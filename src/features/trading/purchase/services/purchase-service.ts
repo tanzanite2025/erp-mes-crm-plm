@@ -1,6 +1,7 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+import { buildVersionedPatchMetadata } from '@/lib/version-guard'
 import { type PurchaseOrder } from '../../data/schema'
 import {
   TRADING_QUERY_PARAM_PAGE,
@@ -23,6 +24,8 @@ import {
   type PurchaseOrderApiDTO,
   type PurchaseOrderListPageApiDTO,
 } from '../contracts/purchase-order-api-dto'
+
+export const PURCHASE_ORDER_PATCH_INTENT_SAVE = 'PURCHASE_ORDER_PATCH_SAVE'
 
 export interface PaginatedResponse<T> {
   items: T[]
@@ -59,7 +62,7 @@ export async function getPurchaseOrders(
     params.set(TRADING_QUERY_PARAM_STATUS, status.join(','))
   }
 
-  const res = await apiFetch<unknown>(`/purchase/orders?${params.toString()}`)
+  const res = await apiFetch<PurchaseOrderListPageApiDTO>(`/purchase/orders?${params.toString()}`)
   const response = ensureObjectResponse<PurchaseOrderListPageApiDTO & Record<string, unknown>>(
     res,
     'PurchaseService.getPurchaseOrders'
@@ -86,7 +89,7 @@ export const getDeletedPurchaseOrders = async (page = 1, pageSize = 50): Promise
     [TRADING_QUERY_PARAM_PAGE]: String(page),
     [TRADING_QUERY_PARAM_PAGE_SIZE]: String(pageSize),
   })
-  const res = await apiFetch<unknown>(`/purchase/deleted-orders?${params.toString()}`)
+  const res = await apiFetch<PurchaseOrderListPageApiDTO>(`/purchase/deleted-orders?${params.toString()}`)
   const response = ensureObjectResponse<PurchaseOrderListPageApiDTO & Record<string, unknown>>(
     res,
     'PurchaseService.getDeletedPurchaseOrders'
@@ -97,7 +100,7 @@ export const getDeletedPurchaseOrders = async (page = 1, pageSize = 50): Promise
 }
 
 export const getPurchaseOrderById = async (id: string): Promise<PurchaseOrder> => {
-  const res = await apiFetch<unknown>(`/purchase/orders/${id}`)
+  const res = await apiFetch<PurchaseOrderApiDTO>(`/purchase/orders/${id}`)
   const response = ensureObjectResponse<PurchaseOrderApiDTO & Record<string, unknown>>(
     res,
     'PurchaseService.getPurchaseOrderById'
@@ -112,7 +115,7 @@ export const createPurchaseOrder = async (order: Omit<PurchaseOrder, 'id' | 'ver
     version: 1,
   }
 
-  const res = await apiFetch<unknown>('/purchase/orders', {
+  const res = await apiFetch<PurchaseOrderApiDTO>('/purchase/orders', {
     method: 'POST',
     body: JSON.stringify(toPurchaseOrderApiDTO(createdOrder)),
   })
@@ -127,10 +130,12 @@ export const patchPurchaseOrder = async (id: string, delta: DeltaSet, version: n
   const payload: DeltaPayload = {
     op: 'PATCH',
     delta,
-    metadata: { id, version },
+    metadata: buildVersionedPatchMetadata(id, version, 'PurchaseService.patchPurchaseOrder', {
+      intent: PURCHASE_ORDER_PATCH_INTENT_SAVE,
+    }),
   }
 
-  const res = await apiFetch<unknown>(`/purchase/orders/${id}`, {
+  const res = await apiFetch<PurchaseOrderApiDTO>(`/purchase/orders/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(payload),
   })

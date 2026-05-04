@@ -48,6 +48,17 @@ export function DailyInsightModal({ open, onOpenChange, session, content, getLat
         clearHistory,
     } = useAiChatEngine({ getLatestSnapshot })
     const isInsightMode = hasUnread && !!content.trim()
+    const modalTitle = isInsightMode
+        ? isAM
+            ? '上午开局简报'
+            : '下午进度预判'
+        : 'Aurora 决策中枢'
+    const modalDescription = isInsightMode
+        ? 'AI 经营简报弹窗，展示当前经营分析与建议动作。'
+        : 'AI 对话弹窗，可输入问询并查看流式分析结果。'
+    const modalStatusLabel = isInsightMode
+        ? '智能行动中心已就绪'
+        : '统一 AI 交互入口已就绪'
 
     useEffect(() => {
         if (open && initialQuery?.trim() && !isInsightMode && messages.length === 0) {
@@ -105,20 +116,18 @@ export function DailyInsightModal({ open, onOpenChange, session, content, getLat
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl rounded-[32px] border-none shadow-[0_32px_128px_rgba(0,0,0,0.4)] p-0 overflow-hidden z-[1000] animate-in fade-in zoom-in-95 duration-500">
+            <DialogContent className="max-w-2xl rounded-[32px] border-none shadow-[0_32px_128px_rgba(0,0,0,0.4)] p-0 overflow-hidden z-1000 animate-in fade-in zoom-in-95 duration-500">
                 <DialogTitle className="sr-only">
-                    {isInsightMode ? (isAM ? '上午开局简报' : '下午进度预判') : 'Aurora 决策中枢'}
+                    {modalTitle}
                 </DialogTitle>
                 <DialogDescription className="sr-only">
-                    {isInsightMode
-                        ? 'AI 经营简报弹窗，展示当前经营分析与建议动作。'
-                        : 'AI 对话弹窗，可输入问询并查看流式分析结果。'}
+                    {modalDescription}
                 </DialogDescription>
                 {/* 1. 头部装饰区域 */}
                 <div className={cn(
                     "p-8 text-white relative overflow-hidden",
-                    isAM ? "bg-gradient-to-br from-indigo-600 via-indigo-700 to-slate-900" 
-                         : "bg-gradient-to-br from-indigo-700 via-slate-900 to-black"
+                    isAM ? "bg-linear-to-br from-indigo-600 via-indigo-700 to-slate-900" 
+                         : "bg-linear-to-br from-indigo-700 via-slate-900 to-black"
                 )}>
                     <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
                         {isAM ? <TrendingUp className="size-48 -rotate-12" /> : <Activity className="size-48 rotate-12" />}
@@ -130,11 +139,11 @@ export function DailyInsightModal({ open, onOpenChange, session, content, getLat
                         </div>
                         <div className="space-y-1">
                             <h2 className="text-xl md:text-2xl font-black italic tracking-tighter uppercase leading-none">
-                                {isInsightMode ? (isAM ? '上午开局简报' : '下午进度预判') : 'Aurora 决策中枢'}
+                                {modalTitle}
                             </h2>
                             <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60 flex items-center gap-2">
                                 <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                                {isInsightMode ? '智能行动中心已就绪' : '统一 AI 交互入口已就绪'}
+                                {modalStatusLabel}
                             </p>
                         </div>
                         {!isInsightMode && (

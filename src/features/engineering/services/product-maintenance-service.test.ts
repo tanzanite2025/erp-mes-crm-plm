@@ -66,7 +66,6 @@ describe('ProductMaintenanceService transaction contracts', () => {
       attributeValues: [],
       attachments: [],
       status: 'Active',
-      templateKey: '',
       revisionNo: 'R1',
       effectiveFrom: null,
       effectiveTo: null,
@@ -139,5 +138,25 @@ describe('ProductMaintenanceService transaction contracts', () => {
         },
       }),
     })
+  })
+
+  it('patchProduct ignores templateKey-only drift because templateKey is derived state', async () => {
+    const current = createProductDraft({
+      id: 'product-1',
+      sku: 'SKU-001',
+      name: 'Product A',
+      typeId: 'type-1',
+      version: 3,
+      templateKey: 'RIM',
+    })
+
+    const result = await ProductMaintenanceService.patchProduct(current, {
+      ...current,
+      templateKey: 'FORK',
+      version: 3,
+    })
+
+    expect(apiFetchMock).not.toHaveBeenCalled()
+    expect(result).toBe(current)
   })
 })

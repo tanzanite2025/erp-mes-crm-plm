@@ -28,12 +28,20 @@ export function QuoteWorkspaceActionPanel({
   onTransfer,
   onConvert,
 }: QuoteWorkspaceActionPanelProps) {
+  const saveButtonLabel = isSaving
+    ? isCreateMode
+      ? '正在创建报价…'
+      : '正在保存报价…'
+    : isCreateMode
+      ? '创建报价'
+      : '保存当前报价'
+
   return (
     <div className={`bg-muted/10 px-5 py-4 ${isCreateMode ? 'border-t border-dashed border-border/60 xl:border-l xl:border-t-0' : 'border-t border-dashed border-border/60 lg:border-t-0 lg:border-l'}`}>
       <div className='space-y-3'>
         <Button className='w-full justify-start rounded-full' size='lg' onClick={onSave} disabled={isSaving || saveDisabled || (!hasDetail && !isCreateMode)}>
           <Save className='size-4' />
-          {isSaving ? (isCreateMode ? '正在创建报价…' : '正在保存报价…') : isCreateMode ? '创建报价' : '保存当前报价'}
+          {saveButtonLabel}
         </Button>
         <Button className='w-full justify-start rounded-full' size='lg' variant='outline' onClick={onExportPdf} disabled={isCreateMode || !hasDetail}>
           <FileDown className='size-4' />

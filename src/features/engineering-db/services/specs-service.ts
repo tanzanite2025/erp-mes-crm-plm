@@ -18,7 +18,7 @@ function toTechnicalSpecContract(item: EngineeringSpec): TechnicalSpec {
     changeOrderNo: item.changeOrderNo,
     siteCode: item.siteCode,
     isDefaultSite: item.isDefaultSite,
-    version: item._v,
+    version: item.version,
     createdAt: item.createdAt || new Date().toISOString(),
   })
 }
@@ -63,7 +63,7 @@ export const SpecsService = {
       siteCode: item.siteCode,
       isDefaultSite: item.isDefaultSite,
       specData: item,
-      _v: item.version || 1,
+      version: item.version || 1,
     }
 
     const saved = await engineeringSpecService.saveSpec(spec)
@@ -78,7 +78,7 @@ export const SpecsService = {
       changeOrderNo: saved.changeOrderNo,
       siteCode: saved.siteCode,
       isDefaultSite: saved.isDefaultSite,
-      version: saved._v,
+      version: saved.version,
       createdAt: saved.createdAt || item.createdAt || new Date().toISOString(),
     })
   },
@@ -90,6 +90,35 @@ export const SpecsService = {
   patchSpec: async (id: string, delta: DeltaSet, version: number) => {
     const mappedDelta: DeltaSet = {}
     Object.entries(delta).forEach(([path, value]) => {
+      if (path === 'name') {
+        mappedDelta.name = value
+        mappedDelta['specData.name'] = value
+        return
+      }
+
+      if (path === 'description') {
+        mappedDelta.description = value
+        mappedDelta['specData.description'] = value
+        return
+      }
+
+      if (
+        path === 'revisionNo' ||
+        path === 'effectiveFrom' ||
+        path === 'effectiveTo' ||
+        path === 'changeType' ||
+        path === 'changeOrderNo' ||
+        path === 'siteCode' ||
+        path === 'isDefaultSite'
+      ) {
+        mappedDelta[path] = value
+        return
+      }
+
+      if (path === 'id' || path === 'version' || path === 'createdAt') {
+        return
+      }
+
       mappedDelta[`specData.${path}`] = value
     })
 

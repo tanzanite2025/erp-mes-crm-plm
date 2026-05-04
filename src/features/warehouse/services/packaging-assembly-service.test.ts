@@ -13,7 +13,6 @@ import { PackagingAssemblyService } from './packaging-assembly-service'
 describe('PackagingAssemblyService', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.unstubAllGlobals()
   })
 
   it('loads packaging assembly records through the authorized warehouse endpoint', async () => {
@@ -69,37 +68,51 @@ describe('PackagingAssemblyService', () => {
     expect(result.uploadToken).toBe('token-1')
   })
 
-  it('submits mobile capture through the public API endpoint', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
+  it('submits mobile capture through apiFetch while preserving public endpoint bypass behavior', async () => {
+    apiFetchMock.mockResolvedValue({
         sessionId: 'session-1',
         status: 'Submitted',
         packageCode: 'PKG-001',
         assemblyId: 'assembly-1',
         expiresAt: '2026-05-01T00:45:00Z',
-      }),
     })
-    vi.stubGlobal('fetch', fetchMock)
 
     const result = await PackagingAssemblyService.submitCaptureSession('session-1', {
       token: 'token-1',
       productBarcodes: ['24125031R360001'],
     })
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      '/api/v1/warehouse/packaging-assemblies/capture-sessions/session-1/submit',
+    expect(apiFetchMock).toHaveBeenCalledWith(
+      '/warehouse/packaging-assemblies/capture-sessions/session-1/submit',
       {
+        ignoreBreaker: true,
         method: 'POST',
         body: JSON.stringify({
           token: 'token-1',
           productBarcodes: ['24125031R360001'],
         }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
       },
     )
     expect(result.status).toBe('Submitted')
+  })
+
+  it('fails loudly when packaging assembly list payload is missing required fields', async () => {
+    apiFetchMock.mockResolvedValue({
+      items: [
+        {
+          packageCode: 'PKG-001',
+          status: 'BOUND',
+          itemCount: 1,
+          source: 'MOBILE_CAPTURE',
+          sessionId: 'session-1',
+          assembledBy: 'tester',
+          createdAt: '2026-05-01T00:00:00Z',
+          items: [],
+        },
+      ],
+      total: 1,
+    })
+
+    await expect(PackagingAssemblyService.list(20)).rejects.toThrow()
   })
 })

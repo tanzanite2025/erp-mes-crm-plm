@@ -11,6 +11,10 @@ var auditModuleAliasMap = map[string][]string{
 		AuditModulePurchaseOrder,
 		"PurchaseOrder",
 	},
+	AuditModuleProduct: {
+		AuditModuleProduct,
+		"Product",
+	},
 	AuditModuleCustomer: {
 		AuditModuleCustomer,
 		"Customer",
@@ -18,6 +22,16 @@ var auditModuleAliasMap = map[string][]string{
 	AuditModuleSupplier: {
 		AuditModuleSupplier,
 		"Supplier",
+	},
+	AuditModuleDrilling: {
+		AuditModuleDrilling,
+		"Drilling",
+		"DrillingPlan",
+	},
+	AuditModuleEngineeringSpec: {
+		AuditModuleEngineeringSpec,
+		"EngineeringSpec",
+		"TechnicalSpec",
 	},
 	AuditModuleEmployee: {
 		AuditModuleEmployee,

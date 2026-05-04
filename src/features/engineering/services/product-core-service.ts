@@ -3,6 +3,7 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import {
+  toProductArrayContract,
   toProductContract,
   toProductListContract,
   toProductOptionsArrayContract,
@@ -44,6 +45,13 @@ export const ProductCoreService = {
         res,
         'ProductCoreService.getProducts.page'
       ) as ProductListPageApiDTO
+    )
+  },
+
+  async getAuthoritativeProducts(): Promise<Product[]> {
+    const res = await apiFetch<ProductApiDTO[]>('/engineering/products?options=true')
+    return toProductArrayContract(
+      ensureArrayResponse<ProductApiDTO>(res, 'ProductCoreService.getAuthoritativeProducts')
     )
   },
 

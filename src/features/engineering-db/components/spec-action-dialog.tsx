@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { FileText, Hash, Tag, Info, Save, FileType } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,10 +8,12 @@ import { Label } from '@/components/ui/label'
 import { SelectDropdown } from '@/components/select-dropdown'
 import { FileUploader } from '@/components/file-uploader'
 import { Textarea } from '@/components/ui/textarea'
-import { TechnicalSpec } from '../data/schema'
+import { type TechnicalSpec } from '../data/schema'
 import { ActionDialogShell } from '@/components/action-dialog-shell'
 import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
-import { useDeltaTracker } from '@/hooks/use-delta-tracker'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
+import { type DeltaSet } from '@/lib/delta/types'
 import { toast } from 'sonner'
 
 interface SpecActionDialogProps {
@@ -21,7 +23,7 @@ interface SpecActionDialogProps {
   onSave: (params: { 
     data: TechnicalSpec; 
     isPatch: boolean; 
-    delta?: any; 
+    delta?: DeltaSet; 
     version?: number 
   }) => void
   isLoading?: boolean
@@ -35,6 +37,25 @@ const DEFAULT_SPEC: Partial<TechnicalSpec> = {
   fileExtension: 'pdf',
   description: '',
   version: 1, 
+}
+
+function buildSpecDelta(before: TechnicalSpec, after: TechnicalSpec): DeltaSet {
+  const delta: DeltaSet = {}
+  const keys = Array.from(new Set([...Object.keys(before), ...Object.keys(after)])) as Array<keyof TechnicalSpec>
+
+  keys.forEach((key) => {
+    const previous = before[key]
+    const next = after[key]
+    if (JSON.stringify(previous) === JSON.stringify(next)) {
+      return
+    }
+    delta[String(key)] = {
+      o: previous,
+      n: next,
+    }
+  })
+
+  return delta
 }
 
 export function SpecActionDialog({
@@ -58,12 +79,28 @@ export function SpecActionDialog({
     if (currentRow) return currentRow
     return { 
       ...DEFAULT_SPEC, 
-      id: `SPEC-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
-      createdAt: new Date().toISOString() 
+      id: '',
+      createdAt: '' 
     } as TechnicalSpec
-  }, [currentRow, open])
+  }, [currentRow])
 
-  const { data: formData, tracker, isDirty } = useDeltaTracker(initialFormData, open)
+  const [formData, setFormData] = useState<TechnicalSpec>(initialFormData)
+
+  const currentDelta = useMemo(() => {
+    if (!isEdit || !currentRow) {
+      return {}
+    }
+    return buildSpecDelta(currentRow, formData)
+  }, [currentRow, formData, isEdit])
+
+  const isDirty = Object.keys(currentDelta).length > 0
+
+  const updateField = <K extends keyof TechnicalSpec>(key: K, value: TechnicalSpec[K]) => {
+    setFormData((prev) => ({
+      ...prev,
+      [key]: value,
+    }))
+  }
 
   const handleSave = () => {
     if (!formData.name) {
@@ -72,7 +109,7 @@ export function SpecActionDialog({
     }
 
     if (isEdit && currentRow) {
-      const delta = tracker.commit()
+      const delta = currentDelta
       if (Object.keys(delta).length === 0) {
         onOpenChange(false)
         return
@@ -93,12 +130,22 @@ export function SpecActionDialog({
       open={open}
       onOpenChange={onOpenChange}
       title={(
-        <>
-          <div className='p-2 bg-indigo-500/10 rounded-xl'>
-            <FileText className='size-5 text-indigo-500' />
+        <div className='flex w-full items-center justify-between gap-3'>
+          <div className='flex min-w-0 items-center gap-2'>
+            <div className='p-2 bg-indigo-500/10 rounded-xl'>
+              <FileText className='size-5 text-indigo-500' />
+            </div>
+            <span className='truncate'>{isEdit ? '编辑技术规范' : '发布技术基准'}</span>
           </div>
-          {isEdit ? '编辑技术规范' : '发布技术基准'}
-        </>
+          {isEdit && currentRow?.id ? (
+            <AuditTimelineTriggerButton
+              module={AUDIT_MODULES.engineeringSpec}
+              targetId={currentRow.id}
+              targetName={currentRow.name}
+              className='h-10 shrink-0 rounded-full border-white/30 bg-background/80 px-4'
+            />
+          ) : null}
+        </div>
       )}
       description="DOCUMENT_MASTER_SPEC / 定义工艺标准、质量规范或 SOP 指引，确保生产流程合规性。"
       contentClassName={shellClasses.content}
@@ -122,7 +169,7 @@ export function SpecActionDialog({
               取消 / CANCEL
             </Button>
             <Button 
-              disabled={isLoading || (isEdit && !isDirty())}
+              disabled={isLoading || (isEdit && !isDirty)}
               onClick={handleSave} 
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-black text-[10px] uppercase tracking-widest px-10 h-11 rounded-full shadow-xl shadow-indigo-600/20 active:scale-95 transition-all gap-2"
             >
@@ -146,7 +193,7 @@ export function SpecActionDialog({
               placeholder='例如: 轮组张力校正标准 SOP'
               className='h-12 font-black text-sm bg-muted/40 border-none rounded-2xl focus-visible:ring-indigo-500/20 px-5 shadow-inner'
               value={formData.name}
-              onChange={(e) => { formData.name = e.target.value }}
+              onChange={(e) => updateField('name', e.target.value)}
             />
           </div>
           <div className='space-y-2'>
@@ -167,7 +214,7 @@ export function SpecActionDialog({
             <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>规范分类 / CATEGORY</Label>
             <SelectDropdown
               defaultValue={formData.category}
-              onValueChange={(val) => { formData.category = val }}
+              onValueChange={(val) => updateField('category', val)}
               items={[
                 { label: '标准作业程序 / SOP', value: 'SOP' },
                 { label: '技术标准 / STANDARD', value: 'Standard' },
@@ -182,7 +229,7 @@ export function SpecActionDialog({
               placeholder='V1.0'
               className='h-12 font-black text-sm bg-muted/40 border-none rounded-2xl px-5 shadow-inner uppercase'
               value={formData.revisionNo || ''}
-              onChange={(e) => { formData.revisionNo = e.target.value }}
+              onChange={(e) => updateField('revisionNo', e.target.value)}
             />
           </div>
         </div>
@@ -196,8 +243,11 @@ export function SpecActionDialog({
             value={formData.fileUrl} 
             accept='.pdf,.xlsx,.docx,.csv'
             onChange={(url, ext) => {
-              formData.fileUrl = url
-              if (ext) formData.fileExtension = ext
+              setFormData((prev) => ({
+                ...prev,
+                fileUrl: url,
+                fileExtension: ext || prev.fileExtension,
+              }))
             }}
           />
         </div>
@@ -211,7 +261,7 @@ export function SpecActionDialog({
             placeholder='记录本次发布的主要变更点...'
             className='min-h-[120px] resize-none rounded-[24px] border-none bg-muted/40 p-5 font-bold text-sm shadow-inner'
             value={formData.description}
-            onChange={(e) => { formData.description = e.target.value }}
+            onChange={(e) => updateField('description', e.target.value)}
           />
         </div>
       </div>

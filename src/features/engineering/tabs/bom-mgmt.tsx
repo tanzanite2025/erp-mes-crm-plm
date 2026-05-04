@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import { AlertTriangle, Layers } from 'lucide-react'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { useLanguage } from '@/context/language-provider'
-import { type DeltaSet } from '@/lib/delta/types'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { BOMActionDialog } from '../components/bom-action-dialog'
 import { BOMPreview } from '../components/bom-mgmt/bom-preview'
 import { BOMTable } from '../components/bom-mgmt/bom-table'
@@ -11,7 +12,6 @@ import { BOMToolbar } from '../components/bom-mgmt/bom-toolbar'
 import { useBOMData } from '../hooks/use-bom-data'
 import { type BOM } from '../data/schema'
 import { type BOMItemDraft } from '../mutation-types'
-import { normalizeBOMInput } from '../utils/product-code-normalization'
 
 export function BOMMgmt() {
   const { t } = useLanguage()
@@ -29,6 +29,34 @@ export function BOMMgmt() {
   const [initialItems, setInitialItems] = useState<BOMItemDraft[] | undefined>(undefined)
   const [initialProductId, setInitialProductId] = useState<string | undefined>(undefined)
 
+  const resetDialogState = () => {
+    setCurrentRow(undefined)
+    setInitialItems(undefined)
+    setInitialProductId(undefined)
+  }
+
+  const handleDialogOpenChange = (nextOpen: boolean) => {
+    if (nextOpen) {
+      setOpen(true)
+      return
+    }
+
+    setOpen(false)
+    resetDialogState()
+  }
+
+  const openCreateDialog = () => {
+    resetDialogState()
+    setOpen(true)
+  }
+
+  const openEditDialog = (bom: BOM) => {
+    setInitialItems(undefined)
+    setInitialProductId(undefined)
+    setCurrentRow(bom)
+    setOpen(true)
+  }
+
   const handleUploadExcel = async (file: File) => {
     const result = await parseExcel(file)
     if (!result) return
@@ -39,20 +67,13 @@ export function BOMMgmt() {
     setOpen(true)
   }
 
-  const handleFormSubmit = async (formData: BOM, delta?: DeltaSet) => {
-    const normalizedFormData = normalizeBOMInput(formData)
-    if (currentRow) {
-      if (!delta || Object.keys(delta).length === 0) {
-        setOpen(false)
-        return
-      }
-      const success = await saveBOM({ data: normalizedFormData, isPatch: true, delta })
-      if (success) setOpen(false)
-      return
-    }
+  const handleFormSubmit = async (formData: BOM) => {
+    const success = await saveBOM({ data: formData })
+    if (success) handleDialogOpenChange(false)
+  }
 
-    const success = await saveBOM({ data: normalizedFormData })
-    if (success) setOpen(false)
+  const closePreview = () => {
+    setPreviewBOM(null)
   }
 
   if (readResource.status === 'error') {
@@ -83,60 +104,64 @@ export function BOMMgmt() {
     )
   }
 
-  if (previewBOM && readResource.status === 'ready') {
-    return (
-      <BOMPreview
-        bom={previewBOM}
-        products={readResource.products}
-        materials={readResource.materials}
-        onBack={() => setPreviewBOM(null)}
-      />
-    )
-  }
-
   const bomTableData = readResource.status === 'ready' ? readResource.data : []
   const bomProducts = readResource.status === 'ready' ? readResource.products : []
+  const bomMaterials = readResource.status === 'ready' ? readResource.materials : []
   const isLoading = readResource.status === 'loading'
+  const viewMode = previewBOM && readResource.status === 'ready' ? 'preview' : 'list'
 
   return (
     <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
       <div className='flex flex-col gap-1 bg-muted/5 p-4 sm:p-6 rounded-[32px] border border-dashed border-muted/50'>
-        <div className='flex items-center gap-2 text-primary'>
-          <Layers className='size-4 text-primary' />
-          <h3 className='text-lg font-black tracking-tighter italic uppercase'>
-            {t('engineering.bomArchive.header.title')}
-          </h3>
+        <div className='flex items-start justify-between gap-3'>
+          <div className='flex items-center gap-2 text-primary'>
+            <Layers className='size-4 text-primary' />
+            <h3 className='text-lg font-black tracking-tighter italic uppercase'>
+              {t('engineering.bomArchive.header.title')}
+            </h3>
+          </div>
+          <AuditTimelineTriggerButton
+            module={AUDIT_MODULES.bom}
+            targetName={t('engineering.bomArchive.header.title')}
+            className='h-11 rounded-full border-dashed bg-background/80 px-4 text-[10px] font-black uppercase tracking-widest'
+          />
         </div>
         <p className='text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-60'>
           {t('engineering.bomArchive.header.description')}
         </p>
       </div>
 
-      <BOMToolbar
-        onDownloadTemplate={downloadTemplate}
-        onUploadExcel={handleUploadExcel}
-        onAddBOM={() => {
-          setInitialItems(undefined)
-          setCurrentRow(undefined)
-          setOpen(true)
-        }}
-      />
+      {viewMode === 'list' ? (
+        <BOMToolbar
+          onDownloadTemplate={downloadTemplate}
+          onUploadExcel={handleUploadExcel}
+          onAddBOM={openCreateDialog}
+        />
+      ) : null}
 
-      <BOMTable
-        data={bomTableData}
-        products={bomProducts}
-        isLoading={isLoading}
-        onPreview={setPreviewBOM}
-        onEdit={(bom) => {
-          setCurrentRow(bom)
-          setOpen(true)
-        }}
-        onDelete={deleteBOM}
-      />
+      {viewMode === 'preview' && previewBOM ? (
+        <div className='rounded-[32px] border border-dashed border-muted/50 bg-background/80 overflow-hidden'>
+          <BOMPreview
+            bom={previewBOM}
+            products={bomProducts}
+            materials={bomMaterials}
+            onBack={closePreview}
+          />
+        </div>
+      ) : (
+        <BOMTable
+          data={bomTableData}
+          products={bomProducts}
+          isLoading={isLoading}
+          onPreview={setPreviewBOM}
+          onEdit={openEditDialog}
+          onDelete={deleteBOM}
+        />
+      )}
 
       <BOMActionDialog
         open={open}
-        onOpenChange={setOpen}
+        onOpenChange={handleDialogOpenChange}
         currentRow={currentRow}
         initialItems={initialItems}
         initialProductId={initialProductId}

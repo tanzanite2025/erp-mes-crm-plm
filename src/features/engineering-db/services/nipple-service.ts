@@ -14,7 +14,7 @@ export const nippleService = {
         color: s.nippleData?.color,
         fileUrl: s.nippleData?.fileUrl,
         fileExtension: s.nippleData?.fileExtension,
-        version: s._v ?? 1,
+        version: s.version,
         createdAt: s.createdAt || new Date().toISOString(),
       })
       return parsed.success ? [parsed.data] : []
@@ -29,7 +29,7 @@ export const nippleService = {
       type: 'NIPPLE_DATA',
       active: true,
       nippleData: data,
-      _v: data.version || 1
+      version: data.version || 1
     }
     await engineeringSpecService.saveSpec(spec);
   },

@@ -285,7 +285,9 @@ export function CustomerList() {
               customerListQuery.refetch(),
               salesClosureSummaryQuery.refetch(),
               salesReturnSummaryQuery.refetch(),
-            ])
+            ]).catch((error) => {
+              logger.error('Failed to retry customer dashboard resources', error)
+            })
           }}
           className='h-12 rounded-full border-2 border-dashed px-10 text-[10px] font-black tracking-widest uppercase'
         >
@@ -314,7 +316,9 @@ export function CustomerList() {
             variant='outline'
             className='h-9 rounded-full border-dashed px-5 text-[10px] font-black tracking-widest uppercase'
             onClick={() => {
-              void Promise.all(customerQuoteSummaryQueries.map((query) => query.refetch()))
+              void Promise.all(customerQuoteSummaryQueries.map((query) => query.refetch())).catch((error) => {
+                logger.error('Failed to retry customer quote summaries', error)
+              })
             }}
           >
             重试报价摘要

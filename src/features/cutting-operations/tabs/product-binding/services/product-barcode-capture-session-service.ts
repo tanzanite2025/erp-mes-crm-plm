@@ -34,29 +34,6 @@ function normalizeSession(item: Partial<ProductBarcodeCaptureSession>): ProductB
   }
 }
 
-function apiBaseUrl(): string {
-  return `${import.meta.env.VITE_API_BASE_URL || ''}/api/v1`
-}
-
-async function publicApiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const response = await fetch(`${apiBaseUrl()}${endpoint}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-    },
-  })
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}))
-    const message =
-      (errorData as { error?: string; message?: string }).error ||
-      (errorData as { error?: string; message?: string }).message ||
-      `请求失败：${response.status}`
-    throw new Error(message)
-  }
-  return response.json() as Promise<T>
-}
-
 export const ProductBarcodeCaptureSessionService = {
   async create(): Promise<ProductBarcodeCaptureSession> {
     const res = await apiFetch<ProductBarcodeCaptureSession>(PRODUCT_BARCODE_CAPTURE_ENDPOINT, {
@@ -87,9 +64,10 @@ export const ProductBarcodeCaptureSessionService = {
     sessionId: string,
     input: SubmitProductBarcodeCaptureSessionInput,
   ): Promise<ProductBarcodeCaptureSession> {
-    const res = await publicApiFetch<ProductBarcodeCaptureSession>(
+    const res = await apiFetch<ProductBarcodeCaptureSession>(
       `${PRODUCT_BARCODE_CAPTURE_ENDPOINT}/${sessionId}/submit`,
       {
+        ignoreBreaker: true,
         method: 'POST',
         body: JSON.stringify({
           token: input.token,

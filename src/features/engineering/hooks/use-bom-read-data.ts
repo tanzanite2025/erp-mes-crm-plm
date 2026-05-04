@@ -6,12 +6,10 @@ import { createLogger } from '@/lib/logger'
 import { type CompositeReadResource, resolveQueryFailure } from '@/lib/read-resource'
 import { failLoudly } from '@/lib/safe-catch'
 import { type MaterialOption } from '../../material-archive/data/schema'
-import { MATERIAL_OPTIONS_QUERY_KEY } from '../../material-archive/query-keys'
-import { MaterialCoreService } from '../../material-archive/services/material-core-service'
 import { type BOM, type Product } from '../data/schema'
-import { BOMS_QUERY_KEY, PRODUCTS_QUERY_KEY } from '../query-keys'
+import { BOMS_QUERY_KEY } from '../query-keys'
 import { bomService } from '../services/bom-service'
-import { ProductCoreService } from '../services/product-core-service'
+import { useBOMReferenceResource } from './use-bom-reference-resource'
 
 const logger = createLogger('useBOMReadData')
 
@@ -22,19 +20,11 @@ export type BOMReadDataResource = CompositeReadResource<{
 }>
 
 export function useBOMReadData(): BOMReadDataResource {
-
   const bomsQuery = useQuery({
     queryKey: BOMS_QUERY_KEY,
     queryFn: () => bomService.getBOMs(),
   })
-  const materialsQuery = useQuery({
-    queryKey: MATERIAL_OPTIONS_QUERY_KEY,
-    queryFn: () => MaterialCoreService.getMaterialOptions(),
-  })
-  const productsQuery = useQuery({
-    queryKey: PRODUCTS_QUERY_KEY,
-    queryFn: () => ProductCoreService.getProducts(),
-  })
+  const referenceResource = useBOMReferenceResource()
 
   const resource = useMemo<BOMReadDataResource>(() => {
     const bomFailure = resolveQueryFailure({
@@ -53,62 +43,24 @@ export function useBOMReadData(): BOMReadDataResource {
       }
     }
 
-    const materialsFailure = resolveQueryFailure({
-      data: materialsQuery.data,
-      error: materialsQuery.error,
-      isPending: materialsQuery.isLoading,
-      scope: 'useBOMReadData.materials',
-      missingMessage: '[CRITICAL] BOM materials are missing after load',
-      failureMessage: '[CRITICAL] BOM materials query failed',
-    })
-    if (materialsFailure) {
-      return {
-        status: 'error',
-        error: materialsFailure.error,
-        scope: materialsFailure.scope,
-      }
+    if (referenceResource.status === 'error') {
+      return referenceResource
     }
 
-    const productsFailure = resolveQueryFailure({
-      data: productsQuery.data,
-      error: productsQuery.error,
-      isPending: productsQuery.isLoading,
-      scope: 'useBOMReadData.products',
-      missingMessage: '[CRITICAL] BOM products are missing after load',
-      failureMessage: '[CRITICAL] BOM products query failed',
-    })
-    if (productsFailure) {
-      return {
-        status: 'error',
-        error: productsFailure.error,
-        scope: productsFailure.scope,
-      }
-    }
-
-    if (bomsQuery.isLoading || materialsQuery.isLoading || productsQuery.isLoading) {
+    if (bomsQuery.isLoading || referenceResource.status === 'loading') {
       return { status: 'loading' }
     }
 
     return {
       status: 'ready',
       data: bomsQuery.data as BOM[],
-      materials: materialsQuery.data as MaterialOption[],
-      products: productsQuery.data as Product[],
+      materials: referenceResource.materials,
+      products: referenceResource.products,
     }
-  }, [
-    bomsQuery.data,
-    bomsQuery.error,
-    bomsQuery.isLoading,
-    materialsQuery.data,
-    materialsQuery.error,
-    materialsQuery.isLoading,
-    productsQuery.data,
-    productsQuery.error,
-    productsQuery.isLoading,
-  ])
+  }, [bomsQuery.data, bomsQuery.error, bomsQuery.isLoading, referenceResource])
 
   useEffect(() => {
-    if (resource.status !== 'error') {
+    if (resource.status !== 'error' || resource.scope !== 'useBOMReadData.boms') {
       return
     }
 

@@ -2,24 +2,26 @@ import { apiFetch } from '@/lib/api-client'
 import { createLogger } from '@/lib/logger'
 import { ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+import { buildVersionedPatchMetadata } from '@/lib/version-guard'
 import { toEmployeeApiDTO, toEmployeeContract } from '../adapters/employee-api-adapter'
 import { type EmployeeApiDTO, type EmployeeAssignmentCommandApiDTO } from '../contracts/employee-api-dto'
 import { type Employee } from '../data/schema'
 import { EmployeeCoreService } from './employee-core-service'
 
 const logger = createLogger('EmployeeMaintenanceService')
+const EMPLOYEE_PATCH_INTENT_SAVE = 'EMPLOYEE_PATCH_SAVE'
 
 type EmployeeStatus = Employee['status']
 
 type BulkUpdateEmployeesStatusResponse = {
-    status: 'success'
-    updated: number
-    operatedAt: string
+  status: 'success'
+  updated: number
+  operatedAt: string
 }
 
 type BulkUpdateEmployeesStatusResult = {
-    updated: number
-    operatedAt: string
+  updated: number
+  operatedAt: string
 }
 
 /**
@@ -96,7 +98,9 @@ export const EmployeeMaintenanceService = {
     const payload: DeltaPayload = {
       op: 'PATCH',
       delta,
-      metadata: { id, version },
+      metadata: buildVersionedPatchMetadata(id, version, 'EmployeeMaintenanceService.patchEmployee', {
+        intent: EMPLOYEE_PATCH_INTENT_SAVE,
+      }),
     }
 
     const res = await apiFetch<EmployeeApiDTO>(`/employees/${id}`, {

@@ -2,6 +2,7 @@ import { CalendarClock, CheckCircle, FileCheck, Play, Printer, Settings2, XCircl
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
 import { type SalesOrder } from '../../data/schema'
+import type { SalesOrderStatusCommandPayload } from '../../hooks/use-sales-order-detail-actions'
 import { useSalesOrderDetailHeaderActions } from '../../hooks/use-sales-order-detail-header-actions'
 import { useSalesOrderDetailHeaderViewModel } from '../../hooks/use-sales-order-detail-header-view-model'
 import { SalesOrderStatusBadge } from './sales-order-status-badge'
@@ -11,7 +12,7 @@ interface SalesOrderDetailHeaderProps {
   isClaimAction: boolean
   activeCommandTitle?: string
   activeCommandContent?: string
-  onMutateStatus: (payload: Partial<SalesOrder>) => void
+  onMutateStatus: (payload: SalesOrderStatusCommandPayload) => void
 }
 
 export function SalesOrderDetailHeader({

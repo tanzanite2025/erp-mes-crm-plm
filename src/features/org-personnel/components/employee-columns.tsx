@@ -98,7 +98,7 @@ export const getEmployeeColumns = (t: TranslateFn): ColumnDef<Employee>[] => [
                 return (
                     <Badge
                         variant='outline'
-                        className='rounded-full h-5 text-[8px] font-black tracking-widest border-none px-2 bg-slate-500/10 text-slate-500'
+                        className='rounded-full h-5 text-[8px] font-black tracking-widest border-none px-2 bg-amber-500/10 text-amber-600'
                     >
                         {t('orgPersonnel.list.unassigned')}
                     </Badge>
@@ -195,7 +195,7 @@ export const getEmployeeColumns = (t: TranslateFn): ColumnDef<Employee>[] => [
 
             if (status === 'resigned') {
                 label = t('orgPersonnel.excel.statuses.resigned')
-                style = 'bg-slate-500/10 text-slate-500'
+                style = 'bg-rose-500/10 text-rose-600'
             } else if (status === 'on-leave') {
                 label = t('orgPersonnel.excel.statuses.onLeave')
                 style = 'bg-amber-500/10 text-amber-600'

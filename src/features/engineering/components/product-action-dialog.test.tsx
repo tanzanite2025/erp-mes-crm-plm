@@ -26,7 +26,12 @@ const {
   productionRestrictionsMock: vi.fn(),
   deleteProductMock: vi.fn(async () => undefined),
   getTemplatesMock: vi.fn(async (): Promise<unknown[]> => []),
-  getTemplateResolutionMock: vi.fn(async () => ({
+  getTemplateResolutionMock: vi.fn<() => Promise<{
+    resolvedTemplateId?: string
+    resolvedTemplateKey?: string
+    templateResolutionSource?: string
+    templateResolutionError?: string
+  }>>(async () => ({
     resolvedTemplateId: undefined,
     resolvedTemplateKey: undefined,
     templateResolutionSource: undefined,
@@ -75,6 +80,12 @@ vi.mock('@/components/ui/dialog', () => ({
 
 vi.mock('@/components/ui/form', () => ({
   Form: ({ children }: { children: ReactNode }) => <div data-testid='form-shell'>{children}</div>,
+}))
+
+vi.mock('@/components/common/audit-timeline-trigger-button', () => ({
+  AuditTimelineTriggerButton: ({ targetId }: { targetId?: string }) => (
+    <div data-testid='audit-trigger'>{targetId || 'module-audit'}</div>
+  ),
 }))
 
 vi.mock('./product/product-basic-info', () => ({
@@ -367,6 +378,96 @@ describe('ProductActionDialog', () => {
         form,
         bindings: templateAttributeBindings,
       }))
+    })
+  })
+
+  it('uses backend template resolution as the only authority in create mode', async () => {
+    const form = buildFormStub()
+    const templateAttributeBindings = [
+      {
+        id: 'template-binding-version',
+        templateId: 'template-rim',
+        categoryKey: 'versionLevel',
+        required: true,
+        active: true,
+        sortOrder: 0,
+        version: 1,
+      },
+    ]
+    const templates: ProductTemplate[] = [
+      {
+        id: 'template-rim',
+        name: '车圈规格',
+        code: 'RIM_TEMPLATE',
+        componentKey: 'RIM',
+        description: '',
+        active: true,
+        attributeBindings: templateAttributeBindings,
+        createdAt: '2026-04-29T00:00:00.000Z',
+        version: 1,
+      },
+    ]
+    getTemplatesMock.mockResolvedValue(templates)
+    getTemplateResolutionMock.mockImplementation(async () => ({
+      resolvedTemplateId: 'template-rim',
+      resolvedTemplateKey: 'RIM',
+      templateResolutionSource: 'typeBinding',
+      templateResolutionError: undefined,
+    }))
+    useWatchMock.mockImplementation(({ name }: { name?: string }) => {
+      if (name === 'modelCode') return '01'
+      if (name === 'typeId') return 'type-a'
+      return undefined
+    })
+
+    renderDialog({
+      props: {
+        productTypes: [],
+      },
+      hookResult: {
+        form,
+        isEdit: false,
+      },
+    })
+
+    await waitFor(() => {
+      expect(getTemplateResolutionMock).toHaveBeenCalledWith('type-a')
+      expect(dynamicAttributeSectionMock).toHaveBeenLastCalledWith(expect.objectContaining({
+        form,
+        bindings: templateAttributeBindings,
+      }))
+    })
+  })
+
+  it('blocks save when authority cannot resolve a template in create mode', async () => {
+    const form = buildFormStub()
+    getTemplatesMock.mockResolvedValue([])
+    getTemplateResolutionMock.mockImplementation(async () => ({
+      resolvedTemplateId: undefined,
+      resolvedTemplateKey: undefined,
+      templateResolutionSource: 'none',
+      templateResolutionError: 'missing binding',
+    }))
+    useWatchMock.mockImplementation(({ name }: { name?: string }) => {
+      if (name === 'modelCode') return '01'
+      if (name === 'typeId') return 'type-a'
+      return undefined
+    })
+
+    renderDialog({
+      props: {
+        productTypes: [],
+      },
+      hookResult: {
+        form,
+        isEdit: false,
+      },
+    })
+
+    await waitFor(() => {
+      expect(getTemplateResolutionMock).toHaveBeenCalledWith('type-a')
+      expect(screen.getByRole('button', { name: 'engineering.productMgmt.dialog.saveStandard' })).toHaveProperty('disabled', true)
+      expect(screen.getByText(/Template binding resolution failed:/)).toBeTruthy()
     })
   })
 

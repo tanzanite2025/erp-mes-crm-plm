@@ -59,4 +59,33 @@ describe('ShipmentCoreService', () => {
       '[INVALID_RESPONSE] ShipmentCoreService.getShipmentHistory expected "items" to be an array.'
     )
   })
+
+  it('rejects shipment demand payloads that omit stockBreakdown instead of treating them as empty lists', async () => {
+    apiFetchMock.mockResolvedValue({
+      items: [
+        {
+          salesOrderId: 'so-1',
+          salesOrderLineId: 1,
+          orderNo: 'SO-001',
+          customerName: '客户A',
+          deliveryDate: '2026-05-04',
+          materialId: 'material-1',
+          materialName: '成品A',
+          materialCode: 'FG-001',
+          materialSpec: 'SPEC-1',
+          uom: 'PCS',
+          orderedQty: 10,
+          deliveredQty: 2,
+          virtualReadyQty: 0,
+          remainingToPrepare: 8,
+          availableQty: 8,
+        },
+      ],
+      total: 1,
+    })
+
+    await expect(ShipmentCoreService.getShipmentDemands()).rejects.toThrow(
+      '[INVALID_RESPONSE] ShipmentApiAdapter.toShipmentDemandContract expected "stockBreakdown" to be an array.'
+    )
+  })
 })

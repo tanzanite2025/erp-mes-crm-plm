@@ -2,6 +2,7 @@ import { CADViewerDialog } from '@/features/engineering-db/components/cad-viewer
 import { ExcelViewerDialog } from '@/features/engineering-db/components/excel-viewer/excel-viewer-dialog'
 import { PDFViewerDialog } from '@/features/engineering-db/components/pdf-viewer/pdf-viewer-dialog'
 import type { SalesOrder } from '../data/schema'
+import type { SalesOrderStatusCommandPayload } from '../hooks/use-sales-order-detail-actions'
 import { SalesOrderDetailActivity } from './parts/sales-order-detail-activity'
 import { SalesOrderDetailHeader } from './parts/sales-order-detail-header'
 import { SalesOrderDetailItemsCard } from './parts/sales-order-detail-items-card'
@@ -15,7 +16,7 @@ interface SalesOrderDetailContentProps {
   activeCommandContent?: string
   claimOperator: string
   canHardDelete?: boolean
-  onMutateStatus: (payload: Partial<SalesOrder>) => void
+  onMutateStatus: (payload: SalesOrderStatusCommandPayload) => void
   onClaimModel: (model: string) => void
   onClaimLine: (lineNo: number) => void
   onPreview: (productId: string | undefined, planId: string | undefined, type: 'spec' | 'drilling' | 'labeling') => void

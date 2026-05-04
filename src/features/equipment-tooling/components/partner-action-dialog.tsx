@@ -3,13 +3,8 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Factory, Save } from 'lucide-react'
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter,
-} from '@/components/ui/dialog'
+import { type z } from 'zod'
+import { ActionDialogShell } from '@/components/action-dialog-shell'
 import {
     Form,
     FormControl,
@@ -32,6 +27,10 @@ import { useLanguage } from '@/context/language-provider'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { type DeltaSet } from '@/lib/delta/types'
 import { useMemo, useEffect } from 'react'
+import { prepareTrackedDialogSubmit } from '../utils/tracked-dialog-submit'
+
+type EquipmentPartnerFormInput = z.input<typeof equipmentPartnerSchema>
+type EquipmentPartnerFormOutput = z.output<typeof equipmentPartnerSchema>
 
 interface PartnerActionDialogProps {
     isOpen: boolean
@@ -65,44 +64,72 @@ export function PartnerActionDialog({
         }
     }, [currentRow])
 
-    const { tracker, deltaProxy } = useDeltaTracker<EquipmentPartner>(initialValues, isOpen)
+    const { commit, deltaProxy, reset } = useDeltaTracker<EquipmentPartner>(initialValues, isOpen)
 
-    const form = useForm<EquipmentPartner>({
-        resolver: zodResolver(equipmentPartnerSchema) as any,
-        defaultValues: initialValues as any,
+    const form = useForm<EquipmentPartnerFormInput, unknown, EquipmentPartnerFormOutput>({
+        resolver: zodResolver(equipmentPartnerSchema),
+        defaultValues: initialValues,
     })
 
     useEffect(() => {
         if (isOpen) {
-            form.reset(initialValues as any)
+            form.reset(initialValues)
+            reset(initialValues)
         }
-    }, [isOpen, initialValues, form])
+    }, [isOpen, initialValues, form, reset])
 
-    const handleFormSubmit = (values: EquipmentPartner) => {
-        Object.assign(deltaProxy, values)
-        const delta = tracker.commit()
-        const isDirty = Object.keys(delta).length > 0
+    const handleFormSubmit = (values: EquipmentPartnerFormOutput) => {
+        const { isDirty, patchDelta } = prepareTrackedDialogSubmit({
+            values,
+            deltaProxy,
+            commit,
+            isEdit,
+        })
 
         if (isEdit && !isDirty) {
             onOpenChange(false)
             return
         }
 
-        onSubmit(values, isEdit, isEdit ? delta : undefined)
+        onSubmit(values, isEdit, patchDelta)
         onOpenChange(false)
     }
 
     return (
-        <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className='w-[95vw] sm:max-w-md max-h-[92vh] flex flex-col p-0 rounded-[32px] shadow-2xl border-none overflow-hidden'>
-                <DialogHeader className='p-6 sm:p-8 shrink-0 pb-4 bg-muted/5 border-b border-dashed'>
-                    <DialogTitle className='text-xl font-black tracking-tighter flex items-center gap-2 italic uppercase'>
-                        <Factory className='size-6 text-blue-600' />
-                        {isEdit ? t('equipmentTooling.partners.dialog.title.edit') : t('equipmentTooling.partners.dialog.title.create')}
-                    </DialogTitle>
-                </DialogHeader>
-                
-                <div className='flex-1 overflow-y-auto px-6 sm:p-8 pt-6 custom-scrollbar pb-8'>
+        <ActionDialogShell
+            open={isOpen}
+            onOpenChange={onOpenChange}
+            title={
+                <div className='flex items-center gap-2'>
+                    <Factory className='size-6 text-blue-600' />
+                    <span>{isEdit ? t('equipmentTooling.partners.dialog.title.edit') : t('equipmentTooling.partners.dialog.title.create')}</span>
+                </div>
+            }
+            contentDecoration={<div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent pointer-events-none' />}
+            contentClassName='relative w-[95vw] sm:max-w-md max-h-[92vh] flex flex-col p-0 rounded-[32px] shadow-2xl border-none overflow-hidden bg-background'
+            headerClassName='p-6 sm:p-8 shrink-0 pb-4 bg-muted/5 border-b border-dashed text-left'
+            bodyClassName='flex-1 overflow-y-auto px-6 sm:p-8 pt-6 custom-scrollbar pb-8'
+            footerClassName='p-6 sm:px-8 bg-muted/5 border-t border-dashed border-muted-foreground/10 flex flex-row sm:justify-end gap-3 shrink-0'
+            titleClassName='text-xl font-black tracking-tighter italic uppercase'
+            footer={
+                <>
+                    <Button
+                        variant='ghost'
+                        onClick={() => onOpenChange(false)}
+                        className='flex-1 sm:flex-none rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest'
+                    >
+                        {t('equipmentTooling.partners.dialog.actions.cancel')}
+                    </Button>
+                    <Button
+                        onClick={form.handleSubmit(handleFormSubmit)}
+                        className='flex-1 sm:flex-none rounded-full shadow-lg h-11 px-10 font-black text-[10px] uppercase tracking-widest bg-blue-600 hover:bg-blue-700 shadow-blue-500/20 active:scale-95 transition-all'
+                    >
+                        <Save className='size-3.5 mr-2' />
+                        {t('common.actions.save')}
+                    </Button>
+                </>
+            }
+        >
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(handleFormSubmit)} className='space-y-6'>
                             <FormField
@@ -201,25 +228,6 @@ export function PartnerActionDialog({
                             />
                         </form>
                     </Form>
-                </div>
-
-                <DialogFooter className='p-6 sm:px-8 bg-muted/5 border-t border-dashed border-muted-foreground/10 flex flex-row sm:justify-end gap-3 shrink-0'>
-                    <Button
-                        variant='ghost'
-                        onClick={() => onOpenChange(false)}
-                        className='flex-1 sm:flex-none rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest'
-                    >
-                        {t('equipmentTooling.partners.dialog.actions.cancel')}
-                    </Button>
-                    <Button
-                        onClick={form.handleSubmit(handleFormSubmit)}
-                        className='flex-1 sm:flex-none rounded-full shadow-lg h-11 px-10 font-black text-[10px] uppercase tracking-widest bg-blue-600 hover:bg-blue-700 shadow-blue-500/20 active:scale-95 transition-all'
-                    >
-                        <Save className='size-3.5 mr-2' />
-                        {isEdit ? t('common.actions.save') : (t as any)('common.actions.create') || t('common.actions.save')}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+        </ActionDialogShell>
     )
 }

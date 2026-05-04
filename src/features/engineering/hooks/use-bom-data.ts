@@ -3,7 +3,6 @@
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { isConflictError } from '@/lib/handle-server-error'
-import { type DeltaSet } from '@/lib/delta/types'
 import { failLoudly } from '@/lib/safe-catch'
 import { type SaveBOMInput } from '../mutation-types'
 import { useBOMImportExport } from './use-bom-import-export'
@@ -12,7 +11,7 @@ import { useBOMWriteActions } from './use-bom-write-actions'
 
 interface BOMDataResult {
   readResource: BOMReadDataResource
-  saveBOM: (params: { data: SaveBOMInput; isPatch?: boolean; delta?: DeltaSet }) => Promise<boolean>
+  saveBOM: (params: { data: SaveBOMInput }) => Promise<boolean>
   deleteBOM: (id: string) => Promise<boolean>
   downloadTemplate: () => Promise<void>
   parseExcel: ReturnType<typeof useBOMImportExport>['parseExcel']
@@ -26,7 +25,7 @@ export function useBOMData(): BOMDataResult {
     products: readResource.status === 'ready' ? readResource.products : [],
   })
 
-  const saveBOM = async (params: { data: SaveBOMInput; isPatch?: boolean; delta?: DeltaSet }) => {
+  const saveBOM = async (params: { data: SaveBOMInput }) => {
     try {
       await persistBOM(params)
       toast.success(t('engineering.bomArchive.toasts.saveSuccess'))

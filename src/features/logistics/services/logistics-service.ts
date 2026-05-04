@@ -2,6 +2,7 @@ import { apiFetch } from '@/lib/api-client'
 import { isApiClientError } from '@/lib/api-error'
 import { ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+import { buildVersionedPatchMetadata } from '@/lib/version-guard'
 import {
   toControlledTrackingDetailContract,
   toLogisticsListPageContract,
@@ -20,6 +21,8 @@ import type {
   SaveLogisticsRecordInput,
   UpdateLogisticsStatusPayload,
 } from '../data/schema'
+
+const LOGISTICS_RECORD_PATCH_INTENT_SAVE = 'LOGISTICS_RECORD_PATCH_SAVE'
 
 class LogisticsService {
   async getRecords(page = 1, pageSize = 50): Promise<LogisticsListPage> {
@@ -111,7 +114,9 @@ class LogisticsService {
     const payload: DeltaPayload = {
       op: 'PATCH',
       delta,
-      metadata: { id, version },
+      metadata: buildVersionedPatchMetadata(id, version, 'LogisticsService.patchLogistics', {
+        intent: LOGISTICS_RECORD_PATCH_INTENT_SAVE,
+      }),
     }
 
     const res = await apiFetch<LogisticsRecordApiDTO>(`/logistics/${id}`, {

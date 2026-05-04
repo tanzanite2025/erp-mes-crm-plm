@@ -1,12 +1,15 @@
-import type { Supplier } from '../../data/schema'
+import type { Supplier, SupplierFormValues } from '../../data/schema'
 
-export function buildSupplierSaveSnapshot(baseSupplier: Supplier | null | undefined, draft: Partial<Supplier>): Supplier {
+export function buildSupplierSaveSnapshot(
+  baseSupplier: Supplier | null | undefined,
+  draft: SupplierFormValues
+): Supplier | SupplierFormValues {
   if (!baseSupplier) {
-    return draft as Supplier
+    return draft
   }
 
   return {
     ...baseSupplier,
-    ...JSON.parse(JSON.stringify(draft)) as Partial<Supplier>,
+    ...structuredClone(draft),
   }
 }

@@ -438,6 +438,7 @@ export const warehouse = {
     },
     toast: {
       executeSuccess: 'Adjustment executed successfully and inventory was updated',
+      executeMissingTarget: 'The adjustment record to execute is missing or no longer valid. Please refresh the list and try again.',
       executeFailed: 'Execution failed: {{message}}',
     },
     printDocument: {

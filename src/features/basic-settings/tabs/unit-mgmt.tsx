@@ -1,5 +1,6 @@
 'use client'
 
+import { useRef } from 'react'
 import {
   Download,
   Edit2,
@@ -33,16 +34,17 @@ import {
 } from '@/components/ui/table'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
+import type { TranslationKey } from '@/locales'
 import { UnitActionDialog } from '../components/unit-action-dialog'
 import { UnitExcelTemplate } from '../utils/unit-excel-utils'
-import { UnitCategory } from '../services/unit-service'
+import type { UnitCategory } from '../services/unit-service'
 import { useUnitMgmt } from '../hooks/use-unit-mgmt'
 import { useUnitImport } from '../hooks/use-unit-import'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 
 const CATEGORY_OPTIONS: Array<{
   value: UnitCategory
-  labelKey: string
+  labelKey: TranslationKey
 }> = [
   { value: 'QUANTITY', labelKey: 'basicSettings.units.categories.quantity' },
   { value: 'WEIGHT', labelKey: 'basicSettings.units.categories.weight' },
@@ -55,6 +57,7 @@ const CATEGORY_OPTIONS: Array<{
 
 export function UnitMgmt() {
   const { locale, t } = useLanguage()
+  const importInputRef = useRef<HTMLInputElement>(null)
   
   // 核心管理 Hook
   const {
@@ -86,7 +89,7 @@ export function UnitMgmt() {
         statusBadge={
           <div className='flex items-center gap-4 px-4 py-1 rounded-full bg-primary/5 border border-primary/10 w-fit shrink-0'>
             <span className='text-[10px] font-black text-primary/60 uppercase tracking-widest italic'>
-              {t('common.status.ready' as 'common.status.ready')}
+              {t('common.status.ready')}
             </span>
             <div className='size-1.5 rounded-full bg-emerald-500 animate-pulse' />
           </div>
@@ -131,7 +134,7 @@ export function UnitMgmt() {
                     : 'text-muted-foreground/40 hover:text-muted-foreground',
                 )}
               >
-                {t(option.labelKey as any)}
+                {t(option.labelKey)}
               </button>
             ))}
           </div>
@@ -140,8 +143,8 @@ export function UnitMgmt() {
         {/* 具按钮组 */}
         <div className='flex flex-col sm:flex-row gap-3 w-full sm:w-auto shrink-0'>
           <input
+            ref={importInputRef}
             type='file'
-            id='excel-import-input'
             className='hidden'
             accept='.xlsx, .xls'
             onChange={handleExcelImport}
@@ -157,7 +160,7 @@ export function UnitMgmt() {
           </Button>
           <Button
             variant='outline'
-            onClick={() => document.getElementById('excel-import-input')?.click()}
+            onClick={() => importInputRef.current?.click()}
             disabled={isImporting}
             className='flex-1 sm:flex-none rounded-full h-11 px-5 font-black text-[10px] uppercase tracking-widest border-dashed gap-2 hover:bg-background'
           >
@@ -219,7 +222,7 @@ export function UnitMgmt() {
                         </TableRow>
                       ))
                     : filteredUnits.map((unit) => {
-                        const categoryLabel =
+                        const categoryLabel: TranslationKey =
                           CATEGORY_OPTIONS.find((option) => option.value === unit.category)?.labelKey ??
                           'basicSettings.units.categories.other'
 
@@ -244,7 +247,7 @@ export function UnitMgmt() {
                             </TableCell>
                             <TableCell className='text-center'>
                               <Badge variant='outline' className='text-[8px] font-black uppercase px-2 h-5 border-none rounded-md bg-muted/50 text-muted-foreground/60 group-hover:bg-primary/10 group-hover:text-primary transition-all shadow-sm'>
-                                {t(categoryLabel as any)}
+                                {t(categoryLabel)}
                               </Badge>
                             </TableCell>
                             <TableCell className='text-center font-mono text-[10px] font-black text-muted-foreground/40 italic'>

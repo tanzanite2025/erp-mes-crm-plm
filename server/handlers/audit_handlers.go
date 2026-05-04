@@ -20,7 +20,10 @@ var auditModulePermissionMap = map[string][]string{
 	services.AuditModuleSalesOrder:        {authz.MenuTrading},
 	services.AuditModulePurchaseOrder:     {authz.MenuTrading, authz.MenuPurchase},
 	services.AuditModuleCustomer:          {authz.MenuTrading},
+	services.AuditModuleProduct:           {authz.MenuEngineering},
 	services.AuditModuleSupplier:          {authz.MenuTrading, authz.MenuPurchase},
+	services.AuditModuleDrilling:          {authz.MenuEngineering},
+	services.AuditModuleEngineeringSpec:   {authz.MenuEngineering},
 	services.AuditModuleEmployee:          {authz.MenuOrg},
 	services.AuditModuleMaterial:          {authz.MenuEngineering, authz.MenuTrading, authz.MenuWarehouse},
 	services.AuditModuleInventory:         {authz.MenuWarehouse},
@@ -79,7 +82,7 @@ func GetDataTimelineHandler(c *gin.Context) {
 	}
 
 	canonicalModule := services.NormalizeAuditModule(module)
-	allowModuleLevelQuery := canonicalModule == services.AuditModuleUserPermission || canonicalModule == services.AuditModuleInventory || canonicalModule == services.AuditModuleShipment || canonicalModule == services.AuditModuleLogistics || canonicalModule == services.AuditModulePurchaseOrder || canonicalModule == services.AuditModuleSupplier || canonicalModule == services.AuditModulePackagingAssembly
+	allowModuleLevelQuery := canonicalModule == services.AuditModuleUserPermission || canonicalModule == services.AuditModuleInventory || canonicalModule == services.AuditModuleShipment || canonicalModule == services.AuditModuleLogistics || canonicalModule == services.AuditModulePurchaseOrder || canonicalModule == services.AuditModuleSupplier || canonicalModule == services.AuditModulePackagingAssembly || canonicalModule == services.AuditModuleEngineeringSpec || canonicalModule == services.AuditModuleDrilling || canonicalModule == services.AuditModuleProduct || canonicalModule == services.AuditModuleBOM
 	if strings.TrimSpace(targetID) == "" && !allowModuleLevelQuery {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] target_id is required for this module"})
 		return

@@ -97,6 +97,14 @@ describe('sales-return-service', () => {
     expect(result.returnNo).toBe('SR-001')
   })
 
+  it('rejects sales return payloads that omit lines instead of treating them as empty lists', async () => {
+    apiFetchMock.mockResolvedValue(buildSalesReturnDto({ lines: undefined as never }))
+
+    await expect(getSalesReturnById('sr-1')).rejects.toThrow(
+      '[INVALID_RESPONSE] SalesReturnService.toSalesReturnContract expected "lines" to be an array.'
+    )
+  })
+
   it('returns an empty history list when actual amount records return 404', async () => {
     apiFetchMock.mockRejectedValue(
       createApiClientError({

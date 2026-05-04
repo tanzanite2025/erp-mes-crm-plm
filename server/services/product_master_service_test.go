@@ -1,9 +1,11 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"testing"
+	"xdfc-server/audit"
 	"xdfc-server/db"
 	"xdfc-server/models"
 
@@ -39,6 +41,18 @@ func setupProductMasterServiceTestDB(t *testing.T) *gorm.DB {
 			description TEXT,
 			active NUMERIC,
 			version INTEGER
+		)
+	`).Error)
+	require.NoError(t, testDB.Exec(`
+		CREATE TABLE audit_logs (
+			id TEXT PRIMARY KEY,
+			module TEXT,
+			target_id TEXT,
+			action TEXT,
+			diff TEXT,
+			operator TEXT,
+			ip TEXT,
+			created_at DATETIME
 		)
 	`).Error)
 	require.NoError(t, testDB.Exec(`
@@ -112,6 +126,17 @@ func setupProductMasterServiceTestDB(t *testing.T) *gorm.DB {
 			version INTEGER
 		)
 	`).Error)
+	require.NoError(t, testDB.Exec(`CREATE TABLE boms (id TEXT PRIMARY KEY, product_id TEXT, deleted_at DATETIME)`).Error)
+	require.NoError(t, testDB.Exec(`CREATE TABLE sales_order_lines (id TEXT PRIMARY KEY, product_id TEXT, deleted_at DATETIME)`).Error)
+	require.NoError(t, testDB.Exec(`CREATE TABLE sales_return_lines (id INTEGER PRIMARY KEY AUTOINCREMENT, product_id TEXT)`).Error)
+	require.NoError(t, testDB.Exec(`CREATE TABLE sales_exchange_lines (id INTEGER PRIMARY KEY AUTOINCREMENT, product_id TEXT)`).Error)
+	require.NoError(t, testDB.Exec(`CREATE TABLE logistics_records (id TEXT PRIMARY KEY, product_id TEXT, deleted_at DATETIME)`).Error)
+	require.NoError(t, testDB.Exec(`CREATE TABLE print_batches (id TEXT PRIMARY KEY, product_id TEXT, deleted_at DATETIME)`).Error)
+	require.NoError(t, testDB.Exec(`CREATE TABLE product_inventory_material_mappings (id TEXT PRIMARY KEY, product_id TEXT, deleted_at DATETIME)`).Error)
+	require.NoError(t, testDB.Exec(`CREATE TABLE production_plans (id TEXT PRIMARY KEY, product_id TEXT, deleted_at DATETIME)`).Error)
+	require.NoError(t, testDB.Exec(`CREATE TABLE inspection_tasks (id TEXT PRIMARY KEY, product_id TEXT, deleted_at DATETIME)`).Error)
+	require.NoError(t, testDB.Exec(`CREATE TABLE piecework_rates (id TEXT PRIMARY KEY, product_id TEXT, deleted_at DATETIME)`).Error)
+	require.NoError(t, testDB.Exec(`CREATE TABLE piecework_records (id TEXT PRIMARY KEY, product_id TEXT, deleted_at DATETIME)`).Error)
 
 	previousDB := db.DB
 	db.DB = testDB
@@ -124,6 +149,15 @@ func setupProductMasterServiceTestDB(t *testing.T) *gorm.DB {
 	})
 
 	return testDB
+}
+
+func productAuditTestContext() context.Context {
+	return audit.NewContextWithActor(context.Background(), audit.AuditActor{
+		UserID:   "product-user-1",
+		Username: "product-auditor",
+		IP:       "203.0.113.71",
+		Source:   "http",
+	})
 }
 
 func TestBuildProductPatchInputRejectsTemplateKeyDelta(t *testing.T) {
@@ -306,7 +340,7 @@ func TestPatchProductReissuesSKUFromUpdatedTypeAndModelCode(t *testing.T) {
 		Version:   1,
 	}).Error)
 
-	saved, err := PatchProduct(productID, 1, map[string]json.RawMessage{
+	saved, err := PatchProduct(productAuditTestContext(), productID, 1, map[string]json.RawMessage{
 		"typeId":    json.RawMessage(`{"o":"type-1","n":"type-2"}`),
 		"modelCode": json.RawMessage(`{"o":"01","n":" 7 "}`),
 	})
@@ -314,6 +348,206 @@ func TestPatchProductReissuesSKUFromUpdatedTypeAndModelCode(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "RD-7", saved.SKU)
 	require.Equal(t, "7", saved.ModelCode)
+}
+
+func TestSaveProductWritesAuditWithActorAndIP(t *testing.T) {
+	testDB := setupProductMasterServiceTestDB(t)
+	productID := "product-audit-save"
+
+	require.NoError(t, testDB.Create(&models.ProductType{
+		ID:      "type-1",
+		Name:    "MTB Fork",
+		Code:    "MTB",
+		Active:  true,
+		Version: 1,
+	}).Error)
+	require.NoError(t, testDB.Create(&models.Product{
+		BaseModel: models.BaseModel{ID: productID},
+		SKU:       "MTB-01",
+		Name:      "Before Save",
+		ModelCode: "01",
+		TypeID:    "type-1",
+		Status:    "Active",
+		Version:   1,
+	}).Error)
+
+	saved, err := SaveProduct(productAuditTestContext(), SaveProductAPIRequest{
+		ID:              productID,
+		Name:            "After Save",
+		SKU:             "MTB-01",
+		ModelCode:       "01",
+		TypeID:          "type-1",
+		Restrictions:    []string{},
+		AttributeValues: []ProductAttributeValueAPIRequest{},
+		Status:          "Active",
+		Version:         1,
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, "MTB-01", saved.SKU)
+	require.Equal(t, "After Save", saved.Name)
+
+	var logs []models.AuditLog
+	require.NoError(t, testDB.Order("created_at asc").Find(&logs).Error)
+	require.Len(t, logs, 1)
+	require.Equal(t, AuditModuleProduct, logs[0].Module)
+	require.Equal(t, productID, logs[0].TargetID)
+	require.Equal(t, "SAVE", logs[0].Action)
+	require.Equal(t, "product-auditor", logs[0].Operator)
+	require.Equal(t, "203.0.113.71", logs[0].IP)
+	require.Contains(t, string(logs[0].Diff), `"f":"operation"`)
+	require.Contains(t, string(logs[0].Diff), `"n":"update"`)
+}
+
+func TestPatchProductWritesAuditWithActorAndIP(t *testing.T) {
+	testDB := setupProductMasterServiceTestDB(t)
+	productID := "product-audit-patch"
+
+	require.NoError(t, testDB.Create(&models.ProductType{
+		ID:      "type-1",
+		Name:    "MTB Fork",
+		Code:    "MTB",
+		Active:  true,
+		Version: 1,
+	}).Error)
+	require.NoError(t, testDB.Create(&models.Product{
+		BaseModel: models.BaseModel{ID: productID},
+		SKU:       "MTB-01",
+		Name:      "Before Patch",
+		ModelCode: "01",
+		TypeID:    "type-1",
+		Status:    "Active",
+		Version:   1,
+	}).Error)
+
+	updated, err := PatchProduct(productAuditTestContext(), productID, 1, map[string]json.RawMessage{
+		"name": json.RawMessage(`{"o":"Before Patch","n":"After Patch"}`),
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, "After Patch", updated.Name)
+
+	var logs []models.AuditLog
+	require.NoError(t, testDB.Order("created_at asc").Find(&logs).Error)
+	require.Len(t, logs, 1)
+	require.Equal(t, AuditModuleProduct, logs[0].Module)
+	require.Equal(t, productID, logs[0].TargetID)
+	require.Equal(t, "PATCH", logs[0].Action)
+	require.Equal(t, "product-auditor", logs[0].Operator)
+	require.Equal(t, "203.0.113.71", logs[0].IP)
+	require.Contains(t, string(logs[0].Diff), `"f":"name"`)
+	require.Contains(t, string(logs[0].Diff), `"n":"After Patch"`)
+}
+
+func TestDeleteProductWritesAuditWithActorAndIP(t *testing.T) {
+	testDB := setupProductMasterServiceTestDB(t)
+	productID := "product-audit-delete"
+
+	require.NoError(t, testDB.Create(&models.ProductType{
+		ID:      "type-1",
+		Name:    "MTB Fork",
+		Code:    "MTB",
+		Active:  true,
+		Version: 1,
+	}).Error)
+	require.NoError(t, testDB.Create(&models.Product{
+		BaseModel: models.BaseModel{ID: productID},
+		SKU:       "MTB-01",
+		Name:      "Delete Me",
+		ModelCode: "01",
+		TypeID:    "type-1",
+		Status:    "Active",
+		Version:   1,
+	}).Error)
+
+	require.NoError(t, DeleteProduct(productAuditTestContext(), productID))
+
+	var logs []models.AuditLog
+	require.NoError(t, testDB.Order("created_at asc").Find(&logs).Error)
+	require.Len(t, logs, 1)
+	require.Equal(t, AuditModuleProduct, logs[0].Module)
+	require.Equal(t, productID, logs[0].TargetID)
+	require.Equal(t, "DELETE", logs[0].Action)
+	require.Equal(t, "product-auditor", logs[0].Operator)
+	require.Equal(t, "203.0.113.71", logs[0].IP)
+	require.Contains(t, string(logs[0].Diff), `"f":"name"`)
+	require.Contains(t, string(logs[0].Diff), `"n":"Delete Me"`)
+}
+
+func TestDeleteProductBlocksAdditionalDownstreamReferences(t *testing.T) {
+	testCases := []struct {
+		name  string
+		setup func(t *testing.T, testDB *gorm.DB, productID string)
+	}{
+		{
+			name: "sales return line",
+			setup: func(t *testing.T, testDB *gorm.DB, productID string) {
+				require.NoError(t, testDB.Exec(`INSERT INTO sales_return_lines (product_id) VALUES (?)`, productID).Error)
+			},
+		},
+		{
+			name: "sales exchange line",
+			setup: func(t *testing.T, testDB *gorm.DB, productID string) {
+				require.NoError(t, testDB.Exec(`INSERT INTO sales_exchange_lines (product_id) VALUES (?)`, productID).Error)
+			},
+		},
+		{
+			name: "print batch",
+			setup: func(t *testing.T, testDB *gorm.DB, productID string) {
+				require.NoError(t, testDB.Exec(`INSERT INTO print_batches (id, product_id, deleted_at) VALUES (?, ?, NULL)`, "print-batch-1", productID).Error)
+			},
+		},
+		{
+			name: "product inventory material mapping",
+			setup: func(t *testing.T, testDB *gorm.DB, productID string) {
+				require.NoError(t, testDB.Exec(`INSERT INTO product_inventory_material_mappings (id, product_id, deleted_at) VALUES (?, ?, NULL)`, "mapping-1", productID).Error)
+			},
+		},
+		{
+			name: "piecework record",
+			setup: func(t *testing.T, testDB *gorm.DB, productID string) {
+				require.NoError(t, testDB.Exec(`INSERT INTO piecework_records (id, product_id, deleted_at) VALUES (?, ?, NULL)`, "piecework-record-1", productID).Error)
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			testDB := setupProductMasterServiceTestDB(t)
+			productID := "product-delete-guard"
+
+			require.NoError(t, testDB.Create(&models.ProductType{
+				ID:      "type-1",
+				Name:    "MTB Fork",
+				Code:    "MTB",
+				Active:  true,
+				Version: 1,
+			}).Error)
+			require.NoError(t, testDB.Create(&models.Product{
+				BaseModel: models.BaseModel{ID: productID},
+				SKU:       "MTB-01",
+				Name:      "Delete Guard",
+				ModelCode: "01",
+				TypeID:    "type-1",
+				Status:    "Active",
+				Version:   1,
+			}).Error)
+
+			tc.setup(t, testDB, productID)
+
+			err := DeleteProduct(productAuditTestContext(), productID)
+			require.Error(t, err)
+			require.Contains(t, err.Error(), "product still referenced by downstream records")
+
+			var count int64
+			require.NoError(t, testDB.Model(&models.Product{}).Where("id = ?", productID).Count(&count).Error)
+			require.EqualValues(t, 1, count)
+
+			var logs []models.AuditLog
+			require.NoError(t, testDB.Find(&logs).Error)
+			require.Len(t, logs, 0)
+		})
+	}
 }
 
 func TestIssueProductIdentityIssuesVersionedSKUFromVariantAttribute(t *testing.T) {

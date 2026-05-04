@@ -1,15 +1,21 @@
 import { z } from 'zod'
+import {
+  entityCreatedBySchema,
+  entityIdentitySchema,
+  entityTimestampAuditSchema,
+  entityVersionSchema,
+} from '@/lib/schema/base-entity-schema'
 
 export type StocktakeTaskStatus = 'DRAFT' | 'IN_PROGRESS' | 'COMPLETED' | 'ADJUSTED'
 
-export const stocktakeTaskSchema = z.object({
-  id: z.string(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+export const stocktakeTaskSchema = entityIdentitySchema
+  .merge(entityTimestampAuditSchema)
+  .merge(entityCreatedBySchema)
+  .merge(entityVersionSchema)
+  .extend({
   title: z.string(),
   warehouseCategoryCode: z.string(),
   status: z.enum(['DRAFT', 'IN_PROGRESS', 'COMPLETED', 'ADJUSTED']),
-  createdBy: z.string(),
   startTime: z.string().optional(),
   endTime: z.string().optional(),
   remarks: z.string().optional(),
@@ -17,10 +23,10 @@ export const stocktakeTaskSchema = z.object({
 
 export type StocktakeTask = z.infer<typeof stocktakeTaskSchema>
 
-export const stocktakeItemSchema = z.object({
-  id: z.string(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+export const stocktakeItemSchema = entityIdentitySchema
+  .merge(entityTimestampAuditSchema)
+  .merge(entityVersionSchema)
+  .extend({
   taskId: z.string(),
   materialId: z.string(),
   materialCode: z.string(),
@@ -32,7 +38,6 @@ export const stocktakeItemSchema = z.object({
   uom: z.string(),
   scannerId: z.string().optional(),
   scanTime: z.string().optional(),
-  version: z.number(),
 })
 
 export type StocktakeItem = z.infer<typeof stocktakeItemSchema>

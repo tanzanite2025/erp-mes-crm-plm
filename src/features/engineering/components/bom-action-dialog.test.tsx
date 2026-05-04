@@ -24,6 +24,10 @@ vi.mock('@/context/language-provider', () => ({
   }),
 }))
 
+vi.mock('@/components/common/audit-timeline-trigger-button', () => ({
+  AuditTimelineTriggerButton: () => <div data-testid='audit-timeline-trigger' />,
+}))
+
 vi.mock('@/components/ui/dialog', () => ({
   Dialog: ({ open, onOpenChange, children }: { open: boolean; onOpenChange: (open: boolean) => void; children: ReactNode }) => {
     if (!open) return null
@@ -74,12 +78,16 @@ type UseBOMFormResult = ReturnType<typeof useBOMForm>
 
 const mockedUseBOMForm = vi.mocked(useBOMForm)
 
-function buildFormStub() {
+function buildFormStub(options?: { isDirty?: boolean; submitData?: Record<string, unknown> }) {
+  const submitData = options?.submitData ?? {}
   return {
     control: {},
+    formState: {
+      isDirty: options?.isDirty ?? false,
+    },
     handleSubmit: (handler: (data: Record<string, unknown>) => void | Promise<void>) => async (event?: { preventDefault?: () => void }) => {
       event?.preventDefault?.()
-      await handler({})
+      await handler(submitData)
     },
   }
 }
@@ -87,9 +95,6 @@ function buildFormStub() {
 function buildUseBOMFormResult(overrides: Partial<UseBOMFormResult> = {}): UseBOMFormResult {
   return {
     form: buildFormStub() as UseBOMFormResult['form'],
-    deltaProxy: {},
-    commitDelta: vi.fn(() => undefined),
-    isDeltaDirty: false,
     fields: [],
     append: vi.fn(),
     remove: vi.fn(),
@@ -172,5 +177,53 @@ describe('BOMActionDialog', () => {
     await user.click(screen.getByRole('button', { name: 'close-dialog' }))
 
     expect(onOpenChange).toHaveBeenCalledWith(false)
+  })
+
+  it('skips submit when edit form stays unchanged', async () => {
+    const user = userEvent.setup()
+    const onOpenChange = vi.fn()
+    const onSubmit = vi.fn()
+
+    mockedUseBOMForm.mockReturnValue(buildUseBOMFormResult({
+      form: buildFormStub({ isDirty: false }) as UseBOMFormResult['form'],
+    }))
+
+    render(
+      <BOMActionDialog
+        open
+        onOpenChange={onOpenChange}
+        onSubmit={onSubmit}
+        currentRow={{ id: 'bom-1', bomNo: 'BOM-001' } as never}
+      />
+    )
+
+    await user.click(screen.getByRole('button', { name: 'engineering.bomArchive.dialog.save' }))
+
+    expect(onSubmit).not.toHaveBeenCalled()
+    expect(onOpenChange).toHaveBeenCalledWith(false)
+  })
+
+  it('does not auto-close after dirty submit and leaves close control to parent', async () => {
+    const user = userEvent.setup()
+    const onOpenChange = vi.fn()
+    const onSubmit = vi.fn(async () => undefined)
+
+    mockedUseBOMForm.mockReturnValue(buildUseBOMFormResult({
+      form: buildFormStub({ isDirty: true, submitData: { bomNo: 'BOM-001' } }) as UseBOMFormResult['form'],
+    }))
+
+    render(
+      <BOMActionDialog
+        open
+        onOpenChange={onOpenChange}
+        onSubmit={onSubmit}
+        currentRow={{ id: 'bom-1', bomNo: 'BOM-001' } as never}
+      />
+    )
+
+    await user.click(screen.getByRole('button', { name: 'engineering.bomArchive.dialog.save' }))
+
+    expect(onSubmit).toHaveBeenCalledWith({ bomNo: 'BOM-001' })
+    expect(onOpenChange).not.toHaveBeenCalledWith(false)
   })
 })

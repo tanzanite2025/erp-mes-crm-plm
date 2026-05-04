@@ -15,6 +15,7 @@ type ActionDialogShellProps = {
   description?: ReactNode
   children: ReactNode
   footer?: ReactNode
+  contentDecoration?: ReactNode
   contentClassName?: string
   headerClassName?: string
   bodyClassName?: string
@@ -30,6 +31,7 @@ export function ActionDialogShell({
   description,
   children,
   footer,
+  contentDecoration,
   contentClassName,
   headerClassName,
   bodyClassName,
@@ -40,6 +42,7 @@ export function ActionDialogShell({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={contentClassName}>
+        {contentDecoration}
         <DialogHeader className={headerClassName}>
           <DialogTitle className={titleClassName}>{title}</DialogTitle>
           {description ? (

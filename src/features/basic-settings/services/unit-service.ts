@@ -2,8 +2,10 @@ import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import { createLogger } from '@/lib/logger'
 import { type DeltaSet, type DeltaPayload } from '@/lib/delta/types'
+import { buildVersionedPatchMetadata } from '@/lib/version-guard'
 
 const logger = createLogger('UnitService')
+const UNIT_PATCH_INTENT_SAVE = 'UNIT_PATCH_SAVE'
 
 export type UnitCategory = 'QUANTITY' | 'WEIGHT' | 'LENGTH' | 'AREA' | 'VOLUME' | 'TIME' | 'OTHER'
 
@@ -49,7 +51,9 @@ export const unitService = {
     const payload: DeltaPayload = {
       op: 'PATCH',
       delta,
-      metadata: { id, version },
+      metadata: buildVersionedPatchMetadata(id, version, 'UnitService.patchUnit', {
+        intent: UNIT_PATCH_INTENT_SAVE,
+      }),
     }
 
     const res = await apiFetch<Unit>(`/basic/units/${id}`, {

@@ -18,6 +18,7 @@ export const tradingSalesOrder = {
   },
   errors: {
     missingActor: "缺少有效的交易操作者",
+    missingDetailOrder: "当前订单详情已失效，请刷新后重试。",
     lineProductMissing: "订单第 {{lineNo}} 行未绑定产品，无法保存订单行快照。"
   },
   detail: {
@@ -80,6 +81,11 @@ export const tradingSalesOrder = {
       warnings: "告警数",
       loadingInline: "包装摘要加载中",
       error: "包装摘要异常"
+    }
+  },
+  preassembleScan: {
+    toasts: {
+      unresolvedOrderLines: '有 {{count}} 条无法确定订单行，请先处理：{{preview}}'
     }
   },
   footer: {

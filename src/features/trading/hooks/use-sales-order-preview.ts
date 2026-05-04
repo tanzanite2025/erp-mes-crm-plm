@@ -11,7 +11,7 @@ import {
 import { SpecsService } from '@/features/engineering-db/services/specs-service'
 import { ProductionDBService } from '@/features/engineering-db/services/production-db-service'
 import { FileResolverService } from '@/features/engineering-db/services/file-resolver-service'
-import { PRODUCTS_QUERY_KEY, productDetailQueryKey } from '@/features/engineering/query-keys'
+import { productDetailQueryKey, productOptionsQueryKey } from '@/features/engineering/query-keys'
 import { ProductCoreService } from '@/features/engineering/services/product-core-service'
 
 type DrawingType = 'spec' | 'drilling' | 'labeling'
@@ -59,8 +59,8 @@ export function useSalesOrderPreview() {
       let targetId = planId
       if (!targetId && productId && type === 'spec') {
         const products = await queryClient.fetchQuery({
-          queryKey: PRODUCTS_QUERY_KEY,
-          queryFn: () => ProductCoreService.getProducts(),
+          queryKey: productOptionsQueryKey(),
+          queryFn: () => ProductCoreService.getProducts({ isOptions: true }),
         })
 
         const cachedProduct = (products as ProductPreviewRefs[]).find((product) => product.id === productId)

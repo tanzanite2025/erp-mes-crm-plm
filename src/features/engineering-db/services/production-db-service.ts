@@ -18,7 +18,7 @@ function toDrillingPlan(spec: EngineeringSpec): DrillingPlan {
   return drillingPlanSchema.parse({
     ...(spec.drillingData ?? {}),
     id: spec.id,
-    version: spec._v,
+    version: spec.version,
     createdAt: spec.createdAt,
   })
 }
@@ -27,7 +27,7 @@ function toLabelingDraft(spec: EngineeringSpec): LabelingDraft {
   return labelingDraftSchema.parse({
     ...(spec.labelingData ?? {}),
     id: spec.id,
-    version: spec._v,
+    version: spec.version,
     createdAt: spec.createdAt,
   })
 }
@@ -68,7 +68,7 @@ export const ProductionDBService = {
       type: 'DRILLING_PLAN',
       active: true,
       drillingData: item,
-      _v: item.version || 1
+      version: item.version || 1
     }
     await engineeringSpecService.saveSpec(spec);
   },
@@ -116,7 +116,7 @@ export const ProductionDBService = {
       type: 'LABELING_DRAFT',
       active: true,
       labelingData: item,
-      _v: item.version || 1
+      version: item.version || 1
     }
     await engineeringSpecService.saveSpec(spec);
   },

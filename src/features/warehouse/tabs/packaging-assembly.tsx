@@ -14,6 +14,8 @@ import {
 import { toast } from 'sonner'
 import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { renderBwipBarcode } from '@/lib/bwip-renderer'
+import { createLogger } from '@/lib/logger'
+import { failLoudly } from '@/lib/safe-catch'
 import { useLanguage } from '@/context/language-provider'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { Badge } from '@/components/ui/badge'
@@ -30,6 +32,8 @@ import {
   type PackagingAssembly,
   type PackagingAssemblyCaptureSession,
 } from '../services/packaging-assembly-service'
+
+const logger = createLogger('PackagingAssembly')
 
 type PackagingCopy = {
   title: string
@@ -269,30 +273,86 @@ export default function PackagingAssembly() {
 
   useEffect(() => {
     if (!captureSession || captureSession.status !== 'Waiting') return
+    let isActive = true
+
+    const pollCaptureSession = async () => {
+      try {
+        const nextSession = await PackagingAssemblyService.getCaptureSession(captureSession.sessionId)
+        if (!isActive) {
+          return
+        }
+
+        setCaptureSession((current) => ({
+          ...nextSession,
+          uploadToken: current?.uploadToken,
+        }))
+        if (nextSession.status === 'Submitted') {
+          toast.success(copy.submitted, {
+            description: nextSession.packageCode,
+          })
+          await queryClient.invalidateQueries({
+            queryKey: warehouseQueryKeys.packagingAssemblies(),
+          })
+        }
+      } catch (error) {
+        logger.warn('Failed to poll packaging capture session', error)
+      }
+    }
+
     const intervalId = window.setInterval(() => {
-      void PackagingAssemblyService.getCaptureSession(captureSession.sessionId)
-        .then((nextSession) => {
-          setCaptureSession((current) => ({
-            ...nextSession,
-            uploadToken: current?.uploadToken,
-          }))
-          if (nextSession.status === 'Submitted') {
-            toast.success(copy.submitted, {
-              description: nextSession.packageCode,
-            })
-            void queryClient.invalidateQueries({
-              queryKey: warehouseQueryKeys.packagingAssemblies(),
-            })
-          }
-        })
-        .catch(() => undefined)
+      void pollCaptureSession()
     }, 2500)
-    return () => window.clearInterval(intervalId)
+
+    return () => {
+      isActive = false
+      window.clearInterval(intervalId)
+    }
   }, [captureSession, copy.submitted, queryClient])
 
-  const assemblies = assembliesQuery.data?.items ?? []
+  const assembliesResource = useMemo(() => {
+    if (assembliesQuery.isLoading) {
+      return { status: 'loading' as const }
+    }
+
+    if (assembliesQuery.error) {
+      return {
+        status: 'error' as const,
+        error: assembliesQuery.error instanceof Error
+          ? assembliesQuery.error
+          : new Error(String(assembliesQuery.error)),
+        scope: 'PackagingAssembly.assembliesQuery',
+      }
+    }
+
+    if (!assembliesQuery.data || !Array.isArray(assembliesQuery.data.items)) {
+      return {
+        status: 'error' as const,
+        error: new Error('[CRITICAL] Packaging assemblies payload missing items after load'),
+        scope: 'PackagingAssembly.assembliesQuery',
+      }
+    }
+
+    return {
+      status: 'ready' as const,
+      items: assembliesQuery.data.items,
+    }
+  }, [assembliesQuery.data, assembliesQuery.error, assembliesQuery.isLoading])
+
+  useEffect(() => {
+    if (assembliesResource.status !== 'error') {
+      return
+    }
+
+    logger.error(`Assemblies resource failed: ${assembliesResource.scope}`, assembliesResource.error)
+    failLoudly(assembliesResource.error, assembliesResource.scope, { silentUI: true })
+  }, [assembliesResource])
+
+  const latestAssemblyPackageCode =
+    assembliesResource.status === 'ready' && assembliesResource.items.length > 0
+      ? assembliesResource.items[0].packageCode
+      : ''
   const activePackageCode =
-    captureSession?.packageCode || assemblies[0]?.packageCode || ''
+    captureSession?.packageCode || latestAssemblyPackageCode || ''
   const selectedPrintBarcodeValue =
     printLabelType === 'qrcode' && printPackageCode === activePackageCode
       ? captureUrl || printPackageCode
@@ -328,7 +388,7 @@ export default function PackagingAssembly() {
       <div className='grid gap-4 xl:grid-cols-[420px_1fr]'>
         <Card className='rounded-lg border border-border/70 shadow-none'>
           <CardHeader className='pb-3'>
-            <CardTitle className='flex items-center gap-2 text-base font-black tracking-tight'>
+            <CardTitle className='flex items-center gap-2 text-sm font-black tracking-tighter italic'>
               <Smartphone className='size-4 text-primary' />
               {copy.mobileEntry}
             </CardTitle>
@@ -407,22 +467,31 @@ export default function PackagingAssembly() {
 
         <Card className='rounded-lg border border-border/70 shadow-none'>
           <CardHeader className='pb-3'>
-            <CardTitle className='flex items-center gap-2 text-base font-black tracking-tight'>
+            <CardTitle className='flex items-center gap-2 text-sm font-black tracking-tight italic'>
               <CheckCircle2 className='size-4 text-primary' />
               {copy.latestAssemblies}
             </CardTitle>
           </CardHeader>
           <CardContent className='space-y-3'>
-            {assembliesQuery.isLoading ? (
+            {assembliesResource.status === 'loading' ? (
               <div className='flex h-40 items-center justify-center text-muted-foreground'>
                 <Loader2 className='size-5 animate-spin' />
               </div>
-            ) : assemblies.length === 0 ? (
+            ) : assembliesResource.status === 'error' ? (
+              <div className='flex h-40 flex-col items-center justify-center rounded-lg border border-dashed border-rose-200 bg-rose-50/60 px-4 text-center'>
+                <div className='text-[10px] font-black uppercase tracking-widest text-rose-700'>
+                  {copy.latestAssemblies}
+                </div>
+                <div className='mt-2 text-[11px] font-bold leading-relaxed text-foreground'>
+                  {assembliesResource.error.message}
+                </div>
+              </div>
+            ) : assembliesResource.items.length === 0 ? (
               <div className='flex h-40 items-center justify-center rounded-lg border border-dashed border-border text-sm font-bold text-muted-foreground'>
                 {copy.empty}
               </div>
             ) : (
-              assemblies.map((assembly) => (
+              assembliesResource.items.map((assembly) => (
                 <AssemblyRecord
                   key={assembly.id}
                   assembly={assembly}

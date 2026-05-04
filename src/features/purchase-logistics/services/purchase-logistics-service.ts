@@ -1,10 +1,13 @@
 import { apiFetch } from '@/lib/api-client'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+import { buildVersionedPatchMetadata } from '@/lib/version-guard'
 import { logisticsService } from '../../logistics/services/logistics-service'
 import type {
   ControlledTrackingOrder,
   LogisticsTrackingRefreshResult,
 } from '../../logistics/data/schema'
+
+const PURCHASE_LOGISTICS_RECORD_PATCH_INTENT_SAVE = 'PURCHASE_LOGISTICS_RECORD_PATCH_SAVE'
 
 export interface LogisticsEvent {
   id: string
@@ -162,7 +165,9 @@ export const PurchaseLogisticsService = {
     const payload: DeltaPayload = {
       op: 'PATCH',
       delta,
-      metadata: { id, version }
+      metadata: buildVersionedPatchMetadata(id, version, 'PurchaseLogisticsService.patchRecord', {
+        intent: PURCHASE_LOGISTICS_RECORD_PATCH_INTENT_SAVE,
+      })
     };
 
     return apiFetch<PurchaseLogisticsRecord>(`/logistics/${id}`, {

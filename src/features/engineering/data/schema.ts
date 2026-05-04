@@ -1,9 +1,13 @@
 import { z } from 'zod'
+import {
+  ENGINEERING_DATE_PROTOCOL_VALIDATION_MESSAGE,
+  ENGINEERING_OPTIONAL_DATE_PROTOCOL_REGEX,
+} from '@/lib/codecs/code-normalization'
 
 const optionalControlDateSchema = z
   .string()
   .trim()
-  .regex(/^$|^\d{4}-\d{2}-\d{2}$/, 'Date must follow YYYY-MM-DD format')
+  .regex(ENGINEERING_OPTIONAL_DATE_PROTOCOL_REGEX, ENGINEERING_DATE_PROTOCOL_VALIDATION_MESSAGE)
   .nullable()
   .optional()
 

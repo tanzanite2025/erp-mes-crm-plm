@@ -34,13 +34,13 @@ export function MaterialUpsertDialog({
 }: MaterialUpsertDialogProps) {
   const { t } = useLanguage()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const { form, selectedCategory, tracker, deltaProxy } = useMaterialForm({ material, open, defaultCategory })
+  const { form, selectedCategory, tracker, replace } = useMaterialForm({ material, open, defaultCategory })
 
   const onSubmit = (data: Material) => {
     setIsSubmitting(true)
     
     // SDRTS: 同步 RHF 数据到 Proxy 用于增量计算
-    Object.assign(deltaProxy, data)
+    replace(data)
     const delta = tracker.commit()
     const isEdit = !!material
     const isDirty = Object.keys(delta).length > 0
@@ -60,7 +60,7 @@ export function MaterialUpsertDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='overflow-hidden rounded-[32px] border-none p-0 shadow-2xl sm:max-w-[700px]'>
-        <div className='pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent' />
+        <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 via-transparent' />
         <div className='relative max-h-[90vh] overflow-y-auto p-6'>
           <DialogHeader className='mb-4'>
             <div className='flex items-center justify-between gap-3 text-primary'>

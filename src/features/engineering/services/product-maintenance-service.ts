@@ -6,8 +6,7 @@ import { type DeltaPayload } from '@/lib/delta/types'
 import { assertRequiredVersion, buildVersionedPatchMetadata } from '@/lib/version-guard'
 import {
   buildProductDelta,
-  toBulkSyncProductsApiDTO,
-  toProductApiDTO,
+  toProductWriteApiDTO,
   toProductContract,
 } from '../adapters/product-api-adapter'
 import { type ProductApiDTO } from '../contracts/product-api-dto'
@@ -25,7 +24,7 @@ export interface ProductTransactionRequest<TPayload> {
 }
 
 const buildProductTransactionBody = (request: ProductTransactionRequest<SaveProductInput>) => ({
-  ...toProductApiDTO(request.payload),
+  ...toProductWriteApiDTO(request.payload),
   metadata: {
     intent: request.intent,
     actorId: request.actorId,
@@ -100,14 +99,6 @@ export const ProductMaintenanceService = {
       return this.patchProduct(current, normalizedProduct)
     }
     return this.createProduct(normalizedProduct)
-  },
-
-  async bulkSyncProducts(products: SaveProductInput[]): Promise<{ status: string; count: number }> {
-    const normalizedProducts = products.map((product) => normalizeSaveProductInput(product))
-    return apiFetch<{ status: string; count: number }>('/engineering/products/sync', {
-      method: 'POST',
-      body: JSON.stringify(toBulkSyncProductsApiDTO(normalizedProducts)),
-    })
   },
 
   async deleteProduct(id: string): Promise<void> {

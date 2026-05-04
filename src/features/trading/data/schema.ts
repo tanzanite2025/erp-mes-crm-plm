@@ -63,6 +63,10 @@ export const supplierSchema = baseEntitySchema.extend({
 })
 
 export type Supplier = z.infer<typeof supplierSchema>
+export type SupplierFormValues = Omit<
+  Supplier,
+  'id' | 'createdAt' | 'updatedAt' | 'isDeleted' | 'version'
+>
 
 export const supplierArraySchema = z.array(supplierSchema)
 

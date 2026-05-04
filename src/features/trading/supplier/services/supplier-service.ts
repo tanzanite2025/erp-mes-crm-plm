@@ -7,13 +7,15 @@ import {
   ensureObjectResponse,
 } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+import { buildVersionedPatchMetadata } from '@/lib/version-guard'
 import { toSupplierApiDTO, toSupplierContract, toSupplierContracts } from '../adapters/supplier-api-adapter'
 import { type SupplierApiDTO, type SupplierListApiResponseDTO } from '../contracts/supplier-api-dto'
-import { supplierArraySchema, supplierSchema, type Supplier } from '../../data/schema'
+import { supplierArraySchema, supplierSchema, type Supplier, type SupplierFormValues } from '../../data/schema'
 
 export const SUPPLIER_TRANSACTION_INTENT_STATUS_CHANGE = 'SUPPLIER_STATUS_CHANGE'
 export const SUPPLIER_TRANSACTION_INTENT_IDENTITY_CHANGE = 'SUPPLIER_IDENTITY_CHANGE'
 export const SUPPLIER_TRANSACTION_INTENT_SAVE = 'SUPPLIER_SAVE'
+export const SUPPLIER_PATCH_INTENT_SAVE = 'SUPPLIER_PATCH_SAVE'
 
 export interface SupplierListStats {
   total: number
@@ -122,7 +124,7 @@ export const executeSupplierTransaction = async <TPayload>(
   )
 }
 
-export const createSupplier = async (supplier: Omit<Supplier, 'id' | 'version'>): Promise<Supplier> => {
+export const createSupplier = async (supplier: SupplierFormValues): Promise<Supplier> => {
   const res = await apiFetch<SupplierApiDTO>('/suppliers', {
     method: 'POST',
     body: JSON.stringify(toSupplierApiDTO({ ...supplier, id: '', version: 1 } as Supplier)),
@@ -206,7 +208,9 @@ export const patchSupplier = async (id: string, delta: DeltaSet, version: number
   const payload: DeltaPayload = {
     op: 'PATCH',
     delta,
-    metadata: { id, version },
+    metadata: buildVersionedPatchMetadata(id, version, 'SupplierService.patchSupplier', {
+      intent: SUPPLIER_PATCH_INTENT_SAVE,
+    }),
   }
 
   const res = await apiFetch<SupplierApiDTO>(`/suppliers/${id}`, {

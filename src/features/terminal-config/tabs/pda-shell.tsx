@@ -317,10 +317,20 @@ export function PDAShellTab() {
     [refreshQueue, t]
   )
 
+  const triggerRetryQueued = useCallback(
+    (targetScene?: string) => {
+      void retryQueued(targetScene).catch((error) => {
+        setPageError(error)
+        logger.error('Failed to execute PDA queued retry', error)
+      })
+    },
+    [retryQueued]
+  )
+
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true)
-      void retryQueued(currentScene)
+      triggerRetryQueued(currentScene)
     }
     const handleOffline = () => setIsOnline(false)
 
@@ -331,15 +341,15 @@ export function PDAShellTab() {
       window.removeEventListener('online', handleOnline)
       window.removeEventListener('offline', handleOffline)
     }
-  }, [currentScene, retryQueued])
+  }, [currentScene, triggerRetryQueued])
 
   useEffect(() => {
     const timer = window.setInterval(() => {
-      void retryQueued(currentScene)
+      triggerRetryQueued(currentScene)
     }, 15000)
 
     return () => window.clearInterval(timer)
-  }, [currentScene, retryQueued])
+  }, [currentScene, triggerRetryQueued])
 
   useEffect(() => {
     const handleHotkey = (event: KeyboardEvent) => {
@@ -426,22 +436,22 @@ export function PDAShellTab() {
   }, [isSubmitting, normalizedRawCode, submitRawCode])
 
   const toneStyles: Record<ShellStatusTone, string> = {
-    idle: 'border-slate-300/60 bg-slate-100/70 text-slate-700',
-    success: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700',
-    warning: 'border-amber-500/30 bg-amber-500/10 text-amber-700',
-    error: 'border-rose-500/30 bg-rose-500/10 text-rose-700',
+    idle: 'border-border/60 bg-muted/70 text-muted-foreground',
+    success: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600',
+    warning: 'border-amber-500/30 bg-amber-500/10 text-amber-600',
+    error: 'border-rose-500/30 bg-rose-500/10 text-rose-600',
   }
 
   const shellTheme = lockMode
     ? {
-        page: 'min-h-full bg-[radial-gradient(circle_at_top,_rgba(34,197,94,0.16),_transparent_32%),linear-gradient(180deg,_rgba(2,6,23,1)_0%,_rgba(15,23,42,1)_100%)] px-2 py-2 md:px-4 md:py-4',
-        card: 'border-slate-700/70 bg-slate-950/85 text-white shadow-[0_25px_70px_rgba(2,6,23,0.45)]',
-        muted: 'text-slate-300',
+        page: 'min-h-full bg-[radial-gradient(circle_at_top,_rgba(34,197,94,0.16),_transparent_32%),linear-gradient(180deg,_var(--background)_0%,_var(--card)_100%)] px-2 py-2 md:px-4 md:py-4',
+        card: 'border-border/70 bg-card/85 text-foreground shadow-[0_25px_70px_rgba(2,6,23,0.45)]',
+        muted: 'text-muted-foreground',
       }
     : {
-        page: 'min-h-full bg-[radial-gradient(circle_at_top,_rgba(34,197,94,0.14),_transparent_40%),linear-gradient(180deg,_rgba(248,250,252,1)_0%,_rgba(241,245,249,1)_100%)] px-3 py-4 md:px-6 md:py-6',
-        card: 'border-slate-300/70 bg-white/95 text-slate-900 shadow-[0_20px_60px_rgba(15,23,42,0.08)]',
-        muted: 'text-slate-600',
+        page: 'min-h-full bg-[radial-gradient(circle_at_top,_rgba(34,197,94,0.14),_transparent_40%),linear-gradient(180deg,_var(--background)_0%,_var(--muted)_100%)] px-3 py-4 md:px-6 md:py-6',
+        card: 'border-border/70 bg-card/95 text-foreground shadow-[0_20px_60px_rgba(15,23,42,0.08)]',
+        muted: 'text-muted-foreground',
       }
 
   if (isForbiddenError(pageError)) {
@@ -458,7 +468,7 @@ export function PDAShellTab() {
                 <SmartphoneCharging className='size-3.5' />
                 {t('terminalConfig.pdaShell.page.badge')}
               </div>
-              <h1 className='text-2xl font-black tracking-tight'>{t('terminalConfig.pdaShell.page.title')}</h1>
+              <h1 className='text-2xl font-black italic tracking-tight'>{t('terminalConfig.pdaShell.page.title')}</h1>
               <p className={`text-sm font-medium leading-relaxed ${shellTheme.muted}`}>
                 {t('terminalConfig.pdaShell.page.description')}
               </p>
@@ -476,12 +486,12 @@ export function PDAShellTab() {
               <Badge className='bg-slate-900 text-white border-none'>
                 {currentSceneLabel}
               </Badge>
-              <Badge className='bg-slate-500/10 text-slate-600 border-none'>
+              <Badge className='bg-muted/20 text-muted-foreground border-none'>
                 {isLoadingConfig
                   ? t('terminalConfig.pdaShell.page.configLoading')
                   : t('terminalConfig.pdaShell.page.configReady')}
               </Badge>
-              <Badge className={isWakeLocked ? 'bg-amber-500/10 text-amber-700 border-none' : 'bg-slate-500/10 text-slate-600 border-none'}>
+              <Badge className={isWakeLocked ? 'bg-amber-500/10 text-amber-600 border-none' : 'bg-muted/20 text-muted-foreground border-none'}>
                 {keepAwake
                   ? isWakeLocked
                     ? t('terminalConfig.pdaShell.page.wakeLockOn')
@@ -545,7 +555,7 @@ export function PDAShellTab() {
               <Button
                 variant='outline'
                 className='h-11 rounded-full px-6 text-[11px] font-black uppercase tracking-widest'
-                onClick={() => void retryQueued(currentScene)}
+                onClick={() => triggerRetryQueued(currentScene)}
                 disabled={isRetrying || !currentSceneQueue.length}
               >
                 {isRetrying ? (
@@ -570,7 +580,7 @@ export function PDAShellTab() {
                   setLastMessage(t('terminalConfig.pdaShell.status.waiting'))
                 }}
                 placeholder={t('terminalConfig.pdaShell.input.placeholder')}
-                inputClassName='h-14 rounded-2xl border-dashed bg-white text-lg font-black tracking-widest text-slate-900'
+                inputClassName='h-14 rounded-2xl border-dashed bg-background text-lg font-black tracking-widest text-foreground'
                 showActionButtons={!lockMode}
                 autoOpenScanner={lockMode}
                 openScannerSignal={scannerWakeSignal}
@@ -603,51 +613,51 @@ export function PDAShellTab() {
             </div>
 
             <div className='grid grid-cols-1 gap-3 sm:grid-cols-4'>
-              <div className='rounded-[24px] border border-dashed border-slate-300/70 bg-slate-50/90 p-4'>
-                <div className='text-[10px] font-black uppercase tracking-[0.2em] text-slate-500'>
+              <div className='rounded-[24px] border border-dashed border-border/50 bg-muted/40 p-4'>
+                <div className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground'>
                   {t('terminalConfig.pdaShell.stats.autoSubmitTitle')}
                 </div>
-                <div className='mt-2 text-2xl font-black text-slate-900'>
+                <div className='mt-2 text-2xl font-black text-foreground'>
                   {t('terminalConfig.pdaShell.stats.autoSubmitValue')}
                 </div>
-                <div className='mt-1 text-xs font-medium text-slate-600'>
+                <div className='mt-1 text-xs font-medium text-muted-foreground'>
                   {t('terminalConfig.pdaShell.stats.autoSubmitHint')}
                 </div>
               </div>
 
-              <div className='rounded-[24px] border border-dashed border-slate-300/70 bg-slate-50/90 p-4'>
-                <div className='text-[10px] font-black uppercase tracking-[0.2em] text-slate-500'>
+              <div className='rounded-[24px] border border-dashed border-border/50 bg-muted/40 p-4'>
+                <div className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground'>
                   {t('terminalConfig.pdaShell.stats.currentSceneTitle')}
                 </div>
-                <div className='mt-2 text-2xl font-black text-slate-900'>{currentSceneQueue.length}</div>
-                <div className='mt-1 text-xs font-medium text-slate-600'>
+                <div className='mt-2 text-2xl font-black text-foreground'>{currentSceneQueue.length}</div>
+                <div className='mt-1 text-xs font-medium text-muted-foreground'>
                   {t('terminalConfig.pdaShell.stats.currentSceneHint')}
                 </div>
               </div>
 
-              <div className='rounded-[24px] border border-dashed border-slate-300/70 bg-slate-50/90 p-4'>
-                <div className='text-[10px] font-black uppercase tracking-[0.2em] text-slate-500'>
+              <div className='rounded-[24px] border border-dashed border-border/50 bg-muted/40 p-4'>
+                <div className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground'>
                   {t('terminalConfig.pdaShell.stats.retryQueueTitle')}
                 </div>
-                <div className='mt-2 text-2xl font-black text-slate-900'>{queue.length}</div>
-                <div className='mt-1 text-xs font-medium text-slate-600'>
+                <div className='mt-2 text-2xl font-black text-foreground'>{queue.length}</div>
+                <div className='mt-1 text-xs font-medium text-muted-foreground'>
                   {isRetrying
                     ? t('terminalConfig.pdaShell.stats.retryQueueHintRetrying')
                     : t('terminalConfig.pdaShell.stats.retryQueueHintIdle')}
                 </div>
               </div>
 
-              <div className='rounded-[24px] border border-dashed border-slate-300/70 bg-slate-50/90 p-4'>
-                <div className='text-[10px] font-black uppercase tracking-[0.2em] text-slate-500'>
+              <div className='rounded-[24px] border border-dashed border-border/50 bg-muted/40 p-4'>
+                <div className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground'>
                   {t('terminalConfig.pdaShell.stats.wakeTitle')}
                 </div>
-                <div className='mt-2 flex items-center gap-2 text-lg font-black text-slate-900'>
+                <div className='mt-2 flex items-center gap-2 text-lg font-black text-foreground'>
                   <Volume2 className='size-4' />
                   {supportsWakeLock
                     ? t('terminalConfig.pdaShell.stats.wakeReady')
                     : t('terminalConfig.pdaShell.stats.wakeBestEffort')}
                 </div>
-                <div className='mt-1 text-xs font-medium text-slate-600'>
+                <div className='mt-1 text-xs font-medium text-muted-foreground'>
                   {t('terminalConfig.pdaShell.stats.wakeHint')}
                 </div>
               </div>
@@ -718,7 +728,7 @@ export function PDAShellTab() {
                 {sceneGroups.map((group) => (
                   <div
                     key={group.scene}
-                    className='rounded-2xl border border-dashed border-slate-300/70 bg-slate-50/90 p-4'
+                    className='rounded-2xl border border-dashed border-border/50 bg-muted/40 p-4'
                   >
                     <div className='text-[10px] font-black uppercase tracking-[0.2em] text-slate-500'>
                       {getSceneLabel(group.scene)}
@@ -733,7 +743,7 @@ export function PDAShellTab() {
                       size='sm'
                       variant='outline'
                       className='mt-3 rounded-full text-[10px] font-black uppercase tracking-widest'
-                      onClick={() => void retryQueued(group.scene)}
+                      onClick={() => triggerRetryQueued(group.scene)}
                     >
                       {t('terminalConfig.pdaShell.actions.retryBucket')}
                     </Button>
@@ -754,7 +764,7 @@ export function PDAShellTab() {
                 {queue.slice(0, 8).map((item) => (
                   <div
                     key={item.id}
-                    className='flex items-center justify-between gap-3 rounded-2xl border border-dashed border-slate-300/70 bg-slate-50/80 px-4 py-3'
+                    className='flex items-center justify-between gap-3 rounded-2xl border border-dashed border-border/50 bg-muted/30 px-4 py-3'
                   >
                     <div className='min-w-0'>
                       <div className='truncate text-sm font-black text-slate-900'>
@@ -773,7 +783,7 @@ export function PDAShellTab() {
                         size='sm'
                         variant='ghost'
                         className='rounded-full text-[10px] font-black uppercase tracking-widest'
-                        onClick={() => void retryQueued(item.scene)}
+                        onClick={() => triggerRetryQueued(item.scene)}
                       >
                         <RefreshCw className='mr-1 size-3.5' />
                         {t('terminalConfig.pdaShell.actions.retry')}

@@ -1,3 +1,5 @@
+import { format } from 'date-fns'
+
 export function normalizeMachineCode(value?: string | null): string {
   return (value || '').replace(/\s+/g, '').trim().toUpperCase()
 }
@@ -61,6 +63,18 @@ export function deriveBomDisplayVersion(bomVersion?: string | null): string {
 const BOM_CHANGE_TYPES = new Set(['MANUAL', 'ECO', 'ECN'])
 const BOM_STATUSES = new Set(['draft', 'active', 'archived'])
 
+export const ENGINEERING_DATE_PROTOCOL_FORMAT = 'yyyy-MM-dd'
+export const ENGINEERING_OPTIONAL_DATE_PROTOCOL_REGEX = /^$|^\d{4}-\d{2}-\d{2}$/
+export const ENGINEERING_DATE_PROTOCOL_VALIDATION_MESSAGE = 'Date must follow YYYY-MM-DD format'
+
+export function formatEngineeringDateProtocol(date: Date): string {
+  return format(date, ENGINEERING_DATE_PROTOCOL_FORMAT)
+}
+
+export function normalizeEngineeringDateProtocol(value?: string | null): string {
+  return (value || '').trim().slice(0, 10)
+}
+
 export function normalizeBomChangeType(value?: string | null, fallback = 'MANUAL'): 'MANUAL' | 'ECO' | 'ECN' {
   const normalized = (value || '').trim().toUpperCase()
   if (BOM_CHANGE_TYPES.has(normalized)) {
@@ -75,10 +89,6 @@ export function normalizeBomStatus(value?: string | null, fallback = 'active'): 
     return normalized as 'draft' | 'active' | 'archived'
   }
   return fallback as 'draft' | 'active' | 'archived'
-}
-
-export function normalizeBomEffectiveDate(value?: string | null): string {
-  return (value || '').trim().slice(0, 10)
 }
 
 export function normalizeSceneKey(value?: string | null, fallback = 'general'): string {

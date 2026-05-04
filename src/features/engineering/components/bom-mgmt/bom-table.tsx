@@ -25,7 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { deriveBomDisplayVersion, normalizeBomChangeType, normalizeBomEffectiveDate, normalizeBomStatus } from '@/lib/codecs/code-normalization'
+import { deriveBomDisplayVersion, normalizeBomChangeType, normalizeBomStatus, normalizeEngineeringDateProtocol } from '@/lib/codecs/code-normalization'
 import { cn } from '@/lib/utils'
 import { type BOM, type Product } from '../../data/schema'
 import { getProductAttributes } from '../../utils/product-utils'
@@ -151,7 +151,7 @@ export function BOMTable({
       header: t('engineering.bomArchive.table.change'),
       cell: ({ row }) => {
         const changeType = normalizeBomChangeType(row.original.changeType)
-        const effectiveFrom = normalizeBomEffectiveDate(row.original.effectiveFrom)
+        const effectiveFrom = normalizeEngineeringDateProtocol(row.original.effectiveFrom)
 
         return (
           <div className='flex flex-col gap-1 text-[10px] font-bold uppercase tracking-wide'>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { History, SearchCheck, Smartphone } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -41,17 +41,8 @@ export function WheelTraceShellPage({
     autoPrompt: autoPromptInstall,
   })
 
-  useEffect(() => {
-    if (autoOpenScanner) {
-      return
-    }
-
-    void handleLookup(DEFAULT_SAMPLE_CODE)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoOpenScanner])
-
-  const handleLookup = async (nextRawCode?: string) => {
-    const value = (nextRawCode || rawCode).trim().toUpperCase()
+  const executeLookup = useCallback(async (lookupCode: string) => {
+    const value = lookupCode.trim().toUpperCase()
     if (!value) return
 
     setIsLoading(true)
@@ -93,7 +84,19 @@ export function WheelTraceShellPage({
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
+
+  const handleLookup = useCallback(async (nextRawCode?: string) => {
+    await executeLookup(nextRawCode ?? rawCode)
+  }, [executeLookup, rawCode])
+
+  useEffect(() => {
+    if (autoOpenScanner) {
+      return
+    }
+
+    void executeLookup(DEFAULT_SAMPLE_CODE)
+  }, [autoOpenScanner, executeLookup])
 
   const warningItems = [
     ...(errorMessage ? [errorMessage] : []),

@@ -22,6 +22,7 @@ export function toStocktakeTaskContract(dto: StocktakeTaskApiDTO): StocktakeTask
     id: dto.id,
     createdAt: dto.createdAt,
     updatedAt: dto.updatedAt,
+    version: dto.version ?? 1,
     title: dto.title,
     warehouseCategoryCode: dto.warehouseCategoryCode,
     status: dto.status,

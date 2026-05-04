@@ -16,6 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useLanguage } from '@/context/language-provider'
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
+const CHART_TICK_COLOR = 'var(--muted-foreground)'
 
 interface PermStatsChartsProps {
   userDist: Array<{ name: string; value: number }>
@@ -113,12 +114,12 @@ export function PermStatsCharts({ userDist, permLoad }: PermStatsChartsProps) {
                   dataKey='name'
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 10, fontWeight: 900, fill: '#94a3b8' }}
+                  tick={{ fontSize: 10, fontWeight: 900, fill: CHART_TICK_COLOR }}
                 />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 10, fontWeight: 900, fill: '#94a3b8' }}
+                  tick={{ fontSize: 10, fontWeight: 900, fill: CHART_TICK_COLOR }}
                 />
                 <Tooltip
                   cursor={{ fill: 'rgba(0,0,0,0.02)' }}

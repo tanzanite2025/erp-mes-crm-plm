@@ -6,6 +6,22 @@ import { type Currency } from '../data/schema'
 export type CreateCurrencyPayload = Omit<Currency, 'id' | 'version'>
 export const CURRENCY_PATCH_INTENT_SAVE = 'FINANCE_CURRENCY_UPDATE'
 
+export interface ExchangeRateSyncProviderConfig {
+  id: string
+  provider: string
+  enabled: boolean
+  priority: number
+  apiBaseUrl: string
+  apiKey: string
+  latestPathTemplate: string
+}
+
+export interface ExchangeRateSyncConfig {
+  enabled: boolean
+  fallbackEnabled: boolean
+  providers: ExchangeRateSyncProviderConfig[]
+}
+
 /**
  * CurrencyMaintenanceService: 币种维护服务
  * 职责：处理 POST/PATCH 以及外部汇率同步事务。
@@ -57,6 +73,19 @@ export const CurrencyMaintenanceService = {
       method: 'POST',
     })
     return ensureObjectResponse<{ message: string; count: number } & Record<string, unknown>>(res, 'CurrencyMaintenanceService.syncCurrencies')
+  },
+
+  async getSyncConfig(): Promise<ExchangeRateSyncConfig> {
+    const res = await apiFetch<ExchangeRateSyncConfig>('/finance/currencies/sync-config')
+    return ensureObjectResponse<ExchangeRateSyncConfig & Record<string, unknown>>(res, 'CurrencyMaintenanceService.getSyncConfig') as ExchangeRateSyncConfig
+  },
+
+  async saveSyncConfig(config: ExchangeRateSyncConfig): Promise<ExchangeRateSyncConfig> {
+    const res = await apiFetch<ExchangeRateSyncConfig>('/finance/currencies/sync-config', {
+      method: 'POST',
+      body: JSON.stringify(config),
+    })
+    return ensureObjectResponse<ExchangeRateSyncConfig & Record<string, unknown>>(res, 'CurrencyMaintenanceService.saveSyncConfig') as ExchangeRateSyncConfig
   },
 
   /**

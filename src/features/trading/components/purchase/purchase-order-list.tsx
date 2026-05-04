@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { Route } from '@/routes/_authenticated/purchase/orders'
 import { PurchaseOrderListToolbar } from './purchase-order-list-toolbar'
@@ -33,38 +33,15 @@ export function PurchaseOrderList() {
   const [pageSize] = useState(50)
   const ordersQuery = useGetPurchaseOrders(page, pageSize)
   const { deleteMutation } = usePurchaseOrderMutations()
-  const [selectedId, setSelectedId] = useState<string | undefined>(detailId || undefined)
-  const [isDetailOpen, setIsDetailOpen] = useState<boolean>(!!detailId)
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false)
   const [editingOrder, setEditingOrder] = useState<PurchaseOrderListItem | null>(null)
-  const [searchTerm, setSearchTerm] = useState(search || '')
   const [statusFilter, setStatusFilter] = useState('ALL')
   const [paymentMethodFilter, setPaymentMethodFilter] = useState('ALL')
   const [paymentTermFilter, setPaymentTermFilter] = useState('ALL')
   const navigate = Route.useNavigate()
-
-  useEffect(() => {
-    if (search) {
-      const syncSearchTimer = globalThis.setTimeout(() => {
-        setSearchTerm(search)
-      }, 0)
-
-      return () => {
-        globalThis.clearTimeout(syncSearchTimer)
-      }
-    }
-
-    if (detailId) {
-      const syncDetailTimer = globalThis.setTimeout(() => {
-        setSelectedId(detailId)
-        setIsDetailOpen(true)
-      }, 0)
-
-      return () => {
-        globalThis.clearTimeout(syncDetailTimer)
-      }
-    }
-  }, [search, detailId])
+  const searchTerm = search || ''
+  const selectedId = detailId || undefined
+  const isDetailOpen = Boolean(detailId)
 
   const listResource = useMemo<PurchaseOrderListResource>(() => {
     const failure = resolveQueryFailure({
@@ -188,7 +165,6 @@ export function PurchaseOrderList() {
   }
 
   const handleOpenChange = (open: boolean) => {
-    setIsDetailOpen(open)
     if (!open) {
       navigate({
         search: (prev) => ({
@@ -197,8 +173,27 @@ export function PurchaseOrderList() {
         }),
         replace: true,
       })
-      setSelectedId(undefined)
     }
+  }
+
+  const handleSearchTermChange = (value: string) => {
+    navigate({
+      search: (prev) => ({
+        ...prev,
+        search: value || undefined,
+      }),
+      replace: true,
+    })
+  }
+
+  const handleSelectOrder = (id: string) => {
+    navigate({
+      search: (prev) => ({
+        ...prev,
+        detailId: id,
+      }),
+      replace: true,
+    })
   }
 
   return (
@@ -215,7 +210,7 @@ export function PurchaseOrderList() {
         }}
         paymentMethodOptions={paymentMethodOptions}
         paymentTermOptions={paymentTermOptions}
-        onSearchTermChange={setSearchTerm}
+        onSearchTermChange={handleSearchTermChange}
         onStatusFilterChange={setStatusFilter}
         onPaymentMethodFilterChange={setPaymentMethodFilter}
         onPaymentTermFilterChange={setPaymentTermFilter}
@@ -226,10 +221,7 @@ export function PurchaseOrderList() {
         <PurchaseOrderMaster
           orders={filteredOrders}
           selectedId={selectedId}
-          onSelect={(id: string) => {
-            setSelectedId(id)
-            setIsDetailOpen(true)
-          }}
+          onSelect={handleSelectOrder}
           onEdit={handleEditOrder}
           onDelete={handleDeleteOrder}
         />

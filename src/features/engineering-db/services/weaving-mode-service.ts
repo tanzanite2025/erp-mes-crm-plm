@@ -30,7 +30,7 @@ function toWeavingMode(item: EngineeringSpec): WeavingMode {
     active: Boolean(specData.active ?? item.active),
     isSystemPreset: Boolean(specData.isSystemPreset ?? false),
     sortOrder: Number(specData.sortOrder ?? 0),
-    version: item._v ?? 1,
+    version: item.version,
     createdAt: item.createdAt || new Date().toISOString(),
   })
 }
@@ -101,7 +101,7 @@ async function saveWeavingModeDraft(
       isSystemPreset,
       sortOrder,
     },
-    _v: current?.version ?? draft.version ?? 1,
+    version: current?.version ?? draft.version ?? 1,
   }
 
   const saved = await engineeringSpecService.saveSpec(payload)

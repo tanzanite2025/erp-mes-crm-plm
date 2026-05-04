@@ -10,7 +10,7 @@ function toSpokeLength(spec: EngineeringSpec): SpokeLength {
   return spokeLengthSchema.parse({
     ...(spec.spokeLengthData ?? {}),
     id: spec.id,
-    version: spec._v,
+    version: spec.version,
     createdAt: spec.createdAt,
   })
 }
@@ -39,7 +39,7 @@ export const SpokeService = {
       type: 'SPOKE_LENGTH',
       active: true,
       spokeLengthData: item,
-      _v: item.version || 1
+      version: item.version || 1
     }
     await engineeringSpecService.saveSpec(spec);
   },

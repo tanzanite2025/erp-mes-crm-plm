@@ -1,8 +1,17 @@
 export const PRODUCTS_QUERY_KEY = ['engineering', 'products'] as const
+export const productManagementQueryKey = () => [...PRODUCTS_QUERY_KEY, 'management'] as const
 export const productOptionsQueryKey = () => [...PRODUCTS_QUERY_KEY, 'options'] as const
+export const productListQueryKeyPrefix = () => [...PRODUCTS_QUERY_KEY, 'page'] as const
 export const productListQueryKey = (page: number = 1, pageSize: number = 50) =>
   [...PRODUCTS_QUERY_KEY, 'page', page, pageSize] as const
 export const productDetailQueryKey = (id: string) => ['engineering', 'products', id] as const
+export const isProductDetailQueryKey = (queryKey: readonly unknown[]) =>
+  queryKey.length === 3
+  && queryKey[0] === PRODUCTS_QUERY_KEY[0]
+  && queryKey[1] === PRODUCTS_QUERY_KEY[1]
+  && typeof queryKey[2] === 'string'
+  && queryKey[2] !== 'management'
+  && queryKey[2] !== 'options'
 export const PRODUCT_TYPES_QUERY_KEY = ['engineering', 'productTypes'] as const
 export const PRODUCT_TEMPLATES_QUERY_KEY = ['engineering', 'productTemplates'] as const
 export const PRODUCT_APPEARANCES_QUERY_KEY = ['engineering', 'productAppearances'] as const

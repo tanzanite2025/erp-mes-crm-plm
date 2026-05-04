@@ -60,15 +60,21 @@ export function PurchaseReturnEvidenceManager({
   const [uploading, setUploading] = useState(false)
   const [draggingEvidenceId, setDraggingEvidenceId] = useState<string | null>(null)
   const [dragOverEvidenceId, setDragOverEvidenceId] = useState<string | null>(null)
+  const [cameraInputResetKey, setCameraInputResetKey] = useState(0)
+  const [uploadInputResetKey, setUploadInputResetKey] = useState(0)
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const uploadInputRef = useRef<HTMLInputElement>(null)
 
-  const handleSelectedFiles = async (files: FileList | null) => {
-    if (!files || files.length === 0 || disabled) return
+  const handleSelectedFiles = async (files: FileList | null, resetInput?: () => void) => {
+    if (!files || files.length === 0 || disabled) {
+      resetInput?.()
+      return
+    }
 
     const remainingSlots = Math.max(maxCount - evidences.length, 0)
     if (remainingSlots === 0) {
       toast.error(maxReachedText.replace('{{max}}', String(maxCount)))
+      resetInput?.()
       return
     }
 
@@ -99,8 +105,7 @@ export function PurchaseReturnEvidenceManager({
       toast.error(uploadFailedText)
     } finally {
       setUploading(false)
-      if (cameraInputRef.current) cameraInputRef.current.value = ''
-      if (uploadInputRef.current) uploadInputRef.current.value = ''
+      resetInput?.()
     }
   }
 
@@ -138,22 +143,30 @@ export function PurchaseReturnEvidenceManager({
       </div>
 
       <input
+        key={cameraInputResetKey}
         ref={cameraInputRef}
         type='file'
         accept='image/*'
         capture='environment'
         className='hidden'
         disabled={disabled || uploading}
-        onChange={(event) => void handleSelectedFiles(event.target.files)}
+        onChange={(event) =>
+          void handleSelectedFiles(event.target.files, () => {
+            setCameraInputResetKey((current) => current + 1)
+          })}
       />
       <input
+        key={uploadInputResetKey}
         ref={uploadInputRef}
         type='file'
         accept='image/*'
         multiple
         className='hidden'
         disabled={disabled || uploading}
-        onChange={(event) => void handleSelectedFiles(event.target.files)}
+        onChange={(event) =>
+          void handleSelectedFiles(event.target.files, () => {
+            setUploadInputResetKey((current) => current + 1)
+          })}
       />
 
       <div

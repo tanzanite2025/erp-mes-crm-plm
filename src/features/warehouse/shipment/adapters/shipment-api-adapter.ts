@@ -1,6 +1,8 @@
+import { ensureArrayField } from '@/lib/api-response'
 import type {
   InventoryShipmentRecordApiDTO,
   ShipmentDemandApiDTO,
+  ShipmentDemandStockBreakdownApiDTO,
 } from '../contracts/shipment-api-dto'
 import type { ShipmentDemand, ShipmentRecord } from '../data/schema'
 
@@ -58,7 +60,11 @@ export function toShipmentDemandContract(dto: ShipmentDemandApiDTO): ShipmentDem
     virtualReadyQty: dto.virtualReadyQty,
     remainingToPrepare: dto.remainingToPrepare,
     availableQty: dto.availableQty,
-    stockBreakdown: dto.stockBreakdown ?? [],
+    stockBreakdown: ensureArrayField<ShipmentDemandStockBreakdownApiDTO>(
+      dto,
+      'stockBreakdown',
+      'ShipmentApiAdapter.toShipmentDemandContract'
+    ),
   }
 }
 

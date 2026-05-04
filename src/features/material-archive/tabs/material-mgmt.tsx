@@ -1,11 +1,8 @@
 import { useMemo } from 'react'
-import {
-    getCoreRowModel,
-    useReactTable
-} from '@tanstack/react-table'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { DataTablePagination } from '@/components/data-table/pagination'
 import { useLanguage } from '@/context/language-provider'
+import { useUdsManualPaginationTable } from '@/hooks/use-uds-table'
 import { isForbiddenError } from '@/lib/error-status'
 import { MaterialUpsertDialog } from '../components/material-upsert-dialog'
 import { getMaterialCategoryOptions } from '../data/material-category-options'
@@ -72,14 +69,12 @@ export function MaterialMgmt({ category }: MaterialMgmtProps) {
         onDelete: handleDelete
     })
 
-    const table = useReactTable({
+    const table = useUdsManualPaginationTable({
         data: filteredMaterials,
         columns,
         pageCount: Math.ceil(totalCount / pagination.pageSize),
         state: { pagination },
         onPaginationChange: setPagination,
-        manualPagination: true,
-        getCoreRowModel: getCoreRowModel(),
     })
 
     if (isForbiddenError(error)) {

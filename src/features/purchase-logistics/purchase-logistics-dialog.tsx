@@ -22,6 +22,7 @@ import {
   queuePurchaseLogisticsOfflineDraft,
   shouldQueuePurchaseLogisticsOfflineDraft,
 } from './services/purchase-logistics-offline-draft-service'
+import { PURCHASE_LOGISTICS_KEYS } from './query-keys'
 import { PurchaseLogisticsService } from './services/purchase-logistics-service'
 
 type PurchaseLogisticsForm = {
@@ -90,7 +91,8 @@ export function PurchaseLogisticsDialog() {
     const payload = { ...form }
 
     if (!navigator.onLine) {
-      queuePurchaseLogisticsOfflineDraft(payload)
+      await queuePurchaseLogisticsOfflineDraft(payload)
+      await queryClient.invalidateQueries({ queryKey: PURCHASE_LOGISTICS_KEYS.offlineDrafts })
       toast.success(t('purchase.logistics.offlineQueued'), {
         description: t('purchase.logistics.offlineQueuedDesc', { trackingNo: form.trackingNo }),
         icon: <Truck className='h-4 w-4' />,
@@ -101,7 +103,7 @@ export function PurchaseLogisticsDialog() {
 
     try {
       await mutation.mutateAsync(payload)
-      queryClient.invalidateQueries({ queryKey: ['purchase-logistics-list'] })
+      await queryClient.invalidateQueries({ queryKey: PURCHASE_LOGISTICS_KEYS.listRoot })
       toast.success(t('purchase.logistics.bindSuccess'), {
         description: t('purchase.logistics.bindSuccessDesc', { trackingNo: form.trackingNo }),
         icon: <Truck className='h-4 w-4' />,
@@ -110,7 +112,8 @@ export function PurchaseLogisticsDialog() {
     } catch (err) {
       if (shouldQueuePurchaseLogisticsOfflineDraft(err)) {
         const message = err instanceof Error ? err.message : undefined
-        queuePurchaseLogisticsOfflineDraft(payload, message)
+        await queuePurchaseLogisticsOfflineDraft(payload, message)
+        await queryClient.invalidateQueries({ queryKey: PURCHASE_LOGISTICS_KEYS.offlineDrafts })
         toast.success(t('purchase.logistics.offlineQueued'), {
           description: t('purchase.logistics.offlineQueuedDesc', { trackingNo: form.trackingNo }),
           icon: <Truck className='h-4 w-4' />,

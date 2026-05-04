@@ -6,9 +6,60 @@
 const DB_NAME = 'xdfc_indexed_db'
 const STORE_NAME = 'key_value_store'
 const DB_VERSION = 1
+const STORAGE_BROADCAST_CHANNEL_NAME = 'xdfc_storage_broadcast'
 
 /** Global storage update event name. */
 export const XDFC_STORAGE_EVENT = 'xdfc_storage_updated'
+
+type StorageAction = 'SET' | 'REMOVE'
+
+interface StorageBroadcastMessage {
+  key: string
+  action: StorageAction
+  source: string
+}
+
+const storageBroadcastSource = `storage_service_${Math.random().toString(36).slice(2, 10)}`
+let storageBroadcastChannel: BroadcastChannel | null = null
+
+function dispatchStorageWindowEvent(key: string, action: StorageAction) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.dispatchEvent(new CustomEvent(XDFC_STORAGE_EVENT, { detail: { key, action } }))
+  if (action === 'SET') {
+    window.dispatchEvent(new CustomEvent(`${key}_updated`, { detail: { action } }))
+  }
+}
+
+function getStorageBroadcastChannel() {
+  if (typeof BroadcastChannel === 'undefined') {
+    return null
+  }
+
+  if (!storageBroadcastChannel) {
+    storageBroadcastChannel = new BroadcastChannel(STORAGE_BROADCAST_CHANNEL_NAME)
+    storageBroadcastChannel.onmessage = (event: MessageEvent<StorageBroadcastMessage>) => {
+      const message = event.data
+      if (!message || message.source === storageBroadcastSource) {
+        return
+      }
+      dispatchStorageWindowEvent(message.key, message.action)
+    }
+  }
+
+  return storageBroadcastChannel
+}
+
+function notifyStorageUpdate(key: string, action: StorageAction) {
+  dispatchStorageWindowEvent(key, action)
+  getStorageBroadcastChannel()?.postMessage({
+    key,
+    action,
+    source: storageBroadcastSource,
+  } satisfies StorageBroadcastMessage)
+}
 
 export const StorageService = {
   /** Open (or initialize) the IndexedDB database. */
@@ -16,15 +67,15 @@ export const StorageService = {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(DB_NAME, DB_VERSION)
 
-      request.onupgradeneeded = (event: any) => {
-        const db = event.target.result
+      request.onupgradeneeded = (event: IDBVersionChangeEvent) => {
+        const db = (event.target as IDBOpenDBRequest).result
         if (!db.objectStoreNames.contains(STORE_NAME)) {
           db.createObjectStore(STORE_NAME)
         }
       }
 
-      request.onsuccess = (event: any) => resolve(event.target.result)
-      request.onerror = (event: any) => reject(event.target.error)
+      request.onsuccess = (event: Event) => resolve((event.target as IDBOpenDBRequest).result)
+      request.onerror = (event: Event) => reject((event.target as IDBOpenDBRequest).error)
     })
   },
 
@@ -66,7 +117,7 @@ export const StorageService = {
   },
 
   /** Write one key. */
-  setItem: async (key: string, value: any): Promise<void> => {
+  setItem: async (key: string, value: unknown): Promise<void> => {
     const db = await StorageService._getDB()
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(STORE_NAME, 'readwrite')
@@ -74,10 +125,7 @@ export const StorageService = {
       const request = store.put(value, key)
 
       request.onsuccess = () => {
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent(XDFC_STORAGE_EVENT, { detail: { key, action: 'SET' } }))
-          window.dispatchEvent(new CustomEvent(`${key}_updated`, { detail: { action: 'SET' } }))
-        }
+        notifyStorageUpdate(key, 'SET')
         resolve()
       }
       request.onerror = () => reject(request.error)
@@ -93,9 +141,7 @@ export const StorageService = {
       const request = store.delete(key)
 
       request.onsuccess = () => {
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent(XDFC_STORAGE_EVENT, { detail: { key, action: 'REMOVE' } }))
-        }
+        notifyStorageUpdate(key, 'REMOVE')
         resolve()
       }
       request.onerror = () => reject(request.error)
@@ -116,9 +162,9 @@ export const StorageService = {
   },
 
   /** Snapshot all key-value pairs. */
-  getAllData: async (): Promise<Record<string, any>> => {
+  getAllData: async (): Promise<Record<string, unknown>> => {
     const keys = await StorageService.getAllKeys()
-    const data: Record<string, any> = {}
+    const data: Record<string, unknown> = {}
     for (const key of keys) {
       data[key] = await StorageService.getItem(key)
     }
@@ -128,6 +174,7 @@ export const StorageService = {
 
 // Expose in development for quick debugging in browser console.
 if (typeof window !== 'undefined' && (import.meta.env.DEV || window.location.hostname === 'localhost')) {
-  ;(window as any).StorageService = StorageService
+  getStorageBroadcastChannel()
+  ;(window as Window & { StorageService?: typeof StorageService }).StorageService = StorageService
 }
 

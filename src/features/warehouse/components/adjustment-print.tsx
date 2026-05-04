@@ -1,7 +1,7 @@
 import React from 'react'
-import { format } from 'date-fns'
 import { useLanguage } from '@/context/language-provider'
 import { auditUtils } from '@/lib/audit-utils'
+import { formatWarehouseDisplayDateTime } from '../utils/warehouse-date-display'
 
 import { type InventoryAdjustment } from '../adjustment'
 
@@ -10,7 +10,7 @@ interface Props {
 }
 
 export const AdjustmentPrint = React.forwardRef<HTMLDivElement, Props>(({ data }, ref) => {
-  const { t } = useLanguage()
+  const { t, locale } = useLanguage()
   const reporterName = auditUtils.formatOperatorName(data.createdBy) || data.createdBy
   const approvedName = data.approvedBy ? auditUtils.formatOperatorName(data.approvedBy) || data.approvedBy : t('warehouse.adjustment.audit.empty')
   const executedName = data.executedBy ? auditUtils.formatOperatorName(data.executedBy) || data.executedBy : t('warehouse.adjustment.audit.empty')
@@ -21,7 +21,7 @@ export const AdjustmentPrint = React.forwardRef<HTMLDivElement, Props>(({ data }
         <h1 className='text-2xl font-bold uppercase tracking-widest'>{t('warehouse.adjustment.printDocument.title')}</h1>
         <div className='flex justify-between mt-4 text-xs'>
           <span>{t('warehouse.adjustment.printDocument.documentNo')}: {data.adjustmentNo}</span>
-          <span>{t('warehouse.adjustment.printDocument.printDate')}: {format(new Date(), 'yyyy-MM-dd HH:mm')}</span>
+          <span>{t('warehouse.adjustment.printDocument.printDate')}: {formatWarehouseDisplayDateTime(new Date(), locale)}</span>
         </div>
       </div>
 
@@ -34,11 +34,11 @@ export const AdjustmentPrint = React.forwardRef<HTMLDivElement, Props>(({ data }
             : t('warehouse.adjustment.printDocument.typeManual')}
         </div>
         <div><span className='font-bold'>{t('warehouse.adjustment.printDocument.reporter')}:</span> {reporterName}</div>
-        <div><span className='font-bold'>{t('warehouse.adjustment.printDocument.createdAt')}:</span> {format(new Date(data.createdAt), 'yyyy-MM-dd HH:mm')}</div>
+        <div><span className='font-bold'>{t('warehouse.adjustment.printDocument.createdAt')}:</span> {formatWarehouseDisplayDateTime(data.createdAt, locale)}</div>
         <div><span className='font-bold'>{t('warehouse.adjustment.printDocument.approvedBy')}:</span> {approvedName}</div>
-        <div><span className='font-bold'>{t('warehouse.adjustment.printDocument.approvedAt')}:</span> {data.approvedAt ? format(new Date(data.approvedAt), 'yyyy-MM-dd HH:mm') : t('warehouse.adjustment.audit.empty')}</div>
+        <div><span className='font-bold'>{t('warehouse.adjustment.printDocument.approvedAt')}:</span> {data.approvedAt ? formatWarehouseDisplayDateTime(data.approvedAt, locale) : t('warehouse.adjustment.audit.empty')}</div>
         <div><span className='font-bold'>{t('warehouse.adjustment.printDocument.executedBy')}:</span> {executedName}</div>
-        <div><span className='font-bold'>{t('warehouse.adjustment.printDocument.executedAt')}:</span> {data.executedAt ? format(new Date(data.executedAt), 'yyyy-MM-dd HH:mm') : t('warehouse.adjustment.audit.empty')}</div>
+        <div><span className='font-bold'>{t('warehouse.adjustment.printDocument.executedAt')}:</span> {data.executedAt ? formatWarehouseDisplayDateTime(data.executedAt, locale) : t('warehouse.adjustment.audit.empty')}</div>
       </div>
 
       <table className='w-full border-collapse border border-black text-xs mb-8'>

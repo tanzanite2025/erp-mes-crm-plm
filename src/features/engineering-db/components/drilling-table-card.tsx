@@ -9,12 +9,14 @@ import {
 } from '@tanstack/react-table'
 import { cn } from '@/lib/utils'
 import { Edit, Eye, Trash2 } from 'lucide-react'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { DataTablePagination } from '@/components/data-table'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useLanguage } from '@/context/language-provider'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import type { DrillingPlan } from '../data/schema'
 import { getEngineeringDbFileVisual } from '../view-helpers'
 import type { DrillingRowViewModel } from '../hooks/use-drilling-page-state'
@@ -108,6 +110,15 @@ export function DrillingTableCard({
       cell: ({ row }) => (
         <div className='flex items-center gap-1'>
           <Button variant='ghost' size='icon' className='size-8 rounded-full hover:bg-orange-500/10 hover:text-orange-500' onClick={() => onPreview(row.original.item)}><Eye className='size-3.5' /></Button>
+          <div onClick={(event) => event.stopPropagation()}>
+            <AuditTimelineTriggerButton
+              module={AUDIT_MODULES.drilling}
+              targetId={row.original.item.id}
+              targetName={row.original.item.name}
+              iconOnly
+              className='size-8 rounded-full px-0'
+            />
+          </div>
           <div className='w-px h-4 bg-border mx-1' />
           <Button variant='ghost' size='icon' className='size-8 rounded-full' onClick={() => onEdit(row.original.item)}><Edit className='size-3.5' /></Button>
           <Button variant='ghost' size='icon' className='size-8 rounded-full text-destructive hover:bg-destructive/10' onClick={() => onDelete(row.original.item)}><Trash2 className='size-3.5' /></Button>

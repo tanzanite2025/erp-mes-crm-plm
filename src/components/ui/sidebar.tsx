@@ -694,7 +694,7 @@ function SidebarMenuSubButton({
       data-size={size}
       data-active={isActive}
       className={cn(
-        'flex h-7 min-w-0 items-center gap-2 overflow-hidden rounded-xl border border-transparent px-2.5 text-sidebar-foreground/72 ring-sidebar-ring outline-hidden transition-all hover:bg-sidebar-accent/28 hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent/35 active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-3.5 [&>svg]:shrink-0 [&>svg]:text-inherit relative before:absolute before:left-0 before:top-1 before:bottom-1 before:w-0.5 before:bg-orange-500 before:opacity-0 data-[active=true]:before:opacity-100 before:transition-opacity before:rounded-full',
+        'flex h-7 w-full min-w-0 items-center gap-2 overflow-hidden rounded-xl border border-transparent px-2.5 text-sidebar-foreground/72 ring-sidebar-ring outline-hidden transition-all hover:bg-sidebar-accent/28 hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent/35 active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>svg]:size-3.5 [&>svg]:shrink-0 [&>svg]:text-inherit relative before:absolute before:left-0 before:top-1 before:bottom-1 before:w-0.5 before:bg-orange-500 before:opacity-0 data-[active=true]:before:opacity-100 before:transition-opacity before:rounded-full',
         'data-[active=true]:bg-sidebar-accent/60 data-[active=true]:text-sidebar-accent-foreground',
         size === 'sm' && 'text-[10px] font-black tracking-tight',
         size === 'md' && 'text-[11px] font-black tracking-tight',

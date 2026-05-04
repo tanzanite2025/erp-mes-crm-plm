@@ -9,8 +9,10 @@ export const CUTTING_ISSUANCE_QUERY_KEYS = {
 
 type Translator = (key: TranslationKey, params?: Record<string, string | number>) => string
 
+export const PRODUCTION_PLAN_STATUS_ALL = 'ALL' as const
+
 export const PRODUCTION_PLAN_STATUS_VALUES = [
-  'ALL',
+  PRODUCTION_PLAN_STATUS_ALL,
   'SCHEDULED',
   'IN_PROGRESS',
   'COMPLETED',
@@ -28,7 +30,7 @@ export function getProductionPlanStatusOptions(t: Translator) {
 
 export function getProductionPlanStatusLabel(status: string, t: Translator): string {
   switch (status) {
-    case 'ALL':
+    case PRODUCTION_PLAN_STATUS_ALL:
       return t('apsScheduling.cuttingIssuance.status.all')
     case 'SCHEDULED':
       return t('apsScheduling.cuttingIssuance.status.scheduled')

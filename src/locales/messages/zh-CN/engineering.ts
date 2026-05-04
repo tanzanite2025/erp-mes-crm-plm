@@ -1186,6 +1186,7 @@ export const engineering = {
       batchSaving: '正在保存 {{count}} 个产品档案...',
       batchSaveFailed: '批量保存失败',
       batchSaveSuccess: '已成功创建 {{count}} 个产品档案',
+      multiVariantSingleSubmitOnly: '当前一次只能创建一个产品规格，请逐个创建。',
       updateSuccess: '产品信息已更新',
       createVariantSuccess: '产品规格已创建',
       createSingleSuccess: '产品档案已创建',

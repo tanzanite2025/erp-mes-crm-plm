@@ -28,6 +28,11 @@ interface PrintBatchApiDTO {
     version?: number
 }
 
+interface PrintBatchActivateRequestApiDTO {
+    count: number
+    _v: number
+}
+
 import { ensureObjectResponse } from '@/lib/api-response'
 import { apiFetch } from '@/lib/api-client'
 
@@ -43,6 +48,13 @@ function toPrintBatchContract(dto: PrintBatchApiDTO): PrintBatch {
         status: dto.status,
         createdAt: dto.createdAt,
         version: dto.version ?? dto._v ?? 1,
+    }
+}
+
+function toPrintBatchActivateRequestApiDTO(count: number, version: number): PrintBatchActivateRequestApiDTO {
+    return {
+        count,
+        _v: version,
     }
 }
 
@@ -119,10 +131,7 @@ export const PrintRecordService = {
     async activate(id: string, count: number, version: number): Promise<PrintBatch | null> {
         const res = await apiFetch<PrintBatchApiDTO>(`/print-batches/${id}/activate`, {
             method: 'POST',
-            body: JSON.stringify({ 
-                count,
-                _v: version 
-            })
+            body: JSON.stringify(toPrintBatchActivateRequestApiDTO(count, version))
         })
 
         return toPrintBatchContract(

@@ -4,6 +4,7 @@ export interface StocktakeTaskApiDTO {
   id: string
   createdAt: string
   updatedAt: string
+  version?: number
   title: string
   warehouseCategoryCode: string
   status: StocktakeTaskStatusApiDTO

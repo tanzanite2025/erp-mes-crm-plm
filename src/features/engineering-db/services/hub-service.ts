@@ -17,7 +17,7 @@ export const hubService = {
         flangeRight: s.hubData?.flangeRight,
         fileUrl: s.hubData?.fileUrl,
         fileExtension: s.hubData?.fileExtension,
-        version: s._v ?? 1,
+        version: s.version,
         createdAt: s.createdAt || new Date().toISOString(),
       })
       return parsed.success ? [parsed.data] : []
@@ -32,7 +32,7 @@ export const hubService = {
       type: 'HUB_DATA',
       active: true,
       hubData: data,
-      _v: data.version || 1
+      version: data.version || 1
     }
     await engineeringSpecService.saveSpec(spec);
   },

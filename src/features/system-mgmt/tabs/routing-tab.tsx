@@ -10,7 +10,7 @@ export function RoutingTab() {
   const { t } = useLanguage()
 
   return (
-    <div className='flex animate-in flex-col gap-6 duration-500 fade-in'>
+    <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
       <section className='rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-6'>
         <div className='space-y-2'>
           <h2 className='text-xl font-black tracking-tight text-foreground'>

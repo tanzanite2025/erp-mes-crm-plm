@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { ClipboardList, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,7 +10,12 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useLanguage } from '@/context/language-provider'
-import { getProductionPlanStatusLabel, getProductionPlanStatusOptions } from '../constants'
+import {
+  getProductionPlanStatusLabel,
+  getProductionPlanStatusOptions,
+  PRODUCTION_PLAN_STATUS_ALL,
+  type ProductionPlanStatusValue,
+} from '../constants'
 import type { CuttingIssuanceExecutionRecord } from '../types'
 import {
   APS_INPUT_CLASS,
@@ -39,35 +44,33 @@ export function ExecutionTableSection(props: ExecutionTableSectionProps) {
   const { t, locale } = useLanguage()
   const { executions, isRefreshing, onRefresh } = props
   const [keyword, setKeyword] = useState('')
-  const [status, setStatus] = useState('ALL')
+  const [status, setStatus] = useState<ProductionPlanStatusValue>(PRODUCTION_PLAN_STATUS_ALL)
   const statusOptions = getProductionPlanStatusOptions(t)
 
-  const filteredExecutions = useMemo(() => {
-    const normalizedKeyword = normalizeSearchText(keyword)
+  const normalizedKeyword = normalizeSearchText(keyword)
 
-    return executions.filter((record) => {
-      if (status !== 'ALL' && record.status !== status) {
-        return false
-      }
+  const filteredExecutions = executions.filter((record) => {
+    if (status !== PRODUCTION_PLAN_STATUS_ALL && record.status !== status) {
+      return false
+    }
 
-      if (!normalizedKeyword) {
-        return true
-      }
+    if (!normalizedKeyword) {
+      return true
+    }
 
-      const haystack = [
-        record.id,
-        record.orderNo,
-        t('apsScheduling.cuttingIssuance.execution.lineValue', { lineNo: record.lineNo }),
-        record.productModel,
-        record.holeCount,
-        record.templateName,
-        record.totalLineQuantity,
-        getProductionPlanStatusLabel(record.status, t),
-      ]
+    const haystack = [
+      record.id,
+      record.orderNo,
+      t('apsScheduling.cuttingIssuance.execution.lineValue', { lineNo: record.lineNo }),
+      record.productModel,
+      record.holeCount,
+      record.templateName,
+      record.totalLineQuantity,
+      getProductionPlanStatusLabel(record.status, t),
+    ]
 
-      return haystack.some((item) => normalizeSearchText(item).includes(normalizedKeyword))
-    })
-  }, [executions, keyword, status, t])
+    return haystack.some((item) => normalizeSearchText(item).includes(normalizedKeyword))
+  })
 
   const emptyMessage = executions.length
     ? t('apsScheduling.cuttingIssuance.execution.emptyFiltered')
@@ -106,7 +109,7 @@ export function ExecutionTableSection(props: ExecutionTableSectionProps) {
             />
           </div>
 
-          <Select value={status} onValueChange={setStatus}>
+          <Select value={status} onValueChange={(value) => setStatus(value as ProductionPlanStatusValue)}>
             <SelectTrigger className={`${APS_INPUT_CLASS} w-full sm:w-[160px]`}>
               <SelectValue placeholder={t('apsScheduling.cuttingIssuance.execution.statusPlaceholder')} />
             </SelectTrigger>

@@ -105,7 +105,7 @@ export function LineCard({ line, onEdit, onDelete, onToggleActive, onUpdate }: L
       id: crypto.randomUUID(),
       name: `${line.name} ${t('orgPersonnel.lineMgmt.card.templateBackup')}`,
       description: t('orgPersonnel.lineMgmt.card.saveTemplateFrom', { name: line.name }),
-      segments: JSON.parse(JSON.stringify(line.segments)),
+      segments: structuredClone(line.segments),
       createdAt: new Date().toISOString()
     }
     addTemplate(newTemplate)

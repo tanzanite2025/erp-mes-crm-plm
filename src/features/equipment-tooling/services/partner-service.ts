@@ -3,6 +3,7 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+import { buildVersionedPatchMetadata } from '@/lib/version-guard'
 import { type EquipmentPartner } from '../data/schema'
 import {
   type SaveEquipmentPartnerInput,
@@ -14,6 +15,8 @@ import {
   type DeleteEquipmentPartnerApiDTO,
   type EquipmentPartnerApiDTO,
 } from '../contracts/equipment-partner-api-dto'
+
+const EQUIPMENT_PARTNER_PATCH_INTENT_SAVE = 'EQUIPMENT_PARTNER_PATCH_SAVE'
 
 export class EquipmentPartnerService {
   static async getPartners(): Promise<EquipmentPartner[]> {
@@ -54,7 +57,9 @@ export class EquipmentPartnerService {
     const payload: DeltaPayload = {
       op: 'PATCH',
       delta,
-      metadata: { id, version },
+      metadata: buildVersionedPatchMetadata(id, version, 'EquipmentPartnerService.patchPartner', {
+        intent: EQUIPMENT_PARTNER_PATCH_INTENT_SAVE,
+      }),
     }
 
     const res = await apiFetch<EquipmentPartnerApiDTO>(`/equipment-partners/${id}`, {

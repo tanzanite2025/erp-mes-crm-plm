@@ -13,7 +13,7 @@ export interface BaseEntity {
     isDeleted?: boolean;
     
     /** 乐观锁版本号 (用于技术防抖与并发控制) */
-    _v?: number;
+    version?: number;
     
     /** 创建时间 (ISO 8601) */
     createdAt: string;

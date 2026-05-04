@@ -1,5 +1,6 @@
 import { loadExcelJS } from '@/lib/lazy-vendors'
 import type { Borders, Workbook } from 'exceljs'
+import { formatEngineeringExportFileDate } from '@/features/engineering/utils/engineering-export-file-date'
 import { type CuttingPlanInput } from '../data/cutting-plan-schema'
 import {
   CUTTING_PLAN_EXCEL_LIMITS,
@@ -129,7 +130,7 @@ export async function generateCuttingPlanImportTemplate() {
     deleteRows: true,
   })
 
-  const date = new Date().toISOString().slice(0, 10)
+  const date = formatEngineeringExportFileDate()
   await downloadWorkbook(workbook, `XDFC_CuttingPlan_Import_${date}.xlsx`)
 }
 
@@ -370,7 +371,7 @@ export async function exportCuttingPlanPrintWorkbook(plan: CuttingPlanInput) {
     sheet.getCell(`E${row}`).alignment = { horizontal: 'left', vertical: 'middle' }
   }
 
-  const date = new Date().toISOString().slice(0, 10)
+  const date = formatEngineeringExportFileDate()
   const fileName = plan.documentNo
     ? `CuttingPlan_Print_${plan.documentNo}_${date}.xlsx`
     : `CuttingPlan_Print_${date}.xlsx`

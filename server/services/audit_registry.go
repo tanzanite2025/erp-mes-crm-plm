@@ -12,8 +12,10 @@ type AuditEntityRegistration struct {
 var auditEntityRegistry = []AuditEntityRegistration{
 	{EntityKey: AuditModuleSalesOrder, EngineModule: AuditEngineModuleTrading, EntryIntegrated: true, DisplayName: "SalesOrder"},
 	{EntityKey: AuditModulePurchaseOrder, EngineModule: AuditEngineModuleTrading, EntryIntegrated: true, DisplayName: "PurchaseOrder"},
+	{EntityKey: AuditModuleProduct, EngineModule: AuditEngineModuleEngineering, EntryIntegrated: true, DisplayName: "Product"},
 	{EntityKey: AuditModuleCustomer, EngineModule: AuditEngineModuleTrading, EntryIntegrated: true, DisplayName: "Customer"},
 	{EntityKey: AuditModuleSupplier, EngineModule: AuditEngineModuleTrading, EntryIntegrated: true, DisplayName: "Supplier"},
+	{EntityKey: AuditModuleDrilling, EngineModule: AuditEngineModuleEngineering, EntryIntegrated: true, DisplayName: "Drilling"},
 	{EntityKey: AuditModuleEmployee, EngineModule: AuditEngineModuleEngineering, EntryIntegrated: true, DisplayName: "Employee"},
 	{EntityKey: AuditModuleInventory, EngineModule: AuditEngineModuleWarehouse, EntryIntegrated: true, DisplayName: "Inventory"},
 	{EntityKey: AuditModuleShipment, EngineModule: AuditEngineModuleWarehouse, EntryIntegrated: true, DisplayName: "Shipment"},

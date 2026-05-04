@@ -4,11 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
     flexRender,
-    getCoreRowModel,
-    getPaginationRowModel,
-    getSortedRowModel,
     type ColumnDef,
-    useReactTable,
 } from '@tanstack/react-table'
 import { useSearch } from '@tanstack/react-router'
 import { cn } from '@/lib/utils'
@@ -18,6 +14,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { DataTablePagination } from '@/components/data-table'
+import { useUdsClientTable } from '@/hooks/use-uds-table'
 import { Badge } from '@/components/ui/badge'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { type TechnicalSpec } from '../data/schema'
@@ -28,10 +25,13 @@ import { toast } from 'sonner'
 import { CADViewerDialog } from '../components/cad-viewer'
 import { PDFViewerDialog } from '../components/pdf-viewer'
 import { ExcelViewerDialog } from '../components/excel-viewer'
+import { type DeltaSet } from '@/lib/delta/types'
 import { useLanguage } from '@/context/language-provider'
 import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
 import { ENGINEERING_DB_SPECS_QUERY_KEY } from '../query-keys'
 import { getEngineeringDbFileVisual, getEngineeringDbPreviewKind } from '../view-helpers'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 
 type SpecsRowViewModel = {
     item: TechnicalSpec
@@ -69,7 +69,7 @@ export function SpecsTab() {
         mutationFn: async (params: {
             data: TechnicalSpec
             isPatch: boolean
-            delta?: any
+            delta?: DeltaSet
             version?: number
         }) => {
             const { data: formData, isPatch, delta, version } = params
@@ -201,6 +201,16 @@ export function SpecsTab() {
                     <Button variant='ghost' size='icon' className='size-8 rounded-full hover:bg-emerald-500/10 hover:text-emerald-500' onClick={() => handleDownload(row.original.item)}><Download className='size-3.5' /></Button>
                     <Button variant='ghost' size='icon' className='size-8 rounded-full hover:bg-blue-500/10 hover:text-blue-500' onClick={() => handlePreview(row.original.item)}><Eye className='size-3.5' /></Button>
                     <div className='w-px h-4 bg-border mx-1' />
+                    <div onClick={(event) => event.stopPropagation()}>
+                        <AuditTimelineTriggerButton
+                            module={AUDIT_MODULES.engineeringSpec}
+                            targetId={row.original.item.id}
+                            targetName={row.original.item.name}
+                            label={t('common.audit.trigger')}
+                            iconOnly
+                            className='size-8 rounded-full border-transparent px-0 hover:bg-violet-500/10 hover:text-violet-500'
+                        />
+                    </div>
                     <Button variant='ghost' size='icon' className='size-8 rounded-full' onClick={() => { setCurrentRow(row.original.item); setOpen(true); }}><Edit className='size-3.5' /></Button>
                     <Button 
                         variant='ghost' 
@@ -229,22 +239,19 @@ export function SpecsTab() {
         }
     ]
 
-    const table = useReactTable({
+    const table = useUdsClientTable({
         data: filteredData,
         columns,
-        getCoreRowModel: getCoreRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
-        getSortedRowModel: getSortedRowModel(),
     })
 
-    const handleSave = async (params: { 
-        data: TechnicalSpec; 
-        isPatch: boolean; 
-        delta?: any; 
-        version?: number 
+    const handleSave = async (params: {
+        data: TechnicalSpec
+        isPatch: boolean
+        delta?: DeltaSet
+        version?: number
     }) => {
         const { data: formData, isPatch, delta, version } = params
-        
+
         await saveMutation.mutateAsync({ data: formData, isPatch, delta, version })
     }
 
@@ -275,12 +282,20 @@ export function SpecsTab() {
                         className='pl-10 h-12 rounded-2xl border-none bg-background shadow-inner text-sm font-medium focus-visible:ring-1 focus-visible:ring-primary/20 w-full'
                     />
                 </div>
-                <Button 
-                    onClick={() => { setCurrentRow(undefined); setOpen(true); }} 
-                    className='w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 shadow-xl shadow-emerald-600/20 rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest text-white gap-2 transition-all active:scale-95'
-                >
-                    <Plus className='size-4' /> {t('engineering.specs.placeholders.upload')}
-                </Button>
+                <div className='flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:justify-end'>
+                    <AuditTimelineTriggerButton
+                        module={AUDIT_MODULES.engineeringSpec}
+                        targetName={t('engineering.specs.overview.title')}
+                        label={t('common.audit.trigger')}
+                        className='h-11 w-full rounded-full px-5 sm:w-auto'
+                    />
+                    <Button 
+                        onClick={() => { setCurrentRow(undefined); setOpen(true); }} 
+                        className='w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 shadow-xl shadow-emerald-600/20 rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest text-white gap-2 transition-all active:scale-95'
+                    >
+                        <Plus className='size-4' /> {t('engineering.specs.placeholders.upload')}
+                    </Button>
+                </div>
             </div>
 
             {/* Desktop Table View */}
@@ -389,6 +404,16 @@ export function SpecsTab() {
                                         </div>
                                         <div className='flex items-center gap-1.5'>
                                             <Button variant='ghost' size='icon' className='size-8 rounded-full hover:bg-emerald-500/10 hover:text-emerald-500' onClick={(e) => { e.stopPropagation(); handleDownload(item); }}><Download className='size-3.5' /></Button>
+                                            <div onClick={(event) => event.stopPropagation()}>
+                                                <AuditTimelineTriggerButton
+                                                    module={AUDIT_MODULES.engineeringSpec}
+                                                    targetId={item.id}
+                                                    targetName={item.name}
+                                                    label={t('common.audit.trigger')}
+                                                    iconOnly
+                                                    className='size-8 rounded-full border-transparent px-0 hover:bg-violet-500/10 hover:text-violet-500'
+                                                />
+                                            </div>
                                             <Button variant='ghost' size='icon' className='size-8 rounded-full' onClick={(e) => { e.stopPropagation(); setCurrentRow(item); setOpen(true); }}><Edit className='size-3.5' /></Button>
                                             <Button 
                                                 variant='ghost' 
@@ -429,6 +454,7 @@ export function SpecsTab() {
             </div>
 
             <SpecActionDialog
+                key={`${currentRow?.id ?? 'new-spec'}-${open ? 'open' : 'closed'}`}
                 open={open}
                 onOpenChange={setOpen}
                 currentRow={currentRow}

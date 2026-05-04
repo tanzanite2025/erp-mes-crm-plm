@@ -96,11 +96,6 @@ type ProductWriteInput struct {
 	Version           int
 }
 
-type BulkSyncProductsAPIPayload struct {
-	Products      []SaveProductAPIRequest `json:"products"`
-	GlobalVersion int                     `json:"globalVersion,omitempty"`
-}
-
 func cloneProductRawMessage(raw json.RawMessage) json.RawMessage {
 	if len(raw) == 0 {
 		return nil

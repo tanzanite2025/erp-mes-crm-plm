@@ -2,12 +2,15 @@ import { NotificationGateway } from '@/features/system-mgmt/notifications/notifi
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+import { buildVersionedPatchMetadata } from '@/lib/version-guard'
 import { type SalesOrder, type SalesOrderFormValues } from '../../data/schema'
 import { toSalesOrderApiDTO, toSalesOrderContract } from '../adapters/sales-order-api-adapter'
 import {
   deserializeSalesOrderApiDTO,
   type SalesOrderApiDTO,
 } from '../contracts/sales-order-api-dto'
+
+export const SALES_ORDER_PATCH_INTENT_SAVE = 'SALES_ORDER_PATCH_SAVE'
 
 export const createSalesOrder = async (order: SalesOrderFormValues): Promise<SalesOrder> => {
   const now = new Date().toISOString()
@@ -20,7 +23,7 @@ export const createSalesOrder = async (order: SalesOrderFormValues): Promise<Sal
     version: 1,
   }
 
-  const res = await apiFetch<unknown>('/sales-orders', {
+  const res = await apiFetch<SalesOrderApiDTO>('/sales-orders', {
     method: 'POST',
     body: JSON.stringify(toSalesOrderApiDTO(createdOrder)),
   })
@@ -32,10 +35,12 @@ export const patchSalesOrder = async (id: string, delta: DeltaSet, version: numb
   const payload: DeltaPayload = {
     op: 'PATCH',
     delta,
-    metadata: { id, version },
+    metadata: buildVersionedPatchMetadata(id, version, 'SalesService.patchSalesOrder', {
+      intent: SALES_ORDER_PATCH_INTENT_SAVE,
+    }),
   }
 
-  const res = await apiFetch<unknown>(`/sales-orders/${id}`, {
+  const res = await apiFetch<SalesOrderApiDTO>(`/sales-orders/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(payload),
   })

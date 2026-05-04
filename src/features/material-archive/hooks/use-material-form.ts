@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react'
-import { useForm } from 'react-hook-form'
+import { type Resolver, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { materialSchema, type Material } from '../data/schema'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
@@ -97,10 +97,10 @@ export function useMaterialForm({ material, open, defaultCategory }: UseMaterial
         }
     }, [material, defaultCategory])
 
-    const { data: deltaProxy, tracker } = useDeltaTracker(initialValues, open)
+    const { data: deltaProxy, tracker, replace } = useDeltaTracker(initialValues, open)
 
     const form = useForm<Material>({
-        resolver: zodResolver(materialSchema) as any,
+        resolver: zodResolver(materialSchema) as Resolver<Material>,
         defaultValues: initialValues
     })
 
@@ -150,6 +150,7 @@ export function useMaterialForm({ material, open, defaultCategory }: UseMaterial
         selectedCategory,
         materialName,
         tracker,
+        replace,
         deltaProxy
     }
 }

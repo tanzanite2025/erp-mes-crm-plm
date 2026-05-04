@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import {
     Plus,
     RefreshCw,
@@ -16,9 +16,9 @@ import { toast } from 'sonner'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { useLanguage } from '@/context/language-provider'
 import { isForbiddenError } from '@/lib/error-status'
-import { apiFetch } from '@/lib/api-client'
 import { isConflictError } from '@/lib/handle-server-error'
 import { type NumberingRule } from '../data/schema'
+import { useNumberingRules } from '../hooks/use-numbering-rules'
 import {
     Table,
     TableBody,
@@ -48,36 +48,15 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 
 export function SequenceMgmt() {
     const { t } = useLanguage()
-    const [rules, setRules] = useState<NumberingRule[]>([])
-    const [isLoading, setIsLoading] = useState(true)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [editingRule, setEditingRule] = useState<Partial<NumberingRule> | null>(null)
-    const [isSaving, setIsSaving] = useState(false)
-    const [error, setError] = useState<unknown>(null)
+    const { rules, isLoading, error, refreshRules, saveRule, isSaving } = useNumberingRules()
 
     const getResetPeriodLabel = (period: NumberingRule['resetPeriod']) => {
         if (period === 'MONTHLY') return t('basicSettings.sequences.table.resetPeriod.monthly')
         if (period === 'YEARLY') return t('basicSettings.sequences.table.resetPeriod.yearly')
         return t('basicSettings.sequences.table.resetPeriod.never')
     }
-
-    const fetchRules = useCallback(async () => {
-        setIsLoading(true)
-        try {
-            setError(null)
-            const data = await apiFetch<NumberingRule[]>('/numbering/rules')
-            setRules(data || [])
-        } catch (loadError) {
-            setError(loadError)
-            toast.error(t('basicSettings.sequences.toast.fetchFailed'))
-        } finally {
-            setIsLoading(false)
-        }
-    }, [t])
-
-    useEffect(() => {
-        void fetchRules()
-    }, [fetchRules])
 
     if (isForbiddenError(error)) {
         return <ForbiddenState />
@@ -94,15 +73,10 @@ export function SequenceMgmt() {
             return
         }
 
-        setIsSaving(true)
         try {
-            await apiFetch('/numbering/rules', {
-                method: 'POST',
-                body: JSON.stringify(editingRule)
-            })
+            await saveRule(editingRule)
             toast.success(t('basicSettings.sequences.toast.saveSuccess'))
             setIsDialogOpen(false)
-            void fetchRules()
         } catch (error: unknown) {
             if (isConflictError(error)) {
                 toast.error(t('basicSettings.sequences.toast.conflict'))
@@ -113,8 +87,6 @@ export function SequenceMgmt() {
                 ? error.message
                 : t('basicSettings.sequences.toast.unknown')
             toast.error(t('basicSettings.sequences.toast.saveFailed', { message }))
-        } finally {
-            setIsSaving(false)
         }
     }
 
@@ -157,7 +129,7 @@ export function SequenceMgmt() {
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                     <Button
                         variant='ghost'
-                        onClick={fetchRules}
+                        onClick={() => void refreshRules()}
                         disabled={isLoading}
                         className='w-full sm:w-auto rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest hover:bg-muted transition-all'
                     >

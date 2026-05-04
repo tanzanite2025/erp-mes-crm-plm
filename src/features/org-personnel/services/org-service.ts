@@ -1,9 +1,12 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+import { buildVersionedPatchMetadata } from '@/lib/version-guard'
 import { toOrgNodeApiDTO, toOrgNodeContract, toOrgNodeContracts } from '../adapters/org-api-adapter'
 import { type OrgNodeApiDTO } from '../contracts/org-api-dto'
 import { type OrgNode } from '../data/org-schema'
+
+const ORG_NODE_PATCH_INTENT_SAVE = 'ORG_NODE_PATCH_SAVE'
 
 /**
  * OrgService - Specialized service for organization structure integration
@@ -52,7 +55,9 @@ export class OrgService {
         const payload: DeltaPayload = {
             op: 'PATCH',
             delta,
-            metadata: { id, version }
+            metadata: buildVersionedPatchMetadata(id, version, 'OrgService.patchOrgNode', {
+                intent: ORG_NODE_PATCH_INTENT_SAVE,
+            })
         };
 
         const res = await apiFetch<OrgNodeApiDTO>(`/org/${id}`, {

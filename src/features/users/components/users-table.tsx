@@ -2,22 +2,15 @@ import {
   type ReactNode,
   useEffect,
   useMemo,
-  useState,
 } from 'react'
 import {
-  type SortingState,
-  type VisibilityState,
   flexRender,
-  getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getSortedRowModel,
-  useReactTable,
 } from '@tanstack/react-table'
 import { cn } from '@/lib/utils'
 import { Card } from '@/components/ui/card'
-import { type NavigateFn, useTableUrlState } from '@/hooks/use-table-url-state'
+import { type NavigateFn } from '@/hooks/use-table-url-state'
+import { useUdsManualPaginationTable } from '@/hooks/use-uds-table'
+import { useUdsUrlTableState } from '@/hooks/use-uds-url-table-state'
 import {
   Table,
   TableBody,
@@ -57,24 +50,16 @@ export function UsersTable({
 }: DataTableProps) {
   const { t } = useLanguage()
 
-  // Local UI-only states
-  const [rowSelection, setRowSelection] = useState({})
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
-  const [sorting, setSorting] = useState<SortingState>([])
-
   const columns = useMemo(
     () => getUsersColumns(t, mode, showSelection),
     [mode, showSelection, t],
   )
 
-  // Synced with URL states (keys/defaults mirror users route search schema)
   const {
-    columnFilters,
-    onColumnFiltersChange,
-    pagination,
-    onPaginationChange,
+    tableState,
+    tableHandlers,
     ensurePageInRange,
-  } = useTableUrlState({
+  } = useUdsUrlTableState({
     search,
     navigate,
     pagination: { defaultPage: 1, defaultPageSize: 10 },
@@ -85,29 +70,16 @@ export function UsersTable({
     ],
   })
 
-  const table = useReactTable({
+  const table = useUdsManualPaginationTable({
     data,
     columns,
-    manualPagination: true,
+    enableSorting: true,
+    enableFiltering: true,
+    enableFaceting: true,
     rowCount: total,
-    state: {
-      sorting,
-      pagination,
-      rowSelection,
-      columnFilters,
-      columnVisibility,
-    },
+    state: tableState,
     enableRowSelection: showSelection,
-    onPaginationChange,
-    onColumnFiltersChange,
-    onRowSelectionChange: setRowSelection,
-    onSortingChange: setSorting,
-    onColumnVisibilityChange: setColumnVisibility,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
+    ...tableHandlers,
   })
 
   useEffect(() => {

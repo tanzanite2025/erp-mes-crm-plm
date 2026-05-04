@@ -67,9 +67,4 @@ export interface ProductNextCodeApiDTO {
   nextCode: string
 }
 
-export interface BulkSyncProductsApiDTO {
-  products: ProductApiDTO[]
-  globalVersion?: number
-}
-
 export type PatchProductApiDTO = DeltaPayload

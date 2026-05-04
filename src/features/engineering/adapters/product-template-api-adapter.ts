@@ -52,7 +52,11 @@ export function toProductTemplateContract(dto: ProductTemplateApiDTO): ProductTe
   }
 }
 
-export function toProductTemplateApiDTO(template: SaveProductTemplateInput): ProductTemplateApiDTO {
+type ProductTemplateWriteCandidate = Omit<ProductTemplateApiDTO, '_v'> & {
+  version: number
+}
+
+function toProductTemplateWriteCandidate(template: SaveProductTemplateInput): ProductTemplateWriteCandidate {
   if (!template.attributeBindings) throw new Error('[CRITICAL] attributeBindings missing during save')
 
   return {
@@ -64,8 +68,20 @@ export function toProductTemplateApiDTO(template: SaveProductTemplateInput): Pro
     active: template.active ?? true,
     attributeBindings: template.attributeBindings.map(toProductTemplateAttributeBindingApiDTO),
     createdAt: template.createdAt,
-    _v: template.version ?? 1,
+    version: template.version ?? 1,
   }
+}
+
+function toProductTemplateWriteApiDTO(candidate: ProductTemplateWriteCandidate): ProductTemplateApiDTO {
+  const { version, ...rest } = candidate
+  return {
+    ...rest,
+    _v: version,
+  }
+}
+
+export function toProductTemplateApiDTO(template: SaveProductTemplateInput): ProductTemplateApiDTO {
+  return toProductTemplateWriteApiDTO(toProductTemplateWriteCandidate(template))
 }
 
 const PRODUCT_TEMPLATE_PATCH_FIELDS: Array<keyof ProductTemplate> = [

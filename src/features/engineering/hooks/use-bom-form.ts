@@ -1,15 +1,9 @@
 import { useMemo } from 'react'
 import { useFieldArray, useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { bomSchema, type BOM } from '../data/schema'
 import { type BOMItemDraft } from '../mutation-types'
-import {
-  normalizeEngineeringBomChangeType,
-  normalizeEngineeringBomStatus,
-  normalizeEngineeringBomVersion,
-  normalizeEngineeringRevisionNo,
-} from '../utils/product-code-normalization'
+import { createEmptyBOMFormValue } from '../utils/bom-form-defaults'
 import { useBOMFormInitialization } from './use-bom-form-initialization'
 import { useBOMFormOptions } from './use-bom-form-options'
 
@@ -22,27 +16,11 @@ interface UseBOMFormProps {
 }
 
 export function useBOMForm({ currentRow, initialItems, initialProductId, open, isEdit }: UseBOMFormProps) {
-  const initialValues = useMemo<BOM>(
-    () => ({
-      id: '',
-      bomNo: '',
-      productId: '',
-      bomVersion: normalizeEngineeringBomVersion('V1.0'),
-      revisionNo: normalizeEngineeringRevisionNo('R1'),
-      changeType: normalizeEngineeringBomChangeType('MANUAL'),
-      isDefaultSite: true,
-      status: normalizeEngineeringBomStatus('active'),
-      items: [],
-      description: '',
-      version: 1,
-    }),
-    []
-  )
+  const initialValues = useMemo<BOM>(() => createEmptyBOMFormValue(), [])
   const form = useForm<BOM>({
     resolver: zodResolver(bomSchema) as Resolver<BOM>,
     defaultValues: initialValues,
   })
-  const { tracker, deltaProxy, commit, isDirty } = useDeltaTracker<BOM>(initialValues, open)
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -57,7 +35,6 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
 
   useBOMFormInitialization({
     form,
-    tracker,
     currentRow,
     initialItems,
     initialProductId,
@@ -67,9 +44,6 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
 
   return {
     form,
-    deltaProxy,
-    commitDelta: commit,
-    isDeltaDirty: isDirty,
     fields,
     append,
     remove,

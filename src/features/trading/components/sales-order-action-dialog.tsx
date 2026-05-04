@@ -231,7 +231,9 @@ export function SalesOrderActionDialog({
       appearancesQuery.refetch(),
       drillingQuery.refetch(),
       labelingQuery.refetch(),
-    ])
+    ]).catch((error) => {
+      logger.error('Failed to retry sales order dialog resources', error)
+    })
   }
 
   return (

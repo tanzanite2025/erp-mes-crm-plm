@@ -3,7 +3,6 @@ import { type DeltaSet } from '@/lib/delta/types'
 import { createLogger } from '@/lib/logger'
 import { barcodeConfigSchema, productSchema, type Product, type ProductAttributeValue } from '../data/schema'
 import {
-  type BulkSyncProductsApiDTO,
   type ProductApiDTO,
   type ProductAttributeValueApiDTO,
   type ProductListPageApiDTO,
@@ -109,6 +108,10 @@ function buildProductCandidate(
   }
 }
 
+type ProductWriteCandidate = Omit<ProductApiDTO, '_v'> & {
+  version: number
+}
+
 export function toProductContract(dto: ProductApiDTO): Product {
   return productSchema.parse(buildProductCandidate(dto))
 }
@@ -173,7 +176,7 @@ export function toProductListContract(dto: ProductListPageApiDTO): Product[] {
   return toProductArrayContract(dto.items)
 }
 
-export function toProductApiDTO(product: SaveProductInput): ProductApiDTO {
+function buildProductWriteCandidate(product: SaveProductInput | Product): ProductWriteCandidate {
   const normalizedProduct = normalizeSaveProductInput(product)
   if (!normalizedProduct.restrictions) throw new Error('[CRITICAL] restrictions missing during save')
   if (!normalizedProduct.attributeValues) throw new Error('[CRITICAL] attributeValues missing during save')
@@ -205,7 +208,6 @@ export function toProductApiDTO(product: SaveProductInput): ProductApiDTO {
     barcodeConfig: normalizedProduct.barcodeConfig,
     attachments: normalizedProduct.attachments,
     status: normalizedProduct.status ?? 'Active',
-    templateKey: normalizeProductTemplateKeyValue(normalizedProduct.templateKey),
     revisionNo: normalizeEngineeringRevisionNo(normalizedProduct.revisionNo),
     effectiveFrom: normalizedProduct.effectiveFrom ?? null,
     effectiveTo: normalizedProduct.effectiveTo ?? null,
@@ -214,8 +216,27 @@ export function toProductApiDTO(product: SaveProductInput): ProductApiDTO {
     siteCode: normalizeEngineeringSiteCode(normalizedProduct.siteCode),
     isDefaultSite: normalizedProduct.isDefaultSite,
     createdAt: normalizedProduct.createdAt,
-    _v: normalizedProduct.version ?? 1,
+    version: normalizedProduct.version ?? 1,
   }
+}
+
+function toProductApiWriteDTO(candidate: ProductWriteCandidate): ProductApiDTO {
+  const { version, ...rest } = candidate
+  return {
+    ...rest,
+    _v: version,
+  }
+}
+
+export function toProductApiDTO(product: SaveProductInput): ProductApiDTO {
+  return toProductApiWriteDTO({
+    ...buildProductWriteCandidate(product),
+    templateKey: normalizeProductTemplateKeyValue(product.templateKey),
+  })
+}
+
+export function toProductWriteApiDTO(product: SaveProductInput | Product): ProductApiDTO {
+  return toProductApiWriteDTO(buildProductWriteCandidate(product))
 }
 
 const PRODUCT_PATCH_FIELDS: Array<keyof ProductApiDTO> = [
@@ -243,7 +264,6 @@ const PRODUCT_PATCH_FIELDS: Array<keyof ProductApiDTO> = [
   'barcodeConfig',
   'attachments',
   'status',
-  'templateKey',
   'revisionNo',
   'effectiveFrom',
   'effectiveTo',
@@ -255,8 +275,8 @@ const PRODUCT_PATCH_FIELDS: Array<keyof ProductApiDTO> = [
 
 export function buildProductDelta(current: Product, next: SaveProductInput): DeltaSet {
   const delta: DeltaSet = {}
-  const currentDto = toProductApiDTO(current)
-  const nextDto = toProductApiDTO(next)
+  const currentDto = toProductWriteApiDTO(current)
+  const nextDto = toProductWriteApiDTO(next)
 
   for (const field of PRODUCT_PATCH_FIELDS) {
     const fieldDelta = buildFlattenDelta(currentDto[field], nextDto[field], { basePath: String(field) })
@@ -264,10 +284,4 @@ export function buildProductDelta(current: Product, next: SaveProductInput): Del
   }
 
   return delta
-}
-
-export function toBulkSyncProductsApiDTO(products: SaveProductInput[]): BulkSyncProductsApiDTO {
-  return {
-    products: products.map(toProductApiDTO),
-  }
 }

@@ -1,6 +1,5 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
-import { type DeltaSet } from '@/lib/delta/types'
 import { bomListSchema, bomSchema, type BOM, type BOMList } from '../data/schema'
 import { type SaveBOMInput } from '../mutation-types'
 import { normalizeBOMInput } from '../utils/product-code-normalization'
@@ -55,15 +54,6 @@ function normalizeBOMListResponse(response: unknown): BOMList {
         'BOMService.getBOMs'
     )
 
-    if (Array.isArray(checked)) {
-        return bomListSchema.parse({
-            items: checked,
-            total: typeof checked.total === 'number' ? checked.total : checked.length,
-            page: typeof checked.page === 'number' ? checked.page : 1,
-            pageSize: typeof checked.pageSize === 'number' ? checked.pageSize : checked.length,
-        })
-    }
-
     return bomListSchema.parse(checked)
 }
 
@@ -94,9 +84,8 @@ export const bomService = {
     /**
      * 保存或更新 BOM
      */
-    async saveBOM(params: { data: SaveBOMInput; isPatch?: boolean; delta?: DeltaSet }): Promise<BOM> {
-        const { data } = params
-        const sanitizedData = sanitizeBOMInput(data)
+    async saveBOM(params: { data: SaveBOMInput }): Promise<BOM> {
+        const sanitizedData = sanitizeBOMInput(params.data)
 
         const res = await apiFetch<BOM>('/engineering/bom', {
             method: 'POST',
@@ -107,9 +96,6 @@ export const bomService = {
         )
     },
 
-    /**
-     * 删除 BOM (后端暂未实现 DELETE 接口，可根据需要补充)
-     */
     async deleteBOM(id: string): Promise<void> {
         await apiFetch<void>(`/engineering/bom/${id}`, {
             method: 'DELETE',

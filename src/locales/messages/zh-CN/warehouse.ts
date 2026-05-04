@@ -448,6 +448,7 @@ export const warehouse = {
     },
     toast: {
       executeSuccess: '调账指令执行成功，库存已更新',
+      executeMissingTarget: '待执行调账记录不存在或已失效，请刷新列表后重试。',
       executeFailed: '执行失败：{{message}}',
     },
     printDocument: {

@@ -494,7 +494,9 @@ export function PurchaseOrderReturns() {
               returnsQuery.refetch(),
               returnReasonQuery.refetch(),
               issueCategoryQuery.refetch(),
-            ])
+            ]).catch((error) => {
+              logger.error('Failed to retry purchase return resources', error)
+            })
           }}
         >
           重试

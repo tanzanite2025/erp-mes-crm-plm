@@ -1,23 +1,22 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { Box, Plus } from 'lucide-react'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { isForbiddenError } from '@/lib/error-status'
 import { CategoryManagerDialog } from './components/category-manager-dialog'
 import { EngineeringSidebar } from './components/engineering-sidebar'
 import { ProductActionDialog } from './components/product-action-dialog'
 import { ProductOverviewTab } from './components/product-overview-tab'
 import { type Product, type ProductType } from './data/schema'
+import { useEngineeringBootstrap } from './hooks/use-engineering-bootstrap'
 import { useProductWriteActions } from './hooks/use-product-write-actions'
 import { type ProductSubmitPayload } from './hooks/use-product-form'
-import { PRODUCT_TYPES_QUERY_KEY, PRODUCTS_QUERY_KEY } from './query-keys'
-import { ProductCoreService } from './services/product-core-service'
-import { ProductTypeService } from './services/product-type-service'
 
 const EMPTY_PRODUCTS: Product[] = []
 const EMPTY_PRODUCT_TYPES: ProductType[] = []
@@ -29,23 +28,11 @@ export function Engineering() {
     const [isTypeDialogOpen, setIsTypeDialogOpen] = useState(false)
     const [editingProduct, setEditingProduct] = useState<Product | undefined>(undefined)
     const { saveProducts } = useProductWriteActions()
-
-    const productsQuery = useQuery({
-        queryKey: PRODUCTS_QUERY_KEY,
-        queryFn: () => ProductCoreService.getProducts(),
-    })
-    const productTypesQuery = useQuery({
-        queryKey: PRODUCT_TYPES_QUERY_KEY,
-        queryFn: () => ProductTypeService.getProductTypes(),
-    })
-
-    if (productsQuery.isSuccess && !productsQuery.data) throw new Error('[CRITICAL] Products Data missing')
-    if (productTypesQuery.isSuccess && !productTypesQuery.data) throw new Error('[CRITICAL] Product Types Data missing')
-
-    const products = productsQuery.data ?? EMPTY_PRODUCTS
-    const types = productTypesQuery.data ?? EMPTY_PRODUCT_TYPES
-    const isLoading = productsQuery.isLoading || productTypesQuery.isLoading
-    const error = productsQuery.error ?? productTypesQuery.error
+    const bootstrap = useEngineeringBootstrap()
+    const products = bootstrap.products ?? EMPTY_PRODUCTS
+    const types = bootstrap.types ?? EMPTY_PRODUCT_TYPES
+    const isLoading = bootstrap.isLoading
+    const error = bootstrap.error
     const productMap = useMemo(
         () => new Map(products.map((product) => [product.id, product])),
         [products]
@@ -106,6 +93,14 @@ export function Engineering() {
                 title={t('engineering.productMgmt.pageTitle')}
                 description={t('engineering.productMgmt.pageDescription')}
             />
+
+            <div className='flex justify-end'>
+                <AuditTimelineTriggerButton
+                    module={AUDIT_MODULES.product}
+                    targetName={t('engineering.productMgmt.pageTitle')}
+                    label={t('common.audit.trigger')}
+                />
+            </div>
 
             <div className='flex flex-col lg:flex-row flex-1 overflow-hidden min-h-[600px] rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-1 gap-1'>
                 <EngineeringSidebar

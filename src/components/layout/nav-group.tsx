@@ -439,9 +439,11 @@ function SidebarMenuBranch({
               <SidebarMenuSubButton asChild isActive={checkIsActive(pathname, subItem)}>
                 <Link to={subItem.url}>
                   {subItem.icon && <subItem.icon />}
-                  <span className='italic font-black text-[10px] tracking-tight'>{subItem.title}</span>
+                  <span className='min-w-0 flex-1 truncate italic font-black text-[10px] tracking-tight'>
+                    {subItem.title}
+                  </span>
                   {subItem.badge ? (
-                    <span className='ms-auto text-[10px] font-black italic opacity-60'>
+                    <span className='ms-auto shrink-0 text-[10px] font-black italic opacity-60'>
                       {subItem.badge}
                     </span>
                   ) : null}

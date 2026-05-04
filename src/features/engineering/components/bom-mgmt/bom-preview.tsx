@@ -6,7 +6,7 @@ import { useReactToPrint } from 'react-to-print'
 import { toast } from 'sonner'
 import { failLoudly } from '@/lib/safe-catch'
 import { useLanguage } from '@/context/language-provider'
-import { deriveBomDisplayVersion, normalizeBomChangeType, normalizeBomEffectiveDate } from '@/lib/codecs/code-normalization'
+import { deriveBomDisplayVersion, normalizeBomChangeType, normalizeEngineeringDateProtocol } from '@/lib/codecs/code-normalization'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { BOMDetailTable } from '../bom-detail-table'
@@ -40,7 +40,7 @@ export function BOMPreview({
   const productName = productView?.displayName || t('printMgmt.bomPreview.unknownProduct')
   const bomDisplayVersion = deriveBomDisplayVersion(bom.bomVersion || bom.bomDisplayVersion)
   const bomChangeType = normalizeBomChangeType(bom.changeType)
-  const effectiveFrom = normalizeBomEffectiveDate(bom.effectiveFrom)
+  const effectiveFrom = normalizeEngineeringDateProtocol(bom.effectiveFrom)
 
   const printItems = bom.items.map((item) => ({
     section: item.section || t('printMgmt.bomPreview.defaultSection'),

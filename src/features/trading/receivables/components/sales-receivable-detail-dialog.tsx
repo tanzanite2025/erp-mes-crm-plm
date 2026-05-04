@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { createLogger } from '@/lib/logger'
 import { resolveQueryFailure } from '@/lib/read-resource'
 import { SettlementLedgerDetailDialog } from '../../settlement-ledger-detail-dialog'
 import { useTradingFinanceResources } from '../../hooks/use-trading-finance-resources'
@@ -6,6 +7,8 @@ import { salesReceivableDetailDialogConfig } from '../config/sales-receivable-de
 import { SalesReceivableSalesReturnAdjustmentSection } from './sales-receivable-sales-return-adjustment-section'
 import { useCreateReceiptRecord, useReceivableLedgerDetail } from '../hooks/use-receivable-ledger-detail'
 import { useGetReceivables, useSearchReceivableLedgers } from '../hooks/use-receivables'
+
+const logger = createLogger('SalesReceivableDetailDialog')
 
 interface SalesReceivableDetailDialogProps {
   open: boolean
@@ -97,7 +100,9 @@ export function SalesReceivableDetailDialog({
       detailResourceStatus={dialogResource.status}
       detailResourceErrorMessage={dialogResource.status === 'error' ? dialogResource.errorMessage : undefined}
       onRetryDetailResource={() => {
-        void Promise.all([detailQuery.retryRead(), receivablesQuery.refetch()])
+        void Promise.all([detailQuery.retryRead(), receivablesQuery.refetch()]).catch((error) => {
+          logger.error('Failed to retry receivable detail resources', error)
+        })
       }}
       isDetailLoading={dialogResource.status === 'loading'}
       isSubmitPending={createMutation.isPending}

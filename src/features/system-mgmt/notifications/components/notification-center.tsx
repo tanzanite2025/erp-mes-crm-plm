@@ -63,11 +63,24 @@ export function NotificationCenter({ placement = 'header' }: NotificationCenterP
   useEffect(() => {
     if (!hasUser) return
 
-    RoutingService.getCommands().then(cmds => {
-      if (cmds) setStdCommands(cmds)
-    }).catch(err => {
-      logger.error('Failed to fetch sync commands', err)
-    })
+    let isActive = true
+
+    const loadCommands = async () => {
+      try {
+        const cmds = await RoutingService.getCommands()
+        if (isActive && cmds) {
+          setStdCommands(cmds)
+        }
+      } catch (err) {
+        logger.error('Failed to fetch sync commands', err)
+      }
+    }
+
+    void loadCommands()
+
+    return () => {
+      isActive = false
+    }
   }, [hasUser])
 
   // 初始化音效与数据完整性同步

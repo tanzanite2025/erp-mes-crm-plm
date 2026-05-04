@@ -18,6 +18,8 @@ func registerFinanceRoutes(authorized *gin.RouterGroup) {
 		financeGroup.GET("/currencies", handlers.GetCurrencies)
 		financeGroup.POST("/currencies", adminOnly, handlers.SaveCurrency)
 		financeGroup.POST("/currencies/:id/set-base", adminOnly, handlers.SetBaseCurrency)
+		financeGroup.GET("/currencies/sync-config", handlers.GetExchangeRateSyncConfigHandler)
+		financeGroup.POST("/currencies/sync-config", adminOnly, handlers.SaveExchangeRateSyncConfigHandler)
 		financeGroup.POST("/currencies/sync", adminOnly, handlers.SyncExchangeRatesWithLock)
 		financeGroup.GET("/payment-methods", handlers.GetPaymentMethods)
 		financeGroup.POST("/payment-methods", adminOnly, handlers.SavePaymentMethod)

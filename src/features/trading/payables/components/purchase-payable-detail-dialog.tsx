@@ -1,10 +1,13 @@
 import { useMemo } from 'react'
+import { createLogger } from '@/lib/logger'
 import { resolveQueryFailure } from '@/lib/read-resource'
 import { SettlementLedgerDetailDialog } from '../../settlement-ledger-detail-dialog'
 import { useTradingFinanceResources } from '../../hooks/use-trading-finance-resources'
 import { purchasePayableDetailDialogConfig } from '../config/purchase-payable-detail-dialog.config'
 import { useCreatePaymentRecord, usePayableLedgerDetail } from '../hooks/use-payable-ledger-detail'
 import { useGetPayables, useSearchPayableLedgers } from '../hooks/use-payables'
+
+const logger = createLogger('PurchasePayableDetailDialog')
 
 interface PurchasePayableDetailDialogProps {
   open: boolean
@@ -96,7 +99,9 @@ export function PurchasePayableDetailDialog({
       detailResourceStatus={dialogResource.status}
       detailResourceErrorMessage={dialogResource.status === 'error' ? dialogResource.errorMessage : undefined}
       onRetryDetailResource={() => {
-        void Promise.all([detailQuery.retryRead(), payablesQuery.refetch()])
+        void Promise.all([detailQuery.retryRead(), payablesQuery.refetch()]).catch((error) => {
+          logger.error('Failed to retry payable detail resources', error)
+        })
       }}
       isDetailLoading={dialogResource.status === 'loading'}
       isSubmitPending={createMutation.isPending}

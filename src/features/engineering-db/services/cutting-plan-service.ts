@@ -41,7 +41,7 @@ function toCuttingPlan(spec: EngineeringSpec): CuttingPlan {
     ...(spec.cuttingData ?? {}),
     id: spec.id,
     name: spec.cuttingData?.name || spec.name,
-    version: spec._v,
+    version: spec.version,
     createdAt: spec.createdAt,
   })
 }
@@ -154,7 +154,7 @@ function toEngineeringSpecInput(plan: CuttingPlanInput, id?: string): Engineerin
     type: CUTTING_PLAN_SPEC_TYPE,
     active: plan.status !== 'Archived',
     cuttingData: plan,
-    _v: plan.version || 1,
+    version: plan.version || 1,
   }
 }
 

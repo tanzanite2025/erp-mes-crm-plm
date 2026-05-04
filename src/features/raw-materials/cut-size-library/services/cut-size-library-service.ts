@@ -19,7 +19,7 @@ function toCutSizeUnit(spec: EngineeringSpec): CutSizeUnit {
     id: spec.id,
     code: payload.code || spec.code,
     name: payload.name || spec.name,
-    version: spec._v,
+    version: spec.version,
     createdAt: spec.createdAt,
     updatedAt: spec.updatedAt,
   })
@@ -47,7 +47,7 @@ function toEngineeringSpecInput(
     type: CUT_SIZE_LIBRARY_SPEC_TYPE,
     active: payload.status !== 'Archived',
     cuttingData: payload as unknown as Record<string, unknown>,
-    _v: editing?.version || payload.version || 1,
+    version: editing?.version || payload.version || 1,
   }
 }
 

@@ -10,6 +10,7 @@ export const sidebar = {
     resourceManagement: 'Resource Management',
     purchaseAndSales: 'Purchase & Sales',
     purchaseManagement: 'Purchase Management',
+    productionManagement: 'Production Management',
     planningCenter: 'Planning Center',
     rawMaterialsManagement: 'Raw Material Management',
     salesManagement: 'Sales Management',

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -38,6 +39,11 @@ type ProductTypeListQuery struct {
 type SaveProductTemplateInput models.ProductTemplate
 type BulkSyncProductTemplateInput models.ProductTemplate
 type SyncProductTypeInput models.ProductType
+
+type productWriteAuditOptions struct {
+	Action    string
+	PatchDiff json.RawMessage
+}
 
 func normalizeEngineeringSpecID(raw string) string {
 	return strings.TrimSpace(raw)
@@ -216,11 +222,11 @@ func GetProductByID(id string) (models.Product, error) {
 	return items[0], nil
 }
 
-func saveProductFromWriteInput(input ProductWriteInput) (models.Product, error) {
+func saveProductFromWriteInput(ctx context.Context, input ProductWriteInput, auditOptions productWriteAuditOptions) (models.Product, error) {
 	input = normalizeProductWriteInput(input)
 	var saved models.Product
 
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
+	err := db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		issuedInput, err := issueProductIdentity(tx, input)
 		if err != nil {
 			return err
@@ -244,6 +250,11 @@ func saveProductFromWriteInput(input ProductWriteInput) (models.Product, error) 
 			if err := tx.Preload("AttributeValues").Where("id = ?", modelInput.ID).First(&existing).Error; err != nil {
 				return err
 			}
+			beforeItems := []models.Product{existing}
+			if err := applyDerivedTemplateKeys(tx, beforeItems); err != nil {
+				return err
+			}
+			before := productAuditSnapshot(beforeItems[0])
 			if modelInput.Version != existing.Version {
 				return domainConflictError("product version conflict")
 			}
@@ -271,7 +282,12 @@ func saveProductFromWriteInput(input ProductWriteInput) (models.Product, error) 
 				return err
 			}
 			saved = items[0]
-			return nil
+			if len(auditOptions.PatchDiff) > 0 {
+				return writeProductAuditDiffEntryWithContext(ctx, tx, saved.ID, strings.TrimSpace(auditOptions.Action), auditOptions.PatchDiff)
+			}
+			payload := productAuditSnapshot(saved)
+			payload["operation"] = "update"
+			return writeProductAuditEntryWithContext(ctx, tx, saved.ID, strings.TrimSpace(auditOptions.Action), before, payload)
 		}
 
 		modelInput.MasterDataControl.Normalize("R1")
@@ -296,7 +312,9 @@ func saveProductFromWriteInput(input ProductWriteInput) (models.Product, error) 
 			return err
 		}
 		saved = items[0]
-		return nil
+		payload := productAuditSnapshot(saved)
+		payload["operation"] = "create"
+		return writeProductAuditEntryWithContext(ctx, tx, saved.ID, strings.TrimSpace(auditOptions.Action), nil, payload)
 	})
 	if err != nil {
 		return models.Product{}, err
@@ -304,8 +322,8 @@ func saveProductFromWriteInput(input ProductWriteInput) (models.Product, error) 
 	return saved, nil
 }
 
-func SaveProduct(input SaveProductAPIRequest) (models.Product, error) {
-	return saveProductFromWriteInput(toProductWriteInput(input))
+func SaveProduct(ctx context.Context, input SaveProductAPIRequest) (models.Product, error) {
+	return saveProductFromWriteInput(ctx, toProductWriteInput(input), productWriteAuditOptions{Action: "SAVE"})
 }
 
 func BuildProductPatchInput(id string, version int, payload map[string]json.RawMessage) (ProductWriteInput, error) {
@@ -497,67 +515,20 @@ func parseRFC3339Time(raw json.RawMessage) (*time.Time, error) {
 	return &parsed, nil
 }
 
-func PatchProduct(id string, version int, payload map[string]json.RawMessage) (models.Product, error) {
+func PatchProduct(ctx context.Context, id string, version int, payload map[string]json.RawMessage) (models.Product, error) {
 	input, err := BuildProductPatchInput(id, version, payload)
 	if err != nil {
 		return models.Product{}, err
 	}
-	return saveProductFromWriteInput(input)
-}
-
-func BulkSyncProducts(input BulkSyncProductsAPIPayload) error {
-	return db.DB.Transaction(func(tx *gorm.DB) error {
-		for idx, in := range input.Products {
-			writeInput := normalizeProductWriteInput(toProductWriteInput(in))
-			writeInput, err := issueProductIdentity(tx, writeInput)
-			if err != nil {
-				return domainValidationError(fmt.Sprintf("bulk product sync item %d (id=%s, name=%s): %v", idx, strings.TrimSpace(in.ID), strings.TrimSpace(in.Name), err))
-			}
-			if err := validateProductWriteInput(writeInput); err != nil {
-				return domainValidationError(fmt.Sprintf("bulk product sync item %d (id=%s, name=%s): %v", idx, strings.TrimSpace(in.ID), strings.TrimSpace(in.Name), err))
-			}
-
-			product := toProductModel(writeInput)
-			product.EngineeringSpecID = normalizeEngineeringSpecID(product.EngineeringSpecID)
-			product.AttributeValues = normalizeProductAttributeValues(product.AttributeValues)
-			if product.EngineeringSpecID != "" {
-				var spec models.EngineeringSpec
-				if err := tx.Where("id = ?", product.EngineeringSpecID).First(&spec).Error; err != nil {
-					return err
-				}
-			}
-			product.MasterDataControl.Normalize("R1")
-			saveTx := tx
-			if product.EngineeringSpecID == "" {
-				saveTx = saveTx.Omit("EngineeringSpecID")
-			}
-
-			if product.ID != "" {
-				if err := saveTx.Model(&models.Product{}).Where("id = ?", product.ID).Omit("CreatedAt", "BaseModel.CreatedAt").Updates(&product).Error; err != nil {
-					return err
-				}
-				if err := replaceProductAttributeValues(tx, product.ID, product.AttributeValues); err != nil {
-					return err
-				}
-			} else {
-				if err := saveTx.Create(&product).Error; err != nil {
-					return err
-				}
-				if err := replaceProductAttributeValues(tx, product.ID, product.AttributeValues); err != nil {
-					return err
-				}
-			}
-
-			if product.ID != "" && product.EngineeringSpecID == "" {
-				if err := tx.Model(&models.Product{}).Where("id = ?", product.ID).Update("engineering_spec_id", nil).Error; err != nil {
-					return err
-				}
-			}
-		}
-		return nil
+	before, err := GetProductByID(id)
+	if err != nil {
+		return models.Product{}, err
+	}
+	return saveProductFromWriteInput(ctx, input, productWriteAuditOptions{
+		Action:    "PATCH",
+		PatchDiff: productPatchAuditDiff(productAuditSnapshot(before), payload),
 	})
 }
-
 func GetNextProductModelCode(typeID string) (string, error) {
 	normalizedTypeID := strings.TrimSpace(typeID)
 	if normalizedTypeID == "" {
@@ -590,14 +561,19 @@ func GetNextProductModelCode(typeID string) (string, error) {
 	return fmt.Sprintf("%02d", nextCode), nil
 }
 
-func DeleteProduct(id string) error {
+func DeleteProduct(ctx context.Context, id string) error {
 	referenceChecks := []any{
 		&models.BOM{},
 		&models.SalesOrderLine{},
+		&models.SalesReturnLine{},
+		&models.SalesExchangeLine{},
 		&models.LogisticsRecord{},
+		&models.PrintBatch{},
+		&models.ProductInventoryMaterialMapping{},
 		&models.ProductionPlan{},
 		&models.InspectionTask{},
 		&models.PieceworkRate{},
+		&models.PieceworkRecord{},
 	}
 
 	for _, model := range referenceChecks {
@@ -610,7 +586,30 @@ func DeleteProduct(id string) error {
 		}
 	}
 
-	return db.DB.Delete(&models.Product{}, "id = ?", id).Error
+	return db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var product models.Product
+		if err := tx.Preload("AttributeValues", func(database *gorm.DB) *gorm.DB {
+			return database.Order("sort_order asc").Order("category_key asc")
+		}).First(&product, "id = ?", id).Error; err != nil {
+			return err
+		}
+		items := []models.Product{product}
+		if err := applyDerivedTemplateKeys(tx, items); err != nil {
+			return err
+		}
+		product = items[0]
+		before := productAuditSnapshot(product)
+		if err := tx.Delete(&models.Product{}, "id = ?", id).Error; err != nil {
+			return err
+		}
+		payload := map[string]any{
+			"id":     strings.TrimSpace(product.ID),
+			"sku":    strings.TrimSpace(product.SKU),
+			"name":   strings.TrimSpace(product.Name),
+			"typeId": strings.TrimSpace(product.TypeID),
+		}
+		return writeProductAuditEntryWithContext(ctx, tx, strings.TrimSpace(product.ID), "DELETE", before, payload)
+	})
 }
 
 func ListProductTemplates(query ProductTemplateListQuery) ([]models.ProductTemplate, int64, error) {

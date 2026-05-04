@@ -7,6 +7,7 @@ import {
   ensureObjectResponse,
 } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+import { buildVersionedPatchMetadata } from '@/lib/version-guard'
 import { toCustomerApiDTO, toCustomerContract, toCustomerContracts } from '../adapters/customer-api-adapter'
 import { type CustomerApiDTO, type CustomerListApiResponseDTO } from '../contracts/customer-api-dto'
 import { customerArraySchema, customerSchema, type Customer, type CustomerFormValues } from '../../data/schema'
@@ -14,6 +15,7 @@ import { customerArraySchema, customerSchema, type Customer, type CustomerFormVa
 export const CUSTOMER_TRANSACTION_INTENT_STATUS_CHANGE = 'CUSTOMER_STATUS_CHANGE'
 export const CUSTOMER_TRANSACTION_INTENT_IDENTITY_CHANGE = 'CUSTOMER_IDENTITY_CHANGE'
 export const CUSTOMER_TRANSACTION_INTENT_SAVE = 'CUSTOMER_SAVE'
+export const CUSTOMER_PATCH_INTENT_SAVE = 'CUSTOMER_PATCH_SAVE'
 
 export interface CustomerListStats {
   total: number
@@ -210,7 +212,9 @@ export const patchCustomer = async (id: string, delta: DeltaSet, version: number
   const payload: DeltaPayload = {
     op: 'PATCH',
     delta,
-    metadata: { id, version },
+    metadata: buildVersionedPatchMetadata(id, version, 'CustomerService.patchCustomer', {
+      intent: CUSTOMER_PATCH_INTENT_SAVE,
+    }),
   }
 
   const res = await apiFetch<CustomerApiDTO>(`/customers/${id}`, {

@@ -1,7 +1,10 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaSet, type DeltaPayload } from '@/lib/delta/types'
+import { buildVersionedPatchMetadata } from '@/lib/version-guard'
 import { type PaymentTerm } from '../data/schema'
+
+const PAYMENT_TERM_PATCH_INTENT_SAVE = 'PAYMENT_TERM_PATCH_SAVE'
 
 /**
  * PaymentTermMaintenanceService: 结算方式维护服务
@@ -25,7 +28,9 @@ export const PaymentTermMaintenanceService = {
     const payload: DeltaPayload = {
       op: 'PATCH',
       delta,
-      metadata: { id: String(id), version }
+      metadata: buildVersionedPatchMetadata(String(id), version, 'PaymentTermMaintenanceService.patchPaymentTerm', {
+        intent: PAYMENT_TERM_PATCH_INTENT_SAVE,
+      })
     };
 
     const res = await apiFetch<PaymentTerm>(`/finance/payment-terms/${id}`, {

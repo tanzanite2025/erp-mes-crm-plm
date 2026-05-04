@@ -1,7 +1,6 @@
 'use client'
 
 import { useRef } from 'react'
-import { format } from 'date-fns'
 import { RefreshCw, FileText, Printer, CheckCircle2, History, Search } from 'lucide-react'
 import { AuditStatusDisplay } from '@/components/common/audit-status-display'
 import { ForbiddenState } from '@/components/forbidden-state'
@@ -20,10 +19,11 @@ import { ConfirmDialog } from '@/components/confirm-dialog'
 import { AdjustmentPrint } from '../components/adjustment-print'
 import { type InventoryAdjustment } from '../adjustment'
 import { useAdjustmentHistoryViewModel } from '../hooks/use-adjustment-history-view-model'
+import { formatWarehouseDisplayDateTime } from '../utils/warehouse-date-display'
 import { getAdjustmentStatusMeta } from '../utils/warehouse-status-display'
 
 export function AdjustmentHistory() {
-    const { t } = useLanguage()
+    const { t, locale } = useLanguage()
     const printRef = useRef<HTMLDivElement>(null)
     const {
         adjustments,
@@ -138,9 +138,9 @@ export function AdjustmentHistory() {
                                         </TableCell>
                                         <TableCell className='py-2 md:py-2.5 font-mono text-[8px] md:text-[9px] text-muted-foreground/40 whitespace-nowrap'>
                                             <div className='flex flex-col gap-1'>
-                                                <span>{format(new Date(adj.createdAt), 'yyyy-MM-dd HH:mm')}</span>
-                                                <span>{t('warehouse.adjustment.audit.approvedAt')}: {adj.approvedAt ? format(new Date(adj.approvedAt), 'yyyy-MM-dd HH:mm') : t('warehouse.adjustment.audit.empty')}</span>
-                                                <span>{t('warehouse.adjustment.audit.executedAt')}: {adj.executedAt ? format(new Date(adj.executedAt), 'yyyy-MM-dd HH:mm') : t('warehouse.adjustment.audit.empty')}</span>
+                                                <span>{formatWarehouseDisplayDateTime(adj.createdAt, locale)}</span>
+                                                <span>{t('warehouse.adjustment.audit.approvedAt')}: {adj.approvedAt ? formatWarehouseDisplayDateTime(adj.approvedAt, locale) : t('warehouse.adjustment.audit.empty')}</span>
+                                                <span>{t('warehouse.adjustment.audit.executedAt')}: {adj.executedAt ? formatWarehouseDisplayDateTime(adj.executedAt, locale) : t('warehouse.adjustment.audit.empty')}</span>
                                             </div>
                                         </TableCell>
                                         <TableCell className='pr-5 md:pr-8 py-2 md:py-2.5 text-right space-x-2 whitespace-nowrap'>

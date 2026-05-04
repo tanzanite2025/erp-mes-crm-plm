@@ -21,6 +21,34 @@ export function toProductTypeContract(dto: ProductTypeApiDTO): ProductType {
   }
 }
 
+type ProductTypeWriteCandidate = Omit<ProductTypeApiDTO, '_v'> & {
+  version: number
+}
+
+function toProductTypeWriteCandidate(type: SaveProductTypeInput): ProductTypeWriteCandidate {
+  return {
+    id: type.id || '',
+    parentId: type.parentId ?? null,
+    templateId: type.templateId ?? null,
+    name: type.name || '',
+    code: normalizeEngineeringProductTypeCode(type.code),
+    description: type.description || '',
+    active: type.active ?? true,
+    sortOrder: type.sortOrder ?? 0,
+    createdAt: type.createdAt,
+    updatedAt: type.updatedAt,
+    version: type.version ?? 1,
+  }
+}
+
+function toProductTypeWriteApiDTO(candidate: ProductTypeWriteCandidate): ProductTypeApiDTO {
+  const { version, ...rest } = candidate
+  return {
+    ...rest,
+    _v: version,
+  }
+}
+
 function collectProductTypes(items: ProductTypeApiDTO[], bucket: Map<string, ProductType>) {
   for (const item of items) {
     if (!bucket.has(item.id)) {
@@ -43,19 +71,7 @@ export function toProductTypeListContract(dto: ProductTypeListPageApiDTO): Produ
 }
 
 export function toProductTypeApiDTO(type: SaveProductTypeInput): ProductTypeApiDTO {
-  return {
-    id: type.id || '',
-    parentId: type.parentId ?? null,
-    templateId: type.templateId ?? null,
-    name: type.name || '',
-    code: normalizeEngineeringProductTypeCode(type.code),
-    description: type.description || '',
-    active: type.active ?? true,
-    sortOrder: type.sortOrder ?? 0,
-    createdAt: type.createdAt,
-    updatedAt: type.updatedAt,
-    _v: type.version ?? 1,
-  }
+  return toProductTypeWriteApiDTO(toProductTypeWriteCandidate(type))
 }
 
 const PRODUCT_TYPE_PATCH_FIELDS: Array<keyof ProductType> = [

@@ -1,6 +1,9 @@
 import { apiFetch } from '@/lib/api-client'
 import { type TaxRate } from '../data/taxation'
 import { type DeltaSet, type DeltaPayload } from '@/lib/delta/types'
+import { buildVersionedPatchMetadata } from '@/lib/version-guard'
+
+const TAX_RATE_PATCH_INTENT_SAVE = 'TAX_RATE_PATCH_SAVE'
 
 class TaxService {
   async getTaxRates(): Promise<TaxRate[]> {
@@ -21,7 +24,9 @@ class TaxService {
     const payload: DeltaPayload = {
       op: 'PATCH',
       delta,
-      metadata: { id, version }
+      metadata: buildVersionedPatchMetadata(id, version, 'TaxService.patchTaxRate', {
+        intent: TAX_RATE_PATCH_INTENT_SAVE,
+      })
     };
 
     return apiFetch<TaxRate>(`/finance/tax-rates/${id}`, {

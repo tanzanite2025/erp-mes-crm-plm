@@ -5,11 +5,11 @@ import type {
   PaginationState,
 } from '@tanstack/react-table'
 
-type SearchRecord = Record<string, unknown>
+export type SearchRecord = Record<string, unknown>
 
-export type NavigateFn = (opts: any) => void
+export type NavigateFn = (...args: never[]) => unknown
 
-type UseTableUrlStateParams = {
+export type UseTableUrlStateParams = {
   search: SearchRecord
   navigate: NavigateFn
   pagination?: {
@@ -42,7 +42,7 @@ type UseTableUrlStateParams = {
   >
 }
 
-type UseTableUrlStateReturn = {
+export type UseTableUrlStateReturn = {
   // Global filter
   globalFilter?: string
   onGlobalFilterChange?: OnChangeFn<string>
@@ -69,6 +69,11 @@ export function useTableUrlState(
     globalFilter: globalFilterCfg,
     columnFilters: columnFiltersCfg = [],
   } = params
+
+  const navigateWithSearch = navigate as (opts: {
+    search?: (prev: SearchRecord) => SearchRecord
+    replace?: boolean
+  }) => void
 
   const pageKey = paginationCfg?.pageKey ?? ('page' as string)
   const pageSizeKey = paginationCfg?.pageSizeKey ?? ('pageSize' as string)
@@ -117,7 +122,7 @@ export function useTableUrlState(
     const next = typeof updater === 'function' ? updater(pagination) : updater
     const nextPage = next.pageIndex + 1
     const nextPageSize = next.pageSize
-    navigate({
+    navigateWithSearch({
       search: (prev: SearchRecord) => ({
         ...(prev as SearchRecord),
         [pageKey]: nextPage <= defaultPage ? undefined : nextPage,
@@ -142,7 +147,7 @@ export function useTableUrlState(
               : updater
           const value = trimGlobal ? next.trim() : next
           setGlobalFilter(value)
-          navigate({
+          navigateWithSearch({
             search: (prev: SearchRecord) => ({
               ...(prev as SearchRecord),
               [pageKey]: undefined,
@@ -175,7 +180,7 @@ export function useTableUrlState(
       }
     }
 
-    navigate({
+    navigateWithSearch({
       search: (prev: SearchRecord) => ({
         ...(prev as SearchRecord),
         [pageKey]: undefined,
@@ -191,7 +196,7 @@ export function useTableUrlState(
     const currentPage = (search as SearchRecord)[pageKey]
     const pageNum = typeof currentPage === 'number' ? currentPage : defaultPage
     if (pageCount > 0 && pageNum > pageCount) {
-      navigate({
+      navigateWithSearch({
         replace: true,
         search: (prev: SearchRecord) => ({
           ...(prev as SearchRecord),

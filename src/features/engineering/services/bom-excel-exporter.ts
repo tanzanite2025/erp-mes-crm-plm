@@ -2,6 +2,7 @@ import { loadExcelJS } from '@/lib/lazy-vendors'
 import type { Borders, DataValidation, Workbook } from 'exceljs'
 import { type MaterialOption } from '../../material-archive/data/schema'
 import { type Product } from '../data/schema'
+import { formatEngineeringExportFileDate } from '../utils/engineering-export-file-date'
 import { formatProductDisplayName } from '../utils/product-utils'
 import { BOM_EXCEL_LIMITS, BOM_EXCEL_LOCK_PASSWORDS, BOM_EXCEL_SHEETS } from './bom-excel-contract'
 import { escapeFormula } from './bom-excel-security'
@@ -193,6 +194,6 @@ export const generateBOMTemplate = async (
   })
 
   // --- 5. 导出 ---
-  const timestamp = new Date().toISOString().split('T')[0]
+  const timestamp = formatEngineeringExportFileDate()
   await downloadWorkbook(workbook, `XDFC_BOM自由录入模板_${timestamp}.xlsx`)
 }

@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react'
 import { Users } from 'lucide-react'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { Card } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useVehicleSpecsQuery } from '@/features/logistics-config/vehicle-loading/hooks/use-vehicle-specs-query'
 import { createDefaultVehicleContactRemoteFilters } from './contact-filters.shared'
@@ -179,7 +180,21 @@ export function VehicleContactsPage() {
 
       {specsError ? <Card className='rounded-2xl border border-destructive/30 bg-destructive/5 px-5 py-4 shadow-none'><div className='text-[10px] font-black uppercase tracking-widest text-destructive'>车型加载失败</div><div className='mt-1.5 text-[11px] leading-5 text-muted-foreground'>{specsError.message}</div></Card> : null}
       {error ? <Card className='rounded-2xl border border-destructive/30 bg-destructive/5 px-5 py-4 shadow-none'><div className='text-[10px] font-black uppercase tracking-widest text-destructive'>车型联系人加载失败</div><div className='mt-1.5 text-[11px] leading-5 text-muted-foreground'>{error.message}</div><button type='button' className='uds-chip mt-3 border-destructive/40 text-[10px] text-destructive' onClick={() => void reload()}>重新加载</button></Card> : null}
-      {isLoadingSpecs || loading ? <Card className='rounded-2xl border border-border/60 bg-background/70 px-5 py-5 shadow-none'><div className='text-[10px] font-black uppercase tracking-widest'>数据加载中...</div></Card> : null}
+      {isLoadingSpecs || loading ? (
+        <Card className='rounded-2xl border border-dashed border-border/60 bg-background/70 px-5 py-5 shadow-none'>
+          <div className='space-y-4'>
+            <div className='space-y-2'>
+              <Skeleton className='h-3 w-24' />
+              <Skeleton className='h-3 w-56' />
+            </div>
+            <div className='grid gap-3 md:grid-cols-3'>
+              <Skeleton className='h-16 w-full rounded-2xl' />
+              <Skeleton className='h-16 w-full rounded-2xl' />
+              <Skeleton className='h-16 w-full rounded-2xl' />
+            </div>
+          </div>
+        </Card>
+      ) : null}
 
       <div className='grid gap-4 xl:grid-cols-[280px_minmax(0,1fr)]'>
         <Card className='rounded-2xl border border-dashed border-border/60 bg-background/90 p-4 shadow-[0_1px_0_rgba(15,23,42,0.04)]'>

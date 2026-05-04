@@ -306,6 +306,46 @@ describe('DrillingTab', () => {
       })
     )
 
+    expect(drillingToolbarMock.mock.calls[0]?.[0]).toStrictEqual(
+      expect.objectContaining({
+        searchTerm: 'current-drilling-search',
+        onSearchTermChange: expect.any(Function),
+        onCreate: handleCreateMock,
+      })
+    )
+
+    expect(drillingTableCardMock.mock.calls[0]?.[0]).toStrictEqual(
+      expect.objectContaining({
+        rows: expect.arrayContaining([expect.objectContaining({ item: expect.objectContaining({ id: 'plan-1', name: 'Drilling Plan' }) })]),
+        isLoading: false,
+        highlightId: 'plan-edit',
+        onPreview: handlePreviewMock,
+        onEdit: handleEditMock,
+        onDelete: handleDeleteMock,
+      })
+    )
+
+    expect(drillingMobileListMock.mock.calls[0]?.[0]).toStrictEqual(
+      expect.objectContaining({
+        rows: expect.arrayContaining([expect.objectContaining({ item: expect.objectContaining({ id: 'plan-1', name: 'Drilling Plan' }) })]),
+        isLoading: false,
+        highlightId: 'plan-edit',
+        onPreview: handlePreviewMock,
+        onEdit: handleEditMock,
+        onDelete: handleDeleteMock,
+      })
+    )
+
+    expect(drillingActionDialogMock.mock.calls[0]?.[0]).toStrictEqual(
+      expect.objectContaining({
+        open: true,
+        onOpenChange: setOpenMock,
+        currentRow: expect.objectContaining({ id: 'plan-edit', name: 'Drilling Plan' }),
+        onSave: handleSaveMock,
+        isLoading: true,
+      })
+    )
+
     expect(cadViewerDialogMock).toHaveBeenCalledWith(
       expect.objectContaining({
         open: true,

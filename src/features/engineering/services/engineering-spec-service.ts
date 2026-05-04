@@ -3,6 +3,7 @@ import { ensureObjectResponse } from '@/lib/api-response'
 import {
   engineeringSpecApiDTOArraySchema,
   engineeringSpecApiDTOSchema,
+  engineeringSpecInputApiSchema,
   engineeringSpecInputSchema,
   engineeringSpecListPageApiDTOSchema,
   engineeringSpecPatchRequestSchema,
@@ -11,9 +12,13 @@ import {
   type EngineeringSpecListPageApiDTO,
 } from '../contracts/engineering-spec-api-contract'
 
-export type EngineeringSpec = EngineeringSpecApiDTO
+export type EngineeringSpec = Omit<EngineeringSpecApiDTO, '_v'> & {
+  version: number
+}
 
-export type EngineeringSpecInput = EngineeringSpecInputDTO
+export type EngineeringSpecInput = Omit<EngineeringSpecInputDTO, '_v'> & {
+  version: number
+}
 
 const ENGINEERING_SPEC_BUCKET_KEYS = [
   'specData',
@@ -37,10 +42,26 @@ function normalizeEngineeringSpecBuckets<T extends Record<string, unknown>>(item
   return normalized as T
 }
 
+function toEngineeringSpecContract(dto: EngineeringSpecApiDTO): EngineeringSpec {
+  return {
+    ...dto,
+    version: dto._v,
+  }
+}
+
+function toEngineeringSpecInputApiDTO(input: EngineeringSpecInput): EngineeringSpecInputDTO {
+  return engineeringSpecInputApiSchema.parse({
+    ...input,
+    _v: input.version,
+  })
+}
+
 function parseEngineeringSpec(item: unknown, scope: string): EngineeringSpec {
-  return engineeringSpecApiDTOSchema.parse(
-    normalizeEngineeringSpecBuckets(
-      ensureObjectResponse<Record<string, unknown>>(item as Record<string, unknown>, scope)
+  return toEngineeringSpecContract(
+    engineeringSpecApiDTOSchema.parse(
+      normalizeEngineeringSpecBuckets(
+        ensureObjectResponse<Record<string, unknown>>(item as Record<string, unknown>, scope)
+      )
     )
   )
 }
@@ -54,6 +75,7 @@ function parseEngineeringSpecList(response: unknown, scope: string): Engineering
         )
       )
     )
+      .map(toEngineeringSpecContract)
   }
 
   const rawPage = ensureObjectResponse<Record<string, unknown>>(response, scope)
@@ -67,7 +89,7 @@ function parseEngineeringSpecList(response: unknown, scope: string): Engineering
           )
         )
       : rawPage.items,
-  }).items
+  }).items.map(toEngineeringSpecContract)
 }
 
 function buildEngineeringSpecsUrl(type?: string): string {
@@ -94,9 +116,10 @@ export const engineeringSpecService = {
 
   saveSpec: async (spec: EngineeringSpecInput): Promise<EngineeringSpec> => {
     const payload = engineeringSpecInputSchema.parse(spec)
+    const apiPayload = toEngineeringSpecInputApiDTO(payload)
     const res = await apiFetch<EngineeringSpecApiDTO>('/engineering/specs', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(apiPayload),
     })
     return parseEngineeringSpec(res, 'engineeringSpecService.saveSpec')
   },
@@ -105,7 +128,14 @@ export const engineeringSpecService = {
     const payload = engineeringSpecPatchRequestSchema.parse({ delta, version })
     const res = await apiFetch<EngineeringSpecApiDTO>(`/engineering/specs/${id}`, {
       method: 'PATCH',
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        op: 'PATCH',
+        delta: payload.delta,
+        metadata: {
+          id,
+          version: payload.version,
+        },
+      }),
     })
     return parseEngineeringSpec(res, 'engineeringSpecService.patchSpec')
   },

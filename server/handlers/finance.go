@@ -214,8 +214,34 @@ func SeedFinanceData(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Finance data seeded successfully"})
 }
 
+func GetExchangeRateSyncConfigHandler(c *gin.Context) {
+	config, err := services.GetExchangeRateSyncConfig()
+	if err != nil {
+		respondFinanceServer(c, "Failed to load exchange rate sync config", err)
+		return
+	}
+
+	c.JSON(http.StatusOK, config)
+}
+
+func SaveExchangeRateSyncConfigHandler(c *gin.Context) {
+	var config services.ExchangeRateSyncConfig
+	if err := c.ShouldBindJSON(&config); err != nil {
+		respondFinanceValidation(c, "Invalid exchange rate sync config payload", err)
+		return
+	}
+
+	saved, err := services.SaveExchangeRateSyncConfig(config)
+	if err != nil {
+		respondFinanceServer(c, "Failed to save exchange rate sync config", err)
+		return
+	}
+
+	c.JSON(http.StatusOK, saved)
+}
+
 func RunExchangeRateSync() (int, error) {
-	return services.SyncExchangeRatesFromEnv()
+	return services.SyncExchangeRates()
 }
 
 func respondExchangeRateSyncError(c *gin.Context, err error) {
@@ -225,9 +251,11 @@ func respondExchangeRateSyncError(c *gin.Context, err error) {
 
 	switch {
 	case errors.Is(err, services.ErrExchangeRateAPIKeyMissing):
-		respondFinanceCritical(c, http.StatusInternalServerError, "Exchange rate sync configuration missing: EXCHANGERATE_API_KEY is not set", nil)
+		respondFinanceCritical(c, http.StatusInternalServerError, "Exchange rate sync configuration missing: API key is not set", nil)
 	case errors.Is(err, services.ErrExchangeRateBaseMissing):
 		respondFinanceCritical(c, http.StatusNotFound, "System base currency is not configured", nil)
+	case errors.Is(err, services.ErrExchangeRateSyncDisabled):
+		respondFinanceValidation(c, "Exchange rate sync is disabled in configuration", nil)
 	case errors.Is(err, services.ErrExchangeRateAPIStatus):
 		respondFinanceServerWithStatus(c, http.StatusBadGateway, "Exchange rate service returned an abnormal response", err)
 	default:

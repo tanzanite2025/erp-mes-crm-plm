@@ -36,7 +36,6 @@ export const BOMPrintTemplate = forwardRef<HTMLDivElement, BOMPrintTemplateProps
       <div
         ref={ref}
         className='bg-white text-black p-8 w-[210mm] min-h-[297mm] mx-auto box-border text-sm font-sans'
-        style={{ color: '#000' }}
       >
         <style type='text/css'>
           {`
@@ -56,13 +55,19 @@ export const BOMPrintTemplate = forwardRef<HTMLDivElement, BOMPrintTemplateProps
               margin: 0;
             }
             .print-table th, .print-table td {
-              border: 1px solid #000;
+              border: 1px solid currentColor;
               padding: 6px 4px;
               text-align: center;
               font-size: 13px;
             }
             .print-table th {
               font-weight: bold;
+            }
+            .print-dashed-bottom {
+              border-bottom: 1px dashed currentColor;
+            }
+            .print-dashed-top {
+              border-top: 1px dashed currentColor;
             }
           `}
         </style>
@@ -198,8 +203,8 @@ export const BOMPrintTemplate = forwardRef<HTMLDivElement, BOMPrintTemplateProps
               <td style={{ width: '10%' }}>{today}</td>
               <td
                 colSpan={4}
-                className='font-bold tracking-widest'
-                style={{ width: '30%', borderBottom: '1px dashed #000' }}
+                className='font-bold tracking-widest print-dashed-bottom'
+                style={{ width: '30%' }}
               >
                 {t('printMgmt.bomTemplate.revisionNotes')}
               </td>
@@ -210,7 +215,7 @@ export const BOMPrintTemplate = forwardRef<HTMLDivElement, BOMPrintTemplateProps
               </td>
               <td>{t('printMgmt.bomTemplate.revisionDate')}</td>
               <td />
-              <td colSpan={4} style={{ borderTop: '1px dashed #000' }} />
+              <td colSpan={4} className='print-dashed-top' />
             </tr>
           </tbody>
         </table>

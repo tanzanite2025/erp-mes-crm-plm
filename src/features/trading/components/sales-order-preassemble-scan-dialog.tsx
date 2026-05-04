@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { CheckCircle2, QrCode, ScanLine, Search, Tag } from 'lucide-react'
 import { toast } from 'sonner'
+import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -12,6 +13,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { ShipmentCoreService } from '@/features/warehouse/shipment'
 import { type ShipmentRecord } from '@/features/warehouse/shipment/data/schema'
@@ -204,6 +206,7 @@ export function SalesOrderPreassembleScanDialog({
   isSubmitting = false,
   onConfirm,
 }: SalesOrderPreassembleScanDialogProps) {
+  const { t } = useLanguage()
   const [scanInput, setScanInput] = useState('')
   const [manualSelectedIds, setManualSelectedIds] = useState<Set<string>>(new Set())
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -453,7 +456,12 @@ export function SalesOrderPreassembleScanDialog({
 
     if (unresolved.length > 0) {
       const preview = unresolved.slice(0, 3).join(' / ')
-      toast.error(`有 ${unresolved.length} 条无法确定订单行，请先处理：${preview}`)
+      toast.error(
+        t('tradingSalesOrder.preassembleScan.toasts.unresolvedOrderLines', {
+          count: unresolved.length,
+          preview,
+        })
+      )
       return
     }
 
@@ -526,8 +534,22 @@ export function SalesOrderPreassembleScanDialog({
 
             <div className='h-[420px] overflow-y-auto rounded-2xl border border-dashed border-muted/50 bg-muted/5 p-2'>
               {virtualPoolQuery.isLoading ? (
-                <div className='flex h-full items-center justify-center text-xs font-black text-muted-foreground/60'>
-                  加载中...
+                <div className='space-y-2'>
+                  {Array.from({ length: 5 }).map((_, index) => (
+                    <div
+                      key={`virtual-pool-skeleton-${index}`}
+                      className='rounded-xl border border-dashed border-muted/40 bg-background p-3'
+                    >
+                      <div className='flex items-center justify-between gap-3'>
+                        <Skeleton className='h-4 w-32' />
+                        <Skeleton className='h-5 w-16 rounded-full' />
+                      </div>
+                      <div className='mt-3 flex items-center gap-2'>
+                        <Skeleton className='h-3 w-24' />
+                        <Skeleton className='h-3 w-20' />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : poolEntries.length === 0 ? (
                 <div className='flex h-full items-center justify-center text-xs font-black text-muted-foreground/60'>

@@ -10,12 +10,13 @@ import { ProxyTracker } from '@/lib/delta/proxy-tracker';
  * @param initialData 初始领域模型数据
  * @param resetKey 可选的重置键，变化时将重新初始化追踪器
  */
-export function useDeltaTracker<T extends Record<string, any>>(initialData: T, resetKey?: any) {
+export function useDeltaTracker<T extends object>(initialData: T, resetKey?: unknown) {
   // 用于强制触发组件重绘的状态
   const [, setTick] = useState(0);
   
   // 初始化追踪器实例
   const tracker = useMemo(() => {
+    void resetKey;
     return new ProxyTracker<T>(initialData, () => {
       setTick(t => t + 1);
     });
@@ -31,6 +32,10 @@ export function useDeltaTracker<T extends Record<string, any>>(initialData: T, r
    */
   const commit = useCallback(() => {
     return tracker.commit();
+  }, [tracker]);
+
+  const replace = useCallback((nextData: T) => {
+    tracker.replace(nextData);
   }, [tracker]);
 
   /**
@@ -49,6 +54,7 @@ export function useDeltaTracker<T extends Record<string, any>>(initialData: T, r
     data,
     deltaProxy: data, // 别名，提高语义化
     commit,
+    replace,
     isDirty,
     mutationCount,
     tracker,

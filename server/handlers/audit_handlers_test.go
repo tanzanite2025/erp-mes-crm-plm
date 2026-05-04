@@ -119,6 +119,154 @@ func TestGetDataTimelineHandlerAllowsModuleLevelQueryForUserPermission(t *testin
 	require.Equal(t, "log-up-1", response[1].ID)
 }
 
+func TestGetDataTimelineHandlerAllowsModuleLevelQueryForEngineeringSpec(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	setupHandlerSQLiteTestDB(t, &models.AuditLog{})
+
+	require.NoError(t, db.DB.Create(&models.AuditLog{
+		ID:        "log-eng-spec-1",
+		Module:    "engineering-spec",
+		TargetID:  "spec-1",
+		Action:    "SAVE",
+		Operator:  "tester",
+		CreatedAt: time.Date(2026, 5, 4, 8, 0, 0, 0, time.UTC),
+	}).Error)
+	require.NoError(t, db.DB.Create(&models.AuditLog{
+		ID:        "log-eng-spec-2",
+		Module:    "EngineeringSpec",
+		TargetID:  "spec-2",
+		Action:    "PATCH",
+		Operator:  "tester",
+		CreatedAt: time.Date(2026, 5, 4, 9, 0, 0, 0, time.UTC),
+	}).Error)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = httptest.NewRequest(http.MethodGet, "/api/v1/audit/timeline?module=engineering-spec", nil)
+	ctx.Set("permissions", []string{authz.MenuEngineering})
+
+	GetDataTimelineHandler(ctx)
+
+	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+
+	var response []models.AuditLog
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Len(t, response, 2)
+	require.Equal(t, "log-eng-spec-2", response[0].ID)
+	require.Equal(t, "log-eng-spec-1", response[1].ID)
+}
+
+func TestGetDataTimelineHandlerAllowsModuleLevelQueryForProduct(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	setupHandlerSQLiteTestDB(t, &models.AuditLog{})
+
+	require.NoError(t, db.DB.Create(&models.AuditLog{
+		ID:        "log-product-1",
+		Module:    "product",
+		TargetID:  "product-1",
+		Action:    "SAVE",
+		Operator:  "tester",
+		CreatedAt: time.Date(2026, 5, 4, 8, 30, 0, 0, time.UTC),
+	}).Error)
+	require.NoError(t, db.DB.Create(&models.AuditLog{
+		ID:        "log-product-2",
+		Module:    "Product",
+		TargetID:  "product-2",
+		Action:    "PATCH",
+		Operator:  "tester",
+		CreatedAt: time.Date(2026, 5, 4, 9, 30, 0, 0, time.UTC),
+	}).Error)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = httptest.NewRequest(http.MethodGet, "/api/v1/audit/timeline?module=product", nil)
+	ctx.Set("permissions", []string{authz.MenuEngineering})
+
+	GetDataTimelineHandler(ctx)
+
+	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+
+	var response []models.AuditLog
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Len(t, response, 2)
+	require.Equal(t, "log-product-2", response[0].ID)
+	require.Equal(t, "log-product-1", response[1].ID)
+}
+
+func TestGetDataTimelineHandlerAllowsModuleLevelQueryForBOM(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	setupHandlerSQLiteTestDB(t, &models.AuditLog{})
+
+	require.NoError(t, db.DB.Create(&models.AuditLog{
+		ID:        "log-bom-1",
+		Module:    "bom",
+		TargetID:  "bom-1",
+		Action:    "SAVE",
+		Operator:  "tester",
+		CreatedAt: time.Date(2026, 5, 4, 10, 30, 0, 0, time.UTC),
+	}).Error)
+	require.NoError(t, db.DB.Create(&models.AuditLog{
+		ID:        "log-bom-2",
+		Module:    "BOM",
+		TargetID:  "bom-2",
+		Action:    "DELETE",
+		Operator:  "tester",
+		CreatedAt: time.Date(2026, 5, 4, 11, 0, 0, 0, time.UTC),
+	}).Error)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = httptest.NewRequest(http.MethodGet, "/api/v1/audit/timeline?module=bom", nil)
+	ctx.Set("permissions", []string{authz.MenuEngineering})
+
+	GetDataTimelineHandler(ctx)
+
+	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+
+	var response []models.AuditLog
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Len(t, response, 2)
+	require.Equal(t, "log-bom-2", response[0].ID)
+	require.Equal(t, "log-bom-1", response[1].ID)
+}
+
+func TestGetDataTimelineHandlerAllowsModuleLevelQueryForDrilling(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	setupHandlerSQLiteTestDB(t, &models.AuditLog{})
+
+	require.NoError(t, db.DB.Create(&models.AuditLog{
+		ID:        "log-drilling-1",
+		Module:    "drilling",
+		TargetID:  "drilling-1",
+		Action:    "SAVE",
+		Operator:  "tester",
+		CreatedAt: time.Date(2026, 5, 4, 9, 30, 0, 0, time.UTC),
+	}).Error)
+	require.NoError(t, db.DB.Create(&models.AuditLog{
+		ID:        "log-drilling-2",
+		Module:    "DrillingPlan",
+		TargetID:  "drilling-2",
+		Action:    "PATCH",
+		Operator:  "tester",
+		CreatedAt: time.Date(2026, 5, 4, 10, 0, 0, 0, time.UTC),
+	}).Error)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = httptest.NewRequest(http.MethodGet, "/api/v1/audit/timeline?module=drilling", nil)
+	ctx.Set("permissions", []string{authz.MenuEngineering})
+
+	GetDataTimelineHandler(ctx)
+
+	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+
+	var response []models.AuditLog
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Len(t, response, 2)
+	require.Equal(t, "log-drilling-2", response[0].ID)
+	require.Equal(t, "log-drilling-1", response[1].ID)
+}
+
 func TestGetDataTimelineHandlerReturnsLegacyInventoryLogsForCanonicalInventoryQuery(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	setupHandlerSQLiteTestDB(t, &models.AuditLog{})

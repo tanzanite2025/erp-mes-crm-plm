@@ -4,15 +4,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
     flexRender,
-    getCoreRowModel,
-    getFacetedRowModel,
-    getFacetedUniqueValues,
-    getFilteredRowModel,
-    getPaginationRowModel,
-    getSortedRowModel,
     type PaginationState,
     type Row,
-    useReactTable,
 } from '@tanstack/react-table'
 import { Clock, Download, FileSpreadsheet, Pencil, Plus, Search, Share, UserCheck, UserMinus, X } from 'lucide-react'
 import { toast } from 'sonner'
@@ -20,6 +13,7 @@ import { ConfirmDialog } from '@/components/confirm-dialog'
 import { DataTableFacetedFilter, DataTablePagination } from '@/components/data-table'
 import { DataTableViewOptions } from '@/components/data-table/view-options'
 import { ForbiddenState } from '@/components/forbidden-state'
+import { useUdsTable } from '@/hooks/use-uds-table'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -278,9 +272,13 @@ export function EmployeeManagementList() {
             })
     }, [data, t])
 
-    const table = useReactTable({
+    const table = useUdsTable({
         data,
         columns,
+        mode: 'client',
+        enableSorting: true,
+        enableFiltering: true,
+        enableFaceting: true,
         state: {
             rowSelection,
             columnVisibility,
@@ -291,12 +289,6 @@ export function EmployeeManagementList() {
         onColumnVisibilityChange: setColumnVisibility,
         onGlobalFilterChange: setGlobalFilter,
         onPaginationChange: setPagination,
-        getCoreRowModel: getCoreRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
-        getSortedRowModel: getSortedRowModel(),
-        getFilteredRowModel: getFilteredRowModel(),
-        getFacetedRowModel: getFacetedRowModel(),
-        getFacetedUniqueValues: getFacetedUniqueValues(),
         onRowSelectionChange: setRowSelection,
         getColumnCanGlobalFilter: (column) => {
             const id = column.id

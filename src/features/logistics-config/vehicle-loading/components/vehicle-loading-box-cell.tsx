@@ -1,11 +1,10 @@
+import { ArrowRight } from 'lucide-react'
 import type { BoxCellProps } from './vehicle-loading-diagram-types'
 
 function Arrow({ direction }: { direction: 'horizontal' | 'vertical' }) {
   return (
     <div className={`flex items-center justify-center text-primary/70 ${direction === 'horizontal' ? 'h-4 w-full' : 'h-full w-4 rotate-90'}`}>
-      <svg viewBox='0 0 24 24' className='size-4 fill-current'>
-        <path d='M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z' />
-      </svg>
+      <ArrowRight className='size-4 stroke-[2.5]' />
     </div>
   )
 }

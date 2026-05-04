@@ -130,7 +130,7 @@ export function PackagingAssemblyMobileCapturePage({
           <div className='flex size-20 items-center justify-center rounded-[28px] bg-emerald-500/10 text-emerald-600'>
             <CheckCircle2 className='size-10' />
           </div>
-          <h1 className='mt-6 text-3xl font-black tracking-tight'>{copy.submittedTitle}</h1>
+          <h1 className='mt-6 text-3xl font-black italic tracking-tight'>{copy.submittedTitle}</h1>
           <p className='mt-3 text-sm font-semibold leading-6 text-muted-foreground'>
             {copy.submittedDescription}
           </p>
@@ -148,7 +148,7 @@ export function PackagingAssemblyMobileCapturePage({
               <Smartphone className='size-7' />
             </div>
             <div>
-              <h1 className='text-2xl font-black tracking-tight'>{copy.title}</h1>
+              <h1 className='text-2xl font-black italic tracking-tight'>{copy.title}</h1>
               <p className='mt-1 text-xs font-bold leading-5 text-muted-foreground'>{copy.description}</p>
             </div>
           </div>

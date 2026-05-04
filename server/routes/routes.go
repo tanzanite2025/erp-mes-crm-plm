@@ -103,7 +103,6 @@ func SetupRoutes(r *gin.Engine) {
 			engineeringGroup.POST("/products", adminOnly, handlers.SaveProductHandler)
 			engineeringGroup.PATCH("/products/:id", adminOnly, handlers.PatchProductHandler)
 			engineeringGroup.DELETE("/products/:id", adminOnly, handlers.DeleteProductHandler)
-			engineeringGroup.POST("/products/sync", adminOnly, handlers.BulkSyncProductsHandler)
 			engineeringGroup.GET("/bom", handlers.GetBOMsHandler)
 			engineeringGroup.GET("/bom/:id", handlers.GetBOMHandler)
 			engineeringGroup.POST("/bom", adminOnly, handlers.SaveBOMHandler)
@@ -135,6 +134,7 @@ func SetupRoutes(r *gin.Engine) {
 			engineeringGroup.GET("/specs", handlers.GetEngineeringSpecsHandler)
 			engineeringGroup.GET("/specs/:id", handlers.GetEngineeringSpecHandler)
 			engineeringGroup.POST("/specs", adminOnly, handlers.SaveEngineeringSpecHandler)
+			engineeringGroup.PATCH("/specs/:id", adminOnly, handlers.PatchEngineeringSpecHandler)
 			engineeringGroup.POST("/specs/sync", adminOnly, handlers.BulkSyncEngineeringSpecsHandler)
 			engineeringGroup.DELETE("/specs/:id", adminOnly, handlers.DeleteEngineeringSpecHandler)
 		}

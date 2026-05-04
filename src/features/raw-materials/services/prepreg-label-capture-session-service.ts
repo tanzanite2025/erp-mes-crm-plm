@@ -38,28 +38,6 @@ function normalizeSession(item: Partial<PrepregLabelCaptureSession>): PrepregLab
   }
 }
 
-function apiBaseUrl(): string {
-  return `${import.meta.env.VITE_API_BASE_URL || ''}/api/v1`
-}
-
-async function publicApiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const response = await fetch(`${apiBaseUrl()}${endpoint}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-    },
-  })
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}))
-    const message = (errorData as { error?: string; message?: string }).error ||
-      (errorData as { error?: string; message?: string }).message ||
-      `请求失败：${response.status}`
-    throw new Error(message)
-  }
-  return response.json() as Promise<T>
-}
-
 export const PrepregLabelCaptureSessionService = {
   async create(): Promise<PrepregLabelCaptureSession> {
     const res = await apiFetch<PrepregLabelCaptureSession>('/raw-materials/prepreg-label-ocr-sessions', {
@@ -85,9 +63,10 @@ export const PrepregLabelCaptureSessionService = {
   },
 
   async submit(sessionId: string, input: SubmitPrepregLabelCaptureSessionInput): Promise<PrepregLabelCaptureSession> {
-    const res = await publicApiFetch<PrepregLabelCaptureSession>(
+    const res = await apiFetch<PrepregLabelCaptureSession>(
       `/raw-materials/prepreg-label-ocr-sessions/${sessionId}/submit`,
       {
+        ignoreBreaker: true,
         method: 'POST',
         body: JSON.stringify({
           token: input.token,

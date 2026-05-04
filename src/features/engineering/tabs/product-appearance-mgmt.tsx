@@ -34,6 +34,7 @@ export function ProductAppearanceMgmt() {
   const { t } = useLanguage()
   const queryClient = useQueryClient()
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [imageInputResetKey, setImageInputResetKey] = useState(0)
   const [currentRow, setCurrentRow] = useState<ProductAppearanceDraft>(EMPTY_FORM)
   const imageInputRef = useRef<HTMLInputElement>(null)
   const dialogShellClasses = buildActionDialogShellClasses({
@@ -114,9 +115,7 @@ export function ProductAppearanceMgmt() {
       imageThumbnailUrl: '',
       imageName: '',
     }))
-    if (imageInputRef.current) {
-      imageInputRef.current.value = ''
-    }
+    setImageInputResetKey((current) => current + 1)
   }
 
   const handleSave = async () => {
@@ -455,6 +454,7 @@ export function ProductAppearanceMgmt() {
                     </button>
                   )}
                   <input
+                    key={imageInputResetKey}
                     ref={imageInputRef}
                     type='file'
                     accept='image/*'

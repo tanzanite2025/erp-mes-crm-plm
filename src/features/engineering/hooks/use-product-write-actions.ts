@@ -1,11 +1,27 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { type Product } from '../data/schema'
-import { type SaveProductInput, type SaveProductOperation } from '../mutation-types'
-import { PRODUCTS_QUERY_KEY } from '../query-keys'
+import { type SaveProductOperation } from '../mutation-types'
+import {
+  isProductDetailQueryKey,
+  productListQueryKeyPrefix,
+  productManagementQueryKey,
+  productOptionsQueryKey,
+} from '../query-keys'
 import { ProductMaintenanceService } from '../services/product-maintenance-service'
 
 export function useProductWriteActions() {
   const queryClient = useQueryClient()
+
+  const invalidateProductQueries = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: productManagementQueryKey() }),
+      queryClient.invalidateQueries({ queryKey: productOptionsQueryKey() }),
+      queryClient.invalidateQueries({ queryKey: productListQueryKeyPrefix() }),
+      queryClient.invalidateQueries({
+        predicate: (query) => isProductDetailQueryKey(query.queryKey),
+      }),
+    ])
+  }
 
   const saveProductsMutation = useMutation({
     mutationFn: async (products: SaveProductOperation[]) => {
@@ -16,30 +32,21 @@ export function useProductWriteActions() {
       return savedProducts
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: PRODUCTS_QUERY_KEY })
-    },
-  })
-
-  const syncProductsMutation = useMutation({
-    mutationFn: (products: SaveProductInput[]) => ProductMaintenanceService.bulkSyncProducts(products),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: PRODUCTS_QUERY_KEY })
+      await invalidateProductQueries()
     },
   })
 
   const deleteProductMutation = useMutation({
     mutationFn: (id: string) => ProductMaintenanceService.deleteProduct(id),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: PRODUCTS_QUERY_KEY })
+      await invalidateProductQueries()
     },
   })
 
   return {
     saveProducts: saveProductsMutation.mutateAsync,
-    syncProducts: syncProductsMutation.mutateAsync,
     deleteProduct: deleteProductMutation.mutateAsync,
     isSavingProducts: saveProductsMutation.isPending,
-    isSyncingProducts: syncProductsMutation.isPending,
     isDeletingProduct: deleteProductMutation.isPending,
   }
 }

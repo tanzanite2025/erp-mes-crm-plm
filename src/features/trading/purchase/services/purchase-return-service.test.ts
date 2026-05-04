@@ -27,6 +27,39 @@ describe('PurchaseReturnService', () => {
     )
   })
 
+  it('rejects purchase return payloads that omit lines instead of treating them as empty lists', async () => {
+    apiFetchMock.mockResolvedValue({
+      items: [
+        {
+          id: 'return-1',
+          returnNo: 'PR-001',
+          purchaseOrderId: 'po-1',
+          purchaseOrderNo: 'PO-001',
+          supplierId: 'supplier-1',
+          supplierName: 'Supplier A',
+          status: 'Draft',
+          returnDate: '2026-04-18',
+          issueCategory: 'Quality',
+          reason: 'Scratch',
+          remarks: '',
+          evidences: [],
+          operator: 'buyer',
+          totalQuantity: 1,
+          totalAmount: 10,
+          createdAt: '2026-04-18T00:00:00.000Z',
+          updatedAt: '2026-04-18T00:00:00.000Z',
+        },
+      ],
+      total: 1,
+      page: 1,
+      pageSize: 50,
+    })
+
+    await expect(getPurchaseReturns()).rejects.toThrow(
+      '[INVALID_RESPONSE] PurchaseReturnService.toPurchaseReturnContract expected "lines" to be an array.'
+    )
+  })
+
   it('loads purchase returns from the locked paginated object protocol', async () => {
     apiFetchMock.mockResolvedValue({
       items: [

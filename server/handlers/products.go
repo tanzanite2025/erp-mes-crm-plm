@@ -65,7 +65,7 @@ func SaveProductHandler(c *gin.Context) {
 		return
 	}
 
-	saved, err := services.SaveProduct(input)
+	saved, err := services.SaveProduct(auditContextFromGin(c), input)
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -87,7 +87,7 @@ func PatchProductHandler(c *gin.Context) {
 		return
 	}
 
-	saved, err := services.PatchProduct(id, int(req.Metadata.Version), req.Delta)
+	saved, err := services.PatchProduct(auditContextFromGin(c), id, int(req.Metadata.Version), req.Delta)
 	if err != nil {
 		switch {
 		case errors.Is(err, gorm.ErrRecordNotFound):
@@ -103,7 +103,7 @@ func PatchProductHandler(c *gin.Context) {
 
 func DeleteProductHandler(c *gin.Context) {
 	id := c.Param("id")
-	if err := services.DeleteProduct(id); err != nil {
+	if err := services.DeleteProduct(auditContextFromGin(c), id); err != nil {
 		respondDomainError(c, err, "[SERVER] failed to delete product: ")
 		return
 	}
@@ -120,23 +120,4 @@ func GetNextProductCodeHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"nextCode": nextCode})
-}
-
-func BulkSyncProductsHandler(c *gin.Context) {
-	if !enforceBulkSyncPermissions(c) {
-		return
-	}
-
-	var input services.BulkSyncProductsAPIPayload
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] invalid bulk product payload: " + err.Error()})
-		return
-	}
-
-	if err := services.BulkSyncProducts(input); err != nil {
-		respondDomainError(c, err, "[SERVER] bulk product sync failed: ")
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"status": "success", "count": len(input.Products)})
 }

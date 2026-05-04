@@ -18,6 +18,7 @@ export const tradingSalesOrder = {
   },
   errors: {
     missingActor: "Missing valid trading command actor",
+    missingDetailOrder: "The current order detail context is no longer available. Please refresh and try again.",
     lineProductMissing: "Line {{lineNo}} is not bound to a product, so the order line snapshot cannot be saved."
   },
   detail: {
@@ -80,6 +81,11 @@ export const tradingSalesOrder = {
       warnings: "Warnings",
       loadingInline: "Packaging summary loading",
       error: "Packaging summary error"
+    }
+  },
+  preassembleScan: {
+    toasts: {
+      unresolvedOrderLines: 'There are {{count}} order lines that could not be resolved. Please handle them first: {{preview}}'
     }
   },
   footer: {

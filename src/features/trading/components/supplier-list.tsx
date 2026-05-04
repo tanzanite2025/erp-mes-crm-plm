@@ -40,10 +40,9 @@ import { ForbiddenState } from '@/components/forbidden-state'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { canOpenWeChat, openWeChat } from '@/features/contact-channels'
-import { type Supplier, type SupplierStatus } from '../data/schema'
+import { type Supplier, type SupplierFormValues, type SupplierStatus } from '../data/schema'
 import { tradingQueryKeys } from '../query-keys'
 import { useGetSupplierList, useSupplierMutations } from '../supplier'
-import { buildSupplierSaveSnapshot } from '../supplier/utils/supplier-save-snapshot'
 import { requireTradingCommandActor } from '../utils/command-actor'
 import { SupplierActionDialog } from './supplier-action-dialog'
 
@@ -101,17 +100,19 @@ export function SupplierList() {
   }
 
   const handleSaveSupplier = (payload: {
-    data: Partial<Supplier>
-    isPatch: boolean
-    delta?: DeltaSet
+    mode: 'create'
+    data: SupplierFormValues
+  } | {
+    mode: 'edit'
+    delta: DeltaSet
+    finalData: Supplier
   }) => {
     if (!allowsAction('action_trading_supplier_manage')) return
 
-    if (payload.isPatch && payload.delta && selectedSupplier) {
-      const finalData = buildSupplierSaveSnapshot(
-        selectedSupplier,
-        payload.data
-      )
+    if (payload.mode === 'edit') {
+      if (!selectedSupplier) {
+        return
+      }
       const actor = requireTradingCommandActor(
         { operator: user?.accountNo, actorId: user?.id },
         'SupplierList.handleSaveSupplier'
@@ -119,13 +120,16 @@ export function SupplierList() {
       saveMutation.mutate({
         id: selectedSupplier.id,
         delta: payload.delta,
-        finalData,
+        finalData: payload.finalData,
         operator: actor.operator,
         actorId: actor.actorId,
         expectedVersion: selectedSupplier.version,
       })
-    } else {
-      createMutation.mutate(payload.data as Omit<Supplier, 'id' | 'version'>)
+      return
+    }
+
+    if (payload.mode === 'create') {
+      createMutation.mutate(payload.data)
     }
   }
 

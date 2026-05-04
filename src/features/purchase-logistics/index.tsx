@@ -9,22 +9,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
-import {
-  getPurchaseLogisticsOfflineDraftsSnapshot,
-  removePurchaseLogisticsOfflineDraft,
-  subscribePurchaseLogisticsOfflineDrafts,
-  syncPurchaseLogisticsOfflineDrafts,
-} from './services/purchase-logistics-offline-draft-service'
+import { usePurchaseLogisticsOfflineDrafts } from './hooks/use-purchase-logistics-offline-drafts'
 import { PurchaseLogisticsList } from './purchase-logistics-list'
+import { PURCHASE_LOGISTICS_KEYS } from './query-keys'
 
 export function PurchaseLogisticsPage() {
   const { t } = useLanguage()
   const queryClient = useQueryClient()
-  const drafts = React.useSyncExternalStore(
-    subscribePurchaseLogisticsOfflineDrafts,
-    getPurchaseLogisticsOfflineDraftsSnapshot,
-    () => []
-  )
+  const { drafts, removeDraft, syncDrafts } = usePurchaseLogisticsOfflineDrafts()
   const [isOnline, setIsOnline] = React.useState(() =>
     typeof navigator === 'undefined' ? true : navigator.onLine
   )
@@ -41,10 +33,10 @@ export function PurchaseLogisticsPage() {
       setIsSyncing(true)
 
       try {
-        const result = await syncPurchaseLogisticsOfflineDrafts()
+        const result = await syncDrafts()
 
         if (result.syncedCount > 0) {
-          queryClient.invalidateQueries({ queryKey: ['purchase-logistics-list'] })
+          queryClient.invalidateQueries({ queryKey: PURCHASE_LOGISTICS_KEYS.listRoot })
           toast.success(t('purchase.logistics.offlineSyncSuccess'), {
             description: t('purchase.logistics.offlineSyncSuccessDesc', { count: result.syncedCount }),
             icon: <Truck className='h-4 w-4' />,
@@ -64,7 +56,7 @@ export function PurchaseLogisticsPage() {
         setIsSyncing(false)
       }
     },
-    [queryClient, t]
+    [queryClient, syncDrafts, t]
   )
 
   React.useEffect(() => {
@@ -205,7 +197,7 @@ export function PurchaseLogisticsPage() {
                     variant='ghost'
                     size='icon'
                     onClick={() => {
-                      removePurchaseLogisticsOfflineDraft(draft.id)
+                      void removeDraft(draft.id)
                       toast.success(t('purchase.logistics.offlineDraftRemoved'))
                     }}
                     className='size-8 rounded-full text-slate-400 hover:bg-rose-50 hover:text-rose-600'

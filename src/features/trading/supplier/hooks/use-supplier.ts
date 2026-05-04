@@ -3,7 +3,7 @@ import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { handleServerError } from '@/lib/handle-server-error'
 import { type DeltaSet } from '@/lib/delta/types'
-import { type Supplier } from '../../data/schema'
+import { type Supplier, type SupplierFormValues } from '../../data/schema'
 import { tradingQueryKeys } from '../../query-keys'
 import { changeSupplierIdentity, changeSupplierStatus, createSupplier, deleteSupplier, getSupplierList, getSuppliers, patchSupplier, saveSupplier } from '../services/supplier-service'
 
@@ -28,7 +28,7 @@ export const useSupplierMutations = () => {
   const queryClient = useQueryClient()
 
   const createMutation = useMutation({
-    mutationFn: (data: Omit<Supplier, 'id' | 'version'>) => {
+    mutationFn: (data: SupplierFormValues) => {
       return createSupplier(data)
     },
     onSuccess: () => {

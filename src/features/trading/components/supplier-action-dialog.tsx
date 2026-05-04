@@ -12,16 +12,27 @@ import { Textarea } from '@/components/ui/textarea'
 import { useLanguage } from '@/context/language-provider'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
-import { type Supplier, type SupplierStatus } from '../data/schema'
+import { type Supplier, type SupplierFormValues, type SupplierStatus } from '../data/schema'
 import { type DeltaSet } from '@/lib/delta/types'
 import { useSupplierActionViewModel } from '../hooks/use-supplier-action-view-model'
 import { buildSupplierSaveSnapshot } from '../supplier/utils/supplier-save-snapshot'
+
+type SupplierSavePayload =
+  | {
+      mode: 'create'
+      data: SupplierFormValues
+    }
+  | {
+      mode: 'edit'
+      delta: DeltaSet
+      finalData: Supplier
+    }
 
 interface SupplierActionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   supplier?: Supplier | null
-  onSave: (payload: { data: Partial<Supplier>; isPatch: boolean; delta?: DeltaSet }) => void
+  onSave: (payload: SupplierSavePayload) => void
 }
 
 export function SupplierActionDialog({
@@ -58,7 +69,7 @@ export function SupplierActionDialog({
   const handleSave = () => {
     const isPatch = !!supplier
     const delta = tracker.commit()
-    const snapshot = JSON.parse(JSON.stringify(formData)) as Partial<Supplier>
+    const snapshot = structuredClone(formData)
     const nextData = buildSupplierSaveSnapshot(supplier, snapshot)
     
     if (isPatch && Object.keys(delta).length === 0) {
@@ -66,11 +77,18 @@ export function SupplierActionDialog({
       return
     }
 
-    onSave({ 
-        data: nextData, 
-        isPatch, 
-        delta: isPatch ? delta : undefined 
-    })
+    if (isPatch) {
+      onSave({
+        mode: 'edit',
+        delta,
+        finalData: nextData as Supplier,
+      })
+    } else {
+      onSave({
+        mode: 'create',
+        data: nextData as SupplierFormValues,
+      })
+    }
     setProductInput('')
     handleDialogOpenChange(false)
   }

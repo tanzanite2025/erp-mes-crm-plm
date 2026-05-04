@@ -4,10 +4,6 @@ import { useEffect, useMemo, useState } from 'react'
 import {
     type ColumnDef,
     flexRender,
-    getCoreRowModel,
-    getPaginationRowModel,
-    getSortedRowModel,
-    useReactTable,
 } from '@tanstack/react-table'
 import { Search, FileText, Eye, ArrowUpRight, Hash, Clock } from 'lucide-react'
 import { useNavigate } from '@tanstack/react-router'
@@ -24,6 +20,7 @@ import {
     TableRow,
 } from '@/components/ui/table'
 import { DataTablePagination } from '@/components/data-table'
+import { useUdsClientTable } from '@/hooks/use-uds-table'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { Badge } from '@/components/ui/badge'
 import { FileResolverService } from '../services/file-resolver-service'
@@ -209,12 +206,9 @@ export function OverviewTab() {
         }
     ]
 
-    const table = useReactTable({
+    const table = useUdsClientTable({
         data: filteredData,
         columns,
-        getCoreRowModel: getCoreRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
-        getSortedRowModel: getSortedRowModel(),
     })
 
     return (

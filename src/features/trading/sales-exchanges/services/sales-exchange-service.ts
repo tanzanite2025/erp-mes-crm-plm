@@ -100,9 +100,11 @@ function toSalesExchangeLineContract(
     replacementProductModel: dto.replacementProductModel,
     issueCategory: dto.issueCategory,
     issueDescription: dto.issueDescription,
-    recognizedLabelCodes: (dto.recognizedLabelCodes ?? []).map(
-      toRecognizedLabelContract
-    ),
+    recognizedLabelCodes: ensureArrayField<SalesExchangeRecognizedLabelApiDTO>(
+      dto,
+      'recognizedLabelCodes',
+      'SalesExchangeService.toSalesExchangeLineContract'
+    ).map(toRecognizedLabelContract),
   }
 }
 
@@ -129,10 +131,16 @@ function toSalesExchangeContract(
     totalExchangeQuantity: dto.totalExchangeQuantity,
     createdAt: dto.createdAt,
     updatedAt: dto.updatedAt,
-    lines: (dto.lines ?? []).map(toSalesExchangeLineContract),
-    unmatchedLabelCodes: (dto.unmatchedLabelCodes ?? []).map(
-      toUnmatchedLabelContract
-    ),
+    lines: ensureArrayField<SalesExchangeLineApiDTO>(
+      dto,
+      'lines',
+      'SalesExchangeService.toSalesExchangeContract'
+    ).map(toSalesExchangeLineContract),
+    unmatchedLabelCodes: ensureArrayField<SalesExchangeUnmatchedLabelApiDTO>(
+      dto,
+      'unmatchedLabelCodes',
+      'SalesExchangeService.toSalesExchangeContract'
+    ).map(toUnmatchedLabelContract),
   }
 }
 
@@ -275,6 +283,10 @@ export async function confirmSalesExchangeOldItemInbound(
 
   return {
     salesExchange: toSalesExchangeContract(response.salesExchange),
-    createdInboundRecords: response.createdInboundRecords ?? [],
+    createdInboundRecords: ensureArrayField<unknown>(
+      response,
+      'createdInboundRecords',
+      'SalesExchangeService.confirmSalesExchangeOldItemInbound'
+    ),
   }
 }

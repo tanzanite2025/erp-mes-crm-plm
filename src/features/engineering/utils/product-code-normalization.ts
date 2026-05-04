@@ -3,7 +3,7 @@ import {
   normalizeChangeOrderNo,
   normalizeBomNo,
   normalizeBomChangeType,
-  normalizeBomEffectiveDate,
+  normalizeEngineeringDateProtocol,
   normalizeBomStatus,
   normalizeBomVersion,
   normalizeMachineCode,
@@ -172,7 +172,7 @@ export function normalizeEngineeringBomStatus(
 }
 
 export function normalizeEngineeringBomEffectiveDate(value?: string | null): string {
-  return normalizeBomEffectiveDate(value)
+  return normalizeEngineeringDateProtocol(value)
 }
 
 export function normalizeBOMControlFieldPatch<T extends {

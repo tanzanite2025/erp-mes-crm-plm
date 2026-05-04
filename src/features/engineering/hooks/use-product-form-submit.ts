@@ -77,35 +77,12 @@ export function useProductFormSubmit({
 
     let savedProducts: Product[] | void = undefined
 
-    if (submitPayload.mode === 'batch') {
-      toast.loading(
-        t('engineering.productArchive.toasts.batchSaving', {
-          count: submitPayload.productsToSave.length,
-        }),
-        { id: 'batch-save' }
-      )
+    if (submitPayload.mode === 'multi-variant') {
+      toast.error(t('engineering.productArchive.toasts.multiVariantSingleSubmitOnly'))
+      return
+    }
 
-      try {
-        if (onSubmit) {
-          savedProducts = await onSubmit({
-            products: submitPayload.productsToSave,
-          })
-        }
-
-        toast.success(
-          t('engineering.productArchive.toasts.batchSaveSuccess', {
-            count: submitPayload.productsToSave.length,
-          }),
-          { id: 'batch-save' }
-        )
-      } catch (error) {
-        failLoudly(error, 'ProductFormSubmit.batchSave')
-        toast.error(t('engineering.productArchive.toasts.batchSaveFailed'), {
-          id: 'batch-save',
-        })
-        return
-      }
-    } else if (submitPayload.mode === 'variant' || submitPayload.mode === 'edit') {
+    if (submitPayload.mode === 'variant' || submitPayload.mode === 'edit') {
       const [finalData] = submitPayload.productsToSave
 
       if (!finalData) {

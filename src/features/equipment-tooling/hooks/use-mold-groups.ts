@@ -2,14 +2,14 @@
 
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { productOptionsQueryKey } from '@/features/engineering/query-keys'
 import { ProductCoreService } from '@/features/engineering/services/product-core-service'
-import { PRODUCTS_QUERY_KEY } from '@/features/engineering/query-keys'
 import { type Mold } from '../data/schema'
 
 export function useMoldGroups(molds: Mold[], searchTerm: string) {
   const { data: products = [], isLoading } = useQuery({
-    queryKey: PRODUCTS_QUERY_KEY,
-    queryFn: () => ProductCoreService.getProducts(),
+    queryKey: productOptionsQueryKey(),
+    queryFn: () => ProductCoreService.getProducts({ isOptions: true }),
   })
 
   const normalizedSearchTerm = searchTerm.toLowerCase()

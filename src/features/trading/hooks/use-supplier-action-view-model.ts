@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { type Supplier, type SupplierStatus } from '../data/schema'
+import { type Supplier, type SupplierFormValues, type SupplierStatus } from '../data/schema'
 import type { TranslationKey } from '@/locales'
 
 interface SupplierActionViewModelOptions {
@@ -13,7 +13,7 @@ interface SupplierOption {
 }
 
 const DEFAULT_CATEGORY = '原材料'
-const DEFAULT_FORM_DATA: Partial<Supplier> = {
+const DEFAULT_FORM_DATA: SupplierFormValues = {
   name: '',
   code: '',
   category: DEFAULT_CATEGORY,
@@ -32,7 +32,29 @@ const DEFAULT_FORM_DATA: Partial<Supplier> = {
 }
 
 export function useSupplierActionViewModel({ supplier, t }: SupplierActionViewModelOptions) {
-  const initialFormData = useMemo(() => (supplier ? supplier : DEFAULT_FORM_DATA), [supplier])
+  const initialFormData = useMemo<SupplierFormValues>(
+    () =>
+      supplier
+        ? {
+            name: supplier.name,
+            code: supplier.code,
+            category: supplier.category,
+            mainProducts: supplier.mainProducts,
+            contactPerson: supplier.contactPerson,
+            contactPhone: supplier.contactPhone,
+            wechat: supplier.wechat,
+            whatsapp: supplier.whatsapp,
+            facebook: supplier.facebook,
+            instagram: supplier.instagram,
+            telegram: supplier.telegram,
+            email: supplier.email,
+            address: supplier.address,
+            status: supplier.status,
+            rating: supplier.rating,
+          }
+        : DEFAULT_FORM_DATA,
+    [supplier]
+  )
   const categoryOptions = useMemo<SupplierOption[]>(
     () => [
       { value: '原材料', label: t('purchase.suppliers.categories.rawMaterial') },

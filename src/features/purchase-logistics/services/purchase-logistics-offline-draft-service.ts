@@ -1,8 +1,8 @@
 import { PurchaseLogisticsService } from './purchase-logistics-service'
+import { StorageService } from '@/features/system-mgmt/services/storage-service'
 import { createLogger } from '@/lib/logger'
 
-const PURCHASE_LOGISTICS_DRAFT_KEY = 'xdfc_purchase_logistics_offline_drafts_v1'
-const PURCHASE_LOGISTICS_DRAFT_EVENT = 'xdfc:purchase-logistics-offline-drafts'
+export const PURCHASE_LOGISTICS_DRAFT_KEY = 'xdfc_purchase_logistics_offline_drafts_v1'
 const PURCHASE_LOGISTICS_DRAFT_LIMIT = 200
 
 const logger = createLogger('PurchaseLogisticsOfflineDrafts')
@@ -10,14 +10,24 @@ const logger = createLogger('PurchaseLogisticsOfflineDrafts')
 // 【单例 Store】物理内存镜像，确保引用稳定性情况情况总量针对。情况总量情况情况情况情况。
 let draftsSnapshot: PurchaseLogisticsOfflineDraft[] = []
 let isInitialized = false
+let initializationPromise: Promise<void> | null = null
 
 /**
  * 确保单例初始化：仅在首次访问或外部变化时从持久层同步情况情况总量针对。情况总量情况情况情况情况。
  */
-function ensureInitialized() {
+async function ensureInitialized() {
   if (isInitialized) return
-  draftsSnapshot = readDrafts()
-  isInitialized = true
+  if (!initializationPromise) {
+    initializationPromise = readDrafts()
+      .then((drafts) => {
+        draftsSnapshot = drafts
+        isInitialized = true
+      })
+      .finally(() => {
+        initializationPromise = null
+      })
+  }
+  await initializationPromise
 }
 
 export interface PurchaseLogisticsOfflineDraftInput {
@@ -48,16 +58,11 @@ interface ApiLikeError extends Error {
 }
 
 function canUseStorage() {
-  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
+  return typeof window !== 'undefined' && typeof indexedDB !== 'undefined'
 }
 
 function isOnline() {
   return typeof navigator === 'undefined' ? true : navigator.onLine
-}
-
-function emitDraftsChanged() {
-  if (typeof window === 'undefined') return
-  window.dispatchEvent(new Event(PURCHASE_LOGISTICS_DRAFT_EVENT))
 }
 
 function buildDraftId() {
@@ -100,15 +105,14 @@ function normalizeDraft(
   }
 }
 
-function readDrafts() {
+async function readDrafts() {
   if (!canUseStorage()) return []
 
   try {
-    const raw = window.localStorage.getItem(PURCHASE_LOGISTICS_DRAFT_KEY)
+    const raw = await StorageService.getItem<unknown>(PURCHASE_LOGISTICS_DRAFT_KEY)
     if (!raw) return []
-    const parsed = JSON.parse(raw)
-    if (!Array.isArray(parsed)) return []
-    return parsed
+    if (!Array.isArray(raw)) return []
+    return raw
       .map((item) => normalizeDraft(item || {}))
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
   } catch (error) {
@@ -120,7 +124,7 @@ function readDrafts() {
 /**
  * 核心写入逻辑：仅在数据发生实质变化时更新内存引用并触发派发事件情况情况总量针对。
  */
-function writeDrafts(drafts: PurchaseLogisticsOfflineDraft[]) {
+async function writeDrafts(drafts: PurchaseLogisticsOfflineDraft[]) {
   if (!canUseStorage()) return
 
   try {
@@ -137,51 +141,29 @@ function writeDrafts(drafts: PurchaseLogisticsOfflineDraft[]) {
       return
     }
 
-    window.localStorage.setItem(PURCHASE_LOGISTICS_DRAFT_KEY, nextSerialized)
+    await StorageService.setItem(PURCHASE_LOGISTICS_DRAFT_KEY, normalized)
     draftsSnapshot = normalized
     isInitialized = true
-    emitDraftsChanged()
   } catch (error) {
     logger.error('Failed to write drafts', error)
   }
 }
 
-export function listPurchaseLogisticsOfflineDrafts() {
-  ensureInitialized()
+export function invalidatePurchaseLogisticsOfflineDraftCache() {
+  isInitialized = false
+  initializationPromise = null
+}
+
+export async function listPurchaseLogisticsOfflineDrafts() {
+  await ensureInitialized()
   return draftsSnapshot
 }
 
-/**
- * getSnapshot 物理引用返回：直接返回内存单例，确保 Object.is 检测通过情况情况总量针对。
- */
-export function getPurchaseLogisticsOfflineDraftsSnapshot() {
-  ensureInitialized()
-  return draftsSnapshot
-}
-
-export function subscribePurchaseLogisticsOfflineDrafts(onStoreChange: () => void) {
-  if (typeof window === 'undefined') return () => undefined
-
-  const handleChange = () => {
-    // 外部变更时强制重载
-    isInitialized = false
-    ensureInitialized()
-    onStoreChange()
-  }
-  window.addEventListener(PURCHASE_LOGISTICS_DRAFT_EVENT, handleChange)
-  window.addEventListener('storage', handleChange)
-
-  return () => {
-    window.removeEventListener(PURCHASE_LOGISTICS_DRAFT_EVENT, handleChange)
-    window.removeEventListener('storage', handleChange)
-  }
-}
-
-export function queuePurchaseLogisticsOfflineDraft(
+export async function queuePurchaseLogisticsOfflineDraft(
   input: PurchaseLogisticsOfflineDraftInput,
   lastError?: string
 ) {
-  const drafts = readDrafts()
+  const drafts = await readDrafts()
   const normalized = normalizeDraft({
     ...input,
     lastError,
@@ -201,16 +183,17 @@ export function queuePurchaseLogisticsOfflineDraft(
       attempts: 0,
       syncStatus: 'pending',
     })
-    writeDrafts([nextDraft, ...drafts.filter((draft) => draft.id !== existing.id)])
+    await writeDrafts([nextDraft, ...drafts.filter((draft) => draft.id !== existing.id)])
     return nextDraft
   }
 
-  writeDrafts([normalized, ...drafts])
+  await writeDrafts([normalized, ...drafts])
   return normalized
 }
 
-export function removePurchaseLogisticsOfflineDraft(id: string) {
-  writeDrafts(readDrafts().filter((draft) => draft.id !== id))
+export async function removePurchaseLogisticsOfflineDraft(id: string) {
+  const drafts = await readDrafts()
+  await writeDrafts(drafts.filter((draft) => draft.id !== id))
 }
 
 export function shouldQueuePurchaseLogisticsOfflineDraft(error: unknown) {
@@ -226,7 +209,7 @@ export function shouldQueuePurchaseLogisticsOfflineDraft(error: unknown) {
 }
 
 export async function syncPurchaseLogisticsOfflineDrafts(): Promise<SyncPurchaseLogisticsOfflineDraftsResult> {
-  const drafts = readDrafts()
+  const drafts = await readDrafts()
 
   if (!isOnline() || drafts.length === 0) {
     return {
@@ -269,7 +252,7 @@ export async function syncPurchaseLogisticsOfflineDrafts(): Promise<SyncPurchase
     }
   }
 
-  writeDrafts(nextDrafts)
+  await writeDrafts(nextDrafts)
 
   return {
     syncedCount,

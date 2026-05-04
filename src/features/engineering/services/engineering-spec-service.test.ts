@@ -22,6 +22,18 @@ const engineeringSpec = {
   _v: 1,
 }
 
+const engineeringSpecContract = {
+  id: 'spec-1',
+  name: 'Drilling plan 1',
+  code: 'DRILL-001',
+  type: 'DRILLING_PLAN',
+  active: true,
+  drillingData: {
+    name: 'Drilling plan 1',
+  },
+  version: 1,
+}
+
 const weavingModeSpecWithNullBuckets = {
   id: 'spec-2',
   name: '2x2 Weaving',
@@ -40,6 +52,19 @@ const weavingModeSpecWithNullBuckets = {
   _v: 1,
 }
 
+const weavingModeSpecContract = {
+  id: 'spec-2',
+  name: '2x2 Weaving',
+  code: 'WEAVE-2X2',
+  type: 'WEAVING_MODE',
+  active: true,
+  specData: {
+    code: 'WEAVE-2X2',
+    label: '2x2 Weaving',
+  },
+  version: 1,
+}
+
 beforeEach(() => {
   apiFetchMock.mockReset()
 })
@@ -51,7 +76,7 @@ describe('engineeringSpecService.getSpecs', () => {
     const result = await engineeringSpecService.getSpecs('DRILLING_PLAN')
 
     expect(apiFetchMock).toHaveBeenCalledWith('/engineering/specs?options=true&type=DRILLING_PLAN')
-    expect(result).toEqual([engineeringSpec])
+    expect(result).toEqual([engineeringSpecContract])
   })
 
   it('accepts the paginated list response returned by the management endpoint', async () => {
@@ -65,7 +90,7 @@ describe('engineeringSpecService.getSpecs', () => {
     const result = await engineeringSpecService.getSpecs()
 
     expect(apiFetchMock).toHaveBeenCalledWith('/engineering/specs?options=true')
-    expect(result).toEqual([engineeringSpec])
+    expect(result).toEqual([engineeringSpecContract])
   })
 
   it('normalizes null buckets returned by the list endpoint', async () => {
@@ -73,20 +98,7 @@ describe('engineeringSpecService.getSpecs', () => {
 
     const result = await engineeringSpecService.getSpecs('WEAVING_MODE')
 
-    expect(result).toEqual([
-      {
-        id: 'spec-2',
-        name: '2x2 Weaving',
-        code: 'WEAVE-2X2',
-        type: 'WEAVING_MODE',
-        active: true,
-        specData: {
-          code: 'WEAVE-2X2',
-          label: '2x2 Weaving',
-        },
-        _v: 1,
-      },
-    ])
+    expect(result).toEqual([weavingModeSpecContract])
   })
 })
 
@@ -103,7 +115,7 @@ describe('engineeringSpecService.saveSpec', () => {
         code: 'WEAVE-2X2',
         label: '2x2 Weaving',
       },
-      _v: 1,
+      version: 1,
     })
 
     expect(apiFetchMock).toHaveBeenCalledTimes(1)
@@ -134,7 +146,7 @@ describe('engineeringSpecService.saveSpec', () => {
         code: 'WEAVE-2X2',
         label: '2x2 Weaving',
       },
-      _v: 1,
+      version: 1,
     })
   })
 })

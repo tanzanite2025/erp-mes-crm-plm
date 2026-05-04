@@ -1,8 +1,22 @@
 import { apiFetch } from '@/lib/api-client'
-import { ensureObjectResponse } from '@/lib/api-response'
+import { ensureArrayField, ensureObjectResponse } from '@/lib/api-response'
 import { createLogger } from '@/lib/logger'
+import { type NumberingRule } from '../data/schema'
 
 const logger = createLogger('NumberingService')
+
+function normalizeNumberingRule(input: Record<string, unknown>): NumberingRule {
+    return {
+        id: typeof input.id === 'string' ? input.id : undefined,
+        ruleKey: String(input.ruleKey ?? '').trim(),
+        prefix: typeof input.prefix === 'string' ? input.prefix : undefined,
+        pattern: String(input.pattern ?? '').trim(),
+        currentSeq: Number(input.currentSeq ?? 0),
+        padding: Number(input.padding ?? 4),
+        resetPeriod: ((String(input.resetPeriod ?? 'MONTHLY').trim() || 'MONTHLY') as NumberingRule['resetPeriod']),
+        lastReset: typeof input.lastReset === 'string' ? input.lastReset : undefined,
+    }
+}
 
 class NumberingService {
     private isInitialized = false
@@ -38,6 +52,37 @@ class NumberingService {
         const now = new Date()
         const yymm = `${now.getFullYear().toString().slice(-2)}${(now.getMonth() + 1).toString().padStart(2, '0')}`
         return `${entityCode}${classificationAlias}${yymm}****`
+    }
+
+    async getRules(): Promise<NumberingRule[]> {
+        if (!this.isInitialized) await this.init()
+
+        try {
+            const res = await apiFetch<Record<string, unknown> | Record<string, unknown>[]>('/numbering/rules')
+            if (Array.isArray(res)) {
+                return res.map((item) => normalizeNumberingRule(item))
+            }
+
+            const payload = ensureObjectResponse(res, 'NumberingService.getRules')
+            return ensureArrayField<Record<string, unknown>>(payload, 'items', 'NumberingService.getRules.items').map(normalizeNumberingRule)
+        } catch (error) {
+            logger.error('Failed to load numbering rules', error)
+            throw error
+        }
+    }
+
+    async saveRule(input: Partial<NumberingRule>): Promise<void> {
+        if (!this.isInitialized) await this.init()
+
+        try {
+            await apiFetch('/numbering/rules', {
+                method: 'POST',
+                body: JSON.stringify(input),
+            })
+        } catch (error) {
+            logger.error('Failed to save numbering rule', error)
+            throw error
+        }
     }
 
     previewSequence(padding: number = 4): string {

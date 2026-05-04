@@ -1,7 +1,16 @@
 import { z } from 'zod'
+import {
+    entityIdentitySchema,
+    entityOptionalActorAuditSchema,
+    entityOptionalTimestampAuditSchema,
+    entityVersionSchema,
+} from '@/lib/schema/base-entity-schema'
 
-export const employeeSchema = z.object({
-    id: z.string(),
+export const employeeSchema = entityIdentitySchema
+    .merge(entityOptionalTimestampAuditSchema)
+    .merge(entityOptionalActorAuditSchema)
+    .merge(entityVersionSchema)
+    .extend({
     staffId: z.string().optional(),
     name: z.string(),
     phone: z.string(),
@@ -27,11 +36,6 @@ export const employeeSchema = z.object({
     lineName: z.string().optional(),
     processName: z.string().optional(),
     positionName: z.string().optional(),
-    createdAt: z.string().optional(),
-    updatedAt: z.string().optional(),
-    createdBy: z.string().optional(),
-    updatedBy: z.string().optional(),
-    version: z.number().default(1),
 })
 
 export const employeeStatusSchema = z.enum(['active', 'resigned', 'on-leave'])
@@ -39,12 +43,12 @@ export type EmployeeStatus = z.infer<typeof employeeStatusSchema>
 
 export type Employee = z.infer<typeof employeeSchema>
 
-export const jobTypeSchema = z.object({
-    id: z.string(),
+export const jobTypeSchema = entityIdentitySchema
+    .merge(entityVersionSchema)
+    .extend({
     name: z.string().min(1, 'orgPersonnel.validation.jobNameRequired'),
     code: z.string().min(1, 'orgPersonnel.validation.jobCodeRequired'),
     description: z.string().optional(),
-    version: z.number().default(1),
 })
 
 export type JobType = z.infer<typeof jobTypeSchema>
@@ -52,8 +56,9 @@ export type JobType = z.infer<typeof jobTypeSchema>
 export const teamTypeSchema = z.enum(['dispatch', 'quality', 'transfer', 'receive'])
 export type TeamType = z.infer<typeof teamTypeSchema>
 
-export const teamSchema = z.object({
-    id: z.string(),
+export const teamSchema = entityIdentitySchema
+    .merge(entityVersionSchema)
+    .extend({
     code: z.string().min(1, 'orgPersonnel.validation.teamCodeRequired'),
     name: z.string().min(1, 'orgPersonnel.validation.teamNameRequired'),
     shortName: z.string().optional(),
@@ -65,7 +70,6 @@ export const teamSchema = z.object({
     remarks: z.string().optional(),
     operator: z.string().optional(),
     operateTime: z.string().optional(),
-    version: z.number().default(1),
 })
 
 export type Team = z.infer<typeof teamSchema>

@@ -1,7 +1,9 @@
 'use client'
 
 import { CircleDot, Save } from 'lucide-react'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { Button } from '@/components/ui/button'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import type { DeltaSet } from '@/lib/delta/types'
 import { type DrillingPlan, type DrillingPlanInput } from '../data/schema'
 import { ActionDialogShell } from '@/components/action-dialog-shell'
@@ -95,6 +97,15 @@ export function DrillingActionDialog({
             Sync_to_Manufacturing_Module
           </p>
           <div className="flex items-center gap-3">
+            {isEdit && currentRow?.id ? (
+              <AuditTimelineTriggerButton
+                module={AUDIT_MODULES.drilling}
+                targetId={currentRow.id}
+                targetName={currentRow.name}
+                label='审计'
+                className='h-11 rounded-full px-5'
+              />
+            ) : null}
             <Button 
               variant="ghost" 
               onClick={() => onOpenChange(false)} 

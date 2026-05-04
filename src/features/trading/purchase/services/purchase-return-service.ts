@@ -116,7 +116,11 @@ function toPurchaseReturnContract(dto: PurchaseReturnApiDTO): PurchaseReturnReco
     totalAmount: dto.totalAmount,
     createdAt: dto.createdAt,
     updatedAt: dto.updatedAt,
-    lines: (dto.lines ?? []).map(toPurchaseReturnLineContract),
+    lines: ensureArrayField<PurchaseReturnLineApiDTO>(
+      dto,
+      'lines',
+      'PurchaseReturnService.toPurchaseReturnContract'
+    ).map(toPurchaseReturnLineContract),
   }
 }
 

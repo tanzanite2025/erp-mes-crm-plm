@@ -27,16 +27,16 @@ export function useSalesOrderForm(
   )
 
   const memoizedInitial = useMemo<SalesOrderFormValues>(() => initialFormData, [initialFormData])
-  const { data: formData, commit, isDirty } = useDeltaTracker(memoizedInitial, open)
+  const { data: formData, commit, replace, isDirty } = useDeltaTracker(memoizedInitial, open)
 
   const setFormData = useCallback((updater: SalesOrderFormUpdater) => {
     if (typeof updater === 'function') {
       const next = updater(formData)
-      Object.assign(formData, next)
+      replace(next)
     } else {
-      Object.assign(formData, updater)
+      replace(updater)
     }
-  }, [formData])
+  }, [formData, replace])
 
   const { handleAddLine, handleRemoveLine, updateLine } = useSalesOrderOps(setFormData)
 

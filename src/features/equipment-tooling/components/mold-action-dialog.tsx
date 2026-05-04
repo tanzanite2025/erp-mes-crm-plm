@@ -5,17 +5,11 @@ import { Link } from '@tanstack/react-router'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
 } from '@/components/ui/dialog'
+import { ActionDialogShell } from '@/components/action-dialog-shell'
 import { auditUtils } from '@/lib/audit-utils'
 import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
-import { cn } from '@/lib/utils'
 import {
     Form,
     FormControl,
@@ -45,6 +39,7 @@ import { toast } from 'sonner'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { useLanguage } from '@/context/language-provider'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
+import { UdsHealthProgress } from '@/components/uds/uds-health-progress'
 import { type DeltaSet } from '@/lib/delta/types'
 import { useMoldGroupsQuery } from '../hooks/use-mold-groups-query'
 import { useMoldDrawingsQuery } from '../hooks/use-mold-drawings-query'
@@ -70,8 +65,7 @@ export function MoldActionDialog({
     const moldFormSchema = useMemo(() => createMoldSchema(t), [t])
     const defaultDraft = useMemo(() => createMoldDraft(editData ?? {}), [editData])
 
-    // SDRTS: 接入增量记录器
-    const { tracker, deltaProxy } = useDeltaTracker<Mold>(editData || createMoldDraft())
+    const { commit, deltaProxy, reset } = useDeltaTracker<Mold>(editData || createMoldDraft())
     const isEdit = !!editData
 
     const form = useForm<MoldFormInput, unknown, MoldFormOutput>({
@@ -94,19 +88,24 @@ export function MoldActionDialog({
         onOpenChange(nextOpen)
     }
 
+    const collectTrackedDelta = (data: MoldFormOutput) => {
+        Object.assign(deltaProxy, data)
+        return commit()
+    }
+
     useEffect(() => {
         if (!open) return
 
         if (editData) {
             form.reset(editData)
-            tracker.reset(editData)
+            reset(editData)
             return
         }
 
         const draft = createMoldDraft()
         form.reset(draft)
-        tracker.reset(draft)
-    }, [editData, form, open, tracker])
+        reset(draft)
+    }, [editData, form, open, reset])
 
     const onSubmit = async (data: MoldFormOutput) => {
         if (!allowsAction('action_equipment_mold_manage')) return
@@ -117,9 +116,7 @@ export function MoldActionDialog({
             return
         }
 
-        // SDRTS: 同步 RHF 数据到 Proxy 用于增量计算
-        Object.assign(deltaProxy, data)
-        const delta = tracker.commit()
+        const delta = collectTrackedDelta(data)
         const isDirty = Object.keys(delta).length > 0
 
         if (isEdit && !isDirty) {
@@ -139,44 +136,51 @@ export function MoldActionDialog({
     }
 
     return (
-        <Dialog open={open} onOpenChange={handleOpenChange}>
-            <DialogContent className='w-[95vw] sm:max-w-[550px] max-h-[92vh] flex flex-col p-0 rounded-[32px] border-none shadow-2xl overflow-hidden'>
-                <DialogHeader className='pb-4 pt-6 px-6 sm:px-8 relative z-10 shrink-0'>
-                    <DialogTitle className='text-lg sm:text-xl font-black tracking-tight uppercase italic'>
-                        {editData ? t('equipmentTooling.molds.dialog.title.edit') : t('equipmentTooling.molds.dialog.title.create')}
-                    </DialogTitle>
-                    <DialogDescription className='text-[10px] sm:text-xs font-bold text-muted-foreground/60 leading-relaxed mt-2'>
-                        {t('equipmentTooling.molds.dialog.description.prefix')}{' '}
-                        <span className='text-primary font-black uppercase tracking-widest'>{t('equipmentTooling.molds.dialog.description.alertCode')}</span>{' '}
-                        {t('equipmentTooling.molds.dialog.description.suffix')}
-                    </DialogDescription>
-                </DialogHeader>
-
-                <div className='flex-1 overflow-y-auto px-6 sm:px-8 pb-8 custom-scrollbar'>
-                    <div className='mb-6 p-4 rounded-[24px] border border-dashed bg-muted/5 space-y-3 relative z-10'>
-                        <div className='flex items-center justify-between text-[9px] font-black uppercase tracking-widest'>
-                            <span className='text-muted-foreground/40'>{t('equipmentTooling.molds.dialog.healthIndex')}</span>
-                            <span className={healthPercent < 20 ? 'text-rose-600' : 'text-primary'}>{healthPercent}%</span>
-                        </div>
-                        <div className='h-1 w-full bg-muted/30 rounded-full overflow-hidden'>
-                            <div
-                                className={cn(
-                                    'h-full transition-all duration-1000',
-                                    healthPercent < 20 ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]' : healthPercent < 50 ? 'bg-amber-500' : 'bg-primary shadow-[0_0_8px_rgba(59,130,246,0.5)]'
-                                )}
-                                style={{ width: `${healthPercent}%` }}
-                            />
-                        </div>
-                        <div className='flex justify-between items-center gap-4 flex-wrap'>
-                            <div className='flex gap-3'>
-                                <span className='text-[8px] text-muted-foreground/30 font-black uppercase'>{t('equipmentTooling.molds.dialog.metrics.current', { value: watchedCurrent })}</span>
-                                <span className='text-[8px] text-muted-foreground/30 font-black uppercase'>{t('equipmentTooling.molds.dialog.metrics.total', { value: form.getValues('totalLifeCycles') || 0 })}</span>
-                            </div>
-                            <Badge variant='outline' className='h-4 border-none bg-primary/5 text-primary text-[8px] font-black uppercase whitespace-nowrap'>
-                                {t('equipmentTooling.molds.dialog.realtimeSync')}
-                            </Badge>
-                        </div>
-                    </div>
+        <ActionDialogShell
+            open={open}
+            onOpenChange={handleOpenChange}
+            title={editData ? t('equipmentTooling.molds.dialog.title.edit') : t('equipmentTooling.molds.dialog.title.create')}
+            description={
+                <>
+                    {t('equipmentTooling.molds.dialog.description.prefix')}{' '}
+                    <span className='text-primary font-black uppercase tracking-widest'>{t('equipmentTooling.molds.dialog.description.alertCode')}</span>{' '}
+                    {t('equipmentTooling.molds.dialog.description.suffix')}
+                </>
+            }
+            contentDecoration={<div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent pointer-events-none' />}
+            contentClassName='relative w-[95vw] sm:max-w-[550px] max-h-[92vh] flex flex-col p-0 rounded-[32px] border-none shadow-2xl overflow-hidden bg-background'
+            headerClassName='pb-4 pt-6 px-6 sm:px-8 relative z-10 shrink-0 text-left'
+            bodyClassName='flex-1 overflow-y-auto px-6 sm:px-8 pb-8 custom-scrollbar'
+            footerClassName='p-6 sm:px-8 bg-muted/5 border-t border-dashed border-muted-foreground/10 flex flex-row sm:justify-end gap-3 shrink-0'
+            titleClassName='text-lg sm:text-xl font-black tracking-tight uppercase italic'
+            descriptionClassName='text-[10px] sm:text-xs font-bold text-muted-foreground/60 leading-relaxed mt-2'
+            footer={
+                <>
+                    <Button type='button' variant='ghost' className='flex-1 sm:flex-none rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest' onClick={() => handleOpenChange(false)}>
+                        {t('equipmentTooling.molds.dialog.actions.cancel')}
+                    </Button>
+                    <Button onClick={form.handleSubmit(onSubmit)} className='flex-1 sm:flex-none rounded-full h-11 px-10 bg-primary hover:bg-primary/90 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 gap-2'>
+                        <Save className='size-3.5' /> {t('equipmentTooling.molds.dialog.actions.save')}
+                    </Button>
+                </>
+            }
+        >
+                    <UdsHealthProgress
+                        className='mb-6'
+                        label={t('equipmentTooling.molds.dialog.healthIndex')}
+                        value={healthPercent}
+                        footer={
+                            <>
+                                <div className='flex gap-3'>
+                                    <span className='text-[8px] text-muted-foreground/30 font-black uppercase'>{t('equipmentTooling.molds.dialog.metrics.current', { value: watchedCurrent })}</span>
+                                    <span className='text-[8px] text-muted-foreground/30 font-black uppercase'>{t('equipmentTooling.molds.dialog.metrics.total', { value: form.getValues('totalLifeCycles') || 0 })}</span>
+                                </div>
+                                <Badge variant='outline' className='h-4 border-none bg-primary/5 text-primary text-[8px] font-black uppercase whitespace-nowrap'>
+                                    {t('equipmentTooling.molds.dialog.realtimeSync')}
+                                </Badge>
+                            </>
+                        }
+                    />
 
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
@@ -370,17 +374,6 @@ export function MoldActionDialog({
                             />
                         </form>
                     </Form>
-                </div>
-
-                <DialogFooter className='p-6 sm:px-8 bg-muted/5 border-t border-dashed border-muted-foreground/10 flex flex-row sm:justify-end gap-3 shrink-0'>
-                    <Button type='button' variant='ghost' className='flex-1 sm:flex-none rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest' onClick={() => handleOpenChange(false)}>
-                        {t('equipmentTooling.molds.dialog.actions.cancel')}
-                    </Button>
-                    <Button onClick={form.handleSubmit(onSubmit)} className='flex-1 sm:flex-none rounded-full h-11 px-10 bg-primary hover:bg-primary/90 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 gap-2'>
-                        <Save className='size-3.5' /> {t('equipmentTooling.molds.dialog.actions.save')}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+        </ActionDialogShell>
     )
 }

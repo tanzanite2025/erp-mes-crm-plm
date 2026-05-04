@@ -1,5 +1,6 @@
 import type { SalesOrder } from '../data/schema'
 import type { TranslationKey } from '@/locales'
+import type { SalesOrderStatusCommandPayload } from './use-sales-order-detail-actions'
 
 function hasAvailableAction(order: SalesOrder, action: string) {
   if (!order.availableActions || order.availableActions.length === 0) {
@@ -35,19 +36,17 @@ export function useSalesOrderDetailHeaderViewModel({
     canStartProduction: hasAvailableAction(order, 'startProduction'),
     canMarkDone: hasAvailableAction(order, 'markDone'),
     canCancel: hasAvailableAction(order, 'cancel'),
-    submitPendingPayload: { id: order.id, status: 'Pending' as const },
+    submitPendingPayload: { status: 'Pending' } as SalesOrderStatusCommandPayload,
     startSchedulingPayload: {
-      id: order.id,
       status: 'Scheduling' as const,
       statusNote: t('tradingSalesOrder.detail.schedulingTriggered'),
-    },
+    } satisfies SalesOrderStatusCommandPayload,
     startProductionPayload: {
-      id: order.id,
       status: 'InProgress' as const,
       statusNote: t('tradingSalesOrder.detail.productionTriggered'),
-    },
-    markDonePayload: { id: order.id, status: 'Done' as const },
-    cancelPayload: { id: order.id, status: 'Canceled' as const },
+    } satisfies SalesOrderStatusCommandPayload,
+    markDonePayload: { status: 'Done' } as SalesOrderStatusCommandPayload,
+    cancelPayload: { status: 'Canceled' } as SalesOrderStatusCommandPayload,
     cancelConfirmText: t('tradingSalesOrder.detail.cancelConfirm'),
   }
 }

@@ -1,8 +1,10 @@
 import { cn } from '@/lib/utils'
 import { Calendar, Edit, Eye, Hash, Layers, Target, Trash2 } from 'lucide-react'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useLanguage } from '@/context/language-provider'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import type { DrillingPlan } from '../data/schema'
 import { getEngineeringDbFileVisual } from '../view-helpers'
 import type { DrillingRowViewModel } from '../hooks/use-drilling-page-state'
@@ -87,6 +89,15 @@ export function DrillingMobileList({
                   </div>
                   <div className='flex items-center gap-1'>
                     <Button variant='ghost' size='icon' className='size-8 rounded-full hover:bg-orange-500/10 hover:text-orange-500' onClick={(event) => { event.stopPropagation(); onPreview(item) }}><Eye className='size-4' /></Button>
+                    <div onClick={(event) => event.stopPropagation()}>
+                      <AuditTimelineTriggerButton
+                        module={AUDIT_MODULES.drilling}
+                        targetId={item.id}
+                        targetName={item.name}
+                        iconOnly
+                        className='size-8 rounded-full px-0'
+                      />
+                    </div>
                     <Button variant='ghost' size='icon' className='size-8 rounded-full' onClick={(event) => { event.stopPropagation(); onEdit(item) }}><Edit className='size-3.5' /></Button>
                     <Button variant='ghost' size='icon' className='size-8 rounded-full text-destructive/40' onClick={(event) => { event.stopPropagation(); onDelete(item) }}><Trash2 className='size-3.5' /></Button>
                   </div>

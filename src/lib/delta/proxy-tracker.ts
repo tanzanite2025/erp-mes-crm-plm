@@ -1,5 +1,8 @@
 import { type DeltaSet } from './types';
 
+type TrackableObject = object;
+type PathReadableObject = Record<string, unknown>;
+
 function cloneValue<T>(value: T): T {
     return JSON.parse(JSON.stringify(value));
 }
@@ -10,19 +13,19 @@ function cloneValue<T>(value: T): T {
  * 一个基于 Proxy 的变更追踪引擎。
  * 能够自动捕获深度嵌套对象的变更，并生成扁平化路径的 Delta 集合。
  */
-export class ProxyTracker<T extends Record<string, any>> {
+export class ProxyTracker<T extends TrackableObject> {
     private baseline: T;
     private workingCopy: T;
     private draft: T;
-    private readonly mutations = new Map<string, any>();
-    private proxyCache = new WeakMap<object, any>();
+    private readonly mutations = new Map<string, unknown>();
+    private proxyCache = new WeakMap<object, unknown>();
     private onMutation?: () => void;
 
     constructor(initialData: T, onMutation?: () => void) {
         this.baseline = cloneValue(initialData);
         this.workingCopy = cloneValue(initialData);
         this.onMutation = onMutation;
-        this.draft = this.createProxy(this.workingCopy, "");
+        this.draft = this.createProxy(this.workingCopy, "") as T;
     }
 
     /**
@@ -33,8 +36,22 @@ export class ProxyTracker<T extends Record<string, any>> {
         this.workingCopy = cloneValue(newData);
         this.mutations.clear();
         this.proxyCache = new WeakMap();
-        this.draft = this.createProxy(this.workingCopy, "");
+        this.draft = this.createProxy(this.workingCopy, "") as T;
         this.onMutation?.();
+    }
+
+    public replace(nextData: T) {
+        const currentKeys = new Set(Object.keys(this.workingCopy));
+        const nextEntries = Object.entries(nextData as Record<string, unknown>);
+
+        nextEntries.forEach(([key, value]) => {
+            currentKeys.delete(key);
+            Reflect.set(this.draft, key, cloneValue(value));
+        });
+
+        currentKeys.forEach((key) => {
+            Reflect.deleteProperty(this.draft, key);
+        });
     }
 
     /**
@@ -47,7 +64,7 @@ export class ProxyTracker<T extends Record<string, any>> {
     /**
      * 核心递归代理生成器
      */
-    private createProxy(target: any, path: string): any {
+    private createProxy(target: unknown, path: string): unknown {
         if (target === null || typeof target !== 'object') {
             return target;
         }
@@ -55,9 +72,9 @@ export class ProxyTracker<T extends Record<string, any>> {
         const cached = this.proxyCache.get(target);
         if (cached) return cached;
 
-        const self = this;
-        const proxy = new Proxy(target, {
-            get(obj, key) {
+        const proxyTarget = target as PathReadableObject;
+        const proxy = new Proxy(proxyTarget, {
+            get: (obj, key) => {
                 if (key === '__isProxy') return true;
                 if (key === '__target') return obj;
 
@@ -65,9 +82,9 @@ export class ProxyTracker<T extends Record<string, any>> {
                 const currentPath = path ? `${path}.${String(key)}` : String(key);
                 
                 // 递归代理
-                return self.createProxy(val, currentPath);
+                return this.createProxy(val, currentPath);
             },
-            set(obj, key, value) {
+            set: (obj, key, value) => {
                 const currentPath = path ? `${path}.${String(key)}` : String(key);
                 const oldValue = Reflect.get(obj, key);
 
@@ -76,20 +93,20 @@ export class ProxyTracker<T extends Record<string, any>> {
 
                 // 记录变更动作
                 Reflect.set(obj, key, value);
-                self.mutations.set(currentPath, value);
+                this.mutations.set(currentPath, value);
                 
                 // 通知监听器相关变更
-                self.onMutation?.();
+                this.onMutation?.();
                 
                 return true;
             },
-            deleteProperty(obj, key) {
+            deleteProperty: (obj, key) => {
                 const currentPath = path ? `${path}.${String(key)}` : String(key);
                 Reflect.deleteProperty(obj, key);
-                self.mutations.set(currentPath, null); // 删除视作设为 null
+                this.mutations.set(currentPath, null); // 删除视作设为 null
                 
                 // 通知监听器相关变更
-                self.onMutation?.();
+                this.onMutation?.();
                 
                 return true;
             }
@@ -130,16 +147,19 @@ export class ProxyTracker<T extends Record<string, any>> {
     /**
      * 根据扁平路径获取对象中的值
      */
-    private getValueByPath(obj: any, path: string): any {
-        return path.split('.').reduce((acc, part) => {
-            return acc && acc[part] !== undefined ? acc[part] : undefined;
+    private getValueByPath(obj: unknown, path: string): unknown {
+        return path.split('.').reduce<unknown>((acc, part) => {
+            if (acc && typeof acc === 'object' && part in acc) {
+                return (acc as PathReadableObject)[part];
+            }
+            return undefined;
         }, obj);
     }
 
     /**
      * 简单的深度相等对比 (针对基本类型和常规 JSON 对象)
      */
-    private isEqual(a: any, b: any): boolean {
+    private isEqual(a: unknown, b: unknown): boolean {
         if (a === b) return true;
         if (a === null || b === null) return a === b;
         if (typeof a !== typeof b) return false;
@@ -155,6 +175,6 @@ export class ProxyTracker<T extends Record<string, any>> {
 /**
  * 便利函数：初始化一个追踪任务
  */
-export function trackDelta<T extends Record<string, any>>(data: T, onMutation?: () => void) {
+export function trackDelta<T extends TrackableObject>(data: T, onMutation?: () => void) {
     return new ProxyTracker<T>(data, onMutation);
 }

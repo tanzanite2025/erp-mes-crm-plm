@@ -2,15 +2,13 @@ import React from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   type ColumnDef,
-  getCoreRowModel,
-  getPaginationRowModel,
-  useReactTable,
   flexRender,
 } from '@tanstack/react-table'
 import { Truck, Package, Search, ChevronRight, MapPin, Loader2, RefreshCw } from 'lucide-react'
 import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { toast } from 'sonner'
 import { ForbiddenState } from '@/components/forbidden-state'
+import { useUdsClientTable } from '@/hooks/use-uds-table'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -20,16 +18,13 @@ import { useLanguage } from '@/context/language-provider'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { isForbiddenError } from '@/lib/error-status'
 import { cn } from '@/lib/utils'
+import { PURCHASE_LOGISTICS_KEYS } from './query-keys'
 import {
   PurchaseLogisticsService,
   type PurchaseLogisticsListResponse,
   type PurchaseLogisticsRecord,
 } from './services/purchase-logistics-service'
 import { PurchaseLogisticsTimeline } from './purchase-logistics-timeline'
-
-const PURCHASE_LOGISTICS_KEYS = {
-  tracking: (trackingNo: string) => ['purchase-logistics', 'tracking', trackingNo] as const,
-}
 
 function PurchaseLogisticsDetailSheet({ record }: { record: PurchaseLogisticsRecord }) {
   const { locale, t } = useLanguage()
@@ -239,7 +234,7 @@ export function PurchaseLogisticsList() {
   const [search, setSearch] = React.useState('')
 
   const { data, error, isLoading } = useQuery<PurchaseLogisticsListResponse>({
-    queryKey: ['purchase-logistics-list', search],
+    queryKey: PURCHASE_LOGISTICS_KEYS.list(search),
     queryFn: () => PurchaseLogisticsService.getRecords({ page: 1, pageSize: 100 }),
   })
 
@@ -341,11 +336,10 @@ export function PurchaseLogisticsList() {
     },
   ]
 
-  const table = useReactTable({
+  const table = useUdsClientTable({
     data: records,
     columns,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    enableSorting: false,
   })
 
   if (isForbiddenError(error)) {

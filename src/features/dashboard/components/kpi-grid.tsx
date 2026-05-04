@@ -1,3 +1,4 @@
+import { CreditCard, DollarSign, Users } from 'lucide-react'
 import {
     Card,
     CardContent,
@@ -47,18 +48,7 @@ export function KpiGrid() {
                         {t('dashboard.page.kpi.wip.title')}
                     </CardTitle>
                     <div className='p-2 rounded-xl bg-emerald-500/10 text-emerald-600 transition-transform group-hover:scale-110'>
-                        <svg
-                            xmlns='http://www.w3.org/2000/svg'
-                            viewBox='0 0 24 24'
-                            fill='none'
-                            stroke='currentColor'
-                            strokeLinecap='round'
-                            strokeLinejoin='round'
-                            strokeWidth='2.5'
-                            className='h-3.5 w-3.5'
-                        >
-                            <path d='M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6' />
-                        </svg>
+                        <DollarSign className='h-3.5 w-3.5 stroke-[2.5]' />
                     </div>
                 </CardHeader>
                 <CardContent className='pb-4 px-4 md:px-5'>
@@ -82,20 +72,7 @@ export function KpiGrid() {
                         {t('dashboard.page.kpi.scrap.title')}
                     </CardTitle>
                     <div className='p-2 rounded-xl bg-rose-500/10 text-rose-500 transition-transform group-hover:scale-110'>
-                        <svg
-                            xmlns='http://www.w3.org/2000/svg'
-                            viewBox='0 0 24 24'
-                            fill='none'
-                            stroke='currentColor'
-                            strokeLinecap='round'
-                            strokeLinejoin='round'
-                            strokeWidth='2.5'
-                            className='h-3.5 w-3.5'
-                        >
-                            <path d='M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2' />
-                            <circle cx='9' cy='7' r='4' />
-                            <path d='M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75' />
-                        </svg>
+                        <Users className='h-3.5 w-3.5 stroke-[2.5]' />
                     </div>
                 </CardHeader>
                 <CardContent className='pb-4 px-4 md:px-5'>
@@ -124,19 +101,7 @@ export function KpiGrid() {
                         {t('dashboard.page.kpi.gap.title')}
                     </CardTitle>
                     <div className='p-2 rounded-xl bg-amber-500/10 text-amber-600 transition-transform group-hover:scale-110'>
-                        <svg
-                            xmlns='http://www.w3.org/2000/svg'
-                            viewBox='0 0 24 24'
-                            fill='none'
-                            stroke='currentColor'
-                            strokeLinecap='round'
-                            strokeLinejoin='round'
-                            strokeWidth='2.5'
-                            className='h-3.5 w-3.5'
-                        >
-                            <rect width='20' height='14' x='2' y='5' rx='2' />
-                            <path d='M2 10h20' />
-                        </svg>
+                        <CreditCard className='h-3.5 w-3.5 stroke-[2.5]' />
                     </div>
                 </CardHeader>
                 <CardContent className='pb-4 px-4 md:px-5'>

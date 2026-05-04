@@ -9,12 +9,14 @@ import { createProductDraft } from '../utils/default-builders'
 
 const {
   useBOMDataMock,
+  auditTimelineTriggerButtonMock,
   bomTableMock,
   bomPreviewMock,
   bomToolbarMock,
   bomActionDialogMock,
 } = vi.hoisted(() => ({
   useBOMDataMock: vi.fn(),
+  auditTimelineTriggerButtonMock: vi.fn(),
   bomTableMock: vi.fn(),
   bomPreviewMock: vi.fn(),
   bomToolbarMock: vi.fn(),
@@ -26,6 +28,13 @@ vi.mock('@/context/language-provider', () => ({
     locale: 'zh-CN',
     t: (key: string) => key,
   }),
+}))
+
+vi.mock('@/components/common/audit-timeline-trigger-button', () => ({
+  AuditTimelineTriggerButton: (props: unknown) => {
+    auditTimelineTriggerButtonMock(props)
+    return <div data-testid='bom-page-audit-trigger' />
+  },
 }))
 
 vi.mock('../hooks/use-bom-data', () => ({
@@ -57,11 +66,14 @@ vi.mock('../components/bom-mgmt/bom-preview', () => ({
 vi.mock('../components/bom-mgmt/bom-toolbar', () => ({
   BOMToolbar: (props: unknown) => {
     bomToolbarMock(props)
-    const typedProps = props as { onAddBOM: () => void }
+    const typedProps = props as { onAddBOM: () => void; onUploadExcel: (file: File) => Promise<void> }
     return (
       <div>
         <button type='button' onClick={typedProps.onAddBOM}>
           open-bom-dialog
+        </button>
+        <button type='button' onClick={() => void typedProps.onUploadExcel(new File(['bom'], 'bom.xlsx'))}>
+          upload-bom
         </button>
       </div>
     )
@@ -71,7 +83,15 @@ vi.mock('../components/bom-mgmt/bom-toolbar', () => ({
 vi.mock('../components/bom-action-dialog', () => ({
   BOMActionDialog: (props: unknown) => {
     bomActionDialogMock(props)
-    return <div data-testid='bom-action-dialog' />
+    const typedProps = props as { onOpenChange: (open: boolean) => void }
+    return (
+      <div>
+        <div data-testid='bom-action-dialog' />
+        <button type='button' onClick={() => typedProps.onOpenChange(false)}>
+          close-bom-dialog
+        </button>
+      </div>
+    )
   },
 }))
 
@@ -148,8 +168,13 @@ describe('BOMMgmt', () => {
     }))
     expect(bomToolbarMock).toHaveBeenCalledTimes(1)
     expect(bomActionDialogMock).toHaveBeenCalledWith(expect.objectContaining({ open: false }))
+    expect(auditTimelineTriggerButtonMock).toHaveBeenCalledWith(expect.objectContaining({
+      module: 'bom',
+      targetName: 'engineering.bomArchive.header.title',
+    }))
     expect(screen.getByTestId('bom-table')).toBeTruthy()
     expect(screen.getByTestId('bom-action-dialog')).toBeTruthy()
+    expect(screen.getByTestId('bom-page-audit-trigger')).toBeTruthy()
   })
 
   it('renders explicit error state instead of falling back to empty table', () => {
@@ -169,16 +194,64 @@ describe('BOMMgmt', () => {
     expect(bomTableMock).not.toHaveBeenCalled()
   })
 
-  it('only enters preview branch when resource status is ready', async () => {
+  it('switches to preview mode within the same page shell when resource status is ready', async () => {
     const user = userEvent.setup()
     mockedUseBOMData.mockReturnValue(buildUseBOMDataResult())
     render(<BOMMgmt />)
 
     await user.click(screen.getByRole('button', { name: 'preview-bom' }))
 
+    expect(screen.getByText('engineering.bomArchive.header.title')).toBeTruthy()
+    expect(screen.getByTestId('bom-page-audit-trigger')).toBeTruthy()
+    expect(screen.getByTestId('bom-preview')).toBeTruthy()
     expect(bomPreviewMock).toHaveBeenCalledWith(expect.objectContaining({
       products: expect.arrayContaining([expect.objectContaining({ id: 'product-1' })]),
       materials: expect.arrayContaining([expect.objectContaining({ id: 'mat-1' })]),
+    }))
+  })
+
+  it('clears imported dialog seed after closing before opening a fresh create dialog', async () => {
+    const user = userEvent.setup()
+    mockedUseBOMData.mockReturnValue(buildUseBOMDataResult({
+      parseExcel: (async (_file: File) => ({
+        productId: 'product-1',
+        items: [{
+          id: '11111111-1111-1111-1111-111111111111',
+          materialId: 'mat-1',
+          section: 'HUB',
+          materialName: 'Material A',
+          materialSpec: '',
+          unitPrice: 10,
+          unit: 'PCS',
+          unitUsage: 1,
+          wastagePercent: 0,
+          materialType: 'RAW_MATERIAL',
+          supplyChannel: 'PURCHASE',
+          substitutes: [],
+        }],
+      })) as UseBOMDataResult['parseExcel'],
+    }))
+
+    render(<BOMMgmt />)
+
+    await user.click(screen.getByRole('button', { name: 'upload-bom' }))
+
+    expect(bomActionDialogMock).toHaveBeenLastCalledWith(expect.objectContaining({
+      open: true,
+      initialProductId: 'product-1',
+      initialItems: expect.arrayContaining([
+        expect.objectContaining({ materialId: 'mat-1', section: 'HUB' }),
+      ]),
+    }))
+
+    await user.click(screen.getByRole('button', { name: 'close-bom-dialog' }))
+    await user.click(screen.getByRole('button', { name: 'open-bom-dialog' }))
+
+    expect(bomActionDialogMock).toHaveBeenLastCalledWith(expect.objectContaining({
+      open: true,
+      currentRow: undefined,
+      initialProductId: undefined,
+      initialItems: undefined,
     }))
   })
 })

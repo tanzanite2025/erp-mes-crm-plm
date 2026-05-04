@@ -1,6 +1,6 @@
 import { useEffect, useMemo, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { format, isValid, parseISO } from 'date-fns'
+import { isValid, parseISO } from 'date-fns'
 import { Plus, Trash2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -42,6 +42,7 @@ import {
   type CuttingPlanInput,
   type CuttingPlanStatus,
 } from '../data/cutting-plan-schema'
+import { formatEngineeringDateProtocol } from '@/lib/codecs/code-normalization'
 
 interface CuttingPlanEditorProps {
   value: CuttingPlanInput
@@ -410,7 +411,7 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
                   className='h-10 w-full justify-start rounded-2xl px-3 text-left text-sm font-semibold'
                 >
                   {selectedEffectiveDate ? (
-                    format(selectedEffectiveDate, 'yyyy-MM-dd')
+                    formatEngineeringDateProtocol(selectedEffectiveDate)
                   ) : (
                     <span className='text-muted-foreground'>{t('engineering.cuttingPlan.placeholders.selectEffectiveDate')}</span>
                   )}
@@ -421,7 +422,7 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
                   mode='single'
                   selected={selectedEffectiveDate}
                   onSelect={(nextDate) =>
-                    updateField('effectiveDate', nextDate ? format(nextDate, 'yyyy-MM-dd') : '')
+                    updateField('effectiveDate', nextDate ? formatEngineeringDateProtocol(nextDate) : '')
                   }
                   initialFocus
                 />

@@ -1,363 +1,59 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import {
+import { 
   flexRender,
   getCoreRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  type ColumnDef,
   useReactTable,
 } from '@tanstack/react-table'
 import {
   ArrowRightLeft,
-  Check,
-  ChevronsUpDown,
   Plus,
   Search,
-  Settings2,
-  Trash2,
 } from 'lucide-react'
-import { toast } from 'sonner'
 import { DataTablePagination } from '@/components/data-table/pagination'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useLanguage } from '@/context/language-provider'
-import { isConflictError } from '@/lib/handle-server-error'
-import { cn } from '@/lib/utils'
-import { failLoudly } from '@/lib/safe-catch'
-import { type MaterialOption, type PackagingRule } from '../data/schema'
-import { type SavePackagingRuleInput } from '../adapters/packaging-api-adapter'
-import { MATERIAL_OPTIONS_QUERY_KEY, PACKAGING_RULES_QUERY_KEY } from '../query-keys'
-import { MaterialCoreService } from '../services/material-core-service'
-import { packagingService } from '../services/packaging-service'
-
-type PackagingRuleDraft = Partial<SavePackagingRuleInput> & Pick<SavePackagingRuleInput, 'direction'>
-
-function buildRelation(rule: PackagingRuleDraft | null) {
-  const factor = rule?.conversionFactor ?? '?'
-  const packUnit = rule?.packUnit || '?'
-  const baseUnit = rule?.baseUnit || '?'
-
-  return rule?.direction === 'reverse'
-    ? `1 ${baseUnit} = ${factor} ${packUnit}`
-    : `1 ${packUnit} = ${factor} ${baseUnit}`
-}
-
-function requireMaterialOption(
-  materialMap: Map<string, MaterialOption>,
-  materialId: string,
-  scope: string
-) {
-  const material = materialMap.get(materialId)
-  if (!material) {
-    const error = new Error(`[CRITICAL] Missing material ${materialId} in ${scope}`)
-    failLoudly(error, `MaterialAssemblyManager.${scope}`)
-    throw error
-  }
-  return material
-}
+import { useMaterialAssemblyColumns } from '../hooks/use-material-assembly-columns'
+import { useMaterialAssemblyManager } from '../hooks/use-material-assembly-manager'
+import { MaterialAssemblyRuleDialog } from './material-assembly-rule-dialog'
 
 export function MaterialAssemblyManager() {
   const { t } = useLanguage()
-  const queryClient = useQueryClient()
-  const [searchTerm, setSearchTerm] = useState('')
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [isComboboxOpen, setIsComboboxOpen] = useState(false)
-  const [editingRule, setEditingRule] = useState<PackagingRuleDraft | null>(null)
+  const {
+    searchTerm,
+    setSearchTerm,
+    isDialogOpen,
+    isComboboxOpen,
+    setIsComboboxOpen,
+    editingRule,
+    selectedMaterial,
+    materialOptions,
+    isLoading,
+    filteredRows,
+    handleDialogOpenChange,
+    handleOpenCreate,
+    handleOpenEdit,
+    handleSelectMaterial,
+    handleDraftFieldChange,
+    handleFactorChange,
+    handleToggleDirection,
+    handleSave,
+    handleDelete,
+    isSaving,
+  } = useMaterialAssemblyManager()
 
-  const rulesQuery = useQuery({
-    queryKey: PACKAGING_RULES_QUERY_KEY,
-    queryFn: () => packagingService.getRules(),
+  const columns = useMaterialAssemblyColumns({
+    onEdit: handleOpenEdit,
+    onDelete: handleDelete,
   })
-
-  const materialsQuery = useQuery({
-    queryKey: MATERIAL_OPTIONS_QUERY_KEY,
-    queryFn: () => MaterialCoreService.getMaterialOptions(),
-  })
-
-  const saveRuleMutation = useMutation({
-    mutationFn: (rule: SavePackagingRuleInput) => packagingService.saveRule(rule),
-    onSuccess: (savedRule) => {
-      queryClient.setQueryData<PackagingRule[]>(PACKAGING_RULES_QUERY_KEY, (current) => {
-        if (!current) return [savedRule]
-
-        return current.some((rule) => rule.id === savedRule.id)
-          ? current.map((rule) => (rule.id === savedRule.id ? savedRule : rule))
-          : [...current, savedRule]
-      })
-    },
-  })
-
-  const deleteRuleMutation = useMutation({
-    mutationFn: (id: string) => packagingService.deleteRule(id),
-    onSuccess: (_result, deletedId) => {
-      queryClient.setQueryData<PackagingRule[]>(PACKAGING_RULES_QUERY_KEY, (current) =>
-        current?.filter((rule) => rule.id !== deletedId)
-      )
-    },
-  })
-
-  const isLoading = rulesQuery.isLoading || materialsQuery.isLoading
-
-  if (rulesQuery.isError) {
-    failLoudly(rulesQuery.error, 'MaterialAssemblyManager.rules')
-    throw rulesQuery.error
-  }
-
-  if (materialsQuery.isError) {
-    failLoudly(materialsQuery.error, 'MaterialAssemblyManager.materials')
-    throw materialsQuery.error
-  }
-
-  if (!isLoading && !rulesQuery.data) {
-    const error = new Error('[CRITICAL] Missing packaging rules payload in material assembly manager')
-    failLoudly(error, 'MaterialAssemblyManager.rules')
-    throw error
-  }
-
-  if (!isLoading && !materialsQuery.data) {
-    const error = new Error('[CRITICAL] Missing material options payload in material assembly manager')
-    failLoudly(error, 'MaterialAssemblyManager.materials')
-    throw error
-  }
-
-  const rules = isLoading ? [] : rulesQuery.data!
-  const materials = isLoading ? [] : materialsQuery.data!
-
-  const materialMap = useMemo(() => {
-    const map = new Map<string, MaterialOption>()
-    materials.forEach((material) => map.set(material.id, material))
-    return map
-  }, [materials])
-
-  const filteredRules = useMemo(() => {
-    const search = searchTerm.trim().toLowerCase()
-
-    return rules.filter((rule) => {
-      const material = requireMaterialOption(materialMap, rule.materialId, 'materialLookup')
-      if (!search) return true
-      return material.name.toLowerCase().includes(search) || material.code.toLowerCase().includes(search)
-    })
-  }, [materialMap, rules, searchTerm])
-
-  const materialOptions = useMemo(() => materials, [materials])
-
-  const selectedMaterial = useMemo(() => {
-    if (!editingRule?.materialId || isLoading) return null
-    return requireMaterialOption(materialMap, editingRule.materialId, 'selectedMaterial')
-  }, [editingRule?.materialId, isLoading, materialMap])
-
-  const handleSave = async () => {
-    const factor = editingRule?.conversionFactor
-    const isFactorValid = typeof factor === 'number' && Number.isFinite(factor) && factor > 0
-
-    if (!editingRule?.materialId || !editingRule?.packUnit || !editingRule?.baseUnit || !isFactorValid) {
-      toast.error(t('materialArchive.assemblyManager.toasts.incomplete'))
-      return
-    }
-
-    const ruleToSave: SavePackagingRuleInput = {
-      id: editingRule.id,
-      materialId: editingRule.materialId,
-      packUnit: editingRule.packUnit,
-      baseUnit: editingRule.baseUnit,
-      conversionFactor: factor,
-      direction: editingRule.direction,
-    }
-
-    try {
-      await saveRuleMutation.mutateAsync(ruleToSave)
-      toast.success(t('materialArchive.assemblyManager.toasts.saveSuccess'))
-      setIsDialogOpen(false)
-      setEditingRule(null)
-    } catch (error) {
-      if (
-        error &&
-        typeof error === 'object' &&
-        'code' in error &&
-        error.code === 'PACKAGING_RULE_DUPLICATE_MATERIAL'
-      ) {
-        toast.error(t('materialArchive.assemblyManager.toasts.duplicateMaterial'))
-        return
-      }
-
-      if (isConflictError(error)) {
-        toast.error(t('materialArchive.assemblyManager.toasts.conflict'))
-        return
-      }
-
-      toast.error(t('materialArchive.assemblyManager.toasts.saveFailed'))
-    }
-  }
-
-  const handleDelete = async (id: string) => {
-    if (!window.confirm(t('materialArchive.assemblyManager.toasts.deleteConfirm'))) return
-
-    try {
-      await deleteRuleMutation.mutateAsync(id)
-      toast.success(t('materialArchive.assemblyManager.toasts.deleteSuccess'))
-    } catch (error) {
-      failLoudly(error, 'MaterialAssemblyManager.handleDelete')
-    }
-  }
-
-  const columns: ColumnDef<PackagingRule>[] = [
-    {
-      id: 'code',
-      header: () => (
-        <div className='w-[120px] pl-8 text-[10px] font-black tracking-widest text-muted-foreground/50'>
-          {t('materialArchive.assemblyManager.table.code')}
-        </div>
-      ),
-      cell: ({ row }) => (
-        <div className='pl-8 font-mono text-[10px] font-black text-muted-foreground'>
-          {requireMaterialOption(materialMap, row.original.materialId, 'tableCode').code}
-        </div>
-      ),
-    },
-    {
-      id: 'name',
-      header: () => (
-        <div className='text-[10px] font-black tracking-widest text-muted-foreground/50'>
-          {t('materialArchive.assemblyManager.table.name')}
-        </div>
-      ),
-      cell: ({ row }) => (
-        <div className='text-sm font-bold tracking-tight'>
-          {requireMaterialOption(materialMap, row.original.materialId, 'tableName').name}
-        </div>
-      ),
-    },
-    {
-      id: 'baseUnit',
-      header: () => (
-        <div className='w-[100px] text-[10px] font-black tracking-widest text-muted-foreground/50'>
-          {t('materialArchive.assemblyManager.table.baseUnit')}
-        </div>
-      ),
-      cell: ({ row }) => (
-        <Badge
-          variant='outline'
-          className='h-5 rounded-full border-none bg-muted/5 text-[8px] font-black tracking-widest text-muted-foreground/50'
-        >
-          {requireMaterialOption(materialMap, row.original.materialId, 'tableBaseUnit').uom}
-        </Badge>
-      ),
-    },
-    {
-      accessorKey: 'packUnit',
-      header: () => (
-        <div className='w-[120px] text-[10px] font-black tracking-widest text-muted-foreground/50'>
-          {t('materialArchive.assemblyManager.table.packUnit')}
-        </div>
-      ),
-      cell: ({ row }) => (
-        <Badge className='h-5 rounded-full border-none bg-primary/10 px-3 text-[8px] font-black tracking-widest text-primary'>
-          {row.original.packUnit}
-        </Badge>
-      ),
-    },
-    {
-      accessorKey: 'conversionFactor',
-      header: () => (
-        <div className='w-[120px] text-[10px] font-black tracking-widest text-muted-foreground/50'>
-          {t('materialArchive.assemblyManager.table.factor')}
-        </div>
-      ),
-      cell: ({ row }) => (
-        <div className='font-mono text-xs font-black tracking-tighter text-primary'>
-          x {row.original.conversionFactor}
-        </div>
-      ),
-    },
-    {
-      id: 'preview',
-      header: () => (
-        <div className='text-[10px] font-black tracking-widest text-muted-foreground/50'>
-          {t('materialArchive.assemblyManager.table.preview')}
-        </div>
-      ),
-      cell: ({ row }) => {
-        const rule = row.original
-        const currentBaseUnit = requireMaterialOption(materialMap, rule.materialId, 'tablePreview').uom
-        const relation =
-          rule.direction === 'reverse'
-            ? `1 ${currentBaseUnit} = ${rule.conversionFactor} ${rule.packUnit}`
-            : `1 ${rule.packUnit} = ${rule.conversionFactor} ${currentBaseUnit}`
-
-        return (
-          <div className='font-mono text-[9px] font-black tracking-widest text-muted-foreground/40'>
-            {relation}
-          </div>
-        )
-      },
-    },
-    {
-      id: 'actions',
-      header: () => (
-        <div className='w-[100px] pr-8 text-right text-[10px] font-black tracking-widest text-muted-foreground/50'>
-          {t('materialArchive.assemblyManager.table.actions')}
-        </div>
-      ),
-      cell: ({ row }) => {
-        const rule = row.original
-        const currentBaseUnit = requireMaterialOption(materialMap, rule.materialId, 'tableActions').uom
-
-        return (
-          <div className='flex items-center justify-end gap-2 pr-8'>
-            <Button
-              variant='ghost'
-              size='icon'
-              className='size-8 rounded-lg transition-all hover:bg-primary/5 hover:text-primary'
-              onClick={() => {
-                setEditingRule({
-                  ...rule,
-                  baseUnit: currentBaseUnit,
-                })
-                setIsDialogOpen(true)
-              }}
-            >
-              <Settings2 className='size-4 text-muted-foreground/30 transition-colors group-hover:text-primary' />
-            </Button>
-            <Button
-              variant='ghost'
-              size='icon'
-              className='size-8 rounded-lg text-destructive/40 transition-all hover:bg-destructive/10 hover:text-destructive'
-              onClick={() => handleDelete(rule.id)}
-            >
-              <Trash2 className='size-3.5' />
-            </Button>
-          </div>
-        )
-      },
-    },
-  ]
 
   const table = useReactTable({
-    data: filteredRules,
+    data: filteredRows,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -386,10 +82,7 @@ export function MaterialAssemblyManager() {
           />
         </div>
         <Button
-          onClick={() => {
-            setEditingRule({ baseUnit: '', packUnit: '', conversionFactor: 1, direction: 'forward' })
-            setIsDialogOpen(true)
-          }}
+          onClick={handleOpenCreate}
           className='h-11 rounded-full bg-primary px-6 text-[10px] font-black tracking-widest text-primary-foreground shadow-xl shadow-blue-500/20 transition-all active:scale-95 hover:bg-primary/90'
         >
           <Plus className='mr-2 size-4' />
@@ -398,7 +91,7 @@ export function MaterialAssemblyManager() {
       </div>
 
       <div className='relative shrink-0 overflow-hidden rounded-[32px] border border-dashed border-muted/50 bg-muted/5 shadow-inner'>
-        <div className='pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent' />
+        <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 via-transparent' />
         <Table>
           <TableHeader className='h-14 bg-muted/30'>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -417,7 +110,7 @@ export function MaterialAssemblyManager() {
             ))}
           </TableHeader>
           <TableBody>
-            {filteredRules.length === 0 ? (
+            {filteredRows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={columns.length} className='h-32 text-center text-muted-foreground'>
                   {isLoading
@@ -447,257 +140,24 @@ export function MaterialAssemblyManager() {
         <DataTablePagination table={table} />
       </div>
 
-      <Dialog
+      <MaterialAssemblyRuleDialog
         open={isDialogOpen}
-        onOpenChange={(open) => {
-          setIsDialogOpen(open)
-          if (!open) setEditingRule(null)
+        onOpenChange={handleDialogOpenChange}
+        isComboboxOpen={isComboboxOpen}
+        onComboboxOpenChange={setIsComboboxOpen}
+        editingRule={editingRule}
+        selectedMaterial={selectedMaterial}
+        materialOptions={materialOptions}
+        onSelectMaterial={handleSelectMaterial}
+        onPackUnitChange={(value) => handleDraftFieldChange('packUnit', value)}
+        onFactorChange={handleFactorChange}
+        onToggleDirection={handleToggleDirection}
+        onCancel={() => handleDialogOpenChange(false)}
+        onConfirm={() => {
+          void handleSave()
         }}
-      >
-        <DialogContent className='overflow-hidden rounded-[32px] border-none bg-background p-0 shadow-2xl sm:max-w-[550px]'>
-          <div className='pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent' />
-          <div className='relative max-h-[90vh] overflow-y-auto p-8'>
-            <DialogHeader className='mb-8'>
-              <DialogTitle className='flex items-center gap-2 text-lg font-black italic tracking-tighter text-primary'>
-                <Settings2 className='size-5' />
-                {t('materialArchive.assemblyManager.dialog.title')}
-              </DialogTitle>
-              <DialogDescription className='text-[9px] font-black tracking-widest text-muted-foreground/60 opacity-60'>
-                {t('materialArchive.assemblyManager.dialog.description')}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className='space-y-8'>
-              <div className='space-y-4'>
-                <Label className='mb-2 block text-[10px] font-black tracking-widest text-muted-foreground/60'>
-                  {t('materialArchive.assemblyManager.dialog.materialLabel')}
-                </Label>
-                <Popover open={isComboboxOpen} onOpenChange={setIsComboboxOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant='outline'
-                      role='combobox'
-                      className='h-12 w-full justify-between rounded-2xl border-none bg-muted/50 px-5 font-bold shadow-sm transition-all hover:bg-muted/70'
-                    >
-                      <span className='truncate'>
-                        {selectedMaterial
-                          ? `${selectedMaterial.name} (${selectedMaterial.code})`
-                          : t('materialArchive.assemblyManager.dialog.materialPlaceholder')}
-                      </span>
-                      <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    className='w-[486px] overflow-hidden rounded-2xl border-none p-0 shadow-2xl'
-                    align='start'
-                  >
-                    <Command className='rounded-2xl'>
-                      <CommandInput
-                        placeholder={t('materialArchive.assemblyManager.dialog.searchMaterialsPlaceholder')}
-                        className='h-12 border-none'
-                      />
-                      <CommandList className='max-h-[300px]'>
-                        <CommandEmpty>
-                          {t('materialArchive.assemblyManager.dialog.noMaterialFound')}
-                        </CommandEmpty>
-                        <CommandGroup>
-                          {materialOptions.slice(0, 50).map((material) => (
-                            <CommandItem
-                              key={material.id}
-                              value={`${material.name} ${material.code} ${material.spec || ''}`}
-                              onSelect={() => {
-                                setEditingRule({
-                                  ...(editingRule ?? { direction: 'forward' }),
-                                  materialId: material.id,
-                                  baseUnit: material.uom || '',
-                                })
-                                setIsComboboxOpen(false)
-                              }}
-                              className='flex cursor-pointer items-center justify-between px-5 py-4 transition-colors hover:bg-muted/50'
-                            >
-                              <div className='flex flex-col gap-1'>
-                                <div className='flex items-center gap-2'>
-                                  <span className='text-sm font-bold tracking-tight'>{material.name}</span>
-                                  {material.spec && (
-                                    <Badge
-                                      variant='outline'
-                                      className='h-4 rounded-full border-none bg-muted/20 px-2 text-[8px] font-black tracking-widest text-muted-foreground'
-                                    >
-                                      {material.spec}
-                                    </Badge>
-                                  )}
-                                </div>
-                                <span className='text-[10px] font-black tracking-widest text-muted-foreground/40'>
-                                  {t('materialArchive.assemblyManager.dialog.materialMeta', {
-                                    code: material.code,
-                                    unit: material.uom,
-                                  })}
-                                </span>
-                              </div>
-                              <Check
-                                className={cn(
-                                  'h-4 w-4 text-primary transition-opacity',
-                                  editingRule?.materialId === material.id ? 'opacity-100' : 'opacity-0'
-                                )}
-                              />
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              <div className='space-y-4'>
-                <Label className='block pl-1 text-[10px] font-black tracking-widest text-muted-foreground/60'>
-                  {t('materialArchive.assemblyManager.dialog.packagingLabel')}
-                </Label>
-                <div className='grid grid-cols-2 gap-4'>
-                  <div className='space-y-2'>
-                    <Label
-                      htmlFor='packUnit'
-                      className='block pl-1 text-[8px] font-black tracking-widest text-primary/60'
-                    >
-                      {t('materialArchive.assemblyManager.dialog.packUnitLabel')}
-                    </Label>
-                    <Input
-                      id='packUnit'
-                      placeholder={t('materialArchive.assemblyManager.dialog.packUnitPlaceholder')}
-                      className='h-12 rounded-2xl border-none bg-muted/50 font-bold shadow-sm'
-                      value={editingRule?.packUnit || ''}
-                      onChange={(event) =>
-                        setEditingRule((current) =>
-                          current
-                            ? { ...current, packUnit: event.target.value }
-                            : { direction: 'forward', packUnit: event.target.value }
-                        )
-                      }
-                    />
-                  </div>
-                  <div className='space-y-2'>
-                    <Label
-                      htmlFor='baseUnit'
-                      className='block pl-1 text-[8px] font-black tracking-widest text-muted-foreground/60'
-                    >
-                      {t('materialArchive.assemblyManager.dialog.baseUnitLabel')}
-                    </Label>
-                    <Input
-                      id='baseUnit'
-                      readOnly
-                      disabled
-                      className='h-12 rounded-2xl border-none bg-muted/20 font-mono font-black italic text-primary/30'
-                      value={editingRule?.baseUnit || ''}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className='space-y-4'>
-                <div className='flex items-center justify-between'>
-                  <Label
-                    htmlFor='factor'
-                    className='block text-[10px] font-black tracking-widest text-muted-foreground/60'
-                  >
-                    {t('materialArchive.assemblyManager.dialog.factorLabel')}
-                  </Label>
-                  <Button
-                    variant='ghost'
-                    size='sm'
-                    className='h-7 rounded-full border border-dashed border-primary/20 px-4 text-[10px] font-black tracking-widest transition-all hover:bg-primary/10 hover:text-primary'
-                    onClick={() =>
-                      setEditingRule((current) => ({
-                        ...(current ?? { direction: 'forward' }),
-                        direction: current?.direction === 'forward' ? 'reverse' : 'forward',
-                      }))
-                    }
-                  >
-                    <ArrowRightLeft className='size-3' />
-                    {t('materialArchive.assemblyManager.dialog.switchDirection')}
-                  </Button>
-                </div>
-                <div className='flex flex-col gap-6'>
-                  <div className='flex items-center gap-4'>
-                    <div className='relative flex-1'>
-                      <Input
-                        id='factor'
-                        type='number'
-                        step='any'
-                        className='h-16 rounded-[24px] border-none bg-muted/50 text-center font-mono text-2xl font-black shadow-inner focus-visible:ring-primary'
-                        value={editingRule?.conversionFactor ?? 1}
-                        onChange={(event) => {
-                          const value = Number.parseFloat(event.target.value)
-                          setEditingRule((current) => ({
-                            ...(current ?? { direction: 'forward' }),
-                            conversionFactor: Number.isNaN(value) ? 0 : value,
-                          }))
-                        }}
-                      />
-                    </div>
-                    <div className='relative flex-[1.5] overflow-hidden rounded-[24px] border border-dashed border-primary/10 bg-primary/5 p-5 shadow-inner'>
-                      <div className='flex flex-col items-center justify-center'>
-                        <span className='mb-3 text-[10px] font-black tracking-widest text-muted-foreground/50'>
-                          {t('materialArchive.assemblyManager.dialog.previewTitle')}
-                        </span>
-                        <div className='flex items-center gap-4'>
-                          {editingRule?.direction !== 'reverse' ? (
-                            <>
-                              <span className='text-xl font-black tracking-tighter text-primary'>
-                                1 {editingRule?.packUnit || '?'}
-                              </span>
-                              <span className='text-xs font-black text-muted-foreground/30'>=</span>
-                              <span className='text-xl font-black tracking-tighter'>
-                                {editingRule?.conversionFactor || '?'} {editingRule?.baseUnit || '?'}
-                              </span>
-                            </>
-                          ) : (
-                            <>
-                              <span className='text-xl font-black tracking-tighter text-primary'>
-                                1 {editingRule?.baseUnit || '?'}
-                              </span>
-                              <span className='text-xs font-black text-muted-foreground/30'>=</span>
-                              <span className='text-xl font-black tracking-tighter'>
-                                {editingRule?.conversionFactor || '?'} {editingRule?.packUnit || '?'}
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className='rounded-2xl border border-dashed border-rose-500/10 bg-rose-500/5 p-4'>
-                    <p className='flex items-center gap-2 text-[10px] font-black tracking-widest text-rose-600'>
-                      <span className='size-2 rounded-full bg-rose-500 animate-pulse' />
-                      {t('materialArchive.assemblyManager.dialog.verificationRequired')}
-                    </p>
-                    <p className='ml-4 mt-2 text-[10px] font-bold text-muted-foreground'>
-                      {t('materialArchive.assemblyManager.dialog.currentRelation', {
-                        relation: buildRelation(editingRule),
-                      })}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter className='flex items-center justify-between gap-4 bg-transparent p-8 pt-0'>
-            <Button
-              variant='ghost'
-              className='h-12 flex-1 rounded-full text-[10px] font-black tracking-widest hover:bg-muted'
-              onClick={() => setIsDialogOpen(false)}
-            >
-              {t('materialArchive.assemblyManager.dialog.cancel')}
-            </Button>
-            <Button
-              className='h-12 flex-1 rounded-full bg-primary text-[10px] font-black tracking-widest text-primary-foreground shadow-lg shadow-primary/20 transition-all active:scale-95 hover:bg-primary/90'
-              onClick={handleSave}
-            >
-              {t('materialArchive.assemblyManager.dialog.confirm')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        isSubmitting={isSaving}
+      />
     </div>
   )
 }

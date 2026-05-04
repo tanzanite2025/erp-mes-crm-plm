@@ -24,7 +24,7 @@ interface ProductInitialState {
   selectedVariants: ProductVariantSelection[]
 }
 
-type ProductSubmitMode = 'single' | 'variant' | 'batch' | 'edit'
+type ProductSubmitMode = 'single' | 'variant' | 'multi-variant' | 'edit'
 
 interface ComposeSubmitPayloadParams {
   values: Product
@@ -126,7 +126,7 @@ function composeBatchSubmitPayload(
   typeCode: string
 ): ProductSubmitPayload {
   return {
-    mode: 'batch',
+    mode: 'multi-variant',
     productsToSave: buildBatchProducts(values, selectedVariants, typeCode),
   }
 }

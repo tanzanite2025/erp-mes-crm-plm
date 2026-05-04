@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { type FieldErrors, useWatch } from 'react-hook-form'
 import { Box, Trash2 } from 'lucide-react'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -16,18 +17,18 @@ import {
 } from '@/components/ui/dialog'
 import { Form } from '@/components/ui/form'
 import { useLanguage } from '@/context/language-provider'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { createLogger } from '@/lib/logger'
-import { type ProductEditTemplateResolution, getLocalizedSpecComponents, resolveEffectiveTemplate } from './specs'
+import { getLocalizedSpecComponents } from './specs'
 import { ProductBasicInfo } from './product/product-basic-info'
 import { DynamicAttributeSection } from './product/dynamic-attribute-section'
 import { ProductionRestrictions } from './product/production-restrictions'
 import { useProductForm, type ProductSubmitPayload } from '../hooks/use-product-form'
 import { useProductWriteActions } from '../hooks/use-product-write-actions'
 import { type Product, type ProductTemplate, type ProductType } from '../data/schema'
-import { getCreateProductTemplate } from '../utils/product-create-template-resolution'
 import { PRODUCT_ATTRIBUTE_CATEGORY_KEYS } from '../utils/product-attribute-utils'
 import { areSameProductAttributeCategoryKey } from '../utils/product-attribute-machine-value'
-import { ProductTypeService } from '../services/product-type-service'
+import { ProductTypeService, type ProductTypeTemplateResolution } from '../services/product-type-service'
 import { productTemplateService } from '../services/product-template-service'
 
 const logger = createLogger('ProductActionDialog')
@@ -119,7 +120,11 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
     let cancelled = false
 
     const resolveBoundTemplate = async () => {
-      if (!watchedTypeId && !resolvedTemplateKey && !resolvedTemplateId) {
+      const authorityTemplateId = isEdit ? resolvedTemplateId : ''
+      const authorityTemplateKey = isEdit ? resolvedTemplateKey : ''
+      const authorityResolutionError = isEdit ? templateResolutionError : ''
+
+      if (!isEdit && !watchedTypeId) {
         if (!cancelled) {
           setBoundTemplate(null)
           setTemplateResolveError(null)
@@ -128,130 +133,60 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
       }
 
       const selectedType = productTypes.find((type) => type.id === watchedTypeId)
-      if (!selectedType && !resolvedTemplateKey && !resolvedTemplateId) {
-        if (!cancelled) {
-          setBoundTemplate(null)
-          setTemplateResolveError(`Template binding resolution failed: product type ${watchedTypeId} was not found in the current dialog context.`)
-        }
-        logger.error('Template binding resolution failed: product type was not found in dialog context', {
-          watchedTypeId,
-        })
-        return
-      }
-
       try {
-        type ResolvedTemplateResult = ProductEditTemplateResolution | {
-          template: ProductTemplate | null
-          source: string
-        }
+        const resolveTemplateEntity = async (params: { templateId?: string; templateKey?: string }) => {
+          const findTemplate = (templates: ProductTemplate[]) => {
+            const normalizedTemplateId = params.templateId?.trim() || ''
+            const normalizedTemplateKey = params.templateKey?.trim().toUpperCase() || ''
 
-        const resolveFromBackendAuthority = async () => {
-          if (!isEdit) return null
+            return templates.find((item) => item.id === normalizedTemplateId)
+              || templates.find((item) => item.componentKey.trim().toUpperCase() === normalizedTemplateKey)
+              || null
+          }
 
           const templates = await productTemplateService.getTemplates()
-          const template = templates.find((item) => item.id === resolvedTemplateId)
-            || templates.find((item) => item.componentKey.trim().toUpperCase() === resolvedTemplateKey.toUpperCase())
-            || null
+          const cachedMatch = findTemplate(templates)
+          if (cachedMatch) {
+            return cachedMatch
+          }
 
-          if (template) {
-            return {
-              template,
-              source: templateResolutionSource || 'backendResolvedTemplate',
+          const freshTemplates = await productTemplateService.getTemplates({ fresh: true })
+          return findTemplate(freshTemplates)
+        }
+
+        const resolvedAuthority: ProductTypeTemplateResolution = isEdit
+          ? {
+              resolvedTemplateId: authorityTemplateId,
+              resolvedTemplateKey: authorityTemplateKey,
+              templateResolutionSource: templateResolutionSource || 'backendResolvedTemplate',
+              templateResolutionError: authorityResolutionError,
             }
-          }
-
-          return null
-        }
-
-        const resolveFromCurrentContext = async () => {
-          if (isEdit) {
-            const templates = await productTemplateService.getTemplates()
-            return resolveEffectiveTemplate(templates, {
-              productTypes,
-              typeId: watchedTypeId,
-              productTemplateKey: resolvedTemplateKey,
-            })
-          }
-
-          const backendResolution = await ProductTypeService.getTemplateResolution(watchedTypeId || '')
-          const templates = await productTemplateService.getTemplates()
-          const backendTemplate = templates.find((item) => item.id === backendResolution.resolvedTemplateId)
-            || templates.find((item) => item.componentKey.trim().toUpperCase() === (backendResolution.resolvedTemplateKey || '').toUpperCase())
-            || null
-
-          if (backendTemplate) {
-            return {
-              template: backendTemplate,
-              source: backendResolution.templateResolutionSource || 'backendCreateTypeResolution',
-            }
-          }
-
-          return getCreateProductTemplate({
-            productTypes,
-            typeId: watchedTypeId,
-          })
-        }
-
-        const resolveFromFreshContext = async () => {
-          const [freshProductTypes, freshTemplates] = await Promise.all([
-            ProductTypeService.getProductTypes({ isOptions: true }),
-            productTemplateService.getTemplates({ fresh: true }),
-          ])
-
-          if (isEdit) {
-            return resolveEffectiveTemplate(freshTemplates, {
-              productTypes: freshProductTypes,
-              typeId: watchedTypeId,
-              productTemplateKey: resolvedTemplateKey,
-            })
-          }
-
-          return getCreateProductTemplate({
-            productTypes: freshProductTypes,
-            typeId: watchedTypeId,
-          })
-        }
-
-        let result: ResolvedTemplateResult | null = await resolveFromBackendAuthority()
-        if (!result) {
-          result = await resolveFromCurrentContext()
-        }
-
-        if (!result?.template) {
-          logger.warn('Template binding unresolved in current dialog context, retrying with fresh metadata', {
-            productTypeId: selectedType?.id,
-            productTemplateKey: resolvedTemplateKey,
-            resolvedTemplateId,
-            templateResolutionError,
-            mode: isEdit ? 'edit' : 'create',
-          })
-          result = await resolveFromFreshContext()
-        }
+          : await ProductTypeService.getTemplateResolution(watchedTypeId || '')
+        const authorityTemplate = await resolveTemplateEntity({
+          templateId: resolvedAuthority.resolvedTemplateId,
+          templateKey: resolvedAuthority.resolvedTemplateKey,
+        })
 
         if (cancelled) return
 
-        if (!result) {
-          setBoundTemplate(null)
-          setTemplateResolveError('Template binding resolution failed: unknown resolution state.')
-          return
-        }
-
-        const template = result.template
+        const template = authorityTemplate
         if (!template) {
           const selectedTypeLabel = selectedType
             ? `${selectedType.name} (${selectedType.id})`
             : `unknown product type (${watchedTypeId || 'missing'})`
-          const message = isEdit && (resolvedTemplateKey || templateResolutionError)
-            ? `Template binding resolution failed: product type ${selectedTypeLabel} could not resolve an effective template. backendResolution=${templateResolutionError || 'unknown'} templateKey=${resolvedTemplateKey || 'missing'}.`
-            : `Template binding resolution failed: product type ${selectedTypeLabel} has no resolvable template binding in its category chain.`
+          const resolutionError = resolvedAuthority.templateResolutionError || ''
+          const resolutionTemplateKey = resolvedAuthority.resolvedTemplateKey || ''
+          const message = resolutionTemplateKey || resolutionError
+            ? `Template binding resolution failed: product type ${selectedTypeLabel} could not resolve an effective template. backendResolution=${resolutionError || 'unknown'} templateKey=${resolutionTemplateKey || 'missing'}.`
+            : `Template binding resolution failed: product type ${selectedTypeLabel} has no resolvable template binding in service authority.`
           setBoundTemplate(null)
           setTemplateResolveError(message)
-          logger.error('Template binding resolution failed: effective template could not be resolved', {
+          logger.error('Template binding resolution failed: authority template could not be mapped', {
             productTypeId: selectedType?.id,
-            templateId: selectedType?.templateId,
-            productTemplateKey: isEdit ? resolvedTemplateKey : undefined,
-            resolvedTemplateId: isEdit ? resolvedTemplateId : undefined,
-            templateResolutionError: isEdit ? templateResolutionError : undefined,
+            templateId: resolvedAuthority.resolvedTemplateId,
+            productTemplateKey: resolutionTemplateKey || undefined,
+            resolvedTemplateId: resolvedAuthority.resolvedTemplateId,
+            templateResolutionError: resolutionError || undefined,
             mode: isEdit ? 'edit' : 'create',
           })
           return
@@ -259,10 +194,10 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
 
         setBoundTemplate(template)
         setTemplateResolveError(null)
-        logger.info('Resolved effective template for product dialog', {
+        logger.info('Resolved authority template for product dialog', {
           productTypeId: selectedType?.id,
           templateId: template.id,
-          source: result.source,
+          source: resolvedAuthority.templateResolutionSource || (isEdit ? 'backendResolvedTemplate' : 'backendCreateTypeResolution'),
           mode: isEdit ? 'edit' : 'create',
         })
       } catch (error) {
@@ -538,6 +473,14 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
             </p>
           </div>
           <div className='flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end'>
+            {isEdit && currentRow ? (
+              <AuditTimelineTriggerButton
+                module={AUDIT_MODULES.product}
+                targetId={currentRow.id}
+                targetName={currentRow.name}
+                label={t('common.audit.trigger')}
+              />
+            ) : null}
             {isEdit ? (
               <Button
                 type='button'

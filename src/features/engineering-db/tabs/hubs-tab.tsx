@@ -4,23 +4,21 @@ import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
     flexRender,
-    getCoreRowModel,
-    getPaginationRowModel,
-    getSortedRowModel,
     type ColumnDef,
-    useReactTable,
 } from '@tanstack/react-table'
 import { useSearch } from '@tanstack/react-router'
 import { cn } from '@/lib/utils'
 import { Search, Plus, Edit, Trash2, Cpu, ImageIcon, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
+import { useUdsClientTable } from '@/hooks/use-uds-table'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { DataTablePagination } from '@/components/data-table'
 import { Badge } from '@/components/ui/badge'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
+import { type DeltaSet } from '@/lib/delta/types'
 import { type Hub } from '../data/hub-schema'
 import { hubService } from '../services/hub-service'
 import { HubActionDialog } from '../components/hub-action-dialog'
@@ -55,7 +53,7 @@ export function HubsTab() {
         mutationFn: async (params: {
             data: Hub
             isPatch: boolean
-            delta?: any
+            delta?: DeltaSet
             version?: number
         }) => {
             const { data: nextData, isPatch, delta, version } = params
@@ -183,12 +181,9 @@ export function HubsTab() {
         }
     ]
 
-    const table = useReactTable({
+    const table = useUdsClientTable({
         data: filteredData,
         columns,
-        getCoreRowModel: getCoreRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
-        getSortedRowModel: getSortedRowModel(),
     })
 
     return (

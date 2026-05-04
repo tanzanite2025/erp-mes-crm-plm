@@ -21,7 +21,6 @@ import {
 import { Input } from '@/components/ui/input'
 import { BOMFormHeader } from './bom-editor/bom-form-header'
 import { BOMRecipeEditor } from './bom-editor/bom-recipe-editor'
-import { type DeltaSet } from '@/lib/delta/types'
 import { type BOM } from '../data/schema'
 import { useBOMForm } from '../hooks/use-bom-form'
 import { type BOMItemDraft } from '../mutation-types'
@@ -32,7 +31,7 @@ type BOMActionDialogProps = {
   initialProductId?: string
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit?: (data: BOM, delta?: DeltaSet) => void | Promise<void>
+  onSubmit?: (data: BOM) => void | Promise<void>
 }
 
 export function BOMActionDialog({
@@ -45,7 +44,7 @@ export function BOMActionDialog({
 }: BOMActionDialogProps) {
   const { t } = useLanguage()
   const isEdit = Boolean(currentRow)
-  const { form, fields, append, remove, optionsResource, products, materials, deltaProxy, commitDelta } = useBOMForm({
+  const { form, fields, append, remove, optionsResource, products, materials } = useBOMForm({
     currentRow,
     initialItems,
     initialProductId,
@@ -55,17 +54,16 @@ export function BOMActionDialog({
   const typedForm = form as UseFormReturn<BOM>
 
   const handleFormSubmit = async (data: BOM) => {
-    let delta: DeltaSet | undefined
-    if (isEdit) {
-      Object.assign(deltaProxy, data)
-      delta = commitDelta()
-      if (!delta || Object.keys(delta).length === 0) {
-        onOpenChange(false)
-        return
-      }
+    if (isEdit && !typedForm.formState.isDirty) {
+      onOpenChange(false)
+      return
     }
 
-    if (onSubmit) await onSubmit(data, delta)
+    if (onSubmit) {
+      await onSubmit(data)
+      return
+    }
+
     onOpenChange(false)
   }
 

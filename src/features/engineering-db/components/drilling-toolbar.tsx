@@ -1,7 +1,9 @@
 import { Search, Plus } from 'lucide-react'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useLanguage } from '@/context/language-provider'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 
 interface DrillingToolbarProps {
   searchTerm: string
@@ -27,12 +29,20 @@ export function DrillingToolbar({
           className='pl-10 h-12 rounded-2xl border-none bg-background shadow-inner text-sm font-medium focus-visible:ring-1 focus-visible:ring-indigo-600/20 w-full'
         />
       </div>
-      <Button
-        onClick={onCreate}
-        className='w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest text-white gap-2 transition-all active:scale-95'
-      >
-        <Plus className='size-4' /> {t('engineering.drilling.table.upload')}
-      </Button>
+      <div className='flex w-full sm:w-auto flex-col sm:flex-row items-stretch sm:items-center gap-3'>
+        <AuditTimelineTriggerButton
+          module={AUDIT_MODULES.drilling}
+          targetName={t('engineering.drilling.overview.title')}
+          label={t('common.audit.trigger')}
+          className='h-11 rounded-full px-5'
+        />
+        <Button
+          onClick={onCreate}
+          className='w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest text-white gap-2 transition-all active:scale-95'
+        >
+          <Plus className='size-4' /> {t('engineering.drilling.table.upload')}
+        </Button>
+      </div>
     </div>
   )
 }

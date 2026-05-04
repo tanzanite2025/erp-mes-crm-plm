@@ -10,6 +10,7 @@ export const sidebar = {
     resourceManagement: '资源管理',
     purchaseAndSales: '购销管理',
     purchaseManagement: '采购管理',
+    productionManagement: '生产管理',
     planningCenter: '计划中心',
     rawMaterialsManagement: '原材料管理',
     salesManagement: '销售管理',

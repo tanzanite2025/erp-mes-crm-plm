@@ -4,14 +4,7 @@ import { useEffect, useMemo } from 'react'
 import { Thermometer } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog'
+import { ActionDialogShell } from '@/components/action-dialog-shell'
 import {
     Form,
     FormControl,
@@ -28,6 +21,7 @@ import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-perm
 import { useLanguage } from '@/context/language-provider'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { type DeltaSet } from '@/lib/delta/types'
+import { prepareTrackedDialogSubmit } from '../utils/tracked-dialog-submit'
 
 interface FurnaceActionDialogProps {
     open: boolean
@@ -48,8 +42,7 @@ export function FurnaceActionDialog({
     const furnaceFormSchema = useMemo(() => createFurnaceSchema(t), [t])
     const defaultDraft = useMemo(() => createFurnaceDraft(defaultFurnaceType, editData ?? {}), [defaultFurnaceType, editData])
 
-    // SDRTS: 接入增量记录器
-    const { tracker, deltaProxy, reset } = useDeltaTracker<Furnace>(editData || createFurnaceDraft(defaultFurnaceType))
+    const { commit, deltaProxy, reset } = useDeltaTracker<Furnace>(editData || createFurnaceDraft(defaultFurnaceType))
     const isEdit = !!editData
 
     const form = useForm<FurnaceFormInput, unknown, FurnaceFormOutput>({
@@ -68,10 +61,12 @@ export function FurnaceActionDialog({
     const onSubmit = (data: FurnaceFormOutput) => {
         if (!allowsAction('action_equipment_furnace_manage')) return
 
-        // SDRTS: 同步 RHF 数据到 Proxy 用于增量计算
-        Object.assign(deltaProxy, data)
-        const delta = tracker.commit()
-        const isDirty = Object.keys(delta).length > 0
+        const { delta, isDirty, patchDelta } = prepareTrackedDialogSubmit({
+            values: data,
+            deltaProxy,
+            commit,
+            isEdit,
+        })
 
         if (isEdit && !isDirty) {
             onOpenChange(false)
@@ -82,27 +77,48 @@ export function FurnaceActionDialog({
              throw new Error('[CRITICAL] 炉台编辑模式下版本号(version)缺失，无法执行 SDRTS 安全 Patch。');
         }
 
-        // SDRTS: 发送 Patch 意图或全量数据
-        onConfirm(data as Furnace, isEdit, isEdit ? delta : undefined)
+        onConfirm(data as Furnace, isEdit, patchDelta ?? delta)
         onOpenChange(false)
     }
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className='w-[95vw] sm:max-w-lg max-h-[92vh] flex flex-col p-0 rounded-[32px] border-none shadow-2xl overflow-hidden'>
-                <DialogHeader className='p-6 sm:p-8 shrink-0 pb-4 bg-primary/5 border-b border-dashed'>
-                    <div className='flex items-center gap-2 text-primary'>
-                        <Thermometer className='size-5' />
-                        <DialogTitle className='text-lg font-black italic uppercase tracking-tighter'>
-                            {editData ? t('equipmentTooling.furnaces.dialog.title.edit') : t('equipmentTooling.furnaces.dialog.title.create')}
-                        </DialogTitle>
-                    </div>
-                    <DialogDescription className='text-[9px] font-black uppercase tracking-widest opacity-60'>
-                        {t('equipmentTooling.furnaces.dialog.description')}
-                    </DialogDescription>
-                </DialogHeader>
-
-                <div className='flex-1 overflow-y-auto p-6 sm:p-8 custom-scrollbar'>
+        <ActionDialogShell
+            open={open}
+            onOpenChange={onOpenChange}
+            title={
+                <div className='flex items-center gap-2 text-primary'>
+                    <Thermometer className='size-5' />
+                    <span>{editData ? t('equipmentTooling.furnaces.dialog.title.edit') : t('equipmentTooling.furnaces.dialog.title.create')}</span>
+                </div>
+            }
+            description={t('equipmentTooling.furnaces.dialog.description')}
+            contentDecoration={<div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent pointer-events-none' />}
+            contentClassName='relative w-[95vw] sm:max-w-lg max-h-[92vh] flex flex-col p-0 rounded-[32px] border-none shadow-2xl overflow-hidden bg-background'
+            headerClassName='p-6 sm:p-8 shrink-0 pb-4 bg-primary/5 border-b border-dashed text-left'
+            bodyClassName='flex-1 overflow-y-auto p-6 sm:p-8 custom-scrollbar'
+            footerClassName='p-6 sm:p-8 bg-muted/5 border-t border-dashed border-muted-foreground/10 flex flex-row sm:justify-end gap-3 shrink-0'
+            titleClassName='text-lg font-black italic uppercase tracking-tighter'
+            descriptionClassName='text-[9px] font-black uppercase tracking-widest opacity-60'
+            footer={
+                <>
+                    <Button
+                        type='button'
+                        variant='ghost'
+                        onClick={() => onOpenChange(false)}
+                        className='flex-1 sm:flex-none rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest text-muted-foreground/60'
+                    >
+                        {t('equipmentTooling.furnaces.dialog.actions.cancel')}
+                    </Button>
+                    <Button
+                        type='submit'
+                        onClick={form.handleSubmit(onSubmit)}
+                        className='flex-1 sm:flex-none rounded-full h-11 px-10 bg-blue-600 hover:bg-blue-700 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-500/20 active:scale-95 transition-all'
+                    >
+                        {t('equipmentTooling.furnaces.dialog.actions.save')}
+                    </Button>
+                </>
+            }
+        >
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
                             <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
@@ -229,26 +245,6 @@ export function FurnaceActionDialog({
                             />
                         </form>
                     </Form>
-                </div>
-
-                <DialogFooter className='p-6 sm:p-8 bg-muted/5 border-t border-dashed border-muted-foreground/10 flex flex-row sm:justify-end gap-3 shrink-0'>
-                    <Button
-                        type='button'
-                        variant='ghost'
-                        onClick={() => onOpenChange(false)}
-                        className='flex-1 sm:flex-none rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest text-muted-foreground/60'
-                    >
-                        {t('equipmentTooling.furnaces.dialog.actions.cancel')}
-                    </Button>
-                    <Button
-                        type='submit'
-                        onClick={form.handleSubmit(onSubmit)}
-                        className='flex-1 sm:flex-none rounded-full h-11 px-10 bg-blue-600 hover:bg-blue-700 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-500/20 active:scale-95 transition-all'
-                    >
-                        {t('equipmentTooling.furnaces.dialog.actions.save')}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+        </ActionDialogShell>
     )
 }

@@ -1,4 +1,5 @@
 import { createLogger } from '@/lib/logger'
+import { StorageService } from '@/features/system-mgmt/services/storage-service'
 import { OfflineStorage } from '@/offline-sync/storage/offline-storage'
 import type { OfflineConflictRecord, PendingDeltaRecord } from '@/offline-sync/types/offline-sync'
 import type { DeltaSet } from '@/lib/delta/types'
@@ -27,16 +28,16 @@ const STOCKTAKE_ITEM_ENTITY_TYPE = 'warehouse.stocktake.item'
 const STOCKTAKE_PATCH_INTENT = 'PDA_STOCKTAKE_PATCH'
 const CLIENT_ID_STORAGE_KEY = 'xdfc_offline_client_id'
 
-function getClientId() {
-  if (typeof window === 'undefined' || typeof window.localStorage === 'undefined') {
+async function getClientId() {
+  if (typeof window === 'undefined' || typeof indexedDB === 'undefined') {
     return 'server'
   }
 
-  const existing = window.localStorage.getItem(CLIENT_ID_STORAGE_KEY)
+  const existing = await StorageService.getItem<string>(CLIENT_ID_STORAGE_KEY)
   if (existing) return existing
 
   const next = `client_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
-  window.localStorage.setItem(CLIENT_ID_STORAGE_KEY, next)
+  await StorageService.setItem(CLIENT_ID_STORAGE_KEY, next)
   return next
 }
 
@@ -92,10 +93,11 @@ function toQueuedPatchPayload(input: StocktakePatchInput, createdAt: string): St
   }
 }
 
-function buildPendingDelta(payload: PDAScanPayload, createdAt: string): PendingDeltaRecord<StocktakeQueuedScanPayload> {
+async function buildPendingDelta(payload: PDAScanPayload, createdAt: string): Promise<PendingDeltaRecord<StocktakeQueuedScanPayload>> {
+  const clientId = await getClientId()
   return {
     opId: buildScanOpId(payload, createdAt),
-    clientId: getClientId(),
+    clientId,
     entityType: STOCKTAKE_SCAN_ENTITY_TYPE,
     entityId: payload.taskId,
     path: buildScanPath(payload),
@@ -113,10 +115,11 @@ function buildPatchOpId(input: StocktakePatchInput, createdAt: string) {
   return ['stocktake_patch', input.itemId, input.version, createdAt].join('_')
 }
 
-function buildPatchDelta(input: StocktakePatchInput, createdAt: string): PendingDeltaRecord<StocktakeQueuedPatchPayload> {
+async function buildPatchDelta(input: StocktakePatchInput, createdAt: string): Promise<PendingDeltaRecord<StocktakeQueuedPatchPayload>> {
+  const clientId = await getClientId()
   return {
     opId: buildPatchOpId(input, createdAt),
-    clientId: getClientId(),
+    clientId,
     entityType: STOCKTAKE_ITEM_ENTITY_TYPE,
     entityId: input.itemId,
     path: buildPatchPath(input.delta),
@@ -472,7 +475,7 @@ async function flushQueuedPatchesInternal(): Promise<StocktakePatchFlushResult> 
 export const StocktakeOfflineAdapter = {
   async submitScan(payload: PDAScanPayload): Promise<StocktakeOfflineSubmitResult> {
     const createdAt = new Date().toISOString()
-    const delta = buildPendingDelta(payload, createdAt)
+    const delta = await buildPendingDelta(payload, createdAt)
 
     await persistQueuedScan(delta)
 
@@ -517,7 +520,7 @@ export const StocktakeOfflineAdapter = {
 
   async submitPatchItem(input: StocktakePatchInput): Promise<StocktakeOfflineSubmitResult> {
     const createdAt = new Date().toISOString()
-    const delta = buildPatchDelta(input, createdAt)
+    const delta = await buildPatchDelta(input, createdAt)
 
     await persistQueuedPatch(delta)
 
@@ -665,9 +668,13 @@ export const StocktakeOfflineAdapter = {
     }
 
     const handleOnline = () => {
-      void Promise.all([flushQueuedScansInternal(), flushQueuedPatchesInternal()]).finally(() => {
-        onSettled?.()
-      })
+      void Promise.all([flushQueuedScansInternal(), flushQueuedPatchesInternal()])
+        .catch((error) => {
+          logger.warn('Auto flush failed', error)
+        })
+        .finally(() => {
+          onSettled?.()
+        })
     }
 
     window.addEventListener('online', handleOnline)

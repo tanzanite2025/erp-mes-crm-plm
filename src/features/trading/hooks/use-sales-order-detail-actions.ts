@@ -1,7 +1,13 @@
 import { toast } from 'sonner'
 import type { TranslationKey } from '@/locales'
-import type { SalesOrder } from '../data/schema'
+import { failLoudly } from '@/lib/safe-catch'
+import type { SalesOrder, SalesOrderStatus } from '../data/schema'
 import { requireTradingCommandActor } from '../utils/command-actor'
+
+export interface SalesOrderStatusCommandPayload {
+  status: SalesOrderStatus
+  statusNote?: string
+}
 
 interface UseSalesOrderDetailActionsParams {
   order?: SalesOrder
@@ -58,8 +64,20 @@ export function useSalesOrderDetailActions({
     }
   }
 
-  const handleMutateStatus = (payload: Partial<SalesOrder>) => {
-    if (!order) return
+  const ensureOrder = (scope: string) => {
+    if (order) {
+      return order
+    }
+
+    const error = new Error(`[CRITICAL] Missing sales order detail context in ${scope}`)
+    failLoudly(error, scope, { silentUI: true })
+    toast.error(t('tradingSalesOrder.errors.missingDetailOrder'))
+    return null
+  }
+
+  const handleMutateStatus = (payload: SalesOrderStatusCommandPayload) => {
+    const currentOrder = ensureOrder('SalesOrderDetail.handleMutateStatus')
+    if (!currentOrder) return
     if (!allowsAction('action_trading_sales_order_manage')) return
 
     const nextStatus = payload.status
@@ -71,60 +89,62 @@ export function useSalesOrderDetailActions({
 
     if (nextStatus === 'Canceled') {
       cancelMutation.mutate({
-        orderId: order.id,
+        orderId: currentOrder.id,
         reason: nextStatusNote,
         operator: actor.operator,
         actorId: actor.actorId,
-        expectedVersion: order.version,
+        expectedVersion: currentOrder.version,
       })
       return
     }
 
-    if (nextStatus === order.status && (nextStatusNote ?? '') === (order.statusNote ?? '')) return
+    if (nextStatus === currentOrder.status && (nextStatusNote ?? '') === (currentOrder.statusNote ?? '')) return
 
     statusTransitionMutation.mutate({
-      orderId: order.id,
+      orderId: currentOrder.id,
       status: nextStatus,
       statusNote: nextStatusNote,
       operator: actor.operator,
       actorId: actor.actorId,
-      expectedVersion: order.version,
+      expectedVersion: currentOrder.version,
     })
   }
 
   const handleClaimModel = (model: string) => {
-    if (!order) return
+    const currentOrder = ensureOrder('SalesOrderDetail.handleClaimModel')
+    if (!currentOrder) return
     if (!allowsAction('action_trading_sales_order_manage')) return
 
     const actor = ensureCommandActor('SalesOrderDetail.handleClaimModel')
     if (!actor) return
 
-    const lineNos = order.lines
+    const lineNos = currentOrder.lines
       .filter((line) => line.productModel === model && !line.claimedBy)
       .map((line) => line.lineNo)
 
     claimMutation.mutate({
-      orderId: order.id,
+      orderId: currentOrder.id,
       lineNos,
       operator: actor.operator,
       actorId: actor.actorId,
-      expectedVersion: order.version,
+      expectedVersion: currentOrder.version,
     })
   }
 
   const handleClaimLine = (lineNo: number) => {
-    if (!order) return
+    const currentOrder = ensureOrder('SalesOrderDetail.handleClaimLine')
+    if (!currentOrder) return
     if (!allowsAction('action_trading_sales_order_manage')) return
 
     const actor = ensureCommandActor('SalesOrderDetail.handleClaimLine')
     if (!actor) return
 
     claimMutation.mutate({
-      orderId: order.id,
+      orderId: currentOrder.id,
       lineNos: [lineNo],
       operator: actor.operator,
       actorId: actor.actorId,
-      expectedVersion: order.version,
+      expectedVersion: currentOrder.version,
     })
   }
 

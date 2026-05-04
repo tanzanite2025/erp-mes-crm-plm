@@ -254,7 +254,7 @@ export function StocktakeMgmt() {
                                 <div className='space-y-0.5 overflow-hidden'>
                                     <div className='flex items-center gap-3'>
                                         <div className='w-1 h-4 md:h-5 bg-blue-600 rounded-full shrink-0' />
-                                        <h3 className='text-base md:text-lg font-black tracking-tighter italic uppercase text-foreground truncate'>{selectedTask.title}</h3>
+                                        <h3 className='text-sm font-black tracking-tighter italic uppercase text-foreground truncate'>{selectedTask.title}</h3>
                                     </div>
                                     <p className='text-[8px] md:text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 ml-[16px] truncate'>
                                         {t('warehouse.stocktake.detailSubtitle', { count: items?.length || 0 })}

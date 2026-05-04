@@ -184,7 +184,11 @@ function toSalesReturnContract(dto: SalesReturnApiDTO): SalesReturnRecord {
     totalAmount: dto.totalAmount,
     createdAt: dto.createdAt,
     updatedAt: dto.updatedAt,
-    lines: (dto.lines ?? []).map(toSalesReturnLineContract),
+    lines: ensureArrayField<SalesReturnLineApiDTO>(
+      dto,
+      'lines',
+      'SalesReturnService.toSalesReturnContract'
+    ).map(toSalesReturnLineContract),
   }
 }
 

@@ -26,7 +26,7 @@ export function ProductBindingTab() {
       title={t('sidebar.items.cuttingOperations')}
       tabs={getCuttingOperationTabs(tabTranslator)}
     >
-      <div className='flex flex-col gap-6 animate-in fade-in duration-700'>
+      <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
         <IndustrialHeader
           icon={Link2}
           title={t('cuttingOperations.productBinding.header.title')}

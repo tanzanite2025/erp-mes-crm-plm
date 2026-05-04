@@ -4,10 +4,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   flexRender,
-  getCoreRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
   type ColumnDef,
 } from '@tanstack/react-table'
 import { CornerDownRight, Edit, Plus, Tags, Trash2 } from 'lucide-react'
@@ -15,6 +11,7 @@ import { toast } from 'sonner'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { useLanguage } from '@/context/language-provider'
 import { DataTablePagination } from '@/components/data-table'
+import { useUdsClientTable } from '@/hooks/use-uds-table'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -195,12 +192,9 @@ export function ProductTypesMgmt() {
     },
   ]
 
-  const table = useReactTable({
+  const table = useUdsClientTable({
     data: displayData,
     columns,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
   })
 
   if (isForbiddenError(error)) {

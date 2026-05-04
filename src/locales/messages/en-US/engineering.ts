@@ -1186,6 +1186,7 @@ export const engineering = {
       batchSaving: 'Saving {{count}} product records...',
       batchSaveFailed: 'Failed to save products in batch',
       batchSaveSuccess: 'Created {{count}} product records',
+      multiVariantSingleSubmitOnly: 'Only one product variant can be created per submission. Please create them one by one.',
       updateSuccess: 'Product updated',
       createVariantSuccess: 'Product variant created',
       createSingleSuccess: 'Product record created',
