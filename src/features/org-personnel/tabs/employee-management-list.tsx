@@ -13,7 +13,7 @@ import { ConfirmDialog } from '@/components/confirm-dialog'
 import { DataTableFacetedFilter, DataTablePagination } from '@/components/data-table'
 import { DataTableViewOptions } from '@/components/data-table/view-options'
 import { ForbiddenState } from '@/components/forbidden-state'
-import { useUdsTable } from '@/hooks/use-uds-table'
+import { useUdsClientTable } from '@/hooks/use-uds-table'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -272,11 +272,9 @@ export function EmployeeManagementList() {
             })
     }, [data, t])
 
-    const table = useUdsTable({
+    const table = useUdsClientTable({
         data,
         columns,
-        mode: 'client',
-        enableSorting: true,
         enableFiltering: true,
         enableFaceting: true,
         state: {

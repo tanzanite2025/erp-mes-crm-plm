@@ -4,11 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
     flexRender,
-    getCoreRowModel,
-    getPaginationRowModel,
-    getSortedRowModel,
     type ColumnDef,
-    useReactTable,
 } from '@tanstack/react-table'
 import { useSearch } from '@tanstack/react-router'
 import { cn } from '@/lib/utils'
@@ -26,6 +22,7 @@ import {
     TableRow,
 } from '@/components/ui/table'
 import { DataTablePagination } from '@/components/data-table'
+import { useUdsClientTable } from '@/hooks/use-uds-table'
 import { Badge } from '@/components/ui/badge'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { type LabelingDraft, type LabelingDraftInput } from '../data/schema'
@@ -256,12 +253,9 @@ export function LabelingTab() {
         }
     ]
 
-    const table = useReactTable({
+    const table = useUdsClientTable({
         data: filteredData,
         columns,
-        getCoreRowModel: getCoreRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
-        getSortedRowModel: getSortedRowModel(),
     })
 
     const handleSave = async (params: {

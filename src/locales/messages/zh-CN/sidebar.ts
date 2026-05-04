@@ -18,6 +18,7 @@ export const sidebar = {
     warehouseManagement: '仓储',
     experimentalCenter: '实验中心',
     productionCoordination: '生产协同',
+    assetManagement: '资产管理',
     toolingManagement: '工装管理',
     orgPersonnel: '组织人事',
     logistics: '物流',

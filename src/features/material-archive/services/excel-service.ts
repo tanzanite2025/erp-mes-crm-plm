@@ -1,5 +1,10 @@
 import { z } from 'zod'
 import { type AppLocale, translate } from '@/locales'
+import {
+  applyWorksheetHeaderRowStyle,
+  createExcelWorkbook,
+  downloadWorkbook,
+} from '@/lib/excel/export'
 import { loadExcelJS } from '@/lib/lazy-vendors'
 import { failLoudly } from '@/lib/safe-catch'
 import type { Cell, CellValue, Row, Workbook } from 'exceljs'
@@ -111,8 +116,7 @@ export const MaterialExcelService = {
     locale: AppLocale = 'zh-CN',
     units: Unit[] = []
   ) {
-    const { default: ExcelJS } = await loadExcelJS()
-    const workbook = new ExcelJS.Workbook()
+    const workbook = await createExcelWorkbook()
 
     const { version } = await MaterialCoreService.getMaterialsWithVersion()
     const globalVersion = Number(version)
@@ -166,9 +170,7 @@ export const MaterialExcelService = {
     const activeRules = await packagingService.getRules()
     const headerRow = sheet.getRow(1)
     headerRow.height = 35
-    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 10 }
-    headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E40AF' } }
-    headerRow.alignment = { vertical: 'middle', horizontal: 'center' }
+    applyWorksheetHeaderRowStyle(headerRow)
 
     materials.forEach((material, idx) => {
       const currentRule = activeRules.find((rule) => rule.materialId === material.id)
@@ -255,23 +257,15 @@ export const MaterialExcelService = {
     await dictSheet.protect('xdfc_safe_edit_2026_core', coreLockOptions)
     await configSheet.protect('xdfc_safe_edit_2026_core', coreLockOptions)
 
-    const buffer = await workbook.xlsx.writeBuffer()
-    const blob = new Blob([buffer], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    })
-    const url = window.URL.createObjectURL(blob)
-    const anchor = document.createElement('a')
     const date = new Date().toISOString().split('T')[0]
 
-    anchor.href = url
-    anchor.download = translate(locale, 'materialArchive.excel.fileName', {
-      category: categoryLabel,
-      date,
-    })
-    document.body.appendChild(anchor)
-    anchor.click()
-    document.body.removeChild(anchor)
-    window.URL.revokeObjectURL(url)
+    await downloadWorkbook(
+      workbook,
+      translate(locale, 'materialArchive.excel.fileName', {
+        category: categoryLabel,
+        date,
+      })
+    )
   },
 
   async parseMaterialExcel(file: File, locale: AppLocale = 'zh-CN') {

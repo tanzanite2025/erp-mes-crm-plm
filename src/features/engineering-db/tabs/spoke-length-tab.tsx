@@ -3,10 +3,6 @@
 import { useState } from 'react'
 import {
     flexRender,
-    getCoreRowModel,
-    getPaginationRowModel,
-    getSortedRowModel,
-    useReactTable,
 } from '@tanstack/react-table'
 import { useSearch } from '@tanstack/react-router'
 import { ForbiddenState } from '@/components/forbidden-state'
@@ -25,6 +21,7 @@ import {
     TableRow,
 } from '@/components/ui/table'
 import { DataTablePagination } from '@/components/data-table'
+import { useUdsClientTable } from '@/hooks/use-uds-table'
 import { type SpokeLength } from '../data/schema'
 import { FileResolverService } from '../services/file-resolver-service'
 import { SpokeLengthActionDialog } from '../components/spoke-length-action-dialog'
@@ -97,12 +94,9 @@ export function SpokeLengthTab() {
         onDelete: handleDelete
     })
 
-    const table = useReactTable({
+    const table = useUdsClientTable({
         data: filteredData,
         columns,
-        getCoreRowModel: getCoreRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
-        getSortedRowModel: getSortedRowModel(),
     })
 
     if (readResource.status === 'error' && isForbiddenError(readResource.error)) {

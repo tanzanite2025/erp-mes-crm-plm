@@ -282,22 +282,29 @@ const navGroupConfigs: SidebarGroupConfig[] = [
     ],
   },
   {
-    id: 'tooling-management',
-    titleKey: 'sidebar.groups.toolingManagement',
+    id: 'asset-management',
+    titleKey: 'sidebar.groups.assetManagement',
     children: [
       {
-        id: 'tooling-assets',
-        titleKey: 'sidebar.items.toolingAssets',
-        url: '/equipment-tooling/overview',
+        id: 'tooling-management',
+        titleKey: 'sidebar.groups.toolingManagement',
         icon: Cpu,
-        permissionId: permissionIdForPath('/equipment-tooling/overview'),
-      },
-      {
-        id: 'furnace-assets',
-        titleKey: 'sidebar.items.furnaceAssets',
-        url: '/furnaces',
-        icon: Gauge,
-        permissionId: permissionIdForPath('/furnaces'),
+        children: [
+          {
+            id: 'tooling-assets',
+            titleKey: 'sidebar.items.toolingAssets',
+            url: '/equipment-tooling/overview',
+            icon: Cpu,
+            permissionId: permissionIdForPath('/equipment-tooling/overview'),
+          },
+          {
+            id: 'furnace-assets',
+            titleKey: 'sidebar.items.furnaceAssets',
+            url: '/furnaces',
+            icon: Gauge,
+            permissionId: permissionIdForPath('/furnaces'),
+          },
+        ],
       },
     ],
   },

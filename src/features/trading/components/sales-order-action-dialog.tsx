@@ -1,5 +1,3 @@
-import { useEffect, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { ClipboardList, Loader2, X } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
@@ -11,43 +9,18 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
-import { useUnitsQuery } from '@/features/basic-settings/hooks/use-units-query'
-import type { Unit } from '@/features/basic-settings/services/unit-service'
-import {
-  ENGINEERING_DB_DRILLING_QUERY_KEY,
-  ENGINEERING_DB_LABELING_QUERY_KEY,
-} from '@/features/engineering-db/query-keys'
-import type { DrillingPlan, LabelingDraft } from '@/features/engineering-db/data/schema'
-import { ProductionDBService } from '@/features/engineering-db/services/production-db-service'
-import type { ProductAppearance } from '@/features/engineering/data/product-appearance'
-import type { Product } from '@/features/engineering/data/schema'
-import { useGetProducts } from '@/features/engineering/hooks/use-products'
-import { PRODUCT_APPEARANCES_QUERY_KEY } from '@/features/engineering/query-keys'
-import { productAppearanceService } from '@/features/engineering/services/product-appearance-service'
 import { DocumentFooterStats } from '@/features/sales-document/components/document-footer-stats'
 import { DocumentHeaderFields } from '@/features/sales-document/components/document-header-fields'
 import { DocumentLinesEditor } from '@/features/sales-document/components/document-lines-editor'
+import { useSalesDocumentReferenceResources } from '@/features/sales-document/hooks/use-sales-document-reference-resources'
 import { DocumentNotesSection } from '@/features/sales-document/components/document-notes-section'
 import { createLogger } from '@/lib/logger'
-import { type CompositeReadResource, resolveQueryFailure } from '@/lib/read-resource'
-import { failLoudly } from '@/lib/safe-catch'
-import { useGetCustomers } from '../customer'
-import { type Customer, type SalesOrder } from '../data/schema'
-import { useSalesOrderDrawingOptions } from '../hooks/use-sales-order-drawing-options'
+import { type SalesOrder } from '../data/schema'
 import { useSalesOrderForm } from '../hooks/use-sales-order-form'
 import { useSalesOrderSave } from '../hooks/use-sales-order-save'
 import { isSalesOrderSnapshotOnly } from '../utils/sales-order-actions'
 
 const logger = createLogger('SalesOrderActionDialog')
-
-type SalesOrderActionDialogResource = CompositeReadResource<{
-  customers: Customer[]
-  products: Product[]
-  units: Unit[]
-  appearances: ProductAppearance[]
-  drillingPlans: DrillingPlan[]
-  labelingPlans: LabelingDraft[]
-}>
 
 interface SalesOrderActionDialogProps {
   open: boolean
@@ -64,131 +37,14 @@ export function SalesOrderActionDialog({
 }: SalesOrderActionDialogProps) {
   const { t } = useLanguage()
   const { allowsAction } = useNonBlockingPermissionActions()
-  const customersQuery = useGetCustomers({ enabled: open })
-  const productsQuery = useGetProducts({ enabled: open })
-  const { readResource: unitsResource, refetch: refetchUnits } = useUnitsQuery({ enabled: open })
-  const appearancesQuery = useQuery({
-    queryKey: PRODUCT_APPEARANCES_QUERY_KEY,
-    queryFn: () => productAppearanceService.getProductAppearances(),
+  const {
+    readResource: dialogResource,
+    resources: dialogResources,
+    retry: retryResources,
+  } = useSalesDocumentReferenceResources({
     enabled: open,
+    scope: 'SalesOrderActionDialog',
   })
-  const drillingQuery = useQuery({
-    queryKey: ENGINEERING_DB_DRILLING_QUERY_KEY,
-    queryFn: () => ProductionDBService.getDrilling(),
-    enabled: open,
-  })
-  const labelingQuery = useQuery({
-    queryKey: ENGINEERING_DB_LABELING_QUERY_KEY,
-    queryFn: () => ProductionDBService.getLabeling(),
-    enabled: open,
-  })
-
-  const dialogResource = useMemo<SalesOrderActionDialogResource>(() => {
-    if (!open) {
-      return {
-        status: 'ready',
-        customers: [],
-        products: [],
-        units: [],
-        appearances: [],
-        drillingPlans: [],
-        labelingPlans: [],
-      }
-    }
-
-    const customersFailure = resolveQueryFailure({
-      data: customersQuery.data,
-      error: customersQuery.error,
-      isPending: customersQuery.isPending,
-      scope: 'SalesOrderActionDialog.customers',
-      missingMessage: '[CRITICAL] Sales order customers missing after load',
-      failureMessage: '[CRITICAL] Sales order customers query failed',
-    })
-    if (customersFailure) {
-      return {
-        status: 'error',
-        error: customersFailure.error,
-        scope: customersFailure.scope,
-      }
-    }
-
-    const productsFailure = resolveQueryFailure({
-      data: productsQuery.data,
-      error: productsQuery.error,
-      isPending: productsQuery.isPending,
-      scope: 'SalesOrderActionDialog.products',
-      missingMessage: '[CRITICAL] Sales order products missing after load',
-      failureMessage: '[CRITICAL] Sales order products query failed',
-    })
-    if (productsFailure) {
-      return {
-        status: 'error',
-        error: productsFailure.error,
-        scope: productsFailure.scope,
-      }
-    }
-
-    if (unitsResource.status === 'error') {
-      return {
-        status: 'error',
-        error: unitsResource.error,
-        scope: unitsResource.scope,
-      }
-    }
-
-    if (
-      customersQuery.isPending ||
-      productsQuery.isPending ||
-      unitsResource.status === 'loading'
-    ) {
-      return { status: 'loading' }
-    }
-
-    return {
-      status: 'ready',
-      customers: (customersQuery.data as Customer[]) ?? [],
-      products: (productsQuery.data as Product[]) ?? [],
-      units: unitsResource.status === 'ready' ? unitsResource.data : [],
-      appearances: appearancesQuery.error ? [] : ((appearancesQuery.data as ProductAppearance[]) ?? []),
-      drillingPlans: drillingQuery.error ? [] : ((drillingQuery.data as DrillingPlan[]) ?? []),
-      labelingPlans: labelingQuery.error ? [] : ((labelingQuery.data as LabelingDraft[]) ?? []),
-    }
-  }, [
-    appearancesQuery.data,
-    appearancesQuery.error,
-    customersQuery.data,
-    customersQuery.error,
-    customersQuery.isPending,
-    drillingQuery.data,
-    drillingQuery.error,
-    labelingQuery.data,
-    labelingQuery.error,
-    open,
-    productsQuery.data,
-    productsQuery.error,
-    productsQuery.isPending,
-    unitsResource,
-  ])
-
-  useEffect(() => {
-    if (dialogResource.status !== 'error') {
-      return
-    }
-
-    logger.error(`Failed to load sales order dialog resources: ${dialogResource.scope}`, dialogResource.error)
-    failLoudly(dialogResource.error, dialogResource.scope)
-  }, [dialogResource])
-
-  const customers = dialogResource.status === 'ready' ? dialogResource.customers : []
-  const products = dialogResource.status === 'ready' ? dialogResource.products : []
-  const units = dialogResource.status === 'ready' ? dialogResource.units : []
-  const appearances = dialogResource.status === 'ready' ? dialogResource.appearances : []
-  const drillingOptions = useSalesOrderDrawingOptions(
-    dialogResource.status === 'ready' ? dialogResource.drillingPlans : undefined
-  )
-  const labelingOptions = useSalesOrderDrawingOptions(
-    dialogResource.status === 'ready' ? dialogResource.labelingPlans : undefined
-  )
   const readOnlySnapshot = isSalesOrderSnapshotOnly(order)
 
   const {
@@ -204,7 +60,7 @@ export function SalesOrderActionDialog({
     isInitializing,
     initError,
     retryInit,
-  } = useSalesOrderForm(order, open, products)
+  } = useSalesOrderForm(order, open, dialogResources.products)
 
   const { handleSave } = useSalesOrderSave({
     order,
@@ -224,14 +80,7 @@ export function SalesOrderActionDialog({
   }
 
   const handleRetryResources = () => {
-    void Promise.all([
-      customersQuery.refetch(),
-      productsQuery.refetch(),
-      refetchUnits(),
-      appearancesQuery.refetch(),
-      drillingQuery.refetch(),
-      labelingQuery.refetch(),
-    ]).catch((error) => {
+    void retryResources().catch((error) => {
       logger.error('Failed to retry sales order dialog resources', error)
     })
   }
@@ -319,7 +168,7 @@ export function SalesOrderActionDialog({
               <DocumentHeaderFields
                 formData={formData}
                 setFormData={setFormData}
-                customers={customers}
+                customers={dialogResources.customers}
                 onClassificationChange={handleClassificationChange}
                 readOnly={readOnlySnapshot}
                 compactEvidence
@@ -327,12 +176,12 @@ export function SalesOrderActionDialog({
               />
 
               <DocumentLinesEditor
-                appearances={appearances}
+                appearances={dialogResources.appearances}
                 lines={formData.lines || []}
-                products={products}
-                units={units}
-                drillingOptions={drillingOptions}
-                labelingOptions={labelingOptions}
+                products={dialogResources.products}
+                units={dialogResources.units}
+                drillingOptions={dialogResources.drillingOptions}
+                labelingOptions={dialogResources.labelingOptions}
                 currency={formData.currency}
                 onAddLine={handleAddLine}
                 onRemoveLine={handleRemoveLine}

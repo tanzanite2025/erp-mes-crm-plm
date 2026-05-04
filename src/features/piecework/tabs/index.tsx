@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { flexRender, getCoreRowModel, type ColumnDef, useReactTable } from '@tanstack/react-table'
+import { flexRender, type ColumnDef } from '@tanstack/react-table'
 import { Landmark, Plus, Edit, Trash2, Search, Box, Target } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
+import { useUdsClientTable } from '@/hooks/use-uds-table'
 import type { DeltaSet } from '@/lib/delta/types'
 import { useGetPieceworkRates, usePieceworkRateMutations } from '../hooks/use-piecework'
 import type { PieceworkRate } from '../data/schema'
@@ -114,10 +115,9 @@ export function PieceworkRules() {
         }
     ]
 
-    const table = useReactTable({
+    const table = useUdsClientTable({
         data: filteredData,
         columns,
-        getCoreRowModel: getCoreRowModel(),
     })
 
     const handleSave = (params: { 

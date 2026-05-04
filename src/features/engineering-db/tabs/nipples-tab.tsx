@@ -4,11 +4,7 @@ import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
     flexRender,
-    getCoreRowModel,
-    getPaginationRowModel,
-    getSortedRowModel,
     type ColumnDef,
-    useReactTable,
 } from '@tanstack/react-table'
 import { useSearch } from '@tanstack/react-router'
 import { cn } from '@/lib/utils'
@@ -17,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { DataTablePagination } from '@/components/data-table'
+import { useUdsClientTable } from '@/hooks/use-uds-table'
 import { Badge } from '@/components/ui/badge'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { type Nipple } from '../data/nipple-schema'
@@ -26,6 +23,7 @@ import { toast } from 'sonner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useLanguage } from '@/context/language-provider'
 import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
+import { type DeltaSet } from '@/lib/delta/types'
 import { ENGINEERING_DB_NIPPLES_QUERY_KEY } from '../query-keys'
 
 type NipplesRowViewModel = {
@@ -54,7 +52,7 @@ export function NipplesTab() {
         mutationFn: async (params: {
             data: Nipple
             isPatch: boolean
-            delta?: any
+            delta?: DeltaSet
             version?: number
         }) => {
             const { data: nextData, isPatch, delta, version } = params
@@ -134,7 +132,7 @@ export function NipplesTab() {
                     </div>
                     <div className='flex flex-col text-left'>
                         <span className='font-bold text-sm text-foreground'>{row.original.item.name}</span>
-                        <span className='text-[10px] text-muted-foreground uppercase font-mono tracking-widest'>{row.original.item.brand || 'GENERIC'}</span>
+                        <span className='text-[10px] font-mono opacity-40 uppercase tracking-tighter'>{row.original.item.brand || 'GENERIC'}</span>
                     </div>
                 </div>
             )
@@ -167,12 +165,9 @@ export function NipplesTab() {
         }
     ]
 
-    const table = useReactTable({
+    const table = useUdsClientTable({
         data: filteredData,
         columns,
-        getCoreRowModel: getCoreRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
-        getSortedRowModel: getSortedRowModel(),
     })
 
     return (

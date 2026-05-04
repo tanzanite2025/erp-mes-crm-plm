@@ -1,9 +1,12 @@
 'use client'
 
+import { createElement, type ReactNode } from 'react'
+
+import { GenericSpecOverview } from './generic-spec'
 import { RimSpecForm, RimSpecOverview } from './rim-spec'
 import { StemSpecForm, StemSpecOverview } from './stem-spec'
 import { ForkSpecForm, ForkSpecOverview } from './fork-spec'
-import { type ProductTemplate, type ProductType } from '../../data/schema'
+import { type Product, type ProductTemplate, type ProductType } from '../../data/schema'
 import { productTemplateService } from '../../services/product-template-service'
 
 type TranslationFn<T extends string = string> = (
@@ -47,6 +50,35 @@ export const SPEC_COMPONENTS = {
 } as const
 
 export type SpecType = keyof typeof SPEC_COMPONENTS
+
+export interface ProductSpecOverviewProps {
+  product: Product
+  categoryName?: string
+}
+
+export function renderProductSpecOverview({
+  product,
+  categoryName,
+  templateKey,
+}: ProductSpecOverviewProps & {
+  templateKey?: string | null
+}): ReactNode {
+  const normalizedTemplateKey = templateKey?.trim().toUpperCase()
+  if (!normalizedTemplateKey) {
+    return createElement(GenericSpecOverview, { product, categoryName })
+  }
+
+  switch (normalizedTemplateKey as SpecType) {
+    case 'RIM':
+      return createElement(RimSpecOverview, { product })
+    case 'STEM':
+      return createElement(StemSpecOverview, { product })
+    case 'FORK':
+      return createElement(ForkSpecOverview, { product })
+    default:
+      return createElement(GenericSpecOverview, { product, categoryName })
+  }
+}
 
 export function getLocalizedSpecComponents<T extends string>(t: TranslationFn<T>): Record<
   SpecType,

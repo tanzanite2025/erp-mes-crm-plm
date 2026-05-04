@@ -1,11 +1,7 @@
 import { useMemo } from 'react'
 import {
   flexRender,
-  getCoreRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
   type ColumnDef,
-  useReactTable,
 } from '@tanstack/react-table'
 import { cn } from '@/lib/utils'
 import { Edit, Eye, Trash2 } from 'lucide-react'
@@ -13,6 +9,7 @@ import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-t
 import { Card, CardContent } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { DataTablePagination } from '@/components/data-table'
+import { useUdsClientTable } from '@/hooks/use-uds-table'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useLanguage } from '@/context/language-provider'
@@ -127,12 +124,9 @@ export function DrillingTableCard({
     },
   ], [onDelete, onEdit, onPreview, t])
 
-  const table = useReactTable({
+  const table = useUdsClientTable({
     data: rows,
     columns,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
   })
 
   return (

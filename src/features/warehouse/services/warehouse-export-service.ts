@@ -1,15 +1,13 @@
 import { translate, type AppLocale } from '@/locales'
+import {
+  applyWorksheetHeaderRowStyle,
+  createExcelWorkbook,
+  downloadWorkbook,
+} from '@/lib/excel/export'
 import { createLogger } from '@/lib/logger'
-import { loadExcelJS } from '@/lib/lazy-vendors'
 
 import { type InboundRecord, type MasterDataSearchResult } from '../inventory'
 import { type ShipmentRecord } from '../shipment'
-
-interface WorkbookBufferWriter {
-    xlsx: {
-        writeBuffer(): Promise<ArrayBuffer>
-    }
-}
 
 const logger = createLogger('WarehouseExportService')
 
@@ -19,8 +17,7 @@ export const WarehouseExportService = {
         masterDataMap: Record<string, MasterDataSearchResult>,
         locale: AppLocale
     ) {
-        const { default: ExcelJS } = await loadExcelJS()
-        const workbook = new ExcelJS.Workbook()
+        const workbook = await createExcelWorkbook()
         const sheet = workbook.addWorksheet(translate(locale, 'warehouse.export.inboundSheetName'))
 
         sheet.columns = [
@@ -47,9 +44,9 @@ export const WarehouseExportService = {
             translate(locale, 'warehouse.export.inboundHeaders.remarks')
         ])
 
-        headerRow.eachCell((cell) => {
-            cell.font = { bold: true }
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEFEFEF' } }
+        applyWorksheetHeaderRowStyle(headerRow, {
+            fillColorArgb: 'FFEFEFEF',
+            fontColorArgb: 'FF000000',
         })
 
         data.forEach((item) => {
@@ -73,7 +70,7 @@ export const WarehouseExportService = {
             ])
         })
 
-        await this.download(
+        await downloadWorkbook(
             workbook,
             translate(locale, 'warehouse.export.inboundFileName', {
                 date: new Date().toISOString().split('T')[0]
@@ -86,8 +83,7 @@ export const WarehouseExportService = {
         masterDataMap: Record<string, MasterDataSearchResult>,
         locale: AppLocale
     ) {
-        const { default: ExcelJS } = await loadExcelJS()
-        const workbook = new ExcelJS.Workbook()
+        const workbook = await createExcelWorkbook()
         const sheet = workbook.addWorksheet(translate(locale, 'warehouse.export.shipmentSheetName'))
 
         sheet.columns = [
@@ -114,9 +110,9 @@ export const WarehouseExportService = {
             translate(locale, 'warehouse.export.shipmentHeaders.remarks')
         ])
 
-        headerRow.eachCell((cell) => {
-            cell.font = { bold: true }
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEFEFEF' } }
+        applyWorksheetHeaderRowStyle(headerRow, {
+            fillColorArgb: 'FFEFEFEF',
+            fontColorArgb: 'FF000000',
         })
 
         const statusMap: Record<string, string> = {
@@ -146,27 +142,11 @@ export const WarehouseExportService = {
             ])
         })
 
-        await this.download(
+        await downloadWorkbook(
             workbook,
             translate(locale, 'warehouse.export.shipmentFileName', {
                 date: new Date().toISOString().split('T')[0]
             })
         )
-    },
-
-    async download(workbook: WorkbookBufferWriter, filename: string) {
-        try {
-            const buffer = await workbook.xlsx.writeBuffer()
-            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-            const url = window.URL.createObjectURL(blob)
-            const a = document.createElement('a')
-            a.href = url
-            a.download = filename
-            a.click()
-            window.URL.revokeObjectURL(url)
-        } catch (error) {
-            logger.error('Excel download execution failed', { error, filename })
-            throw error
-        }
     }
 }

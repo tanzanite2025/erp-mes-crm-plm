@@ -11,7 +11,6 @@ export const technicalSpecSchema = z.object({
   changeOrderNo: z.string().optional(),
   siteCode: z.string().optional(),
   isDefaultSite: z.boolean().optional(),
-  _v: z.number().int().positive().optional(),
   fileUrl: z.string().optional(),
   fileExtension: z.string().optional(),
   description: z.string().optional(),

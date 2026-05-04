@@ -18,6 +18,7 @@ export const sidebar = {
     warehouseManagement: 'Warehouse',
     experimentalCenter: 'Lab Center',
     productionCoordination: 'Production Collaboration',
+    assetManagement: 'Asset Management',
     toolingManagement: 'Tooling Management',
     orgPersonnel: 'Organization & Personnel',
     logistics: 'Logistics',

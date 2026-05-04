@@ -2,10 +2,6 @@
 
 import { 
   flexRender,
-  getCoreRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
 } from '@tanstack/react-table'
 import {
   ArrowRightLeft,
@@ -14,6 +10,7 @@ import {
 } from 'lucide-react'
 import { DataTablePagination } from '@/components/data-table/pagination'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
+import { useUdsClientTable } from '@/hooks/use-uds-table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -52,12 +49,9 @@ export function MaterialAssemblyManager() {
     onDelete: handleDelete,
   })
 
-  const table = useReactTable({
+  const table = useUdsClientTable({
     data: filteredRows,
     columns,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
     initialState: {
       pagination: { pageSize: 20 },
     },

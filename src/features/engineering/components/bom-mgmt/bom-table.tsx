@@ -3,16 +3,13 @@
 import { useMemo } from 'react'
 import {
   flexRender,
-  getCoreRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
   type ColumnDef,
 } from '@tanstack/react-table'
 import { ClipboardList, Edit, Eye, Layers, Trash2 } from 'lucide-react'
 import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { useLanguage } from '@/context/language-provider'
 import { DataTablePagination } from '@/components/data-table'
+import { useUdsClientTable } from '@/hooks/use-uds-table'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -230,12 +227,9 @@ export function BOMTable({
     },
   ]
 
-  const table = useReactTable({
+  const table = useUdsClientTable({
     data,
     columns,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
   })
 
   return (

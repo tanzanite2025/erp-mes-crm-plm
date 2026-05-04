@@ -4,15 +4,13 @@ import { useMemo, useState } from 'react'
 
 import {
   flexRender,
-  getCoreRowModel,
-  getPaginationRowModel,
-  useReactTable,
   type ColumnDef,
 } from '@tanstack/react-table'
 import { CornerDownRight, Edit, Plus, Settings2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { DataTablePagination } from '@/components/data-table'
+import { useUdsClientTable } from '@/hooks/use-uds-table'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -132,11 +130,10 @@ export function CategoryManagerDialog({ open, onOpenChange, productTypes }: Cate
     },
   ]
 
-  const table = useReactTable({
+  const table = useUdsClientTable({
     data: displayData,
     columns,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    enableSorting: false,
   })
 
   const handleFormSubmit = async (formData: SaveProductTypeInput) => {
@@ -161,7 +158,7 @@ export function CategoryManagerDialog({ open, onOpenChange, productTypes }: Cate
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='w-[95vw] sm:w-full sm:max-w-3xl h-[85vh] sm:h-[700px] flex flex-col p-0 overflow-hidden rounded-[24px] sm:rounded-[32px] border-none shadow-2xl'>
-        <div className='absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent pointer-events-none' />
+        <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent pointer-events-none' />
         <DialogHeader className='p-4 sm:p-8 pb-3 sm:pb-4 relative'>
           <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4'>
             <div className='flex flex-col gap-1'>
@@ -200,19 +197,7 @@ export function CategoryManagerDialog({ open, onOpenChange, productTypes }: Cate
                 ))}
               </TableHeader>
               <TableBody>
-                {false ? (
-                  <TableRow>
-                    <TableCell colSpan={columns.length} className='h-32 text-center text-muted-foreground font-black uppercase tracking-widest text-[10px]'>
-                      {t('engineering.categoryArchive.empty.loading')}
-                    </TableCell>
-                  </TableRow>
-                ) : false ? (
-                  <TableRow>
-                    <TableCell colSpan={columns.length} className='h-32 text-center text-destructive font-black uppercase tracking-widest text-[10px]'>
-                      {t('engineering.categoryArchive.toasts.loadFailed')}
-                    </TableCell>
-                  </TableRow>
-                ) : table.getRowModel().rows?.length ? (
+                {table.getRowModel().rows?.length ? (
                   table.getRowModel().rows.map((row) => (
                     <TableRow key={row.id} className='h-14 group hover:bg-muted/30 transition-all border-b border-dashed border-muted/50'>
                       {row.getVisibleCells().map((cell) => (

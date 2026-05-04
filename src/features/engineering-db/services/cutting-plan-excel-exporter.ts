@@ -1,5 +1,10 @@
-import { loadExcelJS } from '@/lib/lazy-vendors'
-import type { Borders, Workbook } from 'exceljs'
+import {
+  applyWorksheetHeaderRowStyle,
+  createExcelWorkbook,
+  downloadWorkbook,
+  EXCEL_LIGHT_THIN_BORDER,
+} from '@/lib/excel/export'
+import type { Borders } from 'exceljs'
 import { formatEngineeringExportFileDate } from '@/features/engineering/utils/engineering-export-file-date'
 import { type CuttingPlanInput } from '../data/cutting-plan-schema'
 import {
@@ -8,19 +13,6 @@ import {
   CUTTING_PLAN_EXCEL_SHEETS,
 } from './cutting-plan-excel-contract'
 import { escapeFormula } from './cutting-plan-excel-security'
-
-async function downloadWorkbook(workbook: Workbook, fileName: string) {
-  const buffer = await workbook.xlsx.writeBuffer()
-  const blob = new Blob([buffer], {
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  })
-  const url = window.URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = fileName
-  link.click()
-  window.URL.revokeObjectURL(url)
-}
 
 function normalizeGroupKey(value?: string): string {
   return (value || '').replace(/\s+/g, '').toUpperCase()
@@ -37,8 +29,7 @@ function formatNumber(value: number, digits = 2): string {
 }
 
 export async function generateCuttingPlanImportTemplate() {
-  const { default: ExcelJS } = await loadExcelJS()
-  const workbook = new ExcelJS.Workbook()
+  const workbook = await createExcelWorkbook()
   const sheet = workbook.addWorksheet(CUTTING_PLAN_EXCEL_SHEETS.import, {
     views: [{ state: 'frozen', ySplit: 2 }],
   })
@@ -64,9 +55,7 @@ export async function generateCuttingPlanImportTemplate() {
 
   const headerRow = sheet.getRow(1)
   headerRow.height = 26
-  headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 10 }
-  headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F172A' } }
-  headerRow.alignment = { vertical: 'middle', horizontal: 'center' }
+  applyWorksheetHeaderRowStyle(headerRow, { fillColorArgb: 'FF0F172A' })
 
   sheet.mergeCells('A2:P2')
   const guideCell = sheet.getCell('A2')
@@ -76,13 +65,6 @@ export async function generateCuttingPlanImportTemplate() {
   guideCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF2F2' } }
   guideCell.alignment = { vertical: 'middle', horizontal: 'left' }
   sheet.getRow(2).height = 24
-
-  const defaultBorder = {
-    top: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-    left: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-    bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-    right: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-  } satisfies Pick<Borders, 'top' | 'left' | 'bottom' | 'right'>
 
   for (
     let rowNumber = 3;
@@ -96,7 +78,7 @@ export async function generateCuttingPlanImportTemplate() {
     row.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } }
 
     for (let col = 1; col <= 16; col += 1) {
-      row.getCell(col).border = defaultBorder
+      row.getCell(col).border = EXCEL_LIGHT_THIN_BORDER
     }
 
     for (let col = 2; col <= 16; col += 1) {
@@ -135,8 +117,7 @@ export async function generateCuttingPlanImportTemplate() {
 }
 
 export async function exportCuttingPlanPrintWorkbook(plan: CuttingPlanInput) {
-  const { default: ExcelJS } = await loadExcelJS()
-  const workbook = new ExcelJS.Workbook()
+  const workbook = await createExcelWorkbook()
   const sheet = workbook.addWorksheet(CUTTING_PLAN_EXCEL_SHEETS.print, {
     views: [{ state: 'frozen', ySplit: 7 }],
   })

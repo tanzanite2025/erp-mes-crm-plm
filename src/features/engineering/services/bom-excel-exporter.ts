@@ -1,23 +1,16 @@
-import { loadExcelJS } from '@/lib/lazy-vendors'
-import type { Borders, DataValidation, Workbook } from 'exceljs'
+import {
+  applyWorksheetHeaderRowStyle,
+  createExcelWorkbook,
+  downloadWorkbook,
+  EXCEL_LIGHT_THIN_BORDER,
+} from '@/lib/excel/export'
+import type { DataValidation } from 'exceljs'
 import { type MaterialOption } from '../../material-archive/data/schema'
 import { type Product } from '../data/schema'
 import { formatEngineeringExportFileDate } from '../utils/engineering-export-file-date'
 import { formatProductDisplayName } from '../utils/product-utils'
 import { BOM_EXCEL_LIMITS, BOM_EXCEL_LOCK_PASSWORDS, BOM_EXCEL_SHEETS } from './bom-excel-contract'
 import { escapeFormula } from './bom-excel-security'
-
-const downloadWorkbook = async (workbook: Workbook, fileName: string) => {
-  const buffer = await workbook.xlsx.writeBuffer()
-  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-  const url = window.URL.createObjectURL(blob)
-  const a = document.createElement('a')
-
-  a.href = url
-  a.download = fileName
-  a.click()
-  window.URL.revokeObjectURL(url)
-}
 
 /**
  * 导出带高级联动特性的智能填报模板
@@ -27,8 +20,7 @@ export const generateBOMTemplate = async (
   materials: MaterialOption[],
   products: Product[],
 ) => {
-  const { default: ExcelJS } = await loadExcelJS()
-  const workbook = new ExcelJS.Workbook()
+  const workbook = await createExcelWorkbook()
 
   // --- 1. 创建物料与产品档案参考页 (绝对隐藏) ---
   const archiveSheet = workbook.addWorksheet(BOM_EXCEL_SHEETS.archive, { state: 'veryHidden' })
@@ -89,9 +81,7 @@ export const generateBOMTemplate = async (
   // 增强表头视觉等级
   const headerRow = sheet.getRow(1)
   headerRow.height = 25
-  headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 10 }
-  headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E40AF' } }
-  headerRow.alignment = { vertical: 'middle', horizontal: 'center' }
+  applyWorksheetHeaderRowStyle(headerRow)
 
   // --- 2.1 增加强硬的数字类型输入防爆破拦截 (Data Validation) ---
   const validateDecimalLabel: DataValidation = {
@@ -111,12 +101,6 @@ export const generateBOMTemplate = async (
 
   // --- 3. 预渲染交互槽位 ---
   const maxArchiveRow = Math.max(materials.length, products.length) + 1
-  const defaultBorder = {
-    top: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-    left: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-    bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-    right: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-  } satisfies Pick<Borders, 'top' | 'left' | 'bottom' | 'right'>
 
   for (let i = 2; i <= BOM_EXCEL_LIMITS.templateRows; i++) {
     const row = sheet.getRow(i)
@@ -124,7 +108,7 @@ export const generateBOMTemplate = async (
 
     // 统一应用浅色细边框，防止被 fill 属性（底色）吃掉默认网格线
     ;['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].forEach((col) => {
-      row.getCell(col).border = defaultBorder
+      row.getCell(col).border = EXCEL_LIGHT_THIN_BORDER
     })
 
     // 【数据验证】A列：产品选择
