@@ -46,7 +46,11 @@ import {
 } from "@/components/ui/select"
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 
-export function SequenceMgmt() {
+interface SequenceMgmtProps {
+    hideHeader?: boolean
+}
+
+export function SequenceMgmt({ hideHeader = false }: SequenceMgmtProps) {
     const { t } = useLanguage()
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [editingRule, setEditingRule] = useState<Partial<NumberingRule> | null>(null)
@@ -103,15 +107,17 @@ export function SequenceMgmt() {
 
     return (
         <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-            <div className='flex flex-col gap-1 bg-muted/5 p-4 md:p-6 rounded-[32px] border border-dashed border-muted/50'>
-                <div className='flex items-center gap-2 text-primary'>
-                    <Hash className='size-4 text-primary' />
-                    <h3 className='text-lg font-black tracking-tighter italic uppercase'>{t('basicSettings.sequences.page.title')}</h3>
+            {!hideHeader && (
+                <div className='flex flex-col gap-1 bg-muted/5 p-4 md:p-6 rounded-[32px] border border-dashed border-muted/50'>
+                    <div className='flex items-center gap-2 text-primary'>
+                        <Hash className='size-4 text-primary' />
+                        <h3 className='text-lg font-black tracking-tighter italic uppercase'>{t('basicSettings.sequences.page.title')}</h3>
+                    </div>
+                    <p className='text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-60'>
+                        {t('basicSettings.sequences.page.subtitle')}
+                    </p>
                 </div>
-                <p className='text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-60'>
-                    {t('basicSettings.sequences.page.subtitle')}
-                </p>
-            </div>
+            )}
 
             <div className='flex flex-col sm:flex-row gap-4 sm:gap-6 justify-between items-start sm:items-center bg-muted/5 p-4 md:p-6 rounded-[24px] border border-dashed border-muted/50'>
                 <Alert className='bg-blue-500/5 border-blue-500/20 rounded-[24px] border-dashed shadow-none max-w-2xl py-4'>

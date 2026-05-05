@@ -18,16 +18,6 @@ export function getLinearBarcodeTabs(t: TranslateFn): TabItem[] {
   ]
 }
 
-export function getDmCodeTabs(t: TranslateFn): TabItem[] {
-  return [
-    {
-      key: 'rules',
-      label: t('codeCenter.dmCode.tabs.rules'),
-      href: '/code-center/dm-code',
-    },
-  ]
-}
-
 export function getSharedCodeSourceTabs(t: TranslateFn): TabItem[] {
   return [
     {

@@ -1,10 +1,10 @@
-import type { DMRuleSegment } from './dm-rules-config'
+import type { BarcodeRuleSegment } from './barcode-rule-segment'
 
-export type { DMRuleSegment }
+export type { BarcodeRuleSegment }
 
 export const LINEAR_BARCODE_SEQUENCE_RULE_KEY = 'LINEAR_BARCODE_WHEEL'
 
-export const LINEAR_BARCODE_RULES_CONFIG: DMRuleSegment[] = [
+export const LINEAR_BARCODE_RULES_CONFIG: BarcodeRuleSegment[] = [
     {
         id: 'year',
         range: '01-02',

@@ -167,11 +167,6 @@ export const codeCenter = {
       },
     },
   },
-  dmCode: {
-    tabs: {
-      rules: 'DM码规则',
-    },
-  },
   sharedCodeSource: {
     tabs: {
       holeCodes: '孔型孔数',
@@ -252,10 +247,9 @@ export const codeCenter = {
       page: {
         title: '共享发号引擎',
         description: '集中承载当前共享发号配置与一维码发号规则入口',
-        notice: '当前共享页仅保留一维码共享发号规则配置。DM 码发号规则请在独立的 DM 码模块中维护。',
+        notice: '当前共享页仅保留一维码共享发号规则配置。',
         badges: {
           linearBarcode: '一维码',
-          dmCode: 'DM码',
         },
       },
       sections: {

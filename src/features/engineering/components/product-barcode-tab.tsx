@@ -23,7 +23,7 @@ import { type BarcodeConfigUpdates } from '../mutation-types'
 import { BarcodeService } from '@/features/print-mgmt/services/barcode-service'
 import { PrintRecordService } from '@/features/print-mgmt/services/print-record-service'
 import { toast } from 'sonner'
-import { DMPreview } from '@/features/basic-settings/components/dm-preview'
+import { BarcodePreview } from '@/features/basic-settings/components/barcode-preview'
 
 interface ProductBarcodeTabProps {
     product: Product
@@ -131,13 +131,15 @@ export function ProductBarcodeTab({ product, onUpdateProduct }: ProductBarcodeTa
                             <div className='absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-600 blur-[100px]' />
                         </div>
 
-                        {/* 标签实体仿真 (改用 DM 二维码) */}
-                        <DMPreview 
+                        <BarcodePreview 
                             code={code}
                             shortCode={code}
+                            type='qrcode'
                             isDrainHole={config.isDrainHole}
                             wheelType={config.wheelType}
                             scopeCode={config.scopeCode}
+                            headerLabel={t('engineering.productMgmt.barcode.coreCode')}
+                            statusLabel={t('engineering.productMgmt.barcode.validated')}
                             className="scale-110 shadow-2xl"
                         />
 

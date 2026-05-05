@@ -83,7 +83,7 @@ export function Dashboard() {
         className={cn(
           'fixed top-14 md:top-16 right-0 z-40 border-b border-dashed bg-background/95 backdrop-blur px-4 py-2.5 h-14 md:h-16 flex items-center shadow-sm',
           'transition-all duration-300 ease-in-out',
-          'left-0 md:left-[10rem] group-data-[state=collapsed]/sidebar-wrapper:md:left-[3rem]'
+          'left-0 md:left-40 group-data-[state=collapsed]/sidebar-wrapper:md:left-12'
         )}
       >
         <div className='flex items-center justify-between gap-4 w-full'>
@@ -102,7 +102,7 @@ export function Dashboard() {
         </div>
       </div>
 
-      <Main className='p-4 md:p-8 animate-in fade-in duration-700 pt-14 md:pt-16'>
+      <Main className='animate-in fade-in duration-700 pt-14 md:pt-16'>
         <div className='flex flex-col gap-6 md:gap-8'>
           <IndustrialHeader
             title={t('dashboard.page.title')}
@@ -218,7 +218,7 @@ export function Dashboard() {
                         : 'border-muted-foreground/20 bg-background group-hover:border-muted-foreground/40'
                     }`}
                   >
-                    {selectedSegmentIds.includes(seg.id) && <Check className='size-3 stroke-[4]' />}
+                    {selectedSegmentIds.includes(seg.id) && <Check className='size-3 stroke-4' />}
                   </div>
                   <div className='flex flex-col overflow-hidden'>
                     <span className='text-[11px] font-black text-slate-700 truncate uppercase tracking-tight'>{seg.name}</span>

@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query'
+import { useQueries, useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns';
 import { 
   History, 
@@ -24,9 +24,15 @@ import { useLanguage } from '@/context/language-provider'
 import { type MaterialOption } from '@/features/material-archive/data/schema'
 import { MATERIAL_OPTIONS_QUERY_KEY } from '@/features/material-archive/query-keys'
 import { MaterialCoreService } from '@/features/material-archive/services/material-core-service'
+import { type Product } from '@/features/engineering/data/schema'
+import { PRODUCT_ATTRIBUTE_CATEGORIES_QUERY_KEY, PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY, productOptionsQueryKey } from '@/features/engineering/query-keys'
+import { ProductAttributeCategoryService } from '@/features/engineering/services/product-attribute-category-service'
+import { ProductAttributeOptionService } from '@/features/engineering/services/product-attribute-option-service'
+import { ProductCoreService } from '@/features/engineering/services/product-core-service'
 import { getDefaultPermissions } from '@/features/authz/data/default-permission-queries'
 import { formatPermissionLabel } from '@/features/authz/utils/permission-tree-utils'
 import { BomAuditEntry } from './bom-audit-entry'
+import { ProductAuditEntry } from './product-audit-entry'
 import { buildPermissionLabelMap } from '../utils/permission-audit'
 import { UserPermissionAuditEntry } from './user-permission-audit-entry'
 
@@ -68,6 +74,8 @@ function formatAuditActionLabel(action: string, t: ReturnType<typeof useLanguage
       return t('common.audit.actionLabels.create')
     case 'save':
       return t('common.audit.actionLabels.save')
+    case 'update':
+      return t('common.audit.actionLabels.update')
     case 'patch':
       return t('common.audit.actionLabels.patch')
     case 'replace':
@@ -114,6 +122,66 @@ export const DataTimeline: React.FC<DataTimelineProps> = ({
 
     return new Map((materialsQuery.data ?? []).map((material) => [material.id, material]))
   }, [materialsQuery.data, module])
+  const productAttributeCategoriesQuery = useQuery({
+    queryKey: PRODUCT_ATTRIBUTE_CATEGORIES_QUERY_KEY,
+    queryFn: () => ProductAttributeCategoryService.getProductAttributeCategories(),
+    enabled: module === AUDIT_MODULES.product && open,
+  })
+  const productAttributeOptionsQuery = useQuery({
+    queryKey: PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY,
+    queryFn: () => ProductAttributeOptionService.getProductAttributeOptions(),
+    enabled: module === AUDIT_MODULES.product && open,
+  })
+  const productOptionsQuery = useQuery({
+    queryKey: productOptionsQueryKey(),
+    queryFn: () => ProductCoreService.getProducts({ isOptions: true }),
+    enabled: module === AUDIT_MODULES.product && open,
+  })
+  const unresolvedProductIds = useMemo(() => {
+    if (module !== AUDIT_MODULES.product) {
+      return [] as string[]
+    }
+
+    const loadedProductIds = new Set((productOptionsQuery.data ?? []).map((product) => product.id))
+    const uniqueIds = new Set<string>()
+
+    ;(logs ?? []).forEach((log) => {
+      const targetIdValue = String(log.target_id || '').trim()
+      if (!targetIdValue || loadedProductIds.has(targetIdValue)) {
+        return
+      }
+
+      uniqueIds.add(targetIdValue)
+    })
+
+    return Array.from(uniqueIds)
+  }, [logs, module, productOptionsQuery.data])
+  const productDetailQueries = useQueries({
+    queries: unresolvedProductIds.map((productId) => ({
+      queryKey: ['engineering', 'products', 'audit-detail', productId] as const,
+      queryFn: () => ProductCoreService.getProductById(productId),
+      enabled: module === AUDIT_MODULES.product && open && productId.trim().length > 0,
+      retry: false,
+    })),
+  })
+  const resolvedProducts = (() => {
+    const mergedProductMap = new Map<string, Product>()
+
+    ;(productOptionsQuery.data ?? []).forEach((product) => {
+      mergedProductMap.set(product.id, product)
+    })
+
+    productDetailQueries.forEach((query, index) => {
+      const productId = unresolvedProductIds[index]
+      if (!productId || !query.data) {
+        return
+      }
+
+      mergedProductMap.set(productId, query.data)
+    })
+
+    return Array.from(mergedProductMap.values())
+  })()
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -150,7 +218,7 @@ export const DataTimeline: React.FC<DataTimelineProps> = ({
                 <span className="text-[10px] font-black uppercase tracking-widest">{t('common.audit.empty')}</span>
               </div>
             ) : (
-              <div className="relative border-l border-dashed border-muted-foreground/30 ml-3 pl-8 space-y-12">
+              <div className="relative border-l border-dashed border-muted-foreground/30 ml-3 pl-8 space-y-6">
                 {logs.map((log) => (
                   <div key={log.id} className="relative group">
                     {/* Timeline Node */}
@@ -162,6 +230,14 @@ export const DataTimeline: React.FC<DataTimelineProps> = ({
                         log={log}
                         actionLabel={formatAuditActionLabel(log.action, t)}
                         materialOptionMap={materialOptionMap}
+                      />
+                    ) : module === AUDIT_MODULES.product ? (
+                      <ProductAuditEntry
+                        log={log}
+                        actionLabel={formatAuditActionLabel(log.action, t)}
+                        attributeCategories={productAttributeCategoriesQuery.data ?? []}
+                        attributeOptions={productAttributeOptionsQuery.data ?? []}
+                        products={resolvedProducts}
                       />
                     ) : module === AUDIT_MODULES.userPermission ? (
                       <UserPermissionAuditEntry

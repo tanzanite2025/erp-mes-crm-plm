@@ -2,7 +2,7 @@ import {
   DEFAULT_LINEAR_BARCODE_SAMPLE,
   LINEAR_BARCODE_RULES_CONFIG,
   LINEAR_BARCODE_SEQUENCE_RULE_KEY,
-  type DMRuleSegment,
+  type BarcodeRuleSegment,
 } from './linear-barcode-rules-config'
 
 export interface LinearBarcodeMockInputs {
@@ -30,23 +30,23 @@ export interface LinearBarcodeIngestDefaults {
 export interface LinearBarcodeProtocolConfig {
   version: string
   sequenceRuleKey: string
-  rules: DMRuleSegment[]
+  rules: BarcodeRuleSegment[]
   mockInput: LinearBarcodeMockInputs
   ingestDefaults: LinearBarcodeIngestDefaults
 }
 
-function cloneRule(rule: DMRuleSegment): DMRuleSegment {
+function cloneRule(rule: BarcodeRuleSegment): BarcodeRuleSegment {
   return {
     ...rule,
     examples: [...rule.examples],
   }
 }
 
-function isLegacyCombinedHoleRule(rule: DMRuleSegment) {
+function isLegacyCombinedHoleRule(rule: BarcodeRuleSegment) {
   return rule.id === 'holes' && (rule.range === '09-11' || rule.length === 3)
 }
 
-export function shouldNormalizeLinearBarcodeRules(rules: DMRuleSegment[] | null | undefined) {
+export function shouldNormalizeLinearBarcodeRules(rules: BarcodeRuleSegment[] | null | undefined) {
   if (!Array.isArray(rules) || rules.length === 0) {
     return false
   }
@@ -68,11 +68,11 @@ export function shouldNormalizeLinearBarcodeRules(rules: DMRuleSegment[] | null 
     || holeCountRule.length !== 2
 }
 
-export function createDefaultLinearBarcodeRules(): DMRuleSegment[] {
+export function createDefaultLinearBarcodeRules(): BarcodeRuleSegment[] {
   return LINEAR_BARCODE_RULES_CONFIG.map((rule) => cloneRule(rule))
 }
 
-export function normalizeLinearBarcodeRules(rules: DMRuleSegment[] | null | undefined): DMRuleSegment[] {
+export function normalizeLinearBarcodeRules(rules: BarcodeRuleSegment[] | null | undefined): BarcodeRuleSegment[] {
   const defaultRules = createDefaultLinearBarcodeRules()
 
   if (!Array.isArray(rules) || rules.length === 0) {
@@ -160,7 +160,7 @@ export function createDefaultLinearBarcodeProtocolConfig(): LinearBarcodeProtoco
   return {
     version: '1',
     sequenceRuleKey: LINEAR_BARCODE_SEQUENCE_RULE_KEY,
-    rules: createDefaultLinearBarcodeRules() as DMRuleSegment[],
+    rules: createDefaultLinearBarcodeRules(),
     mockInput: createDefaultLinearBarcodeMockInputs(),
     ingestDefaults: {
       symbology: 'code128',

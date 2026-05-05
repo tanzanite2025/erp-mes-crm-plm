@@ -1,6 +1,5 @@
 export const basicSettings = {
   tabs: {
-    dmNumbering: "DM码发号规则",
     units: "单位管理",
     knowledgeBase: "知识库",
     sequences: "一维码发号规则",
@@ -330,108 +329,6 @@ export const basicSettings = {
       success: "保存成功",
       successDesc: "企业信息已更新，侧边栏将同步刷新。",
       error: "保存出错"
-    }
-  },
-  dmNumbering: {
-    page: {
-      title: "DM码发号规则中心",
-      subtitle: "维护 DM 码共享发号页中的段位规则、仿真配置与当前本地发号逻辑"
-    },
-    table: {
-      headers: {
-        segment: "分段",
-        description: "含义描述",
-        example: "编码示例",
-        action: "操作"
-      },
-      segments: {
-        year: {
-          name: "年份 (YY)",
-          desc: "公元年份后两位，固定 2 位数字编码。"
-        },
-        month: {
-          name: "月份 (3位)",
-          desc: "1-9月用原数字，10-12月分别使用 0, N, D 标识。"
-        },
-        model: {
-          name: "产品型号",
-          desc: "对应企业内部产品数据字典中的 2 位型号代码。"
-        },
-        appearance: {
-          name: "外观方案",
-          desc: "数值 1-9 代表不同的涂装或编织纹理映射。"
-        },
-        category: {
-          name: "二级分类",
-          desc: "对应物料主数据中的一级业务属性代码。"
-        },
-        holes: {
-          name: "孔数",
-          desc: "轮圈物理孔位数量，固定 2 位数字编码。"
-        },
-        serial: {
-          name: "流水号",
-          desc: "单型号独立计数的 5 位 Base-36 压缩编码。"
-        }
-      }
-    },
-    simulation: {
-      batchSN: "生产批次序列号",
-      verifiedStandard: "认证标准"
-    },
-    toasts: {
-      modelRequired: "请先选择具体型号再申请流水号",
-      serialSuccess: "型号 {{model}} 已成功发放流水码: {{serial}}"
-    },
-    footer: {
-      title: "工业级追溯协议一致性说明",
-      description: "此处的二维码编码配置将作为系统底层的主数据标准。所有移动端采集设备及 MES 执行终端将依据此处的段位定义进行解析。月中特殊代码映射逻辑（如 N=11月, D=12月）已在解析引擎中深度固化，确保数据在 2030 年前的全球唯一性。"
-    },
-    dialog: {
-      editTitle: "编辑{{name}}逻辑",
-      helperText: "修改此段位的编码逻辑后，系统将自动下推规则至生产执行层。变更将在下一次 DM 样张重绘时立即生效。",
-      mappingMatrix: "映射表定义 (Mapping Matrix)",
-      addMapping: "新增映射",
-      originalValue: "原始值 (Key)",
-      convertedValue: "转换码 (Value)",
-      placeholderKey: "如: 11月",
-      placeholderValue: "如: N",
-      autoRules: "自动增量策略 (Auto Rules)",
-      logicDescription: "逻辑描述/起始位",
-      autoDescriptionPlaceholder: "如: 自 00001 开始累加",
-      step: "步进: 1",
-      period: "周期: 按月重置",
-      save: "存储逻辑"
-    },
-    parser: {
-      labels: {
-        yearSuffix: "年",
-        monthSuffix: "",
-        categorySuffix: "类",
-        appearancePrefix: "外观",
-        holesSuffix: "孔",
-        serialPrefix: "序列号",
-        base36Suffix: " (Base-36)",
-        anyCat: "未指定分类 (*)",
-        anyModel: "未指定型号 (**)",
-        unknownMonth: "未知月份",
-        invalidCode: "无效编码",
-        errorLength: "编码长度不符合 14 位标准预设",
-        months: {
-          "0": "10月",
-          "1": "1月",
-          "2": "2月",
-          "3": "3月",
-          "4": "4月",
-          "5": "5月",
-          "6": "6月",
-          "7": "7月",
-          "8": "8月",
-          "9": "9月",
-          N: "11月",
-          D: "12月"
-        }
-      }
     }
   }
 } as const

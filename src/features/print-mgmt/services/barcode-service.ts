@@ -5,7 +5,7 @@ import { type BarcodeConfig } from '../../engineering/data/schema'
  */
 export const BarcodeService = {
     /**
-     * 生成单个 14 位 DM 码 (Data Matrix)
+     * 生成单个 14 位条码编码
      * 规则：年(2位) + 月(1位) + 型号(2位) + 外观(1位) + 孔位类别(3位) + 流水号(5位)
      */
     generateCode(config: BarcodeConfig, date: Date = new Date()): string {

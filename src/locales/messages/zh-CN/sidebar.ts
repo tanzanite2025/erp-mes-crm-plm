@@ -8,8 +8,11 @@ export const sidebar = {
   },
   groups: {
     resourceManagement: '资源管理',
+    warehouseLogistics: '仓储物流',
     purchaseAndSales: '购销管理',
     purchaseManagement: '采购管理',
+    productManagement: '产品管理',
+    productConfig: '产品配置',
     productionManagement: '生产管理',
     planningCenter: '计划中心',
     rawMaterialsManagement: '原材料管理',
@@ -71,7 +74,6 @@ export const sidebar = {
     basicSettings: '基础配置',
     financeCenter: '财务中心',
     linearBarcode: '一维码',
-    dmCode: 'DM码',
     sharedCodeSource: '共享编码源',
   },
 }

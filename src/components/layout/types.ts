@@ -18,6 +18,7 @@ type BaseNavItem = {
   badge?: string
   icon?: React.ElementType
   permissionId?: string | string[]
+  preserveEmptyChildren?: boolean
 }
 
 type NavNode = BaseNavItem & {

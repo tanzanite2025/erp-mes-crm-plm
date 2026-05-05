@@ -1,6 +1,5 @@
 export const basicSettings = {
   tabs: {
-    dmNumbering: "DM Code Numbering Rules",
     linearBarcode: "Linear Barcode",
     units: "Unit Management",
     knowledgeBase: "Knowledge Base",
@@ -481,108 +480,6 @@ export const basicSettings = {
       save: "Save Logic",
       configRevision: "Config revision: {{value}}",
       protocol: "Protocol: {{value}}"
-    }
-  },
-  dmNumbering: {
-    page: {
-      title: "DM Code Numbering Rule Center",
-      subtitle: "Maintain the segment rules, simulation settings, and current local numbering logic used by the shared DM numbering experience."
-    },
-    table: {
-      headers: {
-        segment: "SEGMENT",
-        description: "DESCRIPTION",
-        example: "ENCODING_EXAMPLE",
-        action: "ACTION"
-      },
-      segments: {
-        year: {
-          name: "Year (YY)",
-          desc: "Last two digits of the year, fixed 2-digit encoding."
-        },
-        month: {
-          name: "Month (3-bit)",
-          desc: "1-9 for Jan-Sep, 0, N, D for Oct, Nov, Dec."
-        },
-        model: {
-          name: "Product Model",
-          desc: "2-digit model code from the enterprise product dictionary."
-        },
-        appearance: {
-          name: "Appearance",
-          desc: "Values 1-9 representing different finishes or textures."
-        },
-        category: {
-          name: "Category",
-          desc: "Primary business attribute code from master data."
-        },
-        holes: {
-          name: "Holes",
-          desc: "Number of physical holes, fixed 2-digit encoding."
-        },
-        serial: {
-          name: "Serial Number",
-          desc: "5-digit Base-36 compressed sequence per model."
-        }
-      }
-    },
-    simulation: {
-      batchSN: "PRODUCTION BATCH SN",
-      verifiedStandard: "VERIFIED STANDARD"
-    },
-    toasts: {
-      modelRequired: "Select a model before requesting a serial number.",
-      serialSuccess: "Model {{model}} issued serial: {{serial}}"
-    },
-    footer: {
-      title: "Industrial Traceability Protocol Compliance",
-      description: "The QR code configuration defined here serves as the master data standard. All mobile collection devices and MES terminals will parse sequences based on these segments. Special month mapping (e.g., N=Nov, D=Dec) is hard-coded in the parsing engine to ensure global uniqueness until 2030."
-    },
-    dialog: {
-      editTitle: "Edit {{name}} Logic",
-      helperText: "After modifying the encoding logic for this segment, the system will automatically push rules to the production execution layer. Changes take effect on the next DM proof redraw.",
-      mappingMatrix: "Mapping Matrix Definition",
-      addMapping: "Add Mapping",
-      originalValue: "Original Value (Key)",
-      convertedValue: "Converted Code (Value)",
-      placeholderKey: "e.g. Nov",
-      placeholderValue: "e.g. N",
-      autoRules: "Auto Increment Rules",
-      logicDescription: "Logic Description / Start Bit",
-      autoDescriptionPlaceholder: "e.g. Starts from 00001",
-      step: "Step: 1",
-      period: "Period: Monthly Reset",
-      save: "Save Logic"
-    },
-    parser: {
-      labels: {
-        yearSuffix: "",
-        monthSuffix: "",
-        categorySuffix: " Cat",
-        appearancePrefix: "App",
-        holesSuffix: " Holes",
-        serialPrefix: "Serial",
-        base36Suffix: " (Base-36)",
-        anyCat: "ANY (*)",
-        anyModel: "ANY (**)",
-        unknownMonth: "Unknown Month",
-        invalidCode: "Invalid Code",
-        errorLength: "Invalid code length (14 chars required)",
-        months: {
-          "0": "Oct",
-          "1": "Jan",
-          "2": "Feb",
-          "3": "Mar",
-          "4": "Apr",
-          "5": "May",
-          "6": "Jun",
-          "7": "Jul",
-          "8": "Aug",
-          "9": "Sep",
-          N: "Nov",
-          D: "Dec"
-        }
-      }
     }
   }
 } as const

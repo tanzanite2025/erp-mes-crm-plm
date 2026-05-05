@@ -8,8 +8,11 @@ export const sidebar = {
   },
   groups: {
     resourceManagement: 'Resource Management',
+    warehouseLogistics: 'Warehouse & Logistics',
     purchaseAndSales: 'Purchase & Sales',
     purchaseManagement: 'Purchase Management',
+    productManagement: 'Product Management',
+    productConfig: 'Product Configuration',
     productionManagement: 'Production Management',
     planningCenter: 'Planning Center',
     rawMaterialsManagement: 'Raw Material Management',
@@ -71,7 +74,6 @@ export const sidebar = {
     basicSettings: 'Basic Settings',
     financeCenter: 'Finance Center',
     linearBarcode: 'Linear Barcode',
-    dmCode: 'DM Code',
     sharedCodeSource: 'Shared Code Source',
   },
 }

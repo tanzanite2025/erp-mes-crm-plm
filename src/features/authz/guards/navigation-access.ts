@@ -50,13 +50,13 @@ function filterNavNodeByPermission(
     return null
   }
 
-  if (!node.url && !hasVisibleChildren) {
+  if (!node.url && !hasVisibleChildren && !node.preserveEmptyChildren) {
     return null
   }
 
   return {
     ...node,
-    children: hasVisibleChildren ? visibleChildren : undefined,
+    children: hasVisibleChildren ? visibleChildren : node.children,
   }
 }
 

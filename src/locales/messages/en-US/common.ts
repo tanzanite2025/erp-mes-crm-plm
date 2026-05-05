@@ -65,12 +65,21 @@ export const common = {
     actionLabels: {
       create: 'Create',
       save: 'Save',
+      update: 'Update',
       patch: 'Update',
       replace: 'Replace',
       delete: 'Delete',
       added: 'Added',
       removed: 'Removed',
       bulkSync: 'Bulk Sync',
+    },
+    operators: {
+      system: 'System',
+      unknown: 'Unknown',
+    },
+    product: {
+      scalarBadge: 'Scalar',
+      structuredBadge: 'Structured',
     },
     permission: {
       addedPermissions: 'Added Permissions',

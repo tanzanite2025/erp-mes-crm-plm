@@ -13,7 +13,7 @@ import {
 import type { HoleCodeCountItem, HoleCodePrefixItem } from '@/features/code-center/data/hole-code-source'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
-import { DMPreview } from './dm-preview'
+import { BarcodePreview } from './barcode-preview'
 import type { Product } from '@/features/engineering/data/schema'
 
 type AppearanceMapping = Record<string, { label?: string }>
@@ -127,7 +127,7 @@ export function LinearBarcodeSimulationSection({
         <div className='grid grid-cols-1 lg:grid-cols-12 gap-8'>
           <div
             className={cn(
-              'lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-5 p-6 rounded-3xl transition-colors',
+              'lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-5 p-6 rounded-3xl transition-colors',
               'bg-slate-50 border-slate-200',
               'dark:bg-white/2 dark:border-white/5',
             )}
@@ -349,15 +349,17 @@ export function LinearBarcodeSimulationSection({
             </div>
           </div>
 
-          <div className='lg:col-span-4 flex flex-col items-center justify-center space-y-8'>
-            <div className='relative group/dm'>
-              <DMPreview
+          <div className='lg:col-span-5 flex flex-col items-stretch justify-center space-y-8'>
+            <div className='relative group/dm w-full'>
+              <BarcodePreview
                 code={assembledCode}
                 shortCode={assembledCode}
                 type='code128'
                 isDrainHole={mockInputs.isDrainHole}
                 wheelType={mockInputs.wheelType}
                 scopeCode={mockInputs.scopeCode}
+                headerLabel={t('basicSettings.linearBarcode.simulation.codeLabel')}
+                statusLabel={t('basicSettings.linearBarcode.page.badges.active')}
               />
               <div className='absolute -inset-6 bg-blue-500/20 blur-3xl opacity-30 transition-opacity pointer-events-none' />
               <div className='absolute top-0 left-0 w-full h-1 bg-blue-400/40 blur-md animate-[scanMove_4s_infinite] pointer-events-none' />

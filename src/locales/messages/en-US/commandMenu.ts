@@ -98,7 +98,6 @@ export const commandMenu = {
     warehouseCategory: 'Warehouse Categories',
     stocktake: 'Stocktake',
     adjustments: 'Adjustment Logs',
-    dmNumbering: 'DM Code Numbering Rules',
     sharedNumberingEngine: 'Shared Numbering Engine',
     units: 'Unit Management',
     sequences: 'Linear Barcode Numbering Rules',

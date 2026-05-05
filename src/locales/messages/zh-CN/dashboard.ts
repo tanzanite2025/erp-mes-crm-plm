@@ -50,7 +50,7 @@ export const dashboard = {
         description: '描述: {{value}}',
       },
       activation: {
-        title: 'DM 码激活总量',
+        title: '条码激活总量',
         unit: '码',
         description: '物理核验绑定总数',
       },

@@ -71,7 +71,7 @@ export function ProductAttachmentsTab({ product, onUpdateProduct }: ProductAttac
     }
 
     return (
-        <div className='max-w-5xl mx-auto py-8 space-y-8'>
+        <div className='py-8 space-y-8'>
             {/* 真实的上传区 */}
             <div
                 className='group relative border-2 border-dashed border-muted-foreground/20 rounded-3xl p-12 transition-all hover:border-blue-600/40 hover:bg-blue-600/2 cursor-pointer bg-card overflow-hidden'

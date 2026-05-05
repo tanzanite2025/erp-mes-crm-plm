@@ -65,12 +65,21 @@ export const common = {
     actionLabels: {
       create: '创建',
       save: '保存',
+      update: '更新',
       patch: '更新',
       replace: '替换',
       delete: '删除',
       added: '新增',
       removed: '移除',
       bulkSync: '批量同步',
+    },
+    operators: {
+      system: '系统',
+      unknown: '未记录',
+    },
+    product: {
+      scalarBadge: '基础',
+      structuredBadge: '结构',
     },
     permission: {
       addedPermissions: '新增权限',

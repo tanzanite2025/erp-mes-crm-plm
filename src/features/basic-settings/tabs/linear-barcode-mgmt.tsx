@@ -26,8 +26,8 @@ import { HoleCodeSourceActionDialog } from '@/features/code-center/components/ho
 import { useActiveHoleCodeSource } from '@/features/code-center/hooks/use-hole-code-source'
 import { useGetProducts } from '@/features/engineering/hooks/use-products'
 import { AppearanceActionDialog } from '../components/appearance-action-dialog'
-import { DMRuleConfigDialog } from '../components/dm-rule-config-dialog'
-import { DMRulesTable } from '../components/dm-rules-table'
+import { BarcodeRuleConfigDialog } from '../components/barcode-rule-config-dialog'
+import { BarcodeRulesTable } from '../components/barcode-rules-table'
 import { LinearBarcodeSimulationSection } from '../components/linear-barcode-simulation-section'
 import {
   createDefaultLinearBarcodeProtocolConfig,
@@ -35,7 +35,7 @@ import {
   type LinearBarcodeProtocolConfig,
   type LinearBarcodeMockInputs,
 } from '../data/linear-barcode-protocol'
-import { type DMRuleSegment } from '../data/linear-barcode-rules-config'
+import { type BarcodeRuleSegment } from '../data/linear-barcode-rules-config'
 import { useAppearanceMapping } from '../hooks/use-appearance-mapping'
 import { BASIC_SETTINGS_LINEAR_BARCODE_QUERY_KEY } from '../query-keys'
 import { parseLinearBarcodeCode } from '../utils/linear-barcode-parser'
@@ -53,13 +53,13 @@ export function LinearBarcodeMgmt() {
   )
 
   // --- 本地逻辑状态 (编辑态) ---
-  const [rules, setRules] = useState<DMRuleSegment[] | null>(null)
+  const [rules, setRules] = useState<BarcodeRuleSegment[] | null>(null)
   const [mockInputs, setMockInputs] = useState<LinearBarcodeMockInputs | null>(
     null
   )
 
   // --- UI 状态 ---
-  const [selectedSegment, setSelectedSegment] = useState<DMRuleSegment | null>(
+  const [selectedSegment, setSelectedSegment] = useState<BarcodeRuleSegment | null>(
     null
   )
   const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false)
@@ -138,7 +138,7 @@ export function LinearBarcodeMgmt() {
   )
 
   // --- 交互 Handler ---
-  const handleEditLogic = (segment: DMRuleSegment) => {
+  const handleEditLogic = (segment: BarcodeRuleSegment) => {
     if (segment.id === 'appearance') {
       setIsAppearanceDialogOpen(true)
       return
@@ -203,7 +203,7 @@ export function LinearBarcodeMgmt() {
 
   const handleSaveProtocol = useCallback(
     async (
-      targetRules: DMRuleSegment[] | null = rules,
+      targetRules: BarcodeRuleSegment[] | null = rules,
       targetMockInputs: LinearBarcodeMockInputs | null = mockInputs
     ) => {
       if (!protocolConfig || !targetRules || !targetMockInputs) {
@@ -322,7 +322,7 @@ export function LinearBarcodeMgmt() {
         </div>
       </div>
 
-      <DMRulesTable
+      <BarcodeRulesTable
         rules={rules}
         appearanceMapping={appearanceMapping}
         onEdit={handleEditLogic}
@@ -360,7 +360,7 @@ export function LinearBarcodeMgmt() {
         sequenceRuleKey={protocolConfig.sequenceRuleKey}
       />
 
-      <DMRuleConfigDialog
+      <BarcodeRuleConfigDialog
         open={isConfigDialogOpen}
         onOpenChange={setIsConfigDialogOpen}
         segment={selectedSegment}

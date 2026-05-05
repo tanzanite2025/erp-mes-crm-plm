@@ -150,7 +150,7 @@ export const terminalConfig = {
         'Helps catch hidden issues where the scanner works in isolation but breaks the real workflow.',
       points: [
         'Confirm whether a scan automatically appends Enter, so operators do not have to submit manually every time.',
-        'Confirm recognition rates for linear barcodes, DM codes, and low-quality labels.',
+        'Confirm recognition rates for linear barcodes, QR codes, and low-quality labels.',
         'Confirm compatibility with page inputs, modal forms, and batch-operation modes.',
       ],
     },

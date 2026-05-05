@@ -87,8 +87,8 @@ describe('linear-barcode-print-executor', () => {
       quantity: 5,
     })
 
-    generateCodeMock.mockReturnValue('DM-CODE-001')
-    getFullTextMock.mockReturnValue('H-DM-CODE-001 L-AB')
+    generateCodeMock.mockReturnValue('BARCODE-001')
+    getFullTextMock.mockReturnValue('H-BARCODE-001 L-AB')
     atomicPrintMock.mockResolvedValue({
       batch,
       sn: 'SN-20260423-001',
@@ -102,15 +102,15 @@ describe('linear-barcode-print-executor', () => {
     })
 
     expect(generateCodeMock).toHaveBeenCalledWith(barcodeConfig)
-    expect(getFullTextMock).toHaveBeenCalledWith(barcodeConfig, 'DM-CODE-001')
+    expect(getFullTextMock).toHaveBeenCalledWith(barcodeConfig, 'BARCODE-001')
     expect(atomicPrintMock).toHaveBeenCalledWith({
       templateName: 'LINEAR_BARCODE_PRINT',
       productId: 'product-1',
       quantity: 5,
     })
     expect(result).toEqual({
-      code: 'DM-CODE-001',
-      fullText: 'H-DM-CODE-001 L-AB',
+      code: 'BARCODE-001',
+      fullText: 'H-BARCODE-001 L-AB',
       serialNumber: '90001',
       batch,
       sn: 'SN-20260423-001',
@@ -120,8 +120,8 @@ describe('linear-barcode-print-executor', () => {
   it('records preparation and generated-code logs', async () => {
     const barcodeConfig = createBarcodeConfig()
 
-    generateCodeMock.mockReturnValue('DM-CODE-002')
-    getFullTextMock.mockReturnValue('DM-CODE-002 L-AB')
+    generateCodeMock.mockReturnValue('BARCODE-002')
+    getFullTextMock.mockReturnValue('BARCODE-002 L-AB')
     atomicPrintMock.mockResolvedValue({
       batch: createBatch(),
       sn: 'SN-20260423-002',
@@ -141,7 +141,7 @@ describe('linear-barcode-print-executor', () => {
     )
     expect(loggerInfoMock).toHaveBeenNthCalledWith(
       2,
-      expect.stringContaining('Generated code: DM-CODE-002, readable text: DM-CODE-002 L-AB')
+      expect.stringContaining('Generated code: BARCODE-002, readable text: BARCODE-002 L-AB')
     )
   })
 })

@@ -174,11 +174,6 @@ export const codeCenter = {
       },
     },
   },
-  dmCode: {
-    tabs: {
-      rules: 'DM Code Rules',
-    },
-  },
   sharedCodeSource: {
     tabs: {
       holeCodes: 'Hole Codes',
@@ -266,10 +261,9 @@ export const codeCenter = {
         title: 'Shared Numbering Engine',
         description: 'Centralized entry for the current shared numbering configuration and linear-barcode numbering rules',
         notice:
-          'This shared page now only keeps the linear-barcode shared numbering configuration. Maintain DM code numbering rules in the standalone DM Code module.',
+          'This shared page now only keeps the linear-barcode shared numbering configuration.',
         badges: {
           linearBarcode: 'Linear Barcode',
-          dmCode: 'DM Code',
         },
       },
       sections: {

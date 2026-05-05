@@ -58,7 +58,7 @@ export default function PersonalWorkbenchCapturePage({
         </div>
       </div>
       <Main className='flex-1 overflow-y-auto pt-0 pb-5'>
-        <div className='mx-auto flex min-h-0 w-full max-w-3xl flex-col gap-4 p-4 md:p-8'>
+        <div className='flex min-h-0 w-full flex-col gap-4'>
           <div className='rounded-[32px] border border-dashed border-primary/20 bg-background/80 p-5 shadow-sm'>
             <div className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
               {isVideoMode ? <Video className='size-4' /> : <Camera className='size-4' />}

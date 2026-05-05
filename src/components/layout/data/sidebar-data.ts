@@ -36,6 +36,7 @@ type SidebarNodeConfig = {
   url?: string
   icon?: React.ElementType
   permissionId?: string
+  preserveEmptyChildren?: boolean
   activeMatch?: string
   badgeKey?: string
   children?: SidebarNodeConfig[]
@@ -212,13 +213,6 @@ const navGroupConfigs: SidebarGroupConfig[] = [
     titleKey: 'sidebar.groups.engineeringManagement',
     children: [
       {
-        id: 'product-engineering',
-        titleKey: 'sidebar.items.productEngineering',
-        url: '/engineering',
-        icon: Box,
-        permissionId: permissionIdForPath('/engineering'),
-      },
-      {
         id: 'engineering-database',
         titleKey: 'sidebar.items.engineeringDatabase',
         url: '/engineering-db',
@@ -242,48 +236,104 @@ const navGroupConfigs: SidebarGroupConfig[] = [
     ],
   },
   {
-    id: 'warehouse-management',
-    titleKey: 'sidebar.groups.warehouseManagement',
+    id: 'product-management',
+    titleKey: 'sidebar.groups.productManagement',
     children: [
       {
-        id: 'warehouse-operations',
-        titleKey: 'sidebar.items.warehouseOperations',
-        url: '/warehouse',
-        icon: Warehouse,
-        permissionId: permissionIdForPath('/warehouse'),
+        id: 'product-config-group',
+        titleKey: 'sidebar.groups.productConfig',
+        icon: Box,
+        children: [
+          {
+            id: 'product-engineering',
+            titleKey: 'sidebar.items.productEngineering',
+            url: '/engineering',
+            icon: Box,
+            permissionId: permissionIdForPath('/engineering'),
+          },
+        ],
       },
       {
-        id: 'material-archive',
-        titleKey: 'sidebar.items.materialArchive',
-        url: '/materials',
-        icon: Database,
-        permissionId: permissionIdForPath('/materials'),
-      },
-      {
-        id: 'warehouse-config',
-        titleKey: 'sidebar.items.warehouseConfig',
-        url: '/warehouse-config',
-        icon: Sliders,
-        permissionId: permissionIdForPath('/warehouse-config'),
+        id: 'code-center-group',
+        titleKey: 'sidebar.groups.codeCenter',
+        icon: Barcode,
+        children: [
+          {
+            id: 'linear-barcode',
+            titleKey: 'sidebar.items.linearBarcode',
+            url: '/code-center/linear-barcode',
+            icon: Barcode,
+            permissionId: permissionIdForPath('/code-center/linear-barcode'),
+          },
+          {
+            id: 'shared-code-source',
+            titleKey: 'sidebar.items.sharedCodeSource',
+            url: '/code-center/shared-code-source',
+            icon: Database,
+            permissionId: permissionIdForPath('/code-center/shared-code-source'),
+          },
+        ],
       },
     ],
   },
   {
-    id: 'experimental-center',
-    titleKey: 'sidebar.groups.experimentalCenter',
+    id: 'warehouse-logistics',
+    titleKey: 'sidebar.groups.warehouseLogistics',
     children: [
       {
-        id: 'experimental-center',
-        titleKey: 'sidebar.groups.experimentalCenter',
-        url: '/labs/experimental',
-        icon: Cpu,
-        permissionId: permissionIdForPath('/labs/experimental'),
+        id: 'warehouse-management-group',
+        titleKey: 'sidebar.groups.warehouseManagement',
+        icon: Warehouse,
+        children: [
+          {
+            id: 'warehouse-operations',
+            titleKey: 'sidebar.items.warehouseOperations',
+            url: '/warehouse',
+            icon: Warehouse,
+            permissionId: permissionIdForPath('/warehouse'),
+          },
+          {
+            id: 'material-archive',
+            titleKey: 'sidebar.items.materialArchive',
+            url: '/materials',
+            icon: Database,
+            permissionId: permissionIdForPath('/materials'),
+          },
+          {
+            id: 'warehouse-config',
+            titleKey: 'sidebar.items.warehouseConfig',
+            url: '/warehouse-config',
+            icon: Sliders,
+            permissionId: permissionIdForPath('/warehouse-config'),
+          },
+        ],
+      },
+      {
+        id: 'logistics-group',
+        titleKey: 'sidebar.groups.logistics',
+        icon: Truck,
+        children: [
+          {
+            id: 'logistics-config',
+            titleKey: 'sidebar.items.logisticsConfig',
+            url: '/logistics-config',
+            icon: Truck,
+            permissionId: permissionIdForPath('/logistics-config'),
+          },
+          {
+            id: 'logistics-settings',
+            titleKey: 'sidebar.items.logisticsSettings',
+            url: '/logistics-settings',
+            icon: Sliders,
+            permissionId: permissionIdForPath('/logistics-settings'),
+          },
+        ],
       },
     ],
   },
   {
     id: 'asset-management',
-    titleKey: 'sidebar.groups.assetManagement',
+    titleKey: 'sidebar.groups.resourceManagement',
     children: [
       {
         id: 'tooling-management',
@@ -307,45 +357,40 @@ const navGroupConfigs: SidebarGroupConfig[] = [
           },
         ],
       },
-    ],
-  },
-  {
-    id: 'org-personnel',
-    titleKey: 'sidebar.groups.orgPersonnel',
-    children: [
       {
-        id: 'personnel-center',
-        titleKey: 'sidebar.items.personnelCenter',
-        url: '/personnel',
+        id: 'org-personnel-group',
+        titleKey: 'sidebar.groups.orgPersonnel',
         icon: Users,
-        permissionId: permissionIdForPath('/personnel'),
+        children: [
+          {
+            id: 'personnel-center',
+            titleKey: 'sidebar.items.personnelCenter',
+            url: '/personnel',
+            icon: Users,
+            permissionId: permissionIdForPath('/personnel'),
+          },
+          {
+            id: 'hall-of-fame',
+            titleKey: 'sidebar.items.hallOfFame',
+            url: '/hall-of-fame',
+            icon: Trophy,
+            permissionId: permissionIdForPath('/hall-of-fame'),
+          },
+        ],
       },
       {
-        id: 'hall-of-fame',
-        titleKey: 'sidebar.items.hallOfFame',
-        url: '/hall-of-fame',
-        icon: Trophy,
-        permissionId: permissionIdForPath('/hall-of-fame'),
-      },
-    ],
-  },
-  {
-    id: 'logistics',
-    titleKey: 'sidebar.groups.logistics',
-    children: [
-      {
-        id: 'logistics-config',
-        titleKey: 'sidebar.items.logisticsConfig',
-        url: '/logistics-config',
-        icon: Truck,
-        permissionId: permissionIdForPath('/logistics-config'),
-      },
-      {
-        id: 'logistics-settings',
-        titleKey: 'sidebar.items.logisticsSettings',
-        url: '/logistics-settings',
-        icon: Sliders,
-        permissionId: permissionIdForPath('/logistics-settings'),
+        id: 'experimental-center-group',
+        titleKey: 'sidebar.groups.experimentalCenter',
+        icon: Cpu,
+        children: [
+          {
+            id: 'experimental-center',
+            titleKey: 'sidebar.groups.experimentalCenter',
+            url: '/labs/experimental',
+            icon: Cpu,
+            permissionId: permissionIdForPath('/labs/experimental'),
+          },
+        ],
       },
     ],
   },
@@ -385,40 +430,8 @@ const navGroupConfigs: SidebarGroupConfig[] = [
         id: 'messages-group',
         titleKey: 'sidebar.groups.messages',
         icon: FileText,
-        children: [
-          {
-            id: 'messages-shell',
-            titleKey: 'sidebar.groups.messages',
-            icon: FileText,
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'code-center',
-    titleKey: 'sidebar.groups.codeCenter',
-    children: [
-      {
-        id: 'linear-barcode',
-        titleKey: 'sidebar.items.linearBarcode',
-        url: '/code-center/linear-barcode',
-        icon: Barcode,
-        permissionId: permissionIdForPath('/code-center/linear-barcode'),
-      },
-      {
-        id: 'dm-code',
-        titleKey: 'sidebar.items.dmCode',
-        url: '/code-center/dm-code',
-        icon: ScanLine,
-        permissionId: permissionIdForPath('/code-center/dm-code'),
-      },
-      {
-        id: 'shared-code-source',
-        titleKey: 'sidebar.items.sharedCodeSource',
-        url: '/code-center/shared-code-source',
-        icon: Database,
-        permissionId: permissionIdForPath('/code-center/shared-code-source'),
+        preserveEmptyChildren: true,
+        children: [],
       },
     ],
   },
@@ -473,6 +486,7 @@ function localizeNavNode(t: TranslateFn, node: SidebarNodeConfig): NavNode {
     url: node.url,
     icon: node.icon,
     permissionId: node.permissionId,
+    preserveEmptyChildren: node.preserveEmptyChildren,
     activeMatch: node.activeMatch,
     badgeKey: node.badgeKey,
     children: node.children?.map((child) => localizeNavNode(t, child)),

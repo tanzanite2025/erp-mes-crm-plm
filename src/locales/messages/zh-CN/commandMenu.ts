@@ -98,7 +98,6 @@ export const commandMenu = {
     warehouseCategory: '仓库分类',
     stocktake: '物料盘点',
     adjustments: '调账记录',
-    dmNumbering: 'DM码发号规则',
     sharedNumberingEngine: '共享发号引擎',
     units: '单位管理',
     sequences: '一维码发号规则',

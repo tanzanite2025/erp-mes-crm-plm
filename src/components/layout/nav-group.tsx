@@ -142,6 +142,10 @@ function hasChildren(item: NavItem): item is NavBranch {
   return Array.isArray(item.children) && item.children.length > 0
 }
 
+function isEmptyPreservedBranch(item: NavItem): item is NavItem & { children: NavItem[] } {
+  return item.preserveEmptyChildren === true && Array.isArray(item.children) && item.children.length === 0
+}
+
 function isSystemAlertBadge(item: NavItem) {
   return (item.badgeKey === 'system-alert' || item.id === 'system-management') && item.badge === '●'
 }
@@ -219,7 +223,7 @@ export function NavGroup({ title, children }: NavGroupProps) {
               return <SidebarMenuLink key={item.id} item={item} pathname={pathname} />
             }
 
-            if (!hasChildren(item)) {
+            if (!hasChildren(item) && !isEmptyPreservedBranch(item)) {
               return null
             }
 
@@ -310,7 +314,7 @@ function SidebarMenuCollapsedDropdown({
               if (hasChildren(subItem)) {
                 const nestedChildLinks = subItem.children.filter(isNavLink)
 
-                if (nestedChildLinks.length === 0) {
+                if (nestedChildLinks.length === 0 && !subItem.preserveEmptyChildren) {
                   return null
                 }
 
@@ -332,26 +336,28 @@ function SidebarMenuCollapsedDropdown({
                         </span>
                       ) : null}
                     </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent className={dropdownSubContentClassName}>
-                      {nestedChildLinks.map((nestedItem) => (
-                        <DropdownMenuItem key={nestedItem.id} asChild className={dropdownItemClassName}>
-                          <Link
-                            to={nestedItem.url}
-                            className={cn(checkIsActive(pathname, nestedItem) ? 'bg-secondary' : '')}
-                          >
-                            {nestedItem.icon && <nestedItem.icon />}
-                            <span className='max-w-52 px-0.5 py-0.5 text-[12px] text-wrap italic font-black leading-normal'>
-                              {nestedItem.title}
-                            </span>
-                            {nestedItem.badge ? (
-                              <span className='ms-auto text-[10px] font-black italic opacity-60'>
-                                {nestedItem.badge}
+                    {nestedChildLinks.length > 0 ? (
+                      <DropdownMenuSubContent className={dropdownSubContentClassName}>
+                        {nestedChildLinks.map((nestedItem) => (
+                          <DropdownMenuItem key={nestedItem.id} asChild className={dropdownItemClassName}>
+                            <Link
+                              to={nestedItem.url}
+                              className={cn(checkIsActive(pathname, nestedItem) ? 'bg-secondary' : '')}
+                            >
+                              {nestedItem.icon && <nestedItem.icon />}
+                              <span className='max-w-52 px-0.5 py-0.5 text-[12px] text-wrap italic font-black leading-normal'>
+                                {nestedItem.title}
                               </span>
-                            ) : null}
-                          </Link>
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuSubContent>
+                              {nestedItem.badge ? (
+                                <span className='ms-auto text-[10px] font-black italic opacity-60'>
+                                  {nestedItem.badge}
+                                </span>
+                              ) : null}
+                            </Link>
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuSubContent>
+                    ) : null}
                   </DropdownMenuSub>
                 )
               }
@@ -391,7 +397,7 @@ function SidebarMenuBranch({
   pathname,
   isCollapsed,
 }: {
-  item: NavBranch
+  item: NavItem & { children: NavItem[] }
   pathname: string
   isCollapsed: boolean
 }) {
@@ -400,6 +406,7 @@ function SidebarMenuBranch({
   }
 
   const childLinks = item.children.filter(isNavLink)
+  const shouldRenderEmptyBranch = childLinks.length === 0 && item.preserveEmptyChildren
   const showSystemAlertBadge = isSystemAlertBadge(item)
   const branchIsActive = checkIsActive(pathname, item)
   const branchIsDirectlySelected = checkIsDirectlySelected(pathname, item)
@@ -495,7 +502,7 @@ function SidebarMenuBranch({
             )
           })}
         </SidebarMenuSub>
-      ) : null}
+      ) : shouldRenderEmptyBranch ? <SidebarMenuSub /> : null}
     </SidebarMenuItem>
   )
 }

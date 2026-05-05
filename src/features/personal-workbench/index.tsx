@@ -27,7 +27,7 @@ export default function PersonalWorkbenchPage() {
         </div>
       </div>
       <Main className='flex-1 overflow-y-auto pt-0 pb-5'>
-        <div className='flex flex-col items-stretch animate-in fade-in duration-700 min-h-0 min-w-0 h-fit p-4 md:p-8 gap-4'>
+        <div className='flex flex-col items-stretch animate-in fade-in duration-700 min-h-0 min-w-0 h-fit gap-4'>
           <div className='flex flex-col gap-2 rounded-[24px] border border-dashed border-border/70 bg-muted/10 p-4 md:flex-row md:items-center md:justify-between'>
             <div className='min-w-0'>
               <p className='text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/60'>统一搜索我的内容</p>

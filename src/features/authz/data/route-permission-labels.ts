@@ -126,7 +126,6 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/code-center/linear-barcode/protocol':
     'codeCenter.linearBarcode.tabs.protocol',
   '/code-center/linear-barcode/print': 'codeCenter.linearBarcode.tabs.print',
-  '/code-center/dm-code': 'sidebar.items.dmCode',
   '/code-center/shared-code-source': 'sidebar.items.sharedCodeSource',
   '/code-center/shared-code-source/hole-codes':
     'codeCenter.sharedCodeSource.tabs.holeCodes',

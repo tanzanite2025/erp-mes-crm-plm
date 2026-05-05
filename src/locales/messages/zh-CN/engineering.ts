@@ -868,7 +868,7 @@ export const engineering = {
         validated: '已校验',
         aligned: '100% 对齐',
         configTitle: '条码参数配置',
-        configDesc: '用于生成标准 DataMatrix 标签编码的参数设定',
+        configDesc: '用于生成标准条码标签编码的参数设定',
         modelCodeLabel: '型号编码（位 04-05）',
         appearanceCodeLabel: '外观编码（1-9）',
         syncedWithArchive: '已同步',
