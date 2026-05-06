@@ -56,7 +56,8 @@ export const apsScheduling = {
       templateHintSingleTemplate: '已按型号和孔数自动匹配模板。',
       templateHintMultipleTemplate: '已匹配 {{count}} 个同型号同孔数模板，默认选用最新版本。',
       missingTemplateMessage:
-        '当前订单行（{{productModel}} / {{holeCount}} 孔）还没有可用的启用中裁纱模板，请先到“工程数据库 / 裁纱方案”维护后再下达。',
+        '当前订单行（{{productModel}} / {{holeCount}} 孔）还没有可用的启用中裁纱模板，请先到“裁纱方案”维护后再下达。',
+      openCuttingPlan: '直达裁纱方案',
     },
     planning: {
       kicker: '下达准备',

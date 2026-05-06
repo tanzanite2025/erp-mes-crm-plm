@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Building2, Save, Loader2 } from 'lucide-react'
+import { Save, Loader2 } from 'lucide-react'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -81,14 +81,15 @@ export function EnterpriseMgmt() {
 
     return (
         <div className='flex flex-col gap-8 animate-in fade-in duration-700 max-w-2xl'>
-            <div className='flex flex-col gap-1 bg-muted/5 p-4 md:p-6 rounded-[32px] border border-dashed border-muted/50'>
-                <div className='flex items-center gap-2 text-primary'>
-                    <Building2 className='size-4 text-primary' />
-                    <h3 className='text-lg font-black tracking-tighter italic uppercase'>{t('basicSettings.enterprisePage.title')}</h3>
+            <div className='flex flex-col md:flex-row md:items-center justify-between gap-4'>
+                <div className='flex-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-6'>
+                    <h2 className='text-lg font-black italic tracking-tighter uppercase'>
+                        {t('basicSettings.enterprisePage.title')}
+                    </h2>
+                    <p className='text-[10px] text-muted-foreground font-black tracking-widest uppercase opacity-60'>
+                        {t('basicSettings.enterprisePage.subtitle')}
+                    </p>
                 </div>
-                <p className='text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-60'>
-                    {t('basicSettings.enterprisePage.subtitle')}
-                </p>
             </div>
 
             <div className='bg-muted/5 p-4 md:p-8 rounded-[32px] border border-dashed space-y-8'>
@@ -135,7 +136,7 @@ export function EnterpriseMgmt() {
                 </div>
             </div>
             
-            <div className='p-6 bg-primary/5 rounded-[24px] border border border-dashed border-primary/20'>
+            <div className='p-6 bg-primary/5 rounded-[32px] border border-dashed border-primary/20'>
                 <p className='text-[10px] font-black text-primary/60 italic leading-relaxed uppercase tracking-widest'>
                     {t('basicSettings.enterprisePage.syncNotice')}
                 </p>

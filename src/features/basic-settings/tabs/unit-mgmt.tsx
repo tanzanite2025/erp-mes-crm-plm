@@ -7,6 +7,7 @@ import {
   FileUp,
   MoreHorizontal,
   Plus,
+  RefreshCcw,
   Scale,
   Search,
   ShieldCheck,
@@ -40,7 +41,6 @@ import { UnitExcelTemplate } from '../utils/unit-excel-utils'
 import type { UnitCategory } from '../services/unit-service'
 import { useUnitMgmt } from '../hooks/use-unit-mgmt'
 import { useUnitImport } from '../hooks/use-unit-import'
-import { IndustrialHeader } from '@/components/uds/industrial-header'
 
 const CATEGORY_OPTIONS: Array<{
   value: UnitCategory
@@ -79,25 +79,37 @@ export function UnitMgmt() {
   const { isImporting, handleExcelImport } = useUnitImport(() => refreshData(true))
 
   return (
-    <div className='flex flex-col gap-8 animate-in fade-in duration-700 p-1 md:p-2'>
-      {/* 工业化页眉 */}
-      <IndustrialHeader
-        icon={Scale}
-        title={t('basicSettings.units.page.title')}
-        description={t('basicSettings.units.page.subtitle')}
-        gradient
-        statusBadge={
-          <div className='flex items-center gap-4 px-4 py-1 rounded-full bg-primary/5 border border-primary/10 w-fit shrink-0'>
-            <span className='text-[10px] font-black text-primary/60 uppercase tracking-widest italic'>
+    <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+      {/* 顶级标准页眉布局 */}
+      <div className='flex flex-col md:flex-row md:items-center justify-between gap-4'>
+        <div className='flex-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-6'>
+          <h2 className='text-lg font-black italic tracking-tighter uppercase'>
+            {t('basicSettings.units.page.title')}
+          </h2>
+          <p className='text-[10px] text-muted-foreground font-black tracking-widest uppercase opacity-60'>
+            {t('basicSettings.units.page.subtitle')}
+          </p>
+        </div>
+        <div className='flex flex-wrap items-center gap-2'>
+          <div className='flex items-center gap-4 px-4 py-1.5 rounded-full bg-primary/5 border border-dashed border-primary/20 h-9 shrink-0'>
+            <span className='text-[9px] font-black text-primary/60 uppercase tracking-widest italic'>
               {t('common.status.ready')}
             </span>
             <div className='size-1.5 rounded-full bg-emerald-500 animate-pulse' />
           </div>
-        }
-      />
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={() => void refreshData(true)}
+            className='rounded-full h-9 font-black text-[10px] uppercase tracking-widest border-dashed hover:bg-primary/5 hover:text-primary transition-all'
+          >
+            <RefreshCcw className={cn('size-3', isLoading && 'animate-spin')} />
+          </Button>
+        </div>
+      </div>
 
       {/* 增强工业感操作栏 */}
-      <div className='flex flex-col xl:flex-row gap-6 justify-between items-start xl:items-center bg-muted/5 p-6 rounded-[24px] border border-dashed border-muted/50'>
+      <div className='flex flex-col xl:flex-row gap-6 justify-between items-start xl:items-center bg-muted/5 p-6 rounded-[32px] border border-dashed border-muted/50'>
         <div className='flex flex-col sm:flex-row flex-wrap gap-4 items-start sm:items-center w-full xl:w-auto'>
           {/* 搜索框 */}
           <div className='relative w-full sm:w-72 group'>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Eye, EyeOff, Lock, RefreshCcw, ShieldCheck } from 'lucide-react'
+import { Eye, EyeOff, Lock, RefreshCcw } from 'lucide-react'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { isForbiddenError } from '@/lib/error-status'
 import { toast } from 'sonner'
 import { systemConfigService, type SystemConfig } from '../services/system-config-service'
+import { cn } from '@/lib/utils'
 
 const TOPOLOGY_AUTH_KEY = 'topology_auth_password'
 const TOPOLOGY_AUTH_LABEL = '产线拓扑操作授权码'
@@ -91,25 +92,27 @@ export function SecuritySettings() {
   }
 
   return (
-    <div className='flex flex-col gap-8 animate-in fade-in duration-700 p-8'>
-      <div className='flex items-center justify-between p-6 px-10 bg-muted/5 rounded-[32px] border border-dashed border-primary/20'>
-        <div className='flex flex-col gap-1'>
-          <h1 className='text-lg font-black tracking-tighter italic uppercase flex items-center gap-3'>
-            <ShieldCheck className='w-5 h-5 text-primary' />
+    <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+      <div className='flex flex-col md:flex-row md:items-center justify-between gap-4'>
+        <div className='flex-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-6'>
+          <h2 className='text-lg font-black italic tracking-tighter uppercase'>
             {t('basicSettings.securityPage.title')}
-          </h1>
-          <p className='text-[9px] font-black uppercase tracking-widest opacity-60'>
+          </h2>
+          <p className='text-[10px] text-muted-foreground font-black tracking-widest uppercase opacity-60'>
             {t('basicSettings.securityPage.subtitle')}
           </p>
         </div>
-        <Button
-          variant='ghost'
-          size='icon'
-          className='rounded-full hover:bg-primary/5'
-          onClick={loadConfigs}
-        >
-          <RefreshCcw className='w-4 h-4 opacity-50' />
-        </Button>
+        <div className='flex flex-wrap items-center gap-2'>
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={() => void loadConfigs()}
+            className='rounded-full h-9 font-black text-[10px] uppercase tracking-widest border-dashed hover:bg-primary/5 hover:text-primary transition-all'
+          >
+            <RefreshCcw className={cn('size-3 mr-2', isLoading && 'animate-spin')} />
+            {t('common.actions.refresh') || 'REFRESH'}
+          </Button>
+        </div>
       </div>
 
       <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>

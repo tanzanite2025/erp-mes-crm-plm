@@ -1,6 +1,7 @@
 'use client'
 
-import { Scissors, TriangleAlert } from 'lucide-react'
+import { ExternalLink, Scissors, TriangleAlert } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { ModuleTabbedLayout } from '@/components/layout/module-tabbed-layout'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
@@ -35,10 +36,14 @@ export function ApsCuttingIssuanceTab() {
     refreshExecutionAndTrace,
   } = useCuttingIssuancePageState()
 
+  const handleOpenCuttingPlan = () => {
+    window.open('/raw-materials/cutting-plan', '_blank', 'noopener,noreferrer')
+  }
+
   return (
     <ModuleTabbedLayout
       title={t('sidebar.items.cuttingOperations')}
-      tabs={getCuttingOperationTabs(t as any)}
+      tabs={getCuttingOperationTabs(t)}
     >
       <div className='flex animate-in flex-col gap-5 fade-in duration-700'>
         <IndustrialHeader
@@ -67,10 +72,21 @@ export function ApsCuttingIssuanceTab() {
         ) : null}
 
         {missingTemplateMessage ? (
-          <section className='rounded-[24px] border border-dashed border-amber-300 bg-amber-50 p-4 text-sm text-amber-800'>
-            <div className='flex items-start gap-2'>
-              <TriangleAlert className='mt-0.5 size-4 shrink-0' />
-              <p>{missingTemplateMessage}</p>
+          <section className='rounded-[24px] border border-dashed border-amber-300/80 bg-muted/5 p-4'>
+            <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+              <div className='flex items-center gap-2.5 text-[11px] font-medium leading-5 text-muted-foreground'>
+                <TriangleAlert className='size-3.5 shrink-0 text-amber-600/75' />
+                <p>{missingTemplateMessage}</p>
+              </div>
+              <Button
+                type='button'
+                variant='outline'
+                className='h-8 shrink-0 rounded-full border-amber-300/70 bg-amber-50/40 px-3 text-[10px] font-black uppercase tracking-widest text-amber-700 hover:bg-amber-100/70 hover:text-amber-800'
+                onClick={handleOpenCuttingPlan}
+              >
+                <ExternalLink className='size-3.5' />
+                {t('apsScheduling.cuttingIssuance.feedback.openCuttingPlan')}
+              </Button>
             </div>
           </section>
         ) : null}

@@ -59,7 +59,8 @@ export const apsScheduling = {
       templateHintMultipleTemplate:
         '{{count}} templates matched for the same model and hole count. The latest version is selected by default.',
       missingTemplateMessage:
-        'The current order line ({{productModel}} / {{holeCount}} holes) does not have an enabled cutting template yet. Please maintain it in "Engineering DB / Cutting Plan" before issuing.',
+        'The current order line ({{productModel}} / {{holeCount}} holes) does not have an enabled cutting template yet. Please maintain it in "Cutting Plan" before issuing.',
+      openCuttingPlan: 'Open Cutting Plan',
     },
     planning: {
       kicker: 'Issuance Setup',

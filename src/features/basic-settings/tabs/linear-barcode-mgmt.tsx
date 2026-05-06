@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { Barcode, Loader2, RotateCcw, Save, Settings2 } from 'lucide-react'
+import { Loader2, RotateCcw, Save, Settings2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth-store'
 import { createLogger } from '@/lib/logger'
@@ -19,6 +19,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { cn } from '@/lib/utils'
 import { canOpenRouteEntryNonBlocking } from '@/features/authz/guards/route-entry-access'
 import { linearBarcodeProtocolService } from '@/features/basic-settings/services/linear-barcode-protocol-service'
 import { numberingService } from '@/features/basic-settings/services/numbering-service'
@@ -265,40 +266,44 @@ export function LinearBarcodeMgmt() {
   }
 
   return (
-    <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
-      <div className='flex flex-col gap-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-4 md:p-6'>
-        <div className='flex items-center gap-2 text-primary'>
-          <Barcode className='size-4' />
-          <h3 className='text-lg font-black tracking-tighter uppercase italic'>
+    <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+      <div className='flex flex-col md:flex-row md:items-center justify-between gap-4'>
+        <div className='flex-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-6'>
+          <h2 className='text-lg font-black italic tracking-tighter uppercase'>
             {t('basicSettings.linearBarcode.page.title')}
-          </h3>
+          </h2>
+          <p className='text-[10px] text-muted-foreground font-black tracking-widest uppercase opacity-60'>
+            {t('basicSettings.linearBarcode.page.subtitle')}
+          </p>
         </div>
-        <p className='text-[9px] font-black tracking-widest text-muted-foreground uppercase opacity-60'>
-          {t('basicSettings.linearBarcode.page.subtitle')}
-        </p>
+        <div className='flex flex-wrap items-center gap-2'>
+          <div className='flex items-center gap-3 px-4 py-1.5 rounded-full bg-emerald-500/5 border border-dashed border-emerald-500/20 h-9 shrink-0'>
+            <span className='text-[9px] font-black text-emerald-600/70 uppercase tracking-widest italic'>
+              {t('basicSettings.linearBarcode.page.badges.active')}
+            </span>
+            <div className='size-1.5 rounded-full bg-emerald-500 animate-pulse' />
+          </div>
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={() => void handleSaveProtocol()}
+            disabled={isConfigSaving}
+            className='rounded-full h-9 font-black text-[10px] uppercase tracking-widest border-dashed hover:bg-primary/5 hover:text-primary transition-all'
+          >
+            <Save className={cn('size-3 mr-2', isConfigSaving && 'animate-pulse')} />
+            {isConfigSaving ? t('basicSettings.linearBarcode.page.actions.saving') : t('basicSettings.linearBarcode.page.actions.save')}
+          </Button>
+        </div>
       </div>
 
-      <div className='flex flex-col items-start justify-between gap-4 rounded-[24px] border border-dashed border-muted/50 bg-muted/5 p-4 sm:flex-row sm:items-center md:p-6'>
+      <div className='flex flex-col items-start justify-between gap-4 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-4 sm:flex-row sm:items-center md:p-6'>
         <div className='flex flex-wrap items-center gap-3'>
-          <Badge className='h-6 rounded-full border-none bg-emerald-500/10 px-4 text-[9px] font-black tracking-widest text-emerald-600 uppercase italic'>
-            {t('basicSettings.linearBarcode.page.badges.active')}
-          </Badge>
           <Badge className='h-6 rounded-full border-none bg-slate-500/10 px-4 text-[9px] font-black tracking-widest text-slate-600 uppercase italic'>
             {statusBadgeLabel}
           </Badge>
         </div>
 
         <div className='flex w-full flex-col items-center gap-3 sm:w-auto sm:flex-row'>
-          <Button
-            className='h-11 w-full rounded-full px-8 text-[10px] font-black tracking-widest uppercase sm:w-auto'
-            onClick={() => void handleSaveProtocol()}
-            disabled={isConfigSaving}
-          >
-            <Save className='mr-2 size-4' />
-            {isConfigSaving
-              ? t('basicSettings.linearBarcode.page.actions.saving')
-              : t('basicSettings.linearBarcode.page.actions.save')}
-          </Button>
           {canOpenSharedNumberingEngine && (
             <Button
               variant='ghost'
