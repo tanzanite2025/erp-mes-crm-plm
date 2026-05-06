@@ -374,14 +374,14 @@ export function SupplierList() {
               className='group relative cursor-default overflow-hidden rounded-[24px] border-dashed border-muted/50 bg-muted/5 transition-all hover:bg-muted/30'
             >
               <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 via-transparent' />
-              <CardHeader className='relative border-b border-dashed border-muted/50 p-4 pb-4 md:p-6'>
+              <CardHeader className='relative border-b border-dashed border-muted/50 p-3 pb-3 md:p-4 md:pb-3.5'>
                 <div className='flex items-center justify-between'>
-                  <div className='flex items-center gap-3 md:gap-4'>
-                    <div className='flex size-10 items-center justify-center rounded-2xl bg-primary/10 text-base font-black text-primary shadow-inner md:size-12 md:text-lg'>
+                  <div className='flex items-center gap-2.5 md:gap-3'>
+                    <div className='flex size-9 items-center justify-center rounded-2xl bg-primary/10 text-sm font-black text-primary shadow-inner md:size-10 md:text-base'>
                       {supplier.name.substring(0, 1)}
                     </div>
                     <div>
-                      <div className='flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3'>
+                      <div className='flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2'>
                         <h4 className='text-sm font-black tracking-tight text-foreground italic md:text-base'>
                           {supplier.name}
                         </h4>
@@ -389,7 +389,7 @@ export function SupplierList() {
                           {getStatusBadge(supplier.status)}
                         </div>
                       </div>
-                      <p className='mt-1 text-[8px] font-black tracking-widest text-muted-foreground uppercase opacity-50 md:text-[10px]'>
+                      <p className='mt-0.5 text-[8px] font-black tracking-widest text-muted-foreground uppercase opacity-50 md:text-[9px]'>
                         ID: {supplier.code}
                       </p>
                     </div>
@@ -430,9 +430,9 @@ export function SupplierList() {
                   </DropdownMenu>
                 </div>
               </CardHeader>
-              <CardContent className='relative space-y-5 p-4 pt-5 md:p-6 md:pt-6'>
-                <div className='flex flex-col gap-4 sm:grid sm:grid-cols-2 md:gap-6'>
-                  <div className='space-y-1.5'>
+              <CardContent className='relative space-y-3 p-3 pt-3 md:space-y-3.5 md:p-4 md:pt-4'>
+                <div className='flex flex-col gap-2.5 sm:grid sm:grid-cols-2 md:gap-3'>
+                  <div className='space-y-1'>
                     <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40 md:text-[9px]'>
                       <User className='size-3' />
                       {t('purchase.suppliers.liaison')}
@@ -441,7 +441,7 @@ export function SupplierList() {
                       {supplier.contactPerson}
                     </p>
                   </div>
-                  <div className='space-y-1.5 sm:text-right'>
+                  <div className='space-y-1 sm:text-right'>
                     <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40 sm:justify-end md:text-[9px]'>
                       <Phone className='size-3' />
                       {t('purchase.suppliers.hotline')}
@@ -452,7 +452,7 @@ export function SupplierList() {
                   </div>
                 </div>
 
-                <div className='space-y-2.5'>
+                <div className='space-y-1.5'>
                   <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40 md:text-[9px]'>
                     <Box className='size-3' />
                     {t('purchase.suppliers.offerings')}
@@ -470,7 +470,7 @@ export function SupplierList() {
                   </div>
                 </div>
 
-                <div className='space-y-1.5 border-t border-dashed border-muted/50 pt-4'>
+                <div className='space-y-1 border-t border-dashed border-muted/50 pt-2.5'>
                   <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40 md:text-[9px]'>
                     <MapPin className='size-3' />
                     {t('purchase.suppliers.address')}
@@ -480,13 +480,13 @@ export function SupplierList() {
                   </p>
                 </div>
 
-                <div className='space-y-1.5 border-t border-dashed border-muted/50 pt-4'>
+                <div className='space-y-1 border-t border-dashed border-muted/50 pt-2.5'>
                   <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40 md:text-[9px]'>
                     <MessageCircle className='size-3' />
                     {t('purchase.suppliers.communication')} /{' '}
                     {t('purchase.suppliers.wechat')}
                   </div>
-                  <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+                  <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
                     <p className='text-[10px] font-bold break-all text-muted-foreground md:text-[11px]'>
                       {supplier.wechat || t('purchase.suppliers.unfilled')}
                     </p>
@@ -507,7 +507,7 @@ export function SupplierList() {
                   </div>
                 </div>
 
-                <div className='flex flex-col justify-between gap-4 border-t border-dashed border-muted/50 pt-4 sm:flex-row sm:items-center'>
+                <div className='flex flex-col justify-between gap-2.5 border-t border-dashed border-muted/50 pt-2.5 sm:flex-row sm:items-center'>
                   <div className='flex items-center justify-between gap-1.5 sm:flex-col sm:items-start sm:justify-start'>
                     <span className='text-[8px] font-black tracking-[0.2em] text-muted-foreground/40 uppercase italic'>
                       {t('purchase.suppliers.rating')}
@@ -522,7 +522,7 @@ export function SupplierList() {
                       </span>
                     </div>
                   </div>
-                  <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center'>
+                  <div className='flex w-full flex-col gap-1.5 sm:w-auto sm:flex-row sm:items-center'>
                     <AuditTimelineTriggerButton
                       module={AUDIT_MODULES.supplier}
                       targetId={supplier.id}
@@ -546,7 +546,7 @@ export function SupplierList() {
                   targetId={supplier.id}
                   createdAt={supplier.createdAt}
                   updatedAt={supplier.updatedAt}
-                  className='border-primary/10 pt-2'
+                  className='border-primary/10 pt-1.5'
                 />
               </CardContent>
             </Card>

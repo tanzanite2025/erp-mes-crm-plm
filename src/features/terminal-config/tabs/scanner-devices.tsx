@@ -224,8 +224,8 @@ export function ScannerDevicesTab() {
   return (
     <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
       <IndustrialHeader
-        title='USB 扫码枪接入测试'
-        description='适用于接 USB 后像键盘一样输入的一维码扫码枪。现场只需要让光标停在输入框内，扫码后由页面判断回车、前后缀和一维码协议。'
+        title='USB扫码配置'
+        description='仅面向接入后像键盘一样输入的 USB HID 扫码枪。现场只需要让光标停在输入框内，扫码后由页面判断回车、前后缀和一维码协议。'
         icon={ScanLine}
         statusBadge={<Badge className='rounded-full border-none bg-emerald-500/10 px-4 py-1.5 text-[10px] font-black text-emerald-700'>
           当前接入模式：USB HID 键盘模式
@@ -258,7 +258,7 @@ export function ScannerDevicesTab() {
           <CardHeader className='pb-4'>
             <CardTitle className='flex items-center gap-2 text-base font-black tracking-tight'>
               <Usb className='size-4 text-primary' />
-              扫码输入测试
+              USB扫码输入测试
             </CardTitle>
             <CardDescription className='text-xs leading-relaxed text-muted-foreground/75'>
               插入 USB 扫码枪后，点击下方输入框并扫码。支持 Enter
@@ -430,7 +430,7 @@ export function ScannerDevicesTab() {
               variant='outline'
               className='rounded-full text-[10px] font-black tracking-widest uppercase'
             >
-              <Link to='/wheel-trace' search={{ scan: String(Date.now()) }}>
+              <Link to='/wheel-trace' search={{ scan: '1' }}>
                 去追溯扫码
                 <ArrowRight className='ml-2 size-3.5' />
               </Link>

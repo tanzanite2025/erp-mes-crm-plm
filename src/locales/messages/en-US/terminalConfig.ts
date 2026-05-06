@@ -1,90 +1,31 @@
 export const terminalConfig = {
   moduleTitle: 'Terminal Config',
   tabs: {
-    printers: 'Printer Drivers',
     pda: 'PDA Terminal',
-    scanners: 'Scanner Devices',
+    scanners: 'USB Scanner Config',
     mobileCapture: 'Mobile Capture',
-    downloads: 'Driver Downloads',
-    guides: 'Install Guides',
   },
   shared: {
     statusPendingUpload: 'Pending Upload',
     statusPlanned: 'Planned',
     versionLabel: 'Version',
     packageTypeLabel: 'Type',
-    downloadPending: 'Download Coming Soon',
-    viewGuide: 'View Setup Guide',
   },
   pages: {
-    printers: {
-      title: 'Printer Drivers',
-      description:
-        'Central hub for printer drivers, setup tools, and release packages.',
-      summary:
-        'This page is separate from the print center: the print center manages templates and records, while this area manages terminal-side drivers and access packages. Once the official drivers are uploaded, you only need to replace the download links in the static list.',
-    },
     scanners: {
-      title: 'Scanner Devices',
+      title: 'USB Scanner Config',
       description:
-        'Covers access instructions and parameter templates for barcode scanners, fixed scan heads, and scan modules.',
+        'Focused only on USB HID keyboard-mode scanners for access testing, Enter-suffix validation, and barcode protocol alignment.',
       summary:
-        'Scanner integration is best standardized as HID enter mode or explicit serial protocol templates, so forms, production pages, and PDA scanning can all share the same contract.',
-    },
-    downloads: {
-      title: 'Driver Downloads',
-      description:
-        'A unified download area for printers, PDA devices, and scanner hardware so on-site rollout stays fast and consistent.',
-      summary:
-        'The first version already reserves a shared download area and categorized cards. Later, if your team stores packages in a company drive, OSS, or an internal file server, you only need to fill in the download URLs.',
-    },
-    guides: {
-      title: 'Install Guides',
-      description:
-        'Collects deployment order, acceptance checks, and operational notes for printers, PDA terminals, and scanner devices.',
+        'This page does not cover fixed scan heads, scan modules, or serial devices. It is dedicated to validating the USB scanner keyboard-input path so ERP pages can receive scan results consistently.',
     },
   },
   resources: {
     common: {
       placeholderVersion: 'v1.0 Placeholder',
-      windowsDriverPackage: 'Windows Driver Package',
-      desktopDebugTool: 'Desktop Debug Tool',
       androidPda: 'Android PDA',
       terminalPackage: 'Terminal Package',
       operationManual: 'Operation Manual',
-      configGuide: 'Configuration Guide',
-      parameterTemplate: 'Parameter Template',
-    },
-    printers: {
-      labelPrinters: {
-        title: 'Label Printers',
-        description:
-          'Used for finished-goods labels, barcode reprints, and batch relabeling scenarios.',
-        items: {
-          tsc: {
-            title: 'TSC Label Printer Universal Driver',
-            target: 'TSC / TTP / TDP Series',
-            note: 'Recommended to be released together with the print-center template package. After upload, the download link can be replaced directly.',
-          },
-          zebra: {
-            title: 'Zebra Industrial Printer Driver',
-            target: 'Zebra ZT / GK Series',
-            note: 'Well suited for warehouse and production-line label printing workflows.',
-          },
-        },
-      },
-      debugTools: {
-        title: 'Printer Debug Tools',
-        description:
-          'Used for port inspection, paper calibration, and print self-checks.',
-        items: {
-          portTool: {
-            title: 'Printer Port Debug Utility',
-            target: 'USB / Network Printers',
-            note: 'Recommended to ship together with print-center setup, reducing cases where templates are correct but the driver path is not connected.',
-          },
-        },
-      },
     },
     pda: {
       workTerminals: {
@@ -102,57 +43,6 @@ export const terminalConfig = {
           },
         },
       },
-    },
-    scanners: {
-      deviceModules: {
-        title: 'Scanners and Scan Modules',
-        description:
-          'Covers HID keyboard mode, serial mode, and fixed scan-head debugging.',
-        items: {
-          scannerGuide: {
-            title: 'Scanner Configuration Manual',
-            target: 'USB HID Scanner',
-            note: 'It is recommended to default to enter-suffix mode so ERP forms can receive scans directly.',
-          },
-          fixedHeadTemplate: {
-            title: 'Fixed Scan Head Serial Template',
-            target: 'Serial / Network Scan Head',
-            note: 'Designed for production or automated trigger-based collection scenarios.',
-          },
-        },
-      },
-    },
-  },
-  guides: {
-    printerFlow: {
-      title: 'Printer Setup Flow',
-      description:
-        'Install the driver first, then complete template alignment.',
-      points: [
-        'Confirm whether the printer uses USB or network access before selecting the matching driver package.',
-        'After the driver is installed, validate templates, paper size, and print direction in the print center.',
-        'Only notify the site team to deploy at scale after integration passes, to avoid editing templates while drivers are still being installed.',
-      ],
-    },
-    pdaFlow: {
-      title: 'PDA Go-Live Flow',
-      description:
-        'Prioritize network connectivity, scanner-key mapping, and shell-browser configuration.',
-      points: [
-        'A fixed browser or shell app is recommended so the home page lands directly on the business workflow with fewer navigation layers.',
-        'On site, validate Wi-Fi roaming, offline cache behavior, and resynchronization after reconnect.',
-        'When scanning rules change, update the terminal guide and training checklist at the same time.',
-      ],
-    },
-    scannerChecklist: {
-      title: 'Scanner Acceptance Checklist',
-      description:
-        'Helps catch hidden issues where the scanner works in isolation but breaks the real workflow.',
-      points: [
-        'Confirm whether a scan automatically appends Enter, so operators do not have to submit manually every time.',
-        'Confirm recognition rates for linear barcodes, QR codes, and low-quality labels.',
-        'Confirm compatibility with page inputs, modal forms, and batch-operation modes.',
-      ],
     },
   },
   pda: {

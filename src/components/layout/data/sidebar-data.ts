@@ -177,13 +177,6 @@ const navGroupConfigs: SidebarGroupConfig[] = [
             icon: Box,
             permissionId: permissionIdForPath('/production-architecture'),
           },
-          {
-            id: 'quality-operations',
-            titleKey: 'sidebar.items.qualityOperations',
-            url: '/production-quality',
-            icon: ListChecks,
-            permissionId: permissionIdForPath('/production-quality'),
-          },
         ],
       },
     ],
@@ -213,25 +206,59 @@ const navGroupConfigs: SidebarGroupConfig[] = [
     titleKey: 'sidebar.groups.engineeringManagement',
     children: [
       {
-        id: 'engineering-database',
-        titleKey: 'sidebar.items.engineeringDatabase',
-        url: '/engineering-db',
+        id: 'engineering-database-group',
+        titleKey: 'sidebar.groups.engineeringDatabase',
         icon: Database,
-        permissionId: permissionIdForPath('/engineering-db'),
+        children: [
+          {
+            id: 'engineering-database',
+            titleKey: 'sidebar.items.engineeringDatabase',
+            url: '/engineering-db',
+            icon: Database,
+            permissionId: permissionIdForPath('/engineering-db'),
+          },
+          {
+            id: 'engineering-reference',
+            titleKey: 'sidebar.items.engineeringReference',
+            url: '/engineering-reference',
+            icon: FileText,
+            permissionId: permissionIdForPath('/engineering-reference'),
+          },
+        ],
       },
+    ],
+  },
+  {
+    id: 'quality-management',
+    titleKey: 'sidebar.groups.qualityManagement',
+    children: [
       {
-        id: 'engineering-reference',
-        titleKey: 'sidebar.items.engineeringReference',
-        url: '/engineering-reference',
-        icon: FileText,
-        permissionId: permissionIdForPath('/engineering-reference'),
-      },
-      {
-        id: 'quality-audit',
-        titleKey: 'sidebar.items.qualityAudit',
-        url: '/quality',
+        id: 'quality-standards-group',
+        titleKey: 'sidebar.groups.qualityStandards',
         icon: Scale,
-        permissionId: permissionIdForPath('/quality'),
+        children: [
+          {
+            id: 'quality-audit',
+            titleKey: 'sidebar.items.qualityAudit',
+            url: '/quality',
+            icon: Scale,
+            permissionId: permissionIdForPath('/quality'),
+          },
+        ],
+      },
+      {
+        id: 'quality-operations-group',
+        titleKey: 'sidebar.groups.qualityOperations',
+        icon: ListChecks,
+        children: [
+          {
+            id: 'quality-operations',
+            titleKey: 'sidebar.items.qualityOperations',
+            url: '/production-quality',
+            icon: ListChecks,
+            permissionId: permissionIdForPath('/production-quality'),
+          },
+        ],
       },
     ],
   },
@@ -436,22 +463,29 @@ const navGroupConfigs: SidebarGroupConfig[] = [
     ],
   },
   {
-    id: 'system-settings',
-    titleKey: 'sidebar.groups.systemSettings',
+    id: 'system-management-root',
+    titleKey: 'sidebar.groups.systemManagement',
     children: [
       {
-        id: 'pda-shell',
-        titleKey: 'sidebar.items.pdaShell',
-        url: '/pda-shell',
+        id: 'terminal-config-group',
+        titleKey: 'sidebar.groups.terminalConfig',
         icon: ScanLine,
-        permissionId: permissionIdForPath('/pda-shell'),
-      },
-      {
-        id: 'terminal-config',
-        titleKey: 'sidebar.items.terminalConfig',
-        url: '/terminal-config',
-        icon: ScanLine,
-        permissionId: permissionIdForPath('/terminal-config'),
+        children: [
+          {
+            id: 'pda-shell',
+            titleKey: 'sidebar.items.pdaShell',
+            url: '/pda-shell',
+            icon: ScanLine,
+            permissionId: permissionIdForPath('/pda-shell'),
+          },
+          {
+            id: 'terminal-config',
+            titleKey: 'sidebar.items.terminalConfig',
+            url: '/terminal-config',
+            icon: ScanLine,
+            permissionId: permissionIdForPath('/terminal-config'),
+          },
+        ],
       },
       {
         id: 'sidebar-command-assignment',

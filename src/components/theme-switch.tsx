@@ -29,10 +29,10 @@ export function ThemeSwitch() {
         <Button
           variant='ghost'
           size='icon'
-          className='relative h-10 w-10 rounded-full border border-dashed border-border/70 bg-background/90 shadow-sm transition-all hover:border-primary/30 hover:bg-primary/5'
+          className='relative h-8.5 w-8.5 rounded-full border border-dashed border-border/60 bg-background/90 shadow-sm transition-all hover:border-primary/30 hover:bg-primary/5'
         >
-          <Sun className='size-[1.2rem] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90' />
-          <Moon className='absolute size-[1.2rem] scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0' />
+          <Sun className='size-4 scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90' />
+          <Moon className='absolute size-4 scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0' />
           <span className='sr-only'>{t('common.theme.switcher')}</span>
         </Button>
       </DropdownMenuTrigger>

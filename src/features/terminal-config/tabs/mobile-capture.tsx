@@ -138,7 +138,7 @@ export function MobileCaptureTab() {
           <CardContent className='space-y-3'>
             {[
               '手机采集组件只负责摄像头、拍照和权限提示。',
-              'USB HID 扫码枪继续在“扫码设备”TAB 里测试和维护。',
+              'USB HID 扫码枪继续在“USB扫码配置”TAB 里测试和维护。',
               '业务页面后续统一接收 code，再决定查询、开单或提交。',
             ].map((item) => (
               <div
@@ -162,7 +162,7 @@ export function MobileCaptureTab() {
             asChild
             className='rounded-full text-[10px] font-black tracking-widest uppercase'
           >
-            <Link to='/wheel-trace' search={{ scan: String(Date.now()) }}>
+            <Link to='/wheel-trace' search={{ scan: '1' }}>
               去追溯扫码
               <ArrowRight className='ml-2 size-3.5' />
             </Link>

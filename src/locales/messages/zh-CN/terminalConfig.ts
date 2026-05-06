@@ -1,85 +1,30 @@
 export const terminalConfig = {
   moduleTitle: '终端配置',
   tabs: {
-    printers: '打印机驱动',
     pda: 'PDA 终端',
-    scanners: '扫码设备',
+    scanners: 'USB扫码配置',
     mobileCapture: '移动采集',
-    downloads: '驱动下载',
-    guides: '安装说明',
   },
   shared: {
     statusPendingUpload: '待上传',
     statusPlanned: '已规划',
     versionLabel: '版本',
     packageTypeLabel: '类型',
-    downloadPending: '下载位待补充',
-    viewGuide: '查看接入说明',
   },
   pages: {
-    printers: {
-      title: '打印机驱动',
-      description: '集中维护标签打印、联调工具与打印设备驱动包的发布入口。',
-      summary:
-        '这里和打印中心分工不同：打印中心负责模板与记录，这里负责终端、驱动与接入包。正式驱动上传后，只需要替换静态清单里的下载链接即可。',
-    },
     scanners: {
-      title: '扫码设备',
-      description: '覆盖扫码枪、固定扫描头和扫描模块的接入说明与参数模板。',
+      title: 'USB扫码配置',
+      description: '仅面向 USB HID 键盘模式扫码枪，集中做接入测试、回车结束符校验与协议联调。',
       summary:
-        '扫码设备接入建议统一规范成 HID 回车模式或明确的串口协议模板，这样页面表单、产线过站和 PDA 扫码可以共用同一套约定。',
-    },
-    downloads: {
-      title: '驱动下载',
-      description: '统一汇总打印机、PDA 与扫码设备的下载位，便于现场快速分发。',
-      summary:
-        '第一版已经预留了统一下载位和分类卡片。后续如果你们把驱动包放进企业网盘、OSS 或内网文件服务器，只需要把清单里的下载地址补上即可。',
-    },
-    guides: {
-      title: '安装说明',
-      description:
-        '整理打印机、PDA 与扫码设备部署前后的安装顺序、验收项和注意事项。',
+        '该页不覆盖固定扫描头、扫描模块或串口设备，只负责 USB 扫码枪的键盘输入链路验证，确保 ERP 页面可按统一约定接收扫码结果。',
     },
   },
   resources: {
     common: {
       placeholderVersion: 'v1.0 占位',
-      windowsDriverPackage: 'Windows 驱动包',
-      desktopDebugTool: '桌面调试工具',
       androidPda: 'Android PDA',
       terminalPackage: '终端配置包',
       operationManual: '操作手册',
-      configGuide: '配置说明',
-      parameterTemplate: '参数模板',
-    },
-    printers: {
-      labelPrinters: {
-        title: '标签打印机',
-        description: '适用于成品标签、条码补打与批次重打场景。',
-        items: {
-          tsc: {
-            title: 'TSC 标签打印机通用驱动',
-            target: 'TSC / TTP / TDP 系列',
-            note: '建议和打印中心模板配置配套发布，驱动包上传后可直接替换下载链接。',
-          },
-          zebra: {
-            title: 'Zebra 工业打印机驱动',
-            target: 'Zebra ZT / GK 系列',
-            note: '适合仓储和产线标签枪联动打印。',
-          },
-        },
-      },
-      debugTools: {
-        title: '打印调试工具',
-        description: '用于端口检查、纸张校准与打印自检。',
-        items: {
-          portTool: {
-            title: '打印端口联调工具',
-            target: 'USB / 网口打印机',
-            note: '建议与打印中心联调一起交付，减少模板正常但驱动未连通的问题。',
-          },
-        },
-      },
     },
     pda: {
       workTerminals: {
@@ -96,53 +41,6 @@ export const terminalConfig = {
           },
         },
       },
-    },
-    scanners: {
-      deviceModules: {
-        title: '扫码枪与扫描模块',
-        description: '覆盖 HID 键盘模式、串口模式和固定扫描头调试。',
-        items: {
-          scannerGuide: {
-            title: '扫码枪配置手册',
-            target: 'USB HID 扫码枪',
-            note: '建议默认切到回车结尾模式，便于 ERP 表单直接收枪。',
-          },
-          fixedHeadTemplate: {
-            title: '固定扫描头串口参数模板',
-            target: '串口 / 网口扫描头',
-            note: '用于产线过站或自动触发采集场景。',
-          },
-        },
-      },
-    },
-  },
-  guides: {
-    printerFlow: {
-      title: '打印机接入流程',
-      description: '先装驱动，再做打印模板联调。',
-      points: [
-        '先确认打印机接口是 USB 还是网口，再选择对应驱动包。',
-        '驱动安装完成后，到打印中心验证模板、纸张尺寸和打印方向。',
-        '联调通过后，再通知现场批量部署，避免一边改模板一边装驱动。',
-      ],
-    },
-    pdaFlow: {
-      title: 'PDA 终端上线流程',
-      description: '优先确保网络、扫码键映射和浏览器壳配置。',
-      points: [
-        '建议使用固定浏览器或壳应用，首页直达业务页面，减少操作层级。',
-        '现场要验证 Wi-Fi 漫游、离线缓存和重新同步行为。',
-        '扫描规则变更后，要同步更新终端说明文档和培训清单。',
-      ],
-    },
-    scannerChecklist: {
-      title: '扫码设备验收项',
-      description: '避免“能扫但不好用”的隐性问题。',
-      points: [
-        '确认扫码后是否自动补回车，避免用户每次手动提交。',
-        '确认设备对一维码、二维码和低质量标签的识别率。',
-        '确认与页面输入框、弹窗表单和批量模式的兼容性。',
-      ],
     },
   },
   pda: {

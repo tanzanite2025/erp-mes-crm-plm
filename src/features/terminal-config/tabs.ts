@@ -9,11 +9,6 @@ type TranslateFn = (
 export function getTerminalConfigTabs(t: TranslateFn): TabItem[] {
   return [
     {
-      key: 'printers',
-      label: t('terminalConfig.tabs.printers'),
-      href: '/terminal-config/printers',
-    },
-    {
       key: 'pda',
       label: t('terminalConfig.tabs.pda'),
       href: '/terminal-config/pda',
@@ -27,16 +22,6 @@ export function getTerminalConfigTabs(t: TranslateFn): TabItem[] {
       key: 'mobile-capture',
       label: t('terminalConfig.tabs.mobileCapture'),
       href: '/terminal-config/mobile-capture',
-    },
-    {
-      key: 'downloads',
-      label: t('terminalConfig.tabs.downloads'),
-      href: '/terminal-config/downloads',
-    },
-    {
-      key: 'guides',
-      label: t('terminalConfig.tabs.guides'),
-      href: '/terminal-config/guides',
     },
   ]
 }

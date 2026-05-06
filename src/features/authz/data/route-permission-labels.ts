@@ -132,12 +132,9 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/code-center/shared-code-source/numbering-engine':
     'codeCenter.sharedCodeSource.tabs.numberingEngine',
   '/terminal-config': 'sidebar.items.terminalConfig',
-  '/terminal-config/printers': 'terminalConfig.tabs.printers',
   '/terminal-config/pda': 'terminalConfig.tabs.pda',
   '/terminal-config/scanners': 'terminalConfig.tabs.scanners',
   '/terminal-config/mobile-capture': 'terminalConfig.tabs.mobileCapture',
-  '/terminal-config/downloads': 'terminalConfig.tabs.downloads',
-  '/terminal-config/guides': 'terminalConfig.tabs.guides',
   '/sidebar-command-assignment': 'sidebar.items.sidebarCommandAssignment',
   '/sidebar-command-library': 'sidebar.items.sidebarCommandAssignment',
   '/system-management': 'sidebar.items.systemManagement',

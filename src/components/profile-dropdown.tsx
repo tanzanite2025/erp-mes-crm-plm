@@ -34,11 +34,11 @@ export function ProfileDropdown() {
           <Button
             variant='ghost'
             size='icon'
-            className='relative h-10 w-10 rounded-full border border-dashed border-border/70 bg-background/90 shadow-sm transition-all hover:border-primary/30 hover:bg-primary/5'
+            className='relative h-8.5 w-8.5 rounded-full border border-dashed border-border/60 bg-background/90 shadow-sm transition-all hover:border-primary/30 hover:bg-primary/5'
           >
-            <Avatar className='h-9 w-9'>
+            <Avatar className='h-7.5 w-7.5'>
               <AvatarImage src='' alt={displayName} />
-              <AvatarFallback className='bg-muted/70 text-[12px] font-black text-foreground'>{fallback}</AvatarFallback>
+              <AvatarFallback className='bg-muted/70 text-[10px] font-black text-foreground'>{fallback}</AvatarFallback>
             </Avatar>
           </Button>
         </DropdownMenuTrigger>

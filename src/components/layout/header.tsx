@@ -129,10 +129,9 @@ export function Header({
         <div className='flex items-center justify-end gap-2 md:gap-4 h-full px-2'>
             {(showThemeSwitch || showProfileDropdown || showConfigDrawer) && (
             <div className='flex items-center justify-end gap-2 md:gap-4 shrink-0 relative z-50'>
+                {showThemeSwitch && <AuthDebugIndicator />}
                 {showThemeSwitch && (
-                    <div className='flex items-center gap-2 md:gap-3 p-1 rounded-md'>
-                        <AuthDebugIndicator />
-                        <div className='h-4 w-px bg-border' />
+                    <div className='flex items-center gap-2 rounded-full border border-dashed border-border/70 bg-muted/20 px-2 py-1 shadow-sm backdrop-blur-xl'>
                         <LanguageSwitch />
                         {showProfileDropdown && <ProfileDropdown />}
                         <ThemeSwitch />
