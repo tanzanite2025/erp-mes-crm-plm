@@ -2,14 +2,16 @@ import { useState } from 'react'
 import { Plus, Search, FileCode } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { TopologyTemplate } from '../line-mgmt/types'
+import type { TopologyTemplate } from '../line-mgmt/types'
 import { TemplateCard } from './components/template-card'
 import { TemplateDialog } from './components/template-dialog'
 import { useTopologyTemplates } from '../line-mgmt/hooks/use-topology-templates'
 import { useLanguage } from '@/context/language-provider'
+import { useHierarchyLevelLabels } from '../hierarchy-config/hooks/use-hierarchy-level-labels'
 
 export function TopologyTemplateMgmt() {
   const { t } = useLanguage()
+  const { level1Name, level2Name } = useHierarchyLevelLabels()
   const { templates, addTemplate, removeTemplate, updateTemplate } = useTopologyTemplates()
   const [searchQuery, setSearchQuery] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -53,7 +55,7 @@ export function TopologyTemplateMgmt() {
               <FileCode className='size-4' />
               <h3 className='text-lg font-black tracking-tighter italic uppercase underline decoration-rose-500'>{t('orgPersonnel.topologyTemplateMgmt.header.title')}</h3>
           </div>
-          <p className='text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-60 uppercase'>
+          <p className='text-[9px] font-black text-muted-foreground tracking-widest opacity-60'>
               {t('orgPersonnel.topologyTemplateMgmt.header.subtitle')}
           </p>
       </div>
@@ -94,7 +96,7 @@ export function TopologyTemplateMgmt() {
             <div className='space-y-1'>
                 <p className='text-base font-black italic uppercase tracking-tighter text-muted-foreground/60'>{t('orgPersonnel.topologyTemplateMgmt.list.noTemplates')}</p>
                 <p className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 max-w-[400px]'>
-                    {t('orgPersonnel.topologyTemplateMgmt.list.emptyDesc')}
+                    {t('orgPersonnel.topologyTemplateMgmt.list.emptyDescDynamic', { level1Name, level2Name })}
                 </p>
             </div>
             <Button 

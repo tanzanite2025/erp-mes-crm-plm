@@ -1,13 +1,14 @@
 import { useLanguage } from '@/context/language-provider'
 
 interface OverviewProps {
+  levelName: string
   data: {
     name: string
     total: number
   }[]
 }
 
-export function Overview({ data }: OverviewProps) {
+export function Overview({ data, levelName }: OverviewProps) {
   const { t } = useLanguage()
 
   if (!data || data.length === 0) {
@@ -16,8 +17,8 @@ export function Overview({ data }: OverviewProps) {
         <div className='size-16 rounded-full bg-background flex items-center justify-center mb-4 shadow-inner border border-muted/10'>
            <div className='size-8 rounded-full bg-muted-foreground/10 animate-pulse' />
         </div>
-        <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>{t('dashboard.page.throughput.empty.title' as any)}</p>
-        <p className='text-[9px] mt-2 opacity-40 uppercase font-black italic'>{t('dashboard.page.throughput.empty.description' as any)}</p>
+        <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>{t('dashboard.page.throughput.empty.title', { levelName })}</p>
+        <p className='text-[9px] mt-2 opacity-40 uppercase font-black italic'>{t('dashboard.page.throughput.empty.description', { levelName })}</p>
       </div>
     )
   }
@@ -25,7 +26,7 @@ export function Overview({ data }: OverviewProps) {
   const maxValue = Math.max(...data.map((item) => item.total), 0)
 
   return (
-    <div className='h-[350px] rounded-[24px] border border-dashed border-muted/30 bg-linear-to-b from-blue-500/[0.03] via-background to-background p-4'>
+    <div className='h-[350px] rounded-[24px] border border-dashed border-muted/30 bg-linear-to-b from-blue-500/3 via-background to-background p-4'>
       <div className='grid h-full grid-cols-[auto_1fr] gap-4'>
         <div className='flex h-full flex-col justify-between py-2 text-[8px] font-black uppercase tracking-widest text-muted-foreground/40'>
           {[1, 0.75, 0.5, 0.25, 0].map((step) => (

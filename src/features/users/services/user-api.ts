@@ -1,6 +1,8 @@
 import { apiFetch } from '@/lib/api-client'
+import { createApiClientError } from '@/lib/api-error'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
-import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
+import { ensureObjectResponse } from '@/lib/api-response'
+import { ZodError } from 'zod'
 import {
   toUserContract,
   toUserAccessSnapshotContract,
@@ -10,12 +12,12 @@ import {
   toUserPermissionsResponseContract,
 } from '../adapters/user-api-adapter'
 import {
-  type UserAccessSnapshotApiDTO,
-  type UserApiDTO,
-  type UserListPageApiDTO,
-  type UserOptionApiDTO,
-  type UserPermissionsApiDTO,
-  type UserPermissionsReplaceResultApiDTO,
+  deserializeUserAccessSnapshotApiDTO,
+  deserializeUserApiDTO,
+  deserializeUserListPageApiDTO,
+  deserializeUserOptionListApiDTO,
+  deserializeUserPermissionsApiDTO,
+  deserializeUserPermissionsReplaceResultApiDTO,
 } from '../contracts/user-api-dto'
 
 export const USER_TRANSACTION_INTENT_CREATE = 'USER_CREATE'
@@ -80,6 +82,27 @@ const buildUserTransactionBody = <TPayload extends object>(request: UserTransact
   },
 })
 
+const deserializeUsersApiDTO = <T>(
+  input: unknown,
+  context: string,
+  deserializer: (value: unknown) => T,
+): T => {
+  try {
+    return deserializer(input)
+  } catch (error) {
+    if (error instanceof ZodError) {
+      throw createApiClientError({
+        kind: 'invalid_response',
+        message: `[INVALID_RESPONSE] ${context} failed DTO schema parse.`,
+        context,
+        cause: error,
+      })
+    }
+
+    throw error
+  }
+}
+
 export const fetchUsers = async (params: UsersQueryParams = {}) => {
   const query = new URLSearchParams()
   Object.entries(params).forEach(([key, value]) => {
@@ -95,9 +118,13 @@ export const fetchUsers = async (params: UsersQueryParams = {}) => {
     }
   })
 
-  const res = await apiFetch<UserListPageApiDTO>(`/users?${query.toString()}`)
+  const res = await apiFetch<unknown>(`/users?${query.toString()}`)
   return toUserListPageContract(
-    ensureObjectResponse<UserListPageApiDTO & Record<string, unknown>>(res, 'UserApi.fetchUsers') as UserListPageApiDTO
+    deserializeUsersApiDTO(
+      ensureObjectResponse(res, 'UserApi.fetchUsers'),
+      'UserApi.fetchUsers',
+      deserializeUserListPageApiDTO,
+    )
   )
 }
 
@@ -118,8 +145,10 @@ export const fetchUserOptions = async (params: UsersQueryParams = {}) => {
     }
   })
 
-  const res = await apiFetch<UserOptionApiDTO[]>(`/users?${query.toString()}`)
-  return toUserOptionContracts(ensureArrayResponse<UserOptionApiDTO>(res, 'UserApi.fetchUserOptions'))
+  const res = await apiFetch<unknown>(`/users?${query.toString()}`)
+  return toUserOptionContracts(
+    deserializeUsersApiDTO(res, 'UserApi.fetchUserOptions', deserializeUserOptionListApiDTO)
+  )
 }
 
 export const executeUserTransaction = async <TPayload extends object>(
@@ -127,12 +156,12 @@ export const executeUserTransaction = async <TPayload extends object>(
   request: UserTransactionRequest<TPayload>,
   context = 'UserApi.executeUserTransaction',
 ) => {
-  const res = await apiFetch<UserApiDTO>(endpoint, {
+  const res = await apiFetch<unknown>(endpoint, {
     method: 'POST',
     body: JSON.stringify(buildUserTransactionBody(request)),
   })
   return toUserContract(
-    ensureObjectResponse<UserApiDTO & Record<string, unknown>>(res, context) as UserApiDTO
+    deserializeUsersApiDTO(ensureObjectResponse(res, context), context, deserializeUserApiDTO)
   )
 }
 
@@ -159,22 +188,22 @@ export const patchUser = async (id: string, delta: DeltaSet, version: number) =>
     },
   }
 
-  const res = await apiFetch<UserApiDTO>(`/users/${id}`, {
+  const res = await apiFetch<unknown>(`/users/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(payload),
   })
   return toUserContract(
-    ensureObjectResponse<UserApiDTO & Record<string, unknown>>(res, 'UserApi.patchUser') as UserApiDTO
+    deserializeUsersApiDTO(ensureObjectResponse(res, 'UserApi.patchUser'), 'UserApi.patchUser', deserializeUserApiDTO)
   )
 }
 
 export const replaceUser = async (id: string, userData: UserReplacePayload) => {
-  const res = await apiFetch<UserApiDTO>(`/users/${id}`, {
+  const res = await apiFetch<unknown>(`/users/${id}`, {
     method: 'PUT',
     body: JSON.stringify(userData),
   })
   return toUserContract(
-    ensureObjectResponse<UserApiDTO & Record<string, unknown>>(res, 'UserApi.replaceUser') as UserApiDTO
+    deserializeUsersApiDTO(ensureObjectResponse(res, 'UserApi.replaceUser'), 'UserApi.replaceUser', deserializeUserApiDTO)
   )
 }
 
@@ -210,35 +239,47 @@ export const verifyAdminChallenge = async (passcode: string) => {
 }
 
 export const fetchUserAccessSnapshot = async (id: string) => {
-  const res = await apiFetch<UserAccessSnapshotApiDTO>(`/users/${id}/access`)
+  const context = 'UserApi.fetchUserAccessSnapshot'
+  const res = await apiFetch<unknown>(`/users/${id}/access`)
+  const payload = deserializeUsersApiDTO(
+    ensureObjectResponse(res, context),
+    context,
+    deserializeUserAccessSnapshotApiDTO,
+  )
+
   return toUserAccessSnapshotContract(
-    ensureObjectResponse<UserAccessSnapshotApiDTO & Record<string, unknown>>(
-      res,
-      'UserApi.fetchUserAccessSnapshot',
-    ) as UserAccessSnapshotApiDTO,
+    payload,
   )
 }
 
 export const fetchUserPermissions = async (id: string) => {
-  const res = await apiFetch<UserPermissionsApiDTO>(`/users/${id}/permissions`)
+  const context = 'UserApi.fetchUserPermissions'
+  const res = await apiFetch<unknown>(`/users/${id}/permissions`)
+  const payload = deserializeUsersApiDTO(
+    ensureObjectResponse(res, context),
+    context,
+    deserializeUserPermissionsApiDTO,
+  )
+
   return toUserPermissionsResponseContract(
-    ensureObjectResponse<UserPermissionsApiDTO & Record<string, unknown>>(
-      res,
-      'UserApi.fetchUserPermissions',
-    ) as UserPermissionsApiDTO,
+    payload,
   )
 }
 
 export const replaceUserPermissions = async (id: string, payload: ReplaceUserPermissionsPayload) => {
-  const res = await apiFetch<UserPermissionsReplaceResultApiDTO>(`/users/${id}/permissions`, {
+  const context = 'UserApi.replaceUserPermissions'
+  const res = await apiFetch<unknown>(`/users/${id}/permissions`, {
     method: 'PUT',
     body: JSON.stringify(payload),
   })
+  const responsePayload = deserializeUsersApiDTO(
+    ensureObjectResponse(res, context),
+    context,
+    deserializeUserPermissionsReplaceResultApiDTO,
+  )
+
   return toUserPermissionsReplaceResultContract(
-    ensureObjectResponse<UserPermissionsReplaceResultApiDTO & Record<string, unknown>>(
-      res,
-      'UserApi.replaceUserPermissions',
-    ) as UserPermissionsReplaceResultApiDTO,
+    responsePayload,
   )
 }
 

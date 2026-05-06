@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { useLanguage } from '@/context/language-provider'
 import type { DeltaSet } from '@/lib/delta/types'
 import type { TeamModuleAdapter, TeamRecord } from '@/features/shared/team'
+import { useHierarchyLevelLabels } from '@/features/production-shared/tabs/hierarchy-config/hooks/use-hierarchy-level-labels'
 import type { Team } from '../data/schema'
 import { teamsData as initialData } from '../data/teams-data'
 
@@ -19,6 +20,7 @@ function applyDeltaPatch(target: Team, delta?: DeltaSet) {
 
 export function useOrgTeamAdapter(): TeamModuleAdapter {
   const { t } = useLanguage()
+  const { level1Name, level3Name } = useHierarchyLevelLabels()
   const [teams, setTeams] = useState<Team[]>(initialData)
 
   const saveTeam = useCallback(
@@ -54,7 +56,7 @@ export function useOrgTeamAdapter(): TeamModuleAdapter {
         ...(data as Team),
         id: createLocalTeamId(),
         operateTime: new Date().toLocaleString(),
-        operator: t('common.systemAdmin' as any),
+        operator: t('sidebar.groups.systemAdmin'),
         status: (data.status as Team['status']) ?? 'active',
         type: (data.type as Team['type']) ?? 'dispatch',
         code: String(data.code ?? ''),
@@ -77,15 +79,15 @@ export function useOrgTeamAdapter(): TeamModuleAdapter {
   const texts = useMemo<TeamModuleAdapter['texts']>(
     () => ({
       headerTitle: '班组管理',
-      headerDescription: '维护班组主数据、工序归属与状态。',
-      searchPlaceholder: '搜索班组编码 / 名称 / 工段',
+      headerDescription: `维护班组主数据、${level3Name}归属与状态。`,
+      searchPlaceholder: t('orgPersonnel.org.groups.searchPlaceholderDynamic', { levelName: level1Name }),
       addButtonLabel: '新增班组',
       confirmDeleteMessage: '确定删除该班组吗？',
       table: {
         code: '班组编码',
         name: '班组名称',
-        step: '工序',
-        section: '工段',
+        step: level3Name,
+        section: t('orgPersonnel.org.groups.sectionLabelDynamic', { levelName: level1Name }),
         type: '班组类型',
         maintenance: '维护班组',
         status: '状态',
@@ -108,7 +110,7 @@ export function useOrgTeamAdapter(): TeamModuleAdapter {
       },
       empty: {
         title: '暂无班组数据',
-        description: '点击新增班组，完善工序与工段映射。',
+        description: t('orgPersonnel.org.groups.emptyDescriptionDynamic', { levelName: level1Name, relatedLevelName: level3Name }),
       },
       dialog: {
         titleEdit: '编辑班组',
@@ -122,8 +124,8 @@ export function useOrgTeamAdapter(): TeamModuleAdapter {
           code: '班组编码',
           name: '班组名称',
           shortName: '简称',
-          step: '工序',
-          section: '工段',
+          step: level3Name,
+          section: t('orgPersonnel.org.groups.sectionLabelDynamic', { levelName: level1Name }),
           type: '班组类型',
           maintenance: '维护班组',
           status: '状态',
@@ -133,7 +135,7 @@ export function useOrgTeamAdapter(): TeamModuleAdapter {
           code: '请输入班组编码',
           name: '请输入班组名称',
           shortName: '请输入简称',
-          section: '请输入工段',
+          section: t('orgPersonnel.org.groups.sectionPlaceholderDynamic', { levelName: level1Name }),
           remarks: '可选',
         },
         sectionOptions: {
@@ -158,7 +160,7 @@ export function useOrgTeamAdapter(): TeamModuleAdapter {
         },
       },
     }),
-    []
+    [level1Name, level3Name, t]
   )
 
   return {

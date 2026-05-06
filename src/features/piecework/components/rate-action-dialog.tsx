@@ -14,6 +14,7 @@ import { toast } from 'sonner'
 import type { PieceworkRate } from '../data/schema'
 import { useGetProducts } from '@/features/engineering/hooks/use-products'
 import { SelectDropdown } from '@/components/select-dropdown'
+import { useHierarchyLevelLabels } from '@/features/production-shared/tabs/hierarchy-config/hooks/use-hierarchy-level-labels'
 
 interface RateActionDialogProps {
   currentRow?: PieceworkRate | null
@@ -46,6 +47,7 @@ export function RateActionDialog({
   isLoading,
 }: RateActionDialogProps) {
   const { t } = useLanguage()
+  const { level3Name } = useHierarchyLevelLabels()
   const { data: products = [] } = useGetProducts()
 
   const shellClasses = buildActionDialogShellClasses({
@@ -81,7 +83,7 @@ export function RateActionDialog({
   const handleSave = () => {
     // Fail Loudly: 必须检查必要字段
     if (!formData.productId || !formData.processName || formData.piecePrice === undefined) {
-      toast.error(t('piecework.rules.toast.validationRequired'))
+      toast.error(t('piecework.rules.toast.validationRequired', { levelName: level3Name }))
       return
     }
 
@@ -115,7 +117,7 @@ export function RateActionDialog({
           {isEdit ? t('piecework.rules.dialog.titleEdit') : t('piecework.rules.dialog.titleCreate')}
         </>
       )}
-      description={t('piecework.rules.dialog.description')}
+      description={t('piecework.rules.dialog.description', { levelName: level3Name })}
       contentClassName={shellClasses.content}
       headerClassName={shellClasses.header}
       bodyClassName={shellClasses.body}
@@ -169,10 +171,10 @@ export function RateActionDialog({
         <div className='grid grid-cols-2 gap-6 p-6 rounded-[32px] bg-muted/20 border border-dashed border-muted-foreground/10'>
           <div className='space-y-2'>
             <Label className='text-[10px] font-black uppercase tracking-widest flex items-center gap-2'>
-              <Target className='size-3' /> {t('piecework.rules.dialog.fields.processName')}
+              <Target className='size-3' /> {t('piecework.rules.dialog.fields.processName', { levelName: level3Name })}
             </Label>
             <Input
-              placeholder={t('piecework.rules.dialog.placeholders.processName')}
+              placeholder={t('piecework.rules.dialog.placeholders.processName', { levelName: level3Name })}
               className='h-12 font-black text-sm bg-background border-none rounded-2xl px-5 shadow-sm'
               value={formData.processName}
               onChange={(e) => { setFormData({ processName: e.target.value }) }}

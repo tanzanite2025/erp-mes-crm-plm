@@ -5,6 +5,7 @@ export interface ProductionJobCategory {
   id: string
   segmentId?: string
   name: string
+  hierarchyOptionId?: string
   description?: string
   sortOrder?: number
   attributes?: Record<string, unknown>
@@ -16,6 +17,7 @@ export interface ProductionJobCategory {
 export interface ProductionSegment {
   id: string
   name: string
+  hierarchyOptionId?: string
   description?: string
   sortOrder?: number
   attributes?: Record<string, unknown>

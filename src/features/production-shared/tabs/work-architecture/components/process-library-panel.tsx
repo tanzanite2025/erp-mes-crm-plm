@@ -28,6 +28,7 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
+import { useHierarchyLevelLabels } from '../../hierarchy-config/hooks/use-hierarchy-level-labels'
 import { createLogger } from '@/lib/logger'
 import type { ProductionProcessStep as ProcessStep } from '../../../data/production-process'
 import { useProcessLibraryProcesses } from '../hooks/use-process-library-processes'
@@ -79,6 +80,7 @@ function toProcessFormState(process?: ProcessStep): ProcessFormState {
 }
 
 export function ProcessLibraryPanel() {
+  const { level3Name } = useHierarchyLevelLabels()
   const [searchTerm, setSearchTerm] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [formState, setFormState] = useState<ProcessFormState>(createEmptyProcessState())
@@ -93,9 +95,9 @@ export function ProcessLibraryPanel() {
       return
     }
 
-    toast.error('Failed to load global process library')
+    toast.error(`全局${level3Name}库加载失败`)
     logger.error('Failed to load production processes', error)
-  }, [error])
+  }, [error, level3Name])
 
   const filteredProcesses = useMemo(() => {
     const keyword = searchTerm.trim().toLowerCase()
@@ -121,7 +123,7 @@ export function ProcessLibraryPanel() {
 
   const handleSave = async () => {
     if (!normalizeProductionProcessStepCode(formState.code) || !formState.name.trim()) {
-      toast.error('Process code and name are required')
+      toast.error(`${level3Name}编码和名称不能为空`)
       return
     }
 
@@ -171,11 +173,11 @@ export function ProcessLibraryPanel() {
               <div className='flex items-center gap-2 text-primary'>
                 <Workflow className='size-4' />
                 <CardTitle className='text-base font-black italic tracking-tighter text-slate-800'>
-                  Global Process Library
+                  全局{level3Name}库
                 </CardTitle>
               </div>
               <p className='text-[10px] font-black tracking-widest text-muted-foreground/60'>
-                STANDARD PROCESS RESOURCES
+                STANDARD {level3Name.toUpperCase()} RESOURCES
               </p>
             </div>
 
@@ -184,7 +186,7 @@ export function ProcessLibraryPanel() {
               className='h-11 rounded-full px-5 text-[10px] font-black uppercase tracking-widest'
             >
               <Plus className='mr-2 size-4' />
-              Add Process
+              新增{level3Name}
             </Button>
           </div>
 
@@ -194,7 +196,7 @@ export function ProcessLibraryPanel() {
               <Input
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder='Search code, name, or description'
+                placeholder={`搜索${level3Name}编码、名称或说明`}
                 className='h-11 rounded-2xl border-none bg-background pl-10 text-sm font-medium'
               />
             </div>
@@ -222,10 +224,10 @@ export function ProcessLibraryPanel() {
           ) : filteredProcesses.length === 0 ? (
             <div className='rounded-[24px] border border-dashed border-muted/50 bg-background/70 px-6 py-12 text-center'>
               <p className='text-sm font-black italic tracking-tighter text-muted-foreground/70'>
-                No process resources found
+                暂无{level3Name}资源
               </p>
               <p className='mt-1 text-[10px] font-black tracking-widest text-muted-foreground/40'>
-                CREATE YOUR FIRST STANDARD PROCESS
+                创建首个标准{level3Name}
               </p>
             </div>
           ) : (
@@ -250,7 +252,7 @@ export function ProcessLibraryPanel() {
                     SORT {process.sortOrder || 0}
                   </p>
                   <p className='text-sm text-muted-foreground/70'>
-                    {process.description || 'No description'}
+                    {process.description || '暂无说明'}
                   </p>
                 </div>
 
@@ -262,7 +264,7 @@ export function ProcessLibraryPanel() {
                     onClick={() => openEditDialog(process)}
                   >
                     <Pencil className='mr-2 size-3.5' />
-                    Edit
+                    编辑
                   </Button>
                   <Button
                     variant='outline'
@@ -271,7 +273,7 @@ export function ProcessLibraryPanel() {
                     onClick={() => setPendingDelete(process)}
                   >
                     <Trash2 className='mr-2 size-3.5' />
-                    Delete
+                    删除
                   </Button>
                 </div>
               </div>
@@ -285,10 +287,10 @@ export function ProcessLibraryPanel() {
           <div className='space-y-6 p-8'>
             <DialogHeader className='space-y-1 text-left'>
               <DialogTitle className='text-lg font-black tracking-tighter italic text-slate-800'>
-                {formState.id ? 'Edit Process Resource' : 'Create Process Resource'}
+                {formState.id ? `编辑${level3Name}资源` : `创建${level3Name}资源`}
               </DialogTitle>
               <DialogDescription className='text-[10px] font-black uppercase tracking-widest opacity-60'>
-                GLOBAL PROCESS LIBRARY ENTRY
+                GLOBAL {level3Name.toUpperCase()} LIBRARY ENTRY
               </DialogDescription>
             </DialogHeader>
 
@@ -325,7 +327,7 @@ export function ProcessLibraryPanel() {
                 <Input
                   value={formState.name}
                   onChange={(event) => setFormState((prev) => ({ ...prev, name: event.target.value }))}
-                  placeholder='Standard process name'
+                  placeholder={`标准${level3Name}名称`}
                   className='h-11 rounded-2xl'
                 />
               </div>
@@ -337,16 +339,16 @@ export function ProcessLibraryPanel() {
                   onChange={(event) =>
                     setFormState((prev) => ({ ...prev, description: event.target.value }))
                   }
-                  placeholder='Describe when and how this process should be used'
+                  placeholder={`描述该${level3Name}的适用场景与约束`}
                   className='min-h-28 rounded-2xl'
                 />
               </div>
 
               <div className='flex items-center justify-between rounded-[24px] border border-dashed border-muted/50 bg-muted/5 px-4 py-3 md:col-span-2'>
                 <div>
-                  <p className='text-sm font-black tracking-tight text-slate-800'>Active Status</p>
+                  <p className='text-sm font-black tracking-tight text-slate-800'>启用状态</p>
                   <p className='text-[10px] font-black tracking-widest text-muted-foreground/45'>
-                    CONTROL WHETHER THIS PROCESS STAYS AVAILABLE
+                    控制该{level3Name}是否继续可用
                   </p>
                 </div>
                 <Switch
@@ -364,14 +366,14 @@ export function ProcessLibraryPanel() {
                 onClick={() => setIsDialogOpen(false)}
                 className='h-11 rounded-full px-6 text-[10px] font-black uppercase tracking-widest'
               >
-                Cancel
+                取消
               </Button>
               <Button
                 onClick={() => void handleSave()}
                 disabled={isSaving}
                 className='h-11 rounded-full px-6 text-[10px] font-black uppercase tracking-widest'
               >
-                {isSaving ? 'Saving...' : formState.id ? 'Save Changes' : 'Create Process'}
+                {isSaving ? '保存中...' : formState.id ? '保存变更' : `创建${level3Name}`}
               </Button>
             </DialogFooter>
           </div>
@@ -381,15 +383,15 @@ export function ProcessLibraryPanel() {
       <AlertDialog open={Boolean(pendingDelete)} onOpenChange={(open) => !open && setPendingDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete process resource?</AlertDialogTitle>
+            <AlertDialogTitle>删除{level3Name}资源？</AlertDialogTitle>
             <AlertDialogDescription>
-              This removes the global process definition and any existing mapping that references it.
+              这将移除全局{level3Name}定义以及所有引用它的现有映射。
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>取消</AlertDialogCancel>
             <AlertDialogAction onClick={() => void handleDelete()} disabled={isDeleting}>
-              {isDeleting ? 'Deleting...' : 'Delete'}
+              {isDeleting ? '删除中...' : '删除'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

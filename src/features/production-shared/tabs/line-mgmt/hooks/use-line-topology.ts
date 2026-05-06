@@ -1,5 +1,5 @@
-import { useLanguage } from '@/context/language-provider'
 import type { JobCategory, ProcessStep, ProductionLine, Segment, TopologyTemplate } from '../types'
+import type { HierarchyLevelOptionItem } from '../../hierarchy-config/data/hierarchy-config'
 
 function normalizeProcesses(processes: ProcessStep[] = []): ProcessStep[] {
   return processes.map((process, index) => ({
@@ -41,9 +41,10 @@ function cloneJobCategory(jobCategory: JobCategory, index: number): JobCategory 
   }
 }
 
-export function useLineTopology(line: ProductionLine, onUpdate: (line: ProductionLine) => void) {
-  const { t } = useLanguage()
-
+export function useLineTopology(
+  line: ProductionLine,
+  onUpdate: (line: ProductionLine) => void,
+) {
   const updateSegments = (updater: (segments: Segment[]) => Segment[]) => {
     const nextSegments = normalizeSegments(updater(line.segments || []))
     onUpdate({ ...line, segments: nextSegments })
@@ -62,19 +63,30 @@ export function useLineTopology(line: ProductionLine, onUpdate: (line: Productio
     onUpdate({ ...line, segments: clonedSegments })
   }
 
-  const handleAddSegment = () => {
+  const handleAddSegment = (option: HierarchyLevelOptionItem) => {
+    const nextName = option.name.trim()
+    if (nextName === '') {
+      return
+    }
+
     updateSegments((segments) => [
       ...segments,
       {
         id: crypto.randomUUID(),
-        name: `${t('orgPersonnel.lineMgmt.editor.newSegmentName')} ${segments.length + 1}`,
+        name: nextName,
+        hierarchyOptionId: option.id,
         sortOrder: segments.length,
         jobCategories: [],
       },
     ])
   }
 
-  const handleAddJobCategory = (segmentId: string) => {
+  const handleAddJobCategory = (segmentId: string, option: HierarchyLevelOptionItem) => {
+    const nextName = option.name.trim()
+    if (nextName === '') {
+      return
+    }
+
     updateSegments((segments) =>
       segments.map((segment) => {
         if (segment.id !== segmentId) {
@@ -86,15 +98,16 @@ export function useLineTopology(line: ProductionLine, onUpdate: (line: Productio
           ...segment,
           jobCategories: [
             ...jobCategories,
-              {
-                id: crypto.randomUUID(),
-                segmentId,
-                name: `${t('orgPersonnel.lineMgmt.editor.newJobCategoryName')} ${jobCategories.length + 1}`,
-                sortOrder: jobCategories.length,
-                processes: [],
-              },
-            ],
-          }
+            {
+              id: crypto.randomUUID(),
+              segmentId,
+              name: nextName,
+              hierarchyOptionId: option.id,
+              sortOrder: jobCategories.length,
+              processes: [],
+            },
+          ],
+        }
       })
     )
   }
@@ -103,7 +116,7 @@ export function useLineTopology(line: ProductionLine, onUpdate: (line: Productio
     updateSegments((segments) =>
       segments.map((segment) =>
         segment.id === segmentId
-          ? { ...segment, name }
+          ? { ...segment, name, hierarchyOptionId: undefined }
           : segment
       )
     )
@@ -120,7 +133,7 @@ export function useLineTopology(line: ProductionLine, onUpdate: (line: Productio
           ...segment,
           jobCategories: (segment.jobCategories || []).map((jobCategory) =>
             jobCategory.id === jobCategoryId
-              ? { ...jobCategory, name }
+              ? { ...jobCategory, name, hierarchyOptionId: undefined }
               : jobCategory
           ),
         }

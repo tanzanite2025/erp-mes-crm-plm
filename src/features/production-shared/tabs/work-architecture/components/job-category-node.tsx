@@ -5,15 +5,19 @@ import { Plus, Workflow, X } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { useLanguage } from '@/context/language-provider'
 import { useProductionProcessesQuery } from '../../../hooks/use-production-resources'
 import type { JobCategory } from '../../line-mgmt/types'
 import { useJobCategoryProcessCapabilities } from '../hooks/use-job-category-process-capabilities'
 
 interface JobCategoryNodeProps {
   jobCategory: JobCategory
+  level2Name: string
+  level3Name: string
 }
 
-export function JobCategoryNode({ jobCategory }: JobCategoryNodeProps) {
+export function JobCategoryNode({ jobCategory, level2Name, level3Name }: JobCategoryNodeProps) {
+  const { t } = useLanguage()
   const [isAssignOpen, setIsAssignOpen] = useState(false)
   const mappedProcesses = useMemo(() => jobCategory.processes ?? [], [jobCategory.processes])
   const { data: processLibrary } = useProductionProcessesQuery()
@@ -33,7 +37,7 @@ export function JobCategoryNode({ jobCategory }: JobCategoryNodeProps) {
           variant='outline'
           className='h-5 gap-1 border-emerald-600 bg-emerald-600 px-1.5 py-0 text-white shadow-sm'
         >
-          <span className='text-[10px]'>岗位</span>
+          <span className='text-[10px]'>{level2Name}</span>
         </Badge>
         <span className='flex-1 text-sm font-bold text-slate-700'>{jobCategory.name}</span>
         <Popover open={isAssignOpen} onOpenChange={setIsAssignOpen}>
@@ -44,17 +48,17 @@ export function JobCategoryNode({ jobCategory }: JobCategoryNodeProps) {
               className='h-8 rounded-full text-[10px] font-black uppercase tracking-widest'
             >
               <Plus className='mr-1.5 size-3.5' />
-              Add Process
+              {t('productionShared.workArchitecture.addLevel', { levelName: level3Name })}
             </Button>
           </PopoverTrigger>
           <PopoverContent align='end' className='w-72 rounded-2xl border p-2'>
             <div className='space-y-2'>
               <p className='px-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground'>
-                Assign Process Capability
+                {t('productionShared.workArchitecture.assignLevelCapability', { levelName: level3Name })}
               </p>
               {availableProcesses.length === 0 ? (
                 <p className='px-1 py-2 text-[11px] text-muted-foreground'>
-                  All global processes are already mapped.
+                  {t('productionShared.workArchitecture.allLevelsMapped', { levelName: level3Name })}
                 </p>
               ) : (
                 <div className='max-h-56 space-y-1 overflow-y-auto'>
@@ -87,7 +91,7 @@ export function JobCategoryNode({ jobCategory }: JobCategoryNodeProps) {
       </div>
 
       {mappedProcesses.length === 0 ? (
-        <p className='pl-1 text-[10px] italic text-muted-foreground/35'>No process capabilities mapped</p>
+        <p className='pl-1 text-[10px] italic text-muted-foreground/35'>{t('productionShared.workArchitecture.noLevelMapped', { levelName: level3Name })}</p>
       ) : (
         <div className='flex flex-wrap gap-2 pl-1'>
           {mappedProcesses.map((process) => (

@@ -420,7 +420,7 @@ export const BUSINESS_EVENT_SOURCE_TEMPLATES: BusinessEventSourceTemplate[] = [
         },
         {
           key: 'processName',
-          label: '工序',
+          label: '末级层级',
           path: 'processName',
           type: 'string',
           templateKey: 'ProcessName',

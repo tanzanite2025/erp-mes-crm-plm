@@ -26,6 +26,12 @@ func setupFinanceMasterServiceTestDB(t *testing.T) *gorm.DB {
 	return testDB
 }
 
+func testExchangeRateSyncProviderConfig() ExchangeRateSyncProviderConfig {
+	provider := defaultExchangeRateSyncProviderConfig()
+	provider.APIKey = "test-key"
+	return provider
+}
+
 func TestListCurrenciesSeedsFallbackCNYWhenEmpty(t *testing.T) {
 	originalDB := db.DB
 	testDB := setupFinanceMasterServiceTestDB(t)
@@ -178,7 +184,7 @@ func TestSyncExchangeRatesStoresRateAgainstBaseCurrency(t *testing.T) {
 		Status:    "Active",
 	}).Error)
 
-	count, err := syncExchangeRates("test-key")
+	count, err := syncExchangeRatesWithProvider(testExchangeRateSyncProviderConfig())
 	require.NoError(t, err)
 	require.Equal(t, 2, count)
 
@@ -225,7 +231,7 @@ func TestSyncExchangeRatesTreatsNon200AsUpstreamError(t *testing.T) {
 		Status:    "Active",
 	}).Error)
 
-	_, err := syncExchangeRates("test-key")
+	_, err := syncExchangeRatesWithProvider(testExchangeRateSyncProviderConfig())
 	require.Error(t, err)
 	require.True(t, errors.Is(err, ErrExchangeRateAPIStatus))
 	require.Contains(t, err.Error(), "http 429")

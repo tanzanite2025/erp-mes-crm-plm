@@ -33,7 +33,7 @@ export const scanPlatform = {
     },
     wheelTrace: {
       name: 'Wheel Trace',
-      description: 'Scan plugin for querying the current stage, history timeline, and latest handling record of a wheel.',
+      description: 'Scan plugin for querying the current hierarchy anchor, history timeline, and latest handling record of a wheel.',
       hostLabel: 'Standalone Trace Page',
       statusLabel: 'Live API',
       targetLabel: 'Wheel Trace Lookup',

@@ -1,6 +1,10 @@
 import type { ProductionLine, ProductionJobCategory, ProductionSegment } from '../data/production-line'
 import type { ProcessCardConfig, ProcessFieldConfig, ProcessModuleConfig, ProcessModuleStatus, ProcessTreeNodeConfig } from './config'
 
+const LEVEL1_BADGE_PREFIX = 'L1'
+const LEVEL2_BADGE_PREFIX = 'L2'
+const LEVEL3_BADGE_PREFIX = 'L3'
+
 function toStatus(isActive?: boolean, hasProcesses?: boolean): ProcessModuleStatus {
   if (!isActive) return 'idle'
   if (hasProcesses) return 'active'
@@ -11,12 +15,12 @@ function buildProcessTree(jobCategory: ProductionJobCategory): ProcessTreeNodeCo
   return {
     key: jobCategory.id,
     label: jobCategory.name,
-    meta: `${jobCategory.processes.length} 工序`,
+    meta: `${jobCategory.processes.length} 个末级节点`,
     status: jobCategory.processes.length > 0 ? 'normal' : 'warning',
     children: jobCategory.processes.map((process) => ({
       key: process.id,
       label: process.name,
-      meta: process.code || process.description || '工序节点',
+      meta: process.code || process.description || '末级节点',
       status: process.isActive === false ? 'warning' : 'normal',
     })),
   }
@@ -33,12 +37,12 @@ function buildSegmentFields(
 
   return [
     { key: 'line', label: '产线', value: line.name, tone: 'accent', width: 'md' },
-    { key: 'segment', label: '段名称', value: segment.name, tone: 'accent', width: 'md' },
-    { key: 'jobs', label: '作业类', value: String(jobCategoryCount), tone: 'muted', width: 'sm' },
-    { key: 'processes', label: '工序数', value: String(processCount), tone: processCount > 0 ? 'accent' : 'danger', width: 'sm' },
-    { key: 'segmentDesc', label: '段说明', value: segment.description || '无说明', tone: 'muted', width: 'lg' },
-    { key: 'jobsList', label: '作业类清单', value: jobCategoryNames.length > 0 ? jobCategoryNames.slice(0, 3).join(' / ') : '无作业类', tone: 'muted', width: 'lg' },
-    { key: 'processList', label: '工序清单', value: processNames.length > 0 ? processNames.slice(0, 4).join(' / ') : '无工序', tone: processCount > 0 ? 'accent' : 'danger', width: 'lg' },
+    { key: 'segment', label: '一级名称', value: segment.name, tone: 'accent', width: 'md' },
+    { key: 'jobs', label: '二级节点数', value: String(jobCategoryCount), tone: 'muted', width: 'sm' },
+    { key: 'processes', label: '末级节点数', value: String(processCount), tone: processCount > 0 ? 'accent' : 'danger', width: 'sm' },
+    { key: 'segmentDesc', label: '一级说明', value: segment.description || '无说明', tone: 'muted', width: 'lg' },
+    { key: 'jobsList', label: '二级节点清单', value: jobCategoryNames.length > 0 ? jobCategoryNames.slice(0, 3).join(' / ') : '无二级节点', tone: 'muted', width: 'lg' },
+    { key: 'processList', label: '末级节点清单', value: processNames.length > 0 ? processNames.slice(0, 4).join(' / ') : '无末级节点', tone: processCount > 0 ? 'accent' : 'danger', width: 'lg' },
   ]
 }
 
@@ -59,22 +63,22 @@ export function buildLineManagementProcessModuleConfig(lines: ProductionLine[]):
         status,
         badges: [
           { label: line.code, tone: 'text-cyan-600' },
-          { label: `SEG ${segmentIndex + 1}`, tone: 'text-amber-600' },
-          { label: `JOB ${jobCategoryCount}`, tone: 'text-slate-600' },
-          { label: `PRC ${processCount}`, tone: processCount > 0 ? 'text-slate-600' : 'text-rose-600' },
+          { label: `${LEVEL1_BADGE_PREFIX} ${segmentIndex + 1}`, tone: 'text-amber-600' },
+          { label: `${LEVEL2_BADGE_PREFIX} ${jobCategoryCount}`, tone: 'text-slate-600' },
+          { label: `${LEVEL3_BADGE_PREFIX} ${processCount}`, tone: processCount > 0 ? 'text-slate-600' : 'text-rose-600' },
         ],
         sections: [
           { title: '基础信息', fields: allFields.slice(0, 4) },
-          { title: '作业类', fields: allFields.slice(4, 7) },
-          { title: '作业类与工序树', tree },
+          { title: '层级节点', fields: allFields.slice(4, 7) },
+          { title: '二级与末级节点树', tree },
         ],
       }
     }),
   )
 
   return {
-    title: '产线管理工序模块',
-    subtitle: 'SEGMENT / JOB CATEGORY / PROCESS FULL MAPPING FROM /production-architecture/line',
+    title: '产线管理层级模块',
+    subtitle: 'LEVEL 1 / LEVEL 2 / LEVEL 3 FULL MAPPING FROM /production-architecture/line',
     cards,
   }
 }

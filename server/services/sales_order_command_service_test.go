@@ -1,6 +1,7 @@
 package services
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 	"xdfc-server/db"
@@ -151,4 +152,76 @@ func TestSalesOrderExchangeRateSnapshotRoundTripThroughMapper(t *testing.T) {
 	require.Equal(t, 7.125, model.ExchangeRateSnapshot)
 	require.Equal(t, 7.125, response.ExchangeRateSnapshot)
 	require.Equal(t, 7.125, snapshot.ExchangeRateSnapshot)
+}
+
+func TestSaveSalesOrderRecalculatesAuthorityAmountsOnCreate(t *testing.T) {
+	originalDB := db.DB
+	testDB := setupSalesOrderCommandTestDB(t)
+	db.DB = testDB
+	t.Cleanup(func() {
+		db.DB = originalDB
+		sqlDB, err := testDB.DB()
+		if err == nil {
+			_ = sqlDB.Close()
+		}
+	})
+	require.NoError(t, testDB.Exec(`CREATE TABLE IF NOT EXISTS materials (
+		id TEXT PRIMARY KEY,
+		deleted_at DATETIME
+	)`).Error)
+	require.NoError(t, testDB.Exec(`INSERT INTO materials (id) VALUES (?)`, "material-1").Error)
+
+	result, err := SaveSalesOrder(SaveSalesOrderCommand{
+		Request: SaveSalesOrderRequest{
+			OrderNo:        "SO-AUTH-001",
+			Barcode:        "SO-AUTH-001",
+			CustomerName:   "客户A",
+			Classification: "GENERAL",
+			Status:         "Pending",
+			Currency:       "CNY",
+			OrderDate:      "2026-04-16",
+			DeliveryDate:   "2026-04-23",
+			Amount:         999,
+			Quantity:       888,
+			Lines: []SalesOrderLineRequest{
+				{
+					LineNo:        1,
+					ProductID:     "material-1",
+					ProductModel:  "P1",
+					ProductCode:   "P1",
+					Specification: "Spec",
+					Description:   "Desc",
+					Qty:           2,
+					UOM:           "PCS",
+					Price:         10,
+					Amount:        777,
+					OrderDate:     "2026-04-16",
+					Status:        "Pending",
+				},
+			},
+		},
+		ActorID:  "u-1",
+		Operator: "admin",
+		IP:       "127.0.0.1",
+	})
+	require.NoError(t, err)
+	require.Equal(t, 20.0, result.Amount)
+	require.Equal(t, 2.0, result.Quantity)
+	require.Len(t, result.Lines, 1)
+	require.Equal(t, 20.0, result.Lines[0].Amount)
+}
+
+func TestBuildSalesOrderPatchRequestRejectsAuthorityAmountFields(t *testing.T) {
+	_, err := BuildSalesOrderPatchRequest("so-1", SDRTSDeltaHandlerRequest{
+		Op: "PATCH",
+		Delta: map[string]json.RawMessage{
+			"amount": json.RawMessage(`{"o":100,"n":999}`),
+		},
+		Metadata: SDRTSDeltaMetadata{
+			ID:      "so-1",
+			Version: 1,
+		},
+	})
+	require.Error(t, err)
+	require.ErrorContains(t, err, "unsupported patch field: amount")
 }

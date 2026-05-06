@@ -1,5 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { useLanguage } from '@/context/language-provider'
+import { useHierarchyLevelLabels } from '@/features/production-shared/tabs/hierarchy-config/hooks/use-hierarchy-level-labels'
 import type { ApsSchedulingSource } from '../adapters/aps-scheduling.adapter'
 import { ApsTimelineLane } from './aps-timeline-lane'
 
@@ -9,6 +10,7 @@ type ApsTimelineBoardProps = {
 
 export function ApsTimelineBoard({ source }: ApsTimelineBoardProps) {
   const { t } = useLanguage()
+  const { level2Name, level3Name } = useHierarchyLevelLabels()
 
   return (
     <Card className='rounded-[24px] border border-dashed border-muted/50 bg-background shadow-none'>
@@ -83,6 +85,7 @@ export function ApsTimelineBoard({ source }: ApsTimelineBoardProps) {
                         <span className='rounded-full border border-cyan-500/15 bg-white px-2 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-cyan-700/70'>
                           {t('apsScheduling.board.segmentCategoryCount', {
                             count: segment.jobCategories.length,
+                            levelName: level2Name,
                           })}
                         </span>
                       </div>
@@ -107,6 +110,7 @@ export function ApsTimelineBoard({ source }: ApsTimelineBoardProps) {
                               <span className='rounded-full border border-muted/30 px-2 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60'>
                                 {t('apsScheduling.board.processCount', {
                                   count: jobCategory.processes.length,
+                                  levelName: level3Name,
                                 })}
                               </span>
                             </div>

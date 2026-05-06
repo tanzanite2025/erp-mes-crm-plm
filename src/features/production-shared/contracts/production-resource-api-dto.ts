@@ -13,6 +13,7 @@ export interface ProductionLineSegmentApiDTO {
   id: string
   lineId?: string
   name: string
+  hierarchyOptionId?: string
   description?: string
   sortOrder?: number
   attributes?: Record<string, unknown> | null
@@ -25,6 +26,7 @@ export interface ProductionJobCategoryApiDTO {
   id: string
   segmentId?: string
   name: string
+  hierarchyOptionId?: string
   description?: string
   sortOrder?: number
   attributes?: Record<string, unknown> | null

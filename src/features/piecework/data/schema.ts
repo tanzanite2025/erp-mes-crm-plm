@@ -23,7 +23,7 @@ const teamValidationFallbacks: Record<TeamValidationKey, string> = {
 
 const pieceworkRateValidationFallbacks: Record<PieceworkRateValidationKey, string> = {
   'piecework.validation.pieceworkRateProductRequired': '请选择关联产品 SKU',
-  'piecework.validation.pieceworkRateProcessNameRequired': '请输入工序名称',
+  'piecework.validation.pieceworkRateProcessNameRequired': '请输入末级层级名称',
   'piecework.validation.pieceworkRatePriceNonNegative': '单价不能为负数',
 }
 

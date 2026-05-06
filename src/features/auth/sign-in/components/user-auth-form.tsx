@@ -7,6 +7,7 @@ import { Loader2, LogIn } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth-store'
 import { createLogger } from '@/lib/logger'
+import { failLoudly } from '@/lib/safe-catch'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
@@ -203,11 +204,11 @@ export function UserAuthForm({
             apiBaseUrl: apiBaseUrl || '(same-origin)',
           })
 
-          import('@/features/system-mgmt/services/persistence-service').then(
-            ({ PersistenceService }) => {
-              void PersistenceService.initCloudSync().catch(() => undefined)
-            }
-          )
+          import('@/offline-sync/services/offline-sync-bootstrap-service').then(({ OfflineSyncBootstrapService }) => {
+            void OfflineSyncBootstrapService.ensureStarted().catch((error) => {
+              failLoudly(error, 'UserAuthForm.initCloudSync')
+            })
+          })
 
           navigate({ to: sanitizeRedirectTarget(redirectTo), replace: true })
           toast.success(t('common.auth.signInForm.success', { name: result.user.username }))

@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { useHierarchyLevelLabels } from '../../hierarchy-config/hooks/use-hierarchy-level-labels'
 import { createLogger } from '@/lib/logger'
 import type { ProductionJobCategory, ProductionLine } from '../../../data/production-line'
 import type { ProductionProcessStep } from '../../../data/production-process'
@@ -42,6 +43,7 @@ function updateJobCategoryInLines(
 
 export function useJobCategoryProcessCapabilities() {
   const queryClient = useQueryClient()
+  const { level3Name } = useHierarchyLevelLabels()
 
   const patchLines = (updater: (current: ProductionLine[]) => ProductionLine[]) => {
     queryClient.setQueryData<ProductionLine[]>(productionResourceQueryKeys.lines(), (current) =>
@@ -72,9 +74,9 @@ export function useJobCategoryProcessCapabilities() {
       }
 
       productionResourceSync.emitLinesUpdated({ invalidate: true })
-      toast.success('Process capability added')
+      toast.success(`${level3Name}能力已添加`)
     } catch (error) {
-      toast.error('Failed to add process capability')
+      toast.error(`${level3Name}能力添加失败`)
       logger.error('Failed to assign process capability to job category', {
         error,
         jobCategoryId,
@@ -94,9 +96,9 @@ export function useJobCategoryProcessCapabilities() {
         }))
       )
       productionResourceSync.emitLinesUpdated({ invalidate: true })
-      toast.success('Process capability removed')
+      toast.success(`${level3Name}能力已移除`)
     } catch (error) {
-      toast.error('Failed to remove process capability')
+      toast.error(`${level3Name}能力移除失败`)
       logger.error('Failed to remove process capability from job category', {
         error,
         jobCategoryId,

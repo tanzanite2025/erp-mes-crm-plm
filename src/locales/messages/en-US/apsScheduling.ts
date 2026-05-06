@@ -5,7 +5,7 @@ export const apsScheduling = {
       board: 'APS Board',
       cuttingIssuance: 'Cutting Issuance',
       engineConfig: 'Greedy Engine Config',
-      process: 'Process Overview',
+      process: '{{levelName}} Overview',
     },
   },
   board: {
@@ -28,8 +28,8 @@ export const apsScheduling = {
     refreshing: 'Refreshing APS scheduling data...',
     fallbackNotice: 'If the backend is unavailable, the page will fall back to local sample data.',
     capacityNote: 'Load {{occupiedHours}} / Capacity {{availableHours}} / Window {{timeWindowHours}}',
-    segmentCategoryCount: '{{count}} job categories',
-    processCount: '{{count}} processes',
+    segmentCategoryCount: '{{count}} {{levelName}} groups',
+    processCount: '{{count}} {{levelName}}',
   },
   cuttingIssuance: {
     header: {
@@ -230,7 +230,7 @@ export const apsScheduling = {
     },
   },
   process: {
-    title: 'Process Overview',
-    subtitle: 'This view is now bound to the live line-management process mapping.',
+    title: '{{levelName}} Overview',
+    subtitle: 'This view is now bound to the live line-management {{levelName}} mapping.',
   },
 }

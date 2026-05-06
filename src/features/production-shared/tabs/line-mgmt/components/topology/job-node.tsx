@@ -14,6 +14,8 @@ import { useLanguage } from '@/context/language-provider'
 interface JobNodeProps {
   segmentId: string
   jobCategory: JobCategory
+  level2Name: string
+  level3Name: string
   onUpdateName: (segmentId: string, jobCategoryId: string, name: string) => void
   onRemove: (segmentId: string, jobCategoryId: string) => void
 }
@@ -21,6 +23,8 @@ interface JobNodeProps {
 export const JobNode = memo(({
   segmentId,
   jobCategory,
+  level2Name,
+  level3Name,
   onUpdateName,
   onRemove,
 }: JobNodeProps) => {
@@ -66,7 +70,7 @@ export const JobNode = memo(({
           <div className='flex size-8 shrink-0 items-center justify-center rounded-full border border-cyan-500/15 bg-cyan-500/5'>
             <BriefcaseBusiness className='size-4 text-cyan-600' />
           </div>
-          <span className='shrink-0 pl-1 text-[9px] font-black tracking-[0.24em] text-cyan-700/40'>[{t('orgPersonnel.lineMgmt.topology.jobCategory')}]</span>
+          <span className='shrink-0 pl-1 text-[9px] font-black tracking-[0.24em] text-cyan-700/40'>[{level2Name}]</span>
 
           {isEditing ? (
             <div className='animate-in fade-in zoom-in-95 flex flex-1 items-center gap-1 duration-200'>
@@ -111,7 +115,7 @@ export const JobNode = memo(({
                 className='cursor-pointer gap-2 rounded-xl px-3 py-2 text-[10px] font-bold uppercase tracking-[0.2em]'
               >
                 <ShieldCheck className='size-3.5 text-cyan-600' />
-                {t('orgPersonnel.lineMgmt.topology.renameJobCategory')}
+                {t('orgPersonnel.lineMgmt.topology.renameLevel', { levelName: level2Name })}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => {
@@ -121,7 +125,7 @@ export const JobNode = memo(({
                 className='cursor-pointer gap-2 rounded-xl px-3 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-rose-500 focus:text-rose-600'
               >
                 <X className='size-3.5' />
-                {t('orgPersonnel.lineMgmt.topology.removeJobCategory')}
+                {t('orgPersonnel.lineMgmt.topology.removeLevel', { levelName: level2Name })}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -130,7 +134,7 @@ export const JobNode = memo(({
         <div className='mt-2 flex w-full flex-col gap-3 pl-1'>
           {processes.length === 0 ? (
             <p className='text-[10px] text-muted-foreground/45'>
-              {t('orgPersonnel.lineMgmt.editor.noProcesses')}
+              {t('orgPersonnel.lineMgmt.editor.noLevelsConfigured', { levelName: level3Name })}
             </p>
           ) : (
             <div className='flex flex-wrap gap-2'>
@@ -152,11 +156,11 @@ export const JobNode = memo(({
         onOpenChange={setIsAuthOpen}
         onConfirm={handleAuthConfirm}
         title={pendingAction === 'rename'
-          ? t('orgPersonnel.lineMgmt.topology.jobCategoryRenameTitle')
-          : t('orgPersonnel.lineMgmt.topology.jobCategoryRemoveTitle')}
+          ? t('orgPersonnel.lineMgmt.topology.levelRenameTitle', { levelName: level2Name })
+          : t('orgPersonnel.lineMgmt.topology.levelRemoveTitle', { levelName: level2Name })}
         description={pendingAction === 'rename'
-          ? t('orgPersonnel.lineMgmt.topology.jobCategoryRenameDesc')
-          : t('orgPersonnel.lineMgmt.topology.jobCategoryRemoveDesc')}
+          ? t('orgPersonnel.lineMgmt.topology.levelRenameDesc', { levelName: level2Name })
+          : t('orgPersonnel.lineMgmt.topology.levelRemoveDesc', { levelName: level2Name })}
       />
     </div>
   )

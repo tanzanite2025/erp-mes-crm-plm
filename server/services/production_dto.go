@@ -23,27 +23,29 @@ type ProcessStepDTO struct {
 }
 
 type JobCategoryDTO struct {
-	ID          string           `json:"id"`
-	CreatedAt   time.Time        `json:"createdAt"`
-	UpdatedAt   time.Time        `json:"updatedAt"`
-	SegmentID   string           `json:"segmentId"`
-	Name        string           `json:"name"`
-	Description string           `json:"description"`
-	SortOrder   int              `json:"sortOrder"`
-	Attributes  json.RawMessage  `json:"attributes"`
-	Processes   []ProcessStepDTO `json:"processes"`
+	ID                string           `json:"id"`
+	CreatedAt         time.Time        `json:"createdAt"`
+	UpdatedAt         time.Time        `json:"updatedAt"`
+	SegmentID         string           `json:"segmentId"`
+	Name              string           `json:"name"`
+	HierarchyOptionID string           `json:"hierarchyOptionId"`
+	Description       string           `json:"description"`
+	SortOrder         int              `json:"sortOrder"`
+	Attributes        json.RawMessage  `json:"attributes"`
+	Processes         []ProcessStepDTO `json:"processes"`
 }
 
 type LineSegmentDTO struct {
-	ID            string           `json:"id"`
-	CreatedAt     time.Time        `json:"createdAt"`
-	UpdatedAt     time.Time        `json:"updatedAt"`
-	LineID        string           `json:"lineId"`
-	Name          string           `json:"name"`
-	Description   string           `json:"description"`
-	SortOrder     int              `json:"sortOrder"`
-	Attributes    json.RawMessage  `json:"attributes"`
-	JobCategories []JobCategoryDTO `json:"jobCategories"`
+	ID                string           `json:"id"`
+	CreatedAt         time.Time        `json:"createdAt"`
+	UpdatedAt         time.Time        `json:"updatedAt"`
+	LineID            string           `json:"lineId"`
+	Name              string           `json:"name"`
+	HierarchyOptionID string           `json:"hierarchyOptionId"`
+	Description       string           `json:"description"`
+	SortOrder         int              `json:"sortOrder"`
+	Attributes        json.RawMessage  `json:"attributes"`
+	JobCategories     []JobCategoryDTO `json:"jobCategories"`
 }
 
 type ProductionLineDTO struct {
@@ -101,15 +103,16 @@ func mapJobCategoryToDTO(category models.JobCategory) JobCategoryDTO {
 	}
 
 	return JobCategoryDTO{
-		ID:          category.ID,
-		CreatedAt:   category.CreatedAt,
-		UpdatedAt:   category.UpdatedAt,
-		SegmentID:   category.SegmentID,
-		Name:        category.Name,
-		Description: category.Description,
-		SortOrder:   category.SortOrder,
-		Attributes:  cloneRawMessage(category.Attributes),
-		Processes:   processes,
+		ID:                category.ID,
+		CreatedAt:         category.CreatedAt,
+		UpdatedAt:         category.UpdatedAt,
+		SegmentID:         category.SegmentID,
+		Name:              category.Name,
+		HierarchyOptionID: category.HierarchyOptionID,
+		Description:       category.Description,
+		SortOrder:         category.SortOrder,
+		Attributes:        cloneRawMessage(category.Attributes),
+		Processes:         processes,
 	}
 }
 
@@ -125,12 +128,13 @@ func mapJobCategoryDTOToModel(category JobCategoryDTO) models.JobCategory {
 			CreatedAt: category.CreatedAt,
 			UpdatedAt: category.UpdatedAt,
 		},
-		SegmentID:   category.SegmentID,
-		Name:        category.Name,
-		Description: category.Description,
-		SortOrder:   category.SortOrder,
-		Attributes:  cloneRawMessage(category.Attributes),
-		Processes:   processes,
+		SegmentID:         category.SegmentID,
+		Name:              category.Name,
+		HierarchyOptionID: category.HierarchyOptionID,
+		Description:       category.Description,
+		SortOrder:         category.SortOrder,
+		Attributes:        cloneRawMessage(category.Attributes),
+		Processes:         processes,
 	}
 }
 
@@ -141,15 +145,16 @@ func mapLineSegmentToDTO(segment models.LineSegment) LineSegmentDTO {
 	}
 
 	return LineSegmentDTO{
-		ID:            segment.ID,
-		CreatedAt:     segment.CreatedAt,
-		UpdatedAt:     segment.UpdatedAt,
-		LineID:        segment.LineID,
-		Name:          segment.Name,
-		Description:   segment.Description,
-		SortOrder:     segment.SortOrder,
-		Attributes:    cloneRawMessage(segment.Attributes),
-		JobCategories: jobCategories,
+		ID:                segment.ID,
+		CreatedAt:         segment.CreatedAt,
+		UpdatedAt:         segment.UpdatedAt,
+		LineID:            segment.LineID,
+		Name:              segment.Name,
+		HierarchyOptionID: segment.HierarchyOptionID,
+		Description:       segment.Description,
+		SortOrder:         segment.SortOrder,
+		Attributes:        cloneRawMessage(segment.Attributes),
+		JobCategories:     jobCategories,
 	}
 }
 
@@ -165,12 +170,13 @@ func mapLineSegmentDTOToModel(segment LineSegmentDTO) models.LineSegment {
 			CreatedAt: segment.CreatedAt,
 			UpdatedAt: segment.UpdatedAt,
 		},
-		LineID:        segment.LineID,
-		Name:          segment.Name,
-		Description:   segment.Description,
-		SortOrder:     segment.SortOrder,
-		Attributes:    cloneRawMessage(segment.Attributes),
-		JobCategories: jobCategories,
+		LineID:            segment.LineID,
+		Name:              segment.Name,
+		HierarchyOptionID: segment.HierarchyOptionID,
+		Description:       segment.Description,
+		SortOrder:         segment.SortOrder,
+		Attributes:        cloneRawMessage(segment.Attributes),
+		JobCategories:     jobCategories,
 	}
 }
 

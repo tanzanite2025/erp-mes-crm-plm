@@ -267,7 +267,7 @@ export const basicSettings = {
     title: "System Security Architecture",
     subtitle: "System-level security gateway and topology authorization center",
     authCardTitle: "Topology Operation Authorization Code (AUTH_CODE)",
-    authCardDescription: "Controls the global verification password for topology renaming, process adjustment, and node overflow.",
+    authCardDescription: "Controls the global verification password for topology renaming, hierarchy node adjustment, and node overflow.",
     currentPassword: "Current Authorization Code",
     placeholder: "Enter at least 4 letters or digits",
     warning: "High-risk reminder: after changing this code, all opened topology pages must re-enter the new code.",

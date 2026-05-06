@@ -126,7 +126,7 @@ func PatchSalesOrder(command PatchSalesOrderCommand) (SalesOrderResponse, error)
 }
 
 func BuildSalesOrderPatchRequest(orderID string, req SDRTSDeltaHandlerRequest) (PatchSalesOrderCommand, error) {
-	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "orderNo", "orderName", "customerName", "customerId", "type", "currency", "exchangeRateSnapshot", "paymentMethod", "paymentMethodName", "paymentTerm", "paymentTermName", "classification", "status", "statusNote", "amount", "quantity", "orderDate", "deliveryDate", "purchaseOrderNo", "barcode", "requirements", "evidences", "isDeleted", "lines"); err != nil {
+	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "orderNo", "orderName", "customerName", "customerId", "type", "currency", "exchangeRateSnapshot", "paymentMethod", "paymentMethodName", "paymentTerm", "paymentTermName", "classification", "status", "statusNote", "orderDate", "deliveryDate", "purchaseOrderNo", "barcode", "requirements", "evidences", "isDeleted", "lines"); err != nil {
 		return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta: %w", err)
 	}
 
@@ -198,14 +198,6 @@ func BuildSalesOrderPatchRequest(orderID string, req SDRTSDeltaHandlerRequest) (
 			}
 		case "statusNote":
 			if err := json.Unmarshal(valueRaw, &snapshot.StatusNote); err != nil {
-				return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta field %s", key)
-			}
-		case "amount":
-			if err := json.Unmarshal(valueRaw, &snapshot.Amount); err != nil {
-				return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta field %s", key)
-			}
-		case "quantity":
-			if err := json.Unmarshal(valueRaw, &snapshot.Quantity); err != nil {
 				return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta field %s", key)
 			}
 		case "orderDate":
@@ -288,6 +280,7 @@ func createSalesOrderTx(input models.SalesOrder, originalID, requesterID, operat
 		if strings.TrimSpace(input.ID) == "" {
 			input.ID = uuid.NewString()
 		}
+		recalculateSalesOrderAuthorityCosts(&input)
 		if err := tx.Create(&input).Error; err != nil {
 			return err
 		}
@@ -315,6 +308,8 @@ func buildSalesOrderSaveDelta(request SaveSalesOrderRequest) map[string]json.Raw
 	var raw map[string]json.RawMessage
 	_ = json.Unmarshal(payload, &raw)
 	delete(raw, "id")
+	delete(raw, "amount")
+	delete(raw, "quantity")
 	delete(raw, "updatedBy")
 	delete(raw, "version")
 	return raw

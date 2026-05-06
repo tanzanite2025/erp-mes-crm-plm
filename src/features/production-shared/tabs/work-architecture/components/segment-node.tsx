@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { useLanguage } from '@/context/language-provider'
 import { useCommands } from '@/features/system-mgmt/workflow-core/hooks/use-commands'
 import type { StandardCommand } from '@/features/system-mgmt/workflow-core/data/schema'
 import type { Segment } from '../../line-mgmt/types'
@@ -13,9 +14,13 @@ import { JobCategoryNode } from './job-category-node'
 
 interface SegmentNodeProps {
   segment: Segment
+  level1Name: string
+  level2Name: string
+  level3Name: string
 }
 
-export function SegmentNode({ segment }: SegmentNodeProps) {
+export function SegmentNode({ segment, level1Name, level2Name, level3Name }: SegmentNodeProps) {
+  const { t } = useLanguage()
   const { commands } = useCommands()
   const [assignedCmds, setAssignedCmds] = useState<string[]>([])
   const jobCategories = segment.jobCategories || []
@@ -28,7 +33,7 @@ export function SegmentNode({ segment }: SegmentNodeProps) {
           className='h-5 gap-1 border-blue-600 bg-blue-600 px-1.5 py-0 text-white shadow-sm'
         >
           <Layers className='size-3' />
-          <span className='text-[10px]'>工段</span>
+          <span className='text-[10px]'>{level1Name}</span>
         </Badge>
         <span className='text-sm font-bold text-slate-700'>{segment.name}</span>
 
@@ -45,7 +50,7 @@ export function SegmentNode({ segment }: SegmentNodeProps) {
           <PopoverContent className='w-64 rounded-xl border-2 p-2' align='start'>
             <div className='space-y-2'>
               <p className='px-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground'>
-                Assign Action
+                {t('productionShared.workArchitecture.assignAction')}
               </p>
               <div className='max-h-48 space-y-1 overflow-y-auto'>
                 {commands
@@ -57,7 +62,7 @@ export function SegmentNode({ segment }: SegmentNodeProps) {
                       className='h-auto w-full justify-start px-2 py-2 text-[11px] font-bold hover:bg-blue-50'
                       onClick={() => {
                         setAssignedCmds((prev) => Array.from(new Set([...prev, command.title])))
-                        toast.success(`指令 [${command.title}] 已分配至工段: ${segment.name}`)
+                        toast.success(t('productionShared.workArchitecture.assignActionSuccess', { command: command.title, levelName: level1Name, name: segment.name }))
                       }}
                     >
                       <div className='flex items-center gap-2'>
@@ -87,14 +92,14 @@ export function SegmentNode({ segment }: SegmentNodeProps) {
         )}
 
         {jobCategories.length === 0 && (
-          <span className='ml-1 text-[10px] italic text-muted-foreground/30'>(未配置岗位)</span>
+          <span className='ml-1 text-[10px] italic text-muted-foreground/30'>({t('productionShared.workArchitecture.unconfiguredLevel', { levelName: level2Name })})</span>
         )}
       </div>
 
       {jobCategories.length > 0 && (
         <div className='space-y-4 px-5 pb-4 pt-2'>
           {jobCategories.map((jobCategory) => (
-            <JobCategoryNode key={jobCategory.id} jobCategory={jobCategory} />
+            <JobCategoryNode key={jobCategory.id} jobCategory={jobCategory} level2Name={level2Name} level3Name={level3Name} />
           ))}
         </div>
       )}

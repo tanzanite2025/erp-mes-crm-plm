@@ -29,6 +29,7 @@ import { ProductionSelector } from '../components/production-selector'
 import { type OrgNode } from '../data/org-schema'
 import { useOrgMgmt } from '../hooks/use-org-mgmt'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
+import { useHierarchyLevelLabels } from '@/features/production-shared/tabs/hierarchy-config/hooks/use-hierarchy-level-labels'
 
 export function OrgMgmt() {
   const { locale, t } = useLanguage()
@@ -75,6 +76,8 @@ export function OrgMgmt() {
     if (type === 'department') return '二级部门'
     return '三级生产单元'
   }
+
+  const { level1Name } = useHierarchyLevelLabels()
 
   if (isForbiddenError(error)) {
     return <ForbiddenState />
@@ -318,7 +321,7 @@ export function OrgMgmt() {
                                 <div>
                                   <p className='text-sm font-black italic text-slate-700'>{item.name}</p>
                                   <p className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/50'>
-                                      {item.type === 'line' ? t('orgPersonnel.org.types.productionLine') : t('orgPersonnel.org.types.workshopSegment')}
+                                      {item.type === 'line' ? t('orgPersonnel.org.types.productionLine') : t('orgPersonnel.org.types.workshopLevel', { levelName: level1Name })}
                                   </p>
                                 </div>
                               </div>

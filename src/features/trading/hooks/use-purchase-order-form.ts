@@ -13,8 +13,8 @@ import {
   validatePurchaseOrderForm,
 } from './purchase-order-form-helpers'
 import {
-  buildPurchaseOrderCurrencyPatch,
-  buildPurchaseOrderHeaderPatch,
+  buildPurchaseOrderCurrencyStateUpdater,
+  buildPurchaseOrderHeaderStateUpdater,
   normalizePurchaseOrderCurrencyValue,
   resolvePurchaseOrderExchangeRate,
 } from './purchase-order-form-header-helpers'
@@ -50,18 +50,14 @@ export function usePurchaseOrderForm(initialOrder: PurchaseOrder | null | undefi
     const handleHeaderChange = useCallback((field: keyof PurchaseOrder, value: PurchaseOrder[keyof PurchaseOrder]) => {
         if (field === 'currency') {
             const currencyValue = normalizePurchaseOrderCurrencyValue(value)
-            setFormData((prev) => ({
-                ...prev,
-                ...buildPurchaseOrderCurrencyPatch(
+            setFormData((prev) =>
+                buildPurchaseOrderCurrencyStateUpdater(
                     currencyValue,
                     resolvePurchaseOrderExchangeRate(currencies, currencyValue, prev.exchangeRate)
-                ),
-            }))
+                )(prev)
+            )
         } else {
-            setFormData((prev) => ({
-                ...prev,
-                ...buildPurchaseOrderHeaderPatch(field, value),
-            }))
+            setFormData((prev) => buildPurchaseOrderHeaderStateUpdater(field, value)(prev))
         }
     }, [currencies, setFormData])
 

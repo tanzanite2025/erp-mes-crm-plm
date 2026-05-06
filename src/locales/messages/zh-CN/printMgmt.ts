@@ -27,7 +27,6 @@ export const printMgmt = {
     nameLabel: '名称：BOM表',
     productSpec: '产品规格：{{productName}}',
     columns: {
-      section: '工序',
       materialCode: '物料编号',
       materialName: '品名',
       materialSpec: '规格/型号',

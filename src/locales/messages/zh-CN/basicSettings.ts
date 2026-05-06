@@ -291,7 +291,7 @@ export const basicSettings = {
     title: "系统安全架构",
     subtitle: "系统级安全网关控制与拓扑权限校验中心",
     authCardTitle: "产线拓扑操作授权码 (AUTH_CODE)",
-    authCardDescription: "控制产线更名、工序调整及节点溢出的全局验证密码",
+    authCardDescription: "控制产线更名、层级节点调整及节点溢出的全局验证密码",
     currentPassword: "当前授权码",
     placeholder: "输入至少 4 位数字或字母",
     warning: "高危提醒：修改此码后，所有已打开的产线页面将需要重新输入新码进行验证。",

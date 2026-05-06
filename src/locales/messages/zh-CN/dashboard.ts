@@ -11,10 +11,10 @@ export const dashboard = {
     },
     throughput: {
       title: '各环节产能概览',
-      description: '工段实时产量分布',
+      description: '{{levelName}}实时产量分布',
       empty: {
-        title: '等待挂载工段...',
-        description: '请通过设置按钮配置显示工段...',
+        title: '等待挂载{{levelName}}...',
+        description: '请通过设置按钮配置显示{{levelName}}...',
       },
     },
     scanStream: {
@@ -22,10 +22,10 @@ export const dashboard = {
       description: '摄像头与扫码枪原始采集事件流',
     },
     segmentDialog: {
-      title: '配置显示工段',
-      description: '选择要在全厂概览中展示产量的工段环节。',
-      emptyTitle: '暂无工段定义',
-      emptyDescription: '请先前往“生产配置 -> 产线管理”添加工段。',
+      title: '配置显示{{levelName}}',
+      description: '选择要在全厂概览中展示产量的{{levelName}}节点。',
+      emptyTitle: '暂无{{levelName}}定义',
+      emptyDescription: '请先前往“生产配置 -> 产线管理”添加{{levelName}}。',
       cancel: '取消',
       save: '保存配置',
     },
@@ -60,7 +60,7 @@ export const dashboard = {
       waiting: '等待接收实时数据流...',
     },
     recentSales: {
-      process: '工序',
+      process: '末级层级',
       result: '结果',
       order: '销售单',
       note: '提示',
@@ -82,7 +82,7 @@ export const dashboard = {
         security: '安全风险反馈',
         audit: '管理审计流水',
         equipment: '设备运行状态',
-        process: '工艺参数变更',
+        process: '层级参数变更',
       },
       equipment: {
         waiting: '等待实时设备反馈...',

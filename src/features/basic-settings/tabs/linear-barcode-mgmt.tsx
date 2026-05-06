@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { Loader2, RotateCcw, Save, Settings2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -38,7 +37,7 @@ import {
 } from '../data/linear-barcode-protocol'
 import { type BarcodeRuleSegment } from '../data/linear-barcode-rules-config'
 import { useAppearanceMapping } from '../hooks/use-appearance-mapping'
-import { BASIC_SETTINGS_LINEAR_BARCODE_QUERY_KEY } from '../query-keys'
+import { useLinearBarcodeProtocol } from '../hooks/use-linear-barcode-protocol'
 import { parseLinearBarcodeCode } from '../utils/linear-barcode-parser'
 
 const logger = createLogger('LinearBarcodeMgmt')
@@ -46,7 +45,6 @@ const logger = createLogger('LinearBarcodeMgmt')
 export function LinearBarcodeMgmt() {
   const { t, locale } = useLanguage()
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
   const user = useAuthStore((state) => state.user)
   const canOpenSharedNumberingEngine = canOpenRouteEntryNonBlocking(
     user,
@@ -65,8 +63,7 @@ export function LinearBarcodeMgmt() {
   )
   const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false)
   const [isAppearanceDialogOpen, setIsAppearanceDialogOpen] = useState(false)
-  const [isHoleCodeSourceDialogOpen, setIsHoleCodeSourceDialogOpen] =
-    useState(false)
+  const [isHoleCodeSourceDialogOpen, setIsHoleCodeSourceDialogOpen] = useState(false)
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
   const [confirmText, setConfirmText] = useState('')
   const [isConfigSaving, setIsConfigSaving] = useState(false)
@@ -79,10 +76,7 @@ export function LinearBarcodeMgmt() {
     activeCounts: holeCountSources,
     combinationLabelMap,
   } = useActiveHoleCodeSource()
-  const { data: protocolConfig, isLoading: isConfigLoading } = useQuery({
-    queryKey: BASIC_SETTINGS_LINEAR_BARCODE_QUERY_KEY,
-    queryFn: () => linearBarcodeProtocolService.getConfig(),
-  })
+  const { protocolConfig, isConfigLoading, cacheProtocolConfig } = useLinearBarcodeProtocol()
 
   // --- 水合逻辑：仅在 protocolConfig 加载完成后初始化本地状态一次 ---
   useEffect(() => {
@@ -220,7 +214,7 @@ export function LinearBarcodeMgmt() {
           mockInput: targetMockInputs,
         }
         const saved = await linearBarcodeProtocolService.updateConfig(payload)
-        queryClient.setQueryData(BASIC_SETTINGS_LINEAR_BARCODE_QUERY_KEY, saved)
+        cacheProtocolConfig(saved)
         setRules(saved.rules)
         setMockInputs(saved.mockInput)
         toast.success(t('basicSettings.linearBarcode.toasts.saveSuccess'))
@@ -231,7 +225,7 @@ export function LinearBarcodeMgmt() {
         setIsConfigSaving(false)
       }
     },
-    [protocolConfig, rules, mockInputs, queryClient, t]
+    [cacheProtocolConfig, protocolConfig, rules, mockInputs, t]
   )
 
   const handleResetToDefaults = async () => {

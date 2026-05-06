@@ -33,7 +33,7 @@ export const scanPlatform = {
     },
     wheelTrace: {
       name: '车圈追溯',
-      description: '用于查询车圈当前工段、历史轨迹与最近处理记录的扫码插件。',
+      description: '用于查询车圈当前层级锚点、历史轨迹与最近处理记录的扫码插件。',
       hostLabel: '独立追溯页',
       statusLabel: '真实接口',
       targetLabel: '车圈追溯查询',

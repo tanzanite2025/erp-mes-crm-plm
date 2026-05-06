@@ -1,40 +1,12 @@
 'use client'
 
+import { OfflineSyncBootstrapService } from '@/offline-sync/services/offline-sync-bootstrap-service'
 import { createLogger } from '@/lib/logger'
 import { failLoudly } from '@/lib/safe-catch'
 import { OfflineStorage } from '@/offline-sync/storage/offline-storage'
-import type { PendingDeltaRecord } from '@/offline-sync/types/offline-sync'
 
 const logger = createLogger('PersistenceService')
 const PERSISTENCE_ENTITY_TYPE = 'system.persistence'
-
-function createOperationId(key: string) {
-  return `${PERSISTENCE_ENTITY_TYPE}:${key}:${crypto.randomUUID()}`
-}
-
-function buildPendingDelta(
-  key: string,
-  operation: 'save' | 'delete',
-  previousValue: unknown,
-  nextValue: unknown,
-  baseVersion: number,
-  timestamp: string
-): PendingDeltaRecord<unknown> {
-  return {
-    opId: createOperationId(key),
-    clientId: 'system-persistence',
-    entityType: PERSISTENCE_ENTITY_TYPE,
-    entityId: key,
-    path: key,
-    o: previousValue,
-    n: nextValue,
-    baseVersion,
-    intent: `system.persistence.${operation}`,
-    createdAt: timestamp,
-    updatedAt: timestamp,
-    state: 'queued',
-  }
-}
 
 async function readSnapshot(key: string) {
   return OfflineStorage.getSnapshot(PERSISTENCE_ENTITY_TYPE, key)
@@ -54,7 +26,6 @@ function createPersistenceCorruptionError(operation: string, key?: string, cause
 
 export const PersistenceService = {
   _isLocalInitialized: false,
-  _isCloudSyncStarted: false,
 
   initLocalStore: async () => {
     if (typeof window === 'undefined') return
@@ -73,16 +44,13 @@ export const PersistenceService = {
 
   initCloudSync: async () => {
     if (typeof window === 'undefined') return
-    if (PersistenceService._isCloudSyncStarted) return
 
-    PersistenceService._isCloudSyncStarted = true
     try {
-      logger.info('Starting parallel cloud sync')
-
-      logger.info('High-priority initialization detached and running in background')
+      logger.info('Delegating cloud sync bootstrap to OfflineSyncBootstrapService')
+      await OfflineSyncBootstrapService.ensureStarted()
     } catch (error) {
       logger.error('Cloud sync failure', error)
-      PersistenceService._isCloudSyncStarted = false
+      throw error
     }
   },
 
@@ -95,9 +63,7 @@ export const PersistenceService = {
       const timestamp = new Date().toISOString()
       await OfflineStorage.transaction(async () => {
         const existingSnapshot = await readSnapshot(key)
-        const existingMeta = await OfflineStorage.getSyncMeta(PERSISTENCE_ENTITY_TYPE, key)
-        const baseVersion = Math.max(existingSnapshot?.version ?? 0, existingMeta?.latestAckVersion ?? 0)
-        const nextVersion = baseVersion + 1
+        const nextVersion = (existingSnapshot?.version ?? 0) + 1
 
         await OfflineStorage.saveSnapshot({
           entityType: PERSISTENCE_ENTITY_TYPE,
@@ -105,17 +71,6 @@ export const PersistenceService = {
           version: nextVersion,
           data,
           syncedAt: timestamp,
-        })
-        await OfflineStorage.enqueueDelta(
-          buildPendingDelta(key, 'save', existingSnapshot?.data ?? null, data, baseVersion, timestamp)
-        )
-        await OfflineStorage.upsertSyncMeta({
-          entityType: PERSISTENCE_ENTITY_TYPE,
-          entityId: key,
-          latestAckVersion: existingMeta?.latestAckVersion ?? existingSnapshot?.version ?? 0,
-          lastSyncAt: existingMeta?.lastSyncAt ?? existingSnapshot?.syncedAt,
-          hasConflict: existingMeta?.hasConflict ?? false,
-          queueState: 'queued',
         })
       })
     } catch (error) {
@@ -138,25 +93,7 @@ export const PersistenceService = {
 
   deleteLocal: async (key: string) => {
     try {
-      const timestamp = new Date().toISOString()
-      await OfflineStorage.transaction(async () => {
-        const existingSnapshot = await readSnapshot(key)
-        const existingMeta = await OfflineStorage.getSyncMeta(PERSISTENCE_ENTITY_TYPE, key)
-        const baseVersion = Math.max(existingSnapshot?.version ?? 0, existingMeta?.latestAckVersion ?? 0)
-
-        await OfflineStorage.enqueueDelta(
-          buildPendingDelta(key, 'delete', existingSnapshot?.data ?? null, null, baseVersion, timestamp)
-        )
-        await OfflineStorage.removeSnapshot(PERSISTENCE_ENTITY_TYPE, key)
-        await OfflineStorage.upsertSyncMeta({
-          entityType: PERSISTENCE_ENTITY_TYPE,
-          entityId: key,
-          latestAckVersion: existingMeta?.latestAckVersion ?? existingSnapshot?.version ?? 0,
-          lastSyncAt: existingMeta?.lastSyncAt ?? existingSnapshot?.syncedAt,
-          hasConflict: existingMeta?.hasConflict ?? false,
-          queueState: 'queued',
-        })
-      })
+      await OfflineStorage.removeSnapshot(PERSISTENCE_ENTITY_TYPE, key)
     } catch (error) {
       const persistenceError = createPersistenceCorruptionError('delete', key, error)
       failLoudly(persistenceError, 'PersistenceService.deleteLocal')

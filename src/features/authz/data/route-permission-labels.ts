@@ -90,6 +90,7 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/aps-scheduling/engine-config': 'apsScheduling.engineConfig.title',
   '/production-architecture': 'sidebar.items.productionArchitecture',
   '/production-architecture/line': 'productionArchitecture.layout.tabs.line',
+  '/production-architecture/hierarchy-config': 'productionArchitecture.layout.tabs.hierarchyConfig',
   '/production-architecture/topology': 'productionArchitecture.layout.tabs.topology',
   '/equipment-tooling': 'sidebar.items.toolingAssets',
   '/equipment-tooling/overview': 'equipmentTooling.layout.tabs.overview',

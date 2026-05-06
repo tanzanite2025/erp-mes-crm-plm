@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/card'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { TrackingNumberInput } from '@/components/tracking-number-input'
+import { useHierarchyLevelLabels } from '@/features/production-shared/tabs/hierarchy-config/hooks/use-hierarchy-level-labels'
 import { createWheelTraceApiGateway } from '../adapters/wheel-trace/api-wheel-trace-gateway'
 import { usePageInstall } from '../hooks'
 import type { WheelTracePayload } from '../models/wheel-trace'
@@ -30,6 +31,7 @@ export function WheelTraceShellPage({
   autoOpenScanner = false,
   scannerSignal = 0,
 }: WheelTraceShellPageProps) {
+  const { level1Name, level3Name } = useHierarchyLevelLabels()
   const [rawCode, setRawCode] = useState(() =>
     autoOpenScanner ? '' : DEFAULT_SAMPLE_CODE
   )
@@ -174,10 +176,10 @@ export function WheelTraceShellPage({
         <Card className='rounded-[28px] border-dashed border-muted/50 bg-muted/5 shadow-inner xl:col-span-2'>
           <CardHeader className='pb-4'>
             <CardTitle className='text-sm font-black tracking-tight uppercase md:text-base'>
-              Current Stage
+              Current Hierarchy Snapshot
             </CardTitle>
             <CardDescription className='text-[10px] font-medium text-muted-foreground/70 md:text-[11px]'>
-              当前工段、工序与班组快照已经来自真实接口。没有真实过站记录时，会返回配置推断的锚点并附带提示。
+              当前{level1Name}、{level3Name}与班组快照已经来自真实接口。没有真实过站记录时，会返回配置推断的锚点并附带提示。
             </CardDescription>
           </CardHeader>
           <CardContent className='grid grid-cols-1 gap-4 text-[11px] md:grid-cols-2'>
@@ -192,13 +194,13 @@ export function WheelTraceShellPage({
 
             <div className='rounded-2xl border border-dashed border-muted/50 bg-background/70 p-4'>
               <div className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
-                Stage
+                {level1Name} / {level3Name}
               </div>
               <div className='mt-2 font-bold text-foreground'>
-                {result?.currentStage.segmentName || '暂无工段锚点'}
+                {result?.currentStage.segmentName || `暂无${level1Name}锚点`}
               </div>
               <div className='mt-1 text-muted-foreground/70'>
-                {result?.currentStage.processName || '暂无工序'}
+                {result?.currentStage.processName || `暂无${level3Name}`}
               </div>
             </div>
 

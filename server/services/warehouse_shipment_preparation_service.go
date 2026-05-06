@@ -126,6 +126,11 @@ func ListShipmentDemands() (ShipmentDemandListResponse, error) {
 				remainingToPrepare = 0
 			}
 
+			stockBreakdown := breakdownByMaterialID[materialID]
+			if stockBreakdown == nil {
+				stockBreakdown = []ShipmentDemandStockBreakdownResponse{}
+			}
+
 			items = append(items, ShipmentDemandResponse{
 				SalesOrderID:       order.ID,
 				SalesOrderLineID:   line.ID,
@@ -142,7 +147,7 @@ func ListShipmentDemands() (ShipmentDemandListResponse, error) {
 				VirtualReadyQty:    virtualReadyQty,
 				RemainingToPrepare: remainingToPrepare,
 				AvailableQty:       availableByMaterialID[materialID],
-				StockBreakdown:     breakdownByMaterialID[materialID],
+				StockBreakdown:     stockBreakdown,
 			})
 		}
 	}

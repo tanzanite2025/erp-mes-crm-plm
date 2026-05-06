@@ -11,10 +11,10 @@ export const dashboard = {
     },
     throughput: {
       title: 'Throughput Overview',
-      description: 'Real-time output distribution across segments',
+      description: 'Real-time output distribution across {{levelName}}',
       empty: {
-        title: 'WAITING_FOR_SEGMENT_ATTACHMENT',
-        description: 'Configure Display Segments via Settings...',
+        title: 'Waiting for {{levelName}} attachment...',
+        description: 'Configure visible {{levelName}} entries via settings...',
       },
     },
     scanStream: {
@@ -22,10 +22,10 @@ export const dashboard = {
       description: 'Raw event streams from cameras and scanners',
     },
     segmentDialog: {
-      title: 'Configure Visible Segments',
-      description: 'Choose which production segments should appear in the overview chart.',
-      emptyTitle: 'No segments defined',
-      emptyDescription: 'Please go to "Production Config -> Line Management" and add segments first.',
+      title: 'Configure Visible {{levelName}}',
+      description: 'Choose which {{levelName}} entries should appear in the overview chart.',
+      emptyTitle: 'No {{levelName}} defined',
+      emptyDescription: 'Please go to "Production Config -> Line Management" and add {{levelName}} first.',
       cancel: 'Cancel',
       save: 'Save Configuration',
     },
@@ -60,7 +60,7 @@ export const dashboard = {
       waiting: 'Waiting for stream...',
     },
     recentSales: {
-      process: 'Process',
+      process: 'Level 3',
       result: 'Result',
       order: 'Order',
       note: 'Note',
@@ -82,7 +82,7 @@ export const dashboard = {
         security: 'Security Feedback',
         audit: 'Audit Logstream',
         equipment: 'Equipment Status',
-        process: 'Process Params',
+        process: 'Hierarchy Params',
       },
       equipment: {
         waiting: 'Waiting for equipment feedback...',
@@ -166,7 +166,7 @@ export const dashboard = {
       view: {
         timeline: 'Factory Production Timeline',
         today: 'Today',
-        moreNodes: 'More Segments',
+        moreNodes: 'More Hierarchy Nodes',
         days: {
           sun: 'Sun',
           mon: 'Mon',

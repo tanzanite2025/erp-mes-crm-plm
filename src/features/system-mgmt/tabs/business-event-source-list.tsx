@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Loader2 } from 'lucide-react'
+import { useHierarchyLevelLabels } from '@/features/production-shared/tabs/hierarchy-config/hooks/use-hierarchy-level-labels'
 import { createLogger } from '@/lib/logger'
 import { isForbiddenError } from '@/lib/error-status'
 import { ForbiddenState } from '@/components/forbidden-state'
@@ -26,7 +27,39 @@ import { BusinessEventSourceListHint } from './components/business-event-source-
 
 const logger = createLogger('BusinessEventSourceList')
 
+const LEGACY_LEVEL3_FIELD_LABELS = new Set(['工序', '末级层级', 'Process', 'Level 3'])
+
+function applyDynamicProcessFieldLabel<T extends { code: string; config: { fields: Array<{ key: string; label: string }> } }>(
+  source: T,
+  level3Name: string
+): T {
+  if (source.code !== 'PRODUCTION_TASK') {
+    return source
+  }
+
+  const hasLegacyProcessField = source.config.fields.some(
+    (field) => field.key === 'processName' && LEGACY_LEVEL3_FIELD_LABELS.has(field.label.trim())
+  )
+
+  if (!hasLegacyProcessField) {
+    return source
+  }
+
+  return {
+    ...source,
+    config: {
+      ...source.config,
+      fields: source.config.fields.map((field) =>
+        field.key === 'processName' && LEGACY_LEVEL3_FIELD_LABELS.has(field.label.trim())
+          ? { ...field, label: level3Name }
+          : field
+      ),
+    },
+  }
+}
+
 export function BusinessEventSourceList() {
+  const { level3Name } = useHierarchyLevelLabels()
   const {
     sources,
     isLoaded,
@@ -46,6 +79,11 @@ export function BusinessEventSourceList() {
     null
   )
   const sourceCardRefs = useRef<Record<string, HTMLDivElement | null>>({})
+
+  const displaySources = useMemo(
+    () => sources.map((source) => applyDynamicProcessFieldLabel(source, level3Name)),
+    [level3Name, sources]
+  )
 
   const selectedTemplate = useMemo(
     () =>
@@ -81,13 +119,13 @@ export function BusinessEventSourceList() {
 
   const filteredSources = useMemo(() => {
     const keyword = searchValue.trim().toLowerCase()
-    if (!keyword) return sources
-    return sources.filter((source) => {
+    if (!keyword) return displaySources
+    return displaySources.filter((source) => {
       const name = source.name.toLowerCase()
       const code = source.code.toLowerCase()
       return name.includes(keyword) || code.includes(keyword)
     })
-  }, [searchValue, sources])
+  }, [displaySources, searchValue])
 
   const allVisibleExpanded =
     filteredSources.length > 0 &&
@@ -96,7 +134,10 @@ export function BusinessEventSourceList() {
   const importSelectedTemplate = async () => {
     if (!selectedTemplate) return
     const saved = await addSource(
-      createEventSourceFromTemplate(selectedTemplate, sources)
+      createEventSourceFromTemplate(
+        applyDynamicProcessFieldLabel(selectedTemplate, level3Name),
+        sources
+      )
     )
     if (saved) {
       setExpandedSourceIds((prev) =>

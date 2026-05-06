@@ -10,19 +10,29 @@ import {
 import { Input } from '@/components/ui/input'
 import { useLanguage } from '@/context/language-provider'
 import type { Segment } from '../../types'
+import type { HierarchyLevelOptionItem } from '../../../hierarchy-config/data/hierarchy-config'
+import { HierarchyOptionDropdownButton } from '../../../hierarchy-config/components/hierarchy-option-dropdown-button'
 import { JobNode } from './job-node'
 
 interface SegmentNodeProps {
   segment: Segment
+  level1Name: string
+  level2Name: string
+  level3Name: string
+  level2Options: HierarchyLevelOptionItem[]
   onUpdateName: (segmentId: string, name: string) => void
   onRemove: (segmentId: string) => void
-  onAddJobCategory: (segmentId: string) => void
+  onAddJobCategory: (segmentId: string, option: HierarchyLevelOptionItem) => void
   onUpdateJobCategoryName: (segmentId: string, jobCategoryId: string, name: string) => void
   onRemoveJobCategory: (segmentId: string, jobCategoryId: string) => void
 }
 
 export const SegmentNode = memo(({
   segment,
+  level1Name,
+  level2Name,
+  level3Name,
+  level2Options,
   onUpdateName,
   onRemove,
   onAddJobCategory,
@@ -61,7 +71,7 @@ export const SegmentNode = memo(({
           <Layout className='size-4 text-cyan-600' />
         </div>
         <div className='flex min-w-0 flex-1 items-center gap-3'>
-          <span className='shrink-0 text-[10px] font-black tracking-[0.24em] text-cyan-700/45'>[{t('orgPersonnel.lineMgmt.topology.segment')}]</span>
+          <span className='shrink-0 text-[10px] font-black tracking-[0.24em] text-cyan-700/45'>[{level1Name}]</span>
 
           {isEditing ? (
             <div className='animate-in fade-in zoom-in-95 flex flex-1 items-center gap-2 duration-200'>
@@ -111,7 +121,7 @@ export const SegmentNode = memo(({
                 className='cursor-pointer gap-2 rounded-xl px-4 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-rose-500 focus:text-rose-600'
               >
                 <X className='size-4' />
-                {t('orgPersonnel.lineMgmt.topology.removeAuth')}
+                {t('orgPersonnel.lineMgmt.topology.removeCurrentLevel', { levelName: level1Name })}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -124,19 +134,22 @@ export const SegmentNode = memo(({
             key={jobCategory.id}
             segmentId={segment.id}
             jobCategory={jobCategory}
+            level2Name={level2Name}
+            level3Name={level3Name}
             onUpdateName={onUpdateJobCategoryName}
             onRemove={onRemoveJobCategory}
           />
         ))}
 
-        <Button
+        <HierarchyOptionDropdownButton
+          options={level2Options}
+          onSelect={(option) => onAddJobCategory(segment.id, option)}
           variant='outline'
           size='sm'
           className='h-10 gap-2 rounded-full border-dashed border-cyan-500/15 bg-cyan-500/5 text-[10px] font-black uppercase tracking-[0.24em] text-cyan-700/70 transition-all hover:bg-cyan-500/10 hover:text-cyan-800'
-          onClick={() => onAddJobCategory(segment.id)}
         >
-          <Plus className='size-4' /> {t('orgPersonnel.lineMgmt.topology.addJobCategory')}
-        </Button>
+          <Plus className='size-4' /> {t('orgPersonnel.lineMgmt.topology.addLevel', { levelName: level2Name })}
+        </HierarchyOptionDropdownButton>
       </div>
     </div>
   )

@@ -1,5 +1,6 @@
 import { createLogger } from '@/lib/logger'
 import { StorageService } from '@/features/system-mgmt/services/storage-service'
+import { offlineSyncEngine } from '@/offline-sync/engine/offline-sync-engine'
 import { OfflineStorage } from '@/offline-sync/storage/offline-storage'
 import type { OfflineConflictRecord, PendingDeltaRecord } from '@/offline-sync/types/offline-sync'
 import type { DeltaSet } from '@/lib/delta/types'
@@ -478,6 +479,7 @@ export const StocktakeOfflineAdapter = {
     const delta = await buildPendingDelta(payload, createdAt)
 
     await persistQueuedScan(delta)
+    await offlineSyncEngine.refresh()
 
     if (!isOnline()) {
       return {
@@ -489,6 +491,7 @@ export const StocktakeOfflineAdapter = {
     try {
       const ack = await StocktakeMaintenanceService.pdaSubmitScan(payload)
       await markSynced(delta)
+      await offlineSyncEngine.refresh()
       return {
         status: 'synced',
         opId: delta.opId,
@@ -497,6 +500,7 @@ export const StocktakeOfflineAdapter = {
     } catch (error) {
       if (shouldQueueOffline(error)) {
         await markQueuedWithError(delta.opId, error)
+        await offlineSyncEngine.refresh()
         logger.warn('PDA scan queued for retry', { opId: delta.opId, taskId: payload.taskId })
         return {
           status: 'queued',
@@ -505,6 +509,7 @@ export const StocktakeOfflineAdapter = {
       }
 
       await OfflineStorage.removePendingDelta(delta.opId)
+      await offlineSyncEngine.refresh()
       throw error
     }
   },
@@ -523,6 +528,7 @@ export const StocktakeOfflineAdapter = {
     const delta = await buildPatchDelta(input, createdAt)
 
     await persistQueuedPatch(delta)
+    await offlineSyncEngine.refresh()
 
     if (!isOnline()) {
       return {
@@ -544,7 +550,7 @@ export const StocktakeOfflineAdapter = {
           queueState: 'idle',
         })
       })
-
+      await offlineSyncEngine.refresh()
       return {
         status: 'synced',
         opId: delta.opId,
@@ -553,6 +559,7 @@ export const StocktakeOfflineAdapter = {
     } catch (error) {
       if (shouldQueueOffline(error)) {
         await markQueuedWithError(delta.opId, error)
+        await offlineSyncEngine.refresh()
         return {
           status: 'queued',
           opId: delta.opId,
@@ -561,6 +568,7 @@ export const StocktakeOfflineAdapter = {
 
       if (isVersionConflictError(error)) {
         await markConflict(delta, 'version_conflict', error)
+        await offlineSyncEngine.refresh()
         return {
           status: 'conflict',
           opId: delta.opId,
@@ -568,6 +576,7 @@ export const StocktakeOfflineAdapter = {
       }
 
       await markConflict(delta, 'server_reject', error)
+      await offlineSyncEngine.refresh()
       return {
         status: 'conflict',
         opId: delta.opId,
@@ -602,6 +611,7 @@ export const StocktakeOfflineAdapter = {
 
   async clearConflict(conflictId: string) {
     await OfflineStorage.removeConflict(conflictId)
+    await offlineSyncEngine.refresh()
   },
 
   async resolveConflict(conflictId: string) {
@@ -626,6 +636,8 @@ export const StocktakeOfflineAdapter = {
         queueState: hasUnresolved ? 'conflict' : hasQueued ? 'queued' : 'idle',
       })
     })
+
+    await offlineSyncEngine.refresh()
   },
 
   async retryConflictAfterRefresh(conflictId: string): Promise<StocktakeOfflineSubmitResult> {
@@ -654,6 +666,8 @@ export const StocktakeOfflineAdapter = {
       })
     })
 
+    await offlineSyncEngine.refresh()
+
     return this.submitPatchItem({
       itemId: latestItem.id,
       taskId: conflict.payload.taskId,
@@ -667,19 +681,8 @@ export const StocktakeOfflineAdapter = {
       return () => undefined
     }
 
-    const handleOnline = () => {
-      void Promise.all([flushQueuedScansInternal(), flushQueuedPatchesInternal()])
-        .catch((error) => {
-          logger.warn('Auto flush failed', error)
-        })
-        .finally(() => {
-          onSettled?.()
-        })
-    }
-
-    window.addEventListener('online', handleOnline)
-    return () => {
-      window.removeEventListener('online', handleOnline)
-    }
+    return offlineSyncEngine.subscribeAdapterCycleSettled('warehouse.stocktake', () => {
+      onSettled?.()
+    })
   },
 }

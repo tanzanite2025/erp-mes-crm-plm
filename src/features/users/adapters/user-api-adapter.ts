@@ -96,7 +96,7 @@ export function toUserPermissionsResponseContract(dto: UserPermissionsApiDTO): U
     username: dto.username,
     status: dto.status,
     employeeId: dto.employeeId,
-    permissions: (dto.permissions || []).map(toUserPermissionItemContract),
+    permissions: dto.permissions.map(toUserPermissionItemContract),
     total: dto.total,
   }
 }
@@ -106,7 +106,7 @@ export function toUserPermissionsReplaceResultContract(
 ): UserPermissionsReplaceResult {
   return {
     userId: dto.userId,
-    permissions: Array.isArray(dto.permissions) ? dto.permissions : [],
+    permissions: dto.permissions,
     changeSummary: {
       added: dto.changeSummary?.added ?? 0,
       removed: dto.changeSummary?.removed ?? 0,
@@ -121,7 +121,7 @@ export function toUserAccessSnapshotContract(dto: UserAccessSnapshotApiDTO): Use
     username: dto.username,
     employeeId: dto.employeeId,
     status: dto.status,
-    permissions: Array.isArray(dto.permissions) ? dto.permissions : [],
-    diagnostics: Array.isArray(dto.diagnostics) ? dto.diagnostics : [],
+    permissions: dto.permissions,
+    diagnostics: dto.diagnostics,
   }
 }

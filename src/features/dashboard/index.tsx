@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dialog'
 import type { ProductionSegment as Segment } from '@/features/production-shared/data/production-line'
 import { useProductionLinesQuery } from '@/features/production-shared/hooks/use-production-resources'
+import { useHierarchyLevelLabels } from '@/features/production-shared/tabs/hierarchy-config/hooks/use-hierarchy-level-labels'
 import { useLanguage } from '@/context/language-provider'
 import { useVisibleDashboardSegments } from './hooks/use-visible-dashboard-segments'
 
@@ -32,6 +33,7 @@ const OrdersProgress = lazy(() => import('./components/orders-progress').then((m
 
 export function Dashboard() {
   const { t } = useLanguage()
+  const { level1Name } = useHierarchyLevelLabels()
   const [activeTab, setActiveTab] = useState('overview')
   const [isConfigOpen, setIsConfigOpen] = useState(false)
   const [draftVisibleSegmentIds, setDraftVisibleSegmentIds] = useState<string[] | null>(null)
@@ -131,7 +133,7 @@ export function Dashboard() {
                           {t('dashboard.page.throughput.title')}
                         </CardTitle>
                         <CardDescription className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/40'>
-                          {t('dashboard.page.throughput.description')}
+                          {t('dashboard.page.throughput.description', { levelName: level1Name })}
                         </CardDescription>
                       </div>
                       <Button
@@ -144,7 +146,7 @@ export function Dashboard() {
                       </Button>
                     </CardHeader>
                     <CardContent className='p-4 md:p-6 bg-background/30'>
-                      <Overview data={chartData} />
+                      <Overview data={chartData} levelName={level1Name} />
                     </CardContent>
                   </Card>
 
@@ -188,10 +190,10 @@ export function Dashboard() {
           <div className='relative p-8 space-y-6'>
             <DialogHeader className='text-left space-y-1.5'>
               <DialogTitle className='text-lg font-black tracking-tighter italic uppercase text-slate-800'>
-                {t('dashboard.page.segmentDialog.title')}
+                {t('dashboard.page.segmentDialog.title', { levelName: level1Name })}
               </DialogTitle>
               <DialogDescription className='text-[9px] font-black uppercase tracking-widest opacity-60'>
-                {t('dashboard.page.segmentDialog.description')}
+                {t('dashboard.page.segmentDialog.description', { levelName: level1Name })}
               </DialogDescription>
             </DialogHeader>
 
@@ -229,10 +231,10 @@ export function Dashboard() {
               {segments.length === 0 && (
                 <div className='col-span-2 py-10 text-center border-2 border-dashed rounded-[32px] border-muted bg-muted/5'>
                   <p className='text-[10px] font-black text-muted-foreground uppercase tracking-widest'>
-                    {t('dashboard.page.segmentDialog.emptyTitle')}
+                    {t('dashboard.page.segmentDialog.emptyTitle', { levelName: level1Name })}
                   </p>
                   <p className='text-[9px] mt-1 text-muted-foreground/40 font-black uppercase tracking-tighter'>
-                    {t('dashboard.page.segmentDialog.emptyDescription')}
+                    {t('dashboard.page.segmentDialog.emptyDescription', { levelName: level1Name })}
                   </p>
                 </div>
               )}

@@ -12,6 +12,9 @@ import {
 import type { ProductionLine, TopologyTemplate } from '../types'
 import { useTopologyTemplates } from '../hooks/use-topology-templates'
 import { useLineTopology } from '../hooks/use-line-topology'
+import { useHierarchyLevelLabels } from '../../hierarchy-config/hooks/use-hierarchy-level-labels'
+import { useHierarchyLevelOptions } from '../../hierarchy-config/hooks/use-hierarchy-level-options'
+import { HierarchyOptionDropdownButton } from '../../hierarchy-config/components/hierarchy-option-dropdown-button'
 import { SegmentNode } from './topology/segment-node'
 import { SecurityAuthDialog } from './topology/security-auth-dialog'
 import { useLanguage } from '@/context/language-provider'
@@ -34,6 +37,8 @@ export function LineCard({ line, onEdit, onDelete, onToggleActive, onUpdate }: L
   const [pendingAction, setPendingAction] = useState<'edit' | 'delete' | 'topology' | null>(null)
   const [pendingDelta, setPendingDelta] = useState<DeltaSet | null>(null)
   const { templates, addTemplate } = useTopologyTemplates()
+  const { level1Name, level2Name, level3Name } = useHierarchyLevelLabels()
+  const { level1Options, level2Options } = useHierarchyLevelOptions()
   const authDialogTitle = pendingAction === 'edit'
     ? t('orgPersonnel.lineMgmt.auth.editTitle')
     : pendingAction === 'topology'
@@ -189,10 +194,13 @@ export function LineCard({ line, onEdit, onDelete, onToggleActive, onUpdate }: L
               {t('orgPersonnel.lineMgmt.card.hierarchy')}
             </p>
             <p className='text-[12px] font-black tracking-tight text-foreground'>
-              {t('orgPersonnel.lineMgmt.card.hierarchyStats', { 
-                segments: segmentCount,
-                jobs: jobCategoryCount,
-                processes: processCount,
+              {t('orgPersonnel.lineMgmt.card.hierarchyStatsDynamic', {
+                level1Count: segmentCount,
+                level1Name,
+                level2Count: jobCategoryCount,
+                level2Name,
+                level3Count: processCount,
+                level3Name,
               })}
             </p>
           </div>
@@ -217,6 +225,10 @@ export function LineCard({ line, onEdit, onDelete, onToggleActive, onUpdate }: L
                     <SegmentNode
                       key={segment.id}
                       segment={segment}
+                      level1Name={level1Name}
+                      level2Name={level2Name}
+                      level3Name={level3Name}
+                      level2Options={level2Options}
                       onUpdateName={handleUpdateSegment}
                       onRemove={handleRemoveSegment}
                       onAddJobCategory={handleAddJobCategory}
@@ -225,14 +237,15 @@ export function LineCard({ line, onEdit, onDelete, onToggleActive, onUpdate }: L
                     />
                 ))}
 
-                <Button
+                <HierarchyOptionDropdownButton
+                  options={level1Options}
+                  onSelect={handleAddSegment}
                   variant='outline'
                   size='sm'
                   className='h-11 w-full rounded-[20px] border-dashed border-cyan-500/20 bg-cyan-500/5 text-[10px] font-black uppercase tracking-[0.24em] text-cyan-700/70 transition-all hover:border-cyan-500/30 hover:bg-cyan-500/10 hover:text-cyan-800'
-                  onClick={() => handleAddSegment()}
                 >
-                  <Plus className='mr-2 size-4' /> {t('orgPersonnel.lineMgmt.card.defineSegment')}
-                </Button>
+                  <Plus className='mr-2 size-4' /> {t('orgPersonnel.lineMgmt.card.defineHierarchyLevel', { levelName: level1Name })}
+                </HierarchyOptionDropdownButton>
               </div>
             ) : (
               <div className='flex flex-col items-center justify-center gap-4 rounded-[24px] border border-dashed border-cyan-500/15 bg-cyan-500/5 p-8 text-center'>
@@ -241,7 +254,7 @@ export function LineCard({ line, onEdit, onDelete, onToggleActive, onUpdate }: L
                 </div>
                 <div className='space-y-1'>
                   <p className='text-sm font-black tracking-tight'>{t('orgPersonnel.lineMgmt.card.initTopology')}</p>
-                  <p className='text-xs text-muted-foreground'>{t('orgPersonnel.lineMgmt.card.emptyTopologyDesc')}</p>
+                  <p className='text-xs text-muted-foreground'>{t('orgPersonnel.lineMgmt.card.emptyTopologyDescDynamic', { levelName: level1Name })}</p>
                 </div>
                 {templates.length > 0 ? (
                   <div className='flex flex-wrap justify-center gap-2'>
@@ -258,14 +271,15 @@ export function LineCard({ line, onEdit, onDelete, onToggleActive, onUpdate }: L
                     ))}
                   </div>
                 ) : (
-                  <Button
+                  <HierarchyOptionDropdownButton
+                    options={level1Options}
+                    onSelect={handleAddSegment}
                     variant='ghost'
                     size='sm'
                     className='h-8 rounded-full text-xs font-black uppercase tracking-[0.2em] text-cyan-700 hover:bg-cyan-500/5'
-                    onClick={() => handleAddSegment()}
                   >
-                    <Plus className='mr-1.5 size-3.5' /> {t('orgPersonnel.lineMgmt.card.manualBuild')}
-                  </Button>
+                    <Plus className='mr-1.5 size-3.5' /> {t('orgPersonnel.lineMgmt.card.manualBuildHierarchyLevel', { levelName: level1Name })}
+                  </HierarchyOptionDropdownButton>
                 )}
               </div>
             )}

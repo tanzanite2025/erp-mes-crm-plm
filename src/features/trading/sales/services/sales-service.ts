@@ -5,6 +5,7 @@ import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { buildVersionedPatchMetadata } from '@/lib/version-guard'
 import { type SalesOrder, type SalesOrderFormValues } from '../../data/schema'
 import { toSalesOrderApiDTO, toSalesOrderContract } from '../adapters/sales-order-api-adapter'
+import { sanitizeSalesOrderSubmitValues } from '../../utils/sales-order-submit'
 import {
   deserializeSalesOrderApiDTO,
   type SalesOrderApiDTO,
@@ -14,8 +15,9 @@ export const SALES_ORDER_PATCH_INTENT_SAVE = 'SALES_ORDER_PATCH_SAVE'
 
 export const createSalesOrder = async (order: SalesOrderFormValues): Promise<SalesOrder> => {
   const now = new Date().toISOString()
+  const sanitizedOrder = sanitizeSalesOrderSubmitValues(order)
   const createdOrder: SalesOrder = {
-    ...order,
+    ...sanitizedOrder,
     id: '',
     createdAt: now,
     updatedAt: now,

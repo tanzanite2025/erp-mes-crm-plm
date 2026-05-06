@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { buildFlattenDelta } from '@/lib/delta/flatten-delta'
 import { type DeltaSet } from '@/lib/delta/types'
+import { useHierarchyLevelLabels } from '../../hierarchy-config/hooks/use-hierarchy-level-labels'
 
 interface LineListProps {
   lines: ProductionLine[]
@@ -19,6 +20,7 @@ interface LineListProps {
 
 export function LineList({ lines, onUpdate, onDelete }: LineListProps) {
   const { t } = useLanguage()
+  const { level1Name, level2Name } = useHierarchyLevelLabels()
   const [searchTerm, setSearchTerm] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingLine, setEditingLine] = useState<ProductionLine | null>(null)
@@ -74,20 +76,6 @@ export function LineList({ lines, onUpdate, onDelete }: LineListProps) {
 
   return (
     <div className='flex h-fit min-h-0 w-full flex-col gap-6 pb-10'>
-      <div className='flex flex-col gap-2 rounded-[28px] border border-dashed border-cyan-500/15 bg-background/90 p-5 shadow-none sm:p-6'>
-        <div className='flex items-center gap-2 text-foreground'>
-          <div className='flex size-8 items-center justify-center rounded-full border border-cyan-500/15 bg-cyan-500/5'>
-            <Factory className='size-4 text-cyan-600' />
-          </div>
-          <h3 className='text-base font-black uppercase tracking-[0.24em] text-foreground sm:text-lg'>
-            {t('orgPersonnel.lineMgmt.header.title')}
-          </h3>
-        </div>
-        <p className='text-[9px] font-black uppercase tracking-[0.26em] text-muted-foreground/45'>
-          {t('orgPersonnel.lineMgmt.header.subtitle')}
-        </p>
-      </div>
-
       <div className='flex flex-col gap-4 rounded-[28px] border border-dashed border-muted/35 bg-muted/5 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5'>
         <div className='relative w-full sm:max-w-sm'>
           <Search className='absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/40' />
@@ -117,7 +105,7 @@ export function LineList({ lines, onUpdate, onDelete }: LineListProps) {
                 {t('orgPersonnel.lineMgmt.list.emptyTitle')}
               </p>
               <p className='max-w-[320px] text-[9px] font-black uppercase tracking-[0.22em] text-muted-foreground/45'>
-                {t('orgPersonnel.lineMgmt.list.emptyDesc')}
+                {t('orgPersonnel.lineMgmt.list.emptyDescDynamic', { level1Name, level2Name })}
               </p>
             </div>
             <Button

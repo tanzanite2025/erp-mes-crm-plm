@@ -16,6 +16,7 @@ import { useGetPieceworkRates, usePieceworkRateMutations } from '../hooks/use-pi
 import type { PieceworkRate } from '../data/schema'
 import { RateActionDialog } from '../components/rate-action-dialog'
 import { cn } from '@/lib/utils'
+import { useHierarchyLevelLabels } from '@/features/production-shared/tabs/hierarchy-config/hooks/use-hierarchy-level-labels'
 
 export function PieceworkQuery() {
     const { t } = useLanguage()
@@ -24,6 +25,7 @@ export function PieceworkQuery() {
 
 export function PieceworkRules() {
     const { t } = useLanguage()
+    const { level3Name } = useHierarchyLevelLabels()
     const { data: rates = [], isLoading } = useGetPieceworkRates()
     const { saveRateMutation, patchRateMutation, deleteRateMutation } = usePieceworkRateMutations()
     
@@ -41,7 +43,7 @@ export function PieceworkRules() {
     const columns: ColumnDef<PieceworkRate>[] = [
         {
             accessorKey: 'processName',
-            header: t('piecework.rules.table.processName'),
+            header: t('piecework.rules.table.processName', { levelName: level3Name }),
             cell: ({ row }) => (
                 <div className='flex items-center gap-3'>
                     <div className='p-2 bg-emerald-500/10 rounded-lg text-emerald-600'>
@@ -143,7 +145,7 @@ export function PieceworkRules() {
             <IndustrialHeader
                 icon={Landmark}
                 title={t('piecework.rules.page.headerTitle')}
-                description={t('piecework.rules.page.headerDescription')}
+                description={t('piecework.rules.page.headerDescription', { levelName: level3Name })}
                 gradient
                 innerClassName='text-emerald-600'
                 className='border-muted-foreground/10'
@@ -162,7 +164,7 @@ export function PieceworkRules() {
                 <div className='relative w-96 group'>
                     <Search className='absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/30 group-focus-within:text-emerald-500 transition-colors' />
                     <Input 
-                        placeholder={t('piecework.rules.page.searchPlaceholder')}
+                        placeholder={t('piecework.rules.page.searchPlaceholder', { levelName: level3Name })}
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
                         className='pl-11 h-12 rounded-2xl border-none bg-background shadow-inner text-sm font-medium focus-visible:ring-emerald-500/20'

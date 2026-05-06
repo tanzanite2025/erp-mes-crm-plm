@@ -3,6 +3,7 @@ export const productionArchitecture = {
     title: 'Production Architecture',
     tabs: {
       line: 'Line Management',
+      hierarchyConfig: 'Hierarchy Config',
       topology: 'Topology Templates',
     },
   },

@@ -22,7 +22,6 @@ export const workflowCore = {
         '配置通知正文及点击后的跳转路径，支持使用 [OrderNo]、[ProductName] 等变量。',
       fields: {
         title: '内容模板名称',
-        bindType: '适用范围',
         nodeType: '关联环节',
         params: '动态参数（逗号分隔）',
         targetLink: '跳转目标链接',
@@ -30,18 +29,12 @@ export const workflowCore = {
       },
       placeholders: {
         title: '如：订单审核提醒',
-        bindType: '选择适用范围',
         nodeType: '选择关联环节',
         params: '如：OrderNo, ProductName',
         targetLink: '如：/trading/sales-orders/[OrderId]',
         content: '请在此输入通知正文内容，支持使用参数变量...',
       },
       targetLinkHint: '* 点击通知后将自动跳转至此页面。',
-    },
-    bindTypes: {
-      section: 'SECTION / 仅工段',
-      group: 'GROUP / 仅目标组激活',
-      global: 'GLOBAL / 全局通用',
     },
     nodeTypes: {
       none: '未分类',

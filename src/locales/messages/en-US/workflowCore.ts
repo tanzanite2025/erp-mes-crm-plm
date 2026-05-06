@@ -20,7 +20,6 @@ export const workflowCore = {
       description: "Configure the notification content and the jump path after clicking. Variables like [OrderNo] and [ProductName] are supported.",
       fields: {
         title: "Content Template Name",
-        bindType: "Bind Type",
         nodeType: "Node Type",
         params: "Params (Comma Separated)",
         targetLink: "Target Link",
@@ -28,18 +27,12 @@ export const workflowCore = {
       },
       placeholders: {
         title: "e.g. Order approval reminder",
-        bindType: "Select a bind scope",
         nodeType: "Select a related node",
         params: "e.g. OrderNo, ProductName",
         targetLink: "e.g. /trading/sales-orders/[OrderId]",
         content: "Enter the notification content here. Parameters are supported..."
       },
       targetLinkHint: "* Clicking the notification will automatically navigate to this page."
-    },
-    bindTypes: {
-      section: "SECTION / Section Only",
-      group: "GROUP / Active Target Group",
-      global: "GLOBAL / Available Everywhere"
     },
     nodeTypes: {
       none: "None",

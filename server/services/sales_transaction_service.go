@@ -275,6 +275,7 @@ func executeOrderUnifiedSaveTx(tx *gorm.DB, current *models.SalesOrder, input Ex
 	if len(nextOrder.Evidences) == 0 {
 		nextOrder.Evidences = encodeOrderEvidences(payload.FinalData.Evidences)
 	}
+	recalculateSalesOrderAuthorityCosts(&nextOrder)
 	if err := tx.Model(current).Updates(nextOrder).Error; err != nil {
 		return nil, err
 	}
@@ -1559,7 +1560,7 @@ func parseSalesOrderSavePayload(raw json.RawMessage) (SalesOrderSavePayload, err
 	if len(payload.Delta) == 0 {
 		return SalesOrderSavePayload{}, fmt.Errorf("%w: delta is required", ErrSalesTransactionInvalidPayload)
 	}
-	if err := validateSupportedTopLevelDeltaKeys(payload.Delta, "orderNo", "orderName", "customerName", "customerId", "type", "currency", "exchangeRateSnapshot", "paymentMethod", "paymentMethodName", "paymentTerm", "paymentTermName", "classification", "status", "statusNote", "amount", "quantity", "orderDate", "deliveryDate", "purchaseOrderNo", "barcode", "requirements", "evidences", "isDeleted", "lines"); err != nil {
+	if err := validateSupportedTopLevelDeltaKeys(payload.Delta, "orderNo", "orderName", "customerName", "customerId", "type", "currency", "exchangeRateSnapshot", "paymentMethod", "paymentMethodName", "paymentTerm", "paymentTermName", "classification", "status", "statusNote", "orderDate", "deliveryDate", "purchaseOrderNo", "barcode", "requirements", "evidences", "isDeleted", "lines"); err != nil {
 		return SalesOrderSavePayload{}, fmt.Errorf("%w: %v", ErrSalesTransactionInvalidPayload, err)
 	}
 	return payload, nil

@@ -20,9 +20,10 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
-import { TopologyTemplate } from '../../line-mgmt/types'
+import type { TopologyTemplate } from '../../line-mgmt/types'
 import { useEffect } from 'react'
 import { useLanguage } from '@/context/language-provider'
+import { useHierarchyLevelLabels } from '../../hierarchy-config/hooks/use-hierarchy-level-labels'
 
 interface TemplateDialogProps {
   open: boolean
@@ -33,6 +34,7 @@ interface TemplateDialogProps {
 
 export function TemplateDialog({ open, onOpenChange, template, onSave }: TemplateDialogProps) {
   const { t } = useLanguage()
+  const { level1Name, level2Name } = useHierarchyLevelLabels()
 
   const formSchema = z.object({
     name: z.string().min(2, t('orgPersonnel.topologyTemplateMgmt.dialog.nameRequired')),
@@ -78,7 +80,7 @@ export function TemplateDialog({ open, onOpenChange, template, onSave }: Templat
             </DialogTitle>
           </div>
           <DialogDescription className='text-[9px] font-black uppercase tracking-widest opacity-60'>
-            {t('orgPersonnel.topologyTemplateMgmt.dialog.description')}
+            {t('orgPersonnel.topologyTemplateMgmt.dialog.descriptionDynamic', { level1Name, level2Name })}
           </DialogDescription>
         </DialogHeader>
 

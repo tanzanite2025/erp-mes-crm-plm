@@ -14,6 +14,7 @@ import { Search, LayoutGrid, GitCommit } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { useLanguage } from '@/context/language-provider'
 import { useProductionLinesQuery } from '@/features/production-shared/hooks/use-production-resources'
+import { useHierarchyLevelLabels } from '@/features/production-shared/tabs/hierarchy-config/hooks/use-hierarchy-level-labels'
 
 interface ProductionSelectorProps {
   open: boolean
@@ -24,6 +25,7 @@ interface ProductionSelectorProps {
 
 export function ProductionSelector({ open, onOpenChange, selectedItems, onSave }: ProductionSelectorProps) {
   const { t } = useLanguage()
+  const { level1Name } = useHierarchyLevelLabels()
   const [searchTerm, setSearchTerm] = useState('')
   const [localSelected, setLocalSelected] = useState<string[]>(selectedItems.map(i => i.id))
   const { data: lines } = useProductionLinesQuery({ enabled: open })
@@ -72,7 +74,7 @@ export function ProductionSelector({ open, onOpenChange, selectedItems, onSave }
         <DialogHeader className='p-8 bg-muted/10 border-b border-dashed border-muted/50'>
           <DialogTitle className='text-lg font-black tracking-tighter italic uppercase'>{t('orgPersonnel.org.productionSelector.title')}</DialogTitle>
           <DialogDescription className='text-[10px] font-black uppercase tracking-widest opacity-60'>
-            {t('orgPersonnel.org.productionSelector.desc')}
+            {t('orgPersonnel.org.productionSelector.descDynamic', { levelName: level1Name })}
           </DialogDescription>
         </DialogHeader>
 

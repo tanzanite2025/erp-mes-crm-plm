@@ -37,6 +37,7 @@ function toJobCategoryContract(dto: ProductionJobCategoryApiDTO): ProductionJobC
     id: dto.id,
     segmentId: dto.segmentId || '',
     name: dto.name,
+    hierarchyOptionId: dto.hierarchyOptionId || undefined,
     description: dto.description || '',
     sortOrder: dto.sortOrder || 0,
     attributes: dto.attributes || undefined,
@@ -50,6 +51,7 @@ function toSegmentContract(dto: ProductionLineSegmentApiDTO): ProductionSegment 
   return {
     id: dto.id,
     name: dto.name,
+    hierarchyOptionId: dto.hierarchyOptionId || undefined,
     description: dto.description || '',
     sortOrder: dto.sortOrder || 0,
     attributes: dto.attributes || undefined,
@@ -100,6 +102,7 @@ function toJobCategoryApiDTO(category: ProductionJobCategory): ProductionJobCate
     id: category.id,
     segmentId: category.segmentId || '',
     name: category.name,
+    hierarchyOptionId: category.hierarchyOptionId || '',
     description: category.description || '',
     sortOrder: category.sortOrder || 0,
     attributes: category.attributes || null,
@@ -113,6 +116,7 @@ function toSegmentApiDTO(segment: ProductionSegment): ProductionLineSegmentApiDT
   return {
     id: segment.id,
     name: segment.name,
+    hierarchyOptionId: segment.hierarchyOptionId || '',
     description: segment.description || '',
     sortOrder: segment.sortOrder || 0,
     attributes: segment.attributes || null,

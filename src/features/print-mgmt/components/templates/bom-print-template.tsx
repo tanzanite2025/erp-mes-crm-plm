@@ -1,5 +1,6 @@
 import { forwardRef } from 'react'
 import { useLanguage } from '@/context/language-provider'
+import { useHierarchyLevelLabels } from '@/features/production-shared/tabs/hierarchy-config/hooks/use-hierarchy-level-labels'
 
 export interface BOMPrintItem {
   section: string
@@ -26,6 +27,7 @@ export interface BOMPrintTemplateProps {
 export const BOMPrintTemplate = forwardRef<HTMLDivElement, BOMPrintTemplateProps>(
   ({ bomNo, bomDisplayVersion, revisionNo, changeOrderNo, productName, items = [] }, ref) => {
     const { locale, t } = useLanguage()
+    const { level3Name } = useHierarchyLevelLabels()
     const today = new Intl.DateTimeFormat(locale === 'zh-CN' ? 'zh-CN' : 'en-US', {
       year: 'numeric',
       month: '2-digit',
@@ -120,7 +122,7 @@ export const BOMPrintTemplate = forwardRef<HTMLDivElement, BOMPrintTemplateProps
           <thead>
             <tr>
               <th className='font-bold' style={{ width: '8%', borderTop: 'none' }}>
-                {t('printMgmt.bomTemplate.columns.section')}
+                {level3Name}
               </th>
               <th className='font-bold' style={{ width: '12%', borderTop: 'none' }}>
                 {t('printMgmt.bomTemplate.columns.materialCode')}

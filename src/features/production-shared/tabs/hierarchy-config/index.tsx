@@ -1,0 +1,235 @@
+import { useState } from 'react'
+import { ArrowDown, ArrowUp, Layers3, Plus, RefreshCw, Save, Trash2 } from 'lucide-react'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { useHierarchyConfig } from './hooks/use-hierarchy-config'
+
+const LEVEL_DESCRIPTIONS = {
+  1: '定义最上层结构名称，用于表达当前层级体系的顶层归属。',
+  2: '定义中间层结构名称，用于承接上下层之间的分类与组织。',
+  3: '定义末级结构名称，用于表达当前体系中的执行或落地单元。',
+} as const
+
+export function HierarchyConfig() {
+  const {
+    levels,
+    optionCatalogs,
+    isDirty,
+    isLoading,
+    isSaving,
+    saveConfig,
+    resetConfig,
+    updateLevelName,
+    addLevelOption,
+    updateLevelOption,
+    toggleLevelOptionEnabled,
+    moveLevelOption,
+    removeLevelOption,
+  } = useHierarchyConfig()
+  const [draftOptions, setDraftOptions] = useState<Record<number, { name: string }>>({})
+
+  if (isLoading) {
+    return <div className='px-1 py-10 text-center text-sm text-muted-foreground animate-pulse'>正在加载层级配置...</div>
+  }
+
+  return (
+    <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+      <IndustrialHeader
+        icon={Layers3}
+        title='层级配置'
+        description='Hierarchy Naming / 独立定义生产架构的三级命名方式'
+        statusBadge={
+          <div className='flex flex-wrap items-center gap-2'>
+            <Button
+              type='button'
+              variant='outline'
+              className='h-11 rounded-full border-dashed text-[10px] font-black uppercase tracking-widest'
+              onClick={() => void resetConfig()}
+              disabled={isSaving}
+            >
+              <RefreshCw className='mr-2 size-4' /> 恢复默认
+            </Button>
+            <Button
+              type='button'
+              className='h-11 rounded-full text-[10px] font-black uppercase tracking-widest'
+              onClick={() => void saveConfig()}
+              disabled={isSaving || !isDirty}
+            >
+              <Save className='mr-2 size-4' /> 保存配置
+            </Button>
+          </div>
+        }
+      />
+
+      <div className='px-1'>
+        <p className='max-w-3xl text-[11px] leading-relaxed text-muted-foreground/75'>此页面用于统一维护生产架构的层级命名。当前版本已开始驱动现有产线管理中的一级与二级层级名称，但尚未全面接入模板、APS 与底层模型。</p>
+      </div>
+
+      <div className='grid gap-4 xl:grid-cols-3 xl:items-start'>
+        {levels.map((level) => {
+          const levelOptions = optionCatalogs.find((catalog) => catalog.level === level.level)?.items || []
+          const draftOption = draftOptions[level.level] || { name: '' }
+
+          return (
+            <Card key={level.id} className='rounded-[24px] border border-dashed border-muted/40 bg-background/90 shadow-none'>
+              <CardHeader className='space-y-1.5 p-3.5 pb-2.5'>
+                <div className='flex items-start gap-2.5'>
+                  <div className='flex size-10 shrink-0 items-center justify-center rounded-full border border-dashed border-primary/15 bg-primary/5 text-primary'>
+                    <span className='text-[10px] font-black uppercase tracking-widest'>L{level.level}</span>
+                  </div>
+                  <div className='space-y-1'>
+                    <CardTitle className='text-sm font-black italic tracking-tighter text-foreground'>第 {level.level} 层名称</CardTitle>
+                    <p className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>{LEVEL_DESCRIPTIONS[level.level as keyof typeof LEVEL_DESCRIPTIONS]}</p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className='flex flex-col gap-2.5 px-3.5 pb-3.5 pt-0'>
+                <div className='space-y-1.5'>
+                  <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>层级名称</p>
+                  <Input
+                    value={level.name}
+                    onChange={(event) => updateLevelName(level.level, event.target.value)}
+                    placeholder={`请输入第 ${level.level} 层名称`}
+                    className='h-11 rounded-2xl border-none bg-muted/50 px-4 text-sm font-black tracking-tight'
+                  />
+                </div>
+
+                <div className='space-y-1.5 rounded-[20px] border border-dashed border-muted/40 bg-muted/10 p-2.5'>
+                  <div className='space-y-1'>
+                    <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>候选项池</p>
+                    <p className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/45'>用于产线与模板新增时下拉选择该层级名称</p>
+                  </div>
+
+                  <div className='grid gap-1.5 md:grid-cols-[minmax(0,1fr)_auto] xl:grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_auto]'>
+                    <Input
+                      value={draftOption.name}
+                      onChange={(event) => setDraftOptions((current) => ({
+                        ...current,
+                        [level.level]: {
+                          ...draftOption,
+                          name: event.target.value,
+                        },
+                      }))}
+                      placeholder={`新增第 ${level.level} 层候选项名称`}
+                      className='h-10 rounded-2xl border-none bg-background/80 px-4 text-sm font-bold tracking-tight'
+                    />
+                    <Button
+                      type='button'
+                      variant='outline'
+                      className='h-11 rounded-full border-dashed px-5 text-[10px] font-black uppercase tracking-widest'
+                      onClick={() => {
+                        const added = addLevelOption(level.level, draftOption.name, '')
+                        if (added) {
+                          setDraftOptions((current) => ({
+                            ...current,
+                            [level.level]: { name: '' },
+                          }))
+                        }
+                      }}
+                    >
+                      <Plus className='mr-2 size-4' /> 添加候选项
+                    </Button>
+                  </div>
+
+                  {levelOptions.length ? (
+                    <div className='space-y-1.5'>
+                      {levelOptions.map((item, index) => (
+                        <div
+                          key={item.id}
+                          className='grid gap-1.5 rounded-[20px] border border-dashed border-primary/20 bg-background/85 p-2 md:grid-cols-[minmax(0,1fr)_auto] xl:grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_auto]'
+                        >
+                          <Input
+                            value={item.name}
+                            onChange={(event) => updateLevelOption(level.level, item.id, { name: event.target.value })}
+                            className='h-10 rounded-2xl border-none bg-muted/40 px-4 text-sm font-black tracking-tight'
+                          />
+                          <div className='flex flex-wrap items-center justify-end gap-2'>
+                            <Button
+                              type='button'
+                              variant='outline'
+                              size='sm'
+                              className='h-9 rounded-full border-dashed px-3 text-[10px] font-black uppercase tracking-widest'
+                              onClick={() => toggleLevelOptionEnabled(level.level, item.id)}
+                            >
+                              {item.enabled ? '启用中' : '已禁用'}
+                            </Button>
+                            <Button
+                              type='button'
+                              variant='outline'
+                              size='icon'
+                              className='size-9 rounded-full border-dashed'
+                              onClick={() => moveLevelOption(level.level, item.id, 'up')}
+                              disabled={index === 0}
+                            >
+                              <ArrowUp className='size-4' />
+                            </Button>
+                            <Button
+                              type='button'
+                              variant='outline'
+                              size='icon'
+                              className='size-9 rounded-full border-dashed'
+                              onClick={() => moveLevelOption(level.level, item.id, 'down')}
+                              disabled={index === levelOptions.length - 1}
+                            >
+                              <ArrowDown className='size-4' />
+                            </Button>
+                            <Button
+                              type='button'
+                              variant='ghost'
+                              size='icon'
+                              className='size-9 rounded-full text-rose-500 hover:bg-rose-500/10 hover:text-rose-600'
+                              onClick={() => removeLevelOption(level.level, item.id)}
+                            >
+                              <Trash2 className='size-4' />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className='rounded-2xl border border-dashed border-muted/30 bg-background/70 px-3.5 py-2.5 text-[10px] font-bold text-muted-foreground/60'>
+                      当前还没有候选项，保存后可供产线与模板新增时下拉选择。
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )
+        })}
+      </div>
+
+      <Card className='rounded-[24px] border border-dashed border-muted/40 bg-background/90 shadow-none'>
+        <CardHeader className='space-y-1.5 p-3.5 pb-2.5'>
+          <CardTitle className='text-sm font-black italic tracking-tighter text-foreground'>命名预览</CardTitle>
+          <p className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>Preview / 预览当前三级结构命名方式</p>
+        </CardHeader>
+        <CardContent className='grid gap-3 px-3.5 pb-3.5 pt-0 xl:grid-cols-[minmax(0,1fr)_minmax(280px,0.95fr)]'>
+          <div className='space-y-1.5 rounded-[20px] border border-dashed border-muted/40 bg-muted/10 p-2.5'>
+            {levels.map((level, index) => (
+              <div key={level.id} className='flex items-center gap-3'>
+                <span className='inline-flex h-5 rounded-full border border-dashed border-primary/20 bg-primary/5 px-2 text-[8px] font-mono leading-5 text-primary'>LEVEL {level.level}</span>
+                <span className='text-sm font-black tracking-tight text-foreground'>{level.name.trim() || `第 ${level.level} 层`}</span>
+                {index < levels.length - 1 ? <span className='text-muted-foreground/35'>/</span> : null}
+              </div>
+            ))}
+          </div>
+
+          <div className='grid content-start gap-3'>
+            <div className='space-y-1.5'>
+              <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>配置说明</p>
+              <div className='rounded-[20px] border border-dashed border-muted/30 bg-muted/30 px-3.5 py-2.5 text-[11px] leading-relaxed text-muted-foreground/80'>
+                当前配置已开始承载层级名称与候选项池。一级、二级新增入口已开始从候选项池中下拉选择，现阶段仍不改底层固定三层数据结构。
+              </div>
+            </div>
+
+            <div className='rounded-[20px] border border-dashed border-amber-300/70 bg-amber-500/10 px-3.5 py-2.5 text-[10px] leading-relaxed text-amber-700'>
+              当前版本仍未接入 APS；候选项池会先驱动一级、二级新增入口，第三级先仅保留在配置层，后续再评估是否接入更下游的结构链路。
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}

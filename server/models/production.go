@@ -29,23 +29,25 @@ type ProductionLine struct {
 // LineSegment defines a segment within a production line.
 type LineSegment struct {
 	BaseModel
-	LineID        string          `gorm:"type:uuid;index;not null" json:"lineId"`
-	Name          string          `gorm:"size:255;not null" json:"name"`
-	Description   string          `gorm:"type:text" json:"description"`
-	SortOrder     int             `gorm:"default:0" json:"sortOrder"`
-	Attributes    json.RawMessage `gorm:"type:jsonb" json:"attributes"`
-	JobCategories []JobCategory   `gorm:"foreignKey:SegmentID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"jobCategories"`
+	LineID            string          `gorm:"type:uuid;index;not null" json:"lineId"`
+	Name              string          `gorm:"size:255;not null" json:"name"`
+	HierarchyOptionID string          `gorm:"size:64;index" json:"hierarchyOptionId"`
+	Description       string          `gorm:"type:text" json:"description"`
+	SortOrder         int             `gorm:"default:0" json:"sortOrder"`
+	Attributes        json.RawMessage `gorm:"type:jsonb" json:"attributes"`
+	JobCategories     []JobCategory   `gorm:"foreignKey:SegmentID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"jobCategories"`
 }
 
 // JobCategory is now the terminal capability node in the production topology.
 type JobCategory struct {
 	BaseModel
-	SegmentID   string          `gorm:"type:uuid;index;not null" json:"segmentId"`
-	Name        string          `gorm:"size:255;not null" json:"name"`
-	Description string          `gorm:"type:text" json:"description"`
-	SortOrder   int             `gorm:"default:0" json:"sortOrder"`
-	Attributes  json.RawMessage `gorm:"type:jsonb" json:"attributes"`
-	Processes   []ProcessStep   `gorm:"many2many:job_category_process_mappings;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"processes"`
+	SegmentID         string          `gorm:"type:uuid;index;not null" json:"segmentId"`
+	Name              string          `gorm:"size:255;not null" json:"name"`
+	HierarchyOptionID string          `gorm:"size:64;index" json:"hierarchyOptionId"`
+	Description       string          `gorm:"type:text" json:"description"`
+	SortOrder         int             `gorm:"default:0" json:"sortOrder"`
+	Attributes        json.RawMessage `gorm:"type:jsonb" json:"attributes"`
+	Processes         []ProcessStep   `gorm:"many2many:job_category_process_mappings;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"processes"`
 }
 
 // Organization supports a tree-based org hierarchy.

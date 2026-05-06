@@ -21,7 +21,11 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import type { JobCategory, TopologyTemplate } from '../../line-mgmt/types'
+import type { HierarchyLevelOptionItem } from '../../hierarchy-config/data/hierarchy-config'
 import { useLanguage } from '@/context/language-provider'
+import { useHierarchyLevelLabels } from '../../hierarchy-config/hooks/use-hierarchy-level-labels'
+import { useHierarchyLevelOptions } from '../../hierarchy-config/hooks/use-hierarchy-level-options'
+import { HierarchyOptionDropdownButton } from '../../hierarchy-config/components/hierarchy-option-dropdown-button'
 
 interface TemplateCardProps {
   template: TopologyTemplate
@@ -33,17 +37,30 @@ interface TemplateCardProps {
 export function TemplateCard({ template, onEdit, onDelete, onUpdate }: TemplateCardProps) {
   const { t } = useLanguage()
   const [isExpanded, setIsExpanded] = useState(false)
+  const { level1Name, level2Name, level3Name } = useHierarchyLevelLabels()
+  const { level1Options, level2Options } = useHierarchyLevelOptions()
 
-  const handleAddSegment = () => {
+  const handleAddSegment = (option: HierarchyLevelOptionItem) => {
+    const nextName = option.name.trim()
+    if (nextName === '') {
+      return
+    }
+
     const newSegment = {
       id: crypto.randomUUID(),
-      name: t('orgPersonnel.topologyTemplateMgmt.card.defaultSegment', { index: template.segments?.length + 1 || 1 }),
+      name: nextName,
+      hierarchyOptionId: option.id,
       jobCategories: [],
     }
     onUpdate({ ...template, segments: [...(template.segments || []), newSegment] })
   }
 
-  const handleAddJobCategory = (segmentId: string) => {
+  const handleAddJobCategory = (segmentId: string, option: HierarchyLevelOptionItem) => {
+    const nextName = option.name.trim()
+    if (nextName === '') {
+      return
+    }
+
     const updatedSegments = (template.segments || []).map((segment) => {
       if (segment.id !== segmentId) {
         return segment
@@ -53,7 +70,8 @@ export function TemplateCard({ template, onEdit, onDelete, onUpdate }: TemplateC
       const nextJobCategory: JobCategory = {
         id: crypto.randomUUID(),
         segmentId,
-        name: t('orgPersonnel.topologyTemplateMgmt.card.defaultJobCategory', { index: jobCategories.length + 1 }),
+        name: nextName,
+        hierarchyOptionId: option.id,
         sortOrder: jobCategories.length,
         processes: [],
       }
@@ -88,7 +106,7 @@ export function TemplateCard({ template, onEdit, onDelete, onUpdate }: TemplateC
 
   const handleUpdateSegment = (segmentId: string, name: string) => {
     const updatedSegments = (template.segments || []).map((segment) =>
-      segment.id === segmentId ? { ...segment, name } : segment
+      segment.id === segmentId ? { ...segment, name, hierarchyOptionId: undefined } : segment
     )
     onUpdate({ ...template, segments: updatedSegments })
   }
@@ -102,7 +120,7 @@ export function TemplateCard({ template, onEdit, onDelete, onUpdate }: TemplateC
       return {
         ...segment,
         jobCategories: (segment.jobCategories || []).map((jobCategory) =>
-          jobCategory.id === jobCategoryId ? { ...jobCategory, name } : jobCategory
+          jobCategory.id === jobCategoryId ? { ...jobCategory, name, hierarchyOptionId: undefined } : jobCategory
         ),
       }
     })
@@ -159,7 +177,7 @@ export function TemplateCard({ template, onEdit, onDelete, onUpdate }: TemplateC
                 <div className='flex w-full items-center gap-3 pl-2 text-lg font-black uppercase tracking-tighter text-slate-900'>
                   <Layout className='size-5 shrink-0 text-orange-600' />
                   <div className='flex min-w-0 flex-1 items-center gap-3'>
-                    <span className='shrink-0 text-[10px] font-bold tracking-[0.2em] text-orange-600/30'>[{t('orgPersonnel.topologyTemplateMgmt.card.segment')}]</span>
+                    <span className='shrink-0 text-[10px] font-bold tracking-[0.2em] text-orange-600/30'>[{level1Name}]</span>
                     <Input
                       value={segment.name}
                       onChange={(event) => handleUpdateSegment(segment.id, event.target.value)}
@@ -178,10 +196,10 @@ export function TemplateCard({ template, onEdit, onDelete, onUpdate }: TemplateC
                       <AlertDialogContent className='rounded-[32px] border-none bg-white/95 shadow-2xl backdrop-blur-xl'>
                         <AlertDialogHeader>
                           <AlertDialogTitle className='text-lg font-black tracking-tighter text-slate-900'>
-                            {t('orgPersonnel.topologyTemplateMgmt.card.deleteSegmentTitle')}
+                            {t('orgPersonnel.topologyTemplateMgmt.card.deleteStandardLevelTitle', { levelName: level1Name })}
                           </AlertDialogTitle>
                           <AlertDialogDescription className='px-1 text-[11px] font-medium uppercase tracking-wider leading-relaxed text-slate-500'>
-                            {t('orgPersonnel.topologyTemplateMgmt.card.deleteSegmentDesc', { name: segment.name })}
+                            {t('orgPersonnel.topologyTemplateMgmt.card.deleteStandardLevelDesc', { levelName: level1Name, name: segment.name })}
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter className='gap-2'>
@@ -204,7 +222,7 @@ export function TemplateCard({ template, onEdit, onDelete, onUpdate }: TemplateC
                   {(segment.jobCategories || []).map((jobCategory) => (
                     <div key={jobCategory.id} className='group/job-category relative flex w-full flex-col gap-3 rounded-[24px] border border-muted/30 bg-background/80 p-3 shadow-sm backdrop-blur-sm transition-all hover:border-orange-400/20 hover:shadow-md'>
                       <div className='flex items-center gap-2 text-sm font-black uppercase tracking-tighter text-slate-800'>
-                        <span className='shrink-0 pl-1 text-[9px] font-bold tracking-widest text-orange-600/40'>[{t('orgPersonnel.topologyTemplateMgmt.card.jobCategory')}]</span>
+                        <span className='shrink-0 pl-1 text-[9px] font-bold tracking-widest text-orange-600/40'>[{level2Name}]</span>
                         <Input
                           value={jobCategory.name}
                           onChange={(event) => handleUpdateJobCategory(segment.id, jobCategory.id, event.target.value)}
@@ -222,10 +240,10 @@ export function TemplateCard({ template, onEdit, onDelete, onUpdate }: TemplateC
                           <AlertDialogContent className='rounded-[32px] border-none bg-white/95 shadow-2xl backdrop-blur-xl'>
                             <AlertDialogHeader>
                               <AlertDialogTitle className='text-lg font-black tracking-tighter text-slate-900'>
-                                {t('orgPersonnel.topologyTemplateMgmt.card.deleteJobCategoryTitle')}
+                                {t('orgPersonnel.topologyTemplateMgmt.card.deleteStandardLevelTitle', { levelName: level2Name })}
                               </AlertDialogTitle>
                               <AlertDialogDescription className='px-1 text-[11px] font-medium uppercase tracking-wider leading-relaxed text-slate-500'>
-                                {t('orgPersonnel.topologyTemplateMgmt.card.deleteJobCategoryDesc', { name: jobCategory.name })}
+                                {t('orgPersonnel.topologyTemplateMgmt.card.deleteStandardLevelDesc', { levelName: level2Name, name: jobCategory.name })}
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter className='gap-2'>
@@ -246,7 +264,7 @@ export function TemplateCard({ template, onEdit, onDelete, onUpdate }: TemplateC
                       <div className='flex flex-col gap-3 pl-2'>
                         {(jobCategory.processes || []).length === 0 ? (
                           <p className='text-[10px] italic text-muted-foreground/45'>
-                            {t('orgPersonnel.lineMgmt.editor.noProcesses')}
+                            {t('orgPersonnel.lineMgmt.editor.noLevelsConfigured', { levelName: level3Name })}
                           </p>
                         ) : (
                           (jobCategory.processes || []).map((process) => (
@@ -262,26 +280,28 @@ export function TemplateCard({ template, onEdit, onDelete, onUpdate }: TemplateC
                     </div>
                   ))}
 
-                  <Button
+                  <HierarchyOptionDropdownButton
+                    options={level2Options}
+                    onSelect={(option) => handleAddJobCategory(segment.id, option)}
                     variant='ghost'
                     size='sm'
                     className='h-9 gap-2 rounded-[24px] border border-dashed border-orange-200 bg-white/30 text-[10px] font-black uppercase tracking-[0.2em] text-orange-600/50 shadow-sm transition-all hover:bg-white hover:text-orange-600 active:scale-95'
-                    onClick={() => handleAddJobCategory(segment.id)}
                   >
-                    <Plus className='size-3.5' /> {t('orgPersonnel.topologyTemplateMgmt.card.addJobCategory')}
-                  </Button>
+                    <Plus className='size-3.5' /> {t('orgPersonnel.topologyTemplateMgmt.card.addStandardLevel', { levelName: level2Name })}
+                  </HierarchyOptionDropdownButton>
                 </div>
               </div>
             ))}
 
-            <Button
+            <HierarchyOptionDropdownButton
+              options={level1Options}
+              onSelect={handleAddSegment}
               variant='outline'
               size='sm'
               className='mt-2 h-11 w-full rounded-[28px] border-dashed border-slate-300 text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 shadow-sm transition-all hover:border-orange-400 hover:bg-orange-50/50 hover:text-orange-600 active:scale-95'
-              onClick={handleAddSegment}
             >
-              <Plus className='mr-2 size-4' /> {t('orgPersonnel.topologyTemplateMgmt.card.addSegment')}
-            </Button>
+              <Plus className='mr-2 size-4' /> {t('orgPersonnel.topologyTemplateMgmt.card.addStandardLevel', { levelName: level1Name })}
+            </HierarchyOptionDropdownButton>
           </div>
         )}
       </CardContent>

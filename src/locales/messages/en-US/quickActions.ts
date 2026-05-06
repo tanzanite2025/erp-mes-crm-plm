@@ -26,7 +26,7 @@ export const quickActions = {
     wheelTraceScan: {
       title: 'Wheel Trace',
       description:
-        'Open the camera to scan a wheel barcode and query the current stage and trace timeline.',
+        'Open the camera to scan a wheel barcode and query the current hierarchy anchor and trace timeline.',
     },
     warehouseInboundScan: {
       title: 'Inbound Scan',

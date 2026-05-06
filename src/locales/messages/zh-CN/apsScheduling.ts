@@ -5,7 +5,7 @@ export const apsScheduling = {
       board: 'APS看板',
       cuttingIssuance: '裁纱下达',
       engineConfig: '贪婪引擎配置',
-      process: '工序总览',
+      process: '{{levelName}}总览',
     },
   },
   board: {
@@ -28,8 +28,8 @@ export const apsScheduling = {
     refreshing: '正在刷新 APS 排产数据...',
     fallbackNotice: '若后端暂不可用，页面会回退到本地示例数据。',
     capacityNote: '负载 {{occupiedHours}} / 产能 {{availableHours}} / 窗口 {{timeWindowHours}}',
-    segmentCategoryCount: '{{count}} 个工种分组',
-    processCount: '{{count}} 道工序',
+    segmentCategoryCount: '{{count}} 个{{levelName}}分组',
+    processCount: '{{count}} 个{{levelName}}',
   },
   cuttingIssuance: {
     header: {
@@ -221,7 +221,7 @@ export const apsScheduling = {
     },
   },
   process: {
-    title: '工序总览',
-    subtitle: '这一视图现已绑定到真实的产线工序映射。',
+    title: '{{levelName}}总览',
+    subtitle: '这一视图现已绑定到真实的产线{{levelName}}映射。',
   },
 }

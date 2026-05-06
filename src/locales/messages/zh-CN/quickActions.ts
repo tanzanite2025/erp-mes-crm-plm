@@ -23,7 +23,7 @@ export const quickActions = {
     wheelTraceScan: {
       title: '车圈追溯',
       description:
-        '直接打开摄像头扫描车圈一维码，识别后立即查询当前工段和轨迹。',
+        '直接打开摄像头扫描车圈一维码，识别后立即查询当前层级锚点和轨迹。',
     },
     warehouseInboundScan: {
       title: '入库扫描',

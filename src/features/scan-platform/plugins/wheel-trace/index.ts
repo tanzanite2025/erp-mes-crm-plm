@@ -9,7 +9,7 @@ export const wheelTraceScanPlugin: ScanPluginDefinition<
 > = {
   code: 'wheel-trace',
   name: '车圈追溯',
-  description: '用于查询车圈当前工段、历史轨迹与最近处理记录的扫码插件。',
+  description: '用于查询车圈当前层级锚点、历史轨迹与最近处理记录的扫码插件。',
   entryPath: '/scan/wheel-trace',
   mode: 'view',
   permissions: {

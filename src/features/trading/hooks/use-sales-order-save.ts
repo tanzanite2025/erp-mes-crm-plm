@@ -5,6 +5,7 @@ import { type DeltaSet } from '@/lib/delta/types'
 import { type SalesOrder, type SalesOrderFormValues } from '../data/schema'
 import { useSalesOrderMutations } from '../sales'
 import { requireTradingCommandActor } from '../utils/command-actor'
+import { sanitizeSalesOrderDelta, sanitizeSalesOrderSubmitValues } from '../utils/sales-order-submit'
 
 interface UseSalesOrderSaveOptions {
   order?: SalesOrder | null
@@ -40,16 +41,17 @@ export function useSalesOrderSave({
     if (!submitValues) {
       return
     }
+    const sanitizedSubmitValues = sanitizeSalesOrderSubmitValues(submitValues)
 
     try {
       if (!order) {
-        const stampedData = auditUtils.stamp(submitValues, 'create')
+        const stampedData = auditUtils.stamp(sanitizedSubmitValues, 'create')
         const createdOrder = await createMutation.mutateAsync(stampedData)
         onSaved(createdOrder)
         return
       }
 
-      const delta = commit()
+      const delta = sanitizeSalesOrderDelta(commit(), order)
       if (Object.keys(delta).length === 0) {
         onSaved(order)
         return
@@ -62,7 +64,7 @@ export function useSalesOrderSave({
       const savedOrder = await saveMutation.mutateAsync({
         orderId: order.id,
         delta,
-        finalData: submitValues,
+        finalData: sanitizedSubmitValues,
         operator: actor.operator,
         actorId: actor.actorId,
         expectedVersion: order.version,
