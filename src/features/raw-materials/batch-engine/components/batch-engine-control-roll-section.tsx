@@ -78,7 +78,7 @@ export function BatchEngineControlRollSection(props: BatchEngineControlRollSecti
             <Package2 className='size-4' />
             {t('rawMaterials.batchEngine.sections.control.blocks.rollSpec.title')}
           </div>
-          <div className='grid gap-2'>
+          <div className='grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-4'>
             <BatchEngineControlField label={t('rawMaterials.batchEngine.sections.control.fields.rollWidth')}>
               <Input
                 value={controls.rollWidthMm}
@@ -95,25 +95,24 @@ export function BatchEngineControlRollSection(props: BatchEngineControlRollSecti
                 placeholder='--'
               />
             </BatchEngineControlField>
+            <BatchEngineControlField label={t('rawMaterials.batchEngine.sections.control.fields.knifeGap')}>
+              <Input
+                value={controls.knifeGapMm}
+                onChange={(event) => updateControl('knifeGapMm', event.target.value)}
+                className='h-8 rounded-lg bg-background text-xs font-semibold'
+                placeholder='2'
+              />
+            </BatchEngineControlField>
+            <BatchEngineControlField label={t('rawMaterials.batchEngine.sections.control.fields.edgeTrim')}>
+              <Input
+                value={controls.edgeTrimMm}
+                onChange={(event) => updateControl('edgeTrimMm', event.target.value)}
+                className='h-8 rounded-lg bg-background text-xs font-semibold'
+                placeholder='0'
+              />
+            </BatchEngineControlField>
           </div>
         </div>
-
-        <BatchEngineControlField label={t('rawMaterials.batchEngine.sections.control.fields.knifeGap')}>
-          <Input
-            value={controls.knifeGapMm}
-            onChange={(event) => updateControl('knifeGapMm', event.target.value)}
-            className='h-8 rounded-lg bg-background text-xs font-semibold'
-            placeholder='2'
-          />
-        </BatchEngineControlField>
-        <BatchEngineControlField label={t('rawMaterials.batchEngine.sections.control.fields.edgeTrim')}>
-          <Input
-            value={controls.edgeTrimMm}
-            onChange={(event) => updateControl('edgeTrimMm', event.target.value)}
-            className='h-8 rounded-lg bg-background text-xs font-semibold'
-            placeholder='0'
-          />
-        </BatchEngineControlField>
       </div>
     </div>
   )

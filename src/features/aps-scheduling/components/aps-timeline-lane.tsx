@@ -56,8 +56,8 @@ export function ApsTimelineLane({ line, jobs }: ApsTimelineLaneProps) {
   const hasConflict = loadPercent >= 85 || jobs.some((job) => job.status === 'late')
 
   return (
-    <div className='grid grid-cols-[140px_1fr] min-h-32'>
-      <div className={cn('px-4 py-4 flex flex-col justify-between border-r border-dashed bg-background/70 gap-4', hasConflict ? 'border-rose-400/40' : 'border-muted/40')}>
+    <div className='grid grid-cols-[140px_1fr] min-h-24'>
+      <div className={cn('px-4 py-3 flex flex-col justify-between border-r border-dashed bg-background/70 gap-3', hasConflict ? 'border-rose-400/40' : 'border-muted/40')}>
         <div className='flex flex-col gap-2'>
           <span className={cn('text-sm font-black tracking-tight', hasConflict && 'text-rose-700')}>{line}</span>
           <span className='text-[9px] font-black uppercase tracking-[0.24em] text-muted-foreground/45'>LINE_CAPACITY</span>
@@ -91,7 +91,7 @@ export function ApsTimelineLane({ line, jobs }: ApsTimelineLaneProps) {
 
       <div className={cn('relative grid grid-cols-6 bg-linear-to-r', hasConflict ? 'from-rose-500/5 via-orange-500/5 to-transparent' : 'from-transparent via-cyan-500/5 to-transparent')}>
         {Array.from({ length: 6 }).map((_, slotIndex) => (
-          <div key={slotIndex} className='border-l border-dashed border-muted/30 min-h-32 p-2 relative'>
+          <div key={slotIndex} className='border-l border-dashed border-muted/30 min-h-24 p-2 relative'>
             <div className='absolute top-2 right-2 text-[9px] font-black uppercase tracking-[0.22em] text-muted-foreground/20'>
               T{slotIndex + 1}
             </div>
@@ -113,7 +113,7 @@ export function ApsTimelineLane({ line, jobs }: ApsTimelineLaneProps) {
           return (
             <div
               key={job.id}
-              className={cn('absolute top-3 bottom-3 rounded-[18px] border border-dashed px-3 py-3 shadow-sm cursor-grab active:cursor-grabbing transition-transform hover:-translate-y-0.5 hover:shadow-md overflow-hidden', tone)}
+              className={cn('absolute top-2 bottom-2 rounded-[18px] border border-dashed px-3 py-2.5 shadow-sm cursor-grab active:cursor-grabbing transition-transform hover:-translate-y-0.5 hover:shadow-md overflow-hidden', tone)}
               style={{ left: `calc(${startSlot} * (100% / 6) + 8px)`, width: `calc(${width} * (100% / 6) - 16px)` }}
             >
               {isOverdue(job) ? (
@@ -130,7 +130,7 @@ export function ApsTimelineLane({ line, jobs }: ApsTimelineLaneProps) {
                   })()}
                 </div>
               ) : null}
-              <div className='flex h-full flex-col justify-between gap-2'>
+              <div className='flex h-full flex-col justify-between gap-1.5'>
                 <div className='flex items-center justify-between gap-2'>
                   <div className='flex items-center gap-2 min-w-0'>
                     <Workflow className='size-4 shrink-0 text-current/70' />

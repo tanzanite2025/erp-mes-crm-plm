@@ -15,21 +15,21 @@ import { useFilteredApsSchedulingSource } from '../hooks/use-filtered-aps-schedu
 export function ApsSchedulingBoard() {
   const { t } = useLanguage()
   const [searchTerm, setSearchTerm] = useState('')
-  const { source } = useApsSchedulingSource()
+  const { source, isFallback } = useApsSchedulingSource()
   const filteredSource = useFilteredApsSchedulingSource(source, searchTerm)
 
   const isSearchEmpty = searchTerm.trim().length > 0 && filteredSource.jobs.length === 0
 
   return (
-    <ModuleTabbedLayout title={t('apsScheduling.layout.title')} tabs={getApsSchedulingTabs(t as any)}>
-      <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-        <ApsHeaderCard source={filteredSource} />
+    <ModuleTabbedLayout title={t('apsScheduling.layout.title')} tabs={getApsSchedulingTabs(t)}>
+      <div className='flex flex-col gap-6 animate-in fade-in duration-700'>
+        <ApsHeaderCard source={filteredSource} isFallback={isFallback} />
         <ApsKpiCards source={filteredSource} />
         <ApsToolbar searchTerm={searchTerm} onSearchTermChange={setSearchTerm} source={filteredSource} />
 
         {isSearchEmpty ? (
           <Card className='rounded-[24px] border border-dashed border-muted/50 bg-background shadow-none'>
-            <CardContent className='flex flex-col items-center justify-center gap-3 py-16 text-center'>
+            <CardContent className='flex flex-col items-center justify-center gap-3 py-12 text-center'>
               <p className='text-base font-black italic tracking-tighter text-slate-800'>{t('apsScheduling.board.noResultsTitle')}</p>
               <p className='max-w-lg text-[10px] font-black uppercase tracking-widest text-muted-foreground/45'>
                 {t('apsScheduling.board.noResultsSubtitle')}
