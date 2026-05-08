@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_SALES_ORDER_EVENT_SOURCE } from './business-event-source-templates/sales-order'
 import {
+  canonicalizeBusinessStatusCode,
   deserializeBusinessEventSource,
   deserializeBusinessEventSources,
   deserializeBusinessEventSourceTemplate,
   materializeBusinessEventSourceTemplate,
+  normalizeBusinessStatusCodeInput,
   serializeBusinessEventSourceCreate,
   serializeBusinessEventSourceUpdate,
 } from './business-event-source-normalizer'
@@ -76,7 +78,7 @@ describe('business-event-source-normalizer contracts', () => {
     expect(entity.code).toBe('SALES_ORDER')
   })
 
-  it('accepts scheduling as a valid business status phase during list deserialization', () => {
+  it('accepts additional business status codes during list deserialization', () => {
     const entities = deserializeBusinessEventSources([
       {
         ...DEFAULT_SALES_ORDER_EVENT_SOURCE,
@@ -85,23 +87,17 @@ describe('business-event-source-normalizer contracts', () => {
           ...DEFAULT_SALES_ORDER_EVENT_SOURCE.config,
           statuses: [
             ...DEFAULT_SALES_ORDER_EVENT_SOURCE.config.statuses,
-            {
-              code: 'Scheduling',
-              label: '排产中',
-              phase: 'scheduling',
-              isTerminal: false,
-              defaultResolve: false,
-            },
+            { code: 'Scheduling' },
           ],
         },
       },
     ])
 
     expect(entities).toHaveLength(1)
-    expect(entities[0]?.config.statuses[entities[0].config.statuses.length - 1]?.phase).toBe('scheduling')
+    expect(entities[0]?.config.statuses[entities[0].config.statuses.length - 1]?.code).toBe('Scheduling')
   })
 
-  it('does not reject the whole event source list when an unknown phase appears', () => {
+  it('does not reject the whole event source list when an unknown status code appears', () => {
     const entities = deserializeBusinessEventSources([
       {
         ...DEFAULT_SALES_ORDER_EVENT_SOURCE,
@@ -109,19 +105,37 @@ describe('business-event-source-normalizer contracts', () => {
         config: {
           ...DEFAULT_SALES_ORDER_EVENT_SOURCE.config,
           statuses: [
-            {
-              code: 'Reviewing',
-              label: '评审中',
-              phase: 'reviewing',
-              isTerminal: false,
-              defaultResolve: false,
-            },
+            { code: 'Reviewing' },
           ],
         },
       },
     ])
 
     expect(entities).toHaveLength(1)
-    expect(entities[0]?.config.statuses[0]?.phase).toBe('reviewing')
+    expect(entities[0]?.config.statuses[0]?.code).toBe('Reviewing')
+  })
+
+  it('normalizes raw status input separators before persistence', () => {
+    expect(normalizeBusinessStatusCodeInput(' in progress ')).toBe('in_progress')
+    expect(normalizeBusinessStatusCodeInput('PENDING-APPROVAL')).toBe('PENDING_APPROVAL')
+  })
+
+  it('canonicalizes known catalog statuses back to source-aware codes', () => {
+    expect(canonicalizeBusinessStatusCode('SALES_ORDER', 'draft')).toBe('Draft')
+    expect(canonicalizeBusinessStatusCode('QUALITY_STANDARD', 'pending approval')).toBe(
+      'PENDING_APPROVAL'
+    )
+  })
+
+  it('serializes custom statuses into canonical machine codes', () => {
+    const payload = serializeBusinessEventSourceUpdate({
+      ...DEFAULT_SALES_ORDER_EVENT_SOURCE,
+      config: {
+        ...DEFAULT_SALES_ORDER_EVENT_SOURCE.config,
+        statuses: [{ code: 'quality hold' }],
+      },
+    })
+
+    expect(payload.config.statuses[0]?.code).toBe('QUALITY_HOLD')
   })
 })

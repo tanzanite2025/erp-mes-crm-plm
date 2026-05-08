@@ -87,8 +87,22 @@ func GetInspectionStandardsHandler(c *gin.Context) {
 		return
 	}
 
+	standardIDs := make([]string, 0, len(standards))
+	for _, standard := range standards {
+		if strings.TrimSpace(standard.ID) == "" {
+			continue
+		}
+		standardIDs = append(standardIDs, standard.ID)
+	}
+	approvalSummaryMap, err := services.GetLatestApprovalRequestSummariesByTargetIDs(standardIDs)
+	if err != nil {
+		log.Printf("[ERROR] QualityStandards.ApprovalSummaryMap Error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取品质标准审批摘要失败: " + err.Error()})
+		return
+	}
+
 	c.JSON(http.StatusOK, InspectionStandardsListResponse{
-		Items:    mapInspectionStandardsToResponse(standards),
+		Items:    mapInspectionStandardsToResponse(standards, approvalSummaryMap),
 		Total:    total,
 		Page:     page,
 		PageSize: pageSize,
@@ -124,7 +138,14 @@ func GetInspectionStandardByIDHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, mapInspectionStandardToResponse(standard))
+	approvalSummary, err := services.GetLatestApprovalRequestSummaryByTargetID(standard.ID)
+	if err != nil {
+		log.Printf("[ERROR] QualityStandards.DetailApprovalSummary Error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取品质标准审批摘要失败: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, mapInspectionStandardToResponse(standard, approvalSummary))
 }
 
 func PatchInspectionStandardHandler(c *gin.Context) {
@@ -232,7 +253,14 @@ func PatchInspectionStandardHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, mapInspectionStandardToResponse(updated))
+	approvalSummary, summaryErr := services.GetLatestApprovalRequestSummaryByTargetID(updated.ID)
+	if summaryErr != nil {
+		log.Printf("[ERROR] QualityStandards.PatchApprovalSummary Error: %v", summaryErr)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取品质标准审批摘要失败: " + summaryErr.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, mapInspectionStandardToResponse(updated, approvalSummary))
 }
 
 // SaveInspectionStandardHandler 保存/更新检验标准 (版本受控)
@@ -248,7 +276,15 @@ func SaveInspectionStandardHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 保存品质标准失败: " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, mapInspectionStandardToResponse(standard))
+
+	approvalSummary, err := services.GetLatestApprovalRequestSummaryByTargetID(standard.ID)
+	if err != nil {
+		log.Printf("[ERROR] QualityStandards.SaveApprovalSummary Error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取品质标准审批摘要失败: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, mapInspectionStandardToResponse(standard, approvalSummary))
 }
 
 func qualityVersionMatches(current float64, expected float64) bool {

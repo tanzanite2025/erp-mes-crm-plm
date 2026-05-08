@@ -11,6 +11,7 @@ export const ENTITY_OPTIONS: ReadonlyArray<BusinessEventSource['entity']> = [
   'PRODUCT',
   'MOLD',
   'SYSTEM',
+  'QUALITY',
 ]
 
 export const ACTION_KIND_OPTIONS: BusinessEventAction['kind'][] = [

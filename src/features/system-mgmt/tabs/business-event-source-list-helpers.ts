@@ -43,35 +43,18 @@ function stripPersistenceFields(
   return toCreateInput(source)
 }
 
-export function createNewEventSource(
-  sources: BusinessEventSource[]
-): EventSourceCreateInput {
+export function createNewEventSource(): EventSourceCreateInput {
   const suffix = Date.now().toString().slice(-6)
   return {
     ...stripPersistenceFields(DEFAULT_SALES_ORDER_EVENT_SOURCE),
     code: `CUSTOM_SOURCE_${suffix}`,
-    name: `新业务事件源 ${sources.length + 1}`,
+    name: '新业务事件源',
     module: 'System',
     entity: 'SYSTEM',
     description: '为新的业务对象配置动作、状态、字段和通知变量。',
     config: {
       actions: [{ code: 'STATUS_CHANGED', name: '状态变更', kind: 'status' }],
-      statuses: [
-        {
-          code: 'Pending',
-          label: '待处理',
-          phase: 'pending',
-          isTerminal: false,
-          defaultResolve: false,
-        },
-        {
-          code: 'Done',
-          label: '已完成',
-          phase: 'done',
-          isTerminal: true,
-          defaultResolve: true,
-        },
-      ],
+      statuses: [{ code: 'Pending' }, { code: 'Done' }],
       fields: [
         {
           key: 'id',

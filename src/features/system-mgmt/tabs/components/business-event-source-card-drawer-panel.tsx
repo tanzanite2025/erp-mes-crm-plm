@@ -1,20 +1,25 @@
-import { Sheet, SheetContent } from '@/components/ui/sheet'
-import { type BusinessEventPhaseOption } from '../../workflow-core/data/business-event-phase-catalog'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { type BusinessEventSource } from '../../workflow-core/data/business-event-source-schema'
 import {
   type BusinessEventSourceItemChangeKind,
   type BusinessEventSourceRemovedItemSummary,
 } from './business-event-source-card-diff'
-import { FieldDrawer, StatusDrawer } from './business-event-source-card-drawers'
+import { type BusinessEventStatusReferenceSummary } from './business-event-source-status-references'
+import {
+  FieldEditorContent,
+  StatusEditorContent,
+} from './business-event-source-card-drawers'
 
-export type BusinessEventSourceDrawerMode = 'statuses' | 'fields' | null
+export type BusinessEventSourceEditorMode = 'statuses' | 'fields' | null
 
-interface BusinessEventSourceCardDrawerPanelProps {
-  drawerMode: BusinessEventSourceDrawerMode
+interface BusinessEventSourceEditorOverlayProps {
+  editorMode: BusinessEventSourceEditorMode
+  sourceCode: string
   statuses: BusinessEventSource['config']['statuses']
-  statusPhaseOptions: BusinessEventPhaseOption[]
   fields: BusinessEventSource['config']['fields']
   persistedStatusIds: Set<string>
+  statusReferenceMap: Map<string, BusinessEventStatusReferenceSummary>
+  statusReferencesLoaded: boolean
   persistedFieldIds: Set<string>
   statusDirty: boolean
   fieldDirty: boolean
@@ -54,12 +59,14 @@ interface BusinessEventSourceCardDrawerPanelProps {
   onUndoFields?: () => void
 }
 
-export function BusinessEventSourceCardDrawerPanel({
-  drawerMode,
+export function BusinessEventSourceEditorOverlay({
+  editorMode,
+  sourceCode,
   statuses,
-  statusPhaseOptions,
   fields,
   persistedStatusIds,
+  statusReferenceMap,
+  statusReferencesLoaded,
   persistedFieldIds,
   statusDirty,
   fieldDirty,
@@ -97,15 +104,21 @@ export function BusinessEventSourceCardDrawerPanel({
   onRestoreRemovedFieldItem,
   onSaveFields,
   onUndoFields,
-}: BusinessEventSourceCardDrawerPanelProps) {
+}: BusinessEventSourceEditorOverlayProps) {
   return (
-    <Sheet open={drawerMode !== null} onOpenChange={onOpenChange}>
-      <SheetContent className='w-full overflow-y-auto sm:max-w-4xl'>
-        {drawerMode === 'statuses' && (
-          <StatusDrawer
+    <Dialog open={editorMode !== null} onOpenChange={onOpenChange}>
+      <DialogContent
+        size='6xl'
+        className='gap-0 overflow-hidden p-0'
+        showCloseButton={false}
+      >
+        {editorMode === 'statuses' && (
+          <StatusEditorContent
             statuses={statuses}
-            phaseOptions={statusPhaseOptions}
+            sourceCode={sourceCode}
             persistedStatusIds={persistedStatusIds}
+            statusReferenceMap={statusReferenceMap}
+            statusReferencesLoaded={statusReferencesLoaded}
             onAdd={onAddStatus}
             onUpdate={onUpdateStatus}
             onMove={onMoveStatus}
@@ -127,8 +140,8 @@ export function BusinessEventSourceCardDrawerPanel({
             onClose={() => onOpenChange(false)}
           />
         )}
-        {drawerMode === 'fields' && (
-          <FieldDrawer
+        {editorMode === 'fields' && (
+          <FieldEditorContent
             fields={fields}
             persistedFieldIds={persistedFieldIds}
             onAdd={onAddField}
@@ -151,7 +164,7 @@ export function BusinessEventSourceCardDrawerPanel({
             onClose={() => onOpenChange(false)}
           />
         )}
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   )
 }

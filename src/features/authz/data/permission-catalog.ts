@@ -184,6 +184,7 @@ export const ROUTE_TO_MENU_MAPPING: Record<
   '/production-architecture': 'piecework',
   '/system-management': 'system',
   '/approval': 'approval',
+  '/message-center': 'approval',
   '/basic-settings': 'settings',
   '/sidebar-command-assignment': 'settings',
   '/sidebar-command-library': 'settings',

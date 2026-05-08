@@ -33,10 +33,16 @@ export const quality = {
       statusViewAll: 'All Standards',
       statusViewAllDescription:
         'View all quality standards under the current query conditions.',
+      statusViewDraftDescription:
+        'Only show standards that are still in draft and have not entered the approval workflow.',
+      statusViewPendingApprovalDescription:
+        'Only show standards that have been submitted and are waiting for review.',
+      statusViewApprovedDescription:
+        'Only show standards that are approved and waiting for formal release.',
+      statusViewRejectedDescription:
+        'Only show standards that were rejected and are waiting for revision before resubmission.',
       statusViewPublishedDescription:
         'Only show published standards that are formally traceable.',
-      statusViewDraftDescription:
-        'Only show standards pending review or still in draft status.',
       statusViewArchivedDescription:
         'Only show archived standards that are no longer actively edited.',
       paginationSummary: 'Showing {{start}}-{{end}} of {{total}}',
@@ -62,6 +68,10 @@ export const quality = {
       typeQuality: 'IQC',
       typeProcess: 'IPQC',
       typeFinal: 'FQC',
+      statusDraft: 'Draft',
+      statusPendingApproval: 'Pending Review',
+      statusApproved: 'Approved',
+      statusRejected: 'Rejected',
       statusPublished: 'Published',
       statusPending: 'Pending Review',
       statusArchived: 'Archived',
@@ -70,6 +80,23 @@ export const quality = {
       backToList: 'Back to Standards',
       openPreview: 'Open Preview',
       openEditor: 'Open Editor Workspace',
+      submitForApproval: 'Submit for Approval',
+      approve: 'Approve',
+      approveDescription:
+        'Add the review comment for this approval. Leave it blank if no extra note is needed.',
+      reject: 'Reject',
+      rejectDescription:
+        'Please provide the rejection reason so the owner can revise the standard before resubmission.',
+      publish: 'Publish',
+      archive: 'Archive',
+      archiveDescription:
+        'Please provide the archive reason. After archiving, the standard remains available only for traceability and audit.',
+      reviewCommentLabel: 'Review Comment',
+      reviewCommentPlaceholder: 'Add the approval note for this review (optional)...',
+      rejectReasonLabel: 'Rejection Reason',
+      rejectReasonPlaceholder: 'Please enter the rejection reason...',
+      archiveReasonLabel: 'Archive Reason',
+      archiveReasonPlaceholder: 'Please enter the archive reason...',
       phaseTag: 'Phase A Page Shell',
       currentStandardId: 'Current Standard ID',
       editorCreateTitle: 'Create Quality Standard Workspace',
@@ -84,6 +111,10 @@ export const quality = {
       editorFormDescription:
         'This phase migrates the standard code, name, type, status, and remarks into the standalone editor. Deep matrix editing will follow in later phases.',
       editorDirty: 'Unsaved Changes',
+      approvalControlledHint:
+        'Status is controlled by the approval flow. Save the current edits first, then use Submit for Approval to enter the pending review stage.',
+      readOnlyHint:
+        'This standard is already under controlled status. The editor remains view-only and no direct changes are allowed here.',
       backToPreview: 'Back to Preview',
       editorLoadFailedTitle: 'Failed to Load Standard Editor',
       editorLoadFailedDescription:
@@ -138,6 +169,43 @@ export const quality = {
         cancel: 'Discard',
         save: 'Save and Upgrade Version',
       },
+      controlledProtocol: {
+        titleCreate: 'Add Controlled Protocol',
+        titleEdit: 'Edit Controlled Protocol',
+        titleView: 'View Controlled Protocol',
+        description:
+          'Bind the protocol to a product and level-3 production architecture items first, then fill the target weight for each selected item.',
+        fields: {
+          product: 'Product',
+          level3: 'Level-3 Item',
+          selectedWeights: 'Selected Items & Weights',
+          weight: 'Weight',
+        },
+        placeholders: {
+          product: 'Select product',
+          level3: 'Select a level-3 item',
+          weight: 'Enter weight',
+        },
+        actions: {
+          addSelection: 'Add Item',
+          removeSelection: 'Remove',
+          cancel: 'Cancel',
+          submit: 'Confirm',
+          close: 'Close',
+        },
+        empty: {
+          stages:
+            'No level-3 production architecture data is available yet. Please complete the production architecture setup first.',
+          selections:
+            'No level-3 items have been added yet. Please select one from the dropdown above first.',
+        },
+        validation: {
+          productRequired: 'Please select a product first.',
+          selectionRequired: 'Please add at least one level-3 item.',
+          weightRequired: 'Please fill in the weight for every selected level-3 item.',
+        },
+        toastDraftReady: 'Controlled protocol draft captured with {{count}} items.',
+      },
       detail: {
         title: 'Standard Details',
         subtitle: 'Quality Standard Details',
@@ -153,6 +221,13 @@ export const quality = {
           operateTime: 'Updated At',
           auditor: 'Reviewer',
           auditTime: 'Reviewed At',
+          reviewComment: 'Review Comment',
+          rejectReason: 'Rejection Reason',
+          publishedBy: 'Published By',
+          publishedAt: 'Published At',
+          archivedBy: 'Archived By',
+          archivedAt: 'Archived At',
+          archiveReason: 'Archive Reason',
         },
         table: {
           item: 'Inspection Item',
@@ -265,5 +340,13 @@ export const quality = {
   },
   hooks: {
     saveStandardSuccess: 'Quality standard synced successfully',
+    submitForApprovalSuccess:
+      'Quality standard submitted for approval and moved into pending review.',
+    approveStandardSuccess:
+      'Quality standard approved and moved into the pending release stage.',
+    rejectStandardSuccess:
+      'Quality standard rejected and returned for revision.',
+    publishStandardSuccess: 'Quality standard published successfully.',
+    archiveStandardSuccess: 'Quality standard archived successfully.',
   },
 } as const

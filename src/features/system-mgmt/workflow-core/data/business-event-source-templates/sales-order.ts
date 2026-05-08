@@ -14,41 +14,11 @@ export const DEFAULT_SALES_ORDER_EVENT_SOURCE: BusinessEventSourceTemplate = {
       { code: 'UPDATED', name: '更新', kind: 'updated' },
     ],
     statuses: [
-      {
-        code: 'Draft',
-        label: '草稿',
-        phase: 'draft',
-        isTerminal: false,
-        defaultResolve: false,
-      },
-      {
-        code: 'Pending',
-        label: '待处理',
-        phase: 'pending',
-        isTerminal: false,
-        defaultResolve: false,
-      },
-      {
-        code: 'InProgress',
-        label: '正式下达',
-        phase: 'active',
-        isTerminal: false,
-        defaultResolve: false,
-      },
-      {
-        code: 'Done',
-        label: '已完成',
-        phase: 'done',
-        isTerminal: true,
-        defaultResolve: true,
-      },
-      {
-        code: 'Canceled',
-        label: '已作废',
-        phase: 'cancelled',
-        isTerminal: true,
-        defaultResolve: true,
-      },
+      { code: 'Draft' },
+      { code: 'Pending' },
+      { code: 'InProgress' },
+      { code: 'Done' },
+      { code: 'Canceled' },
     ],
     fields: [
       {

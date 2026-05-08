@@ -3,34 +3,6 @@ import { type BusinessEventSourceTemplate } from './business-event-source-types'
 import { productionPlanStatuses } from './production-plan-status'
 import { productionTaskStatuses } from './production-task-status'
 
-const productionPlanStatusLabels = {
-  SCHEDULED: '已排产',
-  IN_PROGRESS: '生产中',
-  COMPLETED: '计划完成',
-  CANCELED: '已取消',
-} as const
-
-const productionPlanStatusPhases = {
-  SCHEDULED: 'active',
-  IN_PROGRESS: 'active',
-  COMPLETED: 'done',
-  CANCELED: 'cancelled',
-} as const
-
-const productionTaskStatusLabels = {
-  PENDING: '待执行',
-  RUNNING: '执行中',
-  HOLD: '已挂起',
-  DONE: '已完工',
-} as const
-
-const productionTaskStatusPhases = {
-  PENDING: 'pending',
-  RUNNING: 'active',
-  HOLD: 'custom',
-  DONE: 'done',
-} as const
-
 export const BUSINESS_EVENT_SOURCE_TEMPLATES: BusinessEventSourceTemplate[] = [
   DEFAULT_SALES_ORDER_EVENT_SOURCE,
   {
@@ -47,41 +19,11 @@ export const BUSINESS_EVENT_SOURCE_TEMPLATES: BusinessEventSourceTemplate[] = [
         { code: 'RECEIVED', name: '收货完成', kind: 'status' },
       ],
       statuses: [
-        {
-          code: 'Draft',
-          label: '草稿',
-          phase: 'draft',
-          isTerminal: false,
-          defaultResolve: false,
-        },
-        {
-          code: 'Sent',
-          label: '已下达',
-          phase: 'active',
-          isTerminal: false,
-          defaultResolve: false,
-        },
-        {
-          code: 'Awaiting',
-          label: '待收货',
-          phase: 'pending',
-          isTerminal: false,
-          defaultResolve: false,
-        },
-        {
-          code: 'Received',
-          label: '已收货',
-          phase: 'done',
-          isTerminal: true,
-          defaultResolve: true,
-        },
-        {
-          code: 'Canceled',
-          label: '已作废',
-          phase: 'cancelled',
-          isTerminal: true,
-          defaultResolve: true,
-        },
+        { code: 'Draft' },
+        { code: 'Sent' },
+        { code: 'Awaiting' },
+        { code: 'Received' },
+        { code: 'Canceled' },
       ],
       fields: [
         {
@@ -153,55 +95,13 @@ export const BUSINESS_EVENT_SOURCE_TEMPLATES: BusinessEventSourceTemplate[] = [
         { code: 'EXCEPTION', name: '异常', kind: 'custom' },
       ],
       statuses: [
-        {
-          code: 'Draft',
-          label: '草稿',
-          phase: 'draft',
-          isTerminal: false,
-          defaultResolve: false,
-        },
-        {
-          code: 'Dispatched',
-          label: '已派车',
-          phase: 'active',
-          isTerminal: false,
-          defaultResolve: false,
-        },
-        {
-          code: 'Loaded',
-          label: '已装车',
-          phase: 'active',
-          isTerminal: false,
-          defaultResolve: false,
-        },
-        {
-          code: 'InTransit',
-          label: '运输中',
-          phase: 'active',
-          isTerminal: false,
-          defaultResolve: false,
-        },
-        {
-          code: 'Signed',
-          label: '已签收',
-          phase: 'done',
-          isTerminal: true,
-          defaultResolve: true,
-        },
-        {
-          code: 'Exception',
-          label: '异常',
-          phase: 'custom',
-          isTerminal: false,
-          defaultResolve: false,
-        },
-        {
-          code: 'Canceled',
-          label: '已取消',
-          phase: 'cancelled',
-          isTerminal: true,
-          defaultResolve: true,
-        },
+        { code: 'Draft' },
+        { code: 'Dispatched' },
+        { code: 'Loaded' },
+        { code: 'InTransit' },
+        { code: 'Signed' },
+        { code: 'Exception' },
+        { code: 'Canceled' },
       ],
       fields: [
         {
@@ -278,13 +178,7 @@ export const BUSINESS_EVENT_SOURCE_TEMPLATES: BusinessEventSourceTemplate[] = [
         { code: 'CANCELED', name: '取消', kind: 'status' },
         { code: 'COMPLETED', name: '计划完成', kind: 'status' },
       ],
-      statuses: productionPlanStatuses.map((status) => ({
-        code: status,
-        label: productionPlanStatusLabels[status],
-        phase: productionPlanStatusPhases[status],
-        isTerminal: status === 'COMPLETED' || status === 'CANCELED',
-        defaultResolve: status === 'COMPLETED' || status === 'CANCELED',
-      })),
+      statuses: productionPlanStatuses.map((status) => ({ code: status })),
       fields: [
         {
           key: 'planId',
@@ -365,13 +259,7 @@ export const BUSINESS_EVENT_SOURCE_TEMPLATES: BusinessEventSourceTemplate[] = [
         { code: 'STATUS_CHANGED', name: '状态变更', kind: 'status' },
         { code: 'QUALITY_HOLD', name: '质检挂起', kind: 'custom' },
       ],
-      statuses: productionTaskStatuses.map((status) => ({
-        code: status,
-        label: productionTaskStatusLabels[status],
-        phase: productionTaskStatusPhases[status],
-        isTerminal: status === 'DONE',
-        defaultResolve: status === 'DONE',
-      })),
+      statuses: productionTaskStatuses.map((status) => ({ code: status })),
       fields: [
         {
           key: 'taskId',
@@ -446,6 +334,122 @@ export const BUSINESS_EVENT_SOURCE_TEMPLATES: BusinessEventSourceTemplate[] = [
         },
       ],
       defaultActionUrlTemplate: '/dashboard/calendar?planId=[PlanId]',
+    },
+  },
+  {
+    code: 'QUALITY_STANDARD',
+    name: '品质标准',
+    module: 'Quality',
+    entity: 'QUALITY',
+    enabled: true,
+    description: '品质标准围绕草稿、提审、审批、发布与归档的受控流程事件。',
+    config: {
+      actions: [
+        { code: 'CREATED', name: '新建', kind: 'created' },
+        { code: 'STATUS_CHANGED', name: '状态变更', kind: 'status' },
+        { code: 'SUBMITTED_FOR_APPROVAL', name: '提交审批', kind: 'custom' },
+        { code: 'APPROVED', name: '审批通过', kind: 'custom' },
+        { code: 'REJECTED', name: '驳回', kind: 'custom' },
+        { code: 'PUBLISHED', name: '发布', kind: 'custom' },
+        { code: 'ARCHIVED', name: '归档', kind: 'custom' },
+      ],
+      statuses: [
+        { code: 'DRAFT' },
+        { code: 'PENDING_APPROVAL' },
+        { code: 'APPROVED' },
+        { code: 'REJECTED' },
+        { code: 'PUBLISHED' },
+        { code: 'ARCHIVED' },
+      ],
+      fields: [
+        {
+          key: 'targetId',
+          label: '标准ID',
+          path: 'targetId',
+          type: 'string',
+          templateKey: 'StandardId',
+          templateEnabled: true,
+          dynamicResolver: false,
+        },
+        {
+          key: 'standardCode',
+          label: '标准编码',
+          path: 'standardCode',
+          type: 'string',
+          templateKey: 'StandardCode',
+          templateEnabled: true,
+          dynamicResolver: false,
+        },
+        {
+          key: 'standardName',
+          label: '标准名称',
+          path: 'standardName',
+          type: 'string',
+          templateKey: 'StandardName',
+          templateEnabled: true,
+          dynamicResolver: false,
+        },
+        {
+          key: 'operator',
+          label: '责任人',
+          path: 'operator',
+          type: 'user',
+          templateKey: 'Operator',
+          templateEnabled: true,
+          dynamicResolver: true,
+        },
+        {
+          key: 'auditor',
+          label: '审批人',
+          path: 'auditor',
+          type: 'user',
+          templateKey: 'Auditor',
+          templateEnabled: true,
+          dynamicResolver: true,
+        },
+        {
+          key: 'reviewComment',
+          label: '审批意见',
+          path: 'reviewComment',
+          type: 'string',
+          templateKey: 'ReviewComment',
+          templateEnabled: true,
+          dynamicResolver: false,
+        },
+        {
+          key: 'rejectReason',
+          label: '驳回原因',
+          path: 'rejectReason',
+          type: 'string',
+          templateKey: 'RejectReason',
+          templateEnabled: true,
+          dynamicResolver: false,
+        },
+        {
+          key: 'archiveReason',
+          label: '归档原因',
+          path: 'archiveReason',
+          type: 'string',
+          templateKey: 'ArchiveReason',
+          templateEnabled: true,
+          dynamicResolver: false,
+        },
+      ],
+      dynamicResolvers: [
+        {
+          code: 'operator',
+          label: '责任人',
+          path: 'operator',
+          type: 'user',
+        },
+        {
+          code: 'auditor',
+          label: '审批人',
+          path: 'auditor',
+          type: 'user',
+        },
+      ],
+      defaultActionUrlTemplate: '/quality/standards/[StandardId]/preview',
     },
   },
 ]

@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { normalizeSearchHref } from './use-command-menu'
 
 describe('normalizeSearchHref', () => {
-  it('maps the retired system-management routing entry to approval routing', () => {
+  it('maps retired routing entries to message center rules', () => {
     expect(normalizeSearchHref('/system-management/routing')).toBe(
-      '/approval/routing'
+      '/message-center/rules'
     )
+    expect(normalizeSearchHref('/approval/routing')).toBe('/message-center/rules')
   })
 
   it('keeps other search hrefs unchanged', () => {

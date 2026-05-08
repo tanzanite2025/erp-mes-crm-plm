@@ -71,10 +71,10 @@ export const approval = {
     },
   },
   history: {
-    heroTitle: 'Approval Audit History',
-    heroSubtitle: 'Historical authorization trail for sensitive operations across the system, with {{count}} archived records.',
+    heroTitle: 'Approval History',
+    heroSubtitle: 'Historical authorization trail for sensitive operations across the system, with {{count}} approval records.',
     searchPlaceholder: 'Search module, action, or requester...',
-    empty: 'No matching audit records',
+    empty: 'No matching approval records',
   },
   guard: {
     title: 'Security Authorization Required',

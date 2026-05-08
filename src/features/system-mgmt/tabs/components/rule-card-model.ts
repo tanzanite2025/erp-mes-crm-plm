@@ -3,6 +3,10 @@ import {
   type BusinessEventSource,
   type BusinessStatus,
 } from '../../workflow-core/data/business-event-source-schema'
+import {
+  getBusinessEventDefaultResolveStatuses,
+  getBusinessEventStatusLabel,
+} from '../../workflow-core/data/business-event-status-catalog'
 import { type RuleSegment } from '../../workflow-core/data/notification-rule-schema'
 import { type StandardCommand } from '../../workflow-core/data/schema'
 
@@ -36,9 +40,7 @@ export function getStatusActionCode(source: BusinessEventSource) {
 }
 
 export function getDefaultResolveStatuses(source: BusinessEventSource) {
-  return source.config.statuses
-    .filter((status) => status.defaultResolve)
-    .map((status) => status.code)
+  return getBusinessEventDefaultResolveStatuses(source)
 }
 
 export function getUserLabel(user: ApprovalUserOption) {
@@ -173,7 +175,7 @@ export function createStatusSegment(
 ): RuleSegment {
   return {
     id: createSegmentId(),
-    title: status.label,
+    title: getBusinessEventStatusLabel(source.code, status.code),
     targetStatuses: [status.code],
     commandIds: [],
     assigneeGroups: [],

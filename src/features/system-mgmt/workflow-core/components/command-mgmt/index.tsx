@@ -12,7 +12,13 @@ import { useCommands } from '../../hooks/use-commands'
 import { CommandForm } from './command-form.tsx'
 import { CommandList } from './command-list.tsx'
 
-export function CommandMgmt() {
+export function CommandMgmt({
+  searchValue,
+  onSearchValueChange,
+}: {
+  searchValue?: string
+  onSearchValueChange?: (value: string) => void
+} = {}) {
   const { t } = useLanguage()
   const {
     commands,
@@ -23,11 +29,21 @@ export function CommandMgmt() {
     deleteCommand,
     reload,
   } = useCommands()
-  const [search, setSearch] = useState('')
+  const [localSearch, setLocalSearch] = useState('')
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingCommand, setEditingCommand] = useState<
     StandardCommand | undefined
   >()
+
+  const search = searchValue ?? localSearch
+
+  const setSearch = (value: string) => {
+    if (onSearchValueChange) {
+      onSearchValueChange(value)
+      return
+    }
+    setLocalSearch(value)
+  }
 
   const templateCount = commands.length
 
@@ -80,7 +96,7 @@ export function CommandMgmt() {
 
   return (
     <div className='animate-in space-y-5 fade-in duration-500'>
-      <div className='flex flex-col gap-3 rounded-3xl border border-muted/40 bg-card px-5 py-4 shadow-sm lg:flex-row lg:items-center lg:justify-between'>
+      <div className='flex flex-col gap-3 rounded-[24px] border border-dashed border-muted/40 bg-muted/5 px-5 py-4 lg:flex-row lg:items-center lg:justify-between'>
         <div className='relative min-w-56 flex-1'>
           <Search className='absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/50' />
           <Input

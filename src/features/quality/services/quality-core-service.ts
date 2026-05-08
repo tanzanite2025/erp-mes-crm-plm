@@ -41,6 +41,11 @@ export type QualityTasksResponse = {
   [key: string]: unknown
 }
 
+function resolveOptionalNumberField(source: Record<string, unknown>, key: string) {
+  const value = source[key]
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0
+}
+
 export interface QualityAbnormality {
   id: string
   description: string
@@ -117,9 +122,12 @@ export const QualityCoreService = {
         },
         stats: {
           total: ensureNumberField(stats, 'total', context),
-          published: ensureNumberField(stats, 'published', context),
-          draft: ensureNumberField(stats, 'draft', context),
-          archived: ensureNumberField(stats, 'archived', context),
+          draft: resolveOptionalNumberField(stats, 'draft'),
+          pendingApproval: resolveOptionalNumberField(stats, 'pendingApproval'),
+          approved: resolveOptionalNumberField(stats, 'approved'),
+          rejected: resolveOptionalNumberField(stats, 'rejected'),
+          published: resolveOptionalNumberField(stats, 'published'),
+          archived: resolveOptionalNumberField(stats, 'archived'),
         },
       },
     }

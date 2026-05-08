@@ -20,20 +20,36 @@ type InspectionStandardRequest struct {
 	Description string          `json:"description"`
 }
 
+type ApprovalRequestSummaryResponse struct {
+	ID           string     `json:"id"`
+	RequesterID  string     `json:"requesterId"`
+	Reason       string     `json:"reason"`
+	Approver1ID  string     `json:"approver1Id"`
+	Approver2ID  string     `json:"approver2Id"`
+	CurrentLevel int        `json:"currentLevel"`
+	Status       string     `json:"status"`
+	ExpiresAt    *time.Time `json:"expiresAt,omitempty"`
+	Module       string     `json:"module"`
+	Action       string     `json:"action"`
+	CreatedAt    time.Time  `json:"createdAt"`
+	VerifierID   string     `json:"verifierId"`
+}
+
 type InspectionStandardResponse struct {
-	ID          string          `json:"id"`
-	CreatedAt   time.Time       `json:"createdAt"`
-	UpdatedAt   time.Time       `json:"updatedAt"`
-	Code        string          `json:"code"`
-	Name        string          `json:"name"`
-	Type        string          `json:"type"`
-	Version     float64         `json:"version"`
-	Status      string          `json:"status"`
-	Items       json.RawMessage `json:"items"`
-	Auditor     string          `json:"auditor"`
-	AuditTime   *time.Time      `json:"auditTime"`
-	Remarks     string          `json:"remarks"`
-	Description string          `json:"description"`
+	ID                     string                          `json:"id"`
+	CreatedAt              time.Time                       `json:"createdAt"`
+	UpdatedAt              time.Time                       `json:"updatedAt"`
+	Code                   string                          `json:"code"`
+	Name                   string                          `json:"name"`
+	Type                   string                          `json:"type"`
+	Version                float64                         `json:"version"`
+	Status                 string                          `json:"status"`
+	Items                  json.RawMessage                 `json:"items"`
+	Auditor                string                          `json:"auditor"`
+	AuditTime              *time.Time                      `json:"auditTime"`
+	Remarks                string                          `json:"remarks"`
+	Description            string                          `json:"description"`
+	ApprovalRequestSummary *ApprovalRequestSummaryResponse `json:"approvalRequestSummary,omitempty"`
 }
 
 type InspectionStandardPatchMetadata struct {
@@ -152,28 +168,50 @@ func mapInspectionStandardRequestToModel(input InspectionStandardRequest) models
 	}
 }
 
-func mapInspectionStandardToResponse(model models.InspectionStandard) InspectionStandardResponse {
-	return InspectionStandardResponse{
-		ID:          model.ID,
-		CreatedAt:   model.CreatedAt,
-		UpdatedAt:   model.UpdatedAt,
-		Code:        model.Code,
-		Name:        model.Name,
-		Type:        model.Type,
-		Version:     model.Version,
-		Status:      model.Status,
-		Items:       model.Items,
-		Auditor:     model.Auditor,
-		AuditTime:   model.AuditTime,
-		Remarks:     model.Description,
-		Description: model.Description,
+func mapApprovalRequestSummaryToResponse(request *models.ApprovalRequest) *ApprovalRequestSummaryResponse {
+	if request == nil {
+		return nil
+	}
+
+	return &ApprovalRequestSummaryResponse{
+		ID:           request.ID,
+		RequesterID:  request.RequesterID,
+		Reason:       request.Reason,
+		Approver1ID:  request.Approver1ID,
+		Approver2ID:  request.Approver2ID,
+		CurrentLevel: request.CurrentLevel,
+		Status:       request.Status,
+		ExpiresAt:    request.ExpiresAt,
+		Module:       request.Module,
+		Action:       request.Action,
+		CreatedAt:    request.CreatedAt,
+		VerifierID:   request.VerifierID,
 	}
 }
 
-func mapInspectionStandardsToResponse(items []models.InspectionStandard) []InspectionStandardResponse {
+func mapInspectionStandardToResponse(model models.InspectionStandard, approvalSummary *models.ApprovalRequest) InspectionStandardResponse {
+	return InspectionStandardResponse{
+		ID:                     model.ID,
+		CreatedAt:              model.CreatedAt,
+		UpdatedAt:              model.UpdatedAt,
+		Code:                   model.Code,
+		Name:                   model.Name,
+		Type:                   model.Type,
+		Version:                model.Version,
+		Status:                 model.Status,
+		Items:                  model.Items,
+		Auditor:                model.Auditor,
+		AuditTime:              model.AuditTime,
+		Remarks:                model.Description,
+		Description:            model.Description,
+		ApprovalRequestSummary: mapApprovalRequestSummaryToResponse(approvalSummary),
+	}
+}
+
+func mapInspectionStandardsToResponse(items []models.InspectionStandard, approvalSummaryMap map[string]*models.ApprovalRequest) []InspectionStandardResponse {
 	result := make([]InspectionStandardResponse, 0, len(items))
 	for _, item := range items {
-		result = append(result, mapInspectionStandardToResponse(item))
+		result = append(result, mapInspectionStandardToResponse(item, approvalSummaryMap[item.ID]))
 	}
 	return result
 }
@@ -197,7 +235,7 @@ func mapInspectionTaskRequestToModel(input InspectionTaskRequest) models.Inspect
 func mapInspectionTaskToResponse(model models.InspectionTask) InspectionTaskResponse {
 	var standard *InspectionStandardResponse
 	if model.Standard != nil {
-		mapped := mapInspectionStandardToResponse(*model.Standard)
+		mapped := mapInspectionStandardToResponse(*model.Standard, nil)
 		standard = &mapped
 	}
 	return InspectionTaskResponse{

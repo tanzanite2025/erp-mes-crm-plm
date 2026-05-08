@@ -1,5 +1,6 @@
 import { type RefObject } from 'react'
 import { type BusinessEventSource } from '../../workflow-core/data/business-event-source-schema'
+import { getBusinessEventStatusLabel } from '../../workflow-core/data/business-event-status-catalog'
 import {
   type BusinessEventSourceItemChangeKind,
   type BusinessEventSourceRemovedItemSummary,
@@ -8,6 +9,7 @@ import { SummaryPanel } from './business-event-source-card-primitives'
 
 interface BusinessEventSourceStatusSectionProps {
   statuses: BusinessEventSource['config']['statuses']
+  sourceCode: string
   summary: string
   dirty: boolean
   changeSummary: string
@@ -29,6 +31,7 @@ interface BusinessEventSourceStatusSectionProps {
 
 export function BusinessEventSourceStatusSection({
   statuses,
+  sourceCode,
   summary,
   dirty,
   changeSummary,
@@ -55,8 +58,8 @@ export function BusinessEventSourceStatusSection({
         items={statuses.map((status) => ({
           id: status.id,
           code: status.code,
-          label: status.label,
-          meta: status.phase,
+          label: getBusinessEventStatusLabel(sourceCode, status.code),
+          meta: '唯一状态',
           changeType: getChangeType(status.id),
         }))}
         removedItems={removedItems}

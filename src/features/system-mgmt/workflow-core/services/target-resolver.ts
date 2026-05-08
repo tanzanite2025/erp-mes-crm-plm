@@ -156,6 +156,7 @@ export function resolveTemplate(
 export function getTargetEntity(type: RuleExecutionEvent['type']) {
   const entityTypeMap: Record<string, string> = {
     ORDER_EVENT: 'ORDER',
+    QUALITY_STANDARD_EVENT: 'QUALITY',
     QUALITY_ALERT: 'PRODUCT',
     EQUIPMENT_STATUS: 'MOLD',
     SYSTEM_NOTICE: 'SYSTEM',
@@ -167,6 +168,7 @@ export function getTargetEntity(type: RuleExecutionEvent['type']) {
 export function getTargetSourceCode(event: RuleExecutionEvent) {
   const sourceTypeMap: Record<string, string> = {
     ORDER_EVENT: 'SALES_ORDER',
+    QUALITY_STANDARD_EVENT: 'QUALITY_STANDARD',
     QUALITY_ALERT: 'QUALITY_ALERT',
     EQUIPMENT_STATUS: 'EQUIPMENT_STATUS',
     SYSTEM_NOTICE: 'SYSTEM_NOTICE',

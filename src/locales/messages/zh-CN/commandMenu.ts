@@ -44,6 +44,7 @@ export const commandMenu = {
     qualityOperations: '品质作业',
     materialArchive: '物料档案',
     employeeManagement: '员工管理',
+    messageAndApproval: '消息与审批',
   },
   items: {
     dashboard: '仪表盘',
@@ -125,5 +126,6 @@ export const commandMenu = {
     startStocktake: '开始物料盘点',
     newAdjustment: '新建调账申请',
     approvalCenter: '办事审批中心',
+    messageCenter: '消息中心',
   },
 }

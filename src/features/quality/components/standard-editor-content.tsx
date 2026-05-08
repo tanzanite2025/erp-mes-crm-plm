@@ -12,64 +12,32 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import type { Standard } from '../data/schema'
+import {
+  getQualityStandardTypeLabel,
+  getQualityStandardStatusLabel,
+  normalizeQualityStandardType,
+  normalizeQualityStandardStatus,
+} from '../utils/quality-utils'
 
 interface StandardEditorContentProps {
   mode: 'create' | 'edit'
   formData: Standard
   isDirty: boolean
+  readOnly?: boolean
   onCodeChange: (value: string) => void
   onNameChange: (value: string) => void
   onTypeChange: (value: Standard['type']) => void
-  onStatusChange: (value: Standard['status']) => void
   onRemarksChange: (value: string) => void
-}
-
-function normalizeType(type?: string): 'IQC' | 'IPQC' | 'FQC' {
-  const normalized = type?.toUpperCase()
-  if (type === '巡检' || normalized === 'IPQC') return 'IPQC'
-  if (type === '首检' || normalized === 'FQC') return 'FQC'
-  return 'IQC'
-}
-
-function normalizeStatus(status?: string): 'PUBLISHED' | 'DRAFT' | 'ARCHIVED' {
-  const normalized = status?.toUpperCase()
-  if (status === '已归档' || normalized === 'ARCHIVED') return 'ARCHIVED'
-  if (
-    status === '待审核' ||
-    normalized === 'DRAFT' ||
-    normalized === 'PENDING'
-  ) {
-    return 'DRAFT'
-  }
-  return 'PUBLISHED'
-}
-
-function getTypeLabel(t: ReturnType<typeof useLanguage>['t'], type?: string) {
-  const normalized = normalizeType(type)
-  if (normalized === 'IPQC') return t('quality.standards.values.typeProcess')
-  if (normalized === 'FQC') return t('quality.standards.values.typeFinal')
-  return t('quality.standards.values.typeQuality')
-}
-
-function getStatusLabel(
-  t: ReturnType<typeof useLanguage>['t'],
-  status?: string
-) {
-  const normalized = normalizeStatus(status)
-  if (normalized === 'ARCHIVED')
-    return t('quality.standards.values.statusArchived')
-  if (normalized === 'DRAFT') return t('quality.standards.values.statusPending')
-  return t('quality.standards.values.statusPublished')
 }
 
 export function StandardEditorContent({
   mode,
   formData,
   isDirty,
+  readOnly = false,
   onCodeChange,
   onNameChange,
   onTypeChange,
-  onStatusChange,
   onRemarksChange,
 }: StandardEditorContentProps) {
   const { t } = useLanguage()
@@ -83,10 +51,12 @@ export function StandardEditorContent({
             {t('quality.standards.workspace.editorFormTitle')}
           </p>
           <p className='mt-1 text-sm font-medium text-muted-foreground/70'>
-            {t('quality.standards.workspace.editorFormDescription')}
+            {readOnly
+              ? t('quality.standards.workspace.readOnlyHint')
+              : t('quality.standards.workspace.editorFormDescription')}
           </p>
         </div>
-        {isDirty ? (
+        {isDirty && !readOnly ? (
           <Badge className='rounded-full border-none bg-amber-500/10 px-4 py-1 text-[10px] font-black tracking-widest text-amber-600 uppercase'>
             {t('quality.standards.workspace.editorDirty')}
           </Badge>
@@ -107,6 +77,7 @@ export function StandardEditorContent({
                     'quality.standards.dialog.action.placeholders.code'
                   )}
                   className='h-11 rounded-xl border-none bg-muted/30 font-mono shadow-inner transition-all focus:ring-2 focus:ring-primary/20'
+                  disabled={readOnly}
                   value={formData.code || ''}
                   onChange={(event) => onCodeChange(event.target.value)}
                 />
@@ -155,10 +126,11 @@ export function StandardEditorContent({
                   {t('quality.standards.dialog.action.fields.type')}
                 </Label>
                 <Select
-                  value={normalizeType(formData.type)}
+                  value={normalizeQualityStandardType(formData.type)}
                   onValueChange={(value: Standard['type']) =>
                     onTypeChange(value)
                   }
+                  disabled={readOnly}
                 >
                   <SelectTrigger className='h-11 rounded-xl border-none bg-muted/30 shadow-inner transition-all focus:ring-2 focus:ring-primary/20'>
                     <SelectValue
@@ -169,13 +141,13 @@ export function StandardEditorContent({
                   </SelectTrigger>
                   <SelectContent className='rounded-xl border-white/5 bg-background text-[11px] font-black'>
                     <SelectItem value='IQC'>
-                      {getTypeLabel(t, 'IQC')} (IQC)
+                      {getQualityStandardTypeLabel(t, 'IQC')} (IQC)
                     </SelectItem>
                     <SelectItem value='IPQC'>
-                      {getTypeLabel(t, 'IPQC')} (IPQC)
+                      {getQualityStandardTypeLabel(t, 'IPQC')} (IPQC)
                     </SelectItem>
                     <SelectItem value='FQC'>
-                      {getTypeLabel(t, 'FQC')} (FQC)
+                      {getQualityStandardTypeLabel(t, 'FQC')} (FQC)
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -185,31 +157,22 @@ export function StandardEditorContent({
                 <Label className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
                   {t('quality.standards.dialog.action.fields.status')}
                 </Label>
-                <Select
-                  value={normalizeStatus(formData.status)}
-                  onValueChange={(value: Standard['status']) =>
-                    onStatusChange(value)
-                  }
-                >
-                  <SelectTrigger className='h-11 rounded-xl border-none bg-muted/30 shadow-inner transition-all focus:ring-2 focus:ring-primary/20'>
-                    <SelectValue
-                      placeholder={t(
-                        'quality.standards.dialog.action.placeholders.status'
-                      )}
-                    />
-                  </SelectTrigger>
-                  <SelectContent className='rounded-xl border-white/5 bg-background text-[11px] font-black'>
-                    <SelectItem value='DRAFT'>
-                      {getStatusLabel(t, 'DRAFT')} (DRAFT)
-                    </SelectItem>
-                    <SelectItem value='PUBLISHED'>
-                      {getStatusLabel(t, 'PUBLISHED')} (PUBLISHED)
-                    </SelectItem>
-                    <SelectItem value='ARCHIVED'>
-                      {getStatusLabel(t, 'ARCHIVED')} (ARCHIVED)
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className='rounded-xl border border-dashed border-muted/40 bg-muted/20 px-4 py-3 shadow-inner'>
+                  <div className='flex items-center justify-between gap-3'>
+                    <span className='text-[11px] font-black uppercase tracking-widest text-foreground/80'>
+                      {getQualityStandardStatusLabel(t, formData.status)}
+                    </span>
+                    <Badge
+                      variant='secondary'
+                      className='border-none bg-primary/10 py-0.5 text-[9px] font-black uppercase tracking-widest text-primary'
+                    >
+                      {normalizeQualityStandardStatus(formData.status)}
+                    </Badge>
+                  </div>
+                  <p className='mt-1 text-[10px] leading-5 text-muted-foreground/65'>
+                    {t('quality.standards.workspace.approvalControlledHint')}
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -223,6 +186,7 @@ export function StandardEditorContent({
                   'quality.standards.dialog.action.placeholders.remarks'
                 )}
                 className='rounded-xl border-none bg-muted/30 p-4 text-sm shadow-inner transition-all focus:ring-2 focus:ring-primary/20'
+                disabled={readOnly}
                 value={formData.remarks || ''}
                 onChange={(event) => onRemarksChange(event.target.value)}
               />

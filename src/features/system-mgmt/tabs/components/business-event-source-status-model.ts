@@ -14,11 +14,7 @@ import { updateBusinessEventSourceConfig } from './business-event-source-source-
 export function createBusinessStatusDraft(): BusinessStatus {
   return {
     id: createBusinessEventConfigItemId('status'),
-    code: 'Custom',
-    label: '自定义状态',
-    phase: 'custom',
-    isTerminal: false,
-    defaultResolve: false,
+    code: 'CustomStatus',
   }
 }
 
@@ -78,8 +74,5 @@ export function restoreBusinessStatus(
 }
 
 export function getBusinessEventStatusSummary(source: BusinessEventSource) {
-  const terminalCount = source.config.statuses.filter(
-    (status) => status.isTerminal
-  ).length
-  return `${source.config.statuses.length} 状态 / ${terminalCount} 终态`
+  return `${source.config.statuses.length} 个唯一状态`
 }

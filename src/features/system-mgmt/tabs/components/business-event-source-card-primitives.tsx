@@ -138,6 +138,7 @@ export function RemovedItemsPanel({
               </div>
               {onRestoreItem && (
                 <Button
+                  type='button'
                   size='sm'
                   variant='outline'
                   className='h-8 rounded-2xl border-destructive/20 text-xs font-black text-destructive hover:bg-destructive/5'
@@ -180,6 +181,7 @@ export function SectionActions({
     <div className='flex items-center gap-2'>
       {onUndo && (
         <Button
+          type='button'
           size='sm'
           variant='outline'
           className='h-8 rounded-2xl text-xs font-black'
@@ -192,6 +194,7 @@ export function SectionActions({
       )}
       {onSave && (
         <Button
+          type='button'
           size='sm'
           className='h-8 rounded-2xl text-xs font-black'
           disabled={saveDisabled || saving}
@@ -203,6 +206,7 @@ export function SectionActions({
       )}
       {onEdit && (
         <Button
+          type='button'
           size='sm'
           variant='outline'
           className='h-8 rounded-2xl text-xs font-black'
@@ -257,18 +261,15 @@ export function SummaryPanel({
   focusedRemovedItemId?: string | null
   forceOpenRemovedItems?: boolean
 }) {
-  const [isOpen, setIsOpen] = useState(false)
-
-  useEffect(() => {
-    if (dirty || focusedRemovedItemId || forceOpenRemovedItems) {
-      setIsOpen(true)
-    }
-  }, [dirty, focusedRemovedItemId, forceOpenRemovedItems])
+  const [manualOpen, setManualOpen] = useState(false)
+  const isOpen = Boolean(
+    manualOpen || dirty || focusedRemovedItemId || forceOpenRemovedItems
+  )
 
   return (
     <Collapsible
       open={isOpen}
-      onOpenChange={setIsOpen}
+      onOpenChange={setManualOpen}
       className={cn(
         'rounded-2xl border border-dashed border-muted/40 bg-muted/10 p-3',
         dirty && 'border-amber-300/80 bg-amber-50/40'
@@ -293,10 +294,11 @@ export function SummaryPanel({
             undoing={undoing}
           />
           <Button
+            type='button'
             size='icon'
             variant='ghost'
             className='size-8 rounded-2xl'
-            onClick={() => setIsOpen((value) => !value)}
+            onClick={() => setManualOpen((value) => !value)}
             aria-label={isOpen ? '收起分区' : '展开分区'}
           >
             <ChevronDown
@@ -382,18 +384,15 @@ export function EditableList({
   focusedRemovedItemId?: string | null
   forceOpenRemovedItems?: boolean
 }) {
-  const [isOpen, setIsOpen] = useState(false)
-
-  useEffect(() => {
-    if (dirty || focusedRemovedItemId || forceOpenRemovedItems) {
-      setIsOpen(true)
-    }
-  }, [dirty, focusedRemovedItemId, forceOpenRemovedItems])
+  const [manualOpen, setManualOpen] = useState(false)
+  const isOpen = Boolean(
+    manualOpen || dirty || focusedRemovedItemId || forceOpenRemovedItems
+  )
 
   return (
     <Collapsible
       open={isOpen}
-      onOpenChange={setIsOpen}
+      onOpenChange={setManualOpen}
       className={cn(
         'rounded-2xl border border-dashed border-muted/40 bg-muted/10 p-3',
         dirty && 'border-amber-300/80 bg-amber-50/40'
@@ -418,6 +417,7 @@ export function EditableList({
           />
           {isOpen && (
             <Button
+              type='button'
               size='sm'
               variant='outline'
               className='h-8 rounded-2xl text-xs font-black'
@@ -428,10 +428,11 @@ export function EditableList({
             </Button>
           )}
           <Button
+            type='button'
             size='icon'
             variant='ghost'
             className='size-8 rounded-2xl'
-            onClick={() => setIsOpen((value) => !value)}
+            onClick={() => setManualOpen((value) => !value)}
             aria-label={isOpen ? '收起分区' : '展开分区'}
           >
             <ChevronDown
@@ -499,9 +500,10 @@ export function StatusMoveControls({
   return (
     <div className='flex items-center gap-1'>
       <Button
+        type='button'
         size='icon'
         variant='outline'
-        className='size-9 rounded-2xl'
+        className='size-8 rounded-2xl border-dashed'
         disabled={!canMoveUp}
         onClick={onMoveUp}
         title='上移状态'
@@ -509,9 +511,10 @@ export function StatusMoveControls({
         <ArrowUp className='size-3.5' />
       </Button>
       <Button
+        type='button'
         size='icon'
         variant='outline'
-        className='size-9 rounded-2xl'
+        className='size-8 rounded-2xl border-dashed'
         disabled={!canMoveDown}
         onClick={onMoveDown}
         title='下移状态'
@@ -531,9 +534,12 @@ export function IconDeleteButton({
 }) {
   return (
     <Button
+      type='button'
       size='icon'
       variant='ghost'
       className='size-9 rounded-2xl text-destructive disabled:cursor-not-allowed disabled:opacity-35'
+      title='删除状态'
+      aria-label='删除状态'
       onClick={onClick}
       disabled={disabled}
     >

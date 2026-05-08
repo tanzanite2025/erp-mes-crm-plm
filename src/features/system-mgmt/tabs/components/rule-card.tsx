@@ -63,6 +63,7 @@ export function RuleCard({
     initialData?: StandardCommand
   } | null>(null)
   const { commands, addCommand } = useCommands()
+  const expanded = autoExpand || isExpanded
 
   const currentSource =
     eventSources.find(
@@ -170,12 +171,6 @@ export function RuleCard({
       cancelled = true
     }
   }, [])
-
-  useEffect(() => {
-    if (autoExpand) {
-      setIsExpanded(true)
-    }
-  }, [autoExpand])
 
   const updateSegments = async (nextSegments: RuleSegment[]) => {
     await onUpdate(rule.id, { segments: nextSegments })
@@ -356,7 +351,7 @@ export function RuleCard({
               </div>
             </div>
             <p className='mt-1 text-xs font-bold text-muted-foreground'>
-              {isExpanded
+              {expanded
                 ? '直接按业务状态配置：进入某个状态时通知谁、是否创建审批、由谁审批。'
                 : collapsedSummary}
             </p>
@@ -364,7 +359,7 @@ export function RuleCard({
         </div>
 
         <div className='flex flex-wrap items-center gap-2'>
-          {isExpanded ? (
+          {expanded ? (
             <>
               <select
                 value={currentSource.code}
@@ -411,12 +406,12 @@ export function RuleCard({
             className='h-10 rounded-2xl text-xs font-black'
             onClick={() => setIsExpanded((value) => !value)}
           >
-            {isExpanded ? (
+            {expanded ? (
               <ChevronUp className='size-4' />
             ) : (
               <ChevronDown className='size-4' />
             )}
-            {isExpanded ? '收起' : '展开'}
+            {expanded ? '收起' : '展开'}
           </Button>
           <Button
             variant='ghost'
@@ -429,7 +424,7 @@ export function RuleCard({
         </div>
       </div>
 
-      {isExpanded ? (
+      {expanded ? (
         <>
           <div className='grid grid-cols-1 gap-3 p-4'>
             {statusFilter === 'incomplete' ? (
@@ -454,6 +449,7 @@ export function RuleCard({
                 segment={segment}
                 completeness={completeness}
                 sourceName={currentSource.name}
+                sourceCode={currentSource.code}
                 users={users}
                 commands={commands}
                 resolverOptions={currentSource.config.dynamicResolvers}

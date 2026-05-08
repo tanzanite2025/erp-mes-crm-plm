@@ -1,9 +1,16 @@
 'use client'
 
+import { useMemo, useState } from 'react'
 import { useNavigate, type NavigateOptions } from '@tanstack/react-router'
+import { toast } from 'sonner'
 import { isForbiddenError } from '@/lib/error-status'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { ForbiddenState } from '@/components/forbidden-state'
+import { useLanguage } from '@/context/language-provider'
+import {
+  ControlledProtocolDialog,
+  type ControlledProtocolDraft,
+} from '../components/controlled-protocol-dialog'
 import { QualityStandardsDesktopView } from '../components/quality-standards-desktop-view'
 import { QualityStandardsEmpty } from '../components/quality-standards-empty'
 import { QualityStandardsHeader } from '../components/quality-standards-header'
@@ -12,6 +19,7 @@ import { QualityStandardsPagination } from '../components/quality-standards-pagi
 import { QualityStandardsStatusOverview } from '../components/quality-standards-status-overview'
 import type { Standard } from '../data/schema'
 import { useQualityStandardsMgmt } from '../hooks/use-quality-standards-mgmt'
+import { buildQualityStandardListPresenter } from '../presenters/quality-standard-list-presenter'
 import type { QualityStandardsListSearchState } from '../types/quality-standards-list'
 
 type SearchStateUpdater = (
@@ -40,7 +48,10 @@ export function StandardsIndexPage({
   navigate: routeNavigate,
 }: StandardsIndexPageProps) {
   const navigate = useNavigate()
+  const { t, locale } = useLanguage()
   const isMobile = useIsMobile()
+  const [isControlledProtocolDialogOpen, setIsControlledProtocolDialogOpen] =
+    useState(false)
   const normalizedSearch = normalizeSearchState(search)
   const syncSearch = ({
     search: updateSearch,
@@ -78,9 +89,22 @@ export function StandardsIndexPage({
     search: normalizedSearch,
     navigate: syncSearch,
   })
+  const presentedStandards = useMemo(
+    () => buildQualityStandardListPresenter(standards, { t, locale }),
+    [locale, standards, t]
+  )
 
   const handleAdd = () => {
-    navigate({ to: '/quality/standards/new' })
+    setIsControlledProtocolDialogOpen(true)
+  }
+
+  const handleControlledProtocolSubmit = (draft: ControlledProtocolDraft) => {
+    toast.success(
+      t('quality.standards.dialog.controlledProtocol.toastDraftReady', {
+        count: draft.selections.length,
+      })
+    )
+    setIsControlledProtocolDialogOpen(false)
   }
 
   const handleEdit = (standard: Standard) => {
@@ -112,6 +136,14 @@ export function StandardsIndexPage({
 
   return (
     <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
+      {isControlledProtocolDialogOpen ? (
+        <ControlledProtocolDialog
+          open={isControlledProtocolDialogOpen}
+          onOpenChange={setIsControlledProtocolDialogOpen}
+          onSubmit={handleControlledProtocolSubmit}
+        />
+      ) : null}
+
       <QualityStandardsHeader
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -132,13 +164,13 @@ export function StandardsIndexPage({
       {standards.length > 0 ? (
         isMobile ? (
           <QualityStandardsMobileView
-            standards={standards}
+            standards={presentedStandards}
             onViewDetail={handleViewPreview}
             onEdit={handleEdit}
           />
         ) : (
           <QualityStandardsDesktopView
-            standards={standards}
+            standards={presentedStandards}
             onViewDetail={handleViewPreview}
             onEdit={handleEdit}
           />

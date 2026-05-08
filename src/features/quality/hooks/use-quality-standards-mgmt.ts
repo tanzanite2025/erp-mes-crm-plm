@@ -8,8 +8,11 @@ import { useGetQualityStandards } from './use-quality'
 
 const DEFAULT_STATUS_STATS: QualityStandardsListStats = {
   total: 0,
-  published: 0,
   draft: 0,
+  pendingApproval: 0,
+  approved: 0,
+  rejected: 0,
+  published: 0,
   archived: 0,
 }
 

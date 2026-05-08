@@ -1,19 +1,24 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
-import {
+  canonicalizeBusinessStatusCode,
   type BusinessEventField,
   type BusinessStatus,
 } from '../../workflow-core/data/business-event-source-schema'
-import { type BusinessEventPhaseOption } from '../../workflow-core/data/business-event-phase-catalog'
+import { getBusinessEventStatusLabel } from '../../workflow-core/data/business-event-status-catalog'
 import { FIELD_TYPE_OPTIONS } from './business-event-source-card-constants'
 import {
   type BusinessEventSourceItemChangeKind,
@@ -28,6 +33,7 @@ import {
   SectionChangeBadge,
   StatusMoveControls,
 } from './business-event-source-card-primitives'
+import { type BusinessEventStatusReferenceSummary } from './business-event-source-status-references'
 
 function drawerRowTone(changeType?: BusinessEventSourceItemChangeKind | null) {
   switch (changeType) {
@@ -46,10 +52,54 @@ function drawerReadonlyFieldClass(locked?: boolean) {
   return locked ? 'bg-muted/40 text-muted-foreground cursor-not-allowed' : ''
 }
 
-export function StatusDrawer({
+function statusIdentityHint({
+  locked,
+  isReferenced,
+}: {
+  locked?: boolean
+  isReferenced?: boolean
+}) {
+  if (locked && isReferenced) {
+    return '已落库且已被规则引用，编码身份只读。'
+  }
+  return locked ? '已落库状态，编码身份只读。' : '输入规则监听使用的唯一状态码。'
+}
+
+function buildStatusReferenceHint(
+  summary: BusinessEventStatusReferenceSummary | undefined,
+  loaded: boolean,
+  persisted: boolean
+) {
+  if (!persisted) {
+    return '未保存状态，当前不参与规则引用统计。'
+  }
+  if (!loaded) {
+    return '规则引用加载中，暂不允许删除已落库状态。'
+  }
+  if (!summary?.isReferenced) {
+    return '当前未被规则链路引用，删除前仍需二次确认。'
+  }
+
+  const fragments: string[] = []
+  if (summary.targetSegmentCount > 0) {
+    fragments.push(`触发 ${summary.targetSegmentCount}`)
+  }
+  if (summary.resolveSegmentCount > 0) {
+    fragments.push(`归档 ${summary.resolveSegmentCount}`)
+  }
+  if (summary.approvalActionCount > 0) {
+    fragments.push(`审批 ${summary.approvalActionCount}`)
+  }
+
+  return `规则占用：${fragments.join(' / ')}`
+}
+
+export function StatusEditorContent({
   statuses,
-  phaseOptions,
+  sourceCode,
   persistedStatusIds,
+  statusReferenceMap,
+  statusReferencesLoaded,
   onAdd,
   onUpdate,
   onMove,
@@ -71,8 +121,10 @@ export function StatusDrawer({
   forceOpenRemovedItems,
 }: {
   statuses: BusinessStatus[]
-  phaseOptions: BusinessEventPhaseOption[]
+  sourceCode: string
   persistedStatusIds?: Set<string>
+  statusReferenceMap?: Map<string, BusinessEventStatusReferenceSummary>
+  statusReferencesLoaded?: boolean
   onAdd: () => void
   onUpdate: (index: number, updates: Partial<BusinessStatus>) => void
   onMove: (index: number, direction: -1 | 1) => void
@@ -94,6 +146,7 @@ export function StatusDrawer({
   forceOpenRemovedItems?: boolean
 }) {
   const focusedRowRef = useRef<HTMLDivElement | null>(null)
+  const [pendingDeleteIndex, setPendingDeleteIndex] = useState<number | null>(null)
 
   useEffect(() => {
     if (!focusedItemId || !focusedRowRef.current) return
@@ -103,19 +156,24 @@ export function StatusDrawer({
     })
   }, [focusedItemId])
 
+  const pendingDeleteStatus =
+    pendingDeleteIndex !== null ? statuses[pendingDeleteIndex] : null
+
   return (
     <>
-      <SheetHeader>
+      <div className='flex h-full min-h-0 flex-col'>
+        <div className='border-b border-dashed border-muted/30 px-6 py-5'>
         <div className='flex items-center gap-2'>
-          <SheetTitle className='text-base font-black'>状态配置</SheetTitle>
+          <h3 className='text-sm font-black tracking-tight italic'>状态配置</h3>
           <SectionChangeBadge dirty={dirty} summary={changeSummary} />
         </div>
-        <SheetDescription>
+        <p className='mt-2 text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>
           维护这个业务对象可监听的全部状态，顺序会影响规则表单里的展示顺序。
-        </SheetDescription>
-      </SheetHeader>
-      <div className='flex flex-col gap-3 px-4 pb-4'>
+        </p>
+        </div>
+        <div className='flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-6 py-5'>
         <Button
+          type='button'
           variant='outline'
           className='w-fit rounded-2xl text-xs font-black'
           onClick={onAdd}
@@ -129,84 +187,111 @@ export function StatusDrawer({
             const isStatusIdentityLocked =
               persistedStatusIds?.has(status.id ?? '') ?? false
             const isFocused = focusedItemId === status.id
+            const canonicalCode = canonicalizeBusinessStatusCode(
+              sourceCode,
+              status.code
+            )
+            const statusReference = statusReferenceMap?.get(status.code)
+            const deleteDisabled =
+              isStatusIdentityLocked &&
+              (!statusReferencesLoaded || Boolean(statusReference?.isReferenced))
             return (
               <div
                 key={status.id ?? `${status.code}-${index}`}
                 ref={isFocused ? focusedRowRef : null}
                 className={cn(
-                  'grid min-w-[720px] grid-cols-[64px_1fr_1fr_130px_72px_72px_72px_36px] gap-2 rounded-2xl border p-2',
+                  'grid gap-3 rounded-2xl border p-3 lg:grid-cols-[minmax(0,1fr)_auto]',
                   drawerRowTone(changeType),
                   isFocused && 'ring-2 ring-sky-300 ring-offset-1'
                 )}
               >
-                <StatusMoveControls
-                  canMoveUp={index > 0}
-                  canMoveDown={index < statuses.length - 1}
-                  onMoveUp={() => onMove(index, -1)}
-                  onMoveDown={() => onMove(index, 1)}
-                />
-                <Input
-                  value={status.code}
-                  readOnly={isStatusIdentityLocked}
-                  onChange={(event) =>
-                    onUpdate(index, { code: event.target.value })
-                  }
-                  className={cn(
-                    'h-9 rounded-2xl font-mono text-xs',
-                    drawerReadonlyFieldClass(isStatusIdentityLocked)
-                  )}
-                  placeholder='Pending'
-                />
-                <Input
-                  value={status.label}
-                  onChange={(event) =>
-                    onUpdate(index, { label: event.target.value })
-                  }
-                  className='h-9 rounded-2xl text-xs font-bold'
-                  placeholder='待处理'
-                />
-                <select
-                  value={status.phase}
-                  disabled={isStatusIdentityLocked}
-                  onChange={(event) =>
-                    onUpdate(index, {
-                      phase: event.target.value as BusinessStatus['phase'],
-                    })
-                  }
-                  className={cn(
-                    'h-9 rounded-2xl border border-input bg-background px-2 text-xs font-bold',
-                    drawerReadonlyFieldClass(isStatusIdentityLocked)
-                  )}
-                >
-                  {phaseOptions.map((phase) => (
-                    <option key={phase.value} value={phase.value}>
-                      {phase.label}
-                    </option>
-                  ))}
-                </select>
-                <MiniToggle
-                  active={status.isTerminal}
-                  label='终态'
-                  onClick={() =>
-                    onUpdate(index, { isTerminal: !status.isTerminal })
-                  }
-                />
-                <MiniToggle
-                  active={status.defaultResolve}
-                  label='归档'
-                  onClick={() =>
-                    onUpdate(index, {
-                      defaultResolve: !status.defaultResolve,
-                    })
-                  }
-                />
-                <div className='flex items-center justify-center'>
-                  <ItemChangeBadge changeType={changeType} />
+                <div className='grid gap-3 md:grid-cols-[minmax(220px,0.95fr)_minmax(220px,1fr)]'>
+                  <div className='space-y-1.5'>
+                    <div className='px-1 text-[8px] font-black uppercase tracking-widest text-muted-foreground/50'>
+                      状态码 / Code
+                    </div>
+                    <Input
+                      value={status.code}
+                      readOnly={isStatusIdentityLocked}
+                      onChange={(event) =>
+                        onUpdate(index, { code: event.target.value })
+                      }
+                      className={cn(
+                        'h-10 rounded-2xl border-none bg-background/85 font-mono text-xs shadow-inner',
+                        drawerReadonlyFieldClass(isStatusIdentityLocked)
+                      )}
+                      placeholder='Pending'
+                    />
+                    <div className='px-1 text-[8px] font-black uppercase tracking-widest text-muted-foreground/40'>
+                      {statusIdentityHint({
+                        locked: isStatusIdentityLocked,
+                        isReferenced: statusReference?.isReferenced,
+                      })}
+                    </div>
+                    <div className='px-1 text-[8px] font-black uppercase tracking-widest text-muted-foreground/35'>
+                      最终存储：{canonicalCode || '待生成'}
+                    </div>
+                    <div className='px-1 text-[8px] font-black uppercase tracking-widest text-muted-foreground/45'>
+                      {buildStatusReferenceHint(
+                        statusReference,
+                        statusReferencesLoaded ?? false,
+                        isStatusIdentityLocked
+                      )}
+                    </div>
+                  </div>
+
+                  <div className='space-y-1.5'>
+                    <div className='px-1 text-[8px] font-black uppercase tracking-widest text-muted-foreground/50'>
+                      状态名称 / Label
+                    </div>
+                    <div className='flex min-h-10 items-center rounded-2xl border border-dashed border-muted/30 bg-muted/10 px-3 text-xs font-black text-foreground'>
+                      {getBusinessEventStatusLabel(
+                        sourceCode,
+                        canonicalCode || status.code
+                      )}
+                    </div>
+                    <div className='flex flex-wrap items-center gap-2 px-1'>
+                      <span className='inline-flex h-5 items-center rounded-full border border-dashed border-muted/40 bg-background/80 px-2 text-[8px] font-black uppercase tracking-widest text-muted-foreground/70'>
+                        唯一状态
+                      </span>
+                      {statusReference?.isReferenced ? (
+                        <span className='inline-flex h-5 items-center rounded-full border border-dashed border-amber-300/60 bg-amber-50/90 px-2 text-[8px] font-black uppercase tracking-widest text-amber-700'>
+                          已引用
+                        </span>
+                      ) : null}
+                      {isStatusIdentityLocked ? (
+                        <span className='text-[8px] font-black uppercase tracking-widest text-muted-foreground/40'>
+                          Persisted Identity
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
                 </div>
-                <IconDeleteButton
-                  disabled={isStatusIdentityLocked}
-                  onClick={() => onDelete(index)}
-                />
+
+                <div className='flex items-center justify-between gap-2 rounded-2xl border border-dashed border-muted/30 bg-background/50 px-3 py-2 lg:min-w-[140px] lg:justify-end'>
+                  <div className='flex items-center gap-2'>
+                    <ItemChangeBadge changeType={changeType} />
+                    <StatusMoveControls
+                      canMoveUp={index > 0}
+                      canMoveDown={index < statuses.length - 1}
+                      onMoveUp={() => onMove(index, -1)}
+                      onMoveDown={() => onMove(index, 1)}
+                    />
+                    <IconDeleteButton
+                      disabled={deleteDisabled}
+                      onClick={() => {
+                        if (deleteDisabled) {
+                          return
+                        }
+                        if (isStatusIdentityLocked) {
+                          setPendingDeleteIndex(index)
+                          return
+                        }
+                        onDelete(index)
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
             )
           })}
@@ -217,35 +302,73 @@ export function StatusDrawer({
           focusedItemId={focusedRemovedItemId}
           forceOpen={forceOpenRemovedItems}
         />
-      </div>
-      <SheetFooter>
-        <div className='flex w-full items-center justify-between gap-2'>
-          <SectionChangeBadge dirty={dirty} summary={changeSummary} />
-          <div className='flex items-center gap-2'>
-            <SectionActions
-              onUndo={onUndo}
-              undoDisabled={undoDisabled}
-              undoing={undoing}
-              onSave={onSave}
-              saveDisabled={saveDisabled}
-              saving={saving}
-              saveLabel='保存状态'
-            />
-            <Button
-              variant='outline'
-              className='rounded-2xl text-xs font-black'
-              onClick={onClose}
-            >
-              完成
-            </Button>
-          </div>
         </div>
-      </SheetFooter>
+        <div className='flex items-center justify-between gap-2 border-t border-dashed border-muted/30 px-6 py-4'>
+        <SectionChangeBadge dirty={dirty} summary={changeSummary} />
+        <div className='flex items-center gap-2'>
+          <SectionActions
+            onUndo={onUndo}
+            undoDisabled={undoDisabled}
+            undoing={undoing}
+            onSave={onSave}
+            saveDisabled={saveDisabled}
+            saving={saving}
+            saveLabel='保存状态'
+          />
+          <Button
+            type='button'
+            variant='outline'
+            className='rounded-2xl text-xs font-black'
+            onClick={onClose}
+          >
+            完成
+          </Button>
+        </div>
+        </div>
+      </div>
+      <AlertDialog
+        open={pendingDeleteStatus !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPendingDeleteIndex(null)
+          }
+        }}
+      >
+        <AlertDialogContent className='rounded-[32px] border-none bg-background shadow-2xl'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='text-lg font-black tracking-tighter italic uppercase'>
+              删除已落库状态
+            </AlertDialogTitle>
+            <AlertDialogDescription className='text-[11px] font-bold leading-6 text-muted-foreground'>
+              {pendingDeleteStatus
+                ? `状态 ${pendingDeleteStatus.code} 当前未被规则链路引用，但删除后会从事件源配置中移除。请确认这不是一个仍需长期保留的业务状态。`
+                : '请确认是否删除该状态。'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className='gap-2'>
+            <AlertDialogCancel className='rounded-full text-[10px] font-black uppercase tracking-widest'>
+              取消
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className='rounded-full bg-rose-600 text-[10px] font-black uppercase tracking-widest hover:bg-rose-700'
+              onClick={() => {
+                if (pendingDeleteIndex === null) {
+                  return
+                }
+                onDelete(pendingDeleteIndex)
+                setPendingDeleteIndex(null)
+              }}
+            >
+              确认删除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }
 
-export function FieldDrawer({
+export function FieldEditorContent({
   fields,
   persistedFieldIds,
   onAdd,
@@ -299,18 +422,19 @@ export function FieldDrawer({
   }, [focusedItemId])
 
   return (
-    <>
-      <SheetHeader>
+    <div className='flex h-full min-h-0 flex-col'>
+      <div className='border-b border-dashed border-muted/30 px-6 py-5'>
         <div className='flex items-center gap-2'>
-          <SheetTitle className='text-base font-black'>字段配置</SheetTitle>
+          <h3 className='text-sm font-black tracking-tight italic'>字段配置</h3>
           <SectionChangeBadge dirty={dirty} summary={changeSummary} />
         </div>
-        <SheetDescription>
+        <p className='mt-2 text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>
           维护模板变量、动态接收人来源字段，以及事件元数据 path。
-        </SheetDescription>
-      </SheetHeader>
-      <div className='flex flex-col gap-3 px-4 pb-4'>
+        </p>
+      </div>
+      <div className='flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-6 py-5'>
         <Button
+          type='button'
           variant='outline'
           className='w-fit rounded-2xl text-xs font-black'
           onClick={onAdd}
@@ -429,29 +553,28 @@ export function FieldDrawer({
           forceOpen={forceOpenRemovedItems}
         />
       </div>
-      <SheetFooter>
-        <div className='flex w-full items-center justify-between gap-2'>
-          <SectionChangeBadge dirty={dirty} summary={changeSummary} />
-          <div className='flex items-center gap-2'>
-            <SectionActions
-              onUndo={onUndo}
-              undoDisabled={undoDisabled}
-              undoing={undoing}
-              onSave={onSave}
-              saveDisabled={saveDisabled}
-              saving={saving}
-              saveLabel='保存字段'
-            />
-            <Button
-              variant='outline'
-              className='rounded-2xl text-xs font-black'
-              onClick={onClose}
-            >
-              完成
-            </Button>
-          </div>
+      <div className='flex items-center justify-between gap-2 border-t border-dashed border-muted/30 px-6 py-4'>
+        <SectionChangeBadge dirty={dirty} summary={changeSummary} />
+        <div className='flex items-center gap-2'>
+          <SectionActions
+            onUndo={onUndo}
+            undoDisabled={undoDisabled}
+            undoing={undoing}
+            onSave={onSave}
+            saveDisabled={saveDisabled}
+            saving={saving}
+            saveLabel='保存字段'
+          />
+          <Button
+            type='button'
+            variant='outline'
+            className='rounded-2xl text-xs font-black'
+            onClick={onClose}
+          >
+            完成
+          </Button>
         </div>
-      </SheetFooter>
-    </>
+      </div>
+    </div>
   )
 }

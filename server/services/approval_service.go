@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"sort"
 	"strings"
 	"time"
 	"xdfc-server/audit"
@@ -52,6 +53,8 @@ type ApprovalWorkflowResult struct {
 	NotifyTitle      string
 	NotifyTargetUser string
 }
+
+type ApprovalRequestSummary = models.ApprovalRequest
 
 func normalizeApproverChain(approver1ID string, approver2ID string) (string, string) {
 	primary := strings.TrimSpace(approver1ID)
@@ -266,6 +269,74 @@ func ListMyApprovals(userID string, permissionIDs []string) ([]models.ApprovalRe
 		return nil, err
 	}
 	return requests, nil
+}
+
+func GetLatestApprovalRequestSummaryByTargetID(targetID string) (*ApprovalRequestSummary, error) {
+	targetID = strings.TrimSpace(targetID)
+	if targetID == "" {
+		return nil, nil
+	}
+
+	summaryMap, err := GetLatestApprovalRequestSummariesByTargetIDs([]string{targetID})
+	if err != nil {
+		return nil, err
+	}
+
+	return summaryMap[targetID], nil
+}
+
+func GetLatestApprovalRequestSummariesByTargetIDs(targetIDs []string) (map[string]*ApprovalRequestSummary, error) {
+	normalizedTargetIDs := make([]string, 0, len(targetIDs))
+	seen := make(map[string]struct{}, len(targetIDs))
+	for _, targetID := range targetIDs {
+		normalized := strings.TrimSpace(targetID)
+		if normalized == "" {
+			continue
+		}
+		if _, exists := seen[normalized]; exists {
+			continue
+		}
+		seen[normalized] = struct{}{}
+		normalizedTargetIDs = append(normalizedTargetIDs, normalized)
+	}
+
+	if len(normalizedTargetIDs) == 0 {
+		return map[string]*ApprovalRequestSummary{}, nil
+	}
+
+	var requests []models.ApprovalRequest
+	if err := db.DB.
+		Where("target_id IN ?", normalizedTargetIDs).
+		Order("created_at desc").
+		Find(&requests).Error; err != nil {
+		return nil, err
+	}
+
+	summaryMap := make(map[string]*ApprovalRequestSummary, len(normalizedTargetIDs))
+	for _, request := range requests {
+		targetID := strings.TrimSpace(request.TargetID)
+		if targetID == "" {
+			continue
+		}
+		if _, exists := summaryMap[targetID]; exists {
+			continue
+		}
+		requestCopy := request
+		summaryMap[targetID] = &requestCopy
+	}
+
+	keys := make([]string, 0, len(summaryMap))
+	for key := range summaryMap {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	ordered := make(map[string]*ApprovalRequestSummary, len(summaryMap))
+	for _, key := range keys {
+		ordered[key] = summaryMap[key]
+	}
+
+	return ordered, nil
 }
 
 func hasApprovalFullAccess(permissionIDs []string) bool {

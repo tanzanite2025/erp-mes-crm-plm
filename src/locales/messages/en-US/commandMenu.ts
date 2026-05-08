@@ -44,6 +44,7 @@ export const commandMenu = {
     qualityOperations: 'Quality Operations',
     materialArchive: 'Material Archive',
     employeeManagement: 'Employee Management',
+    messageAndApproval: 'Messages & Approvals',
   },
   items: {
     dashboard: 'Dashboard',
@@ -125,5 +126,6 @@ export const commandMenu = {
     startStocktake: 'Start Stocktake',
     newAdjustment: 'New Inventory Adjustment',
     approvalCenter: 'Approval Center',
+    messageCenter: 'Message Center',
   },
 }

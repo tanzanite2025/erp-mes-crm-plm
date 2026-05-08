@@ -6,9 +6,9 @@ import { isForbiddenError } from '@/lib/error-status'
 import { ForbiddenState } from '@/components/forbidden-state'
 import {
   BUSINESS_EVENT_SOURCE_TEMPLATES,
-  type BusinessEventPhaseCatalogItem,
   type BusinessEventSource,
 } from '../workflow-core/data/business-event-source-schema'
+import { type NotificationRule } from '../workflow-core/data/notification-rule-schema'
 import {
   countConnectedBusinessEventSources,
   countPreconnectedBusinessEventSources,
@@ -25,9 +25,8 @@ import { BusinessEventSourceCard } from './components/business-event-source-card
 import { BusinessEventSourceListHeader } from './components/business-event-source-list-header'
 import { BusinessEventSourceListHint } from './components/business-event-source-list-hint'
 
-const logger = createLogger('BusinessEventSourceList')
-
 const LEGACY_LEVEL3_FIELD_LABELS = new Set(['工序', '末级层级', 'Process', 'Level 3'])
+const logger = createLogger('BusinessEventSourceList')
 
 function applyDynamicProcessFieldLabel<T extends { code: string; config: { fields: Array<{ key: string; label: string }> } }>(
   source: T,
@@ -58,7 +57,21 @@ function applyDynamicProcessFieldLabel<T extends { code: string; config: { field
   }
 }
 
-export function BusinessEventSourceList() {
+type BusinessEventSourceListSearchState = {
+  templateCode: string
+  searchValue: string
+  expandedSourceIds: string[]
+}
+
+export function BusinessEventSourceList({
+  searchState,
+  onSearchStateChange,
+}: {
+  searchState?: BusinessEventSourceListSearchState
+  onSearchStateChange?: (
+    partial: Partial<BusinessEventSourceListSearchState>
+  ) => void
+} = {}) {
   const { level3Name } = useHierarchyLevelLabels()
   const {
     sources,
@@ -69,29 +82,60 @@ export function BusinessEventSourceList() {
     deleteSource,
     reloadSources,
   } = useBusinessEventSources()
-  const [phaseCatalog, setPhaseCatalog] = useState<BusinessEventPhaseCatalogItem[]>([])
-  const [templateCode, setTemplateCode] = useState(
+  const [localTemplateCode, setLocalTemplateCode] = useState(
     BUSINESS_EVENT_SOURCE_TEMPLATES[0]?.code ?? ''
   )
-  const [expandedSourceIds, setExpandedSourceIds] = useState<string[]>([])
-  const [searchValue, setSearchValue] = useState('')
+  const [localExpandedSourceIds, setLocalExpandedSourceIds] = useState<string[]>([])
+  const [localSearchValue, setLocalSearchValue] = useState('')
   const [highlightedSourceId, setHighlightedSourceId] = useState<string | null>(
     null
   )
+  const [rules, setRules] = useState<NotificationRule[]>([])
+  const [rulesLoaded, setRulesLoaded] = useState(false)
   const sourceCardRefs = useRef<Record<string, HTMLDivElement | null>>({})
+
+  const templateCode = searchState?.templateCode ?? localTemplateCode
+  const expandedSourceIds =
+    searchState?.expandedSourceIds ?? localExpandedSourceIds
+  const searchValue = searchState?.searchValue ?? localSearchValue
+
+  const setTemplateCode = (value: string) => {
+    if (onSearchStateChange) {
+      onSearchStateChange({ templateCode: value })
+      return
+    }
+    setLocalTemplateCode(value)
+  }
+
+  const setExpandedSourceIds = (updater: string[] | ((prev: string[]) => string[])) => {
+    const nextValue =
+      typeof updater === 'function' ? updater(expandedSourceIds) : updater
+
+    if (onSearchStateChange) {
+      onSearchStateChange({ expandedSourceIds: nextValue })
+      return
+    }
+
+    setLocalExpandedSourceIds(nextValue)
+  }
+
+  const setSearchValue = (value: string) => {
+    if (onSearchStateChange) {
+      onSearchStateChange({ searchValue: value })
+      return
+    }
+    setLocalSearchValue(value)
+  }
 
   const displaySources = useMemo(
     () => sources.map((source) => applyDynamicProcessFieldLabel(source, level3Name)),
     [level3Name, sources]
   )
 
-  const selectedTemplate = useMemo(
-    () =>
-      BUSINESS_EVENT_SOURCE_TEMPLATES.find(
-        (template) => template.code === templateCode
-      ) ?? BUSINESS_EVENT_SOURCE_TEMPLATES[0],
-    [templateCode]
-  )
+  const selectedTemplate =
+    BUSINESS_EVENT_SOURCE_TEMPLATES.find(
+      (template) => template.code === templateCode
+    ) ?? BUSINESS_EVENT_SOURCE_TEMPLATES[0]
 
   const templateOptions = useMemo(
     () =>
@@ -117,15 +161,14 @@ export function BusinessEventSourceList() {
     [sources]
   )
 
-  const filteredSources = useMemo(() => {
-    const keyword = searchValue.trim().toLowerCase()
-    if (!keyword) return displaySources
-    return displaySources.filter((source) => {
-      const name = source.name.toLowerCase()
-      const code = source.code.toLowerCase()
-      return name.includes(keyword) || code.includes(keyword)
-    })
-  }, [displaySources, searchValue])
+  const normalizedSearchValue = searchValue.trim().toLowerCase()
+  const filteredSources = !normalizedSearchValue
+    ? displaySources
+    : displaySources.filter((source) => {
+        const name = source.name.toLowerCase()
+        const code = source.code.toLowerCase()
+        return name.includes(normalizedSearchValue) || code.includes(normalizedSearchValue)
+      })
 
   const allVisibleExpanded =
     filteredSources.length > 0 &&
@@ -148,7 +191,7 @@ export function BusinessEventSourceList() {
   }
 
   const createBlankSource = async () => {
-    const saved = await addSource(createNewEventSource(sources))
+    const saved = await addSource(createNewEventSource())
     if (saved) {
       setExpandedSourceIds((prev) =>
         prev.includes(saved.id) ? prev : [...prev, saved.id]
@@ -168,15 +211,6 @@ export function BusinessEventSourceList() {
   }
 
   useEffect(() => {
-    void RoutingService.getEventSourcePhaseCatalog()
-      .then(setPhaseCatalog)
-      .catch((err) => {
-        logger.error('加载业务事件 phase 目录失败', err)
-        setPhaseCatalog([])
-      })
-  }, [])
-
-  useEffect(() => {
     if (!highlightedSourceId) return
     sourceCardRefs.current[highlightedSourceId]?.scrollIntoView({
       behavior: 'smooth',
@@ -185,6 +219,25 @@ export function BusinessEventSourceList() {
     const timer = window.setTimeout(() => setHighlightedSourceId(null), 2200)
     return () => window.clearTimeout(timer)
   }, [highlightedSourceId])
+
+  useEffect(() => {
+    let cancelled = false
+
+    void RoutingService.getRules()
+      .then((data) => {
+        if (cancelled) return
+        setRules(data)
+        setRulesLoaded(true)
+      })
+      .catch((error) => {
+        if (cancelled) return
+        logger.error('Failed to load notification rules for status references', error)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   if (isForbiddenError(error)) {
     return <ForbiddenState />
@@ -261,9 +314,10 @@ export function BusinessEventSourceList() {
           >
             <BusinessEventSourceCard
               source={source}
-              phaseCatalog={phaseCatalog}
               expanded={expandedSourceIds.includes(source.id)}
               highlighted={highlightedSourceId === source.id}
+              rules={rules}
+              statusReferencesLoaded={rulesLoaded}
               onExpandedChange={(expanded) =>
                 setExpandedSourceIds((prev) =>
                   expanded

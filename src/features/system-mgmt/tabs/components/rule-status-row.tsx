@@ -8,6 +8,7 @@ import {
   type BusinessEventSource,
   type BusinessStatus,
 } from '../../workflow-core/data/business-event-source-schema'
+import { getBusinessEventStatusLabel } from '../../workflow-core/data/business-event-status-catalog'
 import { type RuleSegment } from '../../workflow-core/data/notification-rule-schema'
 import { type StandardCommand } from '../../workflow-core/data/schema'
 import {
@@ -24,6 +25,7 @@ interface RuleStatusRowProps {
   segment?: RuleSegment
   completeness: { label: string; tone: CompletenessTone }
   sourceName: string
+  sourceCode: string
   users: ApprovalUserOption[]
   commands: StandardCommand[]
   resolverOptions: BusinessEventSource['config']['dynamicResolvers']
@@ -45,6 +47,7 @@ export function RuleStatusRow({
   segment,
   completeness,
   sourceName,
+  sourceCode,
   users,
   commands,
   resolverOptions,
@@ -63,6 +66,7 @@ export function RuleStatusRow({
   const notifySelectRef = useRef<HTMLSelectElement | null>(null)
   const hasFocusedConfigRef = useRef(false)
   const enabled = Boolean(segment)
+  const statusLabel = getBusinessEventStatusLabel(sourceCode, status.code)
   const approval = segment?.approval ?? defaultApproval
   const selectedUsernames = segment?.assigneeUsernames ?? []
   const selectedCommandId = segment?.commandIds[0] ?? ''
@@ -93,7 +97,7 @@ export function RuleStatusRow({
     : ''
   const previewText = buildStatusPreview({
     sourceName,
-    statusLabel: status.label,
+    statusLabel,
     enabled,
     notifyTargets,
     commandTitle: selectedCommand?.title,
@@ -135,7 +139,7 @@ export function RuleStatusRow({
           />
           <div className='min-w-0'>
             <div className='flex flex-wrap items-center gap-2'>
-              <span className='text-sm font-black'>{status.label}</span>
+              <span className='text-sm font-black'>{statusLabel}</span>
               <Badge
                 variant='outline'
                 className='rounded-full font-mono text-[10px]'
@@ -144,7 +148,7 @@ export function RuleStatusRow({
               </Badge>
             </div>
             <p className='mt-1 text-[11px] font-bold text-muted-foreground'>
-              进入「{status.label}」时触发
+              进入「{statusLabel}」时触发
             </p>
           </div>
         </div>

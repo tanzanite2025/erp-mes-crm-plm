@@ -10,17 +10,19 @@ export function RoutingTab() {
   const { t } = useLanguage()
 
   return (
-    <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-      <section className='rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-6'>
-        <div className='space-y-2'>
-          <h2 className='text-xl font-black tracking-tight text-foreground'>
-            {t('systemManagement.routingTab.title')}
-          </h2>
-          <p className='max-w-3xl text-sm leading-6 text-muted-foreground'>
-            在这里统一配置业务状态触发的通知与审批，维护可监听的业务事件源、通知内容模板，并在需要时查看执行日志。
-          </p>
-        </div>
-      </section>
+    <div className='space-y-6 animate-in fade-in duration-700'>
+      <div className='flex flex-col justify-between gap-4 md:flex-row md:items-center'>
+        <section className='flex-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-6'>
+          <div className='space-y-2'>
+            <h2 className='text-lg font-black italic uppercase tracking-tighter'>
+              {t('systemManagement.routingTab.title')}
+            </h2>
+            <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60'>
+              {t('systemManagement.routingTab.subtitle')}
+            </p>
+          </div>
+        </section>
+      </div>
 
       <Tabs defaultValue='rules' className='space-y-5'>
         <TabsList className='flex h-auto flex-wrap gap-2 rounded-[24px] bg-transparent p-0'>

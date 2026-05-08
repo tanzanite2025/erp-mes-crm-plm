@@ -1,10 +1,6 @@
 import { apiFetch } from '@/lib/api-client'
 import { type DeltaSet } from '@/lib/delta/types'
 import {
-  deserializeBusinessEventPhaseCatalog,
-  type BusinessEventPhaseCatalogItem,
-} from '../data/business-event-phase-catalog'
-import {
   deserializeBusinessEventSource,
   deserializeBusinessEventSources,
   serializeBusinessEventSourceCreate,
@@ -34,13 +30,6 @@ import { type StandardCommand } from '../data/schema'
  * 路由与指令模板服务 - 统一对接后端
  */
 export const RoutingService = {
-  getEventSourcePhaseCatalog: async (): Promise<BusinessEventPhaseCatalogItem[]> => {
-    const response = await apiFetch<unknown>(
-      '/system/routing/event-source-phase-catalog'
-    )
-    return deserializeBusinessEventPhaseCatalog(response)
-  },
-
   getEventSources: async (): Promise<BusinessEventSource[]> => {
     const response = await apiFetch<unknown>('/system/routing/event-sources')
     return deserializeBusinessEventSources(response)

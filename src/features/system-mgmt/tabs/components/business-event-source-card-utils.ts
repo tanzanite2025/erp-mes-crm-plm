@@ -1,8 +1,12 @@
-import { type BusinessEventSource } from '../../workflow-core/data/business-event-source-schema'
+import {
+  canonicalizeBusinessStatusCode,
+  type BusinessEventSource,
+} from '../../workflow-core/data/business-event-source-schema'
 import { cloneBusinessEventSourceConfig } from './business-event-source-card-model'
 import { type BusinessEventSourceSection } from './business-event-source-card-diff'
 
 const SOURCE_CODE_PATTERN = /^[A-Z][A-Z0-9_]*$/
+const STATUS_CODE_PATTERN = /^[A-Za-z][A-Za-z0-9_]*$/
 const TOKEN_PATTERN = /^[A-Za-z][A-Za-z0-9_]*$/
 
 type ValidationBySection = Record<BusinessEventSourceSection, string[]>
@@ -26,6 +30,14 @@ function findDuplicates(values: string[]) {
     seen.add(normalized)
   }
   return Array.from(duplicates)
+}
+
+function findCanonicalStatusCodeDuplicates(source: BusinessEventSource) {
+  return findDuplicates(
+    source.config.statuses.map((status) =>
+      canonicalizeBusinessStatusCode(source.code, status.code)
+    )
+  )
 }
 
 function collectBusinessEventSourceValidation(
@@ -73,14 +85,23 @@ function collectBusinessEventSourceValidation(
     if (typeof status.order !== 'number')
       errors.statuses.push(`第 ${index + 1} 个状态缺少排序值`)
     if (!status.code.trim()) errors.statuses.push(`第 ${index + 1} 个状态编码不能为空`)
-    if (!status.label.trim())
-      errors.statuses.push(`第 ${index + 1} 个状态名称不能为空`)
+    const canonicalCode = canonicalizeBusinessStatusCode(source.code, status.code)
+    if (status.code.trim() && !canonicalCode) {
+      errors.statuses.push(`第 ${index + 1} 个状态编码无法归一为有效机器码`)
+    } else if (canonicalCode && !STATUS_CODE_PATTERN.test(canonicalCode)) {
+      errors.statuses.push(
+        `第 ${index + 1} 个状态编码规范化后无效：${canonicalCode}`
+      )
+    }
   })
   findDuplicates(source.config.statuses.map((status) => status.id ?? '')).forEach(
     (id) => errors.statuses.push(`状态 ID 重复：${id}`)
   )
   findDuplicates(source.config.statuses.map((status) => status.code)).forEach(
     (code) => errors.statuses.push(`状态编码重复：${code}`)
+  )
+  findCanonicalStatusCodeDuplicates(source).forEach((code) =>
+    errors.statuses.push(`状态编码规范化后重复：${code}`)
   )
 
   source.config.fields.forEach((field, index) => {

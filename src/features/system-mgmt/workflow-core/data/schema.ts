@@ -21,7 +21,7 @@ export const workflowNodeSchema = z.object({
   completedAt: z.string().optional(),
   completedBy: z.string().optional(),
   triggerConfig: z.object({
-    entity: z.enum(['ORDER', 'BOM', 'PRODUCT', 'MOLD', 'SYSTEM']),
+    entity: z.enum(['ORDER', 'BOM', 'PRODUCT', 'MOLD', 'SYSTEM', 'QUALITY']),
     action: z.enum(['CREATED', 'UPDATED', 'DELETED', 'STATUS_CHANGED']),
     targetStatus: z.string().optional(),
   }).optional(),

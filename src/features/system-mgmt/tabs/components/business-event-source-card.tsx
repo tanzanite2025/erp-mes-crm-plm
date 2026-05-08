@@ -6,8 +6,6 @@ import {
 import { cn } from '@/lib/utils'
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible'
 import {
-  buildBusinessEventPhaseOptions,
-  type BusinessEventPhaseCatalogItem,
   type BusinessEventSource,
 } from '../../workflow-core/data/business-event-source-schema'
 import { getBusinessEventSourceRuntimeCoverage } from '../../workflow-core/data/business-event-source-runtime-coverage'
@@ -21,8 +19,8 @@ import {
   BusinessEventSourceChangePanel,
 } from './business-event-source-card-change-panel'
 import {
-  BusinessEventSourceCardDrawerPanel,
-  type BusinessEventSourceDrawerMode,
+  BusinessEventSourceEditorOverlay,
+  type BusinessEventSourceEditorMode,
 } from './business-event-source-card-drawer-panel'
 import { BusinessEventSourceCardHeader } from './business-event-source-card-header'
 import { buildBusinessEventSourceCardPresentation } from './business-event-source-card-presenter'
@@ -66,12 +64,15 @@ import { BusinessEventSourceResolverSection } from './business-event-source-reso
 import {
   cloneBusinessEventSource,
 } from './business-event-source-card-utils'
+import { type NotificationRule } from '../../workflow-core/data/notification-rule-schema'
+import { buildBusinessEventStatusReferenceMap } from './business-event-source-status-references'
 
 interface BusinessEventSourceCardProps {
   source: BusinessEventSource
-  phaseCatalog: BusinessEventPhaseCatalogItem[]
   expanded: boolean
   highlighted?: boolean
+  rules: NotificationRule[]
+  statusReferencesLoaded: boolean
   onExpandedChange: (expanded: boolean) => void
   onUpdate: (
     id: string,
@@ -144,9 +145,10 @@ function mergeDirtySectionsIntoIncomingSource(
 
 export function BusinessEventSourceCard({
   source,
-  phaseCatalog,
   expanded,
   highlighted = false,
+  rules,
+  statusReferencesLoaded,
   onExpandedChange,
   onUpdate,
   onDelete,
@@ -161,10 +163,6 @@ export function BusinessEventSourceCard({
   const [draft, setDraft] = useState<BusinessEventSource>(
     () => initialCommitted
   )
-  const statusPhaseOptions = useMemo(
-    () => buildBusinessEventPhaseOptions(phaseCatalog, draft.config.statuses),
-    [phaseCatalog, draft.config.statuses]
-  )
   const [committedSource, setCommittedSource] =
     useState<BusinessEventSource>(initialCommitted)
   const [savingAll, setSavingAll] = useState(false)
@@ -174,8 +172,8 @@ export function BusinessEventSourceCard({
     useState<SavingState>(createSavingState)
   const [undoPatches, setUndoPatches] =
     useState<UndoPatchState>(createUndoPatchState)
-  const [drawerMode, setDrawerMode] =
-    useState<BusinessEventSourceDrawerMode>(null)
+  const [editorMode, setEditorMode] =
+    useState<BusinessEventSourceEditorMode>(null)
   const [focusedTarget, setFocusedTarget] = useState<FocusedChangeTarget>(null)
   const committedSourceRef = useRef<BusinessEventSource>(initialCommitted)
   const generalSectionRef = useRef<HTMLElement | null>(null)
@@ -183,6 +181,10 @@ export function BusinessEventSourceCard({
   const statusesSectionRef = useRef<HTMLDivElement | null>(null)
   const fieldsSectionRef = useRef<HTMLDivElement | null>(null)
   const dynamicResolversSectionRef = useRef<HTMLDivElement | null>(null)
+  const statusReferenceMap = useMemo(
+    () => buildBusinessEventStatusReferenceMap(committedSource, rules),
+    [committedSource, rules]
+  )
 
   const setCommittedSourceState = (nextSource: BusinessEventSource) => {
     const normalized = cloneBusinessEventSource(nextSource)
@@ -232,7 +234,7 @@ export function BusinessEventSourceCard({
     setFocusedTarget({ section, itemId, changeType })
 
     if (section === 'statuses' || section === 'fields') {
-      setDrawerMode(section)
+      setEditorMode(section)
       window.setTimeout(() => {
         scrollToSection(section)
       }, 60)
@@ -263,8 +265,8 @@ export function BusinessEventSourceCard({
       buildBusinessEventSourceCardPresentation({
         committedSource,
         draft,
-        onOpenStatuses: () => setDrawerMode('statuses'),
-        onOpenFields: () => setDrawerMode('fields'),
+        onOpenStatuses: () => setEditorMode('statuses'),
+        onOpenFields: () => setEditorMode('fields'),
       }),
     [committedSource, draft]
   )
@@ -408,13 +410,6 @@ export function BusinessEventSourceCard({
             hasValidationErrors={validationErrors.length > 0}
             canDelete={canDelete}
             onExpandedChange={onExpandedChange}
-            onNameChange={(value) =>
-              applyDraft((prev) =>
-                updateBusinessEventSourceDraft(prev, {
-                  name: value,
-                })
-              )
-            }
             onDescriptionChange={(value) =>
               applyDraft((prev) =>
                 updateBusinessEventSourceDraft(prev, {
@@ -469,6 +464,7 @@ export function BusinessEventSourceCard({
         dirty={diff.general.dirty}
         changeSummary={getBusinessEventSourceGeneralDiffSummary(diff.general)}
         focused={focusedTarget?.section === 'general'}
+        hasValidationErrors={validationBySection.general.length > 0}
         saving={savingSections.general}
         saveDisabled={
           savingSections.general ||
@@ -583,6 +579,7 @@ export function BusinessEventSourceCard({
 
         <BusinessEventSourceStatusSection
           statuses={draft.config.statuses}
+          sourceCode={draft.code}
           summary={statusSummary}
           dirty={diff.statuses.dirty}
           changeSummary={getBusinessEventSourceSectionDiffSummary(diff.statuses)}
@@ -615,7 +612,7 @@ export function BusinessEventSourceCard({
           onUndo={
             undoPatches.statuses ? () => void undoSection('statuses') : undefined
           }
-          onEdit={() => setDrawerMode('statuses')}
+          onEdit={() => setEditorMode('statuses')}
         />
 
         <BusinessEventSourceFieldSection
@@ -652,7 +649,7 @@ export function BusinessEventSourceCard({
           onUndo={
             undoPatches.fields ? () => void undoSection('fields') : undefined
           }
-          onEdit={() => setDrawerMode('fields')}
+          onEdit={() => setEditorMode('fields')}
         />
 
         <BusinessEventSourceResolverSection
@@ -736,12 +733,14 @@ export function BusinessEventSourceCard({
         />
       </div>
 
-      <BusinessEventSourceCardDrawerPanel
-        drawerMode={drawerMode}
+      <BusinessEventSourceEditorOverlay
+        editorMode={editorMode}
+        sourceCode={draft.code}
         statuses={draft.config.statuses}
-        statusPhaseOptions={statusPhaseOptions}
         fields={draft.config.fields}
         persistedStatusIds={persistedStatusIds}
+        statusReferenceMap={statusReferenceMap}
+        statusReferencesLoaded={statusReferencesLoaded}
         persistedFieldIds={persistedFieldIds}
         statusDirty={diff.statuses.dirty}
         fieldDirty={diff.fields.dirty}
@@ -807,7 +806,7 @@ export function BusinessEventSourceCard({
         getFieldChangeType={(id) =>
           getBusinessEventSourceItemChangeKind(diff.fields, id)
         }
-        onOpenChange={(open) => !open && setDrawerMode(null)}
+        onOpenChange={(open) => !open && setEditorMode(null)}
         onAddStatus={() => applyDraft((prev) => appendBusinessStatus(prev))}
         onUpdateStatus={(index, updates) =>
           applyDraft((prev) => updateBusinessStatusAt(prev, index, updates))

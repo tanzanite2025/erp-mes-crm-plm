@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { DEFAULT_SALES_ORDER_EVENT_SOURCE } from '../../workflow-core/data/business-event-source-templates/sales-order'
+import { getBusinessEventStatusLabel } from '../../workflow-core/data/business-event-status-catalog'
 import { normalizeBusinessEventSource } from '../../workflow-core/data/business-event-source-normalizer'
 import { cloneBusinessEventSource } from './business-event-source-card-utils'
 import { buildBusinessEventSourceCardPresentation } from './business-event-source-card-presenter'
@@ -21,7 +22,7 @@ describe('business-event-source-card-presenter', () => {
       draft,
     })
 
-    expect(presentation.statusSummary).toBe('5 状态 / 2 终态')
+    expect(presentation.statusSummary).toBe('5 个唯一状态')
     expect(presentation.fieldSummary).toBe('4 字段 / 4 模板变量')
     expect(presentation.validationErrors).toEqual([])
     expect(presentation.diff.anyDirty).toBe(false)
@@ -42,10 +43,7 @@ describe('business-event-source-card-presenter', () => {
 
     draft.name = '销售订单 V2'
     draft.config.actions = draft.config.actions.slice(1)
-    draft.config.statuses[1] = {
-      ...draft.config.statuses[1],
-      label: '处理中',
-    }
+    draft.config.statuses[1] = { ...draft.config.statuses[1], code: 'Reviewing' }
 
     const presentation = buildBusinessEventSourceCardPresentation({
       committedSource,
@@ -82,6 +80,17 @@ describe('business-event-source-card-presenter', () => {
               label: '名称',
             }),
           ]),
+        }),
+      ])
+    )
+    expect(
+      presentation.changeOverviewSections.find((section) => section.section === 'statuses')?.items
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'Reviewing',
+          label: getBusinessEventStatusLabel(draft.code, 'Reviewing'),
+          meta: '唯一状态',
         }),
       ])
     )

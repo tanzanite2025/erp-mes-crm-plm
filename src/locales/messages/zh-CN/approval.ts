@@ -56,7 +56,7 @@ export const approval = {
     reject: '拒绝',
     confirm: '口令核销',
     l1Pass: '一级通过',
-    myLogsTitle: '个人申请审计轨迹',
+    myLogsTitle: '个人申请审批轨迹',
     myLogsSubtitle:
       '你发起的所有审批申请都会在这里实时追踪，支持全生命周期状态监控。',
     emptyMine: '暂无本人发起的申请记录',
@@ -74,10 +74,10 @@ export const approval = {
     },
   },
   history: {
-    heroTitle: '审批审计历史中心',
-    heroSubtitle: '系统全域敏感操作的授权历史追溯，共 {{count}} 条审计存档。',
+    heroTitle: '审批历史中心',
+    heroSubtitle: '系统全域敏感操作的授权历史追溯，共 {{count}} 条审批存档。',
     searchPlaceholder: '搜索模块、动作或申请人...',
-    empty: '暂无符合条件的审计历史记录',
+    empty: '暂无符合条件的审批历史记录',
   },
   guard: {
     title: '安全授权拦截',

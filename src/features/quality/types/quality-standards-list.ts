@@ -2,14 +2,20 @@ export type QualityStandardsTypeFilter = 'ALL' | 'IQC' | 'IPQC' | 'FQC'
 
 export type QualityStandardsStatusFilter =
   | 'ALL'
-  | 'PUBLISHED'
   | 'DRAFT'
+  | 'PENDING_APPROVAL'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'PUBLISHED'
   | 'ARCHIVED'
 
 export interface QualityStandardsListStats {
   total: number
-  published: number
   draft: number
+  pendingApproval: number
+  approved: number
+  rejected: number
+  published: number
   archived: number
 }
 

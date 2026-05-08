@@ -15,23 +15,6 @@ beforeEach(() => {
 })
 
 describe('RoutingService event source contracts', () => {
-  it('loads the business event phase catalog from the dedicated backend endpoint', async () => {
-    apiFetchMock.mockResolvedValue([
-      { code: 'draft', label: '草稿', semantic: 'draft', order: 0 },
-      { code: 'scheduling', label: '排产中', semantic: 'pending', order: 2 },
-    ])
-
-    const result = await RoutingService.getEventSourcePhaseCatalog()
-
-    expect(apiFetchMock).toHaveBeenCalledWith(
-      '/system/routing/event-source-phase-catalog'
-    )
-    expect(result).toEqual([
-      { code: 'draft', label: '草稿', semantic: 'draft', order: 0 },
-      { code: 'scheduling', label: '排产中', semantic: 'pending', order: 2 },
-    ])
-  })
-
   it('posts a create payload without persistence fields and deserializes the response', async () => {
     apiFetchMock.mockResolvedValue({
       id: 'source-1',
@@ -43,7 +26,7 @@ describe('RoutingService event source contracts', () => {
       description: '销售订单事件源',
       config: {
         actions: [{ code: 'CREATED', name: '新建', kind: 'created' }],
-        statuses: [{ code: 'Draft', label: '草稿', phase: 'draft' }],
+        statuses: [{ code: 'Draft' }],
         fields: [{ key: 'orderId', label: '订单ID', path: 'orderId', type: 'string' }],
         dynamicResolvers: [],
         defaultActionUrlTemplate: '/trading/orders/[OrderId]',
@@ -59,7 +42,7 @@ describe('RoutingService event source contracts', () => {
       description: '销售订单事件源',
       config: {
         actions: [{ code: 'CREATED', name: '新建', kind: 'created' as const }],
-        statuses: [{ code: 'Draft', label: '草稿', phase: 'draft' as const, isTerminal: false, defaultResolve: false }],
+        statuses: [{ code: 'Draft' }],
         fields: [
           {
             key: 'orderId',
@@ -112,10 +95,6 @@ describe('RoutingService event source contracts', () => {
     expect(body.config.statuses).toEqual([
       expect.objectContaining({
         code: 'Draft',
-        label: '草稿',
-        phase: 'draft',
-        isTerminal: false,
-        defaultResolve: false,
         id: expect.any(String),
         order: 0,
       }),
@@ -145,7 +124,7 @@ describe('RoutingService event source contracts', () => {
       description: '销售订单事件源',
       config: {
         actions: [{ id: 'action-1', order: 0, code: 'CREATED', name: '新建', kind: 'created' }],
-        statuses: [{ id: 'status-1', order: 0, code: 'Draft', label: '草稿', phase: 'draft' }],
+        statuses: [{ id: 'status-1', order: 0, code: 'Draft' }],
         fields: [{ id: 'field-1', order: 0, key: 'orderId', label: '订单ID', path: 'orderId', type: 'string' }],
         dynamicResolvers: [],
         defaultActionUrlTemplate: '/trading/orders/[OrderId]',
@@ -161,7 +140,7 @@ describe('RoutingService event source contracts', () => {
       description: '销售订单事件源',
       config: {
         actions: [{ id: 'action-1', order: 0, code: 'CREATED', name: '新建', kind: 'created' as const }],
-        statuses: [{ id: 'status-1', order: 0, code: 'Draft', label: '草稿', phase: 'draft' as const, isTerminal: false, defaultResolve: false }],
+        statuses: [{ id: 'status-1', order: 0, code: 'Draft' }],
         fields: [
           {
             id: 'field-1',
@@ -218,10 +197,6 @@ describe('RoutingService event source contracts', () => {
         id: 'status-1',
         order: 0,
         code: 'Draft',
-        label: '草稿',
-        phase: 'draft',
-        isTerminal: false,
-        defaultResolve: false,
       }),
     ])
     expect(body.config.fields).toEqual([

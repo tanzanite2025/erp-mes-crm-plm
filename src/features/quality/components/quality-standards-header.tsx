@@ -1,5 +1,7 @@
 import { Search, Plus, Filter, Loader2, ShieldCheck } from 'lucide-react'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { useLanguage } from '@/context/language-provider'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -11,6 +13,7 @@ import {
 } from '@/components/ui/select'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import type { QualityStandardsTypeFilter } from '../types/quality-standards-list'
+import { getQualityStandardTypeLabel } from '../utils/quality-utils'
 
 interface QualityStandardsHeaderProps {
   searchQuery: string
@@ -20,12 +23,6 @@ interface QualityStandardsHeaderProps {
   typeFilter: QualityStandardsTypeFilter
   onTypeFilterChange: (value: QualityStandardsTypeFilter) => void
   isFetching?: boolean
-}
-
-function getTypeLabel(t: ReturnType<typeof useLanguage>['t'], type: string) {
-  if (type === 'IPQC') return t('quality.standards.values.typeProcess')
-  if (type === 'FQC') return t('quality.standards.values.typeFinal')
-  return t('quality.standards.values.typeQuality')
 }
 
 export function QualityStandardsHeader({
@@ -81,6 +78,13 @@ export function QualityStandardsHeader({
         </div>
 
         <div className='flex items-center gap-3'>
+          <AuditTimelineTriggerButton
+            module={AUDIT_MODULES.qualityStandard}
+            targetName={t('quality.standards.page.title')}
+            label={t('common.audit.trigger')}
+            className='h-11 rounded-full border-dashed bg-background/80 px-4 text-[10px] font-black uppercase tracking-widest'
+          />
+
           <div className='flex items-center gap-2 rounded-2xl border border-dashed border-muted/50 bg-muted/5 px-3'>
             <Filter className='size-4 text-muted-foreground/45' />
             <Select
@@ -99,13 +103,13 @@ export function QualityStandardsHeader({
                   {t('quality.standards.page.allTypes')}
                 </SelectItem>
                 <SelectItem value='IQC' className='text-[11px] font-black'>
-                  {getTypeLabel(t, 'IQC')} (IQC)
+                  {getQualityStandardTypeLabel(t, 'IQC')} (IQC)
                 </SelectItem>
                 <SelectItem value='IPQC' className='text-[11px] font-black'>
-                  {getTypeLabel(t, 'IPQC')} (IPQC)
+                  {getQualityStandardTypeLabel(t, 'IPQC')} (IPQC)
                 </SelectItem>
                 <SelectItem value='FQC' className='text-[11px] font-black'>
-                  {getTypeLabel(t, 'FQC')} (FQC)
+                  {getQualityStandardTypeLabel(t, 'FQC')} (FQC)
                 </SelectItem>
               </SelectContent>
             </Select>

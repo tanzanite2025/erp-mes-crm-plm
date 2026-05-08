@@ -3,6 +3,7 @@ export const AUDIT_MODULES = {
   purchaseOrder: 'purchase-order',
   customer: 'customer',
   product: 'product',
+  qualityStandard: 'quality-standard',
   supplier: 'supplier',
   drilling: 'drilling',
   engineeringSpec: 'engineering-spec',

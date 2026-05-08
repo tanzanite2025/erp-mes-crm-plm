@@ -81,6 +81,7 @@ export const sidebar = {
     sidebarCommandAssignment: '快捷操作配置',
     systemManagement: '系统配置',
     approvalCenter: '审批中心',
+    messageCenter: '消息中心',
     basicSettings: '基础配置',
     financeCenter: '财务配置',
     linearBarcode: '一维码',

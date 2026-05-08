@@ -1,6 +1,10 @@
 import { z } from 'zod'
 import { DEFAULT_SALES_ORDER_EVENT_SOURCE } from './business-event-source-templates/sales-order'
 import {
+  getBusinessEventStatusCatalogCandidates,
+  getBusinessEventStatusLabel,
+} from './business-event-status-catalog'
+import {
 	EMPTY_BUSINESS_EVENT_SOURCE_CONFIG,
 	businessEventSourceSchema,
 	businessEventSourceCreateSchema,
@@ -16,6 +20,23 @@ import {
 
 const NON_ID_CHAR_PATTERN = /[^a-z0-9]+/g
 let businessEventConfigItemCounter = 0
+
+function splitBusinessStatusCodeWords(value?: string | null) {
+  return (value ?? '')
+    .trim()
+    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+}
+
+function collapseBusinessStatusCodeSeparators(value?: string | null) {
+  return splitBusinessStatusCodeWords(value)
+    .replace(/[^A-Za-z0-9]+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '')
+}
+
+function buildBusinessStatusCodeSignature(value?: string | null) {
+  return collapseBusinessStatusCodeSeparators(value).replace(/_/g, '').toLowerCase()
+}
 
 function slugifyBusinessEventIdPart(value?: string) {
   return (value ?? '')
@@ -42,6 +63,31 @@ export function createBusinessEventConfigItemId(prefix: string) {
   return `${prefix}-${Date.now().toString(36)}-${businessEventConfigItemCounter.toString(36)}-${Math.random()
     .toString(36)
     .slice(2, 8)}`
+}
+
+export function normalizeBusinessStatusCodeInput(value?: string | null): string {
+  return collapseBusinessStatusCodeSeparators(value)
+}
+
+export function canonicalizeBusinessStatusCode(
+  sourceCode: string | undefined,
+  value?: string | null
+): string {
+  const normalizedInput = normalizeBusinessStatusCodeInput(value)
+  if (!normalizedInput) {
+    return ''
+  }
+
+  const inputSignature = buildBusinessStatusCodeSignature(normalizedInput)
+  const existingEntry = getBusinessEventStatusCatalogCandidates(sourceCode).find(
+    (entry) => buildBusinessStatusCodeSignature(entry.code) === inputSignature
+  )
+
+  if (existingEntry) {
+    return existingEntry.code
+  }
+
+  return normalizedInput.toUpperCase()
 }
 
 export function syncBusinessConfigItemOrder<T extends BusinessConfigItemBase>(
@@ -72,8 +118,29 @@ function normalizeBusinessConfigItems<T extends BusinessConfigItemBase>(
   )
 }
 
+function normalizeBusinessStatuses(
+  items: BusinessEventSourceConfig['statuses'] | undefined,
+  sourceCode: string | undefined,
+  canonicalizeStatusCodes: boolean
+) {
+  const normalizedItems = (items ?? []).map((status) => ({
+    ...status,
+    code: canonicalizeStatusCodes
+      ? canonicalizeBusinessStatusCode(sourceCode, status.code)
+      : status.code,
+  }))
+
+  return normalizeBusinessConfigItems(normalizedItems, 'status', (status) => [
+    status.code,
+  ])
+}
+
 export function normalizeBusinessEventSourceConfig(
-  config?: Partial<BusinessEventSourceConfig>
+  config?: Partial<BusinessEventSourceConfig>,
+  options?: {
+    statusSourceCode?: string
+    canonicalizeStatusCodes?: boolean
+  }
 ): BusinessEventSourceConfig {
   return {
     ...EMPTY_BUSINESS_EVENT_SOURCE_CONFIG,
@@ -83,10 +150,10 @@ export function normalizeBusinessEventSourceConfig(
       'action',
       (action) => [action.code, action.name]
     ),
-    statuses: normalizeBusinessConfigItems(
+    statuses: normalizeBusinessStatuses(
       config?.statuses,
-      'status',
-      (status) => [status.code, status.label]
+      options?.statusSourceCode,
+      options?.canonicalizeStatusCodes ?? false
     ),
     fields: normalizeBusinessConfigItems(config?.fields, 'field', (field) => [
       field.key,
@@ -105,7 +172,9 @@ export function normalizeBusinessEventSource(
 ): BusinessEventSource {
   return {
     ...source,
-    config: normalizeBusinessEventSourceConfig(source.config),
+    config: normalizeBusinessEventSourceConfig(source.config, {
+      statusSourceCode: source.code,
+    }),
   }
 }
 
@@ -114,7 +183,9 @@ export function normalizeBusinessEventSourceTemplate(
 ): BusinessEventSourceTemplate {
   return {
     ...source,
-    config: normalizeBusinessEventSourceConfig(source.config),
+    config: normalizeBusinessEventSourceConfig(source.config, {
+      statusSourceCode: source.code,
+    }),
   }
 }
 
@@ -141,7 +212,10 @@ export function serializeBusinessEventSourceCreate(
   const parsed = businessEventSourceCreateSchema.parse(source)
   return {
     ...parsed,
-    config: normalizeBusinessEventSourceConfig(parsed.config),
+    config: normalizeBusinessEventSourceConfig(parsed.config, {
+      statusSourceCode: parsed.code,
+      canonicalizeStatusCodes: true,
+    }),
   }
 }
 
@@ -151,7 +225,10 @@ export function serializeBusinessEventSourceUpdate(
   const parsed = businessEventSourceUpdateSchema.parse(source)
   return {
     ...parsed,
-    config: normalizeBusinessEventSourceConfig(parsed.config),
+    config: normalizeBusinessEventSourceConfig(parsed.config, {
+      statusSourceCode: parsed.code,
+      canonicalizeStatusCodes: true,
+    }),
   }
 }
 
@@ -176,10 +253,11 @@ export function materializeBusinessEventSourceTemplate(
 }
 
 export function getEventSourceStatusOptions(source?: BusinessEventSource) {
+  const fallbackSourceCode = source?.code ?? DEFAULT_SALES_ORDER_EVENT_SOURCE.code
   return (
     source?.config.statuses ?? DEFAULT_SALES_ORDER_EVENT_SOURCE.config.statuses
   ).map((status) => ({
     value: status.code,
-    label: `${status.label} (${status.code})`,
+    label: `${getBusinessEventStatusLabel(fallbackSourceCode, status.code)} (${status.code})`,
   }))
 }

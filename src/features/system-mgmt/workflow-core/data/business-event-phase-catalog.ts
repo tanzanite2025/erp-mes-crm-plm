@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { type BusinessStatus } from './business-event-source-types'
 
 export const businessEventPhaseSemanticSchema = z.enum([
   'draft',
@@ -45,7 +44,7 @@ export function deserializeBusinessEventPhaseCatalog(
 
 export function buildBusinessEventPhaseOptions(
   catalog: BusinessEventPhaseCatalogItem[],
-  statuses: Pick<BusinessStatus, 'phase'>[] = []
+  statuses: Array<{ phase: string }> = []
 ): BusinessEventPhaseOption[] {
   const options = new Map<string, BusinessEventPhaseOption>()
 

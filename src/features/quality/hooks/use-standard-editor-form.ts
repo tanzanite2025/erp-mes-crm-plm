@@ -26,6 +26,16 @@ function cloneStandard<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T
 }
 
+function buildSnapshot(formData: Standard, overrides?: Partial<Standard>) {
+  return cloneStandard({
+    ...formData,
+    ...overrides,
+    code: (overrides?.code ?? formData.code)?.trim() || '',
+    name: (overrides?.name ?? formData.name)?.trim() || '',
+    remarks: (overrides?.remarks ?? formData.remarks)?.trim() || '',
+  })
+}
+
 export function useStandardEditorForm({
   initialStandard,
   resetKey,
@@ -63,19 +73,14 @@ export function useStandardEditorForm({
     [setFormData]
   )
 
-  const buildSubmitPayload =
-    useCallback((): StandardEditorSubmitPayload | null => {
+  const buildSubmitPayloadWithOverrides = useCallback(
+    (overrides?: Partial<Standard>): StandardEditorSubmitPayload | null => {
       if (!formData.code?.trim() || !formData.name?.trim()) {
         toast.error(t('quality.standards.dialog.action.validationRequired'))
         return null
       }
 
-      const snapshot = cloneStandard({
-        ...formData,
-        code: formData.code.trim(),
-        name: formData.name.trim(),
-        remarks: formData.remarks?.trim() || '',
-      })
+      const snapshot = buildSnapshot(formData, overrides)
 
       if (!isEdit) {
         return {
@@ -85,6 +90,23 @@ export function useStandardEditorForm({
       }
 
       const delta = commit()
+
+      if (overrides) {
+        Object.entries(overrides).forEach(([key, nextValue]) => {
+          const fieldKey = key as keyof Standard
+          const oldValue = memoizedInitial[fieldKey]
+
+          if (oldValue === nextValue) {
+            return
+          }
+
+          delta[key] = {
+            o: oldValue,
+            n: nextValue,
+          }
+        })
+      }
+
       if (Object.keys(delta).length === 0) {
         return null
       }
@@ -94,13 +116,19 @@ export function useStandardEditorForm({
         isPatch: true,
         delta,
       }
-    }, [commit, formData, isEdit, t])
+    }, [commit, formData, isEdit, memoizedInitial, t])
+
+  const buildSubmitPayload = useCallback(
+    (): StandardEditorSubmitPayload | null => buildSubmitPayloadWithOverrides(),
+    [buildSubmitPayloadWithOverrides]
+  )
 
   return {
     formData,
     setFormData,
     updateField,
     buildSubmitPayload,
+    buildSubmitPayloadWithOverrides,
     isDirty: isDirty(),
   }
 }

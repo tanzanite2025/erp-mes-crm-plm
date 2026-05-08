@@ -1,6 +1,10 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { FurnaceMgmt } from '@/features/equipment-tooling/tabs/furnace-mgmt'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_authenticated/tooling-furnaces/')({
-  component: FurnaceMgmt,
+  beforeLoad: () => {
+    throw redirect({
+      to: '/tooling-furnaces/center',
+      replace: true,
+    })
+  },
 })

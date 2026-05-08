@@ -6,8 +6,15 @@ const standardTypeSchema = z.union([
 ])
 
 const standardStatusSchema = z.union([
-  z.enum(['PUBLISHED', 'DRAFT', 'ARCHIVED']),
-  z.enum(['已发布', '待审核', '已归档']),
+  z.enum([
+    'DRAFT',
+    'PENDING_APPROVAL',
+    'APPROVED',
+    'REJECTED',
+    'PUBLISHED',
+    'ARCHIVED',
+  ]),
+  z.enum(['草稿', '待审核', '审批通过', '已驳回', '已发布', '已归档']),
 ])
 
 const formulaStatusSchema = z.union([
@@ -40,18 +47,50 @@ export const standardItemSchema = z.object({
 
 export type StandardItem = z.infer<typeof standardItemSchema>
 
+export const approvalRequestSummarySchema = z.object({
+  id: z.string(),
+  requesterId: z.string(),
+  reason: z.string(),
+  approver1Id: z.string().optional(),
+  approver2Id: z.string().optional(),
+  currentLevel: z.number().int(),
+  status: z.enum([
+    'PENDING',
+    'APPROVED_L1',
+    'APPROVED',
+    'REJECTED',
+    'EXPIRED',
+    'CONSUMED',
+  ]),
+  expiresAt: z.string().optional(),
+  module: z.string(),
+  action: z.string(),
+  createdAt: z.string(),
+  verifierId: z.string().optional(),
+})
+
+export type ApprovalRequestSummary = z.infer<typeof approvalRequestSummarySchema>
+
 export const standardSchema = z.object({
   id: z.string(),
   code: z.string().min(1, '请输入标准编码'),
   version: z.number().default(1),
   name: z.string().min(1, '请输入标准名称'),
   type: standardTypeSchema.default('IQC'),
-  status: standardStatusSchema.default('PUBLISHED'),
+  status: standardStatusSchema.default('DRAFT'),
   auditor: z.string().optional(),
   auditTime: z.string().optional(),
+  reviewComment: z.string().optional(),
+  rejectReason: z.string().optional(),
+  publishedBy: z.string().optional(),
+  publishedAt: z.string().optional(),
+  archiveReason: z.string().optional(),
+  archivedBy: z.string().optional(),
+  archivedAt: z.string().optional(),
   operator: z.string().optional(),
   operateTime: z.string().optional(),
   remarks: z.string().optional(),
+  approvalRequestSummary: approvalRequestSummarySchema.optional(),
   items: z.array(standardItemSchema).default([]),
 })
 

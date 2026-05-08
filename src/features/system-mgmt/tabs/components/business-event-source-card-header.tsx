@@ -9,7 +9,6 @@ import {
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
@@ -32,7 +31,6 @@ interface BusinessEventSourceCardHeaderProps {
   hasValidationErrors: boolean
   canDelete: boolean
   onExpandedChange: (expanded: boolean) => void
-  onNameChange: (value: string) => void
   onDescriptionChange: (value: string) => void
   onEnabledChange: (enabled: boolean) => void
   onSaveAll: () => void
@@ -58,7 +56,6 @@ export function BusinessEventSourceCardHeader({
   hasValidationErrors,
   canDelete,
   onExpandedChange,
-  onNameChange,
   onDescriptionChange,
   onEnabledChange,
   onSaveAll,
@@ -79,17 +76,9 @@ export function BusinessEventSourceCardHeader({
         </div>
         <div className='min-w-0 flex-1'>
           <div className='flex flex-wrap items-center gap-2'>
-            {expanded ? (
-              <Input
-                value={name}
-                onChange={(event) => onNameChange(event.target.value)}
-                className='h-10 max-w-xs rounded-2xl text-sm font-bold tracking-normal'
-              />
-            ) : (
-              <div className='truncate text-sm font-bold leading-5 tracking-normal text-foreground'>
-                {name}
-              </div>
-            )}
+            <div className='truncate text-sm font-bold leading-5 tracking-normal text-foreground'>
+              {name}
+            </div>
             <Badge
               variant='outline'
               className='rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold text-muted-foreground'

@@ -56,7 +56,7 @@ export const systemManagement = {
   },
   routingTab: {
     title: "通知路由与规则中心",
-    subtitle: "定义独立的通知监听规则，实现业务事件的毫秒级分发",
+    subtitle: "在这里统一配置业务状态触发的通知与审批，维护可监听的业务事件源、通知内容模板，并在需要时查看执行日志。",
     tabs: {
       rules: "通知监听规则",
       sources: "业务事件源",

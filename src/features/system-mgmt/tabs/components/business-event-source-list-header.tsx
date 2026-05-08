@@ -39,7 +39,7 @@ export function BusinessEventSourceListHeader({
   const enabledCount = sources.filter((source) => source.enabled).length
 
   return (
-    <div className='rounded-3xl border border-muted/40 bg-card px-5 py-4 shadow-sm'>
+    <div className='rounded-[24px] border border-dashed border-muted/40 bg-muted/5 px-5 py-4'>
       <div className='flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between'>
         <p className='text-xs font-bold text-muted-foreground'>
           已启用 {enabledCount} / {sources.length} 个事件源，当前显示{' '}

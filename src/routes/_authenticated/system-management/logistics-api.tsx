@@ -5,7 +5,7 @@ export const Route = createFileRoute(
 )({
   beforeLoad: () => {
     throw redirect({
-      to: '/approval/routing',
+      to: '/message-center/rules',
       replace: true,
     })
   },

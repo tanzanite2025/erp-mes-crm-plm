@@ -16,7 +16,7 @@ function createExistingSource() {
 
 describe('business-event-source-list-helpers', () => {
   it('creates a blank source without leaking template persistence fields', () => {
-    const created = createNewEventSource([])
+    const created = createNewEventSource()
 
     expect(created).not.toHaveProperty('id')
     expect(created.code).toMatch(/^CUSTOM_SOURCE_/)

@@ -15,10 +15,6 @@ export const businessEventActionSchema = businessConfigItemBaseSchema.extend({
 
 export const businessStatusSchema = businessConfigItemBaseSchema.extend({
   code: z.string().min(1),
-  label: z.string().min(1),
-  phase: z.string().trim().min(1).default('custom'),
-  isTerminal: z.boolean().default(false),
-  defaultResolve: z.boolean().default(false),
 })
 
 export const businessEventFieldSchema = businessConfigItemBaseSchema.extend({
@@ -62,7 +58,7 @@ export const businessEventSourceSchema = z.object({
   name: z.string().min(1),
   module: z.string().default('System'),
   entity: z
-    .enum(['ORDER', 'BOM', 'PRODUCT', 'MOLD', 'SYSTEM'])
+    .enum(['ORDER', 'BOM', 'PRODUCT', 'MOLD', 'SYSTEM', 'QUALITY'])
     .default('SYSTEM'),
   enabled: z.boolean().default(true),
   description: z.string().optional(),
@@ -76,7 +72,7 @@ export const businessEventSourceTemplateSchema = z.object({
   name: z.string().min(1),
   module: z.string().default('System'),
   entity: z
-    .enum(['ORDER', 'BOM', 'PRODUCT', 'MOLD', 'SYSTEM'])
+    .enum(['ORDER', 'BOM', 'PRODUCT', 'MOLD', 'SYSTEM', 'QUALITY'])
     .default('SYSTEM'),
   enabled: z.boolean().default(true),
   description: z.string().optional(),

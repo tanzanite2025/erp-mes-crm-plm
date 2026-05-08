@@ -81,6 +81,7 @@ export const sidebar = {
     sidebarCommandAssignment: 'Quick Action Config',
     systemManagement: 'System Config',
     approvalCenter: 'Approval Center',
+    messageCenter: 'Message Center',
     basicSettings: 'Basic Settings',
     financeCenter: 'Finance Config',
     linearBarcode: 'Linear Barcode',

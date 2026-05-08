@@ -35,7 +35,7 @@ export function DeltaPreview({ delta, className }: DeltaPreviewProps) {
       <div className='flex items-center gap-2 mb-3 border-b border-dashed border-muted-foreground/10 pb-2'>
         <Layers className='size-3.5 text-primary/60' />
         <span className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground'>
-          审计差量视图 / AUDIT_DELTA_VIEW
+          审批差量视图 / APPROVAL_DELTA_VIEW
         </span>
       </div>
 

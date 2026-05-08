@@ -56,7 +56,7 @@ export const systemManagement = {
   },
   routingTab: {
     title: "Notification Routing & Rules Center",
-    subtitle: "Define independent notification listeners to dispatch business events in milliseconds.",
+    subtitle: "Configure notifications and approvals triggered by business states, maintain listenable event sources and notification templates, and review execution logs when needed.",
     tabs: {
       rules: "Notification Rules",
       sources: "Business Event Sources",

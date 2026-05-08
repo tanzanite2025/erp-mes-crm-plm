@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { DEFAULT_SALES_ORDER_EVENT_SOURCE } from '../workflow-core/data/business-event-source-templates/sales-order'
+import { getBusinessEventDefaultResolveStatuses } from '../workflow-core/data/business-event-status-catalog'
 import { type BusinessEventSourceTemplate } from '../workflow-core/data/business-event-source-types'
 import { type NotificationRule } from '../workflow-core/data/notification-rule-schema'
 import { getBusinessEventSourceRuntimeCoverage } from '../workflow-core/data/business-event-source-runtime-coverage'
@@ -36,7 +37,19 @@ function getDefaultStatusActionCode(source: BusinessEventSourceTemplate) {
   )
 }
 
-export function NotificationRuleList() {
+type NotificationRuleListSearchState = {
+  keyword: string
+  sourceCodeFilter: string
+  createSourceCode: string
+}
+
+export function NotificationRuleList({
+  searchState,
+  onSearchStateChange,
+}: {
+  searchState?: NotificationRuleListSearchState
+  onSearchStateChange?: (partial: Partial<NotificationRuleListSearchState>) => void
+} = {}) {
   const {
     rules,
     isLoaded,
@@ -55,9 +68,37 @@ export function NotificationRuleList() {
   const [latestCreatedRuleId, setLatestCreatedRuleId] = useState<string | null>(
     null
   )
-  const [keyword, setKeyword] = useState('')
-  const [sourceCodeFilter, setSourceCodeFilter] = useState('all')
-  const [createSourceCode, setCreateSourceCode] = useState('')
+  const [localKeyword, setLocalKeyword] = useState('')
+  const [localSourceCodeFilter, setLocalSourceCodeFilter] = useState('all')
+  const [localCreateSourceCode, setLocalCreateSourceCode] = useState('')
+
+  const keyword = searchState?.keyword ?? localKeyword
+  const sourceCodeFilter = searchState?.sourceCodeFilter ?? localSourceCodeFilter
+  const createSourceCode = searchState?.createSourceCode ?? localCreateSourceCode
+
+  const setKeyword = (value: string) => {
+    if (onSearchStateChange) {
+      onSearchStateChange({ keyword: value })
+      return
+    }
+    setLocalKeyword(value)
+  }
+
+  const setSourceCodeFilter = (value: string) => {
+    if (onSearchStateChange) {
+      onSearchStateChange({ sourceCodeFilter: value })
+      return
+    }
+    setLocalSourceCodeFilter(value)
+  }
+
+  const setCreateSourceCode = (value: string) => {
+    if (onSearchStateChange) {
+      onSearchStateChange({ createSourceCode: value })
+      return
+    }
+    setLocalCreateSourceCode(value)
+  }
 
   const enabledRuleCount = rules.filter((rule) => rule.enabled).length
 
@@ -65,9 +106,13 @@ export function NotificationRuleList() {
     () => sources.filter((source) => source.enabled),
     [sources]
   )
+  const selectedCreateSourceCode =
+    createSourceCode ||
+    enabledSources[0]?.code ||
+    DEFAULT_SALES_ORDER_EVENT_SOURCE.code
 
   const createSource =
-    enabledSources.find((source) => source.code === createSourceCode) ??
+    enabledSources.find((source) => source.code === selectedCreateSourceCode) ??
     enabledSources[0] ??
     DEFAULT_SALES_ORDER_EVENT_SOURCE
 
@@ -93,9 +138,7 @@ export function NotificationRuleList() {
   const handleAddNewRule = async () => {
     const source = createSource
     const actionCode = getDefaultStatusActionCode(source)
-    const defaultResolveStatuses = source.config.statuses
-      .filter((status) => status.defaultResolve)
-      .map((status) => status.code)
+    const defaultResolveStatuses = getBusinessEventDefaultResolveStatuses(source)
     const newRule: Omit<NotificationRule, 'id' | 'createdAt'> = {
       name: `${source.name}通知规则`,
       enabled: true,
@@ -133,14 +176,6 @@ export function NotificationRuleList() {
       setLatestCreatedRuleId(createdRule.id)
     }
   }
-
-  useEffect(() => {
-    if (createSourceCode) return
-    const firstEnabledSource = enabledSources[0]
-    if (firstEnabledSource) {
-      setCreateSourceCode(firstEnabledSource.code)
-    }
-  }, [createSourceCode, enabledSources])
 
   useEffect(() => {
     if (!latestCreatedRuleId) return
@@ -202,7 +237,7 @@ export function NotificationRuleList() {
 
   return (
     <div className='mx-auto max-w-6xl space-y-5 pb-12 transition-all duration-500'>
-      <div className='rounded-3xl border border-muted/40 bg-card p-4 shadow-sm'>
+      <div className='rounded-[24px] border border-dashed border-muted/40 bg-muted/5 p-4'>
         <div className='grid gap-4 xl:grid-cols-[150px_minmax(0,1fr)_auto] xl:items-center'>
           <div className='rounded-2xl bg-muted/30 px-4 py-3'>
             <div className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
@@ -227,7 +262,7 @@ export function NotificationRuleList() {
                 业务源
               </label>
               <Select
-                value={createSource.code}
+                value={selectedCreateSourceCode}
                 onValueChange={setCreateSourceCode}
               >
                 <SelectTrigger className='h-12 rounded-2xl bg-background px-5 text-sm font-black'>

@@ -1,4 +1,25 @@
-import type { Standard } from '../data/schema'
+import type { ApprovalRequestSummary, Standard } from '../data/schema'
+
+export interface ApprovalRequestSummaryApiDTO {
+  id: string
+  requesterId: string
+  reason: string
+  approver1Id?: string
+  approver2Id?: string
+  currentLevel: number
+  status:
+    | 'PENDING'
+    | 'APPROVED_L1'
+    | 'APPROVED'
+    | 'REJECTED'
+    | 'EXPIRED'
+    | 'CONSUMED'
+  expiresAt?: string | null
+  module: string
+  action: string
+  createdAt: string
+  verifierId?: string
+}
 
 export interface QualityStandardApiDTO {
   id: string
@@ -12,8 +33,16 @@ export interface QualityStandardApiDTO {
   items?: unknown
   auditor?: string
   auditTime?: string | null
+  reviewComment?: string
+  rejectReason?: string
+  publishedBy?: string
+  publishedAt?: string | null
+  archiveReason?: string
+  archivedBy?: string
+  archivedAt?: string | null
   remarks?: string
   description?: string
+  approvalRequestSummary?: ApprovalRequestSummaryApiDTO | null
   [key: string]: unknown
 }
 
@@ -30,8 +59,11 @@ export interface QualityStandardsListApiResponseDTO {
     }
     stats?: {
       total?: number
-      published?: number
       draft?: number
+      pendingApproval?: number
+      approved?: number
+      rejected?: number
+      published?: number
       archived?: number
     }
   }
@@ -47,19 +79,42 @@ function normalizeStandardType(type?: string): Standard['type'] {
 
 function normalizeStandardStatus(status?: string): Standard['status'] {
   const normalized = status?.toUpperCase()
+  if (status === '草稿' || normalized === 'DRAFT') return 'DRAFT'
+  if (status === '待审核' || normalized === 'PENDING_APPROVAL')
+    return 'PENDING_APPROVAL'
+  if (status === '审批通过' || normalized === 'APPROVED') return 'APPROVED'
+  if (status === '已驳回' || normalized === 'REJECTED') return 'REJECTED'
   if (status === '已归档' || normalized === 'ARCHIVED') return 'ARCHIVED'
-  if (
-    status === '待审核' ||
-    normalized === 'DRAFT' ||
-    normalized === 'PENDING'
-  ) {
-    return 'DRAFT'
-  }
   return 'PUBLISHED'
 }
 
 function normalizeStandardItems(items: unknown): Standard['items'] {
   return Array.isArray(items) ? (items as Standard['items']) : []
+}
+
+function normalizeApprovalRequestSummary(
+  summary?: ApprovalRequestSummaryApiDTO | null
+): ApprovalRequestSummary | undefined {
+  if (!summary || !summary.id) {
+    return undefined
+  }
+
+  return {
+    id: summary.id,
+    requesterId: summary.requesterId || '',
+    reason: summary.reason || '',
+    approver1Id: summary.approver1Id || undefined,
+    approver2Id: summary.approver2Id || undefined,
+    currentLevel: Number.isFinite(summary.currentLevel)
+      ? Number(summary.currentLevel)
+      : 1,
+    status: summary.status,
+    expiresAt: summary.expiresAt || undefined,
+    module: summary.module || '',
+    action: summary.action || '',
+    createdAt: summary.createdAt,
+    verifierId: summary.verifierId || undefined,
+  }
 }
 
 export function createDefaultStandard(): Standard {
@@ -69,9 +124,16 @@ export function createDefaultStandard(): Standard {
     version: 1,
     name: '',
     type: 'IQC',
-    status: 'PUBLISHED',
+    status: 'DRAFT',
     auditor: '',
     auditTime: undefined,
+    reviewComment: '',
+    rejectReason: '',
+    publishedBy: undefined,
+    publishedAt: undefined,
+    archiveReason: '',
+    archivedBy: undefined,
+    archivedAt: undefined,
     operator: undefined,
     operateTime: undefined,
     remarks: '',
@@ -91,9 +153,17 @@ export function toQualityStandardContract(
     status: normalizeStandardStatus(dto.status),
     auditor: dto.auditor || undefined,
     auditTime: dto.auditTime || undefined,
+    reviewComment: dto.reviewComment || '',
+    rejectReason: dto.rejectReason || '',
+    publishedBy: dto.publishedBy || undefined,
+    publishedAt: dto.publishedAt || undefined,
+    archiveReason: dto.archiveReason || '',
+    archivedBy: dto.archivedBy || undefined,
+    archivedAt: dto.archivedAt || undefined,
     operator: undefined,
     operateTime: dto.updatedAt || undefined,
     remarks: dto.remarks ?? dto.description ?? '',
+    approvalRequestSummary: normalizeApprovalRequestSummary(dto.approvalRequestSummary),
     items: normalizeStandardItems(dto.items),
   }
 }
@@ -109,10 +179,17 @@ export function toQualityStandardApiDTO(
     version: standard.version ?? 1,
     status: standard.status
       ? normalizeStandardStatus(standard.status)
-      : 'PUBLISHED',
+      : 'DRAFT',
     items: standard.items ?? [],
     auditor: standard.auditor?.trim() || '',
     auditTime: standard.auditTime || null,
+    reviewComment: standard.reviewComment?.trim() || '',
+    rejectReason: standard.rejectReason?.trim() || '',
+    publishedBy: standard.publishedBy?.trim() || '',
+    publishedAt: standard.publishedAt || null,
+    archiveReason: standard.archiveReason?.trim() || '',
+    archivedBy: standard.archivedBy?.trim() || '',
+    archivedAt: standard.archivedAt || null,
     remarks: standard.remarks?.trim() || '',
   }
 }

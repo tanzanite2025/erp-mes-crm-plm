@@ -1,4 +1,4 @@
-import { Standard } from './schema'
+import type { Standard } from './schema'
 
 /**
  * 品质标准模拟数据集 - 已清空

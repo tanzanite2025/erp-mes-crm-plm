@@ -60,6 +60,7 @@ function normalizeNotificationRuleInput(input: unknown) {
   const forceStatusChanged =
     (entity === 'ORDER' &&
       ['SALES_ORDER', 'PURCHASE_ORDER'].includes(normalizedSourceCode)) ||
+    (entity === 'QUALITY' && normalizedSourceCode === 'QUALITY_STANDARD') ||
     (entity === 'SYSTEM' &&
       ['PRODUCTION_PLAN', 'PRODUCTION_TASK'].includes(normalizedSourceCode))
 
@@ -124,7 +125,7 @@ export const NotificationRuleSchema = z.object({
   id: z.string(),
   name: z.string().min(1, '规则名称不能为空'),
   enabled: z.boolean().default(true),
-  entity: z.enum(['ORDER', 'BOM', 'PRODUCT', 'MOLD', 'SYSTEM']),
+  entity: z.enum(['ORDER', 'BOM', 'PRODUCT', 'MOLD', 'SYSTEM', 'QUALITY']),
   sourceCode: z.string().default('SALES_ORDER'),
   actionCode: z.string().default('STATUS_CHANGED'),
   /** 业务规则分支列表，每个分支对应一个 Tab */
@@ -139,7 +140,7 @@ export const NotificationRuleWriteSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, '规则名称不能为空'),
   enabled: z.boolean().default(true),
-  entity: z.enum(['ORDER', 'BOM', 'PRODUCT', 'MOLD', 'SYSTEM']),
+  entity: z.enum(['ORDER', 'BOM', 'PRODUCT', 'MOLD', 'SYSTEM', 'QUALITY']),
   sourceCode: z.string().min(1).default('SALES_ORDER'),
   actionCode: z.string().min(1).default('STATUS_CHANGED'),
   segments: z.array(RuleSegmentSchema).default([]),
@@ -179,6 +180,7 @@ export const ENTITY_OPTIONS = [
   { value: 'PRODUCT', label: '产品 (Product)' },
   { value: 'MOLD', label: '模具 (Mold)' },
   { value: 'SYSTEM', label: '系统 (System)' },
+  { value: 'QUALITY', label: '品质标准 (Quality)' },
 ] as const
 
 /** 动作选项 (已在 V2 中内聚到 Segment 逻辑或简化) */

@@ -14,15 +14,76 @@ import { RuleExecutionLogToolbar } from './components/rule-execution-log-toolbar
 
 const PAGE_SIZE = 20
 
-export function RuleExecutionLogTab() {
+type RuleExecutionLogTabSearchState = {
+  page: number
+  keyword: string
+  sourceCode: string
+  executionType: 'all' | RuleExecutionType
+  executionStatus: 'all' | RuleExecutionStatus
+}
+
+export function RuleExecutionLogTab({
+  searchState,
+  onSearchStateChange,
+}: {
+  searchState?: RuleExecutionLogTabSearchState
+  onSearchStateChange?: (partial: Partial<RuleExecutionLogTabSearchState>) => void
+} = {}) {
   const { locale } = useLanguage()
-  const [page, setPage] = useState(1)
-  const [keyword, setKeyword] = useState('')
-  const [sourceCode, setSourceCode] = useState('all')
-  const [executionType, setExecutionType] =
+  const [localPage, setLocalPage] = useState(1)
+  const [localKeyword, setLocalKeyword] = useState('')
+  const [localSourceCode, setLocalSourceCode] = useState('all')
+  const [localExecutionType, setLocalExecutionType] =
     useState<'all' | RuleExecutionType>('all')
-  const [executionStatus, setExecutionStatus] =
+  const [localExecutionStatus, setLocalExecutionStatus] =
     useState<'all' | RuleExecutionStatus>('all')
+
+  const page = searchState?.page ?? localPage
+  const keyword = searchState?.keyword ?? localKeyword
+  const sourceCode = searchState?.sourceCode ?? localSourceCode
+  const executionType = searchState?.executionType ?? localExecutionType
+  const executionStatus = searchState?.executionStatus ?? localExecutionStatus
+
+  const setPage = (value: number | ((current: number) => number)) => {
+    const nextValue = typeof value === 'function' ? value(page) : value
+    if (onSearchStateChange) {
+      onSearchStateChange({ page: nextValue })
+      return
+    }
+    setLocalPage(nextValue)
+  }
+
+  const setKeyword = (value: string) => {
+    if (onSearchStateChange) {
+      onSearchStateChange({ keyword: value })
+      return
+    }
+    setLocalKeyword(value)
+  }
+
+  const setSourceCode = (value: string) => {
+    if (onSearchStateChange) {
+      onSearchStateChange({ sourceCode: value })
+      return
+    }
+    setLocalSourceCode(value)
+  }
+
+  const setExecutionType = (value: 'all' | RuleExecutionType) => {
+    if (onSearchStateChange) {
+      onSearchStateChange({ executionType: value })
+      return
+    }
+    setLocalExecutionType(value)
+  }
+
+  const setExecutionStatus = (value: 'all' | RuleExecutionStatus) => {
+    if (onSearchStateChange) {
+      onSearchStateChange({ executionStatus: value })
+      return
+    }
+    setLocalExecutionStatus(value)
+  }
 
   const query = useMemo(
     () => ({
@@ -95,23 +156,35 @@ export function RuleExecutionLogTab() {
         skippedCount={totals.skipped}
       />
 
-      <Card className='rounded-[28px] border-dashed shadow-none'>
+      <Card className='rounded-[24px] border-dashed border-muted/40 bg-muted/5 shadow-none'>
         <RuleExecutionLogToolbar
           keyword={keyword}
           onKeywordChange={setKeyword}
           sourceCode={sourceCode}
           onSourceCodeChange={(value) => {
+            if (onSearchStateChange) {
+              onSearchStateChange({ page: 1, sourceCode: value })
+              return
+            }
             setPage(1)
             setSourceCode(value)
           }}
           sourceOptions={sourceOptions}
           executionType={executionType}
           onExecutionTypeChange={(value) => {
+            if (onSearchStateChange) {
+              onSearchStateChange({ page: 1, executionType: value })
+              return
+            }
             setPage(1)
             setExecutionType(value)
           }}
           executionStatus={executionStatus}
           onExecutionStatusChange={(value) => {
+            if (onSearchStateChange) {
+              onSearchStateChange({ page: 1, executionStatus: value })
+              return
+            }
             setPage(1)
             setExecutionStatus(value)
           }}

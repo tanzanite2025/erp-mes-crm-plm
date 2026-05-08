@@ -40,6 +40,7 @@ import { productionQuality } from './productionQuality'
 import { productionArchitecture } from './productionArchitecture'
 import { cuttingOperations } from './cuttingOperations'
 import { recentVisits } from './recentVisits'
+import { messageCenter } from './messageCenter'
 
 export const zhCNMessages = {
   common,
@@ -84,4 +85,5 @@ export const zhCNMessages = {
   productionArchitecture,
   cuttingOperations,
   recentVisits,
+  messageCenter,
 } as const

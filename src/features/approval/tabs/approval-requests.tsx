@@ -91,28 +91,47 @@ export function ApprovalRequests() {
     return <ForbiddenState />
   }
 
-  if (loading) return <div>{t('approval.requests.loading')}</div>
+  if (loading) {
+    return (
+      <div className='space-y-4 animate-in fade-in duration-500'>
+        <div className='flex flex-col justify-between gap-4 md:flex-row md:items-center'>
+          <div className='flex-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-6'>
+            <h2 className='text-lg font-black italic uppercase tracking-tighter'>
+              {t('approval.requests.heroTitle')}
+            </h2>
+            <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60'>
+              {t('approval.requests.loading')}
+            </p>
+          </div>
+        </div>
+        <div className='flex min-h-32 items-center justify-center rounded-[28px] border border-dashed border-muted/50 bg-muted/5 text-[10px] font-black uppercase tracking-widest text-muted-foreground/40'>
+          {t('approval.requests.loading')}
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-      <div className='flex flex-col gap-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-8 relative overflow-hidden'>
-        <div className='absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent pointer-events-none' />
-        <div className='flex items-center gap-3 text-primary relative z-10'>
-          <Shield className='size-5' />
-          <h3 className='text-xl font-black uppercase italic tracking-tighter'>
-            {t('approval.requests.heroTitle')}
-          </h3>
+    <div className='space-y-4 animate-in fade-in duration-700'>
+      <div className='flex flex-col justify-between gap-4 md:flex-row md:items-center'>
+        <div className='flex-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-6'>
+          <div className='flex items-center gap-2 text-primary'>
+            <Shield className='size-5' />
+            <h2 className='text-lg font-black italic uppercase tracking-tighter'>
+              {t('approval.requests.heroTitle')}
+            </h2>
+          </div>
+          <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60'>
+            {t('approval.requests.heroSubtitle', { count: pendingForMe.length })}
+          </p>
         </div>
-        <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60 relative z-10'>
-          {t('approval.requests.heroSubtitle', { count: pendingForMe.length })}
-        </p>
       </div>
 
-      <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-3'>
+      <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
         {pendingForMe.length === 0 ? (
-          <div className='col-span-full flex flex-col items-center justify-center rounded-[32px] border border-dashed bg-muted/5 py-24 italic text-muted-foreground/20'>
-            <Check className='mb-4 size-12 opacity-10' />
-            <p className='text-[11px] font-black uppercase tracking-widest'>
+          <div className='col-span-full flex flex-col items-center justify-center rounded-[28px] border border-dashed bg-muted/5 py-12 italic text-muted-foreground/20'>
+            <Check className='mb-2 size-9 opacity-10' />
+            <p className='text-[10px] font-black uppercase tracking-widest'>
               {t('approval.requests.emptyPending')}
             </p>
           </div>
@@ -120,9 +139,9 @@ export function ApprovalRequests() {
           pendingForMe.map((req) => (
             <Card
               key={req.id}
-              className='group overflow-hidden rounded-[32px] border-dashed border-muted/50 bg-muted/2 shadow-xl shadow-primary/2 duration-300 hover:bg-muted/5 animate-in zoom-in-95'
+              className='group gap-4 overflow-hidden rounded-[28px] border-dashed border-muted/50 bg-muted/2 py-4 shadow-xl shadow-primary/2 duration-300 hover:bg-muted/5 animate-in zoom-in-95'
             >
-              <CardContent className='space-y-4 pt-6'>
+              <CardContent className='space-y-3 px-4 pt-0'>
                 <div className='flex items-center justify-between'>
                   <Badge
                     variant='outline'
@@ -130,7 +149,7 @@ export function ApprovalRequests() {
                   >
                     {getApprovalModuleLabel(t, req.module)}
                   </Badge>
-                  <div className='flex items-center gap-3'>
+                  <div className='flex items-center gap-2'>
                     <AuditStatusDisplay
                       meta={getApprovalStatusMeta(t, req.status)}
                       badgeClassName='h-5 px-2 py-0'
@@ -141,14 +160,14 @@ export function ApprovalRequests() {
                   </div>
                 </div>
 
-                <div className='space-y-4'>
+                <div className='space-y-3'>
                   <h4 className='flex items-center gap-2 text-base font-black uppercase italic tracking-tighter'>
                     <Lock className='size-4 text-primary' />
                     {getApprovalActionLabel(t, req.action)}
                   </h4>
 
-                  <div className='rounded-[20px] border border-dashed border-muted-foreground/10 bg-muted/5 p-5 text-xs font-bold leading-relaxed text-muted-foreground/80 shadow-inner'>
-                    <span className='mb-2 block text-[9px] font-black uppercase tracking-widest opacity-40 italic'>
+                  <div className='rounded-[18px] border border-dashed border-muted-foreground/10 bg-muted/5 p-3.5 text-xs font-bold leading-relaxed text-muted-foreground/80 shadow-inner'>
+                    <span className='mb-1.5 block text-[9px] font-black uppercase tracking-widest opacity-40 italic'>
                       {t('approval.labels.requestReason')} / REQUEST_REASON
                     </span>
                     <p className='text-xs font-black italic tracking-tight opacity-90'>
@@ -157,14 +176,14 @@ export function ApprovalRequests() {
                   </div>
 
                   {/* SDRTS 差量预览区 */}
-                  <DeltaPreview 
-                    delta={req.delta} 
-                    className='rounded-[24px] border-none shadow-none bg-background/40' 
+                  <DeltaPreview
+                    delta={req.delta}
+                    className='rounded-[20px] border-none bg-background/40 shadow-none'
                   />
                 </div>
 
-                <div className='flex items-center gap-3 px-1 pt-2'>
-                  <div className='flex size-9 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-[10px] font-black uppercase text-primary shadow-sm'>
+                <div className='flex items-center gap-3 px-1 pt-0.5'>
+                  <div className='flex size-8 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-[10px] font-black uppercase text-primary shadow-sm'>
                     {req.requester?.username?.charAt(0) || 'U'}
                   </div>
                   <div className='flex flex-col'>
@@ -178,18 +197,18 @@ export function ApprovalRequests() {
                 </div>
               </CardContent>
 
-              <CardFooter className='gap-3 border-t border-dashed border-muted/50 bg-muted/10 p-4'>
+              <CardFooter className='gap-2 border-t border-dashed border-muted/50 bg-muted/10 p-3'>
                 <Button
                   variant='ghost'
                   size='sm'
-                  className='h-10 flex-1 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-destructive/10 hover:text-destructive'
+                  className='h-9 flex-1 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-destructive/10 hover:text-destructive'
                   onClick={() => handleReject(req.id)}
                 >
                   {t('approval.requests.reject')}
                 </Button>
                 <Button
                   size='sm'
-                  className='h-10 flex-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-500/20'
+                  className='h-9 flex-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-500/20'
                   onClick={() => {
                     const isFinal = req.currentLevel === 2 || !req.approver2Id
                     if (isFinal) {
@@ -209,41 +228,42 @@ export function ApprovalRequests() {
         )}
       </div>
 
-      <div className='mt-10 flex flex-col gap-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-8 relative overflow-hidden'>
-        <div className='absolute inset-0 bg-gradient-to-br from-primary/3 via-transparent pointer-events-none' />
-        <div className='flex items-center gap-3 text-muted-foreground relative z-10'>
-          <HistoryIcon className='size-5' />
-          <h3 className='text-xl font-black uppercase italic tracking-tighter'>
-            {t('approval.requests.myLogsTitle')}
-          </h3>
+      <div className='flex items-start justify-between gap-4 px-1 pt-1'>
+        <div className='min-w-0 space-y-1'>
+          <div className='flex items-center gap-2 text-muted-foreground'>
+            <HistoryIcon className='size-4 shrink-0' />
+            <h3 className='text-lg font-black uppercase italic tracking-tighter'>
+              {t('approval.requests.myLogsTitle')}
+            </h3>
+          </div>
+          <p className='max-w-2xl text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>
+            {t('approval.requests.myLogsSubtitle')}
+          </p>
         </div>
-        <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60 relative z-10'>
-          {t('approval.requests.myLogsSubtitle')}
-        </p>
       </div>
 
-      <div className='overflow-hidden rounded-[32px] border border-dashed bg-muted/5 shadow-inner'>
+      <div className='overflow-hidden rounded-[28px] border border-dashed bg-muted/5 shadow-inner'>
         <table className='w-full'>
           <thead>
-            <tr className='h-14 border-b border-dashed bg-muted/30'>
-              <th className='px-6 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+            <tr className='h-11 border-b border-dashed bg-muted/30'>
+              <th className='px-4 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
                 {t('approval.requests.table.content')}
               </th>
-              <th className='px-6 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+              <th className='px-4 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
                 {t('approval.requests.table.status')}
               </th>
-              <th className='px-6 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+              <th className='px-4 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
                 {t('approval.requests.table.pinCode')}
               </th>
-              <th className='px-6 text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+              <th className='px-4 text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
                 {t('approval.requests.table.timestamp')}
               </th>
             </tr>
           </thead>
           <tbody>
             {myRequests.map((req) => (
-              <tr key={req.id} className='h-16 border-b transition-colors last:border-0 hover:bg-muted/5'>
-                <td className='px-6'>
+              <tr key={req.id} className='h-14 border-b transition-colors last:border-0 hover:bg-muted/5'>
+                <td className='px-4'>
                   <div className='text-xs font-black'>
                     {getApprovalModuleLabel(t, req.module)} - {getApprovalActionLabel(t, req.action)}
                   </div>
@@ -251,13 +271,13 @@ export function ApprovalRequests() {
                     ID: {req.targetId}
                   </div>
                 </td>
-                <td className='px-6'>
+                <td className='px-4'>
                   <AuditStatusDisplay
                     meta={getApprovalStatusMeta(t, req.status)}
                     badgeClassName='h-5 px-2 py-0'
                   />
                 </td>
-                <td className='px-6'>
+                <td className='px-4'>
                   {req.authCode ? (
                     <div className='flex items-center gap-2 font-mono text-sm font-black text-primary'>
                       <Lock className='h-3 w-3 opacity-40' />
@@ -267,7 +287,7 @@ export function ApprovalRequests() {
                     <span className='text-muted-foreground/30'>-</span>
                   )}
                 </td>
-                <td className='px-6 text-right text-[10px] font-mono text-muted-foreground'>
+                <td className='px-4 text-right text-[10px] font-mono text-muted-foreground'>
                   {new Date(req.createdAt).toLocaleString(locale)}
                 </td>
               </tr>
@@ -276,7 +296,7 @@ export function ApprovalRequests() {
         </table>
 
         {myRequests.length === 0 && (
-          <div className='py-20 text-center text-[11px] font-black uppercase tracking-widest text-muted-foreground/20 italic'>
+          <div className='py-12 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground/20 italic'>
             {t('approval.requests.emptyMine')}
           </div>
         )}

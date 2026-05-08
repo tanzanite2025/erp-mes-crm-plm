@@ -17,6 +17,12 @@ export type OfflineConflictRow = OfflineConflictRecord<unknown> & {
   key: string
 }
 
+const PENDING_DELTA_STORE_V2 =
+  'key, opId, [entityType+entityId], entityType, entityId, state, intent, createdAt, updatedAt, batchId'
+
+const PENDING_DELTA_STORE_V3 =
+  'key, opId, [entityType+entityId], [intent+state], entityType, entityId, state, intent, createdAt, updatedAt, batchId'
+
 class XdfcOfflineSyncDexieDb extends Dexie {
   snapshots!: EntityTable<OfflineSnapshotRow, 'key'>
   pendingDeltas!: EntityTable<OfflinePendingDeltaRow, 'key'>
@@ -28,7 +34,14 @@ class XdfcOfflineSyncDexieDb extends Dexie {
 
     this.version(2).stores({
       snapshots: 'key, entityType, entityId, syncedAt',
-      pendingDeltas: 'key, opId, [entityType+entityId], entityType, entityId, state, intent, createdAt, updatedAt, batchId',
+      pendingDeltas: PENDING_DELTA_STORE_V2,
+      syncMeta: 'key, entityType, entityId, queueState, lastSyncAt',
+      conflictRecords: 'key, conflictId, opId, [entityType+entityId], entityType, entityId, createdAt, resolvedAt, reason',
+    })
+
+    this.version(3).stores({
+      snapshots: 'key, entityType, entityId, syncedAt',
+      pendingDeltas: PENDING_DELTA_STORE_V3,
       syncMeta: 'key, entityType, entityId, queueState, lastSyncAt',
       conflictRecords: 'key, conflictId, opId, [entityType+entityId], entityType, entityId, createdAt, resolvedAt, reason',
     })

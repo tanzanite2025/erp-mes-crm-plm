@@ -1,4 +1,5 @@
 import { type BusinessEventSource } from '../../workflow-core/data/business-event-source-schema'
+import { getBusinessEventStatusLabel } from '../../workflow-core/data/business-event-status-catalog'
 import {
   getBusinessEventFieldSummary,
   getBusinessEventStatusSummary,
@@ -94,8 +95,8 @@ export function buildBusinessEventSourceCardPresentation({
     (item) => ({
       id: item.id ?? '',
       code: item.code,
-      label: item.label,
-      meta: item.phase,
+      label: getBusinessEventStatusLabel(committedSource.code, item.code),
+      meta: '唯一状态',
     })
   )
   const removedFieldItems = getRemovedBusinessEventSourceItems(
@@ -169,8 +170,8 @@ export function buildBusinessEventSourceCardPresentation({
         (item) => ({
           id: item.id ?? '',
           code: item.code,
-          label: item.label,
-          meta: item.phase,
+          label: getBusinessEventStatusLabel(draft.code, item.code),
+          meta: '唯一状态',
         })
       ),
       onOpen: onOpenStatuses,

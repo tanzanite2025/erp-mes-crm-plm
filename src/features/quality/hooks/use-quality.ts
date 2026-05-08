@@ -76,17 +76,23 @@ export function useQualityMutations() {
       data: Partial<Standard>
       isPatch?: boolean
       delta?: DeltaSet
+      successMessage?: string
     }) => QualityMaintenanceService.saveStandard(params),
     ...buildMutationOptions<
       Standard,
       Error,
-      { data: Partial<Standard>; isPatch?: boolean; delta?: DeltaSet }
+      {
+        data: Partial<Standard>
+        isPatch?: boolean
+        delta?: DeltaSet
+        successMessage?: string
+      }
     >({
       queryClient,
       invalidateQueryKeys: [['quality_standards'], ['quality_standard']],
       onError: handleServerError,
-      onSuccess: () => {
-        toast.success(t('quality.hooks.saveStandardSuccess'))
+      onSuccess: (_, variables) => {
+        toast.success(variables.successMessage || t('quality.hooks.saveStandardSuccess'))
       },
     }),
   })

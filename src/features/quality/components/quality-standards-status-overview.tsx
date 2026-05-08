@@ -1,9 +1,12 @@
 import {
   Archive,
+  Ban,
   CheckCircle2,
+  CircleEllipsis,
   FileClock,
   LayoutGrid,
   Loader2,
+  Send,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
@@ -42,18 +45,39 @@ export function QualityStandardsStatusOverview({
       description: t('quality.standards.page.statusViewAllDescription'),
     },
     {
+      value: 'DRAFT',
+      icon: FileClock,
+      label: t('quality.standards.values.statusDraft'),
+      count: stats.draft,
+      description: t('quality.standards.page.statusViewDraftDescription'),
+    },
+    {
+      value: 'PENDING_APPROVAL',
+      icon: Send,
+      label: t('quality.standards.values.statusPendingApproval'),
+      count: stats.pendingApproval,
+      description: t('quality.standards.page.statusViewPendingApprovalDescription'),
+    },
+    {
+      value: 'APPROVED',
+      icon: CircleEllipsis,
+      label: t('quality.standards.values.statusApproved'),
+      count: stats.approved,
+      description: t('quality.standards.page.statusViewApprovedDescription'),
+    },
+    {
+      value: 'REJECTED',
+      icon: Ban,
+      label: t('quality.standards.values.statusRejected'),
+      count: stats.rejected,
+      description: t('quality.standards.page.statusViewRejectedDescription'),
+    },
+    {
       value: 'PUBLISHED',
       icon: CheckCircle2,
       label: t('quality.standards.values.statusPublished'),
       count: stats.published,
       description: t('quality.standards.page.statusViewPublishedDescription'),
-    },
-    {
-      value: 'DRAFT',
-      icon: FileClock,
-      label: t('quality.standards.values.statusPending'),
-      count: stats.draft,
-      description: t('quality.standards.page.statusViewDraftDescription'),
     },
     {
       value: 'ARCHIVED',
@@ -83,7 +107,7 @@ export function QualityStandardsStatusOverview({
         ) : null}
       </div>
 
-      <div className='mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4'>
+      <div className='mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'>
         {items.map((item) => {
           const Icon = item.icon
           const isActive = value === item.value
