@@ -47,22 +47,22 @@ export function LogisticsSandboxDashboard() {
   } = useLogisticsPlatformAdmin()
 
   return (
-    <div className='mt-4 mx-4 min-h-screen rounded-[40px] border border-dashed border-slate-200 bg-slate-50/50 p-8 shadow-inner animate-in fade-in zoom-in-95 duration-500'>
-      <div className='space-y-8'>
-        <div className='flex justify-end gap-3'>
+    <div className='rounded-[32px] border border-dashed border-slate-200 bg-slate-50/50 px-4 py-5 shadow-inner animate-in fade-in zoom-in-95 duration-500 sm:px-5 lg:px-6 lg:py-6'>
+      <div className='space-y-5 lg:space-y-6'>
+        <div className='flex flex-wrap justify-end gap-2'>
           <Button
             type='button'
             variant='outline'
             onClick={() => void refetch()}
             disabled={isFetching}
-            className='h-12 rounded-full px-6 font-black text-[10px] uppercase tracking-widest'
+            className='h-11 rounded-full px-5 font-black text-[10px] uppercase tracking-widest'
           >
             {isFetching ? <Loader2 className='mr-2 size-4 animate-spin' /> : <RefreshCw className='mr-2 size-4' />}
             {t('logisticsConfig.platforms.actions.refresh')}
           </Button>
 
           <Button
-            className='h-12 rounded-full bg-slate-900 px-8 text-[10px] font-black uppercase tracking-widest shadow-xl shadow-slate-900/20 transition-all hover:scale-105'
+            className='h-11 rounded-full bg-slate-900 px-6 text-[10px] font-black uppercase tracking-widest shadow-lg shadow-slate-900/20 transition-all'
             onClick={openCreateDialog}
           >
             <Plus className='mr-2 size-4' />
@@ -92,7 +92,7 @@ export function LogisticsSandboxDashboard() {
         ) : providers.length === 0 ? (
           <LogisticsPlatformState type='empty' />
         ) : (
-          <div className='grid grid-cols-1 gap-6 lg:grid-cols-2'>
+          <div className='grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3'>
             {providers.map((provider) => {
               const secretKey = getProviderSecretKey(provider)
 

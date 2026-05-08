@@ -19,6 +19,12 @@ export interface SearchItem {
   pinyin?: string
 }
 
+export interface KnowledgeRouteOption {
+  value: string
+  label: string
+  parentLabel: string
+}
+
 type TranslateFn = (
   key: TranslationKey,
   params?: Record<string, string | number>
@@ -528,6 +534,14 @@ function getActionItems(t: TranslateFn): SearchItem[] {
   return getEnabledConfigs(STATIC_SEARCH_RESULT_REGISTRY.actions).map((config) =>
     toSearchItem(t, config, 'actions', PlusCircle)
   )
+}
+
+export function getKnowledgeRouteOptions(t: TranslateFn): KnowledgeRouteOption[] {
+  return getEnabledConfigs(STATIC_SEARCH_RESULT_REGISTRY.modules).map((config) => ({
+    value: config.href,
+    label: t(config.titleKey),
+    parentLabel: t(config.parentKey),
+  }))
 }
 
 export function getSearchItems(t: TranslateFn): SearchItem[] {

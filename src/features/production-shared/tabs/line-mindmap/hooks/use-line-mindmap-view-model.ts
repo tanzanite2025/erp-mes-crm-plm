@@ -1,31 +1,71 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ProductionLine } from '../../../data/production-line'
-import type { HierarchyLevelOptionItem } from '../../hierarchy-config/data/hierarchy-config'
 import {
   getDefaultSelectedNodeId,
   toLineMindmapLineOptions,
   toLineMindmapNodes,
 } from '../adapters/line-mindmap-adapter'
-import {
-  findMindmapNode,
-  updateMindmapNode,
-} from '../data/sample-mindmap'
+import type { LineMindmapNode } from '../data/sample-mindmap'
 import type { LineMindmapNodeDraftMap } from './use-line-mindmap-node-drafts'
 
+function applyNodeDraftMap(
+  nodes: LineMindmapNode[],
+  nodeDraftMap: LineMindmapNodeDraftMap,
+): LineMindmapNode[] {
+  let hasChanges = false
+
+  const nextNodes = nodes.map((node) => {
+    const nextChildren = node.children.length > 0
+      ? applyNodeDraftMap(node.children, nodeDraftMap)
+      : node.children
+    const draft = nodeDraftMap[node.id]
+    const childrenChanged = nextChildren !== node.children
+
+    if (!draft && !childrenChanged) {
+      return node
+    }
+
+    hasChanges = true
+
+    return {
+      ...node,
+      ...draft,
+      children: nextChildren,
+    }
+  })
+
+  return hasChanges ? nextNodes : nodes
+}
+
+function createNodeIndex(nodes: LineMindmapNode[]): Map<string, LineMindmapNode> {
+  const nodeIndex = new Map<string, LineMindmapNode>()
+
+  const visit = (currentNodes: LineMindmapNode[]) => {
+    currentNodes.forEach((node) => {
+      nodeIndex.set(node.id, node)
+
+      if (node.children.length > 0) {
+        visit(node.children)
+      }
+    })
+  }
+
+  visit(nodes)
+
+  return nodeIndex
+}
+
 interface UseLineMindmapViewModelOptions {
-  level2Options: HierarchyLevelOptionItem[]
   lines: ProductionLine[]
   nodeDraftMap: LineMindmapNodeDraftMap
 }
 
 export function useLineMindmapViewModel({
-  level2Options,
   lines,
   nodeDraftMap,
 }: UseLineMindmapViewModelOptions) {
   const [activeLineId, setActiveLineId] = useState('')
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
-  const [isRootInsertMode, setIsRootInsertMode] = useState(false)
 
   const lineOptions = useMemo(() => toLineMindmapLineOptions(lines), [lines])
   const resolvedLineId = useMemo(() => {
@@ -45,59 +85,32 @@ export function useLineMindmapViewModel({
       return baseNodes
     }
 
-    return Object.entries(nodeDraftMap).reduce(
-      (currentNodes, [nodeId, draft]) =>
-        updateMindmapNode(currentNodes, nodeId, (node) => ({
-          ...node,
-          ...draft,
-        })),
-      baseNodes,
-    )
+    return applyNodeDraftMap(baseNodes, nodeDraftMap)
   }, [baseNodes, nodeDraftMap])
+  const nodeIndex = useMemo(() => createNodeIndex(nodes), [nodes])
   const resolvedSelectedNodeId = useMemo(() => {
-    if (isRootInsertMode) {
-      return null
-    }
-
-    if (selectedNodeId && findMindmapNode(nodes, selectedNodeId)) {
+    if (selectedNodeId && nodeIndex.has(selectedNodeId)) {
       return selectedNodeId
     }
 
     return getDefaultSelectedNodeId(nodes)
-  }, [isRootInsertMode, nodes, selectedNodeId])
+  }, [nodeIndex, nodes, selectedNodeId])
   const selectedNode = useMemo(
-    () => (resolvedSelectedNodeId ? findMindmapNode(nodes, resolvedSelectedNodeId) : null),
-    [nodes, resolvedSelectedNodeId],
+    () => (resolvedSelectedNodeId ? nodeIndex.get(resolvedSelectedNodeId) ?? null : null),
+    [nodeIndex, resolvedSelectedNodeId],
   )
-  const childOptions = useMemo(() => {
-    if (selectedNode?.sourceType === 'segment') {
-      return level2Options
-    }
-
-    return []
-  }, [level2Options, selectedNode])
-
-  const enterRootInsertMode = useCallback(() => {
-    setIsRootInsertMode(true)
-    setSelectedNodeId(null)
-  }, [])
 
   const handleSelectNode = useCallback((nodeId: string) => {
-    setIsRootInsertMode(false)
     setSelectedNodeId(nodeId)
   }, [])
 
   const settleSelection = useCallback((nextSelectedNodeId: string | null) => {
-    setIsRootInsertMode(false)
     setSelectedNodeId(nextSelectedNodeId)
   }, [])
 
   return {
     activeLine,
-    childOptions,
-    enterRootInsertMode,
     handleSelectNode,
-    isRootInsertMode,
     lineOptions,
     nodes,
     resolvedLineId,

@@ -79,22 +79,24 @@ export function LogisticsSupplierFormDialog({
           </div>
         </div>
 
-        <DialogFooter className='flex-col gap-2'>
+        <DialogFooter className='flex-col gap-2 pt-0 sm:flex-col sm:items-stretch sm:justify-start'>
           {!isCredentialsComplete && isFormValid ? (
-            <p className='flex w-full items-center justify-center gap-1 text-[10px] font-bold text-amber-600'>
-              <AlertTriangle className='size-3' />
+            <p className='flex w-full items-start justify-start gap-1 text-[10px] font-bold leading-relaxed text-amber-600'>
+              <AlertTriangle className='mt-0.5 size-3 shrink-0' />
               {t('logisticsConfig.suppliers.states.credentialsIncomplete')}
             </p>
           ) : null}
-          <Button variant='outline' onClick={() => onOpenChange(false)}>
-            {t('logisticsConfig.suppliers.actions.cancel')}
-          </Button>
-          <Button onClick={onSave} disabled={!isFormValid || savePending} className='w-full'>
-            {savePending ? <Loader2 className='size-4 animate-spin' /> : <Check className='size-4' />}
-            {isCredentialsComplete
-              ? t('logisticsConfig.suppliers.actions.saveReady')
-              : t('logisticsConfig.suppliers.actions.saveIncomplete')}
-          </Button>
+          <div className='flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end'>
+            <Button variant='outline' onClick={() => onOpenChange(false)}>
+              {t('logisticsConfig.suppliers.actions.cancel')}
+            </Button>
+            <Button onClick={onSave} disabled={!isFormValid || savePending} className='w-full sm:w-auto sm:min-w-56'>
+              {savePending ? <Loader2 className='size-4 animate-spin' /> : <Check className='size-4' />}
+              {isCredentialsComplete
+                ? t('logisticsConfig.suppliers.actions.saveReady')
+                : t('logisticsConfig.suppliers.actions.saveIncomplete')}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

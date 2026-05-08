@@ -72,7 +72,7 @@ export function KnowledgeBaseEntryCard({
               className='h-8 rounded-full border-dashed px-3 text-[11px] font-bold'
               asChild
             >
-              <Link to={entry.routePath as any}>
+              <Link to={entry.routePath as never}>
                 <ExternalLink className='mr-1.5 size-3.5' />
                 {t('basicSettings.knowledgeBase.actions.openRoute')}
               </Link>
@@ -107,32 +107,38 @@ export function KnowledgeBaseMediaIndicators({
   hasVideo,
   imageLabel,
   videoLabel,
+  compact = false,
 }: {
   hasImage: boolean
   hasVideo: boolean
   imageLabel: string
   videoLabel: string
+  compact?: boolean
 }) {
   if (!hasImage && !hasVideo) return null
 
   return (
-    <span className='flex items-center gap-1'>
+    <span className={compact ? 'flex items-center gap-0.5' : 'flex items-center gap-1'}>
       {hasImage ? (
         <span
           title={imageLabel}
           aria-label={imageLabel}
-          className='flex size-6 items-center justify-center rounded-full border border-sky-500/20 bg-sky-500/10 text-sky-600'
+          className={compact
+            ? 'flex size-5 items-center justify-center rounded-full border border-sky-500/20 bg-sky-500/10 text-sky-600'
+            : 'flex size-6 items-center justify-center rounded-full border border-sky-500/20 bg-sky-500/10 text-sky-600'}
         >
-          <ImageIcon className='size-3.5' />
+          <ImageIcon className={compact ? 'size-3' : 'size-3.5'} />
         </span>
       ) : null}
       {hasVideo ? (
         <span
           title={videoLabel}
           aria-label={videoLabel}
-          className='flex size-6 items-center justify-center rounded-full border border-amber-500/20 bg-amber-500/10 text-amber-600'
+          className={compact
+            ? 'flex size-5 items-center justify-center rounded-full border border-amber-500/20 bg-amber-500/10 text-amber-600'
+            : 'flex size-6 items-center justify-center rounded-full border border-amber-500/20 bg-amber-500/10 text-amber-600'}
         >
-          <Video className='size-3.5' />
+          <Video className={compact ? 'size-3' : 'size-3.5'} />
         </span>
       ) : null}
     </span>

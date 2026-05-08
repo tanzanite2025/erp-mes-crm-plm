@@ -94,10 +94,10 @@ export function LogisticsProviderFormDialog({
           </div>
         </div>
 
-        <DialogFooter className='flex-col gap-1 pt-0'>
+        <DialogFooter className='flex-col gap-1 pt-0 sm:flex-col sm:items-stretch sm:justify-start'>
           {!isCredentialsComplete && isFormValid ? (
-            <p className='flex w-full items-center justify-center gap-1 text-[10px] font-bold text-amber-600'>
-              <AlertTriangle className='size-3' />
+            <p className='flex w-full items-start justify-start gap-1 text-[10px] font-bold leading-relaxed text-amber-600'>
+              <AlertTriangle className='mt-0.5 size-3 shrink-0' />
               {t('logisticsConfig.platforms.states.credentialsIncomplete')}
             </p>
           ) : null}

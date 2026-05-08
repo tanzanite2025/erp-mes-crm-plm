@@ -1,6 +1,12 @@
+import z from 'zod'
 import { createFileRoute } from '@tanstack/react-router'
-import { KnowledgeBaseMgmt } from '@/features/basic-settings/knowledge-base/tabs/knowledge-base-mgmt'
+import { KnowledgeBaseRouteEntry } from '@/features/basic-settings/knowledge-base/pages/knowledge-base-route-entry'
+
+const knowledgeBaseSearchSchema = z.object({
+  action: z.enum(['create']).optional(),
+})
 
 export const Route = createFileRoute('/_authenticated/basic-settings/knowledge-base')({
-  component: KnowledgeBaseMgmt,
+  validateSearch: (search) => knowledgeBaseSearchSchema.parse(search),
+  component: KnowledgeBaseRouteEntry,
 })

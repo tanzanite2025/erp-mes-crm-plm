@@ -1,27 +1,24 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useProductionProcessesQuery } from '../../../hooks/use-production-resources'
 import type { ProductionProcessStep } from '../../../data/production-process'
 import type { LineMindmapNode } from '../data/sample-mindmap'
+import type { LineMindmapProcessDraft } from '../types'
 import { useLineMindmapProcessCapabilities } from './use-line-mindmap-process-capabilities'
 import { useLineMindmapProcessLibrary } from './use-line-mindmap-process-library'
-
-interface ProcessLibraryDraft {
-  description: string
-  isActive: boolean
-  name: string
-}
-
-const emptyProcessLibraryDraft: ProcessLibraryDraft = {
-  description: '',
-  isActive: true,
-  name: '',
-}
 
 export function useLineMindmapProcessPanel(selectedNode: LineMindmapNode | null) {
   const { data: processLibrary = [] } = useProductionProcessesQuery()
   const { assignProcessCapability, removeProcessCapability } = useLineMindmapProcessCapabilities()
   const { deleteProcess, saveProcess } = useLineMindmapProcessLibrary()
-  const [processLibraryDraft, setProcessLibraryDraft] = useState<ProcessLibraryDraft>(emptyProcessLibraryDraft)
+
+  const saveProcessFromDraft = async (draft: LineMindmapProcessDraft) => {
+    return saveProcess({
+      id: '',
+      description: draft.description || undefined,
+      isActive: draft.isActive,
+      name: draft.name.trim(),
+    })
+  }
 
   const processOptions = useMemo(() => {
     if (selectedNode?.sourceType !== 'jobCategory') {
@@ -55,26 +52,10 @@ export function useLineMindmapProcessPanel(selectedNode: LineMindmapNode | null)
     await removeProcessCapability(jobCategoryId, selectedNode.sourceId)
   }
 
-  const handlePatchProcessLibraryDraft = (patch: Partial<ProcessLibraryDraft>) => {
-    setProcessLibraryDraft((current) => ({ ...current, ...patch }))
-  }
-
-  const resetProcessLibraryDraft = () => {
-    setProcessLibraryDraft(emptyProcessLibraryDraft)
-  }
-
-  const handleCreateProcess = async (draft: ProcessLibraryDraft) => {
-    const saved = await saveProcess({
-      id: '',
-      description: draft.description || undefined,
-      isActive: draft.isActive,
-      name: draft.name.trim(),
-    })
-    resetProcessLibraryDraft()
-
-    if (selectedNode?.sourceType === 'jobCategory' && selectedNode.sourceId) {
-      await assignProcessCapability(selectedNode.sourceId, saved.id)
-    }
+  const handleCreateProcessForJobCategory = async (draft: LineMindmapProcessDraft, jobCategoryId: string) => {
+    const saved = await saveProcessFromDraft(draft)
+    await assignProcessCapability(jobCategoryId, saved.id)
+    return saved
   }
 
   const handleSaveProcessEntity = async (process: ProductionProcessStep) => {
@@ -92,12 +73,10 @@ export function useLineMindmapProcessPanel(selectedNode: LineMindmapNode | null)
 
   return {
     handleAssignProcess,
-    handleCreateProcess,
+    handleCreateProcessForJobCategory,
     handleDeleteProcessEntity,
-    handlePatchProcessLibraryDraft,
     handleRemoveProcess,
     handleSaveProcessEntity,
-    processLibraryDraft,
     processOptions,
   }
 }

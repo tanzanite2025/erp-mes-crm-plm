@@ -44,6 +44,14 @@ export const basicSettings = {
         summary: "Summary",
         content: "Content",
         keywords: "Keywords"
+      },
+      routeOptions: {
+        placeholder: "Select a linked page",
+        searchPlaceholder: "Search page, module, or route",
+        none: "No linked page",
+        empty: "No matching linked pages found",
+        unlistedCurrent: "Current linked page (unlisted)",
+        legacyRoute: "Legacy Route"
       }
     }
   },

@@ -11,12 +11,12 @@ export interface PendingTopologyMutation {
 
 interface UseLineMindmapTopologyAuthOptions {
   settleSelection: (nextSelectedNodeId: string | null) => void
-  updateLine: (payload: LineMutationPayload, authCode?: string) => Promise<void> | void
+  updateLineStrict: (payload: LineMutationPayload, authCode?: string) => Promise<void>
 }
 
 export function useLineMindmapTopologyAuth({
   settleSelection,
-  updateLine,
+  updateLineStrict,
 }: UseLineMindmapTopologyAuthOptions) {
   const [authDialogOpen, setAuthDialogOpen] = useState(false)
   const [pendingTopologyMutation, setPendingTopologyMutation] = useState<PendingTopologyMutation | null>(null)
@@ -26,12 +26,12 @@ export function useLineMindmapTopologyAuth({
     setAuthDialogOpen(true)
   }, [])
 
-  const handleAuthConfirm = useCallback((password: string) => {
+  const handleAuthConfirm = useCallback(async (password: string) => {
     if (!pendingTopologyMutation) {
-      return
+      return false
     }
 
-    void updateLine(
+    await updateLineStrict(
       {
         type: 'UPDATE',
         id: pendingTopologyMutation.lineId,
@@ -42,7 +42,8 @@ export function useLineMindmapTopologyAuth({
     )
     settleSelection(pendingTopologyMutation.nextSelectedNodeId)
     setPendingTopologyMutation(null)
-  }, [pendingTopologyMutation, settleSelection, updateLine])
+    return true
+  }, [pendingTopologyMutation, settleSelection, updateLineStrict])
 
   const handleAuthOpenChange = useCallback((open: boolean) => {
     setAuthDialogOpen(open)

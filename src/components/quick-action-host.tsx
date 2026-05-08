@@ -56,6 +56,7 @@ export function QuickActionHost({
   const { saveProducts } = useProductWriteActions()
   const { createMutation: createCustomerMutation } = useCustomerMutations()
   const [isProductDialogReady, setIsProductDialogReady] = React.useState(false)
+  const hasHandledProductTypeErrorRef = React.useRef(false)
 
   const activeDefinition = actionId
     ? getHostedQuickActionDefinition(actionId)
@@ -104,28 +105,34 @@ export function QuickActionHost({
 
   React.useEffect(() => {
     if (activeDefinition?.hostKind !== 'product-create') {
-      setIsProductDialogReady(false)
+      hasHandledProductTypeErrorRef.current = false
+      setIsProductDialogReady((current) => (current ? false : current))
       return
     }
 
     if (productTypesQuery.isSuccess) {
-      setIsProductDialogReady(true)
+      hasHandledProductTypeErrorRef.current = false
+      setIsProductDialogReady((current) => (current ? current : true))
       return
     }
 
     if (productTypesQuery.isError) {
+      if (hasHandledProductTypeErrorRef.current) {
+        return
+      }
+
+      hasHandledProductTypeErrorRef.current = true
+      setIsProductDialogReady((current) => (current ? false : current))
       logger.error('Load product types for quick action failed', productTypesQuery.error)
       toast.error('产品类型加载失败')
       completeAction({ status: 'failed', error: productTypesQuery.error })
-      onActionChange(null)
       return
     }
 
-    setIsProductDialogReady(false)
+    setIsProductDialogReady((current) => (current ? false : current))
   }, [
     activeDefinition?.hostKind,
     completeAction,
-    onActionChange,
     productTypesQuery.error,
     productTypesQuery.isError,
     productTypesQuery.isSuccess,

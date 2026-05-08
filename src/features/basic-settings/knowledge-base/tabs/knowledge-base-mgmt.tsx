@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { AlertCircle } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { KnowledgeBaseEntryEditor } from '../components/knowledge-base-entry-editor'
@@ -5,7 +6,14 @@ import { KnowledgeBaseEntryList } from '../components/knowledge-base-entry-list'
 import { KnowledgeBaseToolbar } from '../components/knowledge-base-toolbar'
 import { useKnowledgeBase } from '../hooks/use-knowledge-base'
 
-export function KnowledgeBaseMgmt() {
+interface KnowledgeBaseMgmtProps {
+  search?: {
+    action?: 'create'
+  }
+  onActionConsumed?: () => void
+}
+
+export function KnowledgeBaseMgmt({ search, onActionConsumed }: KnowledgeBaseMgmtProps) {
   const { t } = useLanguage()
   const {
     entries,
@@ -27,6 +35,13 @@ export function KnowledgeBaseMgmt() {
     saveDraft,
     deleteEntry,
   } = useKnowledgeBase()
+
+  useEffect(() => {
+    if (search?.action !== 'create') return
+
+    openCreate()
+    onActionConsumed?.()
+  }, [onActionConsumed, openCreate, search?.action])
 
   return (
     <div className='flex flex-col gap-8 animate-in fade-in duration-700'>

@@ -1,4 +1,5 @@
 import { useCommandMenu } from '@/hooks/use-command-menu'
+import { KnowledgeBaseEntryEditor } from '@/features/basic-settings/knowledge-base/components/knowledge-base-entry-editor'
 import { CommandMenuView } from './command-menu-view'
 import { QuickActionHost } from './quick-action-host'
 
@@ -14,14 +15,23 @@ export function CommandMenu() {
     searchValue,
     setSearchValue,
     asyncResults,
+    isKnowledgeCreateOpen,
+    isKnowledgeCreateSaving,
     knowledgeEntries,
+    knowledgeCreateDraft,
     selectedKnowledgeEntry,
+    setKnowledgeCreateDraft,
     setSelectedKnowledgeEntry,
     isSearching,
     groupedItems,
     handleItemSelect,
+    handleKnowledgeCreate,
+    handleKnowledgeCreateClose,
+    handleKnowledgeCreateSave,
+    handleSearchReset,
     activeQuickActionId,
     setActiveQuickActionId,
+    canCreateKnowledgeEntry,
   } = useCommandMenu()
 
   return (
@@ -35,14 +45,25 @@ export function CommandMenu() {
         groupedItems={groupedItems}
         asyncResults={asyncResults}
         knowledgeEntries={knowledgeEntries}
+        canCreateKnowledgeEntry={canCreateKnowledgeEntry}
         selectedKnowledgeEntry={selectedKnowledgeEntry}
+        onKnowledgeCreate={handleKnowledgeCreate}
         onKnowledgeSelect={setSelectedKnowledgeEntry}
         onItemSelect={handleItemSelect}
       />
       <QuickActionHost
         actionId={activeQuickActionId}
         onActionChange={setActiveQuickActionId}
-        onSearchReset={() => setSearchValue('')}
+        onSearchReset={handleSearchReset}
+      />
+      <KnowledgeBaseEntryEditor
+        open={isKnowledgeCreateOpen}
+        draft={knowledgeCreateDraft}
+        isEditing={false}
+        isSaving={isKnowledgeCreateSaving}
+        onDraftChange={setKnowledgeCreateDraft}
+        onSave={handleKnowledgeCreateSave}
+        onClose={handleKnowledgeCreateClose}
       />
     </>
   )

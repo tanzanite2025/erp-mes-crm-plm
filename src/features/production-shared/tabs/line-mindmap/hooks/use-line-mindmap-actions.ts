@@ -13,23 +13,25 @@ import {
   renameJobCategoryInLine,
   renameSegmentInLine,
 } from '../../line-mgmt/utils/line-topology-helpers'
-import type { LineMindmapNode } from '../data/sample-mindmap'
+import { findMindmapNode, type LineMindmapNode } from '../data/sample-mindmap'
 import type { PendingTopologyMutation } from './use-line-mindmap-topology-auth'
 
 interface UseLineMindmapActionsOptions {
   activeLine: ProductionLine | null
+  nodes: LineMindmapNode[]
   requestTopologyAuth: (mutation: PendingTopologyMutation) => void
   selectedNode: LineMindmapNode | null
   settleSelection: (nextSelectedNodeId: string | null) => void
-  updateLine: (payload: LineMutationPayload, authCode?: string) => Promise<void> | void
+  updateLineStrict: (payload: LineMutationPayload, authCode?: string) => Promise<void>
 }
 
 export function useLineMindmapActions({
   activeLine,
+  nodes,
   requestTopologyAuth,
   selectedNode,
   settleSelection,
-  updateLine,
+  updateLineStrict,
 }: UseLineMindmapActionsOptions) {
   const getParentSegmentForJobCategory = useCallback((jobCategoryId: string) => {
     if (!activeLine) {
@@ -41,7 +43,7 @@ export function useLineMindmapActions({
     ) ?? null
   }, [activeLine])
 
-  const submitTopologyMutation = useCallback((updatedLine: ProductionLine, nextSelectedNodeId: string | null) => {
+  const submitTopologyMutation = useCallback(async (updatedLine: ProductionLine, nextSelectedNodeId: string | null) => {
     if (!activeLine) {
       return
     }
@@ -56,7 +58,7 @@ export function useLineMindmapActions({
     const requiresAuth = Boolean(activeLine.id && !activeLine.id.startsWith('temp-'))
 
     if (!requiresAuth) {
-      void updateLine({ type: 'UPDATE', id: activeLine.id, delta, version: activeLine.version })
+      await updateLineStrict({ type: 'UPDATE', id: activeLine.id, delta, version: activeLine.version })
       settleSelection(nextSelectedNodeId)
       return
     }
@@ -67,9 +69,9 @@ export function useLineMindmapActions({
       nextSelectedNodeId,
       version: activeLine.version,
     })
-  }, [activeLine, requestTopologyAuth, settleSelection, updateLine])
+  }, [activeLine, requestTopologyAuth, settleSelection, updateLineStrict])
 
-  const handleAddRoot = useCallback((option: HierarchyLevelOptionItem) => {
+  const handleAddRoot = useCallback(async (option: HierarchyLevelOptionItem) => {
     if (!activeLine) {
       return
     }
@@ -77,15 +79,23 @@ export function useLineMindmapActions({
     const updatedLine = addSegmentToLine(activeLine, option)
     const nextSegment = updatedLine.segments[updatedLine.segments.length - 1]
     const nextSelectedId = nextSegment?.id ? `segment-${nextSegment.id}` : null
-    submitTopologyMutation(updatedLine, nextSelectedId)
+    await submitTopologyMutation(updatedLine, nextSelectedId)
   }, [activeLine, submitTopologyMutation])
 
-  const handleAddChild = useCallback((parentId: string, option: HierarchyLevelOptionItem) => {
-    if (!activeLine || !selectedNode || selectedNode.sourceType !== 'segment') {
+  const handleAddChild = useCallback(async (parentId: string, option: HierarchyLevelOptionItem) => {
+    if (!activeLine) {
       return
     }
 
-    const segmentId = selectedNode.sourceId
+    const parentNode = selectedNode?.id === parentId
+      ? selectedNode
+      : findMindmapNode(nodes, parentId)
+
+    if (!parentNode || parentNode.sourceType !== 'segment') {
+      return
+    }
+
+    const segmentId = parentNode.sourceId
     if (!segmentId) {
       return
     }
@@ -96,10 +106,10 @@ export function useLineMindmapActions({
     const nextSelectedId = nextJobCategory?.id
       ? `job-category-${nextJobCategory.id}`
       : parentId
-    submitTopologyMutation(updatedLine, nextSelectedId)
-  }, [activeLine, selectedNode, submitTopologyMutation])
+    await submitTopologyMutation(updatedLine, nextSelectedId)
+  }, [activeLine, nodes, selectedNode, submitTopologyMutation])
 
-  const handleRenameSelected = useCallback((name: string) => {
+  const handleRenameSelected = useCallback(async (name: string) => {
     if (!activeLine || !selectedNode) {
       return
     }
@@ -111,7 +121,7 @@ export function useLineMindmapActions({
       }
 
       const updatedLine = renameSegmentInLine(activeLine, segmentId, name)
-      submitTopologyMutation(updatedLine, selectedNode.id)
+      await submitTopologyMutation(updatedLine, selectedNode.id)
       return
     }
 
@@ -127,11 +137,11 @@ export function useLineMindmapActions({
       }
 
       const updatedLine = renameJobCategoryInLine(activeLine, parentSegment.id, jobCategoryId, name)
-      submitTopologyMutation(updatedLine, selectedNode.id)
+      await submitTopologyMutation(updatedLine, selectedNode.id)
     }
   }, [activeLine, getParentSegmentForJobCategory, selectedNode, submitTopologyMutation])
 
-  const handleDeleteSelected = useCallback(() => {
+  const handleDeleteSelected = useCallback(async () => {
     if (!activeLine || !selectedNode) {
       return
     }
@@ -150,7 +160,7 @@ export function useLineMindmapActions({
       const updatedLine = removeSegmentFromLine(activeLine, segmentId)
       const nextSegment = updatedLine.segments[currentIndex] ?? updatedLine.segments[currentIndex - 1] ?? null
       const nextSelectedId = nextSegment ? `segment-${nextSegment.id}` : null
-      submitTopologyMutation(updatedLine, nextSelectedId)
+      await submitTopologyMutation(updatedLine, nextSelectedId)
       return
     }
 
@@ -166,11 +176,11 @@ export function useLineMindmapActions({
       }
 
       const updatedLine = removeJobCategoryFromLine(activeLine, parentSegment.id, jobCategoryId)
-      submitTopologyMutation(updatedLine, `segment-${parentSegment.id}`)
+      await submitTopologyMutation(updatedLine, `segment-${parentSegment.id}`)
     }
   }, [activeLine, getParentSegmentForJobCategory, selectedNode, submitTopologyMutation])
 
-  const handleRebindSelected = useCallback((option: HierarchyLevelOptionItem) => {
+  const handleRebindSelected = useCallback(async (option: HierarchyLevelOptionItem) => {
     if (!activeLine || !selectedNode) {
       return
     }
@@ -182,7 +192,7 @@ export function useLineMindmapActions({
       }
 
       const updatedLine = rebindSegmentInLine(activeLine, segmentId, option)
-      submitTopologyMutation(updatedLine, selectedNode.id)
+      await submitTopologyMutation(updatedLine, selectedNode.id)
       return
     }
 
@@ -198,7 +208,7 @@ export function useLineMindmapActions({
       }
 
       const updatedLine = rebindJobCategoryInLine(activeLine, parentSegment.id, jobCategoryId, option)
-      submitTopologyMutation(updatedLine, selectedNode.id)
+      await submitTopologyMutation(updatedLine, selectedNode.id)
     }
   }, [activeLine, getParentSegmentForJobCategory, selectedNode, submitTopologyMutation])
 

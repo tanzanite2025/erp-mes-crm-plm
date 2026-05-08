@@ -31,7 +31,7 @@ export function CommandMenuKnowledgeDetailDrawer({
   return createPortal(
     <div
       className={cn(
-        'fixed inset-x-0 bottom-3 z-[120] mx-auto !w-[85vw] !max-w-[85vw] overflow-hidden rounded-[28px] border border-amber-500/35 bg-background shadow-[0_24px_80px_rgba(245,158,11,0.16)] ring-1 ring-amber-500/20 transition-all duration-300',
+        'fixed inset-x-0 bottom-3 z-120 mx-auto w-[85vw]! max-w-[85vw]! overflow-hidden rounded-[28px] border border-amber-500/35 bg-background shadow-[0_24px_80px_rgba(245,158,11,0.16)] ring-1 ring-amber-500/20 transition-all duration-300',
         entry
           ? 'translate-y-0 opacity-100'
           : 'pointer-events-none translate-y-8 opacity-0'
@@ -45,7 +45,7 @@ export function CommandMenuKnowledgeDetailDrawer({
               <div className='flex flex-wrap items-center gap-2'>
                 {categoryLabelKey ? (
                   <Badge variant='secondary' className='rounded-full px-2.5 py-0.5 text-[10px] font-black'>
-                    {t(categoryLabelKey as any)}
+                    {t(categoryLabelKey as never)}
                   </Badge>
                 ) : null}
                 {entry.routePath ? (
@@ -97,7 +97,7 @@ export function CommandMenuKnowledgeDetailDrawer({
           {entry.routePath ? (
             <div className='relative flex justify-end border-t border-dashed border-amber-500/20 bg-amber-500/5 px-5 py-3'>
               <Button asChild className='h-9 cursor-pointer rounded-full px-4 text-[11px] font-black'>
-                <Link to={entry.routePath as any}>
+                <Link to={entry.routePath as never}>
                   <ExternalLink className='mr-1.5 size-3.5' />
                   {t('basicSettings.knowledgeBase.actions.openRoute')}
                 </Link>

@@ -12,6 +12,27 @@ export function useCommandMenuKnowledge(open: boolean, searchValue: string) {
   const [debouncedSearchValue, setDebouncedSearchValue] = React.useState('')
   const requestSeqRef = React.useRef(0)
 
+  const loadKnowledgeEntries = React.useCallback(async (query: string) => {
+    const requestSeq = requestSeqRef.current + 1
+    requestSeqRef.current = requestSeq
+
+    try {
+      const nextEntries = await knowledgeBaseService.searchEntries(query)
+      if (requestSeqRef.current !== requestSeq) {
+        return nextEntries
+      }
+
+      setEntries(nextEntries)
+      return nextEntries
+    } catch (error) {
+      if (requestSeqRef.current === requestSeq) {
+        logger.error('Knowledge base search index load failed', error)
+        setEntries([])
+      }
+      throw error
+    }
+  }, [])
+
   React.useEffect(() => {
     if (!open) {
       setDebouncedSearchValue('')
@@ -26,25 +47,20 @@ export function useCommandMenuKnowledge(open: boolean, searchValue: string) {
 
   React.useEffect(() => {
     if (!open) return
-    const requestSeq = requestSeqRef.current + 1
-    requestSeqRef.current = requestSeq
-
-    knowledgeBaseService
-      .searchEntries(debouncedSearchValue)
-      .then((nextEntries) => {
-        if (requestSeqRef.current !== requestSeq) return
-        setEntries(nextEntries)
-      })
-      .catch((error) => {
-        if (requestSeqRef.current !== requestSeq) return
-        logger.error('Knowledge base search index load failed', error)
-        setEntries([])
-      })
-  }, [debouncedSearchValue, open])
+    void loadKnowledgeEntries(debouncedSearchValue).catch(() => undefined)
+  }, [debouncedSearchValue, loadKnowledgeEntries, open])
 
   React.useEffect(() => {
     if (!open) setSelectedEntry(null)
   }, [open])
+
+  const refreshKnowledgeEntries = React.useCallback(
+    async (query: string) => {
+      if (!open) return entries
+      return loadKnowledgeEntries(query)
+    },
+    [entries, loadKnowledgeEntries, open]
+  )
 
   const selectKnowledgeEntry = React.useCallback((entry: KnowledgeBaseEntry | null) => {
     setSelectedEntry(entry)
@@ -68,6 +84,7 @@ export function useCommandMenuKnowledge(open: boolean, searchValue: string) {
 
   return {
     knowledgeEntries: entries,
+    refreshKnowledgeEntries,
     selectedKnowledgeEntry: selectedEntry,
     setSelectedKnowledgeEntry: selectKnowledgeEntry,
   }

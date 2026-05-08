@@ -43,6 +43,14 @@ export const basicSettings = {
         summary: "摘要",
         content: "正文",
         keywords: "关键词"
+      },
+      routeOptions: {
+        placeholder: "请选择关联页面",
+        searchPlaceholder: "搜索页面名称、模块或路径",
+        none: "暂不关联页面",
+        empty: "未找到匹配的关联页面",
+        unlistedCurrent: "当前关联页面（未收录）",
+        legacyRoute: "历史路径"
       }
     }
   },

@@ -1,36 +1,32 @@
-import { useMemo } from 'react'
-import { GitBranchPlus, Workflow } from 'lucide-react'
+import { useMemo, useState } from 'react'
 import { ForbiddenState } from '@/components/forbidden-state'
-import { IndustrialHeader } from '@/components/uds/industrial-header'
-import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { useLanguage } from '@/context/language-provider'
 import { isForbiddenError } from '@/lib/error-status'
 import { useLineMgmtLines } from '../line-mgmt/hooks/use-line-mgmt-lines'
-import { SecurityAuthDialog } from '../line-mgmt/components/topology/security-auth-dialog'
 import { useHierarchyLevelLabels } from '../hierarchy-config/hooks/use-hierarchy-level-labels'
 import { useHierarchyLevelOptions } from '../hierarchy-config/hooks/use-hierarchy-level-options'
+import { LineMindmapDialogs } from './components/line-mindmap-dialogs'
+import { LineMindmapToolbar } from './components/line-mindmap-toolbar'
 import { MindmapCanvas } from './components/mindmap-canvas'
-import { MindmapDetailPanel } from './components/mindmap-detail-panel'
 import type { MindmapLevel } from './data/sample-mindmap'
 import { useLineMindmapActions } from './hooks/use-line-mindmap-actions'
 import { useLineMindmapNodeDrafts } from './hooks/use-line-mindmap-node-drafts'
+import { useLineMindmapParentOptions } from './hooks/use-line-mindmap-parent-options'
 import { useLineMindmapProcessPanel } from './hooks/use-line-mindmap-process-panel'
 import { useLineMindmapTopologyAuth } from './hooks/use-line-mindmap-topology-auth'
 import { useLineMindmapViewModel } from './hooks/use-line-mindmap-view-model'
 
 export function LineMindmap() {
   const { t } = useLanguage()
+  const [createLevel1DialogOpen, setCreateLevel1DialogOpen] = useState(false)
+  const [createLevel2DialogOpen, setCreateLevel2DialogOpen] = useState(false)
+  const [createLevel3DialogOpen, setCreateLevel3DialogOpen] = useState(false)
+  const [nodeEditDialogOpen, setNodeEditDialogOpen] = useState(false)
+  const [hierarchyConfigDialogOpen, setHierarchyConfigDialogOpen] = useState(false)
   const { level1Name, level2Name, level3Name } = useHierarchyLevelLabels()
   const { level1Options, level2Options } = useHierarchyLevelOptions()
-  const { lines, isLoading, error, updateLine } = useLineMgmtLines()
+  const { lines, isLoading, error, updateLineStrict } = useLineMgmtLines()
   const { nodeDraftMap, patchNodeDraft } = useLineMindmapNodeDrafts()
 
   const levelNames = useMemo<Record<MindmapLevel, string>>(
@@ -43,8 +39,6 @@ export function LineMindmap() {
   )
   const {
     activeLine,
-    childOptions,
-    enterRootInsertMode,
     handleSelectNode,
     lineOptions,
     nodes,
@@ -54,7 +48,6 @@ export function LineMindmap() {
     setActiveLineId,
     settleSelection,
   } = useLineMindmapViewModel({
-    level2Options,
     lines,
     nodeDraftMap,
   })
@@ -65,14 +58,15 @@ export function LineMindmap() {
     requestTopologyAuth,
   } = useLineMindmapTopologyAuth({
     settleSelection,
-    updateLine,
+    updateLineStrict,
   })
   const { handleAddChild, handleAddRoot, handleDeleteSelected, handleRebindSelected, handleRenameSelected } = useLineMindmapActions({
     activeLine,
+    nodes,
     requestTopologyAuth,
     selectedNode,
     settleSelection,
-    updateLine,
+    updateLineStrict,
   })
   const rebindOptions = selectedNode?.sourceType === 'segment'
     ? level1Options
@@ -81,14 +75,22 @@ export function LineMindmap() {
       : []
   const {
     handleAssignProcess,
-    handleCreateProcess,
+    handleCreateProcessForJobCategory,
     handleDeleteProcessEntity,
-    handlePatchProcessLibraryDraft,
     handleRemoveProcess,
     handleSaveProcessEntity,
-    processLibraryDraft,
     processOptions,
   } = useLineMindmapProcessPanel(selectedNode)
+  const handleOpenHierarchyConfig = () => setHierarchyConfigDialogOpen(true)
+  const {
+    defaultLevel2ParentId,
+    defaultLevel3ParentId,
+    jobCategoryParentNodeOptions,
+    rootParentNodeOptions,
+  } = useLineMindmapParentOptions({
+    nodes,
+    selectedNode,
+  })
 
   if (isForbiddenError(error)) {
     return <ForbiddenState />
@@ -96,102 +98,80 @@ export function LineMindmap() {
 
   if (isLoading) {
     return (
-      <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-        <div className='space-y-3'>
-          <Skeleton className='h-24 rounded-[32px]' />
-          <Skeleton className='h-10 w-72 rounded-full' />
-        </div>
-        <div className='grid gap-6 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.95fr)]'>
-          <Skeleton className='h-[520px] rounded-[24px]' />
-          <Skeleton className='h-[520px] rounded-[24px]' />
-        </div>
+      <div className='flex min-h-[calc(100dvh-9rem)] flex-col gap-2 animate-in fade-in duration-700 md:min-h-[calc(100dvh-10rem)]'>
+        <Skeleton className='h-12 rounded-[24px]' />
+        <Skeleton className='min-h-[calc(100dvh-14rem)] flex-1 rounded-[24px] md:min-h-[calc(100dvh-15rem)]' />
       </div>
     )
   }
 
   return (
-    <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-      <IndustrialHeader
-        icon={Workflow}
+    <div className='flex min-h-[calc(100dvh-9rem)] flex-col gap-2 animate-in fade-in duration-700 md:min-h-[calc(100dvh-10rem)]'>
+      <LineMindmapToolbar
+        activeLine={Boolean(activeLine)}
+        level1Name={level1Name}
+        level2Name={level2Name}
+        level3Name={level3Name}
+        lineOptions={lineOptions}
+        resolvedLineId={resolvedLineId}
+        selectedNode={Boolean(selectedNode)}
         title={t('productionArchitecture.mindmap.header.title')}
-        description={t('productionArchitecture.mindmap.header.subtitle', {
-          level1Name,
-          level2Name,
-          level3Name,
-        })}
-        statusBadge={
-          <Button
-            type='button'
-            variant='outline'
-            className='h-11 rounded-full border-dashed px-5 text-[10px] font-black uppercase tracking-widest'
-            onClick={enterRootInsertMode}
-            disabled={!activeLine}
-          >
-            <GitBranchPlus className='mr-2 size-4' /> 新增{level1Name}
-          </Button>
-        }
+        onCreateLevel1={() => setCreateLevel1DialogOpen(true)}
+        onCreateLevel2={() => setCreateLevel2DialogOpen(true)}
+        onCreateLevel3={() => setCreateLevel3DialogOpen(true)}
+        onEditNode={() => setNodeEditDialogOpen(true)}
+        onSelectLine={setActiveLineId}
       />
 
-      <div className='grid gap-4 px-1 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-center'>
-        <p className='max-w-3xl text-[11px] leading-relaxed text-muted-foreground/75'>
-          当前阶段已接入一级与二级节点完整结构写回，并为第三级开放 process 能力挂接、移除以及 process library 本体创建 / 编辑 / 删除。
-        </p>
-        <div className='space-y-1.5'>
-          <p className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/55'>当前产线</p>
-          <Select value={resolvedLineId || undefined} onValueChange={setActiveLineId}>
-            <SelectTrigger className='h-12 w-full rounded-2xl border-none bg-muted/40 px-4 text-[11px] font-black shadow-none'>
-              <SelectValue placeholder='选择要查看的产线' />
-            </SelectTrigger>
-            <SelectContent>
-              {lineOptions.map((lineOption) => (
-                <SelectItem key={lineOption.id} value={lineOption.id} className='text-[11px] font-black'>
-                  {lineOption.label} · {lineOption.code}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className='grid gap-6 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.95fr)]'>
+      <div className='min-h-0 flex-1'>
         <MindmapCanvas
           nodes={nodes}
           selectedNodeId={resolvedSelectedNodeId}
           levelNames={levelNames}
           onSelect={handleSelectNode}
-        />
-
-        <MindmapDetailPanel
-          key={selectedNode?.id ?? 'mindmap-detail-empty'}
-          selectedNode={selectedNode}
-          levelNames={levelNames}
-          onPatchNode={patchNodeDraft}
-          readonlyMode={false}
-          rootOptions={level1Options}
-          childOptions={childOptions}
-          processOptions={processOptions}
-          processLibraryDraft={processLibraryDraft}
-          rebindOptions={rebindOptions}
-          onAddRoot={handleAddRoot}
-          onAddChild={handleAddChild}
-          onAssignProcess={handleAssignProcess}
-          onCreateProcess={handleCreateProcess}
-          onDeleteProcessEntity={handleDeleteProcessEntity}
-          onPatchProcessLibraryDraft={handlePatchProcessLibraryDraft}
-          onRenameSelected={handleRenameSelected}
-          onDeleteSelected={handleDeleteSelected}
-          onRemoveProcess={handleRemoveProcess}
-          onRebindSelected={handleRebindSelected}
-          onSaveProcessEntity={handleSaveProcessEntity}
+          onOpenHierarchyConfig={handleOpenHierarchyConfig}
         />
       </div>
 
-      <SecurityAuthDialog
-        open={authDialogOpen}
-        onOpenChange={handleAuthOpenChange}
-        onConfirm={handleAuthConfirm}
-        title={t('orgPersonnel.lineMgmt.topology.authGenericTitle')}
-        description={t('orgPersonnel.lineMgmt.topology.authGenericDesc')}
+      <LineMindmapDialogs
+        authDialogOpen={authDialogOpen}
+        createLevel1DialogOpen={createLevel1DialogOpen}
+        createLevel2DialogOpen={createLevel2DialogOpen}
+        createLevel3DialogOpen={createLevel3DialogOpen}
+        defaultLevel2ParentId={defaultLevel2ParentId}
+        defaultLevel3ParentId={defaultLevel3ParentId}
+        handleAuthConfirm={handleAuthConfirm}
+        handleAuthOpenChange={handleAuthOpenChange}
+        hierarchyConfigDialogOpen={hierarchyConfigDialogOpen}
+        jobCategoryParentNodeOptions={jobCategoryParentNodeOptions}
+        level1Name={level1Name}
+        level1Options={activeLine ? level1Options : []}
+        level2Name={level2Name}
+        level2Options={activeLine ? level2Options : []}
+        level3Name={level3Name}
+        levelNames={levelNames}
+        nodeEditDialogOpen={nodeEditDialogOpen}
+        onAssignProcess={handleAssignProcess}
+        onChildSubmit={handleAddChild}
+        onCreateLevel1DialogOpenChange={setCreateLevel1DialogOpen}
+        onCreateLevel2DialogOpenChange={setCreateLevel2DialogOpen}
+        onCreateLevel3DialogOpenChange={setCreateLevel3DialogOpen}
+        onDeleteProcessEntity={handleDeleteProcessEntity}
+        onDeleteSelected={handleDeleteSelected}
+        onEditDialogOpenChange={setNodeEditDialogOpen}
+        onHierarchyConfigDialogOpenChange={setHierarchyConfigDialogOpen}
+        onOpenHierarchyConfig={handleOpenHierarchyConfig}
+        onPatchNode={patchNodeDraft}
+        onProcessSubmit={handleCreateProcessForJobCategory}
+        onRebindSelected={handleRebindSelected}
+        onRemoveProcess={handleRemoveProcess}
+        onRenameSelected={handleRenameSelected}
+        onRootSubmit={handleAddRoot}
+        onSaveProcessEntity={handleSaveProcessEntity}
+        processOptions={processOptions}
+        rebindOptions={rebindOptions}
+        rootParentNodeOptions={rootParentNodeOptions}
+        selectedNode={selectedNode}
       />
     </div>
   )

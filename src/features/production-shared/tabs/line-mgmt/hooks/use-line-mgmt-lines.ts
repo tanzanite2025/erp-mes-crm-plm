@@ -108,7 +108,7 @@ export function useLineMgmtLines() {
     queryClient.setQueryData<ProductionLine[]>(productionResourceQueryKeys.lines(), (current) => updater(current ?? []))
   }
 
-  const handleUpdateLine = async (payload: LineMutationPayload, authCode?: string) => {
+  const handleUpdateLine = async (payload: LineMutationPayload, authCode?: string, rethrowError = false) => {
     const isUpdate = payload.type === 'UPDATE'
     let optimisticTempId: string | null = null
     let shouldInvalidateOnSuccess = false
@@ -162,6 +162,10 @@ export function useLineMgmtLines() {
       } else {
         toast.error(t('orgPersonnel.lineMgmt.toasts.saveError'))
       }
+
+      if (rethrowError) {
+        throw error
+      }
     }
   }
 
@@ -184,6 +188,7 @@ export function useLineMgmtLines() {
     error,
     isLoading,
     lines,
-    updateLine: handleUpdateLine,
+    updateLine: (payload: LineMutationPayload, authCode?: string) => handleUpdateLine(payload, authCode),
+    updateLineStrict: (payload: LineMutationPayload, authCode?: string) => handleUpdateLine(payload, authCode, true),
   }
 }

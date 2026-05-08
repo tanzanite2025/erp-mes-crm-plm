@@ -40,7 +40,7 @@ export function CalendarView({ onDateClick }: CalendarViewProps) {
                 setLoadError(null)
                 const data = await ProductionCalendarService.getAllRecords()
                 setRecords(data)
-            } catch (error) {
+            } catch (_error) {
                 setLoadError(t('dashboard.page.calendar.error.loadCalendar'))
             }
         }
@@ -49,18 +49,18 @@ export function CalendarView({ onDateClick }: CalendarViewProps) {
         const handleSync = () => loadRecords()
         window.addEventListener('xdfc_production_plans_updated', handleSync)
         return () => window.removeEventListener('xdfc_production_plans_updated', handleSync)
-    }, [])
+    }, [t])
 
     const renderHeader = () => {
         return (
-            <div className='flex flex-col gap-1 bg-muted/5 p-4 md:p-6 rounded-2xl md:rounded-[32px] border border-dashed border-muted/50 mb-6 md:mb-8'>
-                <div className='flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4'>
-                    <div className='flex items-center gap-3 md:gap-4'>
-                        <div className='size-9 md:size-11 rounded-xl md:rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-inner group transition-all shrink-0'>
-                            <CalendarIcon className='size-4 md:size-5 group-hover:scale-110 transition-transform' />
+            <div className='mb-4 flex flex-col gap-1 rounded-2xl border border-dashed border-muted/50 bg-muted/5 p-3 md:mb-5 md:rounded-[28px] md:p-4'>
+                <div className='flex flex-col justify-between gap-3 sm:flex-row sm:items-center'>
+                    <div className='flex items-center gap-2.5 md:gap-3'>
+                        <div className='flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary shadow-inner transition-all md:size-9 md:rounded-xl'>
+                            <CalendarIcon className='size-3.5 transition-transform group-hover:scale-110 md:size-4' />
                         </div>
                         <div className='flex flex-col gap-0.5 overflow-hidden'>
-                            <h1 className='text-base md:text-lg font-black tracking-tighter italic uppercase text-primary truncate'>
+                            <h1 className='truncate text-sm font-black tracking-tighter italic uppercase text-primary md:text-base'>
                                 {format(currentMonth, 'MMMM yyyy', { locale: dateLocale })}
                             </h1>
                             <p className='text-[8px] md:text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-60 truncate'>
@@ -68,12 +68,12 @@ export function CalendarView({ onDateClick }: CalendarViewProps) {
                             </p>
                         </div>
                     </div>
-                    <div className='flex items-center gap-2 md:gap-3'>
+                    <div className='flex items-center gap-1.5 md:gap-2'>
                         <Button
                             variant='outline'
                             size='sm'
                             onClick={() => setCurrentMonth(today)}
-                            className='h-8 md:h-9 flex-1 sm:flex-none rounded-full px-4 md:px-6 text-[9px] md:text-[10px] font-black uppercase tracking-widest border-dashed border-primary/30 text-primary hover:bg-primary/5 transition-all'
+                            className='h-8 flex-1 rounded-full border-dashed border-primary/30 px-3 text-[8px] font-black uppercase tracking-widest text-primary transition-all hover:bg-primary/5 sm:flex-none md:px-4 md:text-[9px]'
                         >
                             {t('dashboard.page.calendar.view.today')}
                         </Button>
@@ -81,7 +81,7 @@ export function CalendarView({ onDateClick }: CalendarViewProps) {
                             <Button
                                 variant='ghost'
                                 size='icon'
-                                className='size-7 md:size-8 rounded-full hover:bg-muted/10 transition-all'
+                                className='size-7 rounded-full transition-all hover:bg-muted/10'
                                 onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
                             >
                                 <ChevronLeft className='size-4 text-muted-foreground' />
@@ -89,7 +89,7 @@ export function CalendarView({ onDateClick }: CalendarViewProps) {
                             <Button
                                 variant='ghost'
                                 size='icon'
-                                className='size-7 md:size-8 rounded-full hover:bg-muted/10 transition-all'
+                                className='size-7 rounded-full transition-all hover:bg-muted/10'
                                 onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
                             >
                                 <ChevronRight className='size-4 text-muted-foreground' />
@@ -112,9 +112,9 @@ export function CalendarView({ onDateClick }: CalendarViewProps) {
           t('dashboard.page.calendar.view.days.sat'),
         ]
         return (
-            <div className='grid grid-cols-7 mb-4 px-2 min-w-[700px] md:min-w-0'>
+            <div className='mb-2.5 grid min-w-[700px] grid-cols-7 px-1 md:min-w-0'>
                 {days.map((day, i) => (
-                    <div key={i} className='text-center text-[9px] font-black text-muted-foreground/30 uppercase tracking-[0.3em] italic'>
+                    <div key={i} className='text-center text-[8px] font-black uppercase tracking-[0.26em] text-muted-foreground/30 italic'>
                         {day}
                     </div>
                 ))}
@@ -134,53 +134,54 @@ export function CalendarView({ onDateClick }: CalendarViewProps) {
         })
 
         return (
-            <div className='grid grid-cols-7 gap-1.5 p-1.5 bg-muted/10 border border-dashed border-muted/50 rounded-2xl md:rounded-[32px] shadow-inner min-w-[700px] md:min-w-0'>
+            <div className='grid min-w-[700px] grid-cols-7 gap-1 border border-dashed border-muted/50 bg-muted/10 p-1 shadow-inner rounded-xl md:min-w-0 md:rounded-[24px]'>
                 {calendarDates.map((day, i) => {
                     const isInMonth = isSameMonth(day, monthStart)
                     const isToday = isSameDay(day, today)
 
                     const dayRecord = records.find(r => isSameDay(r.date, day))
+
                     const hasOutput = dayRecord && dayRecord.output > 0
 
                     return (
                         <div
                             key={i}
                             className={cn(
-                                'min-h-[100px] md:min-h-[120px] bg-background p-2 md:p-3 rounded-xl md:rounded-[24px] border border-transparent transition-all cursor-pointer relative group',
+                                'group relative min-h-[84px] cursor-pointer rounded-lg border border-transparent bg-background p-1.5 transition-all md:min-h-[96px] md:rounded-[20px] md:p-2.5',
                                 !isInMonth && 'bg-muted/5 opacity-30 pointer-events-none',
                                 isInMonth && 'hover:border-primary/20 hover:shadow-lg hover:bg-white',
-                                isToday && 'ring-2 ring-primary/20 bg-primary/[0.02]'
+                                isToday && 'ring-2 ring-primary/20 bg-primary/2'
                             )}
                             onClick={() => onDateClick(day)}
                         >
                             <div className='flex justify-between items-start'>
                                 <span className={cn(
-                                    'text-sm font-black italic tracking-tighter tabular-nums size-8 flex items-center justify-center rounded-xl transition-colors',
+                                    'flex size-7 items-center justify-center rounded-lg text-[13px] font-black italic tracking-tighter tabular-nums transition-colors',
                                     isToday ? 'bg-primary text-white shadow-lg' : 'text-slate-400'
                                 )}>
                                     {format(day, 'd')}
                                 </span>
                                 {hasOutput && (
-                                    <Badge className='text-[8px] font-black italic py-0 h-4 rounded-md bg-emerald-500/10 text-emerald-600 border-none shadow-none'>
+                                    <Badge className='h-4 rounded-md border-none bg-emerald-500/10 px-1.5 py-0 text-[7px] font-black italic text-emerald-600 shadow-none'>
                                         {dayRecord.output} {t('dashboard.page.calendar.units.pcs')}
                                     </Badge>
                                 )}
                             </div>
 
-                            <div className='mt-3 space-y-1.5'>
+                            <div className='mt-2 space-y-1'>
                                 {dayRecord?.items.slice(0, 2).map((item, idx) => (
                                     <div key={idx} className='flex flex-col gap-0.5 group/item transition-all'>
-                                        <div className='flex items-center gap-1.5'>
+                                        <div className='flex items-center gap-1'>
                                             <div className='size-1 rounded-full bg-blue-500 shrink-0' />
-                                            <span className='text-[10px] font-bold text-secondary truncate uppercase tracking-tight'>{item.name}</span>
+                                            <span className='truncate text-[9px] font-bold uppercase tracking-tight text-secondary'>{item.name}</span>
                                         </div>
-                                        <div className='flex items-center gap-2 pl-2.5 opacity-40 text-[8px] font-mono'>
+                                        <div className='flex items-center gap-1.5 pl-2 opacity-40 text-[7px] font-mono'>
                                             <span>#{item.orderNo}</span>
                                         </div>
                                     </div>
                                 ))}
                                 {dayRecord && dayRecord.items.length > 2 && (
-                                    <p className='text-[8px] font-black text-muted-foreground/30 italic uppercase tracking-widest pl-2.5 pt-1'>
+                                    <p className='pl-2 pt-0.5 text-[7px] font-black uppercase tracking-widest text-muted-foreground/30 italic'>
                                         + {dayRecord.items.length - 2} {t('dashboard.page.calendar.view.moreNodes')}
                                     </p>
                                 )}
@@ -188,8 +189,8 @@ export function CalendarView({ onDateClick }: CalendarViewProps) {
 
                             {/* Task Hint */}
                             {hasOutput && (
-                                <div className='absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-all transform translate-y-1 group-hover:translate-y-0'>
-                                    <Activity className='size-3 text-primary animate-pulse' />
+                                <div className='absolute bottom-2 right-2 transform translate-y-1 opacity-0 transition-all group-hover:translate-y-0 group-hover:opacity-100'>
+                                    <Activity className='size-2.5 animate-pulse text-primary' />
                                 </div>
                             )}
                         </div>
@@ -203,11 +204,11 @@ export function CalendarView({ onDateClick }: CalendarViewProps) {
         <Card className='border-none shadow-none bg-transparent animate-in fade-in duration-700 overflow-hidden'>
             <CardContent className='p-0 overflow-hidden'>
                 {renderHeader()}
-                <div className='overflow-x-auto scrollbar-hide pb-4'>
+                <div className='overflow-x-auto scrollbar-hide pb-2'>
                     {loadError ? (
-                        <div className='rounded-2xl border border-dashed border-rose-200 bg-rose-50/70 p-6 text-center text-rose-700'>
+                        <div className='rounded-2xl border border-dashed border-rose-200 bg-rose-50/70 p-4 text-center text-rose-700'>
                             <p className='text-[10px] font-black uppercase tracking-widest'>{t('dashboard.page.calendar.title')}</p>
-                            <p className='mt-2 text-xs font-bold break-words'>{loadError}</p>
+                            <p className='mt-2 text-xs font-bold wrap-break-word'>{loadError}</p>
                         </div>
                     ) : (
                         <>

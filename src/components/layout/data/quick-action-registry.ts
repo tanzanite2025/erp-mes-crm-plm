@@ -16,6 +16,7 @@ export type QuickActionDefinition = {
   keywords?: string[]
   pinyin?: string
   enabled?: boolean
+  requiredPermissions?: string[]
   hostKind?: QuickActionHostKind
   successHref?: string
 }
@@ -27,6 +28,7 @@ export const ENABLED_QUICK_ACTION_IDS = [
   'action-add-customer',
   'action-add-employee',
   'action-create-sales-order',
+  'action-create-knowledge-entry',
 ] as const
 
 export const QUICK_ACTION_DEFINITIONS: QuickActionDefinition[] = [
@@ -88,6 +90,15 @@ export const QUICK_ACTION_DEFINITIONS: QuickActionDefinition[] = [
     pinyin: 'cjdd',
     hostKind: 'sales-order-create',
     successHref: '/trading/sales-orders',
+  },
+  {
+    id: 'action-create-knowledge-entry',
+    href: '/basic-settings/knowledge-base?action=create',
+    titleKey: 'basicSettings.knowledgeBase.actions.create',
+    parentKey: 'commandMenu.parents.basicSettings',
+    keywords: ['knowledge', 'knowledge base', 'create', '新建知识条目', '新增知识库'],
+    pinyin: 'xzzstk',
+    requiredPermissions: ['perm_manage'],
   },
   {
     id: 'action-create-requirement',

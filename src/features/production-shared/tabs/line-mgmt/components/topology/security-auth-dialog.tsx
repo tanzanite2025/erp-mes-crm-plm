@@ -15,7 +15,7 @@ import { useLanguage } from '@/context/language-provider'
 interface SecurityAuthDialogProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    onConfirm: (password: string) => void
+    onConfirm: (password: string) => void | Promise<boolean | void>
     title?: string
     description?: string
 }
@@ -31,24 +31,35 @@ export function SecurityAuthDialog({
     const finalTitle = title || t('orgPersonnel.lineMgmt.topology.authGenericTitle')
     const finalDescription = description || t('orgPersonnel.lineMgmt.topology.authGenericDesc')
     const [password, setPassword] = useState("")
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
     const handleOpenChange = (nextOpen: boolean) => {
         if (!nextOpen) {
             setPassword("")
+            setIsSubmitting(false)
         }
         onOpenChange(nextOpen)
     }
 
-    const handleVerify = () => {
+    const handleVerify = async () => {
         if (password.trim().length > 0) {
-            onConfirm(password)
-            handleOpenChange(false)
+            setIsSubmitting(true)
+            try {
+                const result = await onConfirm(password)
+                if (result !== false) {
+                    handleOpenChange(false)
+                }
+            } catch {
+                return
+            } finally {
+                setIsSubmitting(false)
+            }
         }
     }
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter') {
-            handleVerify()
+            void handleVerify()
         }
     }
 
@@ -85,13 +96,14 @@ export function SecurityAuthDialog({
                     <Button 
                         variant='ghost' 
                         onClick={() => handleOpenChange(false)}
+                        disabled={isSubmitting}
                         className='h-11 flex-1 rounded-full bg-slate-100 text-[10px] font-bold uppercase tracking-widest transition-all hover:bg-slate-200 dark:bg-white/6 dark:hover:bg-white/10'
                     >
                         {t('orgPersonnel.lineMgmt.dialog.cancel')}
                     </Button>
                     <Button 
-                        onClick={handleVerify}
-                        disabled={password.trim().length === 0}
+                        onClick={() => void handleVerify()}
+                        disabled={password.trim().length === 0 || isSubmitting}
                         className='rounded-full h-11 font-bold text-[10px] uppercase tracking-widest bg-slate-900 hover:bg-black text-white shadow-lg transition-all flex-1 gap-2'
                     >
                         <ShieldCheck className='size-4' />

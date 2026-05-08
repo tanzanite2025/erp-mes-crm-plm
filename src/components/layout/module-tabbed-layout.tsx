@@ -3,6 +3,7 @@ import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { ModuleHeaderSummary } from '@/components/layout/module-header-summary'
 import { ModuleTabs, type TabItem } from '@/components/module-tabs'
+import { cn } from '@/lib/utils'
 
 interface ModuleTabbedLayoutProps {
     tabs: TabItem[]
@@ -11,6 +12,7 @@ interface ModuleTabbedLayoutProps {
     title?: string
     headerTitle?: string
     headerDescription?: string
+    contentClassName?: string
 }
 
 function findActiveTab(pathname: string, tabs: TabItem[]): TabItem | undefined {
@@ -19,7 +21,7 @@ function findActiveTab(pathname: string, tabs: TabItem[]): TabItem | undefined {
         .find((tab) => pathname === tab.href || pathname.startsWith(tab.href + '/'))
 }
 
-export function ModuleTabbedLayout({ tabs, children, actions, title, headerTitle, headerDescription }: ModuleTabbedLayoutProps) {
+export function ModuleTabbedLayout({ tabs, children, actions, title, headerTitle, headerDescription, contentClassName }: ModuleTabbedLayoutProps) {
     const { pathname } = useLocation()
     const visibleTabs = tabs
 
@@ -45,7 +47,7 @@ export function ModuleTabbedLayout({ tabs, children, actions, title, headerTitle
             <div className='h-14 shrink-0' />
 
             <Main fixed className='flex-1 overflow-y-auto pt-0 pb-5 [scrollbar-gutter:stable_both-edges]'>
-                <div className='flex flex-col items-stretch animate-in fade-in duration-700 min-h-0 min-w-0 h-fit'>
+                <div className={cn('flex flex-col items-stretch animate-in fade-in duration-700 min-h-0 min-w-0 h-fit', contentClassName)}>
                     {headerTitle ? (
                         <div className='px-1 pt-3 pb-2'>
                             <ModuleHeaderSummary title={headerTitle} description={headerDescription} />
