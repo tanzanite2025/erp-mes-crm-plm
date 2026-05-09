@@ -58,6 +58,7 @@ export const sidebar = {
     cuttingDatabase: 'Cutting Database',
     cuttingOperations: 'Cutting Operations',
     productEngineering: 'Product Engineering',
+    productStructure: 'Product Structure',
     materialArchive: 'Material Archive',
     engineeringDatabase: 'Engineering Database',
     engineeringReference: 'Engineering Reference',

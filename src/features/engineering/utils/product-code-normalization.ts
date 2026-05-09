@@ -1,11 +1,6 @@
 import {
   normalizeComponentKey,
   normalizeChangeOrderNo,
-  normalizeBomNo,
-  normalizeBomChangeType,
-  normalizeEngineeringDateProtocol,
-  normalizeBomStatus,
-  normalizeBomVersion,
   normalizeMachineCode,
   normalizeModelCode,
   normalizeRevisionNo,
@@ -18,7 +13,6 @@ import {
   type SaveProductInput,
   type SaveProductTemplateInput,
   type SaveProductTypeInput,
-  type SaveBOMInput,
 } from '../mutation-types'
 import { normalizeProductAttributeMachineValue } from './product-attribute-machine-value'
 
@@ -147,82 +141,4 @@ export function normalizeEngineeringSiteCode(value?: string | null): string {
 
 export function normalizeEngineeringChangeOrderNo(value?: string | null): string {
   return normalizeChangeOrderNo(value)
-}
-
-export function normalizeEngineeringBomNo(value?: string | null): string {
-  return normalizeBomNo(value)
-}
-
-export function normalizeEngineeringBomVersion(value?: string | null, fallback = 'V1.0'): string {
-  return normalizeBomVersion(value, fallback)
-}
-
-export function normalizeEngineeringBomChangeType(
-  value?: string | null,
-  fallback: 'MANUAL' | 'ECO' | 'ECN' = 'MANUAL'
-): 'MANUAL' | 'ECO' | 'ECN' {
-  return normalizeBomChangeType(value, fallback)
-}
-
-export function normalizeEngineeringBomStatus(
-  value?: string | null,
-  fallback: 'draft' | 'active' | 'archived' = 'active'
-): 'draft' | 'active' | 'archived' {
-  return normalizeBomStatus(value, fallback)
-}
-
-export function normalizeEngineeringBomEffectiveDate(value?: string | null): string {
-  return normalizeEngineeringDateProtocol(value)
-}
-
-export function normalizeBOMControlFieldPatch<T extends {
-  changeType?: string | null
-  status?: string | null
-  revisionNo?: string | null
-  siteCode?: string | null
-  effectiveFrom?: string | null
-  effectiveTo?: string | null
-  isDefaultSite?: boolean | null
-}>(data: T): T {
-  const normalized = { ...data } as T
-
-  if ('changeType' in data) {
-    normalized.changeType = normalizeEngineeringBomChangeType(data.changeType) as T['changeType']
-  }
-  if ('status' in data) {
-    normalized.status = normalizeEngineeringBomStatus(data.status) as T['status']
-  }
-  if ('revisionNo' in data) {
-    normalized.revisionNo = normalizeEngineeringRevisionNo(data.revisionNo) as T['revisionNo']
-  }
-  if ('effectiveFrom' in data) {
-    normalized.effectiveFrom = (normalizeEngineeringBomEffectiveDate(data.effectiveFrom) || '') as T['effectiveFrom']
-  }
-  if ('effectiveTo' in data) {
-    normalized.effectiveTo = (normalizeEngineeringBomEffectiveDate(data.effectiveTo) || '') as T['effectiveTo']
-  }
-  if ('siteCode' in data) {
-    const normalizedSiteCode = normalizeEngineeringSiteCode(data.siteCode)
-    normalized.siteCode = normalizedSiteCode as T['siteCode']
-    normalized.isDefaultSite = (data.isDefaultSite ?? !normalizedSiteCode) as T['isDefaultSite']
-  }
-
-  return normalized
-}
-
-export function normalizeBOMInput(data: SaveBOMInput): SaveBOMInput {
-  const normalizedSiteCode = normalizeEngineeringSiteCode(data.siteCode)
-
-  return {
-    ...data,
-    bomNo: normalizeEngineeringBomNo(data.bomNo),
-    bomVersion: normalizeEngineeringBomVersion(data.bomVersion),
-    changeType: normalizeEngineeringBomChangeType(data.changeType),
-    status: normalizeEngineeringBomStatus(data.status),
-    siteCode: normalizedSiteCode,
-    revisionNo: normalizeEngineeringRevisionNo(data.revisionNo),
-    effectiveFrom: normalizeEngineeringBomEffectiveDate(data.effectiveFrom) || undefined,
-    effectiveTo: normalizeEngineeringBomEffectiveDate(data.effectiveTo) || undefined,
-    isDefaultSite: normalizedSiteCode === '' || Boolean(data.isDefaultSite),
-  }
 }

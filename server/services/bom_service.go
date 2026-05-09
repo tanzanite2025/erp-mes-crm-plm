@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -137,6 +138,101 @@ func normalizeBOMItems(items []models.BOMItem) []models.BOMItem {
 	return items
 }
 
+func normalizeBOMSectionToken(value string) string {
+	return strings.ToUpper(strings.Join(strings.Fields(strings.TrimSpace(value)), ""))
+}
+
+func parseBOMSectionLegacyNames(raw json.RawMessage) []string {
+	if len(raw) == 0 {
+		return []string{}
+	}
+	var values []string
+	if err := json.Unmarshal(raw, &values); err != nil {
+		return []string{}
+	}
+	result := make([]string, 0, len(values))
+	seen := map[string]struct{}{}
+	for _, value := range values {
+		trimmed := strings.TrimSpace(value)
+		if trimmed == "" {
+			continue
+		}
+		key := normalizeBOMSectionToken(trimmed)
+		if _, exists := seen[key]; exists {
+			continue
+		}
+		seen[key] = struct{}{}
+		result = append(result, trimmed)
+	}
+	return result
+}
+
+func defaultBOMSectionCode(sections []models.BOMSection) string {
+	for _, section := range sections {
+		if section.Active && section.IsDefault {
+			return section.Code
+		}
+	}
+	for _, section := range sections {
+		if section.Active {
+			return section.Code
+		}
+	}
+	return ""
+}
+
+func resolveBOMSectionConfig(sections []models.BOMSection, raw string) *models.BOMSection {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		return nil
+	}
+	normalized := normalizeBOMSectionToken(trimmed)
+	for idx := range sections {
+		section := &sections[idx]
+		if normalizeBOMSectionToken(section.Code) == normalized {
+			return section
+		}
+		if normalizeBOMSectionToken(section.Name) == normalized {
+			return section
+		}
+		for _, legacyName := range parseBOMSectionLegacyNames(section.LegacyNames) {
+			if normalizeBOMSectionToken(legacyName) == normalized {
+				return section
+			}
+		}
+	}
+	return nil
+}
+
+func normalizeBOMItemSections(tx *gorm.DB, items []models.BOMItem) ([]models.BOMItem, error) {
+	var sections []models.BOMSection
+	if err := tx.Order("sort_order asc, code asc").Find(&sections).Error; err != nil {
+		return nil, err
+	}
+	if len(sections) == 0 {
+		return nil, fmt.Errorf("[VALIDATION] no BOM section configuration found")
+	}
+
+	defaultCode := defaultBOMSectionCode(sections)
+	if strings.TrimSpace(defaultCode) == "" {
+		return nil, fmt.Errorf("[VALIDATION] no default BOM section configured")
+	}
+
+	for idx := range items {
+		sectionConfig := resolveBOMSectionConfig(sections, items[idx].Section)
+		if sectionConfig == nil {
+			if strings.TrimSpace(items[idx].Section) == "" {
+				sectionConfig = resolveBOMSectionConfig(sections, defaultCode)
+			}
+		}
+		if sectionConfig == nil {
+			return nil, fmt.Errorf("[VALIDATION] unsupported BOM section: %s", items[idx].Section)
+		}
+		items[idx].Section = sectionConfig.Code
+	}
+	return items, nil
+}
+
 func validateUniqueActiveBOM(tx *gorm.DB, input *models.BOM) error {
 	if strings.TrimSpace(input.ProductID) == "" || strings.TrimSpace(input.Status) != "active" {
 		return nil
@@ -195,6 +291,11 @@ func SaveBOM(ctx context.Context, input SaveBOMInput) (models.BOM, error) {
 	var saved models.BOM
 
 	err := db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		normalizedItems, err := normalizeBOMItemSections(tx, modelInput.Items)
+		if err != nil {
+			return err
+		}
+		modelInput.Items = normalizedItems
 		modelInput.Items = normalizeBOMItems(modelInput.Items)
 		if err := validateBOMReferences(tx, &modelInput); err != nil {
 			return err

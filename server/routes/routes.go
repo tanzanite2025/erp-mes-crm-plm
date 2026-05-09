@@ -107,6 +107,11 @@ func SetupRoutes(r *gin.Engine) {
 			engineeringGroup.GET("/bom/:id", handlers.GetBOMHandler)
 			engineeringGroup.POST("/bom", adminOnly, handlers.SaveBOMHandler)
 			engineeringGroup.DELETE("/bom/:id", adminOnly, handlers.DeleteBOMHandler)
+			engineeringGroup.GET("/bom-sections", handlers.GetBOMSectionsHandler)
+			engineeringGroup.GET("/bom-sections/options", handlers.GetBOMSectionOptionsHandler)
+			engineeringGroup.POST("/bom-sections", adminOnly, handlers.SaveBOMSectionHandler)
+			engineeringGroup.PATCH("/bom-sections/:id", adminOnly, handlers.PatchBOMSectionHandler)
+			engineeringGroup.DELETE("/bom-sections/:id", adminOnly, handlers.DeleteBOMSectionHandler)
 
 			templateGroup := engineeringGroup.Group("/templates")
 			{

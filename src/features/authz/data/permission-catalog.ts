@@ -12,7 +12,7 @@ export type MenuPermissionDefinition = {
   rootPath: string
 }
 
-export const PERMISSION_VERSION = '1.1.0'
+export const PERMISSION_VERSION = '1.1.1'
 
 const LEGACY_PERMISSION_ID_ALIASES: Record<string, string> = {
   action_approval_config_manage: 'action_approval_review',
@@ -166,6 +166,7 @@ export const ROUTE_TO_MENU_MAPPING: Record<
   '/shipping-management': 'trading',
   '/purchase': 'purchase',
   '/engineering': 'engineering',
+  '/product-structure': 'engineering',
   '/materials': 'engineering',
   '/engineering-db': 'engineering',
   '/engineering-reference': 'engineering',

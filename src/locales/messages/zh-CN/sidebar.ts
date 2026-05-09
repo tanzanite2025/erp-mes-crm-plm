@@ -58,6 +58,7 @@ export const sidebar = {
     cuttingDatabase: '裁纱数据库',
     cuttingOperations: '裁纱作业',
     productEngineering: '产品工程管理',
+    productStructure: '产品结构',
     materialArchive: '物料档案',
     engineeringDatabase: '工程数据库',
     engineeringReference: '工程关联库',

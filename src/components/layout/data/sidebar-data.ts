@@ -285,6 +285,13 @@ const navGroupConfigs: SidebarGroupConfig[] = [
             icon: Box,
             permissionId: permissionIdForPath('/engineering'),
           },
+          {
+            id: 'product-structure',
+            titleKey: 'sidebar.items.productStructure',
+            url: '/product-structure',
+            icon: Package,
+            permissionId: permissionIdForPath('/product-structure'),
+          },
         ],
       },
       {

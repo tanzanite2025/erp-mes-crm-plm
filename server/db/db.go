@@ -368,6 +368,95 @@ func ensureWarehouseCategoryDefaultFlag(column string, code string) {
 	}
 }
 
+func ensureDefaultBOMSections() {
+	if DB == nil || !DB.Migrator().HasTable(&models.BOMSection{}) {
+		return
+	}
+
+	appendUnique := func(values []string, next string) []string {
+		trimmed := strings.TrimSpace(next)
+		if trimmed == "" {
+			return values
+		}
+		for _, value := range values {
+			if strings.TrimSpace(value) == trimmed {
+				return values
+			}
+		}
+		return append(values, trimmed)
+	}
+
+	for _, section := range models.DefaultBOMSections {
+		var existing models.BOMSection
+		err := DB.Where("code = ?", section.Code).First(&existing).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			item := section
+			if createErr := DB.Create(&item).Error; createErr != nil {
+				log.Fatal("[CRITICAL] Failed to seed default BOM section: ", createErr)
+			}
+			continue
+		}
+
+		if err != nil {
+			log.Fatal("[CRITICAL] Failed to query default BOM section: ", err)
+		}
+
+		updates := map[string]interface{}{}
+		if !existing.IsSystem {
+			updates["is_system"] = true
+		}
+		if !existing.Active {
+			updates["active"] = true
+		}
+		if existing.Name == "" {
+			updates["name"] = section.Name
+		}
+		if existing.SortOrder == 0 {
+			updates["sort_order"] = section.SortOrder
+		}
+		legacyNames := make([]string, 0)
+		if len(existing.LegacyNames) > 0 {
+			if unmarshalErr := json.Unmarshal(existing.LegacyNames, &legacyNames); unmarshalErr != nil {
+				log.Fatal("[CRITICAL] Failed to parse BOM section legacy names: ", unmarshalErr)
+			}
+		}
+		legacyNames = appendUnique(legacyNames, existing.Name)
+		legacyNames = appendUnique(legacyNames, section.Name)
+		legacyRaw, marshalErr := json.Marshal(legacyNames)
+		if marshalErr != nil {
+			log.Fatal("[CRITICAL] Failed to marshal BOM section legacy names: ", marshalErr)
+		}
+		if string(existing.LegacyNames) != string(legacyRaw) {
+			updates["legacy_names"] = legacyRaw
+		}
+
+		if len(updates) == 0 {
+			continue
+		}
+		if updateErr := DB.Model(&existing).Updates(updates).Error; updateErr != nil {
+			log.Fatal("[CRITICAL] Failed to align default BOM section: ", updateErr)
+		}
+	}
+
+	ensureDefaultBOMSectionFlag("PREPARE")
+}
+
+func ensureDefaultBOMSectionFlag(code string) {
+	var count int64
+	if err := DB.Model(&models.BOMSection{}).Where("is_default = ? AND active = ?", true, true).Count(&count).Error; err != nil {
+		log.Fatal("[CRITICAL] Failed to verify BOM section default flag: ", err)
+	}
+	if count > 0 {
+		return
+	}
+
+	if err := DB.Model(&models.BOMSection{}).
+		Where("code = ?", code).
+		Updates(map[string]interface{}{"is_default": true, "active": true}).Error; err != nil {
+		log.Fatal("[CRITICAL] Failed to backfill BOM section default flag: ", err)
+	}
+}
+
 func ensureUserIntegrityConstraints() {
 	if DB == nil || !DB.Migrator().HasTable(&models.User{}) {
 		return
@@ -927,6 +1016,7 @@ func InitDB(dsn string) {
 		&models.BOM{},
 		&models.BOMItem{},
 		&models.BOMSubstituteItem{},
+		&models.BOMSection{},
 		&models.NumberingRule{},
 		&models.ProcessStep{},
 		&models.ProductionLine{},
@@ -1101,6 +1191,7 @@ func InitDB(dsn string) {
 	ensureDefaultProductAttributeCategories()
 	ensureDefaultProductAttributeOptions()
 	ensureDefaultWarehouseCategories()
+	ensureDefaultBOMSections()
 
 	// 6. 闂傚倸鍊风粈渚€骞夐敍鍕殰婵°倕鍟畷鏌ユ煕瀹€鈧崕鎴犵礊閺嶎厽鐓欓梺顓ㄧ畱閺嬫盯鎮楅崹顐ゅ弨闁哄被鍊栭幈銊╁箛椤戣棄浜炬俊銈呮噹閺勩儵鏌ｅΟ鑲╁笡闁绘挻娲樼换娑㈠幢濡ゅ啰顔囬梺閫炲苯澧紓宥咃工椤?Seed
 	var configCount int64

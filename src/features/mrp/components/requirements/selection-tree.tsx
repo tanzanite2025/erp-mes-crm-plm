@@ -10,12 +10,12 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { useLanguage } from '@/context/language-provider'
 import { cn } from '@/lib/utils'
 import { createLogger } from '@/lib/logger'
-import { BOMS_QUERY_KEY } from '@/features/engineering/query-keys'
-import { bomService } from '@/features/engineering/services/bom-service'
+import { BOMS_QUERY_KEY } from '@/features/product-structure/query-keys'
+import { bomService } from '@/features/product-structure/services/bom-service'
 import { type SalesOrder } from '@/features/trading/data/schema'
 import { RequirementStageAlert } from './requirement-stage-alert'
 
-const logger = createLogger('SelectionTree')
+const logger = createLogger('MRPSelectionTree')
 
 interface SelectionTreeProps {
   orders: SalesOrder[]
