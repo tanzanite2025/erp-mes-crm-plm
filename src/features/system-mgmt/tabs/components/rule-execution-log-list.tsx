@@ -10,6 +10,7 @@ import {
   getExecutionTypeLabel,
   getReadableExecutionError,
   getStatusIcon,
+  isConfigurationPendingLog,
 } from './rule-execution-log-presenter'
 
 interface RuleExecutionLogListProps {
@@ -38,11 +39,17 @@ export function RuleExecutionLogList({
       {items.map((log) => {
         const TypeIcon = getExecutionTypeIcon(log.executionType)
         const StatusIcon = getStatusIcon(log.executionStatus)
+        const isConfigurationPending = isConfigurationPendingLog(log)
+        const hasTargets = log.targets.length > 0
+        const hasActionUrl = Boolean(log.actionUrl)
+        const readableError = getReadableExecutionError(log.errorMessage)
 
         return (
           <div
             key={log.id}
-            className='rounded-[24px] border border-dashed border-slate-200 bg-background/80 p-4'
+            className={isConfigurationPending
+              ? 'rounded-[24px] border border-dashed border-slate-200 bg-slate-50/80 p-4'
+              : 'rounded-[24px] border border-dashed border-slate-200 bg-background/80 p-4'}
           >
             <div className='flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between'>
               <div className='space-y-2'>
@@ -51,9 +58,9 @@ export function RuleExecutionLogList({
                     <TypeIcon className='mr-1 size-3.5' />
                     {getExecutionTypeLabel(log.executionType)}
                   </Badge>
-                  <Badge className={getExecutionStatusBadgeClass(log.executionStatus)}>
+                  <Badge className={getExecutionStatusBadgeClass(log.executionStatus, log)}>
                     <StatusIcon className='mr-1 size-3.5' />
-                    {getExecutionStatusLabel(log.executionStatus)}
+                    {getExecutionStatusLabel(log.executionStatus, log)}
                   </Badge>
                   {log.sourceCode ? (
                     <Badge variant='outline'>{log.sourceCode}</Badge>
@@ -84,28 +91,36 @@ export function RuleExecutionLogList({
                     hour12: false,
                   })}
                 </p>
-                <p className='font-mono'>{log.eventKey || '-'}</p>
+                {log.executionStatus === 'failed' && log.eventKey ? (
+                  <p className='font-mono'>{log.eventKey}</p>
+                ) : null}
               </div>
             </div>
 
-            <div className='mt-4 grid gap-3 lg:grid-cols-2'>
-              <div className='rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3'>
-                <p className='text-[10px] font-black uppercase tracking-widest text-slate-500'>
-                  接收对象
-                </p>
-                <p className='mt-1 text-sm text-slate-700'>
-                  {formatTargets(log)}
-                </p>
+            {hasTargets || hasActionUrl ? (
+              <div className='mt-4 grid gap-3 lg:grid-cols-2'>
+                {hasTargets ? (
+                  <div className='rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3'>
+                    <p className='text-[10px] font-black uppercase tracking-widest text-slate-500'>
+                      接收对象
+                    </p>
+                    <p className='mt-1 text-sm text-slate-700'>
+                      {formatTargets(log)}
+                    </p>
+                  </div>
+                ) : null}
+                {hasActionUrl ? (
+                  <div className='rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3'>
+                    <p className='text-[10px] font-black uppercase tracking-widest text-slate-500'>
+                      跳转链接
+                    </p>
+                    <p className='mt-1 break-all font-mono text-xs text-slate-700'>
+                      {log.actionUrl}
+                    </p>
+                  </div>
+                ) : null}
               </div>
-              <div className='rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3'>
-                <p className='text-[10px] font-black uppercase tracking-widest text-slate-500'>
-                  跳转链接
-                </p>
-                <p className='mt-1 break-all font-mono text-xs text-slate-700'>
-                  {log.actionUrl || '未配置'}
-                </p>
-              </div>
-            </div>
+            ) : null}
 
             {log.content ? (
               <div className='mt-3 rounded-2xl border border-dashed border-primary/20 bg-primary/5 px-4 py-3 text-sm text-slate-700'>
@@ -114,8 +129,12 @@ export function RuleExecutionLogList({
             ) : null}
 
             {log.errorMessage ? (
-              <div className='mt-3 rounded-2xl border border-dashed border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700'>
-                {getReadableExecutionError(log.errorMessage)}
+              <div
+                className={isConfigurationPending
+                  ? 'mt-3 rounded-2xl border border-dashed border-slate-200 bg-slate-100 px-4 py-3 text-sm text-slate-700'
+                  : 'mt-3 rounded-2xl border border-dashed border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700'}
+              >
+                {readableError}
               </div>
             ) : null}
           </div>

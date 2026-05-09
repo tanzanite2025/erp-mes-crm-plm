@@ -6,7 +6,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { isForbiddenError } from '@/lib/error-status'
-import { type StandardCommand } from '../../data/schema'
+import { getStandardCommandDisplayTitle, type StandardCommand } from '../../data/schema'
+import { useBusinessEventSources } from '../../hooks/use-business-event-sources'
 import { RoutingQueryErrorState } from '../routing-query-error-state'
 import { useCommands } from '../../hooks/use-commands'
 import { CommandForm } from './command-form.tsx'
@@ -20,6 +21,7 @@ export function CommandMgmt({
   onSearchValueChange?: (value: string) => void
 } = {}) {
   const { t } = useLanguage()
+  const { sources } = useBusinessEventSources()
   const {
     commands,
     loading,
@@ -51,10 +53,16 @@ export function CommandMgmt({
     if (!command) return false
 
     const keyword = (search || '').toLowerCase()
+    const displayTitle = getStandardCommandDisplayTitle(command, sources).toLowerCase()
     return (
-      (command.title || '').toLowerCase().includes(keyword) ||
+      displayTitle.includes(keyword) ||
       (command.content || '').toLowerCase().includes(keyword) ||
-      (command.targetLink || '').toLowerCase().includes(keyword)
+      (command.targetLink || '').toLowerCase().includes(keyword) ||
+      (command.sourceCode || '').toLowerCase().includes(keyword) ||
+      (command.actionCode || '').toLowerCase().includes(keyword) ||
+      (command.statusCodes || []).some((statusCode) =>
+        statusCode.toLowerCase().includes(keyword)
+      )
     )
   })
 

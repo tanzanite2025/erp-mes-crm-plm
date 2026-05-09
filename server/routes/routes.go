@@ -226,6 +226,7 @@ func SetupRoutes(r *gin.Engine) {
 			routingGroup.GET("/event-source-phase-catalog", middleware.RequirePermissions(authz.MenuSystem), handlers.GetBusinessEventPhaseCatalogHandler)
 			routingGroup.GET("/event-sources", middleware.RequirePermissions(authz.MenuSystem), handlers.GetBusinessEventSourcesHandler)
 			routingGroup.POST("/event-sources", adminOnly, handlers.SaveBusinessEventSourceHandler)
+			routingGroup.POST("/event-sources/:id/status-rename-transaction", adminOnly, handlers.CommitBusinessEventStatusRenameTransactionHandler)
 			routingGroup.PUT("/event-sources/:id", adminOnly, handlers.UpdateBusinessEventSourceHandler)
 			routingGroup.DELETE("/event-sources/:id", adminOnly, handlers.DeleteBusinessEventSourceHandler)
 

@@ -58,7 +58,7 @@ func seedBusinessEventSource(t *testing.T, testDB *gorm.DB) models.BusinessEvent
 		Description: "default source",
 		Config: []byte(`{
 			"actions":[{"id":"action-1","order":0,"code":"CREATED","name":"Created","kind":"created"}],
-			"statuses":[{"id":"status-1","order":0,"code":"Pending","label":"Pending","phase":"pending","isTerminal":false,"defaultResolve":false}],
+			"statuses":[{"id":"status-1","order":0,"code":"Pending"}],
 			"fields":[{"id":"field-1","order":0,"key":"orderNo","label":"Order No","path":"orderNo","type":"string","templateKey":"OrderNo","templateEnabled":true,"dynamicResolver":false}],
 			"dynamicResolvers":[{"id":"resolver-1","order":0,"code":"createdBy","label":"Created By","path":"createdBy","type":"user"}],
 			"defaultActionUrlTemplate":"/trading/orders/[OrderId]"
@@ -94,7 +94,7 @@ func TestUpdateBusinessEventSource_RejectsNestedIdentityMutation(t *testing.T) {
 			name: "action code",
 			config: `{
 				"actions":[{"id":"action-1","order":0,"code":"CREATED_V2","name":"Created","kind":"created"}],
-				"statuses":[{"id":"status-1","order":0,"code":"Pending","label":"Pending","phase":"pending","isTerminal":false,"defaultResolve":false}],
+				"statuses":[{"id":"status-1","order":0,"code":"Pending"}],
 				"fields":[{"id":"field-1","order":0,"key":"orderNo","label":"Order No","path":"orderNo","type":"string","templateKey":"OrderNo","templateEnabled":true,"dynamicResolver":false}],
 				"dynamicResolvers":[{"id":"resolver-1","order":0,"code":"createdBy","label":"Created By","path":"createdBy","type":"user"}],
 				"defaultActionUrlTemplate":"/trading/orders/[OrderId]"
@@ -104,7 +104,7 @@ func TestUpdateBusinessEventSource_RejectsNestedIdentityMutation(t *testing.T) {
 			name: "action kind",
 			config: `{
 				"actions":[{"id":"action-1","order":0,"code":"CREATED","name":"Created","kind":"updated"}],
-				"statuses":[{"id":"status-1","order":0,"code":"Pending","label":"Pending","phase":"pending","isTerminal":false,"defaultResolve":false}],
+				"statuses":[{"id":"status-1","order":0,"code":"Pending"}],
 				"fields":[{"id":"field-1","order":0,"key":"orderNo","label":"Order No","path":"orderNo","type":"string","templateKey":"OrderNo","templateEnabled":true,"dynamicResolver":false}],
 				"dynamicResolvers":[{"id":"resolver-1","order":0,"code":"createdBy","label":"Created By","path":"createdBy","type":"user"}],
 				"defaultActionUrlTemplate":"/trading/orders/[OrderId]"
@@ -114,7 +114,7 @@ func TestUpdateBusinessEventSource_RejectsNestedIdentityMutation(t *testing.T) {
 			name: "status code",
 			config: `{
 				"actions":[{"id":"action-1","order":0,"code":"CREATED","name":"Created","kind":"created"}],
-				"statuses":[{"id":"status-1","order":0,"code":"Waiting","label":"Pending","phase":"pending","isTerminal":false,"defaultResolve":false}],
+				"statuses":[{"id":"status-1","order":0,"code":"Waiting"}],
 				"fields":[{"id":"field-1","order":0,"key":"orderNo","label":"Order No","path":"orderNo","type":"string","templateKey":"OrderNo","templateEnabled":true,"dynamicResolver":false}],
 				"dynamicResolvers":[{"id":"resolver-1","order":0,"code":"createdBy","label":"Created By","path":"createdBy","type":"user"}],
 				"defaultActionUrlTemplate":"/trading/orders/[OrderId]"
@@ -124,7 +124,7 @@ func TestUpdateBusinessEventSource_RejectsNestedIdentityMutation(t *testing.T) {
 			name: "field path",
 			config: `{
 				"actions":[{"id":"action-1","order":0,"code":"CREATED","name":"Created","kind":"created"}],
-				"statuses":[{"id":"status-1","order":0,"code":"Pending","label":"Pending","phase":"pending","isTerminal":false,"defaultResolve":false}],
+				"statuses":[{"id":"status-1","order":0,"code":"Pending"}],
 				"fields":[{"id":"field-1","order":0,"key":"orderNo","label":"Order No","path":"payload.orderNo","type":"string","templateKey":"OrderNo","templateEnabled":true,"dynamicResolver":false}],
 				"dynamicResolvers":[{"id":"resolver-1","order":0,"code":"createdBy","label":"Created By","path":"createdBy","type":"user"}],
 				"defaultActionUrlTemplate":"/trading/orders/[OrderId]"
@@ -134,7 +134,7 @@ func TestUpdateBusinessEventSource_RejectsNestedIdentityMutation(t *testing.T) {
 			name: "resolver type",
 			config: `{
 				"actions":[{"id":"action-1","order":0,"code":"CREATED","name":"Created","kind":"created"}],
-				"statuses":[{"id":"status-1","order":0,"code":"Pending","label":"Pending","phase":"pending","isTerminal":false,"defaultResolve":false}],
+				"statuses":[{"id":"status-1","order":0,"code":"Pending"}],
 				"fields":[{"id":"field-1","order":0,"key":"orderNo","label":"Order No","path":"orderNo","type":"string","templateKey":"OrderNo","templateEnabled":true,"dynamicResolver":false}],
 				"dynamicResolvers":[{"id":"resolver-1","order":0,"code":"createdBy","label":"Created By","path":"createdBy","type":"group"}],
 				"defaultActionUrlTemplate":"/trading/orders/[OrderId]"
@@ -144,7 +144,7 @@ func TestUpdateBusinessEventSource_RejectsNestedIdentityMutation(t *testing.T) {
 			name: "persisted action deletion",
 			config: `{
 				"actions":[],
-				"statuses":[{"id":"status-1","order":0,"code":"Pending","label":"Pending","phase":"pending","isTerminal":false,"defaultResolve":false}],
+				"statuses":[{"id":"status-1","order":0,"code":"Pending"}],
 				"fields":[{"id":"field-1","order":0,"key":"orderNo","label":"Order No","path":"orderNo","type":"string","templateKey":"OrderNo","templateEnabled":true,"dynamicResolver":false}],
 				"dynamicResolvers":[{"id":"resolver-1","order":0,"code":"createdBy","label":"Created By","path":"createdBy","type":"user"}],
 				"defaultActionUrlTemplate":"/trading/orders/[OrderId]"
@@ -185,7 +185,7 @@ func TestUpdateBusinessEventSource_AllowsDisplayFieldMutation(t *testing.T) {
 		Description: "updated description",
 		Config: []byte(`{
 			"actions":[{"id":"action-1","order":0,"code":"CREATED","name":"Created Event","kind":"created"}],
-			"statuses":[{"id":"status-1","order":0,"code":"Pending","label":"Pending Review","phase":"pending","isTerminal":false,"defaultResolve":false}],
+			"statuses":[{"id":"status-1","order":0,"code":"Pending"}],
 			"fields":[{"id":"field-1","order":0,"key":"orderNo","label":"Order Number","path":"orderNo","type":"string","templateKey":"OrderNo","templateEnabled":true,"dynamicResolver":false}],
 			"dynamicResolvers":[{"id":"resolver-1","order":0,"code":"createdBy","label":"Created By User","path":"createdBy","type":"user"}],
 			"defaultActionUrlTemplate":"/trading/orders/[OrderId]"
@@ -195,6 +195,48 @@ func TestUpdateBusinessEventSource_AllowsDisplayFieldMutation(t *testing.T) {
 	require.Equal(t, "Sales Order Lifecycle", updated.Name)
 	require.False(t, updated.Enabled)
 	require.Equal(t, "updated description", updated.Description)
+}
+
+func TestUpdateBusinessEventSource_AllowsCodeOnlyStatusWriteContract(t *testing.T) {
+	testDB := setupBusinessEventSourceServiceTestDB(t)
+	existing := seedBusinessEventSource(t, testDB)
+
+	updated, err := UpdateBusinessEventSource(existing.ID, models.BusinessEventSource{
+		Code:        existing.Code,
+		Name:        existing.Name,
+		Module:      existing.Module,
+		Entity:      existing.Entity,
+		Enabled:     existing.Enabled,
+		Description: existing.Description,
+		Config: []byte(`{
+			"actions":[{"id":"action-1","order":0,"code":"CREATED","name":"Created","kind":"created"}],
+			"statuses":[{"id":"status-1","order":0,"code":"Pending"}],
+			"fields":[{"id":"field-1","order":0,"key":"orderNo","label":"Order No","path":"orderNo","type":"string","templateKey":"OrderNo","templateEnabled":true,"dynamicResolver":false}],
+			"dynamicResolvers":[{"id":"resolver-1","order":0,"code":"createdBy","label":"Created By","path":"createdBy","type":"user"}],
+			"defaultActionUrlTemplate":"/trading/orders/[OrderId]"
+		}`),
+	})
+	require.NoError(t, err)
+
+	config, err := unmarshalBusinessEventSourceStoredConfig(updated.Config)
+	require.NoError(t, err)
+	require.Len(t, config.Statuses, 1)
+	require.Equal(t, "Pending", config.Statuses[0].Code)
+	require.Empty(t, config.Statuses[0].Label)
+	require.Empty(t, config.Statuses[0].Phase)
+	require.False(t, config.Statuses[0].IsTerminal)
+	require.False(t, config.Statuses[0].DefaultResolve)
+
+	response, err := MapBusinessEventSourceToResponse(updated)
+	require.NoError(t, err)
+	require.Len(t, response.Config.Statuses, 1)
+
+	expected := indexBusinessEventSourceCompatibilityStatuses(updated.Code)["Pending"]
+	pending := response.Config.Statuses[0]
+	require.Equal(t, expected.Label, pending.Label)
+	require.Equal(t, expected.Phase, pending.Phase)
+	require.Equal(t, expected.IsTerminal, pending.IsTerminal)
+	require.Equal(t, expected.DefaultResolve, pending.DefaultResolve)
 }
 
 func TestEnsureDefaultBusinessEventSources_SeedsDefaultSources(t *testing.T) {
@@ -249,7 +291,7 @@ func TestEnsureDefaultBusinessEventSources_BackfillsMissingDefaultSeeds(t *testi
 	require.Equal(t, "SYSTEM", productionPlan.Entity)
 	require.True(t, productionPlan.Enabled)
 
-	config, err := unmarshalBusinessEventSourceConfig(productionPlan.Config)
+	config, err := unmarshalBusinessEventSourceStoredConfig(productionPlan.Config)
 	require.NoError(t, err)
 	require.Equal(t, []string{"SCHEDULED", "IN_PROGRESS", "COMPLETED", "CANCELED"}, []string{
 		config.Statuses[0].Code,
@@ -269,15 +311,28 @@ func TestBusinessEventPhaseCatalogCoversDefaultSalesOrderStatusPhases(t *testing
 }
 
 func TestDefaultSalesOrderEventSourceUsesStateMachineStatuses(t *testing.T) {
-	config, err := unmarshalBusinessEventSourceConfig(defaultSalesOrderEventSourceConfig())
-	require.NoError(t, err)
-
 	catalog := statemachine.SalesOrderStatusCatalog()
-	require.Len(t, config.Statuses, len(catalog))
+	statuses := defaultSalesOrderBusinessStatuses()
+	require.Len(t, statuses, len(catalog))
 	for index, item := range catalog {
-		require.Equal(t, string(item.Status), config.Statuses[index].Code)
-		require.Equal(t, item.Phase, config.Statuses[index].Phase)
-		require.Equal(t, item.IsTerminal, config.Statuses[index].IsTerminal)
-		require.Equal(t, item.DefaultResolve, config.Statuses[index].DefaultResolve)
+		require.Equal(t, string(item.Status), statuses[index].Code)
+		require.Equal(t, item.Phase, statuses[index].Phase)
+		require.Equal(t, item.IsTerminal, statuses[index].IsTerminal)
+		require.Equal(t, item.DefaultResolve, statuses[index].DefaultResolve)
+	}
+}
+
+func TestDefaultSalesOrderEventSourceConfig_StoresCodeOnlyStatuses(t *testing.T) {
+	config, err := unmarshalBusinessEventSourceStoredConfig(defaultSalesOrderEventSourceConfig())
+	require.NoError(t, err)
+	require.NotEmpty(t, config.Statuses)
+
+	for _, status := range config.Statuses {
+		require.NotEmpty(t, status.ID)
+		require.NotEmpty(t, status.Code)
+		require.Empty(t, status.Label)
+		require.Empty(t, status.Phase)
+		require.False(t, status.IsTerminal)
+		require.False(t, status.DefaultResolve)
 	}
 }

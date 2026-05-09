@@ -6,6 +6,10 @@ import {
 } from './business-event-source-card-diff'
 import { type BusinessEventStatusReferenceSummary } from './business-event-source-status-references'
 import {
+  type BusinessEventStatusRenameBatchAnalysis,
+  type BusinessEventStatusRenamePlan,
+} from './business-event-source-status-safe-rename'
+import {
   FieldEditorContent,
   StatusEditorContent,
 } from './business-event-source-card-drawers'
@@ -18,7 +22,10 @@ interface BusinessEventSourceEditorOverlayProps {
   statuses: BusinessEventSource['config']['statuses']
   fields: BusinessEventSource['config']['fields']
   persistedStatusIds: Set<string>
+  committedStatusCodeMap: Map<string, string>
   statusReferenceMap: Map<string, BusinessEventStatusReferenceSummary>
+  statusRenamePlans: BusinessEventStatusRenamePlan[]
+  statusRenameBatchAnalysis: BusinessEventStatusRenameBatchAnalysis
   statusReferencesLoaded: boolean
   persistedFieldIds: Set<string>
   statusDirty: boolean
@@ -65,7 +72,10 @@ export function BusinessEventSourceEditorOverlay({
   statuses,
   fields,
   persistedStatusIds,
+  committedStatusCodeMap,
   statusReferenceMap,
+  statusRenamePlans,
+  statusRenameBatchAnalysis,
   statusReferencesLoaded,
   persistedFieldIds,
   statusDirty,
@@ -117,7 +127,10 @@ export function BusinessEventSourceEditorOverlay({
             statuses={statuses}
             sourceCode={sourceCode}
             persistedStatusIds={persistedStatusIds}
+            committedStatusCodeMap={committedStatusCodeMap}
             statusReferenceMap={statusReferenceMap}
+            statusRenamePlans={statusRenamePlans}
+            statusRenameBatchAnalysis={statusRenameBatchAnalysis}
             statusReferencesLoaded={statusReferencesLoaded}
             onAdd={onAddStatus}
             onUpdate={onUpdateStatus}

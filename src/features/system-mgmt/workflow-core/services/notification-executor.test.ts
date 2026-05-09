@@ -71,6 +71,9 @@ function createCommand(): StandardCommand {
     title: '订单待处理',
     content: '订单 [OrderNo] 需要处理',
     targetLink: '/trading/orders/[OrderId]',
+    sourceCode: '',
+    actionCode: '',
+    statusCodes: [],
     createdAt: '2026-04-18T00:00:00.000Z',
   }
 }
@@ -170,5 +173,83 @@ describe('notification-executor', () => {
     expect(
       predicate({ metadata: { OrderId: 'order-9', SegmentId: 'segment-x' } })
     ).toBe(false)
+  })
+
+  it('does not persist skipped logs when a bound template is missing', () => {
+    const result = executeNotificationAction({
+      rule: createRule(),
+      segment: createSegment({ commandIds: ['missing-command'] }),
+      event: createEvent(),
+      eventKey: 'event-missing-template',
+      targetEntity: 'ORDER',
+      targetSourceCode: 'SALES_ORDER',
+      metadata: createMetadata(),
+      finalGroups: [],
+      finalUsers: [],
+      finalTargets: ['alice'],
+      commands: [createCommand()],
+      mode: 'live',
+      snoozeMs: 60_000,
+    })
+
+    expect(result).toEqual({
+      notifiedCount: 0,
+      skippedCount: 1,
+    })
+    expect(recordExecutionLogMock).not.toHaveBeenCalled()
+  })
+
+  it('does not persist skipped logs when no template and no fallback content are available', () => {
+    const result = executeNotificationAction({
+      rule: createRule(),
+      segment: createSegment({ commandIds: [] }),
+      event: {
+        ...createEvent(),
+        content: '',
+      },
+      eventKey: 'event-no-template-no-fallback',
+      targetEntity: 'ORDER',
+      targetSourceCode: 'SALES_ORDER',
+      metadata: createMetadata(),
+      finalGroups: [],
+      finalUsers: [],
+      finalTargets: [],
+      commands: [createCommand()],
+      mode: 'live',
+      snoozeMs: 60_000,
+    })
+
+    expect(result).toEqual({
+      notifiedCount: 0,
+      skippedCount: 1,
+    })
+    expect(recordExecutionLogMock).not.toHaveBeenCalled()
+  })
+
+  it('uses runtime event title instead of template title when sending notifications', () => {
+    executeNotificationAction({
+      rule: createRule(),
+      segment: createSegment(),
+      event: {
+        ...createEvent(),
+        title: '订单 [OrderNo] 状态提醒',
+      },
+      eventKey: 'event-3',
+      targetEntity: 'ORDER',
+      targetSourceCode: 'SALES_ORDER',
+      metadata: createMetadata(),
+      finalGroups: [],
+      finalUsers: [],
+      finalTargets: ['alice'],
+      commands: [createCommand()],
+      mode: 'live',
+      snoozeMs: 60_000,
+    })
+
+    expect(addMessageMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: '订单 SO-001 状态提醒',
+      })
+    )
   })
 })

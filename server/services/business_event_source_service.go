@@ -80,11 +80,11 @@ func ensureBusinessEventSourceIdentityImmutable(
 		return errors.New("business event source entity is immutable after creation")
 	}
 
-	existingConfig, err := unmarshalBusinessEventSourceConfig(existing.Config)
+	existingConfig, err := unmarshalBusinessEventSourceStoredConfig(existing.Config)
 	if err != nil {
 		return err
 	}
-	patchConfig, err := unmarshalBusinessEventSourceConfig(patch.Config)
+	patchConfig, err := unmarshalBusinessEventSourceStoredConfig(patch.Config)
 	if err != nil {
 		return err
 	}
@@ -111,7 +111,7 @@ func ensureBusinessEventSourceIdentityImmutable(
 		}
 	}
 
-	existingStatusCodes := make(map[string]BusinessStatusDTO, len(existingConfig.Statuses))
+	existingStatusCodes := make(map[string]BusinessStatusStoredDTO, len(existingConfig.Statuses))
 	for _, status := range existingConfig.Statuses {
 		existingStatusCodes[status.ID] = status
 	}
@@ -122,7 +122,7 @@ func ensureBusinessEventSourceIdentityImmutable(
 			if existingStatus.Code != status.Code {
 				return errors.New("business event status code is immutable after creation")
 			}
-			if existingStatus.Phase != status.Phase {
+			if strings.TrimSpace(status.Phase) != "" && existingStatus.Phase != status.Phase {
 				return errors.New("business event status phase is immutable after creation")
 			}
 		}
@@ -204,9 +204,11 @@ func mergeBusinessEventActionsByID(existing, defaults []BusinessEventActionDTO) 
 	return result
 }
 
-func mergeBusinessStatusesByID(existing, defaults []BusinessStatusDTO) []BusinessStatusDTO {
+func mergeBusinessStatusesByID(
+	existing, defaults []BusinessStatusStoredDTO,
+) []BusinessStatusStoredDTO {
 	seen := make(map[string]struct{}, len(existing))
-	result := append([]BusinessStatusDTO{}, existing...)
+	result := append([]BusinessStatusStoredDTO{}, existing...)
 	for _, item := range existing {
 		seen[item.ID] = struct{}{}
 		seen["code:"+item.Code] = struct{}{}
@@ -259,11 +261,11 @@ func mergeBusinessDynamicResolversByID(existing, defaults []BusinessDynamicResol
 }
 
 func backfillDefaultBusinessEventSourceConfig(existing models.BusinessEventSource, seed defaultBusinessEventSourceSeed) error {
-	existingConfig, err := unmarshalBusinessEventSourceConfig(existing.Config)
+	existingConfig, err := unmarshalBusinessEventSourceStoredConfig(existing.Config)
 	if err != nil {
 		return err
 	}
-	defaultConfig, err := unmarshalBusinessEventSourceConfig(seed.Config)
+	defaultConfig, err := unmarshalBusinessEventSourceStoredConfig(seed.Config)
 	if err != nil {
 		return err
 	}
@@ -277,7 +279,7 @@ func backfillDefaultBusinessEventSourceConfig(existing models.BusinessEventSourc
 		merged.DefaultActionURLTemplate = defaultConfig.DefaultActionURLTemplate
 	}
 
-	mergedRaw, err := marshalBusinessEventSourceConfig(merged)
+	mergedRaw, err := marshalBusinessEventSourceStoredConfig(merged)
 	if err != nil {
 		return err
 	}

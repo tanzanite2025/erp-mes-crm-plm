@@ -9,27 +9,33 @@ import (
 )
 
 type StandardCommandRequest struct {
-	ID         string          `json:"id"`
-	ActionType string          `json:"actionType"`
-	BindType   string          `json:"bindType"`
-	NodeType   string          `json:"nodeType"`
-	Title      string          `json:"title"`
-	Content    string          `json:"content"`
-	TargetLink string          `json:"targetLink"`
-	Params     json.RawMessage `json:"params"`
+	ID          string          `json:"id"`
+	ActionType  string          `json:"actionType"`
+	BindType    string          `json:"bindType"`
+	NodeType    string          `json:"nodeType"`
+	Title       string          `json:"title"`
+	Content     string          `json:"content"`
+	TargetLink  string          `json:"targetLink"`
+	Params      json.RawMessage `json:"params"`
+	SourceCode  string          `json:"sourceCode"`
+	ActionCode  string          `json:"actionCode"`
+	StatusCodes []string        `json:"statusCodes"`
 }
 
 type StandardCommandResponse struct {
-	ID         string          `json:"id"`
-	CreatedAt  time.Time       `json:"createdAt"`
-	UpdatedAt  time.Time       `json:"updatedAt"`
-	ActionType string          `json:"actionType"`
-	BindType   string          `json:"bindType"`
-	NodeType   string          `json:"nodeType"`
-	Title      string          `json:"title"`
-	Content    string          `json:"content"`
-	TargetLink string          `json:"targetLink"`
-	Params     json.RawMessage `json:"params"`
+	ID          string          `json:"id"`
+	CreatedAt   time.Time       `json:"createdAt"`
+	UpdatedAt   time.Time       `json:"updatedAt"`
+	ActionType  string          `json:"actionType"`
+	BindType    string          `json:"bindType"`
+	NodeType    string          `json:"nodeType"`
+	Title       string          `json:"title"`
+	Content     string          `json:"content"`
+	TargetLink  string          `json:"targetLink"`
+	Params      json.RawMessage `json:"params"`
+	SourceCode  string          `json:"sourceCode"`
+	ActionCode  string          `json:"actionCode"`
+	StatusCodes []string        `json:"statusCodes"`
 }
 
 type NotificationRuleApprovalDTO struct {
@@ -79,30 +85,42 @@ type NotificationRuleResponse struct {
 }
 
 func MapStandardCommandRequestToModel(input StandardCommandRequest) models.StandardCommand {
+	statusCodesRaw, _ := json.Marshal(trimStringList(input.StatusCodes))
 	return models.StandardCommand{
-		BaseModel:  models.BaseModel{ID: input.ID},
-		ActionType: input.ActionType,
-		BindType:   input.BindType,
-		NodeType:   input.NodeType,
-		Title:      input.Title,
-		Content:    input.Content,
-		TargetLink: input.TargetLink,
-		Params:     input.Params,
+		BaseModel:   models.BaseModel{ID: input.ID},
+		ActionType:  input.ActionType,
+		BindType:    input.BindType,
+		NodeType:    input.NodeType,
+		Title:       input.Title,
+		Content:     input.Content,
+		TargetLink:  input.TargetLink,
+		Params:      input.Params,
+		SourceCode:  strings.TrimSpace(input.SourceCode),
+		ActionCode:  strings.TrimSpace(input.ActionCode),
+		StatusCodes: statusCodesRaw,
 	}
 }
 
 func MapStandardCommandToResponse(model models.StandardCommand) StandardCommandResponse {
+	var statusCodes []string
+	if len(model.StatusCodes) > 0 {
+		_ = json.Unmarshal(model.StatusCodes, &statusCodes)
+	}
+	statusCodes = trimStringList(statusCodes)
 	return StandardCommandResponse{
-		ID:         model.ID,
-		CreatedAt:  model.CreatedAt,
-		UpdatedAt:  model.UpdatedAt,
-		ActionType: model.ActionType,
-		BindType:   model.BindType,
-		NodeType:   model.NodeType,
-		Title:      model.Title,
-		Content:    model.Content,
-		TargetLink: model.TargetLink,
-		Params:     model.Params,
+		ID:          model.ID,
+		CreatedAt:   model.CreatedAt,
+		UpdatedAt:   model.UpdatedAt,
+		ActionType:  model.ActionType,
+		BindType:    model.BindType,
+		NodeType:    model.NodeType,
+		Title:       model.Title,
+		Content:     model.Content,
+		TargetLink:  model.TargetLink,
+		Params:      model.Params,
+		SourceCode:  strings.TrimSpace(model.SourceCode),
+		ActionCode:  strings.TrimSpace(model.ActionCode),
+		StatusCodes: statusCodes,
 	}
 }
 

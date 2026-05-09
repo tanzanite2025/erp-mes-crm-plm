@@ -128,7 +128,7 @@ export async function saveBusinessEventSourceSection({
 }: SaveBusinessEventSourceSectionOptions) {
   if (validationBySection[section].length > 0) {
     toast.error(validationBySection[section][0])
-    return
+    return undefined
   }
 
   const previousCommitted = committedSourceRef.current
@@ -161,11 +161,12 @@ export async function saveBusinessEventSourceSection({
       mergeIncomingDraft(optimisticCommitted, normalizedSaved, currentDraft)
     )
     toast.success('分区已保存')
-    return
+    return normalizedSaved
   }
 
   setCommittedSourceState(previousCommitted)
   setUndoPatches((prev) => ({ ...prev, [section]: null }))
+  return undefined
 }
 
 interface UndoBusinessEventSourceSectionOptions {

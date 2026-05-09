@@ -16,6 +16,9 @@ const command: StandardCommand = {
   content: '订单 [OrderNo] 待处理',
   targetLink: '/trading/orders/[OrderId]',
   params: ['OrderNo', 'OrderId'],
+  sourceCode: '',
+  actionCode: '',
+  statusCodes: [],
   createdAt: '2026-04-20T00:00:00.000Z',
 }
 

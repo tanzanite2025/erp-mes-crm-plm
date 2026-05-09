@@ -1,33 +1,19 @@
 package services
 
-import (
-	"encoding/json"
-	statemachine "xdfc-server/services/state_machine"
-)
+import "encoding/json"
 
 func defaultSalesOrderBusinessStatuses() []BusinessStatusDTO {
-	catalog := statemachine.SalesOrderStatusCatalog()
-	statuses := make([]BusinessStatusDTO, 0, len(catalog))
-	for _, item := range catalog {
-		statuses = append(statuses, BusinessStatusDTO{
-			Code:           string(item.Status),
-			Label:          item.Label,
-			Phase:          item.Phase,
-			IsTerminal:     item.IsTerminal,
-			DefaultResolve: item.DefaultResolve,
-		})
-	}
-	return statuses
+	return listBusinessEventSourceCompatibilityStatuses("SALES_ORDER")
 }
 
 func defaultSalesOrderEventSourceConfig() json.RawMessage {
-	config := normalizeBusinessEventSourceConfigDTO(BusinessEventSourceConfigDTO{
+	config := normalizeBusinessEventSourceWriteConfigDTO(BusinessEventSourceWriteConfigDTO{
 		Actions: []BusinessEventActionDTO{
 			{ID: "action-created-1", Code: "CREATED", Name: "新建", Kind: "created"},
 			{ID: "action-status-changed-2", Code: "STATUS_CHANGED", Name: "状态变更", Kind: "status"},
 			{ID: "action-updated-3", Code: "UPDATED", Name: "更新", Kind: "updated"},
 		},
-		Statuses: defaultSalesOrderBusinessStatuses(),
+		Statuses: buildBusinessStatusWriteDTOs(defaultSalesOrderBusinessStatuses()),
 		Fields: []BusinessEventFieldDTO{
 			{Key: "orderId", Label: "订单ID", Path: "orderId", Type: "string", TemplateKey: "OrderId", TemplateEnabled: true, DynamicResolver: false},
 			{Key: "orderNo", Label: "订单号", Path: "orderNo", Type: "string", TemplateKey: "OrderNo", TemplateEnabled: true, DynamicResolver: false},
@@ -43,6 +29,6 @@ func defaultSalesOrderEventSourceConfig() json.RawMessage {
 		DefaultActionURLTemplate: "/trading/orders/[OrderId]",
 	})
 
-	raw, _ := marshalBusinessEventSourceConfig(config)
+	raw, _ := marshalBusinessEventSourceWriteConfig(config)
 	return raw
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { type Dispatch, type SetStateAction, useEffect, useMemo, useRef, useState } from 'react'
 import {
   AlertCircle,
   Sparkles,
@@ -27,9 +27,6 @@ import { buildBusinessEventSourceCardPresentation } from './business-event-sourc
 import { BusinessEventSourceBaseSection } from './business-event-source-base-section'
 import { BusinessEventSourceFieldSection } from './business-event-source-field-section'
 import {
-  applyBusinessEventSourceSectionPatch,
-  buildBusinessEventSourceSectionPatch,
-  getBusinessEventSourceDiff,
   getBusinessEventSourceGeneralDiffSummary,
   getBusinessEventSourceItemChangeKind,
   getBusinessEventSourceSectionDiffSummary,
@@ -62,10 +59,22 @@ import {
 } from './business-event-source-card-model'
 import { BusinessEventSourceResolverSection } from './business-event-source-resolver-section'
 import {
+  createBusinessEventSourceSavingState,
+  createBusinessEventSourceUndoPatchState,
+  mergeDirtySectionsIntoIncomingSource,
+  type BusinessEventSourceCardSavingState,
+} from './business-event-source-card-state'
+import {
   cloneBusinessEventSource,
 } from './business-event-source-card-utils'
 import { type NotificationRule } from '../../workflow-core/data/notification-rule-schema'
 import { buildBusinessEventStatusReferenceMap } from './business-event-source-status-references'
+import {
+  analyzeBusinessEventStatusRenameBatch,
+  analyzeBusinessEventStatusRenamePlans,
+  collectBusinessEventStatusRenameDrafts,
+} from './business-event-source-status-safe-rename'
+import { saveBusinessEventSourceStatuses } from './business-event-source-status-save-action'
 
 interface BusinessEventSourceCardProps {
   source: BusinessEventSource
@@ -73,17 +82,19 @@ interface BusinessEventSourceCardProps {
   highlighted?: boolean
   rules: NotificationRule[]
   statusReferencesLoaded: boolean
+  onRulesReplace: Dispatch<SetStateAction<NotificationRule[]>>
   onExpandedChange: (expanded: boolean) => void
   onUpdate: (
     id: string,
     updates: Partial<BusinessEventSource>
   ) => Promise<BusinessEventSource | undefined>
+  onSourceReplace: (source: BusinessEventSource) => void
   onDelete: (id: string) => Promise<void>
   onDuplicate: (source: BusinessEventSource) => Promise<void>
   canDelete: boolean
 }
 
-type SavingState = Record<BusinessEventSourceSection, boolean>
+type SavingState = BusinessEventSourceCardSavingState
 type UndoPatchState = Record<
   BusinessEventSourceSection,
   BusinessEventSourceSectionPatch | null
@@ -94,63 +105,16 @@ type FocusedChangeTarget = {
   changeType?: BusinessEventSourceItemChangeKind
 } | null
 
-function createSavingState() {
-  return {
-    general: false,
-    actions: false,
-    statuses: false,
-    fields: false,
-    dynamicResolvers: false,
-  } satisfies SavingState
-}
-
-function createUndoPatchState() {
-  return {
-    general: null,
-    actions: null,
-    statuses: null,
-    fields: null,
-    dynamicResolvers: null,
-  } satisfies UndoPatchState
-}
-
-function mergeDirtySectionsIntoIncomingSource(
-  previousCommittedSource: BusinessEventSource,
-  incomingCommittedSource: BusinessEventSource,
-  currentDraft: BusinessEventSource
-) {
-  const diff = getBusinessEventSourceDiff(previousCommittedSource, currentDraft)
-  let nextDraft = cloneBusinessEventSource(incomingCommittedSource)
-
-  const dirtySections: BusinessEventSourceSection[] = []
-  if (diff.general.dirty) dirtySections.push('general')
-  if (diff.actions.dirty) dirtySections.push('actions')
-  if (diff.statuses.dirty) dirtySections.push('statuses')
-  if (diff.fields.dirty) dirtySections.push('fields')
-  if (diff.dynamicResolvers.dirty) dirtySections.push('dynamicResolvers')
-
-  for (const section of dirtySections) {
-    const patch = buildBusinessEventSourceSectionPatch(
-      incomingCommittedSource,
-      currentDraft,
-      section
-    )
-    nextDraft = cloneBusinessEventSource(
-      applyBusinessEventSourceSectionPatch(nextDraft, patch)
-    )
-  }
-
-  return nextDraft
-}
-
 export function BusinessEventSourceCard({
   source,
   expanded,
   highlighted = false,
   rules,
   statusReferencesLoaded,
+  onRulesReplace,
   onExpandedChange,
   onUpdate,
+  onSourceReplace,
   onDelete,
   onDuplicate,
   canDelete,
@@ -167,11 +131,11 @@ export function BusinessEventSourceCard({
     useState<BusinessEventSource>(initialCommitted)
   const [savingAll, setSavingAll] = useState(false)
   const [savingSections, setSavingSections] =
-    useState<SavingState>(createSavingState)
+    useState<SavingState>(createBusinessEventSourceSavingState)
   const [undoingSections, setUndoingSections] =
-    useState<SavingState>(createSavingState)
+    useState<SavingState>(createBusinessEventSourceSavingState)
   const [undoPatches, setUndoPatches] =
-    useState<UndoPatchState>(createUndoPatchState)
+    useState<UndoPatchState>(createBusinessEventSourceUndoPatchState)
   const [editorMode, setEditorMode] =
     useState<BusinessEventSourceEditorMode>(null)
   const [focusedTarget, setFocusedTarget] = useState<FocusedChangeTarget>(null)
@@ -184,6 +148,36 @@ export function BusinessEventSourceCard({
   const statusReferenceMap = useMemo(
     () => buildBusinessEventStatusReferenceMap(committedSource, rules),
     [committedSource, rules]
+  )
+  const committedStatusCodeMap = useMemo(
+    () =>
+      new Map(
+        committedSource.config.statuses.flatMap((status) =>
+          status.id ? ([[status.id, status.code]] as const) : []
+        )
+      ),
+    [committedSource]
+  )
+  const statusRenamePlans = useMemo(
+    () =>
+      analyzeBusinessEventStatusRenamePlans({
+        sourceCode: committedSource.code,
+        rules,
+        renameDrafts: collectBusinessEventStatusRenameDrafts(
+          committedSource,
+          draft
+        ),
+      }),
+    [committedSource, draft, rules]
+  )
+  const statusRenameBatchAnalysis = useMemo(
+    () =>
+      analyzeBusinessEventStatusRenameBatch({
+        sourceCode: committedSource.code,
+        rules,
+        renamePlans: statusRenamePlans,
+      }),
+    [committedSource.code, rules, statusRenamePlans]
   )
 
   const setCommittedSourceState = (nextSource: BusinessEventSource) => {
@@ -347,13 +341,38 @@ export function BusinessEventSourceCard({
       setCommittedSourceState,
       setDraft,
       setUndoPatches,
-      createUndoPatchState,
+      createUndoPatchState: createBusinessEventSourceUndoPatchState,
       committedSourceRef,
       onUpdate,
     })
   }
 
+  const saveStatusesWithSafeRename = async () => {
+    return saveBusinessEventSourceStatuses({
+      draft,
+      committedSource,
+      committedSourceRef,
+      rules,
+      validationBySection,
+      statusRenamePlans,
+      statusRenameBatchAnalysis,
+      setSavingSections,
+      setCommittedSourceState,
+      setUndoPatches,
+      setDraft,
+      onRulesReplace,
+      onUpdate,
+      onSourceReplace,
+      mergeIncomingDraft,
+    })
+  }
+
   const saveSection = async (section: BusinessEventSourceSection) => {
+    if (section === 'statuses') {
+      await saveStatusesWithSafeRename()
+      return
+    }
+
     await saveBusinessEventSourceSection({
       section,
       draft,
@@ -739,7 +758,10 @@ export function BusinessEventSourceCard({
         statuses={draft.config.statuses}
         fields={draft.config.fields}
         persistedStatusIds={persistedStatusIds}
+        committedStatusCodeMap={committedStatusCodeMap}
         statusReferenceMap={statusReferenceMap}
+        statusRenamePlans={statusRenamePlans}
+        statusRenameBatchAnalysis={statusRenameBatchAnalysis}
         statusReferencesLoaded={statusReferencesLoaded}
         persistedFieldIds={persistedFieldIds}
         statusDirty={diff.statuses.dirty}

@@ -63,6 +63,9 @@ describe('DispatchService.scanByRules', () => {
         title: 'Pending order',
         content: 'Order [OrderNo] is pending',
         targetLink: '/trading/orders/[OrderId]',
+        sourceCode: '',
+        actionCode: '',
+        statusCodes: [],
         createdAt: '2026-04-18T00:00:00.000Z',
       },
     ]

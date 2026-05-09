@@ -1,10 +1,15 @@
 // @vitest-environment jsdom
 
-import { render, screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { StatusEditorContent } from './business-event-source-card-drawers'
 import { type BusinessEventStatusReferenceSummary } from './business-event-source-status-references'
+import { type BusinessEventStatusRenameBatchAnalysis } from './business-event-source-status-safe-rename'
+
+afterEach(() => {
+  cleanup()
+})
 
 function createReferenceSummary(
   overrides: Partial<BusinessEventStatusReferenceSummary> = {}
@@ -18,6 +23,20 @@ function createReferenceSummary(
     referencedRuleNames: [],
     referencedSegmentTitles: [],
     isReferenced: false,
+    ...overrides,
+  }
+}
+
+function createBatchAnalysis(
+  overrides: Partial<BusinessEventStatusRenameBatchAnalysis> = {}
+): BusinessEventStatusRenameBatchAnalysis {
+  return {
+    blockers: [],
+    swapPairs: [],
+    chainPaths: [],
+    semanticShrinkImpacts: [],
+    hasBlockers: false,
+    hasWarnings: false,
     ...overrides,
   }
 }
@@ -94,5 +113,106 @@ describe('StatusEditorContent reference guardrails', () => {
 
     await user.click(screen.getByRole('button', { name: '确认删除' }))
     expect(onDelete).toHaveBeenCalledWith(0)
+  })
+
+  it('disables save when batch rename blocker exists', () => {
+    render(
+      <StatusEditorContent
+        statuses={[{ id: 'status-1', code: 'Pending', order: 0 }]}
+        sourceCode='SALES_ORDER'
+        persistedStatusIds={new Set(['status-1'])}
+        statusReferenceMap={new Map([['Pending', createReferenceSummary()]])}
+        statusRenameBatchAnalysis={
+          createBatchAnalysis({
+            blockers: [
+              {
+                type: 'merge_rename',
+                codes: ['Pending', 'Queued'],
+                nextCode: 'HOLD',
+              },
+            ],
+            hasBlockers: true,
+          })
+        }
+        statusReferencesLoaded
+        onAdd={() => undefined}
+        onUpdate={() => undefined}
+        onMove={() => undefined}
+        onDelete={() => undefined}
+        onClose={() => undefined}
+        onSave={() => undefined}
+      />
+    )
+
+    expect(screen.queryByText('批量阻断：Pending / Queued 将汇聚到 HOLD')).not.toBeNull()
+    const saveButton = screen
+      .getAllByRole('button', { name: '保存状态' })
+      .find((button) => (button as HTMLButtonElement).disabled)
+    expect((saveButton as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('shows batch warning details in rename confirmation dialog', async () => {
+    const user = userEvent.setup()
+    const onSave = vi.fn()
+
+    render(
+      <StatusEditorContent
+        statuses={[{ id: 'status-1', code: 'Queued', order: 0 }]}
+        sourceCode='SALES_ORDER'
+        persistedStatusIds={new Set(['status-1'])}
+        committedStatusCodeMap={new Map([['status-1', 'Pending']])}
+        statusReferenceMap={new Map([['Pending', createReferenceSummary()]])}
+        statusRenamePlans={[
+          {
+            statusId: 'status-1',
+            oldCode: 'Pending',
+            nextCode: 'Queued',
+            targetSegmentCount: 1,
+            resolveSegmentCount: 0,
+            derivedApprovalActionCount: 1,
+            blockers: [],
+            canSafelyRename: true,
+          },
+        ]}
+        statusRenameBatchAnalysis={
+          createBatchAnalysis({
+            swapPairs: [{ leftCode: 'Pending', rightCode: 'Queued' }],
+            chainPaths: [{ codes: ['Draft', 'Review', 'Approved'] }],
+            semanticShrinkImpacts: [
+              {
+                ruleId: 'rule-1',
+                ruleName: '销售订单待处理规则',
+                segmentId: 'segment-1',
+                segmentTitle: '待处理阶段',
+                field: 'targetStatuses',
+                beforeValues: ['Pending', 'Queued'],
+                afterValues: ['Queued'],
+              },
+            ],
+            hasWarnings: true,
+          })
+        }
+        statusReferencesLoaded
+        onAdd={() => undefined}
+        onUpdate={() => undefined}
+        onMove={() => undefined}
+        onDelete={() => undefined}
+        onClose={() => undefined}
+        onSave={onSave}
+      />
+    )
+
+    const saveButton = screen
+      .getAllByRole('button', { name: '保存状态' })
+      .find((button) => !(button as HTMLButtonElement).disabled)
+
+    await user.click(saveButton as HTMLButtonElement)
+    expect(await screen.findByText('确认安全重命名迁移')).not.toBeNull()
+    expect(await screen.findByText(/交换改名 1 组/)).not.toBeNull()
+    expect(await screen.findByText(/链式改名 1 组/)).not.toBeNull()
+    expect(await screen.findByText(/1 个规则字段会发生语义收缩/)).not.toBeNull()
+
+    await user.click(screen.getByRole('button', { name: '确认迁移并保存' }))
+    expect(onSave).toHaveBeenCalledTimes(1)
   })
 })

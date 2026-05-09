@@ -2,20 +2,19 @@ package services
 
 import "encoding/json"
 
+func defaultProductionPlanBusinessStatuses() []BusinessStatusDTO {
+	return listBusinessEventSourceCompatibilityStatuses("PRODUCTION_PLAN")
+}
+
 func defaultProductionPlanEventSourceConfig() json.RawMessage {
-	config := normalizeBusinessEventSourceConfigDTO(BusinessEventSourceConfigDTO{
+	config := normalizeBusinessEventSourceWriteConfigDTO(BusinessEventSourceWriteConfigDTO{
 		Actions: []BusinessEventActionDTO{
 			{ID: "action-created-1", Code: "CREATED", Name: "新建", Kind: "created"},
 			{ID: "action-status-changed-2", Code: "STATUS_CHANGED", Name: "状态变更", Kind: "status"},
 			{ID: "action-canceled-3", Code: "CANCELED", Name: "取消", Kind: "status"},
 			{ID: "action-completed-4", Code: "COMPLETED", Name: "计划完成", Kind: "status"},
 		},
-		Statuses: []BusinessStatusDTO{
-			{Code: "SCHEDULED", Label: "已排产", Phase: "active", IsTerminal: false, DefaultResolve: false},
-			{Code: "IN_PROGRESS", Label: "生产中", Phase: "active", IsTerminal: false, DefaultResolve: false},
-			{Code: "COMPLETED", Label: "计划完成", Phase: "done", IsTerminal: true, DefaultResolve: true},
-			{Code: "CANCELED", Label: "已取消", Phase: "cancelled", IsTerminal: true, DefaultResolve: true},
-		},
+		Statuses: buildBusinessStatusWriteDTOs(defaultProductionPlanBusinessStatuses()),
 		Fields: []BusinessEventFieldDTO{
 			{Key: "planId", Label: "计划ID", Path: "planId", Type: "string", TemplateKey: "PlanId", TemplateEnabled: true, DynamicResolver: false},
 			{Key: "orderNo", Label: "订单号", Path: "orderNo", Type: "string", TemplateKey: "OrderNo", TemplateEnabled: true, DynamicResolver: false},
@@ -30,6 +29,6 @@ func defaultProductionPlanEventSourceConfig() json.RawMessage {
 		DefaultActionURLTemplate: "/dashboard/calendar?planId=[PlanId]",
 	})
 
-	raw, _ := marshalBusinessEventSourceConfig(config)
+	raw, _ := marshalBusinessEventSourceWriteConfig(config)
 	return raw
 }

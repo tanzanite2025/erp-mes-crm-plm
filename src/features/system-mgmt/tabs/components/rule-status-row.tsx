@@ -26,6 +26,7 @@ interface RuleStatusRowProps {
   completeness: { label: string; tone: CompletenessTone }
   sourceName: string
   sourceCode: string
+  actionCode: string
   users: ApprovalUserOption[]
   commands: StandardCommand[]
   resolverOptions: BusinessEventSource['config']['dynamicResolvers']
@@ -48,6 +49,7 @@ export function RuleStatusRow({
   completeness,
   sourceName,
   sourceCode,
+  actionCode,
   users,
   commands,
   resolverOptions,
@@ -232,6 +234,9 @@ export function RuleStatusRow({
           commands={commands}
           selectedCommandId={selectedCommandId}
           selectedCommand={selectedCommand}
+          sourceCode={sourceCode}
+          actionCode={actionCode}
+          statusCode={status.code}
           onCommandChange={onCommandChange}
           onCreateTemplate={onCreateTemplate}
           onDuplicateTemplate={onDuplicateTemplate}

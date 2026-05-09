@@ -14,6 +14,7 @@ import { knowledgeBaseService } from '@/features/basic-settings/knowledge-base/s
 import { type KnowledgeBaseDraft } from '@/features/basic-settings/knowledge-base/types'
 import { apiFetch } from '@/lib/api-client'
 import { getSearchItems, type SearchItem } from '@/components/layout/data/search-data'
+import { normalizeSearchHref } from '@/components/layout/data/search-href'
 import {
   getQuickActionDefinition,
   isHostedQuickActionId,
@@ -36,13 +37,6 @@ type GlobalSearchApiItem = {
 
 type GlobalSearchApiResponse = {
   data?: GlobalSearchApiItem[]
-}
-
-export function normalizeSearchHref(href: string) {
-  if (href === '/system-management/routing' || href === '/approval/routing') {
-    return '/message-center/rules'
-  }
-  return href
 }
 
 function commandItemMatches(item: SearchItem, query: string) {

@@ -6,6 +6,7 @@ import {
   serializeBusinessEventSourceCreate,
   serializeBusinessEventSourceUpdate,
   type BusinessEventSource,
+  type BusinessStatus,
   type BusinessEventSourceCreatePayload,
   type BusinessEventSourceUpdatePayload,
 } from '../data/business-event-source-schema'
@@ -25,6 +26,27 @@ import {
   type RuleExecutionLogWritePayload,
 } from '../data/rule-execution-log-schema'
 import { type StandardCommand } from '../data/schema'
+
+export interface BusinessEventStatusRenameTransactionPayload {
+  expectedUpdatedAt?: string
+  statuses: Array<Pick<BusinessStatus, 'id' | 'order' | 'code'>>
+  affectedRules: Array<{
+    ruleId: string
+    expectedVersion: number
+  }>
+}
+
+export interface BusinessEventStatusRenameTransactionResult {
+  eventSource: BusinessEventSource
+  rules: NotificationRule[]
+  summary: {
+    renamedStatusCount: number
+    affectedRuleCount: number
+    targetSegmentCount: number
+    resolveSegmentCount: number
+    derivedApprovalActionCount: number
+  }
+}
 
 /**
  * 路由与指令模板服务 - 统一对接后端
@@ -57,6 +79,34 @@ export const RoutingService = {
       }
     )
     return deserializeBusinessEventSource(response)
+  },
+
+  commitEventSourceStatusRenameTransaction: async (
+    id: string,
+    payload: BusinessEventStatusRenameTransactionPayload
+  ): Promise<BusinessEventStatusRenameTransactionResult> => {
+    const response = await apiFetch<{
+      eventSource: unknown
+      rules: unknown
+      summary: BusinessEventStatusRenameTransactionResult['summary']
+    }>(`/system/routing/event-sources/${id}/status-rename-transaction`, {
+      method: 'POST',
+      body: JSON.stringify({
+        expectedUpdatedAt: payload.expectedUpdatedAt,
+        statuses: payload.statuses.map((status, index) => ({
+          id: status.id,
+          order: status.order ?? index,
+          code: status.code,
+        })),
+        affectedRules: payload.affectedRules,
+      }),
+    })
+
+    return {
+      eventSource: deserializeBusinessEventSource(response.eventSource),
+      rules: deserializeNotificationRules(response.rules),
+      summary: response.summary,
+    }
   },
 
   deleteEventSource: async (id: string): Promise<void> => {

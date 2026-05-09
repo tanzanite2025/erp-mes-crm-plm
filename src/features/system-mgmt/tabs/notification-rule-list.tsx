@@ -236,7 +236,7 @@ export function NotificationRuleList({
   }
 
   return (
-    <div className='mx-auto max-w-6xl space-y-5 pb-12 transition-all duration-500'>
+    <div className='w-full space-y-5 pb-12 transition-all duration-500'>
       <div className='rounded-[24px] border border-dashed border-muted/40 bg-muted/5 p-4'>
         <div className='grid gap-4 xl:grid-cols-[150px_minmax(0,1fr)_auto] xl:items-center'>
           <div className='rounded-2xl bg-muted/30 px-4 py-3'>

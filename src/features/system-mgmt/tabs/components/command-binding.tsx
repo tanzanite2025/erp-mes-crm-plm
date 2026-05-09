@@ -3,7 +3,9 @@ import { Search, Check, Info, BellRing } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { getStandardCommandDisplayTitle } from '../../workflow-core/data/schema'
 import { useCommands } from '../../workflow-core/hooks/use-commands'
+import { useBusinessEventSources } from '../../workflow-core/hooks/use-business-event-sources'
 
 interface CommandBindingProps {
     selectedIds: string[]
@@ -15,10 +17,11 @@ interface CommandBindingProps {
  */
 export function CommandBinding({ selectedIds, onChange }: CommandBindingProps) {
     const { commands } = useCommands()
+    const { sources } = useBusinessEventSources()
     const [search, setSearch] = useState('')
 
     const filtered = commands.filter(c => 
-        c.title.toLowerCase().includes(search.toLowerCase()) || 
+        getStandardCommandDisplayTitle(c, sources).toLowerCase().includes(search.toLowerCase()) || 
         c.content.toLowerCase().includes(search.toLowerCase())
     )
 
@@ -83,7 +86,7 @@ export function CommandBinding({ selectedIds, onChange }: CommandBindingProps) {
                                     'text-[11px] font-black leading-tight mb-1 truncate group-hover:text-primary transition-colors',
                                     isSelected ? 'text-primary' : 'text-foreground'
                                 )}>
-                                    {cmd.title}
+                                    {getStandardCommandDisplayTitle(cmd, sources)}
                                 </p>
                                 <div className='flex items-center gap-1.5 opacity-60'>
                                     <Info className='size-3 flex-shrink-0' />
@@ -107,7 +110,7 @@ export function CommandBinding({ selectedIds, onChange }: CommandBindingProps) {
                                 variant='outline' 
                                 className='text-[8px] font-black bg-primary/5 text-primary border-primary/20 px-1.5 py-0'
                             >
-                                {cmd.title}
+                                {getStandardCommandDisplayTitle(cmd, sources)}
                             </Badge>
                         )
                     })}

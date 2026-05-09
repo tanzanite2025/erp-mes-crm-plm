@@ -148,7 +148,7 @@ export function NotificationCenter({ placement = 'header' }: NotificationCenterP
     const cmd = stdCommands.find(c => c.id === msg.commandId)
     if (!cmd) return { title: msg.title, content: msg.content }
     return {
-      title: resolveTemplate(cmd.title || msg.title, msg.metadata),
+      title: resolveTemplate(msg.title, msg.metadata),
       content: resolveTemplate(cmd.content || msg.content, msg.metadata)
     }
   }

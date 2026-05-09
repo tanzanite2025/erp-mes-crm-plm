@@ -9,13 +9,16 @@ import (
  */
 type StandardCommand struct {
 	BaseModel
-	ActionType string          `json:"actionType" gorm:"size:50"`
-	BindType   string          `json:"bindType" gorm:"size:50"`
-	NodeType   string          `json:"nodeType" gorm:"size:50"`
-	Title      string          `json:"title" gorm:"size:255"`
-	Content    string          `json:"content" gorm:"type:text"`
-	TargetLink string          `json:"targetLink" gorm:"size:255"`
-	Params     json.RawMessage `json:"params" gorm:"type:jsonb"`
+	ActionType  string          `json:"actionType" gorm:"size:50"`
+	BindType    string          `json:"bindType" gorm:"size:50"`
+	NodeType    string          `json:"nodeType" gorm:"size:50"`
+	Title       string          `json:"title" gorm:"size:255"`
+	Content     string          `json:"content" gorm:"type:text"`
+	TargetLink  string          `json:"targetLink" gorm:"size:255"`
+	Params      json.RawMessage `json:"params" gorm:"type:jsonb"`
+	SourceCode  string          `json:"sourceCode" gorm:"size:80;index"`
+	ActionCode  string          `json:"actionCode" gorm:"size:80"`
+	StatusCodes json.RawMessage `json:"statusCodes" gorm:"type:jsonb"`
 }
 
 func (StandardCommand) TableName() string {

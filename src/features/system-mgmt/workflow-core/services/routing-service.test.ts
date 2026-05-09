@@ -212,6 +212,101 @@ describe('RoutingService event source contracts', () => {
       }),
     ])
   })
+
+  it('posts a status rename transaction payload and deserializes the aggregated result', async () => {
+    apiFetchMock.mockResolvedValue({
+      eventSource: {
+        id: 'source-1',
+        code: 'SALES_ORDER',
+        name: '销售订单',
+        module: 'Trading',
+        entity: 'ORDER',
+        enabled: true,
+        description: '销售订单事件源',
+        updatedAt: '2026-05-09T00:00:00.000Z',
+        config: {
+          actions: [{ id: 'action-1', order: 0, code: 'STATUS_CHANGED', name: '状态变更', kind: 'status' }],
+          statuses: [
+            { id: 'status-1', order: 0, code: 'Queued' },
+            { id: 'status-2', order: 1, code: 'Done' },
+          ],
+          fields: [],
+          dynamicResolvers: [],
+          defaultActionUrlTemplate: '/trading/orders/[OrderId]',
+        },
+      },
+      rules: [
+        {
+          id: 'rule-1',
+          name: '销售订单待处理规则',
+          enabled: true,
+          entity: 'ORDER',
+          sourceCode: 'SALES_ORDER',
+          actionCode: 'STATUS_CHANGED',
+          createdAt: '2026-05-09T00:00:00.000Z',
+          version: 4,
+          segments: [
+            {
+              id: 'segment-1',
+              title: '待处理阶段',
+              targetStatuses: ['Queued'],
+              commandIds: [],
+              assigneeGroups: [],
+              assigneeUsernames: [],
+              resolveOnStatuses: ['Done'],
+              dynamicTargetField: null,
+              approval: {
+                enabled: true,
+                module: 'Trading',
+                action: 'SALES_ORDER_Queued_APPROVAL',
+                approver1Id: 'u1',
+                approver2Id: '',
+                dynamicApproverField: null,
+                reasonTemplate: '审批',
+              },
+            },
+          ],
+        },
+      ],
+      summary: {
+        renamedStatusCount: 1,
+        affectedRuleCount: 1,
+        targetSegmentCount: 1,
+        resolveSegmentCount: 0,
+        derivedApprovalActionCount: 1,
+      },
+    })
+
+    const result = await RoutingService.commitEventSourceStatusRenameTransaction(
+      'source-1',
+      {
+        expectedUpdatedAt: '2026-05-09T00:00:00.000Z',
+        statuses: [
+          { id: 'status-1', order: 0, code: 'Queued' },
+          { id: 'status-2', order: 1, code: 'Done' },
+        ],
+        affectedRules: [{ ruleId: 'rule-1', expectedVersion: 3 }],
+      }
+    )
+
+    expect(apiFetchMock).toHaveBeenCalledTimes(1)
+    const [url, request] = apiFetchMock.mock.calls[0]
+    expect(url).toBe('/system/routing/event-sources/source-1/status-rename-transaction')
+    expect(request.method).toBe('POST')
+    expect(JSON.parse(request.body as string)).toEqual({
+      expectedUpdatedAt: '2026-05-09T00:00:00.000Z',
+      statuses: [
+        { id: 'status-1', order: 0, code: 'Queued' },
+        { id: 'status-2', order: 1, code: 'Done' },
+      ],
+      affectedRules: [{ ruleId: 'rule-1', expectedVersion: 3 }],
+    })
+    expect(result.eventSource.config.statuses[0]?.code).toBe('Queued')
+    expect(result.rules[0]?.segments[0]?.approval?.action).toBe(
+      'SALES_ORDER_Queued_APPROVAL'
+    )
+    expect(result.summary.renamedStatusCount).toBe(1)
+  })
 })
 
 describe('RoutingService.getRules', () => {

@@ -6,18 +6,7 @@ import (
 )
 
 func defaultPurchaseOrderBusinessStatuses() []BusinessStatusDTO {
-	catalog := statemachine.PurchaseOrderStatusCatalog()
-	statuses := make([]BusinessStatusDTO, 0, len(catalog))
-	for _, item := range catalog {
-		statuses = append(statuses, BusinessStatusDTO{
-			Code:           string(item.Status),
-			Label:          item.Label,
-			Phase:          item.Phase,
-			IsTerminal:     item.IsTerminal,
-			DefaultResolve: item.DefaultResolve,
-		})
-	}
-	return statuses
+	return listBusinessEventSourceCompatibilityStatuses("PURCHASE_ORDER")
 }
 
 func defaultPurchaseOrderBusinessActions() []BusinessEventActionDTO {
@@ -40,9 +29,9 @@ func defaultPurchaseOrderBusinessActions() []BusinessEventActionDTO {
 }
 
 func defaultPurchaseOrderEventSourceConfig() json.RawMessage {
-	config := normalizeBusinessEventSourceConfigDTO(BusinessEventSourceConfigDTO{
+	config := normalizeBusinessEventSourceWriteConfigDTO(BusinessEventSourceWriteConfigDTO{
 		Actions:  defaultPurchaseOrderBusinessActions(),
-		Statuses: defaultPurchaseOrderBusinessStatuses(),
+		Statuses: buildBusinessStatusWriteDTOs(defaultPurchaseOrderBusinessStatuses()),
 		Fields: []BusinessEventFieldDTO{
 			{Key: "purchaseOrderId", Label: "采购单ID", Path: "purchaseOrderId", Type: "string", TemplateKey: "PurchaseOrderId", TemplateEnabled: true, DynamicResolver: false},
 			{Key: "purchaseOrderNo", Label: "采购单号", Path: "purchaseOrderNo", Type: "string", TemplateKey: "PurchaseOrderNo", TemplateEnabled: true, DynamicResolver: false},
@@ -56,6 +45,6 @@ func defaultPurchaseOrderEventSourceConfig() json.RawMessage {
 		DefaultActionURLTemplate: "/purchase/orders?search=[PurchaseOrderNo]&detailId=[PurchaseOrderId]",
 	})
 
-	raw, _ := marshalBusinessEventSourceConfig(config)
+	raw, _ := marshalBusinessEventSourceWriteConfig(config)
 	return raw
 }

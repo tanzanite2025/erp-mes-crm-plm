@@ -104,6 +104,12 @@ export function useBusinessEventSources() {
     }
   }, [])
 
+  const replaceSource = useCallback((nextSource: BusinessEventSource) => {
+    setSources((prev) =>
+      prev.map((source) => (source.id === nextSource.id ? nextSource : source))
+    )
+  }, [])
+
   return {
     sources,
     isLoaded,
@@ -111,6 +117,7 @@ export function useBusinessEventSources() {
     addSource,
     updateSource,
     deleteSource,
+    replaceSource,
     reloadSources: loadSources,
   }
 }

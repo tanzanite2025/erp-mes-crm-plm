@@ -41,8 +41,8 @@ export function RuleExecutionLogSummary({
       </Card>
       <Card className='rounded-[24px] border-dashed border-muted/40 bg-muted/5 shadow-none'>
         <CardHeader className='pb-2'>
-          <CardDescription>跳过</CardDescription>
-          <CardTitle className='text-2xl font-black tracking-tight text-amber-600'>
+          <CardDescription>待处理 / 跳过</CardDescription>
+          <CardTitle className='text-2xl font-black tracking-tight text-slate-500'>
             {skippedCount}
           </CardTitle>
         </CardHeader>

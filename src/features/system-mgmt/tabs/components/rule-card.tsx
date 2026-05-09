@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import {
   BellRing,
   ChevronDown,
@@ -23,7 +24,11 @@ import {
   type NotificationRule,
   type RuleSegment,
 } from '../../workflow-core/data/notification-rule-schema'
-import { type StandardCommand } from '../../workflow-core/data/schema'
+import {
+  getStandardCommandDisplayTitle,
+  getStandardCommandContextGuard,
+  type StandardCommand,
+} from '../../workflow-core/data/schema'
 import { CommandForm } from '../../workflow-core/components/command-mgmt/command-form'
 import { useCommands } from '../../workflow-core/hooks/use-commands'
 import {
@@ -61,6 +66,7 @@ export function RuleCard({
   const [templateDialog, setTemplateDialog] = useState<{
     status: BusinessStatus
     initialData?: StandardCommand
+    contextDefaults: Pick<StandardCommand, 'sourceCode' | 'actionCode' | 'statusCodes'>
   } | null>(null)
   const { commands, addCommand } = useCommands()
   const expanded = autoExpand || isExpanded
@@ -101,6 +107,10 @@ export function RuleCard({
         ? statusRows.filter((row) => row.completeness.tone === 'warning')
         : statusRows,
     [statusFilter, statusRows]
+  )
+  const commandByID = useMemo(
+    () => new Map(commands.map((command) => [command.id, command] as const)),
+    [commands]
   )
   const autoFocusStatusCode =
     rule.segments[0]?.targetStatuses[0] ?? visibleStatusRows[0]?.status.code
@@ -269,8 +279,47 @@ export function RuleCard({
     })
   }
 
+  const handleActionChange = async (nextActionCode: string) => {
+    const blockingSegments = rule.segments.flatMap((segment) => {
+      return segment.commandIds.flatMap((commandID) => {
+        const command = commandByID.get(commandID)
+        if (!command) return []
+
+        const hasBlockingStatus = segment.targetStatuses.some((targetStatus) => {
+          return (
+            getStandardCommandContextGuard(command, {
+              sourceCode: currentSource.code,
+              actionCode: nextActionCode,
+              statusCode: targetStatus,
+            }).tone === 'blocking'
+          )
+        })
+
+        return hasBlockingStatus
+          ? [`${segment.title} / ${getStandardCommandDisplayTitle(command, eventSources)}`]
+          : []
+      })
+    })
+
+    if (blockingSegments.length > 0) {
+      toast.error(
+        `当前动作切换后会让已绑定模板产生范围冲突：${blockingSegments.join('；')}`
+      )
+      return
+    }
+
+    await onUpdate(rule.id, { actionCode: nextActionCode })
+  }
+
   const openCreateTemplate = (status: BusinessStatus) => {
-    setTemplateDialog({ status })
+    setTemplateDialog({
+      status,
+      contextDefaults: {
+        sourceCode: currentSource.code,
+        actionCode: currentActionCode,
+        statusCodes: [status.code],
+      },
+    })
   }
 
   const openDuplicateTemplate = (
@@ -284,6 +333,14 @@ export function RuleCard({
         ...template,
         id: `draft-${template.id}`,
         title: `${template.title} 副本`,
+        sourceCode: currentSource.code,
+        actionCode: currentActionCode,
+        statusCodes: [status.code],
+      },
+      contextDefaults: {
+        sourceCode: currentSource.code,
+        actionCode: currentActionCode,
+        statusCodes: [status.code],
       },
     })
   }
@@ -374,9 +431,7 @@ export function RuleCard({
               </select>
               <select
                 value={currentActionCode}
-                onChange={(event) =>
-                  void onUpdate(rule.id, { actionCode: event.target.value })
-                }
+                onChange={(event) => void handleActionChange(event.target.value)}
                 className='h-10 rounded-2xl border border-input bg-background px-3 text-xs font-black'
               >
                 {currentSource.config.actions.map((action) => (
@@ -450,6 +505,7 @@ export function RuleCard({
                 completeness={completeness}
                 sourceName={currentSource.name}
                 sourceCode={currentSource.code}
+                actionCode={currentActionCode}
                 users={users}
                 commands={commands}
                 resolverOptions={currentSource.config.dynamicResolvers}
@@ -532,6 +588,7 @@ export function RuleCard({
           if (!open) setTemplateDialog(null)
         }}
         initialData={templateDialog?.initialData}
+        contextDefaults={templateDialog?.contextDefaults}
         onSave={(data) => {
           void (async () => {
             const created = await addCommand(data)

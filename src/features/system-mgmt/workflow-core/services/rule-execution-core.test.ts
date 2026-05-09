@@ -87,6 +87,9 @@ function createCommand(overrides: Partial<StandardCommand> = {}): StandardComman
     title: '订单待处理',
     content: '订单 [OrderNo] 需要处理',
     targetLink: '/trading/orders/[OrderId]',
+    sourceCode: '',
+    actionCode: '',
+    statusCodes: [],
     createdAt: '2026-04-18T00:00:00.000Z',
     ...overrides,
   }
@@ -160,17 +163,17 @@ describe('rule-execution-core', () => {
     expect(addMessageMock).toHaveBeenCalledWith(
       expect.objectContaining({
         type: 'ORDER_EVENT',
-        title: '订单待处理',
+        title: '待处理',
         targetUsers: ['alice'],
         actionUrl: '/trading/orders/order-1',
         ruleId: 'rule-1',
         segmentId: 'segment-1',
       })
     )
-    expect(recordExecutionLogMock).toHaveBeenCalledTimes(3)
+    expect(recordExecutionLogMock).toHaveBeenCalledTimes(2)
     expect(
       recordExecutionLogMock.mock.calls.map((call) => call[0]?.executionType)
-    ).toEqual(['match', 'approval', 'notify'])
+    ).toEqual(['approval', 'notify'])
   })
 
   it('aggregates retroactive dedupe results for both approval and notification', async () => {
@@ -252,11 +255,7 @@ describe('rule-execution-core', () => {
 
     const liveLogs = recordExecutionLogMock.mock.calls.map((call) => call[0])
     expect(new Set(liveLogs.map((log) => log.eventKey)).size).toBe(1)
-    expect(liveLogs.map((log) => log.executionType)).toEqual([
-      'match',
-      'approval',
-      'notify',
-    ])
+    expect(liveLogs.map((log) => log.executionType)).toEqual(['approval', 'notify'])
 
     for (const log of liveLogs) {
       expect(log).toEqual(
@@ -279,9 +278,8 @@ describe('rule-execution-core', () => {
         })
       )
     }
-    expect(liveLogs[0]?.result?.mode).toBe('live')
-    expect(liveLogs[1]?.result?.approvalProcessKey).toBeTruthy()
-    expect(liveLogs[2]?.result?.mode).toBe('live')
+    expect(liveLogs[0]?.result?.approvalProcessKey).toBeTruthy()
+    expect(liveLogs[1]?.result?.mode).toBe('live')
 
     recordExecutionLogMock.mockClear()
 
@@ -298,7 +296,6 @@ describe('rule-execution-core', () => {
     )
     expect(new Set(retroactiveLogs.map((log) => log.eventKey)).size).toBe(1)
     expect(retroactiveLogs.map((log) => log.executionType)).toEqual([
-      'match',
       'approval',
       'notify',
     ])
@@ -322,8 +319,7 @@ describe('rule-execution-core', () => {
         })
       )
     }
-    expect(retroactiveLogs[0]?.result?.mode).toBe('retroactive')
-    expect(retroactiveLogs[1]?.result?.approvalProcessKey).toBeTruthy()
-    expect(retroactiveLogs[2]?.result?.mode).toBe('retroactive')
+    expect(retroactiveLogs[0]?.result?.approvalProcessKey).toBeTruthy()
+    expect(retroactiveLogs[1]?.result?.mode).toBe('retroactive')
   })
 })

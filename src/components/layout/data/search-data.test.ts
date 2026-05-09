@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   ENABLED_ACTION_RESULT_IDS,
   STATIC_SEARCH_RESULT_REGISTRY,
+  getKnowledgeRouteOptions,
   getSearchItems,
 } from './search-data'
 
@@ -40,8 +41,9 @@ describe('getSearchItems', () => {
       'action-add-customer',
       'action-add-employee',
       'action-create-sales-order',
+      'action-create-knowledge-entry',
     ])
-    expect(actionItems).toHaveLength(6)
+    expect(actionItems).toHaveLength(7)
     expect(materialCreateAction).toBeDefined()
     expect(materialCreateAction?.title).toBe(
       'materialArchive.upsertDialog.createTitle'
@@ -117,6 +119,7 @@ describe('getSearchItems', () => {
       'action-add-product',
       'action-add-customer',
       'action-create-sales-order',
+      'action-create-knowledge-entry',
       'action-inbound',
       'action-add-employee',
     ])
@@ -130,6 +133,30 @@ describe('getSearchItems', () => {
     expect(materialsTab?.href).toBe('/materials')
     expect(materialsTab?.keywords).toEqual(
       expect.arrayContaining(['物料主数据', 'material', 'archive'])
+    )
+  })
+
+  it('includes message center pages in structured route options', () => {
+    const options = getKnowledgeRouteOptions(t as never)
+
+    expect(options).toEqual(
+      expect.arrayContaining([
+        {
+          value: '/message-center/rules',
+          label: 'messageCenter.pages.rules.title',
+          parentLabel: 'commandMenu.parents.messageAndApproval',
+        },
+        {
+          value: '/message-center/templates',
+          label: 'messageCenter.pages.templates.title',
+          parentLabel: 'commandMenu.parents.messageAndApproval',
+        },
+        {
+          value: '/message-center/executions',
+          label: 'messageCenter.pages.executions.title',
+          parentLabel: 'commandMenu.parents.messageAndApproval',
+        },
+      ])
     )
   })
 })

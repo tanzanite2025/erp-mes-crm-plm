@@ -38,9 +38,6 @@ export interface NotificationExecutionResult {
   skippedCount: number
 }
 
-const MISSING_TEMPLATE_ERROR =
-  '当前规则未绑定通知内容模板，系统也没有可用的默认通知正文。'
-
 function shouldSkipRetroactiveNotification(uniqueKey: string, snoozeMs: number) {
   const isAlreadyVisible = NotificationGateway.hasMessage((message) => {
     const metadata = getMetadataRecord(message.metadata)
@@ -101,23 +98,7 @@ export function executeNotificationAction({
       const uniqueKey = `${buildBusinessKey(metadata)}_${segment.id}_${commandId}`
 
       if (!command) {
-        recordExecutionLog({
-          eventKey,
-          entity: targetEntity,
-          sourceCode: targetSourceCode,
-          actionCode: event.action || 'STATUS_CHANGED',
-          statusCode: event.targetStatus,
-          ruleId: rule.id,
-          ruleName: rule.name,
-          segmentId: segment.id,
-          segmentTitle: segment.title,
-          executionType: 'notify',
-          executionStatus: 'skipped',
-          commandId,
-          targets: finalTargets,
-          metadata,
-          errorMessage: `当前规则绑定的通知内容模板不存在：${commandId}`,
-        })
+        result.skippedCount += 1
         continue
       }
 
@@ -130,6 +111,7 @@ export function executeNotificationAction({
       }
 
       const resolvedContent = resolveTemplate(command.content, metadata)
+      const resolvedTitle = resolveTemplate(event.title || segment.title, metadata)
       const resolvedActionUrl = command.targetLink
         ? resolveTemplate(command.targetLink, metadata)
         : event.actionUrl
@@ -137,7 +119,7 @@ export function executeNotificationAction({
       try {
         NotificationGateway.addMessage({
           type: event.type,
-          title: command.title,
+          title: resolvedTitle,
           content: resolvedContent,
           priority: event.priority || 'info',
           targetGroups: finalGroups.length > 0 ? finalGroups : undefined,
@@ -162,7 +144,7 @@ export function executeNotificationAction({
           executionType: 'notify',
           executionStatus: 'success',
           commandId: command.id,
-          title: command.title,
+          title: resolvedTitle,
           content: resolvedContent,
           actionUrl: resolvedActionUrl,
           targets: finalTargets,
@@ -188,7 +170,7 @@ export function executeNotificationAction({
           executionType: 'notify',
           executionStatus: 'failed',
           commandId: command.id,
-          title: command.title,
+          title: resolvedTitle,
           content: resolvedContent,
           actionUrl: resolvedActionUrl,
           targets: finalTargets,
@@ -202,22 +184,7 @@ export function executeNotificationAction({
   }
 
   if (!event.content && finalTargets.length === 0) {
-    recordExecutionLog({
-      eventKey,
-      entity: targetEntity,
-      sourceCode: targetSourceCode,
-      actionCode: event.action || 'STATUS_CHANGED',
-      statusCode: event.targetStatus,
-      ruleId: rule.id,
-      ruleName: rule.name,
-      segmentId: segment.id,
-      segmentTitle: segment.title,
-      executionType: 'notify',
-      executionStatus: 'skipped',
-      targets: finalTargets,
-      metadata,
-      errorMessage: MISSING_TEMPLATE_ERROR,
-    })
+    result.skippedCount += 1
     return result
   }
 

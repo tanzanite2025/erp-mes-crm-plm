@@ -9,6 +9,7 @@ import {
 import { RoutingQueryErrorState } from '../workflow-core/components/routing-query-error-state'
 import { RoutingService } from '../workflow-core/services/routing-service'
 import { RuleExecutionLogList } from './components/rule-execution-log-list'
+import { shouldHideExecutionLogByDefault } from './components/rule-execution-log-presenter'
 import { RuleExecutionLogSummary } from './components/rule-execution-log-summary'
 import { RuleExecutionLogToolbar } from './components/rule-execution-log-toolbar'
 
@@ -102,7 +103,7 @@ export function RuleExecutionLogTab({
     queryFn: () => RoutingService.getExecutionLogs(query),
   })
 
-  const items = useMemo(() => {
+  const rawItems = useMemo(() => {
     const raw = data?.items ?? []
     const normalizedKeyword = keyword.trim().toLowerCase()
     if (!normalizedKeyword) return raw
@@ -126,6 +127,23 @@ export function RuleExecutionLogTab({
       return haystack.includes(normalizedKeyword)
     })
   }, [data?.items, keyword])
+
+  const shouldAutoHideConfigurationPendingLogs =
+    executionStatus === 'all' && keyword.trim() === ''
+  const hiddenConfigurationPendingCount = useMemo(
+    () =>
+      shouldAutoHideConfigurationPendingLogs
+        ? rawItems.filter((item) => shouldHideExecutionLogByDefault(item)).length
+        : 0,
+    [rawItems, shouldAutoHideConfigurationPendingLogs]
+  )
+  const items = useMemo(
+    () =>
+      shouldAutoHideConfigurationPendingLogs
+        ? rawItems.filter((item) => !shouldHideExecutionLogByDefault(item))
+        : rawItems,
+    [rawItems, shouldAutoHideConfigurationPendingLogs]
+  )
 
   const totals = useMemo(
     () =>
@@ -192,6 +210,12 @@ export function RuleExecutionLogTab({
           onRefresh={() => void refetch()}
         />
         <CardContent className='space-y-4'>
+          {hiddenConfigurationPendingCount > 0 ? (
+            <div className='rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-[11px] font-bold text-slate-600'>
+              已默认收起 {hiddenConfigurationPendingCount} 条“待配置 / 预期跳过”日志，避免在规则尚未配完时制造失败错觉；如需查看，可把“执行结果”切换为“跳过”。
+            </div>
+          ) : null}
+
           {isError ? (
             <RoutingQueryErrorState
               error={error}
@@ -204,6 +228,10 @@ export function RuleExecutionLogTab({
           ) : isLoading ? (
             <div className='rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-600'>
               正在同步规则执行日志...
+            </div>
+          ) : items.length === 0 && hiddenConfigurationPendingCount > 0 ? (
+            <div className='rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-600'>
+              当前页日志都属于“待配置 / 预期跳过”记录，已默认收起；如需查看，可把“执行结果”切换为“跳过”。
             </div>
           ) : items.length === 0 ? (
             <div className='rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-600'>

@@ -5,7 +5,6 @@ import {
 import { type NotificationRule } from '../data/notification-rule-schema'
 import { type StandardCommand } from '../data/schema'
 import { executeApprovalAction } from './approval-executor'
-import { recordExecutionLog } from './execution-log-writer'
 import { executeNotificationAction, archiveResolvedMessages } from './notification-executor'
 import {
   buildExecutionEventKey,
@@ -104,13 +103,12 @@ export async function executeRoutingRules({
 
       if (!isSegmentStatusMatch({ segment, event })) continue
 
-      const { dynamicTargets, finalGroups, finalUsers, finalTargets } =
-        resolveSegmentTargets({
-          assigneeGroups: segment.assigneeGroups,
-          assigneeUsernames: segment.assigneeUsernames,
-          dynamicTargetField: segment.dynamicTargetField,
-          event,
-        })
+      const { finalGroups, finalUsers, finalTargets } = resolveSegmentTargets({
+        assigneeGroups: segment.assigneeGroups,
+        assigneeUsernames: segment.assigneeUsernames,
+        dynamicTargetField: segment.dynamicTargetField,
+        event,
+      })
       const eventKey = buildExecutionEventKey(
         event.type,
         targetSourceCode,
@@ -120,27 +118,6 @@ export async function executeRoutingRules({
       )
 
       result.matchedCount += 1
-      recordExecutionLog({
-        eventKey,
-        entity: targetEntity,
-        sourceCode: targetSourceCode,
-        actionCode: event.action || 'STATUS_CHANGED',
-        statusCode: event.targetStatus,
-        ruleId: rule.id,
-        ruleName: rule.name,
-        segmentId: segment.id,
-        segmentTitle: segment.title,
-        executionType: 'match',
-        executionStatus: 'matched',
-        targets: finalTargets,
-        metadata,
-        result: {
-          commandCount: segment.commandIds.length,
-          usedDynamicTargets: dynamicTargets.length > 0,
-          dynamicTargets,
-          mode,
-        },
-      })
 
       const approvalResult = await executeApprovalAction({
         rule,

@@ -61,7 +61,10 @@ func setupWorkflowRoutingServiceTestDB(t *testing.T) *gorm.DB {
 			title text,
 			content text,
 			target_link text,
-			params blob
+			params blob,
+			source_code text,
+			action_code text,
+			status_codes blob
 		)
 	`).Error)
 
@@ -87,8 +90,8 @@ func seedWorkflowRoutingEventSource(t *testing.T, testDB *gorm.DB) {
 		Config: []byte(`{
 			"actions":[{"id":"action-1","order":0,"code":"STATUS_CHANGED","name":"Status Changed","kind":"status"}],
 			"statuses":[
-				{"id":"status-1","order":0,"code":"Pending","label":"Pending","phase":"pending","isTerminal":false,"defaultResolve":false},
-				{"id":"status-2","order":1,"code":"Done","label":"Done","phase":"done","isTerminal":true,"defaultResolve":true}
+				{"id":"status-1","order":0,"code":"Pending"},
+				{"id":"status-2","order":1,"code":"Done"}
 			],
 			"fields":[],
 			"dynamicResolvers":[{"id":"resolver-1","order":0,"code":"createdBy","label":"Created By","path":"createdBy","type":"user"}],
@@ -104,7 +107,7 @@ func seedWorkflowRoutingEventSource(t *testing.T, testDB *gorm.DB) {
 		Enabled:   true,
 		Config: []byte(`{
 			"actions":[{"id":"action-1","order":0,"code":"STATUS_CHANGED","name":"Status Changed","kind":"status"}],
-			"statuses":[{"id":"status-1","order":0,"code":"Received","label":"Received","phase":"done","isTerminal":true,"defaultResolve":true}],
+			"statuses":[{"id":"status-1","order":0,"code":"Received"}],
 			"fields":[],
 			"dynamicResolvers":[],
 			"defaultActionUrlTemplate":"/purchase/orders/[PurchaseOrderId]"
@@ -119,7 +122,7 @@ func seedWorkflowRoutingEventSource(t *testing.T, testDB *gorm.DB) {
 		Enabled:   true,
 		Config: []byte(`{
 			"actions":[{"id":"action-1","order":0,"code":"STATUS_CHANGED","name":"Status Changed","kind":"status"}],
-			"statuses":[{"id":"status-1","order":0,"code":"COMPLETED","label":"Completed","phase":"done","isTerminal":true,"defaultResolve":true}],
+			"statuses":[{"id":"status-1","order":0,"code":"COMPLETED"}],
 			"fields":[],
 			"dynamicResolvers":[],
 			"defaultActionUrlTemplate":"/dashboard/calendar?planId=[PlanId]"

@@ -46,7 +46,10 @@ func setupSalesOrderBusinessEventTestDB(t *testing.T) *gorm.DB {
 			title text,
 			content text,
 			target_link text,
-			params blob
+			params blob,
+			source_code text,
+			action_code text,
+			status_codes blob
 		)`,
 		`CREATE TABLE rule_execution_logs (
 			id text PRIMARY KEY,
@@ -87,6 +90,7 @@ func setupSalesOrderBusinessEventTestDB(t *testing.T) *gorm.DB {
 			expires_at datetime,
 			module text,
 			action text,
+			verifier_id text,
 			created_at datetime,
 			updated_at datetime,
 			deleted_at datetime

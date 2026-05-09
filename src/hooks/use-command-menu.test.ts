@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeSearchHref } from './use-command-menu'
+import { normalizeSearchHref } from '@/components/layout/data/search-href'
 
 describe('normalizeSearchHref', () => {
   it('maps retired routing entries to message center rules', () => {

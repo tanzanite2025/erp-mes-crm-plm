@@ -86,6 +86,36 @@ func UpdateBusinessEventSourceHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+func CommitBusinessEventStatusRenameTransactionHandler(c *gin.Context) {
+	id := c.Param("id")
+	var input services.BusinessEventStatusRenameTransactionRequest
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 状态重命名事务数据格式错误: " + err.Error()})
+		return
+	}
+
+	result, err := services.CommitBusinessEventStatusRenameTransaction(id, input)
+	if err != nil {
+		if errors.Is(err, services.ErrBusinessEventSourceNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "[CRITICAL] 业务事件源 ID " + id + " 不存在"})
+			return
+		}
+		if errors.Is(err, services.ErrBusinessEventStatusTransactionConflict) {
+			c.JSON(http.StatusConflict, gin.H{"error": "[CONFLICT] 状态重命名事务冲突: " + err.Error()})
+			return
+		}
+		if errors.Is(err, services.ErrBusinessEventStatusTransactionBlocked) ||
+			errors.Is(err, services.ErrBusinessEventStatusTransactionUnsupported) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 状态重命名事务被阻断: " + err.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 状态重命名事务失败: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
 func DeleteBusinessEventSourceHandler(c *gin.Context) {
 	id := c.Param("id")
 	if err := services.DeleteBusinessEventSource(id); err != nil {

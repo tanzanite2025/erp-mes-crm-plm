@@ -79,6 +79,7 @@ export function BusinessEventSourceList({
     error,
     addSource,
     updateSource,
+    replaceSource,
     deleteSource,
     reloadSources,
   } = useBusinessEventSources()
@@ -267,7 +268,7 @@ export function BusinessEventSourceList({
   }
 
   return (
-    <div className='mx-auto flex max-w-6xl flex-col gap-5 pb-12'>
+    <div className='flex w-full flex-col gap-5 pb-12'>
       <BusinessEventSourceListHeader
         sources={sources}
         visibleCount={filteredSources.length}
@@ -318,6 +319,7 @@ export function BusinessEventSourceList({
               highlighted={highlightedSourceId === source.id}
               rules={rules}
               statusReferencesLoaded={rulesLoaded}
+              onRulesReplace={setRules}
               onExpandedChange={(expanded) =>
                 setExpandedSourceIds((prev) =>
                   expanded
@@ -328,6 +330,7 @@ export function BusinessEventSourceList({
                 )
               }
               onUpdate={updateSource}
+              onSourceReplace={replaceSource}
               onDelete={deleteSource}
               onDuplicate={duplicateSource}
               canDelete={sources.length > 1}

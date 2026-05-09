@@ -71,42 +71,48 @@ func persistNormalizedNotificationRuleRouting(existing models.NotificationRule, 
 	}).Error
 }
 
-func validateNotificationRuleReferences(rule models.NotificationRule) error {
+func validateNotificationRuleReferencesWithDB(
+	database *gorm.DB,
+	rule models.NotificationRule,
+	sourceOverride models.BusinessEventSource,
+) error {
 	rule = normalizeNotificationRuleRouting(rule)
 	sourceCode := strings.TrimSpace(rule.SourceCode)
 	entity := strings.TrimSpace(rule.Entity)
 	actionCode := strings.TrimSpace(rule.ActionCode)
 
-	var source models.BusinessEventSource
-	if err := db.DB.Where("code = ?", sourceCode).First(&source).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return fmt.Errorf("business event source %q not found", sourceCode)
+	source := sourceOverride
+	if strings.TrimSpace(source.Code) == "" || strings.TrimSpace(source.Code) != sourceCode {
+		if err := database.Where("code = ?", sourceCode).First(&source).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return fmt.Errorf("business event source %q not found", sourceCode)
+			}
+			return err
 		}
-		return err
 	}
 	if strings.TrimSpace(source.Entity) != entity {
 		return fmt.Errorf("business event source %q entity mismatch: %s", sourceCode, entity)
 	}
 
-	config, err := unmarshalBusinessEventSourceConfig(source.Config)
+	storedConfig, err := unmarshalBusinessEventSourceStoredConfig(source.Config)
 	if err != nil {
 		return err
 	}
 
-	actionCodes := make(map[string]struct{}, len(config.Actions))
-	for _, action := range config.Actions {
+	actionCodes := make(map[string]struct{}, len(storedConfig.Actions))
+	for _, action := range storedConfig.Actions {
 		actionCodes[action.Code] = struct{}{}
 	}
 	if _, ok := actionCodes[actionCode]; !ok {
 		return fmt.Errorf("actionCode %q is not configured on source %q", actionCode, sourceCode)
 	}
 
-	statusCodes := make(map[string]struct{}, len(config.Statuses))
-	for _, status := range config.Statuses {
+	statusCodes := make(map[string]struct{}, len(storedConfig.Statuses))
+	for _, status := range storedConfig.Statuses {
 		statusCodes[status.Code] = struct{}{}
 	}
-	resolverCodes := make(map[string]struct{}, len(config.DynamicResolvers))
-	for _, resolver := range config.DynamicResolvers {
+	resolverCodes := make(map[string]struct{}, len(storedConfig.DynamicResolvers))
+	for _, resolver := range storedConfig.DynamicResolvers {
 		resolverCodes[resolver.Code] = struct{}{}
 	}
 
@@ -160,7 +166,7 @@ func validateNotificationRuleReferences(rule models.NotificationRule) error {
 
 	for commandID := range commandIDs {
 		var count int64
-		if err := db.DB.Model(&models.StandardCommand{}).
+		if err := database.Model(&models.StandardCommand{}).
 			Where("id = ?", commandID).
 			Count(&count).Error; err != nil {
 			return err
@@ -171,6 +177,10 @@ func validateNotificationRuleReferences(rule models.NotificationRule) error {
 	}
 
 	return nil
+}
+
+func validateNotificationRuleReferences(rule models.NotificationRule) error {
+	return validateNotificationRuleReferencesWithDB(db.DB, rule, models.BusinessEventSource{})
 }
 
 func ListStandardCommands() ([]models.StandardCommand, error) {
@@ -198,7 +208,19 @@ func UpdateStandardCommand(id string, patch models.StandardCommand) (models.Stan
 		return models.StandardCommand{}, err
 	}
 
-	if err := db.DB.Model(&existing).Updates(patch).Error; err != nil {
+	updates := map[string]any{
+		"action_type":  patch.ActionType,
+		"bind_type":    patch.BindType,
+		"node_type":    patch.NodeType,
+		"title":        patch.Title,
+		"content":      patch.Content,
+		"target_link":  patch.TargetLink,
+		"params":       patch.Params,
+		"source_code":  patch.SourceCode,
+		"action_code":  patch.ActionCode,
+		"status_codes": patch.StatusCodes,
+	}
+	if err := db.DB.Model(&existing).Updates(updates).Error; err != nil {
 		return models.StandardCommand{}, err
 	}
 	if err := db.DB.First(&existing, "id = ?", id).Error; err != nil {

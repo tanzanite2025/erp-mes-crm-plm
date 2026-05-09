@@ -34,6 +34,10 @@ import {
   StatusMoveControls,
 } from './business-event-source-card-primitives'
 import { type BusinessEventStatusReferenceSummary } from './business-event-source-status-references'
+import {
+  type BusinessEventStatusRenameBatchAnalysis,
+  type BusinessEventStatusRenamePlan,
+} from './business-event-source-status-safe-rename'
 
 function drawerRowTone(changeType?: BusinessEventSourceItemChangeKind | null) {
   switch (changeType) {
@@ -60,9 +64,11 @@ function statusIdentityHint({
   isReferenced?: boolean
 }) {
   if (locked && isReferenced) {
-    return '已落库且已被规则引用，编码身份只读。'
+    return '已落库且已被规则引用，保存时将执行安全重命名迁移检查。'
   }
-  return locked ? '已落库状态，编码身份只读。' : '输入规则监听使用的唯一状态码。'
+  return locked
+    ? '已落库状态，若改码需通过安全重命名检查。'
+    : '输入规则监听使用的唯一状态码。'
 }
 
 function buildStatusReferenceHint(
@@ -94,11 +100,43 @@ function buildStatusReferenceHint(
   return `规则占用：${fragments.join(' / ')}`
 }
 
+function buildStatusRenameHint(
+  renamePlan: BusinessEventStatusRenamePlan | undefined,
+  persisted: boolean
+) {
+  if (!persisted || !renamePlan || renamePlan.oldCode === renamePlan.nextCode) {
+    return persisted ? '如修改编码，保存时会同步校验规则迁移安全性。' : null
+  }
+
+  if (!renamePlan.canSafelyRename) {
+    const blocker = renamePlan.blockers[0]
+    return blocker
+      ? `阻断迁移：${blocker.ruleName} / ${blocker.segmentTitle} 使用了自定义审批动作 ${blocker.configuredAction}`
+      : '阻断迁移：当前改名不满足安全自动迁移条件。'
+  }
+
+  const fragments: string[] = []
+  if (renamePlan.targetSegmentCount > 0) {
+    fragments.push(`触发 ${renamePlan.targetSegmentCount}`)
+  }
+  if (renamePlan.resolveSegmentCount > 0) {
+    fragments.push(`归档 ${renamePlan.resolveSegmentCount}`)
+  }
+  if (renamePlan.derivedApprovalActionCount > 0) {
+    fragments.push(`审批 ${renamePlan.derivedApprovalActionCount}`)
+  }
+
+  return `安全重命名：将同步迁移 ${fragments.join(' / ') || '关联规则引用'}`
+}
+
 export function StatusEditorContent({
   statuses,
   sourceCode,
   persistedStatusIds,
+  committedStatusCodeMap,
   statusReferenceMap,
+  statusRenamePlans,
+  statusRenameBatchAnalysis,
   statusReferencesLoaded,
   onAdd,
   onUpdate,
@@ -123,7 +161,10 @@ export function StatusEditorContent({
   statuses: BusinessStatus[]
   sourceCode: string
   persistedStatusIds?: Set<string>
+  committedStatusCodeMap?: Map<string, string>
   statusReferenceMap?: Map<string, BusinessEventStatusReferenceSummary>
+  statusRenamePlans?: BusinessEventStatusRenamePlan[]
+  statusRenameBatchAnalysis?: BusinessEventStatusRenameBatchAnalysis
   statusReferencesLoaded?: boolean
   onAdd: () => void
   onUpdate: (index: number, updates: Partial<BusinessStatus>) => void
@@ -147,6 +188,7 @@ export function StatusEditorContent({
 }) {
   const focusedRowRef = useRef<HTMLDivElement | null>(null)
   const [pendingDeleteIndex, setPendingDeleteIndex] = useState<number | null>(null)
+  const [renameConfirmOpen, setRenameConfirmOpen] = useState(false)
 
   useEffect(() => {
     if (!focusedItemId || !focusedRowRef.current) return
@@ -158,6 +200,40 @@ export function StatusEditorContent({
 
   const pendingDeleteStatus =
     pendingDeleteIndex !== null ? statuses[pendingDeleteIndex] : null
+  const effectiveRenamePlans = (statusRenamePlans ?? []).filter(
+    (plan) => plan.oldCode !== plan.nextCode
+  )
+  const hasRenameBlocker = effectiveRenamePlans.some((plan) => !plan.canSafelyRename)
+  const totalRenameTargetSegments = effectiveRenamePlans.reduce(
+    (sum, plan) => sum + plan.targetSegmentCount,
+    0
+  )
+  const totalRenameResolveSegments = effectiveRenamePlans.reduce(
+    (sum, plan) => sum + plan.resolveSegmentCount,
+    0
+  )
+  const totalRenameApprovalActions = effectiveRenamePlans.reduce(
+    (sum, plan) => sum + plan.derivedApprovalActionCount,
+    0
+  )
+  const batchBlockers = statusRenameBatchAnalysis?.blockers ?? []
+  const batchWarnings = statusRenameBatchAnalysis?.hasWarnings ?? false
+  const semanticShrinkCount =
+    statusRenameBatchAnalysis?.semanticShrinkImpacts.length ?? 0
+  const swapPairCount = statusRenameBatchAnalysis?.swapPairs.length ?? 0
+  const chainPathCount = statusRenameBatchAnalysis?.chainPaths.length ?? 0
+  const firstBatchBlocker = batchBlockers[0]
+
+  const handleSave = () => {
+    if (!onSave) {
+      return
+    }
+    if (effectiveRenamePlans.length > 0) {
+      setRenameConfirmOpen(true)
+      return
+    }
+    onSave()
+  }
 
   return (
     <>
@@ -187,11 +263,18 @@ export function StatusEditorContent({
             const isStatusIdentityLocked =
               persistedStatusIds?.has(status.id ?? '') ?? false
             const isFocused = focusedItemId === status.id
+            const committedCode =
+              committedStatusCodeMap?.get(status.id ?? '') ?? status.code
             const canonicalCode = canonicalizeBusinessStatusCode(
               sourceCode,
               status.code
             )
-            const statusReference = statusReferenceMap?.get(status.code)
+            const statusReference = statusReferenceMap?.get(committedCode)
+            const renamePlan = statusRenamePlans?.find(
+              (plan) =>
+                (status.id && plan.statusId === status.id) ||
+                plan.oldCode === committedCode
+            )
             const deleteDisabled =
               isStatusIdentityLocked &&
               (!statusReferencesLoaded || Boolean(statusReference?.isReferenced))
@@ -212,13 +295,13 @@ export function StatusEditorContent({
                     </div>
                     <Input
                       value={status.code}
-                      readOnly={isStatusIdentityLocked}
+                      readOnly={false}
                       onChange={(event) =>
                         onUpdate(index, { code: event.target.value })
                       }
                       className={cn(
                         'h-10 rounded-2xl border-none bg-background/85 font-mono text-xs shadow-inner',
-                        drawerReadonlyFieldClass(isStatusIdentityLocked)
+                        drawerReadonlyFieldClass(false)
                       )}
                       placeholder='Pending'
                     />
@@ -238,6 +321,23 @@ export function StatusEditorContent({
                         isStatusIdentityLocked
                       )}
                     </div>
+                    {buildStatusRenameHint(renamePlan, isStatusIdentityLocked) ? (
+                      <div className='px-1 text-[8px] font-black uppercase tracking-widest text-sky-700/80'>
+                        {buildStatusRenameHint(renamePlan, isStatusIdentityLocked)}
+                      </div>
+                    ) : null}
+                    {firstBatchBlocker ? (
+                      <div className='px-1 text-[8px] font-black uppercase tracking-widest text-rose-700/80'>
+                        {firstBatchBlocker.type === 'merge_rename'
+                          ? `批量阻断：${firstBatchBlocker.codes.join(' / ')} 将汇聚到 ${firstBatchBlocker.nextCode}`
+                          : `批量阻断：检测到重命名闭环 ${firstBatchBlocker.codes.join(' -> ')}`}
+                      </div>
+                    ) : null}
+                    {!firstBatchBlocker && batchWarnings ? (
+                      <div className='px-1 text-[8px] font-black uppercase tracking-widest text-amber-700/80'>
+                        批量提示：存在交换/链式改名或规则数组语义收缩，保存前需确认。
+                      </div>
+                    ) : null}
                   </div>
 
                   <div className='space-y-1.5'>
@@ -310,8 +410,8 @@ export function StatusEditorContent({
             onUndo={onUndo}
             undoDisabled={undoDisabled}
             undoing={undoing}
-            onSave={onSave}
-            saveDisabled={saveDisabled}
+            onSave={handleSave}
+            saveDisabled={saveDisabled || hasRenameBlocker || batchBlockers.length > 0}
             saving={saving}
             saveLabel='保存状态'
           />
@@ -360,6 +460,39 @@ export function StatusEditorContent({
               }}
             >
               确认删除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog
+        open={renameConfirmOpen}
+        onOpenChange={(open) => {
+          setRenameConfirmOpen(open)
+        }}
+      >
+        <AlertDialogContent className='rounded-[32px] border-none bg-background shadow-2xl'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='text-lg font-black tracking-tighter italic uppercase'>
+              确认安全重命名迁移
+            </AlertDialogTitle>
+            <AlertDialogDescription className='text-[11px] font-bold leading-6 text-muted-foreground'>
+              {effectiveRenamePlans.length > 0
+                ? `本次将同步迁移 ${effectiveRenamePlans.length} 个状态的规则引用：触发 ${totalRenameTargetSegments} 项，归档 ${totalRenameResolveSegments} 项，系统派生审批动作 ${totalRenameApprovalActions} 项。${swapPairCount > 0 ? ` 交换改名 ${swapPairCount} 组。` : ''}${chainPathCount > 0 ? ` 链式改名 ${chainPathCount} 组。` : ''}${semanticShrinkCount > 0 ? ` 其中 ${semanticShrinkCount} 个规则字段会发生语义收缩。` : ''}`
+                : '请确认是否保存状态。'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className='gap-2'>
+            <AlertDialogCancel className='rounded-full text-[10px] font-black uppercase tracking-widest'>
+              取消
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className='rounded-full text-[10px] font-black uppercase tracking-widest'
+              onClick={() => {
+                setRenameConfirmOpen(false)
+                onSave?.()
+              }}
+            >
+              确认迁移并保存
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
