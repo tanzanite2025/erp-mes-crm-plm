@@ -12,7 +12,6 @@ export function HallOfFameRoutePage() {
 
   return (
     <ModuleTabbedLayout
-      title={t('sidebar.items.personnelCenter')}
       tabs={getOrgPersonnelBranchTabs(t)}
     >
       <FeatureSandbox fallbackName="PERSONNEL_STATISTICS">

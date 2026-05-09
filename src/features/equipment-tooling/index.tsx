@@ -9,7 +9,7 @@ export function EquipmentTooling() {
   const { t } = useLanguage()
 
   return (
-    <ModuleTabbedLayout title={t('equipmentTooling.layout.title')} tabs={getEquipmentToolingTabs(t)}>
+    <ModuleTabbedLayout tabs={getEquipmentToolingTabs(t)}>
       <Outlet />
     </ModuleTabbedLayout>
   )

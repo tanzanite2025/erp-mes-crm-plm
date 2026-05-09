@@ -12,7 +12,6 @@ function TerminalConfigLayout() {
 
   return (
     <ModuleTabbedLayout
-      title={t('terminalConfig.moduleTitle')}
       tabs={getTerminalConfigTabs(t)}
     >
       <Outlet />

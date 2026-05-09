@@ -21,7 +21,7 @@ function findActiveTab(pathname: string, tabs: TabItem[]): TabItem | undefined {
         .find((tab) => pathname === tab.href || pathname.startsWith(tab.href + '/'))
 }
 
-export function ModuleTabbedLayout({ tabs, children, actions, title, headerTitle, headerDescription, contentClassName }: ModuleTabbedLayoutProps) {
+export function ModuleTabbedLayout({ tabs, children, actions, headerTitle, headerDescription, contentClassName }: ModuleTabbedLayoutProps) {
     const { pathname } = useLocation()
     const visibleTabs = tabs
 
@@ -51,13 +51,6 @@ export function ModuleTabbedLayout({ tabs, children, actions, title, headerTitle
                     {headerTitle ? (
                         <div className='px-1 pt-3 pb-2'>
                             <ModuleHeaderSummary title={headerTitle} description={headerDescription} />
-                        </div>
-                    ) : null}
-                    {title ? (
-                        <div className='px-1 pt-3 pb-2'>
-                            <p className='text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/60'>
-                                {title}
-                            </p>
                         </div>
                     ) : null}
                     {children}

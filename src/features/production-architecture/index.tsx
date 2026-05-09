@@ -10,7 +10,6 @@ export function ProductionArchitecture() {
 
   return (
     <ModuleTabbedLayout
-      title={isMindmapRoute ? undefined : t('productionArchitecture.layout.title')}
       tabs={getProductionArchitectureTabs(t)}
       contentClassName={isMindmapRoute ? '-mt-4 md:-mt-5' : undefined}
     >

@@ -3,12 +3,14 @@ import { ModuleTabbedLayout } from '@/components/layout/module-tabbed-layout'
 import { useLanguage } from '@/context/language-provider'
 import { getLabExperimentalTabs } from '../tabs'
 
-export function LabExperimentalLayoutPage() {
+export function LabExperimentalLayout() {
   const { t } = useLanguage()
 
   return (
-    <ModuleTabbedLayout title={t('labExperimental.tabs.centerTitle')} tabs={getLabExperimentalTabs(t)}>
+    <ModuleTabbedLayout tabs={getLabExperimentalTabs(t)}>
       <Outlet />
     </ModuleTabbedLayout>
   )
 }
+
+export { LabExperimentalLayout as LabExperimentalLayoutPage }

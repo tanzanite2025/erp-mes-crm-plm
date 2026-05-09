@@ -7,7 +7,7 @@ export function ProductionQuality() {
   const { t } = useLanguage()
 
   return (
-    <ModuleTabbedLayout title={t('productionQuality.layout.title')} tabs={getProductionQualityTabs(t)}>
+    <ModuleTabbedLayout tabs={getProductionQualityTabs(t)}>
       <Outlet />
     </ModuleTabbedLayout>
   )

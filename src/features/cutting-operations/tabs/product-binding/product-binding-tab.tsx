@@ -23,7 +23,6 @@ export function ProductBindingTab() {
 
   return (
     <ModuleTabbedLayout
-      title={t('sidebar.items.cuttingOperations')}
       tabs={getCuttingOperationTabs(tabTranslator)}
     >
       <div className='flex flex-col gap-8 animate-in fade-in duration-700'>

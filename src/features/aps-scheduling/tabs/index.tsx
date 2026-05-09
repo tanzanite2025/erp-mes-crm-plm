@@ -21,7 +21,7 @@ export function ApsSchedulingBoard() {
   const isSearchEmpty = searchTerm.trim().length > 0 && filteredSource.jobs.length === 0
 
   return (
-    <ModuleTabbedLayout title={t('apsScheduling.layout.title')} tabs={getApsSchedulingTabs(t)}>
+    <ModuleTabbedLayout tabs={getApsSchedulingTabs(t)}>
       <div className='flex flex-col gap-6 animate-in fade-in duration-700'>
         <ApsHeaderCard source={filteredSource} isFallback={isFallback} />
         <ApsKpiCards source={filteredSource} />

@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react'
-import { LucideIcon } from 'lucide-react'
+import { type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface IndustrialHeaderProps {
@@ -23,11 +23,11 @@ export function IndustrialHeader({
 }: IndustrialHeaderProps) {
   return (
     <div className={cn(
-      'flex flex-col gap-2 bg-muted/5 p-6 md:p-8 rounded-[32px] border border-dashed border-muted/50 relative overflow-hidden',
+      'relative flex flex-col gap-1.5 overflow-hidden rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-4 md:p-5',
       className
     )}>
       {gradient && (
-        <div className='absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent pointer-events-none' />
+        <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent pointer-events-none' />
       )}
       
       <div className={cn('flex items-center gap-2 text-primary', innerClassName)}>
@@ -37,7 +37,7 @@ export function IndustrialHeader({
         </h3>
       </div>
 
-      <div className='flex flex-col md:flex-row md:items-center justify-between gap-3'>
+      <div className='flex flex-col justify-between gap-2 md:flex-row md:items-center'>
         {description && (
           <p className='text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-60 max-w-2xl'>
             {description}

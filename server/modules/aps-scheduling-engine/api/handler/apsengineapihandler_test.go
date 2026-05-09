@@ -57,6 +57,26 @@ func TestCreatePlanReturnsOKWithCalendarInput(t *testing.T) {
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
 }
 
+func TestListPlansReturnsStablePaginatedResponse(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	handler := NewAPIHandler(nil)
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = httptest.NewRequest(http.MethodGet, "/aps-scheduling/plans?page=2&pageSize=25", nil)
+
+	handler.ListPlans(ctx)
+
+	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+
+	var payload map[string]any
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &payload))
+	require.Equal(t, float64(2), payload["page"])
+	require.Equal(t, float64(25), payload["pageSize"])
+	require.Equal(t, float64(0), payload["total"])
+	require.Contains(t, payload, "items")
+	require.IsType(t, []any{}, payload["items"])
+}
+
 func TestRecalculatePlanReturnsOKWithCalendarInput(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	handler := NewAPIHandler(nil)

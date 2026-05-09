@@ -8,12 +8,11 @@ export const Route = createFileRoute('/_authenticated/personnel')({
   beforeLoad: async ({ location }) => {
     await ensureAuthenticatedRouteSession(location.pathname)
   },
-  component: function PersonnelLayout() {
+  component: function PersonnelRouteLayout() {
     const { t } = useLanguage()
 
     return (
       <ModuleTabbedLayout
-        title={t('sidebar.items.personnelCenter')}
         tabs={getOrgPersonnelTabs(t)}
       >
         <Outlet />

@@ -7,7 +7,7 @@ export function Purchase() {
   const { t } = useLanguage()
 
   return (
-    <ModuleTabbedLayout title={t('purchase.tabs.title')} tabs={getPurchaseTabs(t)}>
+    <ModuleTabbedLayout tabs={getPurchaseTabs(t)}>
       <Outlet />
     </ModuleTabbedLayout>
   )

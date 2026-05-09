@@ -8,7 +8,7 @@ export const Route = createFileRoute('/_authenticated/engineering-db')({
 
 function EngineeringDBLayout() {
   return (
-    <ModuleTabbedLayout title='工程建模数据库' tabs={engineeringDbTabs}>
+    <ModuleTabbedLayout tabs={engineeringDbTabs}>
       <Outlet />
     </ModuleTabbedLayout>
   )

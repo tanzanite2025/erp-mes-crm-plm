@@ -7,7 +7,7 @@ export function OrgPersonnel() {
   const { t } = useLanguage()
 
   return (
-    <ModuleTabbedLayout title={t('sidebar.items.personnelCenter')} tabs={getOrgPersonnelTabs(t)}>
+    <ModuleTabbedLayout tabs={getOrgPersonnelTabs(t)}>
       <Outlet />
     </ModuleTabbedLayout>
   )

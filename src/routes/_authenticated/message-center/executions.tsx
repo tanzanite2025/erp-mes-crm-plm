@@ -35,7 +35,7 @@ function ExecutionsRouteComponent() {
         icon={Logs}
         title={t('messageCenter.pages.executions.title')}
         description={t('messageCenter.pages.executions.description')}
-        className='gap-1 p-6 md:p-6'
+        className='gap-1'
       />
       <RuleExecutionLogTab
         searchState={{

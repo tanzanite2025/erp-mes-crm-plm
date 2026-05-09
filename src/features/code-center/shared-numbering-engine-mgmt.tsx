@@ -1,4 +1,5 @@
 import { Hash } from 'lucide-react'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
 import { SequenceMgmt } from '@/features/basic-settings/tabs/sequence-mgmt'
 
@@ -7,32 +8,21 @@ export function SharedNumberingEngineMgmt() {
 
   return (
     <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-      <div className='rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-5 sm:p-6'>
-        <div className='flex flex-col gap-5'>
-          <div className='flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between'>
-            <div className='flex items-start gap-3 text-primary'>
-              <div className='flex size-12 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10'>
-                <Hash className='size-5' />
-              </div>
-              <div>
-                <div className='text-lg font-black tracking-tight italic'>
-                  {t('codeCenter.sharedCodeSource.numberingEngine.page.title')}
-                </div>
-                <div className='text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/60'>
-                  {t('codeCenter.sharedCodeSource.numberingEngine.page.description')}
-                </div>
-              </div>
+      <div className='flex flex-col gap-4'>
+        <IndustrialHeader
+          icon={Hash}
+          title={t('codeCenter.sharedCodeSource.numberingEngine.page.title')}
+          description={t('codeCenter.sharedCodeSource.numberingEngine.page.description')}
+          gradient
+          statusBadge={(
+            <div className='inline-flex items-center gap-2 rounded-full border border-dashed border-primary/20 bg-primary/5 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.22em] text-primary/70'>
+              <Hash className='size-3.5' />
+              <span>{t('codeCenter.sharedCodeSource.numberingEngine.page.badges.linearBarcode')}</span>
             </div>
-            <div className='flex flex-wrap items-center gap-2'>
-              <div className='inline-flex items-center gap-2 rounded-full border border-dashed border-primary/20 bg-primary/5 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.22em] text-primary/70'>
-                <Hash className='size-3.5' />
-                <span>{t('codeCenter.sharedCodeSource.numberingEngine.page.badges.linearBarcode')}</span>
-              </div>
-            </div>
-          </div>
-          <div className='rounded-[24px] border border-dashed border-primary/15 bg-primary/5 px-4 py-3 text-[11px] text-muted-foreground'>
-            {t('codeCenter.sharedCodeSource.numberingEngine.page.notice')}
-          </div>
+          )}
+        />
+        <div className='rounded-[24px] border border-dashed border-primary/15 bg-primary/5 px-4 py-3 text-[11px] text-muted-foreground'>
+          {t('codeCenter.sharedCodeSource.numberingEngine.page.notice')}
         </div>
       </div>
 

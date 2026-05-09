@@ -7,7 +7,7 @@ export function MrpModule() {
   const { t } = useLanguage()
 
   return (
-    <ModuleTabbedLayout title={t('mrp.tabs.title')} tabs={getMrpTabs(t)}>
+    <ModuleTabbedLayout tabs={getMrpTabs(t)}>
       <Outlet />
     </ModuleTabbedLayout>
   )

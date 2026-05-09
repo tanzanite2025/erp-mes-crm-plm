@@ -42,7 +42,6 @@ export function ApsCuttingIssuanceTab() {
 
   return (
     <ModuleTabbedLayout
-      title={t('sidebar.items.cuttingOperations')}
       tabs={getCuttingOperationTabs(t)}
     >
       <div className='flex animate-in flex-col gap-5 fade-in duration-700'>

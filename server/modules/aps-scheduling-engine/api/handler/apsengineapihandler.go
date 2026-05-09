@@ -3,6 +3,7 @@ package apsschedulingengine
 import (
 	"context"
 	"net/http"
+	"strconv"
 	"strings"
 	apsengine "xdfc-server/modules/aps-scheduling-engine"
 	apsdto "xdfc-server/modules/aps-scheduling-engine/api/dto"
@@ -83,7 +84,21 @@ func (h *APIHandler) CreatePlan(c *gin.Context) {
 }
 
 func (h *APIHandler) ListPlans(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"items": []apsdto.PlanResponse{}})
+	page, err := strconv.Atoi(strings.TrimSpace(c.DefaultQuery("page", "1")))
+	if err != nil || page < 1 {
+		page = 1
+	}
+	pageSize, err := strconv.Atoi(strings.TrimSpace(c.DefaultQuery("pageSize", "50")))
+	if err != nil || pageSize < 1 {
+		pageSize = 50
+	}
+
+	c.JSON(http.StatusOK, apsdto.PlanListResponse{
+		Items:    []apsdto.PlanListItemResponse{},
+		Total:    0,
+		Page:     page,
+		PageSize: pageSize,
+	})
 }
 
 func (h *APIHandler) GetPlan(c *gin.Context) {

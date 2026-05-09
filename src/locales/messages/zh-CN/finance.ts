@@ -119,6 +119,7 @@ export const finance = {
     page: {
       title: '税率与价税字典中心',
       subtitle: '增值税参数与价税分离规则配置',
+      refresh: '刷新列表',
       add: '新增税率',
     },
     dialog: {

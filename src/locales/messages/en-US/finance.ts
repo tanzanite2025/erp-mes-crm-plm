@@ -121,10 +121,11 @@ export const finance = {
     page: {
       title: 'Taxation & VAT Baseline Center',
       subtitle: 'VAT Configuration & Taxation Calculation Logic',
+      refresh: 'Refresh List',
       add: 'New Tax Rate',
     },
     dialog: {
-      editTitle: 'Adjust Tax Parameters',
+      editTitle: 'Edit Tax Parameter',
       createTitle: 'Define New Tax ID',
       codeLabel: 'VAT Code',
       codePlaceholder: 'e.g. VAT13',

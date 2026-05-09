@@ -7,7 +7,7 @@ export function Warehouse() {
   const { t } = useLanguage()
 
   return (
-    <ModuleTabbedLayout title={t('sidebar.items.warehouse')} tabs={getWarehouseTabs(t)}>
+    <ModuleTabbedLayout tabs={getWarehouseTabs(t)}>
       <Outlet />
     </ModuleTabbedLayout>
   )

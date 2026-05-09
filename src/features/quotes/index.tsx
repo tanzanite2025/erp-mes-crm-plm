@@ -7,7 +7,7 @@ export function Quotes() {
   const { t } = useLanguage()
 
   return (
-    <ModuleTabbedLayout title={t('sidebar.items.quoteManagement')} tabs={getQuoteTabs(t)}>
+    <ModuleTabbedLayout tabs={getQuoteTabs(t)}>
       <Outlet />
     </ModuleTabbedLayout>
   )

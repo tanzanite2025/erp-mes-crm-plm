@@ -21,7 +21,7 @@ export function ApsEngineConfigTab() {
   const dateRuleFactor = buildDateRuleFactorViewModel(snapshot, t)
 
   return (
-    <ModuleTabbedLayout title={t('apsScheduling.layout.title')} tabs={getApsSchedulingTabs(t)}>
+    <ModuleTabbedLayout tabs={getApsSchedulingTabs(t)}>
       <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
         <EngineOverviewCard />
 

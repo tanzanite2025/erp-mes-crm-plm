@@ -8,7 +8,6 @@ export function SidebarCommandShell({ children }: PropsWithChildren) {
 
   return (
     <ModuleTabbedLayout
-      title={t('sidebarCommandAssignment.moduleTitle')}
       tabs={getSidebarCommandTabs(t)}
     >
       <div className='flex min-h-0 flex-col gap-8 p-1 md:p-2'>

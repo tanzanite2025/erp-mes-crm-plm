@@ -8,7 +8,7 @@ function ApprovalRouteLayout() {
   const { t } = useLanguage()
 
   return (
-    <ModuleTabbedLayout title={t('approval.centerTitle')} tabs={getApprovalTabs(t)}>
+    <ModuleTabbedLayout tabs={getApprovalTabs(t)}>
       <Outlet />
     </ModuleTabbedLayout>
   )

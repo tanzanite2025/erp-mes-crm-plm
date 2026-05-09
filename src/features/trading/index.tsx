@@ -7,7 +7,7 @@ export function Trading() {
   const { t } = useLanguage()
 
   return (
-    <ModuleTabbedLayout title={t('trading.tabs.title')} tabs={getTradingTabs(t)}>
+    <ModuleTabbedLayout tabs={getTradingTabs(t)}>
       <Outlet />
     </ModuleTabbedLayout>
   )

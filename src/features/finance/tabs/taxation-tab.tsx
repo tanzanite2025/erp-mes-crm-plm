@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Edit2, Percent, Plus, ShieldAlert, RefreshCcw } from 'lucide-react'
@@ -50,11 +51,13 @@ export function TaxationTab() {
 
   return (
     <div className='space-y-6 animate-in fade-in duration-700'>
-      <div className='flex flex-col md:flex-row md:items-center justify-between gap-4'>
-        <div className='flex-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-6'>
-          <h2 className='text-lg font-black italic tracking-tighter uppercase'>{t('finance.taxation.page.title')}</h2>
-          <p className='text-[10px] text-muted-foreground font-black tracking-widest uppercase opacity-60'>{t('finance.taxation.page.subtitle')}</p>
-        </div>
+      <IndustrialHeader
+        icon={Percent}
+        title={t('finance.taxation.page.title')}
+        description={t('finance.taxation.page.subtitle')}
+      />
+
+      <div className='flex flex-col md:flex-row md:items-center justify-end gap-4'>
         <div className='flex flex-wrap items-center gap-2'>
           <Button 
             variant='outline' 
@@ -63,7 +66,7 @@ export function TaxationTab() {
             className='rounded-full h-9 font-black text-[10px] uppercase tracking-widest border-dashed hover:bg-emerald-500/5 hover:text-emerald-600 transition-all'
           >
             <RefreshCcw className={`size-3 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            {t('finance.currencyRates.page.refresh' as any) || '刷新列表'}
+            {t('finance.taxation.page.refresh')}
           </Button>
           <Button
             size='sm'

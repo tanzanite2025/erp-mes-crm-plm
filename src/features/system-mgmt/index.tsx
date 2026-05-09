@@ -27,7 +27,7 @@ export function SystemMgmt() {
   )
 
   return (
-    <ModuleTabbedLayout title={t('systemManagement.layout.title')} tabs={localizedTabs}>
+    <ModuleTabbedLayout tabs={localizedTabs}>
       <Outlet />
     </ModuleTabbedLayout>
   )

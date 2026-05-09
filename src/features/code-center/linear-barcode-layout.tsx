@@ -7,7 +7,7 @@ export function LinearBarcodeLayout() {
   const { t } = useLanguage()
 
   return (
-    <ModuleTabbedLayout title={t('codeCenter.title')} tabs={getLinearBarcodeTabs(t)}>
+    <ModuleTabbedLayout tabs={getLinearBarcodeTabs(t)}>
       <Outlet />
     </ModuleTabbedLayout>
   )

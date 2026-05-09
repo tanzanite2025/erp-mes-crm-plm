@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { Button } from '@/components/ui/button'
 import { Plus, RefreshCcw, CreditCard, Edit2 } from 'lucide-react'
 import { PaymentTermCoreService } from '../services/payment-term-core-service'
@@ -55,11 +56,13 @@ export function PaymentTermsTab() {
 
     return (
         <div className='space-y-6 animate-in fade-in duration-700'>
-            <div className='flex flex-col md:flex-row md:items-center justify-between gap-4'>
-                <div className='flex-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-6'>
-                    <h2 className='text-lg font-black italic tracking-tighter uppercase'>{t('finance.paymentTerms.page.title')}</h2>
-                    <p className='text-[10px] text-muted-foreground font-black tracking-widest uppercase opacity-60'>{t('finance.paymentTerms.page.subtitle')}</p>
-                </div>
+            <IndustrialHeader
+                icon={CreditCard}
+                title={t('finance.paymentTerms.page.title')}
+                description={t('finance.paymentTerms.page.subtitle')}
+            />
+
+            <div className='flex flex-col md:flex-row md:items-center justify-end gap-4'>
                 <div className='flex flex-wrap items-center gap-2'>
                     <Button 
                         variant='outline' 

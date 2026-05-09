@@ -28,3 +28,20 @@ type PlanResponse struct {
 	Version int    `json:"version"`
 	Status  string `json:"status"`
 }
+
+type PlanListItemResponse struct {
+	ID          string `json:"id"`
+	OrderNo     string `json:"orderNo"`
+	ProductName string `json:"productName"`
+	LineName    string `json:"lineName"`
+	StartAt     string `json:"startAt"`
+	DueAt       string `json:"dueAt"`
+	Status      string `json:"status"`
+}
+
+type PlanListResponse struct {
+	Items    []PlanListItemResponse `json:"items"`
+	Total    int64                  `json:"total"`
+	Page     int                    `json:"page"`
+	PageSize int                    `json:"pageSize"`
+}

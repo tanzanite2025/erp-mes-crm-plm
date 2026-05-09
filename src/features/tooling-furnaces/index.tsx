@@ -9,7 +9,7 @@ export function ToolingFurnaces() {
   const { t } = useLanguage()
 
   return (
-    <ModuleTabbedLayout title={t('sidebar.items.furnaceAssets')} tabs={getToolingFurnacesTabs(t)}>
+    <ModuleTabbedLayout tabs={getToolingFurnacesTabs(t)}>
       <Outlet />
     </ModuleTabbedLayout>
   )

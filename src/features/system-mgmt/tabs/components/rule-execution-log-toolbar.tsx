@@ -42,19 +42,19 @@ export function RuleExecutionLogToolbar({
   onRefresh,
 }: RuleExecutionLogToolbarProps) {
   return (
-    <CardHeader className='gap-3'>
-      <div className='grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_repeat(3,minmax(0,0.6fr))_auto]'>
+    <CardHeader className='gap-0.5 border-b border-dashed border-muted/30 px-0 py-0'>
+      <div className='grid gap-0.5 lg:grid-cols-[minmax(0,1.2fr)_repeat(3,minmax(0,0.6fr))_auto]'>
         <div className='relative'>
-          <Search className='pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground' />
+          <Search className='pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground' />
           <Input
             value={keyword}
             onChange={(event) => onKeywordChange(event.target.value)}
             placeholder='搜索规则、分支、标题、状态或报错'
-            className='pl-9'
+            className='h-9 rounded-2xl border-none bg-muted/50 pl-8.5'
           />
         </div>
         <Select value={sourceCode} onValueChange={onSourceCodeChange}>
-          <SelectTrigger>
+          <SelectTrigger className='h-9 rounded-2xl border-none bg-muted/50'>
             <SelectValue placeholder='业务源' />
           </SelectTrigger>
           <SelectContent>
@@ -72,7 +72,7 @@ export function RuleExecutionLogToolbar({
             onExecutionTypeChange(value as 'all' | RuleExecutionType)
           }
         >
-          <SelectTrigger>
+          <SelectTrigger className='h-9 rounded-2xl border-none bg-muted/50'>
             <SelectValue placeholder='动作类型' />
           </SelectTrigger>
           <SelectContent>
@@ -89,7 +89,7 @@ export function RuleExecutionLogToolbar({
             onExecutionStatusChange(value as 'all' | RuleExecutionStatus)
           }
         >
-          <SelectTrigger>
+          <SelectTrigger className='h-9 rounded-2xl border-none bg-muted/50'>
             <SelectValue placeholder='执行结果' />
           </SelectTrigger>
           <SelectContent>
@@ -104,10 +104,10 @@ export function RuleExecutionLogToolbar({
           variant='outline'
           onClick={onRefresh}
           disabled={isFetching}
-          className='gap-2'
+          className='h-9 rounded-full border-dashed border-muted-foreground/30 px-3.5 text-[10px] font-black uppercase tracking-widest'
         >
           <RefreshCcw
-            className={`size-4 ${isFetching ? 'animate-spin' : ''}`}
+            className={`size-3.5 ${isFetching ? 'animate-spin' : ''}`}
           />
           刷新
         </Button>

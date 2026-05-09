@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Plus, Coins, Edit2, Anchor, Globe2 } from 'lucide-react'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
 import type { TranslationKey } from '@/locales'
 import { useCurrencies } from '../hooks/use-currencies'
@@ -52,6 +53,12 @@ export function CurrencyTab() {
 
     return (
         <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+            <IndustrialHeader
+                icon={Coins}
+                title={t('finance.currencyRates.page.title')}
+                description={t('finance.currencyRates.page.subtitle')}
+            />
+
             <IndustrialActionBar 
                 onRefresh={loadData}
                 isRefreshing={isLoading}

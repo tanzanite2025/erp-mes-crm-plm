@@ -74,7 +74,7 @@ export function CommandBinding({ selectedIds, onChange }: CommandBindingProps) {
                         >
                             {/* 选择指示器 */}
                             <div className={cn(
-                                'size-4.5 rounded-lg mt-0.5 border-2 flex items-center justify-center flex-shrink-0 transition-all',
+                                'size-4.5 rounded-lg mt-0.5 border-2 flex items-center justify-center shrink-0 transition-all',
                                 isSelected ? 'bg-primary border-primary shadow-lg shadow-primary/20' : 'border-muted-foreground/20 bg-card'
                             )}>
                                 {isSelected && <Check className='size-2.5 text-white stroke-[3px]' />}
@@ -89,7 +89,7 @@ export function CommandBinding({ selectedIds, onChange }: CommandBindingProps) {
                                     {getStandardCommandDisplayTitle(cmd, sources)}
                                 </p>
                                 <div className='flex items-center gap-1.5 opacity-60'>
-                                    <Info className='size-3 flex-shrink-0' />
+                                    <Info className='size-3 shrink-0' />
                                     <p className='text-[9px] font-bold truncate italic'>{cmd.content}</p>
                                 </div>
                             </div>

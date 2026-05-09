@@ -7,7 +7,7 @@ export function SharedCodeSourceLayout() {
   const { t } = useLanguage()
 
   return (
-    <ModuleTabbedLayout title={t('codeCenter.title')} tabs={getSharedCodeSourceTabs(t)}>
+    <ModuleTabbedLayout tabs={getSharedCodeSourceTabs(t)}>
       <Outlet />
     </ModuleTabbedLayout>
   )

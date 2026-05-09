@@ -8,7 +8,6 @@ export function WarehouseConfig() {
 
   return (
     <ModuleTabbedLayout
-      title={t('sidebar.items.warehouseConfig')}
       tabs={getWarehouseConfigTabs(t)}
     >
       <Outlet />

@@ -22,7 +22,7 @@ export const getApsScheduling = async (
   if (lineName) params.set('lineName', lineName)
   if (status && status.length > 0) params.set('status', status.join(','))
 
-  const res = await apiFetch<ApsSchedulingListApiDTO>(`/aps-scheduling?${params.toString()}`)
+  const res = await apiFetch<ApsSchedulingListApiDTO>(`/aps-scheduling/plans?${params.toString()}`)
   const response = ensureObjectResponse<ApsSchedulingListApiDTO & Record<string, unknown>>(res, 'ApsSchedulingService.getApsScheduling')
   return toApsSchedulingContract(response)
 }

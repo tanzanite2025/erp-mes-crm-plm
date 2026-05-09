@@ -4,6 +4,7 @@ import { Database, Pencil, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { ActionDialogShell } from '@/components/action-dialog-shell'
 import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -186,30 +187,19 @@ export function SharedHoleCodeSourceMgmt() {
 
   return (
     <div className='flex min-h-[calc(100vh-14rem)] flex-col gap-8 animate-in fade-in duration-700'>
-      <div className='rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-5 sm:p-6'>
-        <div className='flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between'>
-          <div className='space-y-3'>
-            <div className='flex items-center gap-3 text-primary'>
-              <div className='flex size-12 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10'>
-                <Database className='size-5' />
-              </div>
-              <div>
-                <div className='text-lg font-black tracking-tight italic'>
-                  {t('codeCenter.sharedCodeSource.holeCodes.page.title')}
-                </div>
-                <div className='text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/60'>
-                  {t('codeCenter.sharedCodeSource.holeCodes.page.description')}
-                </div>
-              </div>
-            </div>
-            <div className='inline-flex items-center gap-3 rounded-full border border-dashed border-primary/20 bg-primary/5 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.22em] text-primary/70'>
-              <span>{t('codeCenter.sharedCodeSource.holeCodes.page.total', { count: prefixes.length + counts.length })}</span>
-              <span className='opacity-40'>/</span>
-              <span>{t('codeCenter.sharedCodeSource.holeCodes.page.active', { count: activePrefixCount + activeCountCount })}</span>
-            </div>
+      <IndustrialHeader
+        icon={Database}
+        title={t('codeCenter.sharedCodeSource.holeCodes.page.title')}
+        description={t('codeCenter.sharedCodeSource.holeCodes.page.description')}
+        gradient
+        statusBadge={(
+          <div className='inline-flex items-center gap-3 rounded-full border border-dashed border-primary/20 bg-primary/5 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.22em] text-primary/70'>
+            <span>{t('codeCenter.sharedCodeSource.holeCodes.page.total', { count: prefixes.length + counts.length })}</span>
+            <span className='opacity-40'>/</span>
+            <span>{t('codeCenter.sharedCodeSource.holeCodes.page.active', { count: activePrefixCount + activeCountCount })}</span>
           </div>
-        </div>
-      </div>
+        )}
+      />
 
       {isLoading ? (
         <div className='flex min-h-[420px] flex-1 items-center justify-center rounded-[28px] border border-dashed border-muted/50 bg-muted/10 p-10 text-center'>

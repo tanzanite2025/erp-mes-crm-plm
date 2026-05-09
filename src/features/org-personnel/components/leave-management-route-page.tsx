@@ -12,7 +12,6 @@ export function LeaveManagementRoutePage() {
 
   return (
     <ModuleTabbedLayout
-      title={t('sidebar.items.personnelCenter')}
       tabs={getOrgPersonnelBranchTabs(t)}
     >
       <FeatureSandbox fallbackName="LEAVE_MANAGEMENT">

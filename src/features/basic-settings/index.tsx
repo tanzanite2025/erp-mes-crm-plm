@@ -7,7 +7,7 @@ export function BasicSettings() {
   const { t } = useLanguage()
 
   return (
-    <ModuleTabbedLayout title={t('sidebar.items.basicSettings')} tabs={getBasicSettingsTabs(t)}>
+    <ModuleTabbedLayout tabs={getBasicSettingsTabs(t)}>
       <Outlet />
     </ModuleTabbedLayout>
   )
