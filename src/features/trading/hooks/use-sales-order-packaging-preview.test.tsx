@@ -82,6 +82,11 @@ function buildSalesOrder(overrides: Partial<SalesOrder> = {}): SalesOrder {
         productModel: 'MODEL-A',
         productCode: 'CODE-A',
         specification: 'Spec A',
+        productDisplayTitleSnapshot: 'Fork Alpha',
+        productDisplaySubtitleSnapshot: 'trail/disc/v2',
+        productDisplayCodeSnapshot: 'CODE-A',
+        productDisplayFullLabelSnapshot: 'Fork Alpha (trail/disc/v2)',
+        productDisplayStrategyVersionSnapshot: 'product-display-v1',
         description: 'Line A',
         qty: 10,
         uom: 'PCS',
@@ -92,6 +97,22 @@ function buildSalesOrder(overrides: Partial<SalesOrder> = {}): SalesOrder {
         jobNo: 'JOB-001',
         orderDate: '2026-04-25',
         status: 'Canceled',
+        selectedPackaging: {
+          profileId: 'profile-1',
+          profileCode: 'PK-001',
+          profileName: 'Box A',
+          packagingType: 'BOX',
+          length: 10,
+          width: 5,
+          height: 4,
+          dimensionUnitCode: 'cm',
+          netWeight: 1,
+          grossWeight: 0,
+          weightUnitCode: 'kg',
+          capacity: 10,
+          capacityUnitCode: 'pcs',
+          source: 'manual',
+        },
         returnedQuantity: 0,
         remainingReturnableQuantity: 10,
       },
@@ -154,8 +175,40 @@ describe('useSalesOrderPackagingPreview', () => {
     expect(getProductPackagingOptionsMock).toHaveBeenCalledTimes(1)
     expect(getProductsMock).not.toHaveBeenCalled()
     expect(result.current.isError).toBe(false)
+    expect(result.current.data?.lines[0]?.selectedPackaging?.profileId).toBe('profile-1')
+    expect(result.current.data?.lines[0]?.productDisplayTitle).toBe('Fork Alpha')
+    expect(result.current.data?.lines[0]?.productDisplaySubtitle).toBe('trail/disc/v2')
     expect(result.current.data?.lines[0]?.productWeight).toBe(2)
     expect(result.current.data?.summary.totalBoxCount).toBe(1)
     expect(result.current.data?.summary.totalGrossWeight).toBe(21)
+  })
+
+  it('falls back to placeholders when packaging preview line snapshots are missing', async () => {
+    const queryClient = createQueryClient()
+    const { result } = renderHook(
+      () =>
+        useSalesOrderPackagingPreview(
+          buildSalesOrder({
+            lines: [
+              {
+                ...buildSalesOrder().lines[0],
+                productDisplayTitleSnapshot: '',
+                productDisplaySubtitleSnapshot: '',
+                productDisplayFullLabelSnapshot: '',
+              },
+            ],
+          })
+        ),
+      {
+        wrapper: createWrapper(queryClient),
+      }
+    )
+
+    await waitFor(() => {
+      expect(result.current.data).not.toBeNull()
+    })
+
+    expect(result.current.data?.lines[0]?.productDisplayTitle).toBe('未识别产品')
+    expect(result.current.data?.lines[0]?.productDisplaySubtitle).toBe('--')
   })
 })

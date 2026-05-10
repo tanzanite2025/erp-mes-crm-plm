@@ -51,6 +51,11 @@ func setupSalesReturnServiceTestDB(t *testing.T) *gorm.DB {
 			product_model TEXT,
 			product_code TEXT,
 			specification TEXT,
+			product_display_title_snapshot TEXT,
+			product_display_subtitle_snapshot TEXT,
+			product_display_code_snapshot TEXT,
+			product_display_full_label_snapshot TEXT,
+			product_display_strategy_version_snapshot TEXT,
 			model_code_snapshot TEXT,
 			hole_prefix_snapshot TEXT,
 			appearance_id TEXT,
@@ -67,7 +72,8 @@ func setupSalesReturnServiceTestDB(t *testing.T) *gorm.DB {
 			customer_part_no TEXT,
 			job_no TEXT,
 			order_date TEXT,
-			status TEXT
+			status TEXT,
+			selected_packaging BLOB
 		)`,
 		`CREATE TABLE sales_returns (
 			id TEXT PRIMARY KEY NOT NULL,
@@ -109,6 +115,11 @@ func setupSalesReturnServiceTestDB(t *testing.T) *gorm.DB {
 			product_code TEXT,
 			product_model TEXT,
 			specification TEXT,
+			product_display_title_snapshot TEXT,
+			product_display_subtitle_snapshot TEXT,
+			product_display_code_snapshot TEXT,
+			product_display_full_label_snapshot TEXT,
+			product_display_strategy_version_snapshot TEXT,
 			description TEXT,
 			uom TEXT,
 			quantity REAL,
@@ -165,9 +176,9 @@ func TestCreateSalesReturnCreatesRealReturnRecord(t *testing.T) {
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, X'5B5D', ?, ?, ?, ?, ?)
 	`, "so-return-1", "SO-RETURN-001", "Returnable Order", "Customer A", "cust-1", "NORMAL", "CNY", "GENERAL", "InProgress", 200.0, 10.0, "2026-04-18", "2026-04-20", now, now, "tester", false, 1).Error)
 	require.NoError(t, testDB.Exec(`
-		INSERT INTO sales_order_lines (sales_order_id, line_no, product_id, product_model, product_code, specification, description, qty, uom, price, amount, delivered_qty, customer_part_no, job_no, order_date, status)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, "so-return-1", 1, "prod-1", "PM-1", "PC-1", "Spec", "Desc", 10.0, "PCS", 12.5, 125.0, 6.0, "CP-1", "JOB-1", "2026-04-18", "InProgress").Error)
+		INSERT INTO sales_order_lines (sales_order_id, line_no, product_id, product_model, product_code, specification, product_display_title_snapshot, product_display_subtitle_snapshot, product_display_code_snapshot, product_display_full_label_snapshot, product_display_strategy_version_snapshot, description, qty, uom, price, amount, delivered_qty, customer_part_no, job_no, order_date, status)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, "so-return-1", 1, "prod-1", "PM-1", "PC-1", "Spec", "Fork Alpha", "trail/disc/v2", "PC-1", "Fork Alpha (trail/disc/v2)", "product-display-v1", "Desc", 10.0, "PCS", 12.5, 125.0, 6.0, "CP-1", "JOB-1", "2026-04-18", "InProgress").Error)
 
 	response, err := CreateSalesReturn(CreateSalesReturnInput{
 		SalesOrderID:  "so-return-1",
@@ -194,6 +205,11 @@ func TestCreateSalesReturnCreatesRealReturnRecord(t *testing.T) {
 	require.NotEmpty(t, response.SalesReturn.ReturnNo)
 	require.Len(t, response.SalesReturn.Lines, 1)
 	require.Equal(t, uint(1), response.SalesReturn.Lines[0].SalesOrderLineID)
+	require.Equal(t, "Fork Alpha", response.SalesReturn.Lines[0].ProductDisplayTitleSnapshot)
+	require.Equal(t, "trail/disc/v2", response.SalesReturn.Lines[0].ProductDisplaySubtitleSnapshot)
+	require.Equal(t, "PC-1", response.SalesReturn.Lines[0].ProductDisplayCodeSnapshot)
+	require.Equal(t, "Fork Alpha (trail/disc/v2)", response.SalesReturn.Lines[0].ProductDisplayFullLabelSnapshot)
+	require.Equal(t, "product-display-v1", response.SalesReturn.Lines[0].ProductDisplayStrategyVersionSnapshot)
 
 	var returnCount int64
 	require.NoError(t, testDB.Raw(`SELECT COUNT(*) FROM sales_returns`).Scan(&returnCount).Error)

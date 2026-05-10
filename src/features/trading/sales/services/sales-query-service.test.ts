@@ -9,6 +9,8 @@ vi.mock('@/lib/api-client', () => ({
 }))
 
 import {
+  getCustomerProductStats,
+  getGlobalProductRanking,
   getSalesOrderById,
   getSalesOrderByNo,
   getSalesOrders,
@@ -260,5 +262,101 @@ describe('sales-query-service', () => {
     await expect(getSalesOrders()).rejects.toThrow(
       '[INVALID_RESPONSE] SalesQueryService.getSalesOrders expected an object response.',
     )
+  })
+
+  it('maps customer analytics responses to explicit productDisplay contracts', async () => {
+    apiFetchMock.mockResolvedValue({
+      items: [
+        {
+          customerId: 'customer-1',
+          customerName: 'Acme',
+          totalOrders: 3,
+          totalAmount: 180,
+          products: [
+            {
+              productId: 'product-1',
+              productDisplay: {
+                title: 'Road Fork',
+                subtitle: 'trail/disc/v2',
+                code: 'RF-01',
+                fullLabel: 'Road Fork (trail/disc/v2)',
+                strategyVersion: 'product-display-v1',
+              },
+              totalQty: 12,
+              orderCount: 3,
+              totalAmount: 180,
+            },
+          ],
+        },
+      ],
+      total: 1,
+    })
+
+    const result = await getCustomerProductStats({ customerId: 'customer-1' })
+
+    expect(apiFetchMock).toHaveBeenCalledWith(
+      '/sales-orders/analytics/customer-product-stats?customerId=customer-1'
+    )
+    expect(result[0]?.products[0]).toEqual(
+      expect.objectContaining({
+        productId: 'product-1',
+        productDisplay: {
+          title: 'Road Fork',
+          subtitle: 'trail/disc/v2',
+          code: 'RF-01',
+          fullLabel: 'Road Fork (trail/disc/v2)',
+          strategyVersion: 'product-display-v1',
+        },
+        totalQty: 12,
+        orderCount: 3,
+        totalAmount: 180,
+      })
+    )
+    expect(result[0]?.products[0]).not.toHaveProperty('productModel')
+    expect(result[0]?.products[0]).not.toHaveProperty('productCode')
+  })
+
+  it('maps global ranking responses to explicit productDisplay contracts', async () => {
+    apiFetchMock.mockResolvedValue({
+      items: [
+        {
+          productId: 'product-1',
+          productDisplay: {
+            title: 'Road Fork',
+            subtitle: 'trail/disc/v2',
+            code: 'RF-01',
+            fullLabel: 'Road Fork (trail/disc/v2)',
+            strategyVersion: 'product-display-v1',
+          },
+          totalQty: 12,
+          orderCount: 3,
+          totalAmount: 180,
+        },
+      ],
+      total: 1,
+    })
+
+    const result = await getGlobalProductRanking(5)
+
+    expect(apiFetchMock).toHaveBeenCalledWith(
+      '/sales-orders/analytics/global-product-ranking?limit=5'
+    )
+    expect(result[0]).toEqual(
+      expect.objectContaining({
+        productId: 'product-1',
+        productDisplay: {
+          title: 'Road Fork',
+          subtitle: 'trail/disc/v2',
+          code: 'RF-01',
+          fullLabel: 'Road Fork (trail/disc/v2)',
+          strategyVersion: 'product-display-v1',
+        },
+        totalQty: 12,
+        orderCount: 3,
+        totalAmount: 180,
+      })
+    )
+    expect(result[0]).not.toHaveProperty('productModel')
+    expect(result[0]).not.toHaveProperty('productCode')
   })
 })

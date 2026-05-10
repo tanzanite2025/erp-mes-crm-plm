@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { CompactPaginationControls } from '@/components/pagination/compact-pagination-controls'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
@@ -18,6 +19,7 @@ interface SalesOrderCanceledSectionProps {
   onPreassembleScan: (order: SalesOrder) => void
   onEdit: (order: SalesOrder) => void
   onDelete: (id: string) => void
+  renderFeatureCards?: (order: SalesOrder) => ReactNode
 }
 
 export function SalesOrderCanceledSection({
@@ -34,6 +36,7 @@ export function SalesOrderCanceledSection({
   onPreassembleScan,
   onEdit,
   onDelete,
+  renderFeatureCards,
 }: SalesOrderCanceledSectionProps) {
   const { t } = useLanguage()
 
@@ -66,6 +69,7 @@ export function SalesOrderCanceledSection({
           onPreassembleScan={onPreassembleScan}
           onEdit={onEdit}
           onDelete={onDelete}
+          renderFeatureCards={renderFeatureCards}
         />
       ) : null}
 

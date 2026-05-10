@@ -63,6 +63,10 @@ export const tradingSalesOrder = {
     linePackedQuantity: "Packed quantity: {{qty}}",
     lineVolume: "Total volume: {{value}}",
     lineGrossWeightValue: "Total gross weight: {{value}}",
+    entry: {
+      noLinesTitle: "No Packaging Context",
+      noLinesHint: "There is not enough packaging context to determine packaging yet."
+    },
     warnings: {
       missingProductBinding: "This order line is not bound to a product, so no packaging definition can be matched",
       noMatchedProfiles: "No packaging definition matched this product",
@@ -127,6 +131,9 @@ export const tradingSalesOrder = {
     columns: {
       paymentMethod: "Payment Method",
       paymentTerm: "Payment Term"
+    },
+    actions: {
+      viewDetail: "View Detail"
     }
   }
 } as const

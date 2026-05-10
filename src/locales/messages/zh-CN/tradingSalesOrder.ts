@@ -63,6 +63,10 @@ export const tradingSalesOrder = {
     linePackedQuantity: "已装数量：{{qty}}",
     lineVolume: "总体积：{{value}}",
     lineGrossWeightValue: "总毛重：{{value}}",
+    entry: {
+      noLinesTitle: "暂无包装依据",
+      noLinesHint: "当前暂无可用于判断包装的内容"
+    },
     warnings: {
       missingProductBinding: "该订单行未绑定产品，无法匹配包装定义",
       noMatchedProfiles: "当前产品未匹配到包装定义",
@@ -127,6 +131,9 @@ export const tradingSalesOrder = {
     columns: {
       paymentMethod: "支付方式",
       paymentTerm: "结算方式"
+    },
+    actions: {
+      viewDetail: "查看详情"
     }
   }
 } as const

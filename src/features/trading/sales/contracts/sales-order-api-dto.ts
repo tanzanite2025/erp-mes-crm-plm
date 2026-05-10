@@ -29,6 +29,25 @@ const salesOrderActionAvailabilitySchema = z
   })
   .strict()
 
+const salesOrderLinePackagingSelectionSchema = z
+  .object({
+    profileId: z.string(),
+    profileCode: z.string(),
+    profileName: z.string(),
+    packagingType: z.string(),
+    length: z.number(),
+    width: z.number(),
+    height: z.number(),
+    dimensionUnitCode: z.string(),
+    netWeight: z.number(),
+    grossWeight: z.number(),
+    weightUnitCode: z.string(),
+    capacity: z.number(),
+    capacityUnitCode: z.string(),
+    source: z.enum(['auto', 'manual']),
+  })
+  .strict()
+
 export const salesOrderLineApiDTOSchema = z
   .object({
     id: z.number().optional(),
@@ -37,6 +56,11 @@ export const salesOrderLineApiDTOSchema = z
     productModel: z.string(),
     productCode: z.string(),
     specification: z.string(),
+    productDisplayTitleSnapshot: z.string().optional(),
+    productDisplaySubtitleSnapshot: z.string().optional(),
+    productDisplayCodeSnapshot: z.string().optional(),
+    productDisplayFullLabelSnapshot: z.string().optional(),
+    productDisplayStrategyVersionSnapshot: z.string().optional(),
     modelCodeSnapshot: z.string().optional(),
     holePrefixSnapshot: z.string().optional(),
     appearanceId: z.string().optional(),
@@ -61,6 +85,7 @@ export const salesOrderLineApiDTOSchema = z
     status: z.string(),
     claimedBy: z.string().optional(),
     claimedAt: z.string().optional(),
+    selectedPackaging: salesOrderLinePackagingSelectionSchema.optional(),
     returnedQuantity: z.number(),
     remainingReturnableQuantity: z.number(),
   })
@@ -73,6 +98,11 @@ export interface SalesOrderLineApiDTO {
   productModel: string
   productCode: string
   specification: string
+  productDisplayTitleSnapshot?: string
+  productDisplaySubtitleSnapshot?: string
+  productDisplayCodeSnapshot?: string
+  productDisplayFullLabelSnapshot?: string
+  productDisplayStrategyVersionSnapshot?: string
   modelCodeSnapshot?: string
   holePrefixSnapshot?: string
   appearanceId?: string
@@ -97,6 +127,7 @@ export interface SalesOrderLineApiDTO {
   status: string
   claimedBy?: string
   claimedAt?: string
+  selectedPackaging?: z.infer<typeof salesOrderLinePackagingSelectionSchema>
   returnedQuantity: number
   remainingReturnableQuantity: number
 }

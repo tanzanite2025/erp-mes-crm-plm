@@ -26,6 +26,10 @@ import { usePurchaseReturnDictionaryOptions } from '@/features/trading/purchase/
 import { useGetSalesReturnSourceOrderDetail } from '@/features/trading/sales/hooks/use-sales-return-queries'
 import { useSalesReturnMutations } from '@/features/trading/sales/hooks/use-sales-returns'
 import type { SalesReturnLine, SalesReturnRecord } from '@/features/trading/sales/services/sales-return-service'
+import {
+  resolveSalesReturnLineDisplaySubtitle,
+  resolveSalesReturnLineDisplayTitle,
+} from '../utils/sales-return-line-display'
 
 interface SalesReturnCreateSheetProps {
   order?: SalesOrder
@@ -96,6 +100,11 @@ function createFallbackOrderLine(
     productModel: line.productModel,
     productCode: line.productCode,
     specification: line.specification,
+    productDisplayTitleSnapshot: line.productDisplayTitleSnapshot,
+    productDisplaySubtitleSnapshot: line.productDisplaySubtitleSnapshot,
+    productDisplayCodeSnapshot: line.productDisplayCodeSnapshot,
+    productDisplayFullLabelSnapshot: line.productDisplayFullLabelSnapshot,
+    productDisplayStrategyVersionSnapshot: line.productDisplayStrategyVersionSnapshot,
     description: line.description,
     qty: line.quantity,
     uom: line.uom,
@@ -514,10 +523,10 @@ function SalesReturnCreateSheetBody({
                       <div key={lineId} className='flex items-start justify-between gap-3 px-4 py-3'>
                         <div className='min-w-0'>
                           <p className='text-sm font-black text-foreground'>
-                            {line.productCode || line.productModel || `Line ${line.lineNo}`}
+                            {resolveSalesReturnLineDisplayTitle(line)}
                           </p>
                           <p className='mt-0.5 text-xs leading-4.5 font-bold text-muted-foreground'>
-                            {line.specification || line.description || '--'}
+                            {resolveSalesReturnLineDisplaySubtitle(line)}
                           </p>
                           <div className='mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[11px] font-bold text-muted-foreground'>
                             <span>
@@ -587,10 +596,10 @@ function SalesReturnCreateSheetBody({
                         <div className='flex items-start justify-between gap-3'>
                           <div className='min-w-0'>
                             <p className='text-sm font-black text-foreground'>
-                              {line.productCode || line.productModel || `Line ${line.lineNo}`}
+                              {resolveSalesReturnLineDisplayTitle(line)}
                             </p>
                             <p className='mt-0.5 text-xs leading-4.5 font-bold text-muted-foreground'>
-                              {line.specification || line.description || '--'}
+                              {resolveSalesReturnLineDisplaySubtitle(line)}
                             </p>
                             <div className='mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[11px] font-bold text-muted-foreground'>
                               <span>

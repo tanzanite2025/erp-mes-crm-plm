@@ -15,10 +15,10 @@ import {
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
-import { ShipmentCoreService } from '@/features/warehouse/shipment'
-import { type ShipmentRecord } from '@/features/warehouse/shipment/data/schema'
-import { useGetSalesOrderDetail } from '../sales'
+import { ShipmentCoreService, type ShipmentRecord } from '@/features/warehouse/shipment'
 import { type SalesOrder, type SalesOrderLine } from '../data/schema'
+import { useGetSalesOrderDetail } from '../sales'
+import { formatSalesOrderPreassembleCandidateLabel } from '../utils/sales-order-line-display'
 import { isSalesOrderPreassembleScanAllowed } from '../utils/sales-order-preassemble'
 
 const SHIPMENT_FETCH_PAGE_SIZE = 500
@@ -191,7 +191,7 @@ function getRecordLineLabel(record: ShipmentRecord, candidates: SalesOrderLine[]
   }
   if (candidates.length === 1) {
     const line = candidates[0]
-    return `候选行 #${line.lineNo} ${line.productModel || line.productCode || ''}`.trim()
+    return formatSalesOrderPreassembleCandidateLabel(line)
   }
   if (candidates.length > 1) {
     return `候选订单行 ${candidates.length} 条（需唯一）`

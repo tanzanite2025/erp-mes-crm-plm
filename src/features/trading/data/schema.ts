@@ -95,6 +95,25 @@ export interface SalesOrderActionAvailability {
   reason?: string
 }
 
+export type SalesOrderLinePackagingSelectionSource = 'auto' | 'manual'
+
+export interface SalesOrderLinePackagingSelection {
+  profileId: string
+  profileCode: string
+  profileName: string
+  packagingType: string
+  length: number
+  width: number
+  height: number
+  dimensionUnitCode: string
+  netWeight: number
+  grossWeight: number
+  weightUnitCode: string
+  capacity: number
+  capacityUnitCode: string
+  source: SalesOrderLinePackagingSelectionSource
+}
+
 export interface SalesOrderLine {
   id?: number
   lineNo: number
@@ -102,6 +121,11 @@ export interface SalesOrderLine {
   productModel: string
   productCode: string
   specification: string
+  productDisplayTitleSnapshot?: string
+  productDisplaySubtitleSnapshot?: string
+  productDisplayCodeSnapshot?: string
+  productDisplayFullLabelSnapshot?: string
+  productDisplayStrategyVersionSnapshot?: string
   modelCodeSnapshot?: string
   holePrefixSnapshot?: string
   appearanceId?: string
@@ -126,6 +150,7 @@ export interface SalesOrderLine {
   status: SalesOrderStatus
   claimedBy?: string
   claimedAt?: string
+  selectedPackaging?: SalesOrderLinePackagingSelection
   returnedQuantity: number
   remainingReturnableQuantity: number
 }
@@ -135,6 +160,11 @@ export const EMPTY_SALES_ORDER_LINE: Partial<SalesOrderLine> = {
   productModel: '',
   productCode: '',
   specification: '',
+  productDisplayTitleSnapshot: '',
+  productDisplaySubtitleSnapshot: '',
+  productDisplayCodeSnapshot: '',
+  productDisplayFullLabelSnapshot: '',
+  productDisplayStrategyVersionSnapshot: '',
   modelCodeSnapshot: '',
   holePrefixSnapshot: '',
   appearanceId: '',
@@ -203,6 +233,11 @@ export const createEmptySalesOrderLine = (): SalesOrderLine => ({
   productModel: '',
   productCode: '',
   specification: '',
+  productDisplayTitleSnapshot: '',
+  productDisplaySubtitleSnapshot: '',
+  productDisplayCodeSnapshot: '',
+  productDisplayFullLabelSnapshot: '',
+  productDisplayStrategyVersionSnapshot: '',
   modelCodeSnapshot: '',
   holePrefixSnapshot: '',
   appearanceId: '',

@@ -76,6 +76,7 @@ export function useSalesOrderListController() {
   )
 
   const primaryOrdersQuery = useGetSalesOrders(page, pageSize, {
+    withLines: true,
     customerId: routeCustomerId,
     keyword: normalizedSearchTerm,
     status: primaryStatusFilter,
@@ -83,6 +84,7 @@ export function useSalesOrderListController() {
     paymentTerm: normalizedPaymentTermFilter,
   })
   const canceledOrdersQuery = useGetSalesOrders(canceledPage, pageSize, {
+    withLines: true,
     customerId: routeCustomerId,
     keyword: normalizedSearchTerm,
     status: ['Canceled'],

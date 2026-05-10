@@ -157,8 +157,9 @@ export function OrdersAnalysisTab() {
                             {idx + 1}
                           </div>
                           <div className="flex flex-col">
-                            <span className="text-[10px] font-black tracking-tight">{prod.productModel}</span>
-                            <span className="text-[8px] font-mono opacity-40 uppercase">{prod.productCode}</span>
+                            <span className="text-[10px] font-black tracking-tight">{prod.productDisplay.title}</span>
+                            <span className="text-[8px] font-black uppercase tracking-widest opacity-40">{prod.productDisplay.subtitle || '--'}</span>
+                            <span className="text-[8px] font-mono opacity-40 uppercase">{prod.productDisplay.code || '--'}</span>
                           </div>
                        </div>
                        <div className="text-right">
@@ -189,7 +190,10 @@ export function OrdersAnalysisTab() {
             {globalRanking?.map((prod, idx) => (
               <div key={prod.productId} className="flex flex-col gap-1.5 animate-in slide-in-from-right-4 fade-in duration-500" style={{ animationDelay: `${idx * 100}ms` }}>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black italic tracking-tight truncate max-w-[150px]">{prod.productModel}</span>
+                  <div className="min-w-0">
+                    <span className="block truncate text-[10px] font-black italic tracking-tight max-w-[150px]">{prod.productDisplay.title}</span>
+                    <span className="block truncate text-[8px] font-mono uppercase opacity-40 max-w-[150px]">{prod.productDisplay.code || prod.productDisplay.subtitle || '--'}</span>
+                  </div>
                   <span className="text-[10px] font-mono font-bold text-primary">{Math.round((prod.totalQty / (globalRanking[0]?.totalQty || 1)) * 100)}%</span>
                 </div>
                 <div className="h-1 bg-muted/20 rounded-full overflow-hidden">

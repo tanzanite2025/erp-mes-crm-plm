@@ -3,6 +3,8 @@ export const master = {
         orderStatus: 'Order No. / Status',
         customer: 'Customer Entity',
         classificationDate: 'Classification / Date',
+        classification: 'Classification',
+        orderDate: 'Order Date',
         totalQuantity: 'Total Quantity',
         deliveryDeadline: 'Delivery Deadline',
         actions: 'Actions',

@@ -5,6 +5,7 @@ import { type ProductAppearance } from '@/features/engineering/data/product-appe
 import { type Product } from '@/features/engineering/data/schema'
 import { formatProductDisplayName } from '@/features/engineering/utils/product-utils'
 import { type SalesOrderLine } from '../data/schema'
+import { buildSalesOrderLineDisplaySnapshot } from '../utils/sales-order-line-display-snapshot'
 
 type SalesOrderLineFieldValue = SalesOrderLine[keyof SalesOrderLine]
 
@@ -114,15 +115,21 @@ export function useSalesOrderLinesEditorViewModel({
     (index: number, productId: string) => {
       const product = productById.get(productId)
       if (!product) {
-        onLineChange(index, 'productId', productId)
+        onLineChange(index, 'productId', productId, {
+          selectedPackaging: undefined,
+        })
         return
       }
+
+      const displaySnapshot = buildSalesOrderLineDisplaySnapshot(product)
 
       onLineChange(index, 'productId', productId, {
         productModel: product.sku,
         productCode: product.sku,
         specification: formatProductDisplayName(product),
+        ...displaySnapshot,
         uom: 'PCS',
+        selectedPackaging: undefined,
       })
     },
     [onLineChange, productById]

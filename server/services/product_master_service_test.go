@@ -127,7 +127,7 @@ func setupProductMasterServiceTestDB(t *testing.T) *gorm.DB {
 		)
 	`).Error)
 	require.NoError(t, testDB.Exec(`CREATE TABLE boms (id TEXT PRIMARY KEY, product_id TEXT, deleted_at DATETIME)`).Error)
-	require.NoError(t, testDB.Exec(`CREATE TABLE sales_order_lines (id TEXT PRIMARY KEY, product_id TEXT, deleted_at DATETIME)`).Error)
+	require.NoError(t, testDB.Exec(`CREATE TABLE sales_order_lines (id TEXT PRIMARY KEY, product_id TEXT, selected_packaging BLOB, deleted_at DATETIME)`).Error)
 	require.NoError(t, testDB.Exec(`CREATE TABLE sales_return_lines (id INTEGER PRIMARY KEY AUTOINCREMENT, product_id TEXT)`).Error)
 	require.NoError(t, testDB.Exec(`CREATE TABLE sales_exchange_lines (id INTEGER PRIMARY KEY AUTOINCREMENT, product_id TEXT)`).Error)
 	require.NoError(t, testDB.Exec(`CREATE TABLE logistics_records (id TEXT PRIMARY KEY, product_id TEXT, deleted_at DATETIME)`).Error)

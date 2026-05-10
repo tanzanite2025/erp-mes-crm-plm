@@ -70,21 +70,26 @@ type CreateSalesReturnLineRequest struct {
 }
 
 type SalesReturnLineResponse struct {
-	ID               uint                   `json:"id"`
-	SalesOrderLineID uint                   `json:"salesOrderLineId"`
-	LineNo           int                    `json:"lineNo"`
-	ProductID        string                 `json:"productId"`
-	ProductCode      string                 `json:"productCode"`
-	ProductModel     string                 `json:"productModel"`
-	Specification    string                 `json:"specification"`
-	Description      string                 `json:"description"`
-	UOM              string                 `json:"uom"`
-	Quantity         float64                `json:"quantity"`
-	Price            float64                `json:"price"`
-	Amount           float64                `json:"amount"`
-	IssueCategory    string                 `json:"issueCategory"`
-	Reason           string                 `json:"reason"`
-	Evidences        []OrderEvidencePayload `json:"evidences"`
+	ID                                    uint                   `json:"id"`
+	SalesOrderLineID                      uint                   `json:"salesOrderLineId"`
+	LineNo                                int                    `json:"lineNo"`
+	ProductID                             string                 `json:"productId"`
+	ProductCode                           string                 `json:"productCode"`
+	ProductModel                          string                 `json:"productModel"`
+	Specification                         string                 `json:"specification"`
+	ProductDisplayTitleSnapshot           string                 `json:"productDisplayTitleSnapshot"`
+	ProductDisplaySubtitleSnapshot        string                 `json:"productDisplaySubtitleSnapshot"`
+	ProductDisplayCodeSnapshot            string                 `json:"productDisplayCodeSnapshot"`
+	ProductDisplayFullLabelSnapshot       string                 `json:"productDisplayFullLabelSnapshot"`
+	ProductDisplayStrategyVersionSnapshot string                 `json:"productDisplayStrategyVersionSnapshot"`
+	Description                           string                 `json:"description"`
+	UOM                                   string                 `json:"uom"`
+	Quantity                              float64                `json:"quantity"`
+	Price                                 float64                `json:"price"`
+	Amount                                float64                `json:"amount"`
+	IssueCategory                         string                 `json:"issueCategory"`
+	Reason                                string                 `json:"reason"`
+	Evidences                             []OrderEvidencePayload `json:"evidences"`
 }
 
 type SalesReturnResponse struct {

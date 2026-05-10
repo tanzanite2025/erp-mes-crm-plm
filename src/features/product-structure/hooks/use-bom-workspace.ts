@@ -1,46 +1,98 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import { type BOMSectionOption } from '../data/bom-section-schema'
 import { type BOM } from '../data/schema'
 import { createEmptyBOMItem } from '../utils/bom-form-defaults'
-import { getActiveBOMSections, getDefaultBOMSectionCode } from '../utils/bom-section-utils'
+import { type BOMWorkspaceParentChildrenProtocolDraft } from './bom-workspace-source-model'
+import { useBOMWorkspaceProjection } from './use-bom-workspace-projection'
 
 interface UseBOMWorkspaceParams {
   form: UseFormReturn<BOM>
   fields: Array<{ id: string }>
   sections: BOMSectionOption[]
   append: (obj: BOM['items'][number]) => void
+  protocolDraft?: BOMWorkspaceParentChildrenProtocolDraft
 }
 
-export function useBOMWorkspace({ form, fields, sections, append }: UseBOMWorkspaceParams) {
-  const activeSections = useMemo(() => getActiveBOMSections(sections), [sections])
-  const [activeTab, setActiveTab] = useState<string>('all')
-  const watchedItems = form.watch('items')
+export function useBOMWorkspace({ form, fields, sections, append, protocolDraft }: UseBOMWorkspaceParams) {
+  const [activeGroupKey, setActiveGroupKey] = useState<string>('all')
+  const [expandedBranchKeys, setExpandedBranchKeys] = useState<string[]>([])
+  const projection = useBOMWorkspaceProjection({
+    form,
+    fields,
+    sections,
+    activeGroupKey,
+    expandedBranchKeys,
+    protocolDraft,
+  })
 
-  const renderFields = useMemo(
-    () =>
-      fields
-        .map((field, index) => ({ field, index }))
-        .filter(({ index }) => {
-          const currentSection = watchedItems?.[index]?.section
-          return activeTab === 'all' || currentSection === activeTab
-        }),
-    [activeTab, fields, watchedItems]
-  )
+  const collectDescendantBranchNodeIds = (sourceBranchNodeId: string): string[] => {
+    const sourceNode = projection.sourceModel.nodeById.get(sourceBranchNodeId)
+    if (!sourceNode || sourceNode.nodeKind !== 'branch') {
+      return []
+    }
+
+    return sourceNode.childNodeIds.flatMap((childNodeId) => {
+      const childNode = projection.sourceModel.nodeById.get(childNodeId)
+      if (!childNode || childNode.nodeKind !== 'branch') {
+        return []
+      }
+
+      return [childNode.nodeId, ...collectDescendantBranchNodeIds(childNode.nodeId)]
+    })
+  }
+
+  const handleActiveGroupChange = (nextGroupKey: string) => {
+    setActiveGroupKey(nextGroupKey)
+
+    if (nextGroupKey === 'all') {
+      return
+    }
+
+    const nextGroup = projection.groups.find((group) => group.key === nextGroupKey)
+    if (!nextGroup) {
+      return
+    }
+
+    const nextExpandedBranchNodeIds = [
+      nextGroup.sourceNodeId,
+      ...collectDescendantBranchNodeIds(nextGroup.sourceNodeId),
+    ]
+
+    setExpandedBranchKeys((current) =>
+      Array.from(new Set([...current, ...nextExpandedBranchNodeIds]))
+    )
+  }
+
+  const toggleBranchExpanded = (sourceBranchNodeId: string) => {
+    setExpandedBranchKeys((current) =>
+      current.includes(sourceBranchNodeId)
+        ? current.filter((key) => key !== sourceBranchNodeId)
+        : [...current, sourceBranchNodeId]
+    )
+  }
 
   const appendItem = (sectionCode?: string) => {
-    const resolvedSectionCode = activeTab === 'all'
-      ? sectionCode || getDefaultBOMSectionCode(sections)
-      : activeTab
+    const resolvedSectionCode = sectionCode || projection.appendContext.sectionCode
 
     append(createEmptyBOMItem(resolvedSectionCode))
   }
 
   return {
-    activeSections,
-    activeTab,
-    setActiveTab,
-    renderFields,
+    activeSections: projection.activeSections,
+    sourceModel: projection.sourceModel,
+    groups: projection.groups,
+    groupNodes: projection.groupNodes,
+    activeGroupKey: projection.resolvedActiveGroupKey,
+    setActiveGroupKey: handleActiveGroupChange,
+    expandedBranchKeys,
+    toggleBranchExpanded,
+    activeGroup: projection.activeGroup,
+    viewMode: projection.viewMode,
+    visibleNodes: projection.visibleNodes,
+    visibleTreeNodes: projection.visibleTreeNodes,
+    visibleLeafRows: projection.visibleLeafRows,
+    appendContext: projection.appendContext,
     appendItem,
   }
 }

@@ -111,7 +111,7 @@ export function SalesOrderDetailItemsCard({
                   </td>
                   <td className='px-2 py-1'>
                     <div className='flex flex-col'>
-                      <span className='text-[12px] font-black tracking-tight'>{row.line.productModel}</span>
+                      <span className='text-[12px] font-black tracking-tight'>{row.displayTitle}</span>
                       <span className='text-[9px] font-mono text-muted-foreground/50'>
                         ID: {row.line.productId || 'UN-REG'}
                       </span>
@@ -122,9 +122,9 @@ export function SalesOrderDetailItemsCard({
                       <div className='flex flex-col'>
                         <span
                           className='max-w-[120px] truncate text-[11px] font-black leading-tight text-foreground/80'
-                          title={row.specificationLabel}
+                          title={row.displaySubtitle}
                         >
-                          {row.specificationLabel}
+                          {row.displaySubtitle}
                         </span>
                         <p
                           className='max-w-[150px] truncate text-[10px] leading-snug text-muted-foreground/50'

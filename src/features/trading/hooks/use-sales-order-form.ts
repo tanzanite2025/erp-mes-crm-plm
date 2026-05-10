@@ -5,6 +5,7 @@ import { numberingService } from '@/features/basic-settings/services/numbering-s
 import { type Product } from '@/features/engineering/data/schema'
 import { type SalesOrder, type SalesOrderFormValues } from '../data/schema'
 import { getSalesOrderClassificationExt } from '../data/sales-order-options'
+import { mergeSalesOrderLineDisplaySnapshot } from '../utils/sales-order-line-display-snapshot'
 import { validateSalesOrder } from '../utils/sales-order-validator'
 import { useSalesOrderInit } from './use-sales-order-init'
 import { useSalesOrderOps } from './use-sales-order-ops'
@@ -89,11 +90,14 @@ export function useSalesOrderForm(
           )
         }
 
+        const displaySnapshot = mergeSalesOrderLineDisplaySnapshot(line, product)
+
         return {
           ...line,
           productModel: line.productModel || product.sku,
           productCode: line.productCode || product.sku,
           specification: line.specification || product.name || product.sku,
+          ...displaySnapshot,
           modelCodeSnapshot: line.modelCodeSnapshot || product.modelCode || '',
           holePrefixSnapshot: line.holePrefixSnapshot || '',
         }

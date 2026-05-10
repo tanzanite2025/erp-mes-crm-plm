@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
@@ -33,9 +32,8 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { getLeaveTypeLabel } from '../data/leave-display'
 import { leaveCreateFormSchema, type LeaveCreateForm } from '../data/leave-request-schema'
+import { useEmployeesQuery } from '../hooks/use-employees-query'
 import { useSubmitLeaveRequest } from '../hooks/use-submit-leave-request'
-import { EmployeeCoreService } from '../services/employee-core-service'
-import { personnelQueryKeys } from '../query-keys'
 
 const DEFAULT_LEAVE_FORM_VALUES: LeaveCreateForm = {
   employeeId: '',
@@ -68,10 +66,7 @@ export function LeaveActionDialog({ open, onOpenChange }: LeaveActionDialogProps
     resolver: zodResolver(leaveCreateFormSchema),
     defaultValues: DEFAULT_LEAVE_FORM_VALUES,
   })
-  const employeesQuery = useQuery({
-    queryKey: personnelQueryKeys.employees(),
-    queryFn: () => EmployeeCoreService.getEmployees(),
-  })
+  const employeesQuery = useEmployeesQuery()
 
   const leaveTypeOptions = [
     { value: 'annual', label: getLeaveTypeLabel('annual', locale) },

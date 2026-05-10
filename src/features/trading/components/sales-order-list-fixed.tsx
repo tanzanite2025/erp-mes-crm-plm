@@ -4,18 +4,23 @@ import { CompactPaginationControls } from '@/components/pagination/compact-pagin
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useLanguage } from '@/context/language-provider'
 import { isForbiddenError } from '@/lib/error-status'
+import type { SalesOrder } from '../data/schema'
 import { useSalesOrderListController } from '../hooks/use-sales-order-list-controller'
 import { SalesOrderActionDialog } from './sales-order-action-dialog'
 import { SalesOrderCanceledSection } from './sales-order-canceled-section'
 import { SalesOrderDetailSheet } from './sales-order-detail-sheet'
 import { SalesOrderListToolbar } from './sales-order-list-toolbar'
 import { SalesOrderMaster } from './sales-order-master'
+import { SalesOrderPackagingEntry } from './parts/sales-order-packaging-entry'
 import { SalesOrderPreassembleScanDialog } from './sales-order-preassemble-scan-dialog'
 import { TradingQueryErrorState } from './trading-query-error-state'
 
 export function SalesOrderList() {
   const { t } = useLanguage()
   const controller = useSalesOrderListController()
+  const renderOrderFeatureCards = (order: SalesOrder) => (
+    <SalesOrderPackagingEntry order={order} />
+  )
 
   if (controller.listResource.status === 'loading') {
     return (
@@ -74,6 +79,7 @@ export function SalesOrderList() {
               onPreassembleScan={controller.preassemble.handleOpenPreassembleScan}
               onEdit={controller.handleEditOrder}
               onDelete={controller.handleDeleteOrder}
+              renderFeatureCards={renderOrderFeatureCards}
             />
 
             <SalesOrderCanceledSection
@@ -90,6 +96,7 @@ export function SalesOrderList() {
               onPreassembleScan={controller.preassemble.handleOpenPreassembleScan}
               onEdit={controller.handleEditOrder}
               onDelete={controller.handleDeleteOrder}
+              renderFeatureCards={renderOrderFeatureCards}
             />
           </div>
         </ScrollArea>

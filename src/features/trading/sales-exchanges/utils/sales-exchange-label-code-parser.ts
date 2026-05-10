@@ -191,6 +191,12 @@ export function buildSalesExchangeLineDraftFromSalesOrderLine(
     productCode: salesOrderLine.productCode,
     productModel: salesOrderLine.productModel,
     specification: salesOrderLine.specification,
+    productDisplayTitleSnapshot: salesOrderLine.productDisplayTitleSnapshot,
+    productDisplaySubtitleSnapshot: salesOrderLine.productDisplaySubtitleSnapshot,
+    productDisplayCodeSnapshot: salesOrderLine.productDisplayCodeSnapshot,
+    productDisplayFullLabelSnapshot: salesOrderLine.productDisplayFullLabelSnapshot,
+    productDisplayStrategyVersionSnapshot:
+      salesOrderLine.productDisplayStrategyVersionSnapshot,
     description: salesOrderLine.description,
     uom: salesOrderLine.uom,
     originalOrderQuantity: salesOrderLine.qty,

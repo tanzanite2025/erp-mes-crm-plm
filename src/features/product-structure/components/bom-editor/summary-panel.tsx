@@ -1,17 +1,13 @@
-import type { UseFormReturn } from 'react-hook-form'
 import { useLanguage } from '@/context/language-provider'
-import { type BOMSectionOption } from '../../data/bom-section-schema'
-import { type BOM } from '../../data/schema'
 import { useBOMSummary } from '../../hooks/use-bom-summary'
+import { type BOMWorkspaceGroupNode } from '../../hooks/use-bom-workspace-projection'
 
 interface SummaryPanelProps {
-  fields: Array<{ id: string }>
-  form: UseFormReturn<BOM>
-  sections: BOMSectionOption[]
+  groups: BOMWorkspaceGroupNode[]
   onSectionClick: (section: string) => void
 }
 
-export function SummaryPanel({ fields, form, sections, onSectionClick }: SummaryPanelProps) {
+export function SummaryPanel({ groups, onSectionClick }: SummaryPanelProps) {
   const { t } = useLanguage()
   const {
     totalItems,
@@ -19,9 +15,7 @@ export function SummaryPanel({ fields, form, sections, onSectionClick }: Summary
     stageCoverage,
     sectionSummaries,
   } = useBOMSummary({
-    fields,
-    form,
-    sections,
+    groups,
   })
 
   return (
@@ -51,7 +45,7 @@ export function SummaryPanel({ fields, form, sections, onSectionClick }: Summary
             {t('engineering.bomArchive.summary.stageCoverage')}
           </div>
           <div className='mt-2 text-2xl font-black uppercase italic tracking-tighter text-slate-800 sm:text-3xl'>
-            {stageCoverage} / {sections.length}
+            {stageCoverage} / {groups.length}
           </div>
         </div>
       </div>

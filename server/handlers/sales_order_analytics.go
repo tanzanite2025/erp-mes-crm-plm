@@ -5,17 +5,17 @@ import (
 	"strconv"
 	"strings"
 	"xdfc-server/db"
+	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
 )
 
 type salesAnalyticsProductStat struct {
-	ProductID    string  `json:"productId"`
-	ProductModel string  `json:"productModel"`
-	ProductCode  string  `json:"productCode"`
-	TotalQty     float64 `json:"totalQty"`
-	OrderCount   int64   `json:"orderCount"`
-	TotalAmount  float64 `json:"totalAmount"`
+	ProductID      string                            `json:"productId"`
+	ProductDisplay services.ProductDisplayProjection `json:"productDisplay"`
+	TotalQty       float64                           `json:"totalQty"`
+	OrderCount     int64                             `json:"orderCount"`
+	TotalAmount    float64                           `json:"totalAmount"`
 }
 
 type customerAnalyticsResponse struct {
@@ -37,20 +37,16 @@ type customerProductAggRow struct {
 	CustomerID   string  `gorm:"column:customer_id"`
 	CustomerName string  `gorm:"column:customer_name"`
 	ProductID    string  `gorm:"column:product_id"`
-	ProductModel string  `gorm:"column:product_model"`
-	ProductCode  string  `gorm:"column:product_code"`
 	TotalQty     float64 `gorm:"column:total_qty"`
 	OrderCount   int64   `gorm:"column:order_count"`
 	TotalAmount  float64 `gorm:"column:total_amount"`
 }
 
 type globalProductAggRow struct {
-	ProductID    string  `gorm:"column:product_id"`
-	ProductModel string  `gorm:"column:product_model"`
-	ProductCode  string  `gorm:"column:product_code"`
-	TotalQty     float64 `gorm:"column:total_qty"`
-	OrderCount   int64   `gorm:"column:order_count"`
-	TotalAmount  float64 `gorm:"column:total_amount"`
+	ProductID   string  `gorm:"column:product_id"`
+	TotalQty    float64 `gorm:"column:total_qty"`
+	OrderCount  int64   `gorm:"column:order_count"`
+	TotalAmount float64 `gorm:"column:total_amount"`
 }
 
 func normalizeCustomerName(name string) string {
@@ -61,17 +57,14 @@ func normalizeCustomerName(name string) string {
 	return trimmed
 }
 
-func normalizeProductModel(model string, productID string, productCode string) string {
-	if trimmed := strings.TrimSpace(model); trimmed != "" {
-		return trimmed
+func resolveAnalyticsProductDisplay(
+	productID string,
+	productDisplays map[string]services.ProductDisplayProjection,
+) services.ProductDisplayProjection {
+	if productDisplay, ok := productDisplays[strings.TrimSpace(productID)]; ok {
+		return productDisplay
 	}
-	if trimmed := strings.TrimSpace(productCode); trimmed != "" {
-		return trimmed
-	}
-	if trimmed := strings.TrimSpace(productID); trimmed != "" {
-		return trimmed
-	}
-	return "Unknown Product"
+	return services.ResolveProductDisplayProjection(nil)
 }
 
 func GetSalesOrderCustomerProductStatsHandler(c *gin.Context) {
@@ -104,8 +97,6 @@ func GetSalesOrderCustomerProductStatsHandler(c *gin.Context) {
 			so.customer_id AS customer_id,
 			MAX(so.customer_name) AS customer_name,
 			sol.product_id AS product_id,
-			MAX(sol.product_model) AS product_model,
-			MAX(sol.product_code) AS product_code,
 			COALESCE(SUM(sol.qty), 0) AS total_qty,
 			COUNT(DISTINCT so.id) AS order_count,
 			COALESCE(SUM(sol.amount), 0) AS total_amount
@@ -122,6 +113,17 @@ func GetSalesOrderCustomerProductStatsHandler(c *gin.Context) {
 		Order("COALESCE(SUM(sol.qty), 0) DESC").
 		Scan(&productRows).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to aggregate customer product analytics"})
+		return
+	}
+
+	productIDs := make([]string, 0, len(productRows))
+	for _, row := range productRows {
+		productIDs = append(productIDs, row.ProductID)
+	}
+
+	productDisplays, err := services.LoadProductDisplayProjections(productIDs)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to load analytics product display projections"})
 		return
 	}
 
@@ -153,12 +155,11 @@ func GetSalesOrderCustomerProductStatsHandler(c *gin.Context) {
 		}
 
 		existing.Products = append(existing.Products, salesAnalyticsProductStat{
-			ProductID:    row.ProductID,
-			ProductModel: normalizeProductModel(row.ProductModel, row.ProductID, row.ProductCode),
-			ProductCode:  row.ProductCode,
-			TotalQty:     row.TotalQty,
-			OrderCount:   row.OrderCount,
-			TotalAmount:  row.TotalAmount,
+			ProductID:      row.ProductID,
+			ProductDisplay: resolveAnalyticsProductDisplay(row.ProductID, productDisplays),
+			TotalQty:       row.TotalQty,
+			OrderCount:     row.OrderCount,
+			TotalAmount:    row.TotalAmount,
 		})
 	}
 
@@ -187,8 +188,6 @@ func GetSalesOrderGlobalProductRankingHandler(c *gin.Context) {
 		Joins("INNER JOIN sales_order_lines AS sol ON sol.sales_order_id = so.id").
 		Select(`
 			sol.product_id AS product_id,
-			MAX(sol.product_model) AS product_model,
-			MAX(sol.product_code) AS product_code,
 			COALESCE(SUM(sol.qty), 0) AS total_qty,
 			COUNT(DISTINCT so.id) AS order_count,
 			COALESCE(SUM(sol.amount), 0) AS total_amount
@@ -202,15 +201,25 @@ func GetSalesOrderGlobalProductRankingHandler(c *gin.Context) {
 		return
 	}
 
+	productIDs := make([]string, 0, len(rows))
+	for _, row := range rows {
+		productIDs = append(productIDs, row.ProductID)
+	}
+
+	productDisplays, err := services.LoadProductDisplayProjections(productIDs)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to load analytics product display projections"})
+		return
+	}
+
 	result := make([]salesAnalyticsProductStat, 0, len(rows))
 	for _, row := range rows {
 		result = append(result, salesAnalyticsProductStat{
-			ProductID:    row.ProductID,
-			ProductModel: normalizeProductModel(row.ProductModel, row.ProductID, row.ProductCode),
-			ProductCode:  row.ProductCode,
-			TotalQty:     row.TotalQty,
-			OrderCount:   row.OrderCount,
-			TotalAmount:  row.TotalAmount,
+			ProductID:      row.ProductID,
+			ProductDisplay: resolveAnalyticsProductDisplay(row.ProductID, productDisplays),
+			TotalQty:       row.TotalQty,
+			OrderCount:     row.OrderCount,
+			TotalAmount:    row.TotalAmount,
 		})
 	}
 

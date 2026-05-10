@@ -1,5 +1,5 @@
 import { apiFetch } from '@/lib/api-client'
-import { ensureArrayField, ensureObjectResponse } from '@/lib/api-response'
+import { ensureObjectResponse } from '@/lib/api-response'
 import { createLogger } from '@/lib/logger'
 import {
   TRADING_QUERY_PARAM_PAGE,
@@ -11,6 +11,12 @@ import {
   TRADING_QUERY_PARAM_WITH_LINES,
 } from '../../query-params'
 import {
+  toCustomerAnalyticsArrayContract,
+  toProductStatArrayContract,
+  type CustomerAnalytics,
+  type ProductStat,
+} from '../adapters/sales-analytics-api-adapter'
+import {
   toSalesOrderContract,
   toSalesOrderListPageContract,
   type PaginatedSalesOrders,
@@ -21,6 +27,10 @@ import {
   type SalesOrderApiDTO,
   type SalesOrderListPageApiDTO,
 } from '../contracts/sales-order-api-dto'
+import {
+  deserializeCustomerAnalyticsListResponseApiDTO,
+  deserializeGlobalProductRankingResponseApiDTO,
+} from '../contracts/sales-analytics-api-dto'
 
 export interface PaginatedResponse<T> {
   items: T[]
@@ -159,27 +169,29 @@ export const getSalesOrderByNo = async (orderNo: string) => {
 
 export const getCustomerProductStats = async (
   params: { customerId?: string } = {}
-): Promise<Record<string, unknown>[]> => {
+): Promise<CustomerAnalytics[]> => {
   const query = params.customerId ? `?customerId=${params.customerId}` : ''
   const res = await apiFetch<unknown>(
     `/sales-orders/analytics/customer-product-stats${query}`
   )
-  return ensureArrayField<Record<string, unknown>>(
+  const response = ensureObjectResponse<Record<string, unknown>>(
     res,
-    'items',
     'SalesQueryService.getCustomerProductStats'
   )
+  const dto = deserializeCustomerAnalyticsListResponseApiDTO(response)
+  return toCustomerAnalyticsArrayContract(dto.items)
 }
 
 export const getGlobalProductRanking = async (
   limit: number = 10
-): Promise<Record<string, unknown>[]> => {
+): Promise<ProductStat[]> => {
   const res = await apiFetch<unknown>(
     `/sales-orders/analytics/global-product-ranking?limit=${limit}`
   )
-  return ensureArrayField<Record<string, unknown>>(
+  const response = ensureObjectResponse<Record<string, unknown>>(
     res,
-    'items',
     'SalesQueryService.getGlobalProductRanking'
   )
+  const dto = deserializeGlobalProductRankingResponseApiDTO(response)
+  return toProductStatArrayContract(dto.items)
 }

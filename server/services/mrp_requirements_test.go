@@ -105,7 +105,8 @@ func setupMrpRequirementsTestDB(t *testing.T) *gorm.DB {
 			appearance_image_url_snapshot TEXT,
 			qty REAL,
 			uom TEXT,
-			status TEXT
+			status TEXT,
+			selected_packaging BLOB
 		)
 	`).Error)
 

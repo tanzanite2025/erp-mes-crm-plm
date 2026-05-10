@@ -15,6 +15,9 @@ function localizePackagingWarning(
   if (warning === 'No packaging profiles matched this product.') {
     return t('tradingSalesOrder.packagingPreview.warnings.noMatchedProfiles')
   }
+  if (warning === 'Packaging selection is pending for this order line.') {
+    return '该订单行尚未完成包装选择'
+  }
   if (warning === 'No packaging profiles provided.') {
     return t('tradingSalesOrder.packagingPreview.warnings.noProfilesProvided')
   }
@@ -98,9 +101,14 @@ export function SalesOrderPackagingPreviewCard({ order }: { order: SalesOrder })
                 <div className='flex items-center gap-2'>
                   <PackageSearch className='size-4 text-primary' />
                   <span className='text-[12px] font-black tracking-tight'>
-                    #{item.lineNo} {item.productModel || t('tradingSalesOrder.packagingPreview.unknownProduct')}
+                    #{item.lineNo} {item.productDisplayTitle || t('tradingSalesOrder.packagingPreview.unknownProduct')}
                   </span>
                 </div>
+                {item.productDisplaySubtitle ? (
+                  <p className='mt-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>
+                    {item.productDisplaySubtitle}
+                  </p>
+                ) : null}
                 <p className='mt-1 text-[10px] font-medium text-muted-foreground'>
                   {t('tradingSalesOrder.packagingPreview.lineQuantity', {
                     qty: item.qty,

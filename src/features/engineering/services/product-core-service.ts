@@ -14,7 +14,7 @@ import {
   type ProductNextCodeApiDTO,
 } from '../contracts/product-api-dto'
 import { type Product } from '../data/schema'
-import { getProductAttributeSummary } from '../utils/product-attribute-utils'
+import { formatProductDisplay } from '../display/product-display-contract'
 
 export interface ProductPackagingOption {
   id: string
@@ -79,15 +79,7 @@ export const ProductCoreService = {
   formatDisplay(product: Product | null | undefined): string {
     if (!product) return 'NULL_PRODUCT'
 
-    const { name, sku } = product
-    const { series, brake, version } = getProductAttributeSummary(product as Product)
-    const details = [series, brake, version].filter(Boolean).join('/')
-
-    if (details) {
-      return `${name} (${details})`
-    }
-
-    return name || sku || 'UNNAMED'
+    return formatProductDisplay(product)
   },
 
   async getNextCode(typeId: string): Promise<string> {

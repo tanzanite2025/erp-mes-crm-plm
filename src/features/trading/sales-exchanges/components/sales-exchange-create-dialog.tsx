@@ -25,6 +25,10 @@ import type {
   SalesExchangeUnmatchedLabelCode,
 } from '../types/sales-exchange-types'
 import {
+  resolveSalesExchangeLineDisplaySubtitle,
+  resolveSalesExchangeLineDisplayTitle,
+} from '../utils/sales-exchange-line-display'
+import {
   buildSalesExchangeLineDraftFromSalesOrderLine,
   buildSalesExchangeLineDraftsFromRecognizedLabelCodes,
   buildSalesExchangeRecognizedLabelCodesFromScannerInput,
@@ -50,14 +54,6 @@ type SalesExchangeCreateDialogProps = {
 
 function createTodayDateInputValue() {
   return new Date().toISOString().slice(0, 10)
-}
-
-function getSalesExchangeLineDisplayName(salesOrderLine: SalesOrderLine) {
-  return (
-    salesOrderLine.productCode ||
-    salesOrderLine.productModel ||
-    `订单行 ${salesOrderLine.lineNo}`
-  )
 }
 
 function clampSalesExchangeQuantityWithinDeliveredQuantity(
@@ -448,12 +444,10 @@ export function SalesExchangeCreateDialog({
                           <div className='flex items-start justify-between gap-3'>
                             <div className='min-w-0'>
                               <p className='truncate text-sm font-black text-foreground'>
-                                {getSalesExchangeLineDisplayName(salesOrderLine)}
+                                {resolveSalesExchangeLineDisplayTitle(salesOrderLine)}
                               </p>
                               <p className='mt-1 truncate text-xs font-bold text-muted-foreground'>
-                                {salesOrderLine.specification ||
-                                  salesOrderLine.description ||
-                                  '--'}
+                                {resolveSalesExchangeLineDisplaySubtitle(salesOrderLine)}
                               </p>
                               <div className='mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] font-bold text-muted-foreground'>
                                 <span>行号 {salesOrderLine.lineNo}</span>
@@ -577,13 +571,10 @@ export function SalesExchangeCreateDialog({
                           <div className='flex items-start justify-between gap-3'>
                             <div className='min-w-0'>
                               <p className='truncate text-sm font-black text-foreground'>
-                                {lineDraft.productCode ||
-                                  lineDraft.productModel}
+                                {resolveSalesExchangeLineDisplayTitle(lineDraft)}
                               </p>
                               <p className='mt-1 truncate text-xs font-bold text-muted-foreground'>
-                                {lineDraft.specification ||
-                                  lineDraft.description ||
-                                  '--'}
+                                {resolveSalesExchangeLineDisplaySubtitle(lineDraft)}
                               </p>
                             </div>
                             <Button

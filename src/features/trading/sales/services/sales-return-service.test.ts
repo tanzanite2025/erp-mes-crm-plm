@@ -86,7 +86,32 @@ describe('sales-return-service', () => {
   })
 
   it('passes suppressErrorStatuses when loading a sales return detail', async () => {
-    apiFetchMock.mockResolvedValue(buildSalesReturnDto())
+    apiFetchMock.mockResolvedValue(
+      buildSalesReturnDto({
+        lines: [
+          {
+            id: 1,
+            salesOrderLineId: 1,
+            lineNo: 1,
+            productId: 'prod-1',
+            productCode: 'PC-1',
+            productModel: 'PM-1',
+            specification: 'Spec',
+            productDisplayTitleSnapshot: 'Fork Alpha',
+            productDisplaySubtitleSnapshot: 'trail/disc/v2',
+            productDisplayCodeSnapshot: 'PC-1',
+            productDisplayFullLabelSnapshot: 'Fork Alpha (trail/disc/v2)',
+            productDisplayStrategyVersionSnapshot: 'product-display-v1',
+            description: 'Desc',
+            uom: 'PCS',
+            quantity: 1,
+            price: 12.5,
+            amount: 12.5,
+            evidences: [],
+          },
+        ],
+      })
+    )
 
     const result = await getSalesReturnById('sr-1')
 
@@ -95,6 +120,8 @@ describe('sales-return-service', () => {
     })
     expect(result.id).toBe('sr-1')
     expect(result.returnNo).toBe('SR-001')
+    expect(result.lines[0]?.productDisplayTitleSnapshot).toBe('Fork Alpha')
+    expect(result.lines[0]?.productDisplaySubtitleSnapshot).toBe('trail/disc/v2')
   })
 
   it('rejects sales return payloads that omit lines instead of treating them as empty lists', async () => {

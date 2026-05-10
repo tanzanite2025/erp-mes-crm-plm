@@ -335,6 +335,8 @@ func executeOrderLineRemoveTx(tx *gorm.DB, current *models.SalesOrder, input Exe
 		}
 
 		mappedLine := mapSalesOrderLineRequestToModel(lineReq)
+		mappedLine.ID = existing.ID
+		mappedLine.SelectedPackaging = currentLineNos[lineReq.LineNo].SelectedPackaging
 		existingJSON, _ := json.Marshal(existing)
 		mappedJSON, _ := json.Marshal(mappedLine)
 		if string(existingJSON) != string(mappedJSON) {
@@ -347,6 +349,9 @@ func executeOrderLineRemoveTx(tx *gorm.DB, current *models.SalesOrder, input Exe
 	removedLineCount := len(current.Lines) - len(nextLines)
 	if removedLineCount <= 0 {
 		return nil, fmt.Errorf("%w: no line remove detected", ErrSalesTransactionInvalidPayload)
+	}
+	if err := normalizeSalesOrderLinePackagingSelectionsTx(tx, current.Lines, nextLines); err != nil {
+		return nil, err
 	}
 
 	// [BACKEND_AUTHORITY] 强制重算权威金额与汇总，忽略前端传入值
@@ -443,6 +448,8 @@ func executeOrderLineAddTx(tx *gorm.DB, current *models.SalesOrder, input Execut
 
 		mappedLine := mapSalesOrderLineRequestToModel(lineReq)
 		if existing, ok := currentLineNos[lineReq.LineNo]; ok {
+			mappedLine.ID = existing.ID
+			mappedLine.SelectedPackaging = existing.SelectedPackaging
 			existingJSON, _ := json.Marshal(existing)
 			mappedJSON, _ := json.Marshal(mappedLine)
 			if string(existingJSON) != string(mappedJSON) {
@@ -469,6 +476,9 @@ func executeOrderLineAddTx(tx *gorm.DB, current *models.SalesOrder, input Execut
 		if !found {
 			return nil, fmt.Errorf("%w: existing lines removed during line add", ErrSalesTransactionInvalidPayload)
 		}
+	}
+	if err := normalizeSalesOrderLinePackagingSelectionsTx(tx, current.Lines, nextLines); err != nil {
+		return nil, err
 	}
 
 	// [BACKEND_AUTHORITY] 强制重算权威金额与汇总，忽略前端传入值
@@ -546,8 +556,10 @@ func executeOrderLineContentChangeTx(tx *gorm.DB, current *models.SalesOrder, in
 	}
 
 	currentLineNos := make(map[int]struct{}, len(current.Lines))
+	currentLineByNo := make(map[int]models.SalesOrderLine, len(current.Lines))
 	for _, line := range current.Lines {
 		currentLineNos[line.LineNo] = struct{}{}
+		currentLineByNo[line.LineNo] = line
 	}
 
 	nextLines := make([]models.SalesOrderLine, 0, len(payload.Lines))
@@ -564,7 +576,14 @@ func executeOrderLineContentChangeTx(tx *gorm.DB, current *models.SalesOrder, in
 				}
 			}
 		}
-		nextLines = append(nextLines, mapSalesOrderLineRequestToModel(lineReq))
+		mappedLine := mapSalesOrderLineRequestToModel(lineReq)
+		if existing, ok := currentLineByNo[lineReq.LineNo]; ok {
+			mappedLine.ID = existing.ID
+		}
+		nextLines = append(nextLines, mappedLine)
+	}
+	if err := normalizeSalesOrderLinePackagingSelectionsTx(tx, current.Lines, nextLines); err != nil {
+		return nil, err
 	}
 
 	currentLinesJSON, _ := json.Marshal(current.Lines)
@@ -643,6 +662,10 @@ func executeOrderLinesChangeTx(tx *gorm.DB, current *models.SalesOrder, input Ex
 	}
 
 	nextLines := make([]models.SalesOrderLine, 0, len(payload.Lines))
+	currentLineByNo := make(map[int]models.SalesOrderLine, len(current.Lines))
+	for _, line := range current.Lines {
+		currentLineByNo[line.LineNo] = line
+	}
 	for _, lineReq := range payload.Lines {
 		if strings.TrimSpace(lineReq.ProductID) != "" {
 			var product models.Product
@@ -653,7 +676,14 @@ func executeOrderLinesChangeTx(tx *gorm.DB, current *models.SalesOrder, input Ex
 				}
 			}
 		}
-		nextLines = append(nextLines, mapSalesOrderLineRequestToModel(lineReq))
+		mappedLine := mapSalesOrderLineRequestToModel(lineReq)
+		if existing, ok := currentLineByNo[lineReq.LineNo]; ok {
+			mappedLine.ID = existing.ID
+		}
+		nextLines = append(nextLines, mappedLine)
+	}
+	if err := normalizeSalesOrderLinePackagingSelectionsTx(tx, current.Lines, nextLines); err != nil {
+		return nil, err
 	}
 
 	currentLinesJSON, _ := json.Marshal(current.Lines)

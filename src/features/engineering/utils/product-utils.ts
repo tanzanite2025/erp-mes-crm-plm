@@ -1,5 +1,5 @@
 import { type Product } from '../data/schema'
-import { ProductCoreService } from '../services/product-core-service'
+import { resolveProductDisplay } from '../display/product-display-contract'
 import { getProductAttributeSummary } from './product-attribute-utils'
 
 export type ProductViewModel = {
@@ -16,15 +16,17 @@ export type ProductViewModel = {
 }
 
 export function formatProductDisplayName(product: Product) {
-  return ProductCoreService.formatDisplay(product)
+  return resolveProductDisplay(product).fullLabel
 }
 
 export function getProductAttributes(product: Product): ProductViewModel {
   const summary = getProductAttributeSummary(product)
+  const display = resolveProductDisplay(product)
+
   return {
     name: product.name,
     sku: product.sku,
-    displayName: formatProductDisplayName(product),
+    displayName: display.fullLabel,
     version: summary.version,
     series: summary.series,
     brake: summary.brake,

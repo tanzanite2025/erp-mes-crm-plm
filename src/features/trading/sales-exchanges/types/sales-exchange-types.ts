@@ -36,6 +36,11 @@ export interface SalesExchangeLineDraft {
   productCode: string
   productModel: string
   specification: string
+  productDisplayTitleSnapshot?: string
+  productDisplaySubtitleSnapshot?: string
+  productDisplayCodeSnapshot?: string
+  productDisplayFullLabelSnapshot?: string
+  productDisplayStrategyVersionSnapshot?: string
   description: string
   uom: string
   originalOrderQuantity: number

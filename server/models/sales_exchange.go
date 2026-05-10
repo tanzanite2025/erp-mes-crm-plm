@@ -32,25 +32,30 @@ func (SalesExchange) TableName() string {
 }
 
 type SalesExchangeLine struct {
-	ID                      uint                     `gorm:"primaryKey" json:"id"`
-	SalesExchangeID         string                   `gorm:"type:uuid;index" json:"-"`
-	SalesOrderLineID        uint                     `gorm:"index;not null" json:"salesOrderLineId"`
-	LineNo                  int                      `json:"lineNo"`
-	ProductID               string                   `gorm:"type:uuid;index" json:"productId"`
-	ProductCode             string                   `gorm:"size:100" json:"productCode"`
-	ProductModel            string                   `gorm:"size:255" json:"productModel"`
-	Specification           string                   `gorm:"type:text" json:"specification"`
-	Description             string                   `gorm:"type:text" json:"description"`
-	UOM                     string                   `gorm:"size:20" json:"uom"`
-	OriginalOrderQuantity   float64                  `gorm:"default:0" json:"originalOrderQuantity"`
-	DeliveredQuantity       float64                  `gorm:"default:0" json:"deliveredQuantity"`
-	ExchangeQuantity        float64                  `gorm:"default:0" json:"exchangeQuantity"`
-	ReplacementMode         string                   `gorm:"size:80" json:"replacementMode"`
-	ReplacementProductCode  string                   `gorm:"size:100" json:"replacementProductCode"`
-	ReplacementProductModel string                   `gorm:"size:255" json:"replacementProductModel"`
-	IssueCategory           string                   `gorm:"size:100" json:"issueCategory"`
-	IssueDescription        string                   `gorm:"type:text" json:"issueDescription"`
-	LabelCodes              []SalesExchangeLabelCode `gorm:"foreignKey:SalesExchangeLineID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"labelCodes"`
+	ID                                    uint                     `gorm:"primaryKey" json:"id"`
+	SalesExchangeID                       string                   `gorm:"type:uuid;index" json:"-"`
+	SalesOrderLineID                      uint                     `gorm:"index;not null" json:"salesOrderLineId"`
+	LineNo                                int                      `json:"lineNo"`
+	ProductID                             string                   `gorm:"type:uuid;index" json:"productId"`
+	ProductCode                           string                   `gorm:"size:100" json:"productCode"`
+	ProductModel                          string                   `gorm:"size:255" json:"productModel"`
+	Specification                         string                   `gorm:"type:text" json:"specification"`
+	ProductDisplayTitleSnapshot           string                   `gorm:"size:255" json:"productDisplayTitleSnapshot"`
+	ProductDisplaySubtitleSnapshot        string                   `gorm:"size:255" json:"productDisplaySubtitleSnapshot"`
+	ProductDisplayCodeSnapshot            string                   `gorm:"size:100" json:"productDisplayCodeSnapshot"`
+	ProductDisplayFullLabelSnapshot       string                   `gorm:"type:text" json:"productDisplayFullLabelSnapshot"`
+	ProductDisplayStrategyVersionSnapshot string                   `gorm:"size:50" json:"productDisplayStrategyVersionSnapshot"`
+	Description                           string                   `gorm:"type:text" json:"description"`
+	UOM                                   string                   `gorm:"size:20" json:"uom"`
+	OriginalOrderQuantity                 float64                  `gorm:"default:0" json:"originalOrderQuantity"`
+	DeliveredQuantity                     float64                  `gorm:"default:0" json:"deliveredQuantity"`
+	ExchangeQuantity                      float64                  `gorm:"default:0" json:"exchangeQuantity"`
+	ReplacementMode                       string                   `gorm:"size:80" json:"replacementMode"`
+	ReplacementProductCode                string                   `gorm:"size:100" json:"replacementProductCode"`
+	ReplacementProductModel               string                   `gorm:"size:255" json:"replacementProductModel"`
+	IssueCategory                         string                   `gorm:"size:100" json:"issueCategory"`
+	IssueDescription                      string                   `gorm:"type:text" json:"issueDescription"`
+	LabelCodes                            []SalesExchangeLabelCode `gorm:"foreignKey:SalesExchangeLineID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"labelCodes"`
 }
 
 func (SalesExchangeLine) TableName() string {

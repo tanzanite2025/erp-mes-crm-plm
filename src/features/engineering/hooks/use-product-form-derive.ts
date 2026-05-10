@@ -3,6 +3,7 @@ import { type UseFormReturn, useWatch } from 'react-hook-form'
 import { getServerErrorPresentation } from '@/lib/handle-server-error'
 import { createLogger } from '@/lib/logger'
 import { type Product, type ProductType } from '../data/schema'
+import { formatProductDisplay } from '../display/product-display-contract'
 import { ProductCoreService } from '../services/product-core-service'
 import { deriveSku } from '../utils/product-form-utils'
 import {
@@ -74,7 +75,7 @@ export function useProductFormDerive({
     }, [form, isEdit, open, productTypes, watchedModelCode, watchedTypeId])
 
     const specPreviewSummary = useMemo(() => {
-        return ProductCoreService.formatDisplay(allValues as Product)
+        return formatProductDisplay(allValues as Product)
     }, [allValues])
 
     return {

@@ -3,7 +3,7 @@ import { type MaterialOption } from '../../../material-archive/data/schema'
 import { type BOMSectionOption } from '../../data/bom-section-schema'
 import { type BOM } from '../../data/schema'
 import { useBOMWorkspace } from '../../hooks/use-bom-workspace'
-import { BOMRecipeEditor } from './bom-recipe-editor'
+import { BOMFlatWorkspaceView } from './bom-flat-workspace-view'
 
 interface BOMWorkspaceProps {
   form: UseFormReturn<BOM>
@@ -23,15 +23,17 @@ export function BOMWorkspace({ form, fields, materials, sections, append, remove
   })
 
   return (
-    <BOMRecipeEditor
+    <BOMFlatWorkspaceView
       form={form}
-      fields={fields}
       materials={materials}
       remove={remove}
-      activeSections={workspace.activeSections}
-      activeTab={workspace.activeTab}
-      onActiveTabChange={workspace.setActiveTab}
-      renderFields={workspace.renderFields}
+      groups={workspace.groups}
+      groupNodes={workspace.groupNodes}
+      activeGroupKey={workspace.activeGroupKey}
+      onActiveGroupChange={workspace.setActiveGroupKey}
+      viewMode={workspace.viewMode}
+      visibleTreeNodes={workspace.visibleTreeNodes}
+      onBranchToggle={workspace.toggleBranchExpanded}
       onAddItem={() => workspace.appendItem()}
     />
   )

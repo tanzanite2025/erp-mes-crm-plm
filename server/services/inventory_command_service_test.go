@@ -271,7 +271,8 @@ func setupInventoryCommandTestDB(t *testing.T) *gorm.DB {
 			order_date TEXT,
 			status TEXT,
 			claimed_by TEXT,
-			claimed_at TEXT
+			claimed_at TEXT,
+			selected_packaging BLOB
 		)
 	`).Error)
 

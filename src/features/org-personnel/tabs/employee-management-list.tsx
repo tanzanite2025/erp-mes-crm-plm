@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
     flexRender,
     type PaginationState,
@@ -35,10 +34,9 @@ import { EmployeeBulkActions } from '../components/employee-bulk-actions'
 import { getEmployeeColumns, UNASSIGNED_POSITION_FILTER_VALUE } from '../components/employee-columns'
 import { ImportPersonnelDialog } from '../components/import-personnel-dialog'
 import { type Employee } from '../data/schema'
+import { useEmployeesQuery } from '../hooks/use-employees-query'
 import { useOrgPersonnelLookups } from '../hooks/use-org-personnel-lookups'
-import { personnelQueryKeys } from '../query-keys'
 import { type EmployeeStatus } from '../services/employee-service'
-import { EmployeeCoreService } from '../services/employee-core-service'
 import { EmployeeMaintenanceService } from '../services/employee-maintenance-service'
 import { downloadPersonnelTemplate, exportPersonnelData } from '../utils/personnel-import-utils'
 
@@ -55,7 +53,6 @@ type RecentResignSnapshot = {
 
 export function EmployeeManagementList() {
     const { locale, t } = useLanguage()
-    const queryClient = useQueryClient()
     const [open, setOpen] = useState(false)
     const [currentRow, setCurrentRow] = useState<Employee | undefined>(undefined)
     const [importOpen, setImportOpen] = useState(false)
@@ -72,10 +69,7 @@ export function EmployeeManagementList() {
     const [searchValue, setSearchValue] = useState('')
     const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 })
 
-    const employeesQuery = useQuery({
-        queryKey: personnelQueryKeys.employees(),
-        queryFn: () => EmployeeCoreService.getEmployees(),
-    })
+    const employeesQuery = useEmployeesQuery()
     const { nameMap, error: lookupError, isLoading: isLookupsLoading } = useOrgPersonnelLookups({
         includeProductionResources: true,
     })
@@ -100,7 +94,7 @@ export function EmployeeManagementList() {
     }, [searchValue])
 
     const refreshEmployees = async () => {
-        await queryClient.invalidateQueries({ queryKey: personnelQueryKeys.employees() })
+        await employeesQuery.invalidateEmployees()
     }
 
     const handleBulkStatusChange = async (

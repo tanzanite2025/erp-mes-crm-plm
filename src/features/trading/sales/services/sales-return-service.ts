@@ -28,6 +28,11 @@ export interface SalesReturnLine {
   productCode: string
   productModel: string
   specification: string
+  productDisplayTitleSnapshot?: string
+  productDisplaySubtitleSnapshot?: string
+  productDisplayCodeSnapshot?: string
+  productDisplayFullLabelSnapshot?: string
+  productDisplayStrategyVersionSnapshot?: string
   description: string
   uom: string
   quantity: number
@@ -120,6 +125,11 @@ function toSalesReturnLineContract(
     productCode: dto.productCode,
     productModel: dto.productModel,
     specification: dto.specification,
+    productDisplayTitleSnapshot: dto.productDisplayTitleSnapshot,
+    productDisplaySubtitleSnapshot: dto.productDisplaySubtitleSnapshot,
+    productDisplayCodeSnapshot: dto.productDisplayCodeSnapshot,
+    productDisplayFullLabelSnapshot: dto.productDisplayFullLabelSnapshot,
+    productDisplayStrategyVersionSnapshot: dto.productDisplayStrategyVersionSnapshot,
     description: dto.description,
     uom: dto.uom,
     quantity: dto.quantity,

@@ -1,13 +1,19 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayField, ensureNumberField, ensureObjectField, ensureObjectResponse } from '@/lib/api-response'
 
+export interface CustomerSalesStatusCount {
+  code: string
+  phase: string
+  count: number
+}
+
 export interface CustomerSalesClosureSummary {
   customerId: string
-  hasOpenOrders: boolean
-  openOrderCount: number
-  closedOrderCount: number
   canceledOrderCount: number
   effectiveOrderCount: number
+  primaryStatusCode: string
+  primaryStatusPhase: string
+  statusCounts: CustomerSalesStatusCount[]
   lastOrderDate: string
   daysSinceLastOrder?: number
   totalOrders: number
@@ -32,6 +38,33 @@ export interface CustomerSalesClosureSummaryListResponse {
   metadata: CustomerSalesClosureSummaryMetadata
 }
 
+function parseStatusCount(value: unknown, context: string): CustomerSalesStatusCount {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(`[INVALID_RESPONSE] ${context} expected statusCounts item to be an object.`)
+  }
+
+  const record = value as Record<string, unknown>
+  const code = record.code
+  const phase = record.phase
+  const count = record.count
+
+  if (typeof code !== 'string') {
+    throw new Error(`[INVALID_RESPONSE] ${context} expected statusCounts.code to be a string.`)
+  }
+  if (typeof phase !== 'string') {
+    throw new Error(`[INVALID_RESPONSE] ${context} expected statusCounts.phase to be a string.`)
+  }
+  if (typeof count !== 'number') {
+    throw new Error(`[INVALID_RESPONSE] ${context} expected statusCounts.count to be a number.`)
+  }
+
+  return {
+    code,
+    phase,
+    count,
+  }
+}
+
 function parseSummaryItem(value: unknown, context: string): CustomerSalesClosureSummary {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw new Error(`[INVALID_RESPONSE] ${context} expected summary item to be an object.`)
@@ -40,31 +73,28 @@ function parseSummaryItem(value: unknown, context: string): CustomerSalesClosure
   const record = value as Record<string, unknown>
 
   const customerId = record.customerId
-  const hasOpenOrders = record.hasOpenOrders
-  const openOrderCount = record.openOrderCount
-  const closedOrderCount = record.closedOrderCount
   const canceledOrderCount = record.canceledOrderCount
   const effectiveOrderCount = record.effectiveOrderCount
+  const primaryStatusCode = record.primaryStatusCode
+  const primaryStatusPhase = record.primaryStatusPhase
+  const statusCounts = ensureArrayField<unknown>(record, 'statusCounts', context).map((item) => parseStatusCount(item, context))
   const lastOrderDate = record.lastOrderDate
   const totalOrders = record.totalOrders
 
   if (typeof customerId !== 'string' || customerId.trim() === '') {
     throw new Error(`[INVALID_RESPONSE] ${context} expected customerId to be a non-empty string.`)
   }
-  if (typeof hasOpenOrders !== 'boolean') {
-    throw new Error(`[INVALID_RESPONSE] ${context} expected hasOpenOrders to be a boolean.`)
-  }
-  if (typeof openOrderCount !== 'number') {
-    throw new Error(`[INVALID_RESPONSE] ${context} expected openOrderCount to be a number.`)
-  }
-  if (typeof closedOrderCount !== 'number') {
-    throw new Error(`[INVALID_RESPONSE] ${context} expected closedOrderCount to be a number.`)
-  }
   if (typeof canceledOrderCount !== 'number') {
     throw new Error(`[INVALID_RESPONSE] ${context} expected canceledOrderCount to be a number.`)
   }
   if (typeof effectiveOrderCount !== 'number') {
     throw new Error(`[INVALID_RESPONSE] ${context} expected effectiveOrderCount to be a number.`)
+  }
+  if (typeof primaryStatusCode !== 'string') {
+    throw new Error(`[INVALID_RESPONSE] ${context} expected primaryStatusCode to be a string.`)
+  }
+  if (typeof primaryStatusPhase !== 'string') {
+    throw new Error(`[INVALID_RESPONSE] ${context} expected primaryStatusPhase to be a string.`)
   }
   if (typeof lastOrderDate !== 'string') {
     throw new Error(`[INVALID_RESPONSE] ${context} expected lastOrderDate to be a string.`)
@@ -80,11 +110,11 @@ function parseSummaryItem(value: unknown, context: string): CustomerSalesClosure
 
   return {
     customerId,
-    hasOpenOrders,
-    openOrderCount,
-    closedOrderCount,
     canceledOrderCount,
     effectiveOrderCount,
+    primaryStatusCode,
+    primaryStatusPhase,
+    statusCounts,
     lastOrderDate,
     daysSinceLastOrder,
     totalOrders,

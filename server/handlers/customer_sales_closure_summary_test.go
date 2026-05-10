@@ -79,9 +79,10 @@ func TestGetCustomerSalesClosureSummaryHandlerReturnsFullContractAndAllowsEmptyL
 		VALUES
 		('so-1', 'cust-1', 'Customer A', 'Draft', '', NULL, FALSE),
 		('so-2', 'cust-2', 'Customer B', 'Done', ?, NULL, FALSE),
+		('so-5', 'cust-2', 'Customer B', 'Scheduling', ?, NULL, FALSE),
 		('so-3', 'cust-3', 'Customer C', 'Done', '2026-04-01', ?, TRUE),
 		('so-4', 'cust-2', 'Customer B', 'Canceled', ?, NULL, FALSE)
-	`, yesterday, now, yesterday).Error)
+	`, yesterday, yesterday, now, yesterday).Error)
 
 	recorder := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(recorder)
@@ -111,23 +112,46 @@ func TestGetCustomerSalesClosureSummaryHandlerReturnsFullContractAndAllowsEmptyL
 
 	emptyDateItem := itemsByCustomerID["cust-1"]
 	require.Equal(t, "", emptyDateItem["lastOrderDate"])
-	require.Equal(t, true, emptyDateItem["hasOpenOrders"])
-	require.Equal(t, float64(1), emptyDateItem["openOrderCount"])
-	require.Equal(t, float64(0), emptyDateItem["closedOrderCount"])
 	require.Equal(t, float64(0), emptyDateItem["canceledOrderCount"])
 	require.Equal(t, float64(1), emptyDateItem["effectiveOrderCount"])
 	require.Equal(t, float64(1), emptyDateItem["totalOrders"])
+	require.Equal(t, "Draft", emptyDateItem["primaryStatusCode"])
+	require.Equal(t, "draft", emptyDateItem["primaryStatusPhase"])
+	statusCounts, ok := emptyDateItem["statusCounts"].([]any)
+	require.True(t, ok)
+	require.Len(t, statusCounts, 1)
+	firstStatus, ok := statusCounts[0].(map[string]any)
+	require.True(t, ok)
+	require.Equal(t, "Draft", firstStatus["code"])
+	require.Equal(t, "draft", firstStatus["phase"])
+	require.Equal(t, float64(1), firstStatus["count"])
 	_, hasDaysSinceLastOrder := emptyDateItem["daysSinceLastOrder"]
 	require.False(t, hasDaysSinceLastOrder)
 
 	validDateItem := itemsByCustomerID["cust-2"]
 	require.Equal(t, yesterday, validDateItem["lastOrderDate"])
-	require.Equal(t, false, validDateItem["hasOpenOrders"])
-	require.Equal(t, float64(0), validDateItem["openOrderCount"])
-	require.Equal(t, float64(1), validDateItem["closedOrderCount"])
 	require.Equal(t, float64(1), validDateItem["canceledOrderCount"])
-	require.Equal(t, float64(1), validDateItem["effectiveOrderCount"])
-	require.Equal(t, float64(2), validDateItem["totalOrders"])
+	require.Equal(t, float64(2), validDateItem["effectiveOrderCount"])
+	require.Equal(t, float64(3), validDateItem["totalOrders"])
+	require.Equal(t, "Scheduling", validDateItem["primaryStatusCode"])
+	require.Equal(t, "scheduling", validDateItem["primaryStatusPhase"])
+	statusCounts, ok = validDateItem["statusCounts"].([]any)
+	require.True(t, ok)
+	require.Len(t, statusCounts, 3)
+	statusCountsByCode := make(map[string]map[string]any, len(statusCounts))
+	for _, rawStatus := range statusCounts {
+		statusRecord, ok := rawStatus.(map[string]any)
+		require.True(t, ok)
+		code, ok := statusRecord["code"].(string)
+		require.True(t, ok)
+		statusCountsByCode[code] = statusRecord
+	}
+	require.Equal(t, float64(1), statusCountsByCode["Scheduling"]["count"])
+	require.Equal(t, "scheduling", statusCountsByCode["Scheduling"]["phase"])
+	require.Equal(t, float64(1), statusCountsByCode["Done"]["count"])
+	require.Equal(t, "done", statusCountsByCode["Done"]["phase"])
+	require.Equal(t, float64(1), statusCountsByCode["Canceled"]["count"])
+	require.Equal(t, "cancelled", statusCountsByCode["Canceled"]["phase"])
 	_, hasValidDaysSinceLastOrder := validDateItem["daysSinceLastOrder"]
 	require.True(t, hasValidDaysSinceLastOrder)
 }

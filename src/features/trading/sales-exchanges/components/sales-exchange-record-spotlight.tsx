@@ -1,6 +1,10 @@
 import { ArrowLeftRight, Barcode, CalendarDays, Package2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { SalesExchangeDraftRecord } from '../types/sales-exchange-types'
+import {
+  resolveSalesExchangeLineDisplaySubtitle,
+  resolveSalesExchangeLineDisplayTitle,
+} from '../utils/sales-exchange-line-display'
 
 type SalesExchangeRecordSpotlightProps = {
   salesExchangeDraftRecord?: SalesExchangeDraftRecord
@@ -90,10 +94,10 @@ export function SalesExchangeRecordSpotlight({
               <div className='flex items-start justify-between gap-3'>
                 <div className='min-w-0'>
                   <p className='truncate text-sm font-black text-foreground'>
-                    {lineDraft.productCode || lineDraft.productModel}
+                    {resolveSalesExchangeLineDisplayTitle(lineDraft)}
                   </p>
                   <p className='mt-1 truncate text-xs font-bold text-muted-foreground'>
-                    {lineDraft.specification || lineDraft.description || '--'}
+                    {resolveSalesExchangeLineDisplaySubtitle(lineDraft)}
                   </p>
                 </div>
                 <span className='rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-black text-emerald-600 uppercase'>

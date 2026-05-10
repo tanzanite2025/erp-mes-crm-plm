@@ -236,6 +236,73 @@ describe('sales-order-api-adapter', () => {
     })
   })
 
+  it('verifies product display snapshot fields survive sales order API adapter round-trip mapping', () => {
+    const order = toSalesOrderContract({
+      ...baseOrderDto,
+      lines: [
+        {
+          id: 1,
+          lineNo: 1,
+          productId: 'product-1',
+          productModel: 'MTB-01',
+          productCode: 'MTB-01',
+          specification: '',
+          productDisplayTitleSnapshot: 'Mountain Bike Fork',
+          productDisplaySubtitleSnapshot: 'trail/disc/v2',
+          productDisplayCodeSnapshot: 'MTB-01',
+          productDisplayFullLabelSnapshot: 'Mountain Bike Fork (trail/disc/v2)',
+          productDisplayStrategyVersionSnapshot: 'product-display-v1',
+          modelCodeSnapshot: '01',
+          holePrefixSnapshot: 'R',
+          appearanceId: 'appearance-1',
+          appearanceNameSnapshot: 'UD',
+          appearanceBarcodeCodeSnapshot: '1',
+          appearanceDescriptionSnapshot: '澶栬浣嶅€? 1',
+          appearanceImageUrlSnapshot: '/uploads/appearance/ud.png',
+          description: '',
+          qty: 2,
+          uom: 'PCS',
+          price: 50,
+          amount: 100,
+          deliveredQty: 0,
+          customerPartNo: '',
+          jobNo: '',
+          orderDate: '2026-04-18',
+          status: 'Pending',
+          returnedQuantity: 0,
+          remainingReturnableQuantity: 2,
+        },
+      ],
+    })
+
+    expect(order.lines[0]).toMatchObject({
+      productDisplayTitleSnapshot: 'Mountain Bike Fork',
+      productDisplaySubtitleSnapshot: 'trail/disc/v2',
+      productDisplayCodeSnapshot: 'MTB-01',
+      productDisplayFullLabelSnapshot: 'Mountain Bike Fork (trail/disc/v2)',
+      productDisplayStrategyVersionSnapshot: 'product-display-v1',
+      appearanceId: 'appearance-1',
+      appearanceNameSnapshot: 'UD',
+      appearanceBarcodeCodeSnapshot: '1',
+      appearanceDescriptionSnapshot: '澶栬浣嶅€? 1',
+      appearanceImageUrlSnapshot: '/uploads/appearance/ud.png',
+    })
+    const roundTrippedLines = toSalesOrderApiDTO(order).lines ?? []
+    expect(roundTrippedLines).toHaveLength(1)
+    expect(roundTrippedLines[0]).toMatchObject({
+      productDisplayTitleSnapshot: 'Mountain Bike Fork',
+      productDisplaySubtitleSnapshot: 'trail/disc/v2',
+      productDisplayCodeSnapshot: 'MTB-01',
+      productDisplayFullLabelSnapshot: 'Mountain Bike Fork (trail/disc/v2)',
+      productDisplayStrategyVersionSnapshot: 'product-display-v1',
+      appearanceId: 'appearance-1',
+      appearanceNameSnapshot: 'UD',
+      appearanceBarcodeCodeSnapshot: '1',
+      appearanceDescriptionSnapshot: '澶栬浣嶅€? 1',
+      appearanceImageUrlSnapshot: '/uploads/appearance/ud.png',
+    })
+  })
+
   it('does not synthesize missing list items into an empty page', () => {
     expect(() =>
       toSalesOrderListPageContract(

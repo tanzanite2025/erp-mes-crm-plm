@@ -280,6 +280,9 @@ func createSalesOrderTx(input models.SalesOrder, originalID, requesterID, operat
 		if strings.TrimSpace(input.ID) == "" {
 			input.ID = uuid.NewString()
 		}
+		if err := normalizeSalesOrderLinePackagingSelectionsTx(tx, nil, input.Lines); err != nil {
+			return err
+		}
 		recalculateSalesOrderAuthorityCosts(&input)
 		if err := tx.Create(&input).Error; err != nil {
 			return err

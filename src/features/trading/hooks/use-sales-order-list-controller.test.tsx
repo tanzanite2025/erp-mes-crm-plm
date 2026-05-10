@@ -195,6 +195,22 @@ describe('use-sales-order-list-controller', () => {
     expect(result.current.detailSheetState.orderId).toBe('order-c')
   })
 
+  it('requests primary and canceled list data with order lines for packaging-aware cards', () => {
+    renderHook(() => useSalesOrderListController(), {
+      wrapper: createWrapper(),
+    })
+
+    expect(useGetSalesOrdersMock).toHaveBeenCalledTimes(2)
+    expect(useGetSalesOrdersMock.mock.calls[0]?.[2]).toMatchObject({
+      withLines: true,
+      status: ['Draft', 'Pending', 'Scheduling', 'InProgress', 'Done'],
+    })
+    expect(useGetSalesOrdersMock.mock.calls[1]?.[2]).toMatchObject({
+      withLines: true,
+      status: ['Canceled'],
+    })
+  })
+
   it('routes add action through permission flow and opens action dialog', () => {
     const { result } = renderHook(() => useSalesOrderListController(), {
       wrapper: createWrapper(),

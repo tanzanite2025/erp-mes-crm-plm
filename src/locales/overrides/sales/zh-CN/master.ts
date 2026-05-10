@@ -3,6 +3,8 @@ export const master = {
     orderStatus: '业务单号 / 状态',
     customer: '客户主体',
     classificationDate: '分类与日期',
+    classification: '订单分类',
+    orderDate: '下单日期',
     totalQuantity: '合同总量',
     deliveryDeadline: '交付截止',
     actions: '操作',

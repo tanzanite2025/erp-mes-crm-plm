@@ -58,25 +58,30 @@ type SalesExchangeLabelCodeResponse struct {
 }
 
 type SalesExchangeLineResponse struct {
-	ID                      uint                             `json:"id"`
-	LineDraftID             string                           `json:"lineDraftId"`
-	SalesOrderLineID        uint                             `json:"salesOrderLineId"`
-	LineNo                  int                              `json:"lineNo"`
-	ProductID               string                           `json:"productId"`
-	ProductCode             string                           `json:"productCode"`
-	ProductModel            string                           `json:"productModel"`
-	Specification           string                           `json:"specification"`
-	Description             string                           `json:"description"`
-	UOM                     string                           `json:"uom"`
-	OriginalOrderQuantity   float64                          `json:"originalOrderQuantity"`
-	DeliveredQuantity       float64                          `json:"deliveredQuantity"`
-	ExchangeQuantity        float64                          `json:"exchangeQuantity"`
-	ReplacementMode         string                           `json:"replacementMode"`
-	ReplacementProductCode  string                           `json:"replacementProductCode"`
-	ReplacementProductModel string                           `json:"replacementProductModel"`
-	IssueCategory           string                           `json:"issueCategory"`
-	IssueDescription        string                           `json:"issueDescription"`
-	RecognizedLabelCodes    []SalesExchangeLabelCodeResponse `json:"recognizedLabelCodes"`
+	ID                                    uint                             `json:"id"`
+	LineDraftID                           string                           `json:"lineDraftId"`
+	SalesOrderLineID                      uint                             `json:"salesOrderLineId"`
+	LineNo                                int                              `json:"lineNo"`
+	ProductID                             string                           `json:"productId"`
+	ProductCode                           string                           `json:"productCode"`
+	ProductModel                          string                           `json:"productModel"`
+	Specification                         string                           `json:"specification"`
+	ProductDisplayTitleSnapshot           string                           `json:"productDisplayTitleSnapshot"`
+	ProductDisplaySubtitleSnapshot        string                           `json:"productDisplaySubtitleSnapshot"`
+	ProductDisplayCodeSnapshot            string                           `json:"productDisplayCodeSnapshot"`
+	ProductDisplayFullLabelSnapshot       string                           `json:"productDisplayFullLabelSnapshot"`
+	ProductDisplayStrategyVersionSnapshot string                           `json:"productDisplayStrategyVersionSnapshot"`
+	Description                           string                           `json:"description"`
+	UOM                                   string                           `json:"uom"`
+	OriginalOrderQuantity                 float64                          `json:"originalOrderQuantity"`
+	DeliveredQuantity                     float64                          `json:"deliveredQuantity"`
+	ExchangeQuantity                      float64                          `json:"exchangeQuantity"`
+	ReplacementMode                       string                           `json:"replacementMode"`
+	ReplacementProductCode                string                           `json:"replacementProductCode"`
+	ReplacementProductModel               string                           `json:"replacementProductModel"`
+	IssueCategory                         string                           `json:"issueCategory"`
+	IssueDescription                      string                           `json:"issueDescription"`
+	RecognizedLabelCodes                  []SalesExchangeLabelCodeResponse `json:"recognizedLabelCodes"`
 }
 
 type SalesExchangeResponse struct {

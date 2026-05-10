@@ -71,6 +71,7 @@ func setupMaterialAuditServiceTestDB(t *testing.T) *gorm.DB {
 		`CREATE TABLE sales_order_lines (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			product_id TEXT,
+			selected_packaging BLOB,
 			deleted_at DATETIME
 		)`,
 		`CREATE TABLE bom_items (

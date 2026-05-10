@@ -34,6 +34,7 @@ interface ComboboxProps {
   searchPlaceholder?: string
   emptyText?: string
   className?: string
+  contentClassName?: string
   disabled?: boolean
   isLoading?: boolean
   variant?: 'default' | 'industrial'
@@ -47,6 +48,7 @@ export function Combobox({
   searchPlaceholder = '搜索名称、规格或编码...',
   emptyText = '未找到结果',
   className,
+  contentClassName,
   disabled,
   isLoading,
   variant = 'default',
@@ -104,7 +106,7 @@ export function Combobox({
           </Button>
         )}
       </PopoverTrigger>
-      <PopoverContent className='w-[580px] p-0 shadow-2xl border-blue-500/20' align='start'>
+      <PopoverContent className={cn('w-[580px] p-0 shadow-2xl border-blue-500/20', contentClassName)} align='start'>
         <Command filter={() => 1}>
           <div className='flex items-center border-b px-3 text-blue-600 bg-muted/20'>
             <Search className='mr-2 h-4 w-4 shrink-0 opacity-50' />
@@ -122,8 +124,8 @@ export function Combobox({
               </div>
             ) : filteredOptions.length === 0 ? (
               <div className='py-20 text-center text-xs text-muted-foreground'>
-                  <div className='font-black uppercase tracking-tight mb-1'>{emptyText}</div>
-                  <div className='text-[10px] opacity-40 uppercase'>No matching records found</div>
+                  <div data-slot='combobox-empty-title' className='font-black uppercase tracking-tight mb-1'>{emptyText}</div>
+                  <div data-slot='combobox-empty-subtitle' className='text-[10px] opacity-40 uppercase'>No matching records found</div>
               </div>
             ) : (
                 <CommandGroup>
@@ -148,21 +150,21 @@ export function Combobox({
                         {/* 左侧：核心信息 */}
                         <div className='flex flex-col gap-0.5 overflow-hidden flex-1'>
                             <div className='flex items-center justify-between w-full'>
-                                <span className='truncate font-bold text-slate-700'>{option.label}</span>
+                                <span data-slot='combobox-option-label' className='truncate font-bold text-slate-700'>{option.label}</span>
                             </div>
                             <div className='flex items-center gap-2'>
                               {option.secondaryLabel && (
                                     <div className='flex items-center gap-1 shrink-0'>
-                                        <span className='text-[9px] bg-emerald-50 text-emerald-600 px-0.5 rounded font-black uppercase tracking-tight'>
+                                        <span data-slot='combobox-option-secondary-badge' className='text-[9px] bg-emerald-50 text-emerald-600 px-0.5 rounded font-black uppercase tracking-tight'>
                                             规格
                                         </span>
-                                        <span className='text-[10px] text-emerald-600 font-bold truncate max-w-[150px]'>
+                                        <span data-slot='combobox-option-secondary-text' className='text-[10px] text-emerald-600 font-bold truncate max-w-[150px]'>
                                             {option.secondaryLabel}
                                         </span>
                                     </div>
                                 )}
                                 {option.tertiaryLabel && (
-                                    <span className='text-[10px] font-mono opacity-30 shrink-0 italic'>
+                                    <span data-slot='combobox-option-tertiary' className='text-[10px] font-mono opacity-30 shrink-0 italic'>
                                         #{option.tertiaryLabel}
                                     </span>
                                 )}
@@ -183,13 +185,13 @@ export function Combobox({
                                                     : 'bg-slate-50 border-slate-100 text-slate-500'
                                             )}
                                         >
-                                            <span className='text-[9px] font-bold leading-none mb-0.5'>{stat.stage}</span>
-                                            <span className='text-[10px] font-black leading-none'>{stat.percentage}%</span>
+                                            <span data-slot='combobox-option-stats-stage' className='text-[9px] font-bold leading-none mb-0.5'>{stat.stage}</span>
+                                            <span data-slot='combobox-option-stats-value' className='text-[10px] font-black leading-none'>{stat.percentage}%</span>
                                         </div>
                                     ))}
                                 </div>
                             ) : (
-                                <span className='text-[10px] text-slate-300 italic'>标准档案</span>
+                                <span data-slot='combobox-option-stats-empty' className='text-[10px] text-slate-300 italic'>标准档案</span>
                             )}
                         </div>
                       </div>

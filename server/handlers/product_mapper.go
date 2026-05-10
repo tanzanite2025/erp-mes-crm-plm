@@ -13,6 +13,9 @@ func decodeProductStringArray(raw []byte) []string {
 	if err := json.Unmarshal(raw, &items); err != nil {
 		return []string{}
 	}
+	if items == nil {
+		return []string{}
+	}
 	return items
 }
 

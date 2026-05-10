@@ -8,9 +8,13 @@ import {
 } from '@/features/logistics-config/packaging-calculator'
 import {
   packagingRulesService,
-  type PackagingProfile,
 } from '@/features/logistics-config/packaging-rules-service'
-import type { SalesOrder } from '../data/schema'
+import type { SalesOrder, SalesOrderLinePackagingSelection } from '../data/schema'
+import {
+  createPackagingProfileFromSelection,
+  getPackagingProfilesForProduct,
+  resolveSalesOrderLinePackagingSelection,
+} from '../utils/sales-order-packaging-selection'
 
 const PACKAGING_PROFILE_QUERY_KEY = ['logistics-config', 'packaging-profiles'] as const
 
@@ -18,9 +22,11 @@ export interface SalesOrderPackagingPreviewLine {
   key: string
   lineNo: number
   productId?: string
-  productModel: string
+  productDisplayTitle: string
+  productDisplaySubtitle: string
   qty: number
   uom: string
+  selectedPackaging?: SalesOrderLinePackagingSelection
   matchedProfileCount: number
   productWeight: number
   plan: PackagingCalculationResult
@@ -41,14 +47,16 @@ export interface SalesOrderPackagingPreviewData {
   summary: SalesOrderPackagingPreviewSummary
 }
 
-function getProfilesForProduct(profiles: PackagingProfile[], productId?: string) {
-  if (!productId) return []
-
-  return profiles.filter(
-    (profile) =>
-      profile.isActive &&
-      profile.targets.some((target) => target.entityType === 'product' && target.entityId === productId)
+function resolveLineDisplayTitle(line: SalesOrder['lines'][number]): string {
+  return (
+    line.productDisplayTitleSnapshot?.trim() ||
+    line.productDisplayFullLabelSnapshot?.trim() ||
+    '未识别产品'
   )
+}
+
+function resolveLineDisplaySubtitle(line: SalesOrder['lines'][number]): string {
+  return line.productDisplaySubtitleSnapshot?.trim() || '--'
 }
 
 export function useSalesOrderPackagingPreview(order: SalesOrder) {
@@ -69,21 +77,35 @@ export function useSalesOrderPackagingPreview(order: SalesOrder) {
 
     const lines = order.lines.map<SalesOrderPackagingPreviewLine>((line) => {
       const product = line.productId ? productMap.get(line.productId) : undefined
-      const matchedProfiles = getProfilesForProduct(packagingProfilesQuery.data, line.productId)
+      const matchedProfiles = getPackagingProfilesForProduct(
+        packagingProfilesQuery.data,
+        line.productId,
+        true
+      )
+      const selectedPackaging = resolveSalesOrderLinePackagingSelection(
+        line,
+        packagingProfilesQuery.data
+      )
       const warnings: string[] = []
+      const productDisplayTitle = resolveLineDisplayTitle(line)
+      const productDisplaySubtitle = resolveLineDisplaySubtitle(line)
 
       if (!line.productId) {
         warnings.push('Order line is missing product binding.')
       }
 
-      if (matchedProfiles.length === 0) {
-        warnings.push('No packaging profiles matched this product.')
+      if (line.productId && !selectedPackaging) {
+        warnings.push(
+          matchedProfiles.length > 0
+            ? 'Packaging selection is pending for this order line.'
+            : 'No packaging profiles matched this product.'
+        )
       }
 
       const plan = calculatePackagingPlan({
         orderedQuantity: line.qty,
         productWeight: product?.weight ?? 0,
-        profiles: matchedProfiles.map((profile) => ({
+        profiles: (selectedPackaging ? [createPackagingProfileFromSelection(selectedPackaging)] : []).map((profile) => ({
           profileId: profile.id,
           profileName: profile.name,
           capacity: profile.capacity,
@@ -100,9 +122,11 @@ export function useSalesOrderPackagingPreview(order: SalesOrder) {
         key: `${order.id}-${line.lineNo}`,
         lineNo: line.lineNo,
         productId: line.productId,
-        productModel: line.productModel,
+        productDisplayTitle,
+        productDisplaySubtitle,
         qty: line.qty,
         uom: line.uom,
+        selectedPackaging,
         matchedProfileCount: matchedProfiles.length,
         productWeight: product?.weight ?? 0,
         plan: {
