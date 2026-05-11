@@ -44,7 +44,7 @@ export function DrillingActionDialog({
   })
 
   const {
-    products,
+    productOptions,
     formData,
     isEdit,
     isDirty,
@@ -129,7 +129,7 @@ export function DrillingActionDialog({
 
       <div className='grid gap-8 relative'>
         {/* 核心标识组 */}
-        <DrillingBasicInfoSection formData={formData} products={products} updateField={updateField} />
+        <DrillingBasicInfoSection formData={formData} productOptions={productOptions} updateField={updateField} />
 
         {/* 技术规格组 */}
         <DrillingSpecSection

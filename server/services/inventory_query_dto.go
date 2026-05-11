@@ -99,5 +99,34 @@ type InventoryValuationResponse struct {
 }
 
 type InventoryAlertSummaryResponse struct {
-	AlertCount int64 `json:"alertCount"`
+	AlertCount         int64 `json:"alertCount"`
+	MaterialAlertCount int64 `json:"materialAlertCount"`
+	BOMAlertCount      int64 `json:"bomAlertCount"`
+}
+
+type InventoryBOMAlertShortageResponse struct {
+	MaterialID   string  `json:"materialId"`
+	MaterialCode string  `json:"materialCode"`
+	MaterialName string  `json:"materialName"`
+	MaterialSpec string  `json:"materialSpec"`
+	RequiredQty  float64 `json:"requiredQty"`
+	CurrentStock float64 `json:"currentStock"`
+	ShortageQty  float64 `json:"shortageQty"`
+}
+
+type InventoryBOMAlertDetailResponse struct {
+	RuleID       string                              `json:"ruleId"`
+	BOMID        string                              `json:"bomId"`
+	BOMNo        string                              `json:"bomNo"`
+	ProductID    string                              `json:"productId"`
+	ProductName  string                              `json:"productName"`
+	ProductSKU   string                              `json:"productSku"`
+	ThresholdQty float64                             `json:"thresholdQty"`
+	Shortages    []InventoryBOMAlertShortageResponse `json:"shortages"`
+	TriggeredAt  time.Time                           `json:"triggeredAt"`
+}
+
+type InventoryBOMAlertDetailListResponse struct {
+	Items []InventoryBOMAlertDetailResponse `json:"items"`
+	Total int                               `json:"total"`
 }

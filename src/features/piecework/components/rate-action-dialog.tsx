@@ -12,7 +12,7 @@ import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import type { DeltaSet } from '@/lib/delta/types'
 import { toast } from 'sonner'
 import type { PieceworkRate } from '../data/schema'
-import { useGetProducts } from '@/features/engineering/hooks/use-products'
+import { useProductDisplayOptions } from '@/features/engineering/hooks/use-product-display-options'
 import { SelectDropdown } from '@/components/select-dropdown'
 import { useHierarchyLevelLabels } from '@/features/production-shared/tabs/hierarchy-config/hooks/use-hierarchy-level-labels'
 
@@ -48,7 +48,7 @@ export function RateActionDialog({
 }: RateActionDialogProps) {
   const { t } = useLanguage()
   const { level3Name } = useHierarchyLevelLabels()
-  const { data: products = [] } = useGetProducts()
+  const { productOptions } = useProductDisplayOptions({ enabled: open })
 
   const shellClasses = buildActionDialogShellClasses({
     content: 'sm:max-w-[600px] rounded-[32px] overflow-hidden',
@@ -161,7 +161,7 @@ export function RateActionDialog({
           <SelectDropdown
             defaultValue={formData.productId}
             onValueChange={(val) => { setFormData({ productId: val }) }}
-            items={products.map(p => ({ label: `${p.sku} | ${p.name}`, value: p.id }))}
+            items={productOptions}
             placeholder={t('piecework.rules.dialog.placeholders.product')}
             className='h-12 rounded-2xl border-none bg-muted/40 px-4 font-bold text-sm shadow-inner italic'
           />

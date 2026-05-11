@@ -1,6 +1,7 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+import { InventoryThresholdService } from '../../material-thresholds/services/inventory-threshold-service'
 import { toInventoryRecordContract } from '../adapters/inventory-api-adapter'
 import { type InventoryItemApiDTO } from '../contracts/inventory-api-dto'
 import { type InventoryRecord } from '../data/schema'
@@ -47,11 +48,42 @@ export const InventoryMaintenanceService = {
   },
 
   setAlertThreshold: async (materialId: string, minQty: number): Promise<void> => {
-    void materialId
-    void minQty
+    const rules = await InventoryThresholdService.listRules()
+    const existingRule = rules.find(
+      (rule) => rule.targetType === 'MATERIAL' && rule.materialId === materialId
+    )
+
+    if (minQty <= 0) {
+      if (existingRule) {
+        await InventoryThresholdService.deleteRule(existingRule.id)
+      }
+      return
+    }
+
+    const payload = {
+      targetType: 'MATERIAL' as const,
+      materialId,
+      thresholdQty: minQty,
+      enabled: true,
+      notes: existingRule?.notes ?? '',
+    }
+
+    if (existingRule) {
+      await InventoryThresholdService.updateRule(existingRule.id, payload)
+      return
+    }
+
+    await InventoryThresholdService.createRule(payload)
   },
 
   getAlertThresholds: async (): Promise<Record<string, number>> => {
-    return {}
+    const rules = await InventoryThresholdService.listRules()
+    return rules.reduce<Record<string, number>>((acc, rule) => {
+      if (rule.targetType !== 'MATERIAL' || !rule.enabled || !rule.materialId) {
+        return acc
+      }
+      acc[rule.materialId] = rule.thresholdQty
+      return acc
+    }, {})
   },
 }

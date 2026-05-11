@@ -268,6 +268,9 @@ func executeOrderUnifiedSaveTx(tx *gorm.DB, current *models.SalesOrder, input Ex
 			}
 		}
 	}
+	if err := normalizeSalesOrderLineProductFieldsTx(tx, nextOrder.Lines); err != nil {
+		return nil, err
+	}
 
 	nextOrder.ID = current.ID
 	nextOrder.Version = current.Version + 1

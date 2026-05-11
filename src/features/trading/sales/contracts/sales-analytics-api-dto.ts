@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { PRODUCT_DISPLAY_STRATEGY_VERSION } from '@/features/engineering/display/product-display-contract'
+import { SALES_ANALYTICS_PRODUCT_DISPLAY_STRATEGY_VERSION } from './sales-analytics-product-display'
 
 export const salesAnalyticsProductDisplayApiDTOSchema = z
   .object({
@@ -7,7 +7,7 @@ export const salesAnalyticsProductDisplayApiDTOSchema = z
     subtitle: z.string(),
     code: z.string(),
     fullLabel: z.string(),
-    strategyVersion: z.literal(PRODUCT_DISPLAY_STRATEGY_VERSION),
+    strategyVersion: z.literal(SALES_ANALYTICS_PRODUCT_DISPLAY_STRATEGY_VERSION),
   })
   .strict()
 

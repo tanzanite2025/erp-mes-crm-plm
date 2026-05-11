@@ -59,7 +59,7 @@ func ListBOMs(query BOMListQuery) ([]models.BOM, int64, error) {
 	return items, total, nil
 }
 
-func GetBOMByID(id string) (models.BOM, error) {
+func GetBOMByID(id string) (BOMDetailResponse, error) {
 	var bom models.BOM
 	if err := db.DB.
 		Preload("Product").
@@ -67,10 +67,10 @@ func GetBOMByID(id string) (models.BOM, error) {
 		Preload("Items.Substitutes").
 		Preload("Items.Substitutes.Material").
 		First(&bom, "id = ?", id).Error; err != nil {
-		return models.BOM{}, err
+		return BOMDetailResponse{}, err
 	}
 	bom.DisplayVersion = resolveBOMDisplayVersion(bom)
-	return bom, nil
+	return MapBOMToDetailResponse(bom)
 }
 
 func resolveBOMDisplayVersion(bom models.BOM) string {
@@ -286,11 +286,16 @@ func saveBOMItems(tx *gorm.DB, bomID string, items []models.BOMItem) error {
 	return nil
 }
 
-func SaveBOM(ctx context.Context, input SaveBOMInput) (models.BOM, error) {
+func SaveBOM(ctx context.Context, input SaveBOMInput) (BOMDetailResponse, error) {
 	modelInput := input.toModel()
+	normalizedRelationSidecar, err := normalizeRequiredBOMRelationSidecar(modelInput.RelationSidecar)
+	if err != nil {
+		return BOMDetailResponse{}, err
+	}
+	modelInput.RelationSidecar = normalizedRelationSidecar
 	var saved models.BOM
 
-	err := db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	err = db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		normalizedItems, err := normalizeBOMItemSections(tx, modelInput.Items)
 		if err != nil {
 			return err
@@ -368,10 +373,10 @@ func SaveBOM(ctx context.Context, input SaveBOMInput) (models.BOM, error) {
 		return writeBOMAuditEntryWithContext(ctx, tx, saved.ID, "SAVE", nil, payload)
 	})
 	if err != nil {
-		return models.BOM{}, err
+		return BOMDetailResponse{}, err
 	}
 	saved.DisplayVersion = resolveBOMDisplayVersion(saved)
-	return saved, nil
+	return MapBOMToDetailResponse(saved)
 }
 
 func DeleteBOM(ctx context.Context, id string) error {

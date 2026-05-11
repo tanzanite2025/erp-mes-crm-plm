@@ -1,12 +1,10 @@
 import { useCallback, useMemo } from 'react'
-import { type Unit } from '@/features/basic-settings/services/unit-service'
 import { type MaterialOption } from '@/features/material-archive/data/schema'
 import { type PurchaseOrderLine } from '../data/schema'
 
 type PurchaseOrderLineFieldValue = PurchaseOrderLine[keyof PurchaseOrderLine]
 
 interface PurchaseOrderLinesEditorViewModelOptions {
-  units: Unit[]
   materials: MaterialOption[]
   lines: PurchaseOrderLine[]
   onLineChange: (
@@ -26,18 +24,10 @@ interface PurchaseOrderLinesEditorViewModel {
     tertiaryLabel?: string
     keywords?: string
   }[]
-  unitOptions: {
-    label: string
-    value: string
-    secondaryLabel?: string
-    tertiaryLabel?: string
-    keywords?: string
-  }[]
   handleMaterialSelect: (index: number, materialId: string) => void
 }
 
 export function usePurchaseOrderLinesEditorViewModel({
-  units,
   materials,
   lines,
   onLineChange,
@@ -57,18 +47,6 @@ export function usePurchaseOrderLinesEditorViewModel({
         keywords: `${material.name} ${material.code} ${material.spec}`,
       })),
     [materials]
-  )
-
-  const unitOptions = useMemo(
-    () =>
-      units.map((unit) => ({
-        label: unit.name,
-        value: unit.name,
-        secondaryLabel: unit.category,
-        tertiaryLabel: unit.code,
-        keywords: `${unit.name} ${unit.code} ${unit.category}`,
-      })),
-    [units]
   )
 
   const handleMaterialSelect = useCallback(
@@ -93,7 +71,6 @@ export function usePurchaseOrderLinesEditorViewModel({
   return {
     materialById,
     materialOptions,
-    unitOptions,
     handleMaterialSelect,
   }
 }

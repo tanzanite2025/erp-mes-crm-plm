@@ -78,4 +78,33 @@ export interface InventoryValuationApiDTO {
 
 export interface InventoryAlertSummaryApiDTO {
   alertCount: number
+  materialAlertCount: number
+  bomAlertCount: number
+}
+
+export interface InventoryBOMAlertShortageApiDTO {
+  materialId: string
+  materialCode: string
+  materialName: string
+  materialSpec: string
+  requiredQty: number
+  currentStock: number
+  shortageQty: number
+}
+
+export interface InventoryBOMAlertDetailApiDTO {
+  ruleId: string
+  bomId: string
+  bomNo: string
+  productId: string
+  productName: string
+  productSku: string
+  thresholdQty: number
+  shortages: InventoryBOMAlertShortageApiDTO[]
+  triggeredAt: string
+}
+
+export interface InventoryBOMAlertDetailListApiDTO {
+  items: InventoryBOMAlertDetailApiDTO[]
+  total: number
 }

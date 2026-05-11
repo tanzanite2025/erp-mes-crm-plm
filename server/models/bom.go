@@ -1,17 +1,20 @@
 package models
 
+import "encoding/json"
+
 // BOM 閰嶆柟娓呭崟妯″瀷
 type BOM struct {
 	BaseModel
 	MasterDataControl
-	BOMNo          string    `gorm:"size:50;uniqueIndex;not null" json:"bomNo"`
-	ProductID      string    `gorm:"type:uuid;index;not null" json:"productId"`
-	Product        *Product  `gorm:"foreignKey:ProductID" json:"product,omitempty"`
-	VersionText    string    `gorm:"size:20;default:'V1.0'" json:"version"`
-	DisplayVersion string    `gorm:"-" json:"bomDisplayVersion,omitempty"`
-	Status         string    `gorm:"size:20;default:'active'" json:"status"`
-	Items          []BOMItem `gorm:"foreignKey:BOMID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"items"`
-	Description    string    `gorm:"type:text" json:"description"`
+	BOMNo           string          `gorm:"size:50;uniqueIndex;not null" json:"bomNo"`
+	ProductID       string          `gorm:"type:uuid;index;not null" json:"productId"`
+	Product         *Product        `gorm:"foreignKey:ProductID" json:"product,omitempty"`
+	VersionText     string          `gorm:"size:20;default:'V1.0'" json:"version"`
+	DisplayVersion  string          `gorm:"-" json:"bomDisplayVersion,omitempty"`
+	Status          string          `gorm:"size:20;default:'active'" json:"status"`
+	Items           []BOMItem       `gorm:"foreignKey:BOMID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"items"`
+	Description     string          `gorm:"type:text" json:"description"`
+	RelationSidecar json.RawMessage `gorm:"type:jsonb" json:"-"`
 }
 
 // BOMItem BOM 鏄庣粏琛屾ā鍨?

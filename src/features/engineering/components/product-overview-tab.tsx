@@ -3,6 +3,7 @@
 import { useMemo } from 'react'
 
 import { Settings2 } from 'lucide-react'
+import { type TranslationKey } from '@/locales'
 import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
@@ -12,22 +13,26 @@ import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { failLoudly } from '@/lib/safe-catch'
 import { renderProductSpecOverview } from './specs'
 import { type Product, type ProductType } from '../data/schema'
-import { getProductAttributes } from '../utils/product-utils'
+import { type EngineeringProductDisplayMetadata } from '../hooks/use-engineering-product-display-metadata'
 
 type ProductOverviewTabProps = {
     product: Product
     productTypes: ProductType[]
+    displayMetadata?: EngineeringProductDisplayMetadata | null
     onEdit: (product: Product) => void
 }
 
-export function ProductOverviewTab({ product, productTypes, onEdit }: ProductOverviewTabProps) {
+export function ProductOverviewTab({ product, productTypes, displayMetadata, onEdit }: ProductOverviewTabProps) {
     const { t } = useLanguage()
-    const productView = useMemo(() => getProductAttributes(product), [product])
+    const bindingInfoKey = 'engineering.productMgmt.bindingInfo' as TranslationKey
 
     const categoryType = useMemo(
         () => productTypes.find((entry) => entry.id === product.typeId) || null,
         [product.typeId, productTypes]
     )
+    const overviewTemplateKey = displayMetadata?.resolvedTemplate?.componentKey
+        || product.resolvedTemplateKey
+        || product.templateKey
 
     if (!categoryType) {
         const error = new Error(
@@ -38,10 +43,10 @@ export function ProductOverviewTab({ product, productTypes, onEdit }: ProductOve
     }
 
     return (
-        <div className='mt-0 space-y-6'>
+        <div className='mt-0 space-y-4 sm:space-y-5'>
             {/* 产品身份抬头：UDS 1.0 标准对齐 */}
-            <div className='flex items-end justify-between border-b-2 border-dashed border-muted pb-8 mb-4'>
-                <div className='space-y-4'>
+            <div className='flex items-end justify-between border-b-2 border-dashed border-muted pb-5 mb-2'>
+                <div className='space-y-3'>
                     <div className='flex flex-col gap-1'>
                          <div className='flex items-center gap-2'>
                             <div className='size-2 bg-blue-600 rounded-full animate-pulse' />
@@ -62,12 +67,7 @@ export function ProductOverviewTab({ product, productTypes, onEdit }: ProductOve
                     <div className='flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/40'>
                         <div className='flex items-center gap-1.5'>
                             <span className='opacity-40'>{t('engineering.productMgmt.skuIdLabel')}:</span>
-                            <span className='font-mono font-bold text-slate-800 bg-muted/50 px-2 py-0.5 rounded'>#{productView.sku}</span>
-                        </div>
-                        <div className='w-px h-3 bg-muted-foreground/20' />
-                        <div className='flex items-center gap-1.5'>
-                            <span className='opacity-40'>{t('engineering.productMgmt.moldGroupLabel')}:</span>
-                            <span className='font-mono font-bold text-slate-800 bg-muted/50 px-2 py-0.5 rounded'>{product.moldGroup || t('engineering.productMgmt.noBinding')}</span>
+                            <span className='font-mono font-bold text-slate-800 bg-muted/50 px-2 py-0.5 rounded'>#{product.sku}</span>
                         </div>
                     </div>
                 </div>
@@ -89,13 +89,41 @@ export function ProductOverviewTab({ product, productTypes, onEdit }: ProductOve
                 {renderProductSpecOverview({
                     product,
                     categoryName: categoryType.name,
-                    templateKey: product.templateKey,
+                    templateKey: overviewTemplateKey,
                 })}
             </div>
 
+            <Card className='rounded-[20px] border-2 border-dashed border-blue-600/15 bg-blue-600/3 shadow-none overflow-hidden hover:bg-blue-600/5 transition-all'>
+                <div className='px-3 sm:px-4 py-3 sm:py-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-5'>
+                    <div className='flex flex-col gap-1 shrink-0'>
+                        <div className='px-3 py-1 bg-blue-600 text-white text-[9px] font-black uppercase tracking-widest italic rounded-md shadow-lg shadow-blue-600/20'>
+                            {t(bindingInfoKey)}
+                        </div>
+                    </div>
+                    <div className='flex-1 grid grid-cols-1 xl:grid-cols-2 gap-3'>
+                        <div className='rounded-[18px] border border-dashed border-blue-600/15 bg-background/80 px-3 py-2.5'>
+                            <div className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/50'>
+                                {t('engineering.productMgmt.form.spec')}
+                            </div>
+                            <div className='mt-1 break-all text-[13px] font-black tracking-tight text-slate-800 italic'>
+                                {displayMetadata?.engineeringSpecLabel || t('engineering.productMgmt.noBinding')}
+                            </div>
+                        </div>
+                        <div className='rounded-[18px] border border-dashed border-blue-600/15 bg-background/80 px-3 py-2.5'>
+                            <div className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/50'>
+                                {t('engineering.productMgmt.form.mold')}
+                            </div>
+                            <div className='mt-1 break-all text-[13px] font-black tracking-tight text-slate-800 italic'>
+                                {product.moldGroup || t('engineering.productMgmt.noBinding')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </Card>
+
             {/* 特殊约束区域 */}
-            <Card className='rounded-[24px] border-2 border-dashed border-rose-500/20 bg-rose-500/2 shadow-none overflow-hidden hover:bg-rose-500/5 transition-all group'>
-                <div className='px-4 sm:px-6 py-4 sm:py-5 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8'>
+            <Card className='rounded-[20px] border-2 border-dashed border-rose-500/20 bg-rose-500/2 shadow-none overflow-hidden hover:bg-rose-500/5 transition-all group'>
+                <div className='px-3 sm:px-4 py-3 sm:py-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-5'>
                      <div className='flex flex-col gap-1 shrink-0'>
                         <div className='px-3 py-1 bg-rose-500 text-white text-[9px] font-black uppercase tracking-widest italic rounded-md shadow-lg shadow-rose-500/20'>
                             {t('engineering.productMgmt.riskConstraints')}

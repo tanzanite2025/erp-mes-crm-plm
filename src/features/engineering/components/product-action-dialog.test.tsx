@@ -16,8 +16,6 @@ const {
   dynamicAttributeSectionMock,
   productionRestrictionsMock,
   deleteProductMock,
-  getTemplatesMock,
-  getTemplateResolutionMock,
 } = vi.hoisted(() => ({
   useProductFormMock: vi.fn(),
   useWatchMock: vi.fn(),
@@ -25,18 +23,6 @@ const {
   dynamicAttributeSectionMock: vi.fn(),
   productionRestrictionsMock: vi.fn(),
   deleteProductMock: vi.fn(async () => undefined),
-  getTemplatesMock: vi.fn(async (): Promise<unknown[]> => []),
-  getTemplateResolutionMock: vi.fn<() => Promise<{
-    resolvedTemplateId?: string
-    resolvedTemplateKey?: string
-    templateResolutionSource?: string
-    templateResolutionError?: string
-  }>>(async () => ({
-    resolvedTemplateId: undefined,
-    resolvedTemplateKey: undefined,
-    templateResolutionSource: undefined,
-    templateResolutionError: undefined,
-  })),
 }))
 
 vi.mock('react-hook-form', async (importOriginal) => {
@@ -125,19 +111,6 @@ vi.mock('./specs', () => ({
   resolveEffectiveTemplate: vi.fn(async () => null),
 }))
 
-vi.mock('../services/product-template-service', () => ({
-  productTemplateService: {
-    getTemplates: getTemplatesMock,
-  },
-}))
-
-vi.mock('../services/product-type-service', () => ({
-  ProductTypeService: {
-    getTemplateResolution: getTemplateResolutionMock,
-    getProductTypes: vi.fn(async () => []),
-  },
-}))
-
 vi.mock('../utils/product-create-template-resolution', () => ({
   getCreateProductTemplate: vi.fn(() => null),
 }))
@@ -163,7 +136,7 @@ function buildFormStub(overrides: Partial<UseProductFormResult['form']> = {}): U
 }
 
 function buildUseProductFormResult(overrides: Partial<UseProductFormResult> = {}): UseProductFormResult {
-  return {
+  const result: UseProductFormResult = {
     form: buildFormStub(),
     isEdit: false,
     dynamicTypes: [],
@@ -177,12 +150,19 @@ function buildUseProductFormResult(overrides: Partial<UseProductFormResult> = {}
     nextCodeDeriveError: null,
     skuPreview: '',
     selectedVariants: [],
+    boundTemplate: null,
+    templateResolveError: null,
+    templateResolutionPending: false,
+    specPreviewTitle: 'FINAL-PREVIEW-TITLE',
     specPreviewSummary: 'FINAL-PREVIEW',
+    specPreviewV2: null,
     handleVariantToggle: vi.fn(),
     updateVariantWeight: vi.fn(),
     handleFormSubmit: vi.fn(),
     ...overrides,
   }
+
+  return result
 }
 
 function buildProductTypes(): ProductType[] {
@@ -236,11 +216,8 @@ describe('ProductActionDialog', () => {
     dynamicAttributeSectionMock.mockReset()
     productionRestrictionsMock.mockReset()
     deleteProductMock.mockClear()
-    getTemplatesMock.mockClear()
-    getTemplateResolutionMock.mockClear()
     useWatchMock.mockImplementation(({ name }: { name?: string }) => {
       if (name === 'modelCode') return '01'
-      if (name === 'typeId') return ''
       return undefined
     })
   })
@@ -349,12 +326,6 @@ describe('ProductActionDialog', () => {
         version: 1,
       },
     ]
-    getTemplatesMock.mockResolvedValue(templates)
-    useWatchMock.mockImplementation(({ name }: { name?: string }) => {
-      if (name === 'modelCode') return '01'
-      if (name === 'typeId') return 'type-a'
-      return undefined
-    })
 
     renderDialog({
       props: {
@@ -370,6 +341,7 @@ describe('ProductActionDialog', () => {
       hookResult: {
         form,
         isEdit: true,
+        boundTemplate: templates[0],
       },
     })
 
@@ -407,18 +379,6 @@ describe('ProductActionDialog', () => {
         version: 1,
       },
     ]
-    getTemplatesMock.mockResolvedValue(templates)
-    getTemplateResolutionMock.mockImplementation(async () => ({
-      resolvedTemplateId: 'template-rim',
-      resolvedTemplateKey: 'RIM',
-      templateResolutionSource: 'typeBinding',
-      templateResolutionError: undefined,
-    }))
-    useWatchMock.mockImplementation(({ name }: { name?: string }) => {
-      if (name === 'modelCode') return '01'
-      if (name === 'typeId') return 'type-a'
-      return undefined
-    })
 
     renderDialog({
       props: {
@@ -427,11 +387,11 @@ describe('ProductActionDialog', () => {
       hookResult: {
         form,
         isEdit: false,
+        boundTemplate: templates[0],
       },
     })
 
     await waitFor(() => {
-      expect(getTemplateResolutionMock).toHaveBeenCalledWith('type-a')
       expect(dynamicAttributeSectionMock).toHaveBeenLastCalledWith(expect.objectContaining({
         form,
         bindings: templateAttributeBindings,
@@ -439,20 +399,8 @@ describe('ProductActionDialog', () => {
     })
   })
 
-  it('blocks save when authority cannot resolve a template in create mode', async () => {
+  it('renders template-driven v2 preview badges when authority template resolves', async () => {
     const form = buildFormStub()
-    getTemplatesMock.mockResolvedValue([])
-    getTemplateResolutionMock.mockImplementation(async () => ({
-      resolvedTemplateId: undefined,
-      resolvedTemplateKey: undefined,
-      templateResolutionSource: 'none',
-      templateResolutionError: 'missing binding',
-    }))
-    useWatchMock.mockImplementation(({ name }: { name?: string }) => {
-      if (name === 'modelCode') return '01'
-      if (name === 'typeId') return 'type-a'
-      return undefined
-    })
 
     renderDialog({
       props: {
@@ -461,11 +409,54 @@ describe('ProductActionDialog', () => {
       hookResult: {
         form,
         isEdit: false,
+        specPreviewTitle: 'Road Rim',
+        specPreviewSummary: 'Road Rim (normal/UNKNOWN/std)',
+        specPreviewV2: {
+          title: 'Road Rim',
+          code: 'RR-01',
+          summaryItems: [
+            {
+              key: 'techseries',
+              label: '工艺系列',
+              value: '高刚性',
+              empty: false,
+            },
+            {
+              key: 'versionlevel',
+              label: '版本等级',
+              value: '加强版',
+              empty: false,
+            },
+          ],
+          summaryText: '高刚性 / 加强版',
+          fullLabel: 'Road Rim (高刚性 / 加强版)',
+          strategyVersion: 'product-display-v2',
+        },
       },
     })
 
     await waitFor(() => {
-      expect(getTemplateResolutionMock).toHaveBeenCalledWith('type-a')
+      expect(screen.getByText('Road Rim')).toBeTruthy()
+      expect(screen.getByText('工艺系列: 高刚性')).toBeTruthy()
+      expect(screen.getByText('版本等级: 加强版')).toBeTruthy()
+    })
+  })
+
+  it('blocks save when authority cannot resolve a template in create mode', async () => {
+    const form = buildFormStub()
+
+    renderDialog({
+      props: {
+        productTypes: [],
+      },
+      hookResult: {
+        form,
+        isEdit: false,
+        templateResolveError: 'Template binding resolution failed: missing binding',
+      },
+    })
+
+    await waitFor(() => {
       expect(screen.getByRole('button', { name: 'engineering.productMgmt.dialog.saveStandard' })).toHaveProperty('disabled', true)
       expect(screen.getByText(/Template binding resolution failed:/)).toBeTruthy()
     })

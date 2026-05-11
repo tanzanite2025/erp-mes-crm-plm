@@ -13,6 +13,7 @@ interface PurchaseOrderActionDialogShellProps {
   open: boolean
   title: ReactNode
   description: string
+  headerAccessory?: ReactNode
   totalLabel: string
   totalAmount: string
   currency: string
@@ -29,6 +30,7 @@ export function PurchaseOrderActionDialogShell({
   open,
   title,
   description,
+  headerAccessory,
   totalLabel,
   totalAmount,
   currency,
@@ -43,25 +45,31 @@ export function PurchaseOrderActionDialogShell({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
+        size='full'
         showCloseButton={false}
-        className='max-h-[92vh] max-w-[calc(100%-1rem)] overflow-y-auto rounded-[32px] border-none p-0 shadow-2xl lg:max-w-[1100px]'
+        className='h-[95vh] w-[95vw] max-w-[95vw] rounded-[32px] border-none p-0 gap-0 shadow-2xl transition-all duration-300 overflow-hidden flex flex-col sm:h-[90vh] sm:max-h-[90vh] sm:max-w-[95vw] md:max-w-[95vw] lg:max-w-[95vw] xl:max-w-[95vw]'
       >
-        <div className='sticky top-0 z-20 flex items-center justify-between border-b bg-background/95 px-8 py-4 backdrop-blur-sm'>
-          <DialogHeader>
-            <DialogTitle className='flex items-center gap-2 text-lg font-black uppercase tracking-tighter text-slate-900 italic dark:text-white lg:text-xl'>
-              <ClipboardList className='size-6 text-primary' />
-              {title}
-            </DialogTitle>
-            <DialogDescription className='text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60'>
-              {description}
-            </DialogDescription>
-          </DialogHeader>
-          <Button variant='ghost' size='icon' onClick={() => onOpenChange(false)} className='rounded-full'>
-            <X className='size-4' />
-          </Button>
+        <div className='shrink-0 flex items-center justify-between gap-4 border-b bg-background/95 px-8 py-3 backdrop-blur-sm'>
+          <div className='flex min-w-0 flex-1 items-center gap-3'>
+            <ClipboardList className='size-6 shrink-0 text-primary' />
+            <DialogHeader className='min-w-0 flex-1 flex-row flex-wrap items-center gap-x-3 gap-y-1 space-y-0 text-left'>
+              <DialogTitle className='text-lg font-black uppercase tracking-tighter text-slate-900 italic dark:text-white lg:text-xl'>
+                {title}
+              </DialogTitle>
+              <DialogDescription className='text-[9px] font-black uppercase leading-none tracking-widest text-muted-foreground/55'>
+                {description}
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+          <div className='shrink-0 flex items-center gap-2.5'>
+            {headerAccessory ? <div className='flex items-center gap-2.5'>{headerAccessory}</div> : null}
+            <Button variant='ghost' size='icon' onClick={() => onOpenChange(false)} className='size-8 rounded-full'>
+              <X className='size-4' />
+            </Button>
+          </div>
         </div>
 
-        <div className='relative min-h-[400px] space-y-6 p-8'>
+        <div className='relative min-h-0 flex-1 overflow-y-auto space-y-3 px-6 py-4'>
           {isLoading && (
             <div className='absolute inset-0 z-50 flex flex-col items-center justify-center space-y-4 rounded-[32px] bg-background/60 backdrop-blur-sm animate-in fade-in duration-300'>
               <Loader2 className='size-10 animate-spin text-primary opacity-30' />
@@ -74,7 +82,7 @@ export function PurchaseOrderActionDialogShell({
           {children}
         </div>
 
-        <div className='sticky bottom-0 z-20 flex items-center justify-between border-t bg-background/95 px-8 py-5 backdrop-blur-sm'>
+        <div className='shrink-0 flex items-center justify-between border-t bg-background/95 px-8 py-5 backdrop-blur-sm'>
           <div className='flex items-center gap-6'>
             <div className='flex items-center gap-2.5 rounded-2xl bg-primary/5 px-4 py-2'>
               <Calculator className='size-4 text-primary' />

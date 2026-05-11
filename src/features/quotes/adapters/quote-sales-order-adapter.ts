@@ -25,7 +25,12 @@ export function useQuoteWorkspaceSalesOrderAdapter(open: boolean, onCreated: (qu
     updateLine,
     validate,
     prepareToSave,
-  } = useSalesOrderForm(undefined, open, createResources.products)
+  } = useSalesOrderForm(
+    undefined,
+    open,
+    createResources.products,
+    createResources.productDisplayProjectionMap
+  )
   const { createMutation } = useSalesOrderMutations()
 
   const createQuote = async () => {

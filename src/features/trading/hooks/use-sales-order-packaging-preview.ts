@@ -1,6 +1,5 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { productOptionsQueryKey } from '@/features/engineering/query-keys'
 import { ProductCoreService } from '@/features/engineering/services/product-core-service'
 import {
   calculatePackagingPlan,
@@ -10,6 +9,7 @@ import {
   packagingRulesService,
 } from '@/features/logistics-config/packaging-rules-service'
 import type { SalesOrder, SalesOrderLinePackagingSelection } from '../data/schema'
+import { tradingQueryKeys } from '../query-keys'
 import {
   createPackagingProfileFromSelection,
   getPackagingProfilesForProduct,
@@ -66,7 +66,7 @@ export function useSalesOrderPackagingPreview(order: SalesOrder) {
   })
 
   const productsQuery = useQuery({
-    queryKey: productOptionsQueryKey(),
+    queryKey: tradingQueryKeys.salesOrderPackagingProductOptions(),
     queryFn: () => ProductCoreService.getProductPackagingOptions(),
   })
 

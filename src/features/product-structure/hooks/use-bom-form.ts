@@ -2,6 +2,8 @@ import { useMemo } from 'react'
 import { type BOM } from '../data/schema'
 import { type BOMItemDraft } from '../mutation-types'
 import { createEmptyBOMFormValue } from '../utils/bom-form-defaults'
+import { buildBOMWorkspaceParentChildrenProtocolDraftFromBOMDetailSource } from './bom-workspace-protocol-source-adapter'
+import { useBOMEditDetailSource } from './use-bom-edit-detail-source'
 import { useBOMFormInitialization } from './use-bom-form-initialization'
 import { useBOMFormOptions } from './use-bom-form-options'
 import { useBOMFormState } from './use-bom-form-state'
@@ -28,13 +30,57 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
   const optionsResource = useBOMFormOptions({
     open,
   })
-  const products = optionsResource.status === 'ready' ? optionsResource.products : []
-  const materials = optionsResource.status === 'ready' ? optionsResource.materials : []
-  const sections = optionsResource.status === 'ready' ? optionsResource.sections : []
+  const products = useMemo(
+    () => (optionsResource.status === 'ready' ? optionsResource.products : []),
+    [optionsResource]
+  )
+  const productDisplayLabelMap = useMemo(
+    () => (optionsResource.status === 'ready' ? optionsResource.productDisplayLabelMap : new Map<string, string>()),
+    [optionsResource]
+  )
+  const materials = useMemo(
+    () => (optionsResource.status === 'ready' ? optionsResource.materials : []),
+    [optionsResource]
+  )
+  const sections = useMemo(
+    () => (optionsResource.status === 'ready' ? optionsResource.sections : []),
+    [optionsResource]
+  )
+  const watchedItems = form.watch('items')
+  const detailSourceResource = useBOMEditDetailSource({
+    bomId: currentRow?.id,
+    open,
+    isEdit,
+    activeSections: sections,
+    fields,
+    watchedItems,
+  })
+  const resolvedCurrentRow = isEdit
+    ? detailSourceResource?.status === 'ready'
+      ? detailSourceResource.data.bom
+      : undefined
+    : currentRow
+  const liveProtocolDraft = useMemo(
+    () => buildBOMWorkspaceParentChildrenProtocolDraftFromBOMDetailSource({
+      sourceBOM: {
+        ...form.getValues(),
+        items: watchedItems,
+      } as BOM,
+      activeSections: sections,
+      fields,
+      watchedItems,
+    }),
+    [fields, form, sections, watchedItems]
+  )
+  const protocolDraft = isEdit
+    ? detailSourceResource?.status === 'ready'
+      ? detailSourceResource.data.protocolDraft
+      : undefined
+    : liveProtocolDraft
 
   useBOMFormInitialization({
     form,
-    currentRow,
+    currentRow: resolvedCurrentRow,
     initialItems,
     initialProductId,
     sections,
@@ -48,7 +94,10 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
     append,
     remove,
     optionsResource,
+    detailSourceResource,
+    protocolDraft,
     products,
+    productDisplayLabelMap,
     materials,
     sections,
   }

@@ -28,7 +28,8 @@ interface StockMgmtCategorySectionProps {
     onHideZeroChange: (checked: boolean) => void
     materialTotalStock: Record<string, number>
     alertThresholds: Record<string, number>
-    onConfigureThreshold: (materialId: string, name: string, current: number) => void
+    canConfigureThreshold?: boolean
+    onConfigureThreshold: (item: InventoryView, current: number) => void
 }
 
 export function StockMgmtCategorySection({
@@ -38,6 +39,7 @@ export function StockMgmtCategorySection({
     onHideZeroChange,
     materialTotalStock,
     alertThresholds,
+    canConfigureThreshold = true,
     onConfigureThreshold
 }: StockMgmtCategorySectionProps) {
     const { t } = useLanguage()
@@ -141,8 +143,9 @@ export function StockMgmtCategorySection({
                                                 <Button
                                                     variant='ghost'
                                                     size='icon'
+                                                    disabled={!canConfigureThreshold}
                                                     className='size-7 md:size-8 rounded-lg text-muted-foreground/40 hover:text-primary hover:bg-primary/10 transition-all active:scale-90'
-                                                    onClick={() => onConfigureThreshold(item.materialId, item.materialName, min)}
+                                                    onClick={() => onConfigureThreshold(item, min)}
                                                 >
                                                     <Settings2 className='size-4 md:size-5' />
                                                 </Button>

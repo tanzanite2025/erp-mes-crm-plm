@@ -1,17 +1,19 @@
 import { useCallback, useMemo } from 'react'
 import { type Unit } from '@/features/basic-settings/services/unit-service'
 import { useActiveHoleCodeSource } from '@/features/code-center/hooks/use-hole-code-source'
+import { type ProductDisplayProjectionV2 } from '@/features/engineering/display/product-display-v2'
 import { type ProductAppearance } from '@/features/engineering/data/product-appearance'
 import { type Product } from '@/features/engineering/data/schema'
-import { formatProductDisplayName } from '@/features/engineering/utils/product-utils'
 import { type SalesOrderLine } from '../data/schema'
-import { buildSalesOrderLineDisplaySnapshot } from '../utils/sales-order-line-display-snapshot'
+import { buildSalesOrderLineProductFields } from '../utils/sales-order-line-product-fields'
 
 type SalesOrderLineFieldValue = SalesOrderLine[keyof SalesOrderLine]
 
 interface LinesEditorViewModelOptions {
   appearances: ProductAppearance[]
   products: Product[]
+  productDisplayLabelMap: Map<string, string>
+  productDisplayProjectionMap: Map<string, ProductDisplayProjectionV2>
   units: Unit[]
   currency?: string
   onLineChange: (
@@ -55,6 +57,8 @@ function getCurrencySymbol(currency?: string) {
 export function useSalesOrderLinesEditorViewModel({
   appearances,
   products,
+  productDisplayLabelMap,
+  productDisplayProjectionMap,
   units,
   currency,
   onLineChange,
@@ -83,9 +87,9 @@ export function useSalesOrderLinesEditorViewModel({
     () =>
       products.map((product) => ({
         id: product.id,
-        label: formatProductDisplayName(product),
+        label: productDisplayLabelMap.get(product.id) ?? '',
       })),
-    [products]
+    [productDisplayLabelMap, products]
   )
   const activeUnitOptions = useMemo(
     () =>
@@ -114,25 +118,23 @@ export function useSalesOrderLinesEditorViewModel({
   const handleProductChange = useCallback(
     (index: number, productId: string) => {
       const product = productById.get(productId)
-      if (!product) {
+      const displayProjection = productDisplayProjectionMap.get(productId)
+      if (!product || !displayProjection) {
         onLineChange(index, 'productId', productId, {
           selectedPackaging: undefined,
         })
         return
       }
 
-      const displaySnapshot = buildSalesOrderLineDisplaySnapshot(product)
+      const productFields = buildSalesOrderLineProductFields(product, displayProjection)
 
       onLineChange(index, 'productId', productId, {
-        productModel: product.sku,
-        productCode: product.sku,
-        specification: formatProductDisplayName(product),
-        ...displaySnapshot,
+        ...productFields,
         uom: 'PCS',
         selectedPackaging: undefined,
       })
     },
-    [onLineChange, productById]
+    [onLineChange, productById, productDisplayProjectionMap]
   )
 
   const handleAppearanceChange = useCallback(

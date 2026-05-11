@@ -38,6 +38,8 @@ interface DocumentEvidenceManagerProps {
   duplicateTitle?: string
   duplicateDescription?: string
   compact?: boolean
+  evidenceImageHeightClassName?: string
+  compactUploadSlotMinHeightClassName?: string
 }
 
 export function DocumentEvidenceManager({
@@ -60,6 +62,8 @@ export function DocumentEvidenceManager({
   duplicateTitle,
   duplicateDescription,
   compact = false,
+  evidenceImageHeightClassName,
+  compactUploadSlotMinHeightClassName,
 }: DocumentEvidenceManagerProps) {
   const { t } = useLanguage()
   const [uploading, setUploading] = useState(false)
@@ -98,6 +102,10 @@ export function DocumentEvidenceManager({
     duplicateDescription ??
     t('tradingSalesOrder.toasts.duplicateEvidenceDetail')
   const shouldShowHint = resolvedHint.trim().length > 0
+  const resolvedEvidenceImageHeightClassName = evidenceImageHeightClassName
+    ?? (compact ? 'h-[72px]' : 'h-40')
+  const resolvedCompactUploadSlotMinHeightClassName =
+    compactUploadSlotMinHeightClassName ?? 'min-h-[84px]'
 
   const handleFileUpload = useCallback(
     async (files: FileList | null, resetInput?: () => void) => {
@@ -295,11 +303,11 @@ export function DocumentEvidenceManager({
                     alt={ev.name}
                     className={cn(
                       'w-full object-cover transition-transform duration-500 group-hover/item:scale-105',
-                      compact ? 'h-[72px]' : 'h-40'
+                      resolvedEvidenceImageHeightClassName
                     )}
                   />
                 ) : (
-                  <div className={cn('flex items-center justify-center bg-muted/20', compact ? 'h-[72px]' : 'h-40')}>
+                  <div className={cn('flex items-center justify-center bg-muted/20', resolvedEvidenceImageHeightClassName)}>
                     <Loader2 className='size-4 animate-spin text-muted-foreground/40' />
                   </div>
                 )}
@@ -365,7 +373,12 @@ export function DocumentEvidenceManager({
           ))}
 
           {!disabled && evidences.length < maxCount ? (
-            <div className={cn('relative', compact ? 'min-h-[84px]' : 'min-h-[240px]')}>
+            <div
+              className={cn(
+                'relative',
+                compact ? resolvedCompactUploadSlotMinHeightClassName : 'min-h-[240px]'
+              )}
+            >
               <input
                 type='file'
                 className='absolute inset-0 z-10 cursor-pointer opacity-0'
@@ -381,7 +394,9 @@ export function DocumentEvidenceManager({
               <div
                 className={cn(
                   'flex h-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-muted-foreground/20 transition-all hover:border-primary/50 hover:bg-primary/5',
-                  compact ? 'min-h-[84px] space-y-1.5 rounded-[16px]' : 'min-h-[240px] space-y-2'
+                  compact
+                    ? `${resolvedCompactUploadSlotMinHeightClassName} space-y-1.5 rounded-[16px]`
+                    : 'min-h-[240px] space-y-2'
                 )}
               >
                 {uploading ? (

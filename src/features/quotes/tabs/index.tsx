@@ -174,6 +174,8 @@ export function QuoteOrdersTab() {
         appearances={createResources.appearances}
         lines={createFormData.lines || []}
         products={createResources.products}
+        productDisplayLabelMap={createResources.productDisplayLabelMap}
+        productDisplayProjectionMap={createResources.productDisplayProjectionMap}
         units={createResources.units}
         drillingOptions={createResources.drillingOptions}
         labelingOptions={createResources.labelingOptions}

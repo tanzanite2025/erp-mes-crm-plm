@@ -280,6 +280,9 @@ func createSalesOrderTx(input models.SalesOrder, originalID, requesterID, operat
 		if strings.TrimSpace(input.ID) == "" {
 			input.ID = uuid.NewString()
 		}
+		if err := normalizeSalesOrderLineProductFieldsTx(tx, input.Lines); err != nil {
+			return err
+		}
 		if err := normalizeSalesOrderLinePackagingSelectionsTx(tx, nil, input.Lines); err != nil {
 			return err
 		}

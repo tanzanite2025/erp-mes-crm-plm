@@ -1,13 +1,13 @@
-import type { ProductDisplayProjection } from '@/features/engineering/display/product-display-contract'
 import type {
   CustomerAnalyticsApiDTO,
   SalesAnalyticsProductDisplayApiDTO,
   SalesAnalyticsProductStatApiDTO,
 } from '../contracts/sales-analytics-api-dto'
+import type { SalesAnalyticsProductDisplay } from '../contracts/sales-analytics-product-display'
 
 export interface ProductStat {
   productId: string
-  productDisplay: ProductDisplayProjection
+  productDisplay: SalesAnalyticsProductDisplay
   totalQty: number
   orderCount: number
   totalAmount: number
@@ -23,7 +23,7 @@ export interface CustomerAnalytics {
 
 function toProductDisplayContract(
   dto: SalesAnalyticsProductDisplayApiDTO
-): ProductDisplayProjection {
+): SalesAnalyticsProductDisplay {
   return {
     title: dto.title,
     subtitle: dto.subtitle,

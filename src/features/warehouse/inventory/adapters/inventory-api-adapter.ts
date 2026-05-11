@@ -1,6 +1,9 @@
 import {
   type CreateInventoryInboundApiDTO,
   type InventoryAlertSummaryApiDTO,
+  type InventoryBOMAlertDetailApiDTO,
+  type InventoryBOMAlertDetailListApiDTO,
+  type InventoryBOMAlertShortageApiDTO,
   type InventoryInboundRecordApiDTO,
   type InventoryItemApiDTO,
   type InventoryValuationApiDTO,
@@ -10,6 +13,9 @@ import {
   type InboundTDO,
   type InboundRecord,
   type InventoryAlertSummary,
+  type InventoryBOMAlertDetail,
+  type InventoryBOMAlertDetailList,
+  type InventoryBOMAlertShortage,
   type InventoryRecord,
   type InventoryView,
   type MasterDataSearchResult,
@@ -117,5 +123,48 @@ export function toInventoryValuationContract(dto: InventoryValuationApiDTO): num
 export function toInventoryAlertSummaryContract(
   dto: InventoryAlertSummaryApiDTO
 ): InventoryAlertSummary {
-  return { alertCount: dto.alertCount }
+  return {
+    alertCount: dto.alertCount,
+    materialAlertCount: dto.materialAlertCount,
+    bomAlertCount: dto.bomAlertCount,
+  }
+}
+
+export function toInventoryBOMAlertShortageContract(
+  dto: InventoryBOMAlertShortageApiDTO
+): InventoryBOMAlertShortage {
+  return {
+    materialId: dto.materialId,
+    materialCode: dto.materialCode,
+    materialName: dto.materialName,
+    materialSpec: dto.materialSpec,
+    requiredQty: dto.requiredQty,
+    currentStock: dto.currentStock,
+    shortageQty: dto.shortageQty,
+  }
+}
+
+export function toInventoryBOMAlertDetailContract(
+  dto: InventoryBOMAlertDetailApiDTO
+): InventoryBOMAlertDetail {
+  return {
+    ruleId: dto.ruleId,
+    bomId: dto.bomId,
+    bomNo: dto.bomNo,
+    productId: dto.productId,
+    productName: dto.productName,
+    productSku: dto.productSku,
+    thresholdQty: dto.thresholdQty,
+    shortages: dto.shortages.map(toInventoryBOMAlertShortageContract),
+    triggeredAt: dto.triggeredAt,
+  }
+}
+
+export function toInventoryBOMAlertDetailListContract(
+  dto: InventoryBOMAlertDetailListApiDTO
+): InventoryBOMAlertDetailList {
+  return {
+    items: dto.items.map(toInventoryBOMAlertDetailContract),
+    total: dto.total,
+  }
 }

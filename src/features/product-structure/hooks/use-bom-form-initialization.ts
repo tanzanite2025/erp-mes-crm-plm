@@ -30,6 +30,7 @@ export function useBOMFormInitialization({
   useEffect(() => {
     const loadInitData = async () => {
       if (!open) return
+      if (isEdit && !currentRow) return
 
       try {
         const data = createBOMFormValue({

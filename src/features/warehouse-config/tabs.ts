@@ -14,6 +14,11 @@ export const warehouseConfigTabs: TabItem[] = [
     label: '',
     href: '/warehouse-config/category',
   },
+  {
+    key: 'material-thresholds',
+    label: '',
+    href: '/warehouse-config/material-thresholds',
+  },
 ]
 
 export function getWarehouseConfigTabs(t: TranslateFn): TabItem[] {
@@ -27,6 +32,11 @@ export function getWarehouseConfigTabs(t: TranslateFn): TabItem[] {
       key: 'category',
       label: t('warehouse.tabs.category'),
       href: '/warehouse-config/category',
+    },
+    {
+      key: 'material-thresholds',
+      label: t('warehouseConfig.tabs.materialThresholds'),
+      href: '/warehouse-config/material-thresholds',
     },
   ]
 }

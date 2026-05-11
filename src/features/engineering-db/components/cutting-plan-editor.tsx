@@ -26,7 +26,7 @@ import {
 import { useLanguage } from '@/context/language-provider'
 import { useActiveHoleCodeSource } from '@/features/code-center/hooks/use-hole-code-source'
 import type { Product } from '@/features/engineering/data/schema'
-import { useGetProducts } from '@/features/engineering/hooks/use-products'
+import { useProductDisplayOptions } from '@/features/engineering/hooks/use-product-display-options'
 import {
   type CutSizeUnit,
 } from '@/features/raw-materials/cut-size-library/data/cut-size-library-schema'
@@ -121,8 +121,7 @@ function parseCommaSeparatedList(value: string): string[] {
 
 export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
   const { t } = useLanguage()
-  const lines = useMemo(() => value.lines ?? [], [value.lines])
-  const { data: products = [] } = useGetProducts()
+  const { products = [], productOptions } = useProductDisplayOptions()
   const { countOptions } = useActiveHoleCodeSource()
 
   const prepregQuery = useQuery<PrepregMaterialSpec[] | PrepregMaterialSpecListResponse>({
@@ -151,8 +150,16 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
   const cutSizeUnits = useMemo(() => cutSizeQuery.data ?? [], [cutSizeQuery.data])
 
   const activeProducts = useMemo(
-    () => products.filter((product) => product.status !== 'Archived'),
-    [products]
+    () => products.filter((product) => (product.status ?? 'Active') !== 'Archived'),
+    [products],
+  )
+  const activeProductIdSet = useMemo(
+    () => new Set(activeProducts.map((product) => product.id)),
+    [activeProducts],
+  )
+  const activeProductOptions = useMemo(
+    () => productOptions.filter((option) => activeProductIdSet.has(option.value)),
+    [activeProductIdSet, productOptions],
   )
 
   const matchedProduct = useMemo(
@@ -199,6 +206,8 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
       productName: matchedProduct.name || '',
     })
   }, [matchedProduct, onChange, value])
+
+  const lines = useMemo(() => value.lines ?? [], [value.lines])
 
   useEffect(() => {
     if (lines.length === 0 || cutSizeUnits.length === 0) return
@@ -346,9 +355,9 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
               <SelectValue placeholder={t('engineering.cuttingPlan.placeholders.selectProduct')} />
             </SelectTrigger>
             <SelectContent>
-              {activeProducts.map((product) => (
-                <SelectItem key={product.id} value={product.id}>
-                  {product.sku} | {product.name}
+              {activeProductOptions.map((productOption) => (
+                <SelectItem key={productOption.value} value={productOption.value}>
+                  {productOption.label}
                 </SelectItem>
               ))}
             </SelectContent>

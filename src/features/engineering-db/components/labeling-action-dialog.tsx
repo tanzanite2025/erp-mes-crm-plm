@@ -12,12 +12,12 @@ import {
   type LabelingDraft,
   type LabelingDraftInput,
 } from '../data/schema'
-import { useGetProducts } from '@/features/engineering/hooks/use-products'
 import { ActionDialogShell } from '@/components/action-dialog-shell'
 import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { toast } from 'sonner'
 import type { DeltaSet } from '@/lib/delta/types'
+import { useEngineeringDbProductDisplayOptions } from '../hooks/use-engineering-db-product-display-options'
 
 type LabelingFormState = LabelingDraftInput & { id?: string; createdAt?: string }
 type LabelingFormUpdater = LabelingFormState | ((prev: LabelingFormState) => LabelingFormState)
@@ -52,7 +52,7 @@ export function LabelingActionDialog({
   onSave,
   isLoading,
 }: LabelingActionDialogProps) {
-  const { data: products = [] } = useGetProducts()
+  const { productOptions } = useEngineeringDbProductDisplayOptions({ enabled: open })
 
   const shellClasses = buildActionDialogShellClasses({
     content: 'sm:max-w-[700px] rounded-[32px] overflow-hidden',
@@ -86,6 +86,13 @@ export function LabelingActionDialog({
       [field]: value,
     }))
   }, [setFormData])
+  const targetProductOptions = useMemo(
+    () => [
+      { label: '-- 通用方案 / Generic --', value: 'generic' },
+      ...productOptions,
+    ],
+    [productOptions]
+  )
 
   const handleSave = async () => {
     const parsed = labelingDraftInputSchema.safeParse(formData)
@@ -224,13 +231,7 @@ export function LabelingActionDialog({
             <SelectDropdown
               defaultValue={formData.productId || 'generic'}
               onValueChange={(value) => updateField('productId', value === 'generic' ? '' : value)}
-              items={[
-                { label: '-- 通用方案 / Generic --', value: 'generic' },
-                ...products.map((product) => ({
-                  label: `${product.sku} | ${product.name}`,
-                  value: product.id,
-                })),
-              ]}
+              items={targetProductOptions}
               placeholder='选择适配的成品 SKU'
               className='h-12 rounded-2xl border-none bg-background px-5 text-sm font-bold italic shadow-sm'
             />

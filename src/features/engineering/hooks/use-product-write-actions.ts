@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { tradingQueryKeys } from '@/features/trading/query-keys'
 import { type Product } from '../data/schema'
 import { type SaveProductOperation } from '../mutation-types'
 import {
@@ -16,6 +17,7 @@ export function useProductWriteActions() {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: productManagementQueryKey() }),
       queryClient.invalidateQueries({ queryKey: productOptionsQueryKey() }),
+      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.salesOrderPackagingProductOptions() }),
       queryClient.invalidateQueries({ queryKey: productListQueryKeyPrefix() }),
       queryClient.invalidateQueries({
         predicate: (query) => isProductDetailQueryKey(query.queryKey),

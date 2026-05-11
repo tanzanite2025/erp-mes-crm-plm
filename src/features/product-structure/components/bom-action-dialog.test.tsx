@@ -11,10 +11,16 @@ const {
   useBOMFormMock,
   bomFormHeaderMock,
   bomRecipeEditorMock,
+  failLoudlyMock,
 } = vi.hoisted(() => ({
   useBOMFormMock: vi.fn(),
   bomFormHeaderMock: vi.fn(),
   bomRecipeEditorMock: vi.fn(),
+  failLoudlyMock: vi.fn(),
+}))
+
+vi.mock('@/lib/safe-catch', () => ({
+  failLoudly: failLoudlyMock,
 }))
 
 vi.mock('@/context/language-provider', () => ({
@@ -101,8 +107,21 @@ function buildUseBOMFormResult(overrides: Partial<UseBOMFormResult> = {}): UseBO
     fields: [],
     append: vi.fn(),
     remove: vi.fn(),
-    optionsResource: { status: 'ready', products: [], materials: [], sections: [] },
+    optionsResource: {
+      status: 'ready',
+      products: [],
+      productDisplayLabelMap: new Map<string, string>(),
+      materials: [],
+      sections: [],
+      productTemplates: [],
+      productTypes: [],
+      productAttributeCategories: [],
+      productAttributeOptions: [],
+    },
+    detailSourceResource: undefined,
+    protocolDraft: undefined,
     products: [{ id: 'product-1', sku: 'SKU-001', name: 'Product A' }],
+    productDisplayLabelMap: new Map([['product-1', 'Product A (高刚性)']]),
     materials: [{ id: 'mat-1', code: 'MAT-001', name: 'Material A', category: 'RAW_MATERIAL', spec: '', uom: 'PCS', status: 'Active' }],
     sections: [{ value: 'PREPARE', label: '备料', code: 'PREPARE', name: '备料', active: true, sortOrder: 1, isDefault: true, legacyNames: ['备料'] }],
     ...overrides,
@@ -119,19 +138,29 @@ describe('BOMActionDialog', () => {
   })
 
   it('renders form header and recipe editor when options resource is ready', () => {
-    mockedUseBOMForm.mockReturnValue(buildUseBOMFormResult())
+    mockedUseBOMForm.mockReturnValue(buildUseBOMFormResult({
+      protocolDraft: {
+        rootChildren: ['section:PREPARE'],
+        branchNodes: [],
+        itemNodes: [],
+      },
+    }))
 
     render(<BOMActionDialog open onOpenChange={vi.fn()} onSubmit={vi.fn()} />)
 
     expect(bomFormHeaderMock).toHaveBeenCalledWith(
       expect.objectContaining({
         products: expect.arrayContaining([expect.objectContaining({ id: 'product-1' })]),
+        productDisplayLabelMap: expect.any(Map),
         isEdit: false,
       })
     )
     expect(bomRecipeEditorMock).toHaveBeenCalledWith(
       expect.objectContaining({
         materials: expect.arrayContaining([expect.objectContaining({ id: 'mat-1' })]),
+        protocolDraft: expect.objectContaining({
+          rootChildren: ['section:PREPARE'],
+        }),
       })
     )
     expect(screen.getByTestId('bom-form-header')).toBeTruthy()
@@ -144,6 +173,7 @@ describe('BOMActionDialog', () => {
       buildUseBOMFormResult({
         optionsResource: { status: 'loading' },
         products: [],
+        productDisplayLabelMap: new Map<string, string>(),
         materials: [],
         sections: [],
       })
@@ -168,6 +198,7 @@ describe('BOMActionDialog', () => {
           scope: 'useBOMFormOptions.materials',
         },
         products: [],
+        productDisplayLabelMap: new Map<string, string>(),
         materials: [],
         sections: [],
       })
@@ -219,6 +250,39 @@ describe('BOMActionDialog', () => {
     expect(onOpenChange).toHaveBeenCalledWith(false)
   })
 
+  it('includes relationSidecar when dirty create submit succeeds', async () => {
+    const user = userEvent.setup()
+    const onSubmit = vi.fn(async () => undefined)
+
+    mockedUseBOMForm.mockReturnValue(
+      buildUseBOMFormResult({
+        protocolDraft: {
+          rootChildren: ['branch:prepare'],
+          branchNodes: [],
+          itemNodes: [],
+        },
+        form: buildFormStub({ isDirty: true, submitData: { bomNo: 'BOM-NEW-001' } }) as UseBOMFormResult['form'],
+      })
+    )
+
+    render(<BOMActionDialog open onOpenChange={vi.fn()} onSubmit={onSubmit} />)
+
+    await user.click(screen.getByRole('button', { name: 'engineering.bomArchive.dialog.save' }))
+
+    expect(onSubmit).toHaveBeenCalledWith({
+      bomNo: 'BOM-NEW-001',
+      relationSidecar: {
+        kind: 'parent_children_protocol',
+        version: 'v1',
+        protocolDraft: {
+          rootChildren: ['branch:prepare'],
+          branchNodes: [],
+          itemNodes: [],
+        },
+      },
+    })
+  })
+
   it('does not auto-close after dirty submit and leaves close control to parent', async () => {
     const user = userEvent.setup()
     const onOpenChange = vi.fn()
@@ -226,6 +290,11 @@ describe('BOMActionDialog', () => {
 
     mockedUseBOMForm.mockReturnValue(
       buildUseBOMFormResult({
+        protocolDraft: {
+          rootChildren: ['branch:prepare'],
+          branchNodes: [],
+          itemNodes: [],
+        },
         form: buildFormStub({ isDirty: true, submitData: { bomNo: 'BOM-001' } }) as UseBOMFormResult['form'],
       })
     )
@@ -241,7 +310,83 @@ describe('BOMActionDialog', () => {
 
     await user.click(screen.getByRole('button', { name: 'engineering.bomArchive.dialog.save' }))
 
-    expect(onSubmit).toHaveBeenCalledWith({ bomNo: 'BOM-001' })
+    expect(onSubmit).toHaveBeenCalledWith({
+      bomNo: 'BOM-001',
+      relationSidecar: {
+        kind: 'parent_children_protocol',
+        version: 'v1',
+        protocolDraft: {
+          rootChildren: ['branch:prepare'],
+          branchNodes: [],
+          itemNodes: [],
+        },
+      },
+    })
     expect(onOpenChange).not.toHaveBeenCalledWith(false)
+  })
+
+  it('fails loudly and blocks create submit when effective protocol draft is missing', async () => {
+    const user = userEvent.setup()
+    const onOpenChange = vi.fn()
+    const onSubmit = vi.fn()
+
+    mockedUseBOMForm.mockReturnValue(
+      buildUseBOMFormResult({
+        protocolDraft: undefined,
+        form: buildFormStub({ isDirty: true, submitData: { bomNo: 'BOM-NEW-001' } }) as UseBOMFormResult['form'],
+      })
+    )
+
+    render(
+      <BOMActionDialog
+        open
+        onOpenChange={onOpenChange}
+        onSubmit={onSubmit}
+      />
+    )
+
+    await user.click(screen.getByRole('button', { name: 'engineering.bomArchive.dialog.save' }))
+
+    expect(onSubmit).not.toHaveBeenCalled()
+    expect(onOpenChange).not.toHaveBeenCalledWith(false)
+    expect(failLoudlyMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: '[CRITICAL] Missing effective BOM relation sidecar protocol draft during save submit',
+      }),
+      'BOMActionDialog.handleFormSubmit'
+    )
+  })
+
+  it('fails loudly and blocks edit submit when effective protocol draft is missing', async () => {
+    const user = userEvent.setup()
+    const onOpenChange = vi.fn()
+    const onSubmit = vi.fn()
+
+    mockedUseBOMForm.mockReturnValue(
+      buildUseBOMFormResult({
+        protocolDraft: undefined,
+        form: buildFormStub({ isDirty: true, submitData: { bomNo: 'BOM-001' } }) as UseBOMFormResult['form'],
+      })
+    )
+
+    render(
+      <BOMActionDialog
+        open
+        onOpenChange={onOpenChange}
+        onSubmit={onSubmit}
+        currentRow={{ id: 'bom-1', bomNo: 'BOM-001' } as never}
+      />
+    )
+
+    await user.click(screen.getByRole('button', { name: 'engineering.bomArchive.dialog.save' }))
+
+    expect(onSubmit).not.toHaveBeenCalled()
+    expect(onOpenChange).not.toHaveBeenCalledWith(false)
+    expect(failLoudlyMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: '[CRITICAL] Missing effective BOM relation sidecar protocol draft during save submit',
+      }),
+      'BOMActionDialog.handleFormSubmit'
+    )
   })
 })

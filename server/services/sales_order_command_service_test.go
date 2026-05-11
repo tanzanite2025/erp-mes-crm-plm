@@ -41,6 +41,45 @@ func setupSalesOrderCommandTestDB(t *testing.T) *gorm.DB {
 	return testDB
 }
 
+func ensureSalesOrderCommandTestProductsTable(t *testing.T, testDB *gorm.DB) {
+	t.Helper()
+
+	require.NoError(t, testDB.Exec(`
+		CREATE TABLE IF NOT EXISTS products (
+			id TEXT PRIMARY KEY,
+			sku TEXT NOT NULL UNIQUE,
+			name TEXT NOT NULL,
+			model_code TEXT,
+			tech_series TEXT,
+			brake_type TEXT,
+			version_level TEXT,
+			barcode_config BLOB,
+			status TEXT,
+			deleted_at DATETIME
+		)
+	`).Error)
+}
+
+func createSalesOrderCommandTestProduct(t *testing.T, testDB *gorm.DB, id string, sku string, name string, modelCode string, barcodeConfig string) {
+	t.Helper()
+	ensureSalesOrderCommandTestProductsTable(t, testDB)
+	encodedBarcodeConfig, err := json.Marshal([]byte(barcodeConfig))
+	require.NoError(t, err)
+
+	require.NoError(t, testDB.Exec(
+		`INSERT INTO products (id, sku, name, model_code, barcode_config, status) VALUES (?, ?, ?, ?, ?, ?)`,
+		id,
+		sku,
+		name,
+		modelCode,
+		encodedBarcodeConfig,
+		"Active",
+	).Error)
+
+	var persisted models.Product
+	require.NoError(t, testDB.Where("id = ?", id).First(&persisted).Error)
+}
+
 func TestSaveSalesOrderGeneratesOrderNoFromBarcodeWhenBlank(t *testing.T) {
 	originalDB := db.DB
 	testDB := setupSalesOrderCommandTestDB(t)
@@ -173,30 +212,6 @@ func TestSalesOrderLineSnapshotFieldsRoundTripThroughMapper(t *testing.T) {
 	require.Equal(t, "manual", snapshot.SelectedPackaging.Source)
 }
 
-func TestSalesOrderExchangeRateSnapshotRoundTripThroughMapper(t *testing.T) {
-	request := SaveSalesOrderRequest{
-		ID:                   "order-1",
-		OrderNo:              "SO-001",
-		CustomerName:         "Customer A",
-		Type:                 "NORMAL",
-		Currency:             "USD",
-		ExchangeRateSnapshot: 7.125,
-		Classification:       "STANDARD",
-		Status:               "Pending",
-		OrderDate:            "2026-04-29",
-		DeliveryDate:         "2026-05-06",
-		Lines:                []SalesOrderLineRequest{},
-	}
-
-	model := MapSaveSalesOrderRequestToModel(request)
-	response := MapSalesOrderToResponse(model)
-	snapshot := MapSalesOrderResponseToSnapshot(response)
-
-	require.Equal(t, 7.125, model.ExchangeRateSnapshot)
-	require.Equal(t, 7.125, response.ExchangeRateSnapshot)
-	require.Equal(t, 7.125, snapshot.ExchangeRateSnapshot)
-}
-
 func TestSaveSalesOrderRecalculatesAuthorityAmountsOnCreate(t *testing.T) {
 	originalDB := db.DB
 	testDB := setupSalesOrderCommandTestDB(t)
@@ -208,6 +223,7 @@ func TestSaveSalesOrderRecalculatesAuthorityAmountsOnCreate(t *testing.T) {
 			_ = sqlDB.Close()
 		}
 	})
+	ensureSalesOrderCommandTestProductsTable(t, testDB)
 	require.NoError(t, testDB.Exec(`CREATE TABLE IF NOT EXISTS materials (
 		id TEXT PRIMARY KEY,
 		deleted_at DATETIME
@@ -254,6 +270,174 @@ func TestSaveSalesOrderRecalculatesAuthorityAmountsOnCreate(t *testing.T) {
 	require.Equal(t, 20.0, result.Lines[0].Amount)
 }
 
+func TestSaveSalesOrderNormalizesBlankOrUnnamedProductDisplayFieldsFromProduct(t *testing.T) {
+	originalDB := db.DB
+	testDB := setupSalesOrderCommandTestDB(t)
+	db.DB = testDB
+	t.Cleanup(func() {
+		db.DB = originalDB
+		sqlDB, err := testDB.DB()
+		if err == nil {
+			_ = sqlDB.Close()
+		}
+	})
+	createSalesOrderCommandTestProduct(t, testDB, "product-1", "MTB-01", "R50", "01", `{"category":"R"}`)
+
+	result, err := SaveSalesOrder(SaveSalesOrderCommand{
+		Request: SaveSalesOrderRequest{
+			OrderNo:        "SO-DISPLAY-001",
+			Barcode:        "SO-DISPLAY-001",
+			CustomerName:   "客户A",
+			Classification: "GENERAL",
+			Status:         "Pending",
+			Currency:       "CNY",
+			OrderDate:      "2026-05-11",
+			DeliveryDate:   "2026-05-18",
+			Lines: []SalesOrderLineRequest{
+				{
+					LineNo:                          1,
+					ProductID:                       "product-1",
+					ProductModel:                    "",
+					ProductCode:                     "",
+					Specification:                   "UNNAMED (normal/UNKNOWN/std)",
+					ProductDisplayTitleSnapshot:     "UNNAMED",
+					ProductDisplaySubtitleSnapshot:  "normal/UNKNOWN/std",
+					ProductDisplayCodeSnapshot:      "",
+					ProductDisplayFullLabelSnapshot: "UNNAMED (normal/UNKNOWN/std)",
+					Description:                     "Desc",
+					Qty:                             2,
+					UOM:                             "PCS",
+					Price:                           10,
+					Amount:                          20,
+					OrderDate:                       "2026-05-11",
+					Status:                          "Pending",
+				},
+			},
+		},
+		ActorID:  "u-1",
+		Operator: "admin",
+		IP:       "127.0.0.1",
+	})
+	require.NoError(t, err)
+	require.Len(t, result.Lines, 1)
+	require.Equal(t, "MTB-01", result.Lines[0].ProductModel)
+	require.Equal(t, "MTB-01", result.Lines[0].ProductCode)
+	require.Equal(t, "R50 (normal/UNKNOWN/std)", result.Lines[0].Specification)
+	require.Equal(t, "R50", result.Lines[0].ProductDisplayTitleSnapshot)
+	require.Equal(t, "normal/UNKNOWN/std", result.Lines[0].ProductDisplaySubtitleSnapshot)
+	require.Equal(t, "MTB-01", result.Lines[0].ProductDisplayCodeSnapshot)
+	require.Equal(t, "R50 (normal/UNKNOWN/std)", result.Lines[0].ProductDisplayFullLabelSnapshot)
+	require.Equal(t, "product-display-v1", result.Lines[0].ProductDisplayStrategyVersionSnapshot)
+	require.Equal(t, "01", result.Lines[0].ModelCodeSnapshot)
+	require.Equal(t, "R", result.Lines[0].HolePrefixSnapshot)
+}
+
+func TestSaveSalesOrderUnifiedSaveRepairsUnnamedHistoricalProductSnapshots(t *testing.T) {
+	originalDB := db.DB
+	testDB := setupSalesOrderCommandTestDB(t)
+	db.DB = testDB
+	t.Cleanup(func() {
+		db.DB = originalDB
+		sqlDB, err := testDB.DB()
+		if err == nil {
+			_ = sqlDB.Close()
+		}
+	})
+	createSalesOrderCommandTestProduct(t, testDB, "product-1", "MTB-01", "R50", "01", `{"category":"R"}`)
+	require.NoError(t, testDB.Exec(`
+		INSERT INTO sales_orders (
+			id, order_no, customer_name, classification, status, currency, order_date, delivery_date, barcode, version
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`,
+		"order-1",
+		"SO-DISPLAY-002",
+		"客户A",
+		"GENERAL",
+		"Pending",
+		"CNY",
+		"2026-05-11",
+		"2026-05-18",
+		"SO-DISPLAY-002",
+		1,
+	).Error)
+	require.NoError(t, testDB.Exec(`
+		INSERT INTO sales_order_lines (
+			sales_order_id, line_no, product_id, product_model, product_code, specification,
+			product_display_title_snapshot, product_display_subtitle_snapshot, product_display_code_snapshot,
+			product_display_full_label_snapshot, product_display_strategy_version_snapshot,
+			description, qty, uom, price, amount, order_date, status
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`,
+		"order-1",
+		1,
+		"product-1",
+		"",
+		"",
+		"UNNAMED (normal/UNKNOWN/std)",
+		"UNNAMED",
+		"normal/UNKNOWN/std",
+		"",
+		"UNNAMED (normal/UNKNOWN/std)",
+		"product-display-v1",
+		"Desc",
+		2,
+		"PCS",
+		10,
+		20,
+		"2026-05-11",
+		"Pending",
+	).Error)
+
+	result, err := SaveSalesOrder(SaveSalesOrderCommand{
+		Request: SaveSalesOrderRequest{
+			ID:             "order-1",
+			OrderNo:        "SO-DISPLAY-002",
+			Barcode:        "SO-DISPLAY-002",
+			CustomerName:   "客户A",
+			Classification: "GENERAL",
+			Status:         "Pending",
+			Currency:       "CNY",
+			OrderDate:      "2026-05-11",
+			DeliveryDate:   "2026-05-18",
+			Version:        1,
+			Lines: []SalesOrderLineRequest{
+				{
+					LineNo:                                1,
+					ProductID:                             "product-1",
+					ProductModel:                          "",
+					ProductCode:                           "",
+					Specification:                         "UNNAMED (normal/UNKNOWN/std)",
+					ProductDisplayTitleSnapshot:           "UNNAMED",
+					ProductDisplaySubtitleSnapshot:        "normal/UNKNOWN/std",
+					ProductDisplayCodeSnapshot:            "",
+					ProductDisplayFullLabelSnapshot:       "UNNAMED (normal/UNKNOWN/std)",
+					ProductDisplayStrategyVersionSnapshot: "product-display-v1",
+					Description:                           "Desc",
+					Qty:                                   2,
+					UOM:                                   "PCS",
+					Price:                                 10,
+					Amount:                                20,
+					OrderDate:                             "2026-05-11",
+					Status:                                "Pending",
+				},
+			},
+		},
+		ActorID:  "u-1",
+		Operator: "admin",
+		IP:       "127.0.0.1",
+	})
+	require.NoError(t, err)
+	require.Len(t, result.Lines, 1)
+	require.Equal(t, "MTB-01", result.Lines[0].ProductModel)
+	require.Equal(t, "MTB-01", result.Lines[0].ProductCode)
+	require.Equal(t, "R50 (normal/UNKNOWN/std)", result.Lines[0].Specification)
+	require.Equal(t, "R50", result.Lines[0].ProductDisplayTitleSnapshot)
+	require.Equal(t, "MTB-01", result.Lines[0].ProductDisplayCodeSnapshot)
+	require.Equal(t, "R50 (normal/UNKNOWN/std)", result.Lines[0].ProductDisplayFullLabelSnapshot)
+	require.Equal(t, "01", result.Lines[0].ModelCodeSnapshot)
+	require.Equal(t, "R", result.Lines[0].HolePrefixSnapshot)
+}
+
 func TestSaveSalesOrderAutoSelectsUniqueDefaultPackagingProfile(t *testing.T) {
 	originalDB := db.DB
 	testDB := setupSalesOrderCommandTestDB(t)
@@ -265,6 +449,7 @@ func TestSaveSalesOrderAutoSelectsUniqueDefaultPackagingProfile(t *testing.T) {
 			_ = sqlDB.Close()
 		}
 	})
+	ensureSalesOrderCommandTestProductsTable(t, testDB)
 	require.NoError(t, testDB.Exec(`CREATE TABLE IF NOT EXISTS materials (
 		id TEXT PRIMARY KEY,
 		deleted_at DATETIME

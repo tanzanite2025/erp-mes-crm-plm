@@ -10,14 +10,14 @@ import type { WeavingMode } from '../data/weaving-mode-schema'
 const {
   getWeavingModesMock,
   toastErrorMock,
-  useGetProductsMock,
+  useEngineeringDbProductDisplayOptionsMock,
   useDeltaTrackerMock,
   deltaCommitMock,
   deltaIsDirtyMock,
 } = vi.hoisted(() => ({
   getWeavingModesMock: vi.fn(),
   toastErrorMock: vi.fn(),
-  useGetProductsMock: vi.fn(),
+  useEngineeringDbProductDisplayOptionsMock: vi.fn(),
   useDeltaTrackerMock: vi.fn(),
   deltaCommitMock: vi.fn(),
   deltaIsDirtyMock: vi.fn(),
@@ -29,8 +29,8 @@ vi.mock('sonner', () => ({
   },
 }))
 
-vi.mock('@/features/engineering/hooks/use-products', () => ({
-  useGetProducts: useGetProductsMock,
+vi.mock('./use-engineering-db-product-display-options', () => ({
+  useEngineeringDbProductDisplayOptions: useEngineeringDbProductDisplayOptionsMock,
 }))
 
 vi.mock('@/hooks/use-delta-tracker', () => ({
@@ -100,11 +100,17 @@ describe('useDrillingActionDialogState', () => {
   beforeEach(() => {
     vi.clearAllMocks()
 
-    useGetProductsMock.mockReturnValue({
-      data: [
-        { id: 'product-1', sku: 'SKU-001', name: 'Product One' },
-        { id: 'product-2', sku: 'SKU-002', name: 'Product Two' },
+    useEngineeringDbProductDisplayOptionsMock.mockReturnValue({
+      productOptions: [
+        { label: 'Product One (高刚性)', value: 'product-1' },
+        { label: 'Product Two (舒适)', value: 'product-2' },
       ],
+      productDisplayLabelMap: new Map([
+        ['product-1', 'Product One (高刚性)'],
+        ['product-2', 'Product Two (舒适)'],
+      ]),
+      products: [],
+      isLoading: false,
     })
 
     deltaCommitMock.mockReturnValue({})
@@ -125,7 +131,7 @@ describe('useDrillingActionDialogState', () => {
     vi.restoreAllMocks()
   })
 
-  it('builds default create state and only exposes active weaving modes for new forms', async () => {
+  it('builds default create state with authority productOptions and only exposes active weaving modes for new forms', async () => {
     getWeavingModesMock.mockResolvedValue([
       buildWeavingMode({ id: 'wm-1', label: '1:1', active: true }),
       buildWeavingMode({ id: 'wm-2', label: '2:1', active: false, isSystemPreset: false }),
@@ -143,7 +149,10 @@ describe('useDrillingActionDialogState', () => {
     expect(result.current.isEdit).toBe(false)
     expect(result.current.formData.name).toBe('')
     expect(result.current.formData.fileExtension).toBe('pdf')
-    expect(result.current.products).toHaveLength(2)
+    expect(result.current.productOptions).toEqual([
+      { label: 'Product One (高刚性)', value: 'product-1' },
+      { label: 'Product Two (舒适)', value: 'product-2' },
+    ])
     expect(result.current.weavingModeItems).toEqual([
       { label: '1:1', value: 'wm-1' },
     ])

@@ -1,25 +1,54 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { type ProductDisplayProjectionV2 } from '@/features/engineering/display/product-display-v2'
 import { 
   BarChart3, 
   TrendingUp, 
   Users, 
-  Package, 
-  ArrowUpRight
+  Package
 } from 'lucide-react'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { SelectDropdown } from '@/components/select-dropdown'
 import { useLanguage } from '@/context/language-provider'
 import { useSalesAnalytics, useGlobalProductRanking } from '../hooks/use-sales-analytics'
+import { useSalesAnalyticsProductDisplayMap } from '../hooks/use-sales-analytics-product-display'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
+
+type AnalyticsCompatProductDisplay = {
+  title: string
+  subtitle: string
+  code: string
+}
+
+function resolveAnalyticsProductDisplay(
+  productId: string,
+  fallback: AnalyticsCompatProductDisplay,
+  productDisplayProjectionMap: Map<string, ProductDisplayProjectionV2>
+) {
+  const projection = productDisplayProjectionMap.get(productId)
+
+  if (projection) {
+    return {
+      title: projection.title,
+      summaryText: projection.summaryText,
+      code: projection.code,
+    }
+  }
+
+  return {
+    title: fallback.title,
+    summaryText: fallback.subtitle,
+    code: fallback.code,
+  }
+}
 
 export function OrdersAnalysisTab() {
   const { t, locale } = useLanguage()
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('all')
+  const productDisplayProjectionMap = useSalesAnalyticsProductDisplayMap()
   
   const { data: analytics, isLoading: isAnalyticsLoading } = useSalesAnalytics({
     customerId: selectedCustomerId === 'all' ? undefined : selectedCustomerId
@@ -35,7 +64,7 @@ export function OrdersAnalysisTab() {
     ]
   }, [analytics, locale])
 
-  const globalVolume = useMemo(
+  const top10ProductVolume = useMemo(
     () => globalRanking?.reduce((acc, curr) => acc + curr.totalQty, 0) || 0,
     [globalRanking]
   )
@@ -62,52 +91,58 @@ export function OrdersAnalysisTab() {
       />
 
       {/* Header KPI cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="rounded-[32px] border-dashed bg-blue-500/5 p-6 border-blue-500/20 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-125 transition-transform duration-500">
-            <Users className="size-16" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <Card className="min-h-[76px] flex-row items-center gap-3 rounded-[24px] border-dashed border-blue-500/20 bg-blue-500/5 px-4 py-2.5 shadow-none">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[11px] font-black uppercase tracking-widest text-blue-600/60 leading-none">
+               {t('trading.analytics.activeCustomers')}
+            </p>
+            <p className="mt-1 truncate text-[9px] font-black uppercase tracking-[0.16em] opacity-55 leading-none">
+              {t('trading.analytics.activeCustomersDesc')}
+            </p>
           </div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-blue-600/60 mb-1 italic">
-             {t('trading.analytics.activeCustomers')}
-          </p>
-          <h3 className="text-3xl font-black tracking-tighter italic">
+          <h3 className="shrink-0 text-xl font-black tracking-tighter italic leading-none">
             {analytics?.length || 0}
           </h3>
-          <p className="text-[8px] font-mono mt-2 opacity-50 uppercase tracking-widest">
-            {t('trading.analytics.activeCustomersDesc')}
-          </p>
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-full border border-blue-500/15 bg-blue-500/5">
+            <Users className="size-4 text-blue-600/45" />
+          </div>
         </Card>
 
-        <Card className="rounded-[32px] border-dashed bg-emerald-500/5 p-6 border-emerald-500/20 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-125 transition-transform duration-500">
-            <TrendingUp className="size-16" />
+        <Card className="min-h-[76px] flex-row items-center gap-3 rounded-[24px] border-dashed border-emerald-500/20 bg-emerald-500/5 px-4 py-2.5 shadow-none">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[11px] font-black uppercase tracking-widest text-emerald-600/60 leading-none">
+              {t('trading.analytics.top10ProductVolume')}
+            </p>
+            <p className="mt-1 truncate text-[9px] font-black uppercase tracking-[0.16em] opacity-55 leading-none">
+              {t('trading.analytics.top10ProductVolumeDesc')}
+            </p>
           </div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600/60 mb-1 italic">
-            {t('trading.analytics.globalVolume')}
-          </p>
-          <h3 className="text-3xl font-black tracking-tighter italic">
+          <h3 className="shrink-0 text-xl font-black tracking-tighter italic leading-none">
             {/* [UI-DISPLAY-ONLY]: Summarizes only the currently loaded Top 10 list. */}
-            {globalVolume.toLocaleString()}
+            {top10ProductVolume.toLocaleString()}
           </h3>
-          <p className="text-[8px] font-mono mt-2 opacity-50 uppercase tracking-widest">
-            {t('trading.analytics.globalVolumeDesc')}
-          </p>
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-full border border-emerald-500/15 bg-emerald-500/5">
+            <TrendingUp className="size-4 text-emerald-600/45" />
+          </div>
         </Card>
 
-        <Card className="rounded-[32px] border-dashed bg-amber-500/5 p-6 border-amber-500/20 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-125 transition-transform duration-500">
-            <BarChart3 className="size-16" />
+        <Card className="min-h-[76px] flex-row items-center gap-3 rounded-[24px] border-dashed border-amber-500/20 bg-amber-500/5 px-4 py-2.5 shadow-none">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[11px] font-black uppercase tracking-widest text-amber-600/60 leading-none">
+              {t('trading.analytics.analyzedLines')}
+            </p>
+            <p className="mt-1 truncate text-[9px] font-black uppercase tracking-[0.16em] opacity-55 leading-none">
+              {t('trading.analytics.analyzedLinesDesc')}
+            </p>
           </div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-amber-600/60 mb-1 italic">
-            {t('trading.analytics.analyzedLines')}
-          </p>
-          <h3 className="text-3xl font-black tracking-tighter italic">
+          <h3 className="shrink-0 text-xl font-black tracking-tighter italic leading-none">
             {/* [UI-DISPLAY-ONLY]: Summarizes only currently loaded customer orders. */}
             {analyzedLines}
           </h3>
-          <p className="text-[8px] font-mono mt-2 opacity-50 uppercase tracking-widest">
-            {t('trading.analytics.analyzedLinesDesc')}
-          </p>
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-full border border-amber-500/15 bg-amber-500/5">
+            <BarChart3 className="size-4 text-amber-600/45" />
+          </div>
         </Card>
       </div>
 
@@ -116,9 +151,9 @@ export function OrdersAnalysisTab() {
         {/* Left: per-customer ranking list */}
         <div className="flex-1 space-y-6">
           <div className="flex items-center justify-between pb-2 border-b border-dashed border-muted/50">
-            <h2 className="text-lg font-black tracking-tighter italic uppercase flex items-center gap-2">
+            <h2 className="text-sm font-black tracking-tighter italic uppercase flex items-center gap-2">
               <Package className="size-5 text-primary" />
-              {t('trading.tabs.ordersAnalysis')} 
+              {t('trading.analytics.customerProductRanking')}
             </h2>
             <div className="flex gap-2">
                <SelectDropdown
@@ -136,17 +171,27 @@ export function OrdersAnalysisTab() {
             {analytics?.map((customer) => (
               <Card key={customer.customerId} className="rounded-[24px] border-dashed border-muted/40 hover:border-primary/40 transition-all p-5 group">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="flex flex-col">
-                    <p className="text-[8px] font-mono text-muted-foreground/60 uppercase tracking-widest">{t('trading.analytics.customerId')}: {customer.customerId}</p>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">{t('trading.analytics.customerId')}</span>
+                      <span className="text-[9px] font-mono font-semibold tracking-[0.12em] text-foreground/95">{customer.customerId}</span>
+                    </div>
                     <h4 className="text-sm font-black italic tracking-tight">{customer.customerName}</h4>
                   </div>
-                  <Badge variant="outline" className="rounded-full h-5 text-[8px] font-mono bg-primary/5 border-primary/20 text-primary uppercase">
+                  <Badge variant="outline" className="rounded-full h-5 px-2.5 text-[8px] font-mono tracking-[0.16em] bg-primary/10 border-primary/25 text-primary uppercase">
                     {customer.products.length} {t('trading.analytics.productCount')}
                   </Badge>
                 </div>
 
                 <div className="space-y-3">
-                  {customer.products.slice(0, 3).map((prod, idx) => (
+                  {customer.products.slice(0, 3).map((prod, idx) => {
+                    const display = resolveAnalyticsProductDisplay(
+                      prod.productId,
+                      prod.productDisplay,
+                      productDisplayProjectionMap
+                    )
+
+                    return (
                     <div key={prod.productId} className="flex items-center justify-between p-2 rounded-xl hover:bg-muted/30 transition-colors">
                        <div className="flex items-center gap-3">
                           <div className={`size-6 rounded-lg flex items-center justify-center text-[10px] font-black italic border ${
@@ -157,17 +202,18 @@ export function OrdersAnalysisTab() {
                             {idx + 1}
                           </div>
                           <div className="flex flex-col">
-                            <span className="text-[10px] font-black tracking-tight">{prod.productDisplay.title}</span>
-                            <span className="text-[8px] font-black uppercase tracking-widest opacity-40">{prod.productDisplay.subtitle || '--'}</span>
-                            <span className="text-[8px] font-mono opacity-40 uppercase">{prod.productDisplay.code || '--'}</span>
+                            <span className="text-[10px] font-black tracking-tight">{display.title}</span>
+                            <span className="text-[8px] font-black uppercase tracking-widest opacity-40">{display.summaryText || '--'}</span>
+                            <span className="text-[9px] font-mono tracking-[0.14em] text-foreground/70">{display.code || '--'}</span>
                           </div>
                        </div>
                        <div className="text-right">
-                          <p className="text-[10px] font-black italic leading-none">{prod.totalQty.toLocaleString()}</p>
-                          <p className="text-[8px] font-mono opacity-40 uppercase tracking-tighter">{t('trading.analytics.orderedUnits')}</p>
+                          <p className="text-[11px] font-black italic leading-none">{prod.totalQty.toLocaleString()}</p>
+                          <p className="text-[9px] font-black uppercase tracking-[0.16em] text-muted-foreground/60">{t('trading.analytics.orderedUnits')}</p>
                        </div>
                     </div>
-                  ))}
+                    )
+                  })}
                   {customer.products.length > 3 && (
                     <p className="text-[8px] font-black uppercase tracking-[0.2em] text-center opacity-30 mt-2">
                        {t('trading.analytics.moreProducts', { count: customer.products.length - 3 })}
@@ -187,29 +233,32 @@ export function OrdersAnalysisTab() {
           </div>
 
           <Card className="rounded-[32px] border-none bg-muted/10 shadow-inner p-6 space-y-6">
-            {globalRanking?.map((prod, idx) => (
+            {globalRanking?.map((prod, idx) => {
+              const display = resolveAnalyticsProductDisplay(
+                prod.productId,
+                prod.productDisplay,
+                productDisplayProjectionMap
+              )
+
+              return (
               <div key={prod.productId} className="flex flex-col gap-1.5 animate-in slide-in-from-right-4 fade-in duration-500" style={{ animationDelay: `${idx * 100}ms` }}>
                 <div className="flex items-center justify-between">
                   <div className="min-w-0">
-                    <span className="block truncate text-[10px] font-black italic tracking-tight max-w-[150px]">{prod.productDisplay.title}</span>
-                    <span className="block truncate text-[8px] font-mono uppercase opacity-40 max-w-[150px]">{prod.productDisplay.code || prod.productDisplay.subtitle || '--'}</span>
+                    <span className="block truncate text-[10px] font-black italic tracking-tight max-w-[150px]">{display.title}</span>
+                    <span className="block truncate text-[8px] font-mono uppercase opacity-40 max-w-[150px]">{display.code || display.summaryText || '--'}</span>
                   </div>
                   <span className="text-[10px] font-mono font-bold text-primary">{Math.round((prod.totalQty / (globalRanking[0]?.totalQty || 1)) * 100)}%</span>
                 </div>
                 <div className="h-1 bg-muted/20 rounded-full overflow-hidden">
                   <div 
-                    className="h-full bg-gradient-to-r from-primary to-blue-400 rounded-full transition-all duration-1000 ease-out"
+                    className="h-full bg-linear-to-r from-primary to-blue-400 rounded-full transition-all duration-1000 ease-out"
                     style={{ width: `${(prod.totalQty / (globalRanking[0]?.totalQty || 1)) * 100}%` }}
                   />
                 </div>
               </div>
-            ))}
+              )
+            })}
           </Card>
-
-          <Button variant="outline" className="w-full h-11 rounded-full border-dashed border-muted/50 font-black text-[10px] uppercase tracking-widest hover:bg-primary/5 group">
-             {t('trading.analytics.viewMarketReport')}
-             <ArrowUpRight className="ml-2 size-3 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-          </Button>
         </div>
       </div>
     </div>

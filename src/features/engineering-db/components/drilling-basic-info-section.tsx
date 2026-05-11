@@ -6,13 +6,13 @@ import type { DrillingPlanInput } from '../data/schema'
 
 type DrillingBasicInfoSectionProps = {
   formData: DrillingPlanInput & { id?: string; createdAt?: string }
-  products: Array<{ id: string; sku: string; name: string }>
+  productOptions: Array<{ label: string; value: string }>
   updateField: <K extends keyof (DrillingPlanInput & { id?: string; createdAt?: string })>(field: K, value: (DrillingPlanInput & { id?: string; createdAt?: string })[K]) => void
 }
 
 export function DrillingBasicInfoSection({
   formData,
-  products,
+  productOptions,
   updateField,
 }: DrillingBasicInfoSectionProps) {
   return (
@@ -35,7 +35,7 @@ export function DrillingBasicInfoSection({
         <SelectDropdown
           defaultValue={formData.productId}
           onValueChange={(value) => updateField('productId', value)}
-          items={products.map((product) => ({ label: `${product.sku} | ${product.name}`, value: product.id }))}
+          items={productOptions}
           placeholder='选择适配的产品 SKU'
           className='h-12 rounded-2xl border-none bg-muted/40 px-5 font-bold text-sm shadow-inner italic'
         />

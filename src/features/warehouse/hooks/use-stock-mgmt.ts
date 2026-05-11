@@ -5,6 +5,11 @@ import { useLanguage } from '@/context/language-provider'
 import { createLogger } from '@/lib/logger'
 import { type CompositeReadResource, resolveQueryFailure } from '@/lib/read-resource'
 import { failLoudly } from '@/lib/safe-catch'
+import {
+    type InventoryThresholdRule,
+    type InventoryThresholdRuleWritePayload,
+} from '../material-thresholds/data/schema'
+import { InventoryThresholdService } from '../material-thresholds/services/inventory-threshold-service'
 import { WarehouseCategoryCoreService } from '../category'
 import type { WarehouseCategory } from '../category/services/warehouse-category-core-service'
 import { InventoryCoreService, InventoryMaintenanceService, type InventoryView } from '../inventory'
@@ -18,8 +23,11 @@ type StockMgmtReadResource = CompositeReadResource<{
     materialTotalStock: Record<string, number>
     totalAssetsValue: number
     alertThresholds: Record<string, number>
+    thresholdRules: InventoryThresholdRule[]
     categories: WarehouseCategory[]
     alertCount: number
+    materialAlertCount: number
+    bomAlertCount: number
 }>
 
 /**
@@ -51,9 +59,9 @@ export function useStockMgmt(feedback?: Pick<WarehouseUiFeedback, 'success'>) {
         queryFn: () => InventoryCoreService.getAlertSummary()
     })
 
-    const thresholdsQuery = useQuery({
-        queryKey: warehouseQueryKeys.alertThresholds(),
-        queryFn: () => InventoryMaintenanceService.getAlertThresholds()
+    const thresholdRulesQuery = useQuery({
+        queryKey: warehouseQueryKeys.thresholdRules(),
+        queryFn: () => InventoryThresholdService.listRules()
     })
 
     const categoriesQuery = useQuery({
@@ -67,8 +75,13 @@ export function useStockMgmt(feedback?: Pick<WarehouseUiFeedback, 'success'>) {
     
     // Dialog states
     const [configDialogOpen, setConfigDialogOpen] = useState(false)
-    const [selectedMaterial, setSelectedMaterial] = useState<{ id: string, name: string, current: number } | null>(null)
-    const [tempThreshold, setTempThreshold] = useState<string>('')
+    const [selectedMaterial, setSelectedMaterial] = useState<{
+        id: string
+        name: string
+        code: string
+        spec: string
+        uom: string
+    } | null>(null)
     const [reconcileConfirmOpen, setReconcileConfirmOpen] = useState(false)
 
     // Mutations
@@ -82,17 +95,33 @@ export function useStockMgmt(feedback?: Pick<WarehouseUiFeedback, 'success'>) {
         onError: (err) => failLoudly(err, 'StockMgmt.onConfirmReconcile')
     })
 
-    const setThresholdMutation = useMutation({
-        mutationFn: (params: { id: string, value: number }) =>
-            InventoryMaintenanceService.setAlertThreshold(params.id, params.value),
-        onSuccess: (_, variables) => {
+    const saveThresholdRuleMutation = useMutation({
+        mutationFn: async (payload: InventoryThresholdRuleWritePayload) => {
+            if (!selectedMaterial) {
+                throw new Error('[VALIDATION] stock threshold target is missing')
+            }
+
+            const existingRule = thresholdRulesQuery.data?.find(
+                (rule) => rule.targetType === 'MATERIAL' && rule.materialId === selectedMaterial.id
+            )
+
+            if (existingRule) {
+                return InventoryThresholdService.updateRule(existingRule.id, payload)
+            }
+
+            return InventoryThresholdService.createRule(payload)
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.thresholdRules() })
             queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.alertThresholds() })
-            ui.success(t('warehouse.stock.toast.thresholdUpdated', {
-                name: selectedMaterial?.name || 'Item',
-                value: variables.value
+            queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.inventoryAlertSummary() })
+            ui.success(t('warehouse.stock.toast.thresholdRuleUpdated', {
+                name: selectedMaterial?.name || '物料',
             }))
             setConfigDialogOpen(false)
-        }
+            setSelectedMaterial(null)
+        },
+        onError: (err) => failLoudly(err, 'StockMgmt.handleSaveThresholdRule')
     })
 
     // Business Logic Handlers
@@ -105,11 +134,21 @@ export function useStockMgmt(feedback?: Pick<WarehouseUiFeedback, 'success'>) {
         await reconcileMutation.mutateAsync()
     }
 
-    const handleSaveThreshold = async () => {
+    const handleSaveThresholdRule = async (payload: InventoryThresholdRuleWritePayload) => {
         if (!selectedMaterial) return
-        if (!allowsAction('action_warehouse_reconcile')) return
-        const value = parseFloat(tempThreshold) || 0
-        await setThresholdMutation.mutateAsync({ id: selectedMaterial.id, value })
+        if (!allowsAction('action_warehouse_category_manage')) return
+
+        const existingRule = thresholdRulesQuery.data?.find(
+            (rule) => rule.targetType === 'MATERIAL' && rule.materialId === selectedMaterial.id
+        )
+
+        if (!existingRule && payload.thresholdQty <= 0) {
+            setConfigDialogOpen(false)
+            setSelectedMaterial(null)
+            return
+        }
+
+        await saveThresholdRuleMutation.mutateAsync(payload)
     }
 
     const readResource = useMemo<StockMgmtReadResource>(() => {
@@ -129,19 +168,19 @@ export function useStockMgmt(feedback?: Pick<WarehouseUiFeedback, 'success'>) {
             }
         }
 
-        const thresholdsFailure = resolveQueryFailure({
-            data: thresholdsQuery.data,
-            error: thresholdsQuery.error,
-            isPending: thresholdsQuery.isPending,
-            scope: 'useStockMgmt.alertThresholds',
-            missingMessage: '[CRITICAL] Inventory security data missing after load',
-            failureMessage: '[CRITICAL] Inventory security query failed',
+        const thresholdRulesFailure = resolveQueryFailure({
+            data: thresholdRulesQuery.data,
+            error: thresholdRulesQuery.error,
+            isPending: thresholdRulesQuery.isPending,
+            scope: 'useStockMgmt.thresholdRules',
+            missingMessage: '[CRITICAL] Inventory threshold rules missing after load',
+            failureMessage: '[CRITICAL] Inventory threshold rules query failed',
         })
-        if (thresholdsFailure) {
+        if (thresholdRulesFailure) {
             return {
                 status: 'error',
-                error: thresholdsFailure.error,
-                scope: thresholdsFailure.scope,
+                error: thresholdRulesFailure.error,
+                scope: thresholdRulesFailure.scope,
             }
         }
 
@@ -187,7 +226,7 @@ export function useStockMgmt(feedback?: Pick<WarehouseUiFeedback, 'success'>) {
 
         if (
             inventoryQuery.isPending ||
-            thresholdsQuery.isPending ||
+            thresholdRulesQuery.isPending ||
             categoriesQuery.isPending ||
             valuationQuery.isPending ||
             alertSummaryQuery.isPending
@@ -205,10 +244,22 @@ export function useStockMgmt(feedback?: Pick<WarehouseUiFeedback, 'success'>) {
         }
 
         const inventory = inventoryQuery.data as InventoryView[]
-        const alertThresholds = thresholdsQuery.data as Record<string, number>
+        const thresholdRules = thresholdRulesQuery.data as InventoryThresholdRule[]
+        const alertThresholds = thresholdRules.reduce<Record<string, number>>((acc, rule) => {
+            if (rule.targetType !== 'MATERIAL' || !rule.enabled || !rule.materialId) {
+                return acc
+            }
+
+            acc[rule.materialId] = rule.thresholdQty
+            return acc
+        }, {})
         const categories = categoriesQuery.data as WarehouseCategory[]
-        const alertCount = alertSummaryQuery.data?.alertCount
-        if (alertCount === undefined) {
+        const alertSummary = alertSummaryQuery.data
+        if (
+            alertSummary?.alertCount === undefined ||
+            alertSummary.materialAlertCount === undefined ||
+            alertSummary.bomAlertCount === undefined
+        ) {
             return {
                 status: 'error',
                 error: new Error('[CRITICAL] Inventory alert count missing after load'),
@@ -244,8 +295,11 @@ export function useStockMgmt(feedback?: Pick<WarehouseUiFeedback, 'success'>) {
             materialTotalStock,
             totalAssetsValue,
             alertThresholds,
+            thresholdRules,
             categories,
-            alertCount,
+            alertCount: alertSummary.alertCount,
+            materialAlertCount: alertSummary.materialAlertCount,
+            bomAlertCount: alertSummary.bomAlertCount,
         }
     }, [
         alertSummaryQuery.data,
@@ -258,9 +312,9 @@ export function useStockMgmt(feedback?: Pick<WarehouseUiFeedback, 'success'>) {
         inventoryQuery.error,
         inventoryQuery.isPending,
         searchTerm,
-        thresholdsQuery.data,
-        thresholdsQuery.error,
-        thresholdsQuery.isPending,
+        thresholdRulesQuery.data,
+        thresholdRulesQuery.error,
+        thresholdRulesQuery.isPending,
         valuationQuery.data,
         valuationQuery.error,
         valuationQuery.isPending,
@@ -279,8 +333,28 @@ export function useStockMgmt(feedback?: Pick<WarehouseUiFeedback, 'success'>) {
     const materialTotalStock = readResource.status === 'ready' ? readResource.materialTotalStock : {}
     const totalAssetsValue = readResource.status === 'ready' ? readResource.totalAssetsValue : 0
     const alertThresholds = readResource.status === 'ready' ? readResource.alertThresholds : {}
+    const thresholdRules = readResource.status === 'ready' ? readResource.thresholdRules : []
     const categories = readResource.status === 'ready' ? readResource.categories : []
     const alertCount = readResource.status === 'ready' ? readResource.alertCount : 0
+    const materialAlertCount = readResource.status === 'ready' ? readResource.materialAlertCount : 0
+    const bomAlertCount = readResource.status === 'ready' ? readResource.bomAlertCount : 0
+    const selectedThresholdRule = selectedMaterial
+        ? thresholdRules.find(
+            (rule) => rule.targetType === 'MATERIAL' && rule.materialId === selectedMaterial.id
+        ) ?? null
+        : null
+    const selectedMaterialOptions = selectedMaterial ? [
+        {
+            id: selectedMaterial.id,
+            code: selectedMaterial.code,
+            name: selectedMaterial.name,
+            category: '',
+            spec: selectedMaterial.spec,
+            uom: selectedMaterial.uom,
+            status: 'Active',
+        }
+    ] : []
+    const canManageThresholdRule = allowsAction('action_warehouse_category_manage')
 
     return {
         readResource,
@@ -289,10 +363,13 @@ export function useStockMgmt(feedback?: Pick<WarehouseUiFeedback, 'success'>) {
         materialTotalStock,
         totalAssetsValue,
         alertThresholds,
+        thresholdRules,
         categories,
         loading: readResource.status === 'loading',
         error: readResource.status === 'error' ? readResource.error : null,
         alertCount,
+        materialAlertCount,
+        bomAlertCount,
 
         // UI & Filter states
         searchTerm,
@@ -305,18 +382,21 @@ export function useStockMgmt(feedback?: Pick<WarehouseUiFeedback, 'success'>) {
         setConfigDialogOpen,
         selectedMaterial,
         setSelectedMaterial,
-        tempThreshold,
-        setTempThreshold,
+        selectedThresholdRule,
+        selectedMaterialOptions,
+        canManageThresholdRule,
         reconcileConfirmOpen,
         setReconcileConfirmOpen,
         isReconciling: reconcileMutation.isPending,
+        isSavingThresholdRule: saveThresholdRuleMutation.isPending,
 
         // Handlers
         handleHardReconcile,
         onConfirmReconcile,
-        handleSaveThreshold,
+        handleSaveThresholdRule,
         refreshData: () => {
             queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.inventoryList() })
+            queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.thresholdRules() })
             queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.alertThresholds() })
         },
         retryRead: async () => {
@@ -324,7 +404,7 @@ export function useStockMgmt(feedback?: Pick<WarehouseUiFeedback, 'success'>) {
                 inventoryQuery.refetch(),
                 valuationQuery.refetch(),
                 alertSummaryQuery.refetch(),
-                thresholdsQuery.refetch(),
+                thresholdRulesQuery.refetch(),
                 categoriesQuery.refetch(),
             ])
         },

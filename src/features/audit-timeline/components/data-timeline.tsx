@@ -25,10 +25,18 @@ import { type MaterialOption } from '@/features/material-archive/data/schema'
 import { MATERIAL_OPTIONS_QUERY_KEY } from '@/features/material-archive/query-keys'
 import { MaterialCoreService } from '@/features/material-archive/services/material-core-service'
 import { type Product } from '@/features/engineering/data/schema'
-import { PRODUCT_ATTRIBUTE_CATEGORIES_QUERY_KEY, PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY, productOptionsQueryKey } from '@/features/engineering/query-keys'
+import {
+  PRODUCT_ATTRIBUTE_CATEGORIES_QUERY_KEY,
+  PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY,
+  PRODUCT_TEMPLATES_QUERY_KEY,
+  PRODUCT_TYPES_QUERY_KEY,
+  productOptionsQueryKey,
+} from '@/features/engineering/query-keys'
 import { ProductAttributeCategoryService } from '@/features/engineering/services/product-attribute-category-service'
 import { ProductAttributeOptionService } from '@/features/engineering/services/product-attribute-option-service'
 import { ProductCoreService } from '@/features/engineering/services/product-core-service'
+import { productTemplateService } from '@/features/engineering/services/product-template-service'
+import { ProductTypeService } from '@/features/engineering/services/product-type-service'
 import { getDefaultPermissions } from '@/features/authz/data/default-permission-queries'
 import { formatPermissionLabel } from '@/features/authz/utils/permission-tree-utils'
 import { BomAuditEntry } from './bom-audit-entry'
@@ -130,6 +138,16 @@ export const DataTimeline: React.FC<DataTimelineProps> = ({
   const productAttributeOptionsQuery = useQuery({
     queryKey: PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY,
     queryFn: () => ProductAttributeOptionService.getProductAttributeOptions(),
+    enabled: module === AUDIT_MODULES.product && open,
+  })
+  const productTemplatesQuery = useQuery({
+    queryKey: PRODUCT_TEMPLATES_QUERY_KEY,
+    queryFn: () => productTemplateService.getTemplates(),
+    enabled: module === AUDIT_MODULES.product && open,
+  })
+  const productTypesQuery = useQuery({
+    queryKey: PRODUCT_TYPES_QUERY_KEY,
+    queryFn: () => ProductTypeService.getProductTypes(),
     enabled: module === AUDIT_MODULES.product && open,
   })
   const productOptionsQuery = useQuery({
@@ -237,6 +255,8 @@ export const DataTimeline: React.FC<DataTimelineProps> = ({
                         actionLabel={formatAuditActionLabel(log.action, t)}
                         attributeCategories={productAttributeCategoriesQuery.data ?? []}
                         attributeOptions={productAttributeOptionsQuery.data ?? []}
+                        productTemplates={productTemplatesQuery.data ?? []}
+                        productTypes={productTypesQuery.data ?? []}
                         products={resolvedProducts}
                       />
                     ) : module === AUDIT_MODULES.userPermission ? (

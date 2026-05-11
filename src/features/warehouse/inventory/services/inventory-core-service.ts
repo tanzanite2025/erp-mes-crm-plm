@@ -1,17 +1,22 @@
 import { apiFetch } from '@/lib/api-client'
 import {
   ensureArrayField,
+  ensureNumberField,
   ensureObjectResponse,
 } from '@/lib/api-response'
 import {
   toInboundRecordContracts,
   toInventoryAlertSummaryContract,
+  toInventoryBOMAlertDetailListContract,
   toInventoryRecordContract,
   toInventoryValuationContract,
   toInventoryViewContracts,
 } from '../adapters/inventory-api-adapter'
 import {
   type InventoryAlertSummaryApiDTO,
+  type InventoryBOMAlertDetailApiDTO,
+  type InventoryBOMAlertDetailListApiDTO,
+  type InventoryBOMAlertShortageApiDTO,
   type InventoryInboundHistoryApiDTO,
   type InventoryInboundRecordApiDTO,
   type InventoryItemApiDTO,
@@ -21,6 +26,7 @@ import {
 import {
   type InboundRecord,
   type InventoryAlertSummary,
+  type InventoryBOMAlertDetailList,
   type InventoryRecord,
   type InventoryView,
 } from '../data/schema'
@@ -28,6 +34,9 @@ import {
 export type {
   InboundRecord,
   InventoryAlertSummary,
+  InventoryBOMAlertDetail,
+  InventoryBOMAlertDetailList,
+  InventoryBOMAlertShortage,
   InventoryRecord,
   InventoryView,
   MasterDataSearchResult,
@@ -114,5 +123,30 @@ export const InventoryCoreService = {
       'InventoryCoreService.getAlertSummary'
     )
     return toInventoryAlertSummaryContract(response)
+  },
+
+  getBOMAlertDetails: async (): Promise<InventoryBOMAlertDetailList> => {
+    const res = await apiFetch<InventoryBOMAlertDetailListApiDTO>('/inventory/alerts/bom-details')
+    const response = ensureObjectResponse<InventoryBOMAlertDetailListApiDTO & Record<string, unknown>>(
+      res,
+      'InventoryCoreService.getBOMAlertDetails'
+    )
+
+    return toInventoryBOMAlertDetailListContract({
+      ...response,
+      items: ensureArrayField<InventoryBOMAlertDetailApiDTO>(
+        response,
+        'items',
+        'InventoryCoreService.getBOMAlertDetails'
+      ).map((item) => ({
+        ...item,
+        shortages: ensureArrayField<InventoryBOMAlertShortageApiDTO>(
+          item,
+          'shortages',
+          'InventoryCoreService.getBOMAlertDetails'
+        ),
+      })),
+      total: ensureNumberField(response, 'total', 'InventoryCoreService.getBOMAlertDetails'),
+    })
   },
 }

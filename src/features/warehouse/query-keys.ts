@@ -5,6 +5,9 @@ export const warehouseQueryKeys = {
   inboundHistory: (): QueryKey => ['warehouse', 'inbound-history'],
   shipmentHistory: (): QueryKey => ['warehouse', 'shipment-history'],
   shipmentDemands: (): QueryKey => ['warehouse', 'shipment-demands'],
+  inventoryBOMAlertDetails: (): QueryKey => ['warehouse', 'inventory-bom-alert-details'],
+  thresholdRules: (): QueryKey => ['warehouse', 'threshold-rules'],
+  thresholdTargetOptions: (): QueryKey => ['warehouse', 'threshold-target-options'],
   masterDataAll: (): QueryKey => ['warehouse', 'master-data', 'all'],
   masterDataSearch: (scope: string, query: string): QueryKey => [
     'warehouse',

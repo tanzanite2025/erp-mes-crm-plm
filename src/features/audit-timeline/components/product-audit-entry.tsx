@@ -1,8 +1,15 @@
 import { useMemo } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { useLanguage } from '@/context/language-provider'
-import { type Product, type ProductAttributeCategory, type ProductAttributeOption } from '@/features/engineering/data/schema'
-import { ProductCoreService } from '@/features/engineering/services/product-core-service'
+import {
+  type Product,
+  type ProductAttributeCategory,
+  type ProductAttributeOption,
+  type ProductTemplate,
+  type ProductType,
+} from '@/features/engineering/data/schema'
+import { resolveProductDisplayV2 } from '@/features/engineering/display/product-display-v2'
+import { resolveProductDisplayMetadataV2 } from '@/features/engineering/display/product-display-v2-metadata'
 import {
   AuditEntryColumnCard,
   AuditEntryColumns,
@@ -143,12 +150,16 @@ export function ProductAuditEntry({
   actionLabel,
   attributeCategories,
   attributeOptions,
+  productTemplates,
+  productTypes,
   products,
 }: {
   log: AuditLog
   actionLabel: string
   attributeCategories: ProductAttributeCategory[]
   attributeOptions: ProductAttributeOption[]
+  productTemplates: ProductTemplate[]
+  productTypes: ProductType[]
   products: Product[]
 }) {
   const { locale, t } = useLanguage()
@@ -166,9 +177,31 @@ export function ProductAuditEntry({
     [products],
   )
   const targetProduct = productsById.get(log.target_id)
-  const targetDisplayName = targetProduct
-    ? ProductCoreService.formatDisplay(targetProduct)
-    : summary.targetName || log.target_id || (locale === 'zh-CN' ? '未命名产品' : 'Unnamed Product')
+  const displayMetadataV2 = useMemo(
+    () => targetProduct
+      ? resolveProductDisplayMetadataV2({
+          locale,
+          product: targetProduct,
+          templates: productTemplates,
+          productTypes,
+          categories: attributeCategories,
+          options: attributeOptions,
+        })
+      : null,
+    [attributeCategories, attributeOptions, locale, productTemplates, productTypes, targetProduct],
+  )
+  const displayProjectionV2 = displayMetadataV2?.projection
+    ?? (targetProduct
+      ? resolveProductDisplayV2({
+          locale,
+          product: targetProduct,
+        })
+      : null)
+  const targetDisplayName = displayProjectionV2?.fullLabel
+    || summary.targetName
+    || log.target_id
+    || (locale === 'zh-CN' ? '未命名产品' : 'Unnamed Product')
+  const v2SummaryItems = displayMetadataV2?.projection?.summaryItems.filter((item) => !item.empty) ?? []
   const summaryItems = [
     {
       label: locale === 'zh-CN' ? '产品对象' : 'Product',
@@ -327,6 +360,24 @@ export function ProductAuditEntry({
 
         <AuditEntryColumnCard title={locale === 'zh-CN' ? '产品审计摘要' : 'Product Audit Summary'}>
           <AuditEntrySummaryList items={summaryItems} />
+          {v2SummaryItems.length > 0 ? (
+            <div className='mt-4 border-t border-dashed border-muted/30 pt-4'>
+              <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>
+                {locale === 'zh-CN' ? '模板摘要' : 'Template Summary'}
+              </div>
+              <div className='mt-3 flex flex-wrap gap-1.5'>
+                {v2SummaryItems.map((item) => (
+                  <Badge
+                    key={`product-display-v2-${item.key}`}
+                    variant='outline'
+                    className='rounded-full border-dashed border-indigo-500/20 bg-indigo-500/5 text-[8px] font-mono text-indigo-700'
+                  >
+                    {item.label}: {item.value}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          ) : null}
           <div className='mt-4 border-t border-dashed border-muted/30 pt-4'>
             <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>
               {locale === 'zh-CN' ? '变更字段' : 'Changed Fields'}

@@ -2,6 +2,7 @@ import type { UseFormReturn } from 'react-hook-form'
 import { type MaterialOption } from '../../../material-archive/data/schema'
 import { type BOMSectionOption } from '../../data/bom-section-schema'
 import { type BOM } from '../../data/schema'
+import { type BOMWorkspaceParentChildrenProtocolDraft } from '../../hooks/bom-workspace-source-model'
 import { useBOMWorkspace } from '../../hooks/use-bom-workspace'
 import { BOMFlatWorkspaceView } from './bom-flat-workspace-view'
 
@@ -12,14 +13,16 @@ interface BOMWorkspaceProps {
   sections: BOMSectionOption[]
   append: (obj: BOM['items'][number]) => void
   remove: (index: number) => void
+  protocolDraft?: BOMWorkspaceParentChildrenProtocolDraft
 }
 
-export function BOMWorkspace({ form, fields, materials, sections, append, remove }: BOMWorkspaceProps) {
+export function BOMWorkspace({ form, fields, materials, sections, append, remove, protocolDraft }: BOMWorkspaceProps) {
   const workspace = useBOMWorkspace({
     form,
     fields,
     sections,
     append,
+    protocolDraft,
   })
 
   return (

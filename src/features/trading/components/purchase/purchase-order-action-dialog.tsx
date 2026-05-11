@@ -1,9 +1,11 @@
 import { useMemo } from 'react'
+import { AuditStatusDisplay } from '@/components/common/audit-status-display'
 import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { useLanguage } from '@/context/language-provider'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { useAuthStore } from '@/stores/auth-store'
+import { getPurchaseStatusDisplayMeta } from '../../data/purchase-status'
 import { type PurchaseOrder, type PurchaseOrderListItem } from '../../data/schema'
 import { useGetPurchaseOrderDetail, usePurchaseOrderMutations } from '../../purchase'
 import { useGetSuppliers } from '../../supplier'
@@ -12,6 +14,7 @@ import { usePurchaseOrderDialogResources } from '../../hooks/use-purchase-order-
 import { usePurchaseOrderSavePreparation } from '../../hooks/use-purchase-order-save-preparation'
 import { requireTradingCommandActor } from '../../utils/command-actor'
 import { PurchaseOrderHeaderFields } from './parts/purchase-order-header-fields'
+import { PurchaseOrderEvidenceSection } from './parts/purchase-order-evidence-section'
 import { PurchaseOrderLinesEditor } from './parts/purchase-order-lines-editor'
 import { PurchaseOrderActionDialogShell } from './purchase-order-action-dialog-shell'
 
@@ -39,7 +42,7 @@ export function PurchaseOrderActionDialog({
   )
 
   const activeOrder = detailedOrder || (isDetailedPurchaseOrder(summaryOrder) ? summaryOrder : null)
-  const { units, materials, isMetaLoading } = usePurchaseOrderDialogResources(open)
+  const { materials, isMetaLoading } = usePurchaseOrderDialogResources(open)
 
   const { formData, handleHeaderChange, handleAddLine, handleRemoveLine, updateLine, validate, commit, isFinanceLoading } =
     usePurchaseOrderForm(activeOrder, open)
@@ -87,13 +90,24 @@ export function PurchaseOrderActionDialog({
     ? t('purchase.orders.dialogEditTitle')
     : t('purchase.orders.dialogCreateTitle')
   const totalAmount = useMemo(() => (formData.amount?.toLocaleString() ?? '0'), [formData.amount])
+  const statusMeta = useMemo(
+    () => getPurchaseStatusDisplayMeta(formData.status || 'Draft', t),
+    [formData.status, t]
+  )
 
   return (
     <PurchaseOrderActionDialogShell
       open={open}
-      title={
-        <div className='flex items-center justify-between gap-3'>
-          <span>{dialogTitle}</span>
+      title={dialogTitle}
+      description={t('purchase.orders.dialogDescription')}
+      headerAccessory={
+        <>
+          {formData.orderNo ? (
+            <span className='text-[10px] font-mono font-black uppercase tracking-widest text-muted-foreground/55'>
+              {formData.orderNo}
+            </span>
+          ) : null}
+          <AuditStatusDisplay meta={statusMeta} badgeClassName='px-3 py-1.5' />
           {activeOrder?.id ? (
             <AuditTimelineTriggerButton
               module={AUDIT_MODULES.purchaseOrder}
@@ -103,9 +117,8 @@ export function PurchaseOrderActionDialog({
               className='size-9 rounded-full border-dashed'
             />
           ) : null}
-        </div>
+        </>
       }
-      description={t('purchase.orders.dialogDescription')}
       totalLabel={t('purchase.orders.dialogTotal')}
       totalAmount={totalAmount}
       currency={formData.currency || 'CNY'}
@@ -120,20 +133,23 @@ export function PurchaseOrderActionDialog({
         formData={formData}
         handleHeaderChange={handleHeaderChange}
         suppliers={suppliers}
-        onEvidencesChange={(evidences) => {
-          handleHeaderChange('evidences', evidences)
-        }}
       />
 
       <PurchaseOrderLinesEditor
         lines={formData.lines || []}
-        units={units}
         materials={materials}
         isLoading={isDataLoading}
         currency={formData.currency || 'CNY'}
         onAddLine={handleAddLine}
         onRemoveLine={handleRemoveLine}
         onLineChange={updateLine}
+      />
+
+      <PurchaseOrderEvidenceSection
+        evidences={formData.evidences || []}
+        onChange={(evidences) => {
+          handleHeaderChange('evidences', evidences)
+        }}
       />
     </PurchaseOrderActionDialogShell>
   )

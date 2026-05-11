@@ -12,7 +12,6 @@ import {
   type SpokeLength,
   type SpokeLengthInput,
 } from '../data/schema'
-import { useGetProducts } from '@/features/engineering/hooks/use-products'
 import { hubService } from '../services/hub-service'
 import { nippleService } from '../services/nipple-service'
 import { type Hub } from '../data/hub-schema'
@@ -22,6 +21,7 @@ import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { toast } from 'sonner'
 import type { DeltaSet } from '@/lib/delta/types'
+import { useEngineeringDbProductDisplayOptions } from '../hooks/use-engineering-db-product-display-options'
 
 type SpokeLengthFormState = SpokeLengthInput & { id?: string; createdAt?: string }
 type SpokeLengthFormUpdater = SpokeLengthFormState | ((prev: SpokeLengthFormState) => SpokeLengthFormState)
@@ -59,7 +59,7 @@ export function SpokeLengthActionDialog({
   onSave,
   isLoading,
 }: SpokeLengthActionDialogProps) {
-  const { data: products = [] } = useGetProducts({ enabled: open })
+  const { productOptions } = useEngineeringDbProductDisplayOptions({ enabled: open })
   const [hubs, setHubs] = useState<Hub[]>([])
   const [nipples, setNipples] = useState<Nipple[]>([])
 
@@ -96,15 +96,6 @@ export function SpokeLengthActionDialog({
     if (currentRow) return currentRow
     return { ...DEFAULT_SPOKE_LENGTH }
   }, [currentRow])
-
-  const productOptions = useMemo(
-    () =>
-      products.map((product) => ({
-        label: `${product.sku} | ${product.name}`,
-        value: product.id,
-      })),
-    [products],
-  )
 
   const hubOptions = useMemo(
     () =>

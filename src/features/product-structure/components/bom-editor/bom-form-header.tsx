@@ -9,7 +9,6 @@ import { type BOM, type Product } from '../../data/schema'
 import {
   normalizeBOMControlFieldPatch,
 } from '../../utils/bom-control-normalization'
-import { getProductAttributes } from '@/features/engineering/utils/product-utils'
 
 type FormFieldName = keyof BOM | string
 
@@ -27,18 +26,19 @@ type FormFieldConfig = {
 interface BOMFormHeaderProps {
   form: UseFormReturn<BOM>
   products: Product[]
+  productDisplayLabelMap: Map<string, string>
   isEdit: boolean
 }
 
-export function BOMFormHeader({ form, products, isEdit }: BOMFormHeaderProps) {
+export function BOMFormHeader({ form, products, productDisplayLabelMap, isEdit }: BOMFormHeaderProps) {
   const { t } = useLanguage()
   const productItems = useMemo(
     () =>
       products.map((product) => ({
-        label: getProductAttributes(product).displayName,
+        label: productDisplayLabelMap.get(product.id) ?? '',
         value: product.id,
       })),
-    [products]
+    [productDisplayLabelMap, products]
   )
 
   const headerFields: FormFieldConfig[] = [

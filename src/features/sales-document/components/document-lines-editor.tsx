@@ -11,6 +11,7 @@ import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { type Unit } from '@/features/basic-settings/services/unit-service'
+import { type ProductDisplayProjectionV2 } from '@/features/engineering/display/product-display-v2'
 import { type ProductAppearance } from '@/features/engineering/data/product-appearance'
 import { type Product } from '@/features/engineering/data/schema'
 import { type SalesOrderLine } from '@/features/trading/data/schema'
@@ -108,6 +109,8 @@ interface DocumentLinesEditorProps {
   appearances: ProductAppearance[]
   lines: SalesOrderLine[]
   products: Product[]
+  productDisplayLabelMap: Map<string, string>
+  productDisplayProjectionMap: Map<string, ProductDisplayProjectionV2>
   units: Unit[]
   drillingOptions: { label: string; value: string }[]
   labelingOptions: { label: string; value: string }[]
@@ -127,6 +130,8 @@ export function DocumentLinesEditor({
   appearances,
   lines,
   products,
+  productDisplayLabelMap,
+  productDisplayProjectionMap,
   units,
   drillingOptions,
   labelingOptions,
@@ -157,6 +162,8 @@ export function DocumentLinesEditor({
   } = useSalesOrderLinesEditorViewModel({
     appearances,
     products,
+    productDisplayLabelMap,
+    productDisplayProjectionMap,
     units,
     currency,
     onLineChange,

@@ -9,7 +9,6 @@ import { type MaterialOption } from '../../material-archive/data/schema'
 import { type BOMSectionOption } from '../data/bom-section-schema'
 import { type Product } from '../data/schema'
 import { formatEngineeringExportFileDate } from '@/features/engineering/utils/engineering-export-file-date'
-import { formatProductDisplayName } from '@/features/engineering/utils/product-utils'
 import { BOM_EXCEL_LIMITS, BOM_EXCEL_LOCK_PASSWORDS, BOM_EXCEL_SHEETS } from './bom-excel-contract'
 import { escapeFormula } from './bom-excel-security'
 import { getActiveBOMSections } from '../utils/bom-section-utils'
@@ -22,6 +21,7 @@ export const generateBOMTemplate = async (
   materials: MaterialOption[],
   products: Product[],
   sections: BOMSectionOption[],
+  productDisplayLabelMap: Map<string, string>,
 ) => {
   const workbook = await createExcelWorkbook()
   const activeSections = getActiveBOMSections(sections)
@@ -60,7 +60,7 @@ export const generateBOMTemplate = async (
       rowData.m_category = m.category
     }
     if (p) {
-      rowData.p_combo = escapeFormula(`[${p.sku}] ${formatProductDisplayName(p)}`)
+      rowData.p_combo = escapeFormula(`[${p.sku}] ${productDisplayLabelMap.get(p.id) ?? ''}`)
       rowData.p_id = p.id
     }
 

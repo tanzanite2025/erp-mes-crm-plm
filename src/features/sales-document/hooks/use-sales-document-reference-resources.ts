@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useLanguage } from '@/context/language-provider'
 import { useUnitsQuery } from '@/features/basic-settings/hooks/use-units-query'
 import type { Unit } from '@/features/basic-settings/services/unit-service'
 import {
@@ -8,11 +9,31 @@ import {
 } from '@/features/engineering-db/query-keys'
 import type { DrillingPlan, LabelingDraft } from '@/features/engineering-db/data/schema'
 import { ProductionDBService } from '@/features/engineering-db/services/production-db-service'
+import {
+  type ProductDisplayProjectionV2,
+} from '@/features/engineering/display/product-display-v2'
+import { buildProductDisplayMapsV2 } from '@/features/engineering/display/product-display-v2-map'
 import type { ProductAppearance } from '@/features/engineering/data/product-appearance'
-import type { Product } from '@/features/engineering/data/schema'
+import type {
+  Product,
+  ProductAttributeCategory,
+  ProductAttributeOption,
+  ProductTemplate,
+  ProductType,
+} from '@/features/engineering/data/schema'
 import { useGetProducts } from '@/features/engineering/hooks/use-products'
-import { PRODUCT_APPEARANCES_QUERY_KEY } from '@/features/engineering/query-keys'
+import {
+  PRODUCT_APPEARANCES_QUERY_KEY,
+  PRODUCT_ATTRIBUTE_CATEGORIES_QUERY_KEY,
+  PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY,
+  PRODUCT_TEMPLATES_QUERY_KEY,
+  PRODUCT_TYPES_QUERY_KEY,
+} from '@/features/engineering/query-keys'
+import { ProductAttributeCategoryService } from '@/features/engineering/services/product-attribute-category-service'
+import { ProductAttributeOptionService } from '@/features/engineering/services/product-attribute-option-service'
 import { productAppearanceService } from '@/features/engineering/services/product-appearance-service'
+import { productTemplateService } from '@/features/engineering/services/product-template-service'
+import { ProductTypeService } from '@/features/engineering/services/product-type-service'
 import { useGetCustomers } from '@/features/trading/customer'
 import type { Customer } from '@/features/trading/data/schema'
 import { createLogger } from '@/lib/logger'
@@ -29,6 +50,8 @@ export type SalesDocumentDrawingOption = {
 export type SalesDocumentReferenceData = {
   customers: Customer[]
   products: Product[]
+  productDisplayLabelMap: Map<string, string>
+  productDisplayProjectionMap: Map<string, ProductDisplayProjectionV2>
   units: Unit[]
   appearances: ProductAppearance[]
   drillingPlans: DrillingPlan[]
@@ -50,6 +73,8 @@ type UseSalesDocumentReferenceResourcesOptions = {
 const EMPTY_SALES_DOCUMENT_REFERENCE_DATA: SalesDocumentReferenceData = {
   customers: [],
   products: [],
+  productDisplayLabelMap: new Map<string, string>(),
+  productDisplayProjectionMap: new Map<string, ProductDisplayProjectionV2>(),
   units: [],
   appearances: [],
   drillingPlans: [],
@@ -65,6 +90,7 @@ function buildDrawingOptions(items: Array<{ id: string; name: string }>): SalesD
 export function useSalesDocumentReferenceResources(
   options: UseSalesDocumentReferenceResourcesOptions
 ) {
+  const { locale } = useLanguage()
   const {
     enabled = true,
     scope,
@@ -73,6 +99,26 @@ export function useSalesDocumentReferenceResources(
 
   const customersQuery = useGetCustomers({ enabled })
   const productsQuery = useGetProducts({ enabled })
+  const productTemplatesQuery = useQuery({
+    queryKey: PRODUCT_TEMPLATES_QUERY_KEY,
+    queryFn: () => productTemplateService.getTemplates(),
+    enabled,
+  })
+  const productTypesQuery = useQuery({
+    queryKey: PRODUCT_TYPES_QUERY_KEY,
+    queryFn: () => ProductTypeService.getProductTypes(),
+    enabled,
+  })
+  const productAttributeCategoriesQuery = useQuery({
+    queryKey: PRODUCT_ATTRIBUTE_CATEGORIES_QUERY_KEY,
+    queryFn: () => ProductAttributeCategoryService.getProductAttributeCategories({ activeOnly: true }),
+    enabled,
+  })
+  const productAttributeOptionsQuery = useQuery({
+    queryKey: PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY,
+    queryFn: () => ProductAttributeOptionService.getProductAttributeOptions({ activeOnly: true }),
+    enabled,
+  })
   const { readResource: unitsResource, refetch: refetchUnits } = useUnitsQuery({ enabled })
   const appearancesQuery = useQuery({
     queryKey: PRODUCT_APPEARANCES_QUERY_KEY,
@@ -130,6 +176,70 @@ export function useSalesDocumentReferenceResources(
       }
     }
 
+    const productTemplatesFailure = resolveQueryFailure({
+      data: productTemplatesQuery.data,
+      error: productTemplatesQuery.error,
+      isPending: productTemplatesQuery.isPending,
+      scope: `${scope}.productTemplates`,
+      missingMessage: `[CRITICAL] ${scope} product templates missing after load`,
+      failureMessage: `[CRITICAL] ${scope} product templates query failed`,
+    })
+    if (productTemplatesFailure) {
+      return {
+        status: 'error',
+        error: productTemplatesFailure.error,
+        scope: productTemplatesFailure.scope,
+      }
+    }
+
+    const productTypesFailure = resolveQueryFailure({
+      data: productTypesQuery.data,
+      error: productTypesQuery.error,
+      isPending: productTypesQuery.isPending,
+      scope: `${scope}.productTypes`,
+      missingMessage: `[CRITICAL] ${scope} product types missing after load`,
+      failureMessage: `[CRITICAL] ${scope} product types query failed`,
+    })
+    if (productTypesFailure) {
+      return {
+        status: 'error',
+        error: productTypesFailure.error,
+        scope: productTypesFailure.scope,
+      }
+    }
+
+    const productAttributeCategoriesFailure = resolveQueryFailure({
+      data: productAttributeCategoriesQuery.data,
+      error: productAttributeCategoriesQuery.error,
+      isPending: productAttributeCategoriesQuery.isPending,
+      scope: `${scope}.productAttributeCategories`,
+      missingMessage: `[CRITICAL] ${scope} product attribute categories missing after load`,
+      failureMessage: `[CRITICAL] ${scope} product attribute categories query failed`,
+    })
+    if (productAttributeCategoriesFailure) {
+      return {
+        status: 'error',
+        error: productAttributeCategoriesFailure.error,
+        scope: productAttributeCategoriesFailure.scope,
+      }
+    }
+
+    const productAttributeOptionsFailure = resolveQueryFailure({
+      data: productAttributeOptionsQuery.data,
+      error: productAttributeOptionsQuery.error,
+      isPending: productAttributeOptionsQuery.isPending,
+      scope: `${scope}.productAttributeOptions`,
+      missingMessage: `[CRITICAL] ${scope} product attribute options missing after load`,
+      failureMessage: `[CRITICAL] ${scope} product attribute options query failed`,
+    })
+    if (productAttributeOptionsFailure) {
+      return {
+        status: 'error',
+        error: productAttributeOptionsFailure.error,
+        scope: productAttributeOptionsFailure.scope,
+      }
+    }
+
     if (unitsResource.status === 'error') {
       return {
         status: 'error',
@@ -141,6 +251,10 @@ export function useSalesDocumentReferenceResources(
     if (
       customersQuery.isPending ||
       productsQuery.isPending ||
+      productTemplatesQuery.isPending ||
+      productTypesQuery.isPending ||
+      productAttributeCategoriesQuery.isPending ||
+      productAttributeOptionsQuery.isPending ||
       unitsResource.status === 'loading'
     ) {
       return { status: 'loading' }
@@ -213,11 +327,28 @@ export function useSalesDocumentReferenceResources(
     const labelingPlans = labelingQuery.error
       ? []
       : ((labelingQuery.data as LabelingDraft[]) ?? [])
+    const products = (productsQuery.data as Product[]) ?? []
+    const productTemplates = (productTemplatesQuery.data as ProductTemplate[]) ?? []
+    const productTypes = (productTypesQuery.data as ProductType[]) ?? []
+    const productAttributeCategories =
+      (productAttributeCategoriesQuery.data as ProductAttributeCategory[]) ?? []
+    const productAttributeOptions =
+      (productAttributeOptionsQuery.data as ProductAttributeOption[]) ?? []
+    const { productDisplayLabelMap, productDisplayProjectionMap } = buildProductDisplayMapsV2({
+      locale,
+      products,
+      productTemplates,
+      productTypes,
+      productAttributeCategories,
+      productAttributeOptions,
+    })
 
     return {
       status: 'ready',
       customers: (customersQuery.data as Customer[]) ?? [],
-      products: (productsQuery.data as Product[]) ?? [],
+      products,
+      productDisplayLabelMap,
+      productDisplayProjectionMap,
       units: unitsResource.status === 'ready' ? unitsResource.data : [],
       appearances,
       drillingPlans,
@@ -236,13 +367,26 @@ export function useSalesDocumentReferenceResources(
     drillingQuery.error,
     drillingQuery.isPending,
     enabled,
+    locale,
     labelingQuery.data,
     labelingQuery.error,
     labelingQuery.isPending,
     optionalResourceMode,
+    productAttributeCategoriesQuery.data,
+    productAttributeCategoriesQuery.error,
+    productAttributeCategoriesQuery.isPending,
+    productAttributeOptionsQuery.data,
+    productAttributeOptionsQuery.error,
+    productAttributeOptionsQuery.isPending,
     productsQuery.data,
     productsQuery.error,
     productsQuery.isPending,
+    productTemplatesQuery.data,
+    productTemplatesQuery.error,
+    productTemplatesQuery.isPending,
+    productTypesQuery.data,
+    productTypesQuery.error,
+    productTypesQuery.isPending,
     scope,
     unitsResource,
   ])
@@ -268,6 +412,10 @@ export function useSalesDocumentReferenceResources(
     await Promise.all([
       customersQuery.refetch(),
       productsQuery.refetch(),
+      productTemplatesQuery.refetch(),
+      productTypesQuery.refetch(),
+      productAttributeCategoriesQuery.refetch(),
+      productAttributeOptionsQuery.refetch(),
       refetchUnits(),
       appearancesQuery.refetch(),
       drillingQuery.refetch(),

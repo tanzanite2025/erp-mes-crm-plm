@@ -18,6 +18,7 @@ export type BOMReadDataResource = CompositeReadResource<{
   data: BOM[]
   materials: MaterialOption[]
   products: Product[]
+  productDisplayLabelMap: Map<string, string>
   sections: BOMSectionOption[]
 }>
 
@@ -58,6 +59,7 @@ export function useBOMReadData(): BOMReadDataResource {
       data: bomsQuery.data as BOM[],
       materials: referenceResource.materials,
       products: referenceResource.products,
+      productDisplayLabelMap: referenceResource.productDisplayLabelMap,
       sections: referenceResource.sections,
     }
   }, [bomsQuery.data, bomsQuery.error, bomsQuery.isLoading, referenceResource])

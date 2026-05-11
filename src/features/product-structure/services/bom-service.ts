@@ -7,6 +7,11 @@ import { normalizeBOMSectionValue } from '../utils/bom-section-utils'
 
 const saveBOMSchema = bomSchema.omit({ bomDisplayVersion: true })
 
+export interface BOMDetailSource {
+    bom: BOM
+    rawSource: Record<string, unknown>
+}
+
 function trimToUndefined(value?: string) {
     if (value === undefined) return undefined
     const trimmed = value.trim()
@@ -25,7 +30,7 @@ function trimRequiredValue(value?: string) {
 
 function sanitizeBOMInput(data: SaveBOMInput): SaveBOMInput {
     const normalizedData = normalizeBOMInput(data)
-    return saveBOMSchema.parse({
+    const sanitizedPayload = saveBOMSchema.parse({
         ...normalizedData,
         description: trimToUndefined(data.description),
         revisionNo: trimToUndefined(normalizedData.revisionNo),
@@ -51,6 +56,11 @@ function sanitizeBOMInput(data: SaveBOMInput): SaveBOMInput {
             })),
         })),
     })
+
+    return {
+        ...sanitizedPayload,
+        relationSidecar: normalizedData.relationSidecar,
+    }
 }
 
 function normalizeBOMListResponse(response: unknown): BOMList {
@@ -60,6 +70,18 @@ function normalizeBOMListResponse(response: unknown): BOMList {
     )
 
     return bomListSchema.parse(checked)
+}
+
+function normalizeBOMDetailSource(response: unknown): BOMDetailSource {
+    const rawSource = ensureObjectResponse<Record<string, unknown>>(
+        response,
+        'BOMService.getBOMDetailSource'
+    )
+
+    return {
+        bom: bomSchema.parse(rawSource),
+        rawSource,
+    }
 }
 
 /**
@@ -79,11 +101,13 @@ export const bomService = {
     /**
      * 获取单个 BOM 详情
      */
+    async getBOMDetailSource(id: string): Promise<BOMDetailSource> {
+        const response = await apiFetch<unknown>(`/engineering/bom/${id}`)
+        return normalizeBOMDetailSource(response)
+    },
+
     async getBOMById(id: string): Promise<BOM> {
-        const response = await apiFetch<BOM>(`/engineering/bom/${id}`)
-        return bomSchema.parse(
-            ensureObjectResponse<Record<string, unknown>>(response, 'BOMService.getBOMById')
-        )
+        return (await this.getBOMDetailSource(id)).bom
     },
 
     /**

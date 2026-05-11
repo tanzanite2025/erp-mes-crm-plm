@@ -69,4 +69,33 @@ export type InboundRecord = z.infer<typeof inboundRecordSchema>
 
 export interface InventoryAlertSummary {
   alertCount: number
+  materialAlertCount: number
+  bomAlertCount: number
+}
+
+export interface InventoryBOMAlertShortage {
+  materialId: string
+  materialCode: string
+  materialName: string
+  materialSpec: string
+  requiredQty: number
+  currentStock: number
+  shortageQty: number
+}
+
+export interface InventoryBOMAlertDetail {
+  ruleId: string
+  bomId: string
+  bomNo: string
+  productId: string
+  productName: string
+  productSku: string
+  thresholdQty: number
+  shortages: InventoryBOMAlertShortage[]
+  triggeredAt: string
+}
+
+export interface InventoryBOMAlertDetailList {
+  items: InventoryBOMAlertDetail[]
+  total: number
 }

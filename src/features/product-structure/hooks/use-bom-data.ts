@@ -23,6 +23,7 @@ export function useBOMData(): BOMDataResult {
   const { saveBOM: persistBOM, deleteBOM: removeBOM } = useBOMWriteActions()
   const { downloadTemplate, parseExcel } = useBOMImportExport({
     products: readResource.status === 'ready' ? readResource.products : [],
+    productDisplayLabelMap: readResource.status === 'ready' ? readResource.productDisplayLabelMap : new Map<string, string>(),
     sections: readResource.status === 'ready' ? readResource.sections : [],
   })
 

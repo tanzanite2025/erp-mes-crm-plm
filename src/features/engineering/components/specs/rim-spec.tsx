@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form'
 import { type Product } from '../../data/schema'
-import { getProductAttributes } from '../../utils/product-utils'
 
 interface RimSpecFormProps {
   form: UseFormReturn<Product>
@@ -175,11 +174,10 @@ export function RimSpecForm({
 
 export function RimSpecOverview({ product }: { product: Product }) {
   const { t } = useLanguage()
-  const productView = getProductAttributes(product)
 
   return (
-    <div className='flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-6 p-4 sm:p-6 rounded-[24px] bg-muted/5 border-2 border-dashed border-muted transition-all hover:bg-muted/10 group'>
-      <div className='flex-1 grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-8 px-2 sm:px-4'>
+    <div className='flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-[20px] bg-muted/5 border-2 border-dashed border-muted transition-all hover:bg-muted/10 group'>
+      <div className='flex-1 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-5 px-1 sm:px-2'>
         <div className='flex flex-col gap-1.5'>
           <span className='text-[10px] text-muted-foreground/40 font-black uppercase tracking-widest'>
             {t('engineering.specForms.rim.overviewDepth')}
@@ -191,7 +189,7 @@ export function RimSpecOverview({ product }: { product: Product }) {
             <span className='text-[10px] font-black text-muted-foreground/20 italic'>MM</span>
           </div>
         </div>
-        <div className='flex flex-col gap-1.5 sm:border-l sm:border-dashed sm:border-muted sm:pl-8'>
+        <div className='flex flex-col gap-1.5 sm:border-l sm:border-dashed sm:border-muted sm:pl-5'>
           <span className='text-[10px] text-muted-foreground/40 font-black uppercase tracking-widest'>
             {t('engineering.specForms.rim.overviewWeight')}
           </span>
@@ -202,7 +200,7 @@ export function RimSpecOverview({ product }: { product: Product }) {
             <span className='text-[10px] font-black text-muted-foreground/20 italic'>G</span>
           </div>
         </div>
-        <div className='flex flex-col gap-1.5 sm:border-l sm:border-dashed sm:border-muted sm:pl-8'>
+        <div className='flex flex-col gap-1.5 sm:border-l sm:border-dashed sm:border-muted sm:pl-5'>
           <span className='text-[10px] text-muted-foreground/40 font-black uppercase tracking-widest'>
             {t('engineering.specForms.rim.overviewInternalWidth')}
           </span>
@@ -213,7 +211,7 @@ export function RimSpecOverview({ product }: { product: Product }) {
             <span className='text-[10px] font-black text-muted-foreground/20 italic'>MM</span>
           </div>
         </div>
-        <div className='flex flex-col gap-1.5 sm:border-l sm:border-dashed sm:border-muted sm:pl-8'>
+        <div className='flex flex-col gap-1.5 sm:border-l sm:border-dashed sm:border-muted sm:pl-5'>
           <span className='text-[10px] text-muted-foreground/40 font-black uppercase tracking-widest'>
             {t('engineering.specForms.rim.overviewExternalWidth')}
           </span>
@@ -224,14 +222,6 @@ export function RimSpecOverview({ product }: { product: Product }) {
             <span className='text-[10px] font-black text-muted-foreground/20 italic'>MM</span>
           </div>
         </div>
-      </div>
-      <div className='px-8 py-4 bg-blue-600 rounded-3xl flex flex-col items-center justify-center shrink-0 shadow-2xl shadow-blue-600/30 group-hover:scale-105 transition-transform'>
-        <span className='text-[10px] text-blue-100/40 font-black uppercase tracking-widest mb-1 leading-none'>
-          {t('engineering.specForms.rim.overviewBadge')}
-        </span>
-        <span className='text-lg font-black text-white uppercase tracking-tighter italic leading-none'>
-          {productView.tireType}
-        </span>
       </div>
     </div>
   )

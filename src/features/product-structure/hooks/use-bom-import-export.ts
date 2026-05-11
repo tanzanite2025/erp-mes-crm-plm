@@ -15,10 +15,11 @@ const logger = createLogger('useBOMImportExport')
 
 interface UseBOMImportExportParams {
   products: Product[]
+  productDisplayLabelMap: Map<string, string>
   sections: BOMSectionOption[]
 }
 
-export function useBOMImportExport({ products, sections }: UseBOMImportExportParams) {
+export function useBOMImportExport({ products, productDisplayLabelMap, sections }: UseBOMImportExportParams) {
   const { t } = useLanguage()
   const queryClient = useQueryClient()
 
@@ -36,7 +37,7 @@ export function useBOMImportExport({ products, sections }: UseBOMImportExportPar
         throw error
       }
 
-      await ExcelService.generateBOMTemplate(loadedMaterials, products, sections)
+      await ExcelService.generateBOMTemplate(loadedMaterials, products, sections, productDisplayLabelMap)
       toast.success(t('engineering.bomArchive.toasts.downloadSuccess'), { id: loadingId })
     } catch (error) {
       logger.error('Template generation error', error)

@@ -19,6 +19,7 @@ func TestRegisterInventoryRoutesRegistersSummaryEndpoints(t *testing.T) {
 
 	var hasValuation bool
 	var hasAlertSummary bool
+	var hasBOMAlertDetails bool
 
 	for _, route := range r.Routes() {
 		if route.Method == "GET" && route.Path == "/api/v1/inventory/valuation" {
@@ -27,10 +28,14 @@ func TestRegisterInventoryRoutesRegistersSummaryEndpoints(t *testing.T) {
 		if route.Method == "GET" && route.Path == "/api/v1/inventory/alerts/summary" {
 			hasAlertSummary = strings.Contains(route.Handler, "GetInventoryAlertSummaryHandler")
 		}
+		if route.Method == "GET" && route.Path == "/api/v1/inventory/alerts/bom-details" {
+			hasBOMAlertDetails = strings.Contains(route.Handler, "GetInventoryBOMAlertDetailsHandler")
+		}
 	}
 
 	require.True(t, hasValuation, "expected GET /api/v1/inventory/valuation to be registered with GetInventoryValuationHandler")
 	require.True(t, hasAlertSummary, "expected GET /api/v1/inventory/alerts/summary to be registered with GetInventoryAlertSummaryHandler")
+	require.True(t, hasBOMAlertDetails, "expected GET /api/v1/inventory/alerts/bom-details to be registered with GetInventoryBOMAlertDetailsHandler")
 }
 
 func TestRegisterInventoryRoutesRegistersWarehouseMasterDataSearchEndpoint(t *testing.T) {

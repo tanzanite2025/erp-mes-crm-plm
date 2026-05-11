@@ -112,8 +112,8 @@ export function ForkSpecOverview({ product }: { product: Product }) {
   const { t } = useLanguage()
 
   return (
-    <div className='flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-6 p-4 sm:p-6 rounded-[24px] bg-muted/5 border-2 border-dashed border-muted transition-all hover:bg-muted/10 group text-left sm:text-center'>
-      <div className='flex-1 flex flex-col sm:flex-row items-start sm:items-center justify-around gap-4 sm:gap-0 px-2 sm:px-4'>
+    <div className='flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-[20px] bg-muted/5 border-2 border-dashed border-muted transition-all hover:bg-muted/10 group text-left sm:text-center'>
+      <div className='flex-1 flex flex-col sm:flex-row items-start sm:items-center justify-around gap-3 sm:gap-0 px-1 sm:px-2'>
         <div className='flex flex-col gap-1.5'>
           <span className='text-[10px] text-muted-foreground/40 font-black uppercase tracking-widest'>
             {t('engineering.specForms.fork.overviewCategory')}
@@ -122,7 +122,7 @@ export function ForkSpecOverview({ product }: { product: Product }) {
             {t('engineering.specForms.fork.overviewCategoryValue')}
           </span>
         </div>
-        <div className='hidden sm:block w-px h-12 bg-muted border-l border-dashed border-muted mx-4' />
+        <div className='hidden sm:block w-px h-10 bg-muted border-l border-dashed border-muted mx-3' />
         <div className='flex flex-col gap-1.5'>
           <span className='text-[10px] text-muted-foreground/40 font-black uppercase tracking-widest'>
             {t('engineering.specForms.fork.overviewWeight')}
@@ -134,7 +134,7 @@ export function ForkSpecOverview({ product }: { product: Product }) {
             <span className='text-[10px] font-black text-muted-foreground/20 italic'>G</span>
           </div>
         </div>
-        <div className='hidden sm:block w-px h-12 bg-muted border-l border-dashed border-muted mx-4' />
+        <div className='hidden sm:block w-px h-10 bg-muted border-l border-dashed border-muted mx-3' />
         <div className='flex items-center gap-3 text-muted-foreground/30 italic text-[10px] font-black uppercase tracking-widest'>
           <Settings2 className='size-4 opacity-50' />
           <div className='flex flex-col'>

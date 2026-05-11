@@ -200,3 +200,57 @@ func TestGetInventoryAlertSummaryHandlerReturnsLowStockCount(t *testing.T) {
 	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
 	require.EqualValues(t, 2, response.AlertCount)
 }
+
+func TestGetInventoryBOMAlertDetailsHandlerReturnsTriggeredShortages(t *testing.T) {
+	setupInventoryCommandHandlerTestDB(t)
+
+	now := time.Now()
+	materialID := uuid.NewString()
+	productID := uuid.NewString()
+	bomID := uuid.NewString()
+
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO materials (id, created_at, updated_at, code, name, spec, category, min_stock)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+	`, materialID, now, now, "MAT-BOM-001", "Resin A", "Spec-A", "RAW", 0).Error)
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO products (id, created_at, updated_at, sku, name)
+		VALUES (?, ?, ?, ?, ?)
+	`, productID, now, now, "SKU-001", "Trail Wheel").Error)
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO boms (id, created_at, updated_at, bom_no, product_id, status)
+		VALUES (?, ?, ?, ?, ?, ?)
+	`, bomID, now, now, "BOM-TRAIL-001", productID, "active").Error)
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO bom_items (id, bom_id, section, material_id, unit, standard_usage)
+		VALUES (?, ?, ?, ?, ?, ?)
+	`, uuid.NewString(), bomID, "ASSEMBLY", materialID, "PCS", 2.0).Error)
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO inventory (id, created_at, updated_at, material_id, material_name, material_code, material_spec, quantity, total_value, average_unit_cost, category_code, batch_no, uom)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, uuid.NewString(), now, now, materialID, "Resin A", "MAT-BOM-001", "Spec-A", 5.0, 50.0, 10.0, "WH_A", "B-BOM-001", "PCS").Error)
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO inventory_threshold_rules (id, created_at, updated_at, target_type, bom_id, target_name_snapshot, target_code_snapshot, threshold_qty, enabled, notes)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, uuid.NewString(), now, now, "BOM", bomID, "Trail Wheel", "BOM-TRAIL-001", 4.0, true, "").Error)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = httptest.NewRequest(http.MethodGet, "/api/v1/inventory/alerts/bom-details", nil)
+
+	GetInventoryBOMAlertDetailsHandler(ctx)
+	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+
+	var response services.InventoryBOMAlertDetailListResponse
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Equal(t, 1, response.Total)
+	require.Len(t, response.Items, 1)
+	require.Equal(t, bomID, response.Items[0].BOMID)
+	require.Equal(t, "BOM-TRAIL-001", response.Items[0].BOMNo)
+	require.Equal(t, "Trail Wheel", response.Items[0].ProductName)
+	require.Len(t, response.Items[0].Shortages, 1)
+	require.Equal(t, "MAT-BOM-001", response.Items[0].Shortages[0].MaterialCode)
+	require.Equal(t, 8.0, response.Items[0].Shortages[0].RequiredQty)
+	require.Equal(t, 5.0, response.Items[0].Shortages[0].CurrentStock)
+	require.Equal(t, 3.0, response.Items[0].Shortages[0].ShortageQty)
+}

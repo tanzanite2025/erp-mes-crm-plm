@@ -58,12 +58,3 @@ export function getOptionLabel(
   if (locale === 'en-US') return option.labelEn?.trim() || option.labelZh || option.value
   return option.labelZh || option.labelEn || option.value
 }
-
-export function getProductAttributeSummary(product: Product) {
-  return {
-    version: getAttributeValue(product, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version) || 'std',
-    series: getAttributeValue(product, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.series) || 'normal',
-    brake: getAttributeValue(product, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.brake) || 'UNKNOWN',
-    tireType: getAttributeValue(product, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.tireType) || 'NULL',
-  }
-}

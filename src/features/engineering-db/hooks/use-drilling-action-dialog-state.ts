@@ -2,11 +2,11 @@ import { useCallback, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
-import { useGetProducts } from '@/features/engineering/hooks/use-products'
 import type { DeltaSet } from '@/lib/delta/types'
 import { drillingPlanInputSchema, type DrillingPlan, type DrillingPlanInput } from '../data/schema'
 import { ENGINEERING_DB_WEAVING_MODES_QUERY_KEY } from '../query-keys'
 import { weavingModeService } from '../services/weaving-mode-service'
+import { useEngineeringDbProductDisplayOptions } from './use-engineering-db-product-display-options'
 
 type DrillingFormState = DrillingPlanInput & { id?: string; createdAt?: string }
 type DrillingFormUpdater = DrillingFormState | ((prev: DrillingFormState) => DrillingFormState)
@@ -29,7 +29,7 @@ const DEFAULT_DRILLING: DrillingPlanInput = {
 }
 
 export function useDrillingActionDialogState(currentRow: DrillingPlan | null | undefined, open: boolean) {
-  const { data: products = [] } = useGetProducts({ mode: 'options' })
+  const { productOptions } = useEngineeringDbProductDisplayOptions({ enabled: open })
   const { data: weavingModes = [], isLoading: isWeavingModesLoading, isError: isWeavingModesError } = useQuery({
     queryKey: ENGINEERING_DB_WEAVING_MODES_QUERY_KEY,
     queryFn: () => weavingModeService.getWeavingModes(),
@@ -134,7 +134,7 @@ export function useDrillingActionDialogState(currentRow: DrillingPlan | null | u
   }, [currentRow, formData, isEdit, isWeavingModesError, noWeavingModesAvailable, tracker])
 
   return {
-    products,
+    productOptions,
     formData,
     isEdit,
     isDirty,

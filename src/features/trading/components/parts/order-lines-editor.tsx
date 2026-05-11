@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useLanguage } from '@/context/language-provider'
 import { type Unit } from '@/features/basic-settings/services/unit-service'
+import { type ProductDisplayProjectionV2 } from '@/features/engineering/display/product-display-v2'
 import { type ProductAppearance } from '@/features/engineering/data/product-appearance'
 import { type Product } from '@/features/engineering/data/schema'
 import { type SalesOrderLine } from '../../data/schema'
@@ -14,6 +15,8 @@ interface OrderLinesEditorProps {
   lines: SalesOrderLine[]
   appearances?: ProductAppearance[]
   products: Product[]
+  productDisplayLabelMap: Map<string, string>
+  productDisplayProjectionMap: Map<string, ProductDisplayProjectionV2>
   units: Unit[]
   drillingOptions: { label: string; value: string }[]
   labelingOptions: { label: string; value: string }[]
@@ -32,6 +35,8 @@ export function OrderLinesEditor({
   lines,
   appearances = [],
   products,
+  productDisplayLabelMap,
+  productDisplayProjectionMap,
   units,
   drillingOptions,
   labelingOptions,
@@ -45,6 +50,8 @@ export function OrderLinesEditor({
     useSalesOrderLinesEditorViewModel({
       appearances,
       products,
+      productDisplayLabelMap,
+      productDisplayProjectionMap,
       units,
       currency,
       onLineChange,

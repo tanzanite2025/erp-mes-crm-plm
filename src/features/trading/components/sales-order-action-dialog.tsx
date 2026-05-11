@@ -60,7 +60,12 @@ export function SalesOrderActionDialog({
     isInitializing,
     initError,
     retryInit,
-  } = useSalesOrderForm(order, open, dialogResources.products)
+  } = useSalesOrderForm(
+    order,
+    open,
+    dialogResources.products,
+    dialogResources.productDisplayProjectionMap
+  )
 
   const { handleSave } = useSalesOrderSave({
     order,
@@ -179,6 +184,8 @@ export function SalesOrderActionDialog({
                 appearances={dialogResources.appearances}
                 lines={formData.lines || []}
                 products={dialogResources.products}
+                productDisplayLabelMap={dialogResources.productDisplayLabelMap}
+                productDisplayProjectionMap={dialogResources.productDisplayProjectionMap}
                 units={dialogResources.units}
                 drillingOptions={dialogResources.drillingOptions}
                 labelingOptions={dialogResources.labelingOptions}

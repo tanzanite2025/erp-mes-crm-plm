@@ -24,25 +24,26 @@ export function Engineering() {
     }
 
     return (
-        <div className='flex flex-col gap-4 sm:gap-8 px-4 pb-6 pt-0 md:px-6 animate-in fade-in duration-700'>
+        <div className='flex flex-col gap-3 sm:gap-4 pb-5 pt-0 animate-in fade-in duration-700'>
             <IndustrialHeader
                 icon={Box}
                 title={t('engineering.productMgmt.pageTitle')}
                 description={t('engineering.productMgmt.pageDescription')}
+                statusBadge={
+                    <AuditTimelineTriggerButton
+                        module={AUDIT_MODULES.product}
+                        targetName={t('engineering.productMgmt.pageTitle')}
+                        label={t('common.audit.trigger')}
+                        className='h-10 rounded-full px-4'
+                    />
+                }
             />
 
-            <div className='flex justify-end'>
-                <AuditTimelineTriggerButton
-                    module={AUDIT_MODULES.product}
-                    targetName={t('engineering.productMgmt.pageTitle')}
-                    label={t('common.audit.trigger')}
-                />
-            </div>
-
-            <div className='flex flex-col lg:flex-row flex-1 overflow-hidden min-h-[600px] rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-1 gap-1'>
+            <div className='flex flex-col lg:flex-row flex-1 overflow-hidden min-h-[540px] rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-0.5 gap-0.5'>
                 <EngineeringSidebar
                     products={vm.products}
                     types={vm.types}
+                    productDisplayMetadataMap={vm.productDisplayMetadataMap}
                     selectedProductId={vm.effectiveSelectedProductId}
                     onSelectProduct={vm.handleSelectProduct}
                     onAddProduct={vm.handleAddProduct}
@@ -50,12 +51,17 @@ export function Engineering() {
                     onAddType={vm.handleOpenTypeDialog}
                 />
 
-                <div className='p-0 flex-1 overflow-hidden relative bg-background rounded-[24px] lg:rounded-l-none lg:rounded-r-[32px] flex flex-col'>
+                <div className='p-0 flex-1 lg:basis-1/2 overflow-hidden relative bg-background rounded-[24px] lg:rounded-l-none lg:rounded-r-[32px] flex flex-col'>
                     {vm.isLoading ? (
                         <EngineeringWorkspaceLoadingState />
                     ) : vm.selectedProduct ? (
-                        <div className='p-4 sm:p-8 mx-auto w-full overflow-y-auto'>
-                            <ProductOverviewTab product={vm.selectedProduct} productTypes={vm.types} onEdit={vm.handleEditProduct} />
+                        <div className='p-2.5 sm:p-4 mx-auto w-full overflow-y-auto'>
+                            <ProductOverviewTab
+                                product={vm.selectedProduct}
+                                productTypes={vm.types}
+                                displayMetadata={vm.selectedProductDisplayMetadata}
+                                onEdit={vm.handleEditProduct}
+                            />
                         </div>
                     ) : (
                         <EngineeringWorkspaceEmptyState onInitializeProject={vm.handleAddProduct} />

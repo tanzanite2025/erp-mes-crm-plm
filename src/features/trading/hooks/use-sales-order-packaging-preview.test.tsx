@@ -4,7 +4,9 @@ import type { ReactNode } from 'react'
 import { renderHook, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { productOptionsQueryKey } from '@/features/engineering/query-keys'
 import type { SalesOrder } from '../data/schema'
+import { tradingQueryKeys } from '../query-keys'
 
 const {
   getProfilesMock,
@@ -37,6 +39,17 @@ function createQueryClient() {
       queries: {
         retry: false,
         gcTime: 0,
+      },
+    },
+  })
+}
+
+function createPersistentQueryClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+        gcTime: Infinity,
       },
     },
   })
@@ -181,6 +194,12 @@ describe('useSalesOrderPackagingPreview', () => {
     expect(result.current.data?.lines[0]?.productWeight).toBe(2)
     expect(result.current.data?.summary.totalBoxCount).toBe(1)
     expect(result.current.data?.summary.totalGrossWeight).toBe(21)
+    expect(queryClient.getQueryData(tradingQueryKeys.salesOrderPackagingProductOptions())).toEqual([
+      {
+        id: 'product-1',
+        weight: 2,
+      },
+    ])
   })
 
   it('falls back to placeholders when packaging preview line snapshots are missing', async () => {
@@ -210,5 +229,52 @@ describe('useSalesOrderPackagingPreview', () => {
 
     expect(result.current.data?.lines[0]?.productDisplayTitle).toBe('未识别产品')
     expect(result.current.data?.lines[0]?.productDisplaySubtitle).toBe('--')
+  })
+
+  it('does not pollute the engineering product options cache with lightweight packaging products', async () => {
+    const queryClient = createPersistentQueryClient()
+    queryClient.setQueryData(productOptionsQueryKey(), [
+      {
+        id: 'product-full-1',
+        sku: 'SKU-001',
+        name: 'Fork Alpha',
+        modelCode: '01',
+        typeId: 'type-1',
+        restrictions: [],
+        attributeValues: [],
+        attachments: [],
+        createdAt: '2026-05-11T00:00:00.000Z',
+        version: 1,
+      },
+    ])
+
+    renderHook(() => useSalesOrderPackagingPreview(buildSalesOrder()), {
+      wrapper: createWrapper(queryClient),
+    })
+
+    await waitFor(() => {
+      expect(getProductPackagingOptionsMock).toHaveBeenCalledTimes(1)
+    })
+
+    expect(queryClient.getQueryData(productOptionsQueryKey())).toEqual([
+      {
+        id: 'product-full-1',
+        sku: 'SKU-001',
+        name: 'Fork Alpha',
+        modelCode: '01',
+        typeId: 'type-1',
+        restrictions: [],
+        attributeValues: [],
+        attachments: [],
+        createdAt: '2026-05-11T00:00:00.000Z',
+        version: 1,
+      },
+    ])
+    expect(queryClient.getQueryData(tradingQueryKeys.salesOrderPackagingProductOptions())).toEqual([
+      {
+        id: 'product-1',
+        weight: 2,
+      },
+    ])
   })
 })

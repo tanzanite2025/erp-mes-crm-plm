@@ -1,9 +1,10 @@
-import { type Product } from '@/features/engineering/data/schema'
-import {
-  resolveProductDisplay,
-  type ProductDisplayProjection,
-} from '@/features/engineering/display/product-display-contract'
+import { type ProductDisplayProjectionV2 } from '@/features/engineering/display/product-display-v2'
 import { type SalesOrderLine } from '../data/schema'
+
+type SalesOrderLineDisplayProjectionSource = Pick<
+  ProductDisplayProjectionV2,
+  'title' | 'summaryText' | 'code' | 'fullLabel' | 'strategyVersion'
+>
 
 export type SalesOrderLineDisplaySnapshot = Pick<
   SalesOrderLine,
@@ -15,28 +16,56 @@ export type SalesOrderLineDisplaySnapshot = Pick<
 >
 
 function toSalesOrderLineDisplaySnapshot(
-  display: ProductDisplayProjection
+  display: SalesOrderLineDisplayProjectionSource
 ): SalesOrderLineDisplaySnapshot {
   return {
     productDisplayTitleSnapshot: display.title,
-    productDisplaySubtitleSnapshot: display.subtitle,
+    productDisplaySubtitleSnapshot: display.summaryText,
     productDisplayCodeSnapshot: display.code,
     productDisplayFullLabelSnapshot: display.fullLabel,
     productDisplayStrategyVersionSnapshot: display.strategyVersion,
   }
 }
 
+function normalizeSnapshotValue(value?: string | null): string {
+  return value?.trim() ?? ''
+}
+
+export function isSalesOrderLineDisplayPlaceholder(
+  value?: string | null
+): boolean {
+  const normalized = normalizeSnapshotValue(value).toUpperCase()
+
+  return normalized === 'UNNAMED' || normalized.startsWith('UNNAMED (')
+}
+
+function hasInvalidGeneratedDisplaySnapshot(
+  line: Pick<
+    SalesOrderLine,
+    'productDisplayTitleSnapshot' | 'productDisplayFullLabelSnapshot'
+  >
+): boolean {
+  return (
+    isSalesOrderLineDisplayPlaceholder(line.productDisplayTitleSnapshot) ||
+    isSalesOrderLineDisplayPlaceholder(line.productDisplayFullLabelSnapshot)
+  )
+}
+
 export function buildSalesOrderLineDisplaySnapshot(
-  product: Product
+  displayProjection: SalesOrderLineDisplayProjectionSource
 ): SalesOrderLineDisplaySnapshot {
-  return toSalesOrderLineDisplaySnapshot(resolveProductDisplay(product))
+  return toSalesOrderLineDisplaySnapshot(displayProjection)
 }
 
 export function mergeSalesOrderLineDisplaySnapshot(
   line: SalesOrderLine,
-  product: Product
+  displayProjection: SalesOrderLineDisplayProjectionSource
 ): SalesOrderLineDisplaySnapshot {
-  const snapshot = buildSalesOrderLineDisplaySnapshot(product)
+  const snapshot = buildSalesOrderLineDisplaySnapshot(displayProjection)
+
+  if (hasInvalidGeneratedDisplaySnapshot(line)) {
+    return snapshot
+  }
 
   return {
     productDisplayTitleSnapshot:

@@ -268,10 +268,11 @@ export const trading = {
   analytics: {
     activeCustomers: '活跃客户',
     activeCustomersDesc: '参与交易的活跃实体',
-    globalVolume: '全球物料总量',
-    globalVolumeDesc: '全域订单物料吞吐总量',
+    top10ProductVolume: '热销榜累计订购量',
+    top10ProductVolumeDesc: '当前 Top 10 热销榜样本累计订购量',
     analyzedLines: '分析订单行',
     analyzedLinesDesc: '已完成数据审计的事务行',
+    customerProductRanking: '客户产品排行',
     filterCustomer: '筛选客户',
     customerId: '客户 ID',
     productCount: '个产品',

@@ -22,8 +22,13 @@ function formatSchemaIssuePath(path: PropertyKey[]) {
 }
 
 export const ExcelService = {
-  async generateBOMTemplate(materials: MaterialOption[], products: Product[], sections: BOMSectionOption[]) {
-    return generateBOMTemplate(materials, products, sections)
+  async generateBOMTemplate(
+    materials: MaterialOption[],
+    products: Product[],
+    sections: BOMSectionOption[],
+    productDisplayLabelMap: Map<string, string>
+  ) {
+    return generateBOMTemplate(materials, products, sections, productDisplayLabelMap)
   },
 
   async parseBOMExcel(file: File, sections: BOMSectionOption[]): Promise<{

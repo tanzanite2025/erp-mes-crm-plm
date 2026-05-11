@@ -14,13 +14,14 @@ import { BOMPrintTemplate } from '@/features/print-mgmt/components/templates/bom
 import { PrintRecordService } from '@/features/print-mgmt/services/print-record-service'
 import { type BOMSectionOption } from '../../data/bom-section-schema'
 import { type BOM, type Product } from '../../data/schema'
-import { getProductAttributes } from '@/features/engineering/utils/product-utils'
+import { resolveBOMProductDisplaySummary } from '../../utils/bom-product-display'
 import { type MaterialOption } from '@/features/material-archive/data/schema'
 import { resolveBOMSectionLabel } from '../../utils/bom-section-utils'
 
 interface BOMPreviewProps {
   bom: BOM
   products: Product[]
+  productDisplayLabelMap: Map<string, string>
   materials: MaterialOption[]
   sections: BOMSectionOption[]
   onBack: () => void
@@ -29,6 +30,7 @@ interface BOMPreviewProps {
 export function BOMPreview({
   bom,
   products,
+  productDisplayLabelMap,
   materials,
   sections,
   onBack,
@@ -40,8 +42,10 @@ export function BOMPreview({
     [products]
   )
   const product = bom.product || productMap.get(bom.productId)
-  const productView = product ? getProductAttributes(product) : null
-  const productName = productView?.displayName || t('printMgmt.bomPreview.unknownProduct')
+  const productName = product
+    ? (productDisplayLabelMap.get(product.id) ?? t('printMgmt.bomPreview.unknownProduct'))
+    : t('printMgmt.bomPreview.unknownProduct')
+  const productSummary = product ? resolveBOMProductDisplaySummary(product) : null
   const bomDisplayVersion = deriveBomDisplayVersion(bom.bomVersion || bom.bomDisplayVersion)
   const bomChangeType = normalizeBomChangeType(bom.changeType)
   const effectiveFrom = normalizeEngineeringDateProtocol(bom.effectiveFrom)
@@ -121,30 +125,30 @@ export function BOMPreview({
                   : t('printMgmt.bomPreview.noEffectiveDate')}
               </span>
               <div className='flex items-center gap-1.5'>
-                {productView && (
+                {product && productSummary && (
                   <>
                     <Badge
                       variant='secondary'
                       className='border-indigo-100 bg-indigo-50 text-indigo-700 hover:bg-indigo-50'
                     >
-                      {productView.version}
+                      {productSummary.version}
                     </Badge>
                     <Badge
                       variant='outline'
                       className='border-slate-200 bg-slate-50 text-slate-600'
                     >
-                      {productView.series}
+                      {productSummary.series}
                     </Badge>
                     <Badge
                       variant='outline'
                       className='border-slate-200 bg-slate-50 text-slate-600'
                     >
-                      {productView.brake}
+                      {productSummary.brake}
                     </Badge>
                     <span className='rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-500'>
-                      {productView.sku}
+                      {product.sku}
                     </span>
-                    <span className='text-xs font-medium text-slate-400'>{productView.weight}</span>
+                    <span className='text-xs font-medium text-slate-400'>{productSummary.weightLabel}</span>
                   </>
                 )}
               </div>

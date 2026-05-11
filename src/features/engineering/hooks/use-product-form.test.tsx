@@ -6,11 +6,16 @@ import { createProductDraft } from '../utils/default-builders'
 import { PRODUCT_ATTRIBUTE_CATEGORY_KEYS } from '../utils/product-attribute-utils'
 import { useProductForm } from './use-product-form'
 import { useProductFormInit } from './use-product-form-init'
+import { useProductFormPreviewTemplate } from './use-product-form-preview-template'
 import { useProductFormDerive } from './use-product-form-derive'
 import { useProductFormSubmit } from './use-product-form-submit'
 
 vi.mock('./use-product-form-init', () => ({
   useProductFormInit: vi.fn(),
+}))
+
+vi.mock('./use-product-form-preview-template', () => ({
+  useProductFormPreviewTemplate: vi.fn(),
 }))
 
 vi.mock('./use-product-form-derive', () => ({
@@ -24,10 +29,12 @@ vi.mock('./use-product-form-submit', () => ({
 type UseProductFormProps = Parameters<typeof useProductForm>[0]
 
 type InitResult = ReturnType<typeof useProductFormInit>
+type PreviewTemplateResult = ReturnType<typeof useProductFormPreviewTemplate>
 type DeriveResult = ReturnType<typeof useProductFormDerive>
 type SubmitResult = ReturnType<typeof useProductFormSubmit>
 
 const useProductFormInitMock = vi.mocked(useProductFormInit)
+const useProductFormPreviewTemplateMock = vi.mocked(useProductFormPreviewTemplate)
 const useProductFormDeriveMock = vi.mocked(useProductFormDerive)
 const useProductFormSubmitMock = vi.mocked(useProductFormSubmit)
 
@@ -47,9 +54,20 @@ function buildInitResult(overrides: Partial<InitResult> = {}): InitResult {
 function buildDeriveResult(overrides: Partial<DeriveResult> = {}): DeriveResult {
   return {
     dynamicTypes: [],
+    specPreviewTitle: '',
     specPreviewSummary: '',
+    specPreviewV2: null,
     skuPreview: '',
     nextCodeDeriveError: null,
+    ...overrides,
+  }
+}
+
+function buildPreviewTemplateResult(overrides: Partial<PreviewTemplateResult> = {}): PreviewTemplateResult {
+  return {
+    boundTemplate: null,
+    templateResolveError: null,
+    templateResolutionPending: false,
     ...overrides,
   }
 }
@@ -104,6 +122,7 @@ function buildProps(overrides: Partial<UseProductFormProps> = {}): UseProductFor
 describe('useProductForm', () => {
   beforeEach(() => {
     useProductFormInitMock.mockReturnValue(buildInitResult())
+    useProductFormPreviewTemplateMock.mockReturnValue(buildPreviewTemplateResult())
     useProductFormDeriveMock.mockReturnValue(buildDeriveResult())
     useProductFormSubmitMock.mockReturnValue(buildSubmitResult())
   })

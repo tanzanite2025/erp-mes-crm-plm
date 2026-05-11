@@ -79,6 +79,10 @@ export const tradingQueryKeys = {
   purchaseReturnsRoot: (): readonly ['purchase-returns'] => [
     'purchase-returns',
   ],
+  salesOrderPackagingProductOptions: (): readonly [
+    'sales-orders',
+    'packaging-product-options',
+  ] => ['sales-orders', 'packaging-product-options'],
   salesOrdersRoot: (): readonly ['sales-orders'] => ['sales-orders'],
   salesOrders: (
     page: number,

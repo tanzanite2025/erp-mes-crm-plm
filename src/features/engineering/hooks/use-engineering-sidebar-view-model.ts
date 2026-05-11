@@ -1,8 +1,5 @@
 import { useMemo, useState } from 'react'
-import { type TranslationKey } from '@/locales'
-import { useLanguage } from '@/context/language-provider'
 import { type Product, type ProductType } from '../data/schema'
-import { getProductAttributes, type ProductViewModel } from '../utils/product-utils'
 
 type NestedProductType = ProductType & {
   level: number
@@ -22,21 +19,10 @@ export function useEngineeringSidebarViewModel({
   products,
   types,
 }: UseEngineeringSidebarViewModelParams) {
-  const { t } = useLanguage()
   const [searchTerm, setSearchTerm] = useState('')
 
   const handleSearchTermChange = (value: string) => {
     setSearchTerm(value)
-  }
-
-  const getDictLabel = (value: string) => {
-    if (!value) return '-'
-
-    const translationKey = `engineering.dict.${value}` as TranslationKey
-    const localized = t(translationKey)
-    if (localized !== translationKey) return localized
-
-    return value
   }
 
   const filteredProducts = useMemo(() => {
@@ -58,11 +44,6 @@ export function useEngineeringSidebarViewModel({
 
     return grouped
   }, [filteredProducts])
-
-  const productViewMap = useMemo<Map<string, ProductViewModel>>(
-    () => new Map(filteredProducts.map((product) => [product.id, getProductAttributes(product)])),
-    [filteredProducts]
-  )
 
   const sortedTypes = useMemo(() => {
     const result: NestedProductType[] = []
@@ -110,9 +91,7 @@ export function useEngineeringSidebarViewModel({
   return {
     searchTerm,
     filteredProducts,
-    productViewMap,
     typeSections,
-    getDictLabel,
     handleSearchTermChange,
   }
 }

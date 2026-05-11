@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { type Product } from '../data/schema'
 import { useEngineeringBootstrap } from './use-engineering-bootstrap'
+import { useEngineeringProductDisplayMetadata } from './use-engineering-product-display-metadata'
 import { useProductWriteActions } from './use-product-write-actions'
 import { type ProductSubmitPayload } from './use-product-form'
 
@@ -16,8 +17,12 @@ export function useEngineeringWorkspaceViewModel() {
   const bootstrap = useEngineeringBootstrap()
   const products = bootstrap.products ?? EMPTY_PRODUCTS
   const types = bootstrap.types
-  const isLoading = bootstrap.isLoading
-  const error = bootstrap.error
+  const displayMetadata = useEngineeringProductDisplayMetadata({
+    products,
+    productTypes: types,
+  })
+  const isLoading = bootstrap.isLoading || displayMetadata.isLoading
+  const error = bootstrap.error ?? displayMetadata.error
 
   const productMap = useMemo(
     () => new Map(products.map((product) => [product.id, product])),
@@ -37,6 +42,13 @@ export function useEngineeringWorkspaceViewModel() {
   }, [productMap, products, selectedProductId])
 
   const effectiveSelectedProductId = selectedProduct?.id ?? null
+  const selectedProductDisplayMetadata = useMemo(() => {
+    if (!selectedProduct) {
+      return null
+    }
+
+    return displayMetadata.productDisplayMetadataMap.get(selectedProduct.id) || null
+  }, [displayMetadata.productDisplayMetadataMap, selectedProduct])
 
   const handleSelectProduct = (id: string) => {
     setSelectedProductId(id)
@@ -93,6 +105,8 @@ export function useEngineeringWorkspaceViewModel() {
     error,
     editingProduct,
     selectedProduct,
+    selectedProductDisplayMetadata,
+    productDisplayMetadataMap: displayMetadata.productDisplayMetadataMap,
     effectiveSelectedProductId,
     isProductDialogOpen,
     isTypeDialogOpen,

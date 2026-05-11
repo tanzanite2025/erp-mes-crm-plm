@@ -281,10 +281,11 @@ export const trading = {
   analytics: {
     activeCustomers: 'Active Customers',
     activeCustomersDesc: 'Active entities involved in trading',
-    globalVolume: 'Global Volume',
-    globalVolumeDesc: 'Total order throughput',
+    top10ProductVolume: 'Top 10 Product Volume',
+    top10ProductVolumeDesc: 'Combined ordered quantity across the current Top 10 list',
     analyzedLines: 'Analyzed Lines',
     analyzedLinesDesc: 'Rows of audited data transactions',
+    customerProductRanking: 'Customer Product Ranking',
     filterCustomer: 'Filter Customer',
     customerId: 'Customer ID',
     productCount: 'Products',

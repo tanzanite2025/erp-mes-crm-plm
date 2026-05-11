@@ -11,7 +11,7 @@ import { BOMTable } from '../components/bom-mgmt/bom-table'
 import { BOMToolbar } from '../components/bom-mgmt/bom-toolbar'
 import { useBOMData } from '../hooks/use-bom-data'
 import { type BOM } from '../data/schema'
-import { type BOMItemDraft } from '../mutation-types'
+import { type BOMItemDraft, type SaveBOMInput } from '../mutation-types'
 
 export function BOMMgmt() {
   const { t } = useLanguage()
@@ -67,7 +67,7 @@ export function BOMMgmt() {
     setOpen(true)
   }
 
-  const handleFormSubmit = async (formData: BOM) => {
+  const handleFormSubmit = async (formData: SaveBOMInput) => {
     const success = await saveBOM({ data: formData })
     if (success) handleDialogOpenChange(false)
   }
@@ -106,6 +106,7 @@ export function BOMMgmt() {
 
   const bomTableData = readResource.status === 'ready' ? readResource.data : []
   const bomProducts = readResource.status === 'ready' ? readResource.products : []
+  const bomProductDisplayLabelMap = readResource.status === 'ready' ? readResource.productDisplayLabelMap : new Map<string, string>()
   const bomMaterials = readResource.status === 'ready' ? readResource.materials : []
   const bomSections = readResource.status === 'ready' ? readResource.sections : []
   const isLoading = readResource.status === 'loading'
@@ -145,6 +146,7 @@ export function BOMMgmt() {
           <BOMPreview
             bom={previewBOM}
             products={bomProducts}
+            productDisplayLabelMap={bomProductDisplayLabelMap}
             materials={bomMaterials}
             sections={bomSections}
             onBack={closePreview}

@@ -3,6 +3,7 @@ import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { productDraftSchema, type Product, type ProductType } from '../data/schema'
 import { useProductFormInit } from './use-product-form-init'
+import { useProductFormPreviewTemplate } from './use-product-form-preview-template'
 import { useProductFormSubmit } from './use-product-form-submit'
 import { useProductFormDerive } from './use-product-form-derive'
 import { type ProductVariantSelection } from '../utils/product-form-utils'
@@ -82,10 +83,21 @@ export function useProductForm({
     })
   }, [currentRow, currentSessionIdentity, form, isEdit, metadataReady, open, versionLevelOptions])
 
-  const { dynamicTypes, specPreviewSummary, skuPreview, nextCodeDeriveError } = useProductFormDerive({
+  const { boundTemplate, templateResolveError, templateResolutionPending } = useProductFormPreviewTemplate({
+    currentRow,
+    form,
+    isEdit,
+    open,
+    productTypes,
+  })
+
+  const { dynamicTypes, specPreviewTitle, specPreviewSummary, specPreviewV2, skuPreview, nextCodeDeriveError } = useProductFormDerive({
     isEdit,
     open,
     form,
+    previewTemplate: boundTemplate,
+    attributeCategories,
+    attributeOptions,
     productTypes,
   })
 
@@ -115,7 +127,12 @@ export function useProductForm({
     nextCodeDeriveError,
     skuPreview,
     selectedVariants,
+    boundTemplate,
+    templateResolveError,
+    templateResolutionPending,
+    specPreviewTitle,
     specPreviewSummary,
+    specPreviewV2,
     handleVariantToggle,
     updateVariantWeight,
     handleFormSubmit,

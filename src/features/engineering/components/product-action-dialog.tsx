@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { type FieldErrors, useWatch } from 'react-hook-form'
 import { Box, Trash2 } from 'lucide-react'
 import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
@@ -19,17 +19,16 @@ import { Form } from '@/components/ui/form'
 import { useLanguage } from '@/context/language-provider'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { createLogger } from '@/lib/logger'
+import { cn } from '@/lib/utils'
 import { getLocalizedSpecComponents } from './specs'
 import { ProductBasicInfo } from './product/product-basic-info'
 import { DynamicAttributeSection } from './product/dynamic-attribute-section'
 import { ProductionRestrictions } from './product/production-restrictions'
 import { useProductForm, type ProductSubmitPayload } from '../hooks/use-product-form'
 import { useProductWriteActions } from '../hooks/use-product-write-actions'
-import { type Product, type ProductTemplate, type ProductType } from '../data/schema'
+import { type Product, type ProductType } from '../data/schema'
 import { PRODUCT_ATTRIBUTE_CATEGORY_KEYS } from '../utils/product-attribute-utils'
 import { areSameProductAttributeCategoryKey } from '../utils/product-attribute-machine-value'
-import { ProductTypeService, type ProductTypeTemplateResolution } from '../services/product-type-service'
-import { productTemplateService } from '../services/product-template-service'
 
 const logger = createLogger('ProductActionDialog')
 
@@ -86,19 +85,17 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
     metadataReady,
     nextCodeDeriveError,
     selectedVariants,
+    boundTemplate,
+    templateResolveError,
+    templateResolutionPending,
+    specPreviewTitle,
     specPreviewSummary,
+    specPreviewV2,
     handleVariantToggle,
     updateVariantWeight,
     handleFormSubmit,
   } = useProductForm({ currentRow, open, productTypes, onOpenChange, onSubmit, onSaved })
   const { deleteProduct, isDeletingProduct } = useProductWriteActions()
-  const watchedTypeId = useWatch({ control: form.control, name: 'typeId' })
-  const [boundTemplate, setBoundTemplate] = useState<ProductTemplate | null>(null)
-  const [templateResolveError, setTemplateResolveError] = useState<string | null>(null)
-  const resolvedTemplateKey = currentRow?.resolvedTemplateKey?.trim() || currentRow?.templateKey?.trim() || ''
-  const resolvedTemplateId = currentRow?.resolvedTemplateId?.trim() || ''
-  const templateResolutionError = currentRow?.templateResolutionError?.trim() || ''
-  const templateResolutionSource = currentRow?.templateResolutionSource?.trim() || ''
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -115,109 +112,6 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
     }
     reader.readAsDataURL(file)
   }
-
-  useEffect(() => {
-    let cancelled = false
-
-    const resolveBoundTemplate = async () => {
-      const authorityTemplateId = isEdit ? resolvedTemplateId : ''
-      const authorityTemplateKey = isEdit ? resolvedTemplateKey : ''
-      const authorityResolutionError = isEdit ? templateResolutionError : ''
-
-      if (!isEdit && !watchedTypeId) {
-        if (!cancelled) {
-          setBoundTemplate(null)
-          setTemplateResolveError(null)
-        }
-        return
-      }
-
-      const selectedType = productTypes.find((type) => type.id === watchedTypeId)
-      try {
-        const resolveTemplateEntity = async (params: { templateId?: string; templateKey?: string }) => {
-          const findTemplate = (templates: ProductTemplate[]) => {
-            const normalizedTemplateId = params.templateId?.trim() || ''
-            const normalizedTemplateKey = params.templateKey?.trim().toUpperCase() || ''
-
-            return templates.find((item) => item.id === normalizedTemplateId)
-              || templates.find((item) => item.componentKey.trim().toUpperCase() === normalizedTemplateKey)
-              || null
-          }
-
-          const templates = await productTemplateService.getTemplates()
-          const cachedMatch = findTemplate(templates)
-          if (cachedMatch) {
-            return cachedMatch
-          }
-
-          const freshTemplates = await productTemplateService.getTemplates({ fresh: true })
-          return findTemplate(freshTemplates)
-        }
-
-        const resolvedAuthority: ProductTypeTemplateResolution = isEdit
-          ? {
-              resolvedTemplateId: authorityTemplateId,
-              resolvedTemplateKey: authorityTemplateKey,
-              templateResolutionSource: templateResolutionSource || 'backendResolvedTemplate',
-              templateResolutionError: authorityResolutionError,
-            }
-          : await ProductTypeService.getTemplateResolution(watchedTypeId || '')
-        const authorityTemplate = await resolveTemplateEntity({
-          templateId: resolvedAuthority.resolvedTemplateId,
-          templateKey: resolvedAuthority.resolvedTemplateKey,
-        })
-
-        if (cancelled) return
-
-        const template = authorityTemplate
-        if (!template) {
-          const selectedTypeLabel = selectedType
-            ? `${selectedType.name} (${selectedType.id})`
-            : `unknown product type (${watchedTypeId || 'missing'})`
-          const resolutionError = resolvedAuthority.templateResolutionError || ''
-          const resolutionTemplateKey = resolvedAuthority.resolvedTemplateKey || ''
-          const message = resolutionTemplateKey || resolutionError
-            ? `Template binding resolution failed: product type ${selectedTypeLabel} could not resolve an effective template. backendResolution=${resolutionError || 'unknown'} templateKey=${resolutionTemplateKey || 'missing'}.`
-            : `Template binding resolution failed: product type ${selectedTypeLabel} has no resolvable template binding in service authority.`
-          setBoundTemplate(null)
-          setTemplateResolveError(message)
-          logger.error('Template binding resolution failed: authority template could not be mapped', {
-            productTypeId: selectedType?.id,
-            templateId: resolvedAuthority.resolvedTemplateId,
-            productTemplateKey: resolutionTemplateKey || undefined,
-            resolvedTemplateId: resolvedAuthority.resolvedTemplateId,
-            templateResolutionError: resolutionError || undefined,
-            mode: isEdit ? 'edit' : 'create',
-          })
-          return
-        }
-
-        setBoundTemplate(template)
-        setTemplateResolveError(null)
-        logger.info('Resolved authority template for product dialog', {
-          productTypeId: selectedType?.id,
-          templateId: template.id,
-          source: resolvedAuthority.templateResolutionSource || (isEdit ? 'backendResolvedTemplate' : 'backendCreateTypeResolution'),
-          mode: isEdit ? 'edit' : 'create',
-        })
-      } catch (error) {
-        if (cancelled) return
-
-        const message = error instanceof Error
-          ? `Template binding resolution failed: ${error.message}`
-          : 'Template binding resolution failed: unknown error while loading template metadata.'
-        setBoundTemplate(null)
-        setTemplateResolveError(message)
-        logger.error('Template binding resolution failed while loading template metadata', error)
-      }
-    }
-
-    void resolveBoundTemplate()
-
-    return () => {
-      cancelled = true
-    }
-  }, [currentRow?.resolvedTemplateId, currentRow?.resolvedTemplateKey, currentRow?.templateKey, currentRow?.templateResolutionError, currentRow?.templateResolutionSource, isEdit, productTypes, watchedTypeId, resolvedTemplateId, resolvedTemplateKey, templateResolutionError, templateResolutionSource])
 
   const componentKey = boundTemplate?.componentKey as keyof typeof specComponents | undefined
   const activeSpec = componentKey ? specComponents[componentKey] : null
@@ -242,12 +136,6 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
   }, [handleVariantToggle, selectedVariants])
   const watchedModelCode = useWatch({ control: form.control, name: 'modelCode' })
   const issuanceBlocked = Boolean(!isEdit && nextCodeDeriveError && (!watchedModelCode || watchedModelCode === '01'))
-  const templateResolutionPending = Boolean(
-    open
-      && !templateResolveError
-      && !boundTemplate
-      && (watchedTypeId || resolvedTemplateKey || resolvedTemplateId)
-  )
   const metadataPending = Boolean(open && !metadataInitError && !metadataReady)
   const submissionBlocked = Boolean(
     metadataInitError
@@ -469,8 +357,26 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
               </Badge>
             </div>
             <p className='mt-1 text-[11px] font-black text-blue-900 dark:text-blue-200 tracking-tighter italic break-all leading-tight'>
-              {specPreviewSummary || t('engineering.productArchive.states.unnamed')}
+              {specPreviewV2 ? (specPreviewTitle || specPreviewV2.title) : (specPreviewSummary || t('engineering.productArchive.states.unnamed'))}
             </p>
+            {specPreviewV2 && specPreviewV2.summaryItems.length > 0 && (
+              <div className='mt-2 flex flex-wrap gap-1.5'>
+                {specPreviewV2.summaryItems.map((item) => (
+                  <Badge
+                    key={item.key}
+                    variant='outline'
+                    className={cn(
+                      'h-5 rounded-full border-dashed px-2 text-[8px] font-mono uppercase tracking-wide',
+                      item.empty
+                        ? 'border-slate-200 bg-white text-slate-400'
+                        : 'border-blue-300 bg-white text-blue-700'
+                    )}
+                  >
+                    {item.label}: {item.value}
+                  </Badge>
+                ))}
+              </div>
+            )}
           </div>
           <div className='flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end'>
             {isEdit && currentRow ? (

@@ -2,10 +2,11 @@ import { useCallback, useMemo, useRef } from 'react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { numberingService } from '@/features/basic-settings/services/numbering-service'
+import { type ProductDisplayProjectionV2 } from '@/features/engineering/display/product-display-v2'
 import { type Product } from '@/features/engineering/data/schema'
 import { type SalesOrder, type SalesOrderFormValues } from '../data/schema'
 import { getSalesOrderClassificationExt } from '../data/sales-order-options'
-import { mergeSalesOrderLineDisplaySnapshot } from '../utils/sales-order-line-display-snapshot'
+import { mergeSalesOrderLineProductFields } from '../utils/sales-order-line-product-fields'
 import { validateSalesOrder } from '../utils/sales-order-validator'
 import { useSalesOrderInit } from './use-sales-order-init'
 import { useSalesOrderOps } from './use-sales-order-ops'
@@ -17,7 +18,8 @@ type SalesOrderFormUpdater = SalesOrderFormState | ((prev: SalesOrderFormState) 
 export function useSalesOrderForm(
   initialOrder: SalesOrder | null | undefined,
   open: boolean,
-  products: Product[]
+  products: Product[],
+  productDisplayProjectionMap: Map<string, ProductDisplayProjectionV2>
 ) {
   const { t } = useLanguage()
   const classificationPreviewRequestIdRef = useRef(0)
@@ -82,6 +84,7 @@ export function useSalesOrderForm(
         }
 
         const product = productById.get(line.productId)
+        const displayProjection = productDisplayProjectionMap.get(line.productId)
         if (!product) {
           throw new Error(
             t('tradingSalesOrder.errors.lineProductMissing', {
@@ -90,16 +93,15 @@ export function useSalesOrderForm(
           )
         }
 
-        const displaySnapshot = mergeSalesOrderLineDisplaySnapshot(line, product)
+        if (!displayProjection) {
+          throw new Error(`第 ${line.lineNo} 行产品展示快照缺失，请刷新后重试`)
+        }
+
+        const productFields = mergeSalesOrderLineProductFields(line, product, displayProjection)
 
         return {
           ...line,
-          productModel: line.productModel || product.sku,
-          productCode: line.productCode || product.sku,
-          specification: line.specification || product.name || product.sku,
-          ...displaySnapshot,
-          modelCodeSnapshot: line.modelCodeSnapshot || product.modelCode || '',
-          holePrefixSnapshot: line.holePrefixSnapshot || '',
+          ...productFields,
         }
       })
     } catch (error) {

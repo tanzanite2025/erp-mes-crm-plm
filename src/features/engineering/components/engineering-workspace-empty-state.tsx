@@ -15,8 +15,8 @@ export function EngineeringWorkspaceEmptyState({
   const { t } = useLanguage()
 
   return (
-    <div className='flex-1 h-full p-4 flex items-center justify-center bg-background rounded-r-[32px]'>
-      <div className='w-full max-w-2xl relative'>
+    <div className='flex-1 h-full p-3 sm:p-4 flex items-center justify-center bg-background rounded-r-[32px]'>
+      <div className='w-full max-w-xl relative'>
         {/* 背景装饰：增强 UDS 深度感 */}
         <div className='absolute -inset-4 bg-linear-to-b from-blue-600/5 to-transparent blur-3xl rounded-full opacity-50' />
         

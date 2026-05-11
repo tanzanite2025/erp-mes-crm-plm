@@ -10,6 +10,7 @@ import (
 
 func registerInventoryRoutes(authorized *gin.RouterGroup) {
 	warehouseAccess := middleware.RequirePermissions(authz.MenuWarehouse)
+	warehouseThresholdAccess := middleware.RequirePermissions(authz.MenuWarehouse, authz.MenuWarehouseConfig)
 	inboundRecord := middleware.RequirePermissions(authz.ActionWarehouseInboundRecord)
 	shipmentRecord := middleware.RequirePermissions(authz.ActionWarehouseShipmentRecord)
 	shipmentUpdate := middleware.RequirePermissions(authz.ActionWarehouseShipmentUpdate)
@@ -30,6 +31,7 @@ func registerInventoryRoutes(authorized *gin.RouterGroup) {
 	inventoryGroup.GET("/warehouse/master-data/search", handlers.SearchWarehouseMasterDataHandler)
 	inventoryGroup.GET("/inventory/valuation", handlers.GetInventoryValuationHandler)
 	inventoryGroup.GET("/inventory/alerts/summary", handlers.GetInventoryAlertSummaryHandler)
+	inventoryGroup.GET("/inventory/alerts/bom-details", handlers.GetInventoryBOMAlertDetailsHandler)
 	inventoryGroup.PATCH("/inventory/:id", adjustmentUpdate, handlers.PatchInventoryHandler)
 	inventoryGroup.GET("/inventory/inbound", handlers.GetInboundHistoryHandler)
 	inventoryGroup.POST("/inventory/inbound", inboundRecord, handlers.RecordInboundHandler)
@@ -55,6 +57,14 @@ func registerInventoryRoutes(authorized *gin.RouterGroup) {
 	packagingAssemblyGroup.GET("", handlers.GetPackagingAssembliesHandler)
 	packagingAssemblyGroup.POST("/capture-sessions", handlers.CreatePackagingAssemblyCaptureSessionHandler)
 	packagingAssemblyGroup.GET("/capture-sessions/:sessionId", handlers.GetPackagingAssemblyCaptureSessionHandler)
+
+	thresholdRuleGroup := authorized.Group("/warehouse/threshold-rules")
+	thresholdRuleGroup.Use(warehouseThresholdAccess)
+	thresholdRuleGroup.GET("", handlers.GetInventoryThresholdRulesHandler)
+	thresholdRuleGroup.GET("/target-options", handlers.GetInventoryThresholdTargetOptionsHandler)
+	thresholdRuleGroup.POST("", categoryManage, handlers.SaveInventoryThresholdRuleHandler)
+	thresholdRuleGroup.PATCH("/:id", categoryManage, handlers.PatchInventoryThresholdRuleHandler)
+	thresholdRuleGroup.DELETE("/:id", categoryManage, handlers.DeleteInventoryThresholdRuleHandler)
 
 	stocktakeGroup := inventoryGroup.Group("/stocktakes")
 	stocktakeGroup.GET("", handlers.GetStocktakeTasksHandler)

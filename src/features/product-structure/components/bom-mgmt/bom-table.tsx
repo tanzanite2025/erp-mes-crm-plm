@@ -26,7 +26,7 @@ import { deriveBomDisplayVersion, normalizeBomChangeType, normalizeBomStatus, no
 import { cn } from '@/lib/utils'
 import { type BOMSectionOption } from '../../data/bom-section-schema'
 import { type BOM, type Product } from '../../data/schema'
-import { getProductAttributes } from '@/features/engineering/utils/product-utils'
+import { resolveBOMProductDisplaySummary } from '../../utils/bom-product-display'
 import { resolveBOMSectionLabel } from '../../utils/bom-section-utils'
 
 interface BOMTableProps {
@@ -92,26 +92,26 @@ export function BOMTable({
           return <span className='italic text-muted-foreground'>{t('engineering.bomArchive.table.unknownProduct')}</span>
         }
 
-        const productView = getProductAttributes(product)
+        const summary = resolveBOMProductDisplaySummary(product)
 
         return (
           <div className='flex flex-col gap-1 py-1'>
             <div className='flex items-center gap-2'>
-              <span className='text-sm font-bold leading-tight text-slate-800'>{productView.name}</span>
+              <span className='text-sm font-bold leading-tight text-slate-800'>{product.name}</span>
               <Badge className='h-4 border-indigo-100 bg-indigo-50 px-1 text-[10px] font-medium text-indigo-700 hover:bg-indigo-50'>
-                {productView.version}
+                {summary.version}
               </Badge>
             </div>
             <div className='flex items-center gap-1.5'>
               <Badge variant='outline' className='h-3.5 border-slate-200 bg-slate-50 px-1 text-[9px] font-normal text-slate-500'>
-                {productView.series}
+                {summary.series}
               </Badge>
               <Badge variant='outline' className='h-3.5 border-slate-200 bg-slate-50 px-1 text-[9px] font-normal text-slate-500'>
-                {productView.brake}
+                {summary.brake}
               </Badge>
-              <span className='ml-1 text-[10px] text-muted-foreground'>{productView.weight}</span>
+              <span className='ml-1 text-[10px] text-muted-foreground'>{summary.weightLabel}</span>
             </div>
-            <span className='font-mono text-[10px] text-muted-foreground/60'>{productView.sku}</span>
+            <span className='font-mono text-[10px] text-muted-foreground/60'>{product.sku}</span>
           </div>
         )
       },

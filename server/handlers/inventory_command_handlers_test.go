@@ -124,8 +124,52 @@ func setupInventoryCommandHandlerTestDB(t *testing.T) {
 			created_at DATETIME,
 			updated_at DATETIME,
 			deleted_at DATETIME,
+			code TEXT,
+			name TEXT,
 			category TEXT,
+			spec TEXT,
+			uom TEXT,
 			min_stock REAL DEFAULT 0
+		)`,
+		`CREATE TABLE products (
+			id TEXT PRIMARY KEY NOT NULL,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			sku TEXT,
+			name TEXT
+		)`,
+		`CREATE TABLE boms (
+			id TEXT PRIMARY KEY NOT NULL,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			bom_no TEXT,
+			product_id TEXT,
+			status TEXT,
+			description TEXT
+		)`,
+		`CREATE TABLE bom_items (
+			id TEXT PRIMARY KEY NOT NULL,
+			bom_id TEXT NOT NULL,
+			section TEXT,
+			material_id TEXT,
+			unit TEXT,
+			standard_usage REAL DEFAULT 0
+		)`,
+		`CREATE TABLE inventory_threshold_rules (
+			id TEXT PRIMARY KEY NOT NULL DEFAULT (lower(hex(randomblob(16)))),
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			target_type TEXT NOT NULL,
+			material_id TEXT,
+			bom_id TEXT,
+			target_name_snapshot TEXT NOT NULL,
+			target_code_snapshot TEXT,
+			threshold_qty REAL DEFAULT 0,
+			enabled NUMERIC DEFAULT 1,
+			notes TEXT
 		)`,
 		`CREATE TABLE purchase_orders (
 			id TEXT PRIMARY KEY NOT NULL,

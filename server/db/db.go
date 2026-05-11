@@ -1048,6 +1048,7 @@ func InitDB(dsn string) {
 		&models.Organization{},
 		&models.Employee{},
 		&models.WarehouseCategory{},
+		&models.InventoryThresholdRule{},
 		&models.ApprovalRequest{},
 		&models.LeaveRequest{},
 		&models.VehicleContactBinding{},

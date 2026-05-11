@@ -77,3 +77,13 @@ func GetInventoryAlertSummaryHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, response)
 }
+
+func GetInventoryBOMAlertDetailsHandler(c *gin.Context) {
+	response, err := services.ListInventoryBOMAlertDetails()
+	if err != nil {
+		respondInventoryError(c, http.StatusInternalServerError, "INVENTORY_BOM_ALERT_DETAILS_FAILED", "[SERVER] failed to load inventory BOM alert details: "+err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}

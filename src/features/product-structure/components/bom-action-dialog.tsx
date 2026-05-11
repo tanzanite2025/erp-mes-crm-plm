@@ -1,6 +1,7 @@
 'use client'
 
 import { type UseFormReturn } from 'react-hook-form'
+import { failLoudly } from '@/lib/safe-catch'
 import { Form } from '@/components/ui/form'
 import { BOMFormHeader } from './bom-editor/bom-form-header'
 import { BOMWorkspace } from './bom-editor/bom-workspace'
@@ -9,7 +10,8 @@ import { BOMDialogResourceBoundary } from './bom-dialog-resource-boundary'
 import { BOMDialogShell } from './bom-dialog-shell'
 import { type BOM } from '../data/schema'
 import { useBOMForm } from '../hooks/use-bom-form'
-import { type BOMItemDraft } from '../mutation-types'
+import { type BOMItemDraft, type SaveBOMInput } from '../mutation-types'
+import { buildBOMRelationSidecar } from '../utils/bom-relation-sidecar'
 
 type BOMActionDialogProps = {
   currentRow?: BOM
@@ -17,7 +19,7 @@ type BOMActionDialogProps = {
   initialProductId?: string
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit?: (data: BOM) => void | Promise<void>
+  onSubmit?: (data: SaveBOMInput) => void | Promise<void>
 }
 
 export function BOMActionDialog({
@@ -29,7 +31,19 @@ export function BOMActionDialog({
   onSubmit,
 }: BOMActionDialogProps) {
   const isEdit = Boolean(currentRow)
-  const { form, fields, append, remove, optionsResource, products, materials, sections } = useBOMForm({
+  const {
+    form,
+    fields,
+    append,
+    remove,
+    optionsResource,
+    detailSourceResource,
+    protocolDraft,
+    products,
+    productDisplayLabelMap,
+    materials,
+    sections,
+  } = useBOMForm({
     currentRow,
     initialItems,
     initialProductId,
@@ -44,8 +58,21 @@ export function BOMActionDialog({
       return
     }
 
+    if (!protocolDraft) {
+      failLoudly(
+        new Error('[CRITICAL] Missing effective BOM relation sidecar protocol draft during save submit'),
+        'BOMActionDialog.handleFormSubmit'
+      )
+      return
+    }
+
+    const submitData: SaveBOMInput = {
+      ...data,
+      relationSidecar: buildBOMRelationSidecar(protocolDraft),
+    }
+
     if (onSubmit) {
-      await onSubmit(data)
+      await onSubmit(submitData)
       return
     }
 
@@ -65,10 +92,11 @@ export function BOMActionDialog({
           onSubmit={typedForm.handleSubmit(handleFormSubmit)}
           className='flex min-h-0 flex-1 flex-col gap-2 overflow-hidden px-3 pb-3 pt-0 sm:px-4 sm:pb-4'
         >
-          <BOMDialogResourceBoundary resource={optionsResource}>
+          <BOMDialogResourceBoundary resource={optionsResource} detailResource={detailSourceResource}>
             <BOMFormHeader
               form={typedForm}
               products={products}
+              productDisplayLabelMap={productDisplayLabelMap}
               isEdit={isEdit}
             />
 
@@ -79,6 +107,7 @@ export function BOMActionDialog({
               sections={sections}
               append={append}
               remove={remove}
+              protocolDraft={protocolDraft}
             />
 
             <BOMDialogFooter form={typedForm} isSubmitDisabled={false} />

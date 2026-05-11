@@ -118,6 +118,7 @@ function buildReadyReadResource() {
       },
     ],
     products: [createProductDraft({ id: 'product-1', name: 'Product A', sku: 'SKU-001' })],
+    productDisplayLabelMap: new Map([['product-1', 'Product A (高刚性)']]),
     materials: [
       {
         id: 'mat-1',
@@ -221,10 +222,12 @@ describe('BOMMgmt', () => {
     expect(bomPreviewMock).toHaveBeenCalledWith(
       expect.objectContaining({
         products: expect.arrayContaining([expect.objectContaining({ id: 'product-1' })]),
+        productDisplayLabelMap: expect.any(Map),
         materials: expect.arrayContaining([expect.objectContaining({ id: 'mat-1' })]),
         sections: expect.arrayContaining([expect.objectContaining({ code: 'PREPARE' })]),
       })
     )
+    expect((bomPreviewMock.mock.calls[0]?.[0] as { productDisplayLabelMap: Map<string, string> }).productDisplayLabelMap.get('product-1')).toBe('Product A (高刚性)')
   })
 
   it('clears imported dialog seed after closing before opening a fresh create dialog', async () => {

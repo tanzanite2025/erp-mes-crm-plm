@@ -69,6 +69,10 @@ func SaveBOMHandler(c *gin.Context) {
 
 	saved, err := services.SaveBOM(auditContextFromGin(c), input)
 	if err != nil {
+		if errors.Is(err, services.ErrBOMRelationSidecarInvalid) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] invalid BOM relation sidecar: " + err.Error()})
+			return
+		}
 		if errors.Is(err, services.ErrBOMActiveConflict) {
 			c.JSON(http.StatusConflict, gin.H{"error": "[VALIDATION] failed to save BOM: " + err.Error()})
 			return

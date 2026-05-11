@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Box, Layers3, Link2, Plus, Scale, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { SelectDropdown } from '@/components/select-dropdown'
@@ -16,8 +17,19 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useLanguage } from '@/context/language-provider'
+import { resolveProductDisplayV2 } from '@/features/engineering/display/product-display-v2'
+import { resolveProductDisplayMetadataV2 } from '@/features/engineering/display/product-display-v2-metadata'
 import { useGetProducts } from '@/features/engineering/hooks/use-products'
-import { getProductAttributes } from '@/features/engineering/utils/product-utils'
+import {
+  PRODUCT_ATTRIBUTE_CATEGORIES_QUERY_KEY,
+  PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY,
+  PRODUCT_TEMPLATES_QUERY_KEY,
+  PRODUCT_TYPES_QUERY_KEY,
+} from '@/features/engineering/query-keys'
+import { ProductAttributeCategoryService } from '@/features/engineering/services/product-attribute-category-service'
+import { ProductAttributeOptionService } from '@/features/engineering/services/product-attribute-option-service'
+import { productTemplateService } from '@/features/engineering/services/product-template-service'
+import { ProductTypeService } from '@/features/engineering/services/product-type-service'
 import { useProductionLinesQuery } from '@/features/production-shared/hooks/use-production-resources'
 import { useHierarchyLevelLabels } from '@/features/production-shared/tabs/hierarchy-config/hooks/use-hierarchy-level-labels'
 
@@ -86,10 +98,30 @@ export function ControlledProtocolDialog({
   onSubmit,
   isSubmitting = false,
 }: ControlledProtocolDialogProps) {
-  const { t } = useLanguage()
+  const { t, locale } = useLanguage()
   const { level1Name, level2Name, level3Name } = useHierarchyLevelLabels()
   const readonly = mode === 'view'
   const { data: products = [], isLoading: isProductsLoading } = useGetProducts()
+  const productTemplatesQuery = useQuery({
+    queryKey: PRODUCT_TEMPLATES_QUERY_KEY,
+    queryFn: () => productTemplateService.getTemplates(),
+    enabled: open,
+  })
+  const productTypesQuery = useQuery({
+    queryKey: PRODUCT_TYPES_QUERY_KEY,
+    queryFn: () => ProductTypeService.getProductTypes(),
+    enabled: open,
+  })
+  const productAttributeCategoriesQuery = useQuery({
+    queryKey: PRODUCT_ATTRIBUTE_CATEGORIES_QUERY_KEY,
+    queryFn: () => ProductAttributeCategoryService.getProductAttributeCategories({ activeOnly: true }),
+    enabled: open,
+  })
+  const productAttributeOptionsQuery = useQuery({
+    queryKey: PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY,
+    queryFn: () => ProductAttributeOptionService.getProductAttributeOptions({ activeOnly: true }),
+    enabled: open,
+  })
   const { data: lines = [], isLoading: isLinesLoading } = useProductionLinesQuery({
     enabled: open,
   })
@@ -102,19 +134,48 @@ export function ControlledProtocolDialog({
   const [selections, setSelections] = useState<
     ControlledProtocolDraftSelectionFormValue[]
   >(initialFormState.selections)
+  const hasProductDisplayMetadata = Boolean(
+    productTemplatesQuery.data
+      && productTypesQuery.data
+      && productAttributeCategoriesQuery.data
+      && productAttributeOptionsQuery.data
+  )
 
   const productDisplayEntries = useMemo(
     () =>
       products.map((product) => {
-        const attributes = getProductAttributes(product)
-        const displayLabel = `${attributes.displayName} | ${attributes.weight}`
+        const displayMetadata = hasProductDisplayMetadata
+          ? resolveProductDisplayMetadataV2({
+              locale,
+              product,
+              templates: productTemplatesQuery.data ?? [],
+              productTypes: productTypesQuery.data ?? [],
+              categories: productAttributeCategoriesQuery.data ?? [],
+              options: productAttributeOptionsQuery.data ?? [],
+            })
+          : null
+        const displayProjection = displayMetadata?.projection ?? resolveProductDisplayV2({
+          locale,
+          product,
+        })
+        const displayName = displayProjection.fullLabel
+        const weightLabel = product.weight ? `${product.weight}g` : '-'
+        const displayLabel = `${displayName} | ${weightLabel}`
 
         return {
           id: product.id,
           label: displayLabel,
         }
       }),
-    [products]
+    [
+      hasProductDisplayMetadata,
+      productAttributeCategoriesQuery.data,
+      productAttributeOptionsQuery.data,
+      productTemplatesQuery.data,
+      productTypesQuery.data,
+      locale,
+      products,
+    ]
   )
 
   const productOptions = useMemo(
