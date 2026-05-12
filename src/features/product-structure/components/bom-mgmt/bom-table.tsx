@@ -5,7 +5,7 @@ import {
   flexRender,
   type ColumnDef,
 } from '@tanstack/react-table'
-import { ClipboardList, Edit, Eye, Layers, Trash2 } from 'lucide-react'
+import { ClipboardList, Edit, Eye, Layers, Trash2, Zap } from 'lucide-react'
 import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { useLanguage } from '@/context/language-provider'
 import { DataTablePagination } from '@/components/data-table'
@@ -36,6 +36,7 @@ interface BOMTableProps {
   isLoading: boolean
   onPreview: (bom: BOM) => void
   onEdit: (bom: BOM) => void
+  onDerive: (bom: BOM) => void
   onDelete: (id: string) => void
 }
 
@@ -46,6 +47,7 @@ export function BOMTable({
   isLoading,
   onPreview,
   onEdit,
+  onDerive,
   onDelete,
 }: BOMTableProps) {
   const { t } = useLanguage()
@@ -58,21 +60,40 @@ export function BOMTable({
     {
       accessorKey: 'bomNo',
       header: t('engineering.bomArchive.table.bom'),
-      cell: ({ row }) => (
-        <div className='flex items-center gap-3'>
-          <div className='flex size-10 shrink-0 items-center justify-center rounded-md border bg-slate-50'>
-            <ClipboardList className='size-5 text-blue-500' />
-          </div>
-          <div className='flex flex-col'>
-            <span className='font-mono font-bold leading-tight'>{row.original.bomNo}</span>
-            <div className='mt-0.5 flex flex-wrap items-center gap-2'>
-              <Badge variant='outline' className='h-4 border-blue-200 bg-blue-50 px-1 py-0 text-[10px] text-blue-600'>
-                {deriveBomDisplayVersion(row.original.bomVersion || row.original.bomDisplayVersion)}
-              </Badge>
+      cell: ({ row }) => {
+        const bomType = row.original.bomType || 'EBOM'
+        const isMBOM = bomType === 'MBOM'
+
+        return (
+          <div className='flex items-center gap-3'>
+            <div className={cn(
+              'flex size-10 shrink-0 items-center justify-center rounded-md border',
+              isMBOM ? 'bg-indigo-50 border-indigo-100' : 'bg-slate-50 border-slate-100'
+            )}>
+              <ClipboardList className={cn('size-5', isMBOM ? 'text-indigo-500' : 'text-blue-500')} />
+            </div>
+            <div className='flex flex-col'>
+              <div className='flex items-center gap-2'>
+                <span className='font-mono font-bold leading-tight'>{row.original.bomNo}</span>
+                <Badge 
+                  variant='outline' 
+                  className={cn(
+                    'h-3.5 px-1 text-[8px] font-black tracking-widest uppercase border-none',
+                    isMBOM ? 'bg-indigo-500/10 text-indigo-600' : 'bg-blue-500/10 text-blue-600'
+                  )}
+                >
+                  {t(`engineering.dict.${bomType}`)}
+                </Badge>
+              </div>
+              <div className='mt-0.5 flex flex-wrap items-center gap-2'>
+                <Badge variant='outline' className='h-4 border-blue-200 bg-blue-50 px-1 py-0 text-[10px] text-blue-600'>
+                  {deriveBomDisplayVersion(row.original.bomVersion || row.original.bomDisplayVersion)}
+                </Badge>
+              </div>
             </div>
           </div>
-        </div>
-      ),
+        )
+      },
     },
     {
       header: t('engineering.bomArchive.table.product'),
@@ -159,7 +180,7 @@ export function BOMTable({
       header: t('engineering.bomArchive.table.status'),
       cell: ({ row }) => {
         const status = normalizeBomStatus(row.original.status)
-        const config = {
+        const config: Record<string, { label: string; className: string }> = {
           draft: {
             label: t('engineering.bomArchive.status.draft'),
             className: 'bg-slate-500/10 text-slate-600 border-slate-200',
@@ -168,13 +189,33 @@ export function BOMTable({
             label: t('engineering.bomArchive.status.active'),
             className: 'bg-emerald-500/10 text-emerald-600 border-emerald-200 shadow-[0_0_8px_rgba(16,185,129,0.1)]',
           },
+          reviewing: {
+            label: t('engineering.bomArchive.status.reviewing'),
+            className: 'bg-amber-500/10 text-amber-600 border-amber-200',
+          },
+          approved: {
+            label: t('engineering.bomArchive.status.approved'),
+            className: 'bg-cyan-500/10 text-cyan-600 border-cyan-200',
+          },
+          validating: {
+            label: t('engineering.bomArchive.status.validating'),
+            className: 'bg-indigo-500/10 text-indigo-600 border-indigo-200',
+          },
+          released: {
+            label: t('engineering.bomArchive.status.released'),
+            className: 'bg-emerald-500/20 text-emerald-700 border-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.15)] animate-pulse',
+          },
           archived: {
             label: t('engineering.bomArchive.status.archived'),
             className: 'bg-rose-500/10 text-rose-600 border-rose-200',
           },
+          obsolete: {
+            label: t('engineering.bomArchive.status.obsolete'),
+            className: 'bg-zinc-500/10 text-zinc-600 border-zinc-200 grayscale',
+          },
         }
 
-        const current = config[status as keyof typeof config] || config.draft
+        const current = config[status] || config.draft
 
         return (
           <Badge variant='outline' className={cn('h-5 rounded-md border-none px-2 py-0 text-[9px] font-black uppercase tracking-widest', current.className)}>
@@ -186,35 +227,67 @@ export function BOMTable({
     {
       id: 'actions',
       header: t('engineering.bomArchive.table.actions'),
-      cell: ({ row }) => (
-        <div className='flex items-center gap-1'>
-          <AuditTimelineTriggerButton
-            module={AUDIT_MODULES.bom}
-            targetId={row.original.id}
-            targetName={row.original.bomNo}
-            iconOnly
-            className='size-8 rounded-full border-none bg-muted/40 text-foreground hover:bg-muted'
-          />
-          <Button variant='ghost' size='icon' className='size-8 rounded-full text-blue-600 hover:bg-blue-50' onClick={() => onPreview(row.original)}>
-            <Eye className='size-4' />
-          </Button>
-          <Button variant='ghost' size='icon' className='size-8 rounded-full hover:bg-muted' onClick={() => onEdit(row.original)}>
-            <Edit className='size-4' />
-          </Button>
-          <Button
-            variant='ghost'
-            size='icon'
-            className='size-8 rounded-full text-destructive hover:bg-rose-50'
-            onClick={() => {
-              if (window.confirm(t('engineering.bomArchive.table.confirmDelete'))) {
-                onDelete(row.original.id)
-              }
-            }}
-          >
-            <Trash2 className='size-4' />
-          </Button>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const isLocked = row.original.isLocked
+        const canDerive = row.original.bomType === 'EBOM' && !isLocked
+
+        return (
+          <div className='flex items-center gap-1'>
+            <AuditTimelineTriggerButton
+              module={AUDIT_MODULES.bom}
+              targetId={row.original.id}
+              targetName={row.original.bomNo}
+              iconOnly
+              className='size-8 rounded-full border-none bg-muted/40 text-foreground hover:bg-muted'
+            />
+            <Button 
+              variant='ghost' 
+              size='icon' 
+              className='size-8 rounded-full text-blue-600 hover:bg-blue-50' 
+              onClick={() => onPreview(row.original)}
+              title={t('common.actions.preview')}
+            >
+              <Eye className='size-4' />
+            </Button>
+            
+            {canDerive && (
+              <Button 
+                variant='ghost' 
+                size='icon' 
+                className='size-8 rounded-full text-amber-600 hover:bg-amber-50' 
+                onClick={() => onDerive(row.original)}
+                title={t('engineering.bomArchive.actions.derive')}
+              >
+                <Zap className='size-4' />
+              </Button>
+            )}
+
+            <Button 
+              variant='ghost' 
+              size='icon' 
+              className='size-8 rounded-full hover:bg-muted' 
+              onClick={() => onEdit(row.original)}
+              title={t('common.actions.edit')}
+            >
+              <Edit className='size-4' />
+            </Button>
+            <Button
+              variant='ghost'
+              size='icon'
+              disabled={isLocked}
+              className={cn('size-8 rounded-full transition-all duration-300', isLocked ? 'text-muted-foreground/30' : 'text-destructive hover:bg-rose-50')}
+              onClick={() => {
+                if (window.confirm(t('engineering.bomArchive.table.confirmDelete'))) {
+                  onDelete(row.original.id)
+                }
+              }}
+              title={t('common.actions.delete')}
+            >
+              <Trash2 className='size-4' />
+            </Button>
+          </div>
+        )
+      },
     },
   ]
 

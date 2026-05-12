@@ -61,7 +61,7 @@ export function deriveBomDisplayVersion(bomVersion?: string | null): string {
 }
 
 const BOM_CHANGE_TYPES = new Set(['MANUAL', 'ECO', 'ECN'])
-const BOM_STATUSES = new Set(['draft', 'active', 'archived'])
+const BOM_STATUSES = new Set(['DRAFT', 'REVIEWING', 'APPROVED', 'VALIDATING', 'RELEASED', 'OBSOLETE'])
 
 export const ENGINEERING_DATE_PROTOCOL_FORMAT = 'yyyy-MM-dd'
 export const ENGINEERING_OPTIONAL_DATE_PROTOCOL_REGEX = /^$|^\d{4}-\d{2}-\d{2}$/
@@ -83,12 +83,12 @@ export function normalizeBomChangeType(value?: string | null, fallback = 'MANUAL
   return fallback as 'MANUAL' | 'ECO' | 'ECN'
 }
 
-export function normalizeBomStatus(value?: string | null, fallback = 'active'): 'draft' | 'active' | 'archived' {
-  const normalized = (value || '').trim().toLowerCase()
+export function normalizeBomStatus(value?: string | null, fallback = 'DRAFT'): string {
+  const normalized = (value || '').trim().toUpperCase()
   if (BOM_STATUSES.has(normalized)) {
-    return normalized as 'draft' | 'active' | 'archived'
+    return normalized
   }
-  return fallback as 'draft' | 'active' | 'archived'
+  return fallback
 }
 
 export function normalizeSceneKey(value?: string | null, fallback = 'general'): string {

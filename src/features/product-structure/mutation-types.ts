@@ -7,6 +7,7 @@ import { type BOMRelationSidecar } from './utils/bom-relation-sidecar'
 
 export type SaveBOMInput = Omit<BOM, 'bomDisplayVersion'> & {
   relationSidecar: BOMRelationSidecar
+  _v?: number
 }
 export type BOMItemDraft = { [K in keyof BOMItem]?: BOMItem[K] }
 export type MaterialOptionDraft = { [K in keyof MaterialOption]?: MaterialOption[K] }

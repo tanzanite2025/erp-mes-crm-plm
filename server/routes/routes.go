@@ -108,6 +108,8 @@ func SetupRoutes(r *gin.Engine) {
 			engineeringGroup.GET("/bom/version-history/:id", handlers.GetBOMVersionHistoryEntryHandler)
 			engineeringGroup.GET("/bom/:id", handlers.GetBOMHandler)
 			engineeringGroup.POST("/bom", adminOnly, handlers.SaveBOMHandler)
+			engineeringGroup.POST("/bom/:id/promote", adminOnly, handlers.PromoteBOMStatusHandler)
+			engineeringGroup.POST("/bom/:id/derive-mbom", adminOnly, handlers.DeriveMBOMFromEBOMHandler)
 			engineeringGroup.DELETE("/bom/:id", adminOnly, handlers.DeleteBOMHandler)
 			engineeringGroup.GET("/bom-sections", handlers.GetBOMSectionsHandler)
 			engineeringGroup.GET("/bom-sections/options", handlers.GetBOMSectionOptionsHandler)

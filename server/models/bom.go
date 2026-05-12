@@ -2,16 +2,32 @@ package models
 
 import "encoding/json"
 
-// BOM 閰嶆柟娓呭崟妯″瀷
+const (
+	BOMTypeEBOM = "EBOM"
+	BOMTypeMBOM = "MBOM"
+
+	BOMStatusDraft      = "DRAFT"
+	BOMStatusReviewing  = "REVIEWING"
+	BOMStatusApproved   = "APPROVED"
+	BOMStatusValidating = "VALIDATING"
+	BOMStatusReleased   = "RELEASED"
+	BOMStatusObsolete   = "OBSOLETE"
+)
+
+// BOM 配方清单模型
 type BOM struct {
 	BaseModel
 	MasterDataControl
+	BOMType         string          `gorm:"size:20;not null;default:'EBOM'" json:"bomType"`
 	BOMNo           string          `gorm:"size:50;uniqueIndex;not null" json:"bomNo"`
 	ProductID       string          `gorm:"type:uuid;index;not null" json:"productId"`
 	Product         *Product        `gorm:"foreignKey:ProductID" json:"product,omitempty"`
+	SourceEBOMID    *string         `gorm:"type:uuid;index" json:"sourceEbomId,omitempty"`
 	VersionText     string          `gorm:"size:20;default:'V1.0'" json:"version"`
 	DisplayVersion  string          `gorm:"-" json:"bomDisplayVersion,omitempty"`
-	Status          string          `gorm:"size:20;default:'active'" json:"status"`
+	Status          string          `gorm:"size:20;default:'DRAFT'" json:"status"`
+	IsLocked        bool            `gorm:"default:false" json:"isLocked"`
+	Version         int             `gorm:"default:1" json:"_v"`
 	Items           []BOMItem       `gorm:"foreignKey:BOMID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"items"`
 	Description     string          `gorm:"type:text" json:"description"`
 	RelationSidecar json.RawMessage `gorm:"type:jsonb" json:"-"`

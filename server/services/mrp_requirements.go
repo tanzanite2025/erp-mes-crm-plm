@@ -118,7 +118,7 @@ func GetMrpRequirements(params GetMrpRequirementsParams) (MrpRequirementsRespons
 	var boms []models.BOM
 	if err := db.DB.Select("id", "product_id", "status").Preload("Items", func(tx *gorm.DB) *gorm.DB {
 		return tx.Select("id", "bom_id", "section", "material_id", "unit", "standard_usage")
-	}).Where("status = ?", "active").Find(&boms).Error; err != nil {
+	}).Where("status = ? AND bom_type = ?", models.BOMStatusReleased, models.BOMTypeMBOM).Find(&boms).Error; err != nil {
 		return MrpRequirementsResponse{}, err
 	}
 	bomIndex, err := buildActiveBOMIndex(boms)

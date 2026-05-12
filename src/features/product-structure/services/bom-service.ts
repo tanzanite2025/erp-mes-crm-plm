@@ -55,6 +55,7 @@ function sanitizeBOMInput(data: SaveBOMInput): SaveBOMInput {
 
     return {
         ...sanitizedPayload,
+        _v: sanitizedPayload.version,
         relationSidecar: normalizedData.relationSidecar,
     }
 }
@@ -88,8 +89,15 @@ export const bomService = {
      * 获取 BOM 列表
      * @param productId 可选，按产品 ID 过滤
      */
-    async getBOMs(productId?: string): Promise<BOM[]> {
-        const url = productId ? `/engineering/bom?productId=${productId}` : '/engineering/bom'
+    async getBOMs(params?: { productId?: string; status?: string; bomType?: string }): Promise<BOM[]> {
+        const query = new URLSearchParams()
+        if (params?.productId) query.append('productId', params.productId)
+        if (params?.status) query.append('status', params.status)
+        if (params?.bomType) query.append('bomType', params.bomType)
+
+        const queryString = query.toString()
+        const url = queryString ? `/engineering/bom?${queryString}` : '/engineering/bom'
+        
         const response = await apiFetch<BOMList>(url)
         return normalizeBOMListResponse(response).items
     },
@@ -125,5 +133,41 @@ export const bomService = {
         await apiFetch<void>(`/engineering/bom/${id}`, {
             method: 'DELETE',
         })
+    },
+
+    /**
+     * 推进 BOM 状态 (流转状态机)
+     * @param id BOM ID
+     * @param status 目标状态
+     * @param expectedVersion 可选的期望版本号（用于乐观锁）
+     */
+    async promoteBOMStatus(id: string, status: string, expectedVersion?: number): Promise<BOM> {
+        const payload: Record<string, unknown> = { status }
+        if (expectedVersion !== undefined) {
+            payload.expectedVersion = expectedVersion
+        }
+        
+        const res = await apiFetch<BOM>(`/engineering/bom/${id}/promote`, {
+            method: 'POST',
+            body: JSON.stringify(payload),
+        })
+        return bomSchema.parse(
+            ensureObjectResponse<Record<string, unknown>>(res, 'BOMService.promoteBOMStatus')
+        )
+    },
+
+    /**
+     * 从EBOM派生MBOM
+     * @param ebomId 源EBOM的ID
+     * @param input 派生参数
+     */
+    async deriveMBOMFromEBOM(ebomId: string, input: { description?: string; revisionNo?: string; changeOrderNo?: string }): Promise<BOM> {
+        const res = await apiFetch<BOM>(`/engineering/bom/${ebomId}/derive-mbom`, {
+            method: 'POST',
+            body: JSON.stringify(input),
+        })
+        return bomSchema.parse(
+            ensureObjectResponse<Record<string, unknown>>(res, 'BOMService.deriveMBOMFromEBOM')
+        )
     }
 }

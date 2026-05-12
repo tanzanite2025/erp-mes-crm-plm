@@ -3,11 +3,13 @@ package services
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 	"xdfc-server/db"
 	"xdfc-server/models"
+	statemachine "xdfc-server/services/state_machine"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -24,9 +26,18 @@ func ListBOMs(query BOMListQuery) ([]models.BOM, int64, error) {
 	}
 
 	productID := strings.TrimSpace(query.ProductID)
+	status := strings.TrimSpace(query.Status)
+	bomType := strings.TrimSpace(query.BOMType)
+
 	tx := db.DB.Model(&models.BOM{})
 	if productID != "" {
 		tx = tx.Where("product_id = ?", productID)
+	}
+	if status != "" {
+		tx = tx.Where("status = ?", status)
+	}
+	if bomType != "" {
+		tx = tx.Where("bom_type = ?", bomType)
 	}
 
 	if query.Options {
@@ -212,13 +223,13 @@ func normalizeBOMItemSections(tx *gorm.DB, items []models.BOMItem) ([]models.BOM
 	return items, nil
 }
 
-func validateUniqueActiveBOM(tx *gorm.DB, input *models.BOM) error {
-	if strings.TrimSpace(input.ProductID) == "" || strings.TrimSpace(input.Status) != "active" {
+func validateUniqueReleasedMBOM(tx *gorm.DB, input *models.BOM) error {
+	if strings.TrimSpace(input.ProductID) == "" || input.BOMType != models.BOMTypeMBOM || input.Status != models.BOMStatusReleased {
 		return nil
 	}
 
 	query := tx.Model(&models.BOM{}).
-		Where("product_id = ? AND status = ?", input.ProductID, "active")
+		Where("product_id = ? AND bom_type = ? AND status = ?", input.ProductID, models.BOMTypeMBOM, models.BOMStatusReleased)
 	if strings.TrimSpace(input.ID) != "" {
 		query = query.Where("id <> ?", input.ID)
 	}
@@ -228,7 +239,7 @@ func validateUniqueActiveBOM(tx *gorm.DB, input *models.BOM) error {
 		return err
 	}
 	if activeCount > 0 {
-		return fmt.Errorf("%w: product %s already has another active BOM", ErrBOMActiveConflict, input.ProductID)
+		return fmt.Errorf("%w: product %s already has a RELEASED MBOM", ErrBOMActiveConflict, input.ProductID)
 	}
 	return nil
 }
@@ -272,7 +283,7 @@ func SaveBOM(ctx context.Context, input SaveBOMInput) (BOMDetailResponse, error)
 		if err := validateBOMReferences(tx, &modelInput); err != nil {
 			return err
 		}
-		if err := validateUniqueActiveBOM(tx, &modelInput); err != nil {
+		if err := validateUniqueReleasedMBOM(tx, &modelInput); err != nil {
 			return err
 		}
 
@@ -289,12 +300,31 @@ func SaveBOM(ctx context.Context, input SaveBOMInput) (BOMDetailResponse, error)
 			if err := tx.Preload("Items").Where("id = ?", modelInput.ID).First(&existing).Error; err != nil {
 				return err
 			}
+			if existing.IsLocked {
+				return fmt.Errorf("[CRITICAL] Cannot modify a locked BOM (ID: %s)", existing.ID)
+			}
+
+			// ✅ 乐观锁版本检查
+			if input.Version > 0 && existing.Version != input.Version {
+				return fmt.Errorf("[CONFLICT] BOM has been modified by another user (expected v%d, got v%d)", input.Version, existing.Version)
+			}
+
+			// 防篡改
+			modelInput.Status = existing.Status
+			modelInput.BOMType = existing.BOMType
+			modelInput.IsLocked = existing.IsLocked
+			modelInput.SourceEBOMID = existing.SourceEBOMID
+
 			before := bomAuditSnapshot(existing)
 
 			modelInput.MasterDataControl.MergeMissingFrom(existing.MasterDataControl, defaultRevision)
 			if strings.TrimSpace(modelInput.VersionText) == "" {
 				modelInput.VersionText = existing.VersionText
 			}
+
+			// ✅ 版本号递增
+			modelInput.Version = existing.Version + 1
+
 			if err := tx.Model(&existing).Omit("Items").Updates(modelInput).Error; err != nil {
 				return err
 			}
@@ -317,6 +347,11 @@ func SaveBOM(ctx context.Context, input SaveBOMInput) (BOMDetailResponse, error)
 			return writeBOMAuditEntryWithContext(ctx, tx, saved.ID, "SAVE", before, payload)
 		}
 
+		modelInput.Status = models.BOMStatusDraft
+		if strings.TrimSpace(modelInput.BOMType) == "" {
+			modelInput.BOMType = models.BOMTypeEBOM
+		}
+		modelInput.IsLocked = false
 		modelInput.MasterDataControl.Normalize(defaultRevision)
 		items := modelInput.Items
 		modelInput.Items = nil
@@ -359,16 +394,16 @@ func DeleteBOM(ctx context.Context, id string) error {
 			return err
 		}
 		before := bomAuditSnapshot(bom)
-		if strings.TrimSpace(bom.Status) == "active" {
-			var activeCount int64
-			if err := tx.Model(&models.BOM{}).
-				Where("product_id = ? AND status = ?", bom.ProductID, "active").
-				Count(&activeCount).Error; err != nil {
-				return err
-			}
-			if activeCount <= 1 {
-				return fmt.Errorf("%w: cannot delete the only active BOM for product %s", ErrBOMDeleteLockedActive, bom.ProductID)
-			}
+		if bom.IsLocked {
+			return fmt.Errorf("%w: cannot delete a locked BOM for product %s", ErrBOMDeleteLockedActive, bom.ProductID)
+		}
+
+		var referenceCount int64
+		if err := tx.Model(&models.BOM{}).Where("source_ebom_id = ?", id).Count(&referenceCount).Error; err != nil {
+			return err
+		}
+		if referenceCount > 0 {
+			return fmt.Errorf("[VALIDATION] Cannot delete EBOM because it is referenced by %d MBOM(s) as a source", referenceCount)
 		}
 		if err := writeBOMVersionSnapshotTx(ctx, tx, bom, "DELETE"); err != nil {
 			return err
@@ -383,4 +418,172 @@ func DeleteBOM(ctx context.Context, id string) error {
 		payload["operation"] = "delete"
 		return writeBOMAuditEntryWithContext(ctx, tx, bomAuditTargetID(bom), "DELETE", before, payload)
 	})
+}
+
+func PromoteBOMStatus(ctx context.Context, id string, input PromoteBOMStatusInput) (BOMDetailResponse, error) {
+	if strings.TrimSpace(id) == "" {
+		return BOMDetailResponse{}, ErrBOMIDRequired
+	}
+
+	var saved models.BOM
+	err := db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var existing models.BOM
+		if err := tx.Preload("Items").Where("id = ?", id).First(&existing).Error; err != nil {
+			return err
+		}
+
+		// ✅ 乐观锁版本检查
+		if input.ExpectedVersion != nil && existing.Version != *input.ExpectedVersion {
+			return fmt.Errorf("[CONFLICT] BOM has been modified by another user (expected v%d, got v%d)", *input.ExpectedVersion, existing.Version)
+		}
+
+		// ✅ 状态转换验证
+		if guard := statemachine.CanTransitionBOMStatus(existing.Status, input.Status); !guard.Allowed {
+			return guard.Err()
+		}
+
+		if existing.IsLocked && input.Status != models.BOMStatusObsolete {
+			return fmt.Errorf("[CRITICAL] Cannot promote a locked BOM (Status: %s) to %s", existing.Status, input.Status)
+		}
+
+		before := bomAuditSnapshot(existing)
+
+		existing.Status = input.Status
+		if input.Status == models.BOMStatusApproved || input.Status == models.BOMStatusReleased || input.Status == models.BOMStatusObsolete {
+			existing.IsLocked = true
+		}
+
+		if existing.Status == models.BOMStatusReleased && existing.BOMType == models.BOMTypeMBOM {
+			if err := validateUniqueReleasedMBOM(tx, &existing); err != nil {
+				return err
+			}
+		}
+
+		// ✅ 版本号递增
+		existing.Version++
+
+		if err := tx.Save(&existing).Error; err != nil {
+			return err
+		}
+		saved = existing
+
+		if err := writeBOMVersionSnapshotTx(ctx, tx, saved, "PROMOTE"); err != nil {
+			return err
+		}
+		payload := bomAuditSnapshot(saved)
+		payload["operation"] = "promote"
+		return writeBOMAuditEntryWithContext(ctx, tx, saved.ID, "PROMOTE", before, payload)
+	})
+
+	if err != nil {
+		return BOMDetailResponse{}, err
+	}
+	saved.DisplayVersion = resolveBOMDisplayVersion(saved)
+	return MapBOMToDetailResponse(saved)
+}
+
+
+func DeriveMBOMFromEBOM(ctx context.Context, ebomID string, input DeriveMBOMInput) (BOMDetailResponse, error) {
+	if strings.TrimSpace(ebomID) == "" {
+		return BOMDetailResponse{}, ErrBOMIDRequired
+	}
+
+	var saved models.BOM
+	err := db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// 1. 获取源EBOM
+		var ebom models.BOM
+		if err := tx.Preload("Items").Where("id = ?", ebomID).First(&ebom).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrEBOMNotFound
+			}
+			return err
+		}
+
+		// 2. 验证源BOM类型与状态
+		if ebom.BOMType != models.BOMTypeEBOM {
+			return fmt.Errorf("%w: source BOM must be EBOM, got %s", ErrInvalidBOMType, ebom.BOMType)
+		}
+
+		if ebom.Status != models.BOMStatusApproved && ebom.Status != models.BOMStatusReleased {
+			return fmt.Errorf("[VALIDATION] Only APPROVED or RELEASED EBOMs can be derived to MBOM (current: %s)", ebom.Status)
+		}
+
+		// 3. 克隆BOM Items
+		clonedItems := make([]models.BOMItem, len(ebom.Items))
+		for idx, item := range ebom.Items {
+			clonedItems[idx] = models.BOMItem{
+				ID:             uuid.NewString(),
+				Section:        item.Section,
+				MaterialID:     item.MaterialID,
+				UnitPrice:      item.UnitPrice,
+				Unit:           item.Unit,
+				UnitUsage:      item.UnitUsage,
+				WastagePercent: item.WastagePercent,
+				StandardUsage:  item.StandardUsage,
+				MaterialType:   item.MaterialType,
+				SupplyChannel:  item.SupplyChannel,
+			}
+		}
+
+		// 4. 创建MBOM
+		mbom := models.BOM{
+			BOMType:      models.BOMTypeMBOM,
+			BOMNo:        generateBOMNo(tx),
+			ProductID:    ebom.ProductID,
+			SourceEBOMID: &ebomID,
+			VersionText:  "V1.0",
+			Status:       models.BOMStatusDraft,
+			IsLocked:     false,
+			Description:  input.Description,
+			MasterDataControl: models.MasterDataControl{
+				RevisionNo:    input.RevisionNo,
+				ChangeOrderNo: input.ChangeOrderNo,
+				ChangeType:    "MANUAL",
+			},
+			RelationSidecar: ebom.RelationSidecar, // 复制关系结构
+		}
+
+		if strings.TrimSpace(mbom.Description) == "" {
+			mbom.Description = fmt.Sprintf("Derived from EBOM %s", ebom.BOMNo)
+		}
+		if strings.TrimSpace(mbom.MasterDataControl.RevisionNo) == "" {
+			mbom.MasterDataControl.RevisionNo = "R1"
+		}
+
+		mbom.MasterDataControl.Normalize("V1.0")
+
+		// 5. 保存MBOM
+		if err := tx.Create(&mbom).Error; err != nil {
+			return err
+		}
+
+		// 6. 保存Items
+		if err := saveBOMItems(tx, mbom.ID, clonedItems); err != nil {
+			return err
+		}
+
+		// 7. 重新加载完整数据
+		if err := tx.Preload("Items").First(&saved, "id = ?", mbom.ID).Error; err != nil {
+			return err
+		}
+
+		// 8. 写入版本快照
+		if err := writeBOMVersionSnapshotTx(ctx, tx, saved, "DERIVE"); err != nil {
+			return err
+		}
+
+		// 9. 写入审计日志
+		payload := bomAuditSnapshot(saved)
+		payload["operation"] = "derive"
+		payload["sourceEbomId"] = ebomID
+		payload["sourceEbomNo"] = ebom.BOMNo
+		return writeBOMAuditEntryWithContext(ctx, tx, saved.ID, "DERIVE", nil, payload)
+	})
+
+	if err != nil {
+		return BOMDetailResponse{}, err
+	}
+
+	saved.DisplayVersion = resolveBOMDisplayVersion(saved)
+	return MapBOMToDetailResponse(saved)
 }

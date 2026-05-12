@@ -8,11 +8,14 @@ import (
 type BOMVersionSnapshot struct {
 	BaseModel
 	BOMID          string          `gorm:"type:uuid;not null;uniqueIndex:idx_bom_version_snapshots_bom_sequence,priority:1" json:"bomId"`
-	ProductID      string          `gorm:"type:uuid;not null;index" json:"productId"`
-	BOMNo          string          `gorm:"size:50;not null;index" json:"bomNo"`
+	BOMType         string          `gorm:"size:20;not null;default:'EBOM'" json:"bomType"`
+	BOMNo           string          `gorm:"size:50;not null;index" json:"bomNo"`
+	ProductID       string          `gorm:"type:uuid;not null;index" json:"productId"`
+	SourceEBOMID    *string         `gorm:"type:uuid;index" json:"sourceEbomId,omitempty"`
 	VersionSequence int            `gorm:"not null;uniqueIndex:idx_bom_version_snapshots_bom_sequence,priority:2" json:"versionSequence"`
-	VersionText    string          `gorm:"size:20" json:"versionText"`
-	Status         string          `gorm:"size:20" json:"status"`
+	VersionText     string          `gorm:"size:20" json:"versionText"`
+	Status          string          `gorm:"size:20" json:"status"`
+	IsLocked        bool            `gorm:"default:false" json:"isLocked"`
 	Description    string          `gorm:"type:text" json:"description"`
 	RevisionNo     string          `gorm:"size:40" json:"revisionNo"`
 	EffectiveFrom  *time.Time      `json:"effectiveFrom"`

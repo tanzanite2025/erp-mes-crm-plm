@@ -62,16 +62,26 @@ export function BOMFormHeader({ form, products, productDisplayLabelMap, isEdit }
       label: t('engineering.bomArchive.form.version'),
       type: 'input',
       readOnly: true,
-      className: 'bg-blue-50/70 font-mono font-bold text-blue-600',
+      className: 'bg-blue-50/70 font-mono font-bold text-blue-600 text-[11px]!',
+    },
+    {
+      name: 'bomType',
+      label: t('engineering.bomArchive.form.bomType'),
+      type: 'input',
+      readOnly: true,
+      className: 'bg-indigo-50/70 font-bold text-indigo-600 text-[11px]!',
     },
     {
       name: 'status',
       label: t('engineering.bomArchive.form.status'),
       type: 'select',
       items: [
-        { label: t('engineering.bomArchive.status.active'), value: 'active' },
-        { label: t('engineering.bomArchive.status.draft'), value: 'draft' },
-        { label: t('engineering.bomArchive.status.archived'), value: 'archived' },
+        { label: t('engineering.bomArchive.status.draft'), value: 'DRAFT' },
+        { label: t('engineering.bomArchive.status.reviewing'), value: 'REVIEWING' },
+        { label: t('engineering.bomArchive.status.approved'), value: 'APPROVED' },
+        { label: t('engineering.bomArchive.status.validating'), value: 'VALIDATING' },
+        { label: t('engineering.bomArchive.status.released'), value: 'RELEASED' },
+        { label: t('engineering.bomArchive.status.obsolete'), value: 'OBSOLETE' },
       ],
     },
     {
@@ -84,7 +94,7 @@ export function BOMFormHeader({ form, products, productDisplayLabelMap, isEdit }
 
   return (
     <div className='space-y-3 rounded-[24px] border border-dashed border-muted/50 bg-muted/5 p-2.5 sm:p-3'>
-      <div className='grid grid-cols-1 gap-2.5 md:grid-cols-2 md:gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,3.4fr)_minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,1.75fr)] lg:gap-2.5 xl:gap-3'>
+      <div className='grid grid-cols-1 gap-2.5 md:grid-cols-2 md:gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,3.4fr)_minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,1.15fr)_minmax(0,1.75fr)] lg:gap-2.5 xl:gap-3'>
         {headerFields.map((fieldConfig) => (
           <FormField
             key={fieldConfig.name}
@@ -108,15 +118,15 @@ export function BOMFormHeader({ form, products, productDisplayLabelMap, isEdit }
                     }}
                     items={fieldConfig.items}
                     placeholder={fieldConfig.placeholder}
-                    className='h-11! w-full rounded-2xl border-none bg-muted/50 text-[11px] font-bold shadow-inner'
-                    disabled={isEdit && fieldConfig.name === 'productId'}
+                    className='h-11! w-full rounded-2xl border-none bg-muted/50 text-[11px]! font-bold shadow-inner'
+                    disabled={(isEdit && fieldConfig.name === 'productId') || fieldConfig.name === 'status'}
                     isControlled
                   />
                 ) : (
                   <FormControl>
                     <Input
                       {...field}
-                      value={(field.value as string | undefined) ?? ''}
+                      value={fieldConfig.name === 'bomType' ? t(`engineering.dict.${field.value || 'EBOM'}` as any) : ((field.value as string | undefined) ?? '')}
                       type={fieldConfig.inputType ?? 'text'}
                       readOnly={fieldConfig.readOnly}
                       placeholder={fieldConfig.placeholder}
@@ -131,9 +141,9 @@ export function BOMFormHeader({ form, products, productDisplayLabelMap, isEdit }
                         field.onChange(event)
                       }}
                       className={cn(
-                        'h-11! rounded-2xl border-none bg-muted/50 text-[11px] font-bold shadow-inner',
+                        'h-11! rounded-2xl border-none bg-muted/50 text-[11px]! font-bold shadow-inner',
                         fieldConfig.inputType === 'date' &&
-                          'md:text-[11px] [&::-webkit-datetime-edit]:text-[11px] [&::-webkit-datetime-edit]:font-bold [&::-webkit-calendar-picker-indicator]:opacity-60',
+                          '[&::-webkit-datetime-edit]:text-[11px]! [&::-webkit-datetime-edit]:font-bold [&::-webkit-calendar-picker-indicator]:opacity-60',
                         fieldConfig.className
                       )}
                     />

@@ -106,12 +106,14 @@ function buildReadyReadResource() {
       {
         id: 'bom-1',
         bomNo: 'BOM-001',
+        bomType: 'EBOM' as const,
         productId: 'product-1',
         bomVersion: 'V1.0',
         revisionNo: 'R1',
         changeType: 'MANUAL' as const,
         isDefaultSite: true,
-        status: 'active' as const,
+        status: 'DRAFT' as const,
+        isLocked: false,
         items: [],
         description: 'Sample BOM',
         version: 1,
@@ -148,8 +150,10 @@ function buildReadyReadResource() {
 function buildUseBOMDataResult(overrides: Partial<UseBOMDataResult> = {}): UseBOMDataResult {
   return {
     readResource: buildReadyReadResource(),
-    saveBOM: vi.fn(async () => true),
+    saveBOM: vi.fn(async () => null as any),
     deleteBOM: vi.fn(async () => true),
+    promoteBOM: vi.fn(async () => true),
+    deriveMBOM: vi.fn(async () => true),
     downloadTemplate: vi.fn(async () => undefined),
     parseExcel: vi.fn(async () => null),
     ...overrides,

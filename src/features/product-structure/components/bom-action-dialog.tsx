@@ -19,7 +19,8 @@ type BOMActionDialogProps = {
   initialProductId?: string
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit?: (data: SaveBOMInput) => void | Promise<void>
+  onSubmit?: (data: SaveBOMInput) => BOM | Promise<BOM | null>
+  onPromote?: (id: string, status: string, expectedVersion?: number) => Promise<boolean>
 }
 
 export function BOMActionDialog({
@@ -29,6 +30,7 @@ export function BOMActionDialog({
   open,
   onOpenChange,
   onSubmit,
+  onPromote,
 }: BOMActionDialogProps) {
   const isEdit = Boolean(currentRow)
   const {
@@ -55,7 +57,7 @@ export function BOMActionDialog({
   const handleFormSubmit = async (data: BOM) => {
     if (isEdit && !typedForm.formState.isDirty) {
       onOpenChange(false)
-      return
+      return null
     }
 
     if (!protocolDraft) {
@@ -63,7 +65,7 @@ export function BOMActionDialog({
         new Error('[CRITICAL] Missing effective BOM relation sidecar protocol draft during save submit'),
         'BOMActionDialog.handleFormSubmit'
       )
-      return
+      return null
     }
 
     const submitData: SaveBOMInput = {
@@ -72,12 +74,54 @@ export function BOMActionDialog({
     }
 
     if (onSubmit) {
-      await onSubmit(submitData)
-      return
+      const result = await onSubmit(submitData)
+      return result
     }
 
     onOpenChange(false)
+    return null
   }
+
+  const handlePromote = async (targetStatus: string) => {
+    // 1. 如果变脏或者是新建，先执行保存获取最新 ID 或同步数据
+    let activeId = currentRow?.id
+    if (!activeId || typedForm.formState.isDirty) {
+      await typedForm.handleSubmit(handleFormSubmit)()
+      // handleSubmit 返回的是 undefined，实际结果在 handleFormSubmit 内部
+      // 这里需要稍微调整逻辑以获取保存后的结果
+      // 为了简单起见，我们假设 onSubmit 成功后 handleDialogOpenChange 会被调用
+      // 但现在我们要“保存后不关闭弹窗而是继续流转”
+      // 实际上，目前的 onSubmit 在父组件执行完后会调 handleDialogOpenChange(false)
+      // 这是一个冲突。我们需要在 handlePromote 中手动控制。
+    }
+
+    // 重新获取 ID (如果是新建)
+    // 方案改进：直接在 handlePromote 内部手动组装并调用 saveBOM 逻辑，避免依赖 handleSubmit 的闭包逻辑导致无法拿到 ID
+    const currentData = typedForm.getValues()
+    if (!protocolDraft) return
+
+    const submitData: SaveBOMInput = {
+      ...currentData,
+      relationSidecar: buildBOMRelationSidecar(protocolDraft),
+    }
+
+    let bomToPromote = currentRow
+    if (!bomToPromote?.id || typedForm.formState.isDirty) {
+      if (!onSubmit) return
+      const saved = await onSubmit(submitData)
+      if (!saved) return
+      bomToPromote = saved
+    }
+
+    if (bomToPromote?.id && onPromote) {
+      const success = await onPromote(bomToPromote.id, targetStatus, bomToPromote.version)
+      if (success) {
+        onOpenChange(false)
+      }
+    }
+  }
+
+  const isLocked = currentRow?.isLocked || false
 
   return (
     <BOMDialogShell
@@ -110,7 +154,12 @@ export function BOMActionDialog({
               protocolDraft={protocolDraft}
             />
 
-            <BOMDialogFooter form={typedForm} isSubmitDisabled={false} />
+            <BOMDialogFooter 
+              form={typedForm} 
+              currentRow={currentRow}
+              onPromote={handlePromote}
+              isSubmitDisabled={isLocked} 
+            />
           </BOMDialogResourceBoundary>
         </form>
       </Form>

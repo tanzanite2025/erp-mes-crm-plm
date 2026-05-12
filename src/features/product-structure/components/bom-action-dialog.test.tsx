@@ -165,7 +165,7 @@ describe('BOMActionDialog', () => {
     )
     expect(screen.getByTestId('bom-form-header')).toBeTruthy()
     expect(screen.getByTestId('bom-recipe-editor')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'engineering.bomArchive.dialog.save' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'engineering.bomArchive.dialog.saveDraft' })).toBeTruthy()
   })
 
   it('renders loading shell instead of form body when options resource is loading', () => {
@@ -244,7 +244,7 @@ describe('BOMActionDialog', () => {
       />
     )
 
-    await user.click(screen.getByRole('button', { name: 'engineering.bomArchive.dialog.save' }))
+    await user.click(screen.getByRole('button', { name: 'engineering.bomArchive.dialog.saveDraft' }))
 
     expect(onSubmit).not.toHaveBeenCalled()
     expect(onOpenChange).toHaveBeenCalledWith(false)
@@ -252,7 +252,7 @@ describe('BOMActionDialog', () => {
 
   it('includes relationSidecar when dirty create submit succeeds', async () => {
     const user = userEvent.setup()
-    const onSubmit = vi.fn(async () => undefined)
+    const onSubmit = vi.fn(async () => ({ id: 'bom-new-1', bomNo: 'BOM-NEW-001', bomType: 'EBOM', productId: 'product-1', bomVersion: 'V1.0', status: 'DRAFT', isLocked: false } as any))
 
     mockedUseBOMForm.mockReturnValue(
       buildUseBOMFormResult({
@@ -267,7 +267,7 @@ describe('BOMActionDialog', () => {
 
     render(<BOMActionDialog open onOpenChange={vi.fn()} onSubmit={onSubmit} />)
 
-    await user.click(screen.getByRole('button', { name: 'engineering.bomArchive.dialog.save' }))
+    await user.click(screen.getByRole('button', { name: 'engineering.bomArchive.dialog.saveDraft' }))
 
     expect(onSubmit).toHaveBeenCalledWith({
       bomNo: 'BOM-NEW-001',
@@ -286,7 +286,7 @@ describe('BOMActionDialog', () => {
   it('does not auto-close after dirty submit and leaves close control to parent', async () => {
     const user = userEvent.setup()
     const onOpenChange = vi.fn()
-    const onSubmit = vi.fn(async () => undefined)
+    const onSubmit = vi.fn(async () => ({ id: 'bom-1', bomNo: 'BOM-001', bomType: 'EBOM', productId: 'product-1', bomVersion: 'V1.0', status: 'DRAFT', isLocked: false } as any))
 
     mockedUseBOMForm.mockReturnValue(
       buildUseBOMFormResult({
@@ -308,7 +308,7 @@ describe('BOMActionDialog', () => {
       />
     )
 
-    await user.click(screen.getByRole('button', { name: 'engineering.bomArchive.dialog.save' }))
+    await user.click(screen.getByRole('button', { name: 'engineering.bomArchive.dialog.saveDraft' }))
 
     expect(onSubmit).toHaveBeenCalledWith({
       bomNo: 'BOM-001',
@@ -345,7 +345,7 @@ describe('BOMActionDialog', () => {
       />
     )
 
-    await user.click(screen.getByRole('button', { name: 'engineering.bomArchive.dialog.save' }))
+    await user.click(screen.getByRole('button', { name: 'engineering.bomArchive.dialog.saveDraft' }))
 
     expect(onSubmit).not.toHaveBeenCalled()
     expect(onOpenChange).not.toHaveBeenCalledWith(false)
@@ -378,7 +378,7 @@ describe('BOMActionDialog', () => {
       />
     )
 
-    await user.click(screen.getByRole('button', { name: 'engineering.bomArchive.dialog.save' }))
+    await user.click(screen.getByRole('button', { name: 'engineering.bomArchive.dialog.saveDraft' }))
 
     expect(onSubmit).not.toHaveBeenCalled()
     expect(onOpenChange).not.toHaveBeenCalledWith(false)

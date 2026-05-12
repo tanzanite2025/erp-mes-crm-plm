@@ -38,9 +38,9 @@ export function normalizeEngineeringBomChangeType(
 
 export function normalizeEngineeringBomStatus(
   value?: string | null,
-  fallback: 'draft' | 'active' | 'archived' = 'active'
-): 'draft' | 'active' | 'archived' {
-  return normalizeBomStatus(value, fallback)
+  fallback: 'DRAFT' | 'REVIEWING' | 'APPROVED' | 'VALIDATING' | 'RELEASED' | 'OBSOLETE' = 'DRAFT'
+): 'DRAFT' | 'REVIEWING' | 'APPROVED' | 'VALIDATING' | 'RELEASED' | 'OBSOLETE' {
+  return normalizeBomStatus(value, fallback) as 'DRAFT' | 'REVIEWING' | 'APPROVED' | 'VALIDATING' | 'RELEASED' | 'OBSOLETE'
 }
 
 export function normalizeBOMControlFieldPatch<T extends {
@@ -58,7 +58,7 @@ export function normalizeBOMControlFieldPatch<T extends {
     normalized.changeType = normalizeEngineeringBomChangeType(data.changeType) as T['changeType']
   }
   if ('status' in data) {
-    normalized.status = normalizeEngineeringBomStatus(data.status) as T['status']
+    normalized.status = normalizeEngineeringBomStatus(data.status as any) as T['status']
   }
   if ('revisionNo' in data) {
     normalized.revisionNo = normalizeEngineeringRevisionNo(data.revisionNo) as T['revisionNo']
@@ -84,7 +84,7 @@ export function normalizeBOMInput(data: SaveBOMInput): SaveBOMInput {
     bomNo: normalizeBOMNoValue(data.bomNo),
     bomVersion: normalizeEngineeringBomVersion(data.bomVersion),
     changeType: normalizeEngineeringBomChangeType(data.changeType),
-    status: normalizeEngineeringBomStatus(data.status),
+    status: normalizeEngineeringBomStatus(data.status as any),
     revisionNo: normalizeEngineeringRevisionNo(data.revisionNo),
     effectiveFrom: normalizeBOMEffectiveDate(data.effectiveFrom) || undefined,
     effectiveTo: normalizeBOMEffectiveDate(data.effectiveTo) || undefined,

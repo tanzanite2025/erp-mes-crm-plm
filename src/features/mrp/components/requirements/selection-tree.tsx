@@ -31,7 +31,7 @@ export function SelectionTree({ orders, selectedKeys, onSelectionChange, onAnaly
   const bomsQuery = useQuery({
     queryKey: BOMS_QUERY_KEY,
     queryFn: () => bomService.getBOMs(),
-    select: (data) => data.filter((bom) => bom.status === 'active'),
+    select: (data) => data.filter((bom) => bom.status === 'RELEASED'),
   })
   const boms = useMemo(() => bomsQuery.data ?? [], [bomsQuery.data])
 

@@ -22,10 +22,10 @@ export type BOMReadDataResource = CompositeReadResource<{
   sections: BOMSectionOption[]
 }>
 
-export function useBOMReadData(): BOMReadDataResource {
+export function useBOMReadData(filters?: { productId?: string; status?: string; bomType?: string }): BOMReadDataResource {
   const bomsQuery = useQuery({
-    queryKey: BOMS_QUERY_KEY,
-    queryFn: () => bomService.getBOMs(),
+    queryKey: filters ? [...BOMS_QUERY_KEY, filters] : BOMS_QUERY_KEY,
+    queryFn: () => bomService.getBOMs(filters),
   })
   const referenceResource = useBOMReferenceResource()
 

@@ -444,7 +444,9 @@ func isInventoryAlertActiveBOMStatus(status string) bool {
 		return true
 	}
 
-	return strings.EqualFold(trimmedStatus, "active")
+	return strings.EqualFold(trimmedStatus, models.BOMStatusReleased) || 
+	       strings.EqualFold(trimmedStatus, models.BOMStatusApproved) || 
+	       strings.EqualFold(trimmedStatus, "active")
 }
 
 func GetInventoryAlertSummary() (InventoryAlertSummaryResponse, error) {

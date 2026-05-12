@@ -19,6 +19,8 @@ export function BOMMgmt() {
     readResource,
     saveBOM,
     deleteBOM,
+    promoteBOM,
+    deriveMBOM,
     downloadTemplate,
     parseExcel,
   } = useBOMData()
@@ -68,8 +70,9 @@ export function BOMMgmt() {
   }
 
   const handleFormSubmit = async (formData: SaveBOMInput) => {
-    const success = await saveBOM({ data: formData })
-    if (success) handleDialogOpenChange(false)
+    const saved = await saveBOM({ data: formData })
+    if (saved) handleDialogOpenChange(false)
+    return saved
   }
 
   const closePreview = () => {
@@ -111,6 +114,15 @@ export function BOMMgmt() {
   const bomSections = readResource.status === 'ready' ? readResource.sections : []
   const isLoading = readResource.status === 'loading'
   const viewMode = previewBOM && readResource.status === 'ready' ? 'preview' : 'list'
+
+  const handleDerive = async (bom: BOM) => {
+    if (window.confirm(t('engineering.bomArchive.table.confirmDerive'))) {
+      await deriveMBOM(bom.id, {
+        description: `Derived from ${bom.bomNo}`,
+        revisionNo: 'R1'
+      })
+    }
+  }
 
   return (
     <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
@@ -160,6 +172,7 @@ export function BOMMgmt() {
           isLoading={isLoading}
           onPreview={setPreviewBOM}
           onEdit={openEditDialog}
+          onDerive={handleDerive}
           onDelete={deleteBOM}
         />
       )}
@@ -171,6 +184,7 @@ export function BOMMgmt() {
         initialItems={initialItems}
         initialProductId={initialProductId}
         onSubmit={handleFormSubmit}
+        onPromote={(id, status, expectedVersion) => promoteBOM(id, status, expectedVersion)}
       />
     </div>
   )
