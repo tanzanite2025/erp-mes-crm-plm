@@ -42,6 +42,7 @@ func setupProductAttributeSeedTestDB(t *testing.T) *gorm.DB {
 		)
 	`).Error)
 	require.NoError(t, testDB.Exec(`CREATE INDEX idx_product_attribute_categories_deleted_at ON product_attribute_categories(deleted_at)`).Error)
+	require.NoError(t, testDB.Exec(`CREATE UNIQUE INDEX idx_product_attribute_categories_key ON product_attribute_categories(LOWER(key)) WHERE deleted_at IS NULL`).Error)
 	require.NoError(t, testDB.Exec(`
 		CREATE TABLE product_attribute_options (
 			id TEXT PRIMARY KEY,
@@ -66,6 +67,7 @@ func setupProductAttributeSeedTestDB(t *testing.T) *gorm.DB {
 		)
 	`).Error)
 	require.NoError(t, testDB.Exec(`CREATE INDEX idx_product_attribute_options_deleted_at ON product_attribute_options(deleted_at)`).Error)
+	require.NoError(t, testDB.Exec(`CREATE UNIQUE INDEX idx_product_attribute_options_category_value_ci ON product_attribute_options(category, LOWER(value)) WHERE deleted_at IS NULL`).Error)
 	prevDB := db.DB
 	db.DB = testDB
 
@@ -182,6 +184,42 @@ func TestCreateProductAttributeCategoryAutoAssignsNextSortOrder(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Equal(t, 30, saved.SortOrder)
+}
+
+func TestCreateProductAttributeCategoryAllowsRecreateAfterSoftDelete(t *testing.T) {
+	testDB := setupProductAttributeSeedTestDB(t)
+
+	category := models.ProductAttributeCategory{
+		BaseModel: models.BaseModel{ID: "cat-max-tire-pressure"},
+		Key:       "maxtirepressure",
+		NameZh:    "最大胎压",
+		SortOrder: 10,
+		Active:    true,
+		Version:   1,
+	}
+	require.NoError(t, testDB.Create(&category).Error)
+	require.NoError(t, DeleteProductAttributeCategory(category.ID))
+
+	saved, err := CreateProductAttributeCategory(SaveProductAttributeCategoryInput{
+		Key:       "maxtirepressure",
+		NameZh:    "最大胎压",
+		Active:    true,
+		SortOrder: 0,
+	})
+	require.NoError(t, err)
+	require.Equal(t, "maxtirepressure", saved.Key)
+
+	var activeCount int64
+	require.NoError(t, testDB.Model(&models.ProductAttributeCategory{}).
+		Where("key = ?", "maxtirepressure").
+		Count(&activeCount).Error)
+	require.EqualValues(t, 1, activeCount)
+
+	var allCount int64
+	require.NoError(t, testDB.Unscoped().Model(&models.ProductAttributeCategory{}).
+		Where("key = ?", "maxtirepressure").
+		Count(&allCount).Error)
+	require.EqualValues(t, 2, allCount)
 }
 
 func TestCreateProductAttributeOptionAutoAssignsNextSortOrderWithinCategory(t *testing.T) {

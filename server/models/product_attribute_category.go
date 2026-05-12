@@ -3,7 +3,7 @@ package models
 type ProductAttributeCategory struct {
 	BaseModel
 	MasterDataControl
-	Key         string `gorm:"size:50;uniqueIndex;not null" json:"key"`
+	Key         string `gorm:"size:50;not null" json:"key"`
 	NameZh      string `gorm:"size:255;not null" json:"nameZh"`
 	NameEn      string `gorm:"size:255" json:"nameEn"`
 	Description string `gorm:"type:text" json:"description"`

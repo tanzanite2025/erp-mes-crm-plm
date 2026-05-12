@@ -282,7 +282,10 @@ func EnsureProductAttributeOptionValueUniqueIndex(tx *gorm.DB) error {
 	if tx == nil || !tx.Migrator().HasTable(&models.ProductAttributeOption{}) {
 		return nil
 	}
-	return tx.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_product_attribute_options_category_value_ci ON product_attribute_options (category, LOWER(value))").Error
+	if err := tx.Exec("DROP INDEX IF EXISTS idx_product_attribute_options_category_value_ci").Error; err != nil {
+		return err
+	}
+	return tx.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_product_attribute_options_category_value_ci ON product_attribute_options (category, LOWER(value)) WHERE deleted_at IS NULL").Error
 }
 
 func ensureProductAttributeOptionValueAvailable(tx *gorm.DB, categoryKey string, nextValue string, excludeID string) error {

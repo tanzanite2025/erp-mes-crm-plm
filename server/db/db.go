@@ -169,8 +169,39 @@ func ensureProductAttributeOptionValueUniqueIndex() {
 	if DB == nil || !DB.Migrator().HasTable(&models.ProductAttributeOption{}) {
 		return
 	}
-	if err := DB.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_product_attribute_options_category_value_ci ON product_attribute_options (category, LOWER(value))").Error; err != nil {
+	if err := DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Exec("SELECT pg_advisory_xact_lock(2026051202)").Error; err != nil {
+			return err
+		}
+		if err := tx.Exec("DROP INDEX IF EXISTS idx_product_attribute_options_category_value_ci").Error; err != nil {
+			return err
+		}
+		if err := tx.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_product_attribute_options_category_value_ci ON product_attribute_options (category, LOWER(value)) WHERE deleted_at IS NULL").Error; err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
 		log.Fatal("Failed to enforce product attribute option value uniqueness:", err)
+	}
+}
+
+func ensureProductAttributeCategoryKeyUniqueIndex() {
+	if DB == nil || !DB.Migrator().HasTable(&models.ProductAttributeCategory{}) {
+		return
+	}
+	if err := DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Exec("SELECT pg_advisory_xact_lock(2026051201)").Error; err != nil {
+			return err
+		}
+		if err := tx.Exec("DROP INDEX IF EXISTS idx_product_attribute_categories_key").Error; err != nil {
+			return err
+		}
+		if err := tx.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_product_attribute_categories_key ON product_attribute_categories (LOWER(key)) WHERE deleted_at IS NULL").Error; err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		log.Fatal("Failed to enforce product attribute category key uniqueness:", err)
 	}
 }
 
@@ -1144,6 +1175,7 @@ func InitDB(dsn string) {
 	ensureDefaultSidebarCommandDefinitions()
 
 	ensurePackagingRuleMaterialUniqueIndex()
+	ensureProductAttributeCategoryKeyUniqueIndex()
 	cleanupDuplicateProductAttributeOptions()
 	ensureProductAttributeOptionValueUniqueIndex()
 	fmt.Println("Database migration completed.")
