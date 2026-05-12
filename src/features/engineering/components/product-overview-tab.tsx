@@ -10,6 +10,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
+import { BOMVersionTraceTrigger } from '@/features/product-structure/version-trace/components/bom-version-trace-trigger'
 import { failLoudly } from '@/lib/safe-catch'
 import { renderProductSpecOverview } from './specs'
 import { type Product, type ProductType } from '../data/schema'
@@ -75,12 +76,19 @@ export function ProductOverviewTab({ product, productTypes, displayMetadata, onE
                     <Badge variant='secondary' className='h-7 sm:h-8 px-4 sm:px-6 rounded-full text-[9px] sm:text-[10px] font-black bg-blue-600/5 border-none uppercase tracking-widest text-blue-600 italic shadow-inner'>
                         {t('engineering.productMgmt.typeRefLabel')} / {categoryType!.code}
                     </Badge>
-                    <AuditTimelineTriggerButton
-                        module={AUDIT_MODULES.product}
-                        targetId={product.id}
-                        targetName={product.name}
-                        label={t('common.audit.trigger')}
-                    />
+                    <div className='flex flex-wrap items-center gap-2'>
+                        <BOMVersionTraceTrigger
+                            productId={product.id}
+                            targetName={product.name}
+                            label='BOM 版本'
+                        />
+                        <AuditTimelineTriggerButton
+                            module={AUDIT_MODULES.product}
+                            targetId={product.id}
+                            targetName={product.name}
+                            label={t('common.audit.trigger')}
+                        />
+                    </div>
                 </div>
             </div>
 

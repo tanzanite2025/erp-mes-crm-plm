@@ -44,14 +44,14 @@ export function BOMFlatWorkspaceView({
   const activeModeTab = viewMode === 'summary' ? 'all' : 'tree'
 
   return (
-    <div className='flex min-h-0 flex-1 flex-col space-y-2 p-0.5'>
-      <div className='mb-1.5 flex items-center justify-between border-b-2 border-dashed border-muted/50 pb-1.5'>
+    <div className='flex min-h-0 flex-1 flex-col space-y-1.5'>
+      <div className='mb-1 flex items-center justify-between border-b-2 border-dashed border-muted/50 pb-1'>
         <h4 className='text-[10px] font-black uppercase tracking-widest italic text-slate-900 sm:text-[12px]'>
           {t('engineering.bomArchive.recipe.title')}
         </h4>
       </div>
 
-      <div className='mb-1.5'>
+      <div className='mb-1'>
         <SegmentedTabs
           tabs={[
             { value: 'all', label: t('engineering.bomArchive.recipe.all') },
@@ -67,13 +67,13 @@ export function BOMFlatWorkspaceView({
             const fallbackGroupKey = activeGroupKey === 'all' ? groupNodes[0]?.key : activeGroupKey
             onActiveGroupChange(fallbackGroupKey || 'all')
           }}
-          className='w-full overflow-hidden'
-          listClassName='h-11 shrink-0 rounded-2xl bg-muted/20 p-0 px-1 sm:grid sm:h-10 sm:grid-cols-8'
+          className='w-full md:w-full overflow-hidden'
+          listClassName='grid h-11 w-full shrink-0 grid-cols-2 rounded-2xl bg-muted/20 p-1 sm:h-10'
         />
       </div>
 
       <Tabs value={activeModeTab} className='flex min-h-0 w-full flex-1 flex-col'>
-        <div className='relative mt-1 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[24px] border border-dashed border-muted/50 bg-background shadow-inner'>
+        <div className='relative mt-0.5 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[24px] border border-dashed border-muted/50 bg-background shadow-inner'>
           {viewMode === 'summary' ? (
             <div className='custom-scrollbar flex-1 overflow-y-auto p-0'>
               <SummaryPanel

@@ -79,18 +79,14 @@ export function normalizeBOMControlFieldPatch<T extends {
 }
 
 export function normalizeBOMInput(data: SaveBOMInput): SaveBOMInput {
-  const normalizedSiteCode = normalizeBOMSiteCode(data.siteCode)
-
   return {
     ...data,
     bomNo: normalizeBOMNoValue(data.bomNo),
     bomVersion: normalizeEngineeringBomVersion(data.bomVersion),
     changeType: normalizeEngineeringBomChangeType(data.changeType),
     status: normalizeEngineeringBomStatus(data.status),
-    siteCode: normalizedSiteCode,
     revisionNo: normalizeEngineeringRevisionNo(data.revisionNo),
     effectiveFrom: normalizeBOMEffectiveDate(data.effectiveFrom) || undefined,
     effectiveTo: normalizeBOMEffectiveDate(data.effectiveTo) || undefined,
-    isDefaultSite: normalizedSiteCode === '' || Boolean(data.isDefaultSite),
   }
 }

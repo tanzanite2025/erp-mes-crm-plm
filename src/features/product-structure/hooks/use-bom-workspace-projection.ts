@@ -93,6 +93,63 @@ function resolveSourceNodeDepth(nodeId: string, nodeById: Map<string, BOMWorkspa
   return depth
 }
 
+function isCollapsibleCollectionSourceBranchNode(
+  sourceBranchNode: BOMWorkspaceSourceBranchNode,
+  nodeById: Map<string, BOMWorkspaceSourceNode>
+) {
+  if (sourceBranchNode.branchRole !== 'collection' || !sourceBranchNode.parentNodeId) {
+    return false
+  }
+
+  const parentSourceNode = nodeById.get(sourceBranchNode.parentNodeId)
+  if (!parentSourceNode || parentSourceNode.nodeKind !== 'branch') {
+    return false
+  }
+
+  return parentSourceNode.branchRole === 'section'
+    && parentSourceNode.sectionCode === sourceBranchNode.sectionCode
+    && parentSourceNode.childNodeIds.length === 1
+    && parentSourceNode.childNodeIds[0] === sourceBranchNode.nodeId
+    && sourceBranchNode.childNodeIds.every((childNodeId) => nodeById.get(childNodeId)?.nodeKind !== 'branch')
+}
+
+function resolveVisibleParentSourceBranchNode(
+  sourceNode: BOMWorkspaceSourceBranchNode | BOMWorkspaceSourceLeafNode,
+  nodeById: Map<string, BOMWorkspaceSourceNode>
+) {
+  const parentSourceNode = sourceNode.parentNodeId ? nodeById.get(sourceNode.parentNodeId) : undefined
+  if (!parentSourceNode || parentSourceNode.nodeKind !== 'branch') {
+    return undefined
+  }
+
+  if (isCollapsibleCollectionSourceBranchNode(parentSourceNode, nodeById) && parentSourceNode.parentNodeId) {
+    const visibleParentSourceNode = nodeById.get(parentSourceNode.parentNodeId)
+    if (visibleParentSourceNode?.nodeKind === 'branch') {
+      return visibleParentSourceNode
+    }
+  }
+
+  return parentSourceNode
+}
+
+function resolveVisibleNodeDepth(
+  sourceNode: BOMWorkspaceSourceBranchNode | BOMWorkspaceSourceLeafNode,
+  nodeById: Map<string, BOMWorkspaceSourceNode>
+) {
+  const parentSourceNode = sourceNode.parentNodeId ? nodeById.get(sourceNode.parentNodeId) : undefined
+  const sourceDepth = resolveSourceNodeDepth(sourceNode.nodeId, nodeById)
+
+  if (
+    parentSourceNode
+    && parentSourceNode.nodeKind === 'branch'
+    && isCollapsibleCollectionSourceBranchNode(parentSourceNode, nodeById)
+  ) {
+    return Math.max(sourceDepth - 1, 0)
+  }
+
+  return sourceDepth
+}
+
 function resolveDescendantSourceLeafNodes(nodeId: string, nodeById: Map<string, BOMWorkspaceSourceNode>): BOMWorkspaceSourceLeafNode[] {
   const sourceNode = nodeById.get(nodeId)
   if (!sourceNode) {
@@ -110,7 +167,7 @@ function createLeafProjectionNode(
   sourceLeafNode: BOMWorkspaceSourceLeafNode,
   nodeById: Map<string, BOMWorkspaceSourceNode>
 ): BOMWorkspaceLeafNode {
-  const parentSourceNode = sourceLeafNode.parentNodeId ? nodeById.get(sourceLeafNode.parentNodeId) : undefined
+  const parentSourceNode = resolveVisibleParentSourceBranchNode(sourceLeafNode, nodeById)
 
   return {
     key: sourceLeafNode.nodeId,
@@ -118,8 +175,8 @@ function createLeafProjectionNode(
     fieldId: sourceLeafNode.fieldId,
     index: sourceLeafNode.index,
     nodeType: 'leaf',
-    depth: resolveSourceNodeDepth(sourceLeafNode.nodeId, nodeById),
-    parentKey: parentSourceNode && parentSourceNode.nodeKind === 'branch'
+    depth: resolveVisibleNodeDepth(sourceLeafNode, nodeById),
+    parentKey: parentSourceNode
       ? resolveProjectionBranchKey(parentSourceNode)
       : sourceLeafNode.sectionCode,
     sectionCode: sourceLeafNode.sectionCode,
@@ -131,11 +188,7 @@ function createLeafProjectionNode(
   }
 }
 
-function buildBranchChildNodes(branchNode: BOMWorkspaceBranchNode, childNodes: BOMWorkspaceNode[]): BOMWorkspaceNode[] {
-  if (branchNode.branchRole !== 'collection') {
-    return childNodes
-  }
-
+function buildAppendableBranchChildNodes(branchNode: BOMWorkspaceBranchNode, childNodes: BOMWorkspaceNode[]): BOMWorkspaceNode[] {
   if (branchNode.isEmpty) {
     return [{
       key: `${branchNode.key}:empty`,
@@ -162,6 +215,14 @@ function buildBranchChildNodes(branchNode: BOMWorkspaceBranchNode, childNodes: B
       sectionName: branchNode.sectionName,
     },
   ]
+}
+
+function buildBranchChildNodes(branchNode: BOMWorkspaceBranchNode, childNodes: BOMWorkspaceNode[]): BOMWorkspaceNode[] {
+  if (branchNode.branchRole !== 'collection') {
+    return childNodes
+  }
+
+  return buildAppendableBranchChildNodes(branchNode, childNodes)
 }
 
 export interface BOMWorkspaceAppendContext {
@@ -257,14 +318,16 @@ export function useBOMWorkspaceProjection({
 
   const nestedBranchNodes = useMemo<BOMWorkspaceBranchNode[]>(
     () =>
-      sourceModel.collectionBranchNodes.map((sourceBranchNode) => {
+      sourceModel.collectionBranchNodes
+        .filter((sourceBranchNode) => !isCollapsibleCollectionSourceBranchNode(sourceBranchNode, sourceModel.nodeById))
+        .map((sourceBranchNode) => {
         const leafRows = resolveDescendantSourceLeafNodes(sourceBranchNode.nodeId, sourceModel.nodeById).flatMap((sourceLeafNode) => {
           const leafNode = leafNodesBySourceNodeId.get(sourceLeafNode.nodeId)
           return leafNode ? [leafNode] : []
         })
 
         const sectionCost = leafRows.reduce((acc, leafRow) => acc + leafRow.standardUsage * leafRow.unitPrice, 0)
-        const parentSourceNode = sourceBranchNode.parentNodeId ? sourceModel.nodeById.get(sourceBranchNode.parentNodeId) : undefined
+        const parentSourceNode = resolveVisibleParentSourceBranchNode(sourceBranchNode, sourceModel.nodeById)
 
         return {
           key: resolveProjectionBranchKey(sourceBranchNode),
@@ -272,8 +335,8 @@ export function useBOMWorkspaceProjection({
           branchRole: sourceBranchNode.branchRole,
           label: sourceBranchNode.label,
           nodeType: 'branch',
-          depth: resolveSourceNodeDepth(sourceBranchNode.nodeId, sourceModel.nodeById),
-          parentKey: parentSourceNode && parentSourceNode.nodeKind === 'branch'
+          depth: resolveVisibleNodeDepth(sourceBranchNode, sourceModel.nodeById),
+          parentKey: parentSourceNode
             ? resolveProjectionBranchKey(parentSourceNode)
             : null,
           childCount: leafRows.length,
@@ -322,6 +385,24 @@ export function useBOMWorkspaceProjection({
       new Map<string, BOMWorkspaceNode[]>(
         allBranchNodes.map((branchNode) => {
           const sourceBranchNode = sourceModel.nodeById.get(branchNode.sourceNodeId)
+          const resolveCollapsibleCollectionChildNodes = (sourceCollectionBranchNode: BOMWorkspaceSourceBranchNode) => {
+            const childNodes = sourceCollectionBranchNode.childNodeIds.reduce<BOMWorkspaceNode[]>((acc, childNodeId) => {
+              const sourceChildNode = sourceModel.nodeById.get(childNodeId)
+              if (!sourceChildNode || sourceChildNode.nodeKind !== 'leaf') {
+                return acc
+              }
+
+              const childLeafNode = leafNodesBySourceNodeId.get(sourceChildNode.nodeId)
+              if (childLeafNode) {
+                acc.push(childLeafNode)
+              }
+
+              return acc
+            }, [])
+
+            return buildAppendableBranchChildNodes(branchNode, childNodes)
+          }
+
           const directChildNodes = sourceBranchNode?.nodeKind === 'branch'
             ? sourceBranchNode.childNodeIds.reduce<BOMWorkspaceNode[]>((acc, childNodeId) => {
                 const sourceChildNode = sourceModel.nodeById.get(childNodeId)
@@ -330,6 +411,11 @@ export function useBOMWorkspaceProjection({
                 }
 
                 if (sourceChildNode.nodeKind === 'branch') {
+                  if (isCollapsibleCollectionSourceBranchNode(sourceChildNode, sourceModel.nodeById)) {
+                    acc.push(...resolveCollapsibleCollectionChildNodes(sourceChildNode))
+                    return acc
+                  }
+
                   const childBranchNode = branchNodeBySourceNodeId.get(sourceChildNode.nodeId)
                   if (childBranchNode) {
                     acc.push(childBranchNode)

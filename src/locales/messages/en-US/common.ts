@@ -111,8 +111,6 @@ export const common = {
       addedItems: 'Added Items',
       removedItems: 'Removed Items',
       modifiedItems: 'Modified Items',
-      substituteChanges: 'Substitute Changes',
-      substituteCount: 'Substitute Count',
       controlChanges: 'Control Field Changes',
       materialCode: 'Material Code',
       unknownMaterial: 'Unknown Material',

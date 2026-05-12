@@ -80,18 +80,11 @@ export function BOMFormHeader({ form, products, productDisplayLabelMap, isEdit }
       type: 'input',
       inputType: 'date',
     },
-    {
-      name: 'revisionNo',
-      label: t('engineering.bomArchive.form.revisionNo'),
-      type: 'input',
-      placeholder: t('engineering.bomArchive.form.revisionNoPlaceholder'),
-      className: 'font-mono',
-    },
   ]
 
   return (
-    <div className='space-y-4 rounded-[24px] border border-dashed border-muted/50 bg-muted/5 p-3 sm:p-4'>
-      <div className='grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,3.4fr)_minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,1.75fr)_minmax(0,0.95fr)] lg:gap-3 xl:gap-4'>
+    <div className='space-y-3 rounded-[24px] border border-dashed border-muted/50 bg-muted/5 p-2.5 sm:p-3'>
+      <div className='grid grid-cols-1 gap-2.5 md:grid-cols-2 md:gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,3.4fr)_minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,1.75fr)] lg:gap-2.5 xl:gap-3'>
         {headerFields.map((fieldConfig) => (
           <FormField
             key={fieldConfig.name}
@@ -130,11 +123,6 @@ export function BOMFormHeader({ form, products, productDisplayLabelMap, isEdit }
                       onChange={(event) => {
                         const nextValue = event.target.value
 
-                        if (fieldConfig.name === 'revisionNo') {
-                          field.onChange(normalizeBOMControlFieldPatch({ revisionNo: nextValue }).revisionNo)
-                          return
-                        }
-
                         if (fieldConfig.name === 'effectiveFrom') {
                           field.onChange(normalizeBOMControlFieldPatch({ effectiveFrom: nextValue }).effectiveFrom)
                           return
@@ -144,6 +132,8 @@ export function BOMFormHeader({ form, products, productDisplayLabelMap, isEdit }
                       }}
                       className={cn(
                         'h-11! rounded-2xl border-none bg-muted/50 text-[11px] font-bold shadow-inner',
+                        fieldConfig.inputType === 'date' &&
+                          'md:text-[11px] [&::-webkit-datetime-edit]:text-[11px] [&::-webkit-datetime-edit]:font-bold [&::-webkit-calendar-picker-indicator]:opacity-60',
                         fieldConfig.className
                       )}
                     />

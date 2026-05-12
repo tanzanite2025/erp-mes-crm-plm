@@ -80,7 +80,6 @@ describe('bom-workspace-parent-children-protocol-adapter', () => {
           standardUsage: 3,
           materialType: '',
           supplyChannel: '',
-          substitutes: [],
         },
       ],
       resolveNumericField: (_index, _fieldName, value) => value as number,
@@ -97,6 +96,78 @@ describe('bom-workspace-parent-children-protocol-adapter', () => {
         fieldId: 'field-1',
         index: 0,
         itemId: 'item-1',
+        materialId: 'mat-1',
+        materialName: '材料 A',
+        unitPrice: 12,
+        standardUsage: 3,
+      }),
+    ])
+    expect(failLoudlyMock).not.toHaveBeenCalled()
+  })
+
+  it('maps field-based protocol item nodes back to the current form row when business item id is missing', () => {
+    const result = buildParentChildrenProtocolBranchRelations({
+      protocolDraft: {
+        rootChildren: ['branch:prepare'],
+        branchNodes: [
+          {
+            id: 'branch:prepare',
+            parentId: 'root',
+            children: ['branch:prepare:collection'],
+            nodeKind: 'branch',
+            branchRole: 'section',
+            label: '备料',
+            sectionCode: 'PREPARE',
+          },
+          {
+            id: 'branch:prepare:collection',
+            parentId: 'branch:prepare',
+            children: ['field:field-1'],
+            nodeKind: 'branch',
+            branchRole: 'collection',
+            label: '备料 明细',
+            sectionCode: 'PREPARE',
+          },
+        ],
+        itemNodes: [
+          {
+            id: 'field:field-1',
+            parentId: 'branch:prepare:collection',
+            children: [],
+            nodeKind: 'item',
+            sectionCode: 'PREPARE',
+          },
+        ],
+      },
+      activeSections: sections,
+      fields: [{ id: 'field-1' }],
+      watchedItems: [
+        {
+          id: '',
+          section: 'PREPARE',
+          materialId: 'mat-1',
+          materialName: '材料 A',
+          materialSpec: '',
+          unitPrice: 12,
+          unit: 'pcs',
+          unitUsage: 1,
+          wastagePercent: 0,
+          standardUsage: 3,
+          materialType: '',
+          supplyChannel: '',
+        },
+      ],
+      resolveNumericField: (_index, _fieldName, value) => value as number,
+      rootNodeId: 'root',
+    })
+
+    expect(result.leafNodes).toEqual([
+      expect.objectContaining({
+        nodeId: 'field:field-1',
+        parentNodeId: 'branch:prepare:collection',
+        fieldId: 'field-1',
+        index: 0,
+        itemId: '',
         materialId: 'mat-1',
         materialName: '材料 A',
         unitPrice: 12,
@@ -158,7 +229,6 @@ describe('bom-workspace-parent-children-protocol-adapter', () => {
             standardUsage: 3,
             materialType: '',
             supplyChannel: '',
-            substitutes: [],
           },
         ],
         resolveNumericField: (_index, _fieldName, value) => value as number,

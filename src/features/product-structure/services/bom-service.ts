@@ -1,7 +1,7 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
 import { bomListSchema, bomSchema, type BOM, type BOMList } from '../data/schema'
-import { type BOMItemDraft, type BOMSubstitutePatch, type SaveBOMInput } from '@/features/product-structure/mutation-types'
+import { type BOMItemDraft, type SaveBOMInput } from '@/features/product-structure/mutation-types'
 import { normalizeBOMInput } from '../utils/bom-control-normalization'
 import { normalizeBOMSectionValue } from '../utils/bom-section-utils'
 
@@ -29,13 +29,16 @@ function trimRequiredValue(value?: string) {
 }
 
 function sanitizeBOMInput(data: SaveBOMInput): SaveBOMInput {
-    const normalizedData = normalizeBOMInput(data)
+    const {
+        siteCode: _siteCode,
+        isDefaultSite: _isDefaultSite,
+        ...normalizedData
+    } = normalizeBOMInput(data)
     const sanitizedPayload = saveBOMSchema.parse({
         ...normalizedData,
         description: trimToUndefined(data.description),
         revisionNo: trimToUndefined(normalizedData.revisionNo),
         changeOrderNo: trimToUndefined(normalizedData.changeOrderNo),
-        siteCode: trimToUndefined(normalizedData.siteCode),
         effectiveFrom: trimToNull(normalizedData.effectiveFrom),
         effectiveTo: trimToNull(normalizedData.effectiveTo),
         items: data.items.map((item: BOMItemDraft) => ({
@@ -47,13 +50,6 @@ function sanitizeBOMInput(data: SaveBOMInput): SaveBOMInput {
             unit: trimRequiredValue(item.unit),
             materialType: trimToUndefined(item.materialType),
             supplyChannel: trimToUndefined(item.supplyChannel),
-            substitutes: (item.substitutes || []).map((substitute: BOMSubstitutePatch) => ({
-                ...substitute,
-                id: trimToUndefined(substitute.id),
-                bomItemId: trimToUndefined(substitute.bomItemId),
-                materialId: trimRequiredValue(substitute.materialId),
-                notes: trimToUndefined(substitute.notes),
-            })),
         })),
     })
 

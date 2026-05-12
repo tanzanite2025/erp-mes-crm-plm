@@ -108,7 +108,7 @@ export default function ProductShipment() {
     const warehouseCategories = readResource.warehouseCategories
     const history = readResource.history
     const masterDataMap = readResource.masterDataMap
-    const alertThresholds = readResource.alertThresholds
+    const materialThresholdMap = readResource.materialThresholdMap
     const salesOrders = readResource.salesOrders
 
     return (
@@ -169,7 +169,7 @@ export default function ProductShipment() {
                 onRetryInventoryContext={() => {
                     void retryInventoryContext()
                 }}
-                alertThreshold={selectedItem ? alertThresholds[selectedItem.id] : 0}
+                materialThreshold={selectedItem ? materialThresholdMap[selectedItem.id] : 0}
                 salesOrders={salesOrders}
             />
         </div>

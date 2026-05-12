@@ -18,7 +18,6 @@ function normalizeDraftItems(items?: BOMItemDraft[], sections: BOMSectionOption[
   return (items || []).map((item) => ({
     ...item,
     section: normalizeBOMSectionValue(sections, item.section || defaultSectionCode),
-    substitutes: item.substitutes || [],
   })) as BOM['items']
 }
 
@@ -36,7 +35,6 @@ export function createEmptyBOMItem(sectionCode: string): BOM['items'][number] {
     standardUsage: 0,
     materialType: '',
     supplyChannel: '',
-    substitutes: [],
   }
 }
 
@@ -48,7 +46,6 @@ export function createEmptyBOMFormValue(overrides: Partial<BOM> = {}, _sections:
     bomVersion: normalizeEngineeringBomVersion('V1.0'),
     revisionNo: normalizeEngineeringRevisionNo('R1'),
     changeType: normalizeEngineeringBomChangeType('MANUAL'),
-    isDefaultSite: true,
     status: normalizeEngineeringBomStatus('active'),
     items: [],
     description: '',
@@ -69,7 +66,6 @@ export function createBOMFormValue(params: {
   if (isEdit && currentRow) {
     return createEmptyBOMFormValue({
       ...currentRow,
-      isDefaultSite: currentRow.isDefaultSite ?? !currentRow.siteCode,
       items: normalizeDraftItems(currentRow.items, sections),
     }, sections)
   }

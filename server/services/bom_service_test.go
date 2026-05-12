@@ -74,13 +74,29 @@ func setupBOMServiceTestDB(t *testing.T) *gorm.DB {
 		)
 	`).Error)
 	require.NoError(t, testDB.Exec(`
-		CREATE TABLE bom_substitute_items (
+		CREATE TABLE bom_version_snapshots (
 			id TEXT PRIMARY KEY,
-			bom_item_id TEXT NOT NULL,
-			material_id TEXT NOT NULL,
-			priority INTEGER DEFAULT 1,
-			conversion_rate REAL DEFAULT 1,
-			notes TEXT
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			bom_id TEXT NOT NULL,
+			product_id TEXT NOT NULL,
+			bom_no TEXT NOT NULL,
+			version_sequence INTEGER NOT NULL,
+			version_text TEXT,
+			status TEXT,
+			description TEXT,
+			revision_no TEXT,
+			effective_from DATETIME,
+			effective_to DATETIME,
+			change_type TEXT,
+			change_order_no TEXT,
+			site_code TEXT,
+			is_default_site BOOLEAN DEFAULT FALSE,
+			operation TEXT,
+			created_by TEXT,
+			snapshot TEXT NOT NULL,
+			relation_sidecar TEXT
 		)
 	`).Error)
 	require.NoError(t, testDB.Exec(`
@@ -245,6 +261,13 @@ func TestSaveBOMUpdatePersistsExplicitRelationSidecar(t *testing.T) {
 	var stored models.BOM
 	require.NoError(t, testDB.First(&stored, "id = ?", "bom-1").Error)
 	require.JSONEq(t, string(relationSidecar), string(stored.RelationSidecar))
+
+	var snapshots []models.BOMVersionSnapshot
+	require.NoError(t, testDB.Order("created_at asc").Find(&snapshots).Error)
+	require.Len(t, snapshots, 1)
+	require.Equal(t, "bom-1", snapshots[0].BOMID)
+	require.Equal(t, "SAVE", snapshots[0].Operation)
+	require.Equal(t, 1, snapshots[0].VersionSequence)
 }
 
 func TestNormalizeBOMRelationSidecarRejectsInvalidKind(t *testing.T) {

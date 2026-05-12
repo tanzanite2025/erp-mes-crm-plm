@@ -4,6 +4,7 @@ export const engineering = {
     productAppearance: '产品外观',
     productAttributes: '产品属性配置',
     bom: 'BOM 配方',
+    bomRecords: 'BOM追溯',
     sectionConfig: '段位配置',
     changes: 'ECO / ECN',
     templates: '产品模板',
@@ -1211,7 +1212,6 @@ export const engineering = {
       unknownProduct: '未知产品',
       noSection: '未分配层级',
       lines: '{{count}} 行',
-      substitutes: '{{count}} 个替代料',
       fromDate: '自 {{date}} 起',
       noEffectiveDate: '未设置生效日期',
       confirmDelete: '确认删除该 BOM 吗？',
@@ -1254,10 +1254,10 @@ export const engineering = {
     recipe: {
       title: 'BOM 配方明细',
       all: '总览',
-      summaryHint: '提示：点击层级标签即可编辑该层级的 BOM 明细与替代料。',
+      summaryHint: '提示：点击层级标签即可编辑该层级的 BOM 明细。',
     },
     itemTable: {
-      primaryMaterial: '主料与替代料',
+      primaryMaterial: '主料',
       price: '单价',
       unitUsage: '单位用量',
       loss: '损耗 %',
@@ -1267,6 +1267,9 @@ export const engineering = {
       initialize: '初始化当前层级',
       initializeHint: '点击添加当前层级的第一条 BOM 明细',
       append: '新增一条 BOM 明细',
+      searchMaterialPlaceholder: '搜索物料...',
+      specLabel: '规格',
+      memoPlaceholder: '供应商 / 来源 / 备注...',
     },
     summary: {
       totalItems: '物料总项数',
@@ -1299,6 +1302,12 @@ export const engineering = {
       PACKAGING: '包装',
       defaultSection: '辅助材料',
       defaultType: '辅助材料',
+    },
+  },
+  bomRecords: {
+    header: {
+      title: 'BOM追溯中心',
+      description: '聚合查看全部 BOM 的版本记录、差异比对与结构追踪，作为产品结构中的正式追溯工作台。',
     },
   },
   bomSectionConfig: {

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { AlertCircle, RefreshCw } from 'lucide-react'
 import { Accordion } from '@/components/ui/accordion'
 import { ForbiddenState } from '@/components/forbidden-state'
@@ -8,6 +9,8 @@ import { ConfirmDialog } from '@/components/confirm-dialog'
 import { Button } from '@/components/ui/button'
 import { isForbiddenError } from '@/lib/error-status'
 import { useLanguage } from '@/context/language-provider'
+import { financeQueryKeys } from '@/features/finance/query-keys'
+import { CurrencyCoreService } from '@/features/finance/services/currency-core-service'
 import { BOMAlertDetailsDialog } from '../components/bom-alert-details-dialog'
 import { MaterialThresholdDialog } from '../material-thresholds/components/material-threshold-dialog'
 
@@ -19,36 +22,53 @@ import { StockMgmtCategorySection } from '../components/stock-mgmt-category-sect
 export default function StockMgmt() {
     const { t } = useLanguage()
     const [bomAlertDetailsOpen, setBomAlertDetailsOpen] = useState(false)
+    const baseCurrencyQuery = useQuery({
+        queryKey: [...financeQueryKeys.currencies(), 'base'],
+        queryFn: () => CurrencyCoreService.getBaseCurrency(),
+    })
+    const baseCurrency = baseCurrencyQuery.data
     const {
         readResource,
+        stockData,
+        filters,
+        thresholdDialog,
+        reconcileDialog,
+        retryRead,
+    } = useStockMgmt()
+    const {
         groupedInventory,
         materialTotalStock,
-        alertThresholds,
+        materialThresholdMap,
         categories,
         alertCount,
         materialAlertCount,
         bomAlertCount,
+        totalAssetsValue,
+    } = stockData
+    const {
         searchTerm,
         setSearchTerm,
         hideZeroStockMap,
         setHideZeroStockMap,
-        configDialogOpen,
-        setConfigDialogOpen,
+    } = filters
+    const {
+        open: configDialogOpen,
         selectedMaterial,
-        setSelectedMaterial,
         selectedThresholdRule,
         selectedMaterialOptions,
         canManageThresholdRule,
-        reconcileConfirmOpen,
-        setReconcileConfirmOpen,
-        isReconciling,
-        isSavingThresholdRule,
-        handleHardReconcile,
-        onConfirmReconcile,
-        handleSaveThresholdRule,
-        totalAssetsValue,
-        retryRead,
-    } = useStockMgmt()
+        isSubmitting: isSavingThresholdRule,
+        onOpenChange: handleThresholdDialogOpenChange,
+        onSubmit: handleSaveThresholdRule,
+        openForMaterial: openThresholdConfig,
+    } = thresholdDialog
+    const {
+        open: reconcileConfirmOpen,
+        isSubmitting: isReconciling,
+        onOpenChange: handleReconcileConfirmOpenChange,
+        onConfirm: onConfirmReconcile,
+        requestOpen: handleHardReconcile,
+    } = reconcileDialog
 
     if (readResource.status === 'error' && isForbiddenError(readResource.error)) {
         return <ForbiddenState />
@@ -57,7 +77,14 @@ export default function StockMgmt() {
     if (readResource.status === 'error') {
         return (
             <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-                <StockMgmtHeader alertCount={0} materialAlertCount={0} bomAlertCount={0} totalAssets={0} />
+                <StockMgmtHeader
+                    alertCount={0}
+                    materialAlertCount={0}
+                    bomAlertCount={0}
+                    totalAssets={0}
+                    baseCurrencySymbol={baseCurrency?.symbol}
+                    baseCurrencyPrecision={baseCurrency?.precision}
+                />
                 <div className='flex min-h-[360px] flex-col items-center justify-center rounded-[32px] border border-dashed border-rose-500/25 bg-rose-500/3 px-6 text-center'>
                     <AlertCircle className='size-8 text-rose-500' />
                     <p className='mt-4 text-[10px] font-black uppercase tracking-widest text-rose-700'>库存总览加载失败</p>
@@ -87,6 +114,8 @@ export default function StockMgmt() {
                 materialAlertCount={materialAlertCount}
                 bomAlertCount={bomAlertCount}
                 totalAssets={totalAssetsValue}
+                baseCurrencySymbol={baseCurrency?.symbol}
+                baseCurrencyPrecision={baseCurrency?.precision}
                 onOpenBOMAlertDetails={() => setBomAlertDetailsOpen(true)}
             />
 
@@ -130,18 +159,9 @@ export default function StockMgmt() {
                                         }))
                                     }}
                                     materialTotalStock={materialTotalStock}
-                                    alertThresholds={alertThresholds}
+                                    materialThresholdMap={materialThresholdMap}
                                     canConfigureThreshold={canManageThresholdRule}
-                                    onConfigureThreshold={(item) => {
-                                        setSelectedMaterial({
-                                            id: item.materialId,
-                                            name: item.materialName,
-                                            code: item.materialCode,
-                                            spec: item.materialSpec,
-                                            uom: item.uom,
-                                        })
-                                        setConfigDialogOpen(true)
-                                    }}
+                                    onConfigureThreshold={openThresholdConfig}
                                 />
                             )
                         })}
@@ -151,14 +171,8 @@ export default function StockMgmt() {
 
             {/* 5. 业务状态流转弹窗 */}
             <MaterialThresholdDialog
-                key={`${selectedMaterial?.id ?? 'none'}-${selectedThresholdRule?.id ?? 'create'}-${configDialogOpen ? 'open' : 'closed'}`}
                 open={configDialogOpen}
-                onOpenChange={(open) => {
-                    setConfigDialogOpen(open)
-                    if (!open) {
-                        setSelectedMaterial(null)
-                    }
-                }}
+                onOpenChange={handleThresholdDialogOpenChange}
                 rule={selectedThresholdRule}
                 materialOptions={selectedMaterialOptions}
                 bomOptions={[]}
@@ -175,7 +189,7 @@ export default function StockMgmt() {
 
             <ConfirmDialog
                 open={reconcileConfirmOpen}
-                onOpenChange={setReconcileConfirmOpen}
+                onOpenChange={handleReconcileConfirmOpenChange}
                 title={t('warehouse.stock.reconcileDialog.title')}
                 desc={t('warehouse.stock.reconcileDialog.description')}
                 confirmText={t('warehouse.stock.reconcileDialog.confirm')}

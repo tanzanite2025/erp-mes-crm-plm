@@ -7,10 +7,9 @@ import { Button } from '@/components/ui/button'
 import { FormField } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { TableCell, TableRow } from '@/components/ui/table'
-import { failLoudly } from '@/lib/safe-catch'
+import { useLanguage } from '@/context/language-provider'
 import { type MaterialOption } from '../../../material-archive/data/schema'
-import { type BOM, type BOMSubstitute } from '../../data/schema'
-import { type BOMSubstitutePatch } from '../../mutation-types'
+import { type BOM } from '../../data/schema'
 import { type EnrichedMaterialOption } from '../../hooks/use-enriched-material-options'
 import { PrimaryMaterialCell } from './primary-material-cell'
 
@@ -25,54 +24,7 @@ interface BOMItemRowProps {
 }
 
 export function BOMItemRow({ form, index, materials, materialMap, onRemove, measureElement, dataIndex }: BOMItemRowProps) {
-  const primaryMaterialId = form.watch(`items.${index}.materialId`)
-  const substitutesValue = form.watch(`items.${index}.substitutes`)
-  if (!Array.isArray(substitutesValue)) {
-    const error = new Error(`[CRITICAL] Missing substitutes array for BOM item ${index}`)
-    failLoudly(error, 'BOMItemRow.substitutes')
-    throw error
-  }
-  const substitutes = substitutesValue
-  const sortedMaterials = materials
-
-  const setSubstitutes = (nextSubstitutes: BOMSubstitute[]) => {
-    form.setValue(`items.${index}.substitutes`, nextSubstitutes, {
-      shouldDirty: true,
-      shouldTouch: true,
-    })
-  }
-
-  const addSubstitute = () => {
-    setSubstitutes([
-      ...substitutes,
-      {
-        id: '',
-        materialId: '',
-        priority: substitutes.length + 1,
-        conversionRate: 1,
-        notes: '',
-      },
-    ])
-  }
-
-  const removeSubstitute = (substituteIndex: number) => {
-    setSubstitutes(
-      substitutes
-        .filter((_: BOMSubstitute, idx: number) => idx !== substituteIndex)
-        .map((substitute: BOMSubstitute, idx: number) => ({
-          ...substitute,
-          priority: idx + 1,
-        }))
-    )
-  }
-
-  const updateSubstitute = (substituteIndex: number, patch: BOMSubstitutePatch) => {
-    setSubstitutes(
-      substitutes.map((substitute: BOMSubstitute, idx: number) =>
-        idx === substituteIndex ? { ...substitute, ...patch } : substitute
-      )
-    )
-  }
+  const { t } = useLanguage()
 
   return (
     <TableRow
@@ -83,13 +35,8 @@ export function BOMItemRow({ form, index, materials, materialMap, onRemove, meas
       <PrimaryMaterialCell
         form={form}
         index={index}
-        sortedMaterials={sortedMaterials}
+        sortedMaterials={materials}
         materialMap={materialMap}
-        primaryMaterialId={primaryMaterialId}
-        substitutes={substitutes}
-        onAddSubstitute={addSubstitute}
-        onRemoveSubstitute={removeSubstitute}
-        onUpdateSubstitute={updateSubstitute}
       />
 
       <TableCell className='px-1 py-3'>
@@ -161,7 +108,7 @@ export function BOMItemRow({ form, index, materials, materialMap, onRemove, meas
             <Input
               className='h-10 rounded-xl bg-white px-2 text-[11px] shadow-inner'
               {...field}
-              placeholder='Vendor / source / memo...'
+              placeholder={t('engineering.bomArchive.itemTable.memoPlaceholder')}
             />
           )}
         />

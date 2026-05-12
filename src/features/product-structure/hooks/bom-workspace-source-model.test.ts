@@ -34,7 +34,6 @@ describe('bom-workspace-source-model', () => {
           standardUsage: 3,
           materialType: '',
           supplyChannel: '',
-          substitutes: [],
         },
       ],
       protocolDraft: {
@@ -112,7 +111,6 @@ describe('bom-workspace-source-model', () => {
           standardUsage: 3,
           materialType: '',
           supplyChannel: '',
-          substitutes: [],
         },
       ],
       branchRelationBuilder,

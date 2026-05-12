@@ -71,7 +71,7 @@ export interface ShipmentBootstrapState {
   history: ShipmentRecord[]
   shipmentDemands: ShipmentDemand[]
   warehouseCategories: WarehouseCategoryOption[]
-  alertThresholds: Record<string, number>
+  materialThresholdMap: Record<string, number>
   masterDataMap: Record<string, MasterDataSearchResult>
   error: unknown
 }

@@ -61,7 +61,6 @@ describe('ExcelService.normalizeParsedBOMItems', () => {
       unitUsage: 2,
       wastagePercent: 5,
       materialType: '手工指定',
-      substitutes: [],
     })
     expect(result.items[0].standardUsage).toBeCloseTo(2.1)
   })

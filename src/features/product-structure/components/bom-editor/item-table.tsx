@@ -45,11 +45,11 @@ export function ItemTable({ form, nodes, materials, onRemove, onBranchToggle, on
       }
 
       if (node.nodeType === 'branch') {
-        return 76
+        return 60
       }
 
       if (node.nodeType === 'synthetic') {
-        return node.syntheticKind === 'group-empty' ? 208 : 72
+        return node.syntheticKind === 'group-empty' ? 156 : 60
       }
 
       return 136
@@ -111,11 +111,11 @@ export function ItemTable({ form, nodes, materials, onRemove, onBranchToggle, on
                   <TableCell colSpan={7} className='px-0 py-0'>
                     <button
                       type='button'
-                      className='flex w-full items-center gap-4 px-4 py-4 text-left transition-colors hover:bg-primary/5 sm:px-5'
+                      className='flex w-full items-center gap-3 px-3 py-3 text-left transition-colors hover:bg-primary/5 sm:px-4'
                       style={{ paddingLeft: `${20 + node.depth * 20}px` }}
                       onClick={() => onBranchToggle?.(node.sourceNodeId)}
                     >
-                      <div className='flex size-9 items-center justify-center rounded-2xl border border-dashed border-primary/30 bg-primary/10 text-primary'>
+                      <div className='flex size-8 items-center justify-center rounded-2xl border border-dashed border-primary/30 bg-primary/10 text-primary'>
                         <ChevronDown className={cn('size-4 transition-transform duration-300', !node.isExpanded && '-rotate-90')} />
                       </div>
 
@@ -123,12 +123,9 @@ export function ItemTable({ form, nodes, materials, onRemove, onBranchToggle, on
                         <div className='text-sm font-black uppercase tracking-tight italic text-slate-900'>
                           {node.label}
                         </div>
-                        <div className='mt-1 text-[8px] font-mono uppercase tracking-widest text-muted-foreground/70'>
-                          {node.sectionCode}
-                        </div>
                       </div>
 
-                      <div className='flex items-center gap-2'>
+                      <div className='flex items-center gap-1.5'>
                         <div className='flex h-5 items-center rounded-full border border-dashed border-blue-300 bg-blue-500/10 px-2 text-[8px] font-mono uppercase tracking-widest text-blue-700'>
                           {node.childCount} {t('engineering.bomArchive.summary.itemsUnit')}
                         </div>
@@ -150,14 +147,14 @@ export function ItemTable({ form, nodes, materials, onRemove, onBranchToggle, on
                   key={node.key}
                   data-index={virtualRow.index}
                   ref={virtualizer.measureElement}
-                  className='group/add-row h-[56px] cursor-pointer border-t-2 border-dashed border-muted transition-all hover:bg-blue-600'
+                  className='group/add-row h-[52px] cursor-pointer border-t-2 border-dashed border-muted transition-all hover:bg-blue-600'
                   onClick={() => onAdd(node.sectionCode)}
                 >
-                  <TableCell colSpan={7} className='px-6 py-4' style={{ paddingLeft: `${28 + node.depth * 20}px` }}>
+                  <TableCell colSpan={7} className='px-6 py-3' style={{ paddingLeft: `${28 + node.depth * 20}px` }}>
                     {isEmptyState ? (
-                      <div className='flex flex-col items-center justify-center gap-4 py-16 transition-transform group-hover/add-row:scale-[1.01]'>
-                        <div className='flex size-14 items-center justify-center rounded-[20px] border-4 border-white bg-blue-600 text-white shadow-xl transition-all group-hover/add-row:rotate-0 rotate-3'>
-                          <Plus className='size-8 stroke-3' />
+                      <div className='flex flex-col items-center justify-center gap-3 py-10 transition-transform group-hover/add-row:scale-[1.01]'>
+                        <div className='flex size-12 items-center justify-center rounded-[18px] border-[3px] border-white bg-blue-600 text-white shadow-xl transition-all group-hover/add-row:rotate-0 rotate-3'>
+                          <Plus className='size-7 stroke-3' />
                         </div>
                         <div className='text-center'>
                           <p className='text-[11px] font-black uppercase tracking-widest text-slate-800 transition-colors group-hover/add-row:text-white'>
@@ -169,8 +166,8 @@ export function ItemTable({ form, nodes, materials, onRemove, onBranchToggle, on
                         </div>
                       </div>
                     ) : (
-                      <div className='flex items-center gap-4 text-blue-600 transition-all group-hover/add-row:text-white'>
-                        <div className='flex size-6 items-center justify-center rounded-full border-2 border-white bg-blue-600 text-white shadow-md'>
+                      <div className='flex items-center gap-3 text-blue-600 transition-all group-hover/add-row:text-white'>
+                        <div className='flex size-5 items-center justify-center rounded-full border-2 border-white bg-blue-600 text-white shadow-md'>
                           <Plus className='size-4 stroke-3' />
                         </div>
                         <span className='text-[9px] font-black uppercase tracking-widest'>

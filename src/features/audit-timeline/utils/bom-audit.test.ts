@@ -34,9 +34,6 @@ describe('bom audit utils', () => {
             wastagePercent: 3,
             materialType: 'RAW',
             supplyChannel: 'BUY',
-            substitutes: [
-              { id: 'sub-1', materialId: 'MAT-001-SUB', priority: 1, conversionRate: 1, notes: '' },
-            ],
           },
           {
             id: 'item-2',
@@ -48,7 +45,6 @@ describe('bom audit utils', () => {
             wastagePercent: 3,
             materialType: 'RAW',
             supplyChannel: 'BUY',
-            substitutes: [],
           },
         ],
         n: [
@@ -62,10 +58,6 @@ describe('bom audit utils', () => {
             wastagePercent: 3,
             materialType: 'RAW',
             supplyChannel: 'BUY',
-            substitutes: [
-              { id: 'sub-1', materialId: 'MAT-001-SUB', priority: 1, conversionRate: 1.1, notes: '' },
-              { id: 'sub-2', materialId: 'MAT-001-SUB-NEW', priority: 2, conversionRate: 1, notes: '' },
-            ],
           },
           {
             id: 'item-3',
@@ -77,7 +69,6 @@ describe('bom audit utils', () => {
             wastagePercent: 2,
             materialType: 'RAW',
             supplyChannel: 'MAKE',
-            substitutes: [],
           },
         ],
         a: 'items',
@@ -91,16 +82,14 @@ describe('bom audit utils', () => {
     expect(summary.beforeItemCount).toBe(2)
     expect(summary.afterItemCount).toBe(2)
     expect(summary.addedItems).toEqual([
-      { key: 'item-3', section: 'HUB', materialId: 'MAT-003', substituteCount: 0 },
+      { key: 'item-3', section: 'HUB', materialId: 'MAT-003' },
     ])
     expect(summary.removedItems).toEqual([
-      { key: 'item-2', section: 'SPOKE', materialId: 'MAT-002', substituteCount: 0 },
+      { key: 'item-2', section: 'SPOKE', materialId: 'MAT-002' },
     ])
     expect(summary.modifiedItems).toHaveLength(1)
     expect(summary.modifiedItems[0].key).toBe('item-1')
     expect(summary.modifiedItems[0].changedFields).toEqual(['unitUsage'])
-    expect(summary.modifiedItems[0].substituteDelta).toEqual({ added: 1, removed: 0, updated: 1 })
-    expect(summary.substituteChangeCount).toBe(2)
     expect(summary.controlChanges).toEqual([
       { key: 'status', beforeValue: 'draft', afterValue: 'active' },
     ])
@@ -124,7 +113,6 @@ describe('bom audit utils', () => {
               wastagePercent: 3,
               materialType: 'RAW',
               supplyChannel: 'BUY',
-              substitutes: [],
             },
           ],
           n: [
@@ -138,7 +126,6 @@ describe('bom audit utils', () => {
               wastagePercent: 3,
               materialType: 'RAW',
               supplyChannel: 'BUY',
-              substitutes: [],
             },
           ],
           a: 'items',
@@ -154,7 +141,7 @@ describe('bom audit utils', () => {
     expect(summary.afterItemCount).toBe(0)
     expect(summary.addedItems).toEqual([])
     expect(summary.removedItems).toEqual([
-      { key: 'item-1', section: 'RIM', materialId: 'MAT-001', substituteCount: 0 },
+      { key: 'item-1', section: 'RIM', materialId: 'MAT-001' },
     ])
     expect(summary.modifiedItems).toEqual([])
   })

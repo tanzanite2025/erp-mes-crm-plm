@@ -48,7 +48,6 @@ describe('bom-workspace-protocol-source-adapter', () => {
             standardUsage: 3,
             materialType: '',
             supplyChannel: '',
-            substitutes: [],
           },
         ],
         description: '',
@@ -76,7 +75,6 @@ describe('bom-workspace-protocol-source-adapter', () => {
           standardUsage: 3,
           materialType: '',
           supplyChannel: '',
-          substitutes: [],
         },
       ] as never,
     })
@@ -139,7 +137,6 @@ describe('bom-workspace-protocol-source-adapter', () => {
             standardUsage: 3,
             materialType: '',
             supplyChannel: '',
-            substitutes: [],
           },
         ],
         description: '',

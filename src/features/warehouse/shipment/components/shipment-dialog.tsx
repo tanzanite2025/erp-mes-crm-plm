@@ -38,7 +38,7 @@ interface ShipmentDialogProps {
   onSubmit: (status: 'DRAFT' | 'COMMITTED') => void
   inventoryContextResource: ShipmentInventoryContextResource
   onRetryInventoryContext: () => void
-  alertThreshold?: number
+  materialThreshold?: number
   salesOrders?: SalesOrder[]
 }
 
@@ -53,7 +53,7 @@ export function ShipmentDialog({
   onSubmit,
   inventoryContextResource,
   onRetryInventoryContext,
-  alertThreshold = 0,
+  materialThreshold = 0,
   salesOrders = []
 }: ShipmentDialogProps) {
   const { t } = useLanguage()
@@ -66,7 +66,7 @@ export function ShipmentDialog({
     : warehouseCategories
   const readyInventoryContext = inventoryContextResource.status === 'ready' ? inventoryContextResource : null
   const remainingStock = (selectedItem.stock || 0) - (formData.quantity || 0)
-  const isBelowSafety = alertThreshold > 0 && remainingStock < alertThreshold
+  const isBelowSafety = materialThreshold > 0 && remainingStock < materialThreshold
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -213,7 +213,7 @@ export function ShipmentDialog({
                         <div className='text-[10px] font-black text-rose-700 uppercase tracking-widest'>{t('warehouse.shipment.dialog.safetyTitle')}</div>
                         <p className='text-[10px] text-rose-600/70 leading-relaxed font-medium'>
                           {t('warehouse.shipment.dialog.projection', { count: remainingStock, uom: selectedItem.uom })}{' '}
-                          <span className='opacity-40'>{t('warehouse.shipment.dialog.safetyThreshold', { count: alertThreshold })}</span>{' '}
+                          <span className='opacity-40'>{t('warehouse.shipment.dialog.safetyThreshold', { count: materialThreshold })}</span>{' '}
                           {t('warehouse.shipment.dialog.safetyHint')}
                         </p>
                       </div>

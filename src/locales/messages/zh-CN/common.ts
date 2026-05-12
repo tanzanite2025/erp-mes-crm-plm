@@ -111,8 +111,6 @@ export const common = {
       addedItems: '新增条目',
       removedItems: '移除条目',
       modifiedItems: '修改条目',
-      substituteChanges: '替代料变化',
-      substituteCount: '替代料数',
       controlChanges: '控制字段变化',
       materialCode: '物料编号',
       unknownMaterial: '未知物料',

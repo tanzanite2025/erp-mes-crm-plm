@@ -1,7 +1,7 @@
 'use client'
 
 import { CheckCircle2, Loader2 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useReducer } from 'react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
@@ -48,15 +48,73 @@ interface MaterialThresholdDialogState {
   notes: string
 }
 
-function getInitialDialogState(rule?: InventoryThresholdRule | null): MaterialThresholdDialogState {
+type MaterialThresholdDialogAction =
+  | { type: 'reset'; payload: MaterialThresholdDialogState }
+  | { type: 'setTargetType'; payload: InventoryThresholdTargetType }
+  | { type: 'setMaterialId'; payload: string }
+  | { type: 'setBomId'; payload: string }
+  | { type: 'setThresholdQty'; payload: string }
+  | { type: 'setEnabled'; payload: boolean }
+  | { type: 'setNotes'; payload: string }
+
+interface MaterialThresholdDialogSeed {
+  targetType?: InventoryThresholdTargetType
+  materialId?: string
+  bomId?: string
+  thresholdQty?: number
+  enabled?: boolean
+  notes?: string
+}
+
+function getInitialDialogState(seed?: MaterialThresholdDialogSeed): MaterialThresholdDialogState {
   return {
-    targetType: rule?.targetType ?? 'MATERIAL',
-    materialId: rule?.materialId ?? '',
-    bomId: rule?.bomId ?? '',
+    targetType: seed?.targetType ?? 'MATERIAL',
+    materialId: seed?.materialId ?? '',
+    bomId: seed?.bomId ?? '',
     thresholdQty:
-      rule && Number.isFinite(rule.thresholdQty) ? String(rule.thresholdQty) : '',
-    enabled: rule?.enabled ?? true,
-    notes: rule?.notes ?? '',
+      seed && Number.isFinite(seed.thresholdQty) ? String(seed.thresholdQty) : '',
+    enabled: seed?.enabled ?? true,
+    notes: seed?.notes ?? '',
+  }
+}
+
+function buildDialogState(
+  seed?: MaterialThresholdDialogSeed,
+  lockedTargetType?: InventoryThresholdTargetType,
+  lockedMaterialId?: string,
+  lockedBomId?: string
+): MaterialThresholdDialogState {
+  const initialState = getInitialDialogState(seed)
+
+  return {
+    ...initialState,
+    targetType: lockedTargetType ?? initialState.targetType,
+    materialId: lockedMaterialId ?? initialState.materialId,
+    bomId: lockedBomId ?? initialState.bomId,
+  }
+}
+
+function materialThresholdDialogReducer(
+  state: MaterialThresholdDialogState,
+  action: MaterialThresholdDialogAction
+): MaterialThresholdDialogState {
+  switch (action.type) {
+    case 'reset':
+      return action.payload
+    case 'setTargetType':
+      return { ...state, targetType: action.payload }
+    case 'setMaterialId':
+      return { ...state, materialId: action.payload }
+    case 'setBomId':
+      return { ...state, bomId: action.payload }
+    case 'setThresholdQty':
+      return { ...state, thresholdQty: action.payload }
+    case 'setEnabled':
+      return { ...state, enabled: action.payload }
+    case 'setNotes':
+      return { ...state, notes: action.payload }
+    default:
+      return state
   }
 }
 
@@ -111,9 +169,63 @@ export function MaterialThresholdDialog({
   lockedBomId,
 }: MaterialThresholdDialogProps) {
   const { t } = useLanguage()
-  const [formState, setFormState] = useState<MaterialThresholdDialogState>(() =>
-    getInitialDialogState(rule)
+  const ruleTargetType = rule?.targetType
+  const ruleMaterialId = rule?.materialId
+  const ruleBomId = rule?.bomId
+  const ruleThresholdQty = rule?.thresholdQty
+  const ruleEnabled = rule?.enabled
+  const ruleNotes = rule?.notes
+  const [formState, dispatchFormState] = useReducer(
+    materialThresholdDialogReducer,
+    buildDialogState(
+      {
+        targetType: ruleTargetType,
+        materialId: ruleMaterialId,
+        bomId: ruleBomId,
+        thresholdQty: ruleThresholdQty,
+        enabled: ruleEnabled,
+        notes: ruleNotes,
+      },
+      lockedTargetType,
+      lockedMaterialId,
+      lockedBomId
+    )
   )
+
+  useEffect(() => {
+    if (!open) {
+      return
+    }
+
+    dispatchFormState({
+      type: 'reset',
+      payload: buildDialogState(
+        {
+          targetType: ruleTargetType,
+          materialId: ruleMaterialId,
+          bomId: ruleBomId,
+          thresholdQty: ruleThresholdQty,
+          enabled: ruleEnabled,
+          notes: ruleNotes,
+        },
+        lockedTargetType,
+        lockedMaterialId,
+        lockedBomId
+      ),
+    })
+  }, [
+    open,
+    rule?.id,
+    ruleTargetType,
+    ruleMaterialId,
+    ruleBomId,
+    ruleThresholdQty,
+    ruleEnabled,
+    ruleNotes,
+    lockedTargetType,
+    lockedMaterialId,
+    lockedBomId,
+  ])
 
   const effectiveTargetType = lockedTargetType ?? formState.targetType
   const effectiveMaterialId = lockedMaterialId ?? formState.materialId
@@ -194,14 +306,16 @@ export function MaterialThresholdDialog({
             <MaterialThresholdTargetPicker
               targetType={effectiveTargetType}
               onTargetTypeChange={(targetType) =>
-                setFormState((prev) => ({ ...prev, targetType }))
+                dispatchFormState({ type: 'setTargetType', payload: targetType })
               }
               materialId={effectiveMaterialId}
               bomId={effectiveBomId}
               onMaterialIdChange={(materialId) =>
-                setFormState((prev) => ({ ...prev, materialId }))
+                dispatchFormState({ type: 'setMaterialId', payload: materialId })
               }
-              onBomIdChange={(bomId) => setFormState((prev) => ({ ...prev, bomId }))}
+              onBomIdChange={(bomId) =>
+                dispatchFormState({ type: 'setBomId', payload: bomId })
+              }
               materialOptions={materialOptions}
               bomOptions={bomOptions}
               disabled={isSubmitting}
@@ -251,10 +365,10 @@ export function MaterialThresholdDialog({
                   value={formState.thresholdQty}
                   disabled={isSubmitting}
                   onChange={(event) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      thresholdQty: event.target.value,
-                    }))
+                    dispatchFormState({
+                      type: 'setThresholdQty',
+                      payload: event.target.value,
+                    })
                   }
                   placeholder={thresholdPlaceholder}
                   className='h-12 rounded-2xl border-none bg-muted/50 px-4 font-mono text-sm font-black shadow-inner focus-visible:ring-primary/20'
@@ -278,7 +392,7 @@ export function MaterialThresholdDialog({
                     checked={formState.enabled}
                     disabled={isSubmitting}
                     onCheckedChange={(enabled) =>
-                      setFormState((prev) => ({ ...prev, enabled }))
+                      dispatchFormState({ type: 'setEnabled', payload: enabled })
                     }
                   />
                 </div>
@@ -293,7 +407,7 @@ export function MaterialThresholdDialog({
                 value={formState.notes}
                 disabled={isSubmitting}
                 onChange={(event) =>
-                  setFormState((prev) => ({ ...prev, notes: event.target.value }))
+                  dispatchFormState({ type: 'setNotes', payload: event.target.value })
                 }
                 placeholder={t('warehouseConfig.materialThresholds.dialog.notesPlaceholder')}
                 className='min-h-[108px] resize-none rounded-2xl border-none bg-muted/50 px-4 py-3 text-sm shadow-inner focus-visible:ring-primary/20'

@@ -446,7 +446,6 @@ export default function MaterialThresholdsTab() {
       </div>
 
       <MaterialThresholdDialog
-        key={`${editingRule?.id ?? 'create'}-${dialogOpen ? 'open' : 'closed'}`}
         open={dialogOpen}
         onOpenChange={(open) => {
           setDialogOpen(open)

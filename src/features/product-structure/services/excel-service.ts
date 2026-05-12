@@ -89,7 +89,6 @@ export const ExcelService = {
         standardUsage,
         materialType: parsedItem.materialType,
         supplyChannel: parsedItem.supplyChannel,
-        substitutes: parsedItem.substitutes,
       })
     })
 

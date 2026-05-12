@@ -162,6 +162,32 @@ function createResolvedFormItemReferences(
   }
 }
 
+function resolveFieldIdFromProtocolItemNodeId(nodeId: string) {
+  if (!nodeId.startsWith('field:')) {
+    return undefined
+  }
+
+  const rawFieldId = nodeId.slice('field:'.length).trim()
+  return rawFieldId || undefined
+}
+
+function resolveFieldReferenceByProtocolNodeId(
+  nodeId: string,
+  referencesByFieldId: Map<string, BOMWorkspaceResolvedFormItemReference>
+) {
+  const directMatch = referencesByFieldId.get(nodeId)
+  if (directMatch) {
+    return directMatch
+  }
+
+  const rawFieldId = resolveFieldIdFromProtocolItemNodeId(nodeId)
+  if (!rawFieldId) {
+    return undefined
+  }
+
+  return referencesByFieldId.get(rawFieldId)
+}
+
 function resolveFormItemReference(
   itemDraft: BOMWorkspaceParentChildrenProtocolItemDraft,
   referencesByItemId: Map<string, BOMWorkspaceResolvedFormItemReference>,
@@ -173,7 +199,7 @@ function resolveFormItemReference(
   return (
     (normalizedDraftItemId ? referencesByItemId.get(normalizedDraftItemId) : undefined)
     ?? referencesByItemId.get(normalizedDraftNodeId)
-    ?? referencesByFieldId.get(normalizedDraftNodeId)
+    ?? resolveFieldReferenceByProtocolNodeId(normalizedDraftNodeId, referencesByFieldId)
     ?? throwProtocolAdapterError(`Unable to resolve protocol item node to current form row: ${normalizedDraftNodeId}`)
   )
 }

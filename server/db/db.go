@@ -1015,7 +1015,7 @@ func InitDB(dsn string) {
 		&models.ProductAppearance{},
 		&models.BOM{},
 		&models.BOMItem{},
-		&models.BOMSubstituteItem{},
+		&models.BOMVersionSnapshot{},
 		&models.BOMSection{},
 		&models.NumberingRule{},
 		&models.ProcessStep{},

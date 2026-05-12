@@ -4,23 +4,17 @@ import type { UseFormReturn } from 'react-hook-form'
 import { Combobox } from '@/components/ui/combobox'
 import { FormField } from '@/components/ui/form'
 import { TableCell } from '@/components/ui/table'
+import { useLanguage } from '@/context/language-provider'
 import { failLoudly } from '@/lib/safe-catch'
 import { type MaterialOption } from '../../../material-archive/data/schema'
 import { type EnrichedMaterialOption } from '../../hooks/use-enriched-material-options'
-import { type BOM, type BOMSubstitute } from '../../data/schema'
-import { type BOMSubstitutePatch } from '../../mutation-types'
-import { SubstituteEditor } from './substitute-editor'
+import { type BOM } from '../../data/schema'
 
 interface PrimaryMaterialCellProps {
   form: UseFormReturn<BOM>
   index: number
   sortedMaterials: EnrichedMaterialOption[]
   materialMap: Map<string, MaterialOption>
-  primaryMaterialId: string
-  substitutes: BOMSubstitute[]
-  onAddSubstitute: () => void
-  onRemoveSubstitute: (substituteIndex: number) => void
-  onUpdateSubstitute: (substituteIndex: number, patch: BOMSubstitutePatch) => void
 }
 
 export function PrimaryMaterialCell({
@@ -28,12 +22,9 @@ export function PrimaryMaterialCell({
   index,
   sortedMaterials,
   materialMap,
-  primaryMaterialId,
-  substitutes,
-  onAddSubstitute,
-  onRemoveSubstitute,
-  onUpdateSubstitute,
 }: PrimaryMaterialCellProps) {
+  const { t } = useLanguage()
+
   return (
     <TableCell className='py-3'>
       <FormField
@@ -67,24 +58,15 @@ export function PrimaryMaterialCell({
                   tertiaryLabel: material.code,
                   usageStats: material.usageStats,
                 }))}
-                placeholder='Search material...'
+                placeholder={t('engineering.bomArchive.itemTable.searchMaterialPlaceholder')}
                 className='h-10 rounded-xl border-none bg-muted/30 text-[11px] font-bold text-primary shadow-inner'
               />
               {form.watch(`items.${index}.materialSpec`) && (
                 <span className='truncate px-2 text-[10px] font-black italic leading-none tracking-tight text-emerald-700'>
-                  SPEC: {form.watch(`items.${index}.materialSpec`)}
+                  {t('engineering.bomArchive.itemTable.specLabel')}: {form.watch(`items.${index}.materialSpec`)}
                 </span>
               )}
             </div>
-
-            <SubstituteEditor
-              sortedMaterials={sortedMaterials}
-              primaryMaterialId={primaryMaterialId}
-              substitutes={substitutes}
-              onAddSubstitute={onAddSubstitute}
-              onRemoveSubstitute={onRemoveSubstitute}
-              onUpdateSubstitute={onUpdateSubstitute}
-            />
           </div>
         )}
       />

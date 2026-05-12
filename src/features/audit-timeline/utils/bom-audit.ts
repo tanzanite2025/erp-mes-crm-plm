@@ -6,16 +6,10 @@ export type BomAuditLineChange = {
   key: string
   section: string
   materialId: string
-  substituteCount: number
 }
 
 export type BomAuditModifiedLineChange = BomAuditLineChange & {
   changedFields: string[]
-  substituteDelta: {
-    added: number
-    removed: number
-    updated: number
-  }
 }
 
 export type BomAuditControlChange = {
@@ -33,15 +27,6 @@ export type BomAuditSummary = {
   removedItems: BomAuditLineChange[]
   modifiedItems: BomAuditModifiedLineChange[]
   controlChanges: BomAuditControlChange[]
-  substituteChangeCount: number
-}
-
-type BomAuditSubstituteSnapshot = {
-  id: string
-  materialId: string
-  priority: number
-  conversionRate: number
-  notes: string
 }
 
 type BomAuditItemSnapshot = {
@@ -54,7 +39,6 @@ type BomAuditItemSnapshot = {
   wastagePercent: number | null
   materialType: string
   supplyChannel: string
-  substitutes: BomAuditSubstituteSnapshot[]
 }
 
 const BOM_CONTROL_FIELDS = [
@@ -95,25 +79,6 @@ function normalizeAuditNumber(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null
 }
 
-function normalizeSubstituteSnapshot(value: unknown): BomAuditSubstituteSnapshot | null {
-  if (!isRecord(value)) {
-    return null
-  }
-
-  const materialId = normalizeAuditString(value.materialId)
-  if (!materialId) {
-    return null
-  }
-
-  return {
-    id: normalizeAuditString(value.id),
-    materialId,
-    priority: normalizeAuditNumber(value.priority) ?? 0,
-    conversionRate: normalizeAuditNumber(value.conversionRate) ?? 0,
-    notes: normalizeAuditString(value.notes),
-  }
-}
-
 function normalizeItemSnapshot(value: unknown): BomAuditItemSnapshot | null {
   if (!isRecord(value)) {
     return null
@@ -123,12 +88,6 @@ function normalizeItemSnapshot(value: unknown): BomAuditItemSnapshot | null {
   if (!materialId) {
     return null
   }
-
-  const substitutes = Array.isArray(value.substitutes)
-    ? value.substitutes
-        .map(normalizeSubstituteSnapshot)
-        .filter((item): item is BomAuditSubstituteSnapshot => item !== null)
-    : []
 
   return {
     id: normalizeAuditString(value.id),
@@ -140,7 +99,6 @@ function normalizeItemSnapshot(value: unknown): BomAuditItemSnapshot | null {
     wastagePercent: normalizeAuditNumber(value.wastagePercent),
     materialType: normalizeAuditString(value.materialType),
     supplyChannel: normalizeAuditString(value.supplyChannel),
-    substitutes,
   }
 }
 
@@ -205,64 +163,24 @@ function buildLineKey(item: BomAuditItemSnapshot): string {
   return item.id || `${item.section}::${item.materialId}`
 }
 
-function buildSubstituteKey(item: BomAuditSubstituteSnapshot): string {
-  return item.id || `${item.materialId}::${item.priority}`
-}
-
 function toLineChange(item: BomAuditItemSnapshot): BomAuditLineChange {
   return {
     key: buildLineKey(item),
     section: item.section,
     materialId: item.materialId,
-    substituteCount: item.substitutes.length,
   }
-}
-
-function compareSubstitutes(beforeItems: BomAuditSubstituteSnapshot[], afterItems: BomAuditSubstituteSnapshot[]) {
-  const beforeMap = new Map(beforeItems.map((item) => [buildSubstituteKey(item), item]))
-  const afterMap = new Map(afterItems.map((item) => [buildSubstituteKey(item), item]))
-
-  let added = 0
-  let removed = 0
-  let updated = 0
-
-  afterMap.forEach((item, key) => {
-    const before = beforeMap.get(key)
-    if (!before) {
-      added += 1
-      return
-    }
-
-    if (
-      !isSameValue(before.conversionRate, item.conversionRate) ||
-      !isSameValue(before.notes, item.notes)
-    ) {
-      updated += 1
-    }
-  })
-
-  beforeMap.forEach((_item, key) => {
-    if (!afterMap.has(key)) {
-      removed += 1
-    }
-  })
-
-  return { added, removed, updated }
 }
 
 function compareItems(before: BomAuditItemSnapshot, after: BomAuditItemSnapshot): BomAuditModifiedLineChange | null {
   const changedFields = BOM_ITEM_FIELDS.filter((field) => !isSameValue(before[field], after[field]))
-  const substituteDelta = compareSubstitutes(before.substitutes, after.substitutes)
-  const hasSubstituteChange = substituteDelta.added + substituteDelta.removed + substituteDelta.updated > 0
 
-  if (changedFields.length === 0 && !hasSubstituteChange) {
+  if (changedFields.length === 0) {
     return null
   }
 
   return {
     ...toLineChange(after),
     changedFields: [...changedFields],
-    substituteDelta,
   }
 }
 
@@ -343,10 +261,6 @@ export function buildBomAuditSummary(log: AuditLog): BomAuditSummary {
 
   const targetBomNo = normalizeAuditString(readDiffValue(log, 'bomNo')) || log.target_id
   const controlChanges = buildControlChanges(log, operation)
-  const substituteChangeCount = modifiedItems.reduce(
-    (sum, item) => sum + item.substituteDelta.added + item.substituteDelta.removed + item.substituteDelta.updated,
-    0,
-  )
 
   return {
     operation,
@@ -357,6 +271,5 @@ export function buildBomAuditSummary(log: AuditLog): BomAuditSummary {
     removedItems,
     modifiedItems,
     controlChanges,
-    substituteChangeCount,
   }
 }

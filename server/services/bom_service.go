@@ -47,8 +47,6 @@ func ListBOMs(query BOMListQuery) ([]models.BOM, int64, error) {
 	if err := tx.
 		Preload("Product").
 		Preload("Items").
-		Preload("Items.Substitutes").
-		Preload("Items.Substitutes.Material").
 		Order("created_at desc").
 		Limit(pageSize).
 		Offset((page - 1) * pageSize).
@@ -64,8 +62,6 @@ func GetBOMByID(id string) (BOMDetailResponse, error) {
 	if err := db.DB.
 		Preload("Product").
 		Preload("Items").
-		Preload("Items.Substitutes").
-		Preload("Items.Substitutes.Material").
 		First(&bom, "id = ?", id).Error; err != nil {
 		return BOMDetailResponse{}, err
 	}
@@ -102,23 +98,6 @@ func validateBOMReferences(tx *gorm.DB, input *models.BOM) error {
 			}
 			if m.Status == "Archived" || m.Status == "Inactive" {
 				return fmt.Errorf("[LOCKED_ASSET] BOM contains disabled material (%s - %s)", m.Code, m.Name)
-			}
-		}
-
-		for _, substitute := range item.Substitutes {
-			if strings.TrimSpace(substitute.MaterialID) == "" {
-				return fmt.Errorf("[VALIDATION] substitute material is required")
-			}
-			if substitute.MaterialID == item.MaterialID {
-				return fmt.Errorf("[VALIDATION] substitute material cannot equal primary material")
-			}
-
-			var alt models.Material
-			if err := tx.Where("id = ?", substitute.MaterialID).First(&alt).Error; err != nil {
-				return err
-			}
-			if alt.Status == "Archived" || alt.Status == "Inactive" {
-				return fmt.Errorf("[LOCKED_ASSET] substitute material is disabled (%s - %s)", alt.Code, alt.Name)
 			}
 		}
 	}
@@ -267,18 +246,6 @@ func saveBOMItems(tx *gorm.DB, bomID string, items []models.BOMItem) error {
 			items[idx].ID = uuid.NewString()
 		}
 		items[idx].BOMID = bomID
-		for subIdx := range items[idx].Substitutes {
-			if strings.TrimSpace(items[idx].Substitutes[subIdx].ID) == "" {
-				items[idx].Substitutes[subIdx].ID = uuid.NewString()
-			}
-			items[idx].Substitutes[subIdx].BOMItemID = items[idx].ID
-			if items[idx].Substitutes[subIdx].ConversionRate == 0 {
-				items[idx].Substitutes[subIdx].ConversionRate = 1
-			}
-			if items[idx].Substitutes[subIdx].Priority == 0 {
-				items[idx].Substitutes[subIdx].Priority = subIdx + 1
-			}
-		}
 		if err := tx.Session(&gorm.Session{FullSaveAssociations: true}).Create(&items[idx]).Error; err != nil {
 			return err
 		}
@@ -319,7 +286,7 @@ func SaveBOM(ctx context.Context, input SaveBOMInput) (BOMDetailResponse, error)
 
 		if modelInput.ID != "" {
 			var existing models.BOM
-			if err := tx.Preload("Items").Preload("Items.Substitutes").Where("id = ?", modelInput.ID).First(&existing).Error; err != nil {
+			if err := tx.Preload("Items").Where("id = ?", modelInput.ID).First(&existing).Error; err != nil {
 				return err
 			}
 			before := bomAuditSnapshot(existing)
@@ -339,9 +306,10 @@ func SaveBOM(ctx context.Context, input SaveBOMInput) (BOMDetailResponse, error)
 			}
 			if err := tx.
 				Preload("Items").
-				Preload("Items.Substitutes").
-				Preload("Items.Substitutes.Material").
 				First(&saved, "id = ?", existing.ID).Error; err != nil {
+				return err
+			}
+			if err := writeBOMVersionSnapshotTx(ctx, tx, saved, "SAVE"); err != nil {
 				return err
 			}
 			payload := bomAuditSnapshot(saved)
@@ -363,9 +331,10 @@ func SaveBOM(ctx context.Context, input SaveBOMInput) (BOMDetailResponse, error)
 		}
 		if err := tx.
 			Preload("Items").
-			Preload("Items.Substitutes").
-			Preload("Items.Substitutes.Material").
 			First(&saved, "id = ?", modelInput.ID).Error; err != nil {
+			return err
+		}
+		if err := writeBOMVersionSnapshotTx(ctx, tx, saved, "SAVE"); err != nil {
 			return err
 		}
 		payload := bomAuditSnapshot(saved)
@@ -386,7 +355,7 @@ func DeleteBOM(ctx context.Context, id string) error {
 
 	return db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var bom models.BOM
-		if err := tx.Preload("Items").Preload("Items.Substitutes").Where("id = ?", id).First(&bom).Error; err != nil {
+		if err := tx.Preload("Items").Where("id = ?", id).First(&bom).Error; err != nil {
 			return err
 		}
 		before := bomAuditSnapshot(bom)
@@ -400,6 +369,9 @@ func DeleteBOM(ctx context.Context, id string) error {
 			if activeCount <= 1 {
 				return fmt.Errorf("%w: cannot delete the only active BOM for product %s", ErrBOMDeleteLockedActive, bom.ProductID)
 			}
+		}
+		if err := writeBOMVersionSnapshotTx(ctx, tx, bom, "DELETE"); err != nil {
+			return err
 		}
 		if err := tx.Where("bom_id = ?", id).Delete(&models.BOMItem{}).Error; err != nil {
 			return err

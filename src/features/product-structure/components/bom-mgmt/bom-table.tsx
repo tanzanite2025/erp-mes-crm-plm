@@ -69,16 +69,6 @@ export function BOMTable({
               <Badge variant='outline' className='h-4 border-blue-200 bg-blue-50 px-1 py-0 text-[10px] text-blue-600'>
                 {deriveBomDisplayVersion(row.original.bomVersion || row.original.bomDisplayVersion)}
               </Badge>
-              {row.original.revisionNo && (
-                <Badge variant='outline' className='h-4 border-amber-200 bg-amber-50 px-1 py-0 text-[10px] text-amber-700'>
-                  {row.original.revisionNo}
-                </Badge>
-              )}
-              {row.original.siteCode && (
-                <Badge variant='outline' className='h-4 border-slate-200 bg-slate-50 px-1 py-0 text-[10px] text-slate-600'>
-                  {row.original.siteCode}
-                </Badge>
-              )}
             </div>
           </div>
         </div>
@@ -126,10 +116,6 @@ export function BOMTable({
               .filter(Boolean)
           )
         )
-        const substituteCount = row.original.items.reduce(
-          (sum, item) => sum + (item.substitutes?.length || 0),
-          0
-        )
 
         return (
           <div className='flex max-w-[240px] flex-wrap items-center gap-1.5'>
@@ -145,11 +131,6 @@ export function BOMTable({
             <span className='text-[10px] text-muted-foreground'>
               {t('engineering.bomArchive.table.lines', { count: row.original.items.length })}
             </span>
-            {substituteCount > 0 && (
-              <Badge variant='outline' className='h-4 border-emerald-200 bg-emerald-50 px-1 py-0 text-[10px] text-emerald-700'>
-                {t('engineering.bomArchive.table.substitutes', { count: substituteCount })}
-              </Badge>
-            )}
           </div>
         )
       },

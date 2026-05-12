@@ -249,7 +249,6 @@ describe('BOMMgmt', () => {
               wastagePercent: 0,
               materialType: 'RAW_MATERIAL',
               supplyChannel: 'PURCHASE',
-              substitutes: [],
             },
           ],
         })) as UseBOMDataResult['parseExcel'],

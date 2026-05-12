@@ -92,7 +92,6 @@ export function BOMPreview({
           productName={productName}
           bomNo={bom.bomNo}
           bomDisplayVersion={bomDisplayVersion}
-          revisionNo={bom.revisionNo}
           changeOrderNo={bom.changeOrderNo}
           items={printItems}
         />
@@ -107,8 +106,6 @@ export function BOMPreview({
             <div className='flex flex-wrap items-center gap-2'>
               <h3 className='text-xl font-bold'>{bom.bomNo}</h3>
               <Badge className='bg-blue-600'>{bomDisplayVersion}</Badge>
-              {bom.revisionNo && <Badge variant='outline'>{bom.revisionNo}</Badge>}
-              {bom.siteCode && <Badge variant='outline'>{bom.siteCode}</Badge>}
               <Badge variant='outline'>
                 {bomChangeType || t('printMgmt.bomPreview.defaultChangeType')}
               </Badge>

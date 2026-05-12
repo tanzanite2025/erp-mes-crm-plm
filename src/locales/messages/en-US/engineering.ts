@@ -4,6 +4,7 @@ export const engineering = {
     productAppearance: 'Product Appearance',
     productAttributes: 'Product Attributes',
     bom: 'BOM Recipes',
+    bomRecords: 'BOM Trace',
     sectionConfig: 'Section Config',
     changes: 'ECO / ECN',
     templates: 'Product Templates',
@@ -1211,7 +1212,6 @@ export const engineering = {
       unknownProduct: 'Unknown product',
       noSection: 'No hierarchy assigned',
       lines: '{{count}} lines',
-      substitutes: '{{count}} substitutes',
       fromDate: 'From {{date}}',
       noEffectiveDate: 'No effective date',
       confirmDelete: 'Delete this BOM?',
@@ -1254,10 +1254,10 @@ export const engineering = {
     recipe: {
       title: 'BOM Recipe Details',
       all: 'Overview',
-      summaryHint: 'Tip: click a hierarchy tab to edit BOM lines and substitute materials.',
+      summaryHint: 'Tip: click a hierarchy tab to edit BOM lines.',
     },
     itemTable: {
-      primaryMaterial: 'Primary Material + Substitutes',
+      primaryMaterial: 'Primary Material',
       price: 'Price',
       unitUsage: 'Unit Usage',
       loss: 'Loss %',
@@ -1267,6 +1267,9 @@ export const engineering = {
       initialize: 'Initialize this hierarchy section',
       initializeHint: 'Click to add the first BOM line',
       append: 'Append new BOM line',
+      searchMaterialPlaceholder: 'Search material...',
+      specLabel: 'Spec',
+      memoPlaceholder: 'Vendor / source / memo...',
     },
     summary: {
       totalItems: 'BOM Total Items',
@@ -1299,6 +1302,12 @@ export const engineering = {
       PACKAGING: 'Packaging',
       defaultSection: 'Auxiliary',
       defaultType: 'Auxiliary',
+    },
+  },
+  bomRecords: {
+    header: {
+      title: 'BOM Trace Center',
+      description: 'Review aggregated BOM version history, compare revisions, and inspect structural diffs as the formal trace workspace in product structure.',
     },
   },
   bomSectionConfig: {

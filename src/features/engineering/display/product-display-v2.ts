@@ -42,6 +42,33 @@ function normalizeDisplayValue(value?: string | null): string {
   return value?.trim() ?? ''
 }
 
+function resolveMatchedOption(
+  normalizedCategoryKey: string,
+  rawValue: string,
+  options?: Array<Pick<ProductAttributeOption, 'categoryKey' | 'value' | 'labelZh' | 'labelEn'>>
+) {
+  const normalizedRawValue = normalizeProductAttributeMachineValue(rawValue)
+
+  return options?.find((item) => {
+    if (normalizeProductAttributeMachineValue(item.categoryKey) !== normalizedCategoryKey) {
+      return false
+    }
+
+    const optionValue = normalizeDisplayValue(item.value)
+    const labelZh = normalizeDisplayValue(item.labelZh)
+    const labelEn = normalizeDisplayValue(item.labelEn)
+
+    return optionValue === rawValue
+      || (normalizedRawValue !== ''
+        && normalizeProductAttributeMachineValue(optionValue) === normalizedRawValue)
+      || labelZh === rawValue
+      || labelEn === rawValue
+      || (normalizedRawValue !== ''
+        && labelEn !== ''
+        && normalizeProductAttributeMachineValue(labelEn) === normalizedRawValue)
+  })
+}
+
 function resolveDisplayTitle(
   product: Pick<Product, 'name' | 'sku' | 'modelCode'> | null | undefined
 ) {
@@ -73,11 +100,7 @@ export function resolveProductDisplaySummaryItemsV2(
       (item) => normalizeProductAttributeMachineValue(item.key) === normalizedCategoryKey
     )
     const option = rawValue
-      ? params.options?.find(
-          (item) =>
-            normalizeProductAttributeMachineValue(item.categoryKey) === normalizedCategoryKey
-            && normalizeDisplayValue(item.value) === rawValue
-        )
+      ? resolveMatchedOption(normalizedCategoryKey, rawValue, params.options)
       : undefined
 
     return {

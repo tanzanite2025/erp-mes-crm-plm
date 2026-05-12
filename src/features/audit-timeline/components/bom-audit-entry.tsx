@@ -78,7 +78,7 @@ function formatBomFieldLabel(field: string, t: ReturnType<typeof useLanguage>['t
 }
 
 function resolveMaterialDisplay(
-  item: Pick<BomAuditLineChange, 'materialId' | 'section' | 'substituteCount'>,
+  item: Pick<BomAuditLineChange, 'materialId' | 'section'>,
   materialOptionMap: ReadonlyMap<string, MaterialOption>,
   t: ReturnType<typeof useLanguage>['t']
 ) {
@@ -88,7 +88,6 @@ function resolveMaterialDisplay(
     materialName: material?.name?.trim() || t('common.audit.bom.unknownMaterial'),
     materialCode: material?.code?.trim() || item.materialId || t('common.empty.noRecords'),
     section: item.section?.trim() || t('common.empty.noRecords'),
-    substituteCount: item.substituteCount,
   }
 }
 
@@ -163,9 +162,6 @@ function BomAuditLineListCard({
                     <Badge variant='outline' className='rounded-full border-dashed border-slate-200 bg-slate-50 text-[8px] font-mono text-slate-700'>
                       {t('common.audit.bom.materialCode')} · {display.materialCode}
                     </Badge>
-                    <Badge variant='outline' className='rounded-full border-dashed border-slate-200 bg-slate-50 text-[8px] font-mono text-slate-700'>
-                      {t('common.audit.bom.substituteCount')} · {display.substituteCount}
-                    </Badge>
                   </div>
                 </div>
               )
@@ -212,11 +208,6 @@ function BomAuditModifiedListCard({
                     <Badge variant='outline' className='rounded-full border-dashed border-amber-500/20 bg-amber-500/5 text-[8px] font-mono text-amber-700'>
                       {display.materialCode}
                     </Badge>
-                    <div className='flex flex-wrap gap-1'>
-                      <ChangeCountBadge label={t('common.audit.actionLabels.added')} count={item.substituteDelta.added} tone='emerald' />
-                      <ChangeCountBadge label={t('common.audit.actionLabels.removed')} count={item.substituteDelta.removed} tone='rose' />
-                      <ChangeCountBadge label={t('common.audit.bom.updated')} count={item.substituteDelta.updated} tone='amber' />
-                    </div>
                   </div>
                   <div className='mt-2 text-sm font-black tracking-tight text-slate-800'>
                     {display.materialName}
@@ -235,11 +226,6 @@ function BomAuditModifiedListCard({
                         {formatBomFieldLabel(field, t)}
                       </Badge>
                     ))}
-                    {item.substituteDelta.added + item.substituteDelta.removed + item.substituteDelta.updated > 0 ? (
-                      <Badge variant='outline' className='rounded-full border-dashed border-indigo-500/20 bg-indigo-500/5 text-[8px] font-mono text-indigo-700'>
-                        {t('common.audit.bom.substituteChanges')}
-                      </Badge>
-                    ) : null}
                   </div>
                 </div>
               )
@@ -257,14 +243,12 @@ function BomAuditSummaryCard({
   targetBomNo,
   beforeItemCount,
   afterItemCount,
-  substituteChangeCount,
   controlChanges,
   t,
 }: {
   targetBomNo: string
   beforeItemCount: number
   afterItemCount: number
-  substituteChangeCount: number
   controlChanges: BomAuditControlChange[]
   t: ReturnType<typeof useLanguage>['t']
 }) {
@@ -272,7 +256,6 @@ function BomAuditSummaryCard({
     { label: t('common.audit.bom.targetBom'), value: targetBomNo || '—' },
     { label: t('common.audit.bom.beforeItemCount'), value: String(beforeItemCount) },
     { label: t('common.audit.bom.afterItemCount'), value: String(afterItemCount) },
-    { label: t('common.audit.bom.substituteChanges'), value: String(substituteChangeCount) },
   ]
 
   return (
@@ -350,7 +333,6 @@ export function BomAuditEntry({
             <ChangeCountBadge label={t('common.audit.actionLabels.added')} count={summary.addedItems.length} tone='emerald' />
             <ChangeCountBadge label={t('common.audit.actionLabels.removed')} count={summary.removedItems.length} tone='rose' />
             <ChangeCountBadge label={t('common.audit.bom.modifiedItems')} count={summary.modifiedItems.length} tone='amber' />
-            <ChangeCountBadge label={t('common.audit.bom.substituteChanges')} count={summary.substituteChangeCount} tone='slate' />
             <div className='flex items-center gap-1.5 rounded-full border border-dashed border-muted/40 bg-background px-2 py-1'>
               <Clock className='size-3 opacity-50' />
               <span className='text-[8px] font-mono'>{format(new Date(log.created_at), 'yyyy-MM-dd HH:mm:ss')}</span>
@@ -391,7 +373,6 @@ export function BomAuditEntry({
             targetBomNo={summary.targetBomNo}
             beforeItemCount={summary.beforeItemCount}
             afterItemCount={summary.afterItemCount}
-            substituteChangeCount={summary.substituteChangeCount}
             controlChanges={summary.controlChanges}
             t={t}
           />

@@ -136,4 +136,57 @@ describe('product-display-v2', () => {
       },
     ])
   })
+
+  it('prefers localized option label when raw attribute value is stored as english text', () => {
+    const product = createProductDraft({
+      name: 'Road Rim',
+      sku: 'RR-01',
+      attributeValues: [
+        {
+          categoryKey: 'versionLevel',
+          optionValue: 'Reinforced',
+          sortOrder: 0,
+          version: 1,
+        },
+      ],
+    })
+
+    expect(resolveProductDisplaySummaryItemsV2({
+      locale: 'zh-CN',
+      product,
+      template: {
+        attributeBindings: [
+          {
+            categoryKey: 'versionLevel',
+            sortOrder: 0,
+            required: true,
+            active: true,
+            version: 1,
+          },
+        ],
+      },
+      categories: [
+        {
+          key: 'versionLevel',
+          nameZh: '版本等级',
+          nameEn: 'Version',
+        },
+      ],
+      options: [
+        {
+          categoryKey: 'versionLevel',
+          value: 'reinforced',
+          labelZh: '加强版',
+          labelEn: 'Reinforced',
+        },
+      ],
+    })).toEqual([
+      {
+        key: 'versionlevel',
+        label: '版本等级',
+        value: '加强版',
+        empty: false,
+      },
+    ])
+  })
 })

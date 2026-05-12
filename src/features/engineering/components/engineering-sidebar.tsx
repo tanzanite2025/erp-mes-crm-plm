@@ -106,7 +106,7 @@ export function EngineeringSidebar({
                                             return (
                                                 <div
                                                     key={product.id}
-                                                    className={`grid grid-cols-[64px_1fr] xs:grid-cols-[80px_1fr] sm:grid-cols-[92px_1fr] items-center gap-3 xs:gap-3.5 sm:gap-4 p-2.5 sm:p-3 rounded-[20px] cursor-pointer transition-all border-2 border-dashed ${selectedProductId === product.id
+                                                    className={`grid grid-cols-[56px_1fr] xs:grid-cols-[68px_1fr] sm:grid-cols-[80px_1fr] items-center gap-2.5 xs:gap-3 sm:gap-3 p-2 sm:p-2.5 rounded-[18px] cursor-pointer transition-all border-2 border-dashed ${selectedProductId === product.id
                                                         ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/30 border-blue-500/50 transform scale-[1.02]'
                                                         : 'bg-muted/5 border-muted/50 hover:bg-muted/10 hover:border-muted-foreground/20'
                                                         }`}
@@ -114,26 +114,26 @@ export function EngineeringSidebar({
                                                 >
                                                     {/* 第 1 列：图片预览对齐 */}
                                                     <div className='flex justify-center'>
-                                                        <div className={`size-14 xs:size-16 sm:size-20 rounded-2xl overflow-hidden shrink-0 flex items-center justify-center transition-all ${selectedProductId === product.id ? 'bg-white/20 shadow-inner' : 'bg-background shadow-sm border border-muted/20'}`}>
+                                                        <div className={`size-12 xs:size-14 sm:size-16 rounded-2xl overflow-hidden shrink-0 flex items-center justify-center transition-all ${selectedProductId === product.id ? 'bg-white/20 shadow-inner' : 'bg-background shadow-sm border border-muted/20'}`}>
                                                             {product.image ? (
                                                                 <img src={product.image} alt='' className='size-full object-cover' />
                                                             ) : (
-                                                                <Box className={`size-6 xs:size-8 sm:size-10 opacity-30 ${selectedProductId === product.id ? 'text-white' : 'text-muted-foreground'}`} />
+                                                                <Box className={`size-5 xs:size-6 sm:size-8 opacity-30 ${selectedProductId === product.id ? 'text-white' : 'text-muted-foreground'}`} />
                                                             )}
                                                         </div>
                                                     </div>
 
                                                     {/* 第 2 列：信息集中对齐 */}
-                                                    <div className='flex flex-col gap-1 min-w-0 relative group/card-info'>
-                                                        <div className='flex items-center justify-between gap-3'>
-                                                            <p className='text-sm sm:text-[16px] font-black truncate tracking-tight uppercase leading-none italic'>
+                                                    <div className='relative flex min-w-0 flex-col gap-0.5 group/card-info'>
+                                                        <div className='flex items-center justify-between gap-2.5'>
+                                                            <p className='truncate text-[13px] font-black tracking-tight uppercase leading-none italic sm:text-[15px]'>
                                                                 {product.name}
                                                             </p>
                                                             <div className='flex items-center gap-2 shrink-0'>
                                                                 <Button
                                                                     variant='ghost'
                                                                     size='icon'
-                                                                    className={`size-8 rounded-xl transition-all ${selectedProductId === product.id
+                                                                    className={`size-7 rounded-xl transition-all ${selectedProductId === product.id
                                                                         ? 'text-white/40 hover:text-white hover:bg-white/10'
                                                                         : 'text-muted-foreground/40 hover:text-blue-600 hover:bg-blue-600/10'
                                                                         }`}
@@ -150,18 +150,18 @@ export function EngineeringSidebar({
                                                         {/* 规格透出 */}
                                                         {productDisplayMetadata?.resolvedTemplate ? (
                                                             productDisplayMetadata.dynamicSummaryItems.length > 0 ? (
-                                                                <div className='flex flex-wrap gap-1.5'>
+                                                                <div className='flex flex-wrap gap-1'>
                                                                     {productDisplayMetadata.dynamicSummaryItems.map((item) => (
                                                                         <div
                                                                             key={item.key}
-                                                                            className={`rounded-xl border px-2.5 py-1 text-[10px] font-black tracking-tight ${selectedProductId === product.id
+                                                                            className={`rounded-lg border px-2 py-0.5 text-[9px] font-black tracking-tight leading-4 ${selectedProductId === product.id
                                                                                 ? 'border-white/10 bg-white/15 text-white'
                                                                                 : item.empty
                                                                                     ? 'border-amber-500/20 bg-amber-500/5 text-amber-700'
                                                                                     : 'border-blue-600/10 bg-blue-600/5 text-slate-700'
                                                                                 }`}
                                                                         >
-                                                                            <span className={`mr-1 ${selectedProductId === product.id ? 'text-white/50' : 'text-muted-foreground/50'}`}>
+                                                                            <span className={`mr-0.5 ${selectedProductId === product.id ? 'text-white/50' : 'text-muted-foreground/50'}`}>
                                                                                 {item.label}:
                                                                             </span>
                                                                             <span>{item.value}</span>
@@ -170,7 +170,7 @@ export function EngineeringSidebar({
                                                                 </div>
                                                             ) : null
                                                         ) : (
-                                                            <div className={`inline-flex w-fit rounded-xl border border-dashed px-2.5 py-1 text-[10px] font-black tracking-tight ${selectedProductId === product.id ? 'border-white/15 bg-white/10 text-white/80' : 'border-amber-500/20 bg-amber-500/5 text-amber-700'}`}>
+                                                            <div className={`inline-flex w-fit rounded-lg border border-dashed px-2 py-0.5 text-[9px] font-black tracking-tight leading-4 ${selectedProductId === product.id ? 'border-white/15 bg-white/10 text-white/80' : 'border-amber-500/20 bg-amber-500/5 text-amber-700'}`}>
                                                                 {t(templateSummaryUnavailableKey)}
                                                             </div>
                                                         )}

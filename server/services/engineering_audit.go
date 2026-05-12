@@ -45,21 +45,6 @@ func bomAuditItemsSnapshot(items []models.BOMItem) []map[string]any {
 			"standardUsage":  item.StandardUsage,
 			"materialType":   strings.TrimSpace(item.MaterialType),
 			"supplyChannel":  strings.TrimSpace(item.SupplyChannel),
-			"substitutes":    bomAuditSubstitutesSnapshot(item.Substitutes),
-		})
-	}
-	return result
-}
-
-func bomAuditSubstitutesSnapshot(items []models.BOMSubstituteItem) []map[string]any {
-	result := make([]map[string]any, 0, len(items))
-	for _, item := range items {
-		result = append(result, map[string]any{
-			"id":             strings.TrimSpace(item.ID),
-			"materialId":     strings.TrimSpace(item.MaterialID),
-			"priority":       item.Priority,
-			"conversionRate": item.ConversionRate,
-			"notes":          strings.TrimSpace(item.Notes),
 		})
 	}
 	return result

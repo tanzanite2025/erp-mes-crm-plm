@@ -35,7 +35,7 @@ export function BOMDialogShell({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='flex h-[94vh] max-h-[94vh] max-w-[98vw] flex-col gap-0 overflow-hidden rounded-[32px] border-none p-0 shadow-2xl sm:max-w-[95vw]'>
-        <DialogHeader className='relative flex-none p-4 pb-1.5 text-start sm:p-5'>
+        <DialogHeader className='relative flex-none p-3 pb-1 text-start sm:p-4'>
           <div className='flex items-center justify-between gap-3'>
             <DialogTitle className='flex items-center gap-2 pr-8 text-base font-black tracking-tighter uppercase italic sm:gap-3 sm:text-xl'>
               <Layers className='size-5 shrink-0 text-blue-600 stroke-3 sm:size-6' />

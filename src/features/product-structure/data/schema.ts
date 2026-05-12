@@ -4,15 +4,6 @@ import {
   productSchema,
 } from '@/features/engineering/data/schema'
 
-export const bomSubstituteSchema = z.object({
-  id: z.string().optional().default(''),
-  bomItemId: z.string().optional(),
-  materialId: z.string().min(1, 'Substitute material is required'),
-  priority: z.number().int().min(1).default(1),
-  conversionRate: z.number().positive().default(1),
-  notes: z.string().optional(),
-})
-
 export const bomItemSchema = z.object({
   id: z.string(),
   section: z.string().min(1, 'Section is required'),
@@ -26,7 +17,6 @@ export const bomItemSchema = z.object({
   standardUsage: z.number().default(0),
   materialType: z.string().optional(),
   supplyChannel: z.string().optional(),
-  substitutes: z.array(bomSubstituteSchema).default([]),
 })
 
 export const bomSchema = z.object({
@@ -51,7 +41,6 @@ export const bomListSchema = z.object({
 })
 
 export type Product = z.infer<typeof productSchema>
-export type BOMSubstitute = z.infer<typeof bomSubstituteSchema>
 export type BOMItem = z.infer<typeof bomItemSchema>
 export type BOM = z.infer<typeof bomSchema>
 export type BOMList = z.infer<typeof bomListSchema>

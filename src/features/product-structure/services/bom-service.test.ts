@@ -75,7 +75,6 @@ describe('bomService.saveBOM', () => {
       version: 1,
       revisionNo: 'R1',
       changeType: 'MANUAL',
-      isDefaultSite: true,
       effectiveFrom: null,
       effectiveTo: null,
       relationSidecar: {
@@ -89,5 +88,6 @@ describe('bomService.saveBOM', () => {
       },
     })
     expect(body).not.toHaveProperty('siteCode')
+    expect(body).not.toHaveProperty('isDefaultSite')
   })
 })

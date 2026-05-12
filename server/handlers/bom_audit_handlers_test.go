@@ -20,6 +20,20 @@ func setupBOMAuditHandlerTestDB(t *testing.T) {
 	setupHandlerSQLiteTestDB(t)
 
 	statements := []string{
+		`CREATE TABLE bom_sections (
+			id TEXT PRIMARY KEY NOT NULL,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			code TEXT NOT NULL,
+			name TEXT NOT NULL,
+			description TEXT,
+			is_system BOOLEAN DEFAULT FALSE,
+			active BOOLEAN DEFAULT TRUE,
+			sort_order INTEGER DEFAULT 0,
+			is_default BOOLEAN DEFAULT FALSE,
+			legacy_names TEXT NOT NULL DEFAULT '[]'
+		)`,
 		`CREATE TABLE products (
 			id TEXT PRIMARY KEY NOT NULL,
 			created_at DATETIME,
@@ -54,7 +68,8 @@ func setupBOMAuditHandlerTestDB(t *testing.T) {
 			product_id TEXT,
 			version_text TEXT,
 			status TEXT,
-			description TEXT
+			description TEXT,
+			relation_sidecar TEXT
 		)`,
 		`CREATE TABLE bom_items (
 			id TEXT PRIMARY KEY NOT NULL,
@@ -69,13 +84,29 @@ func setupBOMAuditHandlerTestDB(t *testing.T) {
 			material_type TEXT,
 			supply_channel TEXT
 		)`,
-		`CREATE TABLE bom_substitute_items (
+		`CREATE TABLE bom_version_snapshots (
 			id TEXT PRIMARY KEY NOT NULL,
-			bom_item_id TEXT,
-			material_id TEXT,
-			priority INTEGER DEFAULT 1,
-			conversion_rate REAL DEFAULT 1,
-			notes TEXT
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			bom_id TEXT NOT NULL,
+			product_id TEXT NOT NULL,
+			bom_no TEXT NOT NULL,
+			version_sequence INTEGER NOT NULL,
+			version_text TEXT,
+			status TEXT,
+			description TEXT,
+			revision_no TEXT,
+			effective_from DATETIME,
+			effective_to DATETIME,
+			change_type TEXT,
+			change_order_no TEXT,
+			site_code TEXT,
+			is_default_site BOOLEAN DEFAULT FALSE,
+			operation TEXT,
+			created_by TEXT,
+			snapshot TEXT NOT NULL,
+			relation_sidecar TEXT
 		)`,
 		`CREATE TABLE audit_logs (
 			id TEXT PRIMARY KEY NOT NULL,
@@ -92,6 +123,15 @@ func setupBOMAuditHandlerTestDB(t *testing.T) {
 	for _, statement := range statements {
 		require.NoError(t, db.DB.Exec(statement).Error)
 	}
+	require.NoError(t, db.DB.Create(&models.BOMSection{
+		BaseModel:   models.BaseModel{ID: "section-prepare"},
+		Code:        "MAIN",
+		Name:        "主层",
+		Active:      true,
+		SortOrder:   1,
+		IsDefault:   true,
+		LegacyNames: json.RawMessage(`[]`),
+	}).Error)
 }
 
 func newBOMAuditHandlerContext(method string, target string, body string) (*gin.Context, *httptest.ResponseRecorder) {
@@ -115,7 +155,7 @@ func TestSaveBOMHandlerWritesAuditWithActorAndIP(t *testing.T) {
 	ctx, recorder := newBOMAuditHandlerContext(
 		http.MethodPost,
 		"/api/v1/engineering/bom",
-		`{"bomNo":"BOM-AUD-001","productId":"product-bom-1","version":"V1.0","status":"active","description":"handler bom audit","revisionNo":"R1","changeType":"MANUAL","siteCode":"CN","isDefaultSite":true,"items":[{"section":"MAIN","materialId":"material-bom-1","unit":"KG","unitUsage":2.5,"wastagePercent":10,"materialType":"RAW","supplyChannel":"PURCHASE","substitutes":[]}]}`,
+		`{"bomNo":"BOM-AUD-001","productId":"product-bom-1","version":"V1.0","status":"active","description":"handler bom audit","revisionNo":"R1","changeType":"MANUAL","siteCode":"CN","isDefaultSite":true,"relationSidecar":{"kind":"parent_children_protocol","version":"v1","protocolDraft":{"rootChildren":["branch:main"],"branchNodes":[{"id":"branch:main","parentId":"root","children":["branch:main:collection"],"nodeKind":"branch","branchRole":"section","label":"主层","sectionCode":"MAIN","sectionName":"主层"},{"id":"branch:main:collection","parentId":"branch:main","children":["field:seed-1"],"nodeKind":"branch","branchRole":"collection","label":"主层明细","sectionCode":"MAIN","sectionName":"主层"}],"itemNodes":[{"id":"field:seed-1","parentId":"branch:main:collection","children":[],"nodeKind":"item","sectionCode":"MAIN","sectionName":"主层"}]}} ,"items":[{"section":"MAIN","materialId":"material-bom-1","unit":"KG","unitUsage":2.5,"wastagePercent":10,"materialType":"RAW","supplyChannel":"PURCHASE"}]}`,
 	)
 
 	SaveBOMHandler(ctx)
@@ -134,4 +174,10 @@ func TestSaveBOMHandlerWritesAuditWithActorAndIP(t *testing.T) {
 	require.Equal(t, "SAVE", logs[0].Action)
 	require.Equal(t, "bom-auditor", logs[0].Operator)
 	require.Equal(t, "198.51.100.88", logs[0].IP)
+
+	var snapshots []models.BOMVersionSnapshot
+	require.NoError(t, db.DB.Order("created_at desc").Find(&snapshots).Error)
+	require.Len(t, snapshots, 1)
+	require.Equal(t, "bom-auditor", snapshots[0].CreatedBy)
+	require.Equal(t, "SAVE", snapshots[0].Operation)
 }

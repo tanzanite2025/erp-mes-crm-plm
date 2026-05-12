@@ -32,7 +32,7 @@ type ShipmentReadResource = CompositeReadResource<{
   shipmentDemands: ShipmentBootstrapReady['shipmentDemands']
   warehouseCategories: ShipmentBootstrapReady['warehouseCategories']
   masterDataMap: ShipmentBootstrapReady['masterDataMap']
-  alertThresholds: ShipmentBootstrapReady['alertThresholds']
+  materialThresholdMap: ShipmentBootstrapReady['materialThresholdMap']
   salesOrders: SalesOrder[]
 }>
 
@@ -86,7 +86,7 @@ export function useShipment(feedback?: ShipmentUiFeedback) {
       shipmentDemands: shipmentBootstrap.readResource.shipmentDemands,
       warehouseCategories: shipmentBootstrap.readResource.warehouseCategories,
       masterDataMap: shipmentBootstrap.readResource.masterDataMap,
-      alertThresholds: shipmentBootstrap.readResource.alertThresholds,
+      materialThresholdMap: shipmentBootstrap.readResource.materialThresholdMap,
       salesOrders: salesOrdersData as SalesOrder[],
     }
   }, [salesOrdersData, salesOrdersQuery.error, salesOrdersQuery.isPending, shipmentBootstrap.readResource])
@@ -108,7 +108,7 @@ export function useShipment(feedback?: ShipmentUiFeedback) {
       queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.inventoryList() }),
       queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.inventoryValuation() }),
       queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.inventoryAlertSummary() }),
-      queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.alertThresholds() }),
+      queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.materialThresholdMap() }),
       queryClient.invalidateQueries({ queryKey: shippingManagementQueryKeys.vehicleMatchItems() }),
     ]
 

@@ -46,7 +46,5 @@ export const InventoryMaintenanceService = {
 
   patchInventory: InventoryDomainMaintenanceService.patchInventory,
 
-  setAlertThreshold: InventoryDomainMaintenanceService.setAlertThreshold,
-
-  getAlertThresholds: InventoryDomainMaintenanceService.getAlertThresholds,
+  getMaterialThresholdMap: InventoryDomainMaintenanceService.getMaterialThresholdMap,
 }

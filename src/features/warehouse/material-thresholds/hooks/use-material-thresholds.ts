@@ -1,10 +1,12 @@
 import { useEffect, useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useLanguage } from '@/context/language-provider'
 import { createLogger } from '@/lib/logger'
 import { type CompositeReadResource, resolveQueryFailure } from '@/lib/read-resource'
 import { failLoudly } from '@/lib/safe-catch'
 import { createWarehouseUiFeedback, type WarehouseUiFeedback } from '../../hooks/warehouse-ui-feedback'
 import { warehouseQueryKeys } from '../../query-keys'
+import { invalidateMaterialThresholdState } from '../services/material-threshold-helpers'
 import {
   type InventoryThresholdRule,
   type InventoryThresholdRuleWritePayload,
@@ -22,6 +24,7 @@ export type MaterialThresholdReadResource = CompositeReadResource<{
 export function useMaterialThresholds(feedback?: Pick<WarehouseUiFeedback, 'success'>) {
   const queryClient = useQueryClient()
   const ui = useMemo(() => feedback ?? createWarehouseUiFeedback(), [feedback])
+  const { t } = useLanguage()
 
   const rulesQuery = useQuery({
     queryKey: warehouseQueryKeys.thresholdRules(),
@@ -33,20 +36,12 @@ export function useMaterialThresholds(feedback?: Pick<WarehouseUiFeedback, 'succ
     queryFn: () => InventoryThresholdService.getTargetOptions(),
   })
 
-  const invalidateThresholdState = async () => {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.thresholdRules() }),
-      queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.alertThresholds() }),
-      queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.inventoryAlertSummary() }),
-    ])
-  }
-
   const createMutation = useMutation({
     mutationFn: (payload: InventoryThresholdRuleWritePayload) =>
       InventoryThresholdService.createRule(payload),
     onSuccess: async () => {
-      await invalidateThresholdState()
-      ui.success('Inventory threshold rule created')
+      await invalidateMaterialThresholdState(queryClient)
+      ui.success(t('warehouseConfig.materialThresholds.toast.created'))
     },
   })
 
@@ -54,16 +49,16 @@ export function useMaterialThresholds(feedback?: Pick<WarehouseUiFeedback, 'succ
     mutationFn: (params: { id: string; payload: InventoryThresholdRuleWritePayload }) =>
       InventoryThresholdService.updateRule(params.id, params.payload),
     onSuccess: async () => {
-      await invalidateThresholdState()
-      ui.success('Inventory threshold rule updated')
+      await invalidateMaterialThresholdState(queryClient)
+      ui.success(t('warehouseConfig.materialThresholds.toast.updated'))
     },
   })
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => InventoryThresholdService.deleteRule(id),
     onSuccess: async () => {
-      await invalidateThresholdState()
-      ui.success('Inventory threshold rule deleted')
+      await invalidateMaterialThresholdState(queryClient)
+      ui.success(t('warehouseConfig.materialThresholds.toast.deleted'))
     },
   })
 

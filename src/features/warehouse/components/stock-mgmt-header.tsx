@@ -1,16 +1,15 @@
 import { AlertTriangle, Warehouse } from 'lucide-react'
-import { useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/ui/badge'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
-import { financeQueryKeys } from '@/features/finance/query-keys'
-import { CurrencyCoreService } from '@/features/finance/services/currency-core-service'
 
 interface StockMgmtHeaderProps {
     alertCount: number
     materialAlertCount: number
     bomAlertCount: number
     totalAssets: number
+    baseCurrencySymbol?: string
+    baseCurrencyPrecision?: number
     onOpenBOMAlertDetails?: () => void
 }
 
@@ -19,17 +18,14 @@ export function StockMgmtHeader({
     materialAlertCount,
     bomAlertCount,
     totalAssets,
+    baseCurrencySymbol,
+    baseCurrencyPrecision = 2,
     onOpenBOMAlertDetails,
 }: StockMgmtHeaderProps) {
     const { t } = useLanguage()
-    const baseCurrencyQuery = useQuery({
-        queryKey: [...financeQueryKeys.currencies(), 'base'],
-        queryFn: () => CurrencyCoreService.getBaseCurrency(),
-    })
-    const baseCurrency = baseCurrencyQuery.data
     const totalAssetsLabel = totalAssets.toLocaleString(undefined, {
-        minimumFractionDigits: baseCurrency?.precision ?? 2,
-        maximumFractionDigits: baseCurrency?.precision ?? 2,
+        minimumFractionDigits: baseCurrencyPrecision,
+        maximumFractionDigits: baseCurrencyPrecision,
     })
 
     return (
@@ -42,7 +38,7 @@ export function StockMgmtHeader({
                     <Badge variant="outline" className='bg-primary/5 text-primary border-dashed border-primary/20 text-[10px] h-5 px-2 rounded-full flex items-center gap-1.5 shrink-0'>
                         <span className='font-semibold text-muted-foreground/60'>ASSETS</span>
                         <span className='font-black tabular-nums'>
-                            {baseCurrency?.symbol ? `${baseCurrency.symbol} ` : ''}
+                            {baseCurrencySymbol ? `${baseCurrencySymbol} ` : ''}
                             {totalAssetsLabel}
                         </span>
                     </Badge>

@@ -27,7 +27,7 @@ interface StockMgmtCategorySectionProps {
     hideZero: boolean
     onHideZeroChange: (checked: boolean) => void
     materialTotalStock: Record<string, number>
-    alertThresholds: Record<string, number>
+    materialThresholdMap: Record<string, number>
     canConfigureThreshold?: boolean
     onConfigureThreshold: (item: InventoryView, current: number) => void
 }
@@ -38,7 +38,7 @@ export function StockMgmtCategorySection({
     hideZero,
     onHideZeroChange,
     materialTotalStock,
-    alertThresholds,
+    materialThresholdMap,
     canConfigureThreshold = true,
     onConfigureThreshold
 }: StockMgmtCategorySectionProps) {
@@ -99,7 +99,7 @@ export function StockMgmtCategorySection({
                                 .filter((item) => !hideZero || item.quantity > 0)
                                 .map((item) => {
                                     const total = materialTotalStock[item.materialId] || 0
-                                    const min = alertThresholds[item.materialId] || 0
+                                    const min = materialThresholdMap[item.materialId] || 0
                                     const isAlert = min > 0 && total < min
 
                                     return (

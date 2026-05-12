@@ -22,7 +22,7 @@ export type ShipmentBootstrapResource = CompositeReadResource<{
   history: ShipmentRecord[]
   shipmentDemands: ShipmentDemand[]
   warehouseCategories: WarehouseCategoryOption[]
-  alertThresholds: Record<string, number>
+  materialThresholdMap: Record<string, number>
   masterDataMap: Record<string, MasterDataSearchResult>
 }>
 
@@ -52,9 +52,9 @@ export function useShipmentBootstrap(feedback: Pick<ShipmentUiFeedback, 'error'>
     }),
   })
 
-  const thresholdsQuery = useQuery({
-    queryKey: warehouseQueryKeys.alertThresholds(),
-    queryFn: () => InventoryMaintenanceService.getAlertThresholds(),
+  const materialThresholdMapQuery = useQuery({
+    queryKey: warehouseQueryKeys.materialThresholdMap(),
+    queryFn: () => InventoryMaintenanceService.getMaterialThresholdMap(),
   })
 
   const readResource = useMemo<ShipmentBootstrapResource>(() => {
@@ -122,19 +122,19 @@ export function useShipmentBootstrap(feedback: Pick<ShipmentUiFeedback, 'error'>
       }
     }
 
-    const thresholdsFailure = resolveQueryFailure({
-      data: thresholdsQuery.data,
-      error: thresholdsQuery.error,
-      isPending: thresholdsQuery.isPending,
-      scope: 'useShipmentBootstrap.thresholds',
+    const materialThresholdMapFailure = resolveQueryFailure({
+      data: materialThresholdMapQuery.data,
+      error: materialThresholdMapQuery.error,
+      isPending: materialThresholdMapQuery.isPending,
+      scope: 'useShipmentBootstrap.materialThresholdMap',
       missingMessage: '[CRITICAL] Shipment alert thresholds missing after load',
       failureMessage: '[CRITICAL] Shipment alert thresholds query failed',
     })
-    if (thresholdsFailure) {
+    if (materialThresholdMapFailure) {
       return {
         status: 'error',
-        error: thresholdsFailure.error,
-        scope: thresholdsFailure.scope,
+        error: materialThresholdMapFailure.error,
+        scope: materialThresholdMapFailure.scope,
       }
     }
 
@@ -143,7 +143,7 @@ export function useShipmentBootstrap(feedback: Pick<ShipmentUiFeedback, 'error'>
       demandsQuery.isPending ||
       categoriesQuery.isPending ||
       masterDataQuery.isPending ||
-      thresholdsQuery.isPending
+      materialThresholdMapQuery.isPending
     ) {
       return { status: 'loading' }
     }
@@ -167,7 +167,7 @@ export function useShipmentBootstrap(feedback: Pick<ShipmentUiFeedback, 'error'>
       history: historyQuery.data as ShipmentRecord[],
       shipmentDemands: demandsQuery.data as ShipmentDemand[],
       warehouseCategories: filteredCategories,
-      alertThresholds: thresholdsQuery.data as Record<string, number>,
+      materialThresholdMap: materialThresholdMapQuery.data as Record<string, number>,
       masterDataMap: nextMasterDataMap,
     }
   }, [
@@ -183,9 +183,9 @@ export function useShipmentBootstrap(feedback: Pick<ShipmentUiFeedback, 'error'>
     masterDataQuery.data,
     masterDataQuery.error,
     masterDataQuery.isPending,
-    thresholdsQuery.data,
-    thresholdsQuery.error,
-    thresholdsQuery.isPending,
+    materialThresholdMapQuery.data,
+    materialThresholdMapQuery.error,
+    materialThresholdMapQuery.isPending,
   ])
 
   useEffect(() => {
@@ -202,7 +202,7 @@ export function useShipmentBootstrap(feedback: Pick<ShipmentUiFeedback, 'error'>
         demandsQuery.refetch(),
         categoriesQuery.refetch(),
         masterDataQuery.refetch(),
-        thresholdsQuery.refetch(),
+        materialThresholdMapQuery.refetch(),
       ])
     },
   }

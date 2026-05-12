@@ -83,6 +83,9 @@ export const warehouseConfig = {
       invalidThreshold: 'Please enter a threshold quantity greater than or equal to 0',
       selectMaterial: 'Please select a material target',
       selectBom: 'Please select a BOM target',
+      created: 'Threshold rule created',
+      updated: 'Threshold rule updated',
+      deleted: 'Threshold rule deleted',
     },
   },
 } as const

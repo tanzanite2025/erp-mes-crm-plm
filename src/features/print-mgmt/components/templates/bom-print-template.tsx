@@ -18,14 +18,13 @@ export interface BOMPrintItem {
 export interface BOMPrintTemplateProps {
   bomNo: string
   bomDisplayVersion?: string
-  revisionNo?: string
   changeOrderNo?: string
   productName: string
   items: BOMPrintItem[]
 }
 
 export const BOMPrintTemplate = forwardRef<HTMLDivElement, BOMPrintTemplateProps>(
-  ({ bomNo, bomDisplayVersion, revisionNo, changeOrderNo, productName, items = [] }, ref) => {
+  ({ bomNo, bomDisplayVersion, changeOrderNo, productName, items = [] }, ref) => {
     const { locale, t } = useLanguage()
     const { level3Name } = useHierarchyLevelLabels()
     const today = new Intl.DateTimeFormat(locale === 'zh-CN' ? 'zh-CN' : 'en-US', {
@@ -88,7 +87,6 @@ export const BOMPrintTemplate = forwardRef<HTMLDivElement, BOMPrintTemplateProps
                 <div className='mt-2 text-sm font-mono'>
                   {bomNo}
                   {bomDisplayVersion ? ` / ${bomDisplayVersion}` : ''}
-                  {revisionNo ? ` / ${revisionNo}` : ''}
                 </div>
               </td>
               <td style={{ width: '15%' }}>{t('printMgmt.bomTemplate.documentCode')}</td>

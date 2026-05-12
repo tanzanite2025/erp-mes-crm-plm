@@ -83,6 +83,9 @@ export const warehouseConfig = {
       invalidThreshold: '请填写大于等于 0 的阈值数量',
       selectMaterial: '请选择一个物料目标',
       selectBom: '请选择一个 BOM 目标',
+      created: '阈值规则已创建',
+      updated: '阈值规则已更新',
+      deleted: '阈值规则已删除',
     },
   },
 } as const

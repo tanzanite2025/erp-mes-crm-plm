@@ -104,6 +104,8 @@ func SetupRoutes(r *gin.Engine) {
 			engineeringGroup.PATCH("/products/:id", adminOnly, handlers.PatchProductHandler)
 			engineeringGroup.DELETE("/products/:id", adminOnly, handlers.DeleteProductHandler)
 			engineeringGroup.GET("/bom", handlers.GetBOMsHandler)
+			engineeringGroup.GET("/bom/version-history", handlers.ListBOMVersionHistoryHandler)
+			engineeringGroup.GET("/bom/version-history/:id", handlers.GetBOMVersionHistoryEntryHandler)
 			engineeringGroup.GET("/bom/:id", handlers.GetBOMHandler)
 			engineeringGroup.POST("/bom", adminOnly, handlers.SaveBOMHandler)
 			engineeringGroup.DELETE("/bom/:id", adminOnly, handlers.DeleteBOMHandler)

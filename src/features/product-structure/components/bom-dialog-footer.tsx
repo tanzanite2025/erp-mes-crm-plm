@@ -16,7 +16,7 @@ export function BOMDialogFooter({ form, isSubmitDisabled }: BOMDialogFooterProps
   const { t } = useLanguage()
 
   return (
-    <div className='flex h-auto shrink-0 flex-col items-stretch gap-2 border-t border-dashed border-muted/50 pt-1.5 sm:h-11 sm:flex-row sm:gap-3'>
+    <div className='flex h-auto shrink-0 flex-col items-stretch gap-1.5 border-t border-dashed border-muted/50 pt-1 sm:h-11 sm:flex-row sm:gap-2'>
       <FormField
         control={form.control}
         name='description'

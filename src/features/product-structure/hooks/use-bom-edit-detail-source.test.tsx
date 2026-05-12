@@ -73,7 +73,6 @@ describe('useBOMEditDetailSource', () => {
             standardUsage: 3,
             materialType: '',
             supplyChannel: '',
-            substitutes: [],
           },
         ],
         description: '',
@@ -114,7 +113,6 @@ describe('useBOMEditDetailSource', () => {
           standardUsage: 3,
           materialType: '',
           supplyChannel: '',
-          substitutes: [],
         }] as never,
       }),
       { wrapper: createWrapper(queryClient) }
@@ -162,7 +160,6 @@ describe('useBOMEditDetailSource', () => {
             standardUsage: 3,
             materialType: '',
             supplyChannel: '',
-            substitutes: [],
           },
           {
             id: 'item-2',
@@ -177,7 +174,6 @@ describe('useBOMEditDetailSource', () => {
             standardUsage: 5,
             materialType: '',
             supplyChannel: '',
-            substitutes: [],
           },
         ],
         description: '',
@@ -254,7 +250,6 @@ describe('useBOMEditDetailSource', () => {
           standardUsage: 3,
           materialType: '',
           supplyChannel: '',
-          substitutes: [],
         }, {
           id: 'item-2',
           section: 'PREPARE',
@@ -268,7 +263,6 @@ describe('useBOMEditDetailSource', () => {
           standardUsage: 5,
           materialType: '',
           supplyChannel: '',
-          substitutes: [],
         }] as never,
       }),
       { wrapper: createWrapper(queryClient) }
