@@ -64,7 +64,12 @@ export function BOMItemRow({ form, index, materials, materialMap, onRemove, meas
               step='0.000001'
               className='h-10 rounded-xl border-none bg-muted/30 px-2 text-[11px] font-bold text-primary shadow-inner focus:ring-2 focus:ring-primary/20'
               {...field}
-              onChange={(event) => field.onChange(parseFloat(event.target.value))}
+              onChange={(event) => {
+                const val = parseFloat(event.target.value) || 0
+                field.onChange(val)
+                const wastage = form.getValues(`items.${index}.wastagePercent`) || 0
+                form.setValue(`items.${index}.standardUsage`, parseFloat((val * (1 + wastage / 100)).toFixed(6)), { shouldDirty: true })
+              }}
             />
           )}
         />
@@ -79,7 +84,12 @@ export function BOMItemRow({ form, index, materials, materialMap, onRemove, meas
               type='number'
               className='h-10 rounded-xl bg-white px-1 text-center text-[11px] font-bold shadow-inner'
               {...field}
-              onChange={(event) => field.onChange(parseFloat(event.target.value))}
+              onChange={(event) => {
+                const val = parseFloat(event.target.value) || 0
+                field.onChange(val)
+                const usage = form.getValues(`items.${index}.unitUsage`) || 0
+                form.setValue(`items.${index}.standardUsage`, parseFloat((usage * (1 + val / 100)).toFixed(6)), { shouldDirty: true })
+              }}
             />
           )}
         />

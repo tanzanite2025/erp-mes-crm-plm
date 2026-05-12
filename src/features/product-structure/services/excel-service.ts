@@ -73,6 +73,12 @@ export const ExcelService = {
         return
       }
 
+      // ✅ 物料状态检查 (工业标准：禁止在 BOM 中使用已归档或禁用的物料)
+      if (material.status === 'Archived' || material.status === 'Inactive') {
+        errors.push(`Row ${index + 2}: status: Material ${material.code} is currently ${material.status} and cannot be used in a new BOM`)
+        return
+      }
+
       const normalizedSection = normalizeBOMSectionValue(sections, parsedItem.section || defaultSectionCode)
       const standardUsage = Math.max(0, parsedItem.unitUsage * (1 + parsedItem.wastagePercent / 100))
 

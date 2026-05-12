@@ -110,6 +110,55 @@ func validateBOMReferences(tx *gorm.DB, input *models.BOM) error {
 			if m.Status == "Archived" || m.Status == "Inactive" {
 				return fmt.Errorf("[LOCKED_ASSET] BOM contains disabled material (%s - %s)", m.Code, m.Name)
 			}
+
+			// ✅ 循环引用检查 (防止 A 包含 A 或 B->A 循环)
+			if err := checkBOMCircularReference(tx, input.ProductID, item.MaterialID, make(map[string]bool)); err != nil {
+				return err
+			}
+		}
+	}
+
+	// ✅ 同工艺段（Section）内物料唯一性校验
+	sectionMaterialMap := make(map[string]map[string]bool)
+	for _, item := range input.Items {
+		if item.MaterialID == "" {
+			continue
+		}
+		if sectionMaterialMap[item.Section] == nil {
+			sectionMaterialMap[item.Section] = make(map[string]bool)
+		}
+		if sectionMaterialMap[item.Section][item.MaterialID] {
+			return fmt.Errorf("[DUPLICATE_ITEM] Duplicate material %s found in section %s", item.MaterialID, item.Section)
+		}
+		sectionMaterialMap[item.Section][item.MaterialID] = true
+	}
+
+	return nil
+}
+
+// 递归检测 BOM 循环引用
+func checkBOMCircularReference(tx *gorm.DB, rootProductID string, currentMaterialID string, visited map[string]bool) error {
+	if currentMaterialID == rootProductID {
+		return fmt.Errorf("[CIRCULAR_REFERENCE] BOM circular dependency detected: Product depends on itself (ID: %s)", rootProductID)
+	}
+
+	if visited[currentMaterialID] {
+		return nil
+	}
+	visited[currentMaterialID] = true
+
+	// 查询以此物料 ID 作为产品 ID 的所有现有 BOM
+	var boms []models.BOM
+	if err := tx.Where("product_id = ? AND status != ?", currentMaterialID, models.BOMStatusObsolete).
+		Preload("Items").Find(&boms).Error; err != nil {
+		return err
+	}
+
+	for _, b := range boms {
+		for _, item := range b.Items {
+			if err := checkBOMCircularReference(tx, rootProductID, item.MaterialID, visited); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -245,10 +294,13 @@ func validateUniqueReleasedMBOM(tx *gorm.DB, input *models.BOM) error {
 }
 
 func generateBOMNo(tx *gorm.DB) string {
-	dateStr := time.Now().Format("20060102")
+	now := time.Now()
+	dateStr := now.Format("20060102")
 	var count int64
 	tx.Model(&models.BOM{}).Where("bom_no LIKE ?", "BOM-"+dateStr+"-%").Count(&count)
-	return fmt.Sprintf("BOM-%s-%03d", dateStr, count+1)
+	// ✅ 引入纳秒随机因子防止竞态冲突
+	randFactor := now.UnixNano() % 1000
+	return fmt.Sprintf("BOM-%s-%03d-%03d", dateStr, count+1, randFactor)
 }
 
 func saveBOMItems(tx *gorm.DB, bomID string, items []models.BOMItem) error {
