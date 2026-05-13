@@ -217,7 +217,7 @@ func validateBOMReferences(tx *gorm.DB, input *models.BOM) error {
 			}
 
 			// ✅ 循环引用检查 (防止 A 包含 A 或 B->A 循环)
-			if err := checkBOMCircularReference(tx, input.ProductID, item.MaterialID, make(map[string]bool)); err != nil {
+			if err := checkBOMCircularReference(tx, input.ProductID, item.MaterialID, make(map[string]bool), 0); err != nil {
 				return err
 			}
 		}
@@ -241,8 +241,16 @@ func validateBOMReferences(tx *gorm.DB, input *models.BOM) error {
 	return nil
 }
 
-// 递归检测 BOM 循环引用
-func checkBOMCircularReference(tx *gorm.DB, rootProductID string, currentMaterialID string, visited map[string]bool) error {
+// MaxBOMDepth 定义 BOM 最大嵌套深度（工业标准）
+const MaxBOMDepth = 50
+
+// 递归检测 BOM 循环引用（带深度限制）
+func checkBOMCircularReference(tx *gorm.DB, rootProductID string, currentMaterialID string, visited map[string]bool, depth int) error {
+	// ✅ 深度保护：防止超深嵌套导致栈溢出
+	if depth > MaxBOMDepth {
+		return fmt.Errorf("[DEPTH_EXCEEDED] BOM nesting exceeds maximum depth of %d levels. Please simplify the BOM structure", MaxBOMDepth)
+	}
+
 	if currentMaterialID == rootProductID {
 		return fmt.Errorf("[CIRCULAR_REFERENCE] BOM circular dependency detected: Product depends on itself (ID: %s)", rootProductID)
 	}
@@ -261,7 +269,8 @@ func checkBOMCircularReference(tx *gorm.DB, rootProductID string, currentMateria
 
 	for _, b := range boms {
 		for _, item := range b.Items {
-			if err := checkBOMCircularReference(tx, rootProductID, item.MaterialID, visited); err != nil {
+			// ✅ 传递深度计数器
+			if err := checkBOMCircularReference(tx, rootProductID, item.MaterialID, visited, depth+1); err != nil {
 				return err
 			}
 		}
@@ -732,6 +741,11 @@ func DeriveMBOMFromEBOM(ctx context.Context, ebomID string, input DeriveMBOMInpu
 		// ✅ 验证源EBOM必须被锁定
 		if !ebom.IsLocked {
 			return fmt.Errorf("[VALIDATION] Source EBOM must be locked before derivation (ID: %s)", ebomID)
+		}
+
+		// ✅ 验证源 EBOM 的物料完整性（防止幽灵物料注入）
+		if err := validateBOMReferences(tx, &ebom); err != nil {
+			return fmt.Errorf("[VALIDATION] Source EBOM contains invalid references: %w", err)
 		}
 
 		// 3. 克隆BOM Items
