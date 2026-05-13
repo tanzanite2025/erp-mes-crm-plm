@@ -3,6 +3,7 @@ package services
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 	"xdfc-server/db"
@@ -268,16 +269,28 @@ func SaveSupplier(input SaveSupplierRequest, actorID string, operator string, ip
 	model := MapSaveSupplierRequestToModel(input)
 	model.Name = strings.TrimSpace(model.Name)
 	model.Code = strings.TrimSpace(model.Code)
-	if model.Name == "" || model.Code == "" {
-		return SupplierResponse{}, wrapPartnerIdentityRequiredError(ErrSupplierTransactionInvalidPayload)
+	
+	// Name is always required
+	if model.Name == "" {
+		return SupplierResponse{}, fmt.Errorf("%w: name must not be empty", ErrSupplierTransactionInvalidPayload)
 	}
+	
+	// For new suppliers (no ID), auto-generate code if empty
 	if strings.TrimSpace(model.ID) == "" {
+		if model.Code == "" {
+			model.Code = generateSupplierCode()
+		}
 		model.Version = 1
 		if err := db.DB.Create(&model).Error; err != nil {
 			return SupplierResponse{}, err
 		}
 		syncSupplierToSearch(model)
 		return MapSupplierToResponse(model), nil
+	}
+	
+	// For existing suppliers, code must not be empty
+	if model.Code == "" {
+		return SupplierResponse{}, fmt.Errorf("%w: code must not be empty for existing supplier", ErrSupplierTransactionInvalidPayload)
 	}
 
 	payload, err := json.Marshal(SupplierSavePayload{
@@ -305,6 +318,33 @@ func SaveSupplier(input SaveSupplierRequest, actorID string, operator string, ip
 	}
 
 	return MapSupplierToResponse(*updated), nil
+}
+
+// generateSupplierCode generates a unique supplier code
+// Format: XD-S-YYYYMMDD-NNNN where NNNN is a sequential number
+func generateSupplierCode() string {
+	now := time.Now()
+	datePrefix := now.Format("20060102")
+	
+	var maxCode string
+	db.DB.Model(&models.Supplier{}).
+		Where("code LIKE ?", fmt.Sprintf("XD-S-%s-%%", datePrefix)).
+		Order("code DESC").
+		Limit(1).
+		Pluck("code", &maxCode)
+	
+	sequence := 1
+	if maxCode != "" {
+		// Extract sequence number from code like "XD-S-20240514-0001"
+		parts := strings.Split(maxCode, "-")
+		if len(parts) == 4 {
+			if seq, err := strconv.Atoi(parts[3]); err == nil {
+				sequence = seq + 1
+			}
+		}
+	}
+	
+	return fmt.Sprintf("XD-S-%s-%04d", datePrefix, sequence)
 }
 
 func PatchSupplier(input PatchSupplierRequest, actorID string, operator string, ip string) (SupplierResponse, error) {

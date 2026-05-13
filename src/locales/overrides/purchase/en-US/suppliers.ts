@@ -40,6 +40,7 @@ export const suppliers = {
         namePlaceholder: 'Enter supplier name',
         code: 'Vendor Code',
         codePlaceholder: 'e.g. XD-S-2024XX',
+        codeAutoPlaceholder: 'Auto-generated after saving',
         category: 'Category',
         categoryPlaceholder: 'Select category',
         status: 'Admission Status',
@@ -60,5 +61,14 @@ export const suppliers = {
         standardPart: 'Standard Parts',
         outsourcing: 'Outsourced Processing',
         equipmentTooling: 'Equipment & Tooling',
+      },
+      validation: {
+        nameRequired: 'Vendor name is required. Please fill it in before saving.',
+        codeRequired: 'Vendor code cannot be empty',
+        codeAndNameRequired: 'Vendor code and name are required fields. Please fill them in before saving.',
+      },
+      toasts: {
+        saved: 'Supplier profile saved',
+        deleted: 'Supplier profile deleted',
       },
     } as const

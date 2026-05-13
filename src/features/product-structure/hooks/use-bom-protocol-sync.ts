@@ -290,7 +290,7 @@ export function useBOMProtocolSync({
     return validateProtocolConsistency(protocolDraft, watchedItems, fields, sections)
   }, [protocolDraft, watchedItems, fields, sections])
 
-  // Check if sync is needed
+  // Check if sync is needed (memoized to prevent infinite loops)
   const needsSync = useCallback((): boolean => {
     if (!protocolDraft) {
       return false
@@ -312,7 +312,7 @@ export function useBOMProtocolSync({
     return false
   }, [protocolDraft, watchedItems, validation])
 
-  // Perform sync
+  // Perform sync (stable reference)
   const performSync = useCallback((): BOMWorkspaceParentChildrenProtocolDraft | undefined => {
     if (!sourceBOM) {
       return protocolDraft
@@ -338,18 +338,34 @@ export function useBOMProtocolSync({
       return
     }
 
-    const currentValidation = validation()
-    lastValidationRef.current = currentValidation
-
-    // Log validation issues for debugging
-    if (currentValidation.errors.length > 0) {
-      console.error('[BOM Protocol Sync] Validation errors:', currentValidation.errors)
-    }
-    if (currentValidation.warnings.length > 0) {
-      console.warn('[BOM Protocol Sync] Validation warnings:', currentValidation.warnings)
+    // Skip if no protocol to sync
+    if (!protocolDraft || !sourceBOM) {
+      return
     }
 
-    const shouldSync = needsSync()
+    // Inline validation to avoid callback dependency
+    const currentValidation = validateProtocolConsistency(protocolDraft, watchedItems, fields, sections)
+    
+    // Only log if validation changed (prevent spam)
+    const validationChanged = 
+      JSON.stringify(currentValidation) !== JSON.stringify(lastValidationRef.current)
+    
+    if (validationChanged) {
+      lastValidationRef.current = currentValidation
+      
+      // Log validation issues for debugging
+      if (currentValidation.errors.length > 0) {
+        console.error('[BOM Protocol Sync] Validation errors:', currentValidation.errors)
+      }
+      if (currentValidation.warnings.length > 0) {
+        console.warn('[BOM Protocol Sync] Validation warnings:', currentValidation.warnings)
+      }
+    }
+
+    // Inline check if sync is needed
+    const hasValidationIssues = currentValidation.errors.length > 0 || currentValidation.warnings.length > 0
+    const itemsChanged = JSON.stringify(watchedItems) !== JSON.stringify(lastSyncedItemsRef.current)
+    const shouldSync = hasValidationIssues || itemsChanged
     
     if (!shouldSync) {
       return
@@ -360,17 +376,28 @@ export function useBOMProtocolSync({
       clearTimeout(debounceTimerRef.current)
     }
 
+    // Inline sync function
+    const doSync = () => {
+      const syncedProtocol = buildBOMWorkspaceParentChildrenProtocolDraftFromBOMDetailSource({
+        sourceBOM,
+        activeSections: sections,
+        fields,
+        watchedItems,
+        authoritativeProtocolDraft,
+      })
+      lastSyncedItemsRef.current = [...watchedItems]
+      setDebouncedSyncedProtocol(syncedProtocol)
+    }
+
     // If debounce is disabled (0ms), sync immediately
     if (debounceMs === 0) {
-      const synced = performSync()
-      setDebouncedSyncedProtocol(synced)
+      doSync()
       return
     }
 
     // Schedule debounced sync
     debounceTimerRef.current = setTimeout(() => {
-      const synced = performSync()
-      setDebouncedSyncedProtocol(synced)
+      doSync()
       debounceTimerRef.current = null
     }, debounceMs)
 
@@ -381,22 +408,23 @@ export function useBOMProtocolSync({
         debounceTimerRef.current = null
       }
     }
-  }, [validation, needsSync, performSync, debounceMs, manualSyncOnly])
+    // Only depend on primitive values and stable data, not callbacks
+  }, [watchedItems, protocolDraft, sections, fields, sourceBOM, authoritativeProtocolDraft, debounceMs, manualSyncOnly])
 
   // In manual mode, return the original protocol without auto-sync
   if (manualSyncOnly) {
+    const currentValidation = validation()
+    const currentNeedsSync = needsSync()
     return {
-      needsSync: needsSync(),
-      validation: lastValidationRef.current,
+      needsSync: currentNeedsSync,
+      validation: currentValidation,
       syncedProtocol: protocolDraft,
     }
   }
 
-  const shouldSync = needsSync()
-
   return {
-    needsSync: shouldSync,
+    needsSync: needsSync(),
     validation: lastValidationRef.current,
-    syncedProtocol: shouldSync ? debouncedSyncedProtocol : protocolDraft,
+    syncedProtocol: debouncedSyncedProtocol || protocolDraft,
   }
 }

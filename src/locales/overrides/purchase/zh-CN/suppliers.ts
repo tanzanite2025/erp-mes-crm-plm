@@ -40,6 +40,7 @@ export const suppliers = {
         namePlaceholder: '请输入供应商名称',
         code: '厂商编号',
         codePlaceholder: '例如：XD-S-2024XX',
+        codeAutoPlaceholder: '保存后自动生成',
         category: '供应分类',
         categoryPlaceholder: '选择分类',
         status: '准入状态',
@@ -60,5 +61,14 @@ export const suppliers = {
         standardPart: '标准件',
         outsourcing: '外协加工',
         equipmentTooling: '设备工装',
+      },
+      validation: {
+        nameRequired: '厂商名称为必填项，请填写后再保存',
+        codeRequired: '厂商编号不能为空',
+        codeAndNameRequired: '厂商编号和厂商名称为必填项，请填写后再保存',
+      },
+      toasts: {
+        saved: '供应商档案已保存',
+        deleted: '供应商档案已删除',
       },
     } as const

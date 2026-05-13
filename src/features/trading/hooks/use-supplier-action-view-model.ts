@@ -15,7 +15,7 @@ interface SupplierOption {
 const DEFAULT_CATEGORY = '原材料'
 const DEFAULT_FORM_DATA: SupplierFormValues = {
   name: '',
-  code: '',
+  code: '', // 将由后端自动生成
   category: DEFAULT_CATEGORY,
   mainProducts: [],
   contactPerson: '',

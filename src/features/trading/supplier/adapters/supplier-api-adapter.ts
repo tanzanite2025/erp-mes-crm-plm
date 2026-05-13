@@ -53,7 +53,7 @@ export function toSupplierApiDTO(contract: Supplier): SupplierApiDTO {
     name: contract.name,
     code: contract.code,
     category: contract.category,
-    mainProducts: contract.mainProducts,
+    mainProducts: JSON.stringify(contract.mainProducts),
     contactPerson: contract.contactPerson,
     contactPhone: contract.contactPhone,
     wechat: contract.wechat,

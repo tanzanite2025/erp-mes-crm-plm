@@ -539,6 +539,26 @@ const engineeringActions: LegacyActionPermissionEntry[] = [
     parentId: 'menu_engineering',
     routeBindings: ['PATCH /materials/:id'],
   },
+  {
+    id: 'action_engineering_bom_manage',
+    label: '工程：管理BOM',
+    desc: '允许创建、编辑和管理工程BOM。',
+    category: 'action',
+    parentId: 'menu_engineering',
+    routeBindings: [
+      'POST /engineering/bom-sections',
+      'PATCH /engineering/bom-sections/:id',
+      'DELETE /engineering/bom-sections/:id',
+    ],
+  },
+  {
+    id: 'action_engineering_bom_promote',
+    label: '工程：推广BOM',
+    desc: '允许推广和发布工程BOM。',
+    category: 'action',
+    parentId: 'menu_engineering',
+    routeBindings: [],
+  },
 ]
 
 const qualityActions: LegacyActionPermissionEntry[] = [
