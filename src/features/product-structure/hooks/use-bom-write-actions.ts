@@ -47,8 +47,20 @@ export function useBOMWriteActions() {
   })
   
   const promoteBOMMutation = useMutation({
-    mutationFn: (params: { id: string, status: string, expectedVersion?: number }) => 
-      bomService.promoteBOMStatus(params.id, params.status, params.expectedVersion),
+    mutationFn: (params: { 
+      id: string
+      status: string
+      expectedVersion?: number
+      reason?: string
+      approverComment?: string
+    }) => 
+      bomService.promoteBOMStatus(
+        params.id, 
+        params.status, 
+        params.expectedVersion,
+        params.reason,
+        params.approverComment
+      ),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: BOMS_QUERY_KEY })
       await queryClient.invalidateQueries({ queryKey: bomVersionTraceQueryKeys.root() })
@@ -60,6 +72,8 @@ export function useBOMWriteActions() {
         queryClient.invalidateQueries({ queryKey: BOMS_QUERY_KEY })
       } else if (error.message.includes('locked')) {
         toast.error('状态流转失败：BOM已被锁定')
+      } else if (error.message.includes('FORBIDDEN') || error.message.includes('permission')) {
+        toast.error('状态流转失败：您没有执行此操作的权限')
       } else if (error.message.includes('transition') || error.message.includes('cannot')) {
         toast.error(`状态流转失败：不允许从当前状态转换到 ${variables.status}`)
       } else {
@@ -81,6 +95,10 @@ export function useBOMWriteActions() {
         toast.error('派生失败：源EBOM不存在')
       } else if (error.message.includes('must be EBOM')) {
         toast.error('派生失败：只能从EBOM派生MBOM')
+      } else if (error.message.includes('RELEASED') || error.message.includes('released')) {
+        toast.error('派生失败：只能从已发布(RELEASED)的EBOM派生MBOM')
+      } else if (error.message.includes('locked')) {
+        toast.error('派生失败：源EBOM必须处于锁定状态')
       } else {
         toast.error(`派生失败：${error.message}`)
       }

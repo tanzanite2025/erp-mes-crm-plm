@@ -15,6 +15,7 @@ interface PrimaryMaterialCellProps {
   index: number
   sortedMaterials: EnrichedMaterialOption[]
   materialMap: Map<string, MaterialOption>
+  disabled?: boolean
 }
 
 export function PrimaryMaterialCell({
@@ -22,6 +23,7 @@ export function PrimaryMaterialCell({
   index,
   sortedMaterials,
   materialMap,
+  disabled = false,
 }: PrimaryMaterialCellProps) {
   const { t } = useLanguage()
 
@@ -46,6 +48,7 @@ export function PrimaryMaterialCell({
                   form.setValue(`items.${index}.materialName`, material.name)
                   form.setValue(`items.${index}.materialSpec`, material.spec)
                   form.setValue(`items.${index}.unit`, material.uom)
+                  form.setValue(`items.${index}.materialType`, material.category)
                   if (typeof material.costPrice === 'number' && !Number.isNaN(material.costPrice)) {
                     form.setValue(`items.${index}.unitPrice`, material.costPrice)
                   }
@@ -60,6 +63,7 @@ export function PrimaryMaterialCell({
                 }))}
                 placeholder={t('engineering.bomArchive.itemTable.searchMaterialPlaceholder')}
                 className='h-10 rounded-xl border-none bg-muted/30 text-[11px] font-bold text-primary shadow-inner'
+                disabled={disabled}
               />
               {form.watch(`items.${index}.materialSpec`) && (
                 <span className='truncate px-2 text-[10px] font-black italic leading-none tracking-tight text-emerald-700'>

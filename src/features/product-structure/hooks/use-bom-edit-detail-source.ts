@@ -11,7 +11,7 @@ import { bomQueryKeys } from '../query-keys'
 import { bomService, type BOMDetailSource } from '../services/bom-service'
 import { resolveBOMWorkspaceAuthoritativeProtocolDraftFromRawDetailSource } from './bom-workspace-authoritative-protocol-resolver'
 import { buildBOMWorkspaceParentChildrenProtocolDraftFromBOMDetailSource } from './bom-workspace-protocol-source-adapter'
-import { type BOMWorkspaceParentChildrenProtocolDraft } from './bom-workspace-source-model'
+import { type BOMWorkspaceParentChildrenProtocolDraft } from './bom-workspace-branch-relation'
 
 const logger = createLogger('useBOMEditDetailSource')
 

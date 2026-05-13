@@ -30,6 +30,13 @@ func GetBOMsHandler(c *gin.Context) {
 		BOMType:   c.Query("bomType"),
 	})
 	if err != nil {
+		// Check if it's a validation error
+		if contains(err.Error(), "invalid status values") ||
+			contains(err.Error(), "invalid BOM type values") {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to fetch BOM list: " + err.Error()})
 		return
 	}

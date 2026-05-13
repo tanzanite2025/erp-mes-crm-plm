@@ -35,6 +35,7 @@ export function createEmptyBOMItem(sectionCode: string): BOM['items'][number] {
     standardUsage: 0,
     materialType: '',
     supplyChannel: '',
+    sortOrder: 0,
   }
 }
 

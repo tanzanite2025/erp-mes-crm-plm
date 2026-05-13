@@ -69,6 +69,8 @@ export const BACKEND_PERMISSION_CONTRACT_IDS = [
   "action_equipment_loan_manage",
   "action_equipment_telemetry_update",
   "action_material_update",
+  "action_engineering_bom_manage",
+  "action_engineering_bom_promote",
   "action_lab_experimental_category_create",
   "action_lab_experimental_category_delete",
   "action_org_profile_update",
@@ -162,6 +164,8 @@ export const BACKEND_ADMIN_FALLBACK_PERMISSION_IDS = [
   "action_barcode_binding_manage",
   "action_cutting_size_inventory_record",
   "action_approval_review",
+  "action_engineering_bom_manage",
+  "action_engineering_bom_promote",
   "menu_pda"
 ] as const
 

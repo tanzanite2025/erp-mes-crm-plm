@@ -4,12 +4,45 @@ import {
   productSchema,
 } from '@/features/engineering/data/schema'
 
+export const bomParentChildrenProtocolBranchDraftSchema = z.object({
+  id: z.string().trim().min(1, 'Node ID is required'),
+  parentId: z.string().trim().nullable(),
+  children: z.array(z.string().trim()).default([]),
+  nodeKind: z.literal('branch'),
+  branchRole: z.enum(['section', 'collection']).optional(),
+  label: z.string().trim().min(1, 'Label is required'),
+  sectionCode: z.string().trim().min(1, 'Section Code is required'),
+  sectionName: z.string().trim().optional(),
+})
+
+export const bomParentChildrenProtocolItemDraftSchema = z.object({
+  id: z.string().trim().min(1, 'Node ID is required'),
+  parentId: z.string().trim().nullable(),
+  children: z.array(z.string().trim()).default([]),
+  nodeKind: z.literal('item'),
+  sectionCode: z.string().trim().min(1, 'Section Code is required'),
+  sectionName: z.string().trim().optional(),
+  itemId: z.string().trim().optional(),
+})
+
+export const bomParentChildrenProtocolDraftSchema = z.object({
+  rootChildren: z.array(z.string().trim()).default([]),
+  branchNodes: z.array(bomParentChildrenProtocolBranchDraftSchema).default([]),
+  itemNodes: z.array(bomParentChildrenProtocolItemDraftSchema).default([]),
+})
+
+export const bomRelationSidecarSchema = z.object({
+  kind: z.literal('parent_children_protocol'),
+  version: z.literal('v1'),
+  protocolDraft: bomParentChildrenProtocolDraftSchema,
+})
+
 export const bomItemSchema = z.object({
-  id: z.string(),
-  section: z.string().min(1, 'Section is required'),
-  materialId: z.string().min(1, 'Material is required'),
-  materialName: z.string().optional(),
-  materialSpec: z.string().optional(),
+  id: z.string().trim(),
+  section: z.string().trim().min(1, 'Section is required'),
+  materialId: z.string().trim().min(1, 'Material is required'),
+  materialName: z.string().trim().optional(),
+  materialSpec: z.string().trim().optional(),
   unitPrice: z.number().default(0),
   unit: z.string().default('pcs'),
   unitUsage: z.number().min(0, 'Unit usage must be non-negative'),
@@ -17,6 +50,7 @@ export const bomItemSchema = z.object({
   standardUsage: z.number().default(0),
   materialType: z.string().optional(),
   supplyChannel: z.string().optional(),
+  sortOrder: z.number().default(0),
 })
 
 export const bomSchema = z.object({
@@ -32,6 +66,7 @@ export const bomSchema = z.object({
   isLocked: z.boolean().default(false),
   items: z.array(bomItemSchema).default([]),
   description: z.string().optional(),
+  relationSidecar: bomRelationSidecarSchema.optional(),
   createdAt: z.string().optional(),
   version: z.number().default(1),
 }).extend(masterDataControlSchema.shape)
@@ -47,3 +82,8 @@ export type Product = z.infer<typeof productSchema>
 export type BOMItem = z.infer<typeof bomItemSchema>
 export type BOM = z.infer<typeof bomSchema>
 export type BOMList = z.infer<typeof bomListSchema>
+
+export type BOMParentChildrenProtocolBranchDraft = z.infer<typeof bomParentChildrenProtocolBranchDraftSchema>
+export type BOMParentChildrenProtocolItemDraft = z.infer<typeof bomParentChildrenProtocolItemDraftSchema>
+export type BOMParentChildrenProtocolDraft = z.infer<typeof bomParentChildrenProtocolDraftSchema>
+export type BOMRelationSidecar = z.infer<typeof bomRelationSidecarSchema>

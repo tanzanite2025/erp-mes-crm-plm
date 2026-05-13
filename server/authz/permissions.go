@@ -85,6 +85,11 @@ const (
 )
 
 const (
+	ActionEngineeringBOMManage  = "action_engineering_bom_manage"
+	ActionEngineeringBOMPromote = "action_engineering_bom_promote"
+)
+
+const (
 	ActionLabExperimentalCategoryCreate = "action_lab_experimental_category_create"
 	ActionLabExperimentalCategoryDelete = "action_lab_experimental_category_delete"
 )
@@ -190,6 +195,8 @@ var AdminFallbackPermissions = []string{
 	ActionBarcodeBindingManage,
 	ActionCuttingSizeInventoryRecord,
 	ActionApprovalReview,
+	ActionEngineeringBOMManage,
+	ActionEngineeringBOMPromote,
 	MenuPDA,
 }
 

@@ -25,6 +25,29 @@ type BOMListQuery struct {
 	BOMType   string
 }
 
+// DeltaOperation 表示差量操作类型
+type DeltaOperation string
+
+const (
+	DeltaOperationAdd    DeltaOperation = "add"
+	DeltaOperationRemove DeltaOperation = "remove"
+	DeltaOperationMove   DeltaOperation = "move"
+	DeltaOperationUpdate DeltaOperation = "update"
+)
+
+// DeltaEntry 表示单个差量条目
+type DeltaEntry struct {
+	Operation DeltaOperation  `json:"op"`
+	Path      string          `json:"path"`
+	Value     interface{}     `json:"value,omitempty"`
+	OldValue  interface{}     `json:"oldValue,omitempty"`
+}
+
+// DeltaSet 表示差量集合
+type DeltaSet struct {
+	Entries []DeltaEntry `json:"entries"`
+}
+
 type SaveBOMInput struct {
 	ID              string           `json:"id"`
 	BOMNo           string           `json:"bomNo"`
@@ -43,17 +66,23 @@ type SaveBOMInput struct {
 	SiteCode        string           `json:"siteCode"`
 	IsDefaultSite   bool             `json:"isDefaultSite"`
 	RelationSidecar json.RawMessage  `json:"relationSidecar"`
+	// 🔥 SDRTS 协议：Sidecar Delta
+	// 用于审计日志和增量更新
+	SidecarDelta    *DeltaSet        `json:"_sidecarDelta,omitempty"`
 }
 
 type PromoteBOMStatusInput struct {
 	Status          string `json:"status"`
 	ExpectedVersion *int   `json:"expectedVersion,omitempty"`
+	Reason          string `json:"reason,omitempty"`          // ✅ 新增：状态转换原因
+	ApproverComment string `json:"approverComment,omitempty"` // ✅ 新增：审批意见
 }
 
 type DeriveMBOMInput struct {
-	Description   string `json:"description"`
-	RevisionNo    string `json:"revisionNo"`
-	ChangeOrderNo string `json:"changeOrderNo"`
+	Description     string `json:"description"`
+	RevisionNo      string `json:"revisionNo"`
+	ChangeOrderNo   string `json:"changeOrderNo"`
+	SourceVersion   *int   `json:"sourceVersion,omitempty"` // ✅ 新增：源 EBOM 版本号
 }
 
 func (input SaveBOMInput) toModel() models.BOM {

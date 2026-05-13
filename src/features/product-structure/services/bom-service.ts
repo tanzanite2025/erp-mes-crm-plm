@@ -12,44 +12,25 @@ export interface BOMDetailSource {
     rawSource: Record<string, unknown>
 }
 
-function trimToUndefined(value?: string) {
-    if (value === undefined) return undefined
-    const trimmed = value.trim()
-    return trimmed === '' ? undefined : trimmed
-}
-
-function trimToNull(value?: string | null) {
-    if (value === undefined || value === null) return null
-    const trimmed = value.trim()
-    return trimmed === '' ? null : trimmed
-}
-
-function trimRequiredValue(value?: string) {
-    return (value || '').trim()
-}
-
+/**
+ * 清洗 BOM 输入数据
+ * 
+ * 注意：Zod schema 已经包含 .trim() 处理，这里只做必要的结构转换
+ * 避免重复的手动 trim 操作
+ */
 function sanitizeBOMInput(data: SaveBOMInput): SaveBOMInput {
     const {
         siteCode: _siteCode,
         isDefaultSite: _isDefaultSite,
         ...normalizedData
     } = normalizeBOMInput(data)
+    
+    // Zod schema 会自动处理 trim，我们只需要做结构转换
     const sanitizedPayload = saveBOMSchema.parse({
         ...normalizedData,
-        description: trimToUndefined(data.description),
-        revisionNo: trimToUndefined(normalizedData.revisionNo),
-        changeOrderNo: trimToUndefined(normalizedData.changeOrderNo),
-        effectiveFrom: trimToNull(normalizedData.effectiveFrom),
-        effectiveTo: trimToNull(normalizedData.effectiveTo),
         items: data.items.map((item: BOMItemDraft) => ({
             ...item,
             section: normalizeBOMSectionValue([], item.section),
-            materialId: trimRequiredValue(item.materialId),
-            materialName: trimToUndefined(item.materialName),
-            materialSpec: trimToUndefined(item.materialSpec),
-            unit: trimRequiredValue(item.unit),
-            materialType: trimToUndefined(item.materialType),
-            supplyChannel: trimToUndefined(item.supplyChannel),
         })),
     })
 
@@ -57,6 +38,9 @@ function sanitizeBOMInput(data: SaveBOMInput): SaveBOMInput {
         ...sanitizedPayload,
         _v: sanitizedPayload.version,
         relationSidecar: normalizedData.relationSidecar,
+        // 🔥 CRITICAL: 保留 _sidecarDelta 用于 SDRTS 协议
+        // 这是审计日志和增量更新的关键数据
+        _sidecarDelta: data._sidecarDelta,
     }
 }
 
@@ -97,7 +81,7 @@ export const bomService = {
 
         const queryString = query.toString()
         const url = queryString ? `/engineering/bom?${queryString}` : '/engineering/bom'
-        
+
         const response = await apiFetch<BOMList>(url)
         return normalizeBOMListResponse(response).items
     },
@@ -140,13 +124,27 @@ export const bomService = {
      * @param id BOM ID
      * @param status 目标状态
      * @param expectedVersion 可选的期望版本号（用于乐观锁）
+     * @param reason 可选的状态转换原因
+     * @param approverComment 可选的审批意见
      */
-    async promoteBOMStatus(id: string, status: string, expectedVersion?: number): Promise<BOM> {
+    async promoteBOMStatus(
+        id: string,
+        status: string,
+        expectedVersion?: number,
+        reason?: string,
+        approverComment?: string
+    ): Promise<BOM> {
         const payload: Record<string, unknown> = { status }
         if (expectedVersion !== undefined) {
             payload.expectedVersion = expectedVersion
         }
-        
+        if (reason) {
+            payload.reason = reason
+        }
+        if (approverComment) {
+            payload.approverComment = approverComment
+        }
+
         const res = await apiFetch<BOM>(`/engineering/bom/${id}/promote`, {
             method: 'POST',
             body: JSON.stringify(payload),

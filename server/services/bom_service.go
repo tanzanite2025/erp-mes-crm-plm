@@ -31,6 +31,19 @@ var ValidBOMTypes = []string{
 	models.BOMTypeMBOM,
 }
 
+// 定义详细的审计操作类型
+const (
+	AuditOpBOMCreate       = "bom.create"
+	AuditOpBOMUpdate       = "bom.update"
+	AuditOpBOMDelete       = "bom.delete"
+	AuditOpBOMDerive       = "bom.derive"
+	AuditOpBOMPromote      = "bom.promote"
+	AuditOpRelationAdd     = "relation.add"
+	AuditOpRelationRemove  = "relation.remove"
+	AuditOpRelationMove    = "relation.move"
+	AuditOpRelationUpdate  = "relation.update"
+)
+
 // parseAndValidateStatuses parses comma-separated status string and validates each value
 func parseAndValidateStatuses(statusStr string) ([]string, error) {
 	if statusStr == "" {
@@ -102,6 +115,69 @@ func contains(slice []string, item string) bool {
 		}
 	}
 	return false
+}
+
+// processSidecarDelta 处理 Sidecar Delta 并记录审计日志
+// 这是 SDRTS 协议的核心处理函数
+func processSidecarDelta(ctx context.Context, tx *gorm.DB, bomID string, delta *DeltaSet) error {
+	if delta == nil || len(delta.Entries) == 0 {
+		return nil
+	}
+
+	// 从上下文获取用户信息（如果可用）
+	var userID string
+	if uid := ctx.Value("userID"); uid != nil {
+		if uidStr, ok := uid.(string); ok {
+			userID = uidStr
+		}
+	}
+
+	// 为每个 Delta 条目生成详细的审计日志
+	for _, entry := range delta.Entries {
+		var auditOp string
+		switch entry.Operation {
+		case DeltaOperationAdd:
+			auditOp = AuditOpRelationAdd
+		case DeltaOperationRemove:
+			auditOp = AuditOpRelationRemove
+		case DeltaOperationMove:
+			auditOp = AuditOpRelationMove
+		case DeltaOperationUpdate:
+			auditOp = AuditOpRelationUpdate
+		default:
+			auditOp = AuditOpBOMUpdate
+		}
+
+		// 构建审计日志详情
+		auditDetail := map[string]interface{}{
+			"operation": string(entry.Operation),
+			"path":      entry.Path,
+		}
+		if entry.Value != nil {
+			auditDetail["value"] = entry.Value
+		}
+		if entry.OldValue != nil {
+			auditDetail["oldValue"] = entry.OldValue
+		}
+
+		// 写入审计日志
+		payload := map[string]interface{}{
+			"operation": auditOp,
+			"detail":    auditDetail,
+		}
+		if userID != "" {
+			payload["userId"] = userID
+		}
+
+		// 使用现有的审计日志函数
+		// 注意：这里使用 nil 作为 before，因为 Delta 本身就包含了变更信息
+		if err := writeBOMAuditEntryWithContext(ctx, tx, bomID, auditOp, nil, payload); err != nil {
+			// 审计日志失败不应阻塞主流程，只记录错误
+			fmt.Printf("[WARN] Failed to write audit log for delta entry: %v\n", err)
+		}
+	}
+
+	return nil
 }
 
 func ListBOMs(query BOMListQuery) ([]models.BOM, int64, error) {
@@ -603,8 +679,11 @@ func SaveBOM(ctx context.Context, input SaveBOMInput) (BOMDetailResponse, error)
 				return fmt.Errorf("[CRITICAL] Cannot modify a locked BOM (ID: %s)", existing.ID)
 			}
 
-			// ✅ 乐观锁版本检查
-			if input.Version > 0 && existing.Version != input.Version {
+			// ✅ 乐观锁版本检查（强制要求版本号）
+			if input.Version <= 0 {
+				return fmt.Errorf("[VALIDATION] version is required for update operations")
+			}
+			if existing.Version != input.Version {
 				return fmt.Errorf("[CONFLICT] BOM has been modified by another user (expected v%d, got v%d)", input.Version, existing.Version)
 			}
 
@@ -647,9 +726,24 @@ func SaveBOM(ctx context.Context, input SaveBOMInput) (BOMDetailResponse, error)
 			if err := writeBOMVersionSnapshotTx(ctx, tx, saved, "SAVE"); err != nil {
 				return err
 			}
-			payload := bomAuditSnapshot(saved)
-			payload["operation"] = "update"
-			return writeBOMAuditEntryWithContext(ctx, tx, saved.ID, "SAVE", before, payload)
+			
+			// 🔥 处理 SDRTS Delta（在保存成功后）
+			if input.SidecarDelta != nil && len(input.SidecarDelta.Entries) > 0 {
+				fmt.Printf("[SDRTS] Processing %d delta entries for BOM %s\n", len(input.SidecarDelta.Entries), saved.ID)
+				if err := processSidecarDelta(ctx, tx, saved.ID, input.SidecarDelta); err != nil {
+					// Delta 处理失败不阻塞主流程，只记录警告
+					fmt.Printf("[WARN] Failed to process sidecar delta: %v\n", err)
+				}
+			} else {
+				// 降级：记录全量变更（兼容旧版本前端）
+				payload := bomAuditSnapshot(saved)
+				payload["operation"] = "update"
+				if err := writeBOMAuditEntryWithContext(ctx, tx, saved.ID, "SAVE", before, payload); err != nil {
+					fmt.Printf("[WARN] Failed to write fallback audit log: %v\n", err)
+				}
+			}
+			
+			return nil
 		}
 
 		modelInput.Status = models.BOMStatusDraft
@@ -783,8 +877,11 @@ func PromoteBOMStatus(ctx context.Context, id string, input PromoteBOMStatusInpu
 			return err
 		}
 
-		// ✅ 乐观锁版本检查
-		if input.ExpectedVersion != nil && existing.Version != *input.ExpectedVersion {
+		// ✅ 强制乐观锁版本检查
+		if input.ExpectedVersion == nil {
+			return fmt.Errorf("[VALIDATION] expectedVersion is required for status promotion")
+		}
+		if existing.Version != *input.ExpectedVersion {
 			return fmt.Errorf("[CONFLICT] BOM has been modified by another user (expected v%d, got v%d)", *input.ExpectedVersion, existing.Version)
 		}
 
@@ -866,6 +963,11 @@ func DeriveMBOMFromEBOM(ctx context.Context, ebomID string, input DeriveMBOMInpu
 			return err
 		}
 
+		// ✅ 强制版本检查（防止基于过期版本派生）
+		if input.SourceVersion != nil && ebom.Version != *input.SourceVersion {
+			return fmt.Errorf("[CONFLICT] Source EBOM has been modified (expected v%d, got v%d). Please refresh and try again", *input.SourceVersion, ebom.Version)
+		}
+
 		// 2. 验证源BOM类型与状态
 		if ebom.BOMType != models.BOMTypeEBOM {
 			return fmt.Errorf("%w: source BOM must be EBOM, got %s", ErrInvalidBOMType, ebom.BOMType)
@@ -923,7 +1025,7 @@ func DeriveMBOMFromEBOM(ctx context.Context, ebomID string, input DeriveMBOMInpu
 		}
 
 		if strings.TrimSpace(mbom.Description) == "" {
-			mbom.Description = fmt.Sprintf("Derived from EBOM %s", ebom.BOMNo)
+			mbom.Description = fmt.Sprintf("Derived from EBOM %s (v%d)", ebom.BOMNo, ebom.Version)
 		}
 		if strings.TrimSpace(mbom.MasterDataControl.RevisionNo) == "" {
 			mbom.MasterDataControl.RevisionNo = "R1"
@@ -956,6 +1058,7 @@ func DeriveMBOMFromEBOM(ctx context.Context, ebomID string, input DeriveMBOMInpu
 		payload["operation"] = "derive"
 		payload["sourceEbomId"] = ebomID
 		payload["sourceEbomNo"] = ebom.BOMNo
+		payload["sourceEbomVersion"] = ebom.Version
 		return writeBOMAuditEntryWithContext(ctx, tx, saved.ID, "DERIVE", nil, payload)
 	})
 

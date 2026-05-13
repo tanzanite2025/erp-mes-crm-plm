@@ -1,11 +1,13 @@
 import { type BOMSectionOption } from '../data/bom-section-schema'
 import {
-  resolveBOMWorkspaceSourceBranchNodeId,
-  resolveBOMWorkspaceSourceCollectionBranchNodeId,
   type BOMWorkspaceParentChildrenProtocolBranchDraft,
   type BOMWorkspaceParentChildrenProtocolDraft,
   type BOMWorkspaceParentChildrenProtocolItemDraft,
 } from './bom-workspace-branch-relation-builder'
+import {
+  resolveSectionBranchNodeId,
+  resolveCollectionBranchNodeId,
+} from '../utils/bom-node-id-resolver'
 
 interface MergeBOMWorkspaceParentChildrenProtocolDraftsParams {
   activeSections: BOMSectionOption[]
@@ -15,7 +17,7 @@ interface MergeBOMWorkspaceParentChildrenProtocolDraftsParams {
 
 function createFallbackSectionBranchDraft(section: BOMSectionOption): BOMWorkspaceParentChildrenProtocolBranchDraft {
   return {
-    id: resolveBOMWorkspaceSourceBranchNodeId(section.code),
+    id: resolveSectionBranchNodeId(section.code),
     parentId: 'root',
     children: [],
     nodeKind: 'branch',
@@ -181,7 +183,7 @@ export function mergeBOMWorkspaceParentChildrenProtocolDrafts({
       return undefined
     }
 
-    const preferredBranchId = resolveBOMWorkspaceSourceCollectionBranchNodeId(sectionCode)
+    const preferredBranchId = resolveCollectionBranchNodeId(sectionCode)
     if (finalBranchById.has(preferredBranchId)) {
       return preferredBranchId
     }

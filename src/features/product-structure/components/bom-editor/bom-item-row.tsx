@@ -21,9 +21,10 @@ interface BOMItemRowProps {
   onRemove: (index: number) => void
   measureElement?: (el: HTMLTableRowElement | null) => void
   dataIndex?: number
+  canEdit?: boolean
 }
 
-export function BOMItemRow({ form, index, materials, materialMap, onRemove, measureElement, dataIndex }: BOMItemRowProps) {
+export function BOMItemRow({ form, index, materials, materialMap, onRemove, measureElement, dataIndex, canEdit = true }: BOMItemRowProps) {
   const { t } = useLanguage()
 
   return (
@@ -37,6 +38,7 @@ export function BOMItemRow({ form, index, materials, materialMap, onRemove, meas
         index={index}
         sortedMaterials={materials}
         materialMap={materialMap}
+        disabled={!canEdit}
       />
 
       <TableCell className='px-1 py-3'>
@@ -49,6 +51,7 @@ export function BOMItemRow({ form, index, materials, materialMap, onRemove, meas
               className='h-10 rounded-xl border-none bg-muted/30 px-2 text-[11px] font-bold shadow-inner'
               {...field}
               onChange={(event) => field.onChange(parseFloat(event.target.value))}
+              disabled={!canEdit}
             />
           )}
         />
@@ -70,6 +73,7 @@ export function BOMItemRow({ form, index, materials, materialMap, onRemove, meas
                 const wastage = form.getValues(`items.${index}.wastagePercent`) || 0
                 form.setValue(`items.${index}.standardUsage`, parseFloat((val * (1 + wastage / 100)).toFixed(6)), { shouldDirty: true })
               }}
+              disabled={!canEdit}
             />
           )}
         />
@@ -90,6 +94,7 @@ export function BOMItemRow({ form, index, materials, materialMap, onRemove, meas
                 const usage = form.getValues(`items.${index}.unitUsage`) || 0
                 form.setValue(`items.${index}.standardUsage`, parseFloat((usage * (1 + val / 100)).toFixed(6)), { shouldDirty: true })
               }}
+              disabled={!canEdit}
             />
           )}
         />
@@ -119,6 +124,7 @@ export function BOMItemRow({ form, index, materials, materialMap, onRemove, meas
               className='h-10 rounded-xl bg-white px-2 text-[11px] shadow-inner'
               {...field}
               placeholder={t('engineering.bomArchive.itemTable.memoPlaceholder')}
+              disabled={!canEdit}
             />
           )}
         />
@@ -131,6 +137,7 @@ export function BOMItemRow({ form, index, materials, materialMap, onRemove, meas
           size='icon'
           className='size-8 rounded-full opacity-20 shadow-sm transition-all hover:bg-rose-600 hover:text-white group-hover:opacity-100'
           onClick={() => onRemove(index)}
+          disabled={!canEdit}
         >
           <Trash2 className='size-4' />
         </Button>

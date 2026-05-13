@@ -1,7 +1,6 @@
 import {
   buildParentChildrenProtocolBranchRelations,
   buildSyntheticBOMWorkspaceBranchRelations,
-  type BOMWorkspaceBranchRelationBuildParams,
   type BOMWorkspaceBranchRelationBuilder,
   type BOMWorkspaceParentChildrenProtocolDraft,
 } from './bom-workspace-branch-relation-builder'
@@ -20,11 +19,7 @@ export function resolveBOMWorkspaceBranchRelationBuilder({
   }
 
   if (protocolDraft) {
-    return (params: BOMWorkspaceBranchRelationBuildParams) =>
-      buildParentChildrenProtocolBranchRelations({
-        ...params,
-        protocolDraft,
-      })
+    return buildParentChildrenProtocolBranchRelations(protocolDraft)
   }
 
   return buildSyntheticBOMWorkspaceBranchRelations

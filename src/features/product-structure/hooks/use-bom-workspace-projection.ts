@@ -6,11 +6,11 @@ import { type BOM } from '../data/schema'
 import { getActiveBOMSections, getDefaultBOMSectionCode } from '../utils/bom-section-utils'
 import {
   buildBOMWorkspaceSourceModel,
-  type BOMWorkspaceParentChildrenProtocolDraft,
   type BOMWorkspaceSourceBranchNode,
   type BOMWorkspaceSourceLeafNode,
   type BOMWorkspaceSourceNode,
-} from './bom-workspace-source-model'
+} from './bom-workspace-source'
+import { type BOMWorkspaceParentChildrenProtocolDraft } from './bom-workspace-branch-relation-builder'
 
 export type BOMWorkspaceViewMode = 'summary' | 'group'
 export type BOMWorkspaceSyntheticKind = 'group-empty' | 'append-row'

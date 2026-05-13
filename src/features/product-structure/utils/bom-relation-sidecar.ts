@@ -1,4 +1,4 @@
-import { type BOMWorkspaceParentChildrenProtocolDraft } from '../hooks/bom-workspace-source-model'
+import { type BOMWorkspaceParentChildrenProtocolDraft } from '../hooks/bom-workspace-branch-relation'
 
 export interface BOMRelationSidecar {
   kind: 'parent_children_protocol'

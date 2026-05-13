@@ -172,3 +172,41 @@ func GetSafeUsernamePtr(c *gin.Context) *string {
 	username := GetSafeUsername(c)
 	return &username
 }
+
+// GetUserPermissions safely gets user permissions from context
+func GetUserPermissions(c *gin.Context) []string {
+	permissions, ok := c.Get("permissions")
+	if !ok {
+		return []string{}
+	}
+
+	// 处理不同类型的权限数据
+	switch v := permissions.(type) {
+	case []string:
+		return v
+	case string:
+		// 如果是逗号分隔的字符串，分割它
+		if v == "" {
+			return []string{}
+		}
+		parts := strings.Split(v, ",")
+		result := make([]string, 0, len(parts))
+		for _, part := range parts {
+			trimmed := strings.TrimSpace(part)
+			if trimmed != "" {
+				result = append(result, trimmed)
+			}
+		}
+		return result
+	case []interface{}:
+		result := make([]string, 0, len(v))
+		for _, item := range v {
+			if str, ok := item.(string); ok {
+				result = append(result, str)
+			}
+		}
+		return result
+	default:
+		return []string{}
+	}
+}

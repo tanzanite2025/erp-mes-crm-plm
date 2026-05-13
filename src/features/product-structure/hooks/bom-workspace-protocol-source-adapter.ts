@@ -1,11 +1,13 @@
 import { type BOMSectionOption } from '../data/bom-section-schema'
 import { type BOM } from '../data/schema'
 import {
-  resolveBOMWorkspaceSourceBranchNodeId,
-  resolveBOMWorkspaceSourceCollectionBranchNodeId,
-  resolveBOMWorkspaceSourceLeafNodeId,
   type BOMWorkspaceParentChildrenProtocolDraft,
 } from './bom-workspace-branch-relation-builder'
+import {
+  resolveSectionBranchNodeId,
+  resolveCollectionBranchNodeId,
+  resolveLeafNodeId,
+} from '../utils/bom-node-id-resolver'
 import { mergeBOMWorkspaceParentChildrenProtocolDrafts } from './bom-workspace-protocol-merge'
 
 interface BuildBOMWorkspaceParentChildrenProtocolDraftFromBOMDetailSourceParams {
@@ -39,10 +41,10 @@ function buildLiveBOMWorkspaceParentChildrenProtocolDraftFromBOMDetailSource({
   const activeSectionCodeSet = new Set(activeSections.map((section) => section.code))
 
   return {
-    rootChildren: activeSections.map((section) => resolveBOMWorkspaceSourceBranchNodeId(section.code)),
+    rootChildren: activeSections.map((section) => resolveSectionBranchNodeId(section.code)),
     branchNodes: activeSections.flatMap((section) => {
-      const sectionBranchNodeId = resolveBOMWorkspaceSourceBranchNodeId(section.code)
-      const collectionBranchNodeId = resolveBOMWorkspaceSourceCollectionBranchNodeId(section.code)
+      const sectionBranchNodeId = resolveSectionBranchNodeId(section.code)
+      const collectionBranchNodeId = resolveCollectionBranchNodeId(section.code)
 
       return [
         {
@@ -64,7 +66,7 @@ function buildLiveBOMWorkspaceParentChildrenProtocolDraftFromBOMDetailSource({
             }
 
             const fieldId = resolveProtocolFieldId(fields, sourceBOM.id, index)
-            return [resolveBOMWorkspaceSourceLeafNodeId(item.id, fieldId)]
+            return [resolveLeafNodeId(item.id, fieldId)]
           }),
           nodeKind: 'branch' as const,
           branchRole: 'collection' as const,
@@ -83,8 +85,8 @@ function buildLiveBOMWorkspaceParentChildrenProtocolDraftFromBOMDetailSource({
       const normalizedItemId = item.id?.trim()
 
       return [{
-        id: resolveBOMWorkspaceSourceLeafNodeId(item.id, fieldId),
-        parentId: resolveBOMWorkspaceSourceCollectionBranchNodeId(item.section),
+        id: resolveLeafNodeId(item.id, fieldId),
+        parentId: resolveCollectionBranchNodeId(item.section),
         children: [],
         nodeKind: 'item' as const,
         sectionCode: item.section,

@@ -1,124 +1,49 @@
-import { type BOMSectionOption } from '../data/bom-section-schema'
-import { type BOM } from '../data/schema'
-import {
-  type BOMWorkspaceBranchRelationBuilder,
-  type BOMWorkspaceParentChildrenProtocolDraft,
-  type BOMWorkspaceSourceBranchNode,
-  type BOMWorkspaceSourceLeafNode,
-} from './bom-workspace-branch-relation-builder'
-import { resolveBOMWorkspaceBranchRelationBuilder } from './bom-workspace-branch-relation-builder-resolver'
+/**
+ * @deprecated 此文件已被拆分为更小的模块，请使用新的模块结构
+ * 
+ * ## 迁移指南
+ * 
+ * ### 类型导入
+ * ```typescript
+ * // 旧代码
+ * import { BOMWorkspaceSourceModel } from './bom-workspace-source-model'
+ * 
+ * // 新代码（推荐）
+ * import { BOMWorkspaceSourceModel } from './bom-workspace-source/types'
+ * // 或使用统一入口
+ * import { BOMWorkspaceSourceModel } from './bom-workspace-source'
+ * ```
+ * 
+ * ### 函数导入
+ * ```typescript
+ * // 旧代码
+ * import { buildBOMWorkspaceSourceModel } from './bom-workspace-source-model'
+ * 
+ * // 新代码（推荐）
+ * import { buildBOMWorkspaceSourceModel } from './bom-workspace-source/model-builder'
+ * // 或使用统一入口
+ * import { buildBOMWorkspaceSourceModel } from './bom-workspace-source'
+ * ```
+ * 
+ * ### Branch Relation 导入
+ * ```typescript
+ * // 旧代码
+ * import { buildSyntheticBOMWorkspaceBranchRelations } from './bom-workspace-source-model'
+ * 
+ * // 新代码（推荐）
+ * import { buildSyntheticBOMWorkspaceBranchRelations } from './bom-workspace-branch-relation/synthetic-builder'
+ * // 或使用统一入口
+ * import { buildSyntheticBOMWorkspaceBranchRelations } from './bom-workspace-branch-relation'
+ * ```
+ * 
+ * **此兼容层将在未来版本移除，请尽快迁移到新的模块结构。**
+ */
 
-export type BOMWorkspaceSourceNodeKind = 'root' | 'branch' | 'leaf'
-export {
-  buildParentChildrenProtocolBranchRelations,
-  buildSyntheticBOMWorkspaceBranchRelations,
-  resolveBOMWorkspaceBranchRelationBuilder,
-  resolveBOMWorkspaceSourceBranchNodeId,
-  resolveBOMWorkspaceSourceCollectionBranchNodeId,
-  resolveBOMWorkspaceSourceLeafNodeId,
-} from './bom-workspace-branch-relation-builder'
-export type {
-  BOMWorkspaceParentChildrenProtocolBranchDraft,
-  BOMWorkspaceParentChildrenProtocolDraft,
-  BOMWorkspaceParentChildrenProtocolItemDraft,
-  BOMWorkspaceBranchRelationBuildParams,
-  BOMWorkspaceBranchRelationBuildResult,
-  BOMWorkspaceBranchRelationBuilder,
-  BOMWorkspaceSourceBranchNode,
-  BOMWorkspaceSourceBranchRole,
-  BOMWorkspaceSourceLeafNode,
-  BuildBOMWorkspaceParentChildrenProtocolBranchRelationsParams,
-  ResolveBOMWorkspaceBranchRelationBuilderParams,
-} from './bom-workspace-branch-relation-builder'
+// Re-export all content from new modules for backward compatibility
+export * from './bom-workspace-source/types'
+export * from './bom-workspace-source/model-builder'
+export * from './bom-workspace-branch-relation/types'
+export * from './bom-workspace-branch-relation/synthetic-builder'
+export * from './bom-workspace-branch-relation/protocol-adapter'
+export * from './bom-workspace-branch-relation/builder-resolver'
 
-export interface BOMWorkspaceSourceBaseNode {
-  nodeId: string
-  parentNodeId: string | null
-  childNodeIds: string[]
-  nodeKind: BOMWorkspaceSourceNodeKind
-  sectionCode: string
-  sectionName: string
-}
-
-export interface BOMWorkspaceSourceRootNode extends BOMWorkspaceSourceBaseNode {
-  nodeKind: 'root'
-}
-
-export type BOMWorkspaceSourceNode =
-  | BOMWorkspaceSourceRootNode
-  | BOMWorkspaceSourceBranchNode
-  | BOMWorkspaceSourceLeafNode
-
-export interface BOMWorkspaceSourceModel {
-  rootNode: BOMWorkspaceSourceRootNode
-  sourceNodes: BOMWorkspaceSourceNode[]
-  nodeById: Map<string, BOMWorkspaceSourceNode>
-  branchNodes: BOMWorkspaceSourceBranchNode[]
-  sectionBranchNodes: BOMWorkspaceSourceBranchNode[]
-  collectionBranchNodes: BOMWorkspaceSourceBranchNode[]
-  leafNodes: BOMWorkspaceSourceLeafNode[]
-}
-
-interface BuildBOMWorkspaceSourceModelParams {
-  activeSections: BOMSectionOption[]
-  fields: Array<{ id: string }>
-  watchedItems?: BOM['items']
-  resolveNumericField: (index: number, fieldName: 'unitPrice' | 'standardUsage', value: unknown) => number
-  branchRelationBuilder?: BOMWorkspaceBranchRelationBuilder
-  protocolDraft?: BOMWorkspaceParentChildrenProtocolDraft
-}
-
-export function resolveBOMWorkspaceSourceRootNodeId() {
-  return 'root'
-}
-
-export function buildBOMWorkspaceSourceModel({
-  activeSections,
-  fields,
-  watchedItems,
-  resolveNumericField,
-  branchRelationBuilder,
-  protocolDraft,
-}: BuildBOMWorkspaceSourceModelParams): BOMWorkspaceSourceModel {
-  const rootNodeId = resolveBOMWorkspaceSourceRootNodeId()
-  const resolvedBranchRelationBuilder = resolveBOMWorkspaceBranchRelationBuilder({
-    branchRelationBuilder,
-    protocolDraft,
-  })
-
-  const {
-    rootChildNodeIds,
-    branchNodes,
-    sectionBranchNodes,
-    collectionBranchNodes,
-    leafNodes,
-  } = resolvedBranchRelationBuilder({
-    activeSections,
-    fields,
-    watchedItems,
-    resolveNumericField,
-    rootNodeId,
-  })
-
-  const rootNode: BOMWorkspaceSourceRootNode = {
-    nodeId: rootNodeId,
-    parentNodeId: null,
-    childNodeIds: rootChildNodeIds,
-    nodeKind: 'root',
-    sectionCode: '',
-    sectionName: '',
-  }
-
-  const sourceNodes: BOMWorkspaceSourceNode[] = [rootNode, ...branchNodes, ...leafNodes]
-  const nodeById = new Map(sourceNodes.map((node) => [node.nodeId, node]))
-
-  return {
-    rootNode,
-    sourceNodes,
-    nodeById,
-    branchNodes,
-    sectionBranchNodes,
-    collectionBranchNodes,
-    leafNodes,
-  }
-}

@@ -27,9 +27,10 @@ interface ItemTableProps {
   onRemove: (index: number) => void
   onBranchToggle?: (branchKey: string) => void
   onAdd: (sectionCode?: string) => void
+  canEdit?: boolean
 }
 
-export function ItemTable({ form, nodes, materials, onRemove, onBranchToggle, onAdd }: ItemTableProps) {
+export function ItemTable({ form, nodes, materials, onRemove, onBranchToggle, onAdd, canEdit = true }: ItemTableProps) {
   const { t } = useLanguage()
   const parentRef = React.useRef<HTMLDivElement>(null)
   const count = nodes.length
@@ -147,31 +148,46 @@ export function ItemTable({ form, nodes, materials, onRemove, onBranchToggle, on
                   key={node.key}
                   data-index={virtualRow.index}
                   ref={virtualizer.measureElement}
-                  className='group/add-row h-[52px] cursor-pointer border-t-2 border-dashed border-muted transition-all hover:bg-blue-600'
-                  onClick={() => onAdd(node.sectionCode)}
+                  className={cn(
+                    'group/add-row h-[52px] border-t-2 border-dashed border-muted transition-all',
+                    canEdit ? 'cursor-pointer hover:bg-blue-600' : 'cursor-not-allowed opacity-50'
+                  )}
+                  onClick={() => canEdit && onAdd(node.sectionCode)}
                 >
                   <TableCell colSpan={7} className='px-6 py-3' style={{ paddingLeft: `${28 + node.depth * 20}px` }}>
                     {isEmptyState ? (
                       <div className='flex flex-col items-center justify-center gap-3 py-10 transition-transform group-hover/add-row:scale-[1.01]'>
-                        <div className='flex size-12 items-center justify-center rounded-[18px] border-[3px] border-white bg-blue-600 text-white shadow-xl transition-all group-hover/add-row:rotate-0 rotate-3'>
+                        <div className={cn(
+                          'flex size-12 items-center justify-center rounded-[18px] border-[3px] border-white shadow-xl transition-all rotate-3',
+                          canEdit ? 'bg-blue-600 text-white group-hover/add-row:rotate-0' : 'bg-muted text-muted-foreground'
+                        )}>
                           <Plus className='size-7 stroke-3' />
                         </div>
                         <div className='text-center'>
-                          <p className='text-[11px] font-black uppercase tracking-widest text-slate-800 transition-colors group-hover/add-row:text-white'>
-                            {t('engineering.bomArchive.itemTable.initialize')}
+                          <p className={cn(
+                            'text-[11px] font-black uppercase tracking-widest transition-colors',
+                            canEdit ? 'text-slate-800 group-hover/add-row:text-white' : 'text-muted-foreground'
+                          )}>
+                            {canEdit ? t('engineering.bomArchive.itemTable.initialize') : 'Read Only'}
                           </p>
                           <p className='mt-1 text-[9px] font-bold uppercase tracking-widest italic text-muted-foreground/60 transition-colors group-hover/add-row:text-blue-100'>
-                            {t('engineering.bomArchive.itemTable.initializeHint')}
+                            {canEdit ? t('engineering.bomArchive.itemTable.initializeHint') : 'BOM is locked'}
                           </p>
                         </div>
                       </div>
                     ) : (
-                      <div className='flex items-center gap-3 text-blue-600 transition-all group-hover/add-row:text-white'>
-                        <div className='flex size-5 items-center justify-center rounded-full border-2 border-white bg-blue-600 text-white shadow-md'>
+                      <div className={cn(
+                        'flex items-center gap-3 transition-all',
+                        canEdit ? 'text-blue-600 group-hover/add-row:text-white' : 'text-muted-foreground'
+                      )}>
+                        <div className={cn(
+                          'flex size-5 items-center justify-center rounded-full border-2 border-white shadow-md',
+                          canEdit ? 'bg-blue-600 text-white' : 'bg-muted text-muted-foreground'
+                        )}>
                           <Plus className='size-4 stroke-3' />
                         </div>
                         <span className='text-[9px] font-black uppercase tracking-widest'>
-                          {t('engineering.bomArchive.itemTable.append')}
+                          {canEdit ? t('engineering.bomArchive.itemTable.append') : 'Read Only'}
                         </span>
                       </div>
                     )}
@@ -192,6 +208,7 @@ export function ItemTable({ form, nodes, materials, onRemove, onBranchToggle, on
                 onRemove={onRemove}
                 measureElement={virtualizer.measureElement}
                 dataIndex={virtualRow.index}
+                canEdit={canEdit}
               />
             )
           })}

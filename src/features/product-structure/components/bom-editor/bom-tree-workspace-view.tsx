@@ -12,9 +12,10 @@ interface BOMTreeWorkspaceViewProps {
   onRemove: (index: number) => void
   onBranchToggle: (branchKey: string) => void
   onAdd: (sectionCode?: string) => void
+  canEdit?: boolean
 }
 
-export function BOMTreeWorkspaceView({ form, nodes, materials, onRemove, onBranchToggle, onAdd }: BOMTreeWorkspaceViewProps) {
+export function BOMTreeWorkspaceView({ form, nodes, materials, onRemove, onBranchToggle, onAdd, canEdit = true }: BOMTreeWorkspaceViewProps) {
   const { t } = useLanguage()
 
   if (nodes.length === 0) {
@@ -40,6 +41,7 @@ export function BOMTreeWorkspaceView({ form, nodes, materials, onRemove, onBranc
               onRemove={onRemove}
               onBranchToggle={onBranchToggle}
               onAdd={onAdd}
+              canEdit={canEdit}
             />
           </div>
         </div>

@@ -61,7 +61,7 @@ func respondVersionConflict(c *gin.Context) {
 	})
 }
 
-// auditContextFromGin 从 Gin Context 构造带审计身份的标准 Context
+// auditContextFromGin 从 Gin Context 构造带审计身份和权限的标准 Context
 func auditContextFromGin(c *gin.Context) context.Context {
 	actor := audit.AuditActor{
 		UserID:   middleware.GetSafeUserID(c),
@@ -69,7 +69,11 @@ func auditContextFromGin(c *gin.Context) context.Context {
 		IP:       c.ClientIP(),
 		Source:   "http",
 	}
-	return audit.NewContextWithActor(c.Request.Context(), actor)
+	
+	// 获取用户权限
+	permissions := middleware.GetUserPermissions(c)
+	
+	return audit.NewContextWithActorAndPermissions(c.Request.Context(), actor, permissions)
 }
 
 func normalizeOptionalUUIDString(value string) (string, error) {

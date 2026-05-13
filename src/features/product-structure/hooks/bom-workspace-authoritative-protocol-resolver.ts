@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { type BOMWorkspaceParentChildrenProtocolDraft } from './bom-workspace-source-model'
+import { type BOMWorkspaceParentChildrenProtocolDraft } from './bom-workspace-branch-relation'
 
 const branchRoleSchema = z.enum(['section', 'collection'])
 

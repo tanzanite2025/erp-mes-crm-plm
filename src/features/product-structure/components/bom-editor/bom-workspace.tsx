@@ -4,6 +4,7 @@ import { type BOMSectionOption } from '../../data/bom-section-schema'
 import { type BOM } from '../../data/schema'
 import { type BOMWorkspaceParentChildrenProtocolDraft } from '../../hooks/bom-workspace-source-model'
 import { useBOMWorkspace } from '../../hooks/use-bom-workspace'
+import { type BOMPermissionGuard } from '../../hooks/use-bom-permission-guard'
 import { BOMFlatWorkspaceView } from './bom-flat-workspace-view'
 
 interface BOMWorkspaceProps {
@@ -14,22 +15,27 @@ interface BOMWorkspaceProps {
   append: (obj: BOM['items'][number]) => void
   remove: (index: number) => void
   protocolDraft?: BOMWorkspaceParentChildrenProtocolDraft
+  permissionGuard?: BOMPermissionGuard
 }
 
-export function BOMWorkspace({ form, fields, materials, sections, append, remove, protocolDraft }: BOMWorkspaceProps) {
+export function BOMWorkspace({ form, fields, materials, sections, append, remove, protocolDraft, permissionGuard }: BOMWorkspaceProps) {
   const workspace = useBOMWorkspace({
     form,
     fields,
     sections,
     append,
     protocolDraft,
+    permissionGuard,
   })
+
+  // Wrap remove with permission guard if provided
+  const guardedRemove = permissionGuard?.guardedRemove(remove) ?? remove
 
   return (
     <BOMFlatWorkspaceView
       form={form}
       materials={materials}
-      remove={remove}
+      remove={guardedRemove}
       groups={workspace.groups}
       groupNodes={workspace.groupNodes}
       activeGroupKey={workspace.activeGroupKey}
@@ -38,6 +44,7 @@ export function BOMWorkspace({ form, fields, materials, sections, append, remove
       visibleTreeNodes={workspace.visibleTreeNodes}
       onBranchToggle={workspace.toggleBranchExpanded}
       onAddItem={() => workspace.appendItem()}
+      canEdit={workspace.canEdit}
     />
   )
 }

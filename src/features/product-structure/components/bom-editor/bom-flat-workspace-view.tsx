@@ -25,6 +25,7 @@ export interface BOMFlatWorkspaceViewProps {
   visibleTreeNodes: BOMWorkspaceNode[]
   onBranchToggle: (branchKey: string) => void
   onAddItem: (sectionCode?: string) => void
+  canEdit?: boolean
 }
 
 export function BOMFlatWorkspaceView({
@@ -39,6 +40,7 @@ export function BOMFlatWorkspaceView({
   visibleTreeNodes,
   onBranchToggle,
   onAddItem,
+  canEdit = true,
 }: BOMFlatWorkspaceViewProps) {
   const { t } = useLanguage()
   const activeModeTab = viewMode === 'summary' ? 'all' : 'tree'
@@ -89,6 +91,7 @@ export function BOMFlatWorkspaceView({
               onRemove={(index) => remove(index)}
               onBranchToggle={onBranchToggle}
               onAdd={onAddItem}
+              canEdit={canEdit}
             />
           )}
         </div>

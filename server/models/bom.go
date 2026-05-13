@@ -46,4 +46,5 @@ type BOMItem struct {
 	StandardUsage  float64 `json:"standardUsage"`
 	MaterialType   string  `gorm:"size:50" json:"materialType"`
 	SupplyChannel  string  `gorm:"size:100" json:"supplyChannel"`
+	SortOrder      int     `gorm:"default:0" json:"sortOrder"`
 }

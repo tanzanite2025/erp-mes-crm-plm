@@ -54,6 +54,7 @@ describe('useBOMWorkspaceProjection', () => {
         unitUsage: 1,
         wastagePercent: 0,
         standardUsage: 3,
+        sortOrder: 0,
         materialType: '',
         supplyChannel: '',
       }],

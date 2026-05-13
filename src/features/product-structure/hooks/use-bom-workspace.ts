@@ -3,8 +3,9 @@ import type { UseFormReturn } from 'react-hook-form'
 import { type BOMSectionOption } from '../data/bom-section-schema'
 import { type BOM } from '../data/schema'
 import { createEmptyBOMItem } from '../utils/bom-form-defaults'
-import { type BOMWorkspaceParentChildrenProtocolDraft } from './bom-workspace-source-model'
+import { type BOMWorkspaceParentChildrenProtocolDraft } from './bom-workspace-branch-relation'
 import { useBOMWorkspaceProjection } from './use-bom-workspace-projection'
+import { type BOMPermissionGuard } from './use-bom-permission-guard'
 
 interface UseBOMWorkspaceParams {
   form: UseFormReturn<BOM>
@@ -12,9 +13,10 @@ interface UseBOMWorkspaceParams {
   sections: BOMSectionOption[]
   append: (obj: BOM['items'][number]) => void
   protocolDraft?: BOMWorkspaceParentChildrenProtocolDraft
+  permissionGuard?: BOMPermissionGuard
 }
 
-export function useBOMWorkspace({ form, fields, sections, append, protocolDraft }: UseBOMWorkspaceParams) {
+export function useBOMWorkspace({ form, fields, sections, append, protocolDraft, permissionGuard }: UseBOMWorkspaceParams) {
   const [activeGroupKey, setActiveGroupKey] = useState<string>('all')
   const [expandedBranchKeys, setExpandedBranchKeys] = useState<string[]>([])
   const projection = useBOMWorkspaceProjection({
@@ -25,6 +27,9 @@ export function useBOMWorkspace({ form, fields, sections, append, protocolDraft 
     expandedBranchKeys,
     protocolDraft,
   })
+
+  // Wrap append with permission guard if provided
+  const guardedAppend = permissionGuard?.guardedAppend(append) ?? append
 
   const collectDescendantBranchNodeIds = (sourceBranchNodeId: string): string[] => {
     const sourceNode = projection.sourceModel.nodeById.get(sourceBranchNodeId)
@@ -73,9 +78,10 @@ export function useBOMWorkspace({ form, fields, sections, append, protocolDraft 
   }
 
   const appendItem = (sectionCode?: string) => {
+    // Permission check enforced through guardedAppend
     const resolvedSectionCode = sectionCode || projection.appendContext.sectionCode
 
-    append(createEmptyBOMItem(resolvedSectionCode))
+    guardedAppend(createEmptyBOMItem(resolvedSectionCode))
   }
 
   return {
@@ -94,5 +100,6 @@ export function useBOMWorkspace({ form, fields, sections, append, protocolDraft 
     visibleLeafRows: projection.visibleLeafRows,
     appendContext: projection.appendContext,
     appendItem,
+    canEdit: permissionGuard?.canEdit ?? true,
   }
 }

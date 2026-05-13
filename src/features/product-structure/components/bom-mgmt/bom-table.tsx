@@ -25,7 +25,7 @@ import {
 import { deriveBomDisplayVersion, normalizeBomChangeType, normalizeBomStatus, normalizeEngineeringDateProtocol } from '@/lib/codecs/code-normalization'
 import { cn } from '@/lib/utils'
 import { type BOMSectionOption } from '../../data/bom-section-schema'
-import { type BOM, type Product } from '../../data/schema'
+import { type BOM, type Product, type BOMItem } from '../../data/schema'
 import { resolveBOMProductDisplaySummary } from '../../utils/bom-product-display'
 import { resolveBOMSectionLabel } from '../../utils/bom-section-utils'
 
@@ -82,7 +82,7 @@ export function BOMTable({
                     isMBOM ? 'bg-indigo-500/10 text-indigo-600' : 'bg-blue-500/10 text-blue-600'
                   )}
                 >
-                  {t(`engineering.dict.${bomType}`)}
+                  {t(`engineering.dict.${bomType}` as any)}
                 </Badge>
               </div>
               <div className='mt-0.5 flex flex-wrap items-center gap-2'>
@@ -131,17 +131,17 @@ export function BOMTable({
       header: t('engineering.bomArchive.table.structure'),
       cell: ({ row }) => {
         const sectionLabels = Array.from(
-          new Set(
+          new Set<string>(
             row.original.items
-              .map((item) => resolveBOMSectionLabel(sections, item.section, item.section || ''))
-              .filter(Boolean)
+              .map((item: BOMItem) => resolveBOMSectionLabel(sections, item.section, item.section || ''))
+              .filter((label): label is string => Boolean(label))
           )
         )
 
         return (
           <div className='flex max-w-[240px] flex-wrap items-center gap-1.5'>
             {sectionLabels.length > 0 ? (
-              sectionLabels.map((section) => (
+              sectionLabels.map((section: string) => (
                 <Badge key={section} variant='outline' className='h-4 border-slate-200 bg-slate-50 px-1 py-0 text-[10px] text-slate-500'>
                   {section}
                 </Badge>

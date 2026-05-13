@@ -43,6 +43,44 @@ export function getDefaultBOMSectionCode(sections: BOMSectionOption[]) {
   )
 }
 
+/**
+ * 解析 BOM section
+ * 
+ * 支持多种输入格式：
+ * - section.code (如 "MAIN")
+ * - section.name (如 "主料")
+ * - section.value
+ * - section.label
+ * - legacyNames (如 "主要物料")
+ * 
+ * 解析过程：
+ * 1. 标准化输入值（去除空格，转大写）
+ * 2. 在候选 sections 中查找匹配项
+ * 3. 如果未找到，尝试使用 legacy code map
+ * 
+ * @param sections - 可用的 section 列表
+ * @param rawValue - 待解析的值
+ * @returns 匹配的 BOMSectionOption，如果未找到返回 undefined
+ * 
+ * @example
+ * ```typescript
+ * // 通过 code 解析
+ * const section = resolveBOMSection(sections, "MAIN")
+ * // 返回 { code: "MAIN", name: "主料", ... }
+ * 
+ * // 通过 name 解析
+ * const section = resolveBOMSection(sections, "主料")
+ * // 返回 { code: "MAIN", name: "主料", ... }
+ * 
+ * // 通过 legacy name 解析
+ * const section = resolveBOMSection(sections, "主要物料")
+ * // 返回 { code: "MAIN", name: "主料", ... }
+ * 
+ * // 未找到
+ * const section = resolveBOMSection(sections, "UNKNOWN")
+ * // 返回 undefined
+ * ```
+ */
 export function resolveBOMSection(sections: BOMSectionOption[], rawValue?: string | null) {
   const normalizedValue = normalizeSectionToken(rawValue)
   if (!normalizedValue) return undefined
