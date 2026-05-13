@@ -15,6 +15,95 @@ import (
 	"gorm.io/gorm"
 )
 
+// ValidBOMStatuses defines all valid BOM status values
+var ValidBOMStatuses = []string{
+	models.BOMStatusDraft,
+	models.BOMStatusReviewing,
+	models.BOMStatusApproved,
+	models.BOMStatusValidating,
+	models.BOMStatusReleased,
+	models.BOMStatusObsolete,
+}
+
+// ValidBOMTypes defines all valid BOM type values
+var ValidBOMTypes = []string{
+	models.BOMTypeEBOM,
+	models.BOMTypeMBOM,
+}
+
+// parseAndValidateStatuses parses comma-separated status string and validates each value
+func parseAndValidateStatuses(statusStr string) ([]string, error) {
+	if statusStr == "" {
+		return nil, nil
+	}
+
+	statuses := strings.Split(statusStr, ",")
+	var result []string
+	var invalid []string
+
+	for _, s := range statuses {
+		trimmed := strings.TrimSpace(strings.ToUpper(s))
+		if trimmed == "" {
+			continue
+		}
+
+		if !contains(ValidBOMStatuses, trimmed) {
+			invalid = append(invalid, s)
+		} else {
+			result = append(result, trimmed)
+		}
+	}
+
+	if len(invalid) > 0 {
+		return nil, fmt.Errorf("invalid status values: %s. Valid values are: %s",
+			strings.Join(invalid, ", "),
+			strings.Join(ValidBOMStatuses, ", "))
+	}
+
+	return result, nil
+}
+
+// parseAndValidateBOMTypes parses comma-separated BOM type string and validates each value
+func parseAndValidateBOMTypes(bomTypeStr string) ([]string, error) {
+	if bomTypeStr == "" {
+		return nil, nil
+	}
+
+	types := strings.Split(bomTypeStr, ",")
+	var result []string
+	var invalid []string
+
+	for _, t := range types {
+		trimmed := strings.TrimSpace(strings.ToUpper(t))
+		if trimmed == "" {
+			continue
+		}
+
+		if !contains(ValidBOMTypes, trimmed) {
+			invalid = append(invalid, t)
+		} else {
+			result = append(result, trimmed)
+		}
+	}
+
+	if len(invalid) > 0 {
+		return nil, fmt.Errorf("invalid BOM type values: %s. Valid values are: %s",
+			strings.Join(invalid, ", "),
+			strings.Join(ValidBOMTypes, ", "))
+	}
+
+	return result, nil
+}
+
+func contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
+}
+
 func ListBOMs(query BOMListQuery) ([]models.BOM, int64, error) {
 	page := query.Page
 	pageSize := query.PageSize
@@ -25,19 +114,35 @@ func ListBOMs(query BOMListQuery) ([]models.BOM, int64, error) {
 		pageSize = 50
 	}
 
+	// Validate and parse status filter
+	statuses, err := parseAndValidateStatuses(query.Status)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Validate and parse BOM type filter
+	bomTypes, err := parseAndValidateBOMTypes(query.BOMType)
+	if err != nil {
+		return nil, 0, err
+	}
+
 	productID := strings.TrimSpace(query.ProductID)
-	status := strings.TrimSpace(query.Status)
-	bomType := strings.TrimSpace(query.BOMType)
 
 	tx := db.DB.Model(&models.BOM{})
+	
+	// Apply product filter (existing)
 	if productID != "" {
 		tx = tx.Where("product_id = ?", productID)
 	}
-	if status != "" {
-		tx = tx.Where("status = ?", status)
+	
+	// Apply status filter (NEW - supports multiple values)
+	if len(statuses) > 0 {
+		tx = tx.Where("status IN ?", statuses)
 	}
-	if bomType != "" {
-		tx = tx.Where("bom_type = ?", bomType)
+	
+	// Apply BOM type filter (NEW - supports multiple values)
+	if len(bomTypes) > 0 {
+		tx = tx.Where("bom_type IN ?", bomTypes)
 	}
 
 	if query.Options {
@@ -72,7 +177,7 @@ func GetBOMByID(id string) (BOMDetailResponse, error) {
 	var bom models.BOM
 	if err := db.DB.
 		Preload("Product").
-		Preload("Items").
+		Preload("Items", func(db *gorm.DB) *gorm.DB { return db.Order("bom_items.sort_order ASC") }).
 		First(&bom, "id = ?", id).Error; err != nil {
 		return BOMDetailResponse{}, err
 	}
@@ -150,7 +255,7 @@ func checkBOMCircularReference(tx *gorm.DB, rootProductID string, currentMateria
 	// 查询以此物料 ID 作为产品 ID 的所有现有 BOM
 	var boms []models.BOM
 	if err := tx.Where("product_id = ? AND status != ?", currentMaterialID, models.BOMStatusObsolete).
-		Preload("Items").Find(&boms).Error; err != nil {
+		Preload("Items", func(db *gorm.DB) *gorm.DB { return db.Order("bom_items.sort_order ASC") }).Find(&boms).Error; err != nil {
 		return err
 	}
 
@@ -309,6 +414,7 @@ func saveBOMItems(tx *gorm.DB, bomID string, items []models.BOMItem) error {
 			items[idx].ID = uuid.NewString()
 		}
 		items[idx].BOMID = bomID
+		items[idx].SortOrder = idx // 持久化物理顺序
 		if err := tx.Session(&gorm.Session{FullSaveAssociations: true}).Create(&items[idx]).Error; err != nil {
 			return err
 		}
@@ -417,7 +523,7 @@ func SaveBOM(ctx context.Context, input SaveBOMInput) (BOMDetailResponse, error)
 			return err
 		}
 		if err := tx.
-			Preload("Items").
+			Preload("Items", func(db *gorm.DB) *gorm.DB { return db.Order("bom_items.sort_order ASC") }).
 			First(&saved, "id = ?", modelInput.ID).Error; err != nil {
 			return err
 		}
@@ -472,6 +578,52 @@ func DeleteBOM(ctx context.Context, id string) error {
 	})
 }
 
+// validateBOMBusinessIntegrity 校验 BOM 业务完整性（仅在发布时执行）
+func validateBOMBusinessIntegrity(tx *gorm.DB, bomID string, targetStatus string) error {
+	// 仅在发布（RELEASED）时校验
+	if targetStatus != models.BOMStatusReleased {
+		return nil
+	}
+
+	var bom models.BOM
+	if err := tx.Preload("Items").Where("id = ?", bomID).First(&bom).Error; err != nil {
+		return err
+	}
+
+	// 1. 校验：至少包含 1 行物料
+	if len(bom.Items) == 0 {
+		return fmt.Errorf("[VALIDATION] Cannot release an empty BOM (ID: %s). At least one material is required", bomID)
+	}
+
+	// 2. 校验：至少有一行物料的用量 > 0
+	hasValidUsage := false
+	for _, item := range bom.Items {
+		if item.UnitUsage > 0 || item.StandardUsage > 0 {
+			hasValidUsage = true
+			break
+		}
+	}
+	if !hasValidUsage {
+		return fmt.Errorf("[VALIDATION] Cannot release BOM with all zero-usage materials (ID: %s)", bomID)
+	}
+
+	// 3. 校验：所有物料必须存在且状态为 Active
+	for _, item := range bom.Items {
+		var material models.Material
+		if err := tx.Where("id = ?", item.MaterialID).First(&material).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return fmt.Errorf("[VALIDATION] BOM contains non-existent material (ID: %s)", item.MaterialID)
+			}
+			return err
+		}
+		if material.Status != "Active" {
+			return fmt.Errorf("[VALIDATION] BOM contains inactive material: %s - %s (Status: %s)", material.Code, material.Name, material.Status)
+		}
+	}
+
+	return nil
+}
+
 func PromoteBOMStatus(ctx context.Context, id string, input PromoteBOMStatusInput) (BOMDetailResponse, error) {
 	if strings.TrimSpace(id) == "" {
 		return BOMDetailResponse{}, ErrBOMIDRequired
@@ -489,21 +641,31 @@ func PromoteBOMStatus(ctx context.Context, id string, input PromoteBOMStatusInpu
 			return fmt.Errorf("[CONFLICT] BOM has been modified by another user (expected v%d, got v%d)", *input.ExpectedVersion, existing.Version)
 		}
 
-		// ✅ 状态转换验证
-		if guard := statemachine.CanTransitionBOMStatus(existing.Status, input.Status); !guard.Allowed {
+		// ✅ 状态转换验证（考虑BOM类型）
+		if guard := statemachine.CanTransitionBOMStatusWithType(existing.Status, input.Status, existing.BOMType); !guard.Allowed {
 			return guard.Err()
+		}
+
+		// ✅ 权限检查
+		if permCheck := statemachine.CanUserPromoteBOMStatus(ctx, existing.Status, input.Status); !permCheck.Allowed {
+			return permCheck.Err()
 		}
 
 		if existing.IsLocked && input.Status != models.BOMStatusObsolete {
 			return fmt.Errorf("[CRITICAL] Cannot promote a locked BOM (Status: %s) to %s", existing.Status, input.Status)
 		}
 
+		// ✅ 业务完整性校验（防止发布空 BOM 或无效 BOM）
+		if err := validateBOMBusinessIntegrity(tx, id, input.Status); err != nil {
+			return err
+		}
+
 		before := bomAuditSnapshot(existing)
 
 		existing.Status = input.Status
-		if input.Status == models.BOMStatusApproved || input.Status == models.BOMStatusReleased || input.Status == models.BOMStatusObsolete {
-			existing.IsLocked = true
-		}
+		
+		// ✅ 使用状态机统一管理锁定逻辑
+		existing.IsLocked = statemachine.ShouldLockBOMStatusString(input.Status)
 
 		if existing.Status == models.BOMStatusReleased && existing.BOMType == models.BOMTypeMBOM {
 			if err := validateUniqueReleasedMBOM(tx, &existing); err != nil {
@@ -524,6 +686,12 @@ func PromoteBOMStatus(ctx context.Context, id string, input PromoteBOMStatusInpu
 		}
 		payload := bomAuditSnapshot(saved)
 		payload["operation"] = "promote"
+		payload["statusTransition"] = map[string]interface{}{
+			"from":            before["status"],
+			"to":              saved.Status,
+			"reason":          input.Reason,
+			"approverComment": input.ApproverComment,
+		}
 		return writeBOMAuditEntryWithContext(ctx, tx, saved.ID, "PROMOTE", before, payload)
 	})
 
@@ -556,8 +724,14 @@ func DeriveMBOMFromEBOM(ctx context.Context, ebomID string, input DeriveMBOMInpu
 			return fmt.Errorf("%w: source BOM must be EBOM, got %s", ErrInvalidBOMType, ebom.BOMType)
 		}
 
-		if ebom.Status != models.BOMStatusApproved && ebom.Status != models.BOMStatusReleased {
-			return fmt.Errorf("[VALIDATION] Only APPROVED or RELEASED EBOMs can be derived to MBOM (current: %s)", ebom.Status)
+		// ✅ 只允许从RELEASED状态派生，确保源EBOM已经稳定
+		if ebom.Status != models.BOMStatusReleased {
+			return fmt.Errorf("[VALIDATION] Only RELEASED EBOMs can be derived to MBOM (current: %s). EBOM must be released before derivation", ebom.Status)
+		}
+
+		// ✅ 验证源EBOM必须被锁定
+		if !ebom.IsLocked {
+			return fmt.Errorf("[VALIDATION] Source EBOM must be locked before derivation (ID: %s)", ebomID)
 		}
 
 		// 3. 克隆BOM Items
@@ -574,6 +748,7 @@ func DeriveMBOMFromEBOM(ctx context.Context, ebomID string, input DeriveMBOMInpu
 				StandardUsage:  item.StandardUsage,
 				MaterialType:   item.MaterialType,
 				SupplyChannel:  item.SupplyChannel,
+				SortOrder:      item.SortOrder, // ✅ 继承源 EBOM 的装配顺序
 			}
 		}
 
@@ -615,7 +790,7 @@ func DeriveMBOMFromEBOM(ctx context.Context, ebomID string, input DeriveMBOMInpu
 		}
 
 		// 7. 重新加载完整数据
-		if err := tx.Preload("Items").First(&saved, "id = ?", mbom.ID).Error; err != nil {
+		if err := tx.Preload("Items", func(db *gorm.DB) *gorm.DB { return db.Order("bom_items.sort_order ASC") }).First(&saved, "id = ?", mbom.ID).Error; err != nil {
 			return err
 		}
 
