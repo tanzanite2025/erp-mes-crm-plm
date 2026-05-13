@@ -430,7 +430,8 @@ func upsertBOMItems(tx *gorm.DB, bomID string, items []models.BOMItem) (*UpsertR
 	result := &UpsertResult{}
 
 	// 检测是否所有 item 都没有 ID（兼容旧版本前端）
-	allEmpty := true
+	// 注意：空列表不应该触发 legacy 模式
+	allEmpty := len(items) > 0 // 只有当列表非空时才检查
 	for _, item := range items {
 		if strings.TrimSpace(item.ID) != "" {
 			allEmpty = false
@@ -438,7 +439,7 @@ func upsertBOMItems(tx *gorm.DB, bomID string, items []models.BOMItem) (*UpsertR
 		}
 	}
 
-	// 如果所有 ID 都为空，回退到旧逻辑（物理删除 + 重新插入）
+	// 如果所有 ID 都为空（且列表非空），回退到旧逻辑（物理删除 + 重新插入）
 	if allEmpty {
 		return upsertBOMItemsLegacy(tx, bomID, items)
 	}
