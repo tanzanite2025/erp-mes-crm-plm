@@ -30,6 +30,7 @@ func bomAuditSnapshot(bom models.BOM) map[string]any {
 		"changeOrderNo": strings.TrimSpace(bom.ChangeOrderNo),
 		"siteCode":      strings.TrimSpace(bom.SiteCode),
 		"isDefaultSite": bom.IsDefaultSite,
+		"relationSidecar": parseEngineeringJSON(bom.RelationSidecar),
 		"items":         bomAuditItemsSnapshot(bom.Items),
 	}
 }
@@ -48,6 +49,7 @@ func bomAuditItemsSnapshot(items []models.BOMItem) []map[string]any {
 			"standardUsage":  item.StandardUsage,
 			"materialType":   strings.TrimSpace(item.MaterialType),
 			"supplyChannel":  strings.TrimSpace(item.SupplyChannel),
+			"sortOrder":      item.SortOrder, // ✅ 保存装配顺序到审计快照
 		})
 	}
 	return result

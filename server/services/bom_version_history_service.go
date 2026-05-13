@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type BOMVersionHistoryQuery struct {
@@ -125,12 +127,16 @@ func writeBOMVersionSnapshotTx(ctx context.Context, tx *gorm.DB, bom models.BOM,
 
 func nextBOMVersionSequence(tx *gorm.DB, bomID string) (int, error) {
 	var currentMax int
+	
+	// ✅ 使用 FOR UPDATE 锁定相关行，防止并发竞态
 	if err := tx.Model(&models.BOMVersionSnapshot{}).
 		Where("bom_id = ?", strings.TrimSpace(bomID)).
 		Select("COALESCE(MAX(version_sequence), 0)").
+		Clauses(clause.Locking{Strength: "UPDATE"}).
 		Scan(&currentMax).Error; err != nil {
 		return 0, err
 	}
+	
 	return currentMax + 1, nil
 }
 
@@ -150,9 +156,22 @@ func resolveBOMVersionCreatedBy(ctx context.Context) string {
 
 func normalizeBOMVersionOperation(value string) string {
 	trimmed := strings.ToUpper(strings.TrimSpace(value))
-	if trimmed == "DELETE" {
+	
+	// ✅ 定义允许的操作类型（保留业务语义）
+	validOperations := map[string]bool{
+		"SAVE":    true,
+		"CREATE":  true,
+		"UPDATE":  true,
+		"DELETE":  true,
+		"PROMOTE": true, // 状态流转
+		"DERIVE":  true, // MBOM 派生
+	}
+	
+	if validOperations[trimmed] {
 		return trimmed
 	}
+	
+	// 未知操作类型，默认为 SAVE
 	return "SAVE"
 }
 
@@ -184,15 +203,65 @@ func mapBOMVersionRecordDetail(record models.BOMVersionSnapshot) (BOMVersionReco
 	if err != nil {
 		return BOMVersionRecordDetail{}, err
 	}
+	
+	// ✅ 添加主数据状态警告（防止使用已禁用的物料）
+	enrichedSnapshot, err := enrichBOMSnapshotWithMaterialStatus(db.DB, snapshot)
+	if err != nil {
+		return BOMVersionRecordDetail{}, err
+	}
+	
 	relationSidecar, err := parseBOMRelationSidecar(record.RelationSidecar)
 	if err != nil {
 		return BOMVersionRecordDetail{}, err
 	}
 	return BOMVersionRecordDetail{
 		BOMVersionRecordSummary: mapBOMVersionRecordSummary(record),
-		Snapshot:                snapshot,
+		Snapshot:                enrichedSnapshot,
 		RelationSidecar:         relationSidecar,
 	}, nil
+}
+
+// enrichBOMSnapshotWithMaterialStatus 为快照添加主数据状态标记
+func enrichBOMSnapshotWithMaterialStatus(tx *gorm.DB, snapshot map[string]any) (map[string]any, error) {
+	itemsRaw, ok := snapshot["items"]
+	if !ok {
+		return snapshot, nil
+	}
+	
+	// 处理 []any 类型
+	itemsSlice, ok := itemsRaw.([]any)
+	if !ok {
+		return snapshot, nil
+	}
+	
+	for idx := range itemsSlice {
+		itemMap, ok := itemsSlice[idx].(map[string]any)
+		if !ok {
+			continue
+		}
+		
+		materialID, ok := itemMap["materialId"].(string)
+		if !ok || strings.TrimSpace(materialID) == "" {
+			continue
+		}
+		
+		var material models.Material
+		if err := tx.Where("id = ?", materialID).First(&material).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				itemMap["_materialStatusWarning"] = "DELETED"
+				itemMap["_materialStatusMessage"] = "物料已被删除"
+			}
+			continue
+		}
+		
+		if material.Status != "Active" {
+			itemMap["_materialStatusWarning"] = material.Status
+			itemMap["_materialStatusMessage"] = fmt.Sprintf("物料当前状态: %s", material.Status)
+		}
+	}
+	
+	snapshot["items"] = itemsSlice
+	return snapshot, nil
 }
 
 func parseBOMVersionSnapshotPayload(raw json.RawMessage) (map[string]any, error) {
