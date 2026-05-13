@@ -417,6 +417,137 @@ func generateBOMNo(tx *gorm.DB) string {
 	return fmt.Sprintf("BOM-%s-%03d-%03d", dateStr, count+1, randFactor)
 }
 
+// UpsertResult 记录 Upsert 操作的统计信息
+type UpsertResult struct {
+	Created int
+	Updated int
+	Deleted int
+}
+
+// upsertBOMItems 智能 Upsert BOM Items，保持 ID 稳定性
+// 根据前端发送的 ID 判断是新增、更新还是删除
+func upsertBOMItems(tx *gorm.DB, bomID string, items []models.BOMItem) (*UpsertResult, error) {
+	result := &UpsertResult{}
+
+	// 检测是否所有 item 都没有 ID（兼容旧版本前端）
+	allEmpty := true
+	for _, item := range items {
+		if strings.TrimSpace(item.ID) != "" {
+			allEmpty = false
+			break
+		}
+	}
+
+	// 如果所有 ID 都为空，回退到旧逻辑（物理删除 + 重新插入）
+	if allEmpty {
+		return upsertBOMItemsLegacy(tx, bomID, items)
+	}
+
+	// Step 1: 获取现有数据
+	var existingItems []models.BOMItem
+	if err := tx.Where("bom_id = ?", bomID).Find(&existingItems).Error; err != nil {
+		return nil, fmt.Errorf("failed to fetch existing items: %w", err)
+	}
+
+	// Step 2: 构建映射表
+	existingMap := make(map[string]*models.BOMItem)
+	for i := range existingItems {
+		existingMap[existingItems[i].ID] = &existingItems[i]
+	}
+
+	// Step 3: 分类前端数据
+	var toCreate []models.BOMItem
+	var toUpdate []models.BOMItem
+	incomingIDs := make(map[string]bool)
+
+	for idx := range items {
+		item := &items[idx]
+		item.BOMID = bomID
+		item.SortOrder = idx // 持久化物理顺序
+
+		if strings.TrimSpace(item.ID) == "" {
+			// 无 ID，新增（后端生成 ID）
+			item.ID = uuid.NewString()
+			toCreate = append(toCreate, *item)
+		} else if _, found := existingMap[item.ID]; found {
+			// 有 ID 且存在，更新（保留 ID）
+			toUpdate = append(toUpdate, *item)
+		} else {
+			// 有 ID 但不存在，视为新增（保留前端 ID）
+			// 这种情况通常是前端新增时预生成了 ID
+			toCreate = append(toCreate, *item)
+		}
+
+		incomingIDs[item.ID] = true
+	}
+
+	// Step 4: 找出需要删除的
+	var toDelete []models.BOMItem
+	for _, existing := range existingItems {
+		if !incomingIDs[existing.ID] {
+			toDelete = append(toDelete, existing)
+		}
+	}
+
+	// Step 5: 执行数据库操作
+
+	// 5.1 删除
+	if len(toDelete) > 0 {
+		deleteIDs := make([]string, len(toDelete))
+		for i, item := range toDelete {
+			deleteIDs[i] = item.ID
+		}
+		if err := tx.Where("id IN ?", deleteIDs).Delete(&models.BOMItem{}).Error; err != nil {
+			return nil, fmt.Errorf("failed to delete items: %w", err)
+		}
+		result.Deleted = len(toDelete)
+	}
+
+	// 5.2 新增
+	if len(toCreate) > 0 {
+		if err := tx.Create(&toCreate).Error; err != nil {
+			return nil, fmt.Errorf("failed to create items: %w", err)
+		}
+		result.Created = len(toCreate)
+	}
+
+	// 5.3 更新
+	if len(toUpdate) > 0 {
+		// 使用批量更新优化性能
+		for _, item := range toUpdate {
+			if err := tx.Save(&item).Error; err != nil {
+				return nil, fmt.Errorf("failed to update item %s: %w", item.ID, err)
+			}
+		}
+		result.Updated = len(toUpdate)
+	}
+
+	return result, nil
+}
+
+// upsertBOMItemsLegacy 旧逻辑：物理删除 + 重新插入（兼容旧版本前端）
+func upsertBOMItemsLegacy(tx *gorm.DB, bomID string, items []models.BOMItem) (*UpsertResult, error) {
+	// 物理删除所有现有 items
+	if err := tx.Where("bom_id = ?", bomID).Delete(&models.BOMItem{}).Error; err != nil {
+		return nil, err
+	}
+
+	// 重新插入所有 items
+	for idx := range items {
+		items[idx].ID = uuid.NewString()
+		items[idx].BOMID = bomID
+		items[idx].SortOrder = idx
+	}
+
+	if len(items) > 0 {
+		if err := tx.Create(&items).Error; err != nil {
+			return nil, err
+		}
+	}
+
+	return &UpsertResult{Created: len(items)}, nil
+}
+
 func saveBOMItems(tx *gorm.DB, bomID string, items []models.BOMItem) error {
 	for idx := range items {
 		if strings.TrimSpace(items[idx].ID) == "" {
@@ -495,11 +626,17 @@ func SaveBOM(ctx context.Context, input SaveBOMInput) (BOMDetailResponse, error)
 			if err := tx.Model(&existing).Omit("Items").Updates(modelInput).Error; err != nil {
 				return err
 			}
-			if err := tx.Where("bom_id = ?", existing.ID).Delete(&models.BOMItem{}).Error; err != nil {
+			
+			// ✅ 使用智能 Upsert 替代物理删除，保持 ID 稳定性
+			upsertResult, err := upsertBOMItems(tx, existing.ID, modelInput.Items)
+			if err != nil {
 				return err
 			}
-			if err := saveBOMItems(tx, existing.ID, modelInput.Items); err != nil {
-				return err
+			
+			// 📊 记录 Upsert 统计信息到日志（便于监控和调试）
+			if upsertResult.Created > 0 || upsertResult.Updated > 0 || upsertResult.Deleted > 0 {
+				fmt.Printf("[BOM_UPSERT] BOM %s saved: created=%d, updated=%d, deleted=%d\n",
+					existing.ID, upsertResult.Created, upsertResult.Updated, upsertResult.Deleted)
 			}
 			if err := tx.
 				Preload("Items").
