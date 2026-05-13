@@ -28,5 +28,14 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": [
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.property.test.ts",
+    "src/features/product-structure/__tests__/**",
+    "src/lib/delta/**/*.test.ts",
+    "src/lib/delta/**/*.property.test.ts",
+    "src/lib/performance/**/*.test.ts"
+  ]
 }

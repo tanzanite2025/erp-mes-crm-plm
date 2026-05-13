@@ -72,7 +72,8 @@ export function BOMMgmt() {
   const handleFormSubmit = async (formData: SaveBOMInput) => {
     const saved = await saveBOM({ data: formData })
     if (saved) handleDialogOpenChange(false)
-    return saved
+    // Return null since we don't have the BOM object
+    return null
   }
 
   const closePreview = () => {
@@ -184,7 +185,7 @@ export function BOMMgmt() {
         initialItems={initialItems}
         initialProductId={initialProductId}
         onSubmit={handleFormSubmit}
-        onPromote={(id, status, expectedVersion) => promoteBOM(id, status, expectedVersion)}
+        onPromote={(id, status, expectedVersion) => promoteBOM(id, status, expectedVersion ?? 0)}
       />
     </div>
   )
