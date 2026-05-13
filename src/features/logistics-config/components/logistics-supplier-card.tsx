@@ -185,7 +185,7 @@ export function LogisticsSupplierCard({
             {t('logisticsConfig.suppliers.actions.edit')}
           </Button>
           <Button asChild className='rounded-full text-[10px] font-black uppercase tracking-widest'>
-            <Link to='/logistics-settings/platforms'>
+            <Link to='/logistics-config/platforms'>
               <MoveUpRight className='size-3.5' />
               {t('logisticsConfig.suppliers.actions.goToPlatforms')}
             </Link>

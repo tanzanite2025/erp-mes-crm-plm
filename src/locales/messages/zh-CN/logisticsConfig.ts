@@ -1,12 +1,21 @@
 export const logisticsConfig = {
   moduleDescription: '统一承载物流供应商、包装规则、扫描配置与接口平台的配置中心。',
   tabs: {
-    suppliers: '物流供应商',
+    suppliers: '供应商',
     vehicleLoading: '装载/配车',
     vehicleSpecsLibrary: '车型规格库',
     packagingRules: '包装规则',
     scanning: '扫描配置',
-    platforms: '接口/平台',
+    platforms: '接口与供应商',
+  },
+  unified: {
+    title: '接口与供应商管理',
+    description: '统一管理物流供应商目录与接口平台配置',
+    note: '在目录视图中管理供应商联系信息，在接口视图中配置 API 凭证和验证状态。两个视图共享同一数据源，可随时切换。',
+    views: {
+      directory: '目录视图',
+      integration: '接口视图',
+    },
   },
   vehicleSpecsLibrary: {
     title: '车型规格库',

@@ -6,7 +6,16 @@ export const logisticsConfig = {
     vehicleSpecsLibrary: 'Vehicle Specs Library',
     packagingRules: 'Packaging Rules',
     scanning: 'Scanning',
-    platforms: 'Platforms',
+    platforms: 'Platforms & Suppliers',
+  },
+  unified: {
+    title: 'Platforms & Suppliers Management',
+    description: 'Unified management of logistics supplier directory and platform integrations',
+    note: 'Manage supplier contact information in Directory View, configure API credentials and verification status in Integration View. Both views share the same data source and can be switched at any time.',
+    views: {
+      directory: 'Directory',
+      integration: 'Integration',
+    },
   },
   vehicleSpecsLibrary: {
     title: 'Vehicle Specs Library',

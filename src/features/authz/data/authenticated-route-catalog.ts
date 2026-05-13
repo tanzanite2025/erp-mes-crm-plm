@@ -49,7 +49,6 @@ export const AUTHENTICATED_ROUTE_PATHS = [
   "/production-quality/inspection",
   "/shipping-management/logistics",
   "/aps-scheduling/engine-config",
-  "/logistics-settings/platforms",
   "/personal-workbench/workspace",
   "/production-architecture/line",
   "/finance-management/taxation",

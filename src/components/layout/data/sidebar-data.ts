@@ -351,12 +351,12 @@ const navGroupConfigs: SidebarGroupConfig[] = [
       },
       {
         id: 'logistics-group',
-        titleKey: 'sidebar.groups.logistics',
+        titleKey: 'sidebar.groups.logisticsCenter',
         icon: Truck,
         children: [
           {
             id: 'logistics-config',
-            titleKey: 'sidebar.items.logisticsConfig',
+            titleKey: 'sidebar.items.vehicleMatching',
             url: '/logistics-config',
             icon: Truck,
             permissionId: permissionIdForPath('/logistics-config'),

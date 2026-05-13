@@ -5,7 +5,7 @@ type TranslateFn = (key: TranslationKey, params?: Record<string, string | number
 
 export function getLogisticsSettingsTabs(t: TranslateFn): TabItem[] {
   return [
-    { key: 'scanning', label: t('logisticsConfig.tabs.scanning'), href: '/logistics-settings/scanning' },
     { key: 'platforms', label: t('logisticsConfig.tabs.platforms'), href: '/logistics-settings/platforms' },
+    { key: 'scanning', label: t('logisticsConfig.tabs.scanning'), href: '/logistics-settings/scanning' },
   ]
 }

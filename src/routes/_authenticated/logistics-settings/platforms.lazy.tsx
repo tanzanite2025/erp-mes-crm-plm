@@ -1,6 +1,6 @@
 import { createLazyFileRoute } from '@tanstack/react-router'
-import { LogisticsPlatformsTab } from '@/features/logistics-config/platforms-tab'
+import { UnifiedProvidersTab } from '@/features/logistics-config/unified-providers-tab'
 
 export const Route = createLazyFileRoute('/_authenticated/logistics-settings/platforms')({
-  component: LogisticsPlatformsTab,
+  component: UnifiedProvidersTab,
 })
