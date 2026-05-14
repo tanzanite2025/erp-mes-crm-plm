@@ -1,0 +1,22 @@
+{
+  "id": "supplier-fixture-1",
+  "name": "Beta Carbon Materials",
+  "code": "SUPP-001",
+  "category": "RAW_MATERIAL",
+  "mainProducts": "[\"T700\",\"T800\"]",
+  "contactPerson": "Bob Lee",
+  "contactPhone": "+86 139-0000-0001",
+  "wechat": "",
+  "whatsapp": "",
+  "facebook": "",
+  "instagram": "",
+  "telegram": "",
+  "email": "bob@beta.example",
+  "address": "Suzhou, China",
+  "status": "Active",
+  "rating": 4.7,
+  "createdAt": "2026-05-15T10:30:00Z",
+  "updatedAt": "2026-05-15T10:30:00Z",
+  "isDeleted": false,
+  "version": 2
+}

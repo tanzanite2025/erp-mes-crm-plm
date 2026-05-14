@@ -1,0 +1,43 @@
+{
+  "id": "purchase-order-fixture-1",
+  "orderNo": "PO-2026-001",
+  "supplierId": "supplier-fixture-1",
+  "supplierName": "Beta Carbon Materials",
+  "orderDate": "2026-05-15",
+  "expectedDate": "2026-06-15",
+  "status": "Draft",
+  "currency": "CNY",
+  "amount": 18000,
+  "exchangeRate": 1,
+  "purchaser": "Charlie Zhang",
+  "paymentMethod": "BANK_TRANSFER",
+  "paymentMethodName": "银行转账",
+  "paymentTerm": "NET30",
+  "paymentTermName": "月结30天",
+  "note": "Quarterly carbon fiber stock",
+  "evidences": [],
+  "createdAt": "2026-05-15T10:30:00Z",
+  "updatedAt": "2026-05-15T10:30:00Z",
+  "isDeleted": false,
+  "version": 1,
+  "lines": [
+    {
+      "id": 20,
+      "version": 1,
+      "lineNo": 1,
+      "materialId": "material-fixture-1",
+      "materialCode": "MAT-T700-001",
+      "materialName": "T700 碳纤维",
+      "specification": "12K / 800tex",
+      "qty": 100,
+      "uom": "kg",
+      "price": 180,
+      "amount": 18000,
+      "expectedDate": "2026-06-15",
+      "receivedQty": 0,
+      "returnedQty": 0,
+      "status": "Draft",
+      "note": ""
+    }
+  ]
+}

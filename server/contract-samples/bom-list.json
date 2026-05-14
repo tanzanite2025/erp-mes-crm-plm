@@ -1,0 +1,43 @@
+{
+  "items": [
+    {
+      "id": "bom-fixture-1",
+      "createdAt": "2026-05-15T10:30:00Z",
+      "updatedAt": "2026-05-15T10:30:00Z",
+      "revisionNo": "R1",
+      "effectiveFrom": "2026-06-01T00:00:00Z",
+      "effectiveTo": null,
+      "changeType": "MANUAL",
+      "changeOrderNo": "ECO-2026-001",
+      "siteCode": "SZ",
+      "isDefaultSite": false,
+      "bomType": "EBOM",
+      "bomNo": "BOM-FIXTURE-001",
+      "productId": "product-fixture-1",
+      "version": "V2.3",
+      "status": "RELEASED",
+      "isLocked": true,
+      "_v": 7,
+      "items": [
+        {
+          "id": "bom-item-1",
+          "bomId": "bom-fixture-1",
+          "section": "PREPARE",
+          "materialId": "material-fixture-1",
+          "unitPrice": 12.5,
+          "unit": "pcs",
+          "unitUsage": 2,
+          "wastagePercent": 3,
+          "standardUsage": 2.06,
+          "materialType": "RAW_MATERIAL",
+          "supplyChannel": "internal",
+          "sortOrder": 0
+        }
+      ],
+      "description": "Fixture BOM for wire contract sample"
+    }
+  ],
+  "page": 1,
+  "pageSize": 50,
+  "total": 1
+}

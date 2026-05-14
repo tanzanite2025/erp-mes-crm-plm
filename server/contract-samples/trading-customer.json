@@ -1,0 +1,21 @@
+{
+  "id": "customer-fixture-1",
+  "name": "Acme Industries",
+  "code": "CUST-001",
+  "contactPerson": "Alice Wang",
+  "contactPhone": "+86 138-0000-0001",
+  "wechat": "alice-wechat",
+  "whatsapp": "",
+  "facebook": "",
+  "instagram": "",
+  "telegram": "",
+  "email": "alice@acme.example",
+  "address": "Shenzhen, China",
+  "status": "Active",
+  "creditLimit": 100000,
+  "balance": 12500.5,
+  "createdAt": "2026-05-15T10:30:00Z",
+  "updatedAt": "2026-05-15T10:30:00Z",
+  "isDeleted": false,
+  "version": 3
+}
