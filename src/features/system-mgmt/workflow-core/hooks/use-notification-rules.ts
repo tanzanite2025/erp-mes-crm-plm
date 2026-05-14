@@ -1,32 +1,26 @@
-import { useCallback, useEffect, useState } from 'react'
-import { toast } from 'sonner'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { createLogger } from '@/lib/logger'
-import { type PurchaseOrder } from '@/features/trading/data/schema'
-import { getPurchaseOrders } from '@/features/trading/purchase'
 import { type NotificationRule } from '../data/notification-rule-schema'
-import { DispatchService } from '../services/dispatch-service'
-import { getProductionRuleSnapshots } from '../services/production-task-query-service'
+import {
+  startNotificationRulesScanScheduler,
+  triggerNotificationRulesScanNow,
+} from '../services/notification-rules-scan-scheduler'
 import { RoutingService } from '../services/routing-service'
 
 const logger = createLogger('NotificationRules')
 
 type NotificationRuleCreateInput = Omit<NotificationRule, 'id' | 'createdAt'>
 
-type DispatchPurchaseOrderSnapshot = {
-  id: string
-  orderNo: string
-  status: string
-  supplierName: string
-  purchaser: string
-  lines?: Array<{
-    materialName?: string
-  }>
-}
-
 export function useNotificationRules() {
   const [rules, setRules] = useState<NotificationRule[]>([])
   const [isLoaded, setIsLoaded] = useState(false)
   const [error, setError] = useState<unknown>(null)
+  const rulesRef = useRef<NotificationRule[]>([])
+
+  // 让 scheduler 通过 ref 拿到最新规则，避免 effect 依赖 rules 导致 timer 频繁重启
+  useEffect(() => {
+    rulesRef.current = rules
+  }, [rules])
 
   const loadRules = useCallback(async () => {
     try {
@@ -45,39 +39,6 @@ export function useNotificationRules() {
     void loadRules()
   }, [loadRules])
 
-  const triggerScan = useCallback(async (latestRules: NotificationRule[]) => {
-    try {
-      const [purchaseOrders, production] = await Promise.all([
-        getPurchaseOrders({ withLines: true }),
-        getProductionRuleSnapshots(),
-      ])
-
-      const purchaseOrderSnapshots: DispatchPurchaseOrderSnapshot[] =
-        purchaseOrders.items.map((order: PurchaseOrder) => ({
-          id: order.id,
-          orderNo: order.orderNo,
-          status: order.status,
-          supplierName: order.supplierName,
-          purchaser: order.purchaser,
-          lines: order.lines?.map((line) => ({
-            materialName: line.materialName,
-          })),
-        }))
-
-      const scannedCount = await DispatchService.scanByRules(latestRules, {
-        purchaseOrders: purchaseOrderSnapshots,
-        productionPlans: production.productionPlans,
-        productionTasks: production.productionTasks,
-      })
-
-      if (scannedCount > 0) {
-        toast.success(`扫描完成：已为 ${scannedCount} 项存量业务补偿通知`)
-      }
-    } catch (err) {
-      logger.error('追溯扫描失败', err)
-    }
-  }, [])
-
   const addRule = useCallback(
     async (ruleData: Omit<NotificationRule, 'id' | 'createdAt' | 'version'>) => {
       try {
@@ -86,19 +47,22 @@ export function useNotificationRules() {
           version: 1,
         }
         const newRule = await RoutingService.saveRule(ruleWithVersion)
-        setRules((prev) => [newRule, ...prev])
-        await triggerScan([...rules, newRule])
+        setRules((prev) => {
+          const next = [newRule, ...prev]
+          void triggerNotificationRulesScanNow(next)
+          return next
+        })
         return newRule
       } catch (err) {
         logger.error('新增通知规则失败', err)
       }
     },
-    [rules, triggerScan]
+    []
   )
 
   const updateRule = useCallback(
     async (id: string, updates: Partial<NotificationRule>) => {
-      const target = rules.find((rule) => rule.id === id)
+      const target = rulesRef.current.find((rule) => rule.id === id)
       if (!target) return
 
       try {
@@ -108,14 +72,16 @@ export function useNotificationRules() {
           version: (target.version ?? 1) + 1,
         })
 
-        const next = rules.map((rule) => (rule.id === id ? updated : rule))
-        setRules(next)
-        await triggerScan(next)
+        setRules((prev) => {
+          const next = prev.map((rule) => (rule.id === id ? updated : rule))
+          void triggerNotificationRulesScanNow(next)
+          return next
+        })
       } catch (err) {
         logger.error('更新通知规则失败', err)
       }
     },
-    [rules, triggerScan]
+    []
   )
 
   const deleteRule = useCallback(async (id: string) => {
@@ -127,38 +93,34 @@ export function useNotificationRules() {
     }
   }, [])
 
-  const toggleRule = useCallback(
-    async (id: string) => {
-      const target = rules.find((rule) => rule.id === id)
-      if (!target) return
+  const toggleRule = useCallback(async (id: string) => {
+    const target = rulesRef.current.find((rule) => rule.id === id)
+    if (!target) return
 
-      try {
-        const updated = await RoutingService.updateRule(id, {
-          ...target,
-          enabled: !target.enabled,
-          version: (target.version ?? 1) + 1,
-        })
-        const next = rules.map((rule) => (rule.id === id ? updated : rule))
-        setRules(next)
+    try {
+      const updated = await RoutingService.updateRule(id, {
+        ...target,
+        enabled: !target.enabled,
+        version: (target.version ?? 1) + 1,
+      })
+      setRules((prev) => {
+        const next = prev.map((rule) => (rule.id === id ? updated : rule))
         if (updated.enabled) {
-          await triggerScan(next)
+          void triggerNotificationRulesScanNow(next)
         }
-      } catch (err) {
-        logger.error('切换通知规则状态失败', err)
-      }
-    },
-    [rules, triggerScan]
-  )
-
-  useEffect(() => {
-    if (!isLoaded || rules.length === 0) return
-    const initialTimer = setTimeout(() => void triggerScan(rules), 2000)
-    const intervalTimer = setInterval(() => void triggerScan(rules), 60_000)
-    return () => {
-      clearTimeout(initialTimer)
-      clearInterval(intervalTimer)
+        return next
+      })
+    } catch (err) {
+      logger.error('切换通知规则状态失败', err)
     }
-  }, [isLoaded, rules, triggerScan])
+  }, [])
+
+  // 周期扫描走单例 scheduler，多组件并发挂载也只跑一份
+  useEffect(() => {
+    if (!isLoaded) return
+    const stop = startNotificationRulesScanScheduler(() => rulesRef.current)
+    return stop
+  }, [isLoaded])
 
   return {
     rules,

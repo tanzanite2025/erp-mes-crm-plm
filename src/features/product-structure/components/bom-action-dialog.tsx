@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo } from 'react'
 import { type UseFormReturn } from 'react-hook-form'
-import { failLoudly } from '@/lib/safe-catch'
 import { Form } from '@/components/ui/form'
 import { BOMFormHeader } from './bom-editor/bom-form-header'
 import { BOMWorkspace } from './bom-editor/bom-workspace'
@@ -16,6 +15,7 @@ import { useBOMRelationDeltaTracker } from '../hooks/use-bom-relation-delta-trac
 import { useBOMOptimisticLock } from '../hooks/use-bom-optimistic-lock'
 import { useBOMProtocolRecovery } from '../hooks/use-bom-protocol-recovery'
 import { useBOMPermissionGuard, createBOMPermissionContext } from '../hooks/use-bom-permission-guard'
+import { useBOMSubmitOrchestrator } from '../hooks/use-bom-submit-orchestrator'
 import { type BOMItemDraft, type SaveBOMInput } from '../mutation-types'
 import { buildBOMRelationSidecar } from '../utils/bom-relation-sidecar'
 import { BOMVersionConflictDialog } from './bom-version-conflict-dialog'
@@ -64,49 +64,32 @@ export function BOMActionDialog({
   })
   const typedForm = form as UseFormReturn<BOM>
 
-  // Initialize permission guard for access control
+  // Permission guard
   const permissionContext = useMemo(
     () => createBOMPermissionContext(currentRow, isEdit),
     [currentRow, isEdit]
   )
-  
   const permissionGuard = useBOMPermissionGuard({
     context: permissionContext,
     form: typedForm,
     onPermissionDenied: (action, reason) => {
       console.warn(`[BOM Permission] ${action} denied: ${reason}`)
-      // Could show toast notification here
     },
   })
 
-  // Initialize delta tracker for RelationSidecar changes
-  const {
-    resetBaseline,
-    updateSidecar,
-    commitDelta,
-    isDirty: isSidecarDirty,
-  } = useBOMRelationDeltaTracker(currentRow?.relationSidecar)
+  // Sidecar delta tracker
+  const deltaTracker = useBOMRelationDeltaTracker(currentRow?.relationSidecar)
 
-  // Initialize optimistic locking for concurrency control
+  // Optimistic lock
+  const optimisticLock = useBOMOptimisticLock(currentRow)
   const {
-    currentVersion,
-    updateVersion,
-    validateVersion,
     hasConflict,
     conflictError,
     clearConflict,
-    prepareSavePayload,
-  } = useBOMOptimisticLock(currentRow)
+  } = optimisticLock
 
-  // Initialize protocol recovery for graceful error handling
-  const {
-    needsRecovery,
-    error: recoveryError,
-    recoveredProtocol,
-    attemptRecovery,
-    clearRecovery,
-    isRecovering,
-  } = useBOMProtocolRecovery({
+  // Protocol recovery
+  const protocolRecovery = useBOMProtocolRecovery({
     sourceBOM: {
       ...form.getValues(),
       items: form.watch('items'),
@@ -122,131 +105,45 @@ export function BOMActionDialog({
       console.error('[BOM] Protocol recovery failed:', error)
     },
   })
+  const {
+    needsRecovery,
+    error: recoveryError,
+    recoveredProtocol,
+    attemptRecovery,
+    clearRecovery,
+    isRecovering,
+  } = protocolRecovery
 
-  // Use recovered protocol if recovery succeeded
+  // 应用 recovery 后的 protocol draft
   const effectiveProtocolDraft = recoveredProtocol || protocolDraft
 
-  // Reset baseline when loading BOM from backend
+  // 重置 baseline / 同步 sidecar 副作用
   useEffect(() => {
     if (isEdit && currentRow?.relationSidecar) {
-      resetBaseline(currentRow.relationSidecar)
+      deltaTracker.resetBaseline(currentRow.relationSidecar)
     }
-  }, [isEdit, currentRow?.relationSidecar, resetBaseline])
+  }, [isEdit, currentRow?.relationSidecar, deltaTracker])
 
-  // Update tracked sidecar when protocol draft changes
   useEffect(() => {
     if (effectiveProtocolDraft) {
-      const newSidecar = buildBOMRelationSidecar(effectiveProtocolDraft)
-      updateSidecar(newSidecar)
+      deltaTracker.updateSidecar(buildBOMRelationSidecar(effectiveProtocolDraft))
     }
-  }, [effectiveProtocolDraft, updateSidecar])
+  }, [effectiveProtocolDraft, deltaTracker])
 
-  const handleFormSubmit = async (data: BOM) => {
-    // Permission check
-    if (!permissionGuard.canSave) {
-      const reason = permissionGuard.getDenialReason()
-      console.warn('[BOM] Save blocked:', reason)
-      return null
-    }
-
-    if (isEdit && !typedForm.formState.isDirty && !isSidecarDirty) {
-      onOpenChange(false)
-      return null
-    }
-
-    if (!effectiveProtocolDraft) {
-      failLoudly(
-        new Error('[CRITICAL] Missing effective BOM relation sidecar protocol draft during save submit'),
-        'BOMActionDialog.handleFormSubmit'
-      )
-      return null
-    }
-
-    // Commit delta to get only changed fields
-    const sidecarDelta = commitDelta()
-    
-    // Build full sidecar for submission
-    const fullSidecar = buildBOMRelationSidecar(effectiveProtocolDraft)
-
-    // Prepare payload with optimistic lock version check
-    const basePayload: SaveBOMInput = {
-      ...data,
-      relationSidecar: fullSidecar,
-      _sidecarDelta: sidecarDelta,
-    }
-    
-    const submitData = prepareSavePayload(basePayload, currentVersion)
-
-    if (onSubmit) {
-      const result = await onSubmit(submitData)
-      
-      if (result) {
-        // Validate version to detect conflicts
-        const conflict = validateVersion(result.version)
-        
-        if (conflict) {
-          // Version conflict detected - don't close dialog
-          console.warn('[BOM] Version conflict detected:', conflict)
-          return null
-        }
-        
-        // Success - update tracked version and reset baseline
-        updateVersion(result.version)
-        
-        if (fullSidecar) {
-          resetBaseline(fullSidecar)
-        }
-      }
-      
-      return result
-    }
-
-    onOpenChange(false)
-    return null
-  }
-
-  const handlePromote = async (targetStatus: string) => {
-    // Permission check
-    if (!permissionGuard.canPromote) {
-      const reason = permissionGuard.getDenialReason()
-      console.warn('[BOM] Promote blocked:', reason)
-      return
-    }
-
-    const currentData = typedForm.getValues()
-    if (!effectiveProtocolDraft) return
-
-    const basePayload: SaveBOMInput = {
-      ...currentData,
-      relationSidecar: buildBOMRelationSidecar(effectiveProtocolDraft),
-    }
-    
-    const submitData = prepareSavePayload(basePayload, currentVersion)
-
-    let bomToPromote = currentRow
-    if (!bomToPromote?.id || typedForm.formState.isDirty) {
-      if (!onSubmit) return
-      const saved = await onSubmit(submitData)
-      if (!saved) return
-      
-      // Validate version
-      const conflict = validateVersion(saved.version)
-      if (conflict) {
-        console.warn('[BOM] Version conflict during promote:', conflict)
-        return
-      }
-      
-      updateVersion(saved.version)
-      bomToPromote = saved
-    }
-
-    if (bomToPromote?.id && onPromote) {
-      const success = await onPromote(bomToPromote.id, targetStatus, bomToPromote.version)
-      if (success) {
-        onOpenChange(false)
-      }
-    }
-  }
+  // 提交编排（submit + promote）
+  const { submit: handleFormSubmit, promote: handlePromote } = useBOMSubmitOrchestrator({
+    isEdit,
+    currentRow,
+    form: typedForm,
+    effectiveProtocolDraft,
+    isSidecarDirty: deltaTracker.isDirty,
+    permissionGuard,
+    optimisticLock,
+    deltaTracker,
+    onSubmit,
+    onPromote,
+    onClose: () => onOpenChange(false),
+  })
 
   const isLocked = currentRow?.isLocked || false
 
@@ -265,17 +162,15 @@ export function BOMActionDialog({
             className='flex min-h-0 flex-1 flex-col gap-2 overflow-hidden px-3 pb-3 pt-0 sm:px-4 sm:pb-4'
           >
             <BOMDialogResourceBoundary resource={optionsResource} detailResource={detailSourceResource}>
-              {/* Show read-only banner if locked */}
               <BOMReadOnlyBanner isLocked={isLocked} version={currentRow?.version} />
-              
-              {/* Show protocol sync warnings if any */}
+
               {protocolSyncStatus && (
                 <BOMProtocolSyncAlert
                   validation={protocolSyncStatus.validation}
                   needsSync={protocolSyncStatus.needsSync}
                 />
               )}
-              
+
               <BOMFormHeader
                 form={typedForm}
                 products={products}
@@ -294,18 +189,17 @@ export function BOMActionDialog({
                 permissionGuard={permissionGuard}
               />
 
-              <BOMDialogFooter 
-                form={typedForm} 
+              <BOMDialogFooter
+                form={typedForm}
                 currentRow={currentRow}
                 onPromote={handlePromote}
-                isSubmitDisabled={isLocked} 
+                isSubmitDisabled={isLocked}
               />
             </BOMDialogResourceBoundary>
           </form>
         </Form>
       </BOMDialogShell>
 
-      {/* Version Conflict Dialog */}
       <BOMVersionConflictDialog
         open={hasConflict}
         error={conflictError}
@@ -316,7 +210,6 @@ export function BOMActionDialog({
         onCancel={clearConflict}
       />
 
-      {/* Protocol Recovery Dialog */}
       <BOMProtocolRecoveryDialog
         open={needsRecovery}
         error={recoveryError}

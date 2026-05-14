@@ -1,18 +1,23 @@
+import { BOM_STATUS_ORDER } from '@/lib/codecs/code-normalization'
 import { type BusinessEventSourceTemplate } from '../business-event-source-types'
 
 /**
- * BOM 配方业务事件源模板。
- * 状态字典锁定为：DRAFT → REVIEWING → APPROVED → VALIDATING → RELEASED → OBSOLETE
- * 与 src/lib/codecs/code-normalization.ts 中的 BOM_STATUSES 对齐。
+ * 研发 BOM (EBOM) 业务事件源模板。
+ *
+ * 关注点：设计审核流程（DRAFT → REVIEWING → APPROVED → RELEASED → OBSOLETE）。
+ * 接收人通常是设计师 / 设计审核委员会 / 工程经理。
+ *
+ * 数据模型字段：bomType === 'EBOM'。
+ * 实时入口在 use-bom-write-actions.ts 中按 bomType 派发到本事件源。
  */
-export const DEFAULT_BOM_EVENT_SOURCE: BusinessEventSourceTemplate = {
-  code: 'BOM',
-  name: 'BOM 配方',
+export const DEFAULT_BOM_ENGINEERING_EVENT_SOURCE: BusinessEventSourceTemplate = {
+  code: 'BOM_ENGINEERING',
+  name: '研发 BOM (EBOM)',
   module: 'Engineering',
   entity: 'BOM',
   enabled: true,
   description:
-    'BOM 配方草稿、审核、校验、发布与作废等生命周期事件，覆盖工程变更与 MBOM 派生。',
+    '研发 BOM 设计、审核、发布、作废与被派生为生产 BOM 等生命周期事件。',
   config: {
     actions: [
       { code: 'CREATED', name: '新建', kind: 'created' },
@@ -20,19 +25,11 @@ export const DEFAULT_BOM_EVENT_SOURCE: BusinessEventSourceTemplate = {
       { code: 'SUBMITTED_FOR_REVIEW', name: '提交审核', kind: 'custom' },
       { code: 'APPROVED', name: '审批通过', kind: 'custom' },
       { code: 'REJECTED', name: '审批驳回', kind: 'custom' },
-      { code: 'VALIDATION_STARTED', name: '开始校验', kind: 'custom' },
       { code: 'RELEASED', name: '正式发布', kind: 'custom' },
+      { code: 'DERIVED', name: '被派生为 MBOM', kind: 'custom' },
       { code: 'OBSOLETED', name: '作废', kind: 'custom' },
-      { code: 'MBOM_DERIVED', name: 'MBOM 派生', kind: 'custom' },
     ],
-    statuses: [
-      { code: 'DRAFT' },
-      { code: 'REVIEWING' },
-      { code: 'APPROVED' },
-      { code: 'VALIDATING' },
-      { code: 'RELEASED' },
-      { code: 'OBSOLETE' },
-    ],
+    statuses: BOM_STATUS_ORDER.map((code) => ({ code })),
     fields: [
       {
         key: 'bomId',
@@ -71,15 +68,6 @@ export const DEFAULT_BOM_EVENT_SOURCE: BusinessEventSourceTemplate = {
         dynamicResolver: false,
       },
       {
-        key: 'bomType',
-        label: 'BOM 类型',
-        path: 'bomType',
-        type: 'string',
-        templateKey: 'BomType',
-        templateEnabled: true,
-        dynamicResolver: false,
-      },
-      {
         key: 'changeType',
         label: '变更类型',
         path: 'changeType',
@@ -99,7 +87,7 @@ export const DEFAULT_BOM_EVENT_SOURCE: BusinessEventSourceTemplate = {
       },
       {
         key: 'createdBy',
-        label: '创建人',
+        label: '设计师',
         path: 'createdBy',
         type: 'user',
         templateKey: 'CreatedBy',
@@ -108,7 +96,7 @@ export const DEFAULT_BOM_EVENT_SOURCE: BusinessEventSourceTemplate = {
       },
       {
         key: 'reviewer',
-        label: '审核人',
+        label: '设计审核人',
         path: 'reviewer',
         type: 'user',
         templateKey: 'Reviewer',
@@ -133,10 +121,24 @@ export const DEFAULT_BOM_EVENT_SOURCE: BusinessEventSourceTemplate = {
         templateEnabled: true,
         dynamicResolver: false,
       },
+      {
+        key: 'derivedMbomId',
+        label: '派生出的 MBOM ID',
+        path: 'derivedMbomId',
+        type: 'string',
+        templateKey: 'DerivedMbomId',
+        templateEnabled: true,
+        dynamicResolver: false,
+      },
     ],
     dynamicResolvers: [
-      { code: 'createdBy', label: '创建人', path: 'createdBy', type: 'user' },
-      { code: 'reviewer', label: '审核人', path: 'reviewer', type: 'user' },
+      { code: 'createdBy', label: '设计师', path: 'createdBy', type: 'user' },
+      {
+        code: 'reviewer',
+        label: '设计审核人',
+        path: 'reviewer',
+        type: 'user',
+      },
       {
         code: 'approval.manager',
         label: '直属审批经理',
@@ -144,6 +146,13 @@ export const DEFAULT_BOM_EVENT_SOURCE: BusinessEventSourceTemplate = {
         type: 'user',
       },
     ],
-    defaultActionUrlTemplate: '/product-structure/bom?bomId=[BomId]',
+    defaultActionUrlTemplate:
+      '/product-structure/bom?bomId=[BomId]&bomType=EBOM',
+  },
+  meta: {
+    runtimeCoverage: 'connected',
+    notificationType: 'BOM_EVENT',
+    forceStatusChangedAction: false,
+    seedAsFallback: false,
   },
 }

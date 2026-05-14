@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useBOMReadData } from '../hooks/use-bom-read-data'
+import { filterBOMsByProductId } from '../utils/bom-identity'
 import { BOMVersionTraceContent } from '../version-trace/components/bom-version-trace-content'
 
 const ALL_FILTER_VALUE = '__all__'
@@ -43,8 +44,7 @@ export function BOMRecordsTab() {
   )
 
   const bomOptions = useMemo(
-    () => [...(readyResource?.data ?? [])]
-      .filter((bom) => !selectedProductId || bom.productId === selectedProductId)
+    () => filterBOMsByProductId(readyResource?.data ?? [], selectedProductId)
       .map((bom) => ({
         id: bom.id,
         bomNo: bom.bomNo,
@@ -72,7 +72,8 @@ export function BOMRecordsTab() {
     if (!selectedBomId) {
       return
     }
-    const bomStillValid = (readyResource?.data ?? []).some((bom) => bom.id === selectedBomId && (!nextProductId || bom.productId === nextProductId))
+    const matchingBoms = filterBOMsByProductId(readyResource?.data ?? [], nextProductId)
+    const bomStillValid = matchingBoms.some((bom) => bom.id === selectedBomId)
     if (!bomStillValid) {
       setSelectedBomId('')
     }

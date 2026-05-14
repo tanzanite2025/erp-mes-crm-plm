@@ -10,7 +10,7 @@ import { type BOMSectionOption } from '../data/bom-section-schema'
 import { type BOM, type Product } from '../data/schema'
 import { BOMS_QUERY_KEY } from '../query-keys'
 import { bomService } from '../services/bom-service'
-import { useBOMReferenceResource } from './use-bom-reference-resource'
+import { ALL_BOM_REFERENCES, useBOMReferenceResource } from './use-bom-reference-resource'
 
 const logger = createLogger('useBOMReadData')
 
@@ -27,7 +27,7 @@ export function useBOMReadData(filters?: { productId?: string; status?: string; 
     queryKey: filters ? [...BOMS_QUERY_KEY, filters] : BOMS_QUERY_KEY,
     queryFn: () => bomService.getBOMs(filters),
   })
-  const referenceResource = useBOMReferenceResource()
+  const referenceResource = useBOMReferenceResource({ include: ALL_BOM_REFERENCES })
 
   const resource = useMemo<BOMReadDataResource>(() => {
     const bomFailure = resolveQueryFailure({

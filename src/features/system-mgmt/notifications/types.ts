@@ -5,6 +5,7 @@
 export type NotificationType =
   | 'ORDER_EVENT'     // 订单相关事件 (下达、审核、变更)
   | 'QUALITY_STANDARD_EVENT' // 品质标准受控流程事件
+  | 'BOM_EVENT'       // BOM (EBOM / MBOM) 生命周期事件
   | 'QUALITY_ALERT'   // 质量预警
   | 'EQUIPMENT_STATUS'// 设备运行状态异常
   | 'SYSTEM_NOTICE'   // 系统公告/维护

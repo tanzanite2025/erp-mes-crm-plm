@@ -8,6 +8,7 @@ import { executeApprovalAction } from './approval-executor'
 import { executeNotificationAction, archiveResolvedMessages } from './notification-executor'
 import {
   buildExecutionEventKey,
+  buildExecutionId,
   getTargetEntity,
   getTargetSourceCode,
   resolveSegmentTargets,
@@ -116,6 +117,7 @@ export async function executeRoutingRules({
         segment.id,
         metadata
       )
+      const executionId = buildExecutionId()
 
       result.matchedCount += 1
 
@@ -124,6 +126,7 @@ export async function executeRoutingRules({
         segment,
         event,
         eventKey,
+        executionId,
         targetEntity,
         targetSourceCode,
         metadata,
@@ -142,6 +145,7 @@ export async function executeRoutingRules({
         segment,
         event,
         eventKey,
+        executionId,
         targetEntity,
         targetSourceCode,
         metadata,

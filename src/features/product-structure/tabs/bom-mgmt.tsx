@@ -21,6 +21,7 @@ export function BOMMgmt() {
     deleteBOM,
     promoteBOM,
     deriveMBOM,
+    reviseMBOM,
     downloadTemplate,
     parseExcel,
   } = useBOMData()
@@ -125,6 +126,17 @@ export function BOMMgmt() {
     }
   }
 
+  const handleRevise = async (bom: BOM) => {
+    const reason = window.prompt(
+      `请填写修订原因（将记入审计与通知）\n\n当前 MBOM：${bom.bomNo} ${bom.bomVersion}`,
+      ''
+    )
+    if (!reason || !reason.trim()) {
+      return
+    }
+    await reviseMBOM(bom.id, { reason: reason.trim() })
+  }
+
   return (
     <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
       <div className='flex flex-col gap-1 bg-muted/5 p-4 sm:p-6 rounded-[32px] border border-dashed border-muted/50'>
@@ -174,6 +186,7 @@ export function BOMMgmt() {
           onPreview={setPreviewBOM}
           onEdit={openEditDialog}
           onDerive={handleDerive}
+          onRevise={handleRevise}
           onDelete={deleteBOM}
         />
       )}

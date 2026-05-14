@@ -1,0 +1,91 @@
+import { type BusinessEventSourceTemplate } from '../business-event-source-types'
+import { productionPlanStatuses } from '../production-plan-status'
+
+export const DEFAULT_PRODUCTION_PLAN_EVENT_SOURCE: BusinessEventSourceTemplate = {
+  code: 'PRODUCTION_PLAN',
+  name: '生产计划',
+  module: 'Production',
+  entity: 'SYSTEM',
+  enabled: true,
+  description: '生产计划围绕已排产、生产中、计划完成和取消的主计划状态事件。',
+  config: {
+    actions: [
+      { code: 'CREATED', name: '新建', kind: 'created' },
+      { code: 'STATUS_CHANGED', name: '状态变更', kind: 'status' },
+      { code: 'CANCELED', name: '取消', kind: 'status' },
+      { code: 'COMPLETED', name: '计划完成', kind: 'status' },
+    ],
+    statuses: productionPlanStatuses.map((status) => ({ code: status })),
+    fields: [
+      {
+        key: 'planId',
+        label: '计划ID',
+        path: 'planId',
+        type: 'string',
+        templateKey: 'PlanId',
+        templateEnabled: true,
+        dynamicResolver: false,
+      },
+      {
+        key: 'orderNo',
+        label: '订单号',
+        path: 'orderNo',
+        type: 'string',
+        templateKey: 'OrderNo',
+        templateEnabled: true,
+        dynamicResolver: false,
+      },
+      {
+        key: 'productName',
+        label: '产品名称',
+        path: 'productName',
+        type: 'string',
+        templateKey: 'ProductName',
+        templateEnabled: true,
+        dynamicResolver: false,
+      },
+      {
+        key: 'quantity',
+        label: '计划数量',
+        path: 'quantity',
+        type: 'number',
+        templateKey: 'Quantity',
+        templateEnabled: true,
+        dynamicResolver: false,
+      },
+      {
+        key: 'startDate',
+        label: '计划开始',
+        path: 'startDate',
+        type: 'date',
+        templateKey: 'StartDate',
+        templateEnabled: true,
+        dynamicResolver: false,
+      },
+      {
+        key: 'endDate',
+        label: '计划结束',
+        path: 'endDate',
+        type: 'date',
+        templateKey: 'EndDate',
+        templateEnabled: true,
+        dynamicResolver: false,
+      },
+    ],
+    dynamicResolvers: [
+      {
+        code: 'approval.manager',
+        label: '直属审批经理',
+        path: 'approval.manager',
+        type: 'user',
+      },
+    ],
+    defaultActionUrlTemplate: '/dashboard/calendar?planId=[PlanId]',
+  },
+  meta: {
+    runtimeCoverage: 'preconnected',
+    notificationType: 'SYSTEM_NOTICE',
+    forceStatusChangedAction: true,
+    seedAsFallback: true,
+  },
+}

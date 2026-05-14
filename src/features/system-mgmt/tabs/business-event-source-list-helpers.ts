@@ -1,4 +1,3 @@
-import { DEFAULT_SALES_ORDER_EVENT_SOURCE } from '../workflow-core/data/business-event-source-templates/sales-order'
 import {
   type BusinessEventSource,
   type BusinessEventSourceCreatePayload,
@@ -41,36 +40,6 @@ function stripPersistenceFields(
   source: BusinessEventSourceTemplate
 ): EventSourceCreateInput {
   return toCreateInput(source)
-}
-
-export function createNewEventSource(): EventSourceCreateInput {
-  const suffix = Date.now().toString().slice(-6)
-  return {
-    ...stripPersistenceFields(DEFAULT_SALES_ORDER_EVENT_SOURCE),
-    code: `CUSTOM_SOURCE_${suffix}`,
-    name: '新业务事件源',
-    module: 'System',
-    entity: 'SYSTEM',
-    description: '为新的业务对象配置动作、状态、字段和通知变量。',
-    config: {
-      actions: [{ code: 'STATUS_CHANGED', name: '状态变更', kind: 'status' }],
-      statuses: [{ code: 'Pending' }, { code: 'Done' }],
-      fields: [
-        {
-          key: 'id',
-          label: '业务ID',
-          path: 'id',
-          type: 'string',
-          templateKey: 'BusinessId',
-          templateEnabled: true,
-          dynamicResolver: false,
-        },
-      ],
-      dynamicResolvers: [],
-      defaultActionUrlTemplate: '',
-    },
-    enabled: true,
-  }
 }
 
 export function createEventSourceFromTemplate(

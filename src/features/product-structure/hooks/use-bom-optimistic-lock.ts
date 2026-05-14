@@ -53,9 +53,11 @@ export interface OptimisticLockResult {
   clearConflict: () => void
   
   /**
-   * Prepares save payload with version check
+   * Prepares save payload with version check.
+   *
+   * 业务字段统一使用 `version`，service 层会在序列化时翻译为 wire format 的 `_v`。
    */
-  prepareSavePayload: <T extends { version?: number; _v?: number }>(
+  prepareSavePayload: <T extends { version?: number }>(
     data: T,
     expectedVersion: number
   ) => T
@@ -66,7 +68,7 @@ export interface OptimisticLockResult {
  * 
  * Prevents concurrent edit conflicts by:
  * 1. Tracking the version number when BOM is loaded
- * 2. Including expected version in save payload (_v field)
+ * 2. Including expected version in save payload (`version` field; bom-service serializes it as `_v` on the wire)
  * 3. Validating server response version matches expected
  * 4. Showing conflict error if versions don't match
  * 
@@ -140,17 +142,17 @@ export function useBOMOptimisticLock(
     setConflictError(null)
   }, [])
 
-  // Prepare save payload with version check
-  const prepareSavePayload = useCallback(<T extends { version?: number; _v?: number }>(
+  // Prepare save payload with version check.
+  // 业务字段统一使用 `version`，service 层会在序列化时翻译为 wire format 的 `_v`。
+  const prepareSavePayload = useCallback(<T extends { version?: number }>(
     data: T,
     expectedVersion: number
   ): T => {
     expectedVersionRef.current = expectedVersion
-    
+
     return {
       ...data,
       version: expectedVersion,
-      _v: expectedVersion, // Backend uses _v for optimistic lock check
     }
   }, [])
 

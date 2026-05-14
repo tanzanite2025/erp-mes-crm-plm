@@ -5,7 +5,7 @@ import { type BOMItemDraft, type SaveBOMInput } from '@/features/product-structu
 import { normalizeBOMInput } from '../utils/bom-control-normalization'
 import { normalizeBOMSectionValue } from '../utils/bom-section-utils'
 
-const saveBOMSchema = bomSchema.omit({ bomDisplayVersion: true })
+const saveBOMSchema = bomSchema
 
 export interface BOMDetailSource {
     bom: BOM
@@ -14,11 +14,16 @@ export interface BOMDetailSource {
 
 /**
  * 清洗 BOM 输入数据
- * 
+ *
  * 注意：Zod schema 已经包含 .trim() 处理，这里只做必要的结构转换
- * 避免重复的手动 trim 操作
+ * 避免重复的手动 trim 操作。
+ *
+ * Wire format 兼容性：后端 `models.BOM.Version` 的 JSON 标签是 `_v`（历史包袱，
+ * 与 GORM 自带的 `Version` 字段名冲突时手动 alias 出来），
+ * 而前端业务层用 `version`。本函数是双轨转换的**唯一**入口，
+ * 把 `version` 重命名为 `_v` 后发给后端；其他位置的代码一律使用 `version`。
  */
-function sanitizeBOMInput(data: SaveBOMInput): SaveBOMInput {
+function sanitizeBOMInput(data: SaveBOMInput): SaveBOMInput & { _v?: number } {
     const {
         siteCode: _siteCode,
         isDefaultSite: _isDefaultSite,
@@ -36,6 +41,7 @@ function sanitizeBOMInput(data: SaveBOMInput): SaveBOMInput {
 
     return {
         ...sanitizedPayload,
+        // wire format alias：后端读 _v 做乐观锁
         _v: sanitizedPayload.version,
         relationSidecar: normalizedData.relationSidecar,
         // 🔥 CRITICAL: 保留 _sidecarDelta 用于 SDRTS 协议
@@ -166,6 +172,23 @@ export const bomService = {
         })
         return bomSchema.parse(
             ensureObjectResponse<Record<string, unknown>>(res, 'BOMService.deriveMBOMFromEBOM')
+        )
+    },
+
+    /**
+     * 工艺修订当前 MBOM。
+     * 后端会创建新版本（次版本号 +1，状态直接 RELEASED），旧版本自动 OBSOLETE。
+     */
+    async reviseMBOM(
+        id: string,
+        input: { reason: string; changeOrderNo?: string; revisionNo?: string; expectedVersion?: number }
+    ): Promise<BOM> {
+        const res = await apiFetch<BOM>(`/engineering/bom/${id}/revise`, {
+            method: 'POST',
+            body: JSON.stringify(input),
+        })
+        return bomSchema.parse(
+            ensureObjectResponse<Record<string, unknown>>(res, 'BOMService.reviseMBOM')
         )
     }
 }

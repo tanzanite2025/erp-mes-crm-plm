@@ -1,4 +1,5 @@
 import {
+  type BomStatus,
   normalizeBomChangeType,
   normalizeBomNo,
   normalizeBomStatus,
@@ -38,9 +39,9 @@ export function normalizeEngineeringBomChangeType(
 
 export function normalizeEngineeringBomStatus(
   value?: string | null,
-  fallback: 'DRAFT' | 'REVIEWING' | 'APPROVED' | 'VALIDATING' | 'RELEASED' | 'OBSOLETE' = 'DRAFT'
-): 'DRAFT' | 'REVIEWING' | 'APPROVED' | 'VALIDATING' | 'RELEASED' | 'OBSOLETE' {
-  return normalizeBomStatus(value, fallback) as 'DRAFT' | 'REVIEWING' | 'APPROVED' | 'VALIDATING' | 'RELEASED' | 'OBSOLETE'
+  fallback: BomStatus = 'DRAFT'
+): BomStatus {
+  return normalizeBomStatus(value, fallback) as BomStatus
 }
 
 export function normalizeBOMControlFieldPatch<T extends {

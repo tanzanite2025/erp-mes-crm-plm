@@ -1,4 +1,5 @@
 import { type BusinessEventSource } from './business-event-source-types'
+import { BOM_STATUS_ORDER } from '@/lib/codecs/code-normalization'
 
 export interface BusinessEventStatusCatalogEntry {
   code: string
@@ -61,12 +62,23 @@ const BUSINESS_EVENT_SOURCE_STATUS_CATALOG: Record<
     { code: 'PUBLISHED', label: '已发布' },
     { code: 'ARCHIVED', label: '已归档', defaultResolve: true },
   ],
-  BOM: [
-    { code: 'DRAFT', label: '草稿' },
-    { code: 'REVIEWING', label: '审核中' },
-    { code: 'APPROVED', label: '审批通过' },
-    { code: 'VALIDATING', label: '校验中' },
-    { code: 'RELEASED', label: '已发布', defaultResolve: true },
+  BOM_ENGINEERING: (() => {
+    const labels: Record<string, string> = {
+      DRAFT: '草稿',
+      REVIEWING: '设计审核中',
+      APPROVED: '设计审批通过',
+      RELEASED: '已发布',
+      OBSOLETE: '已作废',
+    }
+    const resolveStates = new Set(['RELEASED', 'OBSOLETE'])
+    return BOM_STATUS_ORDER.map((code) => ({
+      code,
+      label: labels[code] ?? code,
+      defaultResolve: resolveStates.has(code),
+    }))
+  })(),
+  BOM_MANUFACTURING: [
+    { code: 'EFFECTIVE', label: '生效中' },
     { code: 'OBSOLETE', label: '已作废', defaultResolve: true },
   ],
 }

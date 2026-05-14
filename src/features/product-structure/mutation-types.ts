@@ -6,9 +6,8 @@ import { type MaterialOption } from '../material-archive/data/schema'
 import { type BOMRelationSidecar } from './utils/bom-relation-sidecar'
 import { type DeltaSet } from '@/lib/delta/types'
 
-export type SaveBOMInput = Omit<BOM, 'bomDisplayVersion'> & {
+export type SaveBOMInput = BOM & {
   relationSidecar: BOMRelationSidecar
-  _v?: number
   /**
    * Optional delta set for RelationSidecar changes.
    * Used for enhanced audit logging and future delta-based PATCH operations.

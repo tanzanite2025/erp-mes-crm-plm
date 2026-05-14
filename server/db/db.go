@@ -185,6 +185,32 @@ func ensureProductAttributeOptionValueUniqueIndex() {
 	}
 }
 
+// ensureBusinessEventSourceCodeUniqueIndex 把业务事件源 code 上的 unique 约束改为
+// 排除软删记录的部分索引，让删除事件源后能立即重用同名 code。
+func ensureBusinessEventSourceCodeUniqueIndex() {
+	if DB == nil || !DB.Migrator().HasTable(&models.BusinessEventSource{}) {
+		return
+	}
+	if err := DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Exec("SELECT pg_advisory_xact_lock(2026111801)").Error; err != nil {
+			return err
+		}
+		// 先清掉 GORM uniqueIndex 标签历史上创建的无条件 unique 索引（如果存在）。
+		if err := tx.Exec("DROP INDEX IF EXISTS idx_business_event_sources_code").Error; err != nil {
+			return err
+		}
+		// 创建带 WHERE deleted_at IS NULL 的部分 unique 索引：
+		//   - 活跃记录之间 code 唯一
+		//   - 软删除记录不参与唯一性判定，code 立即可重用
+		if err := tx.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_business_event_sources_code ON business_event_sources (code) WHERE deleted_at IS NULL").Error; err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		log.Fatal("Failed to enforce business event source code uniqueness:", err)
+	}
+}
+
 func ensureProductAttributeCategoryKeyUniqueIndex() {
 	if DB == nil || !DB.Migrator().HasTable(&models.ProductAttributeCategory{}) {
 		return
@@ -1178,6 +1204,7 @@ func InitDB(dsn string) {
 	ensureProductAttributeCategoryKeyUniqueIndex()
 	cleanupDuplicateProductAttributeOptions()
 	ensureProductAttributeOptionValueUniqueIndex()
+	ensureBusinessEventSourceCodeUniqueIndex()
 	fmt.Println("Database migration completed.")
 	sqlDB, err := DB.DB()
 	if err == nil {

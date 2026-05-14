@@ -7,6 +7,7 @@ import { FormControl, FormField, FormItem } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { useLanguage } from '@/context/language-provider'
 import { type BOM } from '../data/schema'
+import { isMBOM } from '../utils/bom-identity'
 
 interface BOMDialogFooterProps {
   form: UseFormReturn<BOM>
@@ -74,7 +75,7 @@ export function BOMDialogFooter({
               </Button>
             )}
 
-            {status === 'APPROVED' && currentRow?.bomType === 'MBOM' && (
+            {status === 'APPROVED' && isMBOM(currentRow) && (
               <Button
                 type='button'
                 onClick={() => onPromote('RELEASED')}

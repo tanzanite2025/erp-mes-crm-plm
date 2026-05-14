@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { getBusinessEventSourceTemplateByCode } from './business-event-source-templates'
 
 const NON_ID_CHAR_PATTERN = /[^a-z0-9]+/g
 
@@ -57,12 +58,9 @@ function normalizeNotificationRuleInput(input: unknown) {
     entity === 'ORDER' && (sourceCode === '' || sourceCode === 'ORDER')
       ? 'SALES_ORDER'
       : sourceCode
-  const forceStatusChanged =
-    (entity === 'ORDER' &&
-      ['SALES_ORDER', 'PURCHASE_ORDER'].includes(normalizedSourceCode)) ||
-    (entity === 'QUALITY' && normalizedSourceCode === 'QUALITY_STANDARD') ||
-    (entity === 'SYSTEM' &&
-      ['PRODUCTION_PLAN', 'PRODUCTION_TASK'].includes(normalizedSourceCode))
+  const templateMeta =
+    getBusinessEventSourceTemplateByCode(normalizedSourceCode)?.meta
+  const forceStatusChanged = templateMeta?.forceStatusChangedAction === true
 
   return {
     ...rule,

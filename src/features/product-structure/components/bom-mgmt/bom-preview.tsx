@@ -6,13 +6,14 @@ import { useReactToPrint } from 'react-to-print'
 import { toast } from 'sonner'
 import { failLoudly } from '@/lib/safe-catch'
 import { useLanguage } from '@/context/language-provider'
-import { deriveBomDisplayVersion, normalizeBomChangeType, normalizeEngineeringDateProtocol } from '@/lib/codecs/code-normalization'
+import { normalizeBomChangeType, normalizeEngineeringDateProtocol } from '@/lib/codecs/code-normalization'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { BOMDetailTable } from '../bom-detail-table'
 import { BOMPrintTemplate } from '@/features/print-mgmt/components/templates/bom-print-template'
 import { PrintRecordService } from '@/features/print-mgmt/services/print-record-service'
 import { type BOMSectionOption } from '../../data/bom-section-schema'
+import { selectBOMDisplayVersion } from '../../utils/bom-display-version'
 import { type BOM, type Product } from '../../data/schema'
 import { resolveBOMProductDisplaySummary } from '../../utils/bom-product-display'
 import { type MaterialOption } from '@/features/material-archive/data/schema'
@@ -46,7 +47,7 @@ export function BOMPreview({
     ? (productDisplayLabelMap.get(product.id) ?? t('printMgmt.bomPreview.unknownProduct'))
     : t('printMgmt.bomPreview.unknownProduct')
   const productSummary = product ? resolveBOMProductDisplaySummary(product) : null
-  const bomDisplayVersion = deriveBomDisplayVersion(bom.bomVersion || bom.bomDisplayVersion)
+  const bomDisplayVersion = selectBOMDisplayVersion(bom)
   const bomChangeType = normalizeBomChangeType(bom.changeType)
   const effectiveFrom = normalizeEngineeringDateProtocol(bom.effectiveFrom)
 

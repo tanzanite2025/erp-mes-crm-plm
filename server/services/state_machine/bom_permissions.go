@@ -10,18 +10,17 @@ import (
 // 基于最小权限原则，不同状态转换需要不同的权限
 
 const (
-	// BOM权限常量
-	PermissionBOMEdit     = "bom:edit"      // 编辑BOM（DRAFT状态）
-	PermissionBOMReview   = "bom:review"    // 评审BOM（REVIEWING状态）
-	PermissionBOMApprove  = "bom:approve"   // 批准BOM（APPROVED状态）
-	PermissionBOMValidate = "bom:validate"  // 验证BOM（VALIDATING状态）
-	PermissionBOMRelease  = "bom:release"   // 发布BOM（RELEASED状态）
-	PermissionBOMObsolete = "bom:obsolete"  // 废弃BOM（OBSOLETE状态）
-	PermissionBOMManage   = "bom:manage"    // 管理BOM（所有操作）
-	PermissionManage      = "manage"        // 系统管理员权限
+	// BOM 权限常量
+	PermissionBOMEdit     = "bom:edit"     // 编辑 BOM（DRAFT 状态）
+	PermissionBOMReview   = "bom:review"   // 评审 BOM（REVIEWING 状态）
+	PermissionBOMApprove  = "bom:approve"  // 批准 BOM（APPROVED 状态）
+	PermissionBOMRelease  = "bom:release"  // 发布 BOM（RELEASED 状态）
+	PermissionBOMObsolete = "bom:obsolete" // 废弃 BOM（OBSOLETE 状态）
+	PermissionBOMManage   = "bom:manage"   // 管理 BOM（所有操作）
+	PermissionManage      = "manage"       // 系统管理员权限
 )
 
-// BOM状态转换权限矩阵
+// BOM 状态转换权限矩阵
 // 定义从当前状态到目标状态需要的权限
 var bomTransitionPermissions = map[BOMStatus]map[BOMStatus][]string{
 	BOMStatusDraft: {
@@ -33,12 +32,7 @@ var bomTransitionPermissions = map[BOMStatus]map[BOMStatus][]string{
 		BOMStatusApproved: {PermissionBOMReview, PermissionBOMApprove, PermissionBOMManage, PermissionManage},
 	},
 	BOMStatusApproved: {
-		BOMStatusValidating: {PermissionBOMValidate, PermissionBOMManage, PermissionManage},
-		BOMStatusReleased:   {PermissionBOMRelease, PermissionBOMManage, PermissionManage},
-	},
-	BOMStatusValidating: {
-		BOMStatusApproved: {PermissionBOMValidate, PermissionBOMManage, PermissionManage}, // 验证失败退回
-		BOMStatusReleased: {PermissionBOMValidate, PermissionBOMRelease, PermissionBOMManage, PermissionManage},
+		BOMStatusReleased: {PermissionBOMRelease, PermissionBOMManage, PermissionManage},
 	},
 	BOMStatusReleased: {
 		BOMStatusObsolete: {PermissionBOMObsolete, PermissionBOMManage, PermissionManage},

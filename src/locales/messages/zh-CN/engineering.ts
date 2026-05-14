@@ -1223,7 +1223,6 @@ export const engineering = {
       active: '激活',
       reviewing: '审核中',
       approved: '已审核',
-      validating: '验证中',
       released: '已发布',
       archived: '已归档',
       obsolete: '已废弃',

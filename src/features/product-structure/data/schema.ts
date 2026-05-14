@@ -3,6 +3,7 @@ import {
   masterDataControlSchema,
   productSchema,
 } from '@/features/engineering/data/schema'
+import { BOM_STATUS_ORDER } from '@/lib/codecs/code-normalization'
 
 export const bomParentChildrenProtocolBranchDraftSchema = z.object({
   id: z.string().trim().min(1, 'Node ID is required'),
@@ -61,8 +62,7 @@ export const bomSchema = z.object({
   product: productSchema.optional(),
   sourceEbomId: z.string().nullable().optional(),
   bomVersion: z.string().trim().regex(/^V[0-9]+(\.[0-9]+)*$/, 'Version must follow V1.0 format').default('V1.0'),
-  bomDisplayVersion: z.string().optional(),
-  status: z.enum(['DRAFT', 'REVIEWING', 'APPROVED', 'VALIDATING', 'RELEASED', 'OBSOLETE']).default('DRAFT'),
+  status: z.enum(BOM_STATUS_ORDER).default('DRAFT'),
   isLocked: z.boolean().default(false),
   items: z.array(bomItemSchema).default([]),
   description: z.string().optional(),

@@ -183,3 +183,36 @@ func DeriveMBOMFromEBOMHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, saved)
 }
+
+func ReviseMBOMHandler(c *gin.Context) {
+	id := c.Param("id")
+	var input services.ReviseMBOMInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] invalid revise MBOM payload: " + err.Error()})
+		return
+	}
+
+	saved, err := services.ReviseMBOM(auditContextFromGin(c), id, input)
+	if err != nil {
+		if errors.Is(err, services.ErrBOMIDRequired) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] MBOM ID is required"})
+			return
+		}
+		if errors.Is(err, services.ErrInvalidBOMType) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] " + err.Error()})
+			return
+		}
+		if contains(err.Error(), "CONFLICT") {
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			return
+		}
+		if contains(err.Error(), "VALIDATION") {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to revise MBOM: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, saved)
+}

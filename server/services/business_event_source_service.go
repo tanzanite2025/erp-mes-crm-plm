@@ -294,6 +294,14 @@ func EnsureDefaultBusinessEventSources() error {
 		return nil
 	}
 
+	// 一次性清理：把历史上软删除的事件源硬删掉，让 code 重新可用。
+	// 现在 DeleteBusinessEventSource 已改为硬删除，但旧数据仍可能残留。
+	if err := db.DB.Unscoped().
+		Where("deleted_at IS NOT NULL").
+		Delete(&models.BusinessEventSource{}).Error; err != nil {
+		return err
+	}
+
 	for _, seed := range defaultBusinessEventSourceSeeds {
 		var existing models.BusinessEventSource
 		err := db.DB.Where("code = ?", seed.Code).First(&existing).Error
@@ -404,5 +412,7 @@ func UpdateBusinessEventSource(id string, patch models.BusinessEventSource) (mod
 
 func DeleteBusinessEventSource(id string) error {
 	id = strings.TrimSpace(id)
-	return db.DB.Where("id = ?", id).Delete(&models.BusinessEventSource{}).Error
+	// 硬删除：业务事件源 code 受 unique 索引约束，软删除会让 code 永久占用，
+	// 导致用户删除后无法再用同一 code 重建。审计已由 rule-execution-logs 单独承载。
+	return db.DB.Unscoped().Where("id = ?", id).Delete(&models.BusinessEventSource{}).Error
 }

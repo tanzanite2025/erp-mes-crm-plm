@@ -10,7 +10,7 @@ This document specifies the requirements for enhancing the BOM (Bill of Material
 - **BOM_API_Handler**: The backend HTTP handler that processes BOM list requests
 - **BOM_Frontend_Service**: The frontend TypeScript service layer that calls BOM APIs
 - **BOM_List_Query**: The data structure containing query parameters for BOM list retrieval
-- **Status**: The lifecycle state of a BOM (DRAFT, REVIEWING, APPROVED, VALIDATING, RELEASED, OBSOLETE)
+- **Status**: The lifecycle state of a BOM (DRAFT, REVIEWING, APPROVED, RELEASED, OBSOLETE)
 - **BOMType**: The classification of a BOM (EBOM for engineering BOM, MBOM for manufacturing BOM)
 - **Query_Parameter**: An optional filter value passed in the HTTP request to narrow down results
 - **Database_Index**: A database structure that improves query performance for filtered columns
@@ -29,7 +29,7 @@ This document specifies the requirements for enhancing the BOM (Bill of Material
 4. WHEN BOMType is empty or null, THE BOM_Query_Service SHALL return BOMs of all types
 5. WHEN Status contains multiple values, THE BOM_Query_Service SHALL return BOMs matching any of the specified statuses
 6. WHEN BOMType contains multiple values, THE BOM_Query_Service SHALL return BOMs matching any of the specified types
-7. FOR ALL valid Status values (DRAFT, REVIEWING, APPROVED, VALIDATING, RELEASED, OBSOLETE), THE BOM_Query_Service SHALL correctly filter records
+7. FOR ALL valid Status values (DRAFT, REVIEWING, APPROVED, RELEASED, OBSOLETE), THE BOM_Query_Service SHALL correctly filter records
 8. FOR ALL valid BOMType values (EBOM, MBOM), THE BOM_Query_Service SHALL correctly filter records
 
 ### Requirement 2: Backend Query Validation

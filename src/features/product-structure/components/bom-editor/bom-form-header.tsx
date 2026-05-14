@@ -5,23 +5,14 @@ import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/for
 import { Input } from '@/components/ui/input'
 import { SelectDropdown } from '@/components/select-dropdown'
 import { cn } from '@/lib/utils'
+import { getBomStatusOrderByType } from '@/lib/codecs/code-normalization'
 import { type BOM, type Product } from '../../data/schema'
 import {
-  normalizeBOMControlFieldPatch,
-} from '../../utils/bom-control-normalization'
-
-type FormFieldName = keyof BOM | string
-
-type FormFieldConfig = {
-  name: FormFieldName
-  label: string
-  type: 'input' | 'select'
-  readOnly?: boolean
-  placeholder?: string
-  inputType?: 'text' | 'date' | 'number'
-  items?: { label: string; value: string }[]
-  className?: string
-}
+  buildHeaderGridTemplate,
+  getBOMHeaderFields,
+  type BOMHeaderField,
+  type BOMHeaderFieldContext,
+} from './bom-header-fields.config'
 
 interface BOMFormHeaderProps {
   form: UseFormReturn<BOM>
@@ -30,8 +21,15 @@ interface BOMFormHeaderProps {
   isEdit: boolean
 }
 
+/**
+ * BOM 表单顶部字段的纯渲染器。
+ *
+ * 字段顺序 / 列宽 / 类型 / 校验规则 全部来源于 bom-header-fields.config.ts，
+ * 这里仅负责把 config 项落到 react-hook-form 的 FormField 上。
+ */
 export function BOMFormHeader({ form, products, productDisplayLabelMap, isEdit }: BOMFormHeaderProps) {
   const { t } = useLanguage()
+
   const productItems = useMemo(
     () =>
       products.map((product) => ({
@@ -41,119 +39,114 @@ export function BOMFormHeader({ form, products, productDisplayLabelMap, isEdit }
     [productDisplayLabelMap, products]
   )
 
-  const headerFields: FormFieldConfig[] = [
-    {
-      name: 'bomNo',
-      label: t('engineering.bomArchive.form.bomNo'),
-      type: 'input',
-      readOnly: true,
-      placeholder: isEdit ? undefined : t('engineering.bomArchive.form.bomNoAutoPlaceholder'),
-      className: 'bg-muted/50',
-    },
-    {
-      name: 'productId',
-      label: t('engineering.bomArchive.form.product'),
-      type: 'select',
-      placeholder: t('engineering.bomArchive.form.productPlaceholder'),
-      items: productItems,
-    },
-    {
-      name: 'bomVersion',
-      label: t('engineering.bomArchive.form.version'),
-      type: 'input',
-      readOnly: true,
-      className: 'bg-blue-50/70 font-mono font-bold text-blue-600 text-[11px]!',
-    },
-    {
-      name: 'bomType',
-      label: t('engineering.bomArchive.form.bomType'),
-      type: 'input',
-      readOnly: true,
-      className: 'bg-indigo-50/70 font-bold text-indigo-600 text-[11px]!',
-    },
-    {
-      name: 'status',
-      label: t('engineering.bomArchive.form.status'),
-      type: 'select',
-      items: [
-        { label: t('engineering.bomArchive.status.draft'), value: 'DRAFT' },
-        { label: t('engineering.bomArchive.status.reviewing'), value: 'REVIEWING' },
-        { label: t('engineering.bomArchive.status.approved'), value: 'APPROVED' },
-        { label: t('engineering.bomArchive.status.validating'), value: 'VALIDATING' },
-        { label: t('engineering.bomArchive.status.released'), value: 'RELEASED' },
-        { label: t('engineering.bomArchive.status.obsolete'), value: 'OBSOLETE' },
-      ],
-    },
-    {
-      name: 'effectiveFrom',
-      label: t('engineering.bomArchive.form.effectiveFrom'),
-      type: 'input',
-      inputType: 'date',
-    },
-  ]
+  const bomType = form.watch('bomType')
+
+  const statusItems = useMemo(() => {
+    const STATUS_LABEL_KEY: Record<string, string> = {
+      DRAFT: 'engineering.bomArchive.status.draft',
+      REVIEWING: 'engineering.bomArchive.status.reviewing',
+      APPROVED: 'engineering.bomArchive.status.approved',
+      RELEASED: 'engineering.bomArchive.status.released',
+      OBSOLETE: 'engineering.bomArchive.status.obsolete',
+    }
+    return getBomStatusOrderByType(bomType).map((code) => ({
+      label: t(STATUS_LABEL_KEY[code] as any),
+      value: code,
+    }))
+  }, [bomType, t])
+
+  const ctx: BOMHeaderFieldContext = useMemo(
+    () => ({ isEdit, bomType, t, productItems, statusItems }),
+    [isEdit, bomType, t, productItems, statusItems]
+  )
+
+  const headerFields = useMemo(() => getBOMHeaderFields(ctx), [ctx])
+
+  // lg+ 断点的 grid 模板从配置派生，避免硬编码 6 列。
+  // 用 inline style 而非 Tailwind 任意值类名，因为后者要求静态可见的字符串才能被编译器识别。
+  const lgGridTemplateColumns = useMemo(
+    () => buildHeaderGridTemplate(headerFields).replace(/_/g, ' '),
+    [headerFields]
+  )
 
   return (
     <div className='space-y-3 rounded-[24px] border border-dashed border-muted/50 bg-muted/5 p-2.5 sm:p-3'>
-      <div className='grid grid-cols-1 gap-2.5 md:grid-cols-2 md:gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,3.4fr)_minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,1.15fr)_minmax(0,1.75fr)] lg:gap-2.5 xl:gap-3'>
+      <div
+        className='grid grid-cols-1 gap-2.5 md:grid-cols-2 md:gap-3 lg:gap-2.5 xl:gap-3 lg:[grid-template-columns:var(--bom-header-grid)]'
+        style={{ ['--bom-header-grid' as any]: lgGridTemplateColumns }}
+      >
         {headerFields.map((fieldConfig) => (
-          <FormField
+          <BOMHeaderFormField
             key={fieldConfig.name}
-            control={form.control}
-            name={fieldConfig.name as keyof BOM}
-            render={({ field }) => (
-              <FormItem className='min-w-0'>
-                <FormLabel className='mb-1.5 block text-[10px] font-black uppercase tracking-widest text-primary/80'>
-                  {fieldConfig.label}
-                </FormLabel>
-
-                {fieldConfig.type === 'select' ? (
-                  <SelectDropdown
-                    value={(field.value as string | undefined) ?? ''}
-                    onValueChange={(value) => {
-                      if (fieldConfig.name === 'status') {
-                        field.onChange(normalizeBOMControlFieldPatch({ status: value }).status)
-                        return
-                      }
-                      field.onChange(value)
-                    }}
-                    items={fieldConfig.items}
-                    placeholder={fieldConfig.placeholder}
-                    className='h-11! w-full rounded-2xl border-none bg-muted/50 text-[11px]! font-bold shadow-inner'
-                    disabled={(isEdit && fieldConfig.name === 'productId') || fieldConfig.name === 'status'}
-                    isControlled
-                  />
-                ) : (
-                  <FormControl>
-                    <Input
-                      {...field}
-                      value={fieldConfig.name === 'bomType' ? t(`engineering.dict.${field.value || 'EBOM'}` as any) : ((field.value as string | undefined) ?? '')}
-                      type={fieldConfig.inputType ?? 'text'}
-                      readOnly={fieldConfig.readOnly}
-                      placeholder={fieldConfig.placeholder}
-                      onChange={(event) => {
-                        const nextValue = event.target.value
-
-                        if (fieldConfig.name === 'effectiveFrom') {
-                          field.onChange(normalizeBOMControlFieldPatch({ effectiveFrom: nextValue }).effectiveFrom)
-                          return
-                        }
-
-                        field.onChange(event)
-                      }}
-                      className={cn(
-                        'h-11! rounded-2xl border-none bg-muted/50 text-[11px]! font-bold shadow-inner',
-                        fieldConfig.inputType === 'date' &&
-                          '[&::-webkit-datetime-edit]:text-[11px]! [&::-webkit-datetime-edit]:font-bold [&::-webkit-calendar-picker-indicator]:opacity-60',
-                        fieldConfig.className
-                      )}
-                    />
-                  </FormControl>
-                )}
-              </FormItem>
-            )}
+            form={form}
+            fieldConfig={fieldConfig}
+            ctx={ctx}
           />
         ))}
       </div>
     </div>
+  )
+}
+
+interface BOMHeaderFormFieldProps {
+  form: UseFormReturn<BOM>
+  fieldConfig: BOMHeaderField
+  ctx: BOMHeaderFieldContext
+}
+
+function BOMHeaderFormField({ form, fieldConfig, ctx }: BOMHeaderFormFieldProps) {
+  return (
+    <FormField
+      control={form.control}
+      name={fieldConfig.name as keyof BOM}
+      render={({ field }) => (
+        <FormItem className='min-w-0'>
+          <FormLabel className='mb-1.5 block text-[10px] font-black uppercase tracking-widest text-primary/80'>
+            {fieldConfig.label}
+          </FormLabel>
+
+          {fieldConfig.type === 'select' ? (
+            <SelectDropdown
+              value={(field.value as string | undefined) ?? ''}
+              onValueChange={(value) => {
+                const next = fieldConfig.transformOnChange ? fieldConfig.transformOnChange(value) : value
+                field.onChange(next)
+              }}
+              items={[...fieldConfig.getItems(ctx)]}
+              placeholder={fieldConfig.placeholder}
+              className='h-11! w-full rounded-2xl border-none bg-muted/50 text-[11px]! font-bold shadow-inner'
+              disabled={fieldConfig.isDisabled?.(ctx) ?? false}
+              isControlled
+            />
+          ) : (
+            <FormControl>
+              <Input
+                {...field}
+                value={
+                  fieldConfig.getDisplayValue
+                    ? fieldConfig.getDisplayValue(field.value, ctx)
+                    : ((field.value as string | undefined) ?? '')
+                }
+                type={fieldConfig.inputType ?? 'text'}
+                readOnly={fieldConfig.readOnly}
+                placeholder={fieldConfig.placeholder}
+                onChange={(event) => {
+                  const next = fieldConfig.transformOnChange
+                    ? fieldConfig.transformOnChange(event.target.value)
+                    : event.target.value
+                  field.onChange(next)
+                }}
+                className={cn(
+                  'h-11! rounded-2xl border-none bg-muted/50 text-[11px]! font-bold shadow-inner',
+                  fieldConfig.inputType === 'date'
+                    && '[&::-webkit-datetime-edit]:text-[11px]! [&::-webkit-datetime-edit]:font-bold [&::-webkit-calendar-picker-indicator]:opacity-60',
+                  fieldConfig.className
+                )}
+              />
+            </FormControl>
+          )}
+        </FormItem>
+      )}
+    />
   )
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 	"xdfc-server/db"
@@ -20,7 +21,6 @@ var ValidBOMStatuses = []string{
 	models.BOMStatusDraft,
 	models.BOMStatusReviewing,
 	models.BOMStatusApproved,
-	models.BOMStatusValidating,
 	models.BOMStatusReleased,
 	models.BOMStatusObsolete,
 }
@@ -226,7 +226,6 @@ func ListBOMs(query BOMListQuery) ([]models.BOM, int64, error) {
 		if err := tx.Order("created_at desc").Find(&boms).Error; err != nil {
 			return nil, 0, err
 		}
-		hydrateBOMDerivedFields(boms)
 		return boms, int64(len(boms)), nil
 	}
 
@@ -245,7 +244,6 @@ func ListBOMs(query BOMListQuery) ([]models.BOM, int64, error) {
 		Find(&items).Error; err != nil {
 		return nil, 0, err
 	}
-	hydrateBOMDerivedFields(items)
 	return items, total, nil
 }
 
@@ -257,7 +255,6 @@ func GetBOMByID(id string) (BOMDetailResponse, error) {
 		First(&bom, "id = ?", id).Error; err != nil {
 		return BOMDetailResponse{}, err
 	}
-	bom.DisplayVersion = resolveBOMDisplayVersion(bom)
 	return MapBOMToDetailResponse(bom)
 }
 
@@ -266,12 +263,6 @@ func resolveBOMDisplayVersion(bom models.BOM) string {
 		return bom.VersionText
 	}
 	return "V1.0"
-}
-
-func hydrateBOMDerivedFields(items []models.BOM) {
-	for idx := range items {
-		items[idx].DisplayVersion = resolveBOMDisplayVersion(items[idx])
-	}
 }
 
 func validateBOMReferences(tx *gorm.DB, input *models.BOM) error {
@@ -778,7 +769,6 @@ func SaveBOM(ctx context.Context, input SaveBOMInput) (BOMDetailResponse, error)
 	if err != nil {
 		return BOMDetailResponse{}, err
 	}
-	saved.DisplayVersion = resolveBOMDisplayVersion(saved)
 	return MapBOMToDetailResponse(saved)
 }
 
@@ -942,7 +932,6 @@ func PromoteBOMStatus(ctx context.Context, id string, input PromoteBOMStatusInpu
 	if err != nil {
 		return BOMDetailResponse{}, err
 	}
-	saved.DisplayVersion = resolveBOMDisplayVersion(saved)
 	return MapBOMToDetailResponse(saved)
 }
 
@@ -1066,6 +1055,160 @@ func DeriveMBOMFromEBOM(ctx context.Context, ebomID string, input DeriveMBOMInpu
 		return BOMDetailResponse{}, err
 	}
 
-	saved.DisplayVersion = resolveBOMDisplayVersion(saved)
 	return MapBOMToDetailResponse(saved)
+}
+
+// bumpMBOMVersionText 把 V1.0 / V2.3 等版本号的次版本号 +1。
+// 解析失败时回退为 V1.0 -> V1.1，最坏情况返回 "V1.1"。
+func bumpMBOMVersionText(current string) string {
+	trimmed := strings.TrimSpace(current)
+	if trimmed == "" {
+		return "V1.1"
+	}
+	body := strings.TrimPrefix(strings.ToUpper(trimmed), "V")
+	parts := strings.Split(body, ".")
+	if len(parts) < 2 {
+		return "V" + body + ".1"
+	}
+	major, err1 := strconv.Atoi(parts[0])
+	minor, err2 := strconv.Atoi(parts[1])
+	if err1 != nil || err2 != nil {
+		return "V1.1"
+	}
+	return fmt.Sprintf("V%d.%d", major, minor+1)
+}
+
+// ReviseMBOM 把当前 MBOM 复制为新版本（次版本号 +1），旧版自动 OBSOLETE。
+//
+// 业务约束：
+//   - 仅 MBOM 可修订（BOMType == 'MBOM'）
+//   - 当前 MBOM 状态必须是 RELEASED（"生效中"），其它状态不允许修订
+//   - 修订原因（Reason）必填，作为审计依据
+//
+// 修订完成后返回新 MBOM 的 detail。整个过程在单事务内完成，要么全成功，
+// 要么全回滚（旧 MBOM 状态保持原样、不创建新版本）。
+func ReviseMBOM(ctx context.Context, mbomID string, input ReviseMBOMInput) (BOMDetailResponse, error) {
+	if strings.TrimSpace(mbomID) == "" {
+		return BOMDetailResponse{}, ErrBOMIDRequired
+	}
+	if strings.TrimSpace(input.Reason) == "" {
+		return BOMDetailResponse{}, fmt.Errorf("[VALIDATION] revise reason is required")
+	}
+
+	var savedNew models.BOM
+	err := db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// 1. 取出当前 MBOM
+		var current models.BOM
+		if err := tx.Preload("Items").Where("id = ?", mbomID).First(&current).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return fmt.Errorf("[VALIDATION] MBOM not found: %s", mbomID)
+			}
+			return err
+		}
+
+		// 2. 类型与状态校验
+		if current.BOMType != models.BOMTypeMBOM {
+			return fmt.Errorf("%w: revise target must be MBOM, got %s", ErrInvalidBOMType, current.BOMType)
+		}
+		if current.Status != models.BOMStatusReleased {
+			return fmt.Errorf("[VALIDATION] only RELEASED MBOM can be revised (current: %s)", current.Status)
+		}
+
+		// 3. 乐观锁
+		if input.ExpectedVersion != nil && current.Version != *input.ExpectedVersion {
+			return fmt.Errorf("[CONFLICT] MBOM has been modified (expected v%d, got v%d). Please refresh and try again", *input.ExpectedVersion, current.Version)
+		}
+
+		// 4. 旧 MBOM 置 OBSOLETE
+		beforeSnapshot := bomAuditSnapshot(current)
+		if err := tx.Model(&current).
+			Updates(map[string]interface{}{
+				"status":    models.BOMStatusObsolete,
+				"is_locked": true,
+			}).Error; err != nil {
+			return err
+		}
+		if err := writeBOMVersionSnapshotTx(ctx, tx, current, "REVISE_OBSOLETE"); err != nil {
+			return err
+		}
+		obsoletePayload := bomAuditSnapshot(current)
+		obsoletePayload["operation"] = "revise_obsolete"
+		obsoletePayload["reason"] = input.Reason
+		if err := writeBOMAuditEntryWithContext(ctx, tx, current.ID, "REVISE_OBSOLETE", beforeSnapshot, obsoletePayload); err != nil {
+			return err
+		}
+
+		// 5. 克隆 items
+		clonedItems := make([]models.BOMItem, len(current.Items))
+		for idx, item := range current.Items {
+			clonedItems[idx] = models.BOMItem{
+				ID:             uuid.NewString(),
+				Section:        item.Section,
+				MaterialID:     item.MaterialID,
+				UnitPrice:      item.UnitPrice,
+				Unit:           item.Unit,
+				UnitUsage:      item.UnitUsage,
+				WastagePercent: item.WastagePercent,
+				StandardUsage:  item.StandardUsage,
+				MaterialType:   item.MaterialType,
+				SupplyChannel:  item.SupplyChannel,
+				SortOrder:      item.SortOrder,
+			}
+		}
+
+		// 6. 创建新 MBOM 版本
+		nextVersionText := bumpMBOMVersionText(current.VersionText)
+		nextRevisionNo := strings.TrimSpace(input.RevisionNo)
+		if nextRevisionNo == "" {
+			nextRevisionNo = current.MasterDataControl.RevisionNo
+		}
+
+		newMBOM := models.BOM{
+			BOMType:      models.BOMTypeMBOM,
+			BOMNo:        generateBOMNo(tx),
+			ProductID:    current.ProductID,
+			SourceEBOMID: current.SourceEBOMID,
+			VersionText:  nextVersionText,
+			Status:       models.BOMStatusReleased, // ✅ 修订即生效，无中间态
+			IsLocked:     false,
+			Description:  fmt.Sprintf("Revised from %s (%s) — %s", current.BOMNo, current.VersionText, input.Reason),
+			MasterDataControl: models.MasterDataControl{
+				RevisionNo:    nextRevisionNo,
+				ChangeOrderNo: input.ChangeOrderNo,
+				ChangeType:    "MANUAL",
+			},
+			RelationSidecar: current.RelationSidecar,
+		}
+		newMBOM.MasterDataControl.Normalize(nextVersionText)
+		if err := tx.Create(&newMBOM).Error; err != nil {
+			return err
+		}
+
+		// 7. 保存 items
+		if err := saveBOMItems(tx, newMBOM.ID, clonedItems); err != nil {
+			return err
+		}
+
+		// 8. 重新加载
+		if err := tx.Preload("Items", func(db *gorm.DB) *gorm.DB { return db.Order("bom_items.sort_order ASC") }).First(&savedNew, "id = ?", newMBOM.ID).Error; err != nil {
+			return err
+		}
+
+		// 9. 写入版本快照与审计日志
+		if err := writeBOMVersionSnapshotTx(ctx, tx, savedNew, "REVISE"); err != nil {
+			return err
+		}
+		payload := bomAuditSnapshot(savedNew)
+		payload["operation"] = "revise"
+		payload["reason"] = input.Reason
+		payload["previousMbomId"] = current.ID
+		payload["previousMbomVersion"] = current.VersionText
+		return writeBOMAuditEntryWithContext(ctx, tx, savedNew.ID, "REVISE", nil, payload)
+	})
+
+	if err != nil {
+		return BOMDetailResponse{}, err
+	}
+
+	return MapBOMToDetailResponse(savedNew)
 }

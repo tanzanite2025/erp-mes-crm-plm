@@ -12,16 +12,13 @@ import { RoutingService } from '../services/routing-service'
 
 const logger = createLogger('useBusinessEventSources')
 
-const FALLBACK_SOURCE_CODES = new Set([
-  'SALES_ORDER',
-  'PURCHASE_ORDER',
-  'PRODUCTION_PLAN',
-  'PRODUCTION_TASK',
-])
-
+/**
+ * 后端拉不到事件源时使用的 fallback 列表。
+ * 来源是 BUSINESS_EVENT_SOURCE_TEMPLATES 中 meta.seedAsFallback === true 的模板。
+ */
 export function buildFallbackBusinessEventSources() {
-  return BUSINESS_EVENT_SOURCE_TEMPLATES.filter((template) =>
-    FALLBACK_SOURCE_CODES.has(template.code)
+  return BUSINESS_EVENT_SOURCE_TEMPLATES.filter(
+    (template) => template.meta.seedAsFallback === true
   ).map((template) => materializeBusinessEventSourceTemplate(template))
 }
 
@@ -56,12 +53,25 @@ export function useBusinessEventSources() {
         toast.success('业务事件源已创建')
         return saved
       } catch (err) {
-        logger.error('创建业务事件源失败', err)
-        toast.error(`创建业务事件源失败：${err}`)
+        const message = err instanceof Error ? err.message : String(err)
+        const isDuplicate =
+          message.includes('duplicate key') ||
+          message.includes('unique constraint') ||
+          message.includes('已存在')
+        if (isDuplicate) {
+          logger.warn('创建业务事件源失败：编码已存在', err)
+          toast.error(
+            `事件源编码 ${source.code} 已存在，可能由其他用户或会话创建。已为你刷新列表。`
+          )
+          void loadSources()
+        } else {
+          logger.error('创建业务事件源失败', err)
+          toast.error(`创建业务事件源失败：${message}`)
+        }
         return undefined
       }
     },
-    []
+    [loadSources]
   )
 
   const updateSource = useCallback(
@@ -104,7 +114,12 @@ export function useBusinessEventSources() {
     }
   }, [])
 
-  const replaceSource = useCallback((nextSource: BusinessEventSource) => {
+  /**
+   * 用服务端返回的事件源快照（如状态重命名事务返回的结果）原地替换本地缓存。
+   * 仅供"服务端已经处理完一次写入操作，需要把权威结果同步到 hook 状态"的场景使用。
+   * 不会做任何额外的 API 调用或版本校验。
+   */
+  const applyServerSnapshot = useCallback((nextSource: BusinessEventSource) => {
     setSources((prev) =>
       prev.map((source) => (source.id === nextSource.id ? nextSource : source))
     )
@@ -117,7 +132,7 @@ export function useBusinessEventSources() {
     addSource,
     updateSource,
     deleteSource,
-    replaceSource,
+    applyServerSnapshot,
     reloadSources: loadSources,
   }
 }

@@ -78,7 +78,7 @@ export function BusinessEventSourceList({
     error,
     addSource,
     updateSource,
-    replaceSource,
+    applyServerSnapshot,
     deleteSource,
     reloadSources,
   } = useBusinessEventSources()
@@ -318,7 +318,7 @@ export function BusinessEventSourceList({
                 )
               }
               onUpdate={updateSource}
-              onSourceReplace={replaceSource}
+              onSourceReplace={applyServerSnapshot}
               onDelete={deleteSource}
               onDuplicate={duplicateSource}
               canDelete={sources.length > 1}

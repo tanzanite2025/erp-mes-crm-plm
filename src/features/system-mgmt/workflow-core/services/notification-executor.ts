@@ -22,6 +22,7 @@ export interface NotificationExecutionInput {
   segment: RuleSegment
   event: RuleExecutionEvent
   eventKey: string
+  executionId: string
   targetEntity: string
   targetSourceCode: string
   metadata: RuleExecutionMetadata
@@ -77,6 +78,7 @@ export function executeNotificationAction({
   segment,
   event,
   eventKey,
+  executionId,
   targetEntity,
   targetSourceCode,
   metadata,
@@ -154,6 +156,7 @@ export function executeNotificationAction({
             fallback: false,
             targetCount: finalTargets.length,
             mode,
+            executionId,
           },
         })
       } catch (error) {
@@ -176,6 +179,7 @@ export function executeNotificationAction({
           targets: finalTargets,
           metadata: { ...metadata, uniqueKey, commandId: command.id },
           errorMessage: error instanceof Error ? error.message : String(error),
+          result: { executionId },
         })
       }
     }
@@ -236,6 +240,7 @@ export function executeNotificationAction({
         fallback: true,
         targetCount: finalTargets.length,
         mode,
+        executionId,
       },
     })
   } catch (error) {
@@ -257,6 +262,7 @@ export function executeNotificationAction({
       targets: finalTargets,
       metadata: { ...metadata, uniqueKey },
       errorMessage: error instanceof Error ? error.message : String(error),
+      result: { executionId },
     })
   }
 

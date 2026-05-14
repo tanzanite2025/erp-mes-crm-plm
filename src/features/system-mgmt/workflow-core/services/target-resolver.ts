@@ -1,4 +1,8 @@
 import { type SystemMessage } from '@/features/system-mgmt/notifications/types'
+import {
+  BUSINESS_EVENT_SOURCE_TEMPLATES,
+  getBusinessEventSourceCodesByNotificationType,
+} from '../data/business-event-source-templates'
 import { type NotificationRule } from '../data/notification-rule-schema'
 import {
   type RuleExecutionEvent,
@@ -111,6 +115,12 @@ export function buildBusinessKey(metadata: RuleExecutionMetadata) {
   )
 }
 
+/**
+ * 事件键 - 稳定标识（sourceCode + type + businessKey + ruleId + segmentId）。
+ * 同一事件再次执行时返回相同的 eventKey，便于按事件查询所有相关日志。
+ *
+ * 每次执行的唯一标识请使用 buildExecutionId（写入 log.result.executionId）。
+ */
 export function buildExecutionEventKey(
   type: RuleExecutionEvent['type'],
   sourceCode: string,
@@ -124,9 +134,14 @@ export function buildExecutionEventKey(
     buildBusinessKey(metadata),
     ruleId || 'rule',
     segmentId || 'segment',
-    Date.now().toString(36),
-    Math.random().toString(36).slice(2, 8),
   ].join('_')
+}
+
+/**
+ * 单次执行的唯一标识。每次执行都会生成新的 id，写入 log.result.executionId。
+ */
+export function buildExecutionId(): string {
+  return `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
 }
 
 export function buildApprovalProcessKey(
@@ -153,33 +168,30 @@ export function resolveTemplate(
   })
 }
 
+/**
+ * 通过 NotificationType 推断目标实体（ORDER / QUALITY / ...）。
+ * 实体定义来自 BUSINESS_EVENT_SOURCE_TEMPLATES — 取第一个匹配模板的 entity。
+ * 兜底返回 'ORDER' 是为了向后兼容。
+ */
 export function getTargetEntity(type: RuleExecutionEvent['type']) {
-  const entityTypeMap: Record<string, string> = {
-    ORDER_EVENT: 'ORDER',
-    QUALITY_STANDARD_EVENT: 'QUALITY',
-    QUALITY_ALERT: 'PRODUCT',
-    EQUIPMENT_STATUS: 'MOLD',
-    SYSTEM_NOTICE: 'SYSTEM',
-    TASK_ASSIGNED: 'SYSTEM',
-  }
-  return entityTypeMap[type] || 'ORDER'
+  const matchingTemplate = BUSINESS_EVENT_SOURCE_TEMPLATES.find(
+    (template) => template.meta.notificationType === type
+  )
+  return matchingTemplate?.entity ?? 'ORDER'
 }
 
+/**
+ * 通过事件推断目标 sourceCode。
+ * 优先级：event.sourceCode > metadata.sourceCode > 通过 NotificationType 反查的第一个模板 > 'SALES_ORDER'
+ */
 export function getTargetSourceCode(event: RuleExecutionEvent) {
-  const sourceTypeMap: Record<string, string> = {
-    ORDER_EVENT: 'SALES_ORDER',
-    QUALITY_STANDARD_EVENT: 'QUALITY_STANDARD',
-    QUALITY_ALERT: 'QUALITY_ALERT',
-    EQUIPMENT_STATUS: 'EQUIPMENT_STATUS',
-    SYSTEM_NOTICE: 'SYSTEM_NOTICE',
-    TASK_ASSIGNED: 'PRODUCTION_TASK',
-  }
-  return (
-    event.sourceCode ||
-    getMetadataString(event.metadata || {}, 'sourceCode') ||
-    sourceTypeMap[event.type] ||
-    'SALES_ORDER'
-  )
+  if (event.sourceCode) return event.sourceCode
+
+  const metadataSourceCode = getMetadataString(event.metadata || {}, 'sourceCode')
+  if (metadataSourceCode) return metadataSourceCode
+
+  const candidateCodes = getBusinessEventSourceCodesByNotificationType(event.type)
+  return candidateCodes[0] ?? 'SALES_ORDER'
 }
 
 export function resolveSegmentTargets({

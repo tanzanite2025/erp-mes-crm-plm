@@ -1223,7 +1223,6 @@ export const engineering = {
       active: 'Active',
       reviewing: 'Reviewing',
       approved: 'Approved',
-      validating: 'Validating',
       released: 'Released',
       archived: 'Archived',
       obsolete: 'Obsolete',

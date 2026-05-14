@@ -22,6 +22,7 @@ export interface ApprovalExecutionInput {
   segment: RuleSegment
   event: RuleExecutionEvent
   eventKey: string
+  executionId: string
   targetEntity: string
   targetSourceCode: string
   metadata: RuleExecutionMetadata
@@ -41,6 +42,7 @@ export async function executeApprovalAction({
   segment,
   event,
   eventKey,
+  executionId,
   targetEntity,
   targetSourceCode,
   metadata,
@@ -86,7 +88,7 @@ export async function executeApprovalAction({
       content: approvalReason,
       targets: finalTargets,
       metadata,
-      result: { approvalProcessKey, mode, reason: 'already processed' },
+      result: { approvalProcessKey, mode, reason: 'already processed', executionId },
     })
     return result
   }
@@ -117,6 +119,7 @@ export async function executeApprovalAction({
         resolvedDynamicApprover,
         effectiveApprover1Id,
         effectiveApprover2Id,
+        executionId,
       },
     })
     return result
@@ -171,6 +174,7 @@ export async function executeApprovalAction({
         resolvedDynamicApprover,
         effectiveApprover1Id,
         effectiveApprover2Id,
+        executionId,
       },
     })
   } catch (error) {
@@ -201,6 +205,7 @@ export async function executeApprovalAction({
         resolvedDynamicApprover,
         effectiveApprover1Id,
         effectiveApprover2Id,
+        executionId,
       },
     })
   }

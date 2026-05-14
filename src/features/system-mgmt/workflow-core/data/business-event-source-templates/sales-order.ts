@@ -75,4 +75,10 @@ export const DEFAULT_SALES_ORDER_EVENT_SOURCE: BusinessEventSourceTemplate = {
     ],
     defaultActionUrlTemplate: '/trading/orders/[OrderId]',
   },
+  meta: {
+    runtimeCoverage: 'connected',
+    notificationType: 'ORDER_EVENT',
+    forceStatusChangedAction: true,
+    seedAsFallback: true,
+  },
 }

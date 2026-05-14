@@ -85,6 +85,15 @@ type DeriveMBOMInput struct {
 	SourceVersion   *int   `json:"sourceVersion,omitempty"` // ✅ 新增：源 EBOM 版本号
 }
 
+// ReviseMBOMInput 描述工艺师对当前 MBOM 提交修订时的入参。
+// 修订是 MBOM 自身版本独立升级，不影响 EBOM。
+type ReviseMBOMInput struct {
+	Reason          string `json:"reason"`           // 修订原因（必填，用于审计与通知模板）
+	ChangeOrderNo   string `json:"changeOrderNo"`    // 工艺变更单号（可选）
+	RevisionNo      string `json:"revisionNo"`       // 新版本的修订号（默认在原基础上 +1）
+	ExpectedVersion *int   `json:"expectedVersion,omitempty"` // 乐观锁
+}
+
 func (input SaveBOMInput) toModel() models.BOM {
 	model := models.BOM{
 		BaseModel: models.BaseModel{

@@ -6,12 +6,13 @@ const (
 	BOMTypeEBOM = "EBOM"
 	BOMTypeMBOM = "MBOM"
 
-	BOMStatusDraft      = "DRAFT"
-	BOMStatusReviewing  = "REVIEWING"
-	BOMStatusApproved   = "APPROVED"
-	BOMStatusValidating = "VALIDATING"
-	BOMStatusReleased   = "RELEASED"
-	BOMStatusObsolete   = "OBSOLETE"
+	// EBOM 完整生命周期：DRAFT → REVIEWING → APPROVED → RELEASED → OBSOLETE
+	// MBOM 数据层只用 RELEASED / OBSOLETE（派生即生效，无草稿/审批中间态）
+	BOMStatusDraft     = "DRAFT"
+	BOMStatusReviewing = "REVIEWING"
+	BOMStatusApproved  = "APPROVED"
+	BOMStatusReleased  = "RELEASED"
+	BOMStatusObsolete  = "OBSOLETE"
 )
 
 // BOM 配方清单模型
@@ -24,7 +25,6 @@ type BOM struct {
 	Product         *Product        `gorm:"foreignKey:ProductID" json:"product,omitempty"`
 	SourceEBOMID    *string         `gorm:"type:uuid;index" json:"sourceEbomId,omitempty"`
 	VersionText     string          `gorm:"size:20;default:'V1.0'" json:"version"`
-	DisplayVersion  string          `gorm:"-" json:"bomDisplayVersion,omitempty"`
 	Status          string          `gorm:"size:20;default:'DRAFT'" json:"status"`
 	IsLocked        bool            `gorm:"default:false" json:"isLocked"`
 	Version         int             `gorm:"default:1" json:"_v"`

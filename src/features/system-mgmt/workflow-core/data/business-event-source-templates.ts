@@ -1,457 +1,59 @@
-import { DEFAULT_BOM_EVENT_SOURCE } from './business-event-source-templates/bom'
+import { DEFAULT_BOM_ENGINEERING_EVENT_SOURCE } from './business-event-source-templates/bom-engineering'
+import { DEFAULT_BOM_MANUFACTURING_EVENT_SOURCE } from './business-event-source-templates/bom-manufacturing'
+import { DEFAULT_LOGISTICS_RECORD_EVENT_SOURCE } from './business-event-source-templates/logistics-record'
+import { DEFAULT_PRODUCTION_PLAN_EVENT_SOURCE } from './business-event-source-templates/production-plan'
+import { DEFAULT_PRODUCTION_TASK_EVENT_SOURCE } from './business-event-source-templates/production-task'
+import { DEFAULT_PURCHASE_ORDER_EVENT_SOURCE } from './business-event-source-templates/purchase-order'
+import { DEFAULT_QUALITY_STANDARD_EVENT_SOURCE } from './business-event-source-templates/quality-standard'
 import { DEFAULT_SALES_ORDER_EVENT_SOURCE } from './business-event-source-templates/sales-order'
 import { type BusinessEventSourceTemplate } from './business-event-source-types'
-import { productionPlanStatuses } from './production-plan-status'
-import { productionTaskStatuses } from './production-task-status'
 
+/**
+ * 业务事件源模板的单一注册点。
+ *
+ * 每个模板必须包含 `meta` 字段，标识：
+ * - 运行时覆盖度（connected / preconnected / template-only）
+ * - 实时入口的 NotificationType
+ * - 是否强制使用 STATUS_CHANGED action
+ * - 是否作为 fallback 兜底
+ *
+ * 加新事件源只需要：
+ *   1. 在 templates/ 下新增模板文件并 import 进这里
+ *   2. 在 business-event-status-catalog.ts 注册状态字典（即将合并到 meta）
+ *
+ * 不再需要修改 target-resolver / notification-rule-schema / use-business-event-sources。
+ */
 export const BUSINESS_EVENT_SOURCE_TEMPLATES: BusinessEventSourceTemplate[] = [
   DEFAULT_SALES_ORDER_EVENT_SOURCE,
-  {
-    code: 'PURCHASE_ORDER',
-    name: '采购订单',
-    module: 'Trading',
-    entity: 'ORDER',
-    enabled: true,
-    description: '采购订单创建、下达、待收货、收货和取消等生命周期事件。',
-    config: {
-      actions: [
-        { code: 'CREATED', name: '新建', kind: 'created' },
-        { code: 'STATUS_CHANGED', name: '状态变更', kind: 'status' },
-        { code: 'RECEIVED', name: '收货完成', kind: 'status' },
-      ],
-      statuses: [
-        { code: 'Draft' },
-        { code: 'Sent' },
-        { code: 'Awaiting' },
-        { code: 'Received' },
-        { code: 'Canceled' },
-      ],
-      fields: [
-        {
-          key: 'purchaseOrderId',
-          label: '采购单ID',
-          path: 'purchaseOrderId',
-          type: 'string',
-          templateKey: 'PurchaseOrderId',
-          templateEnabled: true,
-          dynamicResolver: false,
-        },
-        {
-          key: 'purchaseOrderNo',
-          label: '采购单号',
-          path: 'purchaseOrderNo',
-          type: 'string',
-          templateKey: 'PurchaseOrderNo',
-          templateEnabled: true,
-          dynamicResolver: false,
-        },
-        {
-          key: 'supplierName',
-          label: '供应商',
-          path: 'supplierName',
-          type: 'string',
-          templateKey: 'SupplierName',
-          templateEnabled: true,
-          dynamicResolver: false,
-        },
-        {
-          key: 'purchaser',
-          label: '采购员',
-          path: 'purchaser',
-          type: 'user',
-          templateKey: 'Purchaser',
-          templateEnabled: true,
-          dynamicResolver: true,
-        },
-      ],
-      dynamicResolvers: [
-        {
-          code: 'purchaser',
-          label: '采购员',
-          path: 'purchaser',
-          type: 'user',
-        },
-        {
-          code: 'approval.manager',
-          label: '直属审批经理',
-          path: 'approval.manager',
-          type: 'user',
-        },
-      ],
-      defaultActionUrlTemplate:
-        '/purchase/orders?search=[PurchaseOrderNo]&detailId=[PurchaseOrderId]',
-    },
-  },
-  {
-    code: 'LOGISTICS_RECORD',
-    name: '物流单',
-    module: 'Trading',
-    entity: 'ORDER',
-    enabled: true,
-    description: '物流派车、装车、运输、签收和异常等状态事件。',
-    config: {
-      actions: [
-        { code: 'CREATED', name: '新建', kind: 'created' },
-        { code: 'STATUS_CHANGED', name: '状态变更', kind: 'status' },
-        { code: 'EXCEPTION', name: '异常', kind: 'custom' },
-      ],
-      statuses: [
-        { code: 'Draft' },
-        { code: 'Dispatched' },
-        { code: 'Loaded' },
-        { code: 'InTransit' },
-        { code: 'Signed' },
-        { code: 'Exception' },
-        { code: 'Canceled' },
-      ],
-      fields: [
-        {
-          key: 'logisticsId',
-          label: '物流单ID',
-          path: 'logisticsId',
-          type: 'string',
-          templateKey: 'LogisticsId',
-          templateEnabled: true,
-          dynamicResolver: false,
-        },
-        {
-          key: 'trackingNo',
-          label: '物流单号',
-          path: 'trackingNo',
-          type: 'string',
-          templateKey: 'TrackingNo',
-          templateEnabled: true,
-          dynamicResolver: false,
-        },
-        {
-          key: 'vehicleNo',
-          label: '车牌号',
-          path: 'vehicleNo',
-          type: 'string',
-          templateKey: 'VehicleNo',
-          templateEnabled: true,
-          dynamicResolver: false,
-        },
-        {
-          key: 'dispatcherId',
-          label: '调度员',
-          path: 'dispatcherId',
-          type: 'user',
-          templateKey: 'DispatcherId',
-          templateEnabled: true,
-          dynamicResolver: true,
-        },
-      ],
-      dynamicResolvers: [
-        {
-          code: 'dispatcherId',
-          label: '调度员',
-          path: 'dispatcherId',
-          type: 'user',
-        },
-        {
-          code: 'driverUserId',
-          label: '司机账号',
-          path: 'driverUserId',
-          type: 'user',
-        },
-        {
-          code: 'approval.manager',
-          label: '直属审批经理',
-          path: 'approval.manager',
-          type: 'user',
-        },
-      ],
-      defaultActionUrlTemplate: '/logistics/[LogisticsId]',
-    },
-  },
-  {
-    code: 'PRODUCTION_PLAN',
-    name: '生产计划',
-    module: 'Production',
-    entity: 'SYSTEM',
-    enabled: true,
-    description: '生产计划围绕已排产、生产中、计划完成和取消的主计划状态事件。',
-    config: {
-      actions: [
-        { code: 'CREATED', name: '新建', kind: 'created' },
-        { code: 'STATUS_CHANGED', name: '状态变更', kind: 'status' },
-        { code: 'CANCELED', name: '取消', kind: 'status' },
-        { code: 'COMPLETED', name: '计划完成', kind: 'status' },
-      ],
-      statuses: productionPlanStatuses.map((status) => ({ code: status })),
-      fields: [
-        {
-          key: 'planId',
-          label: '计划ID',
-          path: 'planId',
-          type: 'string',
-          templateKey: 'PlanId',
-          templateEnabled: true,
-          dynamicResolver: false,
-        },
-        {
-          key: 'orderNo',
-          label: '订单号',
-          path: 'orderNo',
-          type: 'string',
-          templateKey: 'OrderNo',
-          templateEnabled: true,
-          dynamicResolver: false,
-        },
-        {
-          key: 'productName',
-          label: '产品名称',
-          path: 'productName',
-          type: 'string',
-          templateKey: 'ProductName',
-          templateEnabled: true,
-          dynamicResolver: false,
-        },
-        {
-          key: 'quantity',
-          label: '计划数量',
-          path: 'quantity',
-          type: 'number',
-          templateKey: 'Quantity',
-          templateEnabled: true,
-          dynamicResolver: false,
-        },
-        {
-          key: 'startDate',
-          label: '计划开始',
-          path: 'startDate',
-          type: 'date',
-          templateKey: 'StartDate',
-          templateEnabled: true,
-          dynamicResolver: false,
-        },
-        {
-          key: 'endDate',
-          label: '计划结束',
-          path: 'endDate',
-          type: 'date',
-          templateKey: 'EndDate',
-          templateEnabled: true,
-          dynamicResolver: false,
-        },
-      ],
-      dynamicResolvers: [
-        {
-          code: 'approval.manager',
-          label: '直属审批经理',
-          path: 'approval.manager',
-          type: 'user',
-        },
-      ],
-      defaultActionUrlTemplate: '/dashboard/calendar?planId=[PlanId]',
-    },
-  },
-  {
-    code: 'PRODUCTION_TASK',
-    name: '生产任务',
-    module: 'Production',
-    entity: 'SYSTEM',
-    enabled: true,
-    description: '生产任务围绕待执行、执行中、挂起和完工的真实任务状态事件。',
-    config: {
-      actions: [
-        { code: 'CREATED', name: '新建', kind: 'created' },
-        { code: 'STATUS_CHANGED', name: '状态变更', kind: 'status' },
-        { code: 'QUALITY_HOLD', name: '质检挂起', kind: 'custom' },
-      ],
-      statuses: productionTaskStatuses.map((status) => ({ code: status })),
-      fields: [
-        {
-          key: 'taskId',
-          label: '任务ID',
-          path: 'taskId',
-          type: 'string',
-          templateKey: 'TaskId',
-          templateEnabled: true,
-          dynamicResolver: false,
-        },
-        {
-          key: 'planId',
-          label: '计划ID',
-          path: 'planId',
-          type: 'string',
-          templateKey: 'PlanId',
-          templateEnabled: true,
-          dynamicResolver: false,
-        },
-        {
-          key: 'orderNo',
-          label: '订单号',
-          path: 'orderNo',
-          type: 'string',
-          templateKey: 'OrderNo',
-          templateEnabled: true,
-          dynamicResolver: false,
-        },
-        {
-          key: 'productName',
-          label: '产品名称',
-          path: 'productName',
-          type: 'string',
-          templateKey: 'ProductName',
-          templateEnabled: true,
-          dynamicResolver: false,
-        },
-        {
-          key: 'batchNo',
-          label: '批次号',
-          path: 'batchNo',
-          type: 'string',
-          templateKey: 'BatchNo',
-          templateEnabled: true,
-          dynamicResolver: false,
-        },
-        {
-          key: 'processName',
-          label: '末级层级',
-          path: 'processName',
-          type: 'string',
-          templateKey: 'ProcessName',
-          templateEnabled: true,
-          dynamicResolver: false,
-        },
-        {
-          key: 'operator',
-          label: '操作人',
-          path: 'operator',
-          type: 'user',
-          templateKey: 'Operator',
-          templateEnabled: true,
-          dynamicResolver: true,
-        },
-      ],
-      dynamicResolvers: [
-        {
-          code: 'operator',
-          label: '操作人',
-          path: 'operator',
-          type: 'user',
-        },
-      ],
-      defaultActionUrlTemplate: '/dashboard/calendar?planId=[PlanId]',
-    },
-  },
-  {
-    code: 'QUALITY_STANDARD',
-    name: '品质标准',
-    module: 'Quality',
-    entity: 'QUALITY',
-    enabled: true,
-    description: '品质标准围绕草稿、提审、审批、发布与归档的受控流程事件。',
-    config: {
-      actions: [
-        { code: 'CREATED', name: '新建', kind: 'created' },
-        { code: 'STATUS_CHANGED', name: '状态变更', kind: 'status' },
-        { code: 'SUBMITTED_FOR_APPROVAL', name: '提交审批', kind: 'custom' },
-        { code: 'APPROVED', name: '审批通过', kind: 'custom' },
-        { code: 'REJECTED', name: '驳回', kind: 'custom' },
-        { code: 'PUBLISHED', name: '发布', kind: 'custom' },
-        { code: 'ARCHIVED', name: '归档', kind: 'custom' },
-      ],
-      statuses: [
-        { code: 'DRAFT' },
-        { code: 'PENDING_APPROVAL' },
-        { code: 'APPROVED' },
-        { code: 'REJECTED' },
-        { code: 'PUBLISHED' },
-        { code: 'ARCHIVED' },
-      ],
-      fields: [
-        {
-          key: 'targetId',
-          label: '标准ID',
-          path: 'targetId',
-          type: 'string',
-          templateKey: 'StandardId',
-          templateEnabled: true,
-          dynamicResolver: false,
-        },
-        {
-          key: 'standardCode',
-          label: '标准编码',
-          path: 'standardCode',
-          type: 'string',
-          templateKey: 'StandardCode',
-          templateEnabled: true,
-          dynamicResolver: false,
-        },
-        {
-          key: 'standardName',
-          label: '标准名称',
-          path: 'standardName',
-          type: 'string',
-          templateKey: 'StandardName',
-          templateEnabled: true,
-          dynamicResolver: false,
-        },
-        {
-          key: 'operator',
-          label: '责任人',
-          path: 'operator',
-          type: 'user',
-          templateKey: 'Operator',
-          templateEnabled: true,
-          dynamicResolver: true,
-        },
-        {
-          key: 'auditor',
-          label: '审批人',
-          path: 'auditor',
-          type: 'user',
-          templateKey: 'Auditor',
-          templateEnabled: true,
-          dynamicResolver: true,
-        },
-        {
-          key: 'reviewComment',
-          label: '审批意见',
-          path: 'reviewComment',
-          type: 'string',
-          templateKey: 'ReviewComment',
-          templateEnabled: true,
-          dynamicResolver: false,
-        },
-        {
-          key: 'rejectReason',
-          label: '驳回原因',
-          path: 'rejectReason',
-          type: 'string',
-          templateKey: 'RejectReason',
-          templateEnabled: true,
-          dynamicResolver: false,
-        },
-        {
-          key: 'archiveReason',
-          label: '归档原因',
-          path: 'archiveReason',
-          type: 'string',
-          templateKey: 'ArchiveReason',
-          templateEnabled: true,
-          dynamicResolver: false,
-        },
-      ],
-      dynamicResolvers: [
-        {
-          code: 'operator',
-          label: '责任人',
-          path: 'operator',
-          type: 'user',
-        },
-        {
-          code: 'auditor',
-          label: '审批人',
-          path: 'auditor',
-          type: 'user',
-        },
-      ],
-      defaultActionUrlTemplate: '/quality/standards/[StandardId]/preview',
-    },
-  },
-  DEFAULT_BOM_EVENT_SOURCE,
+  DEFAULT_PURCHASE_ORDER_EVENT_SOURCE,
+  DEFAULT_LOGISTICS_RECORD_EVENT_SOURCE,
+  DEFAULT_PRODUCTION_PLAN_EVENT_SOURCE,
+  DEFAULT_PRODUCTION_TASK_EVENT_SOURCE,
+  DEFAULT_QUALITY_STANDARD_EVENT_SOURCE,
+  DEFAULT_BOM_ENGINEERING_EVENT_SOURCE,
+  DEFAULT_BOM_MANUFACTURING_EVENT_SOURCE,
 ]
+
+/**
+ * 通过 sourceCode 取模板的便捷查询。
+ */
+export function getBusinessEventSourceTemplateByCode(
+  sourceCode: string
+): BusinessEventSourceTemplate | undefined {
+  const normalized = sourceCode.trim().toUpperCase()
+  return BUSINESS_EVENT_SOURCE_TEMPLATES.find(
+    (template) => template.code === normalized
+  )
+}
+
+/**
+ * 通过 NotificationType 反查 sourceCode。
+ * 同一个 type 可能对应多个 sourceCode（如 ORDER_EVENT），首个匹配项即为默认。
+ */
+export function getBusinessEventSourceCodesByNotificationType(
+  notificationType: string
+): string[] {
+  return BUSINESS_EVENT_SOURCE_TEMPLATES.filter(
+    (template) => template.meta.notificationType === notificationType
+  ).map((template) => template.code)
+}
