@@ -1390,6 +1390,8 @@ export const engineering = {
       internalWidthPlaceholder: '例如：21',
       externalWidth: '外宽 (mm)',
       externalWidthPlaceholder: '例如：28',
+      maxTirePressure: '最大胎压 (psi)',
+      maxTirePressurePlaceholder: '例如：120',
       tireType: '胎型适配',
       brakeType: '刹车方式',
       techSeries: '技术系列',
@@ -1400,6 +1402,7 @@ export const engineering = {
       overviewWeight: '标准重量',
       overviewInternalWidth: '内宽',
       overviewExternalWidth: '外宽',
+      overviewMaxTirePressure: '最大胎压',
     },
     stem: {
       title: '把立物理规格',

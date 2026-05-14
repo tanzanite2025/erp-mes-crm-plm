@@ -34,6 +34,7 @@ export function buildDefaultProductValues(
         depth: undefined,
         widthInternal: undefined,
         widthExternal: undefined,
+        maxTirePressure: undefined,
         weight: undefined,
         image: '',
         restrictions: [],

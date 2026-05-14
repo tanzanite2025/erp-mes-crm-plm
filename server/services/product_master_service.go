@@ -336,6 +336,7 @@ func BuildProductPatchInput(id string, version int, payload map[string]json.RawM
 		"depth",
 		"widthInternal",
 		"widthExternal",
+		"maxTirePressure",
 		"tireType",
 		"brakeType",
 		"techSeries",
@@ -398,6 +399,8 @@ func BuildProductPatchInput(id string, version int, payload map[string]json.RawM
 			err = json.Unmarshal(valueRaw, &input.WidthInternal)
 		case "widthExternal":
 			err = json.Unmarshal(valueRaw, &input.WidthExternal)
+		case "maxTirePressure":
+			err = json.Unmarshal(valueRaw, &input.MaxTirePressure)
 		case "tireType":
 			err = json.Unmarshal(valueRaw, &input.TireType)
 		case "brakeType":

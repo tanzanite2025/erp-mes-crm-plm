@@ -20,6 +20,7 @@ type ProductApiDTO struct {
 	Depth                    float64                       `json:"depth"`
 	WidthInternal            float64                       `json:"widthInternal"`
 	WidthExternal            float64                       `json:"widthExternal"`
+	MaxTirePressure          float64                       `json:"maxTirePressure"`
 	TireType                 string                        `json:"tireType,omitempty"`
 	BrakeType                string                        `json:"brakeType,omitempty"`
 	TechSeries               string                        `json:"techSeries,omitempty"`

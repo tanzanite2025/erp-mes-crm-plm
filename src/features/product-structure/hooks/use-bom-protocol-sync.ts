@@ -312,25 +312,6 @@ export function useBOMProtocolSync({
     return false
   }, [protocolDraft, watchedItems, validation])
 
-  // Perform sync (stable reference)
-  const performSync = useCallback((): BOMWorkspaceParentChildrenProtocolDraft | undefined => {
-    if (!sourceBOM) {
-      return protocolDraft
-    }
-
-    // Rebuild protocol from current form state
-    const syncedProtocol = buildBOMWorkspaceParentChildrenProtocolDraftFromBOMDetailSource({
-      sourceBOM,
-      activeSections: sections,
-      fields,
-      watchedItems,
-      authoritativeProtocolDraft,
-    })
-
-    lastSyncedItemsRef.current = [...watchedItems]
-    return syncedProtocol
-  }, [sourceBOM, sections, fields, watchedItems, authoritativeProtocolDraft, protocolDraft])
-
   // Auto-sync with debouncing
   useEffect(() => {
     // Skip auto-sync if manual mode is enabled

@@ -25,6 +25,7 @@ type SaveProductAPIRequest struct {
 	Depth             float64                           `json:"depth"`
 	WidthInternal     float64                           `json:"widthInternal"`
 	WidthExternal     float64                           `json:"widthExternal"`
+	MaxTirePressure   float64                           `json:"maxTirePressure"`
 	TireType          string                            `json:"tireType"`
 	BrakeType         string                            `json:"brakeType"`
 	TechSeries        string                            `json:"techSeries"`
@@ -65,6 +66,7 @@ type ProductWriteInput struct {
 	Depth             float64
 	WidthInternal     float64
 	WidthExternal     float64
+	MaxTirePressure   float64
 	TireType          string
 	BrakeType         string
 	TechSeries        string
@@ -156,6 +158,7 @@ func toProductWriteInput(input SaveProductAPIRequest) ProductWriteInput {
 		Depth:             input.Depth,
 		WidthInternal:     input.WidthInternal,
 		WidthExternal:     input.WidthExternal,
+		MaxTirePressure:   input.MaxTirePressure,
 		TireType:          input.TireType,
 		BrakeType:         input.BrakeType,
 		TechSeries:        input.TechSeries,
@@ -209,6 +212,7 @@ func toProductModel(input ProductWriteInput) models.Product {
 		Depth:             input.Depth,
 		WidthInternal:     input.WidthInternal,
 		WidthExternal:     input.WidthExternal,
+		MaxTirePressure:   input.MaxTirePressure,
 		TireType:          input.TireType,
 		BrakeType:         input.BrakeType,
 		TechSeries:        input.TechSeries,
@@ -249,6 +253,7 @@ func toProductAPIRequest(model models.Product) SaveProductAPIRequest {
 		Depth:             model.Depth,
 		WidthInternal:     model.WidthInternal,
 		WidthExternal:     model.WidthExternal,
+		MaxTirePressure:   model.MaxTirePressure,
 		TireType:          model.TireType,
 		BrakeType:         model.BrakeType,
 		TechSeries:        model.TechSeries,

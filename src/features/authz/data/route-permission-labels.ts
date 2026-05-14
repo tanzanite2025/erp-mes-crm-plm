@@ -112,9 +112,7 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/leave-management': 'orgPersonnel.tabs.leave',
   '/hall-of-fame': 'orgPersonnel.tabs.stats',
   '/logistics-config': 'sidebar.items.logisticsConfig',
-  '/logistics-config/platforms': 'logisticsConfig.tabs.platforms',
   '/logistics-config/scanning': 'logisticsConfig.tabs.scanning',
-  '/logistics-config/suppliers': 'logisticsConfig.tabs.suppliers',
   '/logistics-config/packaging-rules': 'logisticsConfig.tabs.packagingRules',
   '/logistics-config/vehicle-loading': 'logisticsConfig.tabs.vehicleLoading',
   '/logistics-config/vehicle-specs-library':

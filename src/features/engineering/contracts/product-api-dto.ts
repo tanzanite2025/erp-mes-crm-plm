@@ -18,6 +18,7 @@ export interface ProductApiDTO {
   depth?: number
   widthInternal?: number
   widthExternal?: number
+  maxTirePressure?: number
   tireType?: string
   brakeType?: string
   techSeries?: string

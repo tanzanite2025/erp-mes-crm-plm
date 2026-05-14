@@ -62,6 +62,7 @@ func toProductApiDTO(product models.Product) ProductApiDTO {
 		Depth:                    product.Depth,
 		WidthInternal:            product.WidthInternal,
 		WidthExternal:            product.WidthExternal,
+		MaxTirePressure:          product.MaxTirePressure,
 		TireType:                 product.TireType,
 		BrakeType:                product.BrakeType,
 		TechSeries:               product.TechSeries,

@@ -1390,6 +1390,8 @@ export const engineering = {
       internalWidthPlaceholder: 'e.g. 21',
       externalWidth: 'External Width (mm)',
       externalWidthPlaceholder: 'e.g. 28',
+      maxTirePressure: 'Max Tire Pressure (psi)',
+      maxTirePressurePlaceholder: 'e.g. 120',
       tireType: 'Tire Compatibility',
       brakeType: 'Brake Type',
       techSeries: 'Tech Series',
@@ -1400,6 +1402,7 @@ export const engineering = {
       overviewWeight: 'Std Weight',
       overviewInternalWidth: 'Internal Width',
       overviewExternalWidth: 'External Width',
+      overviewMaxTirePressure: 'Max Pressure',
     },
     stem: {
       title: 'Stem Physical Spec',

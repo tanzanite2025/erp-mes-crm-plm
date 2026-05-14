@@ -39,7 +39,7 @@ export function RimSpecForm({
           {t('engineering.specForms.rim.subtitle')}
         </Badge>
       </div>
-      <div className='grid grid-cols-2 sm:grid-cols-3 gap-x-2 gap-y-1'>
+      <div className='grid grid-cols-4 gap-x-2 gap-y-1'>
         <FormField
           control={form.control}
           name='depth'
@@ -96,6 +96,29 @@ export function RimSpecForm({
                 <Input
                   type='number'
                   placeholder={t('engineering.specForms.rim.externalWidthPlaceholder')}
+                  {...field}
+                  value={field.value ?? ''}
+                  onChange={(event) =>
+                    field.onChange(event.target.value === '' ? undefined : parseFloat(event.target.value))
+                  }
+                  className='h-7 w-full bg-background/50'
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name='maxTirePressure'
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className='text-blue-600/70'>
+                {t('engineering.specForms.rim.maxTirePressure')}
+              </FormLabel>
+              <FormControl>
+                <Input
+                  type='number'
+                  placeholder={t('engineering.specForms.rim.maxTirePressurePlaceholder')}
                   {...field}
                   value={field.value ?? ''}
                   onChange={(event) =>
@@ -177,7 +200,7 @@ export function RimSpecOverview({ product }: { product: Product }) {
 
   return (
     <div className='flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-[20px] bg-muted/5 border-2 border-dashed border-muted transition-all hover:bg-muted/10 group'>
-      <div className='flex-1 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-5 px-1 sm:px-2'>
+      <div className='flex-1 grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-5 px-1 sm:px-2'>
         <div className='flex flex-col gap-1.5'>
           <span className='text-[10px] text-muted-foreground/40 font-black uppercase tracking-widest'>
             {t('engineering.specForms.rim.overviewDepth')}
@@ -220,6 +243,17 @@ export function RimSpecOverview({ product }: { product: Product }) {
               {product.widthExternal || '0'}
             </span>
             <span className='text-[10px] font-black text-muted-foreground/20 italic'>MM</span>
+          </div>
+        </div>
+        <div className='flex flex-col gap-1.5 sm:border-l sm:border-dashed sm:border-muted sm:pl-5'>
+          <span className='text-[10px] text-muted-foreground/40 font-black uppercase tracking-widest'>
+            {t('engineering.specForms.rim.overviewMaxTirePressure')}
+          </span>
+          <div className='flex items-baseline gap-1.5'>
+            <span className='text-2xl sm:text-3xl font-mono font-black text-amber-600 tracking-tighter italic'>
+              {product.maxTirePressure || '0'}
+            </span>
+            <span className='text-[10px] font-black text-muted-foreground/20 italic'>PSI</span>
           </div>
         </div>
       </div>

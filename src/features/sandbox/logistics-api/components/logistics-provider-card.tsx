@@ -230,7 +230,7 @@ export function LogisticsProviderCard({
             {t('logisticsConfig.platforms.actions.verify')}
           </Button>
           <Button asChild variant='outline' className='h-9 rounded-full px-4 text-[10px] font-black uppercase tracking-widest'>
-            <Link to='/logistics-config/suppliers'>
+            <Link to='/logistics-settings/platforms'>
               <MoveUpRight className='size-3.5' />
               {t('logisticsConfig.platforms.actions.viewDirectory')}
             </Link>

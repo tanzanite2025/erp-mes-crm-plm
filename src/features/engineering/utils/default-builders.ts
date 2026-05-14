@@ -15,6 +15,7 @@ export function createProductDraft(overrides: ProductDraftOverrides = {}): Produ
         depth: undefined,
         widthInternal: undefined,
         widthExternal: undefined,
+        maxTirePressure: undefined,
         weight: undefined,
         image: '',
         restrictions: [],

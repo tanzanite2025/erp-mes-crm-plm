@@ -44,6 +44,7 @@ export const productSchema = z.object({
   depth: z.number().optional(),
   widthInternal: z.number().optional(),
   widthExternal: z.number().optional(),
+  maxTirePressure: z.number().optional(),
   weight: z.number().optional(),
   length: z.number().optional(),
   angle: z.number().optional(),

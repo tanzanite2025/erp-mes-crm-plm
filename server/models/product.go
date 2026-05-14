@@ -36,6 +36,7 @@ type Product struct {
 	Depth                    float64                 `json:"depth"`
 	WidthInternal            float64                 `json:"widthInternal"`
 	WidthExternal            float64                 `json:"widthExternal"`
+	MaxTirePressure          float64                 `json:"maxTirePressure"`
 	TireType                 string                  `gorm:"size:50" json:"tireType"`
 	BrakeType                string                  `gorm:"size:50" json:"brakeType"`
 	TechSeries               string                  `gorm:"size:50" json:"techSeries"`
