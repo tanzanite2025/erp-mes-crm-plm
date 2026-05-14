@@ -195,7 +195,7 @@ export default function MaterialThresholdsTab() {
           <div className='relative z-10 flex items-center gap-3 text-primary'>
             <TriangleAlert className='size-5' />
             <h1 className='text-lg font-black tracking-tighter uppercase italic'>
-              {t('warehouseConfig.materialThresholds.title')} / THRESHOLD_AUTHORITY
+              {t('warehouseConfig.materialThresholds.title')}
             </h1>
           </div>
           <p className='relative z-10 mt-1 text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>

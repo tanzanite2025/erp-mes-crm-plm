@@ -10,6 +10,8 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/warehouse/stocktake': 'warehouse.tabs.stocktake',
   '/warehouse/adjustments': 'warehouse.tabs.adjustments',
   '/warehouse-config': 'sidebar.items.warehouseConfig',
+  '/warehouse-config/material-thresholds':
+    'warehouseConfig.tabs.materialThresholds',
   '/warehouse-config/packaging-assembly':
     'warehouseConfig.tabs.packagingAssembly',
   '/warehouse-config/category': 'warehouse.tabs.category',
