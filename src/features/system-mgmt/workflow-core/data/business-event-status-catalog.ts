@@ -61,6 +61,14 @@ const BUSINESS_EVENT_SOURCE_STATUS_CATALOG: Record<
     { code: 'PUBLISHED', label: '已发布' },
     { code: 'ARCHIVED', label: '已归档', defaultResolve: true },
   ],
+  BOM: [
+    { code: 'DRAFT', label: '草稿' },
+    { code: 'REVIEWING', label: '审核中' },
+    { code: 'APPROVED', label: '审批通过' },
+    { code: 'VALIDATING', label: '校验中' },
+    { code: 'RELEASED', label: '已发布', defaultResolve: true },
+    { code: 'OBSOLETE', label: '已作废', defaultResolve: true },
+  ],
 }
 
 function formatStatusCode(statusCode: string) {

@@ -7,6 +7,21 @@ export const finance = {
       paymentTerms: 'Payment Terms Dictionary',
       currencyRates: 'Currency Rate Center',
       taxation: 'Tax Configuration Center',
+      settlements: 'AR / AP',
+    },
+  },
+  settlements: {
+    page: {
+      title: 'Receivables & Payables',
+      description: 'Unified management of sales receivables and purchase payables',
+    },
+    tabs: {
+      receivables: 'Receivables',
+      payables: 'Payables',
+    },
+    placeholder: {
+      receivables: 'Receivables view coming soon',
+      payables: 'Payables view coming soon',
     },
   },
   currencyRates: {

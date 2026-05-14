@@ -452,6 +452,13 @@ const navGroupConfigs: SidebarGroupConfig[] = [
             icon: Scale,
             permissionId: permissionIdForPath('/finance-management'),
           },
+          {
+            id: 'finance-settlements',
+            titleKey: 'sidebar.items.financeSettlements',
+            url: '/finance-settlements',
+            icon: HandCoins,
+            permissionId: permissionIdForPath('/finance-settlements'),
+          },
         ],
       },
     ],

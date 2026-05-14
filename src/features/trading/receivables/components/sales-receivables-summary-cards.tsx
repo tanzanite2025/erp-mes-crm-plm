@@ -1,4 +1,3 @@
-import { Card } from '@/components/ui/card'
 import type { ReceivableSummary } from '../adapters/receivable-api-adapter'
 
 interface SalesReceivablesSummaryCardsProps {
@@ -15,27 +14,25 @@ export function SalesReceivablesSummaryCards({
   pendingLabel,
 }: SalesReceivablesSummaryCardsProps) {
   const cards = [
-    { label: totalLabel, value: summary?.totalReceivable ?? 0, tone: 'text-slate-900 dark:text-slate-100' },
-    { label: overdueLabel, value: summary?.overdueReceivable ?? 0, tone: 'text-rose-600 dark:text-rose-300' },
-    { label: pendingLabel, value: summary?.pendingReceiptCount ?? 0, tone: 'text-blue-600 dark:text-blue-300' },
+    { label: totalLabel, value: summary?.totalReceivable ?? 0, bg: 'bg-blue-50 dark:bg-blue-950/30', border: 'border-blue-200 dark:border-blue-800', labelColor: 'text-blue-600 dark:text-blue-400', valueColor: 'text-blue-700 dark:text-blue-300' },
+    { label: overdueLabel, value: summary?.overdueReceivable ?? 0, bg: 'bg-rose-50 dark:bg-rose-950/30', border: 'border-rose-200 dark:border-rose-800', labelColor: 'text-rose-600 dark:text-rose-400', valueColor: 'text-rose-700 dark:text-rose-300' },
+    { label: pendingLabel, value: summary?.pendingReceiptCount ?? 0, bg: 'bg-amber-50 dark:bg-amber-950/30', border: 'border-amber-200 dark:border-amber-800', labelColor: 'text-amber-600 dark:text-amber-400', valueColor: 'text-amber-700 dark:text-amber-300' },
   ]
 
   return (
-    <div className='grid gap-3 md:grid-cols-3'>
+    <div className='grid gap-2 md:grid-cols-3'>
       {cards.map((card) => (
-        <Card
+        <div
           key={card.label}
-          className='rounded-[24px] border border-dashed border-muted/60 bg-muted/5 shadow-inner'
+          className={`flex items-center justify-between rounded-lg border px-3 py-1.5 ${card.bg} ${card.border}`}
         >
-          <div className='flex min-h-[112px] flex-col justify-between gap-3 p-5'>
-            <div className='text-[10px] font-black uppercase tracking-[0.16em] text-muted-foreground/55'>
-              {card.label}
-            </div>
-            <div className={`text-2xl font-black leading-none tracking-tight tabular-nums ${card.tone}`}>
-              {card.value}
-            </div>
-          </div>
-        </Card>
+          <span className={`text-[10px] font-black uppercase tracking-[0.12em] ${card.labelColor}`}>
+            {card.label}
+          </span>
+          <span className={`text-base font-black tabular-nums ${card.valueColor}`}>
+            {card.value}
+          </span>
+        </div>
       ))}
     </div>
   )

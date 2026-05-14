@@ -194,6 +194,7 @@ export const ROUTE_TO_MENU_MAPPING: Record<
   '/logistics-config': 'settings',
   '/logistics-settings': 'settings',
   '/finance-management': 'settings',
+  '/finance-settlements': 'settings',
   '/personal-workbench': 'pda',
   '/pda-shell': 'pda',
   '/wheel-trace': 'prodConfig',

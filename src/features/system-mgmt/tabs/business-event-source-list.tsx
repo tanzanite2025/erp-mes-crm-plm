@@ -19,7 +19,6 @@ import { RoutingService } from '../workflow-core/services/routing-service'
 import {
   createDuplicateEventSource,
   createEventSourceFromTemplate,
-  createNewEventSource,
 } from './business-event-source-list-helpers'
 import { BusinessEventSourceCard } from './components/business-event-source-card'
 import { BusinessEventSourceListHeader } from './components/business-event-source-list-header'
@@ -191,16 +190,6 @@ export function BusinessEventSourceList({
     }
   }
 
-  const createBlankSource = async () => {
-    const saved = await addSource(createNewEventSource())
-    if (saved) {
-      setExpandedSourceIds((prev) =>
-        prev.includes(saved.id) ? prev : [...prev, saved.id]
-      )
-      setHighlightedSourceId(saved.id)
-    }
-  }
-
   const duplicateSource = async (source: BusinessEventSource) => {
     const saved = await addSource(createDuplicateEventSource(source, sources))
     if (saved) {
@@ -295,7 +284,6 @@ export function BusinessEventSourceList({
         templateCode={templateCode}
         onTemplateChange={setTemplateCode}
         onImportTemplate={importSelectedTemplate}
-        onCreateBlank={createBlankSource}
       />
 
       {filteredSources.length === 0 ? (

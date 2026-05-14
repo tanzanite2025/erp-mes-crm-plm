@@ -9,7 +9,7 @@ const PRECONNECTED_SOURCE_CODES = new Set([
   'PRODUCTION_TASK',
 ])
 
-const TEMPLATE_ONLY_SOURCE_CODES = new Set(['LOGISTICS_RECORD'])
+const TEMPLATE_ONLY_SOURCE_CODES = new Set(['LOGISTICS_RECORD', 'BOM'])
 
 export type BusinessEventSourceRuntimeCoverage =
   | 'connected'

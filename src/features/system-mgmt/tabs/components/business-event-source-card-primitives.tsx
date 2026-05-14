@@ -237,6 +237,7 @@ export function SummaryPanel({
   undoing,
   focusedRemovedItemId,
   forceOpenRemovedItems,
+  alwaysOpen,
 }: {
   title: string
   summary: string
@@ -260,16 +261,17 @@ export function SummaryPanel({
   undoing?: boolean
   focusedRemovedItemId?: string | null
   forceOpenRemovedItems?: boolean
+  alwaysOpen?: boolean
 }) {
   const [manualOpen, setManualOpen] = useState(false)
   const isOpen = Boolean(
-    manualOpen || dirty || focusedRemovedItemId || forceOpenRemovedItems
+    alwaysOpen || manualOpen || dirty || focusedRemovedItemId || forceOpenRemovedItems
   )
 
   return (
     <Collapsible
       open={isOpen}
-      onOpenChange={setManualOpen}
+      onOpenChange={alwaysOpen ? undefined : setManualOpen}
       className={cn(
         'rounded-2xl border border-dashed border-muted/40 bg-muted/10 p-3',
         dirty && 'border-amber-300/80 bg-amber-50/40'
@@ -293,21 +295,23 @@ export function SummaryPanel({
             undoDisabled={undoDisabled}
             undoing={undoing}
           />
-          <Button
-            type='button'
-            size='icon'
-            variant='ghost'
-            className='size-8 rounded-2xl'
-            onClick={() => setManualOpen((value) => !value)}
-            aria-label={isOpen ? '收起分区' : '展开分区'}
-          >
-            <ChevronDown
-              className={cn(
-                'size-4 transition-transform',
-                isOpen && 'rotate-180'
-              )}
-            />
-          </Button>
+          {!alwaysOpen && (
+            <Button
+              type='button'
+              size='icon'
+              variant='ghost'
+              className='size-8 rounded-2xl'
+              onClick={() => setManualOpen((value) => !value)}
+              aria-label={isOpen ? '收起分区' : '展开分区'}
+            >
+              <ChevronDown
+                className={cn(
+                  'size-4 transition-transform',
+                  isOpen && 'rotate-180'
+                )}
+              />
+            </Button>
+          )}
         </div>
       </div>
       <CollapsibleContent className='overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down'>
@@ -365,6 +369,7 @@ export function EditableList({
   undoing,
   focusedRemovedItemId,
   forceOpenRemovedItems,
+  alwaysOpen,
 }: {
   title: string
   summary: string
@@ -383,16 +388,17 @@ export function EditableList({
   undoing?: boolean
   focusedRemovedItemId?: string | null
   forceOpenRemovedItems?: boolean
+  alwaysOpen?: boolean
 }) {
   const [manualOpen, setManualOpen] = useState(false)
   const isOpen = Boolean(
-    manualOpen || dirty || focusedRemovedItemId || forceOpenRemovedItems
+    alwaysOpen || manualOpen || dirty || focusedRemovedItemId || forceOpenRemovedItems
   )
 
   return (
     <Collapsible
       open={isOpen}
-      onOpenChange={setManualOpen}
+      onOpenChange={alwaysOpen ? undefined : setManualOpen}
       className={cn(
         'rounded-2xl border border-dashed border-muted/40 bg-muted/10 p-3',
         dirty && 'border-amber-300/80 bg-amber-50/40'
@@ -427,21 +433,23 @@ export function EditableList({
               {actionLabel}
             </Button>
           )}
-          <Button
-            type='button'
-            size='icon'
-            variant='ghost'
-            className='size-8 rounded-2xl'
-            onClick={() => setManualOpen((value) => !value)}
-            aria-label={isOpen ? '收起分区' : '展开分区'}
-          >
-            <ChevronDown
-              className={cn(
-                'size-4 transition-transform',
-                isOpen && 'rotate-180'
-              )}
-            />
-          </Button>
+          {!alwaysOpen && (
+            <Button
+              type='button'
+              size='icon'
+              variant='ghost'
+              className='size-8 rounded-2xl'
+              onClick={() => setManualOpen((value) => !value)}
+              aria-label={isOpen ? '收起分区' : '展开分区'}
+            >
+              <ChevronDown
+                className={cn(
+                  'size-4 transition-transform',
+                  isOpen && 'rotate-180'
+                )}
+              />
+            </Button>
+          )}
         </div>
       </div>
       <CollapsibleContent className='overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down'>

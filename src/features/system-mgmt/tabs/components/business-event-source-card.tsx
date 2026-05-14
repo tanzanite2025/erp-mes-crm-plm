@@ -1,10 +1,11 @@
 import { type Dispatch, type SetStateAction, useEffect, useMemo, useRef, useState } from 'react'
 import {
   AlertCircle,
-  Sparkles,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Badge } from '@/components/ui/badge'
 import {
   type BusinessEventSource,
 } from '../../workflow-core/data/business-event-source-schema'
@@ -23,6 +24,7 @@ import {
   type BusinessEventSourceEditorMode,
 } from './business-event-source-card-drawer-panel'
 import { BusinessEventSourceCardHeader } from './business-event-source-card-header'
+import { BusinessEventSourceDeleteDialog } from './business-event-source-delete-dialog'
 import { buildBusinessEventSourceCardPresentation } from './business-event-source-card-presenter'
 import { BusinessEventSourceBaseSection } from './business-event-source-base-section'
 import { BusinessEventSourceFieldSection } from './business-event-source-field-section'
@@ -139,6 +141,8 @@ export function BusinessEventSourceCard({
   const [editorMode, setEditorMode] =
     useState<BusinessEventSourceEditorMode>(null)
   const [focusedTarget, setFocusedTarget] = useState<FocusedChangeTarget>(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const committedSourceRef = useRef<BusinessEventSource>(initialCommitted)
   const generalSectionRef = useRef<HTMLElement | null>(null)
   const actionsSectionRef = useRef<HTMLDivElement | null>(null)
@@ -178,6 +182,14 @@ export function BusinessEventSourceCard({
         renamePlans: statusRenamePlans,
       }),
     [committedSource.code, rules, statusRenamePlans]
+  )
+
+  const referencingRules = useMemo(
+    () =>
+      rules.filter(
+        (rule) => rule.sourceCode === committedSource.code
+      ),
+    [rules, committedSource.code]
   )
 
   const setCommittedSourceState = (nextSource: BusinessEventSource) => {
@@ -403,6 +415,7 @@ export function BusinessEventSourceCard({
   }
 
   return (
+    <>
     <Collapsible
       open={expanded}
       onOpenChange={onExpandedChange}
@@ -443,17 +456,10 @@ export function BusinessEventSourceCard({
             }
             onSaveAll={saveAll}
             onDuplicate={() => onDuplicate(draft)}
-            onDelete={() => onDelete(draft.id)}
+            onDelete={() => setDeleteDialogOpen(true)}
       />
 
       <CollapsibleContent className='overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down'>
-      {diff.anyDirty && (
-        <div className='mx-6 mt-4 flex items-center gap-2 rounded-2xl border border-amber-300/60 bg-amber-50/70 p-3 text-xs font-bold text-amber-700'>
-          <Sparkles className='size-4 shrink-0' />
-          <span>当前有未保存的局部变更，已按分区追踪。</span>
-        </div>
-      )}
-
       {diff.anyDirty && (
         <BusinessEventSourceChangePanel
           sections={changeOverviewSections}
@@ -477,59 +483,69 @@ export function BusinessEventSourceCard({
         </div>
       )}
 
-      <BusinessEventSourceBaseSection
-        source={draft}
-        isIdentityLocked={isIdentityLocked}
-        dirty={diff.general.dirty}
-        changeSummary={getBusinessEventSourceGeneralDiffSummary(diff.general)}
-        focused={focusedTarget?.section === 'general'}
-        hasValidationErrors={validationBySection.general.length > 0}
-        saving={savingSections.general}
-        saveDisabled={
-          savingSections.general ||
-          validationBySection.general.length > 0 ||
-          !diff.general.dirty
-        }
-        undoAvailable={Boolean(undoPatches.general)}
-        undoDisabled={undoingSections.general}
-        undoing={undoingSections.general}
-        sectionRef={generalSectionRef}
-        onSave={() => void saveSection('general')}
-        onUndo={
-          undoPatches.general ? () => void undoSection('general') : undefined
-        }
-        onCodeChange={(value) =>
-          applyDraft((prev) =>
-            updateBusinessEventSourceDraft(prev, {
-              code: value,
-            })
-          )
-        }
-        onModuleChange={(value) =>
-          applyDraft((prev) =>
-            updateBusinessEventSourceDraft(prev, {
-              module: value,
-            })
-          )
-        }
-        onEntityChange={(value) =>
-          applyDraft((prev) =>
-            updateBusinessEventSourceDraft(prev, {
-              entity: value,
-            })
-          )
-        }
-        onDefaultActionUrlTemplateChange={(value) =>
-          applyDraft((prev) =>
-            updateBusinessEventSourceConfig(prev, {
-              defaultActionUrlTemplate: value,
-            })
-          )
-        }
-      />
+      <Tabs defaultValue='actions' className='px-6 pb-6 pt-2'>
+        <TabsList className='mb-4 h-auto w-full justify-start gap-1 rounded-2xl bg-muted/40 p-1'>
+          <TabsTrigger
+            value='actions'
+            className='gap-2 rounded-xl px-4 py-2 text-xs font-black data-[state=active]:bg-background data-[state=active]:shadow-sm'
+          >
+            动作
+            <Badge variant='secondary' className='rounded-full px-1.5 text-[10px]'>
+              {draft.config.actions.length}
+            </Badge>
+            {diff.actions.dirty && (
+              <span className='size-1.5 rounded-full bg-amber-500' />
+            )}
+          </TabsTrigger>
+          <TabsTrigger
+            value='statuses'
+            className='gap-2 rounded-xl px-4 py-2 text-xs font-black data-[state=active]:bg-background data-[state=active]:shadow-sm'
+          >
+            状态
+            <Badge variant='secondary' className='rounded-full px-1.5 text-[10px]'>
+              {draft.config.statuses.length}
+            </Badge>
+            {diff.statuses.dirty && (
+              <span className='size-1.5 rounded-full bg-amber-500' />
+            )}
+          </TabsTrigger>
+          <TabsTrigger
+            value='fields'
+            className='gap-2 rounded-xl px-4 py-2 text-xs font-black data-[state=active]:bg-background data-[state=active]:shadow-sm'
+          >
+            字段
+            <Badge variant='secondary' className='rounded-full px-1.5 text-[10px]'>
+              {draft.config.fields.length}
+            </Badge>
+            {diff.fields.dirty && (
+              <span className='size-1.5 rounded-full bg-amber-500' />
+            )}
+          </TabsTrigger>
+          <TabsTrigger
+            value='resolvers'
+            className='gap-2 rounded-xl px-4 py-2 text-xs font-black data-[state=active]:bg-background data-[state=active]:shadow-sm'
+          >
+            动态接收人
+            <Badge variant='secondary' className='rounded-full px-1.5 text-[10px]'>
+              {draft.config.dynamicResolvers.length}
+            </Badge>
+            {diff.dynamicResolvers.dirty && (
+              <span className='size-1.5 rounded-full bg-amber-500' />
+            )}
+          </TabsTrigger>
+          <TabsTrigger
+            value='base'
+            className='ml-auto gap-2 rounded-xl px-4 py-2 text-xs font-black data-[state=active]:bg-background data-[state=active]:shadow-sm'
+          >
+            基础配置
+            {diff.general.dirty && (
+              <span className='size-1.5 rounded-full bg-amber-500' />
+            )}
+          </TabsTrigger>
+        </TabsList>
 
-      <div className='grid grid-cols-1 gap-5 p-6 xl:grid-cols-2'>
-        <BusinessEventSourceActionSection
+        <TabsContent value='actions' className='mt-0'>
+          <BusinessEventSourceActionSection
           actions={draft.config.actions}
           persistedActionIds={persistedActionIds}
           dirty={diff.actions.dirty}
@@ -545,6 +561,7 @@ export function BusinessEventSourceCard({
           undoing={undoingSections.actions}
           removedItems={removedActionItems}
           sectionRef={actionsSectionRef}
+          alwaysOpen
           focusedItemId={
             focusedTarget?.section === 'actions' &&
             focusedTarget.changeType !== 'removed'
@@ -594,9 +611,11 @@ export function BusinessEventSourceCard({
           onDelete={(index) =>
             applyDraft((prev) => removeBusinessEventActionAt(prev, index))
           }
-        />
+          />
+        </TabsContent>
 
-        <BusinessEventSourceStatusSection
+        <TabsContent value='statuses' className='mt-0'>
+          <BusinessEventSourceStatusSection
           statuses={draft.config.statuses}
           sourceCode={draft.code}
           summary={statusSummary}
@@ -613,6 +632,7 @@ export function BusinessEventSourceCard({
           undoing={undoingSections.statuses}
           removedItems={removedStatusItems}
           sectionRef={statusesSectionRef}
+          alwaysOpen
           focusedRemovedItemId={
             focusedTarget?.section === 'statuses' &&
             focusedTarget.changeType === 'removed'
@@ -632,9 +652,11 @@ export function BusinessEventSourceCard({
             undoPatches.statuses ? () => void undoSection('statuses') : undefined
           }
           onEdit={() => setEditorMode('statuses')}
-        />
+          />
+        </TabsContent>
 
-        <BusinessEventSourceFieldSection
+        <TabsContent value='fields' className='mt-0'>
+          <BusinessEventSourceFieldSection
           fields={draft.config.fields}
           summary={fieldSummary}
           dirty={diff.fields.dirty}
@@ -650,6 +672,7 @@ export function BusinessEventSourceCard({
           undoing={undoingSections.fields}
           removedItems={removedFieldItems}
           sectionRef={fieldsSectionRef}
+          alwaysOpen
           focusedRemovedItemId={
             focusedTarget?.section === 'fields' &&
             focusedTarget.changeType === 'removed'
@@ -669,9 +692,11 @@ export function BusinessEventSourceCard({
             undoPatches.fields ? () => void undoSection('fields') : undefined
           }
           onEdit={() => setEditorMode('fields')}
-        />
+          />
+        </TabsContent>
 
-        <BusinessEventSourceResolverSection
+        <TabsContent value='resolvers' className='mt-0'>
+          <BusinessEventSourceResolverSection
           resolvers={draft.config.dynamicResolvers}
           persistedResolverIds={persistedResolverIds}
           dirty={diff.dynamicResolvers.dirty}
@@ -689,6 +714,7 @@ export function BusinessEventSourceCard({
           undoing={undoingSections.dynamicResolvers}
           removedItems={removedResolverItems}
           sectionRef={dynamicResolversSectionRef}
+          alwaysOpen
           focusedItemId={
             focusedTarget?.section === 'dynamicResolvers' &&
             focusedTarget.changeType !== 'removed'
@@ -749,8 +775,63 @@ export function BusinessEventSourceCard({
           onDelete={(index) =>
             applyDraft((prev) => removeBusinessDynamicResolverAt(prev, index))
           }
-        />
-      </div>
+          />
+        </TabsContent>
+
+        <TabsContent value='base' className='mt-0'>
+          <BusinessEventSourceBaseSection
+            source={draft}
+            isIdentityLocked={isIdentityLocked}
+            dirty={diff.general.dirty}
+            changeSummary={getBusinessEventSourceGeneralDiffSummary(diff.general)}
+            focused={focusedTarget?.section === 'general'}
+            hasValidationErrors={validationBySection.general.length > 0}
+            saving={savingSections.general}
+            saveDisabled={
+              savingSections.general ||
+              validationBySection.general.length > 0 ||
+              !diff.general.dirty
+            }
+            undoAvailable={Boolean(undoPatches.general)}
+            undoDisabled={undoingSections.general}
+            undoing={undoingSections.general}
+            sectionRef={generalSectionRef}
+            alwaysOpen
+            onSave={() => void saveSection('general')}
+            onUndo={
+              undoPatches.general ? () => void undoSection('general') : undefined
+            }
+            onCodeChange={(value) =>
+              applyDraft((prev) =>
+                updateBusinessEventSourceDraft(prev, {
+                  code: value,
+                })
+              )
+            }
+            onModuleChange={(value) =>
+              applyDraft((prev) =>
+                updateBusinessEventSourceDraft(prev, {
+                  module: value,
+                })
+              )
+            }
+            onEntityChange={(value) =>
+              applyDraft((prev) =>
+                updateBusinessEventSourceDraft(prev, {
+                  entity: value,
+                })
+              )
+            }
+            onDefaultActionUrlTemplateChange={(value) =>
+              applyDraft((prev) =>
+                updateBusinessEventSourceConfig(prev, {
+                  defaultActionUrlTemplate: value,
+                })
+              )
+            }
+          />
+        </TabsContent>
+      </Tabs>
 
       <BusinessEventSourceEditorOverlay
         editorMode={editorMode}
@@ -859,5 +940,28 @@ export function BusinessEventSourceCard({
       />
       </CollapsibleContent>
     </Collapsible>
+    <BusinessEventSourceDeleteDialog
+      open={deleteDialogOpen}
+      onOpenChange={(open) => {
+        if (!isDeleting) {
+          setDeleteDialogOpen(open)
+        }
+      }}
+      sourceName={committedSource.name}
+      sourceCode={committedSource.code}
+      referencingRuleCount={referencingRules.length}
+      referencingRuleNames={referencingRules.map((rule) => rule.name)}
+      isDeleting={isDeleting}
+      onConfirm={async () => {
+        setIsDeleting(true)
+        try {
+          await onDelete(committedSource.id)
+          setDeleteDialogOpen(false)
+        } finally {
+          setIsDeleting(false)
+        }
+      }}
+    />
+    </>
   )
 }

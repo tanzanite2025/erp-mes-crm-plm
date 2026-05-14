@@ -87,11 +87,11 @@ export function PaymentTermsTab() {
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5'>
                 {terms.map((term) => (
                     <Card key={term.id} className='rounded-[24px] border-dashed border-primary/20 bg-muted/5 group hover:bg-muted/10 transition-all'>
-                        <CardHeader className='pb-2'>
+                        <CardHeader className='pb-1 pt-3 px-4'>
                             <div className='flex items-center justify-between'>
-                                <div className='flex items-center gap-3'>
-                                    <div className='size-9 rounded-2xl bg-primary/10 flex items-center justify-center'>
-                                        <CreditCard className='size-4 text-primary' />
+                                <div className='flex items-center gap-2.5'>
+                                    <div className='size-7 rounded-xl bg-primary/10 flex items-center justify-center'>
+                                        <CreditCard className='size-3.5 text-primary' />
                                     </div>
                                     <div>
                                         <CardTitle className='text-sm font-black italic tracking-tighter uppercase'>
@@ -115,15 +115,15 @@ export function PaymentTermsTab() {
                                 </Button>
                             </div>
                         </CardHeader>
-                        <CardContent className='pt-2'>
-                            <div className='space-y-3'>
-                                <div className='p-3 bg-background rounded-2xl border border-dashed border-muted/20 text-[10px] font-medium leading-relaxed min-h-[60px] text-muted-foreground/80'>
+                        <CardContent className='pt-1'>
+                            <div className='space-y-2'>
+                                <div className='p-2 bg-background rounded-xl border border-dashed border-muted/20 text-[10px] font-medium leading-relaxed min-h-[36px] text-muted-foreground/80'>
                                     {(() => {
                                         const translatedDesc = t(getCardDescriptionKey(term.code))
                                         return translatedDesc.includes('finance.paymentTerms.card.descriptions') ? (term.description || t('finance.paymentTerms.card.emptyDescription')) : translatedDesc
                                     })()}
                                 </div>
-                                <div className='flex flex-wrap items-center gap-2'>
+                                <div className='flex flex-wrap items-center gap-1.5'>
                                     <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest ${term.isDefault ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-muted text-muted-foreground opacity-50'}`}>
                                         {term.isDefault
                                             ? t('finance.paymentTerms.card.defaultBadge')
@@ -137,10 +137,10 @@ export function PaymentTermsTab() {
                                             {t('finance.paymentTerms.card.systemBadge')}
                                         </span>
                                     ) : null}
+                                    <span className='text-[8px] font-black tracking-widest uppercase text-muted-foreground/40 ml-auto'>
+                                        {t('finance.paymentTerms.card.sortOrder', { sortOrder: term.sortOrder ?? 0 })}
+                                    </span>
                                 </div>
-                                <p className='text-[8px] font-black tracking-widest uppercase text-muted-foreground/40'>
-                                    {t('finance.paymentTerms.card.sortOrder', { sortOrder: term.sortOrder ?? 0 })}
-                                </p>
                             </div>
                         </CardContent>
                     </Card>

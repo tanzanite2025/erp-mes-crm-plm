@@ -1,4 +1,4 @@
-import { Download, MinusSquare, Plus, Search, SquarePlus } from 'lucide-react'
+import { Download, MinusSquare, Search, SquarePlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { type BusinessEventSource } from '../../workflow-core/data/business-event-source-schema'
@@ -17,7 +17,6 @@ interface BusinessEventSourceListHeaderProps {
   templateCode: string
   onTemplateChange: (code: string) => void
   onImportTemplate: () => void
-  onCreateBlank: () => void
 }
 
 export function BusinessEventSourceListHeader({
@@ -34,7 +33,6 @@ export function BusinessEventSourceListHeader({
   templateCode,
   onTemplateChange,
   onImportTemplate,
-  onCreateBlank,
 }: BusinessEventSourceListHeaderProps) {
   const enabledCount = sources.filter((source) => source.enabled).length
 
@@ -83,20 +81,11 @@ export function BusinessEventSourceListHeader({
           </select>
           <Button
             size='lg'
-            variant='outline'
             className='h-10 gap-2 rounded-2xl px-4 text-xs font-black'
             onClick={onImportTemplate}
           >
             <Download className='size-4' />
-            导入模板
-          </Button>
-          <Button
-            size='lg'
-            className='h-10 gap-2 rounded-2xl px-4 text-xs font-black'
-            onClick={onCreateBlank}
-          >
-            <Plus className='size-4' />
-            新建空白
+            添加到列表
           </Button>
         </div>
       </div>

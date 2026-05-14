@@ -29,6 +29,7 @@ interface BusinessEventSourceResolverSectionProps {
   focusedItemId?: string | null
   focusedRemovedItemId?: string | null
   forceOpenRemovedItems?: boolean
+  alwaysOpen?: boolean
   onAdd: () => void
   onSave: () => void
   onUndo?: () => void
@@ -59,6 +60,7 @@ export function BusinessEventSourceResolverSection({
   focusedItemId,
   focusedRemovedItemId,
   forceOpenRemovedItems,
+  alwaysOpen,
   onAdd,
   onSave,
   onUndo,
@@ -89,6 +91,7 @@ export function BusinessEventSourceResolverSection({
         undoing={undoing}
         focusedRemovedItemId={focusedRemovedItemId}
         forceOpenRemovedItems={forceOpenRemovedItems}
+        alwaysOpen={alwaysOpen}
       >
         {resolvers.map((resolver, index) => {
           const changeType = getChangeType(resolver.id)

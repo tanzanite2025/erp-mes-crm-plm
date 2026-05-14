@@ -15,8 +15,25 @@ import {
 
 export type PayableLedgerSearchParams = LedgerSearchQueryParams
 
-export async function getPayables(): Promise<PaginatedPayables> {
-  const res = await apiFetch<PayableListPageApiDTO>('/payables')
+export interface PayableListQueryParams {
+  sourceType?: string
+  sourceRefId?: string
+}
+
+function buildPayableListUrl(params: PayableListQueryParams): string {
+  const searchParams = new URLSearchParams()
+  if (params.sourceType?.trim()) {
+    searchParams.set('sourceType', params.sourceType.trim())
+  }
+  if (params.sourceRefId?.trim()) {
+    searchParams.set('sourceRefId', params.sourceRefId.trim())
+  }
+  const query = searchParams.toString()
+  return query ? `/payables?${query}` : '/payables'
+}
+
+export async function getPayables(params: PayableListQueryParams = {}): Promise<PaginatedPayables> {
+  const res = await apiFetch<PayableListPageApiDTO>(buildPayableListUrl(params))
   const payload = ensureObjectResponse<PayableListPageApiDTO & Record<string, unknown>>(
     res,
     'PayablesQueryService.getPayables'

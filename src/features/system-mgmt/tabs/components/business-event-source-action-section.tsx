@@ -29,6 +29,7 @@ interface BusinessEventSourceActionSectionProps {
   focusedItemId?: string | null
   focusedRemovedItemId?: string | null
   forceOpenRemovedItems?: boolean
+  alwaysOpen?: boolean
   onAdd: () => void
   onSave: () => void
   onUndo?: () => void
@@ -58,6 +59,7 @@ export function BusinessEventSourceActionSection({
   focusedItemId,
   focusedRemovedItemId,
   forceOpenRemovedItems,
+  alwaysOpen,
   onAdd,
   onSave,
   onUndo,
@@ -87,6 +89,7 @@ export function BusinessEventSourceActionSection({
         undoing={undoing}
         focusedRemovedItemId={focusedRemovedItemId}
         forceOpenRemovedItems={forceOpenRemovedItems}
+        alwaysOpen={alwaysOpen}
       >
         {actions.map((action, index) => {
           const changeType = getChangeType(action.id)

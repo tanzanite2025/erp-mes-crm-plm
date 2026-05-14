@@ -1,3 +1,4 @@
+import { DEFAULT_BOM_EVENT_SOURCE } from './business-event-source-templates/bom'
 import { DEFAULT_SALES_ORDER_EVENT_SOURCE } from './business-event-source-templates/sales-order'
 import { type BusinessEventSourceTemplate } from './business-event-source-types'
 import { productionPlanStatuses } from './production-plan-status'
@@ -452,4 +453,5 @@ export const BUSINESS_EVENT_SOURCE_TEMPLATES: BusinessEventSourceTemplate[] = [
       defaultActionUrlTemplate: '/quality/standards/[StandardId]/preview',
     },
   },
+  DEFAULT_BOM_EVENT_SOURCE,
 ]

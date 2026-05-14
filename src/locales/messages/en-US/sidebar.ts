@@ -87,6 +87,7 @@ export const sidebar = {
     messageCenter: 'Message Center',
     basicSettings: 'Basic Settings',
     financeCenter: 'Finance Config',
+    financeSettlements: 'AR / AP',
     linearBarcode: 'Linear Barcode',
     sharedCodeSource: 'Shared Code Source',
   },

@@ -3,13 +3,17 @@ import { tradingQueryKeys } from '@/features/trading/query-keys'
 import {
   getPayables,
   searchPayableLedgers,
+  type PayableListQueryParams,
   type PayableLedgerSearchParams,
 } from '../services/payables-query-service'
 
-export function useGetPayables() {
+export function useGetPayables(params: PayableListQueryParams = {}) {
+  const sourceType = params.sourceType?.trim() ?? ''
+  const sourceRefId = params.sourceRefId?.trim() ?? ''
+
   return useQuery({
-    queryKey: tradingQueryKeys.payables(),
-    queryFn: () => getPayables(),
+    queryKey: tradingQueryKeys.payables(sourceType, sourceRefId),
+    queryFn: () => getPayables({ sourceType, sourceRefId }),
   })
 }
 

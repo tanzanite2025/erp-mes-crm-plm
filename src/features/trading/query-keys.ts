@@ -50,7 +50,12 @@ export const tradingQueryKeys = {
     sortBy,
     sortOrder,
   ],
-  payables: (): readonly ['payables'] => ['payables'],
+  payables: (sourceType?: string, sourceRefId?: string): readonly ['payables', 'list', string, string] => [
+    'payables',
+    'list',
+    sourceType ?? '',
+    sourceRefId ?? '',
+  ],
   purchaseOrderDetail: (id: string): readonly ['purchase-orders', string] => [
     'purchase-orders',
     id,

@@ -22,6 +22,7 @@ interface BusinessEventSourceBaseSectionProps {
   undoDisabled: boolean
   undoing: boolean
   sectionRef: RefObject<HTMLElement | null>
+  alwaysOpen?: boolean
   onSave: () => void
   onUndo?: () => void
   onCodeChange: (value: string) => void
@@ -43,6 +44,7 @@ export function BusinessEventSourceBaseSection({
   undoDisabled,
   undoing,
   sectionRef,
+  alwaysOpen,
   onSave,
   onUndo,
   onCodeChange,
@@ -51,18 +53,18 @@ export function BusinessEventSourceBaseSection({
   onDefaultActionUrlTemplateChange,
 }: BusinessEventSourceBaseSectionProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const forceOpen = dirty || focused || hasValidationErrors
+  const forceOpen = alwaysOpen || dirty || focused || hasValidationErrors
 
   return (
     <section
       ref={sectionRef}
       className={cn(
-        'mx-6 mt-5 rounded-2xl border border-dashed border-muted/40 bg-muted/10 p-4',
+        'rounded-2xl border border-dashed border-muted/40 bg-muted/10 p-4',
         dirty && 'border-amber-300/80 bg-amber-50/40',
         focused && 'ring-2 ring-sky-300 ring-offset-1'
       )}
     >
-      <Collapsible open={forceOpen || isOpen} onOpenChange={setIsOpen}>
+      <Collapsible open={forceOpen || isOpen} onOpenChange={alwaysOpen ? undefined : setIsOpen}>
         <div className='flex items-center justify-between gap-2'>
           <div className='flex min-w-0 flex-col gap-1'>
             <div className='flex flex-wrap items-center gap-2'>
@@ -83,20 +85,22 @@ export function BusinessEventSourceBaseSection({
               saving={saving}
               saveLabel='保存基础'
             />
-            <Button
-              size='icon'
-              variant='ghost'
-              className='size-8 rounded-2xl'
-              onClick={() => setIsOpen((value) => !value)}
-              aria-label={isOpen ? '收起基础配置' : '展开基础配置'}
-            >
-              <ChevronDown
-                className={cn(
-                  'size-4 transition-transform',
-                  isOpen && 'rotate-180'
-                )}
-              />
-            </Button>
+            {!alwaysOpen && (
+              <Button
+                size='icon'
+                variant='ghost'
+                className='size-8 rounded-2xl'
+                onClick={() => setIsOpen((value) => !value)}
+                aria-label={isOpen ? '收起基础配置' : '展开基础配置'}
+              >
+                <ChevronDown
+                  className={cn(
+                    'size-4 transition-transform',
+                    isOpen && 'rotate-180'
+                  )}
+                />
+              </Button>
+            )}
           </div>
         </div>
         <CollapsibleContent className='overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down'>

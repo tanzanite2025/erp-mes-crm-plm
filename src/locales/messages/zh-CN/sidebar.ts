@@ -87,6 +87,7 @@ export const sidebar = {
     messageCenter: '消息中心',
     basicSettings: '基础配置',
     financeCenter: '财务配置',
+    financeSettlements: '应收应付',
     linearBarcode: '一维码',
     sharedCodeSource: '共享编码源',
   },

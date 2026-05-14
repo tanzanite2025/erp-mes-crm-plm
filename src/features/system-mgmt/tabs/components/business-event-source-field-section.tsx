@@ -20,6 +20,7 @@ interface BusinessEventSourceFieldSectionProps {
   sectionRef: RefObject<HTMLDivElement | null>
   focusedRemovedItemId?: string | null
   forceOpenRemovedItems?: boolean
+  alwaysOpen?: boolean
   getChangeType: (id?: string) => BusinessEventSourceItemChangeKind | null
   onRestoreRemovedItem: (id: string) => void
   onSave: () => void
@@ -41,6 +42,7 @@ export function BusinessEventSourceFieldSection({
   sectionRef,
   focusedRemovedItemId,
   forceOpenRemovedItems,
+  alwaysOpen,
   getChangeType,
   onRestoreRemovedItem,
   onSave,
@@ -72,6 +74,7 @@ export function BusinessEventSourceFieldSection({
         onEdit={onEdit}
         focusedRemovedItemId={focusedRemovedItemId}
         forceOpenRemovedItems={forceOpenRemovedItems}
+        alwaysOpen={alwaysOpen}
       />
     </div>
   )

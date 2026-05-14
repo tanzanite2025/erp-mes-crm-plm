@@ -7,6 +7,21 @@ export const finance = {
       paymentTerms: '结算方式字典',
       currencyRates: '币种汇率中心',
       taxation: '税务配置中心',
+      settlements: '应收应付',
+    },
+  },
+  settlements: {
+    page: {
+      title: '应收应付管理',
+      description: '统一管理销售应收与采购应付台账',
+    },
+    tabs: {
+      receivables: '应收',
+      payables: '应付',
+    },
+    placeholder: {
+      receivables: '应收视图即将接入，敬请期待',
+      payables: '应付视图即将接入，敬请期待',
     },
   },
   currencyRates: {

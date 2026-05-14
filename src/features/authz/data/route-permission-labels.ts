@@ -127,6 +127,7 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/finance-management/payment-terms': 'finance.layout.tabs.paymentTerms',
   '/finance-management/currency-rates': 'finance.layout.tabs.currencyRates',
   '/finance-management/taxation': 'finance.layout.tabs.taxation',
+  '/finance-settlements': 'finance.layout.tabs.settlements',
   '/code-center': 'sidebar.groups.codeCenter',
   '/code-center/linear-barcode': 'sidebar.items.linearBarcode',
   '/code-center/linear-barcode/protocol':
