@@ -30,12 +30,12 @@ func GetProductTemplatesHandler(c *gin.Context) {
 	}
 
 	if isOptions {
-		c.JSON(http.StatusOK, items)
+		c.JSON(http.StatusOK, mapProductTemplatesToResponseDTOs(items))
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"items":    items,
+		"items":    mapProductTemplatesToResponseDTOs(items),
 		"total":    total,
 		"page":     page,
 		"pageSize": pageSize,
@@ -56,7 +56,7 @@ func SaveProductTemplateHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, saved)
+	c.JSON(http.StatusOK, mapProductTemplateToResponseDTO(saved))
 }
 
 func PatchProductTemplateHandler(c *gin.Context) {
@@ -79,7 +79,7 @@ func PatchProductTemplateHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, saved)
+	c.JSON(http.StatusOK, mapProductTemplateToResponseDTO(saved))
 }
 
 func DeleteProductTemplateHandler(c *gin.Context) {

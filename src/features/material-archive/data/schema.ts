@@ -62,7 +62,8 @@ export const materialSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
   version: z.number().default(1),
-}).extend(masterDataControlSchema.shape)
+  masterDataControl: masterDataControlSchema.optional(),
+})
 
 export type Material = z.infer<typeof materialSchema>
 

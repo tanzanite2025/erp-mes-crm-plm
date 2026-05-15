@@ -83,7 +83,8 @@ export const productSchema = z.object({
   templateResolutionError: z.string().optional(),
   createdAt: z.string(),
   version: z.number().default(1),
-}).extend(masterDataControlSchema.shape)
+  masterDataControl: masterDataControlSchema.optional(),
+})
 
 export type Product = z.infer<typeof productSchema>
 
@@ -113,7 +114,8 @@ export const productTemplateSchema = z.object({
   attributeBindings: z.array(productTemplateAttributeBindingSchema).default([]),
   createdAt: z.string(),
   version: z.number().default(1),
-}).extend(masterDataControlSchema.shape)
+  masterDataControl: masterDataControlSchema.optional(),
+})
 
 export type ProductTemplate = z.infer<typeof productTemplateSchema>
 

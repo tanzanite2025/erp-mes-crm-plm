@@ -69,7 +69,8 @@ export const bomSchema = z.object({
   relationSidecar: bomRelationSidecarSchema.optional(),
   createdAt: z.string().optional(),
   version: z.number().default(1),
-}).extend(masterDataControlSchema.shape)
+  masterDataControl: masterDataControlSchema.optional(),
+})
 
 export const bomListSchema = z.object({
   items: z.array(bomSchema).default([]),

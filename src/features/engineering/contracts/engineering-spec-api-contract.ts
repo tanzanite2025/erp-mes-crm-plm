@@ -35,13 +35,6 @@ export const engineeringSpecApiDTOSchema = z.object({
   type: z.string().min(1),
   description: z.string().optional(),
   active: z.boolean(),
-  revisionNo: z.string().optional(),
-  effectiveFrom: optionalControlDateSchema,
-  effectiveTo: optionalControlDateSchema,
-  changeType: z.enum(['MANUAL', 'ECO', 'ECN']).optional(),
-  changeOrderNo: z.string().optional(),
-  siteCode: z.string().optional(),
-  isDefaultSite: z.boolean().optional(),
   specData: nullableOptionalBucketSchema,
   drillingData: nullableOptionalBucketSchema,
   cuttingData: nullableOptionalBucketSchema,
@@ -52,6 +45,16 @@ export const engineeringSpecApiDTOSchema = z.object({
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
   version: z.number(),
+  /** MasterDataControl 嵌套命名空间 */
+  masterDataControl: z.object({
+    revisionNo: z.string().optional(),
+    effectiveFrom: optionalControlDateSchema,
+    effectiveTo: optionalControlDateSchema,
+    changeType: z.enum(['MANUAL', 'ECO', 'ECN']).optional(),
+    changeOrderNo: z.string().optional(),
+    siteCode: z.string().optional(),
+    isDefaultSite: z.boolean().optional(),
+  }).optional(),
 })
 
 export const engineeringSpecApiDTOArraySchema = z.array(engineeringSpecApiDTOSchema)

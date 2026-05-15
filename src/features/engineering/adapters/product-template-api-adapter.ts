@@ -49,6 +49,7 @@ export function toProductTemplateContract(dto: ProductTemplateApiDTO): ProductTe
     attributeBindings: dto.attributeBindings.map(toProductTemplateAttributeBindingContract),
     createdAt: dto.createdAt || new Date().toISOString(),
     version: dto.version ?? 1,
+    masterDataControl: dto.masterDataControl ?? undefined,
   }
 }
 

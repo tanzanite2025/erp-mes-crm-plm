@@ -26,8 +26,10 @@
   "createdAt": "2026-05-15T10:30:00Z",
   "depth": 50,
   "id": "product-fixture-1",
-  "isDefaultSite": false,
   "length": 0,
+  "masterDataControl": {
+    "isDefaultSite": false
+  },
   "maxTirePressure": 120,
   "modelCode": "01",
   "name": "Road Rim 700C 24H",

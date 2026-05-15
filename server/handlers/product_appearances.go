@@ -21,13 +21,8 @@ type ProductAppearanceApiDTO struct {
 	ImageName         string `json:"imageName"`
 	Active            bool   `json:"active"`
 	SortOrder         int    `json:"sortOrder"`
-	RevisionNo        string `json:"revisionNo,omitempty"`
-	EffectiveFrom     any    `json:"effectiveFrom,omitempty"`
-	EffectiveTo       any    `json:"effectiveTo,omitempty"`
-	ChangeType        string `json:"changeType,omitempty"`
-	ChangeOrderNo     string `json:"changeOrderNo,omitempty"`
-	SiteCode          string `json:"siteCode,omitempty"`
-	IsDefaultSite     bool   `json:"isDefaultSite"`
+	// --- MasterDataControl 嵌套命名空间（唯一输出格式） ---
+	MasterDataControl *MasterDataControlDTO `json:"masterDataControl,omitempty"`
 	CreatedAt         any    `json:"createdAt"`
 	UpdatedAt         any    `json:"updatedAt"`
 	Version           int    `json:"version"`
@@ -44,13 +39,7 @@ func toProductAppearanceApiDTO(item models.ProductAppearance) ProductAppearanceA
 		ImageName:         item.ImageName,
 		Active:            item.Active,
 		SortOrder:         item.SortOrder,
-		RevisionNo:        item.RevisionNo,
-		EffectiveFrom:     item.EffectiveFrom,
-		EffectiveTo:       item.EffectiveTo,
-		ChangeType:        item.ChangeType,
-		ChangeOrderNo:     item.ChangeOrderNo,
-		SiteCode:          item.SiteCode,
-		IsDefaultSite:     item.IsDefaultSite,
+		MasterDataControl: MapMasterDataControlToDTO(item.MasterDataControl),
 		CreatedAt:         item.CreatedAt,
 		UpdatedAt:         item.UpdatedAt,
 		Version:           item.Version,

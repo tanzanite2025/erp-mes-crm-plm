@@ -2,13 +2,6 @@
   "id": "bom-fixture-1",
   "createdAt": "2026-05-15T10:30:00Z",
   "updatedAt": "2026-05-15T10:30:00Z",
-  "revisionNo": "R1",
-  "effectiveFrom": "2026-06-01T00:00:00Z",
-  "effectiveTo": null,
-  "changeType": "MANUAL",
-  "changeOrderNo": "ECO-2026-001",
-  "siteCode": "SZ",
-  "isDefaultSite": false,
   "bomType": "EBOM",
   "bomNo": "BOM-FIXTURE-001",
   "productId": "product-fixture-1",
@@ -32,5 +25,14 @@
       "sortOrder": 0
     }
   ],
-  "description": "Fixture BOM for wire contract sample"
+  "description": "Fixture BOM for wire contract sample",
+  "masterDataControl": {
+    "revisionNo": "R1",
+    "effectiveFrom": "2026-06-01T00:00:00Z",
+    "effectiveTo": null,
+    "changeType": "MANUAL",
+    "changeOrderNo": "ECO-2026-001",
+    "siteCode": "SZ",
+    "isDefaultSite": false
+  }
 }

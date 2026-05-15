@@ -125,9 +125,12 @@ export function normalizeSaveProductInput(product: SaveProductInput): SaveProduc
       categoryKey: item.categoryKey?.trim() || '',
       optionValue: normalizeProductAttributeMachineValue(item.optionValue),
     })),
-    revisionNo: normalizeEngineeringRevisionNo(product.revisionNo),
-    changeOrderNo: normalizeEngineeringChangeOrderNo(product.changeOrderNo),
-    siteCode: normalizeEngineeringSiteCode(product.siteCode),
+    masterDataControl: product.masterDataControl ? {
+      ...product.masterDataControl,
+      revisionNo: normalizeEngineeringRevisionNo(product.masterDataControl.revisionNo),
+      changeOrderNo: normalizeEngineeringChangeOrderNo(product.masterDataControl.changeOrderNo),
+      siteCode: normalizeEngineeringSiteCode(product.masterDataControl.siteCode),
+    } : undefined,
   }
 }
 

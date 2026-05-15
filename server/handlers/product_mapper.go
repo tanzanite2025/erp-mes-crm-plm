@@ -53,6 +53,8 @@ func toProductAttributeValueApiDTOs(items []models.ProductAttributeValue) []Prod
 }
 
 func toProductApiDTO(product models.Product) ProductApiDTO {
+	mdc := MapMasterDataControlToDTO(product.MasterDataControl)
+
 	return ProductApiDTO{
 		ID:                       product.ID,
 		SKU:                      product.SKU,
@@ -89,13 +91,8 @@ func toProductApiDTO(product models.Product) ProductApiDTO {
 		ResolvedTemplateKey:      product.ResolvedTemplateKey,
 		TemplateResolutionSource: product.TemplateResolutionSource,
 		TemplateResolutionError:  product.TemplateResolutionError,
-		RevisionNo:               product.RevisionNo,
-		EffectiveFrom:            product.EffectiveFrom,
-		EffectiveTo:              product.EffectiveTo,
-		ChangeType:               product.ChangeType,
-		ChangeOrderNo:            product.ChangeOrderNo,
-		SiteCode:                 product.SiteCode,
-		IsDefaultSite:            product.IsDefaultSite,
+		// 嵌套命名空间
+		MasterDataControl:        mdc,
 		CreatedAt:                product.CreatedAt,
 		UpdatedAt:                product.UpdatedAt,
 		Version:                  product.Version,

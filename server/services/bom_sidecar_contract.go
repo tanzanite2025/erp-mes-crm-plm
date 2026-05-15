@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
+	"xdfc-server/dto"
 	"xdfc-server/models"
 )
 
@@ -41,8 +43,22 @@ type BOMRelationSidecar struct {
 }
 
 type BOMDetailResponse struct {
-	models.BOM
-	RelationSidecar *BOMRelationSidecar `json:"relationSidecar,omitempty"`
+	ID                string                    `json:"id"`
+	CreatedAt         time.Time                 `json:"createdAt"`
+	UpdatedAt         time.Time                 `json:"updatedAt"`
+	BOMType           string                    `json:"bomType"`
+	BOMNo             string                    `json:"bomNo"`
+	ProductID         string                    `json:"productId"`
+	SourceEBOMID      *string                   `json:"sourceEbomId,omitempty"`
+	BOMVersion        string                    `json:"bomVersion"`
+	Status            string                    `json:"status"`
+	IsLocked          bool                      `json:"isLocked"`
+	Version           int                       `json:"version"`
+	Items             []models.BOMItem          `json:"items"`
+	Description       string                    `json:"description"`
+	RelationSidecar   *BOMRelationSidecar       `json:"relationSidecar,omitempty"`
+	// --- MasterDataControl 嵌套命名空间（唯一输出格式） ---
+	MasterDataControl *dto.MasterDataControlDTO `json:"masterDataControl,omitempty"`
 }
 
 func MapBOMToDetailResponse(bom models.BOM) (BOMDetailResponse, error) {
@@ -52,8 +68,21 @@ func MapBOMToDetailResponse(bom models.BOM) (BOMDetailResponse, error) {
 	}
 
 	return BOMDetailResponse{
-		BOM:             bom,
-		RelationSidecar: sidecar,
+		ID:                bom.ID,
+		CreatedAt:         bom.CreatedAt,
+		UpdatedAt:         bom.UpdatedAt,
+		BOMType:           bom.BOMType,
+		BOMNo:             bom.BOMNo,
+		ProductID:         bom.ProductID,
+		SourceEBOMID:      bom.SourceEBOMID,
+		BOMVersion:        bom.VersionText,
+		Status:            bom.Status,
+		IsLocked:          bom.IsLocked,
+		Version:           bom.Version,
+		Items:             bom.Items,
+		Description:       bom.Description,
+		RelationSidecar:   sidecar,
+		MasterDataControl: dto.MapMasterDataControl(bom.MasterDataControl),
 	}, nil
 }
 

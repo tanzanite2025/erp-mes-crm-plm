@@ -53,21 +53,22 @@ type SaveBOMInput struct {
 	BOMNo           string           `json:"bomNo"`
 	BOMType         string           `json:"bomType"`
 	ProductID       string           `json:"productId"`
-	VersionText     string           `json:"version"`
+	VersionText     string           `json:"bomVersion"`
 	Status          string           `json:"status"`
 	Items           []models.BOMItem `json:"items"`
 	Description     string           `json:"description"`
-	Version         int              `json:"_v"`
-	RevisionNo      string           `json:"revisionNo"`
-	EffectiveFrom   *time.Time       `json:"effectiveFrom"`
-	EffectiveTo     *time.Time       `json:"effectiveTo"`
-	ChangeType      string           `json:"changeType"`
-	ChangeOrderNo   string           `json:"changeOrderNo"`
-	SiteCode        string           `json:"siteCode"`
-	IsDefaultSite   bool             `json:"isDefaultSite"`
+	Version         int              `json:"version"`
+	MasterDataControl struct {
+		RevisionNo    string     `json:"revisionNo"`
+		EffectiveFrom *time.Time `json:"effectiveFrom"`
+		EffectiveTo   *time.Time `json:"effectiveTo"`
+		ChangeType    string     `json:"changeType"`
+		ChangeOrderNo string     `json:"changeOrderNo"`
+		SiteCode      string     `json:"siteCode"`
+		IsDefaultSite bool       `json:"isDefaultSite"`
+	} `json:"masterDataControl"`
 	RelationSidecar json.RawMessage  `json:"relationSidecar"`
 	// 🔥 SDRTS 协议：Sidecar Delta
-	// 用于审计日志和增量更新
 	SidecarDelta    *DeltaSet        `json:"_sidecarDelta,omitempty"`
 }
 
@@ -100,13 +101,13 @@ func (input SaveBOMInput) toModel() models.BOM {
 			ID: input.ID,
 		},
 		MasterDataControl: models.MasterDataControl{
-			RevisionNo:    input.RevisionNo,
-			EffectiveFrom: input.EffectiveFrom,
-			EffectiveTo:   input.EffectiveTo,
-			ChangeType:    input.ChangeType,
-			ChangeOrderNo: input.ChangeOrderNo,
-			SiteCode:      input.SiteCode,
-			IsDefaultSite: input.IsDefaultSite,
+			RevisionNo:    input.MasterDataControl.RevisionNo,
+			EffectiveFrom: input.MasterDataControl.EffectiveFrom,
+			EffectiveTo:   input.MasterDataControl.EffectiveTo,
+			ChangeType:    input.MasterDataControl.ChangeType,
+			ChangeOrderNo: input.MasterDataControl.ChangeOrderNo,
+			SiteCode:      input.MasterDataControl.SiteCode,
+			IsDefaultSite: input.MasterDataControl.IsDefaultSite,
 		},
 		BOMNo:           input.BOMNo,
 		BOMType:         input.BOMType,

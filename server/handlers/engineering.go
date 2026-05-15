@@ -83,12 +83,12 @@ func GetEngineeringSpecsHandler(c *gin.Context) {
 	}
 
 	if isOptions {
-		c.JSON(http.StatusOK, items)
+		c.JSON(http.StatusOK, mapEngineeringSpecsToResponseDTOs(items))
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"items":    items,
+		"items":    mapEngineeringSpecsToResponseDTOs(items),
 		"total":    total,
 		"page":     page,
 		"pageSize": pageSize,
@@ -107,7 +107,7 @@ func GetEngineeringSpecHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, spec)
+	c.JSON(http.StatusOK, mapEngineeringSpecToResponseDTO(spec))
 }
 
 func SaveEngineeringSpecHandler(c *gin.Context) {
@@ -136,7 +136,7 @@ func SaveEngineeringSpecHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, saved)
+	c.JSON(http.StatusOK, mapEngineeringSpecToResponseDTO(saved))
 }
 
 func PatchEngineeringSpecHandler(c *gin.Context) {
@@ -183,7 +183,7 @@ func PatchEngineeringSpecHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, updated)
+	c.JSON(http.StatusOK, mapEngineeringSpecToResponseDTO(updated))
 }
 
 func BulkSyncEngineeringSpecsHandler(c *gin.Context) {

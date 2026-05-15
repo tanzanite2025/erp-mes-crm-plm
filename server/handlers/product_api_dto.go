@@ -47,13 +47,8 @@ type ProductApiDTO struct {
 	ResolvedTemplateKey      string                        `json:"resolvedTemplateKey,omitempty"`
 	TemplateResolutionSource string                        `json:"templateResolutionSource,omitempty"`
 	TemplateResolutionError  string                        `json:"templateResolutionError,omitempty"`
-	RevisionNo               string                        `json:"revisionNo,omitempty"`
-	EffectiveFrom            any                           `json:"effectiveFrom,omitempty"`
-	EffectiveTo              any                           `json:"effectiveTo,omitempty"`
-	ChangeType               string                        `json:"changeType,omitempty"`
-	ChangeOrderNo            string                        `json:"changeOrderNo,omitempty"`
-	SiteCode                 string                        `json:"siteCode,omitempty"`
-	IsDefaultSite            bool                          `json:"isDefaultSite"`
+	// --- MasterDataControl 嵌套命名空间（唯一输出格式） ---
+	MasterDataControl        *MasterDataControlDTO         `json:"masterDataControl,omitempty"`
 	CreatedAt                any                           `json:"createdAt"`
 	UpdatedAt                any                           `json:"updatedAt"`
 	Version                  int                           `json:"version"`

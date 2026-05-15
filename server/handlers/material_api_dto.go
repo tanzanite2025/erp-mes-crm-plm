@@ -15,13 +15,8 @@ type MaterialApiDTO struct {
 	Description        string  `json:"description"`
 	Images             any     `json:"images"`
 	Status             string  `json:"status"`
-	RevisionNo         string  `json:"revisionNo"`
-	EffectiveFrom      any     `json:"effectiveFrom"`
-	EffectiveTo        any     `json:"effectiveTo"`
-	ChangeType         string  `json:"changeType"`
-	ChangeOrderNo      string  `json:"changeOrderNo"`
-	SiteCode           string  `json:"siteCode"`
-	IsDefaultSite      bool    `json:"isDefaultSite"`
+	// --- MasterDataControl 嵌套命名空间（唯一输出格式） ---
+	MasterDataControl  *MasterDataControlDTO `json:"masterDataControl,omitempty"`
 	CreatedAt          any     `json:"createdAt"`
 	UpdatedAt          any     `json:"updatedAt"`
 	Version            int     `json:"version"`

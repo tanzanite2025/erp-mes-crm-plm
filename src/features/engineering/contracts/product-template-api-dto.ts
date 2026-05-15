@@ -21,6 +21,16 @@ export interface ProductTemplateApiDTO {
   createdAt?: string
   updatedAt?: string
   version?: number
+  /** MasterDataControl 嵌套命名空间 */
+  masterDataControl?: {
+    revisionNo?: string
+    effectiveFrom?: string | null
+    effectiveTo?: string | null
+    changeType?: string
+    changeOrderNo?: string
+    siteCode?: string
+    isDefaultSite?: boolean
+  }
 }
 
 export type ProductTemplatePatchApiDTO = DeltaPayload

@@ -13,21 +13,24 @@ export interface BOMDetailSource {
 }
 
 /**
- * 后端 BOM wire format → 前端 zod schema 的字段名重映射。
+ * 后端 BOM wire format → 前端 zod schema 的字段映射。
  *
- * 自从统一 json tag 后（bomVersion + version），wire format 字段名与前端 schema 一致，
- * 不再需要 version/_v 重映射。仅保留日期格式归一化：
- * 后端 `time.Time` 序列化为 ISO 8601 完整时间戳（例：`"2026-06-01T00:00:00Z"`），
- * 但前端 schema 要求 `YYYY-MM-DD`。
+ * 日期格式归一化：后端 `time.Time` 序列化为 ISO 8601 完整时间戳
+ * （例：`"2026-06-01T00:00:00Z"`），但前端 schema 要求 `YYYY-MM-DD`。
+ * 在 masterDataControl 嵌套对象内截断日期字段。
  */
 function mapBOMWireToSchema(wire: Record<string, unknown>): Record<string, unknown> {
     if (!wire || typeof wire !== 'object') return wire as Record<string, unknown>
 
     const mapped: Record<string, unknown> = { ...wire }
 
-    // 日期字段：ISO 8601 (`2026-06-01T00:00:00Z`) → 前端协议格式 `YYYY-MM-DD`
-    mapped.effectiveFrom = truncateIsoDateToProtocol(mapped.effectiveFrom)
-    mapped.effectiveTo = truncateIsoDateToProtocol(mapped.effectiveTo)
+    // 日期字段在 masterDataControl 嵌套对象内
+    if (mapped.masterDataControl && typeof mapped.masterDataControl === 'object') {
+        const mdc = { ...(mapped.masterDataControl as Record<string, unknown>) }
+        mdc.effectiveFrom = truncateIsoDateToProtocol(mdc.effectiveFrom)
+        mdc.effectiveTo = truncateIsoDateToProtocol(mdc.effectiveTo)
+        mapped.masterDataControl = mdc
+    }
 
     return mapped
 }

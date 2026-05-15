@@ -52,6 +52,16 @@ export interface ProductApiDTO {
   changeOrderNo?: string
   siteCode?: string
   isDefaultSite?: boolean
+  /** 嵌套命名空间（过渡期与平铺字段共存，前端优先读此字段） */
+  masterDataControl?: {
+    revisionNo?: string
+    effectiveFrom?: string | null
+    effectiveTo?: string | null
+    changeType?: 'MANUAL' | 'ECO' | 'ECN'
+    changeOrderNo?: string
+    siteCode?: string
+    isDefaultSite?: boolean
+  }
   createdAt?: string
   updatedAt?: string
   version?: number
