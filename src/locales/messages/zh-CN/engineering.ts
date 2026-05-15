@@ -836,6 +836,10 @@ export const engineering = {
         moldPlaceholder: '选择模具分组...',
         memo: '备注 / 设计说明',
         memoPlaceholder: '输入产品附加说明...',
+        ownerType: '产品归属',
+        ownerTypeInternal: '内部型号',
+        ownerTypeCustomer: '客户定制',
+        ownerPlaceholder: '选择归属...',
     },
     restrictions: {
         title: '生产约束项（风险标识）',
@@ -1217,6 +1221,15 @@ export const engineering = {
       confirmDelete: '确认删除该 BOM 吗？',
       confirmDerive: '确认将该 EBOM 派生为 MBOM 吗？此操作将复制全部配方明细并生成一份新的生产 BOM 草稿。',
       empty: '暂无 BOM 数据',
+      ownerInternal: '内部',
+      ownerCustomer: '客户',
+      ownerUnknown: '未知归属',
+    },
+    filter: {
+      ownerLabel: '归属筛选',
+      ownerPlaceholder: '按归属筛选',
+      allOwners: '全部归属',
+      internal: '内部型号',
     },
     status: {
       draft: '草稿',

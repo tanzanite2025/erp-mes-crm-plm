@@ -48,6 +48,7 @@ export function useProductForm({
     versionLevelOptions,
     moldOptions,
     specOptions,
+    ownerOptions,
     metadataInitError,
     metadataReady,
   } = useProductFormInit({
@@ -122,6 +123,7 @@ export function useProductForm({
     versionLevelOptions,
     moldOptions,
     specOptions,
+    ownerOptions,
     metadataInitError,
     metadataReady,
     nextCodeDeriveError,

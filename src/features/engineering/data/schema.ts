@@ -76,6 +76,8 @@ export const productSchema = z.object({
     createdAt: z.string(),
   })).default([]),
   status: z.enum(['Active', 'Draft', 'Archived']).default('Active'),
+  ownerType: z.enum(['INTERNAL', 'CUSTOMER']).default('INTERNAL'),
+  ownerCustomerId: z.string().optional(),
   templateKey: z.string().optional(),
   resolvedTemplateId: z.string().optional(),
   resolvedTemplateKey: z.string().optional(),

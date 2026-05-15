@@ -36,6 +36,7 @@ interface BOMTableProps {
   products: Product[]
   sections: BOMSectionOption[]
   isLoading: boolean
+  customerNameMap?: Map<string, string>
   onPreview: (bom: BOM) => void
   onEdit: (bom: BOM) => void
   onDerive: (bom: BOM) => void
@@ -48,6 +49,7 @@ export function BOMTable({
   products,
   sections,
   isLoading,
+  customerNameMap,
   onPreview,
   onEdit,
   onDerive,
@@ -108,13 +110,25 @@ export function BOMTable({
         }
 
         const summary = resolveBOMProductDisplaySummary(product)
+        const ownerType = product.ownerType ?? 'INTERNAL'
+        const ownerLabel = ownerType === 'CUSTOMER'
+          ? (product.ownerCustomerId
+              ? customerNameMap?.get(product.ownerCustomerId) ?? t('engineering.bomArchive.table.ownerUnknown')
+              : t('engineering.bomArchive.table.ownerUnknown'))
+          : t('engineering.bomArchive.table.ownerInternal')
+        const ownerBadgeClass = ownerType === 'CUSTOMER'
+          ? 'h-4 border-amber-200 bg-amber-50 px-1 text-[9px] font-bold text-amber-700 hover:bg-amber-50'
+          : 'h-4 border-emerald-200 bg-emerald-50 px-1 text-[9px] font-bold text-emerald-700 hover:bg-emerald-50'
 
         return (
           <div className='flex flex-col gap-1 py-1'>
-            <div className='flex items-center gap-2'>
+            <div className='flex flex-wrap items-center gap-2'>
               <span className='text-sm font-bold leading-tight text-slate-800'>{product.name}</span>
               <Badge className='h-4 border-indigo-100 bg-indigo-50 px-1 text-[10px] font-medium text-indigo-700 hover:bg-indigo-50'>
                 {summary.version}
+              </Badge>
+              <Badge variant='outline' className={ownerBadgeClass} title={ownerLabel}>
+                {ownerLabel}
               </Badge>
             </div>
             <div className='flex items-center gap-1.5'>

@@ -2,6 +2,7 @@
 
 import { Search, Plus, Box, Settings2 } from 'lucide-react'
 import { type TranslationKey } from '@/locales'
+import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -9,11 +10,13 @@ import { useLanguage } from '@/context/language-provider'
 import { type Product, type ProductType } from '../data/schema'
 import { type EngineeringProductDisplayMetadata } from '../hooks/use-engineering-product-display-metadata'
 import { useEngineeringSidebarViewModel } from '../hooks/use-engineering-sidebar-view-model'
+import { resolveProductOwnerDisplay } from '../utils/product-owner-display'
 
 type EngineeringSidebarProps = {
     products: Product[]
     types: ProductType[]
     productDisplayMetadataMap: Map<string, EngineeringProductDisplayMetadata>
+    customerNameMap?: Map<string, string>
     selectedProductId: string | null
     onSelectProduct: (id: string) => void
     onAddProduct: () => void
@@ -25,6 +28,7 @@ export function EngineeringSidebar({
     products,
     types,
     productDisplayMetadataMap,
+    customerNameMap,
     selectedProductId,
     onSelectProduct,
     onAddProduct,
@@ -102,11 +106,22 @@ export function EngineeringSidebar({
                                     {typeProducts.length > 0 ? (
                                         typeProducts.map(product => {
                                             const productDisplayMetadata = productDisplayMetadataMap.get(product.id) || null
+                                            const isSelected = selectedProductId === product.id
+                                            const ownerDisplay = resolveProductOwnerDisplay(product, {
+                                                internalLabel: t('engineering.productMgmt.form.ownerTypeInternal'),
+                                                unknownCustomerLabel: t('engineering.productMgmt.form.ownerTypeCustomer'),
+                                                customerNameMap,
+                                            })
+                                            const ownerBadgeClass = isSelected
+                                                ? 'h-4 border-white/20 bg-white/15 text-white px-1 text-[9px] font-black uppercase tracking-wide'
+                                                : ownerDisplay.ownerType === 'CUSTOMER'
+                                                    ? 'h-4 border-amber-200 bg-amber-50 text-amber-700 px-1 text-[9px] font-black uppercase tracking-wide'
+                                                    : 'h-4 border-emerald-200 bg-emerald-50 text-emerald-700 px-1 text-[9px] font-black uppercase tracking-wide'
 
                                             return (
                                                 <div
                                                     key={product.id}
-                                                    className={`grid grid-cols-[56px_1fr] xs:grid-cols-[68px_1fr] sm:grid-cols-[80px_1fr] items-center gap-2.5 xs:gap-3 sm:gap-3 p-2 sm:p-2.5 rounded-[18px] cursor-pointer transition-all border-2 border-dashed ${selectedProductId === product.id
+                                                    className={`grid grid-cols-[56px_1fr] xs:grid-cols-[68px_1fr] sm:grid-cols-[80px_1fr] items-center gap-2.5 xs:gap-3 sm:gap-3 p-2 sm:p-2.5 rounded-[18px] cursor-pointer transition-all border-2 border-dashed ${isSelected
                                                         ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/30 border-blue-500/50 transform scale-[1.02]'
                                                         : 'bg-muted/5 border-muted/50 hover:bg-muted/10 hover:border-muted-foreground/20'
                                                         }`}
@@ -114,11 +129,11 @@ export function EngineeringSidebar({
                                                 >
                                                     {/* 第 1 列：图片预览对齐 */}
                                                     <div className='flex justify-center'>
-                                                        <div className={`size-12 xs:size-14 sm:size-16 rounded-2xl overflow-hidden shrink-0 flex items-center justify-center transition-all ${selectedProductId === product.id ? 'bg-white/20 shadow-inner' : 'bg-background shadow-sm border border-muted/20'}`}>
+                                                        <div className={`size-12 xs:size-14 sm:size-16 rounded-2xl overflow-hidden shrink-0 flex items-center justify-center transition-all ${isSelected ? 'bg-white/20 shadow-inner' : 'bg-background shadow-sm border border-muted/20'}`}>
                                                             {product.image ? (
                                                                 <img src={product.image} alt='' className='size-full object-cover' />
                                                             ) : (
-                                                                <Box className={`size-5 xs:size-6 sm:size-8 opacity-30 ${selectedProductId === product.id ? 'text-white' : 'text-muted-foreground'}`} />
+                                                                <Box className={`size-5 xs:size-6 sm:size-8 opacity-30 ${isSelected ? 'text-white' : 'text-muted-foreground'}`} />
                                                             )}
                                                         </div>
                                                     </div>
@@ -126,14 +141,23 @@ export function EngineeringSidebar({
                                                     {/* 第 2 列：信息集中对齐 */}
                                                     <div className='relative flex min-w-0 flex-col gap-0.5 group/card-info'>
                                                         <div className='flex items-center justify-between gap-2.5'>
-                                                            <p className='truncate text-[13px] font-black tracking-tight uppercase leading-none italic sm:text-[15px]'>
-                                                                {product.name}
-                                                            </p>
+                                                            <div className='flex min-w-0 items-center gap-1.5'>
+                                                                <p className='truncate text-[13px] font-black tracking-tight uppercase leading-none italic sm:text-[15px]'>
+                                                                    {product.name}
+                                                                </p>
+                                                                <Badge
+                                                                    variant='outline'
+                                                                    className={`shrink-0 ${ownerBadgeClass}`}
+                                                                    title={ownerDisplay.label}
+                                                                >
+                                                                    {ownerDisplay.label}
+                                                                </Badge>
+                                                            </div>
                                                             <div className='flex items-center gap-2 shrink-0'>
                                                                 <Button
                                                                     variant='ghost'
                                                                     size='icon'
-                                                                    className={`size-7 rounded-xl transition-all ${selectedProductId === product.id
+                                                                    className={`size-7 rounded-xl transition-all ${isSelected
                                                                         ? 'text-white/40 hover:text-white hover:bg-white/10'
                                                                         : 'text-muted-foreground/40 hover:text-blue-600 hover:bg-blue-600/10'
                                                                         }`}
@@ -154,14 +178,14 @@ export function EngineeringSidebar({
                                                                     {productDisplayMetadata.dynamicSummaryItems.map((item) => (
                                                                         <div
                                                                             key={item.key}
-                                                                            className={`rounded-lg border px-2 py-0.5 text-[9px] font-black tracking-tight leading-4 ${selectedProductId === product.id
+                                                                            className={`rounded-lg border px-2 py-0.5 text-[9px] font-black tracking-tight leading-4 ${isSelected
                                                                                 ? 'border-white/10 bg-white/15 text-white'
                                                                                 : item.empty
                                                                                     ? 'border-amber-500/20 bg-amber-500/5 text-amber-700'
                                                                                     : 'border-blue-600/10 bg-blue-600/5 text-slate-700'
                                                                                 }`}
                                                                         >
-                                                                            <span className={`mr-0.5 ${selectedProductId === product.id ? 'text-white/50' : 'text-muted-foreground/50'}`}>
+                                                                            <span className={`mr-0.5 ${isSelected ? 'text-white/50' : 'text-muted-foreground/50'}`}>
                                                                                 {item.label}:
                                                                             </span>
                                                                             <span>{item.value}</span>
@@ -170,7 +194,7 @@ export function EngineeringSidebar({
                                                                 </div>
                                                             ) : null
                                                         ) : (
-                                                            <div className={`inline-flex w-fit rounded-lg border border-dashed px-2 py-0.5 text-[9px] font-black tracking-tight leading-4 ${selectedProductId === product.id ? 'border-white/15 bg-white/10 text-white/80' : 'border-amber-500/20 bg-amber-500/5 text-amber-700'}`}>
+                                                            <div className={`inline-flex w-fit rounded-lg border border-dashed px-2 py-0.5 text-[9px] font-black tracking-tight leading-4 ${isSelected ? 'border-white/15 bg-white/10 text-white/80' : 'border-amber-500/20 bg-amber-500/5 text-amber-700'}`}>
                                                                 {t(templateSummaryUnavailableKey)}
                                                             </div>
                                                         )}

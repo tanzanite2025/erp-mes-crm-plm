@@ -4,6 +4,8 @@ import { type ProductAttributeOption } from '../data/schema'
 import { AssetService } from '@/features/equipment-tooling/services/asset-service'
 import { ENGINEERING_DB_SPECS_QUERY_KEY } from '@/features/engineering-db/query-keys'
 import { SpecsService } from '@/features/engineering-db/services/specs-service'
+import { getCustomers } from '@/features/trading/customer'
+import { tradingQueryKeys } from '@/features/trading/query-keys'
 import { ProductAttributeCategoryService } from '../services/product-attribute-category-service'
 import { ProductAttributeOptionService } from '../services/product-attribute-option-service'
 import {
@@ -102,6 +104,25 @@ export function useProductFormInit({
         },
         [specsQuery.data]
     )
+    const customersQuery = useQuery({
+        queryKey: tradingQueryKeys.customers(),
+        queryFn: getCustomers,
+        enabled: open,
+    })
+    const ownerOptions: OptionItem[] = useMemo(
+        () => {
+            const items: OptionItem[] = [
+                { label: t('engineering.productMgmt.form.ownerTypeInternal'), value: '__INTERNAL__' },
+            ]
+            if (customersQuery.data) {
+                for (const customer of customersQuery.data) {
+                    items.push({ label: customer.name, value: customer.id })
+                }
+            }
+            return items
+        },
+        [customersQuery.data, t]
+    )
     const metadataInitError = useMemo(() => {
         const error = categoriesQuery.error ?? optionsQuery.error ?? moldGroupsQuery.error ?? specsQuery.error
         if (!error) {
@@ -123,6 +144,7 @@ export function useProductFormInit({
         versionLevelOptions,
         moldOptions,
         specOptions,
+        ownerOptions,
         metadataInitError,
         metadataReady,
     }

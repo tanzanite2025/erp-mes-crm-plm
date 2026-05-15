@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { AlertTriangle, Layers } from 'lucide-react'
 import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { useLanguage } from '@/context/language-provider'
@@ -8,15 +8,20 @@ import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { BOMActionDialog } from '../components/bom-action-dialog'
 import { BOMPreview } from '../components/bom-mgmt/bom-preview'
 import { BOMTable } from '../components/bom-mgmt/bom-table'
-import { BOMToolbar } from '../components/bom-mgmt/bom-toolbar'
+import { BOMToolbar, type BOMOwnerFilterOption } from '../components/bom-mgmt/bom-toolbar'
 import { useBOMData } from '../hooks/use-bom-data'
 import { type BOM } from '../data/schema'
 import { type BOMItemDraft, type SaveBOMInput } from '../mutation-types'
+
+const OWNER_FILTER_ALL = '__ALL__'
+const OWNER_FILTER_INTERNAL = '__INTERNAL__'
 
 export function BOMMgmt() {
   const { t } = useLanguage()
   const {
     readResource,
+    customers,
+    customerNameMap,
     saveBOM,
     deleteBOM,
     promoteBOM,
@@ -31,6 +36,7 @@ export function BOMMgmt() {
   const [previewBOM, setPreviewBOM] = useState<BOM | null>(null)
   const [initialItems, setInitialItems] = useState<BOMItemDraft[] | undefined>(undefined)
   const [initialProductId, setInitialProductId] = useState<string | undefined>(undefined)
+  const [selectedOwnerValue, setSelectedOwnerValue] = useState<string>(OWNER_FILTER_ALL)
 
   const resetDialogState = () => {
     setCurrentRow(undefined)
@@ -117,6 +123,37 @@ export function BOMMgmt() {
   const isLoading = readResource.status === 'loading'
   const viewMode = previewBOM && readResource.status === 'ready' ? 'preview' : 'list'
 
+  const productMap = useMemo(
+    () => new Map(bomProducts.map((product) => [product.id, product])),
+    [bomProducts]
+  )
+
+  const ownerOptions = useMemo<BOMOwnerFilterOption[]>(() => {
+    const options: BOMOwnerFilterOption[] = [
+      { label: t('engineering.bomArchive.filter.allOwners'), value: OWNER_FILTER_ALL },
+      { label: t('engineering.bomArchive.filter.internal'), value: OWNER_FILTER_INTERNAL },
+    ]
+    for (const customer of customers) {
+      options.push({ label: customer.name, value: customer.id })
+    }
+    return options
+  }, [customers, t])
+
+  const filteredBOMData = useMemo(() => {
+    if (selectedOwnerValue === OWNER_FILTER_ALL) {
+      return bomTableData
+    }
+    return bomTableData.filter((bom) => {
+      const product = bom.product || productMap.get(bom.productId)
+      if (!product) return false
+      const ownerType = product.ownerType ?? 'INTERNAL'
+      if (selectedOwnerValue === OWNER_FILTER_INTERNAL) {
+        return ownerType === 'INTERNAL'
+      }
+      return ownerType === 'CUSTOMER' && product.ownerCustomerId === selectedOwnerValue
+    })
+  }, [bomTableData, productMap, selectedOwnerValue])
+
   const handleDerive = async (bom: BOM) => {
     if (window.confirm(t('engineering.bomArchive.table.confirmDerive'))) {
       await deriveMBOM(bom.id, {
@@ -163,6 +200,9 @@ export function BOMMgmt() {
           onDownloadTemplate={downloadTemplate}
           onUploadExcel={handleUploadExcel}
           onAddBOM={openCreateDialog}
+          ownerOptions={ownerOptions}
+          selectedOwnerValue={selectedOwnerValue}
+          onOwnerChange={setSelectedOwnerValue}
         />
       ) : null}
 
@@ -179,9 +219,10 @@ export function BOMMgmt() {
         </div>
       ) : (
         <BOMTable
-          data={bomTableData}
+          data={filteredBOMData}
           products={bomProducts}
           sections={bomSections}
+          customerNameMap={customerNameMap}
           isLoading={isLoading}
           onPreview={setPreviewBOM}
           onEdit={openEditDialog}

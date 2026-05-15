@@ -836,6 +836,10 @@ export const engineering = {
         moldPlaceholder: 'Select mold group...',
         memo: 'Notes / Design Memo',
         memoPlaceholder: 'Enter additional notes...',
+        ownerType: 'Product Owner',
+        ownerTypeInternal: 'Internal Model',
+        ownerTypeCustomer: 'Customer Custom',
+        ownerPlaceholder: 'Select owner...',
     },
     restrictions: {
         title: 'Production Restrictions',
@@ -1217,6 +1221,15 @@ export const engineering = {
       confirmDelete: 'Delete this BOM?',
       confirmDerive: 'Are you sure you want to derive an MBOM from this EBOM? This will copy all recipe lines and generate a new production BOM draft.',
       empty: 'No BOM data found',
+      ownerInternal: 'Internal',
+      ownerCustomer: 'Customer',
+      ownerUnknown: 'Unknown owner',
+    },
+    filter: {
+      ownerLabel: 'Owner Filter',
+      ownerPlaceholder: 'Filter by owner',
+      allOwners: 'All owners',
+      internal: 'Internal models',
     },
     status: {
       draft: 'Draft',

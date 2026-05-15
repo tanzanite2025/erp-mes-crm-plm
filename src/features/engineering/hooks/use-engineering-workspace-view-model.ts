@@ -1,4 +1,7 @@
 import { useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { getCustomers } from '@/features/trading/customer'
+import { tradingQueryKeys } from '@/features/trading/query-keys'
 import { type Product } from '../data/schema'
 import { useEngineeringBootstrap } from './use-engineering-bootstrap'
 import { useEngineeringProductDisplayMetadata } from './use-engineering-product-display-metadata'
@@ -21,6 +24,19 @@ export function useEngineeringWorkspaceViewModel() {
     products,
     productTypes: types,
   })
+  const customersQuery = useQuery({
+    queryKey: tradingQueryKeys.customers(),
+    queryFn: getCustomers,
+  })
+  const customerNameMap = useMemo(() => {
+    const map = new Map<string, string>()
+    if (customersQuery.data) {
+      for (const customer of customersQuery.data) {
+        map.set(customer.id, customer.name)
+      }
+    }
+    return map
+  }, [customersQuery.data])
   const isLoading = bootstrap.isLoading || displayMetadata.isLoading
   const error = bootstrap.error ?? displayMetadata.error
 
@@ -107,6 +123,7 @@ export function useEngineeringWorkspaceViewModel() {
     selectedProduct,
     selectedProductDisplayMetadata,
     productDisplayMetadataMap: displayMetadata.productDisplayMetadataMap,
+    customerNameMap,
     effectiveSelectedProductId,
     isProductDialogOpen,
     isTypeDialogOpen,

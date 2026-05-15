@@ -1,5 +1,10 @@
 'use client'
 
+import { useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { getCustomers } from '@/features/trading/customer'
+import { tradingQueryKeys } from '@/features/trading/query-keys'
+import { type Customer } from '@/features/trading/data/schema'
 import { type BOM } from '../data/schema'
 import { type SaveBOMInput } from '../mutation-types'
 import { useBOMImportExport } from './use-bom-import-export'
@@ -8,6 +13,8 @@ import { useBOMWriteActions } from './use-bom-write-actions'
 
 interface BOMDataResult {
   readResource: BOMReadDataResource
+  customers: Customer[]
+  customerNameMap: Map<string, string>
   saveBOM: (params: { data: SaveBOMInput }) => Promise<boolean>
   deleteBOM: (id: string) => Promise<boolean>
   promoteBOM: (id: string, status: string, expectedVersion: number) => Promise<boolean>
@@ -34,6 +41,18 @@ interface BOMDataResult {
  */
 export function useBOMData(): BOMDataResult {
   const readResource = useBOMReadData()
+  const customersQuery = useQuery({
+    queryKey: tradingQueryKeys.customers(),
+    queryFn: getCustomers,
+  })
+  const customers = customersQuery.data ?? []
+  const customerNameMap = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const customer of customers) {
+      map.set(customer.id, customer.name)
+    }
+    return map
+  }, [customers])
   const {
     saveBOM: persistBOM,
     deleteBOM: removeBOM,
@@ -104,6 +123,8 @@ export function useBOMData(): BOMDataResult {
 
   return {
     readResource,
+    customers,
+    customerNameMap,
     saveBOM,
     deleteBOM,
     promoteBOM,
