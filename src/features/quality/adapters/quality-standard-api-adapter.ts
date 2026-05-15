@@ -74,6 +74,7 @@ function normalizeStandardType(type?: string): Standard['type'] {
   const normalized = type?.toUpperCase()
   if (type === '巡检' || normalized === 'IPQC') return 'IPQC'
   if (type === '首检' || normalized === 'FQC') return 'FQC'
+  if (type === '出货检验' || normalized === 'OQC') return 'OQC'
   return 'IQC'
 }
 

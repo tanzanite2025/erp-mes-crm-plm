@@ -1,4 +1,4 @@
-export type QualityStandardsTypeFilter = 'ALL' | 'IQC' | 'IPQC' | 'FQC'
+export type QualityStandardsTypeFilter = 'ALL' | 'IQC' | 'IPQC' | 'FQC' | 'OQC'
 
 export type QualityStandardsStatusFilter =
   | 'ALL'

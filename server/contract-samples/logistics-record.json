@@ -1,0 +1,26 @@
+{
+  "id": "logistics-fixture-1",
+  "orderNo": "SO-2026-001",
+  "salesOrderId": "sales-order-fixture-1",
+  "purchaseOrderId": "",
+  "productId": "product-fixture-1",
+  "shipmentId": "shipment-fixture-1",
+  "type": "Shipment",
+  "carrier": "顺丰速运",
+  "trackingNo": "SF1234567890",
+  "status": "InTransit",
+  "lastLocation": "深圳分拣中心",
+  "events": [
+    {
+      "id": "evt-1",
+      "time": "2026-05-15T11:00:00Z",
+      "location": "深圳",
+      "description": "已揽收",
+      "status": "InTransit"
+    }
+  ],
+  "version": 2,
+  "isDeleted": false,
+  "createdAt": "2026-05-15T10:30:00Z",
+  "updatedAt": "2026-05-15T10:30:00Z"
+}

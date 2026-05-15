@@ -149,6 +149,9 @@ export function StandardEditorContent({
                     <SelectItem value='FQC'>
                       {getQualityStandardTypeLabel(t, 'FQC')} (FQC)
                     </SelectItem>
+                    <SelectItem value='OQC'>
+                      {getQualityStandardTypeLabel(t, 'OQC')} (OQC)
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>

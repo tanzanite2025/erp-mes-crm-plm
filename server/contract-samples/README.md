@@ -37,12 +37,18 @@
 | `trading-supplier.json` | 供应商实体 | adapter + zod parse | wire `mainProducts` 是 JSON 字符串 vs schema `string[]`；adapter 已处理 |
 | `trading-sales-order.json` | 销售订单（DTO 响应） | DTO zod 解析 + adapter | 字段对齐，无问题 |
 | `trading-purchase-order.json` | 采购订单（DTO 响应） | adapter | 字段对齐，无问题 |
+| `inventory-item.json` | 库存条目（DTO 响应） | 字段存在性验证 + zod parse | 字段对齐，无问题 |
+| `logistics-record.json` | 物流记录 | 字段存在性 + events 数组验证 | ~~events 是 base64~~ → 已修复为 JSON 数组 |
+| `quality-inspection-standard.json` | 质量检验标准 | zod parse + items 数组验证 | ~~OQC 类型前端不接受~~ → 已修复；status 字典前端更宽（设计如此） |
+| `engineering-product.json` | 工程产品（ProductApiDTO） | 字段存在性 + `_v` 映射 + zod parse | wire `_v` → schema `version`（adapter 处理）；jsonb 字段已在 handler 层 unmarshal |
+| `equipment-mold.json` | 模具资产 | 字段存在性 + zod parse | version 是 UnixMilli 时间戳（设计如此，前端 schema 接受 number） |
+| `production-line.json` | 产线拓扑 | 字段存在性 + 嵌套结构验证 | attributes 是 JSON 对象/null（json.RawMessage 正确展开）；version 是递增整数 |
+| `finance-receivable-ledger.json` | 应收台账列表项 | zod parse（receivableRecordApiDTOSchema） | 字段对齐，无问题 |
+| `org-personnel-employee.json` | 员工列表项 | 字段存在性 + nullable/omitempty 验证 | birthday nil 时 omitempty 不出现；version 是 UnixMilli（秒级） |
 
 ## 待覆盖（按优先级）
 
-- Inventory（warehouse）
-- Quality
-- Logistics
+- Warehouse（PackagingAssembly）—— 字段简单，风险低
 - 其它模块按"风险/价值"优先级铺开
 
 ## 为什么这样设计

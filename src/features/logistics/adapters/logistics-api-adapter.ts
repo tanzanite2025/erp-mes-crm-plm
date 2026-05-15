@@ -25,16 +25,6 @@ function normalizeEvents(raw: LogisticsRecordApiDTO['events']): LogisticsEvent[]
   if (Array.isArray(raw)) {
     return raw.map(toLogisticsEventContract)
   }
-
-  if (typeof raw === 'string' && raw.trim() !== '') {
-    try {
-      const parsed = JSON.parse(raw) as LogisticsEventApiDTO[]
-      return Array.isArray(parsed) ? parsed.map(toLogisticsEventContract) : []
-    } catch {
-      return []
-    }
-  }
-
   return []
 }
 

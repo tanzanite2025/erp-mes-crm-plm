@@ -24,7 +24,7 @@ export interface LogisticsRecordApiDTO {
   lastLocation?: string
   contactPerson?: string
   contactPhone?: string
-  events?: LogisticsEventApiDTO[] | string | null
+  events?: LogisticsEventApiDTO[] | null
   version?: number
   isDeleted?: boolean
   createdAt: string

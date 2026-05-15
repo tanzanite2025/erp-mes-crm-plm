@@ -65,9 +65,10 @@ export const quality = {
       operator: 'Operator',
     },
     values: {
-      typeQuality: 'IQC',
-      typeProcess: 'IPQC',
-      typeFinal: 'FQC',
+      typeIncoming: 'IQC',
+      typeInProcess: 'IPQC',
+      typeFirstPiece: 'FQC',
+      typeOutgoing: 'OQC',
       statusDraft: 'Draft',
       statusPendingApproval: 'Pending Review',
       statusApproved: 'Approved',

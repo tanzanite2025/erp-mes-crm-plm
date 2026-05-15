@@ -1,0 +1,50 @@
+{
+  "id": "line-fixture-1",
+  "createdAt": "2026-05-15T10:30:00Z",
+  "updatedAt": "2026-05-15T10:30:00Z",
+  "code": "LINE-A",
+  "name": "碳纤维轮圈产线 A",
+  "description": "主力产线，覆盖编织-成型-固化-加工全流程",
+  "version": 3,
+  "isActive": true,
+  "segments": [
+    {
+      "id": "seg-fixture-1",
+      "createdAt": "2026-05-15T10:30:00Z",
+      "updatedAt": "2026-05-15T10:30:00Z",
+      "lineId": "line-fixture-1",
+      "name": "编织段",
+      "hierarchyOptionId": "hierarchy-weaving",
+      "description": "碳纤维编织工序",
+      "sortOrder": 1,
+      "attributes": {
+        "capacity": 120
+      },
+      "jobCategories": [
+        {
+          "id": "jc-fixture-1",
+          "createdAt": "2026-05-15T10:30:00Z",
+          "updatedAt": "2026-05-15T10:30:00Z",
+          "segmentId": "seg-fixture-1",
+          "name": "编织岗",
+          "hierarchyOptionId": "hierarchy-weaving-job",
+          "description": "",
+          "sortOrder": 1,
+          "attributes": null,
+          "processes": [
+            {
+              "id": "proc-fixture-1",
+              "createdAt": "2026-05-15T10:30:00Z",
+              "updatedAt": "2026-05-15T10:30:00Z",
+              "code": "WEAVE-001",
+              "name": "2x2 斜纹编织",
+              "description": "标准 2x2 twill 编织工艺",
+              "sortOrder": 1,
+              "isActive": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

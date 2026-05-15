@@ -1,0 +1,21 @@
+{
+  "id": "inventory-fixture-1",
+  "createdAt": "2026-05-15T10:30:00Z",
+  "updatedAt": "2026-05-15T10:30:00Z",
+  "lastUpdated": "2026-05-15T10:30:00Z",
+  "materialId": "material-fixture-1",
+  "materialName": "T700 碳纤维",
+  "materialCode": "MAT-T700-001",
+  "materialCategory": "RAW_MATERIAL",
+  "materialSpec": "12K / 800tex",
+  "onHand": 120,
+  "reserved": 20,
+  "availableQty": 100,
+  "quantity": 120,
+  "totalValue": 21600,
+  "averageUnitCost": 180,
+  "categoryCode": "RAW",
+  "batchNo": "BATCH-2026-05-001",
+  "uom": "kg",
+  "version": 3
+}

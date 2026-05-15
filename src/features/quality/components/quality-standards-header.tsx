@@ -111,6 +111,9 @@ export function QualityStandardsHeader({
                 <SelectItem value='FQC' className='text-[11px] font-black'>
                   {getQualityStandardTypeLabel(t, 'FQC')} (FQC)
                 </SelectItem>
+                <SelectItem value='OQC' className='text-[11px] font-black'>
+                  {getQualityStandardTypeLabel(t, 'OQC')} (OQC)
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>

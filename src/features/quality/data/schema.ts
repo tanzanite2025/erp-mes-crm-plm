@@ -1,8 +1,8 @@
 import { z } from 'zod'
 
 const standardTypeSchema = z.union([
-  z.enum(['IQC', 'IPQC', 'FQC']),
-  z.enum(['品检', '巡检', '首检']),
+  z.enum(['IQC', 'IPQC', 'FQC', 'OQC']),
+  z.enum(['品检', '巡检', '首检', '出货检验']),
 ])
 
 const standardStatusSchema = z.union([
@@ -62,7 +62,7 @@ export const approvalRequestSummarySchema = z.object({
     'EXPIRED',
     'CONSUMED',
   ]),
-  expiresAt: z.string().optional(),
+  expiresAt: z.string().nullable().optional(),
   module: z.string(),
   action: z.string(),
   createdAt: z.string(),
@@ -79,16 +79,17 @@ export const standardSchema = z.object({
   type: standardTypeSchema.default('IQC'),
   status: standardStatusSchema.default('DRAFT'),
   auditor: z.string().optional(),
-  auditTime: z.string().optional(),
+  // 后端 *time.Time 字段在 nil 时序列化为 null，必须 nullable + optional
+  auditTime: z.string().nullable().optional(),
   reviewComment: z.string().optional(),
   rejectReason: z.string().optional(),
   publishedBy: z.string().optional(),
-  publishedAt: z.string().optional(),
+  publishedAt: z.string().nullable().optional(),
   archiveReason: z.string().optional(),
   archivedBy: z.string().optional(),
-  archivedAt: z.string().optional(),
+  archivedAt: z.string().nullable().optional(),
   operator: z.string().optional(),
-  operateTime: z.string().optional(),
+  operateTime: z.string().nullable().optional(),
   remarks: z.string().optional(),
   approvalRequestSummary: approvalRequestSummarySchema.optional(),
   items: z.array(standardItemSchema).default([]),
@@ -100,7 +101,7 @@ export const inspectionFormulaSchema = z.object({
   formula: z.string().min(1, '请输入计算逻辑'),
   status: formulaStatusSchema.default('NORMAL'),
   operator: z.string().optional(),
-  operateTime: z.string().optional(),
+  operateTime: z.string().nullable().optional(),
   remarks: z.string().optional(),
 })
 

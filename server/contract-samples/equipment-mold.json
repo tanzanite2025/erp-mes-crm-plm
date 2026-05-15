@@ -1,0 +1,21 @@
+{
+  "createdAt": "2026-01-15T10:00:00Z",
+  "createdBy": "admin",
+  "currentCycles": 12500,
+  "description": "碳纤维轮圈成型模具",
+  "groupName": "RR-700C",
+  "id": "mold-fixture-1",
+  "imageUrl": "",
+  "isAlerted": false,
+  "lastCheckedAt": "2026-05-10T08:00:00Z",
+  "location": "A 区 3 号架",
+  "maintenanceThreshold": 80000,
+  "maxCycles": 100000,
+  "name": "700C 24H 前轮模具",
+  "sn": "M-2026-001",
+  "status": "IDLE",
+  "totalLifeCycles": 12500,
+  "updatedAt": "2026-05-15T10:30:00Z",
+  "updatedBy": "admin",
+  "version": 1747305000000
+}

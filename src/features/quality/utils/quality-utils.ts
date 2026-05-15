@@ -1,7 +1,7 @@
 import type { useLanguage } from '@/context/language-provider'
 import { auditUtils } from '@/lib/audit-utils'
 
-export type QualityStandardNormalizedType = 'IQC' | 'IPQC' | 'FQC'
+export type QualityStandardNormalizedType = 'IQC' | 'IPQC' | 'FQC' | 'OQC'
 
 export type QualityStandardNormalizedStatus =
   | 'DRAFT'
@@ -15,6 +15,7 @@ export function normalizeQualityStandardType(type?: string): QualityStandardNorm
     const normalized = type?.toUpperCase()
     if (type === '巡检' || normalized === 'IPQC') return 'IPQC'
     if (type === '首检' || normalized === 'FQC') return 'FQC'
+    if (type === '出货检验' || normalized === 'OQC') return 'OQC'
     return 'IQC'
 }
 
@@ -23,9 +24,10 @@ export function getQualityStandardTypeLabel(
     type?: string
 ) {
     const normalized = normalizeQualityStandardType(type)
-    if (normalized === 'IPQC') return t('quality.standards.values.typeProcess')
-    if (normalized === 'FQC') return t('quality.standards.values.typeFinal')
-    return t('quality.standards.values.typeQuality')
+    if (normalized === 'IPQC') return t('quality.standards.values.typeInProcess')
+    if (normalized === 'FQC') return t('quality.standards.values.typeFirstPiece')
+    if (normalized === 'OQC') return t('quality.standards.values.typeOutgoing')
+    return t('quality.standards.values.typeIncoming')
 }
 
 export function getTypeLabel(t: ReturnType<typeof useLanguage>['t'], type?: string) {

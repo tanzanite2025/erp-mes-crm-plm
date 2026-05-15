@@ -1,0 +1,50 @@
+{
+  "_v": 1,
+  "angle": 0,
+  "attachments": [],
+  "attributeValues": [
+    {
+      "categoryKey": "MATERIAL",
+      "id": "attr-val-1",
+      "optionValue": "T700",
+      "productId": "product-fixture-1",
+      "sortOrder": 0,
+      "version": 1
+    }
+  ],
+  "axleCrown": 0,
+  "barcodeConfig": {
+    "appearanceCode": "1",
+    "category": "R",
+    "holes": 24,
+    "isDrainHole": false,
+    "modelCode": "01",
+    "scopeCode": "",
+    "serialNumber": "00001",
+    "suffix": "",
+    "wheelType": "H"
+  },
+  "createdAt": "2026-05-15T10:30:00Z",
+  "depth": 50,
+  "id": "product-fixture-1",
+  "isDefaultSite": false,
+  "length": 0,
+  "maxTirePressure": 120,
+  "modelCode": "01",
+  "name": "Road Rim 700C 24H",
+  "offset": 0,
+  "restrictions": [
+    "no-tubeless"
+  ],
+  "sku": "RR-700C-24H",
+  "status": "Active",
+  "techSpecs": {
+    "layup": "2x2 twill",
+    "resinSystem": "epoxy"
+  },
+  "typeId": "type-fixture-1",
+  "updatedAt": "2026-05-15T10:30:00Z",
+  "weight": 420,
+  "widthExternal": 25,
+  "widthInternal": 19
+}

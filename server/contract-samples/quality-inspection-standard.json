@@ -1,0 +1,30 @@
+{
+  "id": "standard-fixture-1",
+  "createdAt": "2026-05-15T10:30:00Z",
+  "updatedAt": "2026-05-15T10:30:00Z",
+  "code": "QS-2026-001",
+  "name": "T700 碳纤维进料检验",
+  "type": "IQC",
+  "version": 1,
+  "status": "PUBLISHED",
+  "items": [
+    {
+      "id": "item-1",
+      "name": "克重",
+      "order": 1,
+      "centerValue": 150,
+      "levels": [
+        {
+          "level": "A",
+          "tolerance": 3
+        }
+      ],
+      "unit": "g/m²",
+      "isRequired": true
+    }
+  ],
+  "auditor": "auditor-1",
+  "auditTime": null,
+  "operator": "operator-1",
+  "description": "T700 碳纤维入厂全检标准"
+}

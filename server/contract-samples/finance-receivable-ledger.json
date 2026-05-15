@@ -1,0 +1,14 @@
+{
+  "id": "ledger-fixture-1",
+  "documentNo": "AR-2026-001",
+  "customerName": "Acme Industries",
+  "currency": "CNY",
+  "orderAmount": 23200,
+  "receivedAmount": 11600,
+  "outstandingAmount": 11600,
+  "dueDate": "2026-06-30",
+  "agingBucket": "CURRENT",
+  "status": "PARTIAL",
+  "createdAt": "2026-05-15T10:30:00Z",
+  "updatedAt": "2026-05-15T10:30:00Z"
+}

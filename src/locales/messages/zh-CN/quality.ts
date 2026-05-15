@@ -56,9 +56,10 @@ export const quality = {
       operator: '操作人',
     },
     values: {
-      typeQuality: '品检',
-      typeProcess: '巡检',
-      typeFinal: '首检',
+      typeIncoming: '品检',
+      typeInProcess: '巡检',
+      typeFirstPiece: '首检',
+      typeOutgoing: '出货检验',
       statusDraft: '草稿',
       statusPendingApproval: '待审核',
       statusApproved: '审批通过',
