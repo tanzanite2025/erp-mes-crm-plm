@@ -12,13 +12,9 @@ import {
   type EngineeringSpecListPageApiDTO,
 } from '../contracts/engineering-spec-api-contract'
 
-export type EngineeringSpec = Omit<EngineeringSpecApiDTO, '_v'> & {
-  version: number
-}
+export type EngineeringSpec = EngineeringSpecApiDTO
 
-export type EngineeringSpecInput = Omit<EngineeringSpecInputDTO, '_v'> & {
-  version: number
-}
+export type EngineeringSpecInput = EngineeringSpecInputDTO
 
 const ENGINEERING_SPEC_BUCKET_KEYS = [
   'specData',
@@ -43,17 +39,11 @@ function normalizeEngineeringSpecBuckets<T extends Record<string, unknown>>(item
 }
 
 function toEngineeringSpecContract(dto: EngineeringSpecApiDTO): EngineeringSpec {
-  return {
-    ...dto,
-    version: dto._v,
-  }
+  return dto
 }
 
 function toEngineeringSpecInputApiDTO(input: EngineeringSpecInput): EngineeringSpecInputDTO {
-  return engineeringSpecInputApiSchema.parse({
-    ...input,
-    _v: input.version,
-  })
+  return engineeringSpecInputApiSchema.parse(input)
 }
 
 function parseEngineeringSpec(item: unknown, scope: string): EngineeringSpec {

@@ -15,45 +15,15 @@ export interface BOMDetailSource {
 /**
  * 后端 BOM wire format → 前端 zod schema 的字段名重映射。
  *
- * 历史包袱（来自 server/models/bom.go 的 JSON tag）：
- *   - `VersionText`（BOM 版本号字符串，例：'V1.0'）的 JSON tag 是 `"version"`
- *   - `Version`（GORM 自带的乐观锁数字）的 JSON tag 是 `"_v"`
- *
- * 而前端 zod schema 用的字段名是：
- *   - 业务版本号字符串 → `bomVersion`
- *   - 乐观锁数字 → `version`
- *
- * 双方字段名对不上。如果不做映射就丢给 zod parse，会因为 schema 上两个字段都
- * 有 `.default(...)`，zod 静默用默认值兜底（'V1.0' / 1），导致前端永远拿到默认值。
- *
- * 此外还要做日期格式归一化：后端 `time.Time` 序列化为 ISO 8601 完整时间戳
- * （例：`"2026-06-01T00:00:00Z"`），但前端 schema 要求 `YYYY-MM-DD`。
- * 在 mapper 里把日期字段截断到前 10 个字符。
- *
- * 本函数负责在 zod parse 之前把 wire format 重命名到前端 schema 期望的字段名。
- * 是 BOM 双轨命名的**唯一**入口，其他位置都使用前端业务字段名。
- *
- * 与之对称的反向映射在 {@link sanitizeBOMInput} 里：把前端 `version` 重命名回
- * wire format 的 `_v`，把前端 `bomVersion` 反向投回 wire 的 `version`，一并
- * 发给后端，让后端 GORM struct 能正确反序列化。
+ * 自从统一 json tag 后（bomVersion + version），wire format 字段名与前端 schema 一致，
+ * 不再需要 version/_v 重映射。仅保留日期格式归一化：
+ * 后端 `time.Time` 序列化为 ISO 8601 完整时间戳（例：`"2026-06-01T00:00:00Z"`），
+ * 但前端 schema 要求 `YYYY-MM-DD`。
  */
 function mapBOMWireToSchema(wire: Record<string, unknown>): Record<string, unknown> {
     if (!wire || typeof wire !== 'object') return wire as Record<string, unknown>
 
     const mapped: Record<string, unknown> = { ...wire }
-
-    // wire `version` (string) → schema `bomVersion`
-    // 仅当 schema 字段不存在时用 wire 值兜底，避免重复映射后再次 parse 时错位
-    if (mapped.bomVersion === undefined && typeof mapped.version === 'string') {
-        mapped.bomVersion = mapped.version
-        // 删除原 wire 字段，避免与即将赋值的 _v→version 冲突
-        delete mapped.version
-    }
-
-    // wire `_v` (number) → schema `version`
-    if (mapped.version === undefined && typeof mapped._v === 'number') {
-        mapped.version = mapped._v
-    }
 
     // 日期字段：ISO 8601 (`2026-06-01T00:00:00Z`) → 前端协议格式 `YYYY-MM-DD`
     mapped.effectiveFrom = truncateIsoDateToProtocol(mapped.effectiveFrom)
@@ -76,12 +46,8 @@ function truncateIsoDateToProtocol(value: unknown): unknown {
 /**
  * 把前端 SaveBOMInput 转换为后端 wire format 的 payload。
  *
- * Wire 双向映射（与 {@link mapBOMWireToSchema} 对称）：
- *   - 前端 `bomVersion` (string) → wire `version` (string)
- *   - 前端 `version` (number) → wire `_v` (number)
- *
- * 后端 GORM struct 读取这两个 wire 字段；前端 schema 字段（`bomVersion` / `version`）
- * 即使一并发出去也会被后端忽略，但保留它们便于调试。
+ * 自从统一 json tag 后，前后端字段名一致（bomVersion + version），
+ * 不再需要 version/_v 重映射。直接序列化即可。
  */
 function sanitizeBOMInput(data: SaveBOMInput): Record<string, unknown> {
     const {
@@ -99,17 +65,8 @@ function sanitizeBOMInput(data: SaveBOMInput): Record<string, unknown> {
         })),
     })
 
-    // 拆出 schema 字段，避免与 wire 字段同名冲突
-    const { version: schemaVersion, bomVersion: schemaBomVersion, ...rest } = sanitizedPayload
-
     return {
-        ...rest,
-        // wire alias：后端读 `_v` 做乐观锁数字
-        _v: schemaVersion,
-        // wire alias：后端读 `version` 做 BOM 版本号字符串
-        version: schemaBomVersion,
-        // 同时保留前端字段名，便于跨端调试日志匹配
-        bomVersion: schemaBomVersion,
+        ...sanitizedPayload,
         relationSidecar: normalizedData.relationSidecar,
         // 🔥 CRITICAL: 保留 _sidecarDelta 用于 SDRTS 协议
         _sidecarDelta: data._sidecarDelta,

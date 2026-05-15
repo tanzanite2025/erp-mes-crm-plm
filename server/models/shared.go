@@ -18,7 +18,7 @@ type PrintBatch struct {
 	Quantity       int      `gorm:"not null" json:"quantity"`
 	ActivatedCount int      `gorm:"default:0" json:"activatedCount"`
 	Status         string   `gorm:"size:50;default:'Printed'" json:"status"` // 'Printed', 'PartiallyActivated', 'Activated', 'Scrapped'
-	Version        int      `gorm:"default:1" json:"_v"`                      // 乐观锁版本号
+	Version        int      `gorm:"default:1" json:"version"`                  // 乐观锁版本号
 }
 
 // Sequence 序列号发号器模型 (用于支持高并发下的唯一流水号生成)

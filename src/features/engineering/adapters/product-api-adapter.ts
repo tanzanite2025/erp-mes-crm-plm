@@ -98,7 +98,7 @@ function buildProductCandidate(
     templateResolutionSource: dto.templateResolutionSource?.trim() || undefined,
     templateResolutionError: dto.templateResolutionError?.trim() || undefined,
     createdAt: dto.createdAt ?? '',
-    version: dto._v ?? 1,
+    version: dto.version ?? 1,
     revisionNo: normalizeEngineeringRevisionNo(dto.revisionNo),
     effectiveFrom: dto.effectiveFrom ?? undefined,
     effectiveTo: dto.effectiveTo ?? undefined,
@@ -109,7 +109,7 @@ function buildProductCandidate(
   }
 }
 
-type ProductWriteCandidate = Omit<ProductApiDTO, '_v'> & {
+type ProductWriteCandidate = Omit<ProductApiDTO, 'version'> & {
   version: number
 }
 
@@ -223,11 +223,7 @@ function buildProductWriteCandidate(product: SaveProductInput | Product): Produc
 }
 
 function toProductApiWriteDTO(candidate: ProductWriteCandidate): ProductApiDTO {
-  const { version, ...rest } = candidate
-  return {
-    ...rest,
-    _v: version,
-  }
+  return candidate as ProductApiDTO
 }
 
 export function toProductApiDTO(product: SaveProductInput): ProductApiDTO {

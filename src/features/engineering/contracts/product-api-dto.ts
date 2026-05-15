@@ -54,7 +54,7 @@ export interface ProductApiDTO {
   isDefaultSite?: boolean
   createdAt?: string
   updatedAt?: string
-  _v?: number
+  version?: number
 }
 
 export interface ProductListPageApiDTO {

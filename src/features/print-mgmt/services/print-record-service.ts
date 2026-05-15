@@ -24,13 +24,12 @@ interface PrintBatchApiDTO {
     activatedCount: number
     status: 'Printed' | 'PartiallyActivated' | 'Activated' | 'Scrapped'
     createdAt: string
-    _v?: number
     version?: number
 }
 
 interface PrintBatchActivateRequestApiDTO {
     count: number
-    _v: number
+    version: number
 }
 
 import { ensureObjectResponse } from '@/lib/api-response'
@@ -47,14 +46,14 @@ function toPrintBatchContract(dto: PrintBatchApiDTO): PrintBatch {
         activatedCount: dto.activatedCount,
         status: dto.status,
         createdAt: dto.createdAt,
-        version: dto.version ?? dto._v ?? 1,
+        version: dto.version ?? 1,
     }
 }
 
 function toPrintBatchActivateRequestApiDTO(count: number, version: number): PrintBatchActivateRequestApiDTO {
     return {
         count,
-        _v: version,
+        version,
     }
 }
 

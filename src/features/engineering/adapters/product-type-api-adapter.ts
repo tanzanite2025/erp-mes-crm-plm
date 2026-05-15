@@ -17,11 +17,11 @@ export function toProductTypeContract(dto: ProductTypeApiDTO): ProductType {
     sortOrder: dto.sortOrder ?? 0,
     createdAt: dto.createdAt || undefined,
     updatedAt: dto.updatedAt || undefined,
-    version: dto._v ?? 1,
+    version: dto.version ?? 1,
   }
 }
 
-type ProductTypeWriteCandidate = Omit<ProductTypeApiDTO, '_v'> & {
+type ProductTypeWriteCandidate = Omit<ProductTypeApiDTO, 'version'> & {
   version: number
 }
 
@@ -42,11 +42,7 @@ function toProductTypeWriteCandidate(type: SaveProductTypeInput): ProductTypeWri
 }
 
 function toProductTypeWriteApiDTO(candidate: ProductTypeWriteCandidate): ProductTypeApiDTO {
-  const { version, ...rest } = candidate
-  return {
-    ...rest,
-    _v: version,
-  }
+  return candidate as ProductTypeApiDTO
 }
 
 function collectProductTypes(items: ProductTypeApiDTO[], bucket: Map<string, ProductType>) {

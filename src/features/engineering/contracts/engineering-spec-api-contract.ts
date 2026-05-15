@@ -51,7 +51,7 @@ export const engineeringSpecApiDTOSchema = z.object({
   nippleData: nullableOptionalBucketSchema,
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
-  _v: z.number(),
+  version: z.number(),
 })
 
 export const engineeringSpecApiDTOArraySchema = z.array(engineeringSpecApiDTOSchema)
@@ -69,7 +69,7 @@ export const engineeringSpecPatchRequestSchema = z.object({
 })
 
 export const engineeringSpecInputApiSchema = engineeringSpecInputBaseSchema.extend({
-  _v: z.number(),
+  version: z.number(),
 })
 
 export const engineeringSpecInputSchema = engineeringSpecInputBaseSchema.extend({

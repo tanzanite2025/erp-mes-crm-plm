@@ -12,10 +12,10 @@
   "bomType": "EBOM",
   "bomNo": "BOM-FIXTURE-001",
   "productId": "product-fixture-1",
-  "version": "V2.3",
+  "bomVersion": "V2.3",
   "status": "RELEASED",
   "isLocked": true,
-  "_v": 7,
+  "version": 7,
   "items": [
     {
       "id": "bom-item-1",

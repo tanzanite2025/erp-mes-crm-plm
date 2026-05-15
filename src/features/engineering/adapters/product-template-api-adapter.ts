@@ -48,11 +48,11 @@ export function toProductTemplateContract(dto: ProductTemplateApiDTO): ProductTe
     active: dto.active,
     attributeBindings: dto.attributeBindings.map(toProductTemplateAttributeBindingContract),
     createdAt: dto.createdAt || new Date().toISOString(),
-    version: dto._v ?? 1,
+    version: dto.version ?? 1,
   }
 }
 
-type ProductTemplateWriteCandidate = Omit<ProductTemplateApiDTO, '_v'> & {
+type ProductTemplateWriteCandidate = Omit<ProductTemplateApiDTO, 'version'> & {
   version: number
 }
 
@@ -73,11 +73,7 @@ function toProductTemplateWriteCandidate(template: SaveProductTemplateInput): Pr
 }
 
 function toProductTemplateWriteApiDTO(candidate: ProductTemplateWriteCandidate): ProductTemplateApiDTO {
-  const { version, ...rest } = candidate
-  return {
-    ...rest,
-    _v: version,
-  }
+  return candidate as ProductTemplateApiDTO
 }
 
 export function toProductTemplateApiDTO(template: SaveProductTemplateInput): ProductTemplateApiDTO {

@@ -17,7 +17,7 @@ type ProductType struct {
 	SortOrder   int           `json:"sortOrder"`
 	CreatedAt   time.Time     `gorm:"autoCreateTime" json:"createdAt"`
 	UpdatedAt   time.Time     `gorm:"autoUpdateTime" json:"updatedAt"`
-	Version     int           `gorm:"default:1" json:"_v"`
+	Version     int           `gorm:"default:1" json:"version"`
 	Children    []ProductType `gorm:"foreignKey:ParentID" json:"children,omitempty"`
 }
 
@@ -63,5 +63,5 @@ type Product struct {
 	ResolvedTemplateKey      string                  `gorm:"-" json:"resolvedTemplateKey,omitempty"`
 	TemplateResolutionSource string                  `gorm:"-" json:"templateResolutionSource,omitempty"`
 	TemplateResolutionError  string                  `gorm:"-" json:"templateResolutionError,omitempty"`
-	Version                  int                     `gorm:"default:1" json:"_v"`
+	Version                  int                     `gorm:"default:1" json:"version"`
 }

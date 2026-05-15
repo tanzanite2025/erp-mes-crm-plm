@@ -18,7 +18,7 @@ type EngineeringSpec struct {
 	DrillingData datatypes.JSON `json:"drillingData"`
 	CuttingData  datatypes.JSON `json:"cuttingData"`
 	LabelingData datatypes.JSON `json:"labelingData"`
-	Version      int            `gorm:"default:1" json:"_v"`
+	Version      int            `gorm:"default:1" json:"version"`
 }
 
 // ProductEngineeringRelation 浜у搧涓庤鏍肩殑鍏宠仈妯″瀷 (鍙€夛紝濡傛灉涓嶅啀 Product 涓鍔犲瓧娈?

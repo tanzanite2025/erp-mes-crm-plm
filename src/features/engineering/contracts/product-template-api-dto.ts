@@ -20,7 +20,7 @@ export interface ProductTemplateApiDTO {
   attributeBindings?: ProductTemplateAttributeBindingApiDTO[]
   createdAt?: string
   updatedAt?: string
-  _v?: number
+  version?: number
 }
 
 export type ProductTemplatePatchApiDTO = DeltaPayload

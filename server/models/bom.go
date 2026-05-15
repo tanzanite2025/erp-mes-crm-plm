@@ -24,10 +24,10 @@ type BOM struct {
 	ProductID       string          `gorm:"type:uuid;index;not null" json:"productId"`
 	Product         *Product        `gorm:"foreignKey:ProductID" json:"product,omitempty"`
 	SourceEBOMID    *string         `gorm:"type:uuid;index" json:"sourceEbomId,omitempty"`
-	VersionText     string          `gorm:"size:20;default:'V1.0'" json:"version"`
+	VersionText     string          `gorm:"size:20;default:'V1.0'" json:"bomVersion"`
 	Status          string          `gorm:"size:20;default:'DRAFT'" json:"status"`
 	IsLocked        bool            `gorm:"default:false" json:"isLocked"`
-	Version         int             `gorm:"default:1" json:"_v"`
+	Version         int             `gorm:"default:1" json:"version"`
 	Items           []BOMItem       `gorm:"foreignKey:BOMID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"items"`
 	Description     string          `gorm:"type:text" json:"description"`
 	RelationSidecar json.RawMessage `gorm:"type:jsonb" json:"-"`

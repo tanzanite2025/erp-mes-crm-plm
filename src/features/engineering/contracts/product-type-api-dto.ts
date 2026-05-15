@@ -11,7 +11,7 @@ export interface ProductTypeApiDTO {
   sortOrder: number
   createdAt?: string
   updatedAt?: string
-  _v?: number
+  version?: number
   children?: ProductTypeApiDTO[]
 }
 

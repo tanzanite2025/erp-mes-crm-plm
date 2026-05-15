@@ -56,7 +56,7 @@ type ProductApiDTO struct {
 	IsDefaultSite            bool                          `json:"isDefaultSite"`
 	CreatedAt                any                           `json:"createdAt"`
 	UpdatedAt                any                           `json:"updatedAt"`
-	Version                  int                           `json:"_v"`
+	Version                  int                           `json:"version"`
 }
 
 type ProductListPageApiDTO struct {

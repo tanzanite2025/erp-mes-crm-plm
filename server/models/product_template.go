@@ -10,5 +10,5 @@ type ProductTemplate struct {
 	Description       string                            `gorm:"type:text" json:"description"`
 	Active            bool                              `gorm:"default:true" json:"active"`
 	AttributeBindings []ProductTemplateAttributeBinding `gorm:"foreignKey:TemplateID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"attributeBindings"`
-	Version           int                               `gorm:"default:1" json:"_v"`
+	Version           int                               `gorm:"default:1" json:"version"`
 }
