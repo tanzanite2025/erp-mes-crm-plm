@@ -45,11 +45,6 @@ interface VariantSelectionParams {
 
 interface ToggleVariantSelectionParams extends VariantSelectionParams {
   checked: boolean
-  defaultWeight: number | undefined
-}
-
-interface UpdateVariantSelectionWeightParams extends VariantSelectionParams {
-  weight: number | undefined
 }
 
 function toEditFormValues(currentRow: Product): Product {
@@ -64,60 +59,44 @@ function getVersionLevelFromProduct(product: Product): string {
   return getAttributeValue(product, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version)
 }
 
-function createSelectedVariant(level: string, weight: number | undefined): ProductVariantSelection {
-  return { level, weight }
+function createSelectedVariant(level: string): ProductVariantSelection {
+  return { level }
 }
 
 function toEditSelectedVariants(formValues: Product): ProductVariantSelection[] {
   const versionLevel = getVersionLevelFromProduct(formValues)
   if (!versionLevel) return []
-  return [createSelectedVariant(versionLevel, formValues.weight || 0)]
+  return [createSelectedVariant(versionLevel)]
 }
 
 function toCreateSelectedVariants(
-  formValues: Product,
   versionLevelOptions: OptionItem[]
 ): ProductVariantSelection[] {
   if (versionLevelOptions.length === 0) return []
-  return [createSelectedVariant(versionLevelOptions[0].value, formValues.weight)]
+  return [createSelectedVariant(versionLevelOptions[0].value)]
 }
 
-function ensureVariantSelection(selectedVariants: ProductVariantSelection[], level: string, weight: number | undefined): ProductVariantSelection[] {
+function ensureVariantSelection(selectedVariants: ProductVariantSelection[], level: string): ProductVariantSelection[] {
   const existing = selectedVariants.find((variant) => variant.level === level)
   if (existing) {
     return selectedVariants
   }
 
-  return [...selectedVariants, createSelectedVariant(level, weight)]
+  return [...selectedVariants, createSelectedVariant(level)]
 }
 
 function removeVariantSelection(selectedVariants: ProductVariantSelection[], level: string): ProductVariantSelection[] {
   return selectedVariants.filter((variant) => variant.level !== level)
 }
 
-function updateVariantWeight(selectedVariants: ProductVariantSelection[], level: string, weight: number | undefined): ProductVariantSelection[] {
-  return selectedVariants.map((variant) =>
-    variant.level === level ? createSelectedVariant(level, weight) : variant
-  )
-}
-
 function toggleVariantSelection({
   selectedVariants,
   level,
   checked,
-  defaultWeight,
 }: ToggleVariantSelectionParams): ProductVariantSelection[] {
   return checked
-    ? ensureVariantSelection(selectedVariants, level, defaultWeight)
+    ? ensureVariantSelection(selectedVariants, level)
     : removeVariantSelection(selectedVariants, level)
-}
-
-function updateVariantSelectionWeight({
-  selectedVariants,
-  level,
-  weight,
-}: UpdateVariantSelectionWeightParams): ProductVariantSelection[] {
-  return updateVariantWeight(selectedVariants, level, weight)
 }
 
 function composeBatchSubmitPayload(
@@ -168,7 +147,7 @@ export const ProductCommand = {
     const formValues = baseValues ?? buildDefaultProductValues({ includeVersion: false })
     return {
       formValues,
-      selectedVariants: toCreateSelectedVariants(formValues, versionLevelOptions),
+      selectedVariants: toCreateSelectedVariants(versionLevelOptions),
     }
   },
 
@@ -195,9 +174,5 @@ export const ProductCommand = {
 
   deselectVariant(params: VariantSelectionParams): ProductVariantSelection[] {
     return removeVariantSelection(params.selectedVariants, params.level)
-  },
-
-  setVariantWeight(params: UpdateVariantSelectionWeightParams): ProductVariantSelection[] {
-    return updateVariantSelectionWeight(params)
   },
 }

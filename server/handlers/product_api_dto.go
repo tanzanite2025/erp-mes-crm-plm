@@ -25,7 +25,6 @@ type ProductApiDTO struct {
 	BrakeType                string                        `json:"brakeType,omitempty"`
 	TechSeries               string                        `json:"techSeries,omitempty"`
 	VersionLevel             string                        `json:"versionLevel,omitempty"`
-	Weight                   float64                       `json:"weight"`
 	Length                   float64                       `json:"length"`
 	Angle                    float64                       `json:"angle"`
 	Clamp                    string                        `json:"clamp,omitempty"`

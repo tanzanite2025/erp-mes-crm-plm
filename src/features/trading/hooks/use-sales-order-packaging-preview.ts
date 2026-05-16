@@ -8,6 +8,7 @@ import {
 import {
   packagingRulesService,
 } from '@/features/logistics-config/packaging-rules-service'
+import { useActiveBOMWeightMap } from '@/features/product-structure/hooks/use-active-bom-weight-map'
 import type { SalesOrder, SalesOrderLinePackagingSelection } from '../data/schema'
 import { tradingQueryKeys } from '../query-keys'
 import {
@@ -65,18 +66,25 @@ export function useSalesOrderPackagingPreview(order: SalesOrder) {
     queryFn: () => packagingRulesService.getProfiles(),
   })
 
+  // 仍需把销售订单产品打包选项取回来——里面带的是产品身份（id/sku/name），
+  // 与 BOM 重量解耦后这里只用作"该产品在产品主数据里存在"的存在性校验。
   const productsQuery = useQuery({
     queryKey: tradingQueryKeys.salesOrderPackagingProductOptions(),
     queryFn: () => ProductCoreService.getProductPackagingOptions(),
   })
 
+  // 方案 B：产品最终重量唯一权威源是 BOM.measuredWeight。
+  // 这里按订单行涉及的 productIds 批量拉当前 RELEASED BOM 的重量+单位。
+  const productIds = useMemo(
+    () => order.lines.map((line) => line.productId).filter((id): id is string => Boolean(id)),
+    [order.lines]
+  )
+  const weightMap = useActiveBOMWeightMap(productIds)
+
   const data = useMemo<SalesOrderPackagingPreviewData | null>(() => {
     if (!packagingProfilesQuery.data || !productsQuery.data) return null
 
-    const productMap = new Map(productsQuery.data.map((product) => [product.id, product]))
-
     const lines = order.lines.map<SalesOrderPackagingPreviewLine>((line) => {
-      const product = line.productId ? productMap.get(line.productId) : undefined
       const matchedProfiles = getPackagingProfilesForProduct(
         packagingProfilesQuery.data,
         line.productId,
@@ -102,9 +110,18 @@ export function useSalesOrderPackagingPreview(order: SalesOrder) {
         )
       }
 
+      // 从 BOM 权威源拿当前发布版本的重量；没有 RELEASED BOM 时降级 0 + 明确 warning。
+      const weightInfo = line.productId ? weightMap.get(line.productId) : undefined
+      const productWeight = weightInfo?.available ? weightInfo.weight : 0
+      if (line.productId && !weightInfo?.available) {
+        warnings.push(
+          'Product has no released BOM yet; weight defaults to 0 until a BOM is released.'
+        )
+      }
+
       const plan = calculatePackagingPlan({
         orderedQuantity: line.qty,
-        productWeight: product?.weight ?? 0,
+        productWeight,
         profiles: (selectedPackaging ? [createPackagingProfileFromSelection(selectedPackaging)] : []).map((profile) => ({
           profileId: profile.id,
           profileName: profile.name,
@@ -128,7 +145,7 @@ export function useSalesOrderPackagingPreview(order: SalesOrder) {
         uom: line.uom,
         selectedPackaging,
         matchedProfileCount: matchedProfiles.length,
-        productWeight: product?.weight ?? 0,
+        productWeight,
         plan: {
           ...plan,
           warnings: [...warnings, ...plan.warnings],
@@ -151,7 +168,7 @@ export function useSalesOrderPackagingPreview(order: SalesOrder) {
         warnings,
       },
     }
-  }, [order.id, order.lines, packagingProfilesQuery.data, productsQuery.data])
+  }, [order.id, order.lines, packagingProfilesQuery.data, productsQuery.data, weightMap])
 
   return {
     data,

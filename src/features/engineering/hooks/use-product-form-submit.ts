@@ -38,23 +38,11 @@ export function useProductFormSubmit({
   const { t } = useLanguage()
 
   const handleVariantToggle = (level: string, checked: boolean) => {
-    const currentWeight = form.getValues('weight')
     setSelectedVariants((prev) =>
       ProductCommand.selectVariant({
         selectedVariants: prev,
         level,
         checked,
-        defaultWeight: currentWeight,
-      })
-    )
-  }
-
-  const updateVariantWeight = (level: string, weight: number | undefined) => {
-    setSelectedVariants((prev) =>
-      ProductCommand.setVariantWeight({
-        selectedVariants: prev,
-        level,
-        weight,
       })
     )
   }
@@ -132,7 +120,6 @@ export function useProductFormSubmit({
 
   return {
     handleVariantToggle,
-    updateVariantWeight,
     handleFormSubmit,
   }
 }

@@ -23,7 +23,6 @@ export interface ProductApiDTO {
   brakeType?: string
   techSeries?: string
   versionLevel?: string
-  weight?: number
   length?: number
   angle?: number
   clamp?: string

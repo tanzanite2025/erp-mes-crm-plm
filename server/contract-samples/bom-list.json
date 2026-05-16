@@ -11,6 +11,8 @@
       "status": "RELEASED",
       "isLocked": true,
       "version": 7,
+      "measuredWeight": 420.5,
+      "measuredWeightUnit": "g",
       "items": [
         {
           "id": "bom-item-1",

@@ -50,6 +50,8 @@ export function createEmptyBOMFormValue(overrides: Partial<BOM> = {}, _sections:
     changeType: normalizeEngineeringBomChangeType('MANUAL'),
     status: normalizeEngineeringBomStatus('DRAFT'),
     isLocked: false,
+    measuredWeight: 0,
+    measuredWeightUnit: '',
     items: [],
     description: '',
     version: 1,

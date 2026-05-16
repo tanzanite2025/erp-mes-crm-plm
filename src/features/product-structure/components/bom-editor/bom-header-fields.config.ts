@@ -23,7 +23,7 @@ import { normalizeBOMControlFieldPatch } from '../../utils/bom-control-normaliza
 /** 顶部字段允许的字段名（必须是 BOM schema 中的合法 key）。 */
 export type BOMHeaderFieldName = Extract<
   keyof BOM,
-  'bomNo' | 'productId' | 'bomVersion' | 'bomType' | 'status' | 'effectiveFrom'
+  'bomNo' | 'productId' | 'bomVersion' | 'bomType' | 'status' | 'effectiveFrom' | 'measuredWeight' | 'measuredWeightUnit'
 >
 
 /** 字段渲染上下文。由 BOMFormHeader 在调用时拼装好后传入工厂。 */
@@ -38,6 +38,8 @@ export interface BOMHeaderFieldContext {
   productItems: ReadonlyArray<{ label: string; value: string }>
   /** 状态下拉项（外部已基于 bomType 计算）。 */
   statusItems: ReadonlyArray<{ label: string; value: string }>
+  /** 重量单位下拉项（来源 basic-settings 单位主数据 WEIGHT 类目）。 */
+  weightUnitItems: ReadonlyArray<{ label: string; value: string }>
 }
 
 /** select / input 共享的基础属性。 */
@@ -148,6 +150,25 @@ export function getBOMHeaderFields(ctx: BOMHeaderFieldContext): readonly BOMHead
       inputType: 'date',
       transformOnChange: (next) => normalizeBOMControlFieldPatch({ effectiveFrom: next }).effectiveFrom as string,
       colSpan: 'minmax(0,1.75fr)',
+    },
+    {
+      // 方案 B：BOM 是产品最终重量的端到端权威源。
+      // 草稿期允许 0；后端在 PromoteBOMStatus → RELEASED 时校验 > 0 + 单位非空。
+      name: 'measuredWeight',
+      label: ctx.t('engineering.bomArchive.form.measuredWeight'),
+      type: 'input',
+      inputType: 'number',
+      placeholder: ctx.t('engineering.bomArchive.form.measuredWeightPlaceholder'),
+      className: 'bg-emerald-50/60 font-mono font-bold text-emerald-700 text-[11px]!',
+      colSpan: 'minmax(0,1.2fr)',
+    },
+    {
+      name: 'measuredWeightUnit',
+      label: ctx.t('engineering.bomArchive.form.measuredWeightUnit'),
+      type: 'select',
+      placeholder: ctx.t('engineering.bomArchive.form.measuredWeightUnitPlaceholder'),
+      getItems: (c) => c.weightUnitItems,
+      colSpan: 'minmax(0,1fr)',
     },
   ]
 }

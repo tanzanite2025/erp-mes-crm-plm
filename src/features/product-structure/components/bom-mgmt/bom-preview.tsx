@@ -46,7 +46,7 @@ export function BOMPreview({
   const productName = product
     ? (productDisplayLabelMap.get(product.id) ?? t('printMgmt.bomPreview.unknownProduct'))
     : t('printMgmt.bomPreview.unknownProduct')
-  const productSummary = product ? resolveBOMProductDisplaySummary(product) : null
+  const productSummary = product ? resolveBOMProductDisplaySummary(product, bom) : null
   const bomDisplayVersion = selectBOMDisplayVersion(bom)
   const bomChangeType = normalizeBomChangeType(bom.changeType)
   const effectiveFrom = normalizeEngineeringDateProtocol(bom.effectiveFrom)

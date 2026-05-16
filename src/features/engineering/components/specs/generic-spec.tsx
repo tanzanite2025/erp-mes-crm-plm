@@ -9,7 +9,7 @@ interface GenericSpecOverviewProps {
   categoryName?: string
 }
 
-export function GenericSpecOverview({ product, categoryName }: GenericSpecOverviewProps) {
+export function GenericSpecOverview({ categoryName }: GenericSpecOverviewProps) {
   const { t } = useLanguage()
 
   return (
@@ -29,10 +29,8 @@ export function GenericSpecOverview({ product, categoryName }: GenericSpecOvervi
             {t('engineering.productMgmt.estimatedWeight')}
           </span>
           <div className='flex items-baseline gap-1'>
-            <span className='text-xl sm:text-2xl font-mono font-black italic text-foreground'>
-              {product.weight || '-'}
-            </span>
-            <span className='text-[10px] font-bold opacity-40'>g</span>
+            <span className='text-xl sm:text-2xl font-mono font-black italic text-foreground'>—</span>
+            <span className='text-[10px] font-bold opacity-40'>BOM</span>
           </div>
         </div>
         <div className='hidden sm:block w-px h-8 bg-muted' />

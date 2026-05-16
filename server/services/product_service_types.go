@@ -30,7 +30,6 @@ type SaveProductAPIRequest struct {
 	BrakeType         string                            `json:"brakeType"`
 	TechSeries        string                            `json:"techSeries"`
 	VersionLevel      string                            `json:"versionLevel"`
-	Weight            float64                           `json:"weight"`
 	Length            float64                           `json:"length"`
 	Angle             float64                           `json:"angle"`
 	Clamp             string                            `json:"clamp"`
@@ -73,7 +72,6 @@ type ProductWriteInput struct {
 	BrakeType         string
 	TechSeries        string
 	VersionLevel      string
-	Weight            float64
 	Length            float64
 	Angle             float64
 	Clamp             string
@@ -167,7 +165,6 @@ func toProductWriteInput(input SaveProductAPIRequest) ProductWriteInput {
 		BrakeType:         input.BrakeType,
 		TechSeries:        input.TechSeries,
 		VersionLevel:      input.VersionLevel,
-		Weight:            input.Weight,
 		Length:            input.Length,
 		Angle:             input.Angle,
 		Clamp:             input.Clamp,
@@ -223,7 +220,6 @@ func toProductModel(input ProductWriteInput) models.Product {
 		BrakeType:         input.BrakeType,
 		TechSeries:        input.TechSeries,
 		VersionLevel:      input.VersionLevel,
-		Weight:            input.Weight,
 		Length:            input.Length,
 		Angle:             input.Angle,
 		Clamp:             input.Clamp,
@@ -266,7 +262,6 @@ func toProductAPIRequest(model models.Product) SaveProductAPIRequest {
 		BrakeType:         model.BrakeType,
 		TechSeries:        model.TechSeries,
 		VersionLevel:      model.VersionLevel,
-		Weight:            model.Weight,
 		Length:            model.Length,
 		Angle:             model.Angle,
 		Clamp:             model.Clamp,

@@ -14,7 +14,6 @@ const PRODUCT_PATCH_FIELDS: Array<keyof ProductApiDTO> = [
   'widthInternal',
   'widthExternal',
   'maxTirePressure',
-  'weight',
   'length',
   'angle',
   'clamp',

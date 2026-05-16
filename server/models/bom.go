@@ -28,6 +28,11 @@ type BOM struct {
 	Status          string          `gorm:"size:20;default:'DRAFT'" json:"status"`
 	IsLocked        bool            `gorm:"default:false" json:"isLocked"`
 	Version         int             `gorm:"default:1" json:"version"`
+	// MeasuredWeight 是该 BOM 对应最终产品的实测/目标重量（方案 B 端到端权威源）。
+	// > 0 才允许 RELEASED；EBOM 阶段可为 0 表示尚未称重。
+	MeasuredWeight     float64         `gorm:"not null;default:0" json:"measuredWeight"`
+	// MeasuredWeightUnit 引用 basic_settings 单位主数据（WEIGHT 类目），如 g/kg。
+	MeasuredWeightUnit string          `gorm:"size:20;not null;default:'g'" json:"measuredWeightUnit"`
 	Items           []BOMItem       `gorm:"foreignKey:BOMID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"items"`
 	Description     string          `gorm:"type:text" json:"description"`
 	RelationSidecar json.RawMessage `gorm:"type:jsonb" json:"-"`

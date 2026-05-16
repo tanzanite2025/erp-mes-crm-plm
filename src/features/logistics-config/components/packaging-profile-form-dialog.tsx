@@ -24,6 +24,7 @@ import type { Product } from '@/features/engineering/data/schema'
 import type { MaterialOption } from '@/features/material-archive/data/schema'
 import { cn } from '@/lib/utils'
 import type { Unit } from '@/features/basic-settings/services/unit-service'
+import { useActiveBOM } from '@/features/product-structure/hooks/use-active-bom'
 import type { PackagingProfileDraft } from '../packaging-profile-form'
 
 const packagingFieldClass = 'w-full h-11 min-h-11 rounded-2xl border border-border/50 bg-muted/40 px-4 py-0 text-[11px] font-semibold tracking-tight leading-none shadow-sm shadow-black/5 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/15 focus-visible:border-primary/30 disabled:opacity-100 disabled:bg-muted/20 disabled:text-foreground/70'
@@ -97,6 +98,12 @@ export function PackagingProfileFormDialog({
 }: PackagingProfileFormDialogProps) {
   const { t } = useLanguage()
   const selectedTarget = draft.targets[0]
+
+  // 方案 B：产品最终重量从 BOM.measuredWeight 读取，非 Product 字段。
+  const activeBom = useActiveBOM(selectedProduct?.id)
+  const productWeight = activeBom.status === 'released' && activeBom.bom?.measuredWeight
+    ? activeBom.bom.measuredWeight
+    : 0
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -235,7 +242,7 @@ export function PackagingProfileFormDialog({
                 </div>
                 <div className={packagingFieldStackClass}>
                   <Label className={packagingLabelClass}>{t('logisticsConfig.packagingRules.fields.productWeight')}</Label>
-                  <Input className={cn(packagingFieldClass, 'font-mono')} value={selectedProduct?.weight ?? 0} disabled />
+                  <Input className={cn(packagingFieldClass, 'font-mono')} value={productWeight} disabled />
                 </div>
               </div>
             </section>
@@ -292,7 +299,7 @@ export function PackagingProfileFormDialog({
                     onChange={(event) => onDraftChange((current) => ({
                       ...current,
                       capacity: Number(event.target.value) || 0,
-                      grossWeight: current.netWeight + (selectedProduct?.weight ?? 0) * (Number(event.target.value) || 0),
+                      grossWeight: current.netWeight + productWeight * (Number(event.target.value) || 0),
                     }))}
                   />
                 </div>
@@ -307,7 +314,7 @@ export function PackagingProfileFormDialog({
             </div>
             <div>
               <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{t('logisticsConfig.packagingRules.summary.productWeightTotal')}</div>
-              <div className='mt-1 text-xl font-black italic tracking-tighter text-primary'>{(selectedProduct?.weight ?? 0) * draft.capacity} <span className='text-[10px] not-italic opacity-50'>{draft.weightUnitCode || '-'}</span></div>
+              <div className='mt-1 text-xl font-black italic tracking-tighter text-primary'>{productWeight * draft.capacity} <span className='text-[10px] not-italic opacity-50'>{draft.weightUnitCode || '-'}</span></div>
             </div>
             <div>
               <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{t('logisticsConfig.packagingRules.summary.grossWeight')}</div>

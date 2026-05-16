@@ -60,7 +60,6 @@ export function buildProductCandidate(
     widthInternal: dto.widthInternal,
     widthExternal: dto.widthExternal,
     maxTirePressure: dto.maxTirePressure,
-    weight: dto.weight,
     length: dto.length,
     angle: dto.angle,
     clamp: dto.clamp,

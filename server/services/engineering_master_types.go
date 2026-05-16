@@ -3,6 +3,7 @@ package services
 import (
 	"encoding/json"
 	"errors"
+	"strings"
 	"time"
 	"xdfc-server/models"
 )
@@ -55,6 +56,10 @@ type SaveBOMInput struct {
 	ProductID       string           `json:"productId"`
 	VersionText     string           `json:"bomVersion"`
 	Status          string           `json:"status"`
+	// MeasuredWeight 必填且 > 0,表示该 BOM 对应最终产品的实测/目标重量。
+	MeasuredWeight     float64          `json:"measuredWeight"`
+	// MeasuredWeightUnit 必填,单位主数据 WEIGHT 类目的 code(如 g / kg)。
+	MeasuredWeightUnit string           `json:"measuredWeightUnit"`
 	Items           []models.BOMItem `json:"items"`
 	Description     string           `json:"description"`
 	Version         int              `json:"version"`
@@ -114,6 +119,8 @@ func (input SaveBOMInput) toModel() models.BOM {
 		ProductID:       input.ProductID,
 		VersionText:     input.VersionText,
 		Status:          input.Status,
+		MeasuredWeight:     input.MeasuredWeight,
+		MeasuredWeightUnit: strings.TrimSpace(input.MeasuredWeightUnit),
 		Items:           input.Items,
 		Description:     input.Description,
 		RelationSidecar: input.RelationSidecar,

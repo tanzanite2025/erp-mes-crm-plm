@@ -624,6 +624,28 @@ func dropLegacyWorkflowArtifacts() {
 	}
 }
 
+// dropLegacyProductWeightColumn 把 products.weight 列彻底从数据库移除。
+//
+// 方案 B（端到端 BOM 权威源）：产品的最终重量改由 BOM.MeasuredWeight 持有，
+// Product 表不再保留 weight 字段。这里使用幂等的 DROP COLUMN IF EXISTS，
+// 历史 weight 数据会随列一起丢弃（已与产品 owner 确认接受 D1 干净切换）。
+func dropLegacyProductWeightColumn() {
+	if DB == nil || DB.Dialector.Name() != "postgres" {
+		return
+	}
+
+	if !DB.Migrator().HasTable("products") {
+		return
+	}
+	if !DB.Migrator().HasColumn("products", "weight") {
+		return
+	}
+
+	if err := DB.Exec(`ALTER TABLE products DROP COLUMN IF EXISTS weight`).Error; err != nil {
+		log.Fatal("Failed to drop legacy products.weight column:", err)
+	}
+}
+
 func backfillBlankProductSKUs() {
 	if DB == nil || !DB.Migrator().HasTable(&models.Product{}) {
 		return
@@ -1186,6 +1208,7 @@ func InitDB(dsn string) {
 	}
 	dropLegacyRoleArtifacts()
 	dropLegacyWorkflowArtifacts()
+	dropLegacyProductWeightColumn()
 	// --- 闂傚鍓﹂崑鍌炲船閵堝洠鍋撻棃娑氱Ш缂傚秴鐗婂缁樻媴閻?(v8.7) ---
 	ensureUserIntegrityConstraints()
 	backfillBlankProductSKUs()

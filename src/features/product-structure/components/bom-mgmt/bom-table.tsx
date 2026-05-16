@@ -109,7 +109,7 @@ export function BOMTable({
           return <span className='italic text-muted-foreground'>{t('engineering.bomArchive.table.unknownProduct')}</span>
         }
 
-        const summary = resolveBOMProductDisplaySummary(product)
+        const summary = resolveBOMProductDisplaySummary(product, row.original)
         const ownerType = product.ownerType ?? 'INTERNAL'
         const ownerLabel = ownerType === 'CUSTOMER'
           ? (product.ownerCustomerId

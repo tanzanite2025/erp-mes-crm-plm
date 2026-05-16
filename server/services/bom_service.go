@@ -852,6 +852,14 @@ func validateBOMBusinessIntegrity(tx *gorm.DB, bomID string, targetStatus string
 		}
 	}
 
+	// 4. 校验：方案 B 端到端权威源——RELEASED 必须有正向重量与单位
+	if bom.MeasuredWeight <= 0 {
+		return fmt.Errorf("[VALIDATION] Cannot release BOM (ID: %s) without a positive measuredWeight; product weight comes solely from BOM", bomID)
+	}
+	if strings.TrimSpace(bom.MeasuredWeightUnit) == "" {
+		return fmt.Errorf("[VALIDATION] Cannot release BOM (ID: %s) without measuredWeightUnit; pick a WEIGHT-category unit from basic settings", bomID)
+	}
+
 	return nil
 }
 
@@ -1005,6 +1013,9 @@ func DeriveMBOMFromEBOM(ctx context.Context, ebomID string, input DeriveMBOMInpu
 			Status:       models.BOMStatusDraft,
 			IsLocked:     false,
 			Description:  input.Description,
+			// 方案 B：派生 MBOM 默认继承源 EBOM 的重量与单位，工艺师可在编辑时调整
+			MeasuredWeight:     ebom.MeasuredWeight,
+			MeasuredWeightUnit: ebom.MeasuredWeightUnit,
 			MasterDataControl: models.MasterDataControl{
 				RevisionNo:    input.RevisionNo,
 				ChangeOrderNo: input.ChangeOrderNo,
@@ -1163,6 +1174,12 @@ func ReviseMBOM(ctx context.Context, mbomID string, input ReviseMBOMInput) (BOMD
 			nextRevisionNo = current.MasterDataControl.RevisionNo
 		}
 
+		// 方案 B：修订是版本递进，新 MBOM 默认继承当前版本的 measuredWeight + 单位。
+		// 如果当前版本不持有重量（理论上不应发生，因为 RELEASED 必须 > 0），快速失败。
+		if current.MeasuredWeight <= 0 || strings.TrimSpace(current.MeasuredWeightUnit) == "" {
+			return fmt.Errorf("[VALIDATION] revise blocked: current MBOM (ID: %s) is missing measuredWeight/unit", current.ID)
+		}
+
 		newMBOM := models.BOM{
 			BOMType:      models.BOMTypeMBOM,
 			BOMNo:        generateBOMNo(tx),
@@ -1172,6 +1189,8 @@ func ReviseMBOM(ctx context.Context, mbomID string, input ReviseMBOMInput) (BOMD
 			Status:       models.BOMStatusReleased, // ✅ 修订即生效，无中间态
 			IsLocked:     false,
 			Description:  fmt.Sprintf("Revised from %s (%s) — %s", current.BOMNo, current.VersionText, input.Reason),
+			MeasuredWeight:     current.MeasuredWeight,
+			MeasuredWeightUnit: current.MeasuredWeightUnit,
 			MasterDataControl: models.MasterDataControl{
 				RevisionNo:    nextRevisionNo,
 				ChangeOrderNo: input.ChangeOrderNo,

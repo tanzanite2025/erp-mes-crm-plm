@@ -80,28 +80,6 @@ export function ForkSpecForm({ form }: { form: UseFormReturn<Product> }) {
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name='weight'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className='text-[10px] sm:text-xs'>
-                {t('engineering.specForms.fork.weight')}
-              </FormLabel>
-              <FormControl>
-                <Input
-                  type='number'
-                  placeholder='380'
-                  {...field}
-                  value={field.value ?? ''}
-                  onChange={(event) =>
-                    field.onChange(event.target.value === '' ? undefined : parseFloat(event.target.value))
-                  }
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
       </div>
       <p className='text-[10px] text-muted-foreground italic'>{t('engineering.specForms.fork.helper')}</p>
     </div>
@@ -128,10 +106,8 @@ export function ForkSpecOverview({ product }: { product: Product }) {
             {t('engineering.specForms.fork.overviewWeight')}
           </span>
           <div className='flex items-baseline gap-1.5'>
-            <span className='text-3xl font-mono font-black text-emerald-600 tracking-tighter italic'>
-              {product.weight || '0'}
-            </span>
-            <span className='text-[10px] font-black text-muted-foreground/20 italic'>G</span>
+            <span className='text-3xl font-mono font-black text-emerald-600 tracking-tighter italic'>—</span>
+            <span className='text-[10px] font-black text-muted-foreground/20 italic'>BOM</span>
           </div>
         </div>
         <div className='hidden sm:block w-px h-10 bg-muted border-l border-dashed border-muted mx-3' />

@@ -15,9 +15,8 @@ interface RimSpecFormProps {
   options: {
     versionCategoryOptions: Array<{ label: string; value: string }>
   }
-  selectedVariants: { level: string; weight: number | undefined }[]
+  selectedVariants: { level: string }[]
   onVariantToggle: (level: string, checked: boolean) => void
-  onWeightChange: (level: string, weight: number | undefined) => void
 }
 
 export function RimSpecForm({
@@ -25,7 +24,6 @@ export function RimSpecForm({
   options,
   selectedVariants,
   onVariantToggle,
-  onWeightChange,
 }: RimSpecFormProps) {
   const { t } = useLanguage()
 
@@ -143,7 +141,6 @@ export function RimSpecForm({
         <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-2 gap-y-1'>
           {options.versionCategoryOptions.map((option) => {
             const isSelected = selectedVariants.some((variant) => variant.level === option.value)
-            const variant = selectedVariants.find((entry) => entry.level === option.value)
 
             return (
               <div
@@ -165,27 +162,6 @@ export function RimSpecForm({
                     {option.label}
                   </Label>
                 </div>
-
-                {isSelected && (
-                  <div className='flex shrink-0 items-center gap-1 animate-in fade-in slide-in-from-right-2 duration-200'>
-                    <div className='text-[9px] text-muted-foreground mr-0.5'>
-                      {t('engineering.specForms.rim.targetWeight')}
-                    </div>
-                    <Input
-                      type='number'
-                      className='h-6 w-16 text-xs font-mono font-bold bg-blue-50/50 border-blue-100 focus-visible:ring-blue-400'
-                      value={variant?.weight ?? ''}
-                      placeholder='g'
-                      onChange={(event) =>
-                        onWeightChange(
-                          option.value,
-                          event.target.value === '' ? undefined : parseFloat(event.target.value)
-                        )
-                      }
-                    />
-                    <span className='text-[9px] font-bold text-blue-600/40'>g</span>
-                  </div>
-                )}
               </div>
             )
           })}
@@ -217,10 +193,8 @@ export function RimSpecOverview({ product }: { product: Product }) {
             {t('engineering.specForms.rim.overviewWeight')}
           </span>
           <div className='flex items-baseline gap-1.5'>
-            <span className='text-2xl sm:text-3xl font-mono font-black text-emerald-600 tracking-tighter italic'>
-              {product.weight || '0'}
-            </span>
-            <span className='text-[10px] font-black text-muted-foreground/20 italic'>G</span>
+            <span className='text-2xl sm:text-3xl font-mono font-black text-emerald-600 tracking-tighter italic'>—</span>
+            <span className='text-[10px] font-black text-muted-foreground/20 italic'>BOM</span>
           </div>
         </div>
         <div className='flex flex-col gap-1.5 sm:border-l sm:border-dashed sm:border-muted sm:pl-5'>

@@ -46,7 +46,6 @@ export function buildProductWriteCandidate(product: SaveProductInput | Product):
     widthInternal: normalizedProduct.widthInternal,
     widthExternal: normalizedProduct.widthExternal,
     maxTirePressure: normalizedProduct.maxTirePressure,
-    weight: normalizedProduct.weight,
     length: normalizedProduct.length,
     angle: normalizedProduct.angle,
     clamp: normalizedProduct.clamp,

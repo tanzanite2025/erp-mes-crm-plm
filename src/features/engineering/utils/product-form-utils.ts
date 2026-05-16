@@ -9,7 +9,6 @@ import {
 
 export interface ProductVariantSelection {
     level: string
-    weight: number | undefined
 }
 
 export type SkuValidationResult =
@@ -35,7 +34,6 @@ export function buildDefaultProductValues(
         widthInternal: undefined,
         widthExternal: undefined,
         maxTirePressure: undefined,
-        weight: undefined,
         image: '',
         restrictions: [],
         moldGroup: '',
@@ -91,7 +89,6 @@ export function buildBatchProducts(
         return {
             ...nextValues,
             id: '',
-            weight: variant.weight,
             createdAt: new Date().toISOString()
         }
     })
@@ -105,6 +102,5 @@ export function buildSingleVariantProduct(
     const nextValues = upsertAttributeValue(values, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version, variant.level)
     return {
         ...nextValues,
-        weight: variant.weight,
     }
 }

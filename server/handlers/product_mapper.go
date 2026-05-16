@@ -69,7 +69,6 @@ func toProductApiDTO(product models.Product) ProductApiDTO {
 		BrakeType:                product.BrakeType,
 		TechSeries:               product.TechSeries,
 		VersionLevel:             product.VersionLevel,
-		Weight:                   product.Weight,
 		Length:                   product.Length,
 		Angle:                    product.Angle,
 		Clamp:                    product.Clamp,

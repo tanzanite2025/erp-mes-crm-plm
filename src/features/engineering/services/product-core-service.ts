@@ -17,7 +17,6 @@ import { type Product } from '../data/schema'
 
 export interface ProductPackagingOption {
   id: string
-  weight?: number
 }
 
 export const ProductCoreService = {
@@ -61,7 +60,6 @@ export const ProductCoreService = {
       'ProductCoreService.getProductPackagingOptions'
     ).map((item) => ({
       id: item.id,
-      weight: item.weight,
     }))
   },
 

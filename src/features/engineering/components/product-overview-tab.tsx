@@ -13,6 +13,7 @@ import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { BOMVersionTraceTrigger } from '@/features/product-structure/version-trace/components/bom-version-trace-trigger'
 import { failLoudly } from '@/lib/safe-catch'
 import { renderProductSpecOverview } from './specs'
+import { ProductActiveBOMCard } from './product-active-bom-card'
 import { type Product, type ProductType } from '../data/schema'
 import { type EngineeringProductDisplayMetadata } from '../hooks/use-engineering-product-display-metadata'
 import { resolveProductOwnerDisplay } from '../utils/product-owner-display'
@@ -121,6 +122,9 @@ export function ProductOverviewTab({ product, productTypes, displayMetadata, cus
                     templateKey: overviewTemplateKey,
                 })}
             </div>
+
+            {/* 当前激活 BOM 版本 + 重量 (方案 B：唯一权威源) */}
+            <ProductActiveBOMCard productId={product.id} productName={product.name} />
 
             <Card className='rounded-[20px] border-2 border-dashed border-blue-600/15 bg-blue-600/3 shadow-none overflow-hidden hover:bg-blue-600/5 transition-all'>
                 <div className='px-3 sm:px-4 py-3 sm:py-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-5'>

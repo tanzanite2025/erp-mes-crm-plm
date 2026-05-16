@@ -408,8 +408,6 @@ func BuildProductPatchInput(id string, version int, payload map[string]json.RawM
 			err = json.Unmarshal(valueRaw, &input.TechSeries)
 		case "versionLevel":
 			err = json.Unmarshal(valueRaw, &input.VersionLevel)
-		case "weight":
-			err = json.Unmarshal(valueRaw, &input.Weight)
 		case "length":
 			err = json.Unmarshal(valueRaw, &input.Length)
 		case "angle":

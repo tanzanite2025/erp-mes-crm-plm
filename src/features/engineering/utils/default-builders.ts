@@ -16,7 +16,6 @@ export function createProductDraft(overrides: ProductDraftOverrides = {}): Produ
         widthInternal: undefined,
         widthExternal: undefined,
         maxTirePressure: undefined,
-        weight: undefined,
         image: '',
         restrictions: [],
         moldGroup: '',

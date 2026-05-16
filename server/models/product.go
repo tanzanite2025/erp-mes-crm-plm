@@ -41,7 +41,8 @@ type Product struct {
 	BrakeType                string                  `gorm:"size:50" json:"brakeType"`
 	TechSeries               string                  `gorm:"size:50" json:"techSeries"`
 	VersionLevel             string                  `gorm:"size:50" json:"versionLevel"`
-	Weight                   float64                 `json:"weight"`
+	// Weight 字段已移除：重量端到端由 BOM.MeasuredWeight 持有，
+	// 产品概览页通过查询当前 RELEASED MBOM 实时取值（方案 B）。
 	Length                   float64                 `json:"length"`
 	Angle                    float64                 `json:"angle"`
 	Clamp                    string                  `gorm:"size:50" json:"clamp"`

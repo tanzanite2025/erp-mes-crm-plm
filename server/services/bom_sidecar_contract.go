@@ -54,6 +54,10 @@ type BOMDetailResponse struct {
 	Status            string                    `json:"status"`
 	IsLocked          bool                      `json:"isLocked"`
 	Version           int                       `json:"version"`
+	// MeasuredWeight 是该 BOM 对应最终产品的实测/目标重量(方案 B 端到端权威源)。
+	MeasuredWeight     float64                   `json:"measuredWeight"`
+	// MeasuredWeightUnit 引用 basic_settings 单位主数据(WEIGHT 类目)的 code。
+	MeasuredWeightUnit string                    `json:"measuredWeightUnit"`
 	Items             []models.BOMItem          `json:"items"`
 	Description       string                    `json:"description"`
 	RelationSidecar   *BOMRelationSidecar       `json:"relationSidecar,omitempty"`
@@ -79,6 +83,8 @@ func MapBOMToDetailResponse(bom models.BOM) (BOMDetailResponse, error) {
 		Status:            bom.Status,
 		IsLocked:          bom.IsLocked,
 		Version:           bom.Version,
+		MeasuredWeight:     bom.MeasuredWeight,
+		MeasuredWeightUnit: bom.MeasuredWeightUnit,
 		Items:             bom.Items,
 		Description:       bom.Description,
 		RelationSidecar:   sidecar,

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { SelectDropdown } from '@/components/select-dropdown'
 import { cn } from '@/lib/utils'
 import { getBomStatusOrderByType } from '@/lib/codecs/code-normalization'
+import { useUnitsQuery } from '@/features/basic-settings/hooks/use-units-query'
 import { type BOM, type Product } from '../../data/schema'
 import {
   buildHeaderGridTemplate,
@@ -55,9 +56,22 @@ export function BOMFormHeader({ form, products, productDisplayLabelMap, isEdit }
     }))
   }, [bomType, t])
 
+  // 方案 B：BOM 重量单位下拉来源于 basic-settings 单位主数据，仅 WEIGHT 类目。
+  const { units } = useUnitsQuery()
+  const weightUnitItems = useMemo(
+    () =>
+      units
+        .filter((unit) => unit.category === 'WEIGHT' && unit.status === 'active')
+        .map((unit) => ({
+          label: unit.code ? `${unit.code} (${unit.name})` : unit.name,
+          value: unit.code,
+        })),
+    [units]
+  )
+
   const ctx: BOMHeaderFieldContext = useMemo(
-    () => ({ isEdit, bomType, t, productItems, statusItems }),
-    [isEdit, bomType, t, productItems, statusItems]
+    () => ({ isEdit, bomType, t, productItems, statusItems, weightUnitItems }),
+    [isEdit, bomType, t, productItems, statusItems, weightUnitItems]
   )
 
   const headerFields = useMemo(() => getBOMHeaderFields(ctx), [ctx])
@@ -118,6 +132,32 @@ function BOMHeaderFormField({ form, fieldConfig, ctx }: BOMHeaderFormFieldProps)
               disabled={fieldConfig.isDisabled?.(ctx) ?? false}
               isControlled
             />
+          ) : fieldConfig.inputType === 'number' ? (
+            <FormControl>
+              <Input
+                type='number'
+                value={(field.value as number | string | undefined) ?? ''}
+                readOnly={fieldConfig.readOnly}
+                placeholder={fieldConfig.placeholder}
+                onChange={(event) => {
+                  const raw = event.target.value
+                  // 数字字段：空 → 0；非法 → 0；正常 → parseFloat
+                  if (raw === '') {
+                    field.onChange(0)
+                    return
+                  }
+                  const parsed = Number.parseFloat(raw)
+                  field.onChange(Number.isFinite(parsed) ? parsed : 0)
+                }}
+                onBlur={field.onBlur}
+                name={field.name}
+                ref={field.ref}
+                className={cn(
+                  'h-11! rounded-2xl border-none bg-muted/50 text-[11px]! font-bold shadow-inner',
+                  fieldConfig.className
+                )}
+              />
+            </FormControl>
           ) : (
             <FormControl>
               <Input
