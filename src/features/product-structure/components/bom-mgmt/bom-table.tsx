@@ -110,10 +110,11 @@ export function BOMTable({
         }
 
         const summary = resolveBOMProductDisplaySummary(product, row.original)
-        const ownerType = product.ownerType ?? 'INTERNAL'
+        // 方案 B + 1:1：归属语义在 BOM 维度,读 row.original 的归属字段
+        const ownerType = row.original.ownerType ?? 'INTERNAL'
         const ownerLabel = ownerType === 'CUSTOMER'
-          ? (product.ownerCustomerId
-              ? customerNameMap?.get(product.ownerCustomerId) ?? t('engineering.bomArchive.table.ownerUnknown')
+          ? (row.original.ownerCustomerId
+              ? customerNameMap?.get(row.original.ownerCustomerId) ?? t('engineering.bomArchive.table.ownerUnknown')
               : t('engineering.bomArchive.table.ownerUnknown'))
           : t('engineering.bomArchive.table.ownerInternal')
         const ownerBadgeClass = ownerType === 'CUSTOMER'

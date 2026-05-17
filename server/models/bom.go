@@ -28,6 +28,11 @@ type BOM struct {
 	Status          string          `gorm:"size:20;default:'DRAFT'" json:"status"`
 	IsLocked        bool            `gorm:"default:false" json:"isLocked"`
 	Version         int             `gorm:"default:1" json:"version"`
+	// 归属语义在 BOM 维度（方案 B + 1:1 设计）：
+	//   - INTERNAL：内部生产 BOM（OwnerCustomerID 留空）
+	//   - CUSTOMER：某客户专供 BOM（OwnerCustomerID 必填，关联 Customer.ID）
+	OwnerType       string          `gorm:"size:20;not null;default:'INTERNAL';index" json:"ownerType"`
+	OwnerCustomerID string          `gorm:"type:uuid;index" json:"ownerCustomerId,omitempty"`
 	// MeasuredWeight 是该 BOM 对应最终产品的实测/目标重量（方案 B 端到端权威源）。
 	// > 0 才允许 RELEASED；EBOM 阶段可为 0 表示尚未称重。
 	MeasuredWeight     float64         `gorm:"not null;default:0" json:"measuredWeight"`

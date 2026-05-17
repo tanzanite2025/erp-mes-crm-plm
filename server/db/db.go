@@ -646,6 +646,67 @@ func dropLegacyProductWeightColumn() {
 	}
 }
 
+// migrateProductOwnershipToBOMs 把归属语义从 Product 迁移到 BOM（方案 B + 1:1 第二阶段）。
+//
+// 业务背景：同一产品可能服务不同对象（内部 / 客户A / 客户B），归属是 BOM 维度的事实，
+// 不是 Product 维度的事实。因此 Product.owner_type / owner_customer_id 被移除，
+// BOM.owner_type / owner_customer_id 成为新的权威字段。
+//
+// 迁移流程：
+//   1. AutoMigrate 自动给 boms 加列（NOT NULL DEFAULT 'INTERNAL'）
+//   2. 把每个产品的归属信息回填到该产品的所有 BOM（保留历史归属一致性）
+//   3. 幂等地 DROP COLUMN products.owner_type / owner_customer_id
+//
+// 用户已确认接受 D1 干净切换：没 BOM 的产品归属信息丢失。
+func migrateProductOwnershipToBOMs() {
+	if DB == nil || DB.Dialector.Name() != "postgres" {
+		return
+	}
+
+	if !DB.Migrator().HasTable("products") || !DB.Migrator().HasTable("boms") {
+		return
+	}
+
+	hasProductOwnerType := DB.Migrator().HasColumn("products", "owner_type")
+	hasProductOwnerCustomer := DB.Migrator().HasColumn("products", "owner_customer_id")
+
+	// 1. 数据回填：把 products.owner_type / owner_customer_id 复制到对应 BOM
+	if hasProductOwnerType {
+		if err := DB.Exec(`
+			UPDATE boms b
+			SET owner_type = COALESCE(NULLIF(p.owner_type, ''), 'INTERNAL')
+			FROM products p
+			WHERE b.product_id = p.id
+		`).Error; err != nil {
+			log.Fatal("Failed to backfill boms.owner_type from products:", err)
+		}
+	}
+	if hasProductOwnerCustomer {
+		if err := DB.Exec(`
+			UPDATE boms b
+			SET owner_customer_id = NULLIF(p.owner_customer_id::text, '')::uuid
+			FROM products p
+			WHERE b.product_id = p.id
+			  AND p.owner_customer_id IS NOT NULL
+			  AND p.owner_customer_id::text <> ''
+		`).Error; err != nil {
+			log.Fatal("Failed to backfill boms.owner_customer_id from products:", err)
+		}
+	}
+
+	// 2. 删除 products 上的归属列（幂等）
+	if hasProductOwnerCustomer {
+		if err := DB.Exec(`ALTER TABLE products DROP COLUMN IF EXISTS owner_customer_id`).Error; err != nil {
+			log.Fatal("Failed to drop legacy products.owner_customer_id column:", err)
+		}
+	}
+	if hasProductOwnerType {
+		if err := DB.Exec(`ALTER TABLE products DROP COLUMN IF EXISTS owner_type`).Error; err != nil {
+			log.Fatal("Failed to drop legacy products.owner_type column:", err)
+		}
+	}
+}
+
 func backfillBlankProductSKUs() {
 	if DB == nil || !DB.Migrator().HasTable(&models.Product{}) {
 		return
@@ -1209,6 +1270,7 @@ func InitDB(dsn string) {
 	dropLegacyRoleArtifacts()
 	dropLegacyWorkflowArtifacts()
 	dropLegacyProductWeightColumn()
+	migrateProductOwnershipToBOMs()
 	// --- 闂傚鍓﹂崑鍌炲船閵堝洠鍋撻棃娑氱Ш缂傚秴鐗婂缁樻媴閻?(v8.7) ---
 	ensureUserIntegrityConstraints()
 	backfillBlankProductSKUs()

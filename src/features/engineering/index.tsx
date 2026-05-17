@@ -44,7 +44,7 @@ export function Engineering() {
                     products={vm.products}
                     types={vm.types}
                     productDisplayMetadataMap={vm.productDisplayMetadataMap}
-                    customerNameMap={vm.customerNameMap}
+                    productOwnersMap={vm.productOwnersMap}
                     selectedProductId={vm.effectiveSelectedProductId}
                     onSelectProduct={vm.handleSelectProduct}
                     onAddProduct={vm.handleAddProduct}
@@ -61,7 +61,6 @@ export function Engineering() {
                                 product={vm.selectedProduct}
                                 productTypes={vm.types}
                                 displayMetadata={vm.selectedProductDisplayMetadata}
-                                customerNameMap={vm.customerNameMap}
                                 onEdit={vm.handleEditProduct}
                             />
                         </div>

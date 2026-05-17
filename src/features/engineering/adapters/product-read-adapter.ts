@@ -76,8 +76,6 @@ export function buildProductCandidate(
     barcodeConfig: toBarcodeConfig(dto.barcodeConfig),
     attachments: toAttachmentArray(dto.attachments),
     status: dto.status ?? 'Active',
-    ownerType: dto.ownerType ?? 'INTERNAL',
-    ownerCustomerId: dto.ownerCustomerId,
     templateKey: normalizeProductTemplateKeyValue(dto.templateKey),
     resolvedTemplateId: dto.resolvedTemplateId?.trim() || undefined,
     resolvedTemplateKey: normalizeProductTemplateKeyValue(dto.resolvedTemplateKey),

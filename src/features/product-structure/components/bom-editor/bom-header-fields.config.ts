@@ -23,7 +23,7 @@ import { normalizeBOMControlFieldPatch } from '../../utils/bom-control-normaliza
 /** 顶部字段允许的字段名（必须是 BOM schema 中的合法 key）。 */
 export type BOMHeaderFieldName = Extract<
   keyof BOM,
-  'bomNo' | 'productId' | 'bomVersion' | 'bomType' | 'status' | 'effectiveFrom' | 'measuredWeight' | 'measuredWeightUnit'
+  'bomNo' | 'productId' | 'bomVersion' | 'bomType' | 'status' | 'effectiveFrom' | 'measuredWeight' | 'measuredWeightUnit' | 'ownerType' | 'ownerCustomerId'
 >
 
 /** 字段渲染上下文。由 BOMFormHeader 在调用时拼装好后传入工厂。 */
@@ -32,6 +32,8 @@ export interface BOMHeaderFieldContext {
   isEdit: boolean
   /** 当前表单中的 bomType（决定 status 字典等）。 */
   bomType?: BOM['bomType']
+  /** 当前表单中的 ownerType（决定客户下拉是否启用）。 */
+  ownerType?: BOM['ownerType']
   /** i18n 翻译函数（保持配置层与 react 解耦）。 */
   t: TFunction
   /** 产品下拉项（外部已基于 productDisplayLabelMap 计算）。 */
@@ -40,6 +42,10 @@ export interface BOMHeaderFieldContext {
   statusItems: ReadonlyArray<{ label: string; value: string }>
   /** 重量单位下拉项（来源 basic-settings 单位主数据 WEIGHT 类目）。 */
   weightUnitItems: ReadonlyArray<{ label: string; value: string }>
+  /** 归属类型下拉项（INTERNAL / CUSTOMER）。 */
+  ownerTypeItems: ReadonlyArray<{ label: string; value: string }>
+  /** 客户下拉项（仅 ownerType=CUSTOMER 时使用）。 */
+  customerItems: ReadonlyArray<{ label: string; value: string }>
 }
 
 /** select / input 共享的基础属性。 */
@@ -169,6 +175,25 @@ export function getBOMHeaderFields(ctx: BOMHeaderFieldContext): readonly BOMHead
       placeholder: ctx.t('engineering.bomArchive.form.measuredWeightUnitPlaceholder'),
       getItems: (c) => c.weightUnitItems,
       colSpan: 'minmax(0,1fr)',
+    },
+    {
+      // 方案 B + 1:1：归属语义在 BOM 维度，而非 Product 维度。
+      name: 'ownerType',
+      label: ctx.t('engineering.bomArchive.form.ownerType'),
+      type: 'select',
+      placeholder: ctx.t('engineering.bomArchive.form.ownerTypePlaceholder'),
+      getItems: (c) => c.ownerTypeItems,
+      colSpan: 'minmax(0,1fr)',
+    },
+    {
+      // ownerType=CUSTOMER 时必填客户。INTERNAL 时禁用。
+      name: 'ownerCustomerId',
+      label: ctx.t('engineering.bomArchive.form.ownerCustomer'),
+      type: 'select',
+      placeholder: ctx.t('engineering.bomArchive.form.ownerCustomerPlaceholder'),
+      getItems: (c) => c.customerItems,
+      isDisabled: (c) => (c.ownerType ?? 'INTERNAL') !== 'CUSTOMER',
+      colSpan: 'minmax(0,1.6fr)',
     },
   ]
 }

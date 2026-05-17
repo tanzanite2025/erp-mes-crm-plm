@@ -59,8 +59,9 @@ type Product struct {
 	BarcodeConfig            []byte                  `gorm:"type:jsonb;serializer:json" json:"barcodeConfig"`
 	Attachments              []byte                  `gorm:"type:jsonb;serializer:json" json:"attachments"`
 	Status                   string                  `gorm:"size:20;default:'Active'" json:"status"`
-	OwnerType                string                  `gorm:"size:20;default:'INTERNAL';index" json:"ownerType"`       // INTERNAL | CUSTOMER
-	OwnerCustomerID          string                  `gorm:"type:uuid;index" json:"ownerCustomerId,omitempty"`        // 关联 Customer.ID（ownerType=CUSTOMER 时必填）
+	// OwnerType / OwnerCustomerID 已迁移到 BOM。
+	// 归属语义在 BOM 维度（同一产品的不同 BOM 可服务不同客户/内部），
+	// Product 仅作产品身份层，不再持有归属。
 	TemplateKey              string                  `gorm:"-" json:"templateKey,omitempty"`
 	ResolvedTemplateID       string                  `gorm:"-" json:"resolvedTemplateId,omitempty"`
 	ResolvedTemplateKey      string                  `gorm:"-" json:"resolvedTemplateKey,omitempty"`

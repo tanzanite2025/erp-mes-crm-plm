@@ -1013,7 +1013,9 @@ func DeriveMBOMFromEBOM(ctx context.Context, ebomID string, input DeriveMBOMInpu
 			Status:       models.BOMStatusDraft,
 			IsLocked:     false,
 			Description:  input.Description,
-			// 方案 B：派生 MBOM 默认继承源 EBOM 的重量与单位，工艺师可在编辑时调整
+			// 方案 B：派生 MBOM 默认继承源 EBOM 的归属、重量与单位
+			OwnerType:          ebom.OwnerType,
+			OwnerCustomerID:    ebom.OwnerCustomerID,
 			MeasuredWeight:     ebom.MeasuredWeight,
 			MeasuredWeightUnit: ebom.MeasuredWeightUnit,
 			MasterDataControl: models.MasterDataControl{
@@ -1189,6 +1191,8 @@ func ReviseMBOM(ctx context.Context, mbomID string, input ReviseMBOMInput) (BOMD
 			Status:       models.BOMStatusReleased, // ✅ 修订即生效，无中间态
 			IsLocked:     false,
 			Description:  fmt.Sprintf("Revised from %s (%s) — %s", current.BOMNo, current.VersionText, input.Reason),
+			OwnerType:          current.OwnerType,
+			OwnerCustomerID:    current.OwnerCustomerID,
 			MeasuredWeight:     current.MeasuredWeight,
 			MeasuredWeightUnit: current.MeasuredWeightUnit,
 			MasterDataControl: models.MasterDataControl{

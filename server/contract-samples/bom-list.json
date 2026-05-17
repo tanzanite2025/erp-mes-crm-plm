@@ -11,6 +11,7 @@
       "status": "RELEASED",
       "isLocked": true,
       "version": 7,
+      "ownerType": "INTERNAL",
       "measuredWeight": 420.5,
       "measuredWeightUnit": "g",
       "items": [

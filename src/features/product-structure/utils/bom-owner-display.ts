@@ -1,11 +1,11 @@
-import { type Product } from '../data/schema'
+import { type BOM } from '../data/schema'
 
-export interface ProductOwnerDisplay {
+export interface BOMOwnerDisplay {
   /** 'INTERNAL' | 'CUSTOMER' */
   ownerType: 'INTERNAL' | 'CUSTOMER'
-  /** 用于直接渲染的归属标签：内部 → 内部型号；客户 → 客户名称 */
+  /** 用于直接渲染的归属标签：内部 → 内部 BOM；客户 → 客户名称 */
   label: string
-  /** 客户型号但 customer 缺失时为 true（可能是数据漂移或 customer 被删） */
+  /** 客户 BOM 但 customer 缺失时为 true（可能是数据漂移或 customer 被删） */
   missingCustomer: boolean
 }
 
@@ -15,11 +15,17 @@ interface ResolveOptions {
   customerNameMap?: Map<string, string>
 }
 
-export function resolveProductOwnerDisplay(
-  product: Pick<Product, 'ownerType' | 'ownerCustomerId'>,
+/**
+ * 方案 B + 1:1：归属语义在 BOM 维度。
+ *
+ * 同一产品的不同 BOM 可服务不同对象（内部 / 客户A / 客户B），归属是
+ * BOM 的固有属性。Product 不再持有归属字段，所有归属解析必须基于 BOM。
+ */
+export function resolveBOMOwnerDisplay(
+  bom: Pick<BOM, 'ownerType' | 'ownerCustomerId'>,
   options: ResolveOptions
-): ProductOwnerDisplay {
-  const ownerType = product.ownerType ?? 'INTERNAL'
+): BOMOwnerDisplay {
+  const ownerType = bom.ownerType ?? 'INTERNAL'
 
   if (ownerType !== 'CUSTOMER') {
     return {
@@ -29,7 +35,7 @@ export function resolveProductOwnerDisplay(
     }
   }
 
-  const customerId = product.ownerCustomerId
+  const customerId = bom.ownerCustomerId
   const resolvedName = customerId ? options.customerNameMap?.get(customerId) : undefined
 
   if (resolvedName && resolvedName.trim()) {

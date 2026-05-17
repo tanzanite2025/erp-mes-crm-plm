@@ -85,8 +85,6 @@ func toProductApiDTO(product models.Product) ProductApiDTO {
 		BarcodeConfig:            cloneHandlerBytes(product.BarcodeConfig),
 		Attachments:              cloneHandlerBytes(product.Attachments),
 		Status:                   product.Status,
-		OwnerType:                product.OwnerType,
-		OwnerCustomerID:          product.OwnerCustomerID,
 		TemplateKey:              product.TemplateKey,
 		ResolvedTemplateID:       product.ResolvedTemplateID,
 		ResolvedTemplateKey:      product.ResolvedTemplateKey,

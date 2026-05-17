@@ -62,8 +62,6 @@ export function buildProductWriteCandidate(product: SaveProductInput | Product):
     barcodeConfig: normalizedProduct.barcodeConfig,
     attachments: normalizedProduct.attachments,
     status: normalizedProduct.status ?? 'Active',
-    ownerType: normalizedProduct.ownerType ?? 'INTERNAL',
-    ownerCustomerId: normalizedProduct.ownerCustomerId,
     revisionNo: normalizeEngineeringRevisionNo(normalizedProduct.masterDataControl?.revisionNo),
     effectiveFrom: normalizedProduct.masterDataControl?.effectiveFrom ?? null,
     effectiveTo: normalizedProduct.masterDataControl?.effectiveTo ?? null,

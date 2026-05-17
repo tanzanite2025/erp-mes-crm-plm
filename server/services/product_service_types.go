@@ -46,8 +46,6 @@ type SaveProductAPIRequest struct {
 	BarcodeConfig     json.RawMessage                   `json:"barcodeConfig"`
 	Attachments       json.RawMessage                   `json:"attachments"`
 	Status            string                            `json:"status"`
-	OwnerType         string                            `json:"ownerType"`
-	OwnerCustomerID   string                            `json:"ownerCustomerId"`
 	RevisionNo        string                            `json:"revisionNo"`
 	EffectiveFrom     *time.Time                        `json:"effectiveFrom"`
 	EffectiveTo       *time.Time                        `json:"effectiveTo"`
@@ -88,8 +86,6 @@ type ProductWriteInput struct {
 	BarcodeConfig     json.RawMessage
 	Attachments       json.RawMessage
 	Status            string
-	OwnerType         string
-	OwnerCustomerID   string
 	RevisionNo        string
 	EffectiveFrom     *time.Time
 	EffectiveTo       *time.Time
@@ -181,8 +177,6 @@ func toProductWriteInput(input SaveProductAPIRequest) ProductWriteInput {
 		BarcodeConfig:     cloneProductRawMessage(input.BarcodeConfig),
 		Attachments:       cloneProductRawMessage(input.Attachments),
 		Status:            input.Status,
-		OwnerType:         input.OwnerType,
-		OwnerCustomerID:   input.OwnerCustomerID,
 		RevisionNo:        input.RevisionNo,
 		EffectiveFrom:     input.EffectiveFrom,
 		EffectiveTo:       input.EffectiveTo,
@@ -236,8 +230,6 @@ func toProductModel(input ProductWriteInput) models.Product {
 		BarcodeConfig:     cloneProductRawMessage(input.BarcodeConfig),
 		Attachments:       cloneProductRawMessage(input.Attachments),
 		Status:            input.Status,
-		OwnerType:         input.OwnerType,
-		OwnerCustomerID:   input.OwnerCustomerID,
 		Version:           input.Version,
 	}
 }

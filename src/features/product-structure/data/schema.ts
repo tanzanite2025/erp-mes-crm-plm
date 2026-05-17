@@ -64,6 +64,11 @@ export const bomSchema = z.object({
   bomVersion: z.string().trim().regex(/^V[0-9]+(\.[0-9]+)*$/, 'Version must follow V1.0 format').default('V1.0'),
   status: z.enum(BOM_STATUS_ORDER).default('DRAFT'),
   isLocked: z.boolean().default(false),
+  // 归属语义在 BOM 维度（方案 B + 1:1 设计）：
+  //   - INTERNAL：内部生产 BOM（ownerCustomerId 留空）
+  //   - CUSTOMER：某客户专供 BOM（ownerCustomerId 必填，关联 Customer.id）
+  ownerType: z.enum(['INTERNAL', 'CUSTOMER']).default('INTERNAL'),
+  ownerCustomerId: z.string().optional(),
   // 方案 B：BOM 是产品最终重量的端到端权威源。
   //   - 创建/草稿期允许为 0 / 空字符串（后端校验：仅 RELEASED 必须 > 0 + 单位非空）
   //   - 单位引用 basic-settings 的 WEIGHT 类目代码（g / kg 等）

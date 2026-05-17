@@ -1,11 +1,9 @@
 import { useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { getCustomers } from '@/features/trading/customer'
-import { tradingQueryKeys } from '@/features/trading/query-keys'
 import { type Product } from '../data/schema'
 import { useEngineeringBootstrap } from './use-engineering-bootstrap'
 import { useEngineeringProductDisplayMetadata } from './use-engineering-product-display-metadata'
 import { useProductWriteActions } from './use-product-write-actions'
+import { useProductOwnersMap } from '@/features/product-structure/hooks/use-product-owners-map'
 import { type ProductSubmitPayload } from './use-product-form'
 
 const EMPTY_PRODUCTS: Product[] = []
@@ -24,19 +22,8 @@ export function useEngineeringWorkspaceViewModel() {
     products,
     productTypes: types,
   })
-  const customersQuery = useQuery({
-    queryKey: tradingQueryKeys.customers(),
-    queryFn: getCustomers,
-  })
-  const customerNameMap = useMemo(() => {
-    const map = new Map<string, string>()
-    if (customersQuery.data) {
-      for (const customer of customersQuery.data) {
-        map.set(customer.id, customer.name)
-      }
-    }
-    return map
-  }, [customersQuery.data])
+  // 方案 B + 1:1：归属语义在 BOM 维度，按产品聚合后给 sidebar 卡片显示。
+  const { map: productOwnersMap } = useProductOwnersMap()
   const isLoading = bootstrap.isLoading || displayMetadata.isLoading
   const error = bootstrap.error ?? displayMetadata.error
 
@@ -123,7 +110,7 @@ export function useEngineeringWorkspaceViewModel() {
     selectedProduct,
     selectedProductDisplayMetadata,
     productDisplayMetadataMap: displayMetadata.productDisplayMetadataMap,
-    customerNameMap,
+    productOwnersMap,
     effectiveSelectedProductId,
     isProductDialogOpen,
     isTypeDialogOpen,

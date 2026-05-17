@@ -56,6 +56,11 @@ type SaveBOMInput struct {
 	ProductID       string           `json:"productId"`
 	VersionText     string           `json:"bomVersion"`
 	Status          string           `json:"status"`
+	// 归属语义在 BOM 维度（方案 B + 1:1 设计）：
+	//   - INTERNAL：内部生产 BOM（OwnerCustomerID 留空）
+	//   - CUSTOMER：某客户专供 BOM（OwnerCustomerID 必填，关联 Customer.ID）
+	OwnerType       string           `json:"ownerType"`
+	OwnerCustomerID string           `json:"ownerCustomerId"`
 	// MeasuredWeight 必填且 > 0,表示该 BOM 对应最终产品的实测/目标重量。
 	MeasuredWeight     float64          `json:"measuredWeight"`
 	// MeasuredWeightUnit 必填,单位主数据 WEIGHT 类目的 code(如 g / kg)。
@@ -119,6 +124,8 @@ func (input SaveBOMInput) toModel() models.BOM {
 		ProductID:       input.ProductID,
 		VersionText:     input.VersionText,
 		Status:          input.Status,
+		OwnerType:          strings.TrimSpace(input.OwnerType),
+		OwnerCustomerID:    strings.TrimSpace(input.OwnerCustomerID),
 		MeasuredWeight:     input.MeasuredWeight,
 		MeasuredWeightUnit: strings.TrimSpace(input.MeasuredWeightUnit),
 		Items:           input.Items,

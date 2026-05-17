@@ -7,6 +7,9 @@ import { SelectDropdown } from '@/components/select-dropdown'
 import { cn } from '@/lib/utils'
 import { getBomStatusOrderByType } from '@/lib/codecs/code-normalization'
 import { useUnitsQuery } from '@/features/basic-settings/hooks/use-units-query'
+import { getCustomers } from '@/features/trading/customer'
+import { tradingQueryKeys } from '@/features/trading/query-keys'
+import { useQuery } from '@tanstack/react-query'
 import { type BOM, type Product } from '../../data/schema'
 import {
   buildHeaderGridTemplate,
@@ -41,6 +44,7 @@ export function BOMFormHeader({ form, products, productDisplayLabelMap, isEdit }
   )
 
   const bomType = form.watch('bomType')
+  const ownerType = form.watch('ownerType') as BOM['ownerType'] | undefined
 
   const statusItems = useMemo(() => {
     const STATUS_LABEL_KEY: Record<string, string> = {
@@ -69,9 +73,40 @@ export function BOMFormHeader({ form, products, productDisplayLabelMap, isEdit }
     [units]
   )
 
+  // 方案 B + 1:1：归属语义在 BOM 维度。下拉客户来源 trading 主数据。
+  const customersQuery = useQuery({
+    queryKey: tradingQueryKeys.customers(),
+    queryFn: getCustomers,
+  })
+  const ownerTypeItems = useMemo(
+    () => [
+      { label: t('engineering.bomArchive.form.ownerTypeInternal'), value: 'INTERNAL' },
+      { label: t('engineering.bomArchive.form.ownerTypeCustomer'), value: 'CUSTOMER' },
+    ],
+    [t]
+  )
+  const customerItems = useMemo(
+    () =>
+      (customersQuery.data ?? []).map((customer) => ({
+        label: customer.name,
+        value: customer.id,
+      })),
+    [customersQuery.data]
+  )
+
   const ctx: BOMHeaderFieldContext = useMemo(
-    () => ({ isEdit, bomType, t, productItems, statusItems, weightUnitItems }),
-    [isEdit, bomType, t, productItems, statusItems, weightUnitItems]
+    () => ({
+      isEdit,
+      bomType,
+      ownerType,
+      t,
+      productItems,
+      statusItems,
+      weightUnitItems,
+      ownerTypeItems,
+      customerItems,
+    }),
+    [isEdit, bomType, ownerType, t, productItems, statusItems, weightUnitItems, ownerTypeItems, customerItems]
   )
 
   const headerFields = useMemo(() => getBOMHeaderFields(ctx), [ctx])
@@ -125,6 +160,10 @@ function BOMHeaderFormField({ form, fieldConfig, ctx }: BOMHeaderFormFieldProps)
               onValueChange={(value) => {
                 const next = fieldConfig.transformOnChange ? fieldConfig.transformOnChange(value) : value
                 field.onChange(next)
+                // ownerType 切回 INTERNAL 时,强制清空 ownerCustomerId,避免脏数据被提交。
+                if (fieldConfig.name === 'ownerType' && next !== 'CUSTOMER') {
+                  form.setValue('ownerCustomerId', undefined as never)
+                }
               }}
               items={[...fieldConfig.getItems(ctx)]}
               placeholder={fieldConfig.placeholder}

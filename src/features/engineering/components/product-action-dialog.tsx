@@ -81,7 +81,6 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
     versionLevelOptions,
     moldOptions,
     specOptions,
-    ownerOptions,
     metadataInitError,
     metadataReady,
     nextCodeDeriveError,
@@ -220,7 +219,6 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
                 handleImageUpload={handleImageUpload}
                   specOptions={specOptions}
                   moldOptions={moldOptions}
-                  ownerOptions={ownerOptions}
                   isEdit={isEdit}
                   templateLabel={boundTemplate?.name ?? activeSpec?.label}
                 />

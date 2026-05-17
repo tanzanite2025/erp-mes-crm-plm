@@ -20,7 +20,6 @@ interface ProductBasicInfoProps {
     handleImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void
     specOptions: { label: string; value: string }[]
     moldOptions: { label: string; value: string }[]
-    ownerOptions: { label: string; value: string }[]
     isEdit: boolean
     templateLabel?: string
 }
@@ -36,7 +35,6 @@ export function ProductBasicInfo({
     handleImageUpload,
     specOptions,
     moldOptions,
-    ownerOptions,
     isEdit,
     templateLabel
 }: ProductBasicInfoProps) {
@@ -226,32 +224,6 @@ export function ProductBasicInfo({
                                             className='h-[38px] w-full text-[11px] font-bold rounded-xl bg-muted/40 border-none px-3'
                                         />
                                     <FormMessage className='text-[8px] font-bold uppercase' />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name='ownerCustomerId'
-                            render={({ field }) => (
-                                <FormItem className='space-y-0.5 min-w-0'>
-                                    <FormLabel className='text-slate-500 font-black text-[10px] uppercase tracking-widest ml-1'>{t('engineering.productMgmt.form.ownerType')}</FormLabel>
-                                    <SelectDropdown
-                                        value={field.value || '__INTERNAL__'}
-                                        onValueChange={(value) => {
-                                            if (value === '__INTERNAL__') {
-                                                form.setValue('ownerType', 'INTERNAL')
-                                                field.onChange(undefined)
-                                            } else {
-                                                form.setValue('ownerType', 'CUSTOMER')
-                                                field.onChange(value)
-                                            }
-                                        }}
-                                        isControlled={true}
-                                        items={ownerOptions}
-                                        placeholder={t('engineering.productMgmt.form.ownerPlaceholder')}
-                                        className='h-[38px] w-full text-[11px] font-bold rounded-xl bg-muted/40 border-none px-3'
-                                    />
-                                    <FormMessage className='text-[10px] font-bold' />
                                 </FormItem>
                             )}
                         />

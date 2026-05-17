@@ -123,11 +123,6 @@ export function BOMMgmt() {
   const isLoading = readResource.status === 'loading'
   const viewMode = previewBOM && readResource.status === 'ready' ? 'preview' : 'list'
 
-  const productMap = useMemo(
-    () => new Map(bomProducts.map((product) => [product.id, product])),
-    [bomProducts]
-  )
-
   const ownerOptions = useMemo<BOMOwnerFilterOption[]>(() => {
     const options: BOMOwnerFilterOption[] = [
       { label: t('engineering.bomArchive.filter.allOwners'), value: OWNER_FILTER_ALL },
@@ -144,15 +139,13 @@ export function BOMMgmt() {
       return bomTableData
     }
     return bomTableData.filter((bom) => {
-      const product = bom.product || productMap.get(bom.productId)
-      if (!product) return false
-      const ownerType = product.ownerType ?? 'INTERNAL'
+      const ownerType = bom.ownerType ?? 'INTERNAL'
       if (selectedOwnerValue === OWNER_FILTER_INTERNAL) {
         return ownerType === 'INTERNAL'
       }
-      return ownerType === 'CUSTOMER' && product.ownerCustomerId === selectedOwnerValue
+      return ownerType === 'CUSTOMER' && bom.ownerCustomerId === selectedOwnerValue
     })
-  }, [bomTableData, productMap, selectedOwnerValue])
+  }, [bomTableData, selectedOwnerValue])
 
   const handleDerive = async (bom: BOM) => {
     if (window.confirm(t('engineering.bomArchive.table.confirmDerive'))) {

@@ -10,13 +10,13 @@ import { useLanguage } from '@/context/language-provider'
 import { type Product, type ProductType } from '../data/schema'
 import { type EngineeringProductDisplayMetadata } from '../hooks/use-engineering-product-display-metadata'
 import { useEngineeringSidebarViewModel } from '../hooks/use-engineering-sidebar-view-model'
-import { resolveProductOwnerDisplay } from '../utils/product-owner-display'
+import { type ProductOwnerEntry } from '@/features/product-structure/hooks/use-product-owners-map'
 
 type EngineeringSidebarProps = {
     products: Product[]
     types: ProductType[]
     productDisplayMetadataMap: Map<string, EngineeringProductDisplayMetadata>
-    customerNameMap?: Map<string, string>
+    productOwnersMap?: Map<string, ProductOwnerEntry[]>
     selectedProductId: string | null
     onSelectProduct: (id: string) => void
     onAddProduct: () => void
@@ -28,7 +28,7 @@ export function EngineeringSidebar({
     products,
     types,
     productDisplayMetadataMap,
-    customerNameMap,
+    productOwnersMap,
     selectedProductId,
     onSelectProduct,
     onAddProduct,
@@ -107,16 +107,7 @@ export function EngineeringSidebar({
                                         typeProducts.map(product => {
                                             const productDisplayMetadata = productDisplayMetadataMap.get(product.id) || null
                                             const isSelected = selectedProductId === product.id
-                                            const ownerDisplay = resolveProductOwnerDisplay(product, {
-                                                internalLabel: t('engineering.productMgmt.form.ownerTypeInternal'),
-                                                unknownCustomerLabel: t('engineering.productMgmt.form.ownerTypeCustomer'),
-                                                customerNameMap,
-                                            })
-                                            const ownerBadgeClass = isSelected
-                                                ? 'h-4 border-white/20 bg-white/15 text-white px-1 text-[9px] font-black uppercase tracking-wide'
-                                                : ownerDisplay.ownerType === 'CUSTOMER'
-                                                    ? 'h-4 border-amber-200 bg-amber-50 text-amber-700 px-1 text-[9px] font-black uppercase tracking-wide'
-                                                    : 'h-4 border-emerald-200 bg-emerald-50 text-emerald-700 px-1 text-[9px] font-black uppercase tracking-wide'
+                                            const ownerEntries = productOwnersMap?.get(product.id) ?? []
 
                                             return (
                                                 <div
@@ -141,18 +132,9 @@ export function EngineeringSidebar({
                                                     {/* 第 2 列：信息集中对齐 */}
                                                     <div className='relative flex min-w-0 flex-col gap-0.5 group/card-info'>
                                                         <div className='flex items-center justify-between gap-2.5'>
-                                                            <div className='flex min-w-0 items-center gap-1.5'>
-                                                                <p className='truncate text-[13px] font-black tracking-tight uppercase leading-none italic sm:text-[15px]'>
-                                                                    {product.name}
-                                                                </p>
-                                                                <Badge
-                                                                    variant='outline'
-                                                                    className={`shrink-0 ${ownerBadgeClass}`}
-                                                                    title={ownerDisplay.label}
-                                                                >
-                                                                    {ownerDisplay.label}
-                                                                </Badge>
-                                                            </div>
+                                                            <p className='truncate text-[13px] font-black tracking-tight uppercase leading-none italic sm:text-[15px]'>
+                                                                {product.name}
+                                                            </p>
                                                             <div className='flex items-center gap-2 shrink-0'>
                                                                 <Button
                                                                     variant='ghost'
@@ -170,6 +152,36 @@ export function EngineeringSidebar({
                                                                 </Button>
                                                             </div>
                                                         </div>
+
+                                                        {/* 归属覆盖：BOM 维度的归属聚合（方案 B + 1:1） */}
+                                                        {ownerEntries.length > 0 ? (
+                                                            <div className='flex flex-wrap gap-1'>
+                                                                {ownerEntries.map((entry) => {
+                                                                    const label = entry.type === 'INTERNAL'
+                                                                        ? t('engineering.productMgmt.sidebar.ownerInternal')
+                                                                        : (entry.customerName || t('engineering.productMgmt.sidebar.ownerCustomerUnknown'))
+                                                                    const className = isSelected
+                                                                        ? 'h-4 border-white/20 bg-white/15 text-white px-1 text-[9px] font-black uppercase tracking-wide'
+                                                                        : entry.type === 'CUSTOMER'
+                                                                            ? 'h-4 border-amber-200 bg-amber-50 text-amber-700 px-1 text-[9px] font-black uppercase tracking-wide'
+                                                                            : 'h-4 border-emerald-200 bg-emerald-50 text-emerald-700 px-1 text-[9px] font-black uppercase tracking-wide'
+                                                                    return (
+                                                                        <Badge
+                                                                            key={entry.dedupKey}
+                                                                            variant='outline'
+                                                                            className={className}
+                                                                            title={label}
+                                                                        >
+                                                                            {label}
+                                                                        </Badge>
+                                                                    )
+                                                                })}
+                                                            </div>
+                                                        ) : (
+                                                            <div className={`inline-flex w-fit rounded-lg border border-dashed px-2 py-0.5 text-[9px] font-black tracking-tight leading-4 ${isSelected ? 'border-white/15 bg-white/10 text-white/80' : 'border-slate-300 bg-slate-50 text-slate-500'}`}>
+                                                                {t('engineering.productMgmt.sidebar.ownerNoBom')}
+                                                            </div>
+                                                        )}
 
                                                         {/* 规格透出 */}
                                                         {productDisplayMetadata?.resolvedTemplate ? (

@@ -16,17 +16,15 @@ import { renderProductSpecOverview } from './specs'
 import { ProductActiveBOMCard } from './product-active-bom-card'
 import { type Product, type ProductType } from '../data/schema'
 import { type EngineeringProductDisplayMetadata } from '../hooks/use-engineering-product-display-metadata'
-import { resolveProductOwnerDisplay } from '../utils/product-owner-display'
 
 type ProductOverviewTabProps = {
     product: Product
     productTypes: ProductType[]
     displayMetadata?: EngineeringProductDisplayMetadata | null
-    customerNameMap?: Map<string, string>
     onEdit: (product: Product) => void
 }
 
-export function ProductOverviewTab({ product, productTypes, displayMetadata, customerNameMap, onEdit }: ProductOverviewTabProps) {
+export function ProductOverviewTab({ product, productTypes, displayMetadata, onEdit }: ProductOverviewTabProps) {
     const { t } = useLanguage()
     const bindingInfoKey = 'engineering.productMgmt.bindingInfo' as TranslationKey
 
@@ -37,15 +35,6 @@ export function ProductOverviewTab({ product, productTypes, displayMetadata, cus
     const overviewTemplateKey = displayMetadata?.resolvedTemplate?.componentKey
         || product.resolvedTemplateKey
         || product.templateKey
-
-    const ownerDisplay = useMemo(
-        () => resolveProductOwnerDisplay(product, {
-            internalLabel: t('engineering.productMgmt.form.ownerTypeInternal'),
-            unknownCustomerLabel: t('engineering.productMgmt.form.ownerTypeCustomer'),
-            customerNameMap,
-        }),
-        [customerNameMap, product, t]
-    )
 
     if (!categoryType) {
         const error = new Error(
@@ -67,16 +56,6 @@ export function ProductOverviewTab({ product, productTypes, displayMetadata, cus
                         </div>
                         <div className='flex items-center gap-1 sm:gap-3 group/header-title'>
                             <h1 className='text-2xl sm:text-4xl font-black tracking-tighter uppercase italic text-slate-800 leading-none break-all'>{product.name}</h1>
-                            <Badge
-                                variant='outline'
-                                className={`shrink-0 px-2.5 py-1 text-[10px] sm:text-[11px] font-black uppercase tracking-widest rounded-full border-2 ${ownerDisplay.ownerType === 'CUSTOMER'
-                                    ? 'border-amber-300 bg-amber-50 text-amber-700 shadow-sm'
-                                    : 'border-emerald-300 bg-emerald-50 text-emerald-700 shadow-sm'
-                                    }`}
-                                title={ownerDisplay.label}
-                            >
-                                {ownerDisplay.label}
-                            </Badge>
                             <Button
                                 variant='ghost'
                                 size='icon'

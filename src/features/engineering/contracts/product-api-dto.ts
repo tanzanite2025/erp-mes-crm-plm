@@ -39,8 +39,6 @@ export interface ProductApiDTO {
   barcodeConfig?: unknown
   attachments?: unknown
   status?: 'Active' | 'Draft' | 'Archived'
-  ownerType?: 'INTERNAL' | 'CUSTOMER'
-  ownerCustomerId?: string
   templateKey?: string
   resolvedTemplateId?: string
   resolvedTemplateKey?: string

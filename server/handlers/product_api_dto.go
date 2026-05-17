@@ -41,8 +41,6 @@ type ProductApiDTO struct {
 	BarcodeConfig            json.RawMessage               `json:"barcodeConfig,omitempty"`
 	Attachments              json.RawMessage               `json:"attachments,omitempty"`
 	Status                   string                        `json:"status"`
-	OwnerType                string                        `json:"ownerType"`
-	OwnerCustomerID          string                        `json:"ownerCustomerId,omitempty"`
 	TemplateKey              string                        `json:"templateKey,omitempty"`
 	ResolvedTemplateID       string                        `json:"resolvedTemplateId,omitempty"`
 	ResolvedTemplateKey      string                        `json:"resolvedTemplateKey,omitempty"`
