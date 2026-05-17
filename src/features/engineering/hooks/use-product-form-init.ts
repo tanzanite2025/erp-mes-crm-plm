@@ -1,6 +1,5 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { type ProductAttributeOption } from '../data/schema'
 import { AssetService } from '@/features/equipment-tooling/services/asset-service'
 import { ENGINEERING_DB_SPECS_QUERY_KEY } from '@/features/engineering-db/query-keys'
 import { SpecsService } from '@/features/engineering-db/services/specs-service'
@@ -11,35 +10,8 @@ import {
     PRODUCT_ATTRIBUTE_CATEGORIES_QUERY_KEY,
     PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY,
 } from '../query-keys'
-import { PRODUCT_ATTRIBUTE_CATEGORY_KEYS } from '../utils/product-attribute-utils'
-import { normalizeProductAttributeMachineValue } from '../utils/product-attribute-machine-value'
 import { useLanguage } from '@/context/language-provider'
 import { isNotFoundError } from '@/lib/error-status'
-
-type OptionItem = { label: string; value: string }
-
-function toLocalizedOptionLabel(
-    locale: string,
-    item: { labelZh: string; labelEn?: string }
-): string {
-    if (locale === 'en-US') {
-        return item.labelEn?.trim() || item.labelZh
-    }
-
-    return item.labelZh
-}
-
-function toOptionItems(locale: string, items: ProductAttributeOption[], categoryKey: string): OptionItem[] {
-    const normalizedCategoryKey = normalizeProductAttributeMachineValue(categoryKey)
-    if (!normalizedCategoryKey) return []
-
-    return items
-        .filter((item) => normalizeProductAttributeMachineValue(item.categoryKey) === normalizedCategoryKey && item.active)
-        .map((item) => ({
-            value: item.value,
-            label: toLocalizedOptionLabel(locale, item),
-        }))
-}
 
 interface UseProductFormInitParams {
     open: boolean
@@ -48,7 +20,7 @@ interface UseProductFormInitParams {
 export function useProductFormInit({
     open,
 }: UseProductFormInitParams) {
-    const { locale, t } = useLanguage()
+    const { t } = useLanguage()
     const categoriesQuery = useQuery({
         queryKey: PRODUCT_ATTRIBUTE_CATEGORIES_QUERY_KEY,
         queryFn: () => ProductAttributeCategoryService.getProductAttributeCategories({ activeOnly: true }),
@@ -81,13 +53,6 @@ export function useProductFormInit({
     const attributeCategories = categoriesQuery.data
     const attributeOptions = optionsQuery.data
 
-    const versionLevelOptions = useMemo(
-        () => {
-            if (!attributeOptions) return []
-            return toOptionItems(locale, attributeOptions, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version)
-        },
-        [attributeOptions, locale]
-    )
     const moldOptions = useMemo(
         () => {
             if (!moldGroupsQuery.data) return []
@@ -120,7 +85,6 @@ export function useProductFormInit({
     return {
         attributeCategories,
         attributeOptions,
-        versionLevelOptions,
         moldOptions,
         specOptions,
         metadataInitError,

@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react'
 import { isBefore, parseISO, startOfDay } from 'date-fns'
-import { useNavigate } from '@tanstack/react-router'
 import {
   BanknoteArrowDown,
   Edit2,
@@ -31,6 +30,7 @@ interface SalesOrderMasterProps {
   selectedId?: string
   onSelect: (id: string) => void
   onPreassembleScan?: (order: SalesOrder) => void
+  onViewReceivable?: (order: SalesOrder) => void
   onEdit?: (order: SalesOrder) => void
   onDelete?: (id: string) => void
   renderFeatureCards?: (order: SalesOrder) => ReactNode
@@ -156,24 +156,13 @@ export function SalesOrderMaster({
   selectedId,
   onSelect,
   onPreassembleScan,
+  onViewReceivable,
   onEdit,
   onDelete,
   renderFeatureCards,
 }: SalesOrderMasterProps) {
   const { t, locale } = useLanguage()
-  const navigate = useNavigate()
   const hasActions = true
-
-  const openReceivables = (order: SalesOrder, autoOpen: boolean) => {
-    navigate({
-      to: '/trading/receivables',
-      search: {
-        sourceType: 'SALES_ORDER',
-        sourceRefId: order.id,
-        autoOpen: autoOpen || undefined,
-      },
-    })
-  }
 
   const openScanPreassemble = (order: SalesOrder) => {
     onPreassembleScan?.(order)
@@ -307,9 +296,10 @@ export function SalesOrderMaster({
                                   {t('tradingSalesOrder.master.shipByScan')}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
+                                  disabled={!onViewReceivable}
                                   onSelect={(e) => {
                                     e.stopPropagation()
-                                    openReceivables(order, false)
+                                    onViewReceivable?.(order)
                                   }}
                                   className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black tracking-widest uppercase'
                                 >
@@ -317,11 +307,11 @@ export function SalesOrderMaster({
                                   {t('tradingSalesOrder.master.viewReceivable')}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  disabled={!canRegisterReceipt}
+                                  disabled={!canRegisterReceipt || !onViewReceivable}
                                   onSelect={(e) => {
                                     e.stopPropagation()
-                                    if (!canRegisterReceipt) return
-                                    openReceivables(order, true)
+                                    if (!canRegisterReceipt || !onViewReceivable) return
+                                    onViewReceivable(order)
                                   }}
                                   className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black tracking-widest uppercase'
                                 >

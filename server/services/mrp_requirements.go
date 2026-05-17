@@ -73,19 +73,69 @@ type mrpSelectedLine struct {
 	LineNo  int
 }
 
-func buildActiveBOMIndex(boms []models.BOM) (map[string]*models.BOM, error) {
-	index := make(map[string]*models.BOM, len(boms))
+// activeBOMLookup 提供按 (productId, customerId) 选取该订单线对应的活跃 MBOM 的能力。
+//
+// 思路 3 重构后,同一 productId 可同时存在多份 RELEASED MBOM(不同 versionLevel/owner),
+// 因此不能再用 productId 单键索引。这里按"先 CUSTOMER 专供,再 INTERNAL 兜底"的优先级查找。
+type activeBOMLookup struct {
+	// byCustomer: customerId → productId → BOM (CUSTOMER 类型)
+	byCustomer map[string]map[string]*models.BOM
+	// internal: productId → BOM (INTERNAL 类型,跨档次取最新一份作为代表)
+	internal map[string]*models.BOM
+}
+
+func buildActiveBOMLookup(boms []models.BOM) *activeBOMLookup {
+	lookup := &activeBOMLookup{
+		byCustomer: make(map[string]map[string]*models.BOM),
+		internal:   make(map[string]*models.BOM),
+	}
 	for idx := range boms {
 		productID := strings.TrimSpace(boms[idx].ProductID)
 		if productID == "" {
 			continue
 		}
-		if existing, ok := index[productID]; ok {
-			return nil, fmt.Errorf("[CRITICAL] multiple active BOMs detected for product %s: %s and %s", productID, existing.ID, boms[idx].ID)
+		ownerType := strings.TrimSpace(boms[idx].OwnerType)
+		if ownerType == "" {
+			ownerType = "INTERNAL"
 		}
-		index[productID] = &boms[idx]
+		switch ownerType {
+		case "CUSTOMER":
+			customerID := strings.TrimSpace(boms[idx].OwnerCustomerID)
+			if customerID == "" {
+				continue
+			}
+			if _, ok := lookup.byCustomer[customerID]; !ok {
+				lookup.byCustomer[customerID] = make(map[string]*models.BOM)
+			}
+			// 同 (customer, product) 下若有多份(不同 versionLevel),保留最新创建的一份
+			existing := lookup.byCustomer[customerID][productID]
+			if existing == nil || boms[idx].CreatedAt.After(existing.CreatedAt) {
+				lookup.byCustomer[customerID][productID] = &boms[idx]
+			}
+		default:
+			existing := lookup.internal[productID]
+			if existing == nil || boms[idx].CreatedAt.After(existing.CreatedAt) {
+				lookup.internal[productID] = &boms[idx]
+			}
+		}
 	}
-	return index, nil
+	return lookup
+}
+
+// resolve 返回 (BOM, ok)。优先查客户专供,fallback 到 INTERNAL。
+func (l *activeBOMLookup) resolve(productID string, customerID string) *models.BOM {
+	productID = strings.TrimSpace(productID)
+	if productID == "" {
+		return nil
+	}
+	if customerID = strings.TrimSpace(customerID); customerID != "" {
+		if perCustomer, ok := l.byCustomer[customerID]; ok {
+			if bom := perCustomer[productID]; bom != nil {
+				return bom
+			}
+		}
+	}
+	return l.internal[productID]
 }
 
 func GetMrpRequirements(params GetMrpRequirementsParams) (MrpRequirementsResponse, error) {
@@ -108,23 +158,22 @@ func GetMrpRequirements(params GetMrpRequirementsParams) (MrpRequirementsRespons
 	var orders []models.SalesOrder
 	if err := db.DB.Preload("Lines", func(tx *gorm.DB) *gorm.DB {
 		return tx.Select("id", "sales_order_id", "line_no", "product_id", "product_model", "product_code", "specification", "qty", "uom", "status")
-	}).Select("id", "order_no", "customer_name", "status", "order_date", "delivery_date", "deleted_at").
+	}).Select("id", "order_no", "customer_id", "customer_name", "status", "order_date", "delivery_date", "deleted_at").
 		Where("status IN ?", []string{"Pending", "Scheduling", "InProgress"}).
 		Order("order_date desc").
 		Find(&orders).Error; err != nil {
 		return MrpRequirementsResponse{}, err
 	}
 
+	// 思路 3 重构后,同 productId 可有多份 RELEASED MBOM(不同 versionLevel/客户),
+	// 这里全量加载后按 (productId, customerId) 分桶选取。
 	var boms []models.BOM
-	if err := db.DB.Select("id", "product_id", "status").Preload("Items", func(tx *gorm.DB) *gorm.DB {
+	if err := db.DB.Select("id", "product_id", "status", "owner_type", "owner_customer_id", "version_level", "created_at").Preload("Items", func(tx *gorm.DB) *gorm.DB {
 		return tx.Select("id", "bom_id", "section", "material_id", "unit", "standard_usage")
 	}).Where("status = ? AND bom_type = ?", models.BOMStatusReleased, models.BOMTypeMBOM).Find(&boms).Error; err != nil {
 		return MrpRequirementsResponse{}, err
 	}
-	bomIndex, err := buildActiveBOMIndex(boms)
-	if err != nil {
-		return MrpRequirementsResponse{}, err
-	}
+	bomLookup := buildActiveBOMLookup(boms)
 
 	var materials []models.Material
 	if err := db.DB.Select("id", "code", "name", "spec", "uom").Find(&materials).Error; err != nil {
@@ -132,7 +181,7 @@ func GetMrpRequirements(params GetMrpRequirementsParams) (MrpRequirementsRespons
 	}
 
 	var products []models.Product
-	if err := db.DB.Select("id", "sku", "name", "tech_series", "brake_type", "version_level").Find(&products).Error; err != nil {
+	if err := db.DB.Select("id", "sku", "name", "tech_series", "brake_type").Find(&products).Error; err != nil {
 		return MrpRequirementsResponse{}, err
 	}
 
@@ -170,7 +219,7 @@ func GetMrpRequirements(params GetMrpRequirementsParams) (MrpRequirementsRespons
 			}
 			modelQtyMap[modelName] += line.Qty
 
-			productBOM := bomIndex[line.ProductID]
+			productBOM := bomLookup.resolve(line.ProductID, order.CustomerID)
 			if productBOM == nil {
 				productsMissingBOM[modelName] = struct{}{}
 				continue
@@ -179,7 +228,7 @@ func GetMrpRequirements(params GetMrpRequirementsParams) (MrpRequirementsRespons
 			friendlyProductName := line.ProductModel
 			for _, product := range products {
 				if product.ID == line.ProductID || product.SKU == line.ProductCode {
-					friendlyProductName = formatMRPProductName(product, line.ProductModel)
+					friendlyProductName = formatMRPProductName(product, productBOM, line.ProductModel)
 					break
 				}
 			}
@@ -359,7 +408,7 @@ func resolveMRPUnit(material *models.Material, fallback string) string {
 	return "双"
 }
 
-func formatMRPProductName(product models.Product, fallback string) string {
+func formatMRPProductName(product models.Product, bom *models.BOM, fallback string) string {
 	parts := make([]string, 0, 3)
 	if strings.TrimSpace(product.TechSeries) != "" {
 		parts = append(parts, product.TechSeries)
@@ -367,8 +416,12 @@ func formatMRPProductName(product models.Product, fallback string) string {
 	if strings.TrimSpace(product.BrakeType) != "" {
 		parts = append(parts, product.BrakeType)
 	}
-	if strings.TrimSpace(product.VersionLevel) != "" {
-		parts = append(parts, product.VersionLevel)
+	// 思路 3 重构 (Step R7): versionLevel 已物理迁移到 BOM,直接读 BOM.VersionLevel。
+	if bom != nil {
+		versionLevel := strings.TrimSpace(bom.VersionLevel)
+		if versionLevel != "" {
+			parts = append(parts, versionLevel)
+		}
 	}
 	if strings.TrimSpace(product.Name) != "" {
 		if len(parts) > 0 {

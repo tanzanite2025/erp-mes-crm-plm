@@ -15,6 +15,7 @@ var (
 	ErrBOMRelationSidecarInvalid = errors.New("invalid bom relation sidecar")
 	ErrEBOMNotFound              = errors.New("source EBOM not found")
 	ErrInvalidBOMType            = errors.New("invalid BOM type for derivation")
+	ErrBOMOwnershipInvalid       = errors.New("invalid BOM ownership: ownerType=CUSTOMER requires ownerCustomerId")
 )
 
 type BOMListQuery struct {
@@ -61,6 +62,10 @@ type SaveBOMInput struct {
 	//   - CUSTOMER：某客户专供 BOM（OwnerCustomerID 必填，关联 Customer.ID）
 	OwnerType       string           `json:"ownerType"`
 	OwnerCustomerID string           `json:"ownerCustomerId"`
+	// VersionLevel 是 BOM 配方层的"档次"标签（思路 3 重构,Step R1）：
+	//   - 来源 product_attribute_options(category=versionLevel) 的 value
+	//   - 当前阶段允许为空(过渡期),后续 Step R6 加唯一约束时会变必填
+	VersionLevel    string           `json:"versionLevel"`
 	// MeasuredWeight 必填且 > 0,表示该 BOM 对应最终产品的实测/目标重量。
 	MeasuredWeight     float64          `json:"measuredWeight"`
 	// MeasuredWeightUnit 必填,单位主数据 WEIGHT 类目的 code(如 g / kg)。
@@ -126,6 +131,7 @@ func (input SaveBOMInput) toModel() models.BOM {
 		Status:          input.Status,
 		OwnerType:          strings.TrimSpace(input.OwnerType),
 		OwnerCustomerID:    strings.TrimSpace(input.OwnerCustomerID),
+		VersionLevel:       strings.TrimSpace(input.VersionLevel),
 		MeasuredWeight:     input.MeasuredWeight,
 		MeasuredWeightUnit: strings.TrimSpace(input.MeasuredWeightUnit),
 		Items:           input.Items,

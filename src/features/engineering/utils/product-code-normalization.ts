@@ -98,16 +98,12 @@ export function normalizeProductTemplateKeyValue(value?: string | null): string 
 
 export function deriveNormalizedProductSku(
   typeCode: string,
-  modelCode: string,
-  versionLevel?: string
+  modelCode: string
 ): string {
+  // 思路 3 重构 (Step R7): SKU 公式简化为 typeCode-modelCode,
+  // versionLevel 已迁移到 BOM,不参与 SKU 派生。
   const normalizedTypeCode = normalizeProductSkuValue(typeCode)
   const normalizedModelCode = normalizeProductModelCodeValue(modelCode)
-  const normalizedVersionLevel = normalizeProductSkuValue(versionLevel)
-
-  if (versionLevel) {
-    return normalizeProductSkuValue(`${normalizedTypeCode}-${normalizedModelCode}-${normalizedVersionLevel}`)
-  }
 
   return normalizeProductSkuValue(`${normalizedTypeCode}-${normalizedModelCode}`)
 }

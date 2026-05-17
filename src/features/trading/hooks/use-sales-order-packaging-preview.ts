@@ -8,7 +8,7 @@ import {
 import {
   packagingRulesService,
 } from '@/features/logistics-config/packaging-rules-service'
-import { useActiveBOMWeightMap } from '@/features/product-structure/hooks/use-active-bom-weight-map'
+import { getActiveBOMWeight, useActiveBOMWeightMap } from '@/features/product-structure/hooks/use-active-bom-weight-map'
 import type { SalesOrder, SalesOrderLinePackagingSelection } from '../data/schema'
 import { tradingQueryKeys } from '../query-keys'
 import {
@@ -73,13 +73,16 @@ export function useSalesOrderPackagingPreview(order: SalesOrder) {
     queryFn: () => ProductCoreService.getProductPackagingOptions(),
   })
 
-  // 方案 B：产品最终重量唯一权威源是 BOM.measuredWeight。
-  // 这里按订单行涉及的 productIds 批量拉当前 RELEASED BOM 的重量+单位。
-  const productIds = useMemo(
-    () => order.lines.map((line) => line.productId).filter((id): id is string => Boolean(id)),
-    [order.lines]
+  // 方案 B + 思路 3 重构: 销售订单的产品最终重量来自 BOM.measuredWeight。
+  // 同 productId 可有多份 RELEASED MBOM(不同 versionLevel/客户),按订单 customerId 反查
+  // 才能选到正确那份。
+  const probes = useMemo(
+    () => order.lines
+      .filter((line) => Boolean(line.productId))
+      .map((line) => ({ productId: line.productId as string, customerId: order.customerId })),
+    [order.lines, order.customerId]
   )
-  const weightMap = useActiveBOMWeightMap(productIds)
+  const weightMap = useActiveBOMWeightMap(probes)
 
   const data = useMemo<SalesOrderPackagingPreviewData | null>(() => {
     if (!packagingProfilesQuery.data || !productsQuery.data) return null
@@ -111,9 +114,9 @@ export function useSalesOrderPackagingPreview(order: SalesOrder) {
       }
 
       // 从 BOM 权威源拿当前发布版本的重量；没有 RELEASED BOM 时降级 0 + 明确 warning。
-      const weightInfo = line.productId ? weightMap.get(line.productId) : undefined
-      const productWeight = weightInfo?.available ? weightInfo.weight : 0
-      if (line.productId && !weightInfo?.available) {
+      const weightInfo = getActiveBOMWeight(weightMap, line.productId, order.customerId)
+      const productWeight = weightInfo.available ? weightInfo.weight : 0
+      if (line.productId && !weightInfo.available) {
         warnings.push(
           'Product has no released BOM yet; weight defaults to 0 until a BOM is released.'
         )

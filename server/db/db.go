@@ -707,6 +707,167 @@ func migrateProductOwnershipToBOMs() {
 	}
 }
 
+// migrateProductVersionLevelToBOMs 把 versionLevel 从 Product 迁到 BOM（思路 3 重构 Step R3 → R7）。
+//
+// 业务背景：versionLevel 原本作为产品身份属性挂在 Product 上,导致同 typeId 下不同档次只能拆成多个
+// Product 实体。重构后 versionLevel 是配方层标签,挂到 BOM 上,1 个 Product 可以挂多份不同档次的 BOM。
+//
+// 迁移流程（Step R7 完整态,D1 干净切换）：
+//   1. AutoMigrate 自动给 boms 加 version_level 列(允许为空)
+//   2. 若 products 仍有 version_level 列,先把每个产品的 versionLevel 回填到该产品所有 BOM
+//   3. 物理删除 products.version_level 列(R7 切换:Product 不再持有该字段)
+//
+// 幂等：可重复执行(列已删则跳过)。
+func migrateProductVersionLevelToBOMs() {
+	if DB == nil || DB.Dialector.Name() != "postgres" {
+		return
+	}
+
+	if !DB.Migrator().HasTable("products") || !DB.Migrator().HasTable("boms") {
+		return
+	}
+
+	if !DB.Migrator().HasColumn("boms", "version_level") {
+		return
+	}
+
+	hasProductVersionLevel := DB.Migrator().HasColumn("products", "version_level")
+
+	// 1. 回填 BOM.version_level (仅当 products.version_level 列还存在时)
+	if hasProductVersionLevel {
+		if err := DB.Exec(`
+			UPDATE boms b
+			SET version_level = COALESCE(NULLIF(p.version_level, ''), '')
+			FROM products p
+			WHERE b.product_id = p.id
+			  AND COALESCE(b.version_level, '') = ''
+			  AND COALESCE(p.version_level, '') <> ''
+		`).Error; err != nil {
+			log.Fatal("Failed to backfill boms.version_level from products:", err)
+		}
+
+		// 2. Step R7 干净切换：物理删除 products.version_level 列
+		if err := DB.Exec(`ALTER TABLE products DROP COLUMN IF EXISTS version_level`).Error; err != nil {
+			log.Fatal("Failed to drop legacy products.version_level column:", err)
+		}
+	}
+}
+
+// normalizeBOMOwnershipAndVersionFields 思路 3 重构 Step R8 + 性能改进:
+//
+// 把 boms.owner_customer_id 从 uuid 类型改为 text + NOT NULL DEFAULT '',
+// boms.version_level 改为 NOT NULL DEFAULT '',让唯一索引可以使用纯列索引(去掉 COALESCE)。
+//
+// 业务语义:
+//   - INTERNAL BOM 的 owner_customer_id = '' (空字符串)
+//   - CUSTOMER BOM 的 owner_customer_id = 客户 UUID 字符串
+//
+// 幂等:可重复执行,迁移完成后第二次调用 NOOP。
+func normalizeBOMOwnershipAndVersionFields() {
+	if DB == nil || DB.Dialector.Name() != "postgres" {
+		return
+	}
+	if !DB.Migrator().HasTable(&models.BOM{}) {
+		return
+	}
+
+	// 1. owner_customer_id: uuid → text 类型转换
+	// 检查列类型,只有当前是 uuid 时才转。NULL 转为空字符串。
+	var ownerCustomerColType string
+	if err := DB.Raw(`
+		SELECT data_type FROM information_schema.columns
+		WHERE table_name = 'boms' AND column_name = 'owner_customer_id'
+	`).Scan(&ownerCustomerColType).Error; err != nil {
+		log.Fatal("Failed to inspect boms.owner_customer_id column type:", err)
+	}
+	if strings.EqualFold(ownerCustomerColType, "uuid") {
+		// uuid → text + NULL → ''
+		if err := DB.Exec(`
+			ALTER TABLE boms
+			ALTER COLUMN owner_customer_id TYPE varchar(36) USING COALESCE(owner_customer_id::text, ''),
+			ALTER COLUMN owner_customer_id SET DEFAULT '',
+			ALTER COLUMN owner_customer_id SET NOT NULL
+		`).Error; err != nil {
+			log.Fatal("Failed to convert boms.owner_customer_id to text NOT NULL:", err)
+		}
+	} else {
+		// 已是 text 类型,确保 NOT NULL DEFAULT ''
+		if err := DB.Exec(`UPDATE boms SET owner_customer_id = '' WHERE owner_customer_id IS NULL`).Error; err != nil {
+			log.Fatal("Failed to backfill boms.owner_customer_id NULL → '':", err)
+		}
+		if err := DB.Exec(`ALTER TABLE boms ALTER COLUMN owner_customer_id SET DEFAULT ''`).Error; err != nil {
+			log.Fatal("Failed to set boms.owner_customer_id default:", err)
+		}
+		if err := DB.Exec(`ALTER TABLE boms ALTER COLUMN owner_customer_id SET NOT NULL`).Error; err != nil {
+			log.Fatal("Failed to set boms.owner_customer_id NOT NULL:", err)
+		}
+	}
+
+	// 2. version_level: NULL → '' + NOT NULL DEFAULT ''
+	if err := DB.Exec(`UPDATE boms SET version_level = '' WHERE version_level IS NULL`).Error; err != nil {
+		log.Fatal("Failed to backfill boms.version_level NULL → '':", err)
+	}
+	if err := DB.Exec(`ALTER TABLE boms ALTER COLUMN version_level SET DEFAULT ''`).Error; err != nil {
+		log.Fatal("Failed to set boms.version_level default:", err)
+	}
+	if err := DB.Exec(`ALTER TABLE boms ALTER COLUMN version_level SET NOT NULL`).Error; err != nil {
+		log.Fatal("Failed to set boms.version_level NOT NULL:", err)
+	}
+}
+
+// ensureBOMReleasedUniquenessIndex 把"同 (产品, BOM 类型, 归属, 档次) 下只能有 1 份 RELEASED"
+// 这条业务约束物化成 DB 层的部分唯一索引（方案 B + 1:1 + 思路 3 重构 Step R6 + R8）。
+//
+// 业务规则：
+//   - 同一产品的内部 MBOM RELEASED 和客户A 的 MBOM RELEASED 可以共存
+//   - 同 (productId, MBOM, INTERNAL) 下不同 versionLevel 的 RELEASED 可以共存
+//     (1 Product : N BOM 的核心:不同档次互为差异化实例)
+//   - 但 (productId, bomType, owner_type, owner_customer_id, version_level) 同时只能 1 份 RELEASED
+//   - OBSOLETE / DRAFT / 已软删的 BOM 不参与唯一性，所以用 partial index
+//
+// Step R8 改进: 字段全部 NOT NULL DEFAULT '',索引为纯列索引(去掉 COALESCE),
+// PostgreSQL planner 命中更确定。
+//
+// 应用层不再做 SELECT COUNT 软校验,改为乐观写入 + 捕获 unique violation 转友好错误。
+func ensureBOMReleasedUniquenessIndex() {
+	if DB == nil || DB.Dialector.Name() != "postgres" {
+		return
+	}
+	if !DB.Migrator().HasTable(&models.BOM{}) {
+		return
+	}
+
+	// 旧索引（仅按 product_id + bom_type 限制 RELEASED 唯一）若存在，先删掉
+	if err := DB.Exec(`DROP INDEX IF EXISTS idx_boms_released_unique`).Error; err != nil {
+		log.Fatal("Failed to drop legacy idx_boms_released_unique:", err)
+	}
+
+	// Step R6 旧 with_owner 索引(缺 versionLevel 维度)若存在,先删
+	if err := DB.Exec(`DROP INDEX IF EXISTS idx_boms_released_unique_with_owner`).Error; err != nil {
+		log.Fatal("Failed to drop legacy idx_boms_released_unique_with_owner:", err)
+	}
+
+	// Step R8 旧 with_owner_version 索引(用 COALESCE 表达式)若存在,先删并重建为纯列索引
+	if err := DB.Exec(`DROP INDEX IF EXISTS idx_boms_released_unique_with_owner_version`).Error; err != nil {
+		log.Fatal("Failed to drop legacy idx_boms_released_unique_with_owner_version:", err)
+	}
+
+	// 字段都已 NOT NULL DEFAULT '',直接用纯列索引,planner 命中更稳。
+	if err := DB.Exec(`
+		CREATE UNIQUE INDEX IF NOT EXISTS idx_boms_released_unique_v2
+		ON boms (
+			product_id,
+			bom_type,
+			owner_type,
+			owner_customer_id,
+			version_level
+		)
+		WHERE status = 'RELEASED' AND deleted_at IS NULL
+	`).Error; err != nil {
+		log.Fatal("Failed to create idx_boms_released_unique_v2:", err)
+	}
+}
+
 func backfillBlankProductSKUs() {
 	if DB == nil || !DB.Migrator().HasTable(&models.Product{}) {
 		return
@@ -723,13 +884,12 @@ func backfillBlankProductSKUs() {
 	log.Printf("[DATA_FIX] Backfilled %d product row(s) with derived SKUs.", len(plans))
 	for _, plan := range plans {
 		log.Printf(
-			"[DATA_FIX] product=%s name=%s derived_sku=%s type=%s model=%s version=%s",
+			"[DATA_FIX] product=%s name=%s derived_sku=%s type=%s model=%s",
 			plan.ID,
 			plan.Name,
 			plan.DerivedSKU,
 			plan.TypeCode,
 			plan.ModelCode,
-			plan.VersionLevel,
 		)
 	}
 }
@@ -1271,6 +1431,9 @@ func InitDB(dsn string) {
 	dropLegacyWorkflowArtifacts()
 	dropLegacyProductWeightColumn()
 	migrateProductOwnershipToBOMs()
+	migrateProductVersionLevelToBOMs()
+	normalizeBOMOwnershipAndVersionFields()
+	ensureBOMReleasedUniquenessIndex()
 	// --- 闂傚鍓﹂崑鍌炲船閵堝洠鍋撻棃娑氱Ш缂傚秴鐗婂缁樻媴閻?(v8.7) ---
 	ensureUserIntegrityConstraints()
 	backfillBlankProductSKUs()

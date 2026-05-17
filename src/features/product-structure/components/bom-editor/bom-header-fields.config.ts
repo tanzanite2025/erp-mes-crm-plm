@@ -23,7 +23,7 @@ import { normalizeBOMControlFieldPatch } from '../../utils/bom-control-normaliza
 /** 顶部字段允许的字段名（必须是 BOM schema 中的合法 key）。 */
 export type BOMHeaderFieldName = Extract<
   keyof BOM,
-  'bomNo' | 'productId' | 'bomVersion' | 'bomType' | 'status' | 'effectiveFrom' | 'measuredWeight' | 'measuredWeightUnit' | 'ownerType' | 'ownerCustomerId'
+  'bomNo' | 'productId' | 'bomVersion' | 'bomType' | 'status' | 'effectiveFrom' | 'measuredWeight' | 'measuredWeightUnit' | 'ownerType' | 'ownerCustomerId' | 'versionLevel'
 >
 
 /** 字段渲染上下文。由 BOMFormHeader 在调用时拼装好后传入工厂。 */
@@ -46,6 +46,8 @@ export interface BOMHeaderFieldContext {
   ownerTypeItems: ReadonlyArray<{ label: string; value: string }>
   /** 客户下拉项（仅 ownerType=CUSTOMER 时使用）。 */
   customerItems: ReadonlyArray<{ label: string; value: string }>
+  /** 档次下拉项（来源 product attribute options 的 versionLevel category，思路 3 重构 Step R2）。 */
+  versionLevelItems: ReadonlyArray<{ label: string; value: string }>
 }
 
 /** select / input 共享的基础属性。 */
@@ -194,6 +196,15 @@ export function getBOMHeaderFields(ctx: BOMHeaderFieldContext): readonly BOMHead
       getItems: (c) => c.customerItems,
       isDisabled: (c) => (c.ownerType ?? 'INTERNAL') !== 'CUSTOMER',
       colSpan: 'minmax(0,1.6fr)',
+    },
+    {
+      // 思路 3 Step R2：BOM 档次（versionLevel）从产品属性主数据取
+      name: 'versionLevel',
+      label: ctx.t('engineering.bomArchive.form.versionLevel'),
+      type: 'select',
+      placeholder: ctx.t('engineering.bomArchive.form.versionLevelPlaceholder'),
+      getItems: (c) => c.versionLevelItems,
+      colSpan: 'minmax(0,1.2fr)',
     },
   ]
 }

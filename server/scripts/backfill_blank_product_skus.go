@@ -52,12 +52,11 @@ func main() {
 	fmt.Printf("[SCAN] Found %d blank product SKU row(s).\n", len(plans))
 	for _, plan := range plans {
 		fmt.Printf(
-			"[PLAN] id=%s name=%s type=%s model=%s version=%s => sku=%s\n",
+			"[PLAN] id=%s name=%s type=%s model=%s => sku=%s\n",
 			plan.ID,
 			plan.Name,
 			plan.TypeCode,
 			plan.ModelCode,
-			plan.VersionLevel,
 			plan.DerivedSKU,
 		)
 	}

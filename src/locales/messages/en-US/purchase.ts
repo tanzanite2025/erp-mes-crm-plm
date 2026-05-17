@@ -17,6 +17,7 @@ export const purchase = {
   },
   orders: {
     detailConfirmReceipt: "Confirm Receipt",
+    viewPayable: "View Payable",
     detailPrintEvidence: "Print Evidence Attachment",
     detailReceiptAutoRemarks: "Manual receipt confirmation from purchase order page",
     detailEvidenceTitle: "Purchase Contract Evidence",
@@ -57,6 +58,10 @@ export const purchase = {
     summaryPending: "Pending Payments",
     tableTitle: "Payables List",
     tableDescription: "Review payable ledgers, aging status, and open the detail dialog for payment registration and allocation.",
+    orderDialog: {
+      noLedger: "No payable ledger exists for this purchase order yet",
+      loadFailed: "Failed to load the payable ledger for this purchase order"
+    },
     columns: {
       documentNo: "Document No.",
       supplierName: "Supplier",

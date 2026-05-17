@@ -24,6 +24,7 @@ func bomAuditSnapshot(bom models.BOM) map[string]any {
 		"isLocked":      bom.IsLocked,
 		"ownerType":          strings.TrimSpace(bom.OwnerType),
 		"ownerCustomerId":    strings.TrimSpace(bom.OwnerCustomerID),
+		"versionLevel":       strings.TrimSpace(bom.VersionLevel),
 		"measuredWeight":     bom.MeasuredWeight,
 		"measuredWeightUnit": strings.TrimSpace(bom.MeasuredWeightUnit),
 		"description":   strings.TrimSpace(bom.Description),

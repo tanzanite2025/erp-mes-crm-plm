@@ -53,7 +53,6 @@ func normalizeProductWriteInput(input ProductWriteInput) ProductWriteInput {
 	input.Name = strings.TrimSpace(input.Name)
 	input.TypeID = strings.TrimSpace(input.TypeID)
 	input.ModelCode = strings.TrimSpace(input.ModelCode)
-	input.VersionLevel = strings.ToUpper(strings.TrimSpace(input.VersionLevel))
 	input.Status = strings.TrimSpace(input.Status)
 	return input
 }
@@ -66,22 +65,11 @@ func normalizeProductModelCode(raw string) string {
 	return productidentity.NormalizeModelCode(raw)
 }
 
-func normalizeProductVersionLevel(raw string) string {
-	return productidentity.NormalizeVersionLevel(raw)
-}
-
-func deriveVersionLevelFromAttributes(items []ProductAttributeValueAPIRequest) string {
-	for _, item := range items {
-		if !sameProductAttributeCategoryKey(strings.TrimSpace(item.CategoryKey), "versionLevel") {
-			continue
-		}
-		return normalizeProductVersionLevel(item.OptionValue)
-	}
-	return ""
-}
-
-func deriveIssuedProductSKU(typeCode string, modelCode string, versionLevel string) string {
-	return productidentity.DeriveSKU(typeCode, modelCode, versionLevel)
+// deriveIssuedProductSKU 派生产品 SKU。
+//
+// 思路 3 重构 (Step R7): versionLevel 已迁移到 BOM,SKU 公式简化为 typeCode-modelCode。
+func deriveIssuedProductSKU(typeCode string, modelCode string) string {
+	return productidentity.DeriveSKU(typeCode, modelCode)
 }
 
 func issueProductIdentity(tx *gorm.DB, input ProductWriteInput) (ProductWriteInput, error) {
@@ -103,11 +91,7 @@ func issueProductIdentity(tx *gorm.DB, input ProductWriteInput) (ProductWriteInp
 	}
 
 	input.ModelCode = normalizeProductModelCode(input.ModelCode)
-	if versionLevel := deriveVersionLevelFromAttributes(input.AttributeValues); versionLevel != "" {
-		input.VersionLevel = versionLevel
-	}
-	input.VersionLevel = normalizeProductVersionLevel(input.VersionLevel)
-	input.SKU = deriveIssuedProductSKU(typeCode, input.ModelCode, input.VersionLevel)
+	input.SKU = deriveIssuedProductSKU(typeCode, input.ModelCode)
 
 	return input, nil
 }
@@ -339,7 +323,6 @@ func BuildProductPatchInput(id string, version int, payload map[string]json.RawM
 		"tireType",
 		"brakeType",
 		"techSeries",
-		"versionLevel",
 		"weight",
 		"length",
 		"angle",
@@ -406,8 +389,6 @@ func BuildProductPatchInput(id string, version int, payload map[string]json.RawM
 			err = json.Unmarshal(valueRaw, &input.BrakeType)
 		case "techSeries":
 			err = json.Unmarshal(valueRaw, &input.TechSeries)
-		case "versionLevel":
-			err = json.Unmarshal(valueRaw, &input.VersionLevel)
 		case "length":
 			err = json.Unmarshal(valueRaw, &input.Length)
 		case "angle":

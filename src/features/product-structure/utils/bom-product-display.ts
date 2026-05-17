@@ -12,19 +12,21 @@ export interface BOMProductDisplaySummary {
 }
 
 /**
- * 方案 B：BOM 是产品重量的端到端权威源。
+ * 方案 B + 思路 3 重构 (Step R7)：BOM 是产品重量和档次的端到端权威源。
  *
- * 历史上 weight 写在 Product 上，BOM 列表/预览/Sidebar 直接读 product.weight。
- * 现在 weight 唯一来源是 BOM.measuredWeight + measuredWeightUnit，因此调用方
- * 必须把当前展示行对应的 BOM 一并传入；如果上下文里没有 BOM（例如还未关联
- * BOM 的产品概览），传 undefined，重量回退为 "-"。
+ * - weight 来源 BOM.measuredWeight + measuredWeightUnit
+ * - versionLevel 来源 BOM.versionLevel(R7 后产品不再持有该字段)
+ * - series/brake 仍为产品属性
+ *
+ * 调用方必须把当前展示行对应的 BOM 一并传入；如果没有 BOM,version 回退为 "std",
+ * weight 回退为 "-"。
  */
 export function resolveBOMProductDisplaySummary(
   product: Pick<Product, 'attributeValues'>,
-  bom?: Pick<BOM, 'measuredWeight' | 'measuredWeightUnit'>
+  bom?: Pick<BOM, 'measuredWeight' | 'measuredWeightUnit' | 'versionLevel'>
 ): BOMProductDisplaySummary {
   return {
-    version: getAttributeValue(product, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version) || 'std',
+    version: (bom?.versionLevel || '').trim() || 'std',
     series: getAttributeValue(product, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.series) || 'normal',
     brake: getAttributeValue(product, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.brake) || 'UNKNOWN',
     weightLabel: bom && bom.measuredWeight && bom.measuredWeight > 0

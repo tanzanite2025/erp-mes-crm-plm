@@ -17,6 +17,7 @@ export const purchase = {
   },
   orders: {
     detailConfirmReceipt: "确认收货",
+    viewPayable: "查看应付",
     detailPrintEvidence: "打印订单照片附件",
     detailReceiptAutoRemarks: "采购订单页人工确认收货",
     detailEvidenceTitle: "采购合同凭据",
@@ -57,6 +58,10 @@ export const purchase = {
     summaryPending: "待付笔数",
     tableTitle: "应付清单",
     tableDescription: "查看应付台账余额、账龄状态，并进入明细弹层执行付款登记与分摊。",
+    orderDialog: {
+      noLedger: "当前采购订单暂无应付台账",
+      loadFailed: "采购订单应付台账加载失败"
+    },
     columns: {
       documentNo: "单据编号",
       supplierName: "供应商",

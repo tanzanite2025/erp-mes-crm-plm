@@ -7,13 +7,21 @@ import {
 } from '../services/receivables-query-service'
 import { receivableQueryKeys } from '../query-keys'
 
-export function useGetReceivables(params: ReceivableListQueryParams = {}) {
+interface UseGetReceivablesOptions {
+  enabled?: boolean
+}
+
+export function useGetReceivables(
+  params: ReceivableListQueryParams = {},
+  options: UseGetReceivablesOptions = {}
+) {
   const sourceType = params.sourceType?.trim() ?? ''
   const sourceRefId = params.sourceRefId?.trim() ?? ''
 
   return useQuery({
     queryKey: receivableQueryKeys.receivableList(sourceType, sourceRefId),
     queryFn: () => getReceivables({ sourceType, sourceRefId }),
+    enabled: options.enabled ?? true,
   })
 }
 

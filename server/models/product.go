@@ -40,7 +40,9 @@ type Product struct {
 	TireType                 string                  `gorm:"size:50" json:"tireType"`
 	BrakeType                string                  `gorm:"size:50" json:"brakeType"`
 	TechSeries               string                  `gorm:"size:50" json:"techSeries"`
-	VersionLevel             string                  `gorm:"size:50" json:"versionLevel"`
+	// VersionLevel 字段已移除（思路 3 重构 Step R7）：
+	// versionLevel 是 BOM 配方层属性而非产品身份属性,迁移到 BOM.VersionLevel,
+	// 产品 SKU 公式简化为 typeCode-modelCode。
 	// Weight 字段已移除：重量端到端由 BOM.MeasuredWeight 持有，
 	// 产品概览页通过查询当前 RELEASED MBOM 实时取值（方案 B）。
 	Length                   float64                 `json:"length"`

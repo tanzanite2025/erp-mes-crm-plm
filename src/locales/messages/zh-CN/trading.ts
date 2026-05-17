@@ -413,6 +413,10 @@ export const trading = {
       empty: '当前应收单据还没有销售退货冲减记录',
       note: '金额说明',
     },
+    orderDialog: {
+      noLedger: '当前销售订单暂无应收台账',
+      loadFailed: '销售订单应收台账加载失败',
+    },
     columns: {
       documentNo: '单据编号',
       customerName: '客户',

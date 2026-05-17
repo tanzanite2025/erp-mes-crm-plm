@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { productDraftSchema, type Product, type ProductType } from '../data/schema'
@@ -6,7 +6,6 @@ import { useProductFormInit } from './use-product-form-init'
 import { useProductFormPreviewTemplate } from './use-product-form-preview-template'
 import { useProductFormSubmit } from './use-product-form-submit'
 import { useProductFormDerive } from './use-product-form-derive'
-import { type ProductVariantSelection } from '../utils/product-form-utils'
 import { ProductCommand } from '../commands/product-command'
 
 export interface ProductSubmitPayload {
@@ -32,7 +31,6 @@ export function useProductForm({
   onSaved,
 }: UseProductFormProps) {
   const isEdit = !!currentRow
-  const [selectedVariants, setSelectedVariants] = useState<ProductVariantSelection[]>([])
   const initializedSessionIdentityRef = useRef<string | null>(null)
   const initialState = ProductCommand.composeInitialState({ isEdit, currentRow })
   const currentSessionIdentity = isEdit ? `edit:${currentRow?.id ?? ''}` : 'create'
@@ -45,7 +43,6 @@ export function useProductForm({
   const {
     attributeCategories,
     attributeOptions,
-    versionLevelOptions,
     moldOptions,
     specOptions,
     metadataInitError,
@@ -57,9 +54,6 @@ export function useProductForm({
   useEffect(() => {
     if (!open) {
       initializedSessionIdentityRef.current = null
-      queueMicrotask(() => {
-        setSelectedVariants([])
-      })
     }
   }, [open])
 
@@ -74,14 +68,10 @@ export function useProductForm({
     const nextInitialState = ProductCommand.composeInitialState({
       isEdit,
       currentRow,
-      versionLevelOptions,
     })
     form.reset(nextInitialState.formValues)
     initializedSessionIdentityRef.current = currentSessionIdentity
-    queueMicrotask(() => {
-      setSelectedVariants(nextInitialState.selectedVariants)
-    })
-  }, [currentRow, currentSessionIdentity, form, isEdit, metadataReady, open, versionLevelOptions])
+  }, [currentRow, currentSessionIdentity, form, isEdit, metadataReady, open])
 
   const { boundTemplate, templateResolveError, templateResolutionPending } = useProductFormPreviewTemplate({
     currentRow,
@@ -101,13 +91,11 @@ export function useProductForm({
     productTypes,
   })
 
-  const { handleVariantToggle, updateVariantWeight, handleFormSubmit } = useProductFormSubmit({
+  const { handleFormSubmit } = useProductFormSubmit({
     currentRow,
     isEdit,
     form,
     productTypes,
-    selectedVariants,
-    setSelectedVariants,
     onOpenChange,
     onSubmit,
     onSaved,
@@ -119,22 +107,18 @@ export function useProductForm({
     dynamicTypes,
     attributeCategories,
     attributeOptions,
-    versionLevelOptions,
     moldOptions,
     specOptions,
     metadataInitError,
     metadataReady,
     nextCodeDeriveError,
     skuPreview,
-    selectedVariants,
     boundTemplate,
     templateResolveError,
     templateResolutionPending,
     specPreviewTitle,
     specPreviewSummary,
     specPreviewV2,
-    handleVariantToggle,
-    updateVariantWeight,
     handleFormSubmit,
   }
 }

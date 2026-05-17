@@ -12,6 +12,7 @@ import { failLoudly } from '@/lib/safe-catch'
 import { isForbiddenError } from '@/lib/error-status'
 import { PurchaseOrderMaster } from './purchase-order-master'
 import { PurchaseOrderActionDialog } from './purchase-order-action-dialog'
+import { PurchaseOrderPayableDetailDialogBridge } from '../../payables/components/purchase-order-payable-detail-dialog-bridge'
 import { useGetPurchaseOrders, usePurchaseOrderMutations } from '../../purchase'
 import { type PurchaseOrderListItem } from '../../data/schema'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
@@ -38,6 +39,7 @@ export function PurchaseOrderList() {
   const [statusFilter, setStatusFilter] = useState('ALL')
   const [paymentMethodFilter, setPaymentMethodFilter] = useState('ALL')
   const [paymentTermFilter, setPaymentTermFilter] = useState('ALL')
+  const [viewingPayableOrderId, setViewingPayableOrderId] = useState<string | null>(null)
   const navigate = Route.useNavigate()
   const searchTerm = search || ''
   const selectedId = detailId || undefined
@@ -124,6 +126,16 @@ export function PurchaseOrderList() {
     const order = orders.find((item) => item.id === id)
     if (order?.status !== 'Canceled' && !confirm(t('purchase.orders.deleteConfirm'))) return
     deleteMutation.mutate(id)
+  }
+
+  const handleViewPayable = (order: PurchaseOrderListItem) => {
+    setViewingPayableOrderId(order.id)
+  }
+
+  const handlePayableDialogOpenChange = (open: boolean) => {
+    if (!open) {
+      setViewingPayableOrderId(null)
+    }
   }
 
   if (listResource.status === 'loading') {
@@ -222,6 +234,7 @@ export function PurchaseOrderList() {
           orders={filteredOrders}
           selectedId={selectedId}
           onSelect={handleSelectOrder}
+          onViewPayable={handleViewPayable}
           onEdit={handleEditOrder}
           onDelete={handleDeleteOrder}
         />
@@ -273,6 +286,12 @@ export function PurchaseOrderList() {
         open={isActionDialogOpen}
         onOpenChange={setIsActionDialogOpen}
         order={editingOrder}
+      />
+
+      <PurchaseOrderPayableDetailDialogBridge
+        open={Boolean(viewingPayableOrderId)}
+        orderId={viewingPayableOrderId}
+        onOpenChange={handlePayableDialogOpenChange}
       />
     </div>
   )

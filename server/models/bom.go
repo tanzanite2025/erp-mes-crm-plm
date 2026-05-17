@@ -32,7 +32,14 @@ type BOM struct {
 	//   - INTERNAL：内部生产 BOM（OwnerCustomerID 留空）
 	//   - CUSTOMER：某客户专供 BOM（OwnerCustomerID 必填，关联 Customer.ID）
 	OwnerType       string          `gorm:"size:20;not null;default:'INTERNAL';index" json:"ownerType"`
-	OwnerCustomerID string          `gorm:"type:uuid;index" json:"ownerCustomerId,omitempty"`
+	// OwnerCustomerID 用 text 而非 uuid 列类型,以支持 NOT NULL DEFAULT ''(INTERNAL BOM 标记)。
+	// CUSTOMER BOM 时存客户 UUID 字符串,INTERNAL 时为空串,语义和约束都清晰。
+	OwnerCustomerID string          `gorm:"size:36;not null;default:'';index" json:"ownerCustomerId,omitempty"`
+	// VersionLevel 是 BOM 配方层的"档次"标签（思路 3 重构）：
+	//   - 来源 product_attribute_options(category=versionLevel) 的 value，例如 std/lightweight/ultralight/reinforced
+	//   - 同 (productId, bomType, ownerType, ownerCustomerId) 下不同 versionLevel 的 BOM 互为差异化实例
+	//   - 留空(空字符串)表示"未分级"或迁移期间过渡值; 字段 NOT NULL,以让唯一索引为纯列索引
+	VersionLevel    string          `gorm:"size:50;not null;default:'';index" json:"versionLevel"`
 	// MeasuredWeight 是该 BOM 对应最终产品的实测/目标重量（方案 B 端到端权威源）。
 	// > 0 才允许 RELEASED；EBOM 阶段可为 0 表示尚未称重。
 	MeasuredWeight     float64         `gorm:"not null;default:0" json:"measuredWeight"`

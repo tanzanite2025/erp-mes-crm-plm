@@ -44,7 +44,6 @@ const PRODUCT_AUDIT_VISIBLE_BASIC_FIELDS = new Set([
   'tiretype',
   'braketype',
   'techseries',
-  'versionlevel',
   'weight',
   'length',
   'angle',

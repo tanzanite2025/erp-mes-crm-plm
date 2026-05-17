@@ -1,13 +1,19 @@
+// Package services - BOM 写路径主入口。
+//
+// 此文件聚焦 BOM 的写操作 (SaveBOM / DeleteBOM / PromoteBOMStatus /
+// DeriveMBOMFromEBOM / ReviseMBOM) 和 SDRTS Sidecar Delta 处理。
+//
+// 读路径在 bom_query.go,
+// 校验/归属/唯一性在 bom_validation.go,
+// Item 规范化与 Upsert 在 bom_items.go。
 package services
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 	"xdfc-server/db"
 	"xdfc-server/models"
 	statemachine "xdfc-server/services/state_machine"
@@ -15,21 +21,6 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
-
-// ValidBOMStatuses defines all valid BOM status values
-var ValidBOMStatuses = []string{
-	models.BOMStatusDraft,
-	models.BOMStatusReviewing,
-	models.BOMStatusApproved,
-	models.BOMStatusReleased,
-	models.BOMStatusObsolete,
-}
-
-// ValidBOMTypes defines all valid BOM type values
-var ValidBOMTypes = []string{
-	models.BOMTypeEBOM,
-	models.BOMTypeMBOM,
-}
 
 // 定义详细的审计操作类型
 const (
@@ -44,78 +35,6 @@ const (
 	AuditOpRelationUpdate  = "relation.update"
 )
 
-// parseAndValidateStatuses parses comma-separated status string and validates each value
-func parseAndValidateStatuses(statusStr string) ([]string, error) {
-	if statusStr == "" {
-		return nil, nil
-	}
-
-	statuses := strings.Split(statusStr, ",")
-	var result []string
-	var invalid []string
-
-	for _, s := range statuses {
-		trimmed := strings.TrimSpace(strings.ToUpper(s))
-		if trimmed == "" {
-			continue
-		}
-
-		if !contains(ValidBOMStatuses, trimmed) {
-			invalid = append(invalid, s)
-		} else {
-			result = append(result, trimmed)
-		}
-	}
-
-	if len(invalid) > 0 {
-		return nil, fmt.Errorf("invalid status values: %s. Valid values are: %s",
-			strings.Join(invalid, ", "),
-			strings.Join(ValidBOMStatuses, ", "))
-	}
-
-	return result, nil
-}
-
-// parseAndValidateBOMTypes parses comma-separated BOM type string and validates each value
-func parseAndValidateBOMTypes(bomTypeStr string) ([]string, error) {
-	if bomTypeStr == "" {
-		return nil, nil
-	}
-
-	types := strings.Split(bomTypeStr, ",")
-	var result []string
-	var invalid []string
-
-	for _, t := range types {
-		trimmed := strings.TrimSpace(strings.ToUpper(t))
-		if trimmed == "" {
-			continue
-		}
-
-		if !contains(ValidBOMTypes, trimmed) {
-			invalid = append(invalid, t)
-		} else {
-			result = append(result, trimmed)
-		}
-	}
-
-	if len(invalid) > 0 {
-		return nil, fmt.Errorf("invalid BOM type values: %s. Valid values are: %s",
-			strings.Join(invalid, ", "),
-			strings.Join(ValidBOMTypes, ", "))
-	}
-
-	return result, nil
-}
-
-func contains(slice []string, item string) bool {
-	for _, s := range slice {
-		if s == item {
-			return true
-		}
-	}
-	return false
-}
 
 // processSidecarDelta 处理 Sidecar Delta 并记录审计日志
 // 这是 SDRTS 协议的核心处理函数
@@ -180,458 +99,11 @@ func processSidecarDelta(ctx context.Context, tx *gorm.DB, bomID string, delta *
 	return nil
 }
 
-func ListBOMs(query BOMListQuery) ([]models.BOM, int64, error) {
-	page := query.Page
-	pageSize := query.PageSize
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 {
-		pageSize = 50
-	}
-
-	// Validate and parse status filter
-	statuses, err := parseAndValidateStatuses(query.Status)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	// Validate and parse BOM type filter
-	bomTypes, err := parseAndValidateBOMTypes(query.BOMType)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	productID := strings.TrimSpace(query.ProductID)
-
-	tx := db.DB.Model(&models.BOM{})
-	
-	// Apply product filter (existing)
-	if productID != "" {
-		tx = tx.Where("product_id = ?", productID)
-	}
-	
-	// Apply status filter (NEW - supports multiple values)
-	if len(statuses) > 0 {
-		tx = tx.Where("status IN ?", statuses)
-	}
-	
-	// Apply BOM type filter (NEW - supports multiple values)
-	if len(bomTypes) > 0 {
-		tx = tx.Where("bom_type IN ?", bomTypes)
-	}
-
-	if query.Options {
-		var boms []models.BOM
-		if err := tx.Order("created_at desc").Find(&boms).Error; err != nil {
-			return nil, 0, err
-		}
-		return boms, int64(len(boms)), nil
-	}
-
-	var total int64
-	if err := tx.Count(&total).Error; err != nil {
-		return nil, 0, err
-	}
-
-	var items []models.BOM
-	if err := tx.
-		Preload("Product").
-		Preload("Items").
-		Order("created_at desc").
-		Limit(pageSize).
-		Offset((page - 1) * pageSize).
-		Find(&items).Error; err != nil {
-		return nil, 0, err
-	}
-	return items, total, nil
-}
-
-func GetBOMByID(id string) (BOMDetailResponse, error) {
-	var bom models.BOM
-	if err := db.DB.
-		Preload("Product").
-		Preload("Items", func(db *gorm.DB) *gorm.DB { return db.Order("bom_items.sort_order ASC") }).
-		First(&bom, "id = ?", id).Error; err != nil {
-		return BOMDetailResponse{}, err
-	}
-	return MapBOMToDetailResponse(bom)
-}
-
-func resolveBOMDisplayVersion(bom models.BOM) string {
-	if strings.TrimSpace(bom.VersionText) != "" {
-		return bom.VersionText
-	}
-	return "V1.0"
-}
-
-func validateBOMReferences(tx *gorm.DB, input *models.BOM) error {
-	if input.ProductID != "" {
-		var p models.Product
-		if err := tx.Where("id = ?", input.ProductID).First(&p).Error; err != nil {
-			return err
-		}
-	}
-
-	for _, item := range input.Items {
-		if item.MaterialID != "" {
-			var m models.Material
-			if err := tx.Where("id = ?", item.MaterialID).First(&m).Error; err != nil {
-				return err
-			}
-			if m.Status == "Archived" || m.Status == "Inactive" {
-				return fmt.Errorf("[LOCKED_ASSET] BOM contains disabled material (%s - %s)", m.Code, m.Name)
-			}
-
-			// ✅ 循环引用检查 (防止 A 包含 A 或 B->A 循环)
-			if err := checkBOMCircularReference(tx, input.ProductID, item.MaterialID, make(map[string]bool), 0); err != nil {
-				return err
-			}
-		}
-	}
-
-	// ✅ 同工艺段（Section）内物料唯一性校验
-	sectionMaterialMap := make(map[string]map[string]bool)
-	for _, item := range input.Items {
-		if item.MaterialID == "" {
-			continue
-		}
-		if sectionMaterialMap[item.Section] == nil {
-			sectionMaterialMap[item.Section] = make(map[string]bool)
-		}
-		if sectionMaterialMap[item.Section][item.MaterialID] {
-			return fmt.Errorf("[DUPLICATE_ITEM] Duplicate material %s found in section %s", item.MaterialID, item.Section)
-		}
-		sectionMaterialMap[item.Section][item.MaterialID] = true
-	}
-
-	return nil
-}
-
-// MaxBOMDepth 定义 BOM 最大嵌套深度（工业标准）
-const MaxBOMDepth = 50
-
-// 递归检测 BOM 循环引用（带深度限制）
-func checkBOMCircularReference(tx *gorm.DB, rootProductID string, currentMaterialID string, visited map[string]bool, depth int) error {
-	// ✅ 深度保护：防止超深嵌套导致栈溢出
-	if depth > MaxBOMDepth {
-		return fmt.Errorf("[DEPTH_EXCEEDED] BOM nesting exceeds maximum depth of %d levels. Please simplify the BOM structure", MaxBOMDepth)
-	}
-
-	if currentMaterialID == rootProductID {
-		return fmt.Errorf("[CIRCULAR_REFERENCE] BOM circular dependency detected: Product depends on itself (ID: %s)", rootProductID)
-	}
-
-	if visited[currentMaterialID] {
-		return nil
-	}
-	visited[currentMaterialID] = true
-
-	// 查询以此物料 ID 作为产品 ID 的所有现有 BOM
-	var boms []models.BOM
-	if err := tx.Where("product_id = ? AND status != ?", currentMaterialID, models.BOMStatusObsolete).
-		Preload("Items", func(db *gorm.DB) *gorm.DB { return db.Order("bom_items.sort_order ASC") }).Find(&boms).Error; err != nil {
-		return err
-	}
-
-	for _, b := range boms {
-		for _, item := range b.Items {
-			// ✅ 传递深度计数器
-			if err := checkBOMCircularReference(tx, rootProductID, item.MaterialID, visited, depth+1); err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-func normalizeBOMItems(items []models.BOMItem) []models.BOMItem {
-	for idx := range items {
-		unitUsage := items[idx].UnitUsage
-		wastagePercent := items[idx].WastagePercent
-		items[idx].StandardUsage = unitUsage * (1 + wastagePercent/100)
-		if items[idx].StandardUsage < 0 {
-			items[idx].StandardUsage = 0
-		}
-	}
-	return items
-}
-
-func normalizeBOMSectionToken(value string) string {
-	return strings.ToUpper(strings.Join(strings.Fields(strings.TrimSpace(value)), ""))
-}
-
-func parseBOMSectionLegacyNames(raw json.RawMessage) []string {
-	if len(raw) == 0 {
-		return []string{}
-	}
-	var values []string
-	if err := json.Unmarshal(raw, &values); err != nil {
-		return []string{}
-	}
-	result := make([]string, 0, len(values))
-	seen := map[string]struct{}{}
-	for _, value := range values {
-		trimmed := strings.TrimSpace(value)
-		if trimmed == "" {
-			continue
-		}
-		key := normalizeBOMSectionToken(trimmed)
-		if _, exists := seen[key]; exists {
-			continue
-		}
-		seen[key] = struct{}{}
-		result = append(result, trimmed)
-	}
-	return result
-}
-
-func defaultBOMSectionCode(sections []models.BOMSection) string {
-	for _, section := range sections {
-		if section.Active && section.IsDefault {
-			return section.Code
-		}
-	}
-	for _, section := range sections {
-		if section.Active {
-			return section.Code
-		}
-	}
-	return ""
-}
-
-func resolveBOMSectionConfig(sections []models.BOMSection, raw string) *models.BOMSection {
-	trimmed := strings.TrimSpace(raw)
-	if trimmed == "" {
-		return nil
-	}
-	normalized := normalizeBOMSectionToken(trimmed)
-	for idx := range sections {
-		section := &sections[idx]
-		if normalizeBOMSectionToken(section.Code) == normalized {
-			return section
-		}
-		if normalizeBOMSectionToken(section.Name) == normalized {
-			return section
-		}
-		for _, legacyName := range parseBOMSectionLegacyNames(section.LegacyNames) {
-			if normalizeBOMSectionToken(legacyName) == normalized {
-				return section
-			}
-		}
-	}
-	return nil
-}
-
-func normalizeBOMItemSections(tx *gorm.DB, items []models.BOMItem) ([]models.BOMItem, error) {
-	var sections []models.BOMSection
-	if err := tx.Order("sort_order asc, code asc").Find(&sections).Error; err != nil {
-		return nil, err
-	}
-	if len(sections) == 0 {
-		return nil, fmt.Errorf("[VALIDATION] no BOM section configuration found")
-	}
-
-	defaultCode := defaultBOMSectionCode(sections)
-	if strings.TrimSpace(defaultCode) == "" {
-		return nil, fmt.Errorf("[VALIDATION] no default BOM section configured")
-	}
-
-	for idx := range items {
-		sectionConfig := resolveBOMSectionConfig(sections, items[idx].Section)
-		if sectionConfig == nil {
-			if strings.TrimSpace(items[idx].Section) == "" {
-				sectionConfig = resolveBOMSectionConfig(sections, defaultCode)
-			}
-		}
-		if sectionConfig == nil {
-			return nil, fmt.Errorf("[VALIDATION] unsupported BOM section: %s", items[idx].Section)
-		}
-		items[idx].Section = sectionConfig.Code
-	}
-	return items, nil
-}
-
-func validateUniqueReleasedMBOM(tx *gorm.DB, input *models.BOM) error {
-	if strings.TrimSpace(input.ProductID) == "" || input.BOMType != models.BOMTypeMBOM || input.Status != models.BOMStatusReleased {
-		return nil
-	}
-
-	query := tx.Model(&models.BOM{}).
-		Where("product_id = ? AND bom_type = ? AND status = ?", input.ProductID, models.BOMTypeMBOM, models.BOMStatusReleased)
-	if strings.TrimSpace(input.ID) != "" {
-		query = query.Where("id <> ?", input.ID)
-	}
-
-	var activeCount int64
-	if err := query.Count(&activeCount).Error; err != nil {
-		return err
-	}
-	if activeCount > 0 {
-		return fmt.Errorf("%w: product %s already has a RELEASED MBOM", ErrBOMActiveConflict, input.ProductID)
-	}
-	return nil
-}
-
-func generateBOMNo(tx *gorm.DB) string {
-	now := time.Now()
-	dateStr := now.Format("20060102")
-	var count int64
-	tx.Model(&models.BOM{}).Where("bom_no LIKE ?", "BOM-"+dateStr+"-%").Count(&count)
-	// ✅ 引入纳秒随机因子防止竞态冲突
-	randFactor := now.UnixNano() % 1000
-	return fmt.Sprintf("BOM-%s-%03d-%03d", dateStr, count+1, randFactor)
-}
-
-// UpsertResult 记录 Upsert 操作的统计信息
-type UpsertResult struct {
-	Created int
-	Updated int
-	Deleted int
-}
-
-// upsertBOMItems 智能 Upsert BOM Items，保持 ID 稳定性
-// 根据前端发送的 ID 判断是新增、更新还是删除
-func upsertBOMItems(tx *gorm.DB, bomID string, items []models.BOMItem) (*UpsertResult, error) {
-	result := &UpsertResult{}
-
-	// 检测是否所有 item 都没有 ID（兼容旧版本前端）
-	// 注意：空列表不应该触发 legacy 模式
-	allEmpty := len(items) > 0 // 只有当列表非空时才检查
-	for _, item := range items {
-		if strings.TrimSpace(item.ID) != "" {
-			allEmpty = false
-			break
-		}
-	}
-
-	// 如果所有 ID 都为空（且列表非空），回退到旧逻辑（物理删除 + 重新插入）
-	if allEmpty {
-		return upsertBOMItemsLegacy(tx, bomID, items)
-	}
-
-	// Step 1: 获取现有数据
-	var existingItems []models.BOMItem
-	if err := tx.Where("bom_id = ?", bomID).Find(&existingItems).Error; err != nil {
-		return nil, fmt.Errorf("failed to fetch existing items: %w", err)
-	}
-
-	// Step 2: 构建映射表
-	existingMap := make(map[string]*models.BOMItem)
-	for i := range existingItems {
-		existingMap[existingItems[i].ID] = &existingItems[i]
-	}
-
-	// Step 3: 分类前端数据
-	var toCreate []models.BOMItem
-	var toUpdate []models.BOMItem
-	incomingIDs := make(map[string]bool)
-
-	for idx := range items {
-		item := &items[idx]
-		item.BOMID = bomID
-		item.SortOrder = idx // 持久化物理顺序
-
-		if strings.TrimSpace(item.ID) == "" {
-			// 无 ID，新增（后端生成 ID）
-			item.ID = uuid.NewString()
-			toCreate = append(toCreate, *item)
-		} else if _, found := existingMap[item.ID]; found {
-			// 有 ID 且存在，更新（保留 ID）
-			toUpdate = append(toUpdate, *item)
-		} else {
-			// 有 ID 但不存在，视为新增（保留前端 ID）
-			// 这种情况通常是前端新增时预生成了 ID
-			toCreate = append(toCreate, *item)
-		}
-
-		incomingIDs[item.ID] = true
-	}
-
-	// Step 4: 找出需要删除的
-	var toDelete []models.BOMItem
-	for _, existing := range existingItems {
-		if !incomingIDs[existing.ID] {
-			toDelete = append(toDelete, existing)
-		}
-	}
-
-	// Step 5: 执行数据库操作
-
-	// 5.1 删除
-	if len(toDelete) > 0 {
-		deleteIDs := make([]string, len(toDelete))
-		for i, item := range toDelete {
-			deleteIDs[i] = item.ID
-		}
-		if err := tx.Where("id IN ?", deleteIDs).Delete(&models.BOMItem{}).Error; err != nil {
-			return nil, fmt.Errorf("failed to delete items: %w", err)
-		}
-		result.Deleted = len(toDelete)
-	}
-
-	// 5.2 新增
-	if len(toCreate) > 0 {
-		if err := tx.Create(&toCreate).Error; err != nil {
-			return nil, fmt.Errorf("failed to create items: %w", err)
-		}
-		result.Created = len(toCreate)
-	}
-
-	// 5.3 更新
-	if len(toUpdate) > 0 {
-		// 使用批量更新优化性能
-		for _, item := range toUpdate {
-			if err := tx.Save(&item).Error; err != nil {
-				return nil, fmt.Errorf("failed to update item %s: %w", item.ID, err)
-			}
-		}
-		result.Updated = len(toUpdate)
-	}
-
-	return result, nil
-}
-
-// upsertBOMItemsLegacy 旧逻辑：物理删除 + 重新插入（兼容旧版本前端）
-func upsertBOMItemsLegacy(tx *gorm.DB, bomID string, items []models.BOMItem) (*UpsertResult, error) {
-	// 物理删除所有现有 items
-	if err := tx.Where("bom_id = ?", bomID).Delete(&models.BOMItem{}).Error; err != nil {
-		return nil, err
-	}
-
-	// 重新插入所有 items
-	for idx := range items {
-		items[idx].ID = uuid.NewString()
-		items[idx].BOMID = bomID
-		items[idx].SortOrder = idx
-	}
-
-	if len(items) > 0 {
-		if err := tx.Create(&items).Error; err != nil {
-			return nil, err
-		}
-	}
-
-	return &UpsertResult{Created: len(items)}, nil
-}
-
-func saveBOMItems(tx *gorm.DB, bomID string, items []models.BOMItem) error {
-	for idx := range items {
-		if strings.TrimSpace(items[idx].ID) == "" {
-			items[idx].ID = uuid.NewString()
-		}
-		items[idx].BOMID = bomID
-		items[idx].SortOrder = idx // 持久化物理顺序
-		if err := tx.Session(&gorm.Session{FullSaveAssociations: true}).Create(&items[idx]).Error; err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func SaveBOM(ctx context.Context, input SaveBOMInput) (BOMDetailResponse, error) {
 	modelInput := input.toModel()
+	if err := validateBOMOwnership(&modelInput); err != nil {
+		return BOMDetailResponse{}, err
+	}
 	normalizedRelationSidecar, err := normalizeRequiredBOMRelationSidecar(modelInput.RelationSidecar)
 	if err != nil {
 		return BOMDetailResponse{}, err
@@ -647,9 +119,6 @@ func SaveBOM(ctx context.Context, input SaveBOMInput) (BOMDetailResponse, error)
 		modelInput.Items = normalizedItems
 		modelInput.Items = normalizeBOMItems(modelInput.Items)
 		if err := validateBOMReferences(tx, &modelInput); err != nil {
-			return err
-		}
-		if err := validateUniqueReleasedMBOM(tx, &modelInput); err != nil {
 			return err
 		}
 
@@ -695,7 +164,7 @@ func SaveBOM(ctx context.Context, input SaveBOMInput) (BOMDetailResponse, error)
 			modelInput.Version = existing.Version + 1
 
 			if err := tx.Model(&existing).Omit("Items").Updates(modelInput).Error; err != nil {
-				return err
+				return wrapBOMUniqueViolation(err, &modelInput)
 			}
 			
 			// ✅ 使用智能 Upsert 替代物理删除，保持 ID 稳定性
@@ -749,7 +218,7 @@ func SaveBOM(ctx context.Context, input SaveBOMInput) (BOMDetailResponse, error)
 			modelInput.BOMNo = generateBOMNo(tx)
 		}
 		if err := tx.Create(&modelInput).Error; err != nil {
-			return err
+			return wrapBOMUniqueViolation(err, &modelInput)
 		}
 		if err := saveBOMItems(tx, modelInput.ID, items); err != nil {
 			return err
@@ -809,60 +278,6 @@ func DeleteBOM(ctx context.Context, id string) error {
 	})
 }
 
-// validateBOMBusinessIntegrity 校验 BOM 业务完整性（仅在发布时执行）
-func validateBOMBusinessIntegrity(tx *gorm.DB, bomID string, targetStatus string) error {
-	// 仅在发布（RELEASED）时校验
-	if targetStatus != models.BOMStatusReleased {
-		return nil
-	}
-
-	var bom models.BOM
-	if err := tx.Preload("Items").Where("id = ?", bomID).First(&bom).Error; err != nil {
-		return err
-	}
-
-	// 1. 校验：至少包含 1 行物料
-	if len(bom.Items) == 0 {
-		return fmt.Errorf("[VALIDATION] Cannot release an empty BOM (ID: %s). At least one material is required", bomID)
-	}
-
-	// 2. 校验：至少有一行物料的用量 > 0
-	hasValidUsage := false
-	for _, item := range bom.Items {
-		if item.UnitUsage > 0 || item.StandardUsage > 0 {
-			hasValidUsage = true
-			break
-		}
-	}
-	if !hasValidUsage {
-		return fmt.Errorf("[VALIDATION] Cannot release BOM with all zero-usage materials (ID: %s)", bomID)
-	}
-
-	// 3. 校验：所有物料必须存在且状态为 Active
-	for _, item := range bom.Items {
-		var material models.Material
-		if err := tx.Where("id = ?", item.MaterialID).First(&material).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return fmt.Errorf("[VALIDATION] BOM contains non-existent material (ID: %s)", item.MaterialID)
-			}
-			return err
-		}
-		if material.Status != "Active" {
-			return fmt.Errorf("[VALIDATION] BOM contains inactive material: %s - %s (Status: %s)", material.Code, material.Name, material.Status)
-		}
-	}
-
-	// 4. 校验：方案 B 端到端权威源——RELEASED 必须有正向重量与单位
-	if bom.MeasuredWeight <= 0 {
-		return fmt.Errorf("[VALIDATION] Cannot release BOM (ID: %s) without a positive measuredWeight; product weight comes solely from BOM", bomID)
-	}
-	if strings.TrimSpace(bom.MeasuredWeightUnit) == "" {
-		return fmt.Errorf("[VALIDATION] Cannot release BOM (ID: %s) without measuredWeightUnit; pick a WEIGHT-category unit from basic settings", bomID)
-	}
-
-	return nil
-}
-
 func PromoteBOMStatus(ctx context.Context, id string, input PromoteBOMStatusInput) (BOMDetailResponse, error) {
 	if strings.TrimSpace(id) == "" {
 		return BOMDetailResponse{}, ErrBOMIDRequired
@@ -909,17 +324,11 @@ func PromoteBOMStatus(ctx context.Context, id string, input PromoteBOMStatusInpu
 		// ✅ 使用状态机统一管理锁定逻辑
 		existing.IsLocked = statemachine.ShouldLockBOMStatusString(input.Status)
 
-		if existing.Status == models.BOMStatusReleased && existing.BOMType == models.BOMTypeMBOM {
-			if err := validateUniqueReleasedMBOM(tx, &existing); err != nil {
-				return err
-			}
-		}
-
 		// ✅ 版本号递增
 		existing.Version++
 
 		if err := tx.Save(&existing).Error; err != nil {
-			return err
+			return wrapBOMUniqueViolation(err, &existing)
 		}
 		saved = existing
 
@@ -1016,6 +425,7 @@ func DeriveMBOMFromEBOM(ctx context.Context, ebomID string, input DeriveMBOMInpu
 			// 方案 B：派生 MBOM 默认继承源 EBOM 的归属、重量与单位
 			OwnerType:          ebom.OwnerType,
 			OwnerCustomerID:    ebom.OwnerCustomerID,
+			VersionLevel:       ebom.VersionLevel,
 			MeasuredWeight:     ebom.MeasuredWeight,
 			MeasuredWeightUnit: ebom.MeasuredWeightUnit,
 			MasterDataControl: models.MasterDataControl{
@@ -1024,6 +434,11 @@ func DeriveMBOMFromEBOM(ctx context.Context, ebomID string, input DeriveMBOMInpu
 				ChangeType:    "MANUAL",
 			},
 			RelationSidecar: ebom.RelationSidecar, // 复制关系结构
+		}
+
+		// 校验继承的归属是否一致（防止源 EBOM 是历史脏数据传染下游）
+		if err := validateBOMOwnership(&mbom); err != nil {
+			return fmt.Errorf("[VALIDATION] inherited ownership from source EBOM is invalid: %w", err)
 		}
 
 		if strings.TrimSpace(mbom.Description) == "" {
@@ -1193,6 +608,7 @@ func ReviseMBOM(ctx context.Context, mbomID string, input ReviseMBOMInput) (BOMD
 			Description:  fmt.Sprintf("Revised from %s (%s) — %s", current.BOMNo, current.VersionText, input.Reason),
 			OwnerType:          current.OwnerType,
 			OwnerCustomerID:    current.OwnerCustomerID,
+			VersionLevel:       current.VersionLevel,
 			MeasuredWeight:     current.MeasuredWeight,
 			MeasuredWeightUnit: current.MeasuredWeightUnit,
 			MasterDataControl: models.MasterDataControl{
@@ -1202,9 +618,14 @@ func ReviseMBOM(ctx context.Context, mbomID string, input ReviseMBOMInput) (BOMD
 			},
 			RelationSidecar: current.RelationSidecar,
 		}
+		// 校验继承的归属是否一致(防止源 MBOM 是历史脏数据传染下游)
+		if err := validateBOMOwnership(&newMBOM); err != nil {
+			return fmt.Errorf("[VALIDATION] inherited ownership from current MBOM is invalid: %w", err)
+		}
 		newMBOM.MasterDataControl.Normalize(nextVersionText)
+		// Revise 创建即 RELEASED,DB 唯一索引会拦截同 (productId, MBOM, owner, versionLevel) 的重复
 		if err := tx.Create(&newMBOM).Error; err != nil {
-			return err
+			return wrapBOMUniqueViolation(err, &newMBOM)
 		}
 
 		// 7. 保存 items

@@ -52,6 +52,7 @@ export function createEmptyBOMFormValue(overrides: Partial<BOM> = {}, _sections:
     isLocked: false,
     ownerType: 'INTERNAL',
     ownerCustomerId: undefined,
+    versionLevel: '',
     measuredWeight: 0,
     measuredWeightUnit: '',
     items: [],

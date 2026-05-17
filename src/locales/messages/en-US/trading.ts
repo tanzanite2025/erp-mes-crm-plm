@@ -435,6 +435,10 @@ export const trading = {
       empty: 'No sales-return adjustment records for this receivable yet',
       note: 'Amount note',
     },
+    orderDialog: {
+      noLedger: 'No receivable ledger exists for this sales order yet',
+      loadFailed: 'Failed to load the receivable ledger for this sales order',
+    },
     columns: {
       documentNo: 'Document No.',
       customerName: 'Customer',

@@ -69,6 +69,10 @@ export const bomSchema = z.object({
   //   - CUSTOMER：某客户专供 BOM（ownerCustomerId 必填，关联 Customer.id）
   ownerType: z.enum(['INTERNAL', 'CUSTOMER']).default('INTERNAL'),
   ownerCustomerId: z.string().optional(),
+  // VersionLevel 是 BOM 配方层的"档次"标签（思路 3 重构,Step R1）。
+  //   - 来源 product_attribute_options(category=versionLevel) 的 value
+  //   - 当前阶段允许为空(过渡期),后续 Step R6 加唯一约束时变必填
+  versionLevel: z.string().trim().optional(),
   // 方案 B：BOM 是产品最终重量的端到端权威源。
   //   - 创建/草稿期允许为 0 / 空字符串（后端校验：仅 RELEASED 必须 > 0 + 单位非空）
   //   - 单位引用 basic-settings 的 WEIGHT 类目代码（g / kg 等）

@@ -30,7 +30,6 @@ func productAuditSnapshot(product models.Product) map[string]any {
 		"tireType":                 strings.TrimSpace(product.TireType),
 		"brakeType":                strings.TrimSpace(product.BrakeType),
 		"techSeries":               strings.TrimSpace(product.TechSeries),
-		"versionLevel":             strings.TrimSpace(product.VersionLevel),
 		"length":                   product.Length,
 		"angle":                    product.Angle,
 		"clamp":                    strings.TrimSpace(product.Clamp),

@@ -10,6 +10,10 @@ import { useUnitsQuery } from '@/features/basic-settings/hooks/use-units-query'
 import { getCustomers } from '@/features/trading/customer'
 import { tradingQueryKeys } from '@/features/trading/query-keys'
 import { useQuery } from '@tanstack/react-query'
+import { ProductAttributeOptionService } from '@/features/engineering/services/product-attribute-option-service'
+import { PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY } from '@/features/engineering/query-keys'
+import { PRODUCT_ATTRIBUTE_CATEGORY_KEYS } from '@/features/engineering/utils/product-attribute-utils'
+import { areSameProductAttributeCategoryKey } from '@/features/engineering/utils/product-attribute-machine-value'
 import { type BOM, type Product } from '../../data/schema'
 import {
   buildHeaderGridTemplate,
@@ -32,7 +36,7 @@ interface BOMFormHeaderProps {
  * 这里仅负责把 config 项落到 react-hook-form 的 FormField 上。
  */
 export function BOMFormHeader({ form, products, productDisplayLabelMap, isEdit }: BOMFormHeaderProps) {
-  const { t } = useLanguage()
+  const { t, locale } = useLanguage()
 
   const productItems = useMemo(
     () =>
@@ -94,6 +98,25 @@ export function BOMFormHeader({ form, products, productDisplayLabelMap, isEdit }
     [customersQuery.data]
   )
 
+  // 思路 3 Step R2：BOM 档次（versionLevel）下拉来源于产品属性主数据
+  // category=versionLevel 的 active options。
+  const productAttributeOptionsQuery = useQuery({
+    queryKey: PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY,
+    queryFn: () => ProductAttributeOptionService.getProductAttributeOptions({ activeOnly: true }),
+  })
+  const versionLevelItems = useMemo(() => {
+    const data = productAttributeOptionsQuery.data ?? []
+    return data
+      .filter((option) =>
+        areSameProductAttributeCategoryKey(option.categoryKey, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version)
+        && option.active
+      )
+      .map((option) => ({
+        label: locale === 'en-US' && option.labelEn?.trim() ? option.labelEn : option.labelZh,
+        value: option.value,
+      }))
+  }, [productAttributeOptionsQuery.data, locale])
+
   const ctx: BOMHeaderFieldContext = useMemo(
     () => ({
       isEdit,
@@ -105,8 +128,9 @@ export function BOMFormHeader({ form, products, productDisplayLabelMap, isEdit }
       weightUnitItems,
       ownerTypeItems,
       customerItems,
+      versionLevelItems,
     }),
-    [isEdit, bomType, ownerType, t, productItems, statusItems, weightUnitItems, ownerTypeItems, customerItems]
+    [isEdit, bomType, ownerType, t, productItems, statusItems, weightUnitItems, ownerTypeItems, customerItems, versionLevelItems]
   )
 
   const headerFields = useMemo(() => getBOMHeaderFields(ctx), [ctx])

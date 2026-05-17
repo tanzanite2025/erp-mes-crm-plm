@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Loader2, ShoppingCart } from 'lucide-react'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { CompactPaginationControls } from '@/components/pagination/compact-pagination-controls'
@@ -11,6 +12,7 @@ import { SalesOrderCanceledSection } from './sales-order-canceled-section'
 import { SalesOrderDetailSheet } from './sales-order-detail-sheet'
 import { SalesOrderListToolbar } from './sales-order-list-toolbar'
 import { SalesOrderMaster } from './sales-order-master'
+import { SalesOrderReceivableDetailDialogBridge } from '../receivables/components/sales-order-receivable-detail-dialog-bridge'
 import { SalesOrderPackagingEntry } from './parts/sales-order-packaging-entry'
 import { SalesOrderPreassembleScanDialog } from './sales-order-preassemble-scan-dialog'
 import { TradingQueryErrorState } from './trading-query-error-state'
@@ -18,9 +20,18 @@ import { TradingQueryErrorState } from './trading-query-error-state'
 export function SalesOrderList() {
   const { t } = useLanguage()
   const controller = useSalesOrderListController()
+  const [viewingReceivableOrderId, setViewingReceivableOrderId] = useState<string | null>(null)
   const renderOrderFeatureCards = (order: SalesOrder) => (
     <SalesOrderPackagingEntry order={order} />
   )
+  const handleViewReceivable = (order: SalesOrder) => {
+    setViewingReceivableOrderId(order.id)
+  }
+  const handleReceivableDialogOpenChange = (open: boolean) => {
+    if (!open) {
+      setViewingReceivableOrderId(null)
+    }
+  }
 
   if (controller.listResource.status === 'loading') {
     return (
@@ -77,6 +88,7 @@ export function SalesOrderList() {
               selectedId={controller.selectedId || undefined}
               onSelect={controller.handleOpenDetail}
               onPreassembleScan={controller.preassemble.handleOpenPreassembleScan}
+              onViewReceivable={handleViewReceivable}
               onEdit={controller.handleEditOrder}
               onDelete={controller.handleDeleteOrder}
               renderFeatureCards={renderOrderFeatureCards}
@@ -94,6 +106,7 @@ export function SalesOrderList() {
               onCanceledPageChange={controller.setCanceledPage}
               onSelect={controller.handleOpenDetail}
               onPreassembleScan={controller.preassemble.handleOpenPreassembleScan}
+              onViewReceivable={handleViewReceivable}
               onEdit={controller.handleEditOrder}
               onDelete={controller.handleDeleteOrder}
               renderFeatureCards={renderOrderFeatureCards}
@@ -116,6 +129,12 @@ export function SalesOrderList() {
       <SalesOrderActionDialog {...controller.actionDialogState} />
 
       <SalesOrderPreassembleScanDialog {...controller.preassembleDialogState} />
+
+      <SalesOrderReceivableDetailDialogBridge
+        open={Boolean(viewingReceivableOrderId)}
+        orderId={viewingReceivableOrderId}
+        onOpenChange={handleReceivableDialogOpenChange}
+      />
     </div>
   )
 }

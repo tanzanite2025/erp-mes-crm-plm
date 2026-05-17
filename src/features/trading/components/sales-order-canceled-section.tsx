@@ -17,6 +17,7 @@ interface SalesOrderCanceledSectionProps {
   onCanceledPageChange: (page: number) => void
   onSelect: (id: string) => void
   onPreassembleScan: (order: SalesOrder) => void
+  onViewReceivable?: (order: SalesOrder) => void
   onEdit: (order: SalesOrder) => void
   onDelete: (id: string) => void
   renderFeatureCards?: (order: SalesOrder) => ReactNode
@@ -34,6 +35,7 @@ export function SalesOrderCanceledSection({
   onCanceledPageChange,
   onSelect,
   onPreassembleScan,
+  onViewReceivable,
   onEdit,
   onDelete,
   renderFeatureCards,
@@ -67,6 +69,7 @@ export function SalesOrderCanceledSection({
           selectedId={selectedId}
           onSelect={onSelect}
           onPreassembleScan={onPreassembleScan}
+          onViewReceivable={onViewReceivable}
           onEdit={onEdit}
           onDelete={onDelete}
           renderFeatureCards={renderFeatureCards}

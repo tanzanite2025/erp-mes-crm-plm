@@ -23,7 +23,10 @@ type salesOrderLineProductDisplayProjection struct {
 	StrategyVersion string
 }
 
-func normalizeSalesOrderLineProductFieldsTx(tx *gorm.DB, lines []models.SalesOrderLine) error {
+// normalizeSalesOrderLineProductFieldsForCustomerTx 思路 3 重构 (Step R4):
+// 接收 customerID 以便反查 (productId, MBOM, RELEASED, owner) 的活跃 BOM 的 versionLevel,
+// 让产品显示名称从 BOM 权威源拼接。
+func normalizeSalesOrderLineProductFieldsForCustomerTx(tx *gorm.DB, customerID string, lines []models.SalesOrderLine) error {
 	if tx == nil {
 		return errors.New("transaction is required")
 	}
@@ -37,7 +40,12 @@ func normalizeSalesOrderLineProductFieldsTx(tx *gorm.DB, lines []models.SalesOrd
 			continue
 		}
 
-		normalizeSalesOrderLineProductFields(&lines[index], product)
+		bomVersionLevel, err := loadSalesOrderLineActiveBOMVersionLevelTx(tx, lines[index].ProductID, customerID)
+		if err != nil {
+			return err
+		}
+
+		normalizeSalesOrderLineProductFields(&lines[index], product, bomVersionLevel)
 	}
 
 	return nil
@@ -60,12 +68,49 @@ func loadSalesOrderLineProductTx(tx *gorm.DB, productID string) (models.Product,
 	return product, true, nil
 }
 
-func normalizeSalesOrderLineProductFields(line *models.SalesOrderLine, product models.Product) {
+// loadSalesOrderLineActiveBOMVersionLevelTx 优先匹配 CUSTOMER 专供 BOM,fallback 到 INTERNAL BOM。
+// 取不到时返回空串,由调用方继续 fallback 到 product.VersionLevel(过渡兜底)。
+func loadSalesOrderLineActiveBOMVersionLevelTx(tx *gorm.DB, productID string, customerID string) (string, error) {
+	trimmedProductID := strings.TrimSpace(productID)
+	if trimmedProductID == "" {
+		return "", nil
+	}
+
+	trimmedCustomerID := strings.TrimSpace(customerID)
+	if trimmedCustomerID != "" {
+		var customerBOM models.BOM
+		err := tx.Select("version_level").
+			Where("product_id = ? AND bom_type = ? AND status = ? AND owner_type = ? AND owner_customer_id = ?",
+				trimmedProductID, models.BOMTypeMBOM, models.BOMStatusReleased, "CUSTOMER", trimmedCustomerID).
+			First(&customerBOM).Error
+		if err == nil {
+			return strings.TrimSpace(customerBOM.VersionLevel), nil
+		}
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return "", err
+		}
+	}
+
+	var internalBOM models.BOM
+	err := tx.Select("version_level").
+		Where("product_id = ? AND bom_type = ? AND status = ? AND owner_type = ?",
+			trimmedProductID, models.BOMTypeMBOM, models.BOMStatusReleased, "INTERNAL").
+		First(&internalBOM).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return "", nil
+		}
+		return "", err
+	}
+	return strings.TrimSpace(internalBOM.VersionLevel), nil
+}
+
+func normalizeSalesOrderLineProductFields(line *models.SalesOrderLine, product models.Product, bomVersionLevel string) {
 	if line == nil {
 		return
 	}
 
-	display := buildSalesOrderLineProductDisplayProjection(product)
+	display := buildSalesOrderLineProductDisplayProjection(product, bomVersionLevel)
 	derivedCode := firstNonEmptySalesOrderLineValue(strings.TrimSpace(product.SKU), display.Code)
 
 	if shouldReplaceSalesOrderLineGeneratedValue(line.ProductModel) {
@@ -106,16 +151,17 @@ func normalizeSalesOrderLineProductFields(line *models.SalesOrderLine, product m
 	}
 }
 
-func buildSalesOrderLineProductDisplayProjection(product models.Product) salesOrderLineProductDisplayProjection {
+func buildSalesOrderLineProductDisplayProjection(product models.Product, bomVersionLevel string) salesOrderLineProductDisplayProjection {
 	code := firstNonEmptySalesOrderLineValue(
 		strings.TrimSpace(product.SKU),
 		strings.TrimSpace(product.ModelCode),
 	)
 	title := firstNonEmptySalesOrderLineValue(strings.TrimSpace(product.Name), code, "UNNAMED")
+	// 思路 3 重构 (Step R7): versionLevel 已物理迁移到 BOM,只读 BOM 上的字段。
 	subtitle := strings.Join([]string{
 		firstNonEmptySalesOrderLineValue(strings.TrimSpace(product.TechSeries), "normal"),
 		firstNonEmptySalesOrderLineValue(strings.TrimSpace(product.BrakeType), "UNKNOWN"),
-		firstNonEmptySalesOrderLineValue(strings.TrimSpace(product.VersionLevel), "std"),
+		firstNonEmptySalesOrderLineValue(strings.TrimSpace(bomVersionLevel), "std"),
 	}, "/")
 	fullLabel := title
 	if subtitle != "" {

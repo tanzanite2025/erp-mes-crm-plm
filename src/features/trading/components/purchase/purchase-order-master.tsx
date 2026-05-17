@@ -3,6 +3,7 @@ import {
   Building2,
   Calendar,
   Edit2,
+  FileText,
   MoreHorizontal,
   Trash2,
   User,
@@ -33,6 +34,7 @@ interface PurchaseOrderMasterProps {
   orders: PurchaseOrderListItem[]
   selectedId?: string
   onSelect: (id: string) => void
+  onViewPayable?: (order: PurchaseOrderListItem) => void
   onEdit: (order: PurchaseOrderListItem) => void
   onDelete: (id: string) => void
 }
@@ -60,6 +62,7 @@ export function PurchaseOrderMaster({
   orders,
   selectedId,
   onSelect,
+  onViewPayable,
   onEdit,
   onDelete,
 }: PurchaseOrderMasterProps) {
@@ -271,6 +274,17 @@ export function PurchaseOrderMaster({
                               : t('purchase.orders.statusLocked')}
                           </DropdownMenuItem>
                           <DropdownMenuItem
+                            disabled={!onViewPayable}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onViewPayable?.(order)
+                            }}
+                            className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black tracking-widest uppercase'
+                          >
+                            <FileText className='size-3 text-emerald-600' />
+                            {t('purchase.orders.viewPayable')}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
                             onClick={(e) => {
                               e.stopPropagation()
                               onDelete(order.id)
@@ -351,6 +365,13 @@ export function PurchaseOrderMaster({
                         className='px-4 py-2 text-[10px] font-black uppercase'
                       >
                         {t('purchase.orders.editOrder')}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        disabled={!onViewPayable}
+                        onClick={() => onViewPayable?.(order)}
+                        className='px-4 py-2 text-[10px] font-black uppercase'
+                      >
+                        {t('purchase.orders.viewPayable')}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => onDelete(order.id)}

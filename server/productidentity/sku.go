@@ -25,20 +25,16 @@ func NormalizeModelCode(raw string) string {
 	return digitsOnly.String()
 }
 
-func NormalizeVersionLevel(raw string) string {
-	return strings.ToUpper(strings.TrimSpace(raw))
-}
-
-func DeriveSKU(typeCode string, modelCode string, versionLevel string) string {
+// DeriveSKU 派生产品 SKU。
+//
+// 思路 3 重构 (Step R7): versionLevel 已迁移到 BOM,产品 SKU 不再含 versionLevel,
+// 公式简化为 typeCode-modelCode。
+func DeriveSKU(typeCode string, modelCode string) string {
 	normalizedTypeCode := NormalizeTypeCode(typeCode)
 	normalizedModelCode := NormalizeModelCode(modelCode)
-	normalizedVersionLevel := NormalizeVersionLevel(versionLevel)
 
 	if normalizedTypeCode == "" {
 		return ""
-	}
-	if normalizedVersionLevel != "" {
-		return fmt.Sprintf("%s-%s-%s", normalizedTypeCode, normalizedModelCode, normalizedVersionLevel)
 	}
 	return fmt.Sprintf("%s-%s", normalizedTypeCode, normalizedModelCode)
 }

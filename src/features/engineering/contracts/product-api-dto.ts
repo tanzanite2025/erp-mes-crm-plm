@@ -22,7 +22,6 @@ export interface ProductApiDTO {
   tireType?: string
   brakeType?: string
   techSeries?: string
-  versionLevel?: string
   length?: number
   angle?: number
   clamp?: string

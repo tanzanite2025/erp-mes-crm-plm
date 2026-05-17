@@ -1,29 +1,18 @@
 'use client'
 
 import type { UseFormReturn } from 'react-hook-form'
-import { ListChecks } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form'
 import { type Product } from '../../data/schema'
 
 interface RimSpecFormProps {
   form: UseFormReturn<Product>
-  options: {
-    versionCategoryOptions: Array<{ label: string; value: string }>
-  }
-  selectedVariants: { level: string }[]
-  onVariantToggle: (level: string, checked: boolean) => void
 }
 
 export function RimSpecForm({
   form,
-  options,
-  selectedVariants,
-  onVariantToggle,
 }: RimSpecFormProps) {
   const { t } = useLanguage()
 
@@ -128,44 +117,6 @@ export function RimSpecForm({
             </FormItem>
           )}
         />
-      </div>
-
-      <div className='p-1.5 bg-blue-600/5 rounded-xl border border-blue-600/10 space-y-1'>
-        <div className='flex items-center gap-2 text-blue-700'>
-          <ListChecks className='size-3' />
-          <span className='text-[10px] font-black uppercase tracking-wider'>
-            {t('engineering.specForms.rim.matrixTitle')}
-          </span>
-        </div>
-
-        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-2 gap-y-1'>
-          {options.versionCategoryOptions.map((option) => {
-            const isSelected = selectedVariants.some((variant) => variant.level === option.value)
-
-            return (
-              <div
-                key={option.value}
-                className={`flex items-center justify-between p-0.5 px-1.5 rounded border transition-all ${
-                  isSelected
-                    ? 'bg-background border-blue-200 shadow-sm'
-                    : 'bg-muted/5 border-transparent opacity-60 hover:opacity-100'
-                }`}
-              >
-                <div className='flex min-w-0 items-center space-x-1.5'>
-                  <Checkbox
-                    id={`spec-level-${option.value}`}
-                    checked={isSelected}
-                    onCheckedChange={(checked) => onVariantToggle(option.value, !!checked)}
-                    className='size-3.5 data-[state=checked]:bg-blue-600'
-                  />
-                  <Label htmlFor={`spec-level-${option.value}`} className='min-w-0 truncate text-[10px] font-bold cursor-pointer'>
-                    {option.label}
-                  </Label>
-                </div>
-              </div>
-            )
-          })}
-        </div>
       </div>
     </div>
   )

@@ -9,22 +9,23 @@ import (
 	"gorm.io/gorm"
 )
 
+// BlankProductSKUPlan 描述一个待回填空 SKU 的产品计划。
+//
+// 思路 3 重构 (Step R7): SKU 公式简化为 typeCode-modelCode,VersionLevel 字段不再参与。
 type BlankProductSKUPlan struct {
-	ID           string
-	Name         string
-	TypeID       string
-	TypeCode     string
-	ModelCode    string
-	VersionLevel string
-	DerivedSKU   string
+	ID         string
+	Name       string
+	TypeID     string
+	TypeCode   string
+	ModelCode  string
+	DerivedSKU string
 }
 
 type blankProductCandidate struct {
-	ID           string
-	Name         string
-	TypeID       string
-	ModelCode    string
-	VersionLevel string
+	ID        string
+	Name      string
+	TypeID    string
+	ModelCode string
 }
 
 type productTypeCodeRow struct {
@@ -32,15 +33,10 @@ type productTypeCodeRow struct {
 	Code string
 }
 
-type versionLevelRow struct {
-	ProductID   string
-	OptionValue string
-}
-
 func PlanBlankProductSKUBackfill(database *gorm.DB) ([]BlankProductSKUPlan, error) {
 	var candidates []blankProductCandidate
 	if err := database.Table("products").
-		Select("id", "name", "type_id", "model_code", "version_level").
+		Select("id", "name", "type_id", "model_code").
 		Where("deleted_at IS NULL AND (sku IS NULL OR length(trim(sku)) = 0)").
 		Order("created_at ASC, id ASC").
 		Scan(&candidates).Error; err != nil {
@@ -52,10 +48,8 @@ func PlanBlankProductSKUBackfill(database *gorm.DB) ([]BlankProductSKUPlan, erro
 	}
 
 	typeIDs := make([]string, 0, len(candidates))
-	productIDs := make([]string, 0, len(candidates))
 	for _, candidate := range candidates {
 		typeIDs = append(typeIDs, strings.TrimSpace(candidate.TypeID))
-		productIDs = append(productIDs, candidate.ID)
 	}
 
 	var typeRows []productTypeCodeRow
@@ -70,22 +64,6 @@ func PlanBlankProductSKUBackfill(database *gorm.DB) ([]BlankProductSKUPlan, erro
 		typeCodeByID[row.ID] = row.Code
 	}
 
-	var versionRows []versionLevelRow
-	if err := database.Table("product_attribute_values").
-		Select("product_id", "option_value").
-		Where("product_id IN ? AND category_key = ?", productIDs, "versionLevel").
-		Order("sort_order ASC, id ASC").
-		Scan(&versionRows).Error; err != nil {
-		return nil, err
-	}
-	versionByProductID := make(map[string]string, len(versionRows))
-	for _, row := range versionRows {
-		if _, exists := versionByProductID[row.ProductID]; exists {
-			continue
-		}
-		versionByProductID[row.ProductID] = row.OptionValue
-	}
-
 	plans := make([]BlankProductSKUPlan, 0, len(candidates))
 	planBySKU := make(map[string]BlankProductSKUPlan, len(candidates))
 	blankIDs := make([]string, 0, len(candidates))
@@ -95,23 +73,18 @@ func PlanBlankProductSKUBackfill(database *gorm.DB) ([]BlankProductSKUPlan, erro
 			return nil, fmt.Errorf("product %s (%s) cannot backfill sku: product type %s has no code", candidate.ID, candidate.Name, candidate.TypeID)
 		}
 
-		versionLevel := NormalizeVersionLevel(candidate.VersionLevel)
-		if versionLevel == "" {
-			versionLevel = NormalizeVersionLevel(versionByProductID[candidate.ID])
-		}
-		derivedSKU := DeriveSKU(typeCode, candidate.ModelCode, versionLevel)
+		derivedSKU := DeriveSKU(typeCode, candidate.ModelCode)
 		if derivedSKU == "" {
 			return nil, fmt.Errorf("product %s (%s) cannot backfill sku: derived sku is empty", candidate.ID, candidate.Name)
 		}
 
 		plan := BlankProductSKUPlan{
-			ID:           candidate.ID,
-			Name:         candidate.Name,
-			TypeID:       candidate.TypeID,
-			TypeCode:     typeCode,
-			ModelCode:    NormalizeModelCode(candidate.ModelCode),
-			VersionLevel: versionLevel,
-			DerivedSKU:   derivedSKU,
+			ID:         candidate.ID,
+			Name:       candidate.Name,
+			TypeID:     candidate.TypeID,
+			TypeCode:   typeCode,
+			ModelCode:  NormalizeModelCode(candidate.ModelCode),
+			DerivedSKU: derivedSKU,
 		}
 
 		if existing, exists := planBySKU[derivedSKU]; exists && existing.ID != plan.ID {
@@ -160,10 +133,9 @@ func ApplyBlankProductSKUBackfill(database *gorm.DB) ([]BlankProductSKUPlan, err
 			if err := tx.Model(&models.Product{}).
 				Where("id = ? AND deleted_at IS NULL AND (sku IS NULL OR length(trim(sku)) = 0)", plan.ID).
 				Updates(map[string]any{
-					"sku":           plan.DerivedSKU,
-					"model_code":    plan.ModelCode,
-					"version_level": plan.VersionLevel,
-					"updated_at":    time.Now(),
+					"sku":        plan.DerivedSKU,
+					"model_code": plan.ModelCode,
+					"updated_at": time.Now(),
 				}).Error; err != nil {
 				return err
 			}

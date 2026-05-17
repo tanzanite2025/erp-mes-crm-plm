@@ -7,13 +7,21 @@ import {
   type PayableLedgerSearchParams,
 } from '../services/payables-query-service'
 
-export function useGetPayables(params: PayableListQueryParams = {}) {
+interface UseGetPayablesOptions {
+  enabled?: boolean
+}
+
+export function useGetPayables(
+  params: PayableListQueryParams = {},
+  options: UseGetPayablesOptions = {}
+) {
   const sourceType = params.sourceType?.trim() ?? ''
   const sourceRefId = params.sourceRefId?.trim() ?? ''
 
   return useQuery({
     queryKey: tradingQueryKeys.payables(sourceType, sourceRefId),
     queryFn: () => getPayables({ sourceType, sourceRefId }),
+    enabled: options.enabled ?? true,
   })
 }
 

@@ -28,7 +28,6 @@ import { useProductForm, type ProductSubmitPayload } from '../hooks/use-product-
 import { useProductWriteActions } from '../hooks/use-product-write-actions'
 import { type Product, type ProductType } from '../data/schema'
 import { PRODUCT_ATTRIBUTE_CATEGORY_KEYS } from '../utils/product-attribute-utils'
-import { areSameProductAttributeCategoryKey } from '../utils/product-attribute-machine-value'
 
 const logger = createLogger('ProductActionDialog')
 
@@ -78,21 +77,17 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
     dynamicTypes,
     attributeCategories = [],
     attributeOptions = [],
-    versionLevelOptions,
     moldOptions,
     specOptions,
     metadataInitError,
     metadataReady,
     nextCodeDeriveError,
-    selectedVariants,
     boundTemplate,
     templateResolveError,
     templateResolutionPending,
     specPreviewTitle,
     specPreviewSummary,
     specPreviewV2,
-    handleVariantToggle,
-    updateVariantWeight,
     handleFormSubmit,
   } = useProductForm({ currentRow, open, productTypes, onOpenChange, onSubmit, onSaved })
   const { deleteProduct, isDeletingProduct } = useProductWriteActions()
@@ -120,20 +115,6 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
     () => boundTemplate?.attributeBindings ?? [],
     [boundTemplate?.attributeBindings]
   )
-  const handleDynamicAttributeValueChange = React.useCallback((categoryKey: string, nextValue: string) => {
-    if (!areSameProductAttributeCategoryKey(categoryKey, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version)) {
-      return
-    }
-
-    const nextVersionLevel = nextValue.trim()
-    selectedVariants
-      .filter((variant) => variant.level !== nextVersionLevel)
-      .forEach((variant) => handleVariantToggle(variant.level, false))
-
-    if (nextVersionLevel && !selectedVariants.some((variant) => variant.level === nextVersionLevel)) {
-      handleVariantToggle(nextVersionLevel, true)
-    }
-  }, [handleVariantToggle, selectedVariants])
   const watchedModelCode = useWatch({ control: form.control, name: 'modelCode' })
   const issuanceBlocked = Boolean(!isEdit && nextCodeDeriveError && (!watchedModelCode || watchedModelCode === '01'))
   const metadataPending = Boolean(open && !metadataInitError && !metadataReady)
@@ -298,7 +279,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
                 categories={attributeCategories}
                 options={attributeOptions}
                 bindings={effectiveAttributeBindings}
-                onAttributeValueChange={handleDynamicAttributeValueChange}
+                excludeCategoryKeys={[PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version]}
               />
 
               {SpecComponent ? (
@@ -313,12 +294,6 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
                   )}
                   <SpecComponent
                     form={form}
-                    options={{
-                      versionCategoryOptions: versionLevelOptions,
-                    }}
-                    selectedVariants={selectedVariants}
-                    onVariantToggle={handleVariantToggle}
-                    onWeightChange={updateVariantWeight}
                   />
                 </div>
               ) : (
@@ -403,15 +378,9 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
               type='submit'
               form='product-form'
               disabled={submissionBlocked || isDeletingProduct}
-              className={`h-11 sm:h-9 rounded-full px-10 text-[11px] font-black transition-all hover:scale-105 active:scale-95 shadow-xl ${
-                selectedVariants.length > 1
-                  ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/30'
-                  : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/30'
-              }`}
+              className='h-11 sm:h-9 rounded-full px-10 text-[11px] font-black transition-all hover:scale-105 active:scale-95 shadow-xl bg-blue-600 hover:bg-blue-700 shadow-blue-500/30'
             >
-              {selectedVariants.length > 1
-                ? t('engineering.productMgmt.dialog.saveBatch', { count: selectedVariants.length })
-                : t('engineering.productMgmt.dialog.saveStandard')}
+              {t('engineering.productMgmt.dialog.saveStandard')}
             </Button>
           </div>
         </DialogFooter>
