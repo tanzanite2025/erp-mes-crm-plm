@@ -88,7 +88,7 @@ export function TaxActionDialog({
             onOpenChange(false)
         } catch (error) {
             if (isConflictError(error)) {
-                toast.error(t('finance.paymentTerms.toast.conflict' as any) || '数据已被更新，请刷新重试')
+                toast.error(t('finance.paymentTerms.toast.conflict') || '数据已被更新，请刷新重试')
                 return
             }
             toast.error(t('finance.taxation.toast.saveFailed'))

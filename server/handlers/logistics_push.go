@@ -1,3 +1,17 @@
+// Package handlers - 物流服务商对接 + Webhook 推送回调。
+//
+// 此文件聚焦"对接外部物流商"全链路:
+//   - Provider CRUD: GetLogisticsProvidersHandler / SaveLogisticsProviderHandler /
+//     VerifyLogisticsProviderHandler / DeleteLogisticsProviderHandler
+//   - 单号查询代理: GetDeliveryOrdersHandler / GetDeliveryTrackingHandler(失效条件 shouldRefreshDeliveryTracking)
+//   - Webhook 接收: HandlePushCallbackHandler(物流商主动推单)
+//   - 异常补偿: RunLogisticsCompensation(漏推单的批量回填)
+//
+// 安全关键点:
+//   - 物流商配置 verify 后才生效,VerifyLogisticsProviderHandler 是密钥的活性测试入口
+//   - Webhook 签名校验(HMAC-SHA256 / MD5 双协议),verifyLogisticsWebhookSignature 防重放
+//   - generateTrackingHash 给追踪事件生成幂等键,防 webhook 重复处理
+//   - applyVerificationReset 改密钥后强制重新验证
 package handlers
 
 import (

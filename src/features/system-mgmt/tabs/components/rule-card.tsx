@@ -1,3 +1,16 @@
+/**
+ * 业务事件路由规则卡片(系统管理 → 路由规则 tab 的核心渲染单元)。
+ *
+ * 每张 RuleCard 是一条"业务事件 → 触发动作"的配置:
+ *   - 触发条件(filter expression)
+ *   - 接收人(targetUsers)
+ *   - 执行动作(notification / approval / API call)
+ *   - 审批配置(NotificationRuleApprovalDTO,关联审批节点)
+ *
+ * 此卡片支持就地编辑 + 启用/禁用切换,提交后调用 BusinessEventSourceWriteConfigDTO 校验链路。
+ *
+ * 大于 500 行因为单卡片承担"展示 + 编辑 + 校验 + 操作"四态,后续可拆 RuleCardView / RuleCardForm。
+ */
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import {

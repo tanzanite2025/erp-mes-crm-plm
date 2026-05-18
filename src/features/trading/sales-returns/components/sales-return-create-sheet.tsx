@@ -1,3 +1,18 @@
+/**
+ * 销售换货创建抽屉(已有销售订单 + 已有退货单情况下创建调整后的换货)。
+ *
+ * 流程:
+ *   1. 取销售订单原始 lines + 已存在的销售退货 record
+ *   2. createAdjustedOrder 把退货数量从订单 lines 中扣除,得到"剩余可换货"基准
+ *   3. createLineDraftMap 准备每行的换货输入草稿
+ *   4. 用户编辑后调用 createSalesExchange API
+ *
+ * 容错:
+ *   - record 关联的 SalesOrder 已被删除时,createFallbackOrder 用退货数据兜底重建
+ *   - 数量不足时阻止创建(运行时校验,后端 + DB 也有兜底)
+ *
+ * 此组件只负责 UI 呈现 + 表单校验,所有业务计算放在 createAdjustedOrder/createFallbackOrder。
+ */
 import { Plus, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'

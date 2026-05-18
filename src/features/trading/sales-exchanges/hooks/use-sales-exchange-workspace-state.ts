@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { useGetSalesOrders } from '@/features/trading/sales'
+import { useNavigate, useSearch } from '@tanstack/react-router'
+import { useGetSalesOrderDetail, useGetSalesOrders } from '@/features/trading/sales'
 import type { SalesOrder } from '@/features/trading/data/schema'
 import type {
   SalesExchangeLineDraft,
@@ -43,17 +44,37 @@ function createSalesExchangeSourceOrderCandidate(
 }
 
 export function useSalesExchangeWorkspaceState() {
-  const [sourceSearchTerm, setSourceSearchTerm] = useState('')
-  const [sourceStatusFilter, setSourceStatusFilter] = useState('all')
+  const navigate = useNavigate()
+  const search = useSearch({ from: '/_authenticated/trading/sales-exchanges' })
+  const routeCustomerId = search.customerId || undefined
+  const routeCustomerName = search.customerName || undefined
+  const sourceSearchTerm = search.search ?? ''
+  const sourceStatusFilter = search.status ?? 'all'
   const [sourcePage, setSourcePage] = useState(1)
-  const [selectedSourceSalesOrderId, setSelectedSourceSalesOrderId] = useState<
-    string | undefined
-  >(undefined)
+  const selectedSourceSalesOrderId = search.sourceOrderId || undefined
   const [sourceSalesOrderForCreateDialog, setSourceSalesOrderForCreateDialog] =
     useState<SalesOrder | undefined>(undefined)
-  const [selectedSalesExchangeDraftRecordId, setSelectedSalesExchangeDraftRecordId] =
-    useState<string | undefined>(undefined)
+  const selectedSalesExchangeDraftRecordId = search.exchangeId || undefined
   const salesExchangeMutations = useSalesExchangeMutations()
+
+  const navigateSalesExchangeSearch = (params: {
+    search?: string
+    status?: string
+    sourceOrderId?: string
+    exchangeId?: string
+  }) => {
+    void navigate({
+      to: '/trading/sales-exchanges',
+      search: {
+        customerId: routeCustomerId,
+        customerName: routeCustomerName,
+        search: (params.search ?? sourceSearchTerm) || undefined,
+        status: params.status ?? sourceStatusFilter,
+        sourceOrderId: params.sourceOrderId,
+        exchangeId: params.exchangeId,
+      },
+    })
+  }
 
   const sourceSalesOrderStatuses =
     sourceStatusFilter === 'all' ? ['InProgress', 'Done'] : [sourceStatusFilter]
@@ -64,13 +85,19 @@ export function useSalesExchangeWorkspaceState() {
     {
       withLines: true,
       status: sourceSalesOrderStatuses,
+      customerId: routeCustomerId,
       keyword: sourceSearchTerm,
     }
+  )
+
+  const selectedSourceSalesOrderQuery = useGetSalesOrderDetail(
+    selectedSourceSalesOrderId || ''
   )
 
   const salesExchangeRecordsQuery = useGetSalesExchanges({
     page: 1,
     pageSize: salesExchangeRecordPageSize,
+    customerId: routeCustomerId,
     status: 'all',
   })
 
@@ -80,19 +107,29 @@ export function useSalesExchangeWorkspaceState() {
   )
 
   const sourceSalesOrderCandidates = useMemo(
-    () =>
-      (sourceSalesOrdersQuery.data?.items ?? []).map(
-        createSalesExchangeSourceOrderCandidate
-      ),
-    [sourceSalesOrdersQuery.data?.items]
+    () => {
+      const sourceOrders = [...(sourceSalesOrdersQuery.data?.items ?? [])]
+      const selectedSourceSalesOrder = selectedSourceSalesOrderQuery.data
+
+      if (
+        selectedSourceSalesOrder &&
+        !sourceOrders.some((order) => order.id === selectedSourceSalesOrder.id)
+      ) {
+        sourceOrders.unshift(selectedSourceSalesOrder)
+      }
+
+      return sourceOrders.map(createSalesExchangeSourceOrderCandidate)
+    },
+    [selectedSourceSalesOrderQuery.data, sourceSalesOrdersQuery.data?.items]
   )
 
   const selectedSourceSalesOrder = useMemo(
     () =>
+      selectedSourceSalesOrderQuery.data ??
       sourceSalesOrderCandidates.find(
         (candidate) => candidate.order.id === selectedSourceSalesOrderId
       )?.order,
-    [selectedSourceSalesOrderId, sourceSalesOrderCandidates]
+    [selectedSourceSalesOrderId, selectedSourceSalesOrderQuery.data, sourceSalesOrderCandidates]
   )
 
   const selectedSalesExchangeDraftRecord = useMemo(
@@ -112,19 +149,36 @@ export function useSalesExchangeWorkspaceState() {
   )
 
   const handleChangeSourceSearchTerm = (nextSearchTerm: string) => {
-    setSourceSearchTerm(nextSearchTerm)
     setSourcePage(1)
-    setSelectedSourceSalesOrderId(undefined)
+    navigateSalesExchangeSearch({
+      search: nextSearchTerm || undefined,
+      status: sourceStatusFilter,
+      sourceOrderId: undefined,
+      exchangeId: selectedSalesExchangeDraftRecordId,
+    })
   }
 
   const handleChangeSourceStatusFilter = (nextStatusFilter: string) => {
-    setSourceStatusFilter(nextStatusFilter)
     setSourcePage(1)
-    setSelectedSourceSalesOrderId(undefined)
+    navigateSalesExchangeSearch({
+      search: sourceSearchTerm || undefined,
+      status: nextStatusFilter,
+      sourceOrderId: undefined,
+      exchangeId: selectedSalesExchangeDraftRecordId,
+    })
+  }
+
+  const handleSelectSourceSalesOrder = (nextSourceSalesOrderId?: string) => {
+    navigateSalesExchangeSearch({
+      search: sourceSearchTerm || undefined,
+      status: sourceStatusFilter,
+      sourceOrderId: nextSourceSalesOrderId,
+      exchangeId: selectedSalesExchangeDraftRecordId,
+    })
   }
 
   const handleOpenCreateSalesExchangeDialog = (sourceSalesOrder: SalesOrder) => {
-    setSelectedSourceSalesOrderId(sourceSalesOrder.id)
+    handleSelectSourceSalesOrder(sourceSalesOrder.id)
     setSourceSalesOrderForCreateDialog(sourceSalesOrder)
   }
 
@@ -148,17 +202,36 @@ export function useSalesExchangeWorkspaceState() {
         exchangeRemarks: input.exchangeRemarks,
       }),
     })
-    setSelectedSalesExchangeDraftRecordId(response.salesExchange.id)
     setSourceSalesOrderForCreateDialog(undefined)
+    navigateSalesExchangeSearch({
+      search: sourceSearchTerm || undefined,
+      status: sourceStatusFilter,
+      sourceOrderId: input.sourceSalesOrder.id,
+      exchangeId: response.salesExchange.id,
+    })
+  }
+
+  const handleSelectSalesExchangeDraftRecord = (recordId?: string) => {
+    navigateSalesExchangeSearch({
+      search: sourceSearchTerm || undefined,
+      status: sourceStatusFilter,
+      sourceOrderId: selectedSourceSalesOrderId,
+      exchangeId: recordId,
+    })
   }
 
   const handleRemoveSalesExchangeDraftRecord = async (recordId: string) => {
     await salesExchangeMutations.deleteMutation.mutateAsync({
       salesExchangeId: recordId,
     })
-    setSelectedSalesExchangeDraftRecordId((currentSelectedId) =>
-      currentSelectedId === recordId ? undefined : currentSelectedId
-    )
+    if (selectedSalesExchangeDraftRecordId === recordId) {
+      navigateSalesExchangeSearch({
+        search: sourceSearchTerm || undefined,
+        status: sourceStatusFilter,
+        sourceOrderId: selectedSourceSalesOrderId,
+        exchangeId: undefined,
+      })
+    }
   }
 
   return {
@@ -178,11 +251,11 @@ export function useSalesExchangeWorkspaceState() {
     handleChangeSourceSearchTerm,
     handleChangeSourceStatusFilter,
     handleChangeSourcePage: setSourcePage,
-    handleSelectSourceSalesOrder: setSelectedSourceSalesOrderId,
+    handleSelectSourceSalesOrder,
     handleOpenCreateSalesExchangeDialog,
     handleCloseCreateSalesExchangeDialog,
     handleCreateSalesExchangeDraftRecord,
-    handleSelectSalesExchangeDraftRecord: setSelectedSalesExchangeDraftRecordId,
+    handleSelectSalesExchangeDraftRecord,
     handleRemoveSalesExchangeDraftRecord,
     isCreatingSalesExchangeDraftRecord:
       salesExchangeMutations.createMutation.isPending,

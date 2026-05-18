@@ -1,3 +1,20 @@
+/**
+ * 业务事件源卡片的"明细抽屉"组件(配置子项的就地编辑器)。
+ *
+ * 与 business-event-source-card.tsx(主卡片)对应,本文件提供两个抽屉级编辑器:
+ *   - StatusEditorContent: 编辑某状态的详情(显示名 / 颜色 / 派生动作 / 关联规则)
+ *   - FieldEditorContent:  编辑某字段的详情(类型 / 默认值 / 选项)
+ *
+ * 视觉与交互:
+ *   - drawerRowTone 按状态变更类型(新增/修改/删除/重命名)给出色调
+ *   - drawerReadonlyFieldClass 控制字段是否锁定可编辑
+ *   - statusIdentityHint / buildStatusReferenceHint / buildStatusRenameHint
+ *     展示状态的"被引用情况"和"重命名影响范围",提醒用户慎改
+ *
+ * 关键不变量:
+ *   - 重命名状态影响的下游规则在抽屉里给出明确清单(用户对影响有知情权)
+ *   - locked 字段不允许编辑(系统级保护)
+ */
 import { useEffect, useRef, useState } from 'react'
 import { Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'

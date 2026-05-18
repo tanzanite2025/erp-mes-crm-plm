@@ -1,3 +1,20 @@
+/**
+ * 切料计划主管理页(列表 + CRUD + 编辑器入口 + 失效告警)。
+ *
+ * 此页面是"切料计划"模块的总入口(/engineering-db/tabs/cutting-plan):
+ *   - 列表展示所有切料计划,带状态/客户/产品筛选
+ *   - 关联 CuttingPlanEditor(独立组件,本文件不实现编辑器)
+ *   - 失效计划专项告警(InvalidCuttingPlanAlert)+ 失败原因分类
+ *
+ * 失效原因分类(getInvalidCuttingPlanFailure*):
+ *   - filter:  规格名/型号匹配失效
+ *   - group:   分组关联失效
+ *   - status:  原料状态变更
+ *
+ * 数据/UI 解耦:
+ *   - 数据层走 React Query(useMutation/useQuery/useQueryClient)
+ *   - 编辑器/预览组件外置,本页面只负责"列表 + 入口 + 告警"三态
+ */
 import { useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {

@@ -1,5 +1,9 @@
 import { type DeltaSet } from '@/lib/delta/types'
-import { type SalesOrder, type SalesOrderFormValues } from '../data/schema'
+import {
+  getTodaySalesOrderDate,
+  type SalesOrder,
+  type SalesOrderFormValues,
+} from '../data/schema'
 
 function sanitizeSalesOrderDeltaLines(lines: unknown, baselineAmountsByLineNo: Map<number, number>) {
   if (!Array.isArray(lines)) {
@@ -24,13 +28,17 @@ function sanitizeSalesOrderDeltaLines(lines: unknown, baselineAmountsByLineNo: M
 }
 
 export function sanitizeSalesOrderSubmitValues(order: SalesOrderFormValues): SalesOrderFormValues {
+  const orderDate = order.orderDate?.trim() || getTodaySalesOrderDate()
+
   return {
     ...order,
     amount: 0,
     quantity: 0,
+    orderDate,
     lines: (order.lines ?? []).map((line) => ({
       ...line,
       amount: 0,
+      orderDate: line.orderDate?.trim() || orderDate,
     })),
   }
 }

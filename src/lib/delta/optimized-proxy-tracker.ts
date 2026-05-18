@@ -21,6 +21,16 @@ import { type DeltaSet } from './types';
 type TrackableObject = object;
 type PathReadableObject = Record<string, unknown>;
 
+/** 协议假设:被跟踪的根对象包含 `rows` 字段(BOM 表/订单行等"行集"结构)。 */
+interface RowOwner {
+  rows?: unknown[]
+}
+
+function rowsOf(value: object): unknown[] | null {
+  const candidate = (value as RowOwner).rows
+  return Array.isArray(candidate) ? candidate : null
+}
+
 /**
  * Function to extract a unique row ID from a data object
  * 
@@ -190,8 +200,8 @@ export class OptimizedProxyTracker<T extends TrackableObject> {
       if (pathParts.length >= 2 && pathParts[0] === 'rows') {
         const rowIndex = parseInt(pathParts[1], 10);
         if (!isNaN(rowIndex)) {
-          const rows = (this.workingCopy as any).rows;
-          if (Array.isArray(rows) && rows[rowIndex]) {
+          const rows = rowsOf(this.workingCopy);
+          if (rows && rows[rowIndex]) {
             const rowId = this.rowIdExtractor(rows[rowIndex]);
             this.dirtyMarker.markDirty(rowId);
           }
@@ -227,10 +237,10 @@ export class OptimizedProxyTracker<T extends TrackableObject> {
 
     // Only compare dirty rows
     dirtyRows.forEach((rowId) => {
-      const baselineRows = (this.baseline as any).rows;
-      const workingRows = (this.workingCopy as any).rows;
+      const baselineRows = rowsOf(this.baseline);
+      const workingRows = rowsOf(this.workingCopy);
 
-      if (!Array.isArray(baselineRows) || !Array.isArray(workingRows)) {
+      if (!baselineRows || !workingRows) {
         return;
       }
 

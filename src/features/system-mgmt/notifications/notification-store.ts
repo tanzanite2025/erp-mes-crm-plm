@@ -5,6 +5,26 @@ import {
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+// metadata 是 Record<string, unknown>,但业务上常用以下几个动态字段。
+// 集中读取入口避免散落 `as any`,保留运行时安全(undefined 时返回空字符串)。
+function readMetaString(meta: SystemMessage['metadata'], ...keys: string[]): string {
+  if (!meta) return ''
+  for (const key of keys) {
+    const value = meta[key]
+    if (typeof value === 'string' && value) return value
+  }
+  return ''
+}
+function readMetaUniqueKey(meta: SystemMessage['metadata']): string {
+  return readMetaString(meta, 'uniqueKey')
+}
+function readMetaCommandId(meta: SystemMessage['metadata']): string {
+  return readMetaString(meta, 'commandId')
+}
+function readMetaOrderId(meta: SystemMessage['metadata']): string {
+  return readMetaString(meta, 'orderId', 'OrderId', 'id')
+}
+
 /**
  * 全局消息通知状态管理中心 (简版 - 仅管理消息记录)
  * 路由分发逻辑已收拢至 Workflow Designer 驱动
@@ -19,12 +39,12 @@ export const useNotificationStore = create<NotificationState>()(
       // 添加/更新消息 (内置去重逻辑)
       addMessage: (data) => {
         const now = new Date().toISOString()
-        const uniqueKey = (data.metadata as any)?.uniqueKey
+        const uniqueKey = readMetaUniqueKey(data.metadata)
 
         set((state) => {
           // 1. 查找是否存在相同 uniqueKey 且未归档的消息
           const existingIndex = uniqueKey 
-            ? state.messages.findIndex(m => (m.metadata as any)?.uniqueKey === uniqueKey && !m.isArchived)
+            ? state.messages.findIndex(m => readMetaUniqueKey(m.metadata) === uniqueKey && !m.isArchived)
             : -1
 
           if (existingIndex > -1) {
@@ -69,7 +89,7 @@ export const useNotificationStore = create<NotificationState>()(
           const message = state.messages.find((m) => m.id === id)
           if (!message || message.isRead) return state
 
-          const uniqueKey = (message.metadata as any)?.uniqueKey
+          const uniqueKey = readMetaUniqueKey(message.metadata)
           const newDismissed = { ...state.dismissedKeys }
           if (uniqueKey) {
             newDismissed[uniqueKey] = Date.now()
@@ -91,7 +111,7 @@ export const useNotificationStore = create<NotificationState>()(
           const message = state.messages.find((m) => m.id === id)
           if (!message) return state
 
-          const uniqueKey = (message.metadata as any)?.uniqueKey
+          const uniqueKey = readMetaUniqueKey(message.metadata)
           const newDismissed = { ...state.dismissedKeys }
           if (uniqueKey) {
             newDismissed[uniqueKey] = Date.now()
@@ -136,12 +156,11 @@ export const useNotificationStore = create<NotificationState>()(
         set((state) => {
           const toArchive = state.messages.filter(
             m => {
-               const meta = m.metadata as any
-               if (!meta) {
+               if (!m.metadata) {
                  // 如果消息没有元数据但是进入了按订单归档逻辑，说明数据结构损坏或逻辑错误
                  throw new Error(`[CRITICAL] Notification message ${m.id} missing metadata during archiveByOrderId`);
                }
-               const matchesId = meta.orderId === orderId || meta.OrderId === orderId || meta.id === orderId
+               const matchesId = readMetaOrderId(m.metadata) === orderId
                return matchesId && !m.isRead && !m.isArchived
             }
           )
@@ -181,7 +200,7 @@ export const useNotificationStore = create<NotificationState>()(
         set((state) => {
           const validIdsSet = new Set(validCommandIds)
           const newMessages = state.messages.filter(m => {
-            const cmdId = (m.metadata as any)?.commandId
+            const cmdId = readMetaCommandId(m.metadata)
             // 如果某条消息绑定了特定指令，但该指令已从配置中移除，则该消息失效并自动清理
             if (cmdId && !validIdsSet.has(cmdId)) return false
             return true
@@ -201,9 +220,8 @@ export const useNotificationStore = create<NotificationState>()(
         set((state) => {
           const validIdsSet = new Set(validOrderIds)
           const newMessages = state.messages.filter(m => {
-            const meta = m.metadata as any
-            if (!meta) return true // 允许没有元数据的消息保留，但不参与订单同步逻辑
-            const orderId = meta.OrderId || meta.orderId
+            if (!m.metadata) return true // 允许没有元数据的消息保留，但不参与订单同步逻辑
+            const orderId = readMetaOrderId(m.metadata)
             // 如果某条消息绑定了特定订单，但该订单已从系统中彻底删除，则该消息失效
             if (orderId && !validIdsSet.has(orderId)) return false
             return true

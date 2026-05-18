@@ -1,3 +1,27 @@
+// Package services - 销售订单事务编排中心。
+//
+// 此文件聚合所有对销售订单(SalesOrder)的写操作,通过 dispatcher 模式按 op 路由到具体 handler:
+//   - executeOrderUnifiedSaveTx        全量保存(创建/编辑头部 + 全部行)
+//   - executeOrderLineAddTx            纯增行
+//   - executeOrderLineRemoveTx         纯删行
+//   - executeOrderLineContentChangeTx  改单行内容(数量/价格)
+//   - executeOrderLinesChangeTx        多行混合变更
+//   - executeOrderLineClaimTx          行认领(派单)
+//   - executeOrderClassificationTypeChangeTx  改业务类型
+//   - executeOrderDeliveryDateChangeTx 改交货日期
+//   - executeOrderNameChangeTx / executeOrderPurchaseOrderNoChangeTx /
+//     executeOrderRequirementsChangeTx / executeOrderCustomerChangeTx
+//                                       改头部单字段(各自一个事务,审计粒度细)
+//   - executeOrderCancelTx              取消订单
+//   - executeOrderStatusTransitionTx    状态机转移
+//
+// 关键不变量:
+//   - 所有写操作都走 ExecuteSalesOrderTransaction → executeSalesOrderTransactionTx,在一个 GORM 事务内
+//   - 行级修改后调用 normalizeSalesOrderLineProductFieldsForCustomerTx 拼接产品显示快照(BOM 反查)
+//   - 状态转移走 statemachine 包,不允许跳级
+//   - 写入完成后调用 recalculateSalesOrderAuthorityCosts 派生统计字段
+//
+// 命令解析(`parseSalesOrder*Payload`)集中在文件末尾,与 dispatcher 解耦。
 package services
 
 import (

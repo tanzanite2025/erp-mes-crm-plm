@@ -21,8 +21,10 @@ import {
 } from '@/components/ui/select'
 import { useLanguage } from '@/context/language-provider'
 import type { PackagingProfile } from '@/features/logistics-config/packaging-rules-service'
-import type { SalesOrderPackagingEntryTarget } from '../../hooks/use-sales-order-packaging-entry'
-import type { SalesOrderPackagingPreviewSummary } from '../../hooks/use-sales-order-packaging-preview'
+import type {
+  SalesOrderPackagingEntryTarget,
+  SalesOrderPackagingPreviewSummary,
+} from '../../utils/sales-order-packaging-card-view-model'
 import {
   createPackagingProfileFromSelection,
   findPackagingProfileById,
@@ -47,12 +49,34 @@ interface SalesOrderPackagingEntryViewProps {
   lineSummaryText: string | null
   isLoading: boolean
   selectOpen: boolean
+  readonly?: boolean
   isSelectionPending: boolean
   isFormSavePending: boolean
   onSelectOpenChange: (open: boolean) => void
   onPersistLineSelection: (lineNo: number, profile: PackagingProfile) => void
   onStartCreateRule: (lineNo: number, productId?: string) => void
   onEditRule: (profile: PackagingProfile) => void
+}
+
+function PackagingMetricBlock({
+  label,
+  value,
+}: {
+  label: string
+  value: string | number
+}) {
+  return (
+    <div className='rounded-2xl bg-background/80 px-2.5 py-1.5 ring-1 ring-muted/40'>
+      <div className='flex items-center justify-between gap-2'>
+        <div className='min-w-0 truncate text-[8px] font-black tracking-widest text-muted-foreground/55'>
+          {label}
+        </div>
+        <div className='shrink-0 text-[11px] font-black tracking-tighter text-foreground/80'>
+          {value}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export function SalesOrderPackagingEntryView({
@@ -66,6 +90,7 @@ export function SalesOrderPackagingEntryView({
   lineSummaryText,
   isLoading,
   selectOpen,
+  readonly = false,
   isSelectionPending,
   isFormSavePending,
   onSelectOpenChange,
@@ -96,31 +121,26 @@ export function SalesOrderPackagingEntryView({
     }
 
     return (
-      <div className='flex flex-wrap gap-1.5'>
-        <span className='inline-flex items-center gap-1 rounded-full border border-dashed border-primary/15 bg-background/80 px-2 py-1 text-[8px] font-black tracking-widest text-foreground/80'>
-          <span className='text-muted-foreground/55'>箱</span>
-          <span>{summary.totalBoxCount}</span>
-        </span>
-        <span className='inline-flex items-center gap-1 rounded-full border border-dashed border-primary/15 bg-background/80 px-2 py-1 text-[8px] font-black tracking-widest text-foreground/80'>
-          <span className='text-muted-foreground/55'>体积</span>
-          <span>{summary.totalVolume.toFixed(2)}</span>
-        </span>
-        <span className='inline-flex items-center gap-1 rounded-full border border-dashed border-primary/15 bg-background/80 px-2 py-1 text-[8px] font-black tracking-widest text-foreground/80'>
-          <span className='text-muted-foreground/55'>毛重</span>
-          <span>{summary.totalGrossWeight.toFixed(2)}</span>
-        </span>
+      <div className='grid grid-cols-3 gap-1.5'>
+        <PackagingMetricBlock label='箱数' value={summary.totalBoxCount} />
+        <PackagingMetricBlock label='体积' value={summary.totalVolume.toFixed(2)} />
+        <PackagingMetricBlock label='毛重' value={summary.totalGrossWeight.toFixed(2)} />
       </div>
     )
   }
 
   const content = (
-    <div className={`w-full rounded-[24px] border border-dashed px-2.5 py-2 text-left transition-colors ${stateMeta.surfaceClassName}`}>
-      <div className='flex items-start justify-between gap-2'>
-        <div className='flex flex-wrap items-center gap-1.5'>
-          <span className='inline-flex items-center gap-1 rounded-full border border-dashed border-primary/15 bg-background/80 px-2 py-1 text-[8px] font-black uppercase tracking-widest text-primary/75'>
-            <Boxes className='size-3' />
-            {t('tradingSalesOrder.packagingPreview.title')}
-          </span>
+    <div className={`flex h-full w-full flex-col rounded-[24px] border border-dashed p-3 text-left transition-colors ${stateMeta.surfaceClassName}`}>
+      <div className='flex items-start justify-between gap-3'>
+        <div className='min-w-0'>
+          <div className='flex items-center gap-2'>
+            <Boxes className='size-4 text-primary' />
+            <h3 className='text-sm font-black tracking-tighter italic'>
+              {t('tradingSalesOrder.packagingPreview.title')}
+            </h3>
+          </div>
+        </div>
+        <div className='flex items-start gap-1.5'>
           <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[8px] font-black uppercase tracking-widest ${stateMeta.badgeClassName}`}>
             <StateIcon className='size-3' />
             {stateMeta.title}
@@ -131,13 +151,13 @@ export function SalesOrderPackagingEntryView({
               {warningCount}
             </span>
           ) : null}
+          {target && target.state !== 'no_lines' ? (
+            <ChevronDown className='mt-1 size-3.5 shrink-0 text-muted-foreground/50' />
+          ) : null}
         </div>
-        {target && target.state !== 'no_lines' ? (
-          <ChevronDown className='mt-1 size-3.5 shrink-0 text-muted-foreground/50' />
-        ) : null}
       </div>
 
-      <div className='mt-1.5 space-y-1'>
+      <div className='mt-1.5 flex-1 space-y-1'>
         {renderMetrics()}
         {lineSummaryText ? (
           <div className='text-[8px] font-black uppercase tracking-widest text-muted-foreground/50'>
@@ -158,7 +178,7 @@ export function SalesOrderPackagingEntryView({
 
   if (!target) {
     return (
-      <div className='rounded-[24px] border border-dashed border-muted/40 bg-background/80 px-3 py-2.5'>
+      <div className='flex h-full flex-col rounded-[24px] border border-dashed border-muted/40 bg-background/80 px-3 py-2.5'>
         <div className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
           <TriangleAlert className='size-3' />
           暂无可配置包装入口
@@ -172,14 +192,14 @@ export function SalesOrderPackagingEntryView({
   }
 
   return (
-    <div className='space-y-1'>
+    <div className='flex h-full flex-col'>
       <Popover open={selectOpen} onOpenChange={onSelectOpenChange}>
         <PopoverTrigger asChild>
           <Button
             type='button'
             variant='ghost'
             data-order-row-action='true'
-            className='h-auto w-full rounded-[24px] p-0 hover:bg-transparent'
+            className='h-full w-full rounded-[24px] p-0 hover:bg-transparent'
             onClick={(event) => {
               event.stopPropagation()
             }}
@@ -286,6 +306,9 @@ export function SalesOrderPackagingEntryView({
                         <Select
                           value={line.selectedPackaging?.profileId}
                           onValueChange={(profileId) => {
+                            if (readonly) {
+                              return
+                            }
                             const profile =
                               optionProfiles.find((item) => item.id === profileId) ??
                               findPackagingProfileById(profiles, profileId)
@@ -297,7 +320,10 @@ export function SalesOrderPackagingEntryView({
                             onPersistLineSelection(line.lineNo, profile)
                           }}
                         >
-                          <SelectTrigger className='h-11 rounded-2xl border-none bg-muted/50 text-[10px] font-black uppercase tracking-widest'>
+                          <SelectTrigger
+                            disabled={readonly}
+                            className='h-11 rounded-2xl border-none bg-muted/50 text-[10px] font-black uppercase tracking-widest'
+                          >
                             <SelectValue placeholder='选择包装定义' />
                           </SelectTrigger>
                           <SelectContent className='rounded-[24px] border border-dashed'>
@@ -326,7 +352,7 @@ export function SalesOrderPackagingEntryView({
                           type='button'
                           variant='default'
                           className='h-8 rounded-full px-4 text-[10px] font-black uppercase tracking-widest'
-                          disabled={isSelectionPending || isFormSavePending}
+                          disabled={readonly || isSelectionPending || isFormSavePending}
                           onClick={() => {
                             onStartCreateRule(line.lineNo, line.productId)
                           }}
@@ -341,6 +367,7 @@ export function SalesOrderPackagingEntryView({
                           type='button'
                           variant='ghost'
                           className='h-8 rounded-full px-4 text-[10px] font-black uppercase tracking-widest'
+                          disabled={readonly}
                           onClick={() => {
                             onEditRule(editableProfile)
                           }}

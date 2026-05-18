@@ -1332,6 +1332,7 @@ func InitDB(dsn string) {
 		&models.Mold{},
 		&models.Furnace{},
 		&models.MoldLoan{},
+		&models.MaintenanceRecord{},
 		&models.PrepregMaterialSpec{},
 		&models.PrepregBindingToken{},
 		&models.PrepregRollInstance{},

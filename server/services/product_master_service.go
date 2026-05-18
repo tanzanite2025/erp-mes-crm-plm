@@ -1,3 +1,17 @@
+// Package services - 产品主数据写路径(创建/编辑/补丁/派生 SKU/审计)。
+//
+// 思路 3 重构后,Product 仅作产品身份层(typeCode-modelCode 派生 SKU),
+// 归属/版本/重量都迁到 BOM 维度。本文件聚焦产品身份字段的写入流程:
+//   - SaveProduct      全量保存
+//   - PatchProduct     字段级 patch(JSON delta)
+//   - DeleteProduct    级联校验 + 软删
+//   - GetNextProductModelCode  自动派生 modelCode 序号
+//
+// 关键不变量:
+//   - SKU 派生公式 typeCode-modelCode(R7 后简化,versionLevel 不参与)
+//   - issueProductIdentity 是 SKU/identity 的唯一发号入口
+//   - PatchProduct 走 BuildProductPatchInput → saveProductFromWriteInput,字段级 diff 写审计
+//   - applyDerivedTemplateKeys 在 List/Get 出口附加派生字段(从产品类型/模板继承)
 package services
 
 import (

@@ -1,3 +1,15 @@
+/**
+ * 销售/采购单据通用行编辑器(LineDraft → SalesOrderLine / PurchaseOrderLine)。
+ *
+ * 此组件是销售单 / 采购单 / 报价单 等单据的通用"行明细编辑区",承担:
+ *   - 行级 CRUD(增/删/改/排序)
+ *   - 行级展开预览(LineDetailPreview, 显示产品图/规格/库存/历史价)
+ *   - 单价/数量/金额联动计算
+ *   - 跨行汇总(总数量/总金额)
+ *
+ * 通过 props 接受领域类型(SalesOrderLine/PurchaseOrderLine),内部用 LineDraft 作为编辑态。
+ * 上层组件提交时用 commitLineDrafts 把 draft 转回领域类型。
+ */
 import {
   ImageIcon,
   Layers,

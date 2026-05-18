@@ -1,3 +1,20 @@
+// Package services - 业务事件源状态字段重命名的事务化迁移。
+//
+// 当用户重命名一个状态字段(如 "已审核" → "通过")时,所有引用此状态的下游配置
+// (审批规则的状态过滤、通知规则的触发条件、派生动作等)都必须同步迁移,
+// 否则下游配置会指向不存在的状态码,造成静默故障。
+//
+// 本服务提供事务化的状态重命名:
+//   - validateBusinessEventStatusRenameTransactionRequest  入参校验
+//   - buildBusinessEventStatusRenameDraftsForTransaction   计算迁移草稿(预览影响范围)
+//   - analyzeBusinessEventStatusTransactionRules           分析受影响的下游规则
+//   - migrateBusinessEventStatusRuleSegments               实际迁移规则字段
+//   - CommitBusinessEventStatusRenameTransaction           最终提交(单事务)
+//
+// 关键不变量:
+//   - 重命名后,旧状态码不再可用(强一致),新状态码替代
+//   - 迁移过程中如果发现规则会因迁移变得无效(equalStringSlices/equalApprovalDTO 等价比较失败),报错回滚
+//   - 派生动作 ID(buildBusinessEventStatusDerivedApprovalAction)随状态码变化同步更新
 package services
 
 import (

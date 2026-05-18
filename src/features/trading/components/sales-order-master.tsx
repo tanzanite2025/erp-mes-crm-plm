@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react'
 import { isBefore, parseISO, startOfDay } from 'date-fns'
 import {
-  BanknoteArrowDown,
   Edit2,
   FileText,
   MoreHorizontal,
@@ -15,15 +14,17 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { getSalesOrderClassificationLabel } from '../data/sales-order-options'
 import { getSalesStatusLabel, getSalesStatusMeta } from '../data/sales-status'
 import type { SalesOrder } from '../data/schema'
-import { canRegisterSalesOrderReceipt } from '../utils/sales-order-actions'
 import { isSalesOrderPreassembleScanAllowed } from '../utils/sales-order-preassemble'
 import { SalesOrderQuantitySummaryCard } from './parts/sales-order-quantity-packaging-cell'
+import type {
+  SalesOrderCardSection,
+  SalesOrderFeatureCardFactory,
+} from './sales-order-card/sales-order-card-types'
 
 interface SalesOrderMasterProps {
   orders: SalesOrder[]
@@ -33,7 +34,8 @@ interface SalesOrderMasterProps {
   onViewReceivable?: (order: SalesOrder) => void
   onEdit?: (order: SalesOrder) => void
   onDelete?: (id: string) => void
-  renderFeatureCards?: (order: SalesOrder) => ReactNode
+  section?: SalesOrderCardSection
+  getFeatureCards?: SalesOrderFeatureCardFactory
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -54,62 +56,23 @@ interface SalesOrderInfoCardProps {
   className?: string
 }
 
-function SalesOrderInfoCard({ label, children, className }: SalesOrderInfoCardProps) {
-  return (
-    <div
-      className={`rounded-[24px] border border-dashed border-muted/40 bg-background/80 px-3 py-2.5 ${
-        className ?? ''
-      }`}
-    >
-      <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
-        {label}
-      </p>
-      <div className='mt-2'>{children}</div>
-    </div>
-  )
-}
-
-interface SalesOrderMetaStripProps {
-  label: string
-  primary: string
-  secondary?: string
-  trailing?: ReactNode
-  className?: string
-  primaryMono?: boolean
-}
-
-function SalesOrderMetaStrip({
+function SalesOrderInfoCard({
   label,
-  primary,
-  secondary,
-  trailing,
+  children,
   className,
-  primaryMono = false,
-}: SalesOrderMetaStripProps) {
+}: SalesOrderInfoCardProps) {
   return (
     <div
-      className={`rounded-[20px] border border-dashed border-muted/35 bg-background/70 px-2.5 py-2 ${
+      className={`relative flex h-full overflow-hidden rounded-[24px] border border-dashed border-muted/40 bg-background/80 p-3 transition-colors ${
         className ?? ''
       }`}
     >
-      <p className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/45'>
-        {label}
-      </p>
-      <div className='mt-1 flex items-center justify-between gap-2'>
-        <p
-          className={`truncate text-[11px] font-black tracking-tight text-foreground/80 ${
-            primaryMono ? 'font-mono' : ''
-          }`}
-        >
-          {primary}
-        </p>
-        {trailing ? (
-          trailing
-        ) : secondary ? (
-          <span className='font-mono text-[8px] font-black uppercase tracking-widest text-muted-foreground/40'>
-            {secondary}
-          </span>
-        ) : null}
+      <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-transparent' />
+      <div className='relative flex h-full flex-1 flex-col gap-3'>
+        <div>
+          <h3 className='text-sm font-black tracking-tighter italic'>{label}</h3>
+        </div>
+        <div className='flex-1'>{children}</div>
       </div>
     </div>
   )
@@ -121,6 +84,7 @@ interface SalesOrderHeaderMetaPillProps {
   className?: string
   valueClassName?: string
   trailing?: ReactNode
+  variant?: 'default' | 'highlight'
 }
 
 function SalesOrderHeaderMetaPill({
@@ -129,18 +93,29 @@ function SalesOrderHeaderMetaPill({
   className,
   valueClassName,
   trailing,
+  variant = 'default',
 }: SalesOrderHeaderMetaPillProps) {
   return (
     <div
-      className={`flex min-w-0 items-center gap-1.5 rounded-full border border-dashed border-muted/35 bg-background/80 px-2.5 py-1.5 ${
+      className={`flex min-w-0 items-center gap-1.5 rounded-full border border-dashed px-2.5 py-1.5 ${
+        variant === 'highlight'
+          ? 'border-primary/25 bg-primary/5'
+          : 'border-muted/35 bg-background/80'
+      } ${
         className ?? ''
       }`}
     >
-      <span className='shrink-0 text-[8px] font-black uppercase tracking-widest text-muted-foreground/45'>
+      <span
+        className={`shrink-0 text-[8px] font-black uppercase tracking-widest ${
+          variant === 'highlight' ? 'text-primary/60' : 'text-muted-foreground/45'
+        }`}
+      >
         {label}:
       </span>
       <span
         className={`min-w-0 truncate text-[10px] font-black tracking-tight text-foreground/80 ${
+          variant === 'highlight' ? 'text-[11px] text-foreground' : ''
+        } ${
           valueClassName ?? ''
         }`}
       >
@@ -159,7 +134,8 @@ export function SalesOrderMaster({
   onViewReceivable,
   onEdit,
   onDelete,
-  renderFeatureCards,
+  section = 'primary',
+  getFeatureCards,
 }: SalesOrderMasterProps) {
   const { t, locale } = useLanguage()
   const hasActions = true
@@ -183,7 +159,6 @@ export function SalesOrderMaster({
             {orders.map((order) => {
               const active = order.id === selectedId
               const canPreassembleScan = isSalesOrderPreassembleScanAllowed(order)
-              const canRegisterReceipt = canRegisterSalesOrderReceipt(order)
               const classification =
                 getSalesOrderClassificationLabel(order.classification, locale) ||
                 order.classification ||
@@ -192,6 +167,13 @@ export function SalesOrderMaster({
                 order.status !== 'Done' &&
                 order.status !== 'Canceled' &&
                 isBefore(parseISO(order.deliveryDate), startOfDay(new Date()))
+              const cardContext = {
+                section,
+                readonly: section === 'canceled' || order.status === 'Canceled',
+              }
+              const featureCards = (getFeatureCards?.(order, cardContext) ?? [])
+                .filter((featureCard) => featureCard.visible !== false)
+                .sort((left, right) => left.priority - right.priority)
 
               return (
                 <article
@@ -230,12 +212,13 @@ export function SalesOrderMaster({
                         <div className='flex flex-col gap-2 xl:flex-row xl:items-center xl:justify-end'>
                           <div
                             data-testid={`sales-order-header-secondary-meta-${order.id}`}
-                            className='flex min-w-0 flex-wrap items-center justify-end gap-1.5 xl:max-w-[440px]'
+                            className='flex min-w-0 flex-wrap items-center justify-end gap-1.5 xl:max-w-[760px]'
                           >
                             <SalesOrderHeaderMetaPill
                               label={t('tradingSalesOrder.master.columns.customer')}
                               value={order.customerName || '-'}
-                              className='max-w-full xl:max-w-[240px]'
+                              className='max-w-full xl:max-w-[280px]'
+                              variant='highlight'
                             />
                             <SalesOrderHeaderMetaPill
                               label={t('tradingSalesOrder.master.columns.deliveryDeadline')}
@@ -253,6 +236,16 @@ export function SalesOrderMaster({
                                 )
                               }
                             />
+                            <SalesOrderHeaderMetaPill
+                              label={t('tradingSalesOrder.master.columns.paymentMethod')}
+                              value={order.paymentMethodName || order.paymentMethod || '-'}
+                              className='max-w-full xl:max-w-[180px]'
+                            />
+                            <SalesOrderHeaderMetaPill
+                              label={t('tradingSalesOrder.master.columns.paymentTerm')}
+                              value={order.paymentTermName || order.paymentTerm || '-'}
+                              className='max-w-full xl:max-w-[180px]'
+                            />
                           </div>
 
                           <div
@@ -269,111 +262,94 @@ export function SalesOrderMaster({
                               {t('tradingSalesOrder.master.actions.viewDetail')}
                             </Button>
 
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant='ghost'
-                                  size='icon'
-                                  className='h-8 w-8 rounded-full hover:bg-muted'
-                                >
-                                  <MoreHorizontal className='size-4' />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent
-                                align='end'
-                                className='min-w-[144px] rounded-[20px] border-2 p-1.5 shadow-2xl'
-                              >
-                                <DropdownMenuItem
-                                  disabled={!canPreassembleScan}
-                                  onSelect={(e) => {
-                                    e.stopPropagation()
-                                    if (!canPreassembleScan) return
-                                    openScanPreassemble(order)
-                                  }}
-                                  className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black tracking-widest uppercase'
-                                >
-                                  <ScanLine className='size-3 text-blue-600' />
-                                  {t('tradingSalesOrder.master.shipByScan')}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  disabled={!onViewReceivable}
-                                  onSelect={(e) => {
-                                    e.stopPropagation()
-                                    onViewReceivable?.(order)
-                                  }}
-                                  className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black tracking-widest uppercase'
-                                >
-                                  <FileText className='size-3 text-emerald-600' />
-                                  {t('tradingSalesOrder.master.viewReceivable')}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  disabled={!canRegisterReceipt || !onViewReceivable}
-                                  onSelect={(e) => {
-                                    e.stopPropagation()
-                                    if (!canRegisterReceipt || !onViewReceivable) return
-                                    onViewReceivable(order)
-                                  }}
-                                  className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black tracking-widest uppercase'
-                                >
-                                  <BanknoteArrowDown className='size-3 text-emerald-600' />
-                                  {t('tradingSalesOrder.master.registerReceipt')}
-                                </DropdownMenuItem>
-                                {(onEdit || onDelete) && (
-                                  <DropdownMenuSeparator className='my-1' />
-                                )}
-                                {onEdit && (
-                                  <DropdownMenuItem
-                                    onSelect={(e) => {
-                                      e.stopPropagation()
-                                      onEdit?.(order)
-                                    }}
-                                    className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black tracking-widest uppercase'
+                            <Button
+                              type='button'
+                              variant='ghost'
+                              disabled={!canPreassembleScan}
+                              data-order-row-action='true'
+                              className='h-8 rounded-full px-3 text-[10px] font-black tracking-widest'
+                              onClick={() => {
+                                if (!canPreassembleScan) return
+                                openScanPreassemble(order)
+                              }}
+                            >
+                              <ScanLine className='mr-1.5 size-3 text-blue-600' />
+                              {t('tradingSalesOrder.master.shipByScan')}
+                            </Button>
+
+                            <Button
+                              type='button'
+                              variant='ghost'
+                              disabled={!onViewReceivable}
+                              data-order-row-action='true'
+                              className='h-8 rounded-full px-3 text-[10px] font-black tracking-widest'
+                              onClick={() => onViewReceivable?.(order)}
+                            >
+                              <FileText className='mr-1.5 size-3 text-emerald-600' />
+                              {t('tradingSalesOrder.master.viewReceivable')}
+                            </Button>
+
+                            {(onEdit || onDelete) && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant='ghost'
+                                    size='icon'
+                                    className='h-8 w-8 rounded-full hover:bg-muted'
                                   >
-                                    <Edit2 className='size-3 text-blue-500' />
-                                    {t('tradingSalesOrder.master.editOrder')}
-                                  </DropdownMenuItem>
-                                )}
-                                {onDelete && (
-                                  <DropdownMenuItem
-                                    onSelect={(e) => {
-                                      e.stopPropagation()
-                                      onDelete?.(order.id)
-                                    }}
-                                    className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black tracking-widest text-rose-500 uppercase focus:text-rose-600'
-                                  >
-                                    <Trash2 className='size-3' />
-                                    {order.status === 'Canceled'
-                                      ? t(
-                                          'tradingSalesOrder.master.removePermanently'
-                                        )
-                                      : t('tradingSalesOrder.master.voidContract')}
-                                  </DropdownMenuItem>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                                    <MoreHorizontal className='size-4' />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent
+                                  align='end'
+                                  className='min-w-[144px] rounded-[20px] border-2 p-1.5 shadow-2xl'
+                                >
+                                  {onEdit && (
+                                    <DropdownMenuItem
+                                      onSelect={(e) => {
+                                        e.stopPropagation()
+                                        onEdit?.(order)
+                                      }}
+                                      className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black tracking-widest uppercase'
+                                    >
+                                      <Edit2 className='size-3 text-blue-500' />
+                                      {t('tradingSalesOrder.master.editOrder')}
+                                    </DropdownMenuItem>
+                                  )}
+                                  {onDelete && (
+                                    <DropdownMenuItem
+                                      onSelect={(e) => {
+                                        e.stopPropagation()
+                                        onDelete?.(order.id)
+                                      }}
+                                      className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black tracking-widest text-rose-500 uppercase focus:text-rose-600'
+                                    >
+                                      <Trash2 className='size-3' />
+                                      {order.status === 'Canceled'
+                                        ? t(
+                                            'tradingSalesOrder.master.removePermanently'
+                                          )
+                                        : t('tradingSalesOrder.master.voidContract')}
+                                    </DropdownMenuItem>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
                           </div>
                         </div>
                       ) : null}
                     </div>
 
-                    <div className='grid gap-2 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.55fr)_minmax(0,0.95fr)_minmax(0,0.95fr)]'>
+                    <div className='grid items-stretch gap-2 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.55fr)_minmax(0,1.55fr)]'>
                       <SalesOrderInfoCard label={t('tradingSalesOrder.master.columns.totalQuantity')}>
                         <SalesOrderQuantitySummaryCard order={order} />
                       </SalesOrderInfoCard>
 
-                      {renderFeatureCards ? renderFeatureCards(order) : null}
-
-                      <SalesOrderMetaStrip
-                        label={t('tradingSalesOrder.master.columns.paymentMethod')}
-                        primary={order.paymentMethodName || order.paymentMethod || '-'}
-                        secondary={order.paymentMethod || '--'}
-                      />
-
-                      <SalesOrderMetaStrip
-                        label={t('tradingSalesOrder.master.columns.paymentTerm')}
-                        primary={order.paymentTermName || order.paymentTerm || '-'}
-                        secondary={order.paymentTerm || '--'}
-                      />
+                      {featureCards.map((featureCard) => (
+                        <div key={featureCard.id} className='h-full'>
+                          {featureCard.render()}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </article>

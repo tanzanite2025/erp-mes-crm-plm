@@ -1,3 +1,19 @@
+// Package services - 采购订单事务编排中心。
+//
+// 此文件以与销售订单(sales_transaction_service.go)对称的 dispatcher 模式管理采购订单写操作:
+//   - executePurchaseOrderUnifiedSaveTx        全量保存
+//   - executePurchaseOrderLineAddTx            纯增行
+//   - executePurchaseOrderLineRemoveTx         纯删行
+//   - executePurchaseOrderLineContentChangeTx  改单行内容
+//   - executePurchaseOrderSupplierChangeTx     改供应商
+//   - executePurchaseOrderExpectedDateChangeTx 改预计到货日期
+//
+// 关键不变量:
+//   - 所有写操作走 ExecutePurchaseOrderTransaction 单一入口,在同一 GORM 事务内完成
+//   - 收货确认(receipt confirm)在 inventory 模块的 RecordInbound 路径里走,本文件不直接处理库存
+//   - 头部 + 行联动重算 amount 字段调用 recalculatePurchaseOrderAuthorityCosts
+//
+// 命令解析(`parsePurchaseOrder*Payload`)集中在文件末尾。
 package services
 
 import (

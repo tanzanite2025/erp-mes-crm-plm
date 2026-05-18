@@ -1,3 +1,21 @@
+/**
+ * 包装件组装 — 仓库出货前把多个 SKU 物理打包成一个发货单元(箱/托盘)。
+ *
+ * 业务流程:
+ *   1. 选目标(销售订单 / 客户)
+ *   2. 扫描多个产品标签码(PackagingQrCanvas 渲染待绑标签)
+ *   3. 选包装规格(箱型 + 装箱数)
+ *   4. 提交后生成包装件二维码(集装码)+ 关联到所有内含产品(供后续追溯)
+ *
+ * 主要 sub-component:
+ *   - PackagingQrCanvas         扫码框 + 实时反馈
+ *   - PackageCodePrintFormatSelector  打印格式选择(标签纸/A4 等)
+ *   - AssemblyRecord            历史组装记录(展开看明细)
+ *
+ * 关键不变量:
+ *   - 同一标签码不能进入两个不同的包装件
+ *   - 包装件 = 集装码 + 多个内含产品标签码 (1:N),后端通过 unique 索引兜底
+ */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {

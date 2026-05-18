@@ -1,9 +1,9 @@
+import { useEffect } from 'react'
 import { Boxes, PackageSearch, TriangleAlert } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import type { TranslationKey } from '@/locales'
 import { failLoudly } from '@/lib/safe-catch'
-import type { SalesOrder } from '../../data/schema'
-import { useSalesOrderPackagingPreview } from '../../hooks/use-sales-order-packaging-preview'
+import type { SalesOrderPackagingCardViewModel } from '../../utils/sales-order-packaging-card-view-model'
 
 function localizePackagingWarning(
   warning: string,
@@ -36,12 +36,21 @@ function localizePackagingWarning(
   return warning
 }
 
-export function SalesOrderPackagingPreviewCard({ order }: { order: SalesOrder }) {
+export function SalesOrderPackagingPreviewCard({
+  viewModel,
+}: {
+  viewModel: SalesOrderPackagingCardViewModel
+}) {
   const { t } = useLanguage()
-  const { data, isLoading, isError, error } = useSalesOrderPackagingPreview(order)
+  const { preview: data, isLoading, isError, error } = viewModel
+
+  useEffect(() => {
+    if (isError && error) {
+      failLoudly(error, 'SalesOrderPackagingPreviewCard')
+    }
+  }, [error, isError])
 
   if (isError && error) {
-    failLoudly(error, 'SalesOrderPackagingPreviewCard')
     return (
       <div className='flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-[10px] font-medium text-amber-800'>
         <TriangleAlert className='size-4 text-amber-700' />

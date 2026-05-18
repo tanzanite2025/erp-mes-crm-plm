@@ -65,7 +65,7 @@ export function CategoryActionDialog({
 
     const handleSave = () => {
         if (!formData.name) {
-            toast.error(t('labExperimental.toasts.formIncomplete' as any) || '请输入分类名称')
+            toast.error(t('labExperimental.toasts.formIncomplete') || '请输入分类名称')
             return
         }
 

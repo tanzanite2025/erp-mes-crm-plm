@@ -1,3 +1,19 @@
+/**
+ * 销售订单"预装扫码"对话框 — 发货前扫描成品标签,把虚拟标签码绑定到具体订单行。
+ *
+ * 业务背景: 工厂在打包发货前需要"虚拟绑定"——扫描每件成品的二维码 → 系统知道这个码归属哪个订单行。
+ * 这是发货合规链路的关键步骤,绑定后才能进入正式发货流程。
+ *
+ * 主要能力:
+ *   - 扫码事件解析(decodeScannedCodes, 支持 base64/URL/逗号分隔的多码)
+ *   - 行候选匹配(createLineCandidatesResolver, 按已发货数量计算可绑定行)
+ *   - 虚拟码池(VirtualCodePoolEntry, 内存级缓冲,提交前批量上报)
+ *   - 已绑定记录展示(getRecordLineLabel)
+ *
+ * 关键不变量:
+ *   - 同一标签码只能绑一行,前端 + 后端 + DB 三层校验
+ *   - 扫码失败/重复扫码不阻塞,UI 侧给出明确反馈
+ */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { CheckCircle2, QrCode, ScanLine, Search, Tag } from 'lucide-react'

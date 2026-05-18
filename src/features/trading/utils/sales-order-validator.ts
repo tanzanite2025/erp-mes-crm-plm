@@ -4,6 +4,7 @@ import { isSalesOrderEditable } from './sales-order-actions'
 export type SalesOrderValidationErrorKey =
   | 'tradingSalesOrder.headerFields.lockedMessage'
   | 'tradingSalesOrder.headerFields.customerPlaceholder'
+  | 'tradingSalesOrder.headerFields.orderDateRequired'
   | 'tradingSalesOrder.headerFields.deliveryDeadline'
   | 'tradingSalesOrder.linesEditor.noLines'
   | 'tradingSalesOrder.linesEditor.selectProduct'
@@ -31,6 +32,12 @@ export const validateSalesOrder = (
     return {
       isValid: false,
       errorKey: 'tradingSalesOrder.headerFields.customerPlaceholder',
+    }
+  }
+  if (!formData.orderDate.trim()) {
+    return {
+      isValid: false,
+      errorKey: 'tradingSalesOrder.headerFields.orderDateRequired',
     }
   }
   if (!formData.deliveryDate) {

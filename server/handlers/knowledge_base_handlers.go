@@ -1,3 +1,18 @@
+// Package handlers - 知识库条目管理 + 全文搜索 + 富文本安全过滤。
+//
+// 此文件管理知识库的端到端能力:
+//   - CRUD: GetKnowledgeBaseEntriesHandler/CreateKnowledgeBaseEntryHandler/
+//     UpdateKnowledgeBaseEntryHandler/DeleteKnowledgeBaseEntryHandler
+//   - 搜索: SearchKnowledgeBaseEntriesHandler(支持中文分词 + 拼音首字母 + 数据库预过滤)
+//   - 浏览埋点: RecordKnowledgeBaseEntryViewHandler(view_count 累加)
+//
+// 安全关键点:
+//   - 富文本 sanitizeKnowledgeContentHTML 移除危险标签/属性(XSS 防护)
+//   - isSafeKnowledgeLinkURL/isSafeKnowledgeImageSrc 限制 URL scheme(http/https/data:image)
+//   - 搜索 query token 经 knowledgeSearchTokenCanUseDBPrefilter 区分:
+//     长 token 走 SQL LIKE 预过滤,短/拼音 token 走内存 score 排序
+//   - knowledgeViewHeatScore 给同分搜索结果叠加热度排序
+//   - 启动时 ensureKnowledgeBaseSeeded 加载历史种子内容(只插入空库)
 package handlers
 
 import (

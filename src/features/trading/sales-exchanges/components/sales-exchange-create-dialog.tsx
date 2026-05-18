@@ -1,3 +1,17 @@
+/**
+ * 销售换货创建对话框(从一线扫码出发,匹配销售单 → 选行 → 选要换的标签码)。
+ *
+ * 流程:
+ *   1. 用户扫码或手动选已发货的销售订单
+ *   2. 选择需要换货的行(数量受限于 delivered_qty,clampSalesExchangeQuantityWithinDeliveredQuantity 兜底)
+ *   3. 扫码识别旧货标签码 → 自动绑定到行;未识别的标签码作为"未匹配"留痕
+ *   4. 提交后调用 createSalesExchange API,后端走 createSalesExchangeTx 事务
+ *
+ * 关键不变量:
+ *   - 单行换货数量 ≤ 该行已发货数量
+ *   - 标签码去重(appendSalesExchangeUnmatchedLabelCodesWithoutDuplicates),避免同一标签重复入库
+ *   - 已匹配标签自动定位到行,未匹配标签独立列表(便于 QA 后续核对)
+ */
 import { useMemo, useState } from 'react'
 import { ArrowLeftRight, Barcode, Plus, ScanLine, X } from 'lucide-react'
 import { toast } from 'sonner'

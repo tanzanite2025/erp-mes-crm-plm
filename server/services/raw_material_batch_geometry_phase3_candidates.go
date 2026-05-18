@@ -1,3 +1,20 @@
+// Package services - 原料卷料批次切割优化器 Phase 3(几何排版候选生成)。
+//
+// 这是切料优化算法的"几何阶段"。算法分多 phase:
+//   - Phase 1/2: 数量级匹配 + 兼容性筛选(在 raw_material_batch_optimizer.go)
+//   - Phase 3 (本文件): 把通过筛选的需求集放到具体卷料上,做 2D 几何排版,产出可视化 layout
+//
+// 核心算法:
+//   - canSolveRawMaterialBatchOptimizerPhase3Geometry  入口判断(条件不足时跳过 Phase 3)
+//   - seedRawMaterialBatchOptimizerPhase3GeometryCandidates  按 demand line 顺序生成候选解
+//   - tryPlaceRawMaterialBatchOptimizerDemandSetOnRoll  贪心放置算法(尝试匹配卷料的可用 slot)
+//   - countRawMaterialBatchOptimizerPhase3GeometryReuseHits  评分:残料复用度
+//   - buildRawMaterialBatchOptimizerPhase3GeometryLayoutSummary 把放置结果转为前端可消费的 layout
+//
+// 关键不变量:
+//   - 排序策略(orderBy*)是评分的关键输入,不同顺序产出不同候选
+//   - scoreRawMaterialBatchOptimizerPhase3ResidualReusePreference 是优化目标(尽量复用边角料)
+//   - 算法不保证全局最优,只保证 candidate 集合的多样性,由上层综合评分
 package services
 
 import (

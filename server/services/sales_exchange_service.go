@@ -1,3 +1,19 @@
+// Package services - 销售换货单全生命周期管理。
+//
+// 换货 = "客户寄回旧货 + 工厂发出新货" 的双向物流场景。本服务聚焦:
+//   - List/Get/Create/Delete 标准管理
+//   - ConfirmSalesExchangeOldItemInbound 老货收货确认(扫码识别 → 入库 → 状态推进)
+//
+// 关键流程(createSalesExchangeTx):
+//   1. 加锁查找原销售订单(loadSalesExchangeOrderForUpdate)
+//   2. 校验剩余可换数量(loadSalesExchangeQuantityMap 防超额)
+//   3. 派发换货行(buildSalesExchangeLines)
+//   4. 关联标签码(buildSalesExchangeLabelCode* 系列,匹配/未匹配双轨)
+//   5. 生成换货单号(generateSalesExchangeNoTx,日期 + 序号)
+//
+// 关键不变量:
+//   - 一次换货 ≤ 销售订单线剩余数量
+//   - 已识别标签码必须挂到具体的换货行;未匹配标签码挂头部留痕
 package services
 
 import (

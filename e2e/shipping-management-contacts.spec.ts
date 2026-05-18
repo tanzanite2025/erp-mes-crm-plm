@@ -234,14 +234,14 @@ test('contacts page reloads list after toggle and delete', async ({ page }) => {
     return json({})
   })
 
-  await page.goto('/sign-in?redirect=%2Fshipping-management%2Fcontacts')
+  await page.goto('/sign-in?redirect=%2Fshipping-management%2Fvehicle-contacts')
 
   const loginForm = page.locator('form').first()
   await loginForm.locator('input[name="email"]').fill('admin')
   await loginForm.locator('input[name="password"]').fill('password123')
   await loginForm.getByRole('button').last().click()
 
-  await page.waitForURL('**/shipping-management/contacts')
+  await page.waitForURL('**/shipping-management/vehicle-contacts')
   await expect(page.getByText('车型联系人管理')).toBeVisible()
   await expect(page.getByText('张三')).toBeVisible()
   await expect(page.getByText('李四')).toBeVisible()
@@ -255,7 +255,7 @@ test('contacts page reloads list after toggle and delete', async ({ page }) => {
   await expect(page.getByRole('button', { name: '停用' })).toHaveCount(0)
 
   await page.getByRole('button', { name: '删除' }).nth(1).click()
-  await expect(page.getByText('确认删除联系人')).toBeVisible()
+  await expect(page.getByText('确认删除车型联系人')).toBeVisible()
   await page.getByRole('button', { name: '确认删除' }).click()
 
   await expect(page.getByText('删除成功')).toBeVisible()

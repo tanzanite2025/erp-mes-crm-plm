@@ -1,9 +1,9 @@
-import type { ReactNode } from 'react'
-import { CompactPaginationControls } from '@/components/pagination/compact-pagination-controls'
+﻿import { CompactPaginationControls } from '@/components/pagination/compact-pagination-controls'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
 import { type SalesOrder } from '../data/schema'
 import { SalesOrderMaster } from './sales-order-master'
+import type { SalesOrderFeatureCardFactory } from './sales-order-card/sales-order-card-types'
 
 interface SalesOrderCanceledSectionProps {
   shouldLoadCanceledSection: boolean
@@ -20,7 +20,7 @@ interface SalesOrderCanceledSectionProps {
   onViewReceivable?: (order: SalesOrder) => void
   onEdit: (order: SalesOrder) => void
   onDelete: (id: string) => void
-  renderFeatureCards?: (order: SalesOrder) => ReactNode
+  getFeatureCards?: SalesOrderFeatureCardFactory
 }
 
 export function SalesOrderCanceledSection({
@@ -38,7 +38,7 @@ export function SalesOrderCanceledSection({
   onViewReceivable,
   onEdit,
   onDelete,
-  renderFeatureCards,
+  getFeatureCards,
 }: SalesOrderCanceledSectionProps) {
   const { t } = useLanguage()
 
@@ -67,12 +67,13 @@ export function SalesOrderCanceledSection({
         <SalesOrderMaster
           orders={canceledOrders}
           selectedId={selectedId}
+          section='canceled'
           onSelect={onSelect}
           onPreassembleScan={onPreassembleScan}
           onViewReceivable={onViewReceivable}
           onEdit={onEdit}
           onDelete={onDelete}
-          renderFeatureCards={renderFeatureCards}
+          getFeatureCards={getFeatureCards}
         />
       ) : null}
 

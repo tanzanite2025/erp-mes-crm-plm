@@ -1,3 +1,14 @@
+// Package services - 财务主数据(币种/付款方式/付款条件/税率)。
+//
+// 此文件管理财务字典数据,提供 List + Save (JSON delta 形式) 接口。
+// 所有 SaveXxxFromJSON 入口都接受字段级 delta(map[string]json.RawMessage)而非全量结构体,
+// 保证只更新前端真正改动的字段(对乐观锁 + 审计 diff 友好)。
+//
+// 关键不变量:
+//   - 应用启动时通过 SeedFinanceData 确保至少存在 CNY 币种 + 默认付款方式/条件
+//   - SetBaseCurrency 控制系统的本位币标记(全局唯一)
+//   - 系统级付款条件(如 "现款/月结") 不允许通过 UI 删除,通过 removeDisallowedSystemPaymentTermsTx 清理脏数据
+//   - normalize* 系列函数集中处理字段规范化,避免 UI 层歧义
 package services
 
 import (

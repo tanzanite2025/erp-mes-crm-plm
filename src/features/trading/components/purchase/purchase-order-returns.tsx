@@ -1,4 +1,21 @@
-﻿import { useEffect, useMemo, useRef, useState } from 'react'
+﻿/**
+ * 采购退货管理列表 + 行编辑器(双区:列表 + 表单)。
+ *
+ * 这是采购退货的主入口,功能包括:
+ *   - 列表区: 现有退货单列表 + 状态筛选 + 凭证预览(EvidencePreviewGrid)
+ *   - 表单区: 创建新退货单(关联现有采购订单 → 选行 → 填数量/原因 → 上传凭证)
+ *
+ * 状态展示:
+ *   - getPurchaseReturnStatusMeta 把后端 status 字符串映射为 (label, color, icon) 三元组
+ *
+ * 关键不变量:
+ *   - 退货数量 ≤ 采购订单线已收数量(运行时 + DB 兜底)
+ *   - 凭证文件支持图片预览,formatDate/formatMetric 集中数值格式化
+ *
+ * 此组件 1300+ 行偏长,因为列表 + 表单 + 凭证预览三态耦合在同一页;
+ * 后续可考虑拆为 PurchaseReturnList / PurchaseReturnEditor / EvidencePreviewGrid 三个独立模块。
+ */
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   AlertCircle,
   ClipboardMinus,

@@ -1,3 +1,14 @@
+/**
+ * PDA 终端配置 tab — 给 PDA 端用户配置个人工作台默认值与扫码协议。
+ *
+ * 与 pda-shell.tsx 区别: shell 是 PDA 设备运行时入口,本组件是 web 后台的 PDA 配置 UI。
+ *
+ * 配置项:
+ *   - 默认工作台快捷指令(createDefaultWorkbenchForm 按当前协议生成默认表单)
+ *   - 扫码协议(linear barcode 解析规则) 由 LinearBarcodeProtocolConfig 提供
+ *
+ * 此组件只负责 UI 配置呈现,真正下发协议到 PDA 设备由后端 sidebarCommandAssignment 链路处理。
+ */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import {

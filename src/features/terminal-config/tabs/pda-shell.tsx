@@ -1,3 +1,14 @@
+/**
+ * PDA Shell — 工人端 PDA 设备的"启动器/外壳",承载所有 PDA 业务路由。
+ *
+ * 与桌面端不同,PDA 上需要:
+ *   - 全屏锁定(enterFullscreen/exitFullscreen,避免误触退出)
+ *   - 离线感知(getOnlineState,断网时缓存扫码事件本地)
+ *   - 振动反馈(vibrate,扫码成功/失败提示)
+ *   - 扫码事件统一封装(createShellPayload)推到具体业务页
+ *
+ * 此组件本身只负责"PDA 容器层",具体业务(库存/盘点/发料)由内嵌路由消费 shellPayload。
+ */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import {

@@ -1,3 +1,16 @@
+// Package services - 切料发料执行(产品工程裁布料场景)。
+//
+// 业务背景: 复合材料生产中,从一卷预浸料按裁切计划划分尺寸 → 发到产线 → 关联到具体销售订单行。
+// 本服务管理这条"卷料 → 裁料 → 发料 → 关联订单"的执行链:
+//   - CreateCuttingIssuanceExecution    创建一次发料执行(支持多 batch 一次性下发)
+//   - ListCuttingIssuanceExecutions     列表/筛选
+//   - GetCuttingIssuanceTraceReport     按订单/批次回溯
+//
+// 关键不变量:
+//   - 发料前必须校验销售订单线状态 + 模板兼容性(validateTemplateCompatibility)
+//   - 发料过程加锁读销售单(loadSalesOrderLineSnapshot lock=true)避免并发超额
+//   - 发料执行同步生成 ProductionTask(产线工单),后续工序消费
+//   - 模板键(modelKey)规范化处理大小写/全角空白,保证匹配稳定
 package services
 
 import (

@@ -1,3 +1,21 @@
+// Package services - 业务事件源(自定义工作流引擎)的 DTO 编解码与规范化。
+//
+// 业务事件源(BusinessEventSource)是一个用户可配置的"可被规则引擎监听的事件类型",
+// 用于消息中心 + 审批中心的路由触发。配置项包括:
+//   - 事件触发条件
+//   - 状态字段(状态值列表 + 状态间转换图)
+//   - 默认派生的审批/通知动作
+//
+// 此文件聚焦配置的存储格式与 API 形态间的双向映射:
+//   - validateBusinessEventSourceWriteConfigDTO / normalizeBusinessEventSourceWriteConfigDTO
+//   - normalizeBusinessEventSourceStoredConfigDTO / validateBusinessEventSourceStoredConfigDTO
+//   - marshal/unmarshal helpers (config 走 JSONB 存储)
+//   - MapBusinessEventSourceRequestToModel / MapBusinessEventSourceToResponse 双向映射
+//
+// 关键不变量:
+//   - slugifyBusinessEventToken 把人类可读名称规范化为 ASCII slug(用于 ID 生成)
+//   - buildBusinessEventConfigItemID 保证 config 内部子项 ID 在父 source 内唯一
+//   - 状态/动作/配置项的 enum 校验集中在 requireEnum
 package services
 
 import (

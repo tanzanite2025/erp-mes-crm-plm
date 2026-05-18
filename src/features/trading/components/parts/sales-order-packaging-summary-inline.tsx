@@ -1,15 +1,24 @@
+import { useEffect } from 'react'
 import { Boxes, PackageSearch, TriangleAlert } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { failLoudly } from '@/lib/safe-catch'
-import type { SalesOrder } from '../../data/schema'
-import { useSalesOrderPackagingPreview } from '../../hooks/use-sales-order-packaging-preview'
+import type { SalesOrderPackagingCardViewModel } from '../../utils/sales-order-packaging-card-view-model'
 
-export function SalesOrderPackagingSummaryInline({ order }: { order: SalesOrder }) {
+export function SalesOrderPackagingSummaryInline({
+  viewModel,
+}: {
+  viewModel: SalesOrderPackagingCardViewModel
+}) {
   const { t } = useLanguage()
-  const { data, isLoading, isError, error } = useSalesOrderPackagingPreview(order)
+  const { preview: data, isLoading, isError, error } = viewModel
+
+  useEffect(() => {
+    if (isError && error) {
+      failLoudly(error, 'SalesOrderPackagingSummaryInline')
+    }
+  }, [error, isError])
 
   if (isError && error) {
-    failLoudly(error, 'SalesOrderPackagingSummaryInline')
     return (
       <div className='mt-2 inline-flex items-center gap-1 rounded-full border border-rose-500/20 bg-rose-500/5 px-2 py-1 text-[8px] font-black text-rose-600'>
         <TriangleAlert className='size-3' />

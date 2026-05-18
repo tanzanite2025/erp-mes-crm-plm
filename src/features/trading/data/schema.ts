@@ -228,6 +228,13 @@ export type SalesOrderDraft = Omit<
 >
 export type SalesOrderFormValues = SalesOrderDraft
 
+export const getTodaySalesOrderDate = (date = new Date()): string => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 export const createEmptySalesOrderLine = (): SalesOrderLine => ({
   lineNo: 1,
   productModel: '',
@@ -262,33 +269,37 @@ export const createEmptySalesOrderLine = (): SalesOrderLine => ({
 
 export const createEmptySalesOrderDraft = (
   orderNo = ''
-): SalesOrderFormValues => ({
-  orderNo,
-  orderName: '',
-  customerName: '',
-  customerId: '',
-  type: '',
-  currency: 'CNY',
-  exchangeRateSnapshot: 1,
-  paymentMethod: '',
-  paymentMethodName: '',
-  paymentTerm: '',
-  paymentTermName: '',
-  classification: '',
-  status: 'Pending',
-  statusNote: '',
-  evidences: [],
-  amount: 0,
-  quantity: 0,
-  orderDate: '',
-  deliveryDate: '',
-  purchaseOrderNo: '',
-  barcode: orderNo,
-  requirements: '',
-  lines: [createEmptySalesOrderLine()],
-  fulfillmentRate: 0,
-  version: 1,
-})
+): SalesOrderFormValues => {
+  const orderDate = getTodaySalesOrderDate()
+
+  return {
+    orderNo,
+    orderName: '',
+    customerName: '',
+    customerId: '',
+    type: '',
+    currency: 'CNY',
+    exchangeRateSnapshot: 1,
+    paymentMethod: '',
+    paymentMethodName: '',
+    paymentTerm: '',
+    paymentTermName: '',
+    classification: '',
+    status: 'Pending',
+    statusNote: '',
+    evidences: [],
+    amount: 0,
+    quantity: 0,
+    orderDate,
+    deliveryDate: '',
+    purchaseOrderNo: '',
+    barcode: orderNo,
+    requirements: '',
+    lines: [createEmptySalesOrderLine()],
+    fulfillmentRate: 0,
+    version: 1,
+  }
+}
 
 export const salesOrderStatuses: {
   value: SalesOrderStatus

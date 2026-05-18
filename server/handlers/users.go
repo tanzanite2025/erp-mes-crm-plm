@@ -1,3 +1,15 @@
+// Package handlers - 用户账号管理 + 员工绑定 + 权限处理。
+//
+// 此文件管理 User CRUD 与员工档案的双向绑定:
+//   - GetUsersHandler / CreateUserHandler / PatchUserHandler / ReplaceUserHandler / DeleteUserHandler
+//   - BulkSyncUsersHandler                同步导入(批量)
+//   - BindUserEmployeeHandler / UnbindUserEmployeeHandler  User ↔ Employee 双向绑定
+//
+// 关键不变量:
+//   - 受保护账号(isProtectedUserAccount,如 admin)不允许删除/降级
+//   - 密码字段:bcrypt 哈希(isLikelyBcryptHash 检测,不二次哈希)
+//   - 权限上下文校验(hasContextPermission/canManageTargetUser)在每个改账号路径都走一遍
+//   - 唯一索引冲突(23505)在 CreateUserHandler 转友好错误
 package handlers
 
 import (

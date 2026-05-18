@@ -34,7 +34,7 @@ export function EmployeeBulkActions<TData>({
 
     const handleBulkResign = async (items: TData[]) => {
         if (!onStatusChange) {
-            throw new Error(t('orgPersonnel.list.bulk.notEnabled' as any))
+            throw new Error(t('orgPersonnel.list.bulk.notEnabled'))
         }
 
         return await onStatusChange(items, 'resigned')
@@ -42,7 +42,7 @@ export function EmployeeBulkActions<TData>({
 
     return (
         <>
-            <BulkActionsToolbar table={table} entityName={t('orgPersonnel.list.bulk.entity' as any)}>
+            <BulkActionsToolbar table={table} entityName={t('orgPersonnel.list.bulk.entity')}>
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <Button
@@ -55,13 +55,13 @@ export function EmployeeBulkActions<TData>({
                                 }
                             }}
                             className='size-8'
-                            title={t('orgPersonnel.list.bulk.editTitle' as any)}
+                            title={t('orgPersonnel.list.bulk.editTitle')}
                         >
                             <Pencil className='size-3.5 text-slate-500' />
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                        <p>{t('orgPersonnel.list.bulk.editTitle' as any)}</p>
+                        <p>{t('orgPersonnel.list.bulk.editTitle')}</p>
                     </TooltipContent>
                 </Tooltip>
 
@@ -72,19 +72,19 @@ export function EmployeeBulkActions<TData>({
                             size='icon'
                             onClick={() => {
                                 if (!onStatusChange) {
-                                    toast.error(t('orgPersonnel.list.bulk.notEnabled' as any))
+                                    toast.error(t('orgPersonnel.list.bulk.notEnabled'))
                                     return
                                 }
                                 setShowResignConfirm(true)
                             }}
                             className='size-8'
-                            title={t('orgPersonnel.list.bulk.resignTitle' as any)}
+                            title={t('orgPersonnel.list.bulk.resignTitle')}
                         >
                             <UserX className='size-3.5 text-slate-500' />
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                        <p>{t('orgPersonnel.list.bulk.resignTitle' as any)}</p>
+                        <p>{t('orgPersonnel.list.bulk.resignTitle')}</p>
                     </TooltipContent>
                 </Tooltip>
 
@@ -95,13 +95,13 @@ export function EmployeeBulkActions<TData>({
                             size='icon'
                             onClick={() => setShowDeleteConfirm(true)}
                             className='size-8'
-                            title={t('orgPersonnel.list.bulk.deleteTitle' as any)}
+                            title={t('orgPersonnel.list.bulk.deleteTitle')}
                         >
                             <Trash2 />
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                        <p>{t('orgPersonnel.list.bulk.deleteTitle' as any)}</p>
+                        <p>{t('orgPersonnel.list.bulk.deleteTitle')}</p>
                     </TooltipContent>
                 </Tooltip>
             </BulkActionsToolbar>

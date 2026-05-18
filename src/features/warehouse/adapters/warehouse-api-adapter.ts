@@ -1,3 +1,19 @@
+/**
+ * 仓库领域 API DTO ↔ Contract 双向适配器(契约层)。
+ *
+ * 此文件是仓库模块所有"网络协议 DTO"和"前端业务 Contract"间的转换中心,
+ * 集中所有 toXxxContract / toXxxApiDTO 双向映射,保证:
+ *   - UI 层只依赖业务 Contract(去掉网络协议噪音字段)
+ *   - 后端 DTO 字段变更时,只需要改本文件,UI 层不动
+ *
+ * 涵盖实体: WarehouseCategory / Inventory / InboundRecord / ShipmentRecord /
+ *           StocktakeTask / StocktakeItem / InventoryAdjustment / 其他统计/告警类型。
+ *
+ * 关键不变量:
+ *   - 所有 toXxxContracts(复数)版本都返回新数组,不修改入参
+ *   - 时间字段统一走 toDateOnlyString 规范化
+ *   - 适配器纯函数,便于单元测试 / 契约测试覆盖
+ */
 import type {
   InventoryAlertSummaryApiDTO,
   InventoryAdjustmentApiDTO,

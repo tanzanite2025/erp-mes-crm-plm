@@ -1,3 +1,17 @@
+// Package services - 客户/供应商(主数据合作方)事务编排。
+//
+// 客户(Customer)与供应商(Supplier)共用一套 dispatcher 模式,因为两者主数据结构和生命周期
+// 高度对称(身份字段 + 状态字段 + 业务关联):
+//   - Customer 路径: ExecuteCustomerTransaction → executeCustomerTransactionTx → 三个 handler
+//     (UnifiedSave / IdentityChange / StatusChange)
+//   - Supplier 路径: 同上结构,executeSupplier*Tx
+//
+// 关键不变量:
+//   - status-only / identity-only delta 走轻量路径(只校验该字段),减少全量 merge 成本
+//   - mergeCustomerSaveSnapshot / mergeSupplierSaveSnapshot 控制部分字段更新时的字段保留策略
+//   - 写完后联动写审计日志(operator/IP 从 ctx 解析)
+//
+// 命令解析(`parse*Payload`)在文件头部,与 dispatcher 解耦。
 package services
 
 import (

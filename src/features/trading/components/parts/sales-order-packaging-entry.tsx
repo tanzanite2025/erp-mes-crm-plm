@@ -1,18 +1,10 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ChevronDown, PackageSearch, Plus, Settings2, TriangleAlert } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
-import { PackagingProfileFormDialog } from '@/features/logistics-config/components/packaging-profile-form-dialog'
-import { usePackagingProfileFormController } from '@/features/logistics-config/hooks/use-packaging-profile-form-controller'
 import type { PackagingProfile } from '@/features/logistics-config/packaging-rules-service'
 import { failLoudly } from '@/lib/safe-catch'
-import { useAuthStore } from '@/stores/auth-store'
 import type { SalesOrder } from '../../data/schema'
-import { useSalesOrderPackagingEntry } from '../../hooks/use-sales-order-packaging-entry'
-import { useSalesOrderMutations } from '../../sales'
-import { requireTradingCommandActor } from '../../utils/command-actor'
-import {
-  buildSalesOrderLinePackagingSelection,
-} from '../../utils/sales-order-packaging-selection'
+import type { SalesOrderPackagingCardViewModel } from '../../utils/sales-order-packaging-card-view-model'
 import {
   SalesOrderPackagingEntryView,
   type SalesOrderPackagingEntryStateMeta,
@@ -20,66 +12,40 @@ import {
 
 interface SalesOrderPackagingEntryProps {
   order: SalesOrder
+  viewModel: SalesOrderPackagingCardViewModel
+  readonly?: boolean
+  isSelectionPending: boolean
+  isFormSavePending: boolean
+  onPersistLineSelection: (order: SalesOrder, lineNo: number, profile: PackagingProfile) => void
+  onStartCreateRule: (order: SalesOrder, lineNo: number, productId?: string) => void
+  onEditRule: (profile: PackagingProfile) => void
 }
 
-export function SalesOrderPackagingEntry({ order }: SalesOrderPackagingEntryProps) {
+export function SalesOrderPackagingEntry({
+  order,
+  viewModel,
+  readonly = false,
+  isSelectionPending,
+  isFormSavePending,
+  onPersistLineSelection,
+  onStartCreateRule,
+  onEditRule,
+}: SalesOrderPackagingEntryProps) {
   const { t } = useLanguage()
-  const user = useAuthStore((state) => state.user)
   const [selectOpen, setSelectOpen] = useState(false)
-  const [createLineNo, setCreateLineNo] = useState<number | null>(null)
-  const { lineContentChangeMutation } = useSalesOrderMutations()
-  const { target, preview, profiles, isLoading, isError, error } = useSalesOrderPackagingEntry(order)
+  const { target, preview, profiles, isLoading, isError, error } = viewModel
   const actionLine = target && target.state !== 'no_lines' ? target.actionLine : null
 
-  const persistLineSelection = async (lineNo: number, profile: PackagingProfile) => {
-    let actor
-    try {
-      actor = requireTradingCommandActor(
-        { operator: user?.accountNo, actorId: user?.id },
-        'SalesOrderPackagingEntry.persistLineSelection'
-      )
-    } catch {
+  const persistLineSelection = (lineNo: number, profile: PackagingProfile) => {
+    if (readonly) {
       return
     }
 
-    try {
-      await lineContentChangeMutation.mutateAsync({
-        orderId: order.id,
-        lines: order.lines.map((line) =>
-          line.lineNo === lineNo
-            ? {
-                ...line,
-                selectedPackaging: buildSalesOrderLinePackagingSelection(profile, 'manual'),
-              }
-            : line
-        ),
-        operator: actor.operator,
-        actorId: actor.actorId,
-        expectedVersion: order.version,
-      })
-      setSelectOpen(false)
-    } catch {
-      return
-    }
+    onPersistLineSelection(order, lineNo, profile)
+    setSelectOpen(false)
   }
 
-  const handleProfileSaved = (saved: PackagingProfile) => {
-    if (createLineNo === null) {
-      setSelectOpen(false)
-      return
-    }
-
-    void persistLineSelection(createLineNo, saved).finally(() => {
-      setCreateLineNo(null)
-    })
-  }
-
-  const formController = usePackagingProfileFormController({
-    initialProductId: actionLine?.productId,
-    onSaveSuccess: handleProfileSaved,
-  })
-
-  const summary = preview.data?.summary ?? null
+  const summary = preview?.summary ?? null
   const warningCount = summary?.warnings.length ?? 0
   const hasComputedSummary = Boolean(summary && summary.totalBoxCount > 0)
 
@@ -173,83 +139,36 @@ export function SalesOrderPackagingEntry({ order }: SalesOrderPackagingEntryProp
     return `${prefix} ${actionLine.lineNo} · ${actionLine.productDisplayTitle} · ${actionLine.qty} ${actionLine.uom}`
   }, [actionLine, target])
 
-  if (isError && error) {
-    failLoudly(error, 'SalesOrderPackagingEntry')
-  }
+  useEffect(() => {
+    if (isError && error) {
+      failLoudly(error, 'SalesOrderPackagingEntry')
+    }
+  }, [error, isError])
 
   return (
-    <>
-      <SalesOrderPackagingEntryView
-        orderId={order.id}
-        target={target}
-        profiles={profiles}
-        summary={summary}
-        stateMeta={stateMeta}
-        warningCount={warningCount}
-        hasComputedSummary={hasComputedSummary}
-        lineSummaryText={lineSummaryText}
-        isLoading={isLoading}
-        selectOpen={selectOpen}
-        isSelectionPending={lineContentChangeMutation.isPending}
-        isFormSavePending={formController.savePending}
-        onSelectOpenChange={setSelectOpen}
-        onPersistLineSelection={(lineNo, profile) => {
-          void persistLineSelection(lineNo, profile)
-        }}
-        onStartCreateRule={(lineNo, productId) => {
-          if (!productId) {
-            return
-          }
-          setCreateLineNo(lineNo)
-          formController.handleCreate(productId)
-        }}
-        onEditRule={(profile) => {
-          formController.handleEdit(profile)
-        }}
-      />
-
-      <PackagingProfileFormDialog
-        open={formController.open}
-        draft={formController.draft}
-        products={formController.products}
-        packagingMaterials={formController.packagingMaterials}
-        packagingMaterialOptions={formController.packagingMaterialOptions}
-        dimensionUnits={formController.dimensionUnits}
-        weightUnits={formController.weightUnits}
-        quantityUnits={formController.quantityUnits}
-        resolvedDimensionUnitCode={formController.resolvedDimensionUnitCode}
-        resolvedWeightUnitCode={formController.resolvedWeightUnitCode}
-        resolvedCapacityUnitCode={formController.resolvedCapacityUnitCode}
-        selectedPackagingMaterialId={formController.selectedPackagingMaterialId}
-        selectedProduct={formController.selectedProduct}
-        computedVolume={formController.computedVolume}
-        computedGrossWeight={formController.computedGrossWeight}
-        savePending={formController.savePending}
-        packagingMaterialsLoading={formController.packagingMaterialsLoading}
-        onOpenChange={formController.setOpen}
-        onDraftChange={formController.setDraft}
-        onPackagingMaterialChange={formController.updateSelectedPackagingMaterial}
-        onProductChange={formController.updateSelectedProduct}
-        onDimensionUnitChange={(value) =>
-          formController.setDraft((current) => ({
-            ...current,
-            dimensionUnitCode: value,
-          }))
+    <SalesOrderPackagingEntryView
+      orderId={order.id}
+      target={target}
+      profiles={profiles}
+      summary={summary}
+      stateMeta={stateMeta}
+      warningCount={warningCount}
+      hasComputedSummary={hasComputedSummary}
+      lineSummaryText={lineSummaryText}
+      isLoading={isLoading}
+      selectOpen={selectOpen}
+      readonly={readonly}
+      isSelectionPending={isSelectionPending}
+      isFormSavePending={isFormSavePending}
+      onSelectOpenChange={setSelectOpen}
+      onPersistLineSelection={persistLineSelection}
+      onStartCreateRule={(lineNo, productId) => {
+        if (!productId || readonly) {
+          return
         }
-        onWeightUnitChange={(value) =>
-          formController.setDraft((current) => ({
-            ...current,
-            weightUnitCode: value,
-          }))
-        }
-        onCapacityUnitChange={(value) =>
-          formController.setDraft((current) => ({
-            ...current,
-            capacityUnitCode: value,
-          }))
-        }
-        onSave={formController.handleSave}
-      />
-    </>
+        onStartCreateRule(order, lineNo, productId)
+      }}
+      onEditRule={onEditRule}
+    />
   )
 }

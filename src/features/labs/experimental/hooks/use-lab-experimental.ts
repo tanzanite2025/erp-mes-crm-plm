@@ -139,7 +139,7 @@ export function useLabExperimentalMutations() {
         mutationFn: (id: string) => apiFetch(`/labs/experimental/equipment/${id}`, { method: 'DELETE' }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['exp_equipment'] })
-            toast.success(t('labExperimental.toasts.equipmentDeleted' as any) || '设备已删除')
+            toast.success(t('labExperimental.toasts.equipmentDeleted') || '设备已删除')
         }
     })
 

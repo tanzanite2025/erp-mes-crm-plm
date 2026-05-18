@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Loader2, ShoppingCart } from 'lucide-react'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { CompactPaginationControls } from '@/components/pagination/compact-pagination-controls'
@@ -6,6 +6,8 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { useLanguage } from '@/context/language-provider'
 import { isForbiddenError } from '@/lib/error-status'
 import type { SalesOrder } from '../data/schema'
+import { useSalesOrderAfterSalesCardController } from '../hooks/use-sales-order-after-sales-card-controller'
+import { useSalesOrderPackagingCardController } from '../hooks/use-sales-order-packaging-card-controller'
 import { useSalesOrderListController } from '../hooks/use-sales-order-list-controller'
 import { SalesOrderActionDialog } from './sales-order-action-dialog'
 import { SalesOrderCanceledSection } from './sales-order-canceled-section'
@@ -13,7 +15,10 @@ import { SalesOrderDetailSheet } from './sales-order-detail-sheet'
 import { SalesOrderListToolbar } from './sales-order-list-toolbar'
 import { SalesOrderMaster } from './sales-order-master'
 import { SalesOrderReceivableDetailDialogBridge } from '../receivables/components/sales-order-receivable-detail-dialog-bridge'
+import { SalesOrderAfterSalesCard } from './parts/sales-order-after-sales-card'
 import { SalesOrderPackagingEntry } from './parts/sales-order-packaging-entry'
+import { SalesOrderPackagingProfileDialogBridge } from './parts/sales-order-packaging-profile-dialog-bridge'
+import type { SalesOrderFeatureCardFactory } from './sales-order-card/sales-order-card-types'
 import { SalesOrderPreassembleScanDialog } from './sales-order-preassemble-scan-dialog'
 import { TradingQueryErrorState } from './trading-query-error-state'
 
@@ -21,9 +26,51 @@ export function SalesOrderList() {
   const { t } = useLanguage()
   const controller = useSalesOrderListController()
   const [viewingReceivableOrderId, setViewingReceivableOrderId] = useState<string | null>(null)
-  const renderOrderFeatureCards = (order: SalesOrder) => (
-    <SalesOrderPackagingEntry order={order} />
+  const packagingResourceOrders = useMemo(
+    () =>
+      controller.showCanceledSection
+        ? [...controller.primaryOrders, ...controller.canceledOrders]
+        : controller.primaryOrders,
+    [controller.canceledOrders, controller.primaryOrders, controller.showCanceledSection]
   )
+  const packagingController = useSalesOrderPackagingCardController(packagingResourceOrders)
+  const afterSalesController = useSalesOrderAfterSalesCardController(packagingResourceOrders)
+  const getOrderFeatureCards: SalesOrderFeatureCardFactory = (order: SalesOrder, context) => {
+    const packagingViewModel = packagingController.getViewModel(order)
+    const afterSalesViewModel = afterSalesController.getViewModel(order)
+
+    return [
+      {
+        id: 'packaging',
+        priority: 20,
+        render: () => (
+          <SalesOrderPackagingEntry
+            order={order}
+            viewModel={packagingViewModel}
+            readonly={context.readonly}
+            isSelectionPending={packagingController.isSelectionPending}
+            isFormSavePending={packagingController.isFormSavePending}
+            onPersistLineSelection={packagingController.persistLineSelection}
+            onStartCreateRule={packagingController.startCreateRule}
+            onEditRule={packagingController.startEditRule}
+          />
+        ),
+      },
+      {
+        id: 'after-sales',
+        priority: 30,
+        render: () => (
+          <SalesOrderAfterSalesCard
+            order={order}
+            viewModel={afterSalesViewModel}
+            readonly={context.readonly}
+            onOpenReturns={afterSalesController.openReturns}
+            onOpenExchanges={afterSalesController.openExchanges}
+          />
+        ),
+      },
+    ]
+  }
   const handleViewReceivable = (order: SalesOrder) => {
     setViewingReceivableOrderId(order.id)
   }
@@ -91,7 +138,7 @@ export function SalesOrderList() {
               onViewReceivable={handleViewReceivable}
               onEdit={controller.handleEditOrder}
               onDelete={controller.handleDeleteOrder}
-              renderFeatureCards={renderOrderFeatureCards}
+              getFeatureCards={getOrderFeatureCards}
             />
 
             <SalesOrderCanceledSection
@@ -109,7 +156,7 @@ export function SalesOrderList() {
               onViewReceivable={handleViewReceivable}
               onEdit={controller.handleEditOrder}
               onDelete={controller.handleDeleteOrder}
-              renderFeatureCards={renderOrderFeatureCards}
+              getFeatureCards={getOrderFeatureCards}
             />
           </div>
         </ScrollArea>
@@ -134,6 +181,10 @@ export function SalesOrderList() {
         open={Boolean(viewingReceivableOrderId)}
         orderId={viewingReceivableOrderId}
         onOpenChange={handleReceivableDialogOpenChange}
+      />
+
+      <SalesOrderPackagingProfileDialogBridge
+        formController={packagingController.formController}
       />
     </div>
   )

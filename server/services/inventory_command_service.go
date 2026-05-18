@@ -1,3 +1,17 @@
+// Package services - 库存写操作(入库 / 出货 / 调拨 / 盘点同步)事务中心。
+//
+// 此文件管理 Inventory / InboundRecord / ShipmentRecord 的写路径,以及联动审计日志:
+//   - PatchInventoryRecord / BulkSyncInventory  增量/批量改库存(乐观锁)
+//   - RecordInbound + applyInboundToPurchaseOrderTx  入库并回写采购单已收数量
+//   - CreateShipmentDraft + CommitShipment + applyShipmentToSalesOrderTx  发货并回写销售单已发数量
+//   - VoidShipment + rollbackShipmentFromSalesOrderTx  作废发货并回退已发数量
+//   - TransferInventory                                  跨仓库调拨
+//   - ReconcileNegativeInventory                         负库存对账(数据修复)
+//
+// 关键不变量:
+//   - 写操作 → 写审计 在同一 GORM 事务内,保证可追溯
+//   - mergeInventoryForSync 处理批量同步时的字段优先级(导入数据 vs 现有数据)
+//   - audit operator/IP 从 ctx 解析,fallback 到入参 fallbackOperator
 package services
 
 import (

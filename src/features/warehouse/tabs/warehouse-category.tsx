@@ -1,3 +1,15 @@
+/**
+ * 仓库分类(库区/库位)主数据管理页。
+ *
+ * 此页面是仓库结构维护的入口,管理 WarehouseCategory(树形结构):
+ *   - 列表 + 树形展开
+ *   - 创建/编辑/删除
+ *   - 默认仓库 / 默认库区标记(全局唯一)
+ *   - 物料阈值告警绑定(关联到具体库位)
+ *
+ * 这个组件 ~700 行较大,因为包含树形 UI + 表单 + 阈值配置三态;
+ * 考虑后续拆为 CategoryTree / CategoryEditor / ThresholdConfig 三组件。
+ */
 'use client'
 
 import { useMemo, useState } from 'react'

@@ -36,7 +36,7 @@ import { ImportPersonnelDialog } from '../components/import-personnel-dialog'
 import { type Employee } from '../data/schema'
 import { useEmployeesQuery } from '../hooks/use-employees-query'
 import { useOrgPersonnelLookups } from '../hooks/use-org-personnel-lookups'
-import { type EmployeeStatus } from '../services/employee-service'
+import { type EmployeeStatus } from '../data/schema'
 import { EmployeeMaintenanceService } from '../services/employee-maintenance-service'
 import { downloadPersonnelTemplate, exportPersonnelData } from '../utils/personnel-import-utils'
 

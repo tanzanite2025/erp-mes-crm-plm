@@ -1,3 +1,18 @@
+/**
+ * 业务事件源(BusinessEventSource)主配置卡片。
+ *
+ * 业务事件源是工作流引擎的"被监听对象"——一个事件源代表一类业务事件
+ * (如"销售订单提交","BOM 发布"),配置项包括:
+ *   - 触发字段(哪些字段变化触发事件)
+ *   - 状态字段(状态值列表 + 状态间转换图,定义生命周期)
+ *   - 默认派生动作(自动审批/通知)
+ *
+ * 此卡片是配置 UI 的主容器,内部按 section 分组(基础信息/字段配置/状态配置/动作配置)。
+ * 子抽屉(状态详情/动作详情)在 business-event-source-card-drawers.tsx,
+ * 配置数据通过后端 services/business_event_source_dto.go 校验/规范化。
+ *
+ * 因配置项极多,组件 ~970 行,按 section 自上而下排列,无渲染优化(配置不频繁,无性能压力)。
+ */
 import { type Dispatch, type SetStateAction, useEffect, useMemo, useRef, useState } from 'react'
 import {
   AlertCircle,

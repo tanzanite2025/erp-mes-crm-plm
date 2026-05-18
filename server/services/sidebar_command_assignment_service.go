@@ -1,3 +1,23 @@
+// Package services - 用户侧边栏快捷指令分配(SaaS 多租户级权限粒度)。
+//
+// 业务场景: 不同岗位的用户在 PDA / Web 上看到的"快捷扫码命令"应该不同
+// (产线工人扫码进料,品检员扫码检验,管理员看全量)。本服务管理 user → command 的多对多关系。
+//
+// 数据结构:
+//   - SidebarCommandDefinition  指令定义(全局)
+//   - SidebarCommandCategory     指令分组(便于批量分配整组)
+//   - UserSidebarCommandAssignment + UserSidebarCommandCategoryAssignment  用户级分配
+//
+// 主要入口:
+//   - GetSidebarCommandAssignment      读单个用户的有效指令集
+//   - ReplaceSidebarCommandAssignment  全量替换分配
+//   - BatchAssignSidebarCommands       批量给多个用户分配同一份
+//   - CopySidebarCommandAssignment     克隆某用户的分配到其他用户(模板 + 拷贝)
+//
+// 关键不变量:
+//   - 私有指令(isPrivateSidebarCommandID)固定可用,不参与分配
+//   - 分配时记录 source(谁分配的) + assignedBy(操作员),便于审计
+//   - normalize* 系列做大小写/空白容错
 package services
 
 import (

@@ -1,3 +1,15 @@
+// Package services - 员工主数据 Excel 批量导入(预览 + 提交两阶段)。
+//
+// 这是组织人事模块最复杂的导入流程,流程分两阶段:
+//  1. PreviewEmployeeImport: 解析 Excel,匹配现有员工,计算 diff(新增/更新/缺失),返回预览 token
+//  2. CommitEmployeeImport: 凭 token 提交真正写入(带版本号,防并发)
+//
+// 关键不变量:
+//   - 预览快照存内存(storeEmployeeImportPreview/getEmployeeImportPreview),有过期自动清理
+//   - 部门/岗位字段做模糊匹配(normalizeEmployeeImportLookup),允许 Excel 里写部门名而非 ID
+//   - 字段级 mergeImportedEmployee 保留现有员工的非模板字段(如二次开发字段)
+//   - status/gender/education 等枚举有 normalize* 容错(中英文/全角/简体繁体)
+//   - 解析失败时不阻塞整体导入,逐行收集错误返回前端
 package services
 
 import (

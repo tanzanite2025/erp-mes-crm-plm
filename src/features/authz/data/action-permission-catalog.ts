@@ -1,4 +1,19 @@
-﻿import type { Permission } from '@/features/authz/data/permission-schema'
+﻿/**
+ * 动作级权限映射表 + 路由绑定规范化。
+ *
+ * 动作级权限 = "用户能不能执行某个动作"(创建订单 / 删除产品 / 提交审批),
+ * 比路由级权限更细粒度。本文件提供 legacy 配置 → 标准 ActionPermissionEntry 的规范化转换。
+ *
+ * 数据流:
+ *   - 模块自定义 LegacyActionPermissionEntry[](人类可读)
+ *   - normalizeActionPermissionCatalog 转为运行时校验格式 ActionPermissionEntry
+ *   - normalizeActionRouteBinding 把动作绑定到具体路由(权限传递 + 默认路由跳转)
+ *
+ * 关键不变量:
+ *   - 所有路由绑定字段经过 normalizeActionRouteBinding 兜底,允许 legacy 配置缺字段
+ *   - 输出格式与 permission-schema 严格对齐(类型层守护)
+ */
+import type { Permission } from '@/features/authz/data/permission-schema'
 
 export type ActionRouteBinding = {
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'

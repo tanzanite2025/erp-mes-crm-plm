@@ -1,3 +1,20 @@
+/**
+ * 库存盘点离线模式适配器(SDRTS Offline Sync 协议)。
+ *
+ * 业务背景: 工厂车间 PDA 经常断网,扫码盘点必须先入本地队列,联网后再同步到后端。
+ * 本文件桥接"领域操作 (扫码/补丁)" 与 "通用离线引擎 (offline-sync-engine)"。
+ *
+ * 主要能力:
+ *   - buildScanOpId/buildPatchOpId 给每次操作生成幂等 ID,防重复同步
+ *   - persistQueuedScan/persistQueuedPatch 把待发送操作写入本地存储
+ *   - flushQueuedScansInternal/flushQueuedPatchesInternal 网络恢复时批量发送
+ *   - markConflict + buildFieldDiffs/buildMergeSuggestion 处理服务端版本冲突,生成可视化合并方案
+ *
+ * 关键不变量:
+ *   - opId 包含 clientId + 操作内容哈希,跨设备幂等
+ *   - shouldQueueOffline 区分"网络错误"(应入队)和"业务错误"(应直接失败)
+ *   - 版本冲突走专门的 conflict record 流(非简单失败)
+ */
 import { createLogger } from '@/lib/logger'
 import { StorageService } from '@/features/system-mgmt/services/storage-service'
 import { offlineSyncEngine } from '@/offline-sync/engine/offline-sync-engine'

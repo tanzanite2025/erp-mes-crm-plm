@@ -1,3 +1,17 @@
+/**
+ * 切料计划编辑器(裁布料模板配置)。
+ *
+ * 业务背景: 纤维 / 复合材料生产中,从一卷预浸料按"切料计划"切成多种尺寸,
+ * 计划包含切料 spec 配置 + 与产品/树脂模型的匹配关系。
+ *
+ * 主要能力:
+ *   - 编辑切料计划基本信息 + 多行明细
+ *   - 自动匹配现有产品(findMatchedProduct,基于规格名称归一化匹配)
+ *   - 树脂型号识别(tryExtractResinModel,从 spec 字符串提取)
+ *   - 切料尺寸单位下拉(getCutSizeOptionLabel)
+ *
+ * 共用辅助子组件 EditorField/LineInput/ReadonlyLineValue 在文件末尾,集中维护行级 UI。
+ */
 import { useEffect, useMemo, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { isValid, parseISO } from 'date-fns'

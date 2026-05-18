@@ -1,3 +1,15 @@
+// Package services - 仓库主数据 + 物料档案 + 库存盘点写路径。
+//
+// 此文件汇聚仓库域多个相关业务的写操作:
+//   - 物料档案: ListMaterials/SaveMaterial/BulkSyncMaterials/DeleteMaterial(含审计日志)
+//   - 库存盘点任务: ListStocktakeTasks/CreateStocktakeTask/PatchStocktakeItem
+//   - PDA 扫码: SubmitPDAScan/SyncPDAScans(支持离线缓存批量同步)
+//   - 库存调整: SubmitAdjustmentApproval/ExecuteAdjustment/ListAdjustmentHistory
+//
+// 关键不变量:
+//   - 物料级写操作走审计日志,字段 diff 经 materialAuditDiff 计算
+//   - 库存调整有审批流(申请 → 审批 → 执行 → 历史),状态字段独立
+//   - PDA 扫码支持离线模式,SyncPDAScans 提供幂等批量同步入口
 package services
 
 import (

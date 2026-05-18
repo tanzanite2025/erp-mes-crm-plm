@@ -13,7 +13,7 @@ export const master = {
       auditor: 'Auditor',
       system: 'System',
       overdue: 'Overdue',
-      shipByScan: 'Scan Preload (Single/Assembly Code)',
+      shipByScan: 'Scan Preload (Single/Assembly)',
       viewReceivable: 'View Receivable',
       registerReceipt: 'Register Receipt',
       editOrder: 'Edit Order',

@@ -7,6 +7,7 @@ export const headerFields = {
       customerPlaceholder: 'Select customer...',
       tradeMode: 'Trade Mode',
       category: 'Category',
+      orderDateRequired: 'Please select an order date',
       deliveryDeadline: 'Delivery Deadline',
       barcode: 'Contract Barcode',
       barcodePlaceholder: 'Auto generated barcode',

@@ -1,3 +1,20 @@
+// Package services - 产品属性选项(动态字段下拉值)主数据。
+//
+// 产品属性 = (category, option):
+//   - category: 一组属性的集合(如 versionLevel/tireType/brakeType)
+//   - option : category 下的具体可选值(如 std/lightweight)
+//
+// 此文件管理 option 的 CRUD + 数据治理:
+//   - List/Create/Patch/Delete/Reorder 标准 CRUD
+//   - SeedDefaultProductAttributeOptions 启动种子(系统级 option,不允许删)
+//   - CleanupDuplicateProductAttributeOptions 数据治理:历史脏数据清理
+//   - EnsureProductAttributeOptionValueUniqueIndex DB 唯一索引兜底
+//
+// 关键不变量:
+//   - categoryKey 大小写规范化(canonicalize),避免 "TireType" 和 "tireType" 双写
+//   - value 在同 category 内全局唯一(部分唯一索引保证)
+//   - 系统级 option 由 isProductAttributeOptionImmutableField 标记,UI 不允许改 categoryKey/value 等关键字段
+//   - 重排(reorder)走整批 sortOrder 重写,避免冲突
 package services
 
 import (

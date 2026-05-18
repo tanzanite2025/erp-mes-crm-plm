@@ -1,3 +1,17 @@
+/**
+ * 全局侧边栏菜单数据源(三层结构: group → L1 子组 → L2 菜单项)。
+ *
+ * 此文件是侧边栏的"配置即代码"——所有侧边栏入口在这里定义:
+ *   - navGroupConfigs: 12 个顶级 group(资源管理 / 采销 / 生产 / 工程 / 仓储等)
+ *   - 每个 group 下 1-3 个 L1 子组,每个 L1 下 1-N 个 L2 菜单项
+ *   - 共 38 个 L2 菜单(可点击,带 URL),其余为分组容器
+ *
+ * 关键不变量:
+ *   - id 稳定(权限/最近访问/搜索都依赖 id)
+ *   - permissionId 通过 permissionIdForPath 派生,与路由权限映射保持一致
+ *   - getSidebarData(t) 调用时根据 locale 注入 i18n title
+ *   - 侧边栏 L2 菜单进入后看到的 tabs 在 features/<module>/tabs.ts 单独维护(不在本文件)
+ */
 import type { TranslationKey } from '@/locales'
 import {
   BarChart3,

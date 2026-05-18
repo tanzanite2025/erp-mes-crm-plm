@@ -13,7 +13,7 @@ export const master = {
   auditor: '审计人',
   system: '系统',
   overdue: '超期',
-  shipByScan: '扫码预装入单（单件码/组装码）',
+  shipByScan: '扫码预装（单件/组装）',
   viewReceivable: '查看应收',
   registerReceipt: '登记收款',
   editOrder: '编辑单据',

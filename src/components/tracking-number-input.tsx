@@ -1,3 +1,19 @@
+/**
+ * 物流单号通用输入控件(带摄像头扫码 + 离线兜底)。
+ *
+ * 此组件供物流跟踪/退货单/换货单等场景复用,功能:
+ *   - 文本输入 + 自动 normalizeTrackingNumber(去空格/特殊字符)
+ *   - 调用浏览器 BarcodeDetector API 扫一维码/二维码
+ *   - BarcodeDetector 不可用时提供文件上传识别兜底
+ *   - 拍照上传识别(camera intent)
+ *
+ * 浏览器 API 兼容性:
+ *   - getBarcodeDetectorConstructor 检测可用性,不可用时降级为纯文本输入
+ *   - createDetector 异步初始化,UI 上有 loading 状态
+ *
+ * 错误处理:
+ *   - getScannerErrorMessage 把底层错误转友好提示(权限拒绝/格式不支持/网络失败)
+ */
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
 import { Camera, Loader2, RefreshCw, ScanLine, Upload, X } from 'lucide-react'
 import { toast } from 'sonner'
