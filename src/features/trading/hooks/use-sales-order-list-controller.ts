@@ -82,6 +82,7 @@ export function useSalesOrderListController() {
     status: primaryStatusFilter,
     paymentMethod: normalizedPaymentMethodFilter,
     paymentTerm: normalizedPaymentTermFilter,
+    placeholderData: (previousData) => previousData,
   })
   const canceledOrdersQuery = useGetSalesOrders(canceledPage, pageSize, {
     withLines: true,
@@ -91,13 +92,17 @@ export function useSalesOrderListController() {
     paymentMethod: normalizedPaymentMethodFilter,
     paymentTerm: normalizedPaymentTermFilter,
     enabled: shouldLoadCanceledSection,
+    placeholderData: (previousData) => previousData,
   })
 
   const listResource = useMemo<SalesOrderListResource>(() => {
+    const isPrimaryBlockingLoad = primaryOrdersQuery.isPending && !primaryOrdersQuery.data
+    const isCanceledBlockingLoad =
+      shouldLoadCanceledSection && canceledOrdersQuery.isPending && !canceledOrdersQuery.data
     const primaryFailure = resolveQueryFailure({
       data: primaryOrdersQuery.data,
       error: primaryOrdersQuery.error,
-      isPending: primaryOrdersQuery.isPending,
+      isPending: isPrimaryBlockingLoad,
       scope: 'SalesOrderList.primaryOrders',
       missingMessage: '[CRITICAL] Sales order list missing after load',
       failureMessage: '[CRITICAL] Sales order list query failed',
@@ -114,7 +119,7 @@ export function useSalesOrderListController() {
       const canceledFailure = resolveQueryFailure({
         data: canceledOrdersQuery.data,
         error: canceledOrdersQuery.error,
-        isPending: canceledOrdersQuery.isPending,
+        isPending: isCanceledBlockingLoad,
         scope: 'SalesOrderList.canceledOrders',
         missingMessage: '[CRITICAL] Canceled sales order list missing after load',
         failureMessage: '[CRITICAL] Canceled sales order list query failed',
@@ -128,7 +133,7 @@ export function useSalesOrderListController() {
       }
     }
 
-    if (primaryOrdersQuery.isPending || (shouldLoadCanceledSection && canceledOrdersQuery.isPending)) {
+    if (isPrimaryBlockingLoad || isCanceledBlockingLoad) {
       return { status: 'loading' }
     }
 
