@@ -2,6 +2,7 @@ import { type ProductDisplayProjectionV2 } from '@/features/engineering/display/
 import { type Product } from '@/features/engineering/data/schema'
 import { type SalesOrderLine } from '../data/schema'
 import {
+  buildLegacySalesOrderLineDisplayFullLabel,
   buildSalesOrderLineDisplaySnapshot,
   isSalesOrderLineDisplayPlaceholder,
   mergeSalesOrderLineDisplaySnapshot,
@@ -39,6 +40,51 @@ export function shouldReplaceGeneratedSalesOrderLineValue(
   )
 }
 
+function shouldReplaceGeneratedSalesOrderLineSpecification(
+  line: Pick<
+    SalesOrderLine,
+    | 'specification'
+    | 'productDisplayTitleSnapshot'
+    | 'productDisplaySubtitleSnapshot'
+    | 'productDisplayFullLabelSnapshot'
+  >,
+  derived: Pick<
+    SalesOrderLineProductFields,
+    | 'productDisplayTitleSnapshot'
+    | 'productDisplaySubtitleSnapshot'
+    | 'productDisplayFullLabelSnapshot'
+  >
+): boolean {
+  const specification = normalizeLineValue(line.specification)
+  const lineTitleSnapshot = normalizeLineValue(line.productDisplayTitleSnapshot)
+  const derivedTitleSnapshot = normalizeLineValue(derived.productDisplayTitleSnapshot)
+  if (shouldReplaceGeneratedSalesOrderLineValue(specification)) {
+    return true
+  }
+
+  const generatedCandidates = [
+    derivedTitleSnapshot,
+    buildLegacySalesOrderLineDisplayFullLabel({
+      title: derived.productDisplayTitleSnapshot,
+      subtitle: derived.productDisplaySubtitleSnapshot,
+    }),
+    normalizeLineValue(derived.productDisplayFullLabelSnapshot),
+  ]
+
+  if (lineTitleSnapshot !== '' && lineTitleSnapshot === derivedTitleSnapshot) {
+    generatedCandidates.push(
+      lineTitleSnapshot,
+      buildLegacySalesOrderLineDisplayFullLabel({
+        title: line.productDisplayTitleSnapshot,
+        subtitle: line.productDisplaySubtitleSnapshot,
+      }),
+      normalizeLineValue(line.productDisplayFullLabelSnapshot),
+    )
+  }
+
+  return generatedCandidates.filter(Boolean).includes(specification)
+}
+
 export function buildSalesOrderLineProductFields(
   product: Product,
   displayProjection: ProductDisplayProjectionV2
@@ -50,7 +96,7 @@ export function buildSalesOrderLineProductFields(
     productModel: productCode,
     productCode,
     specification:
-      normalizeLineValue(displaySnapshot.productDisplayFullLabelSnapshot) ||
+      normalizeLineValue(displaySnapshot.productDisplayTitleSnapshot) ||
       productCode,
     ...displaySnapshot,
     modelCodeSnapshot: normalizeLineValue(product.modelCode),
@@ -69,7 +115,7 @@ export function mergeSalesOrderLineProductFields(
     ...derived,
     productModel: normalizeLineValue(line.productModel) || derived.productModel,
     productCode: normalizeLineValue(line.productCode) || derived.productCode,
-    specification: shouldReplaceGeneratedSalesOrderLineValue(line.specification)
+    specification: shouldReplaceGeneratedSalesOrderLineSpecification(line, derived)
       ? derived.specification
       : normalizeLineValue(line.specification),
     ...mergeSalesOrderLineDisplaySnapshot(line, displayProjection),

@@ -89,7 +89,10 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
     templateResolutionPending,
     specPreviewTitle,
     specPreviewSummary,
-    specPreviewV2,
+    specPreviewAggregateLabel = '',
+    specPreviewV2 = null,
+    specPreviewItems = [],
+    selectedBomContext = null,
     handleFormSubmit,
   } = useProductForm({ currentRow, open, productTypes, onOpenChange, onSubmit, onSaved })
   const { deleteProduct, isDeletingProduct } = useProductWriteActions()
@@ -300,18 +303,38 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
               />
 
               {SpecComponent ? (
-                <div className='space-y-1.5'>
-                  {isEdit && activeSpec && (
-                    <div className='px-3 py-0.5 bg-green-600/10 text-green-600 text-[10px] font-bold rounded flex items-center gap-2 w-fit mb-1'>
-                      <span>●</span>
-                      {t('engineering.productMgmt.dialog.activeTemplate', {
-                        label: activeSpec.label,
-                      })}
-                    </div>
-                  )}
+                <div className='space-y-2'>
                   <SpecComponent
                     form={form}
                   />
+                  <div className='rounded-[18px] border border-dashed border-indigo-200/60 bg-indigo-50/30 p-2'>
+                    <div className='mb-1.5 flex items-center justify-between gap-2 border-b border-dashed border-indigo-200/50 pb-1.5'>
+                      <div className='text-[8px] font-black uppercase tracking-widest text-indigo-700/60'>
+                        {locale.startsWith('zh') ? 'BOM 承接信息' : 'BOM Context'}
+                      </div>
+                      <div className={cn(
+                        'text-[8px] font-black uppercase tracking-widest',
+                        selectedBomContext?.hasSelection ? 'text-emerald-700/70' : 'text-amber-700/70'
+                      )}>
+                        {selectedBomContext?.hint || (locale.startsWith('zh') ? '待绑定' : 'Pending')}
+                      </div>
+                    </div>
+                    <div className='grid grid-cols-1 gap-1.5 sm:grid-cols-2 xl:grid-cols-5'>
+                      {(selectedBomContext?.items ?? []).map((item) => (
+                        <div key={item.key} className='rounded-xl border border-dashed border-indigo-100/80 bg-white/90 px-2.5 py-2'>
+                          <div className='text-[8px] font-black uppercase tracking-widest text-indigo-700/60'>
+                            {item.label}
+                          </div>
+                          <div className={cn(
+                            'mt-1 truncate text-[11px] font-black tracking-tight',
+                            item.empty ? 'text-slate-400' : 'text-slate-800'
+                          )}>
+                            {item.value}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className='p-6 border-2 border-dashed rounded-[24px] bg-muted/5 flex flex-col items-center justify-center text-center gap-2 transition-all hover:bg-muted/10'>
@@ -349,11 +372,11 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
               </Badge>
             </div>
             <p className='mt-1 text-[11px] font-black text-blue-900 dark:text-blue-200 tracking-tighter italic break-all leading-tight'>
-              {specPreviewV2 ? (specPreviewTitle || specPreviewV2.title) : (specPreviewSummary || t('engineering.productArchive.states.unnamed'))}
+              {specPreviewAggregateLabel || (specPreviewV2 ? (specPreviewTitle || specPreviewV2.title) : (specPreviewSummary || t('engineering.productArchive.states.unnamed')))}
             </p>
-            {specPreviewV2 && specPreviewV2.summaryItems.length > 0 && (
+            {specPreviewItems.length > 0 && (
               <div className='mt-2 flex flex-wrap gap-1.5'>
-                {specPreviewV2.summaryItems.map((item) => (
+                {specPreviewItems.map((item) => (
                   <Badge
                     key={item.key}
                     variant='outline'

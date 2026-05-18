@@ -79,7 +79,7 @@ export function useProductDisplayOptions(
         })
 
         return {
-          label: projection.fullLabel,
+          label: projection.title,
           value: product.id,
         }
       }),

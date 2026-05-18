@@ -44,12 +44,8 @@ export function DynamicAttributeSection({
   }
 
   return (
-    <div className='p-2 rounded-[20px] bg-muted/5 border border-dashed border-muted/30 space-y-1.5'>
-      <div className='flex items-center justify-between gap-2 border-b border-dashed border-muted/30 pb-1'>
-        <div className='text-[10px] font-black uppercase tracking-widest text-blue-800 italic'>Dynamic Attributes</div>
-        <div className='text-[8px] font-black uppercase tracking-widest text-muted-foreground/50'>Product Type Driven</div>
-      </div>
-      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-5 gap-1.5'>
+    <div className='rounded-[18px] border border-dashed border-muted/30 bg-muted/5 p-2'>
+      <div className='grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-5'>
         {visibleBindings.map((binding) => {
           const category = categories.find((item) => areSameProductAttributeCategoryKey(item.key, binding.categoryKey))
           const currentValue = getAttributeValue(values, binding.categoryKey)
@@ -62,8 +58,8 @@ export function DynamicAttributeSection({
             }))
 
           return (
-            <FormItem key={binding.id || binding.categoryKey} className='space-y-0.5'>
-              <FormLabel className='text-slate-600 font-black text-[10px] uppercase tracking-widest ml-1'>
+            <FormItem key={binding.id || binding.categoryKey} className='min-w-0 gap-0.5'>
+              <FormLabel className='ml-1 text-[10px] font-black uppercase tracking-widest text-slate-600'>
                 {getCategoryName(locale, category)}
               </FormLabel>
               <SelectDropdown
@@ -80,7 +76,7 @@ export function DynamicAttributeSection({
                 isControlled
                 items={categoryOptions}
                 placeholder={getCategoryName(locale, category)}
-                className='h-[38px] w-full text-[11px] font-bold rounded-xl bg-muted/40 border-none px-3'
+                className='h-[38px] w-full rounded-xl border-none bg-muted/40 px-3 text-[11px] font-bold'
               />
             </FormItem>
           )

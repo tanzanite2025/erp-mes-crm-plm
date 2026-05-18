@@ -19,8 +19,8 @@ import { BOMVersionTraceContent } from '../version-trace/components/bom-version-
 
 const ALL_FILTER_VALUE = '__all__'
 
-function resolveProductLabel(params: { id: string; name: string; sku: string }, productDisplayLabelMap: Map<string, string>) {
-  return productDisplayLabelMap.get(params.id) || `${params.name} / ${params.sku}`
+function resolveProductLabel(params: { id: string; name: string }, productDisplayLabelMap: Map<string, string>) {
+  return productDisplayLabelMap.get(params.id) || params.name
 }
 
 export function BOMRecordsTab() {

@@ -120,6 +120,7 @@ export function ProductBasicInfo({
                                             onValueChange={(value) => {
                                                 field.onChange(value)
                                                 form.setValue('name', '', { shouldDirty: false, shouldValidate: false })
+                                                form.setValue('sku', '', { shouldDirty: false, shouldValidate: false })
                                             }}
                                             isControlled={true}
                                             items={baseModelItems}

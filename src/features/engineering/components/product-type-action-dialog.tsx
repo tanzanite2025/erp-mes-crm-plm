@@ -241,7 +241,7 @@ export function ProductTypeActionDialog({
         const levelLabel = resolveLevelLabel(meta?.level ?? 0)
         const pathLabel = meta?.pathLabel || type.name
         return {
-          label: `${levelLabel} · ${pathLabel} · ${type.code}`,
+          label: `${levelLabel} · ${pathLabel}`,
           value: type.id,
         }
       }),
@@ -299,7 +299,7 @@ export function ProductTypeActionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='w-[95vw] sm:max-w-md p-0 overflow-hidden rounded-[24px] sm:rounded-[32px] border-none shadow-2xl'>
+      <DialogContent className='flex w-[96vw] flex-col gap-0 p-0 overflow-hidden rounded-[24px] border-none shadow-2xl sm:max-w-4xl sm:rounded-[32px]'>
         <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent pointer-events-none' />
         <DialogHeader className='p-4 sm:p-8 pb-2 relative'>
           <DialogTitle className='text-base sm:text-lg font-black tracking-tighter italic uppercase text-primary'>
@@ -317,7 +317,7 @@ export function ProductTypeActionDialog({
           <form
             id='product-type-form'
             onSubmit={form.handleSubmit(handleFormSubmit)}
-            className='space-y-4 sm:space-y-6 px-4 sm:px-8 max-h-[60vh] overflow-y-auto custom-scrollbar'
+            className='min-h-0 flex-1 space-y-4 overflow-y-auto px-4 pb-4 custom-scrollbar sm:space-y-6 sm:px-8 sm:pb-6'
           >
             <input type='hidden' {...form.register('id')} />
             <input type='hidden' {...form.register('createdAt')} />
@@ -335,7 +335,7 @@ export function ProductTypeActionDialog({
                   {targetRoleLabel}
                 </Badge>
               </div>
-              <div className='grid grid-cols-1 gap-3 sm:grid-cols-3'>
+              <div className='grid grid-cols-1 gap-3 lg:grid-cols-3'>
                 <div className='min-w-0 rounded-2xl border border-dashed border-primary/15 bg-white/80 px-3 py-2'>
                   <div className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/50'>
                     {t('engineering.categoryArchive.dialog.targetLevel')}
@@ -344,7 +344,7 @@ export function ProductTypeActionDialog({
                     {targetLevelLabel}
                   </div>
                 </div>
-                <div className='min-w-0 rounded-2xl border border-dashed border-primary/15 bg-white/80 px-3 py-2 sm:col-span-2'>
+                <div className='min-w-0 rounded-2xl border border-dashed border-primary/15 bg-white/80 px-3 py-2 lg:col-span-2'>
                   <div className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/50'>
                     {t('engineering.categoryArchive.dialog.parentPath')}
                   </div>
@@ -358,7 +358,7 @@ export function ProductTypeActionDialog({
               </div>
             </div>
 
-            <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 pt-2'>
+            <div className='grid grid-cols-1 gap-4 pt-2 md:grid-cols-2 md:gap-6'>
               <FormField
                 control={form.control}
                 name='parentId'
@@ -373,6 +373,7 @@ export function ProductTypeActionDialog({
                       items={parentItems}
                       placeholder={t('engineering.categoryArchive.dialog.parentPlaceholder')}
                       isControlled={true}
+                      className='h-12 w-full rounded-2xl border-none bg-muted/50 text-[11px] font-bold shadow-none'
                     />
                     <div className='text-[10px] text-muted-foreground mt-1'>
                       {hierarchyHint}
@@ -463,6 +464,7 @@ export function ProductTypeActionDialog({
                       ]}
                       placeholder={t('engineering.categoryArchive.dialog.templatePlaceholder')}
                       isControlled={true}
+                      className='h-12 w-full rounded-2xl border-none bg-muted/50 text-[11px] font-bold shadow-none'
                     />
                     <div className='text-[10px] text-muted-foreground mt-1'>
                       {t('engineering.categoryArchive.dialog.templateHelp')}
@@ -471,7 +473,7 @@ export function ProductTypeActionDialog({
                   </FormItem>
                 )}
               />
-              <div className='sm:col-span-2 rounded-2xl border border-dashed border-blue-200/50 bg-blue-50/40 p-4 space-y-3'>
+              <div className='rounded-2xl border border-dashed border-blue-200/50 bg-blue-50/40 p-4 space-y-3 md:col-span-2'>
                 <div className='flex items-center justify-between gap-3'>
                   <div>
                     <div className='text-[10px] font-black uppercase tracking-widest text-blue-700'>

@@ -120,6 +120,7 @@ export function BOMFormHeader({ form, products, productDisplayLabelMap, isEdit }
   const ctx: BOMHeaderFieldContext = useMemo(
     () => ({
       isEdit,
+      hideSystemMetaFields: true,
       bomType,
       ownerType,
       t,

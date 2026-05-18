@@ -73,7 +73,7 @@ function resolveDisplayTitle(
   product: Pick<Product, 'name' | 'sku' | 'modelCode'> | null | undefined
 ) {
   const code = normalizeDisplayValue(product?.sku) || normalizeDisplayValue(product?.modelCode)
-  const title = normalizeDisplayValue(product?.name) || code || 'UNNAMED'
+  const title = normalizeDisplayValue(product?.name) || 'UNNAMED'
 
   return {
     code,
@@ -127,7 +127,7 @@ export function resolveProductDisplayV2(
     code,
     summaryItems,
     summaryText,
-    fullLabel: summaryText ? `${title} (${summaryText})` : title,
+    fullLabel: title,
     strategyVersion: PRODUCT_DISPLAY_V2_STRATEGY_VERSION,
   }
 }

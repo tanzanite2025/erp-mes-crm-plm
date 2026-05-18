@@ -2,9 +2,11 @@ import { type UseFormReturn } from 'react-hook-form'
 import { toast } from 'sonner'
 import { failLoudly } from '@/lib/safe-catch'
 import { useLanguage } from '@/context/language-provider'
-import { type Product, type ProductType } from '../data/schema'
+import { type BOM } from '@/features/product-structure/data/schema'
+import { type Product, type ProductAttributeOption, type ProductType } from '../data/schema'
 import { ProductCommand } from '../commands/product-command'
-import { resolveEffectiveProductName } from '../utils/product-form-utils'
+import { resolveEffectiveProductSku } from '../utils/product-form-utils'
+import { resolveProductAggregateDisplayLabel } from '../utils/product-display-aggregate'
 import { type ProductSubmitPayload } from './use-product-form'
 
 interface UseProductFormSubmitParams {
@@ -12,6 +14,9 @@ interface UseProductFormSubmitParams {
   isEdit: boolean
   form: UseFormReturn<Product>
   productTypes: ProductType[]
+  attributeOptions?: ProductAttributeOption[]
+  boms?: BOM[]
+  customerNameMap?: Map<string, string>
   onOpenChange: (open: boolean) => void
   onSubmit?: (payload: ProductSubmitPayload) => Promise<Product[] | void> | Product[] | void
   onSaved?: (products: Product[]) => void
@@ -26,18 +31,33 @@ export function useProductFormSubmit({
   isEdit,
   form: _form,
   productTypes,
+  attributeOptions,
+  boms,
+  customerNameMap,
   onOpenChange,
   onSubmit,
   onSaved,
 }: UseProductFormSubmitParams) {
-  const { t } = useLanguage()
+  const { locale, t } = useLanguage()
 
   const handleFormSubmit = async (values: Product) => {
     const selectedType = productTypes.find((type) => type.id === values.typeId)
     const typeCode = selectedType?.code || 'X'
+    const selectedBom = (boms ?? []).find((bom) => bom.id === values.bomId) ?? null
     const normalizedValues: Product = {
       ...values,
-      name: resolveEffectiveProductName({
+      name: resolveProductAggregateDisplayLabel({
+        locale,
+        product: values,
+        productTypes,
+        bom: selectedBom,
+        options: attributeOptions,
+        customerNameMap,
+        ownerTypeInternalLabel: t('engineering.bomArchive.form.ownerTypeInternal'),
+        unknownCustomerLabel: t('engineering.bomArchive.table.ownerUnknown'),
+        emptyBaseLabel: t('engineering.productArchive.states.unnamed'),
+      }),
+      sku: resolveEffectiveProductSku({
         product: values,
         productTypes,
         typeCode,

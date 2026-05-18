@@ -29,6 +29,8 @@ function toEditFormValues(currentRow: Product): Product {
   if (!draftRow.engineeringSpecId && draftRow.techSpecId) {
     draftRow.engineeringSpecId = draftRow.techSpecId
   }
+  draftRow.name = ''
+  draftRow.sku = ''
   return draftRow
 }
 

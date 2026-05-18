@@ -8,7 +8,6 @@ import { BOMWorkspace } from './bom-editor/bom-workspace'
 import { BOMDialogFooter } from './bom-dialog-footer'
 import { BOMDialogResourceBoundary } from './bom-dialog-resource-boundary'
 import { BOMDialogShell } from './bom-dialog-shell'
-import { BOMProtocolSyncAlert } from './bom-protocol-sync-alert'
 import { type BOM } from '../data/schema'
 import { useBOMForm } from '../hooks/use-bom-form'
 import { useBOMRelationDeltaTracker } from '../hooks/use-bom-relation-delta-tracker'
@@ -50,7 +49,6 @@ export function BOMActionDialog({
     optionsResource,
     detailSourceResource,
     protocolDraft,
-    protocolSyncStatus,
     products,
     productDisplayLabelMap,
     materials,
@@ -63,6 +61,8 @@ export function BOMActionDialog({
     isEdit,
   })
   const typedForm = form as UseFormReturn<BOM>
+  const bomVersion = typedForm.watch('bomVersion')
+  const status = typedForm.watch('status')
 
   // Permission guard
   const permissionContext = useMemo(
@@ -153,6 +153,10 @@ export function BOMActionDialog({
         open={open}
         onOpenChange={onOpenChange}
         isEdit={isEdit}
+        headerMeta={{
+          version: typeof bomVersion === 'string' ? bomVersion : '',
+          status: typeof status === 'string' ? status : '',
+        }}
         auditTarget={isEdit && currentRow?.id ? { id: currentRow.id, name: currentRow.bomNo } : undefined}
       >
         <Form {...typedForm}>
@@ -163,13 +167,6 @@ export function BOMActionDialog({
           >
             <BOMDialogResourceBoundary resource={optionsResource} detailResource={detailSourceResource}>
               <BOMReadOnlyBanner isLocked={isLocked} version={currentRow?.version} />
-
-              {protocolSyncStatus && (
-                <BOMProtocolSyncAlert
-                  validation={protocolSyncStatus.validation}
-                  needsSync={protocolSyncStatus.needsSync}
-                />
-              )}
 
               <BOMFormHeader
                 form={typedForm}

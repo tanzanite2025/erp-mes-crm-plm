@@ -2,7 +2,6 @@
 
 import { Search, Plus, Box, Settings2 } from 'lucide-react'
 import { type TranslationKey } from '@/locales'
-import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -28,7 +27,7 @@ export function EngineeringSidebar({
     products,
     types,
     productDisplayMetadataMap,
-    productOwnersMap,
+    productOwnersMap: _productOwnersMap,
     selectedProductId,
     onSelectProduct,
     onAddProduct,
@@ -107,7 +106,6 @@ export function EngineeringSidebar({
                                         typeProducts.map(product => {
                                             const productDisplayMetadata = productDisplayMetadataMap.get(product.id) || null
                                             const isSelected = selectedProductId === product.id
-                                            const ownerEntries = productOwnersMap?.get(product.id) ?? []
 
                                             return (
                                                 <div
@@ -153,33 +151,29 @@ export function EngineeringSidebar({
                                                             </div>
                                                         </div>
 
-                                                        {/* 归属覆盖：BOM 维度的归属聚合（方案 B + 1:1） */}
-                                                        {ownerEntries.length > 0 ? (
+                                                        {/* 标题之外的剩余聚合信息 */}
+                                                        {productDisplayMetadata?.aggregateSupplementalItems.length ? (
                                                             <div className='flex flex-wrap gap-1'>
-                                                                {ownerEntries.map((entry) => {
-                                                                    const label = entry.type === 'INTERNAL'
-                                                                        ? t('engineering.productMgmt.sidebar.ownerInternal')
-                                                                        : (entry.customerName || t('engineering.productMgmt.sidebar.ownerCustomerUnknown'))
-                                                                    const className = isSelected
-                                                                        ? 'h-4 border-white/20 bg-white/15 text-white px-1 text-[9px] font-black uppercase tracking-wide'
-                                                                        : entry.type === 'CUSTOMER'
-                                                                            ? 'h-4 border-amber-200 bg-amber-50 text-amber-700 px-1 text-[9px] font-black uppercase tracking-wide'
-                                                                            : 'h-4 border-emerald-200 bg-emerald-50 text-emerald-700 px-1 text-[9px] font-black uppercase tracking-wide'
-                                                                    return (
-                                                                        <Badge
-                                                                            key={entry.dedupKey}
-                                                                            variant='outline'
-                                                                            className={className}
-                                                                            title={label}
-                                                                        >
-                                                                            {label}
-                                                                        </Badge>
-                                                                    )
-                                                                })}
+                                                                {productDisplayMetadata.aggregateSupplementalItems.map((item) => (
+                                                                    <div
+                                                                        key={item.key}
+                                                                        className={`rounded-lg border px-2 py-0.5 text-[9px] font-black tracking-tight leading-4 ${isSelected
+                                                                            ? 'border-white/10 bg-white/15 text-white'
+                                                                            : item.empty
+                                                                                ? 'border-amber-500/20 bg-amber-500/5 text-amber-700'
+                                                                                : 'border-emerald-600/10 bg-emerald-600/5 text-slate-700'
+                                                                            }`}
+                                                                    >
+                                                                        <span className={`mr-0.5 ${isSelected ? 'text-white/50' : 'text-muted-foreground/50'}`}>
+                                                                            {item.label}:
+                                                                        </span>
+                                                                        <span>{item.value}</span>
+                                                                    </div>
+                                                                ))}
                                                             </div>
                                                         ) : (
                                                             <div className={`inline-flex w-fit rounded-lg border border-dashed px-2 py-0.5 text-[9px] font-black tracking-tight leading-4 ${isSelected ? 'border-white/15 bg-white/10 text-white/80' : 'border-slate-300 bg-slate-50 text-slate-500'}`}>
-                                                                {t('engineering.productMgmt.sidebar.ownerNoBom')}
+                                                                {t('engineering.productMgmt.noBinding')}
                                                             </div>
                                                         )}
 

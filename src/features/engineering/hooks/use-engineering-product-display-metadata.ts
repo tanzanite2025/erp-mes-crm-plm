@@ -3,6 +3,10 @@ import { useQuery } from '@tanstack/react-query'
 import { useLanguage } from '@/context/language-provider'
 import { ENGINEERING_DB_SPECS_QUERY_KEY } from '@/features/engineering-db/query-keys'
 import { SpecsService } from '@/features/engineering-db/services/specs-service'
+import { getCustomers } from '@/features/trading/customer'
+import { tradingQueryKeys } from '@/features/trading/query-keys'
+import { BOMS_QUERY_KEY } from '@/features/product-structure/query-keys'
+import { bomService } from '@/features/product-structure/services/bom-service'
 import {
   type Product,
   type ProductTemplate,
@@ -19,11 +23,13 @@ import { productTemplateService } from '../services/product-template-service'
 import { type ProductTemplateResolution } from '../utils/product-template-resolution'
 import { type ProductDisplaySummaryItemV2 } from '../display/product-display-v2'
 import { resolveProductDisplayMetadataV2 } from '../display/product-display-v2-metadata'
+import { resolveProductAggregateDisplay } from '../utils/product-display-aggregate'
 
 export interface EngineeringProductDisplayMetadata {
   resolvedTemplate: ProductTemplate | null
   templateResolution: ProductTemplateResolution
   dynamicSummaryItems: ProductDisplaySummaryItemV2[]
+  aggregateSupplementalItems: ProductDisplaySummaryItemV2[]
   engineeringSpecLabel: string | null
 }
 
@@ -62,6 +68,14 @@ export function useEngineeringProductDisplayMetadata({
     queryKey: ENGINEERING_DB_SPECS_QUERY_KEY,
     queryFn: () => SpecsService.getSpecs(),
   })
+  const bomsQuery = useQuery({
+    queryKey: BOMS_QUERY_KEY,
+    queryFn: () => bomService.getBOMs(),
+  })
+  const customersQuery = useQuery({
+    queryKey: tradingQueryKeys.customers(),
+    queryFn: getCustomers,
+  })
 
   if (templatesQuery.isSuccess && !templatesQuery.data) {
     throw new Error('[CRITICAL] Product Templates Data missing')
@@ -80,12 +94,13 @@ export function useEngineeringProductDisplayMetadata({
   }
 
   const productDisplayMetadataMap = useMemo<Map<string, EngineeringProductDisplayMetadata>>(() => {
-    if (!templatesQuery.data || !categoriesQuery.data || !optionsQuery.data || !specsQuery.data) {
+    if (!templatesQuery.data || !categoriesQuery.data || !optionsQuery.data || !specsQuery.data || !bomsQuery.data || !customersQuery.data) {
       return new Map()
     }
 
     const activeOptions = optionsQuery.data.filter((option) => option.active)
     const specsLookup = new Map(specsQuery.data.map((spec) => [spec.id, spec]))
+    const customerNameMap = new Map(customersQuery.data.map((customer) => [customer.id, customer.name]))
 
     return new Map(
       products.map((product) => {
@@ -100,13 +115,33 @@ export function useEngineeringProductDisplayMetadata({
         })
         const engineeringSpecId = product.engineeringSpecId?.trim() || ''
         const engineeringSpec = engineeringSpecId ? specsLookup.get(engineeringSpecId) : undefined
+        const selectedBom = bomsQuery.data.find((bom) => bom.id === product.bomId) ?? null
+        const aggregateDisplay = resolveProductAggregateDisplay({
+          locale,
+          product,
+          productTypes,
+          bom: selectedBom,
+          categories: categoriesQuery.data,
+          options: activeOptions,
+          customerNameMap,
+          ownerTypeInternalLabel: t('engineering.bomArchive.form.ownerTypeInternal'),
+          ownerTypeCustomerLabel: t('engineering.bomArchive.form.ownerTypeCustomer'),
+          unknownCustomerLabel: t('engineering.bomArchive.table.ownerUnknown'),
+          emptyBaseLabel: t('engineering.productArchive.states.unnamed'),
+          emptyValue: t('engineering.productMgmt.noBinding'),
+        })
+        const titleCoveredKeySet = new Set(aggregateDisplay.titleCoveredKeys)
+        const dynamicSummaryItems = (displayMetadata.projection?.summaryItems ?? []).filter((item) => !titleCoveredKeySet.has(item.key))
+        const dynamicSummaryKeySet = new Set(dynamicSummaryItems.map((item) => item.key))
+        const aggregateSupplementalItems = aggregateDisplay.supplementalItems.filter((item) => !titleCoveredKeySet.has(item.key) && !dynamicSummaryKeySet.has(item.key))
 
         return [
           product.id,
           {
             resolvedTemplate: displayMetadata.resolvedTemplate,
             templateResolution: displayMetadata.templateResolution,
-            dynamicSummaryItems: displayMetadata.projection?.summaryItems ?? [],
+            dynamicSummaryItems,
+            aggregateSupplementalItems,
             engineeringSpecLabel: engineeringSpec
               ? formatEngineeringSpecLabel(engineeringSpec)
               : engineeringSpecId || null,
@@ -114,7 +149,7 @@ export function useEngineeringProductDisplayMetadata({
         ]
       }),
     )
-  }, [categoriesQuery.data, locale, optionsQuery.data, productTypes, products, specsQuery.data, t, templatesQuery.data])
+  }, [bomsQuery.data, categoriesQuery.data, customersQuery.data, locale, optionsQuery.data, productTypes, products, specsQuery.data, t, templatesQuery.data])
 
   return {
     productDisplayMetadataMap,
@@ -122,7 +157,9 @@ export function useEngineeringProductDisplayMetadata({
       templatesQuery.isLoading
       || categoriesQuery.isLoading
       || optionsQuery.isLoading
+      || bomsQuery.isLoading
+      || customersQuery.isLoading
       || specsQuery.isLoading,
-    error: templatesQuery.error ?? categoriesQuery.error ?? optionsQuery.error ?? specsQuery.error,
+    error: templatesQuery.error ?? categoriesQuery.error ?? optionsQuery.error ?? bomsQuery.error ?? customersQuery.error ?? specsQuery.error,
   }
 }

@@ -3,7 +3,7 @@ import { type SalesOrderLine } from '../data/schema'
 
 type SalesOrderLineDisplayProjectionSource = Pick<
   ProductDisplayProjectionV2,
-  'title' | 'summaryText' | 'code' | 'fullLabel' | 'strategyVersion'
+  'title' | 'summaryText' | 'code' | 'strategyVersion'
 >
 
 export type SalesOrderLineDisplaySnapshot = Pick<
@@ -22,13 +22,27 @@ function toSalesOrderLineDisplaySnapshot(
     productDisplayTitleSnapshot: display.title,
     productDisplaySubtitleSnapshot: display.summaryText,
     productDisplayCodeSnapshot: display.code,
-    productDisplayFullLabelSnapshot: display.fullLabel,
+    productDisplayFullLabelSnapshot: display.title,
     productDisplayStrategyVersionSnapshot: display.strategyVersion,
   }
 }
 
 function normalizeSnapshotValue(value?: string | null): string {
   return value?.trim() ?? ''
+}
+
+export function buildLegacySalesOrderLineDisplayFullLabel(params: {
+  title?: string | null
+  subtitle?: string | null
+}): string {
+  const title = normalizeSnapshotValue(params.title)
+  const subtitle = normalizeSnapshotValue(params.subtitle)
+
+  if (!title) {
+    return ''
+  }
+
+  return subtitle ? `${title} (${subtitle})` : title
 }
 
 export function isSalesOrderLineDisplayPlaceholder(
@@ -51,6 +65,38 @@ function hasInvalidGeneratedDisplaySnapshot(
   )
 }
 
+function shouldReplaceGeneratedFullLabelSnapshot(
+  line: Pick<
+    SalesOrderLine,
+    | 'productDisplayTitleSnapshot'
+    | 'productDisplaySubtitleSnapshot'
+    | 'productDisplayFullLabelSnapshot'
+  >,
+  snapshot: SalesOrderLineDisplaySnapshot
+): boolean {
+  const fullLabelSnapshot = normalizeSnapshotValue(line.productDisplayFullLabelSnapshot)
+  const lineTitleSnapshot = normalizeSnapshotValue(line.productDisplayTitleSnapshot)
+  const currentTitleSnapshot = normalizeSnapshotValue(snapshot.productDisplayTitleSnapshot)
+
+  if (!fullLabelSnapshot || isSalesOrderLineDisplayPlaceholder(fullLabelSnapshot)) {
+    return true
+  }
+
+  const historicalLegacyFullLabel = buildLegacySalesOrderLineDisplayFullLabel({
+    title: line.productDisplayTitleSnapshot,
+    subtitle: line.productDisplaySubtitleSnapshot,
+  })
+  const currentLegacyFullLabel = buildLegacySalesOrderLineDisplayFullLabel({
+    title: snapshot.productDisplayTitleSnapshot,
+    subtitle: snapshot.productDisplaySubtitleSnapshot,
+  })
+
+  return (
+    (lineTitleSnapshot !== '' && lineTitleSnapshot === currentTitleSnapshot && fullLabelSnapshot === historicalLegacyFullLabel) ||
+    fullLabelSnapshot === currentLegacyFullLabel
+  )
+}
+
 export function buildSalesOrderLineDisplaySnapshot(
   displayProjection: SalesOrderLineDisplayProjectionSource
 ): SalesOrderLineDisplaySnapshot {
@@ -62,6 +108,10 @@ export function mergeSalesOrderLineDisplaySnapshot(
   displayProjection: SalesOrderLineDisplayProjectionSource
 ): SalesOrderLineDisplaySnapshot {
   const snapshot = buildSalesOrderLineDisplaySnapshot(displayProjection)
+  const replaceFullLabelSnapshot = shouldReplaceGeneratedFullLabelSnapshot(
+    line,
+    snapshot
+  )
 
   if (hasInvalidGeneratedDisplaySnapshot(line)) {
     return snapshot
@@ -75,7 +125,9 @@ export function mergeSalesOrderLineDisplaySnapshot(
     productDisplayCodeSnapshot:
       line.productDisplayCodeSnapshot || snapshot.productDisplayCodeSnapshot,
     productDisplayFullLabelSnapshot:
-      line.productDisplayFullLabelSnapshot || snapshot.productDisplayFullLabelSnapshot,
+      replaceFullLabelSnapshot
+        ? snapshot.productDisplayFullLabelSnapshot
+        : line.productDisplayFullLabelSnapshot || snapshot.productDisplayFullLabelSnapshot,
     productDisplayStrategyVersionSnapshot:
       line.productDisplayStrategyVersionSnapshot || snapshot.productDisplayStrategyVersionSnapshot,
   }

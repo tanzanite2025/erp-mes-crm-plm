@@ -4,6 +4,8 @@ import { AssetService } from '@/features/equipment-tooling/services/asset-servic
 import { ENGINEERING_DB_SPECS_QUERY_KEY } from '@/features/engineering-db/query-keys'
 import { BOMS_QUERY_KEY } from '@/features/product-structure/query-keys'
 import { bomService } from '@/features/product-structure/services/bom-service'
+import { getCustomers } from '@/features/trading/customer'
+import { tradingQueryKeys } from '@/features/trading/query-keys'
 import { SpecsService } from '@/features/engineering-db/services/specs-service'
 import { ProductAttributeCategoryService } from '../services/product-attribute-category-service'
 import { ProductAttributeOptionService } from '../services/product-attribute-option-service'
@@ -52,11 +54,18 @@ export function useProductFormInit({
         queryFn: () => bomService.getBOMs(),
         enabled: open,
     })
+    const customersQuery = useQuery({
+        queryKey: tradingQueryKeys.customers(),
+        queryFn: getCustomers,
+        enabled: open,
+    })
 
     if (categoriesQuery.isSuccess && !categoriesQuery.data) throw new Error('[CRITICAL] Categories Data missing')
     if (optionsQuery.isSuccess && !optionsQuery.data) throw new Error('[CRITICAL] Options Data missing')
     if (moldGroupsQuery.isSuccess && !moldGroupsQuery.data) throw new Error('[CRITICAL] Mold Groups Data missing')
     if (specsQuery.isSuccess && !specsQuery.data) throw new Error('[CRITICAL] Specs Data missing')
+    if (bomsQuery.isSuccess && !bomsQuery.data) throw new Error('[CRITICAL] BOM Data missing')
+    if (customersQuery.isSuccess && !customersQuery.data) throw new Error('[CRITICAL] Customers Data missing')
 
     const attributeCategories = categoriesQuery.data
     const attributeOptions = optionsQuery.data
@@ -87,8 +96,20 @@ export function useProductFormInit({
         },
         [bomsQuery.data]
     )
+    const customerNameMap = useMemo(() => {
+        const nextMap = new Map<string, string>()
+        for (const customer of customersQuery.data ?? []) {
+            nextMap.set(customer.id, customer.name)
+        }
+        return nextMap
+    }, [customersQuery.data])
     const metadataInitError = useMemo(() => {
-        const error = categoriesQuery.error ?? optionsQuery.error ?? moldGroupsQuery.error ?? specsQuery.error
+        const error = categoriesQuery.error
+            ?? optionsQuery.error
+            ?? moldGroupsQuery.error
+            ?? specsQuery.error
+            ?? bomsQuery.error
+            ?? customersQuery.error
         if (!error) {
             return null
         }
@@ -98,16 +119,25 @@ export function useProductFormInit({
             : error instanceof Error
                 ? error.message
                 : t('engineering.productMgmt.metadata.initFailed')
-    }, [categoriesQuery.error, moldGroupsQuery.error, optionsQuery.error, specsQuery.error, t])
+    }, [bomsQuery.error, categoriesQuery.error, customersQuery.error, moldGroupsQuery.error, optionsQuery.error, specsQuery.error, t])
 
-    const metadataReady = open && !metadataInitError && categoriesQuery.isSuccess && optionsQuery.isSuccess && moldGroupsQuery.isSuccess && specsQuery.isSuccess
+    const metadataReady = open
+        && !metadataInitError
+        && categoriesQuery.isSuccess
+        && optionsQuery.isSuccess
+        && moldGroupsQuery.isSuccess
+        && specsQuery.isSuccess
+        && bomsQuery.isSuccess
+        && customersQuery.isSuccess
 
     return {
         attributeCategories,
         attributeOptions,
         moldOptions,
         specOptions,
+        boms: bomsQuery.data ?? [],
         bomOptions,
+        customerNameMap,
         isBomOptionsPending: bomsQuery.isPending,
         metadataInitError,
         metadataReady,

@@ -2,7 +2,6 @@ import { type Product, type ProductType } from '../data/schema'
 import {
   deriveNormalizedProductSku,
   normalizeProductModelCodeValue,
-  normalizeProductSkuValue,
   normalizeProductTemplateKeyValue,
 } from './product-code-normalization'
 
@@ -12,6 +11,18 @@ interface BuildDefaultProductValuesOptions {
 
 function normalizeTrimmedValue(value?: string | null): string {
     return value?.trim() ?? ''
+}
+
+function resolveSelectedProductType(params: {
+    product: Pick<Product, 'typeId'>
+    productTypes: ProductType[]
+}): ProductType | undefined {
+    const normalizedTypeId = normalizeTrimmedValue(params.product.typeId)
+    if (!normalizedTypeId) {
+        return undefined
+    }
+
+    return params.productTypes.find((type) => type.id === normalizedTypeId)
 }
 
 export function buildDefaultProductValues(
@@ -50,60 +61,40 @@ export function buildDefaultProductValues(
     }
 }
 
-export function deriveSku(typeCode: string, modelCode: string): string {
-    return deriveNormalizedProductSku(typeCode, modelCode)
-}
-
-export function isMirroredBaseModelName(params: {
-    name?: string | null
-    typeId?: string | null
+export function resolveBaseModelName(params: {
+    product: Pick<Product, 'typeId'>
     productTypes: ProductType[]
-}): boolean {
-    const normalizedName = normalizeTrimmedValue(params.name)
-    const normalizedTypeId = normalizeTrimmedValue(params.typeId)
-
-    if (!normalizedName || !normalizedTypeId) {
-        return false
-    }
-
-    const selectedType = params.productTypes.find((type) => type.id === normalizedTypeId)
-    if (!selectedType?.name) {
-        return false
-    }
-
-    return normalizeTrimmedValue(selectedType.name) === normalizedName
+}): string {
+    return normalizeTrimmedValue(resolveSelectedProductType(params)?.name)
 }
 
 export function resolveEffectiveProductName(params: {
-    product: Pick<Product, 'name' | 'sku' | 'modelCode' | 'typeId'>
+    product: Pick<Product, 'typeId'>
+    productTypes: ProductType[]
+}): string {
+    return resolveBaseModelName({
+        product: params.product,
+        productTypes: params.productTypes,
+    })
+}
+
+export function resolveEffectiveProductSku(params: {
+    product: Pick<Product, 'modelCode' | 'typeId'>
     productTypes: ProductType[]
     typeCode?: string
 }): string {
-    const normalizedName = normalizeTrimmedValue(params.product.name)
-    if (normalizedName && !isMirroredBaseModelName({
-        name: normalizedName,
-        typeId: params.product.typeId,
-        productTypes: params.productTypes,
-    })) {
-        return normalizedName
-    }
-
-    const normalizedSku = normalizeProductSkuValue(params.product.sku)
-    if (normalizedSku) {
-        return normalizedSku
-    }
-
     const resolvedTypeCode = normalizeTrimmedValue(params.typeCode)
-        || normalizeTrimmedValue(params.productTypes.find((type) => type.id === params.product.typeId)?.code)
+        || normalizeTrimmedValue(resolveSelectedProductType({
+            product: params.product,
+            productTypes: params.productTypes,
+        })?.code)
 
-    if (resolvedTypeCode) {
-        return deriveNormalizedProductSku(
-            resolvedTypeCode,
-            normalizeProductModelCodeValue(params.product.modelCode || '01')
-        )
+    if (!resolvedTypeCode || !normalizeTrimmedValue(params.product.typeId)) {
+        return ''
     }
 
-    return normalizeTrimmedValue(params.product.typeId)
-        ? normalizeProductModelCodeValue(params.product.modelCode || '01')
-        : ''
+    return deriveNormalizedProductSku(
+        resolvedTypeCode,
+        normalizeProductModelCodeValue(params.product.modelCode || '01')
+    )
 }

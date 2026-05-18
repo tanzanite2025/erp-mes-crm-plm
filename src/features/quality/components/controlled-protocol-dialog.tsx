@@ -158,13 +158,10 @@ export function ControlledProtocolDialog({
           locale,
           product,
         })
-        const displayName = displayProjection.fullLabel
-        const weightLabel = product.weight ? `${product.weight}g` : '-'
-        const displayLabel = `${displayName} | ${weightLabel}`
 
         return {
           id: product.id,
-          label: displayLabel,
+          label: displayProjection.title,
         }
       }),
     [

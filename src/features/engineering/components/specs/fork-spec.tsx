@@ -12,22 +12,22 @@ export function ForkSpecForm({ form }: { form: UseFormReturn<Product> }) {
   const { t } = useLanguage()
 
   return (
-    <div className='p-3 bg-green-50/50 dark:bg-green-950/20 rounded-lg border border-green-100/50 dark:border-green-900/30 space-y-3'>
-      <div className='flex items-center justify-between border-b border-green-100 dark:border-green-900/50 pb-1.5'>
-        <h4 className='text-xs font-semibold text-green-600 dark:text-green-400'>
+    <div className='rounded-[20px] border border-dashed border-green-200/60 bg-green-50/35 p-2.5 space-y-2'>
+      <div className='flex flex-col gap-1 border-b border-dashed border-green-200/60 pb-1.5 sm:flex-row sm:items-center sm:justify-between'>
+        <h4 className='text-[10px] font-black uppercase tracking-widest italic text-green-700'>
           {t('engineering.specForms.fork.title')}
         </h4>
-        <Badge variant='outline' className='text-[10px] bg-background dark:bg-slate-900'>
+        <Badge variant='outline' className='h-4 rounded-full border-green-200 bg-white px-1.5 text-[8px] font-mono uppercase tracking-wide text-green-700'>
           {t('engineering.specForms.fork.subtitle')}
         </Badge>
       </div>
-      <div className='grid grid-cols-2 sm:grid-cols-4 gap-3'>
+      <div className='grid grid-cols-1 items-start content-start gap-2 sm:grid-cols-2 lg:grid-cols-3'>
         <FormField
           control={form.control}
           name='offset'
           render={({ field }) => (
-            <FormItem>
-              <FormLabel className='text-[10px] sm:text-xs'>
+            <FormItem className='min-w-0 self-start content-start gap-0.5'>
+              <FormLabel className='ml-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>
                 {t('engineering.specForms.fork.offset')}
               </FormLabel>
               <FormControl>
@@ -39,6 +39,7 @@ export function ForkSpecForm({ form }: { form: UseFormReturn<Product> }) {
                   onChange={(event) =>
                     field.onChange(event.target.value === '' ? undefined : parseFloat(event.target.value))
                   }
+                  className='h-[38px] w-full rounded-xl border-none bg-background/80 px-3 text-[11px] font-bold shadow-none'
                 />
               </FormControl>
             </FormItem>
@@ -48,8 +49,8 @@ export function ForkSpecForm({ form }: { form: UseFormReturn<Product> }) {
           control={form.control}
           name='axleCrown'
           render={({ field }) => (
-            <FormItem>
-              <FormLabel className='text-[10px] sm:text-xs'>
+            <FormItem className='min-w-0 self-start content-start gap-0.5'>
+              <FormLabel className='ml-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>
                 {t('engineering.specForms.fork.axleCrown')}
               </FormLabel>
               <FormControl>
@@ -61,6 +62,7 @@ export function ForkSpecForm({ form }: { form: UseFormReturn<Product> }) {
                   onChange={(event) =>
                     field.onChange(event.target.value === '' ? undefined : parseFloat(event.target.value))
                   }
+                  className='h-[38px] w-full rounded-xl border-none bg-background/80 px-3 text-[11px] font-bold shadow-none'
                 />
               </FormControl>
             </FormItem>
@@ -70,23 +72,23 @@ export function ForkSpecForm({ form }: { form: UseFormReturn<Product> }) {
           control={form.control}
           name='steerer'
           render={({ field }) => (
-            <FormItem>
-              <FormLabel className='text-[10px] sm:text-xs'>
+            <FormItem className='min-w-0 self-start content-start gap-0.5'>
+              <FormLabel className='ml-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>
                 {t('engineering.specForms.fork.steerer')}
               </FormLabel>
               <FormControl>
-                <Input placeholder='1-1/8 to 1.5' {...field} />
+                <Input placeholder='1-1/8 to 1.5' {...field} className='h-[38px] w-full rounded-xl border-none bg-background/80 px-3 text-[11px] font-bold shadow-none' />
               </FormControl>
             </FormItem>
           )}
         />
       </div>
-      <p className='text-[10px] text-muted-foreground italic'>{t('engineering.specForms.fork.helper')}</p>
+      <p className='text-[8px] font-black uppercase tracking-widest text-muted-foreground/50 opacity-70'>{t('engineering.specForms.fork.helper')}</p>
     </div>
   )
 }
 
-export function ForkSpecOverview({ product }: { product: Product }) {
+export function ForkSpecOverview({ product: _product }: { product: Product }) {
   const { t } = useLanguage()
 
   return (

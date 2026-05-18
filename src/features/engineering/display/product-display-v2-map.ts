@@ -46,7 +46,7 @@ export function buildProductDisplayMapsV2(
   return {
     productDisplayProjectionMap: new Map(projectionEntries),
     productDisplayLabelMap: new Map(
-      projectionEntries.map(([productId, projection]) => [productId, projection.fullLabel])
+      projectionEntries.map(([productId, projection]) => [productId, projection.title])
     ),
   }
 }

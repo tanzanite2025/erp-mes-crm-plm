@@ -16,9 +16,10 @@
  * 由渲染器侧用 useLanguage().t(labelKey) 翻译。这样配置层保持纯。
  */
 
-import type { TFunction } from 'i18next'
 import { type BOM } from '../../data/schema'
 import { normalizeBOMControlFieldPatch } from '../../utils/bom-control-normalization'
+
+type TranslateFunction = (key: string, params?: Record<string, string | number>) => string
 
 /** 顶部字段允许的字段名（必须是 BOM schema 中的合法 key）。 */
 export type BOMHeaderFieldName = Extract<
@@ -30,12 +31,13 @@ export type BOMHeaderFieldName = Extract<
 export interface BOMHeaderFieldContext {
   /** 是否处于编辑（而非新建）模式。 */
   isEdit: boolean
+  hideSystemMetaFields?: boolean
   /** 当前表单中的 bomType（决定 status 字典等）。 */
   bomType?: BOM['bomType']
   /** 当前表单中的 ownerType（决定客户下拉是否启用）。 */
   ownerType?: BOM['ownerType']
   /** i18n 翻译函数（保持配置层与 react 解耦）。 */
-  t: TFunction
+  t: TranslateFunction
   /** 产品下拉项（外部已基于 productDisplayLabelMap 计算）。 */
   productItems: ReadonlyArray<{ label: string; value: string }>
   /** 状态下拉项（外部已基于 bomType 计算）。 */
@@ -101,7 +103,7 @@ export type BOMHeaderField = BOMHeaderInputField | BOMHeaderSelectField
  * 不要在这里调用 react-hook-form 的 watch / setValue，配置层应保持纯。
  */
 export function getBOMHeaderFields(ctx: BOMHeaderFieldContext): readonly BOMHeaderField[] {
-  return [
+  const fields: BOMHeaderField[] = [
     {
       name: 'bomNo',
       label: ctx.t('engineering.bomArchive.form.bomNo'),
@@ -138,7 +140,7 @@ export function getBOMHeaderFields(ctx: BOMHeaderFieldContext): readonly BOMHead
       // 显示成翻译后的"研发 BOM / 生产 BOM"。
       getDisplayValue: (rawValue, c) => {
         const code = typeof rawValue === 'string' && rawValue ? rawValue : 'EBOM'
-        return c.t(`engineering.dict.${code}` as any)
+        return c.t(code === 'MBOM' ? 'engineering.dict.MBOM' : 'engineering.dict.EBOM')
       },
     },
     {
@@ -207,6 +209,12 @@ export function getBOMHeaderFields(ctx: BOMHeaderFieldContext): readonly BOMHead
       colSpan: 'minmax(0,1.2fr)',
     },
   ]
+
+  if (!ctx.hideSystemMetaFields) {
+    return fields
+  }
+
+  return fields.filter((field) => field.name !== 'bomVersion' && field.name !== 'status')
 }
 
 /**

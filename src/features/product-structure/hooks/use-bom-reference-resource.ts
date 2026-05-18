@@ -6,8 +6,7 @@ import { useLanguage } from '@/context/language-provider'
 import { createLogger } from '@/lib/logger'
 import { type CompositeReadResource, resolveQueryFailure } from '@/lib/read-resource'
 import { failLoudly } from '@/lib/safe-catch'
-import { resolveProductDisplayV2 } from '@/features/engineering/display/product-display-v2'
-import { resolveProductDisplayMetadataV2 } from '@/features/engineering/display/product-display-v2-metadata'
+import { buildProductDisplayMapsV2 } from '@/features/engineering/display/product-display-v2-map'
 import {
   PRODUCT_ATTRIBUTE_CATEGORIES_QUERY_KEY,
   PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY,
@@ -258,23 +257,14 @@ export function useBOMReferenceResource<K extends BOMReferenceResourceKey = BOMR
       const productTypes = productTypesQuery.data as ProductType[]
       const productAttributeCategories = productAttributeCategoriesQuery.data as ProductAttributeCategory[]
       const productAttributeOptions = productAttributeOptionsQuery.data as ProductAttributeOption[]
-      const productDisplayLabelMap = new Map(
-        products.map((product) => {
-          const displayMetadata = resolveProductDisplayMetadataV2({
-            locale,
-            product,
-            templates: productTemplates,
-            productTypes,
-            categories: productAttributeCategories,
-            options: productAttributeOptions,
-          })
-          const displayProjection = displayMetadata.projection ?? resolveProductDisplayV2({
-            locale,
-            product,
-          })
-          return [product.id, displayProjection.fullLabel]
-        })
-      )
+      const { productDisplayLabelMap } = buildProductDisplayMapsV2({
+        locale,
+        products,
+        productTemplates,
+        productTypes,
+        productAttributeCategories,
+        productAttributeOptions,
+      })
       ready.products = products
       ready.productDisplayLabelMap = productDisplayLabelMap
       ready.productTemplates = productTemplates

@@ -197,7 +197,7 @@ export function ProductAuditEntry({
           product: targetProduct,
         })
       : null)
-  const targetDisplayName = displayProjectionV2?.fullLabel
+  const targetDisplayName = displayProjectionV2?.title
     || summary.targetName
     || log.target_id
     || (locale === 'zh-CN' ? '未命名产品' : 'Unnamed Product')

@@ -45,7 +45,9 @@ export function useProductForm({
     attributeOptions,
     moldOptions,
     specOptions,
+    boms,
     bomOptions,
+    customerNameMap,
     isBomOptionsPending,
     metadataInitError,
     metadataReady,
@@ -83,13 +85,15 @@ export function useProductForm({
     productTypes,
   })
 
-  const { dynamicTypes, specPreviewTitle, specPreviewSummary, specPreviewV2, skuPreview, nextCodeDeriveError } = useProductFormDerive({
+  const { dynamicTypes, specPreviewTitle, specPreviewSummary, specPreviewAggregateLabel, specPreviewV2, specPreviewItems, selectedBomContext, skuPreview, nextCodeDeriveError } = useProductFormDerive({
     isEdit,
     open,
     form,
     previewTemplate: boundTemplate,
     attributeCategories,
     attributeOptions,
+    boms,
+    customerNameMap,
     productTypes,
   })
 
@@ -98,6 +102,9 @@ export function useProductForm({
     isEdit,
     form,
     productTypes,
+    attributeOptions,
+    boms,
+    customerNameMap,
     onOpenChange,
     onSubmit,
     onSaved,
@@ -122,7 +129,10 @@ export function useProductForm({
     templateResolutionPending,
     specPreviewTitle,
     specPreviewSummary,
+    specPreviewAggregateLabel,
     specPreviewV2,
+    specPreviewItems,
+    selectedBomContext,
     handleFormSubmit,
   }
 }
