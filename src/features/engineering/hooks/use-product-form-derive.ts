@@ -15,13 +15,18 @@ import {
   type ProductDisplayProjectionV2,
 } from '../display/product-display-v2'
 import { ProductCoreService } from '../services/product-core-service'
-import { deriveSku } from '../utils/product-form-utils'
+import { deriveSku, resolveEffectiveProductName } from '../utils/product-form-utils'
 import {
   normalizeProductModelCodeValue,
   normalizeProductSkuValue,
 } from '../utils/product-code-normalization'
+import {
+  buildOrderedProductTypes,
+  buildProductTypeHierarchyMetaMap,
+} from '../utils/product-type-tree'
 
 const logger = createLogger('useProductFormDerive')
+const BASE_MODEL_LEVEL = 2
 
 interface UseProductFormDeriveParams {
     isEdit: boolean
@@ -52,12 +57,45 @@ export function useProductFormDerive({
     productTypes
 }: UseProductFormDeriveParams): UseProductFormDeriveResult {
     const { locale } = useLanguage()
-    const dynamicTypes = useMemo(() => (productTypes || []).filter((t: ProductType) => t.active), [productTypes])
 
     const watchedTypeId = useWatch({ control: form.control, name: 'typeId' })
     const watchedModelCode = useWatch({ control: form.control, name: 'modelCode' })
     const allValues = useWatch({ control: form.control })
     const [nextCodeDeriveError, setNextCodeDeriveError] = useState<string | null>(null)
+    const orderedTypes = useMemo(() => buildOrderedProductTypes(productTypes || [], true), [productTypes])
+    const hierarchyMetaMap = useMemo(() => buildProductTypeHierarchyMetaMap(productTypes || [], true), [productTypes])
+    const baseModelTypes = useMemo(
+        () => orderedTypes.filter((type) => {
+            if (!type.active) return false
+            return (hierarchyMetaMap.get(type.id)?.level ?? -1) === BASE_MODEL_LEVEL
+        }),
+        [hierarchyMetaMap, orderedTypes]
+    )
+    const baseModelTypeIds = useMemo(
+        () => new Set(baseModelTypes.map((type) => type.id)),
+        [baseModelTypes]
+    )
+    const selectedType = useMemo(
+        () => (productTypes || []).find((type) => type.id === watchedTypeId),
+        [productTypes, watchedTypeId]
+    )
+    const dynamicTypes = useMemo(() => {
+        return baseModelTypes
+    }, [baseModelTypes])
+
+    useEffect(() => {
+        if (!open || !watchedTypeId) {
+            return
+        }
+
+        if (baseModelTypeIds.has(watchedTypeId)) {
+            return
+        }
+
+        form.clearErrors('typeId')
+        form.setValue('typeId', '', { shouldDirty: false, shouldValidate: false })
+        form.setValue('name', '', { shouldDirty: false, shouldValidate: false })
+    }, [baseModelTypeIds, form, open, watchedTypeId])
 
     useEffect(() => {
         if (isEdit || !watchedTypeId || !open) return
@@ -93,15 +131,27 @@ export function useProductFormDerive({
         return normalizeProductSkuValue(deriveSku(typeCode, normalizeProductModelCodeValue(watchedModelCode || '01')))
     }, [form, isEdit, open, productTypes, watchedModelCode, watchedTypeId])
 
+    const previewProduct = useMemo(
+        () => ({
+            ...(allValues as Product),
+            name: resolveEffectiveProductName({
+                product: allValues as Product,
+                productTypes,
+                typeCode: selectedType?.code,
+            }),
+        }),
+        [allValues, productTypes, selectedType?.code]
+    )
+
     const specPreviewV2 = useMemo(
         () => resolveProductDisplayV2({
                 locale,
-                product: allValues as Product,
+                product: previewProduct,
                 template: previewTemplate ?? undefined,
                 categories: attributeCategories,
                 options: attributeOptions,
             }),
-        [allValues, attributeCategories, attributeOptions, locale, previewTemplate]
+        [attributeCategories, attributeOptions, locale, previewProduct, previewTemplate]
     )
 
     const specPreviewTitle = specPreviewV2.title

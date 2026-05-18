@@ -9,8 +9,8 @@ export const systemManagement = {
     subtitle: "Real-time server health and process integrity monitor",
     forceRefresh: "Force Refresh",
     footer: {
-      nodeResponseTime: "Node Response Time: {{time}}",
-      engineVersion: "Core Engine V2.6.4 (Reliance Stable)"
+      nodeTime: "Node Time: {{time}}",
+      runtimeSnapshot: "Env: {{environment}} / Runtime: {{runtime}}"
     }
   },
   serverIdentity: {
@@ -36,7 +36,8 @@ export const systemManagement = {
   componentStatus: {
     title: "Core Engine Connectivity",
     online: "Online",
-    terminated: "Terminated",
+    terminated: "Offline",
+    warning: "Warning",
     labels: {
       postgres: "PostgreSQL DB",
       redis: "Redis Key-Value",

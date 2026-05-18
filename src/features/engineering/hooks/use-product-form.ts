@@ -45,6 +45,8 @@ export function useProductForm({
     attributeOptions,
     moldOptions,
     specOptions,
+    bomOptions,
+    isBomOptionsPending,
     metadataInitError,
     metadataReady,
   } = useProductFormInit({
@@ -109,6 +111,8 @@ export function useProductForm({
     attributeOptions,
     moldOptions,
     specOptions,
+    bomOptions,
+    isBomOptionsPending,
     metadataInitError,
     metadataReady,
     nextCodeDeriveError,

@@ -56,6 +56,7 @@ export const productSchema = z.object({
   moldGroup: z.string().optional(),
   description: z.string().optional(),
   engineeringSpecId: z.string().optional(),
+  bomId: z.string().optional(),
   attributeValues: z.array(z.object({
     id: z.string().optional(),
     productId: z.string().optional(),
@@ -90,6 +91,7 @@ export type Product = z.infer<typeof productSchema>
 
 export const productDraftSchema = productSchema.extend({
   sku: z.string().default(''),
+  name: z.string().default(''),
 })
 
 export const productTemplateAttributeBindingSchema = z.object({

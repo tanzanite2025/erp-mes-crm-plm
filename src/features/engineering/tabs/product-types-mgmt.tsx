@@ -35,6 +35,7 @@ import { PRODUCT_TYPES_QUERY_KEY } from '../query-keys'
 import { ProductTypeService, type SaveProductTypeInput } from '../services/product-type-service'
 import {
   buildOrderedProductTypes,
+  buildProductTypeHierarchyMetaMap,
   buildProductTypeMap,
 } from '../utils/product-type-tree'
 
@@ -69,26 +70,52 @@ export function ProductTypesMgmt() {
   }, [data, productTypesQuery.error, productTypesQuery.isPending])
 
   const displayData = useMemo(() => buildOrderedProductTypes(resolvedProductTypes), [resolvedProductTypes])
+  const hierarchyMetaMap = useMemo(() => buildProductTypeHierarchyMetaMap(resolvedProductTypes), [resolvedProductTypes])
   const typeMap = useMemo(() => buildProductTypeMap(resolvedProductTypes), [resolvedProductTypes])
+
+  const resolveLevelLabel = (level: number) => {
+    if (level <= 0) return t('engineering.categoryArchive.labels.level1')
+    if (level === 1) return t('engineering.categoryArchive.labels.level2')
+    return t('engineering.categoryArchive.labels.level3')
+  }
 
   const columns: ColumnDef<ProductType>[] = [
     {
       accessorKey: 'name',
       header: () => <div className='pl-6'>{t('engineering.categoryArchive.columns.name')}</div>,
       cell: ({ row }) => {
-        const isSub = Boolean(row.original.parentId)
+        const hierarchy = hierarchyMetaMap.get(row.original.id)
+        const level = hierarchy?.level ?? (row.original.parentId ? 1 : 0)
+        const isSub = level > 0
+        const levelLabel = resolveLevelLabel(level)
+        const isBaseModel = level >= 2
 
         return (
-          <div className={cn('flex items-center gap-2', isSub ? 'pl-12' : 'pl-6')}>
+          <div className={cn('flex items-center gap-2', isSub ? 'pl-6' : 'pl-6')} style={{ paddingLeft: `calc(${level} * 24px + 24px)` }}>
             {isSub ? (
               <>
                 <CornerDownRight className='size-3.5 text-primary/30 shrink-0' />
-                <span className='font-bold text-sm tracking-tight text-muted-foreground'>{row.original.name}</span>
+                <div className='flex min-w-0 items-center gap-2'>
+                  <span className='font-bold text-sm tracking-tight text-muted-foreground'>{row.original.name}</span>
+                  <Badge variant='outline' className='h-5 rounded-full border-dashed px-2 text-[8px] font-black uppercase tracking-wide'>
+                    {levelLabel}
+                  </Badge>
+                  {isBaseModel ? (
+                    <Badge variant='outline' className='h-5 rounded-full border-blue-200 bg-blue-50 px-2 text-[8px] font-black uppercase tracking-wide text-blue-700'>
+                      {t('engineering.categoryArchive.labels.baseModel')}
+                    </Badge>
+                  ) : null}
+                </div>
               </>
             ) : (
-              <span className='font-black text-sm tracking-tighter italic uppercase text-primary'>
-                {row.original.name}
-              </span>
+              <div className='flex min-w-0 items-center gap-2'>
+                <span className='font-black text-sm tracking-tighter italic uppercase text-primary'>
+                  {row.original.name}
+                </span>
+                <Badge variant='outline' className='h-5 rounded-full border-dashed px-2 text-[8px] font-black uppercase tracking-wide'>
+                  {levelLabel}
+                </Badge>
+              </div>
             )}
           </div>
         )

@@ -61,80 +61,93 @@ export function PurchaseOrderListToolbar({
   }
 
   return (
-    <div className='flex flex-col items-center justify-between gap-4 px-2 md:flex-row'>
-      <div className='relative w-full md:w-80'>
-        <ClipboardList className='absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/40' />
-        <Input
-          placeholder={t('purchase.orders.searchPlaceholder')}
-          value={searchTerm}
-          onChange={(e) => onSearchTermChange(e.target.value)}
-          className='h-12 w-full rounded-2xl border-none bg-muted/50 pl-11 text-[11px] font-bold shadow-inner transition-all focus:bg-background'
-        />
-      </div>
-      <div className='flex w-full flex-col items-center gap-3 sm:flex-row md:w-auto'>
-        <div className='no-scrollbar flex w-full max-w-full items-center gap-1 overflow-x-auto rounded-2xl border border-dashed bg-muted/30 p-1.5 font-bold sm:w-auto'>
-          {['ALL', ...PURCHASE_ORDER_STATUSES].map((status) => {
-            const meta = status === 'ALL' ? allStatusMeta : getPurchaseStatusDisplayMeta(status, t)
-            const isActive = statusFilter === status
+    <div className='flex flex-col gap-3 px-2'>
+      <div className='flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between'>
+        <div className='flex min-w-0 flex-1 flex-col gap-3'>
+          <div className='relative w-full xl:max-w-80'>
+            <ClipboardList className='absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/40' />
+            <Input
+              placeholder={t('purchase.orders.searchPlaceholder')}
+              value={searchTerm}
+              onChange={(e) => onSearchTermChange(e.target.value)}
+              className='h-12 w-full rounded-2xl border-none bg-muted/50 pl-11 text-[11px] font-bold shadow-inner transition-all focus:bg-background'
+            />
+          </div>
 
-            return (
-              <button
-                key={status}
-                onClick={() => onStatusFilterChange(status)}
-                className={`whitespace-nowrap rounded-xl px-1.5 py-1 transition-all ${
-                  isActive
-                    ? 'bg-background shadow-md ring-1 ring-primary/10'
-                    : 'opacity-65 hover:bg-muted/60 hover:opacity-100'
-                }`}
-              >
-                <AuditStatusDisplay meta={meta} badgeClassName={`px-3 py-1.5 ${isActive ? '' : 'shadow-none'}`} />
-              </button>
-            )
-          })}
+          <div className='flex min-w-0 flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-start'>
+            <div className='no-scrollbar flex w-full min-w-0 items-center gap-1 overflow-x-auto rounded-2xl border border-dashed bg-muted/30 p-1.5 font-bold lg:flex-1'>
+              {['ALL', ...PURCHASE_ORDER_STATUSES].map((status) => {
+                const meta = status === 'ALL' ? allStatusMeta : getPurchaseStatusDisplayMeta(status, t)
+                const isActive = statusFilter === status
+
+                return (
+                  <button
+                    key={status}
+                    onClick={() => onStatusFilterChange(status)}
+                    className={`shrink-0 whitespace-nowrap rounded-xl px-1.5 py-1 transition-all ${
+                      isActive
+                        ? 'bg-background shadow-md ring-1 ring-primary/10'
+                        : 'opacity-65 hover:bg-muted/60 hover:opacity-100'
+                    }`}
+                  >
+                    <AuditStatusDisplay meta={meta} badgeClassName={`px-3 py-1.5 ${isActive ? '' : 'shadow-none'}`} />
+                  </button>
+                )
+              })}
+            </div>
+
+            <div className='grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:w-auto lg:flex-none'>
+              <Select value={paymentMethodFilter} onValueChange={onPaymentMethodFilterChange} disabled={!isFinanceFilterReady}>
+                <SelectTrigger className='h-11 w-full rounded-2xl border-dashed bg-background/80 font-bold shadow-sm lg:w-[180px]'>
+                  <SelectValue placeholder={t('purchase.orders.filters.paymentMethod')} />
+                </SelectTrigger>
+                <SelectContent className='rounded-2xl'>
+                  <SelectItem value='ALL'>{t('purchase.orders.filters.allPaymentMethods')}</SelectItem>
+                  {paymentMethodOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={paymentTermFilter} onValueChange={onPaymentTermFilterChange} disabled={!isFinanceFilterReady}>
+                <SelectTrigger className='h-11 w-full rounded-2xl border-dashed bg-background/80 font-bold shadow-sm lg:w-[180px]'>
+                  <SelectValue placeholder={t('purchase.orders.filters.paymentTerm')} />
+                </SelectTrigger>
+                <SelectContent className='rounded-2xl'>
+                  <SelectItem value='ALL'>{t('purchase.orders.filters.allPaymentTerms')}</SelectItem>
+                  {paymentTermOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
-        <Select value={paymentMethodFilter} onValueChange={onPaymentMethodFilterChange} disabled={!isFinanceFilterReady}>
-          <SelectTrigger className='h-11 w-full rounded-2xl border-dashed bg-background/80 font-bold shadow-sm sm:w-[180px]'>
-            <SelectValue placeholder={t('purchase.orders.filters.paymentMethod')} />
-          </SelectTrigger>
-          <SelectContent className='rounded-2xl'>
-            <SelectItem value='ALL'>{t('purchase.orders.filters.allPaymentMethods')}</SelectItem>
-            {paymentMethodOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={paymentTermFilter} onValueChange={onPaymentTermFilterChange} disabled={!isFinanceFilterReady}>
-          <SelectTrigger className='h-11 w-full rounded-2xl border-dashed bg-background/80 font-bold shadow-sm sm:w-[180px]'>
-            <SelectValue placeholder={t('purchase.orders.filters.paymentTerm')} />
-          </SelectTrigger>
-          <SelectContent className='rounded-2xl'>
-            <SelectItem value='ALL'>{t('purchase.orders.filters.allPaymentTerms')}</SelectItem>
-            {paymentTermOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button
-          size='sm'
-          className='h-11 w-full gap-2 rounded-full bg-primary px-8 text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95 sm:w-auto'
-          onClick={onAddOrder}
-        >
-          <Plus className='h-4 w-4' />
-          {t('purchase.orders.addOrder')}
-        </Button>
-        <AuditTimelineTriggerButton
-          module={AUDIT_MODULES.purchaseOrder}
-          targetName={t('purchase.orders.title')}
-          label={t('common.audit.trigger')}
-          className='h-11 w-full rounded-full px-6 sm:w-auto'
-        />
+
+        <div className='flex w-full flex-col gap-2 sm:flex-row xl:w-auto xl:flex-none xl:items-center xl:justify-end'>
+          <Button
+            size='sm'
+            className='h-11 w-full shrink-0 gap-2 rounded-full bg-primary px-8 text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95 sm:flex-1 xl:w-auto xl:flex-none'
+            onClick={onAddOrder}
+          >
+            <Plus className='h-4 w-4' />
+            {t('purchase.orders.addOrder')}
+          </Button>
+          <AuditTimelineTriggerButton
+            module={AUDIT_MODULES.purchaseOrder}
+            targetName={t('purchase.orders.title')}
+            label={t('common.audit.trigger')}
+            className='h-11 w-full shrink-0 rounded-full px-6 sm:flex-1 xl:w-auto xl:flex-none'
+          />
+        </div>
       </div>
+
       {financeFilterStatus !== 'ready' ? (
-        <div className='flex w-full items-center justify-end gap-3 text-right text-[9px] font-black uppercase tracking-widest text-muted-foreground/50'>
+        <div className='flex w-full flex-wrap items-center justify-end gap-3 text-right text-[9px] font-black uppercase tracking-widest text-muted-foreground/50'>
           <span>
             {financeFilterStatus === 'loading'
               ? t('purchase.orders.loading')

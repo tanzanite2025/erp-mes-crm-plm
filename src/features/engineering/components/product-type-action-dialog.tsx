@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Badge } from '@/components/ui/badge'
@@ -36,8 +36,13 @@ import {
   normalizeEngineeringProductTypeCode,
   normalizeProductTypeEntity,
 } from '../utils/product-code-normalization'
+import {
+  buildOrderedProductTypes,
+  buildProductTypeHierarchyMetaMap,
+} from '../utils/product-type-tree'
 
 const logger = createLogger('ProductTypeActionDialog')
+const MAX_PRODUCT_TYPE_LEVEL = 2
 
 type ProductTypeForm = Omit<ProductType, 'parentId' | 'templateId'> & {
   parentId: string
@@ -92,6 +97,7 @@ export function ProductTypeActionDialog({
 
   const categoryName = form.watch('name')
   const currentCode = form.watch('code')
+  const watchedParentId = form.watch('parentId')
   const watchedTemplateId = form.watch('templateId')
 
   useEffect(() => {
@@ -173,15 +179,80 @@ export function ProductTypeActionDialog({
     return collected
   }, [allTypes, currentRow, isEdit])
 
+  const orderedTypes = useMemo(() => buildOrderedProductTypes(allTypes, true), [allTypes])
+  const hierarchyMetaMap = useMemo(() => buildProductTypeHierarchyMetaMap(allTypes, true), [allTypes])
+  const currentSubtreeHeight = currentRow ? (hierarchyMetaMap.get(currentRow.id)?.subtreeHeight ?? 0) : 0
+
   const selectableParents = useMemo(
-    () => allTypes.filter((type) => !excludedIds.has(type.id)),
-    [allTypes, excludedIds]
+    () => {
+      const allowed = orderedTypes.filter((type) => {
+        if (excludedIds.has(type.id)) return false
+
+        const meta = hierarchyMetaMap.get(type.id)
+        if (!meta) return false
+
+        return meta.level + 1 + currentSubtreeHeight <= MAX_PRODUCT_TYPE_LEVEL
+      })
+
+      if (!isEdit || !currentRow?.parentId) {
+        return allowed
+      }
+
+      const currentParent = orderedTypes.find((type) => type.id === currentRow.parentId)
+      if (!currentParent || allowed.some((type) => type.id === currentParent.id)) {
+        return allowed
+      }
+
+      return [...allowed, currentParent]
+    },
+    [currentRow?.parentId, currentSubtreeHeight, excludedIds, hierarchyMetaMap, isEdit, orderedTypes]
   )
 
   const localizedTemplates = useMemo(
     () => localizeTemplateDefinitions(allTemplates, t),
     [allTemplates, t]
   )
+
+  const resolveLevelLabel = useCallback((level: number) => {
+    if (level <= 0) return t('engineering.categoryArchive.labels.level1')
+    if (level === 1) return t('engineering.categoryArchive.labels.level2')
+    return t('engineering.categoryArchive.labels.level3')
+  }, [t])
+
+  const selectedParentMeta = useMemo(() => {
+    if (!watchedParentId || watchedParentId === 'root') return null
+    return hierarchyMetaMap.get(watchedParentId) || null
+  }, [hierarchyMetaMap, watchedParentId])
+
+  const targetLevel = selectedParentMeta ? selectedParentMeta.level + 1 : 0
+  const targetLevelLabel = resolveLevelLabel(targetLevel)
+  const targetRoleLabel = targetLevel >= MAX_PRODUCT_TYPE_LEVEL
+    ? t('engineering.categoryArchive.labels.baseModel')
+    : t('engineering.categoryArchive.labels.structureCategory')
+  const parentPathLabel = selectedParentMeta?.pathLabel || t('engineering.categoryArchive.dialog.parentNone')
+  const parentItems = useMemo(
+    () => [
+      {
+        label: t('engineering.categoryArchive.dialog.parentNone'),
+        value: 'root',
+      },
+      ...selectableParents.map((type) => {
+        const meta = hierarchyMetaMap.get(type.id)
+        const levelLabel = resolveLevelLabel(meta?.level ?? 0)
+        const pathLabel = meta?.pathLabel || type.name
+        return {
+          label: `${levelLabel} · ${pathLabel} · ${type.code}`,
+          value: type.id,
+        }
+      }),
+    ],
+    [hierarchyMetaMap, resolveLevelLabel, selectableParents, t]
+  )
+  const hierarchyHint = targetLevel <= 0
+    ? t('engineering.categoryArchive.dialog.levelHintTop')
+    : targetLevel === 1
+      ? t('engineering.categoryArchive.dialog.levelHintMiddle')
+      : t('engineering.categoryArchive.dialog.levelHintLeaf')
 
   const selectedTemplate = useMemo(() => {
     if (!watchedTemplateId || watchedTemplateId === 'none') return null
@@ -197,6 +268,19 @@ export function ProductTypeActionDialog({
     setIsSubmitting(true)
 
     try {
+      const parentLevel = values.parentId === 'root'
+        ? -1
+        : (hierarchyMetaMap.get(values.parentId)?.level ?? -1)
+      const nextTargetLevel = parentLevel + 1
+
+      if (nextTargetLevel + currentSubtreeHeight > MAX_PRODUCT_TYPE_LEVEL) {
+        form.setError('parentId', {
+          type: 'manual',
+          message: t('engineering.categoryArchive.dialog.levelLimitError'),
+        })
+        return
+      }
+
       const submissionData: SaveProductTypeInput = {
         ...normalizeProductTypeEntity(values),
         id: values.id || currentRow?.id,
@@ -239,6 +323,41 @@ export function ProductTypeActionDialog({
             <input type='hidden' {...form.register('createdAt')} />
             <input type='hidden' {...form.register('version')} />
 
+            <div className='rounded-[24px] border border-dashed border-primary/20 bg-primary/5 p-4 space-y-3'>
+              <div className='flex flex-wrap items-center gap-2'>
+                <Badge variant='outline' className='border-primary/20 bg-white text-primary'>
+                  {targetLevelLabel}
+                </Badge>
+                <Badge
+                  variant='outline'
+                  className={targetLevel >= MAX_PRODUCT_TYPE_LEVEL ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-600'}
+                >
+                  {targetRoleLabel}
+                </Badge>
+              </div>
+              <div className='grid grid-cols-1 gap-3 sm:grid-cols-3'>
+                <div className='min-w-0 rounded-2xl border border-dashed border-primary/15 bg-white/80 px-3 py-2'>
+                  <div className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/50'>
+                    {t('engineering.categoryArchive.dialog.targetLevel')}
+                  </div>
+                  <div className='mt-1 truncate text-[11px] font-black tracking-tight text-slate-800'>
+                    {targetLevelLabel}
+                  </div>
+                </div>
+                <div className='min-w-0 rounded-2xl border border-dashed border-primary/15 bg-white/80 px-3 py-2 sm:col-span-2'>
+                  <div className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/50'>
+                    {t('engineering.categoryArchive.dialog.parentPath')}
+                  </div>
+                  <div className='mt-1 truncate text-[11px] font-black tracking-tight text-slate-800'>
+                    {parentPathLabel}
+                  </div>
+                </div>
+              </div>
+              <div className='rounded-2xl border border-dashed border-primary/15 bg-white/70 px-3 py-2 text-[10px] font-black leading-relaxed text-slate-600'>
+                {hierarchyHint}
+              </div>
+            </div>
+
             <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 pt-2'>
               <FormField
                 control={form.control}
@@ -249,20 +368,15 @@ export function ProductTypeActionDialog({
                       {t('engineering.categoryArchive.dialog.parent')}
                     </FormLabel>
                     <SelectDropdown
-                      defaultValue={field.value}
+                      value={field.value}
                       onValueChange={field.onChange}
-                      items={[
-                        {
-                          label: t('engineering.categoryArchive.dialog.parentNone'),
-                          value: 'root',
-                        },
-                        ...selectableParents.map((type) => ({
-                          label: `${type.name} (${type.code})`,
-                          value: type.id,
-                        })),
-                      ]}
+                      items={parentItems}
                       placeholder={t('engineering.categoryArchive.dialog.parentPlaceholder')}
+                      isControlled={true}
                     />
+                    <div className='text-[10px] text-muted-foreground mt-1'>
+                      {hierarchyHint}
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -335,7 +449,7 @@ export function ProductTypeActionDialog({
                       {t('engineering.categoryArchive.dialog.template')}
                     </FormLabel>
                     <SelectDropdown
-                      defaultValue={field.value}
+                      value={field.value}
                       onValueChange={field.onChange}
                       items={[
                         {
@@ -348,6 +462,7 @@ export function ProductTypeActionDialog({
                         })),
                       ]}
                       placeholder={t('engineering.categoryArchive.dialog.templatePlaceholder')}
+                      isControlled={true}
                     />
                     <div className='text-[10px] text-muted-foreground mt-1'>
                       {t('engineering.categoryArchive.dialog.templateHelp')}

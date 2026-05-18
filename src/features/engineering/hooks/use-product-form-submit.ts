@@ -4,6 +4,7 @@ import { failLoudly } from '@/lib/safe-catch'
 import { useLanguage } from '@/context/language-provider'
 import { type Product, type ProductType } from '../data/schema'
 import { ProductCommand } from '../commands/product-command'
+import { resolveEffectiveProductName } from '../utils/product-form-utils'
 import { type ProductSubmitPayload } from './use-product-form'
 
 interface UseProductFormSubmitParams {
@@ -23,7 +24,7 @@ function createEmptySubmitPayloadError(detail: string): Error {
 export function useProductFormSubmit({
   currentRow,
   isEdit,
-  form,
+  form: _form,
   productTypes,
   onOpenChange,
   onSubmit,
@@ -34,8 +35,16 @@ export function useProductFormSubmit({
   const handleFormSubmit = async (values: Product) => {
     const selectedType = productTypes.find((type) => type.id === values.typeId)
     const typeCode = selectedType?.code || 'X'
+    const normalizedValues: Product = {
+      ...values,
+      name: resolveEffectiveProductName({
+        product: values,
+        productTypes,
+        typeCode,
+      }),
+    }
     const submitPayload = ProductCommand.composeSubmitPayload({
-      values,
+      values: normalizedValues,
       typeCode,
       isEdit,
     })

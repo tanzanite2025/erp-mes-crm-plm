@@ -1,5 +1,6 @@
 ﻿'use client'
 
+import { useMemo } from 'react'
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { SelectDropdown } from '@/components/select-dropdown'
@@ -12,12 +13,15 @@ import { useLanguage } from '@/context/language-provider'
 import {
   normalizeProductModelCodeValue,
 } from '../../utils/product-code-normalization'
+import { buildProductTypeHierarchyMetaMap } from '../../utils/product-type-tree'
 
 interface ProductBasicInfoProps {
     form: UseFormReturn<Product>
     dynamicTypes: ProductType[]
     productTypes: ProductType[]
     handleImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void
+    bomOptions: { label: string; value: string }[]
+    isBomOptionsPending?: boolean
     specOptions: { label: string; value: string }[]
     moldOptions: { label: string; value: string }[]
     isEdit: boolean
@@ -33,6 +37,8 @@ export function ProductBasicInfo({
     dynamicTypes,
     productTypes,
     handleImageUpload,
+    bomOptions,
+    isBomOptionsPending,
     specOptions,
     moldOptions,
     isEdit,
@@ -40,6 +46,18 @@ export function ProductBasicInfo({
 }: ProductBasicInfoProps) {
     const { locale, t } = useLanguage()
     const isChineseLocale = locale.startsWith('zh')
+    const hierarchyMetaMap = useMemo(() => buildProductTypeHierarchyMetaMap(productTypes, true), [productTypes])
+    const baseModelItems = useMemo(
+        () => dynamicTypes.map((type: ProductType) => {
+            const hierarchy = hierarchyMetaMap.get(type.id)
+            const pathLabel = hierarchy?.pathLabel || type.name
+            return {
+                label: pathLabel,
+                value: type.id
+            }
+        }),
+        [dynamicTypes, hierarchyMetaMap]
+    )
     const productStatusOptions = [
         { label: isChineseLocale ? '启用' : 'Active', value: 'Active' },
         { label: isChineseLocale ? '开发' : 'Draft', value: 'Draft' },
@@ -86,8 +104,8 @@ export function ProductBasicInfo({
                         </FormItem>
                     )}
                 />
-                <div className='flex min-w-0 flex-col justify-between gap-2.5 sm:min-h-[104px]'>
-                    <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2.5'>
+                <div className='flex min-w-0 flex-col gap-2.5 sm:min-h-[104px]'>
+                    <div className='grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-6'>
                         <FormField
                             control={form.control}
                             name='typeId'
@@ -95,20 +113,38 @@ export function ProductBasicInfo({
                                 <FormItem className='space-y-0.5 min-w-0'>
                                     <FormLabel className='text-slate-600 font-black text-[10px] uppercase tracking-widest ml-1 flex items-center gap-1'>
                                         <RequiredMark />
-                                        <span>{t('engineering.productMgmt.form.category')}</span>
+                                        <span>{t('engineering.categoryArchive.labels.baseModel')}</span>
                                     </FormLabel>
+                                        <SelectDropdown
+                                            value={field.value}
+                                            onValueChange={(value) => {
+                                                field.onChange(value)
+                                                form.setValue('name', '', { shouldDirty: false, shouldValidate: false })
+                                            }}
+                                            isControlled={true}
+                                            items={baseModelItems}
+                                            placeholder={t('engineering.productMgmt.form.categoryPlaceholder')}
+                                            className='h-[38px] w-full text-[11px] font-bold rounded-xl bg-muted/40 border-none px-3'
+                                        />
+                                    <FormMessage className='text-[10px] font-bold'>
+                                        {t('engineering.productMgmt.form.categoryRequired')}
+                                    </FormMessage>
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name='bomId'
+                            render={({ field }) => (
+                                <FormItem className='space-y-0.5 min-w-0'>
+                                    <FormLabel className='text-slate-600 font-black text-[10px] uppercase tracking-widest ml-1'>{t('engineering.productMgmt.form.bom')}</FormLabel>
                                         <SelectDropdown
                                             value={field.value}
                                             onValueChange={field.onChange}
                                             isControlled={true}
-                                            items={dynamicTypes.map((t: ProductType) => {
-                                                const parent = productTypes.find(p => p.id === t.parentId)
-                                                return {
-                                                    label: parent ? `-- ${t.name}` : t.name,
-                                                    value: t.id
-                                                }
-                                            })}
-                                            placeholder={t('engineering.productMgmt.form.categoryPlaceholder')}
+                                            isPending={isBomOptionsPending}
+                                            items={bomOptions}
+                                            placeholder={t('engineering.productMgmt.form.bomPlaceholder')}
                                             className='h-[38px] w-full text-[11px] font-bold rounded-xl bg-muted/40 border-none px-3'
                                         />
                                     <FormMessage className='text-[10px] font-bold' />
@@ -141,53 +177,6 @@ export function ProductBasicInfo({
                                         />
                                     </FormControl>
                                     <FormMessage className='text-[10px] font-bold' />
-                                </FormItem>
-                            )}
-                        />
-                        <div className='space-y-0.5 min-w-0'>
-                            <FormLabel className='text-blue-800 font-black text-[10px] uppercase tracking-widest italic ml-1'>{t('engineering.productMgmt.form.template')}</FormLabel>
-                            <div className='flex h-[38px] w-full items-center rounded-xl bg-muted/40 px-3 text-[11px] font-bold text-slate-700'>
-                                <span className='min-w-0 truncate'>
-                                    {templateLabel || t('engineering.productMgmt.form.templatePlaceholder')}
-                                </span>
-                            </div>
-                        </div>
-                        <FormField
-                            control={form.control}
-                            name='status'
-                            render={({ field }) => (
-                                <FormItem className='space-y-0.5 min-w-0'>
-                                    <FormLabel className='text-slate-600 font-black text-[10px] uppercase tracking-widest ml-1'>{t('engineering.productMgmt.form.status')}</FormLabel>
-                                        <SelectDropdown
-                                            value={field.value}
-                                            onValueChange={field.onChange}
-                                            isControlled={true}
-                                            items={productStatusOptions}
-                                            className='h-[38px] w-full text-[11px] font-bold rounded-xl bg-muted/40 border-none px-3 text-slate-700'
-                                        />
-                                </FormItem>
-                            )}
-                        />
-                    </div>
-
-                    <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2.5'>
-                        <FormField
-                            control={form.control}
-                            name='name'
-                            render={({ field }) => (
-                                <FormItem className='space-y-0.5 min-w-0'>
-                                    <FormLabel className='text-blue-800 font-black text-[10px] uppercase tracking-widest italic ml-1 flex items-center gap-1'>
-                                        <RequiredMark />
-                                        <span>{t('engineering.productMgmt.form.prodName')}</span>
-                                    </FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            placeholder={t('engineering.productMgmt.form.prodNamePlaceholder')}
-                                            className='h-[38px] w-full text-[13px] font-black italic rounded-xl bg-muted/40 border-none focus-visible:ring-blue-400 transition-all px-3 shadow-sm'
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                    <FormMessage className='text-[10px] font-bold uppercase' />
                                 </FormItem>
                             )}
                         />
@@ -227,6 +216,33 @@ export function ProductBasicInfo({
                                 </FormItem>
                             )}
                         />
+                        <FormField
+                            control={form.control}
+                            name='status'
+                            render={({ field }) => (
+                                <FormItem className='space-y-0.5 min-w-0'>
+                                    <FormLabel className='text-slate-600 font-black text-[10px] uppercase tracking-widest ml-1'>{t('engineering.productMgmt.form.status')}</FormLabel>
+                                        <SelectDropdown
+                                            value={field.value}
+                                            onValueChange={field.onChange}
+                                            isControlled={true}
+                                            items={productStatusOptions}
+                                            className='h-[38px] w-full text-[11px] font-bold rounded-xl bg-muted/40 border-none px-3 text-slate-700'
+                                        />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+
+                    <div className='grid grid-cols-1 gap-2.5'>
+                        <div className='space-y-0.5 min-w-0'>
+                            <FormLabel className='text-blue-800 font-black text-[10px] uppercase tracking-widest italic ml-1'>{t('engineering.productMgmt.form.template')}</FormLabel>
+                            <div className='flex h-[38px] w-full items-center rounded-xl bg-muted/40 px-3 text-[11px] font-bold text-slate-700'>
+                                <span className='min-w-0 truncate'>
+                                    {templateLabel || t('engineering.productMgmt.form.templatePlaceholder')}
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

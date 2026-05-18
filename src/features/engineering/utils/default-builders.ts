@@ -30,6 +30,7 @@ export function createProductDraft(overrides: ProductDraftOverrides = {}): Produ
         axleCrown: undefined,
         steerer: '',
         engineeringSpecId: '',
+        bomId: '',
         attachments: [],
         version: 1,
         ...overrides,

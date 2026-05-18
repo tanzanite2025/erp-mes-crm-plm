@@ -71,6 +71,7 @@ export function buildProductCandidate(
     moldGroup: dto.moldGroup,
     description: dto.description,
     engineeringSpecId: dto.engineeringSpecId,
+    bomId: dto.bomId,
     attributeValues: attributeValues.map(toProductAttributeValueContract),
     techSpecs: dto.techSpecs,
     barcodeConfig: toBarcodeConfig(dto.barcodeConfig),

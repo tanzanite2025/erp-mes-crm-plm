@@ -79,6 +79,8 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
     attributeOptions = [],
     moldOptions,
     specOptions,
+    bomOptions,
+    isBomOptionsPending,
     metadataInitError,
     metadataReady,
     nextCodeDeriveError,
@@ -127,8 +129,9 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
   )
   const errorLabelMap: Record<string, string> = {
     typeId: t('engineering.productMgmt.form.category'),
+    bomId: t('engineering.productMgmt.form.bom'),
     modelCode: t('engineering.productMgmt.form.modelCode'),
-    name: t('engineering.productMgmt.form.prodName'),
+    name: t('engineering.productMgmt.form.category'),
     sku: t('engineering.productMgmt.form.sku'),
     engineeringSpecId: t('engineering.productMgmt.form.spec'),
     moldGroup: t('engineering.productMgmt.form.mold'),
@@ -198,6 +201,8 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
                   dynamicTypes={dynamicTypes}
                 productTypes={productTypes}
                 handleImageUpload={handleImageUpload}
+                  bomOptions={bomOptions}
+                  isBomOptionsPending={isBomOptionsPending}
                   specOptions={specOptions}
                   moldOptions={moldOptions}
                   isEdit={isEdit}

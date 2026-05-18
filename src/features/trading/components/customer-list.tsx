@@ -326,55 +326,55 @@ export function CustomerList() {
         </div>
       ) : null}
 
-      <div className='grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4'>
-        <div className='group relative flex h-24 flex-col justify-between overflow-hidden rounded-[20px] border-2 border-dashed border-muted/50 bg-muted/5 p-4 sm:h-28 sm:p-[18px]'>
-          <div className='absolute top-0 right-0 p-4 opacity-[0.03] transition-opacity group-hover:opacity-10'>
-            <Building2 className='size-12 sm:size-16' />
+      <div className='grid grid-cols-1 gap-2.5 sm:grid-cols-3 sm:gap-3'>
+        <div className='group relative flex min-h-[58px] items-center justify-between overflow-hidden rounded-[20px] border-2 border-dashed border-muted/50 bg-muted/5 px-3 py-2.5 sm:min-h-[64px] sm:px-3.5 sm:py-3'>
+          <div className='absolute top-1/2 right-3 -translate-y-1/2 opacity-[0.03] transition-opacity group-hover:opacity-10'>
+            <Building2 className='size-10 sm:size-12' />
           </div>
-          <span className='text-[9px] font-black tracking-[0.2em] text-muted-foreground/50 uppercase italic sm:text-[10px]'>
-            {t('trading.customers.stats.total')}
-          </span>
-          <div className='relative flex items-end justify-between'>
-            <span className='text-3xl font-black tracking-tighter italic tabular-nums sm:text-4xl'>
+          <div className='relative flex min-w-0 items-baseline gap-2.5'>
+            <span className='truncate text-[9px] font-black tracking-[0.18em] text-muted-foreground/50 uppercase italic sm:text-[10px]'>
+              {t('trading.customers.stats.total')}
+            </span>
+            <span className='shrink-0 text-2xl font-black tracking-tighter italic tabular-nums sm:text-[28px]'>
               {customerStats?.total ?? '—'}
             </span>
-            <div className='rounded-xl bg-primary/10 p-2'>
-              <Building2 className='size-5 text-primary' />
-            </div>
+          </div>
+          <div className='relative rounded-lg bg-primary/10 p-1.5 sm:p-2'>
+            <Building2 className='size-4 text-primary sm:size-[18px]' />
           </div>
         </div>
 
-        <div className='group relative flex h-24 flex-col justify-between overflow-hidden rounded-[20px] border-2 border-dashed border-muted/50 bg-muted/5 p-4 sm:h-28 sm:p-[18px]'>
-          <div className='absolute top-0 right-0 p-4 opacity-[0.03] transition-opacity group-hover:opacity-10'>
-            <User className='size-12 sm:size-16' />
+        <div className='group relative flex min-h-[58px] items-center justify-between overflow-hidden rounded-[20px] border-2 border-dashed border-muted/50 bg-muted/5 px-3 py-2.5 sm:min-h-[64px] sm:px-3.5 sm:py-3'>
+          <div className='absolute top-1/2 right-3 -translate-y-1/2 opacity-[0.03] transition-opacity group-hover:opacity-10'>
+            <User className='size-10 sm:size-12' />
           </div>
-          <span className='text-[9px] font-black tracking-[0.2em] text-muted-foreground/50 uppercase italic sm:text-[10px]'>
-            {t('trading.customers.stats.active')}
-          </span>
-          <div className='relative flex items-end justify-between'>
-            <span className='text-3xl font-black tracking-tighter text-emerald-500 italic tabular-nums sm:text-4xl'>
+          <div className='relative flex min-w-0 items-baseline gap-2.5'>
+            <span className='truncate text-[9px] font-black tracking-[0.18em] text-muted-foreground/50 uppercase italic sm:text-[10px]'>
+              {t('trading.customers.stats.active')}
+            </span>
+            <span className='shrink-0 text-2xl font-black tracking-tighter text-emerald-500 italic tabular-nums sm:text-[28px]'>
               {customerStats?.active ?? '—'}
             </span>
-            <div className='rounded-xl bg-emerald-500/10 p-2'>
-              <User className='size-5 text-emerald-500' />
-            </div>
+          </div>
+          <div className='relative rounded-lg bg-emerald-500/10 p-1.5 sm:p-2'>
+            <User className='size-4 text-emerald-500 sm:size-[18px]' />
           </div>
         </div>
 
-        <div className='group relative flex h-24 flex-col justify-between overflow-hidden rounded-[20px] border-2 border-dashed border-muted/50 bg-muted/5 p-4 sm:h-28 sm:p-[18px]'>
-          <div className='absolute top-0 right-0 p-4 opacity-[0.03] transition-opacity group-hover:opacity-10'>
-            <ExternalLink className='size-12 sm:size-16' />
+        <div className='group relative flex min-h-[58px] items-center justify-between overflow-hidden rounded-[20px] border-2 border-dashed border-muted/50 bg-muted/5 px-3 py-2.5 sm:min-h-[64px] sm:px-3.5 sm:py-3'>
+          <div className='absolute top-1/2 right-3 -translate-y-1/2 opacity-[0.03] transition-opacity group-hover:opacity-10'>
+            <ExternalLink className='size-10 sm:size-12' />
           </div>
-          <span className='text-[9px] font-black tracking-[0.2em] text-muted-foreground/50 uppercase italic sm:text-[10px]'>
-            {t('trading.customers.stats.newThisMonth')}
-          </span>
-          <div className='relative flex items-end justify-between'>
-            <span className='text-3xl font-black tracking-tighter text-primary italic tabular-nums sm:text-4xl'>
+          <div className='relative flex min-w-0 items-baseline gap-2.5'>
+            <span className='truncate text-[9px] font-black tracking-[0.18em] text-muted-foreground/50 uppercase italic sm:text-[10px]'>
+              {t('trading.customers.stats.newThisMonth')}
+            </span>
+            <span className='shrink-0 text-2xl font-black tracking-tighter text-primary italic tabular-nums sm:text-[28px]'>
               {typeof customerStats?.newThisMonth === 'number' ? `+${customerStats.newThisMonth}` : '—'}
             </span>
-            <div className='rounded-full bg-primary px-3 py-1 text-[8px] font-black tracking-widest text-primary-foreground uppercase'>
-              {t('trading.customers.stats.newBadge')}
-            </div>
+          </div>
+          <div className='relative rounded-full bg-primary px-2 py-1 text-[7px] font-black tracking-widest text-primary-foreground uppercase sm:px-2.5 sm:text-[8px]'>
+            {t('trading.customers.stats.newBadge')}
           </div>
         </div>
       </div>

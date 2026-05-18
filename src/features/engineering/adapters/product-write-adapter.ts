@@ -57,6 +57,7 @@ export function buildProductWriteCandidate(product: SaveProductInput | Product):
     moldGroup: normalizedProduct.moldGroup,
     description: normalizedProduct.description,
     engineeringSpecId: normalizedProduct.engineeringSpecId || '',
+    bomId: normalizedProduct.bomId || '',
     attributeValues: normalizedProduct.attributeValues.map(toProductAttributeValueApiDTO),
     techSpecs: normalizedProduct.techSpecs,
     barcodeConfig: normalizedProduct.barcodeConfig,

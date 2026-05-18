@@ -2,6 +2,8 @@ import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { AssetService } from '@/features/equipment-tooling/services/asset-service'
 import { ENGINEERING_DB_SPECS_QUERY_KEY } from '@/features/engineering-db/query-keys'
+import { BOMS_QUERY_KEY } from '@/features/product-structure/query-keys'
+import { bomService } from '@/features/product-structure/services/bom-service'
 import { SpecsService } from '@/features/engineering-db/services/specs-service'
 import { ProductAttributeCategoryService } from '../services/product-attribute-category-service'
 import { ProductAttributeOptionService } from '../services/product-attribute-option-service'
@@ -45,6 +47,12 @@ export function useProductFormInit({
         enabled: open,
     })
 
+    const bomsQuery = useQuery({
+        queryKey: BOMS_QUERY_KEY,
+        queryFn: () => bomService.getBOMs(),
+        enabled: open,
+    })
+
     if (categoriesQuery.isSuccess && !categoriesQuery.data) throw new Error('[CRITICAL] Categories Data missing')
     if (optionsQuery.isSuccess && !optionsQuery.data) throw new Error('[CRITICAL] Options Data missing')
     if (moldGroupsQuery.isSuccess && !moldGroupsQuery.data) throw new Error('[CRITICAL] Mold Groups Data missing')
@@ -67,6 +75,18 @@ export function useProductFormInit({
         },
         [specsQuery.data]
     )
+    const bomOptions = useMemo(
+        () => {
+            if (!bomsQuery.data) return []
+            return [...bomsQuery.data]
+                .sort((left, right) => (left.bomNo || left.id).localeCompare((right.bomNo || right.id), 'en'))
+                .map(bom => ({
+                    label: [bom.bomNo || bom.id, bom.bomVersion, bom.bomType, bom.versionLevel].filter(Boolean).join(' / '),
+                    value: bom.id
+                }))
+        },
+        [bomsQuery.data]
+    )
     const metadataInitError = useMemo(() => {
         const error = categoriesQuery.error ?? optionsQuery.error ?? moldGroupsQuery.error ?? specsQuery.error
         if (!error) {
@@ -87,6 +107,8 @@ export function useProductFormInit({
         attributeOptions,
         moldOptions,
         specOptions,
+        bomOptions,
+        isBomOptionsPending: bomsQuery.isPending,
         metadataInitError,
         metadataReady,
     }

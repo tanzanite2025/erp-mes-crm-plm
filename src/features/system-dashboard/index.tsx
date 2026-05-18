@@ -34,13 +34,13 @@ export function SystemStatusPage() {
   if (!data) return null
 
   return (
-    <div className="flex flex-col gap-8 animate-in fade-in duration-700">
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
+    <div className="flex flex-col gap-3 animate-in fade-in duration-700 sm:gap-3.5">
+      <div className="flex items-center justify-between gap-2">
+        <div className="space-y-0">
           <h1 className="text-xl font-black italic tracking-tighter uppercase text-slate-800 dark:text-slate-100">
             {t('systemManagement.statusPage.title')}
           </h1>
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
+          <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 sm:text-[10px]">
             {t('systemManagement.statusPage.subtitle')}
           </p>
         </div>
@@ -49,14 +49,14 @@ export function SystemStatusPage() {
           size="sm" 
           onClick={() => refetch()}
           disabled={isFetching}
-          className="rounded-full h-9 border-dashed border-slate-200 bg-background text-[10px] font-black uppercase tracking-widest gap-2 dark:border-white/10 dark:bg-white/4"
+          className="h-8 rounded-full border-dashed border-slate-200 bg-background px-3 text-[9px] font-black uppercase tracking-widest gap-1.5 dark:border-white/10 dark:bg-white/4 sm:h-9 sm:text-[10px]"
         >
           <RefreshCcw className={isFetching ? "size-3 animate-spin" : "size-3"} />
           {t('systemManagement.statusPage.forceRefresh')}
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 gap-8">
+      <div className="grid grid-cols-1 gap-2.5 sm:gap-3">
         {/* 服务器身份 */}
         <ServerIdentity 
           hostname={data.identity.hostname}
@@ -64,13 +64,14 @@ export function SystemStatusPage() {
           arch={data.identity.arch}
           runtime={data.identity.runtime}
           uptime={data.identity.uptime}
+          environment={data.identity.environment}
         />
 
         {/* 系统自诊断告警 */}
         <DiagnosticAlerts />
 
         {/* 系统组件联通性 */}
-        <ComponentStatusMatrix />
+        <ComponentStatusMatrix components={data.components} />
 
         {/* 基础设施仪表盘 */}
         <InfrastructureGauges 
@@ -80,12 +81,15 @@ export function SystemStatusPage() {
         />
       </div>
 
-      <div className="flex items-center justify-between border-t border-dashed border-slate-100 p-8 opacity-40 dark:border-white/10">
+      <div className="flex items-center justify-between border-t border-dashed border-slate-100 px-1 pt-1.5 opacity-50 dark:border-white/10 sm:pt-2">
         <span className="text-[8px] font-mono uppercase tracking-widest">
-          {t('systemManagement.statusPage.footer.nodeResponseTime', { time: data.time })}
+          {t('systemManagement.statusPage.footer.nodeTime', { time: data.time })}
         </span>
         <span className="text-[8px] font-mono uppercase tracking-widest text-emerald-600 font-bold">
-          {t('systemManagement.statusPage.footer.engineVersion')}
+          {t('systemManagement.statusPage.footer.runtimeSnapshot', {
+            environment: data.identity.environment,
+            runtime: data.identity.runtime,
+          })}
         </span>
       </div>
     </div>

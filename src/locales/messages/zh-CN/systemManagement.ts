@@ -9,8 +9,8 @@ export const systemManagement = {
     subtitle: "实时服务器健康与进程完整性监控",
     forceRefresh: "强制刷新",
     footer: {
-      nodeResponseTime: "节点响应时间：{{time}}",
-      engineVersion: "核心引擎 V2.6.4（稳定版）"
+      nodeTime: "节点时间：{{time}}",
+      runtimeSnapshot: "环境：{{environment}} / 运行时：{{runtime}}"
     }
   },
   serverIdentity: {
@@ -36,7 +36,8 @@ export const systemManagement = {
   componentStatus: {
     title: "核心引擎连通性",
     online: "在线",
-    terminated: "终止",
+    terminated: "离线",
+    warning: "告警",
     labels: {
       postgres: "PostgreSQL 数据库",
       redis: "Redis 键值服务",
