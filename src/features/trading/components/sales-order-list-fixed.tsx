@@ -130,6 +130,13 @@ export function SalesOrderList() {
 
         <ScrollArea className='flex-1 border-2 border-dashed border-muted/50 rounded-[32px] bg-muted/5'>
           <div className='p-4 space-y-4'>
+            {controller.isRefreshingList ? (
+              <div className='flex items-center justify-end gap-2 rounded-full border border-dashed border-primary/20 bg-primary/5 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-primary/70'>
+                <Loader2 className='size-3 animate-spin' />
+                刷新中
+              </div>
+            ) : null}
+
             <SalesOrderMaster
               orders={controller.primaryOrders}
               selectedId={controller.selectedId || undefined}

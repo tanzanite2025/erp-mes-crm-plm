@@ -244,6 +244,9 @@ export function useSalesOrderListController() {
     financeResources.readResource.status === 'error'
       ? financeResources.readResource.error.message
       : undefined
+  const isRefreshingList =
+    primaryOrdersQuery.isFetching ||
+    (shouldLoadCanceledSection && canceledOrdersQuery.isFetching)
   const showCanceledSection =
     shouldLoadCanceledSection &&
     (isCanceledOnlyFilter || selectedOrder?.status === 'Canceled' || isCanceledSectionExpanded)
@@ -462,6 +465,7 @@ export function useSalesOrderListController() {
     pageSize,
     total,
     canceledTotal,
+    isRefreshingList,
     searchTerm,
     setSearchTerm: handleSearchTermChange,
     statusFilter,
