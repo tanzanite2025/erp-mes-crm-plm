@@ -109,8 +109,8 @@ export const mrp = {
     },
     export: {
       sheetName: 'BOM需求下发单',
-      fileName: 'XDFC_物料需求下发单_{{date}}.xlsx',
-      logo: '纤镀复材',
+      fileName: '物料需求下发单_{{date}}.xlsx',
+      logo: '企业平台',
       title: '物料需求聚合下发单（分析报表）',
       docCode: '文件编号',
       version: '版本',

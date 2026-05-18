@@ -130,7 +130,7 @@ export function openCuttingPlanPrintPreview(plan: CuttingPlanInput) {
 
         <table class="header-grid">
           <tr>
-            <td rowspan="3" style="width: 28%; text-align: center; font-weight: 800;">纤镀复材科技（厦门）有限公司</td>
+            <td rowspan="3" style="width: 28%; text-align: center; font-weight: 800;">企业平台</td>
             <td rowspan="3" style="width: 28%;">
               <div class="title">${title}</div>
               <div class="subtitle">${escapeHtml(plan.holeCount ? `${plan.holeCount}孔` : '')}</div>

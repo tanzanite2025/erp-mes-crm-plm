@@ -39,7 +39,7 @@ export const detail = {
       headers: {
         no: 'No.',
         product: 'Product',
-        snapshot: 'Snapshot',
+        snapshot: 'Product Snapshot',
         shipment: 'Shipment',
         productionRef: 'Production Ref',
         drawing: 'Drawing',
@@ -47,7 +47,7 @@ export const detail = {
         state: 'State',
       },
       drawing: {
-        spec: 'Spec',
+        spec: 'Technical SOP',
         drilling: 'Drilling',
         labeling: 'Labeling',
         previewTitle: 'Preview {{label}}',

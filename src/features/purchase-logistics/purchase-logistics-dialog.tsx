@@ -279,7 +279,7 @@ export function PurchaseLogisticsDialog() {
 
           <DialogFooter className='p-6 bg-slate-50 border-t items-center sm:justify-between px-8'>
             <span className='hidden sm:block text-[9px] font-mono text-slate-300 italic tracking-tighter uppercase'>
-              XDFC Supply Chain Integrity 1.0
+              Supply Chain Integrity 1.0
             </span>
             <div className='flex gap-3'>
               <Button

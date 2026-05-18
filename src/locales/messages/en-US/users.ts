@@ -101,7 +101,7 @@ export const users = {
     editTitle: 'Account Profile Maintenance',
     createTitle: 'New Account Provisioning',
     editSubtitle: 'Updating security parameters and explicit permission configuration.',
-    createSubtitle: 'Assigning managed access credentials and system privileges. Syncing to XDFC audit cluster.',
+    createSubtitle: 'Assigning managed access credentials and system privileges. Syncing to the audit cluster.',
     accessVerifyTitle: 'Identity Verification IDENTITY_VERIFY',
     protectedAccountCreateTitle: 'Protected Account Provisioning SECURE_PROVISIONING',
     accessVerifySubtitle: 'Complete highest-level verification before management changes to ensure system integrity.',

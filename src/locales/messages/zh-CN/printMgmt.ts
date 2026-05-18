@@ -17,8 +17,8 @@ export const printMgmt = {
     noEffectiveDate: '未设置生效日期',
   },
   bomTemplate: {
-    companyLine1: '纤镀复材',
-    companyLine2: '科技',
+    companyLine1: '企业',
+    companyLine2: '平台',
     titleSuffix: 'BOM清单',
     documentCode: '文件编号',
     version: '版本',

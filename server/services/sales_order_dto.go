@@ -26,6 +26,7 @@ type SalesOrderLineRequest struct {
 	ProductModel                          string                                   `json:"productModel"`
 	ProductCode                           string                                   `json:"productCode"`
 	Specification                         string                                   `json:"specification"`
+	EngineeringSpecNameSnapshot           string                                   `json:"engineeringSpecNameSnapshot"`
 	ProductDisplayTitleSnapshot           string                                   `json:"productDisplayTitleSnapshot"`
 	ProductDisplaySubtitleSnapshot        string                                   `json:"productDisplaySubtitleSnapshot"`
 	ProductDisplayCodeSnapshot            string                                   `json:"productDisplayCodeSnapshot"`
@@ -48,7 +49,9 @@ type SalesOrderLineRequest struct {
 	JobNo                                 string                                   `json:"jobNo"`
 	Note                                  string                                   `json:"note"`
 	DrillingPlanID                        string                                   `json:"drillingPlanId"`
+	DrillingPlanNameSnapshot              string                                   `json:"drillingPlanNameSnapshot"`
 	LabelingPlanID                        string                                   `json:"labelingPlanId"`
+	LabelingPlanNameSnapshot              string                                   `json:"labelingPlanNameSnapshot"`
 	HoleCount                             int                                      `json:"holeCount"`
 	Route                                 string                                   `json:"route"`
 	OrderDate                             string                                   `json:"orderDate"`
@@ -127,6 +130,7 @@ type SalesOrderLineResponse struct {
 	ProductModel                          string                                   `json:"productModel"`
 	ProductCode                           string                                   `json:"productCode"`
 	Specification                         string                                   `json:"specification"`
+	EngineeringSpecNameSnapshot           string                                   `json:"engineeringSpecNameSnapshot"`
 	ProductDisplayTitleSnapshot           string                                   `json:"productDisplayTitleSnapshot"`
 	ProductDisplaySubtitleSnapshot        string                                   `json:"productDisplaySubtitleSnapshot"`
 	ProductDisplayCodeSnapshot            string                                   `json:"productDisplayCodeSnapshot"`
@@ -149,7 +153,9 @@ type SalesOrderLineResponse struct {
 	JobNo                                 string                                   `json:"jobNo"`
 	Note                                  string                                   `json:"note"`
 	DrillingPlanID                        string                                   `json:"drillingPlanId"`
+	DrillingPlanNameSnapshot              string                                   `json:"drillingPlanNameSnapshot"`
 	LabelingPlanID                        string                                   `json:"labelingPlanId"`
+	LabelingPlanNameSnapshot              string                                   `json:"labelingPlanNameSnapshot"`
 	HoleCount                             int                                      `json:"holeCount"`
 	Route                                 string                                   `json:"route"`
 	OrderDate                             string                                   `json:"orderDate"`

@@ -121,6 +121,7 @@ export interface SalesOrderLine {
   productModel: string
   productCode: string
   specification: string
+  engineeringSpecNameSnapshot?: string
   productDisplayTitleSnapshot?: string
   productDisplaySubtitleSnapshot?: string
   productDisplayCodeSnapshot?: string
@@ -143,7 +144,9 @@ export interface SalesOrderLine {
   jobNo: string
   note?: string
   drillingPlanId?: string
+  drillingPlanNameSnapshot?: string
   labelingPlanId?: string
+  labelingPlanNameSnapshot?: string
   holeCount?: number
   route?: string
   orderDate: string
@@ -160,6 +163,7 @@ export const EMPTY_SALES_ORDER_LINE: Partial<SalesOrderLine> = {
   productModel: '',
   productCode: '',
   specification: '',
+  engineeringSpecNameSnapshot: '',
   productDisplayTitleSnapshot: '',
   productDisplaySubtitleSnapshot: '',
   productDisplayCodeSnapshot: '',
@@ -177,11 +181,47 @@ export const EMPTY_SALES_ORDER_LINE: Partial<SalesOrderLine> = {
   amount: 0,
   uom: 'PCS',
   status: 'Pending',
+  drillingPlanNameSnapshot: '',
+  labelingPlanNameSnapshot: '',
   orderDate: '',
   returnedQuantity: 0,
   remainingReturnableQuantity: 0,
 }
 
+export const createEmptySalesOrderLine = (): SalesOrderLine => ({
+  lineNo: 1,
+  productModel: '',
+  productCode: '',
+  specification: '',
+  engineeringSpecNameSnapshot: '',
+  productDisplayTitleSnapshot: '',
+  productDisplaySubtitleSnapshot: '',
+  productDisplayCodeSnapshot: '',
+  productDisplayFullLabelSnapshot: '',
+  productDisplayStrategyVersionSnapshot: '',
+  modelCodeSnapshot: '',
+  holePrefixSnapshot: '',
+  appearanceId: '',
+  appearanceNameSnapshot: '',
+  appearanceBarcodeCodeSnapshot: '',
+  appearanceDescriptionSnapshot: '',
+  appearanceImageUrlSnapshot: '',
+  description: '',
+  qty: 0,
+  uom: 'PCS',
+  price: 0,
+  amount: 0,
+  deliveredQty: 0,
+  customerPartNo: '',
+  jobNo: '',
+  drillingPlanNameSnapshot: '',
+  labelingPlanNameSnapshot: '',
+  route: '',
+  orderDate: '',
+  status: 'Pending',
+  returnedQuantity: 0,
+  remainingReturnableQuantity: 0,
+})
 
 export interface OrderEvidence {
   id: string
@@ -234,38 +274,6 @@ export const getTodaySalesOrderDate = (date = new Date()): string => {
   const day = String(date.getDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
 }
-
-export const createEmptySalesOrderLine = (): SalesOrderLine => ({
-  lineNo: 1,
-  productModel: '',
-  productCode: '',
-  specification: '',
-  productDisplayTitleSnapshot: '',
-  productDisplaySubtitleSnapshot: '',
-  productDisplayCodeSnapshot: '',
-  productDisplayFullLabelSnapshot: '',
-  productDisplayStrategyVersionSnapshot: '',
-  modelCodeSnapshot: '',
-  holePrefixSnapshot: '',
-  appearanceId: '',
-  appearanceNameSnapshot: '',
-  appearanceBarcodeCodeSnapshot: '',
-  appearanceDescriptionSnapshot: '',
-  appearanceImageUrlSnapshot: '',
-  description: '',
-  qty: 0,
-  uom: 'PCS',
-  price: 0,
-  amount: 0,
-  deliveredQty: 0,
-  customerPartNo: '',
-  jobNo: '',
-  route: '',
-  orderDate: '',
-  status: 'Pending',
-  returnedQuantity: 0,
-  remainingReturnableQuantity: 0,
-})
 
 export const createEmptySalesOrderDraft = (
   orderNo = ''

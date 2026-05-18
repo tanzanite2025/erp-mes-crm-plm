@@ -105,7 +105,7 @@ export function ShipmentDialog({
 
           <div className='absolute right-8 top-1/2 -translate-y-1/2 hidden md:flex flex-col items-end opacity-20 pointer-events-none'>
             <span className='text-[9px] font-black text-white uppercase tracking-widest'>{t('warehouse.shipment.dialog.transactionLayer')}</span>
-            <span className='text-[9px] font-black text-white uppercase tracking-widest'>TS_0928_XDFC</span>
+            <span className='text-[9px] font-black text-white uppercase tracking-widest'>TS_0928_NODE</span>
           </div>
         </div>
 

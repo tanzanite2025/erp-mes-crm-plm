@@ -132,7 +132,7 @@ export const materialArchive = {
   excel: {
     allMaterials: 'All Materials',
     maintenanceSheetName: 'Material Maintenance',
-    fileName: 'XDFC_Material_Maintenance_{{category}}_{{date}}.xlsx',
+    fileName: 'Material_Maintenance_{{category}}_{{date}}.xlsx',
     headers: {
       id: 'Record Key (Do Not Edit)',
       code: 'Material Code (Locked)',

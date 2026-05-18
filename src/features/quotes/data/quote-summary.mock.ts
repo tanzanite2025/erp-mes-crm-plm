@@ -12,7 +12,7 @@ export const quoteSummaryMockData: QuoteSummary[] = [
     amountLabel: '¥ 3,260.00',
     itemCount: 4,
     ownerName: 'Luna',
-    productSummary: '纤镀样品 / 镭射标签 / 打孔',
+    productSummary: '样品订单 / 镭射标签 / 打孔',
   },
   {
     id: 'Q-2026-0011',

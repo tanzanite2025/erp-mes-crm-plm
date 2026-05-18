@@ -10,7 +10,7 @@ export const systemManagement = {
     forceRefresh: "强制刷新",
     footer: {
       nodeResponseTime: "节点响应时间：{{time}}",
-      engineVersion: "XDFC 核心引擎 V2.6.4（稳定版）"
+      engineVersion: "核心引擎 V2.6.4（稳定版）"
     }
   },
   serverIdentity: {
@@ -146,7 +146,7 @@ export const systemManagement = {
     },
     footer: {
       policyTitle: "引擎归档政策",
-      policyDesc: "XDFC 审计引擎会在 30 天后自动将热数据转存至冷 JSON 存储。字段级 Diff 在后端完成计算，以确保数据库性能。"
+      policyDesc: "审计引擎会在 30 天后自动将热数据转存至冷 JSON 存储。字段级 Diff 在后端完成计算，以确保数据库性能。"
     },
     modules: {
       trading: "销售与贸易管理",

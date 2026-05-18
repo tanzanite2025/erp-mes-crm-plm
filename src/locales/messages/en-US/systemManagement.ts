@@ -10,7 +10,7 @@ export const systemManagement = {
     forceRefresh: "Force Refresh",
     footer: {
       nodeResponseTime: "Node Response Time: {{time}}",
-      engineVersion: "XDFC CORE ENGINE V2.6.4 (RELIANCE STABLE)"
+      engineVersion: "Core Engine V2.6.4 (Reliance Stable)"
     }
   },
   serverIdentity: {
@@ -146,7 +146,7 @@ export const systemManagement = {
     },
     footer: {
       policyTitle: "Engine Archival Policy",
-      policyDesc: "The XDFC Audit Engine automatically archives hot data to cold JSON storage after 30 days. Field-level diffing is computed on the backend to ensure database leanness."
+      policyDesc: "The audit engine automatically archives hot data to cold JSON storage after 30 days. Field-level diffing is computed on the backend to ensure database leanness."
     },
     modules: {
       trading: "Trading & Sales",

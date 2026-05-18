@@ -98,7 +98,8 @@ export const tradingSalesOrder = {
   },
   print: {
     templatePending: "PDF 打印模板正在对接中...",
-    printShipment: "打印发货清单"
+    printOrder: "打印订单清单",
+    previewUnavailable: "当前订单尚未加载完成，暂时无法打开打印预览"
   },
   fileUploader: {
     upload: "选择图片上传",

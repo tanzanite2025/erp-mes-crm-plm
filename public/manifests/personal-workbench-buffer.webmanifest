@@ -1,60 +1,31 @@
 {
   "id": "/personal-workbench",
-  "name": "XDFC 个人缓冲区",
+  "name": "个人缓冲区",
   "short_name": "个人缓冲区",
-  "description": "XDFC 个人记录缓冲区快捷入口，可直接查看和整理个人本地草稿。",
+  "description": "个人记录缓冲区快捷入口，可直接查看和整理个人本地草稿。",
   "start_url": "/personal-workbench",
   "scope": "/",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
-  "icons": [
-    {
-      "src": "/icons/wheel-trace-icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    }
-  ],
   "shortcuts": [
     {
       "name": "个人拍照",
       "short_name": "拍照",
       "description": "直接进入个人拍照快捷采集入口",
-      "url": "/personal-workbench/capture?mode=photo",
-      "icons": [
-        {
-          "src": "/icons/wheel-trace-icon.svg",
-          "sizes": "any",
-          "type": "image/svg+xml"
-        }
-      ]
+      "url": "/personal-workbench/capture?mode=photo"
     },
     {
       "name": "个人录视频",
       "short_name": "录视频",
       "description": "直接进入个人录视频快捷采集入口",
-      "url": "/personal-workbench/capture?mode=video",
-      "icons": [
-        {
-          "src": "/icons/wheel-trace-icon.svg",
-          "sizes": "any",
-          "type": "image/svg+xml"
-        }
-      ]
+      "url": "/personal-workbench/capture?mode=video"
     },
     {
       "name": "个人缓冲区",
       "short_name": "缓冲区",
       "description": "打开个人记录缓冲区",
-      "url": "/personal-workbench",
-      "icons": [
-        {
-          "src": "/icons/wheel-trace-icon.svg",
-          "sizes": "any",
-          "type": "image/svg+xml"
-        }
-      ]
+      "url": "/personal-workbench"
     }
   ]
 }

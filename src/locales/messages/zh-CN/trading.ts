@@ -375,7 +375,7 @@ export const trading = {
         address: '经营地址',
       },
       placeholders: {
-        name: '例如：苏州纤镀科技有限公司',
+        name: '例如：苏州示例科技有限公司',
         code: '例如：XD-C-2024-001',
         contactPerson: '请输入联系人姓名',
         contactPhone: '请输入手机或座机',

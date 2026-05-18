@@ -1,7 +1,7 @@
 export const sidebar = {
   team: {
-    defaultName: '数字化管理 ERP',
-    defaultPlan: '专业版',
+    defaultName: '工作台',
+    defaultPlan: '业务域',
   },
   actions: {
     expandAllMenus: '点击展开所有菜单',

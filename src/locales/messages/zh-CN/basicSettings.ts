@@ -192,7 +192,7 @@ export const basicSettings = {
     },
     excel: {
       sheetName: "计量单位导入模板",
-      fileName: "XDFC_计量单位导入模板_{{date}}.xlsx",
+      fileName: "计量单位导入模板_{{date}}.xlsx",
       headers: {
         code: "单位编码(必填)",
         name: "显示名称(必填)",
@@ -326,7 +326,7 @@ export const basicSettings = {
     subtitle: "ENTERPRISE_IDENTITY / 配置系统全局显示的组织名称、数字化平台描述及品牌原子标识",
     form: {
       nameLabel: "系统显示名称 / SYSTEM NAME",
-      namePlaceholder: "例如：纤镀复材",
+      namePlaceholder: "例如：示例企业",
       planLabel: "描述与版本 / PLATFORM DESC",
       planPlaceholder: "例如：数字化管理平台",
       saveButton: "保存配置并同步",

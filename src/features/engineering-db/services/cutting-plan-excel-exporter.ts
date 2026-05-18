@@ -156,7 +156,7 @@ export async function exportCuttingPlanPrintWorkbook(plan: CuttingPlanInput) {
   sheet.mergeCells('D5:F5')
   sheet.mergeCells('G5:H5')
 
-  sheet.getCell('A1').value = '纤镀复材科技（厦门）有限公司'
+  sheet.getCell('A1').value = '企业平台'
   sheet.getCell('D1').value = escapeFormula(plan.name || '普通款-裁纱单')
   sheet.getCell('G1').value = '文件编号'
   sheet.getCell('H1').value = escapeFormula(plan.documentNo || '--')

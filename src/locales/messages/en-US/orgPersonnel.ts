@@ -105,8 +105,8 @@ export const orgPersonnel = {
   excel: {
     templateSheetName: 'Personnel Import Template',
     exportSheetName: 'Personnel Export',
-    templateFileName: 'XDFC_Personnel_Template_{{date}}.xlsx',
-    exportFileName: 'XDFC_Personnel_Export_{{date}}.xlsx',
+    templateFileName: 'Personnel_Template_{{date}}.xlsx',
+    exportFileName: 'Personnel_Export_{{date}}.xlsx',
     invalidSheetName: 'Invalid worksheet name [{{sheetName}}]. Please use the exported "{{templateSheet}}" or "{{exportSheet}}" file.',
     emptyWorkbook: 'The Excel workbook is empty. Please use the standard template and fill in the data.',
     structureFailed: 'Template structure validation failed.\n{{problems}}\nPlease download the latest standard template and import again.',

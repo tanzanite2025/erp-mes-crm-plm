@@ -117,7 +117,7 @@ export function PDFViewer({ fileUrl, className }: PDFViewerProps) {
                         <FileText className='size-3' />
                         TECHNICAL BLUEPRINT OVERVIEW
                     </div>
-                    <span>CONFIDENTIAL - INTELLECTUAL PROPERTY OF XDFC</span>
+                    <span>CONFIDENTIAL - INTERNAL ENGINEERING DOCUMENT</span>
                 </div>
             )}
         </div>

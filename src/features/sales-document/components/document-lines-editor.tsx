@@ -10,6 +10,7 @@
  * 通过 props 接受领域类型(SalesOrderLine/PurchaseOrderLine),内部用 LineDraft 作为编辑态。
  * 上层组件提交时用 commitLineDrafts 把 draft 转回领域类型。
  */
+import { useMemo } from 'react'
 import {
   ImageIcon,
   Layers,
@@ -162,6 +163,20 @@ export function DocumentLinesEditor({
   const appearanceEmptyLabel = t(
     'tradingSalesOrder.linesEditor.appearancePreviewEmpty'
   )
+  const drillingOptionLabelMap = useMemo(
+    () => new Map(drillingOptions.map((option) => [option.value, option.label])),
+    [drillingOptions]
+  )
+  const labelingOptionLabelMap = useMemo(
+    () => new Map(labelingOptions.map((option) => [option.value, option.label])),
+    [labelingOptions]
+  )
+  const buildDrillingSnapshotPatch = (planId: string): Partial<SalesOrderLine> => ({
+    drillingPlanNameSnapshot: planId ? drillingOptionLabelMap.get(planId) || '' : '',
+  })
+  const buildLabelingSnapshotPatch = (planId: string): Partial<SalesOrderLine> => ({
+    labelingPlanNameSnapshot: planId ? labelingOptionLabelMap.get(planId) || '' : '',
+  })
   const {
     appearanceOptions,
     currencySymbol,
@@ -344,7 +359,12 @@ export function DocumentLinesEditor({
                     className='h-8 w-full appearance-none rounded-lg border bg-orange-500/5 px-2 text-center text-[10px] font-bold outline-none focus:ring-1 focus:ring-orange-500'
                     value={line.drillingPlanId || ''}
                     onChange={(e) =>
-                      onLineChange(index, 'drillingPlanId', e.target.value)
+                      onLineChange(
+                        index,
+                        'drillingPlanId',
+                        e.target.value,
+                        buildDrillingSnapshotPatch(e.target.value)
+                      )
                     }
                   >
                     <option value=''>
@@ -362,7 +382,12 @@ export function DocumentLinesEditor({
                     className='h-8 w-full appearance-none rounded-lg border bg-blue-500/5 px-2 text-center text-[10px] font-bold outline-none focus:ring-1 focus:ring-blue-500'
                     value={line.labelingPlanId || ''}
                     onChange={(e) =>
-                      onLineChange(index, 'labelingPlanId', e.target.value)
+                      onLineChange(
+                        index,
+                        'labelingPlanId',
+                        e.target.value,
+                        buildLabelingSnapshotPatch(e.target.value)
+                      )
                     }
                   >
                     <option value=''>
@@ -571,7 +596,12 @@ export function DocumentLinesEditor({
                   className='h-10 w-full appearance-none rounded-xl border border-orange-200/50 bg-orange-50/50 px-3 text-[11px] font-bold'
                   value={line.drillingPlanId || ''}
                   onChange={(e) =>
-                    onLineChange(index, 'drillingPlanId', e.target.value)
+                    onLineChange(
+                      index,
+                      'drillingPlanId',
+                      e.target.value,
+                      buildDrillingSnapshotPatch(e.target.value)
+                    )
                   }
                 >
                   <option value=''>
@@ -595,7 +625,12 @@ export function DocumentLinesEditor({
                   className='h-10 w-full appearance-none rounded-xl border border-blue-200/50 bg-blue-50/50 px-3 text-[11px] font-bold'
                   value={line.labelingPlanId || ''}
                   onChange={(e) =>
-                    onLineChange(index, 'labelingPlanId', e.target.value)
+                    onLineChange(
+                      index,
+                      'labelingPlanId',
+                      e.target.value,
+                      buildLabelingSnapshotPatch(e.target.value)
+                    )
                   }
                 >
                   <option value=''>

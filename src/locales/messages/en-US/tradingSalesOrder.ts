@@ -98,7 +98,8 @@ export const tradingSalesOrder = {
   },
   print: {
     templatePending: "The PDF print feature is being wired up to the template...",
-    printShipment: "Print Shipment Document"
+    printOrder: "Print Order List",
+    previewUnavailable: "The order is still loading, so the print preview is not available yet"
   },
   fileUploader: {
     upload: "Upload Images",

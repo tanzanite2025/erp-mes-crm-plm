@@ -132,7 +132,7 @@ export const materialArchive = {
   excel: {
     allMaterials: '全部物料',
     maintenanceSheetName: '物料档案维护',
-    fileName: 'XDFC物料档案批量维护表_{{category}}_{{date}}.xlsx',
+    fileName: '物料档案批量维护表_{{category}}_{{date}}.xlsx',
     headers: {
       id: '记录唯一键（严禁修改）',
       code: '物料编码（锁定）',

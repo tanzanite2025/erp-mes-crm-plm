@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef } from 'react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { numberingService } from '@/features/basic-settings/services/numbering-service'
+import { type TechnicalSpec } from '@/features/engineering-db/data/schema'
 import { type ProductDisplayProjectionV2 } from '@/features/engineering/display/product-display-v2'
 import { type Product } from '@/features/engineering/data/schema'
 import { type SalesOrder, type SalesOrderFormValues } from '../data/schema'
@@ -14,12 +15,26 @@ import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 
 type SalesOrderFormState = SalesOrderFormValues
 type SalesOrderFormUpdater = SalesOrderFormState | ((prev: SalesOrderFormState) => SalesOrderFormState)
+type SalesOrderPlanOption = { label: string; value: string }
+
+function formatEngineeringSpecLabel(spec: TechnicalSpec): string {
+  const revisionNo = spec.revisionNo?.trim() ?? ''
+  return revisionNo ? `${spec.name} (${revisionNo})` : spec.name
+}
+
+function resolveEngineeringSpecId(product: Product): string {
+  const legacyProduct = product as Product & { techSpecId?: string }
+  return product.engineeringSpecId?.trim() || legacyProduct.techSpecId?.trim() || ''
+}
 
 export function useSalesOrderForm(
   initialOrder: SalesOrder | null | undefined,
   open: boolean,
   products: Product[],
-  productDisplayProjectionMap: Map<string, ProductDisplayProjectionV2>
+  productDisplayProjectionMap: Map<string, ProductDisplayProjectionV2>,
+  drillingOptions: SalesOrderPlanOption[] = [],
+  labelingOptions: SalesOrderPlanOption[] = [],
+  engineeringSpecs: TechnicalSpec[] = []
 ) {
   const { t } = useLanguage()
   const classificationPreviewRequestIdRef = useRef(0)
@@ -27,6 +42,18 @@ export function useSalesOrderForm(
   const productById = useMemo(
     () => new Map(products.map((product) => [product.id, product])),
     [products]
+  )
+  const drillingPlanNameMap = useMemo(
+    () => new Map(drillingOptions.map((option) => [option.value, option.label])),
+    [drillingOptions]
+  )
+  const labelingPlanNameMap = useMemo(
+    () => new Map(labelingOptions.map((option) => [option.value, option.label])),
+    [labelingOptions]
+  )
+  const engineeringSpecNameMap = useMemo(
+    () => new Map(engineeringSpecs.map((spec) => [spec.id, formatEngineeringSpecLabel(spec)])),
+    [engineeringSpecs]
   )
 
   const memoizedInitial = useMemo<SalesOrderFormValues>(() => initialFormData, [initialFormData])
@@ -98,10 +125,23 @@ export function useSalesOrderForm(
         }
 
         const productFields = mergeSalesOrderLineProductFields(line, product, displayProjection)
+        const engineeringSpecId = resolveEngineeringSpecId(product)
+        const engineeringSpecNameSnapshot = !engineeringSpecId
+          ? ''
+          : engineeringSpecNameMap.get(engineeringSpecId) || line.engineeringSpecNameSnapshot?.trim() || ''
+        const drillingPlanNameSnapshot = !line.drillingPlanId
+          ? ''
+          : drillingPlanNameMap.get(line.drillingPlanId) || line.drillingPlanNameSnapshot?.trim() || ''
+        const labelingPlanNameSnapshot = !line.labelingPlanId
+          ? ''
+          : labelingPlanNameMap.get(line.labelingPlanId) || line.labelingPlanNameSnapshot?.trim() || ''
 
         return {
           ...line,
           ...productFields,
+          engineeringSpecNameSnapshot,
+          drillingPlanNameSnapshot,
+          labelingPlanNameSnapshot,
         }
       })
     } catch (error) {

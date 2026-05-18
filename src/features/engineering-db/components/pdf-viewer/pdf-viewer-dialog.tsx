@@ -59,7 +59,7 @@ export function PDFViewerDialog({
 
                 {/* 页脚 */}
                 <div className='px-8 py-4 bg-muted/10 border-t flex items-center justify-center text-[9px] font-black uppercase tracking-widest text-muted-foreground/30'>
-                    Powered by XDFC Next-Gen Engineering Document Engine
+                    Engineering Document Engine
                 </div>
             </DialogContent>
         </Dialog>

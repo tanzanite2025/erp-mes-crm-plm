@@ -69,9 +69,9 @@ const defaultUser = {
 }
 
 const defaultTeam = {
-  name: 'Digital Management ERP',
+  name: 'Workspace',
   logo: ShieldCheck,
-  plan: 'Professional Edition',
+  plan: 'Operations',
 }
 
 const permissionIdForPath = (path: string): string =>

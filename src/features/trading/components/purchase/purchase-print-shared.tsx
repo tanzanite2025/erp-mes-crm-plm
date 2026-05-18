@@ -1,7 +1,5 @@
-import { type ReactNode, useEffect, useMemo, useState } from 'react'
-import { Logo } from '@/assets/logo'
+import { type ReactNode } from 'react'
 import { useLanguage } from '@/context/language-provider'
-import { EnterpriseService } from '@/features/basic-settings/services/enterprise-service'
 import { getStaticEvidenceUrl } from '@/lib/url-utils'
 
 interface PurchasePrintDocumentProps {
@@ -83,40 +81,8 @@ export function PurchasePrintDocument({
   footerNote = '本单据为系统生成的采购业务打印件，照片及数据以系统留档为准。',
   children,
 }: PurchasePrintDocumentProps) {
-  const { locale, t } = useLanguage()
-  const localizedCompanyName = useMemo(() => {
-    const line1 = t('printMgmt.bomTemplate.companyLine1')
-    const line2 = t('printMgmt.bomTemplate.companyLine2')
-    return locale === 'zh-CN' ? `${line1}${line2}`.trim() : `${line1} ${line2}`.trim()
-  }, [locale, t])
-  const [enterpriseName, setEnterpriseName] = useState('')
-  const [enterprisePlan, setEnterprisePlan] = useState('')
-
-  useEffect(() => {
-    let disposed = false
-
-    const loadEnterprise = async () => {
-      const config = await EnterpriseService.getConfig().catch(() => null)
-      if (disposed || !config) return
-      setEnterpriseName((config.name || '').trim())
-      setEnterprisePlan((config.plan || '').trim())
-    }
-
-    void loadEnterprise()
-
-    const handleSync = () => {
-      void loadEnterprise()
-    }
-
-    window.addEventListener('xdfc_enterprise_config_updated', handleSync)
-    return () => {
-      disposed = true
-      window.removeEventListener('xdfc_enterprise_config_updated', handleSync)
-    }
-  }, [])
-
-  const companyName = enterpriseName || localizedCompanyName
-  const brandCaption = enterprisePlan || (locale === 'zh-CN' ? '采购业务打印单据' : 'Procurement Print Document')
+  const { locale } = useLanguage()
+  const headerCaption = locale === 'zh-CN' ? '采购打印单据' : 'Procurement Print Document'
   const editionText = locale === 'zh-CN' ? '采购打印标准版' : 'Procurement Standard Print'
 
   return (
@@ -171,15 +137,9 @@ export function PurchasePrintDocument({
 
       <div className='border-b-2 border-black pb-4'>
         <div className='flex items-start justify-between gap-4'>
-          <div className='flex items-start gap-3'>
-            <div className='flex size-12 items-center justify-center rounded-full border border-black/20 bg-black/[0.03]'>
-              <Logo className='size-6 text-black' />
-            </div>
-            <div>
-              <div className='text-[10px] font-semibold uppercase tracking-[0.35em] text-black/55'>
-                {brandCaption}
-              </div>
-              <div className='mt-1 text-[15px] font-bold leading-5 tracking-[0.12em]'>{companyName}</div>
+          <div>
+            <div className='pt-1 text-[10px] font-semibold uppercase tracking-[0.35em] text-black/55'>
+              {headerCaption}
             </div>
           </div>
           <div className='flex-1 pt-2'>

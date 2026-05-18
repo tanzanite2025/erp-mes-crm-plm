@@ -8,7 +8,7 @@ export function RecentSales() {
       <div className='flex items-center gap-4'>
         <div className='flex flex-1 flex-wrap items-center justify-between'>
           <div className='space-y-1'>
-            <p className='text-sm leading-none font-medium'>SN: XDFC-20260129-001</p>
+            <p className='text-sm leading-none font-medium'>SN: DEMO-20260129-001</p>
             <p className='text-sm text-muted-foreground'>
               {t('dashboard.page.recentSales.process')}：[FQC质检] - {t('dashboard.page.recentSales.result')}：{t('dashboard.page.recentSales.demo.pass')}
             </p>
@@ -19,7 +19,7 @@ export function RecentSales() {
       <div className='flex items-center gap-4'>
         <div className='flex flex-1 flex-wrap items-center justify-between'>
           <div className='space-y-1'>
-            <p className='text-sm leading-none font-medium'>SN: XDFC-20260128-892</p>
+            <p className='text-sm leading-none font-medium'>SN: DEMO-20260128-892</p>
             <p className='text-sm text-muted-foreground'>
               {t('dashboard.page.recentSales.process')}：[出库] - {t('dashboard.page.recentSales.order')}：SO-9921
             </p>
@@ -30,7 +30,7 @@ export function RecentSales() {
       <div className='flex items-center gap-4'>
         <div className='flex flex-1 flex-wrap items-center justify-between'>
           <div className='space-y-1'>
-            <p className='text-sm leading-none font-medium text-red-500'>SN: XDFC-20260129-045</p>
+            <p className='text-sm leading-none font-medium text-red-500'>SN: DEMO-20260129-045</p>
             <p className='text-sm text-muted-foreground'>
               {t('dashboard.page.recentSales.process')}：[热压] - {t('dashboard.page.recentSales.note')}：**{t('dashboard.page.recentSales.demo.lost')}**
             </p>
@@ -41,7 +41,7 @@ export function RecentSales() {
       <div className='flex items-center gap-4'>
         <div className='flex flex-1 flex-wrap items-center justify-between'>
           <div className='space-y-1'>
-            <p className='text-sm leading-none font-medium'>SN: XDFC-20260129-102</p>
+            <p className='text-sm leading-none font-medium'>SN: DEMO-20260129-102</p>
             <p className='text-sm text-muted-foreground'>
               {t('dashboard.page.recentSales.process')}：[精修] - {t('dashboard.page.recentSales.owner')}：{t('dashboard.page.recentSales.demo.name')}
             </p>
@@ -52,7 +52,7 @@ export function RecentSales() {
       <div className='flex items-center gap-4'>
         <div className='flex flex-1 flex-wrap items-center justify-between'>
           <div className='space-y-1'>
-            <p className='text-sm leading-none font-medium'>SN: XDFC-20251210-441</p>
+            <p className='text-sm leading-none font-medium'>SN: DEMO-20251210-441</p>
             <p className='text-sm text-muted-foreground'>
               {t('dashboard.page.recentSales.process')}：[入库] - {t('dashboard.page.recentSales.location')}：A-04-12
             </p>

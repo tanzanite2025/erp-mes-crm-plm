@@ -160,7 +160,7 @@ export const common = {
     signInForm: {
       account: '账号',
       password: '密码',
-      accountPlaceholder: '例如：XDFC 或 name@example.com',
+      accountPlaceholder: '例如：admin 或 name@example.com',
       passwordPlaceholder: '请输入密码',
       forgotPassword: '忘记密码？',
       submit: '立即登录',

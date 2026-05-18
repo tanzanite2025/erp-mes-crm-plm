@@ -105,8 +105,8 @@ export const orgPersonnel = {
   excel: {
     templateSheetName: '人员档案导入模板',
     exportSheetName: '人员档案导出',
-    templateFileName: 'XDFC_人员档案标准模板_{{date}}.xlsx',
-    exportFileName: 'XDFC_人员档案导出_{{date}}.xlsx',
+    templateFileName: '人员档案标准模板_{{date}}.xlsx',
+    exportFileName: '人员档案导出_{{date}}.xlsx',
     invalidSheetName: '工作表名称不正确，当前为 [{{sheetName}}]。请使用系统导出的“{{templateSheet}}”或“{{exportSheet}}”文件。',
     emptyWorkbook: 'Excel 文件内容为空，请确认使用了标准模板并填写了数据。',
     structureFailed: '模板结构校验失败。\n{{problems}}\n请重新下载最新标准模板后再导入。',

@@ -222,7 +222,7 @@ export function CommandMenuView({
           </span>
         </div>
         <div className='text-[9px] font-black uppercase tracking-[0.2em] text-sky-600/35 italic'>
-          XDFC Intelligent Search v2.1
+          Intelligent Search v2.1
         </div>
       </div>
       <CommandMenuKnowledgeDetailDrawer

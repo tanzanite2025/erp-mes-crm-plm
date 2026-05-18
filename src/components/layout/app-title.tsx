@@ -1,4 +1,3 @@
-import { Link } from '@tanstack/react-router'
 import { Menu, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
@@ -10,24 +9,14 @@ import {
 import { Button } from '../ui/button'
 
 export function AppTitle() {
-  const { setOpenMobile } = useSidebar()
   return (
     <SidebarMenu>
       <SidebarMenuItem>
         <SidebarMenuButton
           size='lg'
           className='gap-0 py-0 hover:bg-transparent active:bg-transparent'
-          asChild
         >
-          <div>
-            <Link
-              to='/'
-              onClick={() => setOpenMobile(false)}
-              className='grid flex-1 text-start text-sm leading-tight'
-            >
-              <span className='truncate font-bold'>Digital Management ERP</span>
-              <span className='truncate text-xs text-muted-foreground'>Professional Cloud Governance</span>
-            </Link>
+          <div className='flex w-full items-center justify-end'>
             <ToggleSidebar />
           </div>
         </SidebarMenuButton>

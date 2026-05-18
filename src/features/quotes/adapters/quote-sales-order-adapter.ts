@@ -29,7 +29,10 @@ export function useQuoteWorkspaceSalesOrderAdapter(open: boolean, onCreated: (qu
     undefined,
     open,
     createResources.products,
-    createResources.productDisplayProjectionMap
+    createResources.productDisplayProjectionMap,
+    createResources.drillingOptions,
+    createResources.labelingOptions,
+    createResources.engineeringSpecs
   )
   const { createMutation } = useSalesOrderMutations()
 

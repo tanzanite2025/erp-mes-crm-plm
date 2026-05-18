@@ -56,6 +56,7 @@ export const salesOrderLineApiDTOSchema = z
     productModel: z.string(),
     productCode: z.string(),
     specification: z.string(),
+    engineeringSpecNameSnapshot: z.string().optional(),
     productDisplayTitleSnapshot: z.string().optional(),
     productDisplaySubtitleSnapshot: z.string().optional(),
     productDisplayCodeSnapshot: z.string().optional(),
@@ -78,7 +79,9 @@ export const salesOrderLineApiDTOSchema = z
     jobNo: z.string(),
     note: z.string().optional(),
     drillingPlanId: z.string().optional(),
+    drillingPlanNameSnapshot: z.string().optional(),
     labelingPlanId: z.string().optional(),
+    labelingPlanNameSnapshot: z.string().optional(),
     holeCount: z.number().optional(),
     route: z.string().optional(),
     orderDate: z.string(),
@@ -98,6 +101,7 @@ export interface SalesOrderLineApiDTO {
   productModel: string
   productCode: string
   specification: string
+  engineeringSpecNameSnapshot?: string
   productDisplayTitleSnapshot?: string
   productDisplaySubtitleSnapshot?: string
   productDisplayCodeSnapshot?: string
@@ -120,7 +124,9 @@ export interface SalesOrderLineApiDTO {
   jobNo: string
   note?: string
   drillingPlanId?: string
+  drillingPlanNameSnapshot?: string
   labelingPlanId?: string
+  labelingPlanNameSnapshot?: string
   holeCount?: number
   route?: string
   orderDate: string

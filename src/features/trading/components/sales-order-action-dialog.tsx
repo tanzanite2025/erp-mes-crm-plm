@@ -64,7 +64,10 @@ export function SalesOrderActionDialog({
     order,
     open,
     dialogResources.products,
-    dialogResources.productDisplayProjectionMap
+    dialogResources.productDisplayProjectionMap,
+    dialogResources.drillingOptions,
+    dialogResources.labelingOptions,
+    dialogResources.engineeringSpecs
   )
 
   const { handleSave } = useSalesOrderSave({

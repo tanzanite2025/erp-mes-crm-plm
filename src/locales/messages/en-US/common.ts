@@ -161,7 +161,7 @@ export const common = {
     signInForm: {
       account: 'Account',
       password: 'Password',
-      accountPlaceholder: 'e.g. XDFC or name@example.com',
+      accountPlaceholder: 'e.g. admin or name@example.com',
       passwordPlaceholder: 'Enter your password',
       forgotPassword: 'Forgot password?',
       submit: 'Sign In',

@@ -39,7 +39,7 @@ export const detail = {
       headers: {
         no: '序号',
         product: '产品',
-        snapshot: '规格快照',
+        snapshot: '产品快照',
         shipment: '发运',
         productionRef: '生产参考',
         drawing: '图纸',
@@ -47,7 +47,7 @@ export const detail = {
         state: '状态',
       },
       drawing: {
-        spec: '规格',
+        spec: '技术规范SOP',
         drilling: '打孔',
         labeling: '贴标',
         previewTitle: '预览{{label}}',

@@ -3,12 +3,12 @@ import { useLanguage } from '@/context/language-provider'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { useAuthStore } from '@/stores/auth-store'
 import type { SalesOrder } from '../data/schema'
-import { useSalesOrderPackagingCardController } from '../hooks/use-sales-order-packaging-card-controller'
 import { useSalesOrderCommandState } from '../hooks/use-sales-order-command-state'
 import { useSalesOrderDetailActions } from '../hooks/use-sales-order-detail-actions'
+import { useSalesOrderPrint } from '../hooks/use-sales-order-print'
 import { useSalesOrderPreview } from '../hooks/use-sales-order-preview'
 import { useGetSalesOrderDetail, useSalesOrderMutations } from '../sales'
-import { SalesOrderPackagingProfileDialogBridge } from './parts/sales-order-packaging-profile-dialog-bridge'
+import { SalesOrderPrint } from './parts/sales-order-print'
 import { SalesOrderDetailContent } from './sales-order-detail-content'
 
 export function SalesOrderDetail({
@@ -31,7 +31,7 @@ export function SalesOrderDetail({
   const user = useAuthStore((state) => state.user)
   const canHardDelete = allowsAction('action_trading_sales_order_delete')
   const { activeCommandTitle, activeCommandContent, isClaimAction } = useSalesOrderCommandState()
-  const packagingController = useSalesOrderPackagingCardController(order ? [order] : [])
+  const { printRef, handlePrintOrder } = useSalesOrderPrint(order)
   const {
     handlePreview,
     previewFile,
@@ -80,15 +80,19 @@ export function SalesOrderDetail({
 
   return (
     <>
+      <div className='hidden'>
+        <SalesOrderPrint ref={printRef} order={order} />
+      </div>
+
       <SalesOrderDetailContent
         order={order}
-        packagingViewModel={packagingController.getViewModel(order)}
         isClaimAction={isClaimAction}
         activeCommandTitle={activeCommandTitle}
         activeCommandContent={activeCommandContent}
         claimOperator={user?.accountNo ?? ''}
         canHardDelete={canHardDelete}
         onMutateStatus={handleMutateStatus}
+        onPrint={handlePrintOrder}
         onClaimModel={handleClaimModel}
         onClaimLine={handleClaimLine}
         onPreview={handlePreview}
@@ -100,9 +104,6 @@ export function SalesOrderDetail({
         setIsCADOpen={setIsCADOpen}
         setIsExcelOpen={setIsExcelOpen}
         setIsPDFOpen={setIsPDFOpen}
-      />
-      <SalesOrderPackagingProfileDialogBridge
-        formController={packagingController.formController}
       />
     </>
   )

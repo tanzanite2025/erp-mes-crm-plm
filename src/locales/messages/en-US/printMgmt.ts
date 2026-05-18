@@ -17,8 +17,8 @@ export const printMgmt = {
     noEffectiveDate: 'No effective date',
   },
   bomTemplate: {
-    companyLine1: 'XDFC Composite',
-    companyLine2: 'Technology',
+    companyLine1: 'Enterprise',
+    companyLine2: 'Platform',
     titleSuffix: 'BOM List',
     documentCode: 'Document Code',
     version: 'Version',

@@ -1,4 +1,3 @@
-import { Logo } from '@/assets/logo'
 import type { QuoteDetail } from '@/features/quotes/data/quote-detail'
 
 export function QuotePrintDocument({ detail }: { detail: QuoteDetail }) {
@@ -34,15 +33,10 @@ export function QuotePrintDocument({ detail }: { detail: QuoteDetail }) {
 
       <div className='border-b-2 border-black pb-4'>
         <div className='flex items-start justify-between gap-4'>
-          <div className='flex items-start gap-3'>
-            <div className='flex size-12 items-center justify-center rounded-full border border-black/20 bg-black/3'>
-              <Logo className='size-6 text-black' />
-            </div>
-            <div>
-              <div className='text-[10px] font-semibold uppercase tracking-[0.35em] text-black/55'>Quote Document / Customer Copy</div>
-              <div className='mt-1 text-[15px] font-bold leading-5 tracking-[0.12em]'>纤镀报价单</div>
-              <div className='mt-1 text-[11px] text-black/65'>适用于对客沟通、打印留档与 PDF 交付。</div>
-            </div>
+          <div>
+            <div className='text-[10px] font-semibold uppercase tracking-[0.35em] text-black/55'>Quote Document / Customer Copy</div>
+            <div className='mt-1 text-[15px] font-bold leading-5 tracking-[0.12em]'>报价单</div>
+            <div className='mt-1 text-[11px] text-black/65'>适用于对客沟通、打印留档与 PDF 交付。</div>
           </div>
           <div className='flex-1 pt-2 text-center'>
             <h1 className='text-2xl font-bold tracking-[0.22em]'>QUOTATION</h1>

@@ -111,8 +111,8 @@ export const mrp = {
     },
     export: {
       sheetName: 'BOM Dispatch Sheet',
-      fileName: 'XDFC_Material_Requirement_Dispatch_{{date}}.xlsx',
-      logo: 'XDFC Composite',
+      fileName: 'Material_Requirement_Dispatch_{{date}}.xlsx',
+      logo: 'Enterprise Platform',
       title: 'Material Requirement Dispatch Sheet (Analysis Report)',
       docCode: 'Document Code',
       version: 'Version',

@@ -50,6 +50,7 @@ type SalesOrderLine struct {
 	ProductModel                          string          `json:"productModel"`
 	ProductCode                           string          `json:"productCode"`
 	Specification                         string          `json:"specification"`
+	EngineeringSpecNameSnapshot           string          `gorm:"size:255" json:"engineeringSpecNameSnapshot"`
 	ProductDisplayTitleSnapshot           string          `gorm:"size:255" json:"productDisplayTitleSnapshot"`
 	ProductDisplaySubtitleSnapshot        string          `gorm:"size:255" json:"productDisplaySubtitleSnapshot"`
 	ProductDisplayCodeSnapshot            string          `gorm:"size:100" json:"productDisplayCodeSnapshot"`
@@ -72,7 +73,9 @@ type SalesOrderLine struct {
 	JobNo                                 string          `json:"jobNo"`
 	Note                                  string          `json:"note"`
 	DrillingPlanID                        string          `json:"drillingPlanId"`
+	DrillingPlanNameSnapshot              string          `gorm:"size:255" json:"drillingPlanNameSnapshot"`
 	LabelingPlanID                        string          `json:"labelingPlanId"`
+	LabelingPlanNameSnapshot              string          `gorm:"size:255" json:"labelingPlanNameSnapshot"`
 	HoleCount                             int             `json:"holeCount"`
 	Route                                 string          `json:"route"`
 	OrderDate                             string          `json:"orderDate"`

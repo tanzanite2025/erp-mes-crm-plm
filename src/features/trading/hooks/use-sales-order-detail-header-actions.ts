@@ -1,16 +1,14 @@
-import { toast } from 'sonner'
-
 interface UseSalesOrderDetailHeaderActionsParams {
   printLabel: string
-  printPendingMessage: string
+  onPrint: () => void
 }
 
 export function useSalesOrderDetailHeaderActions({
   printLabel,
-  printPendingMessage,
+  onPrint,
 }: UseSalesOrderDetailHeaderActionsParams) {
   const handlePrint = () => {
-    toast.info(printPendingMessage)
+    onPrint()
   }
 
   return {

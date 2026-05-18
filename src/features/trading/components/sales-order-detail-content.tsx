@@ -3,22 +3,20 @@ import { ExcelViewerDialog } from '@/features/engineering-db/components/excel-vi
 import { PDFViewerDialog } from '@/features/engineering-db/components/pdf-viewer/pdf-viewer-dialog'
 import type { SalesOrder } from '../data/schema'
 import type { SalesOrderStatusCommandPayload } from '../hooks/use-sales-order-detail-actions'
-import type { SalesOrderPackagingCardViewModel } from '../utils/sales-order-packaging-card-view-model'
 import { SalesOrderDetailActivity } from './parts/sales-order-detail-activity'
 import { SalesOrderDetailHeader } from './parts/sales-order-detail-header'
 import { SalesOrderDetailItemsCard } from './parts/sales-order-detail-items-card'
-import { SalesOrderPackagingPreviewCard } from './parts/sales-order-packaging-preview-card'
 import { SalesOrderDetailSummary } from './parts/sales-order-detail-summary'
 
 interface SalesOrderDetailContentProps {
   order: SalesOrder
-  packagingViewModel: SalesOrderPackagingCardViewModel
   isClaimAction: boolean
   activeCommandTitle?: string
   activeCommandContent?: string
   claimOperator: string
   canHardDelete?: boolean
   onMutateStatus: (payload: SalesOrderStatusCommandPayload) => void
+  onPrint: () => void
   onClaimModel: (model: string) => void
   onClaimLine: (lineNo: number) => void
   onPreview: (productId: string | undefined, planId: string | undefined, type: 'spec' | 'drilling' | 'labeling') => void
@@ -34,13 +32,13 @@ interface SalesOrderDetailContentProps {
 
 export function SalesOrderDetailContent({
   order,
-  packagingViewModel,
   isClaimAction,
   activeCommandTitle,
   activeCommandContent,
   claimOperator,
   canHardDelete,
   onMutateStatus,
+  onPrint,
   onClaimModel,
   onClaimLine,
   onPreview,
@@ -61,11 +59,10 @@ export function SalesOrderDetailContent({
         activeCommandTitle={activeCommandTitle}
         activeCommandContent={activeCommandContent}
         onMutateStatus={onMutateStatus}
+        onPrint={onPrint}
       />
 
       <SalesOrderDetailSummary order={order} />
-
-      <SalesOrderPackagingPreviewCard viewModel={packagingViewModel} />
 
       <SalesOrderDetailItemsCard
         order={order}

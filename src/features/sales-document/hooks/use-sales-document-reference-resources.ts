@@ -6,8 +6,10 @@ import type { Unit } from '@/features/basic-settings/services/unit-service'
 import {
   ENGINEERING_DB_DRILLING_QUERY_KEY,
   ENGINEERING_DB_LABELING_QUERY_KEY,
+  ENGINEERING_DB_SPECS_QUERY_KEY,
 } from '@/features/engineering-db/query-keys'
-import type { DrillingPlan, LabelingDraft } from '@/features/engineering-db/data/schema'
+import type { DrillingPlan, LabelingDraft, TechnicalSpec } from '@/features/engineering-db/data/schema'
+import { SpecsService } from '@/features/engineering-db/services/specs-service'
 import { ProductionDBService } from '@/features/engineering-db/services/production-db-service'
 import {
   type ProductDisplayProjectionV2,
@@ -50,6 +52,7 @@ export type SalesDocumentDrawingOption = {
 export type SalesDocumentReferenceData = {
   customers: Customer[]
   products: Product[]
+  engineeringSpecs: TechnicalSpec[]
   productDisplayLabelMap: Map<string, string>
   productDisplayProjectionMap: Map<string, ProductDisplayProjectionV2>
   units: Unit[]
@@ -73,6 +76,7 @@ type UseSalesDocumentReferenceResourcesOptions = {
 const EMPTY_SALES_DOCUMENT_REFERENCE_DATA: SalesDocumentReferenceData = {
   customers: [],
   products: [],
+  engineeringSpecs: [],
   productDisplayLabelMap: new Map<string, string>(),
   productDisplayProjectionMap: new Map<string, ProductDisplayProjectionV2>(),
   units: [],
@@ -133,6 +137,11 @@ export function useSalesDocumentReferenceResources(
   const labelingQuery = useQuery({
     queryKey: ENGINEERING_DB_LABELING_QUERY_KEY,
     queryFn: () => ProductionDBService.getLabeling(),
+    enabled,
+  })
+  const specsQuery = useQuery({
+    queryKey: ENGINEERING_DB_SPECS_QUERY_KEY,
+    queryFn: () => SpecsService.getSpecs(),
     enabled,
   })
 
@@ -240,6 +249,22 @@ export function useSalesDocumentReferenceResources(
       }
     }
 
+    const engineeringSpecsFailure = resolveQueryFailure({
+      data: specsQuery.data,
+      error: specsQuery.error,
+      isPending: specsQuery.isPending,
+      scope: `${scope}.engineeringSpecs`,
+      missingMessage: `[CRITICAL] ${scope} engineering specs missing after load`,
+      failureMessage: `[CRITICAL] ${scope} engineering specs query failed`,
+    })
+    if (engineeringSpecsFailure) {
+      return {
+        status: 'error',
+        error: engineeringSpecsFailure.error,
+        scope: engineeringSpecsFailure.scope,
+      }
+    }
+
     if (unitsResource.status === 'error') {
       return {
         status: 'error',
@@ -255,6 +280,7 @@ export function useSalesDocumentReferenceResources(
       productTypesQuery.isPending ||
       productAttributeCategoriesQuery.isPending ||
       productAttributeOptionsQuery.isPending ||
+      specsQuery.isPending ||
       unitsResource.status === 'loading'
     ) {
       return { status: 'loading' }
@@ -327,6 +353,7 @@ export function useSalesDocumentReferenceResources(
     const labelingPlans = labelingQuery.error
       ? []
       : ((labelingQuery.data as LabelingDraft[]) ?? [])
+    const engineeringSpecs = (specsQuery.data as TechnicalSpec[]) ?? []
     const products = (productsQuery.data as Product[]) ?? []
     const productTemplates = (productTemplatesQuery.data as ProductTemplate[]) ?? []
     const productTypes = (productTypesQuery.data as ProductType[]) ?? []
@@ -347,6 +374,7 @@ export function useSalesDocumentReferenceResources(
       status: 'ready',
       customers: (customersQuery.data as Customer[]) ?? [],
       products,
+      engineeringSpecs,
       productDisplayLabelMap,
       productDisplayProjectionMap,
       units: unitsResource.status === 'ready' ? unitsResource.data : [],
@@ -372,6 +400,9 @@ export function useSalesDocumentReferenceResources(
     labelingQuery.error,
     labelingQuery.isPending,
     optionalResourceMode,
+    specsQuery.data,
+    specsQuery.error,
+    specsQuery.isPending,
     productAttributeCategoriesQuery.data,
     productAttributeCategoriesQuery.error,
     productAttributeCategoriesQuery.isPending,
@@ -416,6 +447,7 @@ export function useSalesDocumentReferenceResources(
       productTypesQuery.refetch(),
       productAttributeCategoriesQuery.refetch(),
       productAttributeOptionsQuery.refetch(),
+      specsQuery.refetch(),
       refetchUnits(),
       appearancesQuery.refetch(),
       drillingQuery.refetch(),

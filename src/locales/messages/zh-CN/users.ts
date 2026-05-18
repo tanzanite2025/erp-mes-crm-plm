@@ -101,7 +101,7 @@
     editTitle: '账户资料维护',
     createTitle: '新账号分配',
     editSubtitle: '正在更新底层账号安全参数与显式权限配置。',
-    createSubtitle: '正在为组织成员分配访问凭据与系统权限，并同步至 XDFC 审计集群。',
+    createSubtitle: '正在为组织成员分配访问凭据与系统权限，并同步至审计集群。',
     accessVerifyTitle: '身份核验 IDENTITY_VERIFY',
     protectedAccountCreateTitle: '高权限账户开通 SECURE_PROVISIONING',
     accessVerifySubtitle: '为了确保系统安全，请先完成高等级身份校验。',

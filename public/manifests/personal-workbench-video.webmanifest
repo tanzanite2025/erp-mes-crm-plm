@@ -1,21 +1,13 @@
 {
   "id": "/personal-workbench/capture?mode=video",
-  "name": "XDFC 个人录视频",
+  "name": "个人录视频",
   "short_name": "个人录视频",
-  "description": "XDFC 个人缓冲区快捷录视频入口，现场短视频可直接整理为个人记录。",
+  "description": "个人缓冲区快捷录视频入口，现场短视频可直接整理为个人记录。",
   "start_url": "/personal-workbench/capture?mode=video",
   "scope": "/",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
-  "icons": [
-    {
-      "src": "/icons/wheel-trace-icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    }
-  ],
   "shortcuts": [
     {
       "name": "个人拍照",

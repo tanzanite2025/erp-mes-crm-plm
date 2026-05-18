@@ -1,19 +1,11 @@
 {
   "id": "/wheel-trace",
-  "name": "XDFC 车圈追溯",
+  "name": "车圈追溯",
   "short_name": "车圈追溯",
-  "description": "XDFC 车圈追溯独立入口，支持扫码查询当前工段与历史轨迹。",
+  "description": "车圈追溯独立入口，支持扫码查询当前工段与历史轨迹。",
   "start_url": "/wheel-trace",
   "scope": "/",
   "display": "standalone",
   "background_color": "#0f172a",
-  "theme_color": "#0f172a",
-  "icons": [
-    {
-      "src": "/icons/wheel-trace-icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    }
-  ]
+  "theme_color": "#0f172a"
 }

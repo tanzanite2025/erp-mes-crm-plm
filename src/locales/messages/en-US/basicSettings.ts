@@ -168,7 +168,7 @@ export const basicSettings = {
     },
     excel: {
       sheetName: "Unit Import Template",
-      fileName: "XDFC_Unit_Import_Template_{{date}}.xlsx",
+      fileName: "Unit_Import_Template_{{date}}.xlsx",
       headers: {
         code: "Unit Code (Required)",
         name: "Display Name (Required)",
@@ -327,7 +327,7 @@ export const basicSettings = {
     subtitle: "ENTERPRISE_IDENTITY / Configure Global Organization Name, Platform Description, and Branding Assets",
     form: {
       nameLabel: "System Display Name / SYSTEM NAME",
-      namePlaceholder: "e.g. XDFC Composite",
+      namePlaceholder: "e.g. Example Enterprise",
       planLabel: "Description & Version / PLATFORM DESC",
       planPlaceholder: "e.g. Digital Management Platform",
       saveButton: "Save & Sync Configuration",

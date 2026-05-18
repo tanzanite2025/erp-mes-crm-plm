@@ -1,7 +1,7 @@
 export const sidebar = {
   team: {
-    defaultName: 'Digital Management ERP',
-    defaultPlan: 'Professional Edition',
+    defaultName: 'Workspace',
+    defaultPlan: 'Operations',
   },
   actions: {
     expandAllMenus: 'Click to expand all menus',

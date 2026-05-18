@@ -53,8 +53,8 @@ export const warehouse = {
   export: {
     inboundSheetName: '入库明细报表',
     shipmentSheetName: '出库明细报表',
-    inboundFileName: 'XDFC_入库报表_{{date}}.xlsx',
-    shipmentFileName: 'XDFC_出库报表_{{date}}.xlsx',
+    inboundFileName: '入库报表_{{date}}.xlsx',
+    shipmentFileName: '出库报表_{{date}}.xlsx',
     fallbackCode: 'N/A',
     fallbackName: '未知项目',
     fallbackUom: 'pcs',

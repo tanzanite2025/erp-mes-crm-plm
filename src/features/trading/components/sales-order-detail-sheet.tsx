@@ -26,7 +26,7 @@ export function SalesOrderDetailSheet({
   const title = order?.orderNo?.trim() ? `销售单详情 · ${order.orderNo}` : '销售单详情'
   const description = order?.customerName?.trim()
     ? `客户主体：${order.customerName}`
-    : '查看销售单明细、包装预览与执行动作。'
+    : '查看销售单明细与执行动作。'
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>

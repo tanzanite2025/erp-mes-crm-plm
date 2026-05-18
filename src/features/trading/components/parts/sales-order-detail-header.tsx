@@ -13,6 +13,7 @@ interface SalesOrderDetailHeaderProps {
   activeCommandTitle?: string
   activeCommandContent?: string
   onMutateStatus: (payload: SalesOrderStatusCommandPayload) => void
+  onPrint: () => void
 }
 
 export function SalesOrderDetailHeader({
@@ -21,11 +22,12 @@ export function SalesOrderDetailHeader({
   activeCommandTitle,
   activeCommandContent,
   onMutateStatus,
+  onPrint,
 }: SalesOrderDetailHeaderProps) {
   const { t } = useLanguage()
   const { handlePrint, printLabel } = useSalesOrderDetailHeaderActions({
-    printLabel: t('tradingSalesOrder.print.printShipment'),
-    printPendingMessage: t('tradingSalesOrder.print.templatePending'),
+    printLabel: t('tradingSalesOrder.print.printOrder'),
+    onPrint,
   })
   const {
     showClaimBanner,
