@@ -126,9 +126,6 @@ export function ProductBasicInfo({
                                             placeholder={t('engineering.productMgmt.form.categoryPlaceholder')}
                                             className='h-[38px] w-full text-[11px] font-bold rounded-xl bg-muted/40 border-none px-3'
                                         />
-                                    <FormMessage className='text-[10px] font-bold'>
-                                        {t('engineering.productMgmt.form.categoryRequired')}
-                                    </FormMessage>
                                 </FormItem>
                             )}
                         />

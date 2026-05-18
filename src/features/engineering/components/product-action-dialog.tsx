@@ -142,6 +142,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
     'barcodeConfig.serialNumber': t('engineering.productMgmt.barcode.serialLabel'),
     attachments: t('engineering.productMgmt.attachments.uploadTitle'),
   }
+  const baseModelError = form.formState.errors.typeId ? t('engineering.productMgmt.form.categoryRequired') : null
 
   const handleDelete = async () => {
     if (!currentRow) return
@@ -208,6 +209,17 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
                   isEdit={isEdit}
                   templateLabel={boundTemplate?.name ?? activeSpec?.label}
                 />
+
+              {baseModelError ? (
+                <div className='rounded-[20px] border border-dashed border-amber-300 bg-amber-50 px-4 py-2 text-amber-900'>
+                  <div className='text-[10px] font-black uppercase tracking-widest'>
+                    {t('engineering.productMgmt.form.category')}
+                  </div>
+                  <p className='mt-1 text-[11px] font-bold leading-relaxed'>
+                    {baseModelError}
+                  </p>
+                </div>
+              ) : null}
 
               {templateResolveError ? (
                 <div className='rounded-2xl border border-dashed border-red-300 bg-red-50/90 px-4 py-2 text-red-900'>
