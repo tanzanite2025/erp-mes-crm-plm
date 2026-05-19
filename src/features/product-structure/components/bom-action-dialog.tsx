@@ -163,35 +163,45 @@ export function BOMActionDialog({
           <form
             id='bom-form'
             onSubmit={typedForm.handleSubmit(handleFormSubmit)}
-            className='flex min-h-0 flex-1 flex-col gap-2 overflow-hidden px-3 pb-3 pt-0 sm:px-4 sm:pb-4'
+            className='flex min-h-0 flex-1 flex-col overflow-hidden'
           >
             <BOMDialogResourceBoundary resource={optionsResource} detailResource={detailSourceResource}>
-              <BOMReadOnlyBanner isLocked={isLocked} version={currentRow?.version} />
+              <div className='flex min-h-0 flex-1 flex-col'>
+                <div className='custom-scrollbar min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-3 pt-0 sm:px-4'>
+                  <div className='flex flex-col gap-2 pb-3 sm:pb-4 lg:min-h-0 lg:flex-1'>
+                    <BOMReadOnlyBanner isLocked={isLocked} version={currentRow?.version} />
 
-              <BOMFormHeader
-                form={typedForm}
-                products={products}
-                productDisplayLabelMap={productDisplayLabelMap}
-                isEdit={isEdit}
-              />
+                    <BOMFormHeader
+                      form={typedForm}
+                      products={products}
+                      productDisplayLabelMap={productDisplayLabelMap}
+                      isEdit={isEdit}
+                    />
 
-              <BOMWorkspace
-                form={typedForm}
-                fields={fields}
-                materials={materials}
-                sections={sections}
-                append={append}
-                remove={remove}
-                protocolDraft={effectiveProtocolDraft}
-                permissionGuard={permissionGuard}
-              />
+                    <div className='min-h-80 lg:min-h-0 lg:flex-1'>
+                      <BOMWorkspace
+                        form={typedForm}
+                        fields={fields}
+                        materials={materials}
+                        sections={sections}
+                        append={append}
+                        remove={remove}
+                        protocolDraft={effectiveProtocolDraft}
+                        permissionGuard={permissionGuard}
+                      />
+                    </div>
+                  </div>
+                </div>
 
-              <BOMDialogFooter
-                form={typedForm}
-                currentRow={currentRow}
-                onPromote={handlePromote}
-                isSubmitDisabled={isLocked}
-              />
+                <div className='shrink-0 px-3 pb-3 sm:px-4 sm:pb-4'>
+                  <BOMDialogFooter
+                    form={typedForm}
+                    currentRow={currentRow}
+                    onPromote={handlePromote}
+                    isSubmitDisabled={isLocked}
+                  />
+                </div>
+              </div>
             </BOMDialogResourceBoundary>
           </form>
         </Form>

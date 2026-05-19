@@ -120,7 +120,7 @@ export function getBOMHeaderFields(ctx: BOMHeaderFieldContext): readonly BOMHead
       placeholder: ctx.t('engineering.bomArchive.form.productPlaceholder'),
       getItems: (c) => c.productItems,
       isDisabled: (c) => c.isEdit,
-      colSpan: 'minmax(0,3.4fr)',
+      colSpan: 'minmax(0,2.6fr)',
     },
     {
       name: 'bomVersion',
@@ -136,7 +136,7 @@ export function getBOMHeaderFields(ctx: BOMHeaderFieldContext): readonly BOMHead
       type: 'input',
       readOnly: true,
       className: 'bg-indigo-50/70 font-bold text-indigo-600 text-[11px]!',
-      colSpan: 'minmax(0,0.8fr)',
+      colSpan: 'minmax(0,1.2fr)',
       // 显示成翻译后的"研发 BOM / 生产 BOM"。
       getDisplayValue: (rawValue, c) => {
         const code = typeof rawValue === 'string' && rawValue ? rawValue : 'EBOM'

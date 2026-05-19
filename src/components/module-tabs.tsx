@@ -110,7 +110,7 @@ export function ModuleTabs({ tabs, activeKey, className, actions, style }: Modul
                                     key={tab.key}
                                     value={tab.key}
                                     className={cn(
-                                        'inline-flex items-center justify-center rounded-full px-3 py-2 text-sm font-medium transition-all duration-300 shrink-0 whitespace-nowrap',
+                                        'inline-flex items-center justify-center rounded-full px-3 py-2 text-[13px] font-medium transition-all duration-300 shrink-0 whitespace-nowrap',
                                         'text-muted-foreground hover:text-foreground',
                                         'dark:text-slate-400 dark:hover:text-white',
                                         'data-[state=active]:bg-white data-[state=active]:text-foreground data-[state=active]:shadow-lg data-[state=active]:border data-[state=active]:border-slate-200',

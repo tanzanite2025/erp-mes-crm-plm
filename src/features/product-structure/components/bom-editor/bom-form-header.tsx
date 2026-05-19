@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, type CSSProperties } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import { useLanguage } from '@/context/language-provider'
 import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form'
@@ -38,10 +38,17 @@ interface BOMFormHeaderProps {
 export function BOMFormHeader({ form, products, productDisplayLabelMap, isEdit }: BOMFormHeaderProps) {
   const { t, locale } = useLanguage()
 
+  type BOMStatusLabelKey =
+    | 'engineering.bomArchive.status.draft'
+    | 'engineering.bomArchive.status.reviewing'
+    | 'engineering.bomArchive.status.approved'
+    | 'engineering.bomArchive.status.released'
+    | 'engineering.bomArchive.status.obsolete'
+
   const productItems = useMemo(
     () =>
       products.map((product) => ({
-        label: productDisplayLabelMap.get(product.id) ?? '',
+        label: productDisplayLabelMap.get(product.id) ?? product.name,
         value: product.id,
       })),
     [productDisplayLabelMap, products]
@@ -51,7 +58,7 @@ export function BOMFormHeader({ form, products, productDisplayLabelMap, isEdit }
   const ownerType = form.watch('ownerType') as BOM['ownerType'] | undefined
 
   const statusItems = useMemo(() => {
-    const STATUS_LABEL_KEY: Record<string, string> = {
+    const STATUS_LABEL_KEY: Record<string, BOMStatusLabelKey> = {
       DRAFT: 'engineering.bomArchive.status.draft',
       REVIEWING: 'engineering.bomArchive.status.reviewing',
       APPROVED: 'engineering.bomArchive.status.approved',
@@ -59,7 +66,7 @@ export function BOMFormHeader({ form, products, productDisplayLabelMap, isEdit }
       OBSOLETE: 'engineering.bomArchive.status.obsolete',
     }
     return getBomStatusOrderByType(bomType).map((code) => ({
-      label: t(STATUS_LABEL_KEY[code] as any),
+      label: t(STATUS_LABEL_KEY[code] ?? 'engineering.bomArchive.status.draft'),
       value: code,
     }))
   }, [bomType, t])
@@ -142,12 +149,16 @@ export function BOMFormHeader({ form, products, productDisplayLabelMap, isEdit }
     () => buildHeaderGridTemplate(headerFields).replace(/_/g, ' '),
     [headerFields]
   )
+  const headerGridStyle = useMemo<CSSProperties>(
+    () => ({ '--bom-header-grid': lgGridTemplateColumns } as CSSProperties),
+    [lgGridTemplateColumns]
+  )
 
   return (
     <div className='space-y-3 rounded-[24px] border border-dashed border-muted/50 bg-muted/5 p-2.5 sm:p-3'>
       <div
-        className='grid grid-cols-1 gap-2.5 md:grid-cols-2 md:gap-3 lg:gap-2.5 xl:gap-3 lg:[grid-template-columns:var(--bom-header-grid)]'
-        style={{ ['--bom-header-grid' as any]: lgGridTemplateColumns }}
+        className='grid grid-cols-1 gap-2.5 md:grid-cols-2 md:gap-3 lg:grid-cols-(--bom-header-grid) lg:gap-2.5 xl:gap-3'
+        style={headerGridStyle}
       >
         {headerFields.map((fieldConfig) => (
           <BOMHeaderFormField
