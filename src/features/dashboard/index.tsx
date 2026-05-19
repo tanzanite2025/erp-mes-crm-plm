@@ -28,7 +28,6 @@ import { useVisibleDashboardSegments } from './hooks/use-visible-dashboard-segme
 const Overview = lazy(() => import('./components/overview').then((m) => ({ default: m.Overview })))
 const SystemEvents = lazy(() => import('./components/system-events').then((m) => ({ default: m.SystemEvents })))
 const ProductionCalendar = lazy(() => import('@/features/production-calendar'))
-const Analytics = lazy(() => import('./components/analytics').then((m) => ({ default: m.Analytics })))
 const OrdersProgress = lazy(() => import('./components/orders-progress').then((m) => ({ default: m.OrdersProgress })))
 
 export function Dashboard() {
@@ -93,7 +92,6 @@ export function Dashboard() {
             tabs={[
               { value: 'overview', label: t('dashboard.page.tabs.overview') },
               { value: 'calendar', label: t('dashboard.page.tabs.calendar') },
-              { value: 'analytics', label: t('dashboard.page.tabs.analytics') },
               { value: 'reports', label: t('dashboard.page.tabs.reports') },
               { value: 'notifications', label: t('dashboard.page.tabs.notifications') },
             ]}
@@ -168,9 +166,6 @@ export function Dashboard() {
 
               <TabsContent value='calendar'>
                 <ProductionCalendar />
-              </TabsContent>
-              <TabsContent value='analytics'>
-                <Analytics />
               </TabsContent>
               <TabsContent value='reports'>
                 <OrdersProgress />

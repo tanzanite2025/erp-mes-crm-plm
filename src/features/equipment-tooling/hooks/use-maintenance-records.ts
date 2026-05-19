@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { MaintenanceRecordService } from '../services/maintenance-record-service';
 import type { SaveMaintenanceRecordApiDTO } from '../contracts/maintenance-record-api-dto';
-import type { DeltaSet } from '@/lib/delta';
+import type { DeltaSet } from '@/lib/delta/types';
 
 /**
  * Query key factory for maintenance records by asset

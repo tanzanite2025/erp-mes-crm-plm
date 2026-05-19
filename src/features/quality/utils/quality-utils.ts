@@ -11,7 +11,7 @@ export type QualityStandardNormalizedStatus =
   | 'PUBLISHED'
   | 'ARCHIVED'
 
-export function normalizeQualityStandardType(type?: string): QualityStandardNormalizedType {
+export function normalizeQualityStandardType(type?: string | null): QualityStandardNormalizedType {
     const normalized = type?.toUpperCase()
     if (type === '巡检' || normalized === 'IPQC') return 'IPQC'
     if (type === '首检' || normalized === 'FQC') return 'FQC'
@@ -21,7 +21,7 @@ export function normalizeQualityStandardType(type?: string): QualityStandardNorm
 
 export function getQualityStandardTypeLabel(
     t: ReturnType<typeof useLanguage>['t'],
-    type?: string
+    type?: string | null
 ) {
     const normalized = normalizeQualityStandardType(type)
     if (normalized === 'IPQC') return t('quality.standards.values.typeInProcess')
@@ -30,11 +30,11 @@ export function getQualityStandardTypeLabel(
     return t('quality.standards.values.typeIncoming')
 }
 
-export function getTypeLabel(t: ReturnType<typeof useLanguage>['t'], type?: string) {
+export function getTypeLabel(t: ReturnType<typeof useLanguage>['t'], type?: string | null) {
     return getQualityStandardTypeLabel(t, type)
 }
 
-export function normalizeQualityStandardStatus(status?: string): QualityStandardNormalizedStatus {
+export function normalizeQualityStandardStatus(status?: string | null): QualityStandardNormalizedStatus {
     const normalized = status?.toUpperCase()
 
     if (status === '草稿' || normalized === 'DRAFT') return 'DRAFT'
@@ -49,7 +49,7 @@ export function normalizeQualityStandardStatus(status?: string): QualityStandard
 
 export function getQualityStandardStatusLabel(
     t: ReturnType<typeof useLanguage>['t'],
-    status?: string
+    status?: string | null
 ) {
     const normalized = normalizeQualityStandardStatus(status)
 
@@ -61,7 +61,7 @@ export function getQualityStandardStatusLabel(
     return t('quality.standards.values.statusPublished')
 }
 
-export function getQualityStandardAvailableActions(status?: string) {
+export function getQualityStandardAvailableActions(status?: string | null) {
     const normalized = normalizeQualityStandardStatus(status)
 
     return {
@@ -75,11 +75,11 @@ export function getQualityStandardAvailableActions(status?: string) {
     }
 }
 
-export function isQualityStandardEditable(status?: string) {
+export function isQualityStandardEditable(status?: string | null) {
     return getQualityStandardAvailableActions(status).canEdit
 }
 
-export function getStatusMeta(t: ReturnType<typeof useLanguage>['t'], status?: string) {
+export function getStatusMeta(t: ReturnType<typeof useLanguage>['t'], status?: string | null) {
     const normalized = normalizeQualityStandardStatus(status)
 
     if (normalized === 'DRAFT') {
@@ -137,7 +137,7 @@ export function getStatusMeta(t: ReturnType<typeof useLanguage>['t'], status?: s
     }
 }
 
-export function formatQualityActorName(rawName?: string) {
+export function formatQualityActorName(rawName?: string | null) {
     if (!rawName) return undefined
 
     const normalized = auditUtils.formatOperatorName(rawName)
@@ -146,7 +146,7 @@ export function formatQualityActorName(rawName?: string) {
     return normalized
 }
 
-export function formatQualityDateTime(value?: string) {
+export function formatQualityDateTime(value?: string | null) {
     if (!value) return undefined
 
     const date = new Date(value)
@@ -162,7 +162,7 @@ interface QualityAuditMeta {
     dotClassName: string
 }
 
-export function getQualityAuditMeta(locale: string, status?: string, auditor?: string): QualityAuditMeta {
+export function getQualityAuditMeta(locale: string, status?: string | null, auditor?: string | null): QualityAuditMeta {
     const normalizedStatus = normalizeQualityStandardStatus(status)
     const hasAuditor = Boolean(formatQualityActorName(auditor))
 

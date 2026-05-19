@@ -567,6 +567,86 @@ export const rawMaterials = {
       size: '尺寸 (mm)',
     },
   },
+  engineConfig: {
+    tab: '裁纱引擎配置',
+    hero: {
+      title: '原材料裁纱引擎配置',
+      description:
+        '裁切几何求解器配置中心。在此调整材料利用率、排布稳定性、刀缝、修边、公差与物理约束。本页面为核心计算资产，请妥善保管访问权限。',
+    },
+    preset: {
+      title: '求解目标预设',
+      description: '选择裁切计算的核心求解取向，系统将自动填充推荐的几何与材料利用率参数。',
+      options: {
+        yieldFirst: {
+          label: '出率优先',
+          description: '最大化利用率，减少废料。',
+        },
+        stabilityFirst: {
+          label: '稳定性优先',
+          description: '减少排布缝合，提高物理抗拉强度。',
+        },
+      },
+    },
+    weights: {
+      title: '裁切几何打分权重模型',
+      description: '调整裁切计算因子，数值越大表示引擎越倾向于优化该几何或材料利用率指标。',
+      utilization: '原材利用率权重',
+      stability: '卷材排布稳定性权重',
+      splitPenalty: '物理分切惩罚项',
+    },
+    constraints: {
+      title: '几何与物理约束',
+      description: '配置设备极限与物理刀头尺寸参数。',
+      lengthRules: {
+        title: '裁切长度规则',
+        description: '用最小/最大长度约束计算边界，并用固定决策长度支持工艺微调覆写。',
+        minSupportedLength: {
+          label: '最小支持长度',
+          hint: '低于该长度不纳入裁切计算候选。',
+        },
+        maxSupportedLength: {
+          label: '最大支持长度',
+          hint: '高于该长度不纳入裁切计算候选。',
+        },
+        fixedDecisionLength: {
+          label: '固定决策长度',
+          hint: '用于覆写最终裁切长度决策。',
+        },
+      },
+      knifeGap: {
+        label: '分切刀口宽度',
+        hint: '每次切割损耗的刀口宽度。',
+      },
+      edgeTrim: {
+        label: '卷材边缘裁剪',
+        hint: '两端必须剥离的非反应区宽度。',
+      },
+      timeout: {
+        label: '最大求解耗时限制',
+        hint: '单次排版最长运算耗时限制。',
+      },
+      units: {
+        mm: '毫米',
+        sec: '秒',
+      },
+    },
+    security: {
+      title: '参数安全警示',
+      description:
+        '裁切几何模型直接影响车间出料率与裁切合格性，调整后将对新生成的裁切计算生效。非工艺部授权专业人员，请勿擅自修改本页面参数。',
+    },
+    actions: {
+      reset: '恢复默认',
+      save: '保存配置',
+      saving: '正在保存...',
+    },
+    toasts: {
+      presetChanged: '已切换为「{{preset}}」官方工艺推荐权重参数。',
+      saveSuccess: '裁纱引擎计算配置固化成功！新裁切计算任务将自动加载此参数资产。',
+      reset: '配置参数已重置为系统出厂工艺默认值。',
+    },
+  },
   cutSizeLibrary: {
     title: '裁切尺寸库',
     description: '将标准裁切单元作为受控主数据维护，为模拟裁切与下达联动提供稳定输入。',

@@ -16,10 +16,11 @@
  * 由渲染器侧用 useLanguage().t(labelKey) 翻译。这样配置层保持纯。
  */
 
+import { type TranslationKey } from '@/locales'
 import { type BOM } from '../../data/schema'
 import { normalizeBOMControlFieldPatch } from '../../utils/bom-control-normalization'
 
-type TranslateFunction = (key: string, params?: Record<string, string | number>) => string
+type TranslateFunction = (key: TranslationKey, params?: Record<string, string | number>) => string
 
 /** 顶部字段允许的字段名（必须是 BOM schema 中的合法 key）。 */
 export type BOMHeaderFieldName = Extract<

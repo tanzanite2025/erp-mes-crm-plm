@@ -37,9 +37,17 @@ function toCreateInput(
 }
 
 function stripPersistenceFields(
-  source: BusinessEventSourceTemplate
+  source: BusinessEventSource
 ): EventSourceCreateInput {
-  return toCreateInput(source)
+  return {
+    code: source.code,
+    name: source.name,
+    module: source.module,
+    entity: source.entity,
+    enabled: source.enabled,
+    description: source.description,
+    config: cloneBusinessEventSourceConfig(source.config),
+  }
 }
 
 export function createEventSourceFromTemplate(

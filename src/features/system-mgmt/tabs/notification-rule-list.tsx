@@ -27,7 +27,7 @@ function createSegmentId() {
   return crypto.randomUUID?.() ?? `seg-${Date.now()}`
 }
 
-function getDefaultStatusActionCode(source: BusinessEventSourceTemplate) {
+function getDefaultStatusActionCode(source: Pick<BusinessEventSourceTemplate, 'config'>) {
   return (
     source.config.actions.find((action) => action.kind === 'status')?.code ??
     source.config.actions.find((action) => action.code === 'STATUS_CHANGED')

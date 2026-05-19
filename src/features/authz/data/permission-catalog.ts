@@ -160,6 +160,7 @@ export const ROUTE_TO_MENU_MAPPING: Record<
   '/warehouse-config': 'warehouseConfig',
   '/mrp': 'mrp',
   '/raw-materials': 'trading',
+  '/raw-materials-engine': 'trading',
   '/trading': 'trading',
   '/sales-analysis': 'trading',
   '/quotes': 'trading',

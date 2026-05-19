@@ -5,7 +5,6 @@ import { resolveMaterialCategoryLabelKey } from '@/features/material-archive/dat
 const RECENT_VISIT_EXACT_LABEL_KEYS: Record<string, TranslationKey> = {
   '/dashboard/overview': 'dashboard.page.tabs.overview',
   '/dashboard/calendar': 'dashboard.page.tabs.calendar',
-  '/dashboard/analytics': 'dashboard.page.tabs.analytics',
   '/dashboard/reports': 'dashboard.page.tabs.reports',
   '/dashboard/notifications': 'dashboard.page.tabs.notifications',
   '/materials': 'sidebar.items.materialArchive',

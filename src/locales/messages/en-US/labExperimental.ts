@@ -9,6 +9,8 @@ export const labExperimental = {
     categorySaved: 'Category updated',
     categoryDeleted: 'Category removed',
     equipmentSaved: 'Equipment archive synchronized',
+    equipmentDeleted: 'Equipment archive deleted',
+    formIncomplete: 'Please complete required fields',
     taskSaved: 'Lab schedule updated',
     reportSaved: 'Lab report re-archived',
   },

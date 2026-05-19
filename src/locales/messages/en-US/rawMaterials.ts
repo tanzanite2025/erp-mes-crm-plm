@@ -588,6 +588,91 @@ export const rawMaterials = {
       size: 'Size (mm)',
     },
   },
+  engineConfig: {
+    tab: 'Cutting Engine Config',
+    hero: {
+      title: 'Raw Materials Engine Configuration',
+      description:
+        'Configure the cutting geometry solver, including material utilization, layout stability, knife gap, edge trim, tolerances, and physical constraints. This page is a core calculation asset; keep access tightly controlled.',
+    },
+    preset: {
+      title: 'Solver Preset',
+      description:
+        'Choose the cutting calculation objective. The system will automatically populate recommended geometry and material-utilization parameters.',
+      options: {
+        yieldFirst: {
+          label: 'Yield First',
+          description: 'Maximize utilization and reduce scrap.',
+        },
+        stabilityFirst: {
+          label: 'Stability First',
+          description: 'Reduce layout stitching and improve physical tensile stability.',
+        },
+      },
+    },
+    weights: {
+      title: 'Cutting Geometry Weights',
+      description:
+        'Adjust cutting calculation factors. Higher values make the engine optimize more aggressively for that geometry or utilization metric.',
+      utilization: 'Material Utilization Weight',
+      stability: 'Roll Layout Stability Weight',
+      splitPenalty: 'Physical Split Penalty',
+    },
+    constraints: {
+      title: 'Geometry & Physical Constraints',
+      description: 'Configure equipment limits and physical cutter dimensions.',
+      lengthRules: {
+        title: 'Cut Length Rules',
+        description:
+          'Use minimum and maximum lengths to constrain calculation boundaries, and use a fixed decision length for process-tuning overrides.',
+        minSupportedLength: {
+          label: 'Min Supported Length',
+          hint: 'Lengths below this value are excluded from cutting candidates.',
+        },
+        maxSupportedLength: {
+          label: 'Max Supported Length',
+          hint: 'Lengths above this value are excluded from cutting candidates.',
+        },
+        fixedDecisionLength: {
+          label: 'Fixed Decision Length',
+          hint: 'Overrides the final cutting-length decision for process tuning.',
+        },
+      },
+      knifeGap: {
+        label: 'Knife Gap',
+        hint: 'Cutter width consumed by each cut.',
+      },
+      edgeTrim: {
+        label: 'Edge Trim',
+        hint: 'Non-reactive width that must be removed from both roll edges.',
+      },
+      timeout: {
+        label: 'Max Solver Timeout',
+        hint: 'Maximum runtime for a single layout calculation.',
+      },
+      units: {
+        mm: 'MM',
+        sec: 'SEC',
+      },
+    },
+    security: {
+      title: 'Configuration Security Alert',
+      description:
+        'The cutting geometry model directly affects shopfloor yield and cutting qualification. Changes apply to newly generated cutting calculations. Do not modify these parameters without process authorization.',
+    },
+    actions: {
+      reset: 'Reset Defaults',
+      save: 'Save Config',
+      saving: 'Saving...',
+    },
+    toasts: {
+      presetChanged:
+        'Switched to the official process-recommended weight parameters for {{preset}}.',
+      saveSuccess:
+        'Cutting engine calculation configuration saved. New cutting calculation jobs will automatically load this parameter asset.',
+      reset: 'Configuration parameters have been reset to system factory defaults.',
+    },
+  },
   cutSizeLibrary: {
     title: 'Cut Size Library',
     description:

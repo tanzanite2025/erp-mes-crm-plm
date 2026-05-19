@@ -1,7 +1,7 @@
 export const sidebar = {
   team: {
     defaultName: '工作台',
-    defaultPlan: '业务域',
+    defaultPlan: '数字化平台',
   },
   actions: {
     expandAllMenus: '点击展开所有菜单',
@@ -58,6 +58,8 @@ export const sidebar = {
     rawMaterialsManagement: '原材料管理',
     cuttingDatabase: '裁纱数据库',
     cuttingOperations: '裁纱作业',
+    engineConfigGroup: '引擎配置',
+    cuttingEngine: '裁纱引擎',
     productEngineering: '产品工程管理',
     productStructure: '产品结构',
     materialArchive: '物料档案',

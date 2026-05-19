@@ -5,7 +5,6 @@ export const dashboard = {
     tabs: {
       overview: '全厂概览',
       calendar: '生产日历',
-      analytics: '转化漏斗',
       reports: '交付进度',
       notifications: '系统全域动态',
     },
@@ -91,36 +90,6 @@ export const dashboard = {
         furnace: '炉台',
         stats: '当前寿命',
         temp: '当前温度',
-      },
-    },
-    analytics: {
-      funnel: {
-        title: '全链路生产漏斗',
-        description: '展示从原始投入到最终成品入库的损耗转化率',
-        stages: {
-          pending: '待下发',
-          inprogress: '生产中',
-          done: '已入库',
-          delivered: '已交付',
-        },
-      },
-      scrapWorkshop: {
-        title: '各车间报废占比',
-      },
-      moldFrequency: {
-        title: '模具使用频率 (TOP 5)',
-      },
-      states: {
-        syncing: '正在同步实时数据流...',
-        noActiveStream: '暂无活跃订单流数据',
-        waitingOrder: '等待订单全生命周期轨迹同步...',
-        noQualityData: '暂无质量检测反馈流',
-        waitingQuality: '等待质量管理数据上报...',
-        noAssetRecords: '暂无资产运行记录',
-      },
-      units: {
-        order: '单',
-        cycle: '次',
       },
     },
     reports: {

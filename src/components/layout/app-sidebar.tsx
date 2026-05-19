@@ -55,19 +55,22 @@ export function AppSidebar() {
    * 品牌信息加载：对接后端 EnterpriseService，移除 StorageService 依赖。
    */
   const defaultPlan = localizedSidebarData.teams[0].plan
+  const defaultName = localizedSidebarData.teams[0].name
   const loadBrand = useCallback(async () => {
     const config = await EnterpriseService.getConfig().catch(() => null)
-    if (!config?.name) {
+    
+    // 如果 config 为空（请求失败），则不更新
+    if (!config) {
       return
     }
 
     setTimeout(() => {
       setBrand({
-        name: config.name,
-        plan: config.plan || defaultPlan,
+        name: config.name ?? defaultName,
+        plan: config.plan ?? defaultPlan,
       })
     }, 0)
-  }, [defaultPlan])
+  }, [defaultPlan, defaultName])
 
   useEffect(() => {
     void loadBrand()
@@ -125,20 +128,20 @@ export function AppSidebar() {
                   variant='default'
                   size='lg'
                   className={cn(
-                    'relative h-12 overflow-hidden rounded-[24px] border border-transparent bg-slate-950 text-white shadow-none',
-                    'hover:bg-slate-900 hover:text-white dark:border dark:border-dashed dark:border-white/6 dark:bg-slate-900 dark:text-slate-50 dark:shadow-[0_8px_18px_rgba(2,6,23,0.34)] dark:hover:bg-slate-800',
-                    'data-[active=true]:bg-slate-900 data-[active=true]:text-white dark:data-[active=true]:bg-slate-800 dark:data-[active=true]:text-slate-50',
-                    'group-data-[collapsible=icon]:size-10! group-data-[collapsible=icon]:rounded-[18px]! group-data-[collapsible=icon]:border-white/8 dark:group-data-[collapsible=icon]:border-white/6'
+                    'relative h-10 overflow-hidden rounded-[20px] border border-transparent bg-slate-800 text-white shadow-none',
+                    'hover:bg-slate-700 hover:text-white dark:border dark:border-dashed dark:border-white/6 dark:bg-slate-800 dark:text-slate-50 dark:shadow-[0_8px_18px_rgba(2,6,23,0.34)] dark:hover:bg-slate-700',
+                    'data-[active=true]:bg-slate-700 data-[active=true]:text-white dark:data-[active=true]:bg-slate-700 dark:data-[active=true]:text-slate-50',
+                    'group-data-[collapsible=icon]:size-10! group-data-[collapsible=icon]:rounded-[16px]! group-data-[collapsible=icon]:border-white/8 dark:group-data-[collapsible=icon]:border-white/6'
                   )}
                 >
                   <Link to={homeEntry.url} onClick={() => setOpenMobile(false)}>
                     {homeEntry.icon ? (
-                      <homeEntry.icon className='pointer-events-none absolute -bottom-3 -right-2 size-14 rotate-12 text-white/8 transition-transform duration-500 group-hover/menu-item:scale-105 dark:text-white/6 group-data-[collapsible=icon]:hidden' />
+                      <homeEntry.icon className='pointer-events-none absolute -bottom-3 -right-2 size-12 rotate-12 text-white/8 transition-transform duration-500 group-hover/menu-item:scale-105 dark:text-white/6 group-data-[collapsible=icon]:hidden' />
                     ) : null}
                     <div className='flex w-full items-center gap-2.5'>
                       <div className='flex items-center gap-2.5'>
                         {homeEntry.icon ? (
-                          <div className='flex size-7 shrink-0 items-center justify-center rounded-xl bg-white/8 text-white ring-1 ring-white/8 dark:bg-white/6 dark:ring-white/6 group-data-[collapsible=icon]:size-6 group-data-[collapsible=icon]:rounded-lg'>
+                          <div className='flex size-6 shrink-0 items-center justify-center rounded-lg bg-white/8 text-white ring-1 ring-white/8 dark:bg-white/6 dark:ring-white/6 group-data-[collapsible=icon]:size-6 group-data-[collapsible=icon]:rounded-lg'>
                             <homeEntry.icon className='size-4 opacity-90 group-data-[collapsible=icon]:size-3.5' />
                           </div>
                         ) : null}

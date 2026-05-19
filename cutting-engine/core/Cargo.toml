@@ -1,0 +1,11 @@
+[package]
+name = "xdfc-cutting-engine-core"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+name = "xdfc_cutting_engine_core"
+path = "src/lib.rs"
+
+[lints]
+workspace = true

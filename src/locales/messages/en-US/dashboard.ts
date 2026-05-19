@@ -5,7 +5,6 @@ export const dashboard = {
     tabs: {
       overview: 'Overview',
       calendar: 'Production Calendar',
-      analytics: 'Conversion Funnel',
       reports: 'Delivery Progress',
       notifications: 'System Activity',
     },
@@ -91,36 +90,6 @@ export const dashboard = {
         furnace: 'Furnace',
         stats: 'Life Cycle',
         temp: 'Temp',
-      },
-    },
-    analytics: {
-      funnel: {
-        title: 'Production Conversion Funnel',
-        description: 'Analyzes loss and yield rates from input to inventory',
-        stages: {
-          pending: 'Pending',
-          inprogress: 'In Production',
-          done: 'Completed',
-          delivered: 'Delivered',
-        },
-      },
-      scrapWorkshop: {
-        title: 'Scrap Ratio by Workshop',
-      },
-      moldFrequency: {
-        title: 'Mold Usage Frequency (TOP 5)',
-      },
-      states: {
-        syncing: 'Syncing Data Stream...',
-        noActiveStream: 'No Active Order Stream',
-        waitingOrder: 'Waiting for Order Lifecycle Sync...',
-        noQualityData: 'No Quality Feedback Stream',
-        waitingQuality: 'Waiting for Quality Reports...',
-        noAssetRecords: 'No Asset Records Found',
-      },
-      units: {
-        order: 'Orders',
-        cycle: 'Cycles',
       },
     },
     reports: {

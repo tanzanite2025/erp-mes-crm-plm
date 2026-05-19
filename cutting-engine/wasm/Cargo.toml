@@ -1,0 +1,17 @@
+[package]
+name = "xdfc-cutting-engine-wasm"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+path = "src/lib.rs"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+wasm-bindgen = "0.2"
+xdfc-cutting-engine-core = { path = "../core" }
+
+[lints]
+workspace = true

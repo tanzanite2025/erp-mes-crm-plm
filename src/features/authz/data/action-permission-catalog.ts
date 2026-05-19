@@ -528,6 +528,18 @@ const equipmentActions: LegacyActionPermissionEntry[] = [
     parentId: 'menu_equipment',
     routeBindings: ['POST /molds/:id/telemetry', 'POST /furnaces/:id/telemetry'],
   },
+  {
+    id: 'action_equipment_maintenance_manage',
+    label: '设备工装：管理维保记录',
+    desc: '允许创建、编辑和删除设备维保记录。',
+    category: 'action',
+    parentId: 'menu_equipment',
+    routeBindings: [
+      'POST /maintenance-records',
+      'PATCH /maintenance-records/:id',
+      'DELETE /maintenance-records/:id',
+    ],
+  },
 ]
 
 const approvalActions: LegacyActionPermissionEntry[] = [

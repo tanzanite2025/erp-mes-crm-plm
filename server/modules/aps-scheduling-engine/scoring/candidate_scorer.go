@@ -60,6 +60,16 @@ func (s *CandidateScorer) Score(task apsorder.Order, resource apsresource.Resour
 		reasons = append(reasons, "conflict")
 	}
 
+	// 1. 交期与松弛时间规则评估
+	slackScore, slackReasons := rules.SlackTime.Evaluate(task, window.EndAt)
+	score += slackScore
+	reasons = append(reasons, slackReasons...)
+
+	// 2. 人员考勤与班组规则评估
+	attendanceScore, attendanceReasons := rules.Attendance.Evaluate(task, resource, window)
+	score += attendanceScore
+	reasons = append(reasons, attendanceReasons...)
+
 	return CandidateScore{
 		TaskID:      task.ID,
 		ResourceID:  resource.ID,

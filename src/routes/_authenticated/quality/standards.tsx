@@ -4,9 +4,9 @@ import { StandardsIndexRouteEntry } from '@/features/quality/pages/standards-ind
 
 const qualityStandardsSearchSchema = z.object({
   keyword: z.string().optional().catch(''),
-  type: z.enum(['ALL', 'IQC', 'IPQC', 'FQC']).optional().catch('ALL'),
+  type: z.enum(['ALL', 'IQC', 'IPQC', 'FQC', 'OQC']).optional().catch('ALL'),
   status: z
-    .enum(['ALL', 'PUBLISHED', 'DRAFT', 'ARCHIVED'])
+    .enum(['ALL', 'DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'PUBLISHED', 'ARCHIVED'])
     .optional()
     .catch('ALL'),
   page: z.coerce.number().int().min(1).optional().catch(1),

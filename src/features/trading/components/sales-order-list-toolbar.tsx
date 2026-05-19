@@ -87,53 +87,55 @@ export function SalesOrderListToolbar({
         </div>
 
         <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end'>
-          <Select value={statusFilter} onValueChange={onStatusFilterChange}>
-            <SelectTrigger className='h-11 w-full sm:w-[180px] rounded-full border-dashed bg-background/80 font-bold shadow-sm'>
-              <SelectValue placeholder={t('tradingSalesOrder.master.filters.status')} />
-            </SelectTrigger>
-            <SelectContent className='rounded-2xl'>
-              <SelectItem value='all'>{t('tradingSalesOrder.master.filters.allStatuses')}</SelectItem>
-              {salesOrderStatuses.map((status) => (
-                <SelectItem key={status.value} value={status.value}>
-                  {t(`tradingSalesOrder.status.${toSalesOrderStatusKey(status.value)}`)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className='grid w-full grid-cols-3 gap-1.5 sm:flex sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-2'>
+            <Select value={statusFilter} onValueChange={onStatusFilterChange}>
+              <SelectTrigger className='h-9 w-full min-w-0 rounded-full border-dashed bg-background/80 px-1.5 text-[9px] font-black tracking-tighter shadow-sm sm:h-11 sm:w-[180px] sm:px-3 sm:text-[11px] sm:font-bold sm:tracking-normal'>
+                <SelectValue placeholder={t('tradingSalesOrder.master.filters.status')} />
+              </SelectTrigger>
+              <SelectContent className='rounded-2xl'>
+                <SelectItem value='all'>{t('tradingSalesOrder.master.filters.allStatuses')}</SelectItem>
+                {salesOrderStatuses.map((status) => (
+                  <SelectItem key={status.value} value={status.value}>
+                    {t(`tradingSalesOrder.status.${toSalesOrderStatusKey(status.value)}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-          <Select value={paymentMethodFilter} onValueChange={onPaymentMethodFilterChange}>
-            <SelectTrigger
-              className='h-11 w-full sm:w-[180px] rounded-full border-dashed bg-background/80 font-bold shadow-sm'
-              disabled={financeFilterStatus !== 'ready'}
-            >
-              <SelectValue placeholder={t('tradingSalesOrder.master.filters.paymentMethod')} />
-            </SelectTrigger>
-            <SelectContent className='rounded-2xl'>
-              <SelectItem value='ALL'>{t('tradingSalesOrder.master.filters.allPaymentMethods')}</SelectItem>
-              {paymentMethodOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <Select value={paymentMethodFilter} onValueChange={onPaymentMethodFilterChange}>
+              <SelectTrigger
+                className='h-9 w-full min-w-0 rounded-full border-dashed bg-background/80 px-1.5 text-[9px] font-black tracking-tighter shadow-sm sm:h-11 sm:w-[180px] sm:px-3 sm:text-[11px] sm:font-bold sm:tracking-normal'
+                disabled={financeFilterStatus !== 'ready'}
+              >
+                <SelectValue placeholder={t('tradingSalesOrder.master.filters.paymentMethod')} />
+              </SelectTrigger>
+              <SelectContent className='rounded-2xl'>
+                <SelectItem value='ALL'>{t('tradingSalesOrder.master.filters.allPaymentMethods')}</SelectItem>
+                {paymentMethodOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-          <Select value={paymentTermFilter} onValueChange={onPaymentTermFilterChange}>
-            <SelectTrigger
-              className='h-11 w-full sm:w-[180px] rounded-full border-dashed bg-background/80 font-bold shadow-sm'
-              disabled={financeFilterStatus !== 'ready'}
-            >
-              <SelectValue placeholder={t('tradingSalesOrder.master.filters.paymentTerm')} />
-            </SelectTrigger>
-            <SelectContent className='rounded-2xl'>
-              <SelectItem value='ALL'>{t('tradingSalesOrder.master.filters.allPaymentTerms')}</SelectItem>
-              {paymentTermOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <Select value={paymentTermFilter} onValueChange={onPaymentTermFilterChange}>
+              <SelectTrigger
+                className='h-9 w-full min-w-0 rounded-full border-dashed bg-background/80 px-1.5 text-[9px] font-black tracking-tighter shadow-sm sm:h-11 sm:w-[180px] sm:px-3 sm:text-[11px] sm:font-bold sm:tracking-normal'
+                disabled={financeFilterStatus !== 'ready'}
+              >
+                <SelectValue placeholder={t('tradingSalesOrder.master.filters.paymentTerm')} />
+              </SelectTrigger>
+              <SelectContent className='rounded-2xl'>
+                <SelectItem value='ALL'>{t('tradingSalesOrder.master.filters.allPaymentTerms')}</SelectItem>
+                {paymentTermOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           <Button
             onClick={onAddOrder}

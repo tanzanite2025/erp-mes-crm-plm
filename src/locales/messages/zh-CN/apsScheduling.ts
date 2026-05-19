@@ -5,6 +5,7 @@ export const apsScheduling = {
       board: 'APS看板',
       cuttingIssuance: '裁纱下达',
       engineConfig: '贪婪引擎配置',
+      engineTuning: '引擎参数微调',
       process: '{{levelName}}总览',
     },
   },
@@ -161,6 +162,57 @@ export const apsScheduling = {
         holidayReducedCapacityValue: '法定节假日按降载处理。',
         holidayIgnoreValue: '当前系统默认规则不对节假日做额外停排覆盖。',
         unknownValue: '当前规则来源未给出明确值。',
+      },
+    },
+    dateRuleCard: {
+      title: '日期规则',
+    },
+    slackTimeCard: {
+      title: '交期预警 / 松弛时间',
+      description: '声明引擎是否启用交期与松弛时间计算约束，以及超期惩罚权重分值。',
+      sourceLabel: '规则来源',
+      sourceType: {
+        systemDefault: '系统默认规则',
+      },
+      sourceStatusLabel: '规则状态',
+      sourceStatus: {
+        active: '当前已启用交期与松弛时间约束',
+      },
+      boundaryLabel: '当前卡片职责',
+      boundaryValue:
+        '这张卡只负责声明引擎是否启用交期与松弛时间约束，以及超期惩罚权重；不解释具体排产寻优动作。',
+      summary: {
+        enableSlackLabel: '交期约束状态',
+        enableSlackValue: '交期与松弛时间约束作为打分因子参与引擎计算。',
+        enableSlackDisabledValue: '当前未将交期与松弛时间作为打分因子输入。',
+        slackThresholdLabel: '预警窗口天数',
+        slackThresholdValue: '交期前 {{days}} 天进入松弛时间衰减区间。',
+        overduePenaltyLabel: '超期惩罚权重',
+        overduePenaltyValue: '完工时间晚于交期时扣减分值：{{penalty}} 分。',
+      },
+    },
+    attendanceCard: {
+      title: '人员出勤 / 班组约束',
+      description: '声明引擎是否联锁考勤打卡状态，以及人手不足时的排产过滤与降载策略。',
+      sourceLabel: '规则来源',
+      sourceType: {
+        systemDefault: '系统默认规则',
+      },
+      sourceStatusLabel: '规则状态',
+      sourceStatus: {
+        active: '当前已启用出勤与班组约束联锁',
+      },
+      boundaryLabel: '当前卡片职责',
+      boundaryValue:
+        '这张卡只负责声明出勤与班组约束是否作为引擎计算的前置因子；不干涉具体车间考勤打卡状态收集。',
+      summary: {
+        enableAttendanceLabel: '考勤联锁状态',
+        enableAttendanceValue: '考勤与打卡出勤状态参与排程联锁。',
+        enableAttendanceDisabledValue: '当前未开启考勤打卡数据联锁。',
+        minCrewRateLabel: '最低出勤阈值',
+        minCrewRateValue: '班组出勤率低于 {{rate}}% 时触发 Hard Block（禁止排产）。',
+        capacityDerateLabel: '缺勤降载系数',
+        capacityDerateValue: '人手不足时该窗口排程运行产能打 {{derate}} 折（拉长加工时间）。',
       },
     },
     boundaryTable: {

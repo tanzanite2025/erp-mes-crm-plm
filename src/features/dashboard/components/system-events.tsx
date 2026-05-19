@@ -79,45 +79,50 @@ export function SystemEvents({ className }: { className?: string }) {
     }
 
     return (
-        <div className={cn('space-y-3', className)}>
-            {CATEGORIES.map((cat) => (
-                <Collapsible
-                    key={cat.id}
-                    open={openCategory === cat.id}
-                    onOpenChange={(isOpen) => setOpenCategory(isOpen ? cat.id : null)}
-                    className='rounded-[24px] border-dashed border-muted/50 bg-muted/5 shadow-none overflow-hidden transition-all hover:bg-muted/10'
-                >
-                    <CollapsibleTrigger asChild>
-                        <div className='flex items-center justify-between p-4 cursor-pointer hover:bg-muted/5 transition-colors group'>
-                            <div className='flex items-center gap-4'>
-                                <div className={cn('rounded-xl p-2.5 shadow-sm transition-all group-hover:scale-110 border border-transparent group-hover:border-current/10', cat.bgColor, cat.color)}>
-                                    <cat.icon className='h-4 w-4' />
-                                </div>
-                                <span className='text-sm font-black text-slate-700 tracking-tight uppercase'>{cat.label}</span>
-                            </div>
-                            <ChevronRight 
-                                className={cn(
-                                    'h-4 w-4 text-muted-foreground/30 transition-transform duration-300',
-                                    openCategory === cat.id && 'rotate-90 text-slate-500'
-                                )} 
-                            />
-                        </div>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className='pb-1'>
-                        <div className='px-4 pb-4 pt-0'>
-                            {cat.id === 'equipment' ? renderEquipmentEvents() : (
-                                <div className='rounded-2xl bg-muted/5 border-2 border-dashed border-muted/50 p-10 flex flex-col items-center justify-center text-center'>
-                                    <div className='size-10 rounded-full bg-background flex items-center justify-center mb-3 shadow-inner border border-muted/20'>
-                                        <div className='size-2.5 rounded-full bg-muted-foreground/20 animate-pulse' />
+        <div className={cn('flex flex-col gap-3.5 animate-in fade-in duration-700', className)}>
+            
+            {/* Log Categories List */}
+            <div className='flex flex-col gap-3'>
+                {CATEGORIES.map((cat) => (
+                    <Collapsible
+                        key={cat.id}
+                        open={openCategory === cat.id}
+                        onOpenChange={(isOpen) => setOpenCategory(isOpen ? cat.id : null)}
+                        className='rounded-[24px] border border-dashed border-muted/30 bg-muted/5 shadow-none overflow-hidden transition-all hover:bg-muted/10 relative'
+                    >
+                        <div className='absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent pointer-events-none' />
+                        <CollapsibleTrigger asChild>
+                            <div className='flex items-center justify-between p-3.5 cursor-pointer hover:bg-muted/5 transition-colors group z-10 relative'>
+                                <div className='flex items-center gap-3.5'>
+                                    <div className={cn('rounded-xl p-2 shadow-sm transition-all group-hover:scale-110 border border-transparent group-hover:border-current/10', cat.bgColor, cat.color)}>
+                                        <cat.icon className='h-4 w-4' />
                                     </div>
-                                    <p className='text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest'>{t('dashboard.page.systemEvents.equipment.offline')}</p>
-                                    <p className='text-[9px] mt-1 text-muted-foreground/20 font-mono uppercase italic'>WAITING_FOR_STREAM</p>
+                                    <span className='text-xs font-black text-slate-700 tracking-tight uppercase'>{cat.label}</span>
                                 </div>
-                            )}
-                        </div>
-                    </CollapsibleContent>
-                </Collapsible>
-            ))}
+                                <ChevronRight 
+                                    className={cn(
+                                        'h-4 w-4 text-muted-foreground/30 transition-transform duration-300',
+                                        openCategory === cat.id && 'rotate-90 text-slate-500'
+                                    )} 
+                                />
+                            </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className='pb-1 z-10 relative'>
+                            <div className='px-3.5 pb-3.5 pt-0'>
+                                {cat.id === 'equipment' ? renderEquipmentEvents() : (
+                                    <div className='rounded-2xl bg-background/50 border border-dashed border-muted/20 p-8 flex flex-col items-center justify-center text-center'>
+                                        <div className='size-8 rounded-full bg-background flex items-center justify-center mb-2 shadow-inner border border-muted/20'>
+                                            <div className='size-2 rounded-full bg-muted-foreground/20 animate-pulse' />
+                                        </div>
+                                        <p className='text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest'>{t('dashboard.page.systemEvents.equipment.offline')}</p>
+                                        <p className='text-[8px] mt-1 text-muted-foreground/20 font-mono uppercase italic'>WAITING_FOR_STREAM</p>
+                                    </div>
+                                )}
+                            </div>
+                        </CollapsibleContent>
+                    </Collapsible>
+                ))}
+            </div>
         </div>
     )
 }

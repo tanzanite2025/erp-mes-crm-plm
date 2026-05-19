@@ -277,16 +277,18 @@ export class OptimizedProxyTracker<T extends TrackableObject> {
         const baselineRowIndex = baselineRows.indexOf(baselineRow);
         // @ts-expect-error - workingRowIndex kept for symmetry and potential future use
         const workingRowIndex = workingRows.indexOf(workingRow);
+        const baselineRowRecord = baselineRow as PathReadableObject;
+        const workingRowRecord = workingRow as PathReadableObject;
 
         // Compare each field in the row
         const allKeys = new Set([
-          ...Object.keys(baselineRow),
-          ...Object.keys(workingRow)
+          ...Object.keys(baselineRowRecord),
+          ...Object.keys(workingRowRecord)
         ]);
 
         allKeys.forEach((key) => {
-          const oldValue = baselineRow[key];
-          const newValue = workingRow[key];
+          const oldValue = baselineRowRecord[key];
+          const newValue = workingRowRecord[key];
 
           // Shallow comparison: use strict equality
           if (oldValue !== newValue) {

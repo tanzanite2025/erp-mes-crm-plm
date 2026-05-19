@@ -41,7 +41,7 @@ export function CustomerDynamicSummaryLayer({
   }
 
   return (
-    <div className='space-y-2.5 sm:space-y-3'>
+    <>
       <CustomerSalesClosureSummaryBlock summary={salesClosureSummary} />
       <CustomerSalesReturnSummaryBlock
         summary={salesReturnSummary}
@@ -59,6 +59,6 @@ export function CustomerDynamicSummaryLayer({
         onCreateQuote={onCreateQuote}
         compact
       />
-    </div>
+    </>
   )
 }

@@ -20,7 +20,7 @@ import { useGetQualityTasks, useGetInspectionStats, useQualityMutations, type Qu
 import { isForbiddenError } from '@/lib/error-status'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
-import { formatQualityActorName } from '../utils/quality-utils'
+import { formatQualityActorName } from '@/features/quality/utils/quality-utils'
 
 export function QualityInspection() {
     const { t } = useLanguage()

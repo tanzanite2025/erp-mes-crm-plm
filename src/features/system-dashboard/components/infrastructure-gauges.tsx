@@ -83,7 +83,7 @@ export function InfrastructureGauges({ memory, db, cpu_cores }: Props) {
               <span>{dbUsage === null ? 'N/A' : `${dbUsage.toFixed(1)}%`}</span>
             </div>
             <Progress value={dbUsage ?? 0} className="h-1.5 bg-slate-100 dark:bg-white/8" indicatorClassName={cn(
-              dbUsage > 80 ? "bg-rose-500" : dbUsage > 50 ? "bg-amber-500" : "bg-blue-500"
+              dbUsage !== null && dbUsage > 80 ? "bg-rose-500" : dbUsage !== null && dbUsage > 50 ? "bg-amber-500" : "bg-blue-500"
             )} />
           </div>
           <div className="grid grid-cols-3 gap-1">

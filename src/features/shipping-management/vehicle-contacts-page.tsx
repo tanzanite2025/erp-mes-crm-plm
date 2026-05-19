@@ -1,7 +1,7 @@
 'use client'
 
 import { useQueryClient } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Users } from 'lucide-react'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { Card } from '@/components/ui/card'
@@ -19,6 +19,19 @@ import { type VehicleContactBinding } from './vehicle-contact.types'
 import { vehicleContactQueryKeys } from './query-keys'
 import { toVehicleContactSaveInput, toVehicleContactToggleInput } from './services/vehicle-contact-service'
 
+function useLocalToast() {
+  const [toastMessage, setToastMessage] = useState<string | null>(null)
+  const [toastVariant, setToastVariant] = useState<'success' | 'error'>('success')
+
+  const showToast = useCallback((message: string, variant: 'success' | 'error' = 'success') => {
+    setToastVariant(variant)
+    setToastMessage(message)
+    window.setTimeout(() => setToastMessage(null), 2500)
+  }, [])
+
+  return { toastMessage, toastVariant, showToast }
+}
+
 export function VehicleContactsPage() {
   const queryClient = useQueryClient()
   const { vehicleSpecs, isLoadingSpecs, specsError, specsStatus } = useVehicleSpecsQuery()
@@ -27,8 +40,10 @@ export function VehicleContactsPage() {
   const [deleteTarget, setDeleteTarget] = useState<VehicleContactBinding | null>(null)
   const defaultRemoteFilters = useMemo(() => createDefaultVehicleContactRemoteFilters(), [])
 
-  const { bindings, loading, error, toastMessage, toastVariant, reload, showToast } = useVehicleContactBindings(defaultRemoteFilters)
-  const { uiFilters, setUiFilters, filteredBindings, categoryLabels } = useVehicleContactUiFilters(bindings)
+  const { readResource, reload } = useVehicleContactBindings(defaultRemoteFilters)
+  const { toastMessage, toastVariant, showToast } = useLocalToast()
+  const readyBindings = readResource.status === 'ready' ? readResource.data : []
+  const { uiFilters, setUiFilters, filteredBindings, categoryLabels } = useVehicleContactUiFilters(readyBindings)
   const { saveBinding, deleteBinding } = useVehicleContactActions()
 
   const vehicleOptions = vehicleSpecs.map((spec) => ({ value: spec.id, label: spec.name }))
@@ -48,11 +63,26 @@ export function VehicleContactsPage() {
   }
 
   const toggleEnabled = async (item: VehicleContactBinding) => {
+    const queryKey = vehicleContactQueryKeys.list(defaultRemoteFilters)
+    await queryClient.cancelQueries({ queryKey })
+
+    const previousBindings = queryClient.getQueryData<VehicleContactBinding[]>(queryKey)
+
+    if (previousBindings) {
+      queryClient.setQueryData<VehicleContactBinding[]>(
+        queryKey,
+        previousBindings.map((b) => (b.id === item.id ? { ...b, enabled: !item.enabled } : b))
+      )
+    }
+
     try {
       await saveBinding(toVehicleContactToggleInput(item, !item.enabled))
       await refreshVehicleContacts()
       showToast('保存成功', 'success')
     } catch (error) {
+      if (previousBindings) {
+        queryClient.setQueryData(queryKey, previousBindings)
+      }
       showToast(error instanceof Error ? error.message : '保存失败', 'error')
     }
   }
@@ -179,8 +209,8 @@ export function VehicleContactsPage() {
       </Card>
 
       {specsError ? <Card className='rounded-2xl border border-destructive/30 bg-destructive/5 px-5 py-4 shadow-none'><div className='text-[10px] font-black uppercase tracking-widest text-destructive'>车型加载失败</div><div className='mt-1.5 text-[11px] leading-5 text-muted-foreground'>{specsError.message}</div></Card> : null}
-      {error ? <Card className='rounded-2xl border border-destructive/30 bg-destructive/5 px-5 py-4 shadow-none'><div className='text-[10px] font-black uppercase tracking-widest text-destructive'>车型联系人加载失败</div><div className='mt-1.5 text-[11px] leading-5 text-muted-foreground'>{error.message}</div><button type='button' className='uds-chip mt-3 border-destructive/40 text-[10px] text-destructive' onClick={() => void reload()}>重新加载</button></Card> : null}
-      {isLoadingSpecs || loading ? (
+      {readResource.status === 'error' ? <Card className='rounded-2xl border border-destructive/30 bg-destructive/5 px-5 py-4 shadow-none'><div className='text-[10px] font-black uppercase tracking-widest text-destructive'>车型联系人加载失败</div><div className='mt-1.5 text-[11px] leading-5 text-muted-foreground'>{readResource.error.message}</div><button type='button' className='uds-chip mt-3 border-destructive/40 text-[10px] text-destructive' onClick={() => void reload()}>重新加载</button></Card> : null}
+      {isLoadingSpecs || readResource.status === 'loading' ? (
         <Card className='rounded-2xl border border-dashed border-border/60 bg-background/70 px-5 py-5 shadow-none'>
           <div className='space-y-4'>
             <div className='space-y-2'>

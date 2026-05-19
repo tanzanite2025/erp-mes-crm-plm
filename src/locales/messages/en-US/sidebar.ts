@@ -58,6 +58,8 @@ export const sidebar = {
     rawMaterialsManagement: 'Raw Material Management',
     cuttingDatabase: 'Cutting Database',
     cuttingOperations: 'Cutting Operations',
+    engineConfigGroup: 'Engine Config',
+    cuttingEngine: 'Cutting Engine',
     productEngineering: 'Product Engineering',
     productStructure: 'Product Structure',
     materialArchive: 'Material Archive',

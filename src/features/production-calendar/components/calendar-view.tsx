@@ -15,7 +15,6 @@ import { zhCN, enUS } from 'date-fns/locale'
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Activity } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ProductionCalendarService, type DailyProductionRecord } from '../services/production-calendar-service'
 import { useLanguage } from '@/context/language-provider'
@@ -53,10 +52,10 @@ export function CalendarView({ onDateClick }: CalendarViewProps) {
 
     const renderHeader = () => {
         return (
-            <div className='mb-4 flex flex-col gap-1 rounded-2xl border border-dashed border-muted/50 bg-muted/5 p-3 md:mb-5 md:rounded-[28px] md:p-4'>
-                <div className='flex flex-col justify-between gap-3 sm:flex-row sm:items-center'>
-                    <div className='flex items-center gap-2.5 md:gap-3'>
-                        <div className='flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary shadow-inner transition-all md:size-9 md:rounded-xl'>
+            <div className='mb-1.5 flex flex-col gap-0.5 rounded-[16px] border border-dashed border-muted/50 bg-muted/5 p-2 md:mb-2 md:rounded-[20px] md:p-2.5'>
+                <div className='flex flex-col justify-between gap-2 sm:flex-row sm:items-center'>
+                    <div className='flex items-center gap-2 md:gap-2.5'>
+                        <div className='flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary shadow-inner transition-all md:size-8 md:rounded-xl'>
                             <CalendarIcon className='size-3.5 transition-transform group-hover:scale-110 md:size-4' />
                         </div>
                         <div className='flex flex-col gap-0.5 overflow-hidden'>
@@ -112,7 +111,7 @@ export function CalendarView({ onDateClick }: CalendarViewProps) {
           t('dashboard.page.calendar.view.days.sat'),
         ]
         return (
-            <div className='mb-2.5 grid min-w-[700px] grid-cols-7 px-1 md:min-w-0'>
+            <div className='mb-1.5 grid grid-cols-7 px-1'>
                 {days.map((day, i) => (
                     <div key={i} className='text-center text-[8px] font-black uppercase tracking-[0.26em] text-muted-foreground/30 italic'>
                         {day}
@@ -134,7 +133,7 @@ export function CalendarView({ onDateClick }: CalendarViewProps) {
         })
 
         return (
-            <div className='grid min-w-[700px] grid-cols-7 gap-1 border border-dashed border-muted/50 bg-muted/10 p-1 shadow-inner rounded-xl md:min-w-0 md:rounded-[24px]'>
+            <div className='grid grid-cols-7 gap-1 border border-dashed border-muted/50 bg-muted/10 p-0.5 shadow-inner rounded-xl md:rounded-[20px]'>
                 {calendarDates.map((day, i) => {
                     const isInMonth = isSameMonth(day, monthStart)
                     const isToday = isSameDay(day, today)
@@ -144,11 +143,11 @@ export function CalendarView({ onDateClick }: CalendarViewProps) {
                     const hasOutput = dayRecord && dayRecord.output > 0
 
                     return (
-                        <div
-                            key={i}
-                            className={cn(
-                                'group relative min-h-[84px] cursor-pointer rounded-lg border border-transparent bg-background p-1.5 transition-all md:min-h-[96px] md:rounded-[20px] md:p-2.5',
-                                !isInMonth && 'bg-muted/5 opacity-30 pointer-events-none',
+                            <div
+                                key={i}
+                                className={cn(
+                                    'group relative min-h-[40px] cursor-pointer rounded-md border border-transparent bg-background p-1 transition-all md:min-h-[48px] md:rounded-lg md:p-1.5',
+                                    !isInMonth && 'bg-muted/5 opacity-30 pointer-events-none',
                                 isInMonth && 'hover:border-primary/20 hover:shadow-lg hover:bg-white',
                                 isToday && 'ring-2 ring-primary/20 bg-primary/2'
                             )}
@@ -156,8 +155,8 @@ export function CalendarView({ onDateClick }: CalendarViewProps) {
                         >
                             <div className='flex justify-between items-start'>
                                 <span className={cn(
-                                    'flex size-7 items-center justify-center rounded-lg text-[13px] font-black italic tracking-tighter tabular-nums transition-colors',
-                                    isToday ? 'bg-primary text-white shadow-lg' : 'text-slate-400'
+                                    'flex size-6 items-center justify-center rounded-md text-[11px] font-black italic tracking-tighter tabular-nums transition-colors',
+                                    isToday ? 'bg-primary text-white shadow-md' : 'text-slate-400'
                                 )}>
                                     {format(day, 'd')}
                                 </span>
@@ -201,12 +200,12 @@ export function CalendarView({ onDateClick }: CalendarViewProps) {
     }
 
     return (
-        <Card className='border-none shadow-none bg-transparent animate-in fade-in duration-700 overflow-hidden'>
-            <CardContent className='p-0 overflow-hidden'>
+        <div className='animate-in fade-in duration-700'>
+            <div className='flex flex-col'>
                 {renderHeader()}
-                <div className='overflow-x-auto scrollbar-hide pb-2'>
+                <div className='flex-1'>
                     {loadError ? (
-                        <div className='rounded-2xl border border-dashed border-rose-200 bg-rose-50/70 p-4 text-center text-rose-700'>
+                        <div className='rounded-[16px] border border-dashed border-rose-200 bg-rose-50/70 p-4 text-center text-rose-700'>
                             <p className='text-[10px] font-black uppercase tracking-widest'>{t('dashboard.page.calendar.title')}</p>
                             <p className='mt-2 text-xs font-bold wrap-break-word'>{loadError}</p>
                         </div>
@@ -217,7 +216,7 @@ export function CalendarView({ onDateClick }: CalendarViewProps) {
                         </>
                     )}
                 </div>
-            </CardContent>
-        </Card>
+            </div>
+        </div>
     )
 }

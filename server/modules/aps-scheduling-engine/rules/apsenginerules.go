@@ -11,6 +11,9 @@ type RuleSet struct {
 	HolidayPenalty      float64
 	ConflictPenalty     float64
 	StopDayBlockPenalty float64
+
+	SlackTime  SlackTimeRuleConfig
+	Attendance AttendanceRuleConfig
 }
 
 func DefaultRuleSet() *RuleSet {
@@ -25,5 +28,8 @@ func DefaultRuleSet() *RuleSet {
 		HolidayPenalty:      120,
 		ConflictPenalty:     100,
 		StopDayBlockPenalty: 1000,
+
+		SlackTime:  DefaultSlackTimeRuleConfig(),
+		Attendance: DefaultAttendanceRuleConfig(),
 	}
 }

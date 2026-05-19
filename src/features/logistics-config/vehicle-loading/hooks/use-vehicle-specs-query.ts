@@ -10,6 +10,7 @@ export function useVehicleSpecsQuery() {
     queryKey: vehicleLoadingQueryKeys.specs(),
     queryFn: getVehicleSpecs,
     retry: false,
+    staleTime: 5 * 60 * 1000,
   })
 
   const status: VehicleSpecsLoadState = query.isLoading

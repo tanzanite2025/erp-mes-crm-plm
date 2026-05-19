@@ -105,6 +105,10 @@ function createPackagingProfileCode(name: string): string {
   return `PKG-${normalized || 'BOX'}-${stamp}`
 }
 
+function resolvePackagingProductWeight(_product: Product | null): number {
+  return 0
+}
+
 interface UsePackagingProfileFormControllerOptions {
   initialProductId?: string
   initialProfile?: PackagingProfile
@@ -218,11 +222,13 @@ export function usePackagingProfileFormController({
     [draft.name, packagingMaterials]
   )
   const computedVolume = draft.length * draft.width * draft.height
+  const selectedProductWeight = resolvePackagingProductWeight(selectedProduct)
   const computedGrossWeight =
-    draft.netWeight + (selectedProduct?.weight ?? 0) * draft.capacity
+    draft.netWeight + selectedProductWeight * draft.capacity
 
   const updateSelectedProduct = (productId: string) => {
     const product = products.find((item) => item.id === productId)
+    const productWeight = resolvePackagingProductWeight(product ?? null)
     setDraft((current) => ({
       ...current,
       targets: [
@@ -238,7 +244,7 @@ export function usePackagingProfileFormController({
           sortOrder: 0,
         },
       ],
-      grossWeight: current.netWeight + (product?.weight ?? 0) * current.capacity,
+      grossWeight: current.netWeight + productWeight * current.capacity,
     }))
   }
 

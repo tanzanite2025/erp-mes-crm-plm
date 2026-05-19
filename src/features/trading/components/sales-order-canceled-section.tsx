@@ -1,9 +1,10 @@
-﻿import { CompactPaginationControls } from '@/components/pagination/compact-pagination-controls'
+﻿import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
-import { useLanguage } from '@/context/language-provider'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { CompactPaginationControls } from '@/components/pagination/compact-pagination-controls'
 import { type SalesOrder } from '../data/schema'
-import { SalesOrderMaster } from './sales-order-master'
 import type { SalesOrderFeatureCardFactory } from './sales-order-card/sales-order-card-types'
+import { SalesOrderMaster } from './sales-order-master'
 
 interface SalesOrderCanceledSectionProps {
   shouldLoadCanceledSection: boolean
@@ -47,8 +48,8 @@ export function SalesOrderCanceledSection({
   }
 
   return (
-    <div className='space-y-3'>
-      <div className='flex items-center justify-between rounded-2xl border border-dashed border-rose-200/80 bg-rose-50/50 px-4 py-3'>
+    <div className='min-w-0 shrink-0 space-y-3'>
+      <div className='flex items-center justify-between rounded-2xl border border-dashed border-rose-500/15 bg-rose-500/5 px-4 py-3'>
         <div className='text-[11px] font-black tracking-wide text-rose-600'>
           {t('tradingSalesOrder.status.canceled')} ({canceledTotal})
         </div>
@@ -64,17 +65,21 @@ export function SalesOrderCanceledSection({
       </div>
 
       {showCanceledSection ? (
-        <SalesOrderMaster
-          orders={canceledOrders}
-          selectedId={selectedId}
-          section='canceled'
-          onSelect={onSelect}
-          onPreassembleScan={onPreassembleScan}
-          onViewReceivable={onViewReceivable}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          getFeatureCards={getFeatureCards}
-        />
+        <ScrollArea className='max-h-[42vh]'>
+          <div className='pr-1'>
+            <SalesOrderMaster
+              orders={canceledOrders}
+              selectedId={selectedId}
+              section='canceled'
+              onSelect={onSelect}
+              onPreassembleScan={onPreassembleScan}
+              onViewReceivable={onViewReceivable}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              getFeatureCards={getFeatureCards}
+            />
+          </div>
+        </ScrollArea>
       ) : null}
 
       {showCanceledSection && canceledTotal > pageSize ? (

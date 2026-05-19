@@ -8,7 +8,7 @@ export function CustomerMgmt() {
   const { t } = useLanguage()
 
   return (
-    <div className='flex flex-col gap-2.5 animate-in fade-in duration-700 sm:gap-3'>
+    <div className='flex min-w-0 flex-col gap-2.5 animate-in fade-in duration-700 sm:gap-3'>
       <IndustrialHeader
         icon={Users}
         title={t('trading.customers.pageTitle')}

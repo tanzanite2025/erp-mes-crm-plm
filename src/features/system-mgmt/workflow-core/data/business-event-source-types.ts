@@ -149,9 +149,9 @@ export type BusinessEventSourceTemplate = z.infer<
 >
 
 export const businessEventSourceCreateSchema =
-  businessEventSourceTemplateSchema
+  businessEventSourceTemplateSchema.omit({ meta: true })
 export const businessEventSourceUpdateSchema =
-  businessEventSourceTemplateSchema
+  businessEventSourceTemplateSchema.omit({ meta: true })
 
 export type BusinessEventSourceCreatePayload = z.infer<
   typeof businessEventSourceCreateSchema

@@ -6,16 +6,18 @@ import { unitService, type Unit } from '../services/unit-service'
 
 interface UseUnitsQueryOptions {
   enabled?: boolean
+  staleTime?: number
 }
 
 export function useUnitsQuery(options: UseUnitsQueryOptions = {}) {
-  const { enabled = true } = options
+  const { enabled = true, staleTime } = options
   const queryClient = useQueryClient()
 
   const unitsQuery = useQuery({
     queryKey: BASIC_SETTINGS_UNITS_QUERY_KEY,
     queryFn: () => unitService.getUnits(),
     enabled,
+    staleTime,
   })
 
   const invalidateUnits = useCallback(async () => {

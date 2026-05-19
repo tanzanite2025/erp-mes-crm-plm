@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Plus, Trash2, Edit2, Calendar } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -31,11 +32,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { useToast } from '@/hooks/use-toast'
 import { useMaintenanceRecords } from '../hooks/use-maintenance-records'
 import { useMaintenanceRecordForm } from '../hooks/use-maintenance-record-form'
 import { useStatusTransition } from '../hooks/use-status-transition'
-import type { MaintenanceRecord } from '../data/schema'
+import type { MaintenanceRecord, MaintenanceRecordPriority, MaintenanceRecordType } from '../data/schema'
 import { getStatusBadge, getPriorityBadge, getTypeBadge, formatMaintenanceDate } from '../utils/maintenance-badges'
 
 interface MaintenanceRecordListProps {
@@ -46,7 +46,6 @@ interface MaintenanceRecordListProps {
 
 export function MaintenanceRecordList({ assetType, assetId, assetSn }: MaintenanceRecordListProps) {
   const { records, isLoading, create, patch, remove, reload } = useMaintenanceRecords({ assetType, assetId })
-  const { toast } = useToast()
   const { formData, updateField, validate, reset, getSubmitData } = useMaintenanceRecordForm()
   const { getValidNextStatuses, getStatusLabel } = useStatusTransition()
 
@@ -54,14 +53,17 @@ export function MaintenanceRecordList({ assetType, assetId, assetSn }: Maintenan
   const [deleteRecordId, setDeleteRecordId] = useState<string | null>(null)
   const [editingRemarks, setEditingRemarks] = useState<string | null>(null)
 
+  const getErrorMessage = (error: unknown, fallback: string) =>
+    error instanceof Error ? error.message : fallback
+
+  const isConflictMessage = (error: unknown) =>
+    error instanceof Error &&
+    (error.message.includes('409') || error.message.includes('conflict'))
+
   const handleCreate = async () => {
     const validation = validate()
     if (!validation.valid) {
-      toast({
-        title: '验证失败',
-        description: validation.error,
-        variant: 'destructive',
-      })
+      toast.error('验证失败', { description: validation.error })
       return
     }
 
@@ -76,15 +78,10 @@ export function MaintenanceRecordList({ assetType, assetId, assetSn }: Maintenan
       setIsCreateDialogOpen(false)
       reset()
 
-      toast({
-        title: '创建成功',
-        description: '维保记录已创建',
-      })
-    } catch (error: any) {
-      toast({
-        title: '创建失败',
-        description: error?.message || '创建维保记录时发生错误',
-        variant: 'destructive',
+      toast.success('创建成功', { description: '维保记录已创建' })
+    } catch (error: unknown) {
+      toast.error('创建失败', {
+        description: getErrorMessage(error, '创建维保记录时发生错误'),
       })
     }
   }
@@ -99,23 +96,16 @@ export function MaintenanceRecordList({ assetType, assetId, assetSn }: Maintenan
         version: record.version,
       })
 
-      toast({
-        title: '状态已更新',
+      toast.success('状态已更新', {
         description: `状态已更改为${getStatusLabel(newStatus)}`,
       })
-    } catch (error: any) {
-      if (error?.message?.includes('409') || error?.message?.includes('conflict')) {
-        toast({
-          title: '更新失败',
-          description: '记录已被他人修改，请刷新后重试',
-          variant: 'destructive',
-        })
+    } catch (error: unknown) {
+      if (isConflictMessage(error)) {
+        toast.error('更新失败', { description: '记录已被他人修改，请刷新后重试' })
         reload()
       } else {
-        toast({
-          title: '更新失败',
-          description: error?.message || '更新状态时发生错误',
-          variant: 'destructive',
+        toast.error('更新失败', {
+          description: getErrorMessage(error, '更新状态时发生错误'),
         })
       }
     }
@@ -130,22 +120,14 @@ export function MaintenanceRecordList({ assetType, assetId, assetSn }: Maintenan
       })
       setEditingRemarks(null)
 
-      toast({
-        title: '备注已更新',
-      })
-    } catch (error: any) {
-      if (error?.message?.includes('409') || error?.message?.includes('conflict')) {
-        toast({
-          title: '更新失败',
-          description: '记录已被他人修改，请刷新后重试',
-          variant: 'destructive',
-        })
+      toast.success('备注已更新')
+    } catch (error: unknown) {
+      if (isConflictMessage(error)) {
+        toast.error('更新失败', { description: '记录已被他人修改，请刷新后重试' })
         reload()
       } else {
-        toast({
-          title: '更新失败',
-          description: error?.message || '更新备注时发生错误',
-          variant: 'destructive',
+        toast.error('更新失败', {
+          description: getErrorMessage(error, '更新备注时发生错误'),
         })
       }
       setEditingRemarks(null)
@@ -159,15 +141,10 @@ export function MaintenanceRecordList({ assetType, assetId, assetSn }: Maintenan
       await remove(deleteRecordId)
       setDeleteRecordId(null)
 
-      toast({
-        title: '删除成功',
-        description: '维保记录已删除',
-      })
-    } catch (error: any) {
-      toast({
-        title: '删除失败',
-        description: error?.message || '删除维保记录时发生错误',
-        variant: 'destructive',
+      toast.success('删除成功', { description: '维保记录已删除' })
+    } catch (error: unknown) {
+      toast.error('删除失败', {
+        description: getErrorMessage(error, '删除维保记录时发生错误'),
       })
     }
   }
@@ -317,7 +294,7 @@ export function MaintenanceRecordList({ assetType, assetId, assetSn }: Maintenan
               <Label htmlFor='type'>类型</Label>
               <Select
                 value={formData.type}
-                onValueChange={(value: any) => updateField('type', value)}
+                onValueChange={(value) => updateField('type', value as MaintenanceRecordType)}
               >
                 <SelectTrigger id='type'>
                   <SelectValue />
@@ -358,7 +335,7 @@ export function MaintenanceRecordList({ assetType, assetId, assetSn }: Maintenan
                 <Label htmlFor='priority'>优先级</Label>
                 <Select
                   value={formData.priority}
-                  onValueChange={(value: any) => updateField('priority', value)}
+                  onValueChange={(value) => updateField('priority', value as MaintenanceRecordPriority)}
                 >
                   <SelectTrigger id='priority'>
                     <SelectValue />

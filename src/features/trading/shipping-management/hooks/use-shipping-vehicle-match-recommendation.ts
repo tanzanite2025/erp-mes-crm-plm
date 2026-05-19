@@ -94,12 +94,14 @@ export function useShippingVehicleMatchRecommendation(item: ShippingVehicleMatch
   const hasPreferredPackagingProfile = item.packageProfileId.trim() !== ''
   const { readResource: unitsReadResource, refetch: refetchUnits } = useUnitsQuery({
     enabled: hasPreferredPackagingProfile,
+    staleTime: 5 * 60 * 1000,
   })
   const profilesQuery = useQuery({
     queryKey: SHIPPING_MATCH_PACKAGING_PROFILE_QUERY_KEY,
     queryFn: () => packagingRulesService.getProfiles(),
     enabled: hasPreferredPackagingProfile,
     retry: false,
+    staleTime: 5 * 60 * 1000,
   })
   const { refetch: refetchProfiles } = profilesQuery
   const profilesReadResource = useMemo<ReadResource<PackagingProfile[]> | { status: 'idle' }>(() => {

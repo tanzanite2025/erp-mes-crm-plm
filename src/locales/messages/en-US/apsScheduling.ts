@@ -5,6 +5,7 @@ export const apsScheduling = {
       board: 'APS Board',
       cuttingIssuance: 'Cutting Issuance',
       engineConfig: 'Greedy Engine Config',
+      engineTuning: 'Engine Tuning',
       process: '{{levelName}} Overview',
     },
   },
@@ -167,6 +168,57 @@ export const apsScheduling = {
         holidayReducedCapacityValue: 'Statutory holidays are treated as reduced-capacity days.',
         holidayIgnoreValue: 'The current system-default rules do not apply an extra holiday stop override.',
         unknownValue: 'The current rule source does not provide a clear value.',
+      },
+    },
+    dateRuleCard: {
+      title: 'Date Rules',
+    },
+    slackTimeCard: {
+      title: 'Due Date Alert / Slack Time',
+      description: 'Declare whether the engine enables due date and slack time calculation constraints, together with the overdue penalty score.',
+      sourceLabel: 'Rule Source',
+      sourceType: {
+        systemDefault: 'System Default Rules',
+      },
+      sourceStatusLabel: 'Rule Status',
+      sourceStatus: {
+        active: 'Due date & slack time constraints are active',
+      },
+      boundaryLabel: 'Current Card Scope',
+      boundaryValue:
+        'This card only declares whether the engine enables due date and slack time constraints, together with the overdue penalty weight. It does not dictate specific scheduling outcomes.',
+      summary: {
+        enableSlackLabel: 'Due Date Constraint Status',
+        enableSlackValue: 'Due date and slack time constraints participate as scoring factors in calculations.',
+        enableSlackDisabledValue: 'Due date and slack time are currently not active scoring factor inputs.',
+        slackThresholdLabel: 'Warning Window Days',
+        slackThresholdValue: 'Enters slack time degradation range {{days}} days before due date.',
+        overduePenaltyLabel: 'Overdue Penalty Weight',
+        overduePenaltyValue: 'Score penalty deducted when completed after due date: {{penalty}} pts.',
+      },
+    },
+    attendanceCard: {
+      title: 'Personnel Attendance / Crew Constraints',
+      description: 'Declare whether the engine links attendance clock-in status, and scheduling filter or derating policies when short-staffed.',
+      sourceLabel: 'Rule Source',
+      sourceType: {
+        systemDefault: 'System Default Rules',
+      },
+      sourceStatusLabel: 'Rule Status',
+      sourceStatus: {
+        active: 'Attendance & crew constraints are currently active',
+      },
+      boundaryLabel: 'Current Card Scope',
+      boundaryValue:
+        'This card only declares whether attendance and crew constraints participate as input factors in engine calculation; it does not collect shopfloor check-in logs.',
+      summary: {
+        enableAttendanceLabel: 'Attendance Link Status',
+        enableAttendanceValue: 'Attendance and check-in statuses participate in scheduling lock.',
+        enableAttendanceDisabledValue: 'Attendance check-in link is currently not active.',
+        minCrewRateLabel: 'Min Attendance Rate',
+        minCrewRateValue: 'Triggers Hard Block (blocks scheduling) when crew attendance is below {{rate}}%.',
+        capacityDerateLabel: 'Absence Derating Factor',
+        capacityDerateValue: 'Capacity scales to {{derate}}% when understaffed (processing time is extended).',
       },
     },
     boundaryTable: {

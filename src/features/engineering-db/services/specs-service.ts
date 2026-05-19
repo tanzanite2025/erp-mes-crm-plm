@@ -8,16 +8,18 @@ import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { failLoudly } from '@/lib/safe-catch'
 
 function toTechnicalSpecContract(item: EngineeringSpec): TechnicalSpec {
+  const control = item.masterDataControl ?? {}
+
   return technicalSpecSchema.parse({
     ...item.specData,
     id: item.id,
-    revisionNo: item.revisionNo,
-    effectiveFrom: item.effectiveFrom,
-    effectiveTo: item.effectiveTo,
-    changeType: item.changeType,
-    changeOrderNo: item.changeOrderNo,
-    siteCode: item.siteCode,
-    isDefaultSite: item.isDefaultSite,
+    revisionNo: control.revisionNo,
+    effectiveFrom: control.effectiveFrom,
+    effectiveTo: control.effectiveTo,
+    changeType: control.changeType,
+    changeOrderNo: control.changeOrderNo,
+    siteCode: control.siteCode,
+    isDefaultSite: control.isDefaultSite,
     version: item.version,
     createdAt: item.createdAt || new Date().toISOString(),
   })
@@ -67,17 +69,18 @@ export const SpecsService = {
     }
 
     const saved = await engineeringSpecService.saveSpec(spec)
+    const control = saved.masterDataControl ?? {}
 
     return technicalSpecSchema.parse({
       ...(saved.specData || item),
       id: saved.id,
-      revisionNo: saved.revisionNo,
-      effectiveFrom: saved.effectiveFrom,
-      effectiveTo: saved.effectiveTo,
-      changeType: saved.changeType,
-      changeOrderNo: saved.changeOrderNo,
-      siteCode: saved.siteCode,
-      isDefaultSite: saved.isDefaultSite,
+      revisionNo: control.revisionNo,
+      effectiveFrom: control.effectiveFrom,
+      effectiveTo: control.effectiveTo,
+      changeType: control.changeType,
+      changeOrderNo: control.changeOrderNo,
+      siteCode: control.siteCode,
+      isDefaultSite: control.isDefaultSite,
       version: saved.version,
       createdAt: saved.createdAt || item.createdAt || new Date().toISOString(),
     })

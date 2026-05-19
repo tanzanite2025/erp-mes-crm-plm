@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Settings, Check, AlertCircle, Loader2 } from 'lucide-react'
+import { Settings, Check, AlertCircle, Loader2, Heart, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { KpiGrid } from '@/features/dashboard/components/kpi-grid'
 import { Overview } from '@/features/dashboard/components/overview'
@@ -17,6 +17,8 @@ import { type ProductionSegment as Segment } from '@/features/production-shared/
 import { useProductionLinesQuery } from '@/features/production-shared/hooks/use-production-resources'
 import { useHierarchyLevelLabels } from '@/features/production-shared/tabs/hierarchy-config/hooks/use-hierarchy-level-labels'
 import { useVisibleDashboardSegments } from '@/features/dashboard/hooks/use-visible-dashboard-segments'
+import { useTraceStats } from '@/features/dashboard/hooks/use-trace-stats'
+import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error && error.message) {
@@ -32,7 +34,17 @@ export function DashboardOverviewTab() {
   const [isConfigOpen, setIsConfigOpen] = useState(false)
   const [draftVisibleSegmentIds, setDraftVisibleSegmentIds] = useState<string[] | null>(null)
   const { data: lines = [], isLoading: loading, error, refetch } = useProductionLinesQuery()
+  const { stats } = useTraceStats()
 
+  const wipVal = stats?.wip ?? 0
+  const scrapVal = stats?.scrap ?? 0
+  const totalVal = wipVal + scrapVal
+  const okPercent = totalVal > 0 ? Math.round((wipVal / totalVal) * 100) : 100
+
+  const passRateData = [
+    { name: '合格品 (WIP)', value: wipVal || 1, color: '#10b981' },
+    { name: '报废品 (SCRAP)', value: scrapVal, color: '#ef4444' }
+  ]
   const segments = useMemo<(Segment & { lineName: string })[]>(
     () =>
       lines.flatMap((line) =>
@@ -110,13 +122,17 @@ export function DashboardOverviewTab() {
 
   return (
     <>
-      <div className='flex flex-col gap-8'>
+      <div className='flex flex-col gap-4'>
         <KpiGrid />
-        <div className='grid grid-cols-1 gap-4'>
-          <Card className='col-span-1 rounded-2xl md:rounded-[32px] border-dashed border-2 border-muted/60 bg-muted/5 shadow-none overflow-hidden'>
-            <CardHeader className='flex flex-row items-center justify-between px-4 py-4 md:px-6 border-b border-dashed border-muted/80'>
+        
+        <div className='grid grid-cols-1 lg:grid-cols-12 gap-3.5'>
+          {/* Left Column: Throughput Chart (col-span-8) */}
+          <Card className='lg:col-span-8 rounded-[24px] border-dashed border bg-muted/5 shadow-none overflow-hidden flex flex-col justify-between p-4 relative'>
+            <div className='absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent pointer-events-none' />
+            <CardHeader className='flex flex-row items-center justify-between p-0 pb-3 border-b border-dashed border-muted/30 z-10'>
               <div className='space-y-1'>
-                <CardTitle className='text-lg md:text-xl font-black uppercase tracking-tighter text-slate-800 italic'>
+                <CardTitle className='text-sm font-black uppercase tracking-tight italic flex items-center gap-1.5'>
+                  <Heart className='size-4 text-primary' />
                   {t('dashboard.page.throughput.title')}
                 </CardTitle>
                 <CardDescription className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/40'>
@@ -126,15 +142,74 @@ export function DashboardOverviewTab() {
               <Button
                 variant='ghost'
                 size='icon'
-                className='size-9 rounded-xl text-muted-foreground hover:text-blue-600 hover:bg-blue-500/10 transition-all border border-transparent hover:border-blue-500/20'
+                className='size-7 rounded-lg text-muted-foreground hover:text-blue-600 hover:bg-blue-500/10 transition-all border border-transparent hover:border-blue-500/20'
                 onClick={handleOpenConfig}
               >
-                <Settings className='size-5' />
+                <Settings className='size-4' />
               </Button>
             </CardHeader>
-            <CardContent className='p-4 md:p-6 bg-background/30'>
+            <CardContent className='p-0 pt-4 bg-background/30 flex-1 z-10'>
               <Overview data={chartData} levelName={level1Name} />
             </CardContent>
+          </Card>
+
+          {/* Right Column: OK Rate Indicator (col-span-4) */}
+          <Card className='lg:col-span-4 rounded-[24px] border-dashed border bg-muted/5 shadow-none overflow-hidden flex flex-col justify-between p-4 relative'>
+            <div className='absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent pointer-events-none' />
+            
+            <div>
+              <CardHeader className='p-0 pb-3 border-b border-dashed border-muted/30 z-10'>
+                <CardTitle className='text-sm font-black uppercase tracking-tight italic flex items-center gap-1.5 text-emerald-500'>
+                  <ShieldCheck className='size-4' />
+                  全厂直通率与合格分析
+                </CardTitle>
+                <CardDescription className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/40'>
+                  QUALITY_PASS_RATE_SCAN / 实时在制量与报废比率
+                </CardDescription>
+              </CardHeader>
+
+              <CardContent className='p-0 pt-6 flex flex-col items-center justify-center min-h-[180px] z-10'>
+                <div className='w-[130px] h-[130px] relative flex items-center justify-center'>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={passRateData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={45}
+                        outerRadius={58}
+                        paddingAngle={3}
+                        dataKey="value"
+                      >
+                        {passRateData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className='absolute flex flex-col items-center justify-center'>
+                    <span className='text-2xl font-black italic tracking-tighter text-emerald-600'>{okPercent}%</span>
+                    <span className='text-[8px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none'>直通率</span>
+                  </div>
+                </div>
+
+                <div className='grid grid-cols-2 gap-4 w-full mt-4 border-t border-dashed border-muted/30 pt-4 text-xs font-black'>
+                  <div className='flex flex-col gap-1 items-center bg-background/50 border border-dashed border-muted/20 p-2 rounded-xl'>
+                    <span className='text-[8px] text-muted-foreground/50 uppercase tracking-widest'>合格品数 (WIP)</span>
+                    <span className='text-sm text-emerald-600 font-mono font-black italic'>{stats?.wip || 0} PCS</span>
+                  </div>
+                  <div className='flex flex-col gap-1 items-center bg-background/50 border border-dashed border-muted/20 p-2 rounded-xl'>
+                    <span className='text-[8px] text-muted-foreground/50 uppercase tracking-widest'>报废品数 (SCRAP)</span>
+                    <span className='text-sm text-rose-500 font-mono font-black italic'>{stats?.scrap || 0} PCS</span>
+                  </div>
+                </div>
+              </CardContent>
+            </div>
+
+            <div className='border-t border-dashed border-muted/30 pt-3 mt-4 text-[9px] font-black text-muted-foreground/50 flex justify-between items-center z-10'>
+              <span>车间质检直通率</span>
+              <span className='text-emerald-500 hover:underline cursor-pointer'>质检监控看板 &rarr;</span>
+            </div>
           </Card>
         </div>
       </div>

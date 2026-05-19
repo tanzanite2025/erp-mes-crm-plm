@@ -220,6 +220,20 @@ const navGroupConfigs: SidebarGroupConfig[] = [
           },
         ],
       },
+      {
+        id: 'engine-configuration',
+        titleKey: 'sidebar.items.engineConfigGroup',
+        icon: Sliders,
+        children: [
+          {
+            id: 'cutting-engine',
+            titleKey: 'sidebar.items.cuttingEngine',
+            url: '/raw-materials-engine/config',
+            icon: Sliders,
+            permissionId: permissionIdForPath('/raw-materials-engine/config'),
+          },
+        ],
+      },
     ],
   },
   {

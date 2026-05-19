@@ -27,6 +27,7 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/raw-materials/batch-engine': 'rawMaterials.tabs.batchEngine',
   '/raw-materials/cut-size-library': 'rawMaterials.tabs.cutSizeLibrary',
   '/raw-materials/cutting-plan': 'rawMaterials.tabs.cuttingPlan',
+  '/raw-materials-engine/config': 'sidebar.items.cuttingEngine',
   '/cutting-operations': 'sidebar.items.cuttingOperations',
   '/cutting-operations/cutting-issuance': 'commandMenu.items.cuttingOperations',
   '/cutting-operations/product-binding':
@@ -92,6 +93,7 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/aps-scheduling': 'sidebar.items.apsScheduling',
   '/aps-scheduling/board': 'sidebar.items.apsScheduling',
   '/aps-scheduling/engine-config': 'apsScheduling.engineConfig.title',
+  '/aps-scheduling/engine-tuning': 'apsScheduling.layout.tabs.engineTuning',
   '/production-architecture': 'sidebar.items.productionArchitecture',
   '/production-architecture/line': 'productionArchitecture.layout.tabs.line',
   '/production-architecture/hierarchy-config': 'productionArchitecture.layout.tabs.hierarchyConfig',

@@ -1,12 +1,6 @@
 import type { ReactNode } from 'react'
 import { isBefore, parseISO, startOfDay } from 'date-fns'
-import {
-  Edit2,
-  FileText,
-  MoreHorizontal,
-  ScanLine,
-  Trash2,
-} from 'lucide-react'
+import { Edit2, FileText, MoreHorizontal, ScanLine, Trash2 } from 'lucide-react'
 import { auditUtils } from '@/lib/audit-utils'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
@@ -43,7 +37,7 @@ function StatusBadge({ status }: { status: string }) {
   const meta = getSalesStatusMeta(status)
   return (
     <span
-      className={`inline-flex items-center rounded-full border px-2 py-1 text-[10px] font-black uppercase italic ${meta.color}`}
+      className={`inline-flex shrink-0 items-center rounded-full border px-2 py-1 text-[10px] font-black uppercase italic ${meta.color}`}
     >
       {getSalesStatusLabel(status, t)}
     </span>
@@ -70,7 +64,9 @@ function SalesOrderInfoCard({
       <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-transparent' />
       <div className='relative flex h-full flex-1 flex-col gap-3'>
         <div>
-          <h3 className='text-sm font-black tracking-tighter italic'>{label}</h3>
+          <h3 className='text-sm font-black tracking-tighter italic'>
+            {label}
+          </h3>
         </div>
         <div className='flex-1'>{children}</div>
       </div>
@@ -97,27 +93,25 @@ function SalesOrderHeaderMetaPill({
 }: SalesOrderHeaderMetaPillProps) {
   return (
     <div
-      className={`flex min-w-0 items-center gap-1.5 rounded-full border border-dashed px-2.5 py-1.5 ${
+      className={`flex min-h-9 w-full min-w-0 items-center gap-1.5 overflow-hidden rounded-full border border-dashed px-2.5 py-1.5 xl:w-auto ${
         variant === 'highlight'
           ? 'border-primary/25 bg-primary/5'
           : 'border-muted/35 bg-background/80'
-      } ${
-        className ?? ''
-      }`}
+      } ${className ?? ''}`}
     >
       <span
-        className={`shrink-0 text-[8px] font-black uppercase tracking-widest ${
-          variant === 'highlight' ? 'text-primary/60' : 'text-muted-foreground/45'
+        className={`shrink-0 text-[8px] font-black tracking-widest uppercase ${
+          variant === 'highlight'
+            ? 'text-primary/60'
+            : 'text-muted-foreground/45'
         }`}
       >
         {label}:
       </span>
       <span
-        className={`min-w-0 truncate text-[10px] font-black tracking-tight text-foreground/80 ${
+        className={`min-w-0 flex-1 truncate text-[10px] font-black tracking-tight text-foreground/80 ${
           variant === 'highlight' ? 'text-[11px] text-foreground' : ''
-        } ${
-          valueClassName ?? ''
-        }`}
+        } ${valueClassName ?? ''}`}
       >
         {value}
       </span>
@@ -145,219 +139,240 @@ export function SalesOrderMaster({
   }
 
   return (
-    <div className='w-full overflow-hidden rounded-[24px] border border-dashed border-muted/50 bg-muted/5 shadow-inner'>
-      <div className='max-h-[70vh] overflow-y-auto p-2.5'>
-        {orders.length === 0 ? (
-          <div className='flex min-h-[40vh] flex-col items-center justify-center opacity-30 grayscale'>
-            <div className='mb-4 size-12 animate-pulse rounded-full border-2 border-dashed border-primary' />
-            <p className='text-[10px] font-black tracking-[0.2em] uppercase'>
-              {t('tradingSalesOrder.master.empty')}
-            </p>
-          </div>
-        ) : (
-          <div className='flex flex-col gap-3'>
-            {orders.map((order) => {
-              const active = order.id === selectedId
-              const canPreassembleScan = isSalesOrderPreassembleScanAllowed(order)
-              const classification =
-                getSalesOrderClassificationLabel(order.classification, locale) ||
-                order.classification ||
-                '-'
-              const isOverdue =
-                order.status !== 'Done' &&
-                order.status !== 'Canceled' &&
-                isBefore(parseISO(order.deliveryDate), startOfDay(new Date()))
-              const cardContext = {
-                section,
-                readonly: section === 'canceled' || order.status === 'Canceled',
-              }
-              const featureCards = (getFeatureCards?.(order, cardContext) ?? [])
-                .filter((featureCard) => featureCard.visible !== false)
-                .sort((left, right) => left.priority - right.priority)
+    <div className='w-full min-w-0'>
+      {orders.length === 0 ? (
+        <div className='flex min-h-[40vh] flex-col items-center justify-center opacity-30 grayscale'>
+          <div className='mb-4 size-12 animate-pulse rounded-full border-2 border-dashed border-primary' />
+          <p className='text-[10px] font-black tracking-[0.2em] uppercase'>
+            {t('tradingSalesOrder.master.empty')}
+          </p>
+        </div>
+      ) : (
+        <div className='flex min-w-0 flex-col gap-3'>
+          {orders.map((order) => {
+            const active = order.id === selectedId
+            const canPreassembleScan = isSalesOrderPreassembleScanAllowed(order)
+            const classification =
+              getSalesOrderClassificationLabel(order.classification, locale) ||
+              order.classification ||
+              '-'
+            const isOverdue =
+              order.status !== 'Done' &&
+              order.status !== 'Canceled' &&
+              isBefore(parseISO(order.deliveryDate), startOfDay(new Date()))
+            const cardContext = {
+              section,
+              readonly: section === 'canceled' || order.status === 'Canceled',
+            }
+            const featureCards = (getFeatureCards?.(order, cardContext) ?? [])
+              .filter((featureCard) => featureCard.visible !== false)
+              .sort((left, right) => left.priority - right.priority)
 
-              return (
-                <article
-                  key={order.id}
-                  className={`group animate-in rounded-[28px] border border-dashed p-3 transition-all duration-200 fade-in slide-in-from-left-2 ${
-                    active
-                      ? 'border-primary/30 bg-card shadow-xl ring-2 ring-primary/20'
-                      : 'border-muted/50 bg-card shadow-sm'
-                  }`}
-                >
-                  <div className='flex flex-col gap-3'>
-                    <div className='flex flex-col gap-2.5 border-b border-dashed border-muted/40 pb-3 xl:flex-row xl:items-center xl:justify-between'>
-                      <div className='space-y-1.5'>
-                        <div className='flex flex-wrap items-center gap-2'>
-                          <span className='text-lg font-black tracking-tighter italic uppercase text-foreground'>
-                            {order.orderNo}
-                          </span>
-                          <StatusBadge status={order.status} />
+            return (
+              <article
+                key={order.id}
+                className={`group animate-in rounded-[28px] border border-dashed p-2.5 transition-all duration-200 fade-in slide-in-from-left-2 sm:p-3 ${
+                  active
+                    ? 'border-primary/30 bg-card shadow-xl ring-2 ring-primary/20'
+                    : 'border-muted/50 bg-card shadow-sm'
+                }`}
+              >
+                <div className='flex flex-col gap-3'>
+                  <div className='flex flex-col gap-2.5 border-b border-dashed border-muted/40 pb-3 xl:flex-row xl:items-center xl:justify-between'>
+                    <div className='min-w-0 space-y-2.5'>
+                      <div className='grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2'>
+                        <span className='min-w-0 truncate text-lg font-black tracking-tighter text-foreground uppercase italic'>
+                          {order.orderNo}
+                        </span>
+                        <StatusBadge status={order.status} />
+                      </div>
+                      <div className='grid min-w-0 grid-cols-2 gap-1.5 text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase sm:flex sm:flex-wrap sm:items-center sm:gap-2'>
+                        <span className='inline-flex min-w-0 items-center truncate rounded-full border border-dashed border-muted/40 bg-muted/20 px-2 py-1 text-muted-foreground/60'>
+                          {t('tradingSalesOrder.master.auditor')}:{' '}
+                          {auditUtils.formatOperatorName(order.createdBy) ||
+                            t('tradingSalesOrder.master.system')}
+                        </span>
+                        <span className='inline-flex min-w-0 items-center truncate rounded-full border border-dashed border-primary/15 bg-primary/5 px-2 py-1 text-primary/70'>
+                          {t('tradingSalesOrder.master.columns.classification')}
+                          : {classification}
+                        </span>
+                        <span className='col-span-2 inline-flex min-w-0 items-center truncate rounded-full border border-dashed border-muted/40 bg-background/80 px-2 py-1 font-mono text-muted-foreground/60 sm:col-span-1'>
+                          {t('tradingSalesOrder.master.columns.orderDate')}:{' '}
+                          {order.orderDate}
+                        </span>
+                      </div>
+                    </div>
+
+                    {hasActions ? (
+                      <div className='flex min-w-0 flex-col gap-2.5 xl:flex-row xl:items-center xl:justify-end'>
+                        <div
+                          data-testid={`sales-order-header-secondary-meta-${order.id}`}
+                          className='grid min-w-0 grid-cols-2 gap-1.5 sm:grid-cols-4 xl:flex xl:max-w-[760px] xl:flex-wrap xl:items-center xl:justify-end'
+                        >
+                          <SalesOrderHeaderMetaPill
+                            label={t(
+                              'tradingSalesOrder.master.columns.customer'
+                            )}
+                            value={order.customerName || '-'}
+                            className='max-w-full xl:max-w-[280px]'
+                            variant='highlight'
+                          />
+                          <SalesOrderHeaderMetaPill
+                            label={t(
+                              'tradingSalesOrder.master.columns.deliveryDeadline'
+                            )}
+                            value={order.deliveryDate}
+                            valueClassName='font-mono'
+                            trailing={
+                              isOverdue ? (
+                                <span className='inline-flex animate-pulse items-center gap-1 rounded-full border border-rose-500/20 bg-rose-500/10 px-1.5 py-0.5 text-[7px] font-black tracking-widest text-rose-600 uppercase'>
+                                  {t('tradingSalesOrder.master.overdue')}
+                                </span>
+                              ) : (
+                                <span className='inline-flex items-center rounded-full border border-dashed border-muted/35 bg-background/80 px-1.5 py-0.5 text-[7px] font-black tracking-widest text-muted-foreground/45 uppercase'>
+                                  交期正常
+                                </span>
+                              )
+                            }
+                          />
+                          <SalesOrderHeaderMetaPill
+                            label={t(
+                              'tradingSalesOrder.master.columns.paymentMethod'
+                            )}
+                            value={
+                              order.paymentMethodName ||
+                              order.paymentMethod ||
+                              '-'
+                            }
+                            className='max-w-full xl:max-w-[180px]'
+                          />
+                          <SalesOrderHeaderMetaPill
+                            label={t(
+                              'tradingSalesOrder.master.columns.paymentTerm'
+                            )}
+                            value={
+                              order.paymentTermName || order.paymentTerm || '-'
+                            }
+                            className='max-w-full xl:max-w-[180px]'
+                          />
                         </div>
-                        <div className='flex flex-wrap items-center gap-2 text-[8px] font-black uppercase tracking-widest text-muted-foreground/50'>
-                          <span className='inline-flex items-center rounded-full border border-dashed border-muted/40 bg-muted/20 px-2 py-1 text-muted-foreground/60'>
-                            {t('tradingSalesOrder.master.auditor')}:{' '}
-                            {auditUtils.formatOperatorName(order.createdBy) ||
-                              t('tradingSalesOrder.master.system')}
-                          </span>
-                          <span className='inline-flex items-center rounded-full border border-dashed border-primary/15 bg-primary/5 px-2 py-1 text-primary/70'>
-                            {t('tradingSalesOrder.master.columns.classification')}: {classification}
-                          </span>
-                          <span className='inline-flex items-center rounded-full border border-dashed border-muted/40 bg-background/80 px-2 py-1 font-mono text-muted-foreground/60'>
-                            {t('tradingSalesOrder.master.columns.orderDate')}: {order.orderDate}
-                          </span>
+
+                        <div
+                          data-order-row-action='true'
+                          className='grid shrink-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)_2.25rem] items-center gap-1.5 rounded-[22px] border border-dashed border-muted/40 bg-background/70 p-1.5 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_2.5rem] xl:flex xl:flex-wrap xl:justify-end xl:rounded-[20px] xl:p-1'
+                        >
+                          <Button
+                            type='button'
+                            variant='default'
+                            data-order-row-action='true'
+                            className='h-9 w-full justify-center rounded-full px-4 text-[10px] font-black tracking-widest xl:h-8 xl:w-auto'
+                            onClick={() => onSelect(order.id)}
+                          >
+                            {t('tradingSalesOrder.master.actions.viewDetail')}
+                          </Button>
+
+                          <Button
+                            type='button'
+                            variant='ghost'
+                            disabled={!canPreassembleScan}
+                            data-order-row-action='true'
+                            className='col-span-2 h-9 w-full justify-center rounded-full px-3 text-[10px] font-black tracking-widest xl:col-span-1 xl:h-8 xl:w-auto'
+                            onClick={() => {
+                              if (!canPreassembleScan) return
+                              openScanPreassemble(order)
+                            }}
+                          >
+                            <ScanLine className='mr-1.5 size-3 text-blue-600' />
+                            {t('tradingSalesOrder.master.shipByScan')}
+                          </Button>
+
+                          <Button
+                            type='button'
+                            variant='ghost'
+                            disabled={!onViewReceivable}
+                            data-order-row-action='true'
+                            className='col-span-2 h-9 w-full justify-center rounded-full px-3 text-[10px] font-black tracking-widest xl:col-span-1 xl:h-8 xl:w-auto'
+                            onClick={() => onViewReceivable?.(order)}
+                          >
+                            <FileText className='mr-1.5 size-3 text-emerald-600' />
+                            {t('tradingSalesOrder.master.viewReceivable')}
+                          </Button>
+
+                          {(onEdit || onDelete) && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant='ghost'
+                                  size='icon'
+                                  data-order-row-action='true'
+                                  className='h-9 w-full rounded-full hover:bg-muted xl:h-8 xl:w-8'
+                                >
+                                  <MoreHorizontal className='size-4' />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent
+                                align='end'
+                                className='min-w-[144px] rounded-[20px] border-2 p-1.5 shadow-2xl'
+                              >
+                                {onEdit && (
+                                  <DropdownMenuItem
+                                    onSelect={(e) => {
+                                      e.stopPropagation()
+                                      onEdit?.(order)
+                                    }}
+                                    className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black tracking-widest uppercase'
+                                  >
+                                    <Edit2 className='size-3 text-blue-500' />
+                                    {t('tradingSalesOrder.master.editOrder')}
+                                  </DropdownMenuItem>
+                                )}
+                                {onDelete && (
+                                  <DropdownMenuItem
+                                    onSelect={(e) => {
+                                      e.stopPropagation()
+                                      onDelete?.(order.id)
+                                    }}
+                                    className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black tracking-widest text-rose-500 uppercase focus:text-rose-600'
+                                  >
+                                    <Trash2 className='size-3' />
+                                    {order.status === 'Canceled'
+                                      ? t(
+                                          'tradingSalesOrder.master.removePermanently'
+                                        )
+                                      : t(
+                                          'tradingSalesOrder.master.voidContract'
+                                        )}
+                                  </DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
                         </div>
                       </div>
-
-                      {hasActions ? (
-                        <div className='flex flex-col gap-2 xl:flex-row xl:items-center xl:justify-end'>
-                          <div
-                            data-testid={`sales-order-header-secondary-meta-${order.id}`}
-                            className='flex min-w-0 flex-wrap items-center justify-end gap-1.5 xl:max-w-[760px]'
-                          >
-                            <SalesOrderHeaderMetaPill
-                              label={t('tradingSalesOrder.master.columns.customer')}
-                              value={order.customerName || '-'}
-                              className='max-w-full xl:max-w-[280px]'
-                              variant='highlight'
-                            />
-                            <SalesOrderHeaderMetaPill
-                              label={t('tradingSalesOrder.master.columns.deliveryDeadline')}
-                              value={order.deliveryDate}
-                              valueClassName='font-mono'
-                              trailing={
-                                isOverdue ? (
-                                  <span className='inline-flex animate-pulse items-center gap-1 rounded-full border border-rose-500/20 bg-rose-500/10 px-1.5 py-0.5 text-[7px] font-black uppercase tracking-widest text-rose-600'>
-                                    {t('tradingSalesOrder.master.overdue')}
-                                  </span>
-                                ) : (
-                                  <span className='inline-flex items-center rounded-full border border-dashed border-muted/35 bg-background/80 px-1.5 py-0.5 text-[7px] font-black uppercase tracking-widest text-muted-foreground/45'>
-                                    交期正常
-                                  </span>
-                                )
-                              }
-                            />
-                            <SalesOrderHeaderMetaPill
-                              label={t('tradingSalesOrder.master.columns.paymentMethod')}
-                              value={order.paymentMethodName || order.paymentMethod || '-'}
-                              className='max-w-full xl:max-w-[180px]'
-                            />
-                            <SalesOrderHeaderMetaPill
-                              label={t('tradingSalesOrder.master.columns.paymentTerm')}
-                              value={order.paymentTermName || order.paymentTerm || '-'}
-                              className='max-w-full xl:max-w-[180px]'
-                            />
-                          </div>
-
-                          <div
-                            data-order-row-action='true'
-                            className='flex shrink-0 flex-wrap items-center justify-end gap-1.5 rounded-[20px] border border-dashed border-muted/40 bg-background/70 p-1'
-                          >
-                            <Button
-                              type='button'
-                              variant='default'
-                              data-order-row-action='true'
-                              className='h-8 rounded-full px-4 text-[10px] font-black tracking-widest'
-                              onClick={() => onSelect(order.id)}
-                            >
-                              {t('tradingSalesOrder.master.actions.viewDetail')}
-                            </Button>
-
-                            <Button
-                              type='button'
-                              variant='ghost'
-                              disabled={!canPreassembleScan}
-                              data-order-row-action='true'
-                              className='h-8 rounded-full px-3 text-[10px] font-black tracking-widest'
-                              onClick={() => {
-                                if (!canPreassembleScan) return
-                                openScanPreassemble(order)
-                              }}
-                            >
-                              <ScanLine className='mr-1.5 size-3 text-blue-600' />
-                              {t('tradingSalesOrder.master.shipByScan')}
-                            </Button>
-
-                            <Button
-                              type='button'
-                              variant='ghost'
-                              disabled={!onViewReceivable}
-                              data-order-row-action='true'
-                              className='h-8 rounded-full px-3 text-[10px] font-black tracking-widest'
-                              onClick={() => onViewReceivable?.(order)}
-                            >
-                              <FileText className='mr-1.5 size-3 text-emerald-600' />
-                              {t('tradingSalesOrder.master.viewReceivable')}
-                            </Button>
-
-                            {(onEdit || onDelete) && (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    variant='ghost'
-                                    size='icon'
-                                    className='h-8 w-8 rounded-full hover:bg-muted'
-                                  >
-                                    <MoreHorizontal className='size-4' />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent
-                                  align='end'
-                                  className='min-w-[144px] rounded-[20px] border-2 p-1.5 shadow-2xl'
-                                >
-                                  {onEdit && (
-                                    <DropdownMenuItem
-                                      onSelect={(e) => {
-                                        e.stopPropagation()
-                                        onEdit?.(order)
-                                      }}
-                                      className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black tracking-widest uppercase'
-                                    >
-                                      <Edit2 className='size-3 text-blue-500' />
-                                      {t('tradingSalesOrder.master.editOrder')}
-                                    </DropdownMenuItem>
-                                  )}
-                                  {onDelete && (
-                                    <DropdownMenuItem
-                                      onSelect={(e) => {
-                                        e.stopPropagation()
-                                        onDelete?.(order.id)
-                                      }}
-                                      className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black tracking-widest text-rose-500 uppercase focus:text-rose-600'
-                                    >
-                                      <Trash2 className='size-3' />
-                                      {order.status === 'Canceled'
-                                        ? t(
-                                            'tradingSalesOrder.master.removePermanently'
-                                          )
-                                        : t('tradingSalesOrder.master.voidContract')}
-                                    </DropdownMenuItem>
-                                  )}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            )}
-                          </div>
-                        </div>
-                      ) : null}
-                    </div>
-
-                    <div className='grid items-stretch gap-2 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.55fr)_minmax(0,1.55fr)]'>
-                      <SalesOrderInfoCard label={t('tradingSalesOrder.master.columns.totalQuantity')}>
-                        <SalesOrderQuantitySummaryCard order={order} />
-                      </SalesOrderInfoCard>
-
-                      {featureCards.map((featureCard) => (
-                        <div key={featureCard.id} className='h-full'>
-                          {featureCard.render()}
-                        </div>
-                      ))}
-                    </div>
+                    ) : null}
                   </div>
-                </article>
-              )
-            })}
-          </div>
-        )}
-      </div>
+
+                  <div className='grid items-stretch gap-2 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.55fr)_minmax(0,1.55fr)]'>
+                    <SalesOrderInfoCard
+                      label={t(
+                        'tradingSalesOrder.master.columns.totalQuantity'
+                      )}
+                    >
+                      <SalesOrderQuantitySummaryCard order={order} />
+                    </SalesOrderInfoCard>
+
+                    {featureCards.map((featureCard) => (
+                      <div key={featureCard.id} className='h-full'>
+                        {featureCard.render()}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </article>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

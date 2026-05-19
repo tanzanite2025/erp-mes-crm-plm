@@ -298,7 +298,7 @@ export function CustomerList() {
   }
 
   return (
-    <div className='flex animate-in flex-col gap-5 duration-700 fade-in sm:gap-6'>
+    <div className='flex min-w-0 animate-in flex-col gap-5 duration-700 fade-in sm:gap-6'>
       {quoteSummaryCollectionStatus === 'loading' && customers.length > 0 ? (
         <div className='rounded-[24px] border border-dashed border-border/60 bg-muted/10 px-4 py-3 text-xs font-bold text-muted-foreground'>
           报价摘要加载中，报价筛选暂不可用。
@@ -441,7 +441,7 @@ export function CustomerList() {
       </div>
 
       {filteredCustomers.length > 0 ? (
-        <div className='grid grid-cols-1 gap-3 lg:gap-4 xl:grid-cols-2'>
+        <div className='-mx-2 grid min-w-0 grid-cols-1 gap-2.5 lg:gap-3 xl:grid-cols-2'>
           {filteredCustomers.map((customer) => (
             <CustomerListItem
               key={customer.id}

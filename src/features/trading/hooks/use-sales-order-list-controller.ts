@@ -8,6 +8,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import { useTradingFinanceResources } from './use-trading-finance-resources'
 import { useSalesOrderPreassembleSubmit } from './use-sales-order-preassemble-submit'
 import { type SalesOrder, type SalesOrderStatus } from '../data/schema'
+import { type PaginatedSalesOrders } from '../sales/adapters/sales-order-api-adapter'
 import { useGetSalesOrders, useSalesOrderMutations } from '../sales'
 import { requireTradingCommandActor } from '../utils/command-actor'
 
@@ -82,7 +83,7 @@ export function useSalesOrderListController() {
     status: primaryStatusFilter,
     paymentMethod: normalizedPaymentMethodFilter,
     paymentTerm: normalizedPaymentTermFilter,
-    placeholderData: (previousData) => previousData,
+    placeholderData: (previousData: PaginatedSalesOrders | undefined) => previousData,
   })
   const canceledOrdersQuery = useGetSalesOrders(canceledPage, pageSize, {
     withLines: true,
@@ -92,7 +93,7 @@ export function useSalesOrderListController() {
     paymentMethod: normalizedPaymentMethodFilter,
     paymentTerm: normalizedPaymentTermFilter,
     enabled: shouldLoadCanceledSection,
-    placeholderData: (previousData) => previousData,
+    placeholderData: (previousData: PaginatedSalesOrders | undefined) => previousData,
   })
 
   const listResource = useMemo<SalesOrderListResource>(() => {

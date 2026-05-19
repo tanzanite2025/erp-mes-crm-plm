@@ -9,6 +9,8 @@ export const labExperimental = {
     categorySaved: '分类已更新',
     categoryDeleted: '分类已移除',
     equipmentSaved: '设备档案已同步',
+    equipmentDeleted: '设备档案已删除',
+    formIncomplete: '请补全必填信息',
     taskSaved: '实验排期已更新',
     reportSaved: '实验报告已重归档',
   },

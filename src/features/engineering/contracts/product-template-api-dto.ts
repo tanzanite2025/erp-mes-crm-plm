@@ -26,7 +26,7 @@ export interface ProductTemplateApiDTO {
     revisionNo?: string
     effectiveFrom?: string | null
     effectiveTo?: string | null
-    changeType?: string
+    changeType?: 'MANUAL' | 'ECO' | 'ECN'
     changeOrderNo?: string
     siteCode?: string
     isDefaultSite?: boolean
