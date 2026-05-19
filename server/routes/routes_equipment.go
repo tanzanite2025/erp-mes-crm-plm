@@ -21,6 +21,7 @@ func registerEquipmentRoutes(authorized *gin.RouterGroup) {
 	partnerUpdate := middleware.RequirePermissions(authz.ActionEquipmentPartnerUpdate)
 	loanManage := middleware.RequirePermissions(authz.ActionEquipmentLoanManage)
 	telemetryUpdate := middleware.RequirePermissions(authz.ActionEquipmentTelemetryUpdate)
+	maintenanceManage := middleware.RequirePermissions(authz.ActionEquipmentMaintenanceManage)
 
 	equipmentGroup := authorized.Group("")
 	equipmentGroup.Use(equipmentAccess)
@@ -62,4 +63,12 @@ func registerEquipmentRoutes(authorized *gin.RouterGroup) {
 	equipmentGroup.GET("/mold-loans", handlers.GetLoansHandler)
 	equipmentGroup.POST("/mold-loans", loanManage, handlers.CreateLoanWithStatusHandler)
 	equipmentGroup.POST("/mold-loans/:id/return", loanManage, handlers.ReturnLoanHandler)
+
+	// Maintenance Records routes
+	equipmentGroup.GET("/maintenance-records", handlers.GetMaintenanceRecordsHandler)
+	equipmentGroup.GET("/maintenance-records/stats", handlers.GetMaintenanceRecordStatsHandler)
+	equipmentGroup.GET("/maintenance-records/:id", handlers.GetMaintenanceRecordHandler)
+	equipmentGroup.POST("/maintenance-records", maintenanceManage, handlers.CreateMaintenanceRecordHandler)
+	equipmentGroup.PATCH("/maintenance-records/:id", maintenanceManage, handlers.PatchMaintenanceRecordHandler)
+	equipmentGroup.DELETE("/maintenance-records/:id", maintenanceManage, handlers.DeleteMaintenanceRecordHandler)
 }

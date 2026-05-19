@@ -61,9 +61,6 @@ export function OrgMgmt() {
   const addChildHint = locale === 'zh-CN'
     ? '三级生产单元为末级，不允许继续新增下级。'
     : 'Third-level production units are terminal and cannot have children.'
-  const orgLevelHint = locale === 'zh-CN'
-    ? '组织层级固定为：一级单位 -> 二级部门 -> 三级生产单元。人员管理中的“部门”字段只关联二级部门。'
-    : 'Organization hierarchy is fixed as Level 1 -> Level 2 department -> Level 3 production unit. Personnel departments only map to level-2 departments.'
 
   const getOrgLevelBadge = (type: OrgNode['type']) => {
     if (locale !== 'zh-CN') {
@@ -97,10 +94,6 @@ export function OrgMgmt() {
             </div>
         }
       />
-
-      <div className='rounded-[24px] border border-dashed border-blue-200 bg-blue-50/70 px-5 py-4 text-blue-900 shadow-sm'>
-        <p className='text-[12px] font-bold leading-relaxed'>{orgLevelHint}</p>
-      </div>
 
       {loadError && (
         <div className='rounded-[24px] border border-dashed border-amber-300 bg-amber-50/80 px-5 py-4 text-amber-900 shadow-sm'>

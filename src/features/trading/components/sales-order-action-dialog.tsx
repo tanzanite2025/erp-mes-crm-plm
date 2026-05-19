@@ -1,4 +1,5 @@
 import { ClipboardList, Loader2, X } from 'lucide-react'
+import { buildHostedQuickActionDialogContentClassName } from '@/components/hosted-quick-action-dialog.styles'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import {
@@ -98,7 +99,9 @@ export function SalesOrderActionDialog({
       <DialogContent
         size='full'
         showCloseButton={false}
-        className='max-h-[95vh] w-[95vw] max-w-[95vw] overflow-y-auto border-none p-0 shadow-2xl transition-all duration-300 sm:max-w-[95vw] md:max-w-[95vw] lg:max-w-[95vw] xl:max-w-[95vw]'
+        className={buildHostedQuickActionDialogContentClassName(
+          'overflow-y-auto border-none p-0 shadow-2xl transition-all duration-300 md:w-[95vw] md:max-w-[95vw]'
+        )}
       >
         <div className='sticky top-0 z-30 flex items-center justify-between gap-4 border-b bg-background/95 px-4 py-2 backdrop-blur-sm sm:px-6 sm:py-2.5'>
           <DialogHeader className='min-w-0 flex-1 gap-1 sm:flex-row sm:items-center sm:gap-3'>

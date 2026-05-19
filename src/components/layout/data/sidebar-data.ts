@@ -411,6 +411,14 @@ const navGroupConfigs: SidebarGroupConfig[] = [
             icon: Gauge,
             permissionId: permissionIdForPath('/tooling-furnaces'),
           },
+          {
+            id: 'maintenance-center',
+            titleKey: 'sidebar.items.maintenanceCenter',
+            url: '/equipment-maintenance/overview',
+            activeMatch: '/equipment-maintenance',
+            icon: Cpu,
+            permissionId: permissionIdForPath('/equipment-maintenance/overview'),
+          },
         ],
       },
       {

@@ -10,6 +10,12 @@ export const equipmentTooling = {
       partners: '合作单位',
     },
   },
+  maintenanceCenter: {
+    tabs: {
+      overview: '概览',
+      records: '维保记录',
+    },
+  },
   common: {
     unknownError: '未知错误',
   },

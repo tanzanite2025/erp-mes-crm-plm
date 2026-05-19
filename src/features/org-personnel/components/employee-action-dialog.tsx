@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { AuditStamp } from '@/components/common/audit-stamp'
+import { buildHostedQuickActionDialogContentClassName } from '@/components/hosted-quick-action-dialog.styles'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
 import {
@@ -227,8 +228,10 @@ export function EmployeeActionDialog({
                 onOpenChange(state)
             }}
         >
-            <DialogContent className='sm:max-w-3xl rounded-[32px] border-none shadow-2xl p-0 gap-0 overflow-hidden bg-background'>
-                <DialogHeader className='text-start bg-muted/5 p-8 border-b border-dashed border-muted/50'>
+            <DialogContent className={buildHostedQuickActionDialogContentClassName(
+                'flex flex-col gap-0 overflow-hidden rounded-[32px] border-none p-0 shadow-2xl bg-background md:max-w-3xl'
+            )}>
+                <DialogHeader className='shrink-0 text-start bg-muted/5 p-8 border-b border-dashed border-muted/50'>
                     <DialogTitle className='text-lg font-black tracking-tighter italic uppercase'>
                         {isEdit ? t('orgPersonnel.org.employeeDialog.editTitle') : t('orgPersonnel.org.employeeDialog.createTitle')}
                     </DialogTitle>
@@ -252,7 +255,7 @@ export function EmployeeActionDialog({
                     <form
                         id='employee-form'
                         onSubmit={form.handleSubmit(onSubmitHandler)}
-                        className='space-y-6 p-8'
+                        className='min-h-0 flex-1 overflow-y-auto space-y-6 p-8'
                     >
                         <div className='grid grid-cols-2 gap-x-8 gap-y-4'>
                             {PERSONNEL_FORM_FIELDS.map(fieldConfig => (
@@ -328,7 +331,7 @@ export function EmployeeActionDialog({
                     </form>
                 </Form>
 
-                <DialogFooter className='p-6 bg-muted/5 border-t border-dashed border-muted/50'>
+                <DialogFooter className='shrink-0 p-6 bg-muted/5 border-t border-dashed border-muted/50'>
                     <Button
                         type='submit'
                         form='employee-form'

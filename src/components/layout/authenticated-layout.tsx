@@ -242,7 +242,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
           className={cn(
             '@container/content',
             'min-h-0 w-full bg-background',
-            isPDAShellRoute ? 'pt-0' : 'pt-14 pb-16 md:pt-16',
+            isPDAShellRoute ? 'pt-0' : 'pt-14 pb-[calc(env(safe-area-inset-bottom)+4rem)] md:pt-16 md:pb-16',
             !isPDAShellRoute &&
               'peer-data-[variant=inset]:mx-2 peer-data-[variant=inset]:mb-2 peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm'
           )}

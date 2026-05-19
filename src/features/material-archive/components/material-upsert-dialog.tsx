@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Settings2 } from 'lucide-react'
 import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
+import { buildHostedQuickActionDialogContentClassName } from '@/components/hosted-quick-action-dialog.styles'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import {
@@ -59,9 +60,13 @@ export function MaterialUpsertDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='overflow-hidden rounded-[32px] border-none p-0 shadow-2xl sm:max-w-[700px]'>
+      <DialogContent
+        className={buildHostedQuickActionDialogContentClassName(
+          'flex flex-col gap-0 overflow-hidden rounded-[32px] border-none p-0 shadow-2xl md:max-w-[700px]'
+        )}
+      >
         <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 via-transparent' />
-        <div className='relative max-h-[90vh] overflow-y-auto p-6'>
+        <div className='relative min-h-0 flex-1 overflow-y-auto p-6'>
           <DialogHeader className='mb-4'>
             <div className='flex items-center justify-between gap-3 text-primary'>
               <div className='flex items-center gap-2'>

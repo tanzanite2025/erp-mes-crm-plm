@@ -24,6 +24,7 @@ const userStatusTranslationKeys: Record<
 type TranslateFn = (
   key:
     | 'users.dialogs.buttons.confirm'
+    | 'users.actions.managePermissions'
     | 'users.columns.username'
     | 'users.columns.name'
     | 'users.columns.role'
@@ -40,12 +41,14 @@ export function getUsersColumns(
   mode: UsersTableMode = 'management',
   showSelection = true,
 ): ColumnDef<User>[] {
+  const isPermissionsMode = mode === 'permissions'
+
   return [
     ...(showSelection
       ? [
           {
             id: 'select',
-            header: ({ table }) => (
+            header: ({ table }) => isPermissionsMode ? null : (
               <Checkbox
                 checked={
                   table.getIsAllPageRowsSelected() ||
@@ -59,11 +62,18 @@ export function getUsersColumns(
             meta: {
               className: cn('max-md:sticky start-0 z-10 rounded-tl-[inherit]'),
             },
-            cell: ({ row }) => (
+            cell: ({ row, table }) => (
               <Checkbox
                 checked={row.getIsSelected()}
-                onCheckedChange={(value) => row.toggleSelected(!!value)}
-                aria-label={t('users.dialogs.buttons.confirm')}
+                onCheckedChange={(value) => {
+                  if (isPermissionsMode) {
+                    table.setRowSelection(value ? { [row.id]: true } : {})
+                    return
+                  }
+
+                  row.toggleSelected(!!value)
+                }}
+                aria-label={isPermissionsMode ? t('users.actions.managePermissions') : t('users.dialogs.buttons.confirm')}
                 className='translate-y-[2px]'
               />
             ),
@@ -163,9 +173,13 @@ export function getUsersColumns(
       enableHiding: false,
       enableSorting: false,
     },
-    {
-      id: 'actions',
-      cell: ({ row }) => <DataTableRowActions row={row} mode={mode} />,
-    },
+    ...(!isPermissionsMode
+      ? [
+          {
+            id: 'actions',
+            cell: ({ row }) => <DataTableRowActions row={row} mode={mode} />,
+          } satisfies ColumnDef<User>,
+        ]
+      : []),
   ]
 }

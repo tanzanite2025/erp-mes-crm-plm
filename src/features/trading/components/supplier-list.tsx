@@ -35,7 +35,6 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
-import { AuditStamp } from '@/components/common/audit-stamp'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
@@ -286,13 +285,13 @@ export function SupplierList() {
             className='h-12 rounded-2xl border-none bg-muted/50 pl-10 text-sm font-medium shadow-inner transition-all focus-visible:ring-1 focus-visible:ring-primary/20'
           />
         </div>
-        <div className='flex w-full flex-col items-center gap-3 sm:flex-row md:w-auto'>
+        <div className='flex w-full flex-row items-center gap-2 sm:gap-3 md:w-auto'>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant='ghost'
                 className={cn(
-                  'h-11 w-full rounded-full px-6 text-[10px] font-black tracking-widest uppercase transition-all sm:w-auto',
+                  'h-11 min-w-0 flex-1 rounded-full px-3 text-[9px] font-black tracking-widest uppercase transition-all sm:w-auto sm:flex-none sm:px-6 sm:text-[10px]',
                   statusFilter !== 'All'
                     ? 'bg-primary/10 text-primary'
                     : 'opacity-60'
@@ -358,7 +357,7 @@ export function SupplierList() {
 
           <Button
             onClick={handleAddClick}
-            className='h-11 w-full rounded-full bg-primary px-8 text-[10px] font-black tracking-widest text-primary-foreground uppercase shadow-xl shadow-primary/20 transition-all active:scale-95 sm:w-auto'
+            className='h-11 min-w-0 flex-1 rounded-full bg-primary px-3 text-[9px] font-black tracking-widest text-primary-foreground uppercase shadow-xl shadow-primary/20 transition-all active:scale-95 sm:w-auto sm:flex-none sm:px-8 sm:text-[10px]'
           >
             <Plus className='mr-2 size-4' />{' '}
             {t('purchase.suppliers.addSupplier')}
@@ -371,10 +370,10 @@ export function SupplierList() {
           {filteredSuppliers.map((supplier) => (
             <Card
               key={supplier.id}
-              className='group relative cursor-default overflow-hidden rounded-[24px] border-dashed border-muted/50 bg-muted/5 transition-all hover:bg-muted/30'
+              className='group relative cursor-default gap-0 overflow-hidden rounded-[24px] border-dashed border-muted/50 bg-muted/5 py-0 transition-all hover:bg-muted/30'
             >
               <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 via-transparent' />
-              <CardHeader className='relative border-b border-dashed border-muted/50 p-3 pb-3 md:p-4 md:pb-3.5'>
+              <CardHeader className='relative border-b border-dashed border-muted/50 p-2.5 pb-2.5 md:p-3 md:pb-2.5'>
                 <div className='flex items-center justify-between'>
                   <div className='flex items-center gap-2.5 md:gap-3'>
                     <div className='flex size-9 items-center justify-center rounded-2xl bg-primary/10 text-sm font-black text-primary shadow-inner md:size-10 md:text-base'>
@@ -430,9 +429,9 @@ export function SupplierList() {
                   </DropdownMenu>
                 </div>
               </CardHeader>
-              <CardContent className='relative space-y-3 p-3 pt-3 md:space-y-3.5 md:p-4 md:pt-4'>
-                <div className='flex flex-col gap-2.5 sm:grid sm:grid-cols-2 md:gap-3'>
-                  <div className='space-y-1'>
+              <CardContent className='relative space-y-2.5 p-2.5 pt-2.5 md:space-y-3 md:p-3 md:pt-3'>
+                <div className='flex flex-col gap-2 sm:grid sm:grid-cols-2 md:gap-2.5'>
+                  <div className='space-y-0.5'>
                     <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40 md:text-[9px]'>
                       <User className='size-3' />
                       {t('purchase.suppliers.liaison')}
@@ -441,7 +440,7 @@ export function SupplierList() {
                       {supplier.contactPerson}
                     </p>
                   </div>
-                  <div className='space-y-1 sm:text-right'>
+                  <div className='space-y-0.5 sm:text-right'>
                     <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40 sm:justify-end md:text-[9px]'>
                       <Phone className='size-3' />
                       {t('purchase.suppliers.hotline')}
@@ -452,7 +451,7 @@ export function SupplierList() {
                   </div>
                 </div>
 
-                <div className='space-y-1.5'>
+                <div className='space-y-1'>
                   <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40 md:text-[9px]'>
                     <Box className='size-3' />
                     {t('purchase.suppliers.offerings')}
@@ -470,7 +469,7 @@ export function SupplierList() {
                   </div>
                 </div>
 
-                <div className='space-y-1 border-t border-dashed border-muted/50 pt-2.5'>
+                <div className='space-y-0.5 border-t border-dashed border-muted/50 pt-2'>
                   <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40 md:text-[9px]'>
                     <MapPin className='size-3' />
                     {t('purchase.suppliers.address')}
@@ -480,7 +479,7 @@ export function SupplierList() {
                   </p>
                 </div>
 
-                <div className='space-y-1 border-t border-dashed border-muted/50 pt-2.5'>
+                <div className='space-y-0.5 border-t border-dashed border-muted/50 pt-2'>
                   <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40 md:text-[9px]'>
                     <MessageCircle className='size-3' />
                     {t('purchase.suppliers.communication')} /{' '}
@@ -507,7 +506,7 @@ export function SupplierList() {
                   </div>
                 </div>
 
-                <div className='flex flex-col justify-between gap-2.5 border-t border-dashed border-muted/50 pt-2.5 sm:flex-row sm:items-center'>
+                <div className='flex flex-col justify-between gap-2 border-t border-dashed border-muted/50 pt-2 sm:flex-row sm:items-center'>
                   <div className='flex items-center justify-between gap-1.5 sm:flex-col sm:items-start sm:justify-start'>
                     <span className='text-[8px] font-black tracking-[0.2em] text-muted-foreground/40 uppercase italic'>
                       {t('purchase.suppliers.rating')}
@@ -540,14 +539,6 @@ export function SupplierList() {
                     </Button>
                   </div>
                 </div>
-
-                <AuditStamp
-                  module={AUDIT_MODULES.supplier}
-                  targetId={supplier.id}
-                  createdAt={supplier.createdAt}
-                  updatedAt={supplier.updatedAt}
-                  className='border-primary/10 pt-1.5'
-                />
               </CardContent>
             </Card>
           ))}

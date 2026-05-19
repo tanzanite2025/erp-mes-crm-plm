@@ -894,46 +894,54 @@ export function PurchaseOrderReturns() {
         </DialogContent>
       </Dialog>
 
-      <div className='grid gap-4 md:grid-cols-4'>
-        <Card className='rounded-[28px] border-none bg-emerald-500/5 shadow-sm'>
-          <CardHeader className='pb-2'>
-            <CardDescription className='text-[10px] font-black uppercase tracking-widest text-emerald-600/60'>
-              {t('purchase.orders.returns.eligibleOrders')}
-            </CardDescription>
-            <CardTitle className='text-3xl font-black italic tracking-tight text-emerald-600'>
-              {eligibleOrders.length}
-            </CardTitle>
-          </CardHeader>
+      <div className='grid gap-3 md:grid-cols-4'>
+        <Card className='gap-0 rounded-[24px] border-none bg-emerald-500/5 py-2.5 shadow-sm'>
+          <CardContent className='px-4'>
+            <div className='flex items-center justify-between gap-2'>
+              <p className='min-w-0 truncate text-[10px] font-black uppercase tracking-widest text-emerald-600/60'>
+                {t('purchase.orders.returns.eligibleOrders')}
+              </p>
+              <p className='shrink-0 text-xl font-black italic leading-none tracking-tighter text-emerald-600'>
+                {eligibleOrders.length}
+              </p>
+            </div>
+          </CardContent>
         </Card>
-        <Card className='rounded-[28px] border-none bg-amber-500/5 shadow-sm'>
-          <CardHeader className='pb-2'>
-            <CardDescription className='text-[10px] font-black uppercase tracking-widest text-amber-600/60'>
-              {t('purchase.orders.returns.pendingLines')}
-            </CardDescription>
-            <CardTitle className='text-3xl font-black italic tracking-tight text-amber-600'>
-              {totalPendingLineCount}
-            </CardTitle>
-          </CardHeader>
+        <Card className='gap-0 rounded-[24px] border-none bg-amber-500/5 py-2.5 shadow-sm'>
+          <CardContent className='px-4'>
+            <div className='flex items-center justify-between gap-2'>
+              <p className='min-w-0 truncate text-[10px] font-black uppercase tracking-widest text-amber-600/60'>
+                {t('purchase.orders.returns.pendingLines')}
+              </p>
+              <p className='shrink-0 text-xl font-black italic leading-none tracking-tighter text-amber-600'>
+                {totalPendingLineCount}
+              </p>
+            </div>
+          </CardContent>
         </Card>
-        <Card className='rounded-[28px] border-none bg-rose-500/5 shadow-sm'>
-          <CardHeader className='pb-2'>
-            <CardDescription className='text-[10px] font-black uppercase tracking-widest text-rose-600/60'>
-              {t('purchase.orders.returns.totalQty')}
-            </CardDescription>
-            <CardTitle className='text-3xl font-black italic tracking-tight text-rose-600'>
-              {formatMetric(totalReturnedQty)}
-            </CardTitle>
-          </CardHeader>
+        <Card className='gap-0 rounded-[24px] border-none bg-rose-500/5 py-2.5 shadow-sm'>
+          <CardContent className='px-4'>
+            <div className='flex items-center justify-between gap-2'>
+              <p className='min-w-0 truncate text-[10px] font-black uppercase tracking-widest text-rose-600/60'>
+                {t('purchase.orders.returns.totalQty')}
+              </p>
+              <p className='shrink-0 text-xl font-black italic leading-none tracking-tighter text-rose-600'>
+                {formatMetric(totalReturnedQty)}
+              </p>
+            </div>
+          </CardContent>
         </Card>
-        <Card className='rounded-[28px] border-none bg-blue-500/5 shadow-sm'>
-          <CardHeader className='pb-2'>
-            <CardDescription className='text-[10px] font-black uppercase tracking-widest text-blue-600/60'>
-              {t('purchase.orders.returns.totalAmount')}
-            </CardDescription>
-            <CardTitle className='text-3xl font-black italic tracking-tight text-blue-600'>
-              {formatMetric(totalReturnedAmount)}
-            </CardTitle>
-          </CardHeader>
+        <Card className='gap-0 rounded-[24px] border-none bg-blue-500/5 py-2.5 shadow-sm'>
+          <CardContent className='px-4'>
+            <div className='flex items-center justify-between gap-2'>
+              <p className='min-w-0 truncate text-[10px] font-black uppercase tracking-widest text-blue-600/60'>
+                {t('purchase.orders.returns.totalAmount')}
+              </p>
+              <p className='shrink-0 text-xl font-black italic leading-none tracking-tighter text-blue-600'>
+                {formatMetric(totalReturnedAmount)}
+              </p>
+            </div>
+          </CardContent>
         </Card>
       </div>
 

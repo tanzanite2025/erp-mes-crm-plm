@@ -7,6 +7,7 @@ import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-t
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { buildHostedQuickActionDialogContentClassName } from '@/components/hosted-quick-action-dialog.styles'
 import {
   Dialog,
   DialogContent,
@@ -171,7 +172,9 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className='max-w-[95vw] sm:max-w-[85vw] h-[95vh] sm:h-[90vh] sm:max-h-[90vh] rounded-[32px] border-none shadow-2xl p-0 gap-0 overflow-hidden flex flex-col'
+        className={buildHostedQuickActionDialogContentClassName(
+          'rounded-[32px] border-none shadow-2xl p-0 gap-0 overflow-hidden flex flex-col md:w-[85vw] md:max-w-[85vw] md:h-[90vh] md:max-h-[90vh]'
+        )}
         aria-describedby={undefined}
       >
         <DialogHeader className='shrink-0 text-start px-8 py-3 bg-muted/5 border-b border-dashed border-muted/50'>

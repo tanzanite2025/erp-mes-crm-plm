@@ -67,17 +67,18 @@ const (
 )
 
 const (
-	ActionEquipmentMoldManage      = "action_equipment_mold_manage"
-	ActionEquipmentMoldSync        = "action_equipment_mold_sync"
-	ActionEquipmentDrawingManage   = "action_equipment_drawing_manage"
-	ActionEquipmentDrawingUpdate   = "action_equipment_drawing_update"
-	ActionEquipmentDrawingDelete   = "action_equipment_drawing_delete"
-	ActionEquipmentFurnaceManage   = "action_equipment_furnace_manage"
-	ActionEquipmentFurnaceSync     = "action_equipment_furnace_sync"
-	ActionEquipmentPartnerManage   = "action_equipment_partner_manage"
-	ActionEquipmentPartnerUpdate   = "action_equipment_partner_update"
-	ActionEquipmentLoanManage      = "action_equipment_loan_manage"
-	ActionEquipmentTelemetryUpdate = "action_equipment_telemetry_update"
+	ActionEquipmentMoldManage           = "action_equipment_mold_manage"
+	ActionEquipmentMoldSync             = "action_equipment_mold_sync"
+	ActionEquipmentDrawingManage        = "action_equipment_drawing_manage"
+	ActionEquipmentDrawingUpdate        = "action_equipment_drawing_update"
+	ActionEquipmentDrawingDelete        = "action_equipment_drawing_delete"
+	ActionEquipmentFurnaceManage        = "action_equipment_furnace_manage"
+	ActionEquipmentFurnaceSync          = "action_equipment_furnace_sync"
+	ActionEquipmentPartnerManage        = "action_equipment_partner_manage"
+	ActionEquipmentPartnerUpdate        = "action_equipment_partner_update"
+	ActionEquipmentLoanManage           = "action_equipment_loan_manage"
+	ActionEquipmentTelemetryUpdate      = "action_equipment_telemetry_update"
+	ActionEquipmentMaintenanceManage    = "action_equipment_maintenance_manage"
 )
 
 const (
@@ -181,6 +182,7 @@ var AdminFallbackPermissions = []string{
 	ActionEquipmentPartnerUpdate,
 	ActionEquipmentLoanManage,
 	ActionEquipmentTelemetryUpdate,
+	ActionEquipmentMaintenanceManage,
 	ActionMaterialUpdate,
 	ActionLabExperimentalCategoryCreate,
 	ActionLabExperimentalCategoryDelete,

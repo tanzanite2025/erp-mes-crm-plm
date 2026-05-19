@@ -33,10 +33,9 @@ import { EmployeeActionDialog } from '../components/employee-action-dialog'
 import { EmployeeBulkActions } from '../components/employee-bulk-actions'
 import { getEmployeeColumns, UNASSIGNED_POSITION_FILTER_VALUE } from '../components/employee-columns'
 import { ImportPersonnelDialog } from '../components/import-personnel-dialog'
-import { type Employee } from '../data/schema'
+import { type Employee, type EmployeeStatus } from '../data/schema'
 import { useEmployeesQuery } from '../hooks/use-employees-query'
 import { useOrgPersonnelLookups } from '../hooks/use-org-personnel-lookups'
-import { type EmployeeStatus } from '../data/schema'
 import { EmployeeMaintenanceService } from '../services/employee-maintenance-service'
 import { downloadPersonnelTemplate, exportPersonnelData } from '../utils/personnel-import-utils'
 
@@ -317,9 +316,9 @@ export function EmployeeManagementList() {
 
     return (
         <div className='flex flex-col gap-4'>
-            <div className='relative z-10 flex items-center justify-between gap-4 px-1 flex-wrap'>
-                <div className='flex min-w-0 flex-wrap items-center gap-2 overflow-visible'>
-                    <div className='relative w-[240px] md:w-[280px] shrink-0'>
+            <div className='relative z-10 flex flex-col gap-1.5 px-1 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4'>
+                <div className='flex min-w-0 w-full flex-col gap-1.5 overflow-visible sm:w-auto sm:flex-1 sm:flex-row sm:flex-wrap sm:items-center'>
+                    <div className='relative w-full sm:w-[240px] md:w-[280px] sm:shrink-0'>
                         <Search className='absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/30' />
                         <Input
                             placeholder={t('orgPersonnel.list.searchPlaceholder')}
@@ -338,74 +337,72 @@ export function EmployeeManagementList() {
                             </Button>
                         )}
                     </div>
-                    <DataTableFacetedFilter
-                        column={table.getColumn('status')}
-                        title={t('orgPersonnel.list.filterStatus')}
-                        subtitle={t('orgPersonnel.list.filterFiltering')}
-                        variant='industrial'
-                        options={[
-                            {
-                                label: t('orgPersonnel.excel.statuses.active'),
-                                value: 'active',
-                                icon: UserCheck,
-                            },
-                            {
-                                label: t('orgPersonnel.excel.statuses.resigned'),
-                                value: 'resigned',
-                                icon: UserMinus,
-                            },
-                            {
-                                label: t('orgPersonnel.excel.statuses.onLeave'),
-                                value: 'on-leave',
-                                icon: Clock,
-                            },
-                        ]}
-                    />
-                    <DataTableFacetedFilter
-                        column={table.getColumn('positionName')}
-                        title={t('orgPersonnel.list.filterPosition')}
-                        subtitle={t('orgPersonnel.list.filterPositionCode')}
-                        variant='industrial'
-                        options={positionFilterOptions}
-                    />
-                    <DataTableViewOptions table={table} variant='industrial' />
+                    <div className='grid w-full grid-cols-3 gap-1.5 sm:flex sm:w-auto sm:flex-wrap sm:items-center'>
+                        <DataTableFacetedFilter
+                            column={table.getColumn('status')}
+                            title={t('orgPersonnel.list.filterStatus')}
+                            variant='industrial'
+                            triggerClassName='!w-full min-w-0 h-10 rounded-xl flex-row gap-1.5 px-2.5 justify-center sm:!w-[105px] sm:px-3'
+                            options={[
+                                {
+                                    label: t('orgPersonnel.excel.statuses.active'),
+                                    value: 'active',
+                                    icon: UserCheck,
+                                },
+                                {
+                                    label: t('orgPersonnel.excel.statuses.resigned'),
+                                    value: 'resigned',
+                                    icon: UserMinus,
+                                },
+                                {
+                                    label: t('orgPersonnel.excel.statuses.onLeave'),
+                                    value: 'on-leave',
+                                    icon: Clock,
+                                },
+                            ]}
+                        />
+                        <DataTableFacetedFilter
+                            column={table.getColumn('positionName')}
+                            title={t('orgPersonnel.list.filterPosition')}
+                            variant='industrial'
+                            triggerClassName='!w-full min-w-0 h-10 rounded-xl flex-row gap-1.5 px-2.5 justify-center sm:!w-[105px] sm:px-3'
+                            options={positionFilterOptions}
+                        />
+                        <DataTableViewOptions
+                            table={table}
+                            variant='industrial'
+                            compact
+                            keepOpenOnItemSelect
+                            triggerClassName='!w-full min-w-0 sm:!w-[105px]'
+                            contentClassName='w-[calc(100vw-1rem)] max-w-[22rem] max-h-[46svh] overscroll-contain sm:w-[220px] sm:max-w-none sm:max-h-(--radix-dropdown-menu-content-available-height)'
+                        />
+                    </div>
                 </div>
-                <div className='flex items-center gap-2 flex-wrap'>
+                <div className='grid w-full grid-cols-2 gap-1.5 sm:flex sm:w-auto sm:flex-wrap sm:items-center'>
                     <Button
                         variant='outline'
                         onClick={() => exportPersonnelData(data, nameMap, locale)}
-                        className='w-[105px] h-12 rounded-2xl flex flex-col items-center justify-center gap-0.5 border-dashed border-muted shadow-sm hover:bg-muted active:scale-95 transition-all p-0'
+                        className='h-10 w-full justify-center rounded-xl border-dashed border-muted px-3 shadow-sm hover:bg-muted active:scale-95 transition-all sm:w-auto'
                     >
-                        <div className='flex items-center gap-1'>
-                            <Share className='size-3 text-emerald-600' />
-                            <span className='text-[10px] font-black tracking-tighter'>{t('orgPersonnel.list.exportData')}</span>
-                        </div>
-                        <span className='text-[7px] font-mono opacity-40 uppercase tracking-widest'>{t('orgPersonnel.list.exporting')}</span>
+                        <Share className='size-3 text-emerald-600' />
+                        <span className='text-[10px] font-black tracking-tighter leading-none'>{t('orgPersonnel.list.exportData')}</span>
                     </Button>
                     <Button
                         variant='outline'
                         onClick={() => downloadPersonnelTemplate(locale)}
-                        className='w-[105px] h-12 rounded-2xl flex flex-col items-center justify-center gap-0.5 border-dashed border-muted shadow-sm hover:bg-muted active:scale-95 transition-all p-0'
+                        className='h-10 w-full justify-center rounded-xl border-dashed border-muted px-3 shadow-sm hover:bg-muted active:scale-95 transition-all sm:w-auto'
                     >
-                        <div className='flex items-center gap-1'>
-                            <Download className='size-3 text-blue-600' />
-                            <span className='text-[10px] font-black tracking-tighter'>{t('orgPersonnel.list.downloadTemplate')}</span>
-                        </div>
-                        <span className='text-[7px] font-mono opacity-40 uppercase tracking-widest'>{t('orgPersonnel.list.templates')}</span>
+                        <Download className='size-3 text-blue-600' />
+                        <span className='text-[10px] font-black tracking-tighter leading-none'>{t('orgPersonnel.list.downloadTemplate')}</span>
                     </Button>
                     <Button
                         variant='outline'
                         onClick={() => setImportOpen(true)}
-                        className='w-[105px] h-12 rounded-2xl flex flex-col items-center justify-center gap-0.5 border-dashed shadow-sm hover:bg-muted active:scale-95 transition-all bg-blue-500/5 border-blue-200 p-0'
+                        className='h-10 w-full justify-center rounded-xl border-dashed border-blue-200 bg-blue-500/5 px-3 shadow-sm hover:bg-muted active:scale-95 transition-all sm:w-auto'
                     >
-                        <div className='flex items-center gap-1'>
-                            <FileSpreadsheet className='size-3 text-blue-600' />
-                            <span className='text-[10px] font-black tracking-tighter'>
-                                {t('orgPersonnel.list.batchSync')}
-                            </span>
-                        </div>
-                        <span className='text-[7px] font-mono opacity-40 uppercase tracking-widest leading-none'>
-                            {t('orgPersonnel.list.batchSyncHint')}
+                        <FileSpreadsheet className='size-3 text-blue-600' />
+                        <span className='text-[10px] font-black tracking-tighter leading-none'>
+                            {t('orgPersonnel.list.batchSync')}
                         </span>
                     </Button>
                     <Button
@@ -413,13 +410,10 @@ export function EmployeeManagementList() {
                             setCurrentRow(undefined)
                             setOpen(true)
                         }}
-                        className='w-[105px] h-12 rounded-2xl flex flex-col items-center justify-center gap-0.5 shadow-xl shadow-blue-500/10 active:scale-95 transition-all p-0'
+                        className='h-10 w-full justify-center rounded-xl px-3 shadow-xl shadow-blue-500/10 active:scale-95 transition-all sm:w-auto'
                     >
-                        <div className='flex items-center gap-1'>
-                            <Plus className='size-3' />
-                            <span className='text-[10px] font-black tracking-tighter'>{t('orgPersonnel.list.addEmployee')}</span>
-                        </div>
-                        <span className='text-[7px] font-mono opacity-40 uppercase tracking-widest'>{t('orgPersonnel.list.addPers')}</span>
+                        <Plus className='size-3' />
+                        <span className='text-[10px] font-black tracking-tighter leading-none'>{t('orgPersonnel.list.addEmployee')}</span>
                     </Button>
                 </div>
             </div>

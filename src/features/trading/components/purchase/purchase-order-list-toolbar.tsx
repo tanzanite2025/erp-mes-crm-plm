@@ -75,7 +75,7 @@ export function PurchaseOrderListToolbar({
           </div>
 
           <div className='flex min-w-0 flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-start'>
-            <div className='no-scrollbar flex w-full min-w-0 items-center gap-1 overflow-x-auto rounded-2xl border border-dashed bg-muted/30 p-1.5 font-bold lg:flex-1'>
+            <div className='no-scrollbar flex w-full min-w-0 items-center gap-0.5 overflow-x-auto rounded-2xl border border-dashed bg-muted/30 p-1 font-bold sm:gap-1 sm:p-1.5 lg:flex-1'>
               {['ALL', ...PURCHASE_ORDER_STATUSES].map((status) => {
                 const meta = status === 'ALL' ? allStatusMeta : getPurchaseStatusDisplayMeta(status, t)
                 const isActive = statusFilter === status
@@ -84,19 +84,24 @@ export function PurchaseOrderListToolbar({
                   <button
                     key={status}
                     onClick={() => onStatusFilterChange(status)}
-                    className={`shrink-0 whitespace-nowrap rounded-xl px-1.5 py-1 transition-all ${
+                    className={`shrink-0 whitespace-nowrap rounded-xl px-0.5 py-0.5 transition-all sm:px-1.5 sm:py-1 ${
                       isActive
                         ? 'bg-background shadow-md ring-1 ring-primary/10'
                         : 'opacity-65 hover:bg-muted/60 hover:opacity-100'
                     }`}
                   >
-                    <AuditStatusDisplay meta={meta} badgeClassName={`px-3 py-1.5 ${isActive ? '' : 'shadow-none'}`} />
+                    <AuditStatusDisplay
+                      meta={meta}
+                      badgeClassName={`gap-1 px-1.5 py-1 sm:gap-1.5 sm:px-3 sm:py-1.5 ${
+                        isActive ? '' : 'shadow-none'
+                      }`}
+                    />
                   </button>
                 )
               })}
             </div>
 
-            <div className='grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:w-auto lg:flex-none'>
+            <div className='grid w-full grid-cols-2 gap-1.5 sm:gap-2 lg:w-auto lg:flex-none'>
               <Select value={paymentMethodFilter} onValueChange={onPaymentMethodFilterChange} disabled={!isFinanceFilterReady}>
                 <SelectTrigger className='h-11 w-full rounded-2xl border-dashed bg-background/80 font-bold shadow-sm lg:w-[180px]'>
                   <SelectValue placeholder={t('purchase.orders.filters.paymentMethod')} />
@@ -128,10 +133,10 @@ export function PurchaseOrderListToolbar({
           </div>
         </div>
 
-        <div className='flex w-full flex-col gap-2 sm:flex-row xl:w-auto xl:flex-none xl:items-center xl:justify-end'>
+        <div className='flex w-full flex-row gap-1.5 sm:gap-2 xl:w-auto xl:flex-none xl:items-center xl:justify-end'>
           <Button
             size='sm'
-            className='h-11 w-full shrink-0 gap-2 rounded-full bg-primary px-8 text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95 sm:flex-1 xl:w-auto xl:flex-none'
+            className='h-10 flex-1 shrink-0 gap-1.5 rounded-full bg-primary px-3 text-[9px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95 sm:h-11 sm:gap-2 sm:px-8 sm:text-[10px] xl:w-auto xl:flex-none'
             onClick={onAddOrder}
           >
             <Plus className='h-4 w-4' />
@@ -141,7 +146,7 @@ export function PurchaseOrderListToolbar({
             module={AUDIT_MODULES.purchaseOrder}
             targetName={t('purchase.orders.title')}
             label={t('common.audit.trigger')}
-            className='h-11 w-full shrink-0 rounded-full px-6 sm:flex-1 xl:w-auto xl:flex-none'
+            className='h-10 flex-1 shrink-0 rounded-full px-3 text-[9px] sm:h-11 sm:px-6 sm:text-[10px] xl:w-auto xl:flex-none'
           />
         </div>
       </div>

@@ -17,6 +17,8 @@ import { useIsMobile } from '@/hooks/use-mobile'
 import { cn } from '@/lib/utils'
 import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
 import { useLanguage } from '@/context/language-provider'
+import { MaintenanceRecordList } from '../components/maintenance-record-list'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 export function MoldMgmt() {
   const { t } = useLanguage()
@@ -173,7 +175,7 @@ export function MoldMgmt() {
                       const isOver = mold.currentCycles >= mold.maxCycles
 
                       return (
-                        <Card key={mold.id} className={cn('group hover:shadow-2xl hover:shadow-primary/5 transition-all border-dashed rounded-[24px] bg-muted/5 relative overflow-hidden flex flex-col min-h-[260px]', isMobile ? 'p-0' : '')}>
+                        <Card key={mold.id} className={cn('group hover:shadow-2xl hover:shadow-primary/5 transition-all border-dashed rounded-[24px] bg-muted/5 relative overflow-hidden flex flex-col', isMobile ? 'p-0' : '')}>
                           <div className={cn('absolute top-0 left-0 w-1.5 h-full', isOver ? 'bg-rose-500' : isMaintenanceNeeded ? 'bg-amber-500' : 'bg-primary')} />
 
                           <CardHeader className='pb-2 pt-6 px-5 sm:px-6'>
@@ -210,34 +212,51 @@ export function MoldMgmt() {
                             </div>
                           </CardHeader>
 
-                          <CardContent className='px-5 sm:px-6 pb-6 flex-1 flex flex-col justify-between gap-6'>
-                            <div className='grid grid-cols-2 gap-y-2 text-[10px] pt-4 border-t border-dashed border-muted-foreground/10'>
-                              <div className='text-muted-foreground/40 font-black uppercase tracking-widest flex items-center gap-2'>
-                                <Link2 className='size-3 opacity-50' /> {t('equipmentTooling.molds.card.sku')}
-                              </div>
-                              <div className='font-black text-right text-primary/80 truncate'>
-                                {mold.groupName && groupToProducts[mold.groupName] ? groupToProducts[mold.groupName].join(', ') : <span className='text-muted-foreground/20 italic font-black'>{t('equipmentTooling.molds.card.unset')}</span>}
-                              </div>
+                          <CardContent className='px-5 sm:px-6 pb-6 flex-1'>
+                            <Tabs defaultValue='info' className='w-full'>
+                              <TabsList className='grid w-full grid-cols-2 mb-4'>
+                                <TabsTrigger value='info' className='text-xs'>基本信息</TabsTrigger>
+                                <TabsTrigger value='maintenance' className='text-xs'>维保记录</TabsTrigger>
+                              </TabsList>
+                              
+                              <TabsContent value='info' className='space-y-6 mt-0'>
+                                <div className='grid grid-cols-2 gap-y-2 text-[10px] pt-4 border-t border-dashed border-muted-foreground/10'>
+                                  <div className='text-muted-foreground/40 font-black uppercase tracking-widest flex items-center gap-2'>
+                                    <Link2 className='size-3 opacity-50' /> {t('equipmentTooling.molds.card.sku')}
+                                  </div>
+                                  <div className='font-black text-right text-primary/80 truncate'>
+                                    {mold.groupName && groupToProducts[mold.groupName] ? groupToProducts[mold.groupName].join(', ') : <span className='text-muted-foreground/20 italic font-black'>{t('equipmentTooling.molds.card.unset')}</span>}
+                                  </div>
 
-                              <div className='text-muted-foreground/40 font-black uppercase tracking-widest flex items-center gap-2'>
-                                <Box className='size-3 opacity-50' /> {t('equipmentTooling.molds.card.location')}
-                              </div>
-                              <div className='font-black text-right text-foreground/60 truncate uppercase'>{mold.location || t('equipmentTooling.molds.card.pendingLocation')}</div>
-                            </div>
+                                  <div className='text-muted-foreground/40 font-black uppercase tracking-widest flex items-center gap-2'>
+                                    <Box className='size-3 opacity-50' /> {t('equipmentTooling.molds.card.location')}
+                                  </div>
+                                  <div className='font-black text-right text-foreground/60 truncate uppercase'>{mold.location || t('equipmentTooling.molds.card.pendingLocation')}</div>
+                                </div>
 
-                            <div className='space-y-3 pt-4 border-t border-dashed border-muted-foreground/10'>
-                              <div className='flex items-center justify-between text-[9px] font-black uppercase tracking-widest'>
-                                <span className='text-muted-foreground/40'>{t('equipmentTooling.molds.card.healthIndex')}</span>
-                                <span className={cn(isOver ? 'text-rose-600' : isMaintenanceNeeded ? 'text-amber-600' : 'text-primary')}>{usageRate}%</span>
-                              </div>
-                              <div className='h-1 px-0.5 bg-muted/40 rounded-full flex items-center shadow-inner'>
-                                <div className={cn('h-0.5 rounded-full transition-all duration-1000 ease-in-out', isOver ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]' : isMaintenanceNeeded ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]' : 'bg-primary shadow-[0_0_8px_rgba(59,130,246,0.3)]')} style={{ width: `${usageRate}%` }} />
-                              </div>
-                              <div className='flex justify-between items-center gap-2'>
-                                <p className='text-[8px] text-muted-foreground/20 font-black uppercase tabular-nums truncate'>{t('equipmentTooling.molds.card.cycles', { current: mold.currentCycles, limit: mold.maxCycles })}</p>
-                                <p className='text-[8px] text-primary/40 font-black uppercase tabular-nums shrink-0'>{t('equipmentTooling.molds.card.totalLife', { total: mold.totalLifeCycles || 0 })}</p>
-                              </div>
-                            </div>
+                                <div className='space-y-3 pt-4 border-t border-dashed border-muted-foreground/10'>
+                                  <div className='flex items-center justify-between text-[9px] font-black uppercase tracking-widest'>
+                                    <span className='text-muted-foreground/40'>{t('equipmentTooling.molds.card.healthIndex')}</span>
+                                    <span className={cn(isOver ? 'text-rose-600' : isMaintenanceNeeded ? 'text-amber-600' : 'text-primary')}>{usageRate}%</span>
+                                  </div>
+                                  <div className='h-1 px-0.5 bg-muted/40 rounded-full flex items-center shadow-inner'>
+                                    <div className={cn('h-0.5 rounded-full transition-all duration-1000 ease-in-out', isOver ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]' : isMaintenanceNeeded ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]' : 'bg-primary shadow-[0_0_8px_rgba(59,130,246,0.3)]')} style={{ width: `${usageRate}%` }} />
+                                  </div>
+                                  <div className='flex justify-between items-center gap-2'>
+                                    <p className='text-[8px] text-muted-foreground/20 font-black uppercase tabular-nums truncate'>{t('equipmentTooling.molds.card.cycles', { current: mold.currentCycles, limit: mold.maxCycles })}</p>
+                                    <p className='text-[8px] text-primary/40 font-black uppercase tabular-nums shrink-0'>{t('equipmentTooling.molds.card.totalLife', { total: mold.totalLifeCycles || 0 })}</p>
+                                  </div>
+                                </div>
+                              </TabsContent>
+                              
+                              <TabsContent value='maintenance' className='mt-0'>
+                                <MaintenanceRecordList
+                                  assetType='MOLD'
+                                  assetId={mold.id}
+                                  assetSn={mold.sn}
+                                />
+                              </TabsContent>
+                            </Tabs>
                           </CardContent>
                         </Card>
                       )

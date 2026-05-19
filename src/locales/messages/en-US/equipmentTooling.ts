@@ -10,6 +10,12 @@ export const equipmentTooling = {
       partners: 'Partner Registry',
     },
   },
+  maintenanceCenter: {
+    tabs: {
+      overview: 'Overview',
+      records: 'Records',
+    },
+  },
   common: {
     unknownError: 'Unknown error',
   },

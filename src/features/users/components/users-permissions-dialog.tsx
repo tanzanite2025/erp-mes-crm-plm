@@ -237,72 +237,92 @@ export function UsersPermissionsDialog({
   return (
     <Dialog open={open} onOpenChange={handleDialogOpenChange}>
       <DialogContent
-        showCloseButton={false}
-        className='w-[calc(100vw-1rem)] gap-0 overflow-hidden rounded-[28px] border-none p-0 sm:w-[96vw] sm:max-w-[1500px]'
+        closeButtonClassName='end-3 top-3 flex size-9 items-center justify-center rounded-full border border-dashed border-muted/40 bg-background/85 text-muted-foreground/70 opacity-100 shadow-sm backdrop-blur-sm transition-all hover:bg-muted/80 hover:text-foreground active:scale-95 focus:ring-2 focus:ring-ring/40 focus:ring-offset-2 data-[state=open]:bg-background/85 data-[state=open]:text-muted-foreground/70 sm:end-4 sm:top-4 sm:size-10'
+        className='left-0 top-0 h-svh max-h-svh w-screen max-w-screen grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden rounded-t-[32px] rounded-b-none border-none p-0 translate-x-0 translate-y-0 shadow-2xl sm:left-[50%] sm:top-[50%] sm:h-[calc(100svh-2rem)] sm:max-h-[calc(100svh-2rem)] sm:w-[96vw] sm:max-w-[1500px] sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-[32px]'
       >
-        <DialogHeader className='border-b border-dashed border-muted/40 bg-muted/5 px-5 py-3 text-left sm:px-6'>
-          <div className='flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between'>
+        <DialogHeader className='border-b border-dashed border-muted/40 bg-muted/5 px-4 py-3 pe-12 text-left sm:px-6 sm:pe-16'>
+          <div className='flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-center lg:justify-between'>
             <div className='min-w-0'>
-              <DialogTitle className='flex items-center gap-2 text-lg font-black tracking-tight uppercase'>
+              <DialogTitle className='flex items-center gap-2 text-base font-black italic tracking-tighter uppercase sm:text-lg'>
                 <ShieldPlus className='size-4 text-primary' aria-hidden='true' />
                 {t('users.permissionAssignments.title')}
               </DialogTitle>
-              <DialogDescription className='mt-1 text-xs font-medium opacity-70'>
+              <DialogDescription className='mt-1 text-[9px] font-black uppercase tracking-[0.12em] opacity-60 sm:text-[10px] sm:tracking-widest'>
                 {t('users.permissionAssignments.subtitle', { username })}
               </DialogDescription>
             </div>
-            <div className='flex shrink-0 flex-wrap gap-2'>
-              <Button type='button' variant='outline' className='rounded-full' onClick={handleReset} disabled={anyMutationPending || !hasUnsavedChanges}>
+            <div className='grid w-full shrink-0 grid-cols-[1.35fr_1fr] gap-2 sm:flex sm:w-auto sm:flex-wrap sm:justify-end'>
+              <Button
+                type='button'
+                variant='outline'
+                className='h-10 min-w-0 rounded-full px-2 text-[9px] font-black tracking-tight whitespace-nowrap shadow-sm transition-all active:scale-95 sm:h-9 sm:px-4 sm:text-[10px] sm:tracking-widest'
+                onClick={handleReset}
+                disabled={anyMutationPending || !hasUnsavedChanges}
+              >
                 {t('users.permissionAssignments.actions.reset')}
               </Button>
-              <Button type='button' className='rounded-full' onClick={handleSave} disabled={anyMutationPending || !hasUnsavedChanges}>
+              <Button
+                type='button'
+                className='h-10 min-w-0 rounded-full px-2 text-[9px] font-black tracking-tight whitespace-nowrap shadow-sm transition-all active:scale-95 sm:h-9 sm:px-4 sm:text-[10px] sm:tracking-widest'
+                onClick={handleSave}
+                disabled={anyMutationPending || !hasUnsavedChanges}
+              >
                 {t('users.permissionAssignments.actions.save')}
-              </Button>
-              <Button type='button' variant='outline' className='rounded-full' onClick={() => handleDialogOpenChange(false)}>
-                {t('common.actions.close')}
               </Button>
             </div>
           </div>
         </DialogHeader>
 
-        <div className='max-h-[calc(100dvh-6rem)] space-y-3 overflow-y-auto overscroll-contain px-4 pb-4 pt-3 sm:px-5 xl:overflow-hidden'>
-          <div className='grid grid-cols-1 gap-3 xl:h-[calc(100dvh-7.75rem)]'>
+        <div className='min-h-0 overflow-y-auto overscroll-contain px-3 pb-3 pt-3 sm:px-5 sm:pb-4 xl:overflow-hidden'>
+          <div className='grid h-full grid-cols-1 gap-3'>
             <div className='space-y-3 xl:flex xl:min-h-0 xl:flex-col'>
-              <div className='shrink-0 space-y-2 rounded-2xl border border-dashed border-muted/40 bg-muted/10 p-3'>
-                <div className='flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center'>
+              <div className='shrink-0 space-y-2 rounded-2xl border border-dashed border-muted/40 bg-muted/10 p-2.5 sm:p-3'>
+                <div className='space-y-2 sm:flex sm:flex-wrap sm:items-center sm:gap-2 sm:space-y-0'>
                   <Input
-                    className='sm:min-w-[220px] sm:flex-1'
+                    className='h-10 rounded-2xl border-none bg-background/80 px-4 text-[12px] shadow-sm placeholder:text-muted-foreground/35 sm:min-w-[220px] sm:flex-1 md:text-sm'
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
                     placeholder={t('users.permissionAssignments.placeholders.search')}
                   />
-                  <Button
-                    type='button'
-                    variant={allPermissionsSelected ? 'outline' : 'default'}
-                    className='rounded-full'
-                    onClick={allPermissionsSelected ? handleClearAll : handleSelectAll}
-                    disabled={allPermissionIDs.length === 0}
-                  >
-                    <CheckCheck className='size-4' />
-                    {allPermissionsSelected
-                      ? t('users.permissionAssignments.actions.deselectAll')
-                      : t('users.permissionAssignments.actions.selectAll')}
-                  </Button>
-                  <Button type='button' variant='outline' className='rounded-full' onClick={() => setExpandedModuleIDs(permissionTree.map((node) => node.module.id))}>
-                    {t('users.permissionAssignments.actions.expandAll')}
-                  </Button>
-                  <Button type='button' variant='outline' className='rounded-full' onClick={() => setExpandedModuleIDs([])}>
-                    {t('users.permissionAssignments.actions.collapseAll')}
-                  </Button>
+                  <div className='grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:items-center'>
+                    <Button
+                      type='button'
+                      variant={allPermissionsSelected ? 'outline' : 'default'}
+                      className='h-9 w-full justify-center rounded-full px-2 text-[10px] font-black uppercase tracking-[0.12em] shadow-sm transition-all active:scale-95 sm:h-10 sm:w-auto sm:px-3 sm:tracking-widest'
+                      onClick={allPermissionsSelected ? handleClearAll : handleSelectAll}
+                      disabled={allPermissionIDs.length === 0}
+                    >
+                      <CheckCheck className='size-4' />
+                      {allPermissionsSelected
+                        ? t('users.permissionAssignments.actions.deselectAll')
+                        : t('users.permissionAssignments.actions.selectAll')}
+                    </Button>
+                    <Button
+                      type='button'
+                      variant='outline'
+                      className='h-9 w-full justify-center rounded-full px-2 text-[10px] font-black uppercase tracking-[0.12em] shadow-sm transition-all active:scale-95 sm:h-10 sm:w-auto sm:px-3 sm:tracking-widest'
+                      onClick={() => setExpandedModuleIDs(permissionTree.map((node) => node.module.id))}
+                    >
+                      {t('users.permissionAssignments.actions.expandAll')}
+                    </Button>
+                    <Button
+                      type='button'
+                      variant='outline'
+                      className='h-9 w-full justify-center rounded-full px-2 text-[10px] font-black uppercase tracking-[0.12em] shadow-sm transition-all active:scale-95 sm:h-10 sm:w-auto sm:px-3 sm:tracking-widest'
+                      onClick={() => setExpandedModuleIDs([])}
+                    >
+                      {t('users.permissionAssignments.actions.collapseAll')}
+                    </Button>
+                  </div>
                 </div>
               </div>
 
-              <div className='space-y-2 rounded-2xl border border-dashed border-muted/40 bg-muted/10 p-3 xl:flex xl:min-h-0 xl:flex-1 xl:flex-col'>
-                <div className='shrink-0 text-xs font-bold uppercase tracking-wide text-muted-foreground'>{t('users.permissionAssignments.tree.title')}</div>
+              <div className='space-y-2 rounded-2xl border border-dashed border-muted/40 bg-muted/10 p-2.5 sm:p-3 xl:flex xl:min-h-0 xl:flex-1 xl:flex-col'>
+                <div className='shrink-0 text-[10px] font-black uppercase tracking-[0.12em] text-muted-foreground/60 sm:tracking-widest'>{t('users.permissionAssignments.tree.title')}</div>
                 {isLoading ? (
-                  <div className='text-xs text-muted-foreground py-6 text-center'>{t('users.permissionAssignments.loading')}</div>
+                  <div className='py-6 text-center text-[10px] font-black uppercase tracking-[0.12em] text-muted-foreground/45'>{t('users.permissionAssignments.loading')}</div>
                 ) : visibleTree.length === 0 ? (
-                  <div className='text-xs text-muted-foreground py-6 text-center'>{t('users.permissionAssignments.tree.empty')}</div>
+                  <div className='py-6 text-center text-[10px] font-black uppercase tracking-[0.12em] text-muted-foreground/45'>{t('users.permissionAssignments.tree.empty')}</div>
                 ) : (
                   <div className='grid gap-2 xl:min-h-0 xl:flex-1 xl:grid-cols-3 xl:items-start xl:overflow-y-auto xl:pr-1'>
                     {visibleTreeColumns.map((columnNodes, columnIndex) => (
@@ -312,14 +332,20 @@ export function UsersPermissionsDialog({
                           const moduleChecked = modulePermissionIDs.every((permissionID) => selectedPermissionIDSet.has(permissionID.toLowerCase()))
                           const expanded = expandedModuleIDs.includes(node.module.id)
                           return (
-                            <div key={node.module.id} className='rounded-xl border border-dashed border-muted/30 bg-background p-3'>
+                            <div key={node.module.id} className='rounded-xl border border-dashed border-muted/30 bg-background p-2.5 sm:p-3'>
                               <div className='flex items-start justify-between gap-2'>
                                 <div className='min-w-0 space-y-0.5'>
-                                  <div className='text-sm font-black leading-tight tracking-tight'>{formatPermissionLabel(node.module.label)}</div>
-                                  <div className='text-xs leading-snug text-muted-foreground'>{node.module.desc}</div>
+                                  <div className='text-[11px] font-black leading-tight tracking-tight sm:text-sm'>{formatPermissionLabel(node.module.label)}</div>
+                                  <div className='text-[9px] leading-snug text-muted-foreground sm:text-xs'>{node.module.desc}</div>
                                 </div>
                                 <div className='flex shrink-0 items-center gap-2'>
-                                  <Button type='button' variant='ghost' size='sm' className='h-7 rounded-full px-2 text-xs' onClick={() => toggleModuleExpanded(node.module.id)}>
+                                  <Button
+                                    type='button'
+                                    variant='ghost'
+                                    size='sm'
+                                    className='h-7 rounded-full px-2 text-[9px] font-black uppercase tracking-[0.12em] sm:text-[10px]'
+                                    onClick={() => toggleModuleExpanded(node.module.id)}
+                                  >
                                     {expanded ? t('users.permissionAssignments.actions.collapse') : t('users.permissionAssignments.actions.expand')}
                                   </Button>
                                   <Checkbox checked={moduleChecked} onCheckedChange={() => togglePermissionIDs(modulePermissionIDs)} />
@@ -335,16 +361,16 @@ export function UsersPermissionsDialog({
                                       <div key={pageNode.page.id} className='space-y-1.5 rounded-lg border border-dashed border-muted/30 p-2.5'>
                                         <div className='flex items-start justify-between gap-2'>
                                           <div className='min-w-0'>
-                                            <div className='text-sm font-semibold leading-tight'>{t('users.permissionAssignments.tree.page')} / {formatPermissionLabel(pageNode.page.label)}</div>
-                                            <div className='text-xs leading-snug text-muted-foreground'>{pageNode.page.path || pageNode.page.desc}</div>
+                                            <div className='text-[10px] font-black leading-tight sm:text-sm'>{t('users.permissionAssignments.tree.page')} / {formatPermissionLabel(pageNode.page.label)}</div>
+                                            <div className='text-[9px] leading-snug text-muted-foreground sm:text-xs'>{pageNode.page.path || pageNode.page.desc}</div>
                                           </div>
                                           <Checkbox checked={pageChecked} onCheckedChange={() => togglePermissionIDs(pagePermissionIDs)} />
                                         </div>
                                         {pageNode.tabs.map((tab) => (
                                           <div key={tab.id} className='flex items-start justify-between gap-2 py-1 pl-3'>
                                             <div className='min-w-0'>
-                                              <div className='text-sm leading-tight'>{t('users.permissionAssignments.tree.tab')} / {formatPermissionLabel(tab.label)}</div>
-                                              <div className='text-xs leading-snug text-muted-foreground'>{tab.path || tab.desc}</div>
+                                              <div className='text-[10px] leading-tight sm:text-sm'>{t('users.permissionAssignments.tree.tab')} / {formatPermissionLabel(tab.label)}</div>
+                                              <div className='text-[9px] leading-snug text-muted-foreground sm:text-xs'>{tab.path || tab.desc}</div>
                                             </div>
                                             <Checkbox
                                               checked={selectedPermissionIDSet.has(tab.id.toLowerCase())}
@@ -359,8 +385,8 @@ export function UsersPermissionsDialog({
                                   {node.directTabs.map((tab) => (
                                     <div key={tab.id} className='flex items-start justify-between gap-2 rounded-lg border border-dashed border-muted/30 p-2.5'>
                                       <div className='min-w-0'>
-                                        <div className='text-sm font-semibold leading-tight'>{t('users.permissionAssignments.tree.tab')} / {formatPermissionLabel(tab.label)}</div>
-                                        <div className='text-xs leading-snug text-muted-foreground'>{tab.path || tab.desc}</div>
+                                        <div className='text-[10px] font-black leading-tight sm:text-sm'>{t('users.permissionAssignments.tree.tab')} / {formatPermissionLabel(tab.label)}</div>
+                                        <div className='text-[9px] leading-snug text-muted-foreground sm:text-xs'>{tab.path || tab.desc}</div>
                                       </div>
                                       <Checkbox
                                         checked={selectedPermissionIDSet.has(tab.id.toLowerCase())}
@@ -372,8 +398,8 @@ export function UsersPermissionsDialog({
                                   {node.directActions.map((action) => (
                                     <div key={action.id} className='flex items-start justify-between gap-2 rounded-lg border border-dashed border-muted/30 p-2.5'>
                                       <div className='min-w-0'>
-                                        <div className='text-sm font-semibold leading-tight'>{t('users.permissionAssignments.tree.action')} / {formatPermissionLabel(action.label)}</div>
-                                        <div className='text-xs leading-snug text-muted-foreground'>{action.desc}</div>
+                                        <div className='text-[10px] font-black leading-tight sm:text-sm'>{t('users.permissionAssignments.tree.action')} / {formatPermissionLabel(action.label)}</div>
+                                        <div className='text-[9px] leading-snug text-muted-foreground sm:text-xs'>{action.desc}</div>
                                       </div>
                                       <Checkbox
                                         checked={selectedPermissionIDSet.has(action.id.toLowerCase())}

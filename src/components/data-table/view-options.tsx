@@ -10,15 +10,24 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
 import { useLanguage } from '@/context/language-provider'
+import { cn } from '@/lib/utils'
 
 type DataTableViewOptionsProps<TData> = {
   table: Table<TData>
   variant?: 'default' | 'industrial'
+  compact?: boolean
+  keepOpenOnItemSelect?: boolean
+  contentClassName?: string
+  triggerClassName?: string
 }
 
 export function DataTableViewOptions<TData>({
   table,
   variant = 'default',
+  compact = false,
+  keepOpenOnItemSelect = false,
+  contentClassName,
+  triggerClassName,
 }: DataTableViewOptionsProps<TData>) {
   const { t } = useLanguage()
   const getColumnLabel = (column: ReturnType<Table<TData>['getAllColumns']>[number]) => {
@@ -34,13 +43,27 @@ export function DataTableViewOptions<TData>({
         {variant === 'industrial' ? (
           <Button
             variant='outline'
-            className='w-[105px] h-12 rounded-2xl flex flex-col items-center justify-center gap-0.5 border-dashed border-muted shadow-sm hover:bg-muted active:scale-95 transition-all p-0'
+            className={cn(
+              compact
+                ? 'w-[105px] h-10 rounded-xl flex items-center justify-center gap-1.5 border-dashed border-muted shadow-sm hover:bg-muted active:scale-95 transition-all px-3'
+                : 'w-[105px] h-12 rounded-2xl flex flex-col items-center justify-center gap-0.5 border-dashed border-muted shadow-sm hover:bg-muted active:scale-95 transition-all p-0',
+              triggerClassName
+            )}
           >
-            <div className='flex items-center gap-1'>
-              <MixerHorizontalIcon className='size-3 text-blue-600' />
-              <span className='text-[10px] font-black tracking-tighter leading-none'>{t('common.table.viewManagement')}</span>
-            </div>
-            <span className='text-[7px] font-mono opacity-40 uppercase tracking-widest leading-none'>{t('common.table.viewing')}</span>
+            {compact ? (
+              <>
+                <MixerHorizontalIcon className='size-3 text-blue-600' />
+                <span className='text-[10px] font-black tracking-tighter leading-none'>{t('common.table.viewManagement')}</span>
+              </>
+            ) : (
+              <>
+                <div className='flex items-center gap-1'>
+                  <MixerHorizontalIcon className='size-3 text-blue-600' />
+                  <span className='text-[10px] font-black tracking-tighter leading-none'>{t('common.table.viewManagement')}</span>
+                </div>
+                <span className='text-[7px] font-mono opacity-40 uppercase tracking-widest leading-none'>{t('common.table.viewing')}</span>
+              </>
+            )}
           </Button>
         ) : (
           <Button
@@ -53,7 +76,13 @@ export function DataTableViewOptions<TData>({
           </Button>
         )}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align='end' className='w-[220px] rounded-[32px] border-dashed bg-background/95 backdrop-blur-md shadow-2xl p-2 border-muted/50'>
+      <DropdownMenuContent
+        align='end'
+        className={cn(
+          'w-[220px] rounded-[32px] border-dashed bg-background/95 backdrop-blur-md shadow-2xl p-2 border-muted/50',
+          contentClassName
+        )}
+      >
         <DropdownMenuLabel className='flex items-center gap-2 text-[10px] font-black tracking-widest uppercase opacity-40 px-4 pt-3 pb-1'>
           <MixerHorizontalIcon className='size-3' />
           {t('common.table.selectColumns')}
@@ -70,8 +99,13 @@ export function DataTableViewOptions<TData>({
             return (
               <DropdownMenuCheckboxItem
                 key={column.id}
-                className='rounded-2xl py-2 px-3 text-[11px] font-black italic tracking-tighter hover:bg-muted/50 transition-colors cursor-pointer data-[state=checked]:text-blue-600 data-[state=checked]:bg-blue-500/5 transition-all active:scale-95'
+                className='rounded-2xl py-2 px-3 text-[11px] font-black italic tracking-tighter hover:bg-muted/50 transition-all cursor-pointer data-[state=checked]:text-blue-600 data-[state=checked]:bg-blue-500/5 active:scale-95'
                 checked={column.getIsVisible()}
+                onSelect={(event) => {
+                  if (keepOpenOnItemSelect) {
+                    event.preventDefault()
+                  }
+                }}
                 onCheckedChange={(value) => column.toggleVisibility(!!value)}
               >
                 {getColumnLabel(column)}

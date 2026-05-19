@@ -1,6 +1,7 @@
 import { Building2, Mail, MapPin, Phone, User } from 'lucide-react'
 import { ActionDialogShell } from '@/components/action-dialog-shell'
 import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
+import { buildHostedQuickActionDialogContentClassName } from '@/components/hosted-quick-action-dialog.styles'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -35,12 +36,14 @@ export function CustomerActionDialog({
 }: CustomerActionDialogProps) {
   const { t } = useLanguage()
   const shellClasses = buildActionDialogShellClasses({
-    content: 'max-w-[95vw] sm:max-w-[600px]',
-    header: 'p-6 pb-2 border-none bg-transparent',
+    content: buildHostedQuickActionDialogContentClassName(
+      'flex flex-col gap-0 overflow-hidden md:max-w-[600px]'
+    ),
+    header: 'shrink-0 p-6 pb-2 border-none bg-transparent',
     title: 'text-lg sm:text-xl flex items-center gap-2',
     description: 'text-[10px]',
-    body: 'contents',
-    footer: 'flex-col-reverse sm:flex-row gap-3 p-6 pt-2 border-t border-dashed border-muted/30',
+    body: 'min-h-0 flex-1 overflow-y-auto',
+    footer: 'shrink-0 flex-col-reverse sm:flex-row gap-3 p-6 pt-2 border-t border-dashed border-muted/30',
   })
   const { allowedEditStatuses, initialFormData, statusOptions } = useCustomerActionViewModel({ customer, t })
   const { data: formData, deltaProxy, tracker } = useDeltaTracker(initialFormData, open)
@@ -121,7 +124,7 @@ export function CustomerActionDialog({
         allowedStatuses={allowedEditStatuses}
         message={t('trading.customers.dialog.lockedMessage')}
       >
-        <div className='grid gap-4 sm:gap-6 p-6 pt-0 max-h-[70vh] overflow-y-auto scrollbar-thin'>
+        <div className='grid gap-4 p-6 pt-0 sm:gap-6'>
           <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
             <div className='grid gap-2'>
               <Label

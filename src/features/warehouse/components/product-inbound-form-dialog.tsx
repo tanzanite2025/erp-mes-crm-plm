@@ -1,6 +1,7 @@
 'use client'
 
 import { CheckCircle2, Package } from 'lucide-react'
+import { buildHostedQuickActionDialogContentClassName } from '@/components/hosted-quick-action-dialog.styles'
 import { NonBlockingPermissionBoundary } from '@/components/permission-passthrough'
 import { Button } from '@/components/ui/button'
 import {
@@ -66,7 +67,11 @@ export function ProductInboundFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='w-[95vw] sm:max-w-[560px] p-0 overflow-hidden rounded-2xl md:rounded-[32px] border-none shadow-2xl'>
+      <DialogContent
+        className={buildHostedQuickActionDialogContentClassName(
+          'rounded-2xl md:rounded-[32px] border-none p-0 overflow-hidden shadow-2xl md:max-w-[560px]'
+        )}
+      >
         <div className='absolute inset-0 bg-linear-to-br from-emerald-600/5 via-transparent pointer-events-none' />
 
         <div className='relative p-5 md:p-8'>

@@ -3,6 +3,7 @@
 import { useMemo } from 'react'
 import { AlertCircle, Database, Loader2, Package, Plus, RefreshCw, Search } from 'lucide-react'
 import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
+import { buildHostedQuickActionDialogContentClassName } from '@/components/hosted-quick-action-dialog.styles'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -66,9 +67,13 @@ export function ProductInboundActionDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={handleDialogOpenChange}>
-        <DialogContent className='w-[95vw] sm:max-w-[760px] p-0 overflow-hidden rounded-[32px] border-none shadow-2xl'>
+        <DialogContent
+          className={buildHostedQuickActionDialogContentClassName(
+            'flex flex-col gap-0 overflow-hidden rounded-[32px] border-none p-0 shadow-2xl md:max-w-[760px]'
+          )}
+        >
           <div className='absolute inset-0 bg-linear-to-br from-emerald-600/5 via-transparent pointer-events-none' />
-          <div className='relative p-5 md:p-8 space-y-6'>
+          <div className='relative min-h-0 flex flex-1 flex-col gap-6 p-5 md:p-8'>
             <DialogHeader className='text-left'>
               <div className='flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between'>
                 <div className='min-w-0'>
@@ -114,7 +119,7 @@ export function ProductInboundActionDialog({
                 <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>入库基础数据加载中</p>
               </div>
             ) : (
-              <>
+              <div className='flex min-h-0 flex-1 flex-col gap-6'>
                 <div className='flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4'>
                   <div className='relative flex-1'>
                     <Search className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/40' />
@@ -136,14 +141,14 @@ export function ProductInboundActionDialog({
                   </div>
                 </div>
 
-                <div className='rounded-[24px] border border-dashed border-muted/50 bg-muted/5 overflow-hidden shadow-inner'>
+                <div className='min-h-0 flex-1 rounded-[24px] border border-dashed border-muted/50 bg-muted/5 overflow-hidden shadow-inner flex flex-col'>
                   <div className='bg-muted/30 px-4 md:px-6 py-3 md:py-4 border-b border-dashed border-muted/50 flex justify-between items-center text-left'>
                     <span className='text-[8px] md:text-[10px] font-black text-muted-foreground/50 uppercase tracking-widest truncate'>{t('warehouse.inbound.results')}</span>
                     <span className='text-[9px] md:text-[10px] font-black text-muted-foreground/60 italic shrink-0'>
                       {t('warehouse.inbound.resultCount', { count: inbound.searchResults.length })}
                     </span>
                   </div>
-                  <div className='h-[320px] overflow-y-auto divide-y divide-dashed divide-muted px-2'>
+                  <div className='min-h-0 flex-1 overflow-y-auto divide-y divide-dashed divide-muted px-2'>
                     {inbound.searchResource.status === 'error' ? (
                       <div className='flex h-full flex-col items-center justify-center px-6 text-center'>
                         <AlertCircle className='size-8 text-rose-500' />
@@ -228,7 +233,7 @@ export function ProductInboundActionDialog({
                     )}
                   </div>
                 </div>
-              </>
+              </div>
             )}
           </div>
         </DialogContent>

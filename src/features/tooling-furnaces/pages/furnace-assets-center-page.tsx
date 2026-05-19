@@ -16,6 +16,8 @@ import { useAssets } from '@/features/equipment-tooling/hooks/use-assets'
 import { useDashboardStats } from '@/features/equipment-tooling/hooks/use-dashboard-stats'
 import { FurnaceActionDialog } from '../components/furnace-action-dialog'
 import { FurnaceStatsHeader } from '../components/furnace/furnace-stats-header'
+import { MaintenanceRecordList } from '@/features/equipment-tooling/components/maintenance-record-list'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 export function FurnaceAssetsCenterPage() {
   const { t } = useLanguage()
@@ -180,42 +182,59 @@ export function FurnaceAssetsCenterPage() {
                 </div>
               </CardHeader>
 
-              <CardContent className='space-y-5 px-5 pb-6 sm:px-6'>
-                <div className='grid grid-cols-2 gap-y-3 border-t border-dashed border-muted-foreground/5 pt-2'>
-                  <div className='flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-muted-foreground/40'>
-                    <Zap className='size-3 text-orange-500/60' />
-                    {t('equipmentTooling.furnaces.card.type')}
-                  </div>
-                  <div className='truncate text-right text-[10px] font-black text-slate-600'>
-                    {furnace.type}
-                  </div>
+              <CardContent className='px-5 pb-6 sm:px-6'>
+                <Tabs defaultValue='info' className='w-full'>
+                  <TabsList className='grid w-full grid-cols-2 mb-4'>
+                    <TabsTrigger value='info' className='text-xs'>基本信息</TabsTrigger>
+                    <TabsTrigger value='maintenance' className='text-xs'>维保记录</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value='info' className='space-y-5 mt-0'>
+                    <div className='grid grid-cols-2 gap-y-3 border-t border-dashed border-muted-foreground/5 pt-2'>
+                      <div className='flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-muted-foreground/40'>
+                        <Zap className='size-3 text-orange-500/60' />
+                        {t('equipmentTooling.furnaces.card.type')}
+                      </div>
+                      <div className='truncate text-right text-[10px] font-black text-slate-600'>
+                        {furnace.type}
+                      </div>
 
-                  <div className='flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-muted-foreground/40'>
-                    <MapPin className='size-3 text-blue-500/60' />
-                    {t('equipmentTooling.furnaces.card.location')}
-                  </div>
-                  <div className='truncate text-right text-[10px] font-black text-slate-600'>
-                    {furnace.location || t('equipmentTooling.furnaces.card.none')}
-                  </div>
-                </div>
+                      <div className='flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-muted-foreground/40'>
+                        <MapPin className='size-3 text-blue-500/60' />
+                        {t('equipmentTooling.furnaces.card.location')}
+                      </div>
+                      <div className='truncate text-right text-[10px] font-black text-slate-600'>
+                        {furnace.location || t('equipmentTooling.furnaces.card.none')}
+                      </div>
+                    </div>
 
-                <div className='space-y-2 border-t border-dashed border-muted-foreground/10 pt-4'>
-                  <div className='flex items-center justify-between'>
-                    <span className='flex items-center gap-2 text-[8px] font-black uppercase tracking-widest text-muted-foreground/40'>
-                      <Thermometer className='size-3' />
-                      {t('equipmentTooling.furnaces.card.tempLive')}
-                    </span>
-                    <span className='text-[10px] font-black font-mono tracking-tighter text-slate-400'>
-                      {t('equipmentTooling.furnaces.card.maxTemp', { value: furnace.maxTemp })}
-                    </span>
-                  </div>
-                  <div className='h-1.5 overflow-hidden rounded-full bg-muted/50 shadow-inner'>
-                    <div className='h-full bg-slate-300/50 transition-all duration-1000' style={{ width: '0%' }} />
-                  </div>
-                  <p className='mt-1 text-center text-[7px] font-black uppercase tracking-[0.2em] text-muted-foreground/20 italic'>
-                    {t('equipmentTooling.furnaces.card.sensorOffline')}
-                  </p>
-                </div>
+                    <div className='space-y-2 border-t border-dashed border-muted-foreground/10 pt-4'>
+                      <div className='flex items-center justify-between'>
+                        <span className='flex items-center gap-2 text-[8px] font-black uppercase tracking-widest text-muted-foreground/40'>
+                          <Thermometer className='size-3' />
+                          {t('equipmentTooling.furnaces.card.tempLive')}
+                        </span>
+                        <span className='text-[10px] font-black font-mono tracking-tighter text-slate-400'>
+                          {t('equipmentTooling.furnaces.card.maxTemp', { value: furnace.maxTemp })}
+                        </span>
+                      </div>
+                      <div className='h-1.5 overflow-hidden rounded-full bg-muted/50 shadow-inner'>
+                        <div className='h-full bg-slate-300/50 transition-all duration-1000' style={{ width: '0%' }} />
+                      </div>
+                      <p className='mt-1 text-center text-[7px] font-black uppercase tracking-[0.2em] text-muted-foreground/20 italic'>
+                        {t('equipmentTooling.furnaces.card.sensorOffline')}
+                      </p>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value='maintenance' className='mt-0'>
+                    <MaintenanceRecordList
+                      assetType='FURNACE'
+                      assetId={furnace.id}
+                      assetSn={furnace.sn}
+                    />
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
           )

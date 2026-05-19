@@ -73,6 +73,7 @@ export const sidebar = {
     productionArchitecture: '生产架构',
     toolingAssets: '模具资产管理',
     furnaceAssets: '炉台资产档案',
+    maintenanceCenter: '设备维保中心',
     pdaShell: 'Pda Shell',
     personnelCenter: '组织人事',
     leaveManagement: '请假管理',

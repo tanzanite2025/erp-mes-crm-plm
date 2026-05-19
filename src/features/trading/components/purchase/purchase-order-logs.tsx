@@ -7,8 +7,6 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   History,
   Trash2,
-  BarChart3,
-  AlertCircle,
   TrendingUp,
   DollarSign,
   Box,
@@ -124,95 +122,79 @@ export function PurchaseOrderLogs() {
 
   return (
     <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-      <div className='grid grid-cols-1 md:grid-cols-4 gap-5'>
-        <Card className='rounded-[28px] border-none bg-rose-500/5 shadow-sm overflow-hidden relative group'>
-          <div className='absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform'>
-            <Trash2 className='size-12' />
+      <div className='grid grid-cols-1 gap-3 md:grid-cols-4'>
+        <Card className='relative overflow-hidden rounded-[24px] border-none bg-rose-500/5 py-2.5 shadow-sm group'>
+          <div className='absolute top-0 right-0 p-2.5 opacity-10 transition-transform group-hover:scale-110'>
+            <Trash2 className='size-8' />
           </div>
-          <CardHeader className='pb-2'>
-            <div className='flex items-center justify-between gap-3'>
-              <CardTitle className='text-[10px] font-black uppercase tracking-widest text-rose-600/60'>
+          <CardContent className='relative z-10 px-4'>
+            <div className='flex items-center justify-between gap-2'>
+              <p className='min-w-0 truncate text-[10px] font-black uppercase tracking-widest text-rose-600/60'>
                 {t('purchase.logs.canceledOrders')}
-              </CardTitle>
+              </p>
+              <p className='shrink-0 text-xl font-black italic leading-none tracking-tighter text-rose-600'>
+                {orders.length}
+              </p>
               <PurchaseLogTag meta={getPurchaseLogTagMeta(locale, 'archive')} />
             </div>
-          </CardHeader>
-          <CardContent>
-            <p className='text-3xl font-black italic tracking-tighter text-rose-600'>{orders.length}</p>
-            <p className='text-[8px] font-bold text-rose-600/40 uppercase tracking-widest mt-1'>
-              Archived deletion records
-            </p>
           </CardContent>
         </Card>
 
-        <Card className='rounded-[28px] border-none bg-amber-500/5 shadow-sm overflow-hidden relative group'>
-          <div className='absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform'>
-            <DollarSign className='size-12' />
+        <Card className='relative overflow-hidden rounded-[24px] border-none bg-amber-500/5 py-2.5 shadow-sm group'>
+          <div className='absolute top-0 right-0 p-2.5 opacity-10 transition-transform group-hover:scale-110'>
+            <DollarSign className='size-8' />
           </div>
-          <CardHeader className='pb-2'>
-            <div className='flex items-center justify-between gap-3'>
-              <CardTitle className='text-[10px] font-black uppercase tracking-widest text-amber-600/60'>
+          <CardContent className='relative z-10 px-4'>
+            <div className='flex items-center justify-between gap-2'>
+              <p className='min-w-0 truncate text-[10px] font-black uppercase tracking-widest text-amber-600/60'>
                 {t('purchase.logs.voidedValue')}
-              </CardTitle>
+              </p>
+              <p className='shrink-0 text-xl font-black italic leading-none tracking-tighter text-amber-600'>
+                {totalAmount.toLocaleString()}
+              </p>
               <PurchaseLogTag meta={getPurchaseLogTagMeta(locale, 'risk')} />
             </div>
-          </CardHeader>
-          <CardContent>
-            <p className='text-3xl font-black italic tracking-tighter text-amber-600'>
-              {totalAmount.toLocaleString()}
-            </p>
-            <p className='text-[8px] font-bold text-amber-600/40 uppercase tracking-widest mt-1'>
-              Potential loss tracking
-            </p>
           </CardContent>
         </Card>
 
-        <Card className='rounded-[28px] border-none bg-blue-500/5 shadow-sm overflow-hidden relative group'>
-          <div className='absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform'>
-            <History className='size-12' />
+        <Card className='relative overflow-hidden rounded-[24px] border-none bg-blue-500/5 py-2.5 shadow-sm group'>
+          <div className='absolute top-0 right-0 p-2.5 opacity-10 transition-transform group-hover:scale-110'>
+            <History className='size-8' />
           </div>
-          <CardHeader className='pb-2'>
-            <div className='flex items-center justify-between gap-3'>
-              <CardTitle className='text-[10px] font-black uppercase tracking-widest text-blue-600/60'>
+          <CardContent className='relative z-10 px-4'>
+            <div className='flex items-center justify-between gap-2'>
+              <p className='min-w-0 truncate text-[10px] font-black uppercase tracking-widest text-blue-600/60'>
                 {t('purchase.logs.auditFrequency')}
-              </CardTitle>
+              </p>
+              <p className='shrink-0 text-xl font-black italic leading-none tracking-tighter text-blue-600'>
+                {t('purchase.logs.daily')}
+              </p>
               <PurchaseLogTag meta={getPurchaseLogTagMeta(locale, 'metric')} />
             </div>
-          </CardHeader>
-          <CardContent>
-            <p className='text-3xl font-black italic tracking-tighter text-blue-600'>
-              {t('purchase.logs.daily')}
-            </p>
-            <p className='text-[8px] font-bold text-blue-600/40 uppercase tracking-widest mt-1'>
-              {t('purchase.logs.lastSync')}
-            </p>
           </CardContent>
         </Card>
 
-        <Card className='rounded-[28px] border-none bg-emerald-500/5 shadow-sm overflow-hidden relative group'>
-          <div className='absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform'>
-            <TrendingUp className='size-12' />
+        <Card className='relative overflow-hidden rounded-[24px] border-none bg-emerald-500/5 py-2.5 shadow-sm group'>
+          <div className='absolute top-0 right-0 p-2.5 opacity-10 transition-transform group-hover:scale-110'>
+            <TrendingUp className='size-8' />
           </div>
-          <CardHeader className='pb-2'>
-            <div className='flex items-center justify-between gap-3'>
-              <CardTitle className='text-[10px] font-black uppercase tracking-widest text-emerald-600/60'>
+          <CardContent className='relative z-10 px-4'>
+            <div className='flex items-center justify-between gap-2'>
+              <p className='min-w-0 truncate text-[10px] font-black uppercase tracking-widest text-emerald-600/60'>
                 {t('purchase.logs.healthStatus')}
-              </CardTitle>
+              </p>
+              <p className='shrink-0 text-xl font-black italic leading-none tracking-tighter text-emerald-600'>
+                98.2%
+              </p>
               <PurchaseLogTag meta={getPurchaseLogTagMeta(locale, 'health')} />
             </div>
-          </CardHeader>
-          <CardContent>
-            <p className='text-3xl font-black italic tracking-tighter text-emerald-600'>98.2%</p>
-            <p className='text-[8px] font-bold text-emerald-600/40 uppercase tracking-widest mt-1'>
-              Consistency across modules
-            </p>
           </CardContent>
         </Card>
       </div>
 
-      <div className='grid grid-cols-1 lg:grid-cols-3 gap-8'>
-        <Card className='lg:col-span-2 rounded-[32px] border-dashed border-muted-foreground/20 bg-muted/5 shadow-none'>
-          <CardHeader className='flex flex-row items-center justify-between'>
+      <div className='grid grid-cols-1 gap-6'>
+        <Card className='flex h-[360px] min-h-0 flex-col gap-2 rounded-[28px] border-dashed border-muted-foreground/20 bg-muted/5 py-3 shadow-none'>
+          <CardHeader className='flex flex-row items-center justify-between px-5 pb-1'>
             <div>
               <CardTitle className='text-sm font-black italic uppercase tracking-tighter flex items-center gap-2'>
                 <History className='size-4 text-rose-500' /> {t('purchase.logs.deletionArchive')}
@@ -222,24 +204,24 @@ export function PurchaseOrderLogs() {
               </CardDescription>
             </div>
           </CardHeader>
-          <CardContent>
-            <ScrollArea className='h-[450px] pr-4'>
+          <CardContent className='min-h-0 flex-1 px-5'>
+            <ScrollArea className='h-full pr-3'>
               {orders.length === 0 ? (
-                <div className='flex flex-col items-center justify-center py-20 opacity-20'>
-                  <Box className='size-12 mb-4' />
+                <div className='flex flex-col items-center justify-center py-12 opacity-20'>
+                  <Box className='mb-3 size-10' />
                   <p className='text-xs font-black uppercase tracking-widest'>{t('purchase.logs.empty')}</p>
                 </div>
               ) : (
-                <div className='space-y-4'>
+                <div className='space-y-3'>
                   {orders.map((order) => (
                     <div
                       key={order.id}
-                      className='group bg-background rounded-[24px] p-5 shadow-sm border border-transparent hover:border-rose-500/20 transition-all'
+                      className='group rounded-[20px] border border-transparent bg-background p-4 shadow-sm transition-all hover:border-rose-500/20'
                     >
-                      <div className='flex items-center justify-between mb-4'>
+                      <div className='mb-3 flex items-center justify-between'>
                         <div className='flex items-center gap-3'>
-                          <div className='size-10 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-600'>
-                            <Trash2 className='size-5' />
+                          <div className='flex size-9 items-center justify-center rounded-2xl bg-rose-500/10 text-rose-600'>
+                            <Trash2 className='size-4' />
                           </div>
                           <div>
                             <p className='text-sm font-black uppercase tracking-tight'>{order.orderNo}</p>
@@ -259,9 +241,9 @@ export function PurchaseOrderLogs() {
                           <AuditStatusDisplay meta={getDeletedOrderStatusMeta(locale)} badgeClassName='px-4 py-1' />
                         </div>
                       </div>
-                      <div className='grid grid-cols-3 gap-4'>
+                      <div className='grid grid-cols-3 gap-3'>
                         <div>
-                          <p className='text-[8px] font-bold text-muted-foreground uppercase tracking-widest mb-1 opacity-40'>
+                          <p className='mb-0.5 text-[8px] font-bold uppercase tracking-widest text-muted-foreground opacity-40'>
                             {t('purchase.logs.value')}
                           </p>
                           <p className='text-xs font-black tabular-nums'>
@@ -269,13 +251,13 @@ export function PurchaseOrderLogs() {
                           </p>
                         </div>
                         <div>
-                          <p className='text-[8px] font-bold text-muted-foreground uppercase tracking-widest mb-1 opacity-40'>
+                          <p className='mb-0.5 text-[8px] font-bold uppercase tracking-widest text-muted-foreground opacity-40'>
                             {t('purchase.logs.purchaser')}
                           </p>
                           <p className='text-xs font-black uppercase'>{order.purchaser}</p>
                         </div>
                         <div>
-                          <p className='text-[8px] font-bold text-muted-foreground uppercase tracking-widest mb-1 opacity-40'>
+                          <p className='mb-0.5 text-[8px] font-bold uppercase tracking-widest text-muted-foreground opacity-40'>
                             {t('purchase.logs.lastUpdate')}
                           </p>
                           <p className='text-xs font-black tabular-nums opacity-60'>
@@ -291,49 +273,6 @@ export function PurchaseOrderLogs() {
           </CardContent>
         </Card>
 
-        <div className='space-y-6'>
-          <Card className='rounded-[32px] border-none bg-slate-900 text-white p-8 space-y-4 relative overflow-hidden'>
-            <div className='absolute -bottom-10 -right-10 opacity-10 scale-150 rotate-12'>
-              <BarChart3 className='size-40' />
-            </div>
-            <h4 className='text-xs font-black italic tracking-tight uppercase border-b border-white/10 pb-4'>
-              {t('purchase.logs.auditInsight')}
-            </h4>
-            <div className='space-y-6 pt-2'>
-              <div className='space-y-2'>
-                <div className='flex justify-between items-center text-[10px] font-black uppercase tracking-widest'>
-                  <span className='opacity-60'>{t('purchase.logs.orderIntegrity')}</span>
-                  <span>{t('purchase.logs.high')}</span>
-                </div>
-                <div className='h-1 bg-white/10 rounded-full overflow-hidden'>
-                  <div className='h-full bg-emerald-500 w-[94%]' />
-                </div>
-              </div>
-              <div className='space-y-2'>
-                <div className='flex justify-between items-center text-[10px] font-black uppercase tracking-widest'>
-                  <span className='opacity-60'>{t('purchase.logs.deletionRatio')}</span>
-                  <span>{((orders.length / 100) * 100).toFixed(1)}%</span>
-                </div>
-                <div className='h-1 bg-white/10 rounded-full overflow-hidden'>
-                  <div className='h-full bg-rose-500 w-[5%]' />
-                </div>
-              </div>
-            </div>
-            <p className='text-[9px] font-medium leading-relaxed opacity-40 pt-4'>
-              {t('purchase.logs.complianceText')}
-            </p>
-          </Card>
-
-          <Card className='rounded-[32px] border-dashed border-muted-foreground/20 p-6 flex flex-col items-center justify-center text-center space-y-3'>
-            <AlertCircle className='size-8 text-muted-foreground/30' />
-            <h5 className='text-[10px] font-black uppercase tracking-widest'>
-              {t('purchase.logs.complianceNote')}
-            </h5>
-            <p className='text-[9px] font-medium leading-relaxed text-muted-foreground max-w-[200px]'>
-              {t('purchase.logs.complianceText')}
-            </p>
-          </Card>
-        </div>
       </div>
     </div>
   )

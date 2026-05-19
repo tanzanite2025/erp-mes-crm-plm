@@ -37,8 +37,8 @@ export function UsersPermissionsPage({ search, navigate }: UsersPermissionsPageP
 
   return (
     <UsersProvider>
-      <div className='flex flex-1 flex-col gap-8 animate-in fade-in duration-700'>
-        <div className='flex flex-col gap-1 rounded-[24px] border border-dashed border-muted/50 bg-muted/5 p-4 sm:rounded-[32px] sm:p-6'>
+      <div className='flex flex-1 flex-col gap-6 animate-in fade-in duration-700 sm:gap-8'>
+        <div className='flex flex-col gap-1 rounded-[24px] border border-dashed border-muted/50 bg-muted/5 p-3 sm:rounded-[32px] sm:p-6'>
           <div className='flex items-center gap-2 text-primary'>
             <ShieldCheck className='size-4' />
             <h3 className='text-base font-black uppercase italic tracking-tighter sm:text-lg'>
@@ -50,62 +50,62 @@ export function UsersPermissionsPage({ search, navigate }: UsersPermissionsPageP
           </p>
         </div>
 
-        <div className='grid gap-4 lg:grid-cols-[1.2fr_0.8fr]'>
-          <div className='grid gap-4 sm:grid-cols-3'>
-            <div className='rounded-[24px] border border-dashed border-muted/50 bg-muted/5 p-4'>
-              <div className='flex items-center justify-between gap-3'>
-                <div>
-                  <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+        <div className='grid gap-3 sm:gap-4 lg:grid-cols-[1.2fr_0.8fr]'>
+          <div className='grid grid-cols-3 gap-1.5 sm:gap-4'>
+            <div className='min-w-0 rounded-[20px] border border-dashed border-muted/50 bg-muted/5 p-2.5 sm:rounded-[24px] sm:p-4'>
+              <div className='flex items-start justify-between gap-1.5 sm:gap-3'>
+                <div className='min-w-0'>
+                  <div className='min-h-7 text-[7px] leading-[0.9rem] font-black uppercase tracking-[0.12em] text-muted-foreground/50 sm:min-h-0 sm:text-[10px] sm:leading-tight sm:tracking-widest'>
                     {t('users.permissionPage.stats.total')}
                   </div>
-                  <div className='mt-2 text-3xl font-black tracking-tighter'>{String(userPage?.total ?? 0)}</div>
+                  <div className='mt-0.5 text-lg leading-none font-black tracking-tighter sm:mt-2 sm:text-3xl'>{String(userPage?.total ?? 0)}</div>
                 </div>
-                <UsersIcon className='size-4 text-primary/60' />
+                <UsersIcon className='size-3 shrink-0 text-primary/60 sm:size-4' />
               </div>
             </div>
 
-            <div className='rounded-[24px] border border-dashed border-muted/50 bg-muted/5 p-4'>
-              <div className='flex items-center justify-between gap-3'>
-                <div>
-                  <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+            <div className='min-w-0 rounded-[20px] border border-dashed border-muted/50 bg-muted/5 p-2.5 sm:rounded-[24px] sm:p-4'>
+              <div className='flex items-start justify-between gap-1.5 sm:gap-3'>
+                <div className='min-w-0'>
+                  <div className='min-h-7 text-[7px] leading-[0.9rem] font-black uppercase tracking-[0.12em] text-muted-foreground/50 sm:min-h-0 sm:text-[10px] sm:leading-tight sm:tracking-widest'>
                     {t('users.permissionPage.stats.activeInView')}
                   </div>
-                  <div className='mt-2 text-3xl font-black tracking-tighter'>{String(activeUsers)}</div>
+                  <div className='mt-0.5 text-lg leading-none font-black tracking-tighter sm:mt-2 sm:text-3xl'>{String(activeUsers)}</div>
                 </div>
-                <ShieldCheck className='size-4 text-emerald-600/70' />
+                <ShieldCheck className='size-3 shrink-0 text-emerald-600/70 sm:size-4' />
               </div>
             </div>
 
-            <div className='rounded-[24px] border border-dashed border-muted/50 bg-muted/5 p-4'>
-              <div className='flex items-center justify-between gap-3'>
-                <div>
-                  <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+            <div className='min-w-0 rounded-[20px] border border-dashed border-muted/50 bg-muted/5 p-2.5 sm:rounded-[24px] sm:p-4'>
+              <div className='flex items-start justify-between gap-1.5 sm:gap-3'>
+                <div className='min-w-0'>
+                  <div className='min-h-7 text-[7px] leading-[0.9rem] font-black uppercase tracking-[0.12em] text-muted-foreground/50 sm:min-h-0 sm:text-[10px] sm:leading-tight sm:tracking-widest'>
                     {t('users.permissionPage.stats.protectedInView')}
                   </div>
-                  <div className='mt-2 text-3xl font-black tracking-tighter'>{String(protectedUsers)}</div>
+                  <div className='mt-0.5 text-lg leading-none font-black tracking-tighter sm:mt-2 sm:text-3xl'>{String(protectedUsers)}</div>
                 </div>
-                <ShieldPlus className='size-4 text-amber-600/70' />
+                <ShieldPlus className='size-3 shrink-0 text-amber-600/70 sm:size-4' />
               </div>
             </div>
           </div>
 
-          <div className='rounded-[24px] border border-dashed border-muted/50 bg-muted/5 p-4'>
-            <div className='text-sm font-black italic tracking-tighter'>{t('users.permissionPage.guideTitle')}</div>
-            <p className='mt-1 text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>
+          <div className='rounded-[20px] border border-dashed border-muted/50 bg-muted/5 p-3 sm:rounded-[24px] sm:p-4'>
+            <div className='text-xs font-black italic tracking-tighter sm:text-sm'>{t('users.permissionPage.guideTitle')}</div>
+            <p className='mt-1 text-[8px] font-black uppercase tracking-widest text-muted-foreground/60 sm:text-[9px]'>
               {t('users.permissionPage.guideDescription')}
             </p>
-            <div className='mt-4 space-y-3'>
-              <div className='flex items-start gap-3'>
-                <div className='flex size-6 items-center justify-center rounded-full bg-primary/10 text-[10px] font-black text-primary'>1</div>
-                <p className='text-sm'>{t('users.permissionPage.steps.filter')}</p>
+            <div className='mt-3 space-y-2 sm:mt-4 sm:space-y-3'>
+              <div className='flex items-start gap-2.5 sm:gap-3'>
+                <div className='flex size-5 items-center justify-center rounded-full bg-primary/10 text-[9px] font-black text-primary sm:size-6 sm:text-[10px]'>1</div>
+                <p className='text-xs leading-5 sm:text-sm sm:leading-normal'>{t('users.permissionPage.steps.filter')}</p>
               </div>
-              <div className='flex items-start gap-3'>
-                <div className='flex size-6 items-center justify-center rounded-full bg-primary/10 text-[10px] font-black text-primary'>2</div>
-                <p className='text-sm'>{t('users.permissionPage.steps.open')}</p>
+              <div className='flex items-start gap-2.5 sm:gap-3'>
+                <div className='flex size-5 items-center justify-center rounded-full bg-primary/10 text-[9px] font-black text-primary sm:size-6 sm:text-[10px]'>2</div>
+                <p className='text-xs leading-5 sm:text-sm sm:leading-normal'>{t('users.permissionPage.steps.open')}</p>
               </div>
-              <div className='flex items-start gap-3'>
-                <div className='flex size-6 items-center justify-center rounded-full bg-primary/10 text-[10px] font-black text-primary'>3</div>
-                <p className='text-sm'>{t('users.permissionPage.steps.save')}</p>
+              <div className='flex items-start gap-2.5 sm:gap-3'>
+                <div className='flex size-5 items-center justify-center rounded-full bg-primary/10 text-[9px] font-black text-primary sm:size-6 sm:text-[10px]'>3</div>
+                <p className='text-xs leading-5 sm:text-sm sm:leading-normal'>{t('users.permissionPage.steps.save')}</p>
               </div>
             </div>
           </div>
@@ -128,12 +128,13 @@ export function UsersPermissionsPage({ search, navigate }: UsersPermissionsPageP
           isLoading={isLoading}
           mode='permissions'
           showBulkActions={false}
-          showSelection={false}
+          showSelection
           leadingViewSlot={(
             <AuditTimelineTriggerButton
               module={AUDIT_MODULES.userPermission}
               targetName={t('users.permissionPage.title')}
               label={t('common.audit.permissionTrigger')}
+              className='h-11 w-full justify-center px-3 md:h-9 md:w-auto md:px-4'
             />
           )}
         />
