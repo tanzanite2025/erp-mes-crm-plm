@@ -326,60 +326,60 @@ export function CustomerList() {
         </div>
       ) : null}
 
-      <div className='grid grid-cols-1 gap-2.5 sm:grid-cols-3 sm:gap-3'>
-        <div className='group relative flex min-h-[58px] items-center justify-between overflow-hidden rounded-[20px] border-2 border-dashed border-muted/50 bg-muted/5 px-3 py-2.5 sm:min-h-[64px] sm:px-3.5 sm:py-3'>
-          <div className='absolute top-1/2 right-3 -translate-y-1/2 opacity-[0.03] transition-opacity group-hover:opacity-10'>
+      <div className='grid grid-cols-3 gap-1.5 sm:gap-3'>
+        <div className='group relative flex min-h-[68px] items-start justify-center overflow-hidden rounded-[18px] border-2 border-dashed border-muted/50 bg-muted/5 px-2 py-2 sm:min-h-[64px] sm:flex-row sm:items-center sm:justify-between sm:rounded-[20px] sm:px-3.5 sm:py-3'>
+          <div className='absolute top-1/2 right-3 hidden -translate-y-1/2 opacity-[0.03] transition-opacity group-hover:opacity-10 sm:block'>
             <Building2 className='size-10 sm:size-12' />
           </div>
-          <div className='relative flex min-w-0 items-baseline gap-2.5'>
-            <span className='truncate text-[9px] font-black tracking-[0.18em] text-muted-foreground/50 uppercase italic sm:text-[10px]'>
+          <div className='relative flex min-w-0 flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:gap-2.5'>
+            <span className='max-w-full truncate text-[8px] font-black tracking-[0.08em] text-muted-foreground/50 uppercase italic sm:text-[10px] sm:tracking-[0.18em]'>
               {t('trading.customers.stats.total')}
             </span>
-            <span className='shrink-0 text-2xl font-black tracking-tighter italic tabular-nums sm:text-[28px]'>
+            <span className='shrink-0 text-xl font-black leading-none tracking-tighter italic tabular-nums sm:text-[28px]'>
               {customerStats?.total ?? '—'}
             </span>
           </div>
-          <div className='relative rounded-lg bg-primary/10 p-1.5 sm:p-2'>
+          <div className='relative hidden rounded-lg bg-primary/10 p-1.5 sm:block sm:p-2'>
             <Building2 className='size-4 text-primary sm:size-[18px]' />
           </div>
         </div>
 
-        <div className='group relative flex min-h-[58px] items-center justify-between overflow-hidden rounded-[20px] border-2 border-dashed border-muted/50 bg-muted/5 px-3 py-2.5 sm:min-h-[64px] sm:px-3.5 sm:py-3'>
-          <div className='absolute top-1/2 right-3 -translate-y-1/2 opacity-[0.03] transition-opacity group-hover:opacity-10'>
+        <div className='group relative flex min-h-[68px] items-start justify-center overflow-hidden rounded-[18px] border-2 border-dashed border-muted/50 bg-muted/5 px-2 py-2 sm:min-h-[64px] sm:flex-row sm:items-center sm:justify-between sm:rounded-[20px] sm:px-3.5 sm:py-3'>
+          <div className='absolute top-1/2 right-3 hidden -translate-y-1/2 opacity-[0.03] transition-opacity group-hover:opacity-10 sm:block'>
             <User className='size-10 sm:size-12' />
           </div>
-          <div className='relative flex min-w-0 items-baseline gap-2.5'>
-            <span className='truncate text-[9px] font-black tracking-[0.18em] text-muted-foreground/50 uppercase italic sm:text-[10px]'>
+          <div className='relative flex min-w-0 flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:gap-2.5'>
+            <span className='max-w-full truncate text-[8px] font-black tracking-[0.08em] text-muted-foreground/50 uppercase italic sm:text-[10px] sm:tracking-[0.18em]'>
               {t('trading.customers.stats.active')}
             </span>
-            <span className='shrink-0 text-2xl font-black tracking-tighter text-emerald-500 italic tabular-nums sm:text-[28px]'>
+            <span className='shrink-0 text-xl font-black leading-none tracking-tighter text-emerald-500 italic tabular-nums sm:text-[28px]'>
               {customerStats?.active ?? '—'}
             </span>
           </div>
-          <div className='relative rounded-lg bg-emerald-500/10 p-1.5 sm:p-2'>
+          <div className='relative hidden rounded-lg bg-emerald-500/10 p-1.5 sm:block sm:p-2'>
             <User className='size-4 text-emerald-500 sm:size-[18px]' />
           </div>
         </div>
 
-        <div className='group relative flex min-h-[58px] items-center justify-between overflow-hidden rounded-[20px] border-2 border-dashed border-muted/50 bg-muted/5 px-3 py-2.5 sm:min-h-[64px] sm:px-3.5 sm:py-3'>
-          <div className='absolute top-1/2 right-3 -translate-y-1/2 opacity-[0.03] transition-opacity group-hover:opacity-10'>
+        <div className='group relative flex min-h-[68px] items-start justify-center overflow-hidden rounded-[18px] border-2 border-dashed border-muted/50 bg-muted/5 px-2 py-2 sm:min-h-[64px] sm:flex-row sm:items-center sm:justify-between sm:rounded-[20px] sm:px-3.5 sm:py-3'>
+          <div className='absolute top-1/2 right-3 hidden -translate-y-1/2 opacity-[0.03] transition-opacity group-hover:opacity-10 sm:block'>
             <ExternalLink className='size-10 sm:size-12' />
           </div>
-          <div className='relative flex min-w-0 items-baseline gap-2.5'>
-            <span className='truncate text-[9px] font-black tracking-[0.18em] text-muted-foreground/50 uppercase italic sm:text-[10px]'>
+          <div className='relative flex min-w-0 flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:gap-2.5'>
+            <span className='max-w-full truncate text-[8px] font-black tracking-[0.08em] text-muted-foreground/50 uppercase italic sm:text-[10px] sm:tracking-[0.18em]'>
               {t('trading.customers.stats.newThisMonth')}
             </span>
-            <span className='shrink-0 text-2xl font-black tracking-tighter text-primary italic tabular-nums sm:text-[28px]'>
+            <span className='shrink-0 text-xl font-black leading-none tracking-tighter text-primary italic tabular-nums sm:text-[28px]'>
               {typeof customerStats?.newThisMonth === 'number' ? `+${customerStats.newThisMonth}` : '—'}
             </span>
           </div>
-          <div className='relative rounded-full bg-primary px-2 py-1 text-[7px] font-black tracking-widest text-primary-foreground uppercase sm:px-2.5 sm:text-[8px]'>
+          <div className='relative hidden rounded-full bg-primary px-2 py-1 text-[7px] font-black tracking-widest text-primary-foreground uppercase sm:block sm:px-2.5 sm:text-[8px]'>
             {t('trading.customers.stats.newBadge')}
           </div>
         </div>
       </div>
 
-      <div className='flex flex-col items-stretch justify-between gap-3 px-1 sm:flex-row sm:items-center sm:gap-4'>
+      <div className='flex flex-col items-stretch justify-between gap-2.5 px-1 sm:flex-row sm:items-center sm:gap-4'>
         <div className='relative w-full sm:w-96'>
           <Search className='absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/40' />
           <Input
@@ -390,8 +390,8 @@ export function CustomerList() {
           />
         </div>
 
-        <div className='flex w-full items-center gap-2 sm:w-auto sm:gap-3'>
-          <div className='flex items-center gap-1 rounded-full bg-muted/40 p-1'>
+        <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3'>
+          <div className='grid w-full grid-cols-3 gap-1 rounded-full bg-muted/40 p-1 sm:flex sm:w-auto sm:items-center'>
             {(['all', 'withQuote', 'withoutQuote'] as const).map((option) => (
               <Button
                 key={option}
@@ -400,7 +400,7 @@ export function CustomerList() {
                 onClick={() => setQuoteStatusFilter(option)}
                 disabled={option !== 'all' && quoteSummaryCollectionStatus !== 'ready'}
                 className={cn(
-                  'h-9 rounded-full px-3 text-[9px] font-black tracking-widest uppercase transition-all sm:text-[10px]',
+                  'h-8 min-w-0 rounded-full px-1.5 text-[8px] font-black tracking-widest uppercase transition-all sm:h-9 sm:px-3 sm:text-[10px]',
                   quoteStatusFilter === option
                     ? 'bg-primary text-primary-foreground shadow-sm'
                     : 'text-muted-foreground hover:text-foreground',
@@ -414,27 +414,29 @@ export function CustomerList() {
             ))}
           </div>
 
-          <Button
-            variant='ghost'
-            onClick={() => setShowDeleted((value) => !value)}
-            className={cn(
-              'h-11 flex-1 rounded-full px-4 text-[9px] font-black tracking-widest uppercase transition-all sm:flex-none sm:px-6 sm:text-[10px]',
-              showDeleted ? 'bg-primary/10 text-primary' : 'opacity-60'
-            )}
-          >
-            <Filter className='mr-2 size-4' />
-            {showDeleted
-              ? t('trading.customers.hideDeleted')
-              : t('trading.customers.showDeleted')}
-          </Button>
+          <div className='flex w-full items-center gap-2 sm:w-auto sm:gap-3'>
+            <Button
+              variant='ghost'
+              onClick={() => setShowDeleted((value) => !value)}
+              className={cn(
+                'h-10 min-w-0 flex-1 rounded-full px-3 text-[8px] font-black tracking-widest uppercase transition-all sm:h-11 sm:flex-none sm:px-6 sm:text-[10px]',
+                showDeleted ? 'bg-primary/10 text-primary' : 'opacity-60'
+              )}
+            >
+              <Filter className='mr-1.5 size-3.5 sm:mr-2 sm:size-4' />
+              {showDeleted
+                ? t('trading.customers.hideDeleted')
+                : t('trading.customers.showDeleted')}
+            </Button>
 
-          <Button
-            onClick={handleAddClick}
-            className='h-11 flex-1 rounded-full bg-primary px-4 text-[9px] font-black tracking-widest text-primary-foreground uppercase shadow-xl shadow-primary/20 transition-all active:scale-95 sm:flex-none sm:px-8 sm:text-[10px]'
-          >
-            <Plus className='mr-2 size-4' />
-            {t('trading.customers.addCustomer')}
-          </Button>
+            <Button
+              onClick={handleAddClick}
+              className='h-10 min-w-0 flex-1 rounded-full bg-primary px-3 text-[8px] font-black tracking-widest text-primary-foreground uppercase shadow-xl shadow-primary/20 transition-all active:scale-95 sm:h-11 sm:flex-none sm:px-8 sm:text-[10px]'
+            >
+              <Plus className='mr-1.5 size-3.5 sm:mr-2 sm:size-4' />
+              {t('trading.customers.addCustomer')}
+            </Button>
+          </div>
         </div>
       </div>
 

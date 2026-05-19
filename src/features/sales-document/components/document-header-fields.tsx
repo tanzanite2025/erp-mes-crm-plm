@@ -114,7 +114,7 @@ export function DocumentHeaderFields({
           className={cn(
             'grid grid-cols-1 gap-4 rounded-[24px] border border-dashed border-muted-foreground/20 bg-muted/5 p-4 transition-all sm:p-5 md:grid-cols-2',
             (compactEvidence || denseContractFields) && 'gap-3 rounded-[20px] p-3 sm:p-4',
-            denseContractFields ? 'lg:grid-cols-5' : 'lg:grid-cols-4'
+            denseContractFields ? 'lg:grid-cols-5 xl:grid-cols-5' : 'lg:grid-cols-4'
           )}
         >
           <div className='grid gap-1'>
@@ -322,7 +322,7 @@ export function DocumentHeaderFields({
             className={cn(
               'grid gap-3 md:col-span-4',
               compactEvidence && 'gap-2',
-              denseContractFields && 'lg:col-span-5'
+              denseContractFields && 'lg:col-span-5 xl:col-span-5'
             )}
           >
             <DocumentEvidenceManager

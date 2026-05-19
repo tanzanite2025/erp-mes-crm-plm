@@ -1,10 +1,6 @@
 import { useEffect } from 'react'
-import { AlertCircle, Loader2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { DocumentHeaderFields } from '@/features/sales-document/components/document-header-fields'
-import { DocumentLinesEditor } from '@/features/sales-document/components/document-lines-editor'
-import { DocumentNotesSection } from '@/features/sales-document/components/document-notes-section'
 import { QuotePrintPreviewDialog } from '@/features/quotes/components/quote-print-preview-dialog'
+import { QuoteWorkspaceCreateEditor } from '@/features/quotes/components/quote-workspace-create-editor'
 import { QuoteWorkspaceDialog } from '@/features/quotes/components/quote-workspace-dialog'
 import { useQuoteCreateEditor } from '@/features/quotes/hooks/use-quote-create-editor'
 import { useConvertQuote } from '@/features/quotes/hooks/use-convert-quote'
@@ -114,56 +110,18 @@ export function QuoteWorkspaceHost({
     })
   }
 
-  const createEditor = createResource.status === 'error' ? (
-    <div className='flex min-h-[320px] flex-col items-center justify-center rounded-[32px] border border-dashed border-rose-500/25 bg-rose-500/3 px-6 text-center'>
-      <AlertCircle className='size-8 text-rose-500' />
-      <p className='mt-4 text-[10px] font-black uppercase tracking-widest text-rose-700'>报价创建字典加载失败</p>
-      <p className='mt-3 max-w-xl text-[11px] font-bold leading-5 text-rose-700/80'>
-        {createResource.error.message || '请重试后再创建报价。'}
-      </p>
-      <Button
-        type='button'
-        variant='outline'
-        className='mt-5 h-10 rounded-full border-dashed px-6 text-[10px] font-black uppercase tracking-widest'
-        onClick={() => {
-          void retryCreateResources()
-        }}
-      >
-        重试
-      </Button>
-    </div>
-  ) : createResource.status === 'loading' ? (
-    <div className='flex min-h-[320px] flex-col items-center justify-center gap-4 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 px-6 text-center'>
-      <Loader2 className='size-8 animate-spin text-primary/40' />
-      <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>报价创建字典加载中</p>
-    </div>
-  ) : (
-    <div className='space-y-4'>
-      <DocumentHeaderFields
-        formData={createFormData}
-        setFormData={setCreateFormData}
-        customers={createResources.customers}
-        onClassificationChange={handleCreateClassificationChange}
-      />
-      <DocumentLinesEditor
-        appearances={createResources.appearances}
-        lines={createFormData.lines || []}
-        products={createResources.products}
-        productDisplayLabelMap={createResources.productDisplayLabelMap}
-        productDisplayProjectionMap={createResources.productDisplayProjectionMap}
-        units={createResources.units}
-        drillingOptions={createResources.drillingOptions}
-        labelingOptions={createResources.labelingOptions}
-        currency={createFormData.currency}
-        onAddLine={handleCreateAddLine}
-        onRemoveLine={handleCreateRemoveLine}
-        onLineChange={updateCreateLine}
-      />
-      <DocumentNotesSection
-        value={createFormData.requirements || ''}
-        onChange={(value) => setCreateFormData((prev) => ({ ...prev, requirements: value }))}
-      />
-    </div>
+  const createEditor = (
+    <QuoteWorkspaceCreateEditor
+      formData={createFormData}
+      setFormData={setCreateFormData}
+      createResources={createResources}
+      createResource={createResource}
+      onClassificationChange={handleCreateClassificationChange}
+      onAddLine={handleCreateAddLine}
+      onRemoveLine={handleCreateRemoveLine}
+      onLineChange={updateCreateLine}
+      retryCreateResources={retryCreateResources}
+    />
   )
 
   return (

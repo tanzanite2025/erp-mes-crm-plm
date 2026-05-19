@@ -39,11 +39,11 @@ export function CustomerActionDialog({
     content: buildHostedQuickActionDialogContentClassName(
       'flex flex-col gap-0 overflow-hidden md:max-w-[600px]'
     ),
-    header: 'shrink-0 p-6 pb-2 border-none bg-transparent',
+    header: 'shrink-0 border-none bg-transparent px-4 pt-4 pb-2 sm:px-6 sm:pt-5',
     title: 'text-lg sm:text-xl flex items-center gap-2',
     description: 'text-[10px]',
-    body: 'min-h-0 flex-1 overflow-y-auto',
-    footer: 'shrink-0 flex-col-reverse sm:flex-row gap-3 p-6 pt-2 border-t border-dashed border-muted/30',
+    body: 'min-h-0 flex-1 overflow-y-auto p-0',
+    footer: 'shrink-0 flex-row gap-2 border-t border-dashed border-muted/30 px-4 py-3 sm:px-6 sm:py-4',
   })
   const { allowedEditStatuses, initialFormData, statusOptions } = useCustomerActionViewModel({ customer, t })
   const { data: formData, deltaProxy, tracker } = useDeltaTracker(initialFormData, open)
@@ -106,13 +106,13 @@ export function CustomerActionDialog({
           <Button
             variant='ghost'
             onClick={() => onOpenChange(false)}
-            className='h-11 rounded-full font-black text-[10px] uppercase tracking-widest'
+            className='h-10 min-w-0 flex-1 rounded-full px-4 text-[9px] font-black uppercase tracking-widest sm:h-11 sm:flex-none sm:px-6 sm:text-[10px]'
           >
             {t('trading.customers.dialog.cancel')}
           </Button>
           <Button
             onClick={handleSave}
-            className='h-11 px-10 rounded-full bg-primary text-primary-foreground font-black uppercase text-[10px] tracking-widest shadow-lg shadow-primary/20'
+            className='h-10 min-w-0 flex-1 rounded-full bg-primary px-4 text-[9px] font-black uppercase tracking-widest text-primary-foreground shadow-lg shadow-primary/20 sm:h-11 sm:flex-none sm:px-10 sm:text-[10px]'
           >
             {t('trading.customers.dialog.save')}
           </Button>
@@ -124,12 +124,12 @@ export function CustomerActionDialog({
         allowedStatuses={allowedEditStatuses}
         message={t('trading.customers.dialog.lockedMessage')}
       >
-        <div className='grid gap-4 p-6 pt-0 sm:gap-6'>
-          <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
-            <div className='grid gap-2'>
+        <div className='grid gap-3 px-4 pt-0 pb-4 sm:gap-4 sm:px-6 sm:pb-5'>
+          <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4'>
+            <div className='grid gap-1.5 sm:gap-2'>
               <Label
                 htmlFor='name'
-                className='text-[11px] font-bold uppercase text-muted-foreground'
+                className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 italic'
               >
                 {t('trading.customers.dialog.fields.name')}
               </Label>
@@ -138,31 +138,31 @@ export function CustomerActionDialog({
                 <Input
                   id='name'
                   placeholder={t('trading.customers.dialog.placeholders.name')}
-                  className='pl-10 h-10 font-bold'
+                  className='h-10 rounded-2xl border-none bg-muted/50 pl-10 text-[12px] font-bold sm:h-11'
                   value={formData.name}
                   onChange={(event) => updateField('name', event.target.value)}
                 />
               </div>
             </div>
 
-            <div className='grid gap-2'>
+            <div className='grid gap-1.5 sm:gap-2'>
               <Label
                 htmlFor='code'
-                className='text-[11px] font-bold uppercase text-muted-foreground'
+                className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 italic'
               >
                 {t('trading.customers.dialog.fields.code')}
               </Label>
               <Input
                 id='code'
                 placeholder={t('trading.customers.dialog.placeholders.code')}
-                className='h-10 font-mono text-sm'
+                className='h-10 rounded-2xl border-none bg-muted/50 font-mono text-[12px] font-bold sm:h-11'
                 value={formData.code}
                 onChange={(event) => updateField('code', event.target.value)}
               />
             </div>
           </div>
 
-          <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+          <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4'>
             <div className='grid gap-2'>
               <Label
                 htmlFor='contactPerson'
@@ -182,54 +182,60 @@ export function CustomerActionDialog({
               </div>
             </div>
 
-            <div className='grid gap-2'>
-              <Label
-                htmlFor='status'
-                className='text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest italic'
-              >
-                {t('trading.customers.dialog.fields.status')}
-              </Label>
-              <Select
-                value={formData.status || 'Active'}
-                onValueChange={(value) => {
-                  updateField('status', value as Customer['status'])
-                }}
-              >
-                <SelectTrigger className='h-11 rounded-2xl border-none bg-muted/50 font-bold'>
-                  <SelectValue placeholder={t('trading.customers.dialog.placeholders.status')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {statusOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <div className='grid grid-cols-2 gap-2 sm:contents'>
+              <div className='grid min-w-0 gap-1.5 sm:gap-2'>
+                <Label
+                  htmlFor='status'
+                  className='text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest italic sm:text-[10px]'
+                >
+                  {t('trading.customers.dialog.fields.status')}
+                </Label>
+                <Select
+                  value={formData.status || 'Active'}
+                  onValueChange={(value) => {
+                    updateField('status', value as Customer['status'])
+                  }}
+                >
+                  <SelectTrigger className='h-10 w-full rounded-2xl border-none bg-muted/50 text-[10px] font-black tracking-widest uppercase sm:h-11'>
+                    <SelectValue placeholder={t('trading.customers.dialog.placeholders.status')} />
+                  </SelectTrigger>
+                  <SelectContent className='rounded-2xl border-none p-1.5 shadow-2xl'>
+                    {statusOptions.map((option) => (
+                      <SelectItem
+                        key={option.value}
+                        value={option.value}
+                        className='rounded-xl py-2 text-[10px] font-black tracking-widest uppercase'
+                      >
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className='grid gap-2'>
-              <Label
-                htmlFor='contactPhone'
-                className='text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest italic'
-              >
-                {t('trading.customers.dialog.fields.contactPhone')}
-              </Label>
-              <div className='relative'>
-                <Phone className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/40' />
-                <Input
-                  id='contactPhone'
-                  placeholder={t('trading.customers.dialog.placeholders.contactPhone')}
-                  className='pl-10 h-11 rounded-2xl border-none bg-muted/50 font-bold'
-                  value={formData.contactPhone}
-                  onChange={(event) => updateField('contactPhone', event.target.value)}
-                />
+              <div className='grid min-w-0 gap-1.5 sm:gap-2'>
+                <Label
+                  htmlFor='contactPhone'
+                  className='text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest italic sm:text-[10px]'
+                >
+                  {t('trading.customers.dialog.fields.contactPhone')}
+                </Label>
+                <div className='relative'>
+                  <Phone className='absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground/40 sm:left-3 sm:size-4' />
+                  <Input
+                    id='contactPhone'
+                    placeholder={t('trading.customers.dialog.placeholders.contactPhone')}
+                    className='h-10 rounded-2xl border-none bg-muted/50 pl-8 text-[12px] font-bold sm:h-11 sm:pl-10 sm:text-sm'
+                    value={formData.contactPhone}
+                    onChange={(event) => updateField('contactPhone', event.target.value)}
+                  />
+                </div>
               </div>
             </div>
           </div>
 
-          <div className='grid gap-3 rounded-[24px] border border-dashed border-muted/40 bg-muted/10 p-4 sm:p-5'>
-            <div className='flex flex-col gap-1'>
+          <div className='grid gap-2.5 rounded-[24px] border border-dashed border-muted/40 bg-muted/10 p-3 sm:p-4'>
+            <div className='flex flex-col gap-0.5'>
               <h3 className='text-[11px] font-black uppercase tracking-[0.2em] text-foreground/80'>
                 联系与沟通
               </h3>
@@ -308,7 +314,7 @@ export function CustomerActionDialog({
                 />
               </div>
 
-              <div className='grid gap-2 sm:col-span-2'>
+              <div className='grid gap-2'>
                 <Label htmlFor='telegram' className='text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest italic'>
                   Telegram
                 </Label>

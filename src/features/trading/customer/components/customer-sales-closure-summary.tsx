@@ -128,26 +128,28 @@ export function CustomerSalesClosureSummaryBlock({
         </p>
       </div>
 
-      <div className='space-y-1'>
-        <div className='flex items-center gap-1.5 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40'>
-          <CalendarClock className='size-3' />
-          {t('trading.customers.summary.lastOrderDate')}
+      <div className='grid grid-cols-2 gap-2 md:contents'>
+        <div className='min-w-0 space-y-1'>
+          <div className='flex items-center gap-1.5 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40'>
+            <CalendarClock className='size-3' />
+            {t('trading.customers.summary.lastOrderDate')}
+          </div>
+          <p className='truncate text-[11px] font-black text-foreground md:text-[12px]'>
+            {hasOrderHistory ? summary?.lastOrderDate : t('trading.customers.summary.noOrders')}
+          </p>
         </div>
-        <p className='text-[11px] font-black text-foreground md:text-[12px]'>
-          {hasOrderHistory ? summary?.lastOrderDate : t('trading.customers.summary.noOrders')}
-        </p>
-      </div>
 
-      <div className='space-y-1'>
-        <div className='flex items-center gap-1.5 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40'>
-          <CalendarClock className='size-3' />
-          {t('trading.customers.summary.idleDays')}
+        <div className='min-w-0 space-y-1'>
+          <div className='flex items-center gap-1.5 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40'>
+            <CalendarClock className='size-3' />
+            {t('trading.customers.summary.idleDays')}
+          </div>
+          <p className='truncate text-[11px] font-black text-foreground md:text-[12px]'>
+            {typeof summary?.daysSinceLastOrder === 'number'
+              ? t('trading.customers.summary.idleDaysValue', { count: summary.daysSinceLastOrder })
+              : t('trading.customers.summary.noOrders')}
+          </p>
         </div>
-        <p className='text-[11px] font-black text-foreground md:text-[12px]'>
-          {typeof summary?.daysSinceLastOrder === 'number'
-            ? t('trading.customers.summary.idleDaysValue', { count: summary.daysSinceLastOrder })
-            : t('trading.customers.summary.noOrders')}
-        </p>
       </div>
     </div>
   )
