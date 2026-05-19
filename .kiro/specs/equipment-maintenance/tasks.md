@@ -2,14 +2,19 @@
 
 ## Overview
 
-实现统一维保记录系统的全栈功能。后端新增 `maintenance_records` 表及 CRUD API（Go/Gin/GORM），前端新增共享 `<MaintenanceRecordList>` 组件（React/TypeScript/TanStack Query/Zod/shadcn），通过 props 接受 `(assetType, assetId, assetSn)` 三元组，分别嵌入模具详情页和炉台详情页。
+实现统一维保记录系统的全栈功能，采用**混合架构**：
 
-实现遵循既有模式：delta-based PATCH、版本号乐观锁、`services.AuditService` 审计日志、`apiFetch` + `ensureResponse`、Zod schema + adapter contract、TanStack Query 缓存按 (assetType, assetId) 隔离。
+1. **嵌入式列表**：在模具和炉台详情页中嵌入 `<MaintenanceRecordList>` 组件，提供设备级维保记录查看和管理
+2. **独立维保中心**：提供独立的维保中心页面 (`/equipment-maintenance/*`)，支持全局视角的维保记录查询、筛选和管理
+
+后端新增 `maintenance_records` 表及 CRUD API（Go/Gin/GORM），支持按设备查询和全局查询（含分页、筛选、搜索）。前端提供共享数据层（service/hook/schema），支持两种使用场景。
+
+实现遵循既有模式：delta-based PATCH、版本号乐观锁、`services.AuditService` 审计日志、`apiFetch` + `ensureResponse`、Zod schema + adapter contract、TanStack Query 缓存隔离。
 
 ## Tasks
 
-- [ ] 1. Backend: Database Migration
-  - [ ] 1.1 Create database migration for `maintenance_records` table
+- [x] 1. Backend: Database Migration
+  - [x] 1.1 Create database migration for `maintenance_records` table
     - Create migration file under `server/migrations/` (follow existing naming convention in that directory)
     - Define `CREATE TABLE maintenance_records` with columns matching design:
       - `id UUID PRIMARY KEY DEFAULT gen_random_uuid()`
@@ -29,7 +34,7 @@
     - _Requirements: 1.1, 1.2, 2.1, 2.2, 4.1_
 
 - [ ] 2. Backend: Model and Handlers
-  - [ ] 2.1 Create `MaintenanceRecord` GORM model
+  - [-] 2.1 Create `MaintenanceRecord` GORM model
     - Create `server/models/maintenance_record.go` with the `MaintenanceRecord` struct from design
     - Include all fields with proper GORM tags: `type:uuid`, `size:N`, `index:idx_mr_asset`, defaults, `gorm.DeletedAt` for soft-delete
     - Register the model in the project's auto-migration list (e.g., `server/migrations/automigrate.go` or equivalent) so `db.AutoMigrate` picks it up alongside the SQL migration
@@ -38,7 +43,8 @@
 
   - [ ] 2.2 Implement `MaintenanceRecord` CRUD handlers
     - Create `server/handlers/handler_maintenance_record.go`
-    - `GetMaintenanceRecordsHandler` — list by `assetType` + `assetId` query params, order by `created_at DESC`, exclude soft-deleted
+    - `GetMaintenanceRecordsHandler` — list by optional `assetType` + `assetId` query params; if omitted, return all records; support pagination (`limit`, `offset`), filtering (`status`, `priority`, `type`, `dateFrom`, `dateTo`), and search (`search` for title/assetSn); order by `created_at DESC`; exclude soft-deleted
+    - `GetMaintenanceRecordStatsHandler` — return counts grouped by status: `{ open, inProgress, completed, cancelled, total }`
     - `GetMaintenanceRecordHandler` — fetch single record by `id`; return 404 if not found or soft-deleted
     - `CreateMaintenanceRecordHandler`:
       - Validate required `title` (HTTP 400 if missing)
@@ -56,17 +62,18 @@
       - Apply delta via existing `buildXxxUpdates` pattern, increment `version`, set `updatedBy`
       - Write audit log via `services.AuditService.LogUpdate("MaintenanceRecord", id, delta)`
     - `DeleteMaintenanceRecordHandler` — soft-delete (`deleted_at = NOW()`), write audit log via `services.AuditService.LogDelete`
-    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 2.1, 2.2, 2.3, 2.4, 3.1, 3.2, 3.3, 3.4, 3.5, 4.1, 4.2, 4.3, 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 6.1, 6.2, 6.3_
+    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 2.1, 2.2, 2.3, 2.4, 3.1, 3.2, 3.3, 3.4, 3.5, 4.1, 4.2, 4.3, 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 6.1, 6.2, 6.3, 14.1, 14.2, 14.3, 14.4_
 
   - [ ] 2.3 Register routes and permission
     - Add `ActionEquipmentMaintenanceManage` permission constant in the `authz` package
     - In `server/routes/routes_equipment.go`, register under the existing `equipmentGroup` (which already applies `equipmentAccess` middleware):
-      - `GET    /maintenance-records` → `GetMaintenanceRecordsHandler` (read)
+      - `GET    /maintenance-records` → `GetMaintenanceRecordsHandler` (read, supports optional assetType/assetId + pagination + filters)
+      - `GET    /maintenance-records/stats` → `GetMaintenanceRecordStatsHandler` (read, returns status counts)
       - `GET    /maintenance-records/:id` → `GetMaintenanceRecordHandler` (read)
       - `POST   /maintenance-records` → `CreateMaintenanceRecordHandler` (requires `ActionEquipmentMaintenanceManage`)
       - `PATCH  /maintenance-records/:id` → `PatchMaintenanceRecordHandler` (requires `ActionEquipmentMaintenanceManage`)
       - `DELETE /maintenance-records/:id` → `DeleteMaintenanceRecordHandler` (requires `ActionEquipmentMaintenanceManage`)
-    - _Requirements: 7.1, 7.2, 7.3_
+    - _Requirements: 7.1, 7.2, 7.3, 14.1_
 
   - [ ]* 2.4 Write property tests for backend CRUD logic
     - **Property 1: Create-Read Round Trip** — for any valid input, POST then GET by id yields all fields preserved, `status='OPEN'`, `version=1`, non-empty `id`/timestamps
@@ -94,7 +101,7 @@
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 4. Frontend: Data Layer (Schema, Contract, Adapter)
-  - [ ] 4.1 Add Zod schema and types for `MaintenanceRecord`
+  - [x] 4.1 Add Zod schema and types for `MaintenanceRecord`
     - Add to `src/features/equipment-tooling/data/schema.ts` (or a dedicated `maintenance-record.ts` if the file is large):
       - `maintenanceRecordTypeSchema = z.enum(['PREVENTIVE','CORRECTIVE','INSPECTION'])`
       - `maintenanceRecordStatusSchema = z.enum(['OPEN','IN_PROGRESS','COMPLETED','CANCELLED'])`
@@ -103,14 +110,15 @@
     - Export `MaintenanceRecord`, `MaintenanceRecordType`, `MaintenanceRecordStatus`, `MaintenanceRecordPriority` types via `z.infer`
     - _Requirements: 12.1, 12.2_
 
-  - [ ] 4.2 Create `MaintenanceRecordApiDTO` contract
+  - [x] 4.2 Create `MaintenanceRecordApiDTO` contract
     - Create `src/features/equipment-tooling/contracts/maintenance-record-api-dto.ts`
     - Define `MaintenanceRecordApiDTO` with full API response shape (id, assetType, assetId, assetSn, type, status, title, description, priority, startedAt, completedAt, cost, remarks, createdBy, updatedBy, version, createdAt, updatedAt)
     - Define `SaveMaintenanceRecordApiDTO` for create requests (assetType, assetId, assetSn, type, title, description?, priority?, cost?, remarks?)
+    - Define `MaintenanceRecordStatsApiDTO` for stats response (`{ open: number, inProgress: number, completed: number, cancelled: number, total: number }`)
     - Export enum-string aliases: `MaintenanceRecordTypeApiDTO`, `MaintenanceRecordStatusApiDTO`, `MaintenanceRecordPriorityApiDTO`
-    - _Requirements: 12.3_
+    - _Requirements: 12.3, 14.1_
 
-  - [ ] 4.3 Create `MaintenanceRecord` API adapter
+  - [x] 4.3 Create `MaintenanceRecord` API adapter
     - Create `src/features/equipment-tooling/adapters/maintenance-record-api-adapter.ts`
     - `toMaintenanceRecordContract(dto: MaintenanceRecordApiDTO): MaintenanceRecord` — map fields and run `maintenanceRecordSchema.parse` (or `safeParse` + log on failure) for runtime validation
     - `toMaintenanceRecordContracts(dtos: MaintenanceRecordApiDTO[]): MaintenanceRecord[]` — array variant
@@ -125,11 +133,15 @@
   - [ ] 5.1 Create `MaintenanceRecordService`
     - Create `src/features/equipment-tooling/services/maintenance-record-service.ts`
     - `getByAsset(assetType, assetId)` → `GET /maintenance-records?assetType=...&assetId=...`, parse via `ensureArrayResponse` + `toMaintenanceRecordContracts`
+    - `getAll(filters?, pagination?)` → `GET /maintenance-records?status=...&limit=...&offset=...` (all query params optional), parse via `ensureArrayResponse` + `toMaintenanceRecordContracts`
+    - `getStats()` → `GET /maintenance-records/stats`, parse via `ensureObjectResponse` returning `MaintenanceRecordStatsApiDTO`
     - `create(record: SaveMaintenanceRecordApiDTO)` → `POST /maintenance-records`, parse via `ensureObjectResponse` + `toMaintenanceRecordContract`
     - `patch(id, delta: DeltaSet, version)` → `PATCH /maintenance-records/:id` with body `{ op:'PATCH', delta, metadata:{ id, version, intent:'MAINTENANCE_RECORD_UPDATE' } }`, parse via `ensureObjectResponse` + `toMaintenanceRecordContract`
     - `delete(id)` → `DELETE /maintenance-records/:id`
+    - Define `MaintenanceRecordFilters` interface (`status?`, `priority?`, `type?`, `dateFrom?`, `dateTo?`, `search?`)
+    - Define `MaintenanceRecordPagination` interface (`limit?`, `offset?`)
     - All calls use shared `apiFetch` from `@/lib/api-client`
-    - _Requirements: 8.3, 9.2, 10.1, 10.4, 12.3_
+    - _Requirements: 8.3, 9.2, 10.1, 10.4, 12.3, 14.1, 14.2, 14.3, 14.4_
 
   - [ ] 5.2 Create `useMaintenanceRecords` hook
     - Create `src/features/equipment-tooling/hooks/use-maintenance-records.ts`
@@ -187,7 +199,63 @@
     - **Property 13: Cache Isolation by Asset Key** — for any two different `(assetType, assetId)` pairs, mutations on one SHALL NOT invalidate the cached data of the other
       - **Validates: Requirement 11.2**
 
-- [ ] 10. Final checkpoint - Full integration verification
+- [ ] 10. Final checkpoint - Embedded lists integration verification
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 11. Backend: Global Query Enhancements (for Independent Center)
+  - [ ] 11.1 Extend `GetMaintenanceRecordsHandler` for global queries
+    - Already implemented in task 2.2 — verify `assetType`/`assetId` are optional
+    - Verify pagination support (`limit`, `offset` query params)
+    - Verify filtering support (`status`, `priority`, `type`, `dateFrom`, `dateTo`, `search` query params)
+    - _Requirements: 14.1, 14.2, 14.3, 14.4_
+
+  - [ ] 11.2 Implement `GetMaintenanceRecordStatsHandler`
+    - Already implemented in task 2.2 — verify it returns `{ open, inProgress, completed, cancelled, total }` counts
+    - _Requirements: 15.1_
+
+- [ ] 12. Frontend: Global Maintenance Records Hook
+  - [ ] 12.1 Create `useMaintenanceRecordsGlobal` hook
+    - Create `src/features/equipment-tooling/hooks/use-maintenance-records-global.ts`
+    - Export `MAINTENANCE_RECORDS_GLOBAL_QUERY_KEY(filters?, pagination?)` factory returning `['maintenanceRecords', 'global', filters, pagination] as const`
+    - `useQuery` for records list with `queryKey` from factory, `queryFn = () => MaintenanceRecordService.getAll(filters, pagination)`
+    - `useQuery` for stats with `queryKey = ['maintenanceRecords', 'stats']`, `queryFn = () => MaintenanceRecordService.getStats()`
+    - Reuse mutations from `useMaintenanceRecords` but invalidate global query keys
+    - Return `{ records, stats, isLoading, isLoadingStats, create, patch, remove, reload }`
+    - _Requirements: 14.1, 14.2, 15.1_
+
+- [ ] 13. Frontend: Independent Maintenance Center Pages
+  - [ ] 13.1 Create `MaintenanceOverview` component
+    - Create `src/features/equipment-tooling/components/maintenance-overview.tsx`
+    - Use `useMaintenanceRecordsGlobal()` to fetch stats and recent records
+    - Display stat cards for each status (OPEN, IN_PROGRESS, COMPLETED, CANCELLED) with counts from `stats`
+    - Display high-priority open records list (filter `status=OPEN`, `priority=HIGH|CRITICAL`, limit 10)
+    - Display recent activities list (last 10 records, no filters)
+    - Provide quick navigation links to `/equipment-maintenance/records?status=OPEN` etc.
+    - _Requirements: 15.1, 15.2, 15.3, 15.4_
+
+  - [ ] 13.2 Create `MaintenanceRecordsPage` component
+    - Create `src/features/equipment-tooling/components/maintenance-records-page.tsx`
+    - Use `useMaintenanceRecordsGlobal(filters, pagination)` with state-managed filters and pagination
+    - Display paginated table with columns: assetType, assetSn, title, type, status, priority, createdAt
+    - Provide filter controls (dropdowns for status/priority/type, date range picker, search input)
+    - Clicking a row navigates to the corresponding asset detail page with maintenance tab active (e.g., `/equipment-tooling/molds?id=xxx&tab=maintenance` or `/tooling-furnaces?id=xxx&tab=maintenance`)
+    - Include "新建维保记录" button that opens a dialog with asset selection (dropdown of molds/furnaces)
+    - _Requirements: 16.1, 16.2, 16.3, 16.4, 16.5_
+
+  - [ ] 13.3 Create route files for independent center
+    - Create `src/routes/_authenticated/equipment-maintenance/route.tsx` — layout component with tab navigation
+    - Create `src/routes/_authenticated/equipment-maintenance/index.tsx` — redirect to `/equipment-maintenance/overview`
+    - Create `src/routes/_authenticated/equipment-maintenance/overview.tsx` — render `MaintenanceOverview`
+    - Create `src/routes/_authenticated/equipment-maintenance/records.tsx` — render `MaintenanceRecordsPage`
+    - _Requirements: 13.1, 13.2, 13.3_
+
+  - [ ] 13.4 Add sidebar menu item
+    - Update `src/components/layout/data/sidebar-data.ts` to add "设备维保中心" under "资源管理 > 模具管理" group
+    - Menu item config: `{ id: 'maintenance-center', titleKey: 'sidebar.items.maintenanceCenter', url: '/equipment-maintenance/overview', activeMatch: '/equipment-maintenance', icon: Wrench, permissionId: permissionIdForPath('/equipment-maintenance/overview') }`
+    - Update `src/locales/messages/zh-CN/sidebar.ts` and `en-US/sidebar.ts` to add `maintenanceCenter` translation
+    - _Requirements: 13.4_
+
+- [ ] 14. Final checkpoint - Independent center integration verification
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
@@ -196,8 +264,9 @@
 - Each task references specific requirements (granular sub-requirements, e.g. 5.7) for traceability
 - All 14 correctness properties from `design.md` are mapped to test sub-tasks: 1–10 → 2.4 (backend), 11–12 → 6.2 (component), 13 → 9.2 (cache isolation), 14 → 4.4 (adapter)
 - Backend follows existing patterns: delta-based PATCH, `services.AuditService` audit logging, GORM soft-delete, version-based optimistic locking
-- Frontend follows existing patterns: `apiFetch` + `ensureResponse`, Zod schema + adapter contract, TanStack Query with `(assetType, assetId)` cache key isolation
-- `MaintenanceRecordList` is the single shared component reused by both Mold and Furnace detail pages, parameterised by `assetType`
+- Frontend follows existing patterns: `apiFetch` + `ensureResponse`, Zod schema + adapter contract, TanStack Query with cache key isolation
+- **Hybrid architecture**: `MaintenanceRecordList` is shared between embedded (detail pages) and independent (center pages) contexts via different hooks (`useMaintenanceRecords` vs `useMaintenanceRecordsGlobal`)
+- Tasks 1-10 implement the embedded lists (original scope), tasks 11-14 add the independent maintenance center
 
 ## Task Dependency Graph
 
@@ -210,7 +279,10 @@
     { "id": 3, "tasks": ["2.3", "5.2"] },
     { "id": 4, "tasks": ["2.4", "6.1"] },
     { "id": 5, "tasks": ["6.2", "7.1", "9.1"] },
-    { "id": 6, "tasks": ["9.2"] }
+    { "id": 6, "tasks": ["9.2", "11.1", "11.2"] },
+    { "id": 7, "tasks": ["12.1"] },
+    { "id": 8, "tasks": ["13.1", "13.2"] },
+    { "id": 9, "tasks": ["13.3", "13.4"] }
   ]
 }
 ```

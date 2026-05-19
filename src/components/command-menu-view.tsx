@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import { ArrowRight, BookOpenText, Box, Search, Zap } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import type { SearchItem } from './layout/data/search-data'
@@ -11,6 +12,7 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { cn } from '@/lib/utils'
 import { ScrollArea } from './ui/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
@@ -49,6 +51,7 @@ export function CommandMenuView({
   onItemSelect,
 }: CommandMenuViewProps) {
   const { t } = useLanguage()
+  const isMobile = useIsMobile()
 
   const categoryLabels: Record<string, string> = {
     modules: t('commandMenu.headings.modules'),
@@ -60,176 +63,182 @@ export function CommandMenuView({
   const hasActionResults = (groupedItems.actions?.length ?? 0) > 0
 
   return (
-    <CommandDialog
-      modal={false}
-      open={open}
-      onOpenChange={onOpenChange}
-      requireCloseButton
-      shouldFilter={false}
-      overlayClassName='!bg-transparent'
-      className='w-[85vw]! max-w-[85vw]! overflow-hidden rounded-[32px] border border-sky-500/35 bg-background p-0 shadow-[0_24px_80px_rgba(14,165,233,0.16)] ring-1 ring-sky-500/20 **:data-[slot=command-input-wrapper]:h-14 **:data-[slot=command-input-wrapper]:border-sky-500/20 **:data-[slot=command-input-wrapper]:px-5 [&_[data-slot=command-input-wrapper]_svg]:size-4'
-    >
-      <div className='pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.12),transparent_34%)]' />
+    <>
+      {isMobile && open && typeof document !== 'undefined'
+        ? createPortal(<div className='fixed inset-0 z-100 bg-black/50 animate-in fade-in-0' />, document.body)
+        : null}
 
-      <div className='relative border-b border-dashed border-sky-500/20'>
-        <CommandInput
-          placeholder={t('commandMenu.placeholder')}
-          className='h-14 border-none bg-transparent text-sm focus:ring-0'
-          value={searchValue}
-          onValueChange={onSearchChange}
-        />
-        {isSearching && (
-          <div className='absolute right-4 top-1/2 -translate-y-1/2'>
-            <div className='size-5 animate-spin rounded-full border-2 border-primary/20 border-t-primary' />
-          </div>
-        )}
-      </div>
+      <CommandDialog
+        modal={false}
+        open={open}
+        onOpenChange={onOpenChange}
+        requireCloseButton
+        shouldFilter={false}
+        overlayClassName='!bg-transparent'
+        className='h-svh! max-h-svh! w-[100vw]! max-w-[100vw]! overflow-hidden rounded-[32px] border border-sky-500/35 bg-background p-0 shadow-[0_24px_80px_rgba(14,165,233,0.16)] ring-1 ring-sky-500/20 md:h-auto! md:max-h-[calc(100dvh-2rem)]! md:w-[85vw]! md:max-w-[85vw]! **:data-[slot=command-input-wrapper]:h-14 **:data-[slot=command-input-wrapper]:border-sky-500/20 **:data-[slot=command-input-wrapper]:px-5 [&_[data-slot=command-input-wrapper]_svg]:size-4'
+      >
+        <div className='pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.12),transparent_34%)]' />
 
-      <Tabs defaultValue='business' className='flex flex-col'>
-        <div className='px-3 pt-1.5'>
-          <TabsList className='grid w-full grid-cols-3 rounded-2xl border border-sky-500/15 bg-sky-500/5 p-1'>
-            <TabsTrigger
-              value='business'
-              className='flex items-center gap-1.5 rounded-xl py-1.5 text-[9px] font-black uppercase tracking-widest text-muted-foreground italic transition-all data-[state=active]:bg-background data-[state=active]:text-sky-700 data-[state=active]:shadow-sm'
-            >
-              <Box size={11} />
-              {t('commandMenu.headings.data')}
-            </TabsTrigger>
-            <TabsTrigger
-              value='knowledge'
-              className='flex items-center gap-1.5 rounded-xl py-1.5 text-[9px] font-black uppercase tracking-widest text-muted-foreground italic transition-all data-[state=active]:bg-background data-[state=active]:text-sky-700 data-[state=active]:shadow-sm'
-            >
-              <BookOpenText size={11} />
-              {t('commandMenu.headings.knowledgeBase')}
-            </TabsTrigger>
-            <TabsTrigger
-              value='actions'
-              className='flex items-center gap-1.5 rounded-xl py-1.5 text-[9px] font-black uppercase tracking-widest text-muted-foreground italic transition-all data-[state=active]:bg-background data-[state=active]:text-sky-700 data-[state=active]:shadow-sm'
-            >
-              <Zap size={11} />
-              {t('commandMenu.headings.actions')}
-            </TabsTrigger>
-          </TabsList>
+        <div className='relative border-b border-dashed border-sky-500/20'>
+          <CommandInput
+            placeholder={t('commandMenu.placeholder')}
+            className='h-14 border-none bg-transparent text-sm focus:ring-0'
+            value={searchValue}
+            onValueChange={onSearchChange}
+          />
+          {isSearching && (
+            <div className='absolute right-4 top-1/2 -translate-y-1/2'>
+              <div className='size-5 animate-spin rounded-full border-2 border-primary/20 border-t-primary' />
+            </div>
+          )}
         </div>
 
-        <CommandList className='max-h-none overflow-hidden'>
-          <ScrollArea className='h-[540px] max-h-[calc(100dvh-10.5rem)]'>
-            <div className='min-h-full'>
-              <TabsContent value='business' className='m-0 focus-visible:outline-none'>
-                <div className='space-y-2 p-2.5'>
-                  {!hasBusinessResults && (
-                    <SearchEmptyState message={t('commandMenu.empty')} />
-                  )}
+        <Tabs defaultValue='business' className='flex min-h-0 flex-1 flex-col'>
+          <div className='px-3 pt-1.5'>
+            <TabsList className='grid w-full grid-cols-3 rounded-2xl border border-sky-500/15 bg-sky-500/5 p-1'>
+              <TabsTrigger
+                value='business'
+                className='flex items-center gap-1.5 rounded-xl py-1.5 text-[9px] font-black uppercase tracking-widest text-muted-foreground italic transition-all data-[state=active]:bg-background data-[state=active]:text-sky-700 data-[state=active]:shadow-sm'
+              >
+                <Box size={11} />
+                {t('commandMenu.headings.data')}
+              </TabsTrigger>
+              <TabsTrigger
+                value='knowledge'
+                className='flex items-center gap-1.5 rounded-xl py-1.5 text-[9px] font-black uppercase tracking-widest text-muted-foreground italic transition-all data-[state=active]:bg-background data-[state=active]:text-sky-700 data-[state=active]:shadow-sm'
+              >
+                <BookOpenText size={11} />
+                {t('commandMenu.headings.knowledgeBase')}
+              </TabsTrigger>
+              <TabsTrigger
+                value='actions'
+                className='flex items-center gap-1.5 rounded-xl py-1.5 text-[9px] font-black uppercase tracking-widest text-muted-foreground italic transition-all data-[state=active]:bg-background data-[state=active]:text-sky-700 data-[state=active]:shadow-sm'
+              >
+                <Zap size={11} />
+                {t('commandMenu.headings.actions')}
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-                  {/* Rust Results (Always show all matches if searching) */}
-                  {asyncResults.length > 0 && (
-                    <CommandGroup
-                      heading={t('commandMenu.headings.data')}
-                      className='**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1 **:[[cmdk-group-heading]]:text-[8px] **:[[cmdk-group-heading]]:font-black **:[[cmdk-group-heading]]:italic **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-[0.2em] **:[[cmdk-group-heading]]:text-emerald-600/70'
-                    >
-                      {asyncResults.map((item) => (
-                        <SearchListItem
-                          key={item.id}
-                          item={item}
-                          onSelect={() => onItemSelect(item)}
-                          isData
-                        />
-                      ))}
-                    </CommandGroup>
-                  )}
+          <CommandList className='min-h-0 max-h-none flex-1 overflow-hidden'>
+            <ScrollArea className='h-full max-h-full md:h-[540px] md:max-h-[calc(100dvh-10.5rem)]'>
+              <div className='min-h-full'>
+                <TabsContent value='business' className='m-0 focus-visible:outline-none'>
+                  <div className='space-y-2 p-2.5'>
+                    {!hasBusinessResults && (
+                      <SearchEmptyState message={t('commandMenu.empty')} />
+                    )}
 
-                  {groupedItems.modules && (
-                    <CommandGroup
-                      heading={categoryLabels.modules}
-                      className='**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1 **:[[cmdk-group-heading]]:text-[8px] **:[[cmdk-group-heading]]:font-black **:[[cmdk-group-heading]]:italic **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-[0.2em] **:[[cmdk-group-heading]]:text-indigo-600/70'
-                    >
-                      {groupedItems.modules
-                        .slice(0, isInitialState ? DISPLAY_LIMIT : undefined)
-                        .map((item) => (
-                          <SearchListItem key={item.id} item={item} onSelect={() => onItemSelect(item)} />
+                    {/* Rust Results (Always show all matches if searching) */}
+                    {asyncResults.length > 0 && (
+                      <CommandGroup
+                        heading={t('commandMenu.headings.data')}
+                        className='**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1 **:[[cmdk-group-heading]]:text-[8px] **:[[cmdk-group-heading]]:font-black **:[[cmdk-group-heading]]:italic **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-[0.2em] **:[[cmdk-group-heading]]:text-emerald-600/70'
+                      >
+                        {asyncResults.map((item) => (
+                          <SearchListItem
+                            key={item.id}
+                            item={item}
+                            onSelect={() => onItemSelect(item)}
+                            isData
+                          />
                         ))}
-                      
-                      {isInitialState && groupedItems.modules.length > DISPLAY_LIMIT && (
-                        <SearchHintItem />
-                      )}
-                    </CommandGroup>
-                  )}
-                </div>
-              </TabsContent>
+                      </CommandGroup>
+                    )}
 
-              <CommandMenuKnowledgeTab
-                entries={knowledgeEntries}
-                canCreateEntry={canCreateKnowledgeEntry}
-                onCreateEntry={onKnowledgeCreate}
-                onSelect={onKnowledgeSelect}
-              />
-
-              <TabsContent value='actions' className='m-0 focus-visible:outline-none'>
-                <div className='p-2.5'>
-                  {!hasActionResults && (
-                    <SearchEmptyState message={t('commandMenu.empty')} />
-                  )}
-
-                  {groupedItems.actions && (
-                    <CommandGroup
-                      heading={categoryLabels.actions}
-                      className='**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1 **:[[cmdk-group-heading]]:text-[8px] **:[[cmdk-group-heading]]:font-black **:[[cmdk-group-heading]]:italic **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-[0.2em] **:[[cmdk-group-heading]]:text-amber-600/70'
-                    >
-                      <div className='grid grid-cols-1 gap-0'>
-                        {groupedItems.actions
+                    {groupedItems.modules && (
+                      <CommandGroup
+                        heading={categoryLabels.modules}
+                        className='**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1 **:[[cmdk-group-heading]]:text-[8px] **:[[cmdk-group-heading]]:font-black **:[[cmdk-group-heading]]:italic **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-[0.2em] **:[[cmdk-group-heading]]:text-indigo-600/70'
+                      >
+                        {groupedItems.modules
                           .slice(0, isInitialState ? DISPLAY_LIMIT : undefined)
                           .map((item) => (
-                            <SearchListItem
-                              key={item.id}
-                              item={item}
-                              onSelect={() => onItemSelect(item)}
-                              isAction
-                            />
+                            <SearchListItem key={item.id} item={item} onSelect={() => onItemSelect(item)} />
                           ))}
-                        
-                        {isInitialState && groupedItems.actions.length > DISPLAY_LIMIT && (
+
+                        {isInitialState && groupedItems.modules.length > DISPLAY_LIMIT && (
                           <SearchHintItem />
                         )}
-                      </div>
-                    </CommandGroup>
-                  )}
-                </div>
-              </TabsContent>
-            </div>
-          </ScrollArea>
-        </CommandList>
-      </Tabs>
+                      </CommandGroup>
+                    )}
+                  </div>
+                </TabsContent>
 
-      <div className='flex items-center justify-between border-t border-dashed border-sky-500/20 bg-sky-500/5 px-4 py-2'>
-        <div className='flex items-center gap-2.5 text-[8px] font-black uppercase tracking-widest text-muted-foreground/50 italic'>
-          <span className='flex items-center gap-1.5'>
-            <kbd className='rounded border border-dashed border-sky-500/20 bg-background px-1.5 py-0.5 font-mono text-[7px]'>
-              Enter
-            </kbd>
-            {t('commandMenu.footer.enter')}
-          </span>
-          <span className='flex items-center gap-1.5'>
-            <kbd className='rounded border border-dashed border-sky-500/20 bg-background px-1.5 py-0.5 font-mono text-[7px]'>
-              ↑↓
-            </kbd>
-            {t('commandMenu.footer.arrows')}
-          </span>
-          <span className='flex items-center gap-1.5'>
-            <kbd className='rounded border border-dashed border-sky-500/20 bg-background px-1.5 py-0.5 font-mono text-[7px]'>
-              Tab
-            </kbd>
-            {t('commandMenu.footer.tab')}
-          </span>
+                <CommandMenuKnowledgeTab
+                  entries={knowledgeEntries}
+                  canCreateEntry={canCreateKnowledgeEntry}
+                  onCreateEntry={onKnowledgeCreate}
+                  onSelect={onKnowledgeSelect}
+                />
+
+                <TabsContent value='actions' className='m-0 focus-visible:outline-none'>
+                  <div className='p-2.5'>
+                    {!hasActionResults && (
+                      <SearchEmptyState message={t('commandMenu.empty')} />
+                    )}
+
+                    {groupedItems.actions && (
+                      <CommandGroup
+                        heading={categoryLabels.actions}
+                        className='**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1 **:[[cmdk-group-heading]]:text-[8px] **:[[cmdk-group-heading]]:font-black **:[[cmdk-group-heading]]:italic **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-[0.2em] **:[[cmdk-group-heading]]:text-amber-600/70'
+                      >
+                        <div className='grid grid-cols-1 gap-0'>
+                          {groupedItems.actions
+                            .slice(0, isInitialState ? DISPLAY_LIMIT : undefined)
+                            .map((item) => (
+                              <SearchListItem
+                                key={item.id}
+                                item={item}
+                                onSelect={() => onItemSelect(item)}
+                                isAction
+                              />
+                            ))}
+
+                          {isInitialState && groupedItems.actions.length > DISPLAY_LIMIT && (
+                            <SearchHintItem />
+                          )}
+                        </div>
+                      </CommandGroup>
+                    )}
+                  </div>
+                </TabsContent>
+              </div>
+            </ScrollArea>
+          </CommandList>
+        </Tabs>
+
+        <div className='flex items-center justify-between border-t border-dashed border-sky-500/20 bg-sky-500/5 px-4 py-2'>
+          <div className='flex items-center gap-2.5 text-[8px] font-black uppercase tracking-widest text-muted-foreground/50 italic'>
+            <span className='flex items-center gap-1.5'>
+              <kbd className='rounded border border-dashed border-sky-500/20 bg-background px-1.5 py-0.5 font-mono text-[7px]'>
+                Enter
+              </kbd>
+              {t('commandMenu.footer.enter')}
+            </span>
+            <span className='flex items-center gap-1.5'>
+              <kbd className='rounded border border-dashed border-sky-500/20 bg-background px-1.5 py-0.5 font-mono text-[7px]'>
+                ↑↓
+              </kbd>
+              {t('commandMenu.footer.arrows')}
+            </span>
+            <span className='flex items-center gap-1.5'>
+              <kbd className='rounded border border-dashed border-sky-500/20 bg-background px-1.5 py-0.5 font-mono text-[7px]'>
+                Tab
+              </kbd>
+              {t('commandMenu.footer.tab')}
+            </span>
+          </div>
+          <div className='text-[9px] font-black uppercase tracking-[0.2em] text-sky-600/35 italic'>
+            Intelligent Search v2.1
+          </div>
         </div>
-        <div className='text-[9px] font-black uppercase tracking-[0.2em] text-sky-600/35 italic'>
-          Intelligent Search v2.1
-        </div>
-      </div>
-      <CommandMenuKnowledgeDetailDrawer
-        entry={selectedKnowledgeEntry}
-        onClose={() => onKnowledgeSelect(null)}
-      />
-    </CommandDialog>
+        <CommandMenuKnowledgeDetailDrawer
+          entry={selectedKnowledgeEntry}
+          onClose={() => onKnowledgeSelect(null)}
+        />
+      </CommandDialog>
+    </>
   )
 }
 

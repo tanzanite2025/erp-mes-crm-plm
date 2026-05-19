@@ -64,6 +64,43 @@ function Wait-DbHealthy {
     throw "Postgres did not become healthy in ${TimeoutSeconds}s."
 }
 
+function Wait-ComposeServiceHealthy {
+    param(
+        [string]$ServiceName,
+        [int]$TimeoutSeconds = 180
+    )
+
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+
+    while ((Get-Date) -lt $deadline) {
+        $containerIds = @((& docker compose --env-file $envFile -f $composeFile ps -q $ServiceName 2>$null) | Where-Object {
+            -not [string]::IsNullOrWhiteSpace($_)
+        })
+
+        if ($containerIds.Count -eq 0) {
+            Start-Sleep -Seconds 2
+            continue
+        }
+
+        $allHealthy = $true
+        foreach ($containerId in $containerIds) {
+            $status = (& docker inspect --format "{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}" $containerId 2>$null).Trim()
+            if ($status -ne "healthy") {
+                $allHealthy = $false
+                break
+            }
+        }
+
+        if ($allHealthy) {
+            return
+        }
+
+        Start-Sleep -Seconds 2
+    }
+
+    throw "${ServiceName} did not become healthy in ${TimeoutSeconds}s."
+}
+
 function Test-DbCredentials {
     param(
         [string]$PgUser,
@@ -189,6 +226,10 @@ if (-not $FullStack) {
 
 Write-Step "FullStack enabled. Starting search-engine + app + nginx_lb + watchdog..."
 Invoke-Compose @("up", "-d", "--build", "search-engine", "app", "nginx_lb", "watchdog")
+Write-Step "Waiting for app containers to become healthy before refreshing nginx_lb..."
+Wait-ComposeServiceHealthy -ServiceName "app"
+Write-Step "Recreating nginx_lb so it picks up fresh app upstream resolution..."
+Invoke-Compose @("up", "-d", "--force-recreate", "nginx_lb")
 
 Write-Step "Done. Local stack is ready."
 Write-Host "  Search engine: http://localhost:8081"

@@ -89,12 +89,14 @@ export async function apiFetch<T>(
   endpoint: string,
   options: ExtendedRequestInit = {},
 ): Promise<T> {
+  const requestMethod = (options.method || 'GET').toUpperCase()
   if (circuitBreaker.tripped && !options.ignoreBreaker) {
     if (Date.now() - circuitBreaker.tripTime > circuitBreaker.resetTimeout) {
       circuitBreaker.tripped = false
     } else {
       logger.error('Blocked request before fetch because circuit breaker is open', {
         endpoint,
+        method: requestMethod,
         baseUrl: import.meta.env.VITE_API_BASE_URL || '',
       })
       throw createApiClientError({
@@ -116,6 +118,7 @@ export async function apiFetch<T>(
   if (!token && !publicEndpoint && !options.ignoreBreaker) {
     logger.error('Blocked request before fetch because auth token is missing', {
       endpoint,
+      method: requestMethod,
       baseUrl,
       publicEndpoint,
     })
@@ -193,7 +196,9 @@ export async function apiFetch<T>(
         code: (errorData as { code?: unknown }).code,
         isConflict: response.status === 409,
         details: {
+          method: requestMethod,
           statusText: response.statusText,
+          errorData,
         },
       }) as ApiFetchError
 
@@ -304,9 +309,14 @@ export async function apiFetch<T>(
         : undefined
 
     if (!shouldSuppressErrorLog(status, options)) {
+      const apiClientError = isApiClientError(normalizedError) ? normalizedError : undefined
       logger.error(`Request failed for ${endpoint}`, {
         durationMs: Number((errorEnd - start).toFixed(2)),
+        method: requestMethod,
         error: normalizedError,
+        errorKind: apiClientError?.kind,
+        code: apiClientError?.code,
+        details: apiClientError?.details,
         status,
       })
     }

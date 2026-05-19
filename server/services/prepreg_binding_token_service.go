@@ -147,7 +147,7 @@ func isExpiredUnboundPrepregBindingToken(binding models.PrepregBindingToken, now
 }
 
 func cleanupExpiredPrepregBindingTokensTx(tx *gorm.DB, now time.Time, excludeToken string) error {
-	query := tx.Where("(bound_spec_id = '' OR bound_spec_id IS NULL) AND expires_at IS NOT NULL AND expires_at < ?", now)
+	query := tx.Where("bound_spec_id IS NULL AND bound_roll_instance_id IS NULL AND expires_at IS NOT NULL AND expires_at < ?", now)
 	if strings.TrimSpace(excludeToken) != "" {
 		query = query.Where("token <> ?", normalizePrepregBindingToken(excludeToken))
 	}
@@ -184,7 +184,7 @@ func CreatePrepregBindingTokenBatch(quantity int) (CreatePrepregBindingTokenBatc
 				Token:     buildPrepregBindingTokenValue(now, index),
 				ExpiresAt: &recordExpiresAt,
 			}
-			if err := tx.Create(&record).Error; err != nil {
+			if err := tx.Omit("BoundSpecID", "BoundSpec", "BoundRollInstanceID", "BoundRollInstance", "BoundAt").Create(&record).Error; err != nil {
 				return err
 			}
 

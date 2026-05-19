@@ -15,30 +15,39 @@ import { cn } from '@/lib/utils'
 interface CommandMenuKnowledgeDetailDrawerProps {
   entry: KnowledgeBaseEntry | null
   onClose: () => void
+  usePortal?: boolean
 }
 
 export function CommandMenuKnowledgeDetailDrawer({
   entry,
   onClose,
+  usePortal = true,
 }: CommandMenuKnowledgeDetailDrawerProps) {
   const { t } = useLanguage()
-  if (typeof document === 'undefined') return null
+  if (usePortal && typeof document === 'undefined') return null
 
   const categoryLabelKey = entry
     ? KNOWLEDGE_BASE_CATEGORIES.find((item) => item.value === entry.category)?.labelKey
     : undefined
 
-  return createPortal(
+  const drawerContent = (
     <div
       className={cn(
-        'fixed inset-x-0 bottom-3 z-120 mx-auto w-[85vw]! max-w-[85vw]! overflow-hidden rounded-[28px] border border-amber-500/35 bg-background shadow-[0_24px_80px_rgba(245,158,11,0.16)] ring-1 ring-amber-500/20 transition-all duration-300',
+        usePortal
+          ? 'fixed inset-x-0 bottom-0 z-120 mx-auto w-[100vw]! max-w-[100vw]! overflow-hidden rounded-[28px] border border-amber-500/35 bg-background shadow-[0_24px_80px_rgba(245,158,11,0.16)] ring-1 ring-amber-500/20 transition-all duration-300 md:bottom-3 md:w-[85vw]! md:max-w-[85vw]!'
+          : 'absolute inset-x-0 bottom-0 z-120 w-full overflow-hidden rounded-[28px] border border-amber-500/35 bg-background shadow-[0_24px_80px_rgba(245,158,11,0.16)] ring-1 ring-amber-500/20 transition-all duration-300',
         entry
           ? 'translate-y-0 opacity-100'
           : 'pointer-events-none translate-y-8 opacity-0'
       )}
     >
       {entry ? (
-        <div className='flex h-[76dvh] max-h-[calc(100dvh-1.5rem)] flex-col sm:h-[72dvh]'>
+        <div
+          className={cn(
+            'flex h-[90dvh] max-h-[90dvh] flex-col',
+            usePortal ? 'md:h-[76dvh] md:max-h-[calc(100dvh-1.5rem)]' : 'max-h-full'
+          )}
+        >
           <div className='pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.12),transparent_34%)]' />
           <div className='relative flex items-start justify-between gap-4 border-b border-dashed border-amber-500/20 px-5 py-4'>
             <div className='min-w-0'>
@@ -106,7 +115,12 @@ export function CommandMenuKnowledgeDetailDrawer({
           ) : null}
         </div>
       ) : null}
-    </div>,
-    document.body
+    </div>
   )
+
+  if (!usePortal) {
+    return drawerContent
+  }
+
+  return createPortal(drawerContent, document.body)
 }

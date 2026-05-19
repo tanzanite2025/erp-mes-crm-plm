@@ -13,6 +13,12 @@
 
 本功能通过多态 `asset_type` + `asset_id` 设计，提供统一的维保记录 CRUD 能力，支持未来扩展到更多设备类型。范围限定为 Step 1-3（不含责任分配、不含计划排程）。
 
+### Architecture Approach
+
+本功能采用混合架构：
+- **嵌入式列表**：在模具和炉台详情页中嵌入 `MaintenanceRecordList` 组件，提供设备级维保记录查看和管理
+- **独立维保中心**：提供独立的维保中心页面 (`/equipment-maintenance/*`)，支持全局视角的维保记录查询、筛选和管理
+
 ## Glossary
 
 - **System**: 设备维保记录系统（后端 API + 前端 UI 的整体）
@@ -182,4 +188,57 @@
 1. THE Frontend SHALL validate all API responses against the maintenanceRecordSchema using Zod
 2. WHEN an API response fails schema validation, THE Frontend SHALL log the validation error and handle gracefully
 3. THE Frontend SHALL use the adapter pattern (toMaintenanceRecordContract) to transform API DTOs to domain objects
+
+---
+
+### Requirement 13: 独立维保中心页面路由
+
+**User Story:** As a 设备管理员, I want to 访问独立的维保中心页面, so that 我可以从全局视角管理所有设备的维保记录。
+
+#### Acceptance Criteria
+
+1. THE Frontend SHALL provide a route /equipment-maintenance/overview for the maintenance center overview page
+2. THE Frontend SHALL provide a route /equipment-maintenance/records for the maintenance records list page
+3. WHEN a user navigates to /equipment-maintenance, THE Frontend SHALL redirect to /equipment-maintenance/overview by default
+4. THE Frontend SHALL add a sidebar menu item "设备维保中心" under "资源管理 > 模具管理" at the same level as "模具资产管理" and "炉台资产档案"
+
+---
+
+### Requirement 14: 全局维保记录列表查询
+
+**User Story:** As a 设备管理员, I want to 查询所有设备的维保记录并按多维度筛选, so that 我可以进行跨设备的维保管理。
+
+#### Acceptance Criteria
+
+1. WHEN a user requests maintenance records without assetType/assetId filters, THE Backend SHALL return all non-deleted MaintenanceRecords ordered by createdAt DESC
+2. THE Backend SHALL support pagination via limit/offset query parameters
+3. THE Backend SHALL support filtering by status, priority, type, and date range via query parameters
+4. THE Backend SHALL support searching by title or assetSn via query parameter
+
+---
+
+### Requirement 15: 维保总览看板
+
+**User Story:** As a 设备管理员, I want to 在维保中心首页看到关键指标和统计, so that 我可以快速了解维保整体状况。
+
+#### Acceptance Criteria
+
+1. THE Frontend SHALL display total counts grouped by status (OPEN, IN_PROGRESS, COMPLETED, CANCELLED)
+2. THE Frontend SHALL display a list of high-priority open maintenance records
+3. THE Frontend SHALL display recent maintenance activities (last 10 records)
+4. THE Frontend SHALL provide quick navigation links to filtered record lists
+
+---
+
+### Requirement 16: 维保记录列表页
+
+**User Story:** As a 设备管理员, I want to 在独立页面查看和管理所有维保记录, so that 我可以进行批量操作和高级筛选。
+
+#### Acceptance Criteria
+
+1. THE Frontend SHALL display a paginated table of all maintenance records with columns: assetType, assetSn, title, type, status, priority, createdAt
+2. THE Frontend SHALL provide filter controls for status, priority, type, and date range
+3. THE Frontend SHALL provide a search box for filtering by title or assetSn
+4. WHEN a user clicks a record row, THE Frontend SHALL navigate to the corresponding asset detail page with the maintenance tab active
+5. THE Frontend SHALL support creating new maintenance records from this page (with asset selection)
 

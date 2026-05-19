@@ -220,20 +220,6 @@ export function PrepregBindingQrPage() {
               </p>
             </div>
           </div>
-
-          <div className='mt-6 grid gap-3'>
-            <div className='rounded-[20px] border border-dashed border-border/60 bg-muted/10 p-4'>
-              <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
-                {t('rawMaterials.bindingQr.form.rulesTitle')}
-              </p>
-              <div className='mt-3 grid gap-2'>
-                <RulePill text={t('rawMaterials.bindingQr.form.ruleUnbound')} />
-                <RulePill text={t('rawMaterials.bindingQr.form.ruleNoLeak')} />
-                <RulePill text={t('rawMaterials.bindingQr.form.rulePrintable')} />
-                <RulePill text={t('rawMaterials.bindingQr.form.ruleExpiry')} />
-              </div>
-            </div>
-          </div>
         </div>
 
         <PrepregBindingQrGrid
@@ -246,16 +232,6 @@ export function PrepregBindingQrPage() {
           cardTip={t('rawMaterials.bindingQr.grid.cardTip')}
         />
       </section>
-    </div>
-  )
-}
-
-function RulePill({ text }: { text: string }) {
-  return (
-    <div className='rounded-full border border-dashed border-border/60 bg-background px-4 py-2'>
-      <p className='text-[9px] font-black uppercase tracking-widest text-foreground/80'>
-        {text}
-      </p>
     </div>
   )
 }

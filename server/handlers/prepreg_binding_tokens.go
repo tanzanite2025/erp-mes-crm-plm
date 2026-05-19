@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"xdfc-server/services"
 
@@ -19,9 +20,11 @@ func CreatePrepregBindingTokenBatchHandler(c *gin.Context) {
 	if err != nil {
 		var validationErr *services.PrepregMaterialSpecValidationError
 		if errors.As(err, &validationErr) {
+			log.Printf("[PREPREG_BINDING_TOKEN_BATCH][VALIDATION] quantity=%d error=%v", input.Quantity, err)
 			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] " + validationErr.Error()})
 			return
 		}
+		log.Printf("[PREPREG_BINDING_TOKEN_BATCH][INTERNAL] quantity=%d error=%T %v", input.Quantity, err, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[RAW_MATERIALS] 批量生成绑定二维码失败: " + err.Error()})
 		return
 	}

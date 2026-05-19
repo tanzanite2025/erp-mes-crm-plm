@@ -4,23 +4,40 @@
 
 统一维保记录系统，为模具(Mold)和炉台(Furnace)提供共享的维保记录管理能力。通过多态 `asset_type` + `asset_id` 设计，支持未来扩展到更多设备类型。
 
+本功能采用**混合架构**：
+- **嵌入式列表**：在模具和炉台详情页中嵌入 `MaintenanceRecordList` 组件，提供设备级维保记录查看和管理
+- **独立维保中心**：提供独立的维保中心页面 (`/equipment-maintenance/*`)，支持全局视角的维保记录查询、筛选和管理
+
 后端新增 `maintenance_records` 表及 CRUD API，前端提供共享 `<MaintenanceRecordList>` 组件，分别嵌入模具详情页和炉台详情页。遵循现有 delta-based PATCH、审计日志、zod contract、apiFetch + ensureResponse 等既有模式。
 
 ## Architecture
 
 ```mermaid
 graph TD
-    subgraph Frontend
-        MoldDetail[Mold Detail Page]
-        FurnaceDetail[Furnace Detail Page]
-        MRL[MaintenanceRecordList Component]
-        MRS[MaintenanceRecordService]
-        Hook[useMaintenanceRecords Hook]
+    subgraph Frontend["Frontend - 混合架构"]
+        subgraph Embedded["嵌入式列表"]
+            MoldDetail[Mold Detail Page]
+            FurnaceDetail[Furnace Detail Page]
+            MRL[MaintenanceRecordList Component]
+        end
+        
+        subgraph Independent["独立维保中心"]
+            Overview[MaintenanceOverview Page]
+            RecordsPage[MaintenanceRecordsPage]
+            Sidebar[Sidebar Menu Item]
+        end
+        
+        subgraph Shared["共享数据层"]
+            MRS[MaintenanceRecordService]
+            Hook[useMaintenanceRecords Hook]
+            HookGlobal[useMaintenanceRecordsGlobal Hook]
+        end
     end
 
     subgraph Backend
         Router[Gin Router - /maintenance-records]
         Handler[MaintenanceRecord Handlers]
+        StatsHandler[Stats Handler]
         Model[MaintenanceRecord Model]
         AuditSvc[AuditService]
         DB[(PostgreSQL)]
@@ -29,9 +46,18 @@ graph TD
     MoldDetail --> MRL
     FurnaceDetail --> MRL
     MRL --> Hook
+    
+    Sidebar --> Overview
+    Sidebar --> RecordsPage
+    Overview --> HookGlobal
+    RecordsPage --> HookGlobal
+    
     Hook --> MRS
+    HookGlobal --> MRS
     MRS -->|apiFetch| Router
+    MRS -->|apiFetch| StatsHandler
     Router --> Handler
+    StatsHandler --> Handler
     Handler --> Model
     Handler --> AuditSvc
     Model --> DB
@@ -80,7 +106,11 @@ type MaintenanceRecord struct {
 **Interface**:
 ```go
 // Routes (注册在 equipmentGroup 下)
-// GET    /maintenance-records?assetType=MOLD&assetId=xxx  → 按设备查询
+// GET    /maintenance-records?assetType=MOLD&assetId=xxx  → 按设备查询 (assetType/assetId 可选)
+// GET    /maintenance-records?limit=20&offset=0           → 全局查询 (支持分页)
+// GET    /maintenance-records?status=OPEN&priority=HIGH   → 筛选查询
+// GET    /maintenance-records?search=模具维修              → 搜索查询
+// GET    /maintenance-records/stats                       → 统计数据
 // GET    /maintenance-records/:id                         → 单条详情
 // POST   /maintenance-records                             → 新建
 // PATCH  /maintenance-records/:id                         → Delta 更新
@@ -92,6 +122,10 @@ type MaintenanceRecord struct {
 - Delta-based PATCH (复用现有 `buildXxxUpdates` 模式)
 - 审计日志写入 (`services.AuditService`)
 - 版本号乐观锁 (version 字段)
+- **新增**: 支持可选的 assetType/assetId 参数 (未提供时返回所有记录)
+- **新增**: 支持分页 (limit/offset 查询参数)
+- **新增**: 支持筛选 (status, priority, type, dateFrom, dateTo, search 查询参数)
+- **新增**: 统计端点 (按状态分组计数)
 
 ### Component 3: MaintenanceRecordService (Frontend)
 
@@ -106,12 +140,27 @@ import { type MaintenanceRecord } from '../data/schema'
 import {
   type MaintenanceRecordApiDTO,
   type SaveMaintenanceRecordApiDTO,
+  type MaintenanceRecordStatsApiDTO,
 } from '../contracts/maintenance-record-api-dto'
 import {
   toMaintenanceRecordContract,
   toMaintenanceRecordContracts,
   toSaveMaintenanceRecordApiDTO,
 } from '../adapters/maintenance-record-api-adapter'
+
+export interface MaintenanceRecordFilters {
+  status?: string
+  priority?: string
+  type?: string
+  dateFrom?: string
+  dateTo?: string
+  search?: string
+}
+
+export interface MaintenanceRecordPagination {
+  limit?: number
+  offset?: number
+}
 
 export class MaintenanceRecordService {
   static async getByAsset(assetType: string, assetId: string): Promise<MaintenanceRecord[]> {
@@ -121,6 +170,36 @@ export class MaintenanceRecordService {
     return toMaintenanceRecordContracts(
       ensureArrayResponse<MaintenanceRecordApiDTO>(res, 'MaintenanceRecordService.getByAsset')
     )
+  }
+
+  static async getAll(
+    filters?: MaintenanceRecordFilters,
+    pagination?: MaintenanceRecordPagination
+  ): Promise<MaintenanceRecord[]> {
+    const params = new URLSearchParams()
+    if (filters?.status) params.append('status', filters.status)
+    if (filters?.priority) params.append('priority', filters.priority)
+    if (filters?.type) params.append('type', filters.type)
+    if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom)
+    if (filters?.dateTo) params.append('dateTo', filters.dateTo)
+    if (filters?.search) params.append('search', filters.search)
+    if (pagination?.limit) params.append('limit', pagination.limit.toString())
+    if (pagination?.offset) params.append('offset', pagination.offset.toString())
+    
+    const queryString = params.toString()
+    const url = queryString ? `/maintenance-records?${queryString}` : '/maintenance-records'
+    
+    const res = await apiFetch<MaintenanceRecordApiDTO[]>(url)
+    return toMaintenanceRecordContracts(
+      ensureArrayResponse<MaintenanceRecordApiDTO>(res, 'MaintenanceRecordService.getAll')
+    )
+  }
+
+  static async getStats(): Promise<MaintenanceRecordStatsApiDTO> {
+    const res = await apiFetch<MaintenanceRecordStatsApiDTO>('/maintenance-records/stats')
+    return ensureObjectResponse<MaintenanceRecordStatsApiDTO & Record<string, unknown>>(
+      res, 'MaintenanceRecordService.getStats'
+    ) as MaintenanceRecordStatsApiDTO
   }
 
   static async create(record: SaveMaintenanceRecordApiDTO): Promise<MaintenanceRecord> {
@@ -229,6 +308,82 @@ interface MaintenanceRecordListProps {
 - 删除确认
 - 按优先级/状态/类型筛选
 
+### Component 6: MaintenanceOverview (Frontend UI)
+
+**Purpose**: 独立维保中心首页，提供全局维保概览和统计
+
+```typescript
+// MaintenanceOverview.tsx
+interface MaintenanceOverviewProps {}
+```
+
+**Responsibilities**:
+- 展示维保记录统计卡片 (按状态分组计数: OPEN, IN_PROGRESS, COMPLETED, CANCELLED)
+- 展示高优先级待处理记录列表 (status=OPEN, priority=HIGH/CRITICAL)
+- 展示最近维保活动 (最近 10 条记录)
+- 提供快速导航链接到筛选后的记录列表页
+
+### Component 7: MaintenanceRecordsPage (Frontend UI)
+
+**Purpose**: 独立维保记录列表页，支持全局查询、筛选和管理
+
+```typescript
+// MaintenanceRecordsPage.tsx
+interface MaintenanceRecordsPageProps {}
+```
+
+**Responsibilities**:
+- 展示分页表格 (列: assetType, assetSn, title, type, status, priority, createdAt)
+- 提供筛选控件 (status, priority, type, date range)
+- 提供搜索框 (按 title 或 assetSn 搜索)
+- 点击记录行跳转到对应设备详情页的维保记录标签
+- 支持从此页面创建新维保记录 (需选择设备)
+
+### Component 8: useMaintenanceRecordsGlobal Hook (Frontend)
+
+**Purpose**: TanStack Query 封装，用于全局维保记录查询 (不限定设备)
+
+```typescript
+// use-maintenance-records-global.ts
+export const MAINTENANCE_RECORDS_GLOBAL_QUERY_KEY = (
+  filters?: MaintenanceRecordFilters,
+  pagination?: MaintenanceRecordPagination
+) => ['maintenanceRecords', 'global', filters, pagination] as const
+
+export function useMaintenanceRecordsGlobal(
+  filters?: MaintenanceRecordFilters,
+  pagination?: MaintenanceRecordPagination
+) {
+  const queryClient = useQueryClient()
+  const queryKey = MAINTENANCE_RECORDS_GLOBAL_QUERY_KEY(filters, pagination)
+
+  const query = useQuery({
+    queryKey,
+    queryFn: () => MaintenanceRecordService.getAll(filters, pagination),
+  })
+
+  const statsQuery = useQuery({
+    queryKey: ['maintenanceRecords', 'stats'],
+    queryFn: () => MaintenanceRecordService.getStats(),
+  })
+
+  // Mutations reuse the same logic from useMaintenanceRecords
+  // but invalidate the global query key instead
+
+  return {
+    records: query.data ?? [],
+    stats: statsQuery.data,
+    isLoading: query.isLoading,
+    // ... mutations
+  }
+}
+```
+
+**Responsibilities**:
+- 使用不同的 query key (`['maintenanceRecords', 'global', ...]`) 与设备级缓存隔离
+- 支持筛选和分页参数
+- 提供统计数据查询
+
 ## Data Models
 
 ### MaintenanceRecord (Frontend Schema)
@@ -312,6 +467,14 @@ export interface SaveMaintenanceRecordApiDTO {
   cost?: number
   remarks?: string
 }
+
+export interface MaintenanceRecordStatsApiDTO {
+  open: number
+  inProgress: number
+  completed: number
+  cancelled: number
+  total: number
+}
 ```
 
 ### Database Migration
@@ -346,7 +509,7 @@ CREATE INDEX idx_mr_created ON maintenance_records(created_at DESC) WHERE delete
 
 ## Sequence Diagrams
 
-### 创建维保记录
+### 创建维保记录 (嵌入式列表)
 
 ```mermaid
 sequenceDiagram
@@ -367,6 +530,46 @@ sequenceDiagram
     Svc-->>Hook: MaintenanceRecord
     Hook->>Hook: invalidateQueries
     Hook-->>UI: re-render with new record
+```
+
+### 全局查询维保记录 (独立页面)
+
+```mermaid
+sequenceDiagram
+    participant UI as MaintenanceRecordsPage
+    participant Hook as useMaintenanceRecordsGlobal
+    participant Svc as MaintenanceRecordService
+    participant API as Gin Handler
+    participant DB as PostgreSQL
+
+    UI->>Hook: query with filters & pagination
+    Hook->>Svc: getAll(filters, pagination)
+    Svc->>API: GET /maintenance-records?status=OPEN&limit=20&offset=0
+    API->>DB: SELECT * FROM maintenance_records WHERE status='OPEN' LIMIT 20 OFFSET 0
+    DB-->>API: records[]
+    API-->>Svc: MaintenanceRecordApiDTO[]
+    Svc-->>Hook: MaintenanceRecord[]
+    Hook-->>UI: render paginated table
+```
+
+### 获取统计数据 (维保概览)
+
+```mermaid
+sequenceDiagram
+    participant UI as MaintenanceOverview
+    participant Hook as useMaintenanceRecordsGlobal
+    participant Svc as MaintenanceRecordService
+    participant API as Gin Handler
+    participant DB as PostgreSQL
+
+    UI->>Hook: query stats
+    Hook->>Svc: getStats()
+    Svc->>API: GET /maintenance-records/stats
+    API->>DB: SELECT status, COUNT(*) FROM maintenance_records GROUP BY status
+    DB-->>API: stats by status
+    API-->>Svc: MaintenanceRecordStatsApiDTO
+    Svc-->>Hook: stats
+    Hook-->>UI: render stat cards
 ```
 
 ### Delta-based PATCH 更新
