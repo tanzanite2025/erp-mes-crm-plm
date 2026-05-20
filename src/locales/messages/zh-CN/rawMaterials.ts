@@ -607,6 +607,7 @@ export const rawMaterials = {
       utilization: '原材利用率权重',
       stability: '卷材排布稳定性权重',
       splitPenalty: '物理分切惩罚项',
+      mustFulfillPenalty: '必达需求惩罚权重',
     },
     constraints: {
       title: '几何与物理约束',

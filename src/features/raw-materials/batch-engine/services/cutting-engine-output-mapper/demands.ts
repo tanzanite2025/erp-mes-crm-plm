@@ -36,7 +36,7 @@ export function buildDemandSummary(
     requiredSets: demandLine.requiredSets,
     requiredPieces: demandLine.requiredPieces,
     fulfilled: remainingPieces <= 0,
-    mustFulfill: false,
+    mustFulfill: demandLine.mustFulfill,
     isSplitAcrossRolls: false,
     coveragePercent: percent(allocatedPieces, demandLine.requiredPieces),
     usageType: demandLine.usageType || 'geometry',

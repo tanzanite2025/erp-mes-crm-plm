@@ -16,6 +16,7 @@ pub struct CuttingEngineWeights {
     pub utilization_weight: f64,
     pub stability_weight: f64,
     pub split_penalty: f64,
+    pub must_fulfill_penalty_weight: f64,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -150,6 +151,8 @@ pub struct CuttingPlan {
     pub produced_pieces: u32,
     pub direction_switch_count: u32,
     pub angle_mix_violation_count: u32,
+    pub must_fulfill_satisfied: bool,
+    pub must_fulfill_penalty: f64,
     pub rule_diagnostics: CuttingPlanRuleDiagnostics,
     pub zones: Vec<CuttingLayoutZone>,
     pub warnings: Vec<String>,

@@ -37,6 +37,8 @@ pub(crate) fn validate_input(input: &CuttingEngineInput) -> Result<(), CuttingEn
     if !input.weights.utilization_weight.is_finite()
         || !input.weights.stability_weight.is_finite()
         || !input.weights.split_penalty.is_finite()
+        || !input.weights.must_fulfill_penalty_weight.is_finite()
+        || input.weights.must_fulfill_penalty_weight < 0.0
         || !input
             .direction_rules
             .direction_switch_penalty_weight

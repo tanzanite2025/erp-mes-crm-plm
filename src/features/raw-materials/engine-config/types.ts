@@ -17,6 +17,7 @@ export type CuttingEngineConfig = {
   utilizationWeight: string
   stabilityWeight: string
   splitPenaltyWeight: string
+  mustFulfillPenaltyWeight: string
   directionSwitchPenaltyWeight: string
   sameDirectionPreferred: boolean
   angleMixMode: CuttingEngineAngleMixMode
@@ -33,6 +34,7 @@ export const DEFAULT_CUTTING_ENGINE_CONFIG: CuttingEngineConfig = {
   utilizationWeight: '55',
   stabilityWeight: '10',
   splitPenaltyWeight: '6',
+  mustFulfillPenaltyWeight: '6000',
   directionSwitchPenaltyWeight: '4',
   sameDirectionPreferred: true,
   angleMixMode: 'prefer-same-angle',
@@ -85,6 +87,7 @@ export function normalizeCuttingEngineConfig(value: Partial<CuttingEngineConfig>
     utilizationWeight: value.utilizationWeight ?? DEFAULT_CUTTING_ENGINE_CONFIG.utilizationWeight,
     stabilityWeight: value.stabilityWeight ?? DEFAULT_CUTTING_ENGINE_CONFIG.stabilityWeight,
     splitPenaltyWeight: value.splitPenaltyWeight ?? DEFAULT_CUTTING_ENGINE_CONFIG.splitPenaltyWeight,
+    mustFulfillPenaltyWeight: value.mustFulfillPenaltyWeight ?? DEFAULT_CUTTING_ENGINE_CONFIG.mustFulfillPenaltyWeight,
     directionSwitchPenaltyWeight: value.directionSwitchPenaltyWeight ?? DEFAULT_CUTTING_ENGINE_CONFIG.directionSwitchPenaltyWeight,
     sameDirectionPreferred: typeof value.sameDirectionPreferred === 'boolean' ? value.sameDirectionPreferred : DEFAULT_CUTTING_ENGINE_CONFIG.sameDirectionPreferred,
     angleMixMode: normalizeCuttingEngineAngleMixMode(value.angleMixMode ?? DEFAULT_CUTTING_ENGINE_CONFIG.angleMixMode),

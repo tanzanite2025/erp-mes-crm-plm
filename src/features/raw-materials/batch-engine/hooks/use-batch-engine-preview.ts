@@ -4,7 +4,7 @@ import type { CuttingPlan } from '@/features/engineering-db/data/cutting-plan-sc
 import type { PrepregMaterialSpec } from '../../data/prepreg-material-spec-schema'
 import type { CutSizeUnit } from '../../cut-size-library/data/cut-size-library-schema'
 import { buildBatchEngineDemandLinesFromCuttingPlan } from '../domain/build-batch-engine-demand-lines-from-cutting-plan'
-import { buildBatchEngineMetrics, buildBatchEngineLegend } from '../domain/build-batch-engine-metrics'
+import { buildBatchEngineLegend } from '../domain/build-batch-engine-metrics'
 import { buildBatchEnginePreview } from '../domain/build-batch-engine-preview'
 import { resolveBatchEngineControls } from '../services/resolve-batch-engine-controls'
 import type { BatchEngineControls } from '../types'
@@ -35,11 +35,6 @@ export function useBatchEnginePreview(options: UseBatchEnginePreviewOptions) {
     [controlState.normalizedControls, mappedDemandLines, selectedCuttingPlan]
   )
 
-  const metrics = useMemo(
-    () => buildBatchEngineMetrics({ t, controls: controlState.resolvedControls, selectedCuttingPlan, simulation }),
-    [controlState.resolvedControls, selectedCuttingPlan, simulation, t]
-  )
-
   const legend = useMemo(() => buildBatchEngineLegend(t), [t])
 
   return {
@@ -47,7 +42,6 @@ export function useBatchEnginePreview(options: UseBatchEnginePreviewOptions) {
     normalizedControls: controlState.normalizedControls,
     mappedDemandLines,
     simulation,
-    metrics,
     legend,
   }
 }

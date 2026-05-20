@@ -73,6 +73,8 @@ function isCuttingPlan(value: unknown) {
     && isFiniteNumber(value.producedPieces)
     && isFiniteNumber(value.directionSwitchCount)
     && isFiniteNumber(value.angleMixViolationCount)
+    && typeof value.mustFulfillSatisfied === 'boolean'
+    && isFiniteNumber(value.mustFulfillPenalty)
     && isCuttingPlanRuleDiagnostics(value.ruleDiagnostics)
     && Array.isArray(value.zones)
     && value.zones.every(isCuttingLayoutZone)

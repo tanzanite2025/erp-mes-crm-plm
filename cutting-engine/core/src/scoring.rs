@@ -1,7 +1,37 @@
 use crate::geometry::round3;
 use crate::{
-    CuttingAngleMixMode, CuttingEngineInput, CuttingObjectivePreset, CuttingPlan, CuttingUnitInput,
+    CuttingAngleMixMode, CuttingEngineInput, CuttingMustFulfillMode, CuttingObjectivePreset,
+    CuttingPlan, CuttingUnitInput,
 };
+
+pub(crate) fn resolve_must_fulfill_satisfied(
+    unit: &CuttingUnitInput,
+    produced_pieces: u32,
+) -> bool {
+    !unit.must_fulfill || produced_pieces >= unit.quantity
+}
+
+pub(crate) fn resolve_must_fulfill_penalty(
+    input: &CuttingEngineInput,
+    unit: &CuttingUnitInput,
+    produced_pieces: u32,
+) -> f64 {
+    if input.rule_strategy.must_fulfill_mode != CuttingMustFulfillMode::SoftPenalty
+        || !unit.must_fulfill
+    {
+        return 0.0;
+    }
+
+    let unmet_pieces = unit.quantity.saturating_sub(produced_pieces);
+    if unmet_pieces == 0 {
+        return 0.0;
+    }
+
+    round3(
+        (f64::from(unmet_pieces) / f64::from(unit.quantity))
+            * input.weights.must_fulfill_penalty_weight,
+    )
+}
 
 pub(crate) fn score_plan(
     input: &CuttingEngineInput,
@@ -11,6 +41,7 @@ pub(crate) fn score_plan(
     loss_area_m2: f64,
     direction_switch_count: u32,
     angle_mix_violation_count: u32,
+    must_fulfill_penalty: f64,
 ) -> f64 {
     let stability_score = match input.objective_preset {
         CuttingObjectivePreset::YieldFirst => f64::from(rows_per_roll).min(100.0),
@@ -40,7 +71,7 @@ pub(crate) fn score_plan(
             + stability_score * input.weights.stability_weight
             + direction_bonus
             - loss_area_m2 * input.weights.split_penalty,
-    ) - round3(direction_penalty + angle_mix_penalty)
+    ) - round3(direction_penalty + angle_mix_penalty + must_fulfill_penalty)
 }
 
 pub(crate) fn sort_plans(plans: &mut [CuttingPlan], objective: CuttingObjectivePreset) {

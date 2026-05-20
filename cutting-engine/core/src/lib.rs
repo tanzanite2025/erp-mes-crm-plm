@@ -10,7 +10,9 @@ use rules::{
     count_direction_switches, resolve_plan_angle_mix_violation_count,
     resolve_plan_direction_switch_count, summarize_input_rule_diagnostics,
 };
-use scoring::{score_plan, sort_plans};
+use scoring::{
+    resolve_must_fulfill_penalty, resolve_must_fulfill_satisfied, score_plan, sort_plans,
+};
 pub use types::{
     CuttingAngleMixMode, CuttingDirectionStrategy, CuttingEngineDirectionRules, CuttingEngineError,
     CuttingEngineInput, CuttingEngineOutput, CuttingEngineRuleStrategy, CuttingEngineWeights,
@@ -66,12 +68,41 @@ pub fn solve(input: &CuttingEngineInput) -> Result<CuttingEngineOutput, CuttingE
         let capacity = pieces_per_row.saturating_mul(rows_per_roll);
         let produced_pieces = capacity.min(unit.quantity);
 
-        if produced_pieces == 0 {
+        let must_fulfill_satisfied = resolve_must_fulfill_satisfied(unit, produced_pieces);
+        if unit.must_fulfill
+            && !must_fulfill_satisfied
+            && input.rule_strategy.must_fulfill_mode == CuttingMustFulfillMode::Strict
+        {
             warnings.push(format!(
-                "{} cannot fit within the usable roll area",
-                unit.id
+                "mustFulfill strict rejected {} with {}/{} produced piece(s)",
+                unit.id, produced_pieces, unit.quantity
             ));
             continue;
+        }
+
+        if produced_pieces == 0 {
+            if unit.must_fulfill
+                && input.rule_strategy.must_fulfill_mode == CuttingMustFulfillMode::SoftPenalty
+            {
+                warnings.push(format!(
+                    "mustFulfill soft penalty retained {} with zero produced piece(s)",
+                    unit.id
+                ));
+            } else {
+                warnings.push(format!(
+                    "{} cannot fit within the usable roll area",
+                    unit.id
+                ));
+                continue;
+            }
+        }
+
+        let must_fulfill_penalty = resolve_must_fulfill_penalty(input, unit, produced_pieces);
+        if must_fulfill_penalty > 0.0 {
+            warnings.push(format!(
+                "mustFulfill soft penalty applied to {} with {:.3} penalty",
+                unit.id, must_fulfill_penalty
+            ));
         }
 
         let used_area_m2 =
@@ -89,6 +120,7 @@ pub fn solve(input: &CuttingEngineInput) -> Result<CuttingEngineOutput, CuttingE
             loss_area_m2,
             direction_switch_count,
             angle_mix_violation_count,
+            must_fulfill_penalty,
         );
         let plan_warnings = build_plan_warnings(
             input,
@@ -106,6 +138,8 @@ pub fn solve(input: &CuttingEngineInput) -> Result<CuttingEngineOutput, CuttingE
             produced_pieces,
             direction_switch_count,
             angle_mix_violation_count,
+            must_fulfill_satisfied,
+            must_fulfill_penalty,
             rule_diagnostics: build_plan_rule_diagnostics(&input_rule_diagnostics, unit),
             zones: build_zones(input, unit, produced_pieces, decision_length_mm),
             warnings: plan_warnings,
@@ -135,6 +169,7 @@ mod tests {
                 utilization_weight: 55.0,
                 stability_weight: 10.0,
                 split_penalty: 6.0,
+                must_fulfill_penalty_weight: 6000.0,
             },
             direction_rules: CuttingEngineDirectionRules {
                 angle_mix_mode: CuttingAngleMixMode::PreferSameAngle,
@@ -263,6 +298,52 @@ mod tests {
             .warnings
             .iter()
             .any(|warning| warning.contains("P0 rule contract received")));
+    }
+
+    #[test]
+    fn strict_must_fulfill_rejects_zero_production_plan() {
+        let mut input = base_input();
+        input.rule_strategy.must_fulfill_mode = CuttingMustFulfillMode::Strict;
+        input.cut_units[0].width_mm = 10_000.0;
+
+        let output = solve(&input).expect("strict mustFulfill should solve with no feasible plan");
+
+        assert!(output.plans.is_empty());
+        assert!(output
+            .warnings
+            .iter()
+            .any(|warning| warning.contains("mustFulfill strict rejected")));
+    }
+
+    #[test]
+    fn soft_must_fulfill_keeps_zero_production_with_penalty() {
+        let mut input = base_input();
+        input.rule_strategy.must_fulfill_mode = CuttingMustFulfillMode::SoftPenalty;
+        input.cut_units[0].width_mm = 10_000.0;
+
+        let output = solve(&input).expect("soft mustFulfill should keep penalized plan");
+
+        assert_eq!(output.plans.len(), 1);
+        assert_eq!(output.plans[0].produced_pieces, 0);
+        assert!(!output.plans[0].must_fulfill_satisfied);
+        assert_eq!(output.plans[0].must_fulfill_penalty, 6000.0);
+        assert!(output.plans[0].score < -5000.0);
+    }
+
+    #[test]
+    fn ignore_must_fulfill_does_not_keep_zero_production_plan() {
+        let mut input = base_input();
+        input.rule_strategy.must_fulfill_mode = CuttingMustFulfillMode::Ignore;
+        input.cut_units[0].width_mm = 10_000.0;
+
+        let output =
+            solve(&input).expect("ignore mustFulfill should keep legacy zero-fit behavior");
+
+        assert!(output.plans.is_empty());
+        assert!(output
+            .warnings
+            .iter()
+            .any(|warning| warning.contains("cannot fit within the usable roll area")));
     }
 
     #[test]

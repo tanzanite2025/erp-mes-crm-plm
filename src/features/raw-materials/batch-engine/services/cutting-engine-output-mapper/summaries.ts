@@ -20,7 +20,7 @@ export function buildAppliedWeights(controls: BatchEngineNormalizedControls): Ba
     assignmentPenaltyWeight: 0,
     unfulfilledPenaltyWeight: 0,
     splitPenaltyWeight: controls.splitPenaltyWeight,
-    mustPenaltyWeight: 0,
+    mustPenaltyWeight: controls.mustFulfillPenaltyWeight,
   }
 }
 
@@ -92,7 +92,7 @@ export function buildScoreBreakdown(
     assignmentPenalty: 0,
     unfulfilledPenalty: 0,
     splitPenalty: round(plan.lossAreaM2 * controls.splitPenaltyWeight, 3),
-    mustFulfillPenalty: 0,
+    mustFulfillPenalty: plan.mustFulfillPenalty,
     groupSplitCount: 0,
     sequenceViolationCount: 0,
     adjacencyBreakCount: 0,
@@ -137,7 +137,7 @@ export function buildReportSummary(options: {
     score: plan.score,
     utilizationPercent: plan.utilizationPercent,
     lossAreaM2: plan.lossAreaM2,
-    mustFulfillRiskCount: 0,
+    mustFulfillRiskCount: plan.mustFulfillSatisfied ? 0 : 1,
     changedDemandLineCount: 0,
     changedRollCount: 0,
     highlightZoneCount: 0,

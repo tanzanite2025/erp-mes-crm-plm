@@ -14,7 +14,6 @@ export type {
 export type {
   BatchEngineLegendItem,
   BatchEngineLegendTone,
-  BatchEngineMetric,
 } from './types/batch-engine-ui'
 export type {
   BatchOptimizerBreakSliceSummary,

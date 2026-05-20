@@ -30,6 +30,7 @@ export function CuttingEngineConfigPage() {
   const [utilizationWeight, setUtilizationWeight] = useState(config.utilizationWeight)
   const [stabilityWeight, setStabilityWeight] = useState(config.stabilityWeight)
   const [splitPenalty, setSplitPenalty] = useState(config.splitPenaltyWeight)
+  const [mustFulfillPenalty, setMustFulfillPenalty] = useState(config.mustFulfillPenaltyWeight)
   const [directionSwitchPenalty, setDirectionSwitchPenalty] = useState(config.directionSwitchPenaltyWeight)
   const [sameDirectionPreferred, setSameDirectionPreferred] = useState(config.sameDirectionPreferred)
   const [angleMixMode, setAngleMixMode] = useState<CuttingEngineAngleMixMode>(config.angleMixMode)
@@ -89,6 +90,46 @@ export function CuttingEngineConfigPage() {
     </div>
   )
 
+  const resolveDirectionStrategyFromDetails = (
+    nextAngleMixMode: CuttingEngineAngleMixMode,
+    nextSameDirectionPreferred: boolean
+  ): CuttingEngineDirectionStrategy => {
+    if (nextAngleMixMode === 'strict-same-angle') return 'sameDirectionRequired'
+    if (nextAngleMixMode === 'allow' && !nextSameDirectionPreferred) return 'allowSwitch'
+    return 'sameDirectionPreferred'
+  }
+
+  const handleDirectionStrategyChange = (value: CuttingEngineDirectionStrategy) => {
+    setDirectionStrategy(value)
+    if (value === 'sameDirectionRequired') {
+      setSameDirectionPreferred(true)
+      setAngleMixMode('strict-same-angle')
+      return
+    }
+    if (value === 'allowSwitch') {
+      setSameDirectionPreferred(false)
+      setAngleMixMode('allow')
+      return
+    }
+    setSameDirectionPreferred(true)
+    setAngleMixMode('prefer-same-angle')
+  }
+
+  const handleAngleMixModeChange = (value: CuttingEngineAngleMixMode) => {
+    const nextSameDirectionPreferred = value === 'allow' ? sameDirectionPreferred : true
+    setAngleMixMode(value)
+    setSameDirectionPreferred(nextSameDirectionPreferred)
+    setDirectionStrategy(resolveDirectionStrategyFromDetails(value, nextSameDirectionPreferred))
+  }
+
+  const handleSameDirectionPreferredChange = () => {
+    const nextSameDirectionPreferred = !sameDirectionPreferred
+    const nextAngleMixMode = nextSameDirectionPreferred ? angleMixMode : 'allow'
+    setSameDirectionPreferred(nextSameDirectionPreferred)
+    setAngleMixMode(nextAngleMixMode)
+    setDirectionStrategy(resolveDirectionStrategyFromDetails(nextAngleMixMode, nextSameDirectionPreferred))
+  }
+
   // 预设模式切换逻辑 - 自动填充工业推荐配置
   const handlePresetChange = (value: CuttingEngineObjectivePreset) => {
     setObjectivePreset(value)
@@ -115,6 +156,7 @@ export function CuttingEngineConfigPage() {
         utilizationWeight,
         stabilityWeight,
         splitPenaltyWeight: splitPenalty,
+        mustFulfillPenaltyWeight: mustFulfillPenalty,
         directionSwitchPenaltyWeight: directionSwitchPenalty,
         sameDirectionPreferred,
         angleMixMode,
@@ -141,6 +183,7 @@ export function CuttingEngineConfigPage() {
     setUtilizationWeight(DEFAULT_CUTTING_ENGINE_CONFIG.utilizationWeight)
     setStabilityWeight(DEFAULT_CUTTING_ENGINE_CONFIG.stabilityWeight)
     setSplitPenalty(DEFAULT_CUTTING_ENGINE_CONFIG.splitPenaltyWeight)
+    setMustFulfillPenalty(DEFAULT_CUTTING_ENGINE_CONFIG.mustFulfillPenaltyWeight)
     setDirectionSwitchPenalty(DEFAULT_CUTTING_ENGINE_CONFIG.directionSwitchPenaltyWeight)
     setSameDirectionPreferred(DEFAULT_CUTTING_ENGINE_CONFIG.sameDirectionPreferred)
     setAngleMixMode(DEFAULT_CUTTING_ENGINE_CONFIG.angleMixMode)
@@ -304,6 +347,30 @@ export function CuttingEngineConfigPage() {
                   </div>
                 </div>
 
+                <div className='flex flex-col gap-1.5'>
+                  <label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/80 flex justify-between'>
+                    <span>{t('rawMaterials.engineConfig.weights.mustFulfillPenalty')}</span>
+                    <span className='font-mono text-primary'>{mustFulfillPenalty}</span>
+                  </label>
+                  <div className='flex gap-3 items-center'>
+                    <input
+                      type='range'
+                      min='0'
+                      max='10000'
+                      step='100'
+                      value={mustFulfillPenalty}
+                      onChange={(e) => setMustFulfillPenalty(e.target.value)}
+                      className='h-1 w-full bg-muted rounded-lg appearance-none cursor-pointer accent-primary'
+                    />
+                    <Input
+                      type='number'
+                      value={mustFulfillPenalty}
+                      onChange={(e) => setMustFulfillPenalty(e.target.value)}
+                      className='h-9 w-20 rounded-lg bg-background text-center text-xs font-mono border-none'
+                    />
+                  </div>
+                </div>
+
               </div>
             </section>
 
@@ -400,31 +467,96 @@ export function CuttingEngineConfigPage() {
                   )}
                 </div>
 
-                <div className='grid gap-2'>
-                  <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/80'>
-                    {t('rawMaterials.engineConfig.constraints.ruleStrategy.directionStrategy.label')}
-                  </span>
-                  {renderStrategySelector<CuttingEngineDirectionStrategy>(
-                    directionStrategy,
-                    [
-                      {
-                        value: 'sameDirectionPreferred',
-                        label: t('rawMaterials.engineConfig.constraints.ruleStrategy.directionStrategy.options.sameDirectionPreferred.label'),
-                        description: t('rawMaterials.engineConfig.constraints.ruleStrategy.directionStrategy.options.sameDirectionPreferred.description'),
-                      },
-                      {
-                        value: 'sameDirectionRequired',
-                        label: t('rawMaterials.engineConfig.constraints.ruleStrategy.directionStrategy.options.sameDirectionRequired.label'),
-                        description: t('rawMaterials.engineConfig.constraints.ruleStrategy.directionStrategy.options.sameDirectionRequired.description'),
-                      },
-                      {
-                        value: 'allowSwitch',
-                        label: t('rawMaterials.engineConfig.constraints.ruleStrategy.directionStrategy.options.allowSwitch.label'),
-                        description: t('rawMaterials.engineConfig.constraints.ruleStrategy.directionStrategy.options.allowSwitch.description'),
-                      },
-                    ],
-                    setDirectionStrategy
-                  )}
+                <div className='grid gap-3 rounded-[20px] border border-dashed border-primary/15 bg-background/70 p-3'>
+                  <div className='grid gap-2'>
+                    <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/80'>
+                      {t('rawMaterials.engineConfig.constraints.ruleStrategy.directionStrategy.label')}
+                    </span>
+                    {renderStrategySelector<CuttingEngineDirectionStrategy>(
+                      directionStrategy,
+                      [
+                        {
+                          value: 'sameDirectionPreferred',
+                          label: t('rawMaterials.engineConfig.constraints.ruleStrategy.directionStrategy.options.sameDirectionPreferred.label'),
+                          description: t('rawMaterials.engineConfig.constraints.ruleStrategy.directionStrategy.options.sameDirectionPreferred.description'),
+                        },
+                        {
+                          value: 'sameDirectionRequired',
+                          label: t('rawMaterials.engineConfig.constraints.ruleStrategy.directionStrategy.options.sameDirectionRequired.label'),
+                          description: t('rawMaterials.engineConfig.constraints.ruleStrategy.directionStrategy.options.sameDirectionRequired.description'),
+                        },
+                        {
+                          value: 'allowSwitch',
+                          label: t('rawMaterials.engineConfig.constraints.ruleStrategy.directionStrategy.options.allowSwitch.label'),
+                          description: t('rawMaterials.engineConfig.constraints.ruleStrategy.directionStrategy.options.allowSwitch.description'),
+                        },
+                      ],
+                      handleDirectionStrategyChange
+                    )}
+                  </div>
+
+                  <div className='grid gap-2'>
+                    <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/80'>
+                      {t('rawMaterials.engineConfig.constraints.directionRules.angleMixMode.label')}
+                    </span>
+                    <div className='grid gap-2 sm:grid-cols-3'>
+                      {(['allow', 'prefer-same-angle', 'strict-same-angle'] as const).map((mode) => (
+                        <button
+                          key={mode}
+                          type='button'
+                          onClick={() => handleAngleMixModeChange(mode)}
+                          className={`rounded-2xl border px-3 py-2 text-left transition-all ${
+                            angleMixMode === mode
+                              ? 'border-primary bg-primary/10 text-primary'
+                              : 'border-dashed border-border/50 bg-muted/20 text-muted-foreground hover:bg-muted/40'
+                          }`}
+                        >
+                          <span className='block text-[10px] font-black uppercase tracking-widest'>
+                            {angleMixModeLabels[mode]}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className='grid gap-3 md:grid-cols-[1fr_160px]'>
+                    <div className='flex items-center justify-between gap-4 rounded-2xl bg-muted/20 px-3 py-2'>
+                      <div className='flex flex-col'>
+                        <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/80'>
+                          {t('rawMaterials.engineConfig.constraints.directionRules.sameDirectionPreferred.label')}
+                        </span>
+                        <span className='mt-0.5 text-[8px] font-mono text-muted-foreground/60'>
+                          {t('rawMaterials.engineConfig.constraints.directionRules.sameDirectionPreferred.hint')}
+                        </span>
+                      </div>
+                      <button
+                        type='button'
+                        onClick={handleSameDirectionPreferredChange}
+                        className={`h-8 rounded-full px-4 text-[10px] font-black uppercase tracking-widest ${
+                          sameDirectionPreferred ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                        }`}
+                      >
+                        {sameDirectionPreferred ? 'ON' : 'OFF'}
+                      </button>
+                    </div>
+
+                    <div className='flex items-center justify-between gap-3 rounded-2xl bg-muted/20 px-3 py-2'>
+                      <div className='flex flex-col'>
+                        <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/80'>
+                          {t('rawMaterials.engineConfig.constraints.directionRules.directionSwitchPenalty.label')}
+                        </span>
+                        <span className='mt-0.5 text-[8px] font-mono text-muted-foreground/60'>
+                          {t('rawMaterials.engineConfig.constraints.directionRules.directionSwitchPenalty.hint')}
+                        </span>
+                      </div>
+                      <Input
+                        type='number'
+                        value={directionSwitchPenalty}
+                        onChange={(e) => setDirectionSwitchPenalty(e.target.value)}
+                        className='h-10 w-16 rounded-lg border-none bg-background pr-3 text-right font-mono text-xs'
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </section>
@@ -547,80 +679,6 @@ export function CuttingEngineConfigPage() {
                   <p className='text-[8px] font-black uppercase tracking-widest text-muted-foreground/60 leading-relaxed'>
                     {t('rawMaterials.engineConfig.constraints.angleRules.hint')}
                   </p>
-                </div>
-              </div>
-
-              <div className='relative rounded-[20px] border border-dashed border-primary/15 bg-background/70 p-3'>
-                <div>
-                  <h5 className='text-[10px] font-black uppercase tracking-widest text-foreground/80'>
-                    {t('rawMaterials.engineConfig.constraints.directionRules.title')}
-                  </h5>
-                  <p className='mt-1 text-[8px] font-black uppercase tracking-widest text-muted-foreground/60'>
-                    {t('rawMaterials.engineConfig.constraints.directionRules.description')}
-                  </p>
-                </div>
-
-                <div className='mt-3 grid gap-3'>
-                  <div className='grid gap-2'>
-                    <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/80'>
-                      {t('rawMaterials.engineConfig.constraints.directionRules.angleMixMode.label')}
-                    </span>
-                    <div className='grid gap-2 sm:grid-cols-3'>
-                      {(['allow', 'prefer-same-angle', 'strict-same-angle'] as const).map((mode) => (
-                        <button
-                          key={mode}
-                          type='button'
-                          onClick={() => setAngleMixMode(mode)}
-                          className={`rounded-2xl border px-3 py-2 text-left transition-all ${
-                            angleMixMode === mode
-                              ? 'border-primary bg-primary/10 text-primary'
-                              : 'border-dashed border-border/50 bg-muted/20 text-muted-foreground hover:bg-muted/40'
-                          }`}
-                        >
-                          <span className='block text-[10px] font-black uppercase tracking-widest'>
-                            {angleMixModeLabels[mode]}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className='flex items-center justify-between gap-4 rounded-2xl bg-muted/20 px-3 py-2'>
-                    <div className='flex flex-col'>
-                      <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/80'>
-                        {t('rawMaterials.engineConfig.constraints.directionRules.sameDirectionPreferred.label')}
-                      </span>
-                      <span className='mt-0.5 text-[8px] font-mono text-muted-foreground/60'>
-                        {t('rawMaterials.engineConfig.constraints.directionRules.sameDirectionPreferred.hint')}
-                      </span>
-                    </div>
-                    <button
-                      type='button'
-                      onClick={() => setSameDirectionPreferred((value) => !value)}
-                      className={`h-8 rounded-full px-4 text-[10px] font-black uppercase tracking-widest ${
-                        sameDirectionPreferred ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                      }`}
-                    >
-                      {sameDirectionPreferred ? 'ON' : 'OFF'}
-                    </button>
-                  </div>
-
-                  <div className='flex items-center justify-between gap-4'>
-                    <div className='flex flex-col'>
-                      <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/80'>
-                        {t('rawMaterials.engineConfig.constraints.directionRules.directionSwitchPenalty.label')}
-                      </span>
-                      <span className='mt-0.5 text-[8px] font-mono text-muted-foreground/60'>
-                        {t('rawMaterials.engineConfig.constraints.directionRules.directionSwitchPenalty.hint')}
-                      </span>
-                    </div>
-                    <Input
-                      type='number'
-                      value={directionSwitchPenalty}
-                      onChange={(e) => setDirectionSwitchPenalty(e.target.value)}
-                      className='h-10 w-24 rounded-lg border-none bg-background pr-3 text-right font-mono text-xs'
-                    />
-                  </div>
                 </div>
               </div>
 

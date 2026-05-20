@@ -2,13 +2,11 @@ import { SlidersHorizontal } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import type { CuttingPlan } from '@/features/engineering-db/data/cutting-plan-schema'
 import type { PrepregMaterialSpec } from '../../data/prepreg-material-spec-schema'
-import type { BatchEngineControls, BatchEngineMetric, BatchEngineSimulation } from '../types'
-import { BatchEngineControlMetricsGrid } from './batch-engine-control-metrics-grid'
+import type { BatchEngineControls, BatchEngineSimulation } from '../types'
 import { BatchEngineControlPlanSection } from './batch-engine-control-plan-section'
 import { BatchEngineControlRollSection } from './batch-engine-control-roll-section'
 
 type BatchEngineControlPanelProps = {
-  metrics: BatchEngineMetric[]
   controls: BatchEngineControls
   updateControl: <K extends keyof BatchEngineControls>(key: K, value: BatchEngineControls[K]) => void
   prepregSpecs: PrepregMaterialSpec[]
@@ -23,7 +21,6 @@ type BatchEngineControlPanelProps = {
 export function BatchEngineControlPanel(props: BatchEngineControlPanelProps) {
   const { t } = useLanguage()
   const {
-    metrics,
     controls,
     updateControl,
     prepregSpecs,
@@ -72,8 +69,6 @@ export function BatchEngineControlPanel(props: BatchEngineControlPanelProps) {
           simulation={simulation}
         />
       </div>
-
-      <BatchEngineControlMetricsGrid metrics={metrics} />
     </section>
   )
 }

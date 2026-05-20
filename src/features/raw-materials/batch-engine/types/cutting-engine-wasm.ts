@@ -9,6 +9,7 @@ export type CuttingEngineWeights = {
   utilizationWeight: number
   stabilityWeight: number
   splitPenalty: number
+  mustFulfillPenaltyWeight: number
 }
 
 export type CuttingEngineDirectionRules = {
@@ -75,6 +76,8 @@ export type CuttingPlan = {
   producedPieces: number
   directionSwitchCount: number
   angleMixViolationCount: number
+  mustFulfillSatisfied: boolean
+  mustFulfillPenalty: number
   ruleDiagnostics: CuttingPlanRuleDiagnostics
   zones: CuttingLayoutZone[]
   warnings: string[]

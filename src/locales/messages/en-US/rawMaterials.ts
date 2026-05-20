@@ -630,6 +630,7 @@ export const rawMaterials = {
       utilization: 'Material Utilization Weight',
       stability: 'Roll Layout Stability Weight',
       splitPenalty: 'Physical Split Penalty',
+      mustFulfillPenalty: 'Must-Fulfill Penalty Weight',
     },
     constraints: {
       title: 'Geometry & Physical Constraints',

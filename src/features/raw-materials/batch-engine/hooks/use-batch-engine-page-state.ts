@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+﻿import { useMemo, useState } from 'react'
 import { DEFAULT_CUTTING_ENGINE_CONFIG, type CuttingEngineConfig } from '../../engine-config/types'
 import { useCuttingEngineConfigStore } from '../../engine-config/use-cutting-engine-config-store'
 import type { BatchEngineControls } from '../types'
@@ -15,6 +15,7 @@ function buildBatchEngineControlsFromConfig(config: CuttingEngineConfig): BatchE
     utilizationWeight: config.utilizationWeight,
     stabilityWeight: config.stabilityWeight,
     splitPenaltyWeight: config.splitPenaltyWeight,
+    mustFulfillPenaltyWeight: config.mustFulfillPenaltyWeight,
     directionSwitchPenaltyWeight: config.directionSwitchPenaltyWeight,
     sameDirectionPreferred: config.sameDirectionPreferred,
     angleMixMode: config.angleMixMode,
@@ -34,6 +35,7 @@ const ENGINE_CONFIG_CONTROL_KEYS = new Set<keyof BatchEngineControls>([
   'utilizationWeight',
   'stabilityWeight',
   'splitPenaltyWeight',
+  'mustFulfillPenaltyWeight',
   'directionSwitchPenaltyWeight',
   'sameDirectionPreferred',
   'angleMixMode',
@@ -52,6 +54,7 @@ function applyEngineConfigToControls(current: BatchEngineControls, config: Cutti
     utilizationWeight: config.utilizationWeight,
     stabilityWeight: config.stabilityWeight,
     splitPenaltyWeight: config.splitPenaltyWeight,
+    mustFulfillPenaltyWeight: config.mustFulfillPenaltyWeight,
     directionSwitchPenaltyWeight: config.directionSwitchPenaltyWeight,
     sameDirectionPreferred: config.sameDirectionPreferred,
     angleMixMode: config.angleMixMode,

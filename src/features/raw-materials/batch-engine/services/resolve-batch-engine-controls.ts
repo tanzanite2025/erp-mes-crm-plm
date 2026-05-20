@@ -33,6 +33,7 @@ export function resolveBatchEngineControls(
     utilizationWeight: toPositiveNumber(rawControls.utilizationWeight),
     stabilityWeight: toPositiveNumber(rawControls.stabilityWeight),
     splitPenaltyWeight: toPositiveNumber(rawControls.splitPenaltyWeight),
+    mustFulfillPenaltyWeight: toPositiveNumber(rawControls.mustFulfillPenaltyWeight),
     directionSwitchPenaltyWeight: toPositiveNumber(rawControls.directionSwitchPenaltyWeight),
     sameDirectionPreferred: rawControls.sameDirectionPreferred,
     angleMixMode: normalizeCuttingEngineAngleMixMode(rawControls.angleMixMode),

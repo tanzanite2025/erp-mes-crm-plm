@@ -13,6 +13,7 @@ export type BatchEngineControls = {
   utilizationWeight: string
   stabilityWeight: string
   splitPenaltyWeight: string
+  mustFulfillPenaltyWeight: string
   directionSwitchPenaltyWeight: string
   sameDirectionPreferred: boolean
   angleMixMode: CuttingEngineAngleMixMode
@@ -35,6 +36,7 @@ export type BatchEngineNormalizedControls = {
   utilizationWeight: number
   stabilityWeight: number
   splitPenaltyWeight: number
+  mustFulfillPenaltyWeight: number
   directionSwitchPenaltyWeight: number
   sameDirectionPreferred: boolean
   angleMixMode: CuttingEngineAngleMixMode

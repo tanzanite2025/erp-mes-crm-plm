@@ -5,10 +5,3 @@ export type BatchEngineLegendItem = {
   label: string
   tone: BatchEngineLegendTone
 }
-
-export type BatchEngineMetric = {
-  key: string
-  label: string
-  value: string
-  hint: string
-}

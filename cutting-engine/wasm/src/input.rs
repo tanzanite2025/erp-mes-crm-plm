@@ -30,6 +30,8 @@ struct WasmCuttingEngineWeights {
     utilization_weight: f64,
     stability_weight: f64,
     split_penalty: f64,
+    #[serde(default = "default_must_fulfill_penalty_weight")]
+    must_fulfill_penalty_weight: f64,
 }
 
 #[derive(Deserialize)]
@@ -87,6 +89,7 @@ pub(crate) fn to_core_input(input: WasmCuttingEngineInput) -> Result<CuttingEngi
             utilization_weight: input.weights.utilization_weight,
             stability_weight: input.weights.stability_weight,
             split_penalty: input.weights.split_penalty,
+            must_fulfill_penalty_weight: input.weights.must_fulfill_penalty_weight,
         },
         direction_rules: CuttingEngineDirectionRules {
             angle_mix_mode: parse_angle_mix_mode(&input.direction_rules.angle_mix_mode)?,
@@ -186,4 +189,8 @@ fn default_rule_strategy() -> WasmCuttingEngineRuleStrategy {
 
 fn default_allow_mixed_plan() -> bool {
     true
+}
+
+fn default_must_fulfill_penalty_weight() -> f64 {
+    6000.0
 }

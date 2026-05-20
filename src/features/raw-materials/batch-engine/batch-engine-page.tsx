@@ -34,7 +34,6 @@ export function BatchEnginePage() {
       <section className='rounded-[32px] border border-dashed border-border/60 bg-card p-4 shadow-none sm:p-5'>
         <div className='flex flex-col gap-6'>
           <BatchEngineControlPanel
-            metrics={preview.metrics}
             controls={preview.controls}
             updateControl={preview.updateControl}
             prepregSpecs={bootstrap.prepregSpecs}

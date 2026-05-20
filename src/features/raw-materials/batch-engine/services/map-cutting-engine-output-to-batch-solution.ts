@@ -1,7 +1,11 @@
 ﻿import type { PrepregMaterialSpec } from '../../data/prepreg-material-spec-schema'
 import type { BuildBatchEngineDemandLinesResult } from '../domain/build-batch-engine-demand-lines-from-cutting-plan'
 import type { BatchEngineNormalizedControls } from '../types'
-import type { BatchOptimizerPlan, BatchOptimizerSolveResponse } from '../types/batch-engine-api'
+import type {
+  BatchOptimizerMustFulfillDiagnostic,
+  BatchOptimizerPlan,
+  BatchOptimizerSolveResponse,
+} from '../types/batch-engine-api'
 import type { CuttingEngineInput, CuttingEngineOutput } from '../types/cutting-engine-wasm'
 import {
   buildDemandSummary,
@@ -26,6 +30,34 @@ type MapCuttingEngineOutputToBatchSolutionOptions = {
   controls: BatchEngineNormalizedControls
   selectedPrepregSpec?: PrepregMaterialSpec
   mappedDemandLines: BuildBatchEngineDemandLinesResult
+}
+
+function buildMustFulfillDiagnostics(options: {
+  activeDemand?: BuildBatchEngineDemandLinesResult['validLines'][number]
+  producedPieces: number
+  mustFulfillSatisfied: boolean
+}): BatchOptimizerMustFulfillDiagnostic[] {
+  const { activeDemand, producedPieces, mustFulfillSatisfied } = options
+  if (!activeDemand?.mustFulfill) {
+    return []
+  }
+
+  const status = mustFulfillSatisfied ? 'fulfilled' : 'unfulfilled'
+  return [
+    {
+      demandLineId: activeDemand.demandLineId,
+      status,
+      reasonCode: mustFulfillSatisfied ? 'must_fulfill_satisfied' : 'must_fulfill_unmet',
+      message: mustFulfillSatisfied
+        ? `MustFulfill 需求已生产 ${producedPieces}/${activeDemand.requiredPieces} 件。`
+        : `MustFulfill 需求仅生产 ${producedPieces}/${activeDemand.requiredPieces} 件。`,
+      blockingConstraintCode: mustFulfillSatisfied ? 'none' : 'capacity',
+      blockingConstraint: mustFulfillSatisfied ? '无阻断约束' : '产能或几何约束限制',
+      suggestion: mustFulfillSatisfied
+        ? '无需处理。'
+        : '可切换 strict 模式拒绝该方案，或提升卷材容量 / 放宽几何约束。',
+    },
+  ]
 }
 
 export function mapCuttingEngineOutputToBatchSolution(
@@ -59,10 +91,15 @@ export function mapCuttingEngineOutputToBatchSolution(
         },
       ]
       : []
+    const mustFulfillDiagnostics = buildMustFulfillDiagnostics({
+      activeDemand,
+      producedPieces: plan.producedPieces,
+      mustFulfillSatisfied: plan.mustFulfillSatisfied,
+    })
     const fulfilledDemandCount = demandSummaries.filter((line) => line.fulfilled).length
     const comparisonSummary = {
       fulfilledDemandCount,
-      mustFulfillSatisfied: true,
+      mustFulfillSatisfied: plan.mustFulfillSatisfied,
       splitDemandCount: 0,
       usedRollCount: plan.producedPieces > 0 ? 1 : 0,
       usedRollPercent: plan.producedPieces > 0 ? 100 : 0,
@@ -131,7 +168,7 @@ export function mapCuttingEngineOutputToBatchSolution(
       },
       comparisonSummary,
       scoreBreakdown,
-      mustFulfillDiagnostics: [],
+      mustFulfillDiagnostics,
       diffSummary,
       diffSummaries: [diffSummary],
       searchConfig,

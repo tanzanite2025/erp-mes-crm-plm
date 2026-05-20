@@ -22,6 +22,8 @@ pub(crate) fn output_to_json(
                 "producedPieces": plan.produced_pieces,
                 "directionSwitchCount": plan.direction_switch_count,
                 "angleMixViolationCount": plan.angle_mix_violation_count,
+                "mustFulfillSatisfied": plan.must_fulfill_satisfied,
+                "mustFulfillPenalty": plan.must_fulfill_penalty,
                 "ruleDiagnostics": {
                     "priority": plan.rule_diagnostics.priority,
                     "mustFulfill": plan.rule_diagnostics.must_fulfill,

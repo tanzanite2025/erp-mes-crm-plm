@@ -77,6 +77,7 @@ export function buildBatchEngineCuttingInput(
       utilizationWeight: controls.utilizationWeight,
       stabilityWeight: controls.stabilityWeight,
       splitPenalty: controls.splitPenaltyWeight,
+      mustFulfillPenaltyWeight: controls.mustFulfillPenaltyWeight,
     },
     directionRules: {
       angleMixMode: controls.angleMixMode,
