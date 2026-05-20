@@ -5,8 +5,6 @@ import {
   ENGINE_BADGE_CLASS,
   ENGINE_CARD_SHELL_CLASS,
   ENGINE_CARD_TITLE_CLASS,
-  ENGINE_DESC_CLASS,
-  ENGINE_KICKER_CLASS,
   ENGINE_TABLE_CELL_CLASS,
   ENGINE_TABLE_HEADER_CELL_CLASS,
   ENGINE_TABLE_ROW_CLASS,
@@ -77,24 +75,25 @@ export function ApsBoundaryTable() {
   return (
     <Card className={`${ENGINE_CARD_SHELL_CLASS} relative overflow-hidden bg-background/80`}>
       <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 via-transparent' />
-      <CardHeader className='relative gap-4 pb-5'>
-        <div className='flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between'>
-          <div className='flex min-w-0 items-start gap-3 text-primary'>
-            <div className='flex size-12 shrink-0 items-center justify-center rounded-[22px] border border-dashed border-primary/20 bg-background shadow-[0_10px_24px_-20px_rgba(15,23,42,0.45)]'>
-              <Network className='size-5' />
-            </div>
-            <div className='min-w-0 pt-0.5'>
-              <div className={ENGINE_KICKER_CLASS}>{t('apsScheduling.engineConfig.boundaryTable.kicker')}</div>
-              <CardTitle className={ENGINE_CARD_TITLE_CLASS}>{t('apsScheduling.engineConfig.boundaryTable.title')}</CardTitle>
-              <CardDescription className={ENGINE_DESC_CLASS}>{t('apsScheduling.engineConfig.boundaryTable.description')}</CardDescription>
+      <CardHeader className='relative p-3 pb-1.5'>
+        <div className='flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between'>
+          <div className='flex min-w-0 items-center gap-2 text-primary'>
+            <Network className='size-4 shrink-0' />
+            <div className='min-w-0'>
+              <CardTitle className={`${ENGINE_CARD_TITLE_CLASS} leading-none`}>
+                {t('apsScheduling.engineConfig.boundaryTable.title')}
+              </CardTitle>
+              <CardDescription className='text-[8px] font-black uppercase tracking-widest text-muted-foreground/50 leading-tight mt-0.5 truncate'>
+                {t('apsScheduling.engineConfig.boundaryTable.description')}
+              </CardDescription>
             </div>
           </div>
-          <div className={`${ENGINE_BADGE_CLASS} self-start border-primary/20 bg-primary/5 text-primary`}>
+          <div className={`${ENGINE_BADGE_CLASS} self-start border-primary/20 bg-primary/5 text-primary h-4 px-2 text-[8px] tracking-[0.16em]`}>
             {t('apsScheduling.engineConfig.boundaryTable.badge')}
           </div>
         </div>
       </CardHeader>
-      <CardContent className='relative pt-0'>
+      <CardContent className='relative p-3 pt-0'>
         <div className={ENGINE_TABLE_SHELL_CLASS}>
           <div className='overflow-x-auto'>
             <table className='w-full min-w-[1100px] border-separate border-spacing-0'>

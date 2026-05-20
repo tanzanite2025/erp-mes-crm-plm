@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react'
-import { GitBranch } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { type WeavingMode } from '../data/weaving-mode-schema'
 import { useWeavingModeMgmt } from '../hooks/use-weaving-mode-mgmt'
@@ -50,35 +49,13 @@ export function EngineeringMasterWeavingModeTab() {
   }
 
   return (
-    <div className='flex flex-col gap-6 animate-in fade-in duration-700'>
-      <div className='rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-5 sm:p-6'>
-        <div className='flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between'>
-          <div className='space-y-3'>
-            <div className='flex items-center gap-3 text-primary'>
-              <div className='flex size-12 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10'>
-                <GitBranch className='size-5' />
-              </div>
-              <div>
-                <div className='text-lg font-black tracking-tight italic'>
-                  {t('engineering.masterData.weavingMode.overview.title')}
-                </div>
-                <div className='text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/60'>
-                  {t('engineering.masterData.weavingMode.overview.description')}
-                </div>
-              </div>
-            </div>
-            <div className='inline-flex flex-wrap items-center gap-3 rounded-full border border-dashed border-primary/20 bg-primary/5 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.22em] text-primary/70'>
-              <span>{t('engineering.masterData.weavingMode.metrics.total', { count: metrics.total })}</span>
-              <span className='opacity-40'>/</span>
-              <span>{t('engineering.masterData.weavingMode.metrics.active', { count: metrics.active })}</span>
-              <span className='opacity-40'>/</span>
-              <span>{t('engineering.masterData.weavingMode.metrics.presets', { count: metrics.presets })}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <WeavingModeToolbar searchTerm={searchTerm} onSearchTermChange={setSearchTerm} onCreate={handleCreate} />
+    <div className='flex flex-col gap-3.5 animate-in fade-in duration-700'>
+      <WeavingModeToolbar
+        searchTerm={searchTerm}
+        onSearchTermChange={setSearchTerm}
+        onCreate={handleCreate}
+        metrics={metrics}
+      />
 
       <WeavingModeListCard data={filteredData} isLoading={isLoading} isLoadError={isLoadError} onRetry={() => void refetchWeavingModes()} onEdit={handleEdit} onDelete={handleDelete} />
 

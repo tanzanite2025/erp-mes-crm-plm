@@ -136,6 +136,16 @@ func LoginHandler(c *gin.Context) {
 		Int("permission_count", len(accessSnapshot.Permissions)).
 		Msg("AUTH_LOGIN_SUCCESS")
 
+	// 设置 CSRF Token
+	if err := middleware.SetCSRFToken(c); err != nil {
+		log.Error().
+			Str("request_id", c.GetString("requestId")).
+			Str("user_id", user.ID).
+			Err(err).
+			Msg("AUTH_LOGIN_CSRF_TOKEN_FAILED")
+		// CSRF Token 设置失败不影响登录,继续返回
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"accessToken": tokenString,
 		"user": gin.H{

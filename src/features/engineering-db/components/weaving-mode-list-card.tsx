@@ -23,8 +23,8 @@ export function WeavingModeListCard({
   const { t } = useLanguage()
 
   return (
-    <div className='rounded-[28px] border border-dashed border-muted/50 bg-background shadow-sm overflow-hidden'>
-      <div className='hidden grid-cols-[1.2fr_0.7fr_0.7fr_0.7fr_auto] gap-4 border-b border-dashed border-muted/40 bg-muted/20 px-5 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 md:grid'>
+    <div className='rounded-[24px] border border-dashed border-muted/40 bg-background shadow-none overflow-hidden'>
+      <div className='hidden grid-cols-[1.2fr_0.7fr_0.7fr_0.7fr_auto] gap-4 border-b border-dashed border-muted/30 bg-muted/20 px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 md:grid'>
         <div>{t('engineering.masterData.weavingMode.table.mode')}</div>
         <div>{t('engineering.masterData.weavingMode.table.ratio')}</div>
         <div>{t('engineering.masterData.weavingMode.table.source')}</div>
@@ -33,45 +33,45 @@ export function WeavingModeListCard({
       </div>
 
       {isLoading ? (
-        <div className='p-12 text-center text-[10px] font-black uppercase tracking-[0.28em] text-muted-foreground/60'>
+        <div className='p-8 text-center text-[10px] font-black uppercase tracking-[0.28em] text-muted-foreground/60'>
           {t('common.status.syncing')}
         </div>
       ) : isLoadError ? (
-        <div className='p-12 text-center'>
+        <div className='p-8 text-center'>
           <div className='text-[10px] font-black uppercase tracking-[0.28em] text-destructive/70'>
             {t('engineering.masterData.weavingMode.toasts.loadFailed')}
           </div>
-          <div className='mt-4'>
+          <div className='mt-3'>
             <Button variant='outline' onClick={onRetry} className='rounded-full px-6 text-[10px] font-black uppercase tracking-widest'>
               {t('common.actions.retry')}
             </Button>
           </div>
         </div>
       ) : data.length === 0 ? (
-        <div className='p-12 text-center'>
+        <div className='p-8 text-center'>
           <div className='text-[10px] font-black uppercase tracking-[0.28em] text-muted-foreground/60'>
             {t('engineering.masterData.weavingMode.empty.title')}
           </div>
-          <div className='mx-auto mt-3 max-w-xl text-sm text-muted-foreground'>
+          <div className='mx-auto mt-2 max-w-xl text-sm text-muted-foreground'>
             {t('engineering.masterData.weavingMode.empty.description')}
           </div>
         </div>
       ) : (
         <div className='divide-y divide-dashed divide-muted/40'>
           {data.map((item) => (
-            <div key={item.id} className='grid gap-4 px-5 py-4 md:grid-cols-[1.2fr_0.7fr_0.7fr_0.7fr_auto] md:items-center'>
-              <div className='flex min-w-0 flex-col gap-2'>
+            <div key={item.id} className='grid gap-3 px-4 py-3 md:grid-cols-[1.2fr_0.7fr_0.7fr_0.7fr_auto] md:items-center'>
+              <div className='flex min-w-0 flex-col gap-1.5'>
                 <div className='flex flex-wrap items-center gap-2'>
                   <div className='inline-flex rounded-full border border-dashed border-primary/20 bg-primary/5 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-primary/70'>
                     {item.label}
                   </div>
-                  <div className='text-sm font-black text-foreground'>{item.normalizedRatioKey}</div>
+                  <div className='text-xs font-bold text-foreground'>{item.normalizedRatioKey}</div>
                 </div>
-                <div className='text-[11px] text-muted-foreground'>
+                <div className='text-[10px] text-muted-foreground/75'>
                   {item.description || t('engineering.masterData.weavingMode.empty.descriptionFallback')}
                 </div>
               </div>
-              <div className='text-sm font-black text-foreground'>
+              <div className='text-xs font-bold font-mono text-foreground'>
                 {item.ratioNumerator} / {item.ratioDenominator}
               </div>
               <div>

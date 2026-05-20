@@ -75,20 +75,20 @@ export function LineList({ lines, onUpdate, onDelete }: LineListProps) {
   )
 
   return (
-    <div className='flex h-fit min-h-0 w-full flex-col gap-6 pb-10'>
-      <div className='flex flex-col gap-4 rounded-[28px] border border-dashed border-muted/35 bg-muted/5 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5'>
+    <div className='flex h-fit min-h-0 w-full flex-col gap-4 pb-8'>
+      <div className='flex flex-col gap-3 rounded-[24px] border border-dashed border-muted/35 bg-muted/5 p-3 px-4 sm:flex-row sm:items-center sm:justify-between sm:p-3 sm:px-4'>
         <div className='relative w-full sm:max-w-sm'>
           <Search className='absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/40' />
           <Input
             placeholder={t('orgPersonnel.lineMgmt.list.searchPlaceholder')}
-            className='h-12 rounded-full border border-cyan-500/10 bg-background/80 pl-10 text-sm font-medium shadow-none focus-visible:ring-2 focus-visible:ring-cyan-200'
+            className='h-10 rounded-full border border-cyan-500/10 bg-background/80 pl-10 text-sm font-medium shadow-none focus-visible:ring-2 focus-visible:ring-cyan-200'
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <Button
           onClick={handleAdd}
-          className='h-11 w-full rounded-full px-6 text-[10px] font-black uppercase tracking-[0.24em] shadow-none transition-all active:scale-95 sm:w-auto'
+          className='h-10 w-full rounded-full px-6 text-[10px] font-black uppercase tracking-[0.24em] shadow-none transition-all active:scale-95 sm:w-auto'
         >
           <Plus className='mr-2 size-4' /> {t('orgPersonnel.lineMgmt.list.addButton')}
         </Button>

@@ -21,7 +21,7 @@ export function LineMgmt() {
   }
 
   return (
-    <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+    <div className='flex flex-col gap-6 animate-in fade-in duration-700'>
       <IndustrialHeader
         icon={Factory}
         title={t('orgPersonnel.lineMgmt.header.title')}

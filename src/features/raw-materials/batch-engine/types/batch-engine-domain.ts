@@ -9,13 +9,9 @@ export type BatchEngineControls = {
   knifeGapMm: string
   edgeTrimMm: string
   objectivePreset: BatchOptimizerObjectivePreset
-  fulfilledWeight: string
   utilizationWeight: string
   stabilityWeight: string
-  assignmentPenaltyWeight: string
-  unfulfilledPenaltyWeight: string
   splitPenaltyWeight: string
-  mustPenaltyWeight: string
 }
 
 export type BatchEngineResolvedControls = BatchEngineControls
@@ -28,13 +24,9 @@ export type BatchEngineNormalizedControls = {
   knifeGapMm: number
   edgeTrimMm: number
   objectivePreset: BatchOptimizerObjectivePreset
-  fulfilledWeight: number
   utilizationWeight: number
   stabilityWeight: number
-  assignmentPenaltyWeight: number
-  unfulfilledPenaltyWeight: number
   splitPenaltyWeight: number
-  mustPenaltyWeight: number
 }
 
 export type BatchEngineResolvedControlState = {

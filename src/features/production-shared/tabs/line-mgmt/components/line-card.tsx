@@ -121,16 +121,16 @@ export function LineCard({ line, onEdit, onDelete, onToggleActive, onUpdate }: L
     <Card
       className={`group/card overflow-hidden rounded-[28px] border border-dashed bg-background/90 shadow-none backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_50px_-28px_rgba(6,182,212,0.55)] ${!line.isActive ? 'opacity-70 grayscale' : 'border-cyan-500/20'}`}
     >
-      <CardContent className='p-5 space-y-4'>
-        <div className='flex items-start justify-between gap-4'>
-          <div className='flex items-start gap-3 flex-1 min-w-0'>
+      <CardContent className='p-3.5 space-y-3'>
+        <div className='flex items-start justify-between gap-3'>
+          <div className='flex items-start gap-2.5 flex-1 min-w-0'>
             <Button
               variant='ghost'
               size='icon'
-              className='size-9 shrink-0 rounded-full border border-dashed border-muted/30 bg-muted/5 text-muted-foreground transition-all hover:border-cyan-500/20 hover:bg-cyan-500/5 hover:text-cyan-700'
+              className='size-8 shrink-0 rounded-full border border-dashed border-muted/30 bg-muted/5 text-muted-foreground transition-all hover:border-cyan-500/20 hover:bg-cyan-500/5 hover:text-cyan-700'
               onClick={() => setIsExpanded(!isExpanded)}
             >
-              {isExpanded ? <ChevronDown className='size-4' /> : <ChevronRight className='size-4' />}
+              {isExpanded ? <ChevronDown className='size-3.5' /> : <ChevronRight className='size-3.5' />}
             </Button>
             <div className='min-w-0 flex-1 space-y-2'>
               <div className='flex flex-wrap items-center gap-2'>
@@ -142,16 +142,16 @@ export function LineCard({ line, onEdit, onDelete, onToggleActive, onUpdate }: L
                   {line.isActive ? t('orgPersonnel.lineMgmt.card.running') : t('orgPersonnel.lineMgmt.card.offline')}
                 </Badge>
               </div>
-              <div className='flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/55'>
-                <Settings2 className='size-3.5 shrink-0 text-cyan-600/60' />
+              <div className='flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/55'>
+                <Settings2 className='size-3 shrink-0 text-cyan-600/60' />
                 <span className='truncate'>{t('orgPersonnel.lineMgmt.card.topologyMgmt')}</span>
               </div>
             </div>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant='ghost' size='icon' className='size-9 shrink-0 rounded-full text-muted-foreground hover:bg-muted/40 hover:text-foreground'>
-                <MoreVertical className='size-4' />
+              <Button variant='ghost' size='icon' className='size-8 shrink-0 rounded-full text-muted-foreground hover:bg-muted/40 hover:text-foreground'>
+                <MoreVertical className='size-3.5' />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end' className='rounded-[22px] border border-dashed border-muted/40 bg-background/95 p-1 shadow-2xl backdrop-blur-md'>
@@ -188,8 +188,8 @@ export function LineCard({ line, onEdit, onDelete, onToggleActive, onUpdate }: L
             description={authDialogDescription}
         />
 
-        <div className='grid gap-4 rounded-[24px] border border-dashed border-muted/40 bg-muted/20 p-4 md:grid-cols-2'>
-          <div className='space-y-1.5'>
+        <div className='grid gap-2 rounded-2xl border border-dashed border-muted/30 bg-muted/20 p-2.5 px-3.5 md:grid-cols-2'>
+          <div className='space-y-0.5'>
             <p className='text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/45'>
               {t('orgPersonnel.lineMgmt.card.hierarchy')}
             </p>
@@ -204,7 +204,7 @@ export function LineCard({ line, onEdit, onDelete, onToggleActive, onUpdate }: L
               })}
             </p>
           </div>
-          <div className='space-y-1.5'>
+          <div className='space-y-0.5'>
             <p className='text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/45'>
               {t('orgPersonnel.lineMgmt.card.status')}
             </p>
@@ -242,9 +242,9 @@ export function LineCard({ line, onEdit, onDelete, onToggleActive, onUpdate }: L
                   onSelect={handleAddSegment}
                   variant='outline'
                   size='sm'
-                  className='h-11 w-full rounded-[20px] border-dashed border-cyan-500/20 bg-cyan-500/5 text-[10px] font-black uppercase tracking-[0.24em] text-cyan-700/70 transition-all hover:border-cyan-500/30 hover:bg-cyan-500/10 hover:text-cyan-800'
+                  className='h-9 w-full rounded-xl border-dashed border-cyan-500/20 bg-cyan-500/5 text-[10px] font-black uppercase tracking-[0.24em] text-cyan-700/70 transition-all hover:border-cyan-500/30 hover:bg-cyan-500/10 hover:text-cyan-800'
                 >
-                  <Plus className='mr-2 size-4' /> {t('orgPersonnel.lineMgmt.card.defineHierarchyLevel', { levelName: level1Name })}
+                  <Plus className='mr-2 size-3.5' /> {t('orgPersonnel.lineMgmt.card.defineHierarchyLevel', { levelName: level1Name })}
                 </HierarchyOptionDropdownButton>
               </div>
             ) : (

@@ -26,7 +26,7 @@ export function HierarchyConfig() {
   }
 
   return (
-    <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+    <div className='flex flex-col gap-5 animate-in fade-in duration-700'>
       <IndustrialHeader
         icon={Layers3}
         title='层级配置'
@@ -36,19 +36,19 @@ export function HierarchyConfig() {
             <Button
               type='button'
               variant='outline'
-              className='h-11 rounded-full border-dashed text-[10px] font-black uppercase tracking-widest'
+              className='h-9 rounded-full border-dashed text-[10px] font-black uppercase tracking-widest'
               onClick={() => void resetConfig()}
               disabled={isSaving}
             >
-              <RefreshCw className='mr-2 size-4' /> 恢复默认
+              <RefreshCw className='mr-2 size-3.5' /> 恢复默认
             </Button>
             <Button
               type='button'
-              className='h-11 rounded-full text-[10px] font-black uppercase tracking-widest'
+              className='h-9 rounded-full text-[10px] font-black uppercase tracking-widest'
               onClick={() => void saveConfig()}
               disabled={isSaving || !isDirty}
             >
-              <Save className='mr-2 size-4' /> 保存配置
+              <Save className='mr-2 size-3.5' /> 保存配置
             </Button>
           </div>
         }

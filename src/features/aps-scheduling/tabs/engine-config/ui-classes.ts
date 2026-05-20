@@ -38,10 +38,10 @@ export const ENGINE_TABLE_SHELL_CLASS =
   'overflow-hidden rounded-[26px] border border-dashed border-muted/45 bg-background/90 shadow-[0_12px_32px_-28px_rgba(15,23,42,0.45)]'
 
 export const ENGINE_TABLE_HEADER_CELL_CLASS =
-  'border-b border-dashed border-muted/40 bg-muted/25 px-5 py-3.5 text-left text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/60'
+  'border-b border-dashed border-muted/40 bg-muted/25 px-4 py-2 text-left text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/60'
 
 export const ENGINE_TABLE_CELL_CLASS =
-  'border-b border-dashed border-muted/25 px-5 py-4.5 align-top text-[10px] leading-5 text-foreground/85'
+  'border-b border-dashed border-muted/25 px-4 py-2.5 align-top text-[10px] leading-normal text-foreground/85'
 
 export const ENGINE_TABLE_ROW_CLASS = 'odd:bg-background even:bg-muted/10 hover:bg-muted/15 transition-colors'
 

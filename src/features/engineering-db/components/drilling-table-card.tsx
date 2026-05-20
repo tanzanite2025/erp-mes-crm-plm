@@ -45,13 +45,13 @@ export function DrillingTableCard({
         const fileVisual = getEngineeringDbFileVisual({ extension: row.original.item.fileExtension, category: 'DRILLING' })
         const Icon = fileVisual.icon
         return (
-          <div className='flex items-center gap-3'>
-            <div className={`size-10 rounded-lg border ${fileVisual.containerClassName} flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-110`}>
-              <Icon className={`size-5 ${fileVisual.iconClassName}`} />
+          <div className='flex items-center gap-2.5'>
+            <div className={`size-8 rounded-lg border ${fileVisual.containerClassName} flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-110`}>
+              <Icon className={`size-4 ${fileVisual.iconClassName}`} />
             </div>
             <div className='flex flex-col'>
               <span className='font-bold text-sm text-foreground'>{row.original.item.name}</span>
-              <div className='flex items-center gap-2 mt-1'>
+              <div className='flex items-center gap-2 mt-0.5'>
                 <Badge variant='outline' className='text-[10px] h-4 px-1.5 py-0 bg-muted/50 text-muted-foreground uppercase font-mono font-bold border-none'>
                   {row.original.item.fileExtension || 'PDF'}
                 </Badge>
@@ -134,11 +134,11 @@ export function DrillingTableCard({
       <Card className='hidden md:block border border-dashed border-muted/50 shadow-none bg-background overflow-hidden rounded-[24px]'>
         <CardContent className='p-0'>
           <Table>
-            <TableHeader className='bg-muted/30 h-14'>
+            <TableHeader className='bg-muted/30 h-11'>
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id} className='hover:bg-transparent border-b border-dashed border-muted/50'>
                   {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id} className='text-[10px] font-black uppercase tracking-widest px-6 text-muted-foreground/50'>
+                    <TableHead key={header.id} className='text-[10px] font-black uppercase tracking-widest px-4 text-muted-foreground/50'>
                       {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                     </TableHead>
                   ))}
@@ -154,12 +154,12 @@ export function DrillingTableCard({
                     key={row.id}
                     onClick={() => onPreview(row.original.item)}
                     className={cn(
-                      'group hover:bg-muted/5 transition-colors border-b border-dashed border-muted/50 last:border-0 h-16 cursor-pointer',
+                      'group hover:bg-muted/5 transition-colors border-b border-dashed border-muted/50 last:border-0 h-12 cursor-pointer',
                       row.original.item.id === highlightId && 'bg-primary/5 animate-pulse border-2 border-primary/20 shadow-inner',
                     )}
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id} className='px-6'>
+                      <TableCell key={cell.id} className='px-4'>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </TableCell>
                     ))}

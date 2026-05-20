@@ -289,8 +289,8 @@ export default function WarehouseCategory() {
 
   return (
     <>
-      <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
-        <div className='relative flex flex-col gap-1 overflow-hidden rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-8'>
+      <div className='flex animate-in flex-col gap-5 duration-700 fade-in'>
+        <div className='relative flex flex-col gap-1 overflow-hidden rounded-[24px] border border-dashed border-muted/50 bg-muted/5 p-4 md:p-6'>
           <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 via-transparent' />
           <div className='relative z-10 flex items-center gap-3 text-primary'>
             <Warehouse className='size-5' />
@@ -357,16 +357,19 @@ export default function WarehouseCategory() {
               return (
                 <div
                   key={cat.id}
-                  className='group relative rounded-[24px] border border-muted/60 bg-background p-6 transition-all hover:-translate-y-0.5 hover:border-blue-500/50 hover:shadow-xl hover:shadow-blue-500/10'
+                  className='group relative rounded-[24px] border border-muted/60 bg-background p-4 md:p-5 transition-all hover:-translate-y-0.5 hover:border-blue-500/50 hover:shadow-xl hover:shadow-blue-500/10'
                 >
-                  <div className='flex items-start justify-between gap-4'>
-                    <div className='flex min-w-0 items-center gap-4'>
-                      <div className='flex size-12 shrink-0 items-center justify-center rounded-xl border border-blue-500/20 bg-blue-500/10 text-blue-600 shadow-inner transition-transform group-hover:scale-105'>
-                        <Warehouse className='size-6' />
+                  <div className='flex items-start justify-between gap-3'>
+                    <div className='flex min-w-0 items-center gap-3'>
+                      <div className='flex size-10 shrink-0 items-center justify-center rounded-xl border border-blue-500/20 bg-blue-500/10 text-blue-600 shadow-inner transition-transform group-hover:scale-105'>
+                        <Warehouse className='size-5' />
                       </div>
-                      <div className='min-w-0 space-y-1'>
+                      <div className='min-w-0 space-y-0.5'>
                         <div className='flex flex-wrap items-center gap-2'>
-                          <h4 className='truncate text-lg font-black tracking-tighter text-slate-800 uppercase italic'>
+                          <h4 className={cn(
+                            'truncate font-black tracking-tighter text-slate-800 uppercase italic',
+                            cat.name.length > 4 ? 'text-sm' : 'text-base'
+                          )}>
                             {cat.name}
                           </h4>
                           <Badge
@@ -411,13 +414,13 @@ export default function WarehouseCategory() {
                     ) : null}
                   </div>
 
-                  <p className='mt-4 min-h-10 text-[11px] leading-5 text-muted-foreground'>
+                  <p className='mt-3 min-h-10 text-[11px] leading-5 text-muted-foreground'>
                     {cat.description ||
                       t('warehouse.category.card.noDescription')}
                   </p>
 
-                  <div className='mt-5 space-y-3'>
-                    <div className='space-y-2'>
+                  <div className='mt-4 space-y-2.5'>
+                    <div className='space-y-1.5'>
                       <div className='text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase'>
                         {t('warehouse.category.card.scopeTitle')}
                       </div>
@@ -439,7 +442,7 @@ export default function WarehouseCategory() {
                       </div>
                     </div>
 
-                    <div className='space-y-2'>
+                    <div className='space-y-1.5'>
                       <div className='text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase'>
                         {t('warehouse.category.card.defaultTitle')}
                       </div>
@@ -463,12 +466,12 @@ export default function WarehouseCategory() {
                   </div>
 
                   {cat.isSystem ? (
-                    <div className='mt-4 rounded-2xl border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-[11px] leading-relaxed text-amber-700'>
+                    <div className='mt-3 rounded-xl border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-[11px] leading-relaxed text-amber-700'>
                       系统保护库区，不允许编辑或删除。
                     </div>
                   ) : null}
 
-                  <div className='mt-6 flex items-center justify-between border-t border-dashed border-muted/80 pt-5'>
+                  <div className='mt-4 flex items-center justify-between border-t border-dashed border-muted/80 pt-3.5'>
                     <div className='text-[10px] font-black tracking-widest text-muted-foreground/30 uppercase'>
                       {t('warehouse.category.permissionLevel')}
                     </div>

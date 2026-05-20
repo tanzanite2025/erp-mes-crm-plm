@@ -1,4 +1,4 @@
-export type BatchOptimizerObjectivePreset = 'yield-first' | 'delivery-first' | 'stability-first'
+export type BatchOptimizerObjectivePreset = 'yield-first' | 'stability-first'
 
 export type BatchOptimizerScoreWeights = {
   fulfilledWeight: number
@@ -8,16 +8,6 @@ export type BatchOptimizerScoreWeights = {
   unfulfilledPenaltyWeight: number
   splitPenaltyWeight: number
   mustPenaltyWeight: number
-}
-
-export type BatchOptimizerRollInput = {
-  rollId: string
-  prepregSpecId: string
-  rollWidthMm: number
-  rollLengthM: number
-  remainingAreaM2: number
-  edgeTrimMm: number
-  status: string
 }
 
 export type BatchOptimizerDemandLineInput = {
@@ -39,17 +29,6 @@ export type BatchOptimizerDemandLineInput = {
   yarnDirectionMode: string
   processTags: string[]
   noteKeywords: string[]
-}
-
-export type BatchOptimizerSolveRequest = {
-  rolls: BatchOptimizerRollInput[]
-  demandLines: BatchOptimizerDemandLineInput[]
-  knifeGapMm: number
-  defaultEdgeTrimMm: number
-  objectivePreset: BatchOptimizerObjectivePreset
-  scoreWeights: BatchOptimizerScoreWeights
-  maxCandidatePlans: number
-  timeLimitMs: number
 }
 
 export type BatchOptimizerPlanAssignment = {

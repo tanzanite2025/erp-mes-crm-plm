@@ -19,28 +19,28 @@ export function DrillingToolbar({
   const { t } = useLanguage()
 
   return (
-    <div className='flex flex-col sm:flex-row items-center justify-between gap-4 bg-muted/5 p-4 md:p-8 rounded-[28px] md:rounded-[32px] border border-dashed border-muted-foreground/10 shadow-inner overflow-hidden'>
-      <div className='relative w-full sm:w-96 group'>
-        <Search className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/30 group-focus-within:text-indigo-600 transition-colors' />
+    <div className='flex flex-col sm:flex-row items-center justify-between gap-3 bg-muted/5 p-3 px-4 rounded-[24px] border border-dashed border-muted-foreground/10 shadow-inner overflow-hidden'>
+      <div className='relative w-full sm:w-80 group'>
+        <Search className='absolute left-3.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/40 group-focus-within:text-indigo-600 transition-colors' />
         <Input
           placeholder={t('engineering.drilling.placeholders.search')}
           value={searchTerm}
           onChange={(event) => onSearchTermChange(event.target.value)}
-          className='pl-10 h-12 rounded-2xl border-none bg-background shadow-inner text-sm font-medium focus-visible:ring-1 focus-visible:ring-indigo-600/20 w-full'
+          className='pl-9 h-10 rounded-xl border-none bg-background shadow-inner text-sm font-medium focus-visible:ring-1 focus-visible:ring-indigo-600/20 w-full'
         />
       </div>
-      <div className='flex w-full sm:w-auto flex-col sm:flex-row items-stretch sm:items-center gap-3'>
+      <div className='flex w-full sm:w-auto flex-col sm:flex-row items-stretch sm:items-center gap-2.5'>
         <AuditTimelineTriggerButton
           module={AUDIT_MODULES.drilling}
           targetName={t('engineering.drilling.overview.title')}
           label={t('common.audit.trigger')}
-          className='h-11 rounded-full px-5'
+          className='h-10 rounded-full px-4 text-[10px] font-black uppercase'
         />
         <Button
           onClick={onCreate}
-          className='w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest text-white gap-2 transition-all active:scale-95'
+          className='w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 rounded-full h-10 px-6 font-black text-[10px] uppercase tracking-widest text-white gap-1.5 transition-all active:scale-95'
         >
-          <Plus className='size-4' /> {t('engineering.drilling.table.upload')}
+          <Plus className='size-3.5' /> {t('engineering.drilling.table.upload')}
         </Button>
       </div>
     </div>

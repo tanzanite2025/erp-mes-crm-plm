@@ -181,13 +181,13 @@ export function LabelingTab() {
                 const typeVisual = getEngineeringDbLabelingTypeVisual(row.original.item.type)
                 const Icon = fileVisual.icon
                 return (
-                    <div className='flex items-center gap-3'>
-                        <div className={`size-10 rounded-lg border ${typeVisual.className} flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-110`}>
-                            <Icon className={`size-5 ${fileVisual.iconClassName}`} />
+                    <div className='flex items-center gap-2.5'>
+                        <div className={`size-8 rounded-lg border ${typeVisual.className} flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-110`}>
+                            <Icon className={`size-4 ${fileVisual.iconClassName}`} />
                         </div>
                         <div className='flex flex-col'>
                             <span className='font-bold text-sm text-foreground'>{row.original.item.name}</span>
-                            <div className='flex items-center gap-2 mt-1'>
+                            <div className='flex items-center gap-2 mt-0.5'>
                                 <Badge variant='outline' className='text-[10px] h-4 px-1.5 py-0 bg-muted/50 text-muted-foreground uppercase font-mono font-bold border-none'>
                                     {row.original.item.fileExtension || 'PDF'}
                                 </Badge>
@@ -269,7 +269,7 @@ export function LabelingTab() {
     }
 
     return (
-        <div className='flex flex-col gap-6 md:gap-8 animate-in fade-in duration-700'>
+        <div className='flex flex-col gap-5 animate-in fade-in duration-700'>
             <IndustrialHeader
                 icon={Sticker}
                 title={t('engineering.labeling.overview.title')}
@@ -285,32 +285,32 @@ export function LabelingTab() {
                 className='border-muted-foreground/10'
             />
 
-            <div className='flex flex-col sm:flex-row items-center justify-between gap-4 bg-muted/5 p-4 md:p-8 rounded-[28px] md:rounded-[32px] border border-dashed border-muted-foreground/10 shadow-inner overflow-hidden'>
-                <div className='relative w-full sm:w-96 group'>
-                    <Search className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/30 group-focus-within:text-teal-600 transition-colors' />
+            <div className='flex flex-col sm:flex-row items-center justify-between gap-3 bg-muted/5 p-3 px-4 rounded-[24px] border border-dashed border-muted-foreground/10 shadow-inner overflow-hidden'>
+                <div className='relative w-full sm:w-80 group'>
+                    <Search className='absolute left-3.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/40 group-focus-within:text-teal-600 transition-colors' />
                     <Input
                         placeholder={t('engineering.labeling.placeholders.search')}
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
-                        className='pl-10 h-12 rounded-2xl border-none bg-background shadow-inner text-sm font-medium focus-visible:ring-1 focus-visible:ring-teal-500/20 w-full'
+                        className='pl-9 h-10 rounded-xl border-none bg-background shadow-inner text-sm font-medium focus-visible:ring-1 focus-visible:ring-teal-500/20 w-full'
                     />
                 </div>
                 <Button
                     onClick={() => { setCurrentRow(undefined); setOpen(true); }}
-                    className='w-full sm:w-auto bg-teal-600 hover:bg-teal-700 shadow-xl shadow-teal-600/20 rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest text-white gap-2 transition-all active:scale-95'
+                    className='w-full sm:w-auto bg-teal-600 hover:bg-teal-700 shadow-xl shadow-teal-600/20 rounded-full h-10 px-6 font-black text-[10px] uppercase tracking-widest text-white gap-1.5 transition-all active:scale-95'
                 >
-                    <Plus className='size-4' /> {t('engineering.labeling.table.upload')}
+                    <Plus className='size-3.5' /> {t('engineering.labeling.table.upload')}
                 </Button>
             </div>
 
             <Card className='hidden md:block border border-dashed border-muted/50 shadow-none bg-background overflow-hidden rounded-[24px]'>
                 <CardContent className='p-0'>
                     <Table>
-                        <TableHeader className='bg-muted/30 h-14'>
+                        <TableHeader className='bg-muted/30 h-11'>
                             {table.getHeaderGroups().map((headerGroup) => (
                                 <TableRow key={headerGroup.id} className='hover:bg-transparent border-b border-dashed border-muted/50'>
                                     {headerGroup.headers.map((header) => (
-                                        <TableHead key={header.id} className='text-[10px] font-black uppercase tracking-widest px-6 text-muted-foreground/50'>
+                                        <TableHead key={header.id} className='text-[10px] font-black uppercase tracking-widest px-4 text-muted-foreground/50'>
                                             {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                                         </TableHead>
                                     ))}
@@ -326,12 +326,12 @@ export function LabelingTab() {
                                         key={row.id}
                                         onClick={() => handlePreview(row.original.item)}
                                         className={cn(
-                                            'group hover:bg-muted/5 transition-colors border-b border-dashed border-muted/50 last:border-0 h-16 cursor-pointer',
+                                            'group hover:bg-muted/5 transition-colors border-b border-dashed border-muted/50 last:border-0 h-12 cursor-pointer',
                                             row.original.item.id === highlightId && 'bg-primary/5 animate-pulse border-2 border-primary/20 shadow-inner'
                                         )}
                                     >
                                         {row.getVisibleCells().map((cell) => (
-                                            <TableCell key={cell.id} className='px-6'>
+                                            <TableCell key={cell.id} className='px-4'>
                                                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                             </TableCell>
                                         ))}

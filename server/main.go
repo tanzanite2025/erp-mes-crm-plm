@@ -22,7 +22,30 @@ import (
 	"github.com/robfig/cron/v3"
 	"github.com/rs/zerolog"
 	zlog "github.com/rs/zerolog/log"
+	
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+	_ "xdfc-server/docs" // 导入生成的 Swagger 文档
 )
+
+// @title XDFC 数字化管理 ERP API
+// @version 2.2.1
+// @description XDFC 数字化管理 ERP 系统的 RESTful API 文档
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name API Support
+// @contact.email support@xdfc.com
+
+// @license.name Proprietary
+// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host localhost:8080
+// @BasePath /api/v1
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description JWT Token (格式: Bearer {token})
 
 func loadBackendEnv() {
 	candidates := []string{
@@ -320,6 +343,10 @@ func main() {
 	log.Println("[READY] 定时任务集群已就绪: 汇率 (11:00) | 备份 (02:00)")
 
 	routes.SetupRoutes(r)
+	
+	// Swagger 文档路由
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	log.Println("[READY] Swagger UI 可访问: http://localhost:8080/swagger/index.html")
 
 	serverAddr := resolveServerAddr()
 	log.Printf("Server starting on %s...", serverAddr)

@@ -13,6 +13,7 @@ import { useLanguage } from '@/context/language-provider'
 import { AUDIT_ENGINE_MODULE_IDS, type AuditEngineModuleId } from '../data/audit-engine-modules'
 import { useAuditEngineStats } from '../hooks/use-audit-engine-stats'
 import { type AuditEngineModuleStats } from '../types'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 
 interface ModuleStatus {
   id: AuditEngineModuleId
@@ -48,56 +49,48 @@ export function AuditEngineTab() {
 
   return (
     <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-      <div className='p-8 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-6'>
-        <div className='flex items-center gap-4'>
-          <div className='p-3 bg-primary/10 rounded-2xl'>
-            <ShieldCheck className='w-8 h-8 text-primary' />
-          </div>
-          <div>
-            <h1 className='text-lg font-black tracking-tighter italic uppercase'>
-              {t('systemManagement.auditEngine.title')}
-            </h1>
-            <p className='text-[9px] font-black uppercase tracking-widest opacity-60'>
-              {t('systemManagement.auditEngine.subtitle')}
-            </p>
-          </div>
-        </div>
-
-        <div className='flex gap-4'>
-          <div className='flex flex-col items-end'>
-            <span className='text-[10px] font-black uppercase tracking-widest opacity-40'>
-              {t('systemManagement.auditEngine.systemStatus')}
-            </span>
-            <div className='flex items-center gap-2'>
-              <div
-                className={cn(
-                  'w-2 h-2 rounded-full animate-pulse',
-                  connectedCount === totalCount ? 'bg-emerald-500' : 'bg-amber-500'
-                )}
-              />
-              <span
-                className={cn(
-                  'text-sm font-black italic tracking-tighter',
-                  connectedCount === totalCount ? 'text-emerald-600' : 'text-amber-600'
-                )}
-              >
-                {connectedCount === totalCount
-                  ? t('systemManagement.auditEngine.status.operational')
-                  : t('systemManagement.auditEngine.status.partial')}
+      <IndustrialHeader
+        icon={ShieldCheck}
+        title={t('systemManagement.auditEngine.title')}
+        description={t('systemManagement.auditEngine.subtitle')}
+        gradient
+        statusBadge={
+          <div className='flex gap-4'>
+            <div className='flex flex-col items-end'>
+              <span className='text-[10px] font-black uppercase tracking-widest opacity-40'>
+                {t('systemManagement.auditEngine.systemStatus')}
+              </span>
+              <div className='flex items-center gap-2'>
+                <div
+                  className={cn(
+                    'w-2 h-2 rounded-full animate-pulse',
+                    connectedCount === totalCount ? 'bg-emerald-500' : 'bg-amber-500'
+                  )}
+                />
+                <span
+                  className={cn(
+                    'text-sm font-black italic tracking-tighter',
+                    connectedCount === totalCount ? 'text-emerald-600' : 'text-amber-600'
+                  )}
+                >
+                  {connectedCount === totalCount
+                    ? t('systemManagement.auditEngine.status.operational')
+                    : t('systemManagement.auditEngine.status.partial')}
+                </span>
+              </div>
+            </div>
+            <Separator orientation='vertical' className='h-10 border-dashed' />
+            <div className='flex flex-col items-end'>
+              <span className='text-[10px] font-black uppercase tracking-widest opacity-40'>
+                {t('systemManagement.auditEngine.connected')}
+              </span>
+              <span className='text-sm font-black italic tracking-tighter'>
+                {t('systemManagement.auditEngine.modulesCount', { connected: connectedCount, total: totalCount })}
               </span>
             </div>
           </div>
-          <Separator orientation='vertical' className='h-10 border-dashed' />
-          <div className='flex flex-col items-end'>
-            <span className='text-[10px] font-black uppercase tracking-widest opacity-40'>
-              {t('systemManagement.auditEngine.connected')}
-            </span>
-            <span className='text-sm font-black italic tracking-tighter'>
-              {t('systemManagement.auditEngine.modulesCount', { connected: connectedCount, total: totalCount })}
-            </span>
-          </div>
-        </div>
-      </div>
+        }
+      />
 
       {isLoading ? (
         <div className='flex min-h-[240px] items-center justify-center rounded-[24px] border border-dashed border-muted/50 bg-muted/5'>

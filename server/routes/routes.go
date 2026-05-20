@@ -2,21 +2,66 @@ package routes
 
 import (
 	"log"
+	"os"
+	"strconv"
+	"time"
 	"xdfc-server/authz"
 	"xdfc-server/handlers"
 	"xdfc-server/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"golang.org/x/time/rate"
 )
 
+// getRateLimitConfig 从环境变量读取限流配置
+func getRateLimitConfig(key string, defaultValue int) int {
+	if val := os.Getenv(key); val != "" {
+		if intVal, err := strconv.Atoi(val); err == nil {
+			return intVal
+		}
+	}
+	return defaultValue
+}
+
 func SetupRoutes(r *gin.Engine) {
+	// ========== Rate Limiting 配置 ==========
+	// 从环境变量读取配置,如果未设置则使用默认值
+	globalRPS := getRateLimitConfig("RATE_LIMIT_GLOBAL_RPS", 20)
+	globalBurst := getRateLimitConfig("RATE_LIMIT_GLOBAL_BURST", 40)
+	writeRPS := getRateLimitConfig("RATE_LIMIT_WRITE_RPS", 5)
+	writeBurst := getRateLimitConfig("RATE_LIMIT_WRITE_BURST", 10)
+
+	// 创建全局限流器: 防止 DoS 攻击
+	globalLimiter := middleware.NewRateLimiter(rate.Limit(globalRPS), globalBurst)
+	globalLimiter.CleanupVisitors(5 * time.Minute)
+
+	// 创建写操作限流器: 防止数据滥用
+	writeLimiter := middleware.NewRateLimiter(rate.Limit(writeRPS), writeBurst)
+	writeLimiter.CleanupVisitors(5 * time.Minute)
+
+	// 应用全局限流到所有路由
+	r.Use(globalLimiter.Middleware())
+	// ========================================
+
 	api := r.Group("/api/v1")
 	registerPublicRoutes(api)
 
 	authorized := api.Group("")
 	authorized.Use(middleware.AuthMiddleware())
 	{
+		// 应用写操作限流和 CSRF 保护
+		authorized.Use(func(c *gin.Context) {
+			method := c.Request.Method
+			// 对写操作应用更严格的限流和 CSRF 保护
+			if method == "POST" || method == "PUT" || method == "PATCH" || method == "DELETE" {
+				writeLimiter.Middleware()(c)
+				// 应用 CSRF 保护
+				middleware.CSRFProtection()(c)
+			}
+			c.Next()
+		})
+
 		registerUserRoutes(authorized)
 		registerAuthzRoutes(authorized)
 		registerBasicUnitRoutes(authorized)
@@ -84,7 +129,6 @@ func SetupRoutes(r *gin.Engine) {
 			rawMaterialGroup.POST("/prepreg-binding-tokens/batch", handlers.CreatePrepregBindingTokenBatchHandler)
 			rawMaterialGroup.GET("/prepreg-binding-tokens/:token", handlers.GetPrepregBindingTokenStateHandler)
 			rawMaterialGroup.POST("/prepreg-binding-tokens/:token/bind", adminOnly, handlers.BindPrepregBindingTokenToSpecHandler)
-			rawMaterialGroup.POST("/batch-optimizer/solve", handlers.SolveRawMaterialBatchOptimizerHandler)
 		}
 
 		appearanceGroup := authorized.Group("/engineering/product-appearances")
@@ -323,6 +367,16 @@ func SetupRoutes(r *gin.Engine) {
 
 func registerPublicRoutes(api *gin.RouterGroup) {
 	api.GET("/health", handlers.HealthHandler)
+
+	// CSRF Token 端点 (公开访问)
+	api.GET("/csrf-token", func(c *gin.Context) {
+		if err := middleware.SetCSRFToken(c); err != nil {
+			c.JSON(500, gin.H{"error": "生成 CSRF Token 失败"})
+			return
+		}
+		c.JSON(200, gin.H{"status": "ok"})
+	})
+
 	api.POST("/auth/login", middleware.LoginRateLimitMiddleware(), handlers.LoginHandler)
 	api.POST("/raw-materials/prepreg-label-ocr-sessions/:sessionId/submit", handlers.SubmitPrepregLabelOcrSessionHandler)
 	api.POST("/production/product-barcode-capture-sessions/:sessionId/submit", handlers.SubmitProductBarcodeCaptureSessionHandler)

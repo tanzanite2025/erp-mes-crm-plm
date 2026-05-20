@@ -7,6 +7,7 @@ import { DetailSections } from '../components/dashboard/detail-sections'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 
 export function AssetDashboard() {
     const { t } = useLanguage()
@@ -64,30 +65,21 @@ export function AssetDashboard() {
 
     return (
         <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-            <div className='relative overflow-hidden bg-slate-900 text-white py-5 px-8 rounded-[32px] shadow-xl group transition-all duration-700'>
-                <div className='absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.12),transparent)] pointer-events-none' />
-                <div className='absolute -right-16 -top-16 size-64 bg-primary/10 rounded-full blur-[80px] group-hover:bg-primary/20 transition-all duration-1000' />
-
-                <div className='relative flex flex-col gap-1.5'>
+            <IndustrialHeader
+                icon={BarChart3}
+                title={t('equipmentTooling.dashboard.header.title')}
+                gradient
+                statusBadge={
                     <div className='flex items-center gap-3'>
-                        <div className='p-1.5 bg-primary/20 rounded-lg backdrop-blur-md'>
-                            <BarChart3 className='size-5 text-primary animate-pulse' />
+                        <div className='inline-flex h-5 items-center justify-center rounded-full border border-dashed border-emerald-500/20 bg-emerald-500/5 px-3 text-[8px] font-mono uppercase tracking-[0.2em] text-emerald-600 whitespace-nowrap'>
+                            {t('equipmentTooling.dashboard.header.systemHealthLabel')}: {t('equipmentTooling.dashboard.header.stable')}
                         </div>
-                        <h3 className='text-lg font-black tracking-tighter italic uppercase'>{t('equipmentTooling.dashboard.header.title')}</h3>
+                        <div className='inline-flex h-5 items-center justify-center rounded-full border border-dashed border-cyan-500/20 bg-cyan-500/5 px-3 text-[8px] font-mono uppercase tracking-[0.2em] text-cyan-600 whitespace-nowrap'>
+                            {t('equipmentTooling.dashboard.header.activeSensorsLabel')}: {stats.moldStats.total + stats.furnaceStats.total} {t('equipmentTooling.dashboard.header.vectors')}
+                        </div>
                     </div>
-                    <div className='flex items-center gap-5 mt-0.5'>
-                        <p className='text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] font-mono'>
-                            {t('equipmentTooling.dashboard.header.systemHealthLabel')}:
-                            <span className='text-emerald-400'> {t('equipmentTooling.dashboard.header.stable')}</span>
-                        </p>
-                        <div className='h-2.5 w-px bg-slate-700' />
-                        <p className='text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] font-mono'>
-                            {t('equipmentTooling.dashboard.header.activeSensorsLabel')}:
-                            <span className='text-blue-400'> {stats.moldStats.total + stats.furnaceStats.total}</span> {t('equipmentTooling.dashboard.header.vectors')}
-                        </p>
-                    </div>
-                </div>
-            </div>
+                }
+            />
 
             <StatGroup moldStats={stats.moldStats} />
 

@@ -1,0 +1,15 @@
+{
+  "name": "xdfc-cutting-engine-wasm",
+  "type": "module",
+  "version": "0.1.0",
+  "files": [
+    "xdfc_cutting_engine_wasm_bg.wasm",
+    "xdfc_cutting_engine_wasm.js",
+    "xdfc_cutting_engine_wasm.d.ts"
+  ],
+  "main": "xdfc_cutting_engine_wasm.js",
+  "types": "xdfc_cutting_engine_wasm.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

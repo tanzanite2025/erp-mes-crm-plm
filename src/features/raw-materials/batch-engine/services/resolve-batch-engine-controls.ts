@@ -29,13 +29,9 @@ export function resolveBatchEngineControls(
     knifeGapMm: toPositiveNumber(rawControls.knifeGapMm),
     edgeTrimMm: toPositiveNumber(rawControls.edgeTrimMm),
     objectivePreset: rawControls.objectivePreset,
-    fulfilledWeight: toPositiveNumber(rawControls.fulfilledWeight),
     utilizationWeight: toPositiveNumber(rawControls.utilizationWeight),
     stabilityWeight: toPositiveNumber(rawControls.stabilityWeight),
-    assignmentPenaltyWeight: toPositiveNumber(rawControls.assignmentPenaltyWeight),
-    unfulfilledPenaltyWeight: toPositiveNumber(rawControls.unfulfilledPenaltyWeight),
     splitPenaltyWeight: toPositiveNumber(rawControls.splitPenaltyWeight),
-    mustPenaltyWeight: toPositiveNumber(rawControls.mustPenaltyWeight),
   }
 
   return {

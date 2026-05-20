@@ -1,5 +1,5 @@
 import { useLanguage } from '@/context/language-provider'
-import type { BatchOptimizerObjectivePreset, BatchOptimizerPlan } from '../types'
+import type { BatchOptimizerPlan } from '../types'
 
 type BatchEngineScoreBreakdownPanelProps = {
   plan: BatchOptimizerPlan
@@ -15,11 +15,8 @@ export function BatchEngineScoreBreakdownPanel(props: BatchEngineScoreBreakdownP
     breakdown.sequenceViolationCount +
     breakdown.directionSwitchCount +
     breakdown.mixViolationCount
-  const objectivePreset = breakdown.objectivePreset as BatchOptimizerObjectivePreset
   const objectivePresetLabel =
-    objectivePreset === 'delivery-first'
-      ? t('rawMaterials.batchEngine.sections.control.objective.options.deliveryFirst')
-      : objectivePreset === 'stability-first'
+    breakdown.objectivePreset === 'stability-first'
         ? t('rawMaterials.batchEngine.sections.control.objective.options.stabilityFirst')
         : t('rawMaterials.batchEngine.sections.control.objective.options.yieldFirst')
 

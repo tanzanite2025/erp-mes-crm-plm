@@ -116,9 +116,9 @@ export function OverviewTab() {
                 const Icon = fileVisual.icon
 
                 return (
-                    <div className='flex items-center gap-3'>
-                        <div className={`size-9 rounded-lg border ${fileVisual.containerClassName} flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-105`}>
-                            <Icon className={`size-5 ${fileVisual.iconClassName}`} />
+                    <div className='flex items-center gap-2.5'>
+                        <div className={`size-8 rounded-lg border ${fileVisual.containerClassName} flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-105`}>
+                            <Icon className={`size-4 ${fileVisual.iconClassName}`} />
                         </div>
                         <div className='flex flex-col'>
                             <span className='font-bold text-sm text-foreground group-hover:text-primary transition-colors'>{item.name}</span>
@@ -212,7 +212,7 @@ export function OverviewTab() {
     })
 
     return (
-        <div className='flex flex-col gap-6 md:gap-8 animate-in fade-in duration-700'>
+        <div className='flex flex-col gap-5 animate-in fade-in duration-700'>
             {/* 响应式工业页眉 */}
             <IndustrialHeader
                 icon={FileText}
@@ -228,30 +228,30 @@ export function OverviewTab() {
             />
 
             {/* 功能栏与统计 - 响应式栅格 */}
-            <div className='flex flex-col gap-4 md:gap-6 bg-muted/5 p-4 md:p-8 rounded-[28px] md:rounded-[32px] border border-dashed border-muted/50 shadow-inner'>
-                <div className='flex flex-col lg:flex-row items-center justify-between gap-4'>
+            <div className='flex flex-col gap-3.5 bg-muted/5 p-3 px-4 rounded-[24px] border border-dashed border-muted/50 shadow-inner'>
+                <div className='flex flex-col lg:flex-row items-center justify-between gap-3'>
                     <div className='relative w-full lg:max-w-md group'>
-                        <Search className='absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/30 group-focus-within:text-primary transition-colors' />
+                        <Search className='absolute left-3.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/40 group-focus-within:text-primary transition-colors' />
                         <Input 
                             placeholder={t('engineering.db.overview.searchPlaceholder')}
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
-                            className='pl-12 h-12 md:h-14 rounded-[20px] border-none bg-background shadow-lg text-sm font-bold placeholder:text-muted-foreground/30 focus-visible:ring-2 focus-visible:ring-primary/20 w-full'
+                            className='pl-9 h-10 rounded-xl border-none bg-background shadow-inner text-sm font-bold placeholder:text-muted-foreground/30 focus-visible:ring-1 focus-visible:ring-primary/20 w-full'
                         />
                     </div>
                     <div className='flex items-center gap-2 self-end lg:self-auto'>
-                        <div className='px-4 py-2 rounded-2xl bg-background border border-dashed border-muted/50 flex flex-col items-center justify-center min-w-[100px]'>
+                        <div className='px-3.5 py-1.5 rounded-xl bg-background border border-dashed border-muted/50 flex flex-col items-center justify-center min-w-[80px]'>
                             <span className='text-[8px] font-black text-muted-foreground/40 uppercase tracking-widest'>{t('engineering.db.stats.total')}</span>
-                            <span className='text-lg font-black text-primary italic'>{data.length}</span>
+                            <span className='text-sm font-black text-primary italic'>{data.length}</span>
                         </div>
                     </div>
                 </div>
 
-                <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4'>
+                <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5'>
                     {statCards.map((stat, idx) => (
-                        <div key={idx} className={`flex flex-col gap-1 ${stat.bg} p-4 md:p-5 rounded-[20px] md:rounded-[24px] border border-white/5 shadow-sm hover:scale-[1.02] transition-all cursor-default`}>
-                            <span className={`text-[8px] md:text-[9px] font-black uppercase tracking-widest opacity-60 ${stat.color}`}>{stat.label}</span>
-                            <div className='text-2xl md:text-3xl font-black italic tabular-nums tracking-tighter'>{stat.count}</div>
+                        <div key={idx} className={`flex items-center justify-between gap-1.5 ${stat.bg} py-2.5 px-3 rounded-[16px] border border-white/5 shadow-sm hover:scale-[1.02] transition-all cursor-default`}>
+                            <span className={`text-[9px] font-black uppercase tracking-widest opacity-60 ${stat.color} whitespace-nowrap truncate`}>{stat.label}</span>
+                            <div className='text-base font-black italic tabular-nums tracking-tighter shrink-0'>{stat.count}</div>
                         </div>
                     ))}
                 </div>
@@ -261,11 +261,11 @@ export function OverviewTab() {
             <Card className='hidden md:block border border-dashed border-muted/50 shadow-none bg-background overflow-hidden rounded-[24px]'>
                 <CardContent className='p-0'>
                     <Table>
-                        <TableHeader className='bg-muted/30 h-14'>
+                        <TableHeader className='bg-muted/30 h-11'>
                             {table.getHeaderGroups().map((headerGroup) => (
                                 <TableRow key={headerGroup.id} className='hover:bg-transparent border-b border-dashed border-muted/50'>
                                     {headerGroup.headers.map((header) => (
-                                        <TableHead key={header.id} className='text-[10px] font-black uppercase tracking-widest px-6 text-muted-foreground/50'>
+                                        <TableHead key={header.id} className='text-[10px] font-black uppercase tracking-widest px-4 text-muted-foreground/50'>
                                             {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                                         </TableHead>
                                     ))}
@@ -277,9 +277,9 @@ export function OverviewTab() {
                                 <TableRow><TableCell colSpan={columns.length} className='h-64 text-center'>{t('engineering.db.status.loading')}</TableCell></TableRow>
                             ) : filteredData.length ? (
                                 table.getRowModel().rows.map((row) => (
-                                    <TableRow key={row.id} className='group hover:bg-muted/5 transition-colors border-b border-dashed border-muted/50 last:border-0 h-16 cursor-pointer' onClick={() => handlePreview(row.original)}>
+                                    <TableRow key={row.id} className='group hover:bg-muted/5 transition-colors border-b border-dashed border-muted/50 last:border-0 h-12 cursor-pointer' onClick={() => handlePreview(row.original)}>
                                         {row.getVisibleCells().map((cell) => (
-                                            <TableCell key={cell.id} className='px-6'>
+                                            <TableCell key={cell.id} className='px-4'>
                                                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                             </TableCell>
                                         ))}

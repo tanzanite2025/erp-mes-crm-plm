@@ -367,7 +367,6 @@ export const rawMaterials = {
           description: 'Choose the default scoring preference template. You can still fine-tune the weights manually.',
           options: {
             yieldFirst: 'Yield First',
-            deliveryFirst: 'Delivery First',
             stabilityFirst: 'Stability First',
           },
         },
@@ -375,13 +374,9 @@ export const rawMaterials = {
           title: 'Score Weights',
           description: 'Used in formal solve scoring to balance fulfillment, utilization, stability, and penalties.',
           fields: {
-            fulfilled: 'Fulfillment',
             utilization: 'Utilization',
             stability: 'Stability',
-            assignmentPenalty: 'Assignment Penalty',
-            unfulfilledPenalty: 'Unfulfilled Penalty',
             splitPenalty: 'Split Penalty',
-            mustPenalty: 'Must-Fulfill Penalty',
           },
         },
         blocks: {

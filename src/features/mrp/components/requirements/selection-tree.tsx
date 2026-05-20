@@ -86,7 +86,7 @@ export function SelectionTree({ orders, selectedKeys, onSelectionChange, onAnaly
 
         return (
           <Card key={order.id} className='overflow-hidden border-none shadow-sm bg-background/40 backdrop-blur-sm rounded-[32px]'>
-            <div className={cn('flex items-center gap-4 px-6 py-5 transition-colors cursor-pointer group', isOrderExpanded ? 'bg-primary/5' : 'hover:bg-muted/30')} onClick={() => toggleOrder(order.id)}>
+            <div className={cn('flex items-center gap-4 px-5 py-3 transition-colors cursor-pointer group', isOrderExpanded ? 'bg-primary/5' : 'hover:bg-muted/30')} onClick={() => toggleOrder(order.id)}>
               <div className='flex items-center gap-4' onClick={(event) => event.stopPropagation()}>
                 <Checkbox
                   checked={isOrderAllSelected ? true : isOrderSomeSelected ? 'indeterminate' : false}
@@ -95,8 +95,8 @@ export function SelectionTree({ orders, selectedKeys, onSelectionChange, onAnaly
                 />
               </div>
 
-              <div className='size-10 rounded-2xl bg-white border shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform duration-500'>
-                <ClipboardList className='size-5 text-primary' />
+              <div className='size-8 rounded-xl bg-white border shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform duration-500'>
+                <ClipboardList className='size-4 text-primary' />
               </div>
 
               <div className='flex-1 flex flex-col min-w-0'>
@@ -123,7 +123,7 @@ export function SelectionTree({ orders, selectedKeys, onSelectionChange, onAnaly
             </div>
 
             {isOrderExpanded && (
-              <div className='px-6 pb-6 pt-2 space-y-3 animate-in fade-in slide-in-from-top-2 duration-500'>
+              <div className='px-5 pb-4 pt-1.5 space-y-2 animate-in fade-in slide-in-from-top-2 duration-500'>
                 {order.lines.map((line) => {
                   const selectionKey = `${order.orderNo}-${line.lineNo}`
                   const isProductSelected = selectedKeys.includes(selectionKey)
@@ -131,40 +131,40 @@ export function SelectionTree({ orders, selectedKeys, onSelectionChange, onAnaly
                   const productBOM = boms.find((bom) => bom.productId === line.productId)
 
                   return (
-                    <div key={line.lineNo} className={cn('rounded-[24px] border border-dashed transition-all duration-300', isProductSelected ? 'border-primary/40 bg-primary/5' : 'border-muted/50 bg-muted/5')}>
-                      <div className='flex items-center gap-4 px-5 py-4 cursor-pointer' onClick={() => toggleProduct(selectionKey)}>
+                    <div key={line.lineNo} className={cn('rounded-[20px] border border-dashed transition-all duration-300', isProductSelected ? 'border-primary/40 bg-primary/5' : 'border-muted/50 bg-muted/5')}>
+                      <div className='flex items-center gap-4 px-4 py-2.5 cursor-pointer' onClick={() => toggleProduct(selectionKey)}>
                         <div onClick={(event) => event.stopPropagation()}>
                           <Checkbox checked={isProductSelected} onCheckedChange={(checked) => handleSelectLine(order.orderNo, line.lineNo, !!checked)} className='rounded-md border-primary/20' />
                         </div>
-                        <div className='size-8 rounded-xl bg-background border flex items-center justify-center'>
-                          <Package className='size-4 text-muted-foreground/60' />
+                        <div className='size-7 rounded-lg bg-background border flex items-center justify-center'>
+                          <Package className='size-3.5 text-muted-foreground/60' />
                         </div>
                         <div className='flex-1 min-w-0 pr-4'>
                           <div className='flex items-center justify-between'>
-                            <div className='flex flex-col gap-1.5'>
+                            <div className='flex flex-col gap-1'>
                               <div className='flex items-start gap-2 max-w-[500px]'>
                                 <div className='w-1.5 h-6 bg-blue-600 rounded-full shadow-[0_0_12px_rgba(37,99,235,0.6)] mt-0.5 shrink-0' />
-                                <span className='text-[16px] font-black text-blue-600 px-2 py-1 rounded-xl bg-blue-50/80 tracking-tight leading-snug italic'>
+                                <span className='text-[12px] font-black text-blue-600 px-1.5 py-0.5 rounded-lg bg-blue-50/80 tracking-tight leading-snug italic'>
                                   {line.specification}
                                 </span>
                               </div>
-                              <div className='flex items-center gap-4 pl-4'>
-                                <span className='text-[10px] font-black text-slate-200 uppercase tracking-[0.2em] bg-slate-100 px-1.5 py-0.5 rounded'>
+                              <div className='flex items-center gap-4 pl-2'>
+                                <span className='text-[8px] font-black text-slate-200 uppercase tracking-[0.2em] bg-slate-100 px-1 py-0.5 rounded'>
                                   {t('mrp.requirements.selectionTree.productCodeLabel')}: {line.productCode}
                                 </span>
                                 <div className='size-1 rounded-full bg-slate-200' />
-                                <span className='text-[9px] font-bold text-slate-300'>
+                                <span className='text-[8px] font-bold text-slate-300'>
                                   {t('mrp.requirements.selectionTree.productModelLabel')}: {line.productModel}
                                 </span>
                               </div>
                             </div>
-                            <div className='px-5 py-2 rounded-2xl bg-[#0F172A] border border-slate-800 shadow-2xl flex items-center gap-3 shrink-0 ml-4'>
-                              <span className='text-[15px] font-black tabular-nums text-white'>{line.qty.toLocaleString()}</span>
+                            <div className='px-3.5 py-1 rounded-xl bg-[#0F172A] border border-slate-800 shadow-2xl flex items-center gap-3 shrink-0 ml-4'>
+                              <span className='text-[12px] font-black tabular-nums text-white'>{line.qty.toLocaleString()}</span>
                               <div className='w-px h-3 bg-white/20' />
-                              <span className='text-[10px] font-black text-slate-500 uppercase'>{line.uom}</span>
+                              <span className='text-[9px] font-black text-slate-500 uppercase'>{line.uom}</span>
                             </div>
                           </div>
-                          {line.description && <div className='mt-2 pl-4 text-[10px] font-medium text-slate-400 opacity-60 italic'>{line.description}</div>}
+                          {line.description && <div className='mt-1.5 pl-2 text-[10px] font-medium text-slate-400 opacity-60 italic'>{line.description}</div>}
                         </div>
                         <div className={cn('transition-transform duration-300', isProductExpanded && 'rotate-90')}>
                           <ChevronRight className='size-3 text-muted-foreground/30' />
@@ -172,7 +172,7 @@ export function SelectionTree({ orders, selectedKeys, onSelectionChange, onAnaly
                       </div>
 
                       {isProductExpanded && (
-                        <div className='px-14 pb-5 space-y-2 animate-in fade-in duration-300'>
+                        <div className='px-10 pb-3 space-y-2 animate-in fade-in duration-300'>
                           {!productBOM ? (
                             <RequirementStageAlert
                               tone='warning'

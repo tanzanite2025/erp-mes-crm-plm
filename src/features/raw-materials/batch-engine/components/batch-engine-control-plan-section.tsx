@@ -92,9 +92,6 @@ export function BatchEngineControlPlanSection(props: BatchEngineControlPlanSecti
               <SelectItem value='yield-first'>
                 {t('rawMaterials.batchEngine.sections.control.objective.options.yieldFirst')}
               </SelectItem>
-              <SelectItem value='delivery-first'>
-                {t('rawMaterials.batchEngine.sections.control.objective.options.deliveryFirst')}
-              </SelectItem>
               <SelectItem value='stability-first'>
                 {t('rawMaterials.batchEngine.sections.control.objective.options.stabilityFirst')}
               </SelectItem>
@@ -123,27 +120,15 @@ export function BatchEngineControlPlanSection(props: BatchEngineControlPlanSecti
           </CollapsibleTrigger>
 
           <CollapsibleContent className='overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down'>
-            <div className='mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4'>
-              <BatchEngineControlField label={t('rawMaterials.batchEngine.sections.control.scoreWeights.fields.fulfilled')}>
-                <Input value={controls.fulfilledWeight} onChange={(event) => updateControl('fulfilledWeight', event.target.value)} className='h-8 rounded-lg bg-background text-xs font-semibold' placeholder='35' />
-              </BatchEngineControlField>
+            <div className='mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3'>
               <BatchEngineControlField label={t('rawMaterials.batchEngine.sections.control.scoreWeights.fields.utilization')}>
                 <Input value={controls.utilizationWeight} onChange={(event) => updateControl('utilizationWeight', event.target.value)} className='h-8 rounded-lg bg-background text-xs font-semibold' placeholder='55' />
               </BatchEngineControlField>
               <BatchEngineControlField label={t('rawMaterials.batchEngine.sections.control.scoreWeights.fields.stability')}>
                 <Input value={controls.stabilityWeight} onChange={(event) => updateControl('stabilityWeight', event.target.value)} className='h-8 rounded-lg bg-background text-xs font-semibold' placeholder='10' />
               </BatchEngineControlField>
-              <BatchEngineControlField label={t('rawMaterials.batchEngine.sections.control.scoreWeights.fields.assignmentPenalty')}>
-                <Input value={controls.assignmentPenaltyWeight} onChange={(event) => updateControl('assignmentPenaltyWeight', event.target.value)} className='h-8 rounded-lg bg-background text-xs font-semibold' placeholder='4' />
-              </BatchEngineControlField>
-              <BatchEngineControlField label={t('rawMaterials.batchEngine.sections.control.scoreWeights.fields.unfulfilledPenalty')}>
-                <Input value={controls.unfulfilledPenaltyWeight} onChange={(event) => updateControl('unfulfilledPenaltyWeight', event.target.value)} className='h-8 rounded-lg bg-background text-xs font-semibold' placeholder='12' />
-              </BatchEngineControlField>
               <BatchEngineControlField label={t('rawMaterials.batchEngine.sections.control.scoreWeights.fields.splitPenalty')}>
                 <Input value={controls.splitPenaltyWeight} onChange={(event) => updateControl('splitPenaltyWeight', event.target.value)} className='h-8 rounded-lg bg-background text-xs font-semibold' placeholder='6' />
-              </BatchEngineControlField>
-              <BatchEngineControlField label={t('rawMaterials.batchEngine.sections.control.scoreWeights.fields.mustPenalty')}>
-                <Input value={controls.mustPenaltyWeight} onChange={(event) => updateControl('mustPenaltyWeight', event.target.value)} className='h-8 rounded-lg bg-background text-xs font-semibold' placeholder='45' />
               </BatchEngineControlField>
             </div>
           </CollapsibleContent>

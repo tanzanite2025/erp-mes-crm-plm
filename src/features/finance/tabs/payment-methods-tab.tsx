@@ -74,7 +74,7 @@ export function PaymentMethodsTab() {
       <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5'>
         {methods.map((method) => (
           <Card key={method.id} className='rounded-[24px] border-dashed border-primary/20 bg-muted/5 group hover:bg-muted/10 transition-all'>
-            <CardHeader className='pb-2'>
+            <CardHeader className='p-4 pb-2'>
               <div className='flex items-center justify-between'>
                 <div className='flex items-center gap-3'>
                   <div className='size-9 rounded-2xl bg-primary/10 flex items-center justify-center'>
@@ -102,9 +102,9 @@ export function PaymentMethodsTab() {
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className='pt-2'>
-              <div className='space-y-3'>
-                <div className='p-3 bg-background rounded-2xl border border-dashed border-muted/20 text-[10px] font-medium leading-relaxed min-h-[60px] text-muted-foreground/80'>
+            <CardContent className='p-4 pt-0 pb-4'>
+              <div className='space-y-2'>
+                <div className='py-2 px-3 bg-background rounded-2xl border border-dashed border-muted/20 text-[10px] font-medium leading-relaxed min-h-[40px] text-muted-foreground/80'>
                   {method.description || t('finance.paymentMethods.card.emptyDescription')}
                 </div>
                 <div className='flex flex-wrap items-center gap-2'>

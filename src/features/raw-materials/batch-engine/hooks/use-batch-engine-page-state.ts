@@ -9,13 +9,9 @@ export const DEFAULT_BATCH_ENGINE_CONTROLS: BatchEngineControls = {
   knifeGapMm: '2',
   edgeTrimMm: '0',
   objectivePreset: 'yield-first',
-  fulfilledWeight: '35',
   utilizationWeight: '55',
   stabilityWeight: '10',
-  assignmentPenaltyWeight: '4',
-  unfulfilledPenaltyWeight: '12',
   splitPenaltyWeight: '6',
-  mustPenaltyWeight: '45',
 }
 
 export function useBatchEnginePageState() {

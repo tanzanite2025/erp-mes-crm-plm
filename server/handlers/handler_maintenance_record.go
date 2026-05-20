@@ -14,10 +14,27 @@ import (
 	"gorm.io/gorm"
 )
 
-// GetMaintenanceRecordsHandler 获取维保记录列表
-// 支持按 assetType + assetId 查询特定设备的记录
-// 支持全局查询（不传 assetType/assetId）
-// 支持分页、筛选、搜索
+// GetMaintenanceRecordsHandler godoc
+// @Summary 获取维保记录列表
+// @Description 查询维保记录列表,支持分页、筛选、搜索
+// @Tags 维保记录
+// @Accept json
+// @Produce json
+// @Param assetType query string false "资产类型" Enums(MOLD, FURNACE)
+// @Param assetId query string false "资产ID"
+// @Param status query string false "状态" Enums(OPEN, IN_PROGRESS, COMPLETED, CANCELLED)
+// @Param priority query string false "优先级(逗号分隔)" example(HIGH,CRITICAL)
+// @Param type query string false "维保类型" Enums(PREVENTIVE, CORRECTIVE, INSPECTION)
+// @Param dateFrom query string false "开始日期" example(2026-01-01)
+// @Param dateTo query string false "结束日期" example(2026-12-31)
+// @Param search query string false "搜索关键词(标题/序列号,最少2个字符)"
+// @Param limit query int false "每页数量" default(100) maximum(1000)
+// @Param offset query int false "偏移量" default(0)
+// @Success 200 {object} map[string]interface{} "成功返回记录列表"
+// @Failure 400 {object} map[string]string "参数错误"
+// @Failure 500 {object} map[string]string "服务器错误"
+// @Security BearerAuth
+// @Router /maintenance-records [get]
 func GetMaintenanceRecordsHandler(c *gin.Context) {
 	// 解析查询参数
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "100"))
@@ -70,8 +87,16 @@ func GetMaintenanceRecordsHandler(c *gin.Context) {
 	})
 }
 
-// GetMaintenanceRecordStatsHandler 获取维保记录统计数据
-// 返回按状态分组的计数
+// GetMaintenanceRecordStatsHandler godoc
+// @Summary 获取维保记录统计
+// @Description 返回按状态分组的维保记录统计数据
+// @Tags 维保记录
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{} "统计数据"
+// @Failure 500 {object} map[string]string "服务器错误"
+// @Security BearerAuth
+// @Router /maintenance-records/stats [get]
 func GetMaintenanceRecordStatsHandler(c *gin.Context) {
 	svc := services.NewMaintenanceRecordService(db.DB)
 	stats, err := svc.GetStats()
@@ -89,7 +114,18 @@ func GetMaintenanceRecordStatsHandler(c *gin.Context) {
 	})
 }
 
-// GetMaintenanceRecordHandler 获取单条维保记录
+// GetMaintenanceRecordHandler godoc
+// @Summary 获取单条维保记录
+// @Description 根据ID获取维保记录详情
+// @Tags 维保记录
+// @Accept json
+// @Produce json
+// @Param id path string true "记录ID"
+// @Success 200 {object} map[string]interface{} "维保记录详情"
+// @Failure 404 {object} map[string]string "记录不存在"
+// @Failure 500 {object} map[string]string "服务器错误"
+// @Security BearerAuth
+// @Router /maintenance-records/{id} [get]
 func GetMaintenanceRecordHandler(c *gin.Context) {
 	id := c.Param("id")
 
@@ -107,7 +143,18 @@ func GetMaintenanceRecordHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, record)
 }
 
-// CreateMaintenanceRecordHandler 创建维保记录
+// CreateMaintenanceRecordHandler godoc
+// @Summary 创建维保记录
+// @Description 创建新的维保记录
+// @Tags 维保记录
+// @Accept json
+// @Produce json
+// @Param body body object true "维保记录信息"
+// @Success 200 {object} map[string]interface{} "创建成功"
+// @Failure 400 {object} map[string]string "参数错误"
+// @Failure 500 {object} map[string]string "服务器错误"
+// @Security BearerAuth
+// @Router /maintenance-records [post]
 func CreateMaintenanceRecordHandler(c *gin.Context) {
 	var input struct {
 		AssetType   string     `json:"assetType"`
@@ -157,7 +204,22 @@ func CreateMaintenanceRecordHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, record)
 }
 
-// PatchMaintenanceRecordHandler 更新维保记录（差分更新）
+// PatchMaintenanceRecordHandler godoc
+// @Summary 更新维保记录
+// @Description 差分更新维保记录(SDRTS Delta 格式)
+// @Tags 维保记录
+// @Accept json
+// @Produce json
+// @Param id path string true "记录ID"
+// @Param body body object true "更新数据(Delta格式)"
+// @Success 200 {object} map[string]interface{} "更新成功"
+// @Failure 400 {object} map[string]string "参数错误"
+// @Failure 404 {object} map[string]string "记录不存在"
+// @Failure 409 {object} map[string]string "版本冲突"
+// @Failure 422 {object} map[string]string "状态流转错误"
+// @Failure 500 {object} map[string]string "服务器错误"
+// @Security BearerAuth
+// @Router /maintenance-records/{id} [patch]
 func PatchMaintenanceRecordHandler(c *gin.Context) {
 	id := c.Param("id")
 
@@ -198,7 +260,18 @@ func PatchMaintenanceRecordHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, record)
 }
 
-// DeleteMaintenanceRecordHandler 软删除维保记录
+// DeleteMaintenanceRecordHandler godoc
+// @Summary 删除维保记录
+// @Description 软删除维保记录
+// @Tags 维保记录
+// @Accept json
+// @Produce json
+// @Param id path string true "记录ID"
+// @Success 200 {object} map[string]string "删除成功"
+// @Failure 404 {object} map[string]string "记录不存在"
+// @Failure 500 {object} map[string]string "服务器错误"
+// @Security BearerAuth
+// @Router /maintenance-records/{id} [delete]
 func DeleteMaintenanceRecordHandler(c *gin.Context) {
 	id := c.Param("id")
 

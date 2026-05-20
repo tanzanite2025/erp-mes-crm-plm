@@ -73,12 +73,19 @@ func (r *MaintenanceRecordRepository) List(params ListParams) (*ListResult, erro
 		query = query.Where("created_at <= ?", params.DateTo)
 	}
 
-	// 搜索（标题或设备序列号）
+	// 全文搜索（使用 PostgreSQL FTS）
 	if params.Search != "" {
-		// 转义 LIKE 特殊字符
-		search := escapeLikePattern(params.Search)
-		searchPattern := "%" + search + "%"
-		query = query.Where("title LIKE ? ESCAPE '\\' OR asset_sn LIKE ? ESCAPE '\\'", searchPattern, searchPattern)
+		// 使用全文搜索
+		searchQuery := strings.ReplaceAll(params.Search, " ", " & ")
+		query = query.Where("search_vector @@ plainto_tsquery('simple', ?)", searchQuery)
+		
+		// 按相关性排序
+		query = query.Order(r.db.Raw("ts_rank(search_vector, plainto_tsquery('simple', ?)) DESC", searchQuery))
+	}
+	
+	// 默认按创建时间排序（如果没有搜索）
+	if params.Search == "" {
+		query = query.Order("created_at DESC")
 	}
 
 	// 获取总记录数
@@ -89,7 +96,7 @@ func (r *MaintenanceRecordRepository) List(params ListParams) (*ListResult, erro
 
 	// 查询记录
 	var records []models.MaintenanceRecord
-	if err := query.Order("created_at DESC").Limit(params.Limit).Offset(params.Offset).Find(&records).Error; err != nil {
+	if err := query.Limit(params.Limit).Offset(params.Offset).Find(&records).Error; err != nil {
 		return nil, err
 	}
 

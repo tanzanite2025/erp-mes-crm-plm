@@ -78,8 +78,10 @@ pub enum CuttingEngineError {
     InvalidRollLength,
     InvalidKnifeGap,
     InvalidEdgeTrim,
+    InvalidUsableArea,
     InvalidLengthBoundary,
     FixedDecisionLengthOutOfRange,
+    InvalidWeight,
     EmptyCutUnits,
     InvalidCutUnit(String),
 }
@@ -145,6 +147,11 @@ fn validate_input(input: &CuttingEngineInput) -> Result<(), CuttingEngineError> 
     if input.edge_trim_mm < 0.0 || !input.edge_trim_mm.is_finite() {
         return Err(CuttingEngineError::InvalidEdgeTrim);
     }
+    if input.edge_trim_mm * 2.0 >= input.roll_width_mm
+        || input.edge_trim_mm * 2.0 >= input.roll_length_mm
+    {
+        return Err(CuttingEngineError::InvalidUsableArea);
+    }
     if input.min_supported_length_mm <= 0.0
         || input.max_supported_length_mm <= 0.0
         || input.min_supported_length_mm > input.max_supported_length_mm
@@ -154,9 +161,18 @@ fn validate_input(input: &CuttingEngineInput) -> Result<(), CuttingEngineError> 
         return Err(CuttingEngineError::InvalidLengthBoundary);
     }
     if let Some(value) = input.fixed_decision_length_mm {
-        if value < input.min_supported_length_mm || value > input.max_supported_length_mm {
+        if !value.is_finite()
+            || value < input.min_supported_length_mm
+            || value > input.max_supported_length_mm
+        {
             return Err(CuttingEngineError::FixedDecisionLengthOutOfRange);
         }
+    }
+    if !input.weights.utilization_weight.is_finite()
+        || !input.weights.stability_weight.is_finite()
+        || !input.weights.split_penalty.is_finite()
+    {
+        return Err(CuttingEngineError::InvalidWeight);
     }
     if input.cut_units.is_empty() {
         return Err(CuttingEngineError::EmptyCutUnits);
@@ -167,6 +183,7 @@ fn validate_input(input: &CuttingEngineInput) -> Result<(), CuttingEngineError> 
             || unit.quantity == 0
             || !unit.width_mm.is_finite()
             || !unit.length_mm.is_finite()
+            || !unit.cut_angle_deg.is_finite()
         {
             return Err(CuttingEngineError::InvalidCutUnit(unit.id.clone()));
         }
@@ -192,9 +209,14 @@ fn fit_count(available_mm: f64, piece_mm: f64, gap_mm: f64) -> u32 {
     if available_mm <= 0.0 || piece_mm <= 0.0 {
         return 0;
     }
-    ((available_mm + gap_mm) / (piece_mm + gap_mm))
+    let count = ((available_mm + gap_mm) / (piece_mm + gap_mm))
         .floor()
-        .max(0.0) as u32
+        .max(0.0);
+    if count > f64::from(u32::MAX) {
+        u32::MAX
+    } else {
+        count as u32
+    }
 }
 
 fn score_plan(
@@ -261,12 +283,15 @@ fn sort_plans(plans: &mut [CuttingPlan], objective: CuttingObjectivePreset) {
                 .partial_cmp(&left.decision_length_mm),
         };
 
-        ordering.unwrap_or(std::cmp::Ordering::Equal).then_with(|| {
-            right
-                .score
-                .partial_cmp(&left.score)
-                .unwrap_or(std::cmp::Ordering::Equal)
-        })
+        ordering
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then_with(|| {
+                right
+                    .score
+                    .partial_cmp(&left.score)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            })
+            .then_with(|| left.plan_id.cmp(&right.plan_id))
     });
 }
 
@@ -352,5 +377,76 @@ mod tests {
         let output = solve(&input).expect("solver should clamp to min boundary");
 
         assert_eq!(output.plans[0].decision_length_mm, 80.0);
+    }
+
+    #[test]
+    fn rejects_non_finite_fixed_decision_length() {
+        let mut input = base_input();
+        input.fixed_decision_length_mm = Some(f64::NAN);
+
+        let error = solve(&input).expect_err("non-finite fixed length should fail");
+
+        assert_eq!(error, CuttingEngineError::FixedDecisionLengthOutOfRange);
+    }
+
+    #[test]
+    fn rejects_non_finite_weights() {
+        let mut input = base_input();
+        input.weights.utilization_weight = f64::NAN;
+
+        let error = solve(&input).expect_err("non-finite weight should fail");
+
+        assert_eq!(error, CuttingEngineError::InvalidWeight);
+    }
+
+    #[test]
+    fn rejects_non_finite_cut_angle() {
+        let mut input = base_input();
+        input.cut_units[0].cut_angle_deg = f64::INFINITY;
+
+        let error = solve(&input).expect_err("non-finite cut angle should fail");
+
+        assert_eq!(
+            error,
+            CuttingEngineError::InvalidCutUnit("unit-91".to_string())
+        );
+    }
+
+    #[test]
+    fn rejects_edge_trim_that_consumes_usable_area() {
+        let mut input = base_input();
+        input.edge_trim_mm = 490.0;
+
+        let error = solve(&input).expect_err("edge trim must leave usable width and length");
+
+        assert_eq!(error, CuttingEngineError::InvalidUsableArea);
+    }
+
+    #[test]
+    fn sorts_equal_plans_by_plan_id() {
+        let mut input = base_input();
+        input.cut_units = vec![
+            CuttingUnitInput {
+                id: "unit-b".to_string(),
+                label: "B".to_string(),
+                width_mm: 120.0,
+                length_mm: 91.0,
+                quantity: 100,
+                cut_angle_deg: 0.0,
+            },
+            CuttingUnitInput {
+                id: "unit-a".to_string(),
+                label: "A".to_string(),
+                width_mm: 120.0,
+                length_mm: 91.0,
+                quantity: 100,
+                cut_angle_deg: 0.0,
+            },
+        ];
+
+        let output = solve(&input).expect("solver should produce deterministic ties");
+
+        assert_eq!(output.plans[0].plan_id, "plan-unit-a");
+        assert_eq!(output.plans[1].plan_id, "plan-unit-b");
     }
 }

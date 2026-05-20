@@ -2,11 +2,12 @@ import { useEffect, useMemo } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import type { CuttingPlan } from '@/features/engineering-db/data/cutting-plan-schema'
 import type { PrepregMaterialSpec } from '../../data/prepreg-material-spec-schema'
-import { BatchEngineApi } from '../services/batch-engine-api'
-import { buildBatchEngineSolveRequest } from '../services/build-batch-engine-solve-request'
+import { solveBatchEngineWithCuttingWasm } from '../services/batch-engine-cutting-wasm'
+import { buildBatchEngineCuttingInput } from '../services/build-batch-engine-cutting-input'
+import { mapCuttingEngineOutputToBatchSolution } from '../services/map-cutting-engine-output-to-batch-solution'
 import type { BatchEngineNormalizedControls, BatchEngineSimulation } from '../types'
-import type { BatchOptimizerSolveRequest } from '../types/batch-engine-api'
 import type { BuildBatchEngineDemandLinesResult } from '../domain/build-batch-engine-demand-lines-from-cutting-plan'
+import type { CuttingEngineInput } from '../types/cutting-engine-wasm'
 
 type UseBatchEngineSolveOptions = {
   controls: BatchEngineNormalizedControls
@@ -17,13 +18,13 @@ type UseBatchEngineSolveOptions = {
 }
 
 /**
- * 管理 batch-engine 的正式后端求解调用，并与本地 preview 状态保持分离。
+ * 管理 batch-engine 的正式 Rust/WASM 求解调用，并与本地 preview 状态保持分离。
  */
 export function useBatchEngineSolve(options: UseBatchEngineSolveOptions) {
   const { controls, selectedCuttingPlan, selectedPrepregSpec, mappedDemandLines, simulation } = options
   const request = useMemo(
     () =>
-      buildBatchEngineSolveRequest({
+      buildBatchEngineCuttingInput({
         controls,
         selectedCuttingPlan,
         selectedPrepregSpec,
@@ -34,7 +35,16 @@ export function useBatchEngineSolve(options: UseBatchEngineSolveOptions) {
   )
   const requestSignature = useMemo(() => JSON.stringify(request ?? null), [request])
   const mutation = useMutation({
-    mutationFn: (payload: BatchOptimizerSolveRequest) => BatchEngineApi.solve(payload),
+    mutationFn: async (payload: CuttingEngineInput) => {
+      const output = await solveBatchEngineWithCuttingWasm(payload)
+      return mapCuttingEngineOutputToBatchSolution({
+        input: payload,
+        output,
+        controls,
+        selectedPrepregSpec,
+        mappedDemandLines,
+      })
+    },
   })
   const { reset, mutate, mutateAsync, data, isPending, error } = mutation
 

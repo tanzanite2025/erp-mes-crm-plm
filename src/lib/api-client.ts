@@ -2,6 +2,23 @@ import { useAuthStore } from '@/stores/auth-store'
 import { createLogger } from '@/lib/logger'
 import { createApiClientError, isApiClientError } from '@/lib/api-error'
 
+/**
+ * 从 Cookie 中读取 CSRF Token
+ * @returns CSRF Token 或 null
+ */
+function getCSRFTokenFromCookie(): string | null {
+  if (typeof document === 'undefined') return null
+  
+  const cookies = document.cookie.split(';')
+  for (const cookie of cookies) {
+    const [name, value] = cookie.trim().split('=')
+    if (name === 'csrf_token') {
+      return decodeURIComponent(value)
+    }
+  }
+  return null
+}
+
 interface ExtendedRequestInit extends RequestInit {
   ignoreBreaker?: boolean
   suppressErrorStatuses?: number[]
@@ -147,10 +164,19 @@ export async function apiFetch<T>(
     if (!(options.body instanceof FormData)) {
       headers['Content-Type'] = 'application/json'
     }
+    
+    // 为写操作添加 CSRF Token
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(requestMethod)) {
+      const csrfToken = getCSRFTokenFromCookie()
+      if (csrfToken) {
+        headers['X-CSRF-Token'] = csrfToken
+      }
+    }
 
     const response = await fetch(`${baseUrl}/api/v1${endpoint}`, {
       ...options,
       headers,
+      credentials: 'include', // 发送和接收 Cookie
       signal: controller.signal,
     })
 
@@ -204,6 +230,15 @@ export async function apiFetch<T>(
 
       if (response.status === 401) {
         handleUnauthorizedSession(endpoint)
+      }
+      
+      // 处理 CSRF 验证失败
+      if (response.status === 403 && errorMessage.includes('CSRF')) {
+        logger.warn('CSRF validation failed, token may be missing or invalid', {
+          endpoint,
+          method: requestMethod,
+          hasToken: !!getCSRFTokenFromCookie(),
+        })
       }
 
       throw error

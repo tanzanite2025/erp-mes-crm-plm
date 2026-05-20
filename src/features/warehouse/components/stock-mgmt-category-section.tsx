@@ -46,19 +46,19 @@ export function StockMgmtCategorySection({
 
     return (
         <AccordionItem value={category.code} className='bg-background rounded-2xl md:rounded-[24px] border-none shadow-sm overflow-hidden group transition-all hover:shadow-md'>
-            <AccordionTrigger className='hover:no-underline py-4 px-4 md:px-6 transition-colors group-data-[state=open]:bg-primary/5'>
+            <AccordionTrigger className='hover:no-underline py-2 px-3 md:px-5 transition-colors group-data-[state=open]:bg-primary/5'>
                 <div className='flex items-center justify-between w-full pr-4 md:pr-8'>
-                    <div className='flex items-center gap-3 md:gap-4 overflow-hidden'>
-                        <div className='size-9 md:size-10 rounded-xl bg-muted/50 flex items-center justify-center border border-muted/80 shadow-inner group-hover:scale-105 transition-transform shrink-0'>
+                    <div className='flex items-center gap-2 md:gap-3 overflow-hidden'>
+                        <div className='size-8 md:size-9 rounded-xl bg-muted/50 flex items-center justify-center border border-muted/80 shadow-inner group-hover:scale-105 transition-transform shrink-0'>
                             {getCategoryIcon(category.code)}
                         </div>
-                        <div className='flex flex-col items-start space-y-0.5 overflow-hidden'>
-                            <span className='font-black text-sm md:text-base tracking-tighter uppercase text-slate-800 italic truncate w-full text-left'>{category.name}</span>
-                            <div className='flex items-center gap-2'>
-                                <Badge variant='outline' className='text-[7px] md:text-[8px] font-black uppercase tracking-widest bg-primary/10 border-none text-primary/80 h-4 px-2 rounded-full whitespace-nowrap'>
-                                    {t('warehouse.stock.nodesCount', { count: items.length })}
-                                </Badge>
-                            </div>
+                        <div className='flex flex-row items-center gap-2 overflow-hidden'>
+                            <span className='font-black text-xs md:text-sm tracking-tighter uppercase text-slate-800 italic truncate text-left'>
+                                {category.name}
+                            </span>
+                            <Badge variant='outline' className='text-[7px] md:text-[8px] font-black uppercase tracking-widest bg-primary/10 border-none text-primary/80 h-4 px-2 rounded-full whitespace-nowrap shrink-0'>
+                                {t('warehouse.stock.nodesCount', { count: items.length })}
+                            </Badge>
                         </div>
                     </div>
 
@@ -66,7 +66,7 @@ export function StockMgmtCategorySection({
                         className='flex items-center gap-2 shrink-0'
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className='flex items-center gap-1.5 md:gap-2 bg-muted/30 px-2 md:px-3 py-1 md:py-1.5 rounded-full border border-dashed border-muted transition-colors hover:bg-muted/50'>
+                        <div className='flex items-center gap-1.5 md:gap-2 bg-muted/30 px-2 md:px-3 py-0.5 md:py-1 rounded-full border border-dashed border-muted transition-colors hover:bg-muted/50'>
                             <Checkbox
                                 id={`hide-zero-${category.code}`}
                                 checked={hideZero}

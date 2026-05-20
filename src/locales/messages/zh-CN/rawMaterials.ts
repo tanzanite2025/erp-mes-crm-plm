@@ -349,7 +349,6 @@ export const rawMaterials = {
           description: '用于选择系统默认评分偏好模板，可继续手工微调权重。',
           options: {
             yieldFirst: '产出优先',
-            deliveryFirst: '交付优先',
             stabilityFirst: '稳定性优先',
           },
         },
@@ -357,13 +356,9 @@ export const rawMaterials = {
           title: '评分权重',
           description: '用于正式求解评分，决定系统在满足率、利用率、稳定性与惩罚项之间的取舍。',
           fields: {
-            fulfilled: '满足率',
             utilization: '利用率',
             stability: '稳定性',
-            assignmentPenalty: '分配惩罚',
-            unfulfilledPenalty: '未满足惩罚',
             splitPenalty: '拆分惩罚',
-            mustPenalty: '强约束惩罚',
           },
         },
         blocks: {

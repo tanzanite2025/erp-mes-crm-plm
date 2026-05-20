@@ -5,10 +5,11 @@ import { ServerIdentity } from "./components/server-identity"
 import { InfrastructureGauges } from "./components/infrastructure-gauges"
 import { ComponentStatusMatrix } from "./components/component-status-matrix"
 import { DiagnosticAlerts } from "./components/diagnostic-alerts"
-import { Loader2, RefreshCcw } from "lucide-react"
+import { Activity, Loader2, RefreshCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useLanguage } from '@/context/language-provider'
 import { isForbiddenError } from '@/lib/error-status'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 
 export function SystemStatusPage() {
   const { t } = useLanguage()
@@ -35,26 +36,24 @@ export function SystemStatusPage() {
 
   return (
     <div className="flex flex-col gap-3 animate-in fade-in duration-700 sm:gap-3.5">
-      <div className="flex items-center justify-between gap-2">
-        <div className="space-y-0">
-          <h1 className="text-xl font-black italic tracking-tighter uppercase text-slate-800 dark:text-slate-100">
-            {t('systemManagement.statusPage.title')}
-          </h1>
-          <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 sm:text-[10px]">
-            {t('systemManagement.statusPage.subtitle')}
-          </p>
-        </div>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => refetch()}
-          disabled={isFetching}
-          className="h-8 rounded-full border-dashed border-slate-200 bg-background px-3 text-[9px] font-black uppercase tracking-widest gap-1.5 dark:border-white/10 dark:bg-white/4 sm:h-9 sm:text-[10px]"
-        >
-          <RefreshCcw className={isFetching ? "size-3 animate-spin" : "size-3"} />
-          {t('systemManagement.statusPage.forceRefresh')}
-        </Button>
-      </div>
+      <IndustrialHeader
+        icon={Activity}
+        title={t('systemManagement.statusPage.title')}
+        description={t('systemManagement.statusPage.subtitle')}
+        gradient
+        statusBadge={
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="h-8 rounded-full border-dashed border-slate-200 bg-background px-3 text-[9px] font-black uppercase tracking-widest gap-1.5 dark:border-white/10 dark:bg-white/4 sm:h-9 sm:text-[10px]"
+          >
+            <RefreshCcw className={isFetching ? "size-3 animate-spin" : "size-3"} />
+            {t('systemManagement.statusPage.forceRefresh')}
+          </Button>
+        }
+      />
 
       <div className="grid grid-cols-1 gap-2.5 sm:gap-3">
         {/* 服务器身份 */}

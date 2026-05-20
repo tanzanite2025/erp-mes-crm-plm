@@ -6,7 +6,6 @@ import {
   ENGINE_CARD_SHELL_CLASS,
   ENGINE_CARD_TITLE_CLASS,
   ENGINE_COMPACT_VALUE_CLASS,
-  ENGINE_DESC_CLASS,
   ENGINE_KICKER_CLASS,
   ENGINE_PANEL_CLASS,
   ENGINE_STATUS_ICON_CLASS,
@@ -47,37 +46,35 @@ export function FactorCard({
   return (
     <Card className={`${ENGINE_CARD_SHELL_CLASS} h-fit bg-muted/5`}>
       <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 via-transparent' />
-      <CardHeader className='relative gap-4 pb-4'>
-        <div className='flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between'>
-          <div className={`flex min-w-0 items-start gap-3 ${accentClassName}`}>
-            <div className='flex size-12 shrink-0 items-center justify-center rounded-[22px] border border-dashed border-primary/20 bg-background shadow-[0_10px_24px_-20px_rgba(15,23,42,0.45)]'>
-              <Icon className='size-5' />
-            </div>
-            <div className='min-w-0 pt-0.5'>
-              <CardTitle className={ENGINE_CARD_TITLE_CLASS}>{title}</CardTitle>
-              <CardDescription className={ENGINE_DESC_CLASS}>{description}</CardDescription>
-            </div>
-          </div>
-          <div className='flex shrink-0 flex-wrap items-center gap-2 lg:max-w-[44%] lg:justify-end'>
-            {badges.map((badge) => (
-              <div key={badge.id} className={`${ENGINE_BADGE_CLASS} ${getEngineStatusBadgeToneClass(badge.tone)} gap-1.5`}>
-                <StatusIcon tone={badge.tone} />
-                <span className='font-black tracking-[0.16em]'>{badge.value}</span>
-              </div>
-            ))}
+      <CardHeader className='relative flex flex-col gap-2 p-3 pb-1.5'>
+        <div className={`flex min-w-0 items-start gap-2 ${accentClassName}`}>
+          <Icon className='size-4 shrink-0 mt-0.5' />
+          <div className='min-w-0'>
+            <CardTitle className={`${ENGINE_CARD_TITLE_CLASS} leading-none`}>{title}</CardTitle>
+            <CardDescription className='text-[8px] font-black uppercase tracking-widest text-muted-foreground/50 leading-tight mt-0.5 whitespace-normal break-all'>
+              {description}
+            </CardDescription>
           </div>
         </div>
+        <div className='flex flex-wrap items-center gap-1.5'>
+          {badges.map((badge) => (
+            <div key={badge.id} className={`${ENGINE_BADGE_CLASS} ${getEngineStatusBadgeToneClass(badge.tone)} gap-1 h-4 px-2`}>
+              <StatusIcon tone={badge.tone} />
+              <span className='font-black tracking-[0.16em] text-[8px]'>{badge.value}</span>
+            </div>
+          ))}
+        </div>
       </CardHeader>
-      <CardContent className='relative space-y-3 pt-0'>
-        <div className='grid gap-2.5'>
+      <CardContent className='relative p-3 pt-0 space-y-2'>
+        <div className='grid gap-1.5'>
           {summaryItems.map((item) => (
             <div
               key={item.id}
-              className={`${ENGINE_PANEL_CLASS} ${item.tone ? getEngineStatusPanelToneClass(item.tone) : 'bg-background'} px-4 py-3.5`}
+              className={`${ENGINE_PANEL_CLASS} ${item.tone ? getEngineStatusPanelToneClass(item.tone) : 'bg-background'} px-3 py-2`}
             >
-              <div className='flex items-start justify-between gap-4'>
+              <div className='flex items-start justify-between gap-2'>
                 <div className={`${ENGINE_KICKER_CLASS} pt-0.5`}>{item.label}</div>
-                <div className={`flex items-start justify-end gap-1.5 text-right ${item.tone ? getEngineStatusTextToneClass(item.tone) : ''}`}>
+                <div className={`flex items-start justify-end gap-1 text-right ${item.tone ? getEngineStatusTextToneClass(item.tone) : ''}`}>
                   {item.tone ? <StatusIcon tone={item.tone} /> : null}
                   <div className={ENGINE_COMPACT_VALUE_CLASS}>{item.value}</div>
                 </div>

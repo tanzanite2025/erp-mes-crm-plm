@@ -1,0 +1,424 @@
+basePath: /api/v1
+definitions:
+  services.TreeProjectionMetadata:
+    properties:
+      badge:
+        description: 徽章文本
+        type: string
+      childCount:
+        description: 子节点数量
+        type: integer
+      color:
+        description: 颜色
+        type: string
+      icon:
+        description: 图标名称
+        type: string
+      isEmpty:
+        description: 是否为空节点
+        type: boolean
+    type: object
+  services.TreeProjectionNode:
+    properties:
+      branchRole:
+        description: '"section", "collection"'
+        type: string
+      childNodeIds:
+        items:
+          type: string
+        type: array
+      depth:
+        description: 节点深度（0 = root）
+        type: integer
+      isCollapsed:
+        description: 是否已折叠
+        type: boolean
+      isCollapsible:
+        description: 是否可折叠
+        type: boolean
+      itemId:
+        description: 仅 leaf 节点
+        type: string
+      label:
+        type: string
+      metadata:
+        allOf:
+        - $ref: '#/definitions/services.TreeProjectionMetadata'
+        description: 元数据
+      nodeId:
+        type: string
+      nodeKind:
+        description: '"root", "branch", "leaf"'
+        type: string
+      parentNodeId:
+        type: string
+      sectionCode:
+        type: string
+      sectionName:
+        type: string
+    type: object
+  services.TreeProjectionResponse:
+    properties:
+      nodes:
+        items:
+          $ref: '#/definitions/services.TreeProjectionNode'
+        type: array
+      rootNodeId:
+        type: string
+      totalCount:
+        type: integer
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@xdfc.com
+    name: API Support
+  description: XDFC 数字化管理 ERP 系统的 RESTful API 文档
+  license:
+    name: Proprietary
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: XDFC 数字化管理 ERP API
+  version: 2.2.1
+paths:
+  /api/bom/{id}/tree-projection:
+    get:
+      consumes:
+      - application/json
+      description: 返回 BOM 的完整树投影数据，包括节点层级、折叠状态、元数据等
+      parameters:
+      - description: BOM ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 折叠空节点
+        in: query
+        name: collapseEmpty
+        type: boolean
+      - description: 最大深度（0 = 无限制）
+        in: query
+        name: maxDepth
+        type: integer
+      - collectionFormat: csv
+        description: 已展开的节点 ID
+        in: query
+        items:
+          type: string
+        name: expandedNodeIds
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/services.TreeProjectionResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: BOM 不存在
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: 服务器内部错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 获取 BOM 树投影
+      tags:
+      - BOM
+  /maintenance-records:
+    get:
+      consumes:
+      - application/json
+      description: 查询维保记录列表,支持分页、筛选、搜索
+      parameters:
+      - description: 资产类型
+        enum:
+        - MOLD
+        - FURNACE
+        in: query
+        name: assetType
+        type: string
+      - description: 资产ID
+        in: query
+        name: assetId
+        type: string
+      - description: 状态
+        enum:
+        - OPEN
+        - IN_PROGRESS
+        - COMPLETED
+        - CANCELLED
+        in: query
+        name: status
+        type: string
+      - description: 优先级(逗号分隔)
+        example: HIGH,CRITICAL
+        in: query
+        name: priority
+        type: string
+      - description: 维保类型
+        enum:
+        - PREVENTIVE
+        - CORRECTIVE
+        - INSPECTION
+        in: query
+        name: type
+        type: string
+      - description: 开始日期
+        example: "2026-01-01"
+        in: query
+        name: dateFrom
+        type: string
+      - description: 结束日期
+        example: "2026-12-31"
+        in: query
+        name: dateTo
+        type: string
+      - description: 搜索关键词(标题/序列号,最少2个字符)
+        in: query
+        name: search
+        type: string
+      - default: 100
+        description: 每页数量
+        in: query
+        maximum: 1000
+        name: limit
+        type: integer
+      - default: 0
+        description: 偏移量
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回记录列表
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 参数错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: 服务器错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 获取维保记录列表
+      tags:
+      - 维保记录
+    post:
+      consumes:
+      - application/json
+      description: 创建新的维保记录
+      parameters:
+      - description: 维保记录信息
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 创建成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 参数错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: 服务器错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 创建维保记录
+      tags:
+      - 维保记录
+  /maintenance-records/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 软删除维保记录
+      parameters:
+      - description: 记录ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: 记录不存在
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: 服务器错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 删除维保记录
+      tags:
+      - 维保记录
+    get:
+      consumes:
+      - application/json
+      description: 根据ID获取维保记录详情
+      parameters:
+      - description: 记录ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 维保记录详情
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: 记录不存在
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: 服务器错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 获取单条维保记录
+      tags:
+      - 维保记录
+    patch:
+      consumes:
+      - application/json
+      description: 差分更新维保记录(SDRTS Delta 格式)
+      parameters:
+      - description: 记录ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 更新数据(Delta格式)
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 参数错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: 记录不存在
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: 版本冲突
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "422":
+          description: 状态流转错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: 服务器错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 更新维保记录
+      tags:
+      - 维保记录
+  /maintenance-records/stats:
+    get:
+      consumes:
+      - application/json
+      description: 返回按状态分组的维保记录统计数据
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 统计数据
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 服务器错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 获取维保记录统计
+      tags:
+      - 维保记录
+securityDefinitions:
+  BearerAuth:
+    description: 'JWT Token (格式: Bearer {token})'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

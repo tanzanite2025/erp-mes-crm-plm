@@ -49,20 +49,22 @@ export function UnifiedProvidersTab() {
   }
 
   return (
-    <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+    <div className='flex flex-col gap-5 animate-in fade-in duration-700'>
       {/* 页面标题 */}
-      <div className='flex flex-col gap-4 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-6'>
+      <div className='flex flex-col gap-1.5 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-4 md:p-5'>
         <div className='flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between'>
           <div className='flex flex-col gap-1'>
             <div className='flex items-center gap-2 text-primary'>
               <Truck className='size-5' />
-              <h2 className='text-lg font-black tracking-tighter italic uppercase'>
+              <h2 className='text-base font-black tracking-tighter italic uppercase'>
                 {t('logisticsConfig.unified.title')}
               </h2>
             </div>
-            <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60'>
-              {t('logisticsConfig.unified.description')}
-            </p>
+            <div className='flex flex-col justify-between gap-2 md:flex-row md:items-center'>
+              <p className='text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-60 max-w-2xl'>
+                {t('logisticsConfig.unified.description')}
+              </p>
+            </div>
             <p className='text-xs leading-relaxed text-muted-foreground'>
               {t('logisticsConfig.unified.note')}
             </p>
