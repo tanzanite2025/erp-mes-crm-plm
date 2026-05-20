@@ -409,9 +409,9 @@ const moduleGroups: CommandItemConfig[] = [
   },
   {
     id: 'tab-cutting-batch-engine',
-    href: '/raw-materials/batch-engine',
+    href: '/raw-materials-engine/batch-engine',
     titleKey: 'commandMenu.items.batchEngine',
-    parentKey: 'commandMenu.parents.rawMaterialsManagement',
+    parentKey: 'sidebar.items.cuttingEngine',
     keywords: [
       'batch engine',
       'batch split engine',

@@ -1,7 +1,1 @@
-﻿*
-!.gitignore
-!package.json
-!xdfc_cutting_engine_wasm.js
-!xdfc_cutting_engine_wasm.d.ts
-!xdfc_cutting_engine_wasm_bg.wasm
-!xdfc_cutting_engine_wasm_bg.wasm.d.ts
+*

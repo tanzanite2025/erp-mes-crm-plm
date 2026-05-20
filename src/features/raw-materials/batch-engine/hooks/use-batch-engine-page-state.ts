@@ -1,24 +1,82 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { DEFAULT_CUTTING_ENGINE_CONFIG, type CuttingEngineConfig } from '../../engine-config/types'
+import { useCuttingEngineConfigStore } from '../../engine-config/use-cutting-engine-config-store'
 import type { BatchEngineControls } from '../types'
 
-export const DEFAULT_BATCH_ENGINE_CONTROLS: BatchEngineControls = {
-  selectedPrepregSpecId: '',
-  selectedCuttingPlanId: '',
-  rollWidthMm: '',
-  rollLengthM: '',
-  knifeGapMm: '2',
-  edgeTrimMm: '0',
-  objectivePreset: 'yield-first',
-  utilizationWeight: '55',
-  stabilityWeight: '10',
-  splitPenaltyWeight: '6',
+function buildBatchEngineControlsFromConfig(config: CuttingEngineConfig): BatchEngineControls {
+  return {
+    selectedPrepregSpecId: '',
+    selectedCuttingPlanId: '',
+    rollWidthMm: '',
+    rollLengthM: '',
+    knifeGapMm: config.knifeGapMm,
+    edgeTrimMm: config.edgeTrimMm,
+    objectivePreset: config.objectivePreset,
+    utilizationWeight: config.utilizationWeight,
+    stabilityWeight: config.stabilityWeight,
+    splitPenaltyWeight: config.splitPenaltyWeight,
+    directionSwitchPenaltyWeight: config.directionSwitchPenaltyWeight,
+    sameDirectionPreferred: config.sameDirectionPreferred,
+    angleMixMode: config.angleMixMode,
+    ruleStrategy: config.ruleStrategy,
+    minSupportedLengthMm: config.minSupportedLengthMm,
+    maxSupportedLengthMm: config.maxSupportedLengthMm,
+    fixedDecisionLengthMm: config.fixedDecisionLengthMm,
+  }
+}
+
+export const DEFAULT_BATCH_ENGINE_CONTROLS: BatchEngineControls = buildBatchEngineControlsFromConfig(DEFAULT_CUTTING_ENGINE_CONFIG)
+
+const ENGINE_CONFIG_CONTROL_KEYS = new Set<keyof BatchEngineControls>([
+  'knifeGapMm',
+  'edgeTrimMm',
+  'objectivePreset',
+  'utilizationWeight',
+  'stabilityWeight',
+  'splitPenaltyWeight',
+  'directionSwitchPenaltyWeight',
+  'sameDirectionPreferred',
+  'angleMixMode',
+  'ruleStrategy',
+  'minSupportedLengthMm',
+  'maxSupportedLengthMm',
+  'fixedDecisionLengthMm',
+])
+
+function applyEngineConfigToControls(current: BatchEngineControls, config: CuttingEngineConfig): BatchEngineControls {
+  return {
+    ...current,
+    knifeGapMm: config.knifeGapMm,
+    edgeTrimMm: config.edgeTrimMm,
+    objectivePreset: config.objectivePreset,
+    utilizationWeight: config.utilizationWeight,
+    stabilityWeight: config.stabilityWeight,
+    splitPenaltyWeight: config.splitPenaltyWeight,
+    directionSwitchPenaltyWeight: config.directionSwitchPenaltyWeight,
+    sameDirectionPreferred: config.sameDirectionPreferred,
+    angleMixMode: config.angleMixMode,
+    ruleStrategy: config.ruleStrategy,
+    minSupportedLengthMm: config.minSupportedLengthMm,
+    maxSupportedLengthMm: config.maxSupportedLengthMm,
+    fixedDecisionLengthMm: config.fixedDecisionLengthMm,
+  }
 }
 
 export function useBatchEnginePageState() {
-  const [controls, setControls] = useState<BatchEngineControls>(DEFAULT_BATCH_ENGINE_CONTROLS)
+  const engineConfig = useCuttingEngineConfigStore((state) => state.config)
+  const updateEngineConfigDraft = useCuttingEngineConfigStore((state) => state.updateDraft)
+  const [localControls, setLocalControls] = useState<BatchEngineControls>(() => buildBatchEngineControlsFromConfig(engineConfig))
+  const controls = useMemo(
+    () => applyEngineConfigToControls(localControls, engineConfig),
+    [engineConfig, localControls]
+  )
 
   const updateControl = <K extends keyof BatchEngineControls>(key: K, value: BatchEngineControls[K]) => {
-    setControls((current) => ({ ...current, [key]: value }))
+    if (ENGINE_CONFIG_CONTROL_KEYS.has(key)) {
+      updateEngineConfigDraft({ [key]: value } as Partial<CuttingEngineConfig>)
+      return
+    }
+    setLocalControls((current) => ({ ...current, [key]: value }))
   }
 
   return {

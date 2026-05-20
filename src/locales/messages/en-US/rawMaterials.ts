@@ -431,6 +431,24 @@ export const rawMaterials = {
         },
       },
     },
+    debug: {
+      kicker: 'Engine Linkage',
+      title: 'Current Applied Config',
+      description: 'Shows the cutting engine config currently used by the batch engine and the Rust/WASM request payload.',
+      resultStale: 'Configuration changed, solve again',
+      fields: {
+        preset: 'Objective Preset',
+        weights: 'Weights U/S/P',
+        geometry: 'Knife / Trim',
+        lengthRules: 'Length Boundary',
+        directionRules: 'Direction / Angle',
+      },
+      payload: {
+        title: 'CuttingEngineInput Payload',
+        description: 'Expand to inspect the real JSON sent into Rust/WASM for this formal solve.',
+        empty: 'Input is incomplete; CuttingEngineInput has not been generated yet.',
+      },
+    },
     metrics: {
       roll: {
         label: 'Roll Spec Basis',
@@ -631,6 +649,105 @@ export const rawMaterials = {
         fixedDecisionLength: {
           label: 'Fixed Decision Length',
           hint: 'Overrides the final cutting-length decision for process tuning.',
+        },
+      },
+      angleRules: {
+        title: 'Supported Cut Angles',
+        description: 'Declares the cut-angle set supported by the size library and cutting input chain.',
+        hint: 'Angles are maintained in the size library and flow into engine input with demand lines; the core only receives projected geometry and angle metadata.',
+      },
+      directionRules: {
+        title: 'Direction & Angle Rules',
+        description:
+          'Controls same-direction preference, angle mixing, and direction-switch penalties. These rules are included in the formal WASM solver input.',
+        angleMixMode: {
+          label: 'Angle Mix Mode',
+          options: {
+            allow: 'Allow Mix',
+            'prefer-same-angle': 'Prefer Same',
+            'strict-same-angle': 'Strict Same',
+          },
+        },
+        sameDirectionPreferred: {
+          label: 'Same Direction Preferred',
+          hint: 'When enabled, candidates with the same yarn direction or angle receive a light score advantage.',
+        },
+        directionSwitchPenalty: {
+          label: 'Direction Switch Penalty',
+          hint: 'Score penalty weight applied for each yarn-direction or angle switch.',
+        },
+      },
+      ruleStrategy: {
+        title: 'Rule Switches / Constraint Strategy',
+        description:
+          'Defines how the engine consumes must-fulfill, mixing, order, and yarn-direction rules. This stage sends the strategy into the WASM contract as diagnostics signals.',
+        mustFulfillMode: {
+          label: 'Must Fulfill Mode',
+          options: {
+            strict: {
+              label: 'Strict',
+              description: 'Treat as a hard constraint.',
+            },
+            'soft-penalty': {
+              label: 'Soft Penalty',
+              description: 'Treat as score penalty.',
+            },
+            ignore: {
+              label: 'Ignore',
+              description: 'Ignore must markers.',
+            },
+          },
+        },
+        mixingStrategy: {
+          label: 'Mixing Strategy',
+          options: {
+            allow: {
+              label: 'Allow',
+              description: 'Allow cross-group mixing.',
+            },
+            sameGroupOnly: {
+              label: 'Same Group',
+              description: 'Prefer same-group mixing.',
+            },
+            strictNoMix: {
+              label: 'No Mix',
+              description: 'Strictly block mixing.',
+            },
+          },
+        },
+        orderStrategy: {
+          label: 'Order Strategy',
+          options: {
+            respectOrder: {
+              label: 'Respect',
+              description: 'Strictly respect order.',
+            },
+            softPenalty: {
+              label: 'Soft',
+              description: 'Penalize order drift.',
+            },
+            ignore: {
+              label: 'Ignore',
+              description: 'Ignore order fields.',
+            },
+          },
+        },
+        directionStrategy: {
+          label: 'Yarn / Angle Strategy',
+          options: {
+            sameDirectionPreferred: {
+              label: 'Preferred',
+              description: 'Prefer same direction.',
+            },
+            sameDirectionRequired: {
+              label: 'Required',
+              description: 'Require same direction.',
+            },
+            allowSwitch: {
+              label: 'Allow Switch',
+              description: 'Allow direction switches.',
+            },
+          },
         },
       },
       knifeGap: {

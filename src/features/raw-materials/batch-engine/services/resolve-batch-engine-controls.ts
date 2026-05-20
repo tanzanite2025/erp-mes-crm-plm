@@ -1,5 +1,6 @@
 import { toPositiveNumber } from '../../cut-size-library/domain/cut-size-geometry'
 import type { PrepregMaterialSpec } from '../../data/prepreg-material-spec-schema'
+import { normalizeCuttingEngineAngleMixMode, normalizeCuttingEngineRuleStrategy } from '../../engine-config/types'
 import type {
   BatchEngineControls,
   BatchEngineNormalizedControls,
@@ -32,6 +33,13 @@ export function resolveBatchEngineControls(
     utilizationWeight: toPositiveNumber(rawControls.utilizationWeight),
     stabilityWeight: toPositiveNumber(rawControls.stabilityWeight),
     splitPenaltyWeight: toPositiveNumber(rawControls.splitPenaltyWeight),
+    directionSwitchPenaltyWeight: toPositiveNumber(rawControls.directionSwitchPenaltyWeight),
+    sameDirectionPreferred: rawControls.sameDirectionPreferred,
+    angleMixMode: normalizeCuttingEngineAngleMixMode(rawControls.angleMixMode),
+    ruleStrategy: normalizeCuttingEngineRuleStrategy(rawControls.ruleStrategy),
+    minSupportedLengthMm: toPositiveNumber(rawControls.minSupportedLengthMm),
+    maxSupportedLengthMm: toPositiveNumber(rawControls.maxSupportedLengthMm),
+    fixedDecisionLengthMm: toPositiveNumber(rawControls.fixedDecisionLengthMm),
   }
 
   return {

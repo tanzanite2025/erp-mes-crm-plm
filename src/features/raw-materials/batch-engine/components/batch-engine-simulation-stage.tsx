@@ -9,6 +9,7 @@ type BatchEngineSimulationStageProps = {
   canSolve: boolean
   solveDisabledReason: string
   isSolving: boolean
+  isResultStale: boolean
   onSolve: () => void
   onOpenPreview: () => void
 }
@@ -30,7 +31,7 @@ function getLegendToneClassName(tone: BatchEngineLegendItem['tone']) {
 
 export function BatchEngineSimulationStage(props: BatchEngineSimulationStageProps) {
   const { t } = useLanguage()
-  const { legend, simulation, canSolve, solveDisabledReason, isSolving, onSolve, onOpenPreview } = props
+  const { legend, simulation, canSolve, solveDisabledReason, isSolving, isResultStale, onSolve, onOpenPreview } = props
 
   return (
     <section className='rounded-[28px] border border-border/50 bg-card p-4 shadow-none'>
@@ -108,6 +109,11 @@ export function BatchEngineSimulationStage(props: BatchEngineSimulationStageProp
 
           {!canSolve && solveDisabledReason ? (
             <p className='mt-3 text-xs font-semibold text-destructive/80'>{solveDisabledReason}</p>
+          ) : null}
+          {isResultStale ? (
+            <p className='mt-3 text-xs font-semibold text-amber-600'>
+              {t('rawMaterials.batchEngine.debug.resultStale')}
+            </p>
           ) : null}
 
           <div className='mt-4 rounded-[22px] border border-dashed border-border/40 bg-background/50 p-4'>

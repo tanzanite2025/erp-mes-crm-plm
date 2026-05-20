@@ -3,6 +3,7 @@ import type { PrepregMaterialSpec } from '../../data/prepreg-material-spec-schem
 import type { BuildBatchEngineDemandLinesResult } from '../domain/build-batch-engine-demand-lines-from-cutting-plan'
 import type { BatchEngineNormalizedControls, BatchEngineSimulation } from '../types'
 import type { CuttingEngineInput, CuttingObjectivePreset } from '../types/cutting-engine-wasm'
+import { buildCuttingEngineCutUnits } from './build-cutting-engine-cut-units'
 
 export type BuildBatchEngineCuttingInputOptions = {
   controls: BatchEngineNormalizedControls
@@ -18,6 +19,27 @@ function resolveLengthBoundary(values: number[], mode: 'min' | 'max') {
     return 1
   }
   return mode === 'min' ? Math.min(...usableValues) : Math.max(...usableValues)
+}
+
+function resolveConfiguredLengthBoundary(
+  controls: BatchEngineNormalizedControls,
+  unitLengths: number[],
+  mode: 'min' | 'max'
+) {
+  const configuredValue = mode === 'min' ? controls.minSupportedLengthMm : controls.maxSupportedLengthMm
+  return configuredValue > 0 ? configuredValue : resolveLengthBoundary(unitLengths, mode)
+}
+
+function resolveFixedDecisionLength(
+  controls: BatchEngineNormalizedControls,
+  minSupportedLengthMm: number,
+  maxSupportedLengthMm: number
+) {
+  const fixedDecisionLengthMm = controls.fixedDecisionLengthMm
+  if (!fixedDecisionLengthMm || fixedDecisionLengthMm < minSupportedLengthMm || fixedDecisionLengthMm > maxSupportedLengthMm) {
+    return undefined
+  }
+  return fixedDecisionLengthMm
 }
 
 function resolveCuttingObjectivePreset(value: BatchEngineNormalizedControls['objectivePreset']): CuttingObjectivePreset {
@@ -38,28 +60,31 @@ export function buildBatchEngineCuttingInput(
   }
 
   const unitLengths = validDemandLines.map((item) => item.lengthMm)
+  const minSupportedLengthMm = resolveConfiguredLengthBoundary(controls, unitLengths, 'min')
+  const maxSupportedLengthMm = Math.max(resolveConfiguredLengthBoundary(controls, unitLengths, 'max'), minSupportedLengthMm)
+  const fixedDecisionLengthMm = resolveFixedDecisionLength(controls, minSupportedLengthMm, maxSupportedLengthMm)
 
   return {
     rollWidthMm: controls.rollWidthMm,
     rollLengthMm: controls.rollLengthM * 1000,
     knifeGapMm: controls.knifeGapMm,
     edgeTrimMm: controls.edgeTrimMm,
-    minSupportedLengthMm: resolveLengthBoundary(unitLengths, 'min'),
-    maxSupportedLengthMm: resolveLengthBoundary(unitLengths, 'max'),
+    minSupportedLengthMm,
+    maxSupportedLengthMm,
+    ...(fixedDecisionLengthMm ? { fixedDecisionLengthMm } : {}),
     objectivePreset: resolveCuttingObjectivePreset(controls.objectivePreset),
     weights: {
       utilizationWeight: controls.utilizationWeight,
       stabilityWeight: controls.stabilityWeight,
       splitPenalty: controls.splitPenaltyWeight,
     },
-    cutUnits: validDemandLines.map((item) => ({
-      id: item.demandLineId,
-      label: item.lineLabel,
-      widthMm: item.widthMm,
-      lengthMm: item.lengthMm,
-      quantity: item.requiredPieces,
-      cutAngleDeg: item.cutAngle,
-    })),
+    directionRules: {
+      angleMixMode: controls.angleMixMode,
+      sameDirectionPreferred: controls.sameDirectionPreferred,
+      directionSwitchPenaltyWeight: controls.directionSwitchPenaltyWeight,
+    },
+    ruleStrategy: controls.ruleStrategy,
+    cutUnits: buildCuttingEngineCutUnits(validDemandLines),
     maxCandidatePlans: 3,
   }
 }

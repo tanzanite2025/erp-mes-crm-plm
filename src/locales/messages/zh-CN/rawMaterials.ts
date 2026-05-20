@@ -411,6 +411,24 @@ export const rawMaterials = {
         },
       },
     },
+    debug: {
+      kicker: '引擎联动',
+      title: '当前应用配置',
+      description: '展示拆批引擎当前使用的裁纱引擎配置与 Rust/WASM 请求载荷。',
+      resultStale: '配置已变化，请重新求解',
+      fields: {
+        preset: '目标预设',
+        weights: '权重 U/S/P',
+        geometry: '刀缝 / 修边',
+        lengthRules: '长度边界',
+        directionRules: '纱向 / 角度',
+      },
+      payload: {
+        title: 'CuttingEngineInput Payload',
+        description: '展开后可查看本次正式求解传入 Rust/WASM 的真实 JSON。',
+        empty: '当前输入不足，尚未生成 CuttingEngineInput。',
+      },
+    },
     metrics: {
       roll: {
         label: '卷规格基准',
@@ -607,6 +625,103 @@ export const rawMaterials = {
         fixedDecisionLength: {
           label: '固定决策长度',
           hint: '用于覆写最终裁切长度决策。',
+        },
+      },
+      angleRules: {
+        title: '支持裁切角度',
+        description: '声明当前尺寸库与裁纱输入链路支持的裁切角度集合。',
+        hint: '角度由尺寸库维护并随裁纱单需求进入引擎输入，计算核心只接收已投影几何与角度元数据。',
+      },
+      directionRules: {
+        title: '纱向与角度规则',
+        description: '控制同向优先、角度混排和方向切换惩罚，这些规则会进入正式 WASM 求解输入。',
+        angleMixMode: {
+          label: '角度混排策略',
+          options: {
+            allow: '允许混排',
+            'prefer-same-angle': '同角优先',
+            'strict-same-angle': '严格同角',
+          },
+        },
+        sameDirectionPreferred: {
+          label: '同向优先',
+          hint: '开启后，同纱向/同角度候选将获得轻量评分优势。',
+        },
+        directionSwitchPenalty: {
+          label: '方向切换惩罚',
+          hint: '每次纱向或角度切换计入的评分扣减权重。',
+        },
+      },
+      ruleStrategy: {
+        title: '规则开关 / 约束策略',
+        description: '定义引擎如何消费必达、混排、顺序与纱向角度规则。本阶段进入 WASM 合约并作为诊断信号。',
+        mustFulfillMode: {
+          label: 'Must Fulfill 模式',
+          options: {
+            strict: {
+              label: 'Strict',
+              description: '作为硬性约束处理。',
+            },
+            'soft-penalty': {
+              label: 'Soft Penalty',
+              description: '作为评分惩罚处理。',
+            },
+            ignore: {
+              label: 'Ignore',
+              description: '忽略必达标记。',
+            },
+          },
+        },
+        mixingStrategy: {
+          label: '混排策略',
+          options: {
+            allow: {
+              label: 'Allow',
+              description: '允许跨组混排。',
+            },
+            sameGroupOnly: {
+              label: 'Same Group',
+              description: '仅同组优先混排。',
+            },
+            strictNoMix: {
+              label: 'No Mix',
+              description: '严格禁止混排。',
+            },
+          },
+        },
+        orderStrategy: {
+          label: '顺序策略',
+          options: {
+            respectOrder: {
+              label: 'Respect',
+              description: '严格尊重顺序。',
+            },
+            softPenalty: {
+              label: 'Soft',
+              description: '顺序偏离计入惩罚。',
+            },
+            ignore: {
+              label: 'Ignore',
+              description: '忽略顺序字段。',
+            },
+          },
+        },
+        directionStrategy: {
+          label: '纱向/角度策略',
+          options: {
+            sameDirectionPreferred: {
+              label: 'Preferred',
+              description: '同向同角优先。',
+            },
+            sameDirectionRequired: {
+              label: 'Required',
+              description: '同向同角必需。',
+            },
+            allowSwitch: {
+              label: 'Allow Switch',
+              description: '允许方向切换。',
+            },
+          },
         },
       },
       knifeGap: {

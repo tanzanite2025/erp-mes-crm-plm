@@ -1,6 +1,7 @@
 import { Blocks } from 'lucide-react'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
+import { BatchEngineConfigDebugPanel } from './components/batch-engine-config-debug-panel'
 import { BatchEngineControlPanel } from './components/batch-engine-control-panel'
 import { BatchEngineCuttingPreviewDialog } from './components/batch-engine-cutting-preview-dialog'
 import { BatchEngineSimulationStage } from './components/batch-engine-simulation-stage'
@@ -50,8 +51,14 @@ export function BatchEnginePage() {
             canSolve={solve.canSolve}
             solveDisabledReason={solve.solveDisabledReason}
             isSolving={solve.isSolving}
+            isResultStale={solve.isResultStale}
             onSolve={solve.solve}
             onOpenPreview={openPreview}
+          />
+          <BatchEngineConfigDebugPanel
+            controls={preview.controls}
+            request={solve.request}
+            isResultStale={solve.isResultStale}
           />
           <BatchEngineSummaryPanel
             simulation={preview.simulation}

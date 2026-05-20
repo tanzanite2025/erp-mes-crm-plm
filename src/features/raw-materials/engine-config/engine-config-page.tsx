@@ -1,44 +1,96 @@
 import { useState } from 'react'
 import { Sliders, Check, RotateCcw, AlertTriangle } from 'lucide-react'
-import { ModuleTabbedLayout } from '@/components/layout/module-tabbed-layout'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useLanguage } from '@/context/language-provider'
 import { toast } from 'sonner'
-
-type ObjectivePreset = 'yield-first' | 'stability-first'
+import {
+  DEFAULT_CUTTING_ENGINE_CONFIG,
+  type CuttingEngineAngleMixMode,
+  type CuttingEngineDirectionStrategy,
+  type CuttingEngineMixingStrategy,
+  type CuttingEngineMustFulfillMode,
+  type CuttingEngineObjectivePreset,
+  type CuttingEngineOrderStrategy,
+} from './types'
+import { useCuttingEngineConfigStore } from './use-cutting-engine-config-store'
+import { SUPPORTED_CUT_ANGLE_OPTIONS } from '../utils/cut-orientation'
 
 export function CuttingEngineConfigPage() {
   const { t } = useLanguage()
+  const config = useCuttingEngineConfigStore((state) => state.config)
+  const saveConfig = useCuttingEngineConfigStore((state) => state.saveConfig)
+  const resetConfig = useCuttingEngineConfigStore((state) => state.resetConfig)
 
   // 1. 求解预设配置
-  const [objectivePreset, setObjectivePreset] = useState<ObjectivePreset>('yield-first')
+  const [objectivePreset, setObjectivePreset] = useState<CuttingEngineObjectivePreset>(config.objectivePreset)
 
   // 2. 权重配置状态
-  const [utilizationWeight, setUtilizationWeight] = useState('55')
-  const [stabilityWeight, setStabilityWeight] = useState('10')
-  const [splitPenalty, setSplitPenalty] = useState('6')
+  const [utilizationWeight, setUtilizationWeight] = useState(config.utilizationWeight)
+  const [stabilityWeight, setStabilityWeight] = useState(config.stabilityWeight)
+  const [splitPenalty, setSplitPenalty] = useState(config.splitPenaltyWeight)
+  const [directionSwitchPenalty, setDirectionSwitchPenalty] = useState(config.directionSwitchPenaltyWeight)
+  const [sameDirectionPreferred, setSameDirectionPreferred] = useState(config.sameDirectionPreferred)
+  const [angleMixMode, setAngleMixMode] = useState<CuttingEngineAngleMixMode>(config.angleMixMode)
+  const [mustFulfillMode, setMustFulfillMode] = useState<CuttingEngineMustFulfillMode>(config.ruleStrategy.mustFulfillMode)
+  const [mixingStrategy, setMixingStrategy] = useState<CuttingEngineMixingStrategy>(config.ruleStrategy.mixingStrategy)
+  const [orderStrategy, setOrderStrategy] = useState<CuttingEngineOrderStrategy>(config.ruleStrategy.orderStrategy)
+  const [directionStrategy, setDirectionStrategy] = useState<CuttingEngineDirectionStrategy>(config.ruleStrategy.directionStrategy)
 
   // 3. 物理与几何约束状态
-  const [knifeGap, setKnifeGap] = useState('2.0')
-  const [edgeTrim, setEdgeTrim] = useState('10.0')
+  const [knifeGap, setKnifeGap] = useState(config.knifeGapMm)
+  const [edgeTrim, setEdgeTrim] = useState(config.edgeTrimMm)
   const [timeout, setTimeoutSec] = useState('30')
   const [, setTolerance] = useState('0.5')
-  const [minSupportedLength, setMinSupportedLength] = useState('80.0')
-  const [maxSupportedLength, setMaxSupportedLength] = useState('1200.0')
-  const [fixedDecisionLength, setFixedDecisionLength] = useState('91.0')
+  const [minSupportedLength, setMinSupportedLength] = useState(config.minSupportedLengthMm)
+  const [maxSupportedLength, setMaxSupportedLength] = useState(config.maxSupportedLengthMm)
+  const [fixedDecisionLength, setFixedDecisionLength] = useState(config.fixedDecisionLengthMm)
   
   // 5. 保存状态
   const [isSaving, setIsSaving] = useState(false)
 
-  const getObjectivePresetLabel = (value: ObjectivePreset) => {
+  const getObjectivePresetLabel = (value: CuttingEngineObjectivePreset) => {
     if (value === 'yield-first') return t('rawMaterials.engineConfig.preset.options.yieldFirst.label')
     return t('rawMaterials.engineConfig.preset.options.stabilityFirst.label')
   }
 
+  const angleMixModeLabels: Record<CuttingEngineAngleMixMode, string> = {
+    allow: t('rawMaterials.engineConfig.constraints.directionRules.angleMixMode.options.allow'),
+    'prefer-same-angle': t('rawMaterials.engineConfig.constraints.directionRules.angleMixMode.options.prefer-same-angle'),
+    'strict-same-angle': t('rawMaterials.engineConfig.constraints.directionRules.angleMixMode.options.strict-same-angle'),
+  }
+
+  const renderStrategySelector = <T extends string,>(
+    value: T,
+    options: Array<{ value: T; label: string; description: string }>,
+    onChange: (value: T) => void
+  ) => (
+    <div className='grid gap-2 sm:grid-cols-3'>
+      {options.map((option) => (
+        <button
+          key={option.value}
+          type='button'
+          onClick={() => onChange(option.value)}
+          className={`rounded-2xl border px-3 py-2 text-left transition-all ${
+            value === option.value
+              ? 'border-primary bg-primary/10 text-primary'
+              : 'border-dashed border-border/50 bg-muted/20 text-muted-foreground hover:bg-muted/40'
+          }`}
+        >
+          <span className='block text-[10px] font-black uppercase tracking-widest'>
+            {option.label}
+          </span>
+          <span className='mt-1 block text-[8px] font-black uppercase tracking-widest opacity-60'>
+            {option.description}
+          </span>
+        </button>
+      ))}
+    </div>
+  )
+
   // 预设模式切换逻辑 - 自动填充工业推荐配置
-  const handlePresetChange = (value: ObjectivePreset) => {
+  const handlePresetChange = (value: CuttingEngineObjectivePreset) => {
     setObjectivePreset(value)
     if (value === 'yield-first') {
       setUtilizationWeight('70')
@@ -58,6 +110,26 @@ export function CuttingEngineConfigPage() {
   const handleSave = () => {
     setIsSaving(true)
     setTimeout(() => {
+      saveConfig({
+        objectivePreset,
+        utilizationWeight,
+        stabilityWeight,
+        splitPenaltyWeight: splitPenalty,
+        directionSwitchPenaltyWeight: directionSwitchPenalty,
+        sameDirectionPreferred,
+        angleMixMode,
+        ruleStrategy: {
+          mustFulfillMode,
+          mixingStrategy,
+          orderStrategy,
+          directionStrategy,
+        },
+        knifeGapMm: knifeGap,
+        edgeTrimMm: edgeTrim,
+        minSupportedLengthMm: minSupportedLength,
+        maxSupportedLengthMm: maxSupportedLength,
+        fixedDecisionLengthMm: fixedDecisionLength,
+      })
       setIsSaving(false)
       toast.success(t('rawMaterials.engineConfig.toasts.saveSuccess'))
     }, 1200)
@@ -65,31 +137,30 @@ export function CuttingEngineConfigPage() {
 
   // 恢复默认
   const handleReset = () => {
-    setObjectivePreset('yield-first')
-    setUtilizationWeight('55')
-    setStabilityWeight('10')
-    setSplitPenalty('6')
-    setKnifeGap('2.0')
-    setEdgeTrim('10.0')
+    setObjectivePreset(DEFAULT_CUTTING_ENGINE_CONFIG.objectivePreset)
+    setUtilizationWeight(DEFAULT_CUTTING_ENGINE_CONFIG.utilizationWeight)
+    setStabilityWeight(DEFAULT_CUTTING_ENGINE_CONFIG.stabilityWeight)
+    setSplitPenalty(DEFAULT_CUTTING_ENGINE_CONFIG.splitPenaltyWeight)
+    setDirectionSwitchPenalty(DEFAULT_CUTTING_ENGINE_CONFIG.directionSwitchPenaltyWeight)
+    setSameDirectionPreferred(DEFAULT_CUTTING_ENGINE_CONFIG.sameDirectionPreferred)
+    setAngleMixMode(DEFAULT_CUTTING_ENGINE_CONFIG.angleMixMode)
+    setMustFulfillMode(DEFAULT_CUTTING_ENGINE_CONFIG.ruleStrategy.mustFulfillMode)
+    setMixingStrategy(DEFAULT_CUTTING_ENGINE_CONFIG.ruleStrategy.mixingStrategy)
+    setOrderStrategy(DEFAULT_CUTTING_ENGINE_CONFIG.ruleStrategy.orderStrategy)
+    setDirectionStrategy(DEFAULT_CUTTING_ENGINE_CONFIG.ruleStrategy.directionStrategy)
+    setKnifeGap(DEFAULT_CUTTING_ENGINE_CONFIG.knifeGapMm)
+    setEdgeTrim(DEFAULT_CUTTING_ENGINE_CONFIG.edgeTrimMm)
     setTimeoutSec('30')
     setTolerance('0.5')
-    setMinSupportedLength('80.0')
-    setMaxSupportedLength('1200.0')
-    setFixedDecisionLength('91.0')
+    setMinSupportedLength(DEFAULT_CUTTING_ENGINE_CONFIG.minSupportedLengthMm)
+    setMaxSupportedLength(DEFAULT_CUTTING_ENGINE_CONFIG.maxSupportedLengthMm)
+    setFixedDecisionLength(DEFAULT_CUTTING_ENGINE_CONFIG.fixedDecisionLengthMm)
+    resetConfig()
     toast.info(t('rawMaterials.engineConfig.toasts.reset'))
   }
 
-  const tabs = [
-    {
-      key: 'engine-tuning',
-      label: t('rawMaterials.engineConfig.tab'),
-      href: '/raw-materials-engine/config',
-    },
-  ]
-
   return (
-    <ModuleTabbedLayout tabs={tabs}>
-      <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+    <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
         {/* 页头 */}
         <IndustrialHeader
           icon={Sliders}
@@ -235,6 +306,128 @@ export function CuttingEngineConfigPage() {
 
               </div>
             </section>
+
+            <section className='relative rounded-[24px] border border-dashed border-border/60 bg-muted/5 p-5 flex flex-col gap-4'>
+              <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent pointer-events-none rounded-[24px]' />
+              <div>
+                <h4 className='text-sm font-black tracking-tighter italic text-foreground/90 uppercase'>
+                  {t('rawMaterials.engineConfig.constraints.ruleStrategy.title')}
+                </h4>
+                <p className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 mt-1'>
+                  {t('rawMaterials.engineConfig.constraints.ruleStrategy.description')}
+                </p>
+              </div>
+
+              <div className='grid gap-4'>
+                <div className='grid gap-2'>
+                  <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/80'>
+                    {t('rawMaterials.engineConfig.constraints.ruleStrategy.mustFulfillMode.label')}
+                  </span>
+                  {renderStrategySelector<CuttingEngineMustFulfillMode>(
+                    mustFulfillMode,
+                    [
+                      {
+                        value: 'strict',
+                        label: t('rawMaterials.engineConfig.constraints.ruleStrategy.mustFulfillMode.options.strict.label'),
+                        description: t('rawMaterials.engineConfig.constraints.ruleStrategy.mustFulfillMode.options.strict.description'),
+                      },
+                      {
+                        value: 'soft-penalty',
+                        label: t('rawMaterials.engineConfig.constraints.ruleStrategy.mustFulfillMode.options.soft-penalty.label'),
+                        description: t('rawMaterials.engineConfig.constraints.ruleStrategy.mustFulfillMode.options.soft-penalty.description'),
+                      },
+                      {
+                        value: 'ignore',
+                        label: t('rawMaterials.engineConfig.constraints.ruleStrategy.mustFulfillMode.options.ignore.label'),
+                        description: t('rawMaterials.engineConfig.constraints.ruleStrategy.mustFulfillMode.options.ignore.description'),
+                      },
+                    ],
+                    setMustFulfillMode
+                  )}
+                </div>
+
+                <div className='grid gap-2'>
+                  <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/80'>
+                    {t('rawMaterials.engineConfig.constraints.ruleStrategy.mixingStrategy.label')}
+                  </span>
+                  {renderStrategySelector<CuttingEngineMixingStrategy>(
+                    mixingStrategy,
+                    [
+                      {
+                        value: 'allow',
+                        label: t('rawMaterials.engineConfig.constraints.ruleStrategy.mixingStrategy.options.allow.label'),
+                        description: t('rawMaterials.engineConfig.constraints.ruleStrategy.mixingStrategy.options.allow.description'),
+                      },
+                      {
+                        value: 'sameGroupOnly',
+                        label: t('rawMaterials.engineConfig.constraints.ruleStrategy.mixingStrategy.options.sameGroupOnly.label'),
+                        description: t('rawMaterials.engineConfig.constraints.ruleStrategy.mixingStrategy.options.sameGroupOnly.description'),
+                      },
+                      {
+                        value: 'strictNoMix',
+                        label: t('rawMaterials.engineConfig.constraints.ruleStrategy.mixingStrategy.options.strictNoMix.label'),
+                        description: t('rawMaterials.engineConfig.constraints.ruleStrategy.mixingStrategy.options.strictNoMix.description'),
+                      },
+                    ],
+                    setMixingStrategy
+                  )}
+                </div>
+
+                <div className='grid gap-2'>
+                  <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/80'>
+                    {t('rawMaterials.engineConfig.constraints.ruleStrategy.orderStrategy.label')}
+                  </span>
+                  {renderStrategySelector<CuttingEngineOrderStrategy>(
+                    orderStrategy,
+                    [
+                      {
+                        value: 'respectOrder',
+                        label: t('rawMaterials.engineConfig.constraints.ruleStrategy.orderStrategy.options.respectOrder.label'),
+                        description: t('rawMaterials.engineConfig.constraints.ruleStrategy.orderStrategy.options.respectOrder.description'),
+                      },
+                      {
+                        value: 'softPenalty',
+                        label: t('rawMaterials.engineConfig.constraints.ruleStrategy.orderStrategy.options.softPenalty.label'),
+                        description: t('rawMaterials.engineConfig.constraints.ruleStrategy.orderStrategy.options.softPenalty.description'),
+                      },
+                      {
+                        value: 'ignore',
+                        label: t('rawMaterials.engineConfig.constraints.ruleStrategy.orderStrategy.options.ignore.label'),
+                        description: t('rawMaterials.engineConfig.constraints.ruleStrategy.orderStrategy.options.ignore.description'),
+                      },
+                    ],
+                    setOrderStrategy
+                  )}
+                </div>
+
+                <div className='grid gap-2'>
+                  <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/80'>
+                    {t('rawMaterials.engineConfig.constraints.ruleStrategy.directionStrategy.label')}
+                  </span>
+                  {renderStrategySelector<CuttingEngineDirectionStrategy>(
+                    directionStrategy,
+                    [
+                      {
+                        value: 'sameDirectionPreferred',
+                        label: t('rawMaterials.engineConfig.constraints.ruleStrategy.directionStrategy.options.sameDirectionPreferred.label'),
+                        description: t('rawMaterials.engineConfig.constraints.ruleStrategy.directionStrategy.options.sameDirectionPreferred.description'),
+                      },
+                      {
+                        value: 'sameDirectionRequired',
+                        label: t('rawMaterials.engineConfig.constraints.ruleStrategy.directionStrategy.options.sameDirectionRequired.label'),
+                        description: t('rawMaterials.engineConfig.constraints.ruleStrategy.directionStrategy.options.sameDirectionRequired.description'),
+                      },
+                      {
+                        value: 'allowSwitch',
+                        label: t('rawMaterials.engineConfig.constraints.ruleStrategy.directionStrategy.options.allowSwitch.label'),
+                        description: t('rawMaterials.engineConfig.constraints.ruleStrategy.directionStrategy.options.allowSwitch.description'),
+                      },
+                    ],
+                    setDirectionStrategy
+                  )}
+                </div>
+              </div>
+            </section>
           </div>
 
           {/* 右列：物理公差与系统全局约束 */}
@@ -326,6 +519,107 @@ export function CuttingEngineConfigPage() {
                         {t('rawMaterials.engineConfig.constraints.units.mm')}
                       </span>
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className='relative rounded-[20px] border border-dashed border-primary/15 bg-background/70 p-3'>
+                <div>
+                  <h5 className='text-[10px] font-black uppercase tracking-widest text-foreground/80'>
+                    {t('rawMaterials.engineConfig.constraints.angleRules.title')}
+                  </h5>
+                  <p className='mt-1 text-[8px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                    {t('rawMaterials.engineConfig.constraints.angleRules.description')}
+                  </p>
+                </div>
+
+                <div className='mt-3 grid gap-2'>
+                  <div className='flex flex-wrap gap-2'>
+                    {SUPPORTED_CUT_ANGLE_OPTIONS.map((option) => (
+                      <span
+                        key={option.value}
+                        className='inline-flex h-8 items-center rounded-full bg-primary/10 px-3 text-[10px] font-mono font-black text-primary'
+                      >
+                        {option.label}
+                      </span>
+                    ))}
+                  </div>
+                  <p className='text-[8px] font-black uppercase tracking-widest text-muted-foreground/60 leading-relaxed'>
+                    {t('rawMaterials.engineConfig.constraints.angleRules.hint')}
+                  </p>
+                </div>
+              </div>
+
+              <div className='relative rounded-[20px] border border-dashed border-primary/15 bg-background/70 p-3'>
+                <div>
+                  <h5 className='text-[10px] font-black uppercase tracking-widest text-foreground/80'>
+                    {t('rawMaterials.engineConfig.constraints.directionRules.title')}
+                  </h5>
+                  <p className='mt-1 text-[8px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                    {t('rawMaterials.engineConfig.constraints.directionRules.description')}
+                  </p>
+                </div>
+
+                <div className='mt-3 grid gap-3'>
+                  <div className='grid gap-2'>
+                    <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/80'>
+                      {t('rawMaterials.engineConfig.constraints.directionRules.angleMixMode.label')}
+                    </span>
+                    <div className='grid gap-2 sm:grid-cols-3'>
+                      {(['allow', 'prefer-same-angle', 'strict-same-angle'] as const).map((mode) => (
+                        <button
+                          key={mode}
+                          type='button'
+                          onClick={() => setAngleMixMode(mode)}
+                          className={`rounded-2xl border px-3 py-2 text-left transition-all ${
+                            angleMixMode === mode
+                              ? 'border-primary bg-primary/10 text-primary'
+                              : 'border-dashed border-border/50 bg-muted/20 text-muted-foreground hover:bg-muted/40'
+                          }`}
+                        >
+                          <span className='block text-[10px] font-black uppercase tracking-widest'>
+                            {angleMixModeLabels[mode]}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className='flex items-center justify-between gap-4 rounded-2xl bg-muted/20 px-3 py-2'>
+                    <div className='flex flex-col'>
+                      <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/80'>
+                        {t('rawMaterials.engineConfig.constraints.directionRules.sameDirectionPreferred.label')}
+                      </span>
+                      <span className='mt-0.5 text-[8px] font-mono text-muted-foreground/60'>
+                        {t('rawMaterials.engineConfig.constraints.directionRules.sameDirectionPreferred.hint')}
+                      </span>
+                    </div>
+                    <button
+                      type='button'
+                      onClick={() => setSameDirectionPreferred((value) => !value)}
+                      className={`h-8 rounded-full px-4 text-[10px] font-black uppercase tracking-widest ${
+                        sameDirectionPreferred ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                      }`}
+                    >
+                      {sameDirectionPreferred ? 'ON' : 'OFF'}
+                    </button>
+                  </div>
+
+                  <div className='flex items-center justify-between gap-4'>
+                    <div className='flex flex-col'>
+                      <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/80'>
+                        {t('rawMaterials.engineConfig.constraints.directionRules.directionSwitchPenalty.label')}
+                      </span>
+                      <span className='mt-0.5 text-[8px] font-mono text-muted-foreground/60'>
+                        {t('rawMaterials.engineConfig.constraints.directionRules.directionSwitchPenalty.hint')}
+                      </span>
+                    </div>
+                    <Input
+                      type='number'
+                      value={directionSwitchPenalty}
+                      onChange={(e) => setDirectionSwitchPenalty(e.target.value)}
+                      className='h-10 w-24 rounded-lg border-none bg-background pr-3 text-right font-mono text-xs'
+                    />
                   </div>
                 </div>
               </div>
@@ -448,7 +742,6 @@ export function CuttingEngineConfigPage() {
             </Button>
           </div>
         </div>
-      </div>
-    </ModuleTabbedLayout>
+    </div>
   )
 }

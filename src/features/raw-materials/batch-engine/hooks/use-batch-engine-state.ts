@@ -28,6 +28,9 @@ export function useBatchEngineState() {
     solution,
     isSolving,
     solveError,
+    request,
+    requestSignature,
+    isResultStale,
     solve,
   } = useBatchEngineSolve({
     controls: normalizedControls,
@@ -85,6 +88,9 @@ export function useBatchEngineState() {
       solution,
       isSolving,
       solveError,
+      request,
+      requestSignature,
+      isResultStale,
       solve,
     },
     planSelection: {

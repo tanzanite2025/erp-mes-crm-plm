@@ -1,4 +1,5 @@
 import type { CutSizeGeometryProjection } from '../../cut-size-library/domain/cut-size-geometry'
+import type { CuttingEngineAngleMixMode, CuttingEngineRuleStrategy } from '../../engine-config/types'
 import type { BatchOptimizerObjectivePreset } from './batch-engine-api'
 
 export type BatchEngineControls = {
@@ -12,6 +13,13 @@ export type BatchEngineControls = {
   utilizationWeight: string
   stabilityWeight: string
   splitPenaltyWeight: string
+  directionSwitchPenaltyWeight: string
+  sameDirectionPreferred: boolean
+  angleMixMode: CuttingEngineAngleMixMode
+  ruleStrategy: CuttingEngineRuleStrategy
+  minSupportedLengthMm: string
+  maxSupportedLengthMm: string
+  fixedDecisionLengthMm: string
 }
 
 export type BatchEngineResolvedControls = BatchEngineControls
@@ -27,6 +35,13 @@ export type BatchEngineNormalizedControls = {
   utilizationWeight: number
   stabilityWeight: number
   splitPenaltyWeight: number
+  directionSwitchPenaltyWeight: number
+  sameDirectionPreferred: boolean
+  angleMixMode: CuttingEngineAngleMixMode
+  ruleStrategy: CuttingEngineRuleStrategy
+  minSupportedLengthMm: number
+  maxSupportedLengthMm: number
+  fixedDecisionLengthMm: number
 }
 
 export type BatchEngineResolvedControlState = {

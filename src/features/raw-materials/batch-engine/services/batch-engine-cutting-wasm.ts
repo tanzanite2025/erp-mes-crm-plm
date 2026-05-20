@@ -40,6 +40,26 @@ function isCuttingLayoutZone(value: unknown) {
   )
 }
 
+function isCuttingPlanRuleDiagnostics(value: unknown) {
+  if (!isRecord(value)) {
+    return false
+  }
+  return (
+    isFiniteNumber(value.priority)
+    && typeof value.mustFulfill === 'boolean'
+    && typeof value.allowMixedPlan === 'boolean'
+    && typeof value.rollGroupKey === 'string'
+    && isFiniteNumber(value.orderSequence)
+    && isStringArray(value.processTags)
+    && isFiniteNumber(value.mustFulfillCount)
+    && isFiniteNumber(value.mixedPlanRestrictedCount)
+    && isFiniteNumber(value.rollGroupCount)
+    && isFiniteNumber(value.processTagCount)
+    && isFiniteNumber(value.prioritySum)
+    && isFiniteNumber(value.sequenceSpan)
+  )
+}
+
 function isCuttingPlan(value: unknown) {
   if (!isRecord(value)) {
     return false
@@ -51,6 +71,9 @@ function isCuttingPlan(value: unknown) {
     && isFiniteNumber(value.utilizationPercent)
     && isFiniteNumber(value.lossAreaM2)
     && isFiniteNumber(value.producedPieces)
+    && isFiniteNumber(value.directionSwitchCount)
+    && isFiniteNumber(value.angleMixViolationCount)
+    && isCuttingPlanRuleDiagnostics(value.ruleDiagnostics)
     && Array.isArray(value.zones)
     && value.zones.every(isCuttingLayoutZone)
     && isStringArray(value.warnings)

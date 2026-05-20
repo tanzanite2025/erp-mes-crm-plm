@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import type { CuttingPlan } from '@/features/engineering-db/data/cutting-plan-schema'
 import type { PrepregMaterialSpec } from '../../data/prepreg-material-spec-schema'
@@ -22,6 +22,7 @@ type UseBatchEngineSolveOptions = {
  */
 export function useBatchEngineSolve(options: UseBatchEngineSolveOptions) {
   const { controls, selectedCuttingPlan, selectedPrepregSpec, mappedDemandLines, simulation } = options
+  const [lastSolvedRequestSignature, setLastSolvedRequestSignature] = useState('')
   const request = useMemo(
     () =>
       buildBatchEngineCuttingInput({
@@ -44,6 +45,9 @@ export function useBatchEngineSolve(options: UseBatchEngineSolveOptions) {
         selectedPrepregSpec,
         mappedDemandLines,
       })
+    },
+    onSuccess: () => {
+      setLastSolvedRequestSignature(requestSignature)
     },
   })
   const { reset, mutate, mutateAsync, data, isPending, error } = mutation
@@ -75,6 +79,9 @@ export function useBatchEngineSolve(options: UseBatchEngineSolveOptions) {
 
   return {
     canSolve: Boolean(request),
+    request,
+    requestSignature,
+    isResultStale: Boolean(request && lastSolvedRequestSignature && lastSolvedRequestSignature !== requestSignature),
     solveDisabledReason,
     solution: data,
     isSolving: isPending,
