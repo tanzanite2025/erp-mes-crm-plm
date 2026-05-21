@@ -341,24 +341,6 @@ export const rawMaterials = {
           invalidLines: '待修复行数',
           empty: '选择裁纱单据后，系统会读取整张单据的全部有效行参与求解。',
         },
-        objective: {
-          title: '评分预设',
-          placeholder: '选择评分预设',
-          description: '用于选择系统默认评分偏好模板，可继续手工微调权重。',
-          options: {
-            yieldFirst: '产出优先',
-            stabilityFirst: '稳定性优先',
-          },
-        },
-        scoreWeights: {
-          title: '评分权重',
-          description: '用于正式求解评分，决定系统在满足率、利用率、稳定性与惩罚项之间的取舍。',
-          fields: {
-            utilization: '利用率',
-            stability: '稳定性',
-            splitPenalty: '拆分惩罚',
-          },
-        },
         blocks: {
           roll: {
             title: '当前卷材',
@@ -448,15 +430,13 @@ export const rawMaterials = {
     },
     scoreBreakdown: {
       title: '评分拆解',
-      subtitle: 'preset / contribution / penalty',
+      subtitle: 'area objective / contribution / penalty',
       fields: {
-        objectivePreset: '评分预设',
         finalScore: '最终评分',
         fulfilledRate: '满足率',
         structuredRuleRisk: '规则风险总数',
         fulfilledContribution: '满足贡献',
-        utilizationContribution: '利用率贡献',
-        stabilityContribution: '稳定性贡献',
+        utilizationContribution: '面积利用贡献',
         assignmentPenalty: '分配惩罚',
         unfulfilledPenalty: '未满足惩罚',
         splitPenalty: '跨卷惩罚',
@@ -583,27 +563,11 @@ export const rawMaterials = {
     hero: {
       title: '原材料裁纱引擎配置',
       description:
-        '裁切几何求解器配置中心。在此调整材料利用率、排布稳定性、刀缝、修边、公差与物理约束。本页面为核心计算资产，请妥善保管访问权限。',
-    },
-    preset: {
-      title: '求解目标预设',
-      description: '选择裁切计算的核心求解取向，系统将自动填充推荐的几何与材料利用率参数。',
-      options: {
-        yieldFirst: {
-          label: '出率优先',
-          description: '最大化利用率，减少废料。',
-        },
-        stabilityFirst: {
-          label: '稳定性优先',
-          description: '减少排布缝合，提高物理抗拉强度。',
-        },
-      },
+        '裁切几何求解器规则边界配置中心。在此维护刀缝、修边、长度边界、角度/纱向规则与软约束惩罚；求解目标固定为最大化可用裁切面积。',
     },
     weights: {
-      title: '裁切几何打分权重模型',
-      description: '调整裁切计算因子，数值越大表示引擎越倾向于优化该几何或材料利用率指标。',
-      utilization: '原材利用率权重',
-      stability: '卷材排布稳定性权重',
+      title: '软约束惩罚边界',
+      description: '求解目标固定为最大化可用裁切面积；这里只维护规则未完全满足时的惩罚边界。',
       splitPenalty: '物理分切惩罚项',
       mustFulfillPenalty: '必达需求惩罚权重',
     },

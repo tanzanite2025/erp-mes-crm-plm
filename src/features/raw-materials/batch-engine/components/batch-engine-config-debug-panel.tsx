@@ -56,11 +56,10 @@ export function BatchEngineConfigDebugPanel(props: BatchEngineConfigDebugPanelPr
           ) : null}
         </div>
 
-        <div className='grid gap-2 md:grid-cols-2 xl:grid-cols-5'>
-          <ConfigChip label={t('rawMaterials.batchEngine.debug.fields.preset')} value={controls.objectivePreset} />
+        <div className='grid gap-2 md:grid-cols-2 xl:grid-cols-4'>
           <ConfigChip
             label={t('rawMaterials.batchEngine.debug.fields.weights')}
-            value={`${controls.utilizationWeight || '--'} / ${controls.stabilityWeight || '--'} / ${controls.splitPenaltyWeight || '--'}`}
+            value={`${controls.splitPenaltyWeight || '--'} / ${controls.mustFulfillPenaltyWeight || '--'}`}
           />
           <ConfigChip
             label={t('rawMaterials.batchEngine.debug.fields.geometry')}

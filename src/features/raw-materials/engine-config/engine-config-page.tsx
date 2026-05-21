@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { Sliders, Check, RotateCcw, AlertTriangle } from 'lucide-react'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { Button } from '@/components/ui/button'
@@ -12,7 +12,6 @@ import {
   type CuttingEngineDirectionStrategy,
   type CuttingEngineMixingStrategy,
   type CuttingEngineMustFulfillMode,
-  type CuttingEngineObjectivePreset,
   type CuttingEngineOrderStrategy,
 } from './types'
 import { useCuttingEngineConfigStore } from './use-cutting-engine-config-store'
@@ -25,12 +24,7 @@ export function CuttingEngineConfigPage() {
   const saveConfig = useCuttingEngineConfigStore((state) => state.saveConfig)
   const resetConfig = useCuttingEngineConfigStore((state) => state.resetConfig)
 
-  // 1. 求解预设配置
-  const [objectivePreset, setObjectivePreset] = useState<CuttingEngineObjectivePreset>(config.objectivePreset)
-
-  // 2. 权重配置状态
-  const [utilizationWeight, setUtilizationWeight] = useState(config.utilizationWeight)
-  const [stabilityWeight, setStabilityWeight] = useState(config.stabilityWeight)
+  // 规则与约束边界
   const [splitPenalty, setSplitPenalty] = useState(config.splitPenaltyWeight)
   const [mustFulfillPenalty, setMustFulfillPenalty] = useState(config.mustFulfillPenaltyWeight)
   const [directionSwitchPenalty, setDirectionSwitchPenalty] = useState(config.directionSwitchPenaltyWeight)
@@ -52,11 +46,6 @@ export function CuttingEngineConfigPage() {
   
   // 5. 保存状态
   const [isSaving, setIsSaving] = useState(false)
-
-  const getObjectivePresetLabel = (value: CuttingEngineObjectivePreset) => {
-    if (value === 'yield-first') return t('rawMaterials.engineConfig.preset.options.yieldFirst.label')
-    return t('rawMaterials.engineConfig.preset.options.stabilityFirst.label')
-  }
 
   const angleMixModeLabels: Record<CuttingEngineAngleMixMode, string> = {
     allow: t('rawMaterials.engineConfig.constraints.directionRules.angleMixMode.options.allow'),
@@ -148,30 +137,11 @@ export function CuttingEngineConfigPage() {
   }
 
   // 预设模式切换逻辑 - 自动填充工业推荐配置
-  const handlePresetChange = (value: CuttingEngineObjectivePreset) => {
-    setObjectivePreset(value)
-    if (value === 'yield-first') {
-      setUtilizationWeight('70')
-      setStabilityWeight('15')
-      setSplitPenalty('8')
-    } else {
-      setUtilizationWeight('45')
-      setStabilityWeight('45')
-      setSplitPenalty('5')
-    }
-    toast.info(t('rawMaterials.engineConfig.toasts.presetChanged', {
-      preset: getObjectivePresetLabel(value),
-    }))
-  }
-
   // 保存操作
   const handleSave = () => {
     setIsSaving(true)
     setTimeout(() => {
       saveConfig({
-        objectivePreset,
-        utilizationWeight,
-        stabilityWeight,
         splitPenaltyWeight: splitPenalty,
         mustFulfillPenaltyWeight: mustFulfillPenalty,
         directionSwitchPenaltyWeight: directionSwitchPenalty,
@@ -197,9 +167,6 @@ export function CuttingEngineConfigPage() {
 
   // 恢复默认
   const handleReset = () => {
-    setObjectivePreset(DEFAULT_CUTTING_ENGINE_CONFIG.objectivePreset)
-    setUtilizationWeight(DEFAULT_CUTTING_ENGINE_CONFIG.utilizationWeight)
-    setStabilityWeight(DEFAULT_CUTTING_ENGINE_CONFIG.stabilityWeight)
     setSplitPenalty(DEFAULT_CUTTING_ENGINE_CONFIG.splitPenaltyWeight)
     setMustFulfillPenalty(DEFAULT_CUTTING_ENGINE_CONFIG.mustFulfillPenaltyWeight)
     setDirectionSwitchPenalty(DEFAULT_CUTTING_ENGINE_CONFIG.directionSwitchPenaltyWeight)
@@ -233,54 +200,10 @@ export function CuttingEngineConfigPage() {
         {/* 主版面 */}
         <div className='grid gap-6 lg:grid-cols-3'>
           
-          {/* 左列：算法预设与核心打分权重 */}
+          {/* 左列：规则边界与核心约束 */}
           <div className='lg:col-span-2 flex flex-col gap-6'>
             
-            {/* 求解预设卡片 */}
-            <section className='relative rounded-[24px] border border-dashed border-border/60 bg-muted/5 p-5 flex flex-col gap-4'>
-              <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent pointer-events-none rounded-[24px]' />
-              <div>
-                <h4 className='text-sm font-black tracking-tighter italic text-foreground/90 uppercase'>
-                  {t('rawMaterials.engineConfig.preset.title')}
-                </h4>
-                <p className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 mt-1'>
-                  {t('rawMaterials.engineConfig.preset.description')}
-                </p>
-              </div>
-
-              <div className='grid gap-3 sm:grid-cols-2 mt-1'>
-                {([
-                  {
-                    id: 'yield-first',
-                    label: t('rawMaterials.engineConfig.preset.options.yieldFirst.label'),
-                    desc: t('rawMaterials.engineConfig.preset.options.yieldFirst.description'),
-                  },
-                  {
-                    id: 'stability-first',
-                    label: t('rawMaterials.engineConfig.preset.options.stabilityFirst.label'),
-                    desc: t('rawMaterials.engineConfig.preset.options.stabilityFirst.description'),
-                  },
-                ] as const).map((item) => (
-                  <button
-                    key={item.id}
-                    type='button'
-                    onClick={() => handlePresetChange(item.id)}
-                    className={`flex flex-col text-left p-4 rounded-2xl border transition-all ${
-                      objectivePreset === item.id
-                        ? 'border-primary bg-primary/5 shadow-inner'
-                        : 'border-border/40 bg-background hover:bg-muted/30'
-                    }`}
-                  >
-                    <span className='text-xs font-black tracking-tight'>{item.label}</span>
-                    <span className='text-[9px] font-semibold text-muted-foreground/80 mt-1.5 leading-relaxed'>
-                      {item.desc}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            {/* 打分权重调节卡片 */}
+            {/* 约束惩罚边界 */}
             <section className='relative rounded-[24px] border border-dashed border-border/60 bg-muted/5 p-5 flex flex-col gap-4'>
               <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent pointer-events-none rounded-[24px]' />
               <div>
@@ -293,54 +216,6 @@ export function CuttingEngineConfigPage() {
               </div>
 
               <div className='grid gap-4 sm:grid-cols-2 mt-2'>
-                {/* 利用率权重 */}
-                <div className='flex flex-col gap-1.5'>
-                  <label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/80 flex justify-between'>
-                    <span>{t('rawMaterials.engineConfig.weights.utilization')}</span>
-                    <span className='font-mono text-primary'>{utilizationWeight}%</span>
-                  </label>
-                  <div className='flex gap-3 items-center'>
-                    <input
-                      type='range'
-                      min='0'
-                      max='100'
-                      value={utilizationWeight}
-                      onChange={(e) => setUtilizationWeight(e.target.value)}
-                      className='h-1 w-full bg-muted rounded-lg appearance-none cursor-pointer accent-primary'
-                    />
-                    <Input
-                      type='number'
-                      value={utilizationWeight}
-                      onChange={(e) => setUtilizationWeight(e.target.value)}
-                      className='h-9 w-14 rounded-lg bg-background text-center text-xs font-mono border-none'
-                    />
-                  </div>
-                </div>
-
-                {/* 稳定性权重 */}
-                <div className='flex flex-col gap-1.5'>
-                  <label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/80 flex justify-between'>
-                    <span>{t('rawMaterials.engineConfig.weights.stability')}</span>
-                    <span className='font-mono text-primary'>{stabilityWeight}%</span>
-                  </label>
-                  <div className='flex gap-3 items-center'>
-                    <input
-                      type='range'
-                      min='0'
-                      max='100'
-                      value={stabilityWeight}
-                      onChange={(e) => setStabilityWeight(e.target.value)}
-                      className='h-1 w-full bg-muted rounded-lg appearance-none cursor-pointer accent-primary'
-                    />
-                    <Input
-                      type='number'
-                      value={stabilityWeight}
-                      onChange={(e) => setStabilityWeight(e.target.value)}
-                      className='h-9 w-14 rounded-lg bg-background text-center text-xs font-mono border-none'
-                    />
-                  </div>
-                </div>
-
                 {/* 物理分切惩罚 */}
                 <div className='flex flex-col gap-1.5'>
                   <label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/80 flex justify-between'>

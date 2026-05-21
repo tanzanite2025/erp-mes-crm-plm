@@ -1,8 +1,4 @@
-export type CuttingObjectivePreset = 'yield-first' | 'stability-first'
-
 export type CuttingEngineWeights = {
-  utilizationWeight: number
-  stabilityWeight: number
   splitPenalty: number
 }
 
@@ -23,7 +19,6 @@ export type CuttingEngineInput = {
   minSupportedLengthMm: number
   maxSupportedLengthMm: number
   fixedDecisionLengthMm?: number
-  objectivePreset: CuttingObjectivePreset
   weights: CuttingEngineWeights
   cutUnits: CuttingUnitInput[]
   maxCandidatePlans: number

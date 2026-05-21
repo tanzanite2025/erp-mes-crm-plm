@@ -229,6 +229,7 @@ const navGroupConfigs: SidebarGroupConfig[] = [
             id: 'cutting-engine',
             titleKey: 'sidebar.items.cuttingEngine',
             url: '/raw-materials-engine/config',
+            activeMatch: '/raw-materials-engine',
             icon: Sliders,
             permissionId: permissionIdForPath('/raw-materials-engine/config'),
           },

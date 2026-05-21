@@ -116,7 +116,6 @@ export function mapCuttingEngineOutputToBatchSolution(
     const reportSummary = buildReportSummary({
       rank,
       plan,
-      controls,
       appliedWeights,
       searchConfig,
       candidateBudgetSummary,

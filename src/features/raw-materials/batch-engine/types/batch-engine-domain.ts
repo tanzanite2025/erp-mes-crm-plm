@@ -1,6 +1,5 @@
 import type { CutSizeGeometryProjection } from '../../cut-size-library/domain/cut-size-geometry'
 import type { CuttingEngineAngleMixMode, CuttingEngineRuleStrategy } from '../../engine-config/types'
-import type { BatchOptimizerObjectivePreset } from './batch-engine-api'
 
 export type BatchEngineControls = {
   selectedPrepregSpecId: string
@@ -10,9 +9,6 @@ export type BatchEngineControls = {
   knifeGapMm: string
   edgeTrimMm: string
   maxSolveDurationSeconds: string
-  objectivePreset: BatchOptimizerObjectivePreset
-  utilizationWeight: string
-  stabilityWeight: string
   splitPenaltyWeight: string
   mustFulfillPenaltyWeight: string
   directionSwitchPenaltyWeight: string
@@ -34,9 +30,6 @@ export type BatchEngineNormalizedControls = {
   knifeGapMm: number
   edgeTrimMm: number
   maxSolveDurationSeconds: number
-  objectivePreset: BatchOptimizerObjectivePreset
-  utilizationWeight: number
-  stabilityWeight: number
   splitPenaltyWeight: number
   mustFulfillPenaltyWeight: number
   directionSwitchPenaltyWeight: number

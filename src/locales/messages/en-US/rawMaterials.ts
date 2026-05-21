@@ -359,24 +359,6 @@ export const rawMaterials = {
           invalidLines: 'Invalid Lines',
           empty: 'After selecting a cutting plan, the system reads every valid row in the sheet into the solve request.',
         },
-        objective: {
-          title: 'Scoring Preset',
-          placeholder: 'Select scoring preset',
-          description: 'Choose the default scoring preference template. You can still fine-tune the weights manually.',
-          options: {
-            yieldFirst: 'Yield First',
-            stabilityFirst: 'Stability First',
-          },
-        },
-        scoreWeights: {
-          title: 'Score Weights',
-          description: 'Used in formal solve scoring to balance fulfillment, utilization, stability, and penalties.',
-          fields: {
-            utilization: 'Utilization',
-            stability: 'Stability',
-            splitPenalty: 'Split Penalty',
-          },
-        },
         blocks: {
           roll: {
             title: 'Active Roll',
@@ -468,15 +450,13 @@ export const rawMaterials = {
     },
     scoreBreakdown: {
       title: 'Score Breakdown',
-      subtitle: 'preset / contribution / penalty',
+      subtitle: 'area objective / contribution / penalty',
       fields: {
-        objectivePreset: 'Scoring Preset',
         finalScore: 'Final Score',
         fulfilledRate: 'Fulfillment Rate',
         structuredRuleRisk: 'Rule Risk Count',
         fulfilledContribution: 'Fulfillment Contribution',
-        utilizationContribution: 'Utilization Contribution',
-        stabilityContribution: 'Stability Contribution',
+        utilizationContribution: 'Area Utilization Contribution',
         assignmentPenalty: 'Assignment Penalty',
         unfulfilledPenalty: 'Unfulfilled Penalty',
         splitPenalty: 'Cross-Roll Penalty',
@@ -604,29 +584,12 @@ export const rawMaterials = {
     hero: {
       title: 'Raw Materials Engine Configuration',
       description:
-        'Configure the cutting geometry solver, including material utilization, layout stability, knife gap, edge trim, tolerances, and physical constraints. This page is a core calculation asset; keep access tightly controlled.',
-    },
-    preset: {
-      title: 'Solver Preset',
-      description:
-        'Choose the cutting calculation objective. The system will automatically populate recommended geometry and material-utilization parameters.',
-      options: {
-        yieldFirst: {
-          label: 'Yield First',
-          description: 'Maximize utilization and reduce scrap.',
-        },
-        stabilityFirst: {
-          label: 'Stability First',
-          description: 'Reduce layout stitching and improve physical tensile stability.',
-        },
-      },
+        'Configure rule boundaries for the cutting geometry solver: knife gap, edge trim, length boundaries, angle/yarn rules, and soft-constraint penalties. The solve objective is fixed to maximizing usable cutting area.',
     },
     weights: {
-      title: 'Cutting Geometry Weights',
+      title: 'Soft Constraint Penalty Boundaries',
       description:
-        'Adjust cutting calculation factors. Higher values make the engine optimize more aggressively for that geometry or utilization metric.',
-      utilization: 'Material Utilization Weight',
-      stability: 'Roll Layout Stability Weight',
+        'The solve objective is fixed to maximizing usable cutting area. This section only maintains penalty boundaries for unmet soft rules.',
       splitPenalty: 'Physical Split Penalty',
       mustFulfillPenalty: 'Must-Fulfill Penalty Weight',
     },

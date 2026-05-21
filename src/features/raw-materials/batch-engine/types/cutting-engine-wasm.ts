@@ -1,4 +1,3 @@
-export type CuttingObjectivePreset = 'yield-first' | 'stability-first'
 export type CuttingAngleMixMode = 'allow' | 'prefer-same-angle' | 'strict-same-angle'
 export type CuttingMustFulfillMode = 'strict' | 'soft-penalty' | 'ignore'
 export type CuttingMixingStrategy = 'allow' | 'sameGroupOnly' | 'strictNoMix'
@@ -6,8 +5,6 @@ export type CuttingOrderStrategy = 'respectOrder' | 'softPenalty' | 'ignore'
 export type CuttingDirectionStrategy = 'sameDirectionPreferred' | 'sameDirectionRequired' | 'allowSwitch'
 
 export type CuttingEngineWeights = {
-  utilizationWeight: number
-  stabilityWeight: number
   splitPenalty: number
   mustFulfillPenaltyWeight: number
 }
@@ -49,7 +46,6 @@ export type CuttingEngineInput = {
   minSupportedLengthMm: number
   maxSupportedLengthMm: number
   fixedDecisionLengthMm?: number
-  objectivePreset: CuttingObjectivePreset
   weights: CuttingEngineWeights
   directionRules: CuttingEngineDirectionRules
   ruleStrategy: CuttingEngineRuleStrategy

@@ -2,7 +2,7 @@ import type { CuttingPlan } from '@/features/engineering-db/data/cutting-plan-sc
 import type { PrepregMaterialSpec } from '../../data/prepreg-material-spec-schema'
 import type { BuildBatchEngineDemandLinesResult } from '../domain/build-batch-engine-demand-lines-from-cutting-plan'
 import type { BatchEngineNormalizedControls, BatchEngineSimulation } from '../types'
-import type { CuttingEngineInput, CuttingObjectivePreset } from '../types/cutting-engine-wasm'
+import type { CuttingEngineInput } from '../types/cutting-engine-wasm'
 import { buildCuttingEngineCutUnits } from './build-cutting-engine-cut-units'
 
 export type BuildBatchEngineCuttingInputOptions = {
@@ -42,10 +42,6 @@ function resolveFixedDecisionLength(
   return fixedDecisionLengthMm
 }
 
-function resolveCuttingObjectivePreset(value: BatchEngineNormalizedControls['objectivePreset']): CuttingObjectivePreset {
-  return value === 'stability-first' ? 'stability-first' : 'yield-first'
-}
-
 function resolveMaxSolveDurationSeconds(controls: BatchEngineNormalizedControls) {
   return controls.maxSolveDurationSeconds > 0 ? controls.maxSolveDurationSeconds : undefined
 }
@@ -77,10 +73,7 @@ export function buildBatchEngineCuttingInput(
     minSupportedLengthMm,
     maxSupportedLengthMm,
     ...(fixedDecisionLengthMm ? { fixedDecisionLengthMm } : {}),
-    objectivePreset: resolveCuttingObjectivePreset(controls.objectivePreset),
     weights: {
-      utilizationWeight: controls.utilizationWeight,
-      stabilityWeight: controls.stabilityWeight,
       splitPenalty: controls.splitPenaltyWeight,
       mustFulfillPenaltyWeight: controls.mustFulfillPenaltyWeight,
     },

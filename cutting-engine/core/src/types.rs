@@ -1,10 +1,4 @@
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum CuttingObjectivePreset {
-    YieldFirst,
-    StabilityFirst,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CuttingAngleMixMode {
     Allow,
     PreferSameAngle,
@@ -13,8 +7,6 @@ pub enum CuttingAngleMixMode {
 
 #[derive(Clone, Copy, Debug)]
 pub struct CuttingEngineWeights {
-    pub utilization_weight: f64,
-    pub stability_weight: f64,
     pub split_penalty: f64,
     pub must_fulfill_penalty_weight: f64,
 }
@@ -88,7 +80,6 @@ pub struct CuttingEngineInput {
     pub min_supported_length_mm: f64,
     pub max_supported_length_mm: f64,
     pub fixed_decision_length_mm: Option<f64>,
-    pub objective_preset: CuttingObjectivePreset,
     pub weights: CuttingEngineWeights,
     pub direction_rules: CuttingEngineDirectionRules,
     pub rule_strategy: CuttingEngineRuleStrategy,

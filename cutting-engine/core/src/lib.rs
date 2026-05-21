@@ -16,9 +16,8 @@ use scoring::{
 pub use types::{
     CuttingAngleMixMode, CuttingDirectionStrategy, CuttingEngineDirectionRules, CuttingEngineError,
     CuttingEngineInput, CuttingEngineOutput, CuttingEngineRuleStrategy, CuttingEngineWeights,
-    CuttingLayoutZone, CuttingMixingStrategy, CuttingMustFulfillMode, CuttingObjectivePreset,
-    CuttingOrderStrategy, CuttingPlan, CuttingPlanRuleDiagnostics, CuttingUnitInput,
-    CuttingZoneKind,
+    CuttingLayoutZone, CuttingMixingStrategy, CuttingMustFulfillMode, CuttingOrderStrategy,
+    CuttingPlan, CuttingPlanRuleDiagnostics, CuttingUnitInput, CuttingZoneKind,
 };
 use validation::validate_input;
 
@@ -145,7 +144,6 @@ where
             input,
             unit,
             utilization_percent,
-            rows_per_roll,
             loss_area_m2,
             direction_switch_count,
             angle_mix_violation_count,
@@ -185,7 +183,7 @@ where
         }
     }
 
-    sort_plans(&mut plans, input.objective_preset);
+    sort_plans(&mut plans);
     plans.truncate(input.max_candidate_plans.max(1));
 
     Ok(CuttingEngineOutput { plans, warnings })
@@ -220,10 +218,7 @@ mod tests {
             min_supported_length_mm: 80.0,
             max_supported_length_mm: 1200.0,
             fixed_decision_length_mm: Some(91.0),
-            objective_preset: CuttingObjectivePreset::YieldFirst,
             weights: CuttingEngineWeights {
-                utilization_weight: 55.0,
-                stability_weight: 10.0,
                 split_penalty: 6.0,
                 must_fulfill_penalty_weight: 6000.0,
             },
@@ -303,7 +298,7 @@ mod tests {
     #[test]
     fn rejects_non_finite_weights() {
         let mut input = base_input();
-        input.weights.utilization_weight = f64::NAN;
+        input.weights.split_penalty = f64::NAN;
 
         let error = solve(&input).expect_err("non-finite weight should fail");
 

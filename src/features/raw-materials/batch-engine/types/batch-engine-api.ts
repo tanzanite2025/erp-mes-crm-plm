@@ -1,9 +1,5 @@
-export type BatchOptimizerObjectivePreset = 'yield-first' | 'stability-first'
-
 export type BatchOptimizerScoreWeights = {
   fulfilledWeight: number
-  utilizationWeight: number
-  stabilityWeight: number
   assignmentPenaltyWeight: number
   unfulfilledPenaltyWeight: number
   splitPenaltyWeight: number
@@ -151,12 +147,10 @@ export type BatchOptimizerPlanComparisonSummary = {
 }
 
 export type BatchOptimizerPlanScoreBreakdown = {
-  objectivePreset: string
   appliedWeights: BatchOptimizerScoreWeights
   fulfilledRatePercent: number
   fulfilledContribution: number
   utilizationContribution: number
-  stabilityContribution: number
   assignmentPenalty: number
   unfulfilledPenalty: number
   splitPenalty: number
@@ -287,7 +281,6 @@ export type BatchOptimizerPlanExplainabilitySummary = {
 export type BatchOptimizerPlanReportSummary = {
   planRank: number
   strategyKey: string
-  objectivePreset: string
   appliedWeights: BatchOptimizerScoreWeights
   baselinePlanRank: number
   baselineStrategyKey: string

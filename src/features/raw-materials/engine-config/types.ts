@@ -1,4 +1,3 @@
-export type CuttingEngineObjectivePreset = 'yield-first' | 'stability-first'
 export type CuttingEngineAngleMixMode = 'allow' | 'prefer-same-angle' | 'strict-same-angle'
 export type CuttingEngineMustFulfillMode = 'strict' | 'soft-penalty' | 'ignore'
 export type CuttingEngineMixingStrategy = 'allow' | 'sameGroupOnly' | 'strictNoMix'
@@ -13,9 +12,6 @@ export type CuttingEngineRuleStrategy = {
 }
 
 export type CuttingEngineConfig = {
-  objectivePreset: CuttingEngineObjectivePreset
-  utilizationWeight: string
-  stabilityWeight: string
   splitPenaltyWeight: string
   mustFulfillPenaltyWeight: string
   directionSwitchPenaltyWeight: string
@@ -31,9 +27,6 @@ export type CuttingEngineConfig = {
 }
 
 export const DEFAULT_CUTTING_ENGINE_CONFIG: CuttingEngineConfig = {
-  objectivePreset: 'yield-first',
-  utilizationWeight: '55',
-  stabilityWeight: '10',
   splitPenaltyWeight: '6',
   mustFulfillPenaltyWeight: '6000',
   directionSwitchPenaltyWeight: '4',
@@ -85,9 +78,6 @@ export function normalizeCuttingEngineRuleStrategy(value: unknown): CuttingEngin
 
 export function normalizeCuttingEngineConfig(value: Partial<CuttingEngineConfig> = {}): CuttingEngineConfig {
   return {
-    objectivePreset: value.objectivePreset === 'stability-first' ? 'stability-first' : DEFAULT_CUTTING_ENGINE_CONFIG.objectivePreset,
-    utilizationWeight: value.utilizationWeight ?? DEFAULT_CUTTING_ENGINE_CONFIG.utilizationWeight,
-    stabilityWeight: value.stabilityWeight ?? DEFAULT_CUTTING_ENGINE_CONFIG.stabilityWeight,
     splitPenaltyWeight: value.splitPenaltyWeight ?? DEFAULT_CUTTING_ENGINE_CONFIG.splitPenaltyWeight,
     mustFulfillPenaltyWeight: value.mustFulfillPenaltyWeight ?? DEFAULT_CUTTING_ENGINE_CONFIG.mustFulfillPenaltyWeight,
     directionSwitchPenaltyWeight: value.directionSwitchPenaltyWeight ?? DEFAULT_CUTTING_ENGINE_CONFIG.directionSwitchPenaltyWeight,

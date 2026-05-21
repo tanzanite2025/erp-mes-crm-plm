@@ -15,8 +15,6 @@ import { round } from './math'
 export function buildAppliedWeights(controls: BatchEngineNormalizedControls): BatchOptimizerScoreWeights {
   return {
     fulfilledWeight: 0,
-    utilizationWeight: controls.utilizationWeight,
-    stabilityWeight: controls.stabilityWeight,
     assignmentPenaltyWeight: 0,
     unfulfilledPenaltyWeight: 0,
     splitPenaltyWeight: controls.splitPenaltyWeight,
@@ -83,12 +81,10 @@ export function buildScoreBreakdown(
   fulfilledRatePercent: number
 ): BatchOptimizerPlanScoreBreakdown {
   return {
-    objectivePreset: controls.objectivePreset,
     appliedWeights,
     fulfilledRatePercent,
     fulfilledContribution: 0,
-    utilizationContribution: round(plan.utilizationPercent * controls.utilizationWeight, 3),
-    stabilityContribution: 0,
+    utilizationContribution: round(plan.utilizationPercent, 3),
     assignmentPenalty: 0,
     unfulfilledPenalty: 0,
     splitPenalty: round(plan.lossAreaM2 * controls.splitPenaltyWeight, 3),
@@ -108,7 +104,6 @@ export function buildScoreBreakdown(
 export function buildReportSummary(options: {
   rank: number
   plan: CuttingEnginePlan
-  controls: BatchEngineNormalizedControls
   appliedWeights: BatchOptimizerScoreWeights
   searchConfig: BatchOptimizerSearchConfigSummary
   candidateBudgetSummary: BatchOptimizerCandidateBudgetSummary
@@ -119,7 +114,6 @@ export function buildReportSummary(options: {
   const {
     rank,
     plan,
-    controls,
     appliedWeights,
     searchConfig,
     candidateBudgetSummary,
@@ -130,7 +124,6 @@ export function buildReportSummary(options: {
   return {
     planRank: rank,
     strategyKey: 'rust-wasm-cutting-core',
-    objectivePreset: controls.objectivePreset,
     appliedWeights,
     baselinePlanRank: rank,
     baselineStrategyKey: 'rust-wasm-cutting-core',

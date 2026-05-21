@@ -2,7 +2,7 @@ use serde::Deserialize;
 use xdfc_cutting_engine_core::{
     CuttingAngleMixMode, CuttingDirectionStrategy, CuttingEngineDirectionRules, CuttingEngineInput,
     CuttingEngineRuleStrategy, CuttingEngineWeights, CuttingMixingStrategy, CuttingMustFulfillMode,
-    CuttingObjectivePreset, CuttingOrderStrategy, CuttingUnitInput,
+    CuttingOrderStrategy, CuttingUnitInput,
 };
 
 #[derive(Deserialize)]
@@ -15,7 +15,6 @@ pub(crate) struct WasmCuttingEngineInput {
     min_supported_length_mm: f64,
     max_supported_length_mm: f64,
     fixed_decision_length_mm: Option<f64>,
-    objective_preset: String,
     weights: WasmCuttingEngineWeights,
     direction_rules: WasmCuttingEngineDirectionRules,
     #[serde(default = "default_rule_strategy")]
@@ -29,8 +28,6 @@ pub(crate) struct WasmCuttingEngineInput {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct WasmCuttingEngineWeights {
-    utilization_weight: f64,
-    stability_weight: f64,
     split_penalty: f64,
     #[serde(default = "default_must_fulfill_penalty_weight")]
     must_fulfill_penalty_weight: f64,
@@ -86,10 +83,7 @@ pub(crate) fn to_core_input(input: WasmCuttingEngineInput) -> Result<CuttingEngi
         min_supported_length_mm: input.min_supported_length_mm,
         max_supported_length_mm: input.max_supported_length_mm,
         fixed_decision_length_mm: input.fixed_decision_length_mm,
-        objective_preset: parse_objective(&input.objective_preset)?,
         weights: CuttingEngineWeights {
-            utilization_weight: input.weights.utilization_weight,
-            stability_weight: input.weights.stability_weight,
             split_penalty: input.weights.split_penalty,
             must_fulfill_penalty_weight: input.weights.must_fulfill_penalty_weight,
         },
@@ -130,14 +124,6 @@ pub(crate) fn to_core_input(input: WasmCuttingEngineInput) -> Result<CuttingEngi
 
 fn normalize_positive_optional(value: Option<f64>) -> Option<f64> {
     value.filter(|item| item.is_finite() && *item > 0.0)
-}
-
-fn parse_objective(value: &str) -> Result<CuttingObjectivePreset, String> {
-    match value {
-        "yield-first" => Ok(CuttingObjectivePreset::YieldFirst),
-        "stability-first" => Ok(CuttingObjectivePreset::StabilityFirst),
-        _ => Err(format!("unsupported objective preset: {value}")),
-    }
 }
 
 fn parse_angle_mix_mode(value: &str) -> Result<CuttingAngleMixMode, String> {

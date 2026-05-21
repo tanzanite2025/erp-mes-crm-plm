@@ -20,7 +20,6 @@ export type {
   BatchOptimizerDemandLineInput,
   BatchOptimizerHeatZoneAttribution,
   BatchOptimizerMustFulfillDiagnostic,
-  BatchOptimizerObjectivePreset,
   BatchOptimizerPlan,
   BatchOptimizerPlanDiffSummary,
   BatchOptimizerPlanLayoutDemandSummary,
