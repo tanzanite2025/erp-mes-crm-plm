@@ -24,6 +24,7 @@ export type CuttingEngineConfig = {
   ruleStrategy: CuttingEngineRuleStrategy
   knifeGapMm: string
   edgeTrimMm: string
+  maxSolveDurationSeconds: string
   minSupportedLengthMm: string
   maxSupportedLengthMm: string
   fixedDecisionLengthMm: string
@@ -46,6 +47,7 @@ export const DEFAULT_CUTTING_ENGINE_CONFIG: CuttingEngineConfig = {
   },
   knifeGapMm: '2.0',
   edgeTrimMm: '10.0',
+  maxSolveDurationSeconds: '30',
   minSupportedLengthMm: '80.0',
   maxSupportedLengthMm: '1200.0',
   fixedDecisionLengthMm: '91.0',
@@ -94,6 +96,7 @@ export function normalizeCuttingEngineConfig(value: Partial<CuttingEngineConfig>
     ruleStrategy: normalizeCuttingEngineRuleStrategy(value.ruleStrategy),
     knifeGapMm: value.knifeGapMm ?? DEFAULT_CUTTING_ENGINE_CONFIG.knifeGapMm,
     edgeTrimMm: value.edgeTrimMm ?? DEFAULT_CUTTING_ENGINE_CONFIG.edgeTrimMm,
+    maxSolveDurationSeconds: value.maxSolveDurationSeconds ?? DEFAULT_CUTTING_ENGINE_CONFIG.maxSolveDurationSeconds,
     minSupportedLengthMm: value.minSupportedLengthMm ?? DEFAULT_CUTTING_ENGINE_CONFIG.minSupportedLengthMm,
     maxSupportedLengthMm: value.maxSupportedLengthMm ?? DEFAULT_CUTTING_ENGINE_CONFIG.maxSupportedLengthMm,
     fixedDecisionLengthMm: value.fixedDecisionLengthMm ?? DEFAULT_CUTTING_ENGINE_CONFIG.fixedDecisionLengthMm,

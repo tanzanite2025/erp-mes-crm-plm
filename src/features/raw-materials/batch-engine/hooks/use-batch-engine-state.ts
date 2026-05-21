@@ -16,7 +16,7 @@ export function useBatchEngineState() {
     selectedCuttingPlan,
     cutSizeUnits,
   } = useBatchEngineBootstrap(rawControls.selectedPrepregSpecId, rawControls.selectedCuttingPlanId)
-  const { controls, normalizedControls, mappedDemandLines, simulation, metrics, legend } = useBatchEnginePreview({
+  const { controls, normalizedControls, mappedDemandLines, simulation, legend } = useBatchEnginePreview({
     controls: rawControls,
     selectedCuttingPlan,
     cutSizeUnits,
@@ -75,7 +75,6 @@ export function useBatchEngineState() {
       selectedCuttingPlan,
     },
     preview: {
-      metrics,
       legend,
       controls,
       normalizedControls,

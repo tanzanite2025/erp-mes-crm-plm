@@ -22,6 +22,8 @@ pub(crate) struct WasmCuttingEngineInput {
     rule_strategy: WasmCuttingEngineRuleStrategy,
     cut_units: Vec<WasmCuttingUnitInput>,
     max_candidate_plans: usize,
+    #[serde(default)]
+    max_solve_duration_seconds: Option<f64>,
 }
 
 #[derive(Deserialize)]
@@ -122,7 +124,12 @@ pub(crate) fn to_core_input(input: WasmCuttingEngineInput) -> Result<CuttingEngi
             })
             .collect(),
         max_candidate_plans: input.max_candidate_plans,
+        max_solve_duration_seconds: normalize_positive_optional(input.max_solve_duration_seconds),
     })
+}
+
+fn normalize_positive_optional(value: Option<f64>) -> Option<f64> {
+    value.filter(|item| item.is_finite() && *item > 0.0)
 }
 
 fn parse_objective(value: &str) -> Result<CuttingObjectivePreset, String> {

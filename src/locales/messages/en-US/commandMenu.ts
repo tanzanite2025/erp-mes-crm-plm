@@ -57,7 +57,7 @@ export const commandMenu = {
     rawMaterialsManagement: 'Raw Material Management',
     cuttingDatabase: 'Cutting Database',
     prepregCatalog: 'Prepreg',
-    batchEngine: 'Batch Split Engine',
+    batchEngine: 'Cutting Simulation',
     cutSizeLibrary: 'Cut Size Library',
     cuttingPlan: 'Cutting Plan',
     cuttingOperations: 'Cutting Operations',

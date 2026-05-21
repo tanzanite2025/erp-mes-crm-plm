@@ -57,7 +57,7 @@ export const commandMenu = {
     rawMaterialsManagement: '原材料管理',
     cuttingDatabase: '裁纱数据库',
     prepregCatalog: '预浸料',
-    batchEngine: '拆批引擎',
+    batchEngine: '裁切模拟',
     cutSizeLibrary: '裁切尺寸库',
     cuttingPlan: '裁纱方案',
     cuttingOperations: '裁纱作业',

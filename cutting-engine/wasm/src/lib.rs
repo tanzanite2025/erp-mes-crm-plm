@@ -4,7 +4,7 @@ mod output;
 use input::{to_core_input, WasmCuttingEngineInput};
 use output::{encode_error, output_to_json, WasmSolveEnvelope};
 use wasm_bindgen::prelude::*;
-use xdfc_cutting_engine_core::solve;
+use xdfc_cutting_engine_core::solve_with_elapsed_seconds;
 
 #[wasm_bindgen(js_name = solveCuttingEngine)]
 pub fn solve_cutting_engine(input_json: &str) -> String {
@@ -18,7 +18,8 @@ pub fn solve_cutting_engine(input_json: &str) -> String {
         Err(error) => return encode_error(error),
     };
 
-    match solve(&input) {
+    let started_at_ms = js_sys::Date::now();
+    match solve_with_elapsed_seconds(&input, || (js_sys::Date::now() - started_at_ms) / 1000.0) {
         Ok(output) => serde_json::to_string(&WasmSolveEnvelope {
             ok: true,
             data: Some(output_to_json(output)),

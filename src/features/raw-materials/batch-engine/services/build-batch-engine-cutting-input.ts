@@ -46,6 +46,10 @@ function resolveCuttingObjectivePreset(value: BatchEngineNormalizedControls['obj
   return value === 'stability-first' ? 'stability-first' : 'yield-first'
 }
 
+function resolveMaxSolveDurationSeconds(controls: BatchEngineNormalizedControls) {
+  return controls.maxSolveDurationSeconds > 0 ? controls.maxSolveDurationSeconds : undefined
+}
+
 export function buildBatchEngineCuttingInput(
   options: BuildBatchEngineCuttingInputOptions
 ): CuttingEngineInput | null {
@@ -63,6 +67,7 @@ export function buildBatchEngineCuttingInput(
   const minSupportedLengthMm = resolveConfiguredLengthBoundary(controls, unitLengths, 'min')
   const maxSupportedLengthMm = Math.max(resolveConfiguredLengthBoundary(controls, unitLengths, 'max'), minSupportedLengthMm)
   const fixedDecisionLengthMm = resolveFixedDecisionLength(controls, minSupportedLengthMm, maxSupportedLengthMm)
+  const maxSolveDurationSeconds = resolveMaxSolveDurationSeconds(controls)
 
   return {
     rollWidthMm: controls.rollWidthMm,
@@ -87,5 +92,6 @@ export function buildBatchEngineCuttingInput(
     ruleStrategy: controls.ruleStrategy,
     cutUnits: buildCuttingEngineCutUnits(validDemandLines),
     maxCandidatePlans: 3,
+    ...(maxSolveDurationSeconds ? { maxSolveDurationSeconds } : {}),
   }
 }

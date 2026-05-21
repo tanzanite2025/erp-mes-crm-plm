@@ -11,6 +11,7 @@ function buildBatchEngineControlsFromConfig(config: CuttingEngineConfig): BatchE
     rollLengthM: '',
     knifeGapMm: config.knifeGapMm,
     edgeTrimMm: config.edgeTrimMm,
+    maxSolveDurationSeconds: config.maxSolveDurationSeconds,
     objectivePreset: config.objectivePreset,
     utilizationWeight: config.utilizationWeight,
     stabilityWeight: config.stabilityWeight,
@@ -31,6 +32,7 @@ export const DEFAULT_BATCH_ENGINE_CONTROLS: BatchEngineControls = buildBatchEngi
 const ENGINE_CONFIG_CONTROL_KEYS = new Set<keyof BatchEngineControls>([
   'knifeGapMm',
   'edgeTrimMm',
+  'maxSolveDurationSeconds',
   'objectivePreset',
   'utilizationWeight',
   'stabilityWeight',
@@ -50,6 +52,7 @@ function applyEngineConfigToControls(current: BatchEngineControls, config: Cutti
     ...current,
     knifeGapMm: config.knifeGapMm,
     edgeTrimMm: config.edgeTrimMm,
+    maxSolveDurationSeconds: config.maxSolveDurationSeconds,
     objectivePreset: config.objectivePreset,
     utilizationWeight: config.utilizationWeight,
     stabilityWeight: config.stabilityWeight,

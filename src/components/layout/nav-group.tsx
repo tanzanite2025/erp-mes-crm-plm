@@ -1,9 +1,6 @@
-import { useState, type ReactNode } from 'react'
+﻿import { useState, type ReactNode } from 'react'
 import { Link, useLocation } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
 import { ChevronRight } from 'lucide-react'
-import { useNotificationStore } from '@/stores/notification-store'
-import { apiFetch } from '@/lib/api-client'
 import { cn } from '@/lib/utils'
 import {
   DropdownMenu,
@@ -34,6 +31,16 @@ import type {
   NavItem,
   NavLink,
 } from './types'
+import {
+  checkIsActive,
+  checkIsDirectlySelected,
+  groupHasActiveItem,
+  hasActiveDescendant,
+  hasChildren,
+  isEmptyPreservedBranch,
+  isNavLink,
+  isSystemAlertBadge,
+} from './sidebar-nav-utils'
 
 const branchButtonClassName =
   'ms-3 w-[calc(100%-0.75rem)] min-h-8 rounded-xl border border-transparent px-2.5 py-1 transition-all hover:bg-sidebar-accent/28 data-[active=true]:bg-sidebar-accent/45 data-[active=true]:text-sidebar-accent-foreground'
@@ -53,141 +60,25 @@ const dropdownSubTriggerClassName =
 const dropdownSubContentClassName =
   'rounded-[20px] border-dashed border-border/55 bg-popover/96 p-1.5 shadow-xl backdrop-blur-sm'
 
-function resolveBadgeValue(item: NavItem, unreadApprovals: number, systemAlertCount: number): string | undefined {
-  if (item.badgeKey === 'approval-unread' || item.id === 'approval-center') {
-    return unreadApprovals > 0 ? unreadApprovals.toString() : undefined
-  }
-
-  if (item.badgeKey === 'system-alert' || item.id === 'system-management') {
-    return systemAlertCount > 0 ? '●' : undefined
-  }
-
-  return item.badge
-}
-
-function withDynamicBadges(items: NavItem[], unreadApprovals: number, systemAlertCount: number): NavItem[] {
-  return items.map((item) => {
-    const resolvedBadge = resolveBadgeValue(item, unreadApprovals, systemAlertCount)
-
-    return {
-      ...item,
-      badge: resolvedBadge,
-      children: item.children?.map((child) => withDynamicBadges([child], unreadApprovals, systemAlertCount)[0]),
-    }
-  })
-}
-
-function normalizePath(path?: string): string {
-  if (!path) {
-    return ''
-  }
-
-  const normalized = path
-    .split('?')[0]
-    ?.split('#')[0]
-    ?.replace(/\/+/g, '/')
-    .replace(/\/$/, '')
-
-  return normalized || '/'
-}
-
-function isPathMatch(pathname: string, target?: string): boolean {
-  if (!target) {
-    return false
-  }
-
-  if (target === '/') {
-    return pathname === '/'
-  }
-
-  return pathname === target || pathname.startsWith(target + '/')
-}
-
-function isExactPathMatch(pathname: string, target?: string): boolean {
-  if (!target) {
-    return false
-  }
-
-  return normalizePath(pathname) === normalizePath(target)
-}
-
-function checkIsActive(pathname: string, item: NavItem, mainNav = false): boolean {
-  const itemUrl = item.url ? String(item.url) : undefined
-  const activeTarget = item.activeMatch ? String(item.activeMatch) : itemUrl
-  const selfActive = isPathMatch(pathname, activeTarget)
-  const childActive = !!item.children?.some((child) => checkIsActive(pathname, child))
-
-  if (selfActive || childActive) {
-    return true
-  }
-
-  return !!(itemUrl && mainNav && pathname.split('/')[1] === itemUrl.split('/')[1])
-}
-
-function checkIsDirectlySelected(pathname: string, item: NavItem): boolean {
-  const itemUrl = item.url ? String(item.url) : undefined
-  const activeTarget = item.activeMatch ? String(item.activeMatch) : itemUrl
-  return isExactPathMatch(pathname, activeTarget)
-}
-
-function hasActiveDescendant(pathname: string, item: NavItem): boolean {
-  return !!item.children?.some((child) => checkIsActive(pathname, child))
-}
-
-function groupHasActiveItem(pathname: string, items: NavItem[]) {
-  return items.some((item) => checkIsActive(pathname, item))
-}
-
-function hasChildren(item: NavItem): item is NavBranch {
-  return Array.isArray(item.children) && item.children.length > 0
-}
-
-function isEmptyPreservedBranch(item: NavItem): item is NavItem & { children: NavItem[] } {
-  return item.preserveEmptyChildren === true && Array.isArray(item.children) && item.children.length === 0
-}
-
-function isSystemAlertBadge(item: NavItem) {
-  return (item.badgeKey === 'system-alert' || item.id === 'system-management') && item.badge === '●'
-}
-
-function hasSystemAlertConsumer(items: NavItem[]): boolean {
-  return items.some(
-    (item) =>
-      item.badgeKey === 'system-alert' ||
-      item.id === 'system-management' ||
-      (!!item.children?.length && hasSystemAlertConsumer(item.children))
-  )
-}
-
-type SidebarSystemAlert = {
-  id?: string
-}
-
-export function NavGroup({ title, children }: NavGroupProps) {
-  const { unreadApprovals } = useNotificationStore()
+export function NavGroup({
+  title,
+  children,
+  excludeBranchId,
+}: NavGroupProps & {
+  excludeBranchId?: string
+}) {
   const pathname = useLocation({ select: (location) => location.pathname })
   const [manualExpanded, setManualExpanded] = useState<boolean | null>(null)
   const { state } = useSidebar()
   const isCollapsed = state === 'collapsed'
-
-  const shouldWatchSystemAlerts = hasSystemAlertConsumer(children)
-  const { data: systemActiveAlerts = [] } = useQuery({
-    queryKey: ['sidebar-system-active-alerts'],
-    queryFn: () => apiFetch<SidebarSystemAlert[]>('/system/status/alerts/active'),
-    refetchInterval: (query) => {
-      const error = query.state.error as { status?: number } | null
-      return error?.status === 403 ? false : 10000
-    },
-    staleTime: 5000,
-    retry: false,
-    enabled: shouldWatchSystemAlerts,
-  })
-
-  const systemAlertCount = systemActiveAlerts.length
-  const itemsWithBadges = withDynamicBadges(children, unreadApprovals, systemAlertCount)
+  const itemsWithBadges = children.filter((item) => item.id !== excludeBranchId)
   const shouldExpandForPath = groupHasActiveItem(pathname, itemsWithBadges)
   const isExpanded = manualExpanded ?? shouldExpandForPath
   const shouldRenderMenu = isCollapsed || isExpanded
+
+  if (itemsWithBadges.length === 0) {
+    return null
+  }
 
   return (
     <SidebarGroup>
@@ -392,7 +283,7 @@ function SidebarMenuCollapsedDropdown({
   )
 }
 
-function SidebarMenuBranch({
+export function SidebarMenuBranch({
   item,
   pathname,
   isCollapsed,
@@ -505,8 +396,4 @@ function SidebarMenuBranch({
       ) : shouldRenderEmptyBranch ? <SidebarMenuSub /> : null}
     </SidebarMenuItem>
   )
-}
-
-function isNavLink(item: NavItem): item is NavLink {
-  return typeof item.url !== 'undefined'
 }

@@ -11,9 +11,9 @@ export function RawMaterialsEngineModule() {
       href: '/raw-materials-engine/config',
     },
     {
-      key: 'batch-engine',
+      key: 'cutting-simulation',
       label: t('rawMaterials.tabs.batchEngine'),
-      href: '/raw-materials-engine/batch-engine',
+      href: '/raw-materials-engine/cutting-simulation',
     },
   ]
 

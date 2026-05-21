@@ -34,6 +34,11 @@ pub(crate) fn validate_input(input: &CuttingEngineInput) -> Result<(), CuttingEn
             return Err(CuttingEngineError::FixedDecisionLengthOutOfRange);
         }
     }
+    if let Some(value) = input.max_solve_duration_seconds {
+        if !value.is_finite() || value <= 0.0 {
+            return Err(CuttingEngineError::InvalidWeight);
+        }
+    }
     if !input.weights.utilization_weight.is_finite()
         || !input.weights.stability_weight.is_finite()
         || !input.weights.split_penalty.is_finite()

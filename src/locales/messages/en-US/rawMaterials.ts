@@ -3,7 +3,7 @@ export const rawMaterials = {
   tabs: {
     catalog: 'Prepreg',
     bindingQr: 'Binding QR',
-    batchEngine: 'Batch Split Engine',
+    batchEngine: 'Cutting Simulation',
     cutSizeLibrary: 'Cut Size Library',
     cuttingPlan: 'Cutting Plan',
   },
@@ -327,7 +327,7 @@ export const rawMaterials = {
     },
   },
   batchEngine: {
-    title: 'Batch Split Engine',
+    title: 'Cutting Simulation',
     description:
       'Estimate sheet-level loss and generate formal solve candidates from the current roll spec and the full cutting plan.',
     sections: {
@@ -335,13 +335,11 @@ export const rawMaterials = {
         kicker: 'Input Side',
         title: 'Roll and Rule Setup',
         description:
-          'Select the roll spec and cutting plan, then tune knife-gap and edge-trim parameters.',
+          'Select the roll spec and cutting plan, then reuse the cutting engine rule parameters.',
         fields: {
           prepregRef: 'Reference Prepreg Roll Spec',
           rollWidth: 'Roll Width (mm)',
           rollLength: 'Roll Length (m)',
-          knifeGap: 'Knife Gap (mm)',
-          edgeTrim: 'Edge Trim (mm)',
           cuttingPlanRef: 'Reference Cutting Plan',
         },
         placeholders: {

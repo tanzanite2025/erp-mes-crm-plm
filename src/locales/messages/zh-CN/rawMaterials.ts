@@ -3,7 +3,7 @@ export const rawMaterials = {
   tabs: {
     catalog: '预浸料',
     bindingQr: '绑定二维码',
-    batchEngine: '拆批引擎',
+    batchEngine: '裁切模拟',
     cutSizeLibrary: '裁切尺寸库',
     cuttingPlan: '裁纱方案',
   },
@@ -311,19 +311,17 @@ export const rawMaterials = {
     },
   },
   batchEngine: {
-    title: '拆批引擎',
+    title: '裁切模拟',
     description: '按当前卷规格与裁纱单据整单需求，实时计算预估损耗并生成正式求解候选。',
     sections: {
       control: {
         kicker: '输入侧',
         title: '卷材与规则准备区',
-        description: '选择卷规格与裁纱单据，并设置刀缝与修边参数。',
+        description: '选择卷规格与裁纱单据，并复用裁纱引擎规则参数。',
         fields: {
           prepregRef: '引用预浸料卷规格',
           rollWidth: '卷材幅宽 (mm)',
           rollLength: '卷材长度 (m)',
-          knifeGap: '刀缝 (mm)',
-          edgeTrim: '修边 (mm)',
           cuttingPlanRef: '引用裁纱单据',
         },
         placeholders: {
@@ -414,7 +412,7 @@ export const rawMaterials = {
     debug: {
       kicker: '引擎联动',
       title: '当前应用配置',
-      description: '展示拆批引擎当前使用的裁纱引擎配置与 Rust/WASM 请求载荷。',
+      description: '展示裁切模拟当前使用的裁纱引擎配置与 Rust/WASM 请求载荷。',
       resultStale: '配置已变化，请重新求解',
       fields: {
         preset: '目标预设',

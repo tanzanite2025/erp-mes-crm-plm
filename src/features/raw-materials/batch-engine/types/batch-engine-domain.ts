@@ -9,6 +9,7 @@ export type BatchEngineControls = {
   rollLengthM: string
   knifeGapMm: string
   edgeTrimMm: string
+  maxSolveDurationSeconds: string
   objectivePreset: BatchOptimizerObjectivePreset
   utilizationWeight: string
   stabilityWeight: string
@@ -32,6 +33,7 @@ export type BatchEngineNormalizedControls = {
   rollLengthM: number
   knifeGapMm: number
   edgeTrimMm: number
+  maxSolveDurationSeconds: number
   objectivePreset: BatchOptimizerObjectivePreset
   utilizationWeight: number
   stabilityWeight: number

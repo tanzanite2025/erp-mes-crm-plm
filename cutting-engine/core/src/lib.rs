@@ -23,6 +23,25 @@ pub use types::{
 use validation::validate_input;
 
 pub fn solve(input: &CuttingEngineInput) -> Result<CuttingEngineOutput, CuttingEngineError> {
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let started_at = std::time::Instant::now();
+        solve_with_elapsed_seconds(input, || started_at.elapsed().as_secs_f64())
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    {
+        solve_with_elapsed_seconds(input, || 0.0)
+    }
+}
+
+pub fn solve_with_elapsed_seconds<F>(
+    input: &CuttingEngineInput,
+    mut elapsed_seconds: F,
+) -> Result<CuttingEngineOutput, CuttingEngineError>
+where
+    F: FnMut() -> f64,
+{
     validate_input(input)?;
 
     let usable_width_mm = input.roll_width_mm - input.edge_trim_mm * 2.0;
@@ -62,6 +81,16 @@ pub fn solve(input: &CuttingEngineInput) -> Result<CuttingEngineOutput, CuttingE
     }
 
     for unit in &input.cut_units {
+        if let Some((budget, elapsed)) = resolve_solve_time_budget(input, &mut elapsed_seconds) {
+            warnings.push(format!(
+                "solve time budget {:.3}s reached after {:.3}s; returned {} candidate plan(s)",
+                budget,
+                elapsed,
+                plans.len()
+            ));
+            break;
+        }
+
         let decision_length_mm = resolve_decision_length(input, unit)?;
         let pieces_per_row = fit_count(usable_width_mm, unit.width_mm, input.knife_gap_mm);
         let rows_per_roll = fit_count(usable_length_mm, decision_length_mm, input.knife_gap_mm);
@@ -144,6 +173,16 @@ pub fn solve(input: &CuttingEngineInput) -> Result<CuttingEngineOutput, CuttingE
             zones: build_zones(input, unit, produced_pieces, decision_length_mm),
             warnings: plan_warnings,
         });
+
+        if let Some((budget, elapsed)) = resolve_solve_time_budget(input, &mut elapsed_seconds) {
+            warnings.push(format!(
+                "solve time budget {:.3}s reached after {:.3}s; returned {} candidate plan(s)",
+                budget,
+                elapsed,
+                plans.len()
+            ));
+            break;
+        }
     }
 
     sort_plans(&mut plans, input.objective_preset);
@@ -151,6 +190,23 @@ pub fn solve(input: &CuttingEngineInput) -> Result<CuttingEngineOutput, CuttingE
 
     Ok(CuttingEngineOutput { plans, warnings })
 }
+
+fn resolve_solve_time_budget<F>(
+    input: &CuttingEngineInput,
+    elapsed_seconds: &mut F,
+) -> Option<(f64, f64)>
+where
+    F: FnMut() -> f64,
+{
+    let budget = input.max_solve_duration_seconds?;
+    let elapsed = elapsed_seconds();
+    if elapsed.is_finite() && elapsed >= budget {
+        Some((budget, elapsed))
+    } else {
+        None
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -198,6 +254,7 @@ mod tests {
                 process_tags: vec!["autoclave".to_string()],
             }],
             max_candidate_plans: 3,
+            max_solve_duration_seconds: None,
         }
     }
 
@@ -251,6 +308,47 @@ mod tests {
         let error = solve(&input).expect_err("non-finite weight should fail");
 
         assert_eq!(error, CuttingEngineError::InvalidWeight);
+    }
+
+    #[test]
+    fn rejects_non_finite_solve_time_budget() {
+        let mut input = base_input();
+        input.max_solve_duration_seconds = Some(f64::NAN);
+
+        let error = solve(&input).expect_err("non-finite solve budget should fail");
+
+        assert_eq!(error, CuttingEngineError::InvalidWeight);
+    }
+
+    #[test]
+    fn stops_candidate_generation_when_time_budget_is_reached() {
+        let mut input = base_input();
+        input.max_solve_duration_seconds = Some(0.5);
+        input.cut_units.push(CuttingUnitInput {
+            id: "unit-120".to_string(),
+            label: "120mm yarn".to_string(),
+            width_mm: 120.0,
+            length_mm: 120.0,
+            quantity: 80,
+            cut_angle_deg: 0.0,
+            priority: 1.0,
+            must_fulfill: false,
+            allow_mixed_plan: true,
+            roll_group_key: "group-b".to_string(),
+            order_sequence: 2,
+            yarn_direction_mode: "warp".to_string(),
+            process_tags: vec!["trim".to_string()],
+        });
+
+        let mut ticks = vec![0.0, 0.6].into_iter();
+        let output = solve_with_elapsed_seconds(&input, || ticks.next().unwrap_or(0.6))
+            .expect("time-budgeted solver should return partial output");
+
+        assert_eq!(output.plans.len(), 1);
+        assert!(output
+            .warnings
+            .iter()
+            .any(|warning| warning.contains("solve time budget")));
     }
 
     #[test]

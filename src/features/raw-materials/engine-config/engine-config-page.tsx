@@ -7,6 +7,7 @@ import { useLanguage } from '@/context/language-provider'
 import { toast } from 'sonner'
 import {
   DEFAULT_CUTTING_ENGINE_CONFIG,
+  type CuttingEngineConfig,
   type CuttingEngineAngleMixMode,
   type CuttingEngineDirectionStrategy,
   type CuttingEngineMixingStrategy,
@@ -15,6 +16,7 @@ import {
   type CuttingEngineOrderStrategy,
 } from './types'
 import { useCuttingEngineConfigStore } from './use-cutting-engine-config-store'
+import { CuttingEnginePhysicalConstraintsPanel } from './components/cutting-engine-physical-constraints-panel'
 import { SUPPORTED_CUT_ANGLE_OPTIONS } from '../utils/cut-orientation'
 
 export function CuttingEngineConfigPage() {
@@ -42,8 +44,8 @@ export function CuttingEngineConfigPage() {
   // 3. 物理与几何约束状态
   const [knifeGap, setKnifeGap] = useState(config.knifeGapMm)
   const [edgeTrim, setEdgeTrim] = useState(config.edgeTrimMm)
-  const [timeout, setTimeoutSec] = useState('30')
   const [, setTolerance] = useState('0.5')
+  const [maxSolveDurationSeconds, setMaxSolveDurationSeconds] = useState(config.maxSolveDurationSeconds)
   const [minSupportedLength, setMinSupportedLength] = useState(config.minSupportedLengthMm)
   const [maxSupportedLength, setMaxSupportedLength] = useState(config.maxSupportedLengthMm)
   const [fixedDecisionLength, setFixedDecisionLength] = useState(config.fixedDecisionLengthMm)
@@ -130,6 +132,21 @@ export function CuttingEngineConfigPage() {
     setDirectionStrategy(resolveDirectionStrategyFromDetails(nextAngleMixMode, nextSameDirectionPreferred))
   }
 
+  const handlePhysicalConstraintChange = (
+    key: keyof Pick<CuttingEngineConfig, 'knifeGapMm' | 'edgeTrimMm' | 'maxSolveDurationSeconds'>,
+    value: string
+  ) => {
+    if (key === 'knifeGapMm') {
+      setKnifeGap(value)
+      return
+    }
+    if (key === 'edgeTrimMm') {
+      setEdgeTrim(value)
+      return
+    }
+    setMaxSolveDurationSeconds(value)
+  }
+
   // 预设模式切换逻辑 - 自动填充工业推荐配置
   const handlePresetChange = (value: CuttingEngineObjectivePreset) => {
     setObjectivePreset(value)
@@ -168,6 +185,7 @@ export function CuttingEngineConfigPage() {
         },
         knifeGapMm: knifeGap,
         edgeTrimMm: edgeTrim,
+        maxSolveDurationSeconds,
         minSupportedLengthMm: minSupportedLength,
         maxSupportedLengthMm: maxSupportedLength,
         fixedDecisionLengthMm: fixedDecisionLength,
@@ -193,8 +211,8 @@ export function CuttingEngineConfigPage() {
     setDirectionStrategy(DEFAULT_CUTTING_ENGINE_CONFIG.ruleStrategy.directionStrategy)
     setKnifeGap(DEFAULT_CUTTING_ENGINE_CONFIG.knifeGapMm)
     setEdgeTrim(DEFAULT_CUTTING_ENGINE_CONFIG.edgeTrimMm)
-    setTimeoutSec('30')
     setTolerance('0.5')
+    setMaxSolveDurationSeconds(DEFAULT_CUTTING_ENGINE_CONFIG.maxSolveDurationSeconds)
     setMinSupportedLength(DEFAULT_CUTTING_ENGINE_CONFIG.minSupportedLengthMm)
     setMaxSupportedLength(DEFAULT_CUTTING_ENGINE_CONFIG.maxSupportedLengthMm)
     setFixedDecisionLength(DEFAULT_CUTTING_ENGINE_CONFIG.fixedDecisionLengthMm)
@@ -683,73 +701,15 @@ export function CuttingEngineConfigPage() {
               </div>
 
               {/* 物理参数输入框 */}
-              <div className='flex flex-col gap-4 mt-2'>
-                <div className='flex items-center justify-between gap-4'>
-                  <div className='flex flex-col'>
-                    <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/80'>
-                      {t('rawMaterials.engineConfig.constraints.knifeGap.label')}
-                    </span>
-                    <span className='text-[8px] font-mono text-muted-foreground/60 mt-0.5'>
-                      {t('rawMaterials.engineConfig.constraints.knifeGap.hint')}
-                    </span>
-                  </div>
-                  <div className='flex items-center gap-2'>
-                    <Input
-                      type='text'
-                      value={knifeGap}
-                      onChange={(e) => setKnifeGap(e.target.value)}
-                      className='h-10 w-24 rounded-lg bg-background text-right pr-3 text-xs font-mono border-none'
-                    />
-                    <span className='text-[10px] font-black text-muted-foreground/50'>
-                      {t('rawMaterials.engineConfig.constraints.units.mm')}
-                    </span>
-                  </div>
-                </div>
-
-                <div className='flex items-center justify-between gap-4'>
-                  <div className='flex flex-col'>
-                    <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/80'>
-                      {t('rawMaterials.engineConfig.constraints.edgeTrim.label')}
-                    </span>
-                    <span className='text-[8px] font-mono text-muted-foreground/60 mt-0.5'>
-                      {t('rawMaterials.engineConfig.constraints.edgeTrim.hint')}
-                    </span>
-                  </div>
-                  <div className='flex items-center gap-2'>
-                    <Input
-                      type='text'
-                      value={edgeTrim}
-                      onChange={(e) => setEdgeTrim(e.target.value)}
-                      className='h-10 w-24 rounded-lg bg-background text-right pr-3 text-xs font-mono border-none'
-                    />
-                    <span className='text-[10px] font-black text-muted-foreground/50'>
-                      {t('rawMaterials.engineConfig.constraints.units.mm')}
-                    </span>
-                  </div>
-                </div>
-
-                <div className='flex items-center justify-between gap-4'>
-                  <div className='flex flex-col'>
-                    <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/80'>
-                      {t('rawMaterials.engineConfig.constraints.timeout.label')}
-                    </span>
-                    <span className='text-[8px] font-mono text-muted-foreground/60 mt-0.5'>
-                      {t('rawMaterials.engineConfig.constraints.timeout.hint')}
-                    </span>
-                  </div>
-                  <div className='flex items-center gap-2'>
-                    <Input
-                      type='text'
-                      value={timeout}
-                      onChange={(e) => setTimeoutSec(e.target.value)}
-                      className='h-10 w-24 rounded-lg bg-background text-right pr-3 text-xs font-mono border-none'
-                    />
-                    <span className='text-[10px] font-black text-muted-foreground/50'>
-                      {t('rawMaterials.engineConfig.constraints.units.sec')}
-                    </span>
-                  </div>
-                </div>
-              </div>
+              <CuttingEnginePhysicalConstraintsPanel
+                values={{
+                  knifeGapMm: knifeGap,
+                  edgeTrimMm: edgeTrim,
+                  maxSolveDurationSeconds,
+                }}
+                onChange={handlePhysicalConstraintChange}
+                className='mt-2 flex flex-col gap-4'
+              />
 
             </section>
           </div>

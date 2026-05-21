@@ -27,7 +27,7 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/raw-materials/cut-size-library': 'rawMaterials.tabs.cutSizeLibrary',
   '/raw-materials/cutting-plan': 'rawMaterials.tabs.cuttingPlan',
   '/raw-materials-engine/config': 'sidebar.items.cuttingEngine',
-  '/raw-materials-engine/batch-engine': 'rawMaterials.tabs.batchEngine',
+  '/raw-materials-engine/cutting-simulation': 'rawMaterials.tabs.batchEngine',
   '/cutting-operations': 'sidebar.items.cuttingOperations',
   '/cutting-operations/cutting-issuance': 'commandMenu.items.cuttingOperations',
   '/cutting-operations/product-binding':

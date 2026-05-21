@@ -94,6 +94,7 @@ pub struct CuttingEngineInput {
     pub rule_strategy: CuttingEngineRuleStrategy,
     pub cut_units: Vec<CuttingUnitInput>,
     pub max_candidate_plans: usize,
+    pub max_solve_duration_seconds: Option<f64>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

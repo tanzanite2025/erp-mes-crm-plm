@@ -55,6 +55,7 @@ export type CuttingEngineInput = {
   ruleStrategy: CuttingEngineRuleStrategy
   cutUnits: CuttingUnitInput[]
   maxCandidatePlans: number
+  maxSolveDurationSeconds?: number
 }
 
 export type CuttingLayoutZone = {

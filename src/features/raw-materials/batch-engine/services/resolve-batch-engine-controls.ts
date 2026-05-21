@@ -29,6 +29,7 @@ export function resolveBatchEngineControls(
     rollLengthM: toPositiveNumber(resolvedControls.rollLengthM),
     knifeGapMm: toPositiveNumber(rawControls.knifeGapMm),
     edgeTrimMm: toPositiveNumber(rawControls.edgeTrimMm),
+    maxSolveDurationSeconds: toPositiveNumber(rawControls.maxSolveDurationSeconds),
     objectivePreset: rawControls.objectivePreset,
     utilizationWeight: toPositiveNumber(rawControls.utilizationWeight),
     stabilityWeight: toPositiveNumber(rawControls.stabilityWeight),

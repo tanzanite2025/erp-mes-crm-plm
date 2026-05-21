@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/select'
 import { useLanguage } from '@/context/language-provider'
 import type { PrepregMaterialSpec } from '../../data/prepreg-material-spec-schema'
+import { CuttingEnginePhysicalConstraintsPanel } from '../../engine-config/components/cutting-engine-physical-constraints-panel'
 import type { BatchEngineControls } from '../types'
 import { BatchEngineControlField } from './batch-engine-control-field'
 
@@ -30,6 +31,12 @@ function prepregOptionLabel(item: PrepregMaterialSpec): string {
 export function BatchEngineControlRollSection(props: BatchEngineControlRollSectionProps) {
   const { t } = useLanguage()
   const { controls, updateControl, prepregSpecs, prepregLoading, selectedPrepregSpec } = props
+  const handlePhysicalConstraintChange = (
+    key: keyof Pick<BatchEngineControls, 'knifeGapMm' | 'edgeTrimMm' | 'maxSolveDurationSeconds'>,
+    value: string
+  ) => {
+    updateControl(key, value)
+  }
 
   return (
     <div className='rounded-[22px] border border-dashed border-border/50 bg-muted/5 p-4'>
@@ -78,7 +85,7 @@ export function BatchEngineControlRollSection(props: BatchEngineControlRollSecti
             <Package2 className='size-4' />
             {t('rawMaterials.batchEngine.sections.control.blocks.rollSpec.title')}
           </div>
-          <div className='grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-4'>
+          <div className='grid grid-cols-1 gap-2 md:grid-cols-2'>
             <BatchEngineControlField label={t('rawMaterials.batchEngine.sections.control.fields.rollWidth')}>
               <Input
                 value={controls.rollWidthMm}
@@ -95,23 +102,25 @@ export function BatchEngineControlRollSection(props: BatchEngineControlRollSecti
                 placeholder='--'
               />
             </BatchEngineControlField>
-            <BatchEngineControlField label={t('rawMaterials.batchEngine.sections.control.fields.knifeGap')}>
-              <Input
-                value={controls.knifeGapMm}
-                onChange={(event) => updateControl('knifeGapMm', event.target.value)}
-                className='h-8 rounded-lg bg-background text-xs font-semibold'
-                placeholder='2'
-              />
-            </BatchEngineControlField>
-            <BatchEngineControlField label={t('rawMaterials.batchEngine.sections.control.fields.edgeTrim')}>
-              <Input
-                value={controls.edgeTrimMm}
-                onChange={(event) => updateControl('edgeTrimMm', event.target.value)}
-                className='h-8 rounded-lg bg-background text-xs font-semibold'
-                placeholder='0'
-              />
-            </BatchEngineControlField>
           </div>
+        </div>
+
+        <div className='rounded-[14px] border border-dashed border-border/40 bg-muted/5 p-3'>
+          <div className='mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground/70'>
+            {t('rawMaterials.engineConfig.constraints.title')}
+          </div>
+          <p className='mb-3 text-[9px] font-black uppercase tracking-[0.16em] text-muted-foreground/50'>
+            {t('rawMaterials.engineConfig.constraints.description')}
+          </p>
+          <CuttingEnginePhysicalConstraintsPanel
+            values={{
+              knifeGapMm: controls.knifeGapMm,
+              edgeTrimMm: controls.edgeTrimMm,
+              maxSolveDurationSeconds: controls.maxSolveDurationSeconds,
+            }}
+            onChange={handlePhysicalConstraintChange}
+            variant='grid'
+          />
         </div>
       </div>
     </div>
