@@ -84,7 +84,7 @@ export const productSchema = z.object({
       })
     )
     .default([]),
-  techSpecs: z.any().optional(),
+  techSpecs: z.unknown().optional(),
   barcodeConfig: barcodeConfigSchema.optional(),
   attachments: z
     .array(
