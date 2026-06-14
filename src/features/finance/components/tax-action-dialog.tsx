@@ -55,6 +55,9 @@ export function TaxActionDialog({
     [editingRate]
   )
   const { data: formData, tracker } = useDeltaTracker(initialFormData, open)
+  const updateFormData = (patch: Partial<TaxRate>) => {
+    tracker.replace({ ...formData, ...patch })
+  }
 
   const handleSave = async () => {
     if (!formData.code || !formData.name) {
@@ -155,7 +158,7 @@ export function TaxActionDialog({
               placeholder={t('finance.taxation.dialog.codePlaceholder')}
               value={formData.code}
               onChange={(e) => {
-                formData.code = e.target.value.toUpperCase()
+                updateFormData({ code: e.target.value.toUpperCase() })
               }}
               className='h-12 rounded-2xl bg-muted/5 font-black italic'
             />
@@ -170,7 +173,7 @@ export function TaxActionDialog({
                 placeholder={t('finance.taxation.dialog.ratePlaceholder')}
                 value={formData.rate}
                 onChange={(e) => {
-                  formData.rate = Number(e.target.value)
+                  updateFormData({ rate: Number(e.target.value) })
                 }}
                 className='h-12 rounded-2xl bg-muted/5 pr-8 font-mono font-bold'
               />
@@ -189,7 +192,7 @@ export function TaxActionDialog({
             placeholder={t('finance.taxation.dialog.namePlaceholder')}
             value={formData.name}
             onChange={(e) => {
-              formData.name = e.target.value
+              updateFormData({ name: e.target.value })
             }}
             className='h-12 rounded-2xl bg-muted/5 font-bold'
           />
@@ -203,7 +206,7 @@ export function TaxActionDialog({
             placeholder={t('finance.taxation.dialog.descriptionPlaceholder')}
             value={formData.description}
             onChange={(e) => {
-              formData.description = e.target.value
+              updateFormData({ description: e.target.value })
             }}
             className='min-h-[100px] rounded-2xl border-dashed bg-muted/5 transition-all focus:border-emerald-500/50'
           />

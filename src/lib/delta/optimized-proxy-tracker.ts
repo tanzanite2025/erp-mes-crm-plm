@@ -45,7 +45,7 @@ function rowsOf(value: object): unknown[] | null {
  * const rowId = extractor({ id: 'BOM-001', name: 'Part A' }); // 'BOM-001'
  * ```
  */
-export type RowIdExtractor<T = any> = (data: T) => string
+export type RowIdExtractor<T = unknown> = (data: T) => string
 
 /**
  * Optimized ProxyTracker with dirty marking and shallow comparison
@@ -248,10 +248,10 @@ export class OptimizedProxyTracker<T extends TrackableObject> {
 
       // Find the row in both baseline and working copy
       const baselineRow = baselineRows.find(
-        (row: any) => this.rowIdExtractor(row) === rowId
+        (row) => this.rowIdExtractor(row) === rowId
       )
       const workingRow = workingRows.find(
-        (row: any) => this.rowIdExtractor(row) === rowId
+        (row) => this.rowIdExtractor(row) === rowId
       )
 
       // If row was deleted

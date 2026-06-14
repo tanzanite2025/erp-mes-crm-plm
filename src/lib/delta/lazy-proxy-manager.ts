@@ -23,7 +23,7 @@ import type { DirtyMarker } from './dirty-marker'
  * const rowId = extractor({ id: 'BOM-001', name: 'Part A' }); // 'BOM-001'
  * ```
  */
-export type RowIdExtractor<T = any> = (data: T) => string
+export type RowIdExtractor<T = unknown> = (data: T) => string
 
 /**
  * Manages Proxy lifecycle based on visibility and modification state

@@ -1,6 +1,7 @@
 import { useState, useRef, useMemo } from 'react'
 import { Upload, Trash2, ImagePlus, Box, Loader2, Save } from 'lucide-react'
 import { toast } from 'sonner'
+import { type DeltaSet } from '@/lib/delta/types'
 import { useLanguage } from '@/context/language-provider'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { Button } from '@/components/ui/button'
@@ -20,7 +21,7 @@ interface CategoryActionDialogProps {
   onSave: (payload: {
     data: EquipmentCategory
     isPatch: boolean
-    delta?: any
+    delta?: DeltaSet
     version?: number
   }) => void
   onDelete?: (id: string) => void
@@ -73,6 +74,9 @@ export function CategoryActionDialog({
   }, [category, parentId, open])
 
   const { data: formData, tracker } = useDeltaTracker(initialFormData, open)
+  const updateFormData = (patch: Partial<EquipmentCategory>) => {
+    tracker.replace({ ...formData, ...patch })
+  }
 
   const handleSave = () => {
     if (!formData.name) {
@@ -113,7 +117,7 @@ export function CategoryActionDialog({
     if (file) {
       const reader = new FileReader()
       reader.onloadend = () => {
-        formData.imageUrl = reader.result as string
+        updateFormData({ imageUrl: reader.result as string })
       }
       reader.readAsDataURL(file)
     }
@@ -245,7 +249,7 @@ export function CategoryActionDialog({
                   className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-sm font-black focus-visible:ring-primary/30'
                   value={formData.name}
                   onChange={(e) => {
-                    formData.name = e.target.value
+                    updateFormData({ name: e.target.value })
                   }}
                 />
               </div>
@@ -277,7 +281,7 @@ export function CategoryActionDialog({
               className='resize-none rounded-2xl border-none bg-muted/40 p-5 text-[11px] leading-relaxed font-medium focus-visible:ring-primary/30'
               value={formData.description}
               onChange={(e) => {
-                formData.description = e.target.value
+                updateFormData({ description: e.target.value })
               }}
             />
           </div>

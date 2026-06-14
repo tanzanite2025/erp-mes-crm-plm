@@ -121,8 +121,7 @@ function BOMRowComponent<T extends BOMRowData = BOMRowData>({
   // Memoize field change handler
   const handleFieldChange = useCallback(
     (fieldName: string, value: unknown) => {
-      // Update the row data (row should be a Proxy)
-      ;(row as any)[fieldName] = value
+      Reflect.set(row, fieldName, value)
 
       // Notify parent component
       onRowChange?.(row)
