@@ -85,6 +85,9 @@ export function UnitActionDialog({
 
   const tracker = useDeltaTracker(initialFormData)
   const formData = tracker.data
+  const updateFormData = (patch: Partial<Omit<Unit, 'id' | 'isSystem'>>) => {
+    tracker.replace({ ...formData, ...patch })
+  }
 
   const handleOpenChange = (nextOpen: boolean) => {
     onOpenChange(nextOpen)
@@ -159,7 +162,7 @@ export function UnitActionDialog({
             placeholder={t('basicSettings.units.dialog.placeholders.code')}
             value={formData.code}
             onChange={(e) => {
-              formData.code = e.target.value.toUpperCase()
+              updateFormData({ code: e.target.value.toUpperCase() })
             }}
             disabled={unit?.isSystem}
             className='h-10 rounded-xl font-mono text-xs font-black uppercase'
@@ -173,7 +176,7 @@ export function UnitActionDialog({
             placeholder={t('basicSettings.units.dialog.placeholders.name')}
             value={formData.name}
             onChange={(e) => {
-              formData.name = e.target.value
+              updateFormData({ name: e.target.value })
             }}
             className='h-10 rounded-xl text-xs font-bold'
           />
@@ -189,7 +192,7 @@ export function UnitActionDialog({
             className='h-10 w-full rounded-xl border border-input bg-background/50 px-3 py-1 text-xs font-black shadow-sm outline-none focus:ring-1 focus:ring-primary'
             value={formData.category}
             onChange={(e) => {
-              formData.category = e.target.value as UnitCategory
+              updateFormData({ category: e.target.value as UnitCategory })
             }}
           >
             {CATEGORY_OPTIONS.map((option) => (
@@ -209,10 +212,12 @@ export function UnitActionDialog({
             max={6}
             value={formData.precision}
             onChange={(e) => {
-              formData.precision = Math.min(
-                6,
-                Math.max(0, parseInt(e.target.value, 10) || 0)
-              )
+              updateFormData({
+                precision: Math.min(
+                  6,
+                  Math.max(0, parseInt(e.target.value, 10) || 0)
+                ),
+              })
             }}
             className='h-10 rounded-xl font-mono text-xs font-black'
           />
@@ -227,7 +232,7 @@ export function UnitActionDialog({
           <button
             type='button'
             onClick={() => {
-              formData.status = 'active'
+              updateFormData({ status: 'active' })
             }}
             className={`flex h-10 flex-1 items-center justify-center gap-2 rounded-xl border text-[10px] font-black uppercase transition-all ${
               formData.status === 'active'
@@ -241,7 +246,7 @@ export function UnitActionDialog({
           <button
             type='button'
             onClick={() => {
-              formData.status = 'inactive'
+              updateFormData({ status: 'inactive' })
             }}
             className={`flex h-10 flex-1 items-center justify-center gap-2 rounded-xl border text-[10px] font-black uppercase transition-all ${
               formData.status === 'inactive'
@@ -263,7 +268,7 @@ export function UnitActionDialog({
           placeholder={t('basicSettings.units.dialog.placeholders.description')}
           value={formData.description}
           onChange={(e) => {
-            formData.description = e.target.value
+            updateFormData({ description: e.target.value })
           }}
           className='h-10 rounded-xl text-xs font-medium'
         />

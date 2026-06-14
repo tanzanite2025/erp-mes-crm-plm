@@ -28,6 +28,8 @@ interface WindowWithSpeech extends Window {
 }
 
 function getSpeechRecognitionCtor(): SpeechRecognitionConstructor | null {
+  if (typeof window === 'undefined') return null
+
   const w = window as WindowWithSpeech
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null
 }
@@ -38,30 +40,33 @@ function getSpeechRecognitionCtor(): SpeechRecognitionConstructor | null {
  */
 export function useAiVoice(onResult: (transcript: string) => void) {
   const [isRecording, setIsRecording] = useState(false)
+  const isSupported = !!getSpeechRecognitionCtor()
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
 
   // 1. 初始化语音引擎
   useEffect(() => {
     const SpeechRecognition = getSpeechRecognitionCtor()
-    if (SpeechRecognition) {
-      const recognition = new SpeechRecognition()
-      recognition.lang = 'zh-CN'
-      recognition.continuous = false
-      recognition.interimResults = false
-
-      recognition.onresult = (event) => {
-        const transcript = event.results?.[0]?.[0]?.transcript
-        if (transcript) {
-          onResult(transcript)
-        }
-      }
-
-      recognition.onstart = () => setIsRecording(true)
-      recognition.onerror = () => setIsRecording(false)
-      recognition.onend = () => setIsRecording(false)
-
-      recognitionRef.current = recognition
+    if (!SpeechRecognition) {
+      return
     }
+
+    const recognition = new SpeechRecognition()
+    recognition.lang = 'zh-CN'
+    recognition.continuous = false
+    recognition.interimResults = false
+
+    recognition.onresult = (event) => {
+      const transcript = event.results?.[0]?.[0]?.transcript
+      if (transcript) {
+        onResult(transcript)
+      }
+    }
+
+    recognition.onstart = () => setIsRecording(true)
+    recognition.onerror = () => setIsRecording(false)
+    recognition.onend = () => setIsRecording(false)
+
+    recognitionRef.current = recognition
 
     return () => {
       if (recognitionRef.current) {
@@ -91,6 +96,6 @@ export function useAiVoice(onResult: (transcript: string) => void) {
     isRecording,
     startRecording,
     stopRecording,
-    isSupported: !!recognitionRef.current || !!getSpeechRecognitionCtor(),
+    isSupported,
   }
 }

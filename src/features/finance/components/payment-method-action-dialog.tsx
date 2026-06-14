@@ -57,6 +57,9 @@ export function PaymentMethodActionDialog({
   )
   const { data: formData, tracker } = useDeltaTracker(initialFormData, open)
   const codeLocked = isEdit
+  const updateFormData = (patch: Partial<PaymentMethod>) => {
+    tracker.replace({ ...formData, ...patch })
+  }
 
   const handleSave = async () => {
     if (!formData.code?.trim() || !formData.name?.trim()) {
@@ -167,7 +170,7 @@ export function PaymentMethodActionDialog({
               value={formData.code}
               readOnly={codeLocked}
               onChange={(e) => {
-                formData.code = e.target.value.toUpperCase()
+                updateFormData({ code: e.target.value.toUpperCase() })
               }}
               className={`h-12 rounded-2xl font-black italic ${
                 codeLocked
@@ -192,7 +195,7 @@ export function PaymentMethodActionDialog({
               placeholder={t('finance.paymentMethods.dialog.namePlaceholder')}
               value={formData.name}
               onChange={(e) => {
-                formData.name = e.target.value
+                updateFormData({ name: e.target.value })
               }}
               className='h-12 rounded-2xl bg-muted/5 font-bold'
             />
@@ -209,7 +212,7 @@ export function PaymentMethodActionDialog({
             )}
             value={formData.description}
             onChange={(e) => {
-              formData.description = e.target.value
+              updateFormData({ description: e.target.value })
             }}
             className='min-h-[100px] rounded-2xl border-dashed bg-muted/5 transition-all focus:border-primary/50'
           />
@@ -224,7 +227,7 @@ export function PaymentMethodActionDialog({
               type='number'
               value={String(formData.sortOrder ?? 0)}
               onChange={(e) => {
-                formData.sortOrder = Number(e.target.value || 0)
+                updateFormData({ sortOrder: Number(e.target.value || 0) })
               }}
               className='h-12 rounded-2xl bg-muted/5 font-bold'
             />
@@ -236,7 +239,9 @@ export function PaymentMethodActionDialog({
             <select
               value={formData.status || 'Active'}
               onChange={(e) => {
-                formData.status = e.target.value as PaymentMethod['status']
+                updateFormData({
+                  status: e.target.value as PaymentMethod['status'],
+                })
               }}
               className='h-12 w-full appearance-none rounded-2xl border border-dashed border-muted/20 bg-muted/5 px-4 text-[12px] font-bold shadow-sm focus:ring-2 focus:ring-primary/20'
             >
@@ -263,7 +268,7 @@ export function PaymentMethodActionDialog({
           <Switch
             checked={formData.isDefault}
             onCheckedChange={(checked) => {
-              formData.isDefault = checked
+              updateFormData({ isDefault: checked })
             }}
           />
         </div>

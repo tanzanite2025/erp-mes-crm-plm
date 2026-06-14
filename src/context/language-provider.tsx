@@ -1,4 +1,11 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 import {
   type AppLocale,
   DEFAULT_LOCALE,
@@ -53,15 +60,18 @@ export function LanguageProvider({
     document.documentElement.lang = locale
   }, [locale])
 
-  const setLocale = (nextLocale: AppLocale) => {
-    setCookie(storageKey, nextLocale, LANGUAGE_COOKIE_MAX_AGE)
-    setLocaleState(nextLocale)
-  }
+  const setLocale = useCallback(
+    (nextLocale: AppLocale) => {
+      setCookie(storageKey, nextLocale, LANGUAGE_COOKIE_MAX_AGE)
+      setLocaleState(nextLocale)
+    },
+    [storageKey]
+  )
 
-  const resetLocale = () => {
+  const resetLocale = useCallback(() => {
     removeCookie(storageKey)
     setLocaleState(defaultLocale)
-  }
+  }, [defaultLocale, storageKey])
 
   const contextValue = useMemo<LanguageContextState>(
     () => ({
@@ -71,7 +81,7 @@ export function LanguageProvider({
       resetLocale,
       t: (key, params) => translate(locale, key, params),
     }),
-    [defaultLocale, locale]
+    [defaultLocale, locale, resetLocale, setLocale]
   )
 
   return <LanguageContext value={contextValue}>{children}</LanguageContext>

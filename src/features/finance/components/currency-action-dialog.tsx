@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { type TranslationKey } from '@/locales'
 import { Star, RefreshCcw, Coins } from 'lucide-react'
 import { toast } from 'sonner'
 import { isConflictError } from '@/lib/handle-server-error'
@@ -41,6 +42,13 @@ const DEFAULT_CURRENCY: Partial<Currency> = {
   isBase: false,
 }
 
+type PresetCurrencyCode = (typeof PRESET_CURRENCIES)[number]['code']
+type PresetCurrencyNameKey = `finance.currencyRates.names.${PresetCurrencyCode}`
+
+function getCurrencyNameKey(code: PresetCurrencyCode): TranslationKey {
+  return `finance.currencyRates.names.${code}` as PresetCurrencyNameKey
+}
+
 export function CurrencyActionDialog({
   open,
   onOpenChange,
@@ -72,6 +80,9 @@ export function CurrencyActionDialog({
     [editingCurrency]
   )
   const { data: formData, tracker } = useDeltaTracker(initialFormData, open)
+  const updateFormData = (patch: Partial<Currency>) => {
+    tracker.replace({ ...formData, ...patch })
+  }
 
   const handleSave = async () => {
     if (!formData.code) return
@@ -183,12 +194,12 @@ export function CurrencyActionDialog({
               onValueChange={(val) => {
                 const preset = PRESET_CURRENCIES.find((p) => p.code === val)
                 if (preset) {
-                  formData.code = preset.code
-                  formData.name = t(
-                    `finance.currencyRates.names.${preset.code}` as any
-                  )
-                  formData.symbol = preset.symbol
-                  formData.precision = preset.precision
+                  updateFormData({
+                    code: preset.code,
+                    name: t(getCurrencyNameKey(preset.code)),
+                    symbol: preset.symbol,
+                    precision: preset.precision,
+                  })
                 }
               }}
             >
@@ -207,8 +218,7 @@ export function CurrencyActionDialog({
                     className='rounded-xl py-3'
                   >
                     <span className='font-black italic'>{p.code}</span> -{' '}
-                    {t(`finance.currencyRates.names.${p.code}` as any)} (
-                    {p.symbol})
+                    {t(getCurrencyNameKey(p.code))} ({p.symbol})
                   </SelectItem>
                 ))}
                 {filteredPresets.length === 0 && (
@@ -231,7 +241,7 @@ export function CurrencyActionDialog({
               value={formData.code}
               readOnly={isEdit || !!formData.code}
               onChange={(e) => {
-                formData.code = e.target.value.toUpperCase()
+                updateFormData({ code: e.target.value.toUpperCase() })
               }}
               className={`h-12 rounded-2xl font-black italic ${isEdit || formData.code ? 'border-none bg-muted/30' : 'bg-muted/50'}`}
             />
@@ -245,7 +255,7 @@ export function CurrencyActionDialog({
               value={formData.name}
               readOnly={!!formData.code && !isEdit}
               onChange={(e) => {
-                formData.name = e.target.value
+                updateFormData({ name: e.target.value })
               }}
               className={`h-12 rounded-2xl font-bold ${formData.code && !isEdit ? 'border-none bg-muted/30' : 'bg-muted/50'}`}
             />
@@ -262,7 +272,7 @@ export function CurrencyActionDialog({
               value={formData.symbol}
               readOnly={!!formData.code && !isEdit}
               onChange={(e) => {
-                formData.symbol = e.target.value
+                updateFormData({ symbol: e.target.value })
               }}
               className={`h-12 rounded-2xl font-bold ${formData.code && !isEdit ? 'border-none bg-muted/30' : 'bg-muted/50'}`}
             />
@@ -276,7 +286,7 @@ export function CurrencyActionDialog({
               value={formData.precision}
               readOnly={!!formData.code && !isEdit}
               onChange={(e) => {
-                formData.precision = parseInt(e.target.value)
+                updateFormData({ precision: parseInt(e.target.value) })
               }}
               className={`h-12 rounded-2xl font-mono font-bold ${formData.code && !isEdit ? 'border-none bg-muted/30' : 'bg-muted/50'}`}
             />
@@ -295,7 +305,7 @@ export function CurrencyActionDialog({
                 disabled={editingCurrency?.isBase}
                 value={formData.rate}
                 onChange={(e) => {
-                  formData.rate = parseFloat(e.target.value)
+                  updateFormData({ rate: parseFloat(e.target.value) })
                 }}
                 className='h-12 rounded-2xl border-dashed border-emerald-500/30 bg-emerald-500/5 font-black text-emerald-600 italic'
               />

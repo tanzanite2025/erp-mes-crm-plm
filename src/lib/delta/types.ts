@@ -7,8 +7,8 @@
  * 单个字段的差异项记录
  */
 export interface DeltaItem {
-  o: any // Old value (原始值)
-  n: any // New value (新值)
+  o: unknown // Old value (原始值)
+  n: unknown // New value (新值)
 }
 
 /**
@@ -27,7 +27,7 @@ export interface DeltaPayload {
     id: string
     version?: number
     updatedAt?: string
-    [key: string]: any
+    [key: string]: unknown
   }
 }
 

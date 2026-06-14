@@ -10,6 +10,7 @@ import {
   Activity,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { type DeltaSet } from '@/lib/delta/types'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -34,7 +35,7 @@ interface EquipmentActionDialogProps {
   onSave: (payload: {
     data: Equipment
     isPatch: boolean
-    delta?: any
+    delta?: DeltaSet
     version?: number
   }) => void
   onDelete?: (id: string) => void
@@ -89,6 +90,9 @@ export function EquipmentActionDialog({
   }, [equipment, categoryId, open])
 
   const { data: formData, tracker } = useDeltaTracker(initialFormData, open)
+  const updateFormData = (patch: Partial<Equipment>) => {
+    tracker.replace({ ...formData, ...patch })
+  }
 
   const handleSave = () => {
     if (!formData.name || !formData.sn) {
@@ -123,7 +127,7 @@ export function EquipmentActionDialog({
     if (file) {
       const reader = new FileReader()
       reader.onloadend = () => {
-        formData.imageUrl = reader.result as string
+        updateFormData({ imageUrl: reader.result as string })
       }
       reader.readAsDataURL(file)
     }
@@ -233,8 +237,8 @@ export function EquipmentActionDialog({
             </Label>
             <Select
               value={formData.status}
-              onValueChange={(val: any) => {
-                formData.status = val
+              onValueChange={(value: Equipment['status']) => {
+                updateFormData({ status: value })
               }}
             >
               <SelectTrigger className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-[11px] font-black tracking-widest uppercase italic focus:ring-primary/30'>
@@ -286,7 +290,7 @@ export function EquipmentActionDialog({
                 className='h-12 rounded-2xl border-none bg-muted/40 px-5 font-mono text-sm focus-visible:ring-primary/30'
                 value={formData.sn}
                 onChange={(e) => {
-                  formData.sn = e.target.value
+                  updateFormData({ sn: e.target.value })
                 }}
               />
             </div>
@@ -303,7 +307,7 @@ export function EquipmentActionDialog({
                 className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-sm font-black focus-visible:ring-primary/30'
                 value={formData.name}
                 onChange={(e) => {
-                  formData.name = e.target.value
+                  updateFormData({ name: e.target.value })
                 }}
               />
             </div>
@@ -323,7 +327,7 @@ export function EquipmentActionDialog({
                 className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-sm font-medium uppercase focus-visible:ring-primary/30'
                 value={formData.model}
                 onChange={(e) => {
-                  formData.model = e.target.value
+                  updateFormData({ model: e.target.value })
                 }}
               />
             </div>
@@ -340,7 +344,7 @@ export function EquipmentActionDialog({
                 className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-[11px] font-medium focus-visible:ring-primary/30'
                 value={formData.spec}
                 onChange={(e) => {
-                  formData.spec = e.target.value
+                  updateFormData({ spec: e.target.value })
                 }}
               />
             </div>
@@ -360,7 +364,7 @@ export function EquipmentActionDialog({
               className='resize-none rounded-3xl border-none bg-muted/40 p-6 text-[11px] leading-relaxed font-medium focus-visible:ring-primary/30'
               value={formData.description}
               onChange={(e) => {
-                formData.description = e.target.value
+                updateFormData({ description: e.target.value })
               }}
             />
           </div>
