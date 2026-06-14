@@ -46,8 +46,9 @@ var blockedCIDRs = mustParseCIDRs([]string{
 })
 
 var allowedOutboundHeaders = map[string]struct{}{
-	"authorization": {},
-	"x-group-id":    {},
+	"authorization":  {},
+	"x-goog-api-key": {},
+	"x-group-id":     {},
 }
 
 func AiProxyHandler(c *gin.Context) {

@@ -16,14 +16,17 @@ const excludedDirs = new Set([
   'dist-ssr',
   '.tanstack',
   '.playwright-cli',
+  '.kiro',
+  'docs',
 ])
 
 const excludedFiles = new Set(['scripts/check-package-manager-commands.mjs'])
+const excludedExtensions = new Set(['.md', '.mdx'])
 
 const commandPatterns = [
   /\bnpm\s+(?:run|exec|install|test|start|build|ci|create|init|publish|pack|update|upgrade|audit|cache|config|link|uninstall|add|remove|i)\b/,
   /\bnpx\s+\S+/,
-  /\byarn\s+\S+/,
+  /\byarn\s+(?:run|exec|install|test|start|build|create|init|publish|pack|update|upgrade|audit|cache|config|link|uninstall|add|remove|dlx)\b/,
 ]
 
 function shouldSkipDir(name) {
@@ -47,6 +50,7 @@ function walk(dir, files = []) {
 }
 
 function readTextFile(path) {
+  if (excludedExtensions.has(path.slice(path.lastIndexOf('.')).toLowerCase())) return null
   const stat = statSync(path)
   if (stat.size > 2 * 1024 * 1024) return null
   const raw = readFileSync(path)

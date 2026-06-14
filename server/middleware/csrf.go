@@ -73,16 +73,16 @@ func SetCSRFToken(c *gin.Context) error {
 		return err
 	}
 
-	// 设置 Cookie
 	secure := os.Getenv("GIN_MODE") == "release"
+	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie(
 		csrfCookieName,
 		token,
-		3600*24,      // 24小时
+		3600*24, // 24小时
 		"/",
 		"",
-		secure,       // 生产环境使用 HTTPS
-		true,         // HttpOnly
+		secure, // 生产环境使用 HTTPS
+		false,  // 前端需要读取后写入 X-CSRF-Token
 	)
 
 	// 同时在响应头中返回 Token (方便前端读取)

@@ -1,14 +1,14 @@
 import { useAuthStore } from '@/stores/auth-store'
-import { createLogger } from '@/lib/logger'
 import { createApiClientError, isApiClientError } from '@/lib/api-error'
+import { createLogger } from '@/lib/logger'
 
 /**
  * 从 Cookie 中读取 CSRF Token
  * @returns CSRF Token 或 null
  */
-function getCSRFTokenFromCookie(): string | null {
+export function getCSRFTokenFromCookie(): string | null {
   if (typeof document === 'undefined') return null
-  
+
   const cookies = document.cookie.split(';')
   for (const cookie of cookies) {
     const [name, value] = cookie.trim().split('=')
@@ -17,6 +17,19 @@ function getCSRFTokenFromCookie(): string | null {
     }
   }
   return null
+}
+
+export async function ensureCSRFToken(baseUrl: string): Promise<string | null> {
+  const existingToken = getCSRFTokenFromCookie()
+  if (existingToken) return existingToken
+  if (typeof document === 'undefined') return null
+
+  await fetch(`${baseUrl}/api/v1/csrf-token`, {
+    method: 'GET',
+    credentials: 'include',
+  }).catch(() => undefined)
+
+  return getCSRFTokenFromCookie()
 }
 
 interface ExtendedRequestInit extends RequestInit {
@@ -42,7 +55,7 @@ const logger = createLogger('apiFetch')
 
 function shouldSuppressErrorLog(
   status: number | undefined,
-  options: ExtendedRequestInit,
+  options: ExtendedRequestInit
 ): boolean {
   if (!Number.isFinite(status)) return false
   return (
@@ -104,18 +117,21 @@ function nextTimeout(endpoint: string): number {
 
 export async function apiFetch<T>(
   endpoint: string,
-  options: ExtendedRequestInit = {},
+  options: ExtendedRequestInit = {}
 ): Promise<T> {
   const requestMethod = (options.method || 'GET').toUpperCase()
   if (circuitBreaker.tripped && !options.ignoreBreaker) {
     if (Date.now() - circuitBreaker.tripTime > circuitBreaker.resetTimeout) {
       circuitBreaker.tripped = false
     } else {
-      logger.error('Blocked request before fetch because circuit breaker is open', {
-        endpoint,
-        method: requestMethod,
-        baseUrl: import.meta.env.VITE_API_BASE_URL || '',
-      })
+      logger.error(
+        'Blocked request before fetch because circuit breaker is open',
+        {
+          endpoint,
+          method: requestMethod,
+          baseUrl: import.meta.env.VITE_API_BASE_URL || '',
+        }
+      )
       throw createApiClientError({
         kind: 'circuit_breaker',
         message: `[CIRCUIT_BREAKER] Request blocked while the circuit breaker is open: ${endpoint}`,
@@ -164,10 +180,10 @@ export async function apiFetch<T>(
     if (!(options.body instanceof FormData)) {
       headers['Content-Type'] = 'application/json'
     }
-    
+
     // 为写操作添加 CSRF Token
     if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(requestMethod)) {
-      const csrfToken = getCSRFTokenFromCookie()
+      const csrfToken = await ensureCSRFToken(baseUrl)
       if (csrfToken) {
         headers['X-CSRF-Token'] = csrfToken
       }
@@ -202,10 +218,13 @@ export async function apiFetch<T>(
         if (circuitBreaker.failures >= circuitBreaker.threshold) {
           circuitBreaker.tripped = true
           circuitBreaker.tripTime = Date.now()
-          logger.warn('Circuit breaker tripped after repeated backend response errors', {
-            endpoint,
-            failures: circuitBreaker.failures,
-          })
+          logger.warn(
+            'Circuit breaker tripped after repeated backend response errors',
+            {
+              endpoint,
+              failures: circuitBreaker.failures,
+            }
+          )
         }
       }
 
@@ -231,7 +250,7 @@ export async function apiFetch<T>(
       if (response.status === 401) {
         handleUnauthorizedSession(endpoint)
       }
-      
+
       // 处理 CSRF 验证失败
       if (response.status === 403 && errorMessage.includes('CSRF')) {
         logger.warn('CSRF validation failed, token may be missing or invalid', {
@@ -262,10 +281,13 @@ export async function apiFetch<T>(
         if (circuitBreaker.failures >= circuitBreaker.threshold) {
           circuitBreaker.tripped = true
           circuitBreaker.tripTime = Date.now()
-          logger.warn('Circuit breaker tripped after repeated request timeouts', {
-            endpoint,
-            failures: circuitBreaker.failures,
-          })
+          logger.warn(
+            'Circuit breaker tripped after repeated request timeouts',
+            {
+              endpoint,
+              failures: circuitBreaker.failures,
+            }
+          )
         }
       }
 
@@ -307,7 +329,9 @@ export async function apiFetch<T>(
             endpoint,
             failures: circuitBreaker.failures,
             origin:
-              typeof window !== 'undefined' ? window.location.origin : 'unknown',
+              typeof window !== 'undefined'
+                ? window.location.origin
+                : 'unknown',
           })
         }
       }
@@ -326,7 +350,10 @@ export async function apiFetch<T>(
       })
     }
 
-    if (!isApiClientError(normalizedError) && normalizedError instanceof Error) {
+    if (
+      !isApiClientError(normalizedError) &&
+      normalizedError instanceof Error
+    ) {
       normalizedError = createApiClientError({
         kind: 'unknown',
         message: normalizedError.message,
@@ -344,7 +371,9 @@ export async function apiFetch<T>(
         : undefined
 
     if (!shouldSuppressErrorLog(status, options)) {
-      const apiClientError = isApiClientError(normalizedError) ? normalizedError : undefined
+      const apiClientError = isApiClientError(normalizedError)
+        ? normalizedError
+        : undefined
       logger.error(`Request failed for ${endpoint}`, {
         durationMs: Number((errorEnd - start).toFixed(2)),
         method: requestMethod,
