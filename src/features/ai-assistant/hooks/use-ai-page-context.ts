@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { useAiContextStore } from '@/stores/ai-context-store'
 
 interface PageContextProps {
-  data: Record<string, any>
+  data: Record<string, unknown>
   title: string
 }
 

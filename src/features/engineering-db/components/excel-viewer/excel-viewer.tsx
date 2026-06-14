@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
+import type { Cell, Column, Row, Worksheet } from 'exceljs'
 import { Loader2, FileSpreadsheet, AlertCircle } from 'lucide-react'
 import { loadExcelJS } from '@/lib/lazy-vendors'
 import { createLogger } from '@/lib/logger'
@@ -24,9 +25,9 @@ interface ExcelViewerProps {
 interface StyleInfo {
   backgroundColor?: string
   color?: string
-  fontWeight?: string
-  textAlign?: 'left' | 'center' | 'right'
-  verticalAlign?: 'top' | 'middle' | 'bottom'
+  fontWeight?: CSSProperties['fontWeight']
+  textAlign?: CSSProperties['textAlign']
+  verticalAlign?: CSSProperties['verticalAlign']
   borderTop?: string
   borderRight?: string
   borderBottom?: string
@@ -34,6 +35,40 @@ interface StyleInfo {
   fontSize?: string
   width?: string
   height?: string
+}
+
+interface WorksheetWithMerges extends Worksheet {
+  _merges?: Record<
+    string,
+    {
+      top: number
+      bottom: number
+      left: number
+      right: number
+    }
+  >
+}
+
+type ExcelBorderSide = {
+  style?: string
+  color?: {
+    argb?: string
+  }
+}
+
+const HORIZONTAL_ALIGNMENTS: CSSProperties['textAlign'][] = [
+  'left',
+  'center',
+  'right',
+]
+const VERTICAL_ALIGNMENTS: CSSProperties['verticalAlign'][] = [
+  'top',
+  'middle',
+  'bottom',
+]
+
+function getCellMaster(cell: Cell): Cell {
+  return 'master' in cell ? (cell as Cell & { master: Cell }).master : cell
 }
 
 interface CellData {
@@ -76,28 +111,29 @@ export function ExcelViewer({ fileUrl, className }: ExcelViewerProps) {
         await workbook.xlsx.load(arrayBuffer)
 
         const sheetsData: SheetData[] = workbook.worksheets.map(
-          (worksheet: any) => {
+          (worksheet: Worksheet) => {
             const rows: CellData[][] = []
             let maxCols = 0
 
             // 1. 提取列宽
             const colWidths: number[] = []
-            worksheet.columns?.forEach((col: any, idx: number) => {
+            worksheet.columns?.forEach((col: Partial<Column>, idx: number) => {
               // exceljs 的 width 单位是字符数，粗略转换为 px (基数 7-8px)
               colWidths[idx] = (col.width || 15) * 8
             })
 
             worksheet.eachRow(
               { includeEmpty: true },
-              (row: any, rowNumber: number) => {
+              (row: Row, rowNumber: number) => {
                 const rowData: CellData[] = []
                 maxCols = Math.max(maxCols, row.cellCount)
 
                 row.eachCell(
                   { includeEmpty: true },
-                  (cell: any, colNumber: number) => {
+                  (cell: Cell, colNumber: number) => {
                     const address = cell.address
-                    const isMaster = cell.address === cell.master.address
+                    const isMaster =
+                      cell.address === getCellMaster(cell).address
                     const isMerged = !isMaster
 
                     const style: StyleInfo = {
@@ -123,15 +159,23 @@ export function ExcelViewer({ fileUrl, className }: ExcelViewerProps) {
 
                     // 对齐
                     if (cell.alignment) {
-                      if (cell.alignment.horizontal)
-                        style.textAlign = cell.alignment.horizontal as any
-                      if (cell.alignment.vertical)
-                        style.verticalAlign = cell.alignment.vertical as any
+                      if (
+                        cell.alignment.horizontal &&
+                        HORIZONTAL_ALIGNMENTS.includes(
+                          cell.alignment.horizontal
+                        )
+                      )
+                        style.textAlign = cell.alignment.horizontal
+                      if (
+                        cell.alignment.vertical &&
+                        VERTICAL_ALIGNMENTS.includes(cell.alignment.vertical)
+                      )
+                        style.verticalAlign = cell.alignment.vertical
                     }
 
                     // 精细边框映射
                     if (cell.border) {
-                      const mapBorder = (b: any) => {
+                      const mapBorder = (b?: ExcelBorderSide) => {
                         if (!b || b.style === 'none') return undefined
                         const color = b.color?.argb
                           ? `#${b.color.argb.substring(2)}`
@@ -151,7 +195,8 @@ export function ExcelViewer({ fileUrl, className }: ExcelViewerProps) {
                     let rowSpan = 1
                     let colSpan = 1
                     if (isMaster && cell.isMerged) {
-                      const mergeRange = (worksheet as any)._merges?.[address]
+                      const mergeRange = (worksheet as WorksheetWithMerges)
+                        ._merges?.[address]
                       if (mergeRange) {
                         rowSpan = mergeRange.bottom - mergeRange.top + 1
                         colSpan = mergeRange.right - mergeRange.left + 1
@@ -315,7 +360,7 @@ export function ExcelViewer({ fileUrl, className }: ExcelViewerProps) {
                           style={{
                             backgroundColor: cell.style.backgroundColor,
                             color: cell.style.color,
-                            fontWeight: cell.style.fontWeight as any,
+                            fontWeight: cell.style.fontWeight,
                             textAlign: cell.style.textAlign,
                             verticalAlign: cell.style.verticalAlign,
                             fontSize: cell.style.fontSize,

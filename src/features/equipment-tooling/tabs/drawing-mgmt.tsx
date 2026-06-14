@@ -137,7 +137,7 @@ export function DrawingMgmt() {
       setEditingDrawing(null)
       await queryClient.invalidateQueries({ queryKey: MOLD_DRAWINGS_QUERY_KEY })
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       if (isConflictError(error)) {
         toast.error(t('equipmentTooling.drawings.toast.conflict'))
         return
@@ -159,7 +159,7 @@ export function DrawingMgmt() {
   }
 
   const handleDownload = (drawing: MoldDrawing) => {
-    const baseUrl = (import.meta as any).env.VITE_API_BASE_URL || ''
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || ''
     const fullUrl = drawing.fileUrl.startsWith('http')
       ? drawing.fileUrl
       : `${baseUrl}${drawing.fileUrl}`
@@ -445,8 +445,8 @@ export function DrawingMgmt() {
                             Technical Changes (SDRTS)
                           </div>
                           <div className='space-y-1.5'>
-                            {Object.entries(log.delta).map(
-                              ([field, values]: [string, any]) => (
+                            {Object.entries(log.delta as DeltaSet).map(
+                              ([field, values]) => (
                                 <div
                                   key={field}
                                   className='flex min-w-0 items-center gap-2 text-[9px]'

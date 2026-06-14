@@ -67,10 +67,11 @@ export function useAiChatEngine({ getLatestSnapshot }: UseAiChatEngineOptions) {
           },
           snapshot
         )
-      } catch (error: any) {
+      } catch (error: unknown) {
         logger.error('Stream failed', error)
+        const message = error instanceof Error ? error.message : '未知错误'
         updateLastAssistantMessage(
-          `\n\n> [!CAUTION]\n> **[CRITICAL ERROR]** 对话流中断: ${error.message || '未知错误'}`
+          `\n\n> [!CAUTION]\n> **[CRITICAL ERROR]** 对话流中断: ${message}`
         )
       } finally {
         setIsGenerating(false)

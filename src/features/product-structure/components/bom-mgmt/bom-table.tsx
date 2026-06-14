@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react'
 import { flexRender, type ColumnDef } from '@tanstack/react-table'
+import { type TranslationKey } from '@/locales'
 import {
   ClipboardList,
   Edit,
@@ -110,7 +111,7 @@ export function BOMTable({
                       : 'bg-blue-500/10 text-blue-600'
                   )}
                 >
-                  {t(`engineering.dict.${bomType}` as any)}
+                  {t(`engineering.dict.${bomType}` as TranslationKey)}
                 </Badge>
               </div>
               <div className='mt-0.5 flex flex-wrap items-center gap-2'>

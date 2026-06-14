@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, type ReactNode } from 'react'
 import { Scan, RefreshCw, X, Check, Cpu, Zap } from 'lucide-react'
 import { toast } from 'sonner'
 import { createLogger } from '@/lib/logger'
@@ -19,7 +19,7 @@ interface UniversalScannerProps {
   onOpenChange: (open: boolean) => void
   plugin: AnyScanPluginDefinition
   onSuccess?: (result: ScanSubmitResult) => void
-  hostContext?: any
+  hostContext?: unknown
 }
 
 export function UniversalScanner({
@@ -209,7 +209,13 @@ export function UniversalScanner({
   )
 }
 
-function Badge({ children, className }: any) {
+function Badge({
+  children,
+  className,
+}: {
+  children: ReactNode
+  className?: string
+}) {
   return (
     <div
       className={cn(

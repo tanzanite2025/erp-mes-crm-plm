@@ -14,7 +14,7 @@ import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('FinanceService')
 
-export const financeService = new Proxy({} as any, {
+export const financeService = new Proxy({} as Record<string, never>, {
   get(_, prop) {
     const errorMsg = `[CRITICAL] 调用了已废弃的 financeService.${String(prop)}。请立即迁移至 Currency 或 PaymentTerm 相关域服务。`
     logger.error(errorMsg)

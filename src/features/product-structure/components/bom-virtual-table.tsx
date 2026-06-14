@@ -141,7 +141,7 @@ function DefaultBOMVirtualRow<T extends BOMVirtualRow>({
         }
 
         const handleChange = (newValue: unknown) => {
-          ;(row as any)[column.field] = newValue
+          Reflect.set(row, column.field, newValue)
           onRowChange?.(row)
         }
 

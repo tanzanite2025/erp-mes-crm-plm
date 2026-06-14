@@ -30,7 +30,7 @@ export function KnowledgeBaseCategoryBadge({
         className
       )}
     >
-      {t(labelKey as any)}
+      {t(labelKey)}
     </Badge>
   )
 }

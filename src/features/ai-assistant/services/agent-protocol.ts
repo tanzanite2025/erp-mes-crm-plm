@@ -14,7 +14,7 @@ interface DashboardSummaryLike {
   recentEvents: string[]
   localContext?: {
     title: string
-    data: any
+    data: unknown
   }
 }
 

@@ -1,6 +1,22 @@
 import { z } from 'zod'
 
-export const orgNodeSchema: z.ZodType<any> = z.lazy(() =>
+export interface OrgNode {
+  id?: string
+  name: string
+  parentId?: string
+  manager?: string
+  description?: string
+  children?: OrgNode[]
+  type: 'company' | 'department' | 'team'
+  linkedArchitecture?: Array<{
+    type: 'line' | 'segment'
+    id: string
+    name: string
+  }>
+  version: number
+}
+
+export const orgNodeSchema: z.ZodType<OrgNode> = z.lazy(() =>
   z.object({
     id: z.string().optional(),
     name: z.string().min(1, 'orgPersonnel.org.dialog.nameRequired'),
@@ -21,5 +37,3 @@ export const orgNodeSchema: z.ZodType<any> = z.lazy(() =>
     version: z.number().default(1),
   })
 )
-
-export type OrgNode = z.infer<typeof orgNodeSchema>

@@ -111,8 +111,11 @@ export const fetchAiInsight = async (
       return ''
     }
     return await callProviderCore([{ role: 'user', content: prompt }])
-  } catch (_error: any) {
-    logger.error('Real API failed, falling back to mock', _error?.message)
+  } catch (_error: unknown) {
+    logger.error(
+      'Real API failed, falling back to mock',
+      _error instanceof Error ? _error.message : _error
+    )
     const mockReply = buildAiUnavailableMessage(data)
 
     if (onChunk) onChunk(mockReply)
@@ -130,7 +133,7 @@ export const chatWithAi = async (
       return ''
     }
     return await callProviderCore(history)
-  } catch (_error: any) {
+  } catch (_error: unknown) {
     const errMsg = [
       'AI 对话暂时不可用，请检查 API 配置或网络连接后重试。',
       '[CMD: 检查 AI 连接配置 | 核对当前提供商、模型、API Key 与代理设置]',

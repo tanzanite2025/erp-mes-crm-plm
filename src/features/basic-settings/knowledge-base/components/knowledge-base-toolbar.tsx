@@ -53,7 +53,7 @@ export function KnowledgeBaseToolbar({
                   : 'text-muted-foreground/50 hover:text-foreground'
               )}
             >
-              {t(category.labelKey as any)}
+              {t(category.labelKey)}
             </button>
           ))}
         </div>

@@ -1,3 +1,4 @@
+import { type TranslationKey } from '@/locales'
 import { getKnowledgeContentText } from './knowledge-content'
 
 export type KnowledgeBaseCategory =
@@ -31,7 +32,7 @@ export { getKnowledgeContentText } from './knowledge-content'
 
 export const KNOWLEDGE_BASE_CATEGORIES: Array<{
   value: KnowledgeBaseCategory | 'all'
-  labelKey: string
+  labelKey: TranslationKey
 }> = [
   { value: 'all', labelKey: 'basicSettings.knowledgeBase.categories.all' },
   {

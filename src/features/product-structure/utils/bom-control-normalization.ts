@@ -70,7 +70,7 @@ export function normalizeBOMControlFieldPatch<
   }
   if ('status' in data) {
     normalized.status = normalizeEngineeringBomStatus(
-      data.status as any
+      data.status
     ) as T['status']
   }
   if ('revisionNo' in data) {
@@ -102,7 +102,7 @@ export function normalizeBOMInput(data: SaveBOMInput): SaveBOMInput {
     bomNo: normalizeBOMNoValue(data.bomNo),
     bomVersion: normalizeEngineeringBomVersion(data.bomVersion),
     changeType: normalizeEngineeringBomChangeType(data.changeType),
-    status: normalizeEngineeringBomStatus(data.status as any),
+    status: normalizeEngineeringBomStatus(data.status),
     revisionNo: normalizeEngineeringRevisionNo(data.revisionNo),
     effectiveFrom: normalizeBOMEffectiveDate(data.effectiveFrom) || undefined,
     effectiveTo: normalizeBOMEffectiveDate(data.effectiveTo) || undefined,

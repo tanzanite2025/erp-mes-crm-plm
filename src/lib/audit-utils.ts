@@ -93,7 +93,14 @@ export const auditUtils = {
     const operator = this.getOperatorInfo()
     const now = new Date().toISOString()
 
-    const result = { ...data } as any
+    const result: T & {
+      createdBy?: string
+      createdAt?: string
+      updatedBy?: string
+      updatedAt?: string
+      approvedBy?: string
+      approvedAt?: string
+    } = { ...data }
 
     if (type === 'create') {
       result.createdBy = operator.label

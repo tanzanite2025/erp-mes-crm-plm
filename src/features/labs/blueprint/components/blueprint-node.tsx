@@ -7,7 +7,7 @@ import {
   CheckCircle,
   AlertCircle,
 } from 'lucide-react'
-import { Handle, Position } from 'reactflow'
+import { Handle, Position, type NodeProps } from 'reactflow'
 import { cn } from '@/lib/utils'
 
 /**
@@ -24,17 +24,28 @@ const IconMap = {
   alert: AlertCircle,
 }
 
-export const MRPNode = memo(({ data }: any) => {
+interface MRPNodeData {
+  icon?: keyof typeof IconMap
+  status?: keyof typeof statusStyles
+  label?: string
+  title?: string
+  subtitle?: string
+  date?: string
+  quantity?: string | number
+  unit?: string
+}
+
+const statusStyles = {
+  PRIMARY: 'bg-primary/10 border-primary text-primary',
+  HEALTHY: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600',
+  ALERT: 'bg-amber-500/10 border-amber-500/30 text-amber-600',
+  CRITICAL: 'bg-rose-500/10 border-rose-500/30 text-rose-600 animate-pulse',
+}
+
+export const MRPNode = memo(({ data }: NodeProps<MRPNodeData>) => {
   const Icon = IconMap[data.icon as keyof typeof IconMap] || Box
 
   // 状态语义映射
-  const statusStyles = {
-    PRIMARY: 'bg-primary/10 border-primary text-primary',
-    HEALTHY: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600',
-    ALERT: 'bg-amber-500/10 border-amber-500/30 text-amber-600',
-    CRITICAL: 'bg-rose-500/10 border-rose-500/30 text-rose-600 animate-pulse',
-  }
-
   const currentStyle =
     statusStyles[data.status as keyof typeof statusStyles] ||
     statusStyles.PRIMARY

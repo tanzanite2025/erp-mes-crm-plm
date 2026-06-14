@@ -1,3 +1,5 @@
+import { type DeltaSet } from '@/lib/delta/types'
+
 export type ScanPlatformMode = 'submit' | 'view'
 export type ScanCaptureSource = 'camera' | 'manual' | 'hardware'
 export type ScanHostSurface =
@@ -25,7 +27,7 @@ export interface ScanResolvedContext<TPayload = unknown> {
 
 export interface ScanDeltaResult {
   id: string
-  delta: any // SDRTS 差量对象
+  delta: DeltaSet // SDRTS 差量对象
   version: number // 悲观并发版次
 }
 

@@ -4,8 +4,21 @@ import { AlertCircle, ArrowRight, Layers } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface DeltaPreviewProps {
-  delta?: any
+  delta?: Record<string, unknown>
   className?: string
+}
+
+interface DeltaChange {
+  o?: unknown
+  n?: unknown
+}
+
+function isDeltaChange(value: unknown): value is DeltaChange {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    ('o' in value || 'n' in value)
+  )
 }
 
 /**
@@ -24,7 +37,7 @@ export function DeltaPreview({ delta, className }: DeltaPreviewProps) {
     )
   }
 
-  const renderValue = (val: any) => {
+  const renderValue = (val: unknown) => {
     if (val === null) return <span className='italic opacity-30'>null</span>
     if (val === undefined)
       return <span className='italic opacity-30'>undefined</span>
@@ -48,12 +61,9 @@ export function DeltaPreview({ delta, className }: DeltaPreviewProps) {
       </div>
 
       <div className='space-y-1.5'>
-        {Object.entries(delta).map(([path, change]: [string, any]) => {
+        {Object.entries(delta).map(([path, change]) => {
           // SDRTS 载荷标准: { o: old, n: new }
-          const hasChange =
-            change &&
-            typeof change === 'object' &&
-            ('o' in change || 'n' in change)
+          const hasChange = isDeltaChange(change)
 
           return (
             <div

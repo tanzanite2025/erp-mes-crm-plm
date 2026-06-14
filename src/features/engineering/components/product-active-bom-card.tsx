@@ -1,6 +1,7 @@
 'use client'
 
 import { useNavigate } from '@tanstack/react-router'
+import { type TranslationKey } from '@/locales'
 import { AlertCircle, ArrowUpRight, Layers, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
@@ -141,7 +142,7 @@ export function ProductActiveBOMCard({
                 : 'bg-blue-500/10 text-blue-700'
             )}
           >
-            {t(`engineering.dict.${bom.bomType}` as any)}
+            {t(`engineering.dict.${bom.bomType}` as TranslationKey)}
           </Badge>
         </div>
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Microscope, Settings2 } from 'lucide-react'
+import { type DeltaSet } from '@/lib/delta/types'
 import { isForbiddenError } from '@/lib/error-status'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
@@ -70,7 +71,7 @@ export function LabEquipmentPage() {
   }: {
     data: EquipmentCategory
     isPatch: boolean
-    delta?: any
+    delta?: DeltaSet
     version?: number
   }) => {
     if (isPatch && delta && version !== undefined) {
@@ -103,7 +104,7 @@ export function LabEquipmentPage() {
   }: {
     data: Equipment
     isPatch: boolean
-    delta?: any
+    delta?: DeltaSet
     version?: number
   }) => {
     if (isPatch && delta && version !== undefined) {

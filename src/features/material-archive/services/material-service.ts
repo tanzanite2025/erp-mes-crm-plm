@@ -16,7 +16,17 @@ const logger = createLogger('MaterialService')
 const DEPRECATED_ERROR =
   '[CRITICAL] 调用了已废弃的 materialService。请迁移至 MaterialCoreService 或 MaterialMaintenanceService。'
 
-export const materialService = new Proxy({} as any, {
+type DeprecatedMaterialService = {
+  getMaterialOptions: never
+  getMaterials: never
+  getMaterialsWithVersion: never
+  saveMaterial: never
+  saveMaterials: never
+  deleteMaterial: never
+  patchMaterial: never
+}
+
+export const materialService = new Proxy({} as DeprecatedMaterialService, {
   get() {
     logger.error(DEPRECATED_ERROR)
     throw new Error(DEPRECATED_ERROR)
