@@ -1,9 +1,6 @@
+import { createLogger } from '@/lib/logger'
+import { AgentProtocol } from './agent-protocol'
 import type { AgentSessionType } from './ai-agent-service'
-import {
-  callProvider as callProviderCore,
-  callProviderStream as callProviderStreamCore,
-  type ChatMessage,
-} from './provider-client'
 import {
   generateAiPrompt as generateAiPromptCore,
   generateAgentBriefPrompt as generateAgentBriefPromptCore,
@@ -11,9 +8,11 @@ import {
   generateAgentCommandPrompt as generateAgentCommandPromptCore,
   type DashboardSummary,
 } from './prompt-builder'
-
-import { AgentProtocol } from './agent-protocol'
-import { createLogger } from '@/lib/logger'
+import {
+  callProvider as callProviderCore,
+  callProviderStream as callProviderStreamCore,
+  type ChatMessage,
+} from './provider-client'
 
 const logger = createLogger('AiService')
 
@@ -21,8 +20,10 @@ const logger = createLogger('AiService')
 
 export type { DashboardSummary, ChatMessage }
 
-export const generateAiPrompt = (data: DashboardSummary, isBrief = true): string =>
-  generateAiPromptCore(data, isBrief)
+export const generateAiPrompt = (
+  data: DashboardSummary,
+  isBrief = true
+): string => generateAiPromptCore(data, isBrief)
 
 export async function callProviderStream(
   messages: ChatMessage[],
@@ -37,14 +38,17 @@ export async function callProviderStream(
     // 注入为第一条系统消息或前置引导
     chatContext.unshift({
       role: 'system',
-      content: `${systemProtocol}\n\n${protocolContext}`
+      content: `${systemProtocol}\n\n${protocolContext}`,
     })
   }
-  
+
   await callProviderStreamCore(chatContext, onChunk)
 }
 
-export function generateAgentBriefPrompt(data: DashboardSummary, type: AgentSessionType): string {
+export function generateAgentBriefPrompt(
+  data: DashboardSummary,
+  type: AgentSessionType
+): string {
   return generateAgentBriefPromptCore(data, type)
 }
 
@@ -52,8 +56,10 @@ export function generateWeeklyAgentPrompt(data: DashboardSummary): string {
   return generateWeeklyAgentPromptCore(data)
 }
 
-export const generateAgentCommandPrompt = (data: DashboardSummary, command: string): string =>
-  generateAgentCommandPromptCore(data, command)
+export const generateAgentCommandPrompt = (
+  data: DashboardSummary,
+  command: string
+): string => generateAgentCommandPromptCore(data, command)
 
 function buildAiUnavailableMessage(data: DashboardSummary): string {
   const isStandby =
@@ -96,7 +102,7 @@ function buildAiUnavailableMessage(data: DashboardSummary): string {
 
 export const fetchAiInsight = async (
   data: DashboardSummary,
-  onChunk?: (text: string) => void,
+  onChunk?: (text: string) => void
 ): Promise<string> => {
   try {
     const prompt = generateAiPrompt(data, true)
@@ -105,8 +111,8 @@ export const fetchAiInsight = async (
       return ''
     }
     return await callProviderCore([{ role: 'user', content: prompt }])
-  } catch (error: any) {
-    logger.error('Real API failed, falling back to mock', error?.message)
+  } catch (_error: any) {
+    logger.error('Real API failed, falling back to mock', _error?.message)
     const mockReply = buildAiUnavailableMessage(data)
 
     if (onChunk) onChunk(mockReply)
@@ -116,7 +122,7 @@ export const fetchAiInsight = async (
 
 export const chatWithAi = async (
   history: ChatMessage[],
-  onChunk?: (text: string) => void,
+  onChunk?: (text: string) => void
 ): Promise<string> => {
   try {
     if (onChunk) {
@@ -124,7 +130,7 @@ export const chatWithAi = async (
       return ''
     }
     return await callProviderCore(history)
-  } catch (error: any) {
+  } catch (_error: any) {
     const errMsg = [
       'AI 对话暂时不可用，请检查 API 配置或网络连接后重试。',
       '[CMD: 检查 AI 连接配置 | 核对当前提供商、模型、API Key 与代理设置]',

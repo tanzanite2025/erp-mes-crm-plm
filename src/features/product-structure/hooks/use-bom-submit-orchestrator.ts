@@ -3,16 +3,15 @@
 import { useCallback } from 'react'
 import { type UseFormReturn } from 'react-hook-form'
 import { failLoudly } from '@/lib/safe-catch'
-import { type BOM } from '../data/schema'
+import { type BOM, type BOMParentChildrenProtocolDraft } from '../data/schema'
 import { type SaveBOMInput } from '../mutation-types'
 import {
   buildBOMRelationSidecar,
   type BOMRelationSidecar,
 } from '../utils/bom-relation-sidecar'
-import { type BOMParentChildrenProtocolDraft } from '../data/schema'
+import { type OptimisticLockResult } from './use-bom-optimistic-lock'
 import { type BOMPermissionGuard } from './use-bom-permission-guard'
 import { type BOMRelationDeltaTrackerResult } from './use-bom-relation-delta-tracker'
-import { type OptimisticLockResult } from './use-bom-optimistic-lock'
 
 /**
  * BOMActionDialog 的提交编排（submit + promote）。
@@ -41,14 +40,21 @@ export interface UseBOMSubmitOrchestratorParams {
   permissionGuard: BOMPermissionGuard
   optimisticLock: Pick<
     OptimisticLockResult,
-    'currentVersion' | 'updateVersion' | 'validateVersion' | 'prepareSavePayload'
+    | 'currentVersion'
+    | 'updateVersion'
+    | 'validateVersion'
+    | 'prepareSavePayload'
   >
   deltaTracker: Pick<
     BOMRelationDeltaTrackerResult,
     'commitDelta' | 'resetBaseline'
   >
   onSubmit?: (data: SaveBOMInput) => BOM | Promise<BOM | null>
-  onPromote?: (id: string, status: string, expectedVersion?: number) => Promise<boolean>
+  onPromote?: (
+    id: string,
+    status: string,
+    expectedVersion?: number
+  ) => Promise<boolean>
   onClose: () => void
 }
 
@@ -81,13 +87,20 @@ export function useBOMSubmitOrchestrator(
    * 并加上乐观锁字段。包含 sidecarDelta 与否由调用方决定。
    */
   const buildSubmitPayload = useCallback(
-    (data: BOM, fullSidecar: BOMRelationSidecar, includeDelta: boolean): SaveBOMInput => {
+    (
+      data: BOM,
+      fullSidecar: BOMRelationSidecar,
+      includeDelta: boolean
+    ): SaveBOMInput => {
       const base: SaveBOMInput = {
         ...data,
         relationSidecar: fullSidecar,
         _sidecarDelta: includeDelta ? deltaTracker.commitDelta() : null,
       }
-      return optimisticLock.prepareSavePayload(base, optimisticLock.currentVersion)
+      return optimisticLock.prepareSavePayload(
+        base,
+        optimisticLock.currentVersion
+      )
     },
     [deltaTracker, optimisticLock]
   )
@@ -109,7 +122,9 @@ export function useBOMSubmitOrchestrator(
 
       if (!effectiveProtocolDraft) {
         failLoudly(
-          new Error('[CRITICAL] Missing effective BOM relation sidecar protocol draft during save submit'),
+          new Error(
+            '[CRITICAL] Missing effective BOM relation sidecar protocol draft during save submit'
+          ),
           'useBOMSubmitOrchestrator.submit'
         )
         return null
@@ -187,7 +202,11 @@ export function useBOMSubmitOrchestrator(
       }
 
       if (bomToPromote?.id && onPromote) {
-        const success = await onPromote(bomToPromote.id, targetStatus, bomToPromote.version)
+        const success = await onPromote(
+          bomToPromote.id,
+          targetStatus,
+          bomToPromote.version
+        )
         if (success) {
           onClose()
         }

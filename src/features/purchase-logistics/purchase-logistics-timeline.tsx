@@ -1,7 +1,7 @@
 import { CheckCircle2, Clock, MapPin, Package } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { cn } from '@/lib/utils'
-import { LogisticsEvent } from './services/purchase-logistics-service'
+import { type LogisticsEvent } from './services/purchase-logistics-service'
 
 interface TimelineProps {
   events: LogisticsEvent[]

@@ -1,10 +1,13 @@
 import { apiFetch } from '@/lib/api-client'
-import type {
-  WheelTraceLookupApiRequestDTO,
-  WheelTraceLookupApiResponseDTO,
+import {
+  toWheelTraceLookupResponseContract,
+  type WheelTraceLookupApiRequestDTO,
+  type WheelTraceLookupApiResponseDTO,
 } from '../../contracts/wheel-trace-api-dto'
-import { toWheelTraceLookupResponseContract } from '../../contracts/wheel-trace-api-dto'
-import type { WheelTraceQueryGateway, WheelTraceLookupRequest } from '../../services/wheel-trace-query-service'
+import type {
+  WheelTraceQueryGateway,
+  WheelTraceLookupRequest,
+} from '../../services/wheel-trace-query-service'
 
 export interface WheelTraceApiGatewayOptions {
   endpoint?: string
@@ -42,10 +45,13 @@ export function createWheelTraceApiGateway(
   return {
     async lookup(request) {
       const dto = buildWheelTraceLookupApiRequestDTO(request, options)
-      const response = await apiFetch<WheelTraceLookupApiResponseDTO>(endpoint, {
-        method: 'POST',
-        body: JSON.stringify(dto),
-      })
+      const response = await apiFetch<WheelTraceLookupApiResponseDTO>(
+        endpoint,
+        {
+          method: 'POST',
+          body: JSON.stringify(dto),
+        }
+      )
 
       return toWheelTraceLookupResponseContract(response)
     },

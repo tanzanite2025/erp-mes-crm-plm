@@ -16,7 +16,7 @@
  */
 
 import { useRef, useEffect, useCallback } from 'react';
-import { BOMPerformanceMonitor, BOMPerformanceThresholds } from './bom-performance-monitor';
+import { BOMPerformanceMonitor, type BOMPerformanceThresholds } from './bom-performance-monitor';
 
 /**
  * Options for useBOMPerformanceMonitor hook

@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react'
 import { useLanguage } from '@/context/language-provider'
 import { createLogger } from '@/lib/logger'
-import { unitService, Unit, UnitCategory } from '../services/unit-service'
+import { unitService, type Unit, type UnitCategory } from '../services/unit-service'
 import { useUnitsQuery } from './use-units-query'
 
 const logger = createLogger('useUnitMgmt')

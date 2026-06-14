@@ -2,15 +2,18 @@
 
 import { useMemo, useState } from 'react'
 import { AlertTriangle, Layers } from 'lucide-react'
-import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { useLanguage } from '@/context/language-provider'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { BOMActionDialog } from '../components/bom-action-dialog'
 import { BOMPreview } from '../components/bom-mgmt/bom-preview'
 import { BOMTable } from '../components/bom-mgmt/bom-table'
-import { BOMToolbar, type BOMOwnerFilterOption } from '../components/bom-mgmt/bom-toolbar'
-import { useBOMData } from '../hooks/use-bom-data'
+import {
+  BOMToolbar,
+  type BOMOwnerFilterOption,
+} from '../components/bom-mgmt/bom-toolbar'
 import { type BOM } from '../data/schema'
+import { useBOMData } from '../hooks/use-bom-data'
 import { type BOMItemDraft, type SaveBOMInput } from '../mutation-types'
 
 const OWNER_FILTER_ALL = '__ALL__'
@@ -34,9 +37,14 @@ export function BOMMgmt() {
   const [open, setOpen] = useState(false)
   const [currentRow, setCurrentRow] = useState<BOM | undefined>(undefined)
   const [previewBOM, setPreviewBOM] = useState<BOM | null>(null)
-  const [initialItems, setInitialItems] = useState<BOMItemDraft[] | undefined>(undefined)
-  const [initialProductId, setInitialProductId] = useState<string | undefined>(undefined)
-  const [selectedOwnerValue, setSelectedOwnerValue] = useState<string>(OWNER_FILTER_ALL)
+  const [initialItems, setInitialItems] = useState<BOMItemDraft[] | undefined>(
+    undefined
+  )
+  const [initialProductId, setInitialProductId] = useState<string | undefined>(
+    undefined
+  )
+  const [selectedOwnerValue, setSelectedOwnerValue] =
+    useState<string>(OWNER_FILTER_ALL)
 
   const resetDialogState = () => {
     setCurrentRow(undefined)
@@ -87,46 +95,31 @@ export function BOMMgmt() {
     setPreviewBOM(null)
   }
 
-  if (readResource.status === 'error') {
-    return (
-      <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-        <div className='flex flex-col gap-1 bg-muted/5 p-4 sm:p-6 rounded-[32px] border border-dashed border-muted/50'>
-          <div className='flex items-center gap-2 text-primary'>
-            <Layers className='size-4 text-primary' />
-            <h3 className='text-lg font-black tracking-tighter italic uppercase'>
-              {t('engineering.bomArchive.header.title')}
-            </h3>
-          </div>
-          <p className='text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-60'>
-            {t('engineering.bomArchive.header.description')}
-          </p>
-        </div>
-
-        <div className='flex flex-col items-center justify-center rounded-[32px] border border-dashed border-rose-200 bg-rose-50/60 px-6 py-12 text-center'>
-          <AlertTriangle className='mb-4 size-10 text-rose-500' />
-          <p className='text-sm font-black tracking-widest text-foreground'>
-            {t('engineering.bomArchive.toasts.loadFailed')}
-          </p>
-          <p className='mt-2 text-[11px] font-medium text-muted-foreground'>
-            {readResource.error.message || t('engineering.bomArchive.toasts.loadFailed')}
-          </p>
-        </div>
-      </div>
-    )
-  }
-
   const bomTableData = readResource.status === 'ready' ? readResource.data : []
-  const bomProducts = readResource.status === 'ready' ? readResource.products : []
-  const bomProductDisplayLabelMap = readResource.status === 'ready' ? readResource.productDisplayLabelMap : new Map<string, string>()
-  const bomMaterials = readResource.status === 'ready' ? readResource.materials : []
-  const bomSections = readResource.status === 'ready' ? readResource.sections : []
+  const bomProducts =
+    readResource.status === 'ready' ? readResource.products : []
+  const bomProductDisplayLabelMap =
+    readResource.status === 'ready'
+      ? readResource.productDisplayLabelMap
+      : new Map<string, string>()
+  const bomMaterials =
+    readResource.status === 'ready' ? readResource.materials : []
+  const bomSections =
+    readResource.status === 'ready' ? readResource.sections : []
   const isLoading = readResource.status === 'loading'
-  const viewMode = previewBOM && readResource.status === 'ready' ? 'preview' : 'list'
+  const viewMode =
+    previewBOM && readResource.status === 'ready' ? 'preview' : 'list'
 
   const ownerOptions = useMemo<BOMOwnerFilterOption[]>(() => {
     const options: BOMOwnerFilterOption[] = [
-      { label: t('engineering.bomArchive.filter.allOwners'), value: OWNER_FILTER_ALL },
-      { label: t('engineering.bomArchive.filter.internal'), value: OWNER_FILTER_INTERNAL },
+      {
+        label: t('engineering.bomArchive.filter.allOwners'),
+        value: OWNER_FILTER_ALL,
+      },
+      {
+        label: t('engineering.bomArchive.filter.internal'),
+        value: OWNER_FILTER_INTERNAL,
+      },
     ]
     for (const customer of customers) {
       options.push({ label: customer.name, value: customer.id })
@@ -143,15 +136,46 @@ export function BOMMgmt() {
       if (selectedOwnerValue === OWNER_FILTER_INTERNAL) {
         return ownerType === 'INTERNAL'
       }
-      return ownerType === 'CUSTOMER' && bom.ownerCustomerId === selectedOwnerValue
+      return (
+        ownerType === 'CUSTOMER' && bom.ownerCustomerId === selectedOwnerValue
+      )
     })
   }, [bomTableData, selectedOwnerValue])
+
+  if (readResource.status === 'error') {
+    return (
+      <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
+        <div className='flex flex-col gap-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-4 sm:p-6'>
+          <div className='flex items-center gap-2 text-primary'>
+            <Layers className='size-4 text-primary' />
+            <h3 className='text-lg font-black tracking-tighter uppercase italic'>
+              {t('engineering.bomArchive.header.title')}
+            </h3>
+          </div>
+          <p className='text-[9px] font-black tracking-widest text-muted-foreground uppercase opacity-60'>
+            {t('engineering.bomArchive.header.description')}
+          </p>
+        </div>
+
+        <div className='flex flex-col items-center justify-center rounded-[32px] border border-dashed border-rose-200 bg-rose-50/60 px-6 py-12 text-center'>
+          <AlertTriangle className='mb-4 size-10 text-rose-500' />
+          <p className='text-sm font-black tracking-widest text-foreground'>
+            {t('engineering.bomArchive.toasts.loadFailed')}
+          </p>
+          <p className='mt-2 text-[11px] font-medium text-muted-foreground'>
+            {readResource.error.message ||
+              t('engineering.bomArchive.toasts.loadFailed')}
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   const handleDerive = async (bom: BOM) => {
     if (window.confirm(t('engineering.bomArchive.table.confirmDerive'))) {
       await deriveMBOM(bom.id, {
         description: `Derived from ${bom.bomNo}`,
-        revisionNo: 'R1'
+        revisionNo: 'R1',
       })
     }
   }
@@ -168,22 +192,22 @@ export function BOMMgmt() {
   }
 
   return (
-    <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-      <div className='flex flex-col gap-1 bg-muted/5 p-4 sm:p-6 rounded-[32px] border border-dashed border-muted/50'>
+    <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
+      <div className='flex flex-col gap-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-4 sm:p-6'>
         <div className='flex items-start justify-between gap-3'>
           <div className='flex items-center gap-2 text-primary'>
             <Layers className='size-4 text-primary' />
-            <h3 className='text-lg font-black tracking-tighter italic uppercase'>
+            <h3 className='text-lg font-black tracking-tighter uppercase italic'>
               {t('engineering.bomArchive.header.title')}
             </h3>
           </div>
           <AuditTimelineTriggerButton
             module={AUDIT_MODULES.bom}
             targetName={t('engineering.bomArchive.header.title')}
-            className='h-11 rounded-full border-dashed bg-background/80 px-4 text-[10px] font-black uppercase tracking-widest'
+            className='h-11 rounded-full border-dashed bg-background/80 px-4 text-[10px] font-black tracking-widest uppercase'
           />
         </div>
-        <p className='text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-60'>
+        <p className='text-[9px] font-black tracking-widest text-muted-foreground uppercase opacity-60'>
           {t('engineering.bomArchive.header.description')}
         </p>
       </div>
@@ -200,7 +224,7 @@ export function BOMMgmt() {
       ) : null}
 
       {viewMode === 'preview' && previewBOM ? (
-        <div className='rounded-[32px] border border-dashed border-muted/50 bg-background/80 overflow-hidden'>
+        <div className='overflow-hidden rounded-[32px] border border-dashed border-muted/50 bg-background/80'>
           <BOMPreview
             bom={previewBOM}
             products={bomProducts}
@@ -232,7 +256,9 @@ export function BOMMgmt() {
         initialItems={initialItems}
         initialProductId={initialProductId}
         onSubmit={handleFormSubmit}
-        onPromote={(id, status, expectedVersion) => promoteBOM(id, status, expectedVersion ?? 0)}
+        onPromote={(id, status, expectedVersion) =>
+          promoteBOM(id, status, expectedVersion ?? 0)
+        }
       />
     </div>
   )

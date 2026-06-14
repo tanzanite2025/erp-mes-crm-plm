@@ -4,9 +4,9 @@ import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { loadXLSX } from '@/lib/lazy-vendors'
 import { createLogger } from '@/lib/logger'
-import { translate, AppLocale } from '@/locales'
+import { translate, type AppLocale } from '@/locales'
 import { BASIC_SETTINGS_UNITS_QUERY_KEY } from '../query-keys'
-import { unitService, Unit, UnitCategory } from '../services/unit-service'
+import { unitService, type Unit, type UnitCategory } from '../services/unit-service'
 
 const logger = createLogger('useUnitImport')
 

@@ -1,5 +1,5 @@
 import { aiContextService } from '../services/ai-context-service'
-import { DashboardSummary } from '../services/ai-service'
+import { type DashboardSummary } from '../services/ai-service'
 
 /**
  * 仪表盘即时快照钩子

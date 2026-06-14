@@ -1,7 +1,7 @@
-import { purchaseLogisticsDialogAdapter } from '../../adapters/logistics-inbound/purchase-logistics-dialog-adapter'
-import type {
-  PurchaseLogisticsDialogAdapterOptions,
-  PurchaseLogisticsDialogFormValue,
+import {
+  purchaseLogisticsDialogAdapter,
+  type PurchaseLogisticsDialogAdapterOptions,
+  type PurchaseLogisticsDialogFormValue,
 } from '../../adapters/logistics-inbound/purchase-logistics-dialog-adapter'
 import type {
   LogisticsInboundHostScanResult,
@@ -15,7 +15,9 @@ export interface PurchaseLogisticsDialogScanHelperOptions {
   setForm: (
     next:
       | PurchaseLogisticsDialogFormValue
-      | ((current: PurchaseLogisticsDialogFormValue) => PurchaseLogisticsDialogFormValue)
+      | ((
+          current: PurchaseLogisticsDialogFormValue
+        ) => PurchaseLogisticsDialogFormValue)
   ) => void
   getAdapterOptions?: () => PurchaseLogisticsDialogAdapterOptions | undefined
   onSummaryChange?: (summary: string) => void
@@ -24,7 +26,9 @@ export interface PurchaseLogisticsDialogScanHelperOptions {
 }
 
 export interface PurchaseLogisticsDialogScanHelper {
-  handleScannedValue: (rawCode: string) => Promise<LogisticsInboundHostScanResult>
+  handleScannedValue: (
+    rawCode: string
+  ) => Promise<LogisticsInboundHostScanResult>
   buildSubmitDraft: () => {
     purchaseOrderId: string
     orderNo: string
@@ -60,7 +64,10 @@ export function createPurchaseLogisticsDialogScanHelper(
     },
 
     buildSubmitDraft() {
-      return purchaseLogisticsDialogAdapter.toSubmissionDraft(options.getForm(), lastPayload)
+      return purchaseLogisticsDialogAdapter.toSubmissionDraft(
+        options.getForm(),
+        lastPayload
+      )
     },
 
     getLastPayload() {

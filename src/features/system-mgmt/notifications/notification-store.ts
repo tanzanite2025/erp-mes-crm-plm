@@ -1,6 +1,6 @@
 import { 
-  SystemMessage,
-  NotificationState 
+  type SystemMessage,
+  type NotificationState 
 } from './types'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'

@@ -1,5 +1,5 @@
 import { getCurrentLocale } from '@/lib/locale'
-import { AppLocale, TranslationKey, translate } from '@/locales'
+import { type AppLocale, type TranslationKey, translate } from '@/locales'
 
 export const INVENTORY_ERROR_CODES = [
   'INVENTORY_QUERY_FAILED',

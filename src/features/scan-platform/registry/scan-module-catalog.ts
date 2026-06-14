@@ -1,5 +1,4 @@
-import type { LucideIcon } from 'lucide-react'
-import { SearchCheck, Truck } from 'lucide-react'
+import { SearchCheck, Truck, type LucideIcon } from 'lucide-react'
 
 export type ScanModuleHostKind = 'embedded-dialog' | 'standalone-page'
 export type ScanModuleStatus = 'ready' | 'skeleton'

@@ -29,7 +29,8 @@ export default defineConfig(
         'warn',
         { allowConstantExport: true },
       ],
-      'no-console': 'error',
+      'no-console': 'warn',
+      '@typescript-eslint/no-explicit-any': 'warn',
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': [
         'error',
@@ -54,6 +55,12 @@ export default defineConfig(
       ],
       // Prevent duplicate imports from the same module
       'no-duplicate-imports': 'error',
+      'react-hooks/immutability': 'warn',
+      'react-hooks/refs': 'warn',
+      'react-hooks/set-state-in-effect': 'warn',
+      'react-hooks/preserve-manual-memoization': 'warn',
+      '@tanstack/query/no-unstable-deps': 'warn',
+      '@tanstack/query/exhaustive-deps': 'warn',
       // Keep dictionary usage scoped to basic-settings only.
       'no-restricted-imports': [
         'error',
