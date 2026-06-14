@@ -762,7 +762,7 @@ The BOM performance optimization provides significant performance improvements t
 - ✅ **Comprehensive monitoring** for production validation
 - ✅ **Well-tested** with unit, integration, and property-based tests
 
-For integration instructions, see [BOM Performance Integration Guide](./bom-performance-integration-guide.md).
+For current integration points, see `src/features/product-structure/components/bom-virtual-table.tsx`, `src/features/product-structure/components/bom-performance-dashboard.tsx`, and `src/lib/performance/use-bom-performance-monitor.ts`.
 
 For troubleshooting, see [BOM Performance Troubleshooting Guide](./bom-performance-troubleshooting.md).
 

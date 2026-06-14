@@ -1,15 +1,17 @@
-# Digital Management ERP
+# Digital Management ERP / MES / CRM / PLM
 
-A modern ERP system for digital governance and industrial resource optimization.
+A modern industrial operations platform for ERP, MES, CRM, PLM, and production resource optimization.
 
 ## Vision
 
-This system bridges complex industrial workflows with cloud-native architecture, providing real-time, data-driven operations for enterprise teams.
+This system bridges complex industrial workflows with cloud-native architecture, providing real-time, data-driven operations for engineering, production, warehouse, trading, finance, and administrative teams.
 
 ## Key Features
 
 - Real-time persistence with Go (Gin) + PostgreSQL.
 - Modular React + Vite frontend architecture.
+- Product lifecycle, engineering BOM, manufacturing BOM, and MRP-oriented workflows.
+- Workflow, approval, permission, and audit infrastructure.
 - Full lifecycle tracking for molds and equipment.
 - JWT-based auth and enterprise security controls.
 - Atomic warehouse/inventory transaction flows.
@@ -21,6 +23,7 @@ This system bridges complex industrial workflows with cloud-native architecture,
 - Backend: Go (Gin), GORM.
 - Database: PostgreSQL (Dockerized).
 - API: RESTful endpoints consumed via `apiFetch`.
+- Package manager: pnpm 10.33.0 via Corepack.
 
 ## Repository Structure
 
@@ -36,16 +39,29 @@ server/services/     Backend business rules, transactions, integrations, and wor
 server/models/       GORM persistence models.
 server/modules/      Newer backend domain modules that bundle focused handlers/services/repositories.
 docs/architecture/   Architecture decisions and current-state topology maps.
+docs/analysis/       Durable audits, retrospectives, and migration analysis.
+docs/frontend/       Frontend-specific implementation guidance.
 docs/ops/            Deployment, monitoring, and operations checklists.
+cutting-engine/      Rust/WASM cutting optimization engine.
+.kiro/specs/         Active spec artifacts only.
 ```
 
 For the current file responsibility and layering assessment, see `docs/architecture/project-structure-review.md`.
 
 ## Documentation Hygiene
 
-- Keep durable source-of-truth docs under `README.md`, `docs/architecture/`, `docs/analysis/`, `docs/ops/`, or feature-local `README.md` files.
+- Keep durable source-of-truth docs under `README.md`, `GEMINI.md`, `DELTA_SYSTEM.md`, `docs/architecture/`, `docs/analysis/`, `docs/frontend/`, `docs/ops/`, or feature-local `README.md` files.
 - Keep `.kiro/specs/**` focused on active spec artifacts (`requirements.md`, `design.md`, `tasks.md`, and short `README.md` files).
-- Do not commit one-off repair notes, local cleanup scripts, generated completion reports, or docs that reference another upstream template project.
+- Do not commit one-off repair notes, local cleanup scripts, generated completion reports, date-stamped local checklists, or docs that reference another upstream template project.
+- When a checklist becomes permanent practice, move the durable rule into the nearest source-of-truth doc and delete the historical checklist.
+- Prefer linking from this README to canonical docs instead of duplicating long instructions in multiple places.
+
+## Type Safety and Validation
+
+- Avoid explicit `any`; use `unknown` at trust boundaries and narrow before reading values.
+- Keep Zod schemas and TypeScript domain types aligned, especially when using React Hook Form transformed output types.
+- Versioned entities should carry `version` through form defaults, SDRTS deltas, and backend patch payloads.
+- Frontend API calls belong in feature services; backend DTO validation and transaction rules belong in handlers/services/modules.
 
 ## Local Development
 
@@ -55,6 +71,8 @@ corepack prepare pnpm@10.33.0 --activate
 pnpm install
 pnpm dev
 ```
+
+`pnpm install` runs `scripts/setup-git-hooks.mjs`, which configures `.githooks` as the repository hook path.
 
 ## Local Development Modes
 
@@ -130,6 +148,25 @@ Notes:
 - This flow is for local dev only and should never point to production database endpoints.
 - Backend env has a single source of truth: `server/.env.dev`
 - Root `.env.local` is frontend-only and should keep only `VITE_*` variables.
+
+## Quality Gates
+
+Run the smallest relevant set while iterating, then run the broader checks before opening a PR:
+
+```bash
+pnpm exec tsc -b
+pnpm run lint
+pnpm run build
+```
+
+Targeted guards:
+
+```bash
+pnpm run verify:i18n
+pnpm run verify:zh-cn-encoding
+pnpm run verify:permissions
+pnpm run verify:frontend-logging
+```
 
 ## Pre-Deploy Check (Important)
 
