@@ -1,4 +1,4 @@
-import { TranslationKey } from '@/locales'
+import { type TranslationKey } from '@/locales'
 import type { AuditStatusDisplayMeta } from '@/components/common/audit-status-display'
 
 type ApprovalTranslator = (

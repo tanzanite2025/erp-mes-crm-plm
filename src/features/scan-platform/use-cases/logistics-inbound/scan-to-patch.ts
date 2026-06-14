@@ -1,5 +1,5 @@
-import { ScanPluginDefinition } from '../../core/plugin-contract'
-import { ScanSubmitResult } from '../../core/types'
+import { type ScanPluginDefinition } from '../../core/plugin-contract'
+import { type ScanSubmitResult } from '../../core/types'
 
 export interface LogisticsInboundContext {
   orderId: string

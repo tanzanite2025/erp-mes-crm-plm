@@ -28,7 +28,7 @@ import { useTasks } from '../store/tasks-context'
 import { DataTableBulkActions } from './data-table-bulk-actions'
 import { tasksColumns as columns } from './tasks-columns'
 
-// @ts-ignore - 示例代码中的 TanStack Router 类型在生产构建中可能未同步生成
+// @ts-expect-error - 示例代码中的 TanStack Router 类型在生产构建中可能未同步生成
 const route = getRouteApi('/_authenticated/tasks/')
 
 export function TasksTable() {
@@ -143,9 +143,9 @@ export function TasksTable() {
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
                     </TableHead>
                   )
                 })}

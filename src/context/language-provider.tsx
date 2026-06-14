@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { getCookie, removeCookie, setCookie } from '@/lib/cookies'
 import { LANGUAGE_COOKIE_NAME } from '@/lib/locale'
-import { AppLocale, DEFAULT_LOCALE, SUPPORTED_LOCALES, TranslationKey, translate } from '@/locales'
+import { type AppLocale, DEFAULT_LOCALE, SUPPORTED_LOCALES, type TranslationKey, translate } from '@/locales'
 
 const LANGUAGE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 

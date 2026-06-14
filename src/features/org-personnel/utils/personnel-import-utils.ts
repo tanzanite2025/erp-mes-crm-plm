@@ -1,4 +1,4 @@
-import { AppLocale, TranslationKey, translate } from '@/locales'
+import { type AppLocale, type TranslationKey, translate } from '@/locales'
 import { loadExcelJS } from '@/lib/lazy-vendors'
 
 import { type Employee } from '../data/schema'
@@ -8,7 +8,7 @@ import {
     PERSONNEL_TEMPLATE_COLUMNS,
     PERSONNEL_TEMPLATE_SHEET_NAME,
     PERSONNEL_EXPORT_SHEET_NAME,
-    PersonnelArchiveColumnKey,
+    type PersonnelArchiveColumnKey,
     getPersonnelArchiveValue,
     normalizePersonnelHeader,
 } from '../config/personnel-archive-columns'

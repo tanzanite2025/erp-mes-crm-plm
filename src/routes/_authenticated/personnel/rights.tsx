@@ -21,9 +21,11 @@ const usersSearchSchema = z.object({
 
 export const Route = createFileRoute('/_authenticated/personnel/rights')({
   validateSearch: usersSearchSchema,
-  component: () => {
-    const search = Route.useSearch()
-    const navigate = Route.useNavigate()
-    return <UsersPermissionsPage search={search} navigate={navigate} />
-  },
+  component: PersonnelRightsRoute,
 })
+
+function PersonnelRightsRoute() {
+  const search = Route.useSearch()
+  const navigate = Route.useNavigate()
+  return <UsersPermissionsPage search={search} navigate={navigate} />
+}

@@ -19,7 +19,7 @@
 
 import { useMemo } from 'react';
 import { Download, Activity, Clock, Database, Edit, Save } from 'lucide-react';
-import { BOMPerformanceMonitor, PerformanceStatus } from '@/lib/performance/bom-performance-monitor';
+import { type BOMPerformanceMonitor, type PerformanceStatus } from '@/lib/performance/bom-performance-monitor';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

@@ -1,4 +1,4 @@
-import { AppLocale, translate } from '@/locales'
+import { type AppLocale, translate } from '@/locales'
 import { loadExcelJS } from '@/lib/lazy-vendors'
 
 export const UnitExcelTemplate = {

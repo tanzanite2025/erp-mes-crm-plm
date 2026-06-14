@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createLogger } from '@/lib/logger'
 import { StorageService } from '@/features/system-mgmt/services/storage-service'
-import { TopologyTemplate } from '../types'
+import { type TopologyTemplate } from '../types'
 
 const TEMPLATE_STORAGE_KEY = 'xdfc_topology_templates_v1'
 const TOPOLOGY_TEMPLATES_QUERY_KEY = ['production-shared', 'topology-templates'] as const
