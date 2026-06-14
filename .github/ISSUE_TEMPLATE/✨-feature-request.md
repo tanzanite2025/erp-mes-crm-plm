@@ -1,6 +1,6 @@
 ---
 name: "✨ Feature Request"
-about: Suggest an idea for improving Shadcn-Admin
+about: Suggest an idea for improving Digital Management ERP
 title: "[Feature Request]: "
 labels: enhancement
 assignees: ""
