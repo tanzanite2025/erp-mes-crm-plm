@@ -2,12 +2,12 @@ import { create } from 'zustand'
 
 interface AiContextState {
   /** 当前业务页面感知的核心数据 (JSON 模型) */
-  localContext: Record<string, any> | null
+  localContext: Record<string, unknown> | null
   /** 当前感知的页面名称或业务实体类型 (如: 'BOM_DETAIL', 'SALES_ORDER') */
   contextTitle: string | null
 
   /** 注入页面上下文 */
-  setPageContext: (data: Record<string, any>, title: string) => void
+  setPageContext: (data: Record<string, unknown>, title: string) => void
   /** 清理上下文 (跨页面重置) */
   clearPageContext: () => void
 }

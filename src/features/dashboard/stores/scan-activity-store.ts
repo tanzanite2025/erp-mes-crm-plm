@@ -15,11 +15,37 @@ export interface ScanActivity {
 
 interface ScanActivityState {
   activities: ScanActivity[]
-  addFromPayload: (payload: any) => void
+  addFromPayload: (payload: ScanActivityPayload) => void
   clear: () => void
 }
 
-function toActivity(payload: any): ScanActivity | null {
+interface ScanActivityPayload {
+  rawCode?: unknown
+  parsed?: {
+    rawCode?: unknown
+    segments?: {
+      serial?: unknown
+    }
+  }
+  scannedAt?: unknown
+  bridge?: {
+    applied?: unknown
+  }
+  resolved?: {
+    product?: {
+      name?: unknown
+    }
+    material?: {
+      code?: unknown
+    }
+  }
+  scene?: unknown
+  deviceId?: unknown
+  protocol?: unknown
+  summary?: unknown
+}
+
+function toActivity(payload: ScanActivityPayload): ScanActivity | null {
   const rawCode = String(
     payload?.rawCode || payload?.parsed?.rawCode || ''
   ).trim()

@@ -11,6 +11,7 @@ import ReactFlow, {
   MarkerType,
   type Edge,
   type Connection,
+  type Node,
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 import { MRPNode, RouterNode } from './components/blueprint-node'
@@ -32,6 +33,14 @@ const defaultEdgeOptions = {
     type: MarkerType.ArrowClosed,
     color: 'hsl(var(--primary))',
   },
+}
+
+interface ReactFlowViewportController {
+  fitView: () => void
+}
+
+type WindowWithReactFlow = Window & {
+  reactFlowInstance?: ReactFlowViewportController
 }
 
 interface BlueprintLabProps {
@@ -75,15 +84,15 @@ export function BlueprintLab({ orderNo }: BlueprintLabProps) {
           minZoom={0.2}
           maxZoom={2}
         >
-          <Background color='#ccc' variant={'dots' as any} gap={20} />
+          <Background color='#ccc' variant='dots' gap={20} />
           <Controls />
           <MiniMap
-            nodeStrokeColor={(n: any) => {
+            nodeStrokeColor={(n: Node) => {
               if (n.data?.status === 'CRITICAL')
                 return 'hsl(var(--destructive))'
               return '#eee'
             }}
-            nodeColor={(n: any) => {
+            nodeColor={(n: Node) => {
               if (n.data?.status === 'CRITICAL')
                 return 'hsl(var(--destructive)/0.2)'
               return '#fff'
@@ -96,7 +105,9 @@ export function BlueprintLab({ orderNo }: BlueprintLabProps) {
             </button>
             <button
               className='h-10 rounded-full border bg-background px-4 text-[10px] font-black tracking-widest uppercase shadow-lg transition-all hover:bg-muted'
-              onClick={() => (window as any).reactFlowInstance?.fitView()}
+              onClick={() =>
+                (window as WindowWithReactFlow).reactFlowInstance?.fitView()
+              }
             >
               Recenter
             </button>

@@ -1,4 +1,5 @@
 import { apiFetch } from '@/lib/api-client'
+import { type DeltaSet } from '@/lib/delta/types'
 import { type Team, type PieceworkRate } from '../data/schema'
 
 /**
@@ -15,7 +16,7 @@ export const PieceworkMaintenanceService = {
 
   patchTeam: async (params: {
     id: string
-    delta: any
+    delta: DeltaSet
     version: number
   }): Promise<void> => {
     const { id, delta, version } = params
@@ -41,7 +42,7 @@ export const PieceworkMaintenanceService = {
 
   patchRate: async (params: {
     id: string
-    delta: any
+    delta: DeltaSet
     version: number
   }): Promise<void> => {
     const { id, delta, version } = params

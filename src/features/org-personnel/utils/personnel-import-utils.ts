@@ -1,4 +1,5 @@
 import { type AppLocale, type TranslationKey, translate } from '@/locales'
+import { type Worksheet } from 'exceljs'
 import { loadExcelJS } from '@/lib/lazy-vendors'
 import {
   PERSONNEL_IMPORT_COLUMNS,
@@ -240,7 +241,7 @@ function validatePersonnelSheetName(sheetName: string) {
   )
 }
 
-function configurePersonnelWorksheet(sheet: any, rowCount: number) {
+function configurePersonnelWorksheet(sheet: Worksheet, rowCount: number) {
   const editableRows = Math.max(rowCount, PERSONNEL_EDITABLE_ROW_COUNT)
 
   PERSONNEL_TEMPLATE_COLUMNS.forEach((_, columnIndex) => {

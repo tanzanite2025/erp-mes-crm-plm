@@ -87,7 +87,7 @@ function JobActionDialogForm({
     open
   )
 
-  const form = useForm<any>({
+  const form = useForm<JobTypeForm>({
     resolver: zodResolver(jobTypeSchema),
     defaultValues: initialValues,
   })

@@ -16,7 +16,7 @@ export interface DashboardSummary {
   recentEvents: string[]
   localContext?: {
     title: string
-    data: Record<string, any>
+    data: Record<string, unknown>
   }
 }
 

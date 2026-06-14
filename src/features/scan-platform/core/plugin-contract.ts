@@ -21,4 +21,4 @@ export interface ScanPluginDefinition<TPayload = unknown, TContext = unknown> {
   ) => Promise<ScanSubmitResult>
 }
 
-export type AnyScanPluginDefinition = ScanPluginDefinition<any, any>
+export type AnyScanPluginDefinition = ScanPluginDefinition<unknown, unknown>

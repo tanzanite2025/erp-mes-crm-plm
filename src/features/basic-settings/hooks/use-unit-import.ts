@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { translate, type AppLocale } from '@/locales'
+import { translate, type AppLocale, type TranslationKey } from '@/locales'
 import { toast } from 'sonner'
 import { loadXLSX } from '@/lib/lazy-vendors'
 import { createLogger } from '@/lib/logger'
@@ -18,7 +18,7 @@ const LOCALES: AppLocale[] = ['zh-CN', 'en-US']
 
 const CATEGORY_OPTIONS: Array<{
   value: UnitCategory
-  labelKey: string
+  labelKey: TranslationKey
 }> = [
   { value: 'QUANTITY', labelKey: 'basicSettings.units.categories.quantity' },
   { value: 'WEIGHT', labelKey: 'basicSettings.units.categories.weight' },
@@ -58,7 +58,7 @@ function normalizeCategory(input: string): UnitCategory {
   for (const option of CATEGORY_OPTIONS) {
     const aliases = new Set(
       LOCALES.map((locale) =>
-        translate(locale, option.labelKey as any).toLowerCase()
+        translate(locale, option.labelKey).toLowerCase()
       ).concat(option.value.toLowerCase())
     )
 
@@ -179,10 +179,10 @@ export function useUnitImport(onSuccess: () => void) {
         }
       )
       onSuccess()
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Unit import failed', error)
       const message =
-        typeof error?.message === 'string' && error.message.trim()
+        error instanceof Error && error.message.trim()
           ? error.message
           : t('basicSettings.units.import.parseFailed')
       toast.error(t('basicSettings.units.import.syncFailed', { message }), {

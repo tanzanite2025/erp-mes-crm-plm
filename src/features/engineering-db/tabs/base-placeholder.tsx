@@ -1,10 +1,11 @@
+import { type LucideIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 
 interface BasePlaceholderProps {
   title: string
   description: string
-  icon: any
+  icon: LucideIcon
 }
 
 export function BasePlaceholder({

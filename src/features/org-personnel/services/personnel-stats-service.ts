@@ -10,6 +10,10 @@ export interface EmployeeStats {
   score: number
 }
 
+interface EmployeeDeptOverviewRow {
+  deptName?: string | null
+}
+
 /**
  * PersonnelStatsService - 负责人员分析统计的前端服务。
  * 遵循“后端权威”原则：所有的核心评分（优秀员工算法）均在后端计算。
@@ -38,7 +42,7 @@ export const PersonnelStatsService = {
    */
   getDeptOverview: async () => {
     // 暂时保留简单 UI 统计，或后续统一由后端聚合
-    const employees = await apiFetch<any[]>('/employees')
+    const employees = await apiFetch<EmployeeDeptOverviewRow[]>('/employees')
     const depts: Record<string, number> = {}
 
     employees.forEach((emp) => {

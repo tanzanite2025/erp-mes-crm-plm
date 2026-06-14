@@ -1,4 +1,4 @@
-import { type Mold, type Furnace } from '../data/schema'
+import { type Mold, type Furnace, type MoldLoan } from '../data/schema'
 import { useAssets } from './use-assets'
 
 export interface DashboardStats {
@@ -44,7 +44,7 @@ export function useDashboardStats(): DashboardStats {
       (m) => m.status === 'CHECKING' || m.status === 'MAINTENANCE'
     ).length,
     fault: molds.filter((m) => m.status === 'RETIRED').length,
-    overdue: ((loans as any[]) || []).filter((l) => l.status === 'OVERDUE')
+    overdue: (loans as MoldLoan[]).filter((loan) => loan.status === 'OVERDUE')
       .length,
   }
 

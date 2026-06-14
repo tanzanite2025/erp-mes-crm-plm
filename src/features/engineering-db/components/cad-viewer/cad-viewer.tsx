@@ -13,6 +13,10 @@ interface CADViewerProps {
   className?: string
 }
 
+interface CADViewerInstance {
+  finish: () => void
+}
+
 /**
  * CADViewer 组件
  * 封装 Autodesk Forge/APS Viewer 的初始化与渲染逻辑
@@ -21,7 +25,7 @@ export function CADViewer({ fileUrl, className }: CADViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [viewer, setViewer] = useState<any>(null)
+  const [viewer, setViewer] = useState<CADViewerInstance | null>(null)
 
   useEffect(() => {
     const initViewer = async () => {

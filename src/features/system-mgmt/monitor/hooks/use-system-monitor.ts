@@ -31,7 +31,7 @@ export function useSystemMonitor() {
     const fsAnomalyKey = SYSTEM_ANOMALY_KEYS.FILESYSTEM_PERMISSION_DENIED
     const hasFsAnomaly = anomalies.includes('FS_PERMISSION_DENIED')
     const existingFsMessage = messages.find(
-      (m) => (m.metadata as any)?.uniqueKey === fsAnomalyKey && !m.isArchived
+      (m) => m.metadata?.uniqueKey === fsAnomalyKey && !m.isArchived
     )
 
     if (hasFsAnomaly) {
