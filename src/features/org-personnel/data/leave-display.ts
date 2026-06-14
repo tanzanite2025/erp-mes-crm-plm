@@ -1,6 +1,13 @@
-import type { LeaveRequest, LeaveRequestStatus, LeaveType } from './leave-request-schema'
+import type {
+  LeaveRequest,
+  LeaveRequestStatus,
+  LeaveType,
+} from './leave-request-schema'
 
-const leaveStatusLabelMaps: Record<string, Record<LeaveRequestStatus, string>> = {
+const leaveStatusLabelMaps: Record<
+  string,
+  Record<LeaveRequestStatus, string>
+> = {
   'zh-CN': {
     PENDING: '待审批',
     APPROVED: '已通过',
@@ -52,27 +59,40 @@ export function formatLeaveDateTime(value: string, locale: string = 'zh-CN') {
   if (Number.isNaN(date.getTime())) {
     return value
   }
-  const formatter = new Intl.DateTimeFormat(locale === 'en-US' ? 'en-US' : 'zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  })
+  const formatter = new Intl.DateTimeFormat(
+    locale === 'en-US' ? 'en-US' : 'zh-CN',
+    {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }
+  )
   return formatter.format(date)
 }
 
-export function getLeaveStatusLabel(status: LeaveRequestStatus | string, locale: string = 'zh-CN') {
+export function getLeaveStatusLabel(
+  status: LeaveRequestStatus | string,
+  locale: string = 'zh-CN'
+) {
   const labelMap = leaveStatusLabelMaps[locale] || leaveStatusLabelMaps['zh-CN']
   return labelMap[status as LeaveRequestStatus] || status
 }
 
-export function getLeaveStatusBadgeClassName(status: LeaveRequestStatus | string) {
-  return leaveStatusBadgeClassMap[status as LeaveRequestStatus] || 'border-dashed'
+export function getLeaveStatusBadgeClassName(
+  status: LeaveRequestStatus | string
+) {
+  return (
+    leaveStatusBadgeClassMap[status as LeaveRequestStatus] || 'border-dashed'
+  )
 }
 
-export function getLeaveTypeLabel(leaveType: LeaveType | string, locale: string = 'zh-CN') {
+export function getLeaveTypeLabel(
+  leaveType: LeaveType | string,
+  locale: string = 'zh-CN'
+) {
   const labelMap = leaveTypeLabelMaps[locale] || leaveTypeLabelMaps['zh-CN']
   return labelMap[leaveType as LeaveType] || leaveType
 }
@@ -81,7 +101,7 @@ export function getSortedAndFilteredLeaves(
   leaves: LeaveRequest[],
   statusFilter: LeaveStatusFilter,
   typeFilter: LeaveTypeFilter,
-  sortOrder: LeaveSortOrder,
+  sortOrder: LeaveSortOrder
 ) {
   return [...leaves]
     .filter((leave) => statusFilter === 'ALL' || leave.status === statusFilter)

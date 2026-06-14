@@ -1,6 +1,11 @@
 export type VehicleCategory = 'van' | 'boxTruck' | 'lightTruck' | 'mediumTruck'
 
-export type ContactChannelType = 'phone' | 'wechat' | 'email' | 'whatsapp' | 'other'
+export type ContactChannelType =
+  | 'phone'
+  | 'wechat'
+  | 'email'
+  | 'whatsapp'
+  | 'other'
 
 export type ContactChannel = {
   type: ContactChannelType

@@ -2,11 +2,11 @@
 
 import type { TranslationKey } from '@/locales'
 import { Edit3, Eye } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { type AppearanceMapping } from '../data/appearance-mapping'
 import { type BarcodeRuleSegment } from '../data/barcode-rule-segment'
-import { cn } from '@/lib/utils'
 
 interface BarcodeRulesTableProps {
   rules: BarcodeRuleSegment[]
@@ -37,7 +37,9 @@ export function BarcodeRulesTable({
           {t(`${translationPrefix}.table.headers.segment` as TranslationKey)}
         </span>
         <span className='text-center text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase'>
-          {t(`${translationPrefix}.table.headers.description` as TranslationKey)}
+          {t(
+            `${translationPrefix}.table.headers.description` as TranslationKey
+          )}
         </span>
         <span className='text-center text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase'>
           {t(`${translationPrefix}.table.headers.example` as TranslationKey)}
@@ -52,7 +54,9 @@ export function BarcodeRulesTable({
         {rules.map((segment) => {
           const previewValues = segmentPreviewValues?.[segment.id]
           const examples =
-            previewValues && previewValues.length > 0 ? previewValues : segment.examples
+            previewValues && previewValues.length > 0
+              ? previewValues
+              : segment.examples
           const isReadOnly = readOnlySegmentIds.includes(segment.id)
 
           return (
@@ -60,8 +64,8 @@ export function BarcodeRulesTable({
               key={segment.id}
               className={cn(
                 'grid grid-cols-[140px_1fr_1fr_100px] items-center',
-                'p-2 rounded-[24px] border border-dashed border-muted/50 bg-muted/5',
-                'transition-all duration-300 hover:bg-white hover:shadow-xl hover:border-blue-400/40 group'
+                'rounded-[24px] border border-dashed border-muted/50 bg-muted/5 p-2',
+                'group transition-all duration-300 hover:border-blue-400/40 hover:bg-white hover:shadow-xl'
               )}
             >
               {/* 1. 字段标识 */}
@@ -69,7 +73,7 @@ export function BarcodeRulesTable({
                 <span className='font-mono text-[10px] font-black tracking-tighter text-rose-600/70'>
                   {segment.length} {lengthLabel} / {segment.id.toUpperCase()}
                 </span>
-                <span className='text-[10px] font-black text-slate-800 italic uppercase tracking-tight'>
+                <span className='text-[10px] font-black tracking-tight text-slate-800 uppercase italic'>
                   {t(
                     `${translationPrefix}.table.segments.${segment.id}.name` as TranslationKey
                   ) || segment.name}
@@ -78,7 +82,7 @@ export function BarcodeRulesTable({
 
               {/* 2. 说明文本 */}
               <div className='px-4'>
-                <p className='mx-auto max-w-[280px] text-center text-[10px] leading-relaxed font-black uppercase text-muted-foreground/60 tracking-tight'>
+                <p className='mx-auto max-w-[280px] text-center text-[10px] leading-relaxed font-black tracking-tight text-muted-foreground/60 uppercase'>
                   {t(
                     `${translationPrefix}.table.segments.${segment.id}.desc` as TranslationKey
                   ) || segment.description}
@@ -121,7 +125,11 @@ export function BarcodeRulesTable({
                   className='size-8 rounded-full transition-all hover:bg-blue-600 hover:text-white'
                   onClick={() => onEdit(segment)}
                 >
-                  {isReadOnly ? <Eye className='size-3.5' /> : <Edit3 className='size-3.5' />}
+                  {isReadOnly ? (
+                    <Eye className='size-3.5' />
+                  ) : (
+                    <Edit3 className='size-3.5' />
+                  )}
                 </Button>
               </div>
             </div>

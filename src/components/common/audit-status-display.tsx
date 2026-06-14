@@ -1,5 +1,5 @@
-import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { Badge } from '@/components/ui/badge'
 
 export interface AuditStatusDisplayMeta {
   label: string
@@ -39,9 +39,7 @@ export function AuditStatusDisplay({
       ? 'gap-2 px-3 py-1.5 rounded-full'
       : 'gap-1.5 px-2.5 py-1 rounded-full'
   const labelSizeClassName =
-    size === 'md'
-      ? 'text-[8px] tracking-widest'
-      : 'text-[8px] tracking-widest'
+    size === 'md' ? 'text-[8px] tracking-widest' : 'text-[8px] tracking-widest'
 
   return (
     <div className={cn('flex flex-col gap-1.5', className)}>
@@ -55,9 +53,21 @@ export function AuditStatusDisplay({
           )}
         >
           {meta.dotClassName ? (
-            <div className={cn('rounded-full', dotSizeClassName, meta.dotClassName)} />
+            <div
+              className={cn(
+                'rounded-full',
+                dotSizeClassName,
+                meta.dotClassName
+              )}
+            />
           ) : null}
-          <span className={cn(labelSizeClassName, italic && 'italic', labelClassName)}>
+          <span
+            className={cn(
+              labelSizeClassName,
+              italic && 'italic',
+              labelClassName
+            )}
+          >
             {meta.label}
           </span>
         </Badge>
@@ -67,7 +77,7 @@ export function AuditStatusDisplay({
         noteVariant === 'text' ? (
           <div
             className={cn(
-              'text-[8px] font-medium leading-4 text-muted-foreground/50',
+              'text-[8px] leading-4 font-medium text-muted-foreground/50',
               noteClassName
             )}
           >
@@ -76,7 +86,7 @@ export function AuditStatusDisplay({
         ) : (
           <div
             className={cn(
-              'rounded-xl border border-dashed px-3 py-2 text-[10px] font-medium leading-5',
+              'rounded-xl border border-dashed px-3 py-2 text-[10px] leading-5 font-medium',
               meta.className,
               noteClassName
             )}

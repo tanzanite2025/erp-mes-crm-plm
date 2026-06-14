@@ -1,5 +1,8 @@
+import {
+  engineeringSpecService,
+  type EngineeringSpecInput,
+} from '@/features/engineering/services/engineering-spec-service'
 import { nippleSchema, type Nipple } from '../data/nipple-schema'
-import { engineeringSpecService, type EngineeringSpecInput } from '@/features/engineering/services/engineering-spec-service'
 
 export const nippleService = {
   getNipples: async (): Promise<Nipple[]> => {
@@ -29,12 +32,16 @@ export const nippleService = {
       type: 'NIPPLE_DATA',
       active: true,
       nippleData: data,
-      version: data.version || 1
+      version: data.version || 1,
     }
-    await engineeringSpecService.saveSpec(spec);
+    await engineeringSpecService.saveSpec(spec)
   },
 
-  patchNipple: async (id: string, delta: Record<string, unknown>, version: number) => {
+  patchNipple: async (
+    id: string,
+    delta: Record<string, unknown>,
+    version: number
+  ) => {
     const mappedDelta: Record<string, unknown> = {}
     Object.entries(delta).forEach(([path, value]) => {
       mappedDelta[`nippleData.${path}`] = value
@@ -43,11 +50,11 @@ export const nippleService = {
   },
 
   saveNipples: async (data: Nipple[]) => {
-    if (data.length === 0) return;
-    await nippleService.saveNipple(data[0]);
+    if (data.length === 0) return
+    await nippleService.saveNipple(data[0])
   },
 
   deleteNipple: async (id: string) => {
-    await engineeringSpecService.deleteSpec(id);
-  }
+    await engineeringSpecService.deleteSpec(id)
+  },
 }

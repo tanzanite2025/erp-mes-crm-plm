@@ -1,7 +1,10 @@
-import type { TabItem } from '@/components/module-tabs'
 import type { TranslationKey } from '@/locales'
+import type { TabItem } from '@/components/module-tabs'
 
-type TranslateFn = (key: TranslationKey, params?: Record<string, string | number>) => string
+type TranslateFn = (
+  key: TranslationKey,
+  params?: Record<string, string | number>
+) => string
 
 export const warehouseTabs: TabItem[] = [
   { key: 'stock', label: '', href: '/warehouse' },
@@ -15,10 +18,30 @@ export const warehouseTabs: TabItem[] = [
 export function getWarehouseTabs(t: TranslateFn): TabItem[] {
   return [
     { key: 'stock', label: t('warehouse.tabs.stock'), href: '/warehouse' },
-    { key: 'reports', label: t('warehouse.tabs.reports'), href: '/warehouse/reports' },
-    { key: 'inbound', label: t('warehouse.tabs.inbound'), href: '/warehouse/inbound' },
-    { key: 'shipment', label: t('warehouse.tabs.shipment'), href: '/warehouse/shipment' },
-    { key: 'stocktake', label: t('warehouse.tabs.stocktake'), href: '/warehouse/stocktake' },
-    { key: 'adjustments', label: t('warehouse.tabs.adjustments'), href: '/warehouse/adjustments' },
+    {
+      key: 'reports',
+      label: t('warehouse.tabs.reports'),
+      href: '/warehouse/reports',
+    },
+    {
+      key: 'inbound',
+      label: t('warehouse.tabs.inbound'),
+      href: '/warehouse/inbound',
+    },
+    {
+      key: 'shipment',
+      label: t('warehouse.tabs.shipment'),
+      href: '/warehouse/shipment',
+    },
+    {
+      key: 'stocktake',
+      label: t('warehouse.tabs.stocktake'),
+      href: '/warehouse/stocktake',
+    },
+    {
+      key: 'adjustments',
+      label: t('warehouse.tabs.adjustments'),
+      href: '/warehouse/adjustments',
+    },
   ]
 }

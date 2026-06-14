@@ -31,10 +31,16 @@ export type ActionPermissionEntry = Permission & {
   routeBindings: ActionRouteBinding[]
 }
 
-function normalizeActionRouteBinding(binding: LegacyActionRouteBinding): ActionRouteBinding {
-  const match = binding.match(/^\s*(GET|POST|PUT|PATCH|DELETE)\s+([^\s(]+)\s*(?:\((.*)\))?$/)
+function normalizeActionRouteBinding(
+  binding: LegacyActionRouteBinding
+): ActionRouteBinding {
+  const match = binding.match(
+    /^\s*(GET|POST|PUT|PATCH|DELETE)\s+([^\s(]+)\s*(?:\((.*)\))?$/
+  )
   if (!match) {
-    throw new Error(`[action-permission-catalog] Unparseable route binding: ${binding}`)
+    throw new Error(
+      `[action-permission-catalog] Unparseable route binding: ${binding}`
+    )
   }
 
   const [, method, path, note] = match
@@ -45,21 +51,23 @@ function normalizeActionRouteBinding(binding: LegacyActionRouteBinding): ActionR
   }
 }
 
-function normalizeActionPermissionEntry(entry: LegacyActionPermissionEntry): ActionPermissionEntry {
+function normalizeActionPermissionEntry(
+  entry: LegacyActionPermissionEntry
+): ActionPermissionEntry {
   return {
     ...entry,
     routeBindings: entry.routeBindings.map(normalizeActionRouteBinding),
   }
 }
 
-function normalizeActionPermissionCatalog<T extends Record<string, LegacyActionPermissionEntry[]>>(
-  catalog: T,
-): Record<keyof T, ActionPermissionEntry[]> {
+function normalizeActionPermissionCatalog<
+  T extends Record<string, LegacyActionPermissionEntry[]>,
+>(catalog: T): Record<keyof T, ActionPermissionEntry[]> {
   return Object.fromEntries(
     Object.entries(catalog).map(([catalogKey, entries]) => [
       catalogKey,
       entries.map(normalizeActionPermissionEntry),
-    ]),
+    ])
   ) as Record<keyof T, ActionPermissionEntry[]>
 }
 
@@ -105,7 +113,11 @@ const systemActions: LegacyActionPermissionEntry[] = [
     desc: '允许删除用户账号。',
     category: 'action',
     parentId: 'menu_system',
-    routeBindings: ['DELETE /users/:id', 'DELETE /org/:id', 'DELETE /employees/:id'],
+    routeBindings: [
+      'DELETE /users/:id',
+      'DELETE /org/:id',
+      'DELETE /employees/:id',
+    ],
   },
   {
     id: 'user_invite',
@@ -175,7 +187,10 @@ const warehouseActions: LegacyActionPermissionEntry[] = [
     desc: '允许创建入库记录。',
     category: 'action',
     parentId: 'menu_warehouse',
-    routeBindings: ['POST /inventory/inbound', 'POST /sales-exchanges/:id/old-item-inbound'],
+    routeBindings: [
+      'POST /inventory/inbound',
+      'POST /sales-exchanges/:id/old-item-inbound',
+    ],
   },
   {
     id: 'action_warehouse_shipment_record',
@@ -183,7 +198,10 @@ const warehouseActions: LegacyActionPermissionEntry[] = [
     desc: '允许创建出库记录。',
     category: 'action',
     parentId: 'menu_warehouse',
-    routeBindings: ['POST /inventory/shipment', 'POST /inventory/shipment/virtual-lock'],
+    routeBindings: [
+      'POST /inventory/shipment',
+      'POST /inventory/shipment/virtual-lock',
+    ],
   },
   {
     id: 'action_inventory_shipment_update',
@@ -239,7 +257,11 @@ const warehouseActions: LegacyActionPermissionEntry[] = [
     desc: '允许维护仓库分类主数据。',
     category: 'action',
     parentId: 'menu_warehouse',
-    routeBindings: ['POST /warehouse/categories', 'PATCH /warehouse/categories/:id', 'DELETE /warehouse/categories/:id'],
+    routeBindings: [
+      'POST /warehouse/categories',
+      'PATCH /warehouse/categories/:id',
+      'DELETE /warehouse/categories/:id',
+    ],
   },
   {
     id: 'action_warehouse_stocktake_manage',
@@ -320,7 +342,11 @@ const tradingActions: LegacyActionPermissionEntry[] = [
     desc: '允许创建或编辑客户资料。',
     category: 'action',
     parentId: 'menu_trading',
-    routeBindings: ['POST /customers', 'POST /customers/:id/transactions', 'PATCH /customers/:id'],
+    routeBindings: [
+      'POST /customers',
+      'POST /customers/:id/transactions',
+      'PATCH /customers/:id',
+    ],
   },
   {
     id: 'action_trading_customer_delete',
@@ -344,7 +370,11 @@ const tradingActions: LegacyActionPermissionEntry[] = [
     desc: '允许创建或编辑供应商资料。',
     category: 'action',
     parentId: 'menu_purchase',
-    routeBindings: ['POST /suppliers', 'POST /suppliers/:id/transactions', 'PATCH /suppliers/:id'],
+    routeBindings: [
+      'POST /suppliers',
+      'POST /suppliers/:id/transactions',
+      'PATCH /suppliers/:id',
+    ],
   },
   {
     id: 'action_trading_supplier_delete',
@@ -435,7 +465,10 @@ const tradingActions: LegacyActionPermissionEntry[] = [
     desc: '允许在应收与应付台账中登记收款和付款记录。',
     category: 'action',
     parentId: 'menu_trading',
-    routeBindings: ['POST /receivables/:id/receipts', 'POST /payables/:id/payments'],
+    routeBindings: [
+      'POST /receivables/:id/receipts',
+      'POST /payables/:id/payments',
+    ],
   },
 ]
 
@@ -502,7 +535,10 @@ const equipmentActions: LegacyActionPermissionEntry[] = [
     desc: '允许维护设备协作单位资料。',
     category: 'action',
     parentId: 'menu_equipment',
-    routeBindings: ['POST /equipment-partners', 'DELETE /equipment-partners/:id'],
+    routeBindings: [
+      'POST /equipment-partners',
+      'DELETE /equipment-partners/:id',
+    ],
   },
   {
     id: 'action_equipment_partner_update',
@@ -526,7 +562,10 @@ const equipmentActions: LegacyActionPermissionEntry[] = [
     desc: '允许上报模具和炉台遥测数据。',
     category: 'action',
     parentId: 'menu_equipment',
-    routeBindings: ['POST /molds/:id/telemetry', 'POST /furnaces/:id/telemetry'],
+    routeBindings: [
+      'POST /molds/:id/telemetry',
+      'POST /furnaces/:id/telemetry',
+    ],
   },
   {
     id: 'action_equipment_maintenance_manage',
@@ -543,17 +582,13 @@ const equipmentActions: LegacyActionPermissionEntry[] = [
 ]
 
 const approvalActions: LegacyActionPermissionEntry[] = [
-
   {
     id: 'action_approval_review',
     label: '审批：审核申请',
     desc: '允许处理待审批申请。',
     category: 'action',
     parentId: 'menu_approval',
-    routeBindings: [
-      'GET /approvals/my',
-      'PATCH /approvals/:id/approve',
-    ],
+    routeBindings: ['GET /approvals/my', 'PATCH /approvals/:id/approve'],
   },
 ]
 
@@ -698,17 +733,21 @@ const productionActions: LegacyActionPermissionEntry[] = [
   },
 ]
 
-export const ACTION_PERMISSION_CATALOG: Record<string, ActionPermissionEntry[]> =
-  normalizeActionPermissionCatalog({
-    system: systemActions,
-    warehouse: warehouseActions,
-    trading: tradingActions,
-    engineering: engineeringActions,
-    quality: qualityActions,
-    equipment: equipmentActions,
-    org: orgActions,
-    production: productionActions,
-    approval: approvalActions,
-  })
+export const ACTION_PERMISSION_CATALOG: Record<
+  string,
+  ActionPermissionEntry[]
+> = normalizeActionPermissionCatalog({
+  system: systemActions,
+  warehouse: warehouseActions,
+  trading: tradingActions,
+  engineering: engineeringActions,
+  quality: qualityActions,
+  equipment: equipmentActions,
+  org: orgActions,
+  production: productionActions,
+  approval: approvalActions,
+})
 
-export const ACTION_PERMISSIONS: Permission[] = Object.values(ACTION_PERMISSION_CATALOG).flat()
+export const ACTION_PERMISSIONS: Permission[] = Object.values(
+  ACTION_PERMISSION_CATALOG
+).flat()

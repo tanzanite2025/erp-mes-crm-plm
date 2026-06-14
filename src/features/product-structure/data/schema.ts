@@ -1,9 +1,9 @@
 import { z } from 'zod'
+import { BOM_STATUS_ORDER } from '@/lib/codecs/code-normalization'
 import {
   masterDataControlSchema,
   productSchema,
 } from '@/features/engineering/data/schema'
-import { BOM_STATUS_ORDER } from '@/lib/codecs/code-normalization'
 
 export const bomParentChildrenProtocolBranchDraftSchema = z.object({
   id: z.string().trim().min(1, 'Node ID is required'),
@@ -61,7 +61,11 @@ export const bomSchema = z.object({
   productId: z.string().min(1, 'Product is required'),
   product: productSchema.optional(),
   sourceEbomId: z.string().nullable().optional(),
-  bomVersion: z.string().trim().regex(/^V[0-9]+(\.[0-9]+)*$/, 'Version must follow V1.0 format').default('V1.0'),
+  bomVersion: z
+    .string()
+    .trim()
+    .regex(/^V[0-9]+(\.[0-9]+)*$/, 'Version must follow V1.0 format')
+    .default('V1.0'),
   status: z.enum(BOM_STATUS_ORDER).default('DRAFT'),
   isLocked: z.boolean().default(false),
   // 归属语义在 BOM 维度（方案 B + 1:1 设计）：
@@ -76,7 +80,10 @@ export const bomSchema = z.object({
   // 方案 B：BOM 是产品最终重量的端到端权威源。
   //   - 创建/草稿期允许为 0 / 空字符串（后端校验：仅 RELEASED 必须 > 0 + 单位非空）
   //   - 单位引用 basic-settings 的 WEIGHT 类目代码（g / kg 等）
-  measuredWeight: z.number().nonnegative('Measured weight must be non-negative').default(0),
+  measuredWeight: z
+    .number()
+    .nonnegative('Measured weight must be non-negative')
+    .default(0),
   measuredWeightUnit: z.string().trim().default(''),
   revisionNo: z.string().optional(),
   effectiveFrom: masterDataControlSchema.shape.effectiveFrom,
@@ -106,7 +113,13 @@ export type BOMItem = z.infer<typeof bomItemSchema>
 export type BOM = z.infer<typeof bomSchema>
 export type BOMList = z.infer<typeof bomListSchema>
 
-export type BOMParentChildrenProtocolBranchDraft = z.infer<typeof bomParentChildrenProtocolBranchDraftSchema>
-export type BOMParentChildrenProtocolItemDraft = z.infer<typeof bomParentChildrenProtocolItemDraftSchema>
-export type BOMParentChildrenProtocolDraft = z.infer<typeof bomParentChildrenProtocolDraftSchema>
+export type BOMParentChildrenProtocolBranchDraft = z.infer<
+  typeof bomParentChildrenProtocolBranchDraftSchema
+>
+export type BOMParentChildrenProtocolItemDraft = z.infer<
+  typeof bomParentChildrenProtocolItemDraftSchema
+>
+export type BOMParentChildrenProtocolDraft = z.infer<
+  typeof bomParentChildrenProtocolDraftSchema
+>
 export type BOMRelationSidecar = z.infer<typeof bomRelationSidecarSchema>

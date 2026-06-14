@@ -96,7 +96,10 @@ const PRODUCT_AUDIT_HIDDEN_NESTED_KEYS = new Set([
 ])
 
 function normalizeAuditFieldName(field: string): string {
-  return field.trim().replace(/[\s_-]/g, '').toLowerCase()
+  return field
+    .trim()
+    .replace(/[\s_-]/g, '')
+    .toLowerCase()
 }
 
 function isStructuredAuditValue(value: unknown): boolean {
@@ -105,7 +108,10 @@ function isStructuredAuditValue(value: unknown): boolean {
 
 function isVisibleBasicField(field: string): boolean {
   const normalizedField = normalizeAuditFieldName(field)
-  return PRODUCT_AUDIT_VISIBLE_BASIC_FIELDS.has(normalizedField) && !PRODUCT_AUDIT_HIDDEN_FIELDS.has(normalizedField)
+  return (
+    PRODUCT_AUDIT_VISIBLE_BASIC_FIELDS.has(normalizedField) &&
+    !PRODUCT_AUDIT_HIDDEN_FIELDS.has(normalizedField)
+  )
 }
 
 function isHiddenField(field: string): boolean {
@@ -168,16 +174,25 @@ function summarizeArrayEntry(value: unknown): string {
 
   const record = value as Record<string, unknown>
 
-  if (typeof record.categoryKey === 'string' || typeof record.optionValue === 'string') {
-    return truncatePreviewText(`${formatProductAuditDisplayText(record.categoryKey)}: ${formatProductAuditDisplayText(record.optionValue)}`)
+  if (
+    typeof record.categoryKey === 'string' ||
+    typeof record.optionValue === 'string'
+  ) {
+    return truncatePreviewText(
+      `${formatProductAuditDisplayText(record.categoryKey)}: ${formatProductAuditDisplayText(record.optionValue)}`
+    )
   }
 
   if (typeof record.name === 'string') {
-    return truncatePreviewText(record.name.trim() || formatProductAuditDisplayText(record.id))
+    return truncatePreviewText(
+      record.name.trim() || formatProductAuditDisplayText(record.id)
+    )
   }
 
   if (typeof record.label === 'string') {
-    return truncatePreviewText(record.label.trim() || formatProductAuditDisplayText(record.id))
+    return truncatePreviewText(
+      record.label.trim() || formatProductAuditDisplayText(record.id)
+    )
   }
 
   if (typeof record.id === 'string') {
@@ -189,7 +204,11 @@ function summarizeArrayEntry(value: unknown): string {
     return '—'
   }
 
-  return truncatePreviewText(entries.map(([key, itemValue]) => summarizeObjectEntry(key, itemValue)).join(' · '))
+  return truncatePreviewText(
+    entries
+      .map(([key, itemValue]) => summarizeObjectEntry(key, itemValue))
+      .join(' · ')
+  )
 }
 
 function toRecord(value: unknown): Record<string, unknown> {
@@ -216,7 +235,9 @@ type ProductAuditAttributeValueRecord = {
   optionValue: string
 }
 
-function toProductAttributeValueRecords(value: unknown): ProductAuditAttributeValueRecord[] {
+function toProductAttributeValueRecords(
+  value: unknown
+): ProductAuditAttributeValueRecord[] {
   if (!Array.isArray(value)) {
     return []
   }
@@ -227,22 +248,31 @@ function toProductAttributeValueRecords(value: unknown): ProductAuditAttributeVa
     }
 
     const record = item as Record<string, unknown>
-    const categoryKey = typeof record.categoryKey === 'string' ? record.categoryKey.trim() : ''
-    const optionValue = typeof record.optionValue === 'string' ? record.optionValue.trim() : ''
+    const categoryKey =
+      typeof record.categoryKey === 'string' ? record.categoryKey.trim() : ''
+    const optionValue =
+      typeof record.optionValue === 'string' ? record.optionValue.trim() : ''
 
     if (!categoryKey) {
       return []
     }
 
-    return [{
-      categoryKey,
-      optionValue,
-    }]
+    return [
+      {
+        categoryKey,
+        optionValue,
+      },
+    ]
   })
 }
 
 function toAttributeValueMap(value: unknown): Map<string, string> {
-  return new Map(toProductAttributeValueRecords(value).map((item) => [item.categoryKey, item.optionValue]))
+  return new Map(
+    toProductAttributeValueRecords(value).map((item) => [
+      item.categoryKey,
+      item.optionValue,
+    ])
+  )
 }
 
 function toAttachmentNames(value: unknown): string[] {
@@ -267,13 +297,19 @@ function toAttachmentNames(value: unknown): string[] {
     .filter((item) => item && item !== '—')
 }
 
-function summarizeStructuredValue(value: unknown): { count: number; preview: string[] } {
+function summarizeStructuredValue(value: unknown): {
+  count: number
+  preview: string[]
+} {
   if (value === null || value === undefined) {
     return { count: 0, preview: ['—'] }
   }
 
   if (Array.isArray(value)) {
-    const preview = value.slice(0, 3).map((item) => summarizeArrayEntry(item)).filter(Boolean)
+    const preview = value
+      .slice(0, 3)
+      .map((item) => summarizeArrayEntry(item))
+      .filter(Boolean)
     return {
       count: value.length,
       preview: preview.length > 0 ? preview : ['—'],
@@ -282,7 +318,9 @@ function summarizeStructuredValue(value: unknown): { count: number; preview: str
 
   if (typeof value === 'object') {
     const entries = Object.entries(value as Record<string, unknown>)
-    const preview = entries.slice(0, 3).map(([key, itemValue]) => summarizeObjectEntry(key, itemValue))
+    const preview = entries
+      .slice(0, 3)
+      .map(([key, itemValue]) => summarizeObjectEntry(key, itemValue))
     return {
       count: entries.length,
       preview: preview.length > 0 ? preview : ['—'],
@@ -296,10 +334,14 @@ function summarizeStructuredValue(value: unknown): { count: number; preview: str
   }
 }
 
-export function buildProductAttributeValueDiffRows(change: ProductAuditStructuredChange): ProductAuditResolvedDiffRow[] {
+export function buildProductAttributeValueDiffRows(
+  change: ProductAuditStructuredChange
+): ProductAuditResolvedDiffRow[] {
   const beforeMap = toAttributeValueMap(change.before)
   const afterMap = toAttributeValueMap(change.after)
-  const categoryKeys = Array.from(new Set([...beforeMap.keys(), ...afterMap.keys()])).sort((left, right) => left.localeCompare(right))
+  const categoryKeys = Array.from(
+    new Set([...beforeMap.keys(), ...afterMap.keys()])
+  ).sort((left, right) => left.localeCompare(right))
 
   return categoryKeys
     .map((categoryKey) => ({
@@ -310,37 +352,52 @@ export function buildProductAttributeValueDiffRows(change: ProductAuditStructure
     .filter((item) => !areDisplayValuesEqual(item.before, item.after))
 }
 
-function buildProductRestrictionsDiffRows(change: ProductAuditStructuredChange): ProductAuditResolvedDiffRow[] {
+function buildProductRestrictionsDiffRows(
+  change: ProductAuditStructuredChange
+): ProductAuditResolvedDiffRow[] {
   const before = toStringArray(change.before).join(', ') || '—'
   const after = toStringArray(change.after).join(', ') || '—'
 
   return areDisplayValuesEqual(before, after)
     ? []
-    : [{
-        key: 'restrictions',
-        before,
-        after,
-      }]
+    : [
+        {
+          key: 'restrictions',
+          before,
+          after,
+        },
+      ]
 }
 
-function buildProductAttachmentDiffRows(change: ProductAuditStructuredChange): ProductAuditResolvedDiffRow[] {
+function buildProductAttachmentDiffRows(
+  change: ProductAuditStructuredChange
+): ProductAuditResolvedDiffRow[] {
   const before = toAttachmentNames(change.before).join(', ') || '—'
   const after = toAttachmentNames(change.after).join(', ') || '—'
 
   return areDisplayValuesEqual(before, after)
     ? []
-    : [{
-        key: 'attachments',
-        before,
-        after,
-      }]
+    : [
+        {
+          key: 'attachments',
+          before,
+          after,
+        },
+      ]
 }
 
-function buildProductObjectDiffRows(change: ProductAuditStructuredChange): ProductAuditResolvedDiffRow[] {
+function buildProductObjectDiffRows(
+  change: ProductAuditStructuredChange
+): ProductAuditResolvedDiffRow[] {
   const beforeRecord = toRecord(change.before)
   const afterRecord = toRecord(change.after)
-  const keys = Array.from(new Set([...Object.keys(beforeRecord), ...Object.keys(afterRecord)]))
-    .filter((key) => !PRODUCT_AUDIT_HIDDEN_NESTED_KEYS.has(normalizeAuditFieldName(key)))
+  const keys = Array.from(
+    new Set([...Object.keys(beforeRecord), ...Object.keys(afterRecord)])
+  )
+    .filter(
+      (key) =>
+        !PRODUCT_AUDIT_HIDDEN_NESTED_KEYS.has(normalizeAuditFieldName(key))
+    )
     .sort((left, right) => left.localeCompare(right))
 
   return keys
@@ -352,7 +409,9 @@ function buildProductObjectDiffRows(change: ProductAuditStructuredChange): Produ
     .filter((item) => !areDisplayValuesEqual(item.before, item.after))
 }
 
-export function buildProductStructuredDiffRows(change: ProductAuditStructuredChange): ProductAuditResolvedDiffRow[] {
+export function buildProductStructuredDiffRows(
+  change: ProductAuditStructuredChange
+): ProductAuditResolvedDiffRow[] {
   const normalizedField = normalizeAuditFieldName(change.field)
 
   if (normalizedField === 'attributevalues') {
@@ -372,7 +431,10 @@ export function buildProductStructuredDiffRows(change: ProductAuditStructuredCha
 
 function resolveTargetText(diff: DiffItem[], field: string): string {
   const normalizedField = normalizeAuditFieldName(field)
-  const matchingItems = diff.filter((item) => normalizeAuditFieldName(item.f || item.a || '') === normalizedField)
+  const matchingItems = diff.filter(
+    (item) =>
+      normalizeAuditFieldName(item.f || item.a || '') === normalizedField
+  )
 
   for (let index = matchingItems.length - 1; index >= 0; index -= 1) {
     const candidate = matchingItems[index]
@@ -402,7 +464,10 @@ export function buildProductAuditSummary(log: AuditLog): ProductAuditSummary {
       return
     }
 
-    const structured = isStructuredField(field) || isStructuredAuditValue(item.o) || isStructuredAuditValue(item.n)
+    const structured =
+      isStructuredField(field) ||
+      isStructuredAuditValue(item.o) ||
+      isStructuredAuditValue(item.n)
 
     if (structured) {
       const beforeSummary = summarizeStructuredValue(item.o)

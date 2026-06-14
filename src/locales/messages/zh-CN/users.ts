@@ -90,7 +90,8 @@
       save: '核对访问画像与已选权限后保存。',
     },
     listTitle: '待分配账户',
-    listSubtitle: '此页只承载账户级显式权限分配，不处理新增、删除或批量账号运维。',
+    listSubtitle:
+      '此页只承载账户级显式权限分配，不处理新增、删除或批量账号运维。',
   },
   status: {
     active: '启用',
@@ -105,7 +106,8 @@
     accessVerifyTitle: '身份核验 IDENTITY_VERIFY',
     protectedAccountCreateTitle: '高权限账户开通 SECURE_PROVISIONING',
     accessVerifySubtitle: '为了确保系统安全，请先完成高等级身份校验。',
-    protectedAccountCreateSubtitle: '校验通过。现在可以创建具备全系统管理权限的受保护账户。',
+    protectedAccountCreateSubtitle:
+      '校验通过。现在可以创建具备全系统管理权限的受保护账户。',
     accessVerifyHint: '需要开发者级操作码以解锁权限',
     accessVerifyPlaceholder: 'ENTER 8-BIT ACCESS CODE',
     accessVerifyButton: '验证权限 VERIFY_ACCESS',

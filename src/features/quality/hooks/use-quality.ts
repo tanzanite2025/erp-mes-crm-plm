@@ -92,7 +92,9 @@ export function useQualityMutations() {
       invalidateQueryKeys: [['quality_standards'], ['quality_standard']],
       onError: handleServerError,
       onSuccess: (_, variables) => {
-        toast.success(variables.successMessage || t('quality.hooks.saveStandardSuccess'))
+        toast.success(
+          variables.successMessage || t('quality.hooks.saveStandardSuccess')
+        )
       },
     }),
   })
@@ -102,7 +104,11 @@ export function useQualityMutations() {
       QualityMaintenanceService.executeInspection(data),
     ...buildMutationOptions<void, Error, ExecuteInspectionPayload>({
       queryClient,
-      invalidateQueryKeys: [['quality_tasks'], ['quality_abnormalities'], ['quality_inspection_stats']],
+      invalidateQueryKeys: [
+        ['quality_tasks'],
+        ['quality_abnormalities'],
+        ['quality_inspection_stats'],
+      ],
       onError: handleServerError,
       onSuccess: () => {
         toast.success(t('quality.inspection.toast.submitted'))

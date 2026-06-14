@@ -1,16 +1,30 @@
-import type { QueryClient, QueryKey, UseMutationOptions } from '@tanstack/react-query'
+import type {
+  QueryClient,
+  QueryKey,
+  UseMutationOptions,
+} from '@tanstack/react-query'
 import { failLoudly } from './safe-catch'
 
 interface BuildMutationOptionsArgs<TData, TError, TVariables, TContext> {
   invalidateQueryKeys?: QueryKey[]
   onError?: UseMutationOptions<TData, TError, TVariables, TContext>['onError']
-  onSuccess?: UseMutationOptions<TData, TError, TVariables, TContext>['onSuccess']
+  onSuccess?: UseMutationOptions<
+    TData,
+    TError,
+    TVariables,
+    TContext
+  >['onSuccess']
   queryClient: QueryClient
   /** 异常上报的来源标识，用于日志定位。默认 'MutationAction' */
   scope?: string
 }
 
-export function buildMutationOptions<TData = unknown, TError = Error, TVariables = void, TContext = unknown>({
+export function buildMutationOptions<
+  TData = unknown,
+  TError = Error,
+  TVariables = void,
+  TContext = unknown,
+>({
   invalidateQueryKeys = [],
   onError,
   onSuccess,
@@ -35,7 +49,9 @@ export function buildMutationOptions<TData = unknown, TError = Error, TVariables
     },
     onSuccess: async (data, variables, onMutateResult, context) => {
       await Promise.all(
-        invalidateQueryKeys.map((queryKey) => queryClient.invalidateQueries({ queryKey }))
+        invalidateQueryKeys.map((queryKey) =>
+          queryClient.invalidateQueries({ queryKey })
+        )
       )
 
       await onSuccess?.(data, variables, onMutateResult, context)

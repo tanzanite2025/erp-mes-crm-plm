@@ -1,6 +1,6 @@
 import { Blocks } from 'lucide-react'
-import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { BatchEngineConfigDebugPanel } from './components/batch-engine-config-debug-panel'
 import { BatchEngineControlPanel } from './components/batch-engine-control-panel'
 import { BatchEngineCuttingPreviewDialog } from './components/batch-engine-cutting-preview-dialog'
@@ -11,7 +11,8 @@ import { useBatchEngineState } from './hooks/use-batch-engine-state'
 
 export function BatchEnginePage() {
   const { t } = useLanguage()
-  const { bootstrap, preview, solve, planSelection, demandSelection } = useBatchEngineState()
+  const { bootstrap, preview, solve, planSelection, demandSelection } =
+    useBatchEngineState()
   const {
     previewOpen,
     selectedExplainabilityTargetId,
@@ -22,10 +23,15 @@ export function BatchEnginePage() {
     openExplainabilityTarget,
     selectExplainabilityTarget,
   } = useBatchEnginePreviewFocusState()
-  const { selectedPlan, selectedPlanRank, baselinePlanRank, activeDiffSummary } = planSelection
+  const {
+    selectedPlan,
+    selectedPlanRank,
+    baselinePlanRank,
+    activeDiffSummary,
+  } = planSelection
 
   return (
-    <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+    <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
       <IndustrialHeader
         icon={Blocks}
         title={t('rawMaterials.batchEngine.title')}
@@ -86,7 +92,9 @@ export function BatchEnginePage() {
             onOpenExplainabilityTarget={openExplainabilityTarget}
             selectedExplainabilityTargetId={selectedExplainabilityTargetId}
             selectedExplainabilityTargetKind={selectedExplainabilityTargetKind}
-            selectedExplainabilityTargetSource={selectedExplainabilityTargetSource}
+            selectedExplainabilityTargetSource={
+              selectedExplainabilityTargetSource
+            }
           />
         </div>
       </section>
@@ -101,9 +109,13 @@ export function BatchEnginePage() {
         baselinePlanRank={baselinePlanRank}
         activeDiffSummary={activeDiffSummary}
         plans={solve.solution?.plans ?? []}
-        explicitSelectedDemandLineId={demandSelection.explicitSelectedDemandLineId}
+        explicitSelectedDemandLineId={
+          demandSelection.explicitSelectedDemandLineId
+        }
         explicitSelectedDemand={demandSelection.explicitSelectedDemand}
-        effectiveSelectedDemandLineId={demandSelection.effectiveSelectedDemandLineId}
+        effectiveSelectedDemandLineId={
+          demandSelection.effectiveSelectedDemandLineId
+        }
         effectiveSelectedDemand={demandSelection.effectiveSelectedDemand}
         selectedDemandLineId={demandSelection.selectedDemandLineId}
         relatedRollIds={demandSelection.relatedRollIds}

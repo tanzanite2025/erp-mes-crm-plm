@@ -2,7 +2,10 @@ import { useMemo, useState, useEffect } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { isNotFoundError } from '@/lib/error-status'
 import { createLogger } from '@/lib/logger'
-import { type CompositeReadResource, resolveQueryFailure } from '@/lib/read-resource'
+import {
+  type CompositeReadResource,
+  resolveQueryFailure,
+} from '@/lib/read-resource'
 import { failLoudly } from '@/lib/safe-catch'
 import type { SalesOrder } from '@/features/trading/data/schema'
 import {
@@ -89,7 +92,8 @@ export function useSalesReturnQueryShell() {
       error: sourceOrdersQuery.error,
       isPending: sourceOrdersQuery.isPending,
       scope: 'useSalesReturnQueryShell.sourceOrders',
-      missingMessage: '[CRITICAL] Sales return source orders missing after load',
+      missingMessage:
+        '[CRITICAL] Sales return source orders missing after load',
       failureMessage: '[CRITICAL] Sales return source orders query failed',
     })
     if (failure) {
@@ -108,7 +112,9 @@ export function useSalesReturnQueryShell() {
     if (!sourceOrdersData) {
       return {
         status: 'error',
-        error: new Error('[CRITICAL] Sales return source orders missing after load'),
+        error: new Error(
+          '[CRITICAL] Sales return source orders missing after load'
+        ),
         scope: 'useSalesReturnQueryShell.sourceOrders',
       }
     }
@@ -121,7 +127,11 @@ export function useSalesReturnQueryShell() {
       total,
       totalPages: Math.max(1, Math.ceil(total / SOURCE_ORDERS_PAGE_SIZE)),
     }
-  }, [sourceOrdersQuery.data, sourceOrdersQuery.error, sourceOrdersQuery.isPending])
+  }, [
+    sourceOrdersQuery.data,
+    sourceOrdersQuery.error,
+    sourceOrdersQuery.isPending,
+  ])
 
   const returnsResource = useMemo<SalesReturnRecordsResource>(() => {
     const failure = resolveQueryFailure({
@@ -161,14 +171,21 @@ export function useSalesReturnQueryShell() {
       total,
       totalPages: Math.max(1, Math.ceil(total / SALES_RETURNS_PAGE_SIZE)),
     }
-  }, [returnsListQuery.data, returnsListQuery.error, returnsListQuery.isPending])
+  }, [
+    returnsListQuery.data,
+    returnsListQuery.error,
+    returnsListQuery.isPending,
+  ])
 
   useEffect(() => {
     if (sourceOrdersResource.status !== 'error') {
       return
     }
 
-    logger.error(`Failed to load sales return source orders: ${sourceOrdersResource.scope}`, sourceOrdersResource.error)
+    logger.error(
+      `Failed to load sales return source orders: ${sourceOrdersResource.scope}`,
+      sourceOrdersResource.error
+    )
     failLoudly(sourceOrdersResource.error, sourceOrdersResource.scope)
   }, [sourceOrdersResource])
 
@@ -177,14 +194,21 @@ export function useSalesReturnQueryShell() {
       return
     }
 
-    logger.error(`Failed to load sales return records: ${returnsResource.scope}`, returnsResource.error)
+    logger.error(
+      `Failed to load sales return records: ${returnsResource.scope}`,
+      returnsResource.error
+    )
     failLoudly(returnsResource.error, returnsResource.scope)
   }, [returnsResource])
 
-  const sourceTotalPages = sourceOrdersResource.status === 'ready' ? sourceOrdersResource.totalPages : 1
+  const sourceTotalPages =
+    sourceOrdersResource.status === 'ready'
+      ? sourceOrdersResource.totalPages
+      : 1
 
   const selectedSourceOrder = useMemo(() => {
-    const sourceOrders = sourceOrdersResource.status === 'ready' ? sourceOrdersResource.items : []
+    const sourceOrders =
+      sourceOrdersResource.status === 'ready' ? sourceOrdersResource.items : []
 
     if (sourceOrderDetailQuery.data) {
       return sourceOrderDetailQuery.data
@@ -193,7 +217,8 @@ export function useSalesReturnQueryShell() {
     return sourceOrders.find((order) => order.id === selectedSourceOrderId)
   }, [sourceOrderDetailQuery.data, sourceOrdersResource, selectedSourceOrderId])
 
-  const returnTotalPages = returnsResource.status === 'ready' ? returnsResource.totalPages : 1
+  const returnTotalPages =
+    returnsResource.status === 'ready' ? returnsResource.totalPages : 1
 
   const hasMissingSelectedReturn =
     Boolean(selectedReturnId) && isNotFoundError(returnDetailQuery.error)
@@ -230,7 +255,8 @@ export function useSalesReturnQueryShell() {
   ])
 
   const selectedReturnRecord = useMemo(() => {
-    const returnRecords = returnsResource.status === 'ready' ? returnsResource.items : []
+    const returnRecords =
+      returnsResource.status === 'ready' ? returnsResource.items : []
 
     if (hasMissingSelectedReturn) {
       return undefined

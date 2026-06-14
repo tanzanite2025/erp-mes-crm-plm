@@ -26,7 +26,9 @@ const LOGISTICS_RECORD_PATCH_INTENT_SAVE = 'LOGISTICS_RECORD_PATCH_SAVE'
 
 class LogisticsService {
   async getRecords(page = 1, pageSize = 50): Promise<LogisticsListPage> {
-    const res = await apiFetch<LogisticsListPageApiDTO>(`/logistics?page=${page}&pageSize=${pageSize}`)
+    const res = await apiFetch<LogisticsListPageApiDTO>(
+      `/logistics?page=${page}&pageSize=${pageSize}`
+    )
     return toLogisticsListPageContract(
       ensureObjectResponse<LogisticsListPageApiDTO & Record<string, unknown>>(
         res,
@@ -68,7 +70,9 @@ class LogisticsService {
         }
       )
       return toControlledTrackingDetailContract(
-        ensureObjectResponse<ControlledTrackingDetailApiDTO & Record<string, unknown>>(
+        ensureObjectResponse<
+          ControlledTrackingDetailApiDTO & Record<string, unknown>
+        >(
           res,
           `LogisticsService.getControlledTrackingDetail(${normalizedTrackingNo})`
         ) as ControlledTrackingDetailApiDTO
@@ -82,7 +86,9 @@ class LogisticsService {
   }
 
   async getRecordsByOrderNo(orderNo: string): Promise<LogisticsRecord[]> {
-    const res = await apiFetch<LogisticsListPageApiDTO>(`/logistics?orderNo=${encodeURIComponent(orderNo)}`)
+    const res = await apiFetch<LogisticsListPageApiDTO>(
+      `/logistics?orderNo=${encodeURIComponent(orderNo)}`
+    )
     return toLogisticsListPageContract(
       ensureObjectResponse<LogisticsListPageApiDTO & Record<string, unknown>>(
         res,
@@ -110,13 +116,22 @@ class LogisticsService {
     })
   }
 
-  async patchLogistics(id: string, delta: DeltaSet, version: number): Promise<LogisticsRecord> {
+  async patchLogistics(
+    id: string,
+    delta: DeltaSet,
+    version: number
+  ): Promise<LogisticsRecord> {
     const payload: DeltaPayload = {
       op: 'PATCH',
       delta,
-      metadata: buildVersionedPatchMetadata(id, version, 'LogisticsService.patchLogistics', {
-        intent: LOGISTICS_RECORD_PATCH_INTENT_SAVE,
-      }),
+      metadata: buildVersionedPatchMetadata(
+        id,
+        version,
+        'LogisticsService.patchLogistics',
+        {
+          intent: LOGISTICS_RECORD_PATCH_INTENT_SAVE,
+        }
+      ),
     }
 
     const res = await apiFetch<LogisticsRecordApiDTO>(`/logistics/${id}`, {
@@ -132,11 +147,17 @@ class LogisticsService {
     )
   }
 
-  async updateStatus(id: string, payload: UpdateLogisticsStatusPayload): Promise<LogisticsRecord> {
-    const res = await apiFetch<LogisticsRecordApiDTO>(`/logistics/${id}/status`, {
-      method: 'PATCH',
-      body: JSON.stringify(payload),
-    })
+  async updateStatus(
+    id: string,
+    payload: UpdateLogisticsStatusPayload
+  ): Promise<LogisticsRecord> {
+    const res = await apiFetch<LogisticsRecordApiDTO>(
+      `/logistics/${id}/status`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      }
+    )
     return toLogisticsRecordContract(
       ensureObjectResponse<LogisticsRecordApiDTO & Record<string, unknown>>(
         res,

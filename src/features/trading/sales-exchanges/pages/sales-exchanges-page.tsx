@@ -1,9 +1,4 @@
-import {
-  ArrowLeftRight,
-  Loader2,
-  Search,
-} from 'lucide-react'
-import { CompactPaginationControls } from '@/components/pagination/compact-pagination-controls'
+import { ArrowLeftRight, Loader2, Search } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -14,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { CompactPaginationControls } from '@/components/pagination/compact-pagination-controls'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { TradingQueryErrorState } from '@/features/trading/components/trading-query-error-state'
 import { SalesExchangeCreateDialog } from '../components/sales-exchange-create-dialog'

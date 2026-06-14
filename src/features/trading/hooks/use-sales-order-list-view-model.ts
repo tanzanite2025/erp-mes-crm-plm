@@ -30,7 +30,8 @@ export function useSalesOrderListViewModel({
     return orders.filter((order) => {
       const matchesCustomerContext =
         normalizedCustomerId.length === 0
-          ? normalizedCustomerName.length === 0 || (order.customerName?.toLowerCase() ?? '') === normalizedCustomerName
+          ? normalizedCustomerName.length === 0 ||
+            (order.customerName?.toLowerCase() ?? '') === normalizedCustomerName
           : (order.customerId ?? '') === normalizedCustomerId
 
       const matchesSearch =
@@ -43,22 +44,42 @@ export function useSalesOrderListViewModel({
           order.paymentMethodName,
           order.paymentTerm,
           order.paymentTermName,
-        ].some((value) => (value?.toLowerCase() ?? '').includes(normalizedSearch))
+        ].some((value) =>
+          (value?.toLowerCase() ?? '').includes(normalizedSearch)
+        )
 
       const matchesStatus =
         statusFilter === 'all'
           ? true
           : order.status.toLowerCase() === statusFilter.toLowerCase()
       const matchesPaymentMethod =
-        paymentMethodFilter === 'ALL' || order.paymentMethod === paymentMethodFilter
-      const matchesPaymentTerm = paymentTermFilter === 'ALL' || order.paymentTerm === paymentTermFilter
+        paymentMethodFilter === 'ALL' ||
+        order.paymentMethod === paymentMethodFilter
+      const matchesPaymentTerm =
+        paymentTermFilter === 'ALL' || order.paymentTerm === paymentTermFilter
 
-      return matchesCustomerContext && matchesSearch && matchesStatus && matchesPaymentMethod && matchesPaymentTerm
+      return (
+        matchesCustomerContext &&
+        matchesSearch &&
+        matchesStatus &&
+        matchesPaymentMethod &&
+        matchesPaymentTerm
+      )
     })
-  }, [customerId, customerName, orders, paymentMethodFilter, paymentTermFilter, searchTerm, statusFilter])
+  }, [
+    customerId,
+    customerName,
+    orders,
+    paymentMethodFilter,
+    paymentTermFilter,
+    searchTerm,
+    statusFilter,
+  ])
 
   const selectedOrder = useMemo(
-    () => filteredOrders.find((order) => order.id === selectedId) ?? orders.find((order) => order.id === selectedId),
+    () =>
+      filteredOrders.find((order) => order.id === selectedId) ??
+      orders.find((order) => order.id === selectedId),
     [filteredOrders, orders, selectedId]
   )
 

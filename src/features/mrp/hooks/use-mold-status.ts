@@ -1,15 +1,17 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { createLogger } from '@/lib/logger'
 import { AssetService } from '@/features/equipment-tooling/services/asset-service'
 import { type MoldCapacityAlert } from '@/features/equipment-tooling/services/mold-transaction-service'
-import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('useMoldStatus')
 
 export type MoldAlert = MoldCapacityAlert
 
-export function useMoldStatus(models: { modelName: string; totalQty: number }[]) {
+export function useMoldStatus(
+  models: { modelName: string; totalQty: number }[]
+) {
   const [alerts, setAlerts] = useState<MoldAlert[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
@@ -28,7 +30,7 @@ export function useMoldStatus(models: { modelName: string; totalQty: number }[])
           models.map((item) => ({
             groupName: item.modelName,
             requestedQty: item.totalQty,
-          })),
+          }))
         )
 
         if (!active) return

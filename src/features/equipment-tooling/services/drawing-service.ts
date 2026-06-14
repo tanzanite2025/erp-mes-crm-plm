@@ -3,7 +3,6 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
-import { type MoldDrawing, type MoldDrawingLog } from '../data/schema'
 import {
   toMoldDrawingContract,
   toMoldDrawingContracts,
@@ -15,6 +14,7 @@ import {
   type MoldDrawingApiDTO,
   type MoldDrawingLogApiDTO,
 } from '../contracts/equipment-drawing-api-dto'
+import { type MoldDrawing, type MoldDrawingLog } from '../data/schema'
 
 export const DrawingService = {
   async getDrawings(): Promise<MoldDrawing[]> {
@@ -25,9 +25,14 @@ export const DrawingService = {
   },
 
   async getDrawingLogs(drawingId: string): Promise<MoldDrawingLog[]> {
-    const logs = await apiFetch<MoldDrawingLogApiDTO[]>(`/drawings/${drawingId}/logs`)
+    const logs = await apiFetch<MoldDrawingLogApiDTO[]>(
+      `/drawings/${drawingId}/logs`
+    )
     return toMoldDrawingLogContracts(
-      ensureArrayResponse<MoldDrawingLogApiDTO>(logs, 'DrawingService.getDrawingLogs')
+      ensureArrayResponse<MoldDrawingLogApiDTO>(
+        logs,
+        'DrawingService.getDrawingLogs'
+      )
     )
   },
 
@@ -47,7 +52,11 @@ export const DrawingService = {
     return saved
   },
 
-  async patchDrawing(id: string, delta: DeltaSet, sysVersion: number): Promise<MoldDrawing> {
+  async patchDrawing(
+    id: string,
+    delta: DeltaSet,
+    sysVersion: number
+  ): Promise<MoldDrawing> {
     const payload: DeltaPayload = {
       op: 'PATCH',
       delta,
@@ -81,9 +90,14 @@ export const DrawingService = {
   },
 
   async getDrawingsByMold(moldSn: string): Promise<MoldDrawing[]> {
-    const response = await apiFetch<MoldDrawingApiDTO[]>(`/drawings/by-mold/${moldSn}`)
+    const response = await apiFetch<MoldDrawingApiDTO[]>(
+      `/drawings/by-mold/${moldSn}`
+    )
     return toMoldDrawingContracts(
-      ensureArrayResponse<MoldDrawingApiDTO>(response, 'DrawingService.getDrawingsByMold')
+      ensureArrayResponse<MoldDrawingApiDTO>(
+        response,
+        'DrawingService.getDrawingsByMold'
+      )
     )
   },
 }

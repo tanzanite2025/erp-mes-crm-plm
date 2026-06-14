@@ -1,4 +1,7 @@
-import { getServerErrorPresentation, showServerErrorToast } from './handle-server-error'
+import {
+  getServerErrorPresentation,
+  showServerErrorToast,
+} from './handle-server-error'
 import { createLogger } from './logger'
 
 const logger = createLogger('SafeCatch')

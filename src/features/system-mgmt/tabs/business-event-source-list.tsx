@@ -1,19 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Loader2 } from 'lucide-react'
-import { useHierarchyLevelLabels } from '@/features/production-shared/tabs/hierarchy-config/hooks/use-hierarchy-level-labels'
-import { createLogger } from '@/lib/logger'
 import { isForbiddenError } from '@/lib/error-status'
+import { createLogger } from '@/lib/logger'
 import { ForbiddenState } from '@/components/forbidden-state'
+import { useHierarchyLevelLabels } from '@/features/production-shared/tabs/hierarchy-config/hooks/use-hierarchy-level-labels'
+import { RoutingQueryErrorState } from '../workflow-core/components/routing-query-error-state'
+import {
+  countConnectedBusinessEventSources,
+  countPreconnectedBusinessEventSources,
+} from '../workflow-core/data/business-event-source-runtime-coverage'
 import {
   BUSINESS_EVENT_SOURCE_TEMPLATES,
   type BusinessEventSource,
 } from '../workflow-core/data/business-event-source-schema'
 import { type NotificationRule } from '../workflow-core/data/notification-rule-schema'
-import {
-  countConnectedBusinessEventSources,
-  countPreconnectedBusinessEventSources,
-} from '../workflow-core/data/business-event-source-runtime-coverage'
-import { RoutingQueryErrorState } from '../workflow-core/components/routing-query-error-state'
 import { useBusinessEventSources } from '../workflow-core/hooks/use-business-event-sources'
 import { RoutingService } from '../workflow-core/services/routing-service'
 import {
@@ -24,19 +24,28 @@ import { BusinessEventSourceCard } from './components/business-event-source-card
 import { BusinessEventSourceListHeader } from './components/business-event-source-list-header'
 import { BusinessEventSourceListHint } from './components/business-event-source-list-hint'
 
-const LEGACY_LEVEL3_FIELD_LABELS = new Set(['工序', '末级层级', 'Process', 'Level 3'])
+const LEGACY_LEVEL3_FIELD_LABELS = new Set([
+  '工序',
+  '末级层级',
+  'Process',
+  'Level 3',
+])
 const logger = createLogger('BusinessEventSourceList')
 
-function applyDynamicProcessFieldLabel<T extends { code: string; config: { fields: Array<{ key: string; label: string }> } }>(
-  source: T,
-  level3Name: string
-): T {
+function applyDynamicProcessFieldLabel<
+  T extends {
+    code: string
+    config: { fields: Array<{ key: string; label: string }> }
+  },
+>(source: T, level3Name: string): T {
   if (source.code !== 'PRODUCTION_TASK') {
     return source
   }
 
   const hasLegacyProcessField = source.config.fields.some(
-    (field) => field.key === 'processName' && LEGACY_LEVEL3_FIELD_LABELS.has(field.label.trim())
+    (field) =>
+      field.key === 'processName' &&
+      LEGACY_LEVEL3_FIELD_LABELS.has(field.label.trim())
   )
 
   if (!hasLegacyProcessField) {
@@ -48,7 +57,8 @@ function applyDynamicProcessFieldLabel<T extends { code: string; config: { field
     config: {
       ...source.config,
       fields: source.config.fields.map((field) =>
-        field.key === 'processName' && LEGACY_LEVEL3_FIELD_LABELS.has(field.label.trim())
+        field.key === 'processName' &&
+        LEGACY_LEVEL3_FIELD_LABELS.has(field.label.trim())
           ? { ...field, label: level3Name }
           : field
       ),
@@ -85,7 +95,9 @@ export function BusinessEventSourceList({
   const [localTemplateCode, setLocalTemplateCode] = useState(
     BUSINESS_EVENT_SOURCE_TEMPLATES[0]?.code ?? ''
   )
-  const [localExpandedSourceIds, setLocalExpandedSourceIds] = useState<string[]>([])
+  const [localExpandedSourceIds, setLocalExpandedSourceIds] = useState<
+    string[]
+  >([])
   const [localSearchValue, setLocalSearchValue] = useState('')
   const [highlightedSourceId, setHighlightedSourceId] = useState<string | null>(
     null
@@ -107,7 +119,9 @@ export function BusinessEventSourceList({
     setLocalTemplateCode(value)
   }
 
-  const setExpandedSourceIds = (updater: string[] | ((prev: string[]) => string[])) => {
+  const setExpandedSourceIds = (
+    updater: string[] | ((prev: string[]) => string[])
+  ) => {
     const nextValue =
       typeof updater === 'function' ? updater(expandedSourceIds) : updater
 
@@ -128,7 +142,10 @@ export function BusinessEventSourceList({
   }
 
   const displaySources = useMemo(
-    () => sources.map((source) => applyDynamicProcessFieldLabel(source, level3Name)),
+    () =>
+      sources.map((source) =>
+        applyDynamicProcessFieldLabel(source, level3Name)
+      ),
     [level3Name, sources]
   )
 
@@ -148,9 +165,7 @@ export function BusinessEventSourceList({
 
   const connectedCount = useMemo(
     () =>
-      countConnectedBusinessEventSources(
-        sources.map((source) => source.code)
-      ),
+      countConnectedBusinessEventSources(sources.map((source) => source.code)),
     [sources]
   )
   const preconnectedCount = useMemo(
@@ -167,7 +182,10 @@ export function BusinessEventSourceList({
     : displaySources.filter((source) => {
         const name = source.name.toLowerCase()
         const code = source.code.toLowerCase()
-        return name.includes(normalizedSearchValue) || code.includes(normalizedSearchValue)
+        return (
+          name.includes(normalizedSearchValue) ||
+          code.includes(normalizedSearchValue)
+        )
       })
 
   const allVisibleExpanded =
@@ -221,7 +239,10 @@ export function BusinessEventSourceList({
       })
       .catch((error) => {
         if (cancelled) return
-        logger.error('Failed to load notification rules for status references', error)
+        logger.error(
+          'Failed to load notification rules for status references',
+          error
+        )
       })
 
     return () => {
@@ -288,7 +309,9 @@ export function BusinessEventSourceList({
 
       {filteredSources.length === 0 ? (
         <div className='rounded-3xl border border-dashed border-muted/50 bg-muted/10 px-6 py-10 text-center'>
-          <p className='text-sm font-black tracking-tight'>未找到匹配的业务事件源</p>
+          <p className='text-sm font-black tracking-tight'>
+            未找到匹配的业务事件源
+          </p>
           <p className='mt-2 text-xs font-bold text-muted-foreground'>
             试试搜索业务名称、事件源编码，或者先导入一个模板。
           </p>

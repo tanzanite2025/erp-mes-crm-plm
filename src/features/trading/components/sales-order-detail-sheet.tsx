@@ -23,7 +23,9 @@ export function SalesOrderDetailSheet({
   onOpenChange,
   onDelete,
 }: SalesOrderDetailSheetProps) {
-  const title = order?.orderNo?.trim() ? `销售单详情 · ${order.orderNo}` : '销售单详情'
+  const title = order?.orderNo?.trim()
+    ? `销售单详情 · ${order.orderNo}`
+    : '销售单详情'
   const description = order?.customerName?.trim()
     ? `客户主体：${order.customerName}`
     : '查看销售单明细与执行动作。'
@@ -32,13 +34,17 @@ export function SalesOrderDetailSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side='bottom'
-        className='h-[78vh] gap-0 rounded-t-[20px] border-t border-dashed border-primary/20 bg-background px-0 pb-0 pt-0 shadow-2xl'
+        className='h-[78vh] gap-0 rounded-t-[20px] border-t border-dashed border-primary/20 bg-background px-0 pt-0 pb-0 shadow-2xl'
       >
         <SheetTitle className='sr-only'>{title}</SheetTitle>
         <SheetDescription className='sr-only'>{description}</SheetDescription>
         <ScrollArea className='min-h-0 flex-1'>
-          <div className='px-4 pb-3 pt-10'>
-            <SalesOrderDetail orderId={orderId} order={order} onDelete={onDelete} />
+          <div className='px-4 pt-10 pb-3'>
+            <SalesOrderDetail
+              orderId={orderId}
+              order={order}
+              onDelete={onDelete}
+            />
           </div>
         </ScrollArea>
       </SheetContent>

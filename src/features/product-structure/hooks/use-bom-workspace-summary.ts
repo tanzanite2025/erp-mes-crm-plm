@@ -5,7 +5,9 @@ interface UseBOMWorkspaceSummaryParams {
   groups: BOMWorkspaceGroupNode[]
 }
 
-export function useBOMWorkspaceSummary({ groups }: UseBOMWorkspaceSummaryParams) {
+export function useBOMWorkspaceSummary({
+  groups,
+}: UseBOMWorkspaceSummaryParams) {
   const sectionSummaries = useMemo(
     () =>
       groups.map((group) => ({

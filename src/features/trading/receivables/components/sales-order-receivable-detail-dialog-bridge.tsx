@@ -1,8 +1,8 @@
 import { useEffect, useMemo } from 'react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
-import { SalesReceivableDetailDialog } from './sales-receivable-detail-dialog'
 import { useGetReceivables } from '../hooks/use-receivables'
+import { SalesReceivableDetailDialog } from './sales-receivable-detail-dialog'
 
 interface SalesOrderReceivableDetailDialogBridgeProps {
   open: boolean

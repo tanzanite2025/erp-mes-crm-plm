@@ -33,7 +33,9 @@ function toProductDisplayContract(
   }
 }
 
-function toProductStatContract(dto: SalesAnalyticsProductStatApiDTO): ProductStat {
+function toProductStatContract(
+  dto: SalesAnalyticsProductStatApiDTO
+): ProductStat {
   return {
     productId: dto.productId,
     productDisplay: toProductDisplayContract(dto.productDisplay),

@@ -19,4 +19,5 @@ export const AUDIT_MODULES = {
   role: 'role',
 } as const
 
-export type AuditModuleValue = (typeof AUDIT_MODULES)[keyof typeof AUDIT_MODULES]
+export type AuditModuleValue =
+  (typeof AUDIT_MODULES)[keyof typeof AUDIT_MODULES]

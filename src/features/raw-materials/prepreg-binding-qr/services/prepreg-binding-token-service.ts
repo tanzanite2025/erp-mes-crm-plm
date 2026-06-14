@@ -16,9 +16,14 @@ export function extractPrepregBindingToken(input: string): string {
   if (isPrepregBindingToken(normalized)) return normalized
 
   try {
-    const baseOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost'
+    const baseOrigin =
+      typeof window !== 'undefined'
+        ? window.location.origin
+        : 'http://localhost'
     const url = new URL(raw, baseOrigin)
-    const bindToken = normalizePrepregBindingToken(url.searchParams.get('bindToken') || '')
+    const bindToken = normalizePrepregBindingToken(
+      url.searchParams.get('bindToken') || ''
+    )
     if (isPrepregBindingToken(bindToken)) return bindToken
   } catch {
     return ''

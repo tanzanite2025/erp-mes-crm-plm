@@ -1,6 +1,6 @@
-import { Badge } from '@/components/ui/badge'
-import { useLanguage } from '@/context/language-provider'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/context/language-provider'
+import { Badge } from '@/components/ui/badge'
 import {
   KNOWLEDGE_BASE_CATEGORIES,
   type KnowledgeBaseCategory,
@@ -25,7 +25,10 @@ export function KnowledgeBaseCategoryBadge({
   return (
     <Badge
       variant='secondary'
-      className={cn('rounded-full px-2.5 py-0.5 text-[10px] font-black', className)}
+      className={cn(
+        'rounded-full px-2.5 py-0.5 text-[10px] font-black',
+        className
+      )}
     >
       {t(labelKey as any)}
     </Badge>

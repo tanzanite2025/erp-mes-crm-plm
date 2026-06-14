@@ -22,7 +22,9 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks)
 
   return (
-    <TasksContext value={{ open, setOpen, currentRow, setCurrentRow, tasks, setTasks }}>
+    <TasksContext
+      value={{ open, setOpen, currentRow, setCurrentRow, tasks, setTasks }}
+    >
       {children}
     </TasksContext>
   )

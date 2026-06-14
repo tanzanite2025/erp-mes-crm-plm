@@ -9,9 +9,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ConfirmDialog } from '@/components/confirm-dialog'
-
-import { useTasks } from '../store/tasks-context'
 import { type Task } from '../api/schema'
+import { useTasks } from '../store/tasks-context'
 
 type TaskMultiDeleteDialogProps<TData> = {
   open: boolean
@@ -46,7 +45,9 @@ export function TasksMultiDeleteDialog<TData>({
       loading: '正在删除任务...',
       success: () => {
         setValue('')
-        setTasks((prev) => prev.filter((task) => !idsToDelete.includes(task.id)))
+        setTasks((prev) =>
+          prev.filter((task) => !idsToDelete.includes(task.id))
+        )
         table.resetRowSelection()
         return `已删除 ${selectedRows.length} 个任务`
       },
@@ -87,9 +88,7 @@ export function TasksMultiDeleteDialog<TData>({
 
           <Alert variant='destructive'>
             <AlertTitle>警告！</AlertTitle>
-            <AlertDescription>
-              请务必小心，该操作不可回滚。
-            </AlertDescription>
+            <AlertDescription>请务必小心，该操作不可回滚。</AlertDescription>
           </Alert>
         </div>
       }

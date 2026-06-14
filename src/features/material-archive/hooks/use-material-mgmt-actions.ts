@@ -1,13 +1,13 @@
 import { useState, type ChangeEvent } from 'react'
 import { type QueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { createLogger } from '@/lib/logger'
 import { useLanguage } from '@/context/language-provider'
 import { BASIC_SETTINGS_UNITS_QUERY_KEY } from '@/features/basic-settings/query-keys'
 import { unitService } from '@/features/basic-settings/services/unit-service'
-import { createLogger } from '@/lib/logger'
 import { type Material } from '../data/schema'
-import { MaterialMaintenanceService } from '../services/material-maintenance-service'
 import { MaterialExcelService } from '../services/excel-service'
+import { MaterialMaintenanceService } from '../services/material-maintenance-service'
 import { isConflictImportError } from '../utils/material-mgmt-utils'
 
 const logger = createLogger('useMaterialMgmtActions')
@@ -47,7 +47,9 @@ export function useMaterialMgmtActions({
 
   const handleExport = async () => {
     const loadingId = toast.loading(
-      t('materialArchive.actions.exportPreparing', { category: currentCategoryLabel })
+      t('materialArchive.actions.exportPreparing', {
+        category: currentCategoryLabel,
+      })
     )
 
     try {
@@ -55,8 +57,15 @@ export function useMaterialMgmtActions({
         queryKey: BASIC_SETTINGS_UNITS_QUERY_KEY,
         queryFn: () => unitService.getUnits(),
       })
-      await MaterialExcelService.exportMaterials(filteredMaterials, currentCategoryLabel, locale, units)
-      toast.success(t('materialArchive.actions.exportSuccess'), { id: loadingId })
+      await MaterialExcelService.exportMaterials(
+        filteredMaterials,
+        currentCategoryLabel,
+        locale,
+        units
+      )
+      toast.success(t('materialArchive.actions.exportSuccess'), {
+        id: loadingId,
+      })
     } catch (error) {
       logger.error('Export error', error)
       toast.error(t('materialArchive.actions.exportFailed'), { id: loadingId })
@@ -74,7 +83,9 @@ export function useMaterialMgmtActions({
         await MaterialExcelService.parseMaterialExcel(file, locale)
 
       if (parsedMaterials.length === 0) {
-        toast.error(t('materialArchive.actions.importNoValidData'), { id: loadingId })
+        toast.error(t('materialArchive.actions.importNoValidData'), {
+          id: loadingId,
+        })
         return
       }
 
@@ -83,16 +94,23 @@ export function useMaterialMgmtActions({
       })
       queryClient.invalidateQueries({ queryKey: ['material-archive'] })
       toast.success(
-        t('materialArchive.actions.importSuccess', { count: parsedMaterials.length }),
+        t('materialArchive.actions.importSuccess', {
+          count: parsedMaterials.length,
+        }),
         { id: loadingId }
       )
     } catch (error) {
       logger.error('Import error', error)
       const message =
-        error instanceof Error ? error.message : t('materialArchive.actions.parseFailed')
+        error instanceof Error
+          ? error.message
+          : t('materialArchive.actions.parseFailed')
 
       if (isConflictImportError(message)) {
-        toast.error(t('materialArchive.actions.importConflict'), { id: loadingId, duration: 5000 })
+        toast.error(t('materialArchive.actions.importConflict'), {
+          id: loadingId,
+          duration: 5000,
+        })
       } else {
         toast.error(message, { id: loadingId })
       }

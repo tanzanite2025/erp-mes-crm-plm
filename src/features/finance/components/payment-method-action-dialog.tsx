@@ -2,16 +2,16 @@ import { useMemo } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { CreditCard, Info, Lock } from 'lucide-react'
 import { toast } from 'sonner'
-import { ActionDialogShell } from '@/components/action-dialog-shell'
-import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
+import { isConflictError } from '@/lib/handle-server-error'
+import { useLanguage } from '@/context/language-provider'
+import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
-import { useLanguage } from '@/context/language-provider'
-import { useDeltaTracker } from '@/hooks/use-delta-tracker'
-import { isConflictError } from '@/lib/handle-server-error'
+import { ActionDialogShell } from '@/components/action-dialog-shell'
+import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
 import { type PaymentMethod } from '../data/schema'
 import { financeQueryKeys } from '../query-keys'
 import { PaymentMethodMaintenanceService } from '../services/payment-method-maintenance-service'
@@ -43,15 +43,17 @@ export function PaymentMethodActionDialog({
   const shellClasses = buildActionDialogShellClasses({
     content: 'max-w-[95vw] sm:max-w-[520px] rounded-[32px]',
     header: 'p-8 pb-4 border-none bg-muted/5',
-    title: 'text-xl font-black italic tracking-tighter uppercase flex items-center gap-3',
+    title:
+      'text-xl font-black italic tracking-tighter uppercase flex items-center gap-3',
     description: 'text-[10px] font-bold uppercase tracking-widest opacity-50',
     body: 'p-8 pt-4 space-y-6',
-    footer: 'p-6 bg-muted/5 border-t border-dashed border-muted/20 flex items-center justify-end gap-3',
+    footer:
+      'p-6 bg-muted/5 border-t border-dashed border-muted/20 flex items-center justify-end gap-3',
   })
 
   const initialFormData = useMemo(
     () => (editingMethod ? editingMethod : (DEFAULT_METHOD as PaymentMethod)),
-    [editingMethod],
+    [editingMethod]
   )
   const { data: formData, tracker } = useDeltaTracker(initialFormData, open)
   const codeLocked = isEdit
@@ -69,7 +71,11 @@ export function PaymentMethodActionDialog({
           onOpenChange(false)
           return
         }
-        await PaymentMethodMaintenanceService.patchPaymentMethod(editingMethod.id, delta, editingMethod.version)
+        await PaymentMethodMaintenanceService.patchPaymentMethod(
+          editingMethod.id,
+          delta,
+          editingMethod.version
+        )
       } else {
         await PaymentMethodMaintenanceService.savePaymentMethod({
           ...formData,
@@ -82,9 +88,11 @@ export function PaymentMethodActionDialog({
       toast.success(
         isEdit
           ? t('finance.paymentMethods.toast.saveSuccessUpdated')
-          : t('finance.paymentMethods.toast.saveSuccessCreated'),
+          : t('finance.paymentMethods.toast.saveSuccessCreated')
       )
-      await queryClient.invalidateQueries({ queryKey: financeQueryKeys.paymentMethods() })
+      await queryClient.invalidateQueries({
+        queryKey: financeQueryKeys.paymentMethods(),
+      })
       onOpenChange(false)
     } catch (error) {
       if (isConflictError(error)) {
@@ -99,12 +107,14 @@ export function PaymentMethodActionDialog({
     <ActionDialogShell
       open={open}
       onOpenChange={onOpenChange}
-      title={(
+      title={
         <>
           <CreditCard className='size-6 text-primary' />
-          {isEdit ? t('finance.paymentMethods.dialog.editTitle') : t('finance.paymentMethods.dialog.createTitle')}
+          {isEdit
+            ? t('finance.paymentMethods.dialog.editTitle')
+            : t('finance.paymentMethods.dialog.createTitle')}
         </>
-      )}
+      }
       description={t('finance.paymentMethods.page.subtitle')}
       contentClassName={shellClasses.content}
       headerClassName={shellClasses.header}
@@ -112,33 +122,35 @@ export function PaymentMethodActionDialog({
       footerClassName={shellClasses.footer}
       titleClassName={shellClasses.title}
       descriptionClassName={shellClasses.description}
-      footer={(
+      footer={
         <>
           <Button
             variant='ghost'
             onClick={() => onOpenChange(false)}
-            className='rounded-full h-12 px-8 font-black uppercase text-[10px] tracking-widest'
+            className='h-12 rounded-full px-8 text-[10px] font-black tracking-widest uppercase'
           >
             {t('common.actions.cancel')}
           </Button>
           <Button
             onClick={handleSave}
-            className='rounded-full h-12 px-10 font-black uppercase tracking-widest shadow-lg shadow-primary/20 bg-primary text-primary-foreground'
+            className='h-12 rounded-full bg-primary px-10 font-black tracking-widest text-primary-foreground uppercase shadow-lg shadow-primary/20'
           >
-            {isEdit ? t('finance.paymentMethods.dialog.save') : t('finance.paymentMethods.page.add')}
+            {isEdit
+              ? t('finance.paymentMethods.dialog.save')
+              : t('finance.paymentMethods.page.add')}
           </Button>
         </>
-      )}
+      }
     >
       <div className='space-y-6'>
         {editingMethod?.isSystem ? (
           <div className='flex items-center gap-3 rounded-2xl border border-dashed border-blue-500/20 bg-blue-500/5 p-4'>
             <Lock className='size-4 shrink-0 text-blue-600' />
             <div className='space-y-1'>
-              <p className='text-[10px] font-black uppercase tracking-widest text-blue-700'>
+              <p className='text-[10px] font-black tracking-widest text-blue-700 uppercase'>
                 {t('finance.paymentMethods.card.systemBadge')}
               </p>
-              <p className='text-[11px] font-bold leading-relaxed text-blue-700/80'>
+              <p className='text-[11px] leading-relaxed font-bold text-blue-700/80'>
                 {t('finance.paymentMethods.dialog.systemHint')}
               </p>
             </div>
@@ -147,7 +159,7 @@ export function PaymentMethodActionDialog({
 
         <div className='grid grid-cols-2 gap-4'>
           <div className='space-y-2'>
-            <Label className='text-[10px] font-black uppercase tracking-widest pl-1 opacity-50'>
+            <Label className='pl-1 text-[10px] font-black tracking-widest uppercase opacity-50'>
               {t('finance.paymentMethods.dialog.codeLabel')}
             </Label>
             <Input
@@ -157,8 +169,10 @@ export function PaymentMethodActionDialog({
               onChange={(e) => {
                 formData.code = e.target.value.toUpperCase()
               }}
-              className={`rounded-2xl h-12 font-black italic ${
-                codeLocked ? 'border-dashed border-blue-500/30 bg-blue-500/5 text-blue-700' : 'bg-muted/5'
+              className={`h-12 rounded-2xl font-black italic ${
+                codeLocked
+                  ? 'border-dashed border-blue-500/30 bg-blue-500/5 text-blue-700'
+                  : 'bg-muted/5'
               }`}
             />
             {codeLocked ? (
@@ -171,7 +185,7 @@ export function PaymentMethodActionDialog({
             ) : null}
           </div>
           <div className='space-y-2'>
-            <Label className='text-[10px] font-black uppercase tracking-widest pl-1 opacity-50'>
+            <Label className='pl-1 text-[10px] font-black tracking-widest uppercase opacity-50'>
               {t('finance.paymentMethods.dialog.nameLabel')}
             </Label>
             <Input
@@ -180,28 +194,30 @@ export function PaymentMethodActionDialog({
               onChange={(e) => {
                 formData.name = e.target.value
               }}
-              className='rounded-2xl h-12 font-bold bg-muted/5'
+              className='h-12 rounded-2xl bg-muted/5 font-bold'
             />
           </div>
         </div>
 
         <div className='space-y-2'>
-          <Label className='text-[10px] font-black uppercase tracking-widest pl-1 opacity-50'>
+          <Label className='pl-1 text-[10px] font-black tracking-widest uppercase opacity-50'>
             {t('finance.paymentMethods.dialog.descriptionLabel')}
           </Label>
           <Textarea
-            placeholder={t('finance.paymentMethods.dialog.descriptionPlaceholder')}
+            placeholder={t(
+              'finance.paymentMethods.dialog.descriptionPlaceholder'
+            )}
             value={formData.description}
             onChange={(e) => {
               formData.description = e.target.value
             }}
-            className='rounded-2xl min-h-[100px] bg-muted/5 border-dashed focus:border-primary/50 transition-all'
+            className='min-h-[100px] rounded-2xl border-dashed bg-muted/5 transition-all focus:border-primary/50'
           />
         </div>
 
         <div className='grid grid-cols-2 gap-4'>
           <div className='space-y-2'>
-            <Label className='text-[10px] font-black uppercase tracking-widest pl-1 opacity-50'>
+            <Label className='pl-1 text-[10px] font-black tracking-widest uppercase opacity-50'>
               {t('finance.paymentMethods.dialog.sortOrderLabel')}
             </Label>
             <Input
@@ -210,11 +226,11 @@ export function PaymentMethodActionDialog({
               onChange={(e) => {
                 formData.sortOrder = Number(e.target.value || 0)
               }}
-              className='rounded-2xl h-12 font-bold bg-muted/5'
+              className='h-12 rounded-2xl bg-muted/5 font-bold'
             />
           </div>
           <div className='space-y-2'>
-            <Label className='text-[10px] font-black uppercase tracking-widest pl-1 opacity-50'>
+            <Label className='pl-1 text-[10px] font-black tracking-widest uppercase opacity-50'>
               {t('finance.paymentMethods.dialog.statusLabel')}
             </Label>
             <select
@@ -224,18 +240,23 @@ export function PaymentMethodActionDialog({
               }}
               className='h-12 w-full appearance-none rounded-2xl border border-dashed border-muted/20 bg-muted/5 px-4 text-[12px] font-bold shadow-sm focus:ring-2 focus:ring-primary/20'
             >
-              <option value='Active'>{t('finance.paymentMethods.status.active')}</option>
-              <option value='Inactive'>{t('finance.paymentMethods.status.inactive')}</option>
+              <option value='Active'>
+                {t('finance.paymentMethods.status.active')}
+              </option>
+              <option value='Inactive'>
+                {t('finance.paymentMethods.status.inactive')}
+              </option>
             </select>
           </div>
         </div>
 
-        <div className='flex items-center justify-between p-4 rounded-2xl bg-primary/5 border border-dashed border-primary/20'>
+        <div className='flex items-center justify-between rounded-2xl border border-dashed border-primary/20 bg-primary/5 p-4'>
           <div className='space-y-0.5'>
-            <Label className='text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2'>
-              <CreditCard className='size-3' /> {t('finance.paymentMethods.card.defaultBadge')}
+            <Label className='flex items-center gap-2 text-[10px] font-black tracking-widest text-primary uppercase'>
+              <CreditCard className='size-3' />{' '}
+              {t('finance.paymentMethods.card.defaultBadge')}
             </Label>
-            <p className='text-[8px] font-bold text-muted-foreground/60 uppercase tracking-widest'>
+            <p className='text-[8px] font-bold tracking-widest text-muted-foreground/60 uppercase'>
               {t('finance.paymentMethods.dialog.defaultHint')}
             </p>
           </div>
@@ -249,7 +270,7 @@ export function PaymentMethodActionDialog({
 
         <div className='flex items-center gap-3 rounded-2xl border border-dashed border-muted/20 bg-muted/10 p-4'>
           <Info className='size-4 shrink-0 text-muted-foreground' />
-          <p className='text-[8px] font-bold uppercase tracking-widest text-muted-foreground/70'>
+          <p className='text-[8px] font-bold tracking-widest text-muted-foreground/70 uppercase'>
             {t('finance.paymentMethods.dialog.codeLockedHint')}
           </p>
         </div>

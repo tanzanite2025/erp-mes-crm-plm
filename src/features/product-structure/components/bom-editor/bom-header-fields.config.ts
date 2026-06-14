@@ -15,17 +15,29 @@
  * 注意：本文件刻意不做 i18n（不调用 useLanguage），仅声明 i18n key，
  * 由渲染器侧用 useLanguage().t(labelKey) 翻译。这样配置层保持纯。
  */
-
 import { type TranslationKey } from '@/locales'
 import { type BOM } from '../../data/schema'
 import { normalizeBOMControlFieldPatch } from '../../utils/bom-control-normalization'
 
-type TranslateFunction = (key: TranslationKey, params?: Record<string, string | number>) => string
+type TranslateFunction = (
+  key: TranslationKey,
+  params?: Record<string, string | number>
+) => string
 
 /** 顶部字段允许的字段名（必须是 BOM schema 中的合法 key）。 */
 export type BOMHeaderFieldName = Extract<
   keyof BOM,
-  'bomNo' | 'productId' | 'bomVersion' | 'bomType' | 'status' | 'effectiveFrom' | 'measuredWeight' | 'measuredWeightUnit' | 'ownerType' | 'ownerCustomerId' | 'versionLevel'
+  | 'bomNo'
+  | 'productId'
+  | 'bomVersion'
+  | 'bomType'
+  | 'status'
+  | 'effectiveFrom'
+  | 'measuredWeight'
+  | 'measuredWeightUnit'
+  | 'ownerType'
+  | 'ownerCustomerId'
+  | 'versionLevel'
 >
 
 /** 字段渲染上下文。由 BOMFormHeader 在调用时拼装好后传入工厂。 */
@@ -84,7 +96,9 @@ export interface BOMHeaderSelectField extends BOMHeaderFieldBase {
   type: 'select'
   placeholder?: string
   /** items 工厂，从 ctx 中按需获取数据。 */
-  getItems: (ctx: BOMHeaderFieldContext) => ReadonlyArray<{ label: string; value: string }>
+  getItems: (
+    ctx: BOMHeaderFieldContext
+  ) => ReadonlyArray<{ label: string; value: string }>
   /** 是否禁用（可基于上下文判断，例：编辑态下 productId 不可改）。 */
   isDisabled?: (ctx: BOMHeaderFieldContext) => boolean
   /** 写回 form 前的 normalize 函数。 */
@@ -103,14 +117,18 @@ export type BOMHeaderField = BOMHeaderInputField | BOMHeaderSelectField
  *
  * 不要在这里调用 react-hook-form 的 watch / setValue，配置层应保持纯。
  */
-export function getBOMHeaderFields(ctx: BOMHeaderFieldContext): readonly BOMHeaderField[] {
+export function getBOMHeaderFields(
+  ctx: BOMHeaderFieldContext
+): readonly BOMHeaderField[] {
   const fields: BOMHeaderField[] = [
     {
       name: 'bomNo',
       label: ctx.t('engineering.bomArchive.form.bomNo'),
       type: 'input',
       readOnly: true,
-      placeholder: ctx.isEdit ? undefined : ctx.t('engineering.bomArchive.form.bomNoAutoPlaceholder'),
+      placeholder: ctx.isEdit
+        ? undefined
+        : ctx.t('engineering.bomArchive.form.bomNoAutoPlaceholder'),
       className: 'bg-muted/50',
       colSpan: 'minmax(0,1.2fr)',
     },
@@ -140,8 +158,11 @@ export function getBOMHeaderFields(ctx: BOMHeaderFieldContext): readonly BOMHead
       colSpan: 'minmax(0,1.2fr)',
       // 显示成翻译后的"研发 BOM / 生产 BOM"。
       getDisplayValue: (rawValue, c) => {
-        const code = typeof rawValue === 'string' && rawValue ? rawValue : 'EBOM'
-        return c.t(code === 'MBOM' ? 'engineering.dict.MBOM' : 'engineering.dict.EBOM')
+        const code =
+          typeof rawValue === 'string' && rawValue ? rawValue : 'EBOM'
+        return c.t(
+          code === 'MBOM' ? 'engineering.dict.MBOM' : 'engineering.dict.EBOM'
+        )
       },
     },
     {
@@ -151,7 +172,8 @@ export function getBOMHeaderFields(ctx: BOMHeaderFieldContext): readonly BOMHead
       getItems: (c) => c.statusItems,
       // 状态当前由系统规则推动（promoteBOMStatus），不允许在表单内手改。
       isDisabled: () => true,
-      transformOnChange: (next) => normalizeBOMControlFieldPatch({ status: next }).status as string,
+      transformOnChange: (next) =>
+        normalizeBOMControlFieldPatch({ status: next }).status as string,
       colSpan: 'minmax(0,1.15fr)',
     },
     {
@@ -159,7 +181,9 @@ export function getBOMHeaderFields(ctx: BOMHeaderFieldContext): readonly BOMHead
       label: ctx.t('engineering.bomArchive.form.effectiveFrom'),
       type: 'input',
       inputType: 'date',
-      transformOnChange: (next) => normalizeBOMControlFieldPatch({ effectiveFrom: next }).effectiveFrom as string,
+      transformOnChange: (next) =>
+        normalizeBOMControlFieldPatch({ effectiveFrom: next })
+          .effectiveFrom as string,
       colSpan: 'minmax(0,1.75fr)',
     },
     {
@@ -169,15 +193,20 @@ export function getBOMHeaderFields(ctx: BOMHeaderFieldContext): readonly BOMHead
       label: ctx.t('engineering.bomArchive.form.measuredWeight'),
       type: 'input',
       inputType: 'number',
-      placeholder: ctx.t('engineering.bomArchive.form.measuredWeightPlaceholder'),
-      className: 'bg-emerald-50/60 font-mono font-bold text-emerald-700 text-[11px]!',
+      placeholder: ctx.t(
+        'engineering.bomArchive.form.measuredWeightPlaceholder'
+      ),
+      className:
+        'bg-emerald-50/60 font-mono font-bold text-emerald-700 text-[11px]!',
       colSpan: 'minmax(0,1.2fr)',
     },
     {
       name: 'measuredWeightUnit',
       label: ctx.t('engineering.bomArchive.form.measuredWeightUnit'),
       type: 'select',
-      placeholder: ctx.t('engineering.bomArchive.form.measuredWeightUnitPlaceholder'),
+      placeholder: ctx.t(
+        'engineering.bomArchive.form.measuredWeightUnitPlaceholder'
+      ),
       getItems: (c) => c.weightUnitItems,
       colSpan: 'minmax(0,1fr)',
     },
@@ -195,7 +224,9 @@ export function getBOMHeaderFields(ctx: BOMHeaderFieldContext): readonly BOMHead
       name: 'ownerCustomerId',
       label: ctx.t('engineering.bomArchive.form.ownerCustomer'),
       type: 'select',
-      placeholder: ctx.t('engineering.bomArchive.form.ownerCustomerPlaceholder'),
+      placeholder: ctx.t(
+        'engineering.bomArchive.form.ownerCustomerPlaceholder'
+      ),
       getItems: (c) => c.customerItems,
       isDisabled: (c) => (c.ownerType ?? 'INTERNAL') !== 'CUSTOMER',
       colSpan: 'minmax(0,1.6fr)',
@@ -215,7 +246,9 @@ export function getBOMHeaderFields(ctx: BOMHeaderFieldContext): readonly BOMHead
     return fields
   }
 
-  return fields.filter((field) => field.name !== 'bomVersion' && field.name !== 'status')
+  return fields.filter(
+    (field) => field.name !== 'bomVersion' && field.name !== 'status'
+  )
 }
 
 /**
@@ -224,8 +257,8 @@ export function getBOMHeaderFields(ctx: BOMHeaderFieldContext): readonly BOMHead
  *
  * Tailwind 通过 grid-cols-[...] 任意值语法消费这个字符串。
  */
-export function buildHeaderGridTemplate(fields: readonly BOMHeaderField[]): string {
-  return fields
-    .map((field) => field.colSpan ?? 'minmax(0,1fr)')
-    .join('_')
+export function buildHeaderGridTemplate(
+  fields: readonly BOMHeaderField[]
+): string {
+  return fields.map((field) => field.colSpan ?? 'minmax(0,1fr)').join('_')
 }

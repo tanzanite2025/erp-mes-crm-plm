@@ -3,8 +3,14 @@ import type { ProductionLine } from '../data/production-line'
 import type { ProductionProcessStep } from '../data/production-process'
 import { productionResourceQueryOptions } from '../data/production-resource-query-options'
 
-type ProductionLinesQueryOptions = Omit<UseQueryOptions<ProductionLine[], Error>, 'queryKey' | 'queryFn'>
-type ProductionProcessesQueryOptions = Omit<UseQueryOptions<ProductionProcessStep[], Error>, 'queryKey' | 'queryFn'>
+type ProductionLinesQueryOptions = Omit<
+  UseQueryOptions<ProductionLine[], Error>,
+  'queryKey' | 'queryFn'
+>
+type ProductionProcessesQueryOptions = Omit<
+  UseQueryOptions<ProductionProcessStep[], Error>,
+  'queryKey' | 'queryFn'
+>
 
 export function useProductionLinesQuery(options?: ProductionLinesQueryOptions) {
   return useQuery({
@@ -13,7 +19,9 @@ export function useProductionLinesQuery(options?: ProductionLinesQueryOptions) {
   })
 }
 
-export function useProductionProcessesQuery(options?: ProductionProcessesQueryOptions) {
+export function useProductionProcessesQuery(
+  options?: ProductionProcessesQueryOptions
+) {
   return useQuery({
     ...productionResourceQueryOptions.processes(),
     ...options,

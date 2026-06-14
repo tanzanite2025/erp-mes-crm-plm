@@ -21,7 +21,9 @@ interface OfflineSyncStoreState {
   lastFlushAt?: string
   lastErrorMessage?: string
   updatedAt?: string
-  setBannerState: (patch: Partial<Omit<OfflineSyncStoreState, 'setBannerState'>>) => void
+  setBannerState: (
+    patch: Partial<Omit<OfflineSyncStoreState, 'setBannerState'>>
+  ) => void
 }
 
 const initialSummary: OfflineSyncSummary = {

@@ -35,7 +35,8 @@ export const aiAssistant = {
       groupIdOptional: 'GROUP_ID（选填，仅 MiniMax）',
       groupIdAlert: 'MiniMax 模式下缺少 GROUP_ID 会导致认证失败',
       minimaxNoteTitle: '订阅提示',
-      minimaxNoteBody: '如果使用的是代币订阅套餐，请使用代币计划密钥（sk-cp-...），普通 API Key 可能导致认证失败。',
+      minimaxNoteBody:
+        '如果使用的是代币订阅套餐，请使用代币计划密钥（sk-cp-...），普通 API Key 可能导致认证失败。',
     },
     governance: {
       title: '治理说明',

@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 /**
  * 维保记录表单状态管理 Hook
- * 
+ *
  * 封装表单数据、验证和重置逻辑
  */
 
@@ -25,7 +25,8 @@ const initialFormData: MaintenanceRecordFormData = {
 }
 
 export function useMaintenanceRecordForm() {
-  const [formData, setFormData] = useState<MaintenanceRecordFormData>(initialFormData)
+  const [formData, setFormData] =
+    useState<MaintenanceRecordFormData>(initialFormData)
 
   /**
    * 更新表单字段

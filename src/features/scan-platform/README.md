@@ -4,6 +4,7 @@ This directory isolates the next-generation mobile scanning workspace from the
 existing terminal and PDA pages.
 
 Current scope:
+
 - shared plugin contract
 - permission contract
 - plugin registry
@@ -13,6 +14,7 @@ Current scope:
 - domain models for logistics inbound and wheel trace
 
 Design goals:
+
 - keep scanner shell generic
 - keep business logic pluggable
 - keep permission checks declarative
@@ -20,6 +22,7 @@ Design goals:
 - support both standalone scan pages and embedded dialog scanners
 
 Planned layering:
+
 1. `core/`
    Shared types and plugin contracts.
 2. `models/`
@@ -39,11 +42,12 @@ Planned layering:
 9. `components/`
    Reusable UI panels for exposing scan-platform status inside existing admin pages.
 10. `pages/`
-   Standalone scan-platform pages such as wheel trace.
+    Standalone scan-platform pages such as wheel trace.
 11. `hooks/`
-   Page-level install and standalone entry helpers.
+    Page-level install and standalone entry helpers.
 
 Architecture note:
+
 - existing logistics scan flows live inside dialogs and treat scanning as one
   field within a larger business form
 - to avoid refactoring later, scan-platform plugins must accept optional host
@@ -54,6 +58,7 @@ Architecture note:
   adapter + resolution + parser + query steps
 
 Example drafts:
+
 - purchase logistics dialog host integration:
   `examples/logistics-inbound/purchase-logistics-dialog-example.tsx`
 - purchase logistics real-page helper:

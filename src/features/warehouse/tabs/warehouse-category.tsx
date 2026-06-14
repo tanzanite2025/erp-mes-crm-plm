@@ -255,8 +255,10 @@ export default function WarehouseCategory() {
     return (
       <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
         <div className='flex min-h-[320px] flex-col items-center justify-center rounded-[32px] border border-dashed border-rose-500/25 bg-rose-500/[0.03] px-6 text-center'>
-          <p className='text-[10px] font-black tracking-widest text-rose-700 uppercase'>仓别列表加载失败</p>
-          <p className='mt-3 max-w-2xl text-[11px] font-bold leading-5 text-rose-700/80'>
+          <p className='text-[10px] font-black tracking-widest text-rose-700 uppercase'>
+            仓别列表加载失败
+          </p>
+          <p className='mt-3 max-w-2xl text-[11px] leading-5 font-bold text-rose-700/80'>
             {readResource.error.message || '请重试后再编辑仓别配置。'}
           </p>
           <Button
@@ -357,7 +359,7 @@ export default function WarehouseCategory() {
               return (
                 <div
                   key={cat.id}
-                  className='group relative rounded-[24px] border border-muted/60 bg-background p-4 md:p-5 transition-all hover:-translate-y-0.5 hover:border-blue-500/50 hover:shadow-xl hover:shadow-blue-500/10'
+                  className='group relative rounded-[24px] border border-muted/60 bg-background p-4 transition-all hover:-translate-y-0.5 hover:border-blue-500/50 hover:shadow-xl hover:shadow-blue-500/10 md:p-5'
                 >
                   <div className='flex items-start justify-between gap-3'>
                     <div className='flex min-w-0 items-center gap-3'>
@@ -366,10 +368,12 @@ export default function WarehouseCategory() {
                       </div>
                       <div className='min-w-0 space-y-0.5'>
                         <div className='flex flex-wrap items-center gap-2'>
-                          <h4 className={cn(
-                            'truncate font-black tracking-tighter text-slate-800 uppercase italic',
-                            cat.name.length > 4 ? 'text-sm' : 'text-base'
-                          )}>
+                          <h4
+                            className={cn(
+                              'truncate font-black tracking-tighter text-slate-800 uppercase italic',
+                              cat.name.length > 4 ? 'text-sm' : 'text-base'
+                            )}
+                          >
                             {cat.name}
                           </h4>
                           <Badge

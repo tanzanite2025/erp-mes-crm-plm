@@ -7,11 +7,11 @@ import {
   Sparkles,
   Trash2,
 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
-import { cn } from '@/lib/utils'
 
 interface BusinessEventSourceCardHeaderProps {
   name: string
@@ -76,7 +76,7 @@ export function BusinessEventSourceCardHeader({
         </div>
         <div className='min-w-0 flex-1'>
           <div className='flex flex-wrap items-center gap-2'>
-            <div className='truncate text-sm font-bold leading-5 tracking-normal text-foreground'>
+            <div className='truncate text-sm leading-5 font-bold tracking-normal text-foreground'>
               {name}
             </div>
             <Badge

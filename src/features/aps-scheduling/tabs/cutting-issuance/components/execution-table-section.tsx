@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ClipboardList, Search } from 'lucide-react'
+import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -9,7 +10,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useLanguage } from '@/context/language-provider'
 import {
   getProductionPlanStatusLabel,
   getProductionPlanStatusOptions,
@@ -44,7 +44,9 @@ export function ExecutionTableSection(props: ExecutionTableSectionProps) {
   const { t, locale } = useLanguage()
   const { executions, isRefreshing, onRefresh } = props
   const [keyword, setKeyword] = useState('')
-  const [status, setStatus] = useState<ProductionPlanStatusValue>(PRODUCTION_PLAN_STATUS_ALL)
+  const [status, setStatus] = useState<ProductionPlanStatusValue>(
+    PRODUCTION_PLAN_STATUS_ALL
+  )
   const statusOptions = getProductionPlanStatusOptions(t)
 
   const normalizedKeyword = normalizeSearchText(keyword)
@@ -61,7 +63,9 @@ export function ExecutionTableSection(props: ExecutionTableSectionProps) {
     const haystack = [
       record.id,
       record.orderNo,
-      t('apsScheduling.cuttingIssuance.execution.lineValue', { lineNo: record.lineNo }),
+      t('apsScheduling.cuttingIssuance.execution.lineValue', {
+        lineNo: record.lineNo,
+      }),
       record.productModel,
       record.holeCount,
       record.templateName,
@@ -69,7 +73,9 @@ export function ExecutionTableSection(props: ExecutionTableSectionProps) {
       getProductionPlanStatusLabel(record.status, t),
     ]
 
-    return haystack.some((item) => normalizeSearchText(item).includes(normalizedKeyword))
+    return haystack.some((item) =>
+      normalizeSearchText(item).includes(normalizedKeyword)
+    )
   })
 
   const emptyMessage = executions.length
@@ -86,7 +92,9 @@ export function ExecutionTableSection(props: ExecutionTableSectionProps) {
             <ClipboardList className='size-4' />
           </div>
           <div>
-            <span className={`${APS_SECTION_MARKER_CLASS} ${APS_SECONDARY_SECTION_MARKER_CLASS}`}>
+            <span
+              className={`${APS_SECTION_MARKER_CLASS} ${APS_SECONDARY_SECTION_MARKER_CLASS}`}
+            >
               {t('apsScheduling.cuttingIssuance.execution.kicker')}
             </span>
             <h3 className='mt-2 text-base font-black tracking-tight text-slate-950'>
@@ -100,18 +108,29 @@ export function ExecutionTableSection(props: ExecutionTableSectionProps) {
 
         <div className='flex flex-col gap-2 sm:flex-row sm:items-center'>
           <div className='relative min-w-[260px]'>
-            <Search className='pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/45' />
+            <Search className='pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/45' />
             <Input
               value={keyword}
               onChange={(event) => setKeyword(event.target.value)}
-              placeholder={t('apsScheduling.cuttingIssuance.execution.searchPlaceholder')}
+              placeholder={t(
+                'apsScheduling.cuttingIssuance.execution.searchPlaceholder'
+              )}
               className={`${APS_INPUT_CLASS} pl-10`}
             />
           </div>
 
-          <Select value={status} onValueChange={(value) => setStatus(value as ProductionPlanStatusValue)}>
+          <Select
+            value={status}
+            onValueChange={(value) =>
+              setStatus(value as ProductionPlanStatusValue)
+            }
+          >
             <SelectTrigger className={`${APS_INPUT_CLASS} w-full sm:w-[160px]`}>
-              <SelectValue placeholder={t('apsScheduling.cuttingIssuance.execution.statusPlaceholder')} />
+              <SelectValue
+                placeholder={t(
+                  'apsScheduling.cuttingIssuance.execution.statusPlaceholder'
+                )}
+              />
             </SelectTrigger>
             <SelectContent>
               {statusOptions.map((item) => (
@@ -146,28 +165,32 @@ export function ExecutionTableSection(props: ExecutionTableSectionProps) {
         <table className='w-full min-w-[720px] text-sm'>
           <thead className='bg-muted/30 text-left'>
             <tr>
-              <th className='px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground/70'>
-                {t('apsScheduling.cuttingIssuance.execution.columns.executionId')}
+              <th className='px-4 py-2 text-[10px] font-black tracking-[0.22em] text-muted-foreground/70 uppercase'>
+                {t(
+                  'apsScheduling.cuttingIssuance.execution.columns.executionId'
+                )}
               </th>
-              <th className='px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground/70'>
+              <th className='px-4 py-2 text-[10px] font-black tracking-[0.22em] text-muted-foreground/70 uppercase'>
                 {t('apsScheduling.cuttingIssuance.execution.columns.orderNo')}
               </th>
-              <th className='px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground/70'>
+              <th className='px-4 py-2 text-[10px] font-black tracking-[0.22em] text-muted-foreground/70 uppercase'>
                 {t('apsScheduling.cuttingIssuance.execution.columns.lineNo')}
               </th>
-              <th className='px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground/70'>
+              <th className='px-4 py-2 text-[10px] font-black tracking-[0.22em] text-muted-foreground/70 uppercase'>
                 {t('apsScheduling.cuttingIssuance.execution.columns.product')}
               </th>
-              <th className='px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground/70'>
+              <th className='px-4 py-2 text-[10px] font-black tracking-[0.22em] text-muted-foreground/70 uppercase'>
                 {t('apsScheduling.cuttingIssuance.execution.columns.template')}
               </th>
-              <th className='px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground/70'>
-                {t('apsScheduling.cuttingIssuance.execution.columns.totalLineQuantity')}
+              <th className='px-4 py-2 text-[10px] font-black tracking-[0.22em] text-muted-foreground/70 uppercase'>
+                {t(
+                  'apsScheduling.cuttingIssuance.execution.columns.totalLineQuantity'
+                )}
               </th>
-              <th className='px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground/70'>
+              <th className='px-4 py-2 text-[10px] font-black tracking-[0.22em] text-muted-foreground/70 uppercase'>
                 {t('apsScheduling.cuttingIssuance.execution.columns.status')}
               </th>
-              <th className='px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground/70'>
+              <th className='px-4 py-2 text-[10px] font-black tracking-[0.22em] text-muted-foreground/70 uppercase'>
                 {t('apsScheduling.cuttingIssuance.execution.columns.createdAt')}
               </th>
             </tr>
@@ -179,23 +202,35 @@ export function ExecutionTableSection(props: ExecutionTableSectionProps) {
                   <td className='px-4 py-2 font-mono text-xs'>{record.id}</td>
                   <td className='px-4 py-2'>{record.orderNo}</td>
                   <td className='px-4 py-2'>
-                    {t('apsScheduling.cuttingIssuance.execution.lineValue', { lineNo: record.lineNo })}
+                    {t('apsScheduling.cuttingIssuance.execution.lineValue', {
+                      lineNo: record.lineNo,
+                    })}
                   </td>
                   <td className='px-4 py-2'>
-                    {t('apsScheduling.cuttingIssuance.execution.modelHoleValue', {
-                      productModel: record.productModel,
-                      holeCount: record.holeCount || '--',
-                    })}
+                    {t(
+                      'apsScheduling.cuttingIssuance.execution.modelHoleValue',
+                      {
+                        productModel: record.productModel,
+                        holeCount: record.holeCount || '--',
+                      }
+                    )}
                   </td>
                   <td className='px-4 py-2'>{record.templateName}</td>
                   <td className='px-4 py-2'>{record.totalLineQuantity}</td>
-                  <td className='px-4 py-2'>{getProductionPlanStatusLabel(record.status, t)}</td>
-                  <td className='px-4 py-2'>{formatDateLabel(record.createdAt, locale)}</td>
+                  <td className='px-4 py-2'>
+                    {getProductionPlanStatusLabel(record.status, t)}
+                  </td>
+                  <td className='px-4 py-2'>
+                    {formatDateLabel(record.createdAt, locale)}
+                  </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={8} className='px-4 py-4 text-center text-xs text-muted-foreground/70'>
+                <td
+                  colSpan={8}
+                  className='px-4 py-4 text-center text-xs text-muted-foreground/70'
+                >
                   {emptyMessage}
                 </td>
               </tr>

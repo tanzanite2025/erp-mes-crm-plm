@@ -1,6 +1,6 @@
 import { Loader2, Plus, RefreshCw } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
+import { Button } from '@/components/ui/button'
 
 type LogisticsSupplierToolbarProps = {
   isFetching: boolean
@@ -22,7 +22,7 @@ export function LogisticsSupplierToolbar({
         variant='outline'
         onClick={onRefresh}
         disabled={isFetching}
-        className='rounded-full px-5 text-[10px] font-black uppercase tracking-widest'
+        className='rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
       >
         {isFetching ? (
           <Loader2 className='size-4 animate-spin' />
@@ -35,7 +35,7 @@ export function LogisticsSupplierToolbar({
       <Button
         type='button'
         onClick={onAdd}
-        className='rounded-full px-6 text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary/20'
+        className='rounded-full px-6 text-[10px] font-black tracking-widest uppercase shadow-xl shadow-primary/20'
       >
         <Plus className='size-4' />
         {t('logisticsConfig.suppliers.actions.add')}

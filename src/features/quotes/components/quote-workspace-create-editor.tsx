@@ -51,7 +51,9 @@ export function QuoteWorkspaceCreateEditor({
     return (
       <div className='flex min-h-[320px] flex-col items-center justify-center rounded-[32px] border border-dashed border-rose-500/25 bg-rose-500/3 px-6 text-center'>
         <AlertCircle className='size-8 text-rose-500' />
-        <p className='mt-4 text-[10px] font-black tracking-widest text-rose-700 uppercase'>报价创建字典加载失败</p>
+        <p className='mt-4 text-[10px] font-black tracking-widest text-rose-700 uppercase'>
+          报价创建字典加载失败
+        </p>
         <p className='mt-3 max-w-xl text-[11px] leading-5 font-bold text-rose-700/80'>
           {createResource.error.message || '请重试后再创建报价。'}
         </p>
@@ -73,7 +75,9 @@ export function QuoteWorkspaceCreateEditor({
     return (
       <div className='flex min-h-[320px] flex-col items-center justify-center gap-4 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 px-6 text-center'>
         <Loader2 className='size-8 animate-spin text-primary/40' />
-        <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>报价创建字典加载中</p>
+        <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+          报价创建字典加载中
+        </p>
       </div>
     )
   }
@@ -93,7 +97,9 @@ export function QuoteWorkspaceCreateEditor({
         lines={formData.lines || []}
         products={createResources.products}
         productDisplayLabelMap={createResources.productDisplayLabelMap}
-        productDisplayProjectionMap={createResources.productDisplayProjectionMap}
+        productDisplayProjectionMap={
+          createResources.productDisplayProjectionMap
+        }
         units={createResources.units}
         drillingOptions={createResources.drillingOptions}
         labelingOptions={createResources.labelingOptions}
@@ -105,7 +111,9 @@ export function QuoteWorkspaceCreateEditor({
       <DocumentNotesSection
         value={formData.requirements || ''}
         compact
-        onChange={(value) => setFormData((prev) => ({ ...prev, requirements: value }))}
+        onChange={(value) =>
+          setFormData((prev) => ({ ...prev, requirements: value }))
+        }
       />
     </div>
   )

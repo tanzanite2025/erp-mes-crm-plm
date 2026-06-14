@@ -139,7 +139,11 @@ export interface InventoryAlertSummaryApiDTO {
   alertCount: number
 }
 
-export type StocktakeTaskStatusApiDTO = 'DRAFT' | 'IN_PROGRESS' | 'COMPLETED' | 'ADJUSTED'
+export type StocktakeTaskStatusApiDTO =
+  | 'DRAFT'
+  | 'IN_PROGRESS'
+  | 'COMPLETED'
+  | 'ADJUSTED'
 
 export interface StocktakeTaskApiDTO {
   id: string
@@ -210,7 +214,11 @@ export interface PDABulkSyncResponseApiDTO {
 
 export type InventoryAdjustmentTypeApiDTO = 'STOCKTAKE' | 'MANUAL'
 
-export type InventoryAdjustmentStatusApiDTO = 'PENDING' | 'APPROVED' | 'REJECTED' | 'EXECUTED'
+export type InventoryAdjustmentStatusApiDTO =
+  | 'PENDING'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'EXECUTED'
 
 export interface InventoryAdjustmentItemApiDTO {
   id: string

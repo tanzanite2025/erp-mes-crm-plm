@@ -2,7 +2,7 @@ import type { AppLocale } from '@/locales'
 
 export function formatProductBindingBoundAtLabel(
   value: string | undefined,
-  locale: AppLocale,
+  locale: AppLocale
 ) {
   if (!value) {
     return '--'

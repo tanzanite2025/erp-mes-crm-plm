@@ -5,12 +5,14 @@ export const warehouseConfig = {
   },
   materialThresholds: {
     title: 'Material Thresholds',
-    subtitle: 'Maintain single-material stock lines and BOM set-capacity lines from warehouse configuration, with BOM alerts evaluated against the current BOM structure.',
+    subtitle:
+      'Maintain single-material stock lines and BOM set-capacity lines from warehouse configuration, with BOM alerts evaluated against the current BOM structure.',
     loadingTitle: 'Loading Material Thresholds',
     errorTitle: 'Failed to Load Material Thresholds',
     searchPlaceholder: 'Search material names, BOM numbers or notes...',
     emptyTitle: 'No Threshold Rules Yet',
-    emptyDescription: 'Create a rule first to manage either a single-material stock floor or how many sets a BOM should still be able to produce.',
+    emptyDescription:
+      'Create a rule first to manage either a single-material stock floor or how many sets a BOM should still be able to produce.',
     deleteConfirmTitle: 'Delete this threshold rule?',
     summary: {
       total: 'Total Rules',
@@ -49,7 +51,8 @@ export const warehouseConfig = {
     dialog: {
       createTitle: 'Create Threshold Rule',
       editTitle: 'Edit Threshold Rule',
-      description: 'This dialog is the shared threshold configuration shell. Material mode maintains a stock floor, while BOM mode maintains a set-capacity floor.',
+      description:
+        'This dialog is the shared threshold configuration shell. Material mode maintains a stock floor, while BOM mode maintains a set-capacity floor.',
       targetTypeLabel: 'Target Type',
       targetTypeMaterial: 'Single Material',
       targetTypeBom: 'BOM Set',
@@ -64,23 +67,29 @@ export const warehouseConfig = {
       thresholdLabel: 'Alert Threshold',
       targetModeTitleMaterial: 'Single-Material Stock Line',
       targetModeTitleBom: 'Dynamic BOM Set Alert',
-      targetModeDescriptionMaterial: 'After saving, the system compares only this material\'s current stock against the configured threshold.',
-      targetModeDescriptionBom: 'If you enter a value like 10 sets, the system dynamically converts that target into required quantities for every current BOM member. If any member cannot support that set count, the BOM alert is triggered.',
+      targetModeDescriptionMaterial:
+        "After saving, the system compares only this material's current stock against the configured threshold.",
+      targetModeDescriptionBom:
+        'If you enter a value like 10 sets, the system dynamically converts that target into required quantities for every current BOM member. If any member cannot support that set count, the BOM alert is triggered.',
       currentTargetLabel: 'Current Target',
       thresholdLabelMaterial: 'Material Stock Floor',
       thresholdLabelBom: 'BOM Set Capacity',
       thresholdPlaceholderMaterial: 'e.g. 100',
       thresholdPlaceholderBom: 'e.g. 10',
-      thresholdHintMaterial: 'Trigger logic: alert when this material\'s current stock drops below the threshold.',
-      thresholdHintBom: 'Trigger logic: the system dynamically evaluates all BOM members from the current structure instead of splitting this into static material rules.',
+      thresholdHintMaterial:
+        "Trigger logic: alert when this material's current stock drops below the threshold.",
+      thresholdHintBom:
+        'Trigger logic: the system dynamically evaluates all BOM members from the current structure instead of splitting this into static material rules.',
       enabledLabel: 'Enabled Status',
       notesLabel: 'Rule Notes',
-      notesPlaceholder: 'Describe scope, replenishment expectations or operational constraints for this rule.',
+      notesPlaceholder:
+        'Describe scope, replenishment expectations or operational constraints for this rule.',
       cancel: 'Cancel',
       save: 'Save Rule',
     },
     toast: {
-      invalidThreshold: 'Please enter a threshold quantity greater than or equal to 0',
+      invalidThreshold:
+        'Please enter a threshold quantity greater than or equal to 0',
       selectMaterial: 'Please select a material target',
       selectBom: 'Please select a BOM target',
       created: 'Threshold rule created',

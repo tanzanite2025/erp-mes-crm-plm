@@ -1,13 +1,4 @@
 import type {
-  User,
-  UserAccessSnapshot,
-  UserListPage,
-  UserOption,
-  UserPermissionItem,
-  UserPermissionsReplaceResult,
-  UserPermissionsResponse,
-} from '../data/schema'
-import type {
   UserAccessSnapshotApiDTO,
   UserApiDTO,
   UserListPageApiDTO,
@@ -16,6 +7,15 @@ import type {
   UserPermissionsApiDTO,
   UserPermissionsReplaceResultApiDTO,
 } from '../contracts/user-api-dto'
+import type {
+  User,
+  UserAccessSnapshot,
+  UserListPage,
+  UserOption,
+  UserPermissionItem,
+  UserPermissionsReplaceResult,
+  UserPermissionsResponse,
+} from '../data/schema'
 
 export function toUserContract(dto: UserApiDTO): User {
   return {
@@ -81,7 +81,9 @@ export function toUserApiDTO(contract: User): UserApiDTO {
   }
 }
 
-export function toUserPermissionItemContract(dto: UserPermissionItemApiDTO): UserPermissionItem {
+export function toUserPermissionItemContract(
+  dto: UserPermissionItemApiDTO
+): UserPermissionItem {
   return {
     permissionId: dto.permissionId,
     source: dto.source,
@@ -90,7 +92,9 @@ export function toUserPermissionItemContract(dto: UserPermissionItemApiDTO): Use
   }
 }
 
-export function toUserPermissionsResponseContract(dto: UserPermissionsApiDTO): UserPermissionsResponse {
+export function toUserPermissionsResponseContract(
+  dto: UserPermissionsApiDTO
+): UserPermissionsResponse {
   return {
     userId: dto.userId,
     username: dto.username,
@@ -102,7 +106,7 @@ export function toUserPermissionsResponseContract(dto: UserPermissionsApiDTO): U
 }
 
 export function toUserPermissionsReplaceResultContract(
-  dto: UserPermissionsReplaceResultApiDTO,
+  dto: UserPermissionsReplaceResultApiDTO
 ): UserPermissionsReplaceResult {
   return {
     userId: dto.userId,
@@ -115,7 +119,9 @@ export function toUserPermissionsReplaceResultContract(
   }
 }
 
-export function toUserAccessSnapshotContract(dto: UserAccessSnapshotApiDTO): UserAccessSnapshot {
+export function toUserAccessSnapshotContract(
+  dto: UserAccessSnapshotApiDTO
+): UserAccessSnapshot {
   return {
     userId: dto.userId,
     username: dto.username,

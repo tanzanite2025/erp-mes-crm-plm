@@ -1,13 +1,20 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
-import { createLogger } from '@/lib/logger'
 import { type DeltaSet, type DeltaPayload } from '@/lib/delta/types'
+import { createLogger } from '@/lib/logger'
 import { buildVersionedPatchMetadata } from '@/lib/version-guard'
 
 const logger = createLogger('UnitService')
 const UNIT_PATCH_INTENT_SAVE = 'UNIT_PATCH_SAVE'
 
-export type UnitCategory = 'QUANTITY' | 'WEIGHT' | 'LENGTH' | 'AREA' | 'VOLUME' | 'TIME' | 'OTHER'
+export type UnitCategory =
+  | 'QUANTITY'
+  | 'WEIGHT'
+  | 'LENGTH'
+  | 'AREA'
+  | 'VOLUME'
+  | 'TIME'
+  | 'OTHER'
 
 export interface Unit {
   id: string
@@ -28,7 +35,9 @@ export const unitService = {
   },
 
   saveUnits: async (_units: Unit[]) => {
-    logger.warn('saveUnits is deprecated, use sync or individual update methods.')
+    logger.warn(
+      'saveUnits is deprecated, use sync or individual update methods.'
+    )
   },
 
   sync: async (units: Array<Omit<Unit, 'id' | 'isSystem'>>) => {
@@ -44,23 +53,38 @@ export const unitService = {
       method: 'POST',
       body: JSON.stringify(unit),
     })
-    return ensureObjectResponse<Unit & Record<string, unknown>>(res, 'UnitService.addUnit') as Unit
+    return ensureObjectResponse<Unit & Record<string, unknown>>(
+      res,
+      'UnitService.addUnit'
+    ) as Unit
   },
 
-  patchUnit: async (id: string, delta: DeltaSet, version?: number): Promise<Unit> => {
+  patchUnit: async (
+    id: string,
+    delta: DeltaSet,
+    version?: number
+  ): Promise<Unit> => {
     const payload: DeltaPayload = {
       op: 'PATCH',
       delta,
-      metadata: buildVersionedPatchMetadata(id, version, 'UnitService.patchUnit', {
-        intent: UNIT_PATCH_INTENT_SAVE,
-      }),
+      metadata: buildVersionedPatchMetadata(
+        id,
+        version,
+        'UnitService.patchUnit',
+        {
+          intent: UNIT_PATCH_INTENT_SAVE,
+        }
+      ),
     }
 
     const res = await apiFetch<Unit>(`/basic/units/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(payload),
     })
-    return ensureObjectResponse<Unit & Record<string, unknown>>(res, 'UnitService.patchUnit') as Unit
+    return ensureObjectResponse<Unit & Record<string, unknown>>(
+      res,
+      'UnitService.patchUnit'
+    ) as Unit
   },
 
   deleteUnit: async (id: string) => {

@@ -2,29 +2,31 @@
 
 import { useCallback, useMemo, useState } from 'react'
 import { Nut, Hash, Tag, Info, Save, Layers } from 'lucide-react'
+import { toast } from 'sonner'
+import type { DeltaSet } from '@/lib/delta/types'
+import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { FileUploader } from '@/components/file-uploader'
-import type { DeltaSet } from '@/lib/delta/types'
-import type { Nipple } from '../data/nipple-schema'
 import { ActionDialogShell } from '@/components/action-dialog-shell'
 import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
-import { useDeltaTracker } from '@/hooks/use-delta-tracker'
-import { toast } from 'sonner'
+import { FileUploader } from '@/components/file-uploader'
+import type { Nipple } from '../data/nipple-schema'
 
 type NippleFormState = Nipple
-type NippleFormUpdater = NippleFormState | ((prev: NippleFormState) => NippleFormState)
+type NippleFormUpdater =
+  | NippleFormState
+  | ((prev: NippleFormState) => NippleFormState)
 
 interface NippleActionDialogProps {
   currentRow?: Nipple | null
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSave: (params: { 
-    data: Nipple; 
-    isPatch: boolean; 
-    delta?: DeltaSet; 
-    version?: number 
+  onSave: (params: {
+    data: Nipple
+    isPatch: boolean
+    delta?: DeltaSet
+    version?: number
   }) => void
   isLoading?: boolean
 }
@@ -47,43 +49,57 @@ export function NippleActionDialog({
   onSave,
   isLoading,
 }: NippleActionDialogProps) {
-  const [draftId] = useState(() => `NIP-${Math.random().toString(36).slice(2, 8).toUpperCase()}`)
+  const [draftId] = useState(
+    () => `NIP-${Math.random().toString(36).slice(2, 8).toUpperCase()}`
+  )
   const shellClasses = buildActionDialogShellClasses({
     content: 'sm:max-w-[650px] rounded-[32px] overflow-hidden',
     header: 'p-8 pb-4 border-none bg-muted/5',
-    title: 'text-xl font-black uppercase italic tracking-tighter flex items-center gap-2',
+    title:
+      'text-xl font-black uppercase italic tracking-tighter flex items-center gap-2',
     description: 'text-[10px] font-black uppercase tracking-widest opacity-60',
     body: 'p-8 pt-4 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar',
-    footer: 'p-8 pt-4 flex items-center justify-between w-full border-t border-dashed border-muted/20 bg-muted/5',
+    footer:
+      'p-8 pt-4 flex items-center justify-between w-full border-t border-dashed border-muted/20 bg-muted/5',
   })
 
   const isEdit = !!currentRow
   const initialFormData = useMemo(() => {
     if (currentRow) return currentRow
-    return { 
-      ...DEFAULT_NIPPLE, 
+    return {
+      ...DEFAULT_NIPPLE,
       id: draftId,
-      createdAt: new Date().toISOString() 
+      createdAt: new Date().toISOString(),
     } as Nipple
   }, [currentRow, draftId])
 
-  const { data: formData, tracker, isDirty } = useDeltaTracker(initialFormData, open)
+  const {
+    data: formData,
+    tracker,
+    isDirty,
+  } = useDeltaTracker(initialFormData, open)
 
-  const setFormData = useCallback((updater: NippleFormUpdater) => {
-    if (typeof updater === 'function') {
-      const next = updater(formData)
-      Object.assign(formData, next)
-    } else {
-      Object.assign(formData, updater)
-    }
-  }, [formData])
+  const setFormData = useCallback(
+    (updater: NippleFormUpdater) => {
+      if (typeof updater === 'function') {
+        const next = updater(formData)
+        Object.assign(formData, next)
+      } else {
+        Object.assign(formData, updater)
+      }
+    },
+    [formData]
+  )
 
-  const updateField = useCallback(<K extends keyof Nipple>(field: K, value: Nipple[K]) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }))
-  }, [setFormData])
+  const updateField = useCallback(
+    <K extends keyof Nipple>(field: K, value: Nipple[K]) => {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: value,
+      }))
+    },
+    [setFormData]
+  )
 
   const handleSave = () => {
     if (!formData.name) {
@@ -97,11 +113,11 @@ export function NippleActionDialog({
         onOpenChange(false)
         return
       }
-      onSave({ 
-        data: formData, 
-        isPatch: true, 
-        delta, 
-        version: currentRow.version 
+      onSave({
+        data: formData,
+        isPatch: true,
+        delta,
+        version: currentRow.version,
       })
     } else {
       onSave({ data: formData, isPatch: false })
@@ -112,70 +128,74 @@ export function NippleActionDialog({
     <ActionDialogShell
       open={open}
       onOpenChange={onOpenChange}
-      title={(
+      title={
         <>
-          <div className='p-2 bg-orange-500/10 rounded-xl'>
+          <div className='rounded-xl bg-orange-500/10 p-2'>
             <Nut className='size-5 text-orange-500' />
           </div>
           {isEdit ? '编辑条帽参数' : '建立条帽基准'}
         </>
-      )}
-      description="COMPONENT_MASTER_NIPPLE / 定义条帽长度、材质与颜色特征，确保装配兼容性。"
+      }
+      description='COMPONENT_MASTER_NIPPLE / 定义条帽长度、材质与颜色特征，确保装配兼容性。'
       contentClassName={shellClasses.content}
       headerClassName={shellClasses.header}
       bodyClassName={shellClasses.body}
       footerClassName={shellClasses.footer}
       titleClassName={shellClasses.title}
       descriptionClassName={shellClasses.description}
-      footer={(
+      footer={
         <>
-          <p className='text-[10px] text-muted-foreground flex items-center gap-2 font-black uppercase tracking-widest opacity-50'>
-            <span className='inline-block size-1.5 rounded-full bg-orange-500 animate-pulse' />
+          <p className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground uppercase opacity-50'>
+            <span className='inline-block size-1.5 animate-pulse rounded-full bg-orange-500' />
             Sync_to_BOM_Engine
           </p>
-          <div className="flex items-center gap-3">
-            <Button 
-              variant="ghost" 
-              onClick={() => onOpenChange(false)} 
-              className="font-black text-[10px] uppercase tracking-widest rounded-full px-6"
+          <div className='flex items-center gap-3'>
+            <Button
+              variant='ghost'
+              onClick={() => onOpenChange(false)}
+              className='rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
             >
               取消 / CANCEL
             </Button>
-            <Button 
+            <Button
               disabled={isLoading || (isEdit && !isDirty())}
-              onClick={handleSave} 
-              className="bg-orange-600 hover:bg-orange-700 text-white font-black text-[10px] uppercase tracking-widest px-10 h-11 rounded-full shadow-xl shadow-orange-600/20 active:scale-95 transition-all gap-2"
+              onClick={handleSave}
+              className='h-11 gap-2 rounded-full bg-orange-600 px-10 text-[10px] font-black tracking-widest text-white uppercase shadow-xl shadow-orange-600/20 transition-all hover:bg-orange-700 active:scale-95'
             >
-              {isLoading ? <span className="animate-spin size-4 border-2 border-current border-t-transparent rounded-full" /> : <Save className="size-4" />}
+              {isLoading ? (
+                <span className='size-4 animate-spin rounded-full border-2 border-current border-t-transparent' />
+              ) : (
+                <Save className='size-4' />
+              )}
               同步存档 / SYNC_ARCHIVE
             </Button>
           </div>
         </>
-      )}
+      }
     >
-      <div className='absolute inset-0 bg-linear-to-br from-orange-500/5 via-transparent pointer-events-none' />
+      <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-orange-500/5 via-transparent' />
 
-      <div className='grid gap-8 relative'>
+      <div className='relative grid gap-8'>
         {/* 核心标识组 */}
         <div className='grid grid-cols-2 gap-6'>
           <div className='space-y-2'>
-            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 flex items-center gap-2'>
+            <Label className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
               <Tag className='size-3' /> 条帽名称 / NIPPLE_NAME
             </Label>
             <Input
               placeholder='例如: Brass-12mm-Black'
-              className='h-12 font-black text-sm bg-muted/40 border-none rounded-2xl focus-visible:ring-orange-500/20 px-5 shadow-inner'
+              className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-sm font-black shadow-inner focus-visible:ring-orange-500/20'
               value={formData.name}
               onChange={(e) => updateField('name', e.target.value)}
             />
           </div>
           <div className='space-y-2'>
-            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 flex items-center gap-2'>
+            <Label className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
               <Hash className='size-3' /> 系统编码 / INTERNAL_ID
             </Label>
             <Input
               readOnly
-              className='h-12 font-mono font-bold text-xs bg-muted/20 border-none rounded-2xl px-5 opacity-60 cursor-not-allowed'
+              className='h-12 cursor-not-allowed rounded-2xl border-none bg-muted/20 px-5 font-mono text-xs font-bold opacity-60'
               value={formData.id}
             />
           </div>
@@ -184,19 +204,23 @@ export function NippleActionDialog({
         {/* 品牌与材质 */}
         <div className='grid grid-cols-2 gap-6'>
           <div className='space-y-2'>
-            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>品牌 / BRAND</Label>
+            <Label className='text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
+              品牌 / BRAND
+            </Label>
             <Input
               placeholder='输入品牌名称'
-              className='h-12 font-bold text-sm bg-muted/40 border-none rounded-2xl px-5 shadow-inner'
+              className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-sm font-bold shadow-inner'
               value={formData.brand}
               onChange={(e) => updateField('brand', e.target.value)}
             />
           </div>
           <div className='space-y-2'>
-            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>材质 / MATERIAL</Label>
+            <Label className='text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
+              材质 / MATERIAL
+            </Label>
             <Input
               placeholder='例如: Brass / Aluminum'
-              className='h-12 font-bold text-sm bg-muted/40 border-none rounded-2xl px-5 shadow-inner'
+              className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-sm font-bold shadow-inner'
               value={formData.material}
               onChange={(e) => updateField('material', e.target.value)}
             />
@@ -204,29 +228,33 @@ export function NippleActionDialog({
         </div>
 
         {/* 规格参数 */}
-        <div className='bg-muted/10 p-6 rounded-[32px] border border-dashed border-muted-foreground/10 space-y-6'>
+        <div className='space-y-6 rounded-[32px] border border-dashed border-muted-foreground/10 bg-muted/10 p-6'>
           <div className='flex items-center justify-between'>
-            <p className='text-[10px] font-black uppercase tracking-[0.2em] text-orange-600/70 flex items-center gap-2'>
+            <p className='flex items-center gap-2 text-[10px] font-black tracking-[0.2em] text-orange-600/70 uppercase'>
               <Layers className='size-3' /> 规格定义 / SPECIFICATION
             </p>
-            <div className='h-px flex-1 mx-4 bg-muted-foreground/10' />
+            <div className='mx-4 h-px flex-1 bg-muted-foreground/10' />
           </div>
 
           <div className='grid grid-cols-2 gap-6'>
             <div className='space-y-2'>
-              <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>长度 / LENGTH (MM)</Label>
+              <Label className='text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
+                长度 / LENGTH (MM)
+              </Label>
               <Input
                 placeholder='例如: 12 / 14 / 16'
-                className='h-12 font-mono font-black text-sm bg-background border-none rounded-2xl px-5 shadow-sm'
+                className='h-12 rounded-2xl border-none bg-background px-5 font-mono text-sm font-black shadow-sm'
                 value={formData.length}
                 onChange={(e) => updateField('length', e.target.value)}
               />
             </div>
             <div className='space-y-2'>
-              <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>颜色 / COLOR</Label>
+              <Label className='text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
+                颜色 / COLOR
+              </Label>
               <Input
                 placeholder='例如: Black / Silver'
-                className='h-12 font-black text-sm bg-background border-none rounded-2xl px-5 shadow-sm'
+                className='h-12 rounded-2xl border-none bg-background px-5 text-sm font-black shadow-sm'
                 value={formData.color}
                 onChange={(e) => updateField('color', e.target.value)}
               />
@@ -235,12 +263,12 @@ export function NippleActionDialog({
         </div>
 
         {/* 附件上传 */}
-        <div className='bg-orange-500/5 p-6 rounded-[32px] border border-dashed border-orange-500/20 space-y-3'>
-          <Label className='text-[10px] font-black uppercase tracking-widest text-orange-600/60 flex items-center gap-2'>
+        <div className='space-y-3 rounded-[32px] border border-dashed border-orange-500/20 bg-orange-500/5 p-6'>
+          <Label className='flex items-center gap-2 text-[10px] font-black tracking-widest text-orange-600/60 uppercase'>
             <Info className='size-3' /> 附件存档 / DOCUMENTATION
           </Label>
-          <FileUploader 
-            value={formData.fileUrl} 
+          <FileUploader
+            value={formData.fileUrl}
             accept='image/*'
             onChange={(url, ext) => {
               setFormData((prev) => ({

@@ -1,7 +1,8 @@
 export const APS_CARD_SHELL_CLASS =
   'rounded-[24px] border border-dashed border-border/60 bg-card shadow-none'
 
-export const APS_PANEL_CLASS = 'rounded-2xl border border-dashed border-border/40 bg-muted/5'
+export const APS_PANEL_CLASS =
+  'rounded-2xl border border-dashed border-border/40 bg-muted/5'
 
 export const APS_PRIMARY_SECTION_CLASS =
   'rounded-[28px] border border-primary/20 bg-card shadow-none'
@@ -18,14 +19,11 @@ export const APS_SECTION_HEADER_CLASS =
 export const APS_SECTION_MARKER_CLASS =
   'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.24em]'
 
-export const APS_PRIMARY_SECTION_HEADER_CLASS =
-  'border-primary/20 bg-primary/5'
+export const APS_PRIMARY_SECTION_HEADER_CLASS = 'border-primary/20 bg-primary/5'
 
-export const APS_SECONDARY_SECTION_HEADER_CLASS =
-  'border-border/40 bg-muted/10'
+export const APS_SECONDARY_SECTION_HEADER_CLASS = 'border-border/40 bg-muted/10'
 
-export const APS_TERTIARY_SECTION_HEADER_CLASS =
-  'border-border/30 bg-muted/5'
+export const APS_TERTIARY_SECTION_HEADER_CLASS = 'border-border/30 bg-muted/5'
 
 export const APS_PRIMARY_SECTION_MARKER_CLASS =
   'bg-primary text-primary-foreground shadow-sm shadow-primary/20'

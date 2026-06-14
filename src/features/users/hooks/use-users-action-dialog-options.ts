@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react'
 import { type OrgNode } from '@/features/org-personnel/data/org-schema'
 import { type Employee } from '@/features/org-personnel/data/schema'
+import { EmployeeCoreService } from '@/features/org-personnel/services/employee-core-service'
 import { OrgService } from '@/features/org-personnel/services/org-service'
-import { productionLinesService } from '@/features/production-shared/services/production-lines-service'
-import { productionProcessesService } from '@/features/production-shared/services/production-processes-service'
 import type { ProductionLine } from '@/features/production-shared/data/production-line'
 import type { ProductionProcessStep } from '@/features/production-shared/data/production-process'
+import { productionLinesService } from '@/features/production-shared/services/production-lines-service'
+import { productionProcessesService } from '@/features/production-shared/services/production-processes-service'
+import {
+  type EmployeeOption,
+  type TranslateFn,
+} from '../components/users-action-dialog.shared'
 import { type UserOption } from '../data/schema'
-import { type EmployeeOption, type TranslateFn } from '../components/users-action-dialog.shared'
-import { EmployeeCoreService } from '@/features/org-personnel/services/employee-core-service'
 
 type UseUsersActionDialogOptionsParams = {
   open: boolean
@@ -66,8 +69,9 @@ export function useUsersActionDialogOptions({
 
       const currentEmployeeRef = (currentRow?.employeeId || '').trim()
       const existingEmployeeIds = new Set(
-        (usersData?.map((u) => u.employeeId).filter(Boolean) || [])
-          .filter((employeeId) => String(employeeId).trim() !== currentEmployeeRef)
+        (usersData?.map((u) => u.employeeId).filter(Boolean) || []).filter(
+          (employeeId) => String(employeeId).trim() !== currentEmployeeRef
+        )
       )
 
       const nextEmployees = data
@@ -84,10 +88,15 @@ export function useUsersActionDialogOptions({
 
       if (currentEmployeeRef) {
         const currentEmployee = data.find((emp: Employee) => {
-          return emp.id === currentEmployeeRef || (emp.staffId || '').trim() === currentEmployeeRef
+          return (
+            emp.id === currentEmployeeRef ||
+            (emp.staffId || '').trim() === currentEmployeeRef
+          )
         })
         if (currentEmployee) {
-          const alreadyIncluded = nextEmployees.some((option) => option.value === currentEmployeeRef)
+          const alreadyIncluded = nextEmployees.some(
+            (option) => option.value === currentEmployeeRef
+          )
           if (!alreadyIncluded) {
             nextEmployees.unshift({
               label: buildEmployeeDisplayLabel(currentEmployee, nameMap, t),

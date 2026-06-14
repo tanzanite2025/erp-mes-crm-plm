@@ -5,7 +5,6 @@
  *
  * 优先级: CUSTOMER 专供 → INTERNAL 兜底; 同档同归属下取 createdAt 最新一份。
  */
-
 import { type BOM } from '../data/schema'
 
 export interface BOMSelector {
@@ -21,7 +20,10 @@ export function byCreatedAtDesc(a: BOM, b: BOM): number {
   return bTime - aTime
 }
 
-function trimSelector(selector?: BOMSelector): { customerId: string; versionLevel: string } {
+function trimSelector(selector?: BOMSelector): {
+  customerId: string
+  versionLevel: string
+} {
   return {
     customerId: (selector?.customerId ?? '').trim(),
     versionLevel: (selector?.versionLevel ?? '').trim(),
@@ -39,13 +41,20 @@ function trimSelector(selector?: BOMSelector): { customerId: string; versionLeve
  *
  * 返回 undefined 表示候选里没有任何匹配项。
  */
-export function pickBOMBySelector(candidates: BOM[], selector?: BOMSelector): BOM | undefined {
+export function pickBOMBySelector(
+  candidates: BOM[],
+  selector?: BOMSelector
+): BOM | undefined {
   const { customerId, versionLevel } = trimSelector(selector)
 
   // 1. 客户专供优先
   if (customerId) {
     const customerCandidates = filterByVersionLevel(
-      candidates.filter((bom) => bom.ownerType === 'CUSTOMER' && (bom.ownerCustomerId ?? '').trim() === customerId),
+      candidates.filter(
+        (bom) =>
+          bom.ownerType === 'CUSTOMER' &&
+          (bom.ownerCustomerId ?? '').trim() === customerId
+      ),
       versionLevel
     )
     if (customerCandidates.length > 0) {
@@ -71,11 +80,18 @@ function filterByVersionLevel(boms: BOM[], versionLevel: string): BOM[] {
  *
  * 用于产品概览/包装重量这种"展示当前生效 BOM"场景。
  */
-export function pickReleasedBOM(boms: BOM[], selector?: BOMSelector): BOM | undefined {
-  const releasedMboms = boms.filter((bom) => bom.bomType === 'MBOM' && bom.status === 'RELEASED')
+export function pickReleasedBOM(
+  boms: BOM[],
+  selector?: BOMSelector
+): BOM | undefined {
+  const releasedMboms = boms.filter(
+    (bom) => bom.bomType === 'MBOM' && bom.status === 'RELEASED'
+  )
   const mbom = pickBOMBySelector(releasedMboms, selector)
   if (mbom) return mbom
 
-  const releasedEboms = boms.filter((bom) => bom.bomType === 'EBOM' && bom.status === 'RELEASED')
+  const releasedEboms = boms.filter(
+    (bom) => bom.bomType === 'EBOM' && bom.status === 'RELEASED'
+  )
   return pickBOMBySelector(releasedEboms, selector)
 }

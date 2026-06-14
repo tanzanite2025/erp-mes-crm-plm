@@ -5,7 +5,15 @@ import {
 import { type NotificationRule } from '../data/notification-rule-schema'
 import { type StandardCommand } from '../data/schema'
 import { executeApprovalAction } from './approval-executor'
-import { executeNotificationAction, archiveResolvedMessages } from './notification-executor'
+import {
+  executeNotificationAction,
+  archiveResolvedMessages,
+} from './notification-executor'
+import {
+  buildSegmentMetadata,
+  getActiveRules,
+  isSegmentStatusMatch,
+} from './rule-matcher'
 import {
   buildExecutionEventKey,
   buildExecutionId,
@@ -14,11 +22,6 @@ import {
   resolveSegmentTargets,
   resolveTemplate,
 } from './target-resolver'
-import {
-  buildSegmentMetadata,
-  getActiveRules,
-  isSegmentStatusMatch,
-} from './rule-matcher'
 
 export type RuleExecutionMetadata = Record<string, unknown>
 export type RuleExecutionMode = 'live' | 'retroactive'
@@ -136,9 +139,7 @@ export async function executeRoutingRules({
       })
       result.approvalCreatedCount += approvalResult.createdCount
       result.skippedApprovalCount += approvalResult.skippedCount
-      result.processedApprovalKeys.push(
-        ...approvalResult.processedApprovalKeys
-      )
+      result.processedApprovalKeys.push(...approvalResult.processedApprovalKeys)
 
       const notificationResult = executeNotificationAction({
         rule,

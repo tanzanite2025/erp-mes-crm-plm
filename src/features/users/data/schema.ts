@@ -70,22 +70,28 @@ export const userPermissionsResponseSchema = z.object({
   permissions: z.array(userPermissionItemSchema),
   total: z.number(),
 })
-export type UserPermissionsResponse = z.infer<typeof userPermissionsResponseSchema>
+export type UserPermissionsResponse = z.infer<
+  typeof userPermissionsResponseSchema
+>
 
 export const userPermissionsReplaceResultSchema = z.object({
   userId: z.string(),
   permissions: z.array(z.string()),
-  changeSummary: z.object({
-    added: z.number().default(0),
-    removed: z.number().default(0),
-    unchanged: z.number().default(0),
-  }).default({
-    added: 0,
-    removed: 0,
-    unchanged: 0,
-  }),
+  changeSummary: z
+    .object({
+      added: z.number().default(0),
+      removed: z.number().default(0),
+      unchanged: z.number().default(0),
+    })
+    .default({
+      added: 0,
+      removed: 0,
+      unchanged: 0,
+    }),
 })
-export type UserPermissionsReplaceResult = z.infer<typeof userPermissionsReplaceResultSchema>
+export type UserPermissionsReplaceResult = z.infer<
+  typeof userPermissionsReplaceResultSchema
+>
 
 export const userAccessSnapshotSchema = z.object({
   userId: z.string(),

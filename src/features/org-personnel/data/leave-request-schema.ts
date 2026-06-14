@@ -1,22 +1,22 @@
 import { z } from 'zod'
 
 export const leaveTypeSchema = z.enum([
-  'annual',   // 年假
-  'sick',     // 病假
+  'annual', // 年假
+  'sick', // 病假
   'personal', // 事假
   'marriage', // 婚假
-  'maternity',// 产假
-  'funeral',  // 丧假
-  'other'     // 其他
+  'maternity', // 产假
+  'funeral', // 丧假
+  'other', // 其他
 ])
 
 export type LeaveType = z.infer<typeof leaveTypeSchema>
 
 export const leaveRequestStatusSchema = z.enum([
-  'PENDING',    // 待审批
-  'APPROVED',   // 已批准
-  'REJECTED',   // 已拒绝
-  'CANCELED'    // 已撤销
+  'PENDING', // 待审批
+  'APPROVED', // 已批准
+  'REJECTED', // 已拒绝
+  'CANCELED', // 已撤销
 ])
 
 export type LeaveRequestStatus = z.infer<typeof leaveRequestStatusSchema>
@@ -28,7 +28,7 @@ export const leaveRequestSchema = z.object({
   submittedByUserId: z.string().optional(),
   leaveType: leaveTypeSchema,
   startTime: z.string(), // ISO String
-  endTime: z.string(),   // ISO String
+  endTime: z.string(), // ISO String
   durationDays: z.number().min(0.5),
   reason: z.string().min(1, 'orgPersonnel.validation.leaveReasonRequired'),
   status: leaveRequestStatusSchema.default('PENDING'),
@@ -51,7 +51,9 @@ export const leavePreviewSchema = z.object({
 export type LeavePreview = z.infer<typeof leavePreviewSchema>
 
 export const leaveCreateFormSchema = z.object({
-  employeeId: z.string().min(1, 'orgPersonnel.validation.leaveEmployeeRequired'),
+  employeeId: z
+    .string()
+    .min(1, 'orgPersonnel.validation.leaveEmployeeRequired'),
   leaveType: leaveTypeSchema,
   startTime: z.string().min(1),
   endTime: z.string().min(1),

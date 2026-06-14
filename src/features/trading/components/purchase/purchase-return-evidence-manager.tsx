@@ -1,12 +1,19 @@
 import { useRef, useState } from 'react'
+import {
+  Camera,
+  CloudUpload,
+  GripVertical,
+  ImageIcon,
+  Loader2,
+  Trash2,
+} from 'lucide-react'
 import { toast } from 'sonner'
-import { Camera, CloudUpload, GripVertical, ImageIcon, Loader2, Trash2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { apiFetch } from '@/lib/api-client'
 import { failLoudly } from '@/lib/safe-catch'
 import { getStaticEvidenceUrl } from '@/lib/url-utils'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import type { OrderEvidence } from '../../data/schema'
 
 interface PurchaseReturnEvidenceManagerProps {
@@ -58,14 +65,21 @@ export function PurchaseReturnEvidenceManager({
   uploadPath = '/purchase/evidence/upload',
 }: PurchaseReturnEvidenceManagerProps) {
   const [uploading, setUploading] = useState(false)
-  const [draggingEvidenceId, setDraggingEvidenceId] = useState<string | null>(null)
-  const [dragOverEvidenceId, setDragOverEvidenceId] = useState<string | null>(null)
+  const [draggingEvidenceId, setDraggingEvidenceId] = useState<string | null>(
+    null
+  )
+  const [dragOverEvidenceId, setDragOverEvidenceId] = useState<string | null>(
+    null
+  )
   const [cameraInputResetKey, setCameraInputResetKey] = useState(0)
   const [uploadInputResetKey, setUploadInputResetKey] = useState(0)
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const uploadInputRef = useRef<HTMLInputElement>(null)
 
-  const handleSelectedFiles = async (files: FileList | null, resetInput?: () => void) => {
+  const handleSelectedFiles = async (
+    files: FileList | null,
+    resetInput?: () => void
+  ) => {
     if (!files || files.length === 0 || disabled) {
       resetInput?.()
       return
@@ -101,7 +115,9 @@ export function PurchaseReturnEvidenceManager({
 
       onChange(next)
     } catch (error) {
-      failLoudly(error, 'PurchaseReturnEvidenceManager.handleSelectedFiles', { silentUI: true })
+      failLoudly(error, 'PurchaseReturnEvidenceManager.handleSelectedFiles', {
+        silentUI: true,
+      })
       toast.error(uploadFailedText)
     } finally {
       setUploading(false)
@@ -114,7 +130,9 @@ export function PurchaseReturnEvidenceManager({
   }
 
   const updateEvidence = (id: string, patch: Partial<OrderEvidence>) => {
-    onChange(evidences.map((item) => (item.id === id ? { ...item, ...patch } : item)))
+    onChange(
+      evidences.map((item) => (item.id === id ? { ...item, ...patch } : item))
+    )
   }
 
   const reorderEvidences = (activeId: string, overId: string) => {
@@ -135,9 +153,11 @@ export function PurchaseReturnEvidenceManager({
       <div className='flex items-center justify-between gap-3'>
         <div className='flex items-center gap-2'>
           <ImageIcon className='size-3.5 text-primary' />
-          <p className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/70'>{title}</p>
+          <p className='text-[10px] font-black tracking-[0.2em] text-muted-foreground/70 uppercase'>
+            {title}
+          </p>
         </div>
-        <span className='text-[9px] font-mono text-muted-foreground/50'>
+        <span className='font-mono text-[9px] text-muted-foreground/50'>
           {evidences.length} / {maxCount}
         </span>
       </div>
@@ -153,7 +173,8 @@ export function PurchaseReturnEvidenceManager({
         onChange={(event) =>
           void handleSelectedFiles(event.target.files, () => {
             setCameraInputResetKey((current) => current + 1)
-          })}
+          })
+        }
       />
       <input
         key={uploadInputResetKey}
@@ -166,7 +187,8 @@ export function PurchaseReturnEvidenceManager({
         onChange={(event) =>
           void handleSelectedFiles(event.target.files, () => {
             setUploadInputResetKey((current) => current + 1)
-          })}
+          })
+        }
       />
 
       <div
@@ -184,7 +206,11 @@ export function PurchaseReturnEvidenceManager({
             disabled={disabled || uploading || evidences.length >= maxCount}
             onClick={() => cameraInputRef.current?.click()}
           >
-            {uploading ? <Loader2 className='mr-2 size-3.5 animate-spin' /> : <Camera className='mr-2 size-3.5' />}
+            {uploading ? (
+              <Loader2 className='mr-2 size-3.5 animate-spin' />
+            ) : (
+              <Camera className='mr-2 size-3.5' />
+            )}
             {cameraAction}
           </Button>
           <Button
@@ -216,7 +242,8 @@ export function PurchaseReturnEvidenceManager({
                 key={evidence.id}
                 className={cn(
                   'group rounded-[18px] border bg-background p-3 shadow-sm transition-colors',
-                  dragOverEvidenceId === evidence.id && draggingEvidenceId !== evidence.id
+                  dragOverEvidenceId === evidence.id &&
+                    draggingEvidenceId !== evidence.id
                     ? 'border-primary bg-primary/5'
                     : 'border-border'
                 )}
@@ -236,7 +263,11 @@ export function PurchaseReturnEvidenceManager({
                 }}
               >
                 <div className='relative overflow-hidden rounded-[14px] border'>
-                  <a href={getStaticEvidenceUrl(evidence.url)} target='_blank' rel='noreferrer'>
+                  <a
+                    href={getStaticEvidenceUrl(evidence.url)}
+                    target='_blank'
+                    rel='noreferrer'
+                  >
                     <img
                       src={getStaticEvidenceUrl(evidence.url)}
                       alt={evidence.name}
@@ -255,7 +286,7 @@ export function PurchaseReturnEvidenceManager({
                         setDraggingEvidenceId(null)
                         setDragOverEvidenceId(null)
                       }}
-                      className='absolute left-2 top-2 flex size-8 cursor-move items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100'
+                      className='absolute top-2 left-2 flex size-8 cursor-move items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100'
                       aria-label='drag to reorder evidence'
                     >
                       <GripVertical className='size-4' />
@@ -265,7 +296,7 @@ export function PurchaseReturnEvidenceManager({
                     <button
                       type='button'
                       onClick={() => removeEvidence(evidence.id)}
-                      className='absolute right-2 top-2 flex size-8 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100'
+                      className='absolute top-2 right-2 flex size-8 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100'
                       aria-label='remove evidence'
                     >
                       <Trash2 className='size-4' />
@@ -273,14 +304,20 @@ export function PurchaseReturnEvidenceManager({
                   ) : null}
                 </div>
                 <div className='mt-3 space-y-2'>
-                  <p className='truncate text-[10px] font-bold text-muted-foreground'>{evidence.name}</p>
+                  <p className='truncate text-[10px] font-bold text-muted-foreground'>
+                    {evidence.name}
+                  </p>
                   <div className='space-y-1'>
-                    <p className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                    <p className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                       {noteLabel}
                     </p>
                     <Input
                       value={evidence.note || ''}
-                      onChange={(event) => updateEvidence(evidence.id, { note: event.target.value })}
+                      onChange={(event) =>
+                        updateEvidence(evidence.id, {
+                          note: event.target.value,
+                        })
+                      }
                       placeholder={notePlaceholder}
                       className='h-9 rounded-xl text-xs'
                       disabled={disabled}
@@ -288,24 +325,32 @@ export function PurchaseReturnEvidenceManager({
                   </div>
                   <div className='grid gap-2 sm:grid-cols-2'>
                     <div className='space-y-1'>
-                      <p className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                      <p className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                         {locationLabel}
                       </p>
                       <Input
                         value={evidence.location || ''}
-                        onChange={(event) => updateEvidence(evidence.id, { location: event.target.value })}
+                        onChange={(event) =>
+                          updateEvidence(evidence.id, {
+                            location: event.target.value,
+                          })
+                        }
                         placeholder={locationPlaceholder}
                         className='h-9 rounded-xl text-xs'
                         disabled={disabled}
                       />
                     </div>
                     <div className='space-y-1'>
-                      <p className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                      <p className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                         {defectPartLabel}
                       </p>
                       <Input
                         value={evidence.defectPart || ''}
-                        onChange={(event) => updateEvidence(evidence.id, { defectPart: event.target.value })}
+                        onChange={(event) =>
+                          updateEvidence(evidence.id, {
+                            defectPart: event.target.value,
+                          })
+                        }
                         placeholder={defectPartPlaceholder}
                         className='h-9 rounded-xl text-xs'
                         disabled={disabled}
@@ -319,7 +364,9 @@ export function PurchaseReturnEvidenceManager({
         )}
       </div>
 
-      <p className='text-[9px] font-bold uppercase tracking-[0.16em] text-muted-foreground/60'>{hint}</p>
+      <p className='text-[9px] font-bold tracking-[0.16em] text-muted-foreground/60 uppercase'>
+        {hint}
+      </p>
     </div>
   )
 }

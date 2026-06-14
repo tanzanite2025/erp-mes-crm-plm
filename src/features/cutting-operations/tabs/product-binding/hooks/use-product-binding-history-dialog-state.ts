@@ -12,7 +12,7 @@ type UseProductBindingHistoryDialogStateOptions = {
 }
 
 export function useProductBindingHistoryDialogState(
-  options: UseProductBindingHistoryDialogStateOptions,
+  options: UseProductBindingHistoryDialogStateOptions
 ) {
   const { defaultFilters, prefetchRecordCount, hasRenderTrigger } = options
   const [open, setOpen] = useState(false)

@@ -1,16 +1,16 @@
 import { useState, useEffect, useRef } from 'react'
 import { type Table } from '@tanstack/react-table'
 import { X } from 'lucide-react'
-import { BottomFloatingActionBar } from '@/components/layout/bottom-floating-action-bar'
+import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { cn } from '@/lib/utils'
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { BottomFloatingActionBar } from '@/components/layout/bottom-floating-action-bar'
 
 type DataTableBulkActionsProps<TData> = {
   table: Table<TData>

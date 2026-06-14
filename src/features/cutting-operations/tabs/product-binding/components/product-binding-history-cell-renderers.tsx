@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { Copy } from 'lucide-react'
 import { toast } from 'sonner'
-import { useLanguage } from '@/context/language-provider'
 import { renderBwipBarcode } from '@/lib/bwip-renderer'
+import { useLanguage } from '@/context/language-provider'
 
 type HistoryQrCodeCellProps = {
   code: string
@@ -40,11 +40,11 @@ export function HistoryQrCodeCell(props: HistoryQrCodeCellProps) {
   if (!code) {
     return (
       <div className='flex flex-col items-center gap-2'>
-        <div className='flex size-[68px] items-center justify-center rounded-2xl border border-dashed border-border/60 bg-muted/20 text-[11px] font-mono text-muted-foreground'>
+        <div className='flex size-[68px] items-center justify-center rounded-2xl border border-dashed border-border/60 bg-muted/20 font-mono text-[11px] text-muted-foreground'>
           --
         </div>
         {isLatest ? (
-          <span className='inline-flex h-5 w-fit items-center rounded-full bg-emerald-500/10 px-2 text-[8px] font-mono uppercase tracking-[0.16em] text-emerald-700'>
+          <span className='inline-flex h-5 w-fit items-center rounded-full bg-emerald-500/10 px-2 font-mono text-[8px] tracking-[0.16em] text-emerald-700 uppercase'>
             {latestLabel}
           </span>
         ) : null}
@@ -61,7 +61,7 @@ export function HistoryQrCodeCell(props: HistoryQrCodeCellProps) {
         <canvas ref={canvasRef} className='size-[68px]' />
       </div>
       {isLatest ? (
-        <span className='inline-flex h-5 w-fit items-center rounded-full bg-emerald-500/10 px-2 text-[8px] font-mono uppercase tracking-[0.16em] text-emerald-700'>
+        <span className='inline-flex h-5 w-fit items-center rounded-full bg-emerald-500/10 px-2 font-mono text-[8px] tracking-[0.16em] text-emerald-700 uppercase'>
           {latestLabel}
         </span>
       ) : null}
@@ -73,7 +73,9 @@ type HistoryProductBarcodeCellProps = {
   productBarcode: string
 }
 
-export function HistoryProductBarcodeCell(props: HistoryProductBarcodeCellProps) {
+export function HistoryProductBarcodeCell(
+  props: HistoryProductBarcodeCellProps
+) {
   const { productBarcode } = props
   const { t } = useLanguage()
 
@@ -82,15 +84,21 @@ export function HistoryProductBarcodeCell(props: HistoryProductBarcodeCellProps)
 
     try {
       await navigator.clipboard.writeText(productBarcode)
-      toast.success(t('cuttingOperations.productBinding.history.toasts.productBarcodeCopied'))
+      toast.success(
+        t(
+          'cuttingOperations.productBinding.history.toasts.productBarcodeCopied'
+        )
+      )
     } catch {
-      toast.error(t('cuttingOperations.productBinding.history.toasts.copyFailed'))
+      toast.error(
+        t('cuttingOperations.productBinding.history.toasts.copyFailed')
+      )
     }
   }
 
   return (
     <div className='flex items-center gap-2'>
-      <span className='min-w-0 flex-1 truncate text-[11px] font-mono text-foreground'>
+      <span className='min-w-0 flex-1 truncate font-mono text-[11px] text-foreground'>
         {productBarcode || '--'}
       </span>
       {productBarcode ? (
@@ -98,7 +106,9 @@ export function HistoryProductBarcodeCell(props: HistoryProductBarcodeCellProps)
           type='button'
           onClick={() => void handleCopyProductBarcode()}
           className='inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-dashed border-border/60 bg-background text-muted-foreground transition-colors hover:text-foreground'
-          title={t('cuttingOperations.productBinding.history.actions.copyProductBarcode')}
+          title={t(
+            'cuttingOperations.productBinding.history.actions.copyProductBarcode'
+          )}
         >
           <Copy className='size-3.5' />
         </button>

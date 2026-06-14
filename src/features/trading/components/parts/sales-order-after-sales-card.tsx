@@ -1,8 +1,15 @@
 import { useEffect } from 'react'
-import { ExternalLink, Loader2, RefreshCw, RotateCcw, ShieldCheck, TriangleAlert } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+import {
+  ExternalLink,
+  Loader2,
+  RefreshCw,
+  RotateCcw,
+  ShieldCheck,
+  TriangleAlert,
+} from 'lucide-react'
 import { failLoudly } from '@/lib/safe-catch'
+import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 import type { SalesOrder } from '../../data/schema'
 import type { SalesOrderAfterSalesCardViewModel } from '../../utils/sales-order-after-sales-card-view-model'
 
@@ -52,14 +59,29 @@ function formatAmount(value: number) {
   })
 }
 
-function MetricBlock({ label, value, tone }: { label: string; value: string | number; tone?: string }) {
+function MetricBlock({
+  label,
+  value,
+  tone,
+}: {
+  label: string
+  value: string | number
+  tone?: string
+}) {
   return (
     <div className='rounded-2xl bg-background/80 px-2.5 py-1.5 ring-1 ring-muted/40'>
       <div className='flex items-center justify-between gap-2'>
         <div className='min-w-0 truncate text-[8px] font-black tracking-widest text-muted-foreground/55'>
           {label}
         </div>
-        <div className={cn('shrink-0 text-[11px] font-black tracking-tighter', tone)}>{value}</div>
+        <div
+          className={cn(
+            'shrink-0 text-[11px] font-black tracking-tighter',
+            tone
+          )}
+        >
+          {value}
+        </div>
       </div>
     </div>
   )
@@ -96,12 +118,14 @@ export function SalesOrderAfterSalesCard({
           <div className='min-w-0'>
             <div className='flex items-center gap-2'>
               <Icon className='size-4 text-primary' />
-              <h3 className='text-sm font-black tracking-tighter italic'>退换货售后</h3>
+              <h3 className='text-sm font-black tracking-tighter italic'>
+                退换货售后
+              </h3>
             </div>
           </div>
           <div
             className={cn(
-              'rounded-full px-2 py-1 text-[8px] font-mono font-black uppercase',
+              'rounded-full px-2 py-1 font-mono text-[8px] font-black uppercase',
               meta.badgeClassName
             )}
           >
@@ -122,7 +146,10 @@ export function SalesOrderAfterSalesCard({
               value={viewModel.openCount}
               tone={viewModel.openCount > 0 ? 'text-amber-600' : undefined}
             />
-            <MetricBlock label='金额' value={`¥${formatAmount(returns.totalAmount)}`} />
+            <MetricBlock
+              label='金额'
+              value={`¥${formatAmount(returns.totalAmount)}`}
+            />
           </div>
         )}
 

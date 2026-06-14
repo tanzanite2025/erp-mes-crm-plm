@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
-import { Progress } from '@/components/ui/progress'
 import { cn } from '@/lib/utils'
+import { Progress } from '@/components/ui/progress'
 
 export type UdsHealthProgressTone = 'healthy' | 'alert' | 'critical'
 
@@ -25,7 +25,7 @@ function clampPercent(value: number) {
 function resolveTone(
   value: number,
   criticalThreshold: number,
-  alertThreshold: number,
+  alertThreshold: number
 ): UdsHealthProgressTone {
   if (value < criticalThreshold) {
     return 'critical'
@@ -68,22 +68,31 @@ export function UdsHealthProgress({
   tone,
 }: UdsHealthProgressProps) {
   const percent = clampPercent(value)
-  const resolvedTone = tone || resolveTone(percent, criticalThreshold, alertThreshold)
+  const resolvedTone =
+    tone || resolveTone(percent, criticalThreshold, alertThreshold)
   const toneClasses = toneClassMap[resolvedTone]
 
   return (
-    <div className={cn('rounded-[24px] border border-dashed bg-muted/5 p-4 space-y-3 relative z-10', className)}>
-      <div className='flex items-center justify-between text-[9px] font-black uppercase tracking-widest'>
+    <div
+      className={cn(
+        'relative z-10 space-y-3 rounded-[24px] border border-dashed bg-muted/5 p-4',
+        className
+      )}
+    >
+      <div className='flex items-center justify-between text-[9px] font-black tracking-widest uppercase'>
         <span className='text-muted-foreground/40'>{label}</span>
         <span className={toneClasses.value}>{valueLabel ?? `${percent}%`}</span>
       </div>
       <Progress
         value={percent}
-        className='h-1 w-full rounded-full bg-muted/30 overflow-hidden'
-        indicatorClassName={cn('transition-all duration-1000', toneClasses.indicator)}
+        className='h-1 w-full overflow-hidden rounded-full bg-muted/30'
+        indicatorClassName={cn(
+          'transition-all duration-1000',
+          toneClasses.indicator
+        )}
       />
       {footer ? (
-        <div className='flex justify-between items-center gap-4 flex-wrap'>
+        <div className='flex flex-wrap items-center justify-between gap-4'>
           {footer}
         </div>
       ) : null}

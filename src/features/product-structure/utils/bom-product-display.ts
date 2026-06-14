@@ -27,10 +27,15 @@ export function resolveBOMProductDisplaySummary(
 ): BOMProductDisplaySummary {
   return {
     version: (bom?.versionLevel || '').trim() || 'std',
-    series: getAttributeValue(product, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.series) || 'normal',
-    brake: getAttributeValue(product, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.brake) || 'UNKNOWN',
-    weightLabel: bom && bom.measuredWeight && bom.measuredWeight > 0
-      ? `${bom.measuredWeight}${(bom.measuredWeightUnit || 'g').trim() || 'g'}`
-      : '-',
+    series:
+      getAttributeValue(product, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.series) ||
+      'normal',
+    brake:
+      getAttributeValue(product, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.brake) ||
+      'UNKNOWN',
+    weightLabel:
+      bom && bom.measuredWeight && bom.measuredWeight > 0
+        ? `${bom.measuredWeight}${(bom.measuredWeightUnit || 'g').trim() || 'g'}`
+        : '-',
   }
 }

@@ -62,11 +62,12 @@ export async function getPurchaseOrders(
     params.set(TRADING_QUERY_PARAM_STATUS, status.join(','))
   }
 
-  const res = await apiFetch<PurchaseOrderListPageApiDTO>(`/purchase/orders?${params.toString()}`)
-  const response = ensureObjectResponse<PurchaseOrderListPageApiDTO & Record<string, unknown>>(
-    res,
-    'PurchaseService.getPurchaseOrders'
+  const res = await apiFetch<PurchaseOrderListPageApiDTO>(
+    `/purchase/orders?${params.toString()}`
   )
+  const response = ensureObjectResponse<
+    PurchaseOrderListPageApiDTO & Record<string, unknown>
+  >(res, 'PurchaseService.getPurchaseOrders')
 
   if (withLines) {
     return toPurchaseOrderListPageWithLinesContract(
@@ -84,31 +85,38 @@ export async function getPurchaseOrders(
   )
 }
 
-export const getDeletedPurchaseOrders = async (page = 1, pageSize = 50): Promise<PaginatedPurchaseOrderListItems> => {
+export const getDeletedPurchaseOrders = async (
+  page = 1,
+  pageSize = 50
+): Promise<PaginatedPurchaseOrderListItems> => {
   const params = new URLSearchParams({
     [TRADING_QUERY_PARAM_PAGE]: String(page),
     [TRADING_QUERY_PARAM_PAGE_SIZE]: String(pageSize),
   })
-  const res = await apiFetch<PurchaseOrderListPageApiDTO>(`/purchase/deleted-orders?${params.toString()}`)
-  const response = ensureObjectResponse<PurchaseOrderListPageApiDTO & Record<string, unknown>>(
-    res,
-    'PurchaseService.getDeletedPurchaseOrders'
+  const res = await apiFetch<PurchaseOrderListPageApiDTO>(
+    `/purchase/deleted-orders?${params.toString()}`
   )
+  const response = ensureObjectResponse<
+    PurchaseOrderListPageApiDTO & Record<string, unknown>
+  >(res, 'PurchaseService.getDeletedPurchaseOrders')
   return toPurchaseOrderListPageContract(
     deserializePurchaseOrderListPageApiDTO(response, { withLines: false })
   )
 }
 
-export const getPurchaseOrderById = async (id: string): Promise<PurchaseOrder> => {
+export const getPurchaseOrderById = async (
+  id: string
+): Promise<PurchaseOrder> => {
   const res = await apiFetch<PurchaseOrderApiDTO>(`/purchase/orders/${id}`)
-  const response = ensureObjectResponse<PurchaseOrderApiDTO & Record<string, unknown>>(
-    res,
-    'PurchaseService.getPurchaseOrderById'
-  )
+  const response = ensureObjectResponse<
+    PurchaseOrderApiDTO & Record<string, unknown>
+  >(res, 'PurchaseService.getPurchaseOrderById')
   return toPurchaseOrderContract(deserializePurchaseOrderApiDTO(response))
 }
 
-export const createPurchaseOrder = async (order: Omit<PurchaseOrder, 'id' | 'version'>): Promise<PurchaseOrder> => {
+export const createPurchaseOrder = async (
+  order: Omit<PurchaseOrder, 'id' | 'version'>
+): Promise<PurchaseOrder> => {
   const createdOrder: PurchaseOrder = {
     ...order,
     id: '',
@@ -119,30 +127,37 @@ export const createPurchaseOrder = async (order: Omit<PurchaseOrder, 'id' | 'ver
     method: 'POST',
     body: JSON.stringify(toPurchaseOrderApiDTO(createdOrder)),
   })
-  const response = ensureObjectResponse<PurchaseOrderApiDTO & Record<string, unknown>>(
-    res,
-    'PurchaseService.createPurchaseOrder'
-  )
+  const response = ensureObjectResponse<
+    PurchaseOrderApiDTO & Record<string, unknown>
+  >(res, 'PurchaseService.createPurchaseOrder')
   return toPurchaseOrderContract(deserializePurchaseOrderApiDTO(response))
 }
 
-export const patchPurchaseOrder = async (id: string, delta: DeltaSet, version: number): Promise<PurchaseOrder> => {
+export const patchPurchaseOrder = async (
+  id: string,
+  delta: DeltaSet,
+  version: number
+): Promise<PurchaseOrder> => {
   const payload: DeltaPayload = {
     op: 'PATCH',
     delta,
-    metadata: buildVersionedPatchMetadata(id, version, 'PurchaseService.patchPurchaseOrder', {
-      intent: PURCHASE_ORDER_PATCH_INTENT_SAVE,
-    }),
+    metadata: buildVersionedPatchMetadata(
+      id,
+      version,
+      'PurchaseService.patchPurchaseOrder',
+      {
+        intent: PURCHASE_ORDER_PATCH_INTENT_SAVE,
+      }
+    ),
   }
 
   const res = await apiFetch<PurchaseOrderApiDTO>(`/purchase/orders/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(payload),
   })
-  const response = ensureObjectResponse<PurchaseOrderApiDTO & Record<string, unknown>>(
-    res,
-    'PurchaseService.patchPurchaseOrder'
-  )
+  const response = ensureObjectResponse<
+    PurchaseOrderApiDTO & Record<string, unknown>
+  >(res, 'PurchaseService.patchPurchaseOrder')
   return toPurchaseOrderContract(deserializePurchaseOrderApiDTO(response))
 }
 

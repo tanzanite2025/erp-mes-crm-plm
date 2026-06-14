@@ -1,27 +1,41 @@
 import type { BatchOptimizerPlan } from '../types'
 import type { BatchEngineExplainabilityTargetSource } from './batch-engine-phase7-visualization'
 
-export function selectTopBreakSlices(selectedPlan: BatchOptimizerPlan | undefined, limit: number) {
+export function selectTopBreakSlices(
+  selectedPlan: BatchOptimizerPlan | undefined,
+  limit: number
+) {
   return [...(selectedPlan?.explainabilitySummary.breakSlices ?? [])]
     .sort((left, right) => right.severityScore - left.severityScore)
     .slice(0, limit)
 }
 
-export function selectTopZoneClusters(selectedPlan: BatchOptimizerPlan | undefined, limit: number) {
+export function selectTopZoneClusters(
+  selectedPlan: BatchOptimizerPlan | undefined,
+  limit: number
+) {
   return [...(selectedPlan?.explainabilitySummary.zoneClusters ?? [])]
     .sort((left, right) => right.densityScore - left.densityScore)
     .slice(0, limit)
 }
 
-export function selectSecondaryBreakSlices(selectedPlan: BatchOptimizerPlan | undefined, limit: number) {
+export function selectSecondaryBreakSlices(
+  selectedPlan: BatchOptimizerPlan | undefined,
+  limit: number
+) {
   return selectTopBreakSlices(selectedPlan, limit + 1).slice(1)
 }
 
-export function selectSecondaryZoneClusters(selectedPlan: BatchOptimizerPlan | undefined, limit: number) {
+export function selectSecondaryZoneClusters(
+  selectedPlan: BatchOptimizerPlan | undefined,
+  limit: number
+) {
   return selectTopZoneClusters(selectedPlan, limit + 1).slice(1)
 }
 
-export function resolvePhase7ExplainabilitySourceLabel(source: BatchEngineExplainabilityTargetSource) {
+export function resolvePhase7ExplainabilitySourceLabel(
+  source: BatchEngineExplainabilityTargetSource
+) {
   if (source === 'home-entry') {
     return '首页入口'
   }

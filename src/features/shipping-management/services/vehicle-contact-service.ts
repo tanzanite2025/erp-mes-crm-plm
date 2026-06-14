@@ -1,19 +1,31 @@
 import { apiFetch } from '@/lib/api'
 import { type VehicleContactRemoteFilters } from '../contact-filters.shared'
-import { type VehicleContactBinding, type VehicleContactBindingSaveInput } from '../vehicle-contact.types'
-import { vehicleContactBindingDTOArraySchema, vehicleContactBindingDTOSchema } from './vehicle-contact.schema'
+import {
+  type VehicleContactBinding,
+  type VehicleContactBindingSaveInput,
+} from '../vehicle-contact.types'
+import {
+  vehicleContactBindingDTOArraySchema,
+  vehicleContactBindingDTOSchema,
+} from './vehicle-contact.schema'
 
 const VEHICLE_CONTACTS_ENDPOINT = '/shipping-management/vehicle-contacts'
 
 function createVehicleContactBindingId(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+  if (
+    typeof crypto !== 'undefined' &&
+    typeof crypto.randomUUID === 'function'
+  ) {
     return `contact-${crypto.randomUUID()}`
   }
 
   return `contact-${Date.now()}`
 }
 
-function parseVehicleContactBinding(value: unknown, context: string): VehicleContactBinding {
+function parseVehicleContactBinding(
+  value: unknown,
+  context: string
+): VehicleContactBinding {
   const result = vehicleContactBindingDTOSchema.safeParse(value)
   if (!result.success) {
     throw new Error(`[INVALID_RESPONSE] ${context} ${result.error.message}`)
@@ -48,7 +60,10 @@ export function toVehicleContactSaveInput(
   }
 }
 
-export function toVehicleContactToggleInput(binding: VehicleContactBinding, enabled: boolean): VehicleContactBindingSaveInput {
+export function toVehicleContactToggleInput(
+  binding: VehicleContactBinding,
+  enabled: boolean
+): VehicleContactBindingSaveInput {
   return {
     id: binding.id,
     vehicleId: binding.vehicleId,
@@ -63,37 +78,53 @@ export function toVehicleContactToggleInput(binding: VehicleContactBinding, enab
 }
 
 export const vehicleContactService = {
-  async listBindings(filters: VehicleContactRemoteFilters): Promise<VehicleContactBinding[]> {
-    const response = await apiFetch<unknown>(VEHICLE_CONTACTS_ENDPOINT, { params: filters })
+  async listBindings(
+    filters: VehicleContactRemoteFilters
+  ): Promise<VehicleContactBinding[]> {
+    const response = await apiFetch<unknown>(VEHICLE_CONTACTS_ENDPOINT, {
+      params: filters,
+    })
     const result = vehicleContactBindingDTOArraySchema.safeParse(response)
     if (!result.success) {
-      throw new Error(`[INVALID_RESPONSE] vehicleContactService.listBindings ${result.error.message}`)
+      throw new Error(
+        `[INVALID_RESPONSE] vehicleContactService.listBindings ${result.error.message}`
+      )
     }
 
     return result.data as VehicleContactBinding[]
   },
 
-  async saveBinding(input: VehicleContactBindingSaveInput): Promise<VehicleContactBinding> {
+  async saveBinding(
+    input: VehicleContactBindingSaveInput
+  ): Promise<VehicleContactBinding> {
     const bindingId = input.id?.trim() || createVehicleContactBindingId()
-    const response = await apiFetch<unknown>(`${VEHICLE_CONTACTS_ENDPOINT}/${bindingId}`, {
-      method: 'POST',
-      body: JSON.stringify({
-        vehicleId: input.vehicleId,
-        supplierName: input.supplierName.trim(),
-        contactName: input.contactName.trim(),
-        channels: input.channels
-          .map((channel) => ({ ...channel, value: channel.value.trim() }))
-          .filter((channel) => channel.value.length > 0),
-        region: input.region.trim(),
-        dispatchAdvice: input.dispatchAdvice.trim(),
-        note: input.note.trim(),
-        enabled: input.enabled,
-      }),
-    })
-    return parseVehicleContactBinding(response, 'vehicleContactService.saveBinding')
+    const response = await apiFetch<unknown>(
+      `${VEHICLE_CONTACTS_ENDPOINT}/${bindingId}`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          vehicleId: input.vehicleId,
+          supplierName: input.supplierName.trim(),
+          contactName: input.contactName.trim(),
+          channels: input.channels
+            .map((channel) => ({ ...channel, value: channel.value.trim() }))
+            .filter((channel) => channel.value.length > 0),
+          region: input.region.trim(),
+          dispatchAdvice: input.dispatchAdvice.trim(),
+          note: input.note.trim(),
+          enabled: input.enabled,
+        }),
+      }
+    )
+    return parseVehicleContactBinding(
+      response,
+      'vehicleContactService.saveBinding'
+    )
   },
 
   async deleteBinding(id: string): Promise<void> {
-    await apiFetch<void>(`${VEHICLE_CONTACTS_ENDPOINT}/${id}`, { method: 'DELETE' })
+    await apiFetch<void>(`${VEHICLE_CONTACTS_ENDPOINT}/${id}`, {
+      method: 'DELETE',
+    })
   },
 }

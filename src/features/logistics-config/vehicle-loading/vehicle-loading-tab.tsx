@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import { ConfigErrorPanel } from './components/config-error-panel'
 import { VehicleFilterPanel } from './components/vehicle-filter-panel'
+import type { VehicleSize } from './components/vehicle-loading-diagram-types'
 import { VehicleLoadingHeader } from './components/vehicle-loading-header'
 import { VehicleLoadingPlanDialog } from './components/vehicle-loading-plan-dialog'
 import { VehicleLoadingPlanOverview } from './components/vehicle-loading-plan-overview'
@@ -10,9 +11,8 @@ import { VehicleLoadingSourceInputPanel } from './components/vehicle-loading-sou
 import { VehicleLoadingSourceSwitch } from './components/vehicle-loading-source-switch'
 import { VehicleLoadingSummaryPanel } from './components/vehicle-loading-summary-panel'
 import { VehicleRecommendationPanel } from './components/vehicle-recommendation-panel'
-import { useVehicleLoadingPage } from './hooks/use-vehicle-loading-page'
 import type { VehicleRecommendation } from './data/vehicle-loading.types'
-import type { VehicleSize } from './components/vehicle-loading-diagram-types'
+import { useVehicleLoadingPage } from './hooks/use-vehicle-loading-page'
 
 export function LogisticsVehicleLoadingTab() {
   const {
@@ -47,7 +47,8 @@ export function LogisticsVehicleLoadingTab() {
   } = useVehicleLoadingPage()
 
   const [diagramOpen, setDiagramOpen] = useState(false)
-  const [selectedRecommendation, setSelectedRecommendation] = useState<VehicleRecommendation | null>(null)
+  const [selectedRecommendation, setSelectedRecommendation] =
+    useState<VehicleRecommendation | null>(null)
 
   const selectedVehicleSize = useMemo<VehicleSize>(
     () => ({
@@ -73,7 +74,7 @@ export function LogisticsVehicleLoadingTab() {
   }
 
   return (
-    <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+    <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
       <VehicleLoadingHeader
         onViewDiagram={() => {
           const fallback = recommendations[0]
@@ -89,14 +90,14 @@ export function LogisticsVehicleLoadingTab() {
       <VehicleLoadingSourceSwitch value={source} onChange={setSource} />
 
       {source === 'packing-rule' ? (
-        <div className='rounded-[28px] border border-dashed border-primary/30 bg-primary/5 shadow-none px-6 py-5 text-[11px] leading-relaxed text-primary/80'>
+        <div className='rounded-[28px] border border-dashed border-primary/30 bg-primary/5 px-6 py-5 text-[11px] leading-relaxed text-primary/80 shadow-none'>
           当前切换到包装规则来源。页面会读取活动包装定义，并将其尺寸与单箱重量映射为推荐输入；
           当前箱数仍以本页 summary 为准，尚未扩大到动态装箱计划 authority。
         </div>
       ) : null}
 
       {source === 'api' ? (
-        <div className='rounded-[28px] border border-dashed border-primary/30 bg-primary/5 shadow-none px-6 py-5 text-[11px] leading-relaxed text-primary/80'>
+        <div className='rounded-[28px] border border-dashed border-primary/30 bg-primary/5 px-6 py-5 text-[11px] leading-relaxed text-primary/80 shadow-none'>
           当前切换到 API 输入来源。推荐计算会通过统一后端接口执行，
           并直接使用你在下方填写的显式箱型参数，不再回落默认箱型冒充真实来源。
         </div>
@@ -118,7 +119,10 @@ export function LogisticsVehicleLoadingTab() {
         summary={summary}
         vehicleSpecsCount={filteredSpecs.length}
         recommendations={recommendations}
-        categoryLabelText={categoryOptions.find((item) => item.value === category)?.label ?? '全部'}
+        categoryLabelText={
+          categoryOptions.find((item) => item.value === category)?.label ??
+          '全部'
+        }
         sourceLabel={sourceLabel}
         activeFilters={activeFilters}
         isLoadingSpecs={isLoadingSpecs}
@@ -128,7 +132,10 @@ export function LogisticsVehicleLoadingTab() {
       />
 
       <div className='grid grid-cols-1 gap-6 xl:grid-cols-3'>
-        <VehicleLoadingSummaryPanel summary={summary} onSummaryChange={setSummary} />
+        <VehicleLoadingSummaryPanel
+          summary={summary}
+          onSummaryChange={setSummary}
+        />
 
         <div className='flex flex-col gap-6 xl:col-span-2'>
           <VehicleFilterPanel
@@ -140,9 +147,16 @@ export function LogisticsVehicleLoadingTab() {
             onMinPayloadKgChange={setMinPayloadKg}
           />
 
-          {specsError ? <ConfigErrorPanel title='车型加载失败' error={specsError} retryLabel='重新加载车型' onRetry={reload} /> : null}
+          {specsError ? (
+            <ConfigErrorPanel
+              title='车型加载失败'
+              error={specsError}
+              retryLabel='重新加载车型'
+              onRetry={reload}
+            />
+          ) : null}
           {!specsError && isLoadingSpecs ? (
-            <div className='rounded-[28px] border border-dashed shadow-none bg-background/80 px-6 py-8 text-sm font-black'>
+            <div className='rounded-[28px] border border-dashed bg-background/80 px-6 py-8 text-sm font-black shadow-none'>
               车型加载中...
             </div>
           ) : null}
@@ -162,12 +176,15 @@ export function LogisticsVehicleLoadingTab() {
             />
           ) : null}
           {!recommendationsError && isLoadingRecommendations ? (
-            <div className='rounded-[22px] border border-dashed shadow-none bg-primary/5 px-5 py-4 text-[10px] font-black uppercase tracking-widest text-primary/70'>
+            <div className='rounded-[22px] border border-dashed bg-primary/5 px-5 py-4 text-[10px] font-black tracking-widest text-primary/70 uppercase shadow-none'>
               推荐计算中...
             </div>
           ) : null}
           {!recommendationsError && !isLoadingRecommendations ? (
-            <VehicleRecommendationPanel recommendations={recommendations} onViewDiagram={handleViewDiagram} />
+            <VehicleRecommendationPanel
+              recommendations={recommendations}
+              onViewDiagram={handleViewDiagram}
+            />
           ) : null}
         </div>
       </div>
@@ -178,7 +195,9 @@ export function LogisticsVehicleLoadingTab() {
         vehicleName={selectedRecommendation?.vehicle.name ?? '装载示意'}
         vehicleSize={selectedVehicleSize}
         packageSize={selectedPackageSize}
-        orientationLabel={selectedRecommendation?.selectedOrientationLabel ?? '当前推荐方案'}
+        orientationLabel={
+          selectedRecommendation?.selectedOrientationLabel ?? '当前推荐方案'
+        }
         orientationAxis={selectedRecommendation?.selectedOrientationAxis}
         boxesPerLayer={selectedRecommendation?.boxesPerLayer ?? 3}
         layerCount={selectedRecommendation?.layerCount ?? 2}

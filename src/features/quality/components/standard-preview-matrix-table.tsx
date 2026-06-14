@@ -1,10 +1,5 @@
 import * as React from 'react'
-import {
-  Inbox,
-  MoveHorizontal,
-  Plus,
-  ShieldCheck,
-} from 'lucide-react'
+import { Inbox, MoveHorizontal, Plus, ShieldCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'

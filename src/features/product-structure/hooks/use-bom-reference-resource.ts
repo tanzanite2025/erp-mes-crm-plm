@@ -2,10 +2,19 @@
 
 import { useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { useLanguage } from '@/context/language-provider'
 import { createLogger } from '@/lib/logger'
-import { type CompositeReadResource, resolveQueryFailure } from '@/lib/read-resource'
+import {
+  type CompositeReadResource,
+  resolveQueryFailure,
+} from '@/lib/read-resource'
 import { failLoudly } from '@/lib/safe-catch'
+import { useLanguage } from '@/context/language-provider'
+import {
+  type ProductAttributeCategory,
+  type ProductAttributeOption,
+  type ProductTemplate,
+  type ProductType,
+} from '@/features/engineering/data/schema'
 import { buildProductDisplayMapsV2 } from '@/features/engineering/display/product-display-v2-map'
 import {
   PRODUCT_ATTRIBUTE_CATEGORIES_QUERY_KEY,
@@ -19,12 +28,6 @@ import { ProductAttributeOptionService } from '@/features/engineering/services/p
 import { ProductCoreService } from '@/features/engineering/services/product-core-service'
 import { productTemplateService } from '@/features/engineering/services/product-template-service'
 import { ProductTypeService } from '@/features/engineering/services/product-type-service'
-import {
-  type ProductAttributeCategory,
-  type ProductAttributeOption,
-  type ProductTemplate,
-  type ProductType,
-} from '@/features/engineering/data/schema'
 import { type MaterialOption } from '../../material-archive/data/schema'
 import { MATERIAL_OPTIONS_QUERY_KEY } from '../../material-archive/query-keys'
 import { MaterialCoreService } from '../../material-archive/services/material-core-service'
@@ -76,20 +79,30 @@ export type BOMReferenceResourceFields = {
  * - include 中含 `'sections'` → 暴露 sections
  */
 export type BOMReferenceResourceFor<K extends BOMReferenceResourceKey> =
-  & ('products' extends K
+  ('products' extends K
     ? Pick<
-      BOMReferenceResourceFields,
-      'products' | 'productDisplayLabelMap' | 'productTemplates' | 'productTypes' | 'productAttributeCategories' | 'productAttributeOptions'
-    >
-    : object)
-  & ('materials' extends K ? Pick<BOMReferenceResourceFields, 'materials'> : object)
-  & ('sections' extends K ? Pick<BOMReferenceResourceFields, 'sections'> : object)
+        BOMReferenceResourceFields,
+        | 'products'
+        | 'productDisplayLabelMap'
+        | 'productTemplates'
+        | 'productTypes'
+        | 'productAttributeCategories'
+        | 'productAttributeOptions'
+      >
+    : object) &
+    ('materials' extends K
+      ? Pick<BOMReferenceResourceFields, 'materials'>
+      : object) &
+    ('sections' extends K
+      ? Pick<BOMReferenceResourceFields, 'sections'>
+      : object)
 
 /**
  * 全集消费方使用的类型别名，等价于 BOMReferenceResourceFor<BOMReferenceResourceKey>。
  * 等同于 BOMReferenceResourceFields，保留以便向后兼容。
  */
-export type BOMReferenceResource = CompositeReadResource<BOMReferenceResourceFields>
+export type BOMReferenceResource =
+  CompositeReadResource<BOMReferenceResourceFields>
 
 interface UseBOMReferenceResourceParams<K extends BOMReferenceResourceKey> {
   /**
@@ -107,11 +120,19 @@ interface UseBOMReferenceResourceParams<K extends BOMReferenceResourceKey> {
  * 仅需 1-2 个资源的场景也得拉全集。本版本支持 include 数组选择性加载，
  * 同时保持旧调用方（不传 include）的行为不变。
  */
-export function useBOMReferenceResource<K extends BOMReferenceResourceKey = BOMReferenceResourceKey>(
+export function useBOMReferenceResource<
+  K extends BOMReferenceResourceKey = BOMReferenceResourceKey,
+>(
   params: UseBOMReferenceResourceParams<K> = {}
 ): CompositeReadResource<BOMReferenceResourceFor<K>> {
-  const { include = ALL_BOM_REFERENCES as unknown as readonly K[], enabled = true } = params
-  const includeSet = useMemo(() => new Set<BOMReferenceResourceKey>(include), [include])
+  const {
+    include = ALL_BOM_REFERENCES as unknown as readonly K[],
+    enabled = true,
+  } = params
+  const includeSet = useMemo(
+    () => new Set<BOMReferenceResourceKey>(include),
+    [include]
+  )
   const wantProducts = includeSet.has('products')
   const wantMaterials = includeSet.has('materials')
   const wantSections = includeSet.has('sections')
@@ -140,17 +161,25 @@ export function useBOMReferenceResource<K extends BOMReferenceResourceKey = BOMR
   })
   const productAttributeCategoriesQuery = useQuery({
     queryKey: PRODUCT_ATTRIBUTE_CATEGORIES_QUERY_KEY,
-    queryFn: () => ProductAttributeCategoryService.getProductAttributeCategories({ activeOnly: true }),
+    queryFn: () =>
+      ProductAttributeCategoryService.getProductAttributeCategories({
+        activeOnly: true,
+      }),
     enabled: enabled && wantProducts,
   })
   const productAttributeOptionsQuery = useQuery({
     queryKey: PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY,
-    queryFn: () => ProductAttributeOptionService.getProductAttributeOptions({ activeOnly: true }),
+    queryFn: () =>
+      ProductAttributeOptionService.getProductAttributeOptions({
+        activeOnly: true,
+      }),
     enabled: enabled && wantProducts,
   })
   const sectionsQuery = useBOMSectionOptions(enabled && wantSections)
 
-  const resource = useMemo<CompositeReadResource<BOMReferenceResourceFor<K>>>(() => {
+  const resource = useMemo<
+    CompositeReadResource<BOMReferenceResourceFor<K>>
+  >(() => {
     if (wantProducts) {
       const productsFailure = resolveQueryFailure({
         data: productsQuery.data,
@@ -161,7 +190,11 @@ export function useBOMReferenceResource<K extends BOMReferenceResourceKey = BOMR
         failureMessage: '[CRITICAL] BOM reference products query failed',
       })
       if (productsFailure) {
-        return { status: 'error', error: productsFailure.error, scope: productsFailure.scope }
+        return {
+          status: 'error',
+          error: productsFailure.error,
+          scope: productsFailure.scope,
+        }
       }
 
       const productTemplatesFailure = resolveQueryFailure({
@@ -169,11 +202,17 @@ export function useBOMReferenceResource<K extends BOMReferenceResourceKey = BOMR
         error: productTemplatesQuery.error,
         isPending: productTemplatesQuery.isPending,
         scope: 'useBOMReferenceResource.productTemplates',
-        missingMessage: '[CRITICAL] Missing BOM reference product templates query data',
-        failureMessage: '[CRITICAL] BOM reference product templates query failed',
+        missingMessage:
+          '[CRITICAL] Missing BOM reference product templates query data',
+        failureMessage:
+          '[CRITICAL] BOM reference product templates query failed',
       })
       if (productTemplatesFailure) {
-        return { status: 'error', error: productTemplatesFailure.error, scope: productTemplatesFailure.scope }
+        return {
+          status: 'error',
+          error: productTemplatesFailure.error,
+          scope: productTemplatesFailure.scope,
+        }
       }
 
       const productTypesFailure = resolveQueryFailure({
@@ -181,11 +220,16 @@ export function useBOMReferenceResource<K extends BOMReferenceResourceKey = BOMR
         error: productTypesQuery.error,
         isPending: productTypesQuery.isPending,
         scope: 'useBOMReferenceResource.productTypes',
-        missingMessage: '[CRITICAL] Missing BOM reference product types query data',
+        missingMessage:
+          '[CRITICAL] Missing BOM reference product types query data',
         failureMessage: '[CRITICAL] BOM reference product types query failed',
       })
       if (productTypesFailure) {
-        return { status: 'error', error: productTypesFailure.error, scope: productTypesFailure.scope }
+        return {
+          status: 'error',
+          error: productTypesFailure.error,
+          scope: productTypesFailure.scope,
+        }
       }
 
       const productAttributeCategoriesFailure = resolveQueryFailure({
@@ -193,11 +237,17 @@ export function useBOMReferenceResource<K extends BOMReferenceResourceKey = BOMR
         error: productAttributeCategoriesQuery.error,
         isPending: productAttributeCategoriesQuery.isPending,
         scope: 'useBOMReferenceResource.productAttributeCategories',
-        missingMessage: '[CRITICAL] Missing BOM reference product attribute categories query data',
-        failureMessage: '[CRITICAL] BOM reference product attribute categories query failed',
+        missingMessage:
+          '[CRITICAL] Missing BOM reference product attribute categories query data',
+        failureMessage:
+          '[CRITICAL] BOM reference product attribute categories query failed',
       })
       if (productAttributeCategoriesFailure) {
-        return { status: 'error', error: productAttributeCategoriesFailure.error, scope: productAttributeCategoriesFailure.scope }
+        return {
+          status: 'error',
+          error: productAttributeCategoriesFailure.error,
+          scope: productAttributeCategoriesFailure.scope,
+        }
       }
 
       const productAttributeOptionsFailure = resolveQueryFailure({
@@ -205,11 +255,17 @@ export function useBOMReferenceResource<K extends BOMReferenceResourceKey = BOMR
         error: productAttributeOptionsQuery.error,
         isPending: productAttributeOptionsQuery.isPending,
         scope: 'useBOMReferenceResource.productAttributeOptions',
-        missingMessage: '[CRITICAL] Missing BOM reference product attribute options query data',
-        failureMessage: '[CRITICAL] BOM reference product attribute options query failed',
+        missingMessage:
+          '[CRITICAL] Missing BOM reference product attribute options query data',
+        failureMessage:
+          '[CRITICAL] BOM reference product attribute options query failed',
       })
       if (productAttributeOptionsFailure) {
-        return { status: 'error', error: productAttributeOptionsFailure.error, scope: productAttributeOptionsFailure.scope }
+        return {
+          status: 'error',
+          error: productAttributeOptionsFailure.error,
+          scope: productAttributeOptionsFailure.scope,
+        }
       }
     }
 
@@ -223,7 +279,11 @@ export function useBOMReferenceResource<K extends BOMReferenceResourceKey = BOMR
         failureMessage: '[CRITICAL] BOM reference materials query failed',
       })
       if (materialsFailure) {
-        return { status: 'error', error: materialsFailure.error, scope: materialsFailure.scope }
+        return {
+          status: 'error',
+          error: materialsFailure.error,
+          scope: materialsFailure.scope,
+        }
       }
     }
 
@@ -237,14 +297,23 @@ export function useBOMReferenceResource<K extends BOMReferenceResourceKey = BOMR
         failureMessage: '[CRITICAL] BOM reference sections query failed',
       })
       if (sectionsFailure) {
-        return { status: 'error', error: sectionsFailure.error, scope: sectionsFailure.scope }
+        return {
+          status: 'error',
+          error: sectionsFailure.error,
+          scope: sectionsFailure.scope,
+        }
       }
     }
 
-    const isStillLoading
-      = (wantProducts && (productsQuery.isPending || productTemplatesQuery.isPending || productTypesQuery.isPending || productAttributeCategoriesQuery.isPending || productAttributeOptionsQuery.isPending))
-      || (wantMaterials && materialsQuery.isPending)
-      || (wantSections && sectionsQuery.isPending)
+    const isStillLoading =
+      (wantProducts &&
+        (productsQuery.isPending ||
+          productTemplatesQuery.isPending ||
+          productTypesQuery.isPending ||
+          productAttributeCategoriesQuery.isPending ||
+          productAttributeOptionsQuery.isPending)) ||
+      (wantMaterials && materialsQuery.isPending) ||
+      (wantSections && sectionsQuery.isPending)
     if (isStillLoading) {
       return { status: 'loading' }
     }
@@ -255,8 +324,10 @@ export function useBOMReferenceResource<K extends BOMReferenceResourceKey = BOMR
       const products = productsQuery.data as Product[]
       const productTemplates = productTemplatesQuery.data as ProductTemplate[]
       const productTypes = productTypesQuery.data as ProductType[]
-      const productAttributeCategories = productAttributeCategoriesQuery.data as ProductAttributeCategory[]
-      const productAttributeOptions = productAttributeOptionsQuery.data as ProductAttributeOption[]
+      const productAttributeCategories =
+        productAttributeCategoriesQuery.data as ProductAttributeCategory[]
+      const productAttributeOptions =
+        productAttributeOptionsQuery.data as ProductAttributeOption[]
       const { productDisplayLabelMap } = buildProductDisplayMapsV2({
         locale,
         products,
@@ -317,7 +388,10 @@ export function useBOMReferenceResource<K extends BOMReferenceResourceKey = BOMR
     if (resource.status !== 'error') {
       return
     }
-    logger.error(`BOM reference resource failed: ${resource.scope}`, resource.error)
+    logger.error(
+      `BOM reference resource failed: ${resource.scope}`,
+      resource.error
+    )
     failLoudly(resource.error, resource.scope)
   }, [resource])
 

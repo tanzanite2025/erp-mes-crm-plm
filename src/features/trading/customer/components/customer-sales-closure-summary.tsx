@@ -1,6 +1,6 @@
 import { AlertCircle, CalendarClock, CheckCircle2 } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
 import { useLanguage } from '@/context/language-provider'
+import { Badge } from '@/components/ui/badge'
 import type { CustomerSalesClosureSummary } from '../services/customer-sales-closure-summary-service'
 import { getCustomerSalesClosureMetrics } from '../utils/customer-sales-closure-metrics'
 
@@ -34,7 +34,10 @@ function getCustomerSalesStatusLabel(
   }
 }
 
-function getPrimaryStatusBadgeClass(phase: string, hasOnlyCanceledOrders: boolean): string {
+function getPrimaryStatusBadgeClass(
+  phase: string,
+  hasOnlyCanceledOrders: boolean
+): string {
   if (hasOnlyCanceledOrders || phase.trim().toLowerCase() === 'cancelled') {
     return 'border-slate-500/20 bg-slate-500/10 text-[8px] font-black text-slate-600 uppercase'
   }
@@ -112,7 +115,8 @@ export function CustomerSalesClosureSummaryBlock({
                 : primaryStatusLabel}
             </Badge>
           ) : null}
-          {metrics.hasEffectiveOrderHistory && metrics.canceledOrderCount > 0 ? (
+          {metrics.hasEffectiveOrderHistory &&
+          metrics.canceledOrderCount > 0 ? (
             <Badge
               variant='outline'
               className='border-slate-500/20 bg-slate-500/10 text-[8px] font-black text-slate-600 uppercase'
@@ -123,7 +127,7 @@ export function CustomerSalesClosureSummaryBlock({
             </Badge>
           ) : null}
         </div>
-        <p className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/70'>
+        <p className='text-[9px] font-black tracking-widest text-muted-foreground/70 uppercase'>
           {summaryDescription}
         </p>
       </div>
@@ -135,7 +139,9 @@ export function CustomerSalesClosureSummaryBlock({
             {t('trading.customers.summary.lastOrderDate')}
           </div>
           <p className='truncate text-[11px] font-black text-foreground md:text-[12px]'>
-            {hasOrderHistory ? summary?.lastOrderDate : t('trading.customers.summary.noOrders')}
+            {hasOrderHistory
+              ? summary?.lastOrderDate
+              : t('trading.customers.summary.noOrders')}
           </p>
         </div>
 
@@ -146,7 +152,9 @@ export function CustomerSalesClosureSummaryBlock({
           </div>
           <p className='truncate text-[11px] font-black text-foreground md:text-[12px]'>
             {typeof summary?.daysSinceLastOrder === 'number'
-              ? t('trading.customers.summary.idleDaysValue', { count: summary.daysSinceLastOrder })
+              ? t('trading.customers.summary.idleDaysValue', {
+                  count: summary.daysSinceLastOrder,
+                })
               : t('trading.customers.summary.noOrders')}
           </p>
         </div>

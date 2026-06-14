@@ -1,5 +1,8 @@
 import type { CutSizeGeometryProjection } from '../../cut-size-library/domain/cut-size-geometry'
-import type { CuttingEngineAngleMixMode, CuttingEngineRuleStrategy } from '../../engine-config/types'
+import type {
+  CuttingEngineAngleMixMode,
+  CuttingEngineRuleStrategy,
+} from '../../engine-config/types'
 
 export type BatchEngineControls = {
   selectedPrepregSpecId: string

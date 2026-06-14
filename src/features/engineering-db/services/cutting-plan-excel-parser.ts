@@ -1,4 +1,5 @@
 import { loadExcelJS } from '@/lib/lazy-vendors'
+import { type CutSizeUnit } from '@/features/raw-materials/cut-size-library/data/cut-size-library-schema'
 import {
   buildCuttingPlanInput,
   EMPTY_CUTTING_PLAN_INPUT,
@@ -6,7 +7,6 @@ import {
   type CuttingPlanInput,
   type CuttingPlanStatus,
 } from '../data/cutting-plan-schema'
-import { type CutSizeUnit } from '@/features/raw-materials/cut-size-library/data/cut-size-library-schema'
 import {
   CUTTING_PLAN_EXCEL_LIMITS,
   CUTTING_PLAN_EXCEL_SHEETS,
@@ -27,7 +27,13 @@ const STATUS_ALIAS_MAP: Record<string, CuttingPlanStatus> = {
   归档: 'Archived',
 }
 
-const MANUAL_BREAK_MARKERS = new Set(['#BREAK', 'BREAK', '分组', '分割', '黄条'])
+const MANUAL_BREAK_MARKERS = new Set([
+  '#BREAK',
+  'BREAK',
+  '分组',
+  '分割',
+  '黄条',
+])
 
 type HeaderSnapshot = {
   documentNo: string
@@ -69,7 +75,11 @@ function hasLineContent(lineFields: string[]): boolean {
   return lineFields.some((field) => normalizeCellText(field) !== '')
 }
 
-function requireHeaderValue(value: string, rowNumber: number, fieldLabel: string): string {
+function requireHeaderValue(
+  value: string,
+  rowNumber: number,
+  fieldLabel: string
+): string {
   if (value) return value
   throw new Error(`第 ${rowNumber} 行缺少“${fieldLabel}”，无法导入。`)
 }
@@ -81,11 +91,11 @@ function normalizeCutSizeCodeKey(value: string): string {
 function findMatchedCutSizeUnitByCode(
   cutSizeCode: string,
   cutSizeUnits: CutSizeUnit[],
-  rowNumber: number,
+  rowNumber: number
 ): CutSizeUnit {
   const normalizedCode = normalizeCutSizeCodeKey(cutSizeCode)
   const matches = cutSizeUnits.filter(
-    (item) => normalizeCutSizeCodeKey(item.code) === normalizedCode,
+    (item) => normalizeCutSizeCodeKey(item.code) === normalizedCode
   )
 
   if (matches.length === 1) {
@@ -94,18 +104,18 @@ function findMatchedCutSizeUnitByCode(
 
   if (matches.length > 1) {
     throw new Error(
-      `第 ${rowNumber} 行的尺寸库编码“${cutSizeCode}”匹配到多个条目，请先清理尺寸库重复定义。`,
+      `第 ${rowNumber} 行的尺寸库编码“${cutSizeCode}”匹配到多个条目，请先清理尺寸库重复定义。`
     )
   }
 
   throw new Error(
-    `第 ${rowNumber} 行的尺寸库编码“${cutSizeCode}”未在尺寸库中启用，必须先在尺寸库建立并启用后才能导入裁纱单。`,
+    `第 ${rowNumber} 行的尺寸库编码“${cutSizeCode}”未在尺寸库中启用，必须先在尺寸库建立并启用后才能导入裁纱单。`
   )
 }
 
 export async function parseCuttingPlanImportExcel(
   file: File,
-  cutSizeUnits: CutSizeUnit[],
+  cutSizeUnits: CutSizeUnit[]
 ): Promise<CuttingPlanInput> {
   validateCuttingPlanFileSize(file)
 
@@ -121,7 +131,9 @@ export async function parseCuttingPlanImportExcel(
 
   validateCuttingPlanWorkbookSheetCount(workbook)
 
-  const sheet = workbook.getWorksheet(CUTTING_PLAN_EXCEL_SHEETS.import) || workbook.getWorksheet(1)
+  const sheet =
+    workbook.getWorksheet(CUTTING_PLAN_EXCEL_SHEETS.import) ||
+    workbook.getWorksheet(1)
   if (!sheet) {
     throw new Error('未找到导入工作表，请使用系统模板。')
   }
@@ -146,7 +158,9 @@ export async function parseCuttingPlanImportExcel(
       holeCount: normalizeCellText(safelyGetCellValue(row.getCell(7))),
       carbonFiberModel: normalizeCellText(safelyGetCellValue(row.getCell(8))),
       resinModel: normalizeCellText(safelyGetCellValue(row.getCell(9))),
-      resinContentPercent: normalizeCellText(safelyGetCellValue(row.getCell(10))),
+      resinContentPercent: normalizeCellText(
+        safelyGetCellValue(row.getCell(10))
+      ),
       status: normalizeCellText(safelyGetCellValue(row.getCell(16))),
     }
 
@@ -168,17 +182,19 @@ export async function parseCuttingPlanImportExcel(
     const productName = requireHeaderValue(
       rowHeader.productName || header.productName,
       rowNumber,
-      '产品型号',
+      '产品型号'
     )
     const holeCount = requireHeaderValue(
       rowHeader.holeCount || header.holeCount,
       rowNumber,
-      '孔数',
+      '孔数'
     )
     const productCode = rowHeader.productCode || header.productCode
 
     if (!productName && !productCode) {
-      throw new Error(`第 ${rowNumber} 行缺少产品型号/产品编码，无法生成方案名称。`)
+      throw new Error(
+        `第 ${rowNumber} 行缺少产品型号/产品编码，无法生成方案名称。`
+      )
     }
 
     const line = {
@@ -189,7 +205,7 @@ export async function parseCuttingPlanImportExcel(
       cutSizeCode: normalizeCellText(lineFields[2]),
       operationNote: normalizeCellText(lineFields[3]),
       manualGroupBreakBefore: resolveManualBreak(
-        normalizeCellText(safelyGetCellValue(row.getCell(15))),
+        normalizeCellText(safelyGetCellValue(row.getCell(15)))
       ),
     }
 
@@ -197,7 +213,11 @@ export async function parseCuttingPlanImportExcel(
       throw new Error(`第 ${rowNumber} 行缺少“尺寸库编码”，无法导入。`)
     }
 
-    const matchedUnit = findMatchedCutSizeUnitByCode(line.cutSizeCode, cutSizeUnits, rowNumber)
+    const matchedUnit = findMatchedCutSizeUnitByCode(
+      line.cutSizeCode,
+      cutSizeUnits,
+      rowNumber
+    )
 
     header.productName = productName
     header.productCode = productCode
@@ -210,13 +230,15 @@ export async function parseCuttingPlanImportExcel(
           cutSizeCode: matchedUnit.code,
           cutSizeName: matchedUnit.name,
         },
-        matchedUnit,
-      ),
+        matchedUnit
+      )
     )
   })
 
   if (rowLimitExceeded) {
-    throw new Error(`导入行数超过 ${CUTTING_PLAN_EXCEL_LIMITS.maxRows} 行上限，请拆分后导入。`)
+    throw new Error(
+      `导入行数超过 ${CUTTING_PLAN_EXCEL_LIMITS.maxRows} 行上限，请拆分后导入。`
+    )
   }
 
   if (lines.length === 0) {
@@ -231,10 +253,13 @@ export async function parseCuttingPlanImportExcel(
     throw new Error('缺少孔数，无法生成方案名称。')
   }
 
-  return buildCuttingPlanInput({
-    ...EMPTY_CUTTING_PLAN_INPUT,
-    ...header,
-    status: resolveStatus(header.status),
-    lines,
-  }, cutSizeUnits)
+  return buildCuttingPlanInput(
+    {
+      ...EMPTY_CUTTING_PLAN_INPUT,
+      ...header,
+      status: resolveStatus(header.status),
+      lines,
+    },
+    cutSizeUnits
+  )
 }

@@ -1,8 +1,8 @@
+import { apiFetch } from '@/lib/api-client'
+import { ensureArrayField, ensureObjectResponse } from '@/lib/api-response'
 import { CuttingPlanService } from '@/features/engineering-db/services/cutting-plan-service'
 import { type SalesOrder } from '@/features/trading/data/schema'
 import { getSalesOrders } from '@/features/trading/sales/services/sales-query-service'
-import { apiFetch } from '@/lib/api-client'
-import { ensureArrayField, ensureObjectResponse } from '@/lib/api-response'
 import type {
   CuttingIssuanceExecutionRecord,
   CuttingIssuanceOrder,
@@ -15,7 +15,8 @@ const SALES_ORDER_PAGE_SIZE = 100
 const MAX_SALES_ORDER_PAGE = 200
 const EXECUTION_LIST_PAGE_SIZE = 500
 const CUTTING_ISSUANCE_EXECUTIONS_ENDPOINT = '/production/cutting-issuances'
-const CUTTING_ISSUANCE_TRACE_REPORT_ENDPOINT = '/production/cutting-issuances/trace-report'
+const CUTTING_ISSUANCE_TRACE_REPORT_ENDPOINT =
+  '/production/cutting-issuances/trace-report'
 
 type CuttingIssuanceExecutionApiDTO = {
   id?: string
@@ -86,11 +87,16 @@ type CreateCuttingIssuanceExecutionParams = {
 }
 
 function parseHoleCount(raw: unknown): number {
-  const asNumber = typeof raw === 'number' ? raw : Number.parseInt(String(raw ?? '').trim(), 10)
+  const asNumber =
+    typeof raw === 'number'
+      ? raw
+      : Number.parseInt(String(raw ?? '').trim(), 10)
   return Number.isFinite(asNumber) ? Math.max(0, asNumber) : 0
 }
 
-function toOrderLine(line: SalesOrder['lines'][number]): CuttingIssuanceOrderLine | null {
+function toOrderLine(
+  line: SalesOrder['lines'][number]
+): CuttingIssuanceOrderLine | null {
   const requestedQuantity = Number.isFinite(line.qty) ? line.qty : 0
   if (requestedQuantity <= 0) {
     return null
@@ -109,7 +115,9 @@ function toOrderLine(line: SalesOrder['lines'][number]): CuttingIssuanceOrderLin
 function toOrderOption(order: SalesOrder): CuttingIssuanceOrder | null {
   const lines = order.lines
     .map(toOrderLine)
-    .filter((line): line is CuttingIssuanceOrderLine => Boolean(line && line.productModel))
+    .filter((line): line is CuttingIssuanceOrderLine =>
+      Boolean(line && line.productModel)
+    )
     .sort((left, right) => left.lineNo - right.lineNo)
 
   if (lines.length === 0) {
@@ -137,8 +145,15 @@ async function loadAllSchedulableSalesOrders(): Promise<SalesOrder[]> {
     })
 
     items.push(...response.items)
-    const totalPages = Math.max(1, Math.ceil(response.total / SALES_ORDER_PAGE_SIZE))
-    if (response.items.length === 0 || page >= totalPages || items.length >= response.total) {
+    const totalPages = Math.max(
+      1,
+      Math.ceil(response.total / SALES_ORDER_PAGE_SIZE)
+    )
+    if (
+      response.items.length === 0 ||
+      page >= totalPages ||
+      items.length >= response.total
+    ) {
       break
     }
   }
@@ -146,7 +161,9 @@ async function loadAllSchedulableSalesOrders(): Promise<SalesOrder[]> {
   return items
 }
 
-function mapExecutionItem(item: CuttingIssuanceExecutionApiDTO): CuttingIssuanceExecutionRecord | null {
+function mapExecutionItem(
+  item: CuttingIssuanceExecutionApiDTO
+): CuttingIssuanceExecutionRecord | null {
   if (!item.id) {
     return null
   }
@@ -165,7 +182,7 @@ function mapExecutionItem(item: CuttingIssuanceExecutionApiDTO): CuttingIssuance
 }
 
 function buildExecutionCreatePayload(
-  params: CreateCuttingIssuanceExecutionParams,
+  params: CreateCuttingIssuanceExecutionParams
 ): CreateCuttingIssuanceExecutionRequest {
   return {
     orderNo: params.order.orderNo,
@@ -179,13 +196,16 @@ function buildExecutionCreatePayload(
     templateName: params.template.planName,
     templateVersion: params.template.version,
     quantity: params.line.requestedQuantity,
-    totalLineQuantity: params.line.requestedQuantity * params.template.templateLineCount,
+    totalLineQuantity:
+      params.line.requestedQuantity * params.template.templateLineCount,
     status: 'SCHEDULED',
     batches: [],
   }
 }
 
-function mapTraceReport(raw: CuttingIssuanceTraceReportApiDTO): CuttingIssuanceTraceReport {
+function mapTraceReport(
+  raw: CuttingIssuanceTraceReportApiDTO
+): CuttingIssuanceTraceReport {
   const summary = raw.summary || {}
   const byStatus = Array.isArray(raw.byStatus) ? raw.byStatus : []
   const byModel = Array.isArray(raw.byModel) ? raw.byModel : []
@@ -213,7 +233,9 @@ function mapTraceReport(raw: CuttingIssuanceTraceReportApiDTO): CuttingIssuanceT
   }
 }
 
-export async function getCuttingIssuanceOrders(): Promise<CuttingIssuanceOrder[]> {
+export async function getCuttingIssuanceOrders(): Promise<
+  CuttingIssuanceOrder[]
+> {
   const orders = await loadAllSchedulableSalesOrders()
 
   return orders
@@ -221,7 +243,9 @@ export async function getCuttingIssuanceOrders(): Promise<CuttingIssuanceOrder[]
     .filter((item): item is CuttingIssuanceOrder => Boolean(item))
 }
 
-export async function getCuttingIssuanceTemplates(): Promise<CuttingIssuanceTemplate[]> {
+export async function getCuttingIssuanceTemplates(): Promise<
+  CuttingIssuanceTemplate[]
+> {
   const plans = await CuttingPlanService.list()
 
   return plans
@@ -239,18 +263,19 @@ export async function getCuttingIssuanceTemplates(): Promise<CuttingIssuanceTemp
     .filter((item) => item.productModel && item.templateLineCount > 0)
 }
 
-export async function listCuttingIssuanceExecutions(): Promise<CuttingIssuanceExecutionRecord[]> {
+export async function listCuttingIssuanceExecutions(): Promise<
+  CuttingIssuanceExecutionRecord[]
+> {
   const response = await apiFetch<unknown>(
-    `${CUTTING_ISSUANCE_EXECUTIONS_ENDPOINT}?page=1&pageSize=${EXECUTION_LIST_PAGE_SIZE}`,
+    `${CUTTING_ISSUANCE_EXECUTIONS_ENDPOINT}?page=1&pageSize=${EXECUTION_LIST_PAGE_SIZE}`
   )
-  const page = ensureObjectResponse<CuttingIssuanceExecutionListApiDTO & Record<string, unknown>>(
-    response,
-    'CuttingIssuanceService.listCuttingIssuanceExecutions',
-  )
+  const page = ensureObjectResponse<
+    CuttingIssuanceExecutionListApiDTO & Record<string, unknown>
+  >(response, 'CuttingIssuanceService.listCuttingIssuanceExecutions')
   const items = ensureArrayField<CuttingIssuanceExecutionApiDTO>(
     page,
     'items',
-    'CuttingIssuanceService.listCuttingIssuanceExecutions',
+    'CuttingIssuanceService.listCuttingIssuanceExecutions'
   )
 
   return items
@@ -259,26 +284,29 @@ export async function listCuttingIssuanceExecutions(): Promise<CuttingIssuanceEx
 }
 
 export async function getCuttingIssuanceTraceReport(): Promise<CuttingIssuanceTraceReport> {
-  const response = await apiFetch<unknown>(CUTTING_ISSUANCE_TRACE_REPORT_ENDPOINT)
-  const report = ensureObjectResponse<CuttingIssuanceTraceReportApiDTO & Record<string, unknown>>(
-    response,
-    'CuttingIssuanceService.getCuttingIssuanceTraceReport',
+  const response = await apiFetch<unknown>(
+    CUTTING_ISSUANCE_TRACE_REPORT_ENDPOINT
   )
+  const report = ensureObjectResponse<
+    CuttingIssuanceTraceReportApiDTO & Record<string, unknown>
+  >(response, 'CuttingIssuanceService.getCuttingIssuanceTraceReport')
   return mapTraceReport(report)
 }
 
 export async function createCuttingIssuanceExecution(
-  params: CreateCuttingIssuanceExecutionParams,
+  params: CreateCuttingIssuanceExecutionParams
 ): Promise<CuttingIssuanceExecutionRecord> {
-  const response = await apiFetch<unknown>(CUTTING_ISSUANCE_EXECUTIONS_ENDPOINT, {
-    method: 'POST',
-    body: JSON.stringify(buildExecutionCreatePayload(params)),
-  })
-
-  const item = ensureObjectResponse<CuttingIssuanceExecutionApiDTO & Record<string, unknown>>(
-    response,
-    'CuttingIssuanceService.createCuttingIssuanceExecution',
+  const response = await apiFetch<unknown>(
+    CUTTING_ISSUANCE_EXECUTIONS_ENDPOINT,
+    {
+      method: 'POST',
+      body: JSON.stringify(buildExecutionCreatePayload(params)),
+    }
   )
+
+  const item = ensureObjectResponse<
+    CuttingIssuanceExecutionApiDTO & Record<string, unknown>
+  >(response, 'CuttingIssuanceService.createCuttingIssuanceExecution')
   const mapped = mapExecutionItem(item)
   if (!mapped) {
     throw new Error('CUTTING_ISSUANCE_RESPONSE_MISSING_ID')

@@ -1,4 +1,10 @@
 import { useEffect, useMemo } from 'react'
+import { createLogger } from '@/lib/logger'
+import {
+  type CompositeReadResource,
+  resolveQueryFailure,
+} from '@/lib/read-resource'
+import { failLoudly } from '@/lib/safe-catch'
 import type { OrderEvidence } from '@/features/trading/data/schema'
 import { useGetSalesReturns } from '@/features/trading/sales/hooks/use-sales-returns'
 import type {
@@ -7,9 +13,6 @@ import type {
 } from '@/features/trading/sales/services/sales-return-service'
 import { useWarehouseCategoryOptions } from '@/features/warehouse/category'
 import { SALES_RETURN_VIRTUAL_WAREHOUSE_CODE } from '@/features/warehouse/utils/warehouse-category-config'
-import { createLogger } from '@/lib/logger'
-import { type CompositeReadResource, resolveQueryFailure } from '@/lib/read-resource'
-import { failLoudly } from '@/lib/safe-catch'
 
 const TERMINAL_SALES_RETURN_STATUSES = new Set([
   'closed',
@@ -96,7 +99,8 @@ export function useSalesReturnReceivingQueue() {
       error: queueQuery.error,
       isPending: queueQuery.isPending,
       scope: 'useSalesReturnReceivingQueue.queue',
-      missingMessage: '[CRITICAL] Sales return receiving queue missing after load',
+      missingMessage:
+        '[CRITICAL] Sales return receiving queue missing after load',
       failureMessage: '[CRITICAL] Sales return receiving queue query failed',
     })
     if (queueFailure) {
@@ -112,7 +116,8 @@ export function useSalesReturnReceivingQueue() {
       error: categoryOptionsQuery.error,
       isPending: categoryOptionsQuery.isPending,
       scope: 'useSalesReturnReceivingQueue.categoryOptions',
-      missingMessage: '[CRITICAL] Warehouse category options missing after load',
+      missingMessage:
+        '[CRITICAL] Warehouse category options missing after load',
       failureMessage: '[CRITICAL] Warehouse category options query failed',
     })
     if (categoryOptionsFailure) {
@@ -132,14 +137,18 @@ export function useSalesReturnReceivingQueue() {
     if (!queueData) {
       return {
         status: 'error',
-        error: new Error('[CRITICAL] Sales return receiving queue missing after load'),
+        error: new Error(
+          '[CRITICAL] Sales return receiving queue missing after load'
+        ),
         scope: 'useSalesReturnReceivingQueue.queue',
       }
     }
     if (!categoryOptions) {
       return {
         status: 'error',
-        error: new Error('[CRITICAL] Warehouse category options missing after load'),
+        error: new Error(
+          '[CRITICAL] Warehouse category options missing after load'
+        ),
         scope: 'useSalesReturnReceivingQueue.categoryOptions',
       }
     }
@@ -157,12 +166,17 @@ export function useSalesReturnReceivingQueue() {
       }
     }
 
-    const items = queueData.items.filter(isWarehousePendingReturn).map(toQueueItem)
+    const items = queueData.items
+      .filter(isWarehousePendingReturn)
+      .map(toQueueItem)
 
     return {
       status: 'ready',
       items,
-      totalPendingQuantity: items.reduce((sum, item) => sum + item.totalQuantity, 0),
+      totalPendingQuantity: items.reduce(
+        (sum, item) => sum + item.totalQuantity,
+        0
+      ),
       salesReturnVirtualWarehouseName:
         salesReturnVirtualWarehouse.label || salesReturnVirtualWarehouse.name,
     }

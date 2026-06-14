@@ -10,8 +10,8 @@ import { type BOM } from '../data/schema'
 import { bomQueryKeys } from '../query-keys'
 import { bomService, type BOMDetailSource } from '../services/bom-service'
 import { resolveBOMWorkspaceAuthoritativeProtocolDraftFromRawDetailSource } from './bom-workspace-authoritative-protocol-resolver'
-import { buildBOMWorkspaceParentChildrenProtocolDraftFromBOMDetailSource } from './bom-workspace-protocol-source-adapter'
 import { type BOMWorkspaceParentChildrenProtocolDraft } from './bom-workspace-branch-relation'
+import { buildBOMWorkspaceParentChildrenProtocolDraftFromBOMDetailSource } from './bom-workspace-protocol-source-adapter'
 
 const logger = createLogger('useBOMEditDetailSource')
 
@@ -38,7 +38,8 @@ export function useBOMEditDetailSource({
   fields,
   watchedItems,
 }: UseBOMEditDetailSourceParams): BOMEditDetailSourceResource | undefined {
-  const enabled = open && isEdit && typeof bomId === 'string' && bomId.trim().length > 0
+  const enabled =
+    open && isEdit && typeof bomId === 'string' && bomId.trim().length > 0
   const normalizedBOMId = bomId?.trim() ?? ''
 
   const bomDetailQuery = useQuery({
@@ -75,12 +76,17 @@ export function useBOMEditDetailSource({
 
     const detailSource = bomDetailQuery.data as BOMDetailSource
     const bom = detailSource.bom
-    const authoritativeProtocolDraft = resolveBOMWorkspaceAuthoritativeProtocolDraftFromRawDetailSource(detailSource.rawSource)
+    const authoritativeProtocolDraft =
+      resolveBOMWorkspaceAuthoritativeProtocolDraftFromRawDetailSource(
+        detailSource.rawSource
+      )
 
     if (!authoritativeProtocolDraft) {
       return {
         status: 'error',
-        error: new Error('[CRITICAL] BOM edit detail is missing authoritative relation sidecar'),
+        error: new Error(
+          '[CRITICAL] BOM edit detail is missing authoritative relation sidecar'
+        ),
         scope: 'useBOMEditDetailSource.authoritativeSidecar',
       }
     }
@@ -90,23 +96,35 @@ export function useBOMEditDetailSource({
       data: {
         bom,
         rawSource: detailSource.rawSource,
-        protocolDraft: buildBOMWorkspaceParentChildrenProtocolDraftFromBOMDetailSource({
-          sourceBOM: bom,
-          activeSections,
-          fields,
-          watchedItems,
-          authoritativeProtocolDraft,
-        }),
+        protocolDraft:
+          buildBOMWorkspaceParentChildrenProtocolDraftFromBOMDetailSource({
+            sourceBOM: bom,
+            activeSections,
+            fields,
+            watchedItems,
+            authoritativeProtocolDraft,
+          }),
       },
     }
-  }, [activeSections, bomDetailQuery.data, bomDetailQuery.error, bomDetailQuery.isLoading, enabled, fields, watchedItems])
+  }, [
+    activeSections,
+    bomDetailQuery.data,
+    bomDetailQuery.error,
+    bomDetailQuery.isLoading,
+    enabled,
+    fields,
+    watchedItems,
+  ])
 
   useEffect(() => {
     if (!resource || resource.status !== 'error') {
       return
     }
 
-    logger.error(`BOM edit detail source failed: ${resource.scope}`, resource.error)
+    logger.error(
+      `BOM edit detail source failed: ${resource.scope}`,
+      resource.error
+    )
     failLoudly(resource.error, resource.scope)
   }, [resource])
 

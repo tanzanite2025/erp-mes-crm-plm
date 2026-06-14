@@ -1,6 +1,10 @@
 import type { NavBranch, NavItem, NavLink } from './types'
 
-function resolveBadgeValue(item: NavItem, unreadApprovals: number, systemAlertCount: number): string | undefined {
+function resolveBadgeValue(
+  item: NavItem,
+  unreadApprovals: number,
+  systemAlertCount: number
+): string | undefined {
   if (item.badgeKey === 'approval-unread' || item.id === 'approval-center') {
     return unreadApprovals > 0 ? unreadApprovals.toString() : undefined
   }
@@ -46,28 +50,47 @@ function isExactPathMatch(pathname: string, target?: string): boolean {
   return normalizePath(pathname) === normalizePath(target)
 }
 
-export function withDynamicBadges(items: NavItem[], unreadApprovals: number, systemAlertCount: number): NavItem[] {
+export function withDynamicBadges(
+  items: NavItem[],
+  unreadApprovals: number,
+  systemAlertCount: number
+): NavItem[] {
   return items.map((item) => ({
     ...item,
     badge: resolveBadgeValue(item, unreadApprovals, systemAlertCount),
-    children: item.children ? withDynamicBadges(item.children, unreadApprovals, systemAlertCount) : undefined,
+    children: item.children
+      ? withDynamicBadges(item.children, unreadApprovals, systemAlertCount)
+      : undefined,
   }))
 }
 
-export function checkIsActive(pathname: string, item: NavItem, mainNav = false): boolean {
+export function checkIsActive(
+  pathname: string,
+  item: NavItem,
+  mainNav = false
+): boolean {
   const itemUrl = item.url ? String(item.url) : undefined
   const activeTarget = item.activeMatch ? String(item.activeMatch) : itemUrl
   const selfActive = isPathMatch(pathname, activeTarget)
-  const childActive = !!item.children?.some((child) => checkIsActive(pathname, child))
+  const childActive = !!item.children?.some((child) =>
+    checkIsActive(pathname, child)
+  )
 
   if (selfActive || childActive) {
     return true
   }
 
-  return !!(itemUrl && mainNav && pathname.split('/')[1] === itemUrl.split('/')[1])
+  return !!(
+    itemUrl &&
+    mainNav &&
+    pathname.split('/')[1] === itemUrl.split('/')[1]
+  )
 }
 
-export function checkIsDirectlySelected(pathname: string, item: NavItem): boolean {
+export function checkIsDirectlySelected(
+  pathname: string,
+  item: NavItem
+): boolean {
   const itemUrl = item.url ? String(item.url) : undefined
   const activeTarget = item.activeMatch ? String(item.activeMatch) : itemUrl
   return isExactPathMatch(pathname, activeTarget)
@@ -85,12 +108,21 @@ export function hasChildren(item: NavItem): item is NavBranch {
   return Array.isArray(item.children) && item.children.length > 0
 }
 
-export function isEmptyPreservedBranch(item: NavItem): item is NavItem & { children: NavItem[] } {
-  return item.preserveEmptyChildren === true && Array.isArray(item.children) && item.children.length === 0
+export function isEmptyPreservedBranch(
+  item: NavItem
+): item is NavItem & { children: NavItem[] } {
+  return (
+    item.preserveEmptyChildren === true &&
+    Array.isArray(item.children) &&
+    item.children.length === 0
+  )
 }
 
 export function isSystemAlertBadge(item: NavItem) {
-  return (item.badgeKey === 'system-alert' || item.id === 'system-management') && item.badge === '●'
+  return (
+    (item.badgeKey === 'system-alert' || item.id === 'system-management') &&
+    item.badge === '●'
+  )
 }
 
 export function hasSystemAlertConsumer(items: NavItem[]): boolean {

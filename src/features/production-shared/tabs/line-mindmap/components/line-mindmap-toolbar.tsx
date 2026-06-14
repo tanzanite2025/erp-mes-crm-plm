@@ -29,17 +29,26 @@ export function LineMindmapToolbar({
     <Card className='sticky top-0 z-30 rounded-[20px] border border-dashed border-muted/35 bg-background shadow-sm'>
       <CardContent className='overflow-x-auto p-2'>
         <div className='flex min-w-max items-center gap-1.5 whitespace-nowrap'>
-          <span className='shrink-0 text-[10px] font-black italic uppercase tracking-tighter text-foreground'>
+          <span className='shrink-0 text-[10px] font-black tracking-tighter text-foreground uppercase italic'>
             {title}
           </span>
-          <span className='text-[8px] font-black uppercase tracking-widest text-muted-foreground/55'>当前产线</span>
-          <Select value={resolvedLineId || undefined} onValueChange={onSelectLine}>
+          <span className='text-[8px] font-black tracking-widest text-muted-foreground/55 uppercase'>
+            当前产线
+          </span>
+          <Select
+            value={resolvedLineId || undefined}
+            onValueChange={onSelectLine}
+          >
             <SelectTrigger className='h-8 w-[200px] shrink-0 rounded-2xl border-none bg-background/80 px-3 text-[9px] font-black shadow-none sm:w-[220px]'>
               <SelectValue placeholder='选择要查看的产线' />
             </SelectTrigger>
             <SelectContent>
               {lineOptions.map((lineOption) => (
-                <SelectItem key={lineOption.id} value={lineOption.id} className='text-[9px] font-black'>
+                <SelectItem
+                  key={lineOption.id}
+                  value={lineOption.id}
+                  className='text-[9px] font-black'
+                >
                   {lineOption.label} · {lineOption.code}
                 </SelectItem>
               ))}
@@ -48,7 +57,7 @@ export function LineMindmapToolbar({
 
           <Button
             type='button'
-            className='h-8 shrink-0 rounded-full px-3 text-[8px] font-black uppercase tracking-widest'
+            className='h-8 shrink-0 rounded-full px-3 text-[8px] font-black tracking-widest uppercase'
             onClick={onCreateLevel1}
             disabled={!activeLine}
           >
@@ -57,7 +66,7 @@ export function LineMindmapToolbar({
           <Button
             type='button'
             variant='outline'
-            className='h-8 shrink-0 rounded-full border-dashed px-3 text-[8px] font-black uppercase tracking-widest'
+            className='h-8 shrink-0 rounded-full border-dashed px-3 text-[8px] font-black tracking-widest uppercase'
             onClick={onCreateLevel2}
             disabled={!activeLine}
           >
@@ -66,7 +75,7 @@ export function LineMindmapToolbar({
           <Button
             type='button'
             variant='outline'
-            className='h-8 shrink-0 rounded-full border-dashed px-3 text-[8px] font-black uppercase tracking-widest'
+            className='h-8 shrink-0 rounded-full border-dashed px-3 text-[8px] font-black tracking-widest uppercase'
             onClick={onCreateLevel3}
             disabled={!activeLine}
           >
@@ -75,7 +84,7 @@ export function LineMindmapToolbar({
           <Button
             type='button'
             variant='outline'
-            className='h-8 shrink-0 rounded-full border-dashed px-3 text-[8px] font-black uppercase tracking-widest'
+            className='h-8 shrink-0 rounded-full border-dashed px-3 text-[8px] font-black tracking-widest uppercase'
             onClick={onEditNode}
             disabled={!selectedNode}
           >

@@ -41,25 +41,40 @@ export function ThemeSwitch() {
         align='end'
         sideOffset={10}
       >
-        <DropdownMenuItem className='rounded-2xl px-3 py-3 text-[12px] font-black tracking-tight text-foreground focus:bg-primary/5 focus:text-foreground' onClick={() => setTheme('light')}>
+        <DropdownMenuItem
+          className='rounded-2xl px-3 py-3 text-[12px] font-black tracking-tight text-foreground focus:bg-primary/5 focus:text-foreground'
+          onClick={() => setTheme('light')}
+        >
           {t('common.theme.light')}{' '}
           <Check
             size={14}
-            className={cn('ms-auto text-primary', theme !== 'light' && 'hidden')}
+            className={cn(
+              'ms-auto text-primary',
+              theme !== 'light' && 'hidden'
+            )}
           />
         </DropdownMenuItem>
-        <DropdownMenuItem className='rounded-2xl px-3 py-3 text-[12px] font-black tracking-tight text-foreground focus:bg-primary/5 focus:text-foreground' onClick={() => setTheme('dark')}>
+        <DropdownMenuItem
+          className='rounded-2xl px-3 py-3 text-[12px] font-black tracking-tight text-foreground focus:bg-primary/5 focus:text-foreground'
+          onClick={() => setTheme('dark')}
+        >
           {t('common.theme.dark')}
           <Check
             size={14}
             className={cn('ms-auto text-primary', theme !== 'dark' && 'hidden')}
           />
         </DropdownMenuItem>
-        <DropdownMenuItem className='rounded-2xl px-3 py-3 text-[12px] font-black tracking-tight text-foreground focus:bg-primary/5 focus:text-foreground' onClick={() => setTheme('system')}>
+        <DropdownMenuItem
+          className='rounded-2xl px-3 py-3 text-[12px] font-black tracking-tight text-foreground focus:bg-primary/5 focus:text-foreground'
+          onClick={() => setTheme('system')}
+        >
           {t('common.theme.system')}
           <Check
             size={14}
-            className={cn('ms-auto text-primary', theme !== 'system' && 'hidden')}
+            className={cn(
+              'ms-auto text-primary',
+              theme !== 'system' && 'hidden'
+            )}
           />
         </DropdownMenuItem>
       </DropdownMenuContent>

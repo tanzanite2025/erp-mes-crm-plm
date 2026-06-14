@@ -1,6 +1,6 @@
 import { RotateCcw, ShieldAlert } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
+import { Button } from '@/components/ui/button'
 import type { CustomerSalesReturnSummary } from '../services/customer-sales-return-summary-service'
 
 type CustomerSalesReturnSummaryBlockProps = {
@@ -19,7 +19,8 @@ export function CustomerSalesReturnSummaryBlock({
   const returnedOrderCount = summary?.returnedOrderCount ?? 0
   const effectiveOrderCount = summary?.effectiveOrderCount ?? 0
   const canceledOrderCount = summary?.canceledOrderCount ?? 0
-  const hasOnlyCanceledOrders = hasRealSummary && effectiveOrderCount === 0 && canceledOrderCount > 0
+  const hasOnlyCanceledOrders =
+    hasRealSummary && effectiveOrderCount === 0 && canceledOrderCount > 0
 
   return (
     <div
@@ -64,7 +65,8 @@ export function CustomerSalesReturnSummaryBlock({
             <p className='text-[10px] leading-5 font-bold text-muted-foreground'>
               {hasRealSummary
                 ? t('trading.customers.summary.returnReadyDescription', {
-                    returnedQuantity: summary?.returnedQuantity.toLocaleString() ?? 0,
+                    returnedQuantity:
+                      summary?.returnedQuantity.toLocaleString() ?? 0,
                     returnedOrderCount: returnedOrderCount.toLocaleString(),
                     effectiveOrderCount: effectiveOrderCount.toLocaleString(),
                     canceledOrderCount: canceledOrderCount.toLocaleString(),
@@ -73,7 +75,7 @@ export function CustomerSalesReturnSummaryBlock({
             </p>
           </div>
 
-          <div className='flex flex-col items-start gap-2 sm:w-[136px] sm:justify-self-end sm:items-end'>
+          <div className='flex flex-col items-start gap-2 sm:w-[136px] sm:items-end sm:justify-self-end'>
             <span className='inline-flex w-fit items-center rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[8px] font-black tracking-widest text-amber-700 uppercase'>
               {hasOnlyCanceledOrders
                 ? t('trading.customers.summary.returnVoidedOnlyBadge')

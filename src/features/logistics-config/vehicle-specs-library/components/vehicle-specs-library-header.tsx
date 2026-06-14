@@ -1,6 +1,6 @@
 import { Truck } from 'lucide-react'
-import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 
 export function VehicleSpecsLibraryHeader() {
   const { t } = useLanguage()

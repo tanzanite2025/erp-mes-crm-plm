@@ -9,7 +9,6 @@ import {
   User,
   Wallet,
 } from 'lucide-react'
-import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import {
@@ -19,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { AuditStatusDisplay } from '@/components/common/audit-status-display'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import {
   isPurchaseOrderTerminalStatus,

@@ -38,6 +38,7 @@ workflow-core
 ## 2. 四个 TAB 的职责边界
 
 ### A. RoutingTab
+
 文件：
 
 - [routing-tab.tsx](C:/Users/P16V/Desktop/纤镀软件开发/XDFC/src/features/system-mgmt/tabs/routing-tab.tsx)
@@ -65,6 +66,7 @@ workflow-core
 ---
 
 ### B. 通知与审批规则 TAB
+
 主文件：
 
 - [notification-rule-list.tsx](C:/Users/P16V/Desktop/纤镀软件开发/XDFC/src/features/system-mgmt/tabs/notification-rule-list.tsx)
@@ -80,6 +82,7 @@ workflow-core
 - [rule-template-panel.tsx](C:/Users/P16V/Desktop/纤镀软件开发/XDFC/src/features/system-mgmt/tabs/components/rule-template-panel.tsx)
 
 #### `notification-rule-list.tsx`
+
 职责：
 
 - 规则列表页容器
@@ -97,6 +100,7 @@ workflow-core
 - 单状态行交互
 
 #### `rule-card.tsx`
+
 职责：
 
 - 单条规则的外层壳
@@ -113,6 +117,7 @@ workflow-core
 - 单状态行的 UI 细节
 
 #### `rule-card-model.ts`
+
 职责：
 
 - 规则卡纯函数
@@ -128,6 +133,7 @@ workflow-core
 - 不依赖 UI 组件
 
 #### `rule-status-row.tsx`
+
 职责：
 
 - 单状态行编辑
@@ -142,6 +148,7 @@ workflow-core
 - 列表级创建逻辑
 
 #### `rule-template-panel.tsx`
+
 职责：
 
 - 状态行内部的“通知内容模板”块
@@ -158,6 +165,7 @@ workflow-core
 ---
 
 ### C. 业务事件源 TAB
+
 主文件：
 
 - [business-event-source-list.tsx](C:/Users/P16V/Desktop/纤镀软件开发/XDFC/src/features/system-mgmt/tabs/business-event-source-list.tsx)
@@ -190,6 +198,7 @@ workflow-core
 ---
 
 ### D. 通知内容模板 TAB
+
 主文件：
 
 - [index.tsx](C:/Users/P16V/Desktop/纤镀软件开发/XDFC/src/features/system-mgmt/workflow-core/components/command-mgmt/index.tsx)
@@ -215,6 +224,7 @@ workflow-core
 ---
 
 ### E. 执行日志 TAB
+
 主文件：
 
 - [rule-execution-log-tab.tsx](C:/Users/P16V/Desktop/纤镀软件开发/XDFC/src/features/system-mgmt/tabs/rule-execution-log-tab.tsx)
@@ -243,6 +253,7 @@ workflow-core
 ## 3. hooks 的职责边界
 
 ### `useNotificationRules`
+
 文件：
 
 - [use-notification-rules.ts](C:/Users/P16V/Desktop/纤镀软件开发/XDFC/src/features/system-mgmt/workflow-core/hooks/use-notification-rules.ts)
@@ -265,6 +276,7 @@ workflow-core
 - 如果以后要加“批量启停 / 批量删除 / 批量复制”，优先继续放这里或它的 helper，而不是散落在页面组件里
 
 ### `useBusinessEventSources`
+
 文件：
 
 - [use-business-event-sources.ts](C:/Users/P16V/Desktop/纤镀软件开发/XDFC/src/features/system-mgmt/workflow-core/hooks/use-business-event-sources.ts)
@@ -275,6 +287,7 @@ workflow-core
 - 事件源 CRUD
 
 ### `useCommands`
+
 文件：
 
 - [use-commands.ts](C:/Users/P16V/Desktop/纤镀软件开发/XDFC/src/features/system-mgmt/workflow-core/hooks/use-commands.ts)
@@ -294,6 +307,7 @@ workflow-core
 ## 4. workflow-core 的职责边界
 
 ### data
+
 目录：
 
 - `workflow-core/data/*`
@@ -312,6 +326,7 @@ workflow-core
 - 不在页面组件里手搓 shape
 
 ### services
+
 目录：
 
 - `workflow-core/services/*`
@@ -333,6 +348,7 @@ workflow-core
 ## 5. 后续加功能时的落位规则
 
 ### 加一个新的业务事件源
+
 应该改：
 
 - `workflow-core/data/business-event-source-templates/*`
@@ -345,6 +361,7 @@ workflow-core
 - `notification-rule-list.tsx`
 
 ### 给规则增加新的状态级能力
+
 例如：
 
 - 升级审批链
@@ -362,6 +379,7 @@ workflow-core
 - `notification-rule-list.tsx`
 
 ### 给模板增加新的表现能力
+
 例如：
 
 - 变量高亮
@@ -375,6 +393,7 @@ workflow-core
 - `command-list.tsx`
 
 ### 给日志增加新的查看方式
+
 例如：
 
 - 按规则聚合

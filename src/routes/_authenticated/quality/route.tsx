@@ -8,9 +8,7 @@ export const Route = createFileRoute('/_authenticated/quality')({
     const { t } = useLanguage()
 
     return (
-      <ModuleTabbedLayout
-        tabs={getQualityTabs(t)}
-      >
+      <ModuleTabbedLayout tabs={getQualityTabs(t)}>
         <Outlet />
       </ModuleTabbedLayout>
     )

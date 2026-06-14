@@ -2,7 +2,11 @@
 
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
-import { toMoldContract, toMoldDuplicateCheckContract, toMoldListPageContract } from '../adapters/equipment-mold-api-adapter'
+import {
+  toMoldContract,
+  toMoldDuplicateCheckContract,
+  toMoldListPageContract,
+} from '../adapters/equipment-mold-api-adapter'
 import {
   type MoldApiDTO,
   type MoldDuplicateCheckApiDTO,
@@ -48,7 +52,9 @@ export const MoldCoreService = {
       query.set('excludeId', excludeId)
     }
 
-    const res = await apiFetch<MoldDuplicateCheckApiDTO>(`/molds/check-sn?${query.toString()}`)
+    const res = await apiFetch<MoldDuplicateCheckApiDTO>(
+      `/molds/check-sn?${query.toString()}`
+    )
     return toMoldDuplicateCheckContract(
       ensureObjectResponse<MoldDuplicateCheckApiDTO & Record<string, unknown>>(
         res,

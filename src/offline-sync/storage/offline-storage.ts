@@ -1,4 +1,10 @@
 import Dexie, { type Transaction } from 'dexie'
+import type {
+  OfflineConflictRecord,
+  OfflineEntitySnapshot,
+  OfflineSyncMeta,
+  PendingDeltaRecord,
+} from '../types/offline-sync'
 import {
   buildOfflineEntityKey,
   offlineSyncDb,
@@ -7,9 +13,10 @@ import {
   type OfflineSnapshotRow,
   type OfflineSyncMetaRow,
 } from './dexie-offline-db'
-import type { OfflineConflictRecord, OfflineEntitySnapshot, OfflineSyncMeta, PendingDeltaRecord } from '../types/offline-sync'
 
-function toSnapshotRow(snapshot: OfflineEntitySnapshot<unknown>): OfflineSnapshotRow {
+function toSnapshotRow(
+  snapshot: OfflineEntitySnapshot<unknown>
+): OfflineSnapshotRow {
   return {
     ...snapshot,
     key: buildOfflineEntityKey(snapshot.entityType, snapshot.entityId),
@@ -23,14 +30,18 @@ function toSyncMetaRow(meta: OfflineSyncMeta): OfflineSyncMetaRow {
   }
 }
 
-function toPendingDeltaRow(delta: PendingDeltaRecord<unknown>): OfflinePendingDeltaRow {
+function toPendingDeltaRow(
+  delta: PendingDeltaRecord<unknown>
+): OfflinePendingDeltaRow {
   return {
     ...delta,
     key: delta.opId,
   }
 }
 
-function toConflictRow(conflict: OfflineConflictRecord<unknown>): OfflineConflictRow {
+function toConflictRow(
+  conflict: OfflineConflictRecord<unknown>
+): OfflineConflictRow {
   return {
     ...conflict,
     key: conflict.conflictId,
@@ -55,9 +66,14 @@ interface OfflineStorageSummaryMutationAccumulator {
 }
 
 let summarySnapshotCache: OfflineStorageSummarySnapshot | null = null
-const summaryMutationAccumulators = new WeakMap<Transaction, OfflineStorageSummaryMutationAccumulator>()
+const summaryMutationAccumulators = new WeakMap<
+  Transaction,
+  OfflineStorageSummaryMutationAccumulator
+>()
 
-function cloneSummarySnapshot(snapshot: OfflineStorageSummarySnapshot): OfflineStorageSummarySnapshot {
+function cloneSummarySnapshot(
+  snapshot: OfflineStorageSummarySnapshot
+): OfflineStorageSummarySnapshot {
   return {
     pendingCount: snapshot.pendingCount,
     conflictCount: snapshot.conflictCount,
@@ -65,15 +81,23 @@ function cloneSummarySnapshot(snapshot: OfflineStorageSummarySnapshot): OfflineS
   }
 }
 
-function isTrackedPendingState(state: PendingDeltaRecord<unknown>['state'] | undefined) {
+function isTrackedPendingState(
+  state: PendingDeltaRecord<unknown>['state'] | undefined
+) {
   return state === 'queued' || state === 'syncing' || state === 'conflict'
 }
 
-function incrementIntentCount(snapshot: OfflineStorageSummarySnapshot, intent: string) {
+function incrementIntentCount(
+  snapshot: OfflineStorageSummarySnapshot,
+  intent: string
+) {
   snapshot.pendingByIntent[intent] = (snapshot.pendingByIntent[intent] ?? 0) + 1
 }
 
-function decrementIntentCount(snapshot: OfflineStorageSummarySnapshot, intent: string) {
+function decrementIntentCount(
+  snapshot: OfflineStorageSummarySnapshot,
+  intent: string
+) {
   const next = (snapshot.pendingByIntent[intent] ?? 0) - 1
   if (next > 0) {
     snapshot.pendingByIntent[intent] = next
@@ -120,7 +144,9 @@ async function hydrateSummarySnapshot(): Promise<OfflineStorageSummarySnapshot> 
 
   const [pendingDeltas, openConflicts] = await Promise.all([
     offlineSyncDb.pendingDeltas.orderBy('createdAt').toArray(),
-    offlineSyncDb.conflictRecords.filter((conflict) => !conflict.resolvedAt).sortBy('createdAt'),
+    offlineSyncDb.conflictRecords
+      .filter((conflict) => !conflict.resolvedAt)
+      .sortBy('createdAt'),
   ])
 
   const snapshot: OfflineStorageSummarySnapshot = {
@@ -161,10 +187,18 @@ function getSummaryMutationAccumulator(transaction: Transaction) {
 
     if (summarySnapshotCache) {
       accumulator.pendingMutations.forEach((mutation) => {
-        applyPendingDeltaMutation(summarySnapshotCache!, mutation.previous, mutation.next)
+        applyPendingDeltaMutation(
+          summarySnapshotCache!,
+          mutation.previous,
+          mutation.next
+        )
       })
       accumulator.conflictMutations.forEach((mutation) => {
-        applyConflictMutation(summarySnapshotCache!, mutation.previous, mutation.next)
+        applyConflictMutation(
+          summarySnapshotCache!,
+          mutation.previous,
+          mutation.next
+        )
       })
     }
 
@@ -179,7 +213,10 @@ function getSummaryMutationAccumulator(transaction: Transaction) {
   return next
 }
 
-function queuePendingDeltaMutation(previous?: PendingDeltaRecord<unknown>, next?: PendingDeltaRecord<unknown>) {
+function queuePendingDeltaMutation(
+  previous?: PendingDeltaRecord<unknown>,
+  next?: PendingDeltaRecord<unknown>
+) {
   if (!summarySnapshotCache) {
     return
   }
@@ -190,10 +227,16 @@ function queuePendingDeltaMutation(previous?: PendingDeltaRecord<unknown>, next?
     return
   }
 
-  getSummaryMutationAccumulator(transaction).pendingMutations.push({ previous, next })
+  getSummaryMutationAccumulator(transaction).pendingMutations.push({
+    previous,
+    next,
+  })
 }
 
-function queueConflictMutation(previous?: OfflineConflictRecord<unknown>, next?: OfflineConflictRecord<unknown>) {
+function queueConflictMutation(
+  previous?: OfflineConflictRecord<unknown>,
+  next?: OfflineConflictRecord<unknown>
+) {
   if (!summarySnapshotCache) {
     return
   }
@@ -204,7 +247,10 @@ function queueConflictMutation(previous?: OfflineConflictRecord<unknown>, next?:
     return
   }
 
-  getSummaryMutationAccumulator(transaction).conflictMutations.push({ previous, next })
+  getSummaryMutationAccumulator(transaction).conflictMutations.push({
+    previous,
+    next,
+  })
 }
 
 export const OfflineStorage = {
@@ -217,7 +263,9 @@ export const OfflineStorage = {
   },
 
   async getSnapshot(entityType: string, entityId: string) {
-    return offlineSyncDb.snapshots.get(buildOfflineEntityKey(entityType, entityId))
+    return offlineSyncDb.snapshots.get(
+      buildOfflineEntityKey(entityType, entityId)
+    )
   },
 
   async listSnapshotsByEntityType(entityType: string) {
@@ -225,7 +273,9 @@ export const OfflineStorage = {
   },
 
   async removeSnapshot(entityType: string, entityId: string) {
-    await offlineSyncDb.snapshots.delete(buildOfflineEntityKey(entityType, entityId))
+    await offlineSyncDb.snapshots.delete(
+      buildOfflineEntityKey(entityType, entityId)
+    )
   },
 
   async upsertSyncMeta(meta: OfflineSyncMeta) {
@@ -233,7 +283,9 @@ export const OfflineStorage = {
   },
 
   async getSyncMeta(entityType: string, entityId: string) {
-    return offlineSyncDb.syncMeta.get(buildOfflineEntityKey(entityType, entityId))
+    return offlineSyncDb.syncMeta.get(
+      buildOfflineEntityKey(entityType, entityId)
+    )
   },
 
   async enqueueDelta(delta: PendingDeltaRecord<unknown>) {
@@ -242,8 +294,13 @@ export const OfflineStorage = {
     queuePendingDeltaMutation(undefined, delta)
   },
 
-  async updatePendingDelta(opId: string, patch: Partial<PendingDeltaRecord<unknown>>) {
-    const existing = summarySnapshotCache ? await offlineSyncDb.pendingDeltas.get(opId) : undefined
+  async updatePendingDelta(
+    opId: string,
+    patch: Partial<PendingDeltaRecord<unknown>>
+  ) {
+    const existing = summarySnapshotCache
+      ? await offlineSyncDb.pendingDeltas.get(opId)
+      : undefined
     await offlineSyncDb.pendingDeltas.update(opId, patch)
 
     if (summarySnapshotCache && existing) {
@@ -252,7 +309,9 @@ export const OfflineStorage = {
   },
 
   async removePendingDelta(opId: string) {
-    const existing = summarySnapshotCache ? await offlineSyncDb.pendingDeltas.get(opId) : undefined
+    const existing = summarySnapshotCache
+      ? await offlineSyncDb.pendingDeltas.get(opId)
+      : undefined
     await offlineSyncDb.pendingDeltas.delete(opId)
 
     if (summarySnapshotCache && existing) {
@@ -268,7 +327,9 @@ export const OfflineStorage = {
   },
 
   async getQueuedByIntent(intent: string) {
-    return offlineSyncDb.pendingDeltas.where({ intent, state: 'queued' }).toArray()
+    return offlineSyncDb.pendingDeltas
+      .where({ intent, state: 'queued' })
+      .toArray()
   },
 
   async getAllByIntent(intent: string) {
@@ -285,14 +346,21 @@ export const OfflineStorage = {
 
   async removePendingDeltas(opIds: string[]) {
     const existing = summarySnapshotCache
-      ? (await Promise.all(opIds.map((opId) => offlineSyncDb.pendingDeltas.get(opId)))).filter(Boolean)
+      ? (
+          await Promise.all(
+            opIds.map((opId) => offlineSyncDb.pendingDeltas.get(opId))
+          )
+        ).filter(Boolean)
       : []
 
     await offlineSyncDb.pendingDeltas.bulkDelete(opIds)
 
     if (summarySnapshotCache) {
       existing.forEach((delta) => {
-        queuePendingDeltaMutation(delta as PendingDeltaRecord<unknown>, undefined)
+        queuePendingDeltaMutation(
+          delta as PendingDeltaRecord<unknown>,
+          undefined
+        )
       })
     }
   },
@@ -311,31 +379,47 @@ export const OfflineStorage = {
   },
 
   async listConflictsByEntityType(entityType: string) {
-    return offlineSyncDb.conflictRecords.where({ entityType }).sortBy('createdAt')
+    return offlineSyncDb.conflictRecords
+      .where({ entityType })
+      .sortBy('createdAt')
   },
 
   async listOpenConflicts() {
-    return offlineSyncDb.conflictRecords.filter((conflict) => !conflict.resolvedAt).sortBy('createdAt')
+    return offlineSyncDb.conflictRecords
+      .filter((conflict) => !conflict.resolvedAt)
+      .sortBy('createdAt')
   },
 
   async getConflict(conflictId: string) {
     return offlineSyncDb.conflictRecords.get(conflictId)
   },
 
-  async markConflictResolved(conflictId: string, resolvedAt: string, resolvedStrategy: 'discard' | 'retry') {
-    const existing = summarySnapshotCache ? await offlineSyncDb.conflictRecords.get(conflictId) : undefined
+  async markConflictResolved(
+    conflictId: string,
+    resolvedAt: string,
+    resolvedStrategy: 'discard' | 'retry'
+  ) {
+    const existing = summarySnapshotCache
+      ? await offlineSyncDb.conflictRecords.get(conflictId)
+      : undefined
     await offlineSyncDb.conflictRecords.update(conflictId, {
       resolvedAt,
       resolvedStrategy,
     })
 
     if (summarySnapshotCache && existing) {
-      queueConflictMutation(existing, { ...existing, resolvedAt, resolvedStrategy })
+      queueConflictMutation(existing, {
+        ...existing,
+        resolvedAt,
+        resolvedStrategy,
+      })
     }
   },
 
   async removeConflict(conflictId: string) {
-    const existing = summarySnapshotCache ? await offlineSyncDb.conflictRecords.get(conflictId) : undefined
+    const existing = summarySnapshotCache
+      ? await offlineSyncDb.conflictRecords.get(conflictId)
+      : undefined
     await offlineSyncDb.conflictRecords.delete(conflictId)
 
     if (summarySnapshotCache && existing) {

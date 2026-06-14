@@ -22,7 +22,8 @@ export const piecework = {
     title: '计件规则',
     page: {
       headerTitle: '计件工价标准',
-      headerDescription: '统一管理{{levelName}}级计件单价基准，所有规则调整均进入受控追踪链路。',
+      headerDescription:
+        '统一管理{{levelName}}级计件单价基准，所有规则调整均进入受控追踪链路。',
       statusBadge: '审计跟踪中',
       searchPlaceholder: '搜索{{levelName}}名称、关联产品 SKU...',
       add: '新增工价标准',

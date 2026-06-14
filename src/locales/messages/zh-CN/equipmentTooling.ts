@@ -345,7 +345,8 @@ export const equipmentTooling = {
     },
     confirm: {
       return: '确认该模具已经运回并完成归还？',
-      createDescription: '正在登记模具流转记录，此操作将同步变更关联模具的库存状态，并开启时间窗追踪。',
+      createDescription:
+        '正在登记模具流转记录，此操作将同步变更关联模具的库存状态，并开启时间窗追踪。',
     },
     toast: {
       createdLend: '借出记录已创建',
@@ -422,7 +423,8 @@ export const equipmentTooling = {
         remarks: '填写改模记录或备注...',
       },
       warnings: {
-        unbindConfirm: '检测到资产解绑动作。该图纸将不再与模具关联，是否确认脱钩？',
+        unbindConfirm:
+          '检测到资产解绑动作。该图纸将不再与模具关联，是否确认脱钩？',
       },
       actions: {
         cancel: '取消',

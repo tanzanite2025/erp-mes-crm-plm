@@ -41,7 +41,10 @@ export function getExecutionTypeBadgeClass(type: RuleExecutionType) {
 
 export function getExecutionStatusBadgeClass(
   status: RuleExecutionStatus,
-  log?: Pick<RuleExecutionLog, 'executionType' | 'executionStatus' | 'errorMessage'>
+  log?: Pick<
+    RuleExecutionLog,
+    'executionType' | 'executionStatus' | 'errorMessage'
+  >
 ) {
   switch (status) {
     case 'success':
@@ -71,7 +74,10 @@ export function getExecutionTypeLabel(type: RuleExecutionType) {
 }
 
 export function isConfigurationPendingLog(
-  log: Pick<RuleExecutionLog, 'executionType' | 'executionStatus' | 'errorMessage'>
+  log: Pick<
+    RuleExecutionLog,
+    'executionType' | 'executionStatus' | 'errorMessage'
+  >
 ) {
   if (log.executionType !== 'notify' || log.executionStatus !== 'skipped') {
     return false
@@ -79,14 +85,18 @@ export function isConfigurationPendingLog(
 
   const readableError = getReadableExecutionError(log.errorMessage)
   return (
-    readableError === '当前规则未绑定通知内容模板，系统也没有可用的默认通知正文。' ||
+    readableError ===
+      '当前规则未绑定通知内容模板，系统也没有可用的默认通知正文。' ||
     readableError.startsWith('当前规则绑定的通知内容模板不存在：')
   )
 }
 
 export function getExecutionStatusLabel(
   status: RuleExecutionStatus,
-  log?: Pick<RuleExecutionLog, 'executionType' | 'executionStatus' | 'errorMessage'>
+  log?: Pick<
+    RuleExecutionLog,
+    'executionType' | 'executionStatus' | 'errorMessage'
+  >
 ) {
   switch (status) {
     case 'success':

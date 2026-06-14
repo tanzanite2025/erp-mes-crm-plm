@@ -47,6 +47,7 @@ type PurchaseLogisticsDialogFormValue = {
 ## Host Responsibilities
 
 The host dialog should continue to own:
+
 - open/close state
 - order selection
 - supplier display
@@ -54,6 +55,7 @@ The host dialog should continue to own:
 - success and error toast behavior
 
 scan-platform should own:
+
 - scan normalization
 - host context projection
 - draft patch generation

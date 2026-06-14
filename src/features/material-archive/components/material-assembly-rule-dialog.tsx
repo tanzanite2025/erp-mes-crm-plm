@@ -1,4 +1,6 @@
 import { ArrowRightLeft, Check, ChevronsUpDown, Settings2 } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -19,9 +21,11 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { useLanguage } from '@/context/language-provider'
-import { cn } from '@/lib/utils'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 import { type MaterialOption } from '../data/schema'
 import {
   buildPackagingRuleRelation,
@@ -70,7 +74,7 @@ export function MaterialAssemblyRuleDialog({
         <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 via-transparent' />
         <div className='relative max-h-[90vh] overflow-y-auto p-8'>
           <DialogHeader className='mb-8'>
-            <DialogTitle className='flex items-center gap-2 text-lg font-black italic tracking-tighter text-primary'>
+            <DialogTitle className='flex items-center gap-2 text-lg font-black tracking-tighter text-primary italic'>
               <Settings2 className='size-5' />
               {t('materialArchive.assemblyManager.dialog.title')}
             </DialogTitle>
@@ -84,7 +88,10 @@ export function MaterialAssemblyRuleDialog({
               <Label className='mb-2 block text-[10px] font-black tracking-widest text-muted-foreground/60'>
                 {t('materialArchive.assemblyManager.dialog.materialLabel')}
               </Label>
-              <Popover open={isComboboxOpen} onOpenChange={onComboboxOpenChange}>
+              <Popover
+                open={isComboboxOpen}
+                onOpenChange={onComboboxOpenChange}
+              >
                 <PopoverTrigger asChild>
                   <Button
                     variant='outline'
@@ -94,7 +101,9 @@ export function MaterialAssemblyRuleDialog({
                     <span className='truncate'>
                       {selectedMaterial
                         ? `${selectedMaterial.name} (${selectedMaterial.code})`
-                        : t('materialArchive.assemblyManager.dialog.materialPlaceholder')}
+                        : t(
+                            'materialArchive.assemblyManager.dialog.materialPlaceholder'
+                          )}
                     </span>
                     <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
                   </Button>
@@ -105,12 +114,16 @@ export function MaterialAssemblyRuleDialog({
                 >
                   <Command className='rounded-2xl'>
                     <CommandInput
-                      placeholder={t('materialArchive.assemblyManager.dialog.searchMaterialsPlaceholder')}
+                      placeholder={t(
+                        'materialArchive.assemblyManager.dialog.searchMaterialsPlaceholder'
+                      )}
                       className='h-12 border-none'
                     />
                     <CommandList className='max-h-[300px]'>
                       <CommandEmpty>
-                        {t('materialArchive.assemblyManager.dialog.noMaterialFound')}
+                        {t(
+                          'materialArchive.assemblyManager.dialog.noMaterialFound'
+                        )}
                       </CommandEmpty>
                       <CommandGroup>
                         {materialOptions.slice(0, 50).map((material) => (
@@ -122,7 +135,9 @@ export function MaterialAssemblyRuleDialog({
                           >
                             <div className='flex flex-col gap-1'>
                               <div className='flex items-center gap-2'>
-                                <span className='text-sm font-bold tracking-tight'>{material.name}</span>
+                                <span className='text-sm font-bold tracking-tight'>
+                                  {material.name}
+                                </span>
                                 {material.spec ? (
                                   <Badge
                                     variant='outline'
@@ -133,16 +148,21 @@ export function MaterialAssemblyRuleDialog({
                                 ) : null}
                               </div>
                               <span className='text-[10px] font-black tracking-widest text-muted-foreground/40'>
-                                {t('materialArchive.assemblyManager.dialog.materialMeta', {
-                                  code: material.code,
-                                  unit: material.uom,
-                                })}
+                                {t(
+                                  'materialArchive.assemblyManager.dialog.materialMeta',
+                                  {
+                                    code: material.code,
+                                    unit: material.uom,
+                                  }
+                                )}
                               </span>
                             </div>
                             <Check
                               className={cn(
                                 'h-4 w-4 text-primary transition-opacity',
-                                editingRule?.materialId === material.id ? 'opacity-100' : 'opacity-0'
+                                editingRule?.materialId === material.id
+                                  ? 'opacity-100'
+                                  : 'opacity-0'
                               )}
                             />
                           </CommandItem>
@@ -168,7 +188,9 @@ export function MaterialAssemblyRuleDialog({
                   </Label>
                   <Input
                     id='packUnit'
-                    placeholder={t('materialArchive.assemblyManager.dialog.packUnitPlaceholder')}
+                    placeholder={t(
+                      'materialArchive.assemblyManager.dialog.packUnitPlaceholder'
+                    )}
                     className='h-12 rounded-2xl border-none bg-muted/50 font-bold shadow-sm'
                     value={editingRule?.packUnit || ''}
                     onChange={(event) => onPackUnitChange(event.target.value)}
@@ -185,7 +207,7 @@ export function MaterialAssemblyRuleDialog({
                     id='baseUnit'
                     readOnly
                     disabled
-                    className='h-12 rounded-2xl border-none bg-muted/20 font-mono font-black italic text-primary/30'
+                    className='h-12 rounded-2xl border-none bg-muted/20 font-mono font-black text-primary/30 italic'
                     value={editingRule?.baseUnit || ''}
                   />
                 </div>
@@ -226,7 +248,9 @@ export function MaterialAssemblyRuleDialog({
                   <div className='relative flex-[1.5] overflow-hidden rounded-[24px] border border-dashed border-primary/10 bg-primary/5 p-5 shadow-inner'>
                     <div className='flex flex-col items-center justify-center'>
                       <span className='mb-3 text-[10px] font-black tracking-widest text-muted-foreground/50'>
-                        {t('materialArchive.assemblyManager.dialog.previewTitle')}
+                        {t(
+                          'materialArchive.assemblyManager.dialog.previewTitle'
+                        )}
                       </span>
                       <div className='flex items-center gap-4'>
                         {editingRule?.direction !== 'reverse' ? (
@@ -234,9 +258,12 @@ export function MaterialAssemblyRuleDialog({
                             <span className='text-xl font-black tracking-tighter text-primary'>
                               1 {editingRule?.packUnit || '?'}
                             </span>
-                            <span className='text-xs font-black text-muted-foreground/30'>=</span>
+                            <span className='text-xs font-black text-muted-foreground/30'>
+                              =
+                            </span>
                             <span className='text-xl font-black tracking-tighter'>
-                              {editingRule?.conversionFactor || '?'} {editingRule?.baseUnit || '?'}
+                              {editingRule?.conversionFactor || '?'}{' '}
+                              {editingRule?.baseUnit || '?'}
                             </span>
                           </>
                         ) : (
@@ -244,9 +271,12 @@ export function MaterialAssemblyRuleDialog({
                             <span className='text-xl font-black tracking-tighter text-primary'>
                               1 {editingRule?.baseUnit || '?'}
                             </span>
-                            <span className='text-xs font-black text-muted-foreground/30'>=</span>
+                            <span className='text-xs font-black text-muted-foreground/30'>
+                              =
+                            </span>
                             <span className='text-xl font-black tracking-tighter'>
-                              {editingRule?.conversionFactor || '?'} {editingRule?.packUnit || '?'}
+                              {editingRule?.conversionFactor || '?'}{' '}
+                              {editingRule?.packUnit || '?'}
                             </span>
                           </>
                         )}
@@ -256,13 +286,18 @@ export function MaterialAssemblyRuleDialog({
                 </div>
                 <div className='rounded-2xl border border-dashed border-rose-500/10 bg-rose-500/5 p-4'>
                   <p className='flex items-center gap-2 text-[10px] font-black tracking-widest text-rose-600'>
-                    <span className='size-2 rounded-full bg-rose-500 animate-pulse' />
-                    {t('materialArchive.assemblyManager.dialog.verificationRequired')}
+                    <span className='size-2 animate-pulse rounded-full bg-rose-500' />
+                    {t(
+                      'materialArchive.assemblyManager.dialog.verificationRequired'
+                    )}
                   </p>
-                  <p className='ml-4 mt-2 text-[10px] font-bold text-muted-foreground'>
-                    {t('materialArchive.assemblyManager.dialog.currentRelation', {
-                      relation: buildPackagingRuleRelation(editingRule),
-                    })}
+                  <p className='mt-2 ml-4 text-[10px] font-bold text-muted-foreground'>
+                    {t(
+                      'materialArchive.assemblyManager.dialog.currentRelation',
+                      {
+                        relation: buildPackagingRuleRelation(editingRule),
+                      }
+                    )}
                   </p>
                 </div>
               </div>
@@ -282,7 +317,7 @@ export function MaterialAssemblyRuleDialog({
           <Button
             type='button'
             disabled={isSubmitting}
-            className='h-12 flex-1 rounded-full bg-primary text-[10px] font-black tracking-widest text-primary-foreground shadow-lg shadow-primary/20 transition-all active:scale-95 hover:bg-primary/90'
+            className='h-12 flex-1 rounded-full bg-primary text-[10px] font-black tracking-widest text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 active:scale-95'
             onClick={onConfirm}
           >
             {t('materialArchive.assemblyManager.dialog.confirm')}

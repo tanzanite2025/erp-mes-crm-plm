@@ -1,7 +1,10 @@
-import { SmartphoneCharging } from 'lucide-react'
 import type { TranslationKey } from '@/locales'
+import { SmartphoneCharging } from 'lucide-react'
 
-type TranslateFn = (key: TranslationKey, params?: Record<string, string | number>) => string
+type TranslateFn = (
+  key: TranslationKey,
+  params?: Record<string, string | number>
+) => string
 
 export function getPdaCategories(t: TranslateFn) {
   return [
@@ -11,19 +14,27 @@ export function getPdaCategories(t: TranslateFn) {
       icon: SmartphoneCharging,
       items: [
         {
-          title: t('terminalConfig.resources.pda.workTerminals.items.browserShell.title'),
+          title: t(
+            'terminalConfig.resources.pda.workTerminals.items.browserShell.title'
+          ),
           version: t('terminalConfig.resources.common.placeholderVersion'),
           target: t('terminalConfig.resources.common.androidPda'),
           packageType: t('terminalConfig.resources.common.terminalPackage'),
-          note: t('terminalConfig.resources.pda.workTerminals.items.browserShell.note'),
+          note: t(
+            'terminalConfig.resources.pda.workTerminals.items.browserShell.note'
+          ),
           status: 'pendingUpload',
         },
         {
-          title: t('terminalConfig.resources.pda.workTerminals.items.offlineGuide.title'),
+          title: t(
+            'terminalConfig.resources.pda.workTerminals.items.offlineGuide.title'
+          ),
           version: t('terminalConfig.resources.common.placeholderVersion'),
           target: t('terminalConfig.resources.common.androidPda'),
           packageType: t('terminalConfig.resources.common.operationManual'),
-          note: t('terminalConfig.resources.pda.workTerminals.items.offlineGuide.note'),
+          note: t(
+            'terminalConfig.resources.pda.workTerminals.items.offlineGuide.note'
+          ),
           status: 'planned',
         },
       ],

@@ -1,9 +1,9 @@
+import { failLoudly } from '@/lib/safe-catch'
 import {
   engineeringSpecService,
   type EngineeringSpec,
   type EngineeringSpecInput,
 } from '@/features/engineering/services/engineering-spec-service'
-import { failLoudly } from '@/lib/safe-catch'
 import {
   DEFAULT_WEAVING_MODE_PRESETS,
   WEAVING_MODE_SPEC_TYPE,
@@ -11,7 +11,10 @@ import {
   type WeavingModeDraft,
   weavingModeSchema,
 } from '../data/weaving-mode-schema'
-import { normalizeWeavingRatio, sortWeavingModes } from '../data/weaving-mode-utils'
+import {
+  normalizeWeavingRatio,
+  sortWeavingModes,
+} from '../data/weaving-mode-utils'
 
 function toWeavingMode(item: EngineeringSpec): WeavingMode {
   const specData = item.specData ?? {}
@@ -25,7 +28,9 @@ function toWeavingMode(item: EngineeringSpec): WeavingMode {
     label: String(specData.label ?? normalized.label),
     ratioNumerator: normalized.normalizedNumerator,
     ratioDenominator: normalized.normalizedDenominator,
-    normalizedRatioKey: String(specData.normalizedRatioKey ?? normalized.normalizedRatioKey),
+    normalizedRatioKey: String(
+      specData.normalizedRatioKey ?? normalized.normalizedRatioKey
+    ),
     description: String(specData.description ?? item.description ?? ''),
     active: Boolean(specData.active ?? item.active),
     isSystemPreset: Boolean(specData.isSystemPreset ?? false),
@@ -48,14 +53,18 @@ async function listRawWeavingModeSpecs() {
 }
 
 function parseWeavingModes(items: EngineeringSpec[]) {
-  return sortWeavingModes(items.reduce<WeavingMode[]>((acc, item) => {
-    try {
-      acc.push(toWeavingMode(item))
-    } catch (error) {
-      failLoudly(error, 'weavingModeService.parseWeavingModes', { silentUI: true })
-    }
-    return acc
-  }, []))
+  return sortWeavingModes(
+    items.reduce<WeavingMode[]>((acc, item) => {
+      try {
+        acc.push(toWeavingMode(item))
+      } catch (error) {
+        failLoudly(error, 'weavingModeService.parseWeavingModes', {
+          silentUI: true,
+        })
+      }
+      return acc
+    }, [])
+  )
 }
 
 async function loadWeavingModes() {
@@ -65,23 +74,32 @@ async function loadWeavingModes() {
 
 async function saveWeavingModeDraft(
   draft: WeavingModeDraft,
-  existingItems?: WeavingMode[],
+  existingItems?: WeavingMode[]
 ): Promise<WeavingMode> {
   const items = existingItems ?? (await loadWeavingModes())
-  const current = draft.id ? items.find((item) => item.id === draft.id) : undefined
-  const normalized = normalizeWeavingRatio(draft.ratioNumerator, draft.ratioDenominator)
+  const current = draft.id
+    ? items.find((item) => item.id === draft.id)
+    : undefined
+  const normalized = normalizeWeavingRatio(
+    draft.ratioNumerator,
+    draft.ratioDenominator
+  )
   const duplicated = items.find(
-    (item) => item.id !== draft.id && item.normalizedRatioKey === normalized.normalizedRatioKey,
+    (item) =>
+      item.id !== draft.id &&
+      item.normalizedRatioKey === normalized.normalizedRatioKey
   )
 
   if (duplicated) {
     throw new Error('Duplicated weaving mode')
   }
 
-  const sortOrder = current?.sortOrder ?? draft.sortOrder ?? getNextSortOrder(items)
+  const sortOrder =
+    current?.sortOrder ?? draft.sortOrder ?? getNextSortOrder(items)
   const description = draft.description?.trim() || ''
   const active = draft.active
-  const isSystemPreset = current?.isSystemPreset ?? draft.isSystemPreset ?? false
+  const isSystemPreset =
+    current?.isSystemPreset ?? draft.isSystemPreset ?? false
 
   const payload: EngineeringSpecInput = {
     id: draft.id,
@@ -118,7 +136,7 @@ export const weavingModeService = {
     const created = await Promise.all(
       DEFAULT_WEAVING_MODE_PRESETS.map(async (preset) => {
         return saveWeavingModeDraft(preset, [])
-      }),
+      })
     )
 
     return sortWeavingModes(created)

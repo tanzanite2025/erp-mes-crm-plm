@@ -20,7 +20,11 @@ export interface ProductPackagingOption {
 }
 
 export const ProductCoreService = {
-  async getProducts(params?: { isOptions?: boolean; page?: number; pageSize?: number }): Promise<Product[]> {
+  async getProducts(params?: {
+    isOptions?: boolean
+    page?: number
+    pageSize?: number
+  }): Promise<Product[]> {
     const useOptions = params?.isOptions ?? !params?.page
     let qs = ''
 
@@ -33,11 +37,16 @@ export const ProductCoreService = {
     if (useOptions) {
       const res = await apiFetch<ProductApiDTO[]>(`/engineering/products${qs}`)
       return toProductOptionsArrayContract(
-        ensureArrayResponse<ProductApiDTO>(res, 'ProductCoreService.getProducts.options')
+        ensureArrayResponse<ProductApiDTO>(
+          res,
+          'ProductCoreService.getProducts.options'
+        )
       )
     }
 
-    const res = await apiFetch<ProductListPageApiDTO>(`/engineering/products${qs}`)
+    const res = await apiFetch<ProductListPageApiDTO>(
+      `/engineering/products${qs}`
+    )
     return toProductListContract(
       ensureObjectResponse<ProductListPageApiDTO & Record<string, unknown>>(
         res,
@@ -47,14 +56,21 @@ export const ProductCoreService = {
   },
 
   async getAuthoritativeProducts(): Promise<Product[]> {
-    const res = await apiFetch<ProductApiDTO[]>('/engineering/products?options=true')
+    const res = await apiFetch<ProductApiDTO[]>(
+      '/engineering/products?options=true'
+    )
     return toProductArrayContract(
-      ensureArrayResponse<ProductApiDTO>(res, 'ProductCoreService.getAuthoritativeProducts')
+      ensureArrayResponse<ProductApiDTO>(
+        res,
+        'ProductCoreService.getAuthoritativeProducts'
+      )
     )
   },
 
   async getProductPackagingOptions(): Promise<ProductPackagingOption[]> {
-    const res = await apiFetch<ProductApiDTO[]>('/engineering/products?options=true')
+    const res = await apiFetch<ProductApiDTO[]>(
+      '/engineering/products?options=true'
+    )
     return ensureArrayResponse<ProductApiDTO>(
       res,
       'ProductCoreService.getProductPackagingOptions'
@@ -77,10 +93,9 @@ export const ProductCoreService = {
     const res = await apiFetch<ProductNextCodeApiDTO>(
       `/engineering/products/next-code?typeId=${typeId}`
     )
-    const data = ensureObjectResponse<ProductNextCodeApiDTO & Record<string, unknown>>(
-      res,
-      'ProductCoreService.getNextCode'
-    ) as ProductNextCodeApiDTO
+    const data = ensureObjectResponse<
+      ProductNextCodeApiDTO & Record<string, unknown>
+    >(res, 'ProductCoreService.getNextCode') as ProductNextCodeApiDTO
     return data.nextCode
   },
 }

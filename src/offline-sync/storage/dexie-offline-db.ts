@@ -1,5 +1,10 @@
 import Dexie, { type EntityTable } from 'dexie'
-import type { OfflineConflictRecord, OfflineEntitySnapshot, OfflineSyncMeta, PendingDeltaRecord } from '../types/offline-sync'
+import type {
+  OfflineConflictRecord,
+  OfflineEntitySnapshot,
+  OfflineSyncMeta,
+  PendingDeltaRecord,
+} from '../types/offline-sync'
 
 export type OfflineSnapshotRow = OfflineEntitySnapshot<unknown> & {
   key: string
@@ -36,14 +41,16 @@ class XdfcOfflineSyncDexieDb extends Dexie {
       snapshots: 'key, entityType, entityId, syncedAt',
       pendingDeltas: PENDING_DELTA_STORE_V2,
       syncMeta: 'key, entityType, entityId, queueState, lastSyncAt',
-      conflictRecords: 'key, conflictId, opId, [entityType+entityId], entityType, entityId, createdAt, resolvedAt, reason',
+      conflictRecords:
+        'key, conflictId, opId, [entityType+entityId], entityType, entityId, createdAt, resolvedAt, reason',
     })
 
     this.version(3).stores({
       snapshots: 'key, entityType, entityId, syncedAt',
       pendingDeltas: PENDING_DELTA_STORE_V3,
       syncMeta: 'key, entityType, entityId, queueState, lastSyncAt',
-      conflictRecords: 'key, conflictId, opId, [entityType+entityId], entityType, entityId, createdAt, resolvedAt, reason',
+      conflictRecords:
+        'key, conflictId, opId, [entityType+entityId], entityType, entityId, createdAt, resolvedAt, reason',
     })
   }
 }

@@ -187,10 +187,15 @@ export function getTargetEntity(type: RuleExecutionEvent['type']) {
 export function getTargetSourceCode(event: RuleExecutionEvent) {
   if (event.sourceCode) return event.sourceCode
 
-  const metadataSourceCode = getMetadataString(event.metadata || {}, 'sourceCode')
+  const metadataSourceCode = getMetadataString(
+    event.metadata || {},
+    'sourceCode'
+  )
   if (metadataSourceCode) return metadataSourceCode
 
-  const candidateCodes = getBusinessEventSourceCodesByNotificationType(event.type)
+  const candidateCodes = getBusinessEventSourceCodesByNotificationType(
+    event.type
+  )
   return candidateCodes[0] ?? 'SALES_ORDER'
 }
 

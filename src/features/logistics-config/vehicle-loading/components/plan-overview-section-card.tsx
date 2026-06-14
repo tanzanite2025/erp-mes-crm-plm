@@ -6,5 +6,11 @@ type Props = {
 }
 
 export function PlanOverviewSectionCard({ className = '', children }: Props) {
-  return <Card className={`rounded-[24px] border border-dashed border-border/55 shadow-none px-5 py-4 ${className}`}>{children}</Card>
+  return (
+    <Card
+      className={`rounded-[24px] border border-dashed border-border/55 px-5 py-4 shadow-none ${className}`}
+    >
+      {children}
+    </Card>
+  )
 }

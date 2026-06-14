@@ -1,8 +1,11 @@
-import { type User } from '../data/schema'
-import { type CreateUserPayload, type UserReplacePayload } from '../services/user-api'
-import { type UserForm } from './users-action-dialog.shared'
 import { trackDelta } from '@/lib/delta/proxy-tracker'
 import { type DeltaSet } from '@/lib/delta/types'
+import { type User } from '../data/schema'
+import {
+  type CreateUserPayload,
+  type UserReplacePayload,
+} from '../services/user-api'
+import { type UserForm } from './users-action-dialog.shared'
 
 /**
  * 使用 ProxyTracker 构建局部更新的 Delta 载荷
@@ -12,16 +15,16 @@ export function buildUserDelta(params: {
   values: UserForm
 }): DeltaSet {
   const { currentRow, values } = params
-  
+
   const tracker = trackDelta(currentRow)
   const draft = tracker.data as User
-  
+
   draft.username = values.username.trim()
   draft.phoneNumber = values.phoneNumber?.trim() || ''
   draft.firstName = values.firstName.trim()
   draft.lastName = values.lastName.trim()
   draft.role = values.role?.trim() || ''
-  
+
   if (values.password && values.password.trim()) {
     draft.password = values.password.trim()
   }

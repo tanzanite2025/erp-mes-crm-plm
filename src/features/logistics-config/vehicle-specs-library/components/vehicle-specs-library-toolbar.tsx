@@ -1,7 +1,7 @@
 import { RefreshCw, Search } from 'lucide-react'
+import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useLanguage } from '@/context/language-provider'
 
 type Props = {
   search: string
@@ -10,7 +10,12 @@ type Props = {
   totalCount: number
 }
 
-export function VehicleSpecsLibraryToolbar({ search, onSearchChange, onRefresh, totalCount }: Props) {
+export function VehicleSpecsLibraryToolbar({
+  search,
+  onSearchChange,
+  onRefresh,
+  totalCount,
+}: Props) {
   const { t } = useLanguage()
 
   return (
@@ -18,7 +23,7 @@ export function VehicleSpecsLibraryToolbar({ search, onSearchChange, onRefresh, 
       <div className='flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between'>
         <div className='flex flex-1 flex-col gap-3 sm:flex-row sm:items-center'>
           <div className='relative w-full max-w-xl'>
-            <Search className='pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground' />
+            <Search className='pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground' />
             <Input
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
@@ -26,11 +31,17 @@ export function VehicleSpecsLibraryToolbar({ search, onSearchChange, onRefresh, 
               className='h-10 rounded-xl border-border/70 bg-background pl-9 text-[13px]'
             />
           </div>
-          <div className='uds-chip whitespace-nowrap text-[10px]'>{`${t('common.labels.nodes')} ${totalCount}`}</div>
+          <div className='uds-chip text-[10px] whitespace-nowrap'>{`${t('common.labels.nodes')} ${totalCount}`}</div>
         </div>
 
         <div className='flex items-center gap-2 self-start xl:self-auto'>
-          <Button type='button' variant='outline' size='sm' onClick={onRefresh} className='h-10 gap-2 rounded-xl px-4 text-[10px] font-black uppercase tracking-[0.2em]'>
+          <Button
+            type='button'
+            variant='outline'
+            size='sm'
+            onClick={onRefresh}
+            className='h-10 gap-2 rounded-xl px-4 text-[10px] font-black tracking-[0.2em] uppercase'
+          >
             <RefreshCw className='size-4' />
             {t('common.actions.refresh')}
           </Button>

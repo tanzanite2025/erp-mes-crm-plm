@@ -29,13 +29,31 @@ export function LanguageSwitch() {
         align='end'
         sideOffset={10}
       >
-        <DropdownMenuItem className='rounded-2xl px-3 py-3 text-[12px] font-black tracking-tight text-foreground focus:bg-primary/5 focus:text-foreground' onClick={() => setLocale('zh-CN')}>
+        <DropdownMenuItem
+          className='rounded-2xl px-3 py-3 text-[12px] font-black tracking-tight text-foreground focus:bg-primary/5 focus:text-foreground'
+          onClick={() => setLocale('zh-CN')}
+        >
           {t('common.language.zhCN')}
-          <Check size={14} className={cn('ms-auto text-primary', locale !== 'zh-CN' && 'hidden')} />
+          <Check
+            size={14}
+            className={cn(
+              'ms-auto text-primary',
+              locale !== 'zh-CN' && 'hidden'
+            )}
+          />
         </DropdownMenuItem>
-        <DropdownMenuItem className='rounded-2xl px-3 py-3 text-[12px] font-black tracking-tight text-foreground focus:bg-primary/5 focus:text-foreground' onClick={() => setLocale('en-US')}>
+        <DropdownMenuItem
+          className='rounded-2xl px-3 py-3 text-[12px] font-black tracking-tight text-foreground focus:bg-primary/5 focus:text-foreground'
+          onClick={() => setLocale('en-US')}
+        >
           {t('common.language.enUS')}
-          <Check size={14} className={cn('ms-auto text-primary', locale !== 'en-US' && 'hidden')} />
+          <Check
+            size={14}
+            className={cn(
+              'ms-auto text-primary',
+              locale !== 'en-US' && 'hidden'
+            )}
+          />
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

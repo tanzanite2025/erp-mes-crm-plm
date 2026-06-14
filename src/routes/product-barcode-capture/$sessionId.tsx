@@ -1,5 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
+import { createFileRoute } from '@tanstack/react-router'
 import { ProductBarcodeMobileCapturePage } from '@/features/cutting-operations/tabs/product-binding/pages/product-barcode-mobile-capture-page'
 
 const searchSchema = z.object({

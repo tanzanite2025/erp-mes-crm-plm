@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { BasicSettings } from '@/features/basic-settings'
 import { ensureAuthenticatedRouteSession } from '@/features/authz/guards/ensure-authenticated-route-session'
+import { BasicSettings } from '@/features/basic-settings'
 
 export const Route = createFileRoute('/_authenticated/basic-settings')({
   beforeLoad: async ({ location }) => {

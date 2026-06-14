@@ -7,12 +7,15 @@ import {
   type BusinessEventSourceItemChangeKind,
   type BusinessEventSourceRemovedItemSummary,
 } from './business-event-source-card-diff'
-import { readonlyFieldClass, rowToneClass } from './business-event-source-card-shared'
 import {
   EditableList,
   IconDeleteButton,
   ItemChangeBadge,
 } from './business-event-source-card-primitives'
+import {
+  readonlyFieldClass,
+  rowToneClass,
+} from './business-event-source-card-shared'
 
 interface BusinessEventSourceResolverSectionProps {
   resolvers: BusinessEventSource['config']['dynamicResolvers']
@@ -137,7 +140,8 @@ export function BusinessEventSourceResolverSection({
                 onChange={(event) =>
                   onTypeChange(
                     index,
-                    event.target.value as BusinessEventSource['config']['dynamicResolvers'][number]['type']
+                    event.target
+                      .value as BusinessEventSource['config']['dynamicResolvers'][number]['type']
                   )
                 }
                 className={cn(

@@ -1,5 +1,5 @@
-import type { RoutePermissionEntry } from './route-permissions-generator'
 import { getRoutePermissionEntries } from './route-permission-registry'
+import type { RoutePermissionEntry } from './route-permissions-generator'
 
 function normalizePath(path: string): string {
   const normalized = path.replace(/\/+$/g, '').replace(/\/+/g, '/')
@@ -10,7 +10,10 @@ function splitPath(path: string): string[] {
   return normalizePath(path).split('/').filter(Boolean)
 }
 
-export function matchesRoutePermissionPattern(targetPath: string, routePattern: string): boolean {
+export function matchesRoutePermissionPattern(
+  targetPath: string,
+  routePattern: string
+): boolean {
   const targetSegments = splitPath(targetPath)
   const patternSegments = splitPath(routePattern)
 
@@ -27,12 +30,19 @@ export function matchesRoutePermissionPattern(targetPath: string, routePattern: 
   })
 }
 
-export function findRoutePermissionEntry(path: string): RoutePermissionEntry | undefined {
+export function findRoutePermissionEntry(
+  path: string
+): RoutePermissionEntry | undefined {
   const normalizedPath = normalizePath(path)
-  return getRoutePermissionEntries().find((entry) => matchesRoutePermissionPattern(normalizedPath, entry.path))
+  return getRoutePermissionEntries().find((entry) =>
+    matchesRoutePermissionPattern(normalizedPath, entry.path)
+  )
 }
 
-export function resolveRoutePermissionIds(path: string, strictTab = false): string[] {
+export function resolveRoutePermissionIds(
+  path: string,
+  strictTab = false
+): string[] {
   const routeEntry = findRoutePermissionEntry(path)
   if (!routeEntry) {
     return []

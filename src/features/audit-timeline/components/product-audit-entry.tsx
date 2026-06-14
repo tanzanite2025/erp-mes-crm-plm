@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
-import { Badge } from '@/components/ui/badge'
 import { useLanguage } from '@/context/language-provider'
+import { Badge } from '@/components/ui/badge'
 import {
   type Product,
   type ProductAttributeCategory,
@@ -10,20 +10,24 @@ import {
 } from '@/features/engineering/data/schema'
 import { resolveProductDisplayV2 } from '@/features/engineering/display/product-display-v2'
 import { resolveProductDisplayMetadataV2 } from '@/features/engineering/display/product-display-v2-metadata'
-import {
-  AuditEntryColumnCard,
-  AuditEntryColumns,
-  AuditEntryShell,
-  AuditEntrySummaryList,
-} from './audit-entry-shell'
 import type { AuditLog } from '../types'
 import {
   buildProductAuditSummary,
   buildProductStructuredDiffRows,
   formatProductAuditDisplayText,
 } from '../utils/product-audit'
+import {
+  AuditEntryColumnCard,
+  AuditEntryColumns,
+  AuditEntryShell,
+  AuditEntrySummaryList,
+} from './audit-entry-shell'
 
-function formatProductFieldLabel(field: string, alias: string, locale: string): string {
+function formatProductFieldLabel(
+  field: string,
+  alias: string,
+  locale: string
+): string {
   switch (field) {
     case 'name':
       return locale === 'zh-CN' ? '产品名称' : 'Product Name'
@@ -79,10 +83,17 @@ function formatProductFieldLabel(field: string, alias: string, locale: string): 
 }
 
 function EmptyText({ text }: { text: string }) {
-  return <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{text}</span>
+  return (
+    <span className='text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
+      {text}
+    </span>
+  )
 }
 
-function getLocalizedCategoryName(locale: string, category?: ProductAttributeCategory): string {
+function getLocalizedCategoryName(
+  locale: string,
+  category?: ProductAttributeCategory
+): string {
   if (!category) {
     return '—'
   }
@@ -94,7 +105,10 @@ function getLocalizedCategoryName(locale: string, category?: ProductAttributeCat
   return category.nameZh || category.nameEn || category.key || '—'
 }
 
-function getLocalizedOptionLabel(locale: string, option?: ProductAttributeOption): string {
+function getLocalizedOptionLabel(
+  locale: string,
+  option?: ProductAttributeOption
+): string {
   if (!option) {
     return '—'
   }
@@ -110,7 +124,7 @@ function resolveStructuredRowLabel(
   field: string,
   rowKey: string,
   locale: string,
-  categoriesByKey: ReadonlyMap<string, ProductAttributeCategory>,
+  categoriesByKey: ReadonlyMap<string, ProductAttributeCategory>
 ): string {
   if (field === 'attributeValues') {
     return getLocalizedCategoryName(locale, categoriesByKey.get(rowKey))
@@ -132,14 +146,17 @@ function resolveStructuredRowValue(
   rawValue: string,
   locale: string,
   optionsByCategoryAndValue: ReadonlyMap<string, ProductAttributeOption>,
-  categoryKey?: string,
+  categoryKey?: string
 ): string {
   if (rawValue === '—') {
     return rawValue
   }
 
   if (field === 'attributeValues' && categoryKey) {
-    return getLocalizedOptionLabel(locale, optionsByCategoryAndValue.get(`${categoryKey}::${rawValue}`))
+    return getLocalizedOptionLabel(
+      locale,
+      optionsByCategoryAndValue.get(`${categoryKey}::${rawValue}`)
+    )
   }
 
   return rawValue
@@ -165,43 +182,62 @@ export function ProductAuditEntry({
   const { locale, t } = useLanguage()
   const summary = useMemo(() => buildProductAuditSummary(log), [log])
   const categoriesByKey = useMemo(
-    () => new Map(attributeCategories.map((category) => [category.key, category])),
-    [attributeCategories],
+    () =>
+      new Map(attributeCategories.map((category) => [category.key, category])),
+    [attributeCategories]
   )
   const optionsByCategoryAndValue = useMemo(
-    () => new Map(attributeOptions.map((option) => [`${option.categoryKey}::${option.value}`, option])),
-    [attributeOptions],
+    () =>
+      new Map(
+        attributeOptions.map((option) => [
+          `${option.categoryKey}::${option.value}`,
+          option,
+        ])
+      ),
+    [attributeOptions]
   )
   const productsById = useMemo(
     () => new Map(products.map((product) => [product.id, product])),
-    [products],
+    [products]
   )
   const targetProduct = productsById.get(log.target_id)
   const displayMetadataV2 = useMemo(
-    () => targetProduct
-      ? resolveProductDisplayMetadataV2({
-          locale,
-          product: targetProduct,
-          templates: productTemplates,
-          productTypes,
-          categories: attributeCategories,
-          options: attributeOptions,
-        })
-      : null,
-    [attributeCategories, attributeOptions, locale, productTemplates, productTypes, targetProduct],
+    () =>
+      targetProduct
+        ? resolveProductDisplayMetadataV2({
+            locale,
+            product: targetProduct,
+            templates: productTemplates,
+            productTypes,
+            categories: attributeCategories,
+            options: attributeOptions,
+          })
+        : null,
+    [
+      attributeCategories,
+      attributeOptions,
+      locale,
+      productTemplates,
+      productTypes,
+      targetProduct,
+    ]
   )
-  const displayProjectionV2 = displayMetadataV2?.projection
-    ?? (targetProduct
+  const displayProjectionV2 =
+    displayMetadataV2?.projection ??
+    (targetProduct
       ? resolveProductDisplayV2({
           locale,
           product: targetProduct,
         })
       : null)
-  const targetDisplayName = displayProjectionV2?.title
-    || summary.targetName
-    || log.target_id
-    || (locale === 'zh-CN' ? '未命名产品' : 'Unnamed Product')
-  const v2SummaryItems = displayMetadataV2?.projection?.summaryItems.filter((item) => !item.empty) ?? []
+  const targetDisplayName =
+    displayProjectionV2?.title ||
+    summary.targetName ||
+    log.target_id ||
+    (locale === 'zh-CN' ? '未命名产品' : 'Unnamed Product')
+  const v2SummaryItems =
+    displayMetadataV2?.projection?.summaryItems.filter((item) => !item.empty) ??
+    []
   const summaryItems = [
     {
       label: locale === 'zh-CN' ? '产品对象' : 'Product',
@@ -232,14 +268,21 @@ export function ProductAuditEntry({
       value: log.ip || '—',
     },
   ]
-  const changedFieldBadges = [...summary.basicChanges, ...summary.structuredChanges].slice(0, 8)
-  const emptyText = locale === 'zh-CN' ? '暂无可展示变更' : 'No changes to display'
+  const changedFieldBadges = [
+    ...summary.basicChanges,
+    ...summary.structuredChanges,
+  ].slice(0, 8)
+  const emptyText =
+    locale === 'zh-CN' ? '暂无可展示变更' : 'No changes to display'
   const structuredChangeGroups = useMemo(
-    () => summary.structuredChanges.map((change) => ({
-      change,
-      rows: buildProductStructuredDiffRows(change),
-    })).filter((item) => item.rows.length > 0),
-    [summary.structuredChanges],
+    () =>
+      summary.structuredChanges
+        .map((change) => ({
+          change,
+          rows: buildProductStructuredDiffRows(change),
+        }))
+        .filter((item) => item.rows.length > 0),
+    [summary.structuredChanges]
   )
 
   return (
@@ -249,22 +292,24 @@ export function ProductAuditEntry({
       createdAt={log.created_at}
       targetLabel={locale === 'zh-CN' ? '产品' : 'Product'}
       targetValue={targetDisplayName}
-      headerBadges={(
+      headerBadges={
         <>
           <Badge
             variant='outline'
             className='rounded-full border-dashed border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-black tracking-tight text-slate-800'
           >
-            {t('common.audit.product.scalarBadge')} {summary.basicChanges.length}
+            {t('common.audit.product.scalarBadge')}{' '}
+            {summary.basicChanges.length}
           </Badge>
           <Badge
             variant='outline'
             className='rounded-full border-dashed border-indigo-500/20 bg-indigo-500/5 px-2.5 py-1 text-[10px] font-black tracking-tight text-indigo-700'
           >
-            {t('common.audit.product.structuredBadge')} {summary.structuredChanges.length}
+            {t('common.audit.product.structuredBadge')}{' '}
+            {summary.structuredChanges.length}
           </Badge>
         </>
-      )}
+      }
     >
       <AuditEntryColumns>
         <AuditEntryColumnCard
@@ -274,29 +319,35 @@ export function ProductAuditEntry({
         >
           {summary.basicChanges.length > 0 ? (
             summary.basicChanges.map((item) => (
-              <div key={`${item.field}-${item.alias}`} className='rounded-2xl border border-dashed bg-background p-3'>
+              <div
+                key={`${item.field}-${item.alias}`}
+                className='rounded-2xl border border-dashed bg-background p-3'
+              >
                 <div className='flex items-center justify-between gap-2'>
                   <div className='text-[10px] font-black tracking-tight text-slate-800'>
                     {formatProductFieldLabel(item.field, item.alias, locale)}
                   </div>
-                  <Badge variant='outline' className='rounded-full border-dashed bg-white text-[8px] font-mono text-slate-600'>
+                  <Badge
+                    variant='outline'
+                    className='rounded-full border-dashed bg-white font-mono text-[8px] text-slate-600'
+                  >
                     {item.field}
                   </Badge>
                 </div>
                 <div className='mt-2 grid grid-cols-1 gap-2'>
                   <div className='rounded-xl border border-dashed border-destructive/10 bg-destructive/5 p-2'>
-                    <div className='text-[7px] font-black uppercase tracking-widest text-destructive/60'>
+                    <div className='text-[7px] font-black tracking-widest text-destructive/60 uppercase'>
                       {t('common.audit.before')}
                     </div>
-                    <div className='mt-1 break-all text-[10px] font-mono text-destructive'>
+                    <div className='mt-1 font-mono text-[10px] break-all text-destructive'>
                       {formatProductAuditDisplayText(item.before)}
                     </div>
                   </div>
                   <div className='rounded-xl border border-dashed border-emerald-500/10 bg-emerald-500/5 p-2'>
-                    <div className='text-[7px] font-black uppercase tracking-widest text-emerald-700/60'>
+                    <div className='text-[7px] font-black tracking-widest text-emerald-700/60 uppercase'>
                       {t('common.audit.after')}
                     </div>
-                    <div className='mt-1 break-all text-[10px] font-mono text-emerald-700'>
+                    <div className='mt-1 font-mono text-[10px] break-all text-emerald-700'>
                       {formatProductAuditDisplayText(item.after)}
                     </div>
                   </div>
@@ -309,42 +360,74 @@ export function ProductAuditEntry({
         </AuditEntryColumnCard>
 
         <AuditEntryColumnCard
-          title={locale === 'zh-CN' ? '属性与配置变更' : 'Attribute & Config Changes'}
+          title={
+            locale === 'zh-CN' ? '属性与配置变更' : 'Attribute & Config Changes'
+          }
           count={structuredChangeGroups.length}
           scrollHeightClassName='h-[220px]'
         >
           {structuredChangeGroups.length > 0 ? (
             structuredChangeGroups.map(({ change, rows }) => (
-              <div key={`${change.field}-${change.alias}`} className='rounded-2xl border border-dashed bg-background p-3'>
+              <div
+                key={`${change.field}-${change.alias}`}
+                className='rounded-2xl border border-dashed bg-background p-3'
+              >
                 <div className='flex items-center justify-between gap-2'>
                   <div className='text-[10px] font-black tracking-tight text-slate-800'>
-                    {formatProductFieldLabel(change.field, change.alias, locale)}
+                    {formatProductFieldLabel(
+                      change.field,
+                      change.alias,
+                      locale
+                    )}
                   </div>
-                  <Badge variant='outline' className='rounded-full border-dashed bg-white text-[8px] font-mono text-slate-600'>
+                  <Badge
+                    variant='outline'
+                    className='rounded-full border-dashed bg-white font-mono text-[8px] text-slate-600'
+                  >
                     {rows.length}
                   </Badge>
                 </div>
                 <div className='mt-2 flex flex-col gap-2'>
                   {rows.map((row) => (
-                    <div key={`${change.field}-${row.key}`} className='rounded-xl border border-dashed border-muted/30 bg-muted/5 p-2.5'>
-                      <div className='text-[8px] font-black uppercase tracking-widest text-muted-foreground/55'>
-                        {resolveStructuredRowLabel(change.field, row.key, locale, categoriesByKey)}
+                    <div
+                      key={`${change.field}-${row.key}`}
+                      className='rounded-xl border border-dashed border-muted/30 bg-muted/5 p-2.5'
+                    >
+                      <div className='text-[8px] font-black tracking-widest text-muted-foreground/55 uppercase'>
+                        {resolveStructuredRowLabel(
+                          change.field,
+                          row.key,
+                          locale,
+                          categoriesByKey
+                        )}
                       </div>
                       <div className='mt-2 grid grid-cols-1 gap-2'>
                         <div className='rounded-xl border border-dashed border-destructive/10 bg-destructive/5 p-2'>
-                          <div className='text-[7px] font-black uppercase tracking-widest text-destructive/60'>
+                          <div className='text-[7px] font-black tracking-widest text-destructive/60 uppercase'>
                             {t('common.audit.before')}
                           </div>
-                          <div className='mt-1 break-all text-[10px] font-mono text-destructive'>
-                            {resolveStructuredRowValue(change.field, row.before, locale, optionsByCategoryAndValue, row.key)}
+                          <div className='mt-1 font-mono text-[10px] break-all text-destructive'>
+                            {resolveStructuredRowValue(
+                              change.field,
+                              row.before,
+                              locale,
+                              optionsByCategoryAndValue,
+                              row.key
+                            )}
                           </div>
                         </div>
                         <div className='rounded-xl border border-dashed border-emerald-500/10 bg-emerald-500/5 p-2'>
-                          <div className='text-[7px] font-black uppercase tracking-widest text-emerald-700/60'>
+                          <div className='text-[7px] font-black tracking-widest text-emerald-700/60 uppercase'>
                             {t('common.audit.after')}
                           </div>
-                          <div className='mt-1 break-all text-[10px] font-mono text-emerald-700'>
-                            {resolveStructuredRowValue(change.field, row.after, locale, optionsByCategoryAndValue, row.key)}
+                          <div className='mt-1 font-mono text-[10px] break-all text-emerald-700'>
+                            {resolveStructuredRowValue(
+                              change.field,
+                              row.after,
+                              locale,
+                              optionsByCategoryAndValue,
+                              row.key
+                            )}
                           </div>
                         </div>
                       </div>
@@ -358,11 +441,13 @@ export function ProductAuditEntry({
           )}
         </AuditEntryColumnCard>
 
-        <AuditEntryColumnCard title={locale === 'zh-CN' ? '产品审计摘要' : 'Product Audit Summary'}>
+        <AuditEntryColumnCard
+          title={locale === 'zh-CN' ? '产品审计摘要' : 'Product Audit Summary'}
+        >
           <AuditEntrySummaryList items={summaryItems} />
           {v2SummaryItems.length > 0 ? (
             <div className='mt-4 border-t border-dashed border-muted/30 pt-4'>
-              <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>
+              <div className='text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
                 {locale === 'zh-CN' ? '模板摘要' : 'Template Summary'}
               </div>
               <div className='mt-3 flex flex-wrap gap-1.5'>
@@ -370,7 +455,7 @@ export function ProductAuditEntry({
                   <Badge
                     key={`product-display-v2-${item.key}`}
                     variant='outline'
-                    className='rounded-full border-dashed border-indigo-500/20 bg-indigo-500/5 text-[8px] font-mono text-indigo-700'
+                    className='rounded-full border-dashed border-indigo-500/20 bg-indigo-500/5 font-mono text-[8px] text-indigo-700'
                   >
                     {item.label}: {item.value}
                   </Badge>
@@ -379,7 +464,7 @@ export function ProductAuditEntry({
             </div>
           ) : null}
           <div className='mt-4 border-t border-dashed border-muted/30 pt-4'>
-            <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>
+            <div className='text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
               {locale === 'zh-CN' ? '变更字段' : 'Changed Fields'}
             </div>
             <div className='mt-3 flex flex-wrap gap-1.5'>
@@ -388,7 +473,7 @@ export function ProductAuditEntry({
                   <Badge
                     key={`${item.field}-${item.alias}-badge`}
                     variant='outline'
-                    className='rounded-full border-dashed border-slate-200 bg-slate-50 text-[8px] font-mono text-slate-700'
+                    className='rounded-full border-dashed border-slate-200 bg-slate-50 font-mono text-[8px] text-slate-700'
                   >
                     {formatProductFieldLabel(item.field, item.alias, locale)}
                   </Badge>

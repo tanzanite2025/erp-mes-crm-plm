@@ -4,20 +4,26 @@ interface ReceivableListItemLike {
   id: string
 }
 
-interface UseSalesReceivablesPageStateParams<TItem extends ReceivableListItemLike> {
+interface UseSalesReceivablesPageStateParams<
+  TItem extends ReceivableListItemLike,
+> {
   sourceType?: string
   sourceRefId?: string
   autoOpen?: boolean
   items: TItem[]
 }
 
-export function useSalesReceivablesPageState<TItem extends ReceivableListItemLike>({
+export function useSalesReceivablesPageState<
+  TItem extends ReceivableListItemLike,
+>({
   sourceType,
   sourceRefId,
   autoOpen,
   items,
 }: UseSalesReceivablesPageStateParams<TItem>) {
-  const [selectedReceivableId, setSelectedReceivableId] = useState<string | null>(null)
+  const [selectedReceivableId, setSelectedReceivableId] = useState<
+    string | null
+  >(null)
   const [dismissedAutoOpenKey, setDismissedAutoOpenKey] = useState('')
   const autoOpenKey = useMemo(
     () => `${sourceType ?? ''}:${sourceRefId ?? ''}:${autoOpen ? '1' : '0'}`,

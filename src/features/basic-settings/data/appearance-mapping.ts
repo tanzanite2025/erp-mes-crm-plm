@@ -8,7 +8,10 @@ export interface AppearanceMapping {
 }
 
 export const APPEARANCE_MAPPING_KEY = 'xdfc_appearance_mapping'
-export const APPEARANCE_MAPPING_QUERY_KEY = ['basic-settings', 'appearance-mapping'] as const
+export const APPEARANCE_MAPPING_QUERY_KEY = [
+  'basic-settings',
+  'appearance-mapping',
+] as const
 
 export const DEFAULT_APPEARANCE_MAPPING: AppearanceMapping = {
   '1': { label: 'UD', desc: 'Default appearance 1' },
@@ -22,7 +25,9 @@ export const DEFAULT_APPEARANCE_MAPPING: AppearanceMapping = {
   '9': { label: '-', desc: 'Reserved' },
 }
 
-export function buildAppearanceMappingFromProductAppearances(items: ProductAppearance[]): AppearanceMapping {
+export function buildAppearanceMappingFromProductAppearances(
+  items: ProductAppearance[]
+): AppearanceMapping {
   const mapping: AppearanceMapping = {}
 
   items.forEach((item) => {

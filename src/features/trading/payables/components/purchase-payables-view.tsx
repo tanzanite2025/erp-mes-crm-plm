@@ -1,12 +1,12 @@
 import { useMemo } from 'react'
 import { BanknoteArrowUp } from 'lucide-react'
-import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
+import { useGetPayables } from '../hooks/use-payables'
+import { usePurchasePayablesPageState } from '../hooks/use-purchase-payables-page-state'
+import { PurchasePayableDetailDialog } from './purchase-payable-detail-dialog'
 import { PurchasePayablesSummaryCards } from './purchase-payables-summary-cards'
 import { PurchasePayablesTableCard } from './purchase-payables-table-card'
-import { PurchasePayableDetailDialog } from './purchase-payable-detail-dialog'
-import { usePurchasePayablesPageState } from '../hooks/use-purchase-payables-page-state'
-import { useGetPayables } from '../hooks/use-payables'
 
 interface PurchasePayablesViewProps {
   /** 来源类型筛选，如 'PURCHASE_ORDER' */
@@ -50,7 +50,7 @@ export function PurchasePayablesView({
     })
 
   return (
-    <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+    <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
       {showHeader && (
         <IndustrialHeader
           icon={BanknoteArrowUp}

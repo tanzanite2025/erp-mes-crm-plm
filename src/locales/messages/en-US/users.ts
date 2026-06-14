@@ -1,7 +1,8 @@
 export const users = {
   layout: {
     title: 'Account Management Center',
-    subtitle: 'ACCOUNT MANAGEMENT / Global profile, explicit permissions, and security auditing',
+    subtitle:
+      'ACCOUNT MANAGEMENT / Global profile, explicit permissions, and security auditing',
     listTitle: 'User List',
     listSubtitle: 'Manage user information and explicit permissions here.',
     errorLoad: 'Failed to load user information, please try again.',
@@ -13,7 +14,8 @@ export const users = {
     filters: {
       status: 'Status',
     },
-    protectedTooltip: 'System core account is protected and cannot be changed here',
+    protectedTooltip:
+      'System core account is protected and cannot be changed here',
   },
   columns: {
     username: 'Username',
@@ -76,21 +78,24 @@ export const users = {
   },
   permissionPage: {
     title: 'User Permission Assignment Center',
-    subtitle: 'USER PERMISSIONS / Account-level explicit permission assignment and access profile review',
+    subtitle:
+      'USER PERMISSIONS / Account-level explicit permission assignment and access profile review',
     stats: {
       total: 'Total Accounts',
       activeInView: 'Active Accounts In View',
       protectedInView: 'Protected Accounts In View',
     },
     guideTitle: 'Assignment Guide',
-    guideDescription: 'Filter the target account first, then open the explicit permission assignment panel and save.',
+    guideDescription:
+      'Filter the target account first, then open the explicit permission assignment panel and save.',
     steps: {
       filter: 'Filter target accounts by username or status.',
       open: 'Click "Manage Permissions" on the target account row to open explicit permission assignment.',
       save: 'Review the access profile and selected permissions, then save.',
     },
     listTitle: 'Accounts Pending Assignment',
-    listSubtitle: 'This page only handles account-level explicit permission assignment, not account creation, deletion, or bulk maintenance.',
+    listSubtitle:
+      'This page only handles account-level explicit permission assignment, not account creation, deletion, or bulk maintenance.',
   },
   status: {
     active: 'Active',
@@ -100,12 +105,17 @@ export const users = {
   dialogs: {
     editTitle: 'Account Profile Maintenance',
     createTitle: 'New Account Provisioning',
-    editSubtitle: 'Updating security parameters and explicit permission configuration.',
-    createSubtitle: 'Assigning managed access credentials and system privileges. Syncing to the audit cluster.',
+    editSubtitle:
+      'Updating security parameters and explicit permission configuration.',
+    createSubtitle:
+      'Assigning managed access credentials and system privileges. Syncing to the audit cluster.',
     accessVerifyTitle: 'Identity Verification IDENTITY_VERIFY',
-    protectedAccountCreateTitle: 'Protected Account Provisioning SECURE_PROVISIONING',
-    accessVerifySubtitle: 'Complete highest-level verification before management changes to ensure system integrity.',
-    protectedAccountCreateSubtitle: 'Verification passed. You can now create a protected account with full-system management permissions.',
+    protectedAccountCreateTitle:
+      'Protected Account Provisioning SECURE_PROVISIONING',
+    accessVerifySubtitle:
+      'Complete highest-level verification before management changes to ensure system integrity.',
+    protectedAccountCreateSubtitle:
+      'Verification passed. You can now create a protected account with full-system management permissions.',
     accessVerifyHint: 'Requires developer-level access code to unlock',
     accessVerifyPlaceholder: 'ENTER 8-BIT ACCESS CODE',
     accessVerifyButton: 'Verify Access VERIFY_ACCESS',
@@ -146,20 +156,24 @@ export const users = {
     },
     delete: {
       title: 'REVOKE_CONFIRM',
-      description: 'Are you sure you want to revoke the account **{{name}}**? This action will permanently wipe associated explicit permission assignments and system access records from the cluster.',
+      description:
+        'Are you sure you want to revoke the account **{{name}}**? This action will permanently wipe associated explicit permission assignments and system access records from the cluster.',
       confirmHint: 'Please enter "{{word}}" to authorize destruction',
       confirmPlaceholder: 'Type "{{word}}"',
       warningTitle: 'CRITICAL_WARNING',
-      warningDesc: 'This instruction is irreversible. Once issued, all associated node permissions will be immediately detached physically.',
+      warningDesc:
+        'This instruction is irreversible. Once issued, all associated node permissions will be immediately detached physically.',
       button: 'EXECUTE_TERMINATION',
     },
     multiDelete: {
       title: 'BULK_REVOKE',
-      description: 'Are you sure you want to bulk revoke the selected **{{count}}** accounts? This action will immediately execute global access restrictions, and associated production/management sessions will be forced to terminate.',
+      description:
+        'Are you sure you want to bulk revoke the selected **{{count}}** accounts? This action will immediately execute global access restrictions, and associated production/management sessions will be forced to terminate.',
       confirmHint: 'Please enter "{{word}}" to confirm bulk revocation',
       confirmPlaceholder: 'Type "{{word}}"',
       warningTitle: 'CRITICAL_WARNING',
-      warningDesc: 'Bulk revocation will cause multiple node permissions to detach simultaneously. Please verify identities carefully.',
+      warningDesc:
+        'Bulk revocation will cause multiple node permissions to detach simultaneously. Please verify identities carefully.',
       button: 'EXECUTE_BULK_TERMINATION',
     },
   },
@@ -173,7 +187,8 @@ export const users = {
     passwordDigit: 'Password must contain at least one digit.',
     passwordMismatch: 'Passwords do not match.',
     accessCodeError: 'Access code incorrect. Please contact system developer.',
-    permissionDenied: 'Insufficient permissions. Only users with full-system management permissions can perform this.',
+    permissionDenied:
+      'Insufficient permissions. Only users with full-system management permissions can perform this.',
   },
   toast: {
     loadFailed: 'Failed to load user list',
@@ -181,7 +196,8 @@ export const users = {
     saveSuccessCreated: 'Account created successfully',
     deleteSuccess: 'Account successfully revoked',
     multiDeleteSyncing: 'Synchronizing bulk revocation... ({{count}} accounts)',
-    multiDeleteSuccess: 'Successfully revoked {{count}} accounts, permissions detached',
+    multiDeleteSuccess:
+      'Successfully revoked {{count}} accounts, permissions detached',
     inviteSyncing: 'Sending invitations...',
     inviteSuccess: 'Invitations sent to {{count}} users',
     activateSyncing: 'Activating users...',
@@ -192,6 +208,7 @@ export const users = {
     protectedAccountActionFailed: 'Protected account operation failed',
     permissionAssignmentsSaved: 'Explicit permissions updated',
     noActionableUsers: 'Selected users are system-protected, action aborted',
-    skippedProtected: 'Automatically skipped {{count}} system-protected core accounts',
+    skippedProtected:
+      'Automatically skipped {{count}} system-protected core accounts',
   },
 } as const

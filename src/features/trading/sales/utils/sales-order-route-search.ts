@@ -6,7 +6,9 @@ export interface SalesOrderRouteSearch {
   customerName?: string
 }
 
-export function parseSalesOrderRouteSearch(search: Record<string, unknown>): SalesOrderRouteSearch {
+export function parseSalesOrderRouteSearch(
+  search: Record<string, unknown>
+): SalesOrderRouteSearch {
   return {
     search: (search.search as string) || undefined,
     detailId: (search.detailId as string) || undefined,

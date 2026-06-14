@@ -1,20 +1,26 @@
 import { useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { createLogger } from '@/lib/logger'
+import {
+  type CompositeReadResource,
+  resolveQueryFailure,
+} from '@/lib/read-resource'
+import { failLoudly } from '@/lib/safe-catch'
 import { useLanguage } from '@/context/language-provider'
 import { useUnitsQuery } from '@/features/basic-settings/hooks/use-units-query'
 import type { Unit } from '@/features/basic-settings/services/unit-service'
+import type {
+  DrillingPlan,
+  LabelingDraft,
+  TechnicalSpec,
+} from '@/features/engineering-db/data/schema'
 import {
   ENGINEERING_DB_DRILLING_QUERY_KEY,
   ENGINEERING_DB_LABELING_QUERY_KEY,
   ENGINEERING_DB_SPECS_QUERY_KEY,
 } from '@/features/engineering-db/query-keys'
-import type { DrillingPlan, LabelingDraft, TechnicalSpec } from '@/features/engineering-db/data/schema'
-import { SpecsService } from '@/features/engineering-db/services/specs-service'
 import { ProductionDBService } from '@/features/engineering-db/services/production-db-service'
-import {
-  type ProductDisplayProjectionV2,
-} from '@/features/engineering/display/product-display-v2'
-import { buildProductDisplayMapsV2 } from '@/features/engineering/display/product-display-v2-map'
+import { SpecsService } from '@/features/engineering-db/services/specs-service'
 import type { ProductAppearance } from '@/features/engineering/data/product-appearance'
 import type {
   Product,
@@ -23,6 +29,8 @@ import type {
   ProductTemplate,
   ProductType,
 } from '@/features/engineering/data/schema'
+import { type ProductDisplayProjectionV2 } from '@/features/engineering/display/product-display-v2'
+import { buildProductDisplayMapsV2 } from '@/features/engineering/display/product-display-v2-map'
 import { useGetProducts } from '@/features/engineering/hooks/use-products'
 import {
   PRODUCT_APPEARANCES_QUERY_KEY,
@@ -31,16 +39,13 @@ import {
   PRODUCT_TEMPLATES_QUERY_KEY,
   PRODUCT_TYPES_QUERY_KEY,
 } from '@/features/engineering/query-keys'
+import { productAppearanceService } from '@/features/engineering/services/product-appearance-service'
 import { ProductAttributeCategoryService } from '@/features/engineering/services/product-attribute-category-service'
 import { ProductAttributeOptionService } from '@/features/engineering/services/product-attribute-option-service'
-import { productAppearanceService } from '@/features/engineering/services/product-appearance-service'
 import { productTemplateService } from '@/features/engineering/services/product-template-service'
 import { ProductTypeService } from '@/features/engineering/services/product-type-service'
 import { useGetCustomers } from '@/features/trading/customer'
 import type { Customer } from '@/features/trading/data/schema'
-import { createLogger } from '@/lib/logger'
-import { type CompositeReadResource, resolveQueryFailure } from '@/lib/read-resource'
-import { failLoudly } from '@/lib/safe-catch'
 
 const logger = createLogger('useSalesDocumentReferenceResources')
 
@@ -63,7 +68,8 @@ export type SalesDocumentReferenceData = {
   labelingOptions: SalesDocumentDrawingOption[]
 }
 
-export type SalesDocumentReferenceResource = CompositeReadResource<SalesDocumentReferenceData>
+export type SalesDocumentReferenceResource =
+  CompositeReadResource<SalesDocumentReferenceData>
 
 type OptionalResourceMode = 'best-effort' | 'blocking'
 
@@ -87,7 +93,9 @@ const EMPTY_SALES_DOCUMENT_REFERENCE_DATA: SalesDocumentReferenceData = {
   labelingOptions: [],
 }
 
-function buildDrawingOptions(items: Array<{ id: string; name: string }>): SalesDocumentDrawingOption[] {
+function buildDrawingOptions(
+  items: Array<{ id: string; name: string }>
+): SalesDocumentDrawingOption[] {
   return items.map((item) => ({ label: item.name, value: item.id }))
 }
 
@@ -115,15 +123,23 @@ export function useSalesDocumentReferenceResources(
   })
   const productAttributeCategoriesQuery = useQuery({
     queryKey: PRODUCT_ATTRIBUTE_CATEGORIES_QUERY_KEY,
-    queryFn: () => ProductAttributeCategoryService.getProductAttributeCategories({ activeOnly: true }),
+    queryFn: () =>
+      ProductAttributeCategoryService.getProductAttributeCategories({
+        activeOnly: true,
+      }),
     enabled,
   })
   const productAttributeOptionsQuery = useQuery({
     queryKey: PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY,
-    queryFn: () => ProductAttributeOptionService.getProductAttributeOptions({ activeOnly: true }),
+    queryFn: () =>
+      ProductAttributeOptionService.getProductAttributeOptions({
+        activeOnly: true,
+      }),
     enabled,
   })
-  const { readResource: unitsResource, refetch: refetchUnits } = useUnitsQuery({ enabled })
+  const { readResource: unitsResource, refetch: refetchUnits } = useUnitsQuery({
+    enabled,
+  })
   const appearancesQuery = useQuery({
     queryKey: PRODUCT_APPEARANCES_QUERY_KEY,
     queryFn: () => productAppearanceService.getProductAppearances(),
@@ -355,20 +371,22 @@ export function useSalesDocumentReferenceResources(
       : ((labelingQuery.data as LabelingDraft[]) ?? [])
     const engineeringSpecs = (specsQuery.data as TechnicalSpec[]) ?? []
     const products = (productsQuery.data as Product[]) ?? []
-    const productTemplates = (productTemplatesQuery.data as ProductTemplate[]) ?? []
+    const productTemplates =
+      (productTemplatesQuery.data as ProductTemplate[]) ?? []
     const productTypes = (productTypesQuery.data as ProductType[]) ?? []
     const productAttributeCategories =
       (productAttributeCategoriesQuery.data as ProductAttributeCategory[]) ?? []
     const productAttributeOptions =
       (productAttributeOptionsQuery.data as ProductAttributeOption[]) ?? []
-    const { productDisplayLabelMap, productDisplayProjectionMap } = buildProductDisplayMapsV2({
-      locale,
-      products,
-      productTemplates,
-      productTypes,
-      productAttributeCategories,
-      productAttributeOptions,
-    })
+    const { productDisplayLabelMap, productDisplayProjectionMap } =
+      buildProductDisplayMapsV2({
+        locale,
+        products,
+        productTemplates,
+        productTypes,
+        productAttributeCategories,
+        productAttributeOptions,
+      })
 
     return {
       status: 'ready',
@@ -435,7 +453,10 @@ export function useSalesDocumentReferenceResources(
   }, [readResource])
 
   const resources = useMemo<SalesDocumentReferenceData>(
-    () => (readResource.status === 'ready' ? readResource : EMPTY_SALES_DOCUMENT_REFERENCE_DATA),
+    () =>
+      readResource.status === 'ready'
+        ? readResource
+        : EMPTY_SALES_DOCUMENT_REFERENCE_DATA,
     [readResource]
   )
 

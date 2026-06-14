@@ -1,8 +1,7 @@
 'use client'
 
 import { CheckCircle2, Package } from 'lucide-react'
-import { buildHostedQuickActionDialogContentClassName } from '@/components/hosted-quick-action-dialog.styles'
-import { NonBlockingPermissionBoundary } from '@/components/permission-passthrough'
+import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -21,7 +20,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useLanguage } from '@/context/language-provider'
+import { buildHostedQuickActionDialogContentClassName } from '@/components/hosted-quick-action-dialog.styles'
+import { NonBlockingPermissionBoundary } from '@/components/permission-passthrough'
 import { type WarehouseCategoryOption } from '../category'
 import { type InboundFormData } from '../hooks/use-product-inbound'
 
@@ -69,39 +69,53 @@ export function ProductInboundFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className={buildHostedQuickActionDialogContentClassName(
-          'rounded-2xl md:rounded-[32px] border-none p-0 overflow-hidden shadow-2xl md:max-w-[560px]'
+          'overflow-hidden rounded-2xl border-none p-0 shadow-2xl md:max-w-[560px] md:rounded-[32px]'
         )}
       >
-        <div className='absolute inset-0 bg-linear-to-br from-emerald-600/5 via-transparent pointer-events-none' />
+        <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-emerald-600/5 via-transparent' />
 
         <div className='relative p-5 md:p-8'>
-          <DialogHeader className='mb-6 md:mb-8 text-left'>
-            <DialogTitle className='text-lg md:text-xl font-black tracking-tighter uppercase italic flex items-center gap-3 md:gap-4'>
-              <div className='size-9 md:size-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 shrink-0'>
-                <Package className='size-4 md:size-5 text-emerald-600' />
+          <DialogHeader className='mb-6 text-left md:mb-8'>
+            <DialogTitle className='flex items-center gap-3 text-lg font-black tracking-tighter uppercase italic md:gap-4 md:text-xl'>
+              <div className='flex size-9 shrink-0 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/10 md:size-10'>
+                <Package className='size-4 text-emerald-600 md:size-5' />
               </div>
-              <span className='truncate'>{t('warehouse.inbound.dialog.title')}</span>
+              <span className='truncate'>
+                {t('warehouse.inbound.dialog.title')}
+              </span>
             </DialogTitle>
-            <DialogDescription className='text-[8px] md:text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 mt-1 truncate block'>
+            <DialogDescription className='mt-1 block truncate text-[8px] font-black tracking-widest text-muted-foreground/40 uppercase md:text-[9px]'>
               {targetNodeDescription
-                ? t('warehouse.inbound.dialog.targetNode', targetNodeDescription)
+                ? t(
+                    'warehouse.inbound.dialog.targetNode',
+                    targetNodeDescription
+                  )
                 : ''}
             </DialogDescription>
           </DialogHeader>
 
           <div className='space-y-4 md:space-y-6'>
-            <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6'>
+            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6'>
               <div className='space-y-2 md:space-y-3'>
-                <Label className='text-[9px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 block'>
+                <Label className='block text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase md:text-[10px]'>
                   {t('warehouse.inbound.dialog.destination')}
                 </Label>
-                <Select value={formData.targetCategory} onValueChange={onTargetCategoryChange}>
-                  <SelectTrigger className='h-10 md:h-11 rounded-xl bg-muted/50 border-none font-bold px-4 md:px-5 focus:ring-emerald-500 shadow-inner text-xs'>
-                    <SelectValue placeholder={t('warehouse.inbound.dialog.selectArea')} />
+                <Select
+                  value={formData.targetCategory}
+                  onValueChange={onTargetCategoryChange}
+                >
+                  <SelectTrigger className='h-10 rounded-xl border-none bg-muted/50 px-4 text-xs font-bold shadow-inner focus:ring-emerald-500 md:h-11 md:px-5'>
+                    <SelectValue
+                      placeholder={t('warehouse.inbound.dialog.selectArea')}
+                    />
                   </SelectTrigger>
-                  <SelectContent className='rounded-xl shadow-2xl border-none p-1.5 md:p-2'>
+                  <SelectContent className='rounded-xl border-none p-1.5 shadow-2xl md:p-2'>
                     {selectableWarehouseCategories.map((cat) => (
-                      <SelectItem key={cat.value} value={cat.value} className='rounded-lg font-black uppercase text-[8px] md:text-[10px] tracking-widest py-2 md:py-2.5'>
+                      <SelectItem
+                        key={cat.value}
+                        value={cat.value}
+                        className='rounded-lg py-2 text-[8px] font-black tracking-widest uppercase md:py-2.5 md:text-[10px]'
+                      >
                         {cat.label}
                       </SelectItem>
                     ))}
@@ -109,79 +123,80 @@ export function ProductInboundFormDialog({
                 </Select>
               </div>
               <div className='space-y-2 md:space-y-3'>
-                <Label className='text-[9px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 block'>
+                <Label className='block text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase md:text-[10px]'>
                   {t('warehouse.inbound.dialog.entryDate')}
                 </Label>
                 <Input
                   type='date'
                   value={formData.entryDate}
                   onChange={(e) => onEntryDateChange(e.target.value)}
-                  className='h-10 md:h-11 rounded-xl bg-muted/50 border-none font-mono font-bold px-4 md:px-5 focus-visible:ring-emerald-500 shadow-inner text-xs'
+                  className='h-10 rounded-xl border-none bg-muted/50 px-4 font-mono text-xs font-bold shadow-inner focus-visible:ring-emerald-500 md:h-11 md:px-5'
                 />
               </div>
             </div>
 
-            <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6'>
+            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6'>
               <div className='space-y-2 md:space-y-3'>
-                <Label className='text-[9px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 block'>
+                <Label className='block text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase md:text-[10px]'>
                   {t('warehouse.inbound.dialog.quantity')}
                 </Label>
-                <div className='relative group'>
+                <div className='group relative'>
                   <Input
                     type='number'
-                    className='h-10 md:h-11 rounded-xl bg-muted/50 border-none font-mono text-lg md:text-xl font-black pl-4 md:pl-5 pr-10 md:pr-12 focus-visible:ring-emerald-500 shadow-inner group-hover:bg-muted/70 transition-all'
+                    className='h-10 rounded-xl border-none bg-muted/50 pr-10 pl-4 font-mono text-lg font-black shadow-inner transition-all group-hover:bg-muted/70 focus-visible:ring-emerald-500 md:h-11 md:pr-12 md:pl-5 md:text-xl'
                     value={formData.quantity}
                     onChange={(e) => onQuantityChange(Number(e.target.value))}
                   />
-                  <div className='absolute right-4 md:right-5 top-1/2 -translate-y-1/2 text-[8px] md:text-[9px] font-black uppercase tracking-widest text-muted-foreground/20 select-none group-focus-within:text-emerald-500 transition-colors'>
+                  <div className='absolute top-1/2 right-4 -translate-y-1/2 text-[8px] font-black tracking-widest text-muted-foreground/20 uppercase transition-colors select-none group-focus-within:text-emerald-500 md:right-5 md:text-[9px]'>
                     {itemUnit || t('warehouse.inbound.dialog.units')}
                   </div>
                 </div>
               </div>
               <div className='space-y-2 md:space-y-3'>
-                <Label className='text-[9px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 block'>
+                <Label className='block text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase md:text-[10px]'>
                   {t('warehouse.inbound.dialog.batch')}
                 </Label>
                 <Input
                   placeholder={t('warehouse.inbound.dialog.batchPlaceholder')}
                   value={formData.batchNo}
                   onChange={(e) => onBatchNoChange(e.target.value)}
-                  className='h-10 md:h-11 rounded-xl bg-muted/50 border-none font-mono font-black text-xs md:text-sm px-4 md:px-5 focus-visible:ring-emerald-500 shadow-inner'
+                  className='h-10 rounded-xl border-none bg-muted/50 px-4 font-mono text-xs font-black shadow-inner focus-visible:ring-emerald-500 md:h-11 md:px-5 md:text-sm'
                 />
               </div>
             </div>
 
             <div className='space-y-3'>
-              <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 block'>
+              <Label className='block text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                 {t('warehouse.inbound.dialog.remarks')}
               </Label>
               <Input
                 placeholder={t('warehouse.inbound.dialog.remarksPlaceholder')}
                 value={formData.remarks}
                 onChange={(e) => onRemarksChange(e.target.value)}
-                className='h-11 rounded-xl bg-muted/50 border-none font-bold px-5 focus-visible:ring-emerald-500 shadow-inner'
+                className='h-11 rounded-xl border-none bg-muted/50 px-5 font-bold shadow-inner focus-visible:ring-emerald-500'
               />
             </div>
           </div>
         </div>
 
-        <DialogFooter className='p-8 pt-0 bg-transparent flex items-center justify-between gap-4'>
+        <DialogFooter className='flex items-center justify-between gap-4 bg-transparent p-8 pt-0'>
           <Button
             variant='ghost'
-            className='flex-1 h-11 rounded-full hover:bg-muted font-black text-[10px] uppercase tracking-widest transition-colors'
+            className='h-11 flex-1 rounded-full text-[10px] font-black tracking-widest uppercase transition-colors hover:bg-muted'
             onClick={onCancel}
           >
             {t('warehouse.inbound.dialog.cancel')}
           </Button>
           <NonBlockingPermissionBoundary permission='action_warehouse_inbound_record'>
             <Button
-              className='flex-1 h-11 rounded-full shadow-lg shadow-emerald-500/20 bg-emerald-600 hover:bg-emerald-700 font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 gap-2'
+              className='h-11 flex-1 gap-2 rounded-full bg-emerald-600 text-[10px] font-black tracking-widest uppercase shadow-lg shadow-emerald-500/20 transition-all hover:bg-emerald-700 active:scale-95'
               onClick={() => {
                 onSubmit()
               }}
               disabled={isSubmittingInbound}
             >
-              <CheckCircle2 className='size-4' /> {t('warehouse.inbound.dialog.commit')}
+              <CheckCircle2 className='size-4' />{' '}
+              {t('warehouse.inbound.dialog.commit')}
             </Button>
           </NonBlockingPermissionBoundary>
         </DialogFooter>

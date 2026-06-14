@@ -15,7 +15,12 @@ function formatMessage(scope: string, message: string) {
   return `[${scope}] ${message}`
 }
 
-function emit(level: LogLevel, scope: string, message: string, context?: unknown) {
+function emit(
+  level: LogLevel,
+  scope: string,
+  message: string,
+  context?: unknown
+) {
   if (!shouldEmit(level)) return
 
   const formatted = formatMessage(scope, message)

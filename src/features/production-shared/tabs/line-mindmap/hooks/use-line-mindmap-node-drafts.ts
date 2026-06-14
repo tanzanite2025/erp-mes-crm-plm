@@ -1,7 +1,10 @@
 import { useState } from 'react'
 import type { LineMindmapNode } from '../data/sample-mindmap'
 
-export type LineMindmapNodeDraft = Pick<LineMindmapNode, 'actionType' | 'dialogKey' | 'note'>
+export type LineMindmapNodeDraft = Pick<
+  LineMindmapNode,
+  'actionType' | 'dialogKey' | 'note'
+>
 export type LineMindmapNodeDraftMap = Record<string, LineMindmapNodeDraft>
 
 export function useLineMindmapNodeDrafts() {
@@ -9,7 +12,7 @@ export function useLineMindmapNodeDrafts() {
 
   const patchNodeDraft = (
     nodeId: string,
-    patch: Partial<LineMindmapNodeDraft>,
+    patch: Partial<LineMindmapNodeDraft>
   ) => {
     setNodeDraftMap((current) => ({
       ...current,

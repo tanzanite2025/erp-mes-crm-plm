@@ -5,7 +5,10 @@ import {
   type SalesOrderFormValues,
 } from '../data/schema'
 
-function sanitizeSalesOrderDeltaLines(lines: unknown, baselineAmountsByLineNo: Map<number, number>) {
+function sanitizeSalesOrderDeltaLines(
+  lines: unknown,
+  baselineAmountsByLineNo: Map<number, number>
+) {
   if (!Array.isArray(lines)) {
     return lines
   }
@@ -17,8 +20,11 @@ function sanitizeSalesOrderDeltaLines(lines: unknown, baselineAmountsByLineNo: M
 
     const lineRecord = line as Record<string, unknown>
     const lineNoValue = lineRecord.lineNo
-    const lineNo = typeof lineNoValue === 'number' ? lineNoValue : Number(lineNoValue)
-    const baselineAmount = Number.isFinite(lineNo) ? (baselineAmountsByLineNo.get(lineNo) ?? 0) : 0
+    const lineNo =
+      typeof lineNoValue === 'number' ? lineNoValue : Number(lineNoValue)
+    const baselineAmount = Number.isFinite(lineNo)
+      ? (baselineAmountsByLineNo.get(lineNo) ?? 0)
+      : 0
 
     return {
       ...lineRecord,
@@ -27,7 +33,9 @@ function sanitizeSalesOrderDeltaLines(lines: unknown, baselineAmountsByLineNo: M
   })
 }
 
-export function sanitizeSalesOrderSubmitValues(order: SalesOrderFormValues): SalesOrderFormValues {
+export function sanitizeSalesOrderSubmitValues(
+  order: SalesOrderFormValues
+): SalesOrderFormValues {
   const orderDate = order.orderDate?.trim() || getTodaySalesOrderDate()
 
   return {
@@ -43,16 +51,23 @@ export function sanitizeSalesOrderSubmitValues(order: SalesOrderFormValues): Sal
   }
 }
 
-export function sanitizeSalesOrderDelta(delta: DeltaSet, order?: SalesOrder | null): DeltaSet {
+export function sanitizeSalesOrderDelta(
+  delta: DeltaSet,
+  order?: SalesOrder | null
+): DeltaSet {
   const sanitizedDelta = Object.fromEntries(
-    Object.entries(delta).filter(([key]) => key !== 'amount' && key !== 'quantity')
+    Object.entries(delta).filter(
+      ([key]) => key !== 'amount' && key !== 'quantity'
+    )
   ) as DeltaSet
 
   if (!sanitizedDelta.lines || !order) {
     return sanitizedDelta
   }
 
-  const baselineAmountsByLineNo = new Map((order.lines ?? []).map((line) => [line.lineNo, Number(line.amount) || 0]))
+  const baselineAmountsByLineNo = new Map(
+    (order.lines ?? []).map((line) => [line.lineNo, Number(line.amount) || 0])
+  )
   const linesDelta = sanitizedDelta.lines
 
   sanitizedDelta.lines = {

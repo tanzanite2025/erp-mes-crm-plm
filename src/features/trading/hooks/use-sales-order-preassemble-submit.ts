@@ -1,19 +1,20 @@
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { type DeltaSet } from '@/lib/delta/types'
+import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
 import { warehouseQueryKeys } from '@/features/warehouse/query-keys'
 import { ShipmentTransactionService } from '@/features/warehouse/shipment'
-import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
-import { type DeltaSet } from '@/lib/delta/types'
+import { type SalesOrderPreassembleConfirmPayload } from '../components/sales-order-preassemble-scan-dialog'
 import { type SalesOrder } from '../data/schema'
 import { tradingQueryKeys } from '../query-keys'
 import { isSalesOrderPreassembleScanAllowed } from '../utils/sales-order-preassemble'
-import { type SalesOrderPreassembleConfirmPayload } from '../components/sales-order-preassemble-scan-dialog'
 
 export function useSalesOrderPreassembleSubmit() {
   const queryClient = useQueryClient()
   const { runConfirmedAction } = useConfirmedActionFlow()
-  const [preassembleScanOrder, setPreassembleScanOrder] = useState<SalesOrder | null>(null)
+  const [preassembleScanOrder, setPreassembleScanOrder] =
+    useState<SalesOrder | null>(null)
   const [isSubmittingPreassemble, setIsSubmittingPreassemble] = useState(false)
 
   const handleOpenPreassembleScan = (order: SalesOrder) => {
@@ -33,7 +34,9 @@ export function useSalesOrderPreassembleSubmit() {
     }
   }
 
-  const handlePreassembleConfirm = (payload: SalesOrderPreassembleConfirmPayload) => {
+  const handlePreassembleConfirm = (
+    payload: SalesOrderPreassembleConfirmPayload
+  ) => {
     runConfirmedAction({
       permission: 'action_inventory_shipment_update',
       onAction: async () => {
@@ -53,7 +56,9 @@ export function useSalesOrderPreassembleSubmit() {
                   n: payload.orderId,
                 }
               }
-              if (entry.currentSalesOrderLineId !== entry.targetSalesOrderLineId) {
+              if (
+                entry.currentSalesOrderLineId !== entry.targetSalesOrderLineId
+              ) {
                 delta.salesOrderLineId = {
                   o: entry.currentSalesOrderLineId,
                   n: entry.targetSalesOrderLineId,
@@ -80,10 +85,18 @@ export function useSalesOrderPreassembleSubmit() {
           )
 
           await Promise.all([
-            queryClient.invalidateQueries({ queryKey: tradingQueryKeys.salesOrdersRoot() }),
-            queryClient.invalidateQueries({ queryKey: tradingQueryKeys.salesOrderDetail(payload.orderId) }),
-            queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.shipmentHistory() }),
-            queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.shipmentDemands() }),
+            queryClient.invalidateQueries({
+              queryKey: tradingQueryKeys.salesOrdersRoot(),
+            }),
+            queryClient.invalidateQueries({
+              queryKey: tradingQueryKeys.salesOrderDetail(payload.orderId),
+            }),
+            queryClient.invalidateQueries({
+              queryKey: warehouseQueryKeys.shipmentHistory(),
+            }),
+            queryClient.invalidateQueries({
+              queryKey: warehouseQueryKeys.shipmentDemands(),
+            }),
           ])
 
           toast.success(
@@ -93,7 +106,9 @@ export function useSalesOrderPreassembleSubmit() {
           )
           setPreassembleScanOrder(null)
         } catch (error) {
-          toast.error(error instanceof Error ? error.message : '扫码预装保存失败')
+          toast.error(
+            error instanceof Error ? error.message : '扫码预装保存失败'
+          )
         } finally {
           setIsSubmittingPreassemble(false)
         }
@@ -107,6 +122,7 @@ export function useSalesOrderPreassembleSubmit() {
     handleOpenPreassembleScan,
     handleClosePreassembleScan,
     handlePreassembleConfirm,
-    isPreassembleDialogOpen: isSalesOrderPreassembleScanAllowed(preassembleScanOrder),
+    isPreassembleDialogOpen:
+      isSalesOrderPreassembleScanAllowed(preassembleScanOrder),
   }
 }

@@ -123,7 +123,8 @@ export const rawMaterials = {
       },
       description: {
         label: 'Remarks',
-        placeholder: 'Optional notes for supplier, quality, or usage constraints',
+        placeholder:
+          'Optional notes for supplier, quality, or usage constraints',
       },
     },
     cleanedPreview: {
@@ -172,13 +173,20 @@ export const rawMaterials = {
       created: 'Prepreg spec created',
       updated: 'Prepreg spec updated',
       saveFailed: 'Failed to save the prepreg spec. Please retry later.',
-      recognizedApplied: 'Recognized fields applied. Please verify before saving.',
-      requiredCodeAndName: 'Please fill in product code and product name first.',
-      bindingActivated: 'The binding QR code was recognized and the dialog is now in binding mode.',
-      bindingInvalid: 'The current content is not a valid prepreg binding QR code.',
-      bindingExpired: 'This binding QR code has expired. Please generate a new one before binding.',
-      bindingAlreadyBound: 'This binding QR code has already been linked to an existing prepreg spec.',
-      bindingLookupFailed: 'Failed to read the binding QR status. Please retry later.',
+      recognizedApplied:
+        'Recognized fields applied. Please verify before saving.',
+      requiredCodeAndName:
+        'Please fill in product code and product name first.',
+      bindingActivated:
+        'The binding QR code was recognized and the dialog is now in binding mode.',
+      bindingInvalid:
+        'The current content is not a valid prepreg binding QR code.',
+      bindingExpired:
+        'This binding QR code has expired. Please generate a new one before binding.',
+      bindingAlreadyBound:
+        'This binding QR code has already been linked to an existing prepreg spec.',
+      bindingLookupFailed:
+        'Failed to read the binding QR status. Please retry later.',
       bindingSaved: 'The prepreg spec has been saved and bound successfully.',
       qrGenerated: 'QR code generated from the current normalized payload.',
       qrGenerateFailed: 'Failed to generate QR code. Please retry.',
@@ -186,25 +194,30 @@ export const rawMaterials = {
     },
     binding: {
       title: 'The dialog is currently in QR binding mode',
-      description: 'Finish the prepreg spec entry and the current QR code will be linked to the saved spec.',
+      description:
+        'Finish the prepreg spec entry and the current QR code will be linked to the saved spec.',
       tokenLabel: 'Current Binding Token',
     },
     scanBinding: {
       title: 'Scan to Bind Prepreg',
-      description: 'Scan or paste an unbound QR code. Once recognized, the system will automatically open the new prepreg spec dialog in binding mode.',
+      description:
+        'Scan or paste an unbound QR code. Once recognized, the system will automatically open the new prepreg spec dialog in binding mode.',
       placeholder: 'Scan QR content, or paste a bindToken link / TOKEN',
       hint: 'Supports scanner input, manual token paste, or the full QR deep-link URL.',
     },
     qr: {
       title: 'QR Generate / Print',
-      description: 'Generate a QR code from the current dialog fields and normalized result, then print it directly for labeling.',
+      description:
+        'Generate a QR code from the current dialog fields and normalized result, then print it directly for labeling.',
       empty: 'QR code has not been generated yet',
-      requirements: 'Fill in at least product code and product name before clicking "Generate QR". The QR payload always follows the current normalized result.',
+      requirements:
+        'Fill in at least product code and product name before clicking "Generate QR". The QR payload always follows the current normalized result.',
       previewTitle: 'Label Preview',
       previewDescription: 'Current QR code and field snapshot',
       previewAlt: 'Prepreg spec QR code',
       payload: 'QR Payload',
-      generatedFromCleaned: 'The content below is generated from the current form and normalized result.',
+      generatedFromCleaned:
+        'The content below is generated from the current form and normalized result.',
       actions: {
         generate: 'Generate QR',
         regenerate: 'Regenerate',
@@ -228,8 +241,7 @@ export const rawMaterials = {
           'The link is valid for 30 minutes. This dialog will receive fields automatically after submit.',
       },
       message: {
-        idle:
-          'After upload, you can paste/correct OCR text, then apply fields into the form in one click.',
+        idle: 'After upload, you can paste/correct OCR text, then apply fields into the form in one click.',
         mobileSubmitted:
           'Mobile result received. Please verify fields before saving.',
         mobilePollingFailed:
@@ -286,7 +298,8 @@ export const rawMaterials = {
     hero: {
       kicker: 'Independent Workspace',
       title: 'Prepreg Batch Binding QR',
-      description: 'Generate and print unbound prepreg binding QR codes in a standalone page without interfering with the current prepreg spec dialog. Unbound QR codes carry no bound spec content and expire automatically after 5 days if unused.',
+      description:
+        'Generate and print unbound prepreg binding QR codes in a standalone page without interfering with the current prepreg spec dialog. Unbound QR codes carry no bound spec content and expire automatically after 5 days if unused.',
     },
     actions: {
       generate: 'Generate Batch QR',
@@ -296,19 +309,25 @@ export const rawMaterials = {
     },
     form: {
       title: 'Batch Parameters',
-      description: 'Enter how many unbound QR labels should be printed in this batch. The page requests backend-issued tokens and renders printable QR cards immediately.',
+      description:
+        'Enter how many unbound QR labels should be printed in this batch. The page requests backend-issued tokens and renders printable QR cards immediately.',
       quantityLabel: 'Batch Quantity',
-      quantityHint: 'The current page allows 1-200 labels per batch for workshop or manual labeling preparation.',
+      quantityHint:
+        'The current page allows 1-200 labels per batch for workshop or manual labeling preparation.',
       rulesTitle: 'Current Rules',
-      ruleUnbound: 'QR codes are unbound by default and only enter binding flow after scanning',
+      ruleUnbound:
+        'QR codes are unbound by default and only enter binding flow after scanning',
       ruleNoLeak: 'Unbound QR codes do not carry prepreg spec information',
-      rulePrintable: 'This page only focuses on batch generation, printing, and UI clearing',
-      ruleExpiry: 'Unbound QR codes expire after 5 days and are cleaned up automatically',
+      rulePrintable:
+        'This page only focuses on batch generation, printing, and UI clearing',
+      ruleExpiry:
+        'Unbound QR codes expire after 5 days and are cleaned up automatically',
     },
     grid: {
       title: 'Current Batch',
       emptyTitle: 'No QR codes generated yet',
-      emptyDescription: 'Enter a quantity and generate the batch before printing.',
+      emptyDescription:
+        'Enter a quantity and generate the batch before printing.',
       tokenLabel: 'Binding Token',
       expiresAtLabel: 'Expires At',
       cardTip: 'UNBOUND TOKEN / BIND WITHIN 5 DAYS',
@@ -350,14 +369,16 @@ export const rawMaterials = {
         },
         prepregSummary: {
           prefix: 'Referenced roll spec',
-          empty: 'Empty is allowed. Once selected, this page only reads roll width and roll length from prepreg master data.',
+          empty:
+            'Empty is allowed. Once selected, this page only reads roll width and roll length from prepreg master data.',
         },
         cuttingPlanSummary: {
           document: 'Document',
           revision: 'Revision',
           lines: 'Demand Lines',
           invalidLines: 'Invalid Lines',
-          empty: 'After selecting a cutting plan, the system reads every valid row in the sheet into the solve request.',
+          empty:
+            'After selecting a cutting plan, the system reads every valid row in the sheet into the solve request.',
         },
         blocks: {
           roll: {
@@ -370,7 +391,8 @@ export const rawMaterials = {
           },
           plan: {
             title: 'Cutting Sheet',
-            value: 'Load one cutting plan and turn every valid row into structured demand lines',
+            value:
+              'Load one cutting plan and turn every valid row into structured demand lines',
             hint: 'The whole sheet participates in the solve request so the optimizer can minimize overall loss.',
           },
         },
@@ -381,7 +403,8 @@ export const rawMaterials = {
         description:
           'The center stage shows a sheet-level aggregated preview. The formal optimized layout still comes from backend solve results.',
         rollCanvasLabel: 'Simulation Canvas',
-        rollCanvasHint: 'Select a cutting plan to inspect the sheet-level preview summary and representative strip-first canvas.',
+        rollCanvasHint:
+          'Select a cutting plan to inspect the sheet-level preview summary and representative strip-first canvas.',
         simulationStatus: 'Pending Calculation',
         computedStatus: 'Sheet Preview Ready',
         openCanvas: 'Open CANVAS Preview',
@@ -405,7 +428,8 @@ export const rawMaterials = {
         cards: {
           output: {
             title: 'Planned Output',
-            value: 'Complete the required inputs to generate the result summary.',
+            value:
+              'Complete the required inputs to generate the result summary.',
             hint: 'This summary is calculated in real time from the current page inputs only.',
           },
         },
@@ -414,7 +438,8 @@ export const rawMaterials = {
     debug: {
       kicker: 'Engine Linkage',
       title: 'Current Applied Config',
-      description: 'Shows the cutting engine config currently used by the batch engine and the Rust/WASM request payload.',
+      description:
+        'Shows the cutting engine config currently used by the batch engine and the Rust/WASM request payload.',
       resultStale: 'Configuration changed, solve again',
       fields: {
         preset: 'Objective Preset',
@@ -425,8 +450,10 @@ export const rawMaterials = {
       },
       payload: {
         title: 'CuttingEngineInput Payload',
-        description: 'Expand to inspect the real JSON sent into Rust/WASM for this formal solve.',
-        empty: 'Input is incomplete; CuttingEngineInput has not been generated yet.',
+        description:
+          'Expand to inspect the real JSON sent into Rust/WASM for this formal solve.',
+        empty:
+          'Input is incomplete; CuttingEngineInput has not been generated yet.',
       },
     },
     metrics: {
@@ -445,7 +472,8 @@ export const rawMaterials = {
         label: 'Estimated Loss',
         value: 'Local preview result',
         hint: 'A local preview result based on the current roll spec, size unit, knife gap, and trim, not the final optimized loss.',
-        utilizationHint: 'Occupied-area preview utilization {percent}% / occupied area {occupiedArea} m2',
+        utilizationHint:
+          'Occupied-area preview utilization {percent}% / occupied area {occupiedArea} m2',
       },
     },
     scoreBreakdown: {
@@ -573,7 +601,8 @@ export const rawMaterials = {
       scale: 'Scale',
       zones: 'Zones',
       selection: 'Selection',
-      hoverHint: 'Hover or click a strip / piece / loss area to inspect details.',
+      hoverHint:
+        'Hover or click a strip / piece / loss area to inspect details.',
       type: 'Type',
       position: 'Position (mm)',
       size: 'Size (mm)',
@@ -615,7 +644,8 @@ export const rawMaterials = {
       },
       angleRules: {
         title: 'Supported Cut Angles',
-        description: 'Declares the cut-angle set supported by the size library and cutting input chain.',
+        description:
+          'Declares the cut-angle set supported by the size library and cutting input chain.',
         hint: 'Angles are maintained in the size library and flow into engine input with demand lines; the core only receives projected geometry and angle metadata.',
       },
       directionRules: {
@@ -744,7 +774,8 @@ export const rawMaterials = {
         'Switched to the official process-recommended weight parameters for {{preset}}.',
       saveSuccess:
         'Cutting engine calculation configuration saved. New cutting calculation jobs will automatically load this parameter asset.',
-      reset: 'Configuration parameters have been reset to system factory defaults.',
+      reset:
+        'Configuration parameters have been reset to system factory defaults.',
     },
   },
   cutSizeLibrary: {

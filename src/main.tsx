@@ -1,6 +1,10 @@
 import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
-import { QueryClient, QueryClientProvider, QueryCache } from '@tanstack/react-query'
+import {
+  QueryClient,
+  QueryClientProvider,
+  QueryCache,
+} from '@tanstack/react-query'
 import { RouterProvider } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth-store'
@@ -32,7 +36,12 @@ const queryClient = new QueryClient({
 
         if (failureCount >= 0 && import.meta.env.DEV) return false
         if (failureCount > 3 && import.meta.env.PROD) return false
-        if (kind === 'auth_required' || kind === 'circuit_breaker' || kind === 'invalid_response') return false
+        if (
+          kind === 'auth_required' ||
+          kind === 'circuit_breaker' ||
+          kind === 'invalid_response'
+        )
+          return false
 
         return ![401, 403].includes(status ?? 0)
       },

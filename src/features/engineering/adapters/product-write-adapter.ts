@@ -1,9 +1,10 @@
-import { type Product, type ProductAttributeValue } from '../data/schema'
 import {
   type ProductApiDTO,
   type ProductAttributeValueApiDTO,
 } from '../contracts/product-api-dto'
+import { type Product, type ProductAttributeValue } from '../data/schema'
 import { type SaveProductInput } from '../mutation-types'
+import { normalizeProductAttributeMachineValue } from '../utils/product-attribute-machine-value'
 import {
   normalizeEngineeringChangeOrderNo,
   normalizeEngineeringRevisionNo,
@@ -13,13 +14,14 @@ import {
   normalizeProductTemplateKeyValue,
   normalizeSaveProductInput,
 } from '../utils/product-code-normalization'
-import { normalizeProductAttributeMachineValue } from '../utils/product-attribute-machine-value'
 
 type ProductWriteCandidate = Omit<ProductApiDTO, 'version'> & {
   version: number
 }
 
-function toProductAttributeValueApiDTO(item: ProductAttributeValue): ProductAttributeValueApiDTO {
+function toProductAttributeValueApiDTO(
+  item: ProductAttributeValue
+): ProductAttributeValueApiDTO {
   return {
     id: item.id,
     productId: item.productId,
@@ -30,11 +32,16 @@ function toProductAttributeValueApiDTO(item: ProductAttributeValue): ProductAttr
   }
 }
 
-export function buildProductWriteCandidate(product: SaveProductInput | Product): ProductWriteCandidate {
+export function buildProductWriteCandidate(
+  product: SaveProductInput | Product
+): ProductWriteCandidate {
   const normalizedProduct = normalizeSaveProductInput(product)
-  if (!normalizedProduct.restrictions) throw new Error('[CRITICAL] restrictions missing during save')
-  if (!normalizedProduct.attributeValues) throw new Error('[CRITICAL] attributeValues missing during save')
-  if (!normalizedProduct.attachments) throw new Error('[CRITICAL] attachments missing during save')
+  if (!normalizedProduct.restrictions)
+    throw new Error('[CRITICAL] restrictions missing during save')
+  if (!normalizedProduct.attributeValues)
+    throw new Error('[CRITICAL] attributeValues missing during save')
+  if (!normalizedProduct.attachments)
+    throw new Error('[CRITICAL] attachments missing during save')
 
   return {
     id: normalizedProduct.id || '',
@@ -58,17 +65,25 @@ export function buildProductWriteCandidate(product: SaveProductInput | Product):
     description: normalizedProduct.description,
     engineeringSpecId: normalizedProduct.engineeringSpecId || '',
     bomId: normalizedProduct.bomId || '',
-    attributeValues: normalizedProduct.attributeValues.map(toProductAttributeValueApiDTO),
+    attributeValues: normalizedProduct.attributeValues.map(
+      toProductAttributeValueApiDTO
+    ),
     techSpecs: normalizedProduct.techSpecs,
     barcodeConfig: normalizedProduct.barcodeConfig,
     attachments: normalizedProduct.attachments,
     status: normalizedProduct.status ?? 'Active',
-    revisionNo: normalizeEngineeringRevisionNo(normalizedProduct.masterDataControl?.revisionNo),
+    revisionNo: normalizeEngineeringRevisionNo(
+      normalizedProduct.masterDataControl?.revisionNo
+    ),
     effectiveFrom: normalizedProduct.masterDataControl?.effectiveFrom ?? null,
     effectiveTo: normalizedProduct.masterDataControl?.effectiveTo ?? null,
     changeType: normalizedProduct.masterDataControl?.changeType,
-    changeOrderNo: normalizeEngineeringChangeOrderNo(normalizedProduct.masterDataControl?.changeOrderNo),
-    siteCode: normalizeEngineeringSiteCode(normalizedProduct.masterDataControl?.siteCode),
+    changeOrderNo: normalizeEngineeringChangeOrderNo(
+      normalizedProduct.masterDataControl?.changeOrderNo
+    ),
+    siteCode: normalizeEngineeringSiteCode(
+      normalizedProduct.masterDataControl?.siteCode
+    ),
     isDefaultSite: normalizedProduct.masterDataControl?.isDefaultSite,
     createdAt: normalizedProduct.createdAt,
     version: normalizedProduct.version ?? 1,
@@ -86,6 +101,8 @@ export function toProductApiDTO(product: SaveProductInput): ProductApiDTO {
   })
 }
 
-export function toProductWriteApiDTO(product: SaveProductInput | Product): ProductApiDTO {
+export function toProductWriteApiDTO(
+  product: SaveProductInput | Product
+): ProductApiDTO {
   return toProductApiWriteDTO(buildProductWriteCandidate(product))
 }

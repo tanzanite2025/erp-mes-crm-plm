@@ -1,5 +1,5 @@
-import { toast } from 'sonner'
 import { type AppLocale } from '@/locales'
+import { toast } from 'sonner'
 import { resolveInventoryErrorTip } from '../../constants/inventory-error-codes'
 
 export interface ShipmentUiFeedback {
@@ -10,7 +10,9 @@ export interface ShipmentUiFeedback {
   warning(message: string): void
 }
 
-export function createShipmentUiFeedback(locale: AppLocale): ShipmentUiFeedback {
+export function createShipmentUiFeedback(
+  locale: AppLocale
+): ShipmentUiFeedback {
   return {
     confirm: (message) => {
       if (typeof window === 'undefined') {

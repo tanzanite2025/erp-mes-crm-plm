@@ -74,11 +74,20 @@ function shouldReplaceGeneratedFullLabelSnapshot(
   >,
   snapshot: SalesOrderLineDisplaySnapshot
 ): boolean {
-  const fullLabelSnapshot = normalizeSnapshotValue(line.productDisplayFullLabelSnapshot)
-  const lineTitleSnapshot = normalizeSnapshotValue(line.productDisplayTitleSnapshot)
-  const currentTitleSnapshot = normalizeSnapshotValue(snapshot.productDisplayTitleSnapshot)
+  const fullLabelSnapshot = normalizeSnapshotValue(
+    line.productDisplayFullLabelSnapshot
+  )
+  const lineTitleSnapshot = normalizeSnapshotValue(
+    line.productDisplayTitleSnapshot
+  )
+  const currentTitleSnapshot = normalizeSnapshotValue(
+    snapshot.productDisplayTitleSnapshot
+  )
 
-  if (!fullLabelSnapshot || isSalesOrderLineDisplayPlaceholder(fullLabelSnapshot)) {
+  if (
+    !fullLabelSnapshot ||
+    isSalesOrderLineDisplayPlaceholder(fullLabelSnapshot)
+  ) {
     return true
   }
 
@@ -92,7 +101,9 @@ function shouldReplaceGeneratedFullLabelSnapshot(
   })
 
   return (
-    (lineTitleSnapshot !== '' && lineTitleSnapshot === currentTitleSnapshot && fullLabelSnapshot === historicalLegacyFullLabel) ||
+    (lineTitleSnapshot !== '' &&
+      lineTitleSnapshot === currentTitleSnapshot &&
+      fullLabelSnapshot === historicalLegacyFullLabel) ||
     fullLabelSnapshot === currentLegacyFullLabel
   )
 }
@@ -121,14 +132,16 @@ export function mergeSalesOrderLineDisplaySnapshot(
     productDisplayTitleSnapshot:
       line.productDisplayTitleSnapshot || snapshot.productDisplayTitleSnapshot,
     productDisplaySubtitleSnapshot:
-      line.productDisplaySubtitleSnapshot || snapshot.productDisplaySubtitleSnapshot,
+      line.productDisplaySubtitleSnapshot ||
+      snapshot.productDisplaySubtitleSnapshot,
     productDisplayCodeSnapshot:
       line.productDisplayCodeSnapshot || snapshot.productDisplayCodeSnapshot,
-    productDisplayFullLabelSnapshot:
-      replaceFullLabelSnapshot
-        ? snapshot.productDisplayFullLabelSnapshot
-        : line.productDisplayFullLabelSnapshot || snapshot.productDisplayFullLabelSnapshot,
+    productDisplayFullLabelSnapshot: replaceFullLabelSnapshot
+      ? snapshot.productDisplayFullLabelSnapshot
+      : line.productDisplayFullLabelSnapshot ||
+        snapshot.productDisplayFullLabelSnapshot,
     productDisplayStrategyVersionSnapshot:
-      line.productDisplayStrategyVersionSnapshot || snapshot.productDisplayStrategyVersionSnapshot,
+      line.productDisplayStrategyVersionSnapshot ||
+      snapshot.productDisplayStrategyVersionSnapshot,
   }
 }

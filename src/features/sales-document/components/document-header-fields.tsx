@@ -1,4 +1,11 @@
-import { Barcode as BarcodeIcon, Calendar, CircleDollarSign, Hash, User } from 'lucide-react'
+import {
+  Barcode as BarcodeIcon,
+  Calendar,
+  CircleDollarSign,
+  Hash,
+  User,
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,7 +18,6 @@ import {
 import { useSalesOrderHeaderFieldsViewModel } from '@/features/trading/hooks/use-sales-order-header-fields-view-model'
 import { useTradingFinanceResources } from '@/features/trading/hooks/use-trading-finance-resources'
 import { SALES_ORDER_EDITABLE_STATUSES } from '@/features/trading/utils/sales-order-actions'
-import { cn } from '@/lib/utils'
 import { DocumentEvidenceManager } from './document-evidence-manager'
 
 type SalesOrderFormState = SalesOrderDraft
@@ -39,13 +45,16 @@ export function DocumentHeaderFields({
   denseContractFields = false,
 }: DocumentHeaderFieldsProps) {
   const { t, locale } = useLanguage()
-  const financeResources = useTradingFinanceResources({ includeCurrencies: true })
+  const financeResources = useTradingFinanceResources({
+    includeCurrencies: true,
+  })
   const { currencies, paymentMethods, paymentTerms } = financeResources
   const isFinanceLoading = financeResources.readResource.status === 'loading'
   const isFinanceError = financeResources.readResource.status === 'error'
-  const financeErrorMessage = financeResources.readResource.status === 'error'
-    ? financeResources.readResource.error.message
-    : ''
+  const financeErrorMessage =
+    financeResources.readResource.status === 'error'
+      ? financeResources.readResource.error.message
+      : ''
   const {
     typeOptions,
     classificationOptions,
@@ -71,7 +80,12 @@ export function DocumentHeaderFields({
   })
 
   return (
-    <section className={cn('space-y-3', (compactEvidence || denseContractFields) && 'space-y-2')}>
+    <section
+      className={cn(
+        'space-y-3',
+        (compactEvidence || denseContractFields) && 'space-y-2'
+      )}
+    >
       <div className='flex items-center gap-2 px-1'>
         <div className='flex size-3 items-center justify-center rounded-full bg-primary/20'>
           <div className='size-1.5 rounded-full bg-primary' />
@@ -88,20 +102,29 @@ export function DocumentHeaderFields({
       >
         {isFinanceLoading ? (
           <div className='rounded-[20px] border border-dashed border-amber-500/30 bg-amber-500/5 px-4 py-3'>
-            <p className='text-[10px] font-black tracking-widest text-amber-700 uppercase'>财务字段加载中</p>
-            <p className='mt-1 text-[9px] font-bold text-amber-700/80'>支付币种、支付方式与结算方式暂不可编辑。</p>
+            <p className='text-[10px] font-black tracking-widest text-amber-700 uppercase'>
+              财务字段加载中
+            </p>
+            <p className='mt-1 text-[9px] font-bold text-amber-700/80'>
+              支付币种、支付方式与结算方式暂不可编辑。
+            </p>
           </div>
         ) : null}
         {isFinanceError ? (
           <div className='flex items-center justify-between gap-3 rounded-[20px] border border-dashed border-rose-500/30 bg-rose-500/5 px-4 py-3'>
             <div className='space-y-1'>
-              <p className='text-[10px] font-black tracking-widest text-rose-700 uppercase'>财务字段加载失败</p>
-              <p className='text-[9px] font-bold text-rose-700/80'>{financeErrorMessage || '请重试后再编辑支付币种、支付方式与结算方式。'}</p>
+              <p className='text-[10px] font-black tracking-widest text-rose-700 uppercase'>
+                财务字段加载失败
+              </p>
+              <p className='text-[9px] font-bold text-rose-700/80'>
+                {financeErrorMessage ||
+                  '请重试后再编辑支付币种、支付方式与结算方式。'}
+              </p>
             </div>
             <Button
               type='button'
               variant='outline'
-              className='h-9 rounded-full border-dashed px-4 text-[10px] font-black uppercase tracking-widest'
+              className='h-9 rounded-full border-dashed px-4 text-[10px] font-black tracking-widest uppercase'
               onClick={() => {
                 void financeResources.retry()
               }}
@@ -113,8 +136,11 @@ export function DocumentHeaderFields({
         <div
           className={cn(
             'grid grid-cols-1 gap-4 rounded-[24px] border border-dashed border-muted-foreground/20 bg-muted/5 p-4 transition-all sm:p-5 md:grid-cols-2',
-            (compactEvidence || denseContractFields) && 'gap-3 rounded-[20px] p-3 sm:p-4',
-            denseContractFields ? 'lg:grid-cols-5 xl:grid-cols-5' : 'lg:grid-cols-4'
+            (compactEvidence || denseContractFields) &&
+              'gap-3 rounded-[20px] p-3 sm:p-4',
+            denseContractFields
+              ? 'lg:grid-cols-5 xl:grid-cols-5'
+              : 'lg:grid-cols-4'
           )}
         >
           <div className='grid gap-1'>
@@ -248,7 +274,9 @@ export function DocumentHeaderFields({
                 onChange={(e) => handleCurrencyChange(e.target.value)}
               >
                 <option value=''>
-                  {t('tradingSalesOrder.headerFields.paymentCurrencyPlaceholder')}
+                  {t(
+                    'tradingSalesOrder.headerFields.paymentCurrencyPlaceholder'
+                  )}
                 </option>
                 {currencyOptions.map((currency) => (
                   <option key={currency.value} value={currency.value}>

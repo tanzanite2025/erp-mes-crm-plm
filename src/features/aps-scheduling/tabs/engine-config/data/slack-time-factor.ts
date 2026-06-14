@@ -5,7 +5,10 @@ import type {
   GreedyEngineFactorSummaryItem,
 } from '../types'
 
-type EngineConfigTranslator = (key: TranslationKey, params?: Record<string, string | number>) => string
+type EngineConfigTranslator = (
+  key: TranslationKey,
+  params?: Record<string, string | number>
+) => string
 
 export type GreedyEngineSlackTimeSnapshot = {
   enableSlackTimePenalty: boolean
@@ -33,36 +36,50 @@ export function buildSystemDefaultGreedySlackTimeSnapshot(): GreedyEngineSlackTi
 
 export function buildSlackTimeSummaryItems(
   snapshot: GreedyEngineSlackTimeSnapshot,
-  t: EngineConfigTranslator,
+  t: EngineConfigTranslator
 ): GreedyEngineFactorSummaryItem[] {
   return [
     {
       id: 'enable-slack',
-      label: t('apsScheduling.engineConfig.slackTimeCard.summary.enableSlackLabel'),
+      label: t(
+        'apsScheduling.engineConfig.slackTimeCard.summary.enableSlackLabel'
+      ),
       value: snapshot.enableSlackTimePenalty
         ? t('apsScheduling.engineConfig.slackTimeCard.summary.enableSlackValue')
-        : t('apsScheduling.engineConfig.slackTimeCard.summary.enableSlackDisabledValue'),
+        : t(
+            'apsScheduling.engineConfig.slackTimeCard.summary.enableSlackDisabledValue'
+          ),
     },
     {
       id: 'slack-threshold',
-      label: t('apsScheduling.engineConfig.slackTimeCard.summary.slackThresholdLabel'),
-      value: t('apsScheduling.engineConfig.slackTimeCard.summary.slackThresholdValue', {
-        days: snapshot.slackThresholdDays,
-      }),
+      label: t(
+        'apsScheduling.engineConfig.slackTimeCard.summary.slackThresholdLabel'
+      ),
+      value: t(
+        'apsScheduling.engineConfig.slackTimeCard.summary.slackThresholdValue',
+        {
+          days: snapshot.slackThresholdDays,
+        }
+      ),
     },
     {
       id: 'overdue-penalty',
-      label: t('apsScheduling.engineConfig.slackTimeCard.summary.overduePenaltyLabel'),
-      value: t('apsScheduling.engineConfig.slackTimeCard.summary.overduePenaltyValue', {
-        penalty: snapshot.overduePenalty,
-      }),
+      label: t(
+        'apsScheduling.engineConfig.slackTimeCard.summary.overduePenaltyLabel'
+      ),
+      value: t(
+        'apsScheduling.engineConfig.slackTimeCard.summary.overduePenaltyValue',
+        {
+          penalty: snapshot.overduePenalty,
+        }
+      ),
     },
   ]
 }
 
 export function buildSlackTimeFactorViewModel(
   snapshot: GreedyEngineSlackTimeSnapshot,
-  t: EngineConfigTranslator,
+  t: EngineConfigTranslator
 ): SlackTimeFactorViewModel {
   const sourceTone: GreedyEngineFactorStatusTone = 'healthy'
   const sourceStatusTone: GreedyEngineFactorStatusTone = 'healthy'
@@ -72,12 +89,16 @@ export function buildSlackTimeFactorViewModel(
     sourceBadges: [
       {
         id: 'slack-time-status',
-        value: t('apsScheduling.engineConfig.slackTimeCard.sourceStatus.active'),
+        value: t(
+          'apsScheduling.engineConfig.slackTimeCard.sourceStatus.active'
+        ),
         tone: sourceStatusTone,
       },
       {
         id: 'slack-time-source',
-        value: t('apsScheduling.engineConfig.slackTimeCard.sourceType.systemDefault'),
+        value: t(
+          'apsScheduling.engineConfig.slackTimeCard.sourceType.systemDefault'
+        ),
         tone: sourceTone,
       },
     ],

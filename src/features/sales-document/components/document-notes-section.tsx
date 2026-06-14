@@ -1,8 +1,8 @@
 import { Tag } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { cn } from '@/lib/utils'
 
 interface DocumentNotesSectionProps {
   value: string

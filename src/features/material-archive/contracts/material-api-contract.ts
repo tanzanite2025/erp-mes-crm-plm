@@ -4,7 +4,11 @@ import { dimensionsSchema, materialCategorySchema } from '../data/schema'
 const optionalControlDateSchema = z.string().nullable().optional()
 
 export const materialChangeTypeApiDTOSchema = z.enum(['MANUAL', 'ECO', 'ECN'])
-export const materialStatusApiDTOSchema = z.enum(['Active', 'Inactive', 'Archived'])
+export const materialStatusApiDTOSchema = z.enum([
+  'Active',
+  'Inactive',
+  'Archived',
+])
 
 export const materialDimensionsApiDTOSchema = dimensionsSchema
 
@@ -93,7 +97,13 @@ export const bulkSyncMaterialsApiDTOSchema = z.object({
 
 export type MaterialApiDTO = z.infer<typeof materialApiDTOSchema>
 export type MaterialOptionApiDTO = z.infer<typeof materialOptionApiDTOSchema>
-export type MaterialOptionsResponseApiDTO = z.infer<typeof materialOptionsResponseApiDTOSchema>
-export type MaterialListPageApiDTO = z.infer<typeof materialListPageApiDTOSchema>
+export type MaterialOptionsResponseApiDTO = z.infer<
+  typeof materialOptionsResponseApiDTOSchema
+>
+export type MaterialListPageApiDTO = z.infer<
+  typeof materialListPageApiDTOSchema
+>
 export type SaveMaterialApiDTO = z.infer<typeof saveMaterialApiDTOSchema>
-export type BulkSyncMaterialsApiDTO = z.infer<typeof bulkSyncMaterialsApiDTOSchema>
+export type BulkSyncMaterialsApiDTO = z.infer<
+  typeof bulkSyncMaterialsApiDTOSchema
+>

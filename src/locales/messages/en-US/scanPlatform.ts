@@ -1,7 +1,8 @@
 export const scanPlatform = {
   panel: {
     title: 'Scan Platform Modules',
-    description: 'This panel shows the scan-platform modules that have already been split out, along with the host page each module fits best.',
+    description:
+      'This panel shows the scan-platform modules that have already been split out, along with the host page each module fits best.',
     moduleCount: '{{count}} modules',
     host: 'Host',
     mode: 'Mode',
@@ -21,7 +22,8 @@ export const scanPlatform = {
   modules: {
     logisticsInbound: {
       name: 'Inbound Logistics Scan',
-      description: 'Scan plugin for incoming receiving, purchase-logistics binding, and pre-inbound validation.',
+      description:
+        'Scan plugin for incoming receiving, purchase-logistics binding, and pre-inbound validation.',
       hostLabel: 'Purchase Logistics Dialog',
       statusLabel: 'Ready to Integrate',
       targetLabel: 'Purchase Logistics Host Page',
@@ -33,7 +35,8 @@ export const scanPlatform = {
     },
     wheelTrace: {
       name: 'Wheel Trace',
-      description: 'Scan plugin for querying the current hierarchy anchor, history timeline, and latest handling record of a wheel.',
+      description:
+        'Scan plugin for querying the current hierarchy anchor, history timeline, and latest handling record of a wheel.',
       hostLabel: 'Standalone Trace Page',
       statusLabel: 'Live API',
       targetLabel: 'Wheel Trace Lookup',

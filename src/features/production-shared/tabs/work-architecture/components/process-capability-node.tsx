@@ -27,13 +27,17 @@ export function ProcessCapabilityNode({
             <Briefcase className='size-3' />
             <span className='text-[10px]'>PROCESS</span>
           </Badge>
-          <span className='text-xs font-semibold text-slate-600'>{processNode.name}</span>
+          <span className='text-xs font-semibold text-slate-600'>
+            {processNode.name}
+          </span>
         </div>
       </div>
 
       <div className='flex flex-wrap gap-1.5'>
         {processes.length === 0 ? (
-          <p className='py-1 pl-1 text-[10px] italic text-muted-foreground/30'>No mapped capabilities</p>
+          <p className='py-1 pl-1 text-[10px] text-muted-foreground/30 italic'>
+            No mapped capabilities
+          </p>
         ) : (
           processes.map((process) => (
             <Badge

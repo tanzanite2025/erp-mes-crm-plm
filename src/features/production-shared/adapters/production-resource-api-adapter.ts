@@ -1,5 +1,3 @@
-import type { ProductionLine, ProductionJobCategory, ProductionSegment } from '../data/production-line'
-import type { ProductionProcessStep } from '../data/production-process'
 import type {
   ProductionJobCategoryApiDTO,
   ProductionLineApiDTO,
@@ -10,12 +8,20 @@ import type {
   SaveProductionLineApiDTO,
   SaveProductionProcessStepApiDTO,
 } from '../contracts/production-resource-api-dto'
+import type {
+  ProductionLine,
+  ProductionJobCategory,
+  ProductionSegment,
+} from '../data/production-line'
+import type { ProductionProcessStep } from '../data/production-process'
 import {
   normalizeProductionLineCode,
   normalizeProductionProcessStepCode,
 } from '../utils/production-code-normalization'
 
-function toLineProcessContract(dto: ProductionProcessStepApiDTO): ProductionProcessStep {
+function toLineProcessContract(
+  dto: ProductionProcessStepApiDTO
+): ProductionProcessStep {
   return {
     id: dto.id,
     code: normalizeProductionProcessStepCode(dto.code),
@@ -28,11 +34,15 @@ function toLineProcessContract(dto: ProductionProcessStepApiDTO): ProductionProc
   }
 }
 
-export function toProductionProcessContract(dto: ProductionProcessStepApiDTO): ProductionProcessStep {
+export function toProductionProcessContract(
+  dto: ProductionProcessStepApiDTO
+): ProductionProcessStep {
   return toLineProcessContract(dto)
 }
 
-function toJobCategoryContract(dto: ProductionJobCategoryApiDTO): ProductionJobCategory {
+function toJobCategoryContract(
+  dto: ProductionJobCategoryApiDTO
+): ProductionJobCategory {
   return {
     id: dto.id,
     segmentId: dto.segmentId || '',
@@ -47,7 +57,9 @@ function toJobCategoryContract(dto: ProductionJobCategoryApiDTO): ProductionJobC
   }
 }
 
-function toSegmentContract(dto: ProductionLineSegmentApiDTO): ProductionSegment {
+function toSegmentContract(
+  dto: ProductionLineSegmentApiDTO
+): ProductionSegment {
   return {
     id: dto.id,
     name: dto.name,
@@ -60,7 +72,9 @@ function toSegmentContract(dto: ProductionLineSegmentApiDTO): ProductionSegment 
   }
 }
 
-export function toProductionLineContract(dto: ProductionLineApiDTO): ProductionLine {
+export function toProductionLineContract(
+  dto: ProductionLineApiDTO
+): ProductionLine {
   return {
     id: dto.id,
     code: normalizeProductionLineCode(dto.code),
@@ -74,7 +88,9 @@ export function toProductionLineContract(dto: ProductionLineApiDTO): ProductionL
   }
 }
 
-export function toProductionLineContracts(dto: ProductionLinesResponseApiDTO): ProductionLine[] {
+export function toProductionLineContracts(
+  dto: ProductionLinesResponseApiDTO
+): ProductionLine[] {
   return (dto.items || []).map(toProductionLineContract)
 }
 
@@ -84,7 +100,9 @@ export function toProductionProcessContracts(
   return (dto.items || []).map(toProductionProcessContract)
 }
 
-function toProcessApiDTO(process: ProductionProcessStep): ProductionProcessStepApiDTO {
+function toProcessApiDTO(
+  process: ProductionProcessStep
+): ProductionProcessStepApiDTO {
   return {
     id: process.id,
     code: normalizeProductionProcessStepCode(process.code),
@@ -97,7 +115,9 @@ function toProcessApiDTO(process: ProductionProcessStep): ProductionProcessStepA
   }
 }
 
-function toJobCategoryApiDTO(category: ProductionJobCategory): ProductionJobCategoryApiDTO {
+function toJobCategoryApiDTO(
+  category: ProductionJobCategory
+): ProductionJobCategoryApiDTO {
   return {
     id: category.id,
     segmentId: category.segmentId || '',
@@ -112,7 +132,9 @@ function toJobCategoryApiDTO(category: ProductionJobCategory): ProductionJobCate
   }
 }
 
-function toSegmentApiDTO(segment: ProductionSegment): ProductionLineSegmentApiDTO {
+function toSegmentApiDTO(
+  segment: ProductionSegment
+): ProductionLineSegmentApiDTO {
   return {
     id: segment.id,
     name: segment.name,

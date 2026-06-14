@@ -1,5 +1,3 @@
-
-
 /**
  * [PREVIEW-ONLY] 前端预览计算单行的总额 (仅用于 UI 实时反馈)
  * 警告：此计算结果严禁作为业务提交的最终数据。最终金额由 Go 后端 Authority 重算引擎裁定。
@@ -13,7 +11,9 @@ export const previewLineAmount = (qty: number, price: number): number => {
  * 警告：此计算结果仅用于 UI 渲染。最终数据以 API 返回的后端重算结果为准。
  * 支持 SalesOrderLine 和 PurchaseOrderLine (Duck Typing)
  */
-export const previewOrderTotals = <T extends { lineNo: number; qty: number; price: number; amount: number }>(
+export const previewOrderTotals = <
+  T extends { lineNo: number; qty: number; price: number; amount: number },
+>(
   lines: T[]
 ) => {
   const reindexed = lines.map((line, index) => ({
@@ -21,8 +21,14 @@ export const previewOrderTotals = <T extends { lineNo: number; qty: number; pric
     lineNo: index + 1,
   }))
 
-  const totalQty = reindexed.reduce((sum, line) => sum + (Number(line.qty) || 0), 0)
-  const totalAmount = reindexed.reduce((sum, line) => sum + (Number(line.amount) || 0), 0)
+  const totalQty = reindexed.reduce(
+    (sum, line) => sum + (Number(line.qty) || 0),
+    0
+  )
+  const totalAmount = reindexed.reduce(
+    (sum, line) => sum + (Number(line.amount) || 0),
+    0
+  )
 
   return {
     lines: reindexed,
@@ -38,7 +44,6 @@ export const previewOrderTotals = <T extends { lineNo: number; qty: number; pric
 export const roundToTwo = (num: number): number => {
   return Math.round((num + Number.EPSILON) * 100) / 100
 }
-
 
 // [DEPRECATED] generateSalesOrderId 逻辑已迁移至后端权威发号器
 // 前端不再承担单号推导职责。

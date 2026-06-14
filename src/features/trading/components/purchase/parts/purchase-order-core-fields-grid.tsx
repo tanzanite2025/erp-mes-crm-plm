@@ -1,11 +1,15 @@
+import { useLanguage } from '@/context/language-provider'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { SelectDropdown } from '@/components/select-dropdown'
-import { useLanguage } from '@/context/language-provider'
 import { type PurchaseOrder } from '../../../data/schema'
 
 type PurchaseOrderFieldValue = PurchaseOrder[keyof PurchaseOrder]
-type PurchaseOrderSelectItem = { label: string; value: string; disabled?: boolean }
+type PurchaseOrderSelectItem = {
+  label: string
+  value: string
+  disabled?: boolean
+}
 
 interface PurchaseOrderCoreFieldsGridProps {
   formData: Partial<PurchaseOrder>
@@ -16,7 +20,10 @@ interface PurchaseOrderCoreFieldsGridProps {
   effectiveExchangeRate: number
   baseCurrencyCode: string
   exchangeRateText: string
-  handleHeaderChange: (field: keyof PurchaseOrder, value: PurchaseOrderFieldValue) => void
+  handleHeaderChange: (
+    field: keyof PurchaseOrder,
+    value: PurchaseOrderFieldValue
+  ) => void
   handleSupplierChange: (value: string) => void
 }
 
@@ -37,7 +44,7 @@ export function PurchaseOrderCoreFieldsGrid({
   return (
     <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-[repeat(3,minmax(0,1fr))_minmax(0,3fr)]'>
       <div className='space-y-1.5'>
-        <Label className='pl-1 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50'>
+        <Label className='pl-1 text-[10px] font-black tracking-[0.2em] text-muted-foreground/50 uppercase'>
           {t('purchase.orders.headerFields.supplier')}
         </Label>
         <SelectDropdown
@@ -50,7 +57,7 @@ export function PurchaseOrderCoreFieldsGrid({
       </div>
 
       <div className='space-y-1.5'>
-        <Label className='pl-1 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50'>
+        <Label className='pl-1 text-[10px] font-black tracking-[0.2em] text-muted-foreground/50 uppercase'>
           {t('purchase.orders.headerFields.currency')}
         </Label>
         <SelectDropdown
@@ -65,7 +72,7 @@ export function PurchaseOrderCoreFieldsGrid({
       </div>
 
       <div className='space-y-1.5'>
-        <Label className='pl-1 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50'>
+        <Label className='pl-1 text-[10px] font-black tracking-[0.2em] text-muted-foreground/50 uppercase'>
           {t('purchase.orders.headerFields.expectedArrival')}
         </Label>
         <Input
@@ -77,7 +84,7 @@ export function PurchaseOrderCoreFieldsGrid({
       </div>
 
       <div className='space-y-1.5'>
-        <Label className='pl-1 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50'>
+        <Label className='pl-1 text-[10px] font-black tracking-[0.2em] text-muted-foreground/50 uppercase'>
           {t('purchase.orders.headerFields.exchangeRate')}
         </Label>
         <div className='space-y-2'>
@@ -92,12 +99,12 @@ export function PurchaseOrderCoreFieldsGrid({
             </p>
             <span className='size-1 rounded-full bg-muted-foreground/30' />
             <p className='text-muted-foreground/70'>
-              {t('purchase.orders.headerFields.exchangeRateBase', { base: baseCurrencyCode })}
+              {t('purchase.orders.headerFields.exchangeRateBase', {
+                base: baseCurrencyCode,
+              })}
             </p>
             <span className='size-1 rounded-full bg-emerald-500/40' />
-            <p className='text-emerald-600'>
-              {exchangeRateText}
-            </p>
+            <p className='text-emerald-600'>{exchangeRateText}</p>
           </div>
         </div>
       </div>

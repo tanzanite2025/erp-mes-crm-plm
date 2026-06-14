@@ -18,7 +18,9 @@ export function findMaterialThresholdRule(
   }
 
   return (
-    rules?.find((rule) => rule.targetType === 'MATERIAL' && rule.materialId === materialId) ?? null
+    rules?.find(
+      (rule) => rule.targetType === 'MATERIAL' && rule.materialId === materialId
+    ) ?? null
   )
 }
 
@@ -58,10 +60,18 @@ export async function upsertMaterialThresholdRule(
 /**
  * 统一失效仓储阈值相关的查询缓存。
  */
-export async function invalidateMaterialThresholdState(queryClient: QueryClient): Promise<void> {
+export async function invalidateMaterialThresholdState(
+  queryClient: QueryClient
+): Promise<void> {
   await Promise.all([
-    queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.thresholdRules() }),
-    queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.materialThresholdMap() }),
-    queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.inventoryAlertSummary() }),
+    queryClient.invalidateQueries({
+      queryKey: warehouseQueryKeys.thresholdRules(),
+    }),
+    queryClient.invalidateQueries({
+      queryKey: warehouseQueryKeys.materialThresholdMap(),
+    }),
+    queryClient.invalidateQueries({
+      queryKey: warehouseQueryKeys.inventoryAlertSummary(),
+    }),
   ])
 }

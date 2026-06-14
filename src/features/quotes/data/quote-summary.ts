@@ -1,5 +1,10 @@
 export type QuoteCustomerFilter = 'all' | 'vip' | 'long-term' | 'new'
-export type QuoteStatusFilter = 'all' | 'draft' | 'pending' | 'converted' | 'voided'
+export type QuoteStatusFilter =
+  | 'all'
+  | 'draft'
+  | 'pending'
+  | 'converted'
+  | 'voided'
 export type QuoteTypeFilter = 'all' | 'retail' | 'wholesale' | 'sample'
 
 export type QuoteSummaryStatus = Exclude<QuoteStatusFilter, 'all'>

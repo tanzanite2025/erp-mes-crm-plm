@@ -3,7 +3,10 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload } from '@/lib/delta/types'
-import { assertRequiredVersion, buildVersionedPatchMetadata } from '@/lib/version-guard'
+import {
+  assertRequiredVersion,
+  buildVersionedPatchMetadata,
+} from '@/lib/version-guard'
 import {
   buildProductDelta,
   toProductWriteApiDTO,
@@ -23,7 +26,9 @@ export interface ProductTransactionRequest<TPayload> {
   payload: TPayload
 }
 
-const buildProductTransactionBody = (request: ProductTransactionRequest<SaveProductInput>) => ({
+const buildProductTransactionBody = (
+  request: ProductTransactionRequest<SaveProductInput>
+) => ({
   ...toProductWriteApiDTO(request.payload),
   metadata: {
     intent: request.intent,
@@ -49,14 +54,24 @@ export const executeProductTransaction = async (
 
 export const ProductMaintenanceService = {
   async createProduct(product: SaveProductInput): Promise<Product> {
-    const payload = normalizeSaveProductInput({ ...product, id: '', version: 1 })
-    return executeProductTransaction({
-      intent: PRODUCT_CREATE_INTENT_SAVE,
-      payload,
-    }, 'ProductMaintenanceService.createProduct')
+    const payload = normalizeSaveProductInput({
+      ...product,
+      id: '',
+      version: 1,
+    })
+    return executeProductTransaction(
+      {
+        intent: PRODUCT_CREATE_INTENT_SAVE,
+        payload,
+      },
+      'ProductMaintenanceService.createProduct'
+    )
   },
 
-  async patchProduct(current: Product, product: SaveProductInput): Promise<Product> {
+  async patchProduct(
+    current: Product,
+    product: SaveProductInput
+  ): Promise<Product> {
     const normalizedProduct = normalizeSaveProductInput(product)
     const delta = buildProductDelta(current, normalizedProduct)
     if (Object.keys(delta).length === 0) {
@@ -72,15 +87,23 @@ export const ProductMaintenanceService = {
     const payload: DeltaPayload = {
       op: 'PATCH',
       delta,
-      metadata: buildVersionedPatchMetadata(current.id, version, 'ProductMaintenanceService.patchProduct', {
-        intent: PRODUCT_PATCH_INTENT_SAVE,
-      }),
+      metadata: buildVersionedPatchMetadata(
+        current.id,
+        version,
+        'ProductMaintenanceService.patchProduct',
+        {
+          intent: PRODUCT_PATCH_INTENT_SAVE,
+        }
+      ),
     }
 
-    const res = await apiFetch<ProductApiDTO>(`/engineering/products/${current.id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(payload),
-    })
+    const res = await apiFetch<ProductApiDTO>(
+      `/engineering/products/${current.id}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      }
+    )
     return toProductContract(
       ensureObjectResponse<ProductApiDTO & Record<string, unknown>>(
         res,
@@ -89,12 +112,17 @@ export const ProductMaintenanceService = {
     )
   },
 
-  async saveProduct(product: SaveProductInput, current?: Product): Promise<Product> {
+  async saveProduct(
+    product: SaveProductInput,
+    current?: Product
+  ): Promise<Product> {
     const normalizedProduct = normalizeSaveProductInput(product)
 
     if (normalizedProduct.id) {
       if (!current) {
-        throw new Error(`[CRITICAL] Missing current product baseline for SDRTS patch on ${normalizedProduct.id}`)
+        throw new Error(
+          `[CRITICAL] Missing current product baseline for SDRTS patch on ${normalizedProduct.id}`
+        )
       }
       return this.patchProduct(current, normalizedProduct)
     }

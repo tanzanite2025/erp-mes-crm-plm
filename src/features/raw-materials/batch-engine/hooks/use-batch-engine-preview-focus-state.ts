@@ -7,9 +7,16 @@ import type {
 
 export function useBatchEnginePreviewFocusState() {
   const [previewOpen, setPreviewOpen] = useState(false)
-  const [selectedExplainabilityTargetId, setSelectedExplainabilityTargetId] = useState('')
-  const [selectedExplainabilityTargetKind, setSelectedExplainabilityTargetKind] = useState<BatchEngineExplainabilityTargetKind>('')
-  const [selectedExplainabilityTargetSource, setSelectedExplainabilityTargetSource] = useState<BatchEngineExplainabilityTargetSource>('')
+  const [selectedExplainabilityTargetId, setSelectedExplainabilityTargetId] =
+    useState('')
+  const [
+    selectedExplainabilityTargetKind,
+    setSelectedExplainabilityTargetKind,
+  ] = useState<BatchEngineExplainabilityTargetKind>('')
+  const [
+    selectedExplainabilityTargetSource,
+    setSelectedExplainabilityTargetSource,
+  ] = useState<BatchEngineExplainabilityTargetSource>('')
 
   const clearPreviewFocus = () => {
     setSelectedExplainabilityTargetId('')
@@ -29,7 +36,9 @@ export function useBatchEnginePreviewFocusState() {
     setPreviewOpen(true)
   }
 
-  const openExplainabilityTarget = (target: BatchEngineExplainabilityTarget) => {
+  const openExplainabilityTarget = (
+    target: BatchEngineExplainabilityTarget
+  ) => {
     setSelectedExplainabilityTargetId(target.targetId)
     setSelectedExplainabilityTargetKind(target.targetKind)
     setSelectedExplainabilityTargetSource('home-entry')

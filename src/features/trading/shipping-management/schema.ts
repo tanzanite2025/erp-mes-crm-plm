@@ -23,10 +23,17 @@ export const shippingVehicleMatchItemSchema = z.object({
   packageProfileName: z.string().optional().default(''),
 })
 
-const shippingVehicleMatchItemArraySchema = z.array(shippingVehicleMatchItemSchema)
+const shippingVehicleMatchItemArraySchema = z.array(
+  shippingVehicleMatchItemSchema
+)
 
-export function parseShippingVehicleMatchItemsResponse(response: unknown): ShippingVehicleMatchItem[] {
+export function parseShippingVehicleMatchItemsResponse(
+  response: unknown
+): ShippingVehicleMatchItem[] {
   return shippingVehicleMatchItemArraySchema.parse(
-    ensureArrayResponse<unknown>(response, 'shippingVehicleMatchService.getVehicleMatchItems')
+    ensureArrayResponse<unknown>(
+      response,
+      'shippingVehicleMatchService.getVehicleMatchItems'
+    )
   )
 }

@@ -1,6 +1,6 @@
+import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { DialogFooter } from '@/components/ui/dialog'
-import { useLanguage } from '@/context/language-provider'
 import { type SalesOrder } from '../../data/schema'
 
 interface OrderFooterStatsProps {
@@ -9,41 +9,48 @@ interface OrderFooterStatsProps {
   onSave: () => void
 }
 
-export function OrderFooterStats({ formData, onCancel, onSave }: OrderFooterStatsProps) {
+export function OrderFooterStats({
+  formData,
+  onCancel,
+  onSave,
+}: OrderFooterStatsProps) {
   const { t } = useLanguage()
 
   return (
     <DialogFooter className='sticky bottom-0 z-20 flex flex-col items-stretch justify-between gap-5 border-t bg-background/90 px-4 py-4 backdrop-blur-md sm:flex-row sm:items-center sm:gap-6 sm:px-6 sm:py-3'>
       <div className='grid grid-cols-3 gap-4 sm:flex sm:items-center sm:gap-8'>
         <div className='flex flex-col'>
-          <span className='mb-1.5 text-[7px] font-bold uppercase tracking-widest text-muted-foreground/40 italic leading-none sm:text-[8px]'>
+          <span className='mb-1.5 text-[7px] leading-none font-bold tracking-widest text-muted-foreground/40 uppercase italic sm:text-[8px]'>
             {t('tradingSalesOrder.footer.items')}
           </span>
-          <span className='text-base font-black italic leading-none tracking-tighter tabular-nums sm:text-lg'>
+          <span className='text-base leading-none font-black tracking-tighter italic tabular-nums sm:text-lg'>
             {(formData.lines?.length || 0).toLocaleString()}
           </span>
         </div>
         <div className='flex flex-col'>
-          <span className='mb-1.5 text-[7px] font-bold uppercase tracking-widest text-muted-foreground/40 italic leading-none sm:text-[8px]'>
+          <span className='mb-1.5 text-[7px] leading-none font-bold tracking-widest text-muted-foreground/40 uppercase italic sm:text-[8px]'>
             {t('tradingSalesOrder.footer.qty')}
           </span>
-          <span className='text-base font-black leading-none tracking-tighter tabular-nums text-muted-foreground/70 sm:text-lg'>
+          <span className='text-base leading-none font-black tracking-tighter text-muted-foreground/70 tabular-nums sm:text-lg'>
             {(formData.quantity || 0).toLocaleString()}
           </span>
         </div>
         <div className='flex flex-col'>
-          <span className='mb-1.5 text-[7px] font-bold uppercase tracking-widest text-amber-600/60 italic leading-none sm:text-[8px]'>
+          <span className='mb-1.5 text-[7px] leading-none font-bold tracking-widest text-amber-600/60 uppercase italic sm:text-[8px]'>
             {t('tradingSalesOrder.footer.amount')}
           </span>
-          <span className='text-base font-black italic leading-none tracking-tighter tabular-nums text-primary sm:text-lg'>
-            {formData.currency} {(formData.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 1 })}
+          <span className='text-base leading-none font-black tracking-tighter text-primary italic tabular-nums sm:text-lg'>
+            {formData.currency}{' '}
+            {(formData.amount || 0).toLocaleString(undefined, {
+              minimumFractionDigits: 1,
+            })}
           </span>
         </div>
       </div>
-      <div className='order-2 flex flex-col gap-2.5 shrink-0 sm:order-1 sm:flex-row sm:gap-3'>
+      <div className='order-2 flex shrink-0 flex-col gap-2.5 sm:order-1 sm:flex-row sm:gap-3'>
         <Button
           onClick={onSave}
-          className='order-1 h-11 rounded-full bg-slate-950 px-8 text-[11px] font-black uppercase text-white shadow-xl shadow-slate-950/20 transition-all active:scale-95 sm:order-2 sm:px-12'
+          className='order-1 h-11 rounded-full bg-slate-950 px-8 text-[11px] font-black text-white uppercase shadow-xl shadow-slate-950/20 transition-all active:scale-95 sm:order-2 sm:px-12'
         >
           {t('tradingSalesOrder.footer.save')}
         </Button>

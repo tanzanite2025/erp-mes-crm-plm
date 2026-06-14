@@ -46,8 +46,12 @@ export function NavUser({ user }: NavUserProps) {
                   <AvatarFallback className='rounded-lg'>SN</AvatarFallback>
                 </Avatar>
                 <div className='grid flex-1 text-start text-sm leading-tight'>
-                  <span className='truncate font-black italic'>{user.name}</span>
-                  <span className='truncate text-xs italic opacity-60'>{user.email}</span>
+                  <span className='truncate font-black italic'>
+                    {user.name}
+                  </span>
+                  <span className='truncate text-xs italic opacity-60'>
+                    {user.email}
+                  </span>
                 </div>
               </SidebarMenuButton>
             </DropdownMenuTrigger>
@@ -64,14 +68,21 @@ export function NavUser({ user }: NavUserProps) {
                     <AvatarFallback className='rounded-lg'>SN</AvatarFallback>
                   </Avatar>
                   <div className='grid flex-1 text-start text-sm leading-tight'>
-                    <span className='truncate font-black italic'>{user.name}</span>
-                    <span className='truncate text-xs italic opacity-60'>{user.email}</span>
+                    <span className='truncate font-black italic'>
+                      {user.name}
+                    </span>
+                    <span className='truncate text-xs italic opacity-60'>
+                      {user.email}
+                    </span>
                   </div>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuSeparator />
-              <DropdownMenuItem variant='destructive' onClick={() => setOpen(true)}>
+              <DropdownMenuItem
+                variant='destructive'
+                onClick={() => setOpen(true)}
+              >
                 <LogOut />
                 {t('common.actions.signOut')}
               </DropdownMenuItem>

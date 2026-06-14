@@ -1,7 +1,13 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import {
+  type AppLocale,
+  DEFAULT_LOCALE,
+  SUPPORTED_LOCALES,
+  type TranslationKey,
+  translate,
+} from '@/locales'
 import { getCookie, removeCookie, setCookie } from '@/lib/cookies'
 import { LANGUAGE_COOKIE_NAME } from '@/lib/locale'
-import { type AppLocale, DEFAULT_LOCALE, SUPPORTED_LOCALES, type TranslationKey, translate } from '@/locales'
 
 const LANGUAGE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 
@@ -57,25 +63,25 @@ export function LanguageProvider({
     setLocaleState(defaultLocale)
   }
 
-  const contextValue = useMemo<LanguageContextState>(() => ({
-    defaultLocale,
-    locale,
-    setLocale,
-    resetLocale,
-    t: (key, params) => translate(locale, key, params),
-  }), [defaultLocale, locale])
-
-  return (
-    <LanguageContext value={contextValue}>
-      {children}
-    </LanguageContext>
+  const contextValue = useMemo<LanguageContextState>(
+    () => ({
+      defaultLocale,
+      locale,
+      setLocale,
+      resetLocale,
+      t: (key, params) => translate(locale, key, params),
+    }),
+    [defaultLocale, locale]
   )
+
+  return <LanguageContext value={contextValue}>{children}</LanguageContext>
 }
 
 export function useLanguage() {
   const context = useContext(LanguageContext)
 
-  if (!context) throw new Error('useLanguage must be used within a LanguageProvider')
+  if (!context)
+    throw new Error('useLanguage must be used within a LanguageProvider')
 
   return context
 }

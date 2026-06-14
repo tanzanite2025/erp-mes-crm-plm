@@ -16,12 +16,15 @@ function openDatabase(): Promise<IDBDatabase> {
     }
 
     request.onsuccess = () => resolve(request.result)
-    request.onerror = () => reject(request.error ?? new Error('无法打开本地媒体草稿数据库'))
+    request.onerror = () =>
+      reject(request.error ?? new Error('无法打开本地媒体草稿数据库'))
   })
 }
 
 function sortDraftsByCreatedAtDesc(items: PersonalLocalMediaDraft[]) {
-  return [...items].sort((left, right) => right.createdAt.localeCompare(left.createdAt))
+  return [...items].sort((left, right) =>
+    right.createdAt.localeCompare(left.createdAt)
+  )
 }
 
 export const localMediaDraftStore = {
@@ -52,10 +55,17 @@ export const localMediaDraftStore = {
     })
   },
 
-  async getAllByOwner(ownerUserId: string, ownerAccountNo: string): Promise<PersonalLocalMediaDraft[]> {
+  async getAllByOwner(
+    ownerUserId: string,
+    ownerAccountNo: string
+  ): Promise<PersonalLocalMediaDraft[]> {
     const items = await this.getAll()
     return sortDraftsByCreatedAtDesc(
-      items.filter((item) => item.ownerUserId === ownerUserId || item.ownerAccountNo === ownerAccountNo)
+      items.filter(
+        (item) =>
+          item.ownerUserId === ownerUserId ||
+          item.ownerAccountNo === ownerAccountNo
+      )
     )
   },
 

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { handleServerError } from '@/lib/handle-server-error'
 import { isNotFoundError } from '@/lib/error-status'
+import { handleServerError } from '@/lib/handle-server-error'
 import { useLanguage } from '@/context/language-provider'
 import { tradingQueryKeys } from '@/features/trading/query-keys'
 import { receivableQueryKeys } from '@/features/trading/receivables/query-keys'
@@ -112,10 +112,7 @@ export function useSalesReturnMutations() {
     }) => createSalesReturn(salesOrderId, payload),
     onSuccess: async (data) => {
       toast.success(t('trading.salesReturns.queryShell.createSuccess'))
-      await invalidateSalesReturnViews(
-        data.salesReturn.id,
-        data.salesOrder.id
-      )
+      await invalidateSalesReturnViews(data.salesReturn.id, data.salesOrder.id)
       await queryClient.invalidateQueries({
         queryKey: tradingQueryKeys.salesOrdersRoot(),
       })
@@ -156,7 +153,9 @@ export function useSalesReturnMutations() {
       toast.success(t('trading.salesReturns.queryShell.editSuccess'))
       await invalidateSalesReturnViews(data.id, data.salesOrderId)
       await queryClient.invalidateQueries({
-        queryKey: tradingQueryKeys.salesReturnsSourceOrderDetail(data.salesOrderId),
+        queryKey: tradingQueryKeys.salesReturnsSourceOrderDetail(
+          data.salesOrderId
+        ),
       })
       await queryClient.invalidateQueries({
         queryKey: ['sales-returns', 'source-orders'],
@@ -183,7 +182,9 @@ export function useSalesReturnMutations() {
       payload: PatchSalesReturnActualAmountEntryPayload
     }) => patchSalesReturnActualAmountEntry(salesReturnId, payload),
     onSuccess: async (data) => {
-      toast.success(t('trading.salesReturns.queryShell.actualAmountEntrySuccess'))
+      toast.success(
+        t('trading.salesReturns.queryShell.actualAmountEntrySuccess')
+      )
       await invalidateSalesReturnViews(data.id, data.salesOrderId)
     },
     onError: handleServerError,

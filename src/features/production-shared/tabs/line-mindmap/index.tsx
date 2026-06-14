@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react'
-import { ForbiddenState } from '@/components/forbidden-state'
-import { Skeleton } from '@/components/ui/skeleton'
-import { useLanguage } from '@/context/language-provider'
 import { isForbiddenError } from '@/lib/error-status'
-import { useLineMgmtLines } from '../line-mgmt/hooks/use-line-mgmt-lines'
+import { useLanguage } from '@/context/language-provider'
+import { Skeleton } from '@/components/ui/skeleton'
+import { ForbiddenState } from '@/components/forbidden-state'
 import { useHierarchyLevelLabels } from '../hierarchy-config/hooks/use-hierarchy-level-labels'
 import { useHierarchyLevelOptions } from '../hierarchy-config/hooks/use-hierarchy-level-options'
+import { useLineMgmtLines } from '../line-mgmt/hooks/use-line-mgmt-lines'
 import { LineMindmapDialogs } from './components/line-mindmap-dialogs'
 import { LineMindmapToolbar } from './components/line-mindmap-toolbar'
 import { MindmapCanvas } from './components/mindmap-canvas'
@@ -23,7 +23,8 @@ export function LineMindmap() {
   const [createLevel2DialogOpen, setCreateLevel2DialogOpen] = useState(false)
   const [createLevel3DialogOpen, setCreateLevel3DialogOpen] = useState(false)
   const [nodeEditDialogOpen, setNodeEditDialogOpen] = useState(false)
-  const [hierarchyConfigDialogOpen, setHierarchyConfigDialogOpen] = useState(false)
+  const [hierarchyConfigDialogOpen, setHierarchyConfigDialogOpen] =
+    useState(false)
   const { level1Name, level2Name, level3Name } = useHierarchyLevelLabels()
   const { level1Options, level2Options } = useHierarchyLevelOptions()
   const { lines, isLoading, error, updateLineStrict } = useLineMgmtLines()
@@ -35,7 +36,7 @@ export function LineMindmap() {
       2: level2Name,
       3: level3Name,
     }),
-    [level1Name, level2Name, level3Name],
+    [level1Name, level2Name, level3Name]
   )
   const {
     activeLine,
@@ -60,7 +61,13 @@ export function LineMindmap() {
     settleSelection,
     updateLineStrict,
   })
-  const { handleAddChild, handleAddRoot, handleDeleteSelected, handleRebindSelected, handleRenameSelected } = useLineMindmapActions({
+  const {
+    handleAddChild,
+    handleAddRoot,
+    handleDeleteSelected,
+    handleRebindSelected,
+    handleRenameSelected,
+  } = useLineMindmapActions({
     activeLine,
     nodes,
     requestTopologyAuth,
@@ -68,11 +75,12 @@ export function LineMindmap() {
     settleSelection,
     updateLineStrict,
   })
-  const rebindOptions = selectedNode?.sourceType === 'segment'
-    ? level1Options
-    : selectedNode?.sourceType === 'jobCategory'
-      ? level2Options
-      : []
+  const rebindOptions =
+    selectedNode?.sourceType === 'segment'
+      ? level1Options
+      : selectedNode?.sourceType === 'jobCategory'
+        ? level2Options
+        : []
   const {
     handleAssignProcess,
     handleCreateProcessForJobCategory,
@@ -98,7 +106,7 @@ export function LineMindmap() {
 
   if (isLoading) {
     return (
-      <div className='flex min-h-[calc(100dvh-9rem)] flex-col gap-2 animate-in fade-in duration-700 md:min-h-[calc(100dvh-10rem)]'>
+      <div className='flex min-h-[calc(100dvh-9rem)] animate-in flex-col gap-2 duration-700 fade-in md:min-h-[calc(100dvh-10rem)]'>
         <Skeleton className='h-12 rounded-[24px]' />
         <Skeleton className='min-h-[calc(100dvh-14rem)] flex-1 rounded-[24px] md:min-h-[calc(100dvh-15rem)]' />
       </div>
@@ -106,7 +114,7 @@ export function LineMindmap() {
   }
 
   return (
-    <div className='flex min-h-[calc(100dvh-9rem)] flex-col gap-2 animate-in fade-in duration-700 md:min-h-[calc(100dvh-10rem)]'>
+    <div className='flex min-h-[calc(100dvh-9rem)] animate-in flex-col gap-2 duration-700 fade-in md:min-h-[calc(100dvh-10rem)]'>
       <LineMindmapToolbar
         activeLine={Boolean(activeLine)}
         level1Name={level1Name}

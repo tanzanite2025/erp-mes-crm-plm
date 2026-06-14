@@ -18,7 +18,11 @@ const salesReturnSourceOrderStatusSet = new Set<string>(
 )
 
 function resolveSalesReturnSourceStatuses(status?: string): string[] {
-  if (status && status !== 'all' && salesReturnSourceOrderStatusSet.has(status)) {
+  if (
+    status &&
+    status !== 'all' &&
+    salesReturnSourceOrderStatusSet.has(status)
+  ) {
     return [status]
   }
 

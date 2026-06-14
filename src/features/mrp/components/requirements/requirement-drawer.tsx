@@ -1,15 +1,20 @@
 'use client'
 
-import { type MaterialRequirement } from '../../data/requirement-schema'
-import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet'
-import { Button } from '@/components/ui/button'
 import { Download, Printer, Share2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { failLoudly } from '@/lib/safe-catch'
 import { useLanguage } from '@/context/language-provider'
-import { RequirementList } from './requirement-list'
-import { MoldRequirementAlert } from './mold-requirement-alert'
+import { Button } from '@/components/ui/button'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+} from '@/components/ui/sheet'
+import { type MaterialRequirement } from '../../data/requirement-schema'
 import { RequirementExportService } from '../../services/requirement-export-service'
+import { MoldRequirementAlert } from './mold-requirement-alert'
+import { RequirementList } from './requirement-list'
 import { RequirementStageAlert } from './requirement-stage-alert'
 
 interface RequirementDrawerProps {
@@ -24,48 +29,72 @@ interface RequirementDrawerProps {
   selectedCount: number
 }
 
-export function RequirementDrawer({ isOpen, onClose, data, errorMessage, stats, isLoading, selectedCount }: RequirementDrawerProps) {
+export function RequirementDrawer({
+  isOpen,
+  onClose,
+  data,
+  errorMessage,
+  stats,
+  isLoading,
+  selectedCount,
+}: RequirementDrawerProps) {
   const { locale, t } = useLanguage()
-  const isAnalyzedButEmpty = !isLoading && !errorMessage && selectedCount > 0 && data.length === 0
+  const isAnalyzedButEmpty =
+    !isLoading && !errorMessage && selectedCount > 0 && data.length === 0
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent side='right' className='w-full sm:max-w-[1050px] p-0 border-l-2 border-dashed border-primary/20 shadow-[-20px_0_50px_rgba(0,0,0,0.1)] bg-[#F8FAFC] rounded-l-[32px] overflow-hidden'>
-        <div className='h-full flex flex-col'>
-          <div className='bg-white/80 backdrop-blur-md border-b border-dashed px-8 py-7 relative overflow-hidden'>
-            <div className='absolute top-0 right-0 p-10 opacity-[0.05] pointer-events-none'>
+      <SheetContent
+        side='right'
+        className='w-full overflow-hidden rounded-l-[32px] border-l-2 border-dashed border-primary/20 bg-[#F8FAFC] p-0 shadow-[-20px_0_50px_rgba(0,0,0,0.1)] sm:max-w-[1050px]'
+      >
+        <div className='flex h-full flex-col'>
+          <div className='relative overflow-hidden border-b border-dashed bg-white/80 px-8 py-7 backdrop-blur-md'>
+            <div className='pointer-events-none absolute top-0 right-0 p-10 opacity-[0.05]'>
               <Download className='size-40 rotate-12 text-primary' />
             </div>
 
-            <div className='flex items-center justify-between relative z-10'>
+            <div className='relative z-10 flex items-center justify-between'>
               <div className='space-y-1'>
                 <div className='flex items-center gap-4'>
-                  <div className='px-2.5 py-1 rounded-lg bg-primary/10 text-primary text-[10px] font-black uppercase tracking-[0.2em] italic border border-primary/20'>
+                  <div className='rounded-lg border border-primary/20 bg-primary/10 px-2.5 py-1 text-[10px] font-black tracking-[0.2em] text-primary uppercase italic'>
                     {t('mrp.requirements.drawer.badge')}
                   </div>
-                  <SheetTitle className='text-3xl font-black tracking-tighter italic uppercase'>
+                  <SheetTitle className='text-3xl font-black tracking-tighter uppercase italic'>
                     {t('mrp.requirements.drawer.title')}
                   </SheetTitle>
                 </div>
-                <SheetDescription className='text-[10px] font-black text-muted-foreground/30 uppercase tracking-widest pl-1'>
-                  {t('mrp.requirements.drawer.description', { count: selectedCount })}
+                <SheetDescription className='pl-1 text-[10px] font-black tracking-widest text-muted-foreground/30 uppercase'>
+                  {t('mrp.requirements.drawer.description', {
+                    count: selectedCount,
+                  })}
                 </SheetDescription>
               </div>
 
               <div className='flex items-center gap-2 pr-6'>
-                <Button variant='outline' size='sm' className='rounded-full h-11 px-6 text-[11px] font-black uppercase gap-2 border-2 border-dashed border-muted/50 hover:bg-muted/5' onClick={() => window.print()}>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  className='h-11 gap-2 rounded-full border-2 border-dashed border-muted/50 px-6 text-[11px] font-black uppercase hover:bg-muted/5'
+                  onClick={() => window.print()}
+                >
                   <Printer className='size-4' />
                   {t('mrp.requirements.drawer.printList')}
                 </Button>
                 <Button
                   size='sm'
-                  className='rounded-full h-11 px-8 text-[11px] font-black uppercase gap-2 bg-primary shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all'
+                  className='h-11 gap-2 rounded-full bg-primary px-8 text-[11px] font-black uppercase shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95'
                   onClick={async () => {
                     try {
                       await RequirementExportService.exportToExcel(data, locale)
-                      toast.success(t('mrp.requirements.drawer.exportSuccess'), {
-                        description: t('mrp.requirements.drawer.exportSuccessDescription'),
-                      })
+                      toast.success(
+                        t('mrp.requirements.drawer.exportSuccess'),
+                        {
+                          description: t(
+                            'mrp.requirements.drawer.exportSuccessDescription'
+                          ),
+                        }
+                      )
                     } catch (error) {
                       failLoudly(error, 'RequirementDrawer.exportToExcel')
                     }
@@ -78,7 +107,7 @@ export function RequirementDrawer({ isOpen, onClose, data, errorMessage, stats, 
             </div>
           </div>
 
-          <div className='flex-1 overflow-y-auto p-6 custom-scrollbar [scrollbar-gutter:stable]'>
+          <div className='custom-scrollbar flex-1 overflow-y-auto p-6 [scrollbar-gutter:stable]'>
             {errorMessage ? (
               <RequirementStageAlert
                 tone='error'
@@ -90,7 +119,9 @@ export function RequirementDrawer({ isOpen, onClose, data, errorMessage, stats, 
               <RequirementStageAlert
                 tone='warning'
                 title={t('mrp.requirements.drawer.emptyAnalyzedTitle')}
-                description={t('mrp.requirements.drawer.emptyAnalyzedDescription')}
+                description={t(
+                  'mrp.requirements.drawer.emptyAnalyzedDescription'
+                )}
               />
             ) : (
               <>
@@ -100,7 +131,7 @@ export function RequirementDrawer({ isOpen, onClose, data, errorMessage, stats, 
             )}
           </div>
 
-          <div className='px-6 py-4 bg-white border-t flex items-center justify-between text-[10px] font-bold text-muted-foreground/40'>
+          <div className='flex items-center justify-between border-t bg-white px-6 py-4 text-[10px] font-bold text-muted-foreground/40'>
             <div className='flex items-center gap-4'>
               <span className='flex items-center gap-1.5 uppercase'>
                 <div className='size-1.5 rounded-full bg-primary' />
@@ -108,7 +139,7 @@ export function RequirementDrawer({ isOpen, onClose, data, errorMessage, stats, 
               </span>
             </div>
             <div className='flex items-center gap-3'>
-              <Share2 className='size-3 hover:text-primary cursor-pointer transition-colors' />
+              <Share2 className='size-3 cursor-pointer transition-colors hover:text-primary' />
               <span>{t('mrp.requirements.drawer.shareLink')}</span>
             </div>
           </div>

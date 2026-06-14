@@ -1,11 +1,14 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createLogger } from '@/lib/logger'
 import { type ReadResource, resolveQueryFailure } from '@/lib/read-resource'
 import { failLoudly } from '@/lib/safe-catch'
 import type { CreateReceiptRecordApiDTO } from '../contracts/receivable-api-dto'
 import { receivableQueryKeys } from '../query-keys'
-import { createReceiptRecord, getReceivableLedgerDetail } from '../services/receivable-ledger-detail-service'
+import {
+  createReceiptRecord,
+  getReceivableLedgerDetail,
+} from '../services/receivable-ledger-detail-service'
 
 const logger = createLogger('useReceivableLedgerDetail')
 
@@ -56,7 +59,10 @@ export function useReceivableLedgerDetail(id: string | null) {
       return
     }
 
-    logger.error(`Failed to load receivable ledger detail: ${readResource.scope}`, readResource.error)
+    logger.error(
+      `Failed to load receivable ledger detail: ${readResource.scope}`,
+      readResource.error
+    )
     failLoudly(readResource.error, readResource.scope)
   }, [readResource])
 
@@ -75,12 +81,21 @@ export function useCreateReceiptRecord() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: CreateReceiptRecordApiDTO }) =>
-      createReceiptRecord(id, payload),
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string
+      payload: CreateReceiptRecordApiDTO
+    }) => createReceiptRecord(id, payload),
     onSuccess: async (_, variables) => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: receivableQueryKeys.receivables() }),
-        queryClient.invalidateQueries({ queryKey: receivableQueryKeys.receivableDetail(variables.id) }),
+        queryClient.invalidateQueries({
+          queryKey: receivableQueryKeys.receivables(),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: receivableQueryKeys.receivableDetail(variables.id),
+        }),
       ])
     },
   })

@@ -1,12 +1,12 @@
 import { useMemo } from 'react'
 import { BanknoteArrowDown } from 'lucide-react'
-import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
+import { useGetReceivables } from '../hooks/use-receivables'
+import { useSalesReceivablesPageState } from '../hooks/use-sales-receivables-page-state'
+import { SalesReceivableDetailDialog } from './sales-receivable-detail-dialog'
 import { SalesReceivablesSummaryCards } from './sales-receivables-summary-cards'
 import { SalesReceivablesTableCard } from './sales-receivables-table-card'
-import { SalesReceivableDetailDialog } from './sales-receivable-detail-dialog'
-import { useSalesReceivablesPageState } from '../hooks/use-sales-receivables-page-state'
-import { useGetReceivables } from '../hooks/use-receivables'
 
 interface SalesReceivablesViewProps {
   /** 来源类型筛选，如 'SALES_ORDER' */
@@ -49,7 +49,7 @@ export function SalesReceivablesView({
     })
 
   return (
-    <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+    <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
       {showHeader && (
         <IndustrialHeader
           icon={BanknoteArrowDown}

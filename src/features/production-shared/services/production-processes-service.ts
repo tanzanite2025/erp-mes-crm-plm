@@ -17,23 +17,31 @@ export { PRODUCTION_PROCESSES_UPDATED_EVENT } from './production-resource-sync'
 
 export const productionProcessesService = {
   getSteps: async (): Promise<ProductionProcessStep[]> => {
-    const res = await apiFetch<ProductionProcessStepsResponseApiDTO>('/production/processes')
-    const checked = ensureObjectResponse<ProductionProcessStepsResponseApiDTO & Record<string, unknown>>(
-      res,
-      'productionProcessesService.getSteps'
+    const res = await apiFetch<ProductionProcessStepsResponseApiDTO>(
+      '/production/processes'
     )
+    const checked = ensureObjectResponse<
+      ProductionProcessStepsResponseApiDTO & Record<string, unknown>
+    >(res, 'productionProcessesService.getSteps')
     return toProductionProcessContracts(checked)
   },
 
-  saveStep: async (step: ProductionProcessStep): Promise<ProductionProcessStep> => {
+  saveStep: async (
+    step: ProductionProcessStep
+  ): Promise<ProductionProcessStep> => {
     const normalizedStep = normalizeProductionProcessStepEntity(step)
-    const res = await apiFetch<ProductionProcessStepApiDTO>('/production/processes', {
-      method: 'POST',
-      body: JSON.stringify(toSaveProductionProcessStepApiDTO(normalizedStep)),
-    })
+    const res = await apiFetch<ProductionProcessStepApiDTO>(
+      '/production/processes',
+      {
+        method: 'POST',
+        body: JSON.stringify(toSaveProductionProcessStepApiDTO(normalizedStep)),
+      }
+    )
 
     const saved = toProductionProcessContract(
-      ensureObjectResponse<ProductionProcessStepApiDTO & Record<string, unknown>>(
+      ensureObjectResponse<
+        ProductionProcessStepApiDTO & Record<string, unknown>
+      >(
         res,
         'productionProcessesService.saveStep'
       ) as ProductionProcessStepApiDTO
@@ -43,9 +51,12 @@ export const productionProcessesService = {
   },
 
   deleteStep: async (id: string): Promise<void> => {
-    const res = await apiFetch<ProductionMessageApiDTO>(`/production/processes/${id}`, {
-      method: 'DELETE',
-    })
+    const res = await apiFetch<ProductionMessageApiDTO>(
+      `/production/processes/${id}`,
+      {
+        method: 'DELETE',
+      }
+    )
 
     ensureObjectResponse<ProductionMessageApiDTO & Record<string, unknown>>(
       res,

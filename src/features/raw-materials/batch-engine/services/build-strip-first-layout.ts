@@ -1,7 +1,15 @@
 import type { CutSizeGeometryProjection } from '../../cut-size-library/domain/cut-size-geometry'
-import type { BatchEngineNormalizedControls, BatchEngineSimulation } from '../types'
+import type {
+  BatchEngineNormalizedControls,
+  BatchEngineSimulation,
+} from '../types'
 
-export type StripLayoutZoneKind = 'roll' | 'loss' | 'strip' | 'piece' | 'aggregate'
+export type StripLayoutZoneKind =
+  | 'roll'
+  | 'loss'
+  | 'strip'
+  | 'piece'
+  | 'aggregate'
 
 export type StripLayoutPoint = {
   x: number
@@ -203,10 +211,14 @@ export function buildStripFirstLayout(
   const piecePitchMm = pieceLengthMm + knifeGapMm
 
   const renderedStripCount = Math.min(stripsPerRoll, MAX_RENDER_STRIPS)
-  const renderedPieceCount = Math.min(piecesPerStrip, MAX_RENDER_PIECES_PER_STRIP)
+  const renderedPieceCount = Math.min(
+    piecesPerStrip,
+    MAX_RENDER_PIECES_PER_STRIP
+  )
 
   const usedLengthMm = Math.min(
-    piecesPerStrip * pieceLengthMm + Math.max(piecesPerStrip - 1, 0) * knifeGapMm,
+    piecesPerStrip * pieceLengthMm +
+      Math.max(piecesPerStrip - 1, 0) * knifeGapMm,
     usableLengthMm
   )
 
@@ -233,7 +245,10 @@ export function buildStripFirstLayout(
     for (let pieceIndex = 0; pieceIndex < renderedPieceCount; pieceIndex += 1) {
       const pieceY = usableY + pieceIndex * piecePitchMm
       if (pieceY >= usableY + usedLengthMm) break
-      const pieceHeight = Math.min(pieceLengthMm, usableY + usedLengthMm - pieceY)
+      const pieceHeight = Math.min(
+        pieceLengthMm,
+        usableY + usedLengthMm - pieceY
+      )
       if (pieceHeight <= 0) continue
 
       zones.push({

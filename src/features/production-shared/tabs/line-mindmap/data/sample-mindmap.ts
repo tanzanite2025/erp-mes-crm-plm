@@ -51,7 +51,7 @@ export function getNextMindmapLevel(level: MindmapLevel): MindmapLevel | null {
 export function createMindmapNodeFromOption(
   level: MindmapLevel,
   option: Pick<HierarchyLevelOptionItem, 'id' | 'name'>,
-  parentId?: string,
+  parentId?: string
 ): LineMindmapNode {
   return {
     id: createMindmapNodeId(),
@@ -105,12 +105,17 @@ export function createDemoMindmap(options: {
   return [
     {
       ...rootNode,
-      children: [firstBranch, secondBranch].filter(Boolean) as LineMindmapNode[],
+      children: [firstBranch, secondBranch].filter(
+        Boolean
+      ) as LineMindmapNode[],
     },
   ]
 }
 
-export function findMindmapNode(nodes: LineMindmapNode[], nodeId: string): LineMindmapNode | null {
+export function findMindmapNode(
+  nodes: LineMindmapNode[],
+  nodeId: string
+): LineMindmapNode | null {
   for (const node of nodes) {
     if (node.id === nodeId) {
       return node
@@ -128,7 +133,7 @@ export function findMindmapNode(nodes: LineMindmapNode[], nodeId: string): LineM
 export function updateMindmapNode(
   nodes: LineMindmapNode[],
   nodeId: string,
-  updater: (node: LineMindmapNode) => LineMindmapNode,
+  updater: (node: LineMindmapNode) => LineMindmapNode
 ): LineMindmapNode[] {
   return nodes.map((node) => {
     if (node.id === nodeId) {
@@ -149,7 +154,7 @@ export function updateMindmapNode(
 export function appendMindmapChild(
   nodes: LineMindmapNode[],
   parentId: string,
-  childNode: LineMindmapNode,
+  childNode: LineMindmapNode
 ): LineMindmapNode[] {
   return nodes.map((node) => {
     if (node.id === parentId) {

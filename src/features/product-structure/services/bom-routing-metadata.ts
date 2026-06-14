@@ -12,7 +12,6 @@
  * 添加新字段（例如未来要接入的 customerId）时，只需在对应 schema 中加一项 +
  * 在 builder 中传值，PascalCase 别名会自动同步。
  */
-
 import { z } from 'zod'
 import { type BOM } from '../data/schema'
 import {
@@ -95,7 +94,9 @@ export const bomEngineeringMetadataSchema = bomCommonMetadataSchema.extend({
   derivedMbomId: z.string().optional(),
 })
 
-export type BomEngineeringMetadata = z.infer<typeof bomEngineeringMetadataSchema>
+export type BomEngineeringMetadata = z.infer<
+  typeof bomEngineeringMetadataSchema
+>
 
 // ---------------------------------------------------------------------------
 // Manufacturing (MBOM) metadata
@@ -114,7 +115,10 @@ export const bomManufacturingSemanticActionSchema = z.enum([
  * MBOM 在事件 metadata 上的状态字典是 EFFECTIVE / OBSOLETE，与数据层
  * RELEASED/OBSOLETE 不同。{@link mapMbomStatusToEventStatus} 负责映射。
  */
-export const bomManufacturingEventStatusSchema = z.enum(['EFFECTIVE', 'OBSOLETE'])
+export const bomManufacturingEventStatusSchema = z.enum([
+  'EFFECTIVE',
+  'OBSOLETE',
+])
 
 export const bomManufacturingMetadataSchema = bomCommonMetadataSchema.extend({
   status: bomManufacturingEventStatusSchema,
@@ -130,7 +134,9 @@ export const bomManufacturingMetadataSchema = bomCommonMetadataSchema.extend({
   productionPlanner: z.string().optional(),
 })
 
-export type BomManufacturingMetadata = z.infer<typeof bomManufacturingMetadataSchema>
+export type BomManufacturingMetadata = z.infer<
+  typeof bomManufacturingMetadataSchema
+>
 
 // ---------------------------------------------------------------------------
 // Builders
@@ -167,7 +173,9 @@ function buildCommonMetadata(params: {
 /**
  * 数据层状态 → MBOM 事件态映射。
  */
-export function mapMbomStatusToEventStatus(status: BOM['status']): 'EFFECTIVE' | 'OBSOLETE' {
+export function mapMbomStatusToEventStatus(
+  status: BOM['status']
+): 'EFFECTIVE' | 'OBSOLETE' {
   return status === 'OBSOLETE' ? 'OBSOLETE' : 'EFFECTIVE'
 }
 
@@ -181,7 +189,9 @@ export interface BuildEbomMetadataInput {
   reviewer?: string
 }
 
-export function buildEbomMetadata(input: BuildEbomMetadataInput): BomEngineeringMetadata {
+export function buildEbomMetadata(
+  input: BuildEbomMetadataInput
+): BomEngineeringMetadata {
   const common = buildCommonMetadata({
     bom: input.bom,
     sourceCode: BOM_ENGINEERING_SOURCE_CODE,
@@ -213,7 +223,9 @@ export interface BuildMbomMetadataInput {
   productionPlanner?: string
 }
 
-export function buildMbomMetadata(input: BuildMbomMetadataInput): BomManufacturingMetadata {
+export function buildMbomMetadata(
+  input: BuildMbomMetadataInput
+): BomManufacturingMetadata {
   const eventStatus = mapMbomStatusToEventStatus(input.bom.status)
   const common = buildCommonMetadata({
     bom: input.bom,

@@ -5,6 +5,9 @@ import { type PaymentMethod } from '../data/schema'
 export const PaymentMethodCoreService = {
   async getPaymentMethods(): Promise<PaymentMethod[]> {
     const res = await apiFetch<PaymentMethod[]>('/finance/payment-methods')
-    return ensureArrayResponse<PaymentMethod>(res, 'PaymentMethodCoreService.getPaymentMethods')
+    return ensureArrayResponse<PaymentMethod>(
+      res,
+      'PaymentMethodCoreService.getPaymentMethods'
+    )
   },
 }

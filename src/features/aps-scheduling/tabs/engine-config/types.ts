@@ -15,7 +15,11 @@ export type GreedyEngineFactorStatusTone = 'healthy' | 'alert' | 'critical'
 
 export type GreedyEngineWeekendPolicy = 'rest_day' | 'workday' | 'unknown'
 
-export type GreedyEngineHolidayPolicy = 'stop_day' | 'reduced_capacity' | 'ignore' | 'unknown'
+export type GreedyEngineHolidayPolicy =
+  | 'stop_day'
+  | 'reduced_capacity'
+  | 'ignore'
+  | 'unknown'
 
 export type GreedyEngineDateRuleSourceType = 'system_default'
 

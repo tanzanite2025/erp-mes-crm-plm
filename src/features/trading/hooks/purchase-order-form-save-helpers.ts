@@ -38,7 +38,9 @@ export function buildPurchaseOrderSaveExecution(
   }
 
   if (initialOrder.version === undefined || initialOrder.version === null) {
-    throw new Error(`[CRITICAL] Missing version for SDRTS Patch on PurchaseOrder ${initialOrder.id}`)
+    throw new Error(
+      `[CRITICAL] Missing version for SDRTS Patch on PurchaseOrder ${initialOrder.id}`
+    )
   }
 
   return {

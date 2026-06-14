@@ -5,7 +5,8 @@ export const mrp = {
   },
   requirements: {
     pageTitle: 'Material Demand Analysis',
-    pageDescription: 'Order-driven material requirement analysis and workload projection',
+    pageDescription:
+      'Order-driven material requirement analysis and workload projection',
     helperText:
       'Select sales orders and line items below, then analyze demand to review the merged material list and hierarchy distribution.',
     analyze: 'Analyze Demand',
@@ -14,17 +15,23 @@ export const mrp = {
     drawer: {
       badge: 'Requirement Analysis',
       title: 'Material Requirement List',
-      description: 'Realtime material requirement analysis for {{count}} selected production items',
+      description:
+        'Realtime material requirement analysis for {{count}} selected production items',
       stageErrorTitle: 'Analysis failed: BOM / MRP chain returned an error',
-      stageErrorDescription: 'Use the error details below to locate the source directly; this is not a normal empty state.',
-      emptyAnalyzedTitle: 'This analysis produced no material requirement lines.',
-      emptyAnalyzedDescription: 'This is usually not a normal empty state. Check the selected products\' BOM, material rows, and linked master data first.',
+      stageErrorDescription:
+        'Use the error details below to locate the source directly; this is not a normal empty state.',
+      emptyAnalyzedTitle:
+        'This analysis produced no material requirement lines.',
+      emptyAnalyzedDescription:
+        "This is usually not a normal empty state. Check the selected products' BOM, material rows, and linked master data first.",
       printList: 'Print List',
       exportExcel: 'Export Excel',
       exportSuccess: 'Export succeeded',
-      exportSuccessDescription: 'The material requirement dispatch sheet has been generated',
+      exportSuccessDescription:
+        'The material requirement dispatch sheet has been generated',
       exportFailed: 'Export failed',
-      exportFailedDescription: 'An error occurred while generating the Excel file',
+      exportFailedDescription:
+        'An error occurred while generating the Excel file',
       realtimeNotice: 'Realtime data: latest BOM and orders are synced',
       shareLink: 'Generate a share link for warehouse',
     },
@@ -56,9 +63,11 @@ export const mrp = {
       usableStockHint: 'On-hand {{inventory}} / Locked {{locked}}',
       totalSupplyLabel: 'Effective Supply',
       pendingIntegration: 'Pending Integration',
-      pendingIntegrationHint: 'Will sync automatically after the production module is connected',
+      pendingIntegrationHint:
+        'Will sync automatically after the production module is connected',
       formulaTitle: 'Calculation Formula',
-      formulaLineUsable: '(On-hand {{inventory}} - Locked for inspection {{locked}})',
+      formulaLineUsable:
+        '(On-hand {{inventory}} - Locked for inspection {{locked}})',
       formulaLinePurchase: '+ Purchase in transit {{purchase}}',
       formulaLineWip: '+ Work in progress {{wip}}',
       formulaLineTotal: '= {{total}} {{unit}}',
@@ -90,13 +99,15 @@ export const mrp = {
       deliveryDate: 'Due: {{date}}',
       productCodeLabel: 'ID',
       productModelLabel: 'Model',
-      noBom: 'No usable BOM is configured for this product. Material analysis cannot continue.',
+      noBom:
+        'No usable BOM is configured for this product. Material analysis cannot continue.',
       noBomTitle: 'Blocked before analysis: missing usable BOM',
       bomPreview: 'BOM Preview ({{count}} items)',
       otherSection: 'Other',
       moreComponents: '+ {{count}} more key components',
       selectedCount: '{{count}} production items selected',
-      blockedByMissingBom: '{{count}} selected production items are missing a usable BOM and must be fixed before analysis',
+      blockedByMissingBom:
+        '{{count}} selected production items are missing a usable BOM and must be fixed before analysis',
       analyzeReady: 'Ready for aggregated material analysis',
       cancel: 'Cancel',
       analyze: 'Analyze Demand',
@@ -117,7 +128,8 @@ export const mrp = {
       docCode: 'Document Code',
       version: 'Version',
       effectiveDate: 'Effective Date',
-      description: 'Technical Standard: [{{products}}] aggregated production material requirement statistics ({{count}} materials included)',
+      description:
+        'Technical Standard: [{{products}}] aggregated production material requirement statistics ({{count}} materials included)',
       headers: {
         section: 'Hierarchy',
         code: 'Material Code',
@@ -130,13 +142,15 @@ export const mrp = {
         packaging: 'Packaging',
         remark: 'Remarks / Source',
       },
-      sectionTitle: '[Hierarchy: {{section}}] - Realtime inventory snapshot: {{date}}',
+      sectionTitle:
+        '[Hierarchy: {{section}}] - Realtime inventory snapshot: {{date}}',
       packagingFormulaForward: '1 {{packUnit}} = {{factor}} {{unit}}',
       packagingFormulaReverse: '1 {{unit}} = {{factor}} {{packUnit}}',
       shortageEnough: 'Sufficient',
       shortageWithPack: '{{gap}} {{unit}} (about {{packQty}} {{packUnit}})',
       issueDept: 'Issued by: Sales & Procurement Decision Center',
-      recipientInfo: 'Recipients: Purchasing, Material Control, Material Prep, Production Site (1 copy each). Note: realtime inventory variance included.',
+      recipientInfo:
+        'Recipients: Purchasing, Material Control, Material Prep, Production Site (1 copy each). Note: realtime inventory variance included.',
       proofread: 'Proofread',
       review: 'Review',
       preparedBy: 'Prepared By',
@@ -144,5 +158,5 @@ export const mrp = {
       separator: ', ',
       productsMore: 'and {{count}} more',
     },
-  }
+  },
 }

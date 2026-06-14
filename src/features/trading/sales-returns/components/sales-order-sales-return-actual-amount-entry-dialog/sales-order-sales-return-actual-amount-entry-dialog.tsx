@@ -44,9 +44,9 @@ export function SalesOrderSalesReturnActualAmountEntryDialog({
   const [actualAmountNote, setActualAmountNote] = useState(
     () => record?.actualReturnAmountNote ?? ''
   )
-  const [actualAmountEvidences, setActualAmountEvidences] = useState<OrderEvidence[]>(
-    () => record?.actualReturnAmountEvidences ?? []
-  )
+  const [actualAmountEvidences, setActualAmountEvidences] = useState<
+    OrderEvidence[]
+  >(() => record?.actualReturnAmountEvidences ?? [])
 
   const parsedActualAmount = useMemo(() => {
     const value = Number(actualAmount)
@@ -69,7 +69,9 @@ export function SalesOrderSalesReturnActualAmountEntryDialog({
           actualReturnAmount: parsedActualAmount,
           actualReturnAmountNote: actualAmountNote.trim() || undefined,
           actualReturnAmountEvidences:
-            actualAmountEvidences.length > 0 ? actualAmountEvidences : undefined,
+            actualAmountEvidences.length > 0
+              ? actualAmountEvidences
+              : undefined,
         },
       },
       {
@@ -87,10 +89,10 @@ export function SalesOrderSalesReturnActualAmountEntryDialog({
         className='w-[calc(100vw-24px)] max-w-[960px] rounded-[32px] border-none bg-background p-0 shadow-2xl'
       >
         <DialogHeader className='border-b border-dashed border-border/70 px-6 py-5 text-left'>
-          <DialogTitle className='text-lg font-black tracking-tighter italic uppercase'>
+          <DialogTitle className='text-lg font-black tracking-tighter uppercase italic'>
             {t('trading.salesReturns.actualAmountEntryDialog.title')}
           </DialogTitle>
-          <DialogDescription className='text-[9px] font-black uppercase tracking-widest opacity-60'>
+          <DialogDescription className='text-[9px] font-black tracking-widest uppercase opacity-60'>
             {t('trading.salesReturns.actualAmountEntryDialog.description', {
               returnNo: record.returnNo,
             })}
@@ -109,12 +111,16 @@ export function SalesOrderSalesReturnActualAmountEntryDialog({
 
         <DialogFooter className='border-t border-dashed border-border/70 px-6 py-4 sm:flex-row sm:items-center sm:justify-end'>
           <div className='flex items-center gap-2'>
-            <Button type='button' variant='outline' onClick={() => onOpenChange(false)}>
+            <Button
+              type='button'
+              variant='outline'
+              onClick={() => onOpenChange(false)}
+            >
               {t('common.actions.cancel')}
             </Button>
             <Button
               type='button'
-              className='h-11 rounded-full text-[10px] font-black uppercase tracking-widest'
+              className='h-11 rounded-full text-[10px] font-black tracking-widest uppercase'
               onClick={handleSubmit}
               disabled={
                 patchActualAmountEntryMutation.isPending ||

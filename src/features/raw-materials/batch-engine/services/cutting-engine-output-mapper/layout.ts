@@ -60,7 +60,12 @@ export function buildGeometryZone(
   allocatedPieces: number,
   coverageSharePercent: number
 ): BatchOptimizerGeometryLayoutZone {
-  const layoutZone = buildLayoutZone(zone, demandLineId, allocatedPieces, coverageSharePercent)
+  const layoutZone = buildLayoutZone(
+    zone,
+    demandLineId,
+    allocatedPieces,
+    coverageSharePercent
+  )
   return {
     id: layoutZone.id,
     kind: layoutZone.kind,

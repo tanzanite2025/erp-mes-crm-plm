@@ -8,12 +8,16 @@ type BatchEnginePreviewStateCardProps = {
   previewContent: ReactNode
 }
 
-export function BatchEnginePreviewStateCard(props: BatchEnginePreviewStateCardProps) {
+export function BatchEnginePreviewStateCard(
+  props: BatchEnginePreviewStateCardProps
+) {
   const { title, mode, solvedContent, previewContent } = props
 
   return (
     <div className='rounded-[24px] border border-dashed border-slate-300 bg-white/90 p-4'>
-      <p className='text-[10px] font-black uppercase tracking-[0.2em] text-slate-500/75'>{title}</p>
+      <p className='text-[10px] font-black tracking-[0.2em] text-slate-500/75 uppercase'>
+        {title}
+      </p>
       {mode === 'solved-plan' ? solvedContent : previewContent}
     </div>
   )

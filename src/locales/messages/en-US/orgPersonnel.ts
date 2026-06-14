@@ -12,7 +12,8 @@ export const orgPersonnel = {
   },
   leaveMgmt: {
     headerTitle: 'Online Leave Requests',
-    headerDescription: 'A fully digital leave application and approval tracking system.',
+    headerDescription:
+      'A fully digital leave application and approval tracking system.',
     createRequest: 'New Leave Request',
     summary: {
       pending: 'Pending',
@@ -41,7 +42,8 @@ export const orgPersonnel = {
     },
     toolbar: {
       title: 'List Filters & Sorting',
-      description: 'Quickly locate records by status, leave type, and start time.',
+      description:
+        'Quickly locate records by status, leave type, and start time.',
       statusPlaceholder: 'Filter status',
       typePlaceholder: 'Filter type',
       sortPlaceholder: 'Sort order',
@@ -52,7 +54,8 @@ export const orgPersonnel = {
     },
     detail: {
       title: 'Leave Details',
-      description: 'View the complete time range, status, and reason for this leave request.',
+      description:
+        'View the complete time range, status, and reason for this leave request.',
       applicant: 'Leave Employee',
       employeeId: 'Employee ID: {{id}}',
       leaveType: 'Leave Type',
@@ -63,17 +66,20 @@ export const orgPersonnel = {
     },
     actionDialog: {
       title: 'New Leave Request',
-      description: 'Select an employee archive to submit a leave request on their behalf. Duration is based on the backend authoritative preview.',
+      description:
+        'Select an employee archive to submit a leave request on their behalf. Duration is based on the backend authoritative preview.',
       employee: 'Leave Employee',
       employeePlaceholder: 'Select an employee archive',
-      employeeSearchPlaceholder: 'Search by name, staff ID, department, or position...',
+      employeeSearchPlaceholder:
+        'Search by name, staff ID, department, or position...',
       employeeEmpty: 'No available employee archive found',
       leaveType: 'Leave Type',
       leaveTypePlaceholder: 'Please select a leave type',
       startTime: 'Start Time',
       endTime: 'End Time',
       reason: 'Reason',
-      reasonPlaceholder: 'Describe the leave reason, handoff notes, or any additional information',
+      reasonPlaceholder:
+        'Describe the leave reason, handoff notes, or any additional information',
       previewTitle: 'Backend Preview Result',
       employeeFallback: 'Unknown employee',
       daysLabel: 'workdays',
@@ -84,7 +90,8 @@ export const orgPersonnel = {
   },
   statsPage: {
     headerTitle: 'Excellent Employee Hall of Fame',
-    headerDescription: 'A real-time digital scoring system based on attendance, tenure, and performance evaluation.',
+    headerDescription:
+      'A real-time digital scoring system based on attendance, tenure, and performance evaluation.',
     metrics: {
       attendanceRate: 'Attendance Rate',
       tenure: 'Tenure',
@@ -107,15 +114,20 @@ export const orgPersonnel = {
     exportSheetName: 'Personnel Export',
     templateFileName: 'Personnel_Template_{{date}}.xlsx',
     exportFileName: 'Personnel_Export_{{date}}.xlsx',
-    invalidSheetName: 'Invalid worksheet name [{{sheetName}}]. Please use the exported "{{templateSheet}}" or "{{exportSheet}}" file.',
-    emptyWorkbook: 'The Excel workbook is empty. Please use the standard template and fill in the data.',
-    structureFailed: 'Template structure validation failed.\n{{problems}}\nPlease download the latest standard template and import again.',
+    invalidSheetName:
+      'Invalid worksheet name [{{sheetName}}]. Please use the exported "{{templateSheet}}" or "{{exportSheet}}" file.',
+    emptyWorkbook:
+      'The Excel workbook is empty. Please use the standard template and fill in the data.',
+    structureFailed:
+      'Template structure validation failed.\n{{problems}}\nPlease download the latest standard template and import again.',
     missingColumns: 'Missing columns: {{columns}}',
     unexpectedColumns: 'Unexpected columns: {{columns}}',
     validationFailed: 'Data validation failed\n{{details}}',
     moreErrors: '\n...and {{count}} more errors',
-    duplicateStaffId: 'Row {{line}}: staff ID [{{staffId}}] is duplicated in the file',
-    unmatchedDept: 'Row {{line}}: department [{{deptName}}] could not be matched in the system',
+    duplicateStaffId:
+      'Row {{line}}: staff ID [{{staffId}}] is duplicated in the file',
+    unmatchedDept:
+      'Row {{line}}: department [{{deptName}}] could not be matched in the system',
     statuses: {
       active: 'Active',
       resigned: 'Resigned',
@@ -164,17 +176,20 @@ export const orgPersonnel = {
   },
   importDialog: {
     title: 'One-click Personnel Import',
-    description: 'Upload the Excel employee roster maintained by HR. The system strictly validates the worksheet name and full header set to avoid data drift caused by accidental edits.',
+    description:
+      'Upload the Excel employee roster maintained by HR. The system strictly validates the worksheet name and full header set to avoid data drift caused by accidental edits.',
     downloadTemplate: 'Download Standard Template',
     clickToUpload: 'Click or drag a file to upload',
     support: 'Supports .xlsx files (max 10MB)',
-    parseFailed: 'Failed to read the file. Please check whether it is a standard Excel file.',
+    parseFailed:
+      'Failed to read the file. Please check whether it is a standard Excel file.',
     auditFailed: 'Compliance Audit Failed',
     retry: 'Retry',
     previewReady: 'Validated / {{sheetName}} / Preview {{count}} rows',
     changeFile: 'Change File',
     preview: 'Preview (Top 5)',
-    warning: 'This import strictly validates the worksheet name and all standard columns. If any header is changed, added, or removed, the import will be rejected to avoid silent data loss.',
+    warning:
+      'This import strictly validates the worksheet name and all standard columns. If any header is changed, added, or removed, the import will be rejected to avoid silent data loss.',
     cancel: 'Cancel',
     syncing: 'Syncing...',
     executeImport: 'Execute Import',
@@ -195,20 +210,25 @@ export const orgPersonnel = {
     saveCreated: 'New employee added successfully',
     saveFailed: 'Operation failed: {{message}}',
     empty: 'No personnel records',
-    resignationConfirm: 'Are you sure you want to handle the resignation for [{{name}}]? They will be moved to the resigned list.',
+    resignationConfirm:
+      'Are you sure you want to handle the resignation for [{{name}}]? They will be moved to the resigned list.',
     resignationSuccess: '{{name}} has resigned successfully',
-    rollbackConfirm: 'Are you sure you want to restore the active status for [{{name}}]?',
+    rollbackConfirm:
+      'Are you sure you want to restore the active status for [{{name}}]?',
     rollbackSuccess: '{{name}} has been restored successfully',
     recentResignTitle: 'RECENT RESIGN ACTION / Recent Resignation',
     recentResignCount: '{{count}} employees resigned ({{time}})',
     recentResignPeople: 'People: {{names}}',
     recentResignExtra: ' and {{count}} others',
-    recentResignHint: 'Note: This record only keeps the latest operation and will be cleared after refreshing.',
+    recentResignHint:
+      'Note: This record only keeps the latest operation and will be cleared after refreshing.',
     undoResign: 'Undo Resignation',
     undoing: 'Undoing...',
     undoErrorEmpty: 'No recoverable personnel in the recent resignation record',
-    undoErrorNone: 'No personnel restored, they may have been deleted or status changed',
-    undoPartial: 'Restored {{updated}}/{{total}} personnel, others may have been deleted',
+    undoErrorNone:
+      'No personnel restored, they may have been deleted or status changed',
+    undoPartial:
+      'Restored {{updated}}/{{total}} personnel, others may have been deleted',
     undoSuccess: 'Restored {{count}} personnel to active status',
     noIdFound: 'No updatable personnel ID found',
     filterStatus: 'Filter Status',
@@ -233,7 +253,8 @@ export const orgPersonnel = {
         confirmPlaceholder: 'Type "{{word}}" to continue',
         confirmError: 'Please type "{{word}}" to confirm.',
         warningTitle: 'CRITICAL: Resignation Operational Risk',
-        warningDesc: 'Resignation will immediately revoke all scheduling and system access. Please verify the list before execution.',
+        warningDesc:
+          'Resignation will immediately revoke all scheduling and system access. Please verify the list before execution.',
         submit: 'Execute Bulk Resignation',
         success: 'Successfully handled resignation for {{count}} staff',
         failure: 'Operation failed, please try again',
@@ -246,7 +267,8 @@ export const orgPersonnel = {
         confirmPlaceholder: 'Type "{{word}}" to confirm',
         confirmError: 'Please type "{{word}}" to confirm.',
         warningTitle: 'High-Level Warning!',
-        warningDesc: 'Bulk deletion is a core data operation, please verify selection before confirmation.',
+        warningDesc:
+          'Bulk deletion is a core data operation, please verify selection before confirmation.',
         submit: 'Confirm Bulk Deletion',
         loading: 'Deleting staff records...',
         success: 'Successfully deleted {{count}} staff records',
@@ -256,7 +278,8 @@ export const orgPersonnel = {
   },
   org: {
     title: 'Organization Architecture',
-    subtitle: 'Maintain the physical topology, administrative hierarchy, and cross-functional relations of the entire group.',
+    subtitle:
+      'Maintain the physical topology, administrative hierarchy, and cross-functional relations of the entire group.',
     treeTitle: 'Hierarchy STRUCTURE',
     detailTitle: 'Details DATA',
     childrenTitle: 'Units UNITS',
@@ -269,28 +292,33 @@ export const orgPersonnel = {
     noLinked: 'No linked architecture',
     noChildren: 'No children at this level',
     emptyTree: 'No organization nodes yet',
-    emptyTreeHint: 'The current environment has no organization tree data yet. Click the plus button on the left to create the first root organization.',
+    emptyTreeHint:
+      'The current environment has no organization tree data yet. Click the plus button on the left to create the first root organization.',
     selectHint: 'Select an organization from the tree on the left to manage',
     editData: 'Edit Data',
     addChild: 'Add Child',
     removeItem: 'Remove Item',
     manageLinks: 'Manage Links',
     manageDetail: 'Manage Details',
-    deleteConfirm: 'Are you sure you want to delete the department "{{name}}"? This action is irreversible.',
+    deleteConfirm:
+      'Are you sure you want to delete the department "{{name}}"? This action is irreversible.',
     saveSuccess: 'Organization information updated',
     createSuccess: 'New organization created successfully',
     deleteSuccess: 'Organization removed successfully',
     deleteFailed: 'Failed to remove organization',
-    saveFailed: 'Failed to save organization data. Please check network or format.',
+    saveFailed:
+      'Failed to save organization data. Please check network or format.',
     goToPersonnel: 'Go to Personnel Management',
     backendErrors: {
       nameConflict: 'Organization name already exists under the same parent',
-      hasChildren: 'Cannot delete: this organization still has child departments',
-      hasEmployees: 'Cannot delete: this organization still has active employees',
+      hasChildren:
+        'Cannot delete: this organization still has child departments',
+      hasEmployees:
+        'Cannot delete: this organization still has active employees',
       deleteFailed: 'Failed to delete organization',
       saveFailed: 'Failed to save organization',
       invalidPayload: 'Invalid organization payload',
-      fetchTreeFailed: 'Failed to fetch organization tree'
+      fetchTreeFailed: 'Failed to fetch organization tree',
     },
     nodeTypes: {
       root: 'ROOT / HQ',
@@ -323,7 +351,8 @@ export const orgPersonnel = {
     },
     productionSelector: {
       title: 'Link Production Arch LINE_ARCH_LINK',
-      descDynamic: 'Select the production lines and specific {{levelName}} managed or followed by this department.',
+      descDynamic:
+        'Select the production lines and specific {{levelName}} managed or followed by this department.',
       searchPlaceholder: 'Search name...',
       submit: 'Confirm Link SAVE_LINK',
     },
@@ -331,7 +360,8 @@ export const orgPersonnel = {
       editTitle: 'Edit Personnel Archive ARCHIVE_EDIT',
       createTitle: 'Create New Entry ARCHIVE_NEW',
       editDesc: 'Update the core archive data for this staff member.',
-      createDesc: 'Record a new entry for joining personnel here. Data fields are aligned with archive templates.',
+      createDesc:
+        'Record a new entry for joining personnel here. Data fields are aligned with archive templates.',
       submit: 'Save & Submit SAVE_ARCHIVE',
       noPosition: 'No Position',
       errors: {
@@ -365,11 +395,14 @@ export const orgPersonnel = {
     },
     groups: {
       headerTitle: 'Group Management Center GROUP_HUB',
-      headerDescription: 'Unified maintenance of production teams, collaborative nodes, and business units within the organization.',
+      headerDescription:
+        'Unified maintenance of production teams, collaborative nodes, and business units within the organization.',
       searchPlaceholderDynamic: 'Search team code / name / {{levelName}}',
       addButton: 'Add Team',
-      deleteConfirmMessage: 'Are you sure you want to delete this team? This action is irreversible.',
-      emptyDescriptionDynamic: 'Click Add Team to complete {{relatedLevelName}} and {{levelName}} mapping.',
+      deleteConfirmMessage:
+        'Are you sure you want to delete this team? This action is irreversible.',
+      emptyDescriptionDynamic:
+        'Click Add Team to complete {{relatedLevelName}} and {{levelName}} mapping.',
       sectionLabelDynamic: '{{levelName}}',
       sectionPlaceholderDynamic: 'Enter {{levelName}}',
     },
@@ -384,15 +417,18 @@ export const orgPersonnel = {
   lineMgmt: {
     header: {
       title: 'Production Line Management Center',
-      subtitleDynamic: 'PRODUCTION LINE MGMT / Define digital production paths with multi-{{level1Name}} topology support',
+      subtitleDynamic:
+        'PRODUCTION LINE MGMT / Define digital production paths with multi-{{level1Name}} topology support',
     },
     list: {
       searchPlaceholder: 'Search by line code or name...',
       addButton: 'Add Line',
       emptyTitle: 'No Production Line Data',
-      emptyDescDynamic: 'Click "Add Line" to establish a digital production path and define the hierarchy of {{level1Name}} and {{level2Name}}.',
+      emptyDescDynamic:
+        'Click "Add Line" to establish a digital production path and define the hierarchy of {{level1Name}} and {{level2Name}}.',
       initButton: 'Add First Line',
-      deleteConfirm: 'Are you sure you want to delete this production line definition?',
+      deleteConfirm:
+        'Are you sure you want to delete this production line definition?',
       requestSent: 'Request sent',
       updateSuccess: 'Line configuration updated',
       addSuccess: 'New request submitted',
@@ -405,13 +441,15 @@ export const orgPersonnel = {
       stop: 'Stop',
       status: 'Status',
       hierarchy: 'Hierarchy Nodes',
-      hierarchyStatsDynamic: '{{level1Count}} {{level1Name}} / {{level2Count}} {{level2Name}} / {{level3Count}} {{level3Name}}',
+      hierarchyStatsDynamic:
+        '{{level1Count}} {{level1Name}} / {{level2Count}} {{level2Name}} / {{level3Count}} {{level3Name}}',
       topologyMgmt: 'Topology Management Console',
       running: 'Running',
       offline: 'Offline',
       defineHierarchyLevel: 'Define New {{levelName}}',
       initTopology: 'Initialize Line Topology',
-      emptyTopologyDescDynamic: 'This line is currently empty. You can import a structure from a standard template or manually create the first {{levelName}}.',
+      emptyTopologyDescDynamic:
+        'This line is currently empty. You can import a structure from a standard template or manually create the first {{levelName}}.',
       manualBuildHierarchyLevel: 'Manually Build First {{levelName}}',
       templateBackup: 'Topology Backup',
       saveTemplateFrom: 'Template saved from line {{name}}',
@@ -420,7 +458,8 @@ export const orgPersonnel = {
     dialog: {
       editTitle: 'Edit Line Basic Config',
       createTitle: 'Add Digital Production Line',
-      description: 'Configure core line info, topology is configured in detail page',
+      description:
+        'Configure core line info, topology is configured in detail page',
       nameLabel: 'Line Name',
       namePlaceholder: 'e.g., Carbon Rim Molding Line',
       codeLabel: 'Unique ID',
@@ -436,15 +475,21 @@ export const orgPersonnel = {
     auth: {
       editTitle: 'Line Archive Edit Authorization',
       deleteTitle: 'Line Resource Deletion Authorization',
-      editDesc: 'Modifying basic line definition. Please enter the authorization code to continue',
-      deleteDesc: 'Removing this line will break associated scheduling, quality, and equipment logic. Please enter the authorization code to continue',
+      editDesc:
+        'Modifying basic line definition. Please enter the authorization code to continue',
+      deleteDesc:
+        'Removing this line will break associated scheduling, quality, and equipment logic. Please enter the authorization code to continue',
     },
     toasts: {
       loadFailed: 'Failed to load line data',
-      saveConflict: 'Save failed: Line configuration has been updated by others, fetching latest version...',
-      saveForbidden: 'Save failed: Backend command validation failed, please check authorization code',
-      saveForbiddenAuthCode: 'Save failed: The topology authorization code is invalid. Please verify it again.',
-      saveForbiddenPermission: 'Save failed: The current account does not have permission to maintain production line configuration.',
+      saveConflict:
+        'Save failed: Line configuration has been updated by others, fetching latest version...',
+      saveForbidden:
+        'Save failed: Backend command validation failed, please check authorization code',
+      saveForbiddenAuthCode:
+        'Save failed: The topology authorization code is invalid. Please verify it again.',
+      saveForbiddenPermission:
+        'Save failed: The current account does not have permission to maintain production line configuration.',
       saveError: 'Save failed, please check network or refresh and try again',
       deleteFailed: 'Deletion failed',
       loading: 'Loading line configurations from cloud...',
@@ -457,10 +502,13 @@ export const orgPersonnel = {
       renameLevel: 'Rename {{levelName}}',
       levelRenameTitle: '{{levelName}} Definition Change',
       levelRemoveTitle: 'Remove {{levelName}} Resource',
-      levelRenameDesc: 'Renaming {{levelName}} will affect the current hierarchy structure. Please verify the authorization code',
-      levelRemoveDesc: 'Removing {{levelName}} will also clear its child structure. Please enter the authorization code to continue',
+      levelRenameDesc:
+        'Renaming {{levelName}} will affect the current hierarchy structure. Please verify the authorization code',
+      levelRemoveDesc:
+        'Removing {{levelName}} will also clear its child structure. Please enter the authorization code to continue',
       authGenericTitle: 'Auth Verification',
-      authGenericDesc: 'This operation involves core line structure changes, please enter auth password to confirm.',
+      authGenericDesc:
+        'This operation involves core line structure changes, please enter auth password to confirm.',
       authPasswordPlaceholder: 'Enter 6-digit auth password',
       authError: 'Incorrect auth password, please try again',
       authVerify: 'Verify & Execute',
@@ -475,38 +523,43 @@ export const orgPersonnel = {
     },
   },
   topologyTemplateMgmt: {
-      header: {
-        title: 'Topology Template Center',
-        subtitle: 'TOPOLOGY TEMPLATES / Define standard hierarchy blueprints for rapid reuse and standardized configuration',
-      },
-      list: {
-        searchPlaceholder: 'Search template name or description...',
-        addTemplate: 'Add Template',
-        noTemplates: 'No Templates',
-        emptyDescDynamic: 'By defining common topology templates, you can avoid repetitive configuration of {{level1Name}} / {{level2Name}} structures when creating similar hierarchy setups, enabling standardized reuse.',
-        initButton: 'Create First Template',
-      },
-      card: {
-        standardTopology: 'Standard Structure Template',
-        noDescription: 'No description',
-        editInfo: 'Edit Basic Info',
-        deleteTemplate: 'Delete Template',
-        deleteStandardLevelTitle: 'Remove Standard {{levelName}} Template?',
-        deleteStandardLevelDesc: 'Removing the {{levelName}} template [{{name}}] will also clear its child structure.',
-        addStandardLevel: 'Define New Standard {{levelName}}',
-        defaultStandardLevel: 'Standard {{levelName}} {{index}}',
-      },
-      dialog: {
-        editTitle: 'Edit Topology Blueprint Info',
-        createTitle: 'Create New Topology Template',
-        descriptionDynamic: 'TEMPLATE_SPEC / Templates define the base {{level1Name}} and {{level2Name}} structure. After creation, you can continue editing detailed hierarchy entries in the template list.',
-        nameLabel: 'Template Name',
-        namePlaceholder: 'e.g., Composite Forming Base Structure Template',
-        nameRequired: 'Template name must be at least 2 characters',
-        descLabel: 'Description (Optional)',
-        descPlaceholder: 'Briefly describe the production scenarios this template applies to...',
-        saveChanges: 'Save Changes',
-        initTemplate: 'Create Now',
-      },
+    header: {
+      title: 'Topology Template Center',
+      subtitle:
+        'TOPOLOGY TEMPLATES / Define standard hierarchy blueprints for rapid reuse and standardized configuration',
     },
+    list: {
+      searchPlaceholder: 'Search template name or description...',
+      addTemplate: 'Add Template',
+      noTemplates: 'No Templates',
+      emptyDescDynamic:
+        'By defining common topology templates, you can avoid repetitive configuration of {{level1Name}} / {{level2Name}} structures when creating similar hierarchy setups, enabling standardized reuse.',
+      initButton: 'Create First Template',
+    },
+    card: {
+      standardTopology: 'Standard Structure Template',
+      noDescription: 'No description',
+      editInfo: 'Edit Basic Info',
+      deleteTemplate: 'Delete Template',
+      deleteStandardLevelTitle: 'Remove Standard {{levelName}} Template?',
+      deleteStandardLevelDesc:
+        'Removing the {{levelName}} template [{{name}}] will also clear its child structure.',
+      addStandardLevel: 'Define New Standard {{levelName}}',
+      defaultStandardLevel: 'Standard {{levelName}} {{index}}',
+    },
+    dialog: {
+      editTitle: 'Edit Topology Blueprint Info',
+      createTitle: 'Create New Topology Template',
+      descriptionDynamic:
+        'TEMPLATE_SPEC / Templates define the base {{level1Name}} and {{level2Name}} structure. After creation, you can continue editing detailed hierarchy entries in the template list.',
+      nameLabel: 'Template Name',
+      namePlaceholder: 'e.g., Composite Forming Base Structure Template',
+      nameRequired: 'Template name must be at least 2 characters',
+      descLabel: 'Description (Optional)',
+      descPlaceholder:
+        'Briefly describe the production scenarios this template applies to...',
+      saveChanges: 'Save Changes',
+      initTemplate: 'Create Now',
+    },
+  },
 }

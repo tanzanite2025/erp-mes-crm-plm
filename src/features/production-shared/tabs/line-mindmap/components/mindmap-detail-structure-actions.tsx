@@ -1,5 +1,5 @@
-import type { LineMindmapNode, MindmapLevel } from '../data/sample-mindmap'
 import type { HierarchyLevelOptionItem } from '../../hierarchy-config/data/hierarchy-config'
+import type { LineMindmapNode, MindmapLevel } from '../data/sample-mindmap'
 import type { LineMindmapProcessOption } from '../types'
 import { MindmapDetailAddChildActions } from './mindmap-detail-add-child-actions'
 import { MindmapDetailStructureWriteback } from './mindmap-detail-structure-writeback'
@@ -25,7 +25,9 @@ export function MindmapDetailStructureActions({
   onRebindSelected,
   onRenameSelected,
 }: MindmapDetailStructureActionsProps) {
-  const canEditStructure = selectedNode.sourceType === 'segment' || selectedNode.sourceType === 'jobCategory'
+  const canEditStructure =
+    selectedNode.sourceType === 'segment' ||
+    selectedNode.sourceType === 'jobCategory'
 
   return (
     <>

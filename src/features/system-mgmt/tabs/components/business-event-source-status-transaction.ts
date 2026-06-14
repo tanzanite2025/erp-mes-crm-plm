@@ -11,7 +11,8 @@ export function isBusinessEventStatusAtomicTransactionSupported({
   committedSource: BusinessEventSource
 }) {
   return (
-    draftSource.config.statuses.length === committedSource.config.statuses.length &&
+    draftSource.config.statuses.length ===
+      committedSource.config.statuses.length &&
     draftSource.config.statuses.every(
       (status) =>
         !!status.id &&
@@ -41,8 +42,8 @@ export function buildBusinessEventStatusAtomicTransactionPayload({
     affectedRules: changedRules.map((rule) => ({
       ruleId: rule.id,
       expectedVersion:
-        previousRules.find((currentRule) => currentRule.id === rule.id)?.version ??
-        rule.version,
+        previousRules.find((currentRule) => currentRule.id === rule.id)
+          ?.version ?? rule.version,
     })),
   }
 }

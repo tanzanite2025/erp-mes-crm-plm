@@ -12,7 +12,8 @@ export const apsScheduling = {
   board: {
     title: 'APS排产工作台',
     subtitle: '统一承接产能、优先级与交期协调的排产工作台。',
-    statusSummary: '当前排产：{{total}} 单，{{running}} 单执行中，{{draft}} 单待排，{{late}} 单有风险。',
+    statusSummary:
+      '当前排产：{{total}} 单，{{running}} 单执行中，{{draft}} 单待排，{{late}} 单有风险。',
     searchPlaceholder: '搜索排程单号、产品或线体...',
     rules: '规则',
     create: '创建排程',
@@ -28,14 +29,16 @@ export const apsScheduling = {
     loading: 'APS排产数据加载中...',
     refreshing: '正在刷新 APS 排产数据...',
     fallbackNotice: '若后端暂不可用，页面会回退到本地示例数据。',
-    capacityNote: '负载 {{occupiedHours}} / 产能 {{availableHours}} / 窗口 {{timeWindowHours}}',
+    capacityNote:
+      '负载 {{occupiedHours}} / 产能 {{availableHours}} / 窗口 {{timeWindowHours}}',
     segmentCategoryCount: '{{count}} 个{{levelName}}分组',
     processCount: '{{count}} 个{{levelName}}',
   },
   cuttingIssuance: {
     header: {
       title: '裁纱下达',
-      description: '将销售订单、模板自动匹配与执行单下达整合在同一页面中闭环完成。',
+      description:
+        '将销售订单、模板自动匹配与执行单下达整合在同一页面中闭环完成。',
       status: {
         loading: '数据加载中',
         awaitingOrder: '等待选择订单',
@@ -48,14 +51,16 @@ export const apsScheduling = {
     feedback: {
       loadingFailed: '加载失败：{{message}}',
       unknownError: '未知错误',
-      createMissingSelection: '请先选择订单行，并确认系统已自动匹配到裁纱模板。',
+      createMissingSelection:
+        '请先选择订单行，并确认系统已自动匹配到裁纱模板。',
       createSuccess: '执行单已创建：{{id}}',
       createFailed: '创建执行单失败。',
       responseMissingId: '创建执行单失败：响应缺少执行单 ID。',
       templateHintAwaitingLine: '请先选择订单行，系统会自动匹配裁纱模板。',
       templateHintNoTemplate: '当前订单行还没有可用模板。',
       templateHintSingleTemplate: '已按型号和孔数自动匹配模板。',
-      templateHintMultipleTemplate: '已匹配 {{count}} 个同型号同孔数模板，默认选用最新版本。',
+      templateHintMultipleTemplate:
+        '已匹配 {{count}} 个同型号同孔数模板，默认选用最新版本。',
       missingTemplateMessage:
         '当前订单行（{{productModel}} / {{holeCount}} 孔）还没有可用的启用中裁纱模板，请先到“裁纱方案”维护后再下达。',
       openCuttingPlan: '直达裁纱方案',
@@ -131,14 +136,16 @@ export const apsScheduling = {
   },
   engineConfig: {
     title: '贪婪引擎配置',
-    subtitle: '用于声明贪婪引擎排产时需要考虑哪些因素，以及这些因素按什么规则参与计算。',
+    subtitle:
+      '用于声明贪婪引擎排产时需要考虑哪些因素，以及这些因素按什么规则参与计算。',
     sections: {
       factorDeckTitle: '引擎考虑因素',
       boundaryTableTitle: 'APS 概念边界',
     },
     dateCard: {
       title: '日期 / 休息日 / 节假日',
-      description: '使用系统默认工作日、休息日与节假日口径，作为引擎日期因子的输入。',
+      description:
+        '使用系统默认工作日、休息日与节假日口径，作为引擎日期因子的输入。',
       sourceLabel: '规则来源',
       sourceType: {
         systemDefault: '系统默认规则',
@@ -169,7 +176,8 @@ export const apsScheduling = {
     },
     slackTimeCard: {
       title: '交期预警 / 松弛时间',
-      description: '声明引擎是否启用交期与松弛时间计算约束，以及超期惩罚权重分值。',
+      description:
+        '声明引擎是否启用交期与松弛时间计算约束，以及超期惩罚权重分值。',
       sourceLabel: '规则来源',
       sourceType: {
         systemDefault: '系统默认规则',
@@ -193,7 +201,8 @@ export const apsScheduling = {
     },
     attendanceCard: {
       title: '人员出勤 / 班组约束',
-      description: '声明引擎是否联锁考勤打卡状态，以及人手不足时的排产过滤与降载策略。',
+      description:
+        '声明引擎是否联锁考勤打卡状态，以及人手不足时的排产过滤与降载策略。',
       sourceLabel: '规则来源',
       sourceType: {
         systemDefault: '系统默认规则',
@@ -210,15 +219,18 @@ export const apsScheduling = {
         enableAttendanceValue: '考勤与打卡出勤状态参与排程联锁。',
         enableAttendanceDisabledValue: '当前未开启考勤打卡数据联锁。',
         minCrewRateLabel: '最低出勤阈值',
-        minCrewRateValue: '班组出勤率低于 {{rate}}% 时触发 Hard Block（禁止排产）。',
+        minCrewRateValue:
+          '班组出勤率低于 {{rate}}% 时触发 Hard Block（禁止排产）。',
         capacityDerateLabel: '缺勤降载系数',
-        capacityDerateValue: '人手不足时该窗口排程运行产能打 {{derate}} 折（拉长加工时间）。',
+        capacityDerateValue:
+          '人手不足时该窗口排程运行产能打 {{derate}} 折（拉长加工时间）。',
       },
     },
     boundaryTable: {
       kicker: '边界分层',
       title: 'APS 概念边界矩阵',
-      description: '将日历规则、资源约束、事件钩子、贪婪求解与执行反馈的职责边界固定在页面内，降低后续概念漂移。',
+      description:
+        '将日历规则、资源约束、事件钩子、贪婪求解与执行反馈的职责边界固定在页面内，降低后续概念漂移。',
       badge: '长期边界说明',
       columns: {
         layer: '层级',

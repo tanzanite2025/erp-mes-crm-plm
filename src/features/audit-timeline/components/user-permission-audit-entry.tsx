@@ -1,14 +1,21 @@
 import { useMemo, useState } from 'react'
 import { format } from 'date-fns'
 import { ChevronDown, Clock, User } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { useLanguage } from '@/context/language-provider'
-import { buildUserPermissionAuditSummary } from '../utils/permission-audit'
+import { Badge } from '@/components/ui/badge'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import type { AuditLog } from '../types'
+import { buildUserPermissionAuditSummary } from '../utils/permission-audit'
 
-function translatePermissionAuditSource(source: string, t: ReturnType<typeof useLanguage>['t']) {
+function translatePermissionAuditSource(
+  source: string,
+  t: ReturnType<typeof useLanguage>['t']
+) {
   switch (source.trim().toLowerCase()) {
     case 'manual':
       return t('common.audit.permission.sourceManual')
@@ -19,7 +26,10 @@ function translatePermissionAuditSource(source: string, t: ReturnType<typeof use
   }
 }
 
-function translatePermissionAuditReason(reason: string, t: ReturnType<typeof useLanguage>['t']) {
+function translatePermissionAuditReason(
+  reason: string,
+  t: ReturnType<typeof useLanguage>['t']
+) {
   switch (reason.trim().toLowerCase()) {
     case 'users_permissions_dialog_save':
       return t('common.audit.permission.reasonUsersPermissionsDialogSave')
@@ -51,8 +61,13 @@ function PermissionBadgeList({
   return (
     <div className='rounded-[24px] border border-dashed bg-muted/5 p-4'>
       <div className='flex items-center justify-between gap-3'>
-        <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>{title}</div>
-        <Badge variant='outline' className='rounded-full border-dashed bg-white text-[8px] font-mono'>
+        <div className='text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
+          {title}
+        </div>
+        <Badge
+          variant='outline'
+          className='rounded-full border-dashed bg-white font-mono text-[8px]'
+        >
           {items.length}
         </Badge>
       </div>
@@ -63,13 +78,15 @@ function PermissionBadgeList({
               <Badge
                 key={item.key}
                 variant='outline'
-                className={`rounded-full border-dashed bg-white text-[8px] font-mono ${toneClassName}`}
+                className={`rounded-full border-dashed bg-white font-mono text-[8px] ${toneClassName}`}
               >
                 {item.label}
               </Badge>
             ))
           ) : (
-            <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{emptyText}</span>
+            <span className='text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
+              {emptyText}
+            </span>
           )}
         </div>
       </ScrollArea>
@@ -86,17 +103,19 @@ function PermissionSummaryCard({
 }) {
   return (
     <div className='rounded-[24px] border border-dashed bg-muted/5 p-4'>
-      <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>{title}</div>
+      <div className='text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
+        {title}
+      </div>
       <div className='mt-3 flex h-[160px] flex-col gap-3 overflow-hidden'>
         {items.map((item) => (
           <div
             key={item.label}
             className='flex items-start justify-between gap-3 border-b border-dashed border-muted/30 pb-2 last:border-b-0 last:pb-0'
           >
-            <span className='shrink-0 text-[8px] font-black uppercase tracking-widest text-muted-foreground/50'>
+            <span className='shrink-0 text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'>
               {item.label}
             </span>
-            <span className='break-all text-right text-[10px] font-black tracking-tight text-slate-700'>
+            <span className='text-right text-[10px] font-black tracking-tight break-all text-slate-700'>
               {item.value}
             </span>
           </div>
@@ -118,8 +137,14 @@ export function UserPermissionAuditEntry({
   const { t } = useLanguage()
   const [open, setOpen] = useState(false)
 
-  const summary = useMemo(() => buildUserPermissionAuditSummary(log, permissionLabelMap), [log, permissionLabelMap])
-  const targetDisplayName = summary.target?.username || log.target_id || t('common.audit.permission.none')
+  const summary = useMemo(
+    () => buildUserPermissionAuditSummary(log, permissionLabelMap),
+    [log, permissionLabelMap]
+  )
+  const targetDisplayName =
+    summary.target?.username ||
+    log.target_id ||
+    t('common.audit.permission.none')
   const summaryItems = [
     {
       label: t('common.audit.permission.targetAccount'),
@@ -135,7 +160,8 @@ export function UserPermissionAuditEntry({
     },
     {
       label: t('common.audit.permission.grantedBy'),
-      value: summary.grantedBy || log.operator || t('common.audit.permission.none'),
+      value:
+        summary.grantedBy || log.operator || t('common.audit.permission.none'),
     },
   ]
 
@@ -144,14 +170,16 @@ export function UserPermissionAuditEntry({
       <CollapsibleTrigger className='w-full rounded-[24px] border border-dashed bg-muted/5 px-4 py-4 text-left transition-colors hover:bg-muted/10'>
         <div className='flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between'>
           <div className='flex flex-wrap items-center gap-2'>
-            <span className='text-[10px] font-black italic tracking-tighter uppercase text-primary'>
+            <span className='text-[10px] font-black tracking-tighter text-primary uppercase italic'>
               {actionLabel}
             </span>
             <div className='flex items-center gap-1.5 rounded-full border border-dashed border-muted/40 bg-background px-2 py-1'>
               <User className='size-3 opacity-50' />
-              <span className='text-[8px] font-mono font-bold uppercase'>{log.operator}</span>
+              <span className='font-mono text-[8px] font-bold uppercase'>
+                {log.operator}
+              </span>
             </div>
-            <div className='rounded-full border border-dashed border-muted/40 bg-background px-2 py-1 text-[8px] font-black uppercase tracking-widest text-slate-700'>
+            <div className='rounded-full border border-dashed border-muted/40 bg-background px-2 py-1 text-[8px] font-black tracking-widest text-slate-700 uppercase'>
               {t('common.audit.permission.targetAccount')}: {targetDisplayName}
             </div>
           </div>
@@ -159,19 +187,23 @@ export function UserPermissionAuditEntry({
           <div className='flex flex-wrap items-center gap-2 xl:justify-end'>
             <Badge
               variant='outline'
-              className='rounded-full border-dashed border-emerald-500/20 bg-emerald-500/5 text-[8px] font-mono text-emerald-700'
+              className='rounded-full border-dashed border-emerald-500/20 bg-emerald-500/5 font-mono text-[8px] text-emerald-700'
             >
-              {t('common.audit.actionLabels.added')} {summary.addedPermissionItems.length}
+              {t('common.audit.actionLabels.added')}{' '}
+              {summary.addedPermissionItems.length}
             </Badge>
             <Badge
               variant='outline'
-              className='rounded-full border-dashed border-rose-500/20 bg-rose-500/5 text-[8px] font-mono text-rose-700'
+              className='rounded-full border-dashed border-rose-500/20 bg-rose-500/5 font-mono text-[8px] text-rose-700'
             >
-              {t('common.audit.actionLabels.removed')} {summary.removedPermissionItems.length}
+              {t('common.audit.actionLabels.removed')}{' '}
+              {summary.removedPermissionItems.length}
             </Badge>
             <div className='flex items-center gap-1.5 rounded-full border border-dashed border-muted/40 bg-background px-2 py-1'>
               <Clock className='size-3 opacity-50' />
-              <span className='text-[8px] font-mono'>{format(new Date(log.created_at), 'yyyy-MM-dd HH:mm:ss')}</span>
+              <span className='font-mono text-[8px]'>
+                {format(new Date(log.created_at), 'yyyy-MM-dd HH:mm:ss')}
+              </span>
             </div>
             <span
               className={`rounded-2xl border border-dashed border-muted/40 bg-background p-2 text-muted-foreground/60 transition-transform ${open ? 'rotate-180' : ''}`}
@@ -198,7 +230,10 @@ export function UserPermissionAuditEntry({
             tone='rose'
             heightClassName='h-[160px]'
           />
-          <PermissionSummaryCard title={t('common.audit.permission.summary')} items={summaryItems} />
+          <PermissionSummaryCard
+            title={t('common.audit.permission.summary')}
+            items={summaryItems}
+          />
         </div>
       </CollapsibleContent>
     </Collapsible>

@@ -13,8 +13,12 @@ export function useCancelLeaveRequest() {
     },
     onSuccess: async () => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: personnelQueryKeys.leaves.list() }),
-        queryClient.invalidateQueries({ queryKey: personnelQueryKeys.leaves.stats() }),
+        queryClient.invalidateQueries({
+          queryKey: personnelQueryKeys.leaves.list(),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: personnelQueryKeys.leaves.stats(),
+        }),
       ])
       toast.success('请假申请已撤销')
     },

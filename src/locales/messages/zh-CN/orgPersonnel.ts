@@ -63,7 +63,8 @@ export const orgPersonnel = {
     },
     actionDialog: {
       title: '新建请假申请',
-      description: '请选择员工档案代为发起请假申请，请假时长以后端权威试算结果为准',
+      description:
+        '请选择员工档案代为发起请假申请，请假时长以后端权威试算结果为准',
       employee: '请假员工',
       employeePlaceholder: '请选择员工档案',
       employeeSearchPlaceholder: '搜索姓名、工号、部门或岗位...',
@@ -107,9 +108,11 @@ export const orgPersonnel = {
     exportSheetName: '人员档案导出',
     templateFileName: '人员档案标准模板_{{date}}.xlsx',
     exportFileName: '人员档案导出_{{date}}.xlsx',
-    invalidSheetName: '工作表名称不正确，当前为 [{{sheetName}}]。请使用系统导出的“{{templateSheet}}”或“{{exportSheet}}”文件。',
+    invalidSheetName:
+      '工作表名称不正确，当前为 [{{sheetName}}]。请使用系统导出的“{{templateSheet}}”或“{{exportSheet}}”文件。',
     emptyWorkbook: 'Excel 文件内容为空，请确认使用了标准模板并填写了数据。',
-    structureFailed: '模板结构校验失败。\n{{problems}}\n请重新下载最新标准模板后再导入。',
+    structureFailed:
+      '模板结构校验失败。\n{{problems}}\n请重新下载最新标准模板后再导入。',
     missingColumns: '缺少列：{{columns}}',
     unexpectedColumns: '存在非标准列：{{columns}}',
     validationFailed: '数据校验失败\n{{details}}',
@@ -164,7 +167,8 @@ export const orgPersonnel = {
   },
   importDialog: {
     title: '一键导入人员档案',
-    description: '上传由人力资源部维护的 Excel 员工花名册。系统会严格校验工作表名称和全量表头，避免误修改后导入造成数据偏差。',
+    description:
+      '上传由人力资源部维护的 Excel 员工花名册。系统会严格校验工作表名称和全量表头，避免误修改后导入造成数据偏差。',
     downloadTemplate: '下载标准模板',
     clickToUpload: '点击或拖拽文件上传',
     support: '支持 .xlsx 格式（最大 10MB）',
@@ -174,7 +178,8 @@ export const orgPersonnel = {
     previewReady: '校验通过 / {{sheetName}} / 可预览 {{count}} 条',
     changeFile: '更换文件',
     preview: '数据预览（前 5 条）',
-    warning: '当前导入会严格校验工作表名称与全部标准列名。如有任何列名被改动、增加或删除，系统都会拒绝导入，避免静默丢字段。',
+    warning:
+      '当前导入会严格校验工作表名称与全部标准列名。如有任何列名被改动、增加或删除，系统都会拒绝导入，避免静默丢字段。',
     cancel: '取消',
     syncing: '同步中...',
     executeImport: '开始导入',
@@ -195,7 +200,8 @@ export const orgPersonnel = {
     saveCreated: '新人员已成功添加',
     saveFailed: '操作失败：{{message}}',
     empty: '暂无人员记录',
-    resignationConfirm: '确定要为员工 [{{name}}] 办理离职吗？状态变更后将转移至离职名单。',
+    resignationConfirm:
+      '确定要为员工 [{{name}}] 办理离职吗？状态变更后将转移至离职名单。',
     resignationSuccess: '已成功为 {{name}} 办理离职',
     rollbackConfirm: '确定要恢复员工 [{{name}}] 的在职身份吗？',
     rollbackSuccess: '已成功恢复 {{name}} 的在职身份',
@@ -233,7 +239,8 @@ export const orgPersonnel = {
         confirmPlaceholder: '键入“{{word}}”以继续',
         confirmError: '请键入“{{word}}”以确认。',
         warningTitle: '警告：离职高危操作',
-        warningDesc: '离职后将立即撤销其产线排班及系统访问权限，请核实名单后再执行。',
+        warningDesc:
+          '离职后将立即撤销其产线排班及系统访问权限，请核实名单后再执行。',
         submit: '执行批量离职',
         success: '成功办理 {{count}} 位员工离职',
         failure: '办理离职失败，请重试',
@@ -269,7 +276,8 @@ export const orgPersonnel = {
     noLinked: '暂无关联架构',
     noChildren: '该层级暂无子项',
     emptyTree: '暂无组织节点',
-    emptyTreeHint: '当前环境还没有组织树数据。请点击左侧新增按钮，创建第一个根组织。',
+    emptyTreeHint:
+      '当前环境还没有组织树数据。请点击左侧新增按钮，创建第一个根组织。',
     selectHint: '请从左侧树状图中选择一个机构进行管理',
     editData: '编辑资料',
     addChild: '新增子项',
@@ -286,11 +294,12 @@ export const orgPersonnel = {
     backendErrors: {
       nameConflict: '同级目录下已存在同名节点',
       hasChildren: '无法删除：该机构下仍存在子组织，请先移除子项',
-      hasEmployees: '无法删除：当前机构仍有关联的活跃员工，请先在人员管理中移除或调离人员',
+      hasEmployees:
+        '无法删除：当前机构仍有关联的活跃员工，请先在人员管理中移除或调离人员',
       deleteFailed: '删除机构失败',
       saveFailed: '保存机构失败',
       invalidPayload: '无效的机构数据载荷',
-      fetchTreeFailed: '获取组织架构树失败'
+      fetchTreeFailed: '获取组织架构树失败',
     },
     nodeTypes: {
       root: '总部',
@@ -331,7 +340,8 @@ export const orgPersonnel = {
       editTitle: '编辑人员档案',
       createTitle: '录入新人员',
       editDesc: '在此更新人员核心档案数据。',
-      createDesc: '在此录入新人员入职记录。数据字段已与人员档案模板和导出列保持一致。',
+      createDesc:
+        '在此录入新人员入职记录。数据字段已与人员档案模板和导出列保持一致。',
       submit: '保存提交',
       noPosition: '未设置岗位',
       errors: {
@@ -365,11 +375,13 @@ export const orgPersonnel = {
     },
     groups: {
       headerTitle: '群组管理中心',
-      headerDescription: '统一维护组织架构中的生产班组、排产协作节点及业务管理单元。',
+      headerDescription:
+        '统一维护组织架构中的生产班组、排产协作节点及业务管理单元。',
       searchPlaceholderDynamic: '搜索班组编码 / 名称 / {{levelName}}',
       addButton: '新增班组',
       deleteConfirmMessage: '确认删除该生产班组？此操作不可撤销。',
-      emptyDescriptionDynamic: '点击新增班组，完善{{relatedLevelName}}与{{levelName}}映射。',
+      emptyDescriptionDynamic:
+        '点击新增班组，完善{{relatedLevelName}}与{{levelName}}映射。',
       sectionLabelDynamic: '{{levelName}}',
       sectionPlaceholderDynamic: '请输入{{levelName}}',
     },
@@ -384,13 +396,15 @@ export const orgPersonnel = {
   lineMgmt: {
     header: {
       title: '产线管理中心',
-      subtitleDynamic: 'PRODUCTION LINE MGMT / 数字化生产路径定义，支持多{{level1Name}}的复杂拓扑配置',
+      subtitleDynamic:
+        'PRODUCTION LINE MGMT / 数字化生产路径定义，支持多{{level1Name}}的复杂拓扑配置',
     },
     list: {
       searchPlaceholder: '搜索产线编号或名称...',
       addButton: '新增产线',
       emptyTitle: '暂无产线数据',
-      emptyDescDynamic: '点击“新增产线”建立工厂的数字化生产路径，定义{{level1Name}}与{{level2Name}}的层级结构。',
+      emptyDescDynamic:
+        '点击“新增产线”建立工厂的数字化生产路径，定义{{level1Name}}与{{level2Name}}的层级结构。',
       initButton: '添加第一条产线',
       deleteConfirm: '确定要删除该生产线定义吗？',
       requestSent: '请求已发送',
@@ -406,12 +420,14 @@ export const orgPersonnel = {
       delete: '删除产线',
       status: '运行状态',
       hierarchy: '层级结构',
-      hierarchyStatsDynamic: '{{level1Count}} {{level1Name}} / {{level2Count}} {{level2Name}} / {{level3Count}} {{level3Name}}',
+      hierarchyStatsDynamic:
+        '{{level1Count}} {{level1Name}} / {{level2Count}} {{level2Name}} / {{level3Count}} {{level3Name}}',
       running: '运行中',
       offline: '系统离线',
       defineHierarchyLevel: '定义新{{levelName}}',
       initTopology: '初始化产线拓扑',
-      emptyTopologyDescDynamic: '该产线目前为空，您可以从标准模板一键导入结构，或手动创建首个{{levelName}}。',
+      emptyTopologyDescDynamic:
+        '该产线目前为空，您可以从标准模板一键导入结构，或手动创建首个{{levelName}}。',
       manualBuildHierarchyLevel: '手动搭建首个{{levelName}}',
       templateBackup: '拓扑备份',
       saveTemplateFrom: '从产线 {{name}} 另存为的模板',
@@ -437,7 +453,8 @@ export const orgPersonnel = {
       editTitle: '产线档案修改授权',
       deleteTitle: '产线资源注销授权',
       editDesc: '正在修改产线基础定义，请输入授权码完成确认',
-      deleteDesc: '移除该产线将导致与其关联的所有排产、质量、设备数据逻辑断裂。请输入授权码完成确认',
+      deleteDesc:
+        '移除该产线将导致与其关联的所有排产、质量、设备数据逻辑断裂。请输入授权码完成确认',
     },
     toasts: {
       loadFailed: '产线数据加载失败',
@@ -457,7 +474,8 @@ export const orgPersonnel = {
       renameLevel: '更名{{levelName}}',
       levelRenameTitle: '{{levelName}}定义变更',
       levelRemoveTitle: '注销{{levelName}}资源',
-      levelRenameDesc: '重新定义{{levelName}}名称将影响当前层级结构，请验证授权码',
+      levelRenameDesc:
+        '重新定义{{levelName}}名称将影响当前层级结构，请验证授权码',
       levelRemoveDesc: '注销{{levelName}}将同步清空下属结构，请输入授权码继续',
       authGenericTitle: '操作权限验证',
       authGenericDesc: '此操作涉及产线核心结构变更，请输入授权密码进行确认。',
@@ -475,38 +493,42 @@ export const orgPersonnel = {
     },
   },
   topologyTemplateMgmt: {
-      header: {
-        title: '拓扑模板中心',
-        subtitle: 'TOPOLOGY TEMPLATES / 定义标准层级结构蓝图，支持快速复用与标准化配置',
-      },
-      list: {
-        searchPlaceholder: '搜索模板名称或描述...',
-        addTemplate: '新增模板',
-        noTemplates: '暂无模板',
-        emptyDescDynamic: '通过定义通用拓扑模板，您可以避免在创建相似{{level1Name}}/{{level2Name}}结构时重复配置，实现层级结构的标准化复用。',
-        initButton: '创建首个模板',
-      },
-      card: {
-        standardTopology: '标准结构模板',
-        noDescription: '暂无描述',
-        editInfo: '编辑基本信息',
-        deleteTemplate: '删除模板',
-        deleteStandardLevelTitle: '注销标准{{levelName}}模板？',
-        deleteStandardLevelDesc: '移除{{levelName}}模板 [{{name}}] 将同步清空其下属结构。',
-        addStandardLevel: '定义新标准{{levelName}}',
-        defaultStandardLevel: '标准{{levelName}} {{index}}',
-      },
-      dialog: {
-        editTitle: '编辑拓扑蓝图信息',
-        createTitle: '创建新拓扑模板',
-        descriptionDynamic: 'TEMPLATE_SPEC / 模板定义基础的{{level1Name}}与{{level2Name}}结构。创建后，您可以在模板列表中继续编辑详细层级条目。',
-        nameLabel: '模板名称',
-        namePlaceholder: '例如：复材成型基础结构模板',
-        nameRequired: '模板名称至少 2 个字符',
-        descLabel: '描述 (可选)',
-        descPlaceholder: '简述此模板适用的生产场景...',
-        saveChanges: '保存变更',
-        initTemplate: '立即创建',
-      },
+    header: {
+      title: '拓扑模板中心',
+      subtitle:
+        'TOPOLOGY TEMPLATES / 定义标准层级结构蓝图，支持快速复用与标准化配置',
     },
+    list: {
+      searchPlaceholder: '搜索模板名称或描述...',
+      addTemplate: '新增模板',
+      noTemplates: '暂无模板',
+      emptyDescDynamic:
+        '通过定义通用拓扑模板，您可以避免在创建相似{{level1Name}}/{{level2Name}}结构时重复配置，实现层级结构的标准化复用。',
+      initButton: '创建首个模板',
+    },
+    card: {
+      standardTopology: '标准结构模板',
+      noDescription: '暂无描述',
+      editInfo: '编辑基本信息',
+      deleteTemplate: '删除模板',
+      deleteStandardLevelTitle: '注销标准{{levelName}}模板？',
+      deleteStandardLevelDesc:
+        '移除{{levelName}}模板 [{{name}}] 将同步清空其下属结构。',
+      addStandardLevel: '定义新标准{{levelName}}',
+      defaultStandardLevel: '标准{{levelName}} {{index}}',
+    },
+    dialog: {
+      editTitle: '编辑拓扑蓝图信息',
+      createTitle: '创建新拓扑模板',
+      descriptionDynamic:
+        'TEMPLATE_SPEC / 模板定义基础的{{level1Name}}与{{level2Name}}结构。创建后，您可以在模板列表中继续编辑详细层级条目。',
+      nameLabel: '模板名称',
+      namePlaceholder: '例如：复材成型基础结构模板',
+      nameRequired: '模板名称至少 2 个字符',
+      descLabel: '描述 (可选)',
+      descPlaceholder: '简述此模板适用的生产场景...',
+      saveChanges: '保存变更',
+      initTemplate: '立即创建',
+    },
+  },
 }

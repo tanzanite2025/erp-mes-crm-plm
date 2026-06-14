@@ -93,11 +93,11 @@ export interface TeamModuleAdapter {
   teams: TeamRecord[]
   isLoading?: boolean
   texts: TeamModuleTexts
-  saveTeam: (params: { 
-    data: Partial<TeamRecord>; 
-    isPatch: boolean; 
-    delta?: DeltaSet; 
-    version?: number 
+  saveTeam: (params: {
+    data: Partial<TeamRecord>
+    isPatch: boolean
+    delta?: DeltaSet
+    version?: number
   }) => void | Promise<void>
   deleteTeam: (id: string) => void | Promise<void>
 }

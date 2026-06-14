@@ -4,9 +4,12 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible'
 import { Input } from '@/components/ui/input'
-import { SectionActions, SectionChangeBadge } from './business-event-source-card-primitives'
-import { ENTITY_OPTIONS } from './business-event-source-card-constants'
 import { type BusinessEventSource } from '../../workflow-core/data/business-event-source-schema'
+import { ENTITY_OPTIONS } from './business-event-source-card-constants'
+import {
+  SectionActions,
+  SectionChangeBadge,
+} from './business-event-source-card-primitives'
 import { readonlyFieldClass } from './business-event-source-card-shared'
 
 interface BusinessEventSourceBaseSectionProps {
@@ -64,7 +67,10 @@ export function BusinessEventSourceBaseSection({
         focused && 'ring-2 ring-sky-300 ring-offset-1'
       )}
     >
-      <Collapsible open={forceOpen || isOpen} onOpenChange={alwaysOpen ? undefined : setIsOpen}>
+      <Collapsible
+        open={forceOpen || isOpen}
+        onOpenChange={alwaysOpen ? undefined : setIsOpen}
+      >
         <div className='flex items-center justify-between gap-2'>
           <div className='flex min-w-0 flex-col gap-1'>
             <div className='flex flex-wrap items-center gap-2'>
@@ -135,7 +141,9 @@ export function BusinessEventSourceBaseSection({
                 value={source.entity}
                 disabled={isIdentityLocked}
                 onChange={(event) =>
-                  onEntityChange(event.target.value as BusinessEventSource['entity'])
+                  onEntityChange(
+                    event.target.value as BusinessEventSource['entity']
+                  )
                 }
                 className={cn(
                   'h-10 rounded-2xl border border-input bg-background px-3 text-xs font-bold',

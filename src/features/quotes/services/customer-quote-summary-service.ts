@@ -13,13 +13,20 @@ export type CustomerQuoteSummaryItem = {
   customerId: string
 }
 
-export async function listCustomerQuoteSummary(customerId: string): Promise<CustomerQuoteSummaryItem[]> {
-  const response = await apiFetch<unknown>(`/quotes/customer-summary?customerId=${encodeURIComponent(customerId)}`)
-  const payload = ensureObjectResponse<CustomerQuoteSummaryResponseApiDTO & Record<string, unknown>>(
-    response,
-    'CustomerQuoteSummaryService./quotes/customer-summary'
+export async function listCustomerQuoteSummary(
+  customerId: string
+): Promise<CustomerQuoteSummaryItem[]> {
+  const response = await apiFetch<unknown>(
+    `/quotes/customer-summary?customerId=${encodeURIComponent(customerId)}`
   )
-  const items = ensureArrayField<CustomerQuoteSummaryItemApiDTO>(payload, 'items', 'CustomerQuoteSummaryService.items')
+  const payload = ensureObjectResponse<
+    CustomerQuoteSummaryResponseApiDTO & Record<string, unknown>
+  >(response, 'CustomerQuoteSummaryService./quotes/customer-summary')
+  const items = ensureArrayField<CustomerQuoteSummaryItemApiDTO>(
+    payload,
+    'items',
+    'CustomerQuoteSummaryService.items'
+  )
 
   return items.map((item) => ({
     id: item.quoteId?.trim() || item.quoteNo?.trim() || '',

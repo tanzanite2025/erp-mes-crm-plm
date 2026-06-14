@@ -1,10 +1,9 @@
 /**
  * BOM Read-Only Banner Component
- * 
+ *
  * Displays a prominent banner when BOM is in locked/read-only state.
  * Provides clear visual feedback to prevent user confusion.
  */
-
 import { Lock } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
@@ -13,7 +12,10 @@ interface BOMReadOnlyBannerProps {
   version?: number
 }
 
-export function BOMReadOnlyBanner({ isLocked, version }: BOMReadOnlyBannerProps) {
+export function BOMReadOnlyBanner({
+  isLocked,
+  version,
+}: BOMReadOnlyBannerProps) {
   if (!isLocked) {
     return null
   }
@@ -23,7 +25,7 @@ export function BOMReadOnlyBanner({ isLocked, version }: BOMReadOnlyBannerProps)
       <Lock className='size-4 text-amber-600' />
       <AlertDescription className='flex items-center justify-between'>
         <div className='flex flex-col gap-0.5'>
-          <span className='text-[11px] font-black uppercase tracking-widest text-amber-900'>
+          <span className='text-[11px] font-black tracking-widest text-amber-900 uppercase'>
             只读模式
           </span>
           <span className='text-[10px] text-amber-700'>

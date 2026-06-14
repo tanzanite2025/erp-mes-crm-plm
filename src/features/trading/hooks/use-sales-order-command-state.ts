@@ -1,6 +1,5 @@
 ﻿import { useMemo } from 'react'
 import { useSearch } from '@tanstack/react-router'
-
 import { useCommands } from '@/features/system-mgmt/workflow-core/hooks/use-commands'
 
 export function useSalesOrderCommandState() {
@@ -14,8 +13,8 @@ export function useSalesOrderCommandState() {
   const activeCommandContent = activeCommand?.content ?? ''
   const isClaimAction = Boolean(
     activeCommand?.actionType === 'CLAIM' ||
-      activeCommandTitle.toLowerCase().includes('claim') ||
-      activeCommandTitle.includes('认领')
+    activeCommandTitle.toLowerCase().includes('claim') ||
+    activeCommandTitle.includes('认领')
   )
 
   return {

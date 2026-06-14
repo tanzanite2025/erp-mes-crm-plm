@@ -17,7 +17,9 @@ function resolveStringList(values: string[]) {
   return values.map((value) => value.trim()).filter(Boolean)
 }
 
-export function buildCuttingEngineCutUnits(lines: BatchEngineResolvedDemandLine[]): CuttingUnitInput[] {
+export function buildCuttingEngineCutUnits(
+  lines: BatchEngineResolvedDemandLine[]
+): CuttingUnitInput[] {
   return lines.map((item) => ({
     id: item.demandLineId,
     label: item.lineLabel,

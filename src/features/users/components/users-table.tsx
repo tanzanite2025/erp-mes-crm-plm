@@ -1,22 +1,16 @@
-import {
-  type ReactNode,
-  useEffect,
-  useMemo,
-} from 'react'
-import {
-  flexRender,
-} from '@tanstack/react-table'
+import { type ReactNode, useEffect, useMemo } from 'react'
+import { flexRender } from '@tanstack/react-table'
 import { ShieldAlert, ShieldPlus } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { NonBlockingPermissionBoundary } from '@/components/permission-passthrough'
+import { useLanguage } from '@/context/language-provider'
+import { type NavigateFn } from '@/hooks/use-table-url-state'
+import { useUdsManualPaginationTable } from '@/hooks/use-uds-table'
+import { useUdsUrlTableState } from '@/hooks/use-uds-url-table-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
-import { type NavigateFn } from '@/hooks/use-table-url-state'
-import { useUdsManualPaginationTable } from '@/hooks/use-uds-table'
-import { useUdsUrlTableState } from '@/hooks/use-uds-url-table-state'
 import {
   Table,
   TableBody,
@@ -25,14 +19,18 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { DataTableFacetedFilter, DataTablePagination, DataTableToolbar } from '@/components/data-table'
+import {
+  DataTableFacetedFilter,
+  DataTablePagination,
+  DataTableToolbar,
+} from '@/components/data-table'
+import { NonBlockingPermissionBoundary } from '@/components/permission-passthrough'
 import { callTypes } from '../data/data'
 import { type User, type UserStatus } from '../data/schema'
+import { isProtectedSystemAccount } from '../utils/user-utils'
 import { DataTableBulkActions } from './data-table-bulk-actions'
 import { getUsersColumns, type UsersTableMode } from './users-columns'
 import { useUsers } from './users-provider'
-import { useLanguage } from '@/context/language-provider'
-import { isProtectedSystemAccount } from '../utils/user-utils'
 
 const permissionUserStatusTranslationKeys: Record<
   UserStatus,
@@ -72,14 +70,10 @@ export function UsersTable({
 
   const columns = useMemo(
     () => getUsersColumns(t, mode, showSelection),
-    [mode, showSelection, t],
+    [mode, showSelection, t]
   )
 
-  const {
-    tableState,
-    tableHandlers,
-    ensurePageInRange,
-  } = useUdsUrlTableState({
+  const { tableState, tableHandlers, ensurePageInRange } = useUdsUrlTableState({
     search,
     navigate,
     pagination: { defaultPage: 1, defaultPageSize: 10 },
@@ -106,9 +100,10 @@ export function UsersTable({
   const selectedRowIds = Object.keys(tableState.rowSelection).filter(
     (rowId) => tableState.rowSelection[rowId]
   )
-  const selectedPermissionUser = isPermissionsMode && selectedRowIds.length === 1
-    ? data.find((user) => user.id === selectedRowIds[0]) ?? null
-    : null
+  const selectedPermissionUser =
+    isPermissionsMode && selectedRowIds.length === 1
+      ? (data.find((user) => user.id === selectedRowIds[0]) ?? null)
+      : null
 
   const toolbarFilters = [
     {
@@ -138,38 +133,36 @@ export function UsersTable({
     setPermissionRowSelection(rowId, !isSelected)
   }
 
-  const permissionActionButtons = isPermissionsMode
-    ? (
-        <>
-          <NonBlockingPermissionBoundary permission='user_edit'>
-            <Button
-              type='button'
-              variant='outline'
-              disabled={!selectedPermissionUser}
-              onClick={() => {
-                if (!selectedPermissionUser) return
+  const permissionActionButtons = isPermissionsMode ? (
+    <>
+      <NonBlockingPermissionBoundary permission='user_edit'>
+        <Button
+          type='button'
+          variant='outline'
+          disabled={!selectedPermissionUser}
+          onClick={() => {
+            if (!selectedPermissionUser) return
 
-                setCurrentRow(selectedPermissionUser)
-                setOpen('permissions')
-              }}
-              className='h-11 w-full justify-center rounded-full px-3 text-[10px] font-black uppercase tracking-widest shadow-sm transition-all active:scale-95 md:h-9 md:w-auto md:px-4'
-            >
-              <ShieldPlus className='mr-2 size-3.5' />
-              {t('users.actions.managePermissions')}
-            </Button>
-          </NonBlockingPermissionBoundary>
-          {leadingViewSlot}
-        </>
-      )
-    : null
+            setCurrentRow(selectedPermissionUser)
+            setOpen('permissions')
+          }}
+          className='h-11 w-full justify-center rounded-full px-3 text-[10px] font-black tracking-widest uppercase shadow-sm transition-all active:scale-95 md:h-9 md:w-auto md:px-4'
+        >
+          <ShieldPlus className='mr-2 size-3.5' />
+          {t('users.actions.managePermissions')}
+        </Button>
+      </NonBlockingPermissionBoundary>
+      {leadingViewSlot}
+    </>
+  ) : null
 
-  const toolbarLeadingSlot = isPermissionsMode
-    ? (
-        <div className='flex flex-wrap items-center gap-2'>
-          {permissionActionButtons}
-        </div>
-      )
-    : leadingViewSlot
+  const toolbarLeadingSlot = isPermissionsMode ? (
+    <div className='flex flex-wrap items-center gap-2'>
+      {permissionActionButtons}
+    </div>
+  ) : (
+    leadingViewSlot
+  )
 
   useEffect(() => {
     ensurePageInRange(table.getPageCount())
@@ -207,7 +200,7 @@ export function UsersTable({
                   table.resetColumnFilters()
                   table.setGlobalFilter('')
                 }}
-                className='h-9 self-start rounded-full px-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'
+                className='h-9 self-start rounded-full px-3 text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'
               >
                 {t('common.actions.reset')}
               </Button>
@@ -236,7 +229,7 @@ export function UsersTable({
         <div className='space-y-3 md:hidden'>
           {isLoading ? (
             <Card className='rounded-[24px] border-dashed border-muted/50 bg-muted/5 p-5 shadow-inner'>
-              <div className='flex min-h-24 items-center justify-center text-center text-[10px] font-black uppercase tracking-widest opacity-30 text-muted-foreground'>
+              <div className='flex min-h-24 items-center justify-center text-center text-[10px] font-black tracking-widest text-muted-foreground uppercase opacity-30'>
                 {t('users.table.syncing')}
               </div>
             </Card>
@@ -245,10 +238,13 @@ export function UsersTable({
               const user = row.original
               const isSelected = row.getIsSelected()
               const isProtected = isProtectedSystemAccount(user)
-              const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || '-'
+              const fullName =
+                `${user.firstName || ''} ${user.lastName || ''}`.trim() || '-'
               const role = String(user.role || '').trim() || 'UNASSIGNED'
               const phoneNumber = String(user.phoneNumber || '').trim() || '-'
-              const statusLabel = t(permissionUserStatusTranslationKeys[user.status])
+              const statusLabel = t(
+                permissionUserStatusTranslationKeys[user.status]
+              )
               const statusTone = callTypes.get(user.status)
 
               return (
@@ -257,7 +253,8 @@ export function UsersTable({
                   data-state={isSelected && 'selected'}
                   className={cn(
                     'rounded-[24px] border-dashed border-muted/50 bg-muted/5 p-3 shadow-inner transition-all active:scale-[0.99]',
-                    isSelected && 'border-primary/40 bg-primary/5 ring-1 ring-primary/20'
+                    isSelected &&
+                      'border-primary/40 bg-primary/5 ring-1 ring-primary/20'
                   )}
                 >
                   <div
@@ -284,14 +281,14 @@ export function UsersTable({
                         />
                         <div className='min-w-0'>
                           <div className='flex items-center gap-2'>
-                            <p className='truncate text-sm font-black italic tracking-tighter text-foreground'>
+                            <p className='truncate text-sm font-black tracking-tighter text-foreground italic'>
                               {user.username || '-'}
                             </p>
                             {isProtected ? (
                               <ShieldAlert className='size-3.5 shrink-0 text-amber-500' />
                             ) : null}
                           </div>
-                          <p className='mt-1 text-[8px] font-black uppercase tracking-widest text-muted-foreground/55'>
+                          <p className='mt-1 text-[8px] font-black tracking-widest text-muted-foreground/55 uppercase'>
                             {t('users.columns.username')}
                           </p>
                         </div>
@@ -299,8 +296,8 @@ export function UsersTable({
                       <Badge
                         variant='outline'
                         className={cn(
-                          'h-6 shrink-0 rounded-full border-dashed px-2.5 text-[9px] font-black uppercase tracking-widest',
-                          statusTone,
+                          'h-6 shrink-0 rounded-full border-dashed px-2.5 text-[9px] font-black tracking-widest uppercase',
+                          statusTone
                         )}
                       >
                         {statusLabel}
@@ -309,7 +306,7 @@ export function UsersTable({
 
                     <div className='grid grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)_minmax(0,0.9fr)_auto] items-center gap-2 rounded-[18px] border border-dashed border-muted/40 bg-background/70 px-2.5 py-1.5'>
                       <div className='flex min-w-0 items-center gap-1'>
-                        <p className='shrink-0 text-[8px] font-black uppercase tracking-widest text-muted-foreground/50'>
+                        <p className='shrink-0 text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                           {t('users.columns.name')}
                         </p>
                         <p className='truncate text-[11px] font-bold text-foreground'>
@@ -318,7 +315,7 @@ export function UsersTable({
                       </div>
 
                       <div className='flex min-w-0 items-center gap-1'>
-                        <p className='shrink-0 text-[8px] font-black uppercase tracking-widest text-muted-foreground/50'>
+                        <p className='shrink-0 text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                           {t('users.columns.phone')}
                         </p>
                         <p className='truncate text-[11px] font-bold text-foreground'>
@@ -327,16 +324,16 @@ export function UsersTable({
                       </div>
 
                       <div className='flex min-w-0 items-center gap-1'>
-                        <p className='shrink-0 text-[8px] font-black uppercase tracking-widest text-muted-foreground/50'>
+                        <p className='shrink-0 text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                           {t('users.columns.role')}
                         </p>
-                        <p className='truncate text-[10px] font-black uppercase tracking-widest text-foreground/75'>
+                        <p className='truncate text-[10px] font-black tracking-widest text-foreground/75 uppercase'>
                           {role}
                         </p>
                       </div>
 
                       {isSelected ? (
-                        <p className='shrink-0 text-[8px] font-black uppercase tracking-widest text-primary/70'>
+                        <p className='shrink-0 text-[8px] font-black tracking-widest text-primary/70 uppercase'>
                           已选中
                         </p>
                       ) : (
@@ -349,7 +346,7 @@ export function UsersTable({
             })
           ) : (
             <Card className='rounded-[24px] border-dashed border-muted/50 bg-muted/5 p-5 shadow-inner'>
-              <div className='flex min-h-24 items-center justify-center text-center text-[10px] font-black uppercase tracking-widest opacity-30 text-muted-foreground'>
+              <div className='flex min-h-24 items-center justify-center text-center text-[10px] font-black tracking-widest text-muted-foreground uppercase opacity-30'>
                 {t('users.table.noResults')}
               </div>
             </Card>
@@ -357,21 +354,26 @@ export function UsersTable({
         </div>
       ) : null}
 
-      <Card className={cn(
-        'rounded-[24px] border-dashed bg-muted/5 shadow-inner border-muted/50 p-1 overflow-hidden',
-        isPermissionsMode && 'hidden md:block'
-      )}>
-        <div className='bg-background/50 rounded-[20px] overflow-x-auto scrollbar-thin'>
+      <Card
+        className={cn(
+          'overflow-hidden rounded-[24px] border-dashed border-muted/50 bg-muted/5 p-1 shadow-inner',
+          isPermissionsMode && 'hidden md:block'
+        )}
+      >
+        <div className='scrollbar-thin overflow-x-auto rounded-[20px] bg-background/50'>
           <Table className='min-w-[1000px]'>
             <TableHeader className='bg-muted/50'>
               {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id} className='hover:bg-transparent border-none'>
+                <TableRow
+                  key={headerGroup.id}
+                  className='border-none hover:bg-transparent'
+                >
                   {headerGroup.headers.map((header) => (
                     <TableHead
                       key={header.id}
                       colSpan={header.colSpan}
                       className={cn(
-                        'h-10 text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 py-0',
+                        'h-10 py-0 text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase',
                         header.column.columnDef.meta?.className,
                         header.column.columnDef.meta?.thClassName
                       )}
@@ -379,9 +381,9 @@ export function UsersTable({
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
                     </TableHead>
                   ))}
                 </TableRow>
@@ -392,7 +394,7 @@ export function UsersTable({
                 <TableRow>
                   <TableCell
                     colSpan={columns.length}
-                    className='h-24 text-center text-[10px] font-black uppercase tracking-widest opacity-30 text-muted-foreground'
+                    className='h-24 text-center text-[10px] font-black tracking-widest text-muted-foreground uppercase opacity-30'
                   >
                     {t('users.table.syncing')}
                   </TableCell>
@@ -402,7 +404,7 @@ export function UsersTable({
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && 'selected'}
-                    className='border-muted/20 hover:bg-muted/30 transition-colors'
+                    className='border-muted/20 transition-colors hover:bg-muted/30'
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell
@@ -425,7 +427,7 @@ export function UsersTable({
                 <TableRow>
                   <TableCell
                     colSpan={columns.length}
-                    className='h-24 text-center text-[10px] font-black uppercase tracking-widest opacity-30 text-muted-foreground'
+                    className='h-24 text-center text-[10px] font-black tracking-widest text-muted-foreground uppercase opacity-30'
                   >
                     {t('users.table.noResults')}
                   </TableCell>

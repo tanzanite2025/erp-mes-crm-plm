@@ -31,9 +31,12 @@ export function useMoldGroups(molds: Mold[], searchTerm: string) {
       const matchesBasic =
         mold.sn.toLowerCase().includes(normalizedSearchTerm) ||
         mold.name.toLowerCase().includes(normalizedSearchTerm) ||
-        (mold.groupName && mold.groupName.toLowerCase().includes(normalizedSearchTerm))
+        (mold.groupName &&
+          mold.groupName.toLowerCase().includes(normalizedSearchTerm))
 
-      const associatedProducts = mold.groupName ? (groupToProducts[mold.groupName] || []) : []
+      const associatedProducts = mold.groupName
+        ? groupToProducts[mold.groupName] || []
+        : []
       const matchesProducts = associatedProducts.some((sku) =>
         sku.toLowerCase().includes(normalizedSearchTerm)
       )
@@ -43,17 +46,23 @@ export function useMoldGroups(molds: Mold[], searchTerm: string) {
   }, [groupToProducts, molds, normalizedSearchTerm])
 
   const groupedMolds = useMemo(() => {
-    return filteredMolds.reduce((acc, mold) => {
-      const group = mold.groupName || '未分组'
-      if (!acc[group]) {
-        acc[group] = []
-      }
-      acc[group].push(mold)
-      return acc
-    }, {} as Record<string, Mold[]>)
+    return filteredMolds.reduce(
+      (acc, mold) => {
+        const group = mold.groupName || '未分组'
+        if (!acc[group]) {
+          acc[group] = []
+        }
+        acc[group].push(mold)
+        return acc
+      },
+      {} as Record<string, Mold[]>
+    )
   }, [filteredMolds])
 
-  const groupNames = useMemo(() => Object.keys(groupedMolds).sort(), [groupedMolds])
+  const groupNames = useMemo(
+    () => Object.keys(groupedMolds).sort(),
+    [groupedMolds]
+  )
 
   return {
     groupNames,

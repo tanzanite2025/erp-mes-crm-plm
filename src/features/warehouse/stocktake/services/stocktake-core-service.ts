@@ -20,15 +20,27 @@ export type { StocktakeItem, StocktakeTask } from '../data/schema'
 export const StocktakeCoreService = {
   async getTasks(): Promise<StocktakeTask[]> {
     const res = await apiFetch<StocktakeTaskApiDTO[]>('/stocktakes')
-    return stocktakeTaskArraySchema.parse(toStocktakeTaskContracts(
-      ensureArrayResponse<StocktakeTaskApiDTO>(res, 'StocktakeCoreService.getTasks')
-    ))
+    return stocktakeTaskArraySchema.parse(
+      toStocktakeTaskContracts(
+        ensureArrayResponse<StocktakeTaskApiDTO>(
+          res,
+          'StocktakeCoreService.getTasks'
+        )
+      )
+    )
   },
 
   async getItems(taskId: string): Promise<StocktakeItem[]> {
-    const res = await apiFetch<StocktakeItemApiDTO[]>(`/stocktakes/${taskId}/items`)
-    return stocktakeItemArraySchema.parse(toStocktakeItemContracts(
-      ensureArrayResponse<StocktakeItemApiDTO>(res, 'StocktakeCoreService.getItems')
-    ))
+    const res = await apiFetch<StocktakeItemApiDTO[]>(
+      `/stocktakes/${taskId}/items`
+    )
+    return stocktakeItemArraySchema.parse(
+      toStocktakeItemContracts(
+        ensureArrayResponse<StocktakeItemApiDTO>(
+          res,
+          'StocktakeCoreService.getItems'
+        )
+      )
+    )
   },
 }

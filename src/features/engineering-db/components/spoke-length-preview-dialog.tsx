@@ -1,42 +1,50 @@
 import { ImageIcon } from 'lucide-react'
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog'
 import { useLanguage } from '@/context/language-provider'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 
 interface SpokeLengthPreviewDialogProps {
-    open: boolean
-    onOpenChange: (open: boolean) => void
-    previewFile: { url: string; name: string } | null
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  previewFile: { url: string; name: string } | null
 }
 
 export function SpokeLengthPreviewDialog({
-    open,
-    onOpenChange,
-    previewFile
+  open,
+  onOpenChange,
+  previewFile,
 }: SpokeLengthPreviewDialogProps) {
-    const { t } = useLanguage()
+  const { t } = useLanguage()
 
-    return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className='sm:max-w-3xl rounded-[32px] p-0 overflow-hidden bg-background border-none shadow-2xl'>
-                <DialogHeader className='p-6 border-b border-dashed border-muted-foreground/10 bg-muted/5'>
-                    <DialogTitle className='text-sm font-black italic uppercase tracking-widest flex items-center gap-2'>
-                        <ImageIcon className='size-4 text-indigo-600' />
-                        {previewFile?.name} / {t('engineering.spokeLength.table.preview')}
-                    </DialogTitle>
-                </DialogHeader>
-                <div className='p-4 flex items-center justify-center bg-muted/10 min-h-[300px]'>
-                    {previewFile?.url.toLowerCase().endsWith('.pdf') ? (
-                        <iframe src={previewFile.url} className='w-full h-[600px] rounded-2xl border-none shadow-inner' title='blueprint-preview' />
-                    ) : (
-                        <img src={previewFile?.url} alt='blueprint' className='max-w-full max-h-[70vh] rounded-2xl shadow-2xl object-contain border-4 border-white' />
-                    )}
-                </div>
-            </DialogContent>
-        </Dialog>
-    )
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className='overflow-hidden rounded-[32px] border-none bg-background p-0 shadow-2xl sm:max-w-3xl'>
+        <DialogHeader className='border-b border-dashed border-muted-foreground/10 bg-muted/5 p-6'>
+          <DialogTitle className='flex items-center gap-2 text-sm font-black tracking-widest uppercase italic'>
+            <ImageIcon className='size-4 text-indigo-600' />
+            {previewFile?.name} / {t('engineering.spokeLength.table.preview')}
+          </DialogTitle>
+        </DialogHeader>
+        <div className='flex min-h-[300px] items-center justify-center bg-muted/10 p-4'>
+          {previewFile?.url.toLowerCase().endsWith('.pdf') ? (
+            <iframe
+              src={previewFile.url}
+              className='h-[600px] w-full rounded-2xl border-none shadow-inner'
+              title='blueprint-preview'
+            />
+          ) : (
+            <img
+              src={previewFile?.url}
+              alt='blueprint'
+              className='max-h-[70vh] max-w-full rounded-2xl border-4 border-white object-contain shadow-2xl'
+            />
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
 }

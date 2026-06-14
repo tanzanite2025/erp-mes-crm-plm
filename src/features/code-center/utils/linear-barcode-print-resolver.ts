@@ -1,3 +1,4 @@
+import type { TranslationKey } from '@/locales'
 import {
   formatLinearBarcodeMonthValue,
   type LinearBarcodeMockInputs,
@@ -6,7 +7,6 @@ import {
 import { numberingService } from '@/features/basic-settings/services/numbering-service'
 import { type BarcodeConfig } from '@/features/engineering/data/schema'
 import { type SalesOrder } from '@/features/trading/data/schema'
-import type { TranslationKey } from '@/locales'
 
 const PREVIEW_SERIAL_LENGTH = 4
 const PREVIEW_BARCODE_SERIAL_LENGTH = 5
@@ -31,7 +31,10 @@ export interface LinearBarcodeResolvedPrintLine {
   printInput?: LinearBarcodePrintInput
 }
 
-type TranslateFn = (key: TranslationKey, params?: Record<string, string | number>) => string
+type TranslateFn = (
+  key: TranslationKey,
+  params?: Record<string, string | number>
+) => string
 
 interface ResolveLinearBarcodePrintLinesParams {
   order?: SalesOrder
@@ -63,7 +66,10 @@ function buildMockInputs(
     model: line.modelCodeSnapshot || '',
     appearance: line.appearanceBarcodeCodeSnapshot || '',
     holePrefix: line.holePrefixSnapshot || '',
-    holes: line.holeCount !== undefined ? String(line.holeCount).padStart(2, '0') : '',
+    holes:
+      line.holeCount !== undefined
+        ? String(line.holeCount).padStart(2, '0')
+        : '',
     serial: protocolMockInput?.serial || defaultSerial,
     isDrainHole: protocolMockInput?.isDrainHole ?? false,
     wheelType: protocolMockInput?.wheelType || 'H',
@@ -84,7 +90,9 @@ function buildBarcodeConfig(
     wheelType: normalizeWheelType(mockInputs.wheelType),
     scopeCode: mockInputs.scopeCode,
     suffix: '',
-    serialNumber: numberingService.previewSequence(PREVIEW_BARCODE_SERIAL_LENGTH),
+    serialNumber: numberingService.previewSequence(
+      PREVIEW_BARCODE_SERIAL_LENGTH
+    ),
   }
 }
 
@@ -102,25 +110,53 @@ export function resolveLinearBarcodePrintLines({
     const issues: string[] = []
 
     if (!line.productId) {
-      issues.push(t('codeCenter.linearBarcode.print.sections.preview.issues.productMissing'))
+      issues.push(
+        t(
+          'codeCenter.linearBarcode.print.sections.preview.issues.productMissing'
+        )
+      )
     }
     if (!line.modelCodeSnapshot) {
-      issues.push(t('codeCenter.linearBarcode.print.sections.preview.issues.modelCodeMissing'))
+      issues.push(
+        t(
+          'codeCenter.linearBarcode.print.sections.preview.issues.modelCodeMissing'
+        )
+      )
     }
     if (!line.holePrefixSnapshot) {
-      issues.push(t('codeCenter.linearBarcode.print.sections.preview.issues.holePrefixMissing'))
+      issues.push(
+        t(
+          'codeCenter.linearBarcode.print.sections.preview.issues.holePrefixMissing'
+        )
+      )
     }
     if (!line.appearanceBarcodeCodeSnapshot) {
-      issues.push(t('codeCenter.linearBarcode.print.sections.preview.issues.appearanceCodeMissing'))
+      issues.push(
+        t(
+          'codeCenter.linearBarcode.print.sections.preview.issues.appearanceCodeMissing'
+        )
+      )
     }
     if (line.holeCount === undefined) {
-      issues.push(t('codeCenter.linearBarcode.print.sections.preview.issues.holeCountMissing'))
+      issues.push(
+        t(
+          'codeCenter.linearBarcode.print.sections.preview.issues.holeCountMissing'
+        )
+      )
     }
     if (!line.qty || line.qty <= 0) {
-      issues.push(t('codeCenter.linearBarcode.print.sections.preview.issues.quantityInvalid'))
+      issues.push(
+        t(
+          'codeCenter.linearBarcode.print.sections.preview.issues.quantityInvalid'
+        )
+      )
     }
     if (!protocol?.sequenceRuleKey) {
-      issues.push(t('codeCenter.linearBarcode.print.sections.preview.issues.sequenceRuleKeyMissing'))
+      issues.push(
+        t(
+          'codeCenter.linearBarcode.print.sections.preview.issues.sequenceRuleKeyMissing'
+        )
+      )
     }
 
     const productLabel = line.productModel || line.productCode || '--'

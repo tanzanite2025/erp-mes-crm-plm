@@ -1,14 +1,17 @@
 import { useMemo } from 'react'
-import { useProductionProcessesQuery } from '../../../hooks/use-production-resources'
 import type { ProductionProcessStep } from '../../../data/production-process'
+import { useProductionProcessesQuery } from '../../../hooks/use-production-resources'
 import type { LineMindmapNode } from '../data/sample-mindmap'
 import type { LineMindmapProcessDraft } from '../types'
 import { useLineMindmapProcessCapabilities } from './use-line-mindmap-process-capabilities'
 import { useLineMindmapProcessLibrary } from './use-line-mindmap-process-library'
 
-export function useLineMindmapProcessPanel(selectedNode: LineMindmapNode | null) {
+export function useLineMindmapProcessPanel(
+  selectedNode: LineMindmapNode | null
+) {
   const { data: processLibrary = [] } = useProductionProcessesQuery()
-  const { assignProcessCapability, removeProcessCapability } = useLineMindmapProcessCapabilities()
+  const { assignProcessCapability, removeProcessCapability } =
+    useLineMindmapProcessCapabilities()
   const { deleteProcess, saveProcess } = useLineMindmapProcessLibrary()
 
   const saveProcessFromDraft = async (draft: LineMindmapProcessDraft) => {
@@ -25,7 +28,11 @@ export function useLineMindmapProcessPanel(selectedNode: LineMindmapNode | null)
       return []
     }
 
-    const mappedIds = new Set((selectedNode.children || []).map((child) => child.sourceId).filter(Boolean))
+    const mappedIds = new Set(
+      (selectedNode.children || [])
+        .map((child) => child.sourceId)
+        .filter(Boolean)
+    )
     return processLibrary
       .filter((process) => !mappedIds.has(process.id))
       .map((process) => ({
@@ -44,7 +51,11 @@ export function useLineMindmapProcessPanel(selectedNode: LineMindmapNode | null)
   }
 
   const handleRemoveProcess = async () => {
-    if (selectedNode?.sourceType !== 'process' || !selectedNode.sourceId || !selectedNode.parentId) {
+    if (
+      selectedNode?.sourceType !== 'process' ||
+      !selectedNode.sourceId ||
+      !selectedNode.parentId
+    ) {
       return
     }
 
@@ -52,7 +63,10 @@ export function useLineMindmapProcessPanel(selectedNode: LineMindmapNode | null)
     await removeProcessCapability(jobCategoryId, selectedNode.sourceId)
   }
 
-  const handleCreateProcessForJobCategory = async (draft: LineMindmapProcessDraft, jobCategoryId: string) => {
+  const handleCreateProcessForJobCategory = async (
+    draft: LineMindmapProcessDraft,
+    jobCategoryId: string
+  ) => {
     const saved = await saveProcessFromDraft(draft)
     await assignProcessCapability(jobCategoryId, saved.id)
     return saved

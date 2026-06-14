@@ -64,13 +64,39 @@ function createSeedAppearance(
 export const DEFAULT_PRODUCT_APPEARANCES: ProductAppearance[] = [
   createSeedAppearance('appearance_ud', 'UD', '1', 'Default appearance 1', 10),
   createSeedAppearance('appearance_3k', '3K', '2', 'Default appearance 2', 20),
-  createSeedAppearance('appearance_12k', '12K', '3', 'Default appearance 3', 30),
-  createSeedAppearance('appearance_marble', 'MARBLE', '4', 'Default appearance 4', 40),
-  createSeedAppearance('appearance_paint', 'PAINT', '5', 'Default appearance 5', 50),
-  createSeedAppearance('appearance_custom', 'CUSTOM', '6', 'Default appearance 6', 60),
+  createSeedAppearance(
+    'appearance_12k',
+    '12K',
+    '3',
+    'Default appearance 3',
+    30
+  ),
+  createSeedAppearance(
+    'appearance_marble',
+    'MARBLE',
+    '4',
+    'Default appearance 4',
+    40
+  ),
+  createSeedAppearance(
+    'appearance_paint',
+    'PAINT',
+    '5',
+    'Default appearance 5',
+    50
+  ),
+  createSeedAppearance(
+    'appearance_custom',
+    'CUSTOM',
+    '6',
+    'Default appearance 6',
+    60
+  ),
 ]
 
-export function mapLegacyAppearanceMapping(mapping: LegacyAppearanceMapping): ProductAppearance[] {
+export function mapLegacyAppearanceMapping(
+  mapping: LegacyAppearanceMapping
+): ProductAppearance[] {
   const now = new Date().toISOString()
 
   return Object.entries(mapping)

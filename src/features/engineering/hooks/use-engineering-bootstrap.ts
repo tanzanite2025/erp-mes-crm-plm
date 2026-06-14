@@ -1,6 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
 import { type Product, type ProductType } from '../data/schema'
-import { PRODUCT_TYPES_QUERY_KEY, productManagementQueryKey } from '../query-keys'
+import {
+  PRODUCT_TYPES_QUERY_KEY,
+  productManagementQueryKey,
+} from '../query-keys'
 import { ProductCoreService } from '../services/product-core-service'
 import { ProductTypeService } from '../services/product-type-service'
 

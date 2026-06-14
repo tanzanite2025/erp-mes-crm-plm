@@ -1,16 +1,29 @@
-import type { BatchOptimizerPlan, BatchOptimizerPlanDiffSummary } from '../types'
+import type {
+  BatchOptimizerPlan,
+  BatchOptimizerPlanDiffSummary,
+} from '../types'
 
 function buildGeometryMetrics(plan: BatchOptimizerPlan) {
   const geometryZones = plan.geometryLayoutSummary?.zones ?? []
   return {
     geometryZoneCount: geometryZones.length,
-    geometryPieceZoneCount: geometryZones.filter((zone) => zone.usageCategory === 'piece').length,
-    geometryResidualZoneCount: geometryZones.filter((zone) => zone.usageCategory === 'residual' || zone.usageCategory === 'leftover').length,
-    geometryRollCount: Array.from(new Set(geometryZones.map((zone) => zone.rollId).filter(Boolean))).length,
+    geometryPieceZoneCount: geometryZones.filter(
+      (zone) => zone.usageCategory === 'piece'
+    ).length,
+    geometryResidualZoneCount: geometryZones.filter(
+      (zone) =>
+        zone.usageCategory === 'residual' || zone.usageCategory === 'leftover'
+    ).length,
+    geometryRollCount: Array.from(
+      new Set(geometryZones.map((zone) => zone.rollId).filter(Boolean))
+    ).length,
   }
 }
 
-function buildExportPayload(plan: BatchOptimizerPlan, diffSummary: BatchOptimizerPlanDiffSummary) {
+function buildExportPayload(
+  plan: BatchOptimizerPlan,
+  diffSummary: BatchOptimizerPlanDiffSummary
+) {
   const geometryMetrics = buildGeometryMetrics(plan)
   return {
     rank: plan.rank,
@@ -38,13 +51,21 @@ function buildExportPayload(plan: BatchOptimizerPlan, diffSummary: BatchOptimize
   }
 }
 
-export function exportBatchEngineReviewJson(plan: BatchOptimizerPlan, diffSummary: BatchOptimizerPlanDiffSummary) {
+export function exportBatchEngineReviewJson(
+  plan: BatchOptimizerPlan,
+  diffSummary: BatchOptimizerPlanDiffSummary
+) {
   const payload = buildExportPayload(plan, diffSummary)
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' })
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: 'application/json;charset=utf-8',
+  })
   downloadBlob(blob, `batch-engine-plan-${plan.rank}-review.json`)
 }
 
-export function exportBatchEngineReviewCsv(plan: BatchOptimizerPlan, diffSummary: BatchOptimizerPlanDiffSummary) {
+export function exportBatchEngineReviewCsv(
+  plan: BatchOptimizerPlan,
+  diffSummary: BatchOptimizerPlanDiffSummary
+) {
   const geometryMetrics = buildGeometryMetrics(plan)
   const rows = [
     ['planRank', String(plan.rank)],
@@ -54,38 +75,84 @@ export function exportBatchEngineReviewCsv(plan: BatchOptimizerPlan, diffSummary
     ['score', plan.score.toFixed(2)],
     ['utilizationPercent', plan.utilizationPercent.toFixed(2)],
     ['lossAreaM2', plan.lossAreaM2.toFixed(3)],
-    ['mustFulfillRiskCount', String(plan.mustFulfillDiagnostics.filter((item) => item.status === 'unfulfilled').length)],
+    [
+      'mustFulfillRiskCount',
+      String(
+        plan.mustFulfillDiagnostics.filter(
+          (item) => item.status === 'unfulfilled'
+        ).length
+      ),
+    ],
     ['changedDemandLineCount', String(diffSummary.changedDemandLineIds.length)],
     ['changedRollCount', String(diffSummary.changedRollIds.length)],
     ['highlightZoneCount', String(diffSummary.highlightZoneIds.length)],
     ['adjacencyBreakCount', String(plan.reportSummary.adjacencyBreakCount)],
     ['rollSwitchCount', String(plan.reportSummary.rollSwitchCount)],
     ['geometryReuseHitCount', String(plan.reportSummary.geometryReuseHitCount)],
-    ['reusableResidualAreaM2', plan.reportSummary.reusableResidualAreaM2.toFixed(6)],
+    [
+      'reusableResidualAreaM2',
+      plan.reportSummary.reusableResidualAreaM2.toFixed(6),
+    ],
     ['searchPreset', plan.searchConfig.presetKey],
     ['beamWidth', String(plan.searchConfig.beamWidth)],
     ['maxSearchDepth', String(plan.searchConfig.maxSearchDepth)],
-    ['perDemandBranchingLimit', String(plan.searchConfig.perDemandBranchingLimit)],
-    ['candidateMergedCount', String(plan.candidateBudgetSummary.mergedCandidateCount)],
+    [
+      'perDemandBranchingLimit',
+      String(plan.searchConfig.perDemandBranchingLimit),
+    ],
+    [
+      'candidateMergedCount',
+      String(plan.candidateBudgetSummary.mergedCandidateCount),
+    ],
     ['candidateGlobalBudget', String(plan.candidateBudgetSummary.globalBudget)],
     ['budgetRerankReason', plan.budgetRerankReason || '--'],
-    ['primaryBreakReasons', plan.explainabilitySummary.primaryBreakReasons.join(' | ') || '--'],
-    ['heatZoneAttributions', plan.explainabilitySummary.heatZoneAttributions.map((item) => `${item.zoneId}:${item.segmentKind}`).join(' | ') || '--'],
-    ['breakSlices', plan.explainabilitySummary.breakSlices.map((item) => `${item.id}:${item.severityScore.toFixed(2)}`).join(' | ') || '--'],
-    ['zoneClusters', plan.explainabilitySummary.zoneClusters.map((item) => `${item.clusterId}:${item.densityScore.toFixed(2)}`).join(' | ') || '--'],
+    [
+      'primaryBreakReasons',
+      plan.explainabilitySummary.primaryBreakReasons.join(' | ') || '--',
+    ],
+    [
+      'heatZoneAttributions',
+      plan.explainabilitySummary.heatZoneAttributions
+        .map((item) => `${item.zoneId}:${item.segmentKind}`)
+        .join(' | ') || '--',
+    ],
+    [
+      'breakSlices',
+      plan.explainabilitySummary.breakSlices
+        .map((item) => `${item.id}:${item.severityScore.toFixed(2)}`)
+        .join(' | ') || '--',
+    ],
+    [
+      'zoneClusters',
+      plan.explainabilitySummary.zoneClusters
+        .map((item) => `${item.clusterId}:${item.densityScore.toFixed(2)}`)
+        .join(' | ') || '--',
+    ],
     ['geometryZoneCount', String(geometryMetrics.geometryZoneCount)],
     ['geometryPieceZoneCount', String(geometryMetrics.geometryPieceZoneCount)],
-    ['geometryResidualZoneCount', String(geometryMetrics.geometryResidualZoneCount)],
+    [
+      'geometryResidualZoneCount',
+      String(geometryMetrics.geometryResidualZoneCount),
+    ],
     ['geometryRollCount', String(geometryMetrics.geometryRollCount)],
   ]
-  const csv = rows.map(([key, value]) => `${escapeCsv(key)},${escapeCsv(value)}`).join('\n')
+  const csv = rows
+    .map(([key, value]) => `${escapeCsv(key)},${escapeCsv(value)}`)
+    .join('\n')
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
   downloadBlob(blob, `batch-engine-plan-${plan.rank}-review.csv`)
 }
 
-export function printBatchEngineReviewPdf(plan: BatchOptimizerPlan, diffSummary: BatchOptimizerPlanDiffSummary) {
+export function printBatchEngineReviewPdf(
+  plan: BatchOptimizerPlan,
+  diffSummary: BatchOptimizerPlanDiffSummary
+) {
   const payload = buildExportPayload(plan, diffSummary)
-  const printWindow = window.open('', '_blank', 'noopener,noreferrer,width=960,height=720')
+  const printWindow = window.open(
+    '',
+    '_blank',
+    'noopener,noreferrer,width=960,height=720'
+  )
   if (!printWindow) {
     return
   }
@@ -127,7 +194,10 @@ function escapeCsv(value: string) {
 
 function escapeHtml(value: string) {
   return value
-    .split('&').join('&amp;')
-    .split('<').join('&lt;')
-    .split('>').join('&gt;')
+    .split('&')
+    .join('&amp;')
+    .split('<')
+    .join('&lt;')
+    .split('>')
+    .join('&gt;')
 }

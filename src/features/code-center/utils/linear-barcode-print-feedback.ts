@@ -1,13 +1,20 @@
 import { type QueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
-import { PRINT_BATCHES_QUERY_KEY } from '@/features/print-mgmt/query-keys'
-import { type BatchPrintResultItem } from '@/features/code-center/utils/linear-barcode-print-result-builder'
 import type { TranslationKey } from '@/locales'
+import { toast } from 'sonner'
+import { type BatchPrintResultItem } from '@/features/code-center/utils/linear-barcode-print-result-builder'
+import { PRINT_BATCHES_QUERY_KEY } from '@/features/print-mgmt/query-keys'
 
-type TranslateFn = (key: TranslationKey, params?: Record<string, string | number>) => string
+type TranslateFn = (
+  key: TranslationKey,
+  params?: Record<string, string | number>
+) => string
 
 export type LinearBarcodeInlineFeedbackKind = 'issueNumbersFailed'
-export type LinearBarcodeInlineFeedbackTone = 'error' | 'warning' | 'success' | 'info'
+export type LinearBarcodeInlineFeedbackTone =
+  | 'error'
+  | 'warning'
+  | 'success'
+  | 'info'
 export type LinearBarcodeInlineFeedbackVariant = 'soft' | 'outline'
 
 export interface LinearBarcodeInlineFeedbackState {
@@ -82,18 +89,32 @@ export async function handleSinglePrintSuccessFeedback({
   t,
 }: SinglePrintSuccessFeedbackParams) {
   await invalidatePrintBatches(queryClient)
-  toast.success(t('codeCenter.linearBarcode.print.sections.preview.toasts.linePrintSuccess', { quantity }), {
-    description: t('codeCenter.linearBarcode.print.sections.preview.toasts.linePrintSuccessDescription', {
-      serialNumber,
-    }),
-  })
+  toast.success(
+    t(
+      'codeCenter.linearBarcode.print.sections.preview.toasts.linePrintSuccess',
+      { quantity }
+    ),
+    {
+      description: t(
+        'codeCenter.linearBarcode.print.sections.preview.toasts.linePrintSuccessDescription',
+        {
+          serialNumber,
+        }
+      ),
+    }
+  )
 }
 
-export function handleSinglePrintFailureFeedback({ error, t }: SinglePrintFailureFeedbackParams) {
+export function handleSinglePrintFailureFeedback({
+  error,
+  t,
+}: SinglePrintFailureFeedbackParams) {
   toast.error(
     error instanceof Error && error.message
       ? error.message
-      : t('codeCenter.linearBarcode.print.sections.preview.toasts.linePrintFailed')
+      : t(
+          'codeCenter.linearBarcode.print.sections.preview.toasts.linePrintFailed'
+        )
   )
 }
 
@@ -109,24 +130,32 @@ export async function handleBatchPrintCompletionFeedback({
 
   if (successCount > 0 && failureCount === 0) {
     toast.success(
-      t('codeCenter.linearBarcode.print.sections.preview.toasts.batchPrintSuccess', {
-        count: successCount,
-      })
+      t(
+        'codeCenter.linearBarcode.print.sections.preview.toasts.batchPrintSuccess',
+        {
+          count: successCount,
+        }
+      )
     )
     return
   }
 
   if (successCount > 0) {
     toast.error(
-      t('codeCenter.linearBarcode.print.sections.preview.toasts.batchPrintPartial', {
-        successCount,
-        failureCount,
-      })
+      t(
+        'codeCenter.linearBarcode.print.sections.preview.toasts.batchPrintPartial',
+        {
+          successCount,
+          failureCount,
+        }
+      )
     )
     return
   }
 
-  toast.error(t('codeCenter.linearBarcode.print.sections.preview.toasts.batchPrintFailed'))
+  toast.error(
+    t('codeCenter.linearBarcode.print.sections.preview.toasts.batchPrintFailed')
+  )
 }
 
 export async function handlePrintBatchesInvalidateFeedback({
@@ -140,10 +169,14 @@ export async function handlePrintBatchesInvalidateFeedback({
   await invalidatePrintBatches(queryClient)
 }
 
-export function resolveIssueNumbersFailureFeedback({ t }: IssueNumbersFailureFeedbackParams): LinearBarcodeInlineFeedbackState {
+export function resolveIssueNumbersFailureFeedback({
+  t,
+}: IssueNumbersFailureFeedbackParams): LinearBarcodeInlineFeedbackState {
   return {
     kind: 'issueNumbersFailed',
-    message: t('codeCenter.linearBarcode.print.sections.preview.states.numberingFailed'),
+    message: t(
+      'codeCenter.linearBarcode.print.sections.preview.states.numberingFailed'
+    ),
     tone: 'error',
     variant: 'soft',
   }

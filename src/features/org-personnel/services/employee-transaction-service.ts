@@ -47,23 +47,31 @@ export const EmployeeTransactionService = {
     })
   },
 
-  previewEmployeeImport: async (file: File): Promise<EmployeeImportPreviewResponse> => {
+  previewEmployeeImport: async (
+    file: File
+  ): Promise<EmployeeImportPreviewResponse> => {
     const formData = new FormData()
     formData.append('file', file)
 
-    return await apiFetch<EmployeeImportPreviewResponse>('/employees/import/preview', {
-      method: 'POST',
-      body: formData,
-    })
+    return await apiFetch<EmployeeImportPreviewResponse>(
+      '/employees/import/preview',
+      {
+        method: 'POST',
+        body: formData,
+      }
+    )
   },
 
   commitEmployeeImport: async (
     previewToken: string,
-    mode: EmployeeImportMode,
+    mode: EmployeeImportMode
   ): Promise<EmployeeImportCommitResponse> => {
-    return await apiFetch<EmployeeImportCommitResponse>('/employees/import/commit', {
-      method: 'POST',
-      body: JSON.stringify({ previewToken, mode }),
-    })
+    return await apiFetch<EmployeeImportCommitResponse>(
+      '/employees/import/commit',
+      {
+        method: 'POST',
+        body: JSON.stringify({ previewToken, mode }),
+      }
+    )
   },
 }

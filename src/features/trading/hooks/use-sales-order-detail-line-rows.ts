@@ -44,15 +44,18 @@ export function useSalesOrderDetailLineRows(order: SalesOrder) {
         deliveredQty,
         deliveredRatio,
         deliveredPercent,
-        deliveredTextClass: deliveredQty > 0 ? 'text-primary' : 'text-foreground',
-        deliveredBarClass: deliveredQty >= line.qty ? 'bg-emerald-500' : 'bg-primary',
+        deliveredTextClass:
+          deliveredQty > 0 ? 'text-primary' : 'text-foreground',
+        deliveredBarClass:
+          deliveredQty >= line.qty ? 'bg-emerald-500' : 'bg-primary',
         routeLabel: line.route || '',
         descriptionLabel: line.description || '',
         appearanceNameLabel: line.appearanceNameSnapshot || '',
         appearanceCodeLabel: line.appearanceBarcodeCodeSnapshot || '',
         appearanceDescriptionLabel: line.appearanceDescriptionSnapshot || '',
         appearanceImageUrl: line.appearanceImageUrlSnapshot || '',
-        holeCountLabel: line.holeCount !== undefined ? String(line.holeCount) : '',
+        holeCountLabel:
+          line.holeCount !== undefined ? String(line.holeCount) : '',
         quantityLabel: line.qty.toLocaleString(),
         modelCodeSnapshotLabel: line.modelCodeSnapshot || '',
         holePrefixSnapshotLabel: line.holePrefixSnapshot || '',

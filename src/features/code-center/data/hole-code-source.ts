@@ -44,10 +44,24 @@ export interface HoleCodeSourceBundle {
   counts: HoleCodeCountItem[]
 }
 
-export const SHARED_HOLE_CODE_SOURCE_STORAGE_KEY = 'code_center_shared_hole_codes_v1'
-export const SHARED_HOLE_CODE_SOURCE_QUERY_KEY = ['code-center', 'shared-code-source', 'hole-codes'] as const
+export const SHARED_HOLE_CODE_SOURCE_STORAGE_KEY =
+  'code_center_shared_hole_codes_v1'
+export const SHARED_HOLE_CODE_SOURCE_QUERY_KEY = [
+  'code-center',
+  'shared-code-source',
+  'hole-codes',
+] as const
 
-const DEFAULT_HOLE_COUNTS = ['14', '16', '18', '20', '21', '24', '28', '32'] as const
+const DEFAULT_HOLE_COUNTS = [
+  '14',
+  '16',
+  '18',
+  '20',
+  '21',
+  '24',
+  '28',
+  '32',
+] as const
 const DEFAULT_PREFIXES: HoleCodePrefix[] = ['R', 'D']
 
 export function createEmptyHoleCodeSourceBundle(): HoleCodeSourceBundle {
@@ -116,10 +130,14 @@ export function buildHoleCountLabelMap(items: HoleCodeCountItem[]) {
   }, {})
 }
 
-export function buildHoleCodeCombinationLabelMap(prefixes: HoleCodePrefixItem[], counts: HoleCodeCountItem[]) {
+export function buildHoleCodeCombinationLabelMap(
+  prefixes: HoleCodePrefixItem[],
+  counts: HoleCodeCountItem[]
+) {
   return prefixes.reduce<Record<string, string>>((accumulator, prefix) => {
     counts.forEach((count) => {
-      accumulator[`${prefix.code}${count.value}`] = `${prefix.label || prefix.code}${count.label || count.value}`
+      accumulator[`${prefix.code}${count.value}`] =
+        `${prefix.label || prefix.code}${count.label || count.value}`
     })
     return accumulator
   }, {})

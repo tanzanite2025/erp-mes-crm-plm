@@ -1,5 +1,10 @@
-import type { JobCategory, ProcessStep, ProductionLine, TopologyTemplate } from '../types'
 import type { HierarchyLevelOptionItem } from '../../hierarchy-config/data/hierarchy-config'
+import type {
+  JobCategory,
+  ProcessStep,
+  ProductionLine,
+  TopologyTemplate,
+} from '../types'
 import {
   addJobCategoryToLine,
   addSegmentToLine,
@@ -18,7 +23,10 @@ function cloneProcess(process: ProcessStep, index: number): ProcessStep {
   }
 }
 
-function cloneJobCategory(jobCategory: JobCategory, index: number): JobCategory {
+function cloneJobCategory(
+  jobCategory: JobCategory,
+  index: number
+): JobCategory {
   return {
     ...jobCategory,
     id: crypto.randomUUID(),
@@ -29,7 +37,7 @@ function cloneJobCategory(jobCategory: JobCategory, index: number): JobCategory 
 
 export function useLineTopology(
   line: ProductionLine,
-  onUpdate: (line: ProductionLine) => void,
+  onUpdate: (line: ProductionLine) => void
 ) {
   const handleApplyTemplate = (template: TopologyTemplate) => {
     const clonedSegments = normalizeSegments(
@@ -48,7 +56,10 @@ export function useLineTopology(
     onUpdate(addSegmentToLine(line, option))
   }
 
-  const handleAddJobCategory = (segmentId: string, option: HierarchyLevelOptionItem) => {
+  const handleAddJobCategory = (
+    segmentId: string,
+    option: HierarchyLevelOptionItem
+  ) => {
     onUpdate(addJobCategoryToLine(line, segmentId, option))
   }
 
@@ -56,7 +67,11 @@ export function useLineTopology(
     onUpdate(renameSegmentInLine(line, segmentId, name))
   }
 
-  const handleUpdateJobCategory = (segmentId: string, jobCategoryId: string, name: string) => {
+  const handleUpdateJobCategory = (
+    segmentId: string,
+    jobCategoryId: string,
+    name: string
+  ) => {
     onUpdate(renameJobCategoryInLine(line, segmentId, jobCategoryId, name))
   }
 
@@ -64,7 +79,10 @@ export function useLineTopology(
     onUpdate(removeSegmentFromLine(line, segmentId))
   }
 
-  const handleRemoveJobCategory = (segmentId: string, jobCategoryId: string) => {
+  const handleRemoveJobCategory = (
+    segmentId: string,
+    jobCategoryId: string
+  ) => {
     onUpdate(removeJobCategoryFromLine(line, segmentId, jobCategoryId))
   }
 

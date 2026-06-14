@@ -27,7 +27,11 @@ export const packagingAssemblyListResultSchema = z.object({
   total: z.number(),
 })
 
-export const packagingAssemblyCaptureStatusSchema = z.enum(['Waiting', 'Submitted', 'Expired'])
+export const packagingAssemblyCaptureStatusSchema = z.enum([
+  'Waiting',
+  'Submitted',
+  'Expired',
+])
 
 export const packagingAssemblyCaptureSessionSchema = z.object({
   sessionId: z.string(),
@@ -45,9 +49,17 @@ export const submitPackagingAssemblyCaptureSessionInputSchema = z.object({
   productBarcodes: z.array(z.string().min(1)),
 })
 
-export type PackagingAssemblyCaptureStatus = z.infer<typeof packagingAssemblyCaptureStatusSchema>
+export type PackagingAssemblyCaptureStatus = z.infer<
+  typeof packagingAssemblyCaptureStatusSchema
+>
 export type PackagingAssemblyItem = z.infer<typeof packagingAssemblyItemSchema>
 export type PackagingAssembly = z.infer<typeof packagingAssemblySchema>
-export type PackagingAssemblyListResult = z.infer<typeof packagingAssemblyListResultSchema>
-export type PackagingAssemblyCaptureSession = z.infer<typeof packagingAssemblyCaptureSessionSchema>
-export type SubmitPackagingAssemblyCaptureSessionInput = z.infer<typeof submitPackagingAssemblyCaptureSessionInputSchema>
+export type PackagingAssemblyListResult = z.infer<
+  typeof packagingAssemblyListResultSchema
+>
+export type PackagingAssemblyCaptureSession = z.infer<
+  typeof packagingAssemblyCaptureSessionSchema
+>
+export type SubmitPackagingAssemblyCaptureSessionInput = z.infer<
+  typeof submitPackagingAssemblyCaptureSessionInputSchema
+>

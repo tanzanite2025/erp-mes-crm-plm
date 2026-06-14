@@ -1,5 +1,5 @@
-import { type ProductDisplayProjectionV2 } from '@/features/engineering/display/product-display-v2'
 import { type Product } from '@/features/engineering/data/schema'
+import { type ProductDisplayProjectionV2 } from '@/features/engineering/display/product-display-v2'
 import { type SalesOrderLine } from '../data/schema'
 import {
   buildLegacySalesOrderLineDisplayFullLabel,
@@ -26,7 +26,9 @@ function normalizeLineValue(value?: string | null): string {
 }
 
 function resolveProductLineCode(product: Product): string {
-  return normalizeLineValue(product.sku) || normalizeLineValue(product.modelCode)
+  return (
+    normalizeLineValue(product.sku) || normalizeLineValue(product.modelCode)
+  )
 }
 
 export function shouldReplaceGeneratedSalesOrderLineValue(
@@ -34,10 +36,7 @@ export function shouldReplaceGeneratedSalesOrderLineValue(
 ): boolean {
   const normalized = normalizeLineValue(value)
 
-  return (
-    normalized === '' ||
-    isSalesOrderLineDisplayPlaceholder(normalized)
-  )
+  return normalized === '' || isSalesOrderLineDisplayPlaceholder(normalized)
 }
 
 function shouldReplaceGeneratedSalesOrderLineSpecification(
@@ -57,7 +56,9 @@ function shouldReplaceGeneratedSalesOrderLineSpecification(
 ): boolean {
   const specification = normalizeLineValue(line.specification)
   const lineTitleSnapshot = normalizeLineValue(line.productDisplayTitleSnapshot)
-  const derivedTitleSnapshot = normalizeLineValue(derived.productDisplayTitleSnapshot)
+  const derivedTitleSnapshot = normalizeLineValue(
+    derived.productDisplayTitleSnapshot
+  )
   if (shouldReplaceGeneratedSalesOrderLineValue(specification)) {
     return true
   }
@@ -78,7 +79,7 @@ function shouldReplaceGeneratedSalesOrderLineSpecification(
         title: line.productDisplayTitleSnapshot,
         subtitle: line.productDisplaySubtitleSnapshot,
       }),
-      normalizeLineValue(line.productDisplayFullLabelSnapshot),
+      normalizeLineValue(line.productDisplayFullLabelSnapshot)
     )
   }
 
@@ -115,7 +116,10 @@ export function mergeSalesOrderLineProductFields(
     ...derived,
     productModel: normalizeLineValue(line.productModel) || derived.productModel,
     productCode: normalizeLineValue(line.productCode) || derived.productCode,
-    specification: shouldReplaceGeneratedSalesOrderLineSpecification(line, derived)
+    specification: shouldReplaceGeneratedSalesOrderLineSpecification(
+      line,
+      derived
+    )
       ? derived.specification
       : normalizeLineValue(line.specification),
     ...mergeSalesOrderLineDisplaySnapshot(line, displayProjection),

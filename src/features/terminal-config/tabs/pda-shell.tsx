@@ -28,15 +28,20 @@ import {
   Zap,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { useLanguage } from '@/context/language-provider'
+import { useAuthStore } from '@/stores/auth-store'
+import {
+  normalizeMachineCode,
+  normalizeSceneKey,
+} from '@/lib/codecs/code-normalization'
+import { isForbiddenError } from '@/lib/error-status'
 import { createLogger } from '@/lib/logger'
-import { normalizeMachineCode, normalizeSceneKey } from '@/lib/codecs/code-normalization'
-import { canOpenRouteEntryNonBlocking } from '@/features/authz/guards/route-entry-access'
-import { ForbiddenState } from '@/components/forbidden-state'
-import { TrackingNumberInput } from '@/components/tracking-number-input'
+import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { ForbiddenState } from '@/components/forbidden-state'
+import { TrackingNumberInput } from '@/components/tracking-number-input'
+import { canOpenRouteEntryNonBlocking } from '@/features/authz/guards/route-entry-access'
 import {
   createDefaultLinearBarcodeProtocolConfig,
   type LinearBarcodeProtocolConfig,
@@ -57,8 +62,6 @@ import {
   type PDAIngestRetryItem,
   type PDAIngestRetrySceneGroup,
 } from '../services/pda-shell-queue-service'
-import { isForbiddenError } from '@/lib/error-status'
-import { useAuthStore } from '@/stores/auth-store'
 
 const logger = createLogger('PDAShellTab')
 
@@ -76,7 +79,14 @@ type NavigatorWithWakeLock = Navigator & {
   }
 }
 
-const HOTKEYS = ['AudioVolumeUp', 'AudioVolumeDown', 'VolumeUp', 'VolumeDown', 'F9', 'F10']
+const HOTKEYS = [
+  'AudioVolumeUp',
+  'AudioVolumeDown',
+  'VolumeUp',
+  'VolumeDown',
+  'F9',
+  'F10',
+]
 
 function vibrate(pattern: number | number[]) {
   if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
@@ -127,10 +137,14 @@ async function exitFullscreen() {
 export function PDAShellTab() {
   const { t } = useLanguage()
   const user = useAuthStore((state) => state.user)
-  const canOpenWorkbench = canOpenRouteEntryNonBlocking(user, '/terminal-config/pda')
-  const [protocolConfig, setProtocolConfig] = useState<LinearBarcodeProtocolConfig>(
-    createDefaultLinearBarcodeProtocolConfig
+  const canOpenWorkbench = canOpenRouteEntryNonBlocking(
+    user,
+    '/terminal-config/pda'
   )
+  const [protocolConfig, setProtocolConfig] =
+    useState<LinearBarcodeProtocolConfig>(
+      createDefaultLinearBarcodeProtocolConfig
+    )
   const [rawCode, setRawCode] = useState('')
   const [queue, setQueue] = useState<PDAIngestRetryItem[]>([])
   const [sceneGroups, setSceneGroups] = useState<PDAIngestRetrySceneGroup[]>([])
@@ -138,7 +152,9 @@ export function PDAShellTab() {
   const [isRetrying, setIsRetrying] = useState(false)
   const [isLoadingConfig, setIsLoadingConfig] = useState(false)
   const [lastResult, setLastResult] = useState<PDAIngestResponse | null>(null)
-  const [lastMessage, setLastMessage] = useState(t('terminalConfig.pdaShell.status.waiting'))
+  const [lastMessage, setLastMessage] = useState(
+    t('terminalConfig.pdaShell.status.waiting')
+  )
   const [statusTone, setStatusTone] = useState<ShellStatusTone>('idle')
   const [isOnline, setIsOnline] = useState(getOnlineState)
   const [lockMode, setLockMode] = useState(false)
@@ -180,7 +196,9 @@ export function PDAShellTab() {
   }, [])
 
   useEffect(() => {
-    setSupportsWakeLock(Boolean((navigator as NavigatorWithWakeLock | undefined)?.wakeLock))
+    setSupportsWakeLock(
+      Boolean((navigator as NavigatorWithWakeLock | undefined)?.wakeLock)
+    )
   }, [])
 
   useEffect(() => {
@@ -226,7 +244,8 @@ export function PDAShellTab() {
 
   const acquireWakeLock = useCallback(async () => {
     if (!keepAwake) return
-    const wakeLockApi = (navigator as NavigatorWithWakeLock | undefined)?.wakeLock
+    const wakeLockApi = (navigator as NavigatorWithWakeLock | undefined)
+      ?.wakeLock
     if (!wakeLockApi?.request) return
 
     try {
@@ -285,8 +304,10 @@ export function PDAShellTab() {
 
       const normalizedScene = normalizeSceneKey(targetScene, '')
       const orderedItems = [...queuedItems].sort((a, b) => {
-        if (!normalizedScene) return b.lastQueuedAt.localeCompare(a.lastQueuedAt)
-        if (a.scene === normalizedScene && b.scene !== normalizedScene) return -1
+        if (!normalizedScene)
+          return b.lastQueuedAt.localeCompare(a.lastQueuedAt)
+        if (a.scene === normalizedScene && b.scene !== normalizedScene)
+          return -1
         if (a.scene !== normalizedScene && b.scene === normalizedScene) return 1
         return b.lastQueuedAt.localeCompare(a.lastQueuedAt)
       })
@@ -315,7 +336,8 @@ export function PDAShellTab() {
               ...item,
               attempts: item.attempts + 1,
               lastTriedAt: new Date().toISOString(),
-              lastError: error instanceof Error ? error.message : 'retry failed',
+              lastError:
+                error instanceof Error ? error.message : 'retry failed',
             })
           }
         }
@@ -420,7 +442,9 @@ export function PDAShellTab() {
         setRawCode('')
         lastAutoSubmittedRef.current = normalized
         vibrate([80, 50, 80])
-        toast.error(t('terminalConfig.pdaShell.toast.submitQueued'), { description: message })
+        toast.error(t('terminalConfig.pdaShell.toast.submitQueued'), {
+          description: message,
+        })
         await refreshQueue()
       } finally {
         setIsSubmitting(false)
@@ -429,7 +453,10 @@ export function PDAShellTab() {
     [getSceneLabel, isOnline, protocolConfig, refreshQueue, t]
   )
 
-  const normalizedRawCode = useMemo(() => normalizeMachineCode(rawCode), [rawCode])
+  const normalizedRawCode = useMemo(
+    () => normalizeMachineCode(rawCode),
+    [rawCode]
+  )
   const currentSceneQueue = useMemo(
     () => queue.filter((item) => item.scene === currentScene),
     [currentScene, queue]
@@ -472,37 +499,55 @@ export function PDAShellTab() {
   return (
     <div className={shellTheme.page}>
       <div className='mx-auto flex max-w-3xl flex-col gap-4'>
-        <div className={`rounded-[30px] border border-dashed p-5 backdrop-blur ${shellTheme.card}`}>
+        <div
+          className={`rounded-[30px] border border-dashed p-5 backdrop-blur ${shellTheme.card}`}
+        >
           <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
             <div className='space-y-2'>
-              <div className='inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400 md:text-emerald-700'>
+              <div className='inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1 text-[10px] font-black tracking-[0.2em] text-emerald-400 uppercase md:text-emerald-700'>
                 <SmartphoneCharging className='size-3.5' />
                 {t('terminalConfig.pdaShell.page.badge')}
               </div>
-              <h1 className='text-2xl font-black italic tracking-tight'>{t('terminalConfig.pdaShell.page.title')}</h1>
-              <p className={`text-sm font-medium leading-relaxed ${shellTheme.muted}`}>
+              <h1 className='text-2xl font-black tracking-tight italic'>
+                {t('terminalConfig.pdaShell.page.title')}
+              </h1>
+              <p
+                className={`text-sm leading-relaxed font-medium ${shellTheme.muted}`}
+              >
                 {t('terminalConfig.pdaShell.page.description')}
               </p>
             </div>
 
             <div className='flex flex-wrap gap-2'>
-              <Badge className={isOnline ? 'bg-emerald-500/10 text-emerald-700 border-none' : 'bg-rose-500/10 text-rose-700 border-none'}>
+              <Badge
+                className={
+                  isOnline
+                    ? 'border-none bg-emerald-500/10 text-emerald-700'
+                    : 'border-none bg-rose-500/10 text-rose-700'
+                }
+              >
                 {isOnline
                   ? t('terminalConfig.pdaShell.page.online')
                   : t('terminalConfig.pdaShell.page.offline')}
               </Badge>
-              <Badge className='bg-blue-500/10 text-blue-700 border-none'>
+              <Badge className='border-none bg-blue-500/10 text-blue-700'>
                 {protocolConfig.ingestDefaults.deviceId}
               </Badge>
-              <Badge className='bg-slate-900 text-white border-none'>
+              <Badge className='border-none bg-slate-900 text-white'>
                 {currentSceneLabel}
               </Badge>
-              <Badge className='bg-muted/20 text-muted-foreground border-none'>
+              <Badge className='border-none bg-muted/20 text-muted-foreground'>
                 {isLoadingConfig
                   ? t('terminalConfig.pdaShell.page.configLoading')
                   : t('terminalConfig.pdaShell.page.configReady')}
               </Badge>
-              <Badge className={isWakeLocked ? 'bg-amber-500/10 text-amber-600 border-none' : 'bg-muted/20 text-muted-foreground border-none'}>
+              <Badge
+                className={
+                  isWakeLocked
+                    ? 'border-none bg-amber-500/10 text-amber-600'
+                    : 'border-none bg-muted/20 text-muted-foreground'
+                }
+              >
                 {keepAwake
                   ? isWakeLocked
                     ? t('terminalConfig.pdaShell.page.wakeLockOn')
@@ -517,7 +562,7 @@ export function PDAShellTab() {
           <CardContent className='space-y-5 p-5 md:p-6'>
             <div className='flex flex-wrap gap-3'>
               <Button
-                className='h-11 rounded-full px-6 text-[11px] font-black uppercase tracking-widest'
+                className='h-11 rounded-full px-6 text-[11px] font-black tracking-widest uppercase'
                 onClick={async () => {
                   const next = !lockMode
                   setLockMode(next)
@@ -541,7 +586,7 @@ export function PDAShellTab() {
 
               <Button
                 variant='outline'
-                className='h-11 rounded-full px-6 text-[11px] font-black uppercase tracking-widest'
+                className='h-11 rounded-full px-6 text-[11px] font-black tracking-widest uppercase'
                 onClick={() => setKeepAwake((current) => !current)}
               >
                 <Zap className='mr-2 size-4' />
@@ -552,7 +597,7 @@ export function PDAShellTab() {
 
               <Button
                 variant='outline'
-                className='h-11 rounded-full px-6 text-[11px] font-black uppercase tracking-widest'
+                className='h-11 rounded-full px-6 text-[11px] font-black tracking-widest uppercase'
                 onClick={() => {
                   setScannerWakeSignal((current) => current + 1)
                   setStatusTone('idle')
@@ -565,7 +610,7 @@ export function PDAShellTab() {
 
               <Button
                 variant='outline'
-                className='h-11 rounded-full px-6 text-[11px] font-black uppercase tracking-widest'
+                className='h-11 rounded-full px-6 text-[11px] font-black tracking-widest uppercase'
                 onClick={() => triggerRetryQueued(currentScene)}
                 disabled={isRetrying || !currentSceneQueue.length}
               >
@@ -598,16 +643,22 @@ export function PDAShellTab() {
               />
             </div>
 
-            <div className={['rounded-[24px] border p-4 transition-colors', toneStyles[statusTone]].join(' ')}>
+            <div
+              className={[
+                'rounded-[24px] border p-4 transition-colors',
+                toneStyles[statusTone],
+              ].join(' ')}
+            >
               <div className='flex items-start justify-between gap-3'>
                 <div className='space-y-1'>
-                  <div className='text-[10px] font-black uppercase tracking-[0.2em] opacity-70'>
+                  <div className='text-[10px] font-black tracking-[0.2em] uppercase opacity-70'>
                     {t('terminalConfig.pdaShell.status.title')}
                   </div>
                   <div className='text-base font-black'>{lastMessage}</div>
                   {lastResult ? (
                     <div className='text-xs font-medium opacity-75'>
-                      {lastResult.parsed.rawCode} / {lastResult.parsed.productionDate}
+                      {lastResult.parsed.rawCode} /{' '}
+                      {lastResult.parsed.productionDate}
                     </div>
                   ) : null}
                 </div>
@@ -625,7 +676,7 @@ export function PDAShellTab() {
 
             <div className='grid grid-cols-1 gap-3 sm:grid-cols-4'>
               <div className='rounded-[24px] border border-dashed border-border/50 bg-muted/40 p-4'>
-                <div className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground'>
+                <div className='text-[10px] font-black tracking-[0.2em] text-muted-foreground uppercase'>
                   {t('terminalConfig.pdaShell.stats.autoSubmitTitle')}
                 </div>
                 <div className='mt-2 text-2xl font-black text-foreground'>
@@ -637,20 +688,24 @@ export function PDAShellTab() {
               </div>
 
               <div className='rounded-[24px] border border-dashed border-border/50 bg-muted/40 p-4'>
-                <div className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground'>
+                <div className='text-[10px] font-black tracking-[0.2em] text-muted-foreground uppercase'>
                   {t('terminalConfig.pdaShell.stats.currentSceneTitle')}
                 </div>
-                <div className='mt-2 text-2xl font-black text-foreground'>{currentSceneQueue.length}</div>
+                <div className='mt-2 text-2xl font-black text-foreground'>
+                  {currentSceneQueue.length}
+                </div>
                 <div className='mt-1 text-xs font-medium text-muted-foreground'>
                   {t('terminalConfig.pdaShell.stats.currentSceneHint')}
                 </div>
               </div>
 
               <div className='rounded-[24px] border border-dashed border-border/50 bg-muted/40 p-4'>
-                <div className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground'>
+                <div className='text-[10px] font-black tracking-[0.2em] text-muted-foreground uppercase'>
                   {t('terminalConfig.pdaShell.stats.retryQueueTitle')}
                 </div>
-                <div className='mt-2 text-2xl font-black text-foreground'>{queue.length}</div>
+                <div className='mt-2 text-2xl font-black text-foreground'>
+                  {queue.length}
+                </div>
                 <div className='mt-1 text-xs font-medium text-muted-foreground'>
                   {isRetrying
                     ? t('terminalConfig.pdaShell.stats.retryQueueHintRetrying')
@@ -659,7 +714,7 @@ export function PDAShellTab() {
               </div>
 
               <div className='rounded-[24px] border border-dashed border-border/50 bg-muted/40 p-4'>
-                <div className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground'>
+                <div className='text-[10px] font-black tracking-[0.2em] text-muted-foreground uppercase'>
                   {t('terminalConfig.pdaShell.stats.wakeTitle')}
                 </div>
                 <div className='mt-2 flex items-center gap-2 text-lg font-black text-foreground'>
@@ -677,7 +732,7 @@ export function PDAShellTab() {
             {!lockMode ? (
               <div className='flex flex-wrap gap-3'>
                 <Button
-                  className='h-11 rounded-full px-6 text-[11px] font-black uppercase tracking-widest'
+                  className='h-11 rounded-full px-6 text-[11px] font-black tracking-widest uppercase'
                   variant='outline'
                   onClick={() => {
                     void (async () => {
@@ -697,14 +752,16 @@ export function PDAShellTab() {
                 </Button>
 
                 <Button
-                  className='h-11 rounded-full px-6 text-[11px] font-black uppercase tracking-widest'
+                  className='h-11 rounded-full px-6 text-[11px] font-black tracking-widest uppercase'
                   variant='outline'
                   onClick={() => {
                     void (async () => {
                       await clearPDAShellRetryQueue()
                       await refreshQueue()
                     })()
-                    toast.success(t('terminalConfig.pdaShell.toast.clearAllQueue'))
+                    toast.success(
+                      t('terminalConfig.pdaShell.toast.clearAllQueue')
+                    )
                   }}
                   disabled={!queue.length}
                 >
@@ -713,7 +770,10 @@ export function PDAShellTab() {
                 </Button>
 
                 {canOpenWorkbench ? (
-                  <Button asChild className='h-11 rounded-full px-6 text-[11px] font-black uppercase tracking-widest'>
+                  <Button
+                    asChild
+                    className='h-11 rounded-full px-6 text-[11px] font-black tracking-widest uppercase'
+                  >
                     <Link to='/terminal-config/pda'>
                       <Workflow className='mr-2 size-4' />
                       {t('terminalConfig.pdaShell.actions.openWorkbench')}
@@ -732,7 +792,7 @@ export function PDAShellTab() {
         {!lockMode && sceneGroups.length ? (
           <Card className={`rounded-[30px] border-dashed ${shellTheme.card}`}>
             <CardContent className='space-y-4 p-5 md:p-6'>
-              <div className='text-[10px] font-black uppercase tracking-[0.24em] text-slate-500'>
+              <div className='text-[10px] font-black tracking-[0.24em] text-slate-500 uppercase'>
                 {t('terminalConfig.pdaShell.queue.sceneBucketsTitle')}
               </div>
               <div className='grid grid-cols-1 gap-3 sm:grid-cols-3'>
@@ -741,19 +801,24 @@ export function PDAShellTab() {
                     key={group.scene}
                     className='rounded-2xl border border-dashed border-border/50 bg-muted/40 p-4'
                   >
-                    <div className='text-[10px] font-black uppercase tracking-[0.2em] text-slate-500'>
+                    <div className='text-[10px] font-black tracking-[0.2em] text-slate-500 uppercase'>
                       {getSceneLabel(group.scene)}
                     </div>
-                    <div className='mt-2 text-2xl font-black text-slate-900'>{group.count}</div>
+                    <div className='mt-2 text-2xl font-black text-slate-900'>
+                      {group.count}
+                    </div>
                     <div className='mt-1 text-xs font-medium text-slate-600'>
-                      {t('terminalConfig.pdaShell.queue.sceneDuplicateSummary', {
-                        count: group.duplicateCount,
-                      })}
+                      {t(
+                        'terminalConfig.pdaShell.queue.sceneDuplicateSummary',
+                        {
+                          count: group.duplicateCount,
+                        }
+                      )}
                     </div>
                     <Button
                       size='sm'
                       variant='outline'
-                      className='mt-3 rounded-full text-[10px] font-black uppercase tracking-widest'
+                      className='mt-3 rounded-full text-[10px] font-black tracking-widest uppercase'
                       onClick={() => triggerRetryQueued(group.scene)}
                     >
                       {t('terminalConfig.pdaShell.actions.retryBucket')}
@@ -768,7 +833,7 @@ export function PDAShellTab() {
         {!lockMode && queue.length ? (
           <Card className={`rounded-[30px] border-dashed ${shellTheme.card}`}>
             <CardContent className='space-y-3 p-5 md:p-6'>
-              <div className='text-[10px] font-black uppercase tracking-[0.24em] text-slate-500'>
+              <div className='text-[10px] font-black tracking-[0.24em] text-slate-500 uppercase'>
                 {t('terminalConfig.pdaShell.queue.pendingTitle')}
               </div>
               <div className='space-y-3'>
@@ -785,7 +850,9 @@ export function PDAShellTab() {
                         {t('terminalConfig.pdaShell.queue.pendingLine', {
                           attempts: item.attempts,
                           duplicates: item.duplicateCount,
-                          error: item.lastError || t('terminalConfig.pdaShell.queue.waitingRetry'),
+                          error:
+                            item.lastError ||
+                            t('terminalConfig.pdaShell.queue.waitingRetry'),
                         })}
                       </div>
                     </div>
@@ -793,7 +860,7 @@ export function PDAShellTab() {
                       <Button
                         size='sm'
                         variant='ghost'
-                        className='rounded-full text-[10px] font-black uppercase tracking-widest'
+                        className='rounded-full text-[10px] font-black tracking-widest uppercase'
                         onClick={() => triggerRetryQueued(item.scene)}
                       >
                         <RefreshCw className='mr-1 size-3.5' />
@@ -802,7 +869,7 @@ export function PDAShellTab() {
                       <Button
                         size='sm'
                         variant='ghost'
-                        className='rounded-full text-[10px] font-black uppercase tracking-widest'
+                        className='rounded-full text-[10px] font-black tracking-widest uppercase'
                         onClick={() => {
                           void (async () => {
                             await removePDAShellRetry(item.id)
@@ -822,7 +889,11 @@ export function PDAShellTab() {
 
         {!lockMode && canOpenWorkbench ? (
           <div className='flex items-center justify-center'>
-            <Button asChild variant='ghost' className='rounded-full text-[10px] font-black uppercase tracking-widest'>
+            <Button
+              asChild
+              variant='ghost'
+              className='rounded-full text-[10px] font-black tracking-widest uppercase'
+            >
               <Link to='/terminal-config/pda'>
                 <MoveUpRight className='mr-2 size-3.5' />
                 {t('terminalConfig.pdaShell.actions.backToWorkbench')}

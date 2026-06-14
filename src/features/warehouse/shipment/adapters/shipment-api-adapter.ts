@@ -16,7 +16,9 @@ function toDateOnlyString(value?: string): string {
   return value.slice(0, 10)
 }
 
-export function toShipmentRecordContract(dto: InventoryShipmentRecordApiDTO): ShipmentRecord {
+export function toShipmentRecordContract(
+  dto: InventoryShipmentRecordApiDTO
+): ShipmentRecord {
   return {
     id: dto.id,
     materialId: dto.materialId,
@@ -39,11 +41,15 @@ export function toShipmentRecordContract(dto: InventoryShipmentRecordApiDTO): Sh
   }
 }
 
-export function toShipmentRecordContracts(dtos: InventoryShipmentRecordApiDTO[]): ShipmentRecord[] {
+export function toShipmentRecordContracts(
+  dtos: InventoryShipmentRecordApiDTO[]
+): ShipmentRecord[] {
   return dtos.map(toShipmentRecordContract)
 }
 
-export function toShipmentDemandContract(dto: ShipmentDemandApiDTO): ShipmentDemand {
+export function toShipmentDemandContract(
+  dto: ShipmentDemandApiDTO
+): ShipmentDemand {
   return {
     salesOrderId: dto.salesOrderId,
     salesOrderLineId: dto.salesOrderLineId,
@@ -68,13 +74,18 @@ export function toShipmentDemandContract(dto: ShipmentDemandApiDTO): ShipmentDem
   }
 }
 
-export function toShipmentDemandContracts(dtos: ShipmentDemandApiDTO[]): ShipmentDemand[] {
+export function toShipmentDemandContracts(
+  dtos: ShipmentDemandApiDTO[]
+): ShipmentDemand[] {
   return dtos.map(toShipmentDemandContract)
 }
 
 export function toShipmentRecordApiDTO(
   contract: ShipmentRecordCreateInput
-): Omit<InventoryShipmentRecordApiDTO, 'id' | 'createdAt' | 'updatedAt' | 'version'> {
+): Omit<
+  InventoryShipmentRecordApiDTO,
+  'id' | 'createdAt' | 'updatedAt' | 'version'
+> {
   return {
     materialId: contract.materialId,
     materialName: contract.materialName,

@@ -17,7 +17,10 @@ function Table({
   if (noWrapper) return table
 
   return (
-    <div data-slot='table-container' className='relative w-full overflow-x-auto'>
+    <div
+      data-slot='table-container'
+      className='relative w-full overflow-x-auto'
+    >
       {table}
     </div>
   )

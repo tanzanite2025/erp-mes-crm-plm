@@ -19,7 +19,11 @@ interface SalesOrderDetailContentProps {
   onPrint: () => void
   onClaimModel: (model: string) => void
   onClaimLine: (lineNo: number) => void
-  onPreview: (productId: string | undefined, planId: string | undefined, type: 'spec' | 'drilling' | 'labeling') => void
+  onPreview: (
+    productId: string | undefined,
+    planId: string | undefined,
+    type: 'spec' | 'drilling' | 'labeling'
+  ) => void
   onHardDelete?: (order: SalesOrder) => void
   previewFile?: { fileName: string; fileUrl: string }
   isCADOpen: boolean
@@ -52,7 +56,7 @@ export function SalesOrderDetailContent({
   setIsPDFOpen,
 }: SalesOrderDetailContentProps) {
   return (
-    <div className='space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-500'>
+    <div className='animate-in space-y-2 duration-500 fade-in slide-in-from-bottom-2'>
       <SalesOrderDetailHeader
         order={order}
         isClaimAction={isClaimAction}

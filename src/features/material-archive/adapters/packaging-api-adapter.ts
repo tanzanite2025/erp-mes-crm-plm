@@ -1,8 +1,8 @@
-import type { PackagingRule } from '../data/schema'
 import type {
   PackagingRuleApiDTO,
   SavePackagingRuleApiDTO,
 } from '../contracts/packaging-api-dto'
+import type { PackagingRule } from '../data/schema'
 
 export type SavePackagingRuleInput = {
   id?: string
@@ -13,7 +13,9 @@ export type SavePackagingRuleInput = {
   direction: PackagingRule['direction']
 }
 
-export function toPackagingRuleContract(dto: PackagingRuleApiDTO): PackagingRule {
+export function toPackagingRuleContract(
+  dto: PackagingRuleApiDTO
+): PackagingRule {
   return {
     id: dto.id,
     materialId: dto.materialId,
@@ -25,11 +27,15 @@ export function toPackagingRuleContract(dto: PackagingRuleApiDTO): PackagingRule
   }
 }
 
-export function toPackagingRuleContracts(dtos: PackagingRuleApiDTO[]): PackagingRule[] {
+export function toPackagingRuleContracts(
+  dtos: PackagingRuleApiDTO[]
+): PackagingRule[] {
   return dtos.map(toPackagingRuleContract)
 }
 
-export function toSavePackagingRuleApiDTO(rule: SavePackagingRuleInput): SavePackagingRuleApiDTO {
+export function toSavePackagingRuleApiDTO(
+  rule: SavePackagingRuleInput
+): SavePackagingRuleApiDTO {
   return {
     id: rule.id || undefined,
     materialId: rule.materialId,

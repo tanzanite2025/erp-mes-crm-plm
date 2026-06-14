@@ -35,25 +35,35 @@ export const CurrencyMaintenanceService = {
       method: 'POST',
       body: JSON.stringify(data),
     })
-    return ensureObjectResponse<Currency & Record<string, unknown>>(res, 'CurrencyMaintenanceService.saveCurrency') as Currency
+    return ensureObjectResponse<Currency & Record<string, unknown>>(
+      res,
+      'CurrencyMaintenanceService.saveCurrency'
+    ) as Currency
   },
 
   /**
    * 局部更新币种 (SDRTS 协议)
    */
-  async patchCurrency(id: number, delta: DeltaSet, version: number): Promise<Currency> {
+  async patchCurrency(
+    id: number,
+    delta: DeltaSet,
+    version: number
+  ): Promise<Currency> {
     const payload: DeltaPayload = {
       op: 'PATCH',
       delta,
-      metadata: { id: String(id), version, intent: CURRENCY_PATCH_INTENT_SAVE }
-    };
+      metadata: { id: String(id), version, intent: CURRENCY_PATCH_INTENT_SAVE },
+    }
 
     const res = await apiFetch<Currency>(`/finance/currencies/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(payload),
-    });
-    
-    return ensureObjectResponse<Currency & Record<string, unknown>>(res, 'CurrencyMaintenanceService.patchCurrency') as Currency
+    })
+
+    return ensureObjectResponse<Currency & Record<string, unknown>>(
+      res,
+      'CurrencyMaintenanceService.patchCurrency'
+    ) as Currency
   },
 
   /**
@@ -69,23 +79,42 @@ export const CurrencyMaintenanceService = {
    * 同步外部汇率
    */
   async syncCurrencies(): Promise<{ message: string; count: number }> {
-    const res = await apiFetch<{ message: string; count: number }>('/finance/currencies/sync', {
-      method: 'POST',
-    })
-    return ensureObjectResponse<{ message: string; count: number } & Record<string, unknown>>(res, 'CurrencyMaintenanceService.syncCurrencies')
+    const res = await apiFetch<{ message: string; count: number }>(
+      '/finance/currencies/sync',
+      {
+        method: 'POST',
+      }
+    )
+    return ensureObjectResponse<
+      { message: string; count: number } & Record<string, unknown>
+    >(res, 'CurrencyMaintenanceService.syncCurrencies')
   },
 
   async getSyncConfig(): Promise<ExchangeRateSyncConfig> {
-    const res = await apiFetch<ExchangeRateSyncConfig>('/finance/currencies/sync-config')
-    return ensureObjectResponse<ExchangeRateSyncConfig & Record<string, unknown>>(res, 'CurrencyMaintenanceService.getSyncConfig') as ExchangeRateSyncConfig
+    const res = await apiFetch<ExchangeRateSyncConfig>(
+      '/finance/currencies/sync-config'
+    )
+    return ensureObjectResponse<
+      ExchangeRateSyncConfig & Record<string, unknown>
+    >(res, 'CurrencyMaintenanceService.getSyncConfig') as ExchangeRateSyncConfig
   },
 
-  async saveSyncConfig(config: ExchangeRateSyncConfig): Promise<ExchangeRateSyncConfig> {
-    const res = await apiFetch<ExchangeRateSyncConfig>('/finance/currencies/sync-config', {
-      method: 'POST',
-      body: JSON.stringify(config),
-    })
-    return ensureObjectResponse<ExchangeRateSyncConfig & Record<string, unknown>>(res, 'CurrencyMaintenanceService.saveSyncConfig') as ExchangeRateSyncConfig
+  async saveSyncConfig(
+    config: ExchangeRateSyncConfig
+  ): Promise<ExchangeRateSyncConfig> {
+    const res = await apiFetch<ExchangeRateSyncConfig>(
+      '/finance/currencies/sync-config',
+      {
+        method: 'POST',
+        body: JSON.stringify(config),
+      }
+    )
+    return ensureObjectResponse<
+      ExchangeRateSyncConfig & Record<string, unknown>
+    >(
+      res,
+      'CurrencyMaintenanceService.saveSyncConfig'
+    ) as ExchangeRateSyncConfig
   },
 
   /**
@@ -95,5 +124,5 @@ export const CurrencyMaintenanceService = {
     await apiFetch('/finance/seed', {
       method: 'POST',
     })
-  }
+  },
 }

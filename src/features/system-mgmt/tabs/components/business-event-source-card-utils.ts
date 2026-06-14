@@ -2,8 +2,8 @@ import {
   canonicalizeBusinessStatusCode,
   type BusinessEventSource,
 } from '../../workflow-core/data/business-event-source-schema'
-import { cloneBusinessEventSourceConfig } from './business-event-source-card-model'
 import { type BusinessEventSourceSection } from './business-event-source-card-diff'
+import { cloneBusinessEventSourceConfig } from './business-event-source-card-model'
 
 const SOURCE_CODE_PATTERN = /^[A-Z][A-Z0-9_]*$/
 const STATUS_CODE_PATTERN = /^[A-Za-z][A-Za-z0-9_]*$/
@@ -61,20 +61,24 @@ function collectBusinessEventSourceValidation(
   }
   if (!source.module.trim()) errors.general.push('模块不能为空')
 
-  if (source.config.actions.length === 0) errors.actions.push('至少需要一个动作')
+  if (source.config.actions.length === 0)
+    errors.actions.push('至少需要一个动作')
   if (source.config.statuses.length === 0)
     errors.statuses.push('至少需要一个状态')
 
   source.config.actions.forEach((action, index) => {
-    if (!action.id?.trim()) errors.actions.push(`第 ${index + 1} 个动作缺少稳定 ID`)
+    if (!action.id?.trim())
+      errors.actions.push(`第 ${index + 1} 个动作缺少稳定 ID`)
     if (typeof action.order !== 'number')
       errors.actions.push(`第 ${index + 1} 个动作缺少排序值`)
-    if (!action.code.trim()) errors.actions.push(`第 ${index + 1} 个动作编码不能为空`)
-    if (!action.name.trim()) errors.actions.push(`第 ${index + 1} 个动作名称不能为空`)
+    if (!action.code.trim())
+      errors.actions.push(`第 ${index + 1} 个动作编码不能为空`)
+    if (!action.name.trim())
+      errors.actions.push(`第 ${index + 1} 个动作名称不能为空`)
   })
-  findDuplicates(source.config.actions.map((action) => action.id ?? '')).forEach(
-    (id) => errors.actions.push(`动作 ID 重复：${id}`)
-  )
+  findDuplicates(
+    source.config.actions.map((action) => action.id ?? '')
+  ).forEach((id) => errors.actions.push(`动作 ID 重复：${id}`))
   findDuplicates(source.config.actions.map((action) => action.code)).forEach(
     (code) => errors.actions.push(`动作编码重复：${code}`)
   )
@@ -84,8 +88,12 @@ function collectBusinessEventSourceValidation(
       errors.statuses.push(`第 ${index + 1} 个状态缺少稳定 ID`)
     if (typeof status.order !== 'number')
       errors.statuses.push(`第 ${index + 1} 个状态缺少排序值`)
-    if (!status.code.trim()) errors.statuses.push(`第 ${index + 1} 个状态编码不能为空`)
-    const canonicalCode = canonicalizeBusinessStatusCode(source.code, status.code)
+    if (!status.code.trim())
+      errors.statuses.push(`第 ${index + 1} 个状态编码不能为空`)
+    const canonicalCode = canonicalizeBusinessStatusCode(
+      source.code,
+      status.code
+    )
     if (status.code.trim() && !canonicalCode) {
       errors.statuses.push(`第 ${index + 1} 个状态编码无法归一为有效机器码`)
     } else if (canonicalCode && !STATUS_CODE_PATTERN.test(canonicalCode)) {
@@ -94,9 +102,9 @@ function collectBusinessEventSourceValidation(
       )
     }
   })
-  findDuplicates(source.config.statuses.map((status) => status.id ?? '')).forEach(
-    (id) => errors.statuses.push(`状态 ID 重复：${id}`)
-  )
+  findDuplicates(
+    source.config.statuses.map((status) => status.id ?? '')
+  ).forEach((id) => errors.statuses.push(`状态 ID 重复：${id}`))
   findDuplicates(source.config.statuses.map((status) => status.code)).forEach(
     (code) => errors.statuses.push(`状态编码重复：${code}`)
   )
@@ -105,12 +113,16 @@ function collectBusinessEventSourceValidation(
   )
 
   source.config.fields.forEach((field, index) => {
-    if (!field.id?.trim()) errors.fields.push(`第 ${index + 1} 个字段缺少稳定 ID`)
+    if (!field.id?.trim())
+      errors.fields.push(`第 ${index + 1} 个字段缺少稳定 ID`)
     if (typeof field.order !== 'number')
       errors.fields.push(`第 ${index + 1} 个字段缺少排序值`)
-    if (!field.key.trim()) errors.fields.push(`第 ${index + 1} 个字段 key 不能为空`)
-    if (!field.label.trim()) errors.fields.push(`第 ${index + 1} 个字段名称不能为空`)
-    if (!field.path.trim()) errors.fields.push(`第 ${index + 1} 个字段 path 不能为空`)
+    if (!field.key.trim())
+      errors.fields.push(`第 ${index + 1} 个字段 key 不能为空`)
+    if (!field.label.trim())
+      errors.fields.push(`第 ${index + 1} 个字段名称不能为空`)
+    if (!field.path.trim())
+      errors.fields.push(`第 ${index + 1} 个字段 path 不能为空`)
     if (field.templateEnabled) {
       if (!field.templateKey?.trim()) {
         errors.fields.push(`第 ${index + 1} 个模板字段缺少模板变量名`)
@@ -127,8 +139,8 @@ function collectBusinessEventSourceValidation(
   findDuplicates(source.config.fields.map((field) => field.id ?? '')).forEach(
     (id) => errors.fields.push(`字段 ID 重复：${id}`)
   )
-  findDuplicates(source.config.fields.map((field) => field.key)).forEach((key) =>
-    errors.fields.push(`字段 key 重复：${key}`)
+  findDuplicates(source.config.fields.map((field) => field.key)).forEach(
+    (key) => errors.fields.push(`字段 key 重复：${key}`)
   )
 
   source.config.dynamicResolvers.forEach((resolver, index) => {

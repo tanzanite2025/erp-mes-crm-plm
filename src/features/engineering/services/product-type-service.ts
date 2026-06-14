@@ -3,8 +3,18 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
-import { buildProductTypeDelta, toProductTypeApiDTO, toProductTypeArrayContract, toProductTypeContract, toProductTypeListContract } from '../adapters/product-type-api-adapter'
-import { type ProductTypeApiDTO, type ProductTypeListPageApiDTO, type ProductTypeTemplateResolutionApiDTO } from '../contracts/product-type-api-dto'
+import {
+  buildProductTypeDelta,
+  toProductTypeApiDTO,
+  toProductTypeArrayContract,
+  toProductTypeContract,
+  toProductTypeListContract,
+} from '../adapters/product-type-api-adapter'
+import {
+  type ProductTypeApiDTO,
+  type ProductTypeListPageApiDTO,
+  type ProductTypeTemplateResolutionApiDTO,
+} from '../contracts/product-type-api-dto'
 import { type ProductType } from '../data/schema'
 import { type SaveProductTypeInput } from '../mutation-types'
 import { normalizeProductTypeInput as normalizeEngineeringProductTypeInput } from '../utils/product-code-normalization'
@@ -23,7 +33,9 @@ export interface ProductTypeTemplateResolution {
  */
 const PRODUCT_TYPE_PATCH_INTENT_SAVE = 'ENGINEERING_PRODUCT_TYPE_UPDATE'
 
-function normalizeProductTypeInput(type: SaveProductTypeInput): SaveProductTypeInput {
+function normalizeProductTypeInput(
+  type: SaveProductTypeInput
+): SaveProductTypeInput {
   return normalizeEngineeringProductTypeInput(type)
 }
 
@@ -41,13 +53,20 @@ export const ProductTypeService = {
     }
 
     if (params?.isOptions) {
-      const res = await apiFetch<ProductTypeApiDTO[]>(`/engineering/product-types${qs}`)
+      const res = await apiFetch<ProductTypeApiDTO[]>(
+        `/engineering/product-types${qs}`
+      )
       return toProductTypeArrayContract(
-        ensureArrayResponse<ProductTypeApiDTO>(res, 'ProductTypeService.getProductTypes.options')
+        ensureArrayResponse<ProductTypeApiDTO>(
+          res,
+          'ProductTypeService.getProductTypes.options'
+        )
       )
     }
 
-    const res = await apiFetch<ProductTypeListPageApiDTO>(`/engineering/product-types${qs}`)
+    const res = await apiFetch<ProductTypeListPageApiDTO>(
+      `/engineering/product-types${qs}`
+    )
     return toProductTypeListContract(
       ensureObjectResponse<ProductTypeListPageApiDTO & Record<string, unknown>>(
         res,
@@ -58,31 +77,52 @@ export const ProductTypeService = {
 
   async createProductType(type: SaveProductTypeInput): Promise<ProductType> {
     const normalizedType = normalizeProductTypeInput(type)
-    const res = await apiFetch<ProductTypeApiDTO>('/engineering/product-types', {
-      method: 'POST',
-      body: JSON.stringify(toProductTypeApiDTO({ ...normalizedType, id: '', version: 1 })),
-    })
+    const res = await apiFetch<ProductTypeApiDTO>(
+      '/engineering/product-types',
+      {
+        method: 'POST',
+        body: JSON.stringify(
+          toProductTypeApiDTO({ ...normalizedType, id: '', version: 1 })
+        ),
+      }
+    )
     return toProductTypeContract(
-      ensureObjectResponse<ProductTypeApiDTO & Record<string, unknown>>(res, 'ProductTypeService.createProductType') as ProductTypeApiDTO
+      ensureObjectResponse<ProductTypeApiDTO & Record<string, unknown>>(
+        res,
+        'ProductTypeService.createProductType'
+      ) as ProductTypeApiDTO
     )
   },
 
-  async patchProductType(id: string, delta: DeltaSet, version: number): Promise<ProductType> {
+  async patchProductType(
+    id: string,
+    delta: DeltaSet,
+    version: number
+  ): Promise<ProductType> {
     const payload: DeltaPayload = {
       op: 'PATCH',
       delta,
       metadata: { id, version, intent: PRODUCT_TYPE_PATCH_INTENT_SAVE },
     }
-    const res = await apiFetch<ProductTypeApiDTO>(`/engineering/product-types/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(payload),
-    })
+    const res = await apiFetch<ProductTypeApiDTO>(
+      `/engineering/product-types/${id}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      }
+    )
     return toProductTypeContract(
-      ensureObjectResponse<ProductTypeApiDTO & Record<string, unknown>>(res, 'ProductTypeService.patchProductType') as ProductTypeApiDTO
+      ensureObjectResponse<ProductTypeApiDTO & Record<string, unknown>>(
+        res,
+        'ProductTypeService.patchProductType'
+      ) as ProductTypeApiDTO
     )
   },
 
-  async saveProductType(type: SaveProductTypeInput, current?: ProductType): Promise<ProductType> {
+  async saveProductType(
+    type: SaveProductTypeInput,
+    current?: ProductType
+  ): Promise<ProductType> {
     const normalizedType = normalizeProductTypeInput(type)
     if (current?.id) {
       const delta = buildProductTypeDelta(current, normalizedType)
@@ -100,9 +140,15 @@ export const ProductTypeService = {
     })
   },
 
-  async getTemplateResolution(typeId: string): Promise<ProductTypeTemplateResolution> {
-    const res = await apiFetch<ProductTypeTemplateResolutionApiDTO>(`/engineering/product-types/template-resolution?typeId=${encodeURIComponent(typeId)}`)
-    const data = ensureObjectResponse<ProductTypeTemplateResolutionApiDTO & Record<string, unknown>>(
+  async getTemplateResolution(
+    typeId: string
+  ): Promise<ProductTypeTemplateResolution> {
+    const res = await apiFetch<ProductTypeTemplateResolutionApiDTO>(
+      `/engineering/product-types/template-resolution?typeId=${encodeURIComponent(typeId)}`
+    )
+    const data = ensureObjectResponse<
+      ProductTypeTemplateResolutionApiDTO & Record<string, unknown>
+    >(
       res,
       'ProductTypeService.getTemplateResolution'
     ) as ProductTypeTemplateResolutionApiDTO
@@ -110,8 +156,10 @@ export const ProductTypeService = {
     return {
       resolvedTemplateId: data.resolvedTemplateId?.trim() || undefined,
       resolvedTemplateKey: data.resolvedTemplateKey?.trim() || undefined,
-      templateResolutionSource: data.templateResolutionSource?.trim() || undefined,
-      templateResolutionError: data.templateResolutionError?.trim() || undefined,
+      templateResolutionSource:
+        data.templateResolutionSource?.trim() || undefined,
+      templateResolutionError:
+        data.templateResolutionError?.trim() || undefined,
     }
   },
 }

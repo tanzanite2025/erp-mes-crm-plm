@@ -44,8 +44,7 @@ const COVERAGE_DESCRIPTORS: Record<
     label: '未接入执行链',
     description:
       '这类事件源还没有接入真实执行链，通常需要先确认业务状态来源和触发入口。',
-    className:
-      'border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-50',
+    className: 'border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-50',
   },
 }
 

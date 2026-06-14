@@ -30,8 +30,10 @@ export const quality = {
       statusViewDescription: '按标准状态切换列表视图，统一走服务端查询语义。',
       statusViewAll: '全部标准',
       statusViewAllDescription: '查看当前条件下的全部品质标准。',
-      statusViewDraftDescription: '仅查看仍处草稿阶段、尚未进入审批链路的标准。',
-      statusViewPendingApprovalDescription: '仅查看已提交审批、正在等待审核的品质标准。',
+      statusViewDraftDescription:
+        '仅查看仍处草稿阶段、尚未进入审批链路的标准。',
+      statusViewPendingApprovalDescription:
+        '仅查看已提交审批、正在等待审核的品质标准。',
       statusViewApprovedDescription: '仅查看审批通过、待正式发布的品质标准。',
       statusViewRejectedDescription: '仅查看已被驳回、待修订重提的品质标准。',
       statusViewPublishedDescription: '仅查看已发布、可正式追溯的品质标准。',
@@ -74,12 +76,14 @@ export const quality = {
       openEditor: '进入编辑工作台',
       submitForApproval: '提交审批',
       approve: '审批通过',
-      approveDescription: '请填写本次审批意见。若无需补充说明，可直接确认通过。',
+      approveDescription:
+        '请填写本次审批意见。若无需补充说明，可直接确认通过。',
       reject: '驳回',
       rejectDescription: '请填写驳回原因，便于责任人按意见修订后重新提审。',
       publish: '发布',
       archive: '归档',
-      archiveDescription: '请填写归档原因，归档后该标准将仅保留追溯与审计能力。',
+      archiveDescription:
+        '请填写归档原因，归档后该标准将仅保留追溯与审计能力。',
       reviewCommentLabel: '审批意见',
       reviewCommentPlaceholder: '补充本次审批意见（可选）...',
       rejectReasonLabel: '驳回原因',
@@ -100,8 +104,10 @@ export const quality = {
       editorFormDescription:
         '本阶段先迁入标准编码、名称、类型、状态与备注说明；检查项矩阵深度编辑将在后续阶段继续页面化。',
       editorDirty: '存在未保存变更',
-      approvalControlledHint: '状态由审批链路控制。请先保存当前编辑，再通过“提交审批”进入待审核链路。',
-      readOnlyHint: '当前状态下标准已受控，编辑区仅允许查看，不再开放直接修改。',
+      approvalControlledHint:
+        '状态由审批链路控制。请先保存当前编辑，再通过“提交审批”进入待审核链路。',
+      readOnlyHint:
+        '当前状态下标准已受控，编辑区仅允许查看，不再开放直接修改。',
       backToPreview: '返回预览页',
       editorLoadFailedTitle: '品质标准编辑页加载失败',
       editorLoadFailedDescription:
@@ -193,7 +199,8 @@ export const quality = {
         title: '标准详情',
         subtitle: '品质标准详情',
         auditTitle: '审计轨迹',
-        auditHint: '展示当前标准的责任人、最近更新时间与审核确认信息，便于品质追溯。',
+        auditHint:
+          '展示当前标准的责任人、最近更新时间与审核确认信息，便于品质追溯。',
         auditPending: '待审核',
         fields: {
           code: '标准编码',

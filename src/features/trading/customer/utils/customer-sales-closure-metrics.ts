@@ -18,18 +18,28 @@ export interface CustomerSalesClosureMetrics {
 }
 
 function isCanceledStatus(code: string): boolean {
-  return code.trim().toLowerCase() === 'canceled' || code.trim().toLowerCase() === 'cancelled'
+  return (
+    code.trim().toLowerCase() === 'canceled' ||
+    code.trim().toLowerCase() === 'cancelled'
+  )
 }
 
 export function getCustomerSalesClosureMetrics(
   summary?: CustomerSalesClosureSummary
 ): CustomerSalesClosureMetrics {
   const totalOrders = Math.max(0, summary?.totalOrders ?? 0)
-  const effectiveOrderCount = Math.min(Math.max(0, summary?.effectiveOrderCount ?? 0), totalOrders)
-  const canceledOrderCount = Math.min(Math.max(0, summary?.canceledOrderCount ?? 0), totalOrders)
+  const effectiveOrderCount = Math.min(
+    Math.max(0, summary?.effectiveOrderCount ?? 0),
+    totalOrders
+  )
+  const canceledOrderCount = Math.min(
+    Math.max(0, summary?.canceledOrderCount ?? 0),
+    totalOrders
+  )
   const hasOrderHistory = totalOrders > 0
   const hasEffectiveOrderHistory = effectiveOrderCount > 0
-  const hasOnlyCanceledOrders = hasOrderHistory && !hasEffectiveOrderHistory && canceledOrderCount > 0
+  const hasOnlyCanceledOrders =
+    hasOrderHistory && !hasEffectiveOrderHistory && canceledOrderCount > 0
   const sanitizedStatusCounts = (summary?.statusCounts ?? [])
     .filter((item) => item.count > 0)
     .map((item) => ({
@@ -37,15 +47,25 @@ export function getCustomerSalesClosureMetrics(
       phase: item.phase,
       count: item.count,
     }))
-  const effectiveStatusCounts = sanitizedStatusCounts.filter((item) => !isCanceledStatus(item.code))
+  const effectiveStatusCounts = sanitizedStatusCounts.filter(
+    (item) => !isCanceledStatus(item.code)
+  )
   const areAllEffectiveOrdersDone =
-    hasEffectiveOrderHistory && effectiveStatusCounts.every((item) => item.phase.trim().toLowerCase() === 'done')
+    hasEffectiveOrderHistory &&
+    effectiveStatusCounts.every(
+      (item) => item.phase.trim().toLowerCase() === 'done'
+    )
   const primaryStatusCode =
-    summary?.primaryStatusCode.trim() || effectiveStatusCounts[0]?.code || sanitizedStatusCounts[0]?.code || ''
+    summary?.primaryStatusCode.trim() ||
+    effectiveStatusCounts[0]?.code ||
+    sanitizedStatusCounts[0]?.code ||
+    ''
   const primaryStatusPhase =
     summary?.primaryStatusPhase.trim() ||
-    effectiveStatusCounts.find((item) => item.code === primaryStatusCode)?.phase ||
-    sanitizedStatusCounts.find((item) => item.code === primaryStatusCode)?.phase ||
+    effectiveStatusCounts.find((item) => item.code === primaryStatusCode)
+      ?.phase ||
+    sanitizedStatusCounts.find((item) => item.code === primaryStatusCode)
+      ?.phase ||
     ''
 
   return {

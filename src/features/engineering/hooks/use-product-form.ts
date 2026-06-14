@@ -1,12 +1,16 @@
 import { useEffect, useRef } from 'react'
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { productDraftSchema, type Product, type ProductType } from '../data/schema'
+import { ProductCommand } from '../commands/product-command'
+import {
+  productDraftSchema,
+  type Product,
+  type ProductType,
+} from '../data/schema'
+import { useProductFormDerive } from './use-product-form-derive'
 import { useProductFormInit } from './use-product-form-init'
 import { useProductFormPreviewTemplate } from './use-product-form-preview-template'
 import { useProductFormSubmit } from './use-product-form-submit'
-import { useProductFormDerive } from './use-product-form-derive'
-import { ProductCommand } from '../commands/product-command'
 
 export interface ProductSubmitPayload {
   products: Product[]
@@ -18,7 +22,9 @@ interface UseProductFormProps {
   open: boolean
   productTypes: ProductType[]
   onOpenChange: (open: boolean) => void
-  onSubmit?: (payload: ProductSubmitPayload) => Promise<Product[] | void> | Product[] | void
+  onSubmit?: (
+    payload: ProductSubmitPayload
+  ) => Promise<Product[] | void> | Product[] | void
   onSaved?: (products: Product[]) => void
 }
 
@@ -32,8 +38,13 @@ export function useProductForm({
 }: UseProductFormProps) {
   const isEdit = !!currentRow
   const initializedSessionIdentityRef = useRef<string | null>(null)
-  const initialState = ProductCommand.composeInitialState({ isEdit, currentRow })
-  const currentSessionIdentity = isEdit ? `edit:${currentRow?.id ?? ''}` : 'create'
+  const initialState = ProductCommand.composeInitialState({
+    isEdit,
+    currentRow,
+  })
+  const currentSessionIdentity = isEdit
+    ? `edit:${currentRow?.id ?? ''}`
+    : 'create'
 
   const form = useForm<Product>({
     resolver: zodResolver(productDraftSchema) as Resolver<Product>,
@@ -77,15 +88,26 @@ export function useProductForm({
     initializedSessionIdentityRef.current = currentSessionIdentity
   }, [currentRow, currentSessionIdentity, form, isEdit, metadataReady, open])
 
-  const { boundTemplate, templateResolveError, templateResolutionPending } = useProductFormPreviewTemplate({
-    currentRow,
-    form,
-    isEdit,
-    open,
-    productTypes,
-  })
+  const { boundTemplate, templateResolveError, templateResolutionPending } =
+    useProductFormPreviewTemplate({
+      currentRow,
+      form,
+      isEdit,
+      open,
+      productTypes,
+    })
 
-  const { dynamicTypes, specPreviewTitle, specPreviewSummary, specPreviewAggregateLabel, specPreviewV2, specPreviewItems, selectedBomContext, skuPreview, nextCodeDeriveError } = useProductFormDerive({
+  const {
+    dynamicTypes,
+    specPreviewTitle,
+    specPreviewSummary,
+    specPreviewAggregateLabel,
+    specPreviewV2,
+    specPreviewItems,
+    selectedBomContext,
+    skuPreview,
+    nextCodeDeriveError,
+  } = useProductFormDerive({
     isEdit,
     open,
     form,

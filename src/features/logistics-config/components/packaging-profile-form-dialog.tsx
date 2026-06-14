@@ -1,3 +1,5 @@
+import { cn } from '@/lib/utils'
+import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Combobox } from '@/components/ui/combobox'
@@ -19,21 +21,25 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { useLanguage } from '@/context/language-provider'
+import type { Unit } from '@/features/basic-settings/services/unit-service'
 import type { Product } from '@/features/engineering/data/schema'
 import type { MaterialOption } from '@/features/material-archive/data/schema'
-import { cn } from '@/lib/utils'
-import type { Unit } from '@/features/basic-settings/services/unit-service'
 import { useActiveBOM } from '@/features/product-structure/hooks/use-active-bom'
 import type { PackagingProfileDraft } from '../packaging-profile-form'
 
-const packagingFieldClass = 'w-full h-11 min-h-11 rounded-2xl border border-border/50 bg-muted/40 px-4 py-0 text-[11px] font-semibold tracking-tight leading-none shadow-sm shadow-black/5 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/15 focus-visible:border-primary/30 disabled:opacity-100 disabled:bg-muted/20 disabled:text-foreground/70'
+const packagingFieldClass =
+  'w-full h-11 min-h-11 rounded-2xl border border-border/50 bg-muted/40 px-4 py-0 text-[11px] font-semibold tracking-tight leading-none shadow-sm shadow-black/5 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/15 focus-visible:border-primary/30 disabled:opacity-100 disabled:bg-muted/20 disabled:text-foreground/70'
 const packagingSelectClass = `${packagingFieldClass} justify-between data-[size=default]:h-11`
-const packagingSelectContentClass = 'min-w-[12rem] rounded-2xl border-none shadow-xl [&_[data-slot=select-item]]:text-[10px] [&_[data-slot=select-item]]:font-medium [&_[data-slot=select-item]]:tracking-tight'
-const packagingSelectEmptyStateClass = 'px-3 py-2 text-[10px] font-medium leading-relaxed text-muted-foreground/75'
-const packagingComboboxContentClass = 'rounded-[24px] border-border/20 bg-popover/98 [&_[data-slot=command-input]]:text-[11px] [&_[data-slot=command-input]]:font-medium [&_[data-slot=command-item]]:text-[10px] [&_[data-slot=command-item]]:font-medium [&_[data-slot=command-item]]:py-2.5 [&_[data-slot=combobox-option-label]]:text-[11px] [&_[data-slot=combobox-option-label]]:font-semibold [&_[data-slot=combobox-option-secondary-badge]]:text-[8px] [&_[data-slot=combobox-option-secondary-text]]:text-[9px] [&_[data-slot=combobox-option-secondary-text]]:font-medium [&_[data-slot=combobox-option-tertiary]]:text-[9px] [&_[data-slot=combobox-option-stats-stage]]:text-[8px] [&_[data-slot=combobox-option-stats-value]]:text-[9px] [&_[data-slot=combobox-option-stats-empty]]:text-[9px] [&_[data-slot=combobox-empty-title]]:text-[10px] [&_[data-slot=combobox-empty-subtitle]]:text-[9px]'
-const packagingLabelClass = 'ml-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'
-const packagingSectionClass = 'rounded-[28px] border border-dashed border-border/60 bg-muted/[0.035] p-3.5 md:p-4'
+const packagingSelectContentClass =
+  'min-w-[12rem] rounded-2xl border-none shadow-xl [&_[data-slot=select-item]]:text-[10px] [&_[data-slot=select-item]]:font-medium [&_[data-slot=select-item]]:tracking-tight'
+const packagingSelectEmptyStateClass =
+  'px-3 py-2 text-[10px] font-medium leading-relaxed text-muted-foreground/75'
+const packagingComboboxContentClass =
+  'rounded-[24px] border-border/20 bg-popover/98 [&_[data-slot=command-input]]:text-[11px] [&_[data-slot=command-input]]:font-medium [&_[data-slot=command-item]]:text-[10px] [&_[data-slot=command-item]]:font-medium [&_[data-slot=command-item]]:py-2.5 [&_[data-slot=combobox-option-label]]:text-[11px] [&_[data-slot=combobox-option-label]]:font-semibold [&_[data-slot=combobox-option-secondary-badge]]:text-[8px] [&_[data-slot=combobox-option-secondary-text]]:text-[9px] [&_[data-slot=combobox-option-secondary-text]]:font-medium [&_[data-slot=combobox-option-tertiary]]:text-[9px] [&_[data-slot=combobox-option-stats-stage]]:text-[8px] [&_[data-slot=combobox-option-stats-value]]:text-[9px] [&_[data-slot=combobox-option-stats-empty]]:text-[9px] [&_[data-slot=combobox-empty-title]]:text-[10px] [&_[data-slot=combobox-empty-subtitle]]:text-[9px]'
+const packagingLabelClass =
+  'ml-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'
+const packagingSectionClass =
+  'rounded-[28px] border border-dashed border-border/60 bg-muted/[0.035] p-3.5 md:p-4'
 const packagingFieldStackClass = 'space-y-1.5'
 
 interface PackagingProfileFormDialogProps {
@@ -61,7 +67,11 @@ interface PackagingProfileFormDialogProps {
   savePending: boolean
   packagingMaterialsLoading: boolean
   onOpenChange: (open: boolean) => void
-  onDraftChange: (updater: PackagingProfileDraft | ((current: PackagingProfileDraft) => PackagingProfileDraft)) => void
+  onDraftChange: (
+    updater:
+      | PackagingProfileDraft
+      | ((current: PackagingProfileDraft) => PackagingProfileDraft)
+  ) => void
   onPackagingMaterialChange: (materialId: string) => void
   onProductChange: (productId: string) => void
   onDimensionUnitChange: (value: string) => void
@@ -101,9 +111,10 @@ export function PackagingProfileFormDialog({
 
   // 方案 B：产品最终重量从 BOM.measuredWeight 读取，非 Product 字段。
   const activeBom = useActiveBOM(selectedProduct?.id)
-  const productWeight = activeBom.status === 'released' && activeBom.bom?.measuredWeight
-    ? activeBom.bom.measuredWeight
-    : 0
+  const productWeight =
+    activeBom.status === 'released' && activeBom.bom?.measuredWeight
+      ? activeBom.bom.measuredWeight
+      : 0
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -111,14 +122,14 @@ export function PackagingProfileFormDialog({
         size='full'
         className='flex max-h-[92vh] w-[min(1360px,calc(100vw-2rem))] flex-col overflow-hidden rounded-[32px] border-none bg-background p-0 shadow-2xl'
       >
-        <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-transparent pointer-events-none' />
+        <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-transparent' />
 
-        <div className='relative flex-1 overflow-y-auto px-5 py-5 lg:px-6 lg:py-5 space-y-4'>
-          <DialogHeader className='space-y-1 mt-1'>
-            <DialogTitle className='text-xl font-black italic uppercase tracking-tighter text-primary'>
+        <div className='relative flex-1 space-y-4 overflow-y-auto px-5 py-5 lg:px-6 lg:py-5'>
+          <DialogHeader className='mt-1 space-y-1'>
+            <DialogTitle className='text-xl font-black tracking-tighter text-primary uppercase italic'>
               {t('logisticsConfig.packagingRules.dialog.title')}
             </DialogTitle>
-            <DialogDescription className='text-[10px] font-black uppercase tracking-[0.2em] opacity-40 leading-none'>
+            <DialogDescription className='text-[10px] leading-none font-black tracking-[0.2em] uppercase opacity-40'>
               {t('logisticsConfig.packagingRules.dialog.description')}
             </DialogDescription>
           </DialogHeader>
@@ -127,21 +138,26 @@ export function PackagingProfileFormDialog({
             <section className={packagingSectionClass}>
               <div className='mb-3 flex items-center justify-between gap-3'>
                 <div>
-                  <p className='text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/45'>
+                  <p className='text-[10px] font-black tracking-[0.24em] text-muted-foreground/45 uppercase'>
                     Packaging Identity
                   </p>
-                  <h3 className='mt-1 text-sm font-black uppercase tracking-tight text-foreground'>
+                  <h3 className='mt-1 text-sm font-black tracking-tight text-foreground uppercase'>
                     基础信息
                   </h3>
                 </div>
-                <Badge variant='outline' className='rounded-full border-primary/15 bg-primary/5 px-3 text-[9px] font-black uppercase tracking-widest text-primary'>
+                <Badge
+                  variant='outline'
+                  className='rounded-full border-primary/15 bg-primary/5 px-3 text-[9px] font-black tracking-widest text-primary uppercase'
+                >
                   01
                 </Badge>
               </div>
 
               <div className='grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4'>
                 <div className={packagingFieldStackClass}>
-                  <Label className={packagingLabelClass}>{t('logisticsConfig.packagingRules.fields.packagingName')}</Label>
+                  <Label className={packagingLabelClass}>
+                    {t('logisticsConfig.packagingRules.fields.packagingName')}
+                  </Label>
                   <Combobox
                     options={packagingMaterialOptions}
                     value={selectedPackagingMaterialId}
@@ -156,14 +172,27 @@ export function PackagingProfileFormDialog({
                   />
                 </div>
                 <div className={packagingFieldStackClass}>
-                  <Label className={packagingLabelClass}>{t('logisticsConfig.packagingRules.fields.product')}</Label>
-                  <Select value={selectedTarget?.entityId ?? ''} onValueChange={onProductChange}>
+                  <Label className={packagingLabelClass}>
+                    {t('logisticsConfig.packagingRules.fields.product')}
+                  </Label>
+                  <Select
+                    value={selectedTarget?.entityId ?? ''}
+                    onValueChange={onProductChange}
+                  >
                     <SelectTrigger className={packagingSelectClass}>
-                      <SelectValue placeholder={t('logisticsConfig.packagingRules.placeholders.product')} />
+                      <SelectValue
+                        placeholder={t(
+                          'logisticsConfig.packagingRules.placeholders.product'
+                        )}
+                      />
                     </SelectTrigger>
                     <SelectContent className={packagingSelectContentClass}>
                       {products.map((product) => (
-                        <SelectItem key={product.id} value={product.id} className='m-1 rounded-lg'>
+                        <SelectItem
+                          key={product.id}
+                          value={product.id}
+                          className='m-1 rounded-lg'
+                        >
                           {product.name} ({product.sku})
                         </SelectItem>
                       ))}
@@ -171,30 +200,59 @@ export function PackagingProfileFormDialog({
                   </Select>
                 </div>
                 <div className={packagingFieldStackClass}>
-                  <Label className={packagingLabelClass}>{t('logisticsConfig.packagingRules.fields.status')}</Label>
-                  <Select value={draft.isActive ? 'active' : 'inactive'} onValueChange={(value) => onDraftChange((current) => ({ ...current, isActive: value === 'active' }))}>
+                  <Label className={packagingLabelClass}>
+                    {t('logisticsConfig.packagingRules.fields.status')}
+                  </Label>
+                  <Select
+                    value={draft.isActive ? 'active' : 'inactive'}
+                    onValueChange={(value) =>
+                      onDraftChange((current) => ({
+                        ...current,
+                        isActive: value === 'active',
+                      }))
+                    }
+                  >
                     <SelectTrigger className={packagingSelectClass}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className={packagingSelectContentClass}>
-                      <SelectItem value='active' className='m-1 rounded-lg'>{t('logisticsConfig.packagingRules.statusActive')}</SelectItem>
-                      <SelectItem value='inactive' className='m-1 rounded-lg'>{t('logisticsConfig.packagingRules.statusInactive')}</SelectItem>
+                      <SelectItem value='active' className='m-1 rounded-lg'>
+                        {t('logisticsConfig.packagingRules.statusActive')}
+                      </SelectItem>
+                      <SelectItem value='inactive' className='m-1 rounded-lg'>
+                        {t('logisticsConfig.packagingRules.statusInactive')}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className={packagingFieldStackClass}>
-                  <Label className={packagingLabelClass}>{t('logisticsConfig.packagingRules.fields.dimensionUnit')}</Label>
-                  <Select value={resolvedDimensionUnitCode} onValueChange={onDimensionUnitChange}>
+                  <Label className={packagingLabelClass}>
+                    {t('logisticsConfig.packagingRules.fields.dimensionUnit')}
+                  </Label>
+                  <Select
+                    value={resolvedDimensionUnitCode}
+                    onValueChange={onDimensionUnitChange}
+                  >
                     <SelectTrigger className={packagingSelectClass}>
-                      <SelectValue placeholder={t('logisticsConfig.packagingRules.placeholders.dimensionUnit')} />
+                      <SelectValue
+                        placeholder={t(
+                          'logisticsConfig.packagingRules.placeholders.dimensionUnit'
+                        )}
+                      />
                     </SelectTrigger>
                     <SelectContent className={packagingSelectContentClass}>
                       {dimensionUnits.length === 0 ? (
-                        <div className={packagingSelectEmptyStateClass}>未找到长度单位，请先到单位管理维护长度单位</div>
+                        <div className={packagingSelectEmptyStateClass}>
+                          未找到长度单位，请先到单位管理维护长度单位
+                        </div>
                       ) : (
                         dimensionUnits.map((unit) => (
-                          <SelectItem key={unit.code} value={unit.code} className='m-1 rounded-lg'>
+                          <SelectItem
+                            key={unit.code}
+                            value={unit.code}
+                            className='m-1 rounded-lg'
+                          >
                             {unit.name} ({unit.code})
                           </SelectItem>
                         ))
@@ -203,17 +261,32 @@ export function PackagingProfileFormDialog({
                   </Select>
                 </div>
                 <div className={packagingFieldStackClass}>
-                  <Label className={packagingLabelClass}>{t('logisticsConfig.packagingRules.fields.weightUnit')}</Label>
-                  <Select value={resolvedWeightUnitCode} onValueChange={onWeightUnitChange}>
+                  <Label className={packagingLabelClass}>
+                    {t('logisticsConfig.packagingRules.fields.weightUnit')}
+                  </Label>
+                  <Select
+                    value={resolvedWeightUnitCode}
+                    onValueChange={onWeightUnitChange}
+                  >
                     <SelectTrigger className={packagingSelectClass}>
-                      <SelectValue placeholder={t('logisticsConfig.packagingRules.placeholders.weightUnit')} />
+                      <SelectValue
+                        placeholder={t(
+                          'logisticsConfig.packagingRules.placeholders.weightUnit'
+                        )}
+                      />
                     </SelectTrigger>
                     <SelectContent className={packagingSelectContentClass}>
                       {weightUnits.length === 0 ? (
-                        <div className={packagingSelectEmptyStateClass}>未找到重量单位，请先到单位管理维护重量单位</div>
+                        <div className={packagingSelectEmptyStateClass}>
+                          未找到重量单位，请先到单位管理维护重量单位
+                        </div>
                       ) : (
                         weightUnits.map((unit) => (
-                          <SelectItem key={unit.code} value={unit.code} className='m-1 rounded-lg'>
+                          <SelectItem
+                            key={unit.code}
+                            value={unit.code}
+                            className='m-1 rounded-lg'
+                          >
                             {unit.name} ({unit.code})
                           </SelectItem>
                         ))
@@ -222,17 +295,32 @@ export function PackagingProfileFormDialog({
                   </Select>
                 </div>
                 <div className={packagingFieldStackClass}>
-                  <Label className={packagingLabelClass}>{t('logisticsConfig.packagingRules.fields.quantityUnit')}</Label>
-                  <Select value={resolvedCapacityUnitCode} onValueChange={onCapacityUnitChange}>
+                  <Label className={packagingLabelClass}>
+                    {t('logisticsConfig.packagingRules.fields.quantityUnit')}
+                  </Label>
+                  <Select
+                    value={resolvedCapacityUnitCode}
+                    onValueChange={onCapacityUnitChange}
+                  >
                     <SelectTrigger className={packagingSelectClass}>
-                      <SelectValue placeholder={t('logisticsConfig.packagingRules.placeholders.capacityUnit')} />
+                      <SelectValue
+                        placeholder={t(
+                          'logisticsConfig.packagingRules.placeholders.capacityUnit'
+                        )}
+                      />
                     </SelectTrigger>
                     <SelectContent className={packagingSelectContentClass}>
                       {quantityUnits.length === 0 ? (
-                        <div className={packagingSelectEmptyStateClass}>未找到数量单位，请先到单位管理维护数量单位</div>
+                        <div className={packagingSelectEmptyStateClass}>
+                          未找到数量单位，请先到单位管理维护数量单位
+                        </div>
                       ) : (
                         quantityUnits.map((unit) => (
-                          <SelectItem key={unit.code} value={unit.code} className='m-1 rounded-lg'>
+                          <SelectItem
+                            key={unit.code}
+                            value={unit.code}
+                            className='m-1 rounded-lg'
+                          >
                             {unit.name} ({unit.code})
                           </SelectItem>
                         ))
@@ -241,8 +329,14 @@ export function PackagingProfileFormDialog({
                   </Select>
                 </div>
                 <div className={packagingFieldStackClass}>
-                  <Label className={packagingLabelClass}>{t('logisticsConfig.packagingRules.fields.productWeight')}</Label>
-                  <Input className={cn(packagingFieldClass, 'font-mono')} value={productWeight} disabled />
+                  <Label className={packagingLabelClass}>
+                    {t('logisticsConfig.packagingRules.fields.productWeight')}
+                  </Label>
+                  <Input
+                    className={cn(packagingFieldClass, 'font-mono')}
+                    value={productWeight}
+                    disabled
+                  />
                 </div>
               </div>
             </section>
@@ -250,57 +344,87 @@ export function PackagingProfileFormDialog({
             <section className={packagingSectionClass}>
               <div className='mb-3 flex items-center justify-between gap-3'>
                 <div>
-                  <p className='text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/45'>
+                  <p className='text-[10px] font-black tracking-[0.24em] text-muted-foreground/45 uppercase'>
                     Packaging Metrics
                   </p>
-                  <h3 className='mt-1 text-sm font-black uppercase tracking-tight text-foreground'>
+                  <h3 className='mt-1 text-sm font-black tracking-tight text-foreground uppercase'>
                     尺寸与装箱
                   </h3>
                 </div>
-                <Badge variant='outline' className='rounded-full border-primary/15 bg-background/80 px-3 text-[9px] font-black uppercase tracking-widest text-primary'>
+                <Badge
+                  variant='outline'
+                  className='rounded-full border-primary/15 bg-background/80 px-3 text-[9px] font-black tracking-widest text-primary uppercase'
+                >
                   02
                 </Badge>
               </div>
 
               <div className='grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4'>
                 <div className={packagingFieldStackClass}>
-                  <Label className={packagingLabelClass}>{t('logisticsConfig.packagingRules.fields.length')}</Label>
+                  <Label className={packagingLabelClass}>
+                    {t('logisticsConfig.packagingRules.fields.length')}
+                  </Label>
                   <Input
                     type='number'
                     className={cn(packagingFieldClass, 'font-mono')}
                     value={draft.length}
-                    onChange={(event) => onDraftChange((current) => ({ ...current, length: Number(event.target.value) || 0 }))}
+                    onChange={(event) =>
+                      onDraftChange((current) => ({
+                        ...current,
+                        length: Number(event.target.value) || 0,
+                      }))
+                    }
                   />
                 </div>
                 <div className={packagingFieldStackClass}>
-                  <Label className={packagingLabelClass}>{t('logisticsConfig.packagingRules.fields.width')}</Label>
+                  <Label className={packagingLabelClass}>
+                    {t('logisticsConfig.packagingRules.fields.width')}
+                  </Label>
                   <Input
                     type='number'
                     className={cn(packagingFieldClass, 'font-mono')}
                     value={draft.width}
-                    onChange={(event) => onDraftChange((current) => ({ ...current, width: Number(event.target.value) || 0 }))}
+                    onChange={(event) =>
+                      onDraftChange((current) => ({
+                        ...current,
+                        width: Number(event.target.value) || 0,
+                      }))
+                    }
                   />
                 </div>
                 <div className={packagingFieldStackClass}>
-                  <Label className={packagingLabelClass}>{t('logisticsConfig.packagingRules.fields.height')}</Label>
+                  <Label className={packagingLabelClass}>
+                    {t('logisticsConfig.packagingRules.fields.height')}
+                  </Label>
                   <Input
                     type='number'
                     className={cn(packagingFieldClass, 'font-mono')}
                     value={draft.height}
-                    onChange={(event) => onDraftChange((current) => ({ ...current, height: Number(event.target.value) || 0 }))}
+                    onChange={(event) =>
+                      onDraftChange((current) => ({
+                        ...current,
+                        height: Number(event.target.value) || 0,
+                      }))
+                    }
                   />
                 </div>
                 <div className={packagingFieldStackClass}>
-                  <Label className={packagingLabelClass}>{t('logisticsConfig.packagingRules.fields.quantity')}</Label>
+                  <Label className={packagingLabelClass}>
+                    {t('logisticsConfig.packagingRules.fields.quantity')}
+                  </Label>
                   <Input
                     type='number'
                     className={cn(packagingFieldClass, 'font-mono')}
                     value={draft.capacity}
-                    onChange={(event) => onDraftChange((current) => ({
-                      ...current,
-                      capacity: Number(event.target.value) || 0,
-                      grossWeight: current.netWeight + productWeight * (Number(event.target.value) || 0),
-                    }))}
+                    onChange={(event) =>
+                      onDraftChange((current) => ({
+                        ...current,
+                        capacity: Number(event.target.value) || 0,
+                        grossWeight:
+                          current.netWeight +
+                          productWeight * (Number(event.target.value) || 0),
+                      }))
+                    }
                   />
                 </div>
               </div>
@@ -309,25 +433,53 @@ export function PackagingProfileFormDialog({
 
           <div className='grid grid-cols-1 gap-2.5 rounded-[24px] border border-dashed bg-primary/5 p-3.5 md:grid-cols-3'>
             <div>
-              <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{t('logisticsConfig.packagingRules.summary.volume')}</div>
-              <div className='mt-1 text-xl font-black italic tracking-tighter text-primary'>{computedVolume} <span className='text-[10px] not-italic opacity-50'>{draft.dimensionUnitCode || '-'}³</span></div>
+              <div className='text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
+                {t('logisticsConfig.packagingRules.summary.volume')}
+              </div>
+              <div className='mt-1 text-xl font-black tracking-tighter text-primary italic'>
+                {computedVolume}{' '}
+                <span className='text-[10px] not-italic opacity-50'>
+                  {draft.dimensionUnitCode || '-'}³
+                </span>
+              </div>
             </div>
             <div>
-              <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{t('logisticsConfig.packagingRules.summary.productWeightTotal')}</div>
-              <div className='mt-1 text-xl font-black italic tracking-tighter text-primary'>{productWeight * draft.capacity} <span className='text-[10px] not-italic opacity-50'>{draft.weightUnitCode || '-'}</span></div>
+              <div className='text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
+                {t('logisticsConfig.packagingRules.summary.productWeightTotal')}
+              </div>
+              <div className='mt-1 text-xl font-black tracking-tighter text-primary italic'>
+                {productWeight * draft.capacity}{' '}
+                <span className='text-[10px] not-italic opacity-50'>
+                  {draft.weightUnitCode || '-'}
+                </span>
+              </div>
             </div>
             <div>
-              <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{t('logisticsConfig.packagingRules.summary.grossWeight')}</div>
-              <div className='mt-1 text-xl font-black italic tracking-tighter text-primary'>{computedGrossWeight} <span className='text-[10px] not-italic opacity-50'>{draft.weightUnitCode || '-'}</span></div>
+              <div className='text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
+                {t('logisticsConfig.packagingRules.summary.grossWeight')}
+              </div>
+              <div className='mt-1 text-xl font-black tracking-tighter text-primary italic'>
+                {computedGrossWeight}{' '}
+                <span className='text-[10px] not-italic opacity-50'>
+                  {draft.weightUnitCode || '-'}
+                </span>
+              </div>
             </div>
           </div>
 
           <div className={packagingFieldStackClass}>
-            <Label className={packagingLabelClass}>{t('logisticsConfig.packagingRules.fields.notes')}</Label>
+            <Label className={packagingLabelClass}>
+              {t('logisticsConfig.packagingRules.fields.notes')}
+            </Label>
             <Textarea
-              className='min-h-[72px] rounded-2xl border border-border/50 bg-muted/40 px-4 py-2.5 text-[11px] font-medium tracking-tight shadow-sm shadow-black/5 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/15 focus-visible:border-primary/30 resize-none'
+              className='min-h-[72px] resize-none rounded-2xl border border-border/50 bg-muted/40 px-4 py-2.5 text-[11px] font-medium tracking-tight shadow-sm shadow-black/5 transition-all duration-200 focus-visible:border-primary/30 focus-visible:ring-2 focus-visible:ring-primary/15'
               value={draft.notes ?? ''}
-              onChange={(event) => onDraftChange((current) => ({ ...current, notes: event.target.value }))}
+              onChange={(event) =>
+                onDraftChange((current) => ({
+                  ...current,
+                  notes: event.target.value,
+                }))
+              }
               rows={2}
             />
           </div>
@@ -335,13 +487,13 @@ export function PackagingProfileFormDialog({
           <DialogFooter className='pt-1'>
             <Button
               variant='ghost'
-              className='h-11 px-8 text-[10px] font-black uppercase tracking-widest'
+              className='h-11 px-8 text-[10px] font-black tracking-widest uppercase'
               onClick={() => onOpenChange(false)}
             >
               {t('logisticsConfig.packagingRules.cancel')}
             </Button>
             <Button
-              className='h-11 px-8 rounded-full font-black text-[10px] uppercase tracking-widest shadow-lg shadow-primary/20 transition-all active:scale-95'
+              className='h-11 rounded-full px-8 text-[10px] font-black tracking-widest uppercase shadow-lg shadow-primary/20 transition-all active:scale-95'
               onClick={onSave}
               disabled={savePending}
             >

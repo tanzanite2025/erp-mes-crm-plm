@@ -1,6 +1,6 @@
 import { ChartColumnIncreasing, Maximize2, Scissors } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
+import { Button } from '@/components/ui/button'
 import type { BatchEngineLegendItem, BatchEngineSimulation } from '../types'
 
 type BatchEngineSimulationStageProps = {
@@ -29,9 +29,20 @@ function getLegendToneClassName(tone: BatchEngineLegendItem['tone']) {
   }
 }
 
-export function BatchEngineSimulationStage(props: BatchEngineSimulationStageProps) {
+export function BatchEngineSimulationStage(
+  props: BatchEngineSimulationStageProps
+) {
   const { t } = useLanguage()
-  const { legend, simulation, canSolve, solveDisabledReason, isSolving, isResultStale, onSolve, onOpenPreview } = props
+  const {
+    legend,
+    simulation,
+    canSolve,
+    solveDisabledReason,
+    isSolving,
+    isResultStale,
+    onSolve,
+    onOpenPreview,
+  } = props
 
   return (
     <section className='rounded-[28px] border border-border/50 bg-card p-4 shadow-none'>
@@ -42,7 +53,7 @@ export function BatchEngineSimulationStage(props: BatchEngineSimulationStageProp
               <Scissors className='size-4' />
             </div>
             <div>
-              <p className='text-[10px] font-black uppercase tracking-[0.24em] text-primary/70'>
+              <p className='text-[10px] font-black tracking-[0.24em] text-primary/70 uppercase'>
                 {t('rawMaterials.batchEngine.sections.stage.kicker')}
               </p>
               <h2 className='mt-2 text-base font-black tracking-tight text-foreground'>
@@ -58,9 +69,11 @@ export function BatchEngineSimulationStage(props: BatchEngineSimulationStageProp
             {legend.map((item) => (
               <span
                 key={item.key}
-                className='inline-flex items-center gap-2 rounded-full border border-border/40 bg-muted/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground'
+                className='inline-flex items-center gap-2 rounded-full border border-border/40 bg-muted/10 px-3 py-1 text-[10px] font-black tracking-[0.18em] text-muted-foreground uppercase'
               >
-                <span className={`size-2.5 rounded-full ${getLegendToneClassName(item.tone)}`} />
+                <span
+                  className={`size-2.5 rounded-full ${getLegendToneClassName(item.tone)}`}
+                />
                 {item.label}
               </span>
             ))}
@@ -70,7 +83,7 @@ export function BatchEngineSimulationStage(props: BatchEngineSimulationStageProp
         <div className='rounded-[24px] border border-border/40 bg-muted/5 p-4 shadow-inner'>
           <div className='flex flex-wrap items-center justify-between gap-3'>
             <div>
-              <p className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60'>
+              <p className='text-[10px] font-black tracking-[0.2em] text-muted-foreground/60 uppercase'>
                 {t('rawMaterials.batchEngine.sections.stage.rollCanvasLabel')}
               </p>
               <p className='mt-1 text-sm font-semibold text-foreground/90'>
@@ -81,15 +94,17 @@ export function BatchEngineSimulationStage(props: BatchEngineSimulationStageProp
             </div>
 
             <div className='flex items-center gap-2'>
-              <div className='inline-flex items-center gap-2 rounded-full border border-border/50 bg-muted/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground'>
+              <div className='inline-flex items-center gap-2 rounded-full border border-border/50 bg-muted/10 px-3 py-1 text-[10px] font-black tracking-[0.18em] text-muted-foreground uppercase'>
                 <ChartColumnIncreasing className='size-4 text-primary/80' />
                 {simulation.ready
                   ? t('rawMaterials.batchEngine.sections.stage.computedStatus')
-                  : t('rawMaterials.batchEngine.sections.stage.simulationStatus')}
+                  : t(
+                      'rawMaterials.batchEngine.sections.stage.simulationStatus'
+                    )}
               </div>
               <Button
                 type='button'
-                className='h-8 rounded-full px-3 text-xs font-black uppercase tracking-wider'
+                className='h-8 rounded-full px-3 text-xs font-black tracking-wider uppercase'
                 disabled={!canSolve || isSolving}
                 onClick={onSolve}
               >
@@ -108,7 +123,9 @@ export function BatchEngineSimulationStage(props: BatchEngineSimulationStageProp
           </div>
 
           {!canSolve && solveDisabledReason ? (
-            <p className='mt-3 text-xs font-semibold text-destructive/80'>{solveDisabledReason}</p>
+            <p className='mt-3 text-xs font-semibold text-destructive/80'>
+              {solveDisabledReason}
+            </p>
           ) : null}
           {isResultStale ? (
             <p className='mt-3 text-xs font-semibold text-amber-600'>
@@ -120,40 +137,55 @@ export function BatchEngineSimulationStage(props: BatchEngineSimulationStageProp
             <div className='rounded-[18px] border border-primary/20 bg-muted/5 p-4'>
               {!simulation.ready ? (
                 <div className='rounded-2xl border border-dashed border-primary/30 bg-primary/5 px-4 py-6 text-center text-sm font-semibold text-primary/70'>
-                  {simulation.reason || t('rawMaterials.batchEngine.sections.stage.pendingHint')}
+                  {simulation.reason ||
+                    t('rawMaterials.batchEngine.sections.stage.pendingHint')}
                 </div>
               ) : (
                 <div className='space-y-4'>
                   <div className='grid gap-2 md:grid-cols-5'>
                     <StatPill
-                      label={t('rawMaterials.batchEngine.sections.stage.stats.demandLines')}
+                      label={t(
+                        'rawMaterials.batchEngine.sections.stage.stats.demandLines'
+                      )}
                       value={`${simulation.demandLineCount}`}
                     />
                     <StatPill
-                      label={t('rawMaterials.batchEngine.sections.stage.stats.validDemandLines')}
+                      label={t(
+                        'rawMaterials.batchEngine.sections.stage.stats.validDemandLines'
+                      )}
                       value={`${simulation.validDemandLineCount}`}
                     />
                     <StatPill
-                      label={t('rawMaterials.batchEngine.sections.stage.stats.totalRequiredPieces')}
+                      label={t(
+                        'rawMaterials.batchEngine.sections.stage.stats.totalRequiredPieces'
+                      )}
                       value={`${simulation.totalRequiredPieces}`}
                     />
                     <StatPill
-                      label={t('rawMaterials.batchEngine.sections.stage.stats.totalDemandArea')}
+                      label={t(
+                        'rawMaterials.batchEngine.sections.stage.stats.totalDemandArea'
+                      )}
                       value={simulation.totalDemandAreaM2.toFixed(3)}
                     />
                     <StatPill
-                      label={t('rawMaterials.batchEngine.sections.stage.stats.totalOccupiedArea')}
+                      label={t(
+                        'rawMaterials.batchEngine.sections.stage.stats.totalOccupiedArea'
+                      )}
                       value={simulation.totalOccupiedAreaM2.toFixed(3)}
                     />
                   </div>
 
                   <div className='grid gap-2 md:grid-cols-2'>
                     <StatPill
-                      label={t('rawMaterials.batchEngine.sections.stage.stats.leftoverWidth')}
+                      label={t(
+                        'rawMaterials.batchEngine.sections.stage.stats.leftoverWidth'
+                      )}
                       value={simulation.leftoverWidthMm.toFixed(1)}
                     />
                     <StatPill
-                      label={t('rawMaterials.batchEngine.sections.stage.stats.leftoverLength')}
+                      label={t(
+                        'rawMaterials.batchEngine.sections.stage.stats.leftoverLength'
+                      )}
                       value={simulation.leftoverLengthMm.toFixed(1)}
                     />
                   </div>
@@ -170,7 +202,9 @@ export function BatchEngineSimulationStage(props: BatchEngineSimulationStageProp
 function StatPill({ label, value }: { label: string; value: string }) {
   return (
     <div className='rounded-xl border border-cyan-400/20 bg-cyan-500/10 px-3 py-2'>
-      <p className='text-[10px] font-black uppercase tracking-[0.18em] text-cyan-100/70'>{label}</p>
+      <p className='text-[10px] font-black tracking-[0.18em] text-cyan-100/70 uppercase'>
+        {label}
+      </p>
       <p className='mt-1 text-sm font-black text-cyan-50'>{value}</p>
     </div>
   )

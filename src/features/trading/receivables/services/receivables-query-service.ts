@@ -1,7 +1,10 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
 import { deserializeLedgerSearchResponseApiDTO } from '../../contracts/ledger-search-api-dto'
-import { buildLedgerSearchUrl, type LedgerSearchQueryParams } from '../../services/ledger-search-query'
+import {
+  buildLedgerSearchUrl,
+  type LedgerSearchQueryParams,
+} from '../../services/ledger-search-query'
 import {
   toReceivableListPageContract,
   type PaginatedReceivables,
@@ -33,21 +36,28 @@ function buildReceivableListUrl(params: ReceivableListQueryParams): string {
 }
 
 export async function getReceivables(
-  params: ReceivableListQueryParams = {},
+  params: ReceivableListQueryParams = {}
 ): Promise<PaginatedReceivables> {
-  const res = await apiFetch<ReceivableListPageApiDTO>(buildReceivableListUrl(params))
-  const payload = ensureObjectResponse<ReceivableListPageApiDTO & Record<string, unknown>>(
-    res,
-    'ReceivablesQueryService.getReceivables'
-  ) as ReceivableListPageApiDTO
-  return toReceivableListPageContract(deserializeReceivableListPageApiDTO(payload))
+  const res = await apiFetch<ReceivableListPageApiDTO>(
+    buildReceivableListUrl(params)
+  )
+  const payload = ensureObjectResponse<
+    ReceivableListPageApiDTO & Record<string, unknown>
+  >(res, 'ReceivablesQueryService.getReceivables') as ReceivableListPageApiDTO
+  return toReceivableListPageContract(
+    deserializeReceivableListPageApiDTO(payload)
+  )
 }
 
-export async function searchReceivableLedgers(params: ReceivableLedgerSearchParams): Promise<ReceivableLedgerSearchCandidateApiDTO[]> {
+export async function searchReceivableLedgers(
+  params: ReceivableLedgerSearchParams
+): Promise<ReceivableLedgerSearchCandidateApiDTO[]> {
   const res = await apiFetch<ReceivableLedgerSearchResponseApiDTO>(
     buildLedgerSearchUrl('/receivables/search', params)
   )
-  const payload = ensureObjectResponse<ReceivableLedgerSearchResponseApiDTO & Record<string, unknown>>(
+  const payload = ensureObjectResponse<
+    ReceivableLedgerSearchResponseApiDTO & Record<string, unknown>
+  >(
     res,
     'ReceivablesQueryService.searchReceivableLedgers'
   ) as ReceivableLedgerSearchResponseApiDTO

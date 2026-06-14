@@ -72,7 +72,9 @@ export function buildBusinessEventStatusRollbackFailureMessage({
   savedRules: NotificationRule[]
   rollbackFailedRules?: NotificationRule[]
 }) {
-  const impactedRuleNames = dedupeRuleNames(snapshots.map((snapshot) => snapshot.ruleName))
+  const impactedRuleNames = dedupeRuleNames(
+    snapshots.map((snapshot) => snapshot.ruleName)
+  )
   const migratedRuleNames = dedupeRuleNames(savedRules.map((rule) => rule.name))
   const rollbackFailedRuleNames = dedupeRuleNames(
     rollbackFailedRules?.map((rule) => rule.name) ?? []

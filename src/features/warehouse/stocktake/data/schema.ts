@@ -6,20 +6,24 @@ import {
   entityVersionSchema,
 } from '@/lib/schema/base-entity-schema'
 
-export type StocktakeTaskStatus = 'DRAFT' | 'IN_PROGRESS' | 'COMPLETED' | 'ADJUSTED'
+export type StocktakeTaskStatus =
+  | 'DRAFT'
+  | 'IN_PROGRESS'
+  | 'COMPLETED'
+  | 'ADJUSTED'
 
 export const stocktakeTaskSchema = entityIdentitySchema
   .merge(entityTimestampAuditSchema)
   .merge(entityCreatedBySchema)
   .merge(entityVersionSchema)
   .extend({
-  title: z.string(),
-  warehouseCategoryCode: z.string(),
-  status: z.enum(['DRAFT', 'IN_PROGRESS', 'COMPLETED', 'ADJUSTED']),
-  startTime: z.string().optional(),
-  endTime: z.string().optional(),
-  remarks: z.string().optional(),
-})
+    title: z.string(),
+    warehouseCategoryCode: z.string(),
+    status: z.enum(['DRAFT', 'IN_PROGRESS', 'COMPLETED', 'ADJUSTED']),
+    startTime: z.string().optional(),
+    endTime: z.string().optional(),
+    remarks: z.string().optional(),
+  })
 
 export type StocktakeTask = z.infer<typeof stocktakeTaskSchema>
 
@@ -27,18 +31,18 @@ export const stocktakeItemSchema = entityIdentitySchema
   .merge(entityTimestampAuditSchema)
   .merge(entityVersionSchema)
   .extend({
-  taskId: z.string(),
-  materialId: z.string(),
-  materialCode: z.string(),
-  materialName: z.string(),
-  batchNo: z.string(),
-  theoryQty: z.number(),
-  actualQty: z.number(),
-  difference: z.number(),
-  uom: z.string(),
-  scannerId: z.string().optional(),
-  scanTime: z.string().optional(),
-})
+    taskId: z.string(),
+    materialId: z.string(),
+    materialCode: z.string(),
+    materialName: z.string(),
+    batchNo: z.string(),
+    theoryQty: z.number(),
+    actualQty: z.number(),
+    difference: z.number(),
+    uom: z.string(),
+    scannerId: z.string().optional(),
+    scanTime: z.string().optional(),
+  })
 
 export type StocktakeItem = z.infer<typeof stocktakeItemSchema>
 

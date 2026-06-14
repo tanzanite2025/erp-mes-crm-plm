@@ -1,15 +1,23 @@
-import type { HierarchyLevelOptionItem } from '../../hierarchy-config/data/hierarchy-config'
-import type { ProductionLine, ProductionJobCategory, ProductionSegment } from '../../../data/production-line'
+import type {
+  ProductionLine,
+  ProductionJobCategory,
+  ProductionSegment,
+} from '../../../data/production-line'
 import type { ProductionProcessStep } from '../../../data/production-process'
+import type { HierarchyLevelOptionItem } from '../../hierarchy-config/data/hierarchy-config'
 
-function normalizeProcesses(processes: ProductionProcessStep[] = []): ProductionProcessStep[] {
+function normalizeProcesses(
+  processes: ProductionProcessStep[] = []
+): ProductionProcessStep[] {
   return processes.map((process, index) => ({
     ...process,
     sortOrder: index,
   }))
 }
 
-function normalizeJobCategories(jobCategories: ProductionJobCategory[] = []): ProductionJobCategory[] {
+function normalizeJobCategories(
+  jobCategories: ProductionJobCategory[] = []
+): ProductionJobCategory[] {
   return jobCategories.map((jobCategory, index) => ({
     ...jobCategory,
     sortOrder: index,
@@ -17,7 +25,9 @@ function normalizeJobCategories(jobCategories: ProductionJobCategory[] = []): Pr
   }))
 }
 
-export function normalizeSegments(segments: ProductionSegment[] = []): ProductionSegment[] {
+export function normalizeSegments(
+  segments: ProductionSegment[] = []
+): ProductionSegment[] {
   return segments.map((segment, index) => ({
     ...segment,
     sortOrder: index,
@@ -27,7 +37,7 @@ export function normalizeSegments(segments: ProductionSegment[] = []): Productio
 
 export function updateLineSegments(
   line: ProductionLine,
-  updater: (segments: ProductionSegment[]) => ProductionSegment[],
+  updater: (segments: ProductionSegment[]) => ProductionSegment[]
 ): ProductionLine {
   return {
     ...line,
@@ -35,7 +45,10 @@ export function updateLineSegments(
   }
 }
 
-export function addSegmentToLine(line: ProductionLine, option: HierarchyLevelOptionItem): ProductionLine {
+export function addSegmentToLine(
+  line: ProductionLine,
+  option: HierarchyLevelOptionItem
+): ProductionLine {
   const nextName = option.name.trim()
   if (nextName === '') {
     return line
@@ -56,7 +69,7 @@ export function addSegmentToLine(line: ProductionLine, option: HierarchyLevelOpt
 export function addJobCategoryToLine(
   line: ProductionLine,
   segmentId: string,
-  option: HierarchyLevelOptionItem,
+  option: HierarchyLevelOptionItem
 ): ProductionLine {
   const nextName = option.name.trim()
   if (nextName === '') {
@@ -84,11 +97,15 @@ export function addJobCategoryToLine(
           },
         ],
       }
-    }),
+    })
   )
 }
 
-export function renameSegmentInLine(line: ProductionLine, segmentId: string, name: string): ProductionLine {
+export function renameSegmentInLine(
+  line: ProductionLine,
+  segmentId: string,
+  name: string
+): ProductionLine {
   const nextName = name.trim()
   if (nextName === '') {
     return line
@@ -99,7 +116,7 @@ export function renameSegmentInLine(line: ProductionLine, segmentId: string, nam
       segment.id === segmentId
         ? { ...segment, name: nextName, hierarchyOptionId: undefined }
         : segment
-    ),
+    )
   )
 }
 
@@ -107,7 +124,7 @@ export function renameJobCategoryInLine(
   line: ProductionLine,
   segmentId: string,
   jobCategoryId: string,
-  name: string,
+  name: string
 ): ProductionLine {
   const nextName = name.trim()
   if (nextName === '') {
@@ -128,14 +145,14 @@ export function renameJobCategoryInLine(
             : jobCategory
         ),
       }
-    }),
+    })
   )
 }
 
 export function rebindSegmentInLine(
   line: ProductionLine,
   segmentId: string,
-  option: HierarchyLevelOptionItem,
+  option: HierarchyLevelOptionItem
 ): ProductionLine {
   const nextName = option.name.trim()
   if (nextName === '') {
@@ -147,7 +164,7 @@ export function rebindSegmentInLine(
       segment.id === segmentId
         ? { ...segment, name: nextName, hierarchyOptionId: option.id }
         : segment
-    ),
+    )
   )
 }
 
@@ -155,7 +172,7 @@ export function rebindJobCategoryInLine(
   line: ProductionLine,
   segmentId: string,
   jobCategoryId: string,
-  option: HierarchyLevelOptionItem,
+  option: HierarchyLevelOptionItem
 ): ProductionLine {
   const nextName = option.name.trim()
   if (nextName === '') {
@@ -176,18 +193,23 @@ export function rebindJobCategoryInLine(
             : jobCategory
         ),
       }
-    }),
+    })
   )
 }
 
-export function removeSegmentFromLine(line: ProductionLine, segmentId: string): ProductionLine {
-  return updateLineSegments(line, (segments) => segments.filter((segment) => segment.id !== segmentId))
+export function removeSegmentFromLine(
+  line: ProductionLine,
+  segmentId: string
+): ProductionLine {
+  return updateLineSegments(line, (segments) =>
+    segments.filter((segment) => segment.id !== segmentId)
+  )
 }
 
 export function removeJobCategoryFromLine(
   line: ProductionLine,
   segmentId: string,
-  jobCategoryId: string,
+  jobCategoryId: string
 ): ProductionLine {
   return updateLineSegments(line, (segments) =>
     segments.map((segment) => {
@@ -197,8 +219,10 @@ export function removeJobCategoryFromLine(
 
       return {
         ...segment,
-        jobCategories: (segment.jobCategories || []).filter((jobCategory) => jobCategory.id !== jobCategoryId),
+        jobCategories: (segment.jobCategories || []).filter(
+          (jobCategory) => jobCategory.id !== jobCategoryId
+        ),
       }
-    }),
+    })
   )
 }

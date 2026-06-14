@@ -3,21 +3,24 @@
 import { useState } from 'react'
 import { Edit2, MapPin, Plus, Search, Thermometer, Zap } from 'lucide-react'
 import { toast } from 'sonner'
-import { IndustrialHeader } from '@/components/uds/industrial-header'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
+import { type DeltaSet } from '@/lib/delta/types'
 import { useLanguage } from '@/context/language-provider'
 import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
-import { type DeltaSet } from '@/lib/delta/types'
-import { type Furnace, type FurnaceStatus } from '@/features/equipment-tooling/data/schema'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
+import { MaintenanceRecordList } from '@/features/equipment-tooling/components/maintenance-record-list'
+import {
+  type Furnace,
+  type FurnaceStatus,
+} from '@/features/equipment-tooling/data/schema'
 import { useAssets } from '@/features/equipment-tooling/hooks/use-assets'
 import { useDashboardStats } from '@/features/equipment-tooling/hooks/use-dashboard-stats'
 import { FurnaceActionDialog } from '../components/furnace-action-dialog'
 import { FurnaceStatsHeader } from '../components/furnace/furnace-stats-header'
-import { MaintenanceRecordList } from '@/features/equipment-tooling/components/maintenance-record-list'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 export function FurnaceAssetsCenterPage() {
   const { t } = useLanguage()
@@ -28,7 +31,11 @@ export function FurnaceAssetsCenterPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingFurnace, setEditingFurnace] = useState<Furnace | null>(null)
 
-  const saveFurnace = (furnace: Furnace, isPatch?: boolean, delta?: DeltaSet) => {
+  const saveFurnace = (
+    furnace: Furnace,
+    isPatch?: boolean,
+    delta?: DeltaSet
+  ) => {
     updateFurnaces(furnace, isPatch, delta)
   }
 
@@ -52,7 +59,11 @@ export function FurnaceAssetsCenterPage() {
     })
   }
 
-  const handleConfirm = (data: Furnace, isPatch?: boolean, delta?: DeltaSet) => {
+  const handleConfirm = (
+    data: Furnace,
+    isPatch?: boolean,
+    delta?: DeltaSet
+  ) => {
     runConfirmedAction({
       permission: 'action_equipment_furnace_manage',
       onAction: async () => {
@@ -111,7 +122,7 @@ export function FurnaceAssetsCenterPage() {
   })
 
   return (
-    <div className='animate-in fade-in duration-700 flex flex-col gap-6 md:gap-8'>
+    <div className='flex animate-in flex-col gap-6 duration-700 fade-in md:gap-8'>
       <IndustrialHeader
         icon={Thermometer}
         title={t('equipmentTooling.furnaces.page.title')}
@@ -121,7 +132,7 @@ export function FurnaceAssetsCenterPage() {
 
       <FurnaceStatsHeader stats={furnaceStats} />
 
-      <div className='flex flex-col items-stretch justify-between gap-4 rounded-[24px] border border-dashed bg-muted/5 p-4 md:flex-row md:items-center sm:p-5'>
+      <div className='flex flex-col items-stretch justify-between gap-4 rounded-[24px] border border-dashed bg-muted/5 p-4 sm:p-5 md:flex-row md:items-center'>
         <div className='relative w-full md:max-w-sm'>
           <Search className='absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground/40' />
           <Input
@@ -134,7 +145,7 @@ export function FurnaceAssetsCenterPage() {
 
         <Button
           onClick={handleAddFurnace}
-          className='h-12 w-full shrink-0 rounded-full px-8 text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-500/20 transition-all active:scale-95 md:w-auto'
+          className='h-12 w-full shrink-0 rounded-full px-8 text-[10px] font-black tracking-widest uppercase shadow-xl shadow-blue-500/20 transition-all active:scale-95 md:w-auto'
         >
           <Plus className='mr-2 size-4' />
           {t('equipmentTooling.furnaces.actions.add')}
@@ -156,11 +167,11 @@ export function FurnaceAssetsCenterPage() {
                     <div className='flex items-center gap-2'>
                       <Badge
                         variant='outline'
-                        className={`rounded-full border-none px-2 py-0.5 text-[7px] font-black uppercase tracking-widest shadow-sm sm:text-[8px] ${status.color}`}
+                        className={`rounded-full border-none px-2 py-0.5 text-[7px] font-black tracking-widest uppercase shadow-sm sm:text-[8px] ${status.color}`}
                       >
                         {status.label}
                       </Badge>
-                      <span className='rounded bg-white/50 px-1.5 py-0.5 text-[8px] font-mono font-black uppercase tracking-tighter text-muted-foreground/40'>
+                      <span className='rounded bg-white/50 px-1.5 py-0.5 font-mono text-[8px] font-black tracking-tighter text-muted-foreground/40 uppercase'>
                         {furnace.sn}
                       </span>
                     </div>
@@ -184,14 +195,18 @@ export function FurnaceAssetsCenterPage() {
 
               <CardContent className='px-5 pb-6 sm:px-6'>
                 <Tabs defaultValue='info' className='w-full'>
-                  <TabsList className='grid w-full grid-cols-2 mb-4'>
-                    <TabsTrigger value='info' className='text-xs'>基本信息</TabsTrigger>
-                    <TabsTrigger value='maintenance' className='text-xs'>维保记录</TabsTrigger>
+                  <TabsList className='mb-4 grid w-full grid-cols-2'>
+                    <TabsTrigger value='info' className='text-xs'>
+                      基本信息
+                    </TabsTrigger>
+                    <TabsTrigger value='maintenance' className='text-xs'>
+                      维保记录
+                    </TabsTrigger>
                   </TabsList>
-                  
-                  <TabsContent value='info' className='space-y-5 mt-0'>
+
+                  <TabsContent value='info' className='mt-0 space-y-5'>
                     <div className='grid grid-cols-2 gap-y-3 border-t border-dashed border-muted-foreground/5 pt-2'>
-                      <div className='flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-muted-foreground/40'>
+                      <div className='flex items-center gap-2 text-[9px] font-black tracking-widest text-muted-foreground/40 uppercase'>
                         <Zap className='size-3 text-orange-500/60' />
                         {t('equipmentTooling.furnaces.card.type')}
                       </div>
@@ -199,34 +214,40 @@ export function FurnaceAssetsCenterPage() {
                         {furnace.type}
                       </div>
 
-                      <div className='flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-muted-foreground/40'>
+                      <div className='flex items-center gap-2 text-[9px] font-black tracking-widest text-muted-foreground/40 uppercase'>
                         <MapPin className='size-3 text-blue-500/60' />
                         {t('equipmentTooling.furnaces.card.location')}
                       </div>
                       <div className='truncate text-right text-[10px] font-black text-slate-600'>
-                        {furnace.location || t('equipmentTooling.furnaces.card.none')}
+                        {furnace.location ||
+                          t('equipmentTooling.furnaces.card.none')}
                       </div>
                     </div>
 
                     <div className='space-y-2 border-t border-dashed border-muted-foreground/10 pt-4'>
                       <div className='flex items-center justify-between'>
-                        <span className='flex items-center gap-2 text-[8px] font-black uppercase tracking-widest text-muted-foreground/40'>
+                        <span className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground/40 uppercase'>
                           <Thermometer className='size-3' />
                           {t('equipmentTooling.furnaces.card.tempLive')}
                         </span>
-                        <span className='text-[10px] font-black font-mono tracking-tighter text-slate-400'>
-                          {t('equipmentTooling.furnaces.card.maxTemp', { value: furnace.maxTemp })}
+                        <span className='font-mono text-[10px] font-black tracking-tighter text-slate-400'>
+                          {t('equipmentTooling.furnaces.card.maxTemp', {
+                            value: furnace.maxTemp,
+                          })}
                         </span>
                       </div>
                       <div className='h-1.5 overflow-hidden rounded-full bg-muted/50 shadow-inner'>
-                        <div className='h-full bg-slate-300/50 transition-all duration-1000' style={{ width: '0%' }} />
+                        <div
+                          className='h-full bg-slate-300/50 transition-all duration-1000'
+                          style={{ width: '0%' }}
+                        />
                       </div>
-                      <p className='mt-1 text-center text-[7px] font-black uppercase tracking-[0.2em] text-muted-foreground/20 italic'>
+                      <p className='mt-1 text-center text-[7px] font-black tracking-[0.2em] text-muted-foreground/20 uppercase italic'>
                         {t('equipmentTooling.furnaces.card.sensorOffline')}
                       </p>
                     </div>
                   </TabsContent>
-                  
+
                   <TabsContent value='maintenance' className='mt-0'>
                     <MaintenanceRecordList
                       assetType='FURNACE'

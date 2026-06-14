@@ -3,7 +3,7 @@
 import { useLanguage } from '@/context/language-provider'
 
 export function Test() {
-    const { t } = useLanguage()
+  const { t } = useLanguage()
 
-    return <div>{t('equipmentTooling.layout.title')}</div>
+  return <div>{t('equipmentTooling.layout.title')}</div>
 }

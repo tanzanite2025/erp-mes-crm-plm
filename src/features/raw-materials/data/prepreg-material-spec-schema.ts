@@ -301,8 +301,11 @@ export function mergePrepregRecognizedFields(
   current: PrepregFormState,
   fields: Partial<PrepregFormState>
 ): PrepregFormState {
-  return Object.entries(fields).reduce<PrepregFormState>((next, [key, value]) => {
-    if (typeof value !== 'string' || !value.trim()) return next
-    return { ...next, [key]: value.trim() }
-  }, current)
+  return Object.entries(fields).reduce<PrepregFormState>(
+    (next, [key, value]) => {
+      if (typeof value !== 'string' || !value.trim()) return next
+      return { ...next, [key]: value.trim() }
+    },
+    current
+  )
 }

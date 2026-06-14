@@ -10,20 +10,25 @@ import {
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import type { PackagingProfile } from '@/features/logistics-config/packaging-rules-service'
+import type { VehicleLoadingSourceType } from '../data/vehicle-loading-sources'
 import type {
   VehicleLoadingApiPackageDraft,
   VehicleLoadingPackageInput,
 } from '../data/vehicle-loading.types'
-import type { VehicleLoadingSourceType } from '../data/vehicle-loading-sources'
 import { FieldCard } from './field-card'
 
 const inputClass =
   'w-full h-11 min-h-11 rounded-2xl border border-border/50 bg-muted/40 px-4 py-0 text-sm font-medium leading-none shadow-sm shadow-black/5 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/15 focus-visible:border-primary/30'
-const labelClass = 'ml-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'
+const labelClass =
+  'ml-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'
 
 function renderPackageSummary(packageInput: VehicleLoadingPackageInput | null) {
   if (!packageInput) {
-    return <div className='rounded-2xl border border-dashed border-border/60 bg-muted/20 px-4 py-3 text-xs text-muted-foreground'>当前来源输入尚未就绪。</div>
+    return (
+      <div className='rounded-2xl border border-dashed border-border/60 bg-muted/20 px-4 py-3 text-xs text-muted-foreground'>
+        当前来源输入尚未就绪。
+      </div>
+    )
   }
 
   return (
@@ -34,14 +39,23 @@ function renderPackageSummary(packageInput: VehicleLoadingPackageInput | null) {
       </div>
       <div className='rounded-2xl border border-dashed border-border/60 bg-muted/20 px-4 py-3'>
         <div className={labelClass}>单箱重量</div>
-        <div className='mt-2 text-sm font-black'>{packageInput.unitWeightKg.toFixed(3)} kg</div>
+        <div className='mt-2 text-sm font-black'>
+          {packageInput.unitWeightKg.toFixed(3)} kg
+        </div>
       </div>
       <div className='rounded-2xl border border-dashed border-border/60 bg-muted/20 px-4 py-3 md:col-span-2'>
         <div className={labelClass}>箱型尺寸</div>
         <div className='mt-2 flex flex-wrap items-center gap-2 text-sm font-black'>
-          <span>{packageInput.dimension.lengthMm} × {packageInput.dimension.widthMm} × {packageInput.dimension.heightMm} mm</span>
-          <Badge className='border-none bg-primary/10 text-primary'>可旋转 {packageInput.dimension.canRotate ? '是' : '否'}</Badge>
-          <Badge className='border-none bg-primary/10 text-primary'>可倒置 {packageInput.dimension.canInvert ? '是' : '否'}</Badge>
+          <span>
+            {packageInput.dimension.lengthMm} × {packageInput.dimension.widthMm}{' '}
+            × {packageInput.dimension.heightMm} mm
+          </span>
+          <Badge className='border-none bg-primary/10 text-primary'>
+            可旋转 {packageInput.dimension.canRotate ? '是' : '否'}
+          </Badge>
+          <Badge className='border-none bg-primary/10 text-primary'>
+            可倒置 {packageInput.dimension.canInvert ? '是' : '否'}
+          </Badge>
         </div>
       </div>
     </div>
@@ -57,7 +71,9 @@ type Props = {
   selectedPackagingProfileId: string
   onSelectedPackagingProfileIdChange: (value: string) => void
   apiPackageDraft: VehicleLoadingApiPackageDraft
-  onApiPackageDraftChange: Dispatch<SetStateAction<VehicleLoadingApiPackageDraft>>
+  onApiPackageDraftChange: Dispatch<
+    SetStateAction<VehicleLoadingApiPackageDraft>
+  >
 }
 
 export function VehicleLoadingSourceInputPanel({
@@ -78,7 +94,10 @@ export function VehicleLoadingSourceInputPanel({
           <div className='space-y-4'>
             <div className='space-y-2'>
               <div className={labelClass}>包装定义</div>
-              <Select value={selectedPackagingProfileId} onValueChange={onSelectedPackagingProfileIdChange}>
+              <Select
+                value={selectedPackagingProfileId}
+                onValueChange={onSelectedPackagingProfileIdChange}
+              >
                 <SelectTrigger className={inputClass}>
                   <SelectValue placeholder='请选择一个包装定义' />
                 </SelectTrigger>
@@ -92,7 +111,9 @@ export function VehicleLoadingSourceInputPanel({
               </Select>
             </div>
             {isLoadingPackageInput ? (
-              <div className='rounded-2xl border border-dashed border-border/60 bg-muted/20 px-4 py-3 text-xs text-muted-foreground'>正在加载包装定义...</div>
+              <div className='rounded-2xl border border-dashed border-border/60 bg-muted/20 px-4 py-3 text-xs text-muted-foreground'>
+                正在加载包装定义...
+              </div>
             ) : null}
           </div>
         ) : null}
@@ -104,7 +125,12 @@ export function VehicleLoadingSourceInputPanel({
               <Input
                 className={inputClass}
                 value={apiPackageDraft.name}
-                onChange={(event) => onApiPackageDraftChange((prev) => ({ ...prev, name: event.target.value }))}
+                onChange={(event) =>
+                  onApiPackageDraftChange((prev) => ({
+                    ...prev,
+                    name: event.target.value,
+                  }))
+                }
               />
             </div>
             <div className='space-y-2'>
@@ -113,7 +139,12 @@ export function VehicleLoadingSourceInputPanel({
                 className={inputClass}
                 inputMode='decimal'
                 value={apiPackageDraft.unitWeightKg}
-                onChange={(event) => onApiPackageDraftChange((prev) => ({ ...prev, unitWeightKg: event.target.value }))}
+                onChange={(event) =>
+                  onApiPackageDraftChange((prev) => ({
+                    ...prev,
+                    unitWeightKg: event.target.value,
+                  }))
+                }
               />
             </div>
             <div className='space-y-2'>
@@ -122,7 +153,12 @@ export function VehicleLoadingSourceInputPanel({
                 className={inputClass}
                 inputMode='decimal'
                 value={apiPackageDraft.lengthMm}
-                onChange={(event) => onApiPackageDraftChange((prev) => ({ ...prev, lengthMm: event.target.value }))}
+                onChange={(event) =>
+                  onApiPackageDraftChange((prev) => ({
+                    ...prev,
+                    lengthMm: event.target.value,
+                  }))
+                }
               />
             </div>
             <div className='space-y-2'>
@@ -131,7 +167,12 @@ export function VehicleLoadingSourceInputPanel({
                 className={inputClass}
                 inputMode='decimal'
                 value={apiPackageDraft.widthMm}
-                onChange={(event) => onApiPackageDraftChange((prev) => ({ ...prev, widthMm: event.target.value }))}
+                onChange={(event) =>
+                  onApiPackageDraftChange((prev) => ({
+                    ...prev,
+                    widthMm: event.target.value,
+                  }))
+                }
               />
             </div>
             <div className='space-y-2'>
@@ -140,14 +181,21 @@ export function VehicleLoadingSourceInputPanel({
                 className={inputClass}
                 inputMode='decimal'
                 value={apiPackageDraft.heightMm}
-                onChange={(event) => onApiPackageDraftChange((prev) => ({ ...prev, heightMm: event.target.value }))}
+                onChange={(event) =>
+                  onApiPackageDraftChange((prev) => ({
+                    ...prev,
+                    heightMm: event.target.value,
+                  }))
+                }
               />
             </div>
             <div className='rounded-2xl border border-dashed border-border/60 bg-muted/20 px-4 py-3'>
               <div className='flex items-center justify-between gap-3'>
                 <div>
                   <div className={labelClass}>允许旋转</div>
-                  <div className='mt-2 text-xs text-muted-foreground'>只允许底面旋转，长宽可互换，保持高度方向不变</div>
+                  <div className='mt-2 text-xs text-muted-foreground'>
+                    只允许底面旋转，长宽可互换，保持高度方向不变
+                  </div>
                 </div>
                 <Switch
                   checked={apiPackageDraft.canRotate}
@@ -165,12 +213,19 @@ export function VehicleLoadingSourceInputPanel({
               <div className='flex items-center justify-between gap-3'>
                 <div>
                   <div className={labelClass}>允许倒置</div>
-                  <div className='mt-2 text-xs text-muted-foreground'>允许改变竖直方向，将箱体侧放或翻面参与计算</div>
+                  <div className='mt-2 text-xs text-muted-foreground'>
+                    允许改变竖直方向，将箱体侧放或翻面参与计算
+                  </div>
                 </div>
                 <Switch
                   checked={apiPackageDraft.canInvert}
                   disabled={!apiPackageDraft.canRotate}
-                  onCheckedChange={(checked) => onApiPackageDraftChange((prev) => ({ ...prev, canInvert: checked }))}
+                  onCheckedChange={(checked) =>
+                    onApiPackageDraftChange((prev) => ({
+                      ...prev,
+                      canInvert: checked,
+                    }))
+                  }
                 />
               </div>
             </div>

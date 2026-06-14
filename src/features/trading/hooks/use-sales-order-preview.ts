@@ -1,17 +1,20 @@
 import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { useLanguage } from '@/context/language-provider'
 import { failLoudly } from '@/lib/safe-catch'
+import { useLanguage } from '@/context/language-provider'
 import {
   ENGINEERING_DB_DRILLING_QUERY_KEY,
   ENGINEERING_DB_LABELING_QUERY_KEY,
   ENGINEERING_DB_SPECS_QUERY_KEY,
 } from '@/features/engineering-db/query-keys'
-import { SpecsService } from '@/features/engineering-db/services/specs-service'
-import { ProductionDBService } from '@/features/engineering-db/services/production-db-service'
 import { FileResolverService } from '@/features/engineering-db/services/file-resolver-service'
-import { productDetailQueryKey, productOptionsQueryKey } from '@/features/engineering/query-keys'
+import { ProductionDBService } from '@/features/engineering-db/services/production-db-service'
+import { SpecsService } from '@/features/engineering-db/services/specs-service'
+import {
+  productDetailQueryKey,
+  productOptionsQueryKey,
+} from '@/features/engineering/query-keys'
 import { ProductCoreService } from '@/features/engineering/services/product-core-service'
 
 type DrawingType = 'spec' | 'drilling' | 'labeling'
@@ -63,7 +66,9 @@ export function useSalesOrderPreview() {
           queryFn: () => ProductCoreService.getProducts({ isOptions: true }),
         })
 
-        const cachedProduct = (products as ProductPreviewRefs[]).find((product) => product.id === productId)
+        const cachedProduct = (products as ProductPreviewRefs[]).find(
+          (product) => product.id === productId
+        )
         targetId = cachedProduct?.engineeringSpecId
 
         if (!targetId) {
@@ -111,7 +116,8 @@ export function useSalesOrderPreview() {
       const fileName = file.name || t('tradingSalesOrder.preview.unknownFile')
       setPreviewFile({ fileName, fileUrl: resolvedUrl })
 
-      const ext = file.fileExtension || fileName.split('.').pop()?.toLowerCase() || ''
+      const ext =
+        file.fileExtension || fileName.split('.').pop()?.toLowerCase() || ''
       if (['dwg', 'dxf', 'rvt'].includes(ext)) setIsCADOpen(true)
       else if (['pdf', 'jpg', 'jpeg', 'png'].includes(ext)) setIsPDFOpen(true)
       else if (['xlsx', 'xls', 'csv'].includes(ext)) setIsExcelOpen(true)

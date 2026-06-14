@@ -29,11 +29,14 @@ function escapeHtml(value?: string): string {
 
 function buildPrintableRows(plan: CuttingPlanInput): PrintableRow[] {
   const rows: PrintableRow[] = []
-  const hasManualBreaks = plan.lines.some((line) => Boolean(line.manualGroupBreakBefore))
+  const hasManualBreaks = plan.lines.some((line) =>
+    Boolean(line.manualGroupBreakBefore)
+  )
 
   if (hasManualBreaks) {
     plan.lines.forEach((line) => {
-      if (rows.length > 0 && line.manualGroupBreakBefore) rows.push({ type: 'separator' })
+      if (rows.length > 0 && line.manualGroupBreakBefore)
+        rows.push({ type: 'separator' })
       rows.push({ type: 'line', line })
     })
     return rows
@@ -42,7 +45,12 @@ function buildPrintableRows(plan: CuttingPlanInput): PrintableRow[] {
   let previousGroup = ''
   plan.lines.forEach((line) => {
     const currentGroup = normalizeGroupKey(line.yarnDirection)
-    if (rows.length > 0 && currentGroup && previousGroup && currentGroup !== previousGroup) {
+    if (
+      rows.length > 0 &&
+      currentGroup &&
+      previousGroup &&
+      currentGroup !== previousGroup
+    ) {
       rows.push({ type: 'separator' })
     }
     rows.push({ type: 'line', line })
@@ -81,8 +89,14 @@ export function openCuttingPlanPrintPreview(plan: CuttingPlanInput) {
     throw new Error('浏览器拦截了预览窗口，请允许弹窗后重试')
   }
 
-  const totalWeight = plan.lines.reduce((sum, line) => sum + parseNumeric(line.weightG), 0)
-  const totalArea = plan.lines.reduce((sum, line) => sum + parseNumeric(line.areaM2), 0)
+  const totalWeight = plan.lines.reduce(
+    (sum, line) => sum + parseNumeric(line.weightG),
+    0
+  )
+  const totalArea = plan.lines.reduce(
+    (sum, line) => sum + parseNumeric(line.areaM2),
+    0
+  )
   const rowsHtml = buildRowsHtml(plan)
   const title = escapeHtml(plan.name || '裁纱单')
   const prepregLabel = escapeHtml(plan.prepregSpecLabel || '--')

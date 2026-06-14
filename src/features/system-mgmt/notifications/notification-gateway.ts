@@ -9,18 +9,29 @@ function getStateSnapshot(): NotificationState {
   return useNotificationStore.getState()
 }
 
-function getMetadataRecord(metadata: SystemMessage['metadata'] | undefined): NotificationMetadata {
-  return metadata && typeof metadata === 'object' ? (metadata as NotificationMetadata) : {}
+function getMetadataRecord(
+  metadata: SystemMessage['metadata'] | undefined
+): NotificationMetadata {
+  return metadata && typeof metadata === 'object'
+    ? (metadata as NotificationMetadata)
+    : {}
 }
 
-function getMetadataString(metadata: NotificationMetadata, key: string): string | undefined {
+function getMetadataString(
+  metadata: NotificationMetadata,
+  key: string
+): string | undefined {
   const value = metadata[key]
   return typeof value === 'string' ? value : undefined
 }
 
 function getMessageOrderId(message: SystemMessage): string | undefined {
   const metadata = getMetadataRecord(message.metadata)
-  return getMetadataString(metadata, 'OrderId') || getMetadataString(metadata, 'orderId') || getMetadataString(metadata, 'id')
+  return (
+    getMetadataString(metadata, 'OrderId') ||
+    getMetadataString(metadata, 'orderId') ||
+    getMetadataString(metadata, 'id')
+  )
 }
 
 function getMessageSegmentId(message: SystemMessage): string | undefined {
@@ -47,7 +58,11 @@ export const NotificationGateway = {
   archiveByOrderAndSegment: (orderId: string, segmentId: string): void => {
     const state = getStateSnapshot()
     state.messages.forEach((message) => {
-      if (getMessageOrderId(message) === orderId && getMessageSegmentId(message) === segmentId && !message.isArchived) {
+      if (
+        getMessageOrderId(message) === orderId &&
+        getMessageSegmentId(message) === segmentId &&
+        !message.isArchived
+      ) {
         state.archiveMessage(message.id)
       }
     })

@@ -1,8 +1,3 @@
-import {
-  resolveProductDisplayV2,
-  type ProductDisplayProjectionV2,
-} from './product-display-v2'
-import { resolveProductDisplayMetadataV2 } from './product-display-v2-metadata'
 import type {
   Product,
   ProductAttributeCategory,
@@ -10,6 +5,11 @@ import type {
   ProductTemplate,
   ProductType,
 } from '../data/schema'
+import {
+  resolveProductDisplayV2,
+  type ProductDisplayProjectionV2,
+} from './product-display-v2'
+import { resolveProductDisplayMetadataV2 } from './product-display-v2-metadata'
 
 export interface BuildProductDisplayMapsV2Params {
   locale: string
@@ -35,10 +35,12 @@ export function buildProductDisplayMapsV2(
       categories: params.productAttributeCategories,
       options: params.productAttributeOptions,
     })
-    const projection = displayMetadata.projection || resolveProductDisplayV2({
-      locale: params.locale,
-      product,
-    })
+    const projection =
+      displayMetadata.projection ||
+      resolveProductDisplayV2({
+        locale: params.locale,
+        product,
+      })
 
     return [product.id, projection] as const
   })
@@ -46,7 +48,10 @@ export function buildProductDisplayMapsV2(
   return {
     productDisplayProjectionMap: new Map(projectionEntries),
     productDisplayLabelMap: new Map(
-      projectionEntries.map(([productId, projection]) => [productId, projection.title])
+      projectionEntries.map(([productId, projection]) => [
+        productId,
+        projection.title,
+      ])
     ),
   }
 }

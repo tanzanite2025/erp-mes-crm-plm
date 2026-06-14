@@ -14,5 +14,9 @@ export function formatWarehouseDisplayDateTime(
   if (Number.isNaN(date.getTime())) {
     return typeof value === 'string' ? value : ''
   }
-  return format(date, WAREHOUSE_DISPLAY_DATETIME_FORMATS[locale] || WAREHOUSE_DISPLAY_DATETIME_FORMATS['zh-CN'])
+  return format(
+    date,
+    WAREHOUSE_DISPLAY_DATETIME_FORMATS[locale] ||
+      WAREHOUSE_DISPLAY_DATETIME_FORMATS['zh-CN']
+  )
 }

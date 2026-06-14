@@ -1,17 +1,17 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { createLogger } from '@/lib/logger'
+import type { BOM } from '../data/schema'
 import { type SaveBOMInput } from '../mutation-types'
 import { BOMS_QUERY_KEY } from '../query-keys'
-import { bomVersionTraceQueryKeys } from '../version-trace/query-keys'
-import { bomService } from '../services/bom-service'
+import type { BomEngineeringSemanticAction } from '../services/bom-routing-event-factory'
 import {
   dispatchBomEngineeringRoutingEvent,
   dispatchBomManufacturingRoutingEvent,
 } from '../services/bom-routing-service'
-import type { BomEngineeringSemanticAction } from '../services/bom-routing-event-factory'
+import { bomService } from '../services/bom-service'
 import { isEBOM } from '../utils/bom-identity'
-import type { BOM } from '../data/schema'
+import { bomVersionTraceQueryKeys } from '../version-trace/query-keys'
 
 const logger = createLogger('useBOMWriteActions')
 
@@ -56,7 +56,9 @@ export function useBOMWriteActions() {
       bomService.saveBOM(params),
     onSuccess: async (saved, variables) => {
       await queryClient.invalidateQueries({ queryKey: BOMS_QUERY_KEY })
-      await queryClient.invalidateQueries({ queryKey: bomVersionTraceQueryKeys.root() })
+      await queryClient.invalidateQueries({
+        queryKey: bomVersionTraceQueryKeys.root(),
+      })
 
       toast.success('BOM 已保存')
 
@@ -68,13 +70,19 @@ export function useBOMWriteActions() {
             semanticAction: 'CREATED',
           })
         } catch (error) {
-          logger.warn('Failed to dispatch EBOM CREATED event', { bomId: saved.id, error })
+          logger.warn('Failed to dispatch EBOM CREATED event', {
+            bomId: saved.id,
+            error,
+          })
         }
       }
     },
     onError: (error: Error) => {
       // 处理并发冲突错误
-      if (error.message.includes('CONFLICT') || error.message.includes('modified by another user')) {
+      if (
+        error.message.includes('CONFLICT') ||
+        error.message.includes('modified by another user')
+      ) {
         toast.error('保存失败：BOM已被其他用户修改，请刷新后重试')
         // 强制刷新数据
         queryClient.invalidateQueries({ queryKey: BOMS_QUERY_KEY })
@@ -91,7 +99,9 @@ export function useBOMWriteActions() {
       bomService.deleteBOM(params.id),
     onSuccess: async (_void, variables) => {
       await queryClient.invalidateQueries({ queryKey: BOMS_QUERY_KEY })
-      await queryClient.invalidateQueries({ queryKey: bomVersionTraceQueryKeys.root() })
+      await queryClient.invalidateQueries({
+        queryKey: bomVersionTraceQueryKeys.root(),
+      })
 
       toast.success('BOM 已删除')
 
@@ -146,13 +156,18 @@ export function useBOMWriteActions() {
       ),
     onSuccess: async (saved, variables) => {
       await queryClient.invalidateQueries({ queryKey: BOMS_QUERY_KEY })
-      await queryClient.invalidateQueries({ queryKey: bomVersionTraceQueryKeys.root() })
+      await queryClient.invalidateQueries({
+        queryKey: bomVersionTraceQueryKeys.root(),
+      })
 
       // 仅 EBOM 走完整审批/发布流程；MBOM 在派生时走 CREATED_FROM_EBOM
       if (!isEBOM(saved)) return
 
       const previousStatus = variables.previousBom?.status
-      const semanticAction = deriveEbomSemanticAction(previousStatus, saved.status)
+      const semanticAction = deriveEbomSemanticAction(
+        previousStatus,
+        saved.status
+      )
       if (!semanticAction) return
 
       try {
@@ -164,19 +179,31 @@ export function useBOMWriteActions() {
           approverComment: variables.approverComment,
         })
       } catch (error) {
-        logger.warn('Failed to dispatch EBOM status event', { bomId: saved.id, error })
+        logger.warn('Failed to dispatch EBOM status event', {
+          bomId: saved.id,
+          error,
+        })
       }
     },
     onError: (error: Error, variables) => {
       // 处理状态转换错误
-      if (error.message.includes('CONFLICT') || error.message.includes('modified by another user')) {
+      if (
+        error.message.includes('CONFLICT') ||
+        error.message.includes('modified by another user')
+      ) {
         toast.error('状态流转失败：BOM已被其他用户修改，请刷新后重试')
         queryClient.invalidateQueries({ queryKey: BOMS_QUERY_KEY })
       } else if (error.message.includes('locked')) {
         toast.error('状态流转失败：BOM已被锁定')
-      } else if (error.message.includes('FORBIDDEN') || error.message.includes('permission')) {
+      } else if (
+        error.message.includes('FORBIDDEN') ||
+        error.message.includes('permission')
+      ) {
         toast.error('状态流转失败：您没有执行此操作的权限')
-      } else if (error.message.includes('transition') || error.message.includes('cannot')) {
+      } else if (
+        error.message.includes('transition') ||
+        error.message.includes('cannot')
+      ) {
         toast.error(`状态流转失败：不允许从当前状态转换到 ${variables.status}`)
       } else {
         toast.error(`状态流转失败：${error.message}`)
@@ -187,12 +214,18 @@ export function useBOMWriteActions() {
   const deriveMBOMMutation = useMutation({
     mutationFn: (params: {
       ebomId: string
-      input: { description?: string; revisionNo?: string; changeOrderNo?: string }
+      input: {
+        description?: string
+        revisionNo?: string
+        changeOrderNo?: string
+      }
       sourceEbom?: BOM
     }) => bomService.deriveMBOMFromEBOM(params.ebomId, params.input),
     onSuccess: async (newMbom, variables) => {
       await queryClient.invalidateQueries({ queryKey: BOMS_QUERY_KEY })
-      await queryClient.invalidateQueries({ queryKey: bomVersionTraceQueryKeys.root() })
+      await queryClient.invalidateQueries({
+        queryKey: bomVersionTraceQueryKeys.root(),
+      })
       toast.success('MBOM派生成功')
 
       const sourceEbom = variables.sourceEbom
@@ -233,7 +266,10 @@ export function useBOMWriteActions() {
         toast.error('派生失败：源EBOM不存在')
       } else if (error.message.includes('must be EBOM')) {
         toast.error('派生失败：只能从EBOM派生MBOM')
-      } else if (error.message.includes('RELEASED') || error.message.includes('released')) {
+      } else if (
+        error.message.includes('RELEASED') ||
+        error.message.includes('released')
+      ) {
         toast.error('派生失败：只能从已发布(RELEASED)的EBOM派生MBOM')
       } else if (error.message.includes('locked')) {
         toast.error('派生失败：源EBOM必须处于锁定状态')
@@ -246,12 +282,19 @@ export function useBOMWriteActions() {
   const reviseMBOMMutation = useMutation({
     mutationFn: (params: {
       mbomId: string
-      input: { reason: string; changeOrderNo?: string; revisionNo?: string; expectedVersion?: number }
+      input: {
+        reason: string
+        changeOrderNo?: string
+        revisionNo?: string
+        expectedVersion?: number
+      }
       previousMbom?: BOM
     }) => bomService.reviseMBOM(params.mbomId, params.input),
     onSuccess: async (newMbom, variables) => {
       await queryClient.invalidateQueries({ queryKey: BOMS_QUERY_KEY })
-      await queryClient.invalidateQueries({ queryKey: bomVersionTraceQueryKeys.root() })
+      await queryClient.invalidateQueries({
+        queryKey: bomVersionTraceQueryKeys.root(),
+      })
       toast.success('MBOM 修订成功，已产生新版本')
 
       const previousMbom = variables.previousMbom
@@ -287,7 +330,10 @@ export function useBOMWriteActions() {
       }
     },
     onError: (error: Error) => {
-      if (error.message.includes('CONFLICT') || error.message.includes('modified by another user')) {
+      if (
+        error.message.includes('CONFLICT') ||
+        error.message.includes('modified by another user')
+      ) {
         toast.error('修订失败：MBOM 已被其他用户修改，请刷新后重试')
         queryClient.invalidateQueries({ queryKey: BOMS_QUERY_KEY })
       } else if (error.message.includes('only RELEASED MBOM')) {

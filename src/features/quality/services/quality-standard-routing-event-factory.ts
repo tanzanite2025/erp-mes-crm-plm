@@ -1,6 +1,6 @@
 import type { NotificationType } from '@/features/system-mgmt/notifications/types'
-import { normalizeQualityStandardStatus } from '../utils/quality-utils'
 import type { Standard } from '../data/schema'
+import { normalizeQualityStandardStatus } from '../utils/quality-utils'
 
 export const QUALITY_STANDARD_SOURCE_CODE = 'QUALITY_STANDARD'
 export const QUALITY_STANDARD_NOTIFICATION_TYPE: NotificationType =
@@ -41,14 +41,15 @@ function buildQualityStandardRoutingContent(
   semanticAction: QualityStandardRoutingSemanticAction
 ) {
   const normalizedStatus = normalizeQualityStandardStatus(standard.status)
-  const semanticLabelMap: Record<QualityStandardRoutingSemanticAction, string> = {
-    CREATED: '标准已创建并进入受控域。',
-    SUBMITTED_FOR_APPROVAL: '标准已进入待审核阶段，请按规则链处理审批。',
-    APPROVED: '标准审批已完成，可继续进入发布链路。',
-    REJECTED: '标准已被驳回，请根据驳回原因修订。',
-    PUBLISHED: '标准已发布，可供执行链引用。',
-    ARCHIVED: '标准已归档，仅保留追溯与审计能力。',
-  }
+  const semanticLabelMap: Record<QualityStandardRoutingSemanticAction, string> =
+    {
+      CREATED: '标准已创建并进入受控域。',
+      SUBMITTED_FOR_APPROVAL: '标准已进入待审核阶段，请按规则链处理审批。',
+      APPROVED: '标准审批已完成，可继续进入发布链路。',
+      REJECTED: '标准已被驳回，请根据驳回原因修订。',
+      PUBLISHED: '标准已发布，可供执行链引用。',
+      ARCHIVED: '标准已归档，仅保留追溯与审计能力。',
+    }
 
   return `${standard.name || standard.code || standard.id} 当前状态：${normalizedStatus}。${semanticLabelMap[semanticAction]}`
 }

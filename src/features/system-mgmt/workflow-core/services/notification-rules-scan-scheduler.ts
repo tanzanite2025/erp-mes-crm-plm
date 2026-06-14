@@ -125,7 +125,9 @@ function unregister() {
  * 手动触发一次扫描（用于规则新增/编辑/启停后立即同步）。
  * 走同一去重通道，扫描在飞行中会跳过。
  */
-export async function triggerNotificationRulesScanNow(rules: NotificationRule[]) {
+export async function triggerNotificationRulesScanNow(
+  rules: NotificationRule[]
+) {
   if (activeHandle?.inFlight) return
   if (activeHandle) {
     activeHandle.inFlight = true

@@ -43,16 +43,23 @@ export function resolveAttributeDisplayValue(params: {
     return ''
   }
 
-  const normalizedCategoryKey = normalizeProductAttributeMachineValue(params.categoryKey)
+  const normalizedCategoryKey = normalizeProductAttributeMachineValue(
+    params.categoryKey
+  )
   const normalizedRawValue = normalizeProductAttributeMachineValue(rawValue)
   const option = params.options?.find((item) => {
-    if (normalizeProductAttributeMachineValue(item.categoryKey) !== normalizedCategoryKey) {
+    if (
+      normalizeProductAttributeMachineValue(item.categoryKey) !==
+      normalizedCategoryKey
+    ) {
       return false
     }
 
     const optionValue = normalizeTrimmedValue(item.value)
-    return optionValue === rawValue
-      || normalizeProductAttributeMachineValue(optionValue) === normalizedRawValue
+    return (
+      optionValue === rawValue ||
+      normalizeProductAttributeMachineValue(optionValue) === normalizedRawValue
+    )
   })
 
   return getOptionLabel(params.locale, option) || rawValue
@@ -75,13 +82,17 @@ function resolveCategoryDisplayLabel(params: {
   fallbackZh: string
   fallbackEn: string
 }): string {
-  const normalizedKey = normalizeProductAttributeMachineValue(params.categoryKey)
+  const normalizedKey = normalizeProductAttributeMachineValue(
+    params.categoryKey
+  )
   const category = params.categories?.find(
     (item) => normalizeProductAttributeMachineValue(item.key) === normalizedKey
   )
 
-  return getCategoryName(params.locale, category)
-    || resolveLocalizedLabel(params.locale, params.fallbackZh, params.fallbackEn)
+  return (
+    getCategoryName(params.locale, category) ||
+    resolveLocalizedLabel(params.locale, params.fallbackZh, params.fallbackEn)
+  )
 }
 
 function buildSupplementalItem(params: {
@@ -104,7 +115,15 @@ export function resolveProductAggregateDisplay(params: {
   locale: string
   product: Pick<Product, 'name' | 'typeId' | 'attributeValues'>
   productTypes: ProductType[]
-  bom?: Pick<BOM, 'bomType' | 'ownerType' | 'ownerCustomerId' | 'versionLevel' | 'measuredWeight' | 'measuredWeightUnit'> | null
+  bom?: Pick<
+    BOM,
+    | 'bomType'
+    | 'ownerType'
+    | 'ownerCustomerId'
+    | 'versionLevel'
+    | 'measuredWeight'
+    | 'measuredWeightUnit'
+  > | null
   categories?: ProductAttributeCategory[]
   options?: ProductAttributeOption[]
   customerNameMap?: Map<string, string>
@@ -115,15 +134,18 @@ export function resolveProductAggregateDisplay(params: {
   emptyValue?: string
 }): ProductAggregateDisplayResult {
   const baseModelLabel =
-    normalizeTrimmedValue(resolveEffectiveProductName({
-      product: params.product,
-      productTypes: params.productTypes,
-    }))
-    || normalizeTrimmedValue(params.product.name)
-    || normalizeTrimmedValue(params.emptyBaseLabel)
-    || 'UNNAMED'
-  const emptyValue = normalizeTrimmedValue(params.emptyValue)
-    || resolveLocalizedLabel(params.locale, '未绑定', 'Unbound')
+    normalizeTrimmedValue(
+      resolveEffectiveProductName({
+        product: params.product,
+        productTypes: params.productTypes,
+      })
+    ) ||
+    normalizeTrimmedValue(params.product.name) ||
+    normalizeTrimmedValue(params.emptyBaseLabel) ||
+    'UNNAMED'
+  const emptyValue =
+    normalizeTrimmedValue(params.emptyValue) ||
+    resolveLocalizedLabel(params.locale, '未绑定', 'Unbound')
 
   const ownerDisplay = params.bom
     ? resolveBOMOwnerDisplay(params.bom, {
@@ -132,14 +154,15 @@ export function resolveProductAggregateDisplay(params: {
         customerNameMap: params.customerNameMap,
       })
     : null
-  const ownerCustomerLabel = ownerDisplay?.ownerType === 'CUSTOMER'
-    ? normalizeTrimmedValue(ownerDisplay.label)
-    : ''
+  const ownerCustomerLabel =
+    ownerDisplay?.ownerType === 'CUSTOMER'
+      ? normalizeTrimmedValue(ownerDisplay.label)
+      : ''
   const ownerTypeLabel = !params.bom
     ? ''
     : ownerDisplay?.ownerType === 'CUSTOMER'
-      ? normalizeTrimmedValue(params.ownerTypeCustomerLabel)
-        || resolveLocalizedLabel(params.locale, '客户', 'Customer')
+      ? normalizeTrimmedValue(params.ownerTypeCustomerLabel) ||
+        resolveLocalizedLabel(params.locale, '客户', 'Customer')
       : params.ownerTypeInternalLabel
   const versionLabel = resolveAttributeDisplayValue({
     locale: params.locale,
@@ -151,14 +174,25 @@ export function resolveProductAggregateDisplay(params: {
   const brakeLabel = resolveAttributeDisplayValue({
     locale: params.locale,
     categoryKey: PRODUCT_ATTRIBUTE_CATEGORY_KEYS.brake,
-    rawValue: getAttributeValue(params.product, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.brake),
+    rawValue: getAttributeValue(
+      params.product,
+      PRODUCT_ATTRIBUTE_CATEGORY_KEYS.brake
+    ),
     options: params.options,
   })
   const titleCoveredKeys = [
     ownerCustomerLabel ? 'bom-owner-customer' : '',
-    versionLabel ? normalizeProductAttributeMachineValue(PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version) : '',
+    versionLabel
+      ? normalizeProductAttributeMachineValue(
+          PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version
+        )
+      : '',
     measuredWeightLabel ? 'bom-measured-weight' : '',
-    brakeLabel ? normalizeProductAttributeMachineValue(PRODUCT_ATTRIBUTE_CATEGORY_KEYS.brake) : '',
+    brakeLabel
+      ? normalizeProductAttributeMachineValue(
+          PRODUCT_ATTRIBUTE_CATEGORY_KEYS.brake
+        )
+      : '',
   ].filter(Boolean)
   const aggregateSegments = [
     ownerCustomerLabel,
@@ -172,7 +206,7 @@ export function resolveProductAggregateDisplay(params: {
       key: 'bom-type',
       label: resolveLocalizedLabel(params.locale, 'BOM类型', 'BOM Type'),
       value: params.bom
-        ? (normalizeTrimmedValue(params.bom.bomType) || 'EBOM')
+        ? normalizeTrimmedValue(params.bom.bomType) || 'EBOM'
         : '',
       emptyValue,
     }),
@@ -189,7 +223,9 @@ export function resolveProductAggregateDisplay(params: {
       emptyValue,
     }),
     buildSupplementalItem({
-      key: normalizeProductAttributeMachineValue(PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version),
+      key: normalizeProductAttributeMachineValue(
+        PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version
+      ),
       label: resolveCategoryDisplayLabel({
         locale: params.locale,
         categoryKey: PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version,
@@ -202,12 +238,18 @@ export function resolveProductAggregateDisplay(params: {
     }),
     buildSupplementalItem({
       key: 'bom-measured-weight',
-      label: resolveLocalizedLabel(params.locale, '成品重量', 'Finished Weight'),
+      label: resolveLocalizedLabel(
+        params.locale,
+        '成品重量',
+        'Finished Weight'
+      ),
       value: measuredWeightLabel,
       emptyValue,
     }),
     buildSupplementalItem({
-      key: normalizeProductAttributeMachineValue(PRODUCT_ATTRIBUTE_CATEGORY_KEYS.brake),
+      key: normalizeProductAttributeMachineValue(
+        PRODUCT_ATTRIBUTE_CATEGORY_KEYS.brake
+      ),
       label: resolveCategoryDisplayLabel({
         locale: params.locale,
         categoryKey: PRODUCT_ATTRIBUTE_CATEGORY_KEYS.brake,
@@ -221,9 +263,10 @@ export function resolveProductAggregateDisplay(params: {
   ]
 
   return {
-    label: aggregateSegments.length > 0
-      ? `${baseModelLabel} (${aggregateSegments.join(' / ')})`
-      : baseModelLabel,
+    label:
+      aggregateSegments.length > 0
+        ? `${baseModelLabel} (${aggregateSegments.join(' / ')})`
+        : baseModelLabel,
     titleCoveredKeys,
     supplementalItems,
   }
@@ -233,7 +276,15 @@ export function resolveProductAggregateDisplayLabel(params: {
   locale: string
   product: Pick<Product, 'name' | 'typeId' | 'attributeValues'>
   productTypes: ProductType[]
-  bom?: Pick<BOM, 'bomType' | 'ownerType' | 'ownerCustomerId' | 'versionLevel' | 'measuredWeight' | 'measuredWeightUnit'> | null
+  bom?: Pick<
+    BOM,
+    | 'bomType'
+    | 'ownerType'
+    | 'ownerCustomerId'
+    | 'versionLevel'
+    | 'measuredWeight'
+    | 'measuredWeightUnit'
+  > | null
   categories?: ProductAttributeCategory[]
   options?: ProductAttributeOption[]
   customerNameMap?: Map<string, string>

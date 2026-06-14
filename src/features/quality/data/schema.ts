@@ -69,7 +69,9 @@ export const approvalRequestSummarySchema = z.object({
   verifierId: z.string().optional(),
 })
 
-export type ApprovalRequestSummary = z.infer<typeof approvalRequestSummarySchema>
+export type ApprovalRequestSummary = z.infer<
+  typeof approvalRequestSummarySchema
+>
 
 export const standardSchema = z.object({
   id: z.string(),

@@ -9,9 +9,13 @@ import {
   type ReceivableDetailApiDTO,
 } from '../contracts/receivable-api-dto'
 
-export async function getReceivableLedgerDetail(id: string): Promise<ReceivableDetailApiDTO> {
+export async function getReceivableLedgerDetail(
+  id: string
+): Promise<ReceivableDetailApiDTO> {
   const res = await apiFetch<ReceivableDetailApiDTO>(`/receivables/${id}`)
-  const payload = ensureObjectResponse<ReceivableDetailApiDTO & Record<string, unknown>>(
+  const payload = ensureObjectResponse<
+    ReceivableDetailApiDTO & Record<string, unknown>
+  >(
     res,
     'ReceivableLedgerDetailService.getReceivableLedgerDetail'
   ) as ReceivableDetailApiDTO
@@ -20,15 +24,20 @@ export async function getReceivableLedgerDetail(id: string): Promise<ReceivableD
 
 export async function createReceiptRecord(
   id: string,
-  payload: CreateReceiptRecordApiDTO,
+  payload: CreateReceiptRecordApiDTO
 ): Promise<CreateReceiptRecordResponseApiDTO> {
   const request = deserializeCreateSettlementRecordApiDTO(payload)
-  const res = await apiFetch<CreateReceiptRecordResponseApiDTO>(`/receivables/${id}/receipts`, {
-    method: 'POST',
-    body: JSON.stringify(request),
-  })
+  const res = await apiFetch<CreateReceiptRecordResponseApiDTO>(
+    `/receivables/${id}/receipts`,
+    {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }
+  )
 
-  const response = ensureObjectResponse<CreateReceiptRecordResponseApiDTO & Record<string, unknown>>(
+  const response = ensureObjectResponse<
+    CreateReceiptRecordResponseApiDTO & Record<string, unknown>
+  >(
     res,
     'ReceivableLedgerDetailService.createReceiptRecord'
   ) as CreateReceiptRecordResponseApiDTO

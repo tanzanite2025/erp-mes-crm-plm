@@ -1,12 +1,19 @@
 import { useCallback } from 'react'
-import { type SalesOrderFormValues, type SalesOrderLine, createEmptySalesOrderLine } from '../data/schema'
-import { previewLineAmount, previewOrderTotals } from '../utils/sales-order-calc'
+import {
+  type SalesOrderFormValues,
+  type SalesOrderLine,
+  createEmptySalesOrderLine,
+} from '../data/schema'
+import {
+  previewLineAmount,
+  previewOrderTotals,
+} from '../utils/sales-order-calc'
 
 type SalesOrderLineFieldValue = SalesOrderLine[keyof SalesOrderLine]
 
 /**
  * useSalesOrderOps - 负责销售订单明细行的 CRUD 操作及前端预览重算逻辑。
- * 
+ *
  * ⚠️ 架构约束：
  * 所有的量值（quantity, amount）计算在此 Hook 中仅作为 UI 预览使用。
  * 系统的最终权威数据由 Go 后端计算引擎在提交时重算生成。
@@ -21,15 +28,19 @@ export function useSalesOrderOps(
     setFormData((prev) => {
       const lines = prev.lines || []
       const nextRawLines = [...lines, createEmptySalesOrderLine()]
-      
+
       // [PREVIEW-ONLY] 重新计算预览统计
-      const { lines: reindexedLines, quantity, amount } = previewOrderTotals(nextRawLines)
-      
-      return { 
-        ...prev, 
-        lines: reindexedLines, 
-        quantity, 
-        amount 
+      const {
+        lines: reindexedLines,
+        quantity,
+        amount,
+      } = previewOrderTotals(nextRawLines)
+
+      return {
+        ...prev,
+        lines: reindexedLines,
+        quantity,
+        amount,
       }
     })
   }, [setFormData])
@@ -37,39 +48,53 @@ export function useSalesOrderOps(
   /**
    * 删除行
    */
-  const handleRemoveLine = useCallback((index: number) => {
-    setFormData((prev) => {
-      if (!prev.lines || index < 0 || index >= prev.lines.length) {
-        return prev;
-      }
+  const handleRemoveLine = useCallback(
+    (index: number) => {
+      setFormData((prev) => {
+        if (!prev.lines || index < 0 || index >= prev.lines.length) {
+          return prev
+        }
 
-      const nextRawLines = prev.lines.filter((_, lineIndex) => lineIndex !== index)
-      
-      // [PREVIEW-ONLY] 重新计算预览统计
-      const { lines: reindexedLines, quantity, amount } = previewOrderTotals(nextRawLines)
-      
-      return { 
-        ...prev, 
-        lines: reindexedLines, 
-        quantity, 
-        amount 
-      }
-    })
-  }, [setFormData])
+        const nextRawLines = prev.lines.filter(
+          (_, lineIndex) => lineIndex !== index
+        )
+
+        // [PREVIEW-ONLY] 重新计算预览统计
+        const {
+          lines: reindexedLines,
+          quantity,
+          amount,
+        } = previewOrderTotals(nextRawLines)
+
+        return {
+          ...prev,
+          lines: reindexedLines,
+          quantity,
+          amount,
+        }
+      })
+    },
+    [setFormData]
+  )
 
   /**
    * 更新行字段
    */
   const updateLine = useCallback(
-    (index: number, field: keyof SalesOrderLine, value: SalesOrderLineFieldValue, extraData?: Partial<SalesOrderLine>) => {
+    (
+      index: number,
+      field: keyof SalesOrderLine,
+      value: SalesOrderLineFieldValue,
+      extraData?: Partial<SalesOrderLine>
+    ) => {
       setFormData((prev) => {
         const nextLines = [...(prev.lines || [])]
         const targetLine = nextLines[index]
-        
+
         if (!targetLine) {
-          return prev;
+          return prev
         }
-        
+
         // 1. 基本字段更新
         let finalValue = value
         if (field === 'qty' || field === 'price' || field === 'holeCount') {
@@ -87,13 +112,17 @@ export function useSalesOrderOps(
         }
 
         // 3. [PREVIEW-ONLY] 全单统计预览
-        const { lines: reindexedLines, quantity, amount } = previewOrderTotals(nextLines)
-        
-        return { 
-          ...prev, 
-          lines: reindexedLines, 
-          quantity, 
-          amount 
+        const {
+          lines: reindexedLines,
+          quantity,
+          amount,
+        } = previewOrderTotals(nextLines)
+
+        return {
+          ...prev,
+          lines: reindexedLines,
+          quantity,
+          amount,
         }
       })
     },

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ScanLine } from 'lucide-react'
+import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -9,7 +10,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { useLanguage } from '@/context/language-provider'
 
 type PrepregBindTokenEntryDialogProps = {
   open: boolean
@@ -36,11 +36,11 @@ export function PrepregBindTokenEntryDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className='gap-4 rounded-[32px] border-none p-6 sm:max-w-xl'>
         <DialogHeader className='space-y-2'>
-          <DialogTitle className='flex items-center gap-2 text-lg font-black italic uppercase tracking-tighter'>
+          <DialogTitle className='flex items-center gap-2 text-lg font-black tracking-tighter uppercase italic'>
             <ScanLine className='size-5 text-primary' />
             {t('rawMaterials.catalog.scanBinding.title')}
           </DialogTitle>
-          <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+          <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
             {t('rawMaterials.catalog.scanBinding.description')}
           </p>
         </DialogHeader>
@@ -59,7 +59,7 @@ export function PrepregBindTokenEntryDialog({
             className='h-12 rounded-2xl border-none bg-muted/50 text-[10px] font-black tracking-[0.14em] placeholder:text-muted-foreground/45'
             autoFocus
           />
-          <p className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>
+          <p className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
             {t('rawMaterials.catalog.scanBinding.hint')}
           </p>
         </div>
@@ -69,14 +69,14 @@ export function PrepregBindTokenEntryDialog({
             type='button'
             variant='outline'
             onClick={() => onOpenChange(false)}
-            className='h-11 rounded-full px-6 text-[10px] font-black uppercase tracking-widest'
+            className='h-11 rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
           >
             {t('rawMaterials.catalog.actions.cancel')}
           </Button>
           <Button
             type='button'
             onClick={() => onSubmit(value)}
-            className='h-11 rounded-full px-6 text-[10px] font-black uppercase tracking-widest'
+            className='h-11 rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
           >
             <ScanLine className='size-4' />
             {t('rawMaterials.catalog.actions.scanBind')}

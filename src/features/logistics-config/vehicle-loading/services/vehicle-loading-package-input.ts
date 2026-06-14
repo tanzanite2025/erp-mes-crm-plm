@@ -64,7 +64,12 @@ export function buildManualVehicleLoadingPackageInput(
     packageId: 'manual-shipment',
     name: sourceLabel,
     unitWeightKg:
-      summary.boxes > 0 ? validatePositiveNumber(summary.totalWeightKg / summary.boxes, 'Manual unit weight') : validatePositiveNumber(summary.totalWeightKg, 'Manual total weight'),
+      summary.boxes > 0
+        ? validatePositiveNumber(
+            summary.totalWeightKg / summary.boxes,
+            'Manual unit weight'
+          )
+        : validatePositiveNumber(summary.totalWeightKg, 'Manual total weight'),
     dimension: DEFAULT_VEHICLE_LOADING_PACKAGE_DIMENSION,
   }
 }
@@ -74,7 +79,11 @@ export function createDefaultVehicleLoadingApiPackageDraft(
 ): VehicleLoadingApiPackageDraft {
   return {
     name: 'API 输入箱型',
-    unitWeightKg: String(summary.boxes > 0 ? Number((summary.totalWeightKg / summary.boxes).toFixed(3)) : summary.totalWeightKg),
+    unitWeightKg: String(
+      summary.boxes > 0
+        ? Number((summary.totalWeightKg / summary.boxes).toFixed(3))
+        : summary.totalWeightKg
+    ),
     lengthMm: String(DEFAULT_VEHICLE_LOADING_PACKAGE_DIMENSION.lengthMm),
     widthMm: String(DEFAULT_VEHICLE_LOADING_PACKAGE_DIMENSION.widthMm),
     heightMm: String(DEFAULT_VEHICLE_LOADING_PACKAGE_DIMENSION.heightMm),
@@ -87,17 +96,30 @@ export function buildVehicleLoadingPackageInputFromProfile(
   profile: PackagingProfile,
   sourceLabel = '包装规则结果'
 ): VehicleLoadingPackageInput {
-  const unitWeightBase = profile.grossWeight > 0 ? profile.grossWeight : profile.netWeight
+  const unitWeightBase =
+    profile.grossWeight > 0 ? profile.grossWeight : profile.netWeight
 
   return {
     packageId: profile.id,
     profileId: profile.id,
     name: profile.name || sourceLabel,
-    unitWeightKg: validatePositiveNumber(toKilograms(unitWeightBase, profile.weightUnitCode), 'Packaging profile gross weight'),
+    unitWeightKg: validatePositiveNumber(
+      toKilograms(unitWeightBase, profile.weightUnitCode),
+      'Packaging profile gross weight'
+    ),
     dimension: {
-      lengthMm: validatePositiveNumber(toMillimeters(profile.length, profile.dimensionUnitCode), 'Packaging profile length'),
-      widthMm: validatePositiveNumber(toMillimeters(profile.width, profile.dimensionUnitCode), 'Packaging profile width'),
-      heightMm: validatePositiveNumber(toMillimeters(profile.height, profile.dimensionUnitCode), 'Packaging profile height'),
+      lengthMm: validatePositiveNumber(
+        toMillimeters(profile.length, profile.dimensionUnitCode),
+        'Packaging profile length'
+      ),
+      widthMm: validatePositiveNumber(
+        toMillimeters(profile.width, profile.dimensionUnitCode),
+        'Packaging profile width'
+      ),
+      heightMm: validatePositiveNumber(
+        toMillimeters(profile.height, profile.dimensionUnitCode),
+        'Packaging profile height'
+      ),
       canRotate: true,
       canInvert: false,
     },
@@ -111,7 +133,10 @@ export function buildVehicleLoadingPackageInputFromApiDraft(
   return {
     packageId: 'api-package-input',
     name: draft.name.trim() || sourceLabel,
-    unitWeightKg: validatePositiveNumber(Number(draft.unitWeightKg), 'API unit weight'),
+    unitWeightKg: validatePositiveNumber(
+      Number(draft.unitWeightKg),
+      'API unit weight'
+    ),
     dimension: {
       lengthMm: validatePositiveNumber(Number(draft.lengthMm), 'API length'),
       widthMm: validatePositiveNumber(Number(draft.widthMm), 'API width'),

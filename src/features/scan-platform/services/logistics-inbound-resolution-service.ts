@@ -1,9 +1,9 @@
+import { normalizeTrackingCode } from '@/lib/codecs/code-normalization'
 import type { ScanResolveInput, ScanResolvedContext } from '../core/types'
 import type {
   LogisticsInboundHostContext,
   LogisticsInboundScanPayload,
 } from '../models/logistics-inbound'
-import { normalizeTrackingCode } from '@/lib/codecs/code-normalization'
 
 export const logisticsInboundResolutionService = {
   async resolve(
@@ -13,7 +13,9 @@ export const logisticsInboundResolutionService = {
     const hostContext = input.context
     if (!hostContext) {
       // 物流进货解析必须具备宿主上下文（采购单信息等），否则将导致采集流程中断或数据孤立
-      throw new Error(`[CRITICAL] Logistics scanning requires host context (Purchase Order info) but received null/undefined`);
+      throw new Error(
+        `[CRITICAL] Logistics scanning requires host context (Purchase Order info) but received null/undefined`
+      )
     }
     const inferredCarrier = hostContext.carrier || undefined
 

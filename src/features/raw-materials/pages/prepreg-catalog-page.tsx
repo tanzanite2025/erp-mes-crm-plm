@@ -32,7 +32,7 @@ export function PrepregCatalogPage() {
   } = usePrepregCatalogPageState()
 
   return (
-    <div className='flex flex-col gap-5 animate-in fade-in duration-700'>
+    <div className='flex animate-in flex-col gap-5 duration-700 fade-in'>
       <PrepregCatalogList
         searchTerm={searchTerm}
         onSearchTermChange={setSearchTerm}

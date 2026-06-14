@@ -21,7 +21,9 @@ export function useUnitsQuery(options: UseUnitsQueryOptions = {}) {
   })
 
   const invalidateUnits = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: BASIC_SETTINGS_UNITS_QUERY_KEY })
+    await queryClient.invalidateQueries({
+      queryKey: BASIC_SETTINGS_UNITS_QUERY_KEY,
+    })
   }, [queryClient])
 
   const readResource: ReadResource<Unit[]> = (() => {

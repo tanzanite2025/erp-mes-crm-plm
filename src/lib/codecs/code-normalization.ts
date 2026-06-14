@@ -16,7 +16,10 @@ export function normalizeDeviceCode(value?: string | null): string {
   return (value || '').trim().toUpperCase()
 }
 
-export function normalizeComponentKey(value?: string | null, fallback = 'GENERAL'): string {
+export function normalizeComponentKey(
+  value?: string | null,
+  fallback = 'GENERAL'
+): string {
   const normalized = (value || '').trim().toUpperCase()
   return normalized || fallback
 }
@@ -25,7 +28,10 @@ export function normalizeSku(value?: string | null): string {
   return (value || '').trim().toUpperCase()
 }
 
-export function normalizeModelCode(value?: string | null, fallback = '01'): string {
+export function normalizeModelCode(
+  value?: string | null,
+  fallback = '01'
+): string {
   const normalized = (value || '').replace(/\D/g, '').slice(0, 2)
   return normalized || fallback
 }
@@ -42,7 +48,10 @@ export function normalizeChangeOrderNo(value?: string | null): string {
   return (value || '').trim().toUpperCase()
 }
 
-export function normalizeRevisionNo(value?: string | null, fallback = 'R1'): string {
+export function normalizeRevisionNo(
+  value?: string | null,
+  fallback = 'R1'
+): string {
   const normalized = (value || '').trim().toUpperCase()
   return normalized || fallback
 }
@@ -51,7 +60,10 @@ export function normalizeBomNo(value?: string | null): string {
   return (value || '').trim().toUpperCase()
 }
 
-export function normalizeBomVersion(value?: string | null, fallback = 'V1.0'): string {
+export function normalizeBomVersion(
+  value?: string | null,
+  fallback = 'V1.0'
+): string {
   const normalized = (value || '').trim().toUpperCase()
   return normalized || fallback
 }
@@ -108,7 +120,9 @@ const BOM_STATUSES = new Set<string>(BOM_STATUS_ORDER)
  * - EBOM：完整 5 状态
  * - MBOM：仅 RELEASED / OBSOLETE
  */
-export function getBomStatusOrderByType(bomType?: string | null): readonly BomStatus[] {
+export function getBomStatusOrderByType(
+  bomType?: string | null
+): readonly BomStatus[] {
   const normalized = (bomType || '').trim().toUpperCase()
   if (normalized === 'MBOM') {
     return MBOM_STATUS_ORDER
@@ -118,17 +132,23 @@ export function getBomStatusOrderByType(bomType?: string | null): readonly BomSt
 
 export const ENGINEERING_DATE_PROTOCOL_FORMAT = 'yyyy-MM-dd'
 export const ENGINEERING_OPTIONAL_DATE_PROTOCOL_REGEX = /^$|^\d{4}-\d{2}-\d{2}$/
-export const ENGINEERING_DATE_PROTOCOL_VALIDATION_MESSAGE = 'Date must follow YYYY-MM-DD format'
+export const ENGINEERING_DATE_PROTOCOL_VALIDATION_MESSAGE =
+  'Date must follow YYYY-MM-DD format'
 
 export function formatEngineeringDateProtocol(date: Date): string {
   return format(date, ENGINEERING_DATE_PROTOCOL_FORMAT)
 }
 
-export function normalizeEngineeringDateProtocol(value?: string | null): string {
+export function normalizeEngineeringDateProtocol(
+  value?: string | null
+): string {
   return (value || '').trim().slice(0, 10)
 }
 
-export function normalizeBomChangeType(value?: string | null, fallback = 'MANUAL'): 'MANUAL' | 'ECO' | 'ECN' {
+export function normalizeBomChangeType(
+  value?: string | null,
+  fallback = 'MANUAL'
+): 'MANUAL' | 'ECO' | 'ECN' {
   const normalized = (value || '').trim().toUpperCase()
   if (BOM_CHANGE_TYPES.has(normalized)) {
     return normalized as 'MANUAL' | 'ECO' | 'ECN'
@@ -136,7 +156,10 @@ export function normalizeBomChangeType(value?: string | null, fallback = 'MANUAL
   return fallback as 'MANUAL' | 'ECO' | 'ECN'
 }
 
-export function normalizeBomStatus(value?: string | null, fallback = 'DRAFT'): string {
+export function normalizeBomStatus(
+  value?: string | null,
+  fallback = 'DRAFT'
+): string {
   const normalized = (value || '').trim().toUpperCase()
   if (BOM_STATUSES.has(normalized)) {
     return normalized
@@ -144,7 +167,10 @@ export function normalizeBomStatus(value?: string | null, fallback = 'DRAFT'): s
   return fallback
 }
 
-export function normalizeSceneKey(value?: string | null, fallback = 'general'): string {
+export function normalizeSceneKey(
+  value?: string | null,
+  fallback = 'general'
+): string {
   const normalized = (value || '').trim().toLowerCase()
   return normalized || fallback
 }

@@ -1,10 +1,13 @@
 import { useMemo } from 'react'
 import { createLogger } from '@/lib/logger'
 import { resolveQueryFailure } from '@/lib/read-resource'
-import { SettlementLedgerDetailDialog } from '../../settlement-ledger-detail-dialog'
 import { useTradingFinanceResources } from '../../hooks/use-trading-finance-resources'
+import { SettlementLedgerDetailDialog } from '../../settlement-ledger-detail-dialog'
 import { purchasePayableDetailDialogConfig } from '../config/purchase-payable-detail-dialog.config'
-import { useCreatePaymentRecord, usePayableLedgerDetail } from '../hooks/use-payable-ledger-detail'
+import {
+  useCreatePaymentRecord,
+  usePayableLedgerDetail,
+} from '../hooks/use-payable-ledger-detail'
 import { useGetPayables, useSearchPayableLedgers } from '../hooks/use-payables'
 
 const logger = createLogger('PurchasePayableDetailDialog')
@@ -28,14 +31,16 @@ export function PurchasePayableDetailDialog({
     includePaymentMethods: false,
     includePaymentTerms: false,
   })
-  const financeResourceStatus = financeResources.readResource.status === 'error'
-    ? 'error'
-    : financeResources.readResource.status === 'loading'
-      ? 'loading'
-      : 'ready'
-  const financeResourceErrorMessage = financeResources.readResource.status === 'error'
-    ? financeResources.readResource.error.message
-    : undefined
+  const financeResourceStatus =
+    financeResources.readResource.status === 'error'
+      ? 'error'
+      : financeResources.readResource.status === 'loading'
+        ? 'loading'
+        : 'ready'
+  const financeResourceErrorMessage =
+    financeResources.readResource.status === 'error'
+      ? financeResources.readResource.error.message
+      : undefined
   const dialogResource = useMemo(() => {
     if (!open || !ledgerId) {
       return { status: 'idle' as const }
@@ -63,7 +68,10 @@ export function PurchasePayableDetailDialog({
       }
     }
 
-    if (detailQuery.readResource.status === 'loading' || payablesQuery.isPending) {
+    if (
+      detailQuery.readResource.status === 'loading' ||
+      payablesQuery.isPending
+    ) {
       return { status: 'loading' as const }
     }
 
@@ -76,7 +84,14 @@ export function PurchasePayableDetailDialog({
       detail: detailQuery.readResource.data,
       ledgerOptions: payablesQuery.data?.items ?? [],
     }
-  }, [detailQuery.readResource, ledgerId, open, payablesQuery.data?.items, payablesQuery.error, payablesQuery.isPending])
+  }, [
+    detailQuery.readResource,
+    ledgerId,
+    open,
+    payablesQuery.data?.items,
+    payablesQuery.error,
+    payablesQuery.isPending,
+  ])
 
   return (
     <SettlementLedgerDetailDialog
@@ -84,10 +99,22 @@ export function PurchasePayableDetailDialog({
       open={open}
       ledgerId={ledgerId}
       onOpenChange={onOpenChange}
-      detail={dialogResource.status === 'ready' ? dialogResource.detail : undefined}
-      records={dialogResource.status === 'ready' ? dialogResource.detail.paymentRecords : []}
-      allocationHistory={dialogResource.status === 'ready' ? dialogResource.detail.allocations : []}
-      ledgerOptions={dialogResource.status === 'ready' ? dialogResource.ledgerOptions : []}
+      detail={
+        dialogResource.status === 'ready' ? dialogResource.detail : undefined
+      }
+      records={
+        dialogResource.status === 'ready'
+          ? dialogResource.detail.paymentRecords
+          : []
+      }
+      allocationHistory={
+        dialogResource.status === 'ready'
+          ? dialogResource.detail.allocations
+          : []
+      }
+      ledgerOptions={
+        dialogResource.status === 'ready' ? dialogResource.ledgerOptions : []
+      }
       currencies={financeResources.currencies}
       paymentMethods={financeResources.paymentMethods}
       isCurrencyLoading={financeResources.isLoading}
@@ -97,9 +124,16 @@ export function PurchasePayableDetailDialog({
         void financeResources.retry()
       }}
       detailResourceStatus={dialogResource.status}
-      detailResourceErrorMessage={dialogResource.status === 'error' ? dialogResource.errorMessage : undefined}
+      detailResourceErrorMessage={
+        dialogResource.status === 'error'
+          ? dialogResource.errorMessage
+          : undefined
+      }
       onRetryDetailResource={() => {
-        void Promise.all([detailQuery.retryRead(), payablesQuery.refetch()]).catch((error) => {
+        void Promise.all([
+          detailQuery.retryRead(),
+          payablesQuery.refetch(),
+        ]).catch((error) => {
           logger.error('Failed to retry payable detail resources', error)
         })
       }}

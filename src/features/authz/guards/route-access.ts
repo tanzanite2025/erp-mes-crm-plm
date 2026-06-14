@@ -1,7 +1,13 @@
 import type { TabItem } from '@/components/module-tabs'
-import { getAuthSessionPermissionIds, type AuthSessionUserLike } from '@/features/authz/utils/auth-session'
-import { hasAnyId, parseRequiredIds } from '@/features/authz/core/permission-kernel'
+import {
+  hasAnyId,
+  parseRequiredIds,
+} from '@/features/authz/core/permission-kernel'
 import { resolveRoutePermissionIds } from '@/features/authz/data/route-permission-queries'
+import {
+  getAuthSessionPermissionIds,
+  type AuthSessionUserLike,
+} from '@/features/authz/utils/auth-session'
 
 type RouteAccessOptions = {
   strictTab?: boolean
@@ -9,15 +15,21 @@ type RouteAccessOptions = {
 
 function matchesPermissionSnapshot(
   user: AuthSessionUserLike | null | undefined,
-  permissionId: string | string[],
+  permissionId: string | string[]
 ): boolean {
-  return hasAnyId(getAuthSessionPermissionIds(user), parseRequiredIds(permissionId))
+  return hasAnyId(
+    getAuthSessionPermissionIds(user),
+    parseRequiredIds(permissionId)
+  )
 }
 
 /**
  * Resolve projected permission ids for a route path.
  */
-export function getProjectedPermissionIdsForPath(path: string, options: RouteAccessOptions = {}): string[] {
+export function getProjectedPermissionIdsForPath(
+  path: string,
+  options: RouteAccessOptions = {}
+): string[] {
   const strictTab = options.strictTab ?? false
   return resolveRoutePermissionIds(path, strictTab)
 }
@@ -28,7 +40,7 @@ export function getProjectedPermissionIdsForPath(path: string, options: RouteAcc
 export function matchesPathPermissionProjection(
   user: AuthSessionUserLike | null | undefined,
   path: string,
-  options: RouteAccessOptions = {},
+  options: RouteAccessOptions = {}
 ): boolean {
   const requiredPermissionIds = getProjectedPermissionIdsForPath(path, options)
 
@@ -36,7 +48,9 @@ export function matchesPathPermissionProjection(
     return true
   }
 
-  return requiredPermissionIds.some((permissionId) => matchesPermissionSnapshot(user, permissionId))
+  return requiredPermissionIds.some((permissionId) =>
+    matchesPermissionSnapshot(user, permissionId)
+  )
 }
 
 /**
@@ -45,7 +59,7 @@ export function matchesPathPermissionProjection(
 export function getProjectedTabsFromPermissionSnapshot(
   user: AuthSessionUserLike | null | undefined,
   tabs: TabItem[],
-  options: RouteAccessOptions = {},
+  options: RouteAccessOptions = {}
 ): TabItem[] {
   return tabs.filter((tab) => {
     if (tab.permissionId) {

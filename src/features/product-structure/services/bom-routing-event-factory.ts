@@ -89,10 +89,14 @@ export function buildBomEngineeringRoutingEvent(input: BuildEbomMetadataInput) {
  * 构造 MBOM 路由事件。CREATED_FROM_EBOM 用 CREATED_FROM_EBOM action，
  * 其它都按各自的 custom action 处理。
  */
-export function buildBomManufacturingRoutingEvent(input: BuildMbomMetadataInput) {
+export function buildBomManufacturingRoutingEvent(
+  input: BuildMbomMetadataInput
+) {
   const { bom, semanticAction } = input
   const action =
-    semanticAction === 'CREATED_FROM_EBOM' ? 'CREATED_FROM_EBOM' : semanticAction
+    semanticAction === 'CREATED_FROM_EBOM'
+      ? 'CREATED_FROM_EBOM'
+      : semanticAction
 
   return {
     type: BOM_NOTIFICATION_TYPE,

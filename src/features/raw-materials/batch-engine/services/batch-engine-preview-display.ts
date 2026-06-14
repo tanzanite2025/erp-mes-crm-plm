@@ -1,4 +1,7 @@
-import type { BatchOptimizerPlan, BatchOptimizerPlanDiffSummary } from '../types'
+import type {
+  BatchOptimizerPlan,
+  BatchOptimizerPlanDiffSummary,
+} from '../types'
 
 export type BatchEnginePreviewDisplayMode = 'local-preview' | 'solved-plan'
 
@@ -15,7 +18,9 @@ export function resolveBatchEnginePreviewDisplayState(
   return {
     mode: selectedPlan ? 'solved-plan' : 'local-preview',
     selectedPlan,
-    diffSummary: selectedPlan ? (activeDiffSummary ?? selectedPlan.diffSummary) : undefined,
+    diffSummary: selectedPlan
+      ? (activeDiffSummary ?? selectedPlan.diffSummary)
+      : undefined,
   }
 }
 

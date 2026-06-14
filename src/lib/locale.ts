@@ -1,5 +1,5 @@
-import { getCookie } from '@/lib/cookies'
 import { type AppLocale, DEFAULT_LOCALE, SUPPORTED_LOCALES } from '@/locales'
+import { getCookie } from '@/lib/cookies'
 
 export const LANGUAGE_COOKIE_NAME = 'vite-ui-language'
 

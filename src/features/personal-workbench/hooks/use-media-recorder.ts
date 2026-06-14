@@ -19,11 +19,18 @@ function pickSupportedMimeType(): string {
     return ''
   }
 
-  const candidates = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4']
+  const candidates = [
+    'video/webm;codecs=vp9',
+    'video/webm;codecs=vp8',
+    'video/webm',
+    'video/mp4',
+  ]
   return candidates.find((item) => MediaRecorder.isTypeSupported(item)) ?? ''
 }
 
-export function useMediaRecorder({ maxDurationSeconds = 10 }: UseMediaRecorderOptions = {}): UseMediaRecorderResult {
+export function useMediaRecorder({
+  maxDurationSeconds = 10,
+}: UseMediaRecorderOptions = {}): UseMediaRecorderResult {
   const recorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
   const countdownIntervalRef = useRef<number | null>(null)
@@ -57,56 +64,68 @@ export function useMediaRecorder({ maxDurationSeconds = 10 }: UseMediaRecorderOp
     return typeof window !== 'undefined' && typeof MediaRecorder !== 'undefined'
   }, [])
 
-  const startRecording = useCallback(async (stream: MediaStream) => {
-    if (!isSupported) {
-      throw new Error('当前浏览器不支持视频录制')
-    }
-
-    if (recorderRef.current && recorderRef.current.state !== 'inactive') {
-      recorderRef.current.stop()
-    }
-
-    clearTimers()
-    chunksRef.current = []
-    setCountdown(maxDurationSeconds)
-
-    const mimeType = pickSupportedMimeType()
-    const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream)
-    recorderRef.current = recorder
-
-    recorder.ondataavailable = (event) => {
-      if (event.data.size > 0) {
-        chunksRef.current.push(event.data)
+  const startRecording = useCallback(
+    async (stream: MediaStream) => {
+      if (!isSupported) {
+        throw new Error('当前浏览器不支持视频录制')
       }
-    }
 
-    recorder.onstop = () => {
+      if (recorderRef.current && recorderRef.current.state !== 'inactive') {
+        recorderRef.current.stop()
+      }
+
       clearTimers()
-      setIsRecording(false)
-      setCountdown(maxDurationSeconds)
-      const blobType = recorder.mimeType || mimeType || 'video/webm'
-      const blob = chunksRef.current.length > 0 ? new Blob(chunksRef.current, { type: blobType }) : null
       chunksRef.current = []
-      const extension = blobType.includes('mp4') ? 'mp4' : 'webm'
-      const file = blob ? new File([blob], `personal-record-${Date.now()}.${extension}`, { type: blobType }) : null
-      setLastRecordedFile(file)
-      resolverRef.current?.(file)
-      resolverRef.current = null
-    }
+      setCountdown(maxDurationSeconds)
 
-    recorder.start()
-    setIsRecording(true)
+      const mimeType = pickSupportedMimeType()
+      const recorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream)
+      recorderRef.current = recorder
 
-    countdownIntervalRef.current = window.setInterval(() => {
-      setCountdown((current) => (current > 0 ? current - 1 : 0))
-    }, 1000)
-
-    autoStopTimeoutRef.current = window.setTimeout(() => {
-      if (recorder.state !== 'inactive') {
-        recorder.stop()
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunksRef.current.push(event.data)
+        }
       }
-    }, maxDurationSeconds * 1000)
-  }, [clearTimers, isSupported, maxDurationSeconds])
+
+      recorder.onstop = () => {
+        clearTimers()
+        setIsRecording(false)
+        setCountdown(maxDurationSeconds)
+        const blobType = recorder.mimeType || mimeType || 'video/webm'
+        const blob =
+          chunksRef.current.length > 0
+            ? new Blob(chunksRef.current, { type: blobType })
+            : null
+        chunksRef.current = []
+        const extension = blobType.includes('mp4') ? 'mp4' : 'webm'
+        const file = blob
+          ? new File([blob], `personal-record-${Date.now()}.${extension}`, {
+              type: blobType,
+            })
+          : null
+        setLastRecordedFile(file)
+        resolverRef.current?.(file)
+        resolverRef.current = null
+      }
+
+      recorder.start()
+      setIsRecording(true)
+
+      countdownIntervalRef.current = window.setInterval(() => {
+        setCountdown((current) => (current > 0 ? current - 1 : 0))
+      }, 1000)
+
+      autoStopTimeoutRef.current = window.setTimeout(() => {
+        if (recorder.state !== 'inactive') {
+          recorder.stop()
+        }
+      }, maxDurationSeconds * 1000)
+    },
+    [clearTimers, isSupported, maxDurationSeconds]
+  )
 
   const stopRecording = useCallback(async () => {
     const recorder = recorderRef.current

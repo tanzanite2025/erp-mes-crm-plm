@@ -1,4 +1,8 @@
-import { type Product, type ProductTemplate, type ProductType } from '../data/schema'
+import {
+  type Product,
+  type ProductTemplate,
+  type ProductType,
+} from '../data/schema'
 
 type TemplateBoundType = Pick<ProductType, 'id' | 'parentId' | 'templateId'>
 
@@ -15,7 +19,12 @@ export interface ProductAuthoritativeTemplateParams extends ProductEffectiveTemp
 
 export interface ProductTemplateResolution {
   template: ProductTemplate | null
-  source: 'resolvedTemplateId' | 'resolvedTemplateKey' | 'typeBinding' | 'productTemplateKey' | 'none'
+  source:
+    | 'resolvedTemplateId'
+    | 'resolvedTemplateKey'
+    | 'typeBinding'
+    | 'productTemplateKey'
+    | 'none'
 }
 
 function normalizeTemplateIdentity(value?: string | null): string {
@@ -35,7 +44,10 @@ export function resolveTemplateFromType(
   return templates.find((template) => template.id === templateId) || null
 }
 
-function resolveTemplateFromTypeChain(types: ProductType[], typeId?: string | null): TemplateBoundType | null {
+function resolveTemplateFromTypeChain(
+  types: ProductType[],
+  typeId?: string | null
+): TemplateBoundType | null {
   const currentTypeId = normalizeTemplateIdentity(typeId)
   if (!currentTypeId) return null
 
@@ -67,7 +79,9 @@ export function resolveTemplateFromComponentKey(
   if (!normalizedComponentKey) return null
 
   const matches = templates.filter(
-    (template) => normalizeTemplateComponentKey(template.componentKey) === normalizedComponentKey
+    (template) =>
+      normalizeTemplateComponentKey(template.componentKey) ===
+      normalizedComponentKey
   )
 
   if (matches.length === 1) {
@@ -82,7 +96,10 @@ export function resolveEffectiveTemplate(
   templates: ProductTemplate[],
   params: ProductEffectiveTemplateParams
 ): ProductTemplateResolution {
-  const resolvedType = resolveTemplateFromTypeChain(params.productTypes, params.typeId)
+  const resolvedType = resolveTemplateFromTypeChain(
+    params.productTypes,
+    params.typeId
+  )
   const templateFromType = resolveTemplateFromType(templates, resolvedType)
   if (templateFromType) {
     return {
@@ -113,7 +130,8 @@ export function resolveAuthoritativeTemplate(
   params: ProductAuthoritativeTemplateParams
 ): ProductTemplateResolution {
   const templateFromResolvedId = templates.find(
-    (template) => template.id === normalizeTemplateIdentity(params.resolvedTemplateId)
+    (template) =>
+      template.id === normalizeTemplateIdentity(params.resolvedTemplateId)
   )
   if (templateFromResolvedId) {
     return {
@@ -138,7 +156,10 @@ export function resolveAuthoritativeTemplate(
 
 export function resolveAuthoritativeTemplateForProduct(
   templates: ProductTemplate[],
-  product: Pick<Product, 'typeId' | 'templateKey' | 'resolvedTemplateId' | 'resolvedTemplateKey'>,
+  product: Pick<
+    Product,
+    'typeId' | 'templateKey' | 'resolvedTemplateId' | 'resolvedTemplateKey'
+  >,
   productTypes: ProductType[]
 ): ProductTemplateResolution {
   return resolveAuthoritativeTemplate(templates, {

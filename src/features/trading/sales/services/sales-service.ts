@@ -1,11 +1,14 @@
-import { NotificationGateway } from '@/features/system-mgmt/notifications/notification-gateway'
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { buildVersionedPatchMetadata } from '@/lib/version-guard'
+import { NotificationGateway } from '@/features/system-mgmt/notifications/notification-gateway'
 import { type SalesOrder, type SalesOrderFormValues } from '../../data/schema'
-import { toSalesOrderApiDTO, toSalesOrderContract } from '../adapters/sales-order-api-adapter'
 import { sanitizeSalesOrderSubmitValues } from '../../utils/sales-order-submit'
+import {
+  toSalesOrderApiDTO,
+  toSalesOrderContract,
+} from '../adapters/sales-order-api-adapter'
 import {
   deserializeSalesOrderApiDTO,
   type SalesOrderApiDTO,
@@ -13,7 +16,9 @@ import {
 
 export const SALES_ORDER_PATCH_INTENT_SAVE = 'SALES_ORDER_PATCH_SAVE'
 
-export const createSalesOrder = async (order: SalesOrderFormValues): Promise<SalesOrder> => {
+export const createSalesOrder = async (
+  order: SalesOrderFormValues
+): Promise<SalesOrder> => {
   const now = new Date().toISOString()
   const sanitizedOrder = sanitizeSalesOrderSubmitValues(order)
   const createdOrder: SalesOrder = {
@@ -29,24 +34,37 @@ export const createSalesOrder = async (order: SalesOrderFormValues): Promise<Sal
     method: 'POST',
     body: JSON.stringify(toSalesOrderApiDTO(createdOrder)),
   })
-  const response = ensureObjectResponse<SalesOrderApiDTO & Record<string, unknown>>(res, 'SalesService.createSalesOrder')
+  const response = ensureObjectResponse<
+    SalesOrderApiDTO & Record<string, unknown>
+  >(res, 'SalesService.createSalesOrder')
   return toSalesOrderContract(deserializeSalesOrderApiDTO(response))
 }
 
-export const patchSalesOrder = async (id: string, delta: DeltaSet, version: number): Promise<SalesOrder> => {
+export const patchSalesOrder = async (
+  id: string,
+  delta: DeltaSet,
+  version: number
+): Promise<SalesOrder> => {
   const payload: DeltaPayload = {
     op: 'PATCH',
     delta,
-    metadata: buildVersionedPatchMetadata(id, version, 'SalesService.patchSalesOrder', {
-      intent: SALES_ORDER_PATCH_INTENT_SAVE,
-    }),
+    metadata: buildVersionedPatchMetadata(
+      id,
+      version,
+      'SalesService.patchSalesOrder',
+      {
+        intent: SALES_ORDER_PATCH_INTENT_SAVE,
+      }
+    ),
   }
 
   const res = await apiFetch<SalesOrderApiDTO>(`/sales-orders/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(payload),
   })
-  const response = ensureObjectResponse<SalesOrderApiDTO & Record<string, unknown>>(res, 'SalesService.patchSalesOrder')
+  const response = ensureObjectResponse<
+    SalesOrderApiDTO & Record<string, unknown>
+  >(res, 'SalesService.patchSalesOrder')
   return toSalesOrderContract(deserializeSalesOrderApiDTO(response))
 }
 

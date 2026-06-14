@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
+import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import {
@@ -12,9 +13,11 @@ import {
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { normalizeSearchHref } from '@/components/layout/data/search-href'
-import { cn } from '@/lib/utils'
 import { getBusinessEventStatusDerivedLabel } from '../../data/business-event-status-contract'
-import { getStandardCommandDisplayTitle, type StandardCommand } from '../../data/schema'
+import {
+  getStandardCommandDisplayTitle,
+  type StandardCommand,
+} from '../../data/schema'
 import { useBusinessEventSources } from '../../hooks/use-business-event-sources'
 import { CommandTargetLinkPicker } from './command-target-link-picker'
 
@@ -24,7 +27,9 @@ interface CommandFormProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   initialData?: StandardCommand
-  contextDefaults?: Partial<Pick<StandardCommand, 'sourceCode' | 'actionCode' | 'statusCodes'>>
+  contextDefaults?: Partial<
+    Pick<StandardCommand, 'sourceCode' | 'actionCode' | 'statusCodes'>
+  >
   onSave: (data: Omit<StandardCommand, 'id' | 'createdAt'>) => void
 }
 
@@ -38,20 +43,21 @@ export function CommandForm({
   const { t } = useLanguage()
   const { sources } = useBusinessEventSources()
   const [isTargetLinkValid, setIsTargetLinkValid] = useState(true)
-  const { register, control, handleSubmit, reset, setValue } = useForm<CommandFormInput>({
-    defaultValues: {
-      actionType: 'NOTIFY',
-      bindType: 'GLOBAL',
-      nodeType: undefined,
-      title: '',
-      content: '',
-      targetLink: '',
-      params: [],
-      sourceCode: '',
-      actionCode: '',
-      statusCodes: [],
-    },
-  })
+  const { register, control, handleSubmit, reset, setValue } =
+    useForm<CommandFormInput>({
+      defaultValues: {
+        actionType: 'NOTIFY',
+        bindType: 'GLOBAL',
+        nodeType: undefined,
+        title: '',
+        content: '',
+        targetLink: '',
+        params: [],
+        sourceCode: '',
+        actionCode: '',
+        statusCodes: [],
+      },
+    })
 
   const watchedSourceCode = useWatch({ control, name: 'sourceCode' })
   const watchedActionCode = useWatch({ control, name: 'actionCode' })
@@ -138,13 +144,19 @@ export function CommandForm({
 
     if (
       selectedActionCode &&
-      !selectedSource.config.actions.some((action) => action.code === selectedActionCode)
+      !selectedSource.config.actions.some(
+        (action) => action.code === selectedActionCode
+      )
     ) {
       setValue('actionCode', '', { shouldDirty: true })
     }
 
-    const allowedStatuses = new Set(selectedSource.config.statuses.map((status) => status.code))
-    const nextStatusCodes = selectedStatusCodes.filter((code) => allowedStatuses.has(code))
+    const allowedStatuses = new Set(
+      selectedSource.config.statuses.map((status) => status.code)
+    )
+    const nextStatusCodes = selectedStatusCodes.filter((code) =>
+      allowedStatuses.has(code)
+    )
     if (nextStatusCodes.length !== selectedStatusCodes.length) {
       setValue('statusCodes', nextStatusCodes, { shouldDirty: true })
     }
@@ -171,7 +183,7 @@ export function CommandForm({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='rounded-[32px] border-4 sm:max-w-[840px]'>
         <DialogHeader>
-          <DialogTitle className='text-sm font-black uppercase tracking-widest'>
+          <DialogTitle className='text-sm font-black tracking-widest uppercase'>
             {initialData
               ? t('workflowCore.commands.form.editTitle')
               : t('workflowCore.commands.form.newTitle')}
@@ -184,12 +196,16 @@ export function CommandForm({
         <form onSubmit={handleSubmit(onSubmit)} className='space-y-6 pt-4'>
           <div className='grid gap-4 rounded-[24px] border border-dashed border-primary/20 bg-primary/5 p-4 md:grid-cols-2'>
             <div className='space-y-2'>
-              <Label className='text-[10px] font-black uppercase text-muted-foreground'>
+              <Label className='text-[10px] font-black text-muted-foreground uppercase'>
                 适用业务事件源
               </Label>
               <select
                 value={selectedSourceCode}
-                onChange={(event) => setValue('sourceCode', event.target.value, { shouldDirty: true })}
+                onChange={(event) =>
+                  setValue('sourceCode', event.target.value, {
+                    shouldDirty: true,
+                  })
+                }
                 className='h-12 w-full rounded-2xl border-none bg-background px-4 text-xs font-black'
               >
                 <option value=''>全部业务事件源</option>
@@ -202,13 +218,17 @@ export function CommandForm({
             </div>
 
             <div className='space-y-2'>
-              <Label className='text-[10px] font-black uppercase text-muted-foreground'>
+              <Label className='text-[10px] font-black text-muted-foreground uppercase'>
                 适用动作
               </Label>
               <select
                 value={selectedActionCode}
                 disabled={!selectedSource}
-                onChange={(event) => setValue('actionCode', event.target.value, { shouldDirty: true })}
+                onChange={(event) =>
+                  setValue('actionCode', event.target.value, {
+                    shouldDirty: true,
+                  })
+                }
                 className='h-12 w-full rounded-2xl border-none bg-background px-4 text-xs font-black disabled:cursor-not-allowed disabled:opacity-50'
               >
                 <option value=''>全部动作</option>
@@ -221,7 +241,7 @@ export function CommandForm({
             </div>
 
             <div className='space-y-2 md:col-span-2'>
-              <Label className='text-[10px] font-black uppercase text-muted-foreground'>
+              <Label className='text-[10px] font-black text-muted-foreground uppercase'>
                 适用状态
               </Label>
               <div className='rounded-[24px] border border-dashed border-primary/15 bg-background/80 p-3'>
@@ -246,7 +266,7 @@ export function CommandForm({
                           </span>
                           <span
                             className={cn(
-                              'text-[8px] font-mono',
+                              'font-mono text-[8px]',
                               active
                                 ? 'text-primary-foreground/80'
                                 : 'text-muted-foreground/70'
@@ -268,14 +288,16 @@ export function CommandForm({
           </div>
 
           <div className='rounded-[24px] border border-dashed border-primary/15 bg-primary/5 px-4 py-3'>
-            <div className='text-[10px] font-black uppercase tracking-widest text-primary/70'>
+            <div className='text-[10px] font-black tracking-widest text-primary/70 uppercase'>
               系统自动生成模板名称
             </div>
-            <div className='mt-2 text-[12px] font-black text-foreground'>{generatedTitle}</div>
+            <div className='mt-2 text-[12px] font-black text-foreground'>
+              {generatedTitle}
+            </div>
           </div>
 
           <div className='space-y-2'>
-            <Label className='text-[10px] font-black uppercase text-muted-foreground'>
+            <Label className='text-[10px] font-black text-muted-foreground uppercase'>
               {t('workflowCore.commands.form.fields.targetLink')}
             </Label>
             <CommandTargetLinkPicker
@@ -296,12 +318,12 @@ export function CommandForm({
           </div>
 
           <div className='space-y-2'>
-            <Label className='text-[10px] font-black uppercase text-muted-foreground'>
+            <Label className='text-[10px] font-black text-muted-foreground uppercase'>
               {t('workflowCore.commands.form.fields.content')}
             </Label>
             <Textarea
               placeholder={t('workflowCore.commands.form.placeholders.content')}
-              className='min-h-[80px] rounded-[24px] border-2 font-bold text-xs leading-relaxed'
+              className='min-h-[80px] rounded-[24px] border-2 text-xs leading-relaxed font-bold'
               {...register('content', { required: true })}
             />
           </div>
@@ -311,14 +333,14 @@ export function CommandForm({
               type='button'
               variant='ghost'
               onClick={() => onOpenChange(false)}
-              className='rounded-xl font-black text-[10px] uppercase'
+              className='rounded-xl text-[10px] font-black uppercase'
             >
               {t('common.actions.cancel')}
             </Button>
             <Button
               type='submit'
               disabled={!isTargetLinkValid}
-              className='rounded-xl px-8 font-black text-[10px] uppercase tracking-widest'
+              className='rounded-xl px-8 text-[10px] font-black tracking-widest uppercase'
             >
               {t('common.actions.save')}
             </Button>

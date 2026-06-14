@@ -1,9 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { AssetService } from '@/services/asset-service'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
-import { AssetService } from '@/services/asset-service'
 import { vehicleLoadingQueryKeys } from '../query-keys'
-import { saveVehiclePhoto, type SaveVehiclePhotoInput } from '../services/vehicle-photo-service'
+import {
+  saveVehiclePhoto,
+  type SaveVehiclePhotoInput,
+} from '../services/vehicle-photo-service'
 
 export type UploadVehiclePhotoPayload = {
   vehicleId: string
@@ -15,7 +18,11 @@ export function useVehiclePhotoUpload() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ vehicleId, file, ...payload }: UploadVehiclePhotoPayload) => {
+    mutationFn: async ({
+      vehicleId,
+      file,
+      ...payload
+    }: UploadVehiclePhotoPayload) => {
       const uploaded = await AssetService.uploadFile(file)
       return saveVehiclePhoto(vehicleId, {
         ...payload,
@@ -25,11 +32,15 @@ export function useVehiclePhotoUpload() {
     },
     onSuccess: async () => {
       toast.success(t('logisticsConfig.vehiclePhotos.toasts.uploadSuccess'))
-      await queryClient.invalidateQueries({ queryKey: vehicleLoadingQueryKeys.specs() })
+      await queryClient.invalidateQueries({
+        queryKey: vehicleLoadingQueryKeys.specs(),
+      })
     },
     onError: (error) => {
       const message = error instanceof Error ? error.message : 'Unknown error'
-      toast.error(t('logisticsConfig.vehiclePhotos.toasts.uploadFailed', { message }))
+      toast.error(
+        t('logisticsConfig.vehiclePhotos.toasts.uploadFailed', { message })
+      )
     },
   })
 }

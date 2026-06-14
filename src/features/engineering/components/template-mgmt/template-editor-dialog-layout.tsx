@@ -35,20 +35,23 @@ export function TemplateEditorDialogLayout({
 }: TemplateEditorDialogLayoutProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent showCloseButton={false} className='flex max-h-[95vh] w-[99vw] max-w-none flex-col sm:w-[92vw] 2xl:w-[1680px] sm:max-w-none overflow-hidden rounded-[32px] border-none p-0 shadow-2xl'>
+      <DialogContent
+        showCloseButton={false}
+        className='flex max-h-[95vh] w-[99vw] max-w-none flex-col overflow-hidden rounded-[32px] border-none p-0 shadow-2xl sm:w-[92vw] sm:max-w-none 2xl:w-[1680px]'
+      >
         <DialogHeader className='shrink-0 bg-muted/5 px-4 py-4 text-start sm:px-6 xl:px-7'>
           <div className='rounded-[24px] border border-dashed border-muted/40 bg-background/85 px-5 py-4 shadow-sm'>
             <div className='flex items-start justify-between gap-4'>
               <div className='min-w-0 flex-1'>
-                <DialogTitle className='flex items-center gap-3 text-[16px] font-black tracking-tight italic uppercase text-slate-800'>
+                <DialogTitle className='flex items-center gap-3 text-[16px] font-black tracking-tight text-slate-800 uppercase italic'>
                   <div className='size-2 animate-pulse rounded-full bg-blue-600' />
                   {title}
                 </DialogTitle>
-                <DialogDescription className='mt-1 text-[9px] font-black uppercase tracking-[0.18em] opacity-60 text-muted-foreground/50'>
+                <DialogDescription className='mt-1 text-[9px] font-black tracking-[0.18em] text-muted-foreground/50 uppercase opacity-60'>
                   {description}
                 </DialogDescription>
               </div>
-              <DialogClose className='shrink-0 rounded-full border border-dashed border-muted/40 bg-muted/40 p-2 text-muted-foreground/70 transition hover:bg-muted/60 hover:text-foreground focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2'>
+              <DialogClose className='shrink-0 rounded-full border border-dashed border-muted/40 bg-muted/40 p-2 text-muted-foreground/70 transition hover:bg-muted/60 hover:text-foreground focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden'>
                 <XIcon className='size-4' />
                 <span className='sr-only'>Close</span>
               </DialogClose>

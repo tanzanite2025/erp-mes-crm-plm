@@ -1,22 +1,25 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { useLanguage } from '@/context/language-provider'
 import type { DeltaSet } from '@/lib/delta/types'
 import { createLogger } from '@/lib/logger'
-import { type CompositeReadResource, resolveQueryFailure } from '@/lib/read-resource'
+import {
+  type CompositeReadResource,
+  resolveQueryFailure,
+} from '@/lib/read-resource'
 import { failLoudly } from '@/lib/safe-catch'
-import { type SpokeLength, type SpokeLengthInput } from '../data/schema'
+import { useLanguage } from '@/context/language-provider'
 import { type Hub } from '../data/hub-schema'
 import { type Nipple } from '../data/nipple-schema'
-import { SpokeService } from '../services/spoke-service'
-import { hubService } from '../services/hub-service'
-import { nippleService } from '../services/nipple-service'
+import { type SpokeLength, type SpokeLengthInput } from '../data/schema'
 import {
   ENGINEERING_DB_HUBS_QUERY_KEY,
   ENGINEERING_DB_NIPPLES_QUERY_KEY,
   ENGINEERING_DB_SPOKE_LENGTHS_QUERY_KEY,
 } from '../query-keys'
+import { hubService } from '../services/hub-service'
+import { nippleService } from '../services/nipple-service'
+import { SpokeService } from '../services/spoke-service'
 import { useEngineeringDbProductLookup } from './use-engineering-db-product-lookup'
 
 export type SpokeLengthRowViewModel = {
@@ -127,7 +130,11 @@ export function useSpokeLengthMgmt() {
       }
     }
 
-    if (spokeLengthsQuery.isPending || hubsQuery.isPending || nipplesQuery.isPending) {
+    if (
+      spokeLengthsQuery.isPending ||
+      hubsQuery.isPending ||
+      nipplesQuery.isPending
+    ) {
       return { status: 'loading' }
     }
 
@@ -160,7 +167,9 @@ export function useSpokeLengthMgmt() {
           nipple?.name || '',
           item.material || '',
           item.length || '',
-        ].join(' ').toLowerCase(),
+        ]
+          .join(' ')
+          .toLowerCase(),
       }
     })
 
@@ -193,21 +202,31 @@ export function useSpokeLengthMgmt() {
       return
     }
 
-    logger.error(`Failed to load spoke length resources: ${readResource.scope}`, readResource.error)
+    logger.error(
+      `Failed to load spoke length resources: ${readResource.scope}`,
+      readResource.error
+    )
     failLoudly(readResource.error, readResource.scope)
   }, [readResource])
 
   const data = readResource.status === 'ready' ? readResource.data : []
-  const filteredData = readResource.status === 'ready' ? readResource.filteredData : []
+  const filteredData =
+    readResource.status === 'ready' ? readResource.filteredData : []
   const isLoading = readResource.status === 'loading'
-  const isRefreshing = spokeLengthsQuery.isFetching || hubsQuery.isFetching || nipplesQuery.isFetching
+  const isRefreshing =
+    spokeLengthsQuery.isFetching ||
+    hubsQuery.isFetching ||
+    nipplesQuery.isFetching
 
   const handleDelete = async (item: SpokeLength) => {
-    if (!window.confirm(t('engineering.spokeLength.toasts.deleteConfirm'))) return
+    if (!window.confirm(t('engineering.spokeLength.toasts.deleteConfirm')))
+      return
 
     try {
       await deleteMutation.mutateAsync(item.id)
-      await queryClient.invalidateQueries({ queryKey: ENGINEERING_DB_SPOKE_LENGTHS_QUERY_KEY })
+      await queryClient.invalidateQueries({
+        queryKey: ENGINEERING_DB_SPOKE_LENGTHS_QUERY_KEY,
+      })
       toast.success(t('engineering.spokeLength.toasts.deleteSuccess'))
     } catch (_error) {
       toast.error('操作失败')
@@ -222,7 +241,9 @@ export function useSpokeLengthMgmt() {
     version?: number
   }) => {
     await saveMutation.mutateAsync(params)
-    await queryClient.invalidateQueries({ queryKey: ENGINEERING_DB_SPOKE_LENGTHS_QUERY_KEY })
+    await queryClient.invalidateQueries({
+      queryKey: ENGINEERING_DB_SPOKE_LENGTHS_QUERY_KEY,
+    })
   }
 
   const retryRead = async () => {

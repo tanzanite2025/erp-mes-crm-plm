@@ -1,7 +1,5 @@
 import { Search, Plus, Filter, Loader2, ShieldCheck } from 'lucide-react'
-import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { useLanguage } from '@/context/language-provider'
-import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -11,7 +9,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import type { QualityStandardsTypeFilter } from '../types/quality-standards-list'
 import { getQualityStandardTypeLabel } from '../utils/quality-utils'
 
@@ -82,7 +82,7 @@ export function QualityStandardsHeader({
             module={AUDIT_MODULES.qualityStandard}
             targetName={t('quality.standards.page.title')}
             label={t('common.audit.trigger')}
-            className='h-11 rounded-full border-dashed bg-background/80 px-4 text-[10px] font-black uppercase tracking-widest'
+            className='h-11 rounded-full border-dashed bg-background/80 px-4 text-[10px] font-black tracking-widest uppercase'
           />
 
           <div className='flex items-center gap-2 rounded-2xl border border-dashed border-muted/50 bg-muted/5 px-3'>

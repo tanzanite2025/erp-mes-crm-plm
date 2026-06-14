@@ -5,7 +5,7 @@ export const receivableQueryKeys = {
   ],
   receivableList: (
     sourceType: string,
-    sourceRefId: string,
+    sourceRefId: string
   ): readonly ['receivables', 'list', string, string] => [
     'receivables',
     'list',

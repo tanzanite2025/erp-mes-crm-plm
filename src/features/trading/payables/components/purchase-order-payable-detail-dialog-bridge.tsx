@@ -1,8 +1,8 @@
 import { useEffect, useMemo } from 'react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
-import { PurchasePayableDetailDialog } from './purchase-payable-detail-dialog'
 import { useGetPayables } from '../hooks/use-payables'
+import { PurchasePayableDetailDialog } from './purchase-payable-detail-dialog'
 
 interface PurchaseOrderPayableDetailDialogBridgeProps {
   open: boolean

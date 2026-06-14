@@ -204,7 +204,9 @@ export function StatusEditorContent({
   forceOpenRemovedItems?: boolean
 }) {
   const focusedRowRef = useRef<HTMLDivElement | null>(null)
-  const [pendingDeleteIndex, setPendingDeleteIndex] = useState<number | null>(null)
+  const [pendingDeleteIndex, setPendingDeleteIndex] = useState<number | null>(
+    null
+  )
   const [renameConfirmOpen, setRenameConfirmOpen] = useState(false)
 
   useEffect(() => {
@@ -220,7 +222,9 @@ export function StatusEditorContent({
   const effectiveRenamePlans = (statusRenamePlans ?? []).filter(
     (plan) => plan.oldCode !== plan.nextCode
   )
-  const hasRenameBlocker = effectiveRenamePlans.some((plan) => !plan.canSafelyRename)
+  const hasRenameBlocker = effectiveRenamePlans.some(
+    (plan) => !plan.canSafelyRename
+  )
   const totalRenameTargetSegments = effectiveRenamePlans.reduce(
     (sum, plan) => sum + plan.targetSegmentCount,
     0
@@ -256,191 +260,202 @@ export function StatusEditorContent({
     <>
       <div className='flex h-full min-h-0 flex-col'>
         <div className='border-b border-dashed border-muted/30 px-6 py-5'>
-        <div className='flex items-center gap-2'>
-          <h3 className='text-sm font-black tracking-tight italic'>状态配置</h3>
-          <SectionChangeBadge dirty={dirty} summary={changeSummary} />
-        </div>
-        <p className='mt-2 text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>
-          维护这个业务对象可监听的全部状态，顺序会影响规则表单里的展示顺序。
-        </p>
+          <div className='flex items-center gap-2'>
+            <h3 className='text-sm font-black tracking-tight italic'>
+              状态配置
+            </h3>
+            <SectionChangeBadge dirty={dirty} summary={changeSummary} />
+          </div>
+          <p className='mt-2 text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+            维护这个业务对象可监听的全部状态，顺序会影响规则表单里的展示顺序。
+          </p>
         </div>
         <div className='flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-6 py-5'>
-        <Button
-          type='button'
-          variant='outline'
-          className='w-fit rounded-2xl text-xs font-black'
-          onClick={onAdd}
-        >
-          <Plus className='size-3.5' />
-          新增状态
-        </Button>
-        <div className='flex flex-col gap-2'>
-          {statuses.map((status, index) => {
-            const changeType = getChangeType?.(status.id)
-            const isStatusIdentityLocked =
-              persistedStatusIds?.has(status.id ?? '') ?? false
-            const isFocused = focusedItemId === status.id
-            const committedCode =
-              committedStatusCodeMap?.get(status.id ?? '') ?? status.code
-            const canonicalCode = canonicalizeBusinessStatusCode(
-              sourceCode,
-              status.code
-            )
-            const statusReference = statusReferenceMap?.get(committedCode)
-            const renamePlan = statusRenamePlans?.find(
-              (plan) =>
-                (status.id && plan.statusId === status.id) ||
-                plan.oldCode === committedCode
-            )
-            const deleteDisabled =
-              isStatusIdentityLocked &&
-              (!statusReferencesLoaded || Boolean(statusReference?.isReferenced))
-            return (
-              <div
-                key={status.id ?? `${status.code}-${index}`}
-                ref={isFocused ? focusedRowRef : null}
-                className={cn(
-                  'grid gap-3 rounded-2xl border p-3 lg:grid-cols-[minmax(0,1fr)_auto]',
-                  drawerRowTone(changeType),
-                  isFocused && 'ring-2 ring-sky-300 ring-offset-1'
-                )}
-              >
-                <div className='grid gap-3 md:grid-cols-[minmax(220px,0.95fr)_minmax(220px,1fr)]'>
-                  <div className='space-y-1.5'>
-                    <div className='px-1 text-[8px] font-black uppercase tracking-widest text-muted-foreground/50'>
-                      状态码 / Code
-                    </div>
-                    <Input
-                      value={status.code}
-                      readOnly={false}
-                      onChange={(event) =>
-                        onUpdate(index, { code: event.target.value })
-                      }
-                      className={cn(
-                        'h-10 rounded-2xl border-none bg-background/85 font-mono text-xs shadow-inner',
-                        drawerReadonlyFieldClass(false)
-                      )}
-                      placeholder='Pending'
-                    />
-                    <div className='px-1 text-[8px] font-black uppercase tracking-widest text-muted-foreground/40'>
-                      {statusIdentityHint({
-                        locked: isStatusIdentityLocked,
-                        isReferenced: statusReference?.isReferenced,
-                      })}
-                    </div>
-                    <div className='px-1 text-[8px] font-black uppercase tracking-widest text-muted-foreground/35'>
-                      最终存储：{canonicalCode || '待生成'}
-                    </div>
-                    <div className='px-1 text-[8px] font-black uppercase tracking-widest text-muted-foreground/45'>
-                      {buildStatusReferenceHint(
-                        statusReference,
-                        statusReferencesLoaded ?? false,
-                        isStatusIdentityLocked
-                      )}
-                    </div>
-                    {buildStatusRenameHint(renamePlan, isStatusIdentityLocked) ? (
-                      <div className='px-1 text-[8px] font-black uppercase tracking-widest text-sky-700/80'>
-                        {buildStatusRenameHint(renamePlan, isStatusIdentityLocked)}
-                      </div>
-                    ) : null}
-                    {firstBatchBlocker ? (
-                      <div className='px-1 text-[8px] font-black uppercase tracking-widest text-rose-700/80'>
-                        {firstBatchBlocker.type === 'merge_rename'
-                          ? `批量阻断：${firstBatchBlocker.codes.join(' / ')} 将汇聚到 ${firstBatchBlocker.nextCode}`
-                          : `批量阻断：检测到重命名闭环 ${firstBatchBlocker.codes.join(' -> ')}`}
-                      </div>
-                    ) : null}
-                    {!firstBatchBlocker && batchWarnings ? (
-                      <div className='px-1 text-[8px] font-black uppercase tracking-widest text-amber-700/80'>
-                        批量提示：存在交换/链式改名或规则数组语义收缩，保存前需确认。
-                      </div>
-                    ) : null}
-                  </div>
-
-                  <div className='space-y-1.5'>
-                    <div className='px-1 text-[8px] font-black uppercase tracking-widest text-muted-foreground/50'>
-                      状态名称 / Label
-                    </div>
-                    <div className='flex min-h-10 items-center rounded-2xl border border-dashed border-muted/30 bg-muted/10 px-3 text-xs font-black text-foreground'>
-                      {getBusinessEventStatusLabel(
-                        sourceCode,
-                        canonicalCode || status.code
-                      )}
-                    </div>
-                    <div className='flex flex-wrap items-center gap-2 px-1'>
-                      <span className='inline-flex h-5 items-center rounded-full border border-dashed border-muted/40 bg-background/80 px-2 text-[8px] font-black uppercase tracking-widest text-muted-foreground/70'>
-                        唯一状态
-                      </span>
-                      {statusReference?.isReferenced ? (
-                        <span className='inline-flex h-5 items-center rounded-full border border-dashed border-amber-300/60 bg-amber-50/90 px-2 text-[8px] font-black uppercase tracking-widest text-amber-700'>
-                          已引用
-                        </span>
-                      ) : null}
-                      {isStatusIdentityLocked ? (
-                        <span className='text-[8px] font-black uppercase tracking-widest text-muted-foreground/40'>
-                          Persisted Identity
-                        </span>
-                      ) : null}
-                    </div>
-                  </div>
-                </div>
-
-                <div className='flex items-center justify-between gap-2 rounded-2xl border border-dashed border-muted/30 bg-background/50 px-3 py-2 lg:min-w-[140px] lg:justify-end'>
-                  <div className='flex items-center gap-2'>
-                    <ItemChangeBadge changeType={changeType} />
-                    <StatusMoveControls
-                      canMoveUp={index > 0}
-                      canMoveDown={index < statuses.length - 1}
-                      onMoveUp={() => onMove(index, -1)}
-                      onMoveDown={() => onMove(index, 1)}
-                    />
-                    <IconDeleteButton
-                      disabled={deleteDisabled}
-                      onClick={() => {
-                        if (deleteDisabled) {
-                          return
-                        }
-                        if (isStatusIdentityLocked) {
-                          setPendingDeleteIndex(index)
-                          return
-                        }
-                        onDelete(index)
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-        <RemovedItemsPanel
-          items={removedItems}
-          onRestoreItem={onRestoreRemovedItem}
-          focusedItemId={focusedRemovedItemId}
-          forceOpen={forceOpenRemovedItems}
-        />
-        </div>
-        <div className='flex items-center justify-between gap-2 border-t border-dashed border-muted/30 px-6 py-4'>
-        <SectionChangeBadge dirty={dirty} summary={changeSummary} />
-        <div className='flex items-center gap-2'>
-          <SectionActions
-            onUndo={onUndo}
-            undoDisabled={undoDisabled}
-            undoing={undoing}
-            onSave={handleSave}
-            saveDisabled={saveDisabled || hasRenameBlocker || batchBlockers.length > 0}
-            saving={saving}
-            saveLabel='保存状态'
-          />
           <Button
             type='button'
             variant='outline'
-            className='rounded-2xl text-xs font-black'
-            onClick={onClose}
+            className='w-fit rounded-2xl text-xs font-black'
+            onClick={onAdd}
           >
-            完成
+            <Plus className='size-3.5' />
+            新增状态
           </Button>
+          <div className='flex flex-col gap-2'>
+            {statuses.map((status, index) => {
+              const changeType = getChangeType?.(status.id)
+              const isStatusIdentityLocked =
+                persistedStatusIds?.has(status.id ?? '') ?? false
+              const isFocused = focusedItemId === status.id
+              const committedCode =
+                committedStatusCodeMap?.get(status.id ?? '') ?? status.code
+              const canonicalCode = canonicalizeBusinessStatusCode(
+                sourceCode,
+                status.code
+              )
+              const statusReference = statusReferenceMap?.get(committedCode)
+              const renamePlan = statusRenamePlans?.find(
+                (plan) =>
+                  (status.id && plan.statusId === status.id) ||
+                  plan.oldCode === committedCode
+              )
+              const deleteDisabled =
+                isStatusIdentityLocked &&
+                (!statusReferencesLoaded ||
+                  Boolean(statusReference?.isReferenced))
+              return (
+                <div
+                  key={status.id ?? `${status.code}-${index}`}
+                  ref={isFocused ? focusedRowRef : null}
+                  className={cn(
+                    'grid gap-3 rounded-2xl border p-3 lg:grid-cols-[minmax(0,1fr)_auto]',
+                    drawerRowTone(changeType),
+                    isFocused && 'ring-2 ring-sky-300 ring-offset-1'
+                  )}
+                >
+                  <div className='grid gap-3 md:grid-cols-[minmax(220px,0.95fr)_minmax(220px,1fr)]'>
+                    <div className='space-y-1.5'>
+                      <div className='px-1 text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'>
+                        状态码 / Code
+                      </div>
+                      <Input
+                        value={status.code}
+                        readOnly={false}
+                        onChange={(event) =>
+                          onUpdate(index, { code: event.target.value })
+                        }
+                        className={cn(
+                          'h-10 rounded-2xl border-none bg-background/85 font-mono text-xs shadow-inner',
+                          drawerReadonlyFieldClass(false)
+                        )}
+                        placeholder='Pending'
+                      />
+                      <div className='px-1 text-[8px] font-black tracking-widest text-muted-foreground/40 uppercase'>
+                        {statusIdentityHint({
+                          locked: isStatusIdentityLocked,
+                          isReferenced: statusReference?.isReferenced,
+                        })}
+                      </div>
+                      <div className='px-1 text-[8px] font-black tracking-widest text-muted-foreground/35 uppercase'>
+                        最终存储：{canonicalCode || '待生成'}
+                      </div>
+                      <div className='px-1 text-[8px] font-black tracking-widest text-muted-foreground/45 uppercase'>
+                        {buildStatusReferenceHint(
+                          statusReference,
+                          statusReferencesLoaded ?? false,
+                          isStatusIdentityLocked
+                        )}
+                      </div>
+                      {buildStatusRenameHint(
+                        renamePlan,
+                        isStatusIdentityLocked
+                      ) ? (
+                        <div className='px-1 text-[8px] font-black tracking-widest text-sky-700/80 uppercase'>
+                          {buildStatusRenameHint(
+                            renamePlan,
+                            isStatusIdentityLocked
+                          )}
+                        </div>
+                      ) : null}
+                      {firstBatchBlocker ? (
+                        <div className='px-1 text-[8px] font-black tracking-widest text-rose-700/80 uppercase'>
+                          {firstBatchBlocker.type === 'merge_rename'
+                            ? `批量阻断：${firstBatchBlocker.codes.join(' / ')} 将汇聚到 ${firstBatchBlocker.nextCode}`
+                            : `批量阻断：检测到重命名闭环 ${firstBatchBlocker.codes.join(' -> ')}`}
+                        </div>
+                      ) : null}
+                      {!firstBatchBlocker && batchWarnings ? (
+                        <div className='px-1 text-[8px] font-black tracking-widest text-amber-700/80 uppercase'>
+                          批量提示：存在交换/链式改名或规则数组语义收缩，保存前需确认。
+                        </div>
+                      ) : null}
+                    </div>
+
+                    <div className='space-y-1.5'>
+                      <div className='px-1 text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'>
+                        状态名称 / Label
+                      </div>
+                      <div className='flex min-h-10 items-center rounded-2xl border border-dashed border-muted/30 bg-muted/10 px-3 text-xs font-black text-foreground'>
+                        {getBusinessEventStatusLabel(
+                          sourceCode,
+                          canonicalCode || status.code
+                        )}
+                      </div>
+                      <div className='flex flex-wrap items-center gap-2 px-1'>
+                        <span className='inline-flex h-5 items-center rounded-full border border-dashed border-muted/40 bg-background/80 px-2 text-[8px] font-black tracking-widest text-muted-foreground/70 uppercase'>
+                          唯一状态
+                        </span>
+                        {statusReference?.isReferenced ? (
+                          <span className='inline-flex h-5 items-center rounded-full border border-dashed border-amber-300/60 bg-amber-50/90 px-2 text-[8px] font-black tracking-widest text-amber-700 uppercase'>
+                            已引用
+                          </span>
+                        ) : null}
+                        {isStatusIdentityLocked ? (
+                          <span className='text-[8px] font-black tracking-widest text-muted-foreground/40 uppercase'>
+                            Persisted Identity
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className='flex items-center justify-between gap-2 rounded-2xl border border-dashed border-muted/30 bg-background/50 px-3 py-2 lg:min-w-[140px] lg:justify-end'>
+                    <div className='flex items-center gap-2'>
+                      <ItemChangeBadge changeType={changeType} />
+                      <StatusMoveControls
+                        canMoveUp={index > 0}
+                        canMoveDown={index < statuses.length - 1}
+                        onMoveUp={() => onMove(index, -1)}
+                        onMoveDown={() => onMove(index, 1)}
+                      />
+                      <IconDeleteButton
+                        disabled={deleteDisabled}
+                        onClick={() => {
+                          if (deleteDisabled) {
+                            return
+                          }
+                          if (isStatusIdentityLocked) {
+                            setPendingDeleteIndex(index)
+                            return
+                          }
+                          onDelete(index)
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          <RemovedItemsPanel
+            items={removedItems}
+            onRestoreItem={onRestoreRemovedItem}
+            focusedItemId={focusedRemovedItemId}
+            forceOpen={forceOpenRemovedItems}
+          />
         </div>
+        <div className='flex items-center justify-between gap-2 border-t border-dashed border-muted/30 px-6 py-4'>
+          <SectionChangeBadge dirty={dirty} summary={changeSummary} />
+          <div className='flex items-center gap-2'>
+            <SectionActions
+              onUndo={onUndo}
+              undoDisabled={undoDisabled}
+              undoing={undoing}
+              onSave={handleSave}
+              saveDisabled={
+                saveDisabled || hasRenameBlocker || batchBlockers.length > 0
+              }
+              saving={saving}
+              saveLabel='保存状态'
+            />
+            <Button
+              type='button'
+              variant='outline'
+              className='rounded-2xl text-xs font-black'
+              onClick={onClose}
+            >
+              完成
+            </Button>
+          </div>
         </div>
       </div>
       <AlertDialog
@@ -453,21 +468,21 @@ export function StatusEditorContent({
       >
         <AlertDialogContent className='rounded-[32px] border-none bg-background shadow-2xl'>
           <AlertDialogHeader>
-            <AlertDialogTitle className='text-lg font-black tracking-tighter italic uppercase'>
+            <AlertDialogTitle className='text-lg font-black tracking-tighter uppercase italic'>
               删除已落库状态
             </AlertDialogTitle>
-            <AlertDialogDescription className='text-[11px] font-bold leading-6 text-muted-foreground'>
+            <AlertDialogDescription className='text-[11px] leading-6 font-bold text-muted-foreground'>
               {pendingDeleteStatus
                 ? `状态 ${pendingDeleteStatus.code} 当前未被规则链路引用，但删除后会从事件源配置中移除。请确认这不是一个仍需长期保留的业务状态。`
                 : '请确认是否删除该状态。'}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className='gap-2'>
-            <AlertDialogCancel className='rounded-full text-[10px] font-black uppercase tracking-widest'>
+            <AlertDialogCancel className='rounded-full text-[10px] font-black tracking-widest uppercase'>
               取消
             </AlertDialogCancel>
             <AlertDialogAction
-              className='rounded-full bg-rose-600 text-[10px] font-black uppercase tracking-widest hover:bg-rose-700'
+              className='rounded-full bg-rose-600 text-[10px] font-black tracking-widest uppercase hover:bg-rose-700'
               onClick={() => {
                 if (pendingDeleteIndex === null) {
                   return
@@ -489,21 +504,21 @@ export function StatusEditorContent({
       >
         <AlertDialogContent className='rounded-[32px] border-none bg-background shadow-2xl'>
           <AlertDialogHeader>
-            <AlertDialogTitle className='text-lg font-black tracking-tighter italic uppercase'>
+            <AlertDialogTitle className='text-lg font-black tracking-tighter uppercase italic'>
               确认安全重命名迁移
             </AlertDialogTitle>
-            <AlertDialogDescription className='text-[11px] font-bold leading-6 text-muted-foreground'>
+            <AlertDialogDescription className='text-[11px] leading-6 font-bold text-muted-foreground'>
               {effectiveRenamePlans.length > 0
                 ? `本次将同步迁移 ${effectiveRenamePlans.length} 个状态的规则引用：触发 ${totalRenameTargetSegments} 项，归档 ${totalRenameResolveSegments} 项，系统派生审批动作 ${totalRenameApprovalActions} 项。${swapPairCount > 0 ? ` 交换改名 ${swapPairCount} 组。` : ''}${chainPathCount > 0 ? ` 链式改名 ${chainPathCount} 组。` : ''}${semanticShrinkCount > 0 ? ` 其中 ${semanticShrinkCount} 个规则字段会发生语义收缩。` : ''}`
                 : '请确认是否保存状态。'}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className='gap-2'>
-            <AlertDialogCancel className='rounded-full text-[10px] font-black uppercase tracking-widest'>
+            <AlertDialogCancel className='rounded-full text-[10px] font-black tracking-widest uppercase'>
               取消
             </AlertDialogCancel>
             <AlertDialogAction
-              className='rounded-full text-[10px] font-black uppercase tracking-widest'
+              className='rounded-full text-[10px] font-black tracking-widest uppercase'
               onClick={() => {
                 setRenameConfirmOpen(false)
                 onSave?.()
@@ -578,7 +593,7 @@ export function FieldEditorContent({
           <h3 className='text-sm font-black tracking-tight italic'>字段配置</h3>
           <SectionChangeBadge dirty={dirty} summary={changeSummary} />
         </div>
-        <p className='mt-2 text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>
+        <p className='mt-2 text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
           维护模板变量、动态接收人来源字段，以及事件元数据 path。
         </p>
       </div>

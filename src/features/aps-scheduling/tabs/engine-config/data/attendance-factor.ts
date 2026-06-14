@@ -5,7 +5,10 @@ import type {
   GreedyEngineFactorSummaryItem,
 } from '../types'
 
-type EngineConfigTranslator = (key: TranslationKey, params?: Record<string, string | number>) => string
+type EngineConfigTranslator = (
+  key: TranslationKey,
+  params?: Record<string, string | number>
+) => string
 
 export type GreedyEngineAttendanceSnapshot = {
   enableAttendanceLock: boolean
@@ -33,36 +36,52 @@ export function buildSystemDefaultGreedyAttendanceSnapshot(): GreedyEngineAttend
 
 export function buildAttendanceSummaryItems(
   snapshot: GreedyEngineAttendanceSnapshot,
-  t: EngineConfigTranslator,
+  t: EngineConfigTranslator
 ): GreedyEngineFactorSummaryItem[] {
   return [
     {
       id: 'enable-attendance',
-      label: t('apsScheduling.engineConfig.attendanceCard.summary.enableAttendanceLabel'),
+      label: t(
+        'apsScheduling.engineConfig.attendanceCard.summary.enableAttendanceLabel'
+      ),
       value: snapshot.enableAttendanceLock
-        ? t('apsScheduling.engineConfig.attendanceCard.summary.enableAttendanceValue')
-        : t('apsScheduling.engineConfig.attendanceCard.summary.enableAttendanceDisabledValue'),
+        ? t(
+            'apsScheduling.engineConfig.attendanceCard.summary.enableAttendanceValue'
+          )
+        : t(
+            'apsScheduling.engineConfig.attendanceCard.summary.enableAttendanceDisabledValue'
+          ),
     },
     {
       id: 'min-crew-rate',
-      label: t('apsScheduling.engineConfig.attendanceCard.summary.minCrewRateLabel'),
-      value: t('apsScheduling.engineConfig.attendanceCard.summary.minCrewRateValue', {
-        rate: snapshot.minCrewAttendanceRate,
-      }),
+      label: t(
+        'apsScheduling.engineConfig.attendanceCard.summary.minCrewRateLabel'
+      ),
+      value: t(
+        'apsScheduling.engineConfig.attendanceCard.summary.minCrewRateValue',
+        {
+          rate: snapshot.minCrewAttendanceRate,
+        }
+      ),
     },
     {
       id: 'capacity-derate',
-      label: t('apsScheduling.engineConfig.attendanceCard.summary.capacityDerateLabel'),
-      value: t('apsScheduling.engineConfig.attendanceCard.summary.capacityDerateValue', {
-        derate: snapshot.absenceCapacityDerate / 10,
-      }),
+      label: t(
+        'apsScheduling.engineConfig.attendanceCard.summary.capacityDerateLabel'
+      ),
+      value: t(
+        'apsScheduling.engineConfig.attendanceCard.summary.capacityDerateValue',
+        {
+          derate: snapshot.absenceCapacityDerate / 10,
+        }
+      ),
     },
   ]
 }
 
 export function buildAttendanceFactorViewModel(
   snapshot: GreedyEngineAttendanceSnapshot,
-  t: EngineConfigTranslator,
+  t: EngineConfigTranslator
 ): AttendanceFactorViewModel {
   const sourceTone: GreedyEngineFactorStatusTone = 'healthy'
   const sourceStatusTone: GreedyEngineFactorStatusTone = 'healthy'
@@ -72,12 +91,16 @@ export function buildAttendanceFactorViewModel(
     sourceBadges: [
       {
         id: 'attendance-status',
-        value: t('apsScheduling.engineConfig.attendanceCard.sourceStatus.active'),
+        value: t(
+          'apsScheduling.engineConfig.attendanceCard.sourceStatus.active'
+        ),
         tone: sourceStatusTone,
       },
       {
         id: 'attendance-source',
-        value: t('apsScheduling.engineConfig.attendanceCard.sourceType.systemDefault'),
+        value: t(
+          'apsScheduling.engineConfig.attendanceCard.sourceType.systemDefault'
+        ),
         tone: sourceTone,
       },
     ],

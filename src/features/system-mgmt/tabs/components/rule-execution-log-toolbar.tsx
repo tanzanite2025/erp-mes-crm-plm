@@ -1,5 +1,6 @@
 import { RefreshCcw, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -8,7 +9,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { CardHeader } from '@/components/ui/card'
 import {
   type RuleExecutionStatus,
   type RuleExecutionType,
@@ -45,7 +45,7 @@ export function RuleExecutionLogToolbar({
     <CardHeader className='gap-0.5 border-b border-dashed border-muted/30 px-0 py-0'>
       <div className='grid gap-0.5 lg:grid-cols-[minmax(0,1.2fr)_repeat(3,minmax(0,0.6fr))_auto]'>
         <div className='relative'>
-          <Search className='pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground' />
+          <Search className='pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground' />
           <Input
             value={keyword}
             onChange={(event) => onKeywordChange(event.target.value)}
@@ -104,7 +104,7 @@ export function RuleExecutionLogToolbar({
           variant='outline'
           onClick={onRefresh}
           disabled={isFetching}
-          className='h-9 rounded-full border-dashed border-muted-foreground/30 px-3.5 text-[10px] font-black uppercase tracking-widest'
+          className='h-9 rounded-full border-dashed border-muted-foreground/30 px-3.5 text-[10px] font-black tracking-widest uppercase'
         >
           <RefreshCcw
             className={`size-3.5 ${isFetching ? 'animate-spin' : ''}`}

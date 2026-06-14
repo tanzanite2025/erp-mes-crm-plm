@@ -1,4 +1,3 @@
-import { CompactPaginationControls } from '@/components/pagination/compact-pagination-controls'
 import { useLanguage } from '@/context/language-provider'
 import {
   Select,
@@ -7,6 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { CompactPaginationControls } from '@/components/pagination/compact-pagination-controls'
 
 interface QualityStandardsPaginationProps {
   page: number

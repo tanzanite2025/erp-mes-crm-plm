@@ -1,9 +1,21 @@
-import { Calendar, Database, Pencil, Plus, Ruler, ScanLine, Search, Waves } from 'lucide-react'
+import {
+  Calendar,
+  Database,
+  Pencil,
+  Plus,
+  Ruler,
+  ScanLine,
+  Search,
+  Waves,
+} from 'lucide-react'
+import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useLanguage } from '@/context/language-provider'
-import { prepregSpecSummary, type PrepregMaterialSpec } from '../data/prepreg-material-spec-schema'
+import {
+  prepregSpecSummary,
+  type PrepregMaterialSpec,
+} from '../data/prepreg-material-spec-schema'
 
 interface PrepregCatalogListProps {
   searchTerm: string
@@ -42,11 +54,11 @@ export function PrepregCatalogList({
           <div className='space-y-2'>
             <div className='flex items-center gap-2 text-primary'>
               <Database className='size-5' />
-              <h2 className='text-sm font-black italic tracking-tighter'>
+              <h2 className='text-sm font-black tracking-tighter italic'>
                 {t('rawMaterials.catalog.hero.title')}
               </h2>
             </div>
-            <p className='max-w-4xl text-[10px] font-black uppercase tracking-widest leading-5 text-muted-foreground/60'>
+            <p className='max-w-4xl text-[10px] leading-5 font-black tracking-widest text-muted-foreground/60 uppercase'>
               {t('rawMaterials.catalog.hero.description')}
             </p>
           </div>
@@ -89,7 +101,7 @@ export function PrepregCatalogList({
 
       <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between'>
         <div className='relative w-full md:max-w-md'>
-          <Search className='absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/40' />
+          <Search className='absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/40' />
           <Input
             value={searchTerm}
             onChange={(event) => onSearchTermChange(event.target.value)}
@@ -102,14 +114,14 @@ export function PrepregCatalogList({
             type='button'
             variant='outline'
             onClick={onScanBind}
-            className='h-11 rounded-full px-7 text-[10px] font-black uppercase tracking-widest'
+            className='h-11 rounded-full px-7 text-[10px] font-black tracking-widest uppercase'
           >
             <ScanLine className='size-4' />
             {t('rawMaterials.catalog.actions.scanBind')}
           </Button>
           <Button
             onClick={onCreate}
-            className='h-11 rounded-full px-7 text-[10px] font-black uppercase tracking-widest'
+            className='h-11 rounded-full px-7 text-[10px] font-black tracking-widest uppercase'
           >
             <Plus className='size-4' />
             {t('rawMaterials.catalog.actions.create')}
@@ -118,7 +130,7 @@ export function PrepregCatalogList({
       </div>
 
       <div className='overflow-hidden rounded-[28px] border border-dashed border-muted/60 bg-background shadow-sm'>
-        <div className='hidden grid-cols-[1.2fr_1fr_1fr_1fr_100px] border-b border-dashed border-muted/60 bg-muted/25 px-5 py-3 text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/60 md:grid'>
+        <div className='hidden grid-cols-[1.2fr_1fr_1fr_1fr_100px] border-b border-dashed border-muted/60 bg-muted/25 px-5 py-3 text-[10px] font-black tracking-[0.24em] text-muted-foreground/60 uppercase md:grid'>
           <span>{t('rawMaterials.catalog.table.columns.product')}</span>
           <span>{t('rawMaterials.catalog.table.columns.material')}</span>
           <span>{t('rawMaterials.catalog.table.columns.dimension')}</span>
@@ -129,15 +141,15 @@ export function PrepregCatalogList({
         </div>
 
         {isLoading ? (
-          <div className='p-10 text-center text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/50'>
+          <div className='p-10 text-center text-[10px] font-black tracking-[0.24em] text-muted-foreground/50 uppercase'>
             {t('rawMaterials.catalog.loading')}
           </div>
         ) : specs.length === 0 ? (
           <div className='p-12 text-center'>
-            <p className='text-[10px] font-black uppercase tracking-[0.24em] text-foreground/80'>
+            <p className='text-[10px] font-black tracking-[0.24em] text-foreground/80 uppercase'>
               {t('rawMaterials.catalog.empty.title')}
             </p>
-            <p className='mt-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+            <p className='mt-2 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
               {t('rawMaterials.catalog.empty.description')}
             </p>
           </div>
@@ -154,11 +166,11 @@ export function PrepregCatalogList({
                   <span className='font-mono text-[10px] font-black tracking-[0.2em] text-foreground/80'>
                     {spec.code}
                   </span>
-                  <Badge className='rounded-full border-none bg-primary/10 text-[10px] font-mono uppercase tracking-widest text-primary'>
+                  <Badge className='rounded-full border-none bg-primary/10 font-mono text-[10px] tracking-widest text-primary uppercase'>
                     {statusLabel(spec.status)}
                   </Badge>
                 </div>
-                <div className='text-sm font-black italic tracking-tighter text-foreground/90'>
+                <div className='text-sm font-black tracking-tighter text-foreground/90 italic'>
                   {spec.displayAlias || spec.name}
                 </div>
                 {spec.displayAlias ? (
@@ -166,7 +178,7 @@ export function PrepregCatalogList({
                     {spec.name}
                   </div>
                 ) : null}
-                <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                <div className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                   {prepregSpecSummary(spec) ||
                     t('rawMaterials.catalog.table.summaryEmpty')}
                 </div>
@@ -182,7 +194,9 @@ export function PrepregCatalogList({
                     spec.resinContentPercent
                       ? `RC ${spec.resinContentPercent}%`
                       : '',
-                  ].filter(Boolean).join(' / ') ||
+                  ]
+                    .filter(Boolean)
+                    .join(' / ') ||
                   t('rawMaterials.catalog.table.fallback.resin')
                 }
               />
@@ -196,8 +210,12 @@ export function PrepregCatalogList({
                 sub={
                   [
                     spec.nominalAreaM2 ? `${spec.nominalAreaM2} m2` : '',
-                    spec.lengthM ? `${t('rawMaterials.catalog.table.length')} ${spec.lengthM} m` : '',
-                  ].filter(Boolean).join(' / ') ||
+                    spec.lengthM
+                      ? `${t('rawMaterials.catalog.table.length')} ${spec.lengthM} m`
+                      : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' / ') ||
                   t('rawMaterials.catalog.table.fallback.area')
                 }
               />
@@ -215,7 +233,9 @@ export function PrepregCatalogList({
                     spec.boxNo
                       ? `${t('rawMaterials.catalog.table.boxNo')} ${spec.boxNo}`
                       : '',
-                  ].filter(Boolean).join(' / ') ||
+                  ]
+                    .filter(Boolean)
+                    .join(' / ') ||
                   t('rawMaterials.catalog.table.fallback.inspection')
                 }
               />
@@ -235,10 +255,10 @@ export function PrepregCatalogList({
 function Metric({ label, value }: { label: string; value: number }) {
   return (
     <div className='rounded-2xl border border-dashed border-muted/60 bg-background/70 p-3'>
-      <div className='text-base font-black tabular-nums tracking-tight text-foreground/90'>
+      <div className='text-base font-black tracking-tight text-foreground/90 tabular-nums'>
         {value}
       </div>
-      <div className='mt-1 text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/60'>
+      <div className='mt-1 text-[10px] font-black tracking-[0.24em] text-muted-foreground/60 uppercase'>
         {label}
       </div>
     </div>
@@ -248,10 +268,10 @@ function Metric({ label, value }: { label: string; value: number }) {
 function FlowStep({ label, value }: { label: string; value: string }) {
   return (
     <div className='rounded-2xl border border-dashed border-muted/45 bg-background/70 p-3'>
-      <div className='text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/60'>
+      <div className='text-[10px] font-black tracking-[0.24em] text-muted-foreground/60 uppercase'>
         {label}
       </div>
-      <div className='mt-2 text-[10px] font-black uppercase tracking-widest leading-5 text-foreground/75'>
+      <div className='mt-2 text-[10px] leading-5 font-black tracking-widest text-foreground/75 uppercase'>
         {value}
       </div>
     </div>
@@ -271,10 +291,10 @@ function InfoCell({
     <div className='flex items-start gap-2'>
       <Icon className='mt-0.5 size-4 shrink-0 text-primary/60' />
       <div className='min-w-0'>
-        <div className='truncate text-[10px] font-black uppercase tracking-[0.16em] text-foreground/80'>
+        <div className='truncate text-[10px] font-black tracking-[0.16em] text-foreground/80 uppercase'>
           {main}
         </div>
-        <div className='truncate text-[10px] font-mono uppercase tracking-widest text-muted-foreground/55'>
+        <div className='truncate font-mono text-[10px] tracking-widest text-muted-foreground/55 uppercase'>
           {sub}
         </div>
       </div>

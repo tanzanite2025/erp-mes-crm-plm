@@ -30,7 +30,8 @@ export const labExperimental = {
       confirmWordPrompt: '请输入 "{{confirmWord}}" 以确认操作：',
       confirmWordPlaceholder: '在此键入 "{{confirmWord}}"',
       dangerTitle: '高危操作警告',
-      dangerDescription: '删除顶级分类会导致该分支下的整个层级结构丢失。建议在操作前确认无误。',
+      dangerDescription:
+        '删除顶级分类会导致该分支下的整个层级结构丢失。建议在操作前确认无误。',
       confirmAction: '确认删除此分类',
     },
   },

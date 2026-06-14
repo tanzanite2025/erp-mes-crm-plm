@@ -13,14 +13,22 @@ export const packagingService = {
   async getRules(): Promise<PackagingRule[]> {
     const data = await apiFetch<PackagingRuleApiDTO[]>('/packaging')
     return toPackagingRuleContracts(
-      ensureArrayResponse<PackagingRuleApiDTO>(data, 'packagingService.getRules')
+      ensureArrayResponse<PackagingRuleApiDTO>(
+        data,
+        'packagingService.getRules'
+      )
     )
   },
 
   async getRuleByMaterialId(materialId: string): Promise<PackagingRule | null> {
-    const data = await apiFetch<PackagingRuleApiDTO[]>(`/packaging?materialId=${materialId}`)
+    const data = await apiFetch<PackagingRuleApiDTO[]>(
+      `/packaging?materialId=${materialId}`
+    )
     const rules = toPackagingRuleContracts(
-      ensureArrayResponse<PackagingRuleApiDTO>(data, 'packagingService.getRuleByMaterialId')
+      ensureArrayResponse<PackagingRuleApiDTO>(
+        data,
+        'packagingService.getRuleByMaterialId'
+      )
     )
     return rules[0] || null
   },

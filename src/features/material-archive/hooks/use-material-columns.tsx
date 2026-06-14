@@ -14,10 +14,16 @@ interface UseMaterialColumnsParams {
   onDelete: (id: string) => void
 }
 
-export function useMaterialColumns({ category, onEdit, onDelete }: UseMaterialColumnsParams) {
+export function useMaterialColumns({
+  category,
+  onEdit,
+  onDelete,
+}: UseMaterialColumnsParams) {
   const { t, locale } = useLanguage()
-  const categoryOptions = useMemo(() => getMaterialCategoryOptions(locale), [locale])
-
+  const categoryOptions = useMemo(
+    () => getMaterialCategoryOptions(locale),
+    [locale]
+  )
 
   return useMemo<ColumnDef<Material>[]>(() => {
     const columns: ColumnDef<Material>[] = [
@@ -65,16 +71,20 @@ export function useMaterialColumns({ category, onEdit, onDelete }: UseMaterialCo
                     variant='outline'
                     className='h-4 rounded-full border-none bg-primary/10 px-2 py-0 font-mono text-[8px] font-black tracking-tighter text-primary'
                   >
-                    {t('materialArchive.columns.internalTag')}: {material.internalDimensions.length}x
-                    {material.internalDimensions.width}x{material.internalDimensions.height}
+                    {t('materialArchive.columns.internalTag')}:{' '}
+                    {material.internalDimensions.length}x
+                    {material.internalDimensions.width}x
+                    {material.internalDimensions.height}
                   </Badge>
                   {material.externalDimensions && (
                     <Badge
                       variant='outline'
                       className='h-4 rounded-full border-none bg-muted/40 px-2 py-0 font-mono text-[8px] font-black tracking-tighter text-muted-foreground'
                     >
-                      {t('materialArchive.columns.externalTag')}: {material.externalDimensions.length}x
-                      {material.externalDimensions.width}x{material.externalDimensions.height}
+                      {t('materialArchive.columns.externalTag')}:{' '}
+                      {material.externalDimensions.length}x
+                      {material.externalDimensions.width}x
+                      {material.externalDimensions.height}
                     </Badge>
                   )}
                 </div>
@@ -126,7 +136,8 @@ export function useMaterialColumns({ category, onEdit, onDelete }: UseMaterialCo
           const categoryLabel =
             resolved && resolved !== row.original.category
               ? resolved
-              : row.original.category || t('materialArchive.columns.unknownCategory')
+              : row.original.category ||
+                t('materialArchive.columns.unknownCategory')
 
           return (
             <Badge

@@ -1,18 +1,11 @@
-import {
-  productionLinesService,
-} from './production-lines-service'
-import {
-  productionProcessesService,
-} from './production-processes-service'
+import { productionLinesService } from './production-lines-service'
+import { productionProcessesService } from './production-processes-service'
 import {
   PRODUCTION_LINES_UPDATED_EVENT,
   PRODUCTION_PROCESSES_UPDATED_EVENT,
 } from './production-resource-sync'
 
-export {
-  PRODUCTION_LINES_UPDATED_EVENT,
-  PRODUCTION_PROCESSES_UPDATED_EVENT,
-}
+export { PRODUCTION_LINES_UPDATED_EVENT, PRODUCTION_PROCESSES_UPDATED_EVENT }
 
 export const productionResourceService = {
   getLines: productionLinesService.getLines,

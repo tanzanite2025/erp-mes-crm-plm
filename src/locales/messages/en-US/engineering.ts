@@ -12,7 +12,8 @@ export const engineering = {
   },
   productAppearance: {
     title: 'Product Appearance',
-    description: 'Maintain appearance master data used later by sales demand selection and barcode appearance code mapping.',
+    description:
+      'Maintain appearance master data used later by sales demand selection and barcode appearance code mapping.',
     metrics: {
       total: 'Appearances',
       codes: 'Barcode Codes',
@@ -48,21 +49,26 @@ export const engineering = {
     },
     empty: {
       title: 'No product appearances yet',
-      description: 'Build the appearance master first, then connect sales orders and barcode flows later.',
+      description:
+        'Build the appearance master first, then connect sales orders and barcode flows later.',
       descriptionFallback: 'No description',
     },
     dialog: {
       createTitle: 'Add Product Appearance',
       editTitle: 'Edit Product Appearance',
-      description: 'This round only builds the appearance master itself and does not yet connect sales orders or barcode pages.',
-      imageHint: 'This phase uses local prototype images first and will migrate to unified file storage later.',
+      description:
+        'This round only builds the appearance master itself and does not yet connect sales orders or barcode pages.',
+      imageHint:
+        'This phase uses local prototype images first and will migrate to unified file storage later.',
       imageEmpty: 'No appearance image uploaded yet',
     },
     toasts: {
       required: 'Appearance name and barcode code are required',
       invalidBarcodeCode: 'Barcode code must be a single digit from 1 to 9',
-      duplicateBarcodeCode: 'This barcode code is already used by another appearance',
-      imageReadFailed: 'Failed to read the image file, please choose another one',
+      duplicateBarcodeCode:
+        'This barcode code is already used by another appearance',
+      imageReadFailed:
+        'Failed to read the image file, please choose another one',
       saveSuccess: 'Product appearance saved',
       saveFailed: 'Failed to save product appearance',
       deleteSuccess: 'Product appearance deleted',
@@ -71,7 +77,8 @@ export const engineering = {
   },
   changeOrders: {
     title: 'ECO / ECN Change Orders',
-    description: 'Formal change masters for BOM release, effective-date control, and site-specific revisions.',
+    description:
+      'Formal change masters for BOM release, effective-date control, and site-specific revisions.',
     stats: '{{count}} ECO / ECN records available',
     newOrder: 'New Change Order',
     table: {
@@ -130,7 +137,8 @@ export const engineering = {
     dialog: {
       create: 'Create Change Order',
       edit: 'Edit Change Order',
-      description: 'The selected record can be linked directly into BOM revisions.',
+      description:
+        'The selected record can be linked directly into BOM revisions.',
     },
     actions: {
       cancel: 'Cancel',
@@ -144,7 +152,8 @@ export const engineering = {
       required: 'Change order number and title are required',
       saveSuccess: 'Change order saved',
       saveFailed: 'Failed to save change order',
-      conflict: 'The change order was updated elsewhere. Refresh and try again.',
+      conflict:
+        'The change order was updated elsewhere. Refresh and try again.',
     },
   },
   bomToolbar: {
@@ -155,7 +164,8 @@ export const engineering = {
   },
   productBarcode: {
     syncSequenceSuccess: 'Preview serial advanced to: {{sn}}',
-    syncSequenceFailed: 'Failed to advance preview serial. Check the current value.',
+    syncSequenceFailed:
+      'Failed to advance preview serial. Check the current value.',
     templateName: 'Product Label - {{name}}',
     printBatchSuccess: 'Print batch recorded. Current SN: {{sn}}',
     printBatchFailed: 'Atomic print failed. Please try again.',
@@ -166,7 +176,8 @@ export const engineering = {
   db: {
     overview: {
       title: 'Engineering File Aggregation Center',
-      description: 'Centralized manufacturing repository for SOPs, drawings, and atomic data assets.',
+      description:
+        'Centralized manufacturing repository for SOPs, drawings, and atomic data assets.',
       searchPlaceholder: 'Search keywords, SKU, product... SCAN_ARCHIVE',
     },
     categories: {
@@ -206,7 +217,8 @@ export const engineering = {
   cuttingPlan: {
     overview: {
       title: 'Cutting Plan',
-      description: 'Import machine-ready templates with only essential fields. Print outputs automatically complete headers and layout for shop-floor circulation and archiving.',
+      description:
+        'Import machine-ready templates with only essential fields. Print outputs automatically complete headers and layout for shop-floor circulation and archiving.',
     },
     metrics: {
       plans: 'Plans',
@@ -214,7 +226,8 @@ export const engineering = {
       lines: 'Cut Lines',
     },
     placeholders: {
-      search: 'Search plan, document no., product, hole count, or carbon fiber model',
+      search:
+        'Search plan, document no., product, hole count, or carbon fiber model',
       generatedName: 'Auto-generated from product model + hole count',
       selectProduct: 'Select product engineering model',
       selectHoleCount: 'Select shared hole-count source',
@@ -223,7 +236,8 @@ export const engineering = {
       selectEffectiveDate: 'Select effective date',
       loadingPrepreg: 'Loading prepreg...',
       selectPrepreg: 'Select prepreg',
-      prepregSummaryFallback: 'Selecting prepreg auto-fills carbon fiber, resin and RC details',
+      prepregSummaryFallback:
+        'Selecting prepreg auto-fills carbon fiber, resin and RC details',
       cutSizeLoading: 'Loading...',
       selectCutSize: 'Select cut-size library unit',
       sizeExpression: '980x34x4',
@@ -251,7 +265,8 @@ export const engineering = {
       effectiveDate: 'Effective Date',
       prepregRef: 'Prepreg Reference',
       lineDetails: 'Cut Line Details',
-      lineDetailsHint: 'Every cutting-plan row must reference the cut-size library; width×length×pieces, FAW, weight, and area are auto-filled from the library and remain read-only.',
+      lineDetailsHint:
+        'Every cutting-plan row must reference the cut-size library; width×length×pieces, FAW, weight, and area are auto-filled from the library and remain read-only.',
       sequenceNo: 'No.',
       rollOrder: 'Roll Order',
       yarnDirection: 'Yarn Type',
@@ -294,8 +309,10 @@ export const engineering = {
     empty: {
       loading: 'Loading cutting plans...',
       title: 'No cutting plans yet',
-      description: 'Download the template for batch import, then review and save in the dialog.',
-      noLines: 'No cut lines yet. Add one row and bind a cut-size library entry first.',
+      description:
+        'Download the template for batch import, then review and save in the dialog.',
+      noLines:
+        'No cut lines yet. Add one row and bind a cut-size library entry first.',
     },
     accessibility: {
       clearEffectiveDate: 'Clear effective date',
@@ -306,14 +323,18 @@ export const engineering = {
       deleteSuccess: 'Cutting plan deleted',
       productRequired: 'Please select or match a product model first',
       holeCountRequired: 'Please select a hole count first',
-      nameGenerateFailed: 'Failed to generate plan name. Check product model and hole count.',
+      nameGenerateFailed:
+        'Failed to generate plan name. Check product model and hole count.',
       emptyLines: 'Add at least one cut line before saving or exporting.',
-      conflict: 'This cutting plan was updated elsewhere. Refresh and try again.',
+      conflict:
+        'This cutting plan was updated elsewhere. Refresh and try again.',
       saveFailed: 'Failed to save cutting plan: {{message}}',
     },
     alerts: {
-      invalidRecordsTitle: 'Isolated {{count}} damaged historical cutting plans',
-      invalidRecordsDescription: 'The following records were safely isolated due to malformed payloads or authority-source mismatches and were excluded from the active list and editor flow.',
+      invalidRecordsTitle:
+        'Isolated {{count}} damaged historical cutting plans',
+      invalidRecordsDescription:
+        'The following records were safely isolated due to malformed payloads or authority-source mismatches and were excluded from the active list and editor flow.',
       invalidRecordsBadge: 'Isolated {{count}}',
       invalidRecordCode: 'Code {{code}}',
       invalidRecordId: 'ID {{id}}',
@@ -334,7 +355,8 @@ export const engineering = {
       },
       failureGroupCount: '{{count}} records',
       emptyFilteredResults: 'No bad records match the current filter',
-      invalidRecordsHint: 'Review the failure summary to repair the historical cutting plan, cut-size binding, or related master data.',
+      invalidRecordsHint:
+        'Review the failure summary to repair the historical cutting plan, cut-size binding, or related master data.',
     },
     values: {
       lineCount: '{{count}} lines',
@@ -344,7 +366,8 @@ export const engineering = {
   masterData: {
     page: {
       title: 'Engineering Master Data Center',
-      description: 'Maintain reusable and constrained engineering dictionaries that can be referenced by later engineering modules.',
+      description:
+        'Maintain reusable and constrained engineering dictionaries that can be referenced by later engineering modules.',
     },
     tabs: {
       weavingMode: 'Weaving Mode',
@@ -352,7 +375,8 @@ export const engineering = {
     weavingMode: {
       overview: {
         title: 'Weaving Mode Master Data',
-        description: 'Maintain ratio-based weaving master data with a single authoritative source, presets, and extensible custom entries.',
+        description:
+          'Maintain ratio-based weaving master data with a single authoritative source, presets, and extensible custom entries.',
       },
       metrics: {
         total: 'Total {{count}}',
@@ -392,15 +416,18 @@ export const engineering = {
       dialog: {
         createTitle: 'Create Weaving Mode',
         editTitle: 'Edit Weaving Mode',
-        description: 'Maintain master data only. The system normalizes ratios, generates codes, and controls sorting automatically.',
+        description:
+          'Maintain master data only. The system normalizes ratios, generates codes, and controls sorting automatically.',
       },
       hints: {
         presetLockedTitle: 'Preset Ratio Locked',
-        presetLockedDescription: 'Preset entries cannot edit numerator or denominator directly. Create a new record for a new ratio.',
+        presetLockedDescription:
+          'Preset entries cannot edit numerator or denominator directly. Create a new record for a new ratio.',
       },
       empty: {
         title: 'No matching weaving modes',
-        description: 'No weaving mode master data matches the current filter. You can create a new ratio rule directly.',
+        description:
+          'No weaving mode master data matches the current filter. You can create a new ratio rule directly.',
         descriptionFallback: 'No description provided',
       },
       toasts: {
@@ -408,19 +435,22 @@ export const engineering = {
         saveSuccess: 'Weaving mode saved',
         saveFailed: 'Failed to save weaving mode',
         initFailed: 'Failed to initialize preset weaving modes',
-        duplicate: 'This weaving ratio already exists. Duplicate normalized values are blocked.',
+        duplicate:
+          'This weaving ratio already exists. Duplicate normalized values are blocked.',
         deleteSuccess: 'Weaving mode deleted',
         deleteFailed: 'Failed to delete weaving mode',
         deleteConfirm: 'Delete weaving mode {{name}}?',
         presetDeleteBlocked: 'System preset weaving modes cannot be deleted',
-        linkedDeleteBlocked: 'This weaving mode is still referenced by drilling plans and cannot be deleted',
+        linkedDeleteBlocked:
+          'This weaving mode is still referenced by drilling plans and cannot be deleted',
       },
     },
   },
   drilling: {
     overview: {
       title: 'Wheel Rim Drilling Center',
-      description: 'Controlled Blueprints: Management of drilling parameters and linked CAD/PDF technical drawings.',
+      description:
+        'Controlled Blueprints: Management of drilling parameters and linked CAD/PDF technical drawings.',
     },
     table: {
       name: 'Plan Name',
@@ -437,7 +467,8 @@ export const engineering = {
     dialog: {
       createTitle: 'Add New Drilling Plan',
       editTitle: 'Edit Drilling Blueprint',
-      description: 'Controlled engineering blueprint defining physical lacing and hole parameters.',
+      description:
+        'Controlled engineering blueprint defining physical lacing and hole parameters.',
     },
     form: {
       name: 'Plan Name',
@@ -460,18 +491,22 @@ export const engineering = {
     toasts: {
       saveSuccess: 'Drilling plan archived successfully',
       updateSuccess: 'Blueprint updated successfully',
-      deleteConfirm: 'Are you sure you want to permanently remove this drilling plan?',
+      deleteConfirm:
+        'Are you sure you want to permanently remove this drilling plan?',
       deleteSuccess: 'Plan removed',
       noFile: 'No blueprint attachment for this plan',
       unResolved: 'Unable to resolve drawing preview link',
-      weavingModeLoadFailed: 'Failed to load weaving mode master data. Please try again later.',
-      weavingModeUnavailable: 'No weaving modes are currently available. Please maintain them in Engineering Master Data first.',
+      weavingModeLoadFailed:
+        'Failed to load weaving mode master data. Please try again later.',
+      weavingModeUnavailable:
+        'No weaving modes are currently available. Please maintain them in Engineering Master Data first.',
     },
   },
   hubs: {
     overview: {
       title: 'Hub Master Database',
-      description: 'Core Geometry Specification Vault: Defines physical center parameters.',
+      description:
+        'Core Geometry Specification Vault: Defines physical center parameters.',
     },
     table: {
       name: 'Hub Name/Model',
@@ -486,7 +521,8 @@ export const engineering = {
     dialog: {
       createTitle: 'Register New Hub',
       editTitle: 'Edit Hub Master Data',
-      description: 'Core Geometry Specifications: Define physical geometric center parameters.',
+      description:
+        'Core Geometry Specifications: Define physical geometric center parameters.',
     },
     form: {
       name: 'Full Hub Name',
@@ -518,7 +554,8 @@ export const engineering = {
   spokeLength: {
     overview: {
       title: 'Spoke Length Atomic Center',
-      description: 'Physical Parameter Archive: Controlled spoke dimensions and process evidence linked to Hub & Nipple master data.',
+      description:
+        'Physical Parameter Archive: Controlled spoke dimensions and process evidence linked to Hub & Nipple master data.',
     },
     table: {
       name: 'Scheme/Description',
@@ -536,7 +573,8 @@ export const engineering = {
     dialog: {
       createTitle: 'Add Spoke Length',
       editTitle: 'Edit Spoke Data',
-      description: 'Master Data Link Model: Integrate Hub and Nipple specs into spoke archive.',
+      description:
+        'Master Data Link Model: Integrate Hub and Nipple specs into spoke archive.',
     },
     form: {
       name: 'Record Name/Descriptor',
@@ -560,7 +598,8 @@ export const engineering = {
     toasts: {
       saveSuccess: 'Spoke record appended',
       updateSuccess: 'Record synchronized',
-      deleteConfirm: 'Are you sure you want to remove this spoke length record?',
+      deleteConfirm:
+        'Are you sure you want to remove this spoke length record?',
       deleteSuccess: 'Record removed',
       noFile: 'No attachment found for this record',
       unResolved: 'Unable to resolve attachment link',
@@ -569,7 +608,8 @@ export const engineering = {
   nipples: {
     overview: {
       title: 'Nipple Master Database',
-      description: 'Parameter Archive: Support for physical material and length evidence.',
+      description:
+        'Parameter Archive: Support for physical material and length evidence.',
     },
     table: {
       name: 'Nipple Name/Model',
@@ -584,7 +624,8 @@ export const engineering = {
     dialog: {
       createTitle: 'Register Nipple Spec',
       editTitle: 'Edit Nipple Data',
-      description: 'Nipple Master Data: Support for material and technical length specifications.',
+      description:
+        'Nipple Master Data: Support for material and technical length specifications.',
     },
     form: {
       name: 'Full Model Name',
@@ -613,7 +654,8 @@ export const engineering = {
   labeling: {
     overview: {
       title: 'Labeling Graphics Archive',
-      description: 'Controlled Designs: Management of Water Transfer, Paint Marking, and Laser Engraving blueprints linked to production SKUs.',
+      description:
+        'Controlled Designs: Management of Water Transfer, Paint Marking, and Laser Engraving blueprints linked to production SKUs.',
     },
     table: {
       name: 'Draft Name',
@@ -636,7 +678,8 @@ export const engineering = {
     dialog: {
       createTitle: 'Add New Labeling Draft',
       editTitle: 'Edit Labeling Graphics',
-      description: 'Visual Standard System: Define labeling category, coordinates, and visual atomic parameters.',
+      description:
+        'Visual Standard System: Define labeling category, coordinates, and visual atomic parameters.',
     },
     form: {
       name: 'Draft Subject Name',
@@ -659,7 +702,8 @@ export const engineering = {
     toasts: {
       saveSuccess: 'Labeling draft archived successfully',
       updateSuccess: 'Graphic blueprint updated',
-      deleteConfirm: 'Are you sure you want to permanently remove this graphic design?',
+      deleteConfirm:
+        'Are you sure you want to permanently remove this graphic design?',
       deleteSuccess: 'Draft removed',
       unResolved: 'Unable to resolve drawing preview link',
       noFile: 'No physical drawing attached to this draft',
@@ -668,7 +712,8 @@ export const engineering = {
   specs: {
     overview: {
       title: 'Technical Specification Depot',
-      description: 'Controlled Standards Center: Centralized repository for SOPs, quality inspection criteria, and technical parameters.',
+      description:
+        'Controlled Standards Center: Centralized repository for SOPs, quality inspection criteria, and technical parameters.',
     },
     table: {
       name: 'Specification File',
@@ -683,7 +728,8 @@ export const engineering = {
     dialog: {
       createTitle: 'PUBLISH_NEW_SPEC',
       editTitle: 'EDIT_TECHNICAL_SPEC',
-      description: 'Controlled manufacturing atomic document, supporting SOP and standards linking.',
+      description:
+        'Controlled manufacturing atomic document, supporting SOP and standards linking.',
     },
     form: {
       name: 'Specification Name',
@@ -697,12 +743,14 @@ export const engineering = {
       name: 'e.g., Rim reinforcement layer layup process',
       search: 'Search spec name, category...',
       upload: 'Upload controlled SOP or technical parameter file',
-      description: 'Briefly describe core process specifications or storage records...',
+      description:
+        'Briefly describe core process specifications or storage records...',
       mobileSearch: 'Syncing Specs...',
       noData: 'No Specs found',
     },
     toasts: {
-      deleteConfirm: 'Confirm deregistration and deletion of this technical spec document?',
+      deleteConfirm:
+        'Confirm deregistration and deletion of this technical spec document?',
       deleteMobileConfirm: 'Confirm deletion of this technical spec?',
       deleteSuccess: 'Document removed',
       deleteFailed: 'Deletion failed, please try again later',
@@ -724,8 +772,10 @@ export const engineering = {
     actionHeader: 'Action / ACT',
     noData: 'NO_CATEGORY_RECORDS_INDEXED',
     confirmDelete: 'Confirm delete this category?',
-    errorRelatedProducts: 'There are still {{count}} active products in this category',
-    errorHasChildren: 'There are still {{count}} sub-categories in this category',
+    errorRelatedProducts:
+      'There are still {{count}} active products in this category',
+    errorHasChildren:
+      'There are still {{count}} sub-categories in this category',
     deleteSuccess: 'Category removed successfully',
     saveSuccess: 'Category synced to cloud',
     conflictError: 'Data updated, please refresh',
@@ -748,7 +798,8 @@ export const engineering = {
       templateLabel: 'PHYSICAL_TEMPLATE / Bound Physical Template',
       templatePlaceholder: 'Select physical template to bind...',
       templateNone: '-- None (General Accessories) --',
-      templateHelp: '* This determines which physical parameter form is shown when creating products in this category.',
+      templateHelp:
+        '* This determines which physical parameter form is shown when creating products in this category.',
       statusLabel: 'ACTIVE_STATUS / Active Status',
       statusDesc: 'BLOCK_OR_ALLOW_THIS_CATEGORY_FOR_NEW_PRODUCTS',
       saveButton: 'CONFIRM_SAVE / Save',
@@ -757,14 +808,18 @@ export const engineering = {
   },
   productMgmt: {
     pageTitle: 'Product Management Dashboard',
-    pageDescription: 'Engineering Dashboard: Manage categories and model archives on the left, conduct physical modeling and technical spec audit on the right.',
+    pageDescription:
+      'Engineering Dashboard: Manage categories and model archives on the left, conduct physical modeling and technical spec audit on the right.',
     syncing: 'Syncing cloud archives...',
     selectPrompt: 'Select a modeling target',
-    initiateProject: 'Click a model card in the sidebar to enter the technical dashboard, or use the button above to start a new product modeling project.',
+    initiateProject:
+      'Click a model card in the sidebar to enter the technical dashboard, or use the button above to start a new product modeling project.',
     metadata: {
       errorTitle: 'Metadata Link Broken',
-      errorHint: 'Restart the local backend at `http://localhost:8080` so the template, dynamic attribute category, and binding endpoints come from the same server version.',
-      unavailable: 'Critical product metadata services are unavailable. Restart the local backend with the latest server code before creating or editing products.',
+      errorHint:
+        'Restart the local backend at `http://localhost:8080` so the template, dynamic attribute category, and binding endpoints come from the same server version.',
+      unavailable:
+        'Critical product metadata services are unavailable. Restart the local backend with the latest server code before creating or editing products.',
       initFailed: 'Failed to initialize product form metadata.',
     },
     sidebar: {
@@ -814,189 +869,199 @@ export const engineering = {
     },
     genericParts: 'General Accessories',
     dialog: {
-        titleEdit: 'Edit Product Specs',
-        titleCreate: 'Bind BOM to Generate Product',
-        description: 'Select a base model and bind a BOM to generate an independent product, then configure geometry, spec weighting, and production constraints.',
-        validationError: 'Validation failed. Please check required fields.',
-        templatePending: 'Spec Template Not Selected',
-        templateHint: 'Please select a "Product Category" or "Spec Template" to start configuration.',
-        activeTemplate: 'Active Template: {{label}}',
-        attributeBindingAligned: 'The current product type bindings match the template assembly. The dynamic attribute section is aligned with the template structure.',
-        attributeBindingMissing: 'The current product type has not synced the template assembly yet. Some template-recommended attributes may be missing.',
-        attributeBindingDrifted: 'The current product type bindings have drifted from the template assembly. The dynamic attribute section shows the product type\'s effective bindings.',
-        attributeBindingTemplateLabel: 'Template Source: {{name}}',
-        previewTitle: 'Final Model Preview',
-        delete: 'Delete Product',
-        deleting: 'Deleting...',
-        saveStandard: 'Save Product Specs',
+      titleEdit: 'Edit Product Specs',
+      titleCreate: 'Bind BOM to Generate Product',
+      description:
+        'Select a base model and bind a BOM to generate an independent product, then configure geometry, spec weighting, and production constraints.',
+      validationError: 'Validation failed. Please check required fields.',
+      templatePending: 'Spec Template Not Selected',
+      templateHint:
+        'Please select a "Product Category" or "Spec Template" to start configuration.',
+      activeTemplate: 'Active Template: {{label}}',
+      attributeBindingAligned:
+        'The current product type bindings match the template assembly. The dynamic attribute section is aligned with the template structure.',
+      attributeBindingMissing:
+        'The current product type has not synced the template assembly yet. Some template-recommended attributes may be missing.',
+      attributeBindingDrifted:
+        "The current product type bindings have drifted from the template assembly. The dynamic attribute section shows the product type's effective bindings.",
+      attributeBindingTemplateLabel: 'Template Source: {{name}}',
+      previewTitle: 'Final Model Preview',
+      delete: 'Delete Product',
+      deleting: 'Deleting...',
+      saveStandard: 'Save Product Specs',
     },
     form: {
-        thumbnail: 'Thumbnail',
-        uploadImg: 'Upload Image',
-        category: 'Base Model',
-        categoryPlaceholder: 'Select base model...',
-        categoryRequired: 'Please select a base model',
-        modelCode: 'Model Code',
-        modelCodePlaceholder: '01~99',
-        modelCodeLinked: 'Linked to numbering rule',
-        template: 'Spec Template',
-        templatePlaceholder: 'Select template...',
-        status: 'Status',
-        bom: 'Bind BOM',
-        bomPlaceholder: 'Select an existing BOM...',
-        sku: 'Product SKU',
-        skuPlaceholder: 'Generated Automatically...',
-        spec: 'Bound Process Spec',
-        specPlaceholder: 'Select technical spec...',
-        mold: 'Mold Group',
-        moldPlaceholder: 'Select mold group...',
-        memo: 'Notes / Design Memo',
-        memoPlaceholder: 'Enter additional notes...',
-        ownerType: 'Product Owner',
-        ownerTypeInternal: 'Internal Model',
-        ownerTypeCustomer: 'Customer Custom',
-        ownerPlaceholder: 'Select owner...',
+      thumbnail: 'Thumbnail',
+      uploadImg: 'Upload Image',
+      category: 'Base Model',
+      categoryPlaceholder: 'Select base model...',
+      categoryRequired: 'Please select a base model',
+      modelCode: 'Model Code',
+      modelCodePlaceholder: '01~99',
+      modelCodeLinked: 'Linked to numbering rule',
+      template: 'Spec Template',
+      templatePlaceholder: 'Select template...',
+      status: 'Status',
+      bom: 'Bind BOM',
+      bomPlaceholder: 'Select an existing BOM...',
+      sku: 'Product SKU',
+      skuPlaceholder: 'Generated Automatically...',
+      spec: 'Bound Process Spec',
+      specPlaceholder: 'Select technical spec...',
+      mold: 'Mold Group',
+      moldPlaceholder: 'Select mold group...',
+      memo: 'Notes / Design Memo',
+      memoPlaceholder: 'Enter additional notes...',
+      ownerType: 'Product Owner',
+      ownerTypeInternal: 'Internal Model',
+      ownerTypeCustomer: 'Customer Custom',
+      ownerPlaceholder: 'Select owner...',
     },
     restrictions: {
-        title: 'Production Restrictions',
-        separator: '* Separator: comma / space',
-        null: 'No restrictions yet',
-        placeholder: 'Add new risk tag...',
-        addButton: '+ Add Core Constraint',
-        addButtonShort: '+ Add',
+      title: 'Production Restrictions',
+      separator: '* Separator: comma / space',
+      null: 'No restrictions yet',
+      placeholder: 'Add new risk tag...',
+      addButton: '+ Add Core Constraint',
+      addButtonShort: '+ Add',
     },
     attachments: {
-        uploadTitle: 'Upload Technical Files',
-        uploadDescPrefix: 'Drag & drop PDF attachments, technical drawings, or 3D model screenshots here, or',
-        uploadDescLink: 'click to browse local files',
-        uploadLimit: 'Up to 50MB · PDF, JPG, PNG, STEP, ZIP',
-        archiveTitle: 'Archived Files ({{count}})',
-        noData: 'No archived engineering files',
-        download: 'Download',
-        delete: 'Delete Permanently',
-        success: 'File uploaded successfully',
-        errorSize: 'File too large, max support 50MB',
-        remove: 'Attachment removed',
+      uploadTitle: 'Upload Technical Files',
+      uploadDescPrefix:
+        'Drag & drop PDF attachments, technical drawings, or 3D model screenshots here, or',
+      uploadDescLink: 'click to browse local files',
+      uploadLimit: 'Up to 50MB · PDF, JPG, PNG, STEP, ZIP',
+      archiveTitle: 'Archived Files ({{count}})',
+      noData: 'No archived engineering files',
+      download: 'Download',
+      delete: 'Delete Permanently',
+      success: 'File uploaded successfully',
+      errorSize: 'File too large, max support 50MB',
+      remove: 'Attachment removed',
     },
     barcode: {
-        syncSequenceSuccess: 'SN Sync Success: {{sn}}',
-        syncSequenceFailed: 'SN Sync Failed',
-        printBatchSuccess: 'Print Success (SN: {{sn}})',
-        printBatchFailed: 'Print Failed',
-        saveConfigSuccess: 'Barcode configuration saved',
-        templateName: 'Barcode Template: {{name}}',
-        printSingleLabel: 'Print Single Label',
-        regenerateSequence: 'Resync Sequence',
-        coreCode: 'Core Code',
-        labelStatus: 'Label Status',
-        visualIntegrity: 'Visual Integrity',
-        validated: 'Validated',
-        aligned: '100% Aligned',
-        configTitle: 'Barcode Configuration',
-        configDesc: 'Adjust rules to generate standard barcodes',
-        modelCodeLabel: 'Model Code (Pos 04-05)',
-        appearanceCodeLabel: 'Appearance Code (1-9)',
-        syncedWithArchive: 'Synced',
-        modifyInBasicInfo: '* Modify this in Basic Info',
-        categoryLabel: 'Rim Category',
-        categoryDesc: 'Road (R) / MTB (D)',
-        holesLabel: 'Holes (2 Digits)',
-        drainHoleLabel: 'Drain Hole Flag',
-        drainHolePrefix: 'Prefix: H',
-        wheelPositionLabel: 'Wheel Position',
-        wheelF: 'Front (F)',
-        wheelR: 'Rear (R)',
-        wheelH: 'Univ (H)',
-        scopeLabel: 'Scope Ext (e.g. AM, BD)',
-        scopePlaceholder: 'Enter scope extension, e.g. AM, BD',
-        serialLabel: 'SERIAL_NUMBER (5 Digits)',
-        saveToArchive: 'Sync to Product Archive',
+      syncSequenceSuccess: 'SN Sync Success: {{sn}}',
+      syncSequenceFailed: 'SN Sync Failed',
+      printBatchSuccess: 'Print Success (SN: {{sn}})',
+      printBatchFailed: 'Print Failed',
+      saveConfigSuccess: 'Barcode configuration saved',
+      templateName: 'Barcode Template: {{name}}',
+      printSingleLabel: 'Print Single Label',
+      regenerateSequence: 'Resync Sequence',
+      coreCode: 'Core Code',
+      labelStatus: 'Label Status',
+      visualIntegrity: 'Visual Integrity',
+      validated: 'Validated',
+      aligned: '100% Aligned',
+      configTitle: 'Barcode Configuration',
+      configDesc: 'Adjust rules to generate standard barcodes',
+      modelCodeLabel: 'Model Code (Pos 04-05)',
+      appearanceCodeLabel: 'Appearance Code (1-9)',
+      syncedWithArchive: 'Synced',
+      modifyInBasicInfo: '* Modify this in Basic Info',
+      categoryLabel: 'Rim Category',
+      categoryDesc: 'Road (R) / MTB (D)',
+      holesLabel: 'Holes (2 Digits)',
+      drainHoleLabel: 'Drain Hole Flag',
+      drainHolePrefix: 'Prefix: H',
+      wheelPositionLabel: 'Wheel Position',
+      wheelF: 'Front (F)',
+      wheelR: 'Rear (R)',
+      wheelH: 'Univ (H)',
+      scopeLabel: 'Scope Ext (e.g. AM, BD)',
+      scopePlaceholder: 'Enter scope extension, e.g. AM, BD',
+      serialLabel: 'SERIAL_NUMBER (5 Digits)',
+      saveToArchive: 'Sync to Product Archive',
     },
     bom: {
-        processNode: 'LEVEL3_NODE / 末级节点',
-        unitUsage: 'UNIT_USAGE / 单位用量',
-        stdUsage: 'STD_USAGE / 标准用量',
-        loss: 'LOSS / 损耗',
-        price: 'PRICE / 单价',
-        path: 'PATH / 进料渠道',
-        unknown: 'UNKNOWN / 未知物料',
-        noData: 'NO_BOM_DATA / 暂无 BOM 数据',
-        headerProcess: 'LEVEL 3',
-        headerCode: 'CODE',
-        headerName: 'NAME',
-        headerSpec: 'SPEC/MODEL',
-        headerUnit: 'UNIT',
-        headerPrice: 'PRICE',
-        headerUsage: 'USAGE',
-        headerLoss: 'LOSS (%)',
-        headerStdUsage: 'STD_USAGE',
-        headerType: 'TYPE',
-        headerChannel: 'CHANNEL',
-        unclassified: 'UNCLASSIFIED',
-        auxiliary: 'AUX',
+      processNode: 'LEVEL3_NODE / 末级节点',
+      unitUsage: 'UNIT_USAGE / 单位用量',
+      stdUsage: 'STD_USAGE / 标准用量',
+      loss: 'LOSS / 损耗',
+      price: 'PRICE / 单价',
+      path: 'PATH / 进料渠道',
+      unknown: 'UNKNOWN / 未知物料',
+      noData: 'NO_BOM_DATA / 暂无 BOM 数据',
+      headerProcess: 'LEVEL 3',
+      headerCode: 'CODE',
+      headerName: 'NAME',
+      headerSpec: 'SPEC/MODEL',
+      headerUnit: 'UNIT',
+      headerPrice: 'PRICE',
+      headerUsage: 'USAGE',
+      headerLoss: 'LOSS (%)',
+      headerStdUsage: 'STD_USAGE',
+      headerType: 'TYPE',
+      headerChannel: 'CHANNEL',
+      unclassified: 'UNCLASSIFIED',
+      auxiliary: 'AUX',
     },
     categoryMgmt: {
-        title: 'CATEGORY_MANAGER / 分类管理',
-        desc: 'HIERARCHY / 维护型号层级结构',
-        addCategory: '新增分类 / ADD_CATEGORY',
-        nameHeader: '分类名称 / NAME',
-        codeHeader: '编码 / CODE',
-        actionHeader: '操作 / ACT',
-        noData: 'NO_CATEGORY_RECORDS_INDEXED',
-        confirmDelete: 'Confirm delete this category?',
-        errorRelatedProducts: 'There are still {{count}} active products in this category',
-        errorHasChildren: 'There are still {{count}} sub-categories in this category',
-        deleteSuccess: 'Category removed successfully',
-        saveSuccess: 'Category synced to cloud',
-        conflictError: 'Data updated, please refresh',
-        deleteError: 'Delete failed',
-        saveError: 'Save failed',
-        form: {
-            addTitle: 'ADD_CATEGORY / 添加分类',
-            updateTitle: 'UPDATE_CATEGORY / 修改分类',
-            addDesc: 'DEFINE_NEW_CLASSIFICATION',
-            updateDesc: 'MODIFY_EXISTING_CLASSIFICATION',
-            parentLabel: 'PARENT_CATEGORY / 所属父级 (大类)',
-            parentPlaceholder: 'Select parent category...',
-            parentNone: '-- None (Root Category) --',
-            nameLabel: 'CATEGORY_NAME / 分类名称',
-            namePlaceholder: 'e.g. Road Clincher Rim',
-            codeLabel: 'CATEGORY_CODE / 分类编码',
-            codePlaceholder: 'e.g. ROAD-CL',
-            descLabel: 'DESCRIPTION / 备注说明',
-            descPlaceholder: 'Detailed description of the category...',
-            templateLabel: 'PHYSICAL_TEMPLATE / 绑定物理规格模板',
-            templatePlaceholder: 'Select physical template to bind...',
-            templateNone: '-- None (General Accessories) --',
-            templateHelp: '* This determines which physical parameters form will be displayed when creating new products.',
-            statusLabel: 'ACTIVE_STATUS / 启用状态',
-            statusDesc: 'BLOCK_OR_ALLOW_THIS_CATEGORY_FOR_NEW_PRODUCTS',
-            saveButton: 'CONFIRM_SAVE / 确认保存',
-            syncingButton: 'SYNCING / 同步中...',
-        }
+      title: 'CATEGORY_MANAGER / 分类管理',
+      desc: 'HIERARCHY / 维护型号层级结构',
+      addCategory: '新增分类 / ADD_CATEGORY',
+      nameHeader: '分类名称 / NAME',
+      codeHeader: '编码 / CODE',
+      actionHeader: '操作 / ACT',
+      noData: 'NO_CATEGORY_RECORDS_INDEXED',
+      confirmDelete: 'Confirm delete this category?',
+      errorRelatedProducts:
+        'There are still {{count}} active products in this category',
+      errorHasChildren:
+        'There are still {{count}} sub-categories in this category',
+      deleteSuccess: 'Category removed successfully',
+      saveSuccess: 'Category synced to cloud',
+      conflictError: 'Data updated, please refresh',
+      deleteError: 'Delete failed',
+      saveError: 'Save failed',
+      form: {
+        addTitle: 'ADD_CATEGORY / 添加分类',
+        updateTitle: 'UPDATE_CATEGORY / 修改分类',
+        addDesc: 'DEFINE_NEW_CLASSIFICATION',
+        updateDesc: 'MODIFY_EXISTING_CLASSIFICATION',
+        parentLabel: 'PARENT_CATEGORY / 所属父级 (大类)',
+        parentPlaceholder: 'Select parent category...',
+        parentNone: '-- None (Root Category) --',
+        nameLabel: 'CATEGORY_NAME / 分类名称',
+        namePlaceholder: 'e.g. Road Clincher Rim',
+        codeLabel: 'CATEGORY_CODE / 分类编码',
+        codePlaceholder: 'e.g. ROAD-CL',
+        descLabel: 'DESCRIPTION / 备注说明',
+        descPlaceholder: 'Detailed description of the category...',
+        templateLabel: 'PHYSICAL_TEMPLATE / 绑定物理规格模板',
+        templatePlaceholder: 'Select physical template to bind...',
+        templateNone: '-- None (General Accessories) --',
+        templateHelp:
+          '* This determines which physical parameters form will be displayed when creating new products.',
+        statusLabel: 'ACTIVE_STATUS / 启用状态',
+        statusDesc: 'BLOCK_OR_ALLOW_THIS_CATEGORY_FOR_NEW_PRODUCTS',
+        saveButton: 'CONFIRM_SAVE / 确认保存',
+        syncingButton: 'SYNCING / 同步中...',
+      },
     },
     tabs: {
-        overview: 'OVERVIEW / Overview',
-        specs: 'SPECS / Specs',
-        bom: 'BOM / Recipe',
-        barcode: 'BARCODE / Barcode',
-        attachments: 'ATTACHMENTS / Attachments',
+      overview: 'OVERVIEW / Overview',
+      specs: 'SPECS / Specs',
+      bom: 'BOM / Recipe',
+      barcode: 'BARCODE / Barcode',
+      attachments: 'ATTACHMENTS / Attachments',
     },
     fields: {
-        sku: 'SKU / Internal ID',
-        name: 'PRODUCT_NAME / Name',
-        type: 'CATEGORY / Category',
-        brakeType: 'BRAKE_SYSTEM / Brake',
-        tireType: 'TIRE_COMPATIBILITY / Tire',
-        weight: 'TARGET_WEIGHT / Target Weight',
-        version: 'REV / Version',
-        status: 'LIFE_CYCLE_STATUS / Status',
-    }
+      sku: 'SKU / Internal ID',
+      name: 'PRODUCT_NAME / Name',
+      type: 'CATEGORY / Category',
+      brakeType: 'BRAKE_SYSTEM / Brake',
+      tireType: 'TIRE_COMPATIBILITY / Tire',
+      weight: 'TARGET_WEIGHT / Target Weight',
+      version: 'REV / Version',
+      status: 'LIFE_CYCLE_STATUS / Status',
+    },
   },
   templateMgmt: {
     header: {
       title: 'Product Spec Templates',
-      description: 'Maintain reusable physical specification templates for engineering product models.',
+      description:
+        'Maintain reusable physical specification templates for engineering product models.',
     },
     status: {
       synced: 'Template Library Synced',
@@ -1007,12 +1072,14 @@ export const engineering = {
     },
     empty: {
       title: 'No templates found',
-      description: 'No template data is available yet. You can restore the built-in templates or create one manually.',
+      description:
+        'No template data is available yet. You can restore the built-in templates or create one manually.',
       create: 'Create your first template',
     },
     card: {
       idLabel: 'ID: {{code}}',
-      descriptionFallback: 'This template defines the key physical parameters for a product family.',
+      descriptionFallback:
+        'This template defines the key physical parameters for a product family.',
       componentLabel: 'Mapped Component',
       active: 'Active',
       inactive: 'Disabled',
@@ -1020,7 +1087,8 @@ export const engineering = {
     dialog: {
       createTitle: 'Create Spec Template',
       editTitle: 'Edit Spec Template',
-      description: 'Define the physical parameter mapping used by engineering product records.',
+      description:
+        'Define the physical parameter mapping used by engineering product records.',
     },
     fields: {
       name: 'Template Name',
@@ -1038,8 +1106,10 @@ export const engineering = {
       attributeCategory: 'Select a global attribute category to assemble...',
     },
     hints: {
-      component: 'The selected component determines which physical parameter form is generated when creating a product.',
-      assembly: 'Templates can assemble global product attribute categories from the shared library and preview the resulting structure in real time.',
+      component:
+        'The selected component determines which physical parameter form is generated when creating a product.',
+      assembly:
+        'Templates can assemble global product attribute categories from the shared library and preview the resulting structure in real time.',
     },
     buttons: {
       cancel: 'Cancel',
@@ -1048,7 +1118,8 @@ export const engineering = {
       removeAttribute: 'Remove',
     },
     confirms: {
-      delete: 'Delete this template? Categories bound to this template may become invalid.',
+      delete:
+        'Delete this template? Categories bound to this template may become invalid.',
     },
     toasts: {
       loadFailed: 'Failed to load templates: {{message}}',
@@ -1070,14 +1141,16 @@ export const engineering = {
       GENERAL: 'General Spec',
     },
     assembly: {
-      empty: 'No global attribute categories are assembled into this template yet.',
+      empty:
+        'No global attribute categories are assembled into this template yet.',
       required: 'Required',
       optional: 'Optional',
       active: 'Active',
       inactive: 'Inactive',
       previewSpec: 'Template Spec Component',
       previewAttributes: 'Assembled Attribute Categories',
-      previewEmpty: 'Select a template component or assemble attribute categories to preview the template structure.',
+      previewEmpty:
+        'Select a template component or assemble attribute categories to preview the template structure.',
       noAvailableCategories: 'No attribute categories available',
     },
     presets: {
@@ -1098,7 +1171,8 @@ export const engineering = {
   categoryArchive: {
     header: {
       title: 'Product Category Archive',
-      description: 'Maintain parent and child engineering categories with controlled template binding and activation state.',
+      description:
+        'Maintain parent and child engineering categories with controlled template binding and activation state.',
     },
     stats: {
       total: 'Total Categories: {{count}}',
@@ -1134,8 +1208,10 @@ export const engineering = {
       delete: 'Delete this category?',
     },
     toasts: {
-      loadFailed: 'Failed to load category archive. Please check network or permissions.',
-      relatedProducts: 'This category still has {{count}} products. Reassign them first.',
+      loadFailed:
+        'Failed to load category archive. Please check network or permissions.',
+      relatedProducts:
+        'This category still has {{count}} products. Reassign them first.',
       hasChildren: 'This category still has {{count}} child categories.',
       deleteSuccess: 'Category deleted',
       deleteFailed: 'Failed to delete category: {{message}}',
@@ -1146,8 +1222,10 @@ export const engineering = {
     dialog: {
       createTitle: 'Create Category',
       editTitle: 'Edit Category',
-      createDescription: 'Define a new engineering category and bind a physical spec template when needed.',
-      editDescription: 'Update the category hierarchy, code, and template binding.',
+      createDescription:
+        'Define a new engineering category and bind a physical spec template when needed.',
+      editDescription:
+        'Update the category hierarchy, code, and template binding.',
       parent: 'Parent Category',
       parentPlaceholder: 'Select a parent category...',
       parentNone: 'No parent (top-level category)',
@@ -1160,25 +1238,37 @@ export const engineering = {
       template: 'Spec Template',
       templatePlaceholder: 'Select a spec template...',
       templateNone: 'No template binding',
-      templateHelp: 'The selected template controls which spec form appears when creating products under this category.',
+      templateHelp:
+        'The selected template controls which spec form appears when creating products under this category.',
       templateAssemblyTitle: 'Template Attribute Assembly',
-      templateAssemblyEmpty: 'This template has no assembled global attribute categories.',
-      templateAssemblyCount: 'Template assembles {{count}} attribute categories',
+      templateAssemblyEmpty:
+        'This template has no assembled global attribute categories.',
+      templateAssemblyCount:
+        'Template assembles {{count}} attribute categories',
       templateAssemblyRequired: 'Required',
       templateAssemblyOptional: 'Optional',
       templateSyncToggle: 'Sync attribute bindings from template after save',
-      templateSyncHelp: 'When enabled, the current template assembly will be copied as this category\'s effective attribute bindings.',
-      templateDriftAligned: 'Current category bindings match the template definition',
-      templateDriftDetected: 'Current category bindings have drifted from the template definition',
-      templateDriftUnknown: 'This category has no attribute bindings yet. You can initialize them from the template on save.',
+      templateSyncHelp:
+        "When enabled, the current template assembly will be copied as this category's effective attribute bindings.",
+      templateDriftAligned:
+        'Current category bindings match the template definition',
+      templateDriftDetected:
+        'Current category bindings have drifted from the template definition',
+      templateDriftUnknown:
+        'This category has no attribute bindings yet. You can initialize them from the template on save.',
       targetLevel: 'Target Level',
       parentPath: 'Parent Path',
-      levelHintTop: 'Level 1 categories define the top hierarchy and are not treated as base models in this phase.',
-      levelHintMiddle: 'Level 2 categories split structural series, while the next level becomes the base-model layer.',
-      levelHintLeaf: 'Level 3 is the base-model layer. A later phase will bind BOM variants here to form independent products.',
-      levelLimitError: 'The selected parent would exceed the three-level limit. Please choose another parent category.',
+      levelHintTop:
+        'Level 1 categories define the top hierarchy and are not treated as base models in this phase.',
+      levelHintMiddle:
+        'Level 2 categories split structural series, while the next level becomes the base-model layer.',
+      levelHintLeaf:
+        'Level 3 is the base-model layer. A later phase will bind BOM variants here to form independent products.',
+      levelLimitError:
+        'The selected parent would exceed the three-level limit. Please choose another parent category.',
       active: 'Active',
-      activeDescription: 'Only active categories can be selected for new product records.',
+      activeDescription:
+        'Only active categories can be selected for new product records.',
       save: 'Save Category',
       saving: 'Saving...',
     },
@@ -1186,7 +1276,8 @@ export const engineering = {
   productArchive: {
     header: {
       title: 'Product Model Archive',
-      description: 'Manage engineering product records by category and child category with one unified product specification flow.',
+      description:
+        'Manage engineering product records by category and child category with one unified product specification flow.',
     },
     filters: {
       allCategories: 'All Categories',
@@ -1223,7 +1314,8 @@ export const engineering = {
   bomArchive: {
     header: {
       title: 'BOM Recipe Center',
-      description: 'Maintain product BOM recipes, change linkage, effective dates, and structured material lines in one place.',
+      description:
+        'Maintain product BOM recipes, change linkage, effective dates, and structured material lines in one place.',
     },
     table: {
       bom: 'BOM',
@@ -1238,7 +1330,8 @@ export const engineering = {
       fromDate: 'From {{date}}',
       noEffectiveDate: 'No effective date',
       confirmDelete: 'Delete this BOM?',
-      confirmDerive: 'Are you sure you want to derive an MBOM from this EBOM? This will copy all recipe lines and generate a new production BOM draft.',
+      confirmDerive:
+        'Are you sure you want to derive an MBOM from this EBOM? This will copy all recipe lines and generate a new production BOM draft.',
       empty: 'No BOM data found',
       ownerInternal: 'Internal',
       ownerCustomer: 'Customer',
@@ -1347,9 +1440,11 @@ export const engineering = {
       downloadFailed: 'Failed to generate BOM template',
       parseLoading: 'Parsing Excel BOM file...',
       parseNoValid: 'No valid BOM rows were found in the file.',
-      parseSchemaErrors: 'Import stopped because {{count}} rows failed validation. Check the console for details.',
+      parseSchemaErrors:
+        'Import stopped because {{count}} rows failed validation. Check the console for details.',
       parseSuccess: 'Parsed {{count}} BOM rows successfully',
-      parseFailed: 'Failed to parse BOM file. Please verify the template format.',
+      parseFailed:
+        'Failed to parse BOM file. Please verify the template format.',
     },
     category: {
       RAW_MATERIAL: 'Direct',
@@ -1364,33 +1459,40 @@ export const engineering = {
   bomRecords: {
     header: {
       title: 'BOM Trace Center',
-      description: 'Review aggregated BOM version history, compare revisions, and inspect structural diffs as the formal trace workspace in product structure.',
+      description:
+        'Review aggregated BOM version history, compare revisions, and inspect structural diffs as the formal trace workspace in product structure.',
     },
   },
   bomSectionConfig: {
     title: 'BOM Section Configuration',
-    description: 'Maintain BOM section codes, labels, default section rules, and active state as the single source of truth for BOM editing and Excel flows.',
+    description:
+      'Maintain BOM section codes, labels, default section rules, and active state as the single source of truth for BOM editing and Excel flows.',
     loading: 'Loading section configuration',
     searchPlaceholder: 'Search code, name, description, or legacy aliases...',
     emptyTitle: 'No matching section configuration',
-    emptyDescription: 'Add a BOM section or adjust the search keyword to view existing configuration.',
+    emptyDescription:
+      'Add a BOM section or adjust the search keyword to view existing configuration.',
     deleteConfirmTitle: 'Delete this section configuration?',
-    deleteConfirmDesc: 'Deleting this item will affect future BOM section selection. If historical BOMs still reference it, the backend will block deletion. Target: {{name}}',
+    deleteConfirmDesc:
+      'Deleting this item will affect future BOM section selection. If historical BOMs still reference it, the backend will block deletion. Target: {{name}}',
     fields: {
       code: 'Section Code',
       name: 'Section Name',
       description: 'Description',
       sortOrder: 'Sort Order',
       active: 'Active',
-      activeHint: 'Inactive sections stay readable for history but are hidden from new selection.',
-      activeLockedHint: 'The system must keep at least one active BOM section, so this item cannot be deactivated.',
+      activeHint:
+        'Inactive sections stay readable for history but are hidden from new selection.',
+      activeLockedHint:
+        'The system must keep at least one active BOM section, so this item cannot be deactivated.',
       isDefault: 'Default Section',
       isDefaultHint: 'Used as the initial section when adding new BOM lines.',
     },
     placeholders: {
       code: 'e.g. PREPARE',
       name: 'e.g. Prepare',
-      description: 'Describe where this section should be used and any maintenance notes',
+      description:
+        'Describe where this section should be used and any maintenance notes',
     },
     actions: {
       add: 'Add Section',
@@ -1402,20 +1504,26 @@ export const engineering = {
     dialog: {
       createTitle: 'Create BOM Section',
       editTitle: 'Edit BOM Section',
-      description: 'Maintain stable section codes, display labels, sort order, and active state.',
+      description:
+        'Maintain stable section codes, display labels, sort order, and active state.',
     },
     toasts: {
       loadFailed: 'Failed to load BOM section configuration',
-      formIncomplete: 'Please complete both the section code and section name first',
+      formIncomplete:
+        'Please complete both the section code and section name first',
       saveSuccess: 'BOM section configuration saved',
       saveFailed: 'Failed to save BOM section configuration',
-      identifierConflict: 'The section code, name, or legacy alias conflicts with an existing section. Adjust it and try again.',
-      lastActiveBlocked: 'The system must keep at least one active BOM section, so this action was blocked.',
-      conflict: 'This section configuration was updated elsewhere. Refresh and try again.',
+      identifierConflict:
+        'The section code, name, or legacy alias conflicts with an existing section. Adjust it and try again.',
+      lastActiveBlocked:
+        'The system must keep at least one active BOM section, so this action was blocked.',
+      conflict:
+        'This section configuration was updated elsewhere. Refresh and try again.',
       deleteSuccess: 'BOM section configuration deleted',
       deleteFailed: 'Failed to delete BOM section configuration',
       deleteProtected: 'System BOM sections cannot be deleted.',
-      deleteLinked: 'This BOM section is still referenced by historical BOM records and cannot be deleted.',
+      deleteLinked:
+        'This BOM section is still referenced by historical BOM records and cannot be deleted.',
     },
   },
   specForms: {
@@ -1452,7 +1560,8 @@ export const engineering = {
       angle: 'Angle (A/deg)',
       clamp: 'Clamp Diameter',
       weight: 'Weight (g)',
-      helper: '* Detailed 3D model parameters can be linked in a later modeling phase.',
+      helper:
+        '* Detailed 3D model parameters can be linked in a later modeling phase.',
       overviewCategory: 'Core Category',
       overviewCategoryValue: 'Precision Stem',
       overviewWeight: 'Estimated Weight',
@@ -1466,7 +1575,8 @@ export const engineering = {
       axleCrown: 'Axle to Crown',
       steerer: 'Steerer Spec',
       weight: 'Weight (g)',
-      helper: '* Fork strength testing standards can be linked later in the process library.',
+      helper:
+        '* Fork strength testing standards can be linked later in the process library.',
       overviewCategory: 'Core Category',
       overviewCategoryValue: 'Composite Fork',
       overviewWeight: 'Estimated Weight',

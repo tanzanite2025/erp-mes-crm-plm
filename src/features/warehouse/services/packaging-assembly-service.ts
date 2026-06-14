@@ -23,23 +23,32 @@ export type {
 
 export const PackagingAssemblyService = {
   async list(limit = 20): Promise<PackagingAssemblyListResult> {
-    const res = await apiFetch<Record<string, unknown>>(`${PACKAGING_ASSEMBLY_ENDPOINT}?limit=${limit}`)
+    const res = await apiFetch<Record<string, unknown>>(
+      `${PACKAGING_ASSEMBLY_ENDPOINT}?limit=${limit}`
+    )
     const payload = ensureObjectResponse(res, 'PackagingAssemblyService.list')
     return packagingAssemblyListResultSchema.parse(payload)
   },
 
   async createCaptureSession(): Promise<PackagingAssemblyCaptureSession> {
-    const res = await apiFetch<Record<string, unknown>>(CAPTURE_SESSION_ENDPOINT, {
-      method: 'POST',
-      body: JSON.stringify({}),
-    })
+    const res = await apiFetch<Record<string, unknown>>(
+      CAPTURE_SESSION_ENDPOINT,
+      {
+        method: 'POST',
+        body: JSON.stringify({}),
+      }
+    )
     return packagingAssemblyCaptureSessionSchema.parse(
       ensureObjectResponse(res, 'PackagingAssemblyService.createCaptureSession')
     )
   },
 
-  async getCaptureSession(sessionId: string): Promise<PackagingAssemblyCaptureSession> {
-    const res = await apiFetch<Record<string, unknown>>(`${CAPTURE_SESSION_ENDPOINT}/${sessionId}`)
+  async getCaptureSession(
+    sessionId: string
+  ): Promise<PackagingAssemblyCaptureSession> {
+    const res = await apiFetch<Record<string, unknown>>(
+      `${CAPTURE_SESSION_ENDPOINT}/${sessionId}`
+    )
     return packagingAssemblyCaptureSessionSchema.parse(
       ensureObjectResponse(res, 'PackagingAssemblyService.getCaptureSession')
     )
@@ -47,16 +56,17 @@ export const PackagingAssemblyService = {
 
   async submitCaptureSession(
     sessionId: string,
-    input: SubmitPackagingAssemblyCaptureSessionInput,
+    input: SubmitPackagingAssemblyCaptureSessionInput
   ): Promise<PackagingAssemblyCaptureSession> {
-    const payload = submitPackagingAssemblyCaptureSessionInputSchema.parse(input)
+    const payload =
+      submitPackagingAssemblyCaptureSessionInputSchema.parse(input)
     const res = await apiFetch<Record<string, unknown>>(
       `${CAPTURE_SESSION_ENDPOINT}/${sessionId}/submit`,
       {
         ignoreBreaker: true,
         method: 'POST',
         body: JSON.stringify(payload),
-      },
+      }
     )
     return packagingAssemblyCaptureSessionSchema.parse(
       ensureObjectResponse(res, 'PackagingAssemblyService.submitCaptureSession')

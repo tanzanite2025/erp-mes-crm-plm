@@ -1,5 +1,5 @@
-import { getCurrentLocale } from '@/lib/locale'
 import { type AppLocale, type TranslationKey, translate } from '@/locales'
+import { getCurrentLocale } from '@/lib/locale'
 
 export const INVENTORY_ERROR_CODES = [
   'INVENTORY_QUERY_FAILED',
@@ -20,7 +20,7 @@ export const INVENTORY_ERROR_CODES = [
   'INVENTORY_BULK_SYNC_FAILED',
 ] as const
 
-export type InventoryErrorCode = typeof INVENTORY_ERROR_CODES[number]
+export type InventoryErrorCode = (typeof INVENTORY_ERROR_CODES)[number]
 
 export interface InventoryErrorMeta {
   status: number
@@ -28,7 +28,10 @@ export interface InventoryErrorMeta {
   translationKey: TranslationKey
 }
 
-export const INVENTORY_ERROR_META: Record<InventoryErrorCode, InventoryErrorMeta> = {
+export const INVENTORY_ERROR_META: Record<
+  InventoryErrorCode,
+  InventoryErrorMeta
+> = {
   INVENTORY_QUERY_FAILED: {
     status: 500,
     trigger: 'Failed to load inventory list from backend.',
@@ -111,13 +114,21 @@ export const INVENTORY_ERROR_META: Record<InventoryErrorCode, InventoryErrorMeta
   },
 }
 
-export const DEFAULT_INVENTORY_ERROR_TIP_KEY: TranslationKey = 'warehouse.errors.default'
+export const DEFAULT_INVENTORY_ERROR_TIP_KEY: TranslationKey =
+  'warehouse.errors.default'
 
-export function isInventoryErrorCode(code: unknown): code is InventoryErrorCode {
-  return typeof code === 'string' && (INVENTORY_ERROR_CODES as readonly string[]).includes(code)
+export function isInventoryErrorCode(
+  code: unknown
+): code is InventoryErrorCode {
+  return (
+    typeof code === 'string' &&
+    (INVENTORY_ERROR_CODES as readonly string[]).includes(code)
+  )
 }
 
-export function getInventoryErrorMeta(code: unknown): InventoryErrorMeta | undefined {
+export function getInventoryErrorMeta(
+  code: unknown
+): InventoryErrorMeta | undefined {
   if (!isInventoryErrorCode(code)) return undefined
   return INVENTORY_ERROR_META[code]
 }

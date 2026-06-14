@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react'
-import { useLanguage } from '@/context/language-provider'
 import { getStaticEvidenceUrl } from '@/lib/url-utils'
+import { useLanguage } from '@/context/language-provider'
 
 interface PurchasePrintDocumentProps {
   title: string
@@ -61,16 +61,22 @@ export function formatPurchasePrintNumber(value?: number) {
   return Number(value || 0).toLocaleString()
 }
 
-export function buildCurrentUserIdentityText(user?: {
-  username?: string
-  accountNo?: string
-}, identitySuffix?: string) {
+export function buildCurrentUserIdentityText(
+  user?: {
+    username?: string
+    accountNo?: string
+  },
+  identitySuffix?: string
+) {
   if (!user) return undefined
 
   const normalizedIdentitySuffix = identitySuffix?.trim() || ''
-  const primaryIdentity = [user.username, user.accountNo].filter(Boolean).join(' / ')
+  const primaryIdentity = [user.username, user.accountNo]
+    .filter(Boolean)
+    .join(' / ')
 
-  if (primaryIdentity && normalizedIdentitySuffix) return `${primaryIdentity} (${normalizedIdentitySuffix})`
+  if (primaryIdentity && normalizedIdentitySuffix)
+    return `${primaryIdentity} (${normalizedIdentitySuffix})`
   return primaryIdentity || normalizedIdentitySuffix || undefined
 }
 
@@ -82,8 +88,10 @@ export function PurchasePrintDocument({
   children,
 }: PurchasePrintDocumentProps) {
   const { locale } = useLanguage()
-  const headerCaption = locale === 'zh-CN' ? '采购打印单据' : 'Procurement Print Document'
-  const editionText = locale === 'zh-CN' ? '采购打印标准版' : 'Procurement Standard Print'
+  const headerCaption =
+    locale === 'zh-CN' ? '采购打印单据' : 'Procurement Print Document'
+  const editionText =
+    locale === 'zh-CN' ? '采购打印标准版' : 'Procurement Standard Print'
 
   return (
     <div className='purchase-print-sheet mx-auto box-border w-full bg-white text-[12px] leading-6 text-black'>
@@ -138,7 +146,7 @@ export function PurchasePrintDocument({
       <div className='border-b-2 border-black pb-4'>
         <div className='flex items-start justify-between gap-4'>
           <div>
-            <div className='pt-1 text-[10px] font-semibold uppercase tracking-[0.35em] text-black/55'>
+            <div className='pt-1 text-[10px] font-semibold tracking-[0.35em] text-black/55 uppercase'>
               {headerCaption}
             </div>
           </div>
@@ -154,7 +162,9 @@ export function PurchasePrintDocument({
           <span>
             {documentNoLabel}：{documentNo || '--'}
           </span>
-          <span>打印时间：{formatPurchasePrintDateTime(new Date().toISOString())}</span>
+          <span>
+            打印时间：{formatPurchasePrintDateTime(new Date().toISOString())}
+          </span>
         </div>
       </div>
 
@@ -174,7 +184,10 @@ export function PurchasePrintInfoGrid({ items }: PurchasePrintInfoGridProps) {
   return (
     <div className='mt-6 grid grid-cols-2 gap-x-8 gap-y-3 text-sm'>
       {items.map((item, index) => (
-        <div key={`${item.label}-${index}`} className={item.span === 2 ? 'col-span-2' : undefined}>
+        <div
+          key={`${item.label}-${index}`}
+          className={item.span === 2 ? 'col-span-2' : undefined}
+        >
           <span className='font-bold'>{item.label}：</span>
           {item.value?.trim() || '--'}
         </div>
@@ -190,17 +203,29 @@ export function PurchasePrintSection({
   children,
 }: PurchasePrintSectionProps) {
   return (
-    <section className={pageBreakBefore ? 'purchase-print-page-break mt-8' : 'mt-8'}>
+    <section
+      className={pageBreakBefore ? 'purchase-print-page-break mt-8' : 'mt-8'}
+    >
       <div className='border-b border-black pb-2'>
         <h2 className='text-base font-bold tracking-[0.08em]'>{title}</h2>
-        {description ? <p className='mt-1 text-[10px] leading-5 text-black/70'>{description}</p> : null}
+        {description ? (
+          <p className='mt-1 text-[10px] leading-5 text-black/70'>
+            {description}
+          </p>
+        ) : null}
       </div>
       <div className='mt-4'>{children}</div>
     </section>
   )
 }
 
-export function PurchasePrintMetaRow({ label, value }: { label: string; value?: string }) {
+export function PurchasePrintMetaRow({
+  label,
+  value,
+}: {
+  label: string
+  value?: string
+}) {
   return (
     <div className='flex gap-2 border-b border-dashed border-black/20 py-1 last:border-b-0'>
       <span className='min-w-[72px] font-bold text-black/70'>{label}</span>
@@ -218,7 +243,9 @@ export function PurchasePrintPhotoCard({
 }: PurchasePrintPhotoCardProps) {
   return (
     <div className='purchase-print-avoid-break purchase-print-photo-card space-y-0 border border-black'>
-      <div className='border-b border-black bg-gray-100 px-3 py-2 text-[11px] font-bold'>{title}</div>
+      <div className='border-b border-black bg-gray-100 px-3 py-2 text-[11px] font-bold'>
+        {title}
+      </div>
       <div className='bg-white p-3'>
         <div className='overflow-hidden border border-black'>
           <img
@@ -231,7 +258,11 @@ export function PurchasePrintPhotoCard({
           <PurchasePrintMetaRow label='照片编号' value={photoLabel} />
           <PurchasePrintMetaRow label='文件名称' value={photoName} />
           {metaRows.map((item, index) => (
-            <PurchasePrintMetaRow key={`${item.label}-${index}`} label={item.label} value={item.value} />
+            <PurchasePrintMetaRow
+              key={`${item.label}-${index}`}
+              label={item.label}
+              value={item.value}
+            />
           ))}
         </div>
       </div>
@@ -239,16 +270,25 @@ export function PurchasePrintPhotoCard({
   )
 }
 
-export function PurchasePrintSignatureGrid({ entries }: PurchasePrintSignatureGridProps) {
+export function PurchasePrintSignatureGrid({
+  entries,
+}: PurchasePrintSignatureGridProps) {
   const gridColumns =
-    entries.length >= 4 ? 'grid-cols-2' : entries.length === 3 ? 'grid-cols-3' : 'grid-cols-2'
+    entries.length >= 4
+      ? 'grid-cols-2'
+      : entries.length === 3
+        ? 'grid-cols-3'
+        : 'grid-cols-2'
 
   return (
     <div
       className={`purchase-print-signature-grid mt-14 grid border-t border-dashed border-black/40 pt-8 text-xs ${gridColumns}`}
     >
       {entries.map((entry) => (
-        <div key={`${entry.label}-${entry.value || ''}`} className='purchase-print-signature-cell'>
+        <div
+          key={`${entry.label}-${entry.value || ''}`}
+          className='purchase-print-signature-cell'
+        >
           <div>
             {entry.label}：{entry.value?.trim() || '______________'}
           </div>

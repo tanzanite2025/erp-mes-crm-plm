@@ -56,7 +56,9 @@ export function QualityStandardsStatusOverview({
       icon: Send,
       label: t('quality.standards.values.statusPendingApproval'),
       count: stats.pendingApproval,
-      description: t('quality.standards.page.statusViewPendingApprovalDescription'),
+      description: t(
+        'quality.standards.page.statusViewPendingApprovalDescription'
+      ),
     },
     {
       value: 'APPROVED',

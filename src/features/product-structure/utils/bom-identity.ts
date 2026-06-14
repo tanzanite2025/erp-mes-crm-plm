@@ -15,7 +15,6 @@
  *
  * 这个文件刻意保持纯逻辑，不引入 React/i18n 依赖，确保前后端可移植。
  */
-
 import { type BOM } from '../data/schema'
 
 /**
@@ -46,7 +45,9 @@ export interface BOMVersionFingerprint extends BOMIdentity {
 const VALID_BOM_TYPES = new Set<BOMIdentity['bomType']>(['EBOM', 'MBOM'])
 
 function normalizeBomTypeStrict(value: unknown): BOMIdentity['bomType'] {
-  const normalized = (typeof value === 'string' ? value : '').trim().toUpperCase()
+  const normalized = (typeof value === 'string' ? value : '')
+    .trim()
+    .toUpperCase()
   if (VALID_BOM_TYPES.has(normalized as BOMIdentity['bomType'])) {
     return normalized as BOMIdentity['bomType']
   }
@@ -58,7 +59,9 @@ function normalizeBomTypeStrict(value: unknown): BOMIdentity['bomType'] {
  *
  * 字段缺失时使用空字符串占位（保持 type 一致），调用方在业务比较前应自行判空。
  */
-export function extractBOMIdentity(bom: Pick<BOM, 'productId' | 'bomVersion' | 'bomType'>): BOMIdentity {
+export function extractBOMIdentity(
+  bom: Pick<BOM, 'productId' | 'bomVersion' | 'bomType'>
+): BOMIdentity {
   return {
     productId: bom.productId ?? '',
     bomVersion: bom.bomVersion ?? '',
@@ -85,9 +88,9 @@ export function extractBOMVersionFingerprint(
  */
 export function bomIdentitiesEqual(a: BOMIdentity, b: BOMIdentity): boolean {
   return (
-    a.productId === b.productId
-    && a.bomVersion === b.bomVersion
-    && a.bomType === b.bomType
+    a.productId === b.productId &&
+    a.bomVersion === b.bomVersion &&
+    a.bomType === b.bomType
   )
 }
 
@@ -104,7 +107,9 @@ export function formatBOMIdentity(identity: BOMIdentity): string {
 /**
  * 判断 BOM 是否属于研发 BOM。
  */
-export function isEBOM(bom: Pick<BOM, 'bomType'> | { bomType?: string | null } | null | undefined): boolean {
+export function isEBOM(
+  bom: Pick<BOM, 'bomType'> | { bomType?: string | null } | null | undefined
+): boolean {
   if (!bom) return false
   return normalizeBomTypeStrict(bom.bomType) === 'EBOM'
 }
@@ -112,7 +117,9 @@ export function isEBOM(bom: Pick<BOM, 'bomType'> | { bomType?: string | null } |
 /**
  * 判断 BOM 是否属于生产 BOM。
  */
-export function isMBOM(bom: Pick<BOM, 'bomType'> | { bomType?: string | null } | null | undefined): boolean {
+export function isMBOM(
+  bom: Pick<BOM, 'bomType'> | { bomType?: string | null } | null | undefined
+): boolean {
   if (!bom) return false
   return normalizeBomTypeStrict(bom.bomType) === 'MBOM'
 }
@@ -120,11 +127,12 @@ export function isMBOM(bom: Pick<BOM, 'bomType'> | { bomType?: string | null } |
 /**
  * 在 BOM 列表中按业务键查找第一条匹配项。
  */
-export function findBOMByIdentity<T extends Pick<BOM, 'productId' | 'bomVersion' | 'bomType'>>(
-  list: readonly T[],
-  identity: BOMIdentity
-): T | undefined {
-  return list.find((bom) => bomIdentitiesEqual(extractBOMIdentity(bom), identity))
+export function findBOMByIdentity<
+  T extends Pick<BOM, 'productId' | 'bomVersion' | 'bomType'>,
+>(list: readonly T[], identity: BOMIdentity): T | undefined {
+  return list.find((bom) =>
+    bomIdentitiesEqual(extractBOMIdentity(bom), identity)
+  )
 }
 
 /**

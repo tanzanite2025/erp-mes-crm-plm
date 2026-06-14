@@ -1,13 +1,16 @@
 import { useCallback, useMemo, useState } from 'react'
-import { useLanguage } from '@/context/language-provider'
 import type { DeltaSet } from '@/lib/delta/types'
-import type { TeamModuleAdapter, TeamRecord } from '@/features/shared/team'
+import { useLanguage } from '@/context/language-provider'
 import { useHierarchyLevelLabels } from '@/features/production-shared/tabs/hierarchy-config/hooks/use-hierarchy-level-labels'
+import type { TeamModuleAdapter, TeamRecord } from '@/features/shared/team'
 import type { Team } from '../data/schema'
 import { teamsData as initialData } from '../data/teams-data'
 
 function createLocalTeamId() {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+  if (
+    typeof crypto !== 'undefined' &&
+    typeof crypto.randomUUID === 'function'
+  ) {
     return crypto.randomUUID()
   }
   return Math.random().toString(36).slice(2, 11)
@@ -24,13 +27,26 @@ export function useOrgTeamAdapter(): TeamModuleAdapter {
   const [teams, setTeams] = useState<Team[]>(initialData)
 
   const saveTeam = useCallback(
-    ({ data, isPatch, delta, version }: { data: Partial<TeamRecord>; isPatch: boolean; delta?: DeltaSet; version?: number }) => {
+    ({
+      data,
+      isPatch,
+      delta,
+      version,
+    }: {
+      data: Partial<TeamRecord>
+      isPatch: boolean
+      delta?: DeltaSet
+      version?: number
+    }) => {
       if (isPatch && data.id) {
         setTeams((prev) =>
           prev.map((team) => {
             if (team.id !== data.id) return team
             const nextTeam = applyDeltaPatch(team, delta)
-            const nextVersion = typeof version === 'number' ? version + 1 : (team.version ?? 0) + 1
+            const nextVersion =
+              typeof version === 'number'
+                ? version + 1
+                : (team.version ?? 0) + 1
             return { ...nextTeam, version: nextVersion }
           })
         )
@@ -44,7 +60,10 @@ export function useOrgTeamAdapter(): TeamModuleAdapter {
               ? ({
                   ...team,
                   ...data,
-                  version: typeof version === 'number' ? version + 1 : (team.version ?? 0) + 1,
+                  version:
+                    typeof version === 'number'
+                      ? version + 1
+                      : (team.version ?? 0) + 1,
                 } as Team)
               : team
           )
@@ -80,14 +99,18 @@ export function useOrgTeamAdapter(): TeamModuleAdapter {
     () => ({
       headerTitle: '班组管理',
       headerDescription: `维护班组主数据、${level3Name}归属与状态。`,
-      searchPlaceholder: t('orgPersonnel.org.groups.searchPlaceholderDynamic', { levelName: level1Name }),
+      searchPlaceholder: t('orgPersonnel.org.groups.searchPlaceholderDynamic', {
+        levelName: level1Name,
+      }),
       addButtonLabel: '新增班组',
       confirmDeleteMessage: '确定删除该班组吗？',
       table: {
         code: '班组编码',
         name: '班组名称',
         step: level3Name,
-        section: t('orgPersonnel.org.groups.sectionLabelDynamic', { levelName: level1Name }),
+        section: t('orgPersonnel.org.groups.sectionLabelDynamic', {
+          levelName: level1Name,
+        }),
         type: '班组类型',
         maintenance: '维护班组',
         status: '状态',
@@ -110,7 +133,10 @@ export function useOrgTeamAdapter(): TeamModuleAdapter {
       },
       empty: {
         title: '暂无班组数据',
-        description: t('orgPersonnel.org.groups.emptyDescriptionDynamic', { levelName: level1Name, relatedLevelName: level3Name }),
+        description: t('orgPersonnel.org.groups.emptyDescriptionDynamic', {
+          levelName: level1Name,
+          relatedLevelName: level3Name,
+        }),
       },
       dialog: {
         titleEdit: '编辑班组',
@@ -125,7 +151,9 @@ export function useOrgTeamAdapter(): TeamModuleAdapter {
           name: '班组名称',
           shortName: '简称',
           step: level3Name,
-          section: t('orgPersonnel.org.groups.sectionLabelDynamic', { levelName: level1Name }),
+          section: t('orgPersonnel.org.groups.sectionLabelDynamic', {
+            levelName: level1Name,
+          }),
           type: '班组类型',
           maintenance: '维护班组',
           status: '状态',
@@ -135,7 +163,9 @@ export function useOrgTeamAdapter(): TeamModuleAdapter {
           code: '请输入班组编码',
           name: '请输入班组名称',
           shortName: '请输入简称',
-          section: t('orgPersonnel.org.groups.sectionPlaceholderDynamic', { levelName: level1Name }),
+          section: t('orgPersonnel.org.groups.sectionPlaceholderDynamic', {
+            levelName: level1Name,
+          }),
           remarks: '可选',
         },
         sectionOptions: {

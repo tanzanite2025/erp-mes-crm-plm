@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useLocation } from '@tanstack/react-router'
+import { useAuthStore } from '@/stores/auth-store'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { useLayout } from '@/context/layout-provider'
@@ -14,18 +15,14 @@ import {
   SidebarRail,
   useSidebar,
 } from '@/components/ui/sidebar'
+import { getNonBlockingNavGroups } from '@/features/authz/guards/navigation-access'
+import { EnterpriseService } from '@/features/basic-settings/services/enterprise-service'
 import { getSidebarData } from './data/sidebar-data'
 import { NavGroup, SidebarMenuBranch } from './nav-group'
 import { SidebarBrand } from './sidebar-brand'
-import { useSidebarNavGroupsWithBadges } from './use-sidebar-nav-badges'
-import { EnterpriseService } from '@/features/basic-settings/services/enterprise-service'
-import { getNonBlockingNavGroups } from '@/features/authz/guards/navigation-access'
-import { useAuthStore } from '@/stores/auth-store'
-import {
-  checkIsActive,
-  hasChildren,
-} from './sidebar-nav-utils'
+import { checkIsActive, hasChildren } from './sidebar-nav-utils'
 import type { NavBranch, NavGroup as SidebarNavGroup, NavLink } from './types'
+import { useSidebarNavGroupsWithBadges } from './use-sidebar-nav-badges'
 
 function isSidebarLink(node: { url?: unknown }): node is NavLink {
   return typeof node.url !== 'undefined'
@@ -74,9 +71,13 @@ function PinnedCurrentSidebarBranch({
   }
 
   return (
-    <SidebarGroup className='pb-1 pt-0 group-data-[collapsible=icon]:hidden'>
+    <SidebarGroup className='pt-0 pb-1 group-data-[collapsible=icon]:hidden'>
       <SidebarMenu className='gap-px'>
-        <SidebarMenuBranch item={context.branch} pathname={pathname} isCollapsed={false} />
+        <SidebarMenuBranch
+          item={context.branch}
+          pathname={pathname}
+          isCollapsed={false}
+        />
       </SidebarMenu>
     </SidebarGroup>
   )
@@ -95,8 +96,11 @@ export function AppSidebar() {
     plan: localizedSidebarData.teams[0].plan,
   })
   const visibleNavGroups = useMemo(
-    () => getNonBlockingNavGroups(user, localizedSidebarData.navGroups, { isIdentitySynced }),
-    [localizedSidebarData.navGroups, user, isIdentitySynced],
+    () =>
+      getNonBlockingNavGroups(user, localizedSidebarData.navGroups, {
+        isIdentitySynced,
+      }),
+    [localizedSidebarData.navGroups, user, isIdentitySynced]
   )
   const navGroupsWithBadges = useSidebarNavGroupsWithBadges(visibleNavGroups)
   const isCollapsed = state === 'collapsed'
@@ -108,7 +112,7 @@ export function AppSidebar() {
   const defaultName = localizedSidebarData.teams[0].name
   const loadBrand = useCallback(async () => {
     const config = await EnterpriseService.getConfig().catch(() => null)
-    
+
     // 如果 config 为空（请求失败），则不更新
     if (!config) {
       return
@@ -143,7 +147,9 @@ export function AppSidebar() {
   }
 
   const homeEntry = useMemo(() => {
-    const resourceGroup = navGroupsWithBadges.find((group) => group.id === 'resource-management')
+    const resourceGroup = navGroupsWithBadges.find(
+      (group) => group.id === 'resource-management'
+    )
     const dashboardNode = resourceGroup?.children.find(
       (item) => item.id === 'dashboard' && isSidebarLink(item)
     )
@@ -152,7 +158,8 @@ export function AppSidebar() {
   }, [navGroupsWithBadges])
 
   const renderedNavGroups = useMemo(
-    () => navGroupsWithBadges.filter((group) => group.id !== 'resource-management'),
+    () =>
+      navGroupsWithBadges.filter((group) => group.id !== 'resource-management'),
     [navGroupsWithBadges]
   )
 
@@ -163,7 +170,8 @@ export function AppSidebar() {
 
   const homeCardActive = isHomeCardActive(
     pathname,
-    (homeEntry?.activeMatch as string | undefined) ?? (homeEntry?.url as string | undefined)
+    (homeEntry?.activeMatch as string | undefined) ??
+      (homeEntry?.url as string | undefined)
   )
 
   return (
@@ -190,22 +198,25 @@ export function AppSidebar() {
                       'group-data-[collapsible=icon]:size-10! group-data-[collapsible=icon]:rounded-[16px]! group-data-[collapsible=icon]:border-white/8 dark:group-data-[collapsible=icon]:border-white/6'
                     )}
                   >
-                    <Link to={homeEntry.url} onClick={() => setOpenMobile(false)}>
+                    <Link
+                      to={homeEntry.url}
+                      onClick={() => setOpenMobile(false)}
+                    >
                       {homeEntry.icon ? (
-                        <homeEntry.icon className='pointer-events-none absolute -bottom-3 -right-2 size-12 rotate-12 text-white/8 transition-transform duration-500 group-hover/menu-item:scale-105 dark:text-white/6 group-data-[collapsible=icon]:hidden' />
+                        <homeEntry.icon className='pointer-events-none absolute -right-2 -bottom-3 size-12 rotate-12 text-white/8 transition-transform duration-500 group-hover/menu-item:scale-105 group-data-[collapsible=icon]:hidden dark:text-white/6' />
                       ) : null}
                       <div className='flex w-full items-center gap-2.5'>
                         <div className='flex items-center gap-2.5'>
                           {homeEntry.icon ? (
-                            <div className='flex size-6 shrink-0 items-center justify-center rounded-lg bg-white/8 text-white ring-1 ring-white/8 dark:bg-white/6 dark:ring-white/6 group-data-[collapsible=icon]:size-6 group-data-[collapsible=icon]:rounded-lg'>
+                            <div className='flex size-6 shrink-0 items-center justify-center rounded-lg bg-white/8 text-white ring-1 ring-white/8 group-data-[collapsible=icon]:size-6 group-data-[collapsible=icon]:rounded-lg dark:bg-white/6 dark:ring-white/6'>
                               <homeEntry.icon className='size-4 opacity-90 group-data-[collapsible=icon]:size-3.5' />
                             </div>
                           ) : null}
-                          <span className='px-0.5 py-0 text-[13px] font-black italic tracking-tight text-white dark:text-slate-50'>
+                          <span className='px-0.5 py-0 text-[13px] font-black tracking-tight text-white italic dark:text-slate-50'>
                             {homeEntry.title}
                           </span>
                         </div>
-                        <div className='ms-auto h-5 w-px bg-white/10 dark:bg-white/8 group-data-[collapsible=icon]:hidden' />
+                        <div className='ms-auto h-5 w-px bg-white/10 group-data-[collapsible=icon]:hidden dark:bg-white/8' />
                       </div>
                     </Link>
                   </SidebarMenuButton>
@@ -213,14 +224,21 @@ export function AppSidebar() {
               </SidebarMenu>
             </SidebarGroup>
           ) : null}
-          {!isCollapsed ? <PinnedCurrentSidebarBranch context={currentSidebarContext} pathname={pathname} /> : null}
+          {!isCollapsed ? (
+            <PinnedCurrentSidebarBranch
+              context={currentSidebarContext}
+              pathname={pathname}
+            />
+          ) : null}
         </div>
-        <div className='no-scrollbar min-h-0 flex-1 overflow-y-auto overflow-x-hidden'>
+        <div className='no-scrollbar min-h-0 flex-1 overflow-x-hidden overflow-y-auto'>
           {renderedNavGroups.map((props) => (
             <NavGroup
               key={props.id}
               {...props}
-              excludeBranchId={!isCollapsed ? currentSidebarContext?.branch.id : undefined}
+              excludeBranchId={
+                !isCollapsed ? currentSidebarContext?.branch.id : undefined
+              }
             />
           ))}
         </div>

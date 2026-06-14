@@ -1,5 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { ReactNode } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 type Props = {
   title: string
@@ -8,12 +8,25 @@ type Props = {
   className?: string
 }
 
-export function FieldCard({ title, description, children, className = '' }: Props) {
+export function FieldCard({
+  title,
+  description,
+  children,
+  className = '',
+}: Props) {
   return (
-    <Card className={`rounded-[28px] border-dashed shadow-none bg-background/80 ${className}`}>
+    <Card
+      className={`rounded-[28px] border-dashed bg-background/80 shadow-none ${className}`}
+    >
       <CardHeader className='space-y-2'>
-        <CardTitle className='text-base font-black tracking-tight'>{title}</CardTitle>
-        {description ? <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>{description}</div> : null}
+        <CardTitle className='text-base font-black tracking-tight'>
+          {title}
+        </CardTitle>
+        {description ? (
+          <div className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+            {description}
+          </div>
+        ) : null}
       </CardHeader>
       <CardContent>{children}</CardContent>
     </Card>

@@ -4,15 +4,15 @@ import { useState } from 'react'
 import { type Table } from '@tanstack/react-table'
 import { AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
+import { createLogger } from '@/lib/logger'
 import { sleep } from '@/lib/utils'
+import { useLanguage } from '@/context/language-provider'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ConfirmDialog } from '@/components/confirm-dialog'
-import { useUserMutations } from '../hooks/use-users'
 import { type User } from '../data/schema'
-import { useLanguage } from '@/context/language-provider'
-import { createLogger } from '@/lib/logger'
+import { useUserMutations } from '../hooks/use-users'
 
 const logger = createLogger('UsersMultiDeleteDialog')
 
@@ -37,7 +37,9 @@ export function UsersMultiDeleteDialog<TData>({
 
   const handleDelete = async () => {
     if (value.trim() !== CONFIRM_WORD) {
-      toast.error(t('users.dialogs.multiDelete.confirmHint', { word: CONFIRM_WORD }))
+      toast.error(
+        t('users.dialogs.multiDelete.confirmHint', { word: CONFIRM_WORD })
+      )
       return
     }
 
@@ -51,12 +53,16 @@ export function UsersMultiDeleteDialog<TData>({
     }
 
     toast.promise(deletePromise(), {
-      loading: t('users.toast.multiDeleteSyncing', { count: selectedRows.length }),
+      loading: t('users.toast.multiDeleteSyncing', {
+        count: selectedRows.length,
+      }),
       success: () => {
         onOpenChange(false)
         setValue('')
         table.resetRowSelection()
-        return t('users.toast.multiDeleteSuccess', { count: selectedRows.length })
+        return t('users.toast.multiDeleteSuccess', {
+          count: selectedRows.length,
+        })
       },
       error: (err) => {
         logger.error('Bulk delete failed', err)
@@ -72,36 +78,44 @@ export function UsersMultiDeleteDialog<TData>({
       handleConfirm={handleDelete}
       disabled={value.trim() !== CONFIRM_WORD}
       title={
-        <span className='text-lg font-black italic uppercase tracking-tighter flex items-center gap-2 text-rose-600'>
-          <AlertTriangle className='size-5' /> {t('users.dialogs.multiDelete.title')}
+        <span className='flex items-center gap-2 text-lg font-black tracking-tighter text-rose-600 uppercase italic'>
+          <AlertTriangle className='size-5' />{' '}
+          {t('users.dialogs.multiDelete.title')}
         </span>
       }
       desc={
         <div className='space-y-6 pt-2'>
-          <div className='bg-rose-500/5 border border-dashed border-rose-500/20 p-4 rounded-2xl shadow-inner'>
-            <p className='text-xs font-medium text-rose-900/70 leading-relaxed'>
-              {t('users.dialogs.multiDelete.description', { count: selectedRows.length })}
+          <div className='rounded-2xl border border-dashed border-rose-500/20 bg-rose-500/5 p-4 shadow-inner'>
+            <p className='text-xs leading-relaxed font-medium text-rose-900/70'>
+              {t('users.dialogs.multiDelete.description', {
+                count: selectedRows.length,
+              })}
             </p>
           </div>
 
           <div className='space-y-3 px-1'>
-            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 flex items-center gap-2'>
-              {t('users.dialogs.multiDelete.confirmHint', { word: CONFIRM_WORD })}
+            <Label className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+              {t('users.dialogs.multiDelete.confirmHint', {
+                word: CONFIRM_WORD,
+              })}
             </Label>
             <Input
               value={value}
               onChange={(e) => setValue(e.target.value)}
-              placeholder={t('users.dialogs.multiDelete.confirmPlaceholder', { word: CONFIRM_WORD })}
-              className='h-12 rounded-2xl bg-muted/50 border-none shadow-inner font-black text-center text-lg tracking-[0.3em] uppercase focus-visible:ring-rose-500/20 transition-all'
+              placeholder={t('users.dialogs.multiDelete.confirmPlaceholder', {
+                word: CONFIRM_WORD,
+              })}
+              className='h-12 rounded-2xl border-none bg-muted/50 text-center text-lg font-black tracking-[0.3em] uppercase shadow-inner transition-all focus-visible:ring-rose-500/20'
             />
           </div>
 
-          <Alert className='border-none bg-rose-500/10 rounded-2xl relative overflow-hidden'>
-            <div className='absolute inset-0 bg-linear-to-r from-rose-500/10 via-transparent to-rose-500/5 animate-pulse' />
-            <AlertTitle className='text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-rose-600 relative z-10'>
-               <AlertTriangle size={14} className='animate-bounce' /> {t('users.dialogs.multiDelete.warningTitle')}
+          <Alert className='relative overflow-hidden rounded-2xl border-none bg-rose-500/10'>
+            <div className='absolute inset-0 animate-pulse bg-linear-to-r from-rose-500/10 via-transparent to-rose-500/5' />
+            <AlertTitle className='relative z-10 flex items-center gap-2 text-[10px] font-black tracking-widest text-rose-600 uppercase'>
+              <AlertTriangle size={14} className='animate-bounce' />{' '}
+              {t('users.dialogs.multiDelete.warningTitle')}
             </AlertTitle>
-            <AlertDescription className='text-[9px] font-bold text-rose-600/70 relative z-10 uppercase tracking-tight'>
+            <AlertDescription className='relative z-10 text-[9px] font-bold tracking-tight text-rose-600/70 uppercase'>
               {t('users.dialogs.multiDelete.warningDesc')}
             </AlertDescription>
           </Alert>

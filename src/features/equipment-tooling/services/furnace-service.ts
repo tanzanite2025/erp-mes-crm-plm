@@ -49,10 +49,13 @@ export class FurnaceService {
   }
 
   static async updateTelemetry(furnaceId: string, temp: number): Promise<void> {
-    const res = await apiFetch<FurnaceTelemetryAckApiDTO>(`/furnaces/${furnaceId}/telemetry`, {
-      method: 'POST',
-      body: JSON.stringify({ temp }),
-    })
+    const res = await apiFetch<FurnaceTelemetryAckApiDTO>(
+      `/furnaces/${furnaceId}/telemetry`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ temp }),
+      }
+    )
 
     ensureObjectResponse<FurnaceTelemetryAckApiDTO & Record<string, unknown>>(
       res,
@@ -60,9 +63,15 @@ export class FurnaceService {
     )
   }
 
-  static async patchFurnace(furnaceId: string, delta: DeltaSet, version?: number): Promise<Furnace> {
+  static async patchFurnace(
+    furnaceId: string,
+    delta: DeltaSet,
+    version?: number
+  ): Promise<Furnace> {
     if (containsTopLevelStatusDelta(delta)) {
-      throw new Error('[CRITICAL] Furnace status transition must use a dedicated transaction command, not FurnaceService.patchFurnace().')
+      throw new Error(
+        '[CRITICAL] Furnace status transition must use a dedicated transaction command, not FurnaceService.patchFurnace().'
+      )
     }
 
     const payload: DeltaPayload = {

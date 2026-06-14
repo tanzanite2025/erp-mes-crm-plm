@@ -37,7 +37,7 @@ function renderTemplatePreviewContent(content: string) {
     return (
       <span
         key={`var-${index}`}
-        className='inline-flex rounded-md border border-primary/15 bg-primary/10 px-1.5 py-0.5 text-[10px] font-black text-primary align-middle'
+        className='inline-flex rounded-md border border-primary/15 bg-primary/10 px-1.5 py-0.5 align-middle text-[10px] font-black text-primary'
       >
         {part}
       </span>
@@ -165,7 +165,7 @@ export function RuleTemplatePanel({
             : '当前未绑定模板'}
         </div>
       </div>
-      <div className='mt-3 rounded-2xl border border-dashed border-primary/15 bg-background/70 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground'>
+      <div className='mt-3 rounded-2xl border border-dashed border-primary/15 bg-background/70 px-4 py-3 text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
         当前上下文：{sourceCode} · {actionCode || '全部动作'} · {statusCode}
       </div>
       <div className='mt-3 rounded-2xl border border-dashed border-primary/15 bg-background/70 px-4 py-3'>
@@ -204,22 +204,24 @@ export function RuleTemplatePanel({
                 </span>
               ) : null}
             </div>
-            {selectedGuard?.tone === 'blocking' && selectedGuard.reasons.length > 0 ? (
+            {selectedGuard?.tone === 'blocking' &&
+            selectedGuard.reasons.length > 0 ? (
               <div className='rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-[10px] font-black text-rose-700'>
                 {selectedGuard.reasons.join('；')}
               </div>
             ) : null}
-            {selectedGuard?.tone === 'warning' && selectedGuard.reasons.length > 0 ? (
+            {selectedGuard?.tone === 'warning' &&
+            selectedGuard.reasons.length > 0 ? (
               <div className='rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-[10px] font-black text-amber-700'>
                 {selectedGuard.reasons.join('；')}
               </div>
             ) : null}
-            <p className='text-[11px] font-bold leading-relaxed text-muted-foreground'>
+            <p className='text-[11px] leading-relaxed font-bold text-muted-foreground'>
               {renderTemplatePreviewContent(selectedCommand.content)}
             </p>
           </div>
         ) : (
-          <p className='text-[11px] font-bold leading-relaxed text-muted-foreground'>
+          <p className='text-[11px] leading-relaxed font-bold text-muted-foreground'>
             绑定后会在这里预览模板正文和跳转链接，方便直接确认这条状态消息会发什么。
           </p>
         )}

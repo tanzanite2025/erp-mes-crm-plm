@@ -25,7 +25,9 @@ function normalizeOptionalString(value: string): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined
 }
 
-export function buildSettlementRecordPayload(values: SettlementRecordFormValues): CreateSettlementRecordApiDTO {
+export function buildSettlementRecordPayload(
+  values: SettlementRecordFormValues
+): CreateSettlementRecordApiDTO {
   const payload = {
     amount: values.amount,
     paymentMethod: normalizeOptionalString(values.paymentMethod),

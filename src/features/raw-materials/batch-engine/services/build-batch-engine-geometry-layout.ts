@@ -1,5 +1,12 @@
-import type { BatchOptimizerPlan, BatchOptimizerPlanDiffSummary } from '../types'
-import type { StripFirstLayout, StripLayoutPoint, StripLayoutZone } from './build-strip-first-layout'
+import type {
+  BatchOptimizerPlan,
+  BatchOptimizerPlanDiffSummary,
+} from '../types'
+import type {
+  StripFirstLayout,
+  StripLayoutPoint,
+  StripLayoutZone,
+} from './build-strip-first-layout'
 
 function resolvePolygonBounds(points: StripLayoutPoint[]) {
   if (!points.length) {
@@ -19,7 +26,13 @@ function resolvePolygonBounds(points: StripLayoutPoint[]) {
 }
 
 function toCanvasZoneKind(kind: string): StripLayoutZone['kind'] {
-  if (kind === 'roll' || kind === 'loss' || kind === 'strip' || kind === 'piece' || kind === 'aggregate') {
+  if (
+    kind === 'roll' ||
+    kind === 'loss' ||
+    kind === 'strip' ||
+    kind === 'piece' ||
+    kind === 'aggregate'
+  ) {
     return kind
   }
   return 'aggregate'
@@ -36,7 +49,10 @@ export function buildBatchEngineGeometryLayout(
 
   const diffZoneIdSet = new Set(activeDiffSummary?.highlightZoneIds ?? [])
   const zones: StripLayoutZone[] = geometryLayoutSummary.zones.map((zone) => {
-    const polygonPoints = zone.polygonPoints.map((point) => ({ x: point.x, y: point.y }))
+    const polygonPoints = zone.polygonPoints.map((point) => ({
+      x: point.x,
+      y: point.y,
+    }))
     const bounds = resolvePolygonBounds(polygonPoints)
     return {
       id: zone.id,
@@ -55,7 +71,10 @@ export function buildBatchEngineGeometryLayout(
       allocatedPieces: zone.allocatedPieces,
       coverageSharePercent: zone.coverageSharePercent,
       tooltipLines: diffZoneIdSet.has(zone.id)
-        ? [...zone.tooltipLines, `差异热区: 当前方案与 Top${activeDiffSummary?.baselinePlanRank ?? 1} 基准存在布局差异`]
+        ? [
+            ...zone.tooltipLines,
+            `差异热区: 当前方案与 Top${activeDiffSummary?.baselinePlanRank ?? 1} 基准存在布局差异`,
+          ]
         : zone.tooltipLines,
       isDiffHighlighted: diffZoneIdSet.has(zone.id),
       interactive: true,

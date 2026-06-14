@@ -1,10 +1,12 @@
 export const materialArchive = {
   layout: {
     title: 'Material Resource Center',
-    description: 'A digital governance workspace for in-house materials, semi-finished goods, and raw material specifications',
+    description:
+      'A digital governance workspace for in-house materials, semi-finished goods, and raw material specifications',
     manageCategories: 'Manage Material Categories',
     categoryDialogTitle: 'Material Category Management',
-    categoryDialogDescription: 'Add, edit, or remove category tags for material archives here.',
+    categoryDialogDescription:
+      'Add, edit, or remove category tags for material archives here.',
     tabs: {
       all: 'All Materials',
       assembly: 'Assembly Rules',
@@ -17,19 +19,23 @@ export const materialArchive = {
     register: 'Register Archive',
   },
   actions: {
-    deleteConfirm: 'Are you sure you want to delete this material definition? This action cannot be undone.',
+    deleteConfirm:
+      'Are you sure you want to delete this material definition? This action cannot be undone.',
     exportPreparing: 'Preparing export data for {{category}}...',
     exportSuccess: 'Export completed successfully',
     exportFailed: 'Export failed. Please check browser permissions.',
     importParsing: 'Parsing Excel and validating version fingerprint...',
     importNoValidData: 'No valid material records were found in the file.',
-    importSuccess: 'Sync completed. Updated or backfilled {{count}} material records.',
-    importConflict: 'A data conflict was detected. Some materials were modified after export. Please re-export the latest archive and try again.',
+    importSuccess:
+      'Sync completed. Updated or backfilled {{count}} material records.',
+    importConflict:
+      'A data conflict was detected. Some materials were modified after export. Please re-export the latest archive and try again.',
     parseFailed: 'Parse failed',
   },
   assemblyManager: {
     title: 'Assembly Conversion Rules',
-    description: 'Define conversion relationships between pack units and base units for each material',
+    description:
+      'Define conversion relationships between pack units and base units for each material',
     searchPlaceholder: 'Search materials with configured conversion rules...',
     addRule: 'Add Rule',
     table: {
@@ -150,11 +156,16 @@ export const materialArchive = {
       factorError: 'The conversion factor must be a number greater than 0.',
     },
     parse: {
-      sheetNotFound: 'The worksheet "{{sheetName}}" was not found in the Excel file. Please use the standard template exported by the system.',
-      configSheetNotFound: 'The system config worksheet "{{sheetName}}" was not found in the Excel file. Please re-export the latest standard template before editing.',
-      invalidGlobalVersion: 'The Excel file is missing a valid global material version fingerprint. Please re-export the latest template before importing.',
-      invalidCompositeId: 'The Excel file contains an invalid record key: {{value}}. Do not edit locked columns manually.',
-      categoryMappingMissing: 'The Excel file contains an unknown material category: {{value}}. Please use the template dropdown values.',
+      sheetNotFound:
+        'The worksheet "{{sheetName}}" was not found in the Excel file. Please use the standard template exported by the system.',
+      configSheetNotFound:
+        'The system config worksheet "{{sheetName}}" was not found in the Excel file. Please re-export the latest standard template before editing.',
+      invalidGlobalVersion:
+        'The Excel file is missing a valid global material version fingerprint. Please re-export the latest template before importing.',
+      invalidCompositeId:
+        'The Excel file contains an invalid record key: {{value}}. Do not edit locked columns manually.',
+      categoryMappingMissing:
+        'The Excel file contains an unknown material category: {{value}}. Please use the template dropdown values.',
     },
   },
 }

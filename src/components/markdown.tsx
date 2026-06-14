@@ -27,9 +27,7 @@ export function Markdown({ children, className }: MarkdownProps) {
         className
       )}
     >
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-        {children}
-      </ReactMarkdown>
+      <ReactMarkdown remarkPlugins={[remarkGfm]}>{children}</ReactMarkdown>
     </div>
   )
 }

@@ -2,7 +2,11 @@ import type { PersonalWorkbenchColumnKey } from './constants'
 
 export type PersonalLocalMediaDraftKind = 'image' | 'video'
 
-export type PersonalLocalMediaDraftStatus = 'local_draft' | 'uploading' | 'uploaded' | 'linked_to_record'
+export type PersonalLocalMediaDraftStatus =
+  | 'local_draft'
+  | 'uploading'
+  | 'uploaded'
+  | 'linked_to_record'
 
 export interface PersonalLocalMediaDraft {
   id: string

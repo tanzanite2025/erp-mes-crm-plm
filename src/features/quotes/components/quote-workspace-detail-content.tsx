@@ -56,58 +56,101 @@ export function QuoteWorkspaceDetailContent({
         <div className='space-y-5'>
           <section className='grid gap-4 rounded-2xl border border-dashed border-border/70 bg-background/80 p-5 md:grid-cols-2 xl:grid-cols-4'>
             <div>
-              <p className='text-[11px] font-black uppercase tracking-[0.18em] text-muted-foreground'>客户</p>
-              <p className='mt-2 text-sm font-bold text-foreground'>{detail.customerName || '—'}</p>
+              <p className='text-[11px] font-black tracking-[0.18em] text-muted-foreground uppercase'>
+                客户
+              </p>
+              <p className='mt-2 text-sm font-bold text-foreground'>
+                {detail.customerName || '—'}
+              </p>
             </div>
             <div>
-              <p className='text-[11px] font-black uppercase tracking-[0.18em] text-muted-foreground'>下单日期</p>
-              <p className='mt-2 text-sm font-bold text-foreground'>{detail.orderDate || '—'}</p>
+              <p className='text-[11px] font-black tracking-[0.18em] text-muted-foreground uppercase'>
+                下单日期
+              </p>
+              <p className='mt-2 text-sm font-bold text-foreground'>
+                {detail.orderDate || '—'}
+              </p>
             </div>
             <div>
-              <p className='text-[11px] font-black uppercase tracking-[0.18em] text-muted-foreground'>交期</p>
-              <p className='mt-2 text-sm font-bold text-foreground'>{detail.deliveryDate || '—'}</p>
+              <p className='text-[11px] font-black tracking-[0.18em] text-muted-foreground uppercase'>
+                交期
+              </p>
+              <p className='mt-2 text-sm font-bold text-foreground'>
+                {detail.deliveryDate || '—'}
+              </p>
             </div>
             <div>
-              <p className='text-[11px] font-black uppercase tracking-[0.18em] text-muted-foreground'>负责人</p>
-              <p className='mt-2 text-sm font-bold text-foreground'>{detail.ownerName || '—'}</p>
+              <p className='text-[11px] font-black tracking-[0.18em] text-muted-foreground uppercase'>
+                负责人
+              </p>
+              <p className='mt-2 text-sm font-bold text-foreground'>
+                {detail.ownerName || '—'}
+              </p>
             </div>
           </section>
 
           <section className='rounded-2xl border border-dashed border-border/70 bg-background/80 p-5'>
             <div className='flex items-center justify-between'>
-              <p className='text-[11px] font-black uppercase tracking-[0.18em] text-muted-foreground'>金额与账期</p>
+              <p className='text-[11px] font-black tracking-[0.18em] text-muted-foreground uppercase'>
+                金额与账期
+              </p>
               <Badge variant='outline'>{detail.currency || 'CNY'}</Badge>
             </div>
             <div className='mt-4 grid gap-4 md:grid-cols-3'>
               <div>
                 <p className='text-xs text-muted-foreground'>报价金额</p>
-                <Input className='mt-2' value={editedAmountLabel} onChange={(event) => onAmountLabelChange(event.target.value)} />
+                <Input
+                  className='mt-2'
+                  value={editedAmountLabel}
+                  onChange={(event) => onAmountLabelChange(event.target.value)}
+                />
               </div>
               <div>
                 <p className='text-xs text-muted-foreground'>数量汇总</p>
-                <p className='mt-3 text-sm font-bold text-foreground'>{detail.quantityLabel || '—'}</p>
+                <p className='mt-3 text-sm font-bold text-foreground'>
+                  {detail.quantityLabel || '—'}
+                </p>
               </div>
               <div>
                 <p className='text-xs text-muted-foreground'>付款方式 / 账期</p>
-                <p className='mt-3 text-sm font-bold text-foreground'>{detail.paymentMethodName || '—'} / {detail.paymentTermName || '—'}</p>
+                <p className='mt-3 text-sm font-bold text-foreground'>
+                  {detail.paymentMethodName || '—'} /{' '}
+                  {detail.paymentTermName || '—'}
+                </p>
               </div>
             </div>
           </section>
 
           <section className='rounded-2xl border border-dashed border-border/70 bg-background/80 p-5'>
-            <p className='text-[11px] font-black uppercase tracking-[0.18em] text-muted-foreground'>需求说明</p>
-            <Input className='mt-4' value={editedRequirements} onChange={(event) => onRequirementsChange(event.target.value)} />
+            <p className='text-[11px] font-black tracking-[0.18em] text-muted-foreground uppercase'>
+              需求说明
+            </p>
+            <Input
+              className='mt-4'
+              value={editedRequirements}
+              onChange={(event) => onRequirementsChange(event.target.value)}
+            />
           </section>
 
           <section className='rounded-2xl border border-dashed border-border/70 bg-background/80 p-5'>
-            <p className='text-[11px] font-black uppercase tracking-[0.18em] text-muted-foreground'>明细摘要</p>
+            <p className='text-[11px] font-black tracking-[0.18em] text-muted-foreground uppercase'>
+              明细摘要
+            </p>
             <div className='mt-4 space-y-3'>
               {detail.lines.map((line) => (
-                <div key={line.id} className='rounded-2xl border border-dashed border-border/60 bg-muted/10 p-4'>
+                <div
+                  key={line.id}
+                  className='rounded-2xl border border-dashed border-border/60 bg-muted/10 p-4'
+                >
                   <div className='flex items-center justify-between gap-3'>
                     <div>
-                      <p className='text-sm font-bold text-foreground'>{line.productModel || '未命名产品'} / {line.productCode || '—'}</p>
-                      <p className='mt-1 text-xs text-muted-foreground'>{line.specification || '无规格说明'}</p>
+                      <p className='text-sm font-bold text-foreground'>
+                        {line.productModel || '未命名产品'} /{' '}
+                        {line.productCode || '—'}
+                      </p>
+                      <p className='mt-1 text-xs text-muted-foreground'>
+                        {line.specification || '无规格说明'}
+                      </p>
                     </div>
                     <Badge variant='outline'>#{line.lineNo}</Badge>
                   </div>
@@ -117,7 +160,9 @@ export function QuoteWorkspaceDetailContent({
                     <p>金额：{line.amount}</p>
                     <p>单位：{line.uom || '—'}</p>
                   </div>
-                  <p className='mt-2 text-xs text-muted-foreground'>{line.note || '无备注'}</p>
+                  <p className='mt-2 text-xs text-muted-foreground'>
+                    {line.note || '无备注'}
+                  </p>
                 </div>
               ))}
             </div>

@@ -1,6 +1,9 @@
 import { CalendarDays } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
-import type { GreedyEngineFactorBadgeItem, GreedyEngineFactorSummaryItem } from '../types'
+import type {
+  GreedyEngineFactorBadgeItem,
+  GreedyEngineFactorSummaryItem,
+} from '../types'
 import { FactorCard } from './factor-card'
 
 type DateRuleCardProps = {
@@ -8,10 +11,7 @@ type DateRuleCardProps = {
   summaryItems: GreedyEngineFactorSummaryItem[]
 }
 
-export function DateRuleCard({
-  badges,
-  summaryItems,
-}: DateRuleCardProps) {
+export function DateRuleCard({ badges, summaryItems }: DateRuleCardProps) {
   const { t } = useLanguage()
 
   return (

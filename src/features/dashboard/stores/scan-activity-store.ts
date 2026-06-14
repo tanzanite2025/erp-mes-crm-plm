@@ -20,17 +20,25 @@ interface ScanActivityState {
 }
 
 function toActivity(payload: any): ScanActivity | null {
-  const rawCode = String(payload?.rawCode || payload?.parsed?.rawCode || '').trim()
+  const rawCode = String(
+    payload?.rawCode || payload?.parsed?.rawCode || ''
+  ).trim()
   if (!rawCode) return null
 
   const scannedAt = String(payload?.scannedAt || new Date().toISOString())
   if (!payload?.bridge || !payload?.resolved) {
-    throw new Error("[CRITICAL] Scan activity payload corrupted: missing bridge or resolved metadata");
+    throw new Error(
+      '[CRITICAL] Scan activity payload corrupted: missing bridge or resolved metadata'
+    )
   }
   const bridge = payload.bridge
   const resolved = payload.resolved
-  const productName = resolved?.product?.name ? String(resolved.product.name) : ''
-  const materialCode = resolved?.material?.code ? String(resolved.material.code) : ''
+  const productName = resolved?.product?.name
+    ? String(resolved.product.name)
+    : ''
+  const materialCode = resolved?.material?.code
+    ? String(resolved.material.code)
+    : ''
 
   let result = '已完成结构解析'
   if (bridge?.applied) {
@@ -42,9 +50,13 @@ function toActivity(payload: any): ScanActivity | null {
   }
 
   const details = [
-    payload?.scene ? `场景 ${String(payload.scene).toUpperCase()}` : '场景 GENERAL',
+    payload?.scene
+      ? `场景 ${String(payload.scene).toUpperCase()}`
+      : '场景 GENERAL',
     payload?.deviceId ? `设备 ${String(payload.deviceId)}` : '',
-    payload?.parsed?.segments?.serial ? `流水 ${String(payload.parsed.segments.serial)}` : '',
+    payload?.parsed?.segments?.serial
+      ? `流水 ${String(payload.parsed.segments.serial)}`
+      : '',
   ]
     .filter(Boolean)
     .join(' / ')
@@ -52,7 +64,9 @@ function toActivity(payload: any): ScanActivity | null {
   return {
     id: `${rawCode}-${scannedAt}`,
     rawCode,
-    process: payload?.protocol ? String(payload.protocol).toUpperCase() : 'SCAN',
+    process: payload?.protocol
+      ? String(payload.protocol).toUpperCase()
+      : 'SCAN',
     result,
     description: details || String(payload?.summary || '原始扫码事件'),
     time: new Date(scannedAt).toLocaleTimeString('zh-CN', { hour12: false }),

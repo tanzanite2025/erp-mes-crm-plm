@@ -33,6 +33,9 @@ export function useActiveHoleCodeSource() {
     countOptions: getHoleCodeCountOptions(activeCounts),
     prefixLabelMap: buildHolePrefixLabelMap(activePrefixes),
     countLabelMap: buildHoleCountLabelMap(activeCounts),
-    combinationLabelMap: buildHoleCodeCombinationLabelMap(activePrefixes, activeCounts),
+    combinationLabelMap: buildHoleCodeCombinationLabelMap(
+      activePrefixes,
+      activeCounts
+    ),
   }
 }

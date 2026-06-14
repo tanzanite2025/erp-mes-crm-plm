@@ -34,7 +34,9 @@ function resolveQualityStandardId(log: RuleExecutionLog) {
   )
 }
 
-function buildRoutingLogSummary(log: RuleExecutionLog): QualityStandardRoutingLogSummary | null {
+function buildRoutingLogSummary(
+  log: RuleExecutionLog
+): QualityStandardRoutingLogSummary | null {
   const standardId = resolveQualityStandardId(log)
   if (!standardId) return null
 

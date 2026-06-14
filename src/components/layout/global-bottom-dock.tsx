@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react'
 import { cn } from '@/lib/utils'
 
 interface GlobalBottomDockProps {
@@ -89,8 +96,14 @@ export function GlobalBottomDock({ children }: GlobalBottomDockProps) {
     if (!element) return
 
     const updateSize = () => {
-      const nextWidth = Math.max(Math.floor(element.getBoundingClientRect().width), 0)
-      const nextHeight = Math.max(Math.floor(element.getBoundingClientRect().height), 0)
+      const nextWidth = Math.max(
+        Math.floor(element.getBoundingClientRect().width),
+        0
+      )
+      const nextHeight = Math.max(
+        Math.floor(element.getBoundingClientRect().height),
+        0
+      )
 
       setDockSize((current) =>
         current.width === nextWidth && current.height === nextHeight
@@ -118,7 +131,8 @@ export function GlobalBottomDock({ children }: GlobalBottomDockProps) {
     ...dockSurfaceVars,
     WebkitMaskImage: mobileDockGeometry.maskImage,
     maskImage: mobileDockGeometry.maskImage,
-    filter: 'drop-shadow(0 -7px 16px rgba(15, 23, 42, 0.1)) drop-shadow(0 16px 30px rgba(15, 23, 42, 0.18))',
+    filter:
+      'drop-shadow(0 -7px 16px rgba(15, 23, 42, 0.1)) drop-shadow(0 16px 30px rgba(15, 23, 42, 0.18))',
     WebkitMaskPosition: 'center',
     maskPosition: 'center',
     WebkitMaskRepeat: 'no-repeat',
@@ -138,7 +152,7 @@ export function GlobalBottomDock({ children }: GlobalBottomDockProps) {
           aria-hidden='true'
           style={mobileDockMaskStyle}
           className={cn(
-            'pointer-events-none absolute inset-0 -z-10 bg-(--dock-surface) backdrop-blur-xl dark:bg-(--dock-surface-dark) sm:hidden',
+            'pointer-events-none absolute inset-0 -z-10 bg-(--dock-surface) backdrop-blur-xl sm:hidden dark:bg-(--dock-surface-dark)',
             'supports-backdrop-filter:bg-(--dock-surface-supported) dark:supports-backdrop-filter:bg-(--dock-surface-dark-supported)'
           )}
         />

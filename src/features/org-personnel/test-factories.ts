@@ -1,6 +1,8 @@
 import { type Employee } from './data/schema'
 
-export function createTestEmployee(overrides: Partial<Employee> = {}): Employee {
+export function createTestEmployee(
+  overrides: Partial<Employee> = {}
+): Employee {
   return {
     id: 'emp-test',
     staffId: 'STAFF-001',

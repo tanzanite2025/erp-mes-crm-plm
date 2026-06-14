@@ -1,4 +1,5 @@
 import { AlertTriangle, FileText } from 'lucide-react'
+import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -7,7 +8,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { useLanguage } from '@/context/language-provider'
 import { type CustomerQuoteSummaryItem } from '@/features/quotes/services/customer-quote-summary-service'
 
 type CustomerQuoteEntryBlockProps = {
@@ -100,7 +100,9 @@ export function CustomerQuoteEntryBlock({
           <div className='grid gap-2 sm:grid-cols-[minmax(0,1fr)_136px] sm:items-center'>
             <div className='space-y-1'>
               <p className='text-[10px] font-black text-amber-700'>
-                {t('trading.customers.summary.quoteEmptyTitle', { customerName })}
+                {t('trading.customers.summary.quoteEmptyTitle', {
+                  customerName,
+                })}
               </p>
               <p className='text-[9px] font-bold text-amber-600/80'>
                 {t('trading.customers.summary.quoteEmptyDescription')}
@@ -168,7 +170,9 @@ export function CustomerQuoteEntryBlock({
         <div className='grid gap-2 sm:grid-cols-[minmax(0,1fr)_136px] sm:items-center'>
           <div className='flex flex-wrap items-center gap-2'>
             <Badge variant='outline' className='text-[10px] font-black'>
-              {t('trading.customers.summary.quoteCount', { count: quotes.length })}
+              {t('trading.customers.summary.quoteCount', {
+                count: quotes.length,
+              })}
             </Badge>
             <span className='text-[10px] font-bold text-muted-foreground'>
               {t('trading.customers.summary.quoteSelectHint')}

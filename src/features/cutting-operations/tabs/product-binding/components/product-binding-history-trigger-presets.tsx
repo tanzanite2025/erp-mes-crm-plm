@@ -1,9 +1,9 @@
 import type { ReactElement } from 'react'
 import { History } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { useLanguage } from '@/context/language-provider'
-import { cn } from '@/lib/utils'
 import {
   ProductBindingHistoryDialog,
   type ProductBindingHistoryDialogProps,
@@ -17,7 +17,9 @@ type BaseHistoryTriggerProps = Omit<
 
 type HistoryTriggerDialogPresetProps = BaseHistoryTriggerProps & {
   prefetchRecordCount?: boolean
-  renderTrigger: (context: ProductBindingHistoryDialogRenderTriggerContext) => ReactElement
+  renderTrigger: (
+    context: ProductBindingHistoryDialogRenderTriggerContext
+  ) => ReactElement
 }
 
 function HistoryTriggerDialogPreset(props: HistoryTriggerDialogPresetProps) {
@@ -43,8 +45,8 @@ function HistoryTriggerCountBadge(props: HistoryTriggerCountBadgeProps) {
   return (
     <span
       className={cn(
-        'inline-flex items-center justify-center font-mono uppercase tracking-[0.16em]',
-        className,
+        'inline-flex items-center justify-center font-mono tracking-[0.16em] uppercase',
+        className
       )}
     >
       {recordCount}
@@ -69,17 +71,22 @@ export function HistoryBadgeTrigger(props: HistoryBadgeTriggerProps) {
           asChild
           variant='outline'
           className={cn(
-            'h-5 rounded-full border-dashed bg-background/90 px-2.5 text-[8px] font-mono uppercase tracking-[0.16em]',
+            'h-5 rounded-full border-dashed bg-background/90 px-2.5 font-mono text-[8px] tracking-[0.16em] uppercase',
             open
               ? 'border-primary/40 bg-primary/10 text-primary'
               : 'border-border/60 text-foreground/80',
-            className,
+            className
           )}
         >
           <button type='button'>
             <History className='size-3' />
-            <span>{label || t('cuttingOperations.productBinding.history.title')}</span>
-            <HistoryTriggerCountBadge recordCount={recordCount} className='text-[8px]' />
+            <span>
+              {label || t('cuttingOperations.productBinding.history.title')}
+            </span>
+            <HistoryTriggerCountBadge
+              recordCount={recordCount}
+              className='text-[8px]'
+            />
           </button>
         </Badge>
       )}
@@ -108,17 +115,17 @@ export function HistoryCardTrigger(props: HistoryCardTriggerProps) {
             open
               ? 'border-primary/40 bg-primary/5'
               : 'hover:border-primary/30 hover:bg-primary/5',
-            className,
+            className
           )}
         >
           <span className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-transparent' />
           <span className='relative flex items-start justify-between gap-4'>
             <span className='flex min-w-0 flex-col gap-1'>
-              <span className='flex items-center gap-2 text-sm font-black italic tracking-tighter text-foreground'>
+              <span className='flex items-center gap-2 text-sm font-black tracking-tighter text-foreground italic'>
                 <History className='size-4 text-primary' />
                 {title || t('cuttingOperations.productBinding.history.title')}
               </span>
-              <span className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>
+              <span className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                 {description ||
                   t('cuttingOperations.productBinding.history.description', {
                     count: recordCount,
@@ -142,7 +149,9 @@ export type HistoryTableActionTriggerProps = BaseHistoryTriggerProps & {
   showCount?: boolean
 }
 
-export function HistoryTableActionTrigger(props: HistoryTableActionTriggerProps) {
+export function HistoryTableActionTrigger(
+  props: HistoryTableActionTriggerProps
+) {
   const { t } = useLanguage()
   const { label, className, showCount = false, ...dialogProps } = props
 
@@ -155,13 +164,14 @@ export function HistoryTableActionTrigger(props: HistoryTableActionTriggerProps)
           type='button'
           variant='ghost'
           className={cn(
-            'h-8 rounded-full px-3 text-[10px] font-black uppercase tracking-widest',
+            'h-8 rounded-full px-3 text-[10px] font-black tracking-widest uppercase',
             open ? 'bg-primary/10 text-primary hover:bg-primary/15' : '',
-            className,
+            className
           )}
         >
           <History className='size-3.5' />
-          {label || t('cuttingOperations.productBinding.history.actions.openDialog')}
+          {label ||
+            t('cuttingOperations.productBinding.history.actions.openDialog')}
           {showCount ? (
             <HistoryTriggerCountBadge
               recordCount={recordCount}

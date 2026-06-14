@@ -14,7 +14,9 @@ function escapeHtml(value: string): string {
     .replace(/'/g, '&#39;')
 }
 
-export function openPrepregSpecQrPrintPreview(options: OpenPrepregSpecQrPrintPreviewOptions) {
+export function openPrepregSpecQrPrintPreview(
+  options: OpenPrepregSpecQrPrintPreviewOptions
+) {
   const printWindow = window.open('', '_blank', 'width=900,height=760')
   if (!printWindow) {
     throw new Error('浏览器拦截了打印预览窗口，请允许弹窗后重试')

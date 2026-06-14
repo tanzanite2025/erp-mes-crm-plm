@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { getRouteApi } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { getRouteApi } from '@tanstack/react-router'
 import { toast } from 'sonner'
-import { useLanguage } from '@/context/language-provider'
 import { getErrorStatus, isNotFoundError } from '@/lib/error-status'
+import { useLanguage } from '@/context/language-provider'
 import { useGetSuppliers } from '@/features/trading/supplier'
 import type { PrepregSupplierOption } from '../components/prepreg-catalog-form'
 import {
@@ -18,10 +18,12 @@ import {
   type PrepregFormState,
   type PrepregMaterialSpec,
 } from '../data/prepreg-material-spec-schema'
-import { PrepregMaterialSpecService } from '../services/prepreg-material-spec-service'
 import { extractPrepregBindingToken } from '../prepreg-binding-qr/services/prepreg-binding-token-service'
+import { PrepregMaterialSpecService } from '../services/prepreg-material-spec-service'
 
-const prepregCatalogRouteApi = getRouteApi('/_authenticated/raw-materials/catalog')
+const prepregCatalogRouteApi = getRouteApi(
+  '/_authenticated/raw-materials/catalog'
+)
 
 interface SupplierLike {
   id: string
@@ -39,7 +41,10 @@ export interface UsePrepregCatalogPageStateResult {
   setDialogOpen: (open: boolean) => void
   editingSpec: PrepregMaterialSpec | null
   form: PrepregFormState
-  updateForm: <K extends keyof PrepregFormState>(key: K, value: PrepregFormState[K]) => void
+  updateForm: <K extends keyof PrepregFormState>(
+    key: K,
+    value: PrepregFormState[K]
+  ) => void
   supplierOptions: PrepregSupplierOption[]
   supplierSelectValue?: string
   isSupplierLoading: boolean
@@ -64,7 +69,9 @@ function supplierLabel(supplier: Pick<SupplierLike, 'code' | 'name'>): string {
   return code || name
 }
 
-function supplierSnapshot(supplier: Pick<SupplierLike, 'code' | 'name'>): string {
+function supplierSnapshot(
+  supplier: Pick<SupplierLike, 'code' | 'name'>
+): string {
   const code = supplier.code.trim()
   const name = supplier.name.trim()
   return code || name
@@ -77,7 +84,9 @@ export function usePrepregCatalogPageState(): UsePrepregCatalogPageStateResult {
   const navigate = prepregCatalogRouteApi.useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [editingSpec, setEditingSpec] = useState<PrepregMaterialSpec | null>(null)
+  const [editingSpec, setEditingSpec] = useState<PrepregMaterialSpec | null>(
+    null
+  )
   const [form, setForm] = useState<PrepregFormState>(EMPTY_PREPREG_FORM)
   const [bindingTokenDialogOpen, setBindingTokenDialogOpen] = useState(false)
   const [activeBindingToken, setActiveBindingToken] = useState('')
@@ -86,9 +95,10 @@ export function usePrepregCatalogPageState(): UsePrepregCatalogPageStateResult {
     queryKey: ['raw-materials', 'prepreg-specs', searchTerm],
     queryFn: () => PrepregMaterialSpecService.list(searchTerm, 1, 200),
   })
-  const { data: suppliers = [], isLoading: isSupplierLoading } = useGetSuppliers({
-    enabled: dialogOpen,
-  })
+  const { data: suppliers = [], isLoading: isSupplierLoading } =
+    useGetSuppliers({
+      enabled: dialogOpen,
+    })
 
   const specs = useMemo(() => data?.items ?? [], [data?.items])
   const activeSuppliers = useMemo(
@@ -295,7 +305,9 @@ export function usePrepregCatalogPageState(): UsePrepregCatalogPageStateResult {
             return
           }
 
-          const detailSpec = await PrepregMaterialSpecService.getById(resolved.specId)
+          const detailSpec = await PrepregMaterialSpecService.getById(
+            resolved.specId
+          )
           openEdit(detailSpec)
           return
         }

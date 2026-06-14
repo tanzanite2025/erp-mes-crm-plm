@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
-import { MindmapNodeCard } from './mindmap-node-card'
 import type { LineMindmapNode, MindmapLevel } from '../data/sample-mindmap'
+import { MindmapNodeCard } from './mindmap-node-card'
 
 interface MindmapTreeNodeProps {
   node: LineMindmapNode
@@ -21,7 +21,9 @@ export function MindmapTreeNode({
 }: MindmapTreeNodeProps) {
   return (
     <div className='relative'>
-      {depth > 0 ? <div className='absolute -left-5 top-4.5 h-px w-5 bg-muted-foreground/30' /> : null}
+      {depth > 0 ? (
+        <div className='absolute top-4.5 -left-5 h-px w-5 bg-muted-foreground/30' />
+      ) : null}
 
       <MindmapNodeCard
         node={node}

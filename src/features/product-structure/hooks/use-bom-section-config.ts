@@ -2,11 +2,20 @@ import { useEffect, useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type DeltaSet } from '@/lib/delta/types'
 import { createLogger } from '@/lib/logger'
-import { type CompositeReadResource, resolveQueryFailure } from '@/lib/read-resource'
+import {
+  type CompositeReadResource,
+  resolveQueryFailure,
+} from '@/lib/read-resource'
 import { failLoudly } from '@/lib/safe-catch'
-import { BOMSectionService, type BOMSectionCreatePayload } from '../services/bom-section-service'
+import {
+  type BOMSectionConfig,
+  type BOMSectionOption,
+} from '../data/bom-section-schema'
 import { bomSectionQueryKeys } from '../query-keys'
-import { type BOMSectionConfig, type BOMSectionOption } from '../data/bom-section-schema'
+import {
+  BOMSectionService,
+  type BOMSectionCreatePayload,
+} from '../services/bom-section-service'
 
 const logger = createLogger('useBOMSectionConfig')
 
@@ -23,7 +32,8 @@ export function useBOMSectionConfig() {
   })
 
   const createMutation = useMutation({
-    mutationFn: (payload: BOMSectionCreatePayload) => BOMSectionService.createSection(payload),
+    mutationFn: (payload: BOMSectionCreatePayload) =>
+      BOMSectionService.createSection(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: bomSectionQueryKeys.list() })
       queryClient.invalidateQueries({ queryKey: bomSectionQueryKeys.options() })
@@ -31,7 +41,7 @@ export function useBOMSectionConfig() {
   })
 
   const patchMutation = useMutation({
-    mutationFn: (params: { id: string, delta: DeltaSet, version: number }) =>
+    mutationFn: (params: { id: string; delta: DeltaSet; version: number }) =>
       BOMSectionService.patchSection(params.id, params.delta, params.version),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: bomSectionQueryKeys.list() })
@@ -76,7 +86,10 @@ export function useBOMSectionConfig() {
 
   useEffect(() => {
     if (readResource.status !== 'error') return
-    logger.error(`Failed to load BOM section list: ${readResource.scope}`, readResource.error)
+    logger.error(
+      `Failed to load BOM section list: ${readResource.scope}`,
+      readResource.error
+    )
     failLoudly(readResource.error, readResource.scope)
   }, [readResource])
 
@@ -89,14 +102,18 @@ export function useBOMSectionConfig() {
     createSection: createMutation.mutateAsync,
     patchSection: patchMutation.mutateAsync,
     deleteSection: deleteMutation.mutateAsync,
-    isActionLoading: createMutation.isPending || patchMutation.isPending || deleteMutation.isPending,
+    isActionLoading:
+      createMutation.isPending ||
+      patchMutation.isPending ||
+      deleteMutation.isPending,
   }
 }
 
 export function useBOMSectionOptions(enabled = true) {
   return useQuery({
     queryKey: bomSectionQueryKeys.options(),
-    queryFn: (): Promise<BOMSectionOption[]> => BOMSectionService.getSectionOptions(),
+    queryFn: (): Promise<BOMSectionOption[]> =>
+      BOMSectionService.getSectionOptions(),
     enabled,
   })
 }

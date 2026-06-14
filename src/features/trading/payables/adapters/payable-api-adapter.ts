@@ -31,7 +31,9 @@ export interface PaginatedPayables {
   summary: PayableSummary
 }
 
-export function toPayableRecordContract(dto: PayableRecordApiDTO): PayableRecord {
+export function toPayableRecordContract(
+  dto: PayableRecordApiDTO
+): PayableRecord {
   return {
     id: dto.id,
     documentNo: dto.documentNo,
@@ -46,7 +48,9 @@ export function toPayableRecordContract(dto: PayableRecordApiDTO): PayableRecord
   }
 }
 
-export function toPayableSummaryContract(dto: PayableSummaryApiDTO): PayableSummary {
+export function toPayableSummaryContract(
+  dto: PayableSummaryApiDTO
+): PayableSummary {
   return {
     totalPayable: dto.totalPayable,
     overduePayable: dto.overduePayable,
@@ -54,7 +58,9 @@ export function toPayableSummaryContract(dto: PayableSummaryApiDTO): PayableSumm
   }
 }
 
-export function toPayableListPageContract(dto: PayableListPageApiDTO): PaginatedPayables {
+export function toPayableListPageContract(
+  dto: PayableListPageApiDTO
+): PaginatedPayables {
   return {
     items: dto.items.map(toPayableRecordContract),
     total: dto.total,

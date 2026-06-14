@@ -22,7 +22,9 @@ export interface PersonalWorkspaceLinkItem extends PersonalWorkspaceItemBase {
   remark: string
 }
 
-export type PersonalWorkspaceItem = PersonalWorkspaceNoteItem | PersonalWorkspaceLinkItem
+export type PersonalWorkspaceItem =
+  | PersonalWorkspaceNoteItem
+  | PersonalWorkspaceLinkItem
 
 export interface PersonalWorkspaceItemDraft {
   title: string

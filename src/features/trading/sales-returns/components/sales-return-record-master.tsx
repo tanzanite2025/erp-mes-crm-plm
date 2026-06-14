@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { CalendarDays, FileStack, Package2, Trash2, User } from 'lucide-react'
+import { useLanguage } from '@/context/language-provider'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,7 +13,6 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { useLanguage } from '@/context/language-provider'
 import type { SalesReturnRecord } from '@/features/trading/sales/services/sales-return-service'
 import { SalesOrderSalesReturnActualAmountEntryDialog } from './sales-order-sales-return-actual-amount-entry-dialog/sales-order-sales-return-actual-amount-entry-dialog'
 
@@ -178,7 +178,9 @@ export function SalesReturnRecordMaster({
                     }}
                     className='h-8 rounded-full px-3 text-[10px] font-black tracking-widest uppercase'
                   >
-                    {t('trading.salesReturns.queryShell.actualAmountEntryAction')}
+                    {t(
+                      'trading.salesReturns.queryShell.actualAmountEntryAction'
+                    )}
                   </Button>
                   {onDelete ? (
                     <Button
@@ -230,23 +232,23 @@ export function SalesReturnRecordMaster({
         >
           <AlertDialogContent className='rounded-[32px] border-none bg-background shadow-2xl'>
             <AlertDialogHeader>
-              <AlertDialogTitle className='text-lg font-black tracking-tighter italic uppercase'>
+              <AlertDialogTitle className='text-lg font-black tracking-tighter uppercase italic'>
                 {t('trading.salesReturns.queryShell.deleteConfirmTitle')}
               </AlertDialogTitle>
-              <AlertDialogDescription className='text-[11px] font-bold leading-6 text-muted-foreground'>
+              <AlertDialogDescription className='text-[11px] leading-6 font-bold text-muted-foreground'>
                 {t('trading.salesReturns.queryShell.deleteConfirmDescription', {
                   returnNo: pendingDeleteRecord.returnNo,
                 })}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className='gap-2'>
-              <AlertDialogCancel className='rounded-full text-[10px] font-black uppercase tracking-widest'>
+              <AlertDialogCancel className='rounded-full text-[10px] font-black tracking-widest uppercase'>
                 {t('common.actions.cancel')}
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={() => void handleConfirmDelete()}
                 disabled={deletingId === pendingDeleteRecord.id}
-                className='rounded-full bg-rose-600 text-[10px] font-black uppercase tracking-widest hover:bg-rose-700'
+                className='rounded-full bg-rose-600 text-[10px] font-black tracking-widest uppercase hover:bg-rose-700'
               >
                 {deletingId === pendingDeleteRecord.id
                   ? t('common.actions.loading')

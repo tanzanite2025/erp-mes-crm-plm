@@ -1,5 +1,11 @@
-import initCuttingEngineWasm, { solveCuttingEngine } from '../wasm/pkg/xdfc_cutting_engine_wasm.js'
-import type { CuttingEngineInput, CuttingEngineOutput, CuttingEngineWasmEnvelope } from '../types/cutting-engine-wasm'
+import type {
+  CuttingEngineInput,
+  CuttingEngineOutput,
+  CuttingEngineWasmEnvelope,
+} from '../types/cutting-engine-wasm'
+import initCuttingEngineWasm, {
+  solveCuttingEngine,
+} from '../wasm/pkg/xdfc_cutting_engine_wasm.js'
 
 let initPromise: Promise<unknown> | null = null
 
@@ -30,13 +36,15 @@ function isCuttingLayoutZone(value: unknown) {
     return false
   }
   return (
-    typeof value.id === 'string'
-    && (value.kind === 'Roll' || value.kind === 'Material' || value.kind === 'Loss')
-    && isFiniteNumber(value.xMm)
-    && isFiniteNumber(value.yMm)
-    && isFiniteNumber(value.widthMm)
-    && isFiniteNumber(value.heightMm)
-    && typeof value.label === 'string'
+    typeof value.id === 'string' &&
+    (value.kind === 'Roll' ||
+      value.kind === 'Material' ||
+      value.kind === 'Loss') &&
+    isFiniteNumber(value.xMm) &&
+    isFiniteNumber(value.yMm) &&
+    isFiniteNumber(value.widthMm) &&
+    isFiniteNumber(value.heightMm) &&
+    typeof value.label === 'string'
   )
 }
 
@@ -45,18 +53,18 @@ function isCuttingPlanRuleDiagnostics(value: unknown) {
     return false
   }
   return (
-    isFiniteNumber(value.priority)
-    && typeof value.mustFulfill === 'boolean'
-    && typeof value.allowMixedPlan === 'boolean'
-    && typeof value.rollGroupKey === 'string'
-    && isFiniteNumber(value.orderSequence)
-    && isStringArray(value.processTags)
-    && isFiniteNumber(value.mustFulfillCount)
-    && isFiniteNumber(value.mixedPlanRestrictedCount)
-    && isFiniteNumber(value.rollGroupCount)
-    && isFiniteNumber(value.processTagCount)
-    && isFiniteNumber(value.prioritySum)
-    && isFiniteNumber(value.sequenceSpan)
+    isFiniteNumber(value.priority) &&
+    typeof value.mustFulfill === 'boolean' &&
+    typeof value.allowMixedPlan === 'boolean' &&
+    typeof value.rollGroupKey === 'string' &&
+    isFiniteNumber(value.orderSequence) &&
+    isStringArray(value.processTags) &&
+    isFiniteNumber(value.mustFulfillCount) &&
+    isFiniteNumber(value.mixedPlanRestrictedCount) &&
+    isFiniteNumber(value.rollGroupCount) &&
+    isFiniteNumber(value.processTagCount) &&
+    isFiniteNumber(value.prioritySum) &&
+    isFiniteNumber(value.sequenceSpan)
   )
 }
 
@@ -65,20 +73,20 @@ function isCuttingPlan(value: unknown) {
     return false
   }
   return (
-    typeof value.planId === 'string'
-    && isFiniteNumber(value.score)
-    && isFiniteNumber(value.decisionLengthMm)
-    && isFiniteNumber(value.utilizationPercent)
-    && isFiniteNumber(value.lossAreaM2)
-    && isFiniteNumber(value.producedPieces)
-    && isFiniteNumber(value.directionSwitchCount)
-    && isFiniteNumber(value.angleMixViolationCount)
-    && typeof value.mustFulfillSatisfied === 'boolean'
-    && isFiniteNumber(value.mustFulfillPenalty)
-    && isCuttingPlanRuleDiagnostics(value.ruleDiagnostics)
-    && Array.isArray(value.zones)
-    && value.zones.every(isCuttingLayoutZone)
-    && isStringArray(value.warnings)
+    typeof value.planId === 'string' &&
+    isFiniteNumber(value.score) &&
+    isFiniteNumber(value.decisionLengthMm) &&
+    isFiniteNumber(value.utilizationPercent) &&
+    isFiniteNumber(value.lossAreaM2) &&
+    isFiniteNumber(value.producedPieces) &&
+    isFiniteNumber(value.directionSwitchCount) &&
+    isFiniteNumber(value.angleMixViolationCount) &&
+    typeof value.mustFulfillSatisfied === 'boolean' &&
+    isFiniteNumber(value.mustFulfillPenalty) &&
+    isCuttingPlanRuleDiagnostics(value.ruleDiagnostics) &&
+    Array.isArray(value.zones) &&
+    value.zones.every(isCuttingLayoutZone) &&
+    isStringArray(value.warnings)
   )
 }
 
@@ -86,7 +94,11 @@ function isCuttingEngineOutput(value: unknown): value is CuttingEngineOutput {
   if (!isRecord(value)) {
     return false
   }
-  return Array.isArray(value.plans) && value.plans.every(isCuttingPlan) && isStringArray(value.warnings)
+  return (
+    Array.isArray(value.plans) &&
+    value.plans.every(isCuttingPlan) &&
+    isStringArray(value.warnings)
+  )
 }
 
 async function ensureCuttingEngineWasm() {
@@ -97,9 +109,13 @@ async function ensureCuttingEngineWasm() {
   await initPromise
 }
 
-function parseCuttingEngineEnvelope(raw: string): CuttingEngineWasmEnvelope<CuttingEngineOutput> {
+function parseCuttingEngineEnvelope(
+  raw: string
+): CuttingEngineWasmEnvelope<CuttingEngineOutput> {
   try {
-    const envelope = JSON.parse(raw) as Partial<CuttingEngineWasmEnvelope<CuttingEngineOutput>>
+    const envelope = JSON.parse(raw) as Partial<
+      CuttingEngineWasmEnvelope<CuttingEngineOutput>
+    >
     if (!envelope || typeof envelope.ok !== 'boolean') {
       throw new Error('invalid envelope')
     }
@@ -109,7 +125,9 @@ function parseCuttingEngineEnvelope(raw: string): CuttingEngineWasmEnvelope<Cutt
   }
 }
 
-export async function solveBatchEngineWithCuttingWasm(input: CuttingEngineInput): Promise<CuttingEngineOutput> {
+export async function solveBatchEngineWithCuttingWasm(
+  input: CuttingEngineInput
+): Promise<CuttingEngineOutput> {
   await ensureCuttingEngineWasm()
   let raw: string
 

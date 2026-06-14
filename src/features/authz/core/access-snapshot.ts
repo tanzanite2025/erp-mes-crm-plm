@@ -4,6 +4,8 @@ export type AccessSnapshotLike = {
   permissions?: unknown
 }
 
-export function getSnapshotPermissionIds(snapshot?: AccessSnapshotLike | null): string[] {
+export function getSnapshotPermissionIds(
+  snapshot?: AccessSnapshotLike | null
+): string[] {
   return parseIdList(snapshot?.permissions)
 }

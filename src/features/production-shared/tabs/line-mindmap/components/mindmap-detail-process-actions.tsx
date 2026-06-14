@@ -6,7 +6,9 @@ import { MindmapDetailProcessEntityEditor } from './mindmap-detail-process-entit
 interface MindmapDetailProcessActionsProps {
   selectedNode: LineMindmapNode
   levelNames: Record<MindmapLevel, string>
-  onDeleteProcessEntity?: (process: ProductionProcessStep) => void | Promise<void>
+  onDeleteProcessEntity?: (
+    process: ProductionProcessStep
+  ) => void | Promise<void>
   onRemoveProcess?: () => void | Promise<void>
   onSaveProcessEntity?: (process: ProductionProcessStep) => void | Promise<void>
 }
@@ -28,7 +30,9 @@ export function MindmapDetailProcessActions({
 
   return (
     <div className='space-y-2'>
-      <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/55'>结构写回</p>
+      <p className='text-[10px] font-black tracking-widest text-muted-foreground/55 uppercase'>
+        结构写回
+      </p>
       <div className='space-y-4 rounded-[20px] border border-dashed border-muted/40 bg-muted/5 p-4'>
         <MindmapDetailProcessCapabilityActions
           levelNames={levelNames}

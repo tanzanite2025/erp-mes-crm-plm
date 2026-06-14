@@ -1,22 +1,25 @@
 import { useState, useEffect, useMemo } from 'react'
-import { AuditStatusDisplay, type AuditStatusDisplayMeta } from '@/components/common/audit-status-display'
-import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
-import { ForbiddenState } from '@/components/forbidden-state'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { History, Trash2, TrendingUp, DollarSign, Box } from 'lucide-react'
+import { toast } from 'sonner'
+import { isForbiddenError } from '@/lib/error-status'
+import { useLanguage } from '@/context/language-provider'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
-  History,
-  Trash2,
-  TrendingUp,
-  DollarSign,
-  Box,
-} from 'lucide-react'
-import { toast } from 'sonner'
-import { useLanguage } from '@/context/language-provider'
+  AuditStatusDisplay,
+  type AuditStatusDisplayMeta,
+} from '@/components/common/audit-status-display'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
+import { ForbiddenState } from '@/components/forbidden-state'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
-import { isForbiddenError } from '@/lib/error-status'
-import { getDeletedPurchaseOrders } from '../../purchase'
 import { type PurchaseOrderListItem } from '../../data/schema'
+import { getDeletedPurchaseOrders } from '../../purchase'
 
 interface PurchaseLogTagMeta {
   label: string
@@ -31,7 +34,10 @@ function getDeletedOrderStatusMeta(locale: string): AuditStatusDisplayMeta {
   }
 }
 
-function getPurchaseLogTagMeta(locale: string, kind: 'archive' | 'risk' | 'metric' | 'health'): PurchaseLogTagMeta {
+function getPurchaseLogTagMeta(
+  locale: string,
+  kind: 'archive' | 'risk' | 'metric' | 'health'
+): PurchaseLogTagMeta {
   switch (kind) {
     case 'archive':
       return {
@@ -51,14 +57,17 @@ function getPurchaseLogTagMeta(locale: string, kind: 'archive' | 'risk' | 'metri
     case 'health':
       return {
         label: locale === 'zh-CN' ? '健康提示' : 'Health Tag',
-        className: 'bg-emerald-500/10 text-emerald-600 border border-emerald-200',
+        className:
+          'bg-emerald-500/10 text-emerald-600 border border-emerald-200',
       }
   }
 }
 
 function PurchaseLogTag({ meta }: { meta: PurchaseLogTagMeta }) {
   return (
-    <span className={`inline-flex items-center rounded-full px-3 py-1 text-[8px] font-black uppercase tracking-widest ${meta.className}`}>
+    <span
+      className={`inline-flex items-center rounded-full px-3 py-1 text-[8px] font-black tracking-widest uppercase ${meta.className}`}
+    >
       {meta.label}
     </span>
   )
@@ -78,9 +87,11 @@ export function PurchaseOrderLogs() {
         // [ARCHITECTURAL-DEBT]: 目前后端 getDeletedPurchaseOrders 返回的分页数据中缺少全量总计金额
         // 暂时在前端进行分页内统计，但建议后续由后端在元数据中提供。
         const response = await getDeletedPurchaseOrders(1, 100)
-        
+
         if (!response || !Array.isArray(response.items)) {
-          throw new Error('[CRITICAL] PurchaseOrderLogs: Invalid response format or items missing');
+          throw new Error(
+            '[CRITICAL] PurchaseOrderLogs: Invalid response format or items missing'
+          )
         }
 
         setOrders(response.items)
@@ -105,11 +116,11 @@ export function PurchaseOrderLogs() {
 
   if (isLoading) {
     return (
-      <div className='flex h-[60vh] flex-col items-center justify-center space-y-4 animate-in fade-in duration-500'>
+      <div className='flex h-[60vh] animate-in flex-col items-center justify-center space-y-4 duration-500 fade-in'>
         <div className='relative'>
-          <History className='size-10 text-primary animate-pulse opacity-20' />
+          <History className='size-10 animate-pulse text-primary opacity-20' />
         </div>
-        <p className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground animate-pulse'>
+        <p className='animate-pulse text-[10px] font-black tracking-[0.2em] text-muted-foreground uppercase'>
           {t('purchase.logs.deletionArchive')}
         </p>
       </div>
@@ -121,18 +132,18 @@ export function PurchaseOrderLogs() {
   }
 
   return (
-    <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+    <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
       <div className='grid grid-cols-1 gap-3 md:grid-cols-4'>
-        <Card className='relative overflow-hidden rounded-[24px] border-none bg-rose-500/5 py-2.5 shadow-sm group'>
+        <Card className='group relative overflow-hidden rounded-[24px] border-none bg-rose-500/5 py-2.5 shadow-sm'>
           <div className='absolute top-0 right-0 p-2.5 opacity-10 transition-transform group-hover:scale-110'>
             <Trash2 className='size-8' />
           </div>
           <CardContent className='relative z-10 px-4'>
             <div className='flex items-center justify-between gap-2'>
-              <p className='min-w-0 truncate text-[10px] font-black uppercase tracking-widest text-rose-600/60'>
+              <p className='min-w-0 truncate text-[10px] font-black tracking-widest text-rose-600/60 uppercase'>
                 {t('purchase.logs.canceledOrders')}
               </p>
-              <p className='shrink-0 text-xl font-black italic leading-none tracking-tighter text-rose-600'>
+              <p className='shrink-0 text-xl leading-none font-black tracking-tighter text-rose-600 italic'>
                 {orders.length}
               </p>
               <PurchaseLogTag meta={getPurchaseLogTagMeta(locale, 'archive')} />
@@ -140,16 +151,16 @@ export function PurchaseOrderLogs() {
           </CardContent>
         </Card>
 
-        <Card className='relative overflow-hidden rounded-[24px] border-none bg-amber-500/5 py-2.5 shadow-sm group'>
+        <Card className='group relative overflow-hidden rounded-[24px] border-none bg-amber-500/5 py-2.5 shadow-sm'>
           <div className='absolute top-0 right-0 p-2.5 opacity-10 transition-transform group-hover:scale-110'>
             <DollarSign className='size-8' />
           </div>
           <CardContent className='relative z-10 px-4'>
             <div className='flex items-center justify-between gap-2'>
-              <p className='min-w-0 truncate text-[10px] font-black uppercase tracking-widest text-amber-600/60'>
+              <p className='min-w-0 truncate text-[10px] font-black tracking-widest text-amber-600/60 uppercase'>
                 {t('purchase.logs.voidedValue')}
               </p>
-              <p className='shrink-0 text-xl font-black italic leading-none tracking-tighter text-amber-600'>
+              <p className='shrink-0 text-xl leading-none font-black tracking-tighter text-amber-600 italic'>
                 {totalAmount.toLocaleString()}
               </p>
               <PurchaseLogTag meta={getPurchaseLogTagMeta(locale, 'risk')} />
@@ -157,16 +168,16 @@ export function PurchaseOrderLogs() {
           </CardContent>
         </Card>
 
-        <Card className='relative overflow-hidden rounded-[24px] border-none bg-blue-500/5 py-2.5 shadow-sm group'>
+        <Card className='group relative overflow-hidden rounded-[24px] border-none bg-blue-500/5 py-2.5 shadow-sm'>
           <div className='absolute top-0 right-0 p-2.5 opacity-10 transition-transform group-hover:scale-110'>
             <History className='size-8' />
           </div>
           <CardContent className='relative z-10 px-4'>
             <div className='flex items-center justify-between gap-2'>
-              <p className='min-w-0 truncate text-[10px] font-black uppercase tracking-widest text-blue-600/60'>
+              <p className='min-w-0 truncate text-[10px] font-black tracking-widest text-blue-600/60 uppercase'>
                 {t('purchase.logs.auditFrequency')}
               </p>
-              <p className='shrink-0 text-xl font-black italic leading-none tracking-tighter text-blue-600'>
+              <p className='shrink-0 text-xl leading-none font-black tracking-tighter text-blue-600 italic'>
                 {t('purchase.logs.daily')}
               </p>
               <PurchaseLogTag meta={getPurchaseLogTagMeta(locale, 'metric')} />
@@ -174,16 +185,16 @@ export function PurchaseOrderLogs() {
           </CardContent>
         </Card>
 
-        <Card className='relative overflow-hidden rounded-[24px] border-none bg-emerald-500/5 py-2.5 shadow-sm group'>
+        <Card className='group relative overflow-hidden rounded-[24px] border-none bg-emerald-500/5 py-2.5 shadow-sm'>
           <div className='absolute top-0 right-0 p-2.5 opacity-10 transition-transform group-hover:scale-110'>
             <TrendingUp className='size-8' />
           </div>
           <CardContent className='relative z-10 px-4'>
             <div className='flex items-center justify-between gap-2'>
-              <p className='min-w-0 truncate text-[10px] font-black uppercase tracking-widest text-emerald-600/60'>
+              <p className='min-w-0 truncate text-[10px] font-black tracking-widest text-emerald-600/60 uppercase'>
                 {t('purchase.logs.healthStatus')}
               </p>
-              <p className='shrink-0 text-xl font-black italic leading-none tracking-tighter text-emerald-600'>
+              <p className='shrink-0 text-xl leading-none font-black tracking-tighter text-emerald-600 italic'>
                 98.2%
               </p>
               <PurchaseLogTag meta={getPurchaseLogTagMeta(locale, 'health')} />
@@ -196,10 +207,11 @@ export function PurchaseOrderLogs() {
         <Card className='flex h-[360px] min-h-0 flex-col gap-2 rounded-[28px] border-dashed border-muted-foreground/20 bg-muted/5 py-3 shadow-none'>
           <CardHeader className='flex flex-row items-center justify-between px-5 pb-1'>
             <div>
-              <CardTitle className='text-sm font-black italic uppercase tracking-tighter flex items-center gap-2'>
-                <History className='size-4 text-rose-500' /> {t('purchase.logs.deletionArchive')}
+              <CardTitle className='flex items-center gap-2 text-sm font-black tracking-tighter uppercase italic'>
+                <History className='size-4 text-rose-500' />{' '}
+                {t('purchase.logs.deletionArchive')}
               </CardTitle>
-              <CardDescription className='text-[10px] font-bold uppercase tracking-widest opacity-60'>
+              <CardDescription className='text-[10px] font-bold tracking-widest uppercase opacity-60'>
                 {t('purchase.logs.deletionArchiveDesc')}
               </CardDescription>
             </div>
@@ -209,7 +221,9 @@ export function PurchaseOrderLogs() {
               {orders.length === 0 ? (
                 <div className='flex flex-col items-center justify-center py-12 opacity-20'>
                   <Box className='mb-3 size-10' />
-                  <p className='text-xs font-black uppercase tracking-widest'>{t('purchase.logs.empty')}</p>
+                  <p className='text-xs font-black tracking-widest uppercase'>
+                    {t('purchase.logs.empty')}
+                  </p>
                 </div>
               ) : (
                 <div className='space-y-3'>
@@ -224,8 +238,10 @@ export function PurchaseOrderLogs() {
                             <Trash2 className='size-4' />
                           </div>
                           <div>
-                            <p className='text-sm font-black uppercase tracking-tight'>{order.orderNo}</p>
-                            <p className='text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60'>
+                            <p className='text-sm font-black tracking-tight uppercase'>
+                              {order.orderNo}
+                            </p>
+                            <p className='text-[10px] font-bold tracking-widest text-muted-foreground uppercase opacity-60'>
                               {order.supplierName}
                             </p>
                           </div>
@@ -238,12 +254,15 @@ export function PurchaseOrderLogs() {
                             iconOnly
                             className='size-8 rounded-full border-dashed'
                           />
-                          <AuditStatusDisplay meta={getDeletedOrderStatusMeta(locale)} badgeClassName='px-4 py-1' />
+                          <AuditStatusDisplay
+                            meta={getDeletedOrderStatusMeta(locale)}
+                            badgeClassName='px-4 py-1'
+                          />
                         </div>
                       </div>
                       <div className='grid grid-cols-3 gap-3'>
                         <div>
-                          <p className='mb-0.5 text-[8px] font-bold uppercase tracking-widest text-muted-foreground opacity-40'>
+                          <p className='mb-0.5 text-[8px] font-bold tracking-widest text-muted-foreground uppercase opacity-40'>
                             {t('purchase.logs.value')}
                           </p>
                           <p className='text-xs font-black tabular-nums'>
@@ -251,17 +270,21 @@ export function PurchaseOrderLogs() {
                           </p>
                         </div>
                         <div>
-                          <p className='mb-0.5 text-[8px] font-bold uppercase tracking-widest text-muted-foreground opacity-40'>
+                          <p className='mb-0.5 text-[8px] font-bold tracking-widest text-muted-foreground uppercase opacity-40'>
                             {t('purchase.logs.purchaser')}
                           </p>
-                          <p className='text-xs font-black uppercase'>{order.purchaser}</p>
+                          <p className='text-xs font-black uppercase'>
+                            {order.purchaser}
+                          </p>
                         </div>
                         <div>
-                          <p className='mb-0.5 text-[8px] font-bold uppercase tracking-widest text-muted-foreground opacity-40'>
+                          <p className='mb-0.5 text-[8px] font-bold tracking-widest text-muted-foreground uppercase opacity-40'>
                             {t('purchase.logs.lastUpdate')}
                           </p>
                           <p className='text-xs font-black tabular-nums opacity-60'>
-                            {new Date(order.updatedAt || '').toLocaleDateString()}
+                            {new Date(
+                              order.updatedAt || ''
+                            ).toLocaleDateString()}
                           </p>
                         </div>
                       </div>
@@ -272,7 +295,6 @@ export function PurchaseOrderLogs() {
             </ScrollArea>
           </CardContent>
         </Card>
-
       </div>
     </div>
   )

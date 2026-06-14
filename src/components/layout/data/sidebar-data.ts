@@ -340,7 +340,9 @@ const navGroupConfigs: SidebarGroupConfig[] = [
             titleKey: 'sidebar.items.sharedCodeSource',
             url: '/code-center/shared-code-source',
             icon: Database,
-            permissionId: permissionIdForPath('/code-center/shared-code-source'),
+            permissionId: permissionIdForPath(
+              '/code-center/shared-code-source'
+            ),
           },
         ],
       },
@@ -432,7 +434,9 @@ const navGroupConfigs: SidebarGroupConfig[] = [
             url: '/equipment-maintenance/overview',
             activeMatch: '/equipment-maintenance',
             icon: Cpu,
-            permissionId: permissionIdForPath('/equipment-maintenance/overview'),
+            permissionId: permissionIdForPath(
+              '/equipment-maintenance/overview'
+            ),
           },
         ],
       },

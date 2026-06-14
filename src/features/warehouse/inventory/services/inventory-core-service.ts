@@ -44,11 +44,12 @@ export type {
 
 export const InventoryCoreService = {
   getInventoryList: async (): Promise<InventoryView[]> => {
-    const res = await apiFetch<InventoryListPageApiDTO>('/inventory?page=1&pageSize=1000')
-    const response = ensureObjectResponse<InventoryListPageApiDTO & Record<string, unknown>>(
-      res,
-      'InventoryCoreService.getInventoryList'
+    const res = await apiFetch<InventoryListPageApiDTO>(
+      '/inventory?page=1&pageSize=1000'
     )
+    const response = ensureObjectResponse<
+      InventoryListPageApiDTO & Record<string, unknown>
+    >(res, 'InventoryCoreService.getInventoryList')
     return toInventoryViewContracts(
       ensureArrayField<InventoryItemApiDTO>(
         response,
@@ -60,10 +61,9 @@ export const InventoryCoreService = {
 
   getInventoryListRaw: async (): Promise<InventoryRecord[]> => {
     const res = await apiFetch<InventoryListPageApiDTO>('/inventory')
-    const response = ensureObjectResponse<InventoryListPageApiDTO & Record<string, unknown>>(
-      res,
-      'InventoryCoreService.getInventoryListRaw'
-    )
+    const response = ensureObjectResponse<
+      InventoryListPageApiDTO & Record<string, unknown>
+    >(res, 'InventoryCoreService.getInventoryListRaw')
     return ensureArrayField<InventoryItemApiDTO>(
       response,
       'items',
@@ -71,7 +71,9 @@ export const InventoryCoreService = {
     ).map(toInventoryRecordContract)
   },
 
-  getInventoryBreakdown: async (materialId: string): Promise<Record<string, number>> => {
+  getInventoryBreakdown: async (
+    materialId: string
+  ): Promise<Record<string, number>> => {
     const res = await apiFetch<Record<string, number>>(
       `/inventory/breakdown?materialId=${encodeURIComponent(materialId)}`
     )
@@ -82,11 +84,11 @@ export const InventoryCoreService = {
   },
 
   getInboundHistory: async (): Promise<InboundRecord[]> => {
-    const res = await apiFetch<InventoryInboundHistoryApiDTO>('/inventory/inbound')
-    const response = ensureObjectResponse<InventoryInboundHistoryApiDTO & Record<string, unknown>>(
-      res,
-      'InventoryCoreService.getInboundHistory'
-    )
+    const res =
+      await apiFetch<InventoryInboundHistoryApiDTO>('/inventory/inbound')
+    const response = ensureObjectResponse<
+      InventoryInboundHistoryApiDTO & Record<string, unknown>
+    >(res, 'InventoryCoreService.getInboundHistory')
     return toInboundRecordContracts(
       ensureArrayField<InventoryInboundRecordApiDTO>(
         response,
@@ -96,7 +98,10 @@ export const InventoryCoreService = {
     )
   },
 
-  getCategoryStock: async (materialId: string, category: string): Promise<number> => {
+  getCategoryStock: async (
+    materialId: string,
+    category: string
+  ): Promise<number> => {
     const res = await apiFetch<{ quantity: number }>(
       `/inventory/stock?materialId=${encodeURIComponent(materialId)}&category=${encodeURIComponent(category)}`
     )
@@ -109,28 +114,29 @@ export const InventoryCoreService = {
 
   getInventoryValuation: async (): Promise<number> => {
     const res = await apiFetch<InventoryValuationApiDTO>('/inventory/valuation')
-    const response = ensureObjectResponse<InventoryValuationApiDTO & Record<string, unknown>>(
-      res,
-      'InventoryCoreService.getInventoryValuation'
-    )
+    const response = ensureObjectResponse<
+      InventoryValuationApiDTO & Record<string, unknown>
+    >(res, 'InventoryCoreService.getInventoryValuation')
     return toInventoryValuationContract(response)
   },
 
   getAlertSummary: async (): Promise<InventoryAlertSummary> => {
-    const res = await apiFetch<InventoryAlertSummaryApiDTO>('/inventory/alerts/summary')
-    const response = ensureObjectResponse<InventoryAlertSummaryApiDTO & Record<string, unknown>>(
-      res,
-      'InventoryCoreService.getAlertSummary'
+    const res = await apiFetch<InventoryAlertSummaryApiDTO>(
+      '/inventory/alerts/summary'
     )
+    const response = ensureObjectResponse<
+      InventoryAlertSummaryApiDTO & Record<string, unknown>
+    >(res, 'InventoryCoreService.getAlertSummary')
     return toInventoryAlertSummaryContract(response)
   },
 
   getBOMAlertDetails: async (): Promise<InventoryBOMAlertDetailList> => {
-    const res = await apiFetch<InventoryBOMAlertDetailListApiDTO>('/inventory/alerts/bom-details')
-    const response = ensureObjectResponse<InventoryBOMAlertDetailListApiDTO & Record<string, unknown>>(
-      res,
-      'InventoryCoreService.getBOMAlertDetails'
+    const res = await apiFetch<InventoryBOMAlertDetailListApiDTO>(
+      '/inventory/alerts/bom-details'
     )
+    const response = ensureObjectResponse<
+      InventoryBOMAlertDetailListApiDTO & Record<string, unknown>
+    >(res, 'InventoryCoreService.getBOMAlertDetails')
 
     return toInventoryBOMAlertDetailListContract({
       ...response,
@@ -146,7 +152,11 @@ export const InventoryCoreService = {
           'InventoryCoreService.getBOMAlertDetails'
         ),
       })),
-      total: ensureNumberField(response, 'total', 'InventoryCoreService.getBOMAlertDetails'),
+      total: ensureNumberField(
+        response,
+        'total',
+        'InventoryCoreService.getBOMAlertDetails'
+      ),
     })
   },
 }

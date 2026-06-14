@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react'
+import { useLanguage } from '@/context/language-provider'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useLanguage } from '@/context/language-provider'
 import { getLogisticsProviderVisibleCredentialFields } from '@/features/sandbox/logistics-api/data/logistics-provider-rules'
 import type { LogisticsProviderDraft } from '@/features/sandbox/logistics-api/types'
 
@@ -37,7 +37,7 @@ export function LogisticsSupplierCredentialsSection({
 
   return (
     <div className='space-y-3 rounded-3xl border border-dashed border-primary/20 bg-primary/5 p-5'>
-      <h4 className='flex items-center gap-2 pl-1 text-[10px] font-black uppercase tracking-widest text-primary/70'>
+      <h4 className='flex items-center gap-2 pl-1 text-[10px] font-black tracking-widest text-primary/70 uppercase'>
         {t('logisticsConfig.suppliers.sections.credentialsTitle')}
         <span className='text-[8px] font-bold tracking-normal text-amber-600 normal-case'>
           * {t('logisticsConfig.suppliers.sections.credentialsHint')}
@@ -46,8 +46,12 @@ export function LogisticsSupplierCredentialsSection({
       <div className='grid grid-cols-2 gap-4'>
         {credentialFields.map((fieldKey) => (
           <div key={fieldKey} className='space-y-2'>
-            <Label className='pl-1 text-[10px] font-black uppercase tracking-widest opacity-50'>
-              {t(getCredentialFieldLabelKey(fieldKey as SupplierCredentialFieldKey))}
+            <Label className='pl-1 text-[10px] font-black tracking-widest uppercase opacity-50'>
+              {t(
+                getCredentialFieldLabelKey(
+                  fieldKey as SupplierCredentialFieldKey
+                )
+              )}
             </Label>
             <Input
               type={fieldKey === 'appSecret' ? 'password' : 'text'}

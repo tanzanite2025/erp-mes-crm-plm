@@ -1,6 +1,9 @@
 import { toPositiveNumber } from '../../cut-size-library/domain/cut-size-geometry'
 import type { PrepregMaterialSpec } from '../../data/prepreg-material-spec-schema'
-import { normalizeCuttingEngineAngleMixMode, normalizeCuttingEngineRuleStrategy } from '../../engine-config/types'
+import {
+  normalizeCuttingEngineAngleMixMode,
+  normalizeCuttingEngineRuleStrategy,
+} from '../../engine-config/types'
 import type {
   BatchEngineControls,
   BatchEngineNormalizedControls,
@@ -18,8 +21,12 @@ export function resolveBatchEngineControls(
 ): BatchEngineResolvedControlState {
   const resolvedControls: BatchEngineResolvedControls = {
     ...rawControls,
-    rollWidthMm: normalizeText(selectedPrepregSpec?.widthMm) || normalizeText(rawControls.rollWidthMm),
-    rollLengthM: normalizeText(selectedPrepregSpec?.lengthM) || normalizeText(rawControls.rollLengthM),
+    rollWidthMm:
+      normalizeText(selectedPrepregSpec?.widthMm) ||
+      normalizeText(rawControls.rollWidthMm),
+    rollLengthM:
+      normalizeText(selectedPrepregSpec?.lengthM) ||
+      normalizeText(rawControls.rollLengthM),
   }
 
   const normalizedControls: BatchEngineNormalizedControls = {
@@ -29,10 +36,16 @@ export function resolveBatchEngineControls(
     rollLengthM: toPositiveNumber(resolvedControls.rollLengthM),
     knifeGapMm: toPositiveNumber(rawControls.knifeGapMm),
     edgeTrimMm: toPositiveNumber(rawControls.edgeTrimMm),
-    maxSolveDurationSeconds: toPositiveNumber(rawControls.maxSolveDurationSeconds),
+    maxSolveDurationSeconds: toPositiveNumber(
+      rawControls.maxSolveDurationSeconds
+    ),
     splitPenaltyWeight: toPositiveNumber(rawControls.splitPenaltyWeight),
-    mustFulfillPenaltyWeight: toPositiveNumber(rawControls.mustFulfillPenaltyWeight),
-    directionSwitchPenaltyWeight: toPositiveNumber(rawControls.directionSwitchPenaltyWeight),
+    mustFulfillPenaltyWeight: toPositiveNumber(
+      rawControls.mustFulfillPenaltyWeight
+    ),
+    directionSwitchPenaltyWeight: toPositiveNumber(
+      rawControls.directionSwitchPenaltyWeight
+    ),
     sameDirectionPreferred: rawControls.sameDirectionPreferred,
     angleMixMode: normalizeCuttingEngineAngleMixMode(rawControls.angleMixMode),
     ruleStrategy: normalizeCuttingEngineRuleStrategy(rawControls.ruleStrategy),

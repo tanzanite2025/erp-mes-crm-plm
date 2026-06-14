@@ -3,13 +3,13 @@
 import { useEffect, useState } from 'react'
 import { LayoutGrid, Search } from 'lucide-react'
 import { toast } from 'sonner'
-import { ForbiddenState } from '@/components/forbidden-state'
+import { isForbiddenError } from '@/lib/error-status'
+import { createLogger } from '@/lib/logger'
 import { useLanguage } from '@/context/language-provider'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
-import { isForbiddenError } from '@/lib/error-status'
-import { createLogger } from '@/lib/logger'
+import { ForbiddenState } from '@/components/forbidden-state'
 import { useProductionLinesQuery } from '../../hooks/use-production-resources'
 import { ProcessLibraryPanel } from './components/process-library-panel.tsx'
 import { WorkArchitectureTree } from './components/work-architecture-tree.tsx'
@@ -42,11 +42,11 @@ export function WorkArchitecture() {
   }
 
   return (
-    <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+    <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
       <div className='flex flex-col gap-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-6'>
         <div className='flex items-center gap-2 text-primary'>
           <LayoutGrid className='size-4' />
-          <h3 className='text-lg font-black italic tracking-tighter'>
+          <h3 className='text-lg font-black tracking-tighter italic'>
             {t('productionShared.workArchitecture.title')}
           </h3>
         </div>
@@ -57,9 +57,11 @@ export function WorkArchitecture() {
 
       <div className='flex items-center justify-between gap-4 px-1'>
         <div className='relative max-w-sm flex-1'>
-          <Search className='absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/40' />
+          <Search className='absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/40' />
           <Input
-            placeholder={t('productionShared.workArchitecture.searchPlaceholder')}
+            placeholder={t(
+              'productionShared.workArchitecture.searchPlaceholder'
+            )}
             className='h-12 rounded-2xl border-none bg-muted/50 pl-10 text-sm font-medium transition-all focus-visible:ring-1 focus-visible:ring-primary/20'
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
@@ -93,7 +95,7 @@ export function WorkArchitecture() {
             <CardContent className='flex flex-col items-center justify-center space-y-4 py-24'>
               <LayoutGrid className='size-12 text-muted-foreground/20' />
               <div className='space-y-1 text-center'>
-                <p className='text-base font-black italic tracking-tighter text-muted-foreground/60'>
+                <p className='text-base font-black tracking-tighter text-muted-foreground/60 italic'>
                   {t('productionShared.workArchitecture.emptyTitle')}
                 </p>
                 <p className='text-[9px] font-black tracking-widest text-muted-foreground/40'>
@@ -110,7 +112,7 @@ export function WorkArchitecture() {
                   <LayoutGrid className='size-5' />
                 </div>
                 <div>
-                  <h3 className='text-base font-black italic tracking-tighter text-slate-800'>
+                  <h3 className='text-base font-black tracking-tighter text-slate-800 italic'>
                     {line.name}
                   </h3>
                   <p className='font-mono text-[9px] font-black tracking-widest text-muted-foreground/50'>

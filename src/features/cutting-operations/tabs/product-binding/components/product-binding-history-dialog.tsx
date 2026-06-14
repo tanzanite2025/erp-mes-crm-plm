@@ -1,11 +1,11 @@
 import { type ComponentProps, type ReactElement } from 'react'
 import { History } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogTrigger } from '@/components/ui/dialog'
-import { useLanguage } from '@/context/language-provider'
-import { cn } from '@/lib/utils'
-import type { ProductBindingHistoryQuery } from '../services/product-binding-service'
 import { useProductBindingHistoryDialogState } from '../hooks/use-product-binding-history-dialog-state'
+import type { ProductBindingHistoryQuery } from '../services/product-binding-service'
 import { ProductBindingHistoryDialogContent } from './product-binding-history-dialog-content'
 
 export type ProductBindingHistoryDialogRenderTriggerContext = {
@@ -22,11 +22,13 @@ export type ProductBindingHistoryDialogProps = {
   prefetchRecordCount?: boolean
   triggerNode?: ReactElement
   renderTrigger?: (
-    context: ProductBindingHistoryDialogRenderTriggerContext,
+    context: ProductBindingHistoryDialogRenderTriggerContext
   ) => ReactElement
 }
 
-export function ProductBindingHistoryDialog(props: ProductBindingHistoryDialogProps) {
+export function ProductBindingHistoryDialog(
+  props: ProductBindingHistoryDialogProps
+) {
   const { t } = useLanguage()
   const {
     triggerLabel,
@@ -42,33 +44,33 @@ export function ProductBindingHistoryDialog(props: ProductBindingHistoryDialogPr
     variant: triggerVariant,
     ...restTriggerButtonProps
   } = triggerButtonProps ?? {}
-  const { open, setOpen, historyQuery, recordCount } = useProductBindingHistoryDialogState({
-    defaultFilters,
-    prefetchRecordCount,
-    hasRenderTrigger: Boolean(renderTrigger),
-  })
+  const { open, setOpen, historyQuery, recordCount } =
+    useProductBindingHistoryDialogState({
+      defaultFilters,
+      prefetchRecordCount,
+      hasRenderTrigger: Boolean(renderTrigger),
+    })
   const triggerContent = renderTrigger
     ? renderTrigger({ open, setOpen, recordCount })
-    : triggerNode ?? (
+    : (triggerNode ?? (
         <Button
           type='button'
           variant={triggerVariant ?? 'outline'}
           className={cn(
-            'h-11 rounded-full px-6 text-[10px] font-black uppercase tracking-widest',
-            triggerClassName,
+            'h-11 rounded-full px-6 text-[10px] font-black tracking-widest uppercase',
+            triggerClassName
           )}
           {...restTriggerButtonProps}
         >
           <History className='size-4' />
-          {triggerLabel || t('cuttingOperations.productBinding.history.actions.openDialog')}
+          {triggerLabel ||
+            t('cuttingOperations.productBinding.history.actions.openDialog')}
         </Button>
-      )
+      ))
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {triggerContent}
-      </DialogTrigger>
+      <DialogTrigger asChild>{triggerContent}</DialogTrigger>
 
       <ProductBindingHistoryDialogContent
         title={t('cuttingOperations.productBinding.history.title')}

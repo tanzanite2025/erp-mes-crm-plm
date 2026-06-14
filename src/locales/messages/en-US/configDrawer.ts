@@ -10,10 +10,13 @@ export const configDrawer = {
     layout: 'Layout',
     direction: 'Direction',
   },
-  themeDescription: 'Choose between system preference, light mode, or dark mode.',
-  sidebarDescription: 'Choose between inset, floating, or standard sidebar layout.',
+  themeDescription:
+    'Choose between system preference, light mode, or dark mode.',
+  sidebarDescription:
+    'Choose between inset, floating, or standard sidebar layout.',
   layoutDescription: 'Choose between default expanded or full layout mode.',
-  directionDescription: 'Choose between left-to-right or right-to-left site direction.',
+  directionDescription:
+    'Choose between left-to-right or right-to-left site direction.',
   sidebarOptions: {
     inset: 'Inset',
     floating: 'Floating',

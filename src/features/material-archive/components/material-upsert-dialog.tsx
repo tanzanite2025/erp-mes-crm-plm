@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Settings2 } from 'lucide-react'
-import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
-import { buildHostedQuickActionDialogContentClassName } from '@/components/hosted-quick-action-dialog.styles'
+import { type DeltaSet } from '@/lib/delta/types'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import {
@@ -12,11 +11,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Form } from '@/components/ui/form'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
+import { buildHostedQuickActionDialogContentClassName } from '@/components/hosted-quick-action-dialog.styles'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { type Material } from '../data/schema'
 import { useMaterialForm } from '../hooks/use-material-form'
 import { MaterialForm } from './material-form'
-import { type DeltaSet } from '@/lib/delta/types'
 
 interface MaterialUpsertDialogProps {
   open: boolean
@@ -35,11 +35,15 @@ export function MaterialUpsertDialog({
 }: MaterialUpsertDialogProps) {
   const { t } = useLanguage()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const { form, selectedCategory, tracker, replace } = useMaterialForm({ material, open, defaultCategory })
+  const { form, selectedCategory, tracker, replace } = useMaterialForm({
+    material,
+    open,
+    defaultCategory,
+  })
 
   const onSubmit = (data: Material) => {
     setIsSubmitting(true)
-    
+
     // SDRTS: 同步 RHF 数据到 Proxy 用于增量计算
     replace(data)
     const delta = tracker.commit()
@@ -48,9 +52,9 @@ export function MaterialUpsertDialog({
 
     // 如果是编辑且无变更，直接关闭
     if (isEdit && !isDirty) {
-        onOpenChange(false)
-        setIsSubmitting(false)
-        return
+      onOpenChange(false)
+      setIsSubmitting(false)
+      return
     }
 
     onSave(data, isEdit, isEdit ? delta : undefined)
@@ -71,7 +75,7 @@ export function MaterialUpsertDialog({
             <div className='flex items-center justify-between gap-3 text-primary'>
               <div className='flex items-center gap-2'>
                 <Settings2 className='size-5' />
-                <DialogTitle className='text-lg font-black italic tracking-tighter'>
+                <DialogTitle className='text-lg font-black tracking-tighter italic'>
                   {material
                     ? t('materialArchive.upsertDialog.editTitle')
                     : t('materialArchive.upsertDialog.createTitle')}

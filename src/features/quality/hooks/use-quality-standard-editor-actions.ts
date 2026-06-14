@@ -2,11 +2,11 @@ import { useCallback } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useLanguage } from '@/context/language-provider'
 import type { Standard } from '../data/schema'
-import type { StandardEditorSubmitPayload } from './use-standard-editor-form'
-import { useQualityMutations } from './use-quality'
 import { dispatchQualityStandardRoutingEvent } from '../services/quality-routing-service'
 import { buildQualityStandardWorkflowChangeSet } from '../services/quality-standard-workflow-service'
 import { normalizeQualityStandardStatus } from '../utils/quality-utils'
+import { useQualityMutations } from './use-quality'
+import type { StandardEditorSubmitPayload } from './use-standard-editor-form'
 
 interface UseQualityStandardEditorActionsOptions {
   mode: 'create' | 'edit'
@@ -94,12 +94,15 @@ export function useQualityStandardEditorActions({
       type: 'submitForApproval',
     })
 
-    const payload = buildSubmitPayloadWithOverrides(workflowChangeSet.nextFields)
+    const payload = buildSubmitPayloadWithOverrides(
+      workflowChangeSet.nextFields
+    )
 
     if (!payload) {
       if (
         isEdit &&
-        normalizeQualityStandardStatus(formData.status) === 'PENDING_APPROVAL' &&
+        normalizeQualityStandardStatus(formData.status) ===
+          'PENDING_APPROVAL' &&
         !isDirty
       ) {
         handleOpenPreview()

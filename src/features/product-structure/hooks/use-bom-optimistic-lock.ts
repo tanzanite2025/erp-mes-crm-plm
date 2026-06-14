@@ -1,15 +1,14 @@
 /**
  * BOM Optimistic Locking Hook
- * 
+ *
  * Implements optimistic concurrency control to prevent silent overwrites
  * when multiple users edit the same BOM simultaneously.
- * 
+ *
  * Addresses the "Version Control Failure" issue where concurrent edits
  * cause the last save to silently overwrite previous changes.
- * 
+ *
  * @module use-bom-optimistic-lock
  */
-
 import { useState, useCallback, useRef } from 'react'
 import { type BOM } from '../data/schema'
 
@@ -26,32 +25,32 @@ export interface OptimisticLockResult {
    * The current version number being tracked
    */
   currentVersion: number
-  
+
   /**
    * Updates the tracked version (call after successful save)
    */
   updateVersion: (newVersion: number) => void
-  
+
   /**
    * Validates that the version hasn't changed before save
    */
   validateVersion: (serverVersion: number) => OptimisticLockError | null
-  
+
   /**
    * Checks if a version conflict error occurred
    */
   hasConflict: boolean
-  
+
   /**
    * The conflict error details (if any)
    */
   conflictError: OptimisticLockError | null
-  
+
   /**
    * Clears the conflict error
    */
   clearConflict: () => void
-  
+
   /**
    * Prepares save payload with version check.
    *
@@ -65,16 +64,16 @@ export interface OptimisticLockResult {
 
 /**
  * Hook for implementing optimistic locking on BOM saves.
- * 
+ *
  * Prevents concurrent edit conflicts by:
  * 1. Tracking the version number when BOM is loaded
  * 2. Including expected version in save payload (`version` field; bom-service serializes it as `_v` on the wire)
  * 3. Validating server response version matches expected
  * 4. Showing conflict error if versions don't match
- * 
+ *
  * @param initialBOM - The BOM loaded from backend
  * @returns Optimistic lock controls
- * 
+ *
  * @example
  * ```tsx
  * const {
@@ -85,14 +84,14 @@ export interface OptimisticLockResult {
  *   conflictError,
  *   prepareSavePayload,
  * } = useBOMOptimisticLock(currentRow)
- * 
+ *
  * // Prepare save with version check
  * const payload = prepareSavePayload(data, currentVersion)
- * 
+ *
  * // Save and validate response
  * const saved = await saveBOM(payload)
  * const conflict = validateVersion(saved.version)
- * 
+ *
  * if (conflict) {
  *   // Show conflict dialog
  *   showConflictDialog(conflict)
@@ -102,13 +101,12 @@ export interface OptimisticLockResult {
  * }
  * ```
  */
-export function useBOMOptimisticLock(
-  initialBOM?: BOM
-): OptimisticLockResult {
+export function useBOMOptimisticLock(initialBOM?: BOM): OptimisticLockResult {
   const [currentVersion, setCurrentVersion] = useState<number>(
     initialBOM?.version ?? 1
   )
-  const [conflictError, setConflictError] = useState<OptimisticLockError | null>(null)
+  const [conflictError, setConflictError] =
+    useState<OptimisticLockError | null>(null)
   const expectedVersionRef = useRef<number>(currentVersion)
 
   // Update tracked version after successful save
@@ -119,23 +117,26 @@ export function useBOMOptimisticLock(
   }, [])
 
   // Validate that server version matches expected version
-  const validateVersion = useCallback((serverVersion: number): OptimisticLockError | null => {
-    const expected = expectedVersionRef.current
+  const validateVersion = useCallback(
+    (serverVersion: number): OptimisticLockError | null => {
+      const expected = expectedVersionRef.current
 
-    if (serverVersion !== expected + 1) {
-      const error: OptimisticLockError = {
-        type: 'version-conflict',
-        message: `Version conflict detected. Expected version ${expected + 1}, but server returned ${serverVersion}. Another user may have modified this BOM.`,
-        expectedVersion: expected + 1,
-        actualVersion: serverVersion,
+      if (serverVersion !== expected + 1) {
+        const error: OptimisticLockError = {
+          type: 'version-conflict',
+          message: `Version conflict detected. Expected version ${expected + 1}, but server returned ${serverVersion}. Another user may have modified this BOM.`,
+          expectedVersion: expected + 1,
+          actualVersion: serverVersion,
+        }
+
+        setConflictError(error)
+        return error
       }
-      
-      setConflictError(error)
-      return error
-    }
 
-    return null
-  }, [])
+      return null
+    },
+    []
+  )
 
   // Clear conflict error
   const clearConflict = useCallback(() => {
@@ -144,17 +145,17 @@ export function useBOMOptimisticLock(
 
   // Prepare save payload with version check.
   // 业务字段统一使用 `version`，service 层会在序列化时翻译为 wire format 的 `_v`。
-  const prepareSavePayload = useCallback(<T extends { version?: number }>(
-    data: T,
-    expectedVersion: number
-  ): T => {
-    expectedVersionRef.current = expectedVersion
+  const prepareSavePayload = useCallback(
+    <T extends { version?: number }>(data: T, expectedVersion: number): T => {
+      expectedVersionRef.current = expectedVersion
 
-    return {
-      ...data,
-      version: expectedVersion,
-    }
-  }, [])
+      return {
+        ...data,
+        version: expectedVersion,
+      }
+    },
+    []
+  )
 
   return {
     currentVersion,
@@ -169,7 +170,7 @@ export function useBOMOptimisticLock(
 
 /**
  * Formats a version conflict error for display to users.
- * 
+ *
  * @param error - The conflict error
  * @returns User-friendly error message
  */

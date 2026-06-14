@@ -35,7 +35,7 @@ export function PrepregCleanedPreview({
 
   return (
     <div className='rounded-xl border border-dashed border-primary/35 bg-primary/5 p-3 md:col-span-4'>
-      <div className='text-[10px] font-black uppercase tracking-[0.2em] text-primary/80'>
+      <div className='text-[10px] font-black tracking-[0.2em] text-primary/80 uppercase'>
         {t('rawMaterials.catalog.cleanedPreview.title')}
       </div>
       <p className='mt-1 text-[11px] font-semibold text-muted-foreground'>

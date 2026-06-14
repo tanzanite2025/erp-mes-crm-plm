@@ -20,13 +20,30 @@ function buildQueryString(params: { bomId?: string; productId?: string }) {
 }
 
 export const bomVersionTraceService = {
-  async getVersionHistory(params: { bomId?: string; productId?: string }): Promise<BOMVersionRecordSummary[]> {
-    const response = await apiFetch<unknown>(`/engineering/bom/version-history${buildQueryString(params)}`)
-    return parseBOMVersionRecordList(ensureArrayResponse<unknown>(response, 'bomVersionTraceService.getVersionHistory'))
+  async getVersionHistory(params: {
+    bomId?: string
+    productId?: string
+  }): Promise<BOMVersionRecordSummary[]> {
+    const response = await apiFetch<unknown>(
+      `/engineering/bom/version-history${buildQueryString(params)}`
+    )
+    return parseBOMVersionRecordList(
+      ensureArrayResponse<unknown>(
+        response,
+        'bomVersionTraceService.getVersionHistory'
+      )
+    )
   },
 
   async getVersionRecord(id: string): Promise<BOMVersionRecordDetail> {
-    const response = await apiFetch<unknown>(`/engineering/bom/version-history/${id}`)
-    return parseBOMVersionRecordDetail(ensureObjectResponse<Record<string, unknown>>(response, 'bomVersionTraceService.getVersionRecord'))
+    const response = await apiFetch<unknown>(
+      `/engineering/bom/version-history/${id}`
+    )
+    return parseBOMVersionRecordDetail(
+      ensureObjectResponse<Record<string, unknown>>(
+        response,
+        'bomVersionTraceService.getVersionRecord'
+      )
+    )
   },
 }

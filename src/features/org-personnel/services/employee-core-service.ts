@@ -1,6 +1,9 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
-import { toEmployeeContract, toEmployeeContracts } from '../adapters/employee-api-adapter'
+import {
+  toEmployeeContract,
+  toEmployeeContracts,
+} from '../adapters/employee-api-adapter'
 import { type EmployeeApiDTO } from '../contracts/employee-api-dto'
 import { type Employee } from '../data/schema'
 
@@ -16,9 +19,16 @@ export const EmployeeCoreService = {
   getEmployees: async (): Promise<Employee[]> => {
     const data = await apiFetch<EmployeeApiDTO[]>('/employees')
     if (!data) {
-      throw new Error('[CRITICAL_DATA_PATH] Failed to fetch employee roster: Null response')
+      throw new Error(
+        '[CRITICAL_DATA_PATH] Failed to fetch employee roster: Null response'
+      )
     }
-    return toEmployeeContracts(ensureArrayResponse<EmployeeApiDTO>(data, 'EmployeeCoreService.getEmployees'))
+    return toEmployeeContracts(
+      ensureArrayResponse<EmployeeApiDTO>(
+        data,
+        'EmployeeCoreService.getEmployees'
+      )
+    )
   },
 
   /**
@@ -30,7 +40,10 @@ export const EmployeeCoreService = {
       throw new Error(`[CRITICAL_DATA_PATH] Failed to fetch employee: ${id}`)
     }
     return toEmployeeContract(
-      ensureObjectResponse<EmployeeApiDTO & Record<string, unknown>>(data, 'EmployeeCoreService.getEmployeeById') as EmployeeApiDTO
+      ensureObjectResponse<EmployeeApiDTO & Record<string, unknown>>(
+        data,
+        'EmployeeCoreService.getEmployeeById'
+      ) as EmployeeApiDTO
     )
   },
 }

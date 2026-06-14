@@ -9,16 +9,12 @@ import { tanstackRouterConfig } from './scripts/tanstack-router-config.js'
 export default defineConfig(({ mode }) => {
   // 加载当前模式下的环境变量
   const env = loadEnv(mode, process.cwd(), '')
-  
+
   // 代理目标解析：优先读取环境变量 VITE_PROXY_TARGET，缺失则默认为本地后端
   const proxyTarget = env.VITE_PROXY_TARGET || 'http://localhost:8080'
 
   return {
-    plugins: [
-      tanstackRouter(tanstackRouterConfig),
-      react(),
-      tailwindcss(),
-    ],
+    plugins: [tanstackRouter(tanstackRouterConfig), react(), tailwindcss()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
@@ -31,8 +27,8 @@ export default defineConfig(({ mode }) => {
             'excel-vendor': ['exceljs'],
             'ui-vendor': ['lucide-react', 'clsx', 'tailwind-merge'],
             'router-vendor': ['@tanstack/react-router'],
-          }
-        }
+          },
+        },
       },
       chunkSizeWarningLimit: 1000,
     },
@@ -48,8 +44,8 @@ export default defineConfig(({ mode }) => {
         '/uploads': {
           target: proxyTarget,
           changeOrigin: true,
-        }
-      }
+        },
+      },
     },
   }
 })

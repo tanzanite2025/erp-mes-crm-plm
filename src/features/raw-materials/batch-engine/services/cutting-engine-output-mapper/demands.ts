@@ -3,16 +3,26 @@ import type {
   BatchOptimizerPlanLayoutDemandSummary,
   BatchOptimizerUnfulfilledLine,
 } from '../../types/batch-engine-api'
-import type { CuttingEngineInput, CuttingPlan as CuttingEnginePlan } from '../../types/cutting-engine-wasm'
+import type {
+  CuttingEngineInput,
+  CuttingPlan as CuttingEnginePlan,
+} from '../../types/cutting-engine-wasm'
 import { percent } from './math'
 
-export function resolvePlanDemandLineId(plan: CuttingEnginePlan, input: CuttingEngineInput) {
-  const fromPlanId = plan.planId.startsWith('plan-') ? plan.planId.slice(5) : plan.planId
+export function resolvePlanDemandLineId(
+  plan: CuttingEnginePlan,
+  input: CuttingEngineInput
+) {
+  const fromPlanId = plan.planId.startsWith('plan-')
+    ? plan.planId.slice(5)
+    : plan.planId
   if (input.cutUnits.some((unit) => unit.id === fromPlanId)) {
     return fromPlanId
   }
   const materialZone = plan.zones.find((zone) => zone.kind === 'Material')
-  const fromZoneId = materialZone?.id.startsWith('material-') ? materialZone.id.slice(9) : materialZone?.id
+  const fromZoneId = materialZone?.id.startsWith('material-')
+    ? materialZone.id.slice(9)
+    : materialZone?.id
   return fromZoneId || fromPlanId
 }
 
@@ -23,8 +33,13 @@ export function buildDemandSummary(
   zoneIds: string[]
 ): BatchOptimizerPlanLayoutDemandSummary {
   const isActive = demandLine.demandLineId === activeDemandLineId
-  const allocatedPieces = isActive ? Math.min(producedPieces, demandLine.requiredPieces) : 0
-  const remainingPieces = Math.max(demandLine.requiredPieces - allocatedPieces, 0)
+  const allocatedPieces = isActive
+    ? Math.min(producedPieces, demandLine.requiredPieces)
+    : 0
+  const remainingPieces = Math.max(
+    demandLine.requiredPieces - allocatedPieces,
+    0
+  )
   const pieceCountPerSet = Math.max(demandLine.pieceCountPerSet, 1)
   return {
     demandLineId: demandLine.demandLineId,
@@ -46,7 +61,9 @@ export function buildDemandSummary(
   }
 }
 
-export function buildUnfulfilledLines(demandSummaries: BatchOptimizerPlanLayoutDemandSummary[]): BatchOptimizerUnfulfilledLine[] {
+export function buildUnfulfilledLines(
+  demandSummaries: BatchOptimizerPlanLayoutDemandSummary[]
+): BatchOptimizerUnfulfilledLine[] {
   return demandSummaries
     .filter((line) => line.remainingPieces > 0)
     .map((line) => ({

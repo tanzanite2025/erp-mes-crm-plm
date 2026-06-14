@@ -11,9 +11,7 @@ function TerminalConfigLayout() {
   const { t } = useLanguage()
 
   return (
-    <ModuleTabbedLayout
-      tabs={getTerminalConfigTabs(t)}
-    >
+    <ModuleTabbedLayout tabs={getTerminalConfigTabs(t)}>
       <Outlet />
     </ModuleTabbedLayout>
   )

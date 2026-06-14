@@ -6,7 +6,9 @@ export type VehicleCategoryLabelKey =
   | 'logisticsConfig.vehicleSpecsLibrary.vehicleCategories.lightTruck'
   | 'logisticsConfig.vehicleSpecsLibrary.vehicleCategories.mediumTruck'
 
-export function categoryLabelKey(category: VehicleCategory): VehicleCategoryLabelKey {
+export function categoryLabelKey(
+  category: VehicleCategory
+): VehicleCategoryLabelKey {
   switch (category) {
     case 'van':
       return 'logisticsConfig.vehicleSpecsLibrary.vehicleCategories.van'

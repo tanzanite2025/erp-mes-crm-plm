@@ -1,3 +1,10 @@
+import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+import { failLoudly } from '@/lib/safe-catch'
+import {
+  engineeringSpecService,
+  type EngineeringSpec,
+  type EngineeringSpecInput,
+} from '@/features/engineering/services/engineering-spec-service'
 import {
   type DrillingPlan,
   type DrillingPlanInput,
@@ -6,13 +13,6 @@ import {
   drillingPlanSchema,
   labelingDraftSchema,
 } from '../data/schema'
-import {
-  engineeringSpecService,
-  type EngineeringSpec,
-  type EngineeringSpecInput,
-} from '@/features/engineering/services/engineering-spec-service'
-import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
-import { failLoudly } from '@/lib/safe-catch'
 
 function toDrillingPlan(spec: EngineeringSpec): DrillingPlan {
   return drillingPlanSchema.parse({
@@ -32,7 +32,11 @@ function toLabelingDraft(spec: EngineeringSpec): LabelingDraft {
   })
 }
 
-function parseManySafely<T>(items: EngineeringSpec[], parser: (spec: EngineeringSpec) => T, scope: string): T[] {
+function parseManySafely<T>(
+  items: EngineeringSpec[],
+  parser: (spec: EngineeringSpec) => T,
+  scope: string
+): T[] {
   return items.reduce<T[]>((acc, item) => {
     try {
       acc.push(parser(item))
@@ -49,11 +53,15 @@ function parseManySafely<T>(items: EngineeringSpec[], parser: (spec: Engineering
  */
 export const ProductionDBService = {
   // --- Drilling (钻孔方案) ---
-  
+
   getDrilling: async (): Promise<DrillingPlan[]> => {
     try {
       const raw = await engineeringSpecService.getSpecs('DRILLING_PLAN')
-      return parseManySafely(raw, toDrillingPlan, 'ProductionDBService.getDrilling.parse')
+      return parseManySafely(
+        raw,
+        toDrillingPlan,
+        'ProductionDBService.getDrilling.parse'
+      )
     } catch (e) {
       failLoudly(e, 'ProductionDBService.getDrilling')
       return []
@@ -61,16 +69,16 @@ export const ProductionDBService = {
   },
 
   saveDrilling: async (data: DrillingPlanInput[]) => {
-    if (data.length === 0) return;
-    const item = data[0];
+    if (data.length === 0) return
+    const item = data[0]
     const spec: EngineeringSpecInput = {
       name: item.name,
       type: 'DRILLING_PLAN',
       active: true,
       drillingData: item,
-      version: item.version || 1
+      version: item.version || 1,
     }
-    await engineeringSpecService.saveSpec(spec);
+    await engineeringSpecService.saveSpec(spec)
   },
 
   saveDrillingItem: async (item: DrillingPlanInput) => {
@@ -82,13 +90,13 @@ export const ProductionDBService = {
     Object.entries(delta).forEach(([path, value]) => {
       mappedDelta[`drillingData.${path}`] = value
     })
-    
+
     const payload: DeltaPayload = {
-        op: 'PATCH',
-        delta: mappedDelta,
-        metadata: { id, version, intent: 'DRILLING_PLAN_UPDATE' }
+      op: 'PATCH',
+      delta: mappedDelta,
+      metadata: { id, version, intent: 'DRILLING_PLAN_UPDATE' },
     }
-    
+
     await engineeringSpecService.patchSpec(id, payload.delta, version)
   },
 
@@ -101,7 +109,11 @@ export const ProductionDBService = {
   getLabeling: async (): Promise<LabelingDraft[]> => {
     try {
       const raw = await engineeringSpecService.getSpecs('LABELING_DRAFT')
-      return parseManySafely(raw, toLabelingDraft, 'ProductionDBService.getLabeling.parse')
+      return parseManySafely(
+        raw,
+        toLabelingDraft,
+        'ProductionDBService.getLabeling.parse'
+      )
     } catch (e) {
       failLoudly(e, 'ProductionDBService.getLabeling')
       return []
@@ -109,16 +121,16 @@ export const ProductionDBService = {
   },
 
   saveLabeling: async (data: LabelingDraftInput[]) => {
-    if (data.length === 0) return;
-    const item = data[0];
+    if (data.length === 0) return
+    const item = data[0]
     const spec: EngineeringSpecInput = {
       name: item.name,
       type: 'LABELING_DRAFT',
       active: true,
       labelingData: item,
-      version: item.version || 1
+      version: item.version || 1,
     }
-    await engineeringSpecService.saveSpec(spec);
+    await engineeringSpecService.saveSpec(spec)
   },
 
   saveLabelingItem: async (item: LabelingDraftInput) => {
@@ -132,9 +144,9 @@ export const ProductionDBService = {
     })
 
     const payload: DeltaPayload = {
-        op: 'PATCH',
-        delta: mappedDelta,
-        metadata: { id, version, intent: 'LABELING_DRAFT_UPDATE' }
+      op: 'PATCH',
+      delta: mappedDelta,
+      metadata: { id, version, intent: 'LABELING_DRAFT_UPDATE' },
     }
 
     await engineeringSpecService.patchSpec(id, payload.delta, version)
@@ -142,5 +154,5 @@ export const ProductionDBService = {
 
   deleteLabeling: async (id: string) => {
     await engineeringSpecService.deleteSpec(id)
-  }
+  },
 }

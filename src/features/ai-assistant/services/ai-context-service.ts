@@ -16,7 +16,9 @@ export const aiContextService = {
     // 1. KPI 采集
     const stats = await TraceService.getDashboardStats()
     if (!stats) {
-      throw new Error('[CRITICAL] Context sensing failed: TraceService.getDashboardStats returned null.')
+      throw new Error(
+        '[CRITICAL] Context sensing failed: TraceService.getDashboardStats returned null.'
+      )
     }
 
     // 2. 状态告警聚合 (从通知中心状态获取)
@@ -29,15 +31,13 @@ export const aiContextService = {
 
     // 3. 事件摘要与内容压缩 (基于设备能力)
     const maxEvents = isMobile ? 2 : 5
-    const recentEvents = messages
-      .slice(0, maxEvents)
-      .map((m) => {
-        const time = new Date(m.timestamp).toLocaleTimeString([], { 
-          hour: '2-digit', 
-          minute: '2-digit' 
-        })
-        return `[${time}] ${m.title}: ${m.content}`
+    const recentEvents = messages.slice(0, maxEvents).map((m) => {
+      const time = new Date(m.timestamp).toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
       })
+      return `[${time}] ${m.title}: ${m.content}`
+    })
 
     return {
       kpis: {
@@ -55,12 +55,15 @@ export const aiContextService = {
   /**
    * 注入局部页面上下文 (用于深度分析，如特定的工单或 BOM)
    */
-  async injectLocalContext(title: string, data: Record<string, unknown>): Promise<Partial<DashboardSummary>> {
+  async injectLocalContext(
+    title: string,
+    data: Record<string, unknown>
+  ): Promise<Partial<DashboardSummary>> {
     return {
       localContext: {
         title,
         data,
       },
     }
-  }
+  },
 }

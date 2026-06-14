@@ -10,14 +10,14 @@ export function RoutingTab() {
   const { t } = useLanguage()
 
   return (
-    <div className='space-y-6 animate-in fade-in duration-700'>
+    <div className='animate-in space-y-6 duration-700 fade-in'>
       <div className='flex flex-col justify-between gap-4 md:flex-row md:items-center'>
         <section className='flex-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-6'>
           <div className='space-y-2'>
-            <h2 className='text-lg font-black italic uppercase tracking-tighter'>
+            <h2 className='text-lg font-black tracking-tighter uppercase italic'>
               {t('systemManagement.routingTab.title')}
             </h2>
-            <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60'>
+            <p className='text-[10px] font-black tracking-widest text-muted-foreground uppercase opacity-60'>
               {t('systemManagement.routingTab.subtitle')}
             </p>
           </div>

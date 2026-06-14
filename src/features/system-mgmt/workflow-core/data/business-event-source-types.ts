@@ -62,7 +62,9 @@ export const businessEventSourceSchema = z.object({
     .default('SYSTEM'),
   enabled: z.boolean().default(true),
   description: z.string().optional(),
-  config: businessEventSourceConfigSchema.default(emptyBusinessEventSourceConfig),
+  config: businessEventSourceConfigSchema.default(
+    emptyBusinessEventSourceConfig
+  ),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
 })
@@ -123,7 +125,9 @@ export const businessEventSourceTemplateSchema = z.object({
     .default('SYSTEM'),
   enabled: z.boolean().default(true),
   description: z.string().optional(),
-  config: businessEventSourceConfigSchema.default(emptyBusinessEventSourceConfig),
+  config: businessEventSourceConfigSchema.default(
+    emptyBusinessEventSourceConfig
+  ),
   /**
    * 运行时元信息 - 让模板成为单一注册点，避免横向多处同步。
    * 详见 BusinessEventSourceTemplateMeta。

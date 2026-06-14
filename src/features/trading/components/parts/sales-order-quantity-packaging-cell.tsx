@@ -5,7 +5,9 @@ interface SalesOrderQuantitySummaryCardProps {
   order: SalesOrder
 }
 
-export function SalesOrderQuantitySummaryCard({ order }: SalesOrderQuantitySummaryCardProps) {
+export function SalesOrderQuantitySummaryCard({
+  order,
+}: SalesOrderQuantitySummaryCardProps) {
   const displayUom = order.lines.find((line) => line.uom?.trim())?.uom || 'PCS'
 
   return (
@@ -16,16 +18,16 @@ export function SalesOrderQuantitySummaryCard({ order }: SalesOrderQuantitySumma
             <span className='text-[24px] font-black tracking-tighter text-primary tabular-nums'>
               {order.quantity?.toLocaleString() || 0}
             </span>
-            <span className='pb-1 text-[8px] font-black uppercase tracking-widest text-muted-foreground/50'>
+            <span className='pb-1 text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'>
               {displayUom}
             </span>
           </div>
-          <p className='mt-0.5 text-[8px] font-black uppercase tracking-widest text-muted-foreground/50'>
+          <p className='mt-0.5 text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'>
             当前订单总数量
           </p>
         </div>
 
-        <span className='inline-flex items-center rounded-full bg-primary/10 px-2 py-1 text-[8px] font-mono font-black uppercase text-primary'>
+        <span className='inline-flex items-center rounded-full bg-primary/10 px-2 py-1 font-mono text-[8px] font-black text-primary uppercase'>
           总量
         </span>
       </div>

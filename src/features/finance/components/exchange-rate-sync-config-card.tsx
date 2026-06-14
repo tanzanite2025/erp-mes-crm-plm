@@ -1,18 +1,31 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Plus, PlugZap, Save, Trash2 } from 'lucide-react'
+import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { Plus, PlugZap, Save, Trash2 } from 'lucide-react'
-import { useLanguage } from '@/context/language-provider'
 import type { ExchangeRateSyncConfig } from '../services/currency-maintenance-service'
 
 interface ExchangeRateSyncConfigCardProps {
   config: ExchangeRateSyncConfig
   isLoading: boolean
   isSaving: boolean
-  onToggleConfigFlag: (field: 'enabled' | 'fallbackEnabled', value: boolean) => void
-  onProviderFieldChange: (providerId: string, field: 'provider' | 'apiBaseUrl' | 'apiKey' | 'latestPathTemplate', value: string) => void
+  onToggleConfigFlag: (
+    field: 'enabled' | 'fallbackEnabled',
+    value: boolean
+  ) => void
+  onProviderFieldChange: (
+    providerId: string,
+    field: 'provider' | 'apiBaseUrl' | 'apiKey' | 'latestPathTemplate',
+    value: string
+  ) => void
   onProviderEnabledChange: (providerId: string, enabled: boolean) => void
   onAddProvider: () => void
   onRemoveProvider: (providerId: string) => void
@@ -31,7 +44,9 @@ export function ExchangeRateSyncConfigCard({
   onSave,
 }: ExchangeRateSyncConfigCardProps) {
   const { t } = useLanguage()
-  const enabledProviders = config.providers.filter((provider) => provider.enabled)
+  const enabledProviders = config.providers.filter(
+    (provider) => provider.enabled
+  )
   const primaryEnabledProviderId = enabledProviders[0]?.id ?? null
 
   return (
@@ -43,28 +58,32 @@ export function ExchangeRateSyncConfigCard({
               <PlugZap className='size-4 text-primary' />
               {t('finance.currencyRates.syncConfig.title')}
             </CardTitle>
-            <CardDescription className='text-[9px] font-black uppercase tracking-widest opacity-60'>
+            <CardDescription className='text-[9px] font-black tracking-widest uppercase opacity-60'>
               {t('finance.currencyRates.syncConfig.description')}
             </CardDescription>
           </div>
           <div className='flex flex-wrap items-center gap-2'>
             <div className='flex items-center gap-2 rounded-full border border-dashed border-primary/20 bg-background/80 px-3 py-1'>
-              <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+              <span className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                 {t('finance.currencyRates.syncConfig.enabled')}
               </span>
               <Switch
                 checked={config.enabled}
-                onCheckedChange={(checked) => onToggleConfigFlag('enabled', checked)}
+                onCheckedChange={(checked) =>
+                  onToggleConfigFlag('enabled', checked)
+                }
                 disabled={isLoading || isSaving}
               />
             </div>
             <div className='flex items-center gap-2 rounded-full border border-dashed border-primary/20 bg-background/80 px-3 py-1'>
-              <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+              <span className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                 {t('finance.currencyRates.syncConfig.fallbackLabel')}
               </span>
               <Switch
                 checked={config.fallbackEnabled}
-                onCheckedChange={(checked) => onToggleConfigFlag('fallbackEnabled', checked)}
+                onCheckedChange={(checked) =>
+                  onToggleConfigFlag('fallbackEnabled', checked)
+                }
                 disabled={isLoading || isSaving}
               />
             </div>
@@ -72,7 +91,7 @@ export function ExchangeRateSyncConfigCard({
               type='button'
               onClick={onAddProvider}
               disabled={isLoading || isSaving}
-              className='h-11 rounded-full px-5 font-black text-[10px] uppercase tracking-widest'
+              className='h-11 rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
             >
               <Plus className='mr-2 size-4' />
               {t('finance.currencyRates.syncConfig.addFallbackProvider')}
@@ -84,11 +103,15 @@ export function ExchangeRateSyncConfigCard({
         <div className='flex flex-col gap-2.5'>
           {config.providers.map((provider) => {
             const isPrimary = provider.id === primaryEnabledProviderId
-            const fallbackIndex = enabledProviders.findIndex((item) => item.id === provider.id)
+            const fallbackIndex = enabledProviders.findIndex(
+              (item) => item.id === provider.id
+            )
             const providerTitle = isPrimary
               ? t('finance.currencyRates.syncConfig.providerTagPrimary')
               : provider.enabled && fallbackIndex >= 0
-                ? t('finance.currencyRates.syncConfig.providerTagFallback', { index: fallbackIndex })
+                ? t('finance.currencyRates.syncConfig.providerTagFallback', {
+                    index: fallbackIndex,
+                  })
                 : t('finance.currencyRates.syncConfig.providerTagDisabled')
             return (
               <div
@@ -97,21 +120,27 @@ export function ExchangeRateSyncConfigCard({
               >
                 <div className='mb-3 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between'>
                   <div className='space-y-0.5'>
-                    <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                    <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                       {providerTitle}
                     </p>
-                    <p className='text-[9px] font-black uppercase tracking-widest opacity-60'>
-                      {t('finance.currencyRates.syncConfig.providerPriority', { priority: provider.priority })}
+                    <p className='text-[9px] font-black tracking-widest uppercase opacity-60'>
+                      {t('finance.currencyRates.syncConfig.providerPriority', {
+                        priority: provider.priority,
+                      })}
                     </p>
                   </div>
                   <div className='flex flex-wrap items-center gap-2'>
                     <div className='flex items-center gap-2 rounded-full border border-dashed border-primary/20 bg-background px-3 py-1'>
-                      <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
-                        {t('finance.currencyRates.syncConfig.providerEnabledLabel')}
+                      <span className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+                        {t(
+                          'finance.currencyRates.syncConfig.providerEnabledLabel'
+                        )}
                       </span>
                       <Switch
                         checked={provider.enabled}
-                        onCheckedChange={(checked) => onProviderEnabledChange(provider.id, checked)}
+                        onCheckedChange={(checked) =>
+                          onProviderEnabledChange(provider.id, checked)
+                        }
                         disabled={isLoading || isSaving}
                       />
                     </div>
@@ -121,7 +150,7 @@ export function ExchangeRateSyncConfigCard({
                         variant='outline'
                         onClick={() => onRemoveProvider(provider.id)}
                         disabled={isLoading || isSaving}
-                        className='h-11 rounded-full border-dashed px-4 font-black text-[10px] uppercase tracking-widest text-rose-600 hover:bg-rose-500/10 hover:text-rose-700'
+                        className='h-11 rounded-full border-dashed px-4 text-[10px] font-black tracking-widest text-rose-600 uppercase hover:bg-rose-500/10 hover:text-rose-700'
                       >
                         <Trash2 className='mr-2 size-4' />
                         {t('finance.currencyRates.syncConfig.removeProvider')}
@@ -132,49 +161,83 @@ export function ExchangeRateSyncConfigCard({
 
                 <div className='grid grid-cols-1 gap-3 lg:grid-cols-12'>
                   <div className='space-y-1 lg:col-span-2'>
-                    <Label className='text-[10px] font-black uppercase tracking-widest opacity-60'>
+                    <Label className='text-[10px] font-black tracking-widest uppercase opacity-60'>
                       {t('finance.currencyRates.syncConfig.providerLabel')}
                     </Label>
                     <Input
                       value={provider.provider}
-                      onChange={(event) => onProviderFieldChange(provider.id, 'provider', event.target.value)}
-                      placeholder={t('finance.currencyRates.syncConfig.providerPlaceholder')}
+                      onChange={(event) =>
+                        onProviderFieldChange(
+                          provider.id,
+                          'provider',
+                          event.target.value
+                        )
+                      }
+                      placeholder={t(
+                        'finance.currencyRates.syncConfig.providerPlaceholder'
+                      )}
                       disabled={isLoading || isSaving}
                       className='h-12 rounded-2xl border-none bg-muted/50'
                     />
                   </div>
                   <div className='space-y-1 lg:col-span-4'>
-                    <Label className='text-[10px] font-black uppercase tracking-widest opacity-60'>
+                    <Label className='text-[10px] font-black tracking-widest uppercase opacity-60'>
                       {t('finance.currencyRates.syncConfig.apiBaseUrlLabel')}
                     </Label>
                     <Input
                       value={provider.apiBaseUrl}
-                      onChange={(event) => onProviderFieldChange(provider.id, 'apiBaseUrl', event.target.value)}
-                      placeholder={t('finance.currencyRates.syncConfig.apiBaseUrlPlaceholder')}
+                      onChange={(event) =>
+                        onProviderFieldChange(
+                          provider.id,
+                          'apiBaseUrl',
+                          event.target.value
+                        )
+                      }
+                      placeholder={t(
+                        'finance.currencyRates.syncConfig.apiBaseUrlPlaceholder'
+                      )}
                       disabled={isLoading || isSaving}
                       className='h-12 rounded-2xl border-none bg-muted/50 font-mono text-[12px]'
                     />
                   </div>
                   <div className='space-y-1 lg:col-span-3'>
-                    <Label className='text-[10px] font-black uppercase tracking-widest opacity-60'>
+                    <Label className='text-[10px] font-black tracking-widest uppercase opacity-60'>
                       {t('finance.currencyRates.syncConfig.apiKeyLabel')}
                     </Label>
                     <Input
                       value={provider.apiKey}
-                      onChange={(event) => onProviderFieldChange(provider.id, 'apiKey', event.target.value)}
-                      placeholder={t('finance.currencyRates.syncConfig.apiKeyPlaceholder')}
+                      onChange={(event) =>
+                        onProviderFieldChange(
+                          provider.id,
+                          'apiKey',
+                          event.target.value
+                        )
+                      }
+                      placeholder={t(
+                        'finance.currencyRates.syncConfig.apiKeyPlaceholder'
+                      )}
                       disabled={isLoading || isSaving}
                       className='h-12 rounded-2xl border-none bg-muted/50 font-mono text-[12px]'
                     />
                   </div>
                   <div className='space-y-1 lg:col-span-3'>
-                    <Label className='text-[10px] font-black uppercase tracking-widest opacity-60'>
-                      {t('finance.currencyRates.syncConfig.latestPathTemplateLabel')}
+                    <Label className='text-[10px] font-black tracking-widest uppercase opacity-60'>
+                      {t(
+                        'finance.currencyRates.syncConfig.latestPathTemplateLabel'
+                      )}
                     </Label>
                     <Input
                       value={provider.latestPathTemplate}
-                      onChange={(event) => onProviderFieldChange(provider.id, 'latestPathTemplate', event.target.value)}
-                      placeholder={t('finance.currencyRates.syncConfig.latestPathTemplatePlaceholder')}
+                      onChange={(event) =>
+                        onProviderFieldChange(
+                          provider.id,
+                          'latestPathTemplate',
+                          event.target.value
+                        )
+                      }
+                      placeholder={t(
+                        'finance.currencyRates.syncConfig.latestPathTemplatePlaceholder'
+                      )}
                       disabled={isLoading || isSaving}
                       className='h-12 rounded-2xl border-none bg-muted/50 font-mono text-[12px]'
                     />
@@ -186,13 +249,13 @@ export function ExchangeRateSyncConfigCard({
         </div>
         <div className='flex flex-col gap-1.5 rounded-[18px] border border-dashed border-primary/15 bg-background/70 p-2.5 lg:col-span-12 lg:flex-row lg:items-center lg:justify-between'>
           <div className='space-y-0.5'>
-            <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+            <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
               {t('finance.currencyRates.syncConfig.hintTitle')}
             </p>
-            <p className='text-[10px] font-medium leading-relaxed text-muted-foreground/80'>
+            <p className='text-[10px] leading-relaxed font-medium text-muted-foreground/80'>
               {t('finance.currencyRates.syncConfig.hintContent')}
             </p>
-            <p className='text-[10px] font-medium leading-relaxed text-muted-foreground/70'>
+            <p className='text-[10px] leading-relaxed font-medium text-muted-foreground/70'>
               {t('finance.currencyRates.syncConfig.fallbackHint')}
             </p>
           </div>
@@ -202,10 +265,12 @@ export function ExchangeRateSyncConfigCard({
               void onSave()
             }}
             disabled={isLoading || isSaving}
-            className='h-11 rounded-full px-5 font-black text-[10px] uppercase tracking-widest'
+            className='h-11 rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
           >
             <Save className='mr-2 size-4' />
-            {isSaving ? t('finance.currencyRates.syncConfig.saving') : t('finance.currencyRates.syncConfig.save')}
+            {isSaving
+              ? t('finance.currencyRates.syncConfig.saving')
+              : t('finance.currencyRates.syncConfig.save')}
           </Button>
         </div>
       </CardContent>

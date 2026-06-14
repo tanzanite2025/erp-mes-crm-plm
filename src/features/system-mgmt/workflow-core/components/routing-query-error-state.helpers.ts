@@ -48,7 +48,8 @@ function extractErrorMessage(error: unknown): string | null {
   }
 
   const record = error as Record<string, unknown>
-  const message = typeof record.message === 'string' ? record.message.trim() : ''
+  const message =
+    typeof record.message === 'string' ? record.message.trim() : ''
   return message.length > 0 ? message : null
 }
 

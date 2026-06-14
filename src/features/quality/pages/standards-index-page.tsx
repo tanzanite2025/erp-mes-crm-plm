@@ -4,9 +4,9 @@ import { useMemo, useState } from 'react'
 import { useNavigate, type NavigateOptions } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { isForbiddenError } from '@/lib/error-status'
+import { useLanguage } from '@/context/language-provider'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { ForbiddenState } from '@/components/forbidden-state'
-import { useLanguage } from '@/context/language-provider'
 import {
   ControlledProtocolDialog,
   type ControlledProtocolDraft,

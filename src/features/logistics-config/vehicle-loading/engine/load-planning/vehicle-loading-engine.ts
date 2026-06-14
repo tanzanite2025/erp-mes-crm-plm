@@ -1,8 +1,13 @@
-import type { PackageLoadProfile, VehicleLoadPlan, VehicleLoadPlanningInput, VehicleRecommendationPlan } from './load-planning.types'
+import type {
+  PackageLoadProfile,
+  VehicleLoadPlan,
+  VehicleLoadPlanningInput,
+  VehicleRecommendationPlan,
+} from './load-planning.types'
 import { comparePlans, isBetterPlan } from './vehicle-loading-explain'
-import { calculateLoadPlanForOrientation } from './vehicle-pack-layout'
-import { getPackageOrientations } from './vehicle-orientation'
 import { checkVehicleConstraints } from './vehicle-loading-rules'
+import { getPackageOrientations } from './vehicle-orientation'
+import { calculateLoadPlanForOrientation } from './vehicle-pack-layout'
 
 const ENGINE_VERSION = 'load-planning-0.2.0'
 
@@ -24,13 +29,19 @@ function buildPackageWarnings(packageProfile: PackageLoadProfile): string[] {
   const warnings: string[] = []
   if (packageProfile.quantity <= 0) warnings.push('装箱数量必须大于 0')
   if (packageProfile.unitWeightKg <= 0) warnings.push('单箱重量必须大于 0')
-  if (packageProfile.dimension.lengthMm <= 0 || packageProfile.dimension.widthMm <= 0 || packageProfile.dimension.heightMm <= 0) {
+  if (
+    packageProfile.dimension.lengthMm <= 0 ||
+    packageProfile.dimension.widthMm <= 0 ||
+    packageProfile.dimension.heightMm <= 0
+  ) {
     warnings.push('箱体尺寸必须大于 0')
   }
   return warnings
 }
 
-export function buildVehicleLoadingPlan(input: VehicleLoadPlanningInput): VehicleRecommendationPlan {
+export function buildVehicleLoadingPlan(
+  input: VehicleLoadPlanningInput
+): VehicleRecommendationPlan {
   const { packageProfile, vehicles } = input
   const warnings = buildPackageWarnings(packageProfile)
 
@@ -52,7 +63,11 @@ export function buildVehicleLoadingPlan(input: VehicleLoadPlanningInput): Vehicl
       let bestPlan: VehicleLoadPlan | null = null
 
       for (const orientation of orientations) {
-        const ruleResults = checkVehicleConstraints(vehicle, orientation, packageProfile.unitWeightKg)
+        const ruleResults = checkVehicleConstraints(
+          vehicle,
+          orientation,
+          packageProfile.unitWeightKg
+        )
         if (ruleResults.some((item) => !item.passed)) continue
 
         const plan = calculateLoadPlanForOrientation(
@@ -93,4 +108,9 @@ export function buildVehicleLoadingPlan(input: VehicleLoadPlanningInput): Vehicl
   }
 }
 
-export type { PackageLoadProfile, VehicleLoadPlan, VehicleLoadPlanningInput, VehicleRecommendationPlan }
+export type {
+  PackageLoadProfile,
+  VehicleLoadPlan,
+  VehicleLoadPlanningInput,
+  VehicleRecommendationPlan,
+}

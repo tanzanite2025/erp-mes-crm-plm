@@ -1,9 +1,9 @@
 'use client'
 
 import { Layers } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { cn } from '@/lib/utils'
 import { type BOMVersionRecordDetail } from '../contracts/bom-version-trace'
 import { type BOMVersionDiffSummary } from '../utils/bom-version-diff'
 
@@ -53,23 +53,23 @@ function FieldChangeCard({
 }) {
   return (
     <div className='rounded-[24px] border border-dashed bg-muted/5 p-4'>
-      <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+      <div className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
         {label}
       </div>
       <div className='mt-3 grid gap-3 xl:grid-cols-2'>
         <div className='rounded-2xl border border-dashed border-rose-500/20 bg-rose-500/5 p-3'>
-          <div className='text-[8px] font-black uppercase tracking-widest text-rose-700/60'>
+          <div className='text-[8px] font-black tracking-widest text-rose-700/60 uppercase'>
             左侧版本
           </div>
-          <div className='mt-1 break-all text-[11px] font-mono text-rose-700'>
+          <div className='mt-1 font-mono text-[11px] break-all text-rose-700'>
             {renderValue(beforeValue)}
           </div>
         </div>
         <div className='rounded-2xl border border-dashed border-emerald-500/20 bg-emerald-500/5 p-3'>
-          <div className='text-[8px] font-black uppercase tracking-widest text-emerald-700/60'>
+          <div className='text-[8px] font-black tracking-widest text-emerald-700/60 uppercase'>
             右侧版本
           </div>
-          <div className='mt-1 break-all text-[11px] font-mono text-emerald-700'>
+          <div className='mt-1 font-mono text-[11px] break-all text-emerald-700'>
             {renderValue(afterValue)}
           </div>
         </div>
@@ -94,34 +94,34 @@ export function BomDiffContent({
         <div className='flex flex-col gap-4 px-5 py-5'>
           {isLoading ? (
             <div className='rounded-[32px] border border-dashed bg-muted/5 px-6 py-16 text-center'>
-              <div className='text-lg font-black tracking-tighter italic uppercase text-slate-700'>
+              <div className='text-lg font-black tracking-tighter text-slate-700 uppercase italic'>
                 正在加载对比数据...
               </div>
             </div>
           ) : error ? (
             <div className='rounded-[32px] border border-dashed border-rose-300 bg-rose-50/60 px-6 py-16 text-center'>
-              <div className='text-lg font-black tracking-tighter italic uppercase text-rose-700'>
+              <div className='text-lg font-black tracking-tighter text-rose-700 uppercase italic'>
                 对比数据加载失败
               </div>
-              <div className='mt-2 text-[10px] font-black uppercase tracking-widest text-rose-700/60'>
+              <div className='mt-2 text-[10px] font-black tracking-widest text-rose-700/60 uppercase'>
                 请稍后重试或联系管理员
               </div>
             </div>
           ) : !leftDetail || !rightDetail ? (
             <div className='rounded-[32px] border border-dashed bg-muted/5 px-6 py-16 text-center'>
-              <div className='text-lg font-black tracking-tighter italic uppercase text-slate-700'>
+              <div className='text-lg font-black tracking-tighter text-slate-700 uppercase italic'>
                 等待对比数据
               </div>
-              <div className='mt-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+              <div className='mt-2 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                 需要两条版本快照才能生成差异结果
               </div>
             </div>
           ) : !diffSummary ? (
             <div className='rounded-[32px] border border-dashed bg-muted/5 px-6 py-16 text-center'>
-              <div className='text-lg font-black tracking-tighter italic uppercase text-slate-700'>
+              <div className='text-lg font-black tracking-tighter text-slate-700 uppercase italic'>
                 两侧为同一版本
               </div>
-              <div className='mt-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+              <div className='mt-2 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                 无差异可显示
               </div>
             </div>
@@ -129,7 +129,7 @@ export function BomDiffContent({
             <>
               <div className='grid gap-4 xl:grid-cols-4'>
                 <div className='rounded-[24px] border border-dashed bg-muted/5 p-4'>
-                  <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                  <div className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                     目标 BOM
                   </div>
                   <div className='mt-2 text-sm font-black tracking-tight text-slate-800'>
@@ -137,7 +137,7 @@ export function BomDiffContent({
                   </div>
                 </div>
                 <div className='rounded-[24px] border border-dashed bg-muted/5 p-4'>
-                  <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                  <div className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                     新增物料
                   </div>
                   <div className='mt-2 text-sm font-black tracking-tight text-emerald-700'>
@@ -145,7 +145,7 @@ export function BomDiffContent({
                   </div>
                 </div>
                 <div className='rounded-[24px] border border-dashed bg-muted/5 p-4'>
-                  <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                  <div className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                     移除物料
                   </div>
                   <div className='mt-2 text-sm font-black tracking-tight text-rose-700'>
@@ -153,7 +153,7 @@ export function BomDiffContent({
                   </div>
                 </div>
                 <div className='rounded-[24px] border border-dashed bg-muted/5 p-4'>
-                  <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                  <div className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                     结构变化
                   </div>
                   <div className='mt-2 text-sm font-black tracking-tight text-amber-700'>
@@ -171,30 +171,32 @@ export function BomDiffContent({
                 </div>
                 <div className='mt-4 grid gap-3 xl:grid-cols-2'>
                   <div className='rounded-2xl border border-dashed border-slate-200 bg-background p-4'>
-                    <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                    <div className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                       {leftLabel || '左侧版本'}
                     </div>
                     <div className='mt-2 text-sm font-black tracking-tight text-slate-800'>
-                      #{leftDetail.versionSequence} / {leftDetail.displayVersionLabel}
+                      #{leftDetail.versionSequence} /{' '}
+                      {leftDetail.displayVersionLabel}
                     </div>
-                    <div className='mt-1 text-[8px] font-mono text-muted-foreground'>
+                    <div className='mt-1 font-mono text-[8px] text-muted-foreground'>
                       {leftDetail.bomNo}
                     </div>
-                    <div className='mt-1 text-[8px] font-mono text-muted-foreground'>
+                    <div className='mt-1 font-mono text-[8px] text-muted-foreground'>
                       {leftDetail.createdAt || '—'}
                     </div>
                   </div>
                   <div className='rounded-2xl border border-dashed border-slate-200 bg-background p-4'>
-                    <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                    <div className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                       {rightLabel || '右侧版本'}
                     </div>
                     <div className='mt-2 text-sm font-black tracking-tight text-slate-800'>
-                      #{rightDetail.versionSequence} / {rightDetail.displayVersionLabel}
+                      #{rightDetail.versionSequence} /{' '}
+                      {rightDetail.displayVersionLabel}
                     </div>
-                    <div className='mt-1 text-[8px] font-mono text-muted-foreground'>
+                    <div className='mt-1 font-mono text-[8px] text-muted-foreground'>
                       {rightDetail.bomNo}
                     </div>
-                    <div className='mt-1 text-[8px] font-mono text-muted-foreground'>
+                    <div className='mt-1 font-mono text-[8px] text-muted-foreground'>
                       {rightDetail.createdAt || '—'}
                     </div>
                   </div>
@@ -217,7 +219,7 @@ export function BomDiffContent({
                         />
                       ))
                     ) : (
-                      <div className='rounded-2xl border border-dashed bg-background p-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                      <div className='rounded-2xl border border-dashed bg-background p-4 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                         当前无控制字段变化
                       </div>
                     )}
@@ -239,7 +241,7 @@ export function BomDiffContent({
                         />
                       ))
                     ) : (
-                      <div className='rounded-2xl border border-dashed bg-background p-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                      <div className='rounded-2xl border border-dashed bg-background p-4 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                         当前无结构变化
                       </div>
                     )}
@@ -249,7 +251,7 @@ export function BomDiffContent({
 
               <div className='grid gap-4 xl:grid-cols-3'>
                 <div className='rounded-[24px] border border-dashed bg-muted/5 p-4'>
-                  <div className='text-sm font-black tracking-tighter italic text-emerald-700'>
+                  <div className='text-sm font-black tracking-tighter text-emerald-700 italic'>
                     新增物料
                   </div>
                   <div className='mt-3 flex flex-col gap-2'>
@@ -262,13 +264,13 @@ export function BomDiffContent({
                           <div className='text-[10px] font-black tracking-tight text-slate-800'>
                             {item.materialId}
                           </div>
-                          <div className='mt-1 text-[8px] font-mono text-muted-foreground'>
+                          <div className='mt-1 font-mono text-[8px] text-muted-foreground'>
                             {item.section || '未分段'}
                           </div>
                         </div>
                       ))
                     ) : (
-                      <div className='rounded-2xl border border-dashed bg-background p-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                      <div className='rounded-2xl border border-dashed bg-background p-4 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                         当前无新增物料
                       </div>
                     )}
@@ -276,7 +278,7 @@ export function BomDiffContent({
                 </div>
 
                 <div className='rounded-[24px] border border-dashed bg-muted/5 p-4'>
-                  <div className='text-sm font-black tracking-tighter italic text-rose-700'>
+                  <div className='text-sm font-black tracking-tighter text-rose-700 italic'>
                     移除物料
                   </div>
                   <div className='mt-3 flex flex-col gap-2'>
@@ -289,13 +291,13 @@ export function BomDiffContent({
                           <div className='text-[10px] font-black tracking-tight text-slate-800'>
                             {item.materialId}
                           </div>
-                          <div className='mt-1 text-[8px] font-mono text-muted-foreground'>
+                          <div className='mt-1 font-mono text-[8px] text-muted-foreground'>
                             {item.section || '未分段'}
                           </div>
                         </div>
                       ))
                     ) : (
-                      <div className='rounded-2xl border border-dashed bg-background p-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                      <div className='rounded-2xl border border-dashed bg-background p-4 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                         当前无移除物料
                       </div>
                     )}
@@ -303,7 +305,7 @@ export function BomDiffContent({
                 </div>
 
                 <div className='rounded-[24px] border border-dashed bg-muted/5 p-4'>
-                  <div className='text-sm font-black tracking-tighter italic text-amber-700'>
+                  <div className='text-sm font-black tracking-tighter text-amber-700 italic'>
                     修改物料
                   </div>
                   <div className='mt-3 flex flex-col gap-2'>
@@ -316,7 +318,7 @@ export function BomDiffContent({
                           <div className='text-[10px] font-black tracking-tight text-slate-800'>
                             {item.materialId}
                           </div>
-                          <div className='mt-1 text-[8px] font-mono text-muted-foreground'>
+                          <div className='mt-1 font-mono text-[8px] text-muted-foreground'>
                             {item.section || '未分段'}
                           </div>
                           <div className='mt-2 flex flex-wrap gap-1.5'>
@@ -324,7 +326,7 @@ export function BomDiffContent({
                               <Badge
                                 key={field}
                                 variant='outline'
-                                className='h-5 rounded-full border-dashed bg-background text-[8px] font-mono'
+                                className='h-5 rounded-full border-dashed bg-background font-mono text-[8px]'
                               >
                                 {field}
                               </Badge>
@@ -333,7 +335,7 @@ export function BomDiffContent({
                         </div>
                       ))
                     ) : (
-                      <div className='rounded-2xl border border-dashed bg-background p-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                      <div className='rounded-2xl border border-dashed bg-background p-4 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                         当前无修改物料
                       </div>
                     )}

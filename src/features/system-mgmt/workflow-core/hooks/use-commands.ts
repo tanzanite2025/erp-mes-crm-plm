@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { useLanguage } from '@/context/language-provider'
 import { createLogger } from '@/lib/logger'
+import { useLanguage } from '@/context/language-provider'
 import { type StandardCommand } from '../data/schema'
 import { RoutingService } from '../services/routing-service'
 
@@ -22,7 +22,10 @@ export function useCommands() {
     } catch (err) {
       setError(err)
       logger.error('Failed to load commands', err)
-      toast.error(t('workflowCore.commands.toasts.loadFailed') || `Failed to load commands: ${err}`)
+      toast.error(
+        t('workflowCore.commands.toasts.loadFailed') ||
+          `Failed to load commands: ${err}`
+      )
     } finally {
       setLoading(false)
     }
@@ -32,7 +35,9 @@ export function useCommands() {
     void loadData()
   }, [loadData])
 
-  const addCommand = async (data: Omit<StandardCommand, 'id' | 'createdAt'>) => {
+  const addCommand = async (
+    data: Omit<StandardCommand, 'id' | 'createdAt'>
+  ) => {
     try {
       const newCommand = await RoutingService.saveCommand(data)
       setCommands((prev) => [newCommand, ...prev])
@@ -44,10 +49,13 @@ export function useCommands() {
     }
   }
 
-  const updateCommand = async (id: string, updates: Partial<StandardCommand>) => {
+  const updateCommand = async (
+    id: string,
+    updates: Partial<StandardCommand>
+  ) => {
     try {
       const updated = await RoutingService.updateCommand(id, updates)
-      setCommands((prev) => 
+      setCommands((prev) =>
         prev.map((command) => (command.id === id ? updated : command))
       )
     } catch (err) {

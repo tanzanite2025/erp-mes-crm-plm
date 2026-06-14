@@ -1,7 +1,7 @@
 import type { UseFormReturn } from 'react-hook-form'
 import { useLanguage } from '@/context/language-provider'
-import { SegmentedTabs } from '@/components/segmented-tabs'
 import { Tabs } from '@/components/ui/tabs'
+import { SegmentedTabs } from '@/components/segmented-tabs'
 import { type MaterialOption } from '../../../material-archive/data/schema'
 import { type BOM } from '../../data/schema'
 import {
@@ -48,7 +48,7 @@ export function BOMFlatWorkspaceView({
   return (
     <div className='flex min-h-0 flex-1 flex-col space-y-1.5'>
       <div className='mb-1 flex items-center justify-between border-b-2 border-dashed border-muted/50 pb-1'>
-        <h4 className='text-[10px] font-black uppercase tracking-widest italic text-slate-900 sm:text-[12px]'>
+        <h4 className='text-[10px] font-black tracking-widest text-slate-900 uppercase italic sm:text-[12px]'>
           {t('engineering.bomArchive.recipe.title')}
         </h4>
       </div>
@@ -66,15 +66,19 @@ export function BOMFlatWorkspaceView({
               return
             }
 
-            const fallbackGroupKey = activeGroupKey === 'all' ? groupNodes[0]?.key : activeGroupKey
+            const fallbackGroupKey =
+              activeGroupKey === 'all' ? groupNodes[0]?.key : activeGroupKey
             onActiveGroupChange(fallbackGroupKey || 'all')
           }}
-          className='w-full md:w-full overflow-hidden'
+          className='w-full overflow-hidden md:w-full'
           listClassName='grid h-11 w-full shrink-0 grid-cols-2 rounded-2xl bg-muted/20 p-1 sm:h-10'
         />
       </div>
 
-      <Tabs value={activeModeTab} className='flex min-h-0 w-full flex-1 flex-col'>
+      <Tabs
+        value={activeModeTab}
+        className='flex min-h-0 w-full flex-1 flex-col'
+      >
         <div className='relative mt-0.5 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[24px] border border-dashed border-muted/50 bg-background shadow-inner'>
           {viewMode === 'summary' ? (
             <div className='custom-scrollbar flex-1 overflow-y-auto p-0'>

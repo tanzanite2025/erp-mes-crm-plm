@@ -1,4 +1,5 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react'
+import { AssetService } from '@/services/asset-service'
 import {
   Bold,
   Heading3,
@@ -10,7 +11,6 @@ import {
   Underline,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { AssetService } from '@/services/asset-service'
 import {
   escapeKnowledgeHtml,
   knowledgeContentToEditorHtml,
@@ -118,7 +118,10 @@ export function KnowledgeBaseRichTextField({
   return (
     <div className='overflow-hidden rounded-2xl border-none bg-muted/50 shadow-inner transition-all focus-within:ring-1 focus-within:ring-primary/20'>
       <div className='flex flex-wrap items-center gap-1 border-b border-dashed border-muted/50 bg-background/65 px-2 py-1.5'>
-        <ToolbarButton label='标题' onClick={() => runCommand('formatBlock', '<h3>')}>
+        <ToolbarButton
+          label='标题'
+          onClick={() => runCommand('formatBlock', '<h3>')}
+        >
           <Heading3 className='size-3.5' />
         </ToolbarButton>
         <ToolbarButton label='加粗' onClick={() => runCommand('bold')}>
@@ -130,13 +133,22 @@ export function KnowledgeBaseRichTextField({
         <ToolbarButton label='下划线' onClick={() => runCommand('underline')}>
           <Underline className='size-3.5' />
         </ToolbarButton>
-        <ToolbarButton label='无序列表' onClick={() => runCommand('insertUnorderedList')}>
+        <ToolbarButton
+          label='无序列表'
+          onClick={() => runCommand('insertUnorderedList')}
+        >
           <List className='size-3.5' />
         </ToolbarButton>
-        <ToolbarButton label='有序列表' onClick={() => runCommand('insertOrderedList')}>
+        <ToolbarButton
+          label='有序列表'
+          onClick={() => runCommand('insertOrderedList')}
+        >
           <ListOrdered className='size-3.5' />
         </ToolbarButton>
-        <ToolbarButton label='引用' onClick={() => runCommand('formatBlock', '<blockquote>')}>
+        <ToolbarButton
+          label='引用'
+          onClick={() => runCommand('formatBlock', '<blockquote>')}
+        >
           <Quote className='size-3.5' />
         </ToolbarButton>
         <ToolbarButton

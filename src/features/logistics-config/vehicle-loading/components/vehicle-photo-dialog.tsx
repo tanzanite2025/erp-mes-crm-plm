@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { useLanguage } from '@/context/language-provider'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
+import type { VehicleSpec } from '../data/vehicle-loading.types'
 import {
   type VehiclePhotoAnnotation,
   type VehiclePhotoEntry,
@@ -8,7 +9,6 @@ import {
   type VehiclePhotoViewType,
 } from '../data/vehicle-photo-manifest'
 import { getVehiclePhotoViewTypeLabel } from '../data/vehicle-photo-view-type-label'
-import type { VehicleSpec } from '../data/vehicle-loading.types'
 import { VehiclePhotoDialogFooter } from './vehicle-photo-dialog-footer'
 import { VehiclePhotoDialogHeader } from './vehicle-photo-dialog-header'
 import { VehiclePhotoDialogPreview } from './vehicle-photo-dialog-preview'
@@ -21,12 +21,23 @@ type Props = {
   photoEntry: VehiclePhotoEntry | null
 }
 
-export function VehiclePhotoDialog({ open, onOpenChange, vehicle, photoEntry }: Props) {
+export function VehiclePhotoDialog({
+  open,
+  onOpenChange,
+  vehicle,
+  photoEntry,
+}: Props) {
   const { t } = useLanguage()
   const [activeImageId, setActiveImageId] = useState<string | null>(null)
-  const [activeAnnotationId, setActiveAnnotationId] = useState<string | null>(null)
+  const [activeAnnotationId, setActiveAnnotationId] = useState<string | null>(
+    null
+  )
 
-  const viewTypeLabel = useCallback((viewType: VehiclePhotoViewType): string => getVehiclePhotoViewTypeLabel(t, viewType), [t])
+  const viewTypeLabel = useCallback(
+    (viewType: VehiclePhotoViewType): string =>
+      getVehiclePhotoViewTypeLabel(t, viewType),
+    [t]
+  )
 
   const images = useMemo(() => photoEntry?.images ?? [], [photoEntry])
 
@@ -35,11 +46,17 @@ export function VehiclePhotoDialog({ open, onOpenChange, vehicle, photoEntry }: 
     return images.find((item) => item.id === activeImageId) ?? images[0]
   }, [activeImageId, images])
 
-  const activeAnnotations = useMemo(() => activeImage?.annotations ?? [], [activeImage])
+  const activeAnnotations = useMemo(
+    () => activeImage?.annotations ?? [],
+    [activeImage]
+  )
 
   const activeAnnotation = useMemo<VehiclePhotoAnnotation | null>(() => {
     if (activeAnnotations.length === 0) return null
-    return activeAnnotations.find((item) => item.id === activeAnnotationId) ?? activeAnnotations[0]
+    return (
+      activeAnnotations.find((item) => item.id === activeAnnotationId) ??
+      activeAnnotations[0]
+    )
   }, [activeAnnotationId, activeAnnotations])
 
   return (

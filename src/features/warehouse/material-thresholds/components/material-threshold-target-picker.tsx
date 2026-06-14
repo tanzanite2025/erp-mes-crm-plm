@@ -1,9 +1,9 @@
 'use client'
 
-import { Boxes, Package } from 'lucide-react'
 import { useMemo } from 'react'
-import { useLanguage } from '@/context/language-provider'
+import { Boxes, Package } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { Combobox } from '@/components/ui/combobox'
 import { Label } from '@/components/ui/label'
@@ -121,9 +121,15 @@ export function MaterialThresholdTargetPicker({
             options={materialComboboxOptions}
             value={materialId}
             onValueChange={onMaterialIdChange}
-            placeholder={t('warehouseConfig.materialThresholds.dialog.materialTargetPlaceholder')}
-            searchPlaceholder={t('warehouseConfig.materialThresholds.dialog.materialSearchPlaceholder')}
-            emptyText={t('warehouseConfig.materialThresholds.dialog.materialEmptyText')}
+            placeholder={t(
+              'warehouseConfig.materialThresholds.dialog.materialTargetPlaceholder'
+            )}
+            searchPlaceholder={t(
+              'warehouseConfig.materialThresholds.dialog.materialSearchPlaceholder'
+            )}
+            emptyText={t(
+              'warehouseConfig.materialThresholds.dialog.materialEmptyText'
+            )}
           />
         </div>
       ) : (
@@ -137,9 +143,15 @@ export function MaterialThresholdTargetPicker({
             options={bomComboboxOptions}
             value={bomId}
             onValueChange={onBomIdChange}
-            placeholder={t('warehouseConfig.materialThresholds.dialog.bomTargetPlaceholder')}
-            searchPlaceholder={t('warehouseConfig.materialThresholds.dialog.bomSearchPlaceholder')}
-            emptyText={t('warehouseConfig.materialThresholds.dialog.bomEmptyText')}
+            placeholder={t(
+              'warehouseConfig.materialThresholds.dialog.bomTargetPlaceholder'
+            )}
+            searchPlaceholder={t(
+              'warehouseConfig.materialThresholds.dialog.bomSearchPlaceholder'
+            )}
+            emptyText={t(
+              'warehouseConfig.materialThresholds.dialog.bomEmptyText'
+            )}
           />
         </div>
       )}

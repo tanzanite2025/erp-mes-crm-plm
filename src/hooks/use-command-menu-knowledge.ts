@@ -1,7 +1,7 @@
 import React from 'react'
+import { createLogger } from '@/lib/logger'
 import type { KnowledgeBaseEntry } from '@/features/basic-settings/knowledge-base/data/knowledge-base'
 import { knowledgeBaseService } from '@/features/basic-settings/knowledge-base/services/knowledge-base-service'
-import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('useCommandMenuKnowledge')
 
@@ -62,25 +62,28 @@ export function useCommandMenuKnowledge(open: boolean, searchValue: string) {
     [entries, loadKnowledgeEntries, open]
   )
 
-  const selectKnowledgeEntry = React.useCallback((entry: KnowledgeBaseEntry | null) => {
-    setSelectedEntry(entry)
-    if (!entry) return
+  const selectKnowledgeEntry = React.useCallback(
+    (entry: KnowledgeBaseEntry | null) => {
+      setSelectedEntry(entry)
+      if (!entry) return
 
-    setEntries((currentEntries) =>
-      currentEntries.map((item) =>
-        item.id === entry.id
-          ? {
-              ...item,
-              viewCount: (item.viewCount ?? 0) + 1,
-              lastViewedAt: new Date().toISOString(),
-            }
-          : item
+      setEntries((currentEntries) =>
+        currentEntries.map((item) =>
+          item.id === entry.id
+            ? {
+                ...item,
+                viewCount: (item.viewCount ?? 0) + 1,
+                lastViewedAt: new Date().toISOString(),
+              }
+            : item
+        )
       )
-    )
-    knowledgeBaseService.recordView(entry.id).catch((error) => {
-      logger.warn('Failed to record knowledge entry view', error)
-    })
-  }, [])
+      knowledgeBaseService.recordView(entry.id).catch((error) => {
+        logger.warn('Failed to record knowledge entry view', error)
+      })
+    },
+    []
+  )
 
   return {
     knowledgeEntries: entries,

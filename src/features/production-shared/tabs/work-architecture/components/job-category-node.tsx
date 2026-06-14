@@ -2,10 +2,14 @@
 
 import { useMemo, useState } from 'react'
 import { Plus, Workflow, X } from 'lucide-react'
+import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { useLanguage } from '@/context/language-provider'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 import { useProductionProcessesQuery } from '../../../hooks/use-production-resources'
 import type { JobCategory } from '../../line-mgmt/types'
 import { useJobCategoryProcessCapabilities } from '../hooks/use-job-category-process-capabilities'
@@ -16,16 +20,27 @@ interface JobCategoryNodeProps {
   level3Name: string
 }
 
-export function JobCategoryNode({ jobCategory, level2Name, level3Name }: JobCategoryNodeProps) {
+export function JobCategoryNode({
+  jobCategory,
+  level2Name,
+  level3Name,
+}: JobCategoryNodeProps) {
   const { t } = useLanguage()
   const [isAssignOpen, setIsAssignOpen] = useState(false)
-  const mappedProcesses = useMemo(() => jobCategory.processes ?? [], [jobCategory.processes])
+  const mappedProcesses = useMemo(
+    () => jobCategory.processes ?? [],
+    [jobCategory.processes]
+  )
   const { data: processLibrary } = useProductionProcessesQuery()
-  const { assignProcessCapability, removeProcessCapability } = useJobCategoryProcessCapabilities()
+  const { assignProcessCapability, removeProcessCapability } =
+    useJobCategoryProcessCapabilities()
   const availableProcesses = useMemo(
     () =>
       (processLibrary ?? []).filter(
-        (process) => !mappedProcesses.some((mappedProcess) => mappedProcess.id === process.id)
+        (process) =>
+          !mappedProcesses.some(
+            (mappedProcess) => mappedProcess.id === process.id
+          )
       ),
     [mappedProcesses, processLibrary]
   )
@@ -39,26 +54,34 @@ export function JobCategoryNode({ jobCategory, level2Name, level3Name }: JobCate
         >
           <span className='text-[10px]'>{level2Name}</span>
         </Badge>
-        <span className='flex-1 text-sm font-bold text-slate-700'>{jobCategory.name}</span>
+        <span className='flex-1 text-sm font-bold text-slate-700'>
+          {jobCategory.name}
+        </span>
         <Popover open={isAssignOpen} onOpenChange={setIsAssignOpen}>
           <PopoverTrigger asChild>
             <Button
               variant='outline'
               size='sm'
-              className='h-8 rounded-full text-[10px] font-black uppercase tracking-widest'
+              className='h-8 rounded-full text-[10px] font-black tracking-widest uppercase'
             >
               <Plus className='mr-1.5 size-3.5' />
-              {t('productionShared.workArchitecture.addLevel', { levelName: level3Name })}
+              {t('productionShared.workArchitecture.addLevel', {
+                levelName: level3Name,
+              })}
             </Button>
           </PopoverTrigger>
           <PopoverContent align='end' className='w-72 rounded-2xl border p-2'>
             <div className='space-y-2'>
-              <p className='px-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground'>
-                {t('productionShared.workArchitecture.assignLevelCapability', { levelName: level3Name })}
+              <p className='px-1 text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
+                {t('productionShared.workArchitecture.assignLevelCapability', {
+                  levelName: level3Name,
+                })}
               </p>
               {availableProcesses.length === 0 ? (
                 <p className='px-1 py-2 text-[11px] text-muted-foreground'>
-                  {t('productionShared.workArchitecture.allLevelsMapped', { levelName: level3Name })}
+                  {t('productionShared.workArchitecture.allLevelsMapped', {
+                    levelName: level3Name,
+                  })}
                 </p>
               ) : (
                 <div className='max-h-56 space-y-1 overflow-y-auto'>
@@ -68,16 +91,21 @@ export function JobCategoryNode({ jobCategory, level2Name, level3Name }: JobCate
                       variant='ghost'
                       className='h-auto w-full justify-start rounded-xl px-2 py-2 text-left'
                       onClick={async () => {
-                        await assignProcessCapability(jobCategory.id, process.id)
+                        await assignProcessCapability(
+                          jobCategory.id,
+                          process.id
+                        )
                         setIsAssignOpen(false)
                       }}
                     >
                       <div className='space-y-0.5'>
                         <div className='flex items-center gap-2'>
                           <Workflow className='size-3.5 text-sky-600' />
-                          <span className='text-[11px] font-bold text-slate-700'>{process.name}</span>
+                          <span className='text-[11px] font-bold text-slate-700'>
+                            {process.name}
+                          </span>
                         </div>
-                        <div className='pl-5 text-[10px] font-mono text-muted-foreground'>
+                        <div className='pl-5 font-mono text-[10px] text-muted-foreground'>
                           {process.code || 'NO-CODE'}
                         </div>
                       </div>
@@ -91,7 +119,11 @@ export function JobCategoryNode({ jobCategory, level2Name, level3Name }: JobCate
       </div>
 
       {mappedProcesses.length === 0 ? (
-        <p className='pl-1 text-[10px] italic text-muted-foreground/35'>{t('productionShared.workArchitecture.noLevelMapped', { levelName: level3Name })}</p>
+        <p className='pl-1 text-[10px] text-muted-foreground/35 italic'>
+          {t('productionShared.workArchitecture.noLevelMapped', {
+            levelName: level3Name,
+          })}
+        </p>
       ) : (
         <div className='flex flex-wrap gap-2 pl-1'>
           {mappedProcesses.map((process) => (
@@ -105,7 +137,9 @@ export function JobCategoryNode({ jobCategory, level2Name, level3Name }: JobCate
               <button
                 type='button'
                 className='ml-1 rounded-full text-sky-500 transition-colors hover:text-rose-500'
-                onClick={() => removeProcessCapability(jobCategory.id, process.id)}
+                onClick={() =>
+                  removeProcessCapability(jobCategory.id, process.id)
+                }
               >
                 <X className='size-3' />
               </button>

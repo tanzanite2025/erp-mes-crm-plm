@@ -33,38 +33,60 @@ type ProductBindingFeedbackCardProps = {
   prepregQrCode: string
 }
 
-export function ProductBindingFeedbackCard(props: ProductBindingFeedbackCardProps) {
+export function ProductBindingFeedbackCard(
+  props: ProductBindingFeedbackCardProps
+) {
   const { t } = useLanguage()
-  const { feedbackState, bindingResult, submitError, productBarcode, prepregQrCode } = props
+  const {
+    feedbackState,
+    bindingResult,
+    submitError,
+    productBarcode,
+    prepregQrCode,
+  } = props
 
   const feedback = useMemo(() => {
     switch (feedbackState) {
       case 'missingBarcode':
         return {
-          title: t('cuttingOperations.productBinding.feedback.missingBarcode.title'),
-          description: t('cuttingOperations.productBinding.feedback.missingBarcode.description'),
+          title: t(
+            'cuttingOperations.productBinding.feedback.missingBarcode.title'
+          ),
+          description: t(
+            'cuttingOperations.productBinding.feedback.missingBarcode.description'
+          ),
         }
       case 'missingQr':
         return {
           title: t('cuttingOperations.productBinding.feedback.missingQr.title'),
-          description: t('cuttingOperations.productBinding.feedback.missingQr.description'),
+          description: t(
+            'cuttingOperations.productBinding.feedback.missingQr.description'
+          ),
         }
       case 'submitting':
         return {
-          title: t('cuttingOperations.productBinding.feedback.submitting.title'),
-          description: t('cuttingOperations.productBinding.feedback.submitting.description'),
+          title: t(
+            'cuttingOperations.productBinding.feedback.submitting.title'
+          ),
+          description: t(
+            'cuttingOperations.productBinding.feedback.submitting.description'
+          ),
         }
       case 'success':
         return {
           title: t('cuttingOperations.productBinding.feedback.success.title'),
           description:
-            bindingResult?.message || t('cuttingOperations.productBinding.feedback.success.description'),
+            bindingResult?.message ||
+            t('cuttingOperations.productBinding.feedback.success.description'),
         }
       case 'duplicate':
         return {
           title: t('cuttingOperations.productBinding.feedback.duplicate.title'),
           description:
-            bindingResult?.message || t('cuttingOperations.productBinding.feedback.duplicate.description'),
+            bindingResult?.message ||
+            t(
+              'cuttingOperations.productBinding.feedback.duplicate.description'
+            ),
         }
       case 'conflict':
         return {
@@ -77,108 +99,162 @@ export function ProductBindingFeedbackCard(props: ProductBindingFeedbackCardProp
       case 'error':
         return {
           title: t('cuttingOperations.productBinding.feedback.error.title'),
-          description: t('cuttingOperations.productBinding.feedback.error.description'),
+          description: t(
+            'cuttingOperations.productBinding.feedback.error.description'
+          ),
         }
       default:
         return {
           title: t('cuttingOperations.productBinding.feedback.idle.title'),
-          description: t('cuttingOperations.productBinding.feedback.idle.description'),
+          description: t(
+            'cuttingOperations.productBinding.feedback.idle.description'
+          ),
         }
     }
   }, [bindingResult?.message, feedbackState, submitError, t])
 
   const showBindingSnapshot =
     bindingResult !== null &&
-    (feedbackState === 'success' || feedbackState === 'duplicate' || feedbackState === 'conflict')
+    (feedbackState === 'success' ||
+      feedbackState === 'duplicate' ||
+      feedbackState === 'conflict')
 
   return (
-    <div className={`rounded-[24px] border border-dashed p-5 ${feedbackToneClass(feedbackState)}`}>
-      <p className='text-sm font-black italic tracking-tighter'>{feedback.title}</p>
-      <p className='mt-3 text-[9px] font-black uppercase tracking-widest opacity-80'>
+    <div
+      className={`rounded-[24px] border border-dashed p-5 ${feedbackToneClass(feedbackState)}`}
+    >
+      <p className='text-sm font-black tracking-tighter italic'>
+        {feedback.title}
+      </p>
+      <p className='mt-3 text-[9px] font-black tracking-widest uppercase opacity-80'>
         {feedback.description}
       </p>
 
       {showBindingSnapshot ? (
         <div className='mt-5 grid gap-3'>
           <div className='rounded-[20px] border border-dashed border-current/20 bg-background/80 px-4 py-3'>
-            <p className='text-[8px] font-black uppercase tracking-[0.16em] opacity-60'>
-              {t('cuttingOperations.productBinding.feedback.snapshot.barcodeLabel')}
+            <p className='text-[8px] font-black tracking-[0.16em] uppercase opacity-60'>
+              {t(
+                'cuttingOperations.productBinding.feedback.snapshot.barcodeLabel'
+              )}
             </p>
-            <p className='mt-2 text-[11px] font-mono leading-5'>{productBarcode.trim() || '--'}</p>
+            <p className='mt-2 font-mono text-[11px] leading-5'>
+              {productBarcode.trim() || '--'}
+            </p>
           </div>
           <div className='rounded-[20px] border border-dashed border-current/20 bg-background/80 px-4 py-3'>
-            <p className='text-[8px] font-black uppercase tracking-[0.16em] opacity-60'>
+            <p className='text-[8px] font-black tracking-[0.16em] uppercase opacity-60'>
               {t('cuttingOperations.productBinding.feedback.snapshot.qrLabel')}
             </p>
-            <p className='mt-2 text-[11px] font-mono leading-5'>{prepregQrCode.trim() || '--'}</p>
-          </div>
-          <div className='rounded-[20px] border border-dashed border-current/20 bg-background/80 px-4 py-3'>
-            <p className='text-[8px] font-black uppercase tracking-[0.16em] opacity-60'>
-              {t('cuttingOperations.productBinding.feedback.snapshot.executionLabel')}
-            </p>
-            <p className='mt-2 text-[11px] font-mono leading-5'>
-              {bindingResult?.prepregRollInstance?.specCode || bindingResult?.prepregBindingToken || '--'}
+            <p className='mt-2 font-mono text-[11px] leading-5'>
+              {prepregQrCode.trim() || '--'}
             </p>
           </div>
           <div className='rounded-[20px] border border-dashed border-current/20 bg-background/80 px-4 py-3'>
-            <p className='text-[8px] font-black uppercase tracking-[0.16em] opacity-60'>
-              {t('cuttingOperations.productBinding.feedback.snapshot.executionDetailLabel')}
+            <p className='text-[8px] font-black tracking-[0.16em] uppercase opacity-60'>
+              {t(
+                'cuttingOperations.productBinding.feedback.snapshot.executionLabel'
+              )}
             </p>
-            <p className='mt-2 text-[11px] font-mono leading-5'>
-              {bindingResult?.prepregRollInstance?.specName || '--'} / {bindingResult?.prepregRollInstance?.supplierBatchNo || '--'} / {bindingResult?.prepregRollInstance?.boxNo || '--'}
+            <p className='mt-2 font-mono text-[11px] leading-5'>
+              {bindingResult?.prepregRollInstance?.specCode ||
+                bindingResult?.prepregBindingToken ||
+                '--'}
             </p>
           </div>
           <div className='rounded-[20px] border border-dashed border-current/20 bg-background/80 px-4 py-3'>
-            <p className='text-[8px] font-black uppercase tracking-[0.16em] opacity-60'>
-              {t('cuttingOperations.productBinding.feedback.snapshot.tokenLabel')}
+            <p className='text-[8px] font-black tracking-[0.16em] uppercase opacity-60'>
+              {t(
+                'cuttingOperations.productBinding.feedback.snapshot.executionDetailLabel'
+              )}
             </p>
-            <p className='mt-2 text-[11px] font-mono leading-5'>{bindingResult?.prepregBindingToken || '--'}</p>
+            <p className='mt-2 font-mono text-[11px] leading-5'>
+              {bindingResult?.prepregRollInstance?.specName || '--'} /{' '}
+              {bindingResult?.prepregRollInstance?.supplierBatchNo || '--'} /{' '}
+              {bindingResult?.prepregRollInstance?.boxNo || '--'}
+            </p>
           </div>
           <div className='rounded-[20px] border border-dashed border-current/20 bg-background/80 px-4 py-3'>
-            <p className='text-[8px] font-black uppercase tracking-[0.16em] opacity-60'>
-              {t('cuttingOperations.productBinding.feedback.snapshot.protocolLabel')}
+            <p className='text-[8px] font-black tracking-[0.16em] uppercase opacity-60'>
+              {t(
+                'cuttingOperations.productBinding.feedback.snapshot.tokenLabel'
+              )}
             </p>
-            <p className='mt-2 text-[11px] font-mono leading-5'>{bindingResult?.barcodeProtocol || '--'}</p>
+            <p className='mt-2 font-mono text-[11px] leading-5'>
+              {bindingResult?.prepregBindingToken || '--'}
+            </p>
           </div>
           <div className='rounded-[20px] border border-dashed border-current/20 bg-background/80 px-4 py-3'>
-            <p className='text-[8px] font-black uppercase tracking-[0.16em] opacity-60'>
-              {t('cuttingOperations.productBinding.feedback.snapshot.summaryLabel')}
+            <p className='text-[8px] font-black tracking-[0.16em] uppercase opacity-60'>
+              {t(
+                'cuttingOperations.productBinding.feedback.snapshot.protocolLabel'
+              )}
             </p>
-            <p className='mt-2 text-[11px] font-mono leading-5'>{bindingResult?.barcodeSummary || '--'}</p>
+            <p className='mt-2 font-mono text-[11px] leading-5'>
+              {bindingResult?.barcodeProtocol || '--'}
+            </p>
           </div>
           <div className='rounded-[20px] border border-dashed border-current/20 bg-background/80 px-4 py-3'>
-            <p className='text-[8px] font-black uppercase tracking-[0.16em] opacity-60'>
-              {t('cuttingOperations.productBinding.feedback.snapshot.boundByLabel')}
+            <p className='text-[8px] font-black tracking-[0.16em] uppercase opacity-60'>
+              {t(
+                'cuttingOperations.productBinding.feedback.snapshot.summaryLabel'
+              )}
             </p>
-            <p className='mt-2 text-[11px] font-mono leading-5'>{bindingResult?.boundBy || '--'}</p>
+            <p className='mt-2 font-mono text-[11px] leading-5'>
+              {bindingResult?.barcodeSummary || '--'}
+            </p>
           </div>
           <div className='rounded-[20px] border border-dashed border-current/20 bg-background/80 px-4 py-3'>
-            <p className='text-[8px] font-black uppercase tracking-[0.16em] opacity-60'>
-              {t('cuttingOperations.productBinding.feedback.snapshot.bindingIdLabel')}
+            <p className='text-[8px] font-black tracking-[0.16em] uppercase opacity-60'>
+              {t(
+                'cuttingOperations.productBinding.feedback.snapshot.boundByLabel'
+              )}
             </p>
-            <p className='mt-2 text-[11px] font-mono leading-5'>{bindingResult?.id || '--'}</p>
+            <p className='mt-2 font-mono text-[11px] leading-5'>
+              {bindingResult?.boundBy || '--'}
+            </p>
           </div>
           <div className='rounded-[20px] border border-dashed border-current/20 bg-background/80 px-4 py-3'>
-            <p className='text-[8px] font-black uppercase tracking-[0.16em] opacity-60'>
-              {t('cuttingOperations.productBinding.feedback.snapshot.boundAtLabel')}
+            <p className='text-[8px] font-black tracking-[0.16em] uppercase opacity-60'>
+              {t(
+                'cuttingOperations.productBinding.feedback.snapshot.bindingIdLabel'
+              )}
             </p>
-            <p className='mt-2 text-[11px] font-mono leading-5'>{bindingResult?.boundAt || '--'}</p>
+            <p className='mt-2 font-mono text-[11px] leading-5'>
+              {bindingResult?.id || '--'}
+            </p>
           </div>
           <div className='rounded-[20px] border border-dashed border-current/20 bg-background/80 px-4 py-3'>
-            <p className='text-[8px] font-black uppercase tracking-[0.16em] opacity-60'>
-              {t('cuttingOperations.productBinding.feedback.snapshot.statusLabel')}
+            <p className='text-[8px] font-black tracking-[0.16em] uppercase opacity-60'>
+              {t(
+                'cuttingOperations.productBinding.feedback.snapshot.boundAtLabel'
+              )}
             </p>
-            <p className='mt-2 text-[11px] font-mono leading-5'>{bindingResult?.status || '--'}</p>
+            <p className='mt-2 font-mono text-[11px] leading-5'>
+              {bindingResult?.boundAt || '--'}
+            </p>
+          </div>
+          <div className='rounded-[20px] border border-dashed border-current/20 bg-background/80 px-4 py-3'>
+            <p className='text-[8px] font-black tracking-[0.16em] uppercase opacity-60'>
+              {t(
+                'cuttingOperations.productBinding.feedback.snapshot.statusLabel'
+              )}
+            </p>
+            <p className='mt-2 font-mono text-[11px] leading-5'>
+              {bindingResult?.status || '--'}
+            </p>
           </div>
         </div>
       ) : null}
 
       {feedbackState === 'error' ? (
         <div className='mt-5 rounded-[20px] border border-dashed border-current/20 bg-background/80 px-4 py-3'>
-          <p className='text-[8px] font-black uppercase tracking-[0.16em] opacity-60'>
+          <p className='text-[8px] font-black tracking-[0.16em] uppercase opacity-60'>
             {t('cuttingOperations.productBinding.feedback.snapshot.errorLabel')}
           </p>
-          <p className='mt-2 text-[11px] font-mono leading-5'>{submitError || '--'}</p>
+          <p className='mt-2 font-mono text-[11px] leading-5'>
+            {submitError || '--'}
+          </p>
         </div>
       ) : null}
     </div>

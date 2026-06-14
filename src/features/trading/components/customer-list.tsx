@@ -102,36 +102,53 @@ export function CustomerList() {
       salesClosureSummaryList: salesClosureSummaryQuery.readResource.data,
       salesReturnSummaryList: salesReturnSummaryQuery.readResource.data,
     }
-  }, [customerListQuery.readResource, salesClosureSummaryQuery.readResource, salesReturnSummaryQuery.readResource])
+  }, [
+    customerListQuery.readResource,
+    salesClosureSummaryQuery.readResource,
+    salesReturnSummaryQuery.readResource,
+  ])
 
   useEffect(() => {
     if (dashboardResource.status !== 'error') {
       return
     }
 
-    logger.error(`Failed to load customer dashboard resources: ${dashboardResource.scope}`, dashboardResource.error)
+    logger.error(
+      `Failed to load customer dashboard resources: ${dashboardResource.scope}`,
+      dashboardResource.error
+    )
     failLoudly(dashboardResource.error, dashboardResource.scope)
   }, [dashboardResource])
 
   const customers = useMemo(
-    () => (dashboardResource.status === 'ready' ? dashboardResource.customerList.items : []),
+    () =>
+      dashboardResource.status === 'ready'
+        ? dashboardResource.customerList.items
+        : [],
     [dashboardResource]
   )
   const customerStats =
-    dashboardResource.status === 'ready' ? dashboardResource.customerList.metadata.stats : null
+    dashboardResource.status === 'ready'
+      ? dashboardResource.customerList.metadata.stats
+      : null
   const salesClosureSummaryMap = useMemo(
-    () => new Map(
-      (dashboardResource.status === 'ready' ? dashboardResource.salesClosureSummaryList.items : []).map((item) => [
-        item.customerId,
-        item,
-      ])
-    ),
+    () =>
+      new Map(
+        (dashboardResource.status === 'ready'
+          ? dashboardResource.salesClosureSummaryList.items
+          : []
+        ).map((item) => [item.customerId, item])
+      ),
     [dashboardResource]
   )
   const salesReturnSummaryMap = useMemo(
-    () => new Map(
-      (dashboardResource.status === 'ready' ? dashboardResource.salesReturnSummaryList.items : []).map((item) => [item.customerId, item])
-    ),
+    () =>
+      new Map(
+        (dashboardResource.status === 'ready'
+          ? dashboardResource.salesReturnSummaryList.items
+          : []
+        ).map((item) => [item.customerId, item])
+      ),
     [dashboardResource]
   )
   const customerQuoteSummaryQueries = useQueries({
@@ -158,7 +175,8 @@ export function CustomerList() {
           items: query?.data ?? [],
           isLoading: query?.isPending ?? false,
           isError: Boolean(query?.error),
-          errorMessage: query?.error instanceof Error ? query.error.message : undefined,
+          errorMessage:
+            query?.error instanceof Error ? query.error.message : undefined,
           onRetry: query
             ? () => {
                 void query.refetch()
@@ -215,7 +233,8 @@ export function CustomerList() {
     isPatch: boolean
     delta?: DeltaSet
   }) => {
-    if (!allowsAction('action_trading_customer_manage')) return Promise.resolve(undefined)
+    if (!allowsAction('action_trading_customer_manage'))
+      return Promise.resolve(undefined)
 
     if (payload.isPatch && payload.delta && selectedCustomer) {
       const actor = requireTradingCommandActor(
@@ -286,7 +305,10 @@ export function CustomerList() {
               salesClosureSummaryQuery.refetch(),
               salesReturnSummaryQuery.refetch(),
             ]).catch((error) => {
-              logger.error('Failed to retry customer dashboard resources', error)
+              logger.error(
+                'Failed to retry customer dashboard resources',
+                error
+              )
             })
           }}
           className='h-12 rounded-full border-2 border-dashed px-10 text-[10px] font-black tracking-widest uppercase'
@@ -309,14 +331,18 @@ export function CustomerList() {
         <div className='flex flex-col gap-3 rounded-[24px] border border-dashed border-amber-300/60 bg-amber-50/80 px-4 py-3 sm:flex-row sm:items-center sm:justify-between'>
           <div className='flex items-start gap-2 text-xs font-bold text-amber-800'>
             <AlertCircle className='mt-0.5 size-4 shrink-0' />
-            <span>部分客户报价摘要加载失败，报价筛选与卡片摘要已切换为显式错误态。</span>
+            <span>
+              部分客户报价摘要加载失败，报价筛选与卡片摘要已切换为显式错误态。
+            </span>
           </div>
           <Button
             type='button'
             variant='outline'
             className='h-9 rounded-full border-dashed px-5 text-[10px] font-black tracking-widest uppercase'
             onClick={() => {
-              void Promise.all(customerQuoteSummaryQueries.map((query) => query.refetch())).catch((error) => {
+              void Promise.all(
+                customerQuoteSummaryQueries.map((query) => query.refetch())
+              ).catch((error) => {
                 logger.error('Failed to retry customer quote summaries', error)
               })
             }}
@@ -335,7 +361,7 @@ export function CustomerList() {
             <span className='max-w-full truncate text-[8px] font-black tracking-[0.08em] text-muted-foreground/50 uppercase italic sm:text-[10px] sm:tracking-[0.18em]'>
               {t('trading.customers.stats.total')}
             </span>
-            <span className='shrink-0 text-xl font-black leading-none tracking-tighter italic tabular-nums sm:text-[28px]'>
+            <span className='shrink-0 text-xl leading-none font-black tracking-tighter italic tabular-nums sm:text-[28px]'>
               {customerStats?.total ?? '—'}
             </span>
           </div>
@@ -352,7 +378,7 @@ export function CustomerList() {
             <span className='max-w-full truncate text-[8px] font-black tracking-[0.08em] text-muted-foreground/50 uppercase italic sm:text-[10px] sm:tracking-[0.18em]'>
               {t('trading.customers.stats.active')}
             </span>
-            <span className='shrink-0 text-xl font-black leading-none tracking-tighter text-emerald-500 italic tabular-nums sm:text-[28px]'>
+            <span className='shrink-0 text-xl leading-none font-black tracking-tighter text-emerald-500 italic tabular-nums sm:text-[28px]'>
               {customerStats?.active ?? '—'}
             </span>
           </div>
@@ -369,8 +395,10 @@ export function CustomerList() {
             <span className='max-w-full truncate text-[8px] font-black tracking-[0.08em] text-muted-foreground/50 uppercase italic sm:text-[10px] sm:tracking-[0.18em]'>
               {t('trading.customers.stats.newThisMonth')}
             </span>
-            <span className='shrink-0 text-xl font-black leading-none tracking-tighter text-primary italic tabular-nums sm:text-[28px]'>
-              {typeof customerStats?.newThisMonth === 'number' ? `+${customerStats.newThisMonth}` : '—'}
+            <span className='shrink-0 text-xl leading-none font-black tracking-tighter text-primary italic tabular-nums sm:text-[28px]'>
+              {typeof customerStats?.newThisMonth === 'number'
+                ? `+${customerStats.newThisMonth}`
+                : '—'}
             </span>
           </div>
           <div className='relative hidden rounded-full bg-primary px-2 py-1 text-[7px] font-black tracking-widest text-primary-foreground uppercase sm:block sm:px-2.5 sm:text-[8px]'>
@@ -398,7 +426,9 @@ export function CustomerList() {
                 type='button'
                 variant='ghost'
                 onClick={() => setQuoteStatusFilter(option)}
-                disabled={option !== 'all' && quoteSummaryCollectionStatus !== 'ready'}
+                disabled={
+                  option !== 'all' && quoteSummaryCollectionStatus !== 'ready'
+                }
                 className={cn(
                   'h-8 min-w-0 rounded-full px-1.5 text-[8px] font-black tracking-widest uppercase transition-all sm:h-9 sm:px-3 sm:text-[10px]',
                   quoteStatusFilter === option

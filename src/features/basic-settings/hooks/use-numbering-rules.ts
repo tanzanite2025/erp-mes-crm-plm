@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { BASIC_SETTINGS_NUMBERING_RULES_QUERY_KEY } from '../query-keys'
 import { type NumberingRule } from '../data/schema'
+import { BASIC_SETTINGS_NUMBERING_RULES_QUERY_KEY } from '../query-keys'
 import { numberingService } from '../services/numbering-service'
 
 export function useNumberingRules() {
@@ -14,9 +14,12 @@ export function useNumberingRules() {
   const { data, isLoading, error, refetch } = rulesQuery
 
   const saveRuleMutation = useMutation({
-    mutationFn: (input: Partial<NumberingRule>) => numberingService.saveRule(input),
+    mutationFn: (input: Partial<NumberingRule>) =>
+      numberingService.saveRule(input),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: BASIC_SETTINGS_NUMBERING_RULES_QUERY_KEY })
+      await queryClient.invalidateQueries({
+        queryKey: BASIC_SETTINGS_NUMBERING_RULES_QUERY_KEY,
+      })
     },
   })
 

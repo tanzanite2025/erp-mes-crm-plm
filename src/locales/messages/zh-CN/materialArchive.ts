@@ -24,12 +24,14 @@ export const materialArchive = {
     importParsing: '正在解析 Excel 并校验版本指纹...',
     importNoValidData: '未在文件中发现有效物料记录。',
     importSuccess: '同步成功，已更新或回填 {{count}} 条物料档案。',
-    importConflict: '发现数据冲突：部分物料在导出后已被修改。请重新导出最新档案后再维护。',
+    importConflict:
+      '发现数据冲突：部分物料在导出后已被修改。请重新导出最新档案后再维护。',
     parseFailed: '解析失败',
   },
   assemblyManager: {
     title: '拼装换算规则',
-    description: '定义物料包装单位与基础单位之间的换算关系，支持包装层级与计量映射',
+    description:
+      '定义物料包装单位与基础单位之间的换算关系，支持包装层级与计量映射',
     searchPlaceholder: '搜索已配置换算规则的物料...',
     addRule: '新增换算规则',
     table: {
@@ -150,11 +152,16 @@ export const materialArchive = {
       factorError: '换算系数必须是大于 0 的数字。',
     },
     parse: {
-      sheetNotFound: '未在 Excel 中找到“{{sheetName}}”页，请确保使用系统导出的标准模板。',
-      configSheetNotFound: '未在 Excel 中找到系统配置页“{{sheetName}}”，请重新使用最新标准模板导出后再维护。',
-      invalidGlobalVersion: 'Excel 中缺少有效的全局物料版本指纹，请重新导出最新模板后再导入。',
-      invalidCompositeId: 'Excel 中存在无效的记录唯一键：{{value}}。请勿手动修改锁定列。',
-      categoryMappingMissing: 'Excel 中存在未识别的物料分类：{{value}}。请使用模板下拉选项选择分类。',
+      sheetNotFound:
+        '未在 Excel 中找到“{{sheetName}}”页，请确保使用系统导出的标准模板。',
+      configSheetNotFound:
+        '未在 Excel 中找到系统配置页“{{sheetName}}”，请重新使用最新标准模板导出后再维护。',
+      invalidGlobalVersion:
+        'Excel 中缺少有效的全局物料版本指纹，请重新导出最新模板后再导入。',
+      invalidCompositeId:
+        'Excel 中存在无效的记录唯一键：{{value}}。请勿手动修改锁定列。',
+      categoryMappingMissing:
+        'Excel 中存在未识别的物料分类：{{value}}。请使用模板下拉选项选择分类。',
     },
   },
 }

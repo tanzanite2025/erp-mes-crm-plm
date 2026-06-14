@@ -11,19 +11,19 @@ export function VehicleSpecCardMetrics({ spec }: Props) {
   return (
     <div className='grid grid-cols-1 gap-3 md:grid-cols-2'>
       <div className='rounded-[22px] border border-dashed border-border/60 bg-muted/10 px-4 py-3'>
-        <div className='text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60'>
+        <div className='text-[10px] font-semibold tracking-[0.18em] text-muted-foreground/60 uppercase'>
           {t('logisticsConfig.vehicleSpecsLibrary.physicalSize')}
         </div>
-        <div className='mt-1.5 text-[13px] font-semibold leading-tight text-foreground tabular-nums'>
+        <div className='mt-1.5 text-[13px] leading-tight font-semibold text-foreground tabular-nums'>
           {`${spec.physicalInnerSize.lengthMm} × ${spec.physicalInnerSize.widthMm} × ${spec.physicalInnerSize.heightMm} mm`}
         </div>
       </div>
 
       <div className='rounded-[22px] border border-dashed border-primary/25 bg-primary/5 px-4 py-3'>
-        <div className='text-[10px] font-semibold uppercase tracking-[0.18em] text-primary/70'>
+        <div className='text-[10px] font-semibold tracking-[0.18em] text-primary/70 uppercase'>
           {t('logisticsConfig.vehicleSpecsLibrary.usableSize')}
         </div>
-        <div className='mt-1.5 text-[13px] font-semibold leading-tight text-primary tabular-nums'>
+        <div className='mt-1.5 text-[13px] leading-tight font-semibold text-primary tabular-nums'>
           {`${spec.usableInnerSize.lengthMm} × ${spec.usableInnerSize.widthMm} × ${spec.usableInnerSize.heightMm} mm`}
         </div>
       </div>

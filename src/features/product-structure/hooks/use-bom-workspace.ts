@@ -4,8 +4,8 @@ import { type BOMSectionOption } from '../data/bom-section-schema'
 import { type BOM } from '../data/schema'
 import { createEmptyBOMItem } from '../utils/bom-form-defaults'
 import { type BOMWorkspaceParentChildrenProtocolDraft } from './bom-workspace-branch-relation'
-import { useBOMWorkspaceProjection } from './use-bom-workspace-projection'
 import { type BOMPermissionGuard } from './use-bom-permission-guard'
+import { useBOMWorkspaceProjection } from './use-bom-workspace-projection'
 
 interface UseBOMWorkspaceParams {
   form: UseFormReturn<BOM>
@@ -16,7 +16,14 @@ interface UseBOMWorkspaceParams {
   permissionGuard?: BOMPermissionGuard
 }
 
-export function useBOMWorkspace({ form, fields, sections, append, protocolDraft, permissionGuard }: UseBOMWorkspaceParams) {
+export function useBOMWorkspace({
+  form,
+  fields,
+  sections,
+  append,
+  protocolDraft,
+  permissionGuard,
+}: UseBOMWorkspaceParams) {
   const [activeGroupKey, setActiveGroupKey] = useState<string>('all')
   const [expandedBranchKeys, setExpandedBranchKeys] = useState<string[]>([])
   const projection = useBOMWorkspaceProjection({
@@ -31,7 +38,9 @@ export function useBOMWorkspace({ form, fields, sections, append, protocolDraft,
   // Wrap append with permission guard if provided
   const guardedAppend = permissionGuard?.guardedAppend(append) ?? append
 
-  const collectDescendantBranchNodeIds = (sourceBranchNodeId: string): string[] => {
+  const collectDescendantBranchNodeIds = (
+    sourceBranchNodeId: string
+  ): string[] => {
     const sourceNode = projection.sourceModel.nodeById.get(sourceBranchNodeId)
     if (!sourceNode || sourceNode.nodeKind !== 'branch') {
       return []
@@ -43,7 +52,10 @@ export function useBOMWorkspace({ form, fields, sections, append, protocolDraft,
         return []
       }
 
-      return [childNode.nodeId, ...collectDescendantBranchNodeIds(childNode.nodeId)]
+      return [
+        childNode.nodeId,
+        ...collectDescendantBranchNodeIds(childNode.nodeId),
+      ]
     })
   }
 
@@ -54,7 +66,9 @@ export function useBOMWorkspace({ form, fields, sections, append, protocolDraft,
       return
     }
 
-    const nextGroup = projection.groups.find((group) => group.key === nextGroupKey)
+    const nextGroup = projection.groups.find(
+      (group) => group.key === nextGroupKey
+    )
     if (!nextGroup) {
       return
     }
@@ -79,7 +93,8 @@ export function useBOMWorkspace({ form, fields, sections, append, protocolDraft,
 
   const appendItem = (sectionCode?: string) => {
     // Permission check enforced through guardedAppend
-    const resolvedSectionCode = sectionCode || projection.appendContext.sectionCode
+    const resolvedSectionCode =
+      sectionCode || projection.appendContext.sectionCode
 
     guardedAppend(createEmptyBOMItem(resolvedSectionCode))
   }

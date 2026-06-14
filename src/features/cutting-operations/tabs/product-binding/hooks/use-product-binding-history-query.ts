@@ -26,7 +26,7 @@ const PRODUCT_BINDING_HISTORY_COUNT_STALE_TIME = 30 * 1000
 const PRODUCT_BINDING_HISTORY_GC_TIME = 5 * 60 * 1000
 
 export function buildProductBindingHistoryQueryKey(
-  filters: ProductBindingHistoryQuery = {},
+  filters: ProductBindingHistoryQuery = {}
 ) {
   const normalized = normalizeProductBindingHistoryQuery(filters)
 
@@ -39,7 +39,7 @@ export function buildProductBindingHistoryQueryKey(
 }
 
 export function buildProductBindingHistoryCountQueryKey(
-  filters: ProductBindingHistoryQuery = {},
+  filters: ProductBindingHistoryQuery = {}
 ) {
   const normalized = normalizeProductBindingHistoryQuery(filters)
 
@@ -54,16 +54,22 @@ type UseProductBindingHistoryQueryOptions = {
   enabled?: boolean
 }
 
-export async function invalidateProductBindingHistoryQueries(queryClient: QueryClient) {
+export async function invalidateProductBindingHistoryQueries(
+  queryClient: QueryClient
+) {
   await Promise.all([
-    queryClient.invalidateQueries({ queryKey: productBindingHistoryQueryBaseKey }),
-    queryClient.invalidateQueries({ queryKey: productBindingHistoryCountQueryBaseKey }),
+    queryClient.invalidateQueries({
+      queryKey: productBindingHistoryQueryBaseKey,
+    }),
+    queryClient.invalidateQueries({
+      queryKey: productBindingHistoryCountQueryBaseKey,
+    }),
   ])
 }
 
 export function useProductBindingHistoryQuery(
   filters: ProductBindingHistoryQuery = {},
-  options: UseProductBindingHistoryQueryOptions = {},
+  options: UseProductBindingHistoryQueryOptions = {}
 ) {
   const normalizedFilters = normalizeProductBindingHistoryQuery(filters)
 
@@ -79,7 +85,7 @@ export function useProductBindingHistoryQuery(
 
 export function useProductBindingHistoryCountQuery(
   filters: ProductBindingHistoryQuery = {},
-  options: UseProductBindingHistoryQueryOptions = {},
+  options: UseProductBindingHistoryQueryOptions = {}
 ) {
   const normalizedFilters = normalizeProductBindingHistoryQuery(filters)
 

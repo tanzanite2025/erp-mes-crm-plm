@@ -1,5 +1,5 @@
-import { type LinearBarcodeResolvedPrintLine } from '@/features/code-center/utils/linear-barcode-print-resolver'
 import type { TranslationKey } from '@/locales'
+import { type LinearBarcodeResolvedPrintLine } from '@/features/code-center/utils/linear-barcode-print-resolver'
 
 export type BatchPrintResultItemStatus = 'success' | 'failed' | 'skipped'
 export type BatchPrintResultFilter = 'all' | BatchPrintResultItemStatus
@@ -24,7 +24,10 @@ export interface BatchPrintResult {
   items: BatchPrintResultItem[]
 }
 
-type TranslateFn = (key: TranslationKey, params?: Record<string, string | number>) => string
+type TranslateFn = (
+  key: TranslationKey,
+  params?: Record<string, string | number>
+) => string
 
 interface BuildBatchPrintResultParams {
   items: BatchPrintResultItem[]
@@ -50,7 +53,9 @@ export function buildBatchPrintResult({
   }
 }
 
-export function resolveBatchPrintResultFilter(items: BatchPrintResultItem[]): BatchPrintResultFilter {
+export function resolveBatchPrintResultFilter(
+  items: BatchPrintResultItem[]
+): BatchPrintResultFilter {
   return items.some((item) => item.status === 'failed') ? 'failed' : 'all'
 }
 
@@ -63,7 +68,11 @@ export function buildSkippedBlockedResultItem(
     lineNo: line.lineNo,
     productLabel: line.productLabel,
     status: 'skipped',
-    message: line.issues[0] || t('codeCenter.linearBarcode.print.sections.result.messages.skippedBlocked'),
+    message:
+      line.issues[0] ||
+      t(
+        'codeCenter.linearBarcode.print.sections.result.messages.skippedBlocked'
+      ),
     serial: line.printInput?.mockInputs.serial || '--',
     barcodeSerial: line.printInput?.barcodeConfig.serialNumber || '--',
   }
@@ -78,7 +87,9 @@ export function buildSkippedUnnumberedResultItem(
     lineNo: line.lineNo,
     productLabel: line.productLabel,
     status: 'skipped',
-    message: t('codeCenter.linearBarcode.print.sections.result.messages.skippedUnnumbered'),
+    message: t(
+      'codeCenter.linearBarcode.print.sections.result.messages.skippedUnnumbered'
+    ),
     serial: line.printInput?.mockInputs.serial || '--',
     barcodeSerial: line.printInput?.barcodeConfig.serialNumber || '--',
   }
@@ -94,7 +105,9 @@ export function buildSuccessResultItem(
     lineNo: line.lineNo,
     productLabel: line.productLabel,
     status: 'success',
-    message: t('codeCenter.linearBarcode.print.sections.result.messages.success'),
+    message: t(
+      'codeCenter.linearBarcode.print.sections.result.messages.success'
+    ),
     serial: line.printInput?.mockInputs.serial || '--',
     barcodeSerial: barcodeSerial || '--',
   }
@@ -110,9 +123,10 @@ export function buildFailedResultItem(
     lineNo: line.lineNo,
     productLabel: line.productLabel,
     status: 'failed',
-    message: error instanceof Error && error.message
-      ? error.message
-      : t('codeCenter.linearBarcode.print.sections.result.messages.failed'),
+    message:
+      error instanceof Error && error.message
+        ? error.message
+        : t('codeCenter.linearBarcode.print.sections.result.messages.failed'),
     serial: line.printInput?.mockInputs.serial || '--',
     barcodeSerial: line.printInput?.barcodeConfig.serialNumber || '--',
   }

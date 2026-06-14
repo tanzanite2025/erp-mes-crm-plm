@@ -30,7 +30,9 @@ export interface CreateApiClientErrorOptions {
   cause?: unknown
 }
 
-export function createApiClientError(options: CreateApiClientErrorOptions): ApiClientError {
+export function createApiClientError(
+  options: CreateApiClientErrorOptions
+): ApiClientError {
   const error = new Error(options.message) as ApiClientError
   error.name = 'ApiClientError'
   error.kind = options.kind
@@ -47,10 +49,10 @@ export function createApiClientError(options: CreateApiClientErrorOptions): ApiC
 export function isApiClientError(error: unknown): error is ApiClientError {
   return Boolean(
     error &&
-      typeof error === 'object' &&
-      'kind' in error &&
-      typeof (error as { kind?: unknown }).kind === 'string' &&
-      'message' in error
+    typeof error === 'object' &&
+    'kind' in error &&
+    typeof (error as { kind?: unknown }).kind === 'string' &&
+    'message' in error
   )
 }
 

@@ -1,7 +1,7 @@
-import { VehicleLoadingLayerStack } from './vehicle-loading-layer-stack'
-import { VehicleLoadingLayerNote } from './vehicle-loading-layer-note'
-import { VehicleLoadingSummaryStrip } from './vehicle-loading-summary-strip'
 import type { VehicleLoadingDiagramProps } from './vehicle-loading-diagram-types'
+import { VehicleLoadingLayerNote } from './vehicle-loading-layer-note'
+import { VehicleLoadingLayerStack } from './vehicle-loading-layer-stack'
+import { VehicleLoadingSummaryStrip } from './vehicle-loading-summary-strip'
 
 export function VehicleLoadingLayerView({
   boxesPerLayer,
@@ -9,7 +9,14 @@ export function VehicleLoadingLayerView({
   orientationAxis,
   layerCount,
   maxBoxes,
-}: Pick<VehicleLoadingDiagramProps, 'boxesPerLayer' | 'orientationLabel' | 'orientationAxis' | 'layerCount' | 'maxBoxes'>) {
+}: Pick<
+  VehicleLoadingDiagramProps,
+  | 'boxesPerLayer'
+  | 'orientationLabel'
+  | 'orientationAxis'
+  | 'layerCount'
+  | 'maxBoxes'
+>) {
   return (
     <div className='relative flex min-h-0 flex-1 flex-col'>
       <VehicleLoadingLayerStack
@@ -19,7 +26,11 @@ export function VehicleLoadingLayerView({
         layerCount={layerCount}
       />
       <VehicleLoadingLayerNote layerCount={layerCount} />
-      <VehicleLoadingSummaryStrip boxesPerLayer={boxesPerLayer} layerCount={layerCount} maxBoxes={maxBoxes} />
+      <VehicleLoadingSummaryStrip
+        boxesPerLayer={boxesPerLayer}
+        layerCount={layerCount}
+        maxBoxes={maxBoxes}
+      />
     </div>
   )
 }

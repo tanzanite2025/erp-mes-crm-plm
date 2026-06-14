@@ -20,9 +20,7 @@ export function hasAllIds(sourceIds: string[], requiredIds: string[]): boolean {
 
 function toStringArray(value: unknown): string[] {
   if (Array.isArray(value)) {
-    return value
-      .map((item) => String(item).trim())
-      .filter(Boolean)
+    return value.map((item) => String(item).trim()).filter(Boolean)
   }
 
   if (typeof value === 'string') {

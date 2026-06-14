@@ -1,9 +1,9 @@
 'use client'
 
 import { Activity, AlertTriangle, Cpu, Zap } from 'lucide-react'
+import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
-import { useLanguage } from '@/context/language-provider'
 
 interface FurnaceStatsHeaderProps {
   stats: {
@@ -25,10 +25,12 @@ export function FurnaceStatsHeader({ stats }: FurnaceStatsHeaderProps) {
             <Cpu className='size-6' />
           </div>
           <div>
-            <p className='text-[10px] font-black uppercase tracking-widest opacity-80 italic'>
+            <p className='text-[10px] font-black tracking-widest uppercase italic opacity-80'>
               {t('equipmentTooling.furnaces.stats.totalUnits')}
             </p>
-            <h3 className='text-3xl font-black font-mono tracking-tighter'>{stats.total}</h3>
+            <h3 className='font-mono text-3xl font-black tracking-tighter'>
+              {stats.total}
+            </h3>
           </div>
         </CardContent>
       </Card>
@@ -37,14 +39,16 @@ export function FurnaceStatsHeader({ stats }: FurnaceStatsHeaderProps) {
         <CardContent className='flex items-center gap-4 p-5'>
           <Activity className='size-6 text-primary/60' />
           <div>
-            <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 italic'>
+            <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'>
               {t('equipmentTooling.furnaces.stats.runningNow')}
             </p>
             <div className='flex items-center gap-2'>
-              <h3 className='text-3xl font-black font-mono tracking-tighter text-primary'>{stats.running}</h3>
+              <h3 className='font-mono text-3xl font-black tracking-tighter text-primary'>
+                {stats.running}
+              </h3>
               <Badge
                 variant='outline'
-                className='h-4 rounded-full bg-background/50 px-1.5 text-[8px] font-bold font-mono text-primary border-primary/20 animate-pulse'
+                className='h-4 animate-pulse rounded-full border-primary/20 bg-background/50 px-1.5 font-mono text-[8px] font-bold text-primary'
               >
                 {t('equipmentTooling.furnaces.stats.live')}
               </Badge>
@@ -57,10 +61,12 @@ export function FurnaceStatsHeader({ stats }: FurnaceStatsHeaderProps) {
         <CardContent className='flex items-center gap-4 p-5'>
           <Zap className='size-6 text-amber-500/60' />
           <div>
-            <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 italic'>
+            <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'>
               {t('equipmentTooling.furnaces.stats.maintenance')}
             </p>
-            <h3 className='text-3xl font-black font-mono tracking-tighter text-amber-600'>{stats.maintenance}</h3>
+            <h3 className='font-mono text-3xl font-black tracking-tighter text-amber-600'>
+              {stats.maintenance}
+            </h3>
           </div>
         </CardContent>
       </Card>
@@ -69,10 +75,12 @@ export function FurnaceStatsHeader({ stats }: FurnaceStatsHeaderProps) {
         <CardContent className='flex items-center gap-4 p-5'>
           <AlertTriangle className='size-6 text-rose-500/60' />
           <div>
-            <p className='text-[10px] font-black uppercase tracking-widest text-rose-600 opacity-60 italic'>
+            <p className='text-[10px] font-black tracking-widest text-rose-600 uppercase italic opacity-60'>
               {t('equipmentTooling.furnaces.stats.faultAlert')}
             </p>
-            <h3 className='text-3xl font-black font-mono tracking-tighter text-rose-600'>{stats.fault}</h3>
+            <h3 className='font-mono text-3xl font-black tracking-tighter text-rose-600'>
+              {stats.fault}
+            </h3>
           </div>
         </CardContent>
       </Card>

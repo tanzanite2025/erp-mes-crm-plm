@@ -16,12 +16,15 @@ function openDatabase(): Promise<IDBDatabase> {
     }
 
     request.onsuccess = () => resolve(request.result)
-    request.onerror = () => reject(request.error ?? new Error('无法打开个人工作收纳箱数据库'))
+    request.onerror = () =>
+      reject(request.error ?? new Error('无法打开个人工作收纳箱数据库'))
   })
 }
 
 function sortItems(items: PersonalWorkspaceItem[]) {
-  return [...items].sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
+  return [...items].sort((left, right) =>
+    right.updatedAt.localeCompare(left.updatedAt)
+  )
 }
 
 export const workspaceItemStore = {
@@ -34,7 +37,7 @@ export const workspaceItemStore = {
       const request = store.getAll()
 
       request.onsuccess = () => {
-        resolve(((request.result as PersonalWorkspaceItem[] | undefined) ?? []))
+        resolve((request.result as PersonalWorkspaceItem[] | undefined) ?? [])
       }
 
       request.onerror = () => {
@@ -52,9 +55,18 @@ export const workspaceItemStore = {
     })
   },
 
-  async getAllByOwner(ownerUserId: string, ownerAccountNo: string): Promise<PersonalWorkspaceItem[]> {
+  async getAllByOwner(
+    ownerUserId: string,
+    ownerAccountNo: string
+  ): Promise<PersonalWorkspaceItem[]> {
     const items = await this.getAll()
-    return sortItems(items.filter((item) => item.ownerUserId === ownerUserId || item.ownerAccountNo === ownerAccountNo))
+    return sortItems(
+      items.filter(
+        (item) =>
+          item.ownerUserId === ownerUserId ||
+          item.ownerAccountNo === ownerAccountNo
+      )
+    )
   },
 
   async save(item: PersonalWorkspaceItem): Promise<void> {

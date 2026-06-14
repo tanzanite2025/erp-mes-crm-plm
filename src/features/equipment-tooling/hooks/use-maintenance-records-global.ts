@@ -1,11 +1,11 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import type { DeltaSet } from '@/lib/delta/types'
+import type { SaveMaintenanceRecordApiDTO } from '../contracts/maintenance-record-api-dto'
 import {
   MaintenanceRecordService,
   type MaintenanceRecordFilters,
   type MaintenanceRecordPagination,
-} from '../services/maintenance-record-service';
-import type { SaveMaintenanceRecordApiDTO } from '../contracts/maintenance-record-api-dto';
-import type { DeltaSet } from '@/lib/delta/types';
+} from '../services/maintenance-record-service'
 
 /**
  * Query key factory for global maintenance records queries
@@ -14,16 +14,19 @@ import type { DeltaSet } from '@/lib/delta/types';
 export const MAINTENANCE_RECORDS_GLOBAL_QUERY_KEY = (
   filters?: MaintenanceRecordFilters,
   pagination?: MaintenanceRecordPagination
-) => ['maintenanceRecords', 'global', filters, pagination] as const;
+) => ['maintenanceRecords', 'global', filters, pagination] as const
 
 /**
  * Query key for maintenance record statistics
  */
-export const MAINTENANCE_RECORDS_STATS_QUERY_KEY = ['maintenanceRecords', 'stats'] as const;
+export const MAINTENANCE_RECORDS_STATS_QUERY_KEY = [
+  'maintenanceRecords',
+  'stats',
+] as const
 
 interface UseMaintenanceRecordsGlobalOptions {
-  filters?: MaintenanceRecordFilters;
-  pagination?: MaintenanceRecordPagination;
+  filters?: MaintenanceRecordFilters
+  pagination?: MaintenanceRecordPagination
 }
 
 /**
@@ -34,23 +37,18 @@ interface UseMaintenanceRecordsGlobalOptions {
 export function useMaintenanceRecordsGlobal(
   options: UseMaintenanceRecordsGlobalOptions = {}
 ) {
-  const { filters, pagination } = options;
-  const queryClient = useQueryClient();
-  const queryKey = MAINTENANCE_RECORDS_GLOBAL_QUERY_KEY(filters, pagination);
+  const { filters, pagination } = options
+  const queryClient = useQueryClient()
+  const queryKey = MAINTENANCE_RECORDS_GLOBAL_QUERY_KEY(filters, pagination)
 
   // Query for fetching all records with filters and pagination
-  const {
-    data,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey,
     queryFn: () => MaintenanceRecordService.getAll(filters, pagination),
-  });
+  })
 
-  const records = data?.records || [];
-  const total = data?.total || 0;
+  const records = data?.records || []
+  const total = data?.total || 0
 
   // Query for fetching statistics
   const {
@@ -61,7 +59,7 @@ export function useMaintenanceRecordsGlobal(
   } = useQuery({
     queryKey: MAINTENANCE_RECORDS_STATS_QUERY_KEY,
     queryFn: () => MaintenanceRecordService.getStats(),
-  });
+  })
 
   // Create mutation
   const createMutation = useMutation({
@@ -71,12 +69,12 @@ export function useMaintenanceRecordsGlobal(
       // Invalidate all global queries and stats
       queryClient.invalidateQueries({
         queryKey: ['maintenanceRecords', 'global'],
-      });
+      })
       queryClient.invalidateQueries({
         queryKey: MAINTENANCE_RECORDS_STATS_QUERY_KEY,
-      });
+      })
     },
-  });
+  })
 
   // Patch mutation
   const patchMutation = useMutation({
@@ -85,20 +83,20 @@ export function useMaintenanceRecordsGlobal(
       delta,
       version,
     }: {
-      id: string;
-      delta: DeltaSet;
-      version: number;
+      id: string
+      delta: DeltaSet
+      version: number
     }) => MaintenanceRecordService.patch(id, delta, version),
     onSuccess: () => {
       // Invalidate all global queries and stats
       queryClient.invalidateQueries({
         queryKey: ['maintenanceRecords', 'global'],
-      });
+      })
       queryClient.invalidateQueries({
         queryKey: MAINTENANCE_RECORDS_STATS_QUERY_KEY,
-      });
+      })
     },
-  });
+  })
 
   // Delete mutation
   const deleteMutation = useMutation({
@@ -107,12 +105,12 @@ export function useMaintenanceRecordsGlobal(
       // Invalidate all global queries and stats
       queryClient.invalidateQueries({
         queryKey: ['maintenanceRecords', 'global'],
-      });
+      })
       queryClient.invalidateQueries({
         queryKey: MAINTENANCE_RECORDS_STATS_QUERY_KEY,
-      });
+      })
     },
-  });
+  })
 
   return {
     records,
@@ -130,5 +128,5 @@ export function useMaintenanceRecordsGlobal(
     isCreating: createMutation.isPending,
     isPatching: patchMutation.isPending,
     isDeleting: deleteMutation.isPending,
-  };
+  }
 }

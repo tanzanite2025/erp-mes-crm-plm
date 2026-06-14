@@ -40,7 +40,9 @@ export function useNotificationRules() {
   }, [loadRules])
 
   const addRule = useCallback(
-    async (ruleData: Omit<NotificationRule, 'id' | 'createdAt' | 'version'>) => {
+    async (
+      ruleData: Omit<NotificationRule, 'id' | 'createdAt' | 'version'>
+    ) => {
       try {
         const ruleWithVersion: NotificationRuleCreateInput = {
           ...ruleData,

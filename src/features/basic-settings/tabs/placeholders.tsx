@@ -33,7 +33,6 @@ export function GroupMgmt() {
   return <Placeholder pageKey='groupMgmt' />
 }
 
-
 export function RoutingMgmt() {
   return <Placeholder pageKey='routingMgmt' />
 }
@@ -70,7 +69,7 @@ function Placeholder({
   const { t } = useLanguage()
 
   return (
-    <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+    <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
       <div className='flex flex-col gap-1 rounded-[32px] border border-dashed bg-muted/5 p-6'>
         <div className='flex items-center gap-2 text-primary'>
           <Info className='h-4 w-4' />
@@ -78,14 +77,14 @@ function Placeholder({
             {t(`basicSettings.placeholders.pages.${pageKey}`)}
           </h3>
         </div>
-        <p className='text-[9px] font-semibold uppercase tracking-widest text-muted-foreground opacity-60'>
+        <p className='text-[9px] font-semibold tracking-widest text-muted-foreground uppercase opacity-60'>
           {t('basicSettings.placeholders.moduleInitialized')}
         </p>
       </div>
 
       <div className='flex h-[400px] flex-col items-center justify-center rounded-[32px] border border-dashed bg-muted/5 text-muted-foreground/20 italic'>
         <div className='pulse-animation mb-6 size-16 rounded-full border-4 border-dashed border-current opacity-10' />
-        <p className='text-[11px] font-black uppercase tracking-widest'>
+        <p className='text-[11px] font-black tracking-widest uppercase'>
           {t('basicSettings.placeholders.dataEngineLinking')}
         </p>
       </div>

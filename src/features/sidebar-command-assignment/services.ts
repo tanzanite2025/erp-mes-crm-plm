@@ -96,11 +96,8 @@ function buildSidebarCommandTransactionBody<TPayload extends object>(
 
 export function executeSidebarCommandTransaction<
   TPayload extends object,
-  TResult
->(
-  endpoint: string,
-  request: SidebarCommandTransactionRequest<TPayload>
-) {
+  TResult,
+>(endpoint: string, request: SidebarCommandTransactionRequest<TPayload>) {
   return apiFetch<TResult>(endpoint, {
     method: 'POST',
     body: JSON.stringify(buildSidebarCommandTransactionBody(request)),
@@ -169,13 +166,10 @@ export function createSidebarCommandDefinition(
   return executeSidebarCommandTransaction<
     SaveSidebarCommandDefinitionPayload,
     SidebarCommandDefinitionDto
-  >(
-    '/quick-actions/sidebar/library',
-    {
-      intent: SIDEBAR_COMMAND_INTENT_CREATE,
-      payload,
-    }
-  )
+  >('/quick-actions/sidebar/library', {
+    intent: SIDEBAR_COMMAND_INTENT_CREATE,
+    payload,
+  })
 }
 
 export function updateSidebarCommandDefinition(

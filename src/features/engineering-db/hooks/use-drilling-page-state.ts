@@ -2,15 +2,15 @@ import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSearch } from '@tanstack/react-router'
 import { toast } from 'sonner'
-import { useLanguage } from '@/context/language-provider'
 import type { DeltaSet } from '@/lib/delta/types'
+import { useLanguage } from '@/context/language-provider'
 import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
 import { type DrillingPlan, type DrillingPlanInput } from '../data/schema'
-import { ProductionDBService } from '../services/production-db-service'
-import { FileResolverService } from '../services/file-resolver-service'
 import { ENGINEERING_DB_DRILLING_QUERY_KEY } from '../query-keys'
-import { useEngineeringDbProductLookup } from './use-engineering-db-product-lookup'
+import { FileResolverService } from '../services/file-resolver-service'
+import { ProductionDBService } from '../services/production-db-service'
 import { getEngineeringDbPreviewKind } from '../view-helpers'
+import { useEngineeringDbProductLookup } from './use-engineering-db-product-lookup'
 
 export type DrillingRowViewModel = {
   item: DrillingPlan
@@ -30,15 +30,23 @@ export function useDrillingPageState() {
   const { t } = useLanguage()
   const queryClient = useQueryClient()
   const { runConfirmedAction } = useConfirmedActionFlow()
-  const { highlightId } = useSearch({ from: '/_authenticated/engineering-db/drilling' })
+  const { highlightId } = useSearch({
+    from: '/_authenticated/engineering-db/drilling',
+  })
   const { productMap } = useEngineeringDbProductLookup()
   const [searchTerm, setSearchTerm] = useState('')
   const [open, setOpen] = useState(false)
-  const [currentRow, setCurrentRow] = useState<DrillingPlan | undefined>(undefined)
+  const [currentRow, setCurrentRow] = useState<DrillingPlan | undefined>(
+    undefined
+  )
   const [cadPreviewOpen, setCadPreviewOpen] = useState(false)
   const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false)
   const [excelPreviewOpen, setExcelPreviewOpen] = useState(false)
-  const [previewFile, setPreviewFile] = useState<{ url: string; name: string; sku?: string } | null>(null)
+  const [previewFile, setPreviewFile] = useState<{
+    url: string
+    name: string
+    sku?: string
+  } | null>(null)
 
   const { data = [], isLoading } = useQuery({
     queryKey: ENGINEERING_DB_DRILLING_QUERY_KEY,
@@ -52,19 +60,25 @@ export function useDrillingPageState() {
         if (!currentRow?.id) {
           return
         }
-        await ProductionDBService.patchDrilling(currentRow.id, delta, version ?? 1)
+        await ProductionDBService.patchDrilling(
+          currentRow.id,
+          delta,
+          version ?? 1
+        )
         return
       }
       await ProductionDBService.saveDrillingItem(formData)
     },
     onSuccess: async (_result, variables) => {
-      await queryClient.invalidateQueries({ queryKey: ENGINEERING_DB_DRILLING_QUERY_KEY })
+      await queryClient.invalidateQueries({
+        queryKey: ENGINEERING_DB_DRILLING_QUERY_KEY,
+      })
       setOpen(false)
       setCurrentRow(undefined)
       toast.success(
         variables.isPatch
           ? t('engineering.drilling.toasts.updateSuccess')
-          : t('engineering.drilling.toasts.saveSuccess'),
+          : t('engineering.drilling.toasts.saveSuccess')
       )
     },
   })
@@ -72,7 +86,9 @@ export function useDrillingPageState() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => ProductionDBService.deleteDrilling(id),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ENGINEERING_DB_DRILLING_QUERY_KEY })
+      await queryClient.invalidateQueries({
+        queryKey: ENGINEERING_DB_DRILLING_QUERY_KEY,
+      })
       toast.success(t('engineering.drilling.toasts.deleteSuccess'))
     },
   })
@@ -98,7 +114,9 @@ export function useDrillingPageState() {
           product?.name || '',
           item.weavingModeLabel || '',
           item.standardHoles || '',
-        ].join(' ').toLowerCase(),
+        ]
+          .join(' ')
+          .toLowerCase(),
       }
     })
 

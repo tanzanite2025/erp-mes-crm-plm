@@ -1,5 +1,5 @@
-import { ModuleTabbedLayout } from '@/components/layout/module-tabbed-layout'
 import { useLanguage } from '@/context/language-provider'
+import { ModuleTabbedLayout } from '@/components/layout/module-tabbed-layout'
 import { getFinanceSettlementsTabs } from '../settlements-tabs'
 import { SettlementsTab } from '../tabs/settlements-tab'
 

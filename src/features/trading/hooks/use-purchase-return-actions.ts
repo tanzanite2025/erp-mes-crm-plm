@@ -17,7 +17,9 @@ interface UsePurchaseReturnActionsParams {
   selectedOrder?: PurchaseOrder
   selectedPendingLines: PurchaseOrder['lines']
   lineDrafts: Record<number, PurchaseReturnLineDraft>
-  setLineDrafts: React.Dispatch<React.SetStateAction<Record<number, PurchaseReturnLineDraft>>>
+  setLineDrafts: React.Dispatch<
+    React.SetStateAction<Record<number, PurchaseReturnLineDraft>>
+  >
   issueCategory: string
   reason: string
   remarks: string
@@ -25,7 +27,10 @@ interface UsePurchaseReturnActionsParams {
   returnDate: string
   createMutation: {
     mutate: (
-      variables: { purchaseOrderId: string; payload: CreatePurchaseReturnPayload },
+      variables: {
+        purchaseOrderId: string
+        payload: CreatePurchaseReturnPayload
+      },
       options?: { onSuccess?: (data: CreatePurchaseReturnResponse) => void }
     ) => void
   }
@@ -69,7 +74,9 @@ export function usePurchaseReturnActions({
   const fillLineRemaining = useCallback(
     (lineId: number) => {
       if (!selectedOrder) return
-      updateLineDraft(lineId, { quantity: getPurchaseOrderRemainingQty(selectedOrder, lineId) })
+      updateLineDraft(lineId, {
+        quantity: getPurchaseOrderRemainingQty(selectedOrder, lineId),
+      })
     },
     [selectedOrder, updateLineDraft]
   )
@@ -117,7 +124,9 @@ export function usePurchaseReturnActions({
       .map(([key, value]) => ({
         purchaseOrderLineId: Number(key),
         quantity: Number(value.quantity || 0),
-        price: selectedOrder.lines.find((line) => line.id === Number(key))?.price || 0,
+        price:
+          selectedOrder.lines.find((line) => line.id === Number(key))?.price ||
+          0,
         issueCategory: value.issueCategory.trim() || issueCategory || undefined,
         reason: value.reason.trim() || undefined,
         evidences: value.evidences,

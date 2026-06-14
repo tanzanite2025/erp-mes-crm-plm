@@ -1,10 +1,16 @@
 import { createLogger } from '@/lib/logger'
-import { barcodeConfigSchema, productSchema, type Product, type ProductAttributeValue } from '../data/schema'
 import {
   type ProductApiDTO,
   type ProductAttributeValueApiDTO,
   type ProductListPageApiDTO,
 } from '../contracts/product-api-dto'
+import {
+  barcodeConfigSchema,
+  productSchema,
+  type Product,
+  type ProductAttributeValue,
+} from '../data/schema'
+import { normalizeProductAttributeMachineValue } from '../utils/product-attribute-machine-value'
 import {
   normalizeEngineeringChangeOrderNo,
   normalizeEngineeringRevisionNo,
@@ -13,11 +19,12 @@ import {
   normalizeProductSkuValue,
   normalizeProductTemplateKeyValue,
 } from '../utils/product-code-normalization'
-import { normalizeProductAttributeMachineValue } from '../utils/product-attribute-machine-value'
 
 const logger = createLogger('ProductReadAdapter')
 
-export function toProductAttributeValueContract(dto: ProductAttributeValueApiDTO): ProductAttributeValue {
+export function toProductAttributeValueContract(
+  dto: ProductAttributeValueApiDTO
+): ProductAttributeValue {
   return {
     id: dto.id,
     productId: dto.productId,
@@ -44,11 +51,15 @@ export function buildProductCandidate(
   }
 ) {
   const allowMissingCollections = options?.allowMissingCollections ?? false
-  const restrictions = dto.restrictions ?? (allowMissingCollections ? [] : undefined)
-  const attributeValues = dto.attributeValues ?? (allowMissingCollections ? [] : undefined)
+  const restrictions =
+    dto.restrictions ?? (allowMissingCollections ? [] : undefined)
+  const attributeValues =
+    dto.attributeValues ?? (allowMissingCollections ? [] : undefined)
 
-  if (!restrictions) throw new Error('[CRITICAL] Missing restrictions array in Product DTO')
-  if (!attributeValues) throw new Error('[CRITICAL] Missing attributeValues array in Product DTO')
+  if (!restrictions)
+    throw new Error('[CRITICAL] Missing restrictions array in Product DTO')
+  if (!attributeValues)
+    throw new Error('[CRITICAL] Missing attributeValues array in Product DTO')
 
   return {
     id: dto.id,
@@ -79,18 +90,28 @@ export function buildProductCandidate(
     status: dto.status ?? 'Active',
     templateKey: normalizeProductTemplateKeyValue(dto.templateKey),
     resolvedTemplateId: dto.resolvedTemplateId?.trim() || undefined,
-    resolvedTemplateKey: normalizeProductTemplateKeyValue(dto.resolvedTemplateKey),
+    resolvedTemplateKey: normalizeProductTemplateKeyValue(
+      dto.resolvedTemplateKey
+    ),
     templateResolutionSource: dto.templateResolutionSource?.trim() || undefined,
     templateResolutionError: dto.templateResolutionError?.trim() || undefined,
     createdAt: dto.createdAt ?? '',
     version: dto.version ?? 1,
     masterDataControl: {
-      revisionNo: normalizeEngineeringRevisionNo(dto.masterDataControl?.revisionNo ?? dto.revisionNo),
-      effectiveFrom: dto.masterDataControl?.effectiveFrom ?? dto.effectiveFrom ?? undefined,
-      effectiveTo: dto.masterDataControl?.effectiveTo ?? dto.effectiveTo ?? undefined,
+      revisionNo: normalizeEngineeringRevisionNo(
+        dto.masterDataControl?.revisionNo ?? dto.revisionNo
+      ),
+      effectiveFrom:
+        dto.masterDataControl?.effectiveFrom ?? dto.effectiveFrom ?? undefined,
+      effectiveTo:
+        dto.masterDataControl?.effectiveTo ?? dto.effectiveTo ?? undefined,
       changeType: dto.masterDataControl?.changeType ?? dto.changeType,
-      changeOrderNo: normalizeEngineeringChangeOrderNo(dto.masterDataControl?.changeOrderNo ?? dto.changeOrderNo),
-      siteCode: normalizeEngineeringSiteCode(dto.masterDataControl?.siteCode ?? dto.siteCode),
+      changeOrderNo: normalizeEngineeringChangeOrderNo(
+        dto.masterDataControl?.changeOrderNo ?? dto.changeOrderNo
+      ),
+      siteCode: normalizeEngineeringSiteCode(
+        dto.masterDataControl?.siteCode ?? dto.siteCode
+      ),
       isDefaultSite: dto.masterDataControl?.isDefaultSite ?? dto.isDefaultSite,
     },
   }
@@ -104,7 +125,9 @@ export function toProductArrayContract(items: ProductApiDTO[]): Product[] {
   return items.map(toProductContract)
 }
 
-export function toProductOptionsArrayContract(items: ProductApiDTO[]): Product[] {
+export function toProductOptionsArrayContract(
+  items: ProductApiDTO[]
+): Product[] {
   const validProducts: Product[] = []
   let skipped = 0
 
@@ -115,15 +138,20 @@ export function toProductOptionsArrayContract(items: ProductApiDTO[]): Product[]
     ].filter(Boolean)
 
     if (missingCollections.length > 0) {
-      logger.warn('Normalized missing product option collections during contract mapping', {
-        index,
-        id: item.id,
-        name: item.name,
-        missingCollections,
-      })
+      logger.warn(
+        'Normalized missing product option collections during contract mapping',
+        {
+          index,
+          id: item.id,
+          name: item.name,
+          missingCollections,
+        }
+      )
     }
 
-    const candidate = buildProductCandidate(item, { allowMissingCollections: true })
+    const candidate = buildProductCandidate(item, {
+      allowMissingCollections: true,
+    })
     const parsed = productSchema.safeParse(candidate)
     if (parsed.success) {
       validProducts.push(parsed.data)
@@ -146,11 +174,14 @@ export function toProductOptionsArrayContract(items: ProductApiDTO[]): Product[]
   })
 
   if (skipped > 0) {
-    logger.warn('Product options contract mapping completed with skipped entries', {
-      received: items.length,
-      returned: validProducts.length,
-      skipped,
-    })
+    logger.warn(
+      'Product options contract mapping completed with skipped entries',
+      {
+        received: items.length,
+        returned: validProducts.length,
+        skipped,
+      }
+    )
   }
 
   return validProducts

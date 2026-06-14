@@ -4,12 +4,12 @@ import {
   type ProductAttributeOption,
   type ProductTemplate,
 } from '../data/schema'
+import { normalizeProductAttributeMachineValue } from '../utils/product-attribute-machine-value'
 import {
   getAttributeValue,
   getCategoryName,
   getOptionLabel,
 } from '../utils/product-attribute-utils'
-import { normalizeProductAttributeMachineValue } from '../utils/product-attribute-machine-value'
 
 export const PRODUCT_DISPLAY_V2_STRATEGY_VERSION = 'product-display-v2' as const
 
@@ -31,10 +31,20 @@ export interface ProductDisplayProjectionV2 {
 
 export interface ResolveProductDisplayV2Params {
   locale: string
-  product: Pick<Product, 'name' | 'sku' | 'modelCode' | 'attributeValues'> | null | undefined
+  product:
+    | Pick<Product, 'name' | 'sku' | 'modelCode' | 'attributeValues'>
+    | null
+    | undefined
   template?: Pick<ProductTemplate, 'attributeBindings'> | null
-  categories?: Array<Pick<ProductAttributeCategory, 'key' | 'nameZh' | 'nameEn'>>
-  options?: Array<Pick<ProductAttributeOption, 'categoryKey' | 'value' | 'labelZh' | 'labelEn'>>
+  categories?: Array<
+    Pick<ProductAttributeCategory, 'key' | 'nameZh' | 'nameEn'>
+  >
+  options?: Array<
+    Pick<
+      ProductAttributeOption,
+      'categoryKey' | 'value' | 'labelZh' | 'labelEn'
+    >
+  >
   emptyValue?: string
 }
 
@@ -45,12 +55,20 @@ function normalizeDisplayValue(value?: string | null): string {
 function resolveMatchedOption(
   normalizedCategoryKey: string,
   rawValue: string,
-  options?: Array<Pick<ProductAttributeOption, 'categoryKey' | 'value' | 'labelZh' | 'labelEn'>>
+  options?: Array<
+    Pick<
+      ProductAttributeOption,
+      'categoryKey' | 'value' | 'labelZh' | 'labelEn'
+    >
+  >
 ) {
   const normalizedRawValue = normalizeProductAttributeMachineValue(rawValue)
 
   return options?.find((item) => {
-    if (normalizeProductAttributeMachineValue(item.categoryKey) !== normalizedCategoryKey) {
+    if (
+      normalizeProductAttributeMachineValue(item.categoryKey) !==
+      normalizedCategoryKey
+    ) {
       return false
     }
 
@@ -58,21 +76,26 @@ function resolveMatchedOption(
     const labelZh = normalizeDisplayValue(item.labelZh)
     const labelEn = normalizeDisplayValue(item.labelEn)
 
-    return optionValue === rawValue
-      || (normalizedRawValue !== ''
-        && normalizeProductAttributeMachineValue(optionValue) === normalizedRawValue)
-      || labelZh === rawValue
-      || labelEn === rawValue
-      || (normalizedRawValue !== ''
-        && labelEn !== ''
-        && normalizeProductAttributeMachineValue(labelEn) === normalizedRawValue)
+    return (
+      optionValue === rawValue ||
+      (normalizedRawValue !== '' &&
+        normalizeProductAttributeMachineValue(optionValue) ===
+          normalizedRawValue) ||
+      labelZh === rawValue ||
+      labelEn === rawValue ||
+      (normalizedRawValue !== '' &&
+        labelEn !== '' &&
+        normalizeProductAttributeMachineValue(labelEn) === normalizedRawValue)
+    )
   })
 }
 
 function resolveDisplayTitle(
   product: Pick<Product, 'name' | 'sku' | 'modelCode'> | null | undefined
 ) {
-  const code = normalizeDisplayValue(product?.sku) || normalizeDisplayValue(product?.modelCode)
+  const code =
+    normalizeDisplayValue(product?.sku) ||
+    normalizeDisplayValue(product?.modelCode)
   const title = normalizeDisplayValue(product?.name) || 'UNNAMED'
 
   return {
@@ -94,10 +117,14 @@ export function resolveProductDisplaySummaryItemsV2(
   }
 
   return bindings.map((binding) => {
-    const normalizedCategoryKey = normalizeProductAttributeMachineValue(binding.categoryKey)
+    const normalizedCategoryKey = normalizeProductAttributeMachineValue(
+      binding.categoryKey
+    )
     const rawValue = getAttributeValue(product, binding.categoryKey).trim()
     const category = params.categories?.find(
-      (item) => normalizeProductAttributeMachineValue(item.key) === normalizedCategoryKey
+      (item) =>
+        normalizeProductAttributeMachineValue(item.key) ===
+        normalizedCategoryKey
     )
     const option = rawValue
       ? resolveMatchedOption(normalizedCategoryKey, rawValue, params.options)
@@ -106,7 +133,9 @@ export function resolveProductDisplaySummaryItemsV2(
     return {
       key: normalizedCategoryKey || binding.categoryKey,
       label: getCategoryName(params.locale, category) || binding.categoryKey,
-      value: rawValue ? getOptionLabel(params.locale, option) || rawValue : params.emptyValue ?? '-',
+      value: rawValue
+        ? getOptionLabel(params.locale, option) || rawValue
+        : (params.emptyValue ?? '-'),
       empty: !rawValue,
     }
   })

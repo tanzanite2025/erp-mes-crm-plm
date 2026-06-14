@@ -14,8 +14,10 @@ export const warehouse = {
     reconcile: 'Reconcile',
     exportReport: 'Export Report',
     noData: 'No data',
-    reconcileConfirm: 'Run the warehouse ledger consistency self-check?\n\nThe system will scan all inbound records and committed outbound flows, recalculate material balances, and fix negative stock caused by historical logic inconsistencies.',
-    reconcileSuccess: 'Ledger audit completed. The system rebuilt balances for {{totalItems}} items and corrected {{fixedNegatives}} negative-stock anomalies. Please verify them in the inventory list tab.',
+    reconcileConfirm:
+      'Run the warehouse ledger consistency self-check?\n\nThe system will scan all inbound records and committed outbound flows, recalculate material balances, and fix negative stock caused by historical logic inconsistencies.',
+    reconcileSuccess:
+      'Ledger audit completed. The system rebuilt balances for {{totalItems}} items and corrected {{fixedNegatives}} negative-stock anomalies. Please verify them in the inventory list tab.',
     reconcileFailed: 'Reconciliation failed. Please check the console.',
     dynamicFilter: 'Dynamic Filter',
     startDate: 'Start Date',
@@ -159,14 +161,17 @@ export const warehouse = {
       consistency: 'Consistency Check Passed',
     },
     toast: {
-      notFound: 'No matching master data found. Please check the input or contact an administrator.',
+      notFound:
+        'No matching master data found. Please check the input or contact an administrator.',
       quantityInvalid: 'Shipment quantity must be greater than 0',
-      insufficientStock: 'Insufficient stock in the selected area. Remaining: {{count}} {{uom}}',
+      insufficientStock:
+        'Insufficient stock in the selected area. Remaining: {{count}} {{uom}}',
       savedDraft: 'Saved as draft',
       commitSuccess: 'Shipment recorded successfully',
       commitConfirm:
         'Are you sure you want to submit the outbound request for [{{name}}]? Stock will be deducted after submission.',
-      commitRecorded: 'Outbound request submitted successfully and stock was synced',
+      commitRecorded:
+        'Outbound request submitted successfully and stock was synced',
       voidConfirmCommitted:
         'Are you sure you want to void this shipment record?\nStock for [{{name}}] will be restored by {{quantity}} automatically.',
       voidConfirmDraft: 'Are you sure you want to delete this shipment draft?',
@@ -177,20 +182,29 @@ export const warehouse = {
   errors: {
     default: 'Warehouse operation failed. Please try again later.',
     queryFailed: 'Failed to load inventory list. Please try again later.',
-    inboundValidationFailed: 'Inbound parameters are invalid. Please review and try again.',
+    inboundValidationFailed:
+      'Inbound parameters are invalid. Please review and try again.',
     inboundFailed: 'Inbound operation failed. Please try again.',
-    shipmentValidationFailed: 'Shipment parameters are invalid. Please review and try again.',
-    shipmentCreateFailed: 'Failed to save the shipment draft. Please try again later.',
-    shipmentNotFound: 'The shipment order does not exist or has already been deleted. Please refresh the list.',
-    shipmentNotDraft: 'Only draft shipments can be submitted. Please refresh and confirm the latest status.',
+    shipmentValidationFailed:
+      'Shipment parameters are invalid. Please review and try again.',
+    shipmentCreateFailed:
+      'Failed to save the shipment draft. Please try again later.',
+    shipmentNotFound:
+      'The shipment order does not exist or has already been deleted. Please refresh the list.',
+    shipmentNotDraft:
+      'Only draft shipments can be submitted. Please refresh and confirm the latest status.',
     commitFailed: 'Failed to submit the shipment. Please try again.',
-    transferValidationFailed: 'Transfer parameters are invalid. Please review and try again.',
+    transferValidationFailed:
+      'Transfer parameters are invalid. Please review and try again.',
     transferFailed: 'Inventory transfer failed. Please try again.',
     reconcileFailed: 'Inventory reconciliation failed. Please try again later.',
-    voidForbidden: 'Your account does not have permission, or approval is still pending. Unable to void this record.',
-    voidInProgress: 'This document is already being processed. Please avoid duplicate actions.',
+    voidForbidden:
+      'Your account does not have permission, or approval is still pending. Unable to void this record.',
+    voidInProgress:
+      'This document is already being processed. Please avoid duplicate actions.',
     voidFailed: 'Failed to void the record. Please try again.',
-    bulkSyncValidationFailed: 'Bulk sync parameters are invalid. Please verify the import data format.',
+    bulkSyncValidationFailed:
+      'Bulk sync parameters are invalid. Please verify the import data format.',
     bulkSyncFailed: 'Bulk sync failed. Please try again.',
   },
   inbound: {
@@ -205,8 +219,10 @@ export const warehouse = {
     select: 'Select',
     idleTitle: 'Idle State',
     startInbound: 'Record Inbound',
-    emptyBeforeSearchGuide: 'Search for a product or material first, then click "Record Inbound" on a matching result to start inbound.',
-    emptyAfterSearchGuide: 'No matching result was found. Refine your search, then click "Record Inbound" on a result to start inbound.',
+    emptyBeforeSearchGuide:
+      'Search for a product or material first, then click "Record Inbound" on a matching result to start inbound.',
+    emptyAfterSearchGuide:
+      'No matching result was found. Refine your search, then click "Record Inbound" on a result to start inbound.',
     historyTitle: 'History',
     latestTransactions: 'Latest Transactions',
     columns: {
@@ -270,7 +286,8 @@ export const warehouse = {
     dialog: {
       createTitle: 'Create Warehouse Base Config',
       editTitle: 'Edit Warehouse Base Config',
-      description: 'Maintain area master data, business scopes, and default landing rules',
+      description:
+        'Maintain area master data, business scopes, and default landing rules',
       nameLabel: '01. Display Name',
       namePlaceholder: 'Enter area or warehouse name...',
       codeLabel: '02. Identifier Code',
@@ -280,13 +297,15 @@ export const warehouse = {
       sortOrderLabel: '04. Sort Order',
       activeLabel: 'Enabled',
       scopeTitle: 'Business Scene Scope',
-      scopeDescription: 'Decide which business flows can read this warehouse area',
+      scopeDescription:
+        'Decide which business flows can read this warehouse area',
       allowInboundLabel: 'Available For Inbound',
       allowShipmentLabel: 'Available For Shipment',
       allowStocktakeLabel: 'Available For Stocktake',
       allowPurchaseReceiptLabel: 'Available For Purchase Receipt',
       defaultRuleTitle: 'Default Landing Rules',
-      defaultRuleDescription: 'Set the preferred target area for each inbound scene',
+      defaultRuleDescription:
+        'Set the preferred target area for each inbound scene',
       defaultProductInboundLabel: 'Default For Product Inbound',
       defaultMaterialInboundLabel: 'Default For Material Inbound',
       defaultPurchaseReceiptLabel: 'Default For Purchase Receipt',
@@ -319,7 +338,8 @@ export const warehouse = {
       scopeLabel: '02. Audit Scope',
       selectCategory: 'Select an area...',
       noCategories: 'No areas available',
-      freezeHint: 'Inventory under the selected category will be locked after creation.',
+      freezeHint:
+        'Inventory under the selected category will be locked after creation.',
       remarksLabel: '03. System Remarks',
       remarksPlaceholder: 'Enter remarks...',
       creating: 'Creating...',
@@ -353,7 +373,8 @@ export const warehouse = {
       postSuccess: 'Adjustment request submitted to the approval center',
       postFailed: 'Submit failed: {{message}}',
       posting: 'Generating adjustment order...',
-      posted: 'Request submitted successfully. Please review it in the approval center.',
+      posted:
+        'Request submitted successfully. Please review it in the approval center.',
       actionFailed: 'Action failed',
     },
   },
@@ -366,16 +387,19 @@ export const warehouse = {
     subtitle: 'Real-time inventory snapshot',
     bomAlertDetails: {
       title: 'BOM Alert Details',
-      description: 'Review triggered dynamic BOM set alerts and the related shortage rows',
+      description:
+        'Review triggered dynamic BOM set alerts and the related shortage rows',
       summary: '{{count}} Triggered BOM Alerts',
       shortageTitle: 'Shortage Material Details',
       thresholdLabel: 'Guaranteed Sets',
       triggeredAt: 'Triggered At',
       loadingTitle: 'Loading BOM alert details...',
-      loadingHint: 'The system is collecting triggered BOMs and shortage rows. Please wait.',
+      loadingHint:
+        'The system is collecting triggered BOMs and shortage rows. Please wait.',
       errorTitle: 'Failed to load BOM alert details',
       emptyTitle: 'No BOM Alert Details',
-      emptyDescription: 'There are currently no triggered dynamic BOM set alerts.',
+      emptyDescription:
+        'There are currently no triggered dynamic BOM set alerts.',
       retry: 'Retry',
       close: 'Close',
       columns: {
@@ -406,20 +430,24 @@ export const warehouse = {
       targetNode: 'Target Material',
       minLevel: 'Minimum Safe Level',
       units: 'Units',
-      warning: 'A global warning will be triggered when stock drops below this level.',
+      warning:
+        'A global warning will be triggered when stock drops below this level.',
       cancel: 'Cancel',
       update: 'Update',
     },
     reconcileDialog: {
       title: 'Inventory Consistency Self-Check',
-      description: 'Are you sure you want to run global reconciliation? The system will recalculate stock from the source ledger and set any negative values to 0. This action is irreversible and recommended during off-peak hours.',
+      description:
+        'Are you sure you want to run global reconciliation? The system will recalculate stock from the source ledger and set any negative values to 0. This action is irreversible and recommended during off-peak hours.',
       confirm: 'Start Self-Check',
       cancel: 'Back',
     },
     toast: {
       loadFailed: 'Failed to load inventory data',
-      reconcileConfirm: 'Run the full inventory consistency self-check?\n\nThe system will recompute inventory from the source ledger and clamp negative stock to 0.',
-      reconcileSuccess: 'Inventory reconciliation completed and stock was corrected.',
+      reconcileConfirm:
+        'Run the full inventory consistency self-check?\n\nThe system will recompute inventory from the source ledger and clamp negative stock to 0.',
+      reconcileSuccess:
+        'Inventory reconciliation completed and stock was corrected.',
       reconcileFailed: 'Reconciliation failed',
       thresholdUpdated: 'Updated {{name}} safety threshold to {{value}}',
       thresholdRuleUpdated: 'Updated the inventory threshold rule for {{name}}',
@@ -462,8 +490,10 @@ export const warehouse = {
       rejected: 'Rejected',
     },
     toast: {
-      executeSuccess: 'Adjustment executed successfully and inventory was updated',
-      executeMissingTarget: 'The adjustment record to execute is missing or no longer valid. Please refresh the list and try again.',
+      executeSuccess:
+        'Adjustment executed successfully and inventory was updated',
+      executeMissingTarget:
+        'The adjustment record to execute is missing or no longer valid. Please refresh the list and try again.',
       executeFailed: 'Execution failed: {{message}}',
     },
     printDocument: {
@@ -501,14 +531,17 @@ export const warehouse = {
   },
   placeholder: {
     title: '{{title}} Warehouse Center',
-    subtitle: '{{title}}_LOGISTICS / Digital Warehouse: Finished goods locator management, flow tracking & inventory accuracy',
+    subtitle:
+      '{{title}}_LOGISTICS / Digital Warehouse: Finished goods locator management, flow tracking & inventory accuracy',
     devMode: '{{title}} module is under development',
     syncing: 'Warehouse operation record is under synchronization',
   },
   service: {
-    integrityError: '[CRITICAL_DATA_INTEGRITY] Inventory record {{id}} references missing material/product {{materialId}}. Data integrity may be compromised.',
+    integrityError:
+      '[CRITICAL_DATA_INTEGRITY] Inventory record {{id}} references missing material/product {{materialId}}. Data integrity may be compromised.',
     unknownItem: 'Unknown Item (Registry Missing)',
     pdaSyncSuccess: 'PDA offline data synced successfully',
-    pdaSyncFailed: 'PDA sync completed with {{count}} anomalies. Check audit logs.',
+    pdaSyncFailed:
+      'PDA sync completed with {{count}} anomalies. Check audit logs.',
   },
 }

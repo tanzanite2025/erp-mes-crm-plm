@@ -20,8 +20,7 @@ export interface BusinessEventSourceRemovedItemSummary {
   meta: string
 }
 
-export interface BusinessEventSourceChangedItemSummary
-  extends BusinessEventSourceRemovedItemSummary {
+export interface BusinessEventSourceChangedItemSummary extends BusinessEventSourceRemovedItemSummary {
   changeType: BusinessEventSourceItemChangeKind
 }
 
@@ -79,7 +78,9 @@ function compareConfigItems<T extends ConfigItem>(
   const previousMap = new Map(
     previousItems.map((item) => [item.id ?? '', item] as const)
   )
-  const nextMap = new Map(nextItems.map((item) => [item.id ?? '', item] as const))
+  const nextMap = new Map(
+    nextItems.map((item) => [item.id ?? '', item] as const)
+  )
 
   const addedIds = new Set<string>()
   const updatedIds = new Set<string>()
@@ -138,7 +139,8 @@ function compareGeneralSection(
   if (previousSource.code !== nextSource.code) changedFields.push('code')
   if (previousSource.module !== nextSource.module) changedFields.push('module')
   if (previousSource.entity !== nextSource.entity) changedFields.push('entity')
-  if (previousSource.enabled !== nextSource.enabled) changedFields.push('enabled')
+  if (previousSource.enabled !== nextSource.enabled)
+    changedFields.push('enabled')
   if (
     (previousSource.config.defaultActionUrlTemplate ?? '') !==
     (nextSource.config.defaultActionUrlTemplate ?? '')

@@ -1,6 +1,6 @@
 import { ShoppingCart, Users } from 'lucide-react'
-import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { CustomerList } from '../components/customer-list'
 import { SalesOrderList } from '../components/sales-order-list-fixed'
 
@@ -8,7 +8,7 @@ export function CustomerMgmt() {
   const { t } = useLanguage()
 
   return (
-    <div className='flex min-w-0 flex-col gap-2.5 animate-in fade-in duration-700 sm:gap-3'>
+    <div className='flex min-w-0 animate-in flex-col gap-2.5 duration-700 fade-in sm:gap-3'>
       <IndustrialHeader
         icon={Users}
         title={t('trading.customers.pageTitle')}
@@ -24,7 +24,7 @@ export function SalesOrders() {
   const { t } = useLanguage()
 
   return (
-    <div className='flex min-h-0 flex-1 flex-col gap-8 animate-in fade-in duration-700'>
+    <div className='flex min-h-0 flex-1 animate-in flex-col gap-8 duration-700 fade-in'>
       <IndustrialHeader
         icon={ShoppingCart}
         title={t('tradingSalesOrder.tabs.title')}

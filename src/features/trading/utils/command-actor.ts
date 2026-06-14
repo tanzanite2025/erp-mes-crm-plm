@@ -18,7 +18,9 @@ export function requireTradingCommandActor(
   const operator = actor.operator?.trim()
 
   if (!actorId || !operator) {
-    const error = new Error(`[CRITICAL] Missing trading command actor in ${scope}`)
+    const error = new Error(
+      `[CRITICAL] Missing trading command actor in ${scope}`
+    )
     failLoudly(error, scope)
     throw error
   }

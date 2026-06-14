@@ -4,9 +4,12 @@ import { useState } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Button } from '@/components/ui/button'
+import { type TranslationKey } from '@/locales'
 import { ShieldCheck, KeyRound, ArrowRight, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/context/language-provider'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -26,23 +29,26 @@ import {
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
 import { useUserMutations } from '../hooks/use-users'
-import { useLanguage } from '@/context/language-provider'
-import { type TranslationKey } from '@/locales'
-import { toast } from 'sonner'
-import { type CreateUserPayload, verifyAdminChallenge } from '../services/user-api'
+import {
+  type CreateUserPayload,
+  verifyAdminChallenge,
+} from '../services/user-api'
 
 type UserForm = z.infer<ReturnType<typeof getFormSchema>>
 
-const getFormSchema = (t: (key: TranslationKey, params?: Record<string, string | number>) => string) => z
-  .object({
-    username: z.string().min(1, t('users.validation.usernameRequired')),
-    password: z.string().min(8, t('users.validation.passwordMin')),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: t('users.validation.passwordMismatch'),
-    path: ['confirmPassword'],
-  })
+const getFormSchema = (
+  t: (key: TranslationKey, params?: Record<string, string | number>) => string
+) =>
+  z
+    .object({
+      username: z.string().min(1, t('users.validation.usernameRequired')),
+      password: z.string().min(8, t('users.validation.passwordMin')),
+      confirmPassword: z.string(),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: t('users.validation.passwordMismatch'),
+      path: ['confirmPassword'],
+    })
 
 type UsersAddAdminDialogProps = {
   open: boolean
@@ -62,7 +68,7 @@ export function UsersAddAdminDialog({
   const [verifyPass, setVerifyPass] = useState('')
   const [verifyError, setVerifyError] = useState('')
   const [isVerifying, setIsVerifying] = useState(false)
-  
+
   const { createMutation } = useUserMutations()
 
   const form = useForm<UserForm>({
@@ -97,7 +103,7 @@ export function UsersAddAdminDialog({
 
   const onSubmit = (values: UserForm) => {
     const { confirmPassword, ...data } = values
-    
+
     // The frontend does not inject any legacy identity marker into this request.
     const adminRequestPayload: CreateUserPayload = {
       ...data,
@@ -113,7 +119,7 @@ export function UsersAddAdminDialog({
       },
       onError: () => {
         toast.error(t('users.toast.protectedAccountActionFailed'))
-      }
+      },
     })
   }
 
@@ -134,14 +140,16 @@ export function UsersAddAdminDialog({
         else onOpenChange(state)
       }}
     >
-      <DialogContent className='sm:max-w-md rounded-[32px] border-none shadow-2xl p-0 gap-0 overflow-hidden bg-background'>
-        <DialogHeader className='text-start bg-muted/5 p-8 border-b border-dashed border-muted/50'>
-          <DialogTitle className='text-lg font-black tracking-tighter italic uppercase flex items-center gap-2'>
-            <ShieldCheck className='h-5 w-5 text-primary' /> 
-            {step === 'verify' ? t('users.dialogs.accessVerifyTitle') : t('users.dialogs.protectedAccountCreateTitle')}
+      <DialogContent className='gap-0 overflow-hidden rounded-[32px] border-none bg-background p-0 shadow-2xl sm:max-w-md'>
+        <DialogHeader className='border-b border-dashed border-muted/50 bg-muted/5 p-8 text-start'>
+          <DialogTitle className='flex items-center gap-2 text-lg font-black tracking-tighter uppercase italic'>
+            <ShieldCheck className='h-5 w-5 text-primary' />
+            {step === 'verify'
+              ? t('users.dialogs.accessVerifyTitle')
+              : t('users.dialogs.protectedAccountCreateTitle')}
           </DialogTitle>
-          <DialogDescription className='text-[9px] font-black uppercase tracking-widest opacity-60'>
-            {step === 'verify' 
+          <DialogDescription className='text-[9px] font-black tracking-widest uppercase opacity-60'>
+            {step === 'verify'
               ? t('users.dialogs.accessVerifySubtitle')
               : t('users.dialogs.protectedAccountCreateSubtitle')}
           </DialogDescription>
@@ -149,30 +157,48 @@ export function UsersAddAdminDialog({
 
         {step === 'verify' ? (
           <div className='space-y-6 p-8 text-center'>
-            <div className='flex flex-col items-center gap-3 mb-2'>
-              <div className='p-4 bg-primary/10 rounded-full shadow-[0_0_25px_rgba(var(--primary),0.15)]'>
-                <KeyRound className={cn('h-10 w-10 text-primary', isVerifying && 'animate-spin')} />
+            <div className='mb-2 flex flex-col items-center gap-3'>
+              <div className='rounded-full bg-primary/10 p-4 shadow-[0_0_25px_rgba(var(--primary),0.15)]'>
+                <KeyRound
+                  className={cn(
+                    'h-10 w-10 text-primary',
+                    isVerifying && 'animate-spin'
+                  )}
+                />
               </div>
-              <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60'>{t('users.dialogs.accessVerifyHint')}</p>
+              <p className='text-[10px] font-black tracking-widest text-muted-foreground uppercase opacity-60'>
+                {t('users.dialogs.accessVerifyHint')}
+              </p>
             </div>
             <div className='space-y-2'>
-              <PasswordInput 
+              <PasswordInput
                 value={verifyPass}
                 onChange={(e) => setVerifyPass(e.target.value)}
                 placeholder={t('users.dialogs.accessVerifyPlaceholder')}
                 autoFocus
                 disabled={isVerifying}
                 onKeyDown={(e) => e.key === 'Enter' && handleVerify()}
-                className='h-12 rounded-2xl bg-muted/50 border-none shadow-inner font-bold text-center text-lg tracking-widest focus-visible:ring-primary/20'
+                className='h-12 rounded-2xl border-none bg-muted/50 text-center text-lg font-bold tracking-widest shadow-inner focus-visible:ring-primary/20'
               />
-              {verifyError && <p className='text-[10px] text-destructive font-black uppercase tracking-widest animate-bounce'>{verifyError}</p>}
+              {verifyError && (
+                <p className='animate-bounce text-[10px] font-black tracking-widest text-destructive uppercase'>
+                  {verifyError}
+                </p>
+              )}
             </div>
-            <Button 
-              onClick={handleVerify} 
+            <Button
+              onClick={handleVerify}
               disabled={isVerifying}
-              className='w-full rounded-full h-11 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-500/20 active:scale-95 transition-all flex items-center justify-center gap-2'
+              className='flex h-11 w-full items-center justify-center gap-2 rounded-full text-[10px] font-black tracking-widest uppercase shadow-xl shadow-blue-500/20 transition-all active:scale-95'
             >
-              {isVerifying ? <Loader2 className="animate-spin h-4 w-4" /> : <>{t('users.dialogs.accessVerifyButton')} <ArrowRight className='h-4 w-4' /></>}
+              {isVerifying ? (
+                <Loader2 className='h-4 w-4 animate-spin' />
+              ) : (
+                <>
+                  {t('users.dialogs.accessVerifyButton')}{' '}
+                  <ArrowRight className='h-4 w-4' />
+                </>
+              )}
             </Button>
           </div>
         ) : (
@@ -187,9 +213,15 @@ export function UsersAddAdminDialog({
                 name='username'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>{t('users.dialogs.labels.username')}</FormLabel>
+                    <FormLabel className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+                      {t('users.dialogs.labels.username')}
+                    </FormLabel>
                     <FormControl>
-                      <Input placeholder={t('users.dialogs.placeholders.username')} className='h-11 rounded-2xl bg-muted/50 border-none shadow-inner font-bold text-xs px-4' {...field} />
+                      <Input
+                        placeholder={t('users.dialogs.placeholders.username')}
+                        className='h-11 rounded-2xl border-none bg-muted/50 px-4 text-xs font-bold shadow-inner'
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage className='text-[10px] font-bold' />
                   </FormItem>
@@ -200,9 +232,17 @@ export function UsersAddAdminDialog({
                 name='password'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>{t('users.dialogs.labels.password')}</FormLabel>
+                    <FormLabel className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+                      {t('users.dialogs.labels.password')}
+                    </FormLabel>
                     <FormControl>
-                      <PasswordInput placeholder={t('users.dialogs.placeholders.passwordCreate')} className='h-11 rounded-2xl bg-muted/50 border-none shadow-inner font-bold text-xs px-4' {...field} />
+                      <PasswordInput
+                        placeholder={t(
+                          'users.dialogs.placeholders.passwordCreate'
+                        )}
+                        className='h-11 rounded-2xl border-none bg-muted/50 px-4 text-xs font-bold shadow-inner'
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage className='text-[10px] font-bold' />
                   </FormItem>
@@ -213,19 +253,27 @@ export function UsersAddAdminDialog({
                 name='confirmPassword'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>{t('users.dialogs.labels.confirm')}</FormLabel>
+                    <FormLabel className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+                      {t('users.dialogs.labels.confirm')}
+                    </FormLabel>
                     <FormControl>
-                      <PasswordInput placeholder={t('users.dialogs.placeholders.confirmCreate')} className='h-11 rounded-2xl bg-muted/50 border-none shadow-inner font-bold text-xs px-4' {...field} />
+                      <PasswordInput
+                        placeholder={t(
+                          'users.dialogs.placeholders.confirmCreate'
+                        )}
+                        className='h-11 rounded-2xl border-none bg-muted/50 px-4 text-xs font-bold shadow-inner'
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage className='text-[10px] font-bold' />
                   </FormItem>
                 )}
               />
-              <DialogFooter className='p-6 bg-muted/5 border-t border-dashed border-muted/50 mt-4'>
-                <Button 
-                  type='submit' 
-                  form='add-admin-form' 
-                  className='w-full rounded-full h-11 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-500/20 active:scale-95 transition-all'
+              <DialogFooter className='mt-4 border-t border-dashed border-muted/50 bg-muted/5 p-6'>
+                <Button
+                  type='submit'
+                  form='add-admin-form'
+                  className='h-11 w-full rounded-full text-[10px] font-black tracking-widest uppercase shadow-xl shadow-blue-500/20 transition-all active:scale-95'
                 >
                   {t('users.dialogs.protectedAccountCreateButton')}
                 </Button>

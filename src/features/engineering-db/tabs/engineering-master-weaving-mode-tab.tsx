@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
 import { useLanguage } from '@/context/language-provider'
+import { WeavingModeActionDialog } from '../components/weaving-mode-action-dialog'
+import { WeavingModeListCard } from '../components/weaving-mode-list-card'
+import { WeavingModeToolbar } from '../components/weaving-mode-toolbar'
 import { type WeavingMode } from '../data/weaving-mode-schema'
 import { useWeavingModeMgmt } from '../hooks/use-weaving-mode-mgmt'
-import { WeavingModeActionDialog } from '../components/weaving-mode-action-dialog'
-import { WeavingModeToolbar } from '../components/weaving-mode-toolbar'
-import { WeavingModeListCard } from '../components/weaving-mode-list-card'
 
 export function EngineeringMasterWeavingModeTab() {
   const { t } = useLanguage()
@@ -41,7 +41,13 @@ export function EngineeringMasterWeavingModeTab() {
   }
 
   const handleDelete = async (item: WeavingMode) => {
-    if (!window.confirm(t('engineering.masterData.weavingMode.toasts.deleteConfirm', { name: item.label }))) {
+    if (
+      !window.confirm(
+        t('engineering.masterData.weavingMode.toasts.deleteConfirm', {
+          name: item.label,
+        })
+      )
+    ) {
       return
     }
 
@@ -49,7 +55,7 @@ export function EngineeringMasterWeavingModeTab() {
   }
 
   return (
-    <div className='flex flex-col gap-3.5 animate-in fade-in duration-700'>
+    <div className='flex animate-in flex-col gap-3.5 duration-700 fade-in'>
       <WeavingModeToolbar
         searchTerm={searchTerm}
         onSearchTermChange={setSearchTerm}
@@ -57,7 +63,14 @@ export function EngineeringMasterWeavingModeTab() {
         metrics={metrics}
       />
 
-      <WeavingModeListCard data={filteredData} isLoading={isLoading} isLoadError={isLoadError} onRetry={() => void refetchWeavingModes()} onEdit={handleEdit} onDelete={handleDelete} />
+      <WeavingModeListCard
+        data={filteredData}
+        isLoading={isLoading}
+        isLoadError={isLoadError}
+        onRetry={() => void refetchWeavingModes()}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
 
       <WeavingModeActionDialog
         key={`${currentRow?.id ?? 'create'}-${open ? 'open' : 'closed'}`}

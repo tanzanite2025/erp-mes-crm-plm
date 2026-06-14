@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { useLanguage } from '@/context/language-provider'
 import type { DeltaSet } from '@/lib/delta/types'
+import { useLanguage } from '@/context/language-provider'
 import type { Team, PieceworkRate } from '../data/schema'
 import { PieceworkCoreService } from '../services/piecework-core-service'
 import { PieceworkMaintenanceService } from '../services/piecework-maintenance-service'
@@ -15,7 +15,7 @@ function getErrorMessage(error: unknown) {
 export function useGetTeams() {
   return useQuery({
     queryKey: ['piecework_teams'],
-    queryFn: () => PieceworkCoreService.getTeams()
+    queryFn: () => PieceworkCoreService.getTeams(),
   })
 }
 
@@ -24,26 +24,35 @@ export function usePieceworkMutations() {
   const { t } = useLanguage()
 
   const saveTeamMutation = useMutation({
-    mutationFn: (data: Partial<Team>) => PieceworkMaintenanceService.saveTeam(data),
+    mutationFn: (data: Partial<Team>) =>
+      PieceworkMaintenanceService.saveTeam(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['piecework_teams'] })
       toast.success(t('piecework.teams.toast.saveSuccess'))
     },
     onError: (error: unknown) => {
-      toast.error(t('piecework.teams.toast.saveFailed', { message: getErrorMessage(error) }))
-    }
+      toast.error(
+        t('piecework.teams.toast.saveFailed', {
+          message: getErrorMessage(error),
+        })
+      )
+    },
   })
 
   const patchTeamMutation = useMutation({
-    mutationFn: (params: { id: string, delta: DeltaSet, version: number }) => 
+    mutationFn: (params: { id: string; delta: DeltaSet; version: number }) =>
       PieceworkMaintenanceService.patchTeam(params),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['piecework_teams'] })
       toast.success(t('piecework.teams.toast.patchSuccess'))
     },
     onError: (error: unknown) => {
-      toast.error(t('piecework.teams.toast.patchFailed', { message: getErrorMessage(error) }))
-    }
+      toast.error(
+        t('piecework.teams.toast.patchFailed', {
+          message: getErrorMessage(error),
+        })
+      )
+    },
   })
 
   const deleteTeamMutation = useMutation({
@@ -53,8 +62,12 @@ export function usePieceworkMutations() {
       toast.success(t('piecework.teams.toast.deleteSuccess'))
     },
     onError: (error: unknown) => {
-      toast.error(t('piecework.teams.toast.deleteFailed', { message: getErrorMessage(error) }))
-    }
+      toast.error(
+        t('piecework.teams.toast.deleteFailed', {
+          message: getErrorMessage(error),
+        })
+      )
+    },
   })
 
   return { saveTeamMutation, patchTeamMutation, deleteTeamMutation }
@@ -65,7 +78,7 @@ export function usePieceworkMutations() {
 export function useGetPieceworkRates() {
   return useQuery({
     queryKey: ['piecework_rates'],
-    queryFn: () => PieceworkCoreService.getPieceworkRates()
+    queryFn: () => PieceworkCoreService.getPieceworkRates(),
   })
 }
 
@@ -74,26 +87,35 @@ export function usePieceworkRateMutations() {
   const { t } = useLanguage()
 
   const saveRateMutation = useMutation({
-    mutationFn: (data: Partial<PieceworkRate>) => PieceworkMaintenanceService.saveRate(data),
+    mutationFn: (data: Partial<PieceworkRate>) =>
+      PieceworkMaintenanceService.saveRate(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['piecework_rates'] })
       toast.success(t('piecework.rules.toast.saveSuccess'))
     },
     onError: (error: unknown) => {
-      toast.error(t('piecework.rules.toast.saveFailed', { message: getErrorMessage(error) }))
-    }
+      toast.error(
+        t('piecework.rules.toast.saveFailed', {
+          message: getErrorMessage(error),
+        })
+      )
+    },
   })
 
   const patchRateMutation = useMutation({
-    mutationFn: (params: { id: string, delta: DeltaSet, version: number }) => 
+    mutationFn: (params: { id: string; delta: DeltaSet; version: number }) =>
       PieceworkMaintenanceService.patchRate(params),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['piecework_rates'] })
       toast.success(t('piecework.rules.toast.patchSuccess'))
     },
     onError: (error: unknown) => {
-      toast.error(t('piecework.rules.toast.patchFailed', { message: getErrorMessage(error) }))
-    }
+      toast.error(
+        t('piecework.rules.toast.patchFailed', {
+          message: getErrorMessage(error),
+        })
+      )
+    },
   })
 
   const deleteRateMutation = useMutation({
@@ -103,8 +125,12 @@ export function usePieceworkRateMutations() {
       toast.success(t('piecework.rules.toast.deleteSuccess'))
     },
     onError: (error: unknown) => {
-      toast.error(t('piecework.rules.toast.deleteFailed', { message: getErrorMessage(error) }))
-    }
+      toast.error(
+        t('piecework.rules.toast.deleteFailed', {
+          message: getErrorMessage(error),
+        })
+      )
+    },
   })
 
   return { saveRateMutation, patchRateMutation, deleteRateMutation }

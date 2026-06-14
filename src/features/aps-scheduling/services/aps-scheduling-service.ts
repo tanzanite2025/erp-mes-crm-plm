@@ -1,7 +1,10 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
+import {
+  toApsSchedulingContract,
+  type ApsSchedulingContract,
+} from '../adapters/aps-scheduling-api-adapter'
 import type { ApsSchedulingListApiDTO } from '../contracts/aps-scheduling-api-dto'
-import { toApsSchedulingContract, type ApsSchedulingContract } from '../adapters/aps-scheduling-api-adapter'
 
 export type GetApsSchedulingOptions = {
   page?: number
@@ -22,7 +25,11 @@ export const getApsScheduling = async (
   if (lineName) params.set('lineName', lineName)
   if (status && status.length > 0) params.set('status', status.join(','))
 
-  const res = await apiFetch<ApsSchedulingListApiDTO>(`/aps-scheduling/plans?${params.toString()}`)
-  const response = ensureObjectResponse<ApsSchedulingListApiDTO & Record<string, unknown>>(res, 'ApsSchedulingService.getApsScheduling')
+  const res = await apiFetch<ApsSchedulingListApiDTO>(
+    `/aps-scheduling/plans?${params.toString()}`
+  )
+  const response = ensureObjectResponse<
+    ApsSchedulingListApiDTO & Record<string, unknown>
+  >(res, 'ApsSchedulingService.getApsScheduling')
   return toApsSchedulingContract(response)
 }

@@ -1,12 +1,37 @@
-import { type QueryClient, useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+  type QueryClient,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { type DeltaSet } from '@/lib/delta/types'
+import { handleServerError } from '@/lib/handle-server-error'
 import { useLanguage } from '@/context/language-provider'
 import { tradingQueryKeys } from '@/features/trading/query-keys'
-import { handleServerError } from '@/lib/handle-server-error'
-import { type DeltaSet } from '@/lib/delta/types'
-import { type SalesOrder, type SalesOrderFormValues, type SalesOrderLine } from '../../data/schema'
-import { addSalesOrderLine, cancelSalesOrder, changeSalesOrderClassificationType, changeSalesOrderCustomer, changeSalesOrderDeliveryDate, changeSalesOrderLineContent, changeSalesOrderLines, changeSalesOrderPurchaseOrderNo, changeSalesOrderRequirements, claimSalesOrderLines, removeSalesOrderLine, transitionSalesOrderStatus } from '../services/sales-transaction-service'
-import { createSalesOrder, deleteSalesOrder, patchSalesOrder } from '../services/sales-service'
+import {
+  type SalesOrder,
+  type SalesOrderFormValues,
+  type SalesOrderLine,
+} from '../../data/schema'
+import {
+  createSalesOrder,
+  deleteSalesOrder,
+  patchSalesOrder,
+} from '../services/sales-service'
+import {
+  addSalesOrderLine,
+  cancelSalesOrder,
+  changeSalesOrderClassificationType,
+  changeSalesOrderCustomer,
+  changeSalesOrderDeliveryDate,
+  changeSalesOrderLineContent,
+  changeSalesOrderLines,
+  changeSalesOrderPurchaseOrderNo,
+  changeSalesOrderRequirements,
+  claimSalesOrderLines,
+  removeSalesOrderLine,
+  transitionSalesOrderStatus,
+} from '../services/sales-transaction-service'
 
 interface SalesOrderListCache {
   items: SalesOrder[]
@@ -32,53 +57,78 @@ function isSalesOrderListCache(value: unknown): value is SalesOrderListCache {
   )
 }
 
-const updateSalesOrderInCaches = (queryClient: QueryClient, order: SalesOrder) => {
-  queryClient.setQueriesData({ queryKey: tradingQueryKeys.salesOrdersRoot() }, (current: unknown) => {
-    if (isSalesOrderListCache(current)) {
-      return {
-        ...current,
-        items: current.items.map((item) => (item.id === order.id ? { ...item, ...order } : item)),
+const updateSalesOrderInCaches = (
+  queryClient: QueryClient,
+  order: SalesOrder
+) => {
+  queryClient.setQueriesData(
+    { queryKey: tradingQueryKeys.salesOrdersRoot() },
+    (current: unknown) => {
+      if (isSalesOrderListCache(current)) {
+        return {
+          ...current,
+          items: current.items.map((item) =>
+            item.id === order.id ? { ...item, ...order } : item
+          ),
+        }
       }
+      if (isSalesOrder(current) && current.id === order.id) {
+        return { ...current, ...order }
+      }
+      return current
     }
-    if (isSalesOrder(current) && current.id === order.id) {
-      return { ...current, ...order }
-    }
-    return current
-  })
+  )
 }
 
-const removeSalesOrderFromCaches = (queryClient: QueryClient, orderId: string) => {
-  queryClient.setQueriesData({ queryKey: tradingQueryKeys.salesOrdersRoot() }, (current: unknown) => {
-    if (isSalesOrderListCache(current)) {
-      const items = current.items.filter((item) => item.id !== orderId)
-      return {
-        ...current,
-        items,
-        total: Math.max(0, current.total - (items.length === current.items.length ? 0 : 1)),
+const removeSalesOrderFromCaches = (
+  queryClient: QueryClient,
+  orderId: string
+) => {
+  queryClient.setQueriesData(
+    { queryKey: tradingQueryKeys.salesOrdersRoot() },
+    (current: unknown) => {
+      if (isSalesOrderListCache(current)) {
+        const items = current.items.filter((item) => item.id !== orderId)
+        return {
+          ...current,
+          items,
+          total: Math.max(
+            0,
+            current.total - (items.length === current.items.length ? 0 : 1)
+          ),
+        }
       }
+      if (isSalesOrder(current) && current.id === orderId) {
+        return undefined
+      }
+      return current
     }
-    if (isSalesOrder(current) && current.id === orderId) {
-      return undefined
-    }
-    return current
-  })
+  )
 }
 
-const markSalesOrderCanceledInCaches = (queryClient: QueryClient, orderId: string) => {
-  queryClient.setQueriesData({ queryKey: tradingQueryKeys.salesOrdersRoot() }, (current: unknown) => {
-    if (isSalesOrderListCache(current)) {
-      return {
-        ...current,
-        items: current.items.map((item) =>
-          item.id === orderId ? { ...item, status: 'Canceled' as const } : item
-        ),
+const markSalesOrderCanceledInCaches = (
+  queryClient: QueryClient,
+  orderId: string
+) => {
+  queryClient.setQueriesData(
+    { queryKey: tradingQueryKeys.salesOrdersRoot() },
+    (current: unknown) => {
+      if (isSalesOrderListCache(current)) {
+        return {
+          ...current,
+          items: current.items.map((item) =>
+            item.id === orderId
+              ? { ...item, status: 'Canceled' as const }
+              : item
+          ),
+        }
       }
+      if (isSalesOrder(current) && current.id === orderId) {
+        return { ...current, status: 'Canceled' as const }
+      }
+      return current
     }
-    if (isSalesOrder(current) && current.id === orderId) {
-      return { ...current, status: 'Canceled' as const }
-    }
-    return current
-  })
+  )
 }
 
 const isAlreadyCanceledError = (error: unknown) => {
@@ -86,11 +136,20 @@ const isAlreadyCanceledError = (error: unknown) => {
   return error.message.toLowerCase().includes('order already canceled')
 }
 
-const invalidateSalesOrderReads = async (queryClient: QueryClient, orderId?: string) => {
+const invalidateSalesOrderReads = async (
+  queryClient: QueryClient,
+  orderId?: string
+) => {
   await Promise.all([
-    queryClient.invalidateQueries({ queryKey: tradingQueryKeys.salesOrdersRoot() }),
+    queryClient.invalidateQueries({
+      queryKey: tradingQueryKeys.salesOrdersRoot(),
+    }),
     ...(orderId
-      ? [queryClient.invalidateQueries({ queryKey: tradingQueryKeys.salesOrderDetail(orderId) })]
+      ? [
+          queryClient.invalidateQueries({
+            queryKey: tradingQueryKeys.salesOrderDetail(orderId),
+          }),
+        ]
       : []),
   ])
 }
@@ -98,7 +157,8 @@ const invalidateSalesOrderReads = async (queryClient: QueryClient, orderId?: str
 export const useSalesOrderMutations = () => {
   const { t } = useLanguage()
   const queryClient = useQueryClient()
-  const invalidateSalesReads = (orderId?: string) => invalidateSalesOrderReads(queryClient, orderId)
+  const invalidateSalesReads = (orderId?: string) =>
+    invalidateSalesOrderReads(queryClient, orderId)
   const handleSavedSuccess = (orderId: string) => {
     toast.success(t('tradingSalesOrder.toasts.saved'))
     void invalidateSalesReads(orderId)
@@ -154,7 +214,13 @@ export const useSalesOrderMutations = () => {
       operator: string
       expectedVersion: number
       actorId?: string
-    }) => changeSalesOrderPurchaseOrderNo(orderId, { purchaseOrderNo, operator, expectedVersion, actorId }),
+    }) =>
+      changeSalesOrderPurchaseOrderNo(orderId, {
+        purchaseOrderNo,
+        operator,
+        expectedVersion,
+        actorId,
+      }),
     onSuccess: (data) => handleSavedSuccess(data.id),
     onError: handleServerError,
   })
@@ -172,7 +238,13 @@ export const useSalesOrderMutations = () => {
       operator: string
       expectedVersion: number
       actorId?: string
-    }) => changeSalesOrderRequirements(orderId, { requirements, operator, expectedVersion, actorId }),
+    }) =>
+      changeSalesOrderRequirements(orderId, {
+        requirements,
+        operator,
+        expectedVersion,
+        actorId,
+      }),
     onSuccess: (data) => handleSavedSuccess(data.id),
     onError: handleServerError,
   })
@@ -190,7 +262,13 @@ export const useSalesOrderMutations = () => {
       operator: string
       expectedVersion: number
       actorId?: string
-    }) => changeSalesOrderDeliveryDate(orderId, { deliveryDate, operator, expectedVersion, actorId }),
+    }) =>
+      changeSalesOrderDeliveryDate(orderId, {
+        deliveryDate,
+        operator,
+        expectedVersion,
+        actorId,
+      }),
     onSuccess: (data) => handleSavedSuccess(data.id),
     onError: handleServerError,
   })
@@ -212,7 +290,15 @@ export const useSalesOrderMutations = () => {
       operator: string
       expectedVersion: number
       actorId?: string
-    }) => changeSalesOrderClassificationType(orderId, { classification, type, barcode, operator, expectedVersion, actorId }),
+    }) =>
+      changeSalesOrderClassificationType(orderId, {
+        classification,
+        type,
+        barcode,
+        operator,
+        expectedVersion,
+        actorId,
+      }),
     onSuccess: (data) => handleSavedSuccess(data.id),
     onError: handleServerError,
   })
@@ -230,7 +316,13 @@ export const useSalesOrderMutations = () => {
       operator: string
       expectedVersion: number
       actorId?: string
-    }) => changeSalesOrderLines(orderId, { lines, operator, expectedVersion, actorId }),
+    }) =>
+      changeSalesOrderLines(orderId, {
+        lines,
+        operator,
+        expectedVersion,
+        actorId,
+      }),
     onSuccess: (data) => handleSavedSuccess(data.id),
     onError: handleServerError,
   })
@@ -248,7 +340,13 @@ export const useSalesOrderMutations = () => {
       operator: string
       expectedVersion: number
       actorId?: string
-    }) => changeSalesOrderLineContent(orderId, { lines, operator, expectedVersion, actorId }),
+    }) =>
+      changeSalesOrderLineContent(orderId, {
+        lines,
+        operator,
+        expectedVersion,
+        actorId,
+      }),
     onSuccess: (data) => handleSavedSuccess(data.id),
     onError: handleServerError,
   })
@@ -266,7 +364,8 @@ export const useSalesOrderMutations = () => {
       operator: string
       expectedVersion: number
       actorId?: string
-    }) => addSalesOrderLine(orderId, { lines, operator, expectedVersion, actorId }),
+    }) =>
+      addSalesOrderLine(orderId, { lines, operator, expectedVersion, actorId }),
     onSuccess: (data) => handleSavedSuccess(data.id),
     onError: handleServerError,
   })
@@ -284,7 +383,13 @@ export const useSalesOrderMutations = () => {
       operator: string
       expectedVersion: number
       actorId?: string
-    }) => removeSalesOrderLine(orderId, { lines, operator, expectedVersion, actorId }),
+    }) =>
+      removeSalesOrderLine(orderId, {
+        lines,
+        operator,
+        expectedVersion,
+        actorId,
+      }),
     onSuccess: (data) => handleSavedSuccess(data.id),
     onError: handleServerError,
   })
@@ -304,7 +409,14 @@ export const useSalesOrderMutations = () => {
       operator: string
       expectedVersion: number
       actorId?: string
-    }) => changeSalesOrderCustomer(orderId, { customerId, customerName, operator, expectedVersion, actorId }),
+    }) =>
+      changeSalesOrderCustomer(orderId, {
+        customerId,
+        customerName,
+        operator,
+        expectedVersion,
+        actorId,
+      }),
     onSuccess: (data) => handleSavedSuccess(data.id),
     onError: handleServerError,
   })
@@ -324,7 +436,14 @@ export const useSalesOrderMutations = () => {
       operator: string
       expectedVersion: number
       actorId?: string
-    }) => transitionSalesOrderStatus(orderId, { status, statusNote, operator, expectedVersion, actorId }),
+    }) =>
+      transitionSalesOrderStatus(orderId, {
+        status,
+        statusNote,
+        operator,
+        expectedVersion,
+        actorId,
+      }),
     onSuccess: (data) => handleSavedSuccess(data.id),
     onError: handleServerError,
   })
@@ -342,7 +461,8 @@ export const useSalesOrderMutations = () => {
       reason?: string
       expectedVersion: number
       actorId?: string
-    }) => cancelSalesOrder(orderId, { operator, reason, expectedVersion, actorId }),
+    }) =>
+      cancelSalesOrder(orderId, { operator, reason, expectedVersion, actorId }),
     onSuccess: (data) => {
       updateSalesOrderInCaches(queryClient, data)
       handleVoidedSuccess(data.id)
@@ -388,7 +508,13 @@ export const useSalesOrderMutations = () => {
       operator: string
       expectedVersion: number
       actorId?: string
-    }) => claimSalesOrderLines(orderId, { lineNos, operator, expectedVersion, actorId }),
+    }) =>
+      claimSalesOrderLines(orderId, {
+        lineNos,
+        operator,
+        expectedVersion,
+        actorId,
+      }),
     onSuccess: (data) => {
       toast.success(t('tradingSalesOrder.toasts.claimed'))
       void invalidateSalesReads(data.id)
@@ -396,5 +522,21 @@ export const useSalesOrderMutations = () => {
     onError: handleServerError,
   })
 
-  return { createMutation, saveMutation, deleteMutation, claimMutation, statusTransitionMutation, cancelMutation, customerChangeMutation, deliveryDateChangeMutation, purchaseOrderNoChangeMutation, requirementsChangeMutation, classificationTypeChangeMutation, linesChangeMutation, lineContentChangeMutation, lineAddMutation, lineRemoveMutation }
+  return {
+    createMutation,
+    saveMutation,
+    deleteMutation,
+    claimMutation,
+    statusTransitionMutation,
+    cancelMutation,
+    customerChangeMutation,
+    deliveryDateChangeMutation,
+    purchaseOrderNoChangeMutation,
+    requirementsChangeMutation,
+    classificationTypeChangeMutation,
+    linesChangeMutation,
+    lineContentChangeMutation,
+    lineAddMutation,
+    lineRemoveMutation,
+  }
 }

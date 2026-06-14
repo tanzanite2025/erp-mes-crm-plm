@@ -1,5 +1,5 @@
-import { type BusinessEventSource } from './business-event-source-types'
 import { BOM_STATUS_ORDER } from '@/lib/codecs/code-normalization'
+import { type BusinessEventSource } from './business-event-source-types'
 
 export interface BusinessEventStatusCatalogEntry {
   code: string
@@ -123,7 +123,11 @@ export function getBusinessEventStatusLabel(
     return sourceEntry.label
   }
 
-  return SHARED_STATUS_CATALOG[statusCode]?.label ?? formatStatusCode(statusCode) ?? statusCode
+  return (
+    SHARED_STATUS_CATALOG[statusCode]?.label ??
+    formatStatusCode(statusCode) ??
+    statusCode
+  )
 }
 
 export function isBusinessEventStatusDefaultResolve(

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useMutation, type QueryClient } from '@tanstack/react-query'
 import { failLoudly } from '@/lib/safe-catch'
+import { InventoryMaintenanceService, type InventoryView } from '../inventory'
 import {
   type InventoryThresholdMaterialOption,
   type InventoryThresholdRule,
@@ -11,7 +12,6 @@ import {
   invalidateMaterialThresholdState,
   upsertMaterialThresholdRule,
 } from '../material-thresholds/services/material-threshold-helpers'
-import { InventoryMaintenanceService, type InventoryView } from '../inventory'
 import { warehouseQueryKeys } from '../query-keys'
 
 interface SelectedStockMaterial {
@@ -43,10 +43,13 @@ export function useStockMgmtActions({
   getThresholdRuleUpdatedMessage,
 }: UseStockMgmtActionsParams) {
   const [configDialogOpen, setConfigDialogOpen] = useState(false)
-  const [selectedMaterial, setSelectedMaterial] = useState<SelectedStockMaterial | null>(null)
+  const [selectedMaterial, setSelectedMaterial] =
+    useState<SelectedStockMaterial | null>(null)
   const [reconcileConfirmOpen, setReconcileConfirmOpen] = useState(false)
 
-  const canManageThresholdRule = allowsAction('action_warehouse_category_manage')
+  const canManageThresholdRule = allowsAction(
+    'action_warehouse_category_manage'
+  )
   const selectedThresholdRule = useMemo(
     () => findMaterialThresholdRule(thresholdRules, selectedMaterial?.id),
     [selectedMaterial?.id, thresholdRules]
@@ -77,7 +80,9 @@ export function useStockMgmtActions({
   const reconcileMutation = useMutation({
     mutationFn: () => InventoryMaintenanceService.reconcileInventory(),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.inventoryList() })
+      queryClient.invalidateQueries({
+        queryKey: warehouseQueryKeys.inventoryList(),
+      })
       showSuccess(getReconcileSuccessMessage())
       setReconcileConfirmOpen(false)
     },
@@ -90,11 +95,17 @@ export function useStockMgmtActions({
         throw new Error('[VALIDATION] stock threshold target is missing')
       }
 
-      return upsertMaterialThresholdRule(thresholdRules, selectedMaterial.id, payload)
+      return upsertMaterialThresholdRule(
+        thresholdRules,
+        selectedMaterial.id,
+        payload
+      )
     },
     onSuccess: async () => {
       await invalidateMaterialThresholdState(queryClient)
-      showSuccess(getThresholdRuleUpdatedMessage(selectedMaterial?.name || '物料'))
+      showSuccess(
+        getThresholdRuleUpdatedMessage(selectedMaterial?.name || '物料')
+      )
       closeThresholdDialog()
     },
     onError: (err) => failLoudly(err, 'StockMgmt.handleSaveThresholdRule'),
@@ -112,7 +123,9 @@ export function useStockMgmtActions({
     await reconcileMutation.mutateAsync()
   }
 
-  const handleSaveThresholdRule = async (payload: InventoryThresholdRuleWritePayload) => {
+  const handleSaveThresholdRule = async (
+    payload: InventoryThresholdRuleWritePayload
+  ) => {
     if (!selectedMaterial) {
       return
     }
@@ -120,7 +133,10 @@ export function useStockMgmtActions({
       return
     }
 
-    const existingRule = findMaterialThresholdRule(thresholdRules, selectedMaterial.id)
+    const existingRule = findMaterialThresholdRule(
+      thresholdRules,
+      selectedMaterial.id
+    )
     if (!existingRule && payload.thresholdQty <= 0) {
       closeThresholdDialog()
       return

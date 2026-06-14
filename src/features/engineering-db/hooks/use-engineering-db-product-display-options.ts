@@ -11,8 +11,8 @@ interface UseEngineeringDbProductDisplayOptionsOptions {
   enabled?: boolean
 }
 
-export function useEngineeringDbProductDisplayOptions(
-  { enabled = true }: UseEngineeringDbProductDisplayOptionsOptions = {}
-) {
+export function useEngineeringDbProductDisplayOptions({
+  enabled = true,
+}: UseEngineeringDbProductDisplayOptionsOptions = {}) {
   return useProductDisplayOptions({ enabled })
 }

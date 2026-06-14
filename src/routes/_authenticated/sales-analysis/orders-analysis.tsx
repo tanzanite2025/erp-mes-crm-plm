@@ -6,8 +6,12 @@ export interface SalesAnalysisOrdersAnalysisSearch {
   timeRange?: string
 }
 
-export const Route = createFileRoute('/_authenticated/sales-analysis/orders-analysis')({
-  validateSearch: (search: Record<string, unknown>): SalesAnalysisOrdersAnalysisSearch => {
+export const Route = createFileRoute(
+  '/_authenticated/sales-analysis/orders-analysis'
+)({
+  validateSearch: (
+    search: Record<string, unknown>
+  ): SalesAnalysisOrdersAnalysisSearch => {
     return {
       customerId: (search.customerId as string) || undefined,
       productId: (search.productId as string) || undefined,

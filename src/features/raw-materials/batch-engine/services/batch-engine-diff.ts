@@ -1,4 +1,7 @@
-import type { BatchOptimizerPlan, BatchOptimizerPlanDiffSummary } from '../types'
+import type {
+  BatchOptimizerPlan,
+  BatchOptimizerPlanDiffSummary,
+} from '../types'
 
 export function getActiveDiffSummary(
   plan: BatchOptimizerPlan,
@@ -7,5 +10,9 @@ export function getActiveDiffSummary(
   if (!baselinePlanRank) {
     return plan.diffSummary
   }
-  return plan.diffSummaries.find((item) => item.baselinePlanRank === baselinePlanRank) ?? plan.diffSummary
+  return (
+    plan.diffSummaries.find(
+      (item) => item.baselinePlanRank === baselinePlanRank
+    ) ?? plan.diffSummary
+  )
 }

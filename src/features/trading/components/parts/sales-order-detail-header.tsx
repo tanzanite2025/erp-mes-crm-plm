@@ -1,6 +1,14 @@
-import { CalendarClock, CheckCircle, FileCheck, Play, Printer, Settings2, XCircle } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import {
+  CalendarClock,
+  CheckCircle,
+  FileCheck,
+  Play,
+  Printer,
+  Settings2,
+  XCircle,
+} from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
+import { Button } from '@/components/ui/button'
 import { type SalesOrder } from '../../data/schema'
 import type { SalesOrderStatusCommandPayload } from '../../hooks/use-sales-order-detail-actions'
 import { useSalesOrderDetailHeaderActions } from '../../hooks/use-sales-order-detail-header-actions'
@@ -52,9 +60,9 @@ export function SalesOrderDetailHeader({
 
   return (
     <div className='relative overflow-hidden rounded-xl border border-dashed border-primary/15 bg-muted/5 px-4 py-2 shadow-inner backdrop-blur-md'>
-      <div className='absolute left-0 top-0 h-full w-1 bg-primary/80' />
+      <div className='absolute top-0 left-0 h-full w-1 bg-primary/80' />
       <div className='flex flex-wrap items-center gap-2 pl-2'>
-        <h3 className='text-[18px] font-black uppercase leading-none tracking-tight'>
+        <h3 className='text-[18px] leading-none font-black tracking-tight uppercase'>
           {order.orderNo}
         </h3>
         <SalesOrderStatusBadge status={order.status} />
@@ -65,7 +73,7 @@ export function SalesOrderDetailHeader({
         {canSubmitPending && (
           <Button
             size='sm'
-            className='h-7 gap-1.5 rounded-lg bg-amber-500 px-2 text-[10px] font-black uppercase text-white hover:bg-amber-600'
+            className='h-7 gap-1.5 rounded-lg bg-amber-500 px-2 text-[10px] font-black text-white uppercase hover:bg-amber-600'
             onClick={() => onMutateStatus(submitPendingPayload)}
           >
             <FileCheck className='size-3.5' />
@@ -75,7 +83,7 @@ export function SalesOrderDetailHeader({
         {canStartScheduling && (
           <Button
             size='sm'
-            className='h-7 gap-1.5 rounded-lg bg-violet-500 px-2 text-[10px] font-black uppercase text-white shadow-lg shadow-violet-500/20 hover:bg-violet-600'
+            className='h-7 gap-1.5 rounded-lg bg-violet-500 px-2 text-[10px] font-black text-white uppercase shadow-lg shadow-violet-500/20 hover:bg-violet-600'
             onClick={() => onMutateStatus(startSchedulingPayload)}
           >
             <CalendarClock className='size-3.5' />
@@ -85,7 +93,7 @@ export function SalesOrderDetailHeader({
         {canStartProduction && (
           <Button
             size='sm'
-            className='h-7 gap-1.5 rounded-lg bg-primary px-2 text-[10px] font-black uppercase text-white shadow-lg shadow-primary/20 hover:bg-primary/90'
+            className='h-7 gap-1.5 rounded-lg bg-primary px-2 text-[10px] font-black text-white uppercase shadow-lg shadow-primary/20 hover:bg-primary/90'
             onClick={() => onMutateStatus(startProductionPayload)}
           >
             <Play className='size-3.5' />
@@ -95,7 +103,7 @@ export function SalesOrderDetailHeader({
         {canMarkDone && (
           <Button
             size='sm'
-            className='h-7 gap-1.5 rounded-lg bg-emerald-500 px-2 text-[10px] font-black uppercase text-white hover:bg-emerald-600'
+            className='h-7 gap-1.5 rounded-lg bg-emerald-500 px-2 text-[10px] font-black text-white uppercase hover:bg-emerald-600'
             onClick={() => onMutateStatus(markDonePayload)}
           >
             <CheckCircle className='size-3.5' />
@@ -106,7 +114,7 @@ export function SalesOrderDetailHeader({
           <Button
             size='sm'
             variant='ghost'
-            className='h-7 gap-1.5 rounded-lg px-2 text-[10px] font-black uppercase text-destructive hover:bg-destructive/10'
+            className='h-7 gap-1.5 rounded-lg px-2 text-[10px] font-black text-destructive uppercase hover:bg-destructive/10'
             onClick={() => {
               if (!confirm(cancelConfirmText)) return
               onMutateStatus(cancelPayload)
@@ -128,14 +136,16 @@ export function SalesOrderDetailHeader({
       </div>
 
       {showClaimBanner && (
-        <div className='mt-1.5 flex items-center justify-between rounded-lg border border-primary/20 bg-primary/5 px-2 py-1 animate-in slide-in-from-top-1'>
+        <div className='mt-1.5 flex animate-in items-center justify-between rounded-lg border border-primary/20 bg-primary/5 px-2 py-1 slide-in-from-top-1'>
           <div className='flex items-center gap-1.5'>
-            <Settings2 className='size-3 animate-spin-slow text-primary' />
-            <span className='text-[10px] font-black uppercase tracking-wide text-primary'>
+            <Settings2 className='animate-spin-slow size-3 text-primary' />
+            <span className='text-[10px] font-black tracking-wide text-primary uppercase'>
               {t('tradingSalesOrder.detail.pendingInstruction')}: {commandTitle}
             </span>
           </div>
-          <p className='text-[10px] font-bold text-muted-foreground'>{activeCommandContent}</p>
+          <p className='text-[10px] font-bold text-muted-foreground'>
+            {activeCommandContent}
+          </p>
         </div>
       )}
     </div>

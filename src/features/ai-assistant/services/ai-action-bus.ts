@@ -1,5 +1,5 @@
-import { isValidRoute } from './ai-protocol-validator'
 import { createLogger } from '@/lib/logger'
+import { isValidRoute } from './ai-protocol-validator'
 
 const logger = createLogger('AiActionBus')
 
@@ -27,7 +27,7 @@ export const aiActionBus = {
    * @param onCommand 指令回调 (由 UI 层注入)
    */
   dispatch(
-    payload: ActionPayload, 
+    payload: ActionPayload,
     navigate: (route: string) => void,
     onCommand: (cmd: string) => void
   ): ActionDispatchResult {
@@ -42,7 +42,7 @@ export const aiActionBus = {
           errorMessage: `[安全拦截] 极光助手生成的路径无效或超出权限范围: ${value}`,
         }
       }
-      
+
       logger.info(`Navigating to: ${value} (${label})`)
       navigate(value)
       return { ok: true }
@@ -52,6 +52,9 @@ export const aiActionBus = {
       return { ok: true }
     }
 
-    return { ok: false, errorMessage: `[AI 动作异常] 未知动作类型: ${type satisfies never}` }
-  }
+    return {
+      ok: false,
+      errorMessage: `[AI 动作异常] 未知动作类型: ${type satisfies never}`,
+    }
+  },
 }

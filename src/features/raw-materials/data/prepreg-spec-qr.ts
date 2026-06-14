@@ -41,7 +41,10 @@ export function buildPrepregSpecQrSnapshot(source: {
   cleanedDimensions: PrepregCleanedDimensionFields
   cleanedResinBatch: PrepregCleanedResinBatchFields
 }): PrepregSpecQrSnapshot {
-  const savedPayload = buildPrepregSpecPayload(source.form, source.editingSpec || null)
+  const savedPayload = buildPrepregSpecPayload(
+    source.form,
+    source.editingSpec || null
+  )
   const payload: PrepregSpecQrPayload = {
     protocol: 'prepreg_spec_label_v1',
     code: savedPayload.code?.trim() || '',
@@ -50,11 +53,19 @@ export function buildPrepregSpecQrSnapshot(source: {
     supplierId: savedPayload.supplierId?.trim() || '',
     supplierProductCode: savedPayload.supplierProductCode?.trim() || '',
     fiberModel: savedPayload.fiberModel?.trim() || '',
-    resinContentPercent: savedPayload.resinContentPercent?.trim() || source.cleanedResinBatch.resinContentPercent.trim(),
-    supplierBatchNo: savedPayload.supplierBatchNo?.trim() || source.cleanedResinBatch.supplierBatchNo.trim(),
-    widthMm: savedPayload.widthMm?.trim() || source.cleanedDimensions.widthMm.trim(),
-    lengthM: savedPayload.lengthM?.trim() || source.cleanedDimensions.lengthM.trim(),
-    nominalAreaM2: savedPayload.nominalAreaM2?.trim() || source.cleanedDimensions.nominalAreaM2.trim(),
+    resinContentPercent:
+      savedPayload.resinContentPercent?.trim() ||
+      source.cleanedResinBatch.resinContentPercent.trim(),
+    supplierBatchNo:
+      savedPayload.supplierBatchNo?.trim() ||
+      source.cleanedResinBatch.supplierBatchNo.trim(),
+    widthMm:
+      savedPayload.widthMm?.trim() || source.cleanedDimensions.widthMm.trim(),
+    lengthM:
+      savedPayload.lengthM?.trim() || source.cleanedDimensions.lengthM.trim(),
+    nominalAreaM2:
+      savedPayload.nominalAreaM2?.trim() ||
+      source.cleanedDimensions.nominalAreaM2.trim(),
     inspector: savedPayload.inspector?.trim() || '',
     boxNo: savedPayload.boxNo?.trim() || '',
     productionDate: savedPayload.productionDate?.trim() || '',
@@ -78,6 +89,8 @@ export function buildPrepregSpecQrSnapshot(source: {
   }
 }
 
-export function canGeneratePrepregSpecQr(snapshot: PrepregSpecQrSnapshot): boolean {
+export function canGeneratePrepregSpecQr(
+  snapshot: PrepregSpecQrSnapshot
+): boolean {
   return Boolean(snapshot.payload.code && snapshot.payload.name)
 }

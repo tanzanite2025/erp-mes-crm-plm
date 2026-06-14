@@ -17,7 +17,10 @@ export interface InboundPayload {
  * 物流入库插件 (Logistics Inbound)
  * 演示如何通过扫码产生 SDRTS 差量补丁
  */
-export const logisticsInboundPlugin: ScanPluginDefinition<InboundPayload, LogisticsInboundContext> = {
+export const logisticsInboundPlugin: ScanPluginDefinition<
+  InboundPayload,
+  LogisticsInboundContext
+> = {
   code: 'LOGISTICS_INBOUND_V1',
   name: '物流入库扫码',
   description: '扫描送货单或标签，自动产生入库 SDRTS 补丁。',
@@ -30,7 +33,7 @@ export const logisticsInboundPlugin: ScanPluginDefinition<InboundPayload, Logist
    */
   async resolveScan({ rawCode, context: _context }) {
     // 模拟后端解析延迟
-    await new Promise(resolve => setTimeout(resolve, 800))
+    await new Promise((resolve) => setTimeout(resolve, 800))
 
     // 模拟解析出的物料
     return {
@@ -40,8 +43,8 @@ export const logisticsInboundPlugin: ScanPluginDefinition<InboundPayload, Logist
         sku: rawCode,
         name: `模拟物料_${rawCode.slice(-4)}`,
         category: 'RAW_MATERIAL',
-        suggestedQty: 100
-      }
+        suggestedQty: 100,
+      },
     }
   },
 
@@ -50,7 +53,7 @@ export const logisticsInboundPlugin: ScanPluginDefinition<InboundPayload, Logist
    */
   async submitAction(resolvedContext): Promise<ScanSubmitResult> {
     const { payload } = resolvedContext
-    
+
     // 模拟业务检查
     if (!payload.sku.startsWith('SKU')) {
       return { success: false, message: '[INVALID_SKU] 非法物料编码格式' }
@@ -63,11 +66,11 @@ export const logisticsInboundPlugin: ScanPluginDefinition<InboundPayload, Logist
       deltaResult: {
         id: payload.sku,
         delta: {
-          'inboundQty': { o: 0, n: payload.suggestedQty },
-          'status': { o: 'PENDING', n: 'SCANNED' }
+          inboundQty: { o: 0, n: payload.suggestedQty },
+          status: { o: 'PENDING', n: 'SCANNED' },
         },
-        version: 1 // 初始版次
-      }
+        version: 1, // 初始版次
+      },
     }
-  }
+  },
 }

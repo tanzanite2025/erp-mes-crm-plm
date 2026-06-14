@@ -1,10 +1,6 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useLanguage } from '@/context/language-provider'
-import {
-  type ProductDisplayProjectionV2,
-} from '@/features/engineering/display/product-display-v2'
-import { buildProductDisplayMapsV2 } from '@/features/engineering/display/product-display-v2-map'
 import type {
   Product,
   ProductAttributeCategory,
@@ -12,6 +8,8 @@ import type {
   ProductTemplate,
   ProductType,
 } from '@/features/engineering/data/schema'
+import { type ProductDisplayProjectionV2 } from '@/features/engineering/display/product-display-v2'
+import { buildProductDisplayMapsV2 } from '@/features/engineering/display/product-display-v2-map'
 import { useGetProducts } from '@/features/engineering/hooks/use-products'
 import {
   PRODUCT_ATTRIBUTE_CATEGORIES_QUERY_KEY,
@@ -24,7 +22,10 @@ import { ProductAttributeOptionService } from '@/features/engineering/services/p
 import { productTemplateService } from '@/features/engineering/services/product-template-service'
 import { ProductTypeService } from '@/features/engineering/services/product-type-service'
 
-export function useSalesAnalyticsProductDisplayMap(): Map<string, ProductDisplayProjectionV2> {
+export function useSalesAnalyticsProductDisplayMap(): Map<
+  string,
+  ProductDisplayProjectionV2
+> {
   const { locale } = useLanguage()
   const productsQuery = useGetProducts()
   const productTemplatesQuery = useQuery({
@@ -37,36 +38,43 @@ export function useSalesAnalyticsProductDisplayMap(): Map<string, ProductDisplay
   })
   const productAttributeCategoriesQuery = useQuery({
     queryKey: PRODUCT_ATTRIBUTE_CATEGORIES_QUERY_KEY,
-    queryFn: () => ProductAttributeCategoryService.getProductAttributeCategories({ activeOnly: true }),
+    queryFn: () =>
+      ProductAttributeCategoryService.getProductAttributeCategories({
+        activeOnly: true,
+      }),
   })
   const productAttributeOptionsQuery = useQuery({
     queryKey: PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY,
-    queryFn: () => ProductAttributeOptionService.getProductAttributeOptions({ activeOnly: true }),
+    queryFn: () =>
+      ProductAttributeOptionService.getProductAttributeOptions({
+        activeOnly: true,
+      }),
   })
 
   return useMemo(() => {
     if (
-      productsQuery.isPending
-      || productTemplatesQuery.isPending
-      || productTypesQuery.isPending
-      || productAttributeCategoriesQuery.isPending
-      || productAttributeOptionsQuery.isPending
+      productsQuery.isPending ||
+      productTemplatesQuery.isPending ||
+      productTypesQuery.isPending ||
+      productAttributeCategoriesQuery.isPending ||
+      productAttributeOptionsQuery.isPending
     ) {
       return new Map<string, ProductDisplayProjectionV2>()
     }
 
     if (
-      productsQuery.error
-      || productTemplatesQuery.error
-      || productTypesQuery.error
-      || productAttributeCategoriesQuery.error
-      || productAttributeOptionsQuery.error
+      productsQuery.error ||
+      productTemplatesQuery.error ||
+      productTypesQuery.error ||
+      productAttributeCategoriesQuery.error ||
+      productAttributeOptionsQuery.error
     ) {
       return new Map<string, ProductDisplayProjectionV2>()
     }
 
     const products = (productsQuery.data as Product[]) ?? []
-    const productTemplates = (productTemplatesQuery.data as ProductTemplate[]) ?? []
+    const productTemplates =
+      (productTemplatesQuery.data as ProductTemplate[]) ?? []
     const productTypes = (productTypesQuery.data as ProductType[]) ?? []
     const productAttributeCategories =
       (productAttributeCategoriesQuery.data as ProductAttributeCategory[]) ?? []

@@ -84,8 +84,7 @@ export const approval = {
     verifyDescription: '该操作受系统保护，请输入审批人发放的 6 位数字授权码。',
     verifyPlaceholder: '输入授权码',
     requestAnother: '丢失或未发起申请？重新申请',
-    requestDescription:
-      '由于尚未配置审批流或申请已过期，请填写理由重新发起：',
+    requestDescription: '由于尚未配置审批流或申请已过期，请填写理由重新发起：',
     requestPlaceholder: '申请理由（如：业务冲销、数据更正）',
     verifyAction: '验证并执行',
     submitRequest: '提交申请',

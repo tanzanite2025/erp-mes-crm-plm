@@ -15,8 +15,17 @@ export function useBatchEngineState() {
     cuttingPlanLoading,
     selectedCuttingPlan,
     cutSizeUnits,
-  } = useBatchEngineBootstrap(rawControls.selectedPrepregSpecId, rawControls.selectedCuttingPlanId)
-  const { controls, normalizedControls, mappedDemandLines, simulation, legend } = useBatchEnginePreview({
+  } = useBatchEngineBootstrap(
+    rawControls.selectedPrepregSpecId,
+    rawControls.selectedCuttingPlanId
+  )
+  const {
+    controls,
+    normalizedControls,
+    mappedDemandLines,
+    simulation,
+    legend,
+  } = useBatchEnginePreview({
     controls: rawControls,
     selectedCuttingPlan,
     cutSizeUnits,
@@ -39,7 +48,8 @@ export function useBatchEngineState() {
     mappedDemandLines,
     simulation,
   })
-  const { selectedPlanContext, selectPlan, selectBaselinePlan } = useBatchEnginePlanSelection({ solution })
+  const { selectedPlanContext, selectPlan, selectBaselinePlan } =
+    useBatchEnginePlanSelection({ solution })
   const {
     searchQuery,
     setSearchQuery,

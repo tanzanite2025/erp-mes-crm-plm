@@ -1,8 +1,8 @@
+import { z } from 'zod'
 import { createFileRoute } from '@tanstack/react-router'
 import { Settings2 } from 'lucide-react'
-import { z } from 'zod'
-import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { BusinessEventSourceList } from '@/features/system-mgmt/tabs/business-event-source-list'
 
 type BusinessEventSourceListRouteSearchState = {
@@ -28,7 +28,7 @@ function SourcesRouteComponent() {
   const navigate = Route.useNavigate()
 
   return (
-    <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+    <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
       <IndustrialHeader
         icon={Settings2}
         title={t('messageCenter.pages.sources.title')}
@@ -43,7 +43,9 @@ function SourcesRouteComponent() {
             ? search.expandedSourceIds.split(',').filter(Boolean)
             : [],
         }}
-        onSearchStateChange={(partial: Partial<BusinessEventSourceListRouteSearchState>) => {
+        onSearchStateChange={(
+          partial: Partial<BusinessEventSourceListRouteSearchState>
+        ) => {
           void navigate({
             search: (prev) => ({
               ...prev,

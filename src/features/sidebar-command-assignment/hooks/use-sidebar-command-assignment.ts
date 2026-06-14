@@ -59,9 +59,7 @@ export function useSidebarCommandAssignmentViewModel() {
   })
 
   const accounts = useMemo(() => {
-    return (
-      usersQuery.data?.map((user) => toSidebarCommandAccount(user)) ?? []
-    )
+    return usersQuery.data?.map((user) => toSidebarCommandAccount(user)) ?? []
   }, [usersQuery.data])
 
   const selectedAccountId = accounts.some(

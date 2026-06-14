@@ -29,13 +29,20 @@ export interface RecordCutSizeInventoryResponse {
 
 export const CutSizeInventoryService = {
   list(): Promise<CutSizeInventoryRecord[]> {
-    return apiFetch<CutSizeInventoryRecord[]>('/cutting-operations/size-inventory')
+    return apiFetch<CutSizeInventoryRecord[]>(
+      '/cutting-operations/size-inventory'
+    )
   },
 
-  record(input: RecordCutSizeInventoryInput): Promise<RecordCutSizeInventoryResponse> {
-    return apiFetch<RecordCutSizeInventoryResponse>('/cutting-operations/size-inventory/records', {
-      method: 'POST',
-      body: JSON.stringify(input),
-    })
+  record(
+    input: RecordCutSizeInventoryInput
+  ): Promise<RecordCutSizeInventoryResponse> {
+    return apiFetch<RecordCutSizeInventoryResponse>(
+      '/cutting-operations/size-inventory/records',
+      {
+        method: 'POST',
+        body: JSON.stringify(input),
+      }
+    )
   },
 }

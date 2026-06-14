@@ -1,18 +1,19 @@
 import { type Dispatch, type SetStateAction } from 'react'
 import { toast } from 'sonner'
 import { type BusinessEventSource } from '../../workflow-core/data/business-event-source-schema'
-import { RoutingService } from '../../workflow-core/services/routing-service'
 import { type NotificationRule } from '../../workflow-core/data/notification-rule-schema'
+import { RoutingService } from '../../workflow-core/services/routing-service'
+import {
+  saveBusinessEventSourceSection,
+  type UndoPatchState,
+} from './business-event-source-card-actions'
 import {
   applyBusinessEventSourceSectionPatch,
   buildBusinessEventSourceSectionPatch,
   extractBusinessEventSourceSectionPatch,
   type BusinessEventSourceSection,
 } from './business-event-source-card-diff'
-import {
-  saveBusinessEventSourceSection,
-  type UndoPatchState,
-} from './business-event-source-card-actions'
+import { type BusinessEventSourceCardSavingState } from './business-event-source-card-state'
 import { cloneBusinessEventSource } from './business-event-source-card-utils'
 import {
   applyBusinessEventStatusRenamesToRules,
@@ -24,7 +25,6 @@ import {
   isBusinessEventStatusAtomicTransactionSupported,
   replaceBusinessEventStatusAtomicTransactionRules,
 } from './business-event-source-status-transaction'
-import { type BusinessEventSourceCardSavingState } from './business-event-source-card-state'
 
 type SavingState = BusinessEventSourceCardSavingState
 
@@ -107,7 +107,8 @@ export async function saveBusinessEventSourceStatuses({
   const renamePlans = statusRenamePlans.filter(
     (plan) => plan.oldCode !== plan.nextCode
   )
-  const planBlockerMessage = getBusinessEventStatusRenamePlanBlockerMessage(renamePlans)
+  const planBlockerMessage =
+    getBusinessEventStatusRenamePlanBlockerMessage(renamePlans)
   if (planBlockerMessage) {
     toast.error(planBlockerMessage)
     return undefined
@@ -142,7 +143,9 @@ export async function saveBusinessEventSourceStatuses({
       committedSource,
     })
   ) {
-    toast.error('当前后端原子事务仅支持已落库状态安全改名，不支持与新增或删除状态混合提交')
+    toast.error(
+      '当前后端原子事务仅支持已落库状态安全改名，不支持与新增或删除状态混合提交'
+    )
     return undefined
   }
 
@@ -168,18 +171,22 @@ export async function saveBusinessEventSourceStatuses({
     setCommittedSourceState(optimisticCommitted)
     setUndoPatches((prev) => ({
       ...prev,
-      statuses: extractBusinessEventSourceSectionPatch(previousCommitted, 'statuses'),
+      statuses: extractBusinessEventSourceSectionPatch(
+        previousCommitted,
+        'statuses'
+      ),
     }))
 
-    const result = await RoutingService.commitEventSourceStatusRenameTransaction(
-      draft.id,
-      buildBusinessEventStatusAtomicTransactionPayload({
-        draftSource: draft,
-        changedRules: migration.changedRules,
-        previousRules,
-        expectedUpdatedAt: previousCommitted.updatedAt,
-      })
-    )
+    const result =
+      await RoutingService.commitEventSourceStatusRenameTransaction(
+        draft.id,
+        buildBusinessEventStatusAtomicTransactionPayload({
+          draftSource: draft,
+          changedRules: migration.changedRules,
+          previousRules,
+          expectedUpdatedAt: previousCommitted.updatedAt,
+        })
+      )
 
     setSavingSections((prev) => ({ ...prev, statuses: false }))
     setCommittedSourceState(result.eventSource)
@@ -188,7 +195,10 @@ export async function saveBusinessEventSourceStatuses({
       mergeIncomingDraft(optimisticCommitted, result.eventSource, currentDraft)
     )
     onRulesReplace((currentRules) =>
-      replaceBusinessEventStatusAtomicTransactionRules(currentRules, result.rules)
+      replaceBusinessEventStatusAtomicTransactionRules(
+        currentRules,
+        result.rules
+      )
     )
     toast.success('状态已通过后端原子事务安全改名，并同步提交规则引用')
     return result.eventSource
@@ -196,7 +206,9 @@ export async function saveBusinessEventSourceStatuses({
     setSavingSections((prev) => ({ ...prev, statuses: false }))
     setCommittedSourceState(previousCommitted)
     setUndoPatches((prev) => ({ ...prev, statuses: null }))
-    toast.error(error instanceof Error ? error.message : '状态安全重命名原子事务失败')
+    toast.error(
+      error instanceof Error ? error.message : '状态安全重命名原子事务失败'
+    )
     return undefined
   }
 }

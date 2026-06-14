@@ -11,8 +11,11 @@ export interface ProductionResourceSyncEmitOptions {
 }
 
 export const PRODUCTION_LINES_UPDATED_EVENT = 'xdfc_production_lines_v2_updated'
-export const PRODUCTION_PROCESSES_UPDATED_EVENT = 'xdfc_production_processes_updated'
-const productionResourceListeners = new Set<(event: ProductionResourceSyncEvent) => void>()
+export const PRODUCTION_PROCESSES_UPDATED_EVENT =
+  'xdfc_production_processes_updated'
+const productionResourceListeners = new Set<
+  (event: ProductionResourceSyncEvent) => void
+>()
 
 function getLegacyEventName(kind: ProductionResourceKind): string {
   switch (kind) {
@@ -30,10 +33,14 @@ function emitLegacyWindowEvent(kind: ProductionResourceKind): void {
     return
   }
 
-  window.dispatchEvent(new CustomEvent(getLegacyEventName(kind), { detail: { kind } }))
+  window.dispatchEvent(
+    new CustomEvent(getLegacyEventName(kind), { detail: { kind } })
+  )
 }
 
-async function invalidateProductionResource(kind: ProductionResourceKind): Promise<void> {
+async function invalidateProductionResource(
+  kind: ProductionResourceKind
+): Promise<void> {
   switch (kind) {
     case 'lines':
       await productionResourceInvalidation.invalidateLines()
@@ -47,7 +54,10 @@ async function invalidateProductionResource(kind: ProductionResourceKind): Promi
 }
 
 export const productionResourceSync = {
-  emit: (event: ProductionResourceSyncEvent, options?: ProductionResourceSyncEmitOptions): void => {
+  emit: (
+    event: ProductionResourceSyncEvent,
+    options?: ProductionResourceSyncEmitOptions
+  ): void => {
     productionResourceListeners.forEach((listener) => listener(event))
     emitLegacyWindowEvent(event.kind)
     if (options?.invalidate !== false) {
@@ -55,7 +65,9 @@ export const productionResourceSync = {
     }
   },
 
-  subscribe: (listener: (event: ProductionResourceSyncEvent) => void): (() => void) => {
+  subscribe: (
+    listener: (event: ProductionResourceSyncEvent) => void
+  ): (() => void) => {
     productionResourceListeners.add(listener)
 
     return () => {

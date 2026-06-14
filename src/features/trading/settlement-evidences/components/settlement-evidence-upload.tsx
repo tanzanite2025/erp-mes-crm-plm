@@ -1,8 +1,8 @@
 import { type ChangeEvent, useState } from 'react'
-import { toast } from 'sonner'
 import { CloudUpload, Loader2 } from 'lucide-react'
-import { Input } from '@/components/ui/input'
+import { toast } from 'sonner'
 import { failLoudly } from '@/lib/safe-catch'
+import { Input } from '@/components/ui/input'
 import { uploadSettlementEvidenceImage } from '../services/settlement-evidence-service'
 
 interface SettlementEvidenceUploadProps {
@@ -50,7 +50,9 @@ export function SettlementEvidenceUpload({
       setNote('')
       toast.success('记录证据上传成功')
     } catch (error) {
-      failLoudly(error, 'SettlementEvidenceUpload.handleChange', { silentUI: true })
+      failLoudly(error, 'SettlementEvidenceUpload.handleChange', {
+        silentUI: true,
+      })
       toast.error('记录证据上传失败')
     } finally {
       setUploading(false)
@@ -61,7 +63,9 @@ export function SettlementEvidenceUpload({
   return (
     <div className='grid gap-3'>
       <div className='space-y-1'>
-        <p className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>凭证备注</p>
+        <p className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+          凭证备注
+        </p>
         <Input
           value={note}
           onChange={(event) => setNote(event.target.value)}
@@ -87,7 +91,7 @@ export function SettlementEvidenceUpload({
               <div className='flex size-10 items-center justify-center rounded-full bg-muted'>
                 <CloudUpload className='size-5 text-muted-foreground' />
               </div>
-              <span className='px-1 text-center text-[9px] font-black uppercase tracking-widest text-muted-foreground'>
+              <span className='px-1 text-center text-[9px] font-black tracking-widest text-muted-foreground uppercase'>
                 上传记录图片证据
               </span>
             </>

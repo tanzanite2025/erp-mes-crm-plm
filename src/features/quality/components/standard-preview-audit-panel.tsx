@@ -1,7 +1,7 @@
 import { Clock3, Info, ShieldCheck, User } from 'lucide-react'
-import { AuditStatusDisplay } from '@/components/common/audit-status-display'
-import { Badge } from '@/components/ui/badge'
 import { useLanguage } from '@/context/language-provider'
+import { Badge } from '@/components/ui/badge'
+import { AuditStatusDisplay } from '@/components/common/audit-status-display'
 import type { Standard } from '../data/schema'
 import {
   formatQualityActorName,
@@ -30,15 +30,19 @@ export function StandardPreviewAuditPanel({
   const publishedAtText = formatQualityDateTime(standard.publishedAt)
   const archivedByText = formatQualityActorName(standard.archivedBy)
   const archivedAtText = formatQualityDateTime(standard.archivedAt)
-  const auditMeta = getQualityAuditMeta(locale, standard.status, standard.auditor)
+  const auditMeta = getQualityAuditMeta(
+    locale,
+    standard.status,
+    standard.auditor
+  )
   const hasDecisionDetails = Boolean(
     reviewComment ||
-      rejectReason ||
-      archiveReason ||
-      publishedByText ||
-      publishedAtText ||
-      archivedByText ||
-      archivedAtText
+    rejectReason ||
+    archiveReason ||
+    publishedByText ||
+    publishedAtText ||
+    archivedByText ||
+    archivedAtText
   )
   const auditTitle = locale === 'zh-CN' ? '审核履历' : 'Audit Trail'
   const auditHint =

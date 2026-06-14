@@ -3,10 +3,14 @@ import { toast } from 'sonner'
 import { failLoudly } from '@/lib/safe-catch'
 import { useLanguage } from '@/context/language-provider'
 import { type BOM } from '@/features/product-structure/data/schema'
-import { type Product, type ProductAttributeOption, type ProductType } from '../data/schema'
 import { ProductCommand } from '../commands/product-command'
-import { resolveEffectiveProductSku } from '../utils/product-form-utils'
+import {
+  type Product,
+  type ProductAttributeOption,
+  type ProductType,
+} from '../data/schema'
 import { resolveProductAggregateDisplayLabel } from '../utils/product-display-aggregate'
+import { resolveEffectiveProductSku } from '../utils/product-form-utils'
 import { type ProductSubmitPayload } from './use-product-form'
 
 interface UseProductFormSubmitParams {
@@ -18,7 +22,9 @@ interface UseProductFormSubmitParams {
   boms?: BOM[]
   customerNameMap?: Map<string, string>
   onOpenChange: (open: boolean) => void
-  onSubmit?: (payload: ProductSubmitPayload) => Promise<Product[] | void> | Product[] | void
+  onSubmit?: (
+    payload: ProductSubmitPayload
+  ) => Promise<Product[] | void> | Product[] | void
   onSaved?: (products: Product[]) => void
 }
 
@@ -43,7 +49,8 @@ export function useProductFormSubmit({
   const handleFormSubmit = async (values: Product) => {
     const selectedType = productTypes.find((type) => type.id === values.typeId)
     const typeCode = selectedType?.code || 'X'
-    const selectedBom = (boms ?? []).find((bom) => bom.id === values.bomId) ?? null
+    const selectedBom =
+      (boms ?? []).find((bom) => bom.id === values.bomId) ?? null
     const normalizedValues: Product = {
       ...values,
       name: resolveProductAggregateDisplayLabel({
@@ -53,7 +60,9 @@ export function useProductFormSubmit({
         bom: selectedBom,
         options: attributeOptions,
         customerNameMap,
-        ownerTypeInternalLabel: t('engineering.bomArchive.form.ownerTypeInternal'),
+        ownerTypeInternalLabel: t(
+          'engineering.bomArchive.form.ownerTypeInternal'
+        ),
         unknownCustomerLabel: t('engineering.bomArchive.table.ownerUnknown'),
         emptyBaseLabel: t('engineering.productArchive.states.unnamed'),
       }),
@@ -70,14 +79,18 @@ export function useProductFormSubmit({
     })
 
     if (submitPayload.productsToSave.length === 0) {
-      const error = createEmptySubmitPayloadError('received empty productsToSave payload')
+      const error = createEmptySubmitPayloadError(
+        'received empty productsToSave payload'
+      )
       failLoudly(error, 'ProductFormSubmit.handleFormSubmit')
       throw error
     }
 
     const [finalData] = submitPayload.productsToSave
     if (!finalData) {
-      const error = createEmptySubmitPayloadError('resolved submit branch without a product item')
+      const error = createEmptySubmitPayloadError(
+        'resolved submit branch without a product item'
+      )
       failLoudly(error, 'ProductFormSubmit.handleFormSubmit')
       throw error
     }

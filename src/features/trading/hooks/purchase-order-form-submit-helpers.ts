@@ -1,6 +1,9 @@
 import { type PurchaseOrder, type PurchaseOrderLine } from '../data/schema'
 
-function normalizePurchaseOrderLineForSubmit(line: PurchaseOrderLine, index: number): PurchaseOrderLine {
+function normalizePurchaseOrderLineForSubmit(
+  line: PurchaseOrderLine,
+  index: number
+): PurchaseOrderLine {
   return {
     ...line,
     lineNo: index + 1,
@@ -18,8 +21,12 @@ function normalizePurchaseOrderLineForSubmit(line: PurchaseOrderLine, index: num
   }
 }
 
-export function preparePurchaseOrderForSubmit(formData: PurchaseOrder): PurchaseOrder {
-  const normalizedLines = formData.lines.map(normalizePurchaseOrderLineForSubmit)
+export function preparePurchaseOrderForSubmit(
+  formData: PurchaseOrder
+): PurchaseOrder {
+  const normalizedLines = formData.lines.map(
+    normalizePurchaseOrderLineForSubmit
+  )
 
   return {
     ...formData,
@@ -33,7 +40,10 @@ export function preparePurchaseOrderForSubmit(formData: PurchaseOrder): Purchase
     paymentTermName: formData.paymentTermName?.trim() || '',
     note: formData.note?.trim() || undefined,
     amount: Number(formData.amount) || 0,
-    exchangeRate: formData.exchangeRate === undefined ? undefined : Number(formData.exchangeRate) || 0,
+    exchangeRate:
+      formData.exchangeRate === undefined
+        ? undefined
+        : Number(formData.exchangeRate) || 0,
     lines: normalizedLines,
   }
 }

@@ -1,7 +1,11 @@
 import type { VehicleLoadingDiagramProps } from './vehicle-loading-diagram-types'
 import { VehicleLoadingLayerView } from './vehicle-loading-layer-view'
 
-function formatSize(size: { lengthMm: number; widthMm: number; heightMm: number }) {
+function formatSize(size: {
+  lengthMm: number
+  widthMm: number
+  heightMm: number
+}) {
   return `${size.lengthMm} × ${size.widthMm} × ${size.heightMm} mm`
 }
 
@@ -13,10 +17,19 @@ export function VehicleLoadingDiagramFrame({
   boxesPerLayer,
   layerCount,
   maxBoxes,
-}: Pick<VehicleLoadingDiagramProps, 'vehicleSize' | 'packageSize' | 'orientationLabel' | 'orientationAxis' | 'boxesPerLayer' | 'layerCount' | 'maxBoxes'>) {
+}: Pick<
+  VehicleLoadingDiagramProps,
+  | 'vehicleSize'
+  | 'packageSize'
+  | 'orientationLabel'
+  | 'orientationAxis'
+  | 'boxesPerLayer'
+  | 'layerCount'
+  | 'maxBoxes'
+>) {
   return (
     <div className='flex min-h-0 flex-1 flex-col rounded-[12px] border border-dashed border-border/40 bg-white/70 p-2'>
-      <div className='mb-1 flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+      <div className='mb-1 flex items-center justify-between text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
         <span>L</span>
         <span>W</span>
       </div>
@@ -38,7 +51,8 @@ export function VehicleLoadingDiagramFrame({
         </div>
 
         <div className='mt-1 text-[11px] leading-relaxed text-muted-foreground'>
-          车厢尺寸 {formatSize(vehicleSize)}；箱体尺寸 {formatSize(packageSize)}。
+          车厢尺寸 {formatSize(vehicleSize)}；箱体尺寸 {formatSize(packageSize)}
+          。
         </div>
       </div>
     </div>

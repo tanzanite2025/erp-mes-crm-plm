@@ -6,7 +6,9 @@ import { useUsers } from './users-provider'
 
 export function UsersDialogs() {
   const { open, setOpen, currentRow, setCurrentRow } = useUsers()
-  const resetTimerRef = useRef<ReturnType<typeof globalThis.setTimeout> | null>(null)
+  const resetTimerRef = useRef<ReturnType<typeof globalThis.setTimeout> | null>(
+    null
+  )
 
   const scheduleRowReset = useCallback(() => {
     if (resetTimerRef.current) {
@@ -27,12 +29,15 @@ export function UsersDialogs() {
     }
   }, [])
 
-  const handleManagedDialogOpenChange = useCallback((dialog: 'edit' | 'permissions' | 'delete', nextOpen: boolean) => {
-    setOpen(dialog)
-    if (!nextOpen) {
-      scheduleRowReset()
-    }
-  }, [scheduleRowReset, setOpen])
+  const handleManagedDialogOpenChange = useCallback(
+    (dialog: 'edit' | 'permissions' | 'delete', nextOpen: boolean) => {
+      setOpen(dialog)
+      if (!nextOpen) {
+        scheduleRowReset()
+      }
+    },
+    [scheduleRowReset, setOpen]
+  )
 
   return (
     <>
@@ -47,21 +52,27 @@ export function UsersDialogs() {
           <UsersActionDialog
             key={`user-edit-${currentRow.id}`}
             open={open === 'edit'}
-            onOpenChange={(nextOpen) => handleManagedDialogOpenChange('edit', nextOpen)}
+            onOpenChange={(nextOpen) =>
+              handleManagedDialogOpenChange('edit', nextOpen)
+            }
             currentRow={currentRow}
           />
 
           <UsersPermissionsDialog
             key={`user-permissions-${currentRow.id}`}
             open={open === 'permissions'}
-            onOpenChange={(nextOpen) => handleManagedDialogOpenChange('permissions', nextOpen)}
+            onOpenChange={(nextOpen) =>
+              handleManagedDialogOpenChange('permissions', nextOpen)
+            }
             currentRow={currentRow}
           />
 
           <UsersDeleteDialog
             key={`user-delete-${currentRow.id}`}
             open={open === 'delete'}
-            onOpenChange={(nextOpen) => handleManagedDialogOpenChange('delete', nextOpen)}
+            onOpenChange={(nextOpen) =>
+              handleManagedDialogOpenChange('delete', nextOpen)
+            }
             currentRow={currentRow}
           />
         </>

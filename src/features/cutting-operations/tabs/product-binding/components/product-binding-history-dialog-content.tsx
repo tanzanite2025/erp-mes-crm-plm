@@ -11,9 +11,10 @@ type ProductBindingHistoryDialogContentProps = {
 }
 
 export function ProductBindingHistoryDialogContent(
-  props: ProductBindingHistoryDialogContentProps,
+  props: ProductBindingHistoryDialogContentProps
 ) {
-  const { title, items, isLoading, error, latestBindingId, historyTotal } = props
+  const { title, items, isLoading, error, latestBindingId, historyTotal } =
+    props
 
   return (
     <DialogContent

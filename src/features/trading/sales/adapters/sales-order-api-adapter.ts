@@ -1,10 +1,10 @@
+import { ensureArrayField } from '@/lib/api-response'
 import type { SalesOrder, SalesOrderLine } from '../../data/schema'
 import type {
   SalesOrderApiDTO,
   SalesOrderLineApiDTO,
   SalesOrderListPageApiDTO,
 } from '../contracts/sales-order-api-dto'
-import { ensureArrayField } from '@/lib/api-response'
 
 export interface PaginatedSalesOrders {
   items: SalesOrder[]
@@ -14,7 +14,10 @@ export interface PaginatedSalesOrders {
 }
 
 function normalizeApiStatus(status: string): string {
-  return status.trim().toLowerCase().replace(/[\s_-]/g, '')
+  return status
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]/g, '')
 }
 
 function normalizeSalesOrderLineStatus(
@@ -50,7 +53,8 @@ function toSalesOrderLineContract(dto: SalesOrderLineApiDTO): SalesOrderLine {
     productDisplaySubtitleSnapshot: dto.productDisplaySubtitleSnapshot ?? '',
     productDisplayCodeSnapshot: dto.productDisplayCodeSnapshot ?? '',
     productDisplayFullLabelSnapshot: dto.productDisplayFullLabelSnapshot ?? '',
-    productDisplayStrategyVersionSnapshot: dto.productDisplayStrategyVersionSnapshot ?? '',
+    productDisplayStrategyVersionSnapshot:
+      dto.productDisplayStrategyVersionSnapshot ?? '',
     modelCodeSnapshot: dto.modelCodeSnapshot,
     holePrefixSnapshot: dto.holePrefixSnapshot,
     appearanceId: dto.appearanceId,
@@ -96,7 +100,8 @@ function toSalesOrderLineApiDTO(line: SalesOrderLine): SalesOrderLineApiDTO {
     productDisplaySubtitleSnapshot: line.productDisplaySubtitleSnapshot,
     productDisplayCodeSnapshot: line.productDisplayCodeSnapshot,
     productDisplayFullLabelSnapshot: line.productDisplayFullLabelSnapshot,
-    productDisplayStrategyVersionSnapshot: line.productDisplayStrategyVersionSnapshot,
+    productDisplayStrategyVersionSnapshot:
+      line.productDisplayStrategyVersionSnapshot,
     modelCodeSnapshot: line.modelCodeSnapshot,
     holePrefixSnapshot: line.holePrefixSnapshot,
     appearanceId: line.appearanceId,
@@ -159,16 +164,18 @@ function normalizeSalesOrderStatus(
 function requireSalesOrderArrayField<T>(
   value: unknown,
   fieldName: string,
-  context: string,
+  context: string
 ): T[] {
   return ensureArrayField<T>(value, fieldName, context)
 }
 
-type SalesOrderBaseDTO = SalesOrderApiDTO | SalesOrderListPageApiDTO['items'][number]
+type SalesOrderBaseDTO =
+  | SalesOrderApiDTO
+  | SalesOrderListPageApiDTO['items'][number]
 
 function toSalesOrderBaseContract(
   dto: SalesOrderBaseDTO,
-  context: string,
+  context: string
 ): Omit<SalesOrder, 'lines'> {
   return {
     id: dto.id,
@@ -200,13 +207,17 @@ function toSalesOrderBaseContract(
     version: dto.version ?? 1,
     evidences: requireSalesOrderArrayField(dto, 'evidences', context),
     fulfillmentRate: dto.fulfillmentRate,
-    availableActions: requireSalesOrderArrayField(dto, 'availableActions', context),
+    availableActions: requireSalesOrderArrayField(
+      dto,
+      'availableActions',
+      context
+    ),
   }
 }
 
 function toSalesOrderListItemContract(
   dto: SalesOrderListPageApiDTO['items'][number],
-  options: { withLines: boolean },
+  options: { withLines: boolean }
 ): SalesOrder {
   const context = 'SalesOrderApiAdapter.toSalesOrderListItemContract'
   const base = toSalesOrderBaseContract(dto, context)
@@ -214,15 +225,19 @@ function toSalesOrderListItemContract(
   if (options.withLines) {
     return {
       ...base,
-      lines: requireSalesOrderArrayField<SalesOrderLineApiDTO>(dto, 'lines', context).map(
-        toSalesOrderLineContract,
-      ),
+      lines: requireSalesOrderArrayField<SalesOrderLineApiDTO>(
+        dto,
+        'lines',
+        context
+      ).map(toSalesOrderLineContract),
     }
   }
 
   return {
     ...base,
-    lines: Array.isArray(dto.lines) ? dto.lines.map(toSalesOrderLineContract) : [],
+    lines: Array.isArray(dto.lines)
+      ? dto.lines.map(toSalesOrderLineContract)
+      : [],
   }
 }
 
@@ -230,9 +245,11 @@ export function toSalesOrderContract(dto: SalesOrderApiDTO): SalesOrder {
   const context = 'SalesOrderApiAdapter.toSalesOrderContract'
   return {
     ...toSalesOrderBaseContract(dto, context),
-    lines: requireSalesOrderArrayField<SalesOrderLineApiDTO>(dto, 'lines', context).map(
-      toSalesOrderLineContract
-    ),
+    lines: requireSalesOrderArrayField<SalesOrderLineApiDTO>(
+      dto,
+      'lines',
+      context
+    ).map(toSalesOrderLineContract),
   }
 }
 
@@ -267,15 +284,17 @@ export function toSalesOrderApiDTO(order: SalesOrder): SalesOrderApiDTO {
     version: order.version,
     evidences: order.evidences,
     availableActions: order.availableActions,
-    lines: requireSalesOrderArrayField<SalesOrderLine>(order, 'lines', 'SalesOrderApiAdapter.toSalesOrderApiDTO').map(
-      toSalesOrderLineApiDTO
-    ),
+    lines: requireSalesOrderArrayField<SalesOrderLine>(
+      order,
+      'lines',
+      'SalesOrderApiAdapter.toSalesOrderApiDTO'
+    ).map(toSalesOrderLineApiDTO),
   }
 }
 
 export function toSalesOrderListPageContract(
   dto: SalesOrderListPageApiDTO,
-  options: { withLines: boolean },
+  options: { withLines: boolean }
 ): PaginatedSalesOrders {
   return {
     items: dto.items.map((item) => toSalesOrderListItemContract(item, options)),

@@ -1,12 +1,19 @@
+import { OfflineStorage } from '@/offline-sync/storage/offline-storage'
+import {
+  useOfflineSyncStore,
+  type OfflineSyncSummary,
+} from '@/offline-sync/stores/offline-sync-store'
 import { toast } from 'sonner'
 import { createLogger } from '@/lib/logger'
 import { failLoudly } from '@/lib/safe-catch'
-import { OfflineStorage } from '@/offline-sync/storage/offline-storage'
-import { useOfflineSyncStore, type OfflineSyncSummary } from '@/offline-sync/stores/offline-sync-store'
 
 const logger = createLogger('OfflineSyncEngine')
 
-type OfflineSyncCycleReason = 'start' | 'online' | 'manual' | 'adapter_registered'
+type OfflineSyncCycleReason =
+  | 'start'
+  | 'online'
+  | 'manual'
+  | 'adapter_registered'
 
 export interface OfflineSyncAdapterFlushResult {
   syncedCount?: number
@@ -42,7 +49,10 @@ interface OfflineSyncPresentation {
 }
 
 const adapters = new Map<string, OfflineSyncAdapter>()
-const adapterCycleSettledListeners = new Map<string, Set<(event: OfflineSyncAdapterCycleEvent) => void>>()
+const adapterCycleSettledListeners = new Map<
+  string,
+  Set<(event: OfflineSyncAdapterCycleEvent) => void>
+>()
 let isStarted = false
 let isStarting = false
 let isFlushRunning = false
@@ -55,7 +65,11 @@ function isBrowserOnline() {
   return typeof navigator === 'undefined' ? true : navigator.onLine
 }
 
-function buildSummaryMessage(summary: OfflineSyncSummary, isOnline: boolean, isSyncing: boolean): OfflineSyncPresentation {
+function buildSummaryMessage(
+  summary: OfflineSyncSummary,
+  isOnline: boolean,
+  isSyncing: boolean
+): OfflineSyncPresentation {
   if (summary.unhandledPendingCount > 0) {
     return {
       severity: 'critical',
@@ -121,7 +135,9 @@ function buildSummaryMessage(summary: OfflineSyncSummary, isOnline: boolean, isS
 
 async function buildSummary(): Promise<OfflineSyncSummary> {
   const summarySnapshot = await OfflineStorage.getSummarySnapshot()
-  const handledIntents = new Set(Array.from(adapters.values()).flatMap((adapter) => adapter.intents))
+  const handledIntents = new Set(
+    Array.from(adapters.values()).flatMap((adapter) => adapter.intents)
+  )
   const unhandledIntents = Object.entries(summarySnapshot.pendingByIntent)
     .filter(([intent, count]) => count > 0 && !handledIntents.has(intent))
     .map(([intent]) => intent)
@@ -154,7 +170,10 @@ function emitAnnouncement(presentation: OfflineSyncPresentation) {
   lastAnnouncementKey = presentation.announcementKey
 
   if (presentation.announcementMode === 'error') {
-    failLoudly(new Error(`${presentation.headline} ${presentation.detail}`.trim()), 'OfflineSyncEngine')
+    failLoudly(
+      new Error(`${presentation.headline} ${presentation.detail}`.trim()),
+      'OfflineSyncEngine'
+    )
     return
   }
 
@@ -166,7 +185,11 @@ function emitAnnouncement(presentation: OfflineSyncPresentation) {
 
 async function publishState(isSyncing: boolean) {
   const summary = await buildSummary()
-  const presentation = buildSummaryMessage(summary, isBrowserOnline(), isSyncing)
+  const presentation = buildSummaryMessage(
+    summary,
+    isBrowserOnline(),
+    isSyncing
+  )
 
   useOfflineSyncStore.getState().setBannerState({
     isEngineStarted: isStarted,
@@ -199,7 +222,12 @@ function buildCycleEvent(
     conflictCount: result?.conflictCount ?? 0,
     remainingCount: result?.remainingCount ?? 0,
     finishedAt: new Date().toISOString(),
-    errorMessage: error instanceof Error ? error.message : typeof error === 'string' ? error : undefined,
+    errorMessage:
+      error instanceof Error
+        ? error.message
+        : typeof error === 'string'
+          ? error
+          : undefined,
   }
 }
 
@@ -213,7 +241,10 @@ function notifyAdapterCycleSettled(event: OfflineSyncAdapterCycleEvent) {
     try {
       listener(event)
     } catch (error) {
-      logger.warn(`Offline sync adapter listener failed: ${event.adapterId}`, error)
+      logger.warn(
+        `Offline sync adapter listener failed: ${event.adapterId}`,
+        error
+      )
     }
   })
 }
@@ -243,7 +274,8 @@ async function flushAllAdapters(reason: OfflineSyncCycleReason) {
         notifyAdapterCycleSettled(event)
       } catch (error) {
         cycleHadError = true
-        lastErrorMessage = error instanceof Error ? error.message : 'Unknown offline sync error'
+        lastErrorMessage =
+          error instanceof Error ? error.message : 'Unknown offline sync error'
         logger.error(`Adapter flush failed: ${adapter.id}`, { reason, error })
         const event = buildCycleEvent(adapter.id, reason, undefined, error)
         notifyAdapterCycleSettled(event)
@@ -307,8 +339,13 @@ export const offlineSyncEngine = {
    * @param listener The listener function.
    * @returns A function to unsubscribe.
    */
-  subscribeAdapterCycleSettled(adapterId: string, listener: (event: OfflineSyncAdapterCycleEvent) => void) {
-    const listeners = adapterCycleSettledListeners.get(adapterId) ?? new Set<(event: OfflineSyncAdapterCycleEvent) => void>()
+  subscribeAdapterCycleSettled(
+    adapterId: string,
+    listener: (event: OfflineSyncAdapterCycleEvent) => void
+  ) {
+    const listeners =
+      adapterCycleSettledListeners.get(adapterId) ??
+      new Set<(event: OfflineSyncAdapterCycleEvent) => void>()
     listeners.add(listener)
     adapterCycleSettledListeners.set(adapterId, listeners)
 

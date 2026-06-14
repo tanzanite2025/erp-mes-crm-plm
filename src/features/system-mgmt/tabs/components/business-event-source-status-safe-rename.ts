@@ -88,10 +88,14 @@ function findCommittedStatusById(
   draftStatus: Pick<BusinessStatus, 'id' | 'code'>
 ) {
   if (draftStatus.id) {
-    return committedSource.config.statuses.find((status) => status.id === draftStatus.id)
+    return committedSource.config.statuses.find(
+      (status) => status.id === draftStatus.id
+    )
   }
 
-  return committedSource.config.statuses.find((status) => status.code === draftStatus.code)
+  return committedSource.config.statuses.find(
+    (status) => status.code === draftStatus.code
+  )
 }
 
 export function collectBusinessEventStatusRenameDrafts(
@@ -99,7 +103,10 @@ export function collectBusinessEventStatusRenameDrafts(
   draftSource: BusinessEventSource
 ) {
   return draftSource.config.statuses.flatMap((draftStatus) => {
-    const committedStatus = findCommittedStatusById(committedSource, draftStatus)
+    const committedStatus = findCommittedStatusById(
+      committedSource,
+      draftStatus
+    )
     if (!committedStatus || committedStatus.code === draftStatus.code) {
       return []
     }
@@ -137,7 +144,9 @@ export function analyzeBusinessEventStatusRenamePlans({
 
     sourceRules.forEach((rule) => {
       rule.segments.forEach((segment) => {
-        const targetsOldCode = segment.targetStatuses.includes(renameDraft.oldCode)
+        const targetsOldCode = segment.targetStatuses.includes(
+          renameDraft.oldCode
+        )
         const resolvesOldCode = (segment.resolveOnStatuses ?? []).includes(
           renameDraft.oldCode
         )
@@ -198,7 +207,8 @@ export function analyzeBusinessEventStatusRenameBatch({
   const blockers: BusinessEventStatusRenameBatchBlocker[] = []
   const swapPairs: BusinessEventStatusRenameSwapPair[] = []
   const chainPaths: BusinessEventStatusRenameChainPath[] = []
-  const semanticShrinkImpacts: BusinessEventStatusRenameSemanticShrinkImpact[] = []
+  const semanticShrinkImpacts: BusinessEventStatusRenameSemanticShrinkImpact[] =
+    []
 
   const nextCodeToOldCodes = new Map<string, string[]>()
   effectivePlans.forEach((plan) => {
@@ -243,7 +253,10 @@ export function analyzeBusinessEventStatusRenameBatch({
 
   const chainCoveredCodes = new Set<string>()
   renames.forEach((_nextCode, oldCode) => {
-    if (swapCoveredCodes.has(oldCode) || (predecessorCount.get(oldCode) ?? 0) > 0) {
+    if (
+      swapCoveredCodes.has(oldCode) ||
+      (predecessorCount.get(oldCode) ?? 0) > 0
+    ) {
       return
     }
 
@@ -252,7 +265,11 @@ export function analyzeBusinessEventStatusRenameBatch({
 
     while (true) {
       const nextCode = renames.get(currentCode)
-      if (!nextCode || !sourceCodes.has(nextCode) || swapCoveredCodes.has(nextCode)) {
+      if (
+        !nextCode ||
+        !sourceCodes.has(nextCode) ||
+        swapCoveredCodes.has(nextCode)
+      ) {
         break
       }
 
@@ -295,7 +312,10 @@ export function analyzeBusinessEventStatusRenameBatch({
 
   sourceRules.forEach((rule) => {
     rule.segments.forEach((segment) => {
-      const nextTargetStatuses = replaceStatusCode(segment.targetStatuses, renames)
+      const nextTargetStatuses = replaceStatusCode(
+        segment.targetStatuses,
+        renames
+      )
       if (nextTargetStatuses.length < segment.targetStatuses.length) {
         semanticShrinkImpacts.push({
           ruleId: rule.id,
@@ -404,7 +424,10 @@ export function applyBusinessEventStatusRenamesToRules({
 
     let changed = false
     const nextSegments = rule.segments.map((segment) => {
-      const nextTargetStatuses = replaceStatusCode(segment.targetStatuses, renames)
+      const nextTargetStatuses = replaceStatusCode(
+        segment.targetStatuses,
+        renames
+      )
       const nextResolveOnStatuses = replaceStatusCode(
         segment.resolveOnStatuses ?? [],
         renames
@@ -416,7 +439,8 @@ export function applyBusinessEventStatusRenamesToRules({
       })
 
       const segmentChanged =
-        JSON.stringify(nextTargetStatuses) !== JSON.stringify(segment.targetStatuses) ||
+        JSON.stringify(nextTargetStatuses) !==
+          JSON.stringify(segment.targetStatuses) ||
         JSON.stringify(nextResolveOnStatuses) !==
           JSON.stringify(segment.resolveOnStatuses ?? []) ||
         JSON.stringify(nextApproval) !== JSON.stringify(segment.approval)

@@ -15,7 +15,8 @@ export function SalesReturnActualAmountRecordHistorySection({
 }: SalesReturnActualAmountRecordHistorySectionProps) {
   const { t } = useLanguage()
   const historyQuery = useGetSalesReturnActualAmountRecords(salesReturnId)
-  const [selectedRecord, setSelectedRecord] = useState<SalesReturnActualAmountRecord | null>(null)
+  const [selectedRecord, setSelectedRecord] =
+    useState<SalesReturnActualAmountRecord | null>(null)
 
   const records = useMemo(() => historyQuery.data ?? [], [historyQuery.data])
 
@@ -26,11 +27,11 @@ export function SalesReturnActualAmountRecordHistorySection({
           <p className='text-sm font-black italic'>
             {t('trading.salesReturns.actualAmountHistory.title')}
           </p>
-          <p className='text-[9px] font-black uppercase tracking-widest opacity-60'>
+          <p className='text-[9px] font-black tracking-widest uppercase opacity-60'>
             {t('trading.salesReturns.actualAmountHistory.description')}
           </p>
         </div>
-        <span className='rounded-full border border-dashed border-primary/20 bg-primary/5 px-2.5 py-1 text-[8px] font-mono text-primary'>
+        <span className='rounded-full border border-dashed border-primary/20 bg-primary/5 px-2.5 py-1 font-mono text-[8px] text-primary'>
           {records.length}
         </span>
       </div>
@@ -54,8 +55,10 @@ export function SalesReturnActualAmountRecordHistorySection({
             >
               <div className='flex items-start justify-between gap-3'>
                 <div>
-                  <p className='text-sm font-black text-foreground'>{record.returnNo}</p>
-                  <p className='mt-1 text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                  <p className='text-sm font-black text-foreground'>
+                    {record.returnNo}
+                  </p>
+                  <p className='mt-1 text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                     {record.salesOrderNo}
                   </p>
                 </div>
@@ -63,7 +66,7 @@ export function SalesReturnActualAmountRecordHistorySection({
                   <p className='text-sm font-black text-primary'>
                     {formatSettlementMoney(record.amount)}
                   </p>
-                  <p className='mt-1 text-[8px] font-mono text-muted-foreground'>
+                  <p className='mt-1 font-mono text-[8px] text-muted-foreground'>
                     {record.recordedAt.replace('T', ' ').slice(0, 16)}
                   </p>
                 </div>
@@ -71,23 +74,29 @@ export function SalesReturnActualAmountRecordHistorySection({
 
               <div className='mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3'>
                 <div className='space-y-1'>
-                  <div className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                  <div className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                     <CalendarDays className='size-3.5' />
-                    {t('trading.salesReturns.queryShell.actualAmountRecordedAt')}
+                    {t(
+                      'trading.salesReturns.queryShell.actualAmountRecordedAt'
+                    )}
                   </div>
                   <p className='text-xs font-black text-foreground'>
                     {record.recordedAt.replace('T', ' ').slice(0, 16)}
                   </p>
                 </div>
                 <div className='space-y-1'>
-                  <div className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                  <div className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                     <User className='size-3.5' />
-                    {t('trading.salesReturns.queryShell.actualAmountRecordedBy')}
+                    {t(
+                      'trading.salesReturns.queryShell.actualAmountRecordedBy'
+                    )}
                   </div>
-                  <p className='text-xs font-black text-foreground'>{record.recordedBy}</p>
+                  <p className='text-xs font-black text-foreground'>
+                    {record.recordedBy}
+                  </p>
                 </div>
                 <div className='space-y-1'>
-                  <div className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                  <div className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                     <FileStack className='size-3.5' />
                     {t('trading.salesReturns.actualAmountHistory.note')}
                   </div>

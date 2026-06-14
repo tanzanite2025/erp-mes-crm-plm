@@ -6,8 +6,8 @@ import {
 } from '@radix-ui/react-icons'
 import { type Table } from '@tanstack/react-table'
 import { cn, getPageNumbers } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
+import { Button } from '@/components/ui/button'
 import {
   Select,
   SelectContent,
@@ -33,7 +33,10 @@ export function DataTablePagination<TData>({
     ? Math.min(table.getState().pagination.pageIndex + 1, totalPages)
     : 0
   const pageNumbers = hasPages ? getPageNumbers(currentPage, totalPages) : []
-  const pageSummary = t('common.table.pageSummary', { current: currentPage, total: totalPages })
+  const pageSummary = t('common.table.pageSummary', {
+    current: currentPage,
+    total: totalPages,
+  })
 
   return (
     <div
@@ -56,11 +59,17 @@ export function DataTablePagination<TData>({
             }}
           >
             <SelectTrigger className='h-8 w-[68px] rounded-xl border-border/70 bg-background text-[11px] font-bold shadow-none'>
-              <SelectValue placeholder={`${table.getState().pagination.pageSize}`} />
+              <SelectValue
+                placeholder={`${table.getState().pagination.pageSize}`}
+              />
             </SelectTrigger>
             <SelectContent side='top' className='rounded-xl'>
               {[10, 20, 30, 40, 50].map((pageSize) => (
-                <SelectItem key={pageSize} value={`${pageSize}`} className='text-[11px] font-semibold'>
+                <SelectItem
+                  key={pageSize}
+                  value={`${pageSize}`}
+                  className='text-[11px] font-semibold'
+                >
                   {pageSize}
                 </SelectItem>
               ))}
@@ -128,7 +137,9 @@ export function DataTablePagination<TData>({
           <Button
             variant='outline'
             className='size-8 rounded-xl border-border/70 p-0 text-muted-foreground shadow-none @max-md/content:hidden'
-            onClick={() => table.setPageIndex(Math.max(table.getPageCount() - 1, 0))}
+            onClick={() =>
+              table.setPageIndex(Math.max(table.getPageCount() - 1, 0))
+            }
             disabled={!table.getCanNextPage()}
           >
             <span className='sr-only'>{t('common.table.lastPage')}</span>

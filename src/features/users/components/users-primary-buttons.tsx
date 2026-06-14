@@ -1,20 +1,21 @@
 import { UserPlus } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { useUsers } from './users-provider'
-import { NonBlockingPermissionBoundary } from '@/components/permission-passthrough'
 import { useLanguage } from '@/context/language-provider'
+import { Button } from '@/components/ui/button'
+import { NonBlockingPermissionBoundary } from '@/components/permission-passthrough'
+import { useUsers } from './users-provider'
 
 export function UsersPrimaryButtons() {
   const { t } = useLanguage()
   const { setOpen } = useUsers()
   return (
-    <div className='flex flex-col sm:flex-row gap-3 w-full sm:w-auto'>
+    <div className='flex w-full flex-col gap-3 sm:w-auto sm:flex-row'>
       <NonBlockingPermissionBoundary permission='user_create'>
-        <Button 
-          className='flex-1 sm:flex-initial rounded-full h-11 px-6 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-500/20 active:scale-95 transition-all' 
+        <Button
+          className='h-11 flex-1 rounded-full px-6 text-[10px] font-black tracking-widest uppercase shadow-xl shadow-blue-500/20 transition-all active:scale-95 sm:flex-initial'
           onClick={() => setOpen('add')}
         >
-          <UserPlus className='mr-2 size-4 shrink-0' /> {t('users.actions.addUser')}
+          <UserPlus className='mr-2 size-4 shrink-0' />{' '}
+          {t('users.actions.addUser')}
         </Button>
       </NonBlockingPermissionBoundary>
     </div>

@@ -21,10 +21,7 @@ export function resolveSalesOrderLineDisplayTitle(
 export function resolveSalesOrderLineDisplaySubtitle(
   line: SalesOrderLineDisplaySource
 ): string {
-  return (
-    line.productDisplaySubtitleSnapshot?.trim() ||
-    '--'
-  )
+  return line.productDisplaySubtitleSnapshot?.trim() || '--'
 }
 
 export function formatSalesOrderPreassembleCandidateLabel(

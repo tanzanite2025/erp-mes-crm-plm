@@ -13,14 +13,18 @@ import {
   Truck,
   Warehouse,
 } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { Skeleton } from '@/components/ui/skeleton'
-import type { OrderEvidence } from '@/features/trading/data/schema'
-import { ForbiddenState } from '@/components/forbidden-state'
 import { isForbiddenError } from '@/lib/error-status'
 import { getStaticEvidenceUrl } from '@/lib/url-utils'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
+import { Skeleton } from '@/components/ui/skeleton'
+import { ForbiddenState } from '@/components/forbidden-state'
+import type { OrderEvidence } from '@/features/trading/data/schema'
 import { SALES_RETURN_VIRTUAL_WAREHOUSE_CODE } from '@/features/warehouse/utils/warehouse-category-config'
 import {
   type SalesReturnReceivingQueueItem,
@@ -44,7 +48,8 @@ function formatReturnDate(value: string) {
 function getStatusLabel(status: string) {
   const normalized = status.toLowerCase()
   if (normalized === 'created') return '已建单'
-  if (normalized === 'intransit' || normalized === 'in_transit') return '退货在途'
+  if (normalized === 'intransit' || normalized === 'in_transit')
+    return '退货在途'
   if (normalized === 'received') return '待入库确认'
   return status
 }
@@ -97,7 +102,7 @@ function QueueItemCard({ item }: { item: SalesReturnReceivingQueueItem }) {
       <div className='flex items-start justify-between gap-3'>
         <div className='min-w-0'>
           <div className='flex items-center gap-2'>
-            <span className='truncate font-mono text-[11px] font-black uppercase tracking-widest text-emerald-700'>
+            <span className='truncate font-mono text-[11px] font-black tracking-widest text-emerald-700 uppercase'>
               {item.returnNo}
             </span>
             <Badge className='h-5 rounded-full border-none bg-emerald-500/10 px-2 text-[8px] font-black text-emerald-700'>
@@ -122,7 +127,7 @@ function QueueItemCard({ item }: { item: SalesReturnReceivingQueueItem }) {
         </div>
       </div>
 
-      <div className='mt-4 grid grid-cols-3 gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+      <div className='mt-4 grid grid-cols-3 gap-2 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
         <div className='rounded-xl bg-muted/40 px-2 py-2'>
           <div className='text-[8px]'>数量</div>
           <div className='mt-1 font-mono text-sm text-slate-800'>
@@ -146,7 +151,7 @@ function QueueItemCard({ item }: { item: SalesReturnReceivingQueueItem }) {
       <div className='mt-4 rounded-2xl border border-dashed border-emerald-500/20 bg-emerald-500/4 px-3 py-3'>
         <div className='flex items-center justify-between gap-3'>
           <div className='min-w-0'>
-            <div className='text-[8px] font-black uppercase tracking-widest text-emerald-700/70'>
+            <div className='text-[8px] font-black tracking-widest text-emerald-700/70 uppercase'>
               快递信息
             </div>
             <div className='mt-1 flex items-center gap-2 text-[11px] font-black text-slate-900'>
@@ -157,7 +162,7 @@ function QueueItemCard({ item }: { item: SalesReturnReceivingQueueItem }) {
             </div>
           </div>
           <div className='min-w-0 text-right'>
-            <div className='text-[8px] font-black uppercase tracking-widest text-emerald-700/70'>
+            <div className='text-[8px] font-black tracking-widest text-emerald-700/70 uppercase'>
               快递单号
             </div>
             <div className='mt-1 truncate font-mono text-[11px] font-black text-slate-900'>
@@ -166,7 +171,7 @@ function QueueItemCard({ item }: { item: SalesReturnReceivingQueueItem }) {
           </div>
         </div>
         {item.logisticsNote?.trim() ? (
-          <p className='mt-2 line-clamp-2 text-[10px] font-bold leading-4 text-muted-foreground/65'>
+          <p className='mt-2 line-clamp-2 text-[10px] leading-4 font-bold text-muted-foreground/65'>
             {item.logisticsNote}
           </p>
         ) : null}
@@ -174,7 +179,7 @@ function QueueItemCard({ item }: { item: SalesReturnReceivingQueueItem }) {
 
       <div className='mt-4'>
         <div className='mb-2 flex items-center justify-between gap-2'>
-          <div className='flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-muted-foreground/55'>
+          <div className='flex items-center gap-1.5 text-[9px] font-black tracking-widest text-muted-foreground/55 uppercase'>
             <ImageIcon className='size-3.5 text-emerald-700' />
             退货凭据
           </div>
@@ -223,7 +228,7 @@ function QueueItemCard({ item }: { item: SalesReturnReceivingQueueItem }) {
               <p className='truncate text-[11px] font-black text-slate-800'>
                 {line.productModel || line.productCode}
               </p>
-              <p className='truncate font-mono text-[9px] font-bold uppercase tracking-widest text-muted-foreground/40'>
+              <p className='truncate font-mono text-[9px] font-bold tracking-widest text-muted-foreground/40 uppercase'>
                 {line.productCode}
               </p>
             </div>
@@ -240,19 +245,16 @@ function QueueItemCard({ item }: { item: SalesReturnReceivingQueueItem }) {
       </div>
 
       <div className='mt-4 flex items-center justify-between gap-3 border-t border-dashed border-muted/50 pt-3'>
-        <div className='min-w-0 truncate text-[9px] font-black uppercase tracking-widest text-muted-foreground/45'>
+        <div className='min-w-0 truncate text-[9px] font-black tracking-widest text-muted-foreground/45 uppercase'>
           拆包前核对快递单号与凭据图片
         </div>
         <Button
           asChild
           size='sm'
           variant='ghost'
-          className='h-8 shrink-0 rounded-full px-3 text-[9px] font-black uppercase tracking-widest text-emerald-700 hover:bg-emerald-500/10'
+          className='h-8 shrink-0 rounded-full px-3 text-[9px] font-black tracking-widest text-emerald-700 uppercase hover:bg-emerald-500/10'
         >
-          <Link
-            to='/trading/sales-returns'
-            search={{ returnId: item.id }}
-          >
+          <Link to='/trading/sales-returns' search={{ returnId: item.id }}>
             查看单据 <ArrowRight className='size-3' />
           </Link>
         </Button>
@@ -275,7 +277,11 @@ export function SalesReturnReceivingQueueCard() {
   const hiddenItemCount = Math.max(items.length - visibleItems.length, 0)
 
   return (
-    <Collapsible key={hasItems ? 'has-items' : 'empty'} defaultOpen={hasItems} className='rounded-2xl md:rounded-[28px] border border-dashed border-emerald-500/25 bg-emerald-500/3 p-3 md:p-4 shadow-inner'>
+    <Collapsible
+      key={hasItems ? 'has-items' : 'empty'}
+      defaultOpen={hasItems}
+      className='rounded-2xl border border-dashed border-emerald-500/25 bg-emerald-500/3 p-3 shadow-inner md:rounded-[28px] md:p-4'
+    >
       <CollapsibleTrigger className='group w-full text-left hover:no-underline'>
         <div className='flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between'>
           <div className='flex min-w-0 items-center gap-2.5'>
@@ -291,7 +297,7 @@ export function SalesReturnReceivingQueueCard() {
                   <RefreshCw className='size-3 animate-spin text-emerald-600' />
                 )}
               </div>
-              <p className='mt-0.5 text-[10px] font-bold leading-4 text-muted-foreground/60 group-data-[state=closed]:hidden'>
+              <p className='mt-0.5 text-[10px] leading-4 font-bold text-muted-foreground/60 group-data-[state=closed]:hidden'>
                 客户退回货品统一先落入销售退货虚拟仓，再按质检结果分配到动态仓库。
               </p>
             </div>
@@ -300,7 +306,7 @@ export function SalesReturnReceivingQueueCard() {
           <div className='flex items-center gap-2.5'>
             <div className='flex flex-wrap items-center justify-end gap-1.5 lg:max-w-[360px]'>
               <div className='inline-flex h-8 min-w-[82px] items-center justify-between gap-2 rounded-full border border-dashed border-emerald-500/15 bg-background/85 px-2.5'>
-                <span className='text-[7px] font-black uppercase tracking-widest text-muted-foreground/45'>
+                <span className='text-[7px] font-black tracking-widest text-muted-foreground/45 uppercase'>
                   待处理
                 </span>
                 <span className='font-mono text-[11px] font-black text-slate-900'>
@@ -308,15 +314,15 @@ export function SalesReturnReceivingQueueCard() {
                 </span>
               </div>
               <div className='inline-flex h-8 min-w-[94px] items-center justify-between gap-2 rounded-full border border-dashed border-emerald-500/15 bg-background/85 px-2.5'>
-                <span className='text-[7px] font-black uppercase tracking-widest text-muted-foreground/45'>
+                <span className='text-[7px] font-black tracking-widest text-muted-foreground/45 uppercase'>
                   待收数量
                 </span>
                 <span className='font-mono text-[11px] font-black text-emerald-700'>
                   {totalPendingQuantity}
                 </span>
               </div>
-              <div className='inline-flex h-8 min-w-[132px] max-w-[160px] items-center justify-between gap-2 rounded-full border border-dashed border-emerald-500/15 bg-background/85 px-2.5'>
-                <span className='text-[7px] font-black uppercase tracking-widest text-muted-foreground/45'>
+              <div className='inline-flex h-8 max-w-[160px] min-w-[132px] items-center justify-between gap-2 rounded-full border border-dashed border-emerald-500/15 bg-background/85 px-2.5'>
+                <span className='text-[7px] font-black tracking-widest text-muted-foreground/45 uppercase'>
                   暂存仓
                 </span>
                 <div className='flex min-w-0 items-center justify-end gap-1 text-[8px] font-black text-emerald-700'>
@@ -345,7 +351,7 @@ export function SalesReturnReceivingQueueCard() {
                 <Button
                   type='button'
                   variant='outline'
-                  className='mt-4 h-9 rounded-full border-dashed px-4 text-[10px] font-black uppercase tracking-widest'
+                  className='mt-4 h-9 rounded-full border-dashed px-4 text-[10px] font-black tracking-widest uppercase'
                   onClick={() => {
                     void retry()
                   }}
@@ -364,8 +370,9 @@ export function SalesReturnReceivingQueueCard() {
                 ))}
               </div>
               {hiddenItemCount > 0 && (
-                <div className='mt-3 rounded-2xl bg-background/70 px-4 py-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
-                  还有 {hiddenItemCount} 张销售退货单，请进入销售退货列表继续处理
+                <div className='mt-3 rounded-2xl bg-background/70 px-4 py-3 text-center text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
+                  还有 {hiddenItemCount}{' '}
+                  张销售退货单，请进入销售退货列表继续处理
                 </div>
               )}
             </>
@@ -384,7 +391,9 @@ export function SalesReturnReceivingQueueCard() {
 
         {items.length > 0 && (
           <div className='mt-4 rounded-2xl bg-background/65 px-4 py-3 text-[10px] font-bold text-muted-foreground/60'>
-            建议先暂存到 {salesReturnVirtualWarehouseName ?? '加载中'}（{SALES_RETURN_VIRTUAL_WAREHOUSE_CODE}），质检后再分配到可售、维修或报废仓。
+            建议先暂存到 {salesReturnVirtualWarehouseName ?? '加载中'}（
+            {SALES_RETURN_VIRTUAL_WAREHOUSE_CODE}
+            ），质检后再分配到可售、维修或报废仓。
           </div>
         )}
       </CollapsibleContent>

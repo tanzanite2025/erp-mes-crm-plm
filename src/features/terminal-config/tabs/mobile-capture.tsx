@@ -63,9 +63,11 @@ export function MobileCaptureTab() {
         title='移动采集'
         description='面向普通手机浏览器的扫码与拍照识别入口。这里和 USB HID 扫码枪分开维护，避免摄像头、权限和键盘输入逻辑互相干扰。'
         icon={MonitorSmartphone}
-        statusBadge={<Badge className='rounded-full border-none bg-blue-500/10 px-4 py-1.5 text-[10px] font-black text-blue-700'>
-          当前接入方式：手机摄像头 / 拍照识别
-        </Badge>}
+        statusBadge={
+          <Badge className='rounded-full border-none bg-blue-500/10 px-4 py-1.5 text-[10px] font-black text-blue-700'>
+            当前接入方式：手机摄像头 / 拍照识别
+          </Badge>
+        }
       />
 
       <section className='grid grid-cols-1 gap-4 md:grid-cols-4'>

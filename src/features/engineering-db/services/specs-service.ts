@@ -1,11 +1,11 @@
-import { type TechnicalSpec, technicalSpecSchema } from '../data/schema'
+import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+import { failLoudly } from '@/lib/safe-catch'
 import {
   engineeringSpecService,
   type EngineeringSpec,
   type EngineeringSpecInput,
 } from '@/features/engineering/services/engineering-spec-service'
-import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
-import { failLoudly } from '@/lib/safe-catch'
+import { type TechnicalSpec, technicalSpecSchema } from '../data/schema'
 
 function toTechnicalSpecContract(item: EngineeringSpec): TechnicalSpec {
   const control = item.masterDataControl ?? {}
@@ -50,7 +50,7 @@ export const SpecsService = {
     // [BACKEND-AUTHORITY]: 业务编码严禁在前端使用 Date.now() / Math.random() 模拟生成的伪 ID。
     // 编码应当由后端发号器在事务执行时分配。
     const safeCode = (item.id || '').trim()
-    
+
     const spec: EngineeringSpecInput = {
       id: item.id,
       name: item.name,
@@ -131,8 +131,8 @@ export const SpecsService = {
       metadata: {
         id,
         version,
-        intent: 'SPEC_DOCUMENT_UPDATE'
-      }
+        intent: 'SPEC_DOCUMENT_UPDATE',
+      },
     }
 
     await engineeringSpecService.patchSpec(id, payload.delta, version)
@@ -143,5 +143,5 @@ export const SpecsService = {
    */
   deleteSpec: async (id: string): Promise<void> => {
     await engineeringSpecService.deleteSpec(id)
-  }
+  },
 }

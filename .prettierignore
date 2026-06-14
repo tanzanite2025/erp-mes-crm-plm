@@ -16,3 +16,9 @@
 
 # Ignore auto generated routeTree.gen.ts
 /src/routeTree.gen.ts
+
+# Ignore generated permission contract
+/src/features/authz/data/permission-contract.gen.ts
+
+# Ignore generated wasm-pack output
+/src/features/raw-materials/batch-engine/wasm/pkg

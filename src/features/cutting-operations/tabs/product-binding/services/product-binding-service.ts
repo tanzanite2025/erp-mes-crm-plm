@@ -64,7 +64,7 @@ export type ProductBindingHistoryResult = {
 export type ProductBindingSubmissionOutcome = 'bound' | 'duplicate'
 
 export function getProductBindingSubmissionOutcome(
-  record: Pick<ProductBindingRecord, 'message'> | null | undefined,
+  record: Pick<ProductBindingRecord, 'message'> | null | undefined
 ): ProductBindingSubmissionOutcome {
   const message = record?.message?.trim() || ''
   if (message.includes('重复提交')) {
@@ -74,7 +74,7 @@ export function getProductBindingSubmissionOutcome(
 }
 
 function normalizeRollInstanceSummary(
-  input: Record<string, unknown> | null | undefined,
+  input: Record<string, unknown> | null | undefined
 ): ProductBindingRollInstanceSummary | null {
   if (!input) return null
 
@@ -95,10 +95,14 @@ function normalizeRollInstanceSummary(
   }
 }
 
-function normalizeProductBindingRecord(input: Record<string, unknown>): ProductBindingRecord {
+function normalizeProductBindingRecord(
+  input: Record<string, unknown>
+): ProductBindingRecord {
   const rollInstanceRaw = input.prepregRollInstance
   const rollInstance =
-    rollInstanceRaw && typeof rollInstanceRaw === 'object' && !Array.isArray(rollInstanceRaw)
+    rollInstanceRaw &&
+    typeof rollInstanceRaw === 'object' &&
+    !Array.isArray(rollInstanceRaw)
       ? normalizeRollInstanceSummary(rollInstanceRaw as Record<string, unknown>)
       : null
 
@@ -120,7 +124,7 @@ function normalizeProductBindingRecord(input: Record<string, unknown>): ProductB
 }
 
 export function normalizeProductBindingHistoryQuery(
-  query: ProductBindingHistoryQuery = {},
+  query: ProductBindingHistoryQuery = {}
 ): ProductBindingHistoryQuery {
   const prepregQrCode = query.prepregQrCode?.trim() || undefined
   const prepregBindingToken =
@@ -137,7 +141,7 @@ export function normalizeProductBindingHistoryQuery(
 }
 
 function normalizeCreateProductBindingRequest(
-  request: CreateProductBindingRequest,
+  request: CreateProductBindingRequest
 ): CreateProductBindingRequest {
   return {
     productBarcode: request.productBarcode.trim(),
@@ -145,38 +149,47 @@ function normalizeCreateProductBindingRequest(
   }
 }
 
-export async function executeProductBinding<TPayload extends CreateProductBindingRequest>(
-  request: ProductBindingTransactionRequest<TPayload>,
+export async function executeProductBinding<
+  TPayload extends CreateProductBindingRequest,
+>(
+  request: ProductBindingTransactionRequest<TPayload>
 ): Promise<ProductBindingRecord> {
   const payload = normalizeCreateProductBindingRequest(request.payload)
-  const response = await apiFetch<Record<string, unknown>>(PRODUCT_BINDING_ENDPOINT, {
-    method: 'POST',
-    body: JSON.stringify({
-      ...payload,
-      metadata: {
-        intent: request.intent,
-        actorId: request.actorId,
-      },
-    }),
-  })
+  const response = await apiFetch<Record<string, unknown>>(
+    PRODUCT_BINDING_ENDPOINT,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        ...payload,
+        metadata: {
+          intent: request.intent,
+          actorId: request.actorId,
+        },
+      }),
+    }
+  )
 
   return normalizeProductBindingRecord(
     ensureObjectResponse<Record<string, unknown>>(
       response,
-      'productBindingService.executeProductBinding',
-    ),
+      'productBindingService.executeProductBinding'
+    )
   )
 }
 
 export const productBindingService = {
-  async submitBinding(request: CreateProductBindingRequest): Promise<ProductBindingRecord> {
+  async submitBinding(
+    request: CreateProductBindingRequest
+  ): Promise<ProductBindingRecord> {
     return executeProductBinding<CreateProductBindingRequest>({
       intent: PRODUCT_BINDING_INTENT_CREATE,
       payload: request,
     })
   },
 
-  async listBindings(query: ProductBindingHistoryQuery = {}): Promise<ProductBindingHistoryResult> {
+  async listBindings(
+    query: ProductBindingHistoryQuery = {}
+  ): Promise<ProductBindingHistoryResult> {
     const normalizedQuery = normalizeProductBindingHistoryQuery(query)
     const params = new URLSearchParams()
     if (typeof normalizedQuery.limit === 'number') {
@@ -196,14 +209,14 @@ export const productBindingService = {
     const response = await apiFetch<Record<string, unknown>>(endpoint)
     const checked = ensureObjectResponse<Record<string, unknown>>(
       response,
-      'productBindingService.listBindings',
+      'productBindingService.listBindings'
     )
 
     return {
       items: ensureArrayField<Record<string, unknown>>(
         checked,
         'items',
-        'productBindingService.listBindings',
+        'productBindingService.listBindings'
       ).map(normalizeProductBindingRecord),
       total: Number(checked.total) || 0,
     }
@@ -226,7 +239,7 @@ export const productBindingService = {
     const response = await apiFetch<Record<string, unknown>>(endpoint)
     const checked = ensureObjectResponse<Record<string, unknown>>(
       response,
-      'productBindingService.countBindings',
+      'productBindingService.countBindings'
     )
     return Number(checked.count) || 0
   },

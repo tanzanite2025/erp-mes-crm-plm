@@ -39,7 +39,9 @@ export function createEmptyPackagingProfileDraft(): PackagingProfileDraft {
   }
 }
 
-export function mapPackagingProfileToDraft(profile: PackagingProfile): PackagingProfileDraft {
+export function mapPackagingProfileToDraft(
+  profile: PackagingProfile
+): PackagingProfileDraft {
   return {
     id: profile.id,
     code: profile.code,

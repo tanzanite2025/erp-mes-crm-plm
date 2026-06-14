@@ -55,7 +55,9 @@ export interface SystemStatusData {
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
-  return value !== null && typeof value === 'object' ? (value as Record<string, unknown>) : null
+  return value !== null && typeof value === 'object'
+    ? (value as Record<string, unknown>)
+    : null
 }
 
 function readString(source: Record<string, unknown> | null, ...keys: string[]) {
@@ -80,7 +82,9 @@ function readNumber(source: Record<string, unknown> | null, ...keys: string[]) {
   return undefined
 }
 
-function toComponentStatus(status: string | undefined): SystemComponentConnectionStatus {
+function toComponentStatus(
+  status: string | undefined
+): SystemComponentConnectionStatus {
   if (status === 'connected') {
     return 'connected'
   }
@@ -143,7 +147,8 @@ export function normalizeSystemStatusData(input: unknown): SystemStatusData {
       db: {
         status: dbStatus || 'unknown',
         open_conns: readNumber(db, 'open_conns', 'openConnections') || 0,
-        max_open_connections: readNumber(db, 'max_open_connections', 'maxOpenConnections') || 0,
+        max_open_connections:
+          readNumber(db, 'max_open_connections', 'maxOpenConnections') || 0,
         in_use: readNumber(db, 'in_use', 'inUse') || 0,
         idle: readNumber(db, 'idle') || 0,
         wait_count: readNumber(db, 'wait_count', 'waitCount') || 0,
@@ -153,8 +158,14 @@ export function normalizeSystemStatusData(input: unknown): SystemStatusData {
       },
     },
     components: {
-      postgres: normalizeComponent(components?.postgres, toComponentStatus(dbStatus)),
-      redis: normalizeComponent(components?.redis, toComponentStatus(redisStatus)),
+      postgres: normalizeComponent(
+        components?.postgres,
+        toComponentStatus(dbStatus)
+      ),
+      redis: normalizeComponent(
+        components?.redis,
+        toComponentStatus(redisStatus)
+      ),
       watchdog: normalizeComponent(components?.watchdog, 'warning'),
       loki: normalizeComponent(components?.loki, 'warning'),
     },

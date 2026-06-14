@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
-import type { PackagingProfile } from '@/features/logistics-config/packaging-rules-service'
 import { useAuthStore } from '@/stores/auth-store'
+import type { PackagingProfile } from '@/features/logistics-config/packaging-rules-service'
 import type { SalesOrder } from '../data/schema'
 import { useSalesOrderMutations } from '../sales'
 import { requireTradingCommandActor } from '../utils/command-actor'
@@ -31,7 +31,10 @@ export function useSalesOrderPackagingCardCommands() {
             line.lineNo === lineNo
               ? {
                   ...line,
-                  selectedPackaging: buildSalesOrderLinePackagingSelection(profile, 'manual'),
+                  selectedPackaging: buildSalesOrderLinePackagingSelection(
+                    profile,
+                    'manual'
+                  ),
                 }
               : line
           ),

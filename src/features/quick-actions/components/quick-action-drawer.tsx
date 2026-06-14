@@ -17,8 +17,8 @@ import {
 import { useLocalMediaDrafts } from '@/features/personal-workbench/hooks/use-local-media-drafts'
 import { usePageInstall } from '@/features/scan-platform/hooks/use-page-install'
 import { fetchMySidebarCommands } from '@/features/sidebar-command-assignment/services'
-import { QuickActionIcon } from './quick-action-icon'
 import { getSidebarQuickActions } from '../services/quick-action-access'
+import { QuickActionIcon } from './quick-action-icon'
 
 interface QuickActionDrawerProps {
   open: boolean

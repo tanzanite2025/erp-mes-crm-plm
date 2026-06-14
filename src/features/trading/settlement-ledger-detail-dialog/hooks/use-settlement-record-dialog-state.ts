@@ -1,5 +1,10 @@
-import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react'
-
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from 'react'
 import type { SettlementAllocationDraft } from '../services/settlement-record-payload'
 
 export interface UseSettlementRecordDialogStateResult {
@@ -44,23 +49,34 @@ export interface UseSettlementRecordDialogStateResult {
   resetForm: () => void
   addAllocationRow: () => void
   removeAllocationRow: (sequenceNo: number) => void
-  updateAllocationRow: (sequenceNo: number, patch: Partial<SettlementAllocationDraft>) => void
+  updateAllocationRow: (
+    sequenceNo: number,
+    patch: Partial<SettlementAllocationDraft>
+  ) => void
   openLedgerSearchDialog: (sequenceNo: number) => void
   activeAllocation: SettlementAllocationDraft | null
   handleLedgerSelected: (selectedLedgerId: string) => void
 }
 
-function buildDefaultAllocations(ledgerId: string | null): SettlementAllocationDraft[] {
-  return ledgerId ? [{ ledgerId, allocatedAmount: '', remark: '', sequenceNo: 1 }] : []
+function buildDefaultAllocations(
+  ledgerId: string | null
+): SettlementAllocationDraft[] {
+  return ledgerId
+    ? [{ ledgerId, allocatedAmount: '', remark: '', sequenceNo: 1 }]
+    : []
 }
 
-export function useSettlementRecordDialogState(ledgerId: string | null): UseSettlementRecordDialogStateResult {
+export function useSettlementRecordDialogState(
+  ledgerId: string | null
+): UseSettlementRecordDialogStateResult {
   const [paymentMethod, setPaymentMethod] = useState('')
   const [recordDate, setRecordDate] = useState('')
   const [receivedAt, setReceivedAt] = useState('')
   const [receiptAccount, setReceiptAccount] = useState('')
   const [referenceNo, setReferenceNo] = useState('')
-  const [allocations, setAllocations] = useState<SettlementAllocationDraft[]>(() => buildDefaultAllocations(ledgerId))
+  const [allocations, setAllocations] = useState<SettlementAllocationDraft[]>(
+    () => buildDefaultAllocations(ledgerId)
+  )
   const [ledgerSearchTerm, setLedgerSearchTerm] = useState('')
   const [debouncedLedgerSearchTerm, setDebouncedLedgerSearchTerm] = useState('')
   const [ledgerStatusFilter, setLedgerStatusFilter] = useState('')
@@ -69,11 +85,15 @@ export function useSettlementRecordDialogState(ledgerId: string | null): UseSett
   const [ledgerOutstandingMax, setLedgerOutstandingMax] = useState('')
   const [ledgerSortBy, setLedgerSortBy] = useState('updated_at')
   const [ledgerSortOrder, setLedgerSortOrder] = useState('desc')
-  const [isLedgerSearchDialogOpen, setIsLedgerSearchDialogOpen] = useState(false)
-  const [activeAllocationSequenceNo, setActiveAllocationSequenceNo] = useState<number | null>(null)
+  const [isLedgerSearchDialogOpen, setIsLedgerSearchDialogOpen] =
+    useState(false)
+  const [activeAllocationSequenceNo, setActiveAllocationSequenceNo] = useState<
+    number | null
+  >(null)
   const [historySearchTerm, setHistorySearchTerm] = useState('')
   const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null)
-  const [showOnlyMissingEvidenceRecords, setShowOnlyMissingEvidenceRecords] = useState(false)
+  const [showOnlyMissingEvidenceRecords, setShowOnlyMissingEvidenceRecords] =
+    useState(false)
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -83,7 +103,11 @@ export function useSettlementRecordDialogState(ledgerId: string | null): UseSett
   }, [ledgerSearchTerm])
 
   const totalAllocatedAmount = useMemo(
-    () => allocations.reduce((sum, item) => sum + (Number(item.allocatedAmount) || 0), 0),
+    () =>
+      allocations.reduce(
+        (sum, item) => sum + (Number(item.allocatedAmount) || 0),
+        0
+      ),
     [allocations]
   )
 
@@ -91,7 +115,9 @@ export function useSettlementRecordDialogState(ledgerId: string | null): UseSett
     () =>
       allocations.length > 0 &&
       totalAllocatedAmount > 0 &&
-      allocations.every((item) => Number(item.allocatedAmount) > 0 && item.ledgerId),
+      allocations.every(
+        (item) => Number(item.allocatedAmount) > 0 && item.ledgerId
+      ),
     [allocations, totalAllocatedAmount]
   )
 
@@ -120,7 +146,12 @@ export function useSettlementRecordDialogState(ledgerId: string | null): UseSett
   const addAllocationRow = () => {
     setAllocations((current) => [
       ...current,
-      { ledgerId: ledgerId ?? '', allocatedAmount: '', remark: '', sequenceNo: current.length + 1 },
+      {
+        ledgerId: ledgerId ?? '',
+        allocatedAmount: '',
+        remark: '',
+        sequenceNo: current.length + 1,
+      },
     ])
   }
 
@@ -132,9 +163,14 @@ export function useSettlementRecordDialogState(ledgerId: string | null): UseSett
     )
   }
 
-  const updateAllocationRow = (sequenceNo: number, patch: Partial<SettlementAllocationDraft>) => {
+  const updateAllocationRow = (
+    sequenceNo: number,
+    patch: Partial<SettlementAllocationDraft>
+  ) => {
     setAllocations((current) =>
-      current.map((item) => (item.sequenceNo === sequenceNo ? { ...item, ...patch } : item))
+      current.map((item) =>
+        item.sequenceNo === sequenceNo ? { ...item, ...patch } : item
+      )
     )
   }
 
@@ -144,7 +180,10 @@ export function useSettlementRecordDialogState(ledgerId: string | null): UseSett
   }
 
   const activeAllocation = useMemo(
-    () => allocations.find((item) => item.sequenceNo === activeAllocationSequenceNo) ?? null,
+    () =>
+      allocations.find(
+        (item) => item.sequenceNo === activeAllocationSequenceNo
+      ) ?? null,
     [activeAllocationSequenceNo, allocations]
   )
 
@@ -152,7 +191,9 @@ export function useSettlementRecordDialogState(ledgerId: string | null): UseSett
     if (!activeAllocationSequenceNo) {
       return
     }
-    updateAllocationRow(activeAllocationSequenceNo, { ledgerId: selectedLedgerId })
+    updateAllocationRow(activeAllocationSequenceNo, {
+      ledgerId: selectedLedgerId,
+    })
     setIsLedgerSearchDialogOpen(false)
     setActiveAllocationSequenceNo(null)
   }

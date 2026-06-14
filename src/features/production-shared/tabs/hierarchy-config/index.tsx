@@ -1,6 +1,6 @@
 import { Layers3, RefreshCw, Save } from 'lucide-react'
-import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { Button } from '@/components/ui/button'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { HierarchyConfigEditor } from './components/hierarchy-config-editor'
 import { useHierarchyConfigEditor } from './hooks/use-hierarchy-config-editor'
 
@@ -22,11 +22,15 @@ export function HierarchyConfig() {
   } = useHierarchyConfigEditor()
 
   if (isLoading) {
-    return <div className='px-1 py-10 text-center text-sm text-muted-foreground animate-pulse'>正在加载层级配置...</div>
+    return (
+      <div className='animate-pulse px-1 py-10 text-center text-sm text-muted-foreground'>
+        正在加载层级配置...
+      </div>
+    )
   }
 
   return (
-    <div className='flex flex-col gap-5 animate-in fade-in duration-700'>
+    <div className='flex animate-in flex-col gap-5 duration-700 fade-in'>
       <IndustrialHeader
         icon={Layers3}
         title='层级配置'
@@ -36,7 +40,7 @@ export function HierarchyConfig() {
             <Button
               type='button'
               variant='outline'
-              className='h-9 rounded-full border-dashed text-[10px] font-black uppercase tracking-widest'
+              className='h-9 rounded-full border-dashed text-[10px] font-black tracking-widest uppercase'
               onClick={() => void resetConfig()}
               disabled={isSaving}
             >
@@ -44,7 +48,7 @@ export function HierarchyConfig() {
             </Button>
             <Button
               type='button'
-              className='h-9 rounded-full text-[10px] font-black uppercase tracking-widest'
+              className='h-9 rounded-full text-[10px] font-black tracking-widest uppercase'
               onClick={() => void saveConfig()}
               disabled={isSaving || !isDirty}
             >
@@ -55,7 +59,10 @@ export function HierarchyConfig() {
       />
 
       <div className='px-1'>
-        <p className='max-w-3xl text-[11px] leading-relaxed text-muted-foreground/75'>此页面用于统一维护生产架构的层级命名。当前版本已开始驱动现有产线管理中的一级与二级层级名称，但尚未全面接入模板、APS 与底层模型。</p>
+        <p className='max-w-3xl text-[11px] leading-relaxed text-muted-foreground/75'>
+          此页面用于统一维护生产架构的层级命名。当前版本已开始驱动现有产线管理中的一级与二级层级名称，但尚未全面接入模板、APS
+          与底层模型。
+        </p>
       </div>
 
       <HierarchyConfigEditor

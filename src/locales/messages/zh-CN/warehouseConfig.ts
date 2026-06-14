@@ -5,12 +5,14 @@ export const warehouseConfig = {
   },
   materialThresholds: {
     title: '物料阈值',
-    subtitle: '在仓储配置侧统一维护单物料库存线与 BOM 整套保障线，BOM 阈值会按当前成员结构动态参与预警。',
+    subtitle:
+      '在仓储配置侧统一维护单物料库存线与 BOM 整套保障线，BOM 阈值会按当前成员结构动态参与预警。',
     loadingTitle: '物料阈值加载中',
     errorTitle: '物料阈值加载失败',
     searchPlaceholder: '搜索物料名称、BOM 编号或备注...',
     emptyTitle: '暂无阈值规则',
-    emptyDescription: '你可以先新增一条规则，用于维护单物料库存下限，或维护某条 BOM 至少可保障多少套的动态预警线。',
+    emptyDescription:
+      '你可以先新增一条规则，用于维护单物料库存下限，或维护某条 BOM 至少可保障多少套的动态预警线。',
     deleteConfirmTitle: '确认删除该阈值规则吗？',
     summary: {
       total: '规则总数',
@@ -49,7 +51,8 @@ export const warehouseConfig = {
     dialog: {
       createTitle: '新增阈值规则',
       editTitle: '编辑阈值规则',
-      description: '弹窗为阈值配置的统一承载层。物料模式维护库存下限，BOM 模式维护整套保障线。',
+      description:
+        '弹窗为阈值配置的统一承载层。物料模式维护库存下限，BOM 模式维护整套保障线。',
       targetTypeLabel: '阈值目标类型',
       targetTypeMaterial: '单个物料',
       targetTypeBom: 'BOM 整套',
@@ -64,15 +67,18 @@ export const warehouseConfig = {
       thresholdLabel: '预警阈值',
       targetModeTitleMaterial: '单物料库存线',
       targetModeTitleBom: 'BOM 动态整套预警',
-      targetModeDescriptionMaterial: '保存后系统只按当前物料库存与阈值直接比较，不会联动其他 BOM 成员。',
-      targetModeDescriptionBom: '填写例如 10 套后，系统会按该 BOM 当前所有成员物料的标准用量动态换算需求量；只要任一成员不足以支撑该套数，即命中该 BOM 预警。',
+      targetModeDescriptionMaterial:
+        '保存后系统只按当前物料库存与阈值直接比较，不会联动其他 BOM 成员。',
+      targetModeDescriptionBom:
+        '填写例如 10 套后，系统会按该 BOM 当前所有成员物料的标准用量动态换算需求量；只要任一成员不足以支撑该套数，即命中该 BOM 预警。',
       currentTargetLabel: '当前目标',
       thresholdLabelMaterial: '物料库存下限',
       thresholdLabelBom: 'BOM 保障套数',
       thresholdPlaceholderMaterial: '例如 100',
       thresholdPlaceholderBom: '例如 10',
       thresholdHintMaterial: '命中逻辑：当前物料库存低于该数量时触发预警。',
-      thresholdHintBom: '命中逻辑：系统按 BOM 当前成员结构动态换算全部物料需求，不会拆成静态单料规则。',
+      thresholdHintBom:
+        '命中逻辑：系统按 BOM 当前成员结构动态换算全部物料需求，不会拆成静态单料规则。',
       enabledLabel: '启用状态',
       notesLabel: '规则说明',
       notesPlaceholder: '填写此规则的适用范围、补货提示或业务约束。',

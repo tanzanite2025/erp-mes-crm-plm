@@ -1,4 +1,5 @@
 import { FolderKanban } from 'lucide-react'
+import { useLanguage } from '@/context/language-provider'
 import {
   Select,
   SelectContent,
@@ -6,14 +7,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useLanguage } from '@/context/language-provider'
 import type { CuttingPlan } from '@/features/engineering-db/data/cutting-plan-schema'
 import type { BatchEngineControls, BatchEngineSimulation } from '../types'
 import { BatchEngineControlField } from './batch-engine-control-field'
 
 type BatchEngineControlPlanSectionProps = {
   controls: BatchEngineControls
-  updateControl: <K extends keyof BatchEngineControls>(key: K, value: BatchEngineControls[K]) => void
+  updateControl: <K extends keyof BatchEngineControls>(
+    key: K,
+    value: BatchEngineControls[K]
+  ) => void
   cuttingPlans: CuttingPlan[]
   cuttingPlanLoading: boolean
   selectedCuttingPlan?: CuttingPlan
@@ -24,7 +27,9 @@ function cuttingPlanOptionLabel(item: CuttingPlan): string {
   return `${item.productCode || '--'} | ${item.name} | ${item.documentNo || item.id}`
 }
 
-export function BatchEngineControlPlanSection(props: BatchEngineControlPlanSectionProps) {
+export function BatchEngineControlPlanSection(
+  props: BatchEngineControlPlanSectionProps
+) {
   const { t } = useLanguage()
   const {
     controls,
@@ -37,22 +42,32 @@ export function BatchEngineControlPlanSection(props: BatchEngineControlPlanSecti
 
   return (
     <div className='rounded-[22px] border border-dashed border-border/50 bg-muted/5 p-4'>
-      <div className='flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/70'>
+      <div className='flex items-center gap-2 text-[10px] font-black tracking-[0.2em] text-muted-foreground/70 uppercase'>
         <FolderKanban className='size-4 text-primary/80' />
         {t('rawMaterials.batchEngine.sections.control.blocks.plan.title')}
       </div>
       <div className='mt-3'>
-        <BatchEngineControlField label={t('rawMaterials.batchEngine.sections.control.fields.cuttingPlanRef')}>
+        <BatchEngineControlField
+          label={t(
+            'rawMaterials.batchEngine.sections.control.fields.cuttingPlanRef'
+          )}
+        >
           <Select
             value={controls.selectedCuttingPlanId || undefined}
-            onValueChange={(value) => updateControl('selectedCuttingPlanId', value)}
+            onValueChange={(value) =>
+              updateControl('selectedCuttingPlanId', value)
+            }
           >
             <SelectTrigger className='h-9 rounded-lg bg-background text-xs font-semibold'>
               <SelectValue
                 placeholder={
                   cuttingPlanLoading
-                    ? t('rawMaterials.batchEngine.sections.control.placeholders.loading')
-                    : t('rawMaterials.batchEngine.sections.control.placeholders.selectCuttingPlan')
+                    ? t(
+                        'rawMaterials.batchEngine.sections.control.placeholders.loading'
+                      )
+                    : t(
+                        'rawMaterials.batchEngine.sections.control.placeholders.selectCuttingPlan'
+                      )
                 }
               />
             </SelectTrigger>
@@ -68,9 +83,10 @@ export function BatchEngineControlPlanSection(props: BatchEngineControlPlanSecti
         <p className='mt-2 min-h-5 text-xs font-semibold text-muted-foreground/80'>
           {selectedCuttingPlan
             ? `${t('rawMaterials.batchEngine.sections.control.cuttingPlanSummary.document')} ${selectedCuttingPlan.documentNo || '--'} / ${t('rawMaterials.batchEngine.sections.control.cuttingPlanSummary.revision')} ${selectedCuttingPlan.revisionNo || '--'} / ${t('rawMaterials.batchEngine.sections.control.cuttingPlanSummary.lines')} ${selectedCuttingPlan.lines.length} / ${t('rawMaterials.batchEngine.sections.control.cuttingPlanSummary.invalidLines')} ${simulation.invalidDemandLineCount}`
-            : t('rawMaterials.batchEngine.sections.control.cuttingPlanSummary.empty')}
+            : t(
+                'rawMaterials.batchEngine.sections.control.cuttingPlanSummary.empty'
+              )}
         </p>
-
       </div>
     </div>
   )

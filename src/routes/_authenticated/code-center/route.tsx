@@ -7,4 +7,3 @@ export const Route = createFileRoute('/_authenticated/code-center')({
   },
   component: Outlet,
 })
-

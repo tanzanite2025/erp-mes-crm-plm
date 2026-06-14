@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { useLanguage } from '@/context/language-provider'
 import { createLogger } from '@/lib/logger'
 import { type ReadResource, resolveQueryFailure } from '@/lib/read-resource'
 import { failLoudly } from '@/lib/safe-catch'
+import { useLanguage } from '@/context/language-provider'
 import { type MasterDataSearchResult } from '../../inventory'
 import { warehouseQueryKeys } from '../../query-keys'
 import { WarehouseMasterDataService } from '../../services/warehouse-master-data-service'
@@ -31,11 +31,15 @@ export function useShipmentSearch(feedback: Pick<ShipmentUiFeedback, 'error'>) {
   }, [searchQuery])
 
   const searchResultsQuery = useQuery({
-    queryKey: warehouseQueryKeys.masterDataSearch('SHIPMENT', debouncedSearchQuery),
-    queryFn: (): Promise<MasterDataSearchResult[]> => WarehouseMasterDataService.searchSelectableItems({
-      query: debouncedSearchQuery,
-      scope: 'SHIPMENT',
-    }),
+    queryKey: warehouseQueryKeys.masterDataSearch(
+      'SHIPMENT',
+      debouncedSearchQuery
+    ),
+    queryFn: (): Promise<MasterDataSearchResult[]> =>
+      WarehouseMasterDataService.searchSelectableItems({
+        query: debouncedSearchQuery,
+        scope: 'SHIPMENT',
+      }),
     enabled: debouncedSearchQuery.length > 0,
   })
 
@@ -72,7 +76,10 @@ export function useShipmentSearch(feedback: Pick<ShipmentUiFeedback, 'error'>) {
 
   useEffect(() => {
     if (searchResource.status !== 'error') return
-    logger.error(`Shipment search failed: ${searchResource.scope}`, searchResource.error)
+    logger.error(
+      `Shipment search failed: ${searchResource.scope}`,
+      searchResource.error
+    )
     failLoudly(searchResource.error, searchResource.scope)
   }, [searchResource])
 

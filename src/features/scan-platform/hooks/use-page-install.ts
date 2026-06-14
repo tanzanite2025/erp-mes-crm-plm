@@ -25,16 +25,19 @@ function isStandaloneMode() {
   if (typeof window === 'undefined') return false
   return (
     window.matchMedia?.('(display-mode: standalone)').matches ||
-    (window.navigator as Navigator & { standalone?: boolean }).standalone === true
+    (window.navigator as Navigator & { standalone?: boolean }).standalone ===
+      true
   )
 }
 
 function getFallbackHint() {
-  if (typeof navigator === 'undefined') return '请使用支持安装的浏览器打开此页面。'
+  if (typeof navigator === 'undefined')
+    return '请使用支持安装的浏览器打开此页面。'
 
   const userAgent = navigator.userAgent.toLowerCase()
   const isIOS = /iphone|ipad|ipod/.test(userAgent)
-  const isSafari = isIOS && /safari/.test(userAgent) && !/crios|fxios/.test(userAgent)
+  const isSafari =
+    isIOS && /safari/.test(userAgent) && !/crios|fxios/.test(userAgent)
 
   if (isSafari) {
     return '在 Safari 中点击分享按钮，再选择“添加到主屏幕”。'
@@ -44,7 +47,9 @@ function getFallbackHint() {
 }
 
 function upsertManifestLink(href: string) {
-  const existing = document.querySelector<HTMLLinkElement>('link[data-scan-platform-manifest="true"]')
+  const existing = document.querySelector<HTMLLinkElement>(
+    'link[data-scan-platform-manifest="true"]'
+  )
   if (existing) {
     existing.href = href
     return existing
@@ -58,7 +63,10 @@ function upsertManifestLink(href: string) {
   return link
 }
 
-export function usePageInstall({ manifestHref, autoPrompt = false }: PageInstallOptions): PageInstallState {
+export function usePageInstall({
+  manifestHref,
+  autoPrompt = false,
+}: PageInstallOptions): PageInstallState {
   const promptEventRef = useRef<BeforeInstallPromptEventLike | null>(null)
   const autoPromptRequestedRef = useRef(false)
   const [isInstalled, setIsInstalled] = useState(isStandaloneMode)
@@ -89,7 +97,10 @@ export function usePageInstall({ manifestHref, autoPrompt = false }: PageInstall
     window.addEventListener('appinstalled', handleAppInstalled)
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+      window.removeEventListener(
+        'beforeinstallprompt',
+        handleBeforeInstallPrompt
+      )
       window.removeEventListener('appinstalled', handleAppInstalled)
     }
   }, [])
@@ -112,7 +123,13 @@ export function usePageInstall({ manifestHref, autoPrompt = false }: PageInstall
   }, [isInstalled])
 
   useEffect(() => {
-    if (!autoPrompt || autoPromptRequestedRef.current || isInstalled || !isPromptAvailable) return
+    if (
+      !autoPrompt ||
+      autoPromptRequestedRef.current ||
+      isInstalled ||
+      !isPromptAvailable
+    )
+      return
     autoPromptRequestedRef.current = true
     void promptInstall()
   }, [autoPrompt, isInstalled, isPromptAvailable, promptInstall])

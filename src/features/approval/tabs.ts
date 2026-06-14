@@ -1,5 +1,5 @@
-import type { TabItem } from '@/components/module-tabs'
 import type { TranslationKey } from '@/locales'
+import type { TabItem } from '@/components/module-tabs'
 
 type TabTranslator = (
   key: TranslationKey,
@@ -8,7 +8,15 @@ type TabTranslator = (
 
 export function getApprovalTabs(t: TabTranslator): TabItem[] {
   return [
-    { key: 'requests', label: t('approval.tabs.requests'), href: '/approval/requests' },
-    { key: 'history', label: t('approval.tabs.history'), href: '/approval/history' },
+    {
+      key: 'requests',
+      label: t('approval.tabs.requests'),
+      href: '/approval/requests',
+    },
+    {
+      key: 'history',
+      label: t('approval.tabs.history'),
+      href: '/approval/history',
+    },
   ]
 }

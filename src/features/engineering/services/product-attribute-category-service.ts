@@ -16,20 +16,26 @@ export const ProductAttributeCategoryService = {
     const res = await apiFetch<ProductAttributeCategory[]>(
       `/engineering/product-attribute-categories${qs ? `?${qs}` : ''}`
     )
-    return ensureArrayResponse<ProductAttributeCategory>(res, 'ProductAttributeCategoryService.getProductAttributeCategories')
+    return ensureArrayResponse<ProductAttributeCategory>(
+      res,
+      'ProductAttributeCategoryService.getProductAttributeCategories'
+    )
   },
 
   async saveProductAttributeCategory(
     category: SaveProductAttributeCategoryInput
   ): Promise<ProductAttributeCategory> {
     const normalizedCategory = buildProductAttributeCategorySaveInput(category)
-    const res = await apiFetch<ProductAttributeCategory>('/engineering/product-attribute-categories', {
-      method: 'POST',
-      body: JSON.stringify({
-        ...normalizedCategory,
-        metadata: { intent: 'PRODUCT_ATTRIBUTE_CATEGORY_UPSERT' },
-      }),
-    })
+    const res = await apiFetch<ProductAttributeCategory>(
+      '/engineering/product-attribute-categories',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          ...normalizedCategory,
+          metadata: { intent: 'PRODUCT_ATTRIBUTE_CATEGORY_UPSERT' },
+        }),
+      }
+    )
     return ensureObjectResponse<ProductAttributeCategory>(
       res,
       'ProductAttributeCategoryService.saveProductAttributeCategory'

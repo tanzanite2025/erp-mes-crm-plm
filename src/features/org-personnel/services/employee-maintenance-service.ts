@@ -1,10 +1,16 @@
 import { apiFetch } from '@/lib/api-client'
-import { createLogger } from '@/lib/logger'
 import { ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+import { createLogger } from '@/lib/logger'
 import { buildVersionedPatchMetadata } from '@/lib/version-guard'
-import { toEmployeeApiDTO, toEmployeeContract } from '../adapters/employee-api-adapter'
-import { type EmployeeApiDTO, type EmployeeAssignmentCommandApiDTO } from '../contracts/employee-api-dto'
+import {
+  toEmployeeApiDTO,
+  toEmployeeContract,
+} from '../adapters/employee-api-adapter'
+import {
+  type EmployeeApiDTO,
+  type EmployeeAssignmentCommandApiDTO,
+} from '../contracts/employee-api-dto'
 import { type Employee } from '../data/schema'
 import { EmployeeCoreService } from './employee-core-service'
 
@@ -46,22 +52,31 @@ export const EmployeeMaintenanceService = {
     }
 
     return toEmployeeContract(
-      ensureObjectResponse<EmployeeApiDTO & Record<string, unknown>>(data, 'EmployeeMaintenanceService.saveEmployee') as EmployeeApiDTO
+      ensureObjectResponse<EmployeeApiDTO & Record<string, unknown>>(
+        data,
+        'EmployeeMaintenanceService.saveEmployee'
+      ) as EmployeeApiDTO
     )
   },
 
   /**
    * 批量更新员工状态 (如 Active -> Resigned)
    */
-  updateEmployeesStatus: async (ids: string[], status: EmployeeStatus): Promise<BulkUpdateEmployeesStatusResult> => {
+  updateEmployeesStatus: async (
+    ids: string[],
+    status: EmployeeStatus
+  ): Promise<BulkUpdateEmployeesStatusResult> => {
     let updated = 0
     let operatedAt = ''
 
     try {
-      const data = await apiFetch<BulkUpdateEmployeesStatusResponse>('/employees/status', {
-        method: 'PATCH',
-        body: JSON.stringify({ ids, status }),
-      })
+      const data = await apiFetch<BulkUpdateEmployeesStatusResponse>(
+        '/employees/status',
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ ids, status }),
+        }
+      )
       updated = data?.updated ?? 0
       operatedAt = data?.operatedAt ?? ''
     } catch (error) {
@@ -74,7 +89,9 @@ export const EmployeeMaintenanceService = {
         throw error
       }
 
-      logger.warn('Bulk status endpoint unavailable, falling back to per-employee updates.')
+      logger.warn(
+        'Bulk status endpoint unavailable, falling back to per-employee updates.'
+      )
       updated = await fallbackUpdateEmployeesStatus(ids, status)
       operatedAt = ''
     }
@@ -94,13 +111,22 @@ export const EmployeeMaintenanceService = {
   /**
    * 局部更新员工 (SDRTS Delta Protocol)
    */
-  patchEmployee: async (id: string, delta: DeltaSet, version: number): Promise<Employee> => {
+  patchEmployee: async (
+    id: string,
+    delta: DeltaSet,
+    version: number
+  ): Promise<Employee> => {
     const payload: DeltaPayload = {
       op: 'PATCH',
       delta,
-      metadata: buildVersionedPatchMetadata(id, version, 'EmployeeMaintenanceService.patchEmployee', {
-        intent: EMPLOYEE_PATCH_INTENT_SAVE,
-      }),
+      metadata: buildVersionedPatchMetadata(
+        id,
+        version,
+        'EmployeeMaintenanceService.patchEmployee',
+        {
+          intent: EMPLOYEE_PATCH_INTENT_SAVE,
+        }
+      ),
     }
 
     const res = await apiFetch<EmployeeApiDTO>(`/employees/${id}`, {
@@ -109,7 +135,9 @@ export const EmployeeMaintenanceService = {
     })
 
     if (!res) {
-      throw new Error(`[CRITICAL_DATA_PATH] Patch employee failed for ID ${id}. SDRTS Sync halted.`)
+      throw new Error(
+        `[CRITICAL_DATA_PATH] Patch employee failed for ID ${id}. SDRTS Sync halted.`
+      )
     }
 
     return toEmployeeContract(
@@ -120,16 +148,25 @@ export const EmployeeMaintenanceService = {
     )
   },
 
-  changeEmployeeOrgUnit: async (id: string, orgUnitId: string, expectedVersion?: number): Promise<Employee> => {
-    const res = await apiFetch<EmployeeAssignmentCommandApiDTO>(`/employees/${id}/change-org-unit`, {
-      method: 'POST',
-      body: JSON.stringify({
-        orgUnitId,
-        expectedVersion,
-      }),
-    })
+  changeEmployeeOrgUnit: async (
+    id: string,
+    orgUnitId: string,
+    expectedVersion?: number
+  ): Promise<Employee> => {
+    const res = await apiFetch<EmployeeAssignmentCommandApiDTO>(
+      `/employees/${id}/change-org-unit`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          orgUnitId,
+          expectedVersion,
+        }),
+      }
+    )
 
-    const payload = ensureObjectResponse<EmployeeAssignmentCommandApiDTO & Record<string, unknown>>(
+    const payload = ensureObjectResponse<
+      EmployeeAssignmentCommandApiDTO & Record<string, unknown>
+    >(
       res,
       'EmployeeMaintenanceService.changeEmployeeOrgUnit'
     ) as EmployeeAssignmentCommandApiDTO
@@ -137,16 +174,25 @@ export const EmployeeMaintenanceService = {
     return toEmployeeContract(payload.employee)
   },
 
-  changeEmployeePosition: async (id: string, positionId: string, expectedVersion?: number): Promise<Employee> => {
-    const res = await apiFetch<EmployeeAssignmentCommandApiDTO>(`/employees/${id}/change-position`, {
-      method: 'POST',
-      body: JSON.stringify({
-        positionId,
-        expectedVersion,
-      }),
-    })
+  changeEmployeePosition: async (
+    id: string,
+    positionId: string,
+    expectedVersion?: number
+  ): Promise<Employee> => {
+    const res = await apiFetch<EmployeeAssignmentCommandApiDTO>(
+      `/employees/${id}/change-position`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          positionId,
+          expectedVersion,
+        }),
+      }
+    )
 
-    const payload = ensureObjectResponse<EmployeeAssignmentCommandApiDTO & Record<string, unknown>>(
+    const payload = ensureObjectResponse<
+      EmployeeAssignmentCommandApiDTO & Record<string, unknown>
+    >(
       res,
       'EmployeeMaintenanceService.changeEmployeePosition'
     ) as EmployeeAssignmentCommandApiDTO
@@ -154,15 +200,23 @@ export const EmployeeMaintenanceService = {
     return toEmployeeContract(payload.employee)
   },
 
-  clearEmployeePosition: async (id: string, expectedVersion?: number): Promise<Employee> => {
-    const res = await apiFetch<EmployeeAssignmentCommandApiDTO>(`/employees/${id}/clear-position`, {
-      method: 'POST',
-      body: JSON.stringify({
-        expectedVersion,
-      }),
-    })
+  clearEmployeePosition: async (
+    id: string,
+    expectedVersion?: number
+  ): Promise<Employee> => {
+    const res = await apiFetch<EmployeeAssignmentCommandApiDTO>(
+      `/employees/${id}/clear-position`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          expectedVersion,
+        }),
+      }
+    )
 
-    const payload = ensureObjectResponse<EmployeeAssignmentCommandApiDTO & Record<string, unknown>>(
+    const payload = ensureObjectResponse<
+      EmployeeAssignmentCommandApiDTO & Record<string, unknown>
+    >(
       res,
       'EmployeeMaintenanceService.clearEmployeePosition'
     ) as EmployeeAssignmentCommandApiDTO
@@ -174,9 +228,14 @@ export const EmployeeMaintenanceService = {
 /**
  * 内部兜底机制：当后端不支持批量状态更新接口时，回退到循环处理
  */
-async function fallbackUpdateEmployeesStatus(ids: string[], status: EmployeeStatus): Promise<number> {
+async function fallbackUpdateEmployeesStatus(
+  ids: string[],
+  status: EmployeeStatus
+): Promise<number> {
   const employees = await EmployeeCoreService.getEmployees()
-  const employeesToUpdate = employees.filter((employee) => ids.includes(employee.id))
+  const employeesToUpdate = employees.filter((employee) =>
+    ids.includes(employee.id)
+  )
 
   if (employeesToUpdate.length === 0) {
     return 0

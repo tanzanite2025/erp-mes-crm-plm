@@ -1,6 +1,6 @@
 import { CheckCircle2, Clock, MapPin, Package } from 'lucide-react'
-import { useLanguage } from '@/context/language-provider'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/context/language-provider'
 import { type LogisticsEvent } from './services/purchase-logistics-service'
 
 interface TimelineProps {
@@ -8,7 +8,10 @@ interface TimelineProps {
   className?: string
 }
 
-function getStatusLabel(status: string, t: ReturnType<typeof useLanguage>['t']) {
+function getStatusLabel(
+  status: string,
+  t: ReturnType<typeof useLanguage>['t']
+) {
   switch (status) {
     case 'Pending':
       return t('purchase.logistics.statusPending')
@@ -23,14 +26,17 @@ function getStatusLabel(status: string, t: ReturnType<typeof useLanguage>['t']) 
   }
 }
 
-export function PurchaseLogisticsTimeline({ events, className }: TimelineProps) {
+export function PurchaseLogisticsTimeline({
+  events,
+  className,
+}: TimelineProps) {
   const { locale, t } = useLanguage()
 
   if (!events || events.length === 0) {
     return (
       <div className='flex flex-col items-center justify-center py-12 text-slate-300'>
         <Package className='mb-4 size-12 opacity-20' />
-        <p className='text-[10px] font-black italic uppercase tracking-widest'>
+        <p className='text-[10px] font-black tracking-widest uppercase italic'>
           {t('purchase.logistics.timelineEmpty')}
         </p>
       </div>
@@ -43,7 +49,7 @@ export function PurchaseLogisticsTimeline({ events, className }: TimelineProps) 
 
   return (
     <div className={cn('relative space-y-0.5', className)}>
-      <div className='absolute bottom-4 left-[15px] top-4 w-px border-l border-dashed border-slate-200' />
+      <div className='absolute top-4 bottom-4 left-[15px] w-px border-l border-dashed border-slate-200' />
 
       {sortedEvents.map((event, index) => {
         const isLatest = index === 0
@@ -52,7 +58,7 @@ export function PurchaseLogisticsTimeline({ events, className }: TimelineProps) 
         return (
           <div
             key={event.id || index}
-            className='group relative flex gap-4 pb-8 animate-in fade-in slide-in-from-left-2'
+            className='group relative flex animate-in gap-4 pb-8 fade-in slide-in-from-left-2'
           >
             <div
               className={cn(
@@ -60,7 +66,9 @@ export function PurchaseLogisticsTimeline({ events, className }: TimelineProps) 
                 isLatest
                   ? 'animate-pulse border-emerald-400 bg-emerald-500 text-white'
                   : 'border-slate-200 bg-white text-slate-400',
-                isDelivered && !isLatest && 'border-emerald-200 bg-emerald-50 text-emerald-500'
+                isDelivered &&
+                  !isLatest &&
+                  'border-emerald-200 bg-emerald-50 text-emerald-500'
               )}
             >
               {isDelivered ? (
@@ -72,31 +80,39 @@ export function PurchaseLogisticsTimeline({ events, className }: TimelineProps) 
               )}
             </div>
 
-            <div className={cn('flex-1 space-y-1 pt-1', isLatest ? 'opacity-100' : 'opacity-70')}>
+            <div
+              className={cn(
+                'flex-1 space-y-1 pt-1',
+                isLatest ? 'opacity-100' : 'opacity-70'
+              )}
+            >
               <div className='flex items-center justify-between'>
-                <span className='text-[10px] font-mono leading-none text-slate-400'>
-                  {new Date(event.time).toLocaleString(locale === 'zh-CN' ? 'zh-CN' : 'en-US', {
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
+                <span className='font-mono text-[10px] leading-none text-slate-400'>
+                  {new Date(event.time).toLocaleString(
+                    locale === 'zh-CN' ? 'zh-CN' : 'en-US',
+                    {
+                      month: '2-digit',
+                      day: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    }
+                  )}
                 </span>
                 {isLatest && (
-                  <span className='rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-emerald-600 italic'>
+                  <span className='rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-black tracking-widest text-emerald-600 uppercase italic'>
                     {t('purchase.logistics.timelineLatest')}
                   </span>
                 )}
               </div>
 
-              <h4 className='text-xs font-black italic tracking-tight text-slate-900 transition-colors group-hover:text-emerald-600'>
+              <h4 className='text-xs font-black tracking-tight text-slate-900 italic transition-colors group-hover:text-emerald-600'>
                 {event.location} - {event.description}
               </h4>
 
               <div className='flex items-center gap-1 text-[10px] font-medium text-slate-500'>
                 <span
                   className={cn(
-                    'rounded-sm px-1.5 py-0.5 text-[9px] font-black uppercase tracking-tighter',
+                    'rounded-sm px-1.5 py-0.5 text-[9px] font-black tracking-tighter uppercase',
                     event.status === 'Delivered'
                       ? 'bg-emerald-100 text-emerald-700'
                       : event.status === 'Pending'

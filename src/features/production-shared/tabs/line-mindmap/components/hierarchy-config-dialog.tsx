@@ -1,4 +1,5 @@
 import { Layers3, RefreshCw, Save } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -7,7 +8,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
 import { HierarchyConfigEditor } from '../../hierarchy-config/components/hierarchy-config-editor'
 import { useHierarchyConfigEditor } from '../../hierarchy-config/hooks/use-hierarchy-config-editor'
 
@@ -47,22 +47,23 @@ export function HierarchyConfigDialog({
         <div className='relative flex max-h-[85vh] flex-col bg-background'>
           <div className='border-b border-dashed border-muted/30 px-5 py-5 md:px-8 md:py-6'>
             <DialogHeader className='text-left'>
-              <DialogTitle className='flex items-center gap-2 text-lg font-black italic uppercase tracking-tighter'>
+              <DialogTitle className='flex items-center gap-2 text-lg font-black tracking-tighter uppercase italic'>
                 <Layers3 className='size-5 text-primary' /> 维护层级配置
               </DialogTitle>
-              <DialogDescription className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>
+              <DialogDescription className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                 在脑图内开放一级、二级与第三级层级配置维护，第三级作为真实作业层可在此就地维护。
               </DialogDescription>
             </DialogHeader>
 
-            <div className='mt-4 rounded-[24px] border border-dashed border-amber-300/70 bg-amber-500/10 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-amber-700'>
-              当前弹窗开放一级、二级与第三级层级名称及候选项池维护。这里维护的是第三级层级配置，不等同于 `process library / capability` 本体与关系编辑。
+            <div className='mt-4 rounded-[24px] border border-dashed border-amber-300/70 bg-amber-500/10 px-4 py-3 text-[10px] font-black tracking-widest text-amber-700 uppercase'>
+              当前弹窗开放一级、二级与第三级层级名称及候选项池维护。这里维护的是第三级层级配置，不等同于
+              `process library / capability` 本体与关系编辑。
             </div>
           </div>
 
           <div className='flex-1 overflow-y-auto px-5 py-5 md:px-8 md:py-6'>
             {isLoading ? (
-              <div className='rounded-[24px] border border-dashed border-muted/40 bg-muted/5 px-4 py-10 text-center text-sm text-muted-foreground animate-pulse'>
+              <div className='animate-pulse rounded-[24px] border border-dashed border-muted/40 bg-muted/5 px-4 py-10 text-center text-sm text-muted-foreground'>
                 正在加载层级配置...
               </div>
             ) : (
@@ -89,7 +90,7 @@ export function HierarchyConfigDialog({
               <Button
                 type='button'
                 variant='outline'
-                className='h-11 rounded-full border-dashed text-[10px] font-black uppercase tracking-widest'
+                className='h-11 rounded-full border-dashed text-[10px] font-black tracking-widest uppercase'
                 onClick={() => void resetConfig()}
                 disabled={isSaving}
               >
@@ -97,7 +98,7 @@ export function HierarchyConfigDialog({
               </Button>
               <Button
                 type='button'
-                className='h-11 rounded-full text-[10px] font-black uppercase tracking-widest'
+                className='h-11 rounded-full text-[10px] font-black tracking-widest uppercase'
                 onClick={() => void saveConfig()}
                 disabled={isSaving || !isDirty}
               >

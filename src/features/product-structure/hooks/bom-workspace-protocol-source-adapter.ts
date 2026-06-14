@@ -1,13 +1,11 @@
 import { type BOMSectionOption } from '../data/bom-section-schema'
 import { type BOM } from '../data/schema'
 import {
-  type BOMWorkspaceParentChildrenProtocolDraft,
-} from './bom-workspace-branch-relation-builder'
-import {
   resolveSectionBranchNodeId,
   resolveCollectionBranchNodeId,
   resolveLeafNodeId,
 } from '../utils/bom-node-id-resolver'
+import { type BOMWorkspaceParentChildrenProtocolDraft } from './bom-workspace-branch-relation-builder'
 import { mergeBOMWorkspaceParentChildrenProtocolDrafts } from './bom-workspace-protocol-merge'
 
 interface BuildBOMWorkspaceParentChildrenProtocolDraftFromBOMDetailSourceParams {
@@ -18,7 +16,11 @@ interface BuildBOMWorkspaceParentChildrenProtocolDraftFromBOMDetailSourceParams 
   authoritativeProtocolDraft?: BOMWorkspaceParentChildrenProtocolDraft
 }
 
-function resolveProtocolFieldId(fields: Array<{ id: string }>, sourceBOMId: string, index: number) {
+function resolveProtocolFieldId(
+  fields: Array<{ id: string }>,
+  sourceBOMId: string,
+  index: number
+) {
   return fields[index]?.id ?? `detail:${sourceBOMId || 'bom'}:${index}`
 }
 
@@ -27,21 +29,31 @@ function buildLiveBOMWorkspaceParentChildrenProtocolDraftFromBOMDetailSource({
   activeSections,
   fields,
   watchedItems,
-}: Omit<BuildBOMWorkspaceParentChildrenProtocolDraftFromBOMDetailSourceParams, 'authoritativeProtocolDraft'>): BOMWorkspaceParentChildrenProtocolDraft | undefined {
+}: Omit<
+  BuildBOMWorkspaceParentChildrenProtocolDraftFromBOMDetailSourceParams,
+  'authoritativeProtocolDraft'
+>): BOMWorkspaceParentChildrenProtocolDraft | undefined {
   if (activeSections.length === 0) {
     return undefined
   }
 
   const liveItems = watchedItems ?? []
-  if (sourceBOM.items.length > 0 && (liveItems.length === 0 || fields.length !== liveItems.length)) {
+  if (
+    sourceBOM.items.length > 0 &&
+    (liveItems.length === 0 || fields.length !== liveItems.length)
+  ) {
     return undefined
   }
 
   const effectiveItems = liveItems
-  const activeSectionCodeSet = new Set(activeSections.map((section) => section.code))
+  const activeSectionCodeSet = new Set(
+    activeSections.map((section) => section.code)
+  )
 
   return {
-    rootChildren: activeSections.map((section) => resolveSectionBranchNodeId(section.code)),
+    rootChildren: activeSections.map((section) =>
+      resolveSectionBranchNodeId(section.code)
+    ),
     branchNodes: activeSections.flatMap((section) => {
       const sectionBranchNodeId = resolveSectionBranchNodeId(section.code)
       const collectionBranchNodeId = resolveCollectionBranchNodeId(section.code)
@@ -84,14 +96,16 @@ function buildLiveBOMWorkspaceParentChildrenProtocolDraftFromBOMDetailSource({
       const fieldId = resolveProtocolFieldId(fields, sourceBOM.id, index)
       const normalizedItemId = item.id?.trim()
 
-      return [{
-        id: resolveLeafNodeId(item.id, fieldId),
-        parentId: resolveCollectionBranchNodeId(item.section),
-        children: [],
-        nodeKind: 'item' as const,
-        sectionCode: item.section,
-        itemId: normalizedItemId || undefined,
-      }]
+      return [
+        {
+          id: resolveLeafNodeId(item.id, fieldId),
+          parentId: resolveCollectionBranchNodeId(item.section),
+          children: [],
+          nodeKind: 'item' as const,
+          sectionCode: item.section,
+          itemId: normalizedItemId || undefined,
+        },
+      ]
     }),
   }
 }
@@ -102,13 +116,16 @@ export function buildBOMWorkspaceParentChildrenProtocolDraftFromBOMDetailSource(
   fields,
   watchedItems,
   authoritativeProtocolDraft,
-}: BuildBOMWorkspaceParentChildrenProtocolDraftFromBOMDetailSourceParams): BOMWorkspaceParentChildrenProtocolDraft | undefined {
-  const liveProtocolDraft = buildLiveBOMWorkspaceParentChildrenProtocolDraftFromBOMDetailSource({
-    sourceBOM,
-    activeSections,
-    fields,
-    watchedItems,
-  })
+}: BuildBOMWorkspaceParentChildrenProtocolDraftFromBOMDetailSourceParams):
+  | BOMWorkspaceParentChildrenProtocolDraft
+  | undefined {
+  const liveProtocolDraft =
+    buildLiveBOMWorkspaceParentChildrenProtocolDraftFromBOMDetailSource({
+      sourceBOM,
+      activeSections,
+      fields,
+      watchedItems,
+    })
 
   return mergeBOMWorkspaceParentChildrenProtocolDrafts({
     activeSections,

@@ -1,4 +1,8 @@
-export type StocktakeTaskStatusApiDTO = 'DRAFT' | 'IN_PROGRESS' | 'COMPLETED' | 'ADJUSTED'
+export type StocktakeTaskStatusApiDTO =
+  | 'DRAFT'
+  | 'IN_PROGRESS'
+  | 'COMPLETED'
+  | 'ADJUSTED'
 
 export interface StocktakeTaskApiDTO {
   id: string

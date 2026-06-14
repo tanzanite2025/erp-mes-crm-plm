@@ -7,7 +7,9 @@ export const salesAnalyticsProductDisplayApiDTOSchema = z
     subtitle: z.string(),
     code: z.string(),
     fullLabel: z.string(),
-    strategyVersion: z.literal(SALES_ANALYTICS_PRODUCT_DISPLAY_STRATEGY_VERSION),
+    strategyVersion: z.literal(
+      SALES_ANALYTICS_PRODUCT_DISPLAY_STRATEGY_VERSION
+    ),
   })
   .strict()
 
@@ -53,7 +55,9 @@ export type SalesAnalyticsProductStatApiDTO = z.infer<
   typeof salesAnalyticsProductStatApiDTOSchema
 >
 
-export type CustomerAnalyticsApiDTO = z.infer<typeof customerAnalyticsApiDTOSchema>
+export type CustomerAnalyticsApiDTO = z.infer<
+  typeof customerAnalyticsApiDTOSchema
+>
 
 export type CustomerAnalyticsListResponseApiDTO = z.infer<
   typeof customerAnalyticsListResponseApiDTOSchema

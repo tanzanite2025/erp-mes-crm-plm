@@ -40,10 +40,7 @@ export interface QualityStandardListItemPresenter {
   canEdit: boolean
 }
 
-function buildProcessSummaryLabel(
-  locale: string,
-  standard: Standard
-) {
+function buildProcessSummaryLabel(locale: string, standard: Standard) {
   const summary = standard.approvalRequestSummary
   if (!summary) {
     return undefined
@@ -180,10 +177,10 @@ function hasEnteredApprovalChain(standard: Standard) {
     normalizedStatus !== 'DRAFT' ||
     Boolean(
       standard.auditor ||
-        standard.auditTime ||
-        standard.reviewComment ||
-        standard.rejectReason ||
-        standard.archiveReason
+      standard.auditTime ||
+      standard.reviewComment ||
+      standard.rejectReason ||
+      standard.archiveReason
     )
   )
 }
@@ -193,7 +190,8 @@ export function buildQualityStandardListItemPresenter(
   { t, locale }: QualityStandardListPresenterContext
 ): QualityStandardListItemPresenter {
   const enteredApprovalChain = hasEnteredApprovalChain(standard)
-  const operatorName = formatQualityActorName(standard.operator) || t('quality.common.system')
+  const operatorName =
+    formatQualityActorName(standard.operator) || t('quality.common.system')
 
   return {
     source: standard,

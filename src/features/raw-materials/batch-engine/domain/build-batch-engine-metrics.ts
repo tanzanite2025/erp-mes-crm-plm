@@ -1,9 +1,8 @@
-import type {
-  BatchEngineLegendItem,
-  BatchEngineTranslate,
-} from '../types'
+import type { BatchEngineLegendItem, BatchEngineTranslate } from '../types'
 
-export function buildBatchEngineLegend(t: BatchEngineTranslate): BatchEngineLegendItem[] {
+export function buildBatchEngineLegend(
+  t: BatchEngineTranslate
+): BatchEngineLegendItem[] {
   return [
     {
       key: 'roll',

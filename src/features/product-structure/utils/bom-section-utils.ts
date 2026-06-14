@@ -1,4 +1,8 @@
-import { DEFAULT_BOM_SECTION_CODE, LEGACY_BOM_SECTION_CODE_MAP, BOM_SECTION_SEED_CONFIGS } from '../constants/bom-sections'
+import {
+  DEFAULT_BOM_SECTION_CODE,
+  LEGACY_BOM_SECTION_CODE_MAP,
+  BOM_SECTION_SEED_CONFIGS,
+} from '../constants/bom-sections'
 import { type BOMSectionOption } from '../data/bom-section-schema'
 
 function normalizeSectionToken(value?: string | null) {
@@ -37,51 +41,54 @@ export function getActiveBOMSections(sections: BOMSectionOption[]) {
 export function getDefaultBOMSectionCode(sections: BOMSectionOption[]) {
   const sorted = getSortedBOMSections(sections)
   return (
-    sorted.find((section) => section.active && section.isDefault)?.code
-    ?? sorted.find((section) => section.active)?.code
-    ?? (sections.length === 0 ? DEFAULT_BOM_SECTION_CODE : '')
+    sorted.find((section) => section.active && section.isDefault)?.code ??
+    sorted.find((section) => section.active)?.code ??
+    (sections.length === 0 ? DEFAULT_BOM_SECTION_CODE : '')
   )
 }
 
 /**
  * 解析 BOM section
- * 
+ *
  * 支持多种输入格式：
  * - section.code (如 "MAIN")
  * - section.name (如 "主料")
  * - section.value
  * - section.label
  * - legacyNames (如 "主要物料")
- * 
+ *
  * 解析过程：
  * 1. 标准化输入值（去除空格，转大写）
  * 2. 在候选 sections 中查找匹配项
  * 3. 如果未找到，尝试使用 legacy code map
- * 
+ *
  * @param sections - 可用的 section 列表
  * @param rawValue - 待解析的值
  * @returns 匹配的 BOMSectionOption，如果未找到返回 undefined
- * 
+ *
  * @example
  * ```typescript
  * // 通过 code 解析
  * const section = resolveBOMSection(sections, "MAIN")
  * // 返回 { code: "MAIN", name: "主料", ... }
- * 
+ *
  * // 通过 name 解析
  * const section = resolveBOMSection(sections, "主料")
  * // 返回 { code: "MAIN", name: "主料", ... }
- * 
+ *
  * // 通过 legacy name 解析
  * const section = resolveBOMSection(sections, "主要物料")
  * // 返回 { code: "MAIN", name: "主料", ... }
- * 
+ *
  * // 未找到
  * const section = resolveBOMSection(sections, "UNKNOWN")
  * // 返回 undefined
  * ```
  */
-export function resolveBOMSection(sections: BOMSectionOption[], rawValue?: string | null) {
+export function resolveBOMSection(
+  sections: BOMSectionOption[],
+  rawValue?: string | null
+) {
   const normalizedValue = normalizeSectionToken(rawValue)
   if (!normalizedValue) return undefined
 
@@ -92,7 +99,9 @@ export function resolveBOMSection(sections: BOMSectionOption[], rawValue?: strin
     if (normalizeSectionToken(section.name) === normalizedValue) return true
     if (normalizeSectionToken(section.value) === normalizedValue) return true
     if (normalizeSectionToken(section.label) === normalizedValue) return true
-    return section.legacyNames.some((legacyName) => normalizeSectionToken(legacyName) === normalizedValue)
+    return section.legacyNames.some(
+      (legacyName) => normalizeSectionToken(legacyName) === normalizedValue
+    )
   })
 
   if (matched) return matched
@@ -102,12 +111,21 @@ export function resolveBOMSection(sections: BOMSectionOption[], rawValue?: strin
   return candidates.find((section) => section.code === fallbackCode)
 }
 
-export function normalizeBOMSectionValue(sections: BOMSectionOption[], rawValue?: string | null) {
+export function normalizeBOMSectionValue(
+  sections: BOMSectionOption[],
+  rawValue?: string | null
+) {
   return resolveBOMSection(sections, rawValue)?.code ?? rawValue?.trim() ?? ''
 }
 
-export function resolveBOMSectionLabel(sections: BOMSectionOption[], rawValue?: string | null, fallback = '') {
-  return resolveBOMSection(sections, rawValue)?.name ?? rawValue?.trim() ?? fallback
+export function resolveBOMSectionLabel(
+  sections: BOMSectionOption[],
+  rawValue?: string | null,
+  fallback = ''
+) {
+  return (
+    resolveBOMSection(sections, rawValue)?.name ?? rawValue?.trim() ?? fallback
+  )
 }
 
 export function buildBOMSectionDisplayNames(sections: BOMSectionOption[]) {
@@ -115,5 +133,7 @@ export function buildBOMSectionDisplayNames(sections: BOMSectionOption[]) {
   if (activeSections.length > 0) {
     return activeSections.map((section) => section.name)
   }
-  return sections.length === 0 ? BOM_SECTION_SEED_CONFIGS.map((section) => section.name) : []
+  return sections.length === 0
+    ? BOM_SECTION_SEED_CONFIGS.map((section) => section.name)
+    : []
 }

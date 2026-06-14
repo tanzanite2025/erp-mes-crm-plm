@@ -15,13 +15,21 @@ interface BOMTreeWorkspaceViewProps {
   canEdit?: boolean
 }
 
-export function BOMTreeWorkspaceView({ form, nodes, materials, onRemove, onBranchToggle, onAdd, canEdit = true }: BOMTreeWorkspaceViewProps) {
+export function BOMTreeWorkspaceView({
+  form,
+  nodes,
+  materials,
+  onRemove,
+  onBranchToggle,
+  onAdd,
+  canEdit = true,
+}: BOMTreeWorkspaceViewProps) {
   const { t } = useLanguage()
 
   if (nodes.length === 0) {
     return (
       <div className='custom-scrollbar flex-1 overflow-y-auto p-2 sm:p-2.5'>
-        <div className='rounded-[24px] border border-dashed border-muted/40 bg-muted/10 p-4 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 sm:p-5'>
+        <div className='rounded-[24px] border border-dashed border-muted/40 bg-muted/10 p-4 text-center text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase sm:p-5'>
           {t('engineering.bomArchive.recipe.summaryHint')}
         </div>
       </div>
@@ -31,7 +39,7 @@ export function BOMTreeWorkspaceView({ form, nodes, materials, onRemove, onBranc
   return (
     <div className='custom-scrollbar flex-1 overflow-y-auto p-2 sm:p-2.5'>
       <div className='rounded-[28px] border border-dashed border-muted/50 bg-muted/5 shadow-inner'>
-        <div className='flex min-h-0 gap-2.5 px-2.5 pb-2.5 pt-2.5 sm:px-3 sm:pb-3 sm:pt-3'>
+        <div className='flex min-h-0 gap-2.5 px-2.5 pt-2.5 pb-2.5 sm:px-3 sm:pt-3 sm:pb-3'>
           <div className='w-px self-stretch rounded-full bg-border/70' />
           <div className='min-h-0 flex-1 overflow-hidden rounded-[24px] border border-dashed border-muted/40 bg-background/70'>
             <ItemTable

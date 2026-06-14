@@ -82,8 +82,12 @@ function sortUnits(items: CutSizeUnit[]): CutSizeUnit[] {
 export const CutSizeLibraryService = {
   async list(search = ''): Promise<CutSizeUnit[]> {
     const keyword = search.trim().toLowerCase()
-    const specs = await engineeringSpecService.getSpecs(CUT_SIZE_LIBRARY_SPEC_TYPE)
-    const items = specs.map(toCutSizeUnit).filter((item) => includesKeyword(item, keyword))
+    const specs = await engineeringSpecService.getSpecs(
+      CUT_SIZE_LIBRARY_SPEC_TYPE
+    )
+    const items = specs
+      .map(toCutSizeUnit)
+      .filter((item) => includesKeyword(item, keyword))
     return sortUnits(items)
   },
 
@@ -92,7 +96,10 @@ export const CutSizeLibraryService = {
     return items.filter((item) => item.status === 'Active')
   },
 
-  async save(form: CutSizeUnitFormState, editing?: CutSizeUnit | null): Promise<CutSizeUnit> {
+  async save(
+    form: CutSizeUnitFormState,
+    editing?: CutSizeUnit | null
+  ): Promise<CutSizeUnit> {
     const payload = buildCutSizeUnitPayload(form, editing || null)
     const specInput = toEngineeringSpecInput(payload, editing || undefined)
     const saved = await engineeringSpecService.saveSpec(specInput)

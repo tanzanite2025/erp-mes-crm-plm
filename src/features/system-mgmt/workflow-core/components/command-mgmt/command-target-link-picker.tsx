@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Check, ChevronsUpDown, Search } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { normalizeSearchHref } from '@/components/layout/data/search-href'
 import {
-  getKnowledgeRouteOptions,
-} from '@/components/layout/data/search-data'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { cn } from '@/lib/utils'
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import { getKnowledgeRouteOptions } from '@/components/layout/data/search-data'
+import { normalizeSearchHref } from '@/components/layout/data/search-href'
 
 interface CommandTargetLinkPickerProps {
   value: string
@@ -47,7 +49,9 @@ export function CommandTargetLinkPicker({
   }, [normalizedValue, routeOptions])
   const selectedRouteOption = useMemo(
     () =>
-      routeOptionsForSelect.find((option) => option.value === normalizedValue) ?? null,
+      routeOptionsForSelect.find(
+        (option) => option.value === normalizedValue
+      ) ?? null,
     [normalizedValue, routeOptionsForSelect]
   )
   const hasUnmappedValue =
@@ -118,13 +122,14 @@ export function CommandTargetLinkPicker({
           collisionPadding={32}
           className='z-170 rounded-[24px] border-dashed border-muted/50 bg-background p-0 shadow-2xl'
           style={{
-            width: 'min(440px, calc(100vw - 5rem), var(--radix-popover-content-available-width))',
+            width:
+              'min(440px, calc(100vw - 5rem), var(--radix-popover-content-available-width))',
             maxWidth: 'calc(100vw - 5rem)',
           }}
         >
           <div className='border-b border-dashed border-muted/50 bg-muted/10 p-2.5'>
             <div className='relative'>
-              <Search className='pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground/45' />
+              <Search className='pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted-foreground/45' />
               <Input
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
@@ -144,16 +149,21 @@ export function CommandTargetLinkPicker({
                   : 'border-muted/50 bg-muted/10 hover:bg-muted/30'
               )}
             >
-              <span className='text-[11px] font-black uppercase tracking-widest'>
+              <span className='text-[11px] font-black tracking-widest uppercase'>
                 暂不设置跳转
               </span>
-              <Check className={cn('size-4', !normalizedValue ? 'opacity-100' : 'opacity-0')} />
+              <Check
+                className={cn(
+                  'size-4',
+                  !normalizedValue ? 'opacity-100' : 'opacity-0'
+                )}
+              />
             </button>
           </div>
           <div className='max-h-[min(60vh,420px)] overflow-y-auto p-2.5'>
             {filteredOptions.length === 0 ? (
               <div className='flex min-h-24 items-center justify-center rounded-[18px] border border-dashed border-muted/50 bg-muted/10 px-4 text-center'>
-                <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                <span className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                   当前筛选下暂无匹配页面
                 </span>
               </div>
@@ -173,10 +183,10 @@ export function CommandTargetLinkPicker({
                   >
                     <div className='flex items-start justify-between gap-2'>
                       <div className='min-w-0 space-y-0.5'>
-                        <div className='truncate text-[12px] font-black tracking-tight leading-none'>
+                        <div className='truncate text-[12px] leading-none font-black tracking-tight'>
                           {option.label}
                         </div>
-                        <div className='truncate text-[8px] font-black uppercase tracking-[0.14em] text-muted-foreground/55 leading-none'>
+                        <div className='truncate text-[8px] leading-none font-black tracking-[0.14em] text-muted-foreground/55 uppercase'>
                           {option.parentLabel}
                         </div>
                       </div>
@@ -184,12 +194,12 @@ export function CommandTargetLinkPicker({
                         className={cn(
                           'size-4 shrink-0 transition-opacity',
                           normalizedValue === option.value
-                            ? 'opacity-100 text-primary'
-                            : 'opacity-0 text-muted-foreground group-hover:opacity-40'
+                            ? 'text-primary opacity-100'
+                            : 'text-muted-foreground opacity-0 group-hover:opacity-40'
                         )}
                       />
                     </div>
-                    <div className='mt-1 truncate text-[8px] leading-none font-mono text-muted-foreground/70'>
+                    <div className='mt-1 truncate font-mono text-[8px] leading-none text-muted-foreground/70'>
                       {option.value}
                     </div>
                   </button>
@@ -202,15 +212,19 @@ export function CommandTargetLinkPicker({
 
       {selectedRouteOption ? (
         <div className='rounded-2xl border border-dashed border-primary/15 bg-primary/5 px-4 py-3'>
-          <div className='text-[10px] font-black uppercase tracking-widest text-primary'>
+          <div className='text-[10px] font-black tracking-widest text-primary uppercase'>
             已选择跳转目标
           </div>
           <div className='mt-2 space-y-1'>
-            <div className='text-[11px] font-black text-foreground'>{selectedRouteOption.label}</div>
-            <div className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/70'>
+            <div className='text-[11px] font-black text-foreground'>
+              {selectedRouteOption.label}
+            </div>
+            <div className='text-[9px] font-black tracking-widest text-muted-foreground/70 uppercase'>
               {selectedRouteOption.parentLabel}
             </div>
-            <div className='text-[8px] font-mono text-muted-foreground'>{selectedRouteOption.value}</div>
+            <div className='font-mono text-[8px] text-muted-foreground'>
+              {selectedRouteOption.value}
+            </div>
           </div>
         </div>
       ) : null}

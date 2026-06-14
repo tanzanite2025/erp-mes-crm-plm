@@ -1,13 +1,14 @@
 import { apiFetch } from '@/lib/api-client'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { buildVersionedPatchMetadata } from '@/lib/version-guard'
-import { logisticsService } from '../../logistics/services/logistics-service'
 import type {
   ControlledTrackingOrder,
   LogisticsTrackingRefreshResult,
 } from '../../logistics/data/schema'
+import { logisticsService } from '../../logistics/services/logistics-service'
 
-const PURCHASE_LOGISTICS_RECORD_PATCH_INTENT_SAVE = 'PURCHASE_LOGISTICS_RECORD_PATCH_SAVE'
+const PURCHASE_LOGISTICS_RECORD_PATCH_INTENT_SAVE =
+  'PURCHASE_LOGISTICS_RECORD_PATCH_SAVE'
 
 export interface LogisticsEvent {
   id: string
@@ -43,7 +44,10 @@ export interface PurchaseControlledTrackingDetail {
   refresh?: LogisticsTrackingRefreshResult
 }
 
-interface PurchaseLogisticsApiRecord extends Omit<PurchaseLogisticsRecord, 'events'> {
+interface PurchaseLogisticsApiRecord extends Omit<
+  PurchaseLogisticsRecord,
+  'events'
+> {
   events?: unknown
 }
 
@@ -82,14 +86,22 @@ export const PurchaseLogisticsService = {
   /**
    * 获取所有物流记录，可选按采购订单过滤 (带数据规范化)
    */
-  async getRecords(params?: { purchaseOrderId?: string; page?: number; pageSize?: number }): Promise<PurchaseLogisticsListResponse> {
+  async getRecords(params?: {
+    purchaseOrderId?: string
+    page?: number
+    pageSize?: number
+  }): Promise<PurchaseLogisticsListResponse> {
     const searchParams = new URLSearchParams()
-    if (params?.purchaseOrderId) searchParams.append('purchaseOrderId', params.purchaseOrderId)
+    if (params?.purchaseOrderId)
+      searchParams.append('purchaseOrderId', params.purchaseOrderId)
     if (params?.page) searchParams.append('page', params.page.toString())
-    if (params?.pageSize) searchParams.append('pageSize', params.pageSize.toString())
+    if (params?.pageSize)
+      searchParams.append('pageSize', params.pageSize.toString())
 
     const queryString = searchParams.toString()
-    const res = await apiFetch<PurchaseLogisticsApiListResponse>(`/logistics${queryString ? `?${queryString}` : ''}`)
+    const res = await apiFetch<PurchaseLogisticsApiListResponse>(
+      `/logistics${queryString ? `?${queryString}` : ''}`
+    )
 
     return {
       ...res,
@@ -105,7 +117,7 @@ export const PurchaseLogisticsService = {
       method: 'POST',
       body: JSON.stringify({
         ...record,
-        type: 'Receipt' // 强制指定类型为采购入库物流
+        type: 'Receipt', // 强制指定类型为采购入库物流
       }),
     })
   },
@@ -114,7 +126,10 @@ export const PurchaseLogisticsService = {
     trackingNo: string,
     options: { refresh?: boolean } = {}
   ): Promise<PurchaseControlledTrackingDetail | null> {
-    const detail = await logisticsService.getControlledTrackingDetail(trackingNo, options)
+    const detail = await logisticsService.getControlledTrackingDetail(
+      trackingNo,
+      options
+    )
     if (!detail) {
       return null
     }
@@ -138,20 +153,23 @@ export const PurchaseLogisticsService = {
   normalizeRecord(record: PurchaseLogisticsApiRecord): PurchaseLogisticsRecord {
     return {
       ...record,
-      events: normalizeLogisticsEvents(record.events)
+      events: normalizeLogisticsEvents(record.events),
     }
   },
 
   /**
    * 更新物流状态并追加事件
    */
-  async updateStatus(id: string, data: {
-    status: string
-    location: string
-    description: string
-    events: LogisticsEvent[]
-    version: number
-  }) {
+  async updateStatus(
+    id: string,
+    data: {
+      status: string
+      location: string
+      description: string
+      events: LogisticsEvent[]
+      version: number
+    }
+  ) {
     return apiFetch(`/logistics/${id}/status`, {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -161,18 +179,27 @@ export const PurchaseLogisticsService = {
   /**
    * 局部更新物流记录 (SDRTS 协议)
    */
-  async patchRecord(id: string, delta: DeltaSet, version: number): Promise<PurchaseLogisticsRecord> {
+  async patchRecord(
+    id: string,
+    delta: DeltaSet,
+    version: number
+  ): Promise<PurchaseLogisticsRecord> {
     const payload: DeltaPayload = {
       op: 'PATCH',
       delta,
-      metadata: buildVersionedPatchMetadata(id, version, 'PurchaseLogisticsService.patchRecord', {
-        intent: PURCHASE_LOGISTICS_RECORD_PATCH_INTENT_SAVE,
-      })
-    };
+      metadata: buildVersionedPatchMetadata(
+        id,
+        version,
+        'PurchaseLogisticsService.patchRecord',
+        {
+          intent: PURCHASE_LOGISTICS_RECORD_PATCH_INTENT_SAVE,
+        }
+      ),
+    }
 
     return apiFetch<PurchaseLogisticsRecord>(`/logistics/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(payload),
-    });
-  }
+    })
+  },
 }

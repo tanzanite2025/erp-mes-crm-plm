@@ -10,7 +10,7 @@ export const router = createRouter({
   routeTree,
   context: {
     // 初始值会在 main.tsx 中被覆盖，或者通过 router.updateContext 注入真实实例
-    queryClient: new QueryClient(), 
+    queryClient: new QueryClient(),
   },
   defaultPreload: 'intent',
   defaultPreloadStaleTime: 0,

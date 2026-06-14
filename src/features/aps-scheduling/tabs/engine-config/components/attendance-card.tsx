@@ -1,6 +1,9 @@
 import { UserCheck } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
-import type { GreedyEngineFactorBadgeItem, GreedyEngineFactorSummaryItem } from '../types'
+import type {
+  GreedyEngineFactorBadgeItem,
+  GreedyEngineFactorSummaryItem,
+} from '../types'
 import { FactorCard } from './factor-card'
 
 type AttendanceCardProps = {
@@ -8,10 +11,7 @@ type AttendanceCardProps = {
   summaryItems: GreedyEngineFactorSummaryItem[]
 }
 
-export function AttendanceCard({
-  badges,
-  summaryItems,
-}: AttendanceCardProps) {
+export function AttendanceCard({ badges, summaryItems }: AttendanceCardProps) {
   const { t } = useLanguage()
 
   return (

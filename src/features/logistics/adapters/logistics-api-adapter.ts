@@ -1,15 +1,4 @@
 import type {
-  ControlledTrackingDetail,
-  ControlledTrackingOrder,
-  LogisticsEvent,
-  LogisticsListPage,
-  LogisticsRecord,
-  LogisticsStatus,
-  LogisticsTrackingRefreshResult,
-  SaveLogisticsRecordInput,
-  UpdateLogisticsStatusInput,
-} from '../data/schema'
-import type {
   ControlledTrackingDetailApiDTO,
   ControlledTrackingOrderApiDTO,
   ControlledTrackingTraceApiDTO,
@@ -20,15 +9,30 @@ import type {
   SaveLogisticsRecordApiDTO,
   UpdateLogisticsStatusApiDTO,
 } from '../contracts/logistics-api-dto'
+import type {
+  ControlledTrackingDetail,
+  ControlledTrackingOrder,
+  LogisticsEvent,
+  LogisticsListPage,
+  LogisticsRecord,
+  LogisticsStatus,
+  LogisticsTrackingRefreshResult,
+  SaveLogisticsRecordInput,
+  UpdateLogisticsStatusInput,
+} from '../data/schema'
 
-function normalizeEvents(raw: LogisticsRecordApiDTO['events']): LogisticsEvent[] {
+function normalizeEvents(
+  raw: LogisticsRecordApiDTO['events']
+): LogisticsEvent[] {
   if (Array.isArray(raw)) {
     return raw.map(toLogisticsEventContract)
   }
   return []
 }
 
-export function toLogisticsEventContract(dto: LogisticsEventApiDTO): LogisticsEvent {
+export function toLogisticsEventContract(
+  dto: LogisticsEventApiDTO
+): LogisticsEvent {
   return {
     id: dto.id ?? `${dto.time}-${dto.status}-${dto.location ?? ''}`,
     time: dto.time,
@@ -38,7 +42,9 @@ export function toLogisticsEventContract(dto: LogisticsEventApiDTO): LogisticsEv
   }
 }
 
-function toControlledTrackingTimelineStatus(status: string | undefined): LogisticsStatus {
+function toControlledTrackingTimelineStatus(
+  status: string | undefined
+): LogisticsStatus {
   switch ((status ?? '').trim().toLowerCase()) {
     case 'pending':
     case 'collected':
@@ -58,7 +64,10 @@ function toControlledTrackingTimelineStatus(status: string | undefined): Logisti
   }
 }
 
-function inferControlledTrackingEventStatus(context: string | undefined, fallbackStatus: LogisticsStatus): LogisticsStatus {
+function inferControlledTrackingEventStatus(
+  context: string | undefined,
+  fallbackStatus: LogisticsStatus
+): LogisticsStatus {
   const normalized = (context ?? '').trim().toLowerCase()
   if (normalized === '') {
     return fallbackStatus
@@ -98,7 +107,9 @@ function inferControlledTrackingEventStatus(context: string | undefined, fallbac
   return fallbackStatus
 }
 
-function toControlledTrackingOrderContract(dto: ControlledTrackingOrderApiDTO): ControlledTrackingOrder {
+function toControlledTrackingOrderContract(
+  dto: ControlledTrackingOrderApiDTO
+): ControlledTrackingOrder {
   return {
     id: dto.id,
     createdAt: dto.createdAt,
@@ -144,17 +155,25 @@ export function toControlledTrackingEventContract(
   }
 }
 
-export function toControlledTrackingDetailContract(dto: ControlledTrackingDetailApiDTO): ControlledTrackingDetail {
+export function toControlledTrackingDetailContract(
+  dto: ControlledTrackingDetailApiDTO
+): ControlledTrackingDetail {
   const order = toControlledTrackingOrderContract(dto.order)
   const fallbackStatus = toControlledTrackingTimelineStatus(order.status)
   return {
     order,
-    events: dto.traces.map((trace) => toControlledTrackingEventContract(trace, fallbackStatus)),
-    refresh: dto.refresh ? toLogisticsTrackingRefreshResultContract(dto.refresh) : undefined,
+    events: dto.traces.map((trace) =>
+      toControlledTrackingEventContract(trace, fallbackStatus)
+    ),
+    refresh: dto.refresh
+      ? toLogisticsTrackingRefreshResultContract(dto.refresh)
+      : undefined,
   }
 }
 
-export function toLogisticsRecordContract(dto: LogisticsRecordApiDTO): LogisticsRecord {
+export function toLogisticsRecordContract(
+  dto: LogisticsRecordApiDTO
+): LogisticsRecord {
   return {
     id: dto.id,
     orderNo: dto.orderNo,
@@ -177,7 +196,9 @@ export function toLogisticsRecordContract(dto: LogisticsRecordApiDTO): Logistics
   }
 }
 
-export function toLogisticsListPageContract(dto: LogisticsListPageApiDTO): LogisticsListPage {
+export function toLogisticsListPageContract(
+  dto: LogisticsListPageApiDTO
+): LogisticsListPage {
   return {
     items: dto.items.map(toLogisticsRecordContract),
     total: dto.total,
@@ -186,7 +207,9 @@ export function toLogisticsListPageContract(dto: LogisticsListPageApiDTO): Logis
   }
 }
 
-export function toSaveLogisticsRecordApiDTO(input: SaveLogisticsRecordInput): SaveLogisticsRecordApiDTO {
+export function toSaveLogisticsRecordApiDTO(
+  input: SaveLogisticsRecordInput
+): SaveLogisticsRecordApiDTO {
   return {
     id: input.id,
     orderNo: input.orderNo,
@@ -207,7 +230,9 @@ export function toSaveLogisticsRecordApiDTO(input: SaveLogisticsRecordInput): Sa
   }
 }
 
-export function toLogisticsEventApiDTO(input: LogisticsEvent): LogisticsEventApiDTO {
+export function toLogisticsEventApiDTO(
+  input: LogisticsEvent
+): LogisticsEventApiDTO {
   return {
     id: input.id,
     time: input.time,

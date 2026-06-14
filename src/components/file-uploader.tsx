@@ -2,12 +2,12 @@
 
 import React, { useRef, useState } from 'react'
 import { CloudUpload, FileText, Plus, X } from 'lucide-react'
+import { toast } from 'sonner'
+import { createLogger } from '@/lib/logger'
+import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { StorageService } from '@/features/system-mgmt/services/storage-service'
-import { createLogger } from '@/lib/logger'
-import { cn } from '@/lib/utils'
-import { toast } from 'sonner'
 
 const logger = createLogger('FileUploader')
 
@@ -92,11 +92,11 @@ export function FileUploader({
   return (
     <div
       className={cn(
-        'relative group cursor-pointer transition-all duration-300',
-        'border-2 border-dashed rounded-2xl p-6 min-h-[120px]',
+        'group relative cursor-pointer transition-all duration-300',
+        'min-h-[120px] rounded-2xl border-2 border-dashed p-6',
         'flex flex-col items-center justify-center gap-2',
         isDragging
-          ? 'border-primary bg-primary/5 scale-[1.01]'
+          ? 'scale-[1.01] border-primary bg-primary/5'
           : 'border-muted-foreground/20 hover:border-primary/50 hover:bg-muted/30',
         value ? 'border-emerald-500/50 bg-emerald-500/5' : '',
         className
@@ -116,25 +116,29 @@ export function FileUploader({
 
       {!value ? (
         <>
-          <div className='size-12 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/20 group-hover:text-primary transition-colors'>
+          <div className='flex size-12 items-center justify-center rounded-full bg-muted transition-colors group-hover:bg-primary/20 group-hover:text-primary'>
             <Plus className='size-6' />
           </div>
           <div className='text-center'>
-            <p className='text-sm font-bold text-foreground'>{displayPlaceholder}</p>
-            <p className='text-[10px] text-muted-foreground mt-1 uppercase tracking-widest font-black'>
+            <p className='text-sm font-bold text-foreground'>
+              {displayPlaceholder}
+            </p>
+            <p className='mt-1 text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
               {t('fileUploader.maxSize', { max: 50 })}
             </p>
           </div>
-          <CloudUpload className='absolute bottom-3 right-3 size-5 text-muted-foreground/20 group-hover:text-primary/40 transition-colors' />
+          <CloudUpload className='absolute right-3 bottom-3 size-5 text-muted-foreground/20 transition-colors group-hover:text-primary/40' />
         </>
       ) : (
-        <div className='flex items-center gap-4 w-full animate-in fade-in slide-in-from-bottom-2'>
-          <div className='size-12 rounded-xl bg-emerald-500/20 text-emerald-600 flex items-center justify-center shrink-0 shadow-inner'>
+        <div className='flex w-full animate-in items-center gap-4 fade-in slide-in-from-bottom-2'>
+          <div className='flex size-12 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-600 shadow-inner'>
             <FileText className='size-6' />
           </div>
-          <div className='flex-1 min-w-0'>
-            <p className='text-sm font-black truncate text-foreground'>{value.split('/').pop()}</p>
-            <p className='text-[10px] text-emerald-600 font-mono mt-0.5 font-bold uppercase'>
+          <div className='min-w-0 flex-1'>
+            <p className='truncate text-sm font-black text-foreground'>
+              {value.split('/').pop()}
+            </p>
+            <p className='mt-0.5 font-mono text-[10px] font-bold text-emerald-600 uppercase'>
               {t('fileUploader.ready')}
             </p>
           </div>

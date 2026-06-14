@@ -1,5 +1,5 @@
-import type { SalesOrder } from '../data/schema'
 import type { TranslationKey } from '@/locales'
+import type { SalesOrder } from '../data/schema'
 import type { SalesOrderStatusCommandPayload } from './use-sales-order-detail-actions'
 
 function hasAvailableAction(order: SalesOrder, action: string) {
@@ -26,7 +26,8 @@ export function useSalesOrderDetailHeaderViewModel({
   t,
 }: UseSalesOrderDetailHeaderViewModelParams) {
   const showClaimBanner = isClaimAction && order.status === 'Pending'
-  const commandTitle = activeCommandTitle || t('tradingSalesOrder.detail.claimFallback')
+  const commandTitle =
+    activeCommandTitle || t('tradingSalesOrder.detail.claimFallback')
 
   return {
     showClaimBanner,
@@ -36,7 +37,9 @@ export function useSalesOrderDetailHeaderViewModel({
     canStartProduction: hasAvailableAction(order, 'startProduction'),
     canMarkDone: hasAvailableAction(order, 'markDone'),
     canCancel: hasAvailableAction(order, 'cancel'),
-    submitPendingPayload: { status: 'Pending' } as SalesOrderStatusCommandPayload,
+    submitPendingPayload: {
+      status: 'Pending',
+    } as SalesOrderStatusCommandPayload,
     startSchedulingPayload: {
       status: 'Scheduling' as const,
       statusNote: t('tradingSalesOrder.detail.schedulingTriggered'),

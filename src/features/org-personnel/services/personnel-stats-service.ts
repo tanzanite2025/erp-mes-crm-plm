@@ -4,10 +4,10 @@ export interface EmployeeStats {
   employeeId: string
   name: string
   deptName?: string
-  attendanceRate: number 
+  attendanceRate: number
   leaveDays: number
   tenureYears: number
-  score: number 
+  score: number
 }
 
 /**
@@ -23,9 +23,11 @@ export const PersonnelStatsService = {
   getExcellentEmployeeRanking: async (): Promise<EmployeeStats[]> => {
     // 调用后端权威统计接口
     const data = await apiFetch<EmployeeStats[]>('/stats/excellence')
-    
+
     if (!data) {
-       throw new Error('[CRITICAL_PATH] Backend failed to return personnel analytics data')
+      throw new Error(
+        '[CRITICAL_PATH] Backend failed to return personnel analytics data'
+      )
     }
 
     return data
@@ -38,12 +40,12 @@ export const PersonnelStatsService = {
     // 暂时保留简单 UI 统计，或后续统一由后端聚合
     const employees = await apiFetch<any[]>('/employees')
     const depts: Record<string, number> = {}
-    
-    employees.forEach(emp => {
+
+    employees.forEach((emp) => {
       const name = emp.deptName || '未分配'
       depts[name] = (depts[name] || 0) + 1
     })
 
     return Object.entries(depts).map(([name, count]) => ({ name, count }))
-  }
+  },
 }

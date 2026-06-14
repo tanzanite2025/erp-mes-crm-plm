@@ -1,7 +1,8 @@
-import { loadExcelJS } from '@/lib/lazy-vendors'
 import type { Alignment, Borders, Row, Workbook } from 'exceljs'
+import { loadExcelJS } from '@/lib/lazy-vendors'
 
-const EXCEL_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+const EXCEL_MIME_TYPE =
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
 export const EXCEL_THIN_BORDER: Partial<Borders> = {
   top: { style: 'thin', color: { argb: 'FFE5E7EB' } },
@@ -31,7 +32,10 @@ export async function createExcelWorkbook() {
   return new ExcelJS.Workbook()
 }
 
-export async function downloadWorkbook(workbook: WorkbookBufferWriter, filename: string) {
+export async function downloadWorkbook(
+  workbook: WorkbookBufferWriter,
+  filename: string
+) {
   const buffer = await workbook.xlsx.writeBuffer()
   const blob = new Blob([buffer], { type: EXCEL_MIME_TYPE })
   const url = window.URL.createObjectURL(blob)
@@ -57,7 +61,11 @@ export function applyWorksheetHeaderRowStyle(
 
   row.eachCell((cell) => {
     cell.font = { bold: true, color: { argb: fontColorArgb }, size: fontSize }
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fillColorArgb } }
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: fillColorArgb },
+    }
     cell.border = EXCEL_THIN_BORDER
     cell.alignment = EXCEL_CENTER_ALIGNMENT
   })

@@ -1,15 +1,15 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { failLoudly } from '@/lib/safe-catch'
+import { useLanguage } from '@/context/language-provider'
 import { useUnitsQuery } from '@/features/basic-settings/hooks/use-units-query'
 import { type Unit } from '@/features/basic-settings/services/unit-service'
 import { type Product } from '@/features/engineering/data/schema'
 import { ProductCoreService } from '@/features/engineering/services/product-core-service'
-import { MATERIAL_OPTIONS_QUERY_KEY } from '@/features/material-archive/query-keys'
 import { type MaterialOption } from '@/features/material-archive/data/schema'
+import { MATERIAL_OPTIONS_QUERY_KEY } from '@/features/material-archive/query-keys'
 import { MaterialCoreService } from '@/features/material-archive/services/material-core-service'
-import { useLanguage } from '@/context/language-provider'
-import { failLoudly } from '@/lib/safe-catch'
 import {
   createDefaultPackagingProfileTarget,
   createEmptyPackagingProfileDraft,
@@ -22,12 +22,32 @@ import {
   type SavePackagingProfileInput,
 } from '../packaging-rules-service'
 
-const PACKAGING_PROFILE_QUERY_KEY = ['logistics-config', 'packaging-profiles'] as const
+const PACKAGING_PROFILE_QUERY_KEY = [
+  'logistics-config',
+  'packaging-profiles',
+] as const
 const EMPTY_PACKAGING_MATERIAL_OPTIONS: MaterialOption[] = []
 const PACKAGING_UNIT_CODE_FALLBACKS = {
   LENGTH: ['mm', 'cm', 'm', 'meter', 'metre', 'km', 'in', 'inch', 'ft', 'foot'],
   WEIGHT: ['mg', 'g', 'gram', 'kg', 'kilogram', 't', 'ton', 'lb', 'lbs', 'oz'],
-  QUANTITY: ['pcs', 'pc', 'piece', 'pieces', 'ea', 'unit', 'units', 'set', 'sets', 'box', 'boxes', 'ctn', 'carton', 'cartons', 'pack', 'pkg'],
+  QUANTITY: [
+    'pcs',
+    'pc',
+    'piece',
+    'pieces',
+    'ea',
+    'unit',
+    'units',
+    'set',
+    'sets',
+    'box',
+    'boxes',
+    'ctn',
+    'carton',
+    'cartons',
+    'pack',
+    'pkg',
+  ],
 } as const
 
 type PackagingUnitKind = keyof typeof PACKAGING_UNIT_CODE_FALLBACKS
@@ -36,7 +56,10 @@ function normalizePackagingUnitCode(value: string): string {
   return value.trim().toLowerCase()
 }
 
-function matchesPackagingUnitKind(unit: Unit, kind: PackagingUnitKind): boolean {
+function matchesPackagingUnitKind(
+  unit: Unit,
+  kind: PackagingUnitKind
+): boolean {
   if (unit.category === kind) {
     return true
   }
@@ -69,8 +92,9 @@ function resolvePackagingUnitCode(units: Unit[], unitCode: string): string {
   }
 
   return (
-    units.find((unit) => normalizePackagingUnitCode(unit.code) === normalizedCode)
-      ?.code ?? unitCode.trim()
+    units.find(
+      (unit) => normalizePackagingUnitCode(unit.code) === normalizedCode
+    )?.code ?? unitCode.trim()
   )
 }
 
@@ -101,7 +125,10 @@ function createPackagingProfileCode(name: string): string {
     .replace(/\s+/g, '-')
     .replace(/[^a-zA-Z0-9\u4e00-\u9fa5-]/g, '')
     .slice(0, 16)
-  const stamp = new Date().toISOString().replace(/[-:TZ.]/g, '').slice(0, 14)
+  const stamp = new Date()
+    .toISOString()
+    .replace(/[-:TZ.]/g, '')
+    .slice(0, 14)
   return `PKG-${normalized || 'BOX'}-${stamp}`
 }
 
@@ -145,16 +172,23 @@ export function usePackagingProfileFormController({
 
   const productsQuery = useQuery({
     queryKey: ['engineering', 'products', 'options'],
-    queryFn: () => ProductCoreService.getProducts({ isOptions: true }) as Promise<Product[]>,
+    queryFn: () =>
+      ProductCoreService.getProducts({ isOptions: true }) as Promise<Product[]>,
   })
   const packagingMaterialsQuery = useQuery({
     queryKey: MATERIAL_OPTIONS_QUERY_KEY,
-    queryFn: () => MaterialCoreService.getMaterialOptions() as Promise<MaterialOption[]>,
+    queryFn: () =>
+      MaterialCoreService.getMaterialOptions() as Promise<MaterialOption[]>,
   })
-  const { units, isLoading: isUnitsLoading, error: unitsError } = useUnitsQuery()
+  const {
+    units,
+    isLoading: isUnitsLoading,
+    error: unitsError,
+  } = useUnitsQuery()
 
   const saveMutation = useMutation({
-    mutationFn: (payload: SavePackagingProfileInput) => packagingRulesService.saveProfile(payload),
+    mutationFn: (payload: SavePackagingProfileInput) =>
+      packagingRulesService.saveProfile(payload),
     onSuccess: (saved) => {
       queryClient.setQueryData<PackagingProfile[]>(
         PACKAGING_PROFILE_QUERY_KEY,
@@ -172,7 +206,8 @@ export function usePackagingProfileFormController({
   const products = productsQuery.data ?? []
   const packagingMaterials =
     packagingMaterialsQuery.data ?? EMPTY_PACKAGING_MATERIAL_OPTIONS
-  const selectedTarget = draft.targets[0] ?? createDefaultPackagingProfileTarget()
+  const selectedTarget =
+    draft.targets[0] ?? createDefaultPackagingProfileTarget()
   const selectedProduct =
     products.find((item) => item.id === selectedTarget.entityId) ?? null
 
@@ -189,7 +224,8 @@ export function usePackagingProfileFormController({
     [units, draft.capacityUnitCode]
   )
   const dimensionUnits = useMemo(
-    () => buildPackagingUnitCandidates(units, 'LENGTH', draft.dimensionUnitCode),
+    () =>
+      buildPackagingUnitCandidates(units, 'LENGTH', draft.dimensionUnitCode),
     [units, draft.dimensionUnitCode]
   )
   const weightUnits = useMemo(
@@ -197,7 +233,8 @@ export function usePackagingProfileFormController({
     [units, draft.weightUnitCode]
   )
   const quantityUnits = useMemo(
-    () => buildPackagingUnitCandidates(units, 'QUANTITY', draft.capacityUnitCode),
+    () =>
+      buildPackagingUnitCandidates(units, 'QUANTITY', draft.capacityUnitCode),
     [units, draft.capacityUnitCode]
   )
   const packagingMaterialOptions = useMemo(
@@ -303,7 +340,9 @@ export function usePackagingProfileFormController({
         dimensionUnitCode: resolvedDimensionUnitCode,
         weightUnitCode: resolvedWeightUnitCode,
         capacityUnitCode:
-          resolvedCapacityUnitCode || quantityUnits[0]?.code || draft.capacityUnitCode,
+          resolvedCapacityUnitCode ||
+          quantityUnits[0]?.code ||
+          draft.capacityUnitCode,
         grossWeight: computedGrossWeight,
         targets: [
           {
@@ -325,7 +364,10 @@ export function usePackagingProfileFormController({
   }
 
   if (productsQuery.isError) {
-    failLoudly(productsQuery.error, 'usePackagingProfileFormController.products')
+    failLoudly(
+      productsQuery.error,
+      'usePackagingProfileFormController.products'
+    )
     throw productsQuery.error
   }
   if (packagingMaterialsQuery.isError) {
@@ -365,6 +407,9 @@ export function usePackagingProfileFormController({
     handleSave,
     updateSelectedPackagingMaterial,
     updateSelectedProduct,
-    isLoading: productsQuery.isLoading || packagingMaterialsQuery.isLoading || isUnitsLoading,
+    isLoading:
+      productsQuery.isLoading ||
+      packagingMaterialsQuery.isLoading ||
+      isUnitsLoading,
   }
 }

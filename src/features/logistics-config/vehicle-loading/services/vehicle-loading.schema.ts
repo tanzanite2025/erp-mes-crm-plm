@@ -1,7 +1,16 @@
 import { z } from 'zod'
 
-export const vehicleCategorySchema = z.enum(['van', 'boxTruck', 'lightTruck', 'mediumTruck'])
-export const vehiclePhotoViewTypeSchema = z.enum(['exterior', 'sideDoorOpen', 'rearDoorInterior'])
+export const vehicleCategorySchema = z.enum([
+  'van',
+  'boxTruck',
+  'lightTruck',
+  'mediumTruck',
+])
+export const vehiclePhotoViewTypeSchema = z.enum([
+  'exterior',
+  'sideDoorOpen',
+  'rearDoorInterior',
+])
 
 const vehicleDimensionSchema = z.object({
   lengthMm: z.number().nonnegative(),
@@ -121,11 +130,19 @@ export const vehicleRecommendationResponseSchema = z.object({
 
 export type VehicleCategoryDTO = z.infer<typeof vehicleCategorySchema>
 export type VehiclePhotoViewTypeDTO = z.infer<typeof vehiclePhotoViewTypeSchema>
-export type VehiclePhotoAnnotationDTO = z.infer<typeof vehiclePhotoAnnotationSchema>
+export type VehiclePhotoAnnotationDTO = z.infer<
+  typeof vehiclePhotoAnnotationSchema
+>
 export type VehiclePhotoImageDTO = z.infer<typeof vehiclePhotoImageSchema>
 export type VehiclePhotoEntryDTO = z.infer<typeof vehiclePhotoEntrySchema>
 export type VehicleSpecDTO = z.infer<typeof vehicleSpecSchema>
 export type ShipmentSummaryDTO = z.infer<typeof shipmentSummarySchema>
-export type VehicleRecommendationDTO = z.infer<typeof vehicleRecommendationSchema>
-export type VehicleRecommendationRequestDTO = z.infer<typeof vehicleRecommendationRequestSchema>
-export type VehicleRecommendationResponseDTO = z.infer<typeof vehicleRecommendationResponseSchema>
+export type VehicleRecommendationDTO = z.infer<
+  typeof vehicleRecommendationSchema
+>
+export type VehicleRecommendationRequestDTO = z.infer<
+  typeof vehicleRecommendationRequestSchema
+>
+export type VehicleRecommendationResponseDTO = z.infer<
+  typeof vehicleRecommendationResponseSchema
+>

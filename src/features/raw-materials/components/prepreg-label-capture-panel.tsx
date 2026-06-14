@@ -10,11 +10,11 @@ import {
   Wand2,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { renderBwipBarcode } from '@/lib/bwip-renderer'
+import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { useLanguage } from '@/context/language-provider'
-import { renderBwipBarcode } from '@/lib/bwip-renderer'
 import type { PrepregFormState } from '../data/prepreg-material-spec-schema'
 import {
   PrepregLabelCaptureSessionService,
@@ -27,17 +27,22 @@ interface PrepregLabelCapturePanelProps {
   onApply: (fields: Partial<PrepregFormState>) => void
 }
 
-export function PrepregLabelCapturePanel({ onApply }: PrepregLabelCapturePanelProps) {
+export function PrepregLabelCapturePanel({
+  onApply,
+}: PrepregLabelCapturePanelProps) {
   const { t } = useLanguage()
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const qrCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const appliedSessionIdRef = useRef('')
   const [rawText, setRawText] = useState('')
   const [imagePreviewUrl, setImagePreviewUrl] = useState('')
-  const [message, setMessage] = useState(t('rawMaterials.catalog.ocr.message.idle'))
+  const [message, setMessage] = useState(
+    t('rawMaterials.catalog.ocr.message.idle')
+  )
   const [isRecognizing, setIsRecognizing] = useState(false)
   const [isCreatingSession, setIsCreatingSession] = useState(false)
-  const [captureSession, setCaptureSession] = useState<PrepregLabelCaptureSession | null>(null)
+  const [captureSession, setCaptureSession] =
+    useState<PrepregLabelCaptureSession | null>(null)
 
   useEffect(() => {
     setMessage(t('rawMaterials.catalog.ocr.message.idle'))
@@ -48,7 +53,9 @@ export function PrepregLabelCapturePanel({ onApply }: PrepregLabelCapturePanelPr
       code: t('rawMaterials.catalog.form.code.label'),
       name: t('rawMaterials.catalog.form.name.label'),
       supplierProductCode: t('rawMaterials.catalog.form.supplier.label'),
-      resinContentBatchRaw: t('rawMaterials.catalog.form.resinContentBatchRaw.label'),
+      resinContentBatchRaw: t(
+        'rawMaterials.catalog.form.resinContentBatchRaw.label'
+      ),
       widthMm: t('rawMaterials.catalog.form.widthMm.label'),
       nominalAreaM2: t('rawMaterials.catalog.form.nominalAreaM2.label'),
       inspector: t('rawMaterials.catalog.form.inspector.label'),
@@ -59,7 +66,9 @@ export function PrepregLabelCapturePanel({ onApply }: PrepregLabelCapturePanelPr
   )
 
   const parsedFields = useMemo(() => parsePrepregLabelText(rawText), [rawText])
-  const parsedEntries = Object.entries(parsedFields) as Array<[keyof PrepregFormState, string]>
+  const parsedEntries = Object.entries(parsedFields) as Array<
+    [keyof PrepregFormState, string]
+  >
 
   const captureUrl = useMemo(() => {
     if (!captureSession?.uploadToken || typeof window === 'undefined') return ''
@@ -130,7 +139,9 @@ export function PrepregLabelCapturePanel({ onApply }: PrepregLabelCapturePanelPr
     fileInputRef.current?.click()
   }
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0]
     if (!file) return
 
@@ -139,7 +150,9 @@ export function PrepregLabelCapturePanel({ onApply }: PrepregLabelCapturePanelPr
       const result = await PrepregLabelOcrService.recognizeImage(file)
       setImagePreviewUrl(result.imagePreviewUrl || '')
       setRawText(result.rawText)
-      setMessage(result.message || t('rawMaterials.catalog.ocr.message.localUploaded'))
+      setMessage(
+        result.message || t('rawMaterials.catalog.ocr.message.localUploaded')
+      )
       if (Object.keys(result.fields).length > 0) {
         onApply(result.fields)
       }
@@ -191,7 +204,7 @@ export function PrepregLabelCapturePanel({ onApply }: PrepregLabelCapturePanelPr
             <Camera className='size-4 text-primary' />
             {t('rawMaterials.catalog.ocr.title')}
           </div>
-          <p className='max-w-2xl text-[11px] font-semibold leading-4 text-muted-foreground'>
+          <p className='max-w-2xl text-[11px] leading-4 font-semibold text-muted-foreground'>
             {t('rawMaterials.catalog.ocr.description')}
           </p>
         </div>
@@ -251,7 +264,7 @@ export function PrepregLabelCapturePanel({ onApply }: PrepregLabelCapturePanelPr
               <Smartphone className='size-4 text-primary' />
               {t('rawMaterials.catalog.ocr.mobile.title')}
             </div>
-            <p className='text-[11px] font-semibold leading-4 text-muted-foreground'>
+            <p className='text-[11px] leading-4 font-semibold text-muted-foreground'>
               {t('rawMaterials.catalog.ocr.mobile.description')}
             </p>
             <div className='flex min-w-0 items-center gap-2 rounded-xl bg-muted/40 px-2.5 py-1.5 text-[11px] font-bold'>
@@ -288,7 +301,7 @@ export function PrepregLabelCapturePanel({ onApply }: PrepregLabelCapturePanelPr
         </div>
 
         <div className='space-y-2'>
-          <div className='flex items-center gap-2 text-[11px] font-bold leading-4 text-muted-foreground'>
+          <div className='flex items-center gap-2 text-[11px] leading-4 font-bold text-muted-foreground'>
             <FileText className='size-3.5 shrink-0' />
             {message}
           </div>
@@ -296,7 +309,7 @@ export function PrepregLabelCapturePanel({ onApply }: PrepregLabelCapturePanelPr
             value={rawText}
             onChange={(event) => setRawText(event.target.value)}
             placeholder={t('rawMaterials.catalog.ocr.textPlaceholder')}
-            className='min-h-[76px] resize-none rounded-xl bg-background/80 text-sm font-semibold leading-5'
+            className='min-h-[76px] resize-none rounded-xl bg-background/80 text-sm leading-5 font-semibold'
           />
           <div className='flex max-h-14 flex-wrap gap-1.5 overflow-y-auto pr-1'>
             {parsedEntries.length === 0 ? (

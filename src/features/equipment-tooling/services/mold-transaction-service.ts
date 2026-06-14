@@ -2,9 +2,12 @@
 
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
-import { type Mold, type MoldStatus } from '../data/schema'
-import { toMoldContract, toSaveMoldApiDTO } from '../adapters/equipment-mold-api-adapter'
+import {
+  toMoldContract,
+  toSaveMoldApiDTO,
+} from '../adapters/equipment-mold-api-adapter'
 import { type MoldApiDTO } from '../contracts/equipment-mold-api-dto'
+import { type Mold, type MoldStatus } from '../data/schema'
 
 export interface MoldCapacityInstance {
   sn: string
@@ -29,7 +32,9 @@ export interface MoldCapacityAlert {
 }
 
 export const MoldTransactionService = {
-  async createMold(mold: Omit<Mold, 'id' | 'version' | 'status'>): Promise<Mold> {
+  async createMold(
+    mold: Omit<Mold, 'id' | 'version' | 'status'>
+  ): Promise<Mold> {
     const result = await apiFetch<MoldApiDTO>('/molds', {
       method: 'POST',
       body: JSON.stringify({
@@ -56,7 +61,10 @@ export const MoldTransactionService = {
     })
   },
 
-  async checkMoldCapacity(groupName: string, requestedQty: number): Promise<MoldCapacityCheckResult> {
+  async checkMoldCapacity(
+    groupName: string,
+    requestedQty: number
+  ): Promise<MoldCapacityCheckResult> {
     const res = await apiFetch<MoldCapacityCheckResult>(
       `/molds/capacity?groupName=${encodeURIComponent(groupName)}&requestedQty=${requestedQty}`
     )

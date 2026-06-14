@@ -1,9 +1,9 @@
-import type { Permission } from '@/features/authz/data/permission-schema'
 import {
   getDefaultPermissionChildrenMap,
   getDefaultPermissionOrderMap,
   getDefaultPermissionParentMap,
 } from '@/features/authz/data/default-permission-queries'
+import type { Permission } from '@/features/authz/data/permission-schema'
 
 export type PermissionPageNode = {
   page: Permission
@@ -77,7 +77,7 @@ export function collectDescendantPermissionIds(permissionId: string): string[] {
 
 export function buildTreeAssistedPermissionIds(
   currentPermissionIds: string[],
-  toggledPermissionId: string,
+  toggledPermissionId: string
 ): string[] {
   const normalizedPermissionIds = toUniquePermissionIds(currentPermissionIds)
   const nextPermissionSet = new Set(normalizedPermissionIds)
@@ -85,24 +85,28 @@ export function buildTreeAssistedPermissionIds(
 
   if (hasPermission) {
     nextPermissionSet.delete(toggledPermissionId)
-    collectDescendantPermissionIds(toggledPermissionId).forEach((descendantId) => {
-      nextPermissionSet.delete(descendantId)
-    })
+    collectDescendantPermissionIds(toggledPermissionId).forEach(
+      (descendantId) => {
+        nextPermissionSet.delete(descendantId)
+      }
+    )
   } else {
     nextPermissionSet.add(toggledPermissionId)
     collectAncestorPermissionIds(toggledPermissionId).forEach((ancestorId) => {
       nextPermissionSet.add(ancestorId)
     })
-    collectDescendantPermissionIds(toggledPermissionId).forEach((descendantId) => {
-      nextPermissionSet.add(descendantId)
-    })
+    collectDescendantPermissionIds(toggledPermissionId).forEach(
+      (descendantId) => {
+        nextPermissionSet.add(descendantId)
+      }
+    )
   }
 
   return sortPermissionIds(Array.from(nextPermissionSet))
 }
 
 export function buildPermissionTreeNodes(
-  permissions: ReadonlyArray<Permission>,
+  permissions: ReadonlyArray<Permission>
 ): PermissionTreeNode[] {
   const byParentId = new Map<string, Permission[]>()
   const byCategory = new Map<string, Permission[]>()
@@ -123,14 +127,22 @@ export function buildPermissionTreeNodes(
 
   return menuPermissions.map((modulePermission) => {
     const directChildren = byParentId.get(modulePermission.id) || []
-    const pages = directChildren.filter((permission) => permission.category === 'page')
+    const pages = directChildren.filter(
+      (permission) => permission.category === 'page'
+    )
     const pageNodes: PermissionPageNode[] = pages.map((pagePermission) => ({
       page: pagePermission,
-      tabs: (byParentId.get(pagePermission.id) || []).filter((permission) => permission.category === 'tab'),
+      tabs: (byParentId.get(pagePermission.id) || []).filter(
+        (permission) => permission.category === 'tab'
+      ),
     }))
 
-    const directTabs = directChildren.filter((permission) => permission.category === 'tab')
-    const directActions = directChildren.filter((permission) => permission.category === 'action')
+    const directTabs = directChildren.filter(
+      (permission) => permission.category === 'tab'
+    )
+    const directActions = directChildren.filter(
+      (permission) => permission.category === 'action'
+    )
 
     return {
       module: modulePermission,
@@ -148,38 +160,58 @@ export function buildPermissionTreeNodes(
 
 export function filterPermissionTreeNodesBySelected(
   nodes: ReadonlyArray<PermissionTreeNode>,
-  selectedPermissionIds: ReadonlySet<string>,
+  selectedPermissionIds: ReadonlySet<string>
 ): PermissionTreeNode[] {
   return nodes.flatMap((node) => {
-    const moduleSelected = selectedPermissionIds.has(node.module.id.toLowerCase())
+    const moduleSelected = selectedPermissionIds.has(
+      node.module.id.toLowerCase()
+    )
     const pages = node.pages.flatMap((pageNode) => {
-      const selectedTabs = pageNode.tabs.filter((tab) => selectedPermissionIds.has(tab.id.toLowerCase()))
-      if (selectedPermissionIds.has(pageNode.page.id.toLowerCase()) || selectedTabs.length > 0) {
-        return [{
-          page: pageNode.page,
-          tabs: selectedTabs,
-        }]
+      const selectedTabs = pageNode.tabs.filter((tab) =>
+        selectedPermissionIds.has(tab.id.toLowerCase())
+      )
+      if (
+        selectedPermissionIds.has(pageNode.page.id.toLowerCase()) ||
+        selectedTabs.length > 0
+      ) {
+        return [
+          {
+            page: pageNode.page,
+            tabs: selectedTabs,
+          },
+        ]
       }
       return []
     })
 
-    const directTabs = node.directTabs.filter((tab) => selectedPermissionIds.has(tab.id.toLowerCase()))
-    const directActions = node.directActions.filter((action) => selectedPermissionIds.has(action.id.toLowerCase()))
+    const directTabs = node.directTabs.filter((tab) =>
+      selectedPermissionIds.has(tab.id.toLowerCase())
+    )
+    const directActions = node.directActions.filter((action) =>
+      selectedPermissionIds.has(action.id.toLowerCase())
+    )
 
-    if (!moduleSelected && pages.length === 0 && directTabs.length === 0 && directActions.length === 0) {
+    if (
+      !moduleSelected &&
+      pages.length === 0 &&
+      directTabs.length === 0 &&
+      directActions.length === 0
+    ) {
       return []
     }
 
-    return [{
-      module: node.module,
-      pages,
-      directTabs,
-      directActions,
-      childNodeCount:
-        pages.length +
-        pages.reduce((total, pageNode) => total + pageNode.tabs.length, 0) +
-        directTabs.length +
-        directActions.length,
-    }]
+    return [
+      {
+        module: node.module,
+        pages,
+        directTabs,
+        directActions,
+        childNodeCount:
+          pages.length +
+          pages.reduce((total, pageNode) => total + pageNode.tabs.length, 0) +
+          directTabs.length +
+          directActions.length,
+      },
+    ]
   })
 }

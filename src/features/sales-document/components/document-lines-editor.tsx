@@ -24,9 +24,9 @@ import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { type Unit } from '@/features/basic-settings/services/unit-service'
-import { type ProductDisplayProjectionV2 } from '@/features/engineering/display/product-display-v2'
 import { type ProductAppearance } from '@/features/engineering/data/product-appearance'
 import { type Product } from '@/features/engineering/data/schema'
+import { type ProductDisplayProjectionV2 } from '@/features/engineering/display/product-display-v2'
 import { type SalesOrderLine } from '@/features/trading/data/schema'
 import { useSalesOrderLinesEditorViewModel } from '@/features/trading/hooks/use-sales-order-lines-editor-view-model'
 
@@ -164,18 +164,28 @@ export function DocumentLinesEditor({
     'tradingSalesOrder.linesEditor.appearancePreviewEmpty'
   )
   const drillingOptionLabelMap = useMemo(
-    () => new Map(drillingOptions.map((option) => [option.value, option.label])),
+    () =>
+      new Map(drillingOptions.map((option) => [option.value, option.label])),
     [drillingOptions]
   )
   const labelingOptionLabelMap = useMemo(
-    () => new Map(labelingOptions.map((option) => [option.value, option.label])),
+    () =>
+      new Map(labelingOptions.map((option) => [option.value, option.label])),
     [labelingOptions]
   )
-  const buildDrillingSnapshotPatch = (planId: string): Partial<SalesOrderLine> => ({
-    drillingPlanNameSnapshot: planId ? drillingOptionLabelMap.get(planId) || '' : '',
+  const buildDrillingSnapshotPatch = (
+    planId: string
+  ): Partial<SalesOrderLine> => ({
+    drillingPlanNameSnapshot: planId
+      ? drillingOptionLabelMap.get(planId) || ''
+      : '',
   })
-  const buildLabelingSnapshotPatch = (planId: string): Partial<SalesOrderLine> => ({
-    labelingPlanNameSnapshot: planId ? labelingOptionLabelMap.get(planId) || '' : '',
+  const buildLabelingSnapshotPatch = (
+    planId: string
+  ): Partial<SalesOrderLine> => ({
+    labelingPlanNameSnapshot: planId
+      ? labelingOptionLabelMap.get(planId) || ''
+      : '',
   })
   const {
     appearanceOptions,

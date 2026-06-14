@@ -1,5 +1,5 @@
-import { StocktakeOfflineAdapter } from '@/features/warehouse/stocktake'
 import type { OfflineSyncAdapter } from '@/offline-sync/engine/offline-sync-engine'
+import { StocktakeOfflineAdapter } from '@/features/warehouse/stocktake'
 
 /**
  * Global offline sync adapter that bridges stocktake replay into the shared engine.

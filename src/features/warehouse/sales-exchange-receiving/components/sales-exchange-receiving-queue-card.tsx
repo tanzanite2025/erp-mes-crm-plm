@@ -14,7 +14,11 @@ import {
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
 import type { SalesExchangeDraftRecord } from '@/features/trading/sales-exchanges/types/sales-exchange-types'
 import { useSalesExchangeReceivingQueue } from '../hooks/use-sales-exchange-receiving-queue'
 
@@ -96,7 +100,7 @@ function SalesExchangeReceivingQueueItemCard({
       <div className='flex items-start justify-between gap-3'>
         <div className='min-w-0'>
           <div className='flex items-center gap-2'>
-            <span className='truncate font-mono text-[11px] font-black uppercase tracking-widest text-sky-700'>
+            <span className='truncate font-mono text-[11px] font-black tracking-widest text-sky-700 uppercase'>
               {salesExchangeDraftRecord.exchangeNo}
             </span>
             <Badge className='h-5 rounded-full border-none bg-sky-500/10 px-2 text-[8px] font-black text-sky-700'>
@@ -123,7 +127,7 @@ function SalesExchangeReceivingQueueItemCard({
         </div>
       </div>
 
-      <div className='mt-4 grid grid-cols-3 gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+      <div className='mt-4 grid grid-cols-3 gap-2 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
         <div className='rounded-xl bg-muted/40 px-2 py-2'>
           <div className='text-[8px]'>数量</div>
           <div className='mt-1 font-mono text-sm text-slate-800'>
@@ -149,7 +153,7 @@ function SalesExchangeReceivingQueueItemCard({
       <div className='mt-4 rounded-2xl border border-dashed border-sky-500/20 bg-sky-500/4 px-3 py-3'>
         <div className='flex items-center justify-between gap-3'>
           <div className='min-w-0'>
-            <div className='text-[8px] font-black uppercase tracking-widest text-sky-700/70'>
+            <div className='text-[8px] font-black tracking-widest text-sky-700/70 uppercase'>
               旧货物流
             </div>
             <div className='mt-1 flex items-center gap-2 text-[11px] font-black text-slate-900'>
@@ -161,7 +165,7 @@ function SalesExchangeReceivingQueueItemCard({
             </div>
           </div>
           <div className='min-w-0 text-right'>
-            <div className='text-[8px] font-black uppercase tracking-widest text-sky-700/70'>
+            <div className='text-[8px] font-black tracking-widest text-sky-700/70 uppercase'>
               预计补发
             </div>
             <div className='mt-1 truncate font-mono text-[11px] font-black text-slate-900'>
@@ -181,7 +185,7 @@ function SalesExchangeReceivingQueueItemCard({
               <p className='truncate text-[11px] font-black text-slate-800'>
                 {lineDraft.productModel || lineDraft.productCode}
               </p>
-              <p className='truncate font-mono text-[9px] font-bold uppercase tracking-widest text-muted-foreground/40'>
+              <p className='truncate font-mono text-[9px] font-bold tracking-widest text-muted-foreground/40 uppercase'>
                 {lineDraft.productCode}
               </p>
             </div>
@@ -198,19 +202,21 @@ function SalesExchangeReceivingQueueItemCard({
       </div>
 
       <div className='mt-4 flex items-center justify-between gap-3 border-t border-dashed border-muted/50 pt-3'>
-        <div className='min-w-0 truncate text-[9px] font-black uppercase tracking-widest text-muted-foreground/45'>
+        <div className='min-w-0 truncate text-[9px] font-black tracking-widest text-muted-foreground/45 uppercase'>
           旧货先入售后暂存，补发另走出库链路
         </div>
         <div className='flex shrink-0 items-center gap-2'>
           <Button
             type='button'
             size='sm'
-            className='h-8 rounded-full px-3 text-[9px] font-black uppercase tracking-widest'
+            className='h-8 rounded-full px-3 text-[9px] font-black tracking-widest uppercase'
             disabled={
               isConfirmingOldItemInbound ||
               salesExchangeDraftRecord.status !== 'Draft'
             }
-            onClick={() => void onConfirmOldItemInbound(salesExchangeDraftRecord)}
+            onClick={() =>
+              void onConfirmOldItemInbound(salesExchangeDraftRecord)
+            }
           >
             确认旧货入库
           </Button>
@@ -218,7 +224,7 @@ function SalesExchangeReceivingQueueItemCard({
             asChild
             size='sm'
             variant='ghost'
-            className='h-8 rounded-full px-3 text-[9px] font-black uppercase tracking-widest text-sky-700 hover:bg-sky-500/10'
+            className='h-8 rounded-full px-3 text-[9px] font-black tracking-widest text-sky-700 uppercase hover:bg-sky-500/10'
           >
             <Link to='/trading/sales-exchanges'>
               查看换货 <ArrowRight className='size-3' />
@@ -250,8 +256,15 @@ export function SalesExchangeReceivingQueueCard() {
   const hiddenItemCount = Math.max(items.length - visibleItems.length, 0)
 
   return (
-    <Collapsible key={hasItems ? 'has-items' : 'empty'} defaultOpen={hasItems} className='rounded-2xl border border-dashed border-sky-500/25 bg-sky-500/3 p-3 shadow-inner md:rounded-[28px] md:p-4'>
-      <CollapsibleTrigger asChild className='group w-full text-left hover:no-underline'>
+    <Collapsible
+      key={hasItems ? 'has-items' : 'empty'}
+      defaultOpen={hasItems}
+      className='rounded-2xl border border-dashed border-sky-500/25 bg-sky-500/3 p-3 shadow-inner md:rounded-[28px] md:p-4'
+    >
+      <CollapsibleTrigger
+        asChild
+        className='group w-full text-left hover:no-underline'
+      >
         <div
           role='button'
           tabIndex={0}
@@ -266,75 +279,75 @@ export function SalesExchangeReceivingQueueCard() {
             }
           }}
         >
-        <div className='flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between'>
-          <div className='flex min-w-0 items-center gap-2.5'>
-            <div className='rounded-xl bg-sky-500/10 p-2.5 text-sky-700'>
-              <ArrowLeftRight className='size-4.5' />
-            </div>
-            <div className='min-w-0 self-center'>
-              <div className='flex flex-wrap items-center gap-1.5'>
-                <h2 className='text-[13px] font-black tracking-tighter text-slate-900 md:text-sm'>
-                  销售换货待入库
-                </h2>
-                <Button
-                  type='button'
-                  variant='ghost'
-                  size='sm'
-                  className='h-6 rounded-full px-2 text-[8px] font-black uppercase tracking-widest text-sky-700 hover:bg-sky-500/10'
-                  disabled={isRefreshing}
-                  onClick={(event) => {
-                    event.preventDefault()
-                    event.stopPropagation()
-                    void reloadSalesExchangeReceivingQueue()
-                  }}
-                >
-                  <RefreshCw
-                    className={`mr-1 size-2.5 ${isRefreshing ? 'animate-spin' : ''}`}
-                  />
-                  刷新
-                </Button>
+          <div className='flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between'>
+            <div className='flex min-w-0 items-center gap-2.5'>
+              <div className='rounded-xl bg-sky-500/10 p-2.5 text-sky-700'>
+                <ArrowLeftRight className='size-4.5' />
               </div>
-              <p className='mt-0.5 text-[10px] font-bold leading-4 text-muted-foreground/60 group-data-[state=closed]:hidden'>
-                客户换货退回的旧货先进入售后暂存，标签码用于核对原出货对象；补发新货后续独立走出库链路。
-              </p>
+              <div className='min-w-0 self-center'>
+                <div className='flex flex-wrap items-center gap-1.5'>
+                  <h2 className='text-[13px] font-black tracking-tighter text-slate-900 md:text-sm'>
+                    销售换货待入库
+                  </h2>
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='sm'
+                    className='h-6 rounded-full px-2 text-[8px] font-black tracking-widest text-sky-700 uppercase hover:bg-sky-500/10'
+                    disabled={isRefreshing}
+                    onClick={(event) => {
+                      event.preventDefault()
+                      event.stopPropagation()
+                      void reloadSalesExchangeReceivingQueue()
+                    }}
+                  >
+                    <RefreshCw
+                      className={`mr-1 size-2.5 ${isRefreshing ? 'animate-spin' : ''}`}
+                    />
+                    刷新
+                  </Button>
+                </div>
+                <p className='mt-0.5 text-[10px] leading-4 font-bold text-muted-foreground/60 group-data-[state=closed]:hidden'>
+                  客户换货退回的旧货先进入售后暂存，标签码用于核对原出货对象；补发新货后续独立走出库链路。
+                </p>
+              </div>
             </div>
-          </div>
 
-          <div className='flex items-center gap-2.5'>
-            <div className='flex flex-wrap items-center justify-end gap-1.5 lg:max-w-[360px]'>
-              <div className='inline-flex h-8 min-w-[82px] items-center justify-between gap-2 rounded-full border border-dashed border-sky-500/15 bg-background/85 px-2.5'>
-                <span className='text-[7px] font-black uppercase tracking-widest text-muted-foreground/45'>
-                  待处理
-                </span>
-                <span className='font-mono text-[11px] font-black text-slate-900'>
-                  {items.length}
-                </span>
-              </div>
-              <div className='inline-flex h-8 min-w-[94px] items-center justify-between gap-2 rounded-full border border-dashed border-sky-500/15 bg-background/85 px-2.5'>
-                <span className='text-[7px] font-black uppercase tracking-widest text-muted-foreground/45'>
-                  待收数量
-                </span>
-                <span className='font-mono text-[11px] font-black text-sky-700'>
-                  {totalPendingQuantity}
-                </span>
-              </div>
-              <div className='inline-flex h-8 min-w-[86px] items-center justify-between gap-2 rounded-full border border-dashed border-sky-500/15 bg-background/85 px-2.5'>
-                <span className='text-[7px] font-black uppercase tracking-widest text-muted-foreground/45'>
-                  标签码
-                </span>
-                <div className='flex min-w-0 items-center justify-end gap-1 text-[8px] font-black text-sky-700'>
-                  <Barcode className='size-3 shrink-0' />
-                  <span className='truncate'>
-                    {totalRecognizedLabelCodeCount}
+            <div className='flex items-center gap-2.5'>
+              <div className='flex flex-wrap items-center justify-end gap-1.5 lg:max-w-[360px]'>
+                <div className='inline-flex h-8 min-w-[82px] items-center justify-between gap-2 rounded-full border border-dashed border-sky-500/15 bg-background/85 px-2.5'>
+                  <span className='text-[7px] font-black tracking-widest text-muted-foreground/45 uppercase'>
+                    待处理
+                  </span>
+                  <span className='font-mono text-[11px] font-black text-slate-900'>
+                    {items.length}
                   </span>
                 </div>
+                <div className='inline-flex h-8 min-w-[94px] items-center justify-between gap-2 rounded-full border border-dashed border-sky-500/15 bg-background/85 px-2.5'>
+                  <span className='text-[7px] font-black tracking-widest text-muted-foreground/45 uppercase'>
+                    待收数量
+                  </span>
+                  <span className='font-mono text-[11px] font-black text-sky-700'>
+                    {totalPendingQuantity}
+                  </span>
+                </div>
+                <div className='inline-flex h-8 min-w-[86px] items-center justify-between gap-2 rounded-full border border-dashed border-sky-500/15 bg-background/85 px-2.5'>
+                  <span className='text-[7px] font-black tracking-widest text-muted-foreground/45 uppercase'>
+                    标签码
+                  </span>
+                  <div className='flex min-w-0 items-center justify-end gap-1 text-[8px] font-black text-sky-700'>
+                    <Barcode className='size-3 shrink-0' />
+                    <span className='truncate'>
+                      {totalRecognizedLabelCodeCount}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className='flex size-9 shrink-0 items-center justify-center rounded-xl border border-dashed border-sky-500/30 bg-background/70 text-sky-700'>
+                <ChevronDown className='size-3.5 transition-transform group-data-[state=open]:rotate-180' />
               </div>
             </div>
-            <div className='flex size-9 shrink-0 items-center justify-center rounded-xl border border-dashed border-sky-500/30 bg-background/70 text-sky-700'>
-              <ChevronDown className='size-3.5 transition-transform group-data-[state=open]:rotate-180' />
-            </div>
           </div>
-        </div>
         </div>
       </CollapsibleTrigger>
 
@@ -353,7 +366,7 @@ export function SalesExchangeReceivingQueueCard() {
                 ))}
               </div>
               {hiddenItemCount > 0 ? (
-                <div className='mt-3 rounded-2xl bg-background/70 px-4 py-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+                <div className='mt-3 rounded-2xl bg-background/70 px-4 py-3 text-center text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                   还有 {hiddenItemCount} 张销售换货草稿，请进入销售换货继续处理
                 </div>
               ) : null}
@@ -377,8 +390,7 @@ export function SalesExchangeReceivingQueueCard() {
             {readResource.status === 'ready'
               ? readResource.defaultTargetCategoryName
               : '售后换货暂存仓'}
-            ，
-            质检后再决定可售、维修、报废或继续补发。
+            ， 质检后再决定可售、维修、报废或继续补发。
             <Warehouse className='ml-1 inline size-3.5 text-sky-700' />
           </div>
         ) : null}

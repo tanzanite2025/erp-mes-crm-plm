@@ -102,8 +102,8 @@ export function DocumentEvidenceManager({
     duplicateDescription ??
     t('tradingSalesOrder.toasts.duplicateEvidenceDetail')
   const shouldShowHint = resolvedHint.trim().length > 0
-  const resolvedEvidenceImageHeightClassName = evidenceImageHeightClassName
-    ?? (compact ? 'h-[72px]' : 'h-40')
+  const resolvedEvidenceImageHeightClassName =
+    evidenceImageHeightClassName ?? (compact ? 'h-[72px]' : 'h-40')
   const resolvedCompactUploadSlotMinHeightClassName =
     compactUploadSlotMinHeightClassName ?? 'min-h-[84px]'
 
@@ -207,7 +207,12 @@ export function DocumentEvidenceManager({
 
   return (
     <div className={cn('group', compact ? 'space-y-2' : 'space-y-4')}>
-      <div className={cn('flex items-center justify-between', compact ? 'px-0.5' : 'px-1')}>
+      <div
+        className={cn(
+          'flex items-center justify-between',
+          compact ? 'px-0.5' : 'px-1'
+        )}
+      >
         <div className='flex items-center gap-2'>
           <ImageIcon className='size-3.5 text-primary' />
           <h4
@@ -241,7 +246,9 @@ export function DocumentEvidenceManager({
             }
             disabled={uploading || disabled || evidences.length >= maxCount}
           />
-          <div className={cn('flex flex-wrap gap-2', compact ? 'px-0.5' : 'px-1')}>
+          <div
+            className={cn('flex flex-wrap gap-2', compact ? 'px-0.5' : 'px-1')}
+          >
             <Button
               type='button'
               variant='outline'
@@ -307,7 +314,12 @@ export function DocumentEvidenceManager({
                     )}
                   />
                 ) : (
-                  <div className={cn('flex items-center justify-center bg-muted/20', resolvedEvidenceImageHeightClassName)}>
+                  <div
+                    className={cn(
+                      'flex items-center justify-center bg-muted/20',
+                      resolvedEvidenceImageHeightClassName
+                    )}
+                  >
                     <Loader2 className='size-4 animate-spin text-muted-foreground/40' />
                   </div>
                 )}
@@ -347,7 +359,9 @@ export function DocumentEvidenceManager({
                 ) : null}
               </div>
 
-              <div className={cn(compact ? 'mt-1.5 space-y-1' : 'mt-3 space-y-2')}>
+              <div
+                className={cn(compact ? 'mt-1.5 space-y-1' : 'mt-3 space-y-2')}
+              >
                 <p className='truncate text-[10px] font-bold text-muted-foreground'>
                   {ev.name}
                 </p>
@@ -376,7 +390,9 @@ export function DocumentEvidenceManager({
             <div
               className={cn(
                 'relative',
-                compact ? resolvedCompactUploadSlotMinHeightClassName : 'min-h-[240px]'
+                compact
+                  ? resolvedCompactUploadSlotMinHeightClassName
+                  : 'min-h-[240px]'
               )}
             >
               <input
@@ -400,7 +416,12 @@ export function DocumentEvidenceManager({
                 )}
               >
                 {uploading ? (
-                  <Loader2 className={cn('animate-spin text-primary', compact ? 'size-5' : 'size-6')} />
+                  <Loader2
+                    className={cn(
+                      'animate-spin text-primary',
+                      compact ? 'size-5' : 'size-6'
+                    )}
+                  />
                 ) : (
                   <>
                     <div
@@ -419,7 +440,9 @@ export function DocumentEvidenceManager({
                     <span
                       className={cn(
                         'px-1 text-center font-black text-muted-foreground uppercase',
-                        compact ? 'text-[8px] tracking-[0.12em]' : 'text-[9px] tracking-widest'
+                        compact
+                          ? 'text-[8px] tracking-[0.12em]'
+                          : 'text-[9px] tracking-widest'
                       )}
                     >
                       {resolvedUploadActionText}
@@ -454,9 +477,16 @@ export function DocumentEvidenceManager({
       </div>
 
       {shouldShowHint ? (
-        <div className={cn('flex items-center gap-2', compact ? 'px-0.5' : 'px-1')}>
+        <div
+          className={cn('flex items-center gap-2', compact ? 'px-0.5' : 'px-1')}
+        >
           <div className='size-1 rounded-full bg-primary/40' />
-          <p className={cn('font-bold tracking-widest text-muted-foreground/60 uppercase', compact ? 'text-[8px]' : 'text-[9px]')}>
+          <p
+            className={cn(
+              'font-bold tracking-widest text-muted-foreground/60 uppercase',
+              compact ? 'text-[8px]' : 'text-[9px]'
+            )}
+          >
             {resolvedHint}
           </p>
         </div>

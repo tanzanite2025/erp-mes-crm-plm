@@ -1,8 +1,11 @@
+import type { TranslationKey } from '@/locales'
 import type { TabItem } from '@/components/module-tabs'
 import { generatePermissionId } from '@/features/authz/data/permission-catalog'
-import type { TranslationKey } from '@/locales'
 
-type TranslateFn = (key: TranslationKey, params?: Record<string, string | number>) => string
+type TranslateFn = (
+  key: TranslationKey,
+  params?: Record<string, string | number>
+) => string
 
 export function getLabExperimentalTabs(t: TranslateFn): TabItem[] {
   return [

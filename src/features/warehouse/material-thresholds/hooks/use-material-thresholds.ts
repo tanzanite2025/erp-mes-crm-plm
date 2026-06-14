@@ -1,18 +1,24 @@
 import { useEffect, useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useLanguage } from '@/context/language-provider'
 import { createLogger } from '@/lib/logger'
-import { type CompositeReadResource, resolveQueryFailure } from '@/lib/read-resource'
+import {
+  type CompositeReadResource,
+  resolveQueryFailure,
+} from '@/lib/read-resource'
 import { failLoudly } from '@/lib/safe-catch'
-import { createWarehouseUiFeedback, type WarehouseUiFeedback } from '../../hooks/warehouse-ui-feedback'
+import { useLanguage } from '@/context/language-provider'
+import {
+  createWarehouseUiFeedback,
+  type WarehouseUiFeedback,
+} from '../../hooks/warehouse-ui-feedback'
 import { warehouseQueryKeys } from '../../query-keys'
-import { invalidateMaterialThresholdState } from '../services/material-threshold-helpers'
 import {
   type InventoryThresholdRule,
   type InventoryThresholdRuleWritePayload,
   type InventoryThresholdTargetOptionsResponse,
 } from '../data/schema'
 import { InventoryThresholdService } from '../services/inventory-threshold-service'
+import { invalidateMaterialThresholdState } from '../services/material-threshold-helpers'
 
 const logger = createLogger('useMaterialThresholds')
 
@@ -21,7 +27,9 @@ export type MaterialThresholdReadResource = CompositeReadResource<{
   targetOptions: InventoryThresholdTargetOptionsResponse
 }>
 
-export function useMaterialThresholds(feedback?: Pick<WarehouseUiFeedback, 'success'>) {
+export function useMaterialThresholds(
+  feedback?: Pick<WarehouseUiFeedback, 'success'>
+) {
   const queryClient = useQueryClient()
   const ui = useMemo(() => feedback ?? createWarehouseUiFeedback(), [feedback])
   const { t } = useLanguage()
@@ -46,8 +54,10 @@ export function useMaterialThresholds(feedback?: Pick<WarehouseUiFeedback, 'succ
   })
 
   const updateMutation = useMutation({
-    mutationFn: (params: { id: string; payload: InventoryThresholdRuleWritePayload }) =>
-      InventoryThresholdService.updateRule(params.id, params.payload),
+    mutationFn: (params: {
+      id: string
+      payload: InventoryThresholdRuleWritePayload
+    }) => InventoryThresholdService.updateRule(params.id, params.payload),
     onSuccess: async () => {
       await invalidateMaterialThresholdState(queryClient)
       ui.success(t('warehouseConfig.materialThresholds.toast.updated'))
@@ -84,8 +94,10 @@ export function useMaterialThresholds(feedback?: Pick<WarehouseUiFeedback, 'succ
       error: targetOptionsQuery.error,
       isPending: targetOptionsQuery.isPending,
       scope: 'useMaterialThresholds.targetOptions',
-      missingMessage: '[CRITICAL] Inventory threshold target options missing after load',
-      failureMessage: '[CRITICAL] Inventory threshold target options query failed',
+      missingMessage:
+        '[CRITICAL] Inventory threshold target options missing after load',
+      failureMessage:
+        '[CRITICAL] Inventory threshold target options query failed',
     })
     if (targetOptionsFailure) {
       return {
@@ -104,14 +116,18 @@ export function useMaterialThresholds(feedback?: Pick<WarehouseUiFeedback, 'succ
     if (!rules) {
       return {
         status: 'error',
-        error: new Error('[CRITICAL] Inventory threshold rules missing after load'),
+        error: new Error(
+          '[CRITICAL] Inventory threshold rules missing after load'
+        ),
         scope: 'useMaterialThresholds.rules',
       }
     }
     if (!targetOptions) {
       return {
         status: 'error',
-        error: new Error('[CRITICAL] Inventory threshold target options missing after load'),
+        error: new Error(
+          '[CRITICAL] Inventory threshold target options missing after load'
+        ),
         scope: 'useMaterialThresholds.targetOptions',
       }
     }
@@ -135,7 +151,10 @@ export function useMaterialThresholds(feedback?: Pick<WarehouseUiFeedback, 'succ
       return
     }
 
-    logger.error(`Failed to load inventory thresholds: ${readResource.scope}`, readResource.error)
+    logger.error(
+      `Failed to load inventory thresholds: ${readResource.scope}`,
+      readResource.error
+    )
     failLoudly(readResource.error, readResource.scope)
   }, [readResource])
 
@@ -154,6 +173,8 @@ export function useMaterialThresholds(feedback?: Pick<WarehouseUiFeedback, 'succ
     updateRule: updateMutation.mutateAsync,
     deleteRule: deleteMutation.mutateAsync,
     isActionLoading:
-      createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
+      createMutation.isPending ||
+      updateMutation.isPending ||
+      deleteMutation.isPending,
   }
 }

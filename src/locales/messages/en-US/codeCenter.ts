@@ -9,7 +9,8 @@ export const codeCenter = {
     print: {
       page: {
         title: 'Linear Barcode Print Center',
-        subtitle: 'LINEAR BARCODE PRINT / Skeleton page for protocol linkage, templates, and print tasks',
+        subtitle:
+          'LINEAR BARCODE PRINT / Skeleton page for protocol linkage, templates, and print tasks',
         notice:
           'This page now focuses on the minimum parsing path for linear barcode printing: select a sales order, read normalized fields from order details, detect blocking issues, and preview resolved parameters. Real print submission will be connected later.',
         badges: {
@@ -42,9 +43,11 @@ export const codeCenter = {
           states: {
             loadingOrders: 'Loading orders',
             emptyOrders: 'There are no sales orders to choose from.',
-            awaitingSelection: 'Select a sales order before starting print parsing.',
+            awaitingSelection:
+              'Select a sales order before starting print parsing.',
             loadingOrderDetail: 'Loading order detail',
-            orderDetailFailed: 'Failed to load order detail. Please retry later.',
+            orderDetailFailed:
+              'Failed to load order detail. Please retry later.',
           },
         },
         parameters: {
@@ -60,12 +63,14 @@ export const codeCenter = {
           },
           states: {
             loadingProtocol: 'Loading protocol config',
-            protocolLoadFailed: 'Failed to load protocol config. Please retry later.',
+            protocolLoadFailed:
+              'Failed to load protocol config. Please retry later.',
           },
           rules: {
             modelCode: 'modelCode comes from order-line `modelCodeSnapshot`',
             holePrefix: 'holePrefix comes from order-line `holePrefixSnapshot`',
-            appearanceCode: 'appearanceCode comes from order-line `appearanceBarcodeCodeSnapshot`',
+            appearanceCode:
+              'appearanceCode comes from order-line `appearanceBarcodeCodeSnapshot`',
             holeCount: 'holes comes from order-line `holeCount`',
             quantity: 'quantity comes from order-line `qty`',
           },
@@ -94,7 +99,8 @@ export const codeCenter = {
             linePrintSuccessDescription: 'Starting SN: {{serialNumber}}',
             linePrintFailed: 'Failed to send the print command',
             batchPrintSuccess: 'Batch print submitted for {{count}} lines.',
-            batchPrintPartial: 'Batch print partially succeeded: {{successCount}} succeeded, {{failureCount}} failed.',
+            batchPrintPartial:
+              'Batch print partially succeeded: {{successCount}} succeeded, {{failureCount}} failed.',
             batchPrintFailed: 'Batch print failed. Please retry later.',
           },
           states: {
@@ -104,7 +110,8 @@ export const codeCenter = {
             lineReady: 'Ready',
             lineBlocked: 'Blocked',
             awaitingRealNumber: 'Issue real numbers first',
-            numberingFailed: 'Failed to issue real numbers. Please retry later.',
+            numberingFailed:
+              'Failed to issue real numbers. Please retry later.',
           },
           fields: {
             lineNo: 'Line',
@@ -125,12 +132,14 @@ export const codeCenter = {
             appearanceCodeMissing: 'Missing appearance-code snapshot',
             holeCountMissing: 'Missing hole count',
             quantityInvalid: 'Quantity must be greater than 0',
-            sequenceRuleKeyMissing: 'Protocol sequence rule key is not configured',
+            sequenceRuleKeyMissing:
+              'Protocol sequence rule key is not configured',
           },
         },
         result: {
           title: 'Latest Task Result',
-          description: 'Keeps the latest order-level batch print result so you can quickly review succeeded and failed lines.',
+          description:
+            'Keeps the latest order-level batch print result so you can quickly review succeeded and failed lines.',
           actions: {
             retryFailedOnly: 'Retry Failed Only',
             retryingFailedOnly: 'Retrying Failed Lines',
@@ -151,7 +160,8 @@ export const codeCenter = {
             skippedCount: 'Skipped',
           },
           states: {
-            emptyFiltered: 'There are no result items under the current filter.',
+            emptyFiltered:
+              'There are no result items under the current filter.',
           },
           status: {
             success: 'Success',
@@ -167,8 +177,10 @@ export const codeCenter = {
           messages: {
             success: 'Print submitted successfully',
             failed: 'Print submission failed',
-            skippedBlocked: 'This line does not satisfy print conditions and was skipped.',
-            skippedUnnumbered: 'This line has not received a real number yet and was skipped.',
+            skippedBlocked:
+              'This line does not satisfy print conditions and was skipped.',
+            skippedUnnumbered:
+              'This line has not received a real number yet and was skipped.',
           },
         },
       },
@@ -259,7 +271,8 @@ export const codeCenter = {
     numberingEngine: {
       page: {
         title: 'Shared Numbering Engine',
-        description: 'Centralized entry for the current shared numbering configuration and linear-barcode numbering rules',
+        description:
+          'Centralized entry for the current shared numbering configuration and linear-barcode numbering rules',
         notice:
           'This shared page now only keeps the linear-barcode shared numbering configuration.',
         badges: {
@@ -269,7 +282,8 @@ export const codeCenter = {
       sections: {
         linearBarcode: {
           title: 'Linear Barcode Numbering Rules',
-          description: 'Reuses the current linear-barcode numbering rules and persisted /numbering/rules backend capability.',
+          description:
+            'Reuses the current linear-barcode numbering rules and persisted /numbering/rules backend capability.',
           status: 'Backend numbering connected',
         },
       },

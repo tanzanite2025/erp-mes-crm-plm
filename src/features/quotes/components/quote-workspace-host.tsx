@@ -2,8 +2,8 @@ import { useEffect } from 'react'
 import { QuotePrintPreviewDialog } from '@/features/quotes/components/quote-print-preview-dialog'
 import { QuoteWorkspaceCreateEditor } from '@/features/quotes/components/quote-workspace-create-editor'
 import { QuoteWorkspaceDialog } from '@/features/quotes/components/quote-workspace-dialog'
-import { useQuoteCreateEditor } from '@/features/quotes/hooks/use-quote-create-editor'
 import { useConvertQuote } from '@/features/quotes/hooks/use-convert-quote'
+import { useQuoteCreateEditor } from '@/features/quotes/hooks/use-quote-create-editor'
 import { useQuoteDetail } from '@/features/quotes/hooks/use-quote-detail'
 import { useQuoteWorkspaceController } from '@/features/quotes/hooks/use-quote-workspace-controller'
 import { useSaveQuote } from '@/features/quotes/hooks/use-save-quote'
@@ -38,7 +38,11 @@ export function QuoteWorkspaceHost({
     switchToDetailMode,
   } = useQuoteWorkspaceController()
 
-  const { detail, isLoading: isDetailLoading, errorMessage: detailError } = useQuoteDetail(selectedQuoteId)
+  const {
+    detail,
+    isLoading: isDetailLoading,
+    errorMessage: detailError,
+  } = useQuoteDetail(selectedQuoteId)
   const {
     formData: createFormData,
     setFormData: setCreateFormData,
@@ -69,7 +73,14 @@ export function QuoteWorkspaceHost({
       handleSelectQuote(externalQuoteId)
       onExternalHandled?.()
     }
-  }, [externalMode, externalOpen, externalQuoteId, handleCreateQuote, handleSelectQuote, onExternalHandled])
+  }, [
+    externalMode,
+    externalOpen,
+    externalQuoteId,
+    handleCreateQuote,
+    handleSelectQuote,
+    onExternalHandled,
+  ])
 
   const parseAmountValue = (value: string) => {
     const normalized = value.replace(/[^\d.-]/g, '').trim()
@@ -86,11 +97,16 @@ export function QuoteWorkspaceHost({
     return parseAmountValue(detail.amountLabel)
   }
 
-  const activeEditedAmountLabel = detail ? editedAmountLabel || detail.amountLabel : editedAmountLabel
-  const activeEditedRequirements = detail ? editedRequirements || detail.requirements : editedRequirements
+  const activeEditedAmountLabel = detail
+    ? editedAmountLabel || detail.amountLabel
+    : editedAmountLabel
+  const activeEditedRequirements = detail
+    ? editedRequirements || detail.requirements
+    : editedRequirements
   const activeSaveError = dialogMode === 'create' ? createError : saveError
   const activeIsSaving = dialogMode === 'create' ? isCreating : isSaving
-  const createSaveDisabled = dialogMode === 'create' && createResource.status !== 'ready'
+  const createSaveDisabled =
+    dialogMode === 'create' && createResource.status !== 'ready'
 
   const handleSaveQuote = async () => {
     if (dialogMode === 'create') {
@@ -143,7 +159,9 @@ export function QuoteWorkspaceHost({
         isSaving={activeIsSaving}
         saveDisabled={createSaveDisabled}
         saveError={activeSaveError}
-        onConvert={() => void (detail ? convertQuote(detail.id) : Promise.resolve())}
+        onConvert={() =>
+          void (detail ? convertQuote(detail.id) : Promise.resolve())
+        }
         isConverting={isConverting}
         convertError={convertError}
       />

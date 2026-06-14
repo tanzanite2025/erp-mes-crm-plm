@@ -31,7 +31,10 @@ import {
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
-import { ShipmentCoreService, type ShipmentRecord } from '@/features/warehouse/shipment'
+import {
+  ShipmentCoreService,
+  type ShipmentRecord,
+} from '@/features/warehouse/shipment'
 import { type SalesOrder, type SalesOrderLine } from '../data/schema'
 import { useGetSalesOrderDetail } from '../sales'
 import { formatSalesOrderPreassembleCandidateLabel } from '../utils/sales-order-line-display'
@@ -45,7 +48,9 @@ interface SalesOrderPreassembleScanDialogProps {
   onOpenChange: (open: boolean) => void
   order: SalesOrder | null
   isSubmitting?: boolean
-  onConfirm?: (payload: SalesOrderPreassembleConfirmPayload) => Promise<void> | void
+  onConfirm?: (
+    payload: SalesOrderPreassembleConfirmPayload
+  ) => Promise<void> | void
 }
 
 interface ScanLogEntry {
@@ -117,10 +122,24 @@ function extractCodesFromUnknown(value: unknown, target: Set<string>) {
   if (!value || typeof value !== 'object') return
 
   const record = value as Record<string, unknown>
-  ;['code', 'barcode', 'packageCode', 'boxCode', 'cartonCode', 'outerCode'].forEach((key) => {
+  ;[
+    'code',
+    'barcode',
+    'packageCode',
+    'boxCode',
+    'cartonCode',
+    'outerCode',
+  ].forEach((key) => {
     appendCode(target, record[key])
   })
-  ;['codes', 'barcodes', 'items', 'components', 'innerCodes', 'children'].forEach((key) => {
+  ;[
+    'codes',
+    'barcodes',
+    'items',
+    'components',
+    'innerCodes',
+    'children',
+  ].forEach((key) => {
     extractCodesFromUnknown(record[key], target)
   })
 }
@@ -201,8 +220,14 @@ function createLineCandidatesResolver(lines: SalesOrderLine[]) {
   }
 }
 
-function getRecordLineLabel(record: ShipmentRecord, candidates: SalesOrderLine[]): string {
-  if (typeof record.salesOrderLineId === 'number' && record.salesOrderLineId > 0) {
+function getRecordLineLabel(
+  record: ShipmentRecord,
+  candidates: SalesOrderLine[]
+): string {
+  if (
+    typeof record.salesOrderLineId === 'number' &&
+    record.salesOrderLineId > 0
+  ) {
     return `已绑定行 #${record.salesOrderLineId}`
   }
   if (candidates.length === 1) {
@@ -224,7 +249,9 @@ export function SalesOrderPreassembleScanDialog({
 }: SalesOrderPreassembleScanDialogProps) {
   const { t } = useLanguage()
   const [scanInput, setScanInput] = useState('')
-  const [manualSelectedIds, setManualSelectedIds] = useState<Set<string>>(new Set())
+  const [manualSelectedIds, setManualSelectedIds] = useState<Set<string>>(
+    new Set()
+  )
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [scanLog, setScanLog] = useState<ScanLogEntry[]>([])
   const [isSubmittingLocal, setIsSubmittingLocal] = useState(false)
@@ -232,10 +259,18 @@ export function SalesOrderPreassembleScanDialog({
 
   const submitting = isSubmitting || isSubmittingLocal
   const orderDetailQuery = useGetSalesOrderDetail(order?.id ?? '')
-  const lines = useMemo(() => orderDetailQuery.data?.lines ?? [], [orderDetailQuery.data?.lines])
+  const lines = useMemo(
+    () => orderDetailQuery.data?.lines ?? [],
+    [orderDetailQuery.data?.lines]
+  )
 
   const virtualPoolQuery = useQuery({
-    queryKey: ['trading', 'sales-order', 'preassemble-scan', order?.id ?? 'empty'],
+    queryKey: [
+      'trading',
+      'sales-order',
+      'preassemble-scan',
+      order?.id ?? 'empty',
+    ],
     queryFn: async () => {
       const all: ShipmentRecord[] = []
       for (let page = 1; page <= SHIPMENT_FETCH_MAX_PAGES; page += 1) {
@@ -258,12 +293,17 @@ export function SalesOrderPreassembleScanDialog({
 
     const resolveLineCandidates = createLineCandidatesResolver(lines)
     const virtualRecords = (virtualPoolQuery.data ?? []).filter((record) => {
-      if (record.sourceCategory !== 'SHIPPING_VIRTUAL' || record.status !== 'DRAFT') {
+      if (
+        record.sourceCategory !== 'SHIPPING_VIRTUAL' ||
+        record.status !== 'DRAFT'
+      ) {
         return false
       }
 
-      const sameOrderByID = Boolean(record.salesOrderId) && record.salesOrderId === order.id
-      const sameOrderByNo = Boolean(record.orderNo) && record.orderNo === order.orderNo
+      const sameOrderByID =
+        Boolean(record.salesOrderId) && record.salesOrderId === order.id
+      const sameOrderByNo =
+        Boolean(record.orderNo) && record.orderNo === order.orderNo
       if (sameOrderByID || sameOrderByNo) {
         return true
       }
@@ -275,14 +315,22 @@ export function SalesOrderPreassembleScanDialog({
         return false
       }
 
-      return resolveLineCandidates(record.materialId, record.materialCode).length > 0
+      return (
+        resolveLineCandidates(record.materialId, record.materialCode).length > 0
+      )
     })
 
     return virtualRecords.map((record) => {
-      const codes = Array.from(new Set(decodeScannedCodes(record.batchNo || '').filter(Boolean)))
+      const codes = Array.from(
+        new Set(decodeScannedCodes(record.batchNo || '').filter(Boolean))
+      )
       const fallbackCode = normalizeCode(record.batchNo || '')
-      const primaryCode = codes[0] || fallbackCode || `[NO-CODE] ${record.id.slice(0, 8)}`
-      const lineCandidates = resolveLineCandidates(record.materialId, record.materialCode)
+      const primaryCode =
+        codes[0] || fallbackCode || `[NO-CODE] ${record.id.slice(0, 8)}`
+      const lineCandidates = resolveLineCandidates(
+        record.materialId,
+        record.materialCode
+      )
       const lineLabel = getRecordLineLabel(record, lineCandidates)
 
       return {
@@ -367,23 +415,27 @@ export function SalesOrderPreassembleScanDialog({
       toast.success(`识别成功：匹配到 ${matchedIds.size} 条记录`)
     }
     if (ambiguousCodes.length > 0) {
-      toast.warning(`有 ${ambiguousCodes.length} 个码命中多条记录，请在左侧手动选择`)
+      toast.warning(
+        `有 ${ambiguousCodes.length} 个码命中多条记录，请在左侧手动选择`
+      )
     }
     if (matchedIds.size === 0 && ambiguousCodes.length === 0) {
       toast.error('未识别到可用条码，请确认条码在虚拟发货仓条码池中')
     }
 
-    setScanLog((prev) => [
-      {
-        raw,
-        matchedCount: matchedIds.size,
-        parsedCodes,
-        ambiguousCodes,
-        unmatchedCodes,
-        scannedAt: new Date().toLocaleTimeString('zh-CN', { hour12: false }),
-      },
-      ...prev,
-    ].slice(0, 12))
+    setScanLog((prev) =>
+      [
+        {
+          raw,
+          matchedCount: matchedIds.size,
+          parsedCodes,
+          ambiguousCodes,
+          unmatchedCodes,
+          scannedAt: new Date().toLocaleTimeString('zh-CN', { hour12: false }),
+        },
+        ...prev,
+      ].slice(0, 12)
+    )
 
     setScanInput('')
     scannerInputRef.current?.focus()
@@ -448,7 +500,10 @@ export function SalesOrderPreassembleScanDialog({
       let targetLineId = 0
       if (entry.salesOrderId === order.id && entry.salesOrderLineId > 0) {
         targetLineId = entry.salesOrderLineId
-      } else if (entry.lineCandidates.length === 1 && typeof entry.lineCandidates[0]?.id === 'number') {
+      } else if (
+        entry.lineCandidates.length === 1 &&
+        typeof entry.lineCandidates[0]?.id === 'number'
+      ) {
         targetLineId = entry.lineCandidates[0].id as number
       }
 
@@ -506,16 +561,17 @@ export function SalesOrderPreassembleScanDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         size='full'
-        className='w-[98vw] max-w-[1560px] sm:max-w-[1560px] rounded-[28px] border-none p-0 shadow-2xl'
+        className='w-[98vw] max-w-[1560px] rounded-[28px] border-none p-0 shadow-2xl sm:max-w-[1560px]'
       >
         <div className='border-b border-dashed border-muted/50 px-6 py-4'>
           <DialogHeader>
-            <DialogTitle className='flex items-center gap-2 text-base font-black uppercase tracking-wide'>
+            <DialogTitle className='flex items-center gap-2 text-base font-black tracking-wide uppercase'>
               <QrCode className='size-4 text-primary' />
               扫码预装入单
             </DialogTitle>
             <DialogDescription className='text-xs font-semibold text-muted-foreground/80'>
-              当前订单：{order?.orderNo || '--'}。支持单件码与组装码识别；完成后将写入订单预装结果。
+              当前订单：{order?.orderNo || '--'}
+              。支持单件码与组装码识别；完成后将写入订单预装结果。
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -528,10 +584,16 @@ export function SalesOrderPreassembleScanDialog({
                 <h3 className='text-sm font-black'>虚拟发货仓条码池</h3>
               </div>
               <div className='flex items-center gap-2'>
-                <Badge variant='outline' className='rounded-full border-dashed text-[10px] font-black'>
+                <Badge
+                  variant='outline'
+                  className='rounded-full border-dashed text-[10px] font-black'
+                >
                   {poolEntries.length} 条
                 </Badge>
-                <Badge variant='outline' className='rounded-full border-dashed text-[10px] font-black'>
+                <Badge
+                  variant='outline'
+                  className='rounded-full border-dashed text-[10px] font-black'
+                >
                   已选 {manualSelectedIds.size}
                 </Badge>
               </div>
@@ -587,7 +649,9 @@ export function SalesOrderPreassembleScanDialog({
                       }`}
                     >
                       <div className='flex items-center justify-between gap-2'>
-                        <p className='truncate text-xs font-black'>{entry.primaryCode}</p>
+                        <p className='truncate text-xs font-black'>
+                          {entry.primaryCode}
+                        </p>
                         <div className='flex items-center gap-1.5'>
                           {recognized ? (
                             <Badge
@@ -601,7 +665,9 @@ export function SalesOrderPreassembleScanDialog({
                             variant='outline'
                             className='rounded-full border-dashed text-[10px] font-black'
                           >
-                            {entry.codeType === 'ASSEMBLY' ? '组装码' : '单件码'}
+                            {entry.codeType === 'ASSEMBLY'
+                              ? '组装码'
+                              : '单件码'}
                           </Badge>
                         </div>
                       </div>
@@ -625,7 +691,10 @@ export function SalesOrderPreassembleScanDialog({
                 <ScanLine className='size-4 text-primary' />
                 <h3 className='text-sm font-black'>扫码识别区</h3>
               </div>
-              <Badge variant='outline' className='rounded-full border-dashed text-[10px] font-black'>
+              <Badge
+                variant='outline'
+                className='rounded-full border-dashed text-[10px] font-black'
+              >
                 已识别 {selectedEntries.length} 条
               </Badge>
             </div>
@@ -670,13 +739,20 @@ export function SalesOrderPreassembleScanDialog({
                   <CheckCircle2 className='size-3.5 text-emerald-600' />
                   已识别记录
                 </div>
-                <div className='h-[180px] overflow-y-auto space-y-1.5'>
+                <div className='h-[180px] space-y-1.5 overflow-y-auto'>
                   {selectedEntries.length === 0 ? (
-                    <p className='text-[11px] font-semibold text-muted-foreground/70'>暂无识别结果</p>
+                    <p className='text-[11px] font-semibold text-muted-foreground/70'>
+                      暂无识别结果
+                    </p>
                   ) : (
                     selectedEntries.map((entry) => (
-                      <div key={entry.shipmentId} className='rounded-lg border border-dashed border-emerald-300/60 bg-emerald-50/40 px-2 py-1.5'>
-                        <p className='truncate text-[11px] font-black'>{entry.primaryCode}</p>
+                      <div
+                        key={entry.shipmentId}
+                        className='rounded-lg border border-dashed border-emerald-300/60 bg-emerald-50/40 px-2 py-1.5'
+                      >
+                        <p className='truncate text-[11px] font-black'>
+                          {entry.primaryCode}
+                        </p>
                         <p className='truncate text-[10px] font-semibold text-muted-foreground'>
                           {entry.materialCode} · {entry.lineLabel}
                         </p>
@@ -688,15 +764,24 @@ export function SalesOrderPreassembleScanDialog({
 
               <div className='rounded-2xl border border-dashed border-muted/50 p-3'>
                 <div className='mb-2 text-xs font-black'>扫码日志</div>
-                <div className='h-[180px] overflow-y-auto space-y-1.5'>
+                <div className='h-[180px] space-y-1.5 overflow-y-auto'>
                   {scanLog.length === 0 ? (
-                    <p className='text-[11px] font-semibold text-muted-foreground/70'>暂无扫码日志</p>
+                    <p className='text-[11px] font-semibold text-muted-foreground/70'>
+                      暂无扫码日志
+                    </p>
                   ) : (
                     scanLog.map((entry, idx) => (
-                      <div key={`${entry.scannedAt}-${idx}`} className='rounded-lg border border-dashed border-muted/50 bg-muted/10 px-2 py-1.5'>
-                        <p className='truncate text-[11px] font-black'>{entry.raw}</p>
+                      <div
+                        key={`${entry.scannedAt}-${idx}`}
+                        className='rounded-lg border border-dashed border-muted/50 bg-muted/10 px-2 py-1.5'
+                      >
+                        <p className='truncate text-[11px] font-black'>
+                          {entry.raw}
+                        </p>
                         <p className='text-[10px] font-semibold text-muted-foreground'>
-                          {entry.scannedAt} · 命中 {entry.matchedCount} · 冲突 {entry.ambiguousCodes.length} · 未匹配 {entry.unmatchedCodes.length}
+                          {entry.scannedAt} · 命中 {entry.matchedCount} · 冲突{' '}
+                          {entry.ambiguousCodes.length} · 未匹配{' '}
+                          {entry.unmatchedCodes.length}
                         </p>
                       </div>
                     ))
@@ -730,4 +815,3 @@ export function SalesOrderPreassembleScanDialog({
     </Dialog>
   )
 }
-

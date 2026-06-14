@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react'
+import { useLanguage } from '@/context/language-provider'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useLanguage } from '@/context/language-provider'
 import type { LogisticsProviderDraft } from '@/features/sandbox/logistics-api/types'
 
 type LogisticsSupplierBasicFieldsSectionProps = {
@@ -18,7 +18,7 @@ export function LogisticsSupplierBasicFieldsSection({
   return (
     <div className='grid grid-cols-2 gap-4'>
       <div className='space-y-2'>
-        <Label className='pl-1 text-[10px] font-black uppercase tracking-widest opacity-50'>
+        <Label className='pl-1 text-[10px] font-black tracking-widest uppercase opacity-50'>
           {t('logisticsConfig.suppliers.fields.name')}
         </Label>
         <Input
@@ -33,7 +33,7 @@ export function LogisticsSupplierBasicFieldsSection({
         />
       </div>
       <div className='space-y-2'>
-        <Label className='pl-1 text-[10px] font-black uppercase tracking-widest opacity-50'>
+        <Label className='pl-1 text-[10px] font-black tracking-widest uppercase opacity-50'>
           {t('logisticsConfig.suppliers.fields.code')}
         </Label>
         <Input
@@ -44,7 +44,7 @@ export function LogisticsSupplierBasicFieldsSection({
               code: event.target.value.toUpperCase(),
             }))
           }
-          className='h-12 rounded-2xl border-slate-200 font-black italic tracking-tighter'
+          className='h-12 rounded-2xl border-slate-200 font-black tracking-tighter italic'
         />
       </div>
     </div>

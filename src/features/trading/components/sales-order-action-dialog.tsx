@@ -1,5 +1,5 @@
 import { ClipboardList, Loader2, X } from 'lucide-react'
-import { buildHostedQuickActionDialogContentClassName } from '@/components/hosted-quick-action-dialog.styles'
+import { createLogger } from '@/lib/logger'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import {
@@ -9,13 +9,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { buildHostedQuickActionDialogContentClassName } from '@/components/hosted-quick-action-dialog.styles'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { DocumentFooterStats } from '@/features/sales-document/components/document-footer-stats'
 import { DocumentHeaderFields } from '@/features/sales-document/components/document-header-fields'
 import { DocumentLinesEditor } from '@/features/sales-document/components/document-lines-editor'
-import { useSalesDocumentReferenceResources } from '@/features/sales-document/hooks/use-sales-document-reference-resources'
 import { DocumentNotesSection } from '@/features/sales-document/components/document-notes-section'
-import { createLogger } from '@/lib/logger'
+import { useSalesDocumentReferenceResources } from '@/features/sales-document/hooks/use-sales-document-reference-resources'
 import { type SalesOrder } from '../data/schema'
 import { useSalesOrderForm } from '../hooks/use-sales-order-form'
 import { useSalesOrderSave } from '../hooks/use-sales-order-save'
@@ -132,7 +132,8 @@ export function SalesOrderActionDialog({
                 订单弹窗基础数据加载失败
               </p>
               <p className='mt-3 max-w-xl text-xs font-bold text-rose-700/80'>
-                {dialogResource.error.message || '请重试后再加载客户、产品与单位字典。'}
+                {dialogResource.error.message ||
+                  '请重试后再加载客户、产品与单位字典。'}
               </p>
               <Button
                 variant='outline'
@@ -191,7 +192,9 @@ export function SalesOrderActionDialog({
                 lines={formData.lines || []}
                 products={dialogResources.products}
                 productDisplayLabelMap={dialogResources.productDisplayLabelMap}
-                productDisplayProjectionMap={dialogResources.productDisplayProjectionMap}
+                productDisplayProjectionMap={
+                  dialogResources.productDisplayProjectionMap
+                }
                 units={dialogResources.units}
                 drillingOptions={dialogResources.drillingOptions}
                 labelingOptions={dialogResources.labelingOptions}

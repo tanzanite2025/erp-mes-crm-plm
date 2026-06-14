@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Info, Loader2, Plus } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { isForbiddenError } from '@/lib/error-status'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { ForbiddenState } from '@/components/forbidden-state'
 import {
   Select,
   SelectContent,
@@ -11,12 +10,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { DEFAULT_SALES_ORDER_EVENT_SOURCE } from '../workflow-core/data/business-event-source-templates/sales-order'
-import { getBusinessEventDefaultResolveStatuses } from '../workflow-core/data/business-event-status-catalog'
-import { type BusinessEventSourceTemplate } from '../workflow-core/data/business-event-source-types'
-import { type NotificationRule } from '../workflow-core/data/notification-rule-schema'
-import { getBusinessEventSourceRuntimeCoverage } from '../workflow-core/data/business-event-source-runtime-coverage'
+import { ForbiddenState } from '@/components/forbidden-state'
 import { RoutingQueryErrorState } from '../workflow-core/components/routing-query-error-state'
+import { getBusinessEventSourceRuntimeCoverage } from '../workflow-core/data/business-event-source-runtime-coverage'
+import { DEFAULT_SALES_ORDER_EVENT_SOURCE } from '../workflow-core/data/business-event-source-templates/sales-order'
+import { type BusinessEventSourceTemplate } from '../workflow-core/data/business-event-source-types'
+import { getBusinessEventDefaultResolveStatuses } from '../workflow-core/data/business-event-status-catalog'
+import { type NotificationRule } from '../workflow-core/data/notification-rule-schema'
 import { useBusinessEventSources } from '../workflow-core/hooks/use-business-event-sources'
 import { useNotificationRules } from '../workflow-core/hooks/use-notification-rules'
 import { NotificationRuleListEmpty } from './components/notification-rule-list-empty'
@@ -27,7 +27,9 @@ function createSegmentId() {
   return crypto.randomUUID?.() ?? `seg-${Date.now()}`
 }
 
-function getDefaultStatusActionCode(source: Pick<BusinessEventSourceTemplate, 'config'>) {
+function getDefaultStatusActionCode(
+  source: Pick<BusinessEventSourceTemplate, 'config'>
+) {
   return (
     source.config.actions.find((action) => action.kind === 'status')?.code ??
     source.config.actions.find((action) => action.code === 'STATUS_CHANGED')
@@ -48,7 +50,9 @@ export function NotificationRuleList({
   onSearchStateChange,
 }: {
   searchState?: NotificationRuleListSearchState
-  onSearchStateChange?: (partial: Partial<NotificationRuleListSearchState>) => void
+  onSearchStateChange?: (
+    partial: Partial<NotificationRuleListSearchState>
+  ) => void
 } = {}) {
   const {
     rules,
@@ -73,8 +77,10 @@ export function NotificationRuleList({
   const [localCreateSourceCode, setLocalCreateSourceCode] = useState('')
 
   const keyword = searchState?.keyword ?? localKeyword
-  const sourceCodeFilter = searchState?.sourceCodeFilter ?? localSourceCodeFilter
-  const createSourceCode = searchState?.createSourceCode ?? localCreateSourceCode
+  const sourceCodeFilter =
+    searchState?.sourceCodeFilter ?? localSourceCodeFilter
+  const createSourceCode =
+    searchState?.createSourceCode ?? localCreateSourceCode
 
   const setKeyword = (value: string) => {
     if (onSearchStateChange) {
@@ -138,7 +144,8 @@ export function NotificationRuleList({
   const handleAddNewRule = async () => {
     const source = createSource
     const actionCode = getDefaultStatusActionCode(source)
-    const defaultResolveStatuses = getBusinessEventDefaultResolveStatuses(source)
+    const defaultResolveStatuses =
+      getBusinessEventDefaultResolveStatuses(source)
     const newRule: Omit<NotificationRule, 'id' | 'createdAt'> = {
       name: `${source.name}通知规则`,
       enabled: true,
@@ -286,7 +293,7 @@ export function NotificationRuleList({
 
             <div
               className={cn(
-                'flex min-h-12 items-start gap-2 rounded-2xl border px-4 py-3 text-xs font-bold leading-relaxed',
+                'flex min-h-12 items-start gap-2 rounded-2xl border px-4 py-3 text-xs leading-relaxed font-bold',
                 createSourceCoverage.status === 'preconnected'
                   ? 'border-sky-200 bg-sky-50 text-sky-700'
                   : 'border-muted/40 bg-muted/20 text-muted-foreground'

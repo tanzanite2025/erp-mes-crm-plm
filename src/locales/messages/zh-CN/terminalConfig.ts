@@ -14,7 +14,8 @@ export const terminalConfig = {
   pages: {
     scanners: {
       title: 'USB扫码配置',
-      description: '仅面向 USB HID 键盘模式扫码枪，集中做接入测试、回车结束符校验与协议联调。',
+      description:
+        '仅面向 USB HID 键盘模式扫码枪，集中做接入测试、回车结束符校验与协议联调。',
       summary:
         '该页不覆盖固定扫描头、扫描模块或串口设备，只负责 USB 扫码枪的键盘输入链路验证，确保 ERP 页面可按统一约定接收扫码结果。',
     },

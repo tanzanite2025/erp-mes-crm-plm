@@ -6,7 +6,9 @@ type BatchEngineScoreBreakdownPanelProps = {
   compact?: boolean
 }
 
-export function BatchEngineScoreBreakdownPanel(props: BatchEngineScoreBreakdownPanelProps) {
+export function BatchEngineScoreBreakdownPanel(
+  props: BatchEngineScoreBreakdownPanelProps
+) {
   const { t } = useLanguage()
   const { plan, compact = false } = props
   const breakdown = plan.scoreBreakdown
@@ -18,44 +20,102 @@ export function BatchEngineScoreBreakdownPanel(props: BatchEngineScoreBreakdownP
 
   return (
     <div className='rounded-[24px] border border-dashed border-slate-300 bg-white/90 p-4'>
-      <p className='text-[10px] font-black uppercase tracking-[0.2em] italic text-slate-500/75'>
+      <p className='text-[10px] font-black tracking-[0.2em] text-slate-500/75 uppercase italic'>
         {t('rawMaterials.batchEngine.scoreBreakdown.title')}
       </p>
-      <p className='mt-1 text-[9px] font-black uppercase tracking-[0.18em] text-slate-400'>
+      <p className='mt-1 text-[9px] font-black tracking-[0.18em] text-slate-400 uppercase'>
         {t('rawMaterials.batchEngine.scoreBreakdown.subtitle')}
       </p>
 
-      <div className={compact ? 'mt-3 grid gap-2' : 'mt-3 grid gap-2 md:grid-cols-2'}>
-        <ScoreMetric label={t('rawMaterials.batchEngine.scoreBreakdown.fields.finalScore')} value={breakdown.finalScore.toFixed(2)} tone='healthy' />
-        <ScoreMetric label={t('rawMaterials.batchEngine.scoreBreakdown.fields.fulfilledRate')} value={`${breakdown.fulfilledRatePercent.toFixed(2)}%`} tone='neutral' />
+      <div
+        className={
+          compact ? 'mt-3 grid gap-2' : 'mt-3 grid gap-2 md:grid-cols-2'
+        }
+      >
         <ScoreMetric
-          label={t('rawMaterials.batchEngine.scoreBreakdown.fields.structuredRuleRisk')}
+          label={t('rawMaterials.batchEngine.scoreBreakdown.fields.finalScore')}
+          value={breakdown.finalScore.toFixed(2)}
+          tone='healthy'
+        />
+        <ScoreMetric
+          label={t(
+            'rawMaterials.batchEngine.scoreBreakdown.fields.fulfilledRate'
+          )}
+          value={`${breakdown.fulfilledRatePercent.toFixed(2)}%`}
+          tone='neutral'
+        />
+        <ScoreMetric
+          label={t(
+            'rawMaterials.batchEngine.scoreBreakdown.fields.structuredRuleRisk'
+          )}
           value={`${structuredRuleRiskCount}`}
           tone={structuredRuleRiskCount > 0 ? 'critical' : 'healthy'}
         />
-        <ScoreMetric label={t('rawMaterials.batchEngine.scoreBreakdown.fields.fulfilledContribution')} value={`+${breakdown.fulfilledContribution.toFixed(2)}`} tone='healthy' />
-        <ScoreMetric label={t('rawMaterials.batchEngine.scoreBreakdown.fields.utilizationContribution')} value={`+${breakdown.utilizationContribution.toFixed(2)}`} tone='healthy' />
-        <ScoreMetric label={t('rawMaterials.batchEngine.scoreBreakdown.fields.assignmentPenalty')} value={`-${breakdown.assignmentPenalty.toFixed(2)}`} tone='alert' />
-        <ScoreMetric label={t('rawMaterials.batchEngine.scoreBreakdown.fields.unfulfilledPenalty')} value={`-${breakdown.unfulfilledPenalty.toFixed(2)}`} tone='alert' />
-        <ScoreMetric label={t('rawMaterials.batchEngine.scoreBreakdown.fields.splitPenalty')} value={`-${breakdown.splitPenalty.toFixed(2)}`} tone='alert' />
-        <ScoreMetric label={t('rawMaterials.batchEngine.scoreBreakdown.fields.mustPenalty')} value={`-${breakdown.mustFulfillPenalty.toFixed(2)}`} tone={breakdown.mustFulfillPenalty > 0 ? 'critical' : 'neutral'} />
+        <ScoreMetric
+          label={t(
+            'rawMaterials.batchEngine.scoreBreakdown.fields.fulfilledContribution'
+          )}
+          value={`+${breakdown.fulfilledContribution.toFixed(2)}`}
+          tone='healthy'
+        />
+        <ScoreMetric
+          label={t(
+            'rawMaterials.batchEngine.scoreBreakdown.fields.utilizationContribution'
+          )}
+          value={`+${breakdown.utilizationContribution.toFixed(2)}`}
+          tone='healthy'
+        />
+        <ScoreMetric
+          label={t(
+            'rawMaterials.batchEngine.scoreBreakdown.fields.assignmentPenalty'
+          )}
+          value={`-${breakdown.assignmentPenalty.toFixed(2)}`}
+          tone='alert'
+        />
+        <ScoreMetric
+          label={t(
+            'rawMaterials.batchEngine.scoreBreakdown.fields.unfulfilledPenalty'
+          )}
+          value={`-${breakdown.unfulfilledPenalty.toFixed(2)}`}
+          tone='alert'
+        />
+        <ScoreMetric
+          label={t(
+            'rawMaterials.batchEngine.scoreBreakdown.fields.splitPenalty'
+          )}
+          value={`-${breakdown.splitPenalty.toFixed(2)}`}
+          tone='alert'
+        />
+        <ScoreMetric
+          label={t(
+            'rawMaterials.batchEngine.scoreBreakdown.fields.mustPenalty'
+          )}
+          value={`-${breakdown.mustFulfillPenalty.toFixed(2)}`}
+          tone={breakdown.mustFulfillPenalty > 0 ? 'critical' : 'neutral'}
+        />
         <ScoreMetric
           label={t('rawMaterials.batchEngine.scoreBreakdown.fields.groupSplit')}
           value={`${breakdown.groupSplitCount}`}
           tone={breakdown.groupSplitCount > 0 ? 'alert' : 'healthy'}
         />
         <ScoreMetric
-          label={t('rawMaterials.batchEngine.scoreBreakdown.fields.sequenceViolation')}
+          label={t(
+            'rawMaterials.batchEngine.scoreBreakdown.fields.sequenceViolation'
+          )}
           value={`${breakdown.sequenceViolationCount}`}
           tone={breakdown.sequenceViolationCount > 0 ? 'alert' : 'healthy'}
         />
         <ScoreMetric
-          label={t('rawMaterials.batchEngine.scoreBreakdown.fields.directionSwitch')}
+          label={t(
+            'rawMaterials.batchEngine.scoreBreakdown.fields.directionSwitch'
+          )}
           value={`${breakdown.directionSwitchCount}`}
           tone={breakdown.directionSwitchCount > 0 ? 'alert' : 'healthy'}
         />
         <ScoreMetric
-          label={t('rawMaterials.batchEngine.scoreBreakdown.fields.mixViolation')}
+          label={t(
+            'rawMaterials.batchEngine.scoreBreakdown.fields.mixViolation'
+          )}
           value={`${breakdown.mixViolationCount}`}
           tone={breakdown.mixViolationCount > 0 ? 'critical' : 'healthy'}
         />
@@ -84,7 +144,9 @@ function ScoreMetric({
 
   return (
     <div className={`rounded-2xl border px-3 py-2 ${className}`}>
-      <p className='text-[8px] font-black uppercase tracking-[0.18em] text-current/70'>{label}</p>
+      <p className='text-[8px] font-black tracking-[0.18em] text-current/70 uppercase'>
+        {label}
+      </p>
       <p className='mt-1 text-xs font-black text-current'>{value}</p>
     </div>
   )

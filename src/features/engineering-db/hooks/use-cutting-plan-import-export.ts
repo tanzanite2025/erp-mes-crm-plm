@@ -19,11 +19,19 @@ export function useCuttingPlanImportExport() {
     }
   }
 
-  const parseExcel = async (file: File, cutSizeUnits: CutSizeUnit[]): Promise<CuttingPlanInput | null> => {
+  const parseExcel = async (
+    file: File,
+    cutSizeUnits: CutSizeUnit[]
+  ): Promise<CuttingPlanInput | null> => {
     const loadingId = toast.loading('正在解析裁纱模板...')
     try {
-      const parsed = await CuttingPlanExcelService.parseImportFile(file, cutSizeUnits)
-      toast.success(`导入成功，共 ${parsed.lines.length} 条裁片`, { id: loadingId })
+      const parsed = await CuttingPlanExcelService.parseImportFile(
+        file,
+        cutSizeUnits
+      )
+      toast.success(`导入成功，共 ${parsed.lines.length} 条裁片`, {
+        id: loadingId,
+      })
       return parsed
     } catch (error) {
       logger.error('parseExcel failed', error)

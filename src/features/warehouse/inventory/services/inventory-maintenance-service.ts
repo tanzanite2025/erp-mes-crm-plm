@@ -1,8 +1,8 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
-import { buildMaterialThresholdMap } from '../../material-thresholds/services/material-threshold-helpers'
 import { InventoryThresholdService } from '../../material-thresholds/services/inventory-threshold-service'
+import { buildMaterialThresholdMap } from '../../material-thresholds/services/material-threshold-helpers'
 import { toInventoryRecordContract } from '../adapters/inventory-api-adapter'
 import { type InventoryItemApiDTO } from '../contracts/inventory-api-dto'
 import { type InventoryRecord } from '../data/schema'
@@ -24,7 +24,11 @@ export const InventoryMaintenanceService = {
     ) as ReconcileResult
   },
 
-  patchInventory: async (id: string, delta: DeltaSet, version: number): Promise<InventoryRecord> => {
+  patchInventory: async (
+    id: string,
+    delta: DeltaSet,
+    version: number
+  ): Promise<InventoryRecord> => {
     const payload: DeltaPayload = {
       op: 'PATCH',
       delta,

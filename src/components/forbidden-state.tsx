@@ -1,7 +1,7 @@
 import { useNavigate, useRouter } from '@tanstack/react-router'
-import { Button } from '@/components/ui/button'
-import { useLanguage } from '@/context/language-provider'
 import { useAuthStore } from '@/stores/auth-store'
+import { useLanguage } from '@/context/language-provider'
+import { Button } from '@/components/ui/button'
 
 type ForbiddenStateProps = {
   fullHeight?: boolean
@@ -23,7 +23,7 @@ export function ForbiddenState({ fullHeight = false }: ForbiddenStateProps) {
   }
 
   return (
-    <div className={fullHeight ? 'flex-1 h-full' : 'w-full'}>
+    <div className={fullHeight ? 'h-full flex-1' : 'w-full'}>
       <div
         className={
           fullHeight
@@ -31,7 +31,9 @@ export function ForbiddenState({ fullHeight = false }: ForbiddenStateProps) {
             : 'flex w-full flex-col items-center justify-center gap-2 rounded-[40px] border border-border/50 bg-muted/10 px-6 py-16 text-center'
         }
       >
-        <h1 className='text-[7rem] leading-tight font-bold'>{t('errors.forbidden.title')}</h1>
+        <h1 className='text-[7rem] leading-tight font-bold'>
+          {t('errors.forbidden.title')}
+        </h1>
         <span className='font-medium'>{t('errors.forbidden.subtitle')}</span>
         <p className='text-center text-muted-foreground'>
           {t('errors.forbidden.description')}
@@ -45,7 +47,9 @@ export function ForbiddenState({ fullHeight = false }: ForbiddenStateProps) {
           <Button variant='secondary' onClick={handleRelogin}>
             {t('errors.forbidden.relogin')}
           </Button>
-          <Button onClick={() => navigate({ to: '/' })}>{t('errors.forbidden.backHome')}</Button>
+          <Button onClick={() => navigate({ to: '/' })}>
+            {t('errors.forbidden.backHome')}
+          </Button>
         </div>
       </div>
     </div>

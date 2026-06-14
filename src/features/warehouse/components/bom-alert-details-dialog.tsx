@@ -44,7 +44,10 @@ function formatDateTime(value: string): string {
   return date.toLocaleString()
 }
 
-export function BOMAlertDetailsDialog({ open, onOpenChange }: BOMAlertDetailsDialogProps) {
+export function BOMAlertDetailsDialog({
+  open,
+  onOpenChange,
+}: BOMAlertDetailsDialogProps) {
   const { t } = useLanguage()
   const bomAlertDetailsQuery = useQuery({
     queryKey: warehouseQueryKeys.inventoryBOMAlertDetails(),
@@ -77,8 +80,10 @@ export function BOMAlertDetailsDialog({ open, onOpenChange }: BOMAlertDetailsDia
             <div className='mt-5 rounded-[24px] border border-dashed border-muted/50 bg-muted/10 p-5'>
               <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between'>
                 <div className='space-y-2'>
-                  <p className='text-sm font-black tracking-tighter uppercase italic text-foreground'>
-                    {t('warehouse.stock.bomAlertDetails.summary', { count: total })}
+                  <p className='text-sm font-black tracking-tighter text-foreground uppercase italic'>
+                    {t('warehouse.stock.bomAlertDetails.summary', {
+                      count: total,
+                    })}
                   </p>
                   <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                     {t('warehouse.stock.bomAlertDetails.shortageTitle')}
@@ -99,7 +104,7 @@ export function BOMAlertDetailsDialog({ open, onOpenChange }: BOMAlertDetailsDia
                 <p className='mt-4 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                   {t('warehouse.stock.bomAlertDetails.loadingTitle')}
                 </p>
-                <p className='mt-3 max-w-xl text-[11px] font-bold leading-5 text-muted-foreground/70'>
+                <p className='mt-3 max-w-xl text-[11px] leading-5 font-bold text-muted-foreground/70'>
                   {t('warehouse.stock.bomAlertDetails.loadingHint')}
                 </p>
               </div>
@@ -109,7 +114,7 @@ export function BOMAlertDetailsDialog({ open, onOpenChange }: BOMAlertDetailsDia
                 <p className='mt-4 text-[10px] font-black tracking-widest text-rose-700 uppercase'>
                   {t('warehouse.stock.bomAlertDetails.errorTitle')}
                 </p>
-                <p className='mt-3 max-w-2xl text-[11px] font-bold leading-5 text-rose-700/80'>
+                <p className='mt-3 max-w-2xl text-[11px] leading-5 font-bold text-rose-700/80'>
                   {bomAlertDetailsQuery.error instanceof Error
                     ? bomAlertDetailsQuery.error.message
                     : t('warehouse.stock.bomAlertDetails.errorTitle')}
@@ -131,7 +136,7 @@ export function BOMAlertDetailsDialog({ open, onOpenChange }: BOMAlertDetailsDia
                 <p className='mt-4 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase italic'>
                   {t('warehouse.stock.bomAlertDetails.emptyTitle')}
                 </p>
-                <p className='mt-3 max-w-xl text-[11px] font-bold leading-5 text-muted-foreground/70'>
+                <p className='mt-3 max-w-xl text-[11px] leading-5 font-bold text-muted-foreground/70'>
                   {t('warehouse.stock.bomAlertDetails.emptyDescription')}
                 </p>
               </div>
@@ -154,20 +159,24 @@ export function BOMAlertDetailsDialog({ open, onOpenChange }: BOMAlertDetailsDia
                               {detail.bomNo}
                             </Badge>
                           </div>
-                          <div className='text-[8px] font-mono text-muted-foreground/60'>
+                          <div className='font-mono text-[8px] text-muted-foreground/60'>
                             {detail.productSku || detail.productId || '--'}
                           </div>
                         </div>
 
                         <div className='flex flex-wrap gap-2'>
                           <Badge className='h-5 rounded-full border-none bg-blue-500/10 px-2 text-[8px] font-black tracking-widest text-blue-600 uppercase'>
-                            {t('warehouse.stock.bomAlertDetails.thresholdLabel')}: {formatQuantity(detail.thresholdQty)}
+                            {t(
+                              'warehouse.stock.bomAlertDetails.thresholdLabel'
+                            )}
+                            : {formatQuantity(detail.thresholdQty)}
                           </Badge>
                           <Badge
                             variant='outline'
                             className='h-5 rounded-full border-dashed border-muted/50 bg-background/80 px-2 text-[8px] font-black tracking-widest text-muted-foreground/70 uppercase'
                           >
-                            {t('warehouse.stock.bomAlertDetails.triggeredAt')}: {formatDateTime(detail.triggeredAt)}
+                            {t('warehouse.stock.bomAlertDetails.triggeredAt')}:{' '}
+                            {formatDateTime(detail.triggeredAt)}
                           </Badge>
                         </div>
                       </div>
@@ -185,29 +194,40 @@ export function BOMAlertDetailsDialog({ open, onOpenChange }: BOMAlertDetailsDia
                         <Table className='min-w-[720px]'>
                           <TableHeader className='bg-muted/30'>
                             <TableRow className='border-b border-dashed hover:bg-transparent'>
-                              <TableHead className='font-black text-[9px] tracking-widest text-muted-foreground/50 uppercase'>
-                                {t('warehouse.stock.bomAlertDetails.columns.material')}
+                              <TableHead className='text-[9px] font-black tracking-widest text-muted-foreground/50 uppercase'>
+                                {t(
+                                  'warehouse.stock.bomAlertDetails.columns.material'
+                                )}
                               </TableHead>
-                              <TableHead className='text-right font-black text-[9px] tracking-widest text-muted-foreground/50 uppercase'>
-                                {t('warehouse.stock.bomAlertDetails.columns.requiredQty')}
+                              <TableHead className='text-right text-[9px] font-black tracking-widest text-muted-foreground/50 uppercase'>
+                                {t(
+                                  'warehouse.stock.bomAlertDetails.columns.requiredQty'
+                                )}
                               </TableHead>
-                              <TableHead className='text-right font-black text-[9px] tracking-widest text-muted-foreground/50 uppercase'>
-                                {t('warehouse.stock.bomAlertDetails.columns.currentStock')}
+                              <TableHead className='text-right text-[9px] font-black tracking-widest text-muted-foreground/50 uppercase'>
+                                {t(
+                                  'warehouse.stock.bomAlertDetails.columns.currentStock'
+                                )}
                               </TableHead>
-                              <TableHead className='text-right font-black text-[9px] tracking-widest text-muted-foreground/50 uppercase'>
-                                {t('warehouse.stock.bomAlertDetails.columns.shortageQty')}
+                              <TableHead className='text-right text-[9px] font-black tracking-widest text-muted-foreground/50 uppercase'>
+                                {t(
+                                  'warehouse.stock.bomAlertDetails.columns.shortageQty'
+                                )}
                               </TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {detail.shortages.map((shortage) => (
-                              <TableRow key={`${detail.ruleId}-${shortage.materialId}`} className='border-dashed'>
+                              <TableRow
+                                key={`${detail.ruleId}-${shortage.materialId}`}
+                                className='border-dashed'
+                              >
                                 <TableCell className='whitespace-normal'>
                                   <div className='min-w-[200px]'>
                                     <div className='text-[11px] font-black tracking-tighter text-foreground'>
                                       {shortage.materialName}
                                     </div>
-                                    <div className='mt-1 text-[8px] font-mono text-muted-foreground/60'>
+                                    <div className='mt-1 font-mono text-[8px] text-muted-foreground/60'>
                                       {shortage.materialCode}
                                     </div>
                                     <div className='mt-1 text-[9px] font-bold tracking-widest text-muted-foreground/60 uppercase'>
@@ -215,13 +235,13 @@ export function BOMAlertDetailsDialog({ open, onOpenChange }: BOMAlertDetailsDia
                                     </div>
                                   </div>
                                 </TableCell>
-                                <TableCell className='text-right text-[11px] font-mono font-black'>
+                                <TableCell className='text-right font-mono text-[11px] font-black'>
                                   {formatQuantity(shortage.requiredQty)}
                                 </TableCell>
-                                <TableCell className='text-right text-[11px] font-mono font-black'>
+                                <TableCell className='text-right font-mono text-[11px] font-black'>
                                   {formatQuantity(shortage.currentStock)}
                                 </TableCell>
-                                <TableCell className='text-right text-[11px] font-mono font-black text-rose-600'>
+                                <TableCell className='text-right font-mono text-[11px] font-black text-rose-600'>
                                   {formatQuantity(shortage.shortageQty)}
                                 </TableCell>
                               </TableRow>

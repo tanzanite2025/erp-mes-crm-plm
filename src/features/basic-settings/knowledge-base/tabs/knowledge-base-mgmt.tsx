@@ -13,7 +13,10 @@ interface KnowledgeBaseMgmtProps {
   onActionConsumed?: () => void
 }
 
-export function KnowledgeBaseMgmt({ search, onActionConsumed }: KnowledgeBaseMgmtProps) {
+export function KnowledgeBaseMgmt({
+  search,
+  onActionConsumed,
+}: KnowledgeBaseMgmtProps) {
   const { t } = useLanguage()
   const {
     entries,
@@ -44,23 +47,25 @@ export function KnowledgeBaseMgmt({ search, onActionConsumed }: KnowledgeBaseMgm
   }, [onActionConsumed, openCreate, search?.action])
 
   return (
-    <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+    <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
       {/* 顶级标准页眉布局 */}
-      <div className='flex flex-col md:flex-row md:items-center justify-between gap-4'>
+      <div className='flex flex-col justify-between gap-4 md:flex-row md:items-center'>
         <div className='flex-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-6'>
-          <h2 className='text-lg font-black italic tracking-tighter uppercase'>
+          <h2 className='text-lg font-black tracking-tighter uppercase italic'>
             {t('basicSettings.knowledgeBase.page.title')}
           </h2>
-          <p className='text-[10px] text-muted-foreground font-black tracking-widest uppercase opacity-60'>
+          <p className='text-[10px] font-black tracking-widest text-muted-foreground uppercase opacity-60'>
             {t('basicSettings.knowledgeBase.page.subtitle')}
           </p>
         </div>
         <div className='flex flex-wrap items-center gap-2'>
           <div className='flex h-9 items-center gap-3 rounded-full border border-dashed border-primary/20 bg-primary/5 px-4'>
-            <span className='text-[9px] font-black uppercase tracking-[0.2em] text-primary/60 italic'>
-              {t('basicSettings.knowledgeBase.page.entryCount', { count: entries.length })}
+            <span className='text-[9px] font-black tracking-[0.2em] text-primary/60 uppercase italic'>
+              {t('basicSettings.knowledgeBase.page.entryCount', {
+                count: entries.length,
+              })}
             </span>
-            <div className='size-1.5 rounded-full bg-emerald-500 animate-pulse' />
+            <div className='size-1.5 animate-pulse rounded-full bg-emerald-500' />
           </div>
         </div>
       </div>

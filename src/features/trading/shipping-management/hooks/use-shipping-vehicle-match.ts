@@ -22,7 +22,8 @@ export function useShippingVehicleMatch() {
       error: query.error,
       isPending: query.isPending,
       scope: 'useShippingVehicleMatch.items',
-      missingMessage: '[CRITICAL] Shipping vehicle match items missing after load',
+      missingMessage:
+        '[CRITICAL] Shipping vehicle match items missing after load',
       failureMessage: '[CRITICAL] Shipping vehicle match items query failed',
     })
     if (failure) {
@@ -48,7 +49,10 @@ export function useShippingVehicleMatch() {
       return
     }
 
-    logger.error(`Failed to load shipping vehicle match items: ${readResource.scope}`, readResource.error)
+    logger.error(
+      `Failed to load shipping vehicle match items: ${readResource.scope}`,
+      readResource.error
+    )
     failLoudly(readResource.error, readResource.scope)
   }, [readResource])
 

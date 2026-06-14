@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Outlet } from '@tanstack/react-router'
-import { ModuleTabbedLayout } from '@/components/layout/module-tabbed-layout'
 import { useLanguage } from '@/context/language-provider'
+import { ModuleTabbedLayout } from '@/components/layout/module-tabbed-layout'
 import { systemManagementTabs } from './tab-config'
 
 export function SystemMgmt() {
@@ -16,9 +16,16 @@ export function SystemMgmt() {
           case 'routing':
             return { ...tab, label: t('systemManagement.layout.tabs.routing') }
           case 'ai-capability':
-            return { ...tab, label: t('systemManagement.layout.tabs.aiCapability') }
+            return {
+              ...tab,
+              label: t('systemManagement.layout.tabs.aiCapability'),
+            }
           case 'audit-engine':
-            return { ...tab, label: t('systemManagement.layout.tabs.auditEngine') || 'Audit Engine' }
+            return {
+              ...tab,
+              label:
+                t('systemManagement.layout.tabs.auditEngine') || 'Audit Engine',
+            }
           default:
             return tab
         }

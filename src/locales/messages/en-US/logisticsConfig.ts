@@ -1,5 +1,6 @@
 export const logisticsConfig = {
-  moduleDescription: 'A central configuration hub for logistics suppliers, packaging rules, scanning setup, and platform integrations.',
+  moduleDescription:
+    'A central configuration hub for logistics suppliers, packaging rules, scanning setup, and platform integrations.',
   tabs: {
     suppliers: 'Suppliers',
     vehicleLoading: 'Vehicle Loading',
@@ -10,7 +11,8 @@ export const logisticsConfig = {
   },
   unified: {
     title: 'Platforms & Suppliers Management',
-    description: 'Unified management of logistics supplier directory and platform integrations',
+    description:
+      'Unified management of logistics supplier directory and platform integrations',
     note: 'Manage supplier contact information in Directory View, configure API credentials and verification status in Integration View. Both views share the same data source and can be switched at any time.',
     views: {
       directory: 'Directory',
@@ -19,7 +21,8 @@ export const logisticsConfig = {
   },
   vehicleSpecsLibrary: {
     title: 'Vehicle Specs Library',
-    description: 'Centralizes vehicle master data into a single source of truth, covering physical cabin dimensions, usable loading space, safety allowances, and loading constraints.',
+    description:
+      'Centralizes vehicle master data into a single source of truth, covering physical cabin dimensions, usable loading space, safety allowances, and loading constraints.',
     loading: 'Loading vehicle specs library...',
     errorTitle: 'Unable to load vehicle specs library',
     retry: 'Reload',
@@ -53,7 +56,8 @@ export const logisticsConfig = {
       mediumTruck96: 'Medium Truck - 9.6 m',
     },
     vehicleNotes: {
-      vanStandard: 'Best suited for short-haul urban deliveries and light cargo.',
+      vanStandard:
+        'Best suited for short-haul urban deliveries and light cargo.',
       vanLarge: 'Well suited to small and medium replenishment runs.',
       boxTruck42: 'A dependable workhorse for everyday distribution.',
       lightTruck68: 'Well suited to full-load intercity transport.',
@@ -104,14 +108,16 @@ export const logisticsConfig = {
       },
       emptyState: {
         title: 'No available vehicles',
-        description: 'No vehicle matches the current filters. Please relax minimum volume, payload, or category.',
+        description:
+          'No vehicle matches the current filters. Please relax minimum volume, payload, or category.',
       },
     },
     recommendation: {
       title: 'Recommendations',
       vehiclesNeeded: 'Vehicles needed: {{count}}',
       emptyStateTitle: 'No recommendation results',
-      emptyStateDescription: 'No vehicle can be recommended under the current conditions. Try adjusting the shipment volume or filters.',
+      emptyStateDescription:
+        'No vehicle can be recommended under the current conditions. Try adjusting the shipment volume or filters.',
       volumeUtilization: 'Volume utilization',
       weightUtilization: 'Weight utilization',
     },
@@ -137,18 +143,22 @@ export const logisticsConfig = {
     uploadTitle: 'Photo Upload',
     uploadButton: 'Upload Photo',
     uploading: 'Uploading',
-    uploadHint: 'The left upload area binds the image directly to the current vehicle and files it under the selected view type.',
+    uploadHint:
+      'The left upload area binds the image directly to the current vehicle and files it under the selected view type.',
     uploadSummary: 'Attached photos: {{count}}',
     selectViewType: 'Select image view',
     dialogTitle: 'Vehicle Photos',
-    dialogDescription: 'Review real vehicle photos, open-door states, and annotated loading-related positions.',
+    dialogDescription:
+      'Review real vehicle photos, open-door states, and annotated loading-related positions.',
     emptyTitle: 'No real vehicle photos are attached yet',
-    emptyDescription: 'Add exterior, side-door-open, and rear-door/interior views later. Once attached, this dialog will show the real photos together with important location annotations.',
+    emptyDescription:
+      'Add exterior, side-door-open, and rear-door/interior views later. Once attached, this dialog will show the real photos together with important location annotations.',
     metadataTitle: 'Image Metadata',
     currentView: 'Current View',
     noImageSelected: 'No image selected',
     annotationTitle: 'Position Annotations',
-    annotationEmpty: 'No annotations are configured for the current image yet. Later you can mark wheel arches, door openings, rear-door space, and similar details in the photo manifest.',
+    annotationEmpty:
+      'No annotations are configured for the current image yet. Later you can mark wheel arches, door openings, rear-door space, and similar details in the photo manifest.',
     toasts: {
       uploadSuccess: 'Vehicle photo uploaded.',
       uploadFailed: 'Vehicle photo upload failed: {{message}}',
@@ -161,8 +171,10 @@ export const logisticsConfig = {
   },
   suppliers: {
     title: 'Logistics Suppliers Directory',
-    description: 'Centralizes carriers, domestic/international platform entries, contacts, phone numbers, and handoff notes for fast onboarding.',
-    directoryNote: 'This page keeps directory cards and manual handoff notes, and now also lets you complete endpoint and credentials directly in the directory dialog when you want to finish setup in one place.',
+    description:
+      'Centralizes carriers, domestic/international platform entries, contacts, phone numbers, and handoff notes for fast onboarding.',
+    directoryNote:
+      'This page keeps directory cards and manual handoff notes, and now also lets you complete endpoint and credentials directly in the directory dialog when you want to finish setup in one place.',
     categoryDomestic: 'Domestic',
     categoryInternational: 'International',
     website: 'Website / Platform',
@@ -170,13 +182,16 @@ export const logisticsConfig = {
     phone: 'Phone',
     loading: 'Syncing directory cards...',
     emptyTitle: 'No logistics directory cards yet',
-    emptyDescription: 'Create a card from a common template first, or add a manual card for a carrier without API integration.',
+    emptyDescription:
+      'Create a card from a common template first, or add a manual card for a carrier without API integration.',
     unset: 'Not set',
     noteEmpty: 'No note has been added yet.',
     apiConnected: 'API Connected',
     apiNotConnected: 'API Not Connected',
-    apiConnectedHint: 'This card already has the basic conditions for platform integration. You can continue maintaining credentials and endpoint from either the directory dialog or the platform page.',
-    apiNotConnectedHint: 'This card can still remain a directory-only record, but you may also complete contacts, notes, endpoint, and credentials directly here when you want to finish the integration setup in one pass.',
+    apiConnectedHint:
+      'This card already has the basic conditions for platform integration. You can continue maintaining credentials and endpoint from either the directory dialog or the platform page.',
+    apiNotConnectedHint:
+      'This card can still remain a directory-only record, but you may also complete contacts, notes, endpoint, and credentials directly here when you want to finish the integration setup in one pass.',
     templateLinked: 'Template Synced',
     customEntry: 'Custom Card',
     actions: {
@@ -195,11 +210,13 @@ export const logisticsConfig = {
     },
     sections: {
       credentialsTitle: 'Credential Settings',
-      credentialsHint: 'After saving, credentials can also be maintained directly from the directory dialog.',
+      credentialsHint:
+        'After saving, credentials can also be maintained directly from the directory dialog.',
     },
     fields: {
       template: 'Common Platform Template',
-      templatePlaceholder: 'Choose a template to prefill name, code, website, and default endpoint',
+      templatePlaceholder:
+        'Choose a template to prefill name, code, website, and default endpoint',
       name: 'Carrier Name',
       code: 'Unique Code',
       category: 'Directory Category',
@@ -217,7 +234,8 @@ export const logisticsConfig = {
       customerId: 'Customer ID / Merchant ID',
       checkWord: 'CheckWord / Signature Seed',
       note: 'Note',
-      notePlaceholder: 'Add scenario notes, handoff instructions, contact responsibilities, etc.',
+      notePlaceholder:
+        'Add scenario notes, handoff instructions, contact responsibilities, etc.',
     },
     errors: {
       title: 'Failed to load logistics directory',
@@ -234,17 +252,20 @@ export const logisticsConfig = {
       missing: 'Credentials Missing',
     },
     states: {
-      credentialsIncomplete: 'Credentials are still incomplete. Saving now will only complete the directory record and partial integration setup.',
+      credentialsIncomplete:
+        'Credentials are still incomplete. Saving now will only complete the directory record and partial integration setup.',
     },
   },
   providerShared: {
     sectionDirectory: {
       title: 'Directory Info',
-      description: 'Maintains business coordination, directory lookup, and handoff notes.',
+      description:
+        'Maintains business coordination, directory lookup, and handoff notes.',
     },
     sectionIntegration: {
       title: 'Integration Info',
-      description: 'Maintains technical configuration, verification status, and capability scope.',
+      description:
+        'Maintains technical configuration, verification status, and capability scope.',
     },
     labels: {
       endpoint: 'Endpoint',
@@ -288,26 +309,44 @@ export const logisticsConfig = {
       safe: 'No business references were found. Maintenance and deletion are currently allowed.',
     },
     summaries: {
-      unverified: 'The provider record exists, but no connection test has been run yet.',
-      reachable: 'The built-in trusted gateway is reachable, but business authentication is not confirmed yet.',
-      healthy: 'The provider is currently stable and can continue following the existing flow.',
-      manual_review: 'This provider does not have built-in automatic verification and must be confirmed through manual integration review.',
-      error: 'The latest connection test failed. Resolve the issue before continuing integration.',
-      invalid_config: 'Required configuration is still missing, so the provider is not ready for stable integration.',
-      disabled: 'This provider is disabled and is excluded from normal calls and verification.',
+      unverified:
+        'The provider record exists, but no connection test has been run yet.',
+      reachable:
+        'The built-in trusted gateway is reachable, but business authentication is not confirmed yet.',
+      healthy:
+        'The provider is currently stable and can continue following the existing flow.',
+      manual_review:
+        'This provider does not have built-in automatic verification and must be confirmed through manual integration review.',
+      error:
+        'The latest connection test failed. Resolve the issue before continuing integration.',
+      invalid_config:
+        'Required configuration is still missing, so the provider is not ready for stable integration.',
+      disabled:
+        'This provider is disabled and is excluded from normal calls and verification.',
     },
     nextActions: {
-      unverified: 'Run a connection test first before deciding whether this provider is ready.',
-      reachableSF: 'Continue with a real SF test order to confirm authentication or order creation.',
-      reachableJD: 'Continue with a real JD Logistics test order to confirm business authentication.',
-      reachable17Track: 'Continue in the 17TRACK console with a real token and sample request.',
-      reachableGeneric: 'Continue with real provider authentication or a sandbox request to confirm business readiness.',
-      healthy: 'Keep the current setup and periodically review credentials, quota, and gateway availability.',
-      manualReview: 'This provider is not supported by built-in automatic verification. Use manual integration review or choose a supported template.',
-      error: 'Check network access, gateway health, and provider-side allowlist settings before retrying.',
-      invalidConfigEndpoint: 'Fill in a valid endpoint first, then rerun the connection test.',
-      invalidConfigCredentials: 'Fill in the required credentials first, then rerun the connection test.',
-      invalidConfigGeneral: 'Complete the missing configuration first, then rerun the connection test.',
+      unverified:
+        'Run a connection test first before deciding whether this provider is ready.',
+      reachableSF:
+        'Continue with a real SF test order to confirm authentication or order creation.',
+      reachableJD:
+        'Continue with a real JD Logistics test order to confirm business authentication.',
+      reachable17Track:
+        'Continue in the 17TRACK console with a real token and sample request.',
+      reachableGeneric:
+        'Continue with real provider authentication or a sandbox request to confirm business readiness.',
+      healthy:
+        'Keep the current setup and periodically review credentials, quota, and gateway availability.',
+      manualReview:
+        'This provider is not supported by built-in automatic verification. Use manual integration review or choose a supported template.',
+      error:
+        'Check network access, gateway health, and provider-side allowlist settings before retrying.',
+      invalidConfigEndpoint:
+        'Fill in a valid endpoint first, then rerun the connection test.',
+      invalidConfigCredentials:
+        'Fill in the required credentials first, then rerun the connection test.',
+      invalidConfigGeneral:
+        'Complete the missing configuration first, then rerun the connection test.',
       disabled: 'Enable this provider first if you need to test it again.',
     },
     states: {
@@ -318,11 +357,13 @@ export const logisticsConfig = {
   },
   scanning: {
     title: 'Logistics Scanning Configuration',
-    description: 'Shows logistics-related scan modules, host notes, permissions, and integration status in one place.',
+    description:
+      'Shows logistics-related scan modules, host notes, permissions, and integration status in one place.',
   },
   platforms: {
     title: 'Logistics API & Platform Config',
-    description: 'Maintains logistics providers, endpoints, and platform parameters as the extension point for future domestic and international integrations.',
+    description:
+      'Maintains logistics providers, endpoints, and platform parameters as the extension point for future domestic and international integrations.',
     badgeProduction: 'Production',
     hubTitle: 'Logistics API Hub',
     hubSubtitle: 'Unified carrier API integration center',
@@ -343,14 +384,18 @@ export const logisticsConfig = {
     sections: {
       templateTitle: 'Quick Select / Common Provider Templates',
       directoryTitle: 'Directory Info',
-      directoryDescription: 'Maintains business coordination, directory lookup, and handoff notes.',
+      directoryDescription:
+        'Maintains business coordination, directory lookup, and handoff notes.',
       integrationTitle: 'Integration Info',
-      integrationDescription: 'Maintains technical configuration, verification status, and capability scope.',
+      integrationDescription:
+        'Maintains technical configuration, verification status, and capability scope.',
       credentialsTitle: 'Credential Settings',
-      credentialsHint: 'Saving is allowed without credentials, but the provider cannot be fully connected yet.',
+      credentialsHint:
+        'Saving is allowed without credentials, but the provider cannot be fully connected yet.',
     },
     fields: {
-      templatePlaceholder: 'Choose a provider template to prefill name, code, and default endpoint',
+      templatePlaceholder:
+        'Choose a provider template to prefill name, code, and default endpoint',
       name: 'Provider Name',
       code: 'Unique Internal Code',
       category: 'Directory Category',
@@ -358,7 +403,8 @@ export const logisticsConfig = {
       contact: 'Contact',
       phone: 'Phone',
       note: 'Directory Note',
-      notePlaceholder: 'Add contact responsibilities, usage scenarios, and handoff notes',
+      notePlaceholder:
+        'Add contact responsibilities, usage scenarios, and handoff notes',
       endpoint: 'Production Endpoint',
       appKey: 'AppKey / Token',
       appSecret: 'AppSecret / Secret',
@@ -373,14 +419,18 @@ export const logisticsConfig = {
       loadErrorTitle: 'Failed to load provider config',
       loading: 'Syncing provider config from backend',
       emptyTitle: 'No logistics provider config yet',
-      emptyDescription: 'Use the add button to create the first real backend provider record.',
+      emptyDescription:
+        'Use the add button to create the first real backend provider record.',
       duplicate: 'A duplicate logistics provider already exists: {{name}}',
       missingCredentials: 'Credentials Missing',
-      credentialsIncomplete: 'Credentials are still incomplete. Saving now will only create the provider record.',
-      noteEmpty: 'No directory note has been added yet. You can add responsibilities, scenarios, and handoff notes in edit mode.',
+      credentialsIncomplete:
+        'Credentials are still incomplete. Saving now will only create the provider record.',
+      noteEmpty:
+        'No directory note has been added yet. You can add responsibilities, scenarios, and handoff notes in edit mode.',
     },
     prompts: {
-      deleteConfirm: 'Delete this provider config? If it is already referenced, the backend will block deletion.',
+      deleteConfirm:
+        'Delete this provider config? If it is already referenced, the backend will block deletion.',
     },
     toasts: {
       saveSuccess: 'Provider config saved',
@@ -394,7 +444,8 @@ export const logisticsConfig = {
   },
   packagingRules: {
     title: 'Packaging Definition & Boxing Rules',
-    description: 'Define package dimensions and self weight, then choose product and quantity to directly get volume and gross weight.',
+    description:
+      'Define package dimensions and self weight, then choose product and quantity to directly get volume and gross weight.',
     addRule: 'Add Rule',
     edit: 'Edit',
     save: 'Save',
@@ -461,7 +512,8 @@ export const logisticsConfig = {
     },
     dialog: {
       title: 'Packaging Rule Editor',
-      description: 'Define the package itself first, then choose product and quantity so the system can calculate volume and gross weight from existing product weight.',
+      description:
+        'Define the package itself first, then choose product and quantity so the system can calculate volume and gross weight from existing product weight.',
     },
     summary: {
       volume: 'Package Volume',

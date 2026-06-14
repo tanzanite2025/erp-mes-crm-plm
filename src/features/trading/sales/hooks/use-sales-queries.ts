@@ -9,15 +9,27 @@ import {
 export const useGetSalesOrders = (
   page = 1,
   pageSize = 50,
-  options: Omit<GetSalesOrdersOptions, 'page' | 'pageSize'> & Record<string, unknown> = {}
+  options: Omit<GetSalesOrdersOptions, 'page' | 'pageSize'> &
+    Record<string, unknown> = {}
 ) => {
-  const { withLines, status, customerId, keyword, paymentMethod, paymentTerm, ...queryOptions } = options
+  const {
+    withLines,
+    status,
+    customerId,
+    keyword,
+    paymentMethod,
+    paymentTerm,
+    ...queryOptions
+  } = options
   const normalizedWithLines = withLines ?? false
   const normalizedStatus = status ?? []
-  const normalizedCustomerID = typeof customerId === 'string' ? customerId.trim() : ''
+  const normalizedCustomerID =
+    typeof customerId === 'string' ? customerId.trim() : ''
   const normalizedKeyword = typeof keyword === 'string' ? keyword.trim() : ''
-  const normalizedPaymentMethod = typeof paymentMethod === 'string' ? paymentMethod.trim() : ''
-  const normalizedPaymentTerm = typeof paymentTerm === 'string' ? paymentTerm.trim() : ''
+  const normalizedPaymentMethod =
+    typeof paymentMethod === 'string' ? paymentMethod.trim() : ''
+  const normalizedPaymentTerm =
+    typeof paymentTerm === 'string' ? paymentTerm.trim() : ''
 
   return useQuery({
     queryKey: tradingQueryKeys.salesOrders(

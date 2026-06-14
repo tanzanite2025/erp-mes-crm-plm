@@ -64,10 +64,12 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/engineering-db/specs': 'engineering.db.categories.spec',
   '/engineering-db/drilling': 'engineering.db.categories.drilling',
   '/engineering-db/engineering-master': 'engineering.masterData.page.title',
-  '/engineering-db/engineering-master/weaving-mode': 'engineering.masterData.tabs.weavingMode',
+  '/engineering-db/engineering-master/weaving-mode':
+    'engineering.masterData.tabs.weavingMode',
   '/engineering-db/labeling': 'engineering.db.categories.labeling',
   '/engineering-reference': 'sidebar.items.engineeringReference',
-  '/engineering-reference/spoke-length': 'engineering.spokeLength.overview.title',
+  '/engineering-reference/spoke-length':
+    'engineering.spokeLength.overview.title',
   '/engineering-reference/hubs': 'engineering.hubs.overview.title',
   '/engineering-reference/nipples': 'engineering.nipples.overview.title',
   '/quality': 'sidebar.items.qualityAudit',
@@ -96,9 +98,12 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/aps-scheduling/engine-tuning': 'apsScheduling.layout.tabs.engineTuning',
   '/production-architecture': 'sidebar.items.productionArchitecture',
   '/production-architecture/line': 'productionArchitecture.layout.tabs.line',
-  '/production-architecture/mindmap': 'productionArchitecture.layout.tabs.mindmap',
-  '/production-architecture/hierarchy-config': 'productionArchitecture.layout.tabs.hierarchyConfig',
-  '/production-architecture/topology': 'productionArchitecture.layout.tabs.topology',
+  '/production-architecture/mindmap':
+    'productionArchitecture.layout.tabs.mindmap',
+  '/production-architecture/hierarchy-config':
+    'productionArchitecture.layout.tabs.hierarchyConfig',
+  '/production-architecture/topology':
+    'productionArchitecture.layout.tabs.topology',
   '/equipment-tooling': 'sidebar.items.toolingAssets',
   '/equipment-tooling/overview': 'equipmentTooling.layout.tabs.overview',
   '/equipment-tooling/molds': 'equipmentTooling.layout.tabs.molds',
@@ -106,8 +111,10 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/equipment-tooling/drawings': 'equipmentTooling.layout.tabs.drawings',
   '/equipment-tooling/partners': 'equipmentTooling.layout.tabs.partners',
   '/equipment-maintenance': 'sidebar.items.maintenanceCenter',
-  '/equipment-maintenance/overview': 'equipmentTooling.maintenanceCenter.tabs.overview',
-  '/equipment-maintenance/records': 'equipmentTooling.maintenanceCenter.tabs.records',
+  '/equipment-maintenance/overview':
+    'equipmentTooling.maintenanceCenter.tabs.overview',
+  '/equipment-maintenance/records':
+    'equipmentTooling.maintenanceCenter.tabs.records',
   '/tooling-furnaces': 'sidebar.items.furnaceAssets',
   '/tooling-furnaces/center': 'sidebar.items.furnaceAssets',
   '/personnel': 'sidebar.items.personnelCenter',

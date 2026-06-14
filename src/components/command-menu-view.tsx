@@ -1,10 +1,8 @@
-import { createPortal } from 'react-dom'
 import { ArrowRight, BookOpenText, Box, Search, Zap } from 'lucide-react'
+import { createPortal } from 'react-dom'
+import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
-import type { SearchItem } from './layout/data/search-data'
-import type { KnowledgeBaseEntry } from '@/features/basic-settings/knowledge-base/data/knowledge-base'
-import { CommandMenuKnowledgeDetailDrawer } from './command-menu-knowledge-detail-drawer'
-import { CommandMenuKnowledgeTab } from './command-menu-knowledge-tab'
+import { useIsMobile } from '@/hooks/use-mobile'
 import {
   CommandDialog,
   CommandGroup,
@@ -12,8 +10,10 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command'
-import { useIsMobile } from '@/hooks/use-mobile'
-import { cn } from '@/lib/utils'
+import type { KnowledgeBaseEntry } from '@/features/basic-settings/knowledge-base/data/knowledge-base'
+import { CommandMenuKnowledgeDetailDrawer } from './command-menu-knowledge-detail-drawer'
+import { CommandMenuKnowledgeTab } from './command-menu-knowledge-tab'
+import type { SearchItem } from './layout/data/search-data'
 import { ScrollArea } from './ui/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 
@@ -59,13 +59,17 @@ export function CommandMenuView({
   }
 
   const isInitialState = searchValue === ''
-  const hasBusinessResults = asyncResults.length > 0 || (groupedItems.modules?.length ?? 0) > 0
+  const hasBusinessResults =
+    asyncResults.length > 0 || (groupedItems.modules?.length ?? 0) > 0
   const hasActionResults = (groupedItems.actions?.length ?? 0) > 0
 
   return (
     <>
       {isMobile && open && typeof document !== 'undefined'
-        ? createPortal(<div className='fixed inset-0 z-100 bg-black/50 animate-in fade-in-0' />, document.body)
+        ? createPortal(
+            <div className='fixed inset-0 z-100 animate-in bg-black/50 fade-in-0' />,
+            document.body
+          )
         : null}
 
       <CommandDialog
@@ -75,7 +79,7 @@ export function CommandMenuView({
         requireCloseButton
         shouldFilter={false}
         overlayClassName='!bg-transparent'
-        className='h-svh! max-h-svh! w-[100vw]! max-w-[100vw]! overflow-hidden rounded-[32px] border border-sky-500/35 bg-background p-0 shadow-[0_24px_80px_rgba(14,165,233,0.16)] ring-1 ring-sky-500/20 md:h-auto! md:max-h-[calc(100dvh-2rem)]! md:w-[85vw]! md:max-w-[85vw]! **:data-[slot=command-input-wrapper]:h-14 **:data-[slot=command-input-wrapper]:border-sky-500/20 **:data-[slot=command-input-wrapper]:px-5 [&_[data-slot=command-input-wrapper]_svg]:size-4'
+        className='h-svh! max-h-svh! w-[100vw]! max-w-[100vw]! overflow-hidden rounded-[32px] border border-sky-500/35 bg-background p-0 shadow-[0_24px_80px_rgba(14,165,233,0.16)] ring-1 ring-sky-500/20 **:data-[slot=command-input-wrapper]:h-14 **:data-[slot=command-input-wrapper]:border-sky-500/20 **:data-[slot=command-input-wrapper]:px-5 md:h-auto! md:max-h-[calc(100dvh-2rem)]! md:w-[85vw]! md:max-w-[85vw]! [&_[data-slot=command-input-wrapper]_svg]:size-4'
       >
         <div className='pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.12),transparent_34%)]' />
 
@@ -87,7 +91,7 @@ export function CommandMenuView({
             onValueChange={onSearchChange}
           />
           {isSearching && (
-            <div className='absolute right-4 top-1/2 -translate-y-1/2'>
+            <div className='absolute top-1/2 right-4 -translate-y-1/2'>
               <div className='size-5 animate-spin rounded-full border-2 border-primary/20 border-t-primary' />
             </div>
           )}
@@ -98,21 +102,21 @@ export function CommandMenuView({
             <TabsList className='grid w-full grid-cols-3 rounded-2xl border border-sky-500/15 bg-sky-500/5 p-1'>
               <TabsTrigger
                 value='business'
-                className='flex items-center gap-1.5 rounded-xl py-1.5 text-[9px] font-black uppercase tracking-widest text-muted-foreground italic transition-all data-[state=active]:bg-background data-[state=active]:text-sky-700 data-[state=active]:shadow-sm'
+                className='flex items-center gap-1.5 rounded-xl py-1.5 text-[9px] font-black tracking-widest text-muted-foreground uppercase italic transition-all data-[state=active]:bg-background data-[state=active]:text-sky-700 data-[state=active]:shadow-sm'
               >
                 <Box size={11} />
                 {t('commandMenu.headings.data')}
               </TabsTrigger>
               <TabsTrigger
                 value='knowledge'
-                className='flex items-center gap-1.5 rounded-xl py-1.5 text-[9px] font-black uppercase tracking-widest text-muted-foreground italic transition-all data-[state=active]:bg-background data-[state=active]:text-sky-700 data-[state=active]:shadow-sm'
+                className='flex items-center gap-1.5 rounded-xl py-1.5 text-[9px] font-black tracking-widest text-muted-foreground uppercase italic transition-all data-[state=active]:bg-background data-[state=active]:text-sky-700 data-[state=active]:shadow-sm'
               >
                 <BookOpenText size={11} />
                 {t('commandMenu.headings.knowledgeBase')}
               </TabsTrigger>
               <TabsTrigger
                 value='actions'
-                className='flex items-center gap-1.5 rounded-xl py-1.5 text-[9px] font-black uppercase tracking-widest text-muted-foreground italic transition-all data-[state=active]:bg-background data-[state=active]:text-sky-700 data-[state=active]:shadow-sm'
+                className='flex items-center gap-1.5 rounded-xl py-1.5 text-[9px] font-black tracking-widest text-muted-foreground uppercase italic transition-all data-[state=active]:bg-background data-[state=active]:text-sky-700 data-[state=active]:shadow-sm'
               >
                 <Zap size={11} />
                 {t('commandMenu.headings.actions')}
@@ -120,10 +124,13 @@ export function CommandMenuView({
             </TabsList>
           </div>
 
-          <CommandList className='min-h-0 max-h-none flex-1 overflow-hidden'>
+          <CommandList className='max-h-none min-h-0 flex-1 overflow-hidden'>
             <ScrollArea className='h-full max-h-full md:h-[540px] md:max-h-[calc(100dvh-10.5rem)]'>
               <div className='min-h-full'>
-                <TabsContent value='business' className='m-0 focus-visible:outline-none'>
+                <TabsContent
+                  value='business'
+                  className='m-0 focus-visible:outline-none'
+                >
                   <div className='space-y-2 p-2.5'>
                     {!hasBusinessResults && (
                       <SearchEmptyState message={t('commandMenu.empty')} />
@@ -133,7 +140,7 @@ export function CommandMenuView({
                     {asyncResults.length > 0 && (
                       <CommandGroup
                         heading={t('commandMenu.headings.data')}
-                        className='**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1 **:[[cmdk-group-heading]]:text-[8px] **:[[cmdk-group-heading]]:font-black **:[[cmdk-group-heading]]:italic **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-[0.2em] **:[[cmdk-group-heading]]:text-emerald-600/70'
+                        className='**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1 **:[[cmdk-group-heading]]:text-[8px] **:[[cmdk-group-heading]]:font-black **:[[cmdk-group-heading]]:tracking-[0.2em] **:[[cmdk-group-heading]]:text-emerald-600/70 **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:italic'
                       >
                         {asyncResults.map((item) => (
                           <SearchListItem
@@ -149,17 +156,22 @@ export function CommandMenuView({
                     {groupedItems.modules && (
                       <CommandGroup
                         heading={categoryLabels.modules}
-                        className='**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1 **:[[cmdk-group-heading]]:text-[8px] **:[[cmdk-group-heading]]:font-black **:[[cmdk-group-heading]]:italic **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-[0.2em] **:[[cmdk-group-heading]]:text-indigo-600/70'
+                        className='**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1 **:[[cmdk-group-heading]]:text-[8px] **:[[cmdk-group-heading]]:font-black **:[[cmdk-group-heading]]:tracking-[0.2em] **:[[cmdk-group-heading]]:text-indigo-600/70 **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:italic'
                       >
                         {groupedItems.modules
                           .slice(0, isInitialState ? DISPLAY_LIMIT : undefined)
                           .map((item) => (
-                            <SearchListItem key={item.id} item={item} onSelect={() => onItemSelect(item)} />
+                            <SearchListItem
+                              key={item.id}
+                              item={item}
+                              onSelect={() => onItemSelect(item)}
+                            />
                           ))}
 
-                        {isInitialState && groupedItems.modules.length > DISPLAY_LIMIT && (
-                          <SearchHintItem />
-                        )}
+                        {isInitialState &&
+                          groupedItems.modules.length > DISPLAY_LIMIT && (
+                            <SearchHintItem />
+                          )}
                       </CommandGroup>
                     )}
                   </div>
@@ -172,7 +184,10 @@ export function CommandMenuView({
                   onSelect={onKnowledgeSelect}
                 />
 
-                <TabsContent value='actions' className='m-0 focus-visible:outline-none'>
+                <TabsContent
+                  value='actions'
+                  className='m-0 focus-visible:outline-none'
+                >
                   <div className='p-2.5'>
                     {!hasActionResults && (
                       <SearchEmptyState message={t('commandMenu.empty')} />
@@ -181,11 +196,14 @@ export function CommandMenuView({
                     {groupedItems.actions && (
                       <CommandGroup
                         heading={categoryLabels.actions}
-                        className='**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1 **:[[cmdk-group-heading]]:text-[8px] **:[[cmdk-group-heading]]:font-black **:[[cmdk-group-heading]]:italic **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-[0.2em] **:[[cmdk-group-heading]]:text-amber-600/70'
+                        className='**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1 **:[[cmdk-group-heading]]:text-[8px] **:[[cmdk-group-heading]]:font-black **:[[cmdk-group-heading]]:tracking-[0.2em] **:[[cmdk-group-heading]]:text-amber-600/70 **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:italic'
                       >
                         <div className='grid grid-cols-1 gap-0'>
                           {groupedItems.actions
-                            .slice(0, isInitialState ? DISPLAY_LIMIT : undefined)
+                            .slice(
+                              0,
+                              isInitialState ? DISPLAY_LIMIT : undefined
+                            )
                             .map((item) => (
                               <SearchListItem
                                 key={item.id}
@@ -195,9 +213,10 @@ export function CommandMenuView({
                               />
                             ))}
 
-                          {isInitialState && groupedItems.actions.length > DISPLAY_LIMIT && (
-                            <SearchHintItem />
-                          )}
+                          {isInitialState &&
+                            groupedItems.actions.length > DISPLAY_LIMIT && (
+                              <SearchHintItem />
+                            )}
                         </div>
                       </CommandGroup>
                     )}
@@ -209,7 +228,7 @@ export function CommandMenuView({
         </Tabs>
 
         <div className='flex items-center justify-between border-t border-dashed border-sky-500/20 bg-sky-500/5 px-4 py-2'>
-          <div className='flex items-center gap-2.5 text-[8px] font-black uppercase tracking-widest text-muted-foreground/50 italic'>
+          <div className='flex items-center gap-2.5 text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase italic'>
             <span className='flex items-center gap-1.5'>
               <kbd className='rounded border border-dashed border-sky-500/20 bg-background px-1.5 py-0.5 font-mono text-[7px]'>
                 Enter
@@ -229,7 +248,7 @@ export function CommandMenuView({
               {t('commandMenu.footer.tab')}
             </span>
           </div>
-          <div className='text-[9px] font-black uppercase tracking-[0.2em] text-sky-600/35 italic'>
+          <div className='text-[9px] font-black tracking-[0.2em] text-sky-600/35 uppercase italic'>
             Intelligent Search v2.1
           </div>
         </div>
@@ -244,7 +263,7 @@ export function CommandMenuView({
 
 function SearchEmptyState({ message }: { message: string }) {
   return (
-    <div className='flex min-h-40 items-center justify-center rounded-2xl border border-dashed border-muted/60 bg-muted/10 px-4 text-center text-xs font-bold italic text-muted-foreground/50'>
+    <div className='flex min-h-40 items-center justify-center rounded-2xl border border-dashed border-muted/60 bg-muted/10 px-4 text-center text-xs font-bold text-muted-foreground/50 italic'>
       {message}
     </div>
   )
@@ -298,14 +317,21 @@ function SearchListItem({
       </div>
       <div className='flex flex-1 items-center justify-between overflow-hidden'>
         <div className='flex min-w-0 flex-col truncate leading-tight'>
-          <span className={cn('truncate font-bold tracking-tight', isAction ? 'text-[12px]' : 'text-[13px]')}>
+          <span
+            className={cn(
+              'truncate font-bold tracking-tight',
+              isAction ? 'text-[12px]' : 'text-[13px]'
+            )}
+          >
             {item.title}
           </span>
           {item.parentTitle && (
-            <span className={cn(
-              'truncate font-black uppercase tracking-[0.18em] text-muted-foreground/45',
-              isAction ? 'text-[6px]' : 'text-[7px]'
-            )}>
+            <span
+              className={cn(
+                'truncate font-black tracking-[0.18em] text-muted-foreground/45 uppercase',
+                isAction ? 'text-[6px]' : 'text-[7px]'
+              )}
+            >
               {item.parentTitle}
             </span>
           )}
@@ -317,7 +343,7 @@ function SearchListItem({
 
 function SearchHintItem() {
   return (
-    <div className='flex items-center gap-1.5 px-2 py-1 text-[7px] font-black uppercase tracking-widest text-muted-foreground/30 italic'>
+    <div className='flex items-center gap-1.5 px-2 py-1 text-[7px] font-black tracking-widest text-muted-foreground/30 uppercase italic'>
       <Search size={10} />
       <span>输入更多关键词以搜索完整列表...</span>
     </div>

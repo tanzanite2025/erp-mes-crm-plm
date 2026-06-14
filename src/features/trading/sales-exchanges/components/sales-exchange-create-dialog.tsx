@@ -39,15 +39,15 @@ import type {
   SalesExchangeUnmatchedLabelCode,
 } from '../types/sales-exchange-types'
 import {
-  resolveSalesExchangeLineDisplaySubtitle,
-  resolveSalesExchangeLineDisplayTitle,
-} from '../utils/sales-exchange-line-display'
-import {
   buildSalesExchangeLineDraftFromSalesOrderLine,
   buildSalesExchangeLineDraftsFromRecognizedLabelCodes,
   buildSalesExchangeRecognizedLabelCodesFromScannerInput,
   mergeSalesExchangeRecognizedLabelCodes,
 } from '../utils/sales-exchange-label-code-parser'
+import {
+  resolveSalesExchangeLineDisplaySubtitle,
+  resolveSalesExchangeLineDisplayTitle,
+} from '../utils/sales-exchange-line-display'
 
 type SalesExchangeCreateDialogProps = {
   sourceSalesOrder?: SalesOrder
@@ -120,8 +120,10 @@ export function SalesExchangeCreateDialog({
   const [exchangeReason, setExchangeReason] = useState('')
   const [exchangeRemarks, setExchangeRemarks] = useState('')
   const [scannerInputValue, setScannerInputValue] = useState('')
-  const [activeSalesOrderLineIdForLabelInput, setActiveSalesOrderLineIdForLabelInput] =
-    useState<number | null>(null)
+  const [
+    activeSalesOrderLineIdForLabelInput,
+    setActiveSalesOrderLineIdForLabelInput,
+  ] = useState<number | null>(null)
   const [lineDrafts, setLineDrafts] = useState<SalesExchangeLineDraft[]>([])
   const [unmatchedLabelCodes, setUnmatchedLabelCodes] = useState<
     SalesExchangeUnmatchedLabelCode[]
@@ -254,33 +256,29 @@ export function SalesExchangeCreateDialog({
 
     setLineDrafts((currentLineDrafts) => {
       const currentLineDraft = currentLineDrafts.find(
-        (lineDraft) =>
-          lineDraft.salesOrderLineId === activeSalesOrderLine.id
+        (lineDraft) => lineDraft.salesOrderLineId === activeSalesOrderLine.id
       )
-      const nextRecognizedLabelCodes =
-        mergeSalesExchangeRecognizedLabelCodes(
-          currentLineDraft?.recognizedLabelCodes ?? [],
-          incomingRecognizedLabelCodes
-        )
-      const nextLineDraft =
-        currentLineDraft
-          ? {
-              ...currentLineDraft,
-              exchangeQuantity: Math.max(
-                currentLineDraft.exchangeQuantity,
-                nextRecognizedLabelCodes.length
-              ),
-              recognizedLabelCodes: nextRecognizedLabelCodes,
-            }
-          : buildSalesExchangeLineDraftFromSalesOrderLine(
-              activeSalesOrderLine,
-              nextRecognizedLabelCodes
-            )
+      const nextRecognizedLabelCodes = mergeSalesExchangeRecognizedLabelCodes(
+        currentLineDraft?.recognizedLabelCodes ?? [],
+        incomingRecognizedLabelCodes
+      )
+      const nextLineDraft = currentLineDraft
+        ? {
+            ...currentLineDraft,
+            exchangeQuantity: Math.max(
+              currentLineDraft.exchangeQuantity,
+              nextRecognizedLabelCodes.length
+            ),
+            recognizedLabelCodes: nextRecognizedLabelCodes,
+          }
+        : buildSalesExchangeLineDraftFromSalesOrderLine(
+            activeSalesOrderLine,
+            nextRecognizedLabelCodes
+          )
 
       return [
         ...currentLineDrafts.filter(
-          (lineDraft) =>
-            lineDraft.salesOrderLineId !== activeSalesOrderLine.id
+          (lineDraft) => lineDraft.salesOrderLineId !== activeSalesOrderLine.id
         ),
         nextLineDraft,
       ].sort((left, right) => left.lineNo - right.lineNo)
@@ -384,7 +382,8 @@ export function SalesExchangeCreateDialog({
                 新建销售换货草稿
               </DialogTitle>
               <DialogDescription className='text-xs font-bold text-muted-foreground'>
-                来源订单 {sourceSalesOrder.orderNo}，换货不会写入应收冲减；标签码会作为旧货识别和后续追溯依据。
+                来源订单 {sourceSalesOrder.orderNo}
+                ，换货不会写入应收冲减；标签码会作为旧货识别和后续追溯依据。
               </DialogDescription>
             </DialogHeader>
 
@@ -458,10 +457,14 @@ export function SalesExchangeCreateDialog({
                           <div className='flex items-start justify-between gap-3'>
                             <div className='min-w-0'>
                               <p className='truncate text-sm font-black text-foreground'>
-                                {resolveSalesExchangeLineDisplayTitle(salesOrderLine)}
+                                {resolveSalesExchangeLineDisplayTitle(
+                                  salesOrderLine
+                                )}
                               </p>
                               <p className='mt-1 truncate text-xs font-bold text-muted-foreground'>
-                                {resolveSalesExchangeLineDisplaySubtitle(salesOrderLine)}
+                                {resolveSalesExchangeLineDisplaySubtitle(
+                                  salesOrderLine
+                                )}
                               </p>
                               <div className='mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] font-bold text-muted-foreground'>
                                 <span>行号 {salesOrderLine.lineNo}</span>
@@ -539,7 +542,9 @@ export function SalesExchangeCreateDialog({
                     <Button
                       type='button'
                       className='w-full rounded-full text-xs font-black'
-                      onClick={handleRecognizeScannerInputAgainstSourceSalesOrder}
+                      onClick={
+                        handleRecognizeScannerInputAgainstSourceSalesOrder
+                      }
                     >
                       <ScanLine className='mr-1 size-3.5' />
                       识别并加入换货明细
@@ -585,10 +590,14 @@ export function SalesExchangeCreateDialog({
                           <div className='flex items-start justify-between gap-3'>
                             <div className='min-w-0'>
                               <p className='truncate text-sm font-black text-foreground'>
-                                {resolveSalesExchangeLineDisplayTitle(lineDraft)}
+                                {resolveSalesExchangeLineDisplayTitle(
+                                  lineDraft
+                                )}
                               </p>
                               <p className='mt-1 truncate text-xs font-bold text-muted-foreground'>
-                                {resolveSalesExchangeLineDisplaySubtitle(lineDraft)}
+                                {resolveSalesExchangeLineDisplaySubtitle(
+                                  lineDraft
+                                )}
                               </p>
                             </div>
                             <Button

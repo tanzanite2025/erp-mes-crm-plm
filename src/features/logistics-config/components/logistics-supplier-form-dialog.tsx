@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react'
 import { AlertTriangle, Check, Loader2, Truck } from 'lucide-react'
+import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -8,8 +9,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { useLanguage } from '@/context/language-provider'
-import type { LogisticsProviderDraft, LogisticsVerificationStatus } from '@/features/sandbox/logistics-api/types'
+import type {
+  LogisticsProviderDraft,
+  LogisticsVerificationStatus,
+} from '@/features/sandbox/logistics-api/types'
 import { LogisticsSupplierBasicFieldsSection } from './logistics-supplier-basic-fields-section'
 import { LogisticsSupplierCredentialsSection } from './logistics-supplier-credentials-section'
 import { LogisticsSupplierDirectoryFieldsSection } from './logistics-supplier-directory-fields-section'
@@ -49,9 +52,12 @@ export function LogisticsSupplierFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size='6xl' className='rounded-[32px] border-none bg-white/95 p-8 shadow-2xl backdrop-blur-xl'>
+      <DialogContent
+        size='6xl'
+        className='rounded-[32px] border-none bg-white/95 p-8 shadow-2xl backdrop-blur-xl'
+      >
         <DialogHeader>
-          <DialogTitle className='flex items-center gap-2 text-xl font-black italic tracking-tighter'>
+          <DialogTitle className='flex items-center gap-2 text-xl font-black tracking-tighter italic'>
             <Truck className='size-5 text-primary' />
             {formData.id
               ? t('logisticsConfig.suppliers.dialog.editTitle')
@@ -64,9 +70,15 @@ export function LogisticsSupplierFormDialog({
             selectedTemplateNote={selectedTemplateNote}
             onApplyTemplate={onApplyTemplate}
           />
-          <LogisticsSupplierBasicFieldsSection formData={formData} setFormData={setFormData} />
+          <LogisticsSupplierBasicFieldsSection
+            formData={formData}
+            setFormData={setFormData}
+          />
           <div className='grid grid-cols-2 gap-6'>
-            <LogisticsSupplierDirectoryFieldsSection formData={formData} setFormData={setFormData} />
+            <LogisticsSupplierDirectoryFieldsSection
+              formData={formData}
+              setFormData={setFormData}
+            />
             <div className='space-y-6'>
               <LogisticsSupplierIntegrationFieldsSection
                 formData={formData}
@@ -74,14 +86,17 @@ export function LogisticsSupplierFormDialog({
                 previewConnected={previewConnected}
                 previewVerificationStatus={previewVerificationStatus}
               />
-              <LogisticsSupplierCredentialsSection formData={formData} setFormData={setFormData} />
+              <LogisticsSupplierCredentialsSection
+                formData={formData}
+                setFormData={setFormData}
+              />
             </div>
           </div>
         </div>
 
         <DialogFooter className='flex-col gap-2 pt-0 sm:flex-col sm:items-stretch sm:justify-start'>
           {!isCredentialsComplete && isFormValid ? (
-            <p className='flex w-full items-start justify-start gap-1 text-[10px] font-bold leading-relaxed text-amber-600'>
+            <p className='flex w-full items-start justify-start gap-1 text-[10px] leading-relaxed font-bold text-amber-600'>
               <AlertTriangle className='mt-0.5 size-3 shrink-0' />
               {t('logisticsConfig.suppliers.states.credentialsIncomplete')}
             </p>
@@ -90,8 +105,16 @@ export function LogisticsSupplierFormDialog({
             <Button variant='outline' onClick={() => onOpenChange(false)}>
               {t('logisticsConfig.suppliers.actions.cancel')}
             </Button>
-            <Button onClick={onSave} disabled={!isFormValid || savePending} className='w-full sm:w-auto sm:min-w-56'>
-              {savePending ? <Loader2 className='size-4 animate-spin' /> : <Check className='size-4' />}
+            <Button
+              onClick={onSave}
+              disabled={!isFormValid || savePending}
+              className='w-full sm:w-auto sm:min-w-56'
+            >
+              {savePending ? (
+                <Loader2 className='size-4 animate-spin' />
+              ) : (
+                <Check className='size-4' />
+              )}
               {isCredentialsComplete
                 ? t('logisticsConfig.suppliers.actions.saveReady')
                 : t('logisticsConfig.suppliers.actions.saveIncomplete')}

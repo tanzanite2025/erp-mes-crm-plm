@@ -37,17 +37,25 @@ export interface PackagingProfile {
   updatedAt?: string
 }
 
-export type SavePackagingProfileInput = Omit<PackagingProfile, 'id' | 'createdAt' | 'updatedAt'> & {
+export type SavePackagingProfileInput = Omit<
+  PackagingProfile,
+  'id' | 'createdAt' | 'updatedAt'
+> & {
   id?: string
 }
 
 export const packagingRulesService = {
   async getProfiles(): Promise<PackagingProfile[]> {
     const res = await apiFetch<PackagingProfile[]>('/packaging/profiles')
-    return ensureArrayResponse<PackagingProfile>(res, 'packagingRulesService.getProfiles')
+    return ensureArrayResponse<PackagingProfile>(
+      res,
+      'packagingRulesService.getProfiles'
+    )
   },
 
-  async saveProfile(input: SavePackagingProfileInput): Promise<PackagingProfile> {
+  async saveProfile(
+    input: SavePackagingProfileInput
+  ): Promise<PackagingProfile> {
     const res = await apiFetch<PackagingProfile>('/packaging/profiles', {
       method: 'POST',
       body: JSON.stringify(input),

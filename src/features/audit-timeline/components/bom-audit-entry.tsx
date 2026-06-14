@@ -1,13 +1,22 @@
 import { useMemo, useState } from 'react'
 import { format } from 'date-fns'
 import { ChevronDown, Clock, User } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { useLanguage } from '@/context/language-provider'
+import { Badge } from '@/components/ui/badge'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { type MaterialOption } from '@/features/material-archive/data/schema'
-import { buildBomAuditSummary, type BomAuditControlChange, type BomAuditLineChange, type BomAuditModifiedLineChange } from '../utils/bom-audit'
 import type { AuditLog } from '../types'
+import {
+  buildBomAuditSummary,
+  type BomAuditControlChange,
+  type BomAuditLineChange,
+  type BomAuditModifiedLineChange,
+} from '../utils/bom-audit'
 
 function formatAuditDisplayText(value: unknown): string {
   if (value === null || value === undefined) {
@@ -18,7 +27,9 @@ function formatAuditDisplayText(value: unknown): string {
     return trimmed || '—'
   }
   if (Array.isArray(value)) {
-    return value.length > 0 ? value.map((item) => formatAuditDisplayText(item)).join(', ') : '—'
+    return value.length > 0
+      ? value.map((item) => formatAuditDisplayText(item)).join(', ')
+      : '—'
   }
   if (typeof value === 'object') {
     try {
@@ -30,7 +41,10 @@ function formatAuditDisplayText(value: unknown): string {
   return String(value)
 }
 
-function formatBomFieldLabel(field: string, t: ReturnType<typeof useLanguage>['t']): string {
+function formatBomFieldLabel(
+  field: string,
+  t: ReturnType<typeof useLanguage>['t']
+): string {
   switch (field) {
     case 'bomNo':
       return t('common.audit.bom.fieldLabels.bomNo')
@@ -85,13 +99,23 @@ function resolveMaterialDisplay(
   const material = materialOptionMap.get(item.materialId)
 
   return {
-    materialName: material?.name?.trim() || t('common.audit.bom.unknownMaterial'),
-    materialCode: material?.code?.trim() || item.materialId || t('common.empty.noRecords'),
+    materialName:
+      material?.name?.trim() || t('common.audit.bom.unknownMaterial'),
+    materialCode:
+      material?.code?.trim() || item.materialId || t('common.empty.noRecords'),
     section: item.section?.trim() || t('common.empty.noRecords'),
   }
 }
 
-function ChangeCountBadge({ label, count, tone }: { label: string; count: number; tone: 'emerald' | 'rose' | 'amber' | 'slate' }) {
+function ChangeCountBadge({
+  label,
+  count,
+  tone,
+}: {
+  label: string
+  count: number
+  tone: 'emerald' | 'rose' | 'amber' | 'slate'
+}) {
   const toneClassName =
     tone === 'emerald'
       ? 'border-emerald-500/20 bg-emerald-500/5 text-emerald-700'
@@ -102,7 +126,10 @@ function ChangeCountBadge({ label, count, tone }: { label: string; count: number
           : 'border-slate-200 bg-slate-50 text-slate-700'
 
   return (
-    <Badge variant='outline' className={`rounded-full border-dashed text-[8px] font-mono ${toneClassName}`}>
+    <Badge
+      variant='outline'
+      className={`rounded-full border-dashed font-mono text-[8px] ${toneClassName}`}
+    >
       {label} {count}
     </Badge>
   )
@@ -131,8 +158,13 @@ function BomAuditLineListCard({
   return (
     <div className='rounded-[24px] border border-dashed bg-muted/5 p-4'>
       <div className='flex items-center justify-between gap-3'>
-        <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>{title}</div>
-        <Badge variant='outline' className='rounded-full border-dashed bg-white text-[8px] font-mono'>
+        <div className='text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
+          {title}
+        </div>
+        <Badge
+          variant='outline'
+          className='rounded-full border-dashed bg-white font-mono text-[8px]'
+        >
           {items.length}
         </Badge>
       </div>
@@ -143,12 +175,18 @@ function BomAuditLineListCard({
               const display = resolveMaterialDisplay(item, materialOptionMap, t)
 
               return (
-                <div key={item.key} className='rounded-2xl border border-dashed bg-background p-3'>
+                <div
+                  key={item.key}
+                  className='rounded-2xl border border-dashed bg-background p-3'
+                >
                   <div className='flex items-center justify-between gap-3'>
-                    <Badge variant='outline' className={`rounded-full border-dashed text-[8px] font-mono ${toneClassName}`}>
+                    <Badge
+                      variant='outline'
+                      className={`rounded-full border-dashed font-mono text-[8px] ${toneClassName}`}
+                    >
                       {display.materialCode}
                     </Badge>
-                    <span className='text-[8px] font-black uppercase tracking-widest text-muted-foreground/50'>
+                    <span className='text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                       {title}
                     </span>
                   </div>
@@ -156,18 +194,27 @@ function BomAuditLineListCard({
                     {display.materialName}
                   </div>
                   <div className='mt-2 flex flex-wrap gap-1.5'>
-                    <Badge variant='outline' className='rounded-full border-dashed border-slate-200 bg-slate-50 text-[8px] font-mono text-slate-700'>
+                    <Badge
+                      variant='outline'
+                      className='rounded-full border-dashed border-slate-200 bg-slate-50 font-mono text-[8px] text-slate-700'
+                    >
                       {formatBomFieldLabel('section', t)} · {display.section}
                     </Badge>
-                    <Badge variant='outline' className='rounded-full border-dashed border-slate-200 bg-slate-50 text-[8px] font-mono text-slate-700'>
-                      {t('common.audit.bom.materialCode')} · {display.materialCode}
+                    <Badge
+                      variant='outline'
+                      className='rounded-full border-dashed border-slate-200 bg-slate-50 font-mono text-[8px] text-slate-700'
+                    >
+                      {t('common.audit.bom.materialCode')} ·{' '}
+                      {display.materialCode}
                     </Badge>
                   </div>
                 </div>
               )
             })
           ) : (
-            <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{emptyText}</span>
+            <span className='text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
+              {emptyText}
+            </span>
           )}
         </div>
       </ScrollArea>
@@ -191,8 +238,13 @@ function BomAuditModifiedListCard({
   return (
     <div className='rounded-[24px] border border-dashed bg-muted/5 p-4'>
       <div className='flex items-center justify-between gap-3'>
-        <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>{title}</div>
-        <Badge variant='outline' className='rounded-full border-dashed bg-white text-[8px] font-mono'>
+        <div className='text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
+          {title}
+        </div>
+        <Badge
+          variant='outline'
+          className='rounded-full border-dashed bg-white font-mono text-[8px]'
+        >
           {items.length}
         </Badge>
       </div>
@@ -203,9 +255,15 @@ function BomAuditModifiedListCard({
               const display = resolveMaterialDisplay(item, materialOptionMap, t)
 
               return (
-                <div key={item.key} className='rounded-2xl border border-dashed bg-background p-3'>
+                <div
+                  key={item.key}
+                  className='rounded-2xl border border-dashed bg-background p-3'
+                >
                   <div className='flex items-center justify-between gap-2'>
-                    <Badge variant='outline' className='rounded-full border-dashed border-amber-500/20 bg-amber-500/5 text-[8px] font-mono text-amber-700'>
+                    <Badge
+                      variant='outline'
+                      className='rounded-full border-dashed border-amber-500/20 bg-amber-500/5 font-mono text-[8px] text-amber-700'
+                    >
                       {display.materialCode}
                     </Badge>
                   </div>
@@ -213,16 +271,27 @@ function BomAuditModifiedListCard({
                     {display.materialName}
                   </div>
                   <div className='mt-2 flex flex-wrap gap-1.5'>
-                    <Badge variant='outline' className='rounded-full border-dashed border-slate-200 bg-slate-50 text-[8px] font-mono text-slate-700'>
+                    <Badge
+                      variant='outline'
+                      className='rounded-full border-dashed border-slate-200 bg-slate-50 font-mono text-[8px] text-slate-700'
+                    >
                       {formatBomFieldLabel('section', t)} · {display.section}
                     </Badge>
-                    <Badge variant='outline' className='rounded-full border-dashed border-slate-200 bg-slate-50 text-[8px] font-mono text-slate-700'>
-                      {t('common.audit.bom.materialCode')} · {display.materialCode}
+                    <Badge
+                      variant='outline'
+                      className='rounded-full border-dashed border-slate-200 bg-slate-50 font-mono text-[8px] text-slate-700'
+                    >
+                      {t('common.audit.bom.materialCode')} ·{' '}
+                      {display.materialCode}
                     </Badge>
                   </div>
                   <div className='mt-2 flex flex-wrap gap-1.5'>
                     {item.changedFields.map((field) => (
-                      <Badge key={field} variant='outline' className='rounded-full border-dashed border-slate-200 bg-slate-50 text-[8px] font-mono text-slate-700'>
+                      <Badge
+                        key={field}
+                        variant='outline'
+                        className='rounded-full border-dashed border-slate-200 bg-slate-50 font-mono text-[8px] text-slate-700'
+                      >
                         {formatBomFieldLabel(field, t)}
                       </Badge>
                     ))}
@@ -231,7 +300,9 @@ function BomAuditModifiedListCard({
               )
             })
           ) : (
-            <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{emptyText}</span>
+            <span className='text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
+              {emptyText}
+            </span>
           )}
         </div>
       </ScrollArea>
@@ -254,43 +325,69 @@ function BomAuditSummaryCard({
 }) {
   const summaryItems = [
     { label: t('common.audit.bom.targetBom'), value: targetBomNo || '—' },
-    { label: t('common.audit.bom.beforeItemCount'), value: String(beforeItemCount) },
-    { label: t('common.audit.bom.afterItemCount'), value: String(afterItemCount) },
+    {
+      label: t('common.audit.bom.beforeItemCount'),
+      value: String(beforeItemCount),
+    },
+    {
+      label: t('common.audit.bom.afterItemCount'),
+      value: String(afterItemCount),
+    },
   ]
 
   return (
     <div className='rounded-[24px] border border-dashed bg-muted/5 p-4'>
       <div className='flex items-center justify-between gap-3'>
-        <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>{t('common.audit.bom.summary')}</div>
-        <Badge variant='outline' className='rounded-full border-dashed bg-white text-[8px] font-mono'>
+        <div className='text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
+          {t('common.audit.bom.summary')}
+        </div>
+        <Badge
+          variant='outline'
+          className='rounded-full border-dashed bg-white font-mono text-[8px]'
+        >
           {controlChanges.length}
         </Badge>
       </div>
       <div className='mt-3 flex flex-col gap-3'>
         {summaryItems.map((item) => (
-          <div key={item.label} className='flex items-start justify-between gap-3 border-b border-dashed border-muted/30 pb-2 last:border-b-0 last:pb-0'>
-            <span className='shrink-0 text-[8px] font-black uppercase tracking-widest text-muted-foreground/50'>{item.label}</span>
-            <span className='break-all text-right text-[10px] font-black tracking-tight text-slate-700'>{item.value}</span>
+          <div
+            key={item.label}
+            className='flex items-start justify-between gap-3 border-b border-dashed border-muted/30 pb-2 last:border-b-0 last:pb-0'
+          >
+            <span className='shrink-0 text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'>
+              {item.label}
+            </span>
+            <span className='text-right text-[10px] font-black tracking-tight break-all text-slate-700'>
+              {item.value}
+            </span>
           </div>
         ))}
       </div>
       <div className='mt-4 border-t border-dashed border-muted/30 pt-4'>
-        <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>{t('common.audit.bom.controlChanges')}</div>
+        <div className='text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
+          {t('common.audit.bom.controlChanges')}
+        </div>
         <ScrollArea className='mt-3 h-[120px] pr-3'>
           <div className='flex flex-col gap-2'>
             {controlChanges.length > 0 ? (
               controlChanges.map((item) => (
-                <div key={item.key} className='rounded-2xl border border-dashed bg-background p-3'>
-                  <div className='text-[8px] font-black uppercase tracking-widest text-muted-foreground/50'>
+                <div
+                  key={item.key}
+                  className='rounded-2xl border border-dashed bg-background p-3'
+                >
+                  <div className='text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                     {formatBomFieldLabel(item.key, t)}
                   </div>
                   <div className='mt-1 text-[10px] font-black tracking-tight text-slate-700'>
-                    {formatAuditDisplayText(item.beforeValue)} → {formatAuditDisplayText(item.afterValue)}
+                    {formatAuditDisplayText(item.beforeValue)} →{' '}
+                    {formatAuditDisplayText(item.afterValue)}
                   </div>
                 </div>
               ))
             ) : (
-              <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{t('common.empty.noRecords')}</span>
+              <span className='text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
+                {t('common.empty.noRecords')}
+              </span>
             )}
           </div>
         </ScrollArea>
@@ -317,27 +414,48 @@ export function BomAuditEntry({
       <CollapsibleTrigger className='w-full rounded-[24px] border border-dashed bg-muted/5 px-4 py-4 text-left transition-colors hover:bg-muted/10'>
         <div className='flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between'>
           <div className='flex flex-wrap items-center gap-2'>
-            <span className='text-[10px] font-black italic tracking-tighter uppercase text-primary'>
+            <span className='text-[10px] font-black tracking-tighter text-primary uppercase italic'>
               {actionLabel}
             </span>
             <div className='flex items-center gap-1.5 rounded-full border border-dashed border-muted/40 bg-background px-2 py-1'>
               <User className='size-3 opacity-50' />
-              <span className='text-[8px] font-mono font-bold uppercase'>{log.operator}</span>
+              <span className='font-mono text-[8px] font-bold uppercase'>
+                {log.operator}
+              </span>
             </div>
-            <div className='rounded-full border border-dashed border-muted/40 bg-background px-2 py-1 text-[8px] font-black uppercase tracking-widest text-slate-700'>
-              {t('common.audit.bom.targetBom')}: {summary.targetBomNo || log.target_id || t('common.empty.noRecords')}
+            <div className='rounded-full border border-dashed border-muted/40 bg-background px-2 py-1 text-[8px] font-black tracking-widest text-slate-700 uppercase'>
+              {t('common.audit.bom.targetBom')}:{' '}
+              {summary.targetBomNo ||
+                log.target_id ||
+                t('common.empty.noRecords')}
             </div>
           </div>
 
           <div className='flex flex-wrap items-center gap-2 xl:justify-end'>
-            <ChangeCountBadge label={t('common.audit.actionLabels.added')} count={summary.addedItems.length} tone='emerald' />
-            <ChangeCountBadge label={t('common.audit.actionLabels.removed')} count={summary.removedItems.length} tone='rose' />
-            <ChangeCountBadge label={t('common.audit.bom.modifiedItems')} count={summary.modifiedItems.length} tone='amber' />
+            <ChangeCountBadge
+              label={t('common.audit.actionLabels.added')}
+              count={summary.addedItems.length}
+              tone='emerald'
+            />
+            <ChangeCountBadge
+              label={t('common.audit.actionLabels.removed')}
+              count={summary.removedItems.length}
+              tone='rose'
+            />
+            <ChangeCountBadge
+              label={t('common.audit.bom.modifiedItems')}
+              count={summary.modifiedItems.length}
+              tone='amber'
+            />
             <div className='flex items-center gap-1.5 rounded-full border border-dashed border-muted/40 bg-background px-2 py-1'>
               <Clock className='size-3 opacity-50' />
-              <span className='text-[8px] font-mono'>{format(new Date(log.created_at), 'yyyy-MM-dd HH:mm:ss')}</span>
+              <span className='font-mono text-[8px]'>
+                {format(new Date(log.created_at), 'yyyy-MM-dd HH:mm:ss')}
+              </span>
             </div>
-            <span className={`rounded-2xl border border-dashed border-muted/40 bg-background p-2 text-muted-foreground/60 transition-transform ${open ? 'rotate-180' : ''}`}>
+            <span
+              className={`rounded-2xl border border-dashed border-muted/40 bg-background p-2 text-muted-foreground/60 transition-transform ${open ? 'rotate-180' : ''}`}
+            >
               <ChevronDown className='size-4' />
             </span>
           </div>

@@ -4,7 +4,7 @@ const logger = createLogger('AiStreamParser')
 
 export async function parseStream(
   reader: ReadableStreamDefaultReader<Uint8Array>,
-  onChunk: (text: string) => void,
+  onChunk: (text: string) => void
 ): Promise<void> {
   const decoder = new TextDecoder()
   let buffer = ''
@@ -26,7 +26,8 @@ export async function parseStream(
 
       try {
         const json = JSON.parse(dataStr)
-        const content = json.choices?.[0]?.delta?.content || json.choices?.[0]?.text || ''
+        const content =
+          json.choices?.[0]?.delta?.content || json.choices?.[0]?.text || ''
         if (content) onChunk(content)
       } catch {
         logger.warn('Failed to parse chunk', dataStr)

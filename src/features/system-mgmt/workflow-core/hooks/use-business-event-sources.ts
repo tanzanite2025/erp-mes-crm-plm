@@ -84,8 +84,11 @@ export function useBusinessEventSources() {
           ...target,
           ...updates,
         }
-        const { createdAt: _createdAt, updatedAt: _updatedAt, ...writePayload } =
-          merged
+        const {
+          createdAt: _createdAt,
+          updatedAt: _updatedAt,
+          ...writePayload
+        } = merged
         const saved = await RoutingService.updateEventSource(
           id,
           writePayload as BusinessEventSourceUpdatePayload

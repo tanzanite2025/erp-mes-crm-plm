@@ -11,7 +11,8 @@ export const productionArchitecture = {
   mindmap: {
     header: {
       title: '产线脑图',
-      subtitle: '以 {{level1Name}} / {{level2Name}} / {{level3Name}} 为层级骨架，验证新的受限脑图编辑方式',
+      subtitle:
+        '以 {{level1Name}} / {{level2Name}} / {{level3Name}} 为层级骨架，验证新的受限脑图编辑方式',
     },
   },
 }

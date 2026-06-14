@@ -2,9 +2,8 @@ import { useState, type FormEvent, useMemo } from 'react'
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
 import { Plus, Truck, Package, Info } from 'lucide-react'
 import { toast } from 'sonner'
+import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
-import { TrackingNumberInput } from '@/components/tracking-number-input'
-import { Input } from '@/components/ui/input'
 import {
   Dialog,
   DialogContent,
@@ -14,15 +13,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { useLanguage } from '@/context/language-provider'
-import { getPurchaseOrders } from '@/features/trading/purchase'
+import { Input } from '@/components/ui/input'
+import { TrackingNumberInput } from '@/components/tracking-number-input'
 import { getPreferredCarriers } from '@/features/logistics/utils/carriers'
 import { inferCarrierFromTrackingNo } from '@/features/logistics/utils/tracking-no'
+import { getPurchaseOrders } from '@/features/trading/purchase'
+import { PURCHASE_LOGISTICS_KEYS } from './query-keys'
 import {
   queuePurchaseLogisticsOfflineDraft,
   shouldQueuePurchaseLogisticsOfflineDraft,
 } from './services/purchase-logistics-offline-draft-service'
-import { PURCHASE_LOGISTICS_KEYS } from './query-keys'
 import { PurchaseLogisticsService } from './services/purchase-logistics-service'
 
 type PurchaseLogisticsForm = {
@@ -69,7 +69,8 @@ export function PurchaseLogisticsDialog() {
   const orders = purchaseOrders ?? []
 
   const mutation = useMutation({
-    mutationFn: (data: PurchaseLogisticsForm) => PurchaseLogisticsService.saveRecord(data),
+    mutationFn: (data: PurchaseLogisticsForm) =>
+      PurchaseLogisticsService.saveRecord(data),
   })
 
   const handleOpenChange = (nextOpen: boolean) => {
@@ -92,9 +93,13 @@ export function PurchaseLogisticsDialog() {
 
     if (!navigator.onLine) {
       await queuePurchaseLogisticsOfflineDraft(payload)
-      await queryClient.invalidateQueries({ queryKey: PURCHASE_LOGISTICS_KEYS.offlineDrafts })
+      await queryClient.invalidateQueries({
+        queryKey: PURCHASE_LOGISTICS_KEYS.offlineDrafts,
+      })
       toast.success(t('purchase.logistics.offlineQueued'), {
-        description: t('purchase.logistics.offlineQueuedDesc', { trackingNo: form.trackingNo }),
+        description: t('purchase.logistics.offlineQueuedDesc', {
+          trackingNo: form.trackingNo,
+        }),
         icon: <Truck className='h-4 w-4' />,
       })
       setOpen(false)
@@ -103,9 +108,13 @@ export function PurchaseLogisticsDialog() {
 
     try {
       await mutation.mutateAsync(payload)
-      await queryClient.invalidateQueries({ queryKey: PURCHASE_LOGISTICS_KEYS.listRoot })
+      await queryClient.invalidateQueries({
+        queryKey: PURCHASE_LOGISTICS_KEYS.listRoot,
+      })
       toast.success(t('purchase.logistics.bindSuccess'), {
-        description: t('purchase.logistics.bindSuccessDesc', { trackingNo: form.trackingNo }),
+        description: t('purchase.logistics.bindSuccessDesc', {
+          trackingNo: form.trackingNo,
+        }),
         icon: <Truck className='h-4 w-4' />,
       })
       setOpen(false)
@@ -113,9 +122,13 @@ export function PurchaseLogisticsDialog() {
       if (shouldQueuePurchaseLogisticsOfflineDraft(err)) {
         const message = err instanceof Error ? err.message : undefined
         await queuePurchaseLogisticsOfflineDraft(payload, message)
-        await queryClient.invalidateQueries({ queryKey: PURCHASE_LOGISTICS_KEYS.offlineDrafts })
+        await queryClient.invalidateQueries({
+          queryKey: PURCHASE_LOGISTICS_KEYS.offlineDrafts,
+        })
         toast.success(t('purchase.logistics.offlineQueued'), {
-          description: t('purchase.logistics.offlineQueuedDesc', { trackingNo: form.trackingNo }),
+          description: t('purchase.logistics.offlineQueuedDesc', {
+            trackingNo: form.trackingNo,
+          }),
           icon: <Truck className='h-4 w-4' />,
         })
         setOpen(false)
@@ -139,7 +152,9 @@ export function PurchaseLogisticsDialog() {
 
       if (!isCarrierTouched) {
         const shouldClearAutoCarrier =
-          !autoDetectedCarrier && Boolean(inferredCarrier) && currentForm.carrier === inferredCarrier
+          !autoDetectedCarrier &&
+          Boolean(inferredCarrier) &&
+          currentForm.carrier === inferredCarrier
         if (autoDetectedCarrier) {
           nextForm.carrier = autoDetectedCarrier
         } else if (shouldClearAutoCarrier) {
@@ -154,43 +169,47 @@ export function PurchaseLogisticsDialog() {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button className='rounded-full h-10 font-black text-[10px] uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-500/20'>
-          <Plus className='size-4 me-2' />
+        <Button className='h-10 rounded-full bg-emerald-600 text-[10px] font-black tracking-widest uppercase shadow-lg shadow-emerald-500/20 hover:bg-emerald-700'>
+          <Plus className='me-2 size-4' />
           {t('purchase.logistics.bindOrder')}
         </Button>
       </DialogTrigger>
-      <DialogContent className='rounded-[32px] sm:max-w-[480px] p-0 overflow-hidden border-none shadow-2xl'>
+      <DialogContent className='overflow-hidden rounded-[32px] border-none p-0 shadow-2xl sm:max-w-[480px]'>
         <form onSubmit={handleSubmit}>
-          <DialogHeader className='p-8 bg-slate-50 border-b relative'>
-            <div className='absolute top-0 right-0 p-4 opacity-5 pointer-events-none'>
+          <DialogHeader className='relative border-b bg-slate-50 p-8'>
+            <div className='pointer-events-none absolute top-0 right-0 p-4 opacity-5'>
               <Package className='size-24 scale-150' />
             </div>
-            <DialogTitle className='text-base font-black italic tracking-tighter uppercase mb-1'>
+            <DialogTitle className='mb-1 text-base font-black tracking-tighter uppercase italic'>
               {t('purchase.logistics.bindDialogTitle')}
             </DialogTitle>
-            <DialogDescription className='text-[10px] font-black uppercase tracking-widest text-slate-400'>
+            <DialogDescription className='text-[10px] font-black tracking-widest text-slate-400 uppercase'>
               {t('purchase.logistics.bindDialogDesc')}
             </DialogDescription>
           </DialogHeader>
 
-          <div className='p-8 space-y-6'>
+          <div className='space-y-6 p-8'>
             <div className='space-y-2'>
-              <label className='text-[10px] font-black uppercase tracking-widest text-slate-400 ms-1'>
+              <label className='ms-1 text-[10px] font-black tracking-widest text-slate-400 uppercase'>
                 {t('purchase.logistics.orderLabel')}
               </label>
               <select
                 value={form.purchaseOrderId}
                 onChange={(e) => {
-                  const selected = orders.find((order) => order.id === e.target.value)
+                  const selected = orders.find(
+                    (order) => order.id === e.target.value
+                  )
                   setForm((currentForm) => ({
                     ...currentForm,
                     purchaseOrderId: e.target.value,
                     orderNo: selected?.orderNo || '',
                   }))
                 }}
-                className='w-full h-12 rounded-2xl bg-slate-100 border-none px-4 text-sm font-bold focus:ring-2 focus:ring-emerald-500 outline-none appearance-none'
+                className='h-12 w-full appearance-none rounded-2xl border-none bg-slate-100 px-4 text-sm font-bold outline-none focus:ring-2 focus:ring-emerald-500'
               >
-                <option value=''>{t('purchase.logistics.orderPlaceholder')}</option>
+                <option value=''>
+                  {t('purchase.logistics.orderPlaceholder')}
+                </option>
                 {orders.map((order) => (
                   <option key={order.id} value={order.id}>
                     [{order.orderNo}] {order.supplierName}
@@ -201,7 +220,7 @@ export function PurchaseLogisticsDialog() {
 
             <div className='grid grid-cols-2 gap-4'>
               <div className='space-y-2'>
-                <label className='text-[10px] font-black uppercase tracking-widest text-slate-400 ms-1'>
+                <label className='ms-1 text-[10px] font-black tracking-widest text-slate-400 uppercase'>
                   {t('purchase.logistics.carrierLabel')}
                 </label>
                 <Input
@@ -216,7 +235,7 @@ export function PurchaseLogisticsDialog() {
                     }))
                   }}
                   placeholder={t('purchase.logistics.carrierPlaceholder')}
-                  className='h-12 rounded-2xl bg-slate-100 border-none'
+                  className='h-12 rounded-2xl border-none bg-slate-100'
                 />
                 <datalist id='purchase-logistics-carriers'>
                   {preferredCarriers.map((carrier) => (
@@ -239,7 +258,7 @@ export function PurchaseLogisticsDialog() {
                             carrier,
                           }))
                         }}
-                        className={`h-8 rounded-full px-4 text-[10px] font-black uppercase tracking-widest transition-all ${
+                        className={`h-8 rounded-full px-4 text-[10px] font-black tracking-widest uppercase transition-all ${
                           isActive
                             ? 'border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-600 hover:text-white'
                             : 'border-dashed border-slate-300 bg-white text-slate-600 hover:border-emerald-300 hover:text-emerald-700'
@@ -252,7 +271,7 @@ export function PurchaseLogisticsDialog() {
                 </div>
               </div>
               <div className='space-y-2'>
-                <label className='text-[10px] font-black uppercase tracking-widest text-slate-400 ms-1'>
+                <label className='ms-1 text-[10px] font-black tracking-widest text-slate-400 uppercase'>
                   {t('purchase.logistics.trackingLabel')}
                 </label>
                 <TrackingNumberInput
@@ -263,22 +282,24 @@ export function PurchaseLogisticsDialog() {
                 />
                 {inferredCarrier ? (
                   <p className='pl-1 text-[10px] font-bold text-emerald-700'>
-                    {t('purchase.logistics.inferredCarrier', { carrier: inferredCarrier })}
+                    {t('purchase.logistics.inferredCarrier', {
+                      carrier: inferredCarrier,
+                    })}
                   </p>
                 ) : null}
               </div>
             </div>
 
-            <div className='p-4 rounded-2xl bg-emerald-50 border border-dashed border-emerald-200 flex gap-3 items-start'>
-              <Info className='size-4 text-emerald-600 mt-0.5' />
-              <p className='text-[9px] font-black uppercase leading-relaxed text-emerald-700 tracking-wider'>
+            <div className='flex items-start gap-3 rounded-2xl border border-dashed border-emerald-200 bg-emerald-50 p-4'>
+              <Info className='mt-0.5 size-4 text-emerald-600' />
+              <p className='text-[9px] leading-relaxed font-black tracking-wider text-emerald-700 uppercase'>
                 {t('purchase.logistics.tip')}
               </p>
             </div>
           </div>
 
-          <DialogFooter className='p-6 bg-slate-50 border-t items-center sm:justify-between px-8'>
-            <span className='hidden sm:block text-[9px] font-mono text-slate-300 italic tracking-tighter uppercase'>
+          <DialogFooter className='items-center border-t bg-slate-50 p-6 px-8 sm:justify-between'>
+            <span className='hidden font-mono text-[9px] tracking-tighter text-slate-300 uppercase italic sm:block'>
               Supply Chain Integrity 1.0
             </span>
             <div className='flex gap-3'>
@@ -286,14 +307,14 @@ export function PurchaseLogisticsDialog() {
                 type='button'
                 variant='ghost'
                 onClick={() => handleOpenChange(false)}
-                className='rounded-full h-11 px-8 text-[10px] font-black uppercase tracking-widest'
+                className='h-11 rounded-full px-8 text-[10px] font-black tracking-widest uppercase'
               >
                 {t('purchase.logistics.cancel')}
               </Button>
               <Button
                 disabled={mutation.isPending}
                 type='submit'
-                className='rounded-full h-11 px-8 text-[10px] font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700'
+                className='h-11 rounded-full bg-emerald-600 px-8 text-[10px] font-black tracking-widest uppercase hover:bg-emerald-700'
               >
                 {t('purchase.logistics.confirmBind')}
               </Button>

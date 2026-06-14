@@ -1,7 +1,7 @@
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { AuditStatusDisplay } from '@/components/common/audit-status-display'
 import { Layers, User, Clock, MoreHorizontal } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { AuditStatusDisplay } from '@/components/common/audit-status-display'
 import type { Standard } from '../data/schema'
 import type { QualityStandardListItemPresenter } from '../presenters/quality-standard-list-presenter'
 
@@ -41,7 +41,7 @@ export function QualityStandardsMobileView({
                 </div>
               </div>
               <div className='flex shrink-0 flex-col items-end gap-1.5'>
-                <div className='inline-flex h-5 items-center justify-center rounded-lg border border-primary/10 bg-primary/5 px-1.5 font-mono text-[8px] font-black tracking-tighter uppercase text-primary'>
+                <div className='inline-flex h-5 items-center justify-center rounded-lg border border-primary/10 bg-primary/5 px-1.5 font-mono text-[8px] font-black tracking-tighter text-primary uppercase'>
                   {standard.versionText}
                 </div>
                 <span className='rounded-md bg-muted/20 px-2 py-0.5 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
@@ -52,18 +52,25 @@ export function QualityStandardsMobileView({
 
             <div className='flex items-center justify-between border-t border-dashed border-muted/20 pt-3'>
               <div className='flex flex-col gap-3'>
-                <div className='flex items-center gap-2 flex-wrap'>
-                  <div className={`flex items-center gap-1.5 rounded-full px-2 py-1 ${standard.statusMeta.className}`}>
-                    <div className={`size-1 rounded-full ${standard.statusMeta.dotClassName}`} />
+                <div className='flex flex-wrap items-center gap-2'>
+                  <div
+                    className={`flex items-center gap-1.5 rounded-full px-2 py-1 ${standard.statusMeta.className}`}
+                  >
+                    <div
+                      className={`size-1 rounded-full ${standard.statusMeta.dotClassName}`}
+                    />
                     <span className='text-[8px] font-black tracking-widest uppercase italic'>
                       {standard.statusMeta.label}
                     </span>
                   </div>
                   <AuditStatusDisplay meta={standard.auditMeta} italic />
-                  <span className={`rounded-full px-2 py-1 text-[8px] font-black tracking-widest uppercase ${standard.approvalChainClassName}`}>
+                  <span
+                    className={`rounded-full px-2 py-1 text-[8px] font-black tracking-widest uppercase ${standard.approvalChainClassName}`}
+                  >
                     {standard.approvalChainLabel}
                   </span>
-                  {standard.processSummaryLabel && standard.processSummaryClassName ? (
+                  {standard.processSummaryLabel &&
+                  standard.processSummaryClassName ? (
                     <span
                       className={`rounded-full px-2 py-1 text-[8px] font-black tracking-widest uppercase ${standard.processSummaryClassName}`}
                     >

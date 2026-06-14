@@ -1,7 +1,10 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
 import { deserializeLedgerSearchResponseApiDTO } from '../../contracts/ledger-search-api-dto'
-import { buildLedgerSearchUrl, type LedgerSearchQueryParams } from '../../services/ledger-search-query'
+import {
+  buildLedgerSearchUrl,
+  type LedgerSearchQueryParams,
+} from '../../services/ledger-search-query'
 import {
   toPayableListPageContract,
   type PaginatedPayables,
@@ -32,20 +35,25 @@ function buildPayableListUrl(params: PayableListQueryParams): string {
   return query ? `/payables?${query}` : '/payables'
 }
 
-export async function getPayables(params: PayableListQueryParams = {}): Promise<PaginatedPayables> {
+export async function getPayables(
+  params: PayableListQueryParams = {}
+): Promise<PaginatedPayables> {
   const res = await apiFetch<PayableListPageApiDTO>(buildPayableListUrl(params))
-  const payload = ensureObjectResponse<PayableListPageApiDTO & Record<string, unknown>>(
-    res,
-    'PayablesQueryService.getPayables'
-  ) as PayableListPageApiDTO
+  const payload = ensureObjectResponse<
+    PayableListPageApiDTO & Record<string, unknown>
+  >(res, 'PayablesQueryService.getPayables') as PayableListPageApiDTO
   return toPayableListPageContract(deserializePayableListPageApiDTO(payload))
 }
 
-export async function searchPayableLedgers(params: PayableLedgerSearchParams): Promise<PayableLedgerSearchCandidateApiDTO[]> {
+export async function searchPayableLedgers(
+  params: PayableLedgerSearchParams
+): Promise<PayableLedgerSearchCandidateApiDTO[]> {
   const res = await apiFetch<PayableLedgerSearchResponseApiDTO>(
     buildLedgerSearchUrl('/payables/search', params)
   )
-  const payload = ensureObjectResponse<PayableLedgerSearchResponseApiDTO & Record<string, unknown>>(
+  const payload = ensureObjectResponse<
+    PayableLedgerSearchResponseApiDTO & Record<string, unknown>
+  >(
     res,
     'PayablesQueryService.searchPayableLedgers'
   ) as PayableLedgerSearchResponseApiDTO

@@ -7,12 +7,15 @@ import {
   type BusinessEventSourceItemChangeKind,
   type BusinessEventSourceRemovedItemSummary,
 } from './business-event-source-card-diff'
-import { readonlyFieldClass, rowToneClass } from './business-event-source-card-shared'
 import {
   EditableList,
   IconDeleteButton,
   ItemChangeBadge,
 } from './business-event-source-card-primitives'
+import {
+  readonlyFieldClass,
+  rowToneClass,
+} from './business-event-source-card-shared'
 
 interface BusinessEventSourceActionSectionProps {
   actions: BusinessEventSource['config']['actions']
@@ -124,7 +127,8 @@ export function BusinessEventSourceActionSection({
                 onChange={(event) =>
                   onKindChange(
                     index,
-                    event.target.value as BusinessEventSource['config']['actions'][number]['kind']
+                    event.target
+                      .value as BusinessEventSource['config']['actions'][number]['kind']
                   )
                 }
                 className={cn(
