@@ -407,7 +407,7 @@ export const moldDrawingLogSchema = z.object({
     'VERSION_UPDATE',
   ]),
   details: z.string(),
-  delta: z.record(z.string(), z.any()).optional(),
+  delta: z.record(z.string(), z.unknown()).optional(),
   operator: z.string().default('SYSTEM'),
   timestamp: z.string(),
 })

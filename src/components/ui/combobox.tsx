@@ -25,7 +25,7 @@ interface ComboboxProps {
     secondaryLabel?: string
     tertiaryLabel?: string
     usageStats?: { stage: string; percentage: number }[] // 新增：使用占比统计
-    [key: string]: any
+    [key: string]: unknown
   }[]
   value?: string
   onValueChange: (value: string) => void

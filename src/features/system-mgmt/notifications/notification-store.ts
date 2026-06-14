@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware'
 import { type SystemMessage, type NotificationState } from './types'
 
 // metadata 是 Record<string, unknown>,但业务上常用以下几个动态字段。
-// 集中读取入口避免散落 `as any`,保留运行时安全(undefined 时返回空字符串)。
+// 集中读取入口保留运行时安全(undefined 时返回空字符串)。
 function readMetaString(
   meta: SystemMessage['metadata'],
   ...keys: string[]
