@@ -1,8 +1,9 @@
-import { StorageService } from '@/features/system-mgmt/services/storage-service'
 import { useAuthStore } from '@/stores/auth-store'
-import { parseStream } from './stream-parser'
-import { aiPolicyService } from './ai-policy-service'
+import { ensureCSRFToken } from '@/lib/api-client'
 import { createLogger } from '@/lib/logger'
+import { StorageService } from '@/features/system-mgmt/services/storage-service'
+import { aiPolicyService } from './ai-policy-service'
+import { parseStream } from './stream-parser'
 
 const AI_CONFIG_KEY = 'xdfc_ai_capability_config'
 const logger = createLogger('AiProviderClient')
@@ -39,7 +40,10 @@ interface ProviderContext {
   baseUrl: string
 }
 
-function mergeApiConfig(local?: AiApiConfig, remote?: AiApiConfig): AiApiConfig | undefined {
+function mergeApiConfig(
+  local?: AiApiConfig,
+  remote?: AiApiConfig
+): AiApiConfig | undefined {
   if (!local && !remote) return undefined
 
   const localProvider = local?.provider
@@ -63,7 +67,10 @@ function mergeApiConfig(local?: AiApiConfig, remote?: AiApiConfig): AiApiConfig 
 }
 
 function normalizeBaseUrl(provider: ProviderKind, baseUrl?: string): string {
-  const fallback = provider === 'gemini' ? 'https://generativelanguage.googleapis.com' : 'https://api.openai.com'
+  const fallback =
+    provider === 'gemini'
+      ? 'https://generativelanguage.googleapis.com'
+      : 'https://api.openai.com'
   return (baseUrl || fallback).trim().replace(/\/+$/, '')
 }
 
@@ -83,16 +90,22 @@ async function loadProviderContext(): Promise<ProviderContext> {
   const api = mergeApiConfig(localConfig?.api, remoteConfig?.api)
   if (!api?.apiKey) throw new Error('API_KEY_MISSING')
 
-  if ((!localConfig?.api?.apiKey?.trim() || !localConfig?.api?.groupId?.trim()) && api.apiKey) {
+  if (
+    (!localConfig?.api?.apiKey?.trim() || !localConfig?.api?.groupId?.trim()) &&
+    api.apiKey
+  ) {
     const nextConfig: StoredConfig = {
       ...(localConfig || {}),
       api,
     }
-    void StorageService.setItem(AI_CONFIG_KEY, nextConfig).catch(() => undefined)
+    void StorageService.setItem(AI_CONFIG_KEY, nextConfig).catch(
+      () => undefined
+    )
   }
 
   const provider: ProviderKind = api.provider || 'gemini'
-  const model = api.model || (provider === 'gemini' ? 'gemini-1.5-flash' : 'gpt-3.5-turbo')
+  const model =
+    api.model || (provider === 'gemini' ? 'gemini-1.5-flash' : 'gpt-3.5-turbo')
   const baseUrl = normalizeBaseUrl(provider, api.baseUrl)
 
   return {
@@ -108,7 +121,9 @@ async function loadProviderContext(): Promise<ProviderContext> {
 
 function buildProxyAuthHeaders(api: AiApiConfig): Record<string, string> {
   const rawKey = (api.apiKey || '').trim()
-  const authHeader = rawKey.toLowerCase().startsWith('bearer ') ? rawKey : `Bearer ${rawKey}`
+  const authHeader = rawKey.toLowerCase().startsWith('bearer ')
+    ? rawKey
+    : `Bearer ${rawKey}`
   const headers: Record<string, string> = { Authorization: authHeader }
 
   if (api.groupId?.trim()) {
@@ -118,39 +133,73 @@ function buildProxyAuthHeaders(api: AiApiConfig): Record<string, string> {
   return headers
 }
 
+async function buildAIProxyRequestHeaders(): Promise<Record<string, string>> {
+  const token = useAuthStore.getState().accessToken
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  }
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+  }
+  const csrfToken = await ensureCSRFToken('')
+  if (csrfToken) {
+    headers['X-CSRF-Token'] = csrfToken
+  }
+  return headers
+}
+
 function assertMiniMaxConfig(targetUrl: string, api: AiApiConfig): void {
   const normalized = targetUrl.toLowerCase()
-  const isMiniMax = normalized.includes('minimaxi.com') || normalized.includes('minimax.io')
+  const isMiniMax =
+    normalized.includes('minimaxi.com') || normalized.includes('minimax.io')
   if (isMiniMax && !api.groupId?.trim()) {
-    throw new Error('[CRITICAL] MiniMax target detected but Group ID is missing. Please configure it in AI settings.')
+    throw new Error(
+      '[CRITICAL] MiniMax target detected but Group ID is missing. Please configure it in AI settings.'
+    )
   }
 }
 
-function mapProxyError(status: number, err: ProxyErrorPayload, apiKey: string): string {
-  let errorMsg = typeof err.error === 'object'
-    ? JSON.stringify(err.error)
-    : (String(err.error || err.message || err.code || 'Unknown error'))
+function mapProxyError(
+  status: number,
+  err: ProxyErrorPayload,
+  apiKey: string
+): string {
+  let errorMsg =
+    typeof err.error === 'object'
+      ? JSON.stringify(err.error)
+      : String(err.error || err.message || err.code || 'Unknown error')
 
-  if (status === 401 && (errorMsg.includes('2049') || JSON.stringify(err).includes('2049'))) {
+  if (
+    status === 401 &&
+    (errorMsg.includes('2049') || JSON.stringify(err).includes('2049'))
+  ) {
     const isTokenPlanKey = apiKey.trim().startsWith('sk-cp')
     errorMsg = isTokenPlanKey
       ? 'MiniMax auth failed: invalid API key or Group ID (code 2049).'
       : 'MiniMax billing mode mismatch: use token-plan key (sk-cp-...) for subscription mode (code 2049).'
   }
 
-  if (status === 401 && (errorMsg.includes('1004') || JSON.stringify(err).includes('1004'))) {
-    errorMsg = 'MiniMax auth header is invalid (code 1004). Try base URL api.minimax.io and verify API key.'
+  if (
+    status === 401 &&
+    (errorMsg.includes('1004') || JSON.stringify(err).includes('1004'))
+  ) {
+    errorMsg =
+      'MiniMax auth header is invalid (code 1004). Try base URL api.minimax.io and verify API key.'
   }
 
   if (status === 403 && err.code === 'AI_PROXY_TARGET_BLOCKED') {
-    errorMsg = 'Proxy blocked target host because resolved IP is private or blocked.'
+    errorMsg =
+      'Proxy blocked target host because resolved IP is private or blocked.'
   }
 
   return errorMsg
 }
 
-
-function buildRequestBody(model: string, messages: ChatMessage[], stream = false): Record<string, unknown> {
+function buildRequestBody(
+  model: string,
+  messages: ChatMessage[],
+  stream = false
+): Record<string, unknown> {
   return {
     model,
     messages,
@@ -159,43 +208,46 @@ function buildRequestBody(model: string, messages: ChatMessage[], stream = false
   }
 }
 
-
-
 /**
  * 指数退避重试封装 (Retry Wrapper)
  */
 async function callWithRetry<T>(
-  fn: () => Promise<T>, 
-  maxRetries = 3, 
+  fn: () => Promise<T>,
+  maxRetries = 3,
   baseDelay = 1000
 ): Promise<T> {
-  let lastError: any = null;
+  let lastError: unknown = null
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      return await fn();
-    } catch (err: any) {
-      lastError = err;
-      const statusMatch = err.message.match(/\((\d+)\)/);
-      const status = statusMatch ? parseInt(statusMatch[1], 10) : null;
-      
-      const isRetryable = 
-        status === 429 || 
-        status === 502 || 
-        status === 503 || 
+      return await fn()
+    } catch (err) {
+      lastError = err
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      const statusMatch = errorMessage.match(/\((\d+)\)/)
+      const status = statusMatch ? parseInt(statusMatch[1], 10) : null
+
+      const isRetryable =
+        status === 429 ||
+        status === 502 ||
+        status === 503 ||
         status === 504 ||
-        err.message.includes('FETCH_FAILED') ||
-        err.message.includes('TIMEOUT');
+        errorMessage.includes('FETCH_FAILED') ||
+        errorMessage.includes('TIMEOUT')
 
       if (attempt < maxRetries && isRetryable) {
-        const delay = baseDelay * Math.pow(2, attempt);
-        logger.warn(`Attempt ${attempt + 1} failed. Retrying in ${delay}ms...`, err.message);
-        await new Promise(resolve => setTimeout(resolve, delay));
-        continue;
+        const delay = baseDelay * Math.pow(2, attempt)
+        logger.warn(
+          `Attempt ${attempt + 1} failed. Retrying in ${delay}ms...`,
+          errorMessage
+        )
+        await new Promise<void>((resolve) => setTimeout(resolve, delay))
+        continue
       }
-      throw err;
+      throw err
     }
   }
-  throw lastError;
+  if (lastError instanceof Error) throw lastError
+  throw new Error(String(lastError || 'AI_PROVIDER_RETRY_FAILED'))
 }
 
 export async function callProvider(messages: ChatMessage[]): Promise<string> {
@@ -203,32 +255,56 @@ export async function callProvider(messages: ChatMessage[]): Promise<string> {
     const { api, provider, model, baseUrl } = await loadProviderContext()
 
     if (provider === 'gemini') {
-      const endpoint = `${baseUrl}/v1beta/models/${model}:generateContent?key=${api.apiKey}`
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: messages.map((m) => ({
-            role: m.role === 'assistant' ? 'model' : 'user',
-            parts: [{ text: m.content }],
-          })),
-        }),
-      })
+      const endpoint = `${baseUrl}/v1beta/models/${model}:generateContent`
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 30000)
 
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({ error: { message: response.statusText } }))
-        throw new Error(`Gemini Error (${response.status}): ${err.error?.message || response.statusText}`)
+      try {
+        const response = await fetch('/api/v1/ai/proxy', {
+          method: 'POST',
+          headers: await buildAIProxyRequestHeaders(),
+          credentials: 'include',
+          signal: controller.signal,
+          body: JSON.stringify({
+            url: endpoint,
+            method: 'POST',
+            headers: { 'x-goog-api-key': api.apiKey },
+            body: {
+              contents: messages.map((m) => ({
+                role: m.role === 'assistant' ? 'model' : 'user',
+                parts: [{ text: m.content }],
+              })),
+            },
+          }),
+        })
+
+        if (!response.ok) {
+          const err = await response
+            .json()
+            .catch(() => ({ error: { message: response.statusText } }))
+          const errorMsg = mapProxyError(
+            response.status,
+            err as ProxyErrorPayload,
+            api.apiKey
+          )
+          throw new Error(`AI_PROXY_ERROR (${response.status}): ${errorMsg}`)
+        }
+
+        const result = await response.json()
+        return result.candidates?.[0]?.content?.parts?.[0]?.text || ''
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError')
+          throw new Error('AI_TIMEOUT (30s)')
+        throw err
+      } finally {
+        clearTimeout(timeoutId)
       }
-
-      const result = await response.json()
-      return result.candidates?.[0]?.content?.parts?.[0]?.text || ''
     }
 
     if (provider === 'openai' || provider === 'custom') {
       const targetUrl = resolveTargetUrl(baseUrl)
       assertMiniMaxConfig(targetUrl, api)
 
-      const userToken = useAuthStore.getState().accessToken
       const proxyHeaders = buildProxyAuthHeaders(api)
 
       const controller = new AbortController()
@@ -237,10 +313,8 @@ export async function callProvider(messages: ChatMessage[]): Promise<string> {
       try {
         const response = await fetch('/api/v1/ai/proxy', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${userToken}`,
-          },
+          headers: await buildAIProxyRequestHeaders(),
+          credentials: 'include',
           signal: controller.signal,
           body: JSON.stringify({
             url: targetUrl,
@@ -251,15 +325,18 @@ export async function callProvider(messages: ChatMessage[]): Promise<string> {
         })
 
         if (!response.ok) {
-          const err = await response.json().catch(() => ({ error: { message: response.statusText } })) as ProxyErrorPayload
+          const err = (await response.json().catch(() => ({
+            error: { message: response.statusText },
+          }))) as ProxyErrorPayload
           const errorMsg = mapProxyError(response.status, err, api.apiKey)
           throw new Error(`AI_PROXY_ERROR (${response.status}): ${errorMsg}`)
         }
 
         const result = await response.json()
         return result.choices?.[0]?.message?.content || ''
-      } catch (err: any) {
-        if (err.name === 'AbortError') throw new Error('AI_TIMEOUT (30s)')
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError')
+          throw new Error('AI_TIMEOUT (30s)')
         throw err
       } finally {
         clearTimeout(timeoutId)
@@ -267,12 +344,12 @@ export async function callProvider(messages: ChatMessage[]): Promise<string> {
     }
 
     throw new Error('UNSUPPORTED_PROVIDER')
-  });
+  })
 }
 
 export async function callProviderStream(
   messages: ChatMessage[],
-  onChunk: (text: string) => void,
+  onChunk: (text: string) => void
 ): Promise<void> {
   return callWithRetry(async () => {
     const { api, provider, model, baseUrl } = await loadProviderContext()
@@ -292,15 +369,12 @@ export async function callProviderStream(
       const targetUrl = resolveTargetUrl(baseUrl)
       assertMiniMaxConfig(targetUrl, api)
 
-      const userToken = useAuthStore.getState().accessToken
       const proxyHeaders = buildProxyAuthHeaders(api)
 
       const response = await fetch('/api/v1/ai/proxy', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${userToken}`,
-        },
+        headers: await buildAIProxyRequestHeaders(),
+        credentials: 'include',
         body: JSON.stringify({
           url: targetUrl,
           method: 'POST',
@@ -310,7 +384,9 @@ export async function callProviderStream(
       })
 
       if (!response.ok) {
-        const err = await response.json().catch(() => ({ error: response.statusText })) as ProxyErrorPayload
+        const err = (await response
+          .json()
+          .catch(() => ({ error: response.statusText }))) as ProxyErrorPayload
         const errorMsg = mapProxyError(response.status, err, api.apiKey)
         throw new Error(`AI_PROXY_ERROR (${response.status}): ${errorMsg}`)
       }
@@ -321,5 +397,5 @@ export async function callProviderStream(
     }
 
     throw new Error('UNSUPPORTED_PROVIDER')
-  });
+  })
 }

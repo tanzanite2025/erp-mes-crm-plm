@@ -9,6 +9,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import { createLogger } from '@/lib/logger'
 import { failLoudly } from '@/lib/safe-catch'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -20,7 +21,6 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
-import { useLanguage } from '@/context/language-provider'
 import {
   processAndNotifyPermissions,
   syncIdentitySnapshotFromProfile,
@@ -115,7 +115,9 @@ export function UserAuthForm({
   const formSchema = useMemo(
     () =>
       z.object({
-        email: z.string().min(1, t('common.auth.signInForm.validationAccountRequired')),
+        email: z
+          .string()
+          .min(1, t('common.auth.signInForm.validationAccountRequired')),
         password: z
           .string()
           .min(1, t('common.auth.signInForm.validationPasswordRequired'))
@@ -160,7 +162,11 @@ export function UserAuthForm({
         const response = await fetch(requestUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: data.email, password: data.password }),
+          credentials: 'include',
+          body: JSON.stringify({
+            username: data.email,
+            password: data.password,
+          }),
           signal: controller.signal,
         })
 
@@ -171,21 +177,26 @@ export function UserAuthForm({
         const retryAfterHeader = response.headers.get('Retry-After')
         const rawBody = await response.text()
         const parsedBody =
-          safeJsonParse<LoginSuccessPayload & LoginErrorPayload>(rawBody) || ({} as LoginErrorPayload)
+          safeJsonParse<LoginSuccessPayload & LoginErrorPayload>(rawBody) ||
+          ({} as LoginErrorPayload)
 
         if (response.status === 200) {
           const result = parsedBody as LoginSuccessPayload
-          const { setUser, setAccessToken, setIsIdentitySynced } = useAuthStore.getState()
+          const { setUser, setAccessToken, setIsIdentitySynced } =
+            useAuthStore.getState()
 
-          setUser({
-            id: result.user.id,
-            accountNo: result.user.employeeId || result.user.id,
-            employeeId: result.user.employeeId?.trim() || undefined,
-            email: result.user.email || data.email,
-            username: result.user.username,
-            permissions: result.user.permissions || [],
-            exp: Date.now() + 24 * 60 * 60 * 1000,
-          }, 'login_success')
+          setUser(
+            {
+              id: result.user.id,
+              accountNo: result.user.employeeId || result.user.id,
+              employeeId: result.user.employeeId?.trim() || undefined,
+              email: result.user.email || data.email,
+              username: result.user.username,
+              permissions: result.user.permissions || [],
+              exp: Date.now() + 24 * 60 * 60 * 1000,
+            },
+            'login_success'
+          )
           setAccessToken(result.accessToken)
           setIsIdentitySynced(false)
           try {
@@ -204,14 +215,20 @@ export function UserAuthForm({
             apiBaseUrl: apiBaseUrl || '(same-origin)',
           })
 
-          import('@/offline-sync/services/offline-sync-bootstrap-service').then(({ OfflineSyncBootstrapService }) => {
-            void OfflineSyncBootstrapService.ensureStarted().catch((error) => {
-              failLoudly(error, 'UserAuthForm.initCloudSync')
-            })
-          })
+          import('@/offline-sync/services/offline-sync-bootstrap-service').then(
+            ({ OfflineSyncBootstrapService }) => {
+              void OfflineSyncBootstrapService.ensureStarted().catch(
+                (error) => {
+                  failLoudly(error, 'UserAuthForm.initCloudSync')
+                }
+              )
+            }
+          )
 
           navigate({ to: sanitizeRedirectTarget(redirectTo), replace: true })
-          toast.success(t('common.auth.signInForm.success', { name: result.user.username }))
+          toast.success(
+            t('common.auth.signInForm.success', { name: result.user.username })
+          )
           return
         }
 
@@ -247,12 +264,19 @@ export function UserAuthForm({
             duration: 8000,
           })
         } else {
-          toast.error(t('common.auth.signInForm.serverError', { status: response.status }), {
-            description: requestId
-              ? t('common.auth.signInForm.serverErrorDescription', { requestId })
-              : parsedBody.error,
-            duration: 10000,
-          })
+          toast.error(
+            t('common.auth.signInForm.serverError', {
+              status: response.status,
+            }),
+            {
+              description: requestId
+                ? t('common.auth.signInForm.serverErrorDescription', {
+                    requestId,
+                  })
+                : parsedBody.error,
+              duration: 10000,
+            }
+          )
         }
       } catch (apiErr) {
         clearTimeout(timeoutId)
@@ -276,10 +300,13 @@ export function UserAuthForm({
         })
 
         if (!navigator.onLine) {
-          toast.error(t('common.auth.signInForm.networkError', { error: 'offline' }), {
-            description: t('common.auth.signInForm.offlineHint'),
-            duration: 10000,
-          })
+          toast.error(
+            t('common.auth.signInForm.networkError', { error: 'offline' }),
+            {
+              description: t('common.auth.signInForm.offlineHint'),
+              duration: 10000,
+            }
+          )
         } else if (apiErr instanceof Error && apiErr.name === 'AbortError') {
           toast.error(t('common.auth.signInForm.timeout'), {
             description: t('common.auth.signInForm.timeoutHint'),
@@ -335,7 +362,7 @@ export function UserAuthForm({
           name='email'
           render={({ field }) => (
             <FormItem>
-              <FormLabel className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/80'>
+              <FormLabel className='text-[10px] font-black tracking-widest text-muted-foreground/80 uppercase'>
                 {t('common.auth.signInForm.account')}
               </FormLabel>
               <FormControl>
@@ -355,12 +382,12 @@ export function UserAuthForm({
           render={({ field }) => (
             <FormItem>
               <div className='flex items-center justify-between gap-3'>
-                <FormLabel className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/80'>
+                <FormLabel className='text-[10px] font-black tracking-widest text-muted-foreground/80 uppercase'>
                   {t('common.auth.signInForm.password')}
                 </FormLabel>
                 <Link
                   to='/forgot-password'
-                  className='shrink-0 text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 transition-colors hover:text-foreground'
+                  className='shrink-0 text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase transition-colors hover:text-foreground'
                 >
                   {t('common.auth.signInForm.forgotPassword')}
                 </Link>
@@ -377,10 +404,14 @@ export function UserAuthForm({
           )}
         />
         <Button
-          className='mt-6 h-12 rounded-full font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95 gap-2'
+          className='mt-6 h-12 gap-2 rounded-full text-[10px] font-black tracking-[0.2em] uppercase shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95'
           disabled={isLoading}
         >
-          {isLoading ? <Loader2 className='animate-spin size-4' /> : <LogIn className='size-4' />}
+          {isLoading ? (
+            <Loader2 className='size-4 animate-spin' />
+          ) : (
+            <LogIn className='size-4' />
+          )}
           {t('common.auth.signInForm.submit')}
         </Button>
       </form>

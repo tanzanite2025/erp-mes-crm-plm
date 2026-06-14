@@ -2,6 +2,7 @@ package routes
 
 import (
 	"log"
+	"net/http"
 	"os"
 	"strconv"
 	"time"
@@ -51,13 +52,20 @@ func SetupRoutes(r *gin.Engine) {
 	authorized.Use(middleware.AuthMiddleware())
 	{
 		// 应用写操作限流和 CSRF 保护
+		csrfProtection := middleware.CSRFProtection()
 		authorized.Use(func(c *gin.Context) {
 			method := c.Request.Method
 			// 对写操作应用更严格的限流和 CSRF 保护
 			if method == "POST" || method == "PUT" || method == "PATCH" || method == "DELETE" {
-				writeLimiter.Middleware()(c)
-				// 应用 CSRF 保护
-				middleware.CSRFProtection()(c)
+				if !writeLimiter.Allow(c.ClientIP()) {
+					c.JSON(http.StatusTooManyRequests, gin.H{
+						"error": "[RATE_LIMIT] 请求过于频繁,请稍后重试",
+					})
+					c.Abort()
+					return
+				}
+				csrfProtection(c)
+				return
 			}
 			c.Next()
 		})
@@ -99,12 +107,20 @@ func SetupRoutes(r *gin.Engine) {
 		labCategoryDelete := middleware.RequirePermissions(authz.ActionLabExperimentalCategoryDelete)
 		bomManage := middleware.RequirePermissions(authz.ActionEngineeringBOMManage)
 		bomPromote := middleware.RequirePermissions(authz.ActionEngineeringBOMPromote)
+		assetUploadAccess := middleware.RequirePermissions(
+			authz.MenuEquipment,
+			authz.MenuEngineering,
+			authz.MenuTrading,
+			authz.MenuWarehouse,
+			authz.MenuPDA,
+			authz.PermissionManage,
+		)
 
 		authorized.GET("/auth/snapshot", handlers.GetAuthSnapshotHandler)
 		authorized.GET("/dashboard/stats", middleware.RequirePermissions(authz.MenuDashboard), handlers.GetDashboardStatsHandler)
 		authorized.GET("/audit/timeline", handlers.GetDataTimelineHandler)
 		authorized.GET("/audit/engine/stats", middleware.RequirePermissions(authz.MenuSystem), handlers.GetAuditEngineStatsHandler)
-		authorized.POST("/assets/upload", handlers.UploadAssetHandler)
+		authorized.POST("/assets/upload", assetUploadAccess, handlers.UploadAssetHandler)
 		authorized.POST("/ai/proxy", middleware.AIPolicyGuard(), middleware.AIProxyIngressGuard(), handlers.AiProxyHandler)
 
 		materialGroup := authorized.Group("/materials")

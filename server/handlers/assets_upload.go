@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -10,6 +11,46 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
+
+const maxAssetUploadBytes int64 = 50 << 20
+
+func isDetectedAssetContentAllowed(ext string, detected string) bool {
+	contentType := strings.ToLower(strings.TrimSpace(strings.Split(detected, ";")[0]))
+	switch ext {
+	case ".pdf":
+		return contentType == "application/pdf"
+	case ".jpg", ".jpeg":
+		return contentType == "image/jpeg"
+	case ".png":
+		return contentType == "image/png"
+	case ".gif":
+		return contentType == "image/gif"
+	case ".zip", ".docx", ".xlsx":
+		return contentType == "application/zip" ||
+			contentType == "application/x-zip-compressed" ||
+			contentType == "application/octet-stream"
+	case ".rar":
+		return contentType == "application/vnd.rar" ||
+			contentType == "application/x-rar-compressed" ||
+			contentType == "application/octet-stream"
+	case ".7z":
+		return contentType == "application/x-7z-compressed" ||
+			contentType == "application/octet-stream"
+	case ".doc":
+		return contentType == "application/msword" ||
+			contentType == "application/octet-stream"
+	case ".xls":
+		return contentType == "application/vnd.ms-excel" ||
+			contentType == "application/octet-stream"
+	case ".dwg", ".stp", ".step", ".xt":
+		return contentType == "application/octet-stream"
+	case ".dxf":
+		return contentType == "text/plain" ||
+			contentType == "application/octet-stream"
+	default:
+		return false
+	}
+}
 
 // UploadAssetHandler 处理文件上传并保存到本地磁盘
 func UploadAssetHandler(c *gin.Context) {
@@ -22,7 +63,7 @@ func UploadAssetHandler(c *gin.Context) {
 
 	// 2. 验证与生成新文件名 (UUID 防止冲突)
 	ext := strings.ToLower(filepath.Ext(file.Filename))
-	
+
 	// 安全加固：后缀白名单校验 (防止上传 .html / .sh / .exe 等恶意文件)
 	allowedExts := map[string]bool{
 		".pdf":  true,
@@ -46,6 +87,27 @@ func UploadAssetHandler(c *gin.Context) {
 
 	if !allowedExts[ext] {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("[SECURITY] 不允许上传此类型的文件: %s", ext)})
+		return
+	}
+	if file.Size <= 0 || file.Size > maxAssetUploadBytes {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[SECURITY] 文件大小不合法或超过 50MB 限制"})
+		return
+	}
+	openedFile, err := file.Open()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[UPLOAD] 无法读取上传文件"})
+		return
+	}
+	defer openedFile.Close()
+	header := make([]byte, 512)
+	bytesRead, readErr := openedFile.Read(header)
+	if readErr != nil && readErr != io.EOF {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[UPLOAD] 无法识别上传文件内容"})
+		return
+	}
+	detectedContentType := http.DetectContentType(header[:bytesRead])
+	if !isDetectedAssetContentAllowed(ext, detectedContentType) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("[SECURITY] 文件内容类型与扩展名不匹配: %s", detectedContentType)})
 		return
 	}
 

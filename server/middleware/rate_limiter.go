@@ -28,6 +28,10 @@ func NewRateLimiter(r rate.Limit, b int) *RateLimiter {
 	}
 }
 
+func (rl *RateLimiter) Allow(ip string) bool {
+	return rl.getVisitor(ip).Allow()
+}
+
 // getVisitor 获取或创建访问者的限流器
 func (rl *RateLimiter) getVisitor(ip string) *rate.Limiter {
 	rl.mu.Lock()
@@ -45,10 +49,7 @@ func (rl *RateLimiter) getVisitor(ip string) *rate.Limiter {
 // Middleware 限流中间件
 func (rl *RateLimiter) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ip := c.ClientIP()
-		limiter := rl.getVisitor(ip)
-
-		if !limiter.Allow() {
+		if !rl.Allow(c.ClientIP()) {
 			c.JSON(http.StatusTooManyRequests, gin.H{
 				"error": "[RATE_LIMIT] 请求过于频繁,请稍后重试",
 			})
