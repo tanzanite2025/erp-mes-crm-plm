@@ -1,5 +1,5 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect } from 'react'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_authenticated/approval/')({
   component: RedirectToRequests,
@@ -7,7 +7,7 @@ export const Route = createFileRoute('/_authenticated/approval/')({
 
 function RedirectToRequests() {
   const navigate = useNavigate()
-  
+
   useEffect(() => {
     navigate({ to: '/approval/requests', replace: true })
   }, [navigate])

@@ -1,7 +1,10 @@
 import type { CuttingPlan } from '@/features/engineering-db/data/cutting-plan-schema'
 import type { PrepregMaterialSpec } from '../../data/prepreg-material-spec-schema'
 import type { BuildBatchEngineDemandLinesResult } from '../domain/build-batch-engine-demand-lines-from-cutting-plan'
-import type { BatchEngineNormalizedControls, BatchEngineSimulation } from '../types'
+import type {
+  BatchEngineNormalizedControls,
+  BatchEngineSimulation,
+} from '../types'
 import type { CuttingEngineInput } from '../types/cutting-engine-wasm'
 import { buildCuttingEngineCutUnits } from './build-cutting-engine-cut-units'
 
@@ -14,7 +17,9 @@ export type BuildBatchEngineCuttingInputOptions = {
 }
 
 function resolveLengthBoundary(values: number[], mode: 'min' | 'max') {
-  const usableValues = values.filter((value) => Number.isFinite(value) && value > 0)
+  const usableValues = values.filter(
+    (value) => Number.isFinite(value) && value > 0
+  )
   if (!usableValues.length) {
     return 1
   }
@@ -26,8 +31,13 @@ function resolveConfiguredLengthBoundary(
   unitLengths: number[],
   mode: 'min' | 'max'
 ) {
-  const configuredValue = mode === 'min' ? controls.minSupportedLengthMm : controls.maxSupportedLengthMm
-  return configuredValue > 0 ? configuredValue : resolveLengthBoundary(unitLengths, mode)
+  const configuredValue =
+    mode === 'min'
+      ? controls.minSupportedLengthMm
+      : controls.maxSupportedLengthMm
+  return configuredValue > 0
+    ? configuredValue
+    : resolveLengthBoundary(unitLengths, mode)
 }
 
 function resolveFixedDecisionLength(
@@ -36,33 +46,62 @@ function resolveFixedDecisionLength(
   maxSupportedLengthMm: number
 ) {
   const fixedDecisionLengthMm = controls.fixedDecisionLengthMm
-  if (!fixedDecisionLengthMm || fixedDecisionLengthMm < minSupportedLengthMm || fixedDecisionLengthMm > maxSupportedLengthMm) {
+  if (
+    !fixedDecisionLengthMm ||
+    fixedDecisionLengthMm < minSupportedLengthMm ||
+    fixedDecisionLengthMm > maxSupportedLengthMm
+  ) {
     return undefined
   }
   return fixedDecisionLengthMm
 }
 
-function resolveMaxSolveDurationSeconds(controls: BatchEngineNormalizedControls) {
-  return controls.maxSolveDurationSeconds > 0 ? controls.maxSolveDurationSeconds : undefined
+function resolveMaxSolveDurationSeconds(
+  controls: BatchEngineNormalizedControls
+) {
+  return controls.maxSolveDurationSeconds > 0
+    ? controls.maxSolveDurationSeconds
+    : undefined
 }
 
 export function buildBatchEngineCuttingInput(
   options: BuildBatchEngineCuttingInputOptions
 ): CuttingEngineInput | null {
-  const { controls, selectedCuttingPlan, selectedPrepregSpec, mappedDemandLines, simulation } = options
+  const {
+    controls,
+    selectedCuttingPlan,
+    selectedPrepregSpec,
+    mappedDemandLines,
+    simulation,
+  } = options
   const validDemandLines = mappedDemandLines.validLines
 
   if (!selectedPrepregSpec || !selectedCuttingPlan || !simulation.ready) {
     return null
   }
-  if (!controls.rollWidthMm || !controls.rollLengthM || validDemandLines.length <= 0) {
+  if (
+    !controls.rollWidthMm ||
+    !controls.rollLengthM ||
+    validDemandLines.length <= 0
+  ) {
     return null
   }
 
   const unitLengths = validDemandLines.map((item) => item.lengthMm)
-  const minSupportedLengthMm = resolveConfiguredLengthBoundary(controls, unitLengths, 'min')
-  const maxSupportedLengthMm = Math.max(resolveConfiguredLengthBoundary(controls, unitLengths, 'max'), minSupportedLengthMm)
-  const fixedDecisionLengthMm = resolveFixedDecisionLength(controls, minSupportedLengthMm, maxSupportedLengthMm)
+  const minSupportedLengthMm = resolveConfiguredLengthBoundary(
+    controls,
+    unitLengths,
+    'min'
+  )
+  const maxSupportedLengthMm = Math.max(
+    resolveConfiguredLengthBoundary(controls, unitLengths, 'max'),
+    minSupportedLengthMm
+  )
+  const fixedDecisionLengthMm = resolveFixedDecisionLength(
+    controls,
+    minSupportedLengthMm,
+    maxSupportedLengthMm
+  )
   const maxSolveDurationSeconds = resolveMaxSolveDurationSeconds(controls)
 
   return {

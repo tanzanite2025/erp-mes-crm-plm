@@ -1,8 +1,8 @@
 'use client'
 
 import { AlertCircle, FileText, Package2 } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
 import { useLanguage } from '@/context/language-provider'
+import { Card, CardContent } from '@/components/ui/card'
 
 interface RequirementStatsProps {
   stats: {
@@ -43,18 +43,29 @@ export function RequirementStats({ stats }: RequirementStatsProps) {
   ]
 
   return (
-    <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-6'>
+    <div className='mb-6 grid grid-cols-1 gap-4 md:grid-cols-3'>
       {items.map((item, index) => (
-        <Card key={index} className='border border-dashed border-muted/50 shadow-inner bg-muted/5 backdrop-blur-sm overflow-hidden group hover:bg-white hover:shadow-xl transition-all duration-500 rounded-[24px]'>
-          <CardContent className='p-5 flex items-center gap-4'>
-            <div className={`size-12 rounded-2xl ${item.bg} flex items-center justify-center group-hover:scale-110 transition-transform`}>
+        <Card
+          key={index}
+          className='group overflow-hidden rounded-[24px] border border-dashed border-muted/50 bg-muted/5 shadow-inner backdrop-blur-sm transition-all duration-500 hover:bg-white hover:shadow-xl'
+        >
+          <CardContent className='flex items-center gap-4 p-5'>
+            <div
+              className={`size-12 rounded-2xl ${item.bg} flex items-center justify-center transition-transform group-hover:scale-110`}
+            >
               <item.icon className={`size-6 ${item.color}`} />
             </div>
             <div className='flex flex-col'>
-              <span className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 italic'>{item.label}</span>
+              <span className='text-[10px] font-black tracking-[0.2em] text-muted-foreground/40 uppercase italic'>
+                {item.label}
+              </span>
               <div className='flex items-baseline gap-2'>
-                <span className='text-3xl font-black tabular-nums tracking-tighter italic'>{item.value.toLocaleString()}</span>
-                <span className='text-[9px] font-black text-muted-foreground/30 uppercase tracking-widest'>{item.sub}</span>
+                <span className='text-3xl font-black tracking-tighter italic tabular-nums'>
+                  {item.value.toLocaleString()}
+                </span>
+                <span className='text-[9px] font-black tracking-widest text-muted-foreground/30 uppercase'>
+                  {item.sub}
+                </span>
               </div>
             </div>
           </CardContent>

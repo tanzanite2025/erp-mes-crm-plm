@@ -6,7 +6,8 @@ export const basicSettingsZhCNOverrides = {
     linearBarcode: {
       page: {
         title: '一维码规则中心',
-        subtitle: 'LINEAR_BARCODE_PROTOCOL / 维护年月日、型号、外观、孔型前缀、孔数与四位流水号的持久化 Code128 协议。',
+        subtitle:
+          'LINEAR_BARCODE_PROTOCOL / 维护年月日、型号、外观、孔型前缀、孔数与四位流水号的持久化 Code128 协议。',
         badges: {
           active: '协议已启用',
           loading: '配置加载中',
@@ -30,13 +31,31 @@ export const basicSettingsZhCNOverrides = {
         },
         segments: {
           year: { name: '年份 (YY)', desc: '生产年份后两位，固定 2 位编码。' },
-          month: { name: '月份 (1 位)', desc: '1-9 表示 1-9 月，0 表示 10 月，N 表示 11 月，D 表示 12 月。' },
+          month: {
+            name: '月份 (1 位)',
+            desc: '1-9 表示 1-9 月，0 表示 10 月，N 表示 11 月，D 表示 12 月。',
+          },
           day: { name: '日期 (DD)', desc: '自然日编码，范围固定为 01-31。' },
-          model: { name: '型号', desc: '与工程产品档案中的 2 位型号编码保持一致。' },
-          appearance: { name: '外观', desc: '沿用共享外观字典的一位外观映射值。' },
-          holePrefix: { name: '孔型前缀', desc: '占 1 位，当前使用 R/D 等孔型分类标识。' },
-          holes: { name: '孔数', desc: '占 2 位，使用两位数字编码，例如 14、18、32。' },
-          serial: { name: '流水号', desc: '通过共享业务编号规则发放的四位流水号。' },
+          model: {
+            name: '型号',
+            desc: '与工程产品档案中的 2 位型号编码保持一致。',
+          },
+          appearance: {
+            name: '外观',
+            desc: '沿用共享外观字典的一位外观映射值。',
+          },
+          holePrefix: {
+            name: '孔型前缀',
+            desc: '占 1 位，当前使用 R/D 等孔型分类标识。',
+          },
+          holes: {
+            name: '孔数',
+            desc: '占 2 位，使用两位数字编码，例如 14、18、32。',
+          },
+          serial: {
+            name: '流水号',
+            desc: '通过共享业务编号规则发放的四位流水号。',
+          },
         },
       },
       simulation: {
@@ -95,7 +114,8 @@ export const basicSettingsZhCNOverrides = {
       },
       resetDialog: {
         title: '重置一维码协议',
-        description: '该操作会将本页字段说明和仿真输入恢复为默认值，并同步写回后端持久化配置。',
+        description:
+          '该操作会将本页字段说明和仿真输入恢复为默认值，并同步写回后端持久化配置。',
         verifyPrompt: '请输入校验文本后再继续。',
         verifyTarget: '重置一维码',
         placeholder: '在此输入校验文本...',
@@ -107,7 +127,8 @@ export const basicSettingsZhCNOverrides = {
           '规则 {{key}} 必须返回 4 位数字流水号，请将业务编号规则配置为 pattern={SEQ} 且 padding=4。',
         requestSerialSuccess: '已获取一维码流水号：{{serial}}',
         requestSerialFailed: '获取流水号失败。',
-        sequenceRuleMissing: '请先创建业务编号规则 {{key}}，并配置为 pattern={SEQ} 且 padding=4。',
+        sequenceRuleMissing:
+          '请先创建业务编号规则 {{key}}，并配置为 pattern={SEQ} 且 padding=4。',
         saveSuccess: '一维码协议已同步到后端配置中心。',
         saveFailed: '保存一维码协议失败。',
         resetSuccess: '已恢复一维码默认配置。',

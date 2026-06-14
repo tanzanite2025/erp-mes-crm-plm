@@ -1,6 +1,9 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { VEHICLE_LOADING_SOURCE_OPTIONS, type VehicleLoadingSourceType } from '../data/vehicle-loading-sources'
+import {
+  VEHICLE_LOADING_SOURCE_OPTIONS,
+  type VehicleLoadingSourceType,
+} from '../data/vehicle-loading-sources'
 import { FieldCard } from './field-card'
 
 type Props = {
@@ -29,8 +32,12 @@ export function VehicleLoadingSourceSwitch({ value, onChange }: Props) {
                   : 'border-border/60 bg-muted/20 text-foreground hover:bg-muted/40'
               }`}
             >
-              <div className='text-sm font-black tracking-tight'>{option.label}</div>
-              <div className='mt-2 text-[11px] leading-relaxed opacity-80'>{option.description}</div>
+              <div className='text-sm font-black tracking-tight'>
+                {option.label}
+              </div>
+              <div className='mt-2 text-[11px] leading-relaxed opacity-80'>
+                {option.description}
+              </div>
             </Button>
           )
         })}

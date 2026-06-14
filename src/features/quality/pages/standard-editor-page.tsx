@@ -1,9 +1,14 @@
 import { useParams } from '@tanstack/react-router'
-import { ArrowLeft, Eye, GitPullRequestArrow, Loader2, Save, SquarePen } from 'lucide-react'
+import {
+  ArrowLeft,
+  Eye,
+  GitPullRequestArrow,
+  Loader2,
+  Save,
+  SquarePen,
+} from 'lucide-react'
 import { isForbiddenError, isNotFoundError } from '@/lib/error-status'
-import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { useLanguage } from '@/context/language-provider'
-import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -12,15 +17,15 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { StandardEditorContent } from '../components/standard-editor-content'
-import { useQualityStandardEditorActions } from '../hooks/use-quality-standard-editor-actions'
 import { useGetQualityStandard } from '../hooks/use-quality'
+import { useQualityStandardEditorActions } from '../hooks/use-quality-standard-editor-actions'
 import { useStandardEditorForm } from '../hooks/use-standard-editor-form'
-import {
-  getQualityStandardAvailableActions,
-} from '../utils/quality-utils'
+import { getQualityStandardAvailableActions } from '../utils/quality-utils'
 
 interface StandardEditorPageProps {
   mode: 'create' | 'edit'
@@ -44,18 +49,18 @@ export function StandardEditorPage({
     buildSubmitPayload,
     buildSubmitPayloadWithOverrides,
     isDirty,
-  } =
-    useStandardEditorForm({
-      initialStandard: isEdit ? standard : null,
-      resetKey: isEdit
-        ? `quality-standard-${standardId || 'missing'}-${standard?.version || 'loading'}`
-        : 'quality-standard-create',
-      mode,
-    })
+  } = useStandardEditorForm({
+    initialStandard: isEdit ? standard : null,
+    resetKey: isEdit
+      ? `quality-standard-${standardId || 'missing'}-${standard?.version || 'loading'}`
+      : 'quality-standard-create',
+    mode,
+  })
   const availableActions = getQualityStandardAvailableActions(
     isEdit ? standard?.status : formData.status
   )
-  const isReadOnly = isEdit && Boolean(standard) ? availableActions.isReadOnly : false
+  const isReadOnly =
+    isEdit && Boolean(standard) ? availableActions.isReadOnly : false
   const {
     saveStandardMutation,
     handleBack,
@@ -87,7 +92,11 @@ export function StandardEditorPage({
   if (isEdit && isLoading) {
     return (
       <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
-        <IndustrialHeader icon={SquarePen} title={title} description={description} />
+        <IndustrialHeader
+          icon={SquarePen}
+          title={title}
+          description={description}
+        />
         <div className='flex min-h-[60vh] items-center justify-center rounded-[32px] border border-dashed border-muted/50 bg-muted/5'>
           <div className='flex flex-col items-center gap-3 text-muted-foreground'>
             <Loader2 className='size-8 animate-spin text-primary' />
@@ -116,7 +125,11 @@ export function StandardEditorPage({
           </Button>
         </div>
 
-        <IndustrialHeader icon={SquarePen} title={title} description={description} />
+        <IndustrialHeader
+          icon={SquarePen}
+          title={title}
+          description={description}
+        />
 
         <Card className='rounded-[32px] border-dashed border-muted/50 bg-muted/5'>
           <CardHeader>
@@ -172,7 +185,11 @@ export function StandardEditorPage({
         </div>
       </div>
 
-      <IndustrialHeader icon={SquarePen} title={title} description={description} />
+      <IndustrialHeader
+        icon={SquarePen}
+        title={title}
+        description={description}
+      />
 
       <div className='rounded-[32px] border border-dashed border-muted/50 bg-background p-6 shadow-sm lg:p-8'>
         <StandardEditorContent

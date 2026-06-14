@@ -1,4 +1,7 @@
-export type VehiclePhotoViewType = 'exterior' | 'sideDoorOpen' | 'rearDoorInterior'
+export type VehiclePhotoViewType =
+  | 'exterior'
+  | 'sideDoorOpen'
+  | 'rearDoorInterior'
 
 export type VehiclePhotoAnnotation = {
   id: string
@@ -28,4 +31,8 @@ export type VehiclePhotoEntry = {
   images: VehiclePhotoImage[]
 }
 
-export const VEHICLE_PHOTO_VIEW_TYPES: VehiclePhotoViewType[] = ['exterior', 'sideDoorOpen', 'rearDoorInterior']
+export const VEHICLE_PHOTO_VIEW_TYPES: VehiclePhotoViewType[] = [
+  'exterior',
+  'sideDoorOpen',
+  'rearDoorInterior',
+]

@@ -15,15 +15,18 @@
  *   - shouldQueueOffline 区分"网络错误"(应入队)和"业务错误"(应直接失败)
  *   - 版本冲突走专门的 conflict record 流(非简单失败)
  */
-import { createLogger } from '@/lib/logger'
-import { StorageService } from '@/features/system-mgmt/services/storage-service'
 import { offlineSyncEngine } from '@/offline-sync/engine/offline-sync-engine'
 import { OfflineStorage } from '@/offline-sync/storage/offline-storage'
-import type { OfflineConflictRecord, PendingDeltaRecord } from '@/offline-sync/types/offline-sync'
+import type {
+  OfflineConflictRecord,
+  PendingDeltaRecord,
+} from '@/offline-sync/types/offline-sync'
 import type { DeltaSet } from '@/lib/delta/types'
+import { createLogger } from '@/lib/logger'
+import { StorageService } from '@/features/system-mgmt/services/storage-service'
+import type { PDAScanPayload } from '../data/schema'
 import { StocktakeCoreService } from '../services/stocktake-core-service'
 import { StocktakeMaintenanceService } from '../services/stocktake-maintenance-service'
-import type { PDAScanPayload } from '../data/schema'
 import type {
   StocktakeConflictFieldDiff,
   StocktakeConflictMergeSuggestion,
@@ -94,14 +97,20 @@ function shouldQueueOffline(error: unknown) {
   )
 }
 
-function toQueuedPayload(payload: PDAScanPayload, createdAt: string): StocktakeQueuedScanPayload {
+function toQueuedPayload(
+  payload: PDAScanPayload,
+  createdAt: string
+): StocktakeQueuedScanPayload {
   return {
     ...payload,
     localCreatedAt: createdAt,
   }
 }
 
-function toQueuedPatchPayload(input: StocktakePatchInput, createdAt: string): StocktakeQueuedPatchPayload {
+function toQueuedPatchPayload(
+  input: StocktakePatchInput,
+  createdAt: string
+): StocktakeQueuedPatchPayload {
   return {
     itemId: input.itemId,
     taskId: input.taskId,
@@ -111,7 +120,10 @@ function toQueuedPatchPayload(input: StocktakePatchInput, createdAt: string): St
   }
 }
 
-async function buildPendingDelta(payload: PDAScanPayload, createdAt: string): Promise<PendingDeltaRecord<StocktakeQueuedScanPayload>> {
+async function buildPendingDelta(
+  payload: PDAScanPayload,
+  createdAt: string
+): Promise<PendingDeltaRecord<StocktakeQueuedScanPayload>> {
   const clientId = await getClientId()
   return {
     opId: buildScanOpId(payload, createdAt),
@@ -133,7 +145,10 @@ function buildPatchOpId(input: StocktakePatchInput, createdAt: string) {
   return ['stocktake_patch', input.itemId, input.version, createdAt].join('_')
 }
 
-async function buildPatchDelta(input: StocktakePatchInput, createdAt: string): Promise<PendingDeltaRecord<StocktakeQueuedPatchPayload>> {
+async function buildPatchDelta(
+  input: StocktakePatchInput,
+  createdAt: string
+): Promise<PendingDeltaRecord<StocktakeQueuedPatchPayload>> {
   const clientId = await getClientId()
   return {
     opId: buildPatchOpId(input, createdAt),
@@ -151,10 +166,15 @@ async function buildPatchDelta(input: StocktakePatchInput, createdAt: string): P
   }
 }
 
-async function persistQueuedScan(delta: PendingDeltaRecord<StocktakeQueuedScanPayload>) {
+async function persistQueuedScan(
+  delta: PendingDeltaRecord<StocktakeQueuedScanPayload>
+) {
   await OfflineStorage.transaction(async () => {
     await OfflineStorage.enqueueDelta(delta)
-    const existingMeta = await OfflineStorage.getSyncMeta(delta.entityType, delta.entityId)
+    const existingMeta = await OfflineStorage.getSyncMeta(
+      delta.entityType,
+      delta.entityId
+    )
     await OfflineStorage.upsertSyncMeta({
       entityType: delta.entityType,
       entityId: delta.entityId,
@@ -166,14 +186,20 @@ async function persistQueuedScan(delta: PendingDeltaRecord<StocktakeQueuedScanPa
   })
 }
 
-async function persistQueuedPatch(delta: PendingDeltaRecord<StocktakeQueuedPatchPayload>) {
+async function persistQueuedPatch(
+  delta: PendingDeltaRecord<StocktakeQueuedPatchPayload>
+) {
   await OfflineStorage.transaction(async () => {
     await OfflineStorage.enqueueDelta(delta)
-    const existingMeta = await OfflineStorage.getSyncMeta(delta.entityType, delta.entityId)
+    const existingMeta = await OfflineStorage.getSyncMeta(
+      delta.entityType,
+      delta.entityId
+    )
     await OfflineStorage.upsertSyncMeta({
       entityType: delta.entityType,
       entityId: delta.entityId,
-      latestAckVersion: existingMeta?.latestAckVersion ?? Math.max(delta.baseVersion, 0),
+      latestAckVersion:
+        existingMeta?.latestAckVersion ?? Math.max(delta.baseVersion, 0),
       lastSyncAt: existingMeta?.lastSyncAt,
       hasConflict: existingMeta?.hasConflict ?? false,
       queueState: 'queued',
@@ -181,11 +207,16 @@ async function persistQueuedPatch(delta: PendingDeltaRecord<StocktakeQueuedPatch
   })
 }
 
-async function markSynced(delta: PendingDeltaRecord<StocktakeQueuedScanPayload>) {
+async function markSynced(
+  delta: PendingDeltaRecord<StocktakeQueuedScanPayload>
+) {
   const syncedAt = new Date().toISOString()
   await OfflineStorage.transaction(async () => {
     await OfflineStorage.removePendingDelta(delta.opId)
-    const existingMeta = await OfflineStorage.getSyncMeta(delta.entityType, delta.entityId)
+    const existingMeta = await OfflineStorage.getSyncMeta(
+      delta.entityType,
+      delta.entityId
+    )
     await OfflineStorage.upsertSyncMeta({
       entityType: delta.entityType,
       entityId: delta.entityId,
@@ -236,7 +267,10 @@ async function markConflict(
       createdAt,
     })
 
-    const existingMeta = await OfflineStorage.getSyncMeta(delta.entityType, delta.entityId)
+    const existingMeta = await OfflineStorage.getSyncMeta(
+      delta.entityType,
+      delta.entityId
+    )
     await OfflineStorage.upsertSyncMeta({
       entityType: delta.entityType,
       entityId: delta.entityId,
@@ -248,7 +282,9 @@ async function markConflict(
   })
 }
 
-function toPendingRecord(delta: PendingDeltaRecord<StocktakeQueuedScanPayload>): StocktakePendingScanRecord {
+function toPendingRecord(
+  delta: PendingDeltaRecord<StocktakeQueuedScanPayload>
+): StocktakePendingScanRecord {
   return {
     opId: delta.opId,
     taskId: delta.entityId,
@@ -262,7 +298,9 @@ function toPendingRecord(delta: PendingDeltaRecord<StocktakeQueuedScanPayload>):
   }
 }
 
-function toPendingPatchRecord(delta: PendingDeltaRecord<StocktakeQueuedPatchPayload>): StocktakePendingPatchRecord {
+function toPendingPatchRecord(
+  delta: PendingDeltaRecord<StocktakeQueuedPatchPayload>
+): StocktakePendingPatchRecord {
   return {
     opId: delta.opId,
     itemId: delta.entityId,
@@ -276,7 +314,9 @@ function toPendingPatchRecord(delta: PendingDeltaRecord<StocktakeQueuedPatchPayl
   }
 }
 
-function buildFieldDiffs(conflict: OfflineConflictRecord<StocktakeQueuedPatchPayload>): StocktakeConflictFieldDiff[] {
+function buildFieldDiffs(
+  conflict: OfflineConflictRecord<StocktakeQueuedPatchPayload>
+): StocktakeConflictFieldDiff[] {
   return Object.entries(conflict.payload.delta).map(([path, change]) => ({
     path,
     oldValue: change.o,
@@ -284,12 +324,15 @@ function buildFieldDiffs(conflict: OfflineConflictRecord<StocktakeQueuedPatchPay
   }))
 }
 
-function buildMergeSuggestion(conflict: OfflineConflictRecord<StocktakeQueuedPatchPayload>): StocktakeConflictMergeSuggestion {
+function buildMergeSuggestion(
+  conflict: OfflineConflictRecord<StocktakeQueuedPatchPayload>
+): StocktakeConflictMergeSuggestion {
   if (conflict.reason === 'version_conflict') {
     return {
       strategy: 'retry_with_latest_version',
       label: '刷新后重试',
-      reason: '服务端版本已变化，建议刷新最新盘点项后使用新版本重放本地 patch。',
+      reason:
+        '服务端版本已变化，建议刷新最新盘点项后使用新版本重放本地 patch。',
     }
   }
 
@@ -308,7 +351,9 @@ function buildMergeSuggestion(conflict: OfflineConflictRecord<StocktakeQueuedPat
   }
 }
 
-function toConflictRecord(conflict: OfflineConflictRecord<StocktakeQueuedPatchPayload>): StocktakeConflictRecord {
+function toConflictRecord(
+  conflict: OfflineConflictRecord<StocktakeQueuedPatchPayload>
+): StocktakeConflictRecord {
   return {
     conflictId: conflict.conflictId,
     opId: conflict.opId,
@@ -327,8 +372,12 @@ function toConflictRecord(conflict: OfflineConflictRecord<StocktakeQueuedPatchPa
   }
 }
 
-function groupQueuedScansByTask(deltas: PendingDeltaRecord<StocktakeQueuedScanPayload>[]) {
-  return deltas.reduce<Record<string, PendingDeltaRecord<StocktakeQueuedScanPayload>[]>>((groups, delta) => {
+function groupQueuedScansByTask(
+  deltas: PendingDeltaRecord<StocktakeQueuedScanPayload>[]
+) {
+  return deltas.reduce<
+    Record<string, PendingDeltaRecord<StocktakeQueuedScanPayload>[]>
+  >((groups, delta) => {
     if (!groups[delta.entityId]) {
       groups[delta.entityId] = []
     }
@@ -355,7 +404,9 @@ async function restoreQueued(opIds: string[], error: unknown) {
 }
 
 async function flushQueuedScansInternal(): Promise<StocktakeFlushResult> {
-  const queued = (await OfflineStorage.getQueuedByIntent(STOCKTAKE_SCAN_INTENT)) as PendingDeltaRecord<StocktakeQueuedScanPayload>[]
+  const queued = (await OfflineStorage.getQueuedByIntent(
+    STOCKTAKE_SCAN_INTENT
+  )) as PendingDeltaRecord<StocktakeQueuedScanPayload>[]
 
   if (queued.length === 0) {
     return {
@@ -407,11 +458,16 @@ async function flushQueuedScansInternal(): Promise<StocktakeFlushResult> {
     } catch (error) {
       failedCount += deltas.length
       await restoreQueued(opIds, error)
-      logger.warn('PDA bulk flush failed', { taskId: deltas[0]?.entityId, count: deltas.length })
+      logger.warn('PDA bulk flush failed', {
+        taskId: deltas[0]?.entityId,
+        count: deltas.length,
+      })
     }
   }
 
-  const remaining = await OfflineStorage.getQueuedByIntent(STOCKTAKE_SCAN_INTENT)
+  const remaining = await OfflineStorage.getQueuedByIntent(
+    STOCKTAKE_SCAN_INTENT
+  )
 
   return {
     syncedCount,
@@ -420,21 +476,35 @@ async function flushQueuedScansInternal(): Promise<StocktakeFlushResult> {
   }
 }
 
-function isVersionConflictError(error: unknown): error is Error & { status?: number; isConflict?: boolean } {
+function isVersionConflictError(
+  error: unknown
+): error is Error & { status?: number; isConflict?: boolean } {
   if (!error || typeof error !== 'object') return false
   const candidate = error as Error & { status?: number; isConflict?: boolean }
   return candidate.isConflict === true || candidate.status === 409
 }
 
 async function flushQueuedPatchesInternal(): Promise<StocktakePatchFlushResult> {
-  const queued = (await OfflineStorage.getQueuedByIntent(STOCKTAKE_PATCH_INTENT)) as PendingDeltaRecord<StocktakeQueuedPatchPayload>[]
+  const queued = (await OfflineStorage.getQueuedByIntent(
+    STOCKTAKE_PATCH_INTENT
+  )) as PendingDeltaRecord<StocktakeQueuedPatchPayload>[]
 
   if (queued.length === 0) {
-    return { syncedCount: 0, conflictCount: 0, failedCount: 0, remainingCount: 0 }
+    return {
+      syncedCount: 0,
+      conflictCount: 0,
+      failedCount: 0,
+      remainingCount: 0,
+    }
   }
 
   if (!isOnline()) {
-    return { syncedCount: 0, conflictCount: 0, failedCount: 0, remainingCount: queued.length }
+    return {
+      syncedCount: 0,
+      conflictCount: 0,
+      failedCount: 0,
+      remainingCount: queued.length,
+    }
   }
 
   let syncedCount = 0
@@ -448,16 +518,26 @@ async function flushQueuedPatchesInternal(): Promise<StocktakePatchFlushResult> 
     })
 
     try {
-      await StocktakeMaintenanceService.pdaPatchItem(delta.n.itemId, delta.n.delta, delta.n.version)
+      await StocktakeMaintenanceService.pdaPatchItem(
+        delta.n.itemId,
+        delta.n.delta,
+        delta.n.version
+      )
 
       syncedCount += 1
       await OfflineStorage.transaction(async () => {
         await OfflineStorage.removePendingDelta(delta.opId)
-        const existingMeta = await OfflineStorage.getSyncMeta(delta.entityType, delta.entityId)
+        const existingMeta = await OfflineStorage.getSyncMeta(
+          delta.entityType,
+          delta.entityId
+        )
         await OfflineStorage.upsertSyncMeta({
           entityType: delta.entityType,
           entityId: delta.entityId,
-          latestAckVersion: Math.max(existingMeta?.latestAckVersion ?? 0, delta.baseVersion + 1),
+          latestAckVersion: Math.max(
+            existingMeta?.latestAckVersion ?? 0,
+            delta.baseVersion + 1
+          ),
           lastSyncAt: new Date().toISOString(),
           hasConflict: false,
           queueState: 'idle',
@@ -481,7 +561,9 @@ async function flushQueuedPatchesInternal(): Promise<StocktakePatchFlushResult> 
     }
   }
 
-  const remaining = await OfflineStorage.getQueuedByIntent(STOCKTAKE_PATCH_INTENT)
+  const remaining = await OfflineStorage.getQueuedByIntent(
+    STOCKTAKE_PATCH_INTENT
+  )
   return {
     syncedCount,
     conflictCount,
@@ -491,7 +573,9 @@ async function flushQueuedPatchesInternal(): Promise<StocktakePatchFlushResult> 
 }
 
 export const StocktakeOfflineAdapter = {
-  async submitScan(payload: PDAScanPayload): Promise<StocktakeOfflineSubmitResult> {
+  async submitScan(
+    payload: PDAScanPayload
+  ): Promise<StocktakeOfflineSubmitResult> {
     const createdAt = new Date().toISOString()
     const delta = await buildPendingDelta(payload, createdAt)
 
@@ -518,7 +602,10 @@ export const StocktakeOfflineAdapter = {
       if (shouldQueueOffline(error)) {
         await markQueuedWithError(delta.opId, error)
         await offlineSyncEngine.refresh()
-        logger.warn('PDA scan queued for retry', { opId: delta.opId, taskId: payload.taskId })
+        logger.warn('PDA scan queued for retry', {
+          opId: delta.opId,
+          taskId: payload.taskId,
+        })
         return {
           status: 'queued',
           opId: delta.opId,
@@ -532,7 +619,9 @@ export const StocktakeOfflineAdapter = {
   },
 
   async listPendingScans(): Promise<StocktakePendingScanRecord[]> {
-    const pending = (await OfflineStorage.getAllByIntent(STOCKTAKE_SCAN_INTENT)) as PendingDeltaRecord<StocktakeQueuedScanPayload>[]
+    const pending = (await OfflineStorage.getAllByIntent(
+      STOCKTAKE_SCAN_INTENT
+    )) as PendingDeltaRecord<StocktakeQueuedScanPayload>[]
     return pending.map(toPendingRecord)
   },
 
@@ -540,7 +629,9 @@ export const StocktakeOfflineAdapter = {
     return flushQueuedScansInternal()
   },
 
-  async submitPatchItem(input: StocktakePatchInput): Promise<StocktakeOfflineSubmitResult> {
+  async submitPatchItem(
+    input: StocktakePatchInput
+  ): Promise<StocktakeOfflineSubmitResult> {
     const createdAt = new Date().toISOString()
     const delta = await buildPatchDelta(input, createdAt)
 
@@ -555,7 +646,11 @@ export const StocktakeOfflineAdapter = {
     }
 
     try {
-      const ack = await StocktakeMaintenanceService.pdaPatchItem(input.itemId, input.delta, input.version)
+      const ack = await StocktakeMaintenanceService.pdaPatchItem(
+        input.itemId,
+        input.delta,
+        input.version
+      )
       await OfflineStorage.transaction(async () => {
         await OfflineStorage.removePendingDelta(delta.opId)
         await OfflineStorage.upsertSyncMeta({
@@ -602,7 +697,9 @@ export const StocktakeOfflineAdapter = {
   },
 
   async listPendingPatches(): Promise<StocktakePendingPatchRecord[]> {
-    const pending = (await OfflineStorage.getAllByIntent(STOCKTAKE_PATCH_INTENT)) as PendingDeltaRecord<StocktakeQueuedPatchPayload>[]
+    const pending = (await OfflineStorage.getAllByIntent(
+      STOCKTAKE_PATCH_INTENT
+    )) as PendingDeltaRecord<StocktakeQueuedPatchPayload>[]
     return pending.map(toPendingPatchRecord)
   },
 
@@ -611,15 +708,21 @@ export const StocktakeOfflineAdapter = {
   },
 
   async listConflicts(taskId?: string): Promise<StocktakeConflictRecord[]> {
-    const conflicts = (await OfflineStorage.listConflictsByEntityType(STOCKTAKE_ITEM_ENTITY_TYPE)) as OfflineConflictRecord<StocktakeQueuedPatchPayload>[]
+    const conflicts = (await OfflineStorage.listConflictsByEntityType(
+      STOCKTAKE_ITEM_ENTITY_TYPE
+    )) as OfflineConflictRecord<StocktakeQueuedPatchPayload>[]
     return conflicts
       .filter((item) => !item.resolvedAt)
       .filter((item) => !taskId || item.payload.taskId === taskId)
       .map(toConflictRecord)
   },
 
-  async listResolvedConflicts(taskId?: string): Promise<StocktakeConflictRecord[]> {
-    const conflicts = (await OfflineStorage.listConflictsByEntityType(STOCKTAKE_ITEM_ENTITY_TYPE)) as OfflineConflictRecord<StocktakeQueuedPatchPayload>[]
+  async listResolvedConflicts(
+    taskId?: string
+  ): Promise<StocktakeConflictRecord[]> {
+    const conflicts = (await OfflineStorage.listConflictsByEntityType(
+      STOCKTAKE_ITEM_ENTITY_TYPE
+    )) as OfflineConflictRecord<StocktakeQueuedPatchPayload>[]
     return conflicts
       .filter((item) => Boolean(item.resolvedAt))
       .filter((item) => !taskId || item.payload.taskId === taskId)
@@ -632,22 +735,47 @@ export const StocktakeOfflineAdapter = {
   },
 
   async resolveConflict(conflictId: string) {
-    const conflict = (await OfflineStorage.getConflict(conflictId)) as OfflineConflictRecord<StocktakeQueuedPatchPayload> | undefined
+    const conflict = (await OfflineStorage.getConflict(conflictId)) as
+      | OfflineConflictRecord<StocktakeQueuedPatchPayload>
+      | undefined
     if (!conflict) return
 
     await OfflineStorage.transaction(async () => {
       await OfflineStorage.removePendingDelta(conflict.opId)
-      await OfflineStorage.markConflictResolved(conflictId, new Date().toISOString(), 'discard')
+      await OfflineStorage.markConflictResolved(
+        conflictId,
+        new Date().toISOString(),
+        'discard'
+      )
 
-      const remainingConflicts = (await OfflineStorage.listConflictsByEntity(conflict.entityType, conflict.entityId)) as OfflineConflictRecord<StocktakeQueuedPatchPayload>[]
-      const hasUnresolved = remainingConflicts.some((item) => item.conflictId !== conflictId && !item.resolvedAt)
-      const hasQueued = (await OfflineStorage.getPendingByEntity(conflict.entityType, conflict.entityId)).some((item) => item.state === 'queued' || item.state === 'syncing' || item.state === 'conflict')
-      const existingMeta = await OfflineStorage.getSyncMeta(conflict.entityType, conflict.entityId)
+      const remainingConflicts = (await OfflineStorage.listConflictsByEntity(
+        conflict.entityType,
+        conflict.entityId
+      )) as OfflineConflictRecord<StocktakeQueuedPatchPayload>[]
+      const hasUnresolved = remainingConflicts.some(
+        (item) => item.conflictId !== conflictId && !item.resolvedAt
+      )
+      const hasQueued = (
+        await OfflineStorage.getPendingByEntity(
+          conflict.entityType,
+          conflict.entityId
+        )
+      ).some(
+        (item) =>
+          item.state === 'queued' ||
+          item.state === 'syncing' ||
+          item.state === 'conflict'
+      )
+      const existingMeta = await OfflineStorage.getSyncMeta(
+        conflict.entityType,
+        conflict.entityId
+      )
 
       await OfflineStorage.upsertSyncMeta({
         entityType: conflict.entityType,
         entityId: conflict.entityId,
-        latestAckVersion: existingMeta?.latestAckVersion ?? conflict.baseVersion,
+        latestAckVersion:
+          existingMeta?.latestAckVersion ?? conflict.baseVersion,
         lastSyncAt: existingMeta?.lastSyncAt,
         hasConflict: hasUnresolved,
         queueState: hasUnresolved ? 'conflict' : hasQueued ? 'queued' : 'idle',
@@ -657,13 +785,19 @@ export const StocktakeOfflineAdapter = {
     await offlineSyncEngine.refresh()
   },
 
-  async retryConflictAfterRefresh(conflictId: string): Promise<StocktakeOfflineSubmitResult> {
-    const conflict = (await OfflineStorage.getConflict(conflictId)) as OfflineConflictRecord<StocktakeQueuedPatchPayload> | undefined
+  async retryConflictAfterRefresh(
+    conflictId: string
+  ): Promise<StocktakeOfflineSubmitResult> {
+    const conflict = (await OfflineStorage.getConflict(conflictId)) as
+      | OfflineConflictRecord<StocktakeQueuedPatchPayload>
+      | undefined
     if (!conflict) {
       throw new Error('未找到可重试的冲突记录')
     }
 
-    const latestItems = await StocktakeCoreService.getItems(conflict.payload.taskId)
+    const latestItems = await StocktakeCoreService.getItems(
+      conflict.payload.taskId
+    )
     const latestItem = latestItems.find((item) => item.id === conflict.entityId)
     if (!latestItem) {
       throw new Error('刷新后未找到对应盘点项')
@@ -671,12 +805,22 @@ export const StocktakeOfflineAdapter = {
 
     await OfflineStorage.transaction(async () => {
       await OfflineStorage.removePendingDelta(conflict.opId)
-      await OfflineStorage.markConflictResolved(conflictId, new Date().toISOString(), 'retry')
-      const existingMeta = await OfflineStorage.getSyncMeta(conflict.entityType, conflict.entityId)
+      await OfflineStorage.markConflictResolved(
+        conflictId,
+        new Date().toISOString(),
+        'retry'
+      )
+      const existingMeta = await OfflineStorage.getSyncMeta(
+        conflict.entityType,
+        conflict.entityId
+      )
       await OfflineStorage.upsertSyncMeta({
         entityType: conflict.entityType,
         entityId: conflict.entityId,
-        latestAckVersion: Math.max(existingMeta?.latestAckVersion ?? 0, latestItem.version),
+        latestAckVersion: Math.max(
+          existingMeta?.latestAckVersion ?? 0,
+          latestItem.version
+        ),
         lastSyncAt: existingMeta?.lastSyncAt,
         hasConflict: false,
         queueState: 'idle',
@@ -698,8 +842,11 @@ export const StocktakeOfflineAdapter = {
       return () => undefined
     }
 
-    return offlineSyncEngine.subscribeAdapterCycleSettled('warehouse.stocktake', () => {
-      onSettled?.()
-    })
+    return offlineSyncEngine.subscribeAdapterCycleSettled(
+      'warehouse.stocktake',
+      () => {
+        onSettled?.()
+      }
+    )
   },
 }

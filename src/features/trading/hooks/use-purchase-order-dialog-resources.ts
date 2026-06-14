@@ -8,7 +8,8 @@ export function usePurchaseOrderDialogResources(open: boolean) {
   const { units, isLoading: isUnitsLoading } = useUnitsQuery({ enabled: open })
   const materialsQuery = useQuery({
     queryKey: MATERIAL_OPTIONS_QUERY_KEY,
-    queryFn: (): Promise<MaterialOption[]> => MaterialCoreService.getMaterialOptions(),
+    queryFn: (): Promise<MaterialOption[]> =>
+      MaterialCoreService.getMaterialOptions(),
     enabled: open,
   })
 

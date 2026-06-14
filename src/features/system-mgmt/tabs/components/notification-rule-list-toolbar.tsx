@@ -27,7 +27,7 @@ export function NotificationRuleListToolbar({
   return (
     <div className='grid gap-3 rounded-[24px] border border-dashed border-muted/40 bg-background px-5 py-4 md:grid-cols-[minmax(0,1fr)_220px]'>
       <div className='relative'>
-        <Search className='pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/50' />
+        <Search className='pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/50' />
         <Input
           value={keyword}
           onChange={(event) => onKeywordChange(event.target.value)}

@@ -241,8 +241,11 @@ export function migratePermissions(
       permissionIds
         .map((permissionId) => permissionId.trim().toLowerCase())
         .filter(Boolean)
-        .map((permissionId) => LEGACY_PERMISSION_ID_ALIASES[permissionId] || permissionId),
-    ),
+        .map(
+          (permissionId) =>
+            LEGACY_PERMISSION_ID_ALIASES[permissionId] || permissionId
+        )
+    )
   )
 }
 

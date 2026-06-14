@@ -248,7 +248,19 @@ const moduleGroups: CommandItemConfig[] = [
     href: '/code-center/shared-code-source/numbering-engine',
     titleKey: 'commandMenu.items.sharedNumberingEngine',
     parentKey: 'commandMenu.parents.codeCenter',
-    keywords: ['shared', 'numbering', 'engine', 'barcode', 'dm', 'dm码', 'dm号码', '发号', '编号', '业务编号', '规则'],
+    keywords: [
+      'shared',
+      'numbering',
+      'engine',
+      'barcode',
+      'dm',
+      'dm码',
+      'dm号码',
+      '发号',
+      '编号',
+      '业务编号',
+      '规则',
+    ],
     pinyin: 'gxfhqy',
   },
   {
@@ -505,9 +517,10 @@ const moduleGroups: CommandItemConfig[] = [
   },
 ]
 
-const actionConfigDefinitions: CommandItemConfig[] = QUICK_ACTION_DEFINITIONS.map(
-  ({ hostKind: _hostKind, successHref: _successHref, ...config }) => config
-)
+const actionConfigDefinitions: CommandItemConfig[] =
+  QUICK_ACTION_DEFINITIONS.map(
+    ({ hostKind: _hostKind, successHref: _successHref, ...config }) => config
+  )
 
 const actionConfigs: CommandItemConfig[] = actionConfigDefinitions.map(
   (config): CommandItemConfig => ({
@@ -558,23 +571,27 @@ function toSearchItem(
 }
 
 function getTabItems(t: TranslateFn): SearchItem[] {
-  return getEnabledConfigs(STATIC_SEARCH_RESULT_REGISTRY.modules).map((config) =>
-    toSearchItem(t, config, 'modules', Layout)
+  return getEnabledConfigs(STATIC_SEARCH_RESULT_REGISTRY.modules).map(
+    (config) => toSearchItem(t, config, 'modules', Layout)
   )
 }
 
 function getActionItems(t: TranslateFn): SearchItem[] {
-  return getEnabledConfigs(STATIC_SEARCH_RESULT_REGISTRY.actions).map((config) =>
-    toSearchItem(t, config, 'actions', PlusCircle)
+  return getEnabledConfigs(STATIC_SEARCH_RESULT_REGISTRY.actions).map(
+    (config) => toSearchItem(t, config, 'actions', PlusCircle)
   )
 }
 
-export function getKnowledgeRouteOptions(t: TranslateFn): KnowledgeRouteOption[] {
-  return getEnabledConfigs(STATIC_SEARCH_RESULT_REGISTRY.modules).map((config) => ({
-    value: config.href,
-    label: t(config.titleKey),
-    parentLabel: t(config.parentKey),
-  }))
+export function getKnowledgeRouteOptions(
+  t: TranslateFn
+): KnowledgeRouteOption[] {
+  return getEnabledConfigs(STATIC_SEARCH_RESULT_REGISTRY.modules).map(
+    (config) => ({
+      value: config.href,
+      label: t(config.titleKey),
+      parentLabel: t(config.parentKey),
+    })
+  )
 }
 
 export function getSearchItems(t: TranslateFn): SearchItem[] {

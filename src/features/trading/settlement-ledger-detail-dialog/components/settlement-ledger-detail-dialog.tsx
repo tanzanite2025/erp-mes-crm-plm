@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-
+import type { CreateSettlementRecordApiDTO } from '../../contracts/settlement-record-api-dto'
 import { useSettlementLedgerDetailDialogViewModel } from '../hooks/use-settlement-ledger-detail-dialog-view-model'
 import type {
   SettlementAllocationLike,
@@ -24,7 +24,6 @@ import type {
 import { SettlementLedgerDetailDialogBody } from './settlement-ledger-detail-dialog-body'
 import { SettlementLedgerDetailDialogFooter } from './settlement-ledger-detail-dialog-footer'
 import { SettlementLedgerSearchDialogContainer } from './settlement-ledger-search-dialog-container'
-import type { CreateSettlementRecordApiDTO } from '../../contracts/settlement-record-api-dto'
 
 interface SettlementLedgerDetailDialogProps<
   TDetail extends SettlementDetailLike,
@@ -119,10 +118,15 @@ export function SettlementLedgerDetailDialog<
   return (
     <>
       <Dialog open={open} onOpenChange={vm.handleOpenChange}>
-        <DialogContent size='6xl' className='gap-0 overflow-hidden rounded-[28px] border-dashed p-0 shadow-2xl'>
+        <DialogContent
+          size='6xl'
+          className='gap-0 overflow-hidden rounded-[28px] border-dashed p-0 shadow-2xl'
+        >
           <DialogHeader className='border-b border-dashed border-muted/60 bg-muted/20 px-5 py-3.5'>
-            <DialogTitle className='text-base font-black leading-tight tracking-tight'>{config.dialogTitle}</DialogTitle>
-            <DialogDescription className='text-[11px] font-medium leading-5 text-muted-foreground/70'>
+            <DialogTitle className='text-base leading-tight font-black tracking-tight'>
+              {config.dialogTitle}
+            </DialogTitle>
+            <DialogDescription className='text-[11px] leading-5 font-medium text-muted-foreground/70'>
               {description}
             </DialogDescription>
           </DialogHeader>
@@ -133,8 +137,10 @@ export function SettlementLedgerDetailDialog<
                 <div className='flex max-w-md flex-col items-center gap-3 rounded-[24px] border border-dashed border-rose-300/60 bg-rose-50/60 px-6 py-8 text-center'>
                   <AlertTriangle className='size-8 text-rose-500' />
                   <div className='space-y-1'>
-                    <p className='text-[10px] font-black uppercase tracking-widest text-rose-700'>台账详情加载失败</p>
-                    <p className='text-[10px] font-bold leading-5 text-rose-700/80'>
+                    <p className='text-[10px] font-black tracking-widest text-rose-700 uppercase'>
+                      台账详情加载失败
+                    </p>
+                    <p className='text-[10px] leading-5 font-bold text-rose-700/80'>
                       {detailResourceErrorMessage || '请稍后重试。'}
                     </p>
                   </div>
@@ -142,7 +148,7 @@ export function SettlementLedgerDetailDialog<
                     <Button
                       type='button'
                       variant='outline'
-                      className='h-9 rounded-full border-dashed px-4 text-[10px] font-black uppercase tracking-widest'
+                      className='h-9 rounded-full border-dashed px-4 text-[10px] font-black tracking-widest uppercase'
                       onClick={onRetryDetailResource}
                     >
                       重试
@@ -155,16 +161,24 @@ export function SettlementLedgerDetailDialog<
                 <div className='flex max-w-md flex-col items-center gap-3 rounded-[24px] border border-dashed border-amber-300/60 bg-amber-50/50 px-6 py-8 text-center'>
                   <Loader2 className='size-8 animate-spin text-amber-600' />
                   <div className='space-y-1'>
-                    <p className='text-[10px] font-black uppercase tracking-widest text-amber-700'>台账详情加载中</p>
-                    <p className='text-[10px] font-bold leading-5 text-amber-700/80'>请稍候后再登记结算记录。</p>
+                    <p className='text-[10px] font-black tracking-widest text-amber-700 uppercase'>
+                      台账详情加载中
+                    </p>
+                    <p className='text-[10px] leading-5 font-bold text-amber-700/80'>
+                      请稍候后再登记结算记录。
+                    </p>
                   </div>
                 </div>
               </div>
             ) : detailResourceStatus === 'idle' ? (
               <div className='flex min-h-[420px] items-center justify-center px-2 py-6'>
                 <div className='flex max-w-md flex-col items-center gap-3 rounded-[24px] border border-dashed border-muted/60 bg-muted/5 px-6 py-8 text-center'>
-                  <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground'>未选择台账</p>
-                  <p className='text-[10px] font-bold leading-5 text-muted-foreground/80'>请先选择一条台账记录。</p>
+                  <p className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
+                    未选择台账
+                  </p>
+                  <p className='text-[10px] leading-5 font-bold text-muted-foreground/80'>
+                    请先选择一条台账记录。
+                  </p>
                 </div>
               </div>
             ) : (
@@ -180,7 +194,9 @@ export function SettlementLedgerDetailDialog<
                   allocationHistoryCount={allocationHistory.length}
                 />
 
-                {extraContent ? <div className='mt-3'>{extraContent}</div> : null}
+                {extraContent ? (
+                  <div className='mt-3'>{extraContent}</div>
+                ) : null}
               </>
             )}
           </div>

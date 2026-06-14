@@ -46,7 +46,7 @@ export function resolveProductDisplayMetadataV2(
   const templateResolution = resolveAuthoritativeTemplateForProduct(
     params.templates,
     params.product,
-    params.productTypes,
+    params.productTypes
   )
   const resolvedTemplate = templateResolution.template
 

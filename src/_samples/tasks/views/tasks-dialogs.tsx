@@ -1,8 +1,8 @@
 import { showSubmittedData } from '@/lib/show-submitted-data'
 import { ConfirmDialog } from '@/components/confirm-dialog'
+import { useTasks } from '../store/tasks-context'
 import { TasksImportDialog } from './tasks-import-dialog'
 import { TasksMutateDrawer } from './tasks-mutate-drawer'
-import { useTasks } from '../store/tasks-context'
 
 export function TasksDialogs() {
   const { open, setOpen, currentRow, setCurrentRow, setTasks } = useTasks()
@@ -46,21 +46,20 @@ export function TasksDialogs() {
             }}
             handleConfirm={() => {
               setOpen(null)
-              setTasks((prev) => prev.filter((task) => task.id !== currentRow.id))
+              setTasks((prev) =>
+                prev.filter((task) => task.id !== currentRow.id)
+              )
               setTimeout(() => {
                 setCurrentRow(null)
               }, 500)
-              showSubmittedData(
-                currentRow,
-                '已删除以下任务：'
-              )
+              showSubmittedData(currentRow, '已删除以下任务：')
             }}
             className='max-w-md'
             title={`确定删除该任务: ${currentRow.id} ?`}
             desc={
               <>
-                您即将删除 ID 为{' '}
-                <strong>{currentRow.id}</strong> 的任务。 <br />
+                您即将删除 ID 为 <strong>{currentRow.id}</strong> 的任务。{' '}
+                <br />
                 此操作无法撤销。
               </>
             }

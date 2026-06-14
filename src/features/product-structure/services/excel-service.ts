@@ -17,7 +17,11 @@ interface NormalizeParsedBOMExcelItemsParams {
 
 function formatSchemaIssuePath(path: PropertyKey[]) {
   return path.length > 0
-    ? path.map((segment) => (typeof segment === 'symbol' ? segment.toString() : String(segment))).join('.')
+    ? path
+        .map((segment) =>
+          typeof segment === 'symbol' ? segment.toString() : String(segment)
+        )
+        .join('.')
     : 'row'
 }
 
@@ -28,10 +32,18 @@ export const ExcelService = {
     sections: BOMSectionOption[],
     productDisplayLabelMap: Map<string, string>
   ) {
-    return generateBOMTemplate(materials, products, sections, productDisplayLabelMap)
+    return generateBOMTemplate(
+      materials,
+      products,
+      sections,
+      productDisplayLabelMap
+    )
   },
 
-  async parseBOMExcel(file: File, sections: BOMSectionOption[]): Promise<{
+  async parseBOMExcel(
+    file: File,
+    sections: BOMSectionOption[]
+  ): Promise<{
     items: BOMItemDraft[]
     productId?: string
     materials?: MaterialOptionDraft[]
@@ -43,23 +55,34 @@ export const ExcelService = {
     parsedItems,
     materials,
     sections,
-  }: NormalizeParsedBOMExcelItemsParams): { items: BOMItemDraft[]; errors: string[] } {
+  }: NormalizeParsedBOMExcelItemsParams): {
+    items: BOMItemDraft[]
+    errors: string[]
+  } {
     const defaultSectionCode = getDefaultBOMSectionCode(sections)
-    const materialMap = new Map(materials.map((material) => [material.id, material]))
+    const materialMap = new Map(
+      materials.map((material) => [material.id, material])
+    )
     const normalizedItems: BOMItemDraft[] = []
     const errors: string[] = []
 
     parsedItems.forEach((item, index) => {
-      const hasExplicitUnitPrice = typeof item.unitPrice === 'number' && !Number.isNaN(item.unitPrice)
+      const hasExplicitUnitPrice =
+        typeof item.unitPrice === 'number' && !Number.isNaN(item.unitPrice)
       const schemaInput: BOMItemDraft = {
         ...item,
-        section: normalizeBOMSectionValue(sections, item.section || defaultSectionCode),
+        section: normalizeBOMSectionValue(
+          sections,
+          item.section || defaultSectionCode
+        ),
       }
       const result = bomItemSchema.safeParse(schemaInput)
 
       if (!result.success) {
         const fieldErrors = result.error.issues
-          .map((issue) => `${formatSchemaIssuePath(issue.path)}: ${issue.message}`)
+          .map(
+            (issue) => `${formatSchemaIssuePath(issue.path)}: ${issue.message}`
+          )
           .join('; ')
 
         errors.push(`Row ${index + 2}: ${fieldErrors}`)
@@ -69,18 +92,28 @@ export const ExcelService = {
       const parsedItem = result.data
       const material = materialMap.get(parsedItem.materialId)
       if (!material) {
-        errors.push(`Row ${index + 2}: materialId: Material ${parsedItem.materialId} was not found in current material archive`)
+        errors.push(
+          `Row ${index + 2}: materialId: Material ${parsedItem.materialId} was not found in current material archive`
+        )
         return
       }
 
       // ✅ 物料状态检查 (工业标准：禁止在 BOM 中使用已归档或禁用的物料)
       if (material.status === 'Archived' || material.status === 'Inactive') {
-        errors.push(`Row ${index + 2}: status: Material ${material.code} is currently ${material.status} and cannot be used in a new BOM`)
+        errors.push(
+          `Row ${index + 2}: status: Material ${material.code} is currently ${material.status} and cannot be used in a new BOM`
+        )
         return
       }
 
-      const normalizedSection = normalizeBOMSectionValue(sections, parsedItem.section || defaultSectionCode)
-      const standardUsage = Math.max(0, parsedItem.unitUsage * (1 + parsedItem.wastagePercent / 100))
+      const normalizedSection = normalizeBOMSectionValue(
+        sections,
+        parsedItem.section || defaultSectionCode
+      )
+      const standardUsage = Math.max(
+        0,
+        parsedItem.unitUsage * (1 + parsedItem.wastagePercent / 100)
+      )
 
       normalizedItems.push({
         id: crypto.randomUUID(),
@@ -88,7 +121,9 @@ export const ExcelService = {
         materialId: parsedItem.materialId,
         materialName: material.name,
         materialSpec: material.spec,
-        unitPrice: hasExplicitUnitPrice ? parsedItem.unitPrice : material.costPrice ?? parsedItem.unitPrice,
+        unitPrice: hasExplicitUnitPrice
+          ? parsedItem.unitPrice
+          : (material.costPrice ?? parsedItem.unitPrice),
         unit: material.uom || parsedItem.unit,
         unitUsage: parsedItem.unitUsage,
         wastagePercent: parsedItem.wastagePercent,

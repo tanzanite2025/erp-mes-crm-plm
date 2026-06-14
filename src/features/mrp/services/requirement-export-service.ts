@@ -12,7 +12,9 @@ import { RequirementCoreService } from './requirement-core-service'
 export const RequirementExportService = {
   async exportToExcel(data: MaterialRequirement[], locale: AppLocale) {
     const workbook = await createExcelWorkbook()
-    const sheet = workbook.addWorksheet(translate(locale, 'mrp.requirements.export.sheetName'))
+    const sheet = workbook.addWorksheet(
+      translate(locale, 'mrp.requirements.export.sheetName')
+    )
 
     sheet.columns = [
       { width: 12, key: 'section' },
@@ -41,14 +43,24 @@ export const RequirementExportService = {
     titleCell.alignment = EXCEL_CENTER_ALIGNMENT
     titleCell.border = EXCEL_THIN_BORDER
 
-    const today = new Date().toLocaleDateString(locale === 'zh-CN' ? 'zh-CN' : 'en-CA').replace(/\//g, '-')
+    const today = new Date()
+      .toLocaleDateString(locale === 'zh-CN' ? 'zh-CN' : 'en-CA')
+      .replace(/\//g, '-')
 
-    sheet.getCell('I1').value = translate(locale, 'mrp.requirements.export.docCode')
-    sheet.getCell('I2').value = translate(locale, 'mrp.requirements.export.version')
-    sheet.getCell('I3').value = translate(locale, 'mrp.requirements.export.effectiveDate')
+    sheet.getCell('I1').value = translate(
+      locale,
+      'mrp.requirements.export.docCode'
+    )
+    sheet.getCell('I2').value = translate(
+      locale,
+      'mrp.requirements.export.version'
+    )
+    sheet.getCell('I3').value = translate(
+      locale,
+      'mrp.requirements.export.effectiveDate'
+    )
     sheet.getCell('J2').value = 'A1'
     sheet.getCell('J3').value = today
-
     ;['I1', 'J1', 'I2', 'J2', 'I3', 'J3'].forEach((ref) => {
       const cell = sheet.getCell(ref)
       cell.border = EXCEL_THIN_BORDER
@@ -56,7 +68,10 @@ export const RequirementExportService = {
       cell.font = { size: 9 }
     })
 
-    const productList = RequirementCoreService.getUniqueProductsSummary(data, locale)
+    const productList = RequirementCoreService.getUniqueProductsSummary(
+      data,
+      locale
+    )
 
     sheet.mergeCells('A4:J4')
     const descCell = sheet.getCell('A4')
@@ -65,7 +80,11 @@ export const RequirementExportService = {
       count: data.length,
     })
     descCell.font = { bold: true, size: 10 }
-    descCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } }
+    descCell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFF5F5F5' },
+    }
     descCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 }
     descCell.border = EXCEL_THIN_BORDER
     sheet.getRow(4).height = 25
@@ -95,12 +114,20 @@ export const RequirementExportService = {
     sections.forEach((sectionName, sectionIndex) => {
       sheet.mergeCells(`A${currentRowNum}:J${currentRowNum}`)
       const sectionHeader = sheet.getCell(`A${currentRowNum}`)
-      sectionHeader.value = translate(locale, 'mrp.requirements.export.sectionTitle', {
-        section: sectionName,
-        date: today,
-      })
+      sectionHeader.value = translate(
+        locale,
+        'mrp.requirements.export.sectionTitle',
+        {
+          section: sectionName,
+          date: today,
+        }
+      )
       sectionHeader.font = { bold: true, size: 11 }
-      sectionHeader.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F0F0' } }
+      sectionHeader.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFF0F0F0' },
+      }
       sectionHeader.border = EXCEL_THIN_BORDER
       sheet.getRow(currentRowNum).height = 24
       currentRowNum++
@@ -110,7 +137,10 @@ export const RequirementExportService = {
         const row = sheet.getRow(currentRowNum)
         row.height = 24
 
-        const packagingDesc = RequirementCoreService.formatPackaging(item, locale)
+        const packagingDesc = RequirementCoreService.formatPackaging(
+          item,
+          locale
+        )
         const shortageStr = RequirementCoreService.formatShortage(item, locale)
 
         row.values = [
@@ -123,14 +153,20 @@ export const RequirementExportService = {
           `${item.inventoryQty.toFixed(1)} ${item.unit}`,
           shortageStr,
           packagingDesc,
-          item.sourceOrders.map((order) => `[${order.customerName}] ${order.productName}(${order.qty})`).join('; '),
+          item.sourceOrders
+            .map(
+              (order) =>
+                `[${order.customerName}] ${order.productName}(${order.qty})`
+            )
+            .join('; '),
         ]
 
         row.eachCell((cell, colNumber) => {
           cell.border = EXCEL_THIN_BORDER
-          cell.alignment = colNumber === 10
-            ? { ...EXCEL_CENTER_ALIGNMENT, horizontal: 'left' }
-            : EXCEL_CENTER_ALIGNMENT
+          cell.alignment =
+            colNumber === 10
+              ? { ...EXCEL_CENTER_ALIGNMENT, horizontal: 'left' }
+              : EXCEL_CENTER_ALIGNMENT
           cell.font = { size: 10 }
 
           if (colNumber === 6) {
@@ -187,7 +223,9 @@ export const RequirementExportService = {
       '',
       '',
       '',
-      translate(locale, 'mrp.requirements.export.preparedDate', { date: today }),
+      translate(locale, 'mrp.requirements.export.preparedDate', {
+        date: today,
+      }),
     ]
     signRow.eachCell((cell, colNumber) => {
       cell.border = EXCEL_THIN_BORDER

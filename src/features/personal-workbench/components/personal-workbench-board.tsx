@@ -26,7 +26,8 @@ export function PersonalWorkbenchBoard({
 }: PersonalWorkbenchBoardProps) {
   const { reorderMutation } = usePersonalWorkbenchMutations()
   const [draggingRecordId, setDraggingRecordId] = useState<string | null>(null)
-  const [displayRecords, setDisplayRecords] = useState<PersonalRecord[]>(records)
+  const [displayRecords, setDisplayRecords] =
+    useState<PersonalRecord[]>(records)
 
   useEffect(() => {
     setDisplayRecords(records)
@@ -35,7 +36,9 @@ export function PersonalWorkbenchBoard({
   const recordsByColumn = useMemo(() => {
     return personalWorkbenchColumns.map((column) => ({
       ...column,
-      records: displayRecords.filter((record) => record.columnKey === column.key),
+      records: displayRecords.filter(
+        (record) => record.columnKey === column.key
+      ),
     }))
   }, [displayRecords])
 
@@ -47,7 +50,10 @@ export function PersonalWorkbenchBoard({
       return
     }
     const previousRecords = displayRecords
-    const result = reorderPersonalRecords(displayRecords, draggingRecordId, { columnKey, index })
+    const result = reorderPersonalRecords(displayRecords, draggingRecordId, {
+      columnKey,
+      index,
+    })
     setDraggingRecordId(null)
     if (result.updates.length === 0) {
       return
@@ -57,7 +63,8 @@ export function PersonalWorkbenchBoard({
       await reorderMutation.mutateAsync(result.updates)
     } catch (error) {
       setDisplayRecords(previousRecords)
-      const message = error instanceof Error ? error.message : '个人记录排序失败'
+      const message =
+        error instanceof Error ? error.message : '个人记录排序失败'
       toast.error(message)
     }
   }
@@ -66,8 +73,16 @@ export function PersonalWorkbenchBoard({
     <div className='flex min-h-0 flex-1 flex-col gap-4'>
       <div className='flex items-center justify-between gap-4'>
         <div>
-          {!hideHeading && <h2 className='text-lg font-black uppercase tracking-tight italic'>个人记录缓冲区</h2>}
-          {!hideHeading && <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>仅自己可见</p>}
+          {!hideHeading && (
+            <h2 className='text-lg font-black tracking-tight uppercase italic'>
+              个人记录缓冲区
+            </h2>
+          )}
+          {!hideHeading && (
+            <p className='text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
+              仅自己可见
+            </p>
+          )}
         </div>
         {!hideCreateAction && (
           <Button type='button' className='rounded-full' onClick={onCreate}>
@@ -77,7 +92,7 @@ export function PersonalWorkbenchBoard({
         )}
       </div>
       <ScrollArea className='flex-1'>
-        <div className='grid gap-4 xl:grid-cols-4 md:grid-cols-2'>
+        <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-4'>
           {recordsByColumn.map((column) => (
             <PersonalWorkbenchColumn
               key={column.key}

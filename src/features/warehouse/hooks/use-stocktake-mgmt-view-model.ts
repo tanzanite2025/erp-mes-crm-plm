@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { createLogger } from '@/lib/logger'
-import { type CompositeReadResource, resolveQueryFailure } from '@/lib/read-resource'
+import {
+  type CompositeReadResource,
+  resolveQueryFailure,
+} from '@/lib/read-resource'
 import { failLoudly } from '@/lib/safe-catch'
-import { useStocktake, useStocktakeItems } from './use-stock-maintenance'
-import { useStocktakeAdjustmentSubmission } from './use-stocktake-adjustment-submission'
-import { useWarehouseCategoryOptions } from './use-warehouse-category'
+import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { type WarehouseCategoryOption } from '../category'
 import { type StocktakeTask } from '../stocktake'
 import { filterWarehouseCategoriesByScene } from '../utils/warehouse-category-config'
+import { useStocktake, useStocktakeItems } from './use-stock-maintenance'
+import { useStocktakeAdjustmentSubmission } from './use-stocktake-adjustment-submission'
+import { useWarehouseCategoryOptions } from './use-warehouse-category'
 
 const logger = createLogger('useStocktakeMgmtViewModel')
 
@@ -39,7 +42,12 @@ export function useStocktakeMgmtViewModel() {
   const [adjustmentConfirmOpen, setAdjustmentConfirmOpen] = useState(false)
 
   const selectedTaskId = selectedTask?.id ?? null
-  const { itemsResource, data: items, isLoading: itemsLoading, refetch: refetchItems } = useStocktakeItems(selectedTaskId)
+  const {
+    itemsResource,
+    data: items,
+    isLoading: itemsLoading,
+    refetch: refetchItems,
+  } = useStocktakeItems(selectedTaskId)
 
   const shellResource = useMemo<StocktakeMgmtShellResource>(() => {
     if (readResource.status === 'error') {
@@ -51,7 +59,8 @@ export function useStocktakeMgmtViewModel() {
       error: categoriesQuery.error,
       isPending: categoriesQuery.isPending,
       scope: 'useStocktakeMgmtViewModel.categories',
-      missingMessage: '[CRITICAL] Stocktake warehouse categories missing after load',
+      missingMessage:
+        '[CRITICAL] Stocktake warehouse categories missing after load',
       failureMessage: '[CRITICAL] Stocktake warehouse categories query failed',
     })
     if (categoriesFailure) {
@@ -73,7 +82,9 @@ export function useStocktakeMgmtViewModel() {
     if (filteredCategories.length === 0) {
       return {
         status: 'error',
-        error: new Error('[CRITICAL] No warehouse categories allowed for stocktake scene'),
+        error: new Error(
+          '[CRITICAL] No warehouse categories allowed for stocktake scene'
+        ),
         scope: 'useStocktakeMgmtViewModel.categories',
       }
     }
@@ -83,14 +94,23 @@ export function useStocktakeMgmtViewModel() {
       tasks,
       stocktakeCategories: filteredCategories,
     }
-  }, [categoriesQuery.data, categoriesQuery.error, categoriesQuery.isPending, readResource, tasks])
+  }, [
+    categoriesQuery.data,
+    categoriesQuery.error,
+    categoriesQuery.isPending,
+    readResource,
+    tasks,
+  ])
 
   useEffect(() => {
     if (shellResource.status !== 'error') {
       return
     }
 
-    logger.error(`Failed to load stocktake shell resources: ${shellResource.scope}`, shellResource.error)
+    logger.error(
+      `Failed to load stocktake shell resources: ${shellResource.scope}`,
+      shellResource.error
+    )
     failLoudly(shellResource.error, shellResource.scope)
   }, [shellResource])
 
@@ -98,7 +118,8 @@ export function useStocktakeMgmtViewModel() {
     shellResource.status === 'ready' ? shellResource.stocktakeCategories : []
 
   const canSubmitAdjustment =
-    selectedTask?.status === 'IN_PROGRESS' || selectedTask?.status === 'COMPLETED'
+    selectedTask?.status === 'IN_PROGRESS' ||
+    selectedTask?.status === 'COMPLETED'
 
   const handleCreateDialogOpenChange = (open: boolean) => {
     setIsCreateOpen(open)
@@ -145,9 +166,13 @@ export function useStocktakeMgmtViewModel() {
       await submitAdjustmentForApproval(selectedTask.id)
       setAdjustmentConfirmOpen(false)
     } catch (error) {
-      failLoudly(error, 'useStocktakeMgmtViewModel.handleConfirmAdjustmentSubmission', {
-        silentUI: true,
-      })
+      failLoudly(
+        error,
+        'useStocktakeMgmtViewModel.handleConfirmAdjustmentSubmission',
+        {
+          silentUI: true,
+        }
+      )
     }
   }
 

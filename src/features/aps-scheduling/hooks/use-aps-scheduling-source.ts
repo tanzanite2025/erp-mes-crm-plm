@@ -1,7 +1,10 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useProductionLinesQuery } from '@/features/production-shared/hooks/use-production-resources'
-import { buildApsSchedulingSource, type ApsSchedulingSource } from '../adapters/aps-scheduling.adapter'
+import {
+  buildApsSchedulingSource,
+  type ApsSchedulingSource,
+} from '../adapters/aps-scheduling.adapter'
 import { apsFallbackSource } from '../aps-source'
 import { getApsScheduling } from '../services/aps-scheduling-service'
 
@@ -29,11 +32,13 @@ export function useApsSchedulingSource() {
     })
   }, [jobsQuery.data, linesQuery.data])
 
-  const hasResolvedSource = linesQuery.data !== undefined || jobsQuery.data !== undefined
+  const hasResolvedSource =
+    linesQuery.data !== undefined || jobsQuery.data !== undefined
 
   return {
     source: hasResolvedSource ? source : apsFallbackSource,
-    isLoading: (linesQuery.isLoading || jobsQuery.isLoading) && !hasResolvedSource,
+    isLoading:
+      (linesQuery.isLoading || jobsQuery.isLoading) && !hasResolvedSource,
     error: linesQuery.error ?? jobsQuery.error,
     isFetching: linesQuery.isFetching || jobsQuery.isFetching,
     refetch: async () => {

@@ -1,7 +1,7 @@
 import { Card } from '@/components/ui/card'
-import type { VehicleSpec } from '../../vehicle-loading/data/vehicle-loading.types'
-import { VehiclePhotoUploadPanel } from '../../vehicle-loading/components/vehicle-photo-upload-panel'
 import { VehiclePhotoTriggerButton } from '../../vehicle-loading/components/vehicle-photo-trigger-button'
+import { VehiclePhotoUploadPanel } from '../../vehicle-loading/components/vehicle-photo-upload-panel'
+import type { VehicleSpec } from '../../vehicle-loading/data/vehicle-loading.types'
 import { VehicleSpecCardHeader } from './vehicle-spec-card-header'
 import { VehicleSpecCardMetrics } from './vehicle-spec-card-metrics'
 import { VehicleSpecCardNotes } from './vehicle-spec-card-notes'
@@ -22,7 +22,7 @@ export function VehicleSpecCard({ spec, onOpenPhotos }: Props) {
           </div>
           <VehiclePhotoTriggerButton
             onClick={() => onOpenPhotos(spec)}
-            className='h-9 shrink-0 rounded-xl px-4 text-[10px] font-black uppercase tracking-[0.18em]'
+            className='h-9 shrink-0 rounded-xl px-4 text-[10px] font-black tracking-[0.18em] uppercase'
           />
         </div>
 

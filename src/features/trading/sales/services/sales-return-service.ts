@@ -129,7 +129,8 @@ function toSalesReturnLineContract(
     productDisplaySubtitleSnapshot: dto.productDisplaySubtitleSnapshot,
     productDisplayCodeSnapshot: dto.productDisplayCodeSnapshot,
     productDisplayFullLabelSnapshot: dto.productDisplayFullLabelSnapshot,
-    productDisplayStrategyVersionSnapshot: dto.productDisplayStrategyVersionSnapshot,
+    productDisplayStrategyVersionSnapshot:
+      dto.productDisplayStrategyVersionSnapshot,
     description: dto.description,
     uom: dto.uom,
     quantity: dto.quantity,
@@ -234,7 +235,11 @@ export async function getSalesReturns(
       'items',
       'SalesReturnService.getSalesReturns'
     ).map(toSalesReturnContract),
-    total: ensureNumberField(dto, 'total', 'SalesReturnService.getSalesReturns'),
+    total: ensureNumberField(
+      dto,
+      'total',
+      'SalesReturnService.getSalesReturns'
+    ),
     page: ensureNumberField(dto, 'page', 'SalesReturnService.getSalesReturns'),
     pageSize: ensureNumberField(
       dto,

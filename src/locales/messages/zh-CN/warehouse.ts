@@ -14,8 +14,10 @@ export const warehouse = {
     reconcile: '财务对账',
     exportReport: '导出报表',
     noData: '暂无数据',
-    reconcileConfirm: '确定要执行【仓库账务一致性自检】吗？\n\n系统将扫描全部入库与已提交出库流水，重新计算全量物料库存余额，并修复历史逻辑不一致导致的负库存异常。',
-    reconcileSuccess: '账务审计完成，系统已依据流水重建 {{totalItems}} 项库存余额，并自动纠偏 {{fixedNegatives}} 项负库存异常。请切换到“库存清单”页签确认。',
+    reconcileConfirm:
+      '确定要执行【仓库账务一致性自检】吗？\n\n系统将扫描全部入库与已提交出库流水，重新计算全量物料库存余额，并修复历史逻辑不一致导致的负库存异常。',
+    reconcileSuccess:
+      '账务审计完成，系统已依据流水重建 {{totalItems}} 项库存余额，并自动纠偏 {{fixedNegatives}} 项负库存异常。请切换到“库存清单”页签确认。',
     reconcileFailed: '对账执行失败，请检查控制台。',
     dynamicFilter: '动态筛选',
     startDate: '开始日期',
@@ -164,9 +166,11 @@ export const warehouse = {
       insufficientStock: '库区库存不足，当前剩余 {{count}} {{uom}}',
       savedDraft: '已保存为草稿',
       commitSuccess: '出货登记成功',
-      commitConfirm: '确定要提交 [{{name}}] 的出库申请吗？提交后将正式扣减库存。',
+      commitConfirm:
+        '确定要提交 [{{name}}] 的出库申请吗？提交后将正式扣减库存。',
       commitRecorded: '出库提交成功，库存已同步',
-      voidConfirmCommitted: '确定要作废该出货记录吗？\n[{{name}}] 的库存将自动回退 {{quantity}}。',
+      voidConfirmCommitted:
+        '确定要作废该出货记录吗？\n[{{name}}] 的库存将自动回退 {{quantity}}。',
       voidConfirmDraft: '确定要删除该出货草稿吗？',
       voidSuccess: '记录已作废，库存已回滚',
       actionSuccess: '操作成功',
@@ -174,12 +178,14 @@ export const warehouse = {
   },
   placeholder: {
     title: '{{title}}仓储中心',
-    subtitle: '{{title}}_LOGISTICS / 数字化仓储：成品库位管理、出入库流水与库存实效核算',
+    subtitle:
+      '{{title}}_LOGISTICS / 数字化仓储：成品库位管理、出入库流水与库存实效核算',
     devMode: '{{title}} 仓储模块开发中',
     syncing: 'Warehouse operation record is under synchronization',
   },
   service: {
-    integrityError: '[CRITICAL_DATA_INTEGRITY] 库存记录 {{id}} 引用了不存在的物料/产品 {{materialId}}。数据一致性可能已受损。',
+    integrityError:
+      '[CRITICAL_DATA_INTEGRITY] 库存记录 {{id}} 引用了不存在的物料/产品 {{materialId}}。数据一致性可能已受损。',
     unknownItem: '未知项(档案缺失)',
     pdaSyncSuccess: 'PDA 离线数据同步成功',
     pdaSyncFailed: 'PDA 同步完成，但存在 {{count}} 项异常，请检查审计日志',
@@ -215,8 +221,10 @@ export const warehouse = {
     select: '选择',
     idleTitle: '空闲状态',
     startInbound: '登记入库',
-    emptyBeforeSearchGuide: '请先搜索产品或物料，匹配到结果后点击“登记入库”开始入库。',
-    emptyAfterSearchGuide: '当前没有匹配结果，请调整搜索关键词，匹配到结果后点击“登记入库”开始入库。',
+    emptyBeforeSearchGuide:
+      '请先搜索产品或物料，匹配到结果后点击“登记入库”开始入库。',
+    emptyAfterSearchGuide:
+      '当前没有匹配结果，请调整搜索关键词，匹配到结果后点击“登记入库”开始入库。',
     historyTitle: '历史流水',
     latestTransactions: '最新流水',
     columns: {
@@ -422,13 +430,15 @@ export const warehouse = {
     },
     reconcileDialog: {
       title: '全库账务一致性自检',
-      description: '确定要执行全局对账吗？系统将从原始流水重算库存快照，并将任何逻辑负数纠偏为 0。此操作不可逆，建议在非作业时段执行。',
+      description:
+        '确定要执行全局对账吗？系统将从原始流水重算库存快照，并将任何逻辑负数纠偏为 0。此操作不可逆，建议在非作业时段执行。',
       confirm: '开始自检',
       cancel: '返回',
     },
     toast: {
       loadFailed: '获取库存数据失败',
-      reconcileConfirm: '确定要执行【全库账务一致性自检】吗？\n\n系统将从原始流水重算库存，并将任何负数纠偏为 0。',
+      reconcileConfirm:
+        '确定要执行【全库账务一致性自检】吗？\n\n系统将从原始流水重算库存，并将任何负数纠偏为 0。',
       reconcileSuccess: '账务重算完成，库存已修正。',
       reconcileFailed: '对账失败',
       thresholdUpdated: '已更新 {{name}} 的安全水位为 {{value}}',

@@ -1,16 +1,15 @@
 import { Suspense, lazy, useMemo, useState } from 'react'
 import { Check, LayoutDashboard, Settings } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent } from '@/components/ui/tabs'
-import { SegmentedTabs } from '@/components/segmented-tabs'
-import { Header } from '@/components/layout/header'
-import { Main } from '@/components/layout/main'
-import { IndustrialHeader } from '@/components/uds/industrial-header'
-import { KpiGrid } from './components/kpi-grid'
-import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { TraceActivityList } from './components/trace-activity-list'
+import { useLanguage } from '@/context/language-provider'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
@@ -19,23 +18,42 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Tabs, TabsContent } from '@/components/ui/tabs'
+import { Header } from '@/components/layout/header'
+import { Main } from '@/components/layout/main'
+import { SegmentedTabs } from '@/components/segmented-tabs'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import type { ProductionSegment as Segment } from '@/features/production-shared/data/production-line'
 import { useProductionLinesQuery } from '@/features/production-shared/hooks/use-production-resources'
 import { useHierarchyLevelLabels } from '@/features/production-shared/tabs/hierarchy-config/hooks/use-hierarchy-level-labels'
-import { useLanguage } from '@/context/language-provider'
+import { KpiGrid } from './components/kpi-grid'
+import { TraceActivityList } from './components/trace-activity-list'
 import { useVisibleDashboardSegments } from './hooks/use-visible-dashboard-segments'
 
-const Overview = lazy(() => import('./components/overview').then((m) => ({ default: m.Overview })))
-const SystemEvents = lazy(() => import('./components/system-events').then((m) => ({ default: m.SystemEvents })))
+const Overview = lazy(() =>
+  import('./components/overview').then((m) => ({ default: m.Overview }))
+)
+const SystemEvents = lazy(() =>
+  import('./components/system-events').then((m) => ({
+    default: m.SystemEvents,
+  }))
+)
 const ProductionCalendar = lazy(() => import('@/features/production-calendar'))
-const OrdersProgress = lazy(() => import('./components/orders-progress').then((m) => ({ default: m.OrdersProgress })))
+const OrdersProgress = lazy(() =>
+  import('./components/orders-progress').then((m) => ({
+    default: m.OrdersProgress,
+  }))
+)
 
 export function Dashboard() {
   const { t } = useLanguage()
   const { level1Name } = useHierarchyLevelLabels()
   const [activeTab, setActiveTab] = useState('overview')
   const [isConfigOpen, setIsConfigOpen] = useState(false)
-  const [draftVisibleSegmentIds, setDraftVisibleSegmentIds] = useState<string[] | null>(null)
+  const [draftVisibleSegmentIds, setDraftVisibleSegmentIds] = useState<
+    string[] | null
+  >(null)
   const { data: lines } = useProductionLinesQuery()
   const segments = useMemo<(Segment & { lineName: string })[]>(() => {
     return (lines ?? []).flatMap((line) =>
@@ -45,7 +63,10 @@ export function Dashboard() {
       }))
     )
   }, [lines])
-  const segmentIds = useMemo(() => segments.map((segment) => segment.id), [segments])
+  const segmentIds = useMemo(
+    () => segments.map((segment) => segment.id),
+    [segments]
+  )
 
   const { visibleSegmentIds: savedVisibleSegmentIds, saveVisibleSegmentIds } =
     useVisibleDashboardSegments(segmentIds)
@@ -82,18 +103,21 @@ export function Dashboard() {
 
       <div
         className={cn(
-          'fixed top-14 md:top-16 right-0 z-40 border-b border-dashed bg-background/95 backdrop-blur px-4 py-2.5 h-14 md:h-16 flex items-center shadow-sm',
+          'fixed top-14 right-0 z-40 flex h-14 items-center border-b border-dashed bg-background/95 px-4 py-2.5 shadow-sm backdrop-blur md:top-16 md:h-16',
           'transition-all duration-300 ease-in-out',
           'left-0 md:left-40 group-data-[state=collapsed]/sidebar-wrapper:md:left-12'
         )}
       >
-        <div className='flex items-center justify-between gap-4 w-full'>
+        <div className='flex w-full items-center justify-between gap-4'>
           <SegmentedTabs
             tabs={[
               { value: 'overview', label: t('dashboard.page.tabs.overview') },
               { value: 'calendar', label: t('dashboard.page.tabs.calendar') },
               { value: 'reports', label: t('dashboard.page.tabs.reports') },
-              { value: 'notifications', label: t('dashboard.page.tabs.notifications') },
+              {
+                value: 'notifications',
+                label: t('dashboard.page.tabs.notifications'),
+              },
             ]}
             value={activeTab}
             onValueChange={setActiveTab}
@@ -102,7 +126,7 @@ export function Dashboard() {
         </div>
       </div>
 
-      <Main className='animate-in fade-in duration-700 pt-14 md:pt-16'>
+      <Main className='animate-in pt-14 duration-700 fade-in md:pt-16'>
         <div className='flex flex-col gap-6 md:gap-8'>
           <IndustrialHeader
             title={t('dashboard.page.title')}
@@ -124,40 +148,42 @@ export function Dashboard() {
               <TabsContent value='overview' className='flex flex-col gap-8'>
                 <KpiGrid />
                 <div className='grid grid-cols-1 gap-4'>
-                  <Card className='col-span-1 rounded-2xl md:rounded-[32px] border-dashed border-2 border-muted/60 bg-muted/5 shadow-none overflow-hidden'>
-                    <CardHeader className='flex flex-row items-center justify-between px-4 py-4 md:px-6 border-b border-dashed border-muted/80'>
+                  <Card className='col-span-1 overflow-hidden rounded-2xl border-2 border-dashed border-muted/60 bg-muted/5 shadow-none md:rounded-[32px]'>
+                    <CardHeader className='flex flex-row items-center justify-between border-b border-dashed border-muted/80 px-4 py-4 md:px-6'>
                       <div className='space-y-1'>
-                        <CardTitle className='text-lg md:text-xl font-black uppercase tracking-tighter text-slate-800 italic'>
+                        <CardTitle className='text-lg font-black tracking-tighter text-slate-800 uppercase italic md:text-xl'>
                           {t('dashboard.page.throughput.title')}
                         </CardTitle>
-                        <CardDescription className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/40'>
-                          {t('dashboard.page.throughput.description', { levelName: level1Name })}
+                        <CardDescription className='text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase'>
+                          {t('dashboard.page.throughput.description', {
+                            levelName: level1Name,
+                          })}
                         </CardDescription>
                       </div>
                       <Button
                         variant='ghost'
                         size='icon'
-                        className='size-9 rounded-xl text-muted-foreground hover:text-blue-600 hover:bg-blue-500/10 transition-all border border-transparent hover:border-blue-500/20'
+                        className='size-9 rounded-xl border border-transparent text-muted-foreground transition-all hover:border-blue-500/20 hover:bg-blue-500/10 hover:text-blue-600'
                         onClick={handleOpenConfig}
                       >
                         <Settings className='size-5' />
                       </Button>
                     </CardHeader>
-                    <CardContent className='p-4 md:p-6 bg-background/30'>
+                    <CardContent className='bg-background/30 p-4 md:p-6'>
                       <Overview data={chartData} levelName={level1Name} />
                     </CardContent>
                   </Card>
 
-                  <Card className='col-span-1 rounded-2xl md:rounded-[32px] border-dashed border-2 border-muted/60 bg-muted/5 shadow-none overflow-hidden'>
-                    <CardHeader className='px-4 py-4 md:px-6 border-b border-dashed border-muted/80'>
-                      <CardTitle className='text-lg md:text-xl font-black uppercase tracking-tighter text-slate-800 italic'>
+                  <Card className='col-span-1 overflow-hidden rounded-2xl border-2 border-dashed border-muted/60 bg-muted/5 shadow-none md:rounded-[32px]'>
+                    <CardHeader className='border-b border-dashed border-muted/80 px-4 py-4 md:px-6'>
+                      <CardTitle className='text-lg font-black tracking-tighter text-slate-800 uppercase italic md:text-xl'>
                         {t('dashboard.page.scanStream.title')}
                       </CardTitle>
-                      <CardDescription className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/40'>
+                      <CardDescription className='text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase'>
                         {t('dashboard.page.scanStream.description')}
                       </CardDescription>
                     </CardHeader>
-                    <CardContent className='p-4 md:p-6 bg-background/30'>
+                    <CardContent className='bg-background/30 p-4 md:p-6'>
                       <TraceActivityList />
                     </CardContent>
                   </Card>
@@ -179,16 +205,20 @@ export function Dashboard() {
       </Main>
 
       <Dialog open={isConfigOpen} onOpenChange={handleConfigOpenChange}>
-        <DialogContent className='sm:max-w-md rounded-[32px] border-none shadow-2xl p-0 overflow-hidden bg-background'>
-          <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent pointer-events-none' />
-          
-          <div className='relative p-8 space-y-6'>
-            <DialogHeader className='text-left space-y-1.5'>
-              <DialogTitle className='text-lg font-black tracking-tighter italic uppercase text-slate-800'>
-                {t('dashboard.page.segmentDialog.title', { levelName: level1Name })}
+        <DialogContent className='overflow-hidden rounded-[32px] border-none bg-background p-0 shadow-2xl sm:max-w-md'>
+          <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 via-transparent' />
+
+          <div className='relative space-y-6 p-8'>
+            <DialogHeader className='space-y-1.5 text-left'>
+              <DialogTitle className='text-lg font-black tracking-tighter text-slate-800 uppercase italic'>
+                {t('dashboard.page.segmentDialog.title', {
+                  levelName: level1Name,
+                })}
               </DialogTitle>
-              <DialogDescription className='text-[9px] font-black uppercase tracking-widest opacity-60'>
-                {t('dashboard.page.segmentDialog.description', { levelName: level1Name })}
+              <DialogDescription className='text-[9px] font-black tracking-widest uppercase opacity-60'>
+                {t('dashboard.page.segmentDialog.description', {
+                  levelName: level1Name,
+                })}
               </DialogDescription>
             </DialogHeader>
 
@@ -196,10 +226,10 @@ export function Dashboard() {
               {segments.map((seg) => (
                 <div
                   key={seg.id}
-                  className={`flex items-center space-x-3 p-3 border-dashed border-2 rounded-2xl transition-all cursor-pointer group ${
-                    selectedSegmentIds.includes(seg.id) 
-                      ? 'bg-primary/5 border-primary/30 ring-1 ring-primary/10' 
-                      : 'bg-muted/5 border-muted/40 hover:border-muted/80'
+                  className={`group flex cursor-pointer items-center space-x-3 rounded-2xl border-2 border-dashed p-3 transition-all ${
+                    selectedSegmentIds.includes(seg.id)
+                      ? 'border-primary/30 bg-primary/5 ring-1 ring-primary/10'
+                      : 'border-muted/40 bg-muted/5 hover:border-muted/80'
                   }`}
                   onClick={() => {
                     const newIds = selectedSegmentIds.includes(seg.id)
@@ -209,43 +239,53 @@ export function Dashboard() {
                   }}
                 >
                   <div
-                    className={`flex items-center justify-center size-5 rounded-lg border-2 transition-all ${
-                      selectedSegmentIds.includes(seg.id) 
-                        ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20 scale-105' 
+                    className={`flex size-5 items-center justify-center rounded-lg border-2 transition-all ${
+                      selectedSegmentIds.includes(seg.id)
+                        ? 'scale-105 border-primary bg-primary text-white shadow-lg shadow-primary/20'
                         : 'border-muted-foreground/20 bg-background group-hover:border-muted-foreground/40'
                     }`}
                   >
-                    {selectedSegmentIds.includes(seg.id) && <Check className='size-3 stroke-4' />}
+                    {selectedSegmentIds.includes(seg.id) && (
+                      <Check className='size-3 stroke-4' />
+                    )}
                   </div>
                   <div className='flex flex-col overflow-hidden'>
-                    <span className='text-[11px] font-black text-slate-700 truncate uppercase tracking-tight'>{seg.name}</span>
-                    <span className='text-[8px] text-muted-foreground/50 font-mono truncate uppercase tracking-widest leading-none mt-0.5'>{seg.lineName}</span>
+                    <span className='truncate text-[11px] font-black tracking-tight text-slate-700 uppercase'>
+                      {seg.name}
+                    </span>
+                    <span className='mt-0.5 truncate font-mono text-[8px] leading-none tracking-widest text-muted-foreground/50 uppercase'>
+                      {seg.lineName}
+                    </span>
                   </div>
                 </div>
               ))}
               {segments.length === 0 && (
-                <div className='col-span-2 py-10 text-center border-2 border-dashed rounded-[32px] border-muted bg-muted/5'>
-                  <p className='text-[10px] font-black text-muted-foreground uppercase tracking-widest'>
-                    {t('dashboard.page.segmentDialog.emptyTitle', { levelName: level1Name })}
+                <div className='col-span-2 rounded-[32px] border-2 border-dashed border-muted bg-muted/5 py-10 text-center'>
+                  <p className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
+                    {t('dashboard.page.segmentDialog.emptyTitle', {
+                      levelName: level1Name,
+                    })}
                   </p>
-                  <p className='text-[9px] mt-1 text-muted-foreground/40 font-black uppercase tracking-tighter'>
-                    {t('dashboard.page.segmentDialog.emptyDescription', { levelName: level1Name })}
+                  <p className='mt-1 text-[9px] font-black tracking-tighter text-muted-foreground/40 uppercase'>
+                    {t('dashboard.page.segmentDialog.emptyDescription', {
+                      levelName: level1Name,
+                    })}
                   </p>
                 </div>
               )}
             </div>
 
-            <DialogFooter className='sm:justify-end gap-3'>
-              <Button 
-                variant='ghost' 
+            <DialogFooter className='gap-3 sm:justify-end'>
+              <Button
+                variant='ghost'
                 onClick={() => handleConfigOpenChange(false)}
-                className='rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest bg-muted/30 hover:bg-muted/50 border-none'
+                className='h-11 rounded-full border-none bg-muted/30 px-8 text-[10px] font-black tracking-widest uppercase hover:bg-muted/50'
               >
                 {t('dashboard.page.segmentDialog.cancel')}
               </Button>
-              <Button 
-                onClick={() => void handleSaveConfig()} 
-                className='rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20'
+              <Button
+                onClick={() => void handleSaveConfig()}
+                className='h-11 rounded-full bg-primary px-8 text-[10px] font-black tracking-widest text-white uppercase shadow-lg shadow-primary/20 hover:bg-primary/90'
               >
                 {t('dashboard.page.segmentDialog.save')}
               </Button>

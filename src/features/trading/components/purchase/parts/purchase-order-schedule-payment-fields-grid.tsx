@@ -1,12 +1,16 @@
+import { useLanguage } from '@/context/language-provider'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { SelectDropdown } from '@/components/select-dropdown'
-import { useLanguage } from '@/context/language-provider'
 import { type PurchaseOrder } from '../../../data/schema'
 import { PurchaseOrderNoteSection } from './purchase-order-note-section'
 
 type PurchaseOrderFieldValue = PurchaseOrder[keyof PurchaseOrder]
-type PurchaseOrderSelectItem = { label: string; value: string; disabled?: boolean }
+type PurchaseOrderSelectItem = {
+  label: string
+  value: string
+  disabled?: boolean
+}
 
 interface PurchaseOrderSchedulePaymentFieldsGridProps {
   formData: Partial<PurchaseOrder>
@@ -14,7 +18,10 @@ interface PurchaseOrderSchedulePaymentFieldsGridProps {
   paymentTermOptions: PurchaseOrderSelectItem[]
   isFinanceLoading: boolean
   isFinanceReady: boolean
-  handleHeaderChange: (field: keyof PurchaseOrder, value: PurchaseOrderFieldValue) => void
+  handleHeaderChange: (
+    field: keyof PurchaseOrder,
+    value: PurchaseOrderFieldValue
+  ) => void
   handlePaymentMethodChange: (value: string) => void
   handlePaymentTermChange: (value: string) => void
 }
@@ -34,11 +41,13 @@ export function PurchaseOrderSchedulePaymentFieldsGrid({
   return (
     <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-[repeat(3,minmax(0,1fr))_minmax(0,3fr)]'>
       <div className='space-y-1.5'>
-        <Label className='pl-1 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50'>
+        <Label className='pl-1 text-[10px] font-black tracking-[0.2em] text-muted-foreground/50 uppercase'>
           {t('purchase.orders.headerFields.paymentMethod')}
         </Label>
         <SelectDropdown
-          placeholder={t('purchase.orders.headerFields.paymentMethodPlaceholder')}
+          placeholder={t(
+            'purchase.orders.headerFields.paymentMethodPlaceholder'
+          )}
           items={paymentMethodOptions}
           defaultValue={formData.paymentMethod}
           onValueChange={handlePaymentMethodChange}
@@ -49,7 +58,7 @@ export function PurchaseOrderSchedulePaymentFieldsGrid({
       </div>
 
       <div className='space-y-1.5'>
-        <Label className='pl-1 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50'>
+        <Label className='pl-1 text-[10px] font-black tracking-[0.2em] text-muted-foreground/50 uppercase'>
           {t('purchase.orders.headerFields.paymentTerm')}
         </Label>
         <SelectDropdown
@@ -64,10 +73,14 @@ export function PurchaseOrderSchedulePaymentFieldsGrid({
       </div>
 
       <div className='space-y-1.5'>
-        <Label className='pl-1 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50'>
+        <Label className='pl-1 text-[10px] font-black tracking-[0.2em] text-muted-foreground/50 uppercase'>
           {t('purchase.orders.headerFields.purchaser')}
         </Label>
-        <Input value={formData.purchaser} disabled className='h-10 rounded-2xl border-none bg-white/50 font-black shadow-sm' />
+        <Input
+          value={formData.purchaser}
+          disabled
+          className='h-10 rounded-2xl border-none bg-white/50 font-black shadow-sm'
+        />
       </div>
 
       <PurchaseOrderNoteSection

@@ -1,9 +1,16 @@
-import { apiFetch } from '@/lib/api-client'
 import { z } from 'zod'
+import { apiFetch } from '@/lib/api-client'
 
 // 终端资源状态定义
-export const TerminalResourceStatusSchema = z.enum(['active', 'pendingUpload', 'deprecated', 'planned'])
-export type TerminalResourceStatus = z.infer<typeof TerminalResourceStatusSchema>
+export const TerminalResourceStatusSchema = z.enum([
+  'active',
+  'pendingUpload',
+  'deprecated',
+  'planned',
+])
+export type TerminalResourceStatus = z.infer<
+  typeof TerminalResourceStatusSchema
+>
 
 // 终端资源定义 (驱动、固件等)
 export const TerminalResourceSchema = z.object({
@@ -26,15 +33,21 @@ class TerminalResourceService {
    */
   async getResourcesByCategory(category: string): Promise<TerminalResource[]> {
     // 实际生产环境下此接口应对应 GET /api/v1/terminal/resources?category=${category}
-    return apiFetch<TerminalResource[]>(`/terminal/resources?category=${category}`, {
-      method: 'GET',
-    })
+    return apiFetch<TerminalResource[]>(
+      `/terminal/resources?category=${category}`,
+      {
+        method: 'GET',
+      }
+    )
   }
 
   /**
    * 上传资源 (管理员权限)
    */
-  async uploadResource(category: string, file: File): Promise<TerminalResource> {
+  async uploadResource(
+    category: string,
+    file: File
+  ): Promise<TerminalResource> {
     const formData = new FormData()
     formData.append('file', file)
     formData.append('category', category)

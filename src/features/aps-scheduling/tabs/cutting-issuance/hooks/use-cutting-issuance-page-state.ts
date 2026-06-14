@@ -3,7 +3,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { CUTTING_ISSUANCE_QUERY_KEYS } from '../constants'
-import { findTemplateForOrder, getCompatibleTemplates } from '../template-matcher'
 import {
   createCuttingIssuanceExecution,
   getCuttingIssuanceOrders,
@@ -11,6 +10,10 @@ import {
   getCuttingIssuanceTraceReport,
   listCuttingIssuanceExecutions,
 } from '../service'
+import {
+  findTemplateForOrder,
+  getCompatibleTemplates,
+} from '../template-matcher'
 
 export function useCuttingIssuancePageState() {
   const { t } = useLanguage()
@@ -52,7 +55,7 @@ export function useCuttingIssuancePageState() {
 
   const selectedOrder = useMemo(
     () => orders.find((order) => order.id === orderId),
-    [orderId, orders],
+    [orderId, orders]
   )
 
   useEffect(() => {
@@ -61,20 +64,24 @@ export function useCuttingIssuancePageState() {
       return
     }
 
-    const exists = selectedOrder.lines.some((line) => String(line.lineNo) === lineNo)
+    const exists = selectedOrder.lines.some(
+      (line) => String(line.lineNo) === lineNo
+    )
     if (!exists) {
-      setLineNo(selectedOrder.lines[0] ? String(selectedOrder.lines[0].lineNo) : '')
+      setLineNo(
+        selectedOrder.lines[0] ? String(selectedOrder.lines[0].lineNo) : ''
+      )
     }
   }, [lineNo, selectedOrder])
 
   const selectedLine = useMemo(
     () => selectedOrder?.lines.find((line) => String(line.lineNo) === lineNo),
-    [lineNo, selectedOrder],
+    [lineNo, selectedOrder]
   )
 
   const compatibleTemplates = useMemo(
     () => getCompatibleTemplates(selectedLine, templates),
-    [selectedLine, templates],
+    [selectedLine, templates]
   )
 
   useEffect(() => {
@@ -83,24 +90,31 @@ export function useCuttingIssuancePageState() {
       return
     }
 
-    const existsInCompatible = compatibleTemplates.some((template) => template.id === templateId)
+    const existsInCompatible = compatibleTemplates.some(
+      (template) => template.id === templateId
+    )
     if (existsInCompatible) {
       return
     }
 
-    const matchedTemplate = findTemplateForOrder(selectedLine, compatibleTemplates)
+    const matchedTemplate = findTemplateForOrder(
+      selectedLine,
+      compatibleTemplates
+    )
     setTemplateId(matchedTemplate?.id || '')
   }, [compatibleTemplates, selectedLine, templateId])
 
   const selectedTemplate = useMemo(
     () => compatibleTemplates.find((template) => template.id === templateId),
-    [compatibleTemplates, templateId],
+    [compatibleTemplates, templateId]
   )
 
   const createExecutionMutation = useMutation({
     mutationFn: async () => {
       if (!selectedOrder || !selectedLine || !selectedTemplate) {
-        throw new Error(t('apsScheduling.cuttingIssuance.feedback.createMissingSelection'))
+        throw new Error(
+          t('apsScheduling.cuttingIssuance.feedback.createMissingSelection')
+        )
       }
 
       return createCuttingIssuanceExecution({
@@ -113,12 +127,18 @@ export function useCuttingIssuancePageState() {
       toast.success(
         t('apsScheduling.cuttingIssuance.feedback.createSuccess', {
           id: result.id || selectedOrder?.orderNo || '',
-        }),
+        })
       )
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: CUTTING_ISSUANCE_QUERY_KEYS.executions }),
-        queryClient.invalidateQueries({ queryKey: CUTTING_ISSUANCE_QUERY_KEYS.traceReport }),
-        queryClient.invalidateQueries({ queryKey: CUTTING_ISSUANCE_QUERY_KEYS.orders }),
+        queryClient.invalidateQueries({
+          queryKey: CUTTING_ISSUANCE_QUERY_KEYS.executions,
+        }),
+        queryClient.invalidateQueries({
+          queryKey: CUTTING_ISSUANCE_QUERY_KEYS.traceReport,
+        }),
+        queryClient.invalidateQueries({
+          queryKey: CUTTING_ISSUANCE_QUERY_KEYS.orders,
+        }),
       ])
     },
     onError: (error) => {
@@ -134,8 +154,12 @@ export function useCuttingIssuancePageState() {
 
   const isLoading = ordersQuery.isLoading || templatesQuery.isLoading
   const loadingError =
-    ordersQuery.error || templatesQuery.error || executionsQuery.error || traceReportQuery.error
-  const isExecutionOrTraceRefreshing = executionsQuery.isFetching || traceReportQuery.isFetching
+    ordersQuery.error ||
+    templatesQuery.error ||
+    executionsQuery.error ||
+    traceReportQuery.error
+  const isExecutionOrTraceRefreshing =
+    executionsQuery.isFetching || traceReportQuery.isFetching
 
   const headerStatus = useMemo(() => {
     if (isLoading) {
@@ -177,7 +201,14 @@ export function useCuttingIssuancePageState() {
       label: t('apsScheduling.cuttingIssuance.header.status.matching'),
       className: 'border-cyan-500/20 bg-cyan-500/5 text-cyan-700',
     }
-  }, [compatibleTemplates.length, isLoading, selectedLine, selectedOrder, selectedTemplate, t])
+  }, [
+    compatibleTemplates.length,
+    isLoading,
+    selectedLine,
+    selectedOrder,
+    selectedTemplate,
+    t,
+  ])
 
   const templateMatchHint = !selectedLine
     ? t('apsScheduling.cuttingIssuance.feedback.templateHintAwaitingLine')
@@ -185,9 +216,12 @@ export function useCuttingIssuancePageState() {
       ? t('apsScheduling.cuttingIssuance.feedback.templateHintNoTemplate')
       : compatibleTemplates.length === 1
         ? t('apsScheduling.cuttingIssuance.feedback.templateHintSingleTemplate')
-        : t('apsScheduling.cuttingIssuance.feedback.templateHintMultipleTemplate', {
-            count: compatibleTemplates.length,
-          })
+        : t(
+            'apsScheduling.cuttingIssuance.feedback.templateHintMultipleTemplate',
+            {
+              count: compatibleTemplates.length,
+            }
+          )
 
   const missingTemplateMessage =
     selectedLine && compatibleTemplates.length === 0
@@ -197,7 +231,9 @@ export function useCuttingIssuancePageState() {
         })
       : null
 
-  const canCreateExecution = Boolean(selectedOrder && selectedLine && selectedTemplate)
+  const canCreateExecution = Boolean(
+    selectedOrder && selectedLine && selectedTemplate
+  )
 
   const refreshExecutionAndTrace = () => {
     void executionsQuery.refetch()

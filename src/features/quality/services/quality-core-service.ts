@@ -41,7 +41,10 @@ export type QualityTasksResponse = {
   [key: string]: unknown
 }
 
-function resolveOptionalNumberField(source: Record<string, unknown>, key: string) {
+function resolveOptionalNumberField(
+  source: Record<string, unknown>,
+  key: string
+) {
   const value = source[key]
   return typeof value === 'number' && Number.isFinite(value) ? value : 0
 }

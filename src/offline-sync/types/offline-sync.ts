@@ -1,4 +1,6 @@
-export type OfflineEntityType = 'warehouse.stocktake.scan' | 'warehouse.stocktake.item'
+export type OfflineEntityType =
+  | 'warehouse.stocktake.scan'
+  | 'warehouse.stocktake.item'
 
 export type OfflineSyncState = 'queued' | 'syncing' | 'conflict' | 'expired'
 

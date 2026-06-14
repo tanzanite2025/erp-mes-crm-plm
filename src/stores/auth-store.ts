@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import { StorageService } from '@/features/system-mgmt/services/storage-service'
 import { useNotificationStore } from '@/features/system-mgmt/notifications/notification-store'
+import { StorageService } from '@/features/system-mgmt/services/storage-service'
 
 export const XDFC_AUTH_USER_MUTATION_EVENT = 'xdfc_auth_user_mutation'
 
@@ -60,11 +60,17 @@ function toAuthUserSnapshot(user: AuthUser | null): AuthUserSnapshot | null {
     username: user.username,
     accountNo: user.accountNo,
     email: user.email,
-    permissionCount: Array.isArray(user.permissions) ? user.permissions.length : 0,
+    permissionCount: Array.isArray(user.permissions)
+      ? user.permissions.length
+      : 0,
   }
 }
 
-function logAuthUserMutation(prevUser: AuthUser | null, nextUser: AuthUser | null, source: string) {
+function logAuthUserMutation(
+  prevUser: AuthUser | null,
+  nextUser: AuthUser | null,
+  source: string
+) {
   if (typeof window === 'undefined') return
 
   const before = toAuthUserSnapshot(prevUser)
@@ -92,7 +98,9 @@ function logAuthUserMutation(prevUser: AuthUser | null, nextUser: AuthUser | nul
   }
   win.__XDFC_AUTH_USER_MUTATIONS__ = history
 
-  window.dispatchEvent(new CustomEvent(XDFC_AUTH_USER_MUTATION_EVENT, { detail }))
+  window.dispatchEvent(
+    new CustomEvent(XDFC_AUTH_USER_MUTATION_EVENT, { detail })
+  )
 }
 
 /**
@@ -116,7 +124,12 @@ export const useAuthStore = create<AuthState>()(
       resetAccessToken: () => set({ accessToken: '' }),
       reset: () => {
         logAuthUserMutation(get().user, null, 'reset')
-        set({ user: null, accessToken: '', isSyncing: false, isIdentitySynced: false })
+        set({
+          user: null,
+          accessToken: '',
+          isSyncing: false,
+          isIdentitySynced: false,
+        })
         void StorageService.removeItem('system_effective_permissions')
         useNotificationStore.getState().clearAll()
       },
@@ -124,7 +137,8 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'xdfc_auth_v2',
       storage: createJSONStorage(() => ({
-        getItem: (name) => StorageService.getItem(name).then((data) => JSON.stringify(data)),
+        getItem: (name) =>
+          StorageService.getItem(name).then((data) => JSON.stringify(data)),
         setItem: (name, value) => {
           // 深度过滤：即使 middleware 尝试写入，我们也确保持久化层不包含 user
           const parsed = JSON.parse(value)
@@ -142,8 +156,8 @@ export const useAuthStore = create<AuthState>()(
         ...currentState,
         ...sanitizePersistedAuthState(persistedState),
       }),
-    },
-  ),
+    }
+  )
 )
 
 type AuthPersistApi = {
@@ -153,19 +167,27 @@ type AuthPersistApi = {
 }
 
 function getAuthPersistApi(): AuthPersistApi | undefined {
-  return (useAuthStore as typeof useAuthStore & { persist?: AuthPersistApi }).persist
+  return (useAuthStore as typeof useAuthStore & { persist?: AuthPersistApi })
+    .persist
 }
 
-function sanitizePersistedAuthState(persistedState: unknown): Partial<AuthState> {
+function sanitizePersistedAuthState(
+  persistedState: unknown
+): Partial<AuthState> {
   // [BACKEND-AUTHORITY & FAIL-LOUDLY]: 身份验证状态必须严谨。
   // 严禁使用 persistedState ?? {} 掩盖加载失败或状态损坏。
-  if (persistedState !== null && persistedState !== undefined && typeof persistedState !== 'object') {
+  if (
+    persistedState !== null &&
+    persistedState !== undefined &&
+    typeof persistedState !== 'object'
+  ) {
     const errorMsg = `[CRITICAL] Auth Storage Corruption: Persisted state is not an object (type: ${typeof persistedState})`
     throw new Error(errorMsg)
   }
 
   const raw = (persistedState || {}) as LegacyAuthPersistShape
-  const nestedAuth = raw.auth && typeof raw.auth === 'object' ? raw.auth : undefined
+  const nestedAuth =
+    raw.auth && typeof raw.auth === 'object' ? raw.auth : undefined
 
   // 校验 Token 类型，非字符串则视为缺失
   const accessTokenCandidate =

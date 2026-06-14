@@ -1,7 +1,8 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
 
-const PRODUCT_BARCODE_CAPTURE_ENDPOINT = '/production/product-barcode-capture-sessions'
+const PRODUCT_BARCODE_CAPTURE_ENDPOINT =
+  '/production/product-barcode-capture-sessions'
 
 export type ProductBarcodeCaptureStatus = 'Waiting' | 'Submitted' | 'Expired'
 
@@ -21,7 +22,9 @@ export interface SubmitProductBarcodeCaptureSessionInput {
   rawCode: string
 }
 
-function normalizeSession(item: Partial<ProductBarcodeCaptureSession>): ProductBarcodeCaptureSession {
+function normalizeSession(
+  item: Partial<ProductBarcodeCaptureSession>
+): ProductBarcodeCaptureSession {
   return {
     sessionId: item.sessionId || '',
     uploadToken: item.uploadToken,
@@ -36,33 +39,34 @@ function normalizeSession(item: Partial<ProductBarcodeCaptureSession>): ProductB
 
 export const ProductBarcodeCaptureSessionService = {
   async create(): Promise<ProductBarcodeCaptureSession> {
-    const res = await apiFetch<ProductBarcodeCaptureSession>(PRODUCT_BARCODE_CAPTURE_ENDPOINT, {
-      method: 'POST',
-      body: JSON.stringify({}),
-    })
+    const res = await apiFetch<ProductBarcodeCaptureSession>(
+      PRODUCT_BARCODE_CAPTURE_ENDPOINT,
+      {
+        method: 'POST',
+        body: JSON.stringify({}),
+      }
+    )
     return normalizeSession(
-      ensureObjectResponse<ProductBarcodeCaptureSession & Record<string, unknown>>(
-        res,
-        'ProductBarcodeCaptureSessionService.create',
-      ),
+      ensureObjectResponse<
+        ProductBarcodeCaptureSession & Record<string, unknown>
+      >(res, 'ProductBarcodeCaptureSessionService.create')
     )
   },
 
   async get(sessionId: string): Promise<ProductBarcodeCaptureSession> {
     const res = await apiFetch<ProductBarcodeCaptureSession>(
-      `${PRODUCT_BARCODE_CAPTURE_ENDPOINT}/${sessionId}`,
+      `${PRODUCT_BARCODE_CAPTURE_ENDPOINT}/${sessionId}`
     )
     return normalizeSession(
-      ensureObjectResponse<ProductBarcodeCaptureSession & Record<string, unknown>>(
-        res,
-        'ProductBarcodeCaptureSessionService.get',
-      ),
+      ensureObjectResponse<
+        ProductBarcodeCaptureSession & Record<string, unknown>
+      >(res, 'ProductBarcodeCaptureSessionService.get')
     )
   },
 
   async submit(
     sessionId: string,
-    input: SubmitProductBarcodeCaptureSessionInput,
+    input: SubmitProductBarcodeCaptureSessionInput
   ): Promise<ProductBarcodeCaptureSession> {
     const res = await apiFetch<ProductBarcodeCaptureSession>(
       `${PRODUCT_BARCODE_CAPTURE_ENDPOINT}/${sessionId}/submit`,
@@ -73,7 +77,7 @@ export const ProductBarcodeCaptureSessionService = {
           token: input.token,
           rawCode: input.rawCode,
         }),
-      },
+      }
     )
     return normalizeSession(res)
   },

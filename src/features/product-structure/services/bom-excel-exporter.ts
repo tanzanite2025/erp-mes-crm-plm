@@ -1,17 +1,21 @@
+import type { DataValidation } from 'exceljs'
 import {
   applyWorksheetHeaderRowStyle,
   createExcelWorkbook,
   downloadWorkbook,
   EXCEL_LIGHT_THIN_BORDER,
 } from '@/lib/excel/export'
-import type { DataValidation } from 'exceljs'
+import { formatEngineeringExportFileDate } from '@/features/engineering/utils/engineering-export-file-date'
 import { type MaterialOption } from '../../material-archive/data/schema'
 import { type BOMSectionOption } from '../data/bom-section-schema'
 import { type Product } from '../data/schema'
-import { formatEngineeringExportFileDate } from '@/features/engineering/utils/engineering-export-file-date'
-import { BOM_EXCEL_LIMITS, BOM_EXCEL_LOCK_PASSWORDS, BOM_EXCEL_SHEETS } from './bom-excel-contract'
-import { escapeFormula } from './bom-excel-security'
 import { getActiveBOMSections } from '../utils/bom-section-utils'
+import {
+  BOM_EXCEL_LIMITS,
+  BOM_EXCEL_LOCK_PASSWORDS,
+  BOM_EXCEL_SHEETS,
+} from './bom-excel-contract'
+import { escapeFormula } from './bom-excel-security'
 
 /**
  * 导出带高级联动特性的智能填报模板
@@ -21,14 +25,16 @@ export const generateBOMTemplate = async (
   materials: MaterialOption[],
   products: Product[],
   sections: BOMSectionOption[],
-  productDisplayLabelMap: Map<string, string>,
+  productDisplayLabelMap: Map<string, string>
 ) => {
   const workbook = await createExcelWorkbook()
   const activeSections = getActiveBOMSections(sections)
   const sectionLabels = activeSections.map((section) => section.name)
 
   // --- 1. 创建物料与产品档案参考页 (绝对隐藏) ---
-  const archiveSheet = workbook.addWorksheet(BOM_EXCEL_SHEETS.archive, { state: 'veryHidden' })
+  const archiveSheet = workbook.addWorksheet(BOM_EXCEL_SHEETS.archive, {
+    state: 'veryHidden',
+  })
   archiveSheet.columns = [
     // 物料区 (A-F)
     { header: 'Material_ComboText', key: 'm_combo' },
@@ -51,7 +57,9 @@ export const generateBOMTemplate = async (
     const p = products[i]
     const rowData: Record<string, unknown> = {}
     if (m) {
-      rowData.m_combo = escapeFormula(`[${m.code}] ${m.name} - ${m.spec || '规格未录'}`)
+      rowData.m_combo = escapeFormula(
+        `[${m.code}] ${m.name} - ${m.spec || '规格未录'}`
+      )
       rowData.m_id = m.id
       rowData.m_name = escapeFormula(m.name)
       rowData.m_spec = escapeFormula(m.spec)
@@ -60,7 +68,9 @@ export const generateBOMTemplate = async (
       rowData.m_category = m.category
     }
     if (p) {
-      rowData.p_combo = escapeFormula(`[${p.sku}] ${productDisplayLabelMap.get(p.id) ?? ''}`)
+      rowData.p_combo = escapeFormula(
+        `[${p.sku}] ${productDisplayLabelMap.get(p.id) ?? ''}`
+      )
       rowData.p_id = p.id
     }
 
@@ -143,8 +153,12 @@ export const generateBOMTemplate = async (
     row.getCell('G').dataValidation = validateDecimalLabel
 
     // 【智能填充】D/E列：侦听 C 列变动，经 Sheet VLOOKUP 获取单位和单价
-    row.getCell('D').value = { formula: `IFERROR(VLOOKUP(C${i}, '${BOM_EXCEL_SHEETS.archive}'!A:F, 5, FALSE)&"", "")` }
-    row.getCell('E').value = { formula: `IF(C${i}="", "", IFERROR(VLOOKUP(C${i}, '${BOM_EXCEL_SHEETS.archive}'!A:F, 6, FALSE), 0))` }
+    row.getCell('D').value = {
+      formula: `IFERROR(VLOOKUP(C${i}, '${BOM_EXCEL_SHEETS.archive}'!A:F, 5, FALSE)&"", "")`,
+    }
+    row.getCell('E').value = {
+      formula: `IF(C${i}="", "", IFERROR(VLOOKUP(C${i}, '${BOM_EXCEL_SHEETS.archive}'!A:F, 6, FALSE), 0))`,
+    }
 
     // 权限切分：开放操作列的写全权限，开放单价(E)让用户能在公式基础上改写
     ;['A', 'B', 'C', 'E', 'F', 'G', 'H'].forEach((col) => {
@@ -155,12 +169,24 @@ export const generateBOMTemplate = async (
     ;['D'].forEach((col) => {
       const cell = row.getCell(col)
       cell.protection = { locked: true }
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF9FAFB' } }
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFF9FAFB' },
+      }
     })
 
     // F列(用量)和 G列(损耗)由于必填，给一个醒目底色
-    row.getCell('F').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFDF2F8' } }
-    row.getCell('G').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFDF2F8' } }
+    row.getCell('F').fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFFDF2F8' },
+    }
+    row.getCell('G').fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFFDF2F8' },
+    }
   }
 
   // --- 4. 施加保护 ---

@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { useLanguage } from '@/context/language-provider'
-import { buildMutationOptions } from '@/lib/react-query-mutation'
+import { type DeltaSet } from '@/lib/delta/types'
 import { isConflictError } from '@/lib/handle-server-error'
+import { buildMutationOptions } from '@/lib/react-query-mutation'
+import { useLanguage } from '@/context/language-provider'
 import { toUpdateLogisticsStatusApiDTO } from '../adapters/logistics-api-adapter'
 import type {
   LogisticsEvent,
@@ -11,7 +12,6 @@ import type {
   UpdateLogisticsStatusInput,
 } from '../data/schema'
 import { logisticsService } from '../services/logistics-service'
-import { type DeltaSet } from '@/lib/delta/types'
 
 interface PatchLogisticsRecordInput {
   id: string
@@ -34,8 +34,10 @@ export const LOGISTICS_KEYS = {
   all: ['logistics'] as const,
   list: () => [...LOGISTICS_KEYS.all, 'list'] as const,
   detail: (id: string) => [...LOGISTICS_KEYS.all, 'detail', id] as const,
-  tracking: (trackingNo: string) => [...LOGISTICS_KEYS.all, 'tracking', trackingNo] as const,
-  byOrder: (orderNo: string) => [...LOGISTICS_KEYS.all, 'by-order', orderNo] as const,
+  tracking: (trackingNo: string) =>
+    [...LOGISTICS_KEYS.all, 'tracking', trackingNo] as const,
+  byOrder: (orderNo: string) =>
+    [...LOGISTICS_KEYS.all, 'by-order', orderNo] as const,
 }
 
 export function useGetLogistics(page = 1, pageSize = 50) {
@@ -53,10 +55,16 @@ export function useGetLogisticsDetail(id: string | undefined) {
   })
 }
 
-export function useGetControlledTrackingDetail(trackingNo: string | undefined, enabled = true) {
+export function useGetControlledTrackingDetail(
+  trackingNo: string | undefined,
+  enabled = true
+) {
   return useQuery({
     queryKey: LOGISTICS_KEYS.tracking(trackingNo || ''),
-    queryFn: () => (trackingNo ? logisticsService.getControlledTrackingDetail(trackingNo) : null),
+    queryFn: () =>
+      trackingNo
+        ? logisticsService.getControlledTrackingDetail(trackingNo)
+        : null,
     enabled: enabled && !!trackingNo,
   })
 }
@@ -68,7 +76,11 @@ export function useLogisticsMutations() {
   const saveMutation = useMutation({
     mutationFn: (input: SaveLogisticsMutationInput) => {
       if (input.mode === 'patch' && input.patchInput) {
-        return logisticsService.patchLogistics(input.patchInput.id, input.patchInput.delta, input.patchInput.version)
+        return logisticsService.patchLogistics(
+          input.patchInput.id,
+          input.patchInput.delta,
+          input.patchInput.version
+        )
       }
 
       if (input.mode === 'create' && input.createInput) {
@@ -77,19 +89,23 @@ export function useLogisticsMutations() {
 
       throw new Error('[CRITICAL] Invalid logistics save mutation input')
     },
-    ...buildMutationOptions<LogisticsRecord, Error, SaveLogisticsMutationInput>({
-      queryClient,
-      invalidateQueryKeys: [LOGISTICS_KEYS.all],
-      onSuccess: () => {
-        toast.success(t('trading.logistics.toasts.saveSuccess'))
-      },
-    }),
+    ...buildMutationOptions<LogisticsRecord, Error, SaveLogisticsMutationInput>(
+      {
+        queryClient,
+        invalidateQueryKeys: [LOGISTICS_KEYS.all],
+        onSuccess: () => {
+          toast.success(t('trading.logistics.toasts.saveSuccess'))
+        },
+      }
+    ),
     onError: (err: Error) => {
       if (isConflictError(err)) {
         toast.error(t('trading.logistics.toasts.conflict'))
         return
       }
-      toast.error(t('trading.logistics.toasts.saveFailed', { message: err.message }))
+      toast.error(
+        t('trading.logistics.toasts.saveFailed', { message: err.message })
+      )
     },
   })
 
@@ -97,9 +113,17 @@ export function useLogisticsMutations() {
     mutationFn: (input: UpdateLogisticsStatusMutationInput) =>
       logisticsService.updateStatus(
         input.id,
-        toUpdateLogisticsStatusApiDTO(input, input.currentVersion, input.currentEvents)
+        toUpdateLogisticsStatusApiDTO(
+          input,
+          input.currentVersion,
+          input.currentEvents
+        )
       ),
-    ...buildMutationOptions<LogisticsRecord, Error, UpdateLogisticsStatusMutationInput>({
+    ...buildMutationOptions<
+      LogisticsRecord,
+      Error,
+      UpdateLogisticsStatusMutationInput
+    >({
       queryClient,
       invalidateQueryKeys: [LOGISTICS_KEYS.all],
       onSuccess: () => {
@@ -107,7 +131,11 @@ export function useLogisticsMutations() {
       },
     }),
     onError: (err: Error) => {
-      toast.error(t('trading.logistics.toasts.updateStatusFailed', { message: err.message }))
+      toast.error(
+        t('trading.logistics.toasts.updateStatusFailed', {
+          message: err.message,
+        })
+      )
     },
   })
 
@@ -121,20 +149,29 @@ export function useLogisticsMutations() {
       },
     }),
     onError: (err: Error) => {
-      toast.error(t('trading.logistics.toasts.deleteFailed', { message: err.message }))
+      toast.error(
+        t('trading.logistics.toasts.deleteFailed', { message: err.message })
+      )
     },
   })
 
   const refreshTrackingMutation = useMutation({
     mutationFn: async (trackingNo: string) => {
-      const detail = await logisticsService.getControlledTrackingDetail(trackingNo, { refresh: true })
+      const detail = await logisticsService.getControlledTrackingDetail(
+        trackingNo,
+        { refresh: true }
+      )
       if (detail) {
         queryClient.setQueryData(LOGISTICS_KEYS.tracking(trackingNo), detail)
       }
       return detail
     },
     onError: (err: Error) => {
-      toast.error(t('trading.logistics.toasts.trackingRefreshFailed', { message: err.message }))
+      toast.error(
+        t('trading.logistics.toasts.trackingRefreshFailed', {
+          message: err.message,
+        })
+      )
     },
   })
 

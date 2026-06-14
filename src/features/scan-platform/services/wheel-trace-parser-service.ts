@@ -1,5 +1,5 @@
-import { parseLinearBarcodeCode } from '@/features/basic-settings/utils/linear-barcode-parser'
 import { normalizeMachineCode } from '@/lib/codecs/code-normalization'
+import { parseLinearBarcodeCode } from '@/features/basic-settings/utils/linear-barcode-parser'
 import type { ScanResolveInput } from '../core/types'
 import type {
   WheelBarcodeSnapshot,
@@ -9,7 +9,12 @@ import type {
 
 export interface WheelTraceParserOptions {
   appearanceMapping?: Record<string, { label?: string }>
-  products?: Array<{ modelCode?: string; name?: string; id?: string; sku?: string }>
+  products?: Array<{
+    modelCode?: string
+    name?: string
+    id?: string
+    sku?: string
+  }>
 }
 
 export type WheelTraceParserContext = WheelTraceParserOptions
@@ -35,7 +40,9 @@ function toIdentitySnapshot(
   barcode: WheelBarcodeSnapshot,
   options: WheelTraceParserOptions = {}
 ): WheelIdentitySnapshot {
-  const matchedProduct = options.products?.find((product) => product.modelCode === barcode.modelCode)
+  const matchedProduct = options.products?.find(
+    (product) => product.modelCode === barcode.modelCode
+  )
   const appearanceLabel = barcode.appearanceCode
     ? options.appearanceMapping?.[barcode.appearanceCode]?.label
     : undefined

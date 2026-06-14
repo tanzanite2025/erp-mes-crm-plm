@@ -1,17 +1,17 @@
+import { ZodError } from 'zod'
+import { createLogger } from '@/lib/logger'
 import {
   engineeringSpecService,
   type EngineeringSpec,
   type EngineeringSpecInput,
 } from '@/features/engineering/services/engineering-spec-service'
-import { ZodError } from 'zod'
-import { createLogger } from '@/lib/logger'
+import type { CutSizeUnit } from '@/features/raw-materials/cut-size-library/data/cut-size-library-schema'
 import {
   cuttingPlanSchema,
   prepareCuttingPlanForPersistence,
   type CuttingPlan,
   type CuttingPlanInput,
 } from '../data/cutting-plan-schema'
-import type { CutSizeUnit } from '@/features/raw-materials/cut-size-library/data/cut-size-library-schema'
 
 const CUTTING_PLAN_SPEC_TYPE = 'CUTTING_PLAN'
 const logger = createLogger('CuttingPlanService')
@@ -81,7 +81,9 @@ function classifyInvalidCuttingPlanFailure(error: unknown): {
   failureLabel: string
 } {
   if (error instanceof ZodError) {
-    const paths = error.issues.map((issue) => issue.path.map((segment) => String(segment)).join('.'))
+    const paths = error.issues.map((issue) =>
+      issue.path.map((segment) => String(segment)).join('.')
+    )
 
     if (paths.some((path) => path === 'lines' || path.startsWith('lines.'))) {
       return {
@@ -92,7 +94,14 @@ function classifyInvalidCuttingPlanFailure(error: unknown): {
 
     if (
       paths.some((path) =>
-        ['name', 'productId', 'productCode', 'productName', 'holeCount', 'status'].includes(path),
+        [
+          'name',
+          'productId',
+          'productCode',
+          'productName',
+          'holeCount',
+          'status',
+        ].includes(path)
       )
     ) {
       return {
@@ -113,7 +122,10 @@ function classifyInvalidCuttingPlanFailure(error: unknown): {
   }
 }
 
-function toInvalidCuttingPlanSummary(spec: EngineeringSpec, error: unknown): InvalidCuttingPlanSummary {
+function toInvalidCuttingPlanSummary(
+  spec: EngineeringSpec,
+  error: unknown
+): InvalidCuttingPlanSummary {
   const { failureType, failureLabel } = classifyInvalidCuttingPlanFailure(error)
   const reason = summarizeInvalidCuttingPlanReason(error)
 
@@ -127,7 +139,9 @@ function toInvalidCuttingPlanSummary(spec: EngineeringSpec, error: unknown): Inv
   }
 }
 
-function safeToCuttingPlan(spec: EngineeringSpec): CuttingPlan | InvalidCuttingPlanSummary {
+function safeToCuttingPlan(
+  spec: EngineeringSpec
+): CuttingPlan | InvalidCuttingPlanSummary {
   try {
     return toCuttingPlan(spec)
   } catch (error) {
@@ -144,7 +158,10 @@ function safeToCuttingPlan(spec: EngineeringSpec): CuttingPlan | InvalidCuttingP
   }
 }
 
-function toEngineeringSpecInput(plan: CuttingPlanInput, id?: string): EngineeringSpecInput {
+function toEngineeringSpecInput(
+  plan: CuttingPlanInput,
+  id?: string
+): EngineeringSpecInput {
   const code = plan.documentNo || plan.productCode || `CUTTING-${Date.now()}`
 
   return {
@@ -185,9 +202,17 @@ export const CuttingPlanService = {
     return result.items
   },
 
-  async save(plan: CuttingPlanInput, options: { id?: string; cutSizeUnits: CutSizeUnit[] }): Promise<CuttingPlan> {
-    const prepared = prepareCuttingPlanForPersistence(plan, options.cutSizeUnits)
-    const saved = await engineeringSpecService.saveSpec(toEngineeringSpecInput(prepared, options.id))
+  async save(
+    plan: CuttingPlanInput,
+    options: { id?: string; cutSizeUnits: CutSizeUnit[] }
+  ): Promise<CuttingPlan> {
+    const prepared = prepareCuttingPlanForPersistence(
+      plan,
+      options.cutSizeUnits
+    )
+    const saved = await engineeringSpecService.saveSpec(
+      toEngineeringSpecInput(prepared, options.id)
+    )
     return toCuttingPlan(saved)
   },
 

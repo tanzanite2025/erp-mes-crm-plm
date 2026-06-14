@@ -1,11 +1,14 @@
 import { useQueryClient } from '@tanstack/react-query'
+import { auditUtils } from '@/lib/audit-utils'
 import { quoteQueryKeys } from '@/features/quotes/query-keys'
 import { useSalesDocumentReferenceResources } from '@/features/sales-document/hooks/use-sales-document-reference-resources'
 import { useSalesOrderForm } from '@/features/trading/hooks/use-sales-order-form'
 import { useSalesOrderMutations } from '@/features/trading/sales'
-import { auditUtils } from '@/lib/audit-utils'
 
-export function useQuoteWorkspaceSalesOrderAdapter(open: boolean, onCreated: (quoteId: string) => void) {
+export function useQuoteWorkspaceSalesOrderAdapter(
+  open: boolean,
+  onCreated: (quoteId: string) => void
+) {
   const queryClient = useQueryClient()
   const {
     readResource: createResource,
@@ -67,7 +70,10 @@ export function useQuoteWorkspaceSalesOrderAdapter(open: boolean, onCreated: (qu
     createResource,
     createQuote,
     isCreatingQuote: createMutation.isPending,
-    createQuoteError: createMutation.error instanceof Error ? createMutation.error.message : null,
+    createQuoteError:
+      createMutation.error instanceof Error
+        ? createMutation.error.message
+        : null,
     retryCreateResources,
   }
 }

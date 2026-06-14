@@ -16,7 +16,10 @@ export type PackageLoadProfile = {
   unitWeightKg: number
 }
 
-export type VehicleLoadSpace = Pick<VehicleSpec, 'id' | 'name' | 'usableInnerSize' | 'payloadKg' | 'volumeM3' | 'isBoxBody'>
+export type VehicleLoadSpace = Pick<
+  VehicleSpec,
+  'id' | 'name' | 'usableInnerSize' | 'payloadKg' | 'volumeM3' | 'isBoxBody'
+>
 
 export type Orientation = {
   lengthMm: number

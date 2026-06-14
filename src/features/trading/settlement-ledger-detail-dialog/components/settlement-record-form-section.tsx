@@ -1,10 +1,15 @@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-
-import type { SettlementAllocationMode } from '../types'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import type { SettlementAllocationDraft } from '../services/settlement-record-payload'
+import type { SettlementAllocationMode } from '../types'
 import { formatSettlementMoney } from '../utils/format-settlement-money'
 
 interface SettlementRecordFormSectionProps {
@@ -88,7 +93,10 @@ interface SettlementRecordFormSectionProps {
   selectLedgerLabel: string
   onOpenLedgerSearchDialog: (sequenceNo: number) => void
   allocatedAmountLabel: string
-  onUpdateAllocationRow: (sequenceNo: number, patch: Partial<SettlementAllocationDraft>) => void
+  onUpdateAllocationRow: (
+    sequenceNo: number,
+    patch: Partial<SettlementAllocationDraft>
+  ) => void
   remarkLabel: string
   removeAllocationLabel: string
   onRemoveAllocationRow: (sequenceNo: number) => void
@@ -186,13 +194,17 @@ export function SettlementRecordFormSection({
     : 'xl:grid-cols-[minmax(0,1.6fr)_minmax(120px,0.55fr)_minmax(140px,0.75fr)_auto]'
 
   return (
-    <div className='grid gap-3 rounded-[22px] border border-dashed border-muted/60 bg-muted/5 p-4 shadow-inner [&_input]:h-9 [&_input]:rounded-xl [&_input]:text-xs [&_label]:text-[9px] [&_label]:font-black [&_label]:uppercase [&_label]:tracking-[0.12em] [&_label]:text-muted-foreground/60 [&_[data-slot=select-trigger]]:h-9 [&_[data-slot=select-trigger]]:rounded-xl [&_[data-slot=select-trigger]]:text-xs'>
+    <div className='grid gap-3 rounded-[22px] border border-dashed border-muted/60 bg-muted/5 p-4 shadow-inner [&_[data-slot=select-trigger]]:h-9 [&_[data-slot=select-trigger]]:rounded-xl [&_[data-slot=select-trigger]]:text-xs [&_input]:h-9 [&_input]:rounded-xl [&_input]:text-xs [&_label]:text-[9px] [&_label]:font-black [&_label]:tracking-[0.12em] [&_label]:text-muted-foreground/60 [&_label]:uppercase'>
       <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
-        <div className='text-sm font-black leading-tight tracking-tight'>{title}</div>
+        <div className='text-sm leading-tight font-black tracking-tight'>
+          {title}
+        </div>
         <div className='flex flex-wrap items-center gap-2'>
-          <div className='rounded-full border border-dashed border-muted/60 bg-background px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-muted-foreground/60'>
+          <div className='rounded-full border border-dashed border-muted/60 bg-background px-3 py-1.5 text-[10px] font-black tracking-[0.12em] text-muted-foreground/60 uppercase'>
             {totalAllocatedLabel}
-            <span className='ml-2 text-foreground tabular-nums'>{formatSettlementMoney(totalAllocatedAmount, currencyCode)}</span>
+            <span className='ml-2 text-foreground tabular-nums'>
+              {formatSettlementMoney(totalAllocatedAmount, currencyCode)}
+            </span>
           </div>
           {!isSingleLedgerMode ? (
             <Button
@@ -214,14 +226,20 @@ export function SettlementRecordFormSection({
             <Label htmlFor={paymentMethodFieldId}>{paymentMethodLabel}</Label>
             <Select
               value={paymentMethod || '__empty__'}
-              onValueChange={(value) => onPaymentMethodChange(value === '__empty__' ? '' : value)}
-              disabled={isPaymentMethodLoading || isPaymentMethodOptionsUnavailable}
+              onValueChange={(value) =>
+                onPaymentMethodChange(value === '__empty__' ? '' : value)
+              }
+              disabled={
+                isPaymentMethodLoading || isPaymentMethodOptionsUnavailable
+              }
             >
               <SelectTrigger id={paymentMethodFieldId}>
                 <SelectValue placeholder={paymentMethodPlaceholder} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value='__empty__'>{paymentMethodPlaceholder}</SelectItem>
+                <SelectItem value='__empty__'>
+                  {paymentMethodPlaceholder}
+                </SelectItem>
                 {paymentMethodOptions.map((option) => (
                   <SelectItem key={option.code} value={option.code}>
                     {option.name}
@@ -229,8 +247,16 @@ export function SettlementRecordFormSection({
                 ))}
               </SelectContent>
             </Select>
-            {isPaymentMethodLoading ? <div className='text-[10px] font-bold text-muted-foreground/60'>{paymentMethodLoadingLabel}</div> : null}
-            {isPaymentMethodOptionsUnavailable ? <div className='text-[10px] font-bold text-destructive'>{paymentMethodUnavailableLabel}</div> : null}
+            {isPaymentMethodLoading ? (
+              <div className='text-[10px] font-bold text-muted-foreground/60'>
+                {paymentMethodLoadingLabel}
+              </div>
+            ) : null}
+            {isPaymentMethodOptionsUnavailable ? (
+              <div className='text-[10px] font-bold text-destructive'>
+                {paymentMethodUnavailableLabel}
+              </div>
+            ) : null}
           </div>
         ) : null}
         <div className='grid gap-1.5'>
@@ -275,7 +301,7 @@ export function SettlementRecordFormSection({
           </div>
 
           <details className='group rounded-2xl border border-dashed border-muted/50 bg-background/55 px-3 py-2'>
-            <summary className='cursor-pointer select-none text-[10px] font-black uppercase tracking-[0.12em] text-muted-foreground/60 marker:text-muted-foreground/50'>
+            <summary className='cursor-pointer text-[10px] font-black tracking-[0.12em] text-muted-foreground/60 uppercase select-none marker:text-muted-foreground/50'>
               台账筛选 / 排序
             </summary>
             <div className='mt-3 grid gap-3 md:grid-cols-3 xl:grid-cols-6'>
@@ -283,7 +309,9 @@ export function SettlementRecordFormSection({
                 <Label htmlFor={statusFieldId}>{statusLabel}</Label>
                 <Select
                   value={statusFilter || '__all__'}
-                  onValueChange={(value) => onStatusFilterChange(value === '__all__' ? '' : value)}
+                  onValueChange={(value) =>
+                    onStatusFilterChange(value === '__all__' ? '' : value)
+                  }
                 >
                   <SelectTrigger id={statusFieldId}>
                     <SelectValue placeholder={statusPlaceholder} />
@@ -302,7 +330,9 @@ export function SettlementRecordFormSection({
                 <Label htmlFor={currencyFieldId}>{currencyLabel}</Label>
                 <Select
                   value={currencyFilter || '__all__'}
-                  onValueChange={(value) => onCurrencyFilterChange(value === '__all__' ? '' : value)}
+                  onValueChange={(value) =>
+                    onCurrencyFilterChange(value === '__all__' ? '' : value)
+                  }
                   disabled={isCurrencyLoading || isCurrencyOptionsUnavailable}
                 >
                   <SelectTrigger id={currencyFieldId}>
@@ -317,25 +347,41 @@ export function SettlementRecordFormSection({
                     ))}
                   </SelectContent>
                 </Select>
-                {isCurrencyLoading ? <div className='text-[10px] font-bold text-muted-foreground/60'>{currencyLoadingLabel}</div> : null}
-                {isCurrencyOptionsUnavailable ? <div className='text-[10px] font-bold text-destructive'>{currencyUnavailableLabel}</div> : null}
+                {isCurrencyLoading ? (
+                  <div className='text-[10px] font-bold text-muted-foreground/60'>
+                    {currencyLoadingLabel}
+                  </div>
+                ) : null}
+                {isCurrencyOptionsUnavailable ? (
+                  <div className='text-[10px] font-bold text-destructive'>
+                    {currencyUnavailableLabel}
+                  </div>
+                ) : null}
               </div>
               <div className='grid gap-1.5'>
-                <Label htmlFor={outstandingMinFieldId}>{outstandingMinLabel}</Label>
+                <Label htmlFor={outstandingMinFieldId}>
+                  {outstandingMinLabel}
+                </Label>
                 <Input
                   id={outstandingMinFieldId}
                   type='number'
                   value={outstandingMin}
-                  onChange={(event) => onOutstandingMinChange(event.target.value)}
+                  onChange={(event) =>
+                    onOutstandingMinChange(event.target.value)
+                  }
                 />
               </div>
               <div className='grid gap-1.5'>
-                <Label htmlFor={outstandingMaxFieldId}>{outstandingMaxLabel}</Label>
+                <Label htmlFor={outstandingMaxFieldId}>
+                  {outstandingMaxLabel}
+                </Label>
                 <Input
                   id={outstandingMaxFieldId}
                   type='number'
                   value={outstandingMax}
-                  onChange={(event) => onOutstandingMaxChange(event.target.value)}
+                  onChange={(event) =>
+                    onOutstandingMaxChange(event.target.value)
+                  }
                 />
               </div>
               <div className='grid gap-1.5'>
@@ -381,14 +427,26 @@ export function SettlementRecordFormSection({
           >
             {!isSingleLedgerMode ? (
               <div className='grid gap-1.5'>
-                <Label htmlFor={`${allocationFieldPrefix}-ledger-${item.sequenceNo}`}>{ledgerIdLabel}</Label>
+                <Label
+                  htmlFor={`${allocationFieldPrefix}-ledger-${item.sequenceNo}`}
+                >
+                  {ledgerIdLabel}
+                </Label>
                 <div className='flex gap-2'>
                   <div
                     id={`${allocationFieldPrefix}-ledger-${item.sequenceNo}`}
                     className='flex h-9 min-w-0 flex-1 items-center truncate rounded-xl border border-dashed border-muted/60 bg-muted/10 px-3 text-xs font-semibold text-muted-foreground'
-                    title={ledgerDisplayMap.get(item.ledgerId) ?? item.ledgerId ?? selectedLedgerPlaceholder}
+                    title={
+                      ledgerDisplayMap.get(item.ledgerId) ??
+                      item.ledgerId ??
+                      selectedLedgerPlaceholder
+                    }
                   >
-                    <span className='truncate'>{ledgerDisplayMap.get(item.ledgerId) ?? item.ledgerId ?? selectedLedgerPlaceholder}</span>
+                    <span className='truncate'>
+                      {ledgerDisplayMap.get(item.ledgerId) ??
+                        item.ledgerId ??
+                        selectedLedgerPlaceholder}
+                    </span>
                   </div>
                   <Button
                     type='button'
@@ -403,22 +461,36 @@ export function SettlementRecordFormSection({
               </div>
             ) : null}
             <div className='grid gap-1.5'>
-              <Label htmlFor={`${allocationFieldPrefix}-amount-${item.sequenceNo}`}>{allocatedAmountLabel}</Label>
+              <Label
+                htmlFor={`${allocationFieldPrefix}-amount-${item.sequenceNo}`}
+              >
+                {allocatedAmountLabel}
+              </Label>
               <Input
                 id={`${allocationFieldPrefix}-amount-${item.sequenceNo}`}
                 type='number'
                 value={item.allocatedAmount}
                 onChange={(event) =>
-                  onUpdateAllocationRow(item.sequenceNo, { allocatedAmount: event.target.value })
+                  onUpdateAllocationRow(item.sequenceNo, {
+                    allocatedAmount: event.target.value,
+                  })
                 }
               />
             </div>
             <div className='grid gap-1.5'>
-              <Label htmlFor={`${allocationFieldPrefix}-remark-${item.sequenceNo}`}>{remarkLabel}</Label>
+              <Label
+                htmlFor={`${allocationFieldPrefix}-remark-${item.sequenceNo}`}
+              >
+                {remarkLabel}
+              </Label>
               <Input
                 id={`${allocationFieldPrefix}-remark-${item.sequenceNo}`}
                 value={item.remark}
-                onChange={(event) => onUpdateAllocationRow(item.sequenceNo, { remark: event.target.value })}
+                onChange={(event) =>
+                  onUpdateAllocationRow(item.sequenceNo, {
+                    remark: event.target.value,
+                  })
+                }
               />
             </div>
             {!isSingleLedgerMode ? (

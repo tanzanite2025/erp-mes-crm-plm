@@ -100,7 +100,8 @@ export const common = {
       sourceManual: 'Manual Assignment',
       sourceSystem: 'System Sync',
       sourceUnknown: 'Not Recorded',
-      reasonUsersPermissionsDialogSave: 'Saved explicit permissions in the permissions panel',
+      reasonUsersPermissionsDialogSave:
+        'Saved explicit permissions in the permissions panel',
       reasonUnknown: 'Not Recorded',
     },
     bom: {
@@ -152,7 +153,8 @@ export const common = {
       'Are you sure you want to sign out? You will need to sign in again to access your account.',
     layout: {
       title: 'Digital Management System',
-      description: 'Authorized Access Area · Follow Internal Management and Privacy Policy',
+      description:
+        'Authorized Access Area · Follow Internal Management and Privacy Policy',
       connectivity: 'System Connectivity',
       smartFactory: 'Smart Factory',
       factoryDesc:
@@ -170,11 +172,13 @@ export const common = {
       validationPasswordMin: 'Password must be at least 7 characters.',
       success: 'Signed in successfully. Welcome back, {{name}}!',
       invalidCredentials: 'Incorrect account or password. Please try again.',
-      apiNotReady: 'Backend service is not ready (404). Please verify the API route.',
+      apiNotReady:
+        'Backend service is not ready (404). Please verify the API route.',
       serverError: 'Unexpected server response: {{status}}',
       serverErrorDescription:
         'If this keeps happening, record request ID {{requestId}} and check the server logs.',
-      timeout: 'The sign-in request timed out. Please check your network connection.',
+      timeout:
+        'The sign-in request timed out. Please check your network connection.',
       timeoutHint:
         'Try an incognito window or clear the current site data, then verify the route to this domain is stable.',
       deployMismatch:

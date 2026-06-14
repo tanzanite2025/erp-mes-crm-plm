@@ -7,7 +7,10 @@ export const CUTTING_ISSUANCE_QUERY_KEYS = {
   traceReport: ['aps-scheduling', 'cutting-issuance', 'trace-report'] as const,
 }
 
-type Translator = (key: TranslationKey, params?: Record<string, string | number>) => string
+type Translator = (
+  key: TranslationKey,
+  params?: Record<string, string | number>
+) => string
 
 export const PRODUCTION_PLAN_STATUS_ALL = 'ALL' as const
 
@@ -19,7 +22,8 @@ export const PRODUCTION_PLAN_STATUS_VALUES = [
   'CANCELED',
 ] as const
 
-export type ProductionPlanStatusValue = (typeof PRODUCTION_PLAN_STATUS_VALUES)[number]
+export type ProductionPlanStatusValue =
+  (typeof PRODUCTION_PLAN_STATUS_VALUES)[number]
 
 export function getProductionPlanStatusOptions(t: Translator) {
   return PRODUCTION_PLAN_STATUS_VALUES.map((value) => ({
@@ -28,7 +32,10 @@ export function getProductionPlanStatusOptions(t: Translator) {
   }))
 }
 
-export function getProductionPlanStatusLabel(status: string, t: Translator): string {
+export function getProductionPlanStatusLabel(
+  status: string,
+  t: Translator
+): string {
   switch (status) {
     case PRODUCTION_PLAN_STATUS_ALL:
       return t('apsScheduling.cuttingIssuance.status.all')

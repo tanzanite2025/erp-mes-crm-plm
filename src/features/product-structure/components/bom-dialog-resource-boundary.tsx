@@ -12,24 +12,29 @@ interface BOMDialogResourceBoundaryProps {
   children: ReactNode
 }
 
-export function BOMDialogResourceBoundary({ resource, detailResource, children }: BOMDialogResourceBoundaryProps) {
+export function BOMDialogResourceBoundary({
+  resource,
+  detailResource,
+  children,
+}: BOMDialogResourceBoundaryProps) {
   const { t } = useLanguage()
 
-  const errorResource = resource.status === 'error'
-    ? resource
-    : detailResource?.status === 'error'
-      ? detailResource
-      : null
+  const errorResource =
+    resource.status === 'error'
+      ? resource
+      : detailResource?.status === 'error'
+        ? detailResource
+        : null
 
   if (errorResource) {
     return (
       <div className='flex min-h-0 flex-1 items-center justify-center rounded-[24px] border border-dashed border-rose-200 bg-rose-50/60 px-6 py-8 text-center'>
         <div className='flex max-w-md flex-col items-center gap-2'>
           <Layers className='size-8 text-rose-500' />
-          <div className='text-[10px] font-black uppercase tracking-widest text-rose-700'>
+          <div className='text-[10px] font-black tracking-widest text-rose-700 uppercase'>
             {t('engineering.bomArchive.toasts.loadFailed')}
           </div>
-          <p className='text-[11px] font-bold leading-relaxed text-foreground'>
+          <p className='text-[11px] leading-relaxed font-bold text-foreground'>
             {errorResource.error.message}
           </p>
         </div>
@@ -42,10 +47,10 @@ export function BOMDialogResourceBoundary({ resource, detailResource, children }
       <div className='flex min-h-0 flex-1 items-center justify-center rounded-[24px] border border-dashed border-muted/40 bg-muted/5 px-6 py-8 text-center'>
         <div className='flex max-w-md flex-col items-center gap-2'>
           <Layers className='size-8 animate-pulse text-blue-400' />
-          <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground'>
+          <div className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
             {t('engineering.bomArchive.header.title')}
           </div>
-          <p className='text-[11px] font-bold leading-relaxed text-muted-foreground'>
+          <p className='text-[11px] leading-relaxed font-bold text-muted-foreground'>
             {t('engineering.bomArchive.toasts.loadFailed')}
           </p>
         </div>

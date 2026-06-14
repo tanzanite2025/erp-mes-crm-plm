@@ -30,16 +30,16 @@ import {
   Smartphone,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { renderBwipBarcode } from '@/lib/bwip-renderer'
 import { createLogger } from '@/lib/logger'
 import { failLoudly } from '@/lib/safe-catch'
 import { useLanguage } from '@/context/language-provider'
-import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import {
   PackagingAssemblyPrintDialog,
   type PackagingLabelType,
@@ -295,7 +295,9 @@ export default function PackagingAssembly() {
 
     const pollCaptureSession = async () => {
       try {
-        const nextSession = await PackagingAssemblyService.getCaptureSession(captureSession.sessionId)
+        const nextSession = await PackagingAssemblyService.getCaptureSession(
+          captureSession.sessionId
+        )
         if (!isActive) {
           return
         }
@@ -335,9 +337,10 @@ export default function PackagingAssembly() {
     if (assembliesQuery.error) {
       return {
         status: 'error' as const,
-        error: assembliesQuery.error instanceof Error
-          ? assembliesQuery.error
-          : new Error(String(assembliesQuery.error)),
+        error:
+          assembliesQuery.error instanceof Error
+            ? assembliesQuery.error
+            : new Error(String(assembliesQuery.error)),
         scope: 'PackagingAssembly.assembliesQuery',
       }
     }
@@ -345,7 +348,9 @@ export default function PackagingAssembly() {
     if (!assembliesQuery.data || !Array.isArray(assembliesQuery.data.items)) {
       return {
         status: 'error' as const,
-        error: new Error('[CRITICAL] Packaging assemblies payload missing items after load'),
+        error: new Error(
+          '[CRITICAL] Packaging assemblies payload missing items after load'
+        ),
         scope: 'PackagingAssembly.assembliesQuery',
       }
     }
@@ -361,8 +366,13 @@ export default function PackagingAssembly() {
       return
     }
 
-    logger.error(`Assemblies resource failed: ${assembliesResource.scope}`, assembliesResource.error)
-    failLoudly(assembliesResource.error, assembliesResource.scope, { silentUI: true })
+    logger.error(
+      `Assemblies resource failed: ${assembliesResource.scope}`,
+      assembliesResource.error
+    )
+    failLoudly(assembliesResource.error, assembliesResource.scope, {
+      silentUI: true,
+    })
   }, [assembliesResource])
 
   const latestAssemblyPackageCode =
@@ -390,7 +400,7 @@ export default function PackagingAssembly() {
           module={AUDIT_MODULES.packagingAssembly}
           targetName={copy.title}
           label='审计'
-          className='h-10 md:h-11 rounded-full px-4 md:px-5'
+          className='h-10 rounded-full px-4 md:h-11 md:px-5'
         />
       </div>
       <PackagingAssemblyPrintDialog
@@ -497,10 +507,10 @@ export default function PackagingAssembly() {
               </div>
             ) : assembliesResource.status === 'error' ? (
               <div className='flex h-40 flex-col items-center justify-center rounded-lg border border-dashed border-rose-200 bg-rose-50/60 px-4 text-center'>
-                <div className='text-[10px] font-black uppercase tracking-widest text-rose-700'>
+                <div className='text-[10px] font-black tracking-widest text-rose-700 uppercase'>
                   {copy.latestAssemblies}
                 </div>
-                <div className='mt-2 text-[11px] font-bold leading-relaxed text-foreground'>
+                <div className='mt-2 text-[11px] leading-relaxed font-bold text-foreground'>
                   {assembliesResource.error.message}
                 </div>
               </div>

@@ -12,7 +12,9 @@ import type {
 import type { CuttingPlan as CuttingEnginePlan } from '../../types/cutting-engine-wasm'
 import { round } from './math'
 
-export function buildAppliedWeights(controls: BatchEngineNormalizedControls): BatchOptimizerScoreWeights {
+export function buildAppliedWeights(
+  controls: BatchEngineNormalizedControls
+): BatchOptimizerScoreWeights {
   return {
     fulfilledWeight: 0,
     assignmentPenaltyWeight: 0,
@@ -46,7 +48,9 @@ export function buildSearchConfig(): BatchOptimizerSearchConfigSummary {
   }
 }
 
-export function buildCandidateBudgetSummary(planCount: number): BatchOptimizerCandidateBudgetSummary {
+export function buildCandidateBudgetSummary(
+  planCount: number
+): BatchOptimizerCandidateBudgetSummary {
   return {
     perStrategyQuota: planCount,
     globalBudget: planCount,

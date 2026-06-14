@@ -1,7 +1,7 @@
 import type { WarehouseCategory } from '../category/services/warehouse-category-core-service'
+import type { InventoryAlertSummary, InventoryView } from '../inventory'
 import type { InventoryThresholdRule } from '../material-thresholds/data/schema'
 import { buildMaterialThresholdMap } from '../material-thresholds/services/material-threshold-helpers'
-import type { InventoryAlertSummary, InventoryView } from '../inventory'
 
 export interface StockMgmtReadyData {
   groupedInventory: Record<string, InventoryView[]>
@@ -23,23 +23,37 @@ export function buildStockMgmtReadyData(params: {
   totalAssetsValue: number
   searchTerm: string
 }): StockMgmtReadyData {
-  const { inventory, thresholdRules, categories, alertSummary, totalAssetsValue, searchTerm } = params
+  const {
+    inventory,
+    thresholdRules,
+    categories,
+    alertSummary,
+    totalAssetsValue,
+    searchTerm,
+  } = params
   const materialThresholdMap = buildMaterialThresholdMap(thresholdRules)
-  const materialTotalStock = inventory.reduce<Record<string, number>>((totals, item) => {
-    totals[item.materialId] = (totals[item.materialId] || 0) + item.quantity
-    return totals
-  }, {})
-
-  const normalizedSearchTerm = searchTerm.toLowerCase()
-  const filteredInventory = inventory.filter((item) =>
-    item.materialName.toLowerCase().includes(normalizedSearchTerm) ||
-    item.materialCode.toLowerCase().includes(normalizedSearchTerm)
+  const materialTotalStock = inventory.reduce<Record<string, number>>(
+    (totals, item) => {
+      totals[item.materialId] = (totals[item.materialId] || 0) + item.quantity
+      return totals
+    },
+    {}
   )
 
-  const groupedInventory = categories.reduce<Record<string, InventoryView[]>>((groups, category) => {
-    groups[category.code] = []
-    return groups
-  }, {})
+  const normalizedSearchTerm = searchTerm.toLowerCase()
+  const filteredInventory = inventory.filter(
+    (item) =>
+      item.materialName.toLowerCase().includes(normalizedSearchTerm) ||
+      item.materialCode.toLowerCase().includes(normalizedSearchTerm)
+  )
+
+  const groupedInventory = categories.reduce<Record<string, InventoryView[]>>(
+    (groups, category) => {
+      groups[category.code] = []
+      return groups
+    },
+    {}
+  )
 
   filteredInventory.forEach((item) => {
     let categoryCode = (item.categoryCode || 'MATERIAL').trim()

@@ -1,11 +1,14 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import {
+  useProductionLinesQuery,
+  useProductionProcessesQuery,
+} from '@/features/production-shared/hooks/use-production-resources'
 import { type PersonnelSelectOption } from '../config/personnel-archive-columns'
 import { type OrgNode } from '../data/org-schema'
-import { PositionService } from '../services/position-service'
-import { OrgService } from '../services/org-service'
 import { personnelQueryKeys } from '../query-keys'
-import { useProductionLinesQuery, useProductionProcessesQuery } from '@/features/production-shared/hooks/use-production-resources'
+import { OrgService } from '../services/org-service'
+import { PositionService } from '../services/position-service'
 
 type UseOrgPersonnelLookupsOptions = {
   enabled?: boolean
@@ -15,15 +18,28 @@ type UseOrgPersonnelLookupsOptions = {
 
 function flattenDepartmentOptions(nodes: OrgNode[]): PersonnelSelectOption[] {
   return nodes.flatMap((node) => {
-    const current = node.type === 'department' && node.id
-      ? [{ label: node.name, value: node.id }]
-      : []
+    const current =
+      node.type === 'department' && node.id
+        ? [{ label: node.name, value: node.id }]
+        : []
 
     return current.concat(flattenDepartmentOptions(node.children ?? []))
   })
 }
 
-function buildNameMap(orgData: OrgNode[], lineData: Array<{ id: string; name: string; segments?: Array<{ id: string; name: string; jobCategories?: Array<{ processes?: Array<{ id: string; name: string }> }> }> }>, processData: Array<{ id: string; name: string }>) {
+function buildNameMap(
+  orgData: OrgNode[],
+  lineData: Array<{
+    id: string
+    name: string
+    segments?: Array<{
+      id: string
+      name: string
+      jobCategories?: Array<{ processes?: Array<{ id: string; name: string }> }>
+    }>
+  }>,
+  processData: Array<{ id: string; name: string }>
+) {
   const nextMap: Record<string, string> = {}
 
   const flattenOrg = (nodes: OrgNode[]) => {
@@ -56,7 +72,9 @@ function buildNameMap(orgData: OrgNode[], lineData: Array<{ id: string; name: st
   return nextMap
 }
 
-export function useOrgPersonnelLookups(options: UseOrgPersonnelLookupsOptions = {}) {
+export function useOrgPersonnelLookups(
+  options: UseOrgPersonnelLookupsOptions = {}
+) {
   const {
     enabled = true,
     includePositions = false,
@@ -84,9 +102,19 @@ export function useOrgPersonnelLookups(options: UseOrgPersonnelLookupsOptions = 
   })
 
   const orgTree = useMemo(() => orgTreeQuery.data ?? [], [orgTreeQuery.data])
-  const positions = useMemo(() => positionsQuery.data ?? [], [positionsQuery.data])
-  const departmentOptions = useMemo(() => flattenDepartmentOptions(orgTree), [orgTree])
-  const nameMap = useMemo(() => buildNameMap(orgTree, linesQuery.data ?? [], processesQuery.data ?? []), [orgTree, linesQuery.data, processesQuery.data])
+  const positions = useMemo(
+    () => positionsQuery.data ?? [],
+    [positionsQuery.data]
+  )
+  const departmentOptions = useMemo(
+    () => flattenDepartmentOptions(orgTree),
+    [orgTree]
+  )
+  const nameMap = useMemo(
+    () =>
+      buildNameMap(orgTree, linesQuery.data ?? [], processesQuery.data ?? []),
+    [orgTree, linesQuery.data, processesQuery.data]
+  )
 
   return {
     orgTree,

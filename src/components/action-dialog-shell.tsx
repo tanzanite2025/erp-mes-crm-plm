@@ -46,11 +46,15 @@ export function ActionDialogShell({
         <DialogHeader className={headerClassName}>
           <DialogTitle className={titleClassName}>{title}</DialogTitle>
           {description ? (
-            <DialogDescription className={descriptionClassName}>{description}</DialogDescription>
+            <DialogDescription className={descriptionClassName}>
+              {description}
+            </DialogDescription>
           ) : null}
         </DialogHeader>
         <div className={bodyClassName}>{children}</div>
-        {footer ? <DialogFooter className={footerClassName}>{footer}</DialogFooter> : null}
+        {footer ? (
+          <DialogFooter className={footerClassName}>{footer}</DialogFooter>
+        ) : null}
       </DialogContent>
     </Dialog>
   )

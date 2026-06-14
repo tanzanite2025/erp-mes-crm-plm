@@ -1,9 +1,9 @@
+import { type PackagingProfile } from '@/features/logistics-config/packaging-rules-service'
 import {
   type SalesOrderLine,
   type SalesOrderLinePackagingSelection,
   type SalesOrderLinePackagingSelectionSource,
 } from '../data/schema'
-import { type PackagingProfile } from '@/features/logistics-config/packaging-rules-service'
 
 function matchesProduct(profile: PackagingProfile, productId?: string) {
   if (!productId) {
@@ -34,7 +34,8 @@ export function getPackagingProfilesForProduct(
 ): PackagingProfile[] {
   return dedupeProfiles(
     profiles.filter(
-      (profile) => matchesProduct(profile, productId) && (!activeOnly || profile.isActive)
+      (profile) =>
+        matchesProduct(profile, productId) && (!activeOnly || profile.isActive)
     )
   )
 }
@@ -76,7 +77,11 @@ export function resolveAutoPackagingProfile(
   profiles: PackagingProfile[],
   productId?: string
 ): PackagingProfile | undefined {
-  const activeProfiles = getPackagingProfilesForProduct(profiles, productId, true)
+  const activeProfiles = getPackagingProfilesForProduct(
+    profiles,
+    productId,
+    true
+  )
   if (activeProfiles.length === 0) {
     return undefined
   }

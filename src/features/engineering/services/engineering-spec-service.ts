@@ -26,7 +26,9 @@ const ENGINEERING_SPEC_BUCKET_KEYS = [
   'nippleData',
 ] as const
 
-function normalizeEngineeringSpecBuckets<T extends Record<string, unknown>>(item: T): T {
+function normalizeEngineeringSpecBuckets<T extends Record<string, unknown>>(
+  item: T
+): T {
   const normalized = { ...item }
 
   ENGINEERING_SPEC_BUCKET_KEYS.forEach((key) => {
@@ -38,11 +40,15 @@ function normalizeEngineeringSpecBuckets<T extends Record<string, unknown>>(item
   return normalized as T
 }
 
-function toEngineeringSpecContract(dto: EngineeringSpecApiDTO): EngineeringSpec {
+function toEngineeringSpecContract(
+  dto: EngineeringSpecApiDTO
+): EngineeringSpec {
   return dto
 }
 
-function toEngineeringSpecInputApiDTO(input: EngineeringSpecInput): EngineeringSpecInputDTO {
+function toEngineeringSpecInputApiDTO(
+  input: EngineeringSpecInput
+): EngineeringSpecInputDTO {
   return engineeringSpecInputApiSchema.parse(input)
 }
 
@@ -50,36 +56,51 @@ function parseEngineeringSpec(item: unknown, scope: string): EngineeringSpec {
   return toEngineeringSpecContract(
     engineeringSpecApiDTOSchema.parse(
       normalizeEngineeringSpecBuckets(
-        ensureObjectResponse<Record<string, unknown>>(item as Record<string, unknown>, scope)
+        ensureObjectResponse<Record<string, unknown>>(
+          item as Record<string, unknown>,
+          scope
+        )
       )
     )
   )
 }
 
-function parseEngineeringSpecList(response: unknown, scope: string): EngineeringSpec[] {
+function parseEngineeringSpecList(
+  response: unknown,
+  scope: string
+): EngineeringSpec[] {
   if (Array.isArray(response)) {
-    return engineeringSpecApiDTOArraySchema.parse(
-      response.map((item, index) =>
-        normalizeEngineeringSpecBuckets(
-          ensureObjectResponse<Record<string, unknown>>(item as Record<string, unknown>, `${scope}[${index}]`)
+    return engineeringSpecApiDTOArraySchema
+      .parse(
+        response.map((item, index) =>
+          normalizeEngineeringSpecBuckets(
+            ensureObjectResponse<Record<string, unknown>>(
+              item as Record<string, unknown>,
+              `${scope}[${index}]`
+            )
+          )
         )
       )
-    )
       .map(toEngineeringSpecContract)
   }
 
   const rawPage = ensureObjectResponse<Record<string, unknown>>(response, scope)
 
-  return engineeringSpecListPageApiDTOSchema.parse({
-    ...rawPage,
-    items: Array.isArray(rawPage.items)
-      ? rawPage.items.map((item, index) =>
-          normalizeEngineeringSpecBuckets(
-            ensureObjectResponse<Record<string, unknown>>(item as Record<string, unknown>, `${scope}.items[${index}]`)
+  return engineeringSpecListPageApiDTOSchema
+    .parse({
+      ...rawPage,
+      items: Array.isArray(rawPage.items)
+        ? rawPage.items.map((item, index) =>
+            normalizeEngineeringSpecBuckets(
+              ensureObjectResponse<Record<string, unknown>>(
+                item as Record<string, unknown>,
+                `${scope}.items[${index}]`
+              )
+            )
           )
-        )
-      : rawPage.items,
-  }).items.map(toEngineeringSpecContract)
+        : rawPage.items,
+    })
+    .items.map(toEngineeringSpecContract)
 }
 
 function buildEngineeringSpecsUrl(type?: string): string {
@@ -93,14 +114,16 @@ function buildEngineeringSpecsUrl(type?: string): string {
 
 export const engineeringSpecService = {
   getSpecs: async (type?: string): Promise<EngineeringSpec[]> => {
-    const res = await apiFetch<EngineeringSpecApiDTO[] | EngineeringSpecListPageApiDTO>(
-      buildEngineeringSpecsUrl(type),
-    )
+    const res = await apiFetch<
+      EngineeringSpecApiDTO[] | EngineeringSpecListPageApiDTO
+    >(buildEngineeringSpecsUrl(type))
     return parseEngineeringSpecList(res, 'engineeringSpecService.getSpecs')
   },
 
   getSpec: async (id: string): Promise<EngineeringSpec> => {
-    const res = await apiFetch<EngineeringSpecApiDTO>(`/engineering/specs/${id}`)
+    const res = await apiFetch<EngineeringSpecApiDTO>(
+      `/engineering/specs/${id}`
+    )
     return parseEngineeringSpec(res, 'engineeringSpecService.getSpec')
   },
 
@@ -114,19 +137,26 @@ export const engineeringSpecService = {
     return parseEngineeringSpec(res, 'engineeringSpecService.saveSpec')
   },
 
-  patchSpec: async (id: string, delta: Record<string, unknown>, version: number): Promise<EngineeringSpec> => {
+  patchSpec: async (
+    id: string,
+    delta: Record<string, unknown>,
+    version: number
+  ): Promise<EngineeringSpec> => {
     const payload = engineeringSpecPatchRequestSchema.parse({ delta, version })
-    const res = await apiFetch<EngineeringSpecApiDTO>(`/engineering/specs/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({
-        op: 'PATCH',
-        delta: payload.delta,
-        metadata: {
-          id,
-          version: payload.version,
-        },
-      }),
-    })
+    const res = await apiFetch<EngineeringSpecApiDTO>(
+      `/engineering/specs/${id}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({
+          op: 'PATCH',
+          delta: payload.delta,
+          metadata: {
+            id,
+            version: payload.version,
+          },
+        }),
+      }
+    )
     return parseEngineeringSpec(res, 'engineeringSpecService.patchSpec')
   },
 
@@ -141,5 +171,5 @@ export const engineeringSpecService = {
     return apiFetch<void>(`/engineering/specs/${id}`, {
       method: 'DELETE',
     })
-  }
-};
+  },
+}

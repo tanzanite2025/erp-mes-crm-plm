@@ -1,7 +1,7 @@
+import { createLogger } from '@/lib/logger'
 import { NotificationGateway } from '@/features/system-mgmt/notifications/notification-gateway'
 import { type SystemMessage } from '@/features/system-mgmt/notifications/types'
 import { StorageService } from '@/features/system-mgmt/services/storage-service'
-import { createLogger } from '@/lib/logger'
 import { type NotificationRule } from '../data/notification-rule-schema'
 import { type StandardCommand, type WorkflowNode } from '../data/schema'
 import { RoutingService } from './routing-service'
@@ -160,7 +160,9 @@ export const DispatchService = {
             continue
           }
 
-          const cmdTemplate = stdCommands.find((command) => command.id === cmdId)
+          const cmdTemplate = stdCommands.find(
+            (command) => command.id === cmdId
+          )
           const metadata = {
             OrderId: order.id,
             OrderNo: order.orderNo,
@@ -201,14 +203,17 @@ export const DispatchService = {
           )
         })
         const lastDismissed = NotificationGateway.getDismissedAt(fallbackKey)
-        if (isAlreadyInList || (lastDismissed && now - lastDismissed < 60_000)) {
+        if (
+          isAlreadyInList ||
+          (lastDismissed && now - lastDismissed < 60_000)
+        ) {
           continue
         }
 
         addMessage({
           type: 'ORDER_EVENT',
           title: `[${node.title}] 待处理`,
-          content: `订单 ${order.orderNo} 的状态已变更�?${order.status}，请相关负责人及时处理。`,
+          content: `订单 ${order.orderNo} 的状态已变更�?${order.status}，请相关负责人及时处理。`,
           priority: 'info',
           targetGroups: node.assigneeGroups,
           actionUrl: `/trading/sales-orders?search=${order.orderNo}&detailId=${order.id}`,
@@ -333,7 +338,7 @@ export const DispatchService = {
         processedApprovalKey,
         Array.from(processedApprovalIds)
       )
-      logger.info(`追溯扫描已创�?${approvalCount} 条审批申请`)
+      logger.info(`追溯扫描已创�?${approvalCount} 条审批申请`)
     }
 
     return newCount

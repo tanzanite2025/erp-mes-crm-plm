@@ -53,7 +53,8 @@ export const printMgmt = {
   pages: {
     barcode: {
       title: '条形码/标签模板管理',
-      subtitle: '模板定义 / 此处可独立配置产品条码、批次标签、包装箱唛等打印模板',
+      subtitle:
+        '模板定义 / 此处可独立配置产品条码、批次标签、包装箱唛等打印模板',
     },
     records: {
       title: '打印激活与核验历史',
@@ -64,7 +65,8 @@ export const printMgmt = {
     searchPlaceholder: '搜索模板名称或类型...',
     createTemplate: '新建模板',
     templateActionTitle: '模板操作：{{action}}',
-    templateActionDescription: '已针对模板“{{name}}”发起请求，该功能正在开发中。',
+    templateActionDescription:
+      '已针对模板“{{name}}”发起请求，该功能正在开发中。',
     modifiedLabel: '最后修改',
     visualDesignerPlaceholderTitle: '可视化设计器占位',
     visualDesignerPlaceholderDescription: '选择左侧模板以加载可视化编辑器',

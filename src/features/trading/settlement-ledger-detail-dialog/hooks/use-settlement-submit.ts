@@ -14,7 +14,9 @@ interface UseSettlementSubmitParams {
   referenceNo: string
   resetForm: () => void
   onOpenChange: (open: boolean) => void
-  onSubmit: (payload: ReturnType<typeof buildSettlementRecordPayload>) => Promise<void>
+  onSubmit: (
+    payload: ReturnType<typeof buildSettlementRecordPayload>
+  ) => Promise<void>
 }
 
 export function useSettlementSubmit({

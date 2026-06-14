@@ -8,9 +8,7 @@ export const Route = createFileRoute('/_authenticated/engineering-reference')({
     const { t } = useLanguage()
 
     return (
-      <ModuleTabbedLayout
-        tabs={getEngineeringReferenceTabs(t)}
-      >
+      <ModuleTabbedLayout tabs={getEngineeringReferenceTabs(t)}>
         <Outlet />
       </ModuleTabbedLayout>
     )

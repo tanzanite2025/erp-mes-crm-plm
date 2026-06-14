@@ -21,7 +21,9 @@ export function useEmployeesQuery(options: UseEmployeesQueryOptions = {}) {
   })
 
   const invalidateEmployees = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: personnelQueryKeys.employees() })
+    await queryClient.invalidateQueries({
+      queryKey: personnelQueryKeys.employees(),
+    })
   }, [queryClient])
 
   return {

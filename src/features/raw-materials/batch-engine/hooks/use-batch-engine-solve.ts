@@ -2,11 +2,14 @@ import { useEffect, useMemo, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import type { CuttingPlan } from '@/features/engineering-db/data/cutting-plan-schema'
 import type { PrepregMaterialSpec } from '../../data/prepreg-material-spec-schema'
+import type { BuildBatchEngineDemandLinesResult } from '../domain/build-batch-engine-demand-lines-from-cutting-plan'
 import { solveBatchEngineWithCuttingWasm } from '../services/batch-engine-cutting-wasm'
 import { buildBatchEngineCuttingInput } from '../services/build-batch-engine-cutting-input'
 import { mapCuttingEngineOutputToBatchSolution } from '../services/map-cutting-engine-output-to-batch-solution'
-import type { BatchEngineNormalizedControls, BatchEngineSimulation } from '../types'
-import type { BuildBatchEngineDemandLinesResult } from '../domain/build-batch-engine-demand-lines-from-cutting-plan'
+import type {
+  BatchEngineNormalizedControls,
+  BatchEngineSimulation,
+} from '../types'
 import type { CuttingEngineInput } from '../types/cutting-engine-wasm'
 
 type UseBatchEngineSolveOptions = {
@@ -21,8 +24,15 @@ type UseBatchEngineSolveOptions = {
  * 管理 batch-engine 的正式 Rust/WASM 求解调用，并与本地 preview 状态保持分离。
  */
 export function useBatchEngineSolve(options: UseBatchEngineSolveOptions) {
-  const { controls, selectedCuttingPlan, selectedPrepregSpec, mappedDemandLines, simulation } = options
-  const [lastSolvedRequestSignature, setLastSolvedRequestSignature] = useState('')
+  const {
+    controls,
+    selectedCuttingPlan,
+    selectedPrepregSpec,
+    mappedDemandLines,
+    simulation,
+  } = options
+  const [lastSolvedRequestSignature, setLastSolvedRequestSignature] =
+    useState('')
   const request = useMemo(
     () =>
       buildBatchEngineCuttingInput({
@@ -32,9 +42,18 @@ export function useBatchEngineSolve(options: UseBatchEngineSolveOptions) {
         mappedDemandLines,
         simulation,
       }),
-    [controls, mappedDemandLines, selectedCuttingPlan, selectedPrepregSpec, simulation]
+    [
+      controls,
+      mappedDemandLines,
+      selectedCuttingPlan,
+      selectedPrepregSpec,
+      simulation,
+    ]
   )
-  const requestSignature = useMemo(() => JSON.stringify(request ?? null), [request])
+  const requestSignature = useMemo(
+    () => JSON.stringify(request ?? null),
+    [request]
+  )
   const mutation = useMutation({
     mutationFn: async (payload: CuttingEngineInput) => {
       const output = await solveBatchEngineWithCuttingWasm(payload)
@@ -75,22 +94,29 @@ export function useBatchEngineSolve(options: UseBatchEngineSolveOptions) {
       return '当前输入不足以生成正式求解请求'
     }
     return ''
-  }, [mappedDemandLines.invalidLines.length, mappedDemandLines.validLines.length, request, selectedCuttingPlan, selectedPrepregSpec, simulation])
+  }, [
+    mappedDemandLines.invalidLines.length,
+    mappedDemandLines.validLines.length,
+    request,
+    selectedCuttingPlan,
+    selectedPrepregSpec,
+    simulation,
+  ])
 
   return {
     canSolve: Boolean(request),
     request,
     requestSignature,
-    isResultStale: Boolean(request && lastSolvedRequestSignature && lastSolvedRequestSignature !== requestSignature),
+    isResultStale: Boolean(
+      request &&
+      lastSolvedRequestSignature &&
+      lastSolvedRequestSignature !== requestSignature
+    ),
     solveDisabledReason,
     solution: data,
     isSolving: isPending,
     solveError:
-      error instanceof Error
-        ? error.message
-        : error
-          ? '正式求解失败'
-          : '',
+      error instanceof Error ? error.message : error ? '正式求解失败' : '',
     solve: () => {
       if (!request) {
         return

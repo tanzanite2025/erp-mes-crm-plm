@@ -1,5 +1,5 @@
-import type { ApsJob, ApsStageCard, ApsTimelineLaneDefinition } from '../types'
 import type { ApsSchedulingListApiDTO } from '../contracts/aps-scheduling-api-dto'
+import type { ApsJob, ApsStageCard, ApsTimelineLaneDefinition } from '../types'
 
 export type ApsSchedulingContract = {
   jobs: ApsJob[]
@@ -17,7 +17,10 @@ function groupJobsByLine(jobs: ApsJob[]): ApsTimelineLaneDefinition[] {
     const current = laneMap.get(job.lineName) ?? []
     laneMap.set(job.lineName, [...current, job])
   })
-  return [...laneMap.entries()].map(([line, laneJobs]) => ({ line, jobs: laneJobs }))
+  return [...laneMap.entries()].map(([line, laneJobs]) => ({
+    line,
+    jobs: laneJobs,
+  }))
 }
 
 function buildStageCards(jobs: ApsJob[]): ApsStageCard[] {
@@ -49,7 +52,9 @@ function buildStageCards(jobs: ApsJob[]): ApsStageCard[] {
   ]
 }
 
-export function toApsSchedulingContract(api: ApsSchedulingListApiDTO): ApsSchedulingContract {
+export function toApsSchedulingContract(
+  api: ApsSchedulingListApiDTO
+): ApsSchedulingContract {
   const jobs = api.items
   const lanes = groupJobsByLine(jobs)
 

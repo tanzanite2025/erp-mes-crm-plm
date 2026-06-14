@@ -1,8 +1,14 @@
 import type { BatchOptimizerPlan } from '../types'
 
-export type BatchEngineExplainabilityTargetKind = 'break-slice' | 'zone-cluster' | ''
+export type BatchEngineExplainabilityTargetKind =
+  | 'break-slice'
+  | 'zone-cluster'
+  | ''
 
-export type BatchEngineExplainabilityTargetSource = 'home-entry' | 'preview-switch' | ''
+export type BatchEngineExplainabilityTargetSource =
+  | 'home-entry'
+  | 'preview-switch'
+  | ''
 
 export type BatchEngineExplainabilityTarget = {
   targetId: string
@@ -18,10 +24,18 @@ export function resolveBatchEngineExplainabilityHighlightZoneIds(
     return []
   }
   if (targetKind === 'break-slice') {
-    return selectedPlan.explainabilitySummary.breakSlices.find((item) => item.id === targetId)?.zoneIds ?? []
+    return (
+      selectedPlan.explainabilitySummary.breakSlices.find(
+        (item) => item.id === targetId
+      )?.zoneIds ?? []
+    )
   }
   if (targetKind === 'zone-cluster') {
-    return selectedPlan.explainabilitySummary.zoneClusters.find((item) => item.clusterId === targetId)?.zoneIds ?? []
+    return (
+      selectedPlan.explainabilitySummary.zoneClusters.find(
+        (item) => item.clusterId === targetId
+      )?.zoneIds ?? []
+    )
   }
   return []
 }

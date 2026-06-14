@@ -1,3 +1,6 @@
+import { Layers, Eye, MoreHorizontal } from 'lucide-react'
+import { useLanguage } from '@/context/language-provider'
+import { Button } from '@/components/ui/button'
 import {
   Table,
   TableBody,
@@ -6,10 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
 import { AuditStatusDisplay } from '@/components/common/audit-status-display'
-import { Layers, Eye, MoreHorizontal } from 'lucide-react'
-import { useLanguage } from '@/context/language-provider'
 import type { Standard } from '../data/schema'
 import type { QualityStandardListItemPresenter } from '../presenters/quality-standard-list-presenter'
 
@@ -93,17 +93,24 @@ export function QualityStandardsDesktopView({
                 </TableCell>
                 <TableCell className='text-center'>
                   <div className='flex flex-col items-center justify-center gap-1.5'>
-                    <div className={`flex items-center gap-2 rounded-full px-3 py-1.5 ${standard.statusMeta.className}`}>
-                      <div className={`size-1.5 rounded-full ${standard.statusMeta.dotClassName}`} />
+                    <div
+                      className={`flex items-center gap-2 rounded-full px-3 py-1.5 ${standard.statusMeta.className}`}
+                    >
+                      <div
+                        className={`size-1.5 rounded-full ${standard.statusMeta.dotClassName}`}
+                      />
                       <span className='text-[8px] font-black tracking-widest uppercase'>
                         {standard.statusMeta.label}
                       </span>
                     </div>
                     <AuditStatusDisplay meta={standard.auditMeta} />
-                    <span className={`rounded-full px-2.5 py-1 text-[8px] font-black tracking-widest uppercase ${standard.approvalChainClassName}`}>
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-[8px] font-black tracking-widest uppercase ${standard.approvalChainClassName}`}
+                    >
                       {standard.approvalChainLabel}
                     </span>
-                    {standard.processSummaryLabel && standard.processSummaryClassName ? (
+                    {standard.processSummaryLabel &&
+                    standard.processSummaryClassName ? (
                       <span
                         className={`rounded-full px-2.5 py-1 text-[8px] font-black tracking-widest uppercase ${standard.processSummaryClassName}`}
                       >
@@ -119,14 +126,14 @@ export function QualityStandardsDesktopView({
                 </TableCell>
                 <TableCell>
                   <div className='flex flex-col gap-0.5'>
-                    <span className='text-[10px] font-black text-slate-600 uppercase whitespace-nowrap'>
+                    <span className='text-[10px] font-black whitespace-nowrap text-slate-600 uppercase'>
                       {standard.operatorName}
                     </span>
                     <span className='font-mono text-[8px] text-muted-foreground/40 tabular-nums'>
                       {standard.operateTimeText}
                     </span>
                     {standard.decisionActor ? (
-                      <span className='text-[9px] font-black text-primary/80 uppercase whitespace-nowrap'>
+                      <span className='text-[9px] font-black whitespace-nowrap text-primary/80 uppercase'>
                         {standard.decisionActor}
                       </span>
                     ) : null}

@@ -22,17 +22,22 @@ type SaveLinePayload = ProductionLine & {
 
 export const productionLinesService = {
   getLines: async (): Promise<ProductionLine[]> => {
-    const res = await apiFetch<ProductionLinesResponseApiDTO>('/production/lines')
-    const checked = ensureObjectResponse<ProductionLinesResponseApiDTO & Record<string, unknown>>(
-      res,
-      'productionLinesService.getLines'
-    )
+    const res =
+      await apiFetch<ProductionLinesResponseApiDTO>('/production/lines')
+    const checked = ensureObjectResponse<
+      ProductionLinesResponseApiDTO & Record<string, unknown>
+    >(res, 'productionLinesService.getLines')
     return toProductionLineContracts(checked)
   },
 
-  saveLine: async (line: ProductionLine, authCode?: string): Promise<ProductionLine> => {
+  saveLine: async (
+    line: ProductionLine,
+    authCode?: string
+  ): Promise<ProductionLine> => {
     const normalizedLine = normalizeProductionLineEntity(line)
-    const payload: SaveLinePayload = authCode ? { ...normalizedLine, authCode } : normalizedLine
+    const payload: SaveLinePayload = authCode
+      ? { ...normalizedLine, authCode }
+      : normalizedLine
     const res = await apiFetch<ProductionLineApiDTO>('/production/lines', {
       method: 'POST',
       body: JSON.stringify(toSaveProductionLineApiDTO(payload, authCode)),
@@ -48,7 +53,12 @@ export const productionLinesService = {
     return saved
   },
 
-  patchLine: async (id: string, delta: DeltaSet, version: number, authCode?: string): Promise<ProductionLine> => {
+  patchLine: async (
+    id: string,
+    delta: DeltaSet,
+    version: number,
+    authCode?: string
+  ): Promise<ProductionLine> => {
     const payload: DeltaPayload = {
       op: 'PATCH',
       delta,
@@ -59,10 +69,13 @@ export const productionLinesService = {
       },
     }
 
-    const res = await apiFetch<ProductionLineApiDTO>(`/production/lines/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(payload),
-    })
+    const res = await apiFetch<ProductionLineApiDTO>(
+      `/production/lines/${id}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      }
+    )
 
     const saved = toProductionLineContract(
       ensureObjectResponse<ProductionLineApiDTO & Record<string, unknown>>(
@@ -75,9 +88,12 @@ export const productionLinesService = {
   },
 
   deleteLine: async (id: string): Promise<void> => {
-    const res = await apiFetch<ProductionMessageApiDTO>(`/production/lines/${id}`, {
-      method: 'DELETE',
-    })
+    const res = await apiFetch<ProductionMessageApiDTO>(
+      `/production/lines/${id}`,
+      {
+        method: 'DELETE',
+      }
+    )
 
     ensureObjectResponse<ProductionMessageApiDTO & Record<string, unknown>>(
       res,

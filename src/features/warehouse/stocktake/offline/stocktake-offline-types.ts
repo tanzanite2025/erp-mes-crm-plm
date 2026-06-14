@@ -8,7 +8,10 @@ export interface StocktakeConflictFieldDiff {
 }
 
 export interface StocktakeConflictMergeSuggestion {
-  strategy: 'retry_with_latest_version' | 'discard_local_change' | 'manual_review'
+  strategy:
+    | 'retry_with_latest_version'
+    | 'discard_local_change'
+    | 'manual_review'
   label: string
   reason: string
 }

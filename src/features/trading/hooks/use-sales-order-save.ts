@@ -5,7 +5,10 @@ import { type DeltaSet } from '@/lib/delta/types'
 import { type SalesOrder, type SalesOrderFormValues } from '../data/schema'
 import { useSalesOrderMutations } from '../sales'
 import { requireTradingCommandActor } from '../utils/command-actor'
-import { sanitizeSalesOrderDelta, sanitizeSalesOrderSubmitValues } from '../utils/sales-order-submit'
+import {
+  sanitizeSalesOrderDelta,
+  sanitizeSalesOrderSubmitValues,
+} from '../utils/sales-order-submit'
 
 interface UseSalesOrderSaveOptions {
   order?: SalesOrder | null

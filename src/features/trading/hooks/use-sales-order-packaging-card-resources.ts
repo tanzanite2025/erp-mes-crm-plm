@@ -72,7 +72,10 @@ export function useSalesOrderPackagingCardResources(
     queryFn: () => ProductCoreService.getProductPackagingOptions(),
   })
 
-  const probes = useMemo(() => buildSalesOrderPackagingWeightProbes(orders), [orders])
+  const probes = useMemo(
+    () => buildSalesOrderPackagingWeightProbes(orders),
+    [orders]
+  )
   const weightMap = useActiveBOMWeightMap(probes)
 
   return {

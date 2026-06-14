@@ -15,14 +15,22 @@ export interface DashboardSummary {
   }
   recentEvents: string[]
   localContext?: {
-    title: string;
-    data: Record<string, any>;
-  };
+    title: string
+    data: Record<string, any>
+  }
 }
 
-export type AgentSessionType = 'AM_REVIEW' | 'PM_FORECAST' | 'WEEKLY_REPORT' | 'CRITICAL_ALERT' | string
+export type AgentSessionType =
+  | 'AM_REVIEW'
+  | 'PM_FORECAST'
+  | 'WEEKLY_REPORT'
+  | 'CRITICAL_ALERT'
+  | string
 
-export function generateAiPrompt(data: DashboardSummary, isBrief = true): string {
+export function generateAiPrompt(
+  data: DashboardSummary,
+  isBrief = true
+): string {
   const context = AgentProtocol.toContextDCL(data)
 
   return `
@@ -30,11 +38,15 @@ ${AgentProtocol.getSystemProtocol()}
 
 ${context}
 
-${data.localContext ? `
+${
+  data.localContext
+    ? `
 [ACTIVE_PAGE_CONTEXT] 
 - 标题: ${data.localContext.title}
 - 业务数据: ${JSON.stringify(data.localContext.data, null, 2)}
-` : ''}
+`
+    : ''
+}
 
 Action General_Assessment {
   意图 = "请输出一份适合管理层快速阅读的运营摘要";
@@ -50,7 +62,10 @@ ${isBrief ? '- 保持回答简洁，不要输出推理过程。' : ''}
 `.trim()
 }
 
-export function generateAgentBriefPrompt(data: DashboardSummary, type: AgentSessionType): string {
+export function generateAgentBriefPrompt(
+  data: DashboardSummary,
+  type: AgentSessionType
+): string {
   const isAM = type === 'AM_REVIEW'
   const context = AgentProtocol.toContextDCL(data)
 
@@ -91,7 +106,10 @@ Requirements:
 `.trim()
 }
 
-export function generateAgentCommandPrompt(data: DashboardSummary, command: string): string {
+export function generateAgentCommandPrompt(
+  data: DashboardSummary,
+  command: string
+): string {
   const context = AgentProtocol.toContextDCL(data)
   const action = AgentProtocol.toActionDCL('Custom_Analysis', command)
 
@@ -100,11 +118,15 @@ ${AgentProtocol.getSystemProtocol()}
 
 ${context}
 
-${data.localContext ? `
+${
+  data.localContext
+    ? `
 [COMMAND_TARGET_FOCUS]
 - 页面: ${data.localContext.title}
 - 深度模型: ${JSON.stringify(data.localContext.data, null, 2)}
-` : ''}
+`
+    : ''
+}
 
 ${action}
 

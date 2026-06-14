@@ -1,4 +1,9 @@
-export type LogisticsStatusApiDTO = 'Pending' | 'InTransit' | 'Delivered' | 'Exception' | 'Canceled'
+export type LogisticsStatusApiDTO =
+  | 'Pending'
+  | 'InTransit'
+  | 'Delivered'
+  | 'Exception'
+  | 'Canceled'
 
 export type LogisticsTypeApiDTO = 'Shipment' | 'Receipt'
 

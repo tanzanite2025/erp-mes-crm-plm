@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { type AppLocale, translate } from '@/locales'
+import type { Cell, CellValue, Row, Workbook } from 'exceljs'
 import {
   applyWorksheetHeaderRowStyle,
   createExcelWorkbook,
@@ -7,12 +8,11 @@ import {
 } from '@/lib/excel/export'
 import { loadExcelJS } from '@/lib/lazy-vendors'
 import { failLoudly } from '@/lib/safe-catch'
-import type { Cell, CellValue, Row, Workbook } from 'exceljs'
-import { type Material } from '../data/schema'
-import { getMaterialCategoryOptions } from '../data/material-category-options'
-import { packagingService } from './packaging-service'
 import { type Unit } from '../../basic-settings/services/unit-service'
+import { getMaterialCategoryOptions } from '../data/material-category-options'
+import { type Material } from '../data/schema'
 import { MaterialCoreService } from './material-core-service'
+import { packagingService } from './packaging-service'
 
 const DICT_SHEET_NAME = '__MATERIAL_DICTIONARY__'
 const CONFIG_SHEET_NAME = '__SYSTEM_CONFIG__'
@@ -43,7 +43,11 @@ function escapeFormula(value: unknown) {
 
 function unescapeFormula(value: string) {
   if (!value) return value
-  if (value.length > 1 && value[0] === '\'' && ['=', '+', '-', '@'].includes(value[1])) {
+  if (
+    value.length > 1 &&
+    value[0] === "'" &&
+    ['=', '+', '-', '@'].includes(value[1])
+  ) {
     return value.slice(1)
   }
   return value
@@ -58,13 +62,13 @@ function getWorksheetByNames(workbook: Workbook, names: string[]) {
 }
 
 function getCellValue(cell: Cell) {
-	const value = cell.value as CellValue | undefined
-	if (value === null || value === undefined) return ''
-	if (typeof value === 'object' && 'result' in value) {
-		const resultValue = value.result
-		return unescapeFormula(resultValue?.toString() || '')
-	}
-	return unescapeFormula(value.toString().trim())
+  const value = cell.value as CellValue | undefined
+  if (value === null || value === undefined) return ''
+  if (typeof value === 'object' && 'result' in value) {
+    const resultValue = value.result
+    return unescapeFormula(resultValue?.toString() || '')
+  }
+  return unescapeFormula(value.toString().trim())
 }
 
 function parseCompositeId(compositeId: string, locale: AppLocale) {
@@ -112,7 +116,10 @@ const materialExcelSchema = z.array(materialExcelRowSchema)
 export const MaterialExcelService = {
   async exportMaterials(
     materials: Material[],
-    categoryLabel: string = translate('zh-CN', 'materialArchive.excel.allMaterials'),
+    categoryLabel: string = translate(
+      'zh-CN',
+      'materialArchive.excel.allMaterials'
+    ),
     locale: AppLocale = 'zh-CN',
     units: Unit[] = []
   ) {
@@ -121,8 +128,12 @@ export const MaterialExcelService = {
     const { version } = await MaterialCoreService.getMaterialsWithVersion()
     const globalVersion = Number(version)
 
-    const dictSheet = workbook.addWorksheet(DICT_SHEET_NAME, { state: 'veryHidden' })
-    const configSheet = workbook.addWorksheet(CONFIG_SHEET_NAME, { state: 'veryHidden' })
+    const dictSheet = workbook.addWorksheet(DICT_SHEET_NAME, {
+      state: 'veryHidden',
+    })
+    const configSheet = workbook.addWorksheet(CONFIG_SHEET_NAME, {
+      state: 'veryHidden',
+    })
 
     const categories = getMaterialCategoryOptions(locale)
 
@@ -155,16 +166,56 @@ export const MaterialExcelService = {
     )
 
     sheet.columns = [
-      { header: translate(locale, 'materialArchive.excel.headers.id'), key: 'id', width: 10 },
-      { header: translate(locale, 'materialArchive.excel.headers.code'), key: 'code', width: 22 },
-      { header: translate(locale, 'materialArchive.excel.headers.name'), key: 'name', width: 35 },
-      { header: translate(locale, 'materialArchive.excel.headers.spec'), key: 'spec', width: 45 },
-      { header: translate(locale, 'materialArchive.excel.headers.category'), key: 'categoryLabel', width: 22 },
-      { header: translate(locale, 'materialArchive.excel.headers.uom'), key: 'uom', width: 18 },
-      { header: translate(locale, 'materialArchive.excel.headers.packUnit'), key: 'packUnit', width: 18 },
-      { header: translate(locale, 'materialArchive.excel.headers.factor'), key: 'factor', width: 15 },
-      { header: translate(locale, 'materialArchive.excel.headers.example'), key: 'example', width: 25 },
-      { header: translate(locale, 'materialArchive.excel.headers.description'), key: 'description', width: 40 },
+      {
+        header: translate(locale, 'materialArchive.excel.headers.id'),
+        key: 'id',
+        width: 10,
+      },
+      {
+        header: translate(locale, 'materialArchive.excel.headers.code'),
+        key: 'code',
+        width: 22,
+      },
+      {
+        header: translate(locale, 'materialArchive.excel.headers.name'),
+        key: 'name',
+        width: 35,
+      },
+      {
+        header: translate(locale, 'materialArchive.excel.headers.spec'),
+        key: 'spec',
+        width: 45,
+      },
+      {
+        header: translate(locale, 'materialArchive.excel.headers.category'),
+        key: 'categoryLabel',
+        width: 22,
+      },
+      {
+        header: translate(locale, 'materialArchive.excel.headers.uom'),
+        key: 'uom',
+        width: 18,
+      },
+      {
+        header: translate(locale, 'materialArchive.excel.headers.packUnit'),
+        key: 'packUnit',
+        width: 18,
+      },
+      {
+        header: translate(locale, 'materialArchive.excel.headers.factor'),
+        key: 'factor',
+        width: 15,
+      },
+      {
+        header: translate(locale, 'materialArchive.excel.headers.example'),
+        key: 'example',
+        width: 25,
+      },
+      {
+        header: translate(locale, 'materialArchive.excel.headers.description'),
+        key: 'description',
+        width: 40,
+      },
     ]
 
     const activeRules = await packagingService.getRules()
@@ -173,10 +224,14 @@ export const MaterialExcelService = {
     applyWorksheetHeaderRowStyle(headerRow)
 
     materials.forEach((material, idx) => {
-      const currentRule = activeRules.find((rule) => rule.materialId === material.id)
+      const currentRule = activeRules.find(
+        (rule) => rule.materialId === material.id
+      )
       const categoryText =
         categories.find(
-          (option) => option.value.toUpperCase() === (material.category || '').toUpperCase()
+          (option) =>
+            option.value.toUpperCase() ===
+            (material.category || '').toUpperCase()
         )?.label || material.category
       const compositeId = `${material.id}_${material.version || 1}`
 
@@ -201,7 +256,6 @@ export const MaterialExcelService = {
           fgColor: { argb: 'FFF9FAFB' },
         }
       })
-
       ;['E', 'F', 'G', 'H', 'J'].forEach((col) => {
         row.getCell(col).protection = { locked: false }
       })
@@ -230,8 +284,14 @@ export const MaterialExcelService = {
         operator: 'greaterThan',
         formulae: [0],
         showErrorMessage: true,
-        errorTitle: translate(locale, 'materialArchive.excel.validation.factorErrorTitle'),
-        error: translate(locale, 'materialArchive.excel.validation.factorError'),
+        errorTitle: translate(
+          locale,
+          'materialArchive.excel.validation.factorErrorTitle'
+        ),
+        error: translate(
+          locale,
+          'materialArchive.excel.validation.factorError'
+        ),
       }
     })
 
@@ -293,8 +353,13 @@ export const MaterialExcelService = {
       }
     })
 
-    if (!Number.isInteger(globalSnapshotVersion) || (globalSnapshotVersion as number) <= 0) {
-      const error = new Error(translate(locale, 'materialArchive.excel.parse.invalidGlobalVersion'))
+    if (
+      !Number.isInteger(globalSnapshotVersion) ||
+      (globalSnapshotVersion as number) <= 0
+    ) {
+      const error = new Error(
+        translate(locale, 'materialArchive.excel.parse.invalidGlobalVersion')
+      )
       failLoudly(error, 'MaterialExcelService.parseMaterialExcel.globalVersion')
       throw error
     }
@@ -312,14 +377,23 @@ export const MaterialExcelService = {
       })
     }
 
-    const maintenanceSheet = getWorksheetByNames(workbook, getMaintenanceSheetNames())
+    const maintenanceSheet = getWorksheetByNames(
+      workbook,
+      getMaintenanceSheetNames()
+    )
     if (!maintenanceSheet) {
       const error = new Error(
         translate(locale, 'materialArchive.excel.parse.sheetNotFound', {
-          sheetName: translate(locale, 'materialArchive.excel.maintenanceSheetName'),
+          sheetName: translate(
+            locale,
+            'materialArchive.excel.maintenanceSheetName'
+          ),
         })
       )
-      failLoudly(error, 'MaterialExcelService.parseMaterialExcel.maintenanceSheet')
+      failLoudly(
+        error,
+        'MaterialExcelService.parseMaterialExcel.maintenanceSheet'
+      )
       throw error
     }
 
@@ -337,9 +411,13 @@ export const MaterialExcelService = {
       const categoryValue = categoryMap.get(categoryLabel)
       if (!categoryValue) {
         const error = new Error(
-          translate(locale, 'materialArchive.excel.parse.categoryMappingMissing', {
-            value: categoryLabel || '[EMPTY]',
-          })
+          translate(
+            locale,
+            'materialArchive.excel.parse.categoryMappingMissing',
+            {
+              value: categoryLabel || '[EMPTY]',
+            }
+          )
         )
         failLoudly(error, 'MaterialExcelService.parseMaterialExcel.categoryMap')
         throw error

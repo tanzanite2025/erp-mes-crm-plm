@@ -1,16 +1,24 @@
 'use client'
 
 import { useMemo } from 'react'
+import { flexRender, type ColumnDef } from '@tanstack/react-table'
 import {
-  flexRender,
-  type ColumnDef,
-} from '@tanstack/react-table'
-import { ClipboardList, Edit, Eye, Layers, RefreshCw, Trash2, Zap } from 'lucide-react'
-import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
+  ClipboardList,
+  Edit,
+  Eye,
+  Layers,
+  RefreshCw,
+  Trash2,
+  Zap,
+} from 'lucide-react'
+import {
+  normalizeBomChangeType,
+  normalizeBomStatus,
+  normalizeEngineeringDateProtocol,
+} from '@/lib/codecs/code-normalization'
+import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
-import { DataTablePagination } from '@/components/data-table'
 import { useUdsClientTable } from '@/hooks/use-uds-table'
-import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -22,12 +30,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { normalizeBomChangeType, normalizeBomStatus, normalizeEngineeringDateProtocol } from '@/lib/codecs/code-normalization'
-import { cn } from '@/lib/utils'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
+import { DataTablePagination } from '@/components/data-table'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { type BOMSectionOption } from '../../data/bom-section-schema'
 import { type BOM, type Product, type BOMItem } from '../../data/schema'
-import { isEBOM, isMBOM } from '../../utils/bom-identity'
 import { selectBOMDisplayVersion } from '../../utils/bom-display-version'
+import { isEBOM, isMBOM } from '../../utils/bom-identity'
 import { resolveBOMProductDisplaySummary } from '../../utils/bom-product-display'
 import { resolveBOMSectionLabel } from '../../utils/bom-section-utils'
 
@@ -72,27 +81,43 @@ export function BOMTable({
 
         return (
           <div className='flex items-center gap-3'>
-            <div className={cn(
-              'flex size-10 shrink-0 items-center justify-center rounded-md border',
-              isMfg ? 'bg-indigo-50 border-indigo-100' : 'bg-slate-50 border-slate-100'
-            )}>
-              <ClipboardList className={cn('size-5', isMfg ? 'text-indigo-500' : 'text-blue-500')} />
+            <div
+              className={cn(
+                'flex size-10 shrink-0 items-center justify-center rounded-md border',
+                isMfg
+                  ? 'border-indigo-100 bg-indigo-50'
+                  : 'border-slate-100 bg-slate-50'
+              )}
+            >
+              <ClipboardList
+                className={cn(
+                  'size-5',
+                  isMfg ? 'text-indigo-500' : 'text-blue-500'
+                )}
+              />
             </div>
             <div className='flex flex-col'>
               <div className='flex items-center gap-2'>
-                <span className='font-mono font-bold leading-tight'>{row.original.bomNo}</span>
-                <Badge 
-                  variant='outline' 
+                <span className='font-mono leading-tight font-bold'>
+                  {row.original.bomNo}
+                </span>
+                <Badge
+                  variant='outline'
                   className={cn(
-                    'h-3.5 px-1 text-[8px] font-black tracking-widest uppercase border-none',
-                    isMfg ? 'bg-indigo-500/10 text-indigo-600' : 'bg-blue-500/10 text-blue-600'
+                    'h-3.5 border-none px-1 text-[8px] font-black tracking-widest uppercase',
+                    isMfg
+                      ? 'bg-indigo-500/10 text-indigo-600'
+                      : 'bg-blue-500/10 text-blue-600'
                   )}
                 >
                   {t(`engineering.dict.${bomType}` as any)}
                 </Badge>
               </div>
               <div className='mt-0.5 flex flex-wrap items-center gap-2'>
-                <Badge variant='outline' className='h-4 border-blue-200 bg-blue-50 px-1 py-0 text-[10px] text-blue-600'>
+                <Badge
+                  variant='outline'
+                  className='h-4 border-blue-200 bg-blue-50 px-1 py-0 text-[10px] text-blue-600'
+                >
                   {selectBOMDisplayVersion(row.original)}
                 </Badge>
               </div>
@@ -104,44 +129,68 @@ export function BOMTable({
     {
       header: t('engineering.bomArchive.table.product'),
       cell: ({ row }) => {
-        const product = row.original.product || productMap.get(row.original.productId)
+        const product =
+          row.original.product || productMap.get(row.original.productId)
         if (!product) {
-          return <span className='italic text-muted-foreground'>{t('engineering.bomArchive.table.unknownProduct')}</span>
+          return (
+            <span className='text-muted-foreground italic'>
+              {t('engineering.bomArchive.table.unknownProduct')}
+            </span>
+          )
         }
 
         const summary = resolveBOMProductDisplaySummary(product, row.original)
         // 方案 B + 1:1：归属语义在 BOM 维度,读 row.original 的归属字段
         const ownerType = row.original.ownerType ?? 'INTERNAL'
-        const ownerLabel = ownerType === 'CUSTOMER'
-          ? (row.original.ownerCustomerId
-              ? customerNameMap?.get(row.original.ownerCustomerId) ?? t('engineering.bomArchive.table.ownerUnknown')
-              : t('engineering.bomArchive.table.ownerUnknown'))
-          : t('engineering.bomArchive.table.ownerInternal')
-        const ownerBadgeClass = ownerType === 'CUSTOMER'
-          ? 'h-4 border-amber-200 bg-amber-50 px-1 text-[9px] font-bold text-amber-700 hover:bg-amber-50'
-          : 'h-4 border-emerald-200 bg-emerald-50 px-1 text-[9px] font-bold text-emerald-700 hover:bg-emerald-50'
+        const ownerLabel =
+          ownerType === 'CUSTOMER'
+            ? row.original.ownerCustomerId
+              ? (customerNameMap?.get(row.original.ownerCustomerId) ??
+                t('engineering.bomArchive.table.ownerUnknown'))
+              : t('engineering.bomArchive.table.ownerUnknown')
+            : t('engineering.bomArchive.table.ownerInternal')
+        const ownerBadgeClass =
+          ownerType === 'CUSTOMER'
+            ? 'h-4 border-amber-200 bg-amber-50 px-1 text-[9px] font-bold text-amber-700 hover:bg-amber-50'
+            : 'h-4 border-emerald-200 bg-emerald-50 px-1 text-[9px] font-bold text-emerald-700 hover:bg-emerald-50'
 
         return (
           <div className='flex flex-col gap-1 py-1'>
             <div className='flex flex-wrap items-center gap-2'>
-              <span className='text-sm font-bold leading-tight text-slate-800'>{product.name}</span>
+              <span className='text-sm leading-tight font-bold text-slate-800'>
+                {product.name}
+              </span>
               <Badge className='h-4 border-indigo-100 bg-indigo-50 px-1 text-[10px] font-medium text-indigo-700 hover:bg-indigo-50'>
                 {summary.version}
               </Badge>
-              <Badge variant='outline' className={ownerBadgeClass} title={ownerLabel}>
+              <Badge
+                variant='outline'
+                className={ownerBadgeClass}
+                title={ownerLabel}
+              >
                 {ownerLabel}
               </Badge>
             </div>
             <div className='flex items-center gap-1.5'>
-              <Badge variant='outline' className='h-3.5 border-slate-200 bg-slate-50 px-1 text-[9px] font-normal text-slate-500'>
+              <Badge
+                variant='outline'
+                className='h-3.5 border-slate-200 bg-slate-50 px-1 text-[9px] font-normal text-slate-500'
+              >
                 {summary.series}
               </Badge>
-              <Badge variant='outline' className='h-3.5 border-slate-200 bg-slate-50 px-1 text-[9px] font-normal text-slate-500'>
+              <Badge
+                variant='outline'
+                className='h-3.5 border-slate-200 bg-slate-50 px-1 text-[9px] font-normal text-slate-500'
+              >
                 {summary.brake}
               </Badge>
-              <span className='ml-1 text-[10px] text-muted-foreground'>{summary.weightLabel}</span>
+              <span className='ml-1 text-[10px] text-muted-foreground'>
+                {summary.weightLabel}
+              </span>
             </div>
-            <span className='font-mono text-[10px] text-muted-foreground/60'>{product.sku}</span>
+            <span className='font-mono text-[10px] text-muted-foreground/60'>
+              {product.sku}
+            </span>
           </div>
         )
       },
@@ -152,7 +201,13 @@ export function BOMTable({
         const sectionLabels = Array.from(
           new Set<string>(
             row.original.items
-              .map((item: BOMItem) => resolveBOMSectionLabel(sections, item.section, item.section || ''))
+              .map((item: BOMItem) =>
+                resolveBOMSectionLabel(
+                  sections,
+                  item.section,
+                  item.section || ''
+                )
+              )
               .filter((label): label is string => Boolean(label))
           )
         )
@@ -161,15 +216,23 @@ export function BOMTable({
           <div className='flex max-w-[240px] flex-wrap items-center gap-1.5'>
             {sectionLabels.length > 0 ? (
               sectionLabels.map((section: string) => (
-                <Badge key={section} variant='outline' className='h-4 border-slate-200 bg-slate-50 px-1 py-0 text-[10px] text-slate-500'>
+                <Badge
+                  key={section}
+                  variant='outline'
+                  className='h-4 border-slate-200 bg-slate-50 px-1 py-0 text-[10px] text-slate-500'
+                >
                   {section}
                 </Badge>
               ))
             ) : (
-              <span className='text-xs italic text-muted-foreground'>{t('engineering.bomArchive.table.noSection')}</span>
+              <span className='text-xs text-muted-foreground italic'>
+                {t('engineering.bomArchive.table.noSection')}
+              </span>
             )}
             <span className='text-[10px] text-muted-foreground'>
-              {t('engineering.bomArchive.table.lines', { count: row.original.items.length })}
+              {t('engineering.bomArchive.table.lines', {
+                count: row.original.items.length,
+              })}
             </span>
           </div>
         )
@@ -179,15 +242,23 @@ export function BOMTable({
       header: t('engineering.bomArchive.table.change'),
       cell: ({ row }) => {
         const changeType = normalizeBomChangeType(row.original.changeType)
-        const effectiveFrom = normalizeEngineeringDateProtocol(row.original.effectiveFrom)
+        const effectiveFrom = normalizeEngineeringDateProtocol(
+          row.original.effectiveFrom
+        )
 
         return (
-          <div className='flex flex-col gap-1 text-[10px] font-bold uppercase tracking-wide'>
-            <span className='text-slate-700'>{changeType || t('engineering.bomArchive.form.manual')}</span>
-            <span className='font-mono text-muted-foreground'>{row.original.changeOrderNo || '-'}</span>
+          <div className='flex flex-col gap-1 text-[10px] font-bold tracking-wide uppercase'>
+            <span className='text-slate-700'>
+              {changeType || t('engineering.bomArchive.form.manual')}
+            </span>
+            <span className='font-mono text-muted-foreground'>
+              {row.original.changeOrderNo || '-'}
+            </span>
             <span className='text-muted-foreground'>
               {effectiveFrom
-                ? t('engineering.bomArchive.table.fromDate', { date: effectiveFrom })
+                ? t('engineering.bomArchive.table.fromDate', {
+                    date: effectiveFrom,
+                  })
                 : t('engineering.bomArchive.table.noEffectiveDate')}
             </span>
           </div>
@@ -206,7 +277,8 @@ export function BOMTable({
           },
           active: {
             label: t('engineering.bomArchive.status.active'),
-            className: 'bg-emerald-500/10 text-emerald-600 border-emerald-200 shadow-[0_0_8px_rgba(16,185,129,0.1)]',
+            className:
+              'bg-emerald-500/10 text-emerald-600 border-emerald-200 shadow-[0_0_8px_rgba(16,185,129,0.1)]',
           },
           reviewing: {
             label: t('engineering.bomArchive.status.reviewing'),
@@ -218,7 +290,8 @@ export function BOMTable({
           },
           released: {
             label: t('engineering.bomArchive.status.released'),
-            className: 'bg-emerald-500/20 text-emerald-700 border-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.15)] animate-pulse',
+            className:
+              'bg-emerald-500/20 text-emerald-700 border-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.15)] animate-pulse',
           },
           archived: {
             label: t('engineering.bomArchive.status.archived'),
@@ -233,7 +306,13 @@ export function BOMTable({
         const current = config[status] || config.draft
 
         return (
-          <Badge variant='outline' className={cn('h-5 rounded-md border-none px-2 py-0 text-[9px] font-black uppercase tracking-widest', current.className)}>
+          <Badge
+            variant='outline'
+            className={cn(
+              'h-5 rounded-md border-none px-2 py-0 text-[9px] font-black tracking-widest uppercase',
+              current.className
+            )}
+          >
             {current.label}
           </Badge>
         )
@@ -245,7 +324,8 @@ export function BOMTable({
       cell: ({ row }) => {
         const isLocked = row.original.isLocked
         const canDerive = isEBOM(row.original) && !isLocked
-        const canRevise = isMBOM(row.original) && row.original.status === 'RELEASED'
+        const canRevise =
+          isMBOM(row.original) && row.original.status === 'RELEASED'
 
         return (
           <div className='flex items-center gap-1'>
@@ -256,21 +336,21 @@ export function BOMTable({
               iconOnly
               className='size-8 rounded-full border-none bg-muted/40 text-foreground hover:bg-muted'
             />
-            <Button 
-              variant='ghost' 
-              size='icon' 
-              className='size-8 rounded-full text-blue-600 hover:bg-blue-50' 
+            <Button
+              variant='ghost'
+              size='icon'
+              className='size-8 rounded-full text-blue-600 hover:bg-blue-50'
               onClick={() => onPreview(row.original)}
               title={t('common.actions.preview')}
             >
               <Eye className='size-4' />
             </Button>
-            
+
             {canDerive && (
-              <Button 
-                variant='ghost' 
-                size='icon' 
-                className='size-8 rounded-full text-amber-600 hover:bg-amber-50' 
+              <Button
+                variant='ghost'
+                size='icon'
+                className='size-8 rounded-full text-amber-600 hover:bg-amber-50'
                 onClick={() => onDerive(row.original)}
                 title={t('engineering.bomArchive.actions.derive')}
               >
@@ -302,10 +382,10 @@ export function BOMTable({
               </Button>
             )}
 
-            <Button 
-              variant='ghost' 
-              size='icon' 
-              className='size-8 rounded-full hover:bg-muted' 
+            <Button
+              variant='ghost'
+              size='icon'
+              className='size-8 rounded-full hover:bg-muted'
               onClick={() => onEdit(row.original)}
               title={t('common.actions.edit')}
             >
@@ -315,9 +395,18 @@ export function BOMTable({
               variant='ghost'
               size='icon'
               disabled={isLocked}
-              className={cn('size-8 rounded-full transition-all duration-300', isLocked ? 'text-muted-foreground/30' : 'text-destructive hover:bg-rose-50')}
+              className={cn(
+                'size-8 rounded-full transition-all duration-300',
+                isLocked
+                  ? 'text-muted-foreground/30'
+                  : 'text-destructive hover:bg-rose-50'
+              )}
               onClick={() => {
-                if (window.confirm(t('engineering.bomArchive.table.confirmDelete'))) {
+                if (
+                  window.confirm(
+                    t('engineering.bomArchive.table.confirmDelete')
+                  )
+                ) {
                   onDelete(row.original.id)
                 }
               }}
@@ -339,15 +428,26 @@ export function BOMTable({
   return (
     <div className='space-y-4'>
       <Card className='overflow-hidden rounded-[24px] border-dashed border-muted/50 bg-muted/3 shadow-inner'>
-        <CardContent className='overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/10 p-0'>
+        <CardContent className='scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/10 overflow-x-auto p-0'>
           <div className='min-w-[980px]'>
             <Table>
               <TableHeader className='border-b border-dashed border-muted/30 bg-muted/10'>
                 {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id} className='border-none hover:bg-transparent'>
+                  <TableRow
+                    key={headerGroup.id}
+                    className='border-none hover:bg-transparent'
+                  >
                     {headerGroup.headers.map((header) => (
-                      <TableHead key={header.id} className='h-12 py-0 text-[10px] font-black uppercase tracking-[0.2em] text-primary/40'>
-                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                      <TableHead
+                        key={header.id}
+                        className='h-12 py-0 text-[10px] font-black tracking-[0.2em] text-primary/40 uppercase'
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
                       </TableHead>
                     ))}
                   </TableRow>
@@ -364,20 +464,29 @@ export function BOMTable({
                   ))
                 ) : table.getRowModel().rows.length ? (
                   table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id} className='transition-colors hover:bg-slate-50/30'>
+                    <TableRow
+                      key={row.id}
+                      className='transition-colors hover:bg-slate-50/30'
+                    >
                       {row.getVisibleCells().map((cell) => (
                         <TableCell key={cell.id} className='py-3'>
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
                         </TableCell>
                       ))}
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={columns.length} className='h-48 text-center sm:h-64'>
+                    <TableCell
+                      colSpan={columns.length}
+                      className='h-48 text-center sm:h-64'
+                    >
                       <div className='flex flex-col items-center justify-center gap-3 opacity-40'>
-                        <Layers className='size-10 text-muted-foreground stroke-1 sm:size-12' />
-                        <p className='px-8 text-[10px] font-semibold uppercase tracking-widest italic sm:text-sm'>
+                        <Layers className='size-10 stroke-1 text-muted-foreground sm:size-12' />
+                        <p className='px-8 text-[10px] font-semibold tracking-widest uppercase italic sm:text-sm'>
                           {t('engineering.bomArchive.table.empty')}
                         </p>
                       </div>

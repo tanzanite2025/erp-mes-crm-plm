@@ -34,7 +34,10 @@ export const drillingPlanSchema = z.object({
 })
 
 export type DrillingPlan = z.infer<typeof drillingPlanSchema>
-export const drillingPlanInputSchema = drillingPlanSchema.omit({ id: true, createdAt: true })
+export const drillingPlanInputSchema = drillingPlanSchema.omit({
+  id: true,
+  createdAt: true,
+})
 export type DrillingPlanInput = z.input<typeof drillingPlanInputSchema>
 
 export const labelingDraftSchema = z.object({
@@ -49,7 +52,10 @@ export const labelingDraftSchema = z.object({
 })
 
 export type LabelingDraft = z.infer<typeof labelingDraftSchema>
-export const labelingDraftInputSchema = labelingDraftSchema.omit({ id: true, createdAt: true })
+export const labelingDraftInputSchema = labelingDraftSchema.omit({
+  id: true,
+  createdAt: true,
+})
 export type LabelingDraftInput = z.input<typeof labelingDraftInputSchema>
 
 export const spokeLengthSchema = z.object({
@@ -67,5 +73,8 @@ export const spokeLengthSchema = z.object({
 })
 
 export type SpokeLength = z.infer<typeof spokeLengthSchema>
-export const spokeLengthInputSchema = spokeLengthSchema.omit({ id: true, createdAt: true })
+export const spokeLengthInputSchema = spokeLengthSchema.omit({
+  id: true,
+  createdAt: true,
+})
 export type SpokeLengthInput = z.input<typeof spokeLengthInputSchema>

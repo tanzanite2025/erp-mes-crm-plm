@@ -82,7 +82,8 @@ export const equipmentTooling = {
         edit: 'Edit Equipment Profile',
         create: 'Register New Furnace Asset',
       },
-      description: 'Input physical serial, maximum temperature, and location data',
+      description:
+        'Input physical serial, maximum temperature, and location data',
       fields: {
         sn: 'Serial No.',
         name: 'Alias',
@@ -127,7 +128,8 @@ export const equipmentTooling = {
       addInGroup: 'Add Asset in This Group',
     },
     confirm: {
-      remove: 'Are you sure you want to remove this mold asset? This action cannot be undone.',
+      remove:
+        'Are you sure you want to remove this mold asset? This action cannot be undone.',
     },
     toast: {
       removed: 'Mold asset removed',
@@ -174,7 +176,8 @@ export const equipmentTooling = {
         create: 'Register Mold Asset',
       },
       description: {
-        prefix: 'Enter mold identifiers and lifespan thresholds. The system will automatically trigger',
+        prefix:
+          'Enter mold identifiers and lifespan thresholds. The system will automatically trigger',
         alertCode: 'Maintenance Alert',
         suffix: 'based on cycle counts.',
       },
@@ -221,7 +224,8 @@ export const equipmentTooling = {
         nameRequired: 'Please enter a mold name',
         maxCyclesPositive: 'Lifespan must be greater than 0',
         maintenanceThresholdPositive: 'Alert point must be greater than 0',
-        duplicateSn: 'Serial {{sn}} already exists. Please use a unique serial.',
+        duplicateSn:
+          'Serial {{sn}} already exists. Please use a unique serial.',
       },
     },
   },
@@ -234,7 +238,8 @@ export const equipmentTooling = {
       add: 'Add Partner',
     },
     confirm: {
-      remove: 'Are you sure you want to remove this partner? Historical records may fall back to the raw ID.',
+      remove:
+        'Are you sure you want to remove this partner? Historical records may fall back to the raw ID.',
     },
     toast: {
       removed: 'Partner removed',
@@ -301,7 +306,8 @@ export const equipmentTooling = {
         edit: 'Edit Movement Record',
         create: 'Register Movement Record',
       },
-      description: 'Track physical location changes and status synchronization of molds between units.',
+      description:
+        'Track physical location changes and status synchronization of molds between units.',
       modes: {
         lend: 'Lend Out',
         borrow: 'Borrow In',
@@ -379,7 +385,8 @@ export const equipmentTooling = {
   drawings: {
     page: {
       title: 'Drawing Archive',
-      description: 'Centralized management for mold drawings and technical files',
+      description:
+        'Centralized management for mold drawings and technical files',
       searchPlaceholder: 'Search by drawing name or linked mold serial...',
     },
     actions: {
@@ -423,7 +430,8 @@ export const equipmentTooling = {
         remarks: 'Revision notes or remarks...',
       },
       warnings: {
-        unbindConfirm: 'Asset unbinding detected. This drawing will no longer be linked to the mold. Confirm detachment?',
+        unbindConfirm:
+          'Asset unbinding detected. This drawing will no longer be linked to the mold. Confirm detachment?',
       },
       actions: {
         cancel: 'Cancel',
@@ -473,7 +481,8 @@ export const equipmentTooling = {
   dashboard: {
     error: {
       title: 'Telemetry link lost',
-      description: 'The dashboard aggregation service is unavailable. Check the network or backend containers.',
+      description:
+        'The dashboard aggregation service is unavailable. Check the network or backend containers.',
       retry: 'Retry',
     },
     header: {

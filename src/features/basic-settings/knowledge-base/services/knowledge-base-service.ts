@@ -1,8 +1,5 @@
 import { apiFetch } from '@/lib/api-client'
-import {
-  ensureArrayResponse,
-  ensureObjectResponse,
-} from '@/lib/api-response'
+import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import {
   DEFAULT_KNOWLEDGE_BASE_ENTRIES,
   type KnowledgeBaseCategory,
@@ -16,7 +13,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-function isKnowledgeBaseCategory(value: unknown): value is KnowledgeBaseCategory {
+function isKnowledgeBaseCategory(
+  value: unknown
+): value is KnowledgeBaseCategory {
   return (
     value === 'workflow' ||
     value === 'status' ||
@@ -26,7 +25,9 @@ function isKnowledgeBaseCategory(value: unknown): value is KnowledgeBaseCategory
   )
 }
 
-export function normalizeKnowledgeBaseEntry(value: unknown): KnowledgeBaseEntry | null {
+export function normalizeKnowledgeBaseEntry(
+  value: unknown
+): KnowledgeBaseEntry | null {
   if (!isRecord(value)) return null
   if (
     typeof value.id !== 'string' ||
@@ -47,22 +48,32 @@ export function normalizeKnowledgeBaseEntry(value: unknown): KnowledgeBaseEntry 
     category: value.category,
     summary: value.summary,
     content: value.content,
-    contentText: typeof value.contentText === 'string' ? value.contentText : undefined,
+    contentText:
+      typeof value.contentText === 'string' ? value.contentText : undefined,
     routePath: value.routePath,
     hasImage: typeof value.hasImage === 'boolean' ? value.hasImage : undefined,
     hasVideo: typeof value.hasVideo === 'boolean' ? value.hasVideo : undefined,
-    viewCount: typeof value.viewCount === 'number' ? value.viewCount : undefined,
-    lastViewedAt: typeof value.lastViewedAt === 'string' ? value.lastViewedAt : undefined,
+    viewCount:
+      typeof value.viewCount === 'number' ? value.viewCount : undefined,
+    lastViewedAt:
+      typeof value.lastViewedAt === 'string' ? value.lastViewedAt : undefined,
     version: typeof value.version === 'number' ? value.version : undefined,
-    createdBy: typeof value.createdBy === 'string' ? value.createdBy : undefined,
-    updatedBy: typeof value.updatedBy === 'string' ? value.updatedBy : undefined,
-    createdAt: typeof value.createdAt === 'string' ? value.createdAt : undefined,
+    createdBy:
+      typeof value.createdBy === 'string' ? value.createdBy : undefined,
+    updatedBy:
+      typeof value.updatedBy === 'string' ? value.updatedBy : undefined,
+    createdAt:
+      typeof value.createdAt === 'string' ? value.createdAt : undefined,
     updatedAt: value.updatedAt,
-    keywords: value.keywords.filter((item): item is string => typeof item === 'string'),
+    keywords: value.keywords.filter(
+      (item): item is string => typeof item === 'string'
+    ),
   }
 }
 
-export function parseKnowledgeBaseEntries(value: unknown): KnowledgeBaseEntry[] {
+export function parseKnowledgeBaseEntries(
+  value: unknown
+): KnowledgeBaseEntry[] {
   let rawEntries: unknown
   try {
     rawEntries = typeof value === 'string' ? JSON.parse(value) : value
@@ -87,7 +98,9 @@ function parseKnowledgeBaseEntry(value: unknown): KnowledgeBaseEntry {
   )
   const entry = normalizeKnowledgeBaseEntry(objectValue)
   if (!entry) {
-    throw new Error('[INVALID_RESPONSE] KnowledgeBaseService expected a knowledge entry.')
+    throw new Error(
+      '[INVALID_RESPONSE] KnowledgeBaseService expected a knowledge entry.'
+    )
   }
   return entry
 }
@@ -128,7 +141,10 @@ export const knowledgeBaseService = {
     return parseKnowledgeBaseEntry(res)
   },
 
-  async updateEntry(id: string, draft: KnowledgeBaseDraft): Promise<KnowledgeBaseEntry> {
+  async updateEntry(
+    id: string,
+    draft: KnowledgeBaseDraft
+  ): Promise<KnowledgeBaseEntry> {
     const res = await apiFetch<unknown>(`${KNOWLEDGE_BASE_ENDPOINT}/${id}`, {
       method: 'PUT',
       body: JSON.stringify(toKnowledgeBasePayload(draft, id)),

@@ -19,8 +19,12 @@ function normalizePositiveInteger(value: string | undefined, fallback: number) {
   return parsed > 0 ? parsed : fallback
 }
 
-export function getBatchEngineDemandLineLabel(line: CuttingPlanLine, display?: CutSizeDisplaySnapshot) {
-  const expression = line.sizeExpression?.trim() || display?.sizeExpression || '--'
+export function getBatchEngineDemandLineLabel(
+  line: CuttingPlanLine,
+  display?: CutSizeDisplaySnapshot
+) {
+  const expression =
+    line.sizeExpression?.trim() || display?.sizeExpression || '--'
   const code = line.cutSizeCode?.trim() || display?.code || '--'
   return `#${line.sequenceNo} / ${code} / ${expression}`
 }
@@ -33,7 +37,9 @@ type MapBatchEngineDemandLineOptions = {
   rules: BatchEngineResolvedDemandLineRules
 }
 
-export function mapBatchEngineDemandLine(options: MapBatchEngineDemandLineOptions): BatchEngineResolvedDemandLine {
+export function mapBatchEngineDemandLine(
+  options: MapBatchEngineDemandLineOptions
+): BatchEngineResolvedDemandLine {
   const { demandLineId, line, cutSizeGeometry, cutSizeDisplay, rules } = options
   const widthMm = cutSizeGeometry.widthMm
   const lengthMm = cutSizeGeometry.lengthMm
@@ -41,9 +47,15 @@ export function mapBatchEngineDemandLine(options: MapBatchEngineDemandLineOption
   const layupCount = cutSizeGeometry.layupCount
   const requiredSets = normalizePositiveInteger(line.requiredSets, 1)
   const requiredPieces = requiredSets * pieceCountPerSet
-  const areaM2 = round(cutSizeGeometry.baseAreaM2 * pieceCountPerSet * layupCount * requiredSets, 3)
+  const areaM2 = round(
+    cutSizeGeometry.baseAreaM2 * pieceCountPerSet * layupCount * requiredSets,
+    3
+  )
   const occupiedPieceAreaM2 = cutSizeGeometry.envelopeAreaM2
-  const occupiedAreaM2 = round(occupiedPieceAreaM2 * pieceCountPerSet * layupCount * requiredSets, 3)
+  const occupiedAreaM2 = round(
+    occupiedPieceAreaM2 * pieceCountPerSet * layupCount * requiredSets,
+    3
+  )
 
   return {
     demandLineId,

@@ -1,10 +1,10 @@
 import { Package, Plus, Trash2 } from 'lucide-react'
+import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Combobox } from '@/components/ui/combobox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useLanguage } from '@/context/language-provider'
 import { type MaterialOption } from '@/features/material-archive/data/schema'
 import { type PurchaseOrderLine } from '../../../data/schema'
 import { usePurchaseOrderLinesEditorViewModel } from '../../../hooks/use-purchase-order-lines-editor-view-model'
@@ -36,16 +36,17 @@ export function PurchaseOrderLinesEditor({
   onLineChange,
 }: PurchaseOrderLinesEditorProps) {
   const { t } = useLanguage()
-  const { materialOptions, handleMaterialSelect } = usePurchaseOrderLinesEditorViewModel({
-    materials,
-    lines,
-    onLineChange,
-  })
+  const { materialOptions, handleMaterialSelect } =
+    usePurchaseOrderLinesEditorViewModel({
+      materials,
+      lines,
+      onLineChange,
+    })
 
   return (
     <section className='space-y-2.5'>
       <div className='flex items-center justify-between px-1'>
-        <h3 className='flex items-center gap-2 text-sm font-black uppercase tracking-tighter text-slate-800 italic dark:text-slate-200'>
+        <h3 className='flex items-center gap-2 text-sm font-black tracking-tighter text-slate-800 uppercase italic dark:text-slate-200'>
           <Package className='size-4 text-primary' />
           {t('purchase.orders.linesEditor.title')}
         </h3>
@@ -73,7 +74,9 @@ export function PurchaseOrderLinesEditor({
               <div className='grid grid-cols-1 items-end gap-2.5 md:grid-cols-12 md:gap-3'>
                 <div className='flex flex-col items-start gap-2.5 md:col-span-4 md:flex-row md:items-end'>
                   <div className='mb-1 hidden size-8 shrink-0 items-center justify-center rounded-full bg-muted/50 md:flex'>
-                    <span className='text-[11px] font-black'>{line.lineNo}</span>
+                    <span className='text-[11px] font-black'>
+                      {line.lineNo}
+                    </span>
                   </div>
                   <div className='w-full space-y-1.5'>
                     <Label className='ml-1 text-[9px] font-black uppercase opacity-60'>
@@ -82,10 +85,16 @@ export function PurchaseOrderLinesEditor({
                     <Combobox
                       options={materialOptions}
                       value={line.materialId}
-                      onValueChange={(value) => handleMaterialSelect(index, value)}
+                      onValueChange={(value) =>
+                        handleMaterialSelect(index, value)
+                      }
                       isLoading={isLoading}
-                      placeholder={t('purchase.orders.linesEditor.materialPlaceholder')}
-                      searchPlaceholder={t('purchase.orders.linesEditor.materialSearchPlaceholder')}
+                      placeholder={t(
+                        'purchase.orders.linesEditor.materialPlaceholder'
+                      )}
+                      searchPlaceholder={t(
+                        'purchase.orders.linesEditor.materialSearchPlaceholder'
+                      )}
                       emptyText={t('purchase.orders.linesEditor.materialEmpty')}
                       className='h-10 w-full rounded-xl border-none bg-muted/20 font-bold md:h-9'
                     />
@@ -124,7 +133,9 @@ export function PurchaseOrderLinesEditor({
                     <Input
                       type='number'
                       value={line.qty}
-                      onChange={(e) => onLineChange(index, 'qty', Number(e.target.value))}
+                      onChange={(e) =>
+                        onLineChange(index, 'qty', Number(e.target.value))
+                      }
                       className='h-10 rounded-xl border-none bg-muted/20 text-right font-black md:h-9'
                     />
                   </div>
@@ -133,7 +144,7 @@ export function PurchaseOrderLinesEditor({
                       {t('purchase.orders.linesEditor.unit')}
                     </Label>
                     <div className='flex h-10 items-center rounded-xl bg-muted/20 px-3 md:h-9'>
-                      <span className='rounded-full bg-background px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.18em] text-muted-foreground/70'>
+                      <span className='rounded-full bg-background px-2.5 py-1 text-[8px] font-black tracking-[0.18em] text-muted-foreground/70 uppercase'>
                         {line.uom || '--'}
                       </span>
                     </div>
@@ -148,7 +159,9 @@ export function PurchaseOrderLinesEditor({
                     <Input
                       type='number'
                       value={line.price}
-                      onChange={(e) => onLineChange(index, 'price', Number(e.target.value))}
+                      onChange={(e) =>
+                        onLineChange(index, 'price', Number(e.target.value))
+                      }
                       className='h-10 rounded-xl border-none bg-muted/20 text-right font-black md:h-9'
                     />
                   </div>
@@ -156,7 +169,7 @@ export function PurchaseOrderLinesEditor({
                     <p className='mb-1 text-[8px] font-black uppercase opacity-40'>
                       {t('purchase.orders.linesEditor.subtotal')}
                     </p>
-                    <p className='truncate text-[12px] font-black tabular-nums text-primary md:text-[13px]'>
+                    <p className='truncate text-[12px] font-black text-primary tabular-nums md:text-[13px]'>
                       {line.amount.toLocaleString()}
                     </p>
                   </div>

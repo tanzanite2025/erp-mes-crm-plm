@@ -41,7 +41,9 @@ Context Factory_Snapshot {
   ]
 }
 
-${data.localContext ? `
+${
+  data.localContext
+    ? `
 Context Local_${data.localContext.title.replace(/\s+/g, '_')} {
   备注 = "这是当前用户正在点击/浏览的【${data.localContext.title}】实时局部数据。";
   
@@ -49,7 +51,9 @@ Context Local_${data.localContext.title.replace(/\s+/g, '_')} {
     ${JSON.stringify(data.localContext.data, null, 2)}
   }
 }
-` : ''}
+`
+    : ''
+}
 `.trim()
   },
 

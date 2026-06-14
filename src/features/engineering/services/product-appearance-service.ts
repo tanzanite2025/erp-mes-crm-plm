@@ -1,5 +1,8 @@
 import { apiFetch } from '@/lib/api-client'
-import { type ProductAppearance, type ProductAppearanceDraft } from '../data/product-appearance'
+import {
+  type ProductAppearance,
+  type ProductAppearanceDraft,
+} from '../data/product-appearance'
 
 interface ProductAppearanceApiDTO {
   id: string
@@ -16,7 +19,9 @@ interface ProductAppearanceApiDTO {
   version?: number
 }
 
-function normalizeProductAppearance(item: ProductAppearance): ProductAppearance {
+function normalizeProductAppearance(
+  item: ProductAppearance
+): ProductAppearance {
   return {
     ...item,
     imageUrl: item.imageUrl || '',
@@ -26,7 +31,9 @@ function normalizeProductAppearance(item: ProductAppearance): ProductAppearance 
   }
 }
 
-function toProductAppearanceContract(dto: ProductAppearanceApiDTO): ProductAppearance {
+function toProductAppearanceContract(
+  dto: ProductAppearanceApiDTO
+): ProductAppearance {
   return normalizeProductAppearance({
     id: dto.id,
     name: dto.name || '',
@@ -67,26 +74,34 @@ function buildAppearanceId() {
 
 export const productAppearanceService = {
   async getProductAppearances(): Promise<ProductAppearance[]> {
-    const items = await apiFetch<ProductAppearanceApiDTO[]>('/engineering/product-appearances')
+    const items = await apiFetch<ProductAppearanceApiDTO[]>(
+      '/engineering/product-appearances'
+    )
     return sortProductAppearances(items.map(toProductAppearanceContract))
   },
 
-  async saveProductAppearance(draft: ProductAppearanceDraft): Promise<ProductAppearance[]> {
-    await apiFetch<ProductAppearanceApiDTO>('/engineering/product-appearances', {
-      method: 'POST',
-      body: JSON.stringify({
-        id: draft.id?.trim() || buildAppearanceId(),
-      name: draft.name.trim(),
-      barcodeCode: draft.barcodeCode.trim(),
-      description: draft.description.trim(),
-      imageUrl: draft.imageUrl?.trim() || '',
-      imageThumbnailUrl: draft.imageThumbnailUrl?.trim() || draft.imageUrl?.trim() || '',
-      imageName: draft.imageName?.trim() || '',
-      active: draft.active,
-      sortOrder: Number.isFinite(draft.sortOrder) ? draft.sortOrder : 0,
-        version: draft.version ?? 0,
-      }),
-    })
+  async saveProductAppearance(
+    draft: ProductAppearanceDraft
+  ): Promise<ProductAppearance[]> {
+    await apiFetch<ProductAppearanceApiDTO>(
+      '/engineering/product-appearances',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          id: draft.id?.trim() || buildAppearanceId(),
+          name: draft.name.trim(),
+          barcodeCode: draft.barcodeCode.trim(),
+          description: draft.description.trim(),
+          imageUrl: draft.imageUrl?.trim() || '',
+          imageThumbnailUrl:
+            draft.imageThumbnailUrl?.trim() || draft.imageUrl?.trim() || '',
+          imageName: draft.imageName?.trim() || '',
+          active: draft.active,
+          sortOrder: Number.isFinite(draft.sortOrder) ? draft.sortOrder : 0,
+          version: draft.version ?? 0,
+        }),
+      }
+    )
     return this.getProductAppearances()
   },
 

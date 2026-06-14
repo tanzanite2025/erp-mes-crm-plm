@@ -1,23 +1,23 @@
 import { useMemo, useState } from 'react'
 import { FileText } from 'lucide-react'
-import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { QuotePrintPreviewDialog } from '@/features/quotes/components/quote-print-preview-dialog'
 import { QuoteWorkspaceCreateEditor } from '@/features/quotes/components/quote-workspace-create-editor'
 import { QuoteWorkspaceDialog } from '@/features/quotes/components/quote-workspace-dialog'
 import { QuoteWorkspaceFilters } from '@/features/quotes/components/quote-workspace-filters'
 import { QuoteWorkspaceList } from '@/features/quotes/components/quote-workspace-list'
-import { useQuoteCreateEditor } from '@/features/quotes/hooks/use-quote-create-editor'
-import { useConvertQuote } from '@/features/quotes/hooks/use-convert-quote'
-import { useQuoteWorkspaceController } from '@/features/quotes/hooks/use-quote-workspace-controller'
-import { useSaveQuote } from '@/features/quotes/hooks/use-save-quote'
 import type {
   QuoteCustomerFilter,
   QuoteStatusFilter,
   QuoteTypeFilter,
 } from '@/features/quotes/data/quote-summary'
+import { useConvertQuote } from '@/features/quotes/hooks/use-convert-quote'
+import { useQuoteCreateEditor } from '@/features/quotes/hooks/use-quote-create-editor'
 import { useQuoteDetail } from '@/features/quotes/hooks/use-quote-detail'
 import { useQuoteList } from '@/features/quotes/hooks/use-quote-list'
+import { useQuoteWorkspaceController } from '@/features/quotes/hooks/use-quote-workspace-controller'
+import { useSaveQuote } from '@/features/quotes/hooks/use-save-quote'
 
 const customerLabels: Record<string, string> = {
   all: '全部客户',
@@ -64,16 +64,35 @@ export function QuoteOrdersTab() {
     switchToDetailMode,
   } = useQuoteWorkspaceController()
 
-  const activeCustomerLabel = useMemo(() => customerLabels[customer] ?? '全部客户', [customer])
-  const activeStatusLabel = useMemo(() => statusLabels[status] ?? '全部状态', [status])
-  const activeTypeLabel = useMemo(() => typeLabels[quoteType] ?? '全部类型', [quoteType])
-  const { rows, summary, isLoading, isError: isListError, errorMessage: listError } = useQuoteList({
+  const activeCustomerLabel = useMemo(
+    () => customerLabels[customer] ?? '全部客户',
+    [customer]
+  )
+  const activeStatusLabel = useMemo(
+    () => statusLabels[status] ?? '全部状态',
+    [status]
+  )
+  const activeTypeLabel = useMemo(
+    () => typeLabels[quoteType] ?? '全部类型',
+    [quoteType]
+  )
+  const {
+    rows,
+    summary,
+    isLoading,
+    isError: isListError,
+    errorMessage: listError,
+  } = useQuoteList({
     customer,
     status,
     quoteType,
     keyword,
   })
-  const { detail, isLoading: isDetailLoading, errorMessage: detailError } = useQuoteDetail(selectedQuoteId)
+  const {
+    detail,
+    isLoading: isDetailLoading,
+    errorMessage: detailError,
+  } = useQuoteDetail(selectedQuoteId)
   const {
     formData: createFormData,
     setFormData: setCreateFormData,
@@ -129,11 +148,16 @@ export function QuoteOrdersTab() {
     await convertQuote(detail.id)
   }
 
-  const activeEditedAmountLabel = detail ? editedAmountLabel || detail.amountLabel : editedAmountLabel
-  const activeEditedRequirements = detail ? editedRequirements || detail.requirements : editedRequirements
+  const activeEditedAmountLabel = detail
+    ? editedAmountLabel || detail.amountLabel
+    : editedAmountLabel
+  const activeEditedRequirements = detail
+    ? editedRequirements || detail.requirements
+    : editedRequirements
   const activeSaveError = dialogMode === 'create' ? createError : saveError
   const activeIsSaving = dialogMode === 'create' ? isCreating : isSaving
-  const createSaveDisabled = dialogMode === 'create' && createResource.status !== 'ready'
+  const createSaveDisabled =
+    dialogMode === 'create' && createResource.status !== 'ready'
   const createEditor = (
     <QuoteWorkspaceCreateEditor
       formData={createFormData}
@@ -149,7 +173,7 @@ export function QuoteOrdersTab() {
   )
 
   return (
-    <div className='flex min-h-0 flex-1 flex-col gap-6 animate-in fade-in duration-700'>
+    <div className='flex min-h-0 flex-1 animate-in flex-col gap-6 duration-700 fade-in'>
       <IndustrialHeader
         icon={FileText}
         title={t('commandMenu.items.quoteManagement')}
@@ -170,7 +194,9 @@ export function QuoteOrdersTab() {
         <QuoteWorkspaceList
           activeCustomerLabel={activeCustomerLabel}
           activeStatusLabel={activeStatusLabel}
-          activeTypeLabel={keyword ? `${activeTypeLabel} · ${keyword}` : activeTypeLabel}
+          activeTypeLabel={
+            keyword ? `${activeTypeLabel} · ${keyword}` : activeTypeLabel
+          }
           rows={rows}
           resultsLabel={summary.amountLabel}
           isLoading={isLoading}

@@ -146,8 +146,7 @@ export const rawMaterials = {
       notes: {
         resinContentMissing: '树脂含量/批号未识别出有效含量，请手工复核。',
         supplierBatchMissing: '树脂含量/批号未识别出批号，请手工复核。',
-        areaMismatch:
-          '面积与宽度/卷长不一致，已保留手工输入，请复核标签单位。',
+        areaMismatch: '面积与宽度/卷长不一致，已保留手工输入，请复核标签单位。',
       },
     },
     status: {
@@ -182,20 +181,24 @@ export const rawMaterials = {
     },
     binding: {
       title: '当前为二维码绑定模式',
-      description: '请完成当前预浸料规格录入，保存后会把本次二维码与该规格绑定。',
+      description:
+        '请完成当前预浸料规格录入，保存后会把本次二维码与该规格绑定。',
       tokenLabel: '当前绑定码',
     },
     scanBinding: {
       title: '扫码绑定预浸料',
-      description: '请扫描或粘贴未绑定二维码。识别成功后，系统会自动打开新增预浸料规格弹窗并进入绑定模式。',
+      description:
+        '请扫描或粘贴未绑定二维码。识别成功后，系统会自动打开新增预浸料规格弹窗并进入绑定模式。',
       placeholder: '扫描二维码内容，或粘贴带 bindToken 的链接 / TOKEN',
       hint: '支持扫码枪输入、手工粘贴 TOKEN，或直接粘贴二维码深链 URL。',
     },
     qr: {
       title: '二维码直转 / 直打',
-      description: '基于当前弹窗已填字段与清洗结果生成二维码，并可直接打印贴标。',
+      description:
+        '基于当前弹窗已填字段与清洗结果生成二维码，并可直接打印贴标。',
       empty: '尚未生成二维码',
-      requirements: '至少填写产品编号和产品名称后，再点击“转为二维码”。二维码内容严格跟随当前清洗口径。',
+      requirements:
+        '至少填写产品编号和产品名称后，再点击“转为二维码”。二维码内容严格跟随当前清洗口径。',
       previewTitle: '贴标预览',
       previewDescription: '当前二维码与字段快照',
       previewAlt: '预浸料规格二维码',
@@ -211,7 +214,8 @@ export const rawMaterials = {
     },
     ocr: {
       title: '标签拍照识别',
-      description: '电脑端可直接上传；也可生成手机采集链接，手机提交后自动回填当前弹窗。',
+      description:
+        '电脑端可直接上传；也可生成手机采集链接，手机提交后自动回填当前弹窗。',
       waitingImage: '等待标签照片',
       previewAlt: '预浸料标签预览',
       textPlaceholder:
@@ -257,7 +261,8 @@ export const rawMaterials = {
       },
       submitted: {
         title: '已提交',
-        description: '电脑端预浸料弹窗会自动接收识别结果，请回到电脑端核对保存。',
+        description:
+          '电脑端预浸料弹窗会自动接收识别结果，请回到电脑端核对保存。',
       },
       errors: {
         missingToken: '采集链接缺少口令，请回到电脑端重新生成。',
@@ -270,7 +275,8 @@ export const rawMaterials = {
     hero: {
       kicker: '独立作业页',
       title: '预浸料批量绑定二维码',
-      description: '这里独立批量生成未绑定二维码并打印，不干扰当前预浸料规格录入弹窗。二维码仅作为后续绑定入口，未绑定时不承载规格信息，5 天未绑定自动失效。',
+      description:
+        '这里独立批量生成未绑定二维码并打印，不干扰当前预浸料规格录入弹窗。二维码仅作为后续绑定入口，未绑定时不承载规格信息，5 天未绑定自动失效。',
     },
     actions: {
       generate: '批量生成二维码',
@@ -280,7 +286,8 @@ export const rawMaterials = {
     },
     form: {
       title: '生成参数',
-      description: '输入本次需要打印的未绑定二维码数量，系统会通过后端签发并即时生成二维码卡片用于打印。',
+      description:
+        '输入本次需要打印的未绑定二维码数量，系统会通过后端签发并即时生成二维码卡片用于打印。',
       quantityLabel: '生成数量',
       quantityHint: '当前页面单次限制 1-200 张，用于车间或人工批量贴标准备。',
       rulesTitle: '当前口径',
@@ -312,7 +319,8 @@ export const rawMaterials = {
   },
   batchEngine: {
     title: '裁切模拟',
-    description: '按当前卷规格与裁纱单据整单需求，实时计算预估损耗并生成正式求解候选。',
+    description:
+      '按当前卷规格与裁纱单据整单需求，实时计算预估损耗并生成正式求解候选。',
     sections: {
       control: {
         kicker: '输入侧',
@@ -362,7 +370,8 @@ export const rawMaterials = {
         title: '裁纱单据整单预演',
         description: '中间区域用于整单聚合预演，正式方案仍以后端求解结果为准。',
         rollCanvasLabel: '模拟画布',
-        rollCanvasHint: '选择裁纱单据后，在此查看整单预演摘要与代表性排样画布。',
+        rollCanvasHint:
+          '选择裁纱单据后，在此查看整单预演摘要与代表性排样画布。',
         simulationStatus: '待计算',
         computedStatus: '整单预演已生成',
         openCanvas: '打开 CANVAS 预览',
@@ -425,7 +434,8 @@ export const rawMaterials = {
         label: '预估损耗',
         value: '本地预演结果',
         hint: '基于当前卷规格、尺寸单元、刀缝与修边的本地预演结果，非正式优化后的最终损耗。',
-        utilizationHint: '当前预演占用口径利用率 {percent}% / 占用面积 {occupiedArea} m2',
+        utilizationHint:
+          '当前预演占用口径利用率 {percent}% / 占用面积 {occupiedArea} m2',
       },
     },
     scoreBreakdown: {
@@ -567,7 +577,8 @@ export const rawMaterials = {
     },
     weights: {
       title: '软约束惩罚边界',
-      description: '求解目标固定为最大化可用裁切面积；这里只维护规则未完全满足时的惩罚边界。',
+      description:
+        '求解目标固定为最大化可用裁切面积；这里只维护规则未完全满足时的惩罚边界。',
       splitPenalty: '物理分切惩罚项',
       mustFulfillPenalty: '必达需求惩罚权重',
     },
@@ -576,7 +587,8 @@ export const rawMaterials = {
       description: '配置设备极限与物理刀头尺寸参数。',
       lengthRules: {
         title: '裁切长度规则',
-        description: '用最小/最大长度约束计算边界，并用固定决策长度支持工艺微调覆写。',
+        description:
+          '用最小/最大长度约束计算边界，并用固定决策长度支持工艺微调覆写。',
         minSupportedLength: {
           label: '最小支持长度',
           hint: '低于该长度不纳入裁切计算候选。',
@@ -597,7 +609,8 @@ export const rawMaterials = {
       },
       directionRules: {
         title: '纱向与角度规则',
-        description: '控制同向优先、角度混排和方向切换惩罚，这些规则会进入正式 WASM 求解输入。',
+        description:
+          '控制同向优先、角度混排和方向切换惩罚，这些规则会进入正式 WASM 求解输入。',
         angleMixMode: {
           label: '角度混排策略',
           options: {
@@ -617,7 +630,8 @@ export const rawMaterials = {
       },
       ruleStrategy: {
         title: '规则开关 / 约束策略',
-        description: '定义引擎如何消费必达、混排、顺序与纱向角度规则。本阶段进入 WASM 合约并作为诊断信号。',
+        description:
+          '定义引擎如何消费必达、混排、顺序与纱向角度规则。本阶段进入 WASM 合约并作为诊断信号。',
         mustFulfillMode: {
           label: 'Must Fulfill 模式',
           options: {
@@ -716,13 +730,15 @@ export const rawMaterials = {
     },
     toasts: {
       presetChanged: '已切换为「{{preset}}」官方工艺推荐权重参数。',
-      saveSuccess: '裁纱引擎计算配置固化成功！新裁切计算任务将自动加载此参数资产。',
+      saveSuccess:
+        '裁纱引擎计算配置固化成功！新裁切计算任务将自动加载此参数资产。',
       reset: '配置参数已重置为系统出厂工艺默认值。',
     },
   },
   cutSizeLibrary: {
     title: '裁切尺寸库',
-    description: '将标准裁切单元作为受控主数据维护，为模拟裁切与下达联动提供稳定输入。',
+    description:
+      '将标准裁切单元作为受控主数据维护，为模拟裁切与下达联动提供稳定输入。',
     status: '结构就绪',
     actions: {
       add: '新增尺寸单元',
@@ -747,7 +763,8 @@ export const rawMaterials = {
     },
     empty: {
       title: '暂无尺寸单元',
-      description: '先建立标准尺寸库，再让裁纱方案与模拟引擎引用，避免手输字符串。',
+      description:
+        '先建立标准尺寸库，再让裁纱方案与模拟引擎引用，避免手输字符串。',
     },
     fields: {
       size: {

@@ -36,7 +36,9 @@ export function resolveBOMOwnerDisplay(
   }
 
   const customerId = bom.ownerCustomerId
-  const resolvedName = customerId ? options.customerNameMap?.get(customerId) : undefined
+  const resolvedName = customerId
+    ? options.customerNameMap?.get(customerId)
+    : undefined
 
   if (resolvedName && resolvedName.trim()) {
     return {

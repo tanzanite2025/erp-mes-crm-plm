@@ -3,16 +3,16 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
-import { type MaintenanceRecord } from '../data/schema'
+import {
+  toMaintenanceRecordContract,
+  toMaintenanceRecordContracts,
+} from '../adapters/maintenance-record-api-adapter'
 import {
   type MaintenanceRecordApiDTO,
   type SaveMaintenanceRecordApiDTO,
   type MaintenanceRecordStatsApiDTO,
 } from '../contracts/maintenance-record-api-dto'
-import {
-  toMaintenanceRecordContract,
-  toMaintenanceRecordContracts,
-} from '../adapters/maintenance-record-api-adapter'
+import { type MaintenanceRecord } from '../data/schema'
 
 export interface MaintenanceRecordFilters {
   status?: string
@@ -35,12 +35,18 @@ export class MaintenanceRecordService {
    * @param assetId - Asset ID
    * @returns Array of maintenance records for the specified asset
    */
-  static async getByAsset(assetType: string, assetId: string): Promise<MaintenanceRecord[]> {
+  static async getByAsset(
+    assetType: string,
+    assetId: string
+  ): Promise<MaintenanceRecord[]> {
     const res = await apiFetch<MaintenanceRecordApiDTO[]>(
       `/maintenance-records?assetType=${assetType}&assetId=${assetId}`
     )
     return toMaintenanceRecordContracts(
-      ensureArrayResponse<MaintenanceRecordApiDTO>(res, 'MaintenanceRecordService.getByAsset')
+      ensureArrayResponse<MaintenanceRecordApiDTO>(
+        res,
+        'MaintenanceRecordService.getByAsset'
+      )
     )
   }
 
@@ -53,7 +59,12 @@ export class MaintenanceRecordService {
   static async getAll(
     filters?: MaintenanceRecordFilters,
     pagination?: MaintenanceRecordPagination
-  ): Promise<{ records: MaintenanceRecord[]; total: number; limit: number; offset: number }> {
+  ): Promise<{
+    records: MaintenanceRecord[]
+    total: number
+    limit: number
+    offset: number
+  }> {
     const params = new URLSearchParams()
     if (filters?.status) params.append('status', filters.status)
     if (filters?.priority) params.append('priority', filters.priority)
@@ -62,10 +73,13 @@ export class MaintenanceRecordService {
     if (filters?.dateTo) params.append('dateTo', filters.dateTo)
     if (filters?.search) params.append('search', filters.search)
     if (pagination?.limit) params.append('limit', pagination.limit.toString())
-    if (pagination?.offset) params.append('offset', pagination.offset.toString())
+    if (pagination?.offset)
+      params.append('offset', pagination.offset.toString())
 
     const queryString = params.toString()
-    const url = queryString ? `/maintenance-records?${queryString}` : '/maintenance-records'
+    const url = queryString
+      ? `/maintenance-records?${queryString}`
+      : '/maintenance-records'
 
     const res = await apiFetch<{
       records: MaintenanceRecordApiDTO[]
@@ -73,13 +87,15 @@ export class MaintenanceRecordService {
       limit: number
       offset: number
     }>(url)
-    
-    const data = ensureObjectResponse<{
-      records: MaintenanceRecordApiDTO[]
-      total: number
-      limit: number
-      offset: number
-    } & Record<string, unknown>>(res, 'MaintenanceRecordService.getAll')
+
+    const data = ensureObjectResponse<
+      {
+        records: MaintenanceRecordApiDTO[]
+        total: number
+        limit: number
+        offset: number
+      } & Record<string, unknown>
+    >(res, 'MaintenanceRecordService.getAll')
 
     return {
       records: toMaintenanceRecordContracts(data.records),
@@ -94,11 +110,12 @@ export class MaintenanceRecordService {
    * @returns Statistics object with counts by status
    */
   static async getStats(): Promise<MaintenanceRecordStatsApiDTO> {
-    const res = await apiFetch<MaintenanceRecordStatsApiDTO>('/maintenance-records/stats')
-    return ensureObjectResponse<MaintenanceRecordStatsApiDTO & Record<string, unknown>>(
-      res,
-      'MaintenanceRecordService.getStats'
-    ) as MaintenanceRecordStatsApiDTO
+    const res = await apiFetch<MaintenanceRecordStatsApiDTO>(
+      '/maintenance-records/stats'
+    )
+    return ensureObjectResponse<
+      MaintenanceRecordStatsApiDTO & Record<string, unknown>
+    >(res, 'MaintenanceRecordService.getStats') as MaintenanceRecordStatsApiDTO
   }
 
   /**
@@ -106,11 +123,16 @@ export class MaintenanceRecordService {
    * @param record - Maintenance record data to create
    * @returns The created maintenance record
    */
-  static async create(record: SaveMaintenanceRecordApiDTO): Promise<MaintenanceRecord> {
-    const res = await apiFetch<MaintenanceRecordApiDTO>('/maintenance-records', {
-      method: 'POST',
-      body: JSON.stringify(record),
-    })
+  static async create(
+    record: SaveMaintenanceRecordApiDTO
+  ): Promise<MaintenanceRecord> {
+    const res = await apiFetch<MaintenanceRecordApiDTO>(
+      '/maintenance-records',
+      {
+        method: 'POST',
+        body: JSON.stringify(record),
+      }
+    )
     return toMaintenanceRecordContract(
       ensureObjectResponse<MaintenanceRecordApiDTO & Record<string, unknown>>(
         res,
@@ -126,16 +148,23 @@ export class MaintenanceRecordService {
    * @param version - Current version number for optimistic locking
    * @returns The updated maintenance record
    */
-  static async patch(id: string, delta: DeltaSet, version: number): Promise<MaintenanceRecord> {
+  static async patch(
+    id: string,
+    delta: DeltaSet,
+    version: number
+  ): Promise<MaintenanceRecord> {
     const payload: DeltaPayload = {
       op: 'PATCH',
       delta,
       metadata: { id, version, intent: 'MAINTENANCE_RECORD_UPDATE' },
     }
-    const res = await apiFetch<MaintenanceRecordApiDTO>(`/maintenance-records/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(payload),
-    })
+    const res = await apiFetch<MaintenanceRecordApiDTO>(
+      `/maintenance-records/${id}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      }
+    )
     return toMaintenanceRecordContract(
       ensureObjectResponse<MaintenanceRecordApiDTO & Record<string, unknown>>(
         res,

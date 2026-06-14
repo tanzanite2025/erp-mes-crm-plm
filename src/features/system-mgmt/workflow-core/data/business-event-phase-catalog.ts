@@ -39,7 +39,9 @@ export function deserializeBusinessEventPhaseCatalog(
     .array(businessEventPhaseCatalogItemSchema)
     .parse(input)
     .slice()
-    .sort((a, b) => (a.order === b.order ? a.code.localeCompare(b.code) : a.order - b.order))
+    .sort((a, b) =>
+      a.order === b.order ? a.code.localeCompare(b.code) : a.order - b.order
+    )
 }
 
 export function buildBusinessEventPhaseOptions(

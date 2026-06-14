@@ -162,12 +162,12 @@ export function StandardEditorContent({
                 </Label>
                 <div className='rounded-xl border border-dashed border-muted/40 bg-muted/20 px-4 py-3 shadow-inner'>
                   <div className='flex items-center justify-between gap-3'>
-                    <span className='text-[11px] font-black uppercase tracking-widest text-foreground/80'>
+                    <span className='text-[11px] font-black tracking-widest text-foreground/80 uppercase'>
                       {getQualityStandardStatusLabel(t, formData.status)}
                     </span>
                     <Badge
                       variant='secondary'
-                      className='border-none bg-primary/10 py-0.5 text-[9px] font-black uppercase tracking-widest text-primary'
+                      className='border-none bg-primary/10 py-0.5 text-[9px] font-black tracking-widest text-primary uppercase'
                     >
                       {normalizeQualityStandardStatus(formData.status)}
                     </Badge>

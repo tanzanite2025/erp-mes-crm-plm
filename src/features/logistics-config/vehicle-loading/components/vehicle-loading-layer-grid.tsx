@@ -8,11 +8,19 @@ function getGridDimensions(totalBoxes: number) {
   return { cols, rows }
 }
 
-function formatArrangementText(orientationAxis?: VehicleLoadingDiagramProps['orientationAxis']) {
+function formatArrangementText(
+  orientationAxis?: VehicleLoadingDiagramProps['orientationAxis']
+) {
   const isHeight = orientationAxis === 'height'
   const isLength = orientationAxis === 'length'
   const isWidth = orientationAxis === 'width'
-  return isHeight ? '长边竖放' : isLength ? '长边朝车头方向' : isWidth ? '长边朝车厢宽度方向' : '标准朝向'
+  return isHeight
+    ? '长边竖放'
+    : isLength
+      ? '长边朝车头方向'
+      : isWidth
+        ? '长边朝车厢宽度方向'
+        : '标准朝向'
 }
 
 export function VehicleLoadingLayerGrid({
@@ -33,7 +41,10 @@ export function VehicleLoadingLayerGrid({
         {arrangementText} · 每层横向 {cols} 个 · 共 {rows} 行
       </div>
 
-      <div className='grid flex-1 gap-1' style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+      <div
+        className='grid flex-1 gap-1'
+        style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+      >
         {Array.from({ length: Math.max(boxesPerLayer, 1) }, (_, index) => (
           <VehicleLoadingBoxCell
             key={index}
@@ -43,9 +54,15 @@ export function VehicleLoadingLayerGrid({
             orientationAxis={orientationAxis}
           />
         ))}
-        {Array.from({ length: Math.max(cols * rows - boxesPerLayer, 0) }, (_, index) => (
-          <div key={`empty-${index}`} className='min-h-14 rounded-md border border-dashed border-border/30 bg-transparent' />
-        ))}
+        {Array.from(
+          { length: Math.max(cols * rows - boxesPerLayer, 0) },
+          (_, index) => (
+            <div
+              key={`empty-${index}`}
+              className='min-h-14 rounded-md border border-dashed border-border/30 bg-transparent'
+            />
+          )
+        )}
       </div>
     </div>
   )

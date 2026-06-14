@@ -1,36 +1,47 @@
-import { lazy, Suspense, useEffect, useState, startTransition, useCallback } from 'react'
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useState,
+  startTransition,
+  useCallback,
+} from 'react'
 import { Outlet, useLocation, useNavigate } from '@tanstack/react-router'
-import { Button } from '@/components/ui/button'
+import { useAuthStore } from '@/stores/auth-store'
 import { getCookie } from '@/lib/cookies'
+import { createLogger } from '@/lib/logger'
 import { cn } from '@/lib/utils'
 import { LayoutProvider } from '@/context/layout-provider'
+import { useNotifications } from '@/hooks/use-notifications'
+import { Button } from '@/components/ui/button'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import { GlobalBottomDock } from '@/components/layout/global-bottom-dock'
-import { SkipToMain } from '@/components/skip-to-main'
 import { Search } from '@/components/search'
-import { useNotifications } from '@/hooks/use-notifications'
-import { useSystemMonitor } from '@/features/system-mgmt/monitor/hooks/use-system-monitor'
-import { useAuthStore } from '@/stores/auth-store'
+import { SkipToMain } from '@/components/skip-to-main'
 import { syncIdentitySnapshotFromProfile } from '@/features/authz/services/effective-permission-service'
 import { QuickActionsFloating } from '@/features/quick-actions'
 import { useRecentVisitTracker } from '@/features/recent-visits'
-import { createLogger } from '@/lib/logger'
+import { useSystemMonitor } from '@/features/system-mgmt/monitor/hooks/use-system-monitor'
 
 const logger = createLogger('AuthenticatedLayout')
 
 const SystemAnomalyBanner = lazy(() =>
-  import('@/features/system-mgmt/monitor/components/system-anomaly-banner').then((module) => ({
-    default: module.SystemAnomalyBanner,
-  }))
+  import('@/features/system-mgmt/monitor/components/system-anomaly-banner').then(
+    (module) => ({
+      default: module.SystemAnomalyBanner,
+    })
+  )
 )
 
 const AIAssistant = lazy(() => import('@/features/ai-assistant'))
 
 const NotificationCenter = lazy(() =>
-  import('@/features/system-mgmt/notifications/components/notification-center').then((module) => ({
-    default: module.NotificationCenter,
-  }))
+  import('@/features/system-mgmt/notifications/components/notification-center').then(
+    (module) => ({
+      default: module.NotificationCenter,
+    })
+  )
 )
 
 function useDeferredActivation(enabled: boolean, delayMs = 0) {
@@ -116,10 +127,11 @@ type IdentitySyncGateState =
 export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const { pathname } = useLocation()
   const navigate = useNavigate()
-  const { accessToken, isIdentitySynced, isSyncing, setIsSyncing } = useAuthStore()
+  const { accessToken, isIdentitySynced, isSyncing, setIsSyncing } =
+    useAuthStore()
   const shouldSyncIdentity = !!accessToken && !isIdentitySynced
-  const [syncGateState, setSyncGateState] = useState<IdentitySyncGateState>(() =>
-    shouldSyncIdentity ? { status: 'syncing' } : { status: 'idle' }
+  const [syncGateState, setSyncGateState] = useState<IdentitySyncGateState>(
+    () => (shouldSyncIdentity ? { status: 'syncing' } : { status: 'idle' })
   )
 
   useNotifications()
@@ -141,8 +153,12 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
       await syncIdentitySnapshotFromProfile()
       setSyncGateState({ status: 'idle' })
     } catch (error: unknown) {
-      const normalizedError = error instanceof Error ? error : new Error('身份权限同步失败')
-      logger.error('[CRITICAL] Background identity sync failed. Showing retry gate.', normalizedError)
+      const normalizedError =
+        error instanceof Error ? error : new Error('身份权限同步失败')
+      logger.error(
+        '[CRITICAL] Background identity sync failed. Showing retry gate.',
+        normalizedError
+      )
       setSyncGateState({ status: 'error', error: normalizedError })
     } finally {
       setIsSyncing(false)
@@ -167,7 +183,13 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
     }
 
     void runIdentitySync()
-  }, [accessToken, navigate, runIdentitySync, shouldSyncIdentity, syncGateState.status])
+  }, [
+    accessToken,
+    navigate,
+    runIdentitySync,
+    shouldSyncIdentity,
+    syncGateState.status,
+  ])
 
   const defaultOpen = getCookie('sidebar_state') !== 'false'
 
@@ -177,17 +199,18 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
         <div className='flex w-full max-w-md flex-col items-center gap-4 rounded-3xl border border-dashed border-rose-500/25 bg-rose-500/5 px-8 py-10 text-center'>
           <div className='size-12 rounded-full border-2 border-rose-500/20 border-t-rose-500' />
           <div className='space-y-2'>
-            <p className='text-sm font-black uppercase tracking-widest text-rose-700'>
+            <p className='text-sm font-black tracking-widest text-rose-700 uppercase'>
               身份权限同步失败
             </p>
             <p className='text-xs font-bold text-rose-700/80'>
-              {syncGateState.error.message || '当前无法完成登录后身份快照同步，请重试或返回登录页。'}
+              {syncGateState.error.message ||
+                '当前无法完成登录后身份快照同步，请重试或返回登录页。'}
             </p>
           </div>
           <div className='flex flex-col gap-3 sm:flex-row'>
             <Button
               type='button'
-              className='h-11 rounded-full px-6 text-[10px] font-black uppercase tracking-widest'
+              className='h-11 rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
               onClick={() => {
                 void runIdentitySync()
               }}
@@ -197,7 +220,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
             <Button
               type='button'
               variant='outline'
-              className='h-11 rounded-full border-dashed px-6 text-[10px] font-black uppercase tracking-widest'
+              className='h-11 rounded-full border-dashed px-6 text-[10px] font-black tracking-widest uppercase'
               onClick={() => {
                 navigate({ to: '/sign-in', replace: true })
               }}
@@ -216,7 +239,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
         <div className='flex w-full max-w-md flex-col items-center gap-4 rounded-3xl border border-dashed border-muted/50 bg-muted/5 px-8 py-10 text-center'>
           <div className='size-12 animate-spin rounded-full border-2 border-primary/20 border-t-primary' />
           <div className='space-y-2'>
-            <p className='text-sm font-black uppercase tracking-widest text-foreground'>
+            <p className='text-sm font-black tracking-widest text-foreground uppercase'>
               正在等待后端同步身份权限
             </p>
             <p className='text-xs font-bold text-muted-foreground'>
@@ -242,7 +265,9 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
           className={cn(
             '@container/content',
             'min-h-0 w-full bg-background',
-            isPDAShellRoute ? 'pt-0' : 'pt-14 pb-[calc(env(safe-area-inset-bottom)+4rem)] md:pt-16 md:pb-16',
+            isPDAShellRoute
+              ? 'pt-0'
+              : 'pt-14 pb-[calc(env(safe-area-inset-bottom)+4rem)] md:pt-16 md:pb-16',
             !isPDAShellRoute &&
               'peer-data-[variant=inset]:mx-2 peer-data-[variant=inset]:mb-2 peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm'
           )}

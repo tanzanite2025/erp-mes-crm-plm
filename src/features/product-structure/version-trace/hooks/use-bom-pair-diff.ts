@@ -1,8 +1,6 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import {
-  type BOMVersionRecordDetail,
-} from '../contracts/bom-version-trace'
+import { type BOMVersionRecordDetail } from '../contracts/bom-version-trace'
 import { bomVersionTraceQueryKeys } from '../query-keys'
 import { bomVersionTraceService } from '../services/bom-version-trace-service'
 import {
@@ -52,7 +50,9 @@ export function useBomPairDiff({
     queryKey: bomVersionTraceQueryKeys.detail(normalizedRightId),
     queryFn: () => bomVersionTraceService.getVersionRecord(normalizedRightId),
     enabled:
-      enabled && normalizedRightId.length > 0 && normalizedRightId !== normalizedLeftId,
+      enabled &&
+      normalizedRightId.length > 0 &&
+      normalizedRightId !== normalizedLeftId,
   })
 
   const leftDetail = leftQuery.data ?? null

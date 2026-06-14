@@ -1,9 +1,9 @@
 /**
  * VirtualScrollerErrorBoundary Component
- * 
+ *
  * React Error Boundary for BOM Virtual Scroller.
  * Catches errors during rendering and provides fallback UI.
- * 
+ *
  * Features:
  * - Catches rendering errors in virtual scroller
  * - Displays user-friendly error message
@@ -11,13 +11,13 @@
  * - Logs errors for debugging
  */
 
-'use client';
+'use client'
 
-import React, { Component, type ReactNode } from 'react';
-import { AlertCircle, RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { logError } from '@/lib/delta/errors';
+import React, { Component, type ReactNode } from 'react'
+import { AlertCircle, RefreshCw } from 'lucide-react'
+import { logError } from '@/lib/delta/errors'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
 
 /**
  * Props for VirtualScrollerErrorBoundary
@@ -26,32 +26,32 @@ export interface VirtualScrollerErrorBoundaryProps {
   /**
    * Child components to render
    */
-  children: ReactNode;
-  
+  children: ReactNode
+
   /**
    * Fallback UI to render when error occurs (optional)
    */
-  fallback?: ReactNode;
-  
+  fallback?: ReactNode
+
   /**
    * Callback when error occurs
    */
-  onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
-  
+  onError?: (error: Error, errorInfo: React.ErrorInfo) => void
+
   /**
    * Callback when user clicks retry
    */
-  onRetry?: () => void;
-  
+  onRetry?: () => void
+
   /**
    * Custom error message
    */
-  errorMessage?: string;
-  
+  errorMessage?: string
+
   /**
    * Show retry button (default: true)
    */
-  showRetry?: boolean;
+  showRetry?: boolean
 }
 
 /**
@@ -61,22 +61,22 @@ interface VirtualScrollerErrorBoundaryState {
   /**
    * Whether an error has occurred
    */
-  hasError: boolean;
-  
+  hasError: boolean
+
   /**
    * The error that occurred
    */
-  error?: Error;
-  
+  error?: Error
+
   /**
    * Error info from React
    */
-  errorInfo?: React.ErrorInfo;
+  errorInfo?: React.ErrorInfo
 }
 
 /**
  * VirtualScrollerErrorBoundary Component
- * 
+ *
  * Catches errors in BOM virtual scroller and provides fallback UI.
  */
 export class VirtualScrollerErrorBoundary extends Component<
@@ -84,22 +84,24 @@ export class VirtualScrollerErrorBoundary extends Component<
   VirtualScrollerErrorBoundaryState
 > {
   constructor(props: VirtualScrollerErrorBoundaryProps) {
-    super(props);
+    super(props)
     this.state = {
       hasError: false,
-    };
+    }
   }
-  
+
   /**
    * Update state when error is caught
    */
-  static getDerivedStateFromError(error: Error): VirtualScrollerErrorBoundaryState {
+  static getDerivedStateFromError(
+    error: Error
+  ): VirtualScrollerErrorBoundaryState {
     return {
       hasError: true,
       error,
-    };
+    }
   }
-  
+
   /**
    * Log error when it occurs
    */
@@ -108,86 +110,87 @@ export class VirtualScrollerErrorBoundary extends Component<
     logError(error, {
       componentStack: errorInfo.componentStack,
       errorBoundary: 'VirtualScrollerErrorBoundary',
-    });
-    
+    })
+
     // Call onError callback if provided
-    this.props.onError?.(error, errorInfo);
-    
+    this.props.onError?.(error, errorInfo)
+
     // Update state with error info
     this.setState({
       errorInfo,
-    });
+    })
   }
-  
+
   /**
    * Handle retry button click
    */
   handleRetry = (): void => {
     // Call onRetry callback if provided
-    this.props.onRetry?.();
-    
+    this.props.onRetry?.()
+
     // Reset error state
     this.setState({
       hasError: false,
       error: undefined,
       errorInfo: undefined,
-    });
-  };
-  
+    })
+  }
+
   /**
    * Render fallback UI when error occurs
    */
   renderFallback(): ReactNode {
-    const { fallback, errorMessage, showRetry = true } = this.props;
-    const { error } = this.state;
-    
+    const { fallback, errorMessage, showRetry = true } = this.props
+    const { error } = this.state
+
     // Use custom fallback if provided
     if (fallback) {
-      return fallback;
+      return fallback
     }
-    
+
     // Default fallback UI
     return (
-      <div className="flex items-center justify-center min-h-[400px] p-8">
-        <Alert variant="destructive" className="max-w-2xl">
-          <AlertCircle className="h-5 w-5" />
-          <AlertTitle className="text-lg font-semibold mb-2">
+      <div className='flex min-h-[400px] items-center justify-center p-8'>
+        <Alert variant='destructive' className='max-w-2xl'>
+          <AlertCircle className='h-5 w-5' />
+          <AlertTitle className='mb-2 text-lg font-semibold'>
             虚拟滚动加载失败
           </AlertTitle>
-          <AlertDescription className="space-y-4">
-            <p className="text-sm">
-              {errorMessage || '渲染 BOM 表格时发生错误。请尝试刷新页面或联系技术支持。'}
+          <AlertDescription className='space-y-4'>
+            <p className='text-sm'>
+              {errorMessage ||
+                '渲染 BOM 表格时发生错误。请尝试刷新页面或联系技术支持。'}
             </p>
-            
+
             {error && (
-              <details className="text-xs">
-                <summary className="cursor-pointer font-medium mb-2">
+              <details className='text-xs'>
+                <summary className='mb-2 cursor-pointer font-medium'>
                   错误详情
                 </summary>
-                <pre className="bg-muted p-3 rounded overflow-auto max-h-40">
+                <pre className='max-h-40 overflow-auto rounded bg-muted p-3'>
                   {error.message}
                   {'\n\n'}
                   {error.stack}
                 </pre>
               </details>
             )}
-            
+
             {showRetry && (
-              <div className="flex gap-2 pt-2">
+              <div className='flex gap-2 pt-2'>
                 <Button
-                  variant="outline"
-                  size="sm"
+                  variant='outline'
+                  size='sm'
                   onClick={this.handleRetry}
-                  className="gap-2"
+                  className='gap-2'
                 >
-                  <RefreshCw className="h-4 w-4" />
+                  <RefreshCw className='h-4 w-4' />
                   重试
                 </Button>
                 <Button
-                  variant="outline"
-                  size="sm"
+                  variant='outline'
+                  size='sm'
                   onClick={() => window.location.reload()}
-                  className="gap-2"
+                  className='gap-2'
                 >
                   刷新页面
                 </Button>
@@ -196,15 +199,15 @@ export class VirtualScrollerErrorBoundary extends Component<
           </AlertDescription>
         </Alert>
       </div>
-    );
+    )
   }
-  
+
   render(): ReactNode {
     if (this.state.hasError) {
-      return this.renderFallback();
+      return this.renderFallback()
     }
-    
-    return this.props.children;
+
+    return this.props.children
   }
 }
 
@@ -212,25 +215,25 @@ export class VirtualScrollerErrorBoundary extends Component<
  * Hook to use VirtualScrollerErrorBoundary programmatically
  */
 export function useVirtualScrollerErrorBoundary() {
-  const [error, setError] = React.useState<Error | null>(null);
-  
+  const [error, setError] = React.useState<Error | null>(null)
+
   const resetError = React.useCallback(() => {
-    setError(null);
-  }, []);
-  
+    setError(null)
+  }, [])
+
   const catchError = React.useCallback((error: Error) => {
-    setError(error);
+    setError(error)
     logError(error, {
       source: 'useVirtualScrollerErrorBoundary',
-    });
-  }, []);
-  
+    })
+  }, [])
+
   return {
     error,
     hasError: error !== null,
     resetError,
     catchError,
-  };
+  }
 }
 
 /**
@@ -245,17 +248,17 @@ export function withVirtualScrollerErrorBoundary<P extends object>(
       <VirtualScrollerErrorBoundary {...errorBoundaryProps}>
         <Component {...props} />
       </VirtualScrollerErrorBoundary>
-    );
-  };
+    )
+  }
 }
 
 /**
  * Compact error display for inline errors
  */
 export interface CompactErrorDisplayProps {
-  error: Error;
-  onRetry?: () => void;
-  className?: string;
+  error: Error
+  onRetry?: () => void
+  className?: string
 }
 
 export function CompactErrorDisplay({
@@ -264,20 +267,22 @@ export function CompactErrorDisplay({
   className,
 }: CompactErrorDisplayProps) {
   return (
-    <div className={`flex items-center gap-2 text-sm text-destructive ${className || ''}`}>
-      <AlertCircle className="h-4 w-4 flex-shrink-0" />
-      <span className="flex-1 min-w-0 truncate">{error.message}</span>
+    <div
+      className={`flex items-center gap-2 text-sm text-destructive ${className || ''}`}
+    >
+      <AlertCircle className='h-4 w-4 flex-shrink-0' />
+      <span className='min-w-0 flex-1 truncate'>{error.message}</span>
       {onRetry && (
         <Button
-          variant="ghost"
-          size="sm"
+          variant='ghost'
+          size='sm'
           onClick={onRetry}
-          className="h-6 px-2 gap-1"
+          className='h-6 gap-1 px-2'
         >
-          <RefreshCw className="h-3 w-3" />
+          <RefreshCw className='h-3 w-3' />
           重试
         </Button>
       )}
     </div>
-  );
+  )
 }

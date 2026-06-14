@@ -2,25 +2,30 @@
 
 import { useCallback, useMemo } from 'react'
 import { Sticker, Hash, Tag, Save, Layers, Package } from 'lucide-react'
+import { toast } from 'sonner'
+import type { DeltaSet } from '@/lib/delta/types'
+import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { SelectDropdown } from '@/components/select-dropdown'
+import { ActionDialogShell } from '@/components/action-dialog-shell'
+import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
 import { FileUploader } from '@/components/file-uploader'
+import { SelectDropdown } from '@/components/select-dropdown'
 import {
   labelingDraftInputSchema,
   type LabelingDraft,
   type LabelingDraftInput,
 } from '../data/schema'
-import { ActionDialogShell } from '@/components/action-dialog-shell'
-import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
-import { useDeltaTracker } from '@/hooks/use-delta-tracker'
-import { toast } from 'sonner'
-import type { DeltaSet } from '@/lib/delta/types'
 import { useEngineeringDbProductDisplayOptions } from '../hooks/use-engineering-db-product-display-options'
 
-type LabelingFormState = LabelingDraftInput & { id?: string; createdAt?: string }
-type LabelingFormUpdater = LabelingFormState | ((prev: LabelingFormState) => LabelingFormState)
+type LabelingFormState = LabelingDraftInput & {
+  id?: string
+  createdAt?: string
+}
+type LabelingFormUpdater =
+  | LabelingFormState
+  | ((prev: LabelingFormState) => LabelingFormState)
 
 interface LabelingActionDialogProps {
   currentRow?: LabelingDraft | null
@@ -52,15 +57,19 @@ export function LabelingActionDialog({
   onSave,
   isLoading,
 }: LabelingActionDialogProps) {
-  const { productOptions } = useEngineeringDbProductDisplayOptions({ enabled: open })
+  const { productOptions } = useEngineeringDbProductDisplayOptions({
+    enabled: open,
+  })
 
   const shellClasses = buildActionDialogShellClasses({
     content: 'sm:max-w-[700px] rounded-[32px] overflow-hidden',
     header: 'p-8 pb-4 border-none bg-muted/5',
-    title: 'text-xl font-black uppercase italic tracking-tighter flex items-center gap-2',
+    title:
+      'text-xl font-black uppercase italic tracking-tighter flex items-center gap-2',
     description: 'text-[10px] font-black uppercase tracking-widest opacity-60',
     body: 'p-8 pt-4 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar',
-    footer: 'p-8 pt-4 flex items-center justify-between w-full border-t border-dashed border-muted/20 bg-muted/5',
+    footer:
+      'p-8 pt-4 flex items-center justify-between w-full border-t border-dashed border-muted/20 bg-muted/5',
   })
 
   const isEdit = !!currentRow
@@ -69,23 +78,36 @@ export function LabelingActionDialog({
     return { ...DEFAULT_LABELING }
   }, [currentRow])
 
-  const { data: formData, tracker, isDirty } = useDeltaTracker(initialFormData, open)
+  const {
+    data: formData,
+    tracker,
+    isDirty,
+  } = useDeltaTracker(initialFormData, open)
 
-  const setFormData = useCallback((updater: LabelingFormUpdater) => {
-    if (typeof updater === 'function') {
-      const next = updater(formData)
-      Object.assign(formData, next)
-    } else {
-      Object.assign(formData, updater)
-    }
-  }, [formData])
+  const setFormData = useCallback(
+    (updater: LabelingFormUpdater) => {
+      if (typeof updater === 'function') {
+        const next = updater(formData)
+        Object.assign(formData, next)
+      } else {
+        Object.assign(formData, updater)
+      }
+    },
+    [formData]
+  )
 
-  const updateField = useCallback(<K extends keyof LabelingFormState>(field: K, value: LabelingFormState[K]) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }))
-  }, [setFormData])
+  const updateField = useCallback(
+    <K extends keyof LabelingFormState>(
+      field: K,
+      value: LabelingFormState[K]
+    ) => {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: value,
+      }))
+    },
+    [setFormData]
+  )
   const targetProductOptions = useMemo(
     () => [
       { label: '-- 通用方案 / Generic --', value: 'generic' },
@@ -97,7 +119,9 @@ export function LabelingActionDialog({
   const handleSave = async () => {
     const parsed = labelingDraftInputSchema.safeParse(formData)
     if (!parsed.success) {
-      toast.error(parsed.error.issues[0]?.message ?? '请上传设计稿并填写方案名称')
+      toast.error(
+        parsed.error.issues[0]?.message ?? '请上传设计稿并填写方案名称'
+      )
       return
     }
 
@@ -143,22 +167,22 @@ export function LabelingActionDialog({
       descriptionClassName={shellClasses.description}
       footer={
         <>
-          <p className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50'>
-            <span className='inline-block size-1.5 rounded-full bg-teal-500 animate-pulse' />
+          <p className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground uppercase opacity-50'>
+            <span className='inline-block size-1.5 animate-pulse rounded-full bg-teal-500' />
             Sync_to_Visual_Identity
           </p>
           <div className='flex items-center gap-3'>
             <Button
               variant='ghost'
               onClick={() => onOpenChange(false)}
-              className='rounded-full px-6 text-[10px] font-black uppercase tracking-widest'
+              className='rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
             >
               取消 / Cancel
             </Button>
             <Button
               disabled={isLoading || (isEdit && !isDirty())}
               onClick={handleSave}
-              className='h-11 gap-2 rounded-full bg-teal-600 px-10 text-[10px] font-black uppercase tracking-widest text-white shadow-xl shadow-teal-600/20 transition-all active:scale-95 hover:bg-teal-700'
+              className='h-11 gap-2 rounded-full bg-teal-600 px-10 text-[10px] font-black tracking-widest text-white uppercase shadow-xl shadow-teal-600/20 transition-all hover:bg-teal-700 active:scale-95'
             >
               {isLoading ? (
                 <span className='size-4 animate-spin rounded-full border-2 border-current border-t-transparent' />
@@ -176,7 +200,7 @@ export function LabelingActionDialog({
       <div className='relative grid gap-8'>
         <div className='space-y-4 rounded-[32px] border border-dashed border-teal-500/20 bg-teal-500/5 p-6'>
           <div className='flex items-center justify-between'>
-            <p className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-teal-600/70'>
+            <p className='flex items-center gap-2 text-[10px] font-black tracking-widest text-teal-600/70 uppercase'>
               <Layers className='size-3' /> 设计源文件 / Design Asset
             </p>
           </div>
@@ -195,7 +219,7 @@ export function LabelingActionDialog({
 
         <div className='grid grid-cols-2 gap-6'>
           <div className='space-y-2'>
-            <Label className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>
+            <Label className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
               <Tag className='size-3' /> 方案名称 / Scheme Name
             </Label>
             <Input
@@ -206,12 +230,14 @@ export function LabelingActionDialog({
             />
           </div>
           <div className='space-y-2'>
-            <Label className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>
+            <Label className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
               <Layers className='size-3' /> 工艺类型 / Tech Type
             </Label>
             <SelectDropdown
               defaultValue={formData.type}
-              onValueChange={(value) => updateField('type', value as LabelingDraftInput['type'])}
+              onValueChange={(value) =>
+                updateField('type', value as LabelingDraftInput['type'])
+              }
               items={[
                 { label: '水标 / Water Decal', value: 'Water' },
                 { label: '涂装 / Paint', value: 'Paint' },
@@ -225,12 +251,14 @@ export function LabelingActionDialog({
 
         <div className='space-y-4 rounded-[32px] border border-dashed border-muted-foreground/10 bg-muted/10 p-6'>
           <div className='space-y-2'>
-            <Label className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>
+            <Label className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
               <Package className='size-3' /> 适配成品 / Target Product
             </Label>
             <SelectDropdown
               defaultValue={formData.productId || 'generic'}
-              onValueChange={(value) => updateField('productId', value === 'generic' ? '' : value)}
+              onValueChange={(value) =>
+                updateField('productId', value === 'generic' ? '' : value)
+              }
               items={targetProductOptions}
               placeholder='选择适配的成品 SKU'
               className='h-12 rounded-2xl border-none bg-background px-5 text-sm font-bold italic shadow-sm'
@@ -238,9 +266,11 @@ export function LabelingActionDialog({
           </div>
         </div>
 
-        <div className='grid grid-cols-2 gap-6 grayscale opacity-40 pointer-events-none'>
+        <div className='pointer-events-none grid grid-cols-2 gap-6 opacity-40 grayscale'>
           <div className='space-y-2'>
-            <Label className='text-[10px] font-black uppercase tracking-widest'>资源标识 / Asset UID</Label>
+            <Label className='text-[10px] font-black tracking-widest uppercase'>
+              资源标识 / Asset UID
+            </Label>
             <Input
               readOnly
               className='h-10 rounded-xl border-none bg-muted/20 px-5 font-mono text-xs'
@@ -248,7 +278,7 @@ export function LabelingActionDialog({
             />
           </div>
           <div className='space-y-2'>
-            <Label className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>
+            <Label className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
               <Hash className='size-3' /> 数据版本 / Version
             </Label>
             <Input

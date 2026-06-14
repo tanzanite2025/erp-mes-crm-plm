@@ -4,15 +4,15 @@ import {
   type BusinessEventSourceItemChangeKind,
   type BusinessEventSourceRemovedItemSummary,
 } from './business-event-source-card-diff'
+import {
+  FieldEditorContent,
+  StatusEditorContent,
+} from './business-event-source-card-drawers'
 import { type BusinessEventStatusReferenceSummary } from './business-event-source-status-references'
 import {
   type BusinessEventStatusRenameBatchAnalysis,
   type BusinessEventStatusRenamePlan,
 } from './business-event-source-status-safe-rename'
-import {
-  FieldEditorContent,
-  StatusEditorContent,
-} from './business-event-source-card-drawers'
 
 export type BusinessEventSourceEditorMode = 'statuses' | 'fields' | null
 
@@ -52,14 +52,20 @@ interface BusinessEventSourceEditorOverlayProps {
   getFieldChangeType: (id?: string) => BusinessEventSourceItemChangeKind | null
   onOpenChange: (open: boolean) => void
   onAddStatus: () => void
-  onUpdateStatus: (index: number, updates: Partial<BusinessEventSource['config']['statuses'][number]>) => void
+  onUpdateStatus: (
+    index: number,
+    updates: Partial<BusinessEventSource['config']['statuses'][number]>
+  ) => void
   onMoveStatus: (index: number, direction: -1 | 1) => void
   onDeleteStatus: (index: number) => void
   onRestoreRemovedStatusItem: (id: string) => void
   onSaveStatuses: () => void
   onUndoStatuses?: () => void
   onAddField: () => void
-  onUpdateField: (index: number, updates: Partial<BusinessEventSource['config']['fields'][number]>) => void
+  onUpdateField: (
+    index: number,
+    updates: Partial<BusinessEventSource['config']['fields'][number]>
+  ) => void
   onDeleteField: (index: number) => void
   onRestoreRemovedFieldItem: (id: string) => void
   onSaveFields: () => void

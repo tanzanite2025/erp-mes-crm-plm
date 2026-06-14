@@ -2,9 +2,22 @@ import React from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { Box } from 'lucide-react'
 import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
+import { apiFetch } from '@/lib/api-client'
+import { createLogger } from '@/lib/logger'
 import { useLanguage } from '@/context/language-provider'
 import { useSearch } from '@/context/search-provider'
 import { useTheme } from '@/context/theme-provider'
+import {
+  getQuickActionDefinition,
+  isHostedQuickActionId,
+  type HostedQuickActionId,
+} from '@/components/layout/data/quick-action-registry'
+import {
+  getSearchItems,
+  type SearchItem,
+} from '@/components/layout/data/search-data'
+import { normalizeSearchHref } from '@/components/layout/data/search-href'
 import { hasAllIds } from '@/features/authz/core/permission-kernel'
 import {
   EMPTY_KNOWLEDGE_BASE_ENTRY,
@@ -12,16 +25,6 @@ import {
 } from '@/features/basic-settings/knowledge-base/data/knowledge-base'
 import { knowledgeBaseService } from '@/features/basic-settings/knowledge-base/services/knowledge-base-service'
 import { type KnowledgeBaseDraft } from '@/features/basic-settings/knowledge-base/types'
-import { apiFetch } from '@/lib/api-client'
-import { getSearchItems, type SearchItem } from '@/components/layout/data/search-data'
-import { normalizeSearchHref } from '@/components/layout/data/search-href'
-import {
-  getQuickActionDefinition,
-  isHostedQuickActionId,
-  type HostedQuickActionId,
-} from '@/components/layout/data/quick-action-registry'
-import { createLogger } from '@/lib/logger'
-import { useAuthStore } from '@/stores/auth-store'
 import { useCommandMenuKnowledge } from './use-command-menu-knowledge'
 
 const logger = createLogger('useCommandMenu')
@@ -65,12 +68,14 @@ export function useCommandMenu() {
   const [asyncResults, setAsyncResults] = React.useState<SearchItem[]>([])
   const [isSearching, setIsSearching] = React.useState(false)
   const [debouncedValue, setDebouncedValue] = React.useState('')
-  const [activeQuickActionId, setActiveQuickActionId] = React.useState<HostedQuickActionId | null>(null)
-  const [isKnowledgeCreateOpen, setIsKnowledgeCreateOpen] = React.useState(false)
-  const [knowledgeCreateDraft, setKnowledgeCreateDraft] = React.useState<KnowledgeBaseDraft>(
-    EMPTY_KNOWLEDGE_BASE_ENTRY
-  )
-  const [isKnowledgeCreateSaving, setIsKnowledgeCreateSaving] = React.useState(false)
+  const [activeQuickActionId, setActiveQuickActionId] =
+    React.useState<HostedQuickActionId | null>(null)
+  const [isKnowledgeCreateOpen, setIsKnowledgeCreateOpen] =
+    React.useState(false)
+  const [knowledgeCreateDraft, setKnowledgeCreateDraft] =
+    React.useState<KnowledgeBaseDraft>(EMPTY_KNOWLEDGE_BASE_ENTRY)
+  const [isKnowledgeCreateSaving, setIsKnowledgeCreateSaving] =
+    React.useState(false)
   const userPermissionIds = useAuthStore(
     (state) => state.user?.permissions ?? EMPTY_PERMISSION_IDS
   )
@@ -126,11 +131,7 @@ export function useCommandMenu() {
               category: 'data',
               icon: Box,
               parentTitle: item.parentTitle + ` (${item.code})`,
-              keywords: [
-                item.title,
-                item.code,
-                'search',
-              ],
+              keywords: [item.title, item.code, 'search'],
             })
           })
         }
@@ -170,12 +171,18 @@ export function useCommandMenu() {
 
   const groupedItems = React.useMemo(() => {
     return searchItems
-      .filter((item) => isVisibleActionItem(item) && commandItemMatches(item, searchValue))
-      .reduce((acc, item) => {
-        if (!acc[item.category]) acc[item.category] = []
-        acc[item.category].push(item)
-        return acc
-      }, {} as Record<string, SearchItem[]>)
+      .filter(
+        (item) =>
+          isVisibleActionItem(item) && commandItemMatches(item, searchValue)
+      )
+      .reduce(
+        (acc, item) => {
+          if (!acc[item.category]) acc[item.category] = []
+          acc[item.category].push(item)
+          return acc
+        },
+        {} as Record<string, SearchItem[]>
+      )
   }, [isVisibleActionItem, searchItems, searchValue])
 
   const handleNavigate = React.useCallback(
@@ -236,11 +243,17 @@ export function useCommandMenu() {
       summary: knowledgeCreateDraft.summary.trim(),
       content: knowledgeCreateDraft.content.trim(),
       routePath: knowledgeCreateDraft.routePath.trim(),
-      keywords: knowledgeCreateDraft.keywords.map((item) => item.trim()).filter(Boolean),
+      keywords: knowledgeCreateDraft.keywords
+        .map((item) => item.trim())
+        .filter(Boolean),
       version: knowledgeCreateDraft.version,
     }
 
-    if (!normalizedDraft.title || !normalizedDraft.summary || !normalizedDraft.content) {
+    if (
+      !normalizedDraft.title ||
+      !normalizedDraft.summary ||
+      !normalizedDraft.content
+    ) {
       toast.error('请先补全标题、摘要和正文')
       return
     }
@@ -249,8 +262,13 @@ export function useCommandMenu() {
     try {
       const savedEntry = await knowledgeBaseService.createEntry(normalizedDraft)
       const nextEntries = await refreshKnowledgeEntries(searchValue)
-      const isVisibleInCurrentResults = nextEntries.some((entry) => entry.id === savedEntry.id)
-      const matchesCurrentSearch = matchesKnowledgeBaseEntry(savedEntry, searchValue)
+      const isVisibleInCurrentResults = nextEntries.some(
+        (entry) => entry.id === savedEntry.id
+      )
+      const matchesCurrentSearch = matchesKnowledgeBaseEntry(
+        savedEntry,
+        searchValue
+      )
 
       setIsKnowledgeCreateOpen(false)
       setKnowledgeCreateDraft(EMPTY_KNOWLEDGE_BASE_ENTRY)
@@ -279,7 +297,9 @@ export function useCommandMenu() {
   }
 
   const canCreateKnowledgeEntry = React.useMemo(() => {
-    const knowledgeCreateAction = getQuickActionDefinition('action-create-knowledge-entry')
+    const knowledgeCreateAction = getQuickActionDefinition(
+      'action-create-knowledge-entry'
+    )
     const requiredPermissions = knowledgeCreateAction?.requiredPermissions ?? []
     if (requiredPermissions.length === 0) return true
 

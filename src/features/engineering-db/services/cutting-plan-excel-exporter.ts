@@ -1,10 +1,10 @@
+import type { Borders } from 'exceljs'
 import {
   applyWorksheetHeaderRowStyle,
   createExcelWorkbook,
   downloadWorkbook,
   EXCEL_LIGHT_THIN_BORDER,
 } from '@/lib/excel/export'
-import type { Borders } from 'exceljs'
 import { formatEngineeringExportFileDate } from '@/features/engineering/utils/engineering-export-file-date'
 import { type CuttingPlanInput } from '../data/cutting-plan-schema'
 import {
@@ -62,7 +62,11 @@ export async function generateCuttingPlanImportTemplate() {
   guideCell.value =
     '导入说明：方案名称由“产品型号 + 孔数”自动生成，不需要填写名称列；每行必须填写尺寸库编码，并且该编码必须已在尺寸库中启用；黄色分组条请在“分组标记”列填 #BREAK。'
   guideCell.font = { bold: true, size: 10, color: { argb: 'FFB91C1C' } }
-  guideCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF2F2' } }
+  guideCell.fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FFFEF2F2' },
+  }
   guideCell.alignment = { vertical: 'middle', horizontal: 'left' }
   sheet.getRow(2).height = 24
 
@@ -75,7 +79,11 @@ export async function generateCuttingPlanImportTemplate() {
     row.height = 22
     row.getCell(1).value = { formula: 'ROW()-2' }
     row.getCell(1).protection = { locked: true }
-    row.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } }
+    row.getCell(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFF8FAFC' },
+    }
 
     for (let col = 1; col <= 16; col += 1) {
       row.getCell(col).border = EXCEL_LIGHT_THIN_BORDER
@@ -164,10 +172,14 @@ export async function exportCuttingPlanPrintWorkbook(plan: CuttingPlanInput) {
   sheet.getCell('H2').value = escapeFormula(plan.revisionNo || '--')
   sheet.getCell('G3').value = '生效日期'
   sheet.getCell('H3').value = escapeFormula(plan.effectiveDate || '--')
-  sheet.getCell('A4').value = `技术文件（预浸料：${escapeFormula(plan.prepregSpecLabel || '--')}）`
-  sheet.getCell('A5').value = `碳丝型号：${escapeFormula(plan.carbonFiberModel || '--')}`
-  sheet.getCell('D5').value = `树脂型号：${escapeFormula(plan.resinModel || '--')}`
-  sheet.getCell('G5').value = `RC含量：${escapeFormula(plan.resinContentPercent || '--')}`
+  sheet.getCell('A4').value =
+    `技术文件（预浸料：${escapeFormula(plan.prepregSpecLabel || '--')}）`
+  sheet.getCell('A5').value =
+    `碳丝型号：${escapeFormula(plan.carbonFiberModel || '--')}`
+  sheet.getCell('D5').value =
+    `树脂型号：${escapeFormula(plan.resinModel || '--')}`
+  sheet.getCell('G5').value =
+    `RC含量：${escapeFormula(plan.resinContentPercent || '--')}`
 
   sheet.getRow(1).height = 30
   sheet.getRow(2).height = 24
@@ -176,11 +188,18 @@ export async function exportCuttingPlanPrintWorkbook(plan: CuttingPlanInput) {
   sheet.getRow(5).height = 22
   sheet.getCell('A1').font = { bold: true, size: 14 }
   sheet.getCell('D1').font = { bold: true, size: 14 }
-  sheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
-  sheet.getCell('D1').alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
+  sheet.getCell('A1').alignment = {
+    horizontal: 'center',
+    vertical: 'middle',
+    wrapText: true,
+  }
+  sheet.getCell('D1').alignment = {
+    horizontal: 'center',
+    vertical: 'middle',
+    wrapText: true,
+  }
   sheet.getCell('A4').alignment = { horizontal: 'center', vertical: 'middle' }
   sheet.getCell('A4').font = { bold: true, size: 11 }
-
   ;['G1', 'G2', 'G3'].forEach((cellRef) => {
     const cell = sheet.getCell(cellRef)
     cell.font = { bold: true, size: 10 }
@@ -206,14 +225,21 @@ export async function exportCuttingPlanPrintWorkbook(plan: CuttingPlanInput) {
     const cell = sheet.getCell(tableHeaderRow, idx + 1)
     cell.value = header
     cell.font = { bold: true, size: 10, color: { argb: 'FFFFFFFF' } }
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E293B' } }
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF1E293B' },
+    }
     cell.alignment = { horizontal: 'center', vertical: 'middle' }
   })
 
   const printableRows: Array<
-    { type: 'line'; line: CuttingPlanInput['lines'][number] } | { type: 'separator' }
+    | { type: 'line'; line: CuttingPlanInput['lines'][number] }
+    | { type: 'separator' }
   > = []
-  const hasManualBreaks = plan.lines.some((line) => Boolean(line.manualGroupBreakBefore))
+  const hasManualBreaks = plan.lines.some((line) =>
+    Boolean(line.manualGroupBreakBefore)
+  )
 
   if (hasManualBreaks) {
     plan.lines.forEach((line) => {
@@ -246,7 +272,11 @@ export async function exportCuttingPlanPrintWorkbook(plan: CuttingPlanInput) {
     if (item.type === 'separator') {
       row.height = 12
       for (let col = 1; col <= 8; col += 1) {
-        row.getCell(col).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFF00' } }
+        row.getCell(col).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFFF00' },
+        }
       }
       cursor += 1
       return
@@ -266,8 +296,14 @@ export async function exportCuttingPlanPrintWorkbook(plan: CuttingPlanInput) {
     cursor += 1
   })
 
-  const totalWeight = plan.lines.reduce((sum, line) => sum + parseNumeric(line.weightG), 0)
-  const totalArea = plan.lines.reduce((sum, line) => sum + parseNumeric(line.areaM2), 0)
+  const totalWeight = plan.lines.reduce(
+    (sum, line) => sum + parseNumeric(line.weightG),
+    0
+  )
+  const totalArea = plan.lines.reduce(
+    (sum, line) => sum + parseNumeric(line.areaM2),
+    0
+  )
 
   const totalRow = cursor
   sheet.mergeCells(`A${totalRow}:E${totalRow}`)
@@ -285,12 +321,15 @@ export async function exportCuttingPlanPrintWorkbook(plan: CuttingPlanInput) {
   const summaryRow = toleranceRow + 1
   sheet.mergeCells(`A${summaryRow}:D${summaryRow}`)
   sheet.mergeCells(`E${summaryRow}:H${summaryRow}`)
-  sheet.getCell(`A${summaryRow}`).value = `内圈材料重(g)：${escapeFormula(plan.totalInnerMaterialWeightG || '--')}`
-  sheet.getCell(`E${summaryRow}`).value = `材料总重(g)：${escapeFormula(plan.totalMaterialWeightG || formatNumber(totalWeight, 2))}`
+  sheet.getCell(`A${summaryRow}`).value =
+    `内圈材料重(g)：${escapeFormula(plan.totalInnerMaterialWeightG || '--')}`
+  sheet.getCell(`E${summaryRow}`).value =
+    `材料总重(g)：${escapeFormula(plan.totalMaterialWeightG || formatNumber(totalWeight, 2))}`
 
   const usageRow = summaryRow + 1
   sheet.mergeCells(`A${usageRow}:H${usageRow}`)
-  sheet.getCell(`A${usageRow}`).value = `材料总用量(m²)：${formatNumber(totalArea, 4)}`
+  sheet.getCell(`A${usageRow}`).value =
+    `材料总用量(m²)：${formatNumber(totalArea, 4)}`
 
   const signHeaderRow = usageRow + 2
   const signValueRow = signHeaderRow + 1
@@ -302,9 +341,14 @@ export async function exportCuttingPlanPrintWorkbook(plan: CuttingPlanInput) {
     ['G', '裁纱'],
   ]
   signItems.forEach(([col, label]) => {
-    sheet.mergeCells(`${col}${signHeaderRow}:${String.fromCharCode(col.charCodeAt(0) + 1)}${signHeaderRow}`)
+    sheet.mergeCells(
+      `${col}${signHeaderRow}:${String.fromCharCode(col.charCodeAt(0) + 1)}${signHeaderRow}`
+    )
     sheet.getCell(`${col}${signHeaderRow}`).value = label
-    sheet.getCell(`${col}${signHeaderRow}`).alignment = { horizontal: 'center', vertical: 'middle' }
+    sheet.getCell(`${col}${signHeaderRow}`).alignment = {
+      horizontal: 'center',
+      vertical: 'middle',
+    }
     sheet.getCell(`${col}${signHeaderRow}`).font = { bold: true, size: 10 }
   })
 
@@ -315,7 +359,8 @@ export async function exportCuttingPlanPrintWorkbook(plan: CuttingPlanInput) {
   sheet.getCell(`A${signValueRow}`).value = '校准'
   sheet.getCell(`C${signValueRow}`).value = '审核'
   sheet.getCell(`E${signValueRow}`).value = '制表'
-  sheet.getCell(`G${signValueRow}`).value = `制定日期 ${escapeFormula(plan.effectiveDate || '--')}`
+  sheet.getCell(`G${signValueRow}`).value =
+    `制定日期 ${escapeFormula(plan.effectiveDate || '--')}`
 
   sheet.mergeCells(`A${signTailRow}:B${signTailRow}`)
   sheet.mergeCells(`C${signTailRow}:D${signTailRow}`)
@@ -348,8 +393,14 @@ export async function exportCuttingPlanPrintWorkbook(plan: CuttingPlanInput) {
 
   for (let row = toleranceRow; row <= signTailRow; row += 1) {
     sheet.getRow(row).height = 22
-    sheet.getCell(`A${row}`).alignment = { horizontal: 'left', vertical: 'middle' }
-    sheet.getCell(`E${row}`).alignment = { horizontal: 'left', vertical: 'middle' }
+    sheet.getCell(`A${row}`).alignment = {
+      horizontal: 'left',
+      vertical: 'middle',
+    }
+    sheet.getCell(`E${row}`).alignment = {
+      horizontal: 'left',
+      vertical: 'middle',
+    }
   }
 
   const date = formatEngineeringExportFileDate()

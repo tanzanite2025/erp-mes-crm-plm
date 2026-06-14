@@ -66,9 +66,7 @@ function normalizeNotificationRuleInput(input: unknown) {
     ...rule,
     entity,
     sourceCode: normalizedSourceCode,
-    actionCode: forceStatusChanged
-      ? 'STATUS_CHANGED'
-      : rule.actionCode?.trim(),
+    actionCode: forceStatusChanged ? 'STATUS_CHANGED' : rule.actionCode?.trim(),
     segments: Array.isArray(rule.segments)
       ? rule.segments.map((segment, index) =>
           normalizeRuleSegmentInput(segment, index)

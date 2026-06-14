@@ -3,10 +3,10 @@
 import { Card, CardContent } from '@/components/ui/card'
 import type { ProcessModuleContext } from './adapter'
 import { processModuleApsConfig } from './aps-process.adapter'
-import { processModuleLineManagementConfig } from './config-line-management'
 import { ProcessModuleCard } from './components/card'
 import { ProcessModuleHeader } from './components/header'
 import type { ProcessModuleConfig } from './config'
+import { processModuleLineManagementConfig } from './config-line-management'
 
 interface ProcessModuleProps {
   context?: ProcessModuleContext
@@ -14,10 +14,15 @@ interface ProcessModuleProps {
 }
 
 function getProcessModuleConfig(context: ProcessModuleContext) {
-  return context === 'aps' ? processModuleApsConfig : processModuleLineManagementConfig
+  return context === 'aps'
+    ? processModuleApsConfig
+    : processModuleLineManagementConfig
 }
 
-export function ProcessModule({ context = 'aps', config: externalConfig }: ProcessModuleProps) {
+export function ProcessModule({
+  context = 'aps',
+  config: externalConfig,
+}: ProcessModuleProps) {
   const config = externalConfig ?? getProcessModuleConfig(context)
 
   return (

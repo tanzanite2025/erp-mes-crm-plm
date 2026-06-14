@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 import { useLanguage } from '@/context/language-provider'
 import type { CuttingPlan } from '@/features/engineering-db/data/cutting-plan-schema'
-import type { PrepregMaterialSpec } from '../../data/prepreg-material-spec-schema'
 import type { CutSizeUnit } from '../../cut-size-library/data/cut-size-library-schema'
+import type { PrepregMaterialSpec } from '../../data/prepreg-material-spec-schema'
 import { buildBatchEngineDemandLinesFromCuttingPlan } from '../domain/build-batch-engine-demand-lines-from-cutting-plan'
 import { buildBatchEngineLegend } from '../domain/build-batch-engine-metrics'
 import { buildBatchEnginePreview } from '../domain/build-batch-engine-preview'
@@ -18,7 +18,8 @@ type UseBatchEnginePreviewOptions = {
 
 export function useBatchEnginePreview(options: UseBatchEnginePreviewOptions) {
   const { t } = useLanguage()
-  const { controls, selectedCuttingPlan, cutSizeUnits, selectedPrepregSpec } = options
+  const { controls, selectedCuttingPlan, cutSizeUnits, selectedPrepregSpec } =
+    options
 
   const controlState = useMemo(
     () => resolveBatchEngineControls(controls, selectedPrepregSpec),
@@ -26,12 +27,21 @@ export function useBatchEnginePreview(options: UseBatchEnginePreviewOptions) {
   )
 
   const mappedDemandLines = useMemo(
-    () => buildBatchEngineDemandLinesFromCuttingPlan(selectedCuttingPlan, cutSizeUnits),
+    () =>
+      buildBatchEngineDemandLinesFromCuttingPlan(
+        selectedCuttingPlan,
+        cutSizeUnits
+      ),
     [cutSizeUnits, selectedCuttingPlan]
   )
 
   const simulation = useMemo(
-    () => buildBatchEnginePreview(selectedCuttingPlan, mappedDemandLines, controlState.normalizedControls),
+    () =>
+      buildBatchEnginePreview(
+        selectedCuttingPlan,
+        mappedDemandLines,
+        controlState.normalizedControls
+      ),
     [controlState.normalizedControls, mappedDemandLines, selectedCuttingPlan]
   )
 

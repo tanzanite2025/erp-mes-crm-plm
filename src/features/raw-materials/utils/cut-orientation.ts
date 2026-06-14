@@ -90,9 +90,11 @@ export function resolveCutOrientationGeometry(params: {
 
   const radians = (normalizedAngleDeg * Math.PI) / 180
   const envelopeWidthMm =
-    Math.abs(baseWidthMm * Math.cos(radians)) + Math.abs(baseLengthMm * Math.sin(radians))
+    Math.abs(baseWidthMm * Math.cos(radians)) +
+    Math.abs(baseLengthMm * Math.sin(radians))
   const envelopeLengthMm =
-    Math.abs(baseWidthMm * Math.sin(radians)) + Math.abs(baseLengthMm * Math.cos(radians))
+    Math.abs(baseWidthMm * Math.sin(radians)) +
+    Math.abs(baseLengthMm * Math.cos(radians))
   const baseAreaM2 = (baseWidthMm * baseLengthMm) / 1_000_000
   const envelopeAreaM2 = (envelopeWidthMm * envelopeLengthMm) / 1_000_000
 

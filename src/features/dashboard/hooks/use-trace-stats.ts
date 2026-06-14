@@ -27,7 +27,9 @@ export function useTraceStats(enabled = true) {
         }
       } catch (err) {
         if (isMounted) {
-          setError(err instanceof Error ? err : new Error('Failed to fetch stats'))
+          setError(
+            err instanceof Error ? err : new Error('Failed to fetch stats')
+          )
           setLoading(false)
         }
       }

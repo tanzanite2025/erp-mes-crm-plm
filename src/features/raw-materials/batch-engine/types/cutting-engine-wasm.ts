@@ -1,8 +1,14 @@
-export type CuttingAngleMixMode = 'allow' | 'prefer-same-angle' | 'strict-same-angle'
+export type CuttingAngleMixMode =
+  | 'allow'
+  | 'prefer-same-angle'
+  | 'strict-same-angle'
 export type CuttingMustFulfillMode = 'strict' | 'soft-penalty' | 'ignore'
 export type CuttingMixingStrategy = 'allow' | 'sameGroupOnly' | 'strictNoMix'
 export type CuttingOrderStrategy = 'respectOrder' | 'softPenalty' | 'ignore'
-export type CuttingDirectionStrategy = 'sameDirectionPreferred' | 'sameDirectionRequired' | 'allowSwitch'
+export type CuttingDirectionStrategy =
+  | 'sameDirectionPreferred'
+  | 'sameDirectionRequired'
+  | 'allowSwitch'
 
 export type CuttingEngineWeights = {
   splitPenalty: number

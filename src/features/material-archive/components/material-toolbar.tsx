@@ -1,8 +1,8 @@
 import { useRef, type ChangeEvent } from 'react'
 import { Plus, Search, Download, Upload } from 'lucide-react'
+import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useLanguage } from '@/context/language-provider'
 
 interface MaterialToolbarProps {
   currentCategoryLabel: string
@@ -25,37 +25,39 @@ export function MaterialToolbar({
   const importInputRef = useRef<HTMLInputElement>(null)
 
   return (
-    <div className='flex flex-col lg:flex-row items-center justify-between gap-4'>
+    <div className='flex flex-col items-center justify-between gap-4 lg:flex-row'>
       <div className='relative w-full lg:max-w-sm'>
-        <Search className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/40' />
+        <Search className='absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/40' />
         <Input
           id='material-toolbar-search-input'
-          placeholder={t('materialArchive.toolbar.searchPlaceholder', { category: currentCategoryLabel })}
-          className='pl-10 h-12 rounded-2xl border-none bg-muted/50 focus-visible:ring-1 focus-visible:ring-primary/20 text-sm font-medium transition-all shadow-inner w-full'
+          placeholder={t('materialArchive.toolbar.searchPlaceholder', {
+            category: currentCategoryLabel,
+          })}
+          className='h-12 w-full rounded-2xl border-none bg-muted/50 pl-10 text-sm font-medium shadow-inner transition-all focus-visible:ring-1 focus-visible:ring-primary/20'
           value={searchTerm}
           onChange={(e) => onSearchTermChange(e.target.value)}
         />
       </div>
-      <div className='flex flex-wrap items-center justify-center gap-2 md:gap-3 w-full lg:w-auto'>
-        <div className='flex items-center gap-2 bg-muted/20 p-1 rounded-full border border-dashed border-muted-foreground/10'>
+      <div className='flex w-full flex-wrap items-center justify-center gap-2 md:gap-3 lg:w-auto'>
+        <div className='flex items-center gap-2 rounded-full border border-dashed border-muted-foreground/10 bg-muted/20 p-1'>
           <Button
             id='material-toolbar-export-button'
             variant='ghost'
             size='sm'
             onClick={onExport}
-            className='h-9 md:h-11 px-4 md:px-6 rounded-full font-black text-[9px] md:text-[10px] uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity whitespace-nowrap'
+            className='h-9 rounded-full px-4 text-[9px] font-black tracking-widest whitespace-nowrap uppercase opacity-60 transition-opacity hover:opacity-100 md:h-11 md:px-6 md:text-[10px]'
           >
-            <Download className='h-3.5 md:h-4 w-3.5 md:w-4 mr-1.5' />
+            <Download className='mr-1.5 h-3.5 w-3.5 md:h-4 md:w-4' />
             {t('materialArchive.toolbar.export')}
           </Button>
-          <div className='w-px h-4 bg-muted-foreground/10' />
+          <div className='h-4 w-px bg-muted-foreground/10' />
           <Button
             variant='ghost'
             size='sm'
             onClick={() => importInputRef.current?.click()}
-            className='h-9 md:h-11 px-4 md:px-6 rounded-full font-black text-[9px] md:text-[10px] uppercase tracking-widest text-orange-600/60 hover:text-orange-600 hover:bg-orange-500/5 transition-all whitespace-nowrap'
+            className='h-9 rounded-full px-4 text-[9px] font-black tracking-widest whitespace-nowrap text-orange-600/60 uppercase transition-all hover:bg-orange-500/5 hover:text-orange-600 md:h-11 md:px-6 md:text-[10px]'
           >
-            <Upload className='h-3.5 md:h-4 w-3.5 md:w-4 mr-1.5' />
+            <Upload className='mr-1.5 h-3.5 w-3.5 md:h-4 md:w-4' />
             {t('materialArchive.toolbar.import')}
           </Button>
         </div>
@@ -70,9 +72,9 @@ export function MaterialToolbar({
           id='material-toolbar-add-button'
           size='sm'
           onClick={onAdd}
-          className='h-10 md:h-11 px-6 md:px-8 rounded-full font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95 bg-primary text-primary-foreground w-full sm:w-auto'
+          className='h-10 w-full rounded-full bg-primary px-6 text-[10px] font-black tracking-widest text-primary-foreground uppercase shadow-xl shadow-primary/20 transition-all active:scale-95 sm:w-auto md:h-11 md:px-8'
         >
-          <Plus className='h-4 w-4 mr-2' />
+          <Plus className='mr-2 h-4 w-4' />
           {t('materialArchive.toolbar.register')}
         </Button>
       </div>

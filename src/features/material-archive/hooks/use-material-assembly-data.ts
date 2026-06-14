@@ -1,7 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
 import { failLoudly } from '@/lib/safe-catch'
 import { type MaterialOption, type PackagingRule } from '../data/schema'
-import { MATERIAL_OPTIONS_QUERY_KEY, PACKAGING_RULES_QUERY_KEY } from '../query-keys'
+import {
+  MATERIAL_OPTIONS_QUERY_KEY,
+  PACKAGING_RULES_QUERY_KEY,
+} from '../query-keys'
 import { MaterialCoreService } from '../services/material-core-service'
 import { packagingService } from '../services/packaging-service'
 
@@ -32,13 +35,17 @@ export function useMaterialAssemblyData() {
   }
 
   if (!isLoading && !rulesQuery.data) {
-    const error = new Error('[CRITICAL] Missing packaging rules payload in material assembly manager')
+    const error = new Error(
+      '[CRITICAL] Missing packaging rules payload in material assembly manager'
+    )
     failLoudly(error, 'useMaterialAssemblyData.rules')
     throw error
   }
 
   if (!isLoading && !materialsQuery.data) {
-    const error = new Error('[CRITICAL] Missing material options payload in material assembly manager')
+    const error = new Error(
+      '[CRITICAL] Missing material options payload in material assembly manager'
+    )
     failLoudly(error, 'useMaterialAssemblyData.materials')
     throw error
   }

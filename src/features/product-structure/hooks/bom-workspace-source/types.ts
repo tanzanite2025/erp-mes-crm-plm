@@ -1,9 +1,8 @@
 /**
  * BOM Workspace Source Types
- * 
+ *
  * 定义 BOM workspace 源数据模型的类型
  */
-
 import type {
   BOMWorkspaceSourceBranchNode,
   BOMWorkspaceSourceLeafNode,

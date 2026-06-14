@@ -1,8 +1,15 @@
 import { useMemo, useState } from 'react'
-import { CheckCircle2, Loader2, PackageCheck, Plus, Smartphone, Trash2 } from 'lucide-react'
+import {
+  CheckCircle2,
+  Loader2,
+  PackageCheck,
+  Plus,
+  Smartphone,
+  Trash2,
+} from 'lucide-react'
+import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { TrackingNumberInput } from '@/components/tracking-number-input'
-import { useLanguage } from '@/context/language-provider'
 import { PackagingAssemblyService } from '../services/packaging-assembly-service'
 
 type MobileCopy = {
@@ -39,7 +46,8 @@ const copyByLocale: Record<'zh-CN' | 'en-US', MobileCopy> = {
   },
   'en-US': {
     title: 'Package Scan',
-    description: 'Scan product barcodes already bound in the system, then submit this package assembly.',
+    description:
+      'Scan product barcodes already bound in the system, then submit this package assembly.',
     packageCode: 'Package Code',
     scanPlaceholder: 'Scan or enter product barcode',
     add: 'Add',
@@ -50,7 +58,8 @@ const copyByLocale: Record<'zh-CN' | 'en-US', MobileCopy> = {
     missingItems: 'Add at least one product barcode.',
     submitFailed: 'Package submit failed',
     submittedTitle: 'Package Submitted',
-    submittedDescription: 'Product barcodes are now bound to the package. The desktop page will refresh automatically.',
+    submittedDescription:
+      'Product barcodes are now bound to the package. The desktop page will refresh automatically.',
   },
 }
 
@@ -79,7 +88,7 @@ export function PackagingAssemblyMobileCapturePage({
 
   const canSubmit = useMemo(
     () => productBarcodes.length > 0 && !submitting,
-    [productBarcodes.length, submitting],
+    [productBarcodes.length, submitting]
   )
 
   const addBarcode = (value: string) => {
@@ -88,9 +97,9 @@ export function PackagingAssemblyMobileCapturePage({
       setError(copy.missingCode)
       return
     }
-    setProductBarcodes((current) => (
+    setProductBarcodes((current) =>
       current.includes(nextCode) ? current : [...current, nextCode]
-    ))
+    )
     setRawCode('')
     setError('')
   }
@@ -117,7 +126,9 @@ export function PackagingAssemblyMobileCapturePage({
       })
       setSubmitted(true)
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : copy.submitFailed)
+      setError(
+        submitError instanceof Error ? submitError.message : copy.submitFailed
+      )
     } finally {
       setSubmitting(false)
     }
@@ -130,8 +141,10 @@ export function PackagingAssemblyMobileCapturePage({
           <div className='flex size-20 items-center justify-center rounded-[28px] bg-emerald-500/10 text-emerald-600'>
             <CheckCircle2 className='size-10' />
           </div>
-          <h1 className='mt-6 text-3xl font-black italic tracking-tight'>{copy.submittedTitle}</h1>
-          <p className='mt-3 text-sm font-semibold leading-6 text-muted-foreground'>
+          <h1 className='mt-6 text-3xl font-black tracking-tight italic'>
+            {copy.submittedTitle}
+          </h1>
+          <p className='mt-3 text-sm leading-6 font-semibold text-muted-foreground'>
             {copy.submittedDescription}
           </p>
         </section>
@@ -148,15 +161,21 @@ export function PackagingAssemblyMobileCapturePage({
               <Smartphone className='size-7' />
             </div>
             <div>
-              <h1 className='text-2xl font-black italic tracking-tight'>{copy.title}</h1>
-              <p className='mt-1 text-xs font-bold leading-5 text-muted-foreground'>{copy.description}</p>
+              <h1 className='text-2xl font-black tracking-tight italic'>
+                {copy.title}
+              </h1>
+              <p className='mt-1 text-xs leading-5 font-bold text-muted-foreground'>
+                {copy.description}
+              </p>
             </div>
           </div>
           <div className='mt-4 rounded-2xl bg-background/80 px-4 py-3'>
-            <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground'>
+            <div className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
               {copy.packageCode}
             </div>
-            <div className='mt-1 break-all font-mono text-lg font-black'>{packageCode || '--'}</div>
+            <div className='mt-1 font-mono text-lg font-black break-all'>
+              {packageCode || '--'}
+            </div>
           </div>
         </header>
 
@@ -181,10 +200,12 @@ export function PackagingAssemblyMobileCapturePage({
 
         <section className='rounded-[24px] border border-dashed border-muted-foreground/20 bg-muted/20 p-4'>
           <div className='mb-3 flex items-center justify-between'>
-            <div className='text-xs font-black uppercase tracking-widest text-muted-foreground'>
+            <div className='text-xs font-black tracking-widest text-muted-foreground uppercase'>
               {copy.scanned}
             </div>
-            <div className='font-mono text-sm font-black'>{productBarcodes.length}</div>
+            <div className='font-mono text-sm font-black'>
+              {productBarcodes.length}
+            </div>
           </div>
           <div className='space-y-2'>
             {productBarcodes.map((item) => (
@@ -217,7 +238,11 @@ export function PackagingAssemblyMobileCapturePage({
           disabled={!canSubmit}
           className='h-14 w-full rounded-full text-sm font-black tracking-widest'
         >
-          {submitting ? <Loader2 className='size-4 animate-spin' /> : <PackageCheck className='size-4' />}
+          {submitting ? (
+            <Loader2 className='size-4 animate-spin' />
+          ) : (
+            <PackageCheck className='size-4' />
+          )}
           {copy.submit}
         </Button>
       </section>

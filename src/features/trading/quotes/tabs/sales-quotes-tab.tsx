@@ -1,22 +1,22 @@
 import { FileText, Layers3, Route } from 'lucide-react'
-import { IndustrialHeader } from '@/components/uds/industrial-header'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useLanguage } from '@/context/language-provider'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 
 export function SalesQuotesTab() {
   const { t } = useLanguage()
 
   return (
-    <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+    <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
       <IndustrialHeader
         icon={FileText}
         title={t('trading.quotes.title')}
         description={t('trading.quotes.description')}
       />
 
-      <Card className='rounded-2xl md:rounded-[32px] border border-dashed border-primary/20 bg-muted/5 shadow-inner'>
+      <Card className='rounded-2xl border border-dashed border-primary/20 bg-muted/5 shadow-inner md:rounded-[32px]'>
         <CardHeader className='gap-2 border-b border-dashed border-muted/50 bg-muted/20 px-5 py-4 md:px-8 md:py-5'>
-          <CardTitle className='text-lg font-black italic tracking-tighter uppercase'>
+          <CardTitle className='text-lg font-black tracking-tighter uppercase italic'>
             {t('trading.quotes.statusTitle')}
           </CardTitle>
         </CardHeader>
@@ -30,8 +30,12 @@ export function SalesQuotesTab() {
               <CardContent className='flex items-start gap-3 p-5'>
                 <Layers3 className='mt-0.5 size-4 text-primary' />
                 <div>
-                  <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>Tab</p>
-                  <p className='mt-2 text-sm font-bold text-foreground'>{t('trading.quotes.scopes.tab')}</p>
+                  <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+                    Tab
+                  </p>
+                  <p className='mt-2 text-sm font-bold text-foreground'>
+                    {t('trading.quotes.scopes.tab')}
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -40,8 +44,12 @@ export function SalesQuotesTab() {
               <CardContent className='flex items-start gap-3 p-5'>
                 <Route className='mt-0.5 size-4 text-primary' />
                 <div>
-                  <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>Route</p>
-                  <p className='mt-2 text-sm font-bold text-foreground'>{t('trading.quotes.scopes.route')}</p>
+                  <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+                    Route
+                  </p>
+                  <p className='mt-2 text-sm font-bold text-foreground'>
+                    {t('trading.quotes.scopes.route')}
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -50,8 +58,12 @@ export function SalesQuotesTab() {
               <CardContent className='flex items-start gap-3 p-5'>
                 <FileText className='mt-0.5 size-4 text-primary' />
                 <div>
-                  <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>Future</p>
-                  <p className='mt-2 text-sm font-bold text-foreground'>{t('trading.quotes.scopes.expansion')}</p>
+                  <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+                    Future
+                  </p>
+                  <p className='mt-2 text-sm font-bold text-foreground'>
+                    {t('trading.quotes.scopes.expansion')}
+                  </p>
                 </div>
               </CardContent>
             </Card>

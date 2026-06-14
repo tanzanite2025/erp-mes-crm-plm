@@ -1,15 +1,17 @@
+import { z } from 'zod'
 import { createFileRoute } from '@tanstack/react-router'
 import { Library } from 'lucide-react'
-import { z } from 'zod'
-import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { CommandMgmt } from '@/features/system-mgmt/workflow-core/components/command-mgmt'
 
 const templatesSearchSchema = z.object({
   search: z.string().optional().catch(''),
 })
 
-export const Route = createFileRoute('/_authenticated/message-center/templates')({
+export const Route = createFileRoute(
+  '/_authenticated/message-center/templates'
+)({
   validateSearch: (search) => templatesSearchSchema.parse(search),
   component: TemplatesRouteComponent,
 })
@@ -20,7 +22,7 @@ function TemplatesRouteComponent() {
   const navigate = Route.useNavigate()
 
   return (
-    <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+    <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
       <IndustrialHeader
         icon={Library}
         title={t('messageCenter.pages.templates.title')}

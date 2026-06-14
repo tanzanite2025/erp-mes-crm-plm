@@ -1,6 +1,12 @@
-import { getActiveBOMWeight, type ActiveBOMWeightInfo } from '@/features/product-structure/hooks/use-active-bom-weight-map'
-import { calculatePackagingPlan, type PackagingCalculationResult } from '@/features/logistics-config/packaging-calculator'
+import {
+  calculatePackagingPlan,
+  type PackagingCalculationResult,
+} from '@/features/logistics-config/packaging-calculator'
 import type { PackagingProfile } from '@/features/logistics-config/packaging-rules-service'
+import {
+  getActiveBOMWeight,
+  type ActiveBOMWeightInfo,
+} from '@/features/product-structure/hooks/use-active-bom-weight-map'
 import type {
   SalesOrder,
   SalesOrderLine,
@@ -122,8 +128,15 @@ function buildLineTarget(
   line: SalesOrderLine,
   profiles: PackagingProfile[]
 ): SalesOrderPackagingEntryLineTarget {
-  const matchedProfiles = getPackagingProfilesForProduct(profiles, line.productId, true)
-  const selectedPackaging = resolveSalesOrderLinePackagingSelection(line, profiles)
+  const matchedProfiles = getPackagingProfilesForProduct(
+    profiles,
+    line.productId,
+    true
+  )
+  const selectedPackaging = resolveSalesOrderLinePackagingSelection(
+    line,
+    profiles
+  )
   const productDisplayTitle = resolveLineDisplayTitle(line)
   const productDisplaySubtitle = resolveLineDisplaySubtitle(line)
 
@@ -204,10 +217,18 @@ export function buildSalesOrderPackagingEntryTarget(
   }
 
   const lines = order.lines.map((line) => buildLineTarget(line, profiles))
-  const resolvedLineCount = lines.filter((line) => line.state === 'resolved').length
-  const pendingSelectionLineCount = lines.filter((line) => line.state === 'needs_selection').length
-  const createRuleLineCount = lines.filter((line) => line.state === 'create_new').length
-  const missingProductLineCount = lines.filter((line) => line.state === 'missing_product').length
+  const resolvedLineCount = lines.filter(
+    (line) => line.state === 'resolved'
+  ).length
+  const pendingSelectionLineCount = lines.filter(
+    (line) => line.state === 'needs_selection'
+  ).length
+  const createRuleLineCount = lines.filter(
+    (line) => line.state === 'create_new'
+  ).length
+  const missingProductLineCount = lines.filter(
+    (line) => line.state === 'missing_product'
+  ).length
   const actionLine = selectActionLine(lines)
 
   let state: Exclude<SalesOrderPackagingEntryState, 'no_lines'> = 'resolved'
@@ -243,8 +264,15 @@ export function buildSalesOrderPackagingPreviewData(
   }
 
   const lines = order.lines.map<SalesOrderPackagingPreviewLine>((line) => {
-    const matchedProfiles = getPackagingProfilesForProduct(profiles, line.productId, true)
-    const selectedPackaging = resolveSalesOrderLinePackagingSelection(line, profiles)
+    const matchedProfiles = getPackagingProfilesForProduct(
+      profiles,
+      line.productId,
+      true
+    )
+    const selectedPackaging = resolveSalesOrderLinePackagingSelection(
+      line,
+      profiles
+    )
     const warnings: string[] = []
     const productDisplayTitle = resolveLineDisplayTitle(line)
     const productDisplaySubtitle = resolveLineDisplaySubtitle(line)
@@ -261,7 +289,11 @@ export function buildSalesOrderPackagingPreviewData(
       )
     }
 
-    const weightInfo = getActiveBOMWeight(weightMap, line.productId, order.customerId)
+    const weightInfo = getActiveBOMWeight(
+      weightMap,
+      line.productId,
+      order.customerId
+    )
     const productWeight = weightInfo.available ? weightInfo.weight : 0
     if (line.productId && !weightInfo.available) {
       warnings.push(
@@ -272,7 +304,10 @@ export function buildSalesOrderPackagingPreviewData(
     const plan = calculatePackagingPlan({
       orderedQuantity: line.qty,
       productWeight,
-      profiles: (selectedPackaging ? [createPackagingProfileFromSelection(selectedPackaging)] : []).map((profile) => ({
+      profiles: (selectedPackaging
+        ? [createPackagingProfileFromSelection(selectedPackaging)]
+        : []
+      ).map((profile) => ({
         profileId: profile.id,
         profileName: profile.name,
         capacity: profile.capacity,
@@ -304,7 +339,9 @@ export function buildSalesOrderPackagingPreviewData(
   })
 
   const warnings = lines.flatMap((line) => line.plan.warnings)
-  const packagedLineCount = lines.filter((line) => line.plan.boxCount > 0).length
+  const packagedLineCount = lines.filter(
+    (line) => line.plan.boxCount > 0
+  ).length
 
   return {
     lines,
@@ -314,7 +351,10 @@ export function buildSalesOrderPackagingPreviewData(
       unpackagedLineCount: lines.length - packagedLineCount,
       totalBoxCount: lines.reduce((sum, line) => sum + line.plan.boxCount, 0),
       totalVolume: lines.reduce((sum, line) => sum + line.plan.totalVolume, 0),
-      totalGrossWeight: lines.reduce((sum, line) => sum + line.plan.totalGrossWeight, 0),
+      totalGrossWeight: lines.reduce(
+        (sum, line) => sum + line.plan.totalGrossWeight,
+        0
+      ),
       warnings,
     },
   }
@@ -332,7 +372,13 @@ export function buildSalesOrderPackagingCardViewModel({
 }: BuildSalesOrderPackagingCardViewModelInput): SalesOrderPackagingCardViewModel {
   return {
     target: buildSalesOrderPackagingEntryTarget(order, profiles, profilesReady),
-    preview: buildSalesOrderPackagingPreviewData(order, profiles, profilesReady, productOptionsReady, weightMap),
+    preview: buildSalesOrderPackagingPreviewData(
+      order,
+      profiles,
+      profilesReady,
+      productOptionsReady,
+      weightMap
+    ),
     profiles,
     isLoading,
     isError,

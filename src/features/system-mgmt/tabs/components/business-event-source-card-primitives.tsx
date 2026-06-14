@@ -265,7 +265,11 @@ export function SummaryPanel({
 }) {
   const [manualOpen, setManualOpen] = useState(false)
   const isOpen = Boolean(
-    alwaysOpen || manualOpen || dirty || focusedRemovedItemId || forceOpenRemovedItems
+    alwaysOpen ||
+    manualOpen ||
+    dirty ||
+    focusedRemovedItemId ||
+    forceOpenRemovedItems
   )
 
   return (
@@ -392,7 +396,11 @@ export function EditableList({
 }) {
   const [manualOpen, setManualOpen] = useState(false)
   const isOpen = Boolean(
-    alwaysOpen || manualOpen || dirty || focusedRemovedItemId || forceOpenRemovedItems
+    alwaysOpen ||
+    manualOpen ||
+    dirty ||
+    focusedRemovedItemId ||
+    forceOpenRemovedItems
   )
 
   return (

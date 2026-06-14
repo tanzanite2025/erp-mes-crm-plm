@@ -1,16 +1,20 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { type CuttingPlan } from '../data/cutting-plan-schema'
+import {
+  type DrillingPlan,
+  type LabelingDraft,
+  type TechnicalSpec,
+} from '../data/schema'
 import {
   ENGINEERING_DB_CUTTING_PLANS_QUERY_KEY,
   ENGINEERING_DB_DRILLING_QUERY_KEY,
   ENGINEERING_DB_LABELING_QUERY_KEY,
   ENGINEERING_DB_SPECS_QUERY_KEY,
 } from '../query-keys'
-import { type DrillingPlan, type LabelingDraft, type TechnicalSpec } from '../data/schema'
-import { type CuttingPlan } from '../data/cutting-plan-schema'
+import { CuttingPlanService } from '../services/cutting-plan-service'
 import { ProductionDBService } from '../services/production-db-service'
 import { SpecsService } from '../services/specs-service'
-import { CuttingPlanService } from '../services/cutting-plan-service'
 import { useEngineeringDbProductLookup } from './use-engineering-db-product-lookup'
 
 export type UnifiedEntry = {
@@ -90,26 +94,40 @@ function toCuttingEntry(item: CuttingPlan): UnifiedEntry {
 
 export function useEngineeringDbOverview(searchTerm: string) {
   const { productMap } = useEngineeringDbProductLookup()
-  const { data: specs = [], isLoading: isSpecsLoading } = useQuery<TechnicalSpec[]>({
+  const { data: specs = [], isLoading: isSpecsLoading } = useQuery<
+    TechnicalSpec[]
+  >({
     queryKey: ENGINEERING_DB_SPECS_QUERY_KEY,
     queryFn: () => SpecsService.getSpecs(),
   })
-  const { data: drilling = [], isLoading: isDrillingLoading } = useQuery<DrillingPlan[]>({
+  const { data: drilling = [], isLoading: isDrillingLoading } = useQuery<
+    DrillingPlan[]
+  >({
     queryKey: ENGINEERING_DB_DRILLING_QUERY_KEY,
     queryFn: () => ProductionDBService.getDrilling(),
   })
-  const { data: labeling = [], isLoading: isLabelingLoading } = useQuery<LabelingDraft[]>({
+  const { data: labeling = [], isLoading: isLabelingLoading } = useQuery<
+    LabelingDraft[]
+  >({
     queryKey: ENGINEERING_DB_LABELING_QUERY_KEY,
     queryFn: () => ProductionDBService.getLabeling(),
   })
-  const { data: cuttingPlans = [], isLoading: isCuttingLoading } = useQuery<CuttingPlan[]>({
+  const { data: cuttingPlans = [], isLoading: isCuttingLoading } = useQuery<
+    CuttingPlan[]
+  >({
     queryKey: ENGINEERING_DB_CUTTING_PLANS_QUERY_KEY,
     queryFn: () => CuttingPlanService.list(),
   })
 
   const data = useMemo(() => {
-    return [...specs.map(toSpecEntry), ...drilling.map(toDrillingEntry), ...cuttingPlans.map(toCuttingEntry), ...labeling.map(toLabelingEntry)].sort(
-      (left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
+    return [
+      ...specs.map(toSpecEntry),
+      ...drilling.map(toDrillingEntry),
+      ...cuttingPlans.map(toCuttingEntry),
+      ...labeling.map(toLabelingEntry),
+    ].sort(
+      (left, right) =>
+        new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()
     )
   }, [cuttingPlans, drilling, labeling, specs])
 
@@ -142,10 +160,16 @@ export function useEngineeringDbOverview(searchTerm: string) {
         }
 
         const normalizedExtension = item.fileExtension?.toLowerCase()
-        if (normalizedExtension && EXCEL_FILE_EXTENSIONS.has(normalizedExtension)) {
+        if (
+          normalizedExtension &&
+          EXCEL_FILE_EXTENSIONS.has(normalizedExtension)
+        ) {
           result.excelCount += 1
         }
-        if (normalizedExtension && CAD_FILE_EXTENSIONS.has(normalizedExtension)) {
+        if (
+          normalizedExtension &&
+          CAD_FILE_EXTENSIONS.has(normalizedExtension)
+        ) {
           result.cadCount += 1
         }
 
@@ -158,7 +182,7 @@ export function useEngineeringDbOverview(searchTerm: string) {
         labelingCount: 0,
         excelCount: 0,
         cadCount: 0,
-      },
+      }
     )
   }, [data])
 
@@ -167,6 +191,10 @@ export function useEngineeringDbOverview(searchTerm: string) {
     filteredData,
     productMap,
     stats,
-    isLoading: isSpecsLoading || isDrillingLoading || isCuttingLoading || isLabelingLoading,
+    isLoading:
+      isSpecsLoading ||
+      isDrillingLoading ||
+      isCuttingLoading ||
+      isLabelingLoading,
   }
 }

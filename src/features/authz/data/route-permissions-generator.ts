@@ -41,8 +41,12 @@ function comparePathsBySpecificity(a: string, b: string): number {
     return bSegments.length - aSegments.length
   }
 
-  const aStaticCount = aSegments.filter((segment) => !segment.startsWith(':')).length
-  const bStaticCount = bSegments.filter((segment) => !segment.startsWith(':')).length
+  const aStaticCount = aSegments.filter(
+    (segment) => !segment.startsWith(':')
+  ).length
+  const bStaticCount = bSegments.filter(
+    (segment) => !segment.startsWith(':')
+  ).length
   if (aStaticCount !== bStaticCount) {
     return bStaticCount - aStaticCount
   }
@@ -68,7 +72,10 @@ function toUniqueIds(ids: Array<string | undefined>): string[] {
 }
 
 function buildRoutePathsSignature(routePaths: readonly string[]): string {
-  return [...routePaths].map((path) => normalizePath(path)).sort().join('|')
+  return [...routePaths]
+    .map((path) => normalizePath(path))
+    .sort()
+    .join('|')
 }
 
 const routePermissionsCache = new Map<string, GeneratedRoutePermissions>()
@@ -85,7 +92,7 @@ export function clearRoutePermissionsCache(): void {
  */
 export function getPermissionsWithCache(
   version: string,
-  routePaths: readonly string[],
+  routePaths: readonly string[]
 ): GeneratedRoutePermissions {
   const cacheKey = `${version}::${buildRoutePathsSignature(routePaths)}`
   const cached = routePermissionsCache.get(cacheKey)
@@ -112,7 +119,9 @@ export class RoutePermissionsGenerator {
     const normalized = routePaths
       .map((path) => normalizePath(path))
       .filter((path) => !isLazyPath(path))
-    this.routePaths = Array.from(new Set(normalized)).sort(comparePathsBySpecificity)
+    this.routePaths = Array.from(new Set(normalized)).sort(
+      comparePathsBySpecificity
+    )
   }
 
   /**
@@ -177,39 +186,45 @@ export class RoutePermissionsGenerator {
       permissionById.set(tabPermission.id, tabPermission)
     })
 
-    const routePermissionEntries: RoutePermissionEntry[] = this.routePaths.map((path) => {
-      const segments = splitPath(path)
-      const menuId = getMenuPermissionForPath(path)
+    const routePermissionEntries: RoutePermissionEntry[] = this.routePaths.map(
+      (path) => {
+        const segments = splitPath(path)
+        const menuId = getMenuPermissionForPath(path)
 
-      if (segments.length <= 1) {
-        const pagePermissionId = pagePermissionByPath.get(path)?.id
-        const permissionId = pagePermissionId || menuId
+        if (segments.length <= 1) {
+          const pagePermissionId = pagePermissionByPath.get(path)?.id
+          const permissionId = pagePermissionId || menuId
+
+          return {
+            path,
+            permissionId,
+            fallbackPermissionIds: toUniqueIds([menuId]).filter(
+              (id) => id !== permissionId
+            ),
+          }
+        }
+
+        const tabPermissionId = tabPermissionByPath.get(path)?.id
+        const permissionId = tabPermissionId || menuId
 
         return {
           path,
           permissionId,
-          fallbackPermissionIds: toUniqueIds([menuId]).filter((id) => id !== permissionId),
+          fallbackPermissionIds: [],
         }
       }
+    )
 
-      const tabPermissionId = tabPermissionByPath.get(path)?.id
-      const permissionId = tabPermissionId || menuId
-
-      return {
-        path,
-        permissionId,
-        fallbackPermissionIds: [],
-      }
-    })
-
-    routePermissionEntries.sort((a, b) => comparePathsBySpecificity(a.path, b.path))
+    routePermissionEntries.sort((a, b) =>
+      comparePathsBySpecificity(a.path, b.path)
+    )
 
     const routePermissionMap = routePermissionEntries.reduce(
       (acc, entry) => {
         acc[entry.path] = entry.permissionId
         return acc
       },
-      {} as Record<string, string>,
+      {} as Record<string, string>
     )
 
     return {

@@ -6,8 +6,8 @@ export const hubSchema = z.object({
   brand: z.string().optional(),
   model: z.string().optional(),
   holeCount: z.string().optional(), // 孔数
-  pcdLeft: z.string().optional(),   // 左侧 PCD
-  pcdRight: z.string().optional(),  // 右侧 PCD
+  pcdLeft: z.string().optional(), // 左侧 PCD
+  pcdRight: z.string().optional(), // 右侧 PCD
   flangeLeft: z.string().optional(), // 左侧法兰距
   flangeRight: z.string().optional(), // 右侧法兰距
   fileUrl: z.string().optional(),

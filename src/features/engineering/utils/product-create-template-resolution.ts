@@ -25,7 +25,10 @@ function resolveTemplateFromType(
   return templates.find((template) => template.id === type.templateId) || null
 }
 
-function resolveTemplateFromTypeChain(types: ProductType[], typeId?: string | null): TemplateBoundType | null {
+function resolveTemplateFromTypeChain(
+  types: ProductType[],
+  typeId?: string | null
+): TemplateBoundType | null {
   const currentTypeId = typeId?.trim()
   if (!currentTypeId) return null
 
@@ -51,8 +54,14 @@ export function resolveCreateProductTemplate(
   templates: ProductTemplate[],
   params: ProductCreateTemplateParams
 ): ProductCreateTemplateResolution {
-  const resolvedType = resolveTemplateFromTypeChain(params.productTypes, params.typeId)
-  const templateFromType = resolveTemplateFromType(templates, resolvedType ?? undefined)
+  const resolvedType = resolveTemplateFromTypeChain(
+    params.productTypes,
+    params.typeId
+  )
+  const templateFromType = resolveTemplateFromType(
+    templates,
+    resolvedType ?? undefined
+  )
   if (templateFromType) {
     return {
       template: templateFromType,
@@ -66,7 +75,9 @@ export function resolveCreateProductTemplate(
   }
 }
 
-export async function getCreateProductTemplate(params: ProductCreateTemplateParams) {
+export async function getCreateProductTemplate(
+  params: ProductCreateTemplateParams
+) {
   const templates = await productTemplateService.getTemplates()
   return resolveCreateProductTemplate(templates, params)
 }

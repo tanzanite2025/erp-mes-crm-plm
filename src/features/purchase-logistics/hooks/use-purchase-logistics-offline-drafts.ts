@@ -26,30 +26,46 @@ export function usePurchaseLogisticsOfflineDrafts() {
     }
 
     const handleStorage = (event: Event) => {
-      const detail = event instanceof CustomEvent ? event.detail as { key?: string } | undefined : undefined
+      const detail =
+        event instanceof CustomEvent
+          ? (event.detail as { key?: string } | undefined)
+          : undefined
       if (detail?.key && detail.key !== PURCHASE_LOGISTICS_DRAFT_KEY) {
         return
       }
       invalidatePurchaseLogisticsOfflineDraftCache()
-      void queryClient.invalidateQueries({ queryKey: PURCHASE_LOGISTICS_KEYS.offlineDrafts })
+      void queryClient.invalidateQueries({
+        queryKey: PURCHASE_LOGISTICS_KEYS.offlineDrafts,
+      })
     }
 
     window.addEventListener(XDFC_STORAGE_EVENT, handleStorage)
-    window.addEventListener(`${PURCHASE_LOGISTICS_DRAFT_KEY}_updated`, handleStorage)
+    window.addEventListener(
+      `${PURCHASE_LOGISTICS_DRAFT_KEY}_updated`,
+      handleStorage
+    )
     return () => {
       window.removeEventListener(XDFC_STORAGE_EVENT, handleStorage)
-      window.removeEventListener(`${PURCHASE_LOGISTICS_DRAFT_KEY}_updated`, handleStorage)
+      window.removeEventListener(
+        `${PURCHASE_LOGISTICS_DRAFT_KEY}_updated`,
+        handleStorage
+      )
     }
   }, [queryClient])
 
   const invalidateDrafts = React.useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: PURCHASE_LOGISTICS_KEYS.offlineDrafts })
+    await queryClient.invalidateQueries({
+      queryKey: PURCHASE_LOGISTICS_KEYS.offlineDrafts,
+    })
   }, [queryClient])
 
-  const removeDraft = React.useCallback(async (id: string) => {
-    await removePurchaseLogisticsOfflineDraft(id)
-    await invalidateDrafts()
-  }, [invalidateDrafts])
+  const removeDraft = React.useCallback(
+    async (id: string) => {
+      await removePurchaseLogisticsOfflineDraft(id)
+      await invalidateDrafts()
+    },
+    [invalidateDrafts]
+  )
 
   const syncDrafts = React.useCallback(async () => {
     const result = await syncPurchaseLogisticsOfflineDrafts()

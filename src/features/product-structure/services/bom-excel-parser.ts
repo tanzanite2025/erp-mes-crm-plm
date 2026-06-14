@@ -1,9 +1,16 @@
 import { loadExcelJS } from '@/lib/lazy-vendors'
 import { type BOMSectionOption } from '../data/bom-section-schema'
 import { type BOMItemDraft, type MaterialOptionDraft } from '../mutation-types'
+import {
+  getDefaultBOMSectionCode,
+  normalizeBOMSectionValue,
+} from '../utils/bom-section-utils'
 import { BOM_EXCEL_LIMITS, BOM_EXCEL_SHEETS } from './bom-excel-contract'
-import { safelyGetCellValue, validateBOMFileSize, validateBOMWorkbookSheetCount } from './bom-excel-security'
-import { getDefaultBOMSectionCode, normalizeBOMSectionValue } from '../utils/bom-section-utils'
+import {
+  safelyGetCellValue,
+  validateBOMFileSize,
+  validateBOMWorkbookSheetCount,
+} from './bom-excel-security'
 
 export interface ParsedBOMExcelResult {
   items: BOMItemDraft[]
@@ -36,7 +43,8 @@ export const parseBOMExcel = async (
 
   // 1. 读取隐藏沙盒提取密钥字典
   const archiveSheet =
-    workbook.getWorksheet(BOM_EXCEL_SHEETS.archive) || workbook.getWorksheet(BOM_EXCEL_SHEETS.legacyArchive)
+    workbook.getWorksheet(BOM_EXCEL_SHEETS.archive) ||
+    workbook.getWorksheet(BOM_EXCEL_SHEETS.legacyArchive)
   const comboToIdMap = new Map<string, string>()
   const productComboToIdMap = new Map<string, string>()
   const extractedMaterials: MaterialOptionDraft[] = []
@@ -85,11 +93,14 @@ export const parseBOMExcel = async (
   }
 
   if (archiveRowExceeded) {
-    throw new Error(`系统档案行数超过 ${BOM_EXCEL_LIMITS.maxRows} 行上限，请联系管理员或分批下载导入。`)
+    throw new Error(
+      `系统档案行数超过 ${BOM_EXCEL_LIMITS.maxRows} 行上限，请联系管理员或分批下载导入。`
+    )
   }
 
   // 2. 爬取填报视图
-  const mainSheet = workbook.getWorksheet(BOM_EXCEL_SHEETS.main) || workbook.getWorksheet(1)
+  const mainSheet =
+    workbook.getWorksheet(BOM_EXCEL_SHEETS.main) || workbook.getWorksheet(1)
   if (!mainSheet) return { items: [] }
 
   const items: BOMItemDraft[] = []
@@ -115,7 +126,10 @@ export const parseBOMExcel = async (
     const unitUsageStr = safelyGetCellValue(row.getCell(6))
     const unitPriceStr = safelyGetCellValue(row.getCell(5))
     const rawSection = safelyGetCellValue(row.getCell(2)) || defaultSectionCode
-    const section = normalizeBOMSectionValue(sections, rawSection || defaultSectionCode)
+    const section = normalizeBOMSectionValue(
+      sections,
+      rawSection || defaultSectionCode
+    )
     const wastageStr = safelyGetCellValue(row.getCell(7)) || '0'
 
     // 核心防护：判断该行是否有实质性业务数据
@@ -126,7 +140,9 @@ export const parseBOMExcel = async (
 
     if (!comboText) {
       if (hasSignificantData) {
-        throw new Error(`解析在第 ${rowNumber} 行中断：发现业务数据但未指定物料！`)
+        throw new Error(
+          `解析在第 ${rowNumber} 行中断：发现业务数据但未指定物料！`
+        )
       }
       return
     }
@@ -134,17 +150,23 @@ export const parseBOMExcel = async (
     // UUID 映射
     const materialId = comboToIdMap.get(comboText)
     if (!materialId) {
-      throw new Error(`解析在第 ${rowNumber} 行中断：未知的物料 "${comboText}"。请确保从下拉框选择。`)
+      throw new Error(
+        `解析在第 ${rowNumber} 行中断：未知的物料 "${comboText}"。请确保从下拉框选择。`
+      )
     }
 
     const unitUsage = parseFloat(unitUsageStr)
     if (!unitUsageStr || isNaN(unitUsage) || unitUsage <= 0) {
-      throw new Error(`解析在第 ${rowNumber} 行中断：物料 [${comboText}] 的单位用量无效！`)
+      throw new Error(
+        `解析在第 ${rowNumber} 行中断：物料 [${comboText}] 的单位用量无效！`
+      )
     }
 
     const unitPrice = parseFloat(unitPriceStr)
     if (unitPriceStr && isNaN(unitPrice)) {
-      throw new Error(`解析在第 ${rowNumber} 行中断：物料 [${comboText}] 的单价无效！`)
+      throw new Error(
+        `解析在第 ${rowNumber} 行中断：物料 [${comboText}] 的单价无效！`
+      )
     }
 
     const wastageCell = row.getCell(7)
@@ -152,7 +174,10 @@ export const parseBOMExcel = async (
     let wastage = parseFloat(wastageRawStr)
 
     // 智能百分比归一化
-    if (wastageCell.type === ExcelJS.ValueType.Number && wastageCell.numFmt?.includes('%')) {
+    if (
+      wastageCell.type === ExcelJS.ValueType.Number &&
+      wastageCell.numFmt?.includes('%')
+    ) {
       const numericValue = wastageCell.value as number
       wastage = numericValue * 100
     } else if (wastageRawStr.endsWith('%')) {
@@ -160,7 +185,9 @@ export const parseBOMExcel = async (
     }
 
     if (isNaN(wastage)) {
-      throw new Error(`解析在第 ${rowNumber} 行中断：物料 [${comboText}] 的损耗比例无效！`)
+      throw new Error(
+        `解析在第 ${rowNumber} 行中断：物料 [${comboText}] 的损耗比例无效！`
+      )
     }
 
     items.push({
@@ -174,7 +201,9 @@ export const parseBOMExcel = async (
   })
 
   if (mainRowExceeded) {
-    throw new Error(`配方明细行数超过 ${BOM_EXCEL_LIMITS.maxRows} 行上限，请拆分后分次录入。`)
+    throw new Error(
+      `配方明细行数超过 ${BOM_EXCEL_LIMITS.maxRows} 行上限，请拆分后分次录入。`
+    )
   }
 
   return {

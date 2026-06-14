@@ -3,19 +3,19 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useLanguage } from '@/context/language-provider'
+import { resolveProductDisplayV2 } from '../display/product-display-v2'
+import { resolveProductDisplayMetadataV2 } from '../display/product-display-v2-metadata'
 import {
   PRODUCT_ATTRIBUTE_CATEGORIES_QUERY_KEY,
   PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY,
   PRODUCT_TEMPLATES_QUERY_KEY,
   PRODUCT_TYPES_QUERY_KEY,
 } from '../query-keys'
-import { resolveProductDisplayV2 } from '../display/product-display-v2'
-import { resolveProductDisplayMetadataV2 } from '../display/product-display-v2-metadata'
-import { useGetProducts } from './use-products'
 import { ProductAttributeCategoryService } from '../services/product-attribute-category-service'
 import { ProductAttributeOptionService } from '../services/product-attribute-option-service'
 import { productTemplateService } from '../services/product-template-service'
 import { ProductTypeService } from '../services/product-type-service'
+import { useGetProducts } from './use-products'
 
 export interface ProductDisplayOption {
   label: string
@@ -26,9 +26,9 @@ interface UseProductDisplayOptionsOptions {
   enabled?: boolean
 }
 
-export function useProductDisplayOptions(
-  { enabled = true }: UseProductDisplayOptionsOptions = {}
-) {
+export function useProductDisplayOptions({
+  enabled = true,
+}: UseProductDisplayOptionsOptions = {}) {
   const { locale } = useLanguage()
   const productsQuery = useGetProducts({ enabled })
   const products = useMemo(() => productsQuery.data ?? [], [productsQuery.data])
@@ -44,20 +44,26 @@ export function useProductDisplayOptions(
   })
   const productAttributeCategoriesQuery = useQuery({
     queryKey: PRODUCT_ATTRIBUTE_CATEGORIES_QUERY_KEY,
-    queryFn: () => ProductAttributeCategoryService.getProductAttributeCategories({ activeOnly: true }),
+    queryFn: () =>
+      ProductAttributeCategoryService.getProductAttributeCategories({
+        activeOnly: true,
+      }),
     enabled,
   })
   const productAttributeOptionsQuery = useQuery({
     queryKey: PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY,
-    queryFn: () => ProductAttributeOptionService.getProductAttributeOptions({ activeOnly: true }),
+    queryFn: () =>
+      ProductAttributeOptionService.getProductAttributeOptions({
+        activeOnly: true,
+      }),
     enabled,
   })
 
   const hasProductDisplayMetadata = Boolean(
-    productTemplatesQuery.data
-      && productTypesQuery.data
-      && productAttributeCategoriesQuery.data
-      && productAttributeOptionsQuery.data
+    productTemplatesQuery.data &&
+    productTypesQuery.data &&
+    productAttributeCategoriesQuery.data &&
+    productAttributeOptionsQuery.data
   )
 
   const productOptions = useMemo<ProductDisplayOption[]>(
@@ -73,10 +79,12 @@ export function useProductDisplayOptions(
               options: productAttributeOptionsQuery.data ?? [],
             })
           : null
-        const projection = displayMetadata?.projection ?? resolveProductDisplayV2({
-          locale,
-          product,
-        })
+        const projection =
+          displayMetadata?.projection ??
+          resolveProductDisplayV2({
+            locale,
+            product,
+          })
 
         return {
           label: projection.title,
@@ -104,11 +112,11 @@ export function useProductDisplayOptions(
     productOptions,
     productDisplayLabelMap,
     isLoading: Boolean(
-      productsQuery.isPending
-        || productTemplatesQuery.isPending
-        || productTypesQuery.isPending
-        || productAttributeCategoriesQuery.isPending
-        || productAttributeOptionsQuery.isPending
+      productsQuery.isPending ||
+      productTemplatesQuery.isPending ||
+      productTypesQuery.isPending ||
+      productAttributeCategoriesQuery.isPending ||
+      productAttributeOptionsQuery.isPending
     ),
   }
 }

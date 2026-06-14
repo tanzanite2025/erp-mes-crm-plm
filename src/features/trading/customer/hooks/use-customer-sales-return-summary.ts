@@ -2,7 +2,10 @@ import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { type ReadResource, resolveQueryFailure } from '@/lib/read-resource'
 import { tradingQueryKeys } from '../../query-keys'
-import { type CustomerSalesReturnSummaryListResponse, getCustomerSalesReturnSummaryList } from '../services/customer-sales-return-summary-service'
+import {
+  type CustomerSalesReturnSummaryListResponse,
+  getCustomerSalesReturnSummaryList,
+} from '../services/customer-sales-return-summary-service'
 
 export function useGetCustomerSalesReturnSummary(options = {}) {
   const query = useQuery({
@@ -11,13 +14,16 @@ export function useGetCustomerSalesReturnSummary(options = {}) {
     ...options,
   })
 
-  const readResource = useMemo<ReadResource<CustomerSalesReturnSummaryListResponse>>(() => {
+  const readResource = useMemo<
+    ReadResource<CustomerSalesReturnSummaryListResponse>
+  >(() => {
     const failure = resolveQueryFailure({
       data: query.data,
       error: query.error,
       isPending: query.isPending,
       scope: 'useGetCustomerSalesReturnSummary.summary',
-      missingMessage: '[CRITICAL] Customer sales return summary missing after load',
+      missingMessage:
+        '[CRITICAL] Customer sales return summary missing after load',
       failureMessage: '[CRITICAL] Customer sales return summary query failed',
     })
     if (failure) {

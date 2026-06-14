@@ -6,12 +6,6 @@ import {
 } from '@/lib/api-response'
 import type { SalesOrder } from '@/features/trading/data/schema'
 import type {
-  SalesExchangeDraftRecord,
-  SalesExchangeLineDraft,
-  SalesExchangeRecognizedLabelCode,
-  SalesExchangeUnmatchedLabelCode,
-} from '../types/sales-exchange-types'
-import type {
   ConfirmSalesExchangeOldItemInboundPayload,
   ConfirmSalesExchangeOldItemInboundResponseApiDTO,
   CreateSalesExchangePayload,
@@ -22,6 +16,12 @@ import type {
   SalesExchangeRecognizedLabelApiDTO,
   SalesExchangeUnmatchedLabelApiDTO,
 } from '../contracts/sales-exchange-api-dto'
+import type {
+  SalesExchangeDraftRecord,
+  SalesExchangeLineDraft,
+  SalesExchangeRecognizedLabelCode,
+  SalesExchangeUnmatchedLabelCode,
+} from '../types/sales-exchange-types'
 
 export interface PaginatedSalesExchanges {
   items: SalesExchangeDraftRecord[]
@@ -94,7 +94,8 @@ function toSalesExchangeLineContract(
     productDisplaySubtitleSnapshot: dto.productDisplaySubtitleSnapshot,
     productDisplayCodeSnapshot: dto.productDisplayCodeSnapshot,
     productDisplayFullLabelSnapshot: dto.productDisplayFullLabelSnapshot,
-    productDisplayStrategyVersionSnapshot: dto.productDisplayStrategyVersionSnapshot,
+    productDisplayStrategyVersionSnapshot:
+      dto.productDisplayStrategyVersionSnapshot,
     description: dto.description,
     uom: dto.uom,
     originalOrderQuantity: dto.originalOrderQuantity,
@@ -190,7 +191,8 @@ export async function getSalesExchanges(
   })
   if (customerId) params.set('customerId', customerId)
   if (status && status !== 'all') params.set('status', status)
-  if (keyword && keyword.trim().length > 0) params.set('keyword', keyword.trim())
+  if (keyword && keyword.trim().length > 0)
+    params.set('keyword', keyword.trim())
 
   const response = ensureObjectResponse<
     SalesExchangeListPageApiDTO & Record<string, unknown>

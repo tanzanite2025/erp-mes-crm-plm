@@ -1,7 +1,10 @@
 import { apiFetch } from '@/lib/api-client'
 import { isApiClientError } from '@/lib/api-error'
 import { ensureArrayField, ensureObjectResponse } from '@/lib/api-response'
-import { toShipmentDemandContracts, toShipmentRecordContracts } from '../adapters/shipment-api-adapter'
+import {
+  toShipmentDemandContracts,
+  toShipmentRecordContracts,
+} from '../adapters/shipment-api-adapter'
 import {
   type InventoryShipmentRecordApiDTO,
   type ShipmentDemandApiDTO,
@@ -9,7 +12,11 @@ import {
 } from '../contracts/shipment-api-dto'
 import { type ShipmentDemand, type ShipmentRecord } from '../data/schema'
 
-export type { ShipmentDemand, ShipmentRecord, ShipmentStatus } from '../data/schema'
+export type {
+  ShipmentDemand,
+  ShipmentRecord,
+  ShipmentStatus,
+} from '../data/schema'
 
 interface ShipmentHistoryApiDTO {
   items: InventoryShipmentRecordApiDTO[]
@@ -34,8 +41,12 @@ export const ShipmentCoreService = {
       pageSize: String(pageSize),
     })
 
-    const res = await apiFetch<ShipmentHistoryApiDTO>(`/inventory/shipment?${params.toString()}`)
-    return ensureObjectResponse<ShipmentHistoryApiDTO & Record<string, unknown>>(
+    const res = await apiFetch<ShipmentHistoryApiDTO>(
+      `/inventory/shipment?${params.toString()}`
+    )
+    return ensureObjectResponse<
+      ShipmentHistoryApiDTO & Record<string, unknown>
+    >(
       res,
       'ShipmentCoreService.getShipmentHistoryPage'
     ) as ShipmentHistoryApiDTO
@@ -57,19 +68,21 @@ export const ShipmentCoreService = {
   getShipmentDemands: async (): Promise<ShipmentDemand[]> => {
     let res: ShipmentDemandListApiDTO
     try {
-      res = await apiFetch<ShipmentDemandListApiDTO>('/inventory/shipment-demands', {
-        suppressErrorStatuses: [404],
-      })
+      res = await apiFetch<ShipmentDemandListApiDTO>(
+        '/inventory/shipment-demands',
+        {
+          suppressErrorStatuses: [404],
+        }
+      )
     } catch (error) {
       if (isApiClientError(error) && error.status === 404) {
         return []
       }
       throw error
     }
-    const response = ensureObjectResponse<ShipmentDemandListApiDTO & Record<string, unknown>>(
-      res,
-      'ShipmentCoreService.getShipmentDemands'
-    )
+    const response = ensureObjectResponse<
+      ShipmentDemandListApiDTO & Record<string, unknown>
+    >(res, 'ShipmentCoreService.getShipmentDemands')
     return toShipmentDemandContracts(
       ensureArrayField<ShipmentDemandApiDTO>(
         response,

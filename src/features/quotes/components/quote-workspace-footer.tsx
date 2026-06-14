@@ -35,19 +35,21 @@ export function QuoteWorkspaceFooter({
     <div className='border-t border-dashed border-border/60 px-6 py-4'>
       <div className='flex flex-wrap items-center justify-between gap-3'>
         <p className='text-[11px] leading-5 text-muted-foreground'>
-          {isCreateMode ? '创建完成后可继续在当前工作台执行更多动作。' : transferHelper}
+          {isCreateMode
+            ? '创建完成后可继续在当前工作台执行更多动作。'
+            : transferHelper}
         </p>
         <div className='flex flex-wrap items-center justify-end gap-2'>
           <Button
             variant='outline'
-            className='h-11 rounded-full px-5 text-[10px] font-black uppercase tracking-widest'
+            className='h-11 rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
             onClick={() => onOpenChange(false)}
           >
             关闭
           </Button>
           <Button
             variant='outline'
-            className='h-11 rounded-full px-5 text-[10px] font-black uppercase tracking-widest'
+            className='h-11 rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
             onClick={onExportPdf}
             disabled={isCreateMode || !detail}
           >
@@ -56,7 +58,7 @@ export function QuoteWorkspaceFooter({
           </Button>
           <Button
             variant='outline'
-            className='h-11 rounded-full px-5 text-[10px] font-black uppercase tracking-widest'
+            className='h-11 rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
             onClick={onTransfer}
             disabled={isCreateMode || !detail}
           >
@@ -65,7 +67,7 @@ export function QuoteWorkspaceFooter({
           </Button>
           <Button
             variant='outline'
-            className='h-11 rounded-full px-5 text-[10px] font-black uppercase tracking-widest'
+            className='h-11 rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
             onClick={onConvert}
             disabled={isConverting || isCreateMode || !detail}
           >
@@ -73,11 +75,17 @@ export function QuoteWorkspaceFooter({
             {isConverting ? '正在转正式销售订单…' : '转正式销售订单'}
           </Button>
           <Button
-            className='h-11 rounded-full px-5 text-[10px] font-black uppercase tracking-widest'
+            className='h-11 rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
             onClick={onSave}
             disabled={isSaving || saveDisabled || (!detail && !isCreateMode)}
           >
-            {isSaving ? (isCreateMode ? '正在创建…' : '正在保存…') : isCreateMode ? '创建并继续处理' : '保存并继续处理'}
+            {isSaving
+              ? isCreateMode
+                ? '正在创建…'
+                : '正在保存…'
+              : isCreateMode
+                ? '创建并继续处理'
+                : '保存并继续处理'}
           </Button>
         </div>
       </div>

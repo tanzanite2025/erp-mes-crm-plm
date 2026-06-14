@@ -31,11 +31,12 @@ export const DEFAULT_HIERARCHY_LEVELS: HierarchyLevelConfig[] = [
   { id: 'level-3', level: 3, name: '三级' },
 ]
 
-export const DEFAULT_HIERARCHY_OPTION_CATALOGS: HierarchyLevelOptionCatalog[] = [
-  { level: 1, items: [] },
-  { level: 2, items: [] },
-  { level: 3, items: [] },
-]
+export const DEFAULT_HIERARCHY_OPTION_CATALOGS: HierarchyLevelOptionCatalog[] =
+  [
+    { level: 1, items: [] },
+    { level: 2, items: [] },
+    { level: 3, items: [] },
+  ]
 
 function createHierarchyOptionId() {
   if (typeof globalThis.crypto?.randomUUID === 'function') {
@@ -45,7 +46,11 @@ function createHierarchyOptionId() {
   return `hierarchy-option-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
 }
 
-export function createHierarchyOptionItem(name: string, code: string, sortOrder: number): HierarchyLevelOptionItem {
+export function createHierarchyOptionItem(
+  name: string,
+  code: string,
+  sortOrder: number
+): HierarchyLevelOptionItem {
   return {
     id: createHierarchyOptionId(),
     name: name.trim(),
@@ -55,7 +60,9 @@ export function createHierarchyOptionItem(name: string, code: string, sortOrder:
   }
 }
 
-function normalizeHierarchyLevelOptionItems(items: HierarchyLevelOptionItem[] | null | undefined): HierarchyLevelOptionItem[] {
+function normalizeHierarchyLevelOptionItems(
+  items: HierarchyLevelOptionItem[] | null | undefined
+): HierarchyLevelOptionItem[] {
   if (!Array.isArray(items)) {
     return []
   }
@@ -76,9 +83,13 @@ function normalizeHierarchyLevelOptionItems(items: HierarchyLevelOptionItem[] | 
     }))
 }
 
-function normalizeHierarchyOptionCatalogs(catalogs: HierarchyLevelOptionCatalog[] | null | undefined): HierarchyLevelOptionCatalog[] {
+function normalizeHierarchyOptionCatalogs(
+  catalogs: HierarchyLevelOptionCatalog[] | null | undefined
+): HierarchyLevelOptionCatalog[] {
   return DEFAULT_HIERARCHY_OPTION_CATALOGS.map((defaultCatalog) => {
-    const matchedCatalog = catalogs?.find((catalog) => catalog.level === defaultCatalog.level)
+    const matchedCatalog = catalogs?.find(
+      (catalog) => catalog.level === defaultCatalog.level
+    )
     return {
       level: defaultCatalog.level,
       items: normalizeHierarchyLevelOptionItems(matchedCatalog?.items),
@@ -86,7 +97,9 @@ function normalizeHierarchyOptionCatalogs(catalogs: HierarchyLevelOptionCatalog[
   })
 }
 
-export function createDefaultHierarchyConfigSnapshot(updatedAt?: string): HierarchyConfigSnapshot {
+export function createDefaultHierarchyConfigSnapshot(
+  updatedAt?: string
+): HierarchyConfigSnapshot {
   return {
     levels: DEFAULT_HIERARCHY_LEVELS.map((level) => ({ ...level })),
     optionCatalogs: DEFAULT_HIERARCHY_OPTION_CATALOGS.map((catalog) => ({
@@ -97,14 +110,19 @@ export function createDefaultHierarchyConfigSnapshot(updatedAt?: string): Hierar
   }
 }
 
-export function normalizeHierarchyConfigSnapshot(snapshot: HierarchyConfigSnapshot | null | undefined): HierarchyConfigSnapshot {
+export function normalizeHierarchyConfigSnapshot(
+  snapshot: HierarchyConfigSnapshot | null | undefined
+): HierarchyConfigSnapshot {
   if (!snapshot || !Array.isArray(snapshot.levels)) {
     return createDefaultHierarchyConfigSnapshot(snapshot?.updatedAt)
   }
 
   return {
     levels: DEFAULT_HIERARCHY_LEVELS.map((defaultLevel) => {
-      const matchedLevel = snapshot.levels.find((level) => level.level === defaultLevel.level || level.id === defaultLevel.id)
+      const matchedLevel = snapshot.levels.find(
+        (level) =>
+          level.level === defaultLevel.level || level.id === defaultLevel.id
+      )
       return {
         ...defaultLevel,
         name: matchedLevel?.name?.trim() || defaultLevel.name,
@@ -115,10 +133,20 @@ export function normalizeHierarchyConfigSnapshot(snapshot: HierarchyConfigSnapsh
   }
 }
 
-export function getHierarchyLevelName(levels: HierarchyLevelConfig[], level: number): string {
-  return levels.find((item) => item.level === level)?.name?.trim() || DEFAULT_HIERARCHY_LEVELS.find((item) => item.level === level)?.name || `第${level}层`
+export function getHierarchyLevelName(
+  levels: HierarchyLevelConfig[],
+  level: number
+): string {
+  return (
+    levels.find((item) => item.level === level)?.name?.trim() ||
+    DEFAULT_HIERARCHY_LEVELS.find((item) => item.level === level)?.name ||
+    `第${level}层`
+  )
 }
 
-export function getHierarchyLevelOptions(optionCatalogs: HierarchyLevelOptionCatalog[], level: number): HierarchyLevelOptionItem[] {
+export function getHierarchyLevelOptions(
+  optionCatalogs: HierarchyLevelOptionCatalog[],
+  level: number
+): HierarchyLevelOptionItem[] {
   return optionCatalogs.find((catalog) => catalog.level === level)?.items ?? []
 }

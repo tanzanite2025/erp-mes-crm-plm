@@ -1,14 +1,13 @@
 /**
  * Protocol Branch Relation Builder
- * 
+ *
  * 实现基于父子关系协议的分支关系构建器
  */
-
 import { failLoudly } from '@/lib/safe-catch'
 import type { BOMSectionOption } from '../../data/bom-section-schema'
 import type { BOM } from '../../data/schema'
-import { resolveBOMSection } from '../../utils/bom-section-utils'
 import { parseLeafNodeId } from '../../utils/bom-node-id-resolver'
+import { resolveBOMSection } from '../../utils/bom-section-utils'
 import type {
   BOMWorkspaceBranchRelationBuilder,
   BOMWorkspaceBranchRelationBuildResult,
@@ -44,7 +43,9 @@ interface BOMWorkspaceResolvedFormItemReference {
 
 function throwProtocolAdapterError(message: string): never {
   const error = new Error(`[CRITICAL] ${message}`)
-  failLoudly(error, 'buildParentChildrenProtocolBranchRelations', { silentUI: true })
+  failLoudly(error, 'buildParentChildrenProtocolBranchRelations', {
+    silentUI: true,
+  })
   throw error
 }
 
@@ -93,11 +94,16 @@ function resolveRootChildNodeIds(
     protocolDraft.rootChildren.length > 0
       ? protocolDraft.rootChildren
       : protocolDraft.branchNodes
-          .filter((branchNode: BOMWorkspaceParentChildrenProtocolBranchDraft) => {
-            const parentId = normalizeOptionalId(branchNode.parentId)
-            return parentId === null || parentId === rootNodeId
-          })
-          .map((branchNode: BOMWorkspaceParentChildrenProtocolBranchDraft) => branchNode.id)
+          .filter(
+            (branchNode: BOMWorkspaceParentChildrenProtocolBranchDraft) => {
+              const parentId = normalizeOptionalId(branchNode.parentId)
+              return parentId === null || parentId === rootNodeId
+            }
+          )
+          .map(
+            (branchNode: BOMWorkspaceParentChildrenProtocolBranchDraft) =>
+              branchNode.id
+          )
 
   ensureUniqueIds(derivedRootChildNodeIds, 'protocol root child')
 
@@ -109,7 +115,9 @@ function resolveRootChildNodeIds(
 
     const parentId = normalizeOptionalId(branchDraft.parentId)
     if (parentId !== null && parentId !== rootNodeId) {
-      throwProtocolAdapterError(`Root child branch ${nodeId} must use root parent`)
+      throwProtocolAdapterError(
+        `Root child branch ${nodeId} must use root parent`
+      )
     }
   })
 
@@ -120,8 +128,14 @@ function createResolvedFormItemReferences(
   fields: Array<{ id: string }>,
   watchedItems?: BOM['items']
 ) {
-  const referencesByItemId = new Map<string, BOMWorkspaceResolvedFormItemReference>()
-  const referencesByFieldId = new Map<string, BOMWorkspaceResolvedFormItemReference>()
+  const referencesByItemId = new Map<
+    string,
+    BOMWorkspaceResolvedFormItemReference
+  >()
+  const referencesByFieldId = new Map<
+    string,
+    BOMWorkspaceResolvedFormItemReference
+  >()
 
   fields.forEach((field, index) => {
     const item = watchedItems?.[index]
@@ -180,9 +194,14 @@ function resolveFormItemReference(
   const normalizedDraftItemId = itemDraft.itemId
 
   return (
-    (normalizedDraftItemId ? referencesByItemId.get(normalizedDraftItemId) : undefined) ??
+    (normalizedDraftItemId
+      ? referencesByItemId.get(normalizedDraftItemId)
+      : undefined) ??
     referencesByItemId.get(normalizedDraftNodeId) ??
-    resolveFieldReferenceByProtocolNodeId(normalizedDraftNodeId, referencesByFieldId) ??
+    resolveFieldReferenceByProtocolNodeId(
+      normalizedDraftNodeId,
+      referencesByFieldId
+    ) ??
     throwProtocolAdapterError(
       `Unable to resolve protocol item node to current form row: ${normalizedDraftNodeId}`
     )
@@ -200,11 +219,15 @@ function resolveBranchRole(
     (isRootChild ? 'section' : 'collection')
 
   if (isRootChild && branchRole !== 'section') {
-    throwProtocolAdapterError(`Root child branch must use section role: ${branchId}`)
+    throwProtocolAdapterError(
+      `Root child branch must use section role: ${branchId}`
+    )
   }
 
   if (!isRootChild && branchRole === 'section') {
-    throwProtocolAdapterError(`Nested branch cannot use section role: ${branchId}`)
+    throwProtocolAdapterError(
+      `Nested branch cannot use section role: ${branchId}`
+    )
   }
 
   return branchRole
@@ -212,12 +235,12 @@ function resolveBranchRole(
 
 /**
  * 构建基于父子关系协议的分支关系
- * 
+ *
  * 此函数返回一个构建器，该构建器使用提供的协议草稿来构建分支关系。
- * 
+ *
  * @param protocolDraft - 父子关系协议草稿
  * @returns 分支关系构建器函数
- * 
+ *
  * @example
  * ```typescript
  * const builder = buildParentChildrenProtocolBranchRelations(myProtocol)
@@ -234,10 +257,17 @@ export function buildParentChildrenProtocolBranchRelations(
   protocolDraft: BOMWorkspaceParentChildrenProtocolDraft
 ): BOMWorkspaceBranchRelationBuilder {
   return (params): BOMWorkspaceBranchRelationBuildResult => {
-    const { activeSections, fields, watchedItems, resolveNumericField, rootNodeId } = params
+    const {
+      activeSections,
+      fields,
+      watchedItems,
+      resolveNumericField,
+      rootNodeId,
+    } = params
 
     const branchDraftIds = protocolDraft.branchNodes.map(
-      (branchNode: BOMWorkspaceParentChildrenProtocolBranchDraft) => branchNode.id
+      (branchNode: BOMWorkspaceParentChildrenProtocolBranchDraft) =>
+        branchNode.id
     )
     const itemDraftIds = protocolDraft.itemNodes.map(
       (itemNode: BOMWorkspaceParentChildrenProtocolItemDraft) => itemNode.id
@@ -255,50 +285,96 @@ export function buildParentChildrenProtocolBranchRelations(
       )
     }
 
-    if (branchDraftIds.includes(rootNodeId) || itemDraftIds.includes(rootNodeId)) {
-      throwProtocolAdapterError(`Protocol node id cannot reuse root node id: ${rootNodeId}`)
+    if (
+      branchDraftIds.includes(rootNodeId) ||
+      itemDraftIds.includes(rootNodeId)
+    ) {
+      throwProtocolAdapterError(
+        `Protocol node id cannot reuse root node id: ${rootNodeId}`
+      )
     }
 
-    const branchDraftById = new Map<string, BOMWorkspaceParentChildrenProtocolBranchDraft>(
+    const branchDraftById = new Map<
+      string,
+      BOMWorkspaceParentChildrenProtocolBranchDraft
+    >(
       protocolDraft.branchNodes.map(
-        (branchNode: BOMWorkspaceParentChildrenProtocolBranchDraft) => [branchNode.id, branchNode]
+        (branchNode: BOMWorkspaceParentChildrenProtocolBranchDraft) => [
+          branchNode.id,
+          branchNode,
+        ]
       )
     )
     const allNodeIds = new Set<string>([...branchDraftIds, ...itemDraftIds])
 
-    const rootChildNodeIds = resolveRootChildNodeIds(protocolDraft, branchDraftById, rootNodeId)
+    const rootChildNodeIds = resolveRootChildNodeIds(
+      protocolDraft,
+      branchDraftById,
+      rootNodeId
+    )
     const rootChildNodeIdSet = new Set<string>(rootChildNodeIds)
 
-    const branchNodes = protocolDraft.branchNodes.map<BOMWorkspaceSourceBranchNode>(
-      (branchDraft: BOMWorkspaceParentChildrenProtocolBranchDraft) => {
-        const branchNodeId = branchDraft.id
-        const parentId = normalizeOptionalId(branchDraft.parentId)
-        const branchRole = resolveBranchRole(branchDraft, rootChildNodeIdSet)
-        const { section, sectionName } = resolveSectionOptionForProtocol(
-          branchDraft.sectionCode,
-          branchDraft.sectionName,
-          activeSections
-        )
-        const childNodeIds = branchDraft.children
+    const branchNodes =
+      protocolDraft.branchNodes.map<BOMWorkspaceSourceBranchNode>(
+        (branchDraft: BOMWorkspaceParentChildrenProtocolBranchDraft) => {
+          const branchNodeId = branchDraft.id
+          const parentId = normalizeOptionalId(branchDraft.parentId)
+          const branchRole = resolveBranchRole(branchDraft, rootChildNodeIdSet)
+          const { section, sectionName } = resolveSectionOptionForProtocol(
+            branchDraft.sectionCode,
+            branchDraft.sectionName,
+            activeSections
+          )
+          const childNodeIds = branchDraft.children
 
-        ensureUniqueIds(childNodeIds, `protocol child node for branch ${branchNodeId}`)
+          ensureUniqueIds(
+            childNodeIds,
+            `protocol child node for branch ${branchNodeId}`
+          )
 
-        childNodeIds.forEach((childNodeId: string) => {
-          if (!allNodeIds.has(childNodeId)) {
+          childNodeIds.forEach((childNodeId: string) => {
+            if (!allNodeIds.has(childNodeId)) {
+              throwProtocolAdapterError(
+                `Branch ${branchNodeId} references missing child node: ${childNodeId}`
+              )
+            }
+          })
+
+          if (rootChildNodeIdSet.has(branchNodeId)) {
+            if (parentId !== null && parentId !== rootNodeId) {
+              throwProtocolAdapterError(
+                `Root child branch ${branchNodeId} must use root parent`
+              )
+            }
+
+            return {
+              nodeId: branchNodeId,
+              parentNodeId: rootNodeId,
+              childNodeIds,
+              nodeKind: 'branch',
+              branchRole,
+              sectionCode: section.code,
+              sectionName,
+              label: branchDraft.label || section.name,
+              section,
+            }
+          }
+
+          if (!parentId || parentId === rootNodeId) {
             throwProtocolAdapterError(
-              `Branch ${branchNodeId} references missing child node: ${childNodeId}`
+              `Nested branch ${branchNodeId} must reference a non-root branch parent`
             )
           }
-        })
 
-        if (rootChildNodeIdSet.has(branchNodeId)) {
-          if (parentId !== null && parentId !== rootNodeId) {
-            throwProtocolAdapterError(`Root child branch ${branchNodeId} must use root parent`)
+          if (!branchDraftById.has(parentId)) {
+            throwProtocolAdapterError(
+              `Nested branch ${branchNodeId} references missing parent branch: ${parentId}`
+            )
           }
 
           return {
             nodeId: branchNodeId,
-            parentNodeId: rootNodeId,
+            parentNodeId: parentId,
             childNodeIds,
             nodeKind: 'branch',
             branchRole,
@@ -308,37 +384,10 @@ export function buildParentChildrenProtocolBranchRelations(
             section,
           }
         }
+      )
 
-        if (!parentId || parentId === rootNodeId) {
-          throwProtocolAdapterError(
-            `Nested branch ${branchNodeId} must reference a non-root branch parent`
-          )
-        }
-
-        if (!branchDraftById.has(parentId)) {
-          throwProtocolAdapterError(
-            `Nested branch ${branchNodeId} references missing parent branch: ${parentId}`
-          )
-        }
-
-        return {
-          nodeId: branchNodeId,
-          parentNodeId: parentId,
-          childNodeIds,
-          nodeKind: 'branch',
-          branchRole,
-          sectionCode: section.code,
-          sectionName,
-          label: branchDraft.label || section.name,
-          section,
-        }
-      }
-    )
-
-    const { referencesByItemId, referencesByFieldId } = createResolvedFormItemReferences(
-      fields,
-      watchedItems
-    )
+    const { referencesByItemId, referencesByFieldId } =
+      createResolvedFormItemReferences(fields, watchedItems)
 
     const leafNodes = protocolDraft.itemNodes.map<BOMWorkspaceSourceLeafNode>(
       (itemDraft: BOMWorkspaceParentChildrenProtocolItemDraft) => {
@@ -352,11 +401,15 @@ export function buildParentChildrenProtocolBranchRelations(
         const childNodeIds = itemDraft.children
 
         if (childNodeIds.length > 0) {
-          throwProtocolAdapterError(`Leaf item node cannot have children: ${itemNodeId}`)
+          throwProtocolAdapterError(
+            `Leaf item node cannot have children: ${itemNodeId}`
+          )
         }
 
         if (!parentId || parentId === rootNodeId) {
-          throwProtocolAdapterError(`Leaf item node must reference a branch parent: ${itemNodeId}`)
+          throwProtocolAdapterError(
+            `Leaf item node must reference a branch parent: ${itemNodeId}`
+          )
         }
 
         if (!branchDraftById.has(parentId)) {
@@ -409,7 +462,10 @@ export function buildParentChildrenProtocolBranchRelations(
       ])
     )
     const leafNodeById = new Map<string, BOMWorkspaceSourceLeafNode>(
-      leafNodes.map((leafNode: BOMWorkspaceSourceLeafNode) => [leafNode.nodeId, leafNode])
+      leafNodes.map((leafNode: BOMWorkspaceSourceLeafNode) => [
+        leafNode.nodeId,
+        leafNode,
+      ])
     )
 
     branchNodes.forEach((branchNode: BOMWorkspaceSourceBranchNode) => {
@@ -458,25 +514,36 @@ export function buildParentChildrenProtocolBranchRelations(
         const childBranchNode = branchNodeById.get(childNodeId)
         const childLeafNode = leafNodeById.get(childNodeId)
 
-        if (childBranchNode && childBranchNode.parentNodeId !== branchNode.nodeId) {
-          throwProtocolAdapterError(`Child branch parent relation mismatch: ${childNodeId}`)
+        if (
+          childBranchNode &&
+          childBranchNode.parentNodeId !== branchNode.nodeId
+        ) {
+          throwProtocolAdapterError(
+            `Child branch parent relation mismatch: ${childNodeId}`
+          )
         }
 
         if (childLeafNode && childLeafNode.parentNodeId !== branchNode.nodeId) {
-          throwProtocolAdapterError(`Child leaf parent relation mismatch: ${childNodeId}`)
+          throwProtocolAdapterError(
+            `Child leaf parent relation mismatch: ${childNodeId}`
+          )
         }
       })
     })
 
     const sectionBranchNodes = branchNodes.filter(
-      (branchNode: BOMWorkspaceSourceBranchNode) => branchNode.branchRole === 'section'
+      (branchNode: BOMWorkspaceSourceBranchNode) =>
+        branchNode.branchRole === 'section'
     )
     const collectionBranchNodes = branchNodes.filter(
-      (branchNode: BOMWorkspaceSourceBranchNode) => branchNode.branchRole === 'collection'
+      (branchNode: BOMWorkspaceSourceBranchNode) =>
+        branchNode.branchRole === 'collection'
     )
 
     ensureUniqueIds(
-      sectionBranchNodes.map((branchNode: BOMWorkspaceSourceBranchNode) => branchNode.sectionCode),
+      sectionBranchNodes.map(
+        (branchNode: BOMWorkspaceSourceBranchNode) => branchNode.sectionCode
+      ),
       'section branch sectionCode'
     )
 

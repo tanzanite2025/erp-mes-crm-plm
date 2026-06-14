@@ -9,8 +9,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { TrackingNumberInput } from '@/components/tracking-number-input'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useHierarchyLevelLabels } from '@/features/production-shared/tabs/hierarchy-config/hooks/use-hierarchy-level-labels'
 import { createWheelTraceApiGateway } from '../adapters/wheel-trace/api-wheel-trace-gateway'
 import { usePageInstall } from '../hooks'
@@ -88,9 +88,12 @@ export function WheelTraceShellPage({
     }
   }, [])
 
-  const handleLookup = useCallback(async (nextRawCode?: string) => {
-    await executeLookup(nextRawCode ?? rawCode)
-  }, [executeLookup, rawCode])
+  const handleLookup = useCallback(
+    async (nextRawCode?: string) => {
+      await executeLookup(nextRawCode ?? rawCode)
+    },
+    [executeLookup, rawCode]
+  )
 
   useEffect(() => {
     if (autoOpenScanner) {
@@ -116,14 +119,16 @@ export function WheelTraceShellPage({
         title='车圈追溯'
         description='独立追溯页已经切到真实查询接口，当前返回条码解析、产品匹配和生产拓扑锚点，后续可继续接入真实过站记录。'
         icon={SearchCheck}
-        statusBadge={<div className='flex flex-wrap gap-2'>
-          <Badge className='border-none bg-emerald-500/10 text-emerald-700'>
-            SHELL_READY
-          </Badge>
-          <Badge className='border-none bg-blue-500/10 text-blue-700'>
-            REAL_API
-          </Badge>
-        </div>}
+        statusBadge={
+          <div className='flex flex-wrap gap-2'>
+            <Badge className='border-none bg-emerald-500/10 text-emerald-700'>
+              SHELL_READY
+            </Badge>
+            <Badge className='border-none bg-blue-500/10 text-blue-700'>
+              REAL_API
+            </Badge>
+          </div>
+        }
       />
 
       <Card className='rounded-[28px] border-dashed border-muted/50 bg-muted/5 shadow-inner'>
@@ -179,7 +184,8 @@ export function WheelTraceShellPage({
               Current Hierarchy Snapshot
             </CardTitle>
             <CardDescription className='text-[10px] font-medium text-muted-foreground/70 md:text-[11px]'>
-              当前{level1Name}、{level3Name}与班组快照已经来自真实接口。没有真实过站记录时，会返回配置推断的锚点并附带提示。
+              当前{level1Name}、{level3Name}
+              与班组快照已经来自真实接口。没有真实过站记录时，会返回配置推断的锚点并附带提示。
             </CardDescription>
           </CardHeader>
           <CardContent className='grid grid-cols-1 gap-4 text-[11px] md:grid-cols-2'>

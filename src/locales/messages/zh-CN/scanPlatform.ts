@@ -1,7 +1,8 @@
 export const scanPlatform = {
   panel: {
     title: '扫码能力模组',
-    description: '这里展示当前扫码能力平台已经拆出的功能模组，以及每个模组更适合挂在哪一类宿主页。',
+    description:
+      '这里展示当前扫码能力平台已经拆出的功能模组，以及每个模组更适合挂在哪一类宿主页。',
     moduleCount: '{{count}} 个模组',
     host: '宿主页',
     mode: '模式',
@@ -33,7 +34,8 @@ export const scanPlatform = {
     },
     wheelTrace: {
       name: '车圈追溯',
-      description: '用于查询车圈当前层级锚点、历史轨迹与最近处理记录的扫码插件。',
+      description:
+        '用于查询车圈当前层级锚点、历史轨迹与最近处理记录的扫码插件。',
       hostLabel: '独立追溯页',
       statusLabel: '真实接口',
       targetLabel: '车圈追溯查询',

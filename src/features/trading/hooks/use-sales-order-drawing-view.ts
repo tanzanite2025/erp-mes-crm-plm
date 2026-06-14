@@ -14,11 +14,13 @@ const DRAWING_META: Record<DrawingType, DrawingViewMeta> = {
   },
   drilling: {
     type: 'drilling',
-    className: 'border-indigo-200/50 hover:bg-indigo-500/10 hover:text-indigo-600',
+    className:
+      'border-indigo-200/50 hover:bg-indigo-500/10 hover:text-indigo-600',
   },
   labeling: {
     type: 'labeling',
-    className: 'border-teal-200/50 text-teal-600 hover:bg-teal-500/10 hover:text-teal-600',
+    className:
+      'border-teal-200/50 text-teal-600 hover:bg-teal-500/10 hover:text-teal-600',
   },
 }
 

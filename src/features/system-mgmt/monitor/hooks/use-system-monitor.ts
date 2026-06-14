@@ -12,7 +12,13 @@ export function useSystemMonitor() {
   const { data } = useQuery({
     queryKey: ['system-health-integrity'],
     queryFn: () =>
-      apiFetch<{ integrity?: { anomalies: string[]; isHealing: boolean; details: string[] } }>('/health'),
+      apiFetch<{
+        integrity?: {
+          anomalies: string[]
+          isHealing: boolean
+          details: string[]
+        }
+      }>('/health'),
     refetchInterval: 300000,
     staleTime: 60000,
     retry: 2,
@@ -31,7 +37,8 @@ export function useSystemMonitor() {
     if (hasFsAnomaly) {
       addMessage({
         title: '文件存储权限告警',
-        content: '检测到核心存储目录 (uploads/backups) 无法写入，这会导致上传与备份任务失败。',
+        content:
+          '检测到核心存储目录 (uploads/backups) 无法写入，这会导致上传与备份任务失败。',
         type: 'SYSTEM_NOTICE',
         priority: 'critical',
         metadata: {

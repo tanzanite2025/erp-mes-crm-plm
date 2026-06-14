@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { AlertTriangle, Lock, ShieldAlert } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,9 +11,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { cn } from '@/lib/utils'
+import { Input } from '@/components/ui/input'
 
 const CONFIRM_KEYWORD = 'DELETE'
 
@@ -70,7 +70,11 @@ export function BusinessEventSourceDeleteDialog({
                   : 'bg-rose-100 text-rose-600'
               )}
             >
-              {isReferenced ? <Lock className='size-5' /> : <AlertTriangle className='size-5' />}
+              {isReferenced ? (
+                <Lock className='size-5' />
+              ) : (
+                <AlertTriangle className='size-5' />
+              )}
             </div>
             <AlertDialogTitle className='text-base font-black tracking-tight uppercase italic'>
               {isReferenced ? '无法删除业务事件源' : '危险操作：删除业务事件源'}
@@ -78,15 +82,20 @@ export function BusinessEventSourceDeleteDialog({
           </div>
           <div className='flex flex-wrap items-center gap-2'>
             <span className='text-sm font-bold'>{sourceName}</span>
-            <Badge variant='outline' className='rounded-full font-mono text-[10px] font-semibold text-muted-foreground'>
+            <Badge
+              variant='outline'
+              className='rounded-full font-mono text-[10px] font-semibold text-muted-foreground'
+            >
               {sourceCode}
             </Badge>
           </div>
-          <AlertDialogDescription className='text-xs font-bold leading-6 text-muted-foreground'>
+          <AlertDialogDescription className='text-xs leading-6 font-bold text-muted-foreground'>
             {isReferenced ? (
               <>
                 当前事件源被{' '}
-                <span className='font-black text-amber-700'>{referencingRuleCount}</span>{' '}
+                <span className='font-black text-amber-700'>
+                  {referencingRuleCount}
+                </span>{' '}
                 条通知规则引用，必须先解除引用才能删除。
               </>
             ) : (
@@ -104,13 +113,16 @@ export function BusinessEventSourceDeleteDialog({
 
         {isReferenced ? (
           <div className='rounded-2xl border border-dashed border-amber-300 bg-amber-50/60 px-4 py-3'>
-            <div className='flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-amber-700'>
+            <div className='flex items-center gap-2 text-[11px] font-black tracking-widest text-amber-700 uppercase'>
               <ShieldAlert className='size-3.5' />
               规则引用清单
             </div>
             <ul className='mt-2 flex flex-col gap-1 text-xs font-bold text-amber-900'>
               {referencingRuleNames.slice(0, 6).map((name, index) => (
-                <li key={`${name}-${index}`} className='flex items-center gap-2'>
+                <li
+                  key={`${name}-${index}`}
+                  className='flex items-center gap-2'
+                >
                   <span className='size-1 rounded-full bg-amber-500' />
                   {name}
                 </li>
@@ -127,7 +139,7 @@ export function BusinessEventSourceDeleteDialog({
           </div>
         ) : (
           <div className='flex flex-col gap-2'>
-            <label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground'>
+            <label className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
               输入 DELETE 以确认
             </label>
             <Input
@@ -158,7 +170,7 @@ export function BusinessEventSourceDeleteDialog({
               void onConfirm()
             }}
             className={cn(
-              'rounded-full text-xs font-black uppercase tracking-widest',
+              'rounded-full text-xs font-black tracking-widest uppercase',
               isReferenced
                 ? 'bg-muted text-muted-foreground'
                 : 'bg-rose-600 text-white hover:bg-rose-700'

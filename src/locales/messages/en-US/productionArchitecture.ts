@@ -11,7 +11,8 @@ export const productionArchitecture = {
   mindmap: {
     header: {
       title: 'Line Mindmap',
-      subtitle: 'Validate a constrained mindmap editor with {{level1Name}} / {{level2Name}} / {{level3Name}} as the hierarchy backbone',
+      subtitle:
+        'Validate a constrained mindmap editor with {{level1Name}} / {{level2Name}} / {{level3Name}} as the hierarchy backbone',
     },
   },
 }

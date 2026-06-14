@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
+import { receivableQueryKeys } from '../query-keys'
 import {
   getReceivables,
   searchReceivableLedgers,
   type ReceivableListQueryParams,
   type ReceivableLedgerSearchParams,
 } from '../services/receivables-query-service'
-import { receivableQueryKeys } from '../query-keys'
 
 interface UseGetReceivablesOptions {
   enabled?: boolean
@@ -25,8 +25,18 @@ export function useGetReceivables(
   })
 }
 
-export function useSearchReceivableLedgers(params: ReceivableLedgerSearchParams) {
-  const { keyword, status, currency, outstandingMin, outstandingMax, sortBy, sortOrder } = params
+export function useSearchReceivableLedgers(
+  params: ReceivableLedgerSearchParams
+) {
+  const {
+    keyword,
+    status,
+    currency,
+    outstandingMin,
+    outstandingMax,
+    sortBy,
+    sortOrder,
+  } = params
 
   return useQuery({
     queryKey: receivableQueryKeys.receivableSearch(
@@ -39,7 +49,15 @@ export function useSearchReceivableLedgers(params: ReceivableLedgerSearchParams)
       sortOrder
     ),
     queryFn: () =>
-      searchReceivableLedgers({ keyword, status, currency, outstandingMin, outstandingMax, sortBy, sortOrder }),
+      searchReceivableLedgers({
+        keyword,
+        status,
+        currency,
+        outstandingMin,
+        outstandingMax,
+        sortBy,
+        sortOrder,
+      }),
     enabled: keyword.trim().length >= 2,
   })
 }

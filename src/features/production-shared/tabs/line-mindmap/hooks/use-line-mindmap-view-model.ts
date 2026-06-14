@@ -10,14 +10,15 @@ import type { LineMindmapNodeDraftMap } from './use-line-mindmap-node-drafts'
 
 function applyNodeDraftMap(
   nodes: LineMindmapNode[],
-  nodeDraftMap: LineMindmapNodeDraftMap,
+  nodeDraftMap: LineMindmapNodeDraftMap
 ): LineMindmapNode[] {
   let hasChanges = false
 
   const nextNodes = nodes.map((node) => {
-    const nextChildren = node.children.length > 0
-      ? applyNodeDraftMap(node.children, nodeDraftMap)
-      : node.children
+    const nextChildren =
+      node.children.length > 0
+        ? applyNodeDraftMap(node.children, nodeDraftMap)
+        : node.children
     const draft = nodeDraftMap[node.id]
     const childrenChanged = nextChildren !== node.children
 
@@ -37,7 +38,9 @@ function applyNodeDraftMap(
   return hasChanges ? nextNodes : nodes
 }
 
-function createNodeIndex(nodes: LineMindmapNode[]): Map<string, LineMindmapNode> {
+function createNodeIndex(
+  nodes: LineMindmapNode[]
+): Map<string, LineMindmapNode> {
   const nodeIndex = new Map<string, LineMindmapNode>()
 
   const visit = (currentNodes: LineMindmapNode[]) => {
@@ -77,7 +80,7 @@ export function useLineMindmapViewModel({
   }, [activeLineId, lineOptions])
   const activeLine = useMemo(
     () => lines.find((line) => line.id === resolvedLineId) ?? null,
-    [lines, resolvedLineId],
+    [lines, resolvedLineId]
   )
   const baseNodes = useMemo(() => toLineMindmapNodes(activeLine), [activeLine])
   const nodes = useMemo(() => {
@@ -96,8 +99,11 @@ export function useLineMindmapViewModel({
     return getDefaultSelectedNodeId(nodes)
   }, [nodeIndex, nodes, selectedNodeId])
   const selectedNode = useMemo(
-    () => (resolvedSelectedNodeId ? nodeIndex.get(resolvedSelectedNodeId) ?? null : null),
-    [nodeIndex, resolvedSelectedNodeId],
+    () =>
+      resolvedSelectedNodeId
+        ? (nodeIndex.get(resolvedSelectedNodeId) ?? null)
+        : null,
+    [nodeIndex, resolvedSelectedNodeId]
   )
 
   const handleSelectNode = useCallback((nodeId: string) => {

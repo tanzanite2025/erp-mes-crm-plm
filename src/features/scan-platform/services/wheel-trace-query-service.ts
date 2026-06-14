@@ -1,4 +1,8 @@
-import type { WheelTracePayload, WheelTraceStageSnapshot, WheelTraceTimelineNode } from '../models/wheel-trace'
+import type {
+  WheelTracePayload,
+  WheelTraceStageSnapshot,
+  WheelTraceTimelineNode,
+} from '../models/wheel-trace'
 
 export interface WheelTraceLookupRequest {
   rawCode: string
@@ -12,7 +16,9 @@ export interface WheelTraceLookupResponse {
 }
 
 export interface WheelTraceQueryGateway {
-  lookup: (request: WheelTraceLookupRequest) => Promise<WheelTraceLookupResponse>
+  lookup: (
+    request: WheelTraceLookupRequest
+  ) => Promise<WheelTraceLookupResponse>
 }
 
 async function defaultLookup(): Promise<WheelTraceLookupResponse> {
@@ -26,14 +32,19 @@ async function defaultLookup(): Promise<WheelTraceLookupResponse> {
 }
 
 export const wheelTraceQueryService = {
-  createGateway(gateway?: Partial<WheelTraceQueryGateway>): WheelTraceQueryGateway {
+  createGateway(
+    gateway?: Partial<WheelTraceQueryGateway>
+  ): WheelTraceQueryGateway {
     return {
       lookup: gateway?.lookup || defaultLookup,
     }
   },
 
   async enrichPayload(
-    payload: Pick<WheelTracePayload, 'summary' | 'barcode' | 'identity' | 'warnings'>,
+    payload: Pick<
+      WheelTracePayload,
+      'summary' | 'barcode' | 'identity' | 'warnings'
+    >,
     request: WheelTraceLookupRequest,
     gateway?: Partial<WheelTraceQueryGateway>
   ): Promise<WheelTracePayload> {

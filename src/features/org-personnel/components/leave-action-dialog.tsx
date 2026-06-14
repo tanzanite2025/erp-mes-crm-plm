@@ -3,6 +3,7 @@ import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
+import { Button } from '@/components/ui/button'
 import { Combobox } from '@/components/ui/combobox'
 import {
   Dialog,
@@ -12,7 +13,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
 import {
   Form,
   FormControl,
@@ -31,7 +31,10 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { getLeaveTypeLabel } from '../data/leave-display'
-import { leaveCreateFormSchema, type LeaveCreateForm } from '../data/leave-request-schema'
+import {
+  leaveCreateFormSchema,
+  type LeaveCreateForm,
+} from '../data/leave-request-schema'
 import { useEmployeesQuery } from '../hooks/use-employees-query'
 import { useSubmitLeaveRequest } from '../hooks/use-submit-leave-request'
 
@@ -60,7 +63,10 @@ function toIsoString(localValue: string): string {
   return new Date(localValue).toISOString()
 }
 
-export function LeaveActionDialog({ open, onOpenChange }: LeaveActionDialogProps) {
+export function LeaveActionDialog({
+  open,
+  onOpenChange,
+}: LeaveActionDialogProps) {
   const { locale, t } = useLanguage()
   const form = useForm<LeaveCreateForm>({
     resolver: zodResolver(leaveCreateFormSchema),
@@ -83,9 +89,16 @@ export function LeaveActionDialog({ open, onOpenChange }: LeaveActionDialogProps
       .map((employee) => ({
         label: employee.name,
         value: employee.id,
-        secondaryLabel: employee.deptName || employee.positionName || employee.status,
+        secondaryLabel:
+          employee.deptName || employee.positionName || employee.status,
         tertiaryLabel: employee.staffId || employee.id,
-        keywords: [employee.name, employee.staffId, employee.deptName, employee.positionName, employee.phone]
+        keywords: [
+          employee.name,
+          employee.staffId,
+          employee.deptName,
+          employee.positionName,
+          employee.phone,
+        ]
           .filter(Boolean)
           .join(' '),
       }))
@@ -120,7 +133,12 @@ export function LeaveActionDialog({ open, onOpenChange }: LeaveActionDialogProps
   }, [open, reset, resetPreview])
 
   const handlePreview = async () => {
-    const valid = await form.trigger(['employeeId', 'leaveType', 'startTime', 'endTime'])
+    const valid = await form.trigger([
+      'employeeId',
+      'leaveType',
+      'startTime',
+      'endTime',
+    ])
     if (!valid) return
 
     const values = form.getValues()
@@ -141,33 +159,45 @@ export function LeaveActionDialog({ open, onOpenChange }: LeaveActionDialogProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='w-[95vw] sm:max-w-[560px] rounded-3xl border-dashed p-0 overflow-hidden'>
-        <div className='relative p-6 md:p-8 space-y-6'>
+      <DialogContent className='w-[95vw] overflow-hidden rounded-3xl border-dashed p-0 sm:max-w-[560px]'>
+        <div className='relative space-y-6 p-6 md:p-8'>
           <DialogHeader className='text-left'>
-            <DialogTitle className='text-lg md:text-xl font-black tracking-tighter uppercase italic'>
+            <DialogTitle className='text-lg font-black tracking-tighter uppercase italic md:text-xl'>
               {t('orgPersonnel.leaveMgmt.actionDialog.title')}
             </DialogTitle>
-            <DialogDescription className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+            <DialogDescription className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
               {t('orgPersonnel.leaveMgmt.actionDialog.description')}
             </DialogDescription>
           </DialogHeader>
 
           <Form {...form}>
-            <form id='leave-action-form' className='space-y-5' onSubmit={form.handleSubmit(handleSubmit)}>
+            <form
+              id='leave-action-form'
+              className='space-y-5'
+              onSubmit={form.handleSubmit(handleSubmit)}
+            >
               <FormField
                 control={form.control}
                 name='employeeId'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className='text-[10px] font-black uppercase tracking-widest'>{t('orgPersonnel.leaveMgmt.actionDialog.employee')}</FormLabel>
+                    <FormLabel className='text-[10px] font-black tracking-widest uppercase'>
+                      {t('orgPersonnel.leaveMgmt.actionDialog.employee')}
+                    </FormLabel>
                     <FormControl>
                       <Combobox
                         variant='industrial'
                         value={field.value}
                         onValueChange={field.onChange}
-                        placeholder={t('orgPersonnel.leaveMgmt.actionDialog.employeePlaceholder')}
-                        searchPlaceholder={t('orgPersonnel.leaveMgmt.actionDialog.employeeSearchPlaceholder')}
-                        emptyText={t('orgPersonnel.leaveMgmt.actionDialog.employeeEmpty')}
+                        placeholder={t(
+                          'orgPersonnel.leaveMgmt.actionDialog.employeePlaceholder'
+                        )}
+                        searchPlaceholder={t(
+                          'orgPersonnel.leaveMgmt.actionDialog.employeeSearchPlaceholder'
+                        )}
+                        emptyText={t(
+                          'orgPersonnel.leaveMgmt.actionDialog.employeeEmpty'
+                        )}
                         options={employeeOptions}
                         isLoading={employeesQuery.isLoading}
                       />
@@ -182,11 +212,17 @@ export function LeaveActionDialog({ open, onOpenChange }: LeaveActionDialogProps
                 name='leaveType'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className='text-[10px] font-black uppercase tracking-widest'>{t('orgPersonnel.leaveMgmt.actionDialog.leaveType')}</FormLabel>
+                    <FormLabel className='text-[10px] font-black tracking-widest uppercase'>
+                      {t('orgPersonnel.leaveMgmt.actionDialog.leaveType')}
+                    </FormLabel>
                     <Select value={field.value} onValueChange={field.onChange}>
                       <FormControl>
-                        <SelectTrigger className='w-full h-11 rounded-2xl'>
-                          <SelectValue placeholder={t('orgPersonnel.leaveMgmt.actionDialog.leaveTypePlaceholder')} />
+                        <SelectTrigger className='h-11 w-full rounded-2xl'>
+                          <SelectValue
+                            placeholder={t(
+                              'orgPersonnel.leaveMgmt.actionDialog.leaveTypePlaceholder'
+                            )}
+                          />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -202,15 +238,21 @@ export function LeaveActionDialog({ open, onOpenChange }: LeaveActionDialogProps
                 )}
               />
 
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+              <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
                 <FormField
                   control={form.control}
                   name='startTime'
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className='text-[10px] font-black uppercase tracking-widest'>{t('orgPersonnel.leaveMgmt.actionDialog.startTime')}</FormLabel>
+                      <FormLabel className='text-[10px] font-black tracking-widest uppercase'>
+                        {t('orgPersonnel.leaveMgmt.actionDialog.startTime')}
+                      </FormLabel>
                       <FormControl>
-                        <Input type='datetime-local' className='h-11 rounded-2xl' {...field} />
+                        <Input
+                          type='datetime-local'
+                          className='h-11 rounded-2xl'
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -222,9 +264,15 @@ export function LeaveActionDialog({ open, onOpenChange }: LeaveActionDialogProps
                   name='endTime'
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className='text-[10px] font-black uppercase tracking-widest'>{t('orgPersonnel.leaveMgmt.actionDialog.endTime')}</FormLabel>
+                      <FormLabel className='text-[10px] font-black tracking-widest uppercase'>
+                        {t('orgPersonnel.leaveMgmt.actionDialog.endTime')}
+                      </FormLabel>
                       <FormControl>
-                        <Input type='datetime-local' className='h-11 rounded-2xl' {...field} />
+                        <Input
+                          type='datetime-local'
+                          className='h-11 rounded-2xl'
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -237,11 +285,15 @@ export function LeaveActionDialog({ open, onOpenChange }: LeaveActionDialogProps
                 name='reason'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className='text-[10px] font-black uppercase tracking-widest'>{t('orgPersonnel.leaveMgmt.actionDialog.reason')}</FormLabel>
+                    <FormLabel className='text-[10px] font-black tracking-widest uppercase'>
+                      {t('orgPersonnel.leaveMgmt.actionDialog.reason')}
+                    </FormLabel>
                     <FormControl>
                       <Textarea
                         className='min-h-28 rounded-2xl'
-                        placeholder={t('orgPersonnel.leaveMgmt.actionDialog.reasonPlaceholder')}
+                        placeholder={t(
+                          'orgPersonnel.leaveMgmt.actionDialog.reasonPlaceholder'
+                        )}
                         {...field}
                       />
                     </FormControl>
@@ -253,52 +305,68 @@ export function LeaveActionDialog({ open, onOpenChange }: LeaveActionDialogProps
           </Form>
 
           {preview ? (
-            <div className='rounded-2xl border border-dashed bg-primary/5 p-4 flex items-center justify-between gap-4'>
+            <div className='flex items-center justify-between gap-4 rounded-2xl border border-dashed bg-primary/5 p-4'>
               <div className='space-y-1'>
-                <p className='text-[10px] font-black uppercase tracking-widest opacity-60'>{t('orgPersonnel.leaveMgmt.actionDialog.previewTitle')}</p>
-                <p className='text-sm font-black italic tracking-tighter uppercase'>
-                  {preview.employeeName || t('orgPersonnel.leaveMgmt.actionDialog.employeeFallback')}
+                <p className='text-[10px] font-black tracking-widest uppercase opacity-60'>
+                  {t('orgPersonnel.leaveMgmt.actionDialog.previewTitle')}
+                </p>
+                <p className='text-sm font-black tracking-tighter uppercase italic'>
+                  {preview.employeeName ||
+                    t('orgPersonnel.leaveMgmt.actionDialog.employeeFallback')}
                 </p>
                 <p className='text-[11px] text-muted-foreground'>
-                  {toDateTimeLocalValue(preview.startTime)} → {toDateTimeLocalValue(preview.endTime)}
+                  {toDateTimeLocalValue(preview.startTime)} →{' '}
+                  {toDateTimeLocalValue(preview.endTime)}
                 </p>
               </div>
               <div className='text-right'>
-                <p className='text-2xl font-black italic tracking-tighter text-primary'>
+                <p className='text-2xl font-black tracking-tighter text-primary italic'>
                   {preview.durationDays.toFixed(1)}
                 </p>
-                <p className='text-[9px] font-black uppercase tracking-widest opacity-50'>{t('orgPersonnel.leaveMgmt.actionDialog.daysLabel')}</p>
+                <p className='text-[9px] font-black tracking-widest uppercase opacity-50'>
+                  {t('orgPersonnel.leaveMgmt.actionDialog.daysLabel')}
+                </p>
               </div>
             </div>
           ) : null}
 
-          <DialogFooter className='flex-col-reverse md:flex-row md:justify-between gap-3'>
+          <DialogFooter className='flex-col-reverse gap-3 md:flex-row md:justify-between'>
             <Button
               type='button'
               variant='outline'
-              className='h-11 rounded-full px-6 font-black text-[10px] uppercase tracking-widest'
+              className='h-11 rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
               onClick={() => onOpenChange(false)}
             >
               {t('orgPersonnel.leaveMgmt.actionDialog.close')}
             </Button>
-            <div className='flex flex-col-reverse md:flex-row gap-3 w-full md:w-auto'>
+            <div className='flex w-full flex-col-reverse gap-3 md:w-auto md:flex-row'>
               <Button
                 type='button'
                 variant='outline'
-                className='h-11 rounded-full px-6 font-black text-[10px] uppercase tracking-widest'
+                className='h-11 rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
                 onClick={handlePreview}
-                disabled={!hasSelectedEmployee(employeeId) || isPreviewing || isSubmitting || !startTime || !endTime}
+                disabled={
+                  !hasSelectedEmployee(employeeId) ||
+                  isPreviewing ||
+                  isSubmitting ||
+                  !startTime ||
+                  !endTime
+                }
               >
-                {isPreviewing ? <Loader2 className='size-4 animate-spin' /> : null}
+                {isPreviewing ? (
+                  <Loader2 className='size-4 animate-spin' />
+                ) : null}
                 {t('orgPersonnel.leaveMgmt.actionDialog.preview')}
               </Button>
               <Button
                 type='submit'
                 form='leave-action-form'
-                className='h-11 rounded-full px-6 font-black text-[10px] uppercase tracking-widest'
+                className='h-11 rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
                 disabled={!hasSelectedEmployee(employeeId) || isSubmitting}
               >
-                {isSubmitting ? <Loader2 className='size-4 animate-spin' /> : null}
+                {isSubmitting ? (
+                  <Loader2 className='size-4 animate-spin' />
+                ) : null}
                 {t('orgPersonnel.leaveMgmt.actionDialog.submit')}
               </Button>
             </div>

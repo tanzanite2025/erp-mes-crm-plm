@@ -1,13 +1,13 @@
 import * as React from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { CloudOff, RefreshCw, Trash2, Truck } from 'lucide-react'
-import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { toast } from 'sonner'
+import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
-import { useLanguage } from '@/context/language-provider'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { usePurchaseLogisticsOfflineDrafts } from './hooks/use-purchase-logistics-offline-drafts'
 import { PurchaseLogisticsList } from './purchase-logistics-list'
@@ -16,7 +16,8 @@ import { PURCHASE_LOGISTICS_KEYS } from './query-keys'
 export function PurchaseLogisticsPage() {
   const { t } = useLanguage()
   const queryClient = useQueryClient()
-  const { drafts, removeDraft, syncDrafts } = usePurchaseLogisticsOfflineDrafts()
+  const { drafts, removeDraft, syncDrafts } =
+    usePurchaseLogisticsOfflineDrafts()
   const [isOnline, setIsOnline] = React.useState(() =>
     typeof navigator === 'undefined' ? true : navigator.onLine
   )
@@ -36,9 +37,13 @@ export function PurchaseLogisticsPage() {
         const result = await syncDrafts()
 
         if (result.syncedCount > 0) {
-          queryClient.invalidateQueries({ queryKey: PURCHASE_LOGISTICS_KEYS.listRoot })
+          queryClient.invalidateQueries({
+            queryKey: PURCHASE_LOGISTICS_KEYS.listRoot,
+          })
           toast.success(t('purchase.logistics.offlineSyncSuccess'), {
-            description: t('purchase.logistics.offlineSyncSuccessDesc', { count: result.syncedCount }),
+            description: t('purchase.logistics.offlineSyncSuccessDesc', {
+              count: result.syncedCount,
+            }),
             icon: <Truck className='h-4 w-4' />,
           })
           return
@@ -87,7 +92,7 @@ export function PurchaseLogisticsPage() {
   }, [isOnline]) // 故意不监听 drafts.length，防止同步过程中的回流引发死循环
 
   return (
-    <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+    <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
       <IndustrialHeader
         icon={Truck}
         title={t('purchase.logistics.title')}
@@ -109,7 +114,7 @@ export function PurchaseLogisticsPage() {
               <div className='space-y-2'>
                 <div className='flex items-center gap-2'>
                   <CloudOff className='size-4 text-amber-700' />
-                  <CardTitle className='text-sm font-black italic tracking-tighter uppercase text-amber-900'>
+                  <CardTitle className='text-sm font-black tracking-tighter text-amber-900 uppercase italic'>
                     {t('purchase.logistics.offlineDraftsTitle')}
                   </CardTitle>
                   <Badge className='rounded-full border border-amber-200 bg-white text-amber-700'>
@@ -117,21 +122,32 @@ export function PurchaseLogisticsPage() {
                   </Badge>
                 </div>
 
-                <p className='text-[10px] font-black uppercase tracking-widest text-amber-700/80'>
+                <p className='text-[10px] font-black tracking-widest text-amber-700/80 uppercase'>
                   {t('purchase.logistics.offlineDraftsDesc')}
                 </p>
 
                 <div className='flex flex-wrap gap-2'>
-                  <Badge variant='outline' className='border-amber-300 bg-white text-amber-700'>
-                    {t('purchase.logistics.offlineDraftStatusPending')}: {pendingDrafts.length}
+                  <Badge
+                    variant='outline'
+                    className='border-amber-300 bg-white text-amber-700'
+                  >
+                    {t('purchase.logistics.offlineDraftStatusPending')}:{' '}
+                    {pendingDrafts.length}
                   </Badge>
                   {blockedDrafts.length > 0 ? (
-                    <Badge variant='outline' className='border-rose-300 bg-white text-rose-700'>
-                      {t('purchase.logistics.offlineDraftStatusBlocked')}: {blockedDrafts.length}
+                    <Badge
+                      variant='outline'
+                      className='border-rose-300 bg-white text-rose-700'
+                    >
+                      {t('purchase.logistics.offlineDraftStatusBlocked')}:{' '}
+                      {blockedDrafts.length}
                     </Badge>
                   ) : null}
                   {!isOnline ? (
-                    <Badge variant='outline' className='border-slate-300 bg-white text-slate-500'>
+                    <Badge
+                      variant='outline'
+                      className='border-slate-300 bg-white text-slate-500'
+                    >
                       {t('purchase.logistics.offlineNetworkStatus')}
                     </Badge>
                   ) : null}
@@ -143,9 +159,11 @@ export function PurchaseLogisticsPage() {
                 variant='outline'
                 disabled={isSyncing || !isOnline || pendingDrafts.length === 0}
                 onClick={() => void performSync('manual')}
-                className='rounded-full border-amber-300 bg-white text-[10px] font-black uppercase tracking-widest text-amber-700 hover:bg-amber-100'
+                className='rounded-full border-amber-300 bg-white text-[10px] font-black tracking-widest text-amber-700 uppercase hover:bg-amber-100'
               >
-                <RefreshCw className={`me-2 size-3 ${isSyncing ? 'animate-spin' : ''}`} />
+                <RefreshCw
+                  className={`me-2 size-3 ${isSyncing ? 'animate-spin' : ''}`}
+                />
                 {isSyncing
                   ? t('purchase.logistics.offlineSyncing')
                   : t('purchase.logistics.offlineSyncNow')}
@@ -177,17 +195,21 @@ export function PurchaseLogisticsPage() {
                       </Badge>
                     </div>
 
-                    <p className='text-[10px] font-black uppercase tracking-widest text-slate-500'>
+                    <p className='text-[10px] font-black tracking-widest text-slate-500 uppercase'>
                       {draft.orderNo || '--'} / {draft.carrier || '--'}
                     </p>
 
                     <p className='text-[10px] font-medium text-slate-500'>
-                      {t('purchase.logistics.offlineSavedAt', { time: draft.updatedAt })}
+                      {t('purchase.logistics.offlineSavedAt', {
+                        time: draft.updatedAt,
+                      })}
                     </p>
 
                     {draft.lastError ? (
                       <p className='text-[10px] font-medium text-rose-600'>
-                        {t('purchase.logistics.offlineLastError', { message: draft.lastError })}
+                        {t('purchase.logistics.offlineLastError', {
+                          message: draft.lastError,
+                        })}
                       </p>
                     ) : null}
                   </div>

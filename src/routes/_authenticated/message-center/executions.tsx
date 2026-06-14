@@ -1,8 +1,8 @@
+import { z } from 'zod'
 import { createFileRoute } from '@tanstack/react-router'
 import { Logs } from 'lucide-react'
-import { z } from 'zod'
-import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { RuleExecutionLogTab } from '@/features/system-mgmt/tabs/rule-execution-log-tab'
 
 const executionsSearchSchema = z.object({
@@ -19,7 +19,9 @@ const executionsSearchSchema = z.object({
     .catch('all'),
 })
 
-export const Route = createFileRoute('/_authenticated/message-center/executions')({
+export const Route = createFileRoute(
+  '/_authenticated/message-center/executions'
+)({
   validateSearch: (search) => executionsSearchSchema.parse(search),
   component: ExecutionsRouteComponent,
 })
@@ -30,7 +32,7 @@ function ExecutionsRouteComponent() {
   const navigate = Route.useNavigate()
 
   return (
-    <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+    <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
       <IndustrialHeader
         icon={Logs}
         title={t('messageCenter.pages.executions.title')}

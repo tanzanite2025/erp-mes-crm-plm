@@ -8,7 +8,8 @@ export const printMgmt = {
     unknownProduct: 'Unknown Product',
     defaultSection: 'Default',
     afterPrint: 'Print triggered',
-    saveRecordFailed: 'Failed to save the print record. Printing will continue.',
+    saveRecordFailed:
+      'Failed to save the print record. Printing will continue.',
     print: 'Print',
     defaultChangeType: 'Manual',
     productLabel: 'Product',
@@ -41,7 +42,8 @@ export const printMgmt = {
     issueDept: 'Issued By',
     issuedBy: 'Released By',
     recipientDept: 'Recipients',
-    recipients: 'Material Control, Material Prep, Rolling, Forming, Machining, Finishing, Coating (1 copy each)',
+    recipients:
+      'Material Control, Material Prep, Rolling, Forming, Machining, Finishing, Coating (1 copy each)',
     proofread: 'Proofread',
     approve: 'Approve',
     preparedBy: 'Prepared By',
@@ -70,7 +72,8 @@ export const printMgmt = {
       'A request has been initiated for template "{{name}}". This feature is under development.',
     modifiedLabel: 'Last Modified',
     visualDesignerPlaceholderTitle: 'Visual Designer Placeholder',
-    visualDesignerPlaceholderDescription: 'Select a template on the left to load the visual editor',
+    visualDesignerPlaceholderDescription:
+      'Select a template on the left to load the visual editor',
     actions: {
       preview: 'Preview',
       edit: 'Edit Template',
@@ -93,7 +96,8 @@ export const printMgmt = {
   records: {
     searchPlaceholder: 'Search batch number or template name...',
     totalLabel: 'TOTAL / {{count}} records',
-    confirmScrap: 'Are you sure to scrap this batch? Related activations will become invalid.',
+    confirmScrap:
+      'Are you sure to scrap this batch? Related activations will become invalid.',
     activationButton: 'Activate & Verify',
     tableHeaders: {
       batchNo: 'Print Batch No.',
@@ -117,7 +121,8 @@ export const printMgmt = {
     },
     verifyDialog: {
       title: 'Batch Activation Verification',
-      description: 'Simulate scan-signal ingestion. Please enter the physically verified quantity.',
+      description:
+        'Simulate scan-signal ingestion. Please enter the physically verified quantity.',
       batchLabel: 'Batch',
       pendingLabel: 'Pending',
       inputLabel: 'Verified Quantity',

@@ -20,16 +20,21 @@ export const InventoryThresholdService = {
     return inventoryThresholdRuleListResponseSchema.parse(payload).items
   },
 
-  getTargetOptions: async (): Promise<InventoryThresholdTargetOptionsResponse> => {
-    const res = await apiFetch<unknown>('/warehouse/threshold-rules/target-options')
-    const payload = ensureObjectResponse<Record<string, unknown>>(
-      res,
-      'InventoryThresholdService.getTargetOptions'
-    )
-    return inventoryThresholdTargetOptionsResponseSchema.parse(payload)
-  },
+  getTargetOptions:
+    async (): Promise<InventoryThresholdTargetOptionsResponse> => {
+      const res = await apiFetch<unknown>(
+        '/warehouse/threshold-rules/target-options'
+      )
+      const payload = ensureObjectResponse<Record<string, unknown>>(
+        res,
+        'InventoryThresholdService.getTargetOptions'
+      )
+      return inventoryThresholdTargetOptionsResponseSchema.parse(payload)
+    },
 
-  createRule: async (payload: InventoryThresholdRuleWritePayload): Promise<InventoryThresholdRule> => {
+  createRule: async (
+    payload: InventoryThresholdRuleWritePayload
+  ): Promise<InventoryThresholdRule> => {
     const body = inventoryThresholdRuleWritePayloadSchema.parse(payload)
     const res = await apiFetch<unknown>('/warehouse/threshold-rules', {
       method: 'POST',
@@ -40,7 +45,7 @@ export const InventoryThresholdService = {
 
   updateRule: async (
     id: string,
-    payload: InventoryThresholdRuleWritePayload,
+    payload: InventoryThresholdRuleWritePayload
   ): Promise<InventoryThresholdRule> => {
     const body = inventoryThresholdRuleWritePayloadSchema.parse(payload)
     const res = await apiFetch<unknown>(`/warehouse/threshold-rules/${id}`, {

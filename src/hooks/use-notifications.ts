@@ -1,12 +1,12 @@
 import { useEffect, useRef } from 'react'
-import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth-store'
 import { useNotificationStore as useLegacyNotificationStore } from '@/stores/notification-store'
+import { createLogger } from '@/lib/logger'
+import { useScanActivityStore } from '@/features/dashboard/stores/scan-activity-store'
 import { useNotificationStore as useSystemNotificationStore } from '@/features/system-mgmt/notifications/notification-store'
 import type { NotificationPriority } from '@/features/system-mgmt/notifications/types'
-import { useScanActivityStore } from '@/features/dashboard/stores/scan-activity-store'
-import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('useNotifications')
 
@@ -21,9 +21,15 @@ function resolvePriorityFromSeverity(severity: string): NotificationPriority {
 export const useNotifications = () => {
   const user = useAuthStore((state) => state.user)
   const accessToken = useAuthStore((state) => state.accessToken)
-  const incrementUnread = useLegacyNotificationStore((state) => state.incrementUnread)
-  const addSystemMessage = useSystemNotificationStore((state) => state.addMessage)
-  const archiveSystemMessage = useSystemNotificationStore((state) => state.archiveMessage)
+  const incrementUnread = useLegacyNotificationStore(
+    (state) => state.incrementUnread
+  )
+  const addSystemMessage = useSystemNotificationStore(
+    (state) => state.addMessage
+  )
+  const archiveSystemMessage = useSystemNotificationStore(
+    (state) => state.archiveMessage
+  )
   const addScanActivity = useScanActivityStore((state) => state.addFromPayload)
   const queryClient = useQueryClient()
   const socketRef = useRef<WebSocket | null>(null)
@@ -47,7 +53,9 @@ export const useNotifications = () => {
           const data = JSON.parse(event.data)
 
           if (data.type === 'SYSTEM_STATUS_CHANGE') {
-            queryClient.invalidateQueries({ queryKey: ['system-health-integrity'] })
+            queryClient.invalidateQueries({
+              queryKey: ['system-health-integrity'],
+            })
             return
           }
 
@@ -59,21 +67,35 @@ export const useNotifications = () => {
             return
           }
 
-          if (data.module === 'Scan' && data.action === 'INGESTED' && data.payload) {
+          if (
+            data.module === 'Scan' &&
+            data.action === 'INGESTED' &&
+            data.payload
+          ) {
             addScanActivity(data.payload)
             return
           }
 
           if (data.module === 'System' && data.action === 'ALERT') {
             const payload = data.payload || {}
-            const description = payload.description || '检测到基础设施异常，请立即查看系统监控页面'
-            const fingerprint = String(payload.fingerprint || payload.id || payload.name || payload.description || Date.now())
+            const description =
+              payload.description ||
+              '检测到基础设施异常，请立即查看系统监控页面'
+            const fingerprint = String(
+              payload.fingerprint ||
+                payload.id ||
+                payload.name ||
+                payload.description ||
+                Date.now()
+            )
 
             addSystemMessage({
               type: 'SYSTEM_NOTICE',
               title: data.title || '系统自诊断异常',
               content: description,
-              priority: resolvePriorityFromSeverity(String(payload.severity || 'critical')),
+              priority: resolvePriorityFromSeverity(
+                String(payload.severity || 'critical')
+              ),
               metadata: {
                 uniqueKey: `system_alert_${fingerprint}`,
                 fingerprint,
@@ -86,7 +108,9 @@ export const useNotifications = () => {
             queryClient.invalidateQueries({ queryKey: ['service-status'] })
             queryClient.invalidateQueries({ queryKey: ['active-alerts'] })
             queryClient.invalidateQueries({ queryKey: ['diagnostic-alerts'] })
-            queryClient.invalidateQueries({ queryKey: ['sidebar-system-active-alerts'] })
+            queryClient.invalidateQueries({
+              queryKey: ['sidebar-system-active-alerts'],
+            })
             return
           }
 
@@ -97,7 +121,9 @@ export const useNotifications = () => {
               const uniqueKey = `system_alert_${fingerprint}`
               const target = useSystemNotificationStore
                 .getState()
-                .messages.find((m) => m.metadata?.uniqueKey === uniqueKey && !m.isArchived)
+                .messages.find(
+                  (m) => m.metadata?.uniqueKey === uniqueKey && !m.isArchived
+                )
 
               if (target) {
                 archiveSystemMessage(target.id)
@@ -106,13 +132,18 @@ export const useNotifications = () => {
 
             queryClient.invalidateQueries({ queryKey: ['active-alerts'] })
             queryClient.invalidateQueries({ queryKey: ['diagnostic-alerts'] })
-            queryClient.invalidateQueries({ queryKey: ['sidebar-system-active-alerts'] })
+            queryClient.invalidateQueries({
+              queryKey: ['sidebar-system-active-alerts'],
+            })
             return
           }
 
           if (data.targetUser === user.id) {
             toast.info(data.title || '您有新的系统消息', {
-              description: data.payload?.reason || data.payload?.description || '请前往中心查看详情',
+              description:
+                data.payload?.reason ||
+                data.payload?.description ||
+                '请前往中心查看详情',
               duration: 10000,
             })
             incrementUnread()
@@ -123,7 +154,9 @@ export const useNotifications = () => {
       }
 
       socket.onclose = (event) => {
-        logger.warn(`WebSocket disconnected (Code: ${event.code}, Reason: ${event.reason || 'None'}). Retry scheduled in 5 seconds`)
+        logger.warn(
+          `WebSocket disconnected (Code: ${event.code}, Reason: ${event.reason || 'None'}). Retry scheduled in 5 seconds`
+        )
         setTimeout(connect, 5000)
       }
 
@@ -138,7 +171,15 @@ export const useNotifications = () => {
     return () => {
       socketRef.current?.close()
     }
-  }, [user?.id, accessToken, incrementUnread, queryClient, addSystemMessage, archiveSystemMessage, addScanActivity])
+  }, [
+    user?.id,
+    accessToken,
+    incrementUnread,
+    queryClient,
+    addSystemMessage,
+    archiveSystemMessage,
+    addScanActivity,
+  ])
 
   return null
 }

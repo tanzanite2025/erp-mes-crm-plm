@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useState, type ComponentType, type ReactNode } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type ComponentType,
+  type ReactNode,
+} from 'react'
 import { GitBranchPlus, Layers3, Route } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -41,7 +47,10 @@ interface MindmapCreateChildDialogProps extends BaseDialogProps {
   parentNodes: MindmapParentNodeOption[]
   options: HierarchyLevelOptionItem[]
   defaultParentId?: string
-  onSubmit: (parentId: string, option: HierarchyLevelOptionItem) => DialogSubmitValue
+  onSubmit: (
+    parentId: string,
+    option: HierarchyLevelOptionItem
+  ) => DialogSubmitValue
   onOpenHierarchyConfig: () => void
 }
 
@@ -50,7 +59,10 @@ interface MindmapCreateProcessDialogProps extends BaseDialogProps {
   levelName: string
   parentNodes: MindmapParentNodeOption[]
   defaultParentId?: string
-  onSubmit: (draft: LineMindmapProcessDraft, parentJobCategoryId: string) => DialogSubmitValue<unknown>
+  onSubmit: (
+    draft: LineMindmapProcessDraft,
+    parentJobCategoryId: string
+  ) => DialogSubmitValue<unknown>
 }
 
 function MindmapDialogShell({
@@ -79,8 +91,10 @@ function MindmapDialogShell({
                 <Icon className='size-4 text-primary' />
               </div>
               <div className='space-y-1'>
-                <DialogTitle className='text-sm font-black italic tracking-tighter uppercase'>{title}</DialogTitle>
-                <DialogDescription className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                <DialogTitle className='text-sm font-black tracking-tighter uppercase italic'>
+                  {title}
+                </DialogTitle>
+                <DialogDescription className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                   {description}
                 </DialogDescription>
               </div>
@@ -104,12 +118,15 @@ export function MindmapCreateRootDialog({
   const [selectedOptionId, setSelectedOptionId] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const resolvedOptionId = useMemo(
-    () => (options.some((option) => option.id === selectedOptionId) ? selectedOptionId : options[0]?.id ?? ''),
-    [options, selectedOptionId],
+    () =>
+      options.some((option) => option.id === selectedOptionId)
+        ? selectedOptionId
+        : (options[0]?.id ?? ''),
+    [options, selectedOptionId]
   )
   const selectedOption = useMemo(
     () => options.find((option) => option.id === resolvedOptionId) ?? null,
-    [options, resolvedOptionId],
+    [options, resolvedOptionId]
   )
 
   useEffect(() => {
@@ -142,20 +159,27 @@ export function MindmapCreateRootDialog({
     >
       <div className='space-y-4'>
         {options.length > 0 ? (
-          <Select value={resolvedOptionId || undefined} onValueChange={setSelectedOptionId}>
+          <Select
+            value={resolvedOptionId || undefined}
+            onValueChange={setSelectedOptionId}
+          >
             <SelectTrigger className='h-12 rounded-2xl border-none bg-muted/50 px-4 text-[11px] font-black shadow-none'>
               <SelectValue placeholder={`选择${levelName}候选项`} />
             </SelectTrigger>
             <SelectContent>
               {options.map((option) => (
-                <SelectItem key={option.id} value={option.id} className='text-[11px] font-black'>
+                <SelectItem
+                  key={option.id}
+                  value={option.id}
+                  className='text-[11px] font-black'
+                >
                   {option.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         ) : (
-          <div className='rounded-[24px] border border-dashed border-amber-300/70 bg-amber-500/10 px-4 py-4 text-[10px] font-black uppercase tracking-widest text-amber-700'>
+          <div className='rounded-[24px] border border-dashed border-amber-300/70 bg-amber-500/10 px-4 py-4 text-[10px] font-black tracking-widest text-amber-700 uppercase'>
             当前还没有可用的{levelName}候选项，请先去维护层级配置。
           </div>
         )}
@@ -164,14 +188,14 @@ export function MindmapCreateRootDialog({
         <Button
           type='button'
           variant='outline'
-          className='h-11 rounded-full border-dashed px-5 text-[10px] font-black uppercase tracking-widest'
+          className='h-11 rounded-full border-dashed px-5 text-[10px] font-black tracking-widest uppercase'
           onClick={onOpenHierarchyConfig}
         >
           <Layers3 className='size-4' /> 维护层级配置
         </Button>
         <Button
           type='button'
-          className='h-11 rounded-full px-5 text-[10px] font-black uppercase tracking-widest'
+          className='h-11 rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
           onClick={() => void handleSubmit()}
           disabled={!selectedOption || isSubmitting}
         >
@@ -193,20 +217,31 @@ export function MindmapCreateChildDialog({
   onSubmit,
   onOpenHierarchyConfig,
 }: MindmapCreateChildDialogProps) {
-  const [selectedParentId, setSelectedParentId] = useState(defaultParentId ?? '')
+  const [selectedParentId, setSelectedParentId] = useState(
+    defaultParentId ?? ''
+  )
   const [selectedOptionId, setSelectedOptionId] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const resolvedParentId = useMemo(
-    () => (parentNodes.some((node) => node.id === selectedParentId) ? selectedParentId : defaultParentId && parentNodes.some((node) => node.id === defaultParentId) ? defaultParentId : parentNodes[0]?.id ?? ''),
-    [defaultParentId, parentNodes, selectedParentId],
+    () =>
+      parentNodes.some((node) => node.id === selectedParentId)
+        ? selectedParentId
+        : defaultParentId &&
+            parentNodes.some((node) => node.id === defaultParentId)
+          ? defaultParentId
+          : (parentNodes[0]?.id ?? ''),
+    [defaultParentId, parentNodes, selectedParentId]
   )
   const resolvedOptionId = useMemo(
-    () => (options.some((option) => option.id === selectedOptionId) ? selectedOptionId : options[0]?.id ?? ''),
-    [options, selectedOptionId],
+    () =>
+      options.some((option) => option.id === selectedOptionId)
+        ? selectedOptionId
+        : (options[0]?.id ?? ''),
+    [options, selectedOptionId]
   )
   const selectedOption = useMemo(
     () => options.find((option) => option.id === resolvedOptionId) ?? null,
-    [options, resolvedOptionId],
+    [options, resolvedOptionId]
   )
 
   useEffect(() => {
@@ -242,39 +277,53 @@ export function MindmapCreateChildDialog({
     >
       <div className='space-y-4'>
         {parentNodes.length > 0 ? (
-          <Select value={resolvedParentId || undefined} onValueChange={setSelectedParentId}>
+          <Select
+            value={resolvedParentId || undefined}
+            onValueChange={setSelectedParentId}
+          >
             <SelectTrigger className='h-12 rounded-2xl border-none bg-muted/50 px-4 text-[11px] font-black shadow-none'>
               <SelectValue placeholder={`选择${parentLevelName}父节点`} />
             </SelectTrigger>
             <SelectContent>
               {parentNodes.map((node) => (
-                <SelectItem key={node.id} value={node.id} className='text-[11px] font-black'>
+                <SelectItem
+                  key={node.id}
+                  value={node.id}
+                  className='text-[11px] font-black'
+                >
                   {node.label}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         ) : (
-          <div className='rounded-[24px] border border-dashed border-amber-300/70 bg-amber-500/10 px-4 py-4 text-[10px] font-black uppercase tracking-widest text-amber-700'>
+          <div className='rounded-[24px] border border-dashed border-amber-300/70 bg-amber-500/10 px-4 py-4 text-[10px] font-black tracking-widest text-amber-700 uppercase'>
             当前还没有可用的{parentLevelName}节点，请先创建{parentLevelName}。
           </div>
         )}
 
         {options.length > 0 ? (
-          <Select value={resolvedOptionId || undefined} onValueChange={setSelectedOptionId}>
+          <Select
+            value={resolvedOptionId || undefined}
+            onValueChange={setSelectedOptionId}
+          >
             <SelectTrigger className='h-12 rounded-2xl border-none bg-muted/50 px-4 text-[11px] font-black shadow-none'>
               <SelectValue placeholder={`选择${levelName}候选项`} />
             </SelectTrigger>
             <SelectContent>
               {options.map((option) => (
-                <SelectItem key={option.id} value={option.id} className='text-[11px] font-black'>
+                <SelectItem
+                  key={option.id}
+                  value={option.id}
+                  className='text-[11px] font-black'
+                >
                   {option.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         ) : (
-          <div className='rounded-[24px] border border-dashed border-amber-300/70 bg-amber-500/10 px-4 py-4 text-[10px] font-black uppercase tracking-widest text-amber-700'>
+          <div className='rounded-[24px] border border-dashed border-amber-300/70 bg-amber-500/10 px-4 py-4 text-[10px] font-black tracking-widest text-amber-700 uppercase'>
             当前还没有可用的{levelName}候选项，请先去维护层级配置。
           </div>
         )}
@@ -283,14 +332,14 @@ export function MindmapCreateChildDialog({
         <Button
           type='button'
           variant='outline'
-          className='h-11 rounded-full border-dashed px-5 text-[10px] font-black uppercase tracking-widest'
+          className='h-11 rounded-full border-dashed px-5 text-[10px] font-black tracking-widest uppercase'
           onClick={onOpenHierarchyConfig}
         >
           <Layers3 className='size-4' /> 维护层级配置
         </Button>
         <Button
           type='button'
-          className='h-11 rounded-full px-5 text-[10px] font-black uppercase tracking-widest'
+          className='h-11 rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
           onClick={() => void handleSubmit()}
           disabled={!resolvedParentId || !selectedOption || isSubmitting}
         >
@@ -310,7 +359,9 @@ export function MindmapCreateProcessDialog({
   defaultParentId,
   onSubmit,
 }: MindmapCreateProcessDialogProps) {
-  const [selectedParentId, setSelectedParentId] = useState(defaultParentId ?? '')
+  const [selectedParentId, setSelectedParentId] = useState(
+    defaultParentId ?? ''
+  )
   const [draft, setDraft] = useState<LineMindmapProcessDraft>({
     description: '',
     isActive: true,
@@ -318,12 +369,18 @@ export function MindmapCreateProcessDialog({
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const resolvedParentId = useMemo(
-    () => (parentNodes.some((node) => node.id === selectedParentId) ? selectedParentId : defaultParentId && parentNodes.some((node) => node.id === defaultParentId) ? defaultParentId : parentNodes[0]?.id ?? ''),
-    [defaultParentId, parentNodes, selectedParentId],
+    () =>
+      parentNodes.some((node) => node.id === selectedParentId)
+        ? selectedParentId
+        : defaultParentId &&
+            parentNodes.some((node) => node.id === defaultParentId)
+          ? defaultParentId
+          : (parentNodes[0]?.id ?? ''),
+    [defaultParentId, parentNodes, selectedParentId]
   )
   const selectedParentNode = useMemo(
     () => parentNodes.find((node) => node.id === resolvedParentId) ?? null,
-    [parentNodes, resolvedParentId],
+    [parentNodes, resolvedParentId]
   )
 
   useEffect(() => {
@@ -353,7 +410,7 @@ export function MindmapCreateProcessDialog({
           isActive: draft.isActive,
           name: draft.name,
         },
-        selectedParentNode.sourceId,
+        selectedParentNode.sourceId
       )
       onOpenChange(false)
     } finally {
@@ -371,45 +428,68 @@ export function MindmapCreateProcessDialog({
     >
       <div className='space-y-4'>
         {parentNodes.length > 0 ? (
-          <Select value={resolvedParentId || undefined} onValueChange={setSelectedParentId}>
+          <Select
+            value={resolvedParentId || undefined}
+            onValueChange={setSelectedParentId}
+          >
             <SelectTrigger className='h-12 rounded-2xl border-none bg-muted/50 px-4 text-[11px] font-black shadow-none'>
               <SelectValue placeholder={`选择${parentLevelName}父节点`} />
             </SelectTrigger>
             <SelectContent>
               {parentNodes.map((node) => (
-                <SelectItem key={node.id} value={node.id} className='text-[11px] font-black'>
+                <SelectItem
+                  key={node.id}
+                  value={node.id}
+                  className='text-[11px] font-black'
+                >
                   {node.label}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         ) : (
-          <div className='rounded-[24px] border border-dashed border-amber-300/70 bg-amber-500/10 px-4 py-4 text-[10px] font-black uppercase tracking-widest text-amber-700'>
+          <div className='rounded-[24px] border border-dashed border-amber-300/70 bg-amber-500/10 px-4 py-4 text-[10px] font-black tracking-widest text-amber-700 uppercase'>
             当前还没有可用的{parentLevelName}节点，请先创建{parentLevelName}。
           </div>
         )}
         <Input
           value={draft.name}
-          onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
+          onChange={(event) =>
+            setDraft((current) => ({ ...current, name: event.target.value }))
+          }
           placeholder={`输入${levelName}名称`}
           className='h-12 rounded-2xl border-none bg-muted/50 px-4 text-[11px] font-black shadow-none'
         />
         <Textarea
           value={draft.description}
-          onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}
+          onChange={(event) =>
+            setDraft((current) => ({
+              ...current,
+              description: event.target.value,
+            }))
+          }
           placeholder={`补充${levelName}说明`}
           className='min-h-24 rounded-[24px] border-none bg-muted/50 text-[11px] shadow-none'
         />
         <Select
           value={draft.isActive ? 'active' : 'inactive'}
-          onValueChange={(value) => setDraft((current) => ({ ...current, isActive: value === 'active' }))}
+          onValueChange={(value) =>
+            setDraft((current) => ({
+              ...current,
+              isActive: value === 'active',
+            }))
+          }
         >
           <SelectTrigger className='h-12 rounded-2xl border-none bg-muted/50 px-4 text-[11px] font-black shadow-none'>
             <SelectValue placeholder='选择启用状态' />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value='active' className='text-[11px] font-black'>启用</SelectItem>
-            <SelectItem value='inactive' className='text-[11px] font-black'>停用</SelectItem>
+            <SelectItem value='active' className='text-[11px] font-black'>
+              启用
+            </SelectItem>
+            <SelectItem value='inactive' className='text-[11px] font-black'>
+              停用
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -417,16 +497,18 @@ export function MindmapCreateProcessDialog({
         <Button
           type='button'
           variant='outline'
-          className='h-11 rounded-full border-dashed px-5 text-[10px] font-black uppercase tracking-widest'
+          className='h-11 rounded-full border-dashed px-5 text-[10px] font-black tracking-widest uppercase'
           onClick={() => onOpenChange(false)}
         >
           取消
         </Button>
         <Button
           type='button'
-          className='h-11 rounded-full px-5 text-[10px] font-black uppercase tracking-widest'
+          className='h-11 rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
           onClick={() => void handleSubmit()}
-          disabled={!selectedParentNode?.sourceId || !draft.name.trim() || isSubmitting}
+          disabled={
+            !selectedParentNode?.sourceId || !draft.name.trim() || isSubmitting
+          }
         >
           创建并挂接{levelName}
         </Button>

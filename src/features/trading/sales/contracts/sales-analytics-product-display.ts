@@ -1,4 +1,5 @@
-export const SALES_ANALYTICS_PRODUCT_DISPLAY_STRATEGY_VERSION = 'product-display-v1' as const
+export const SALES_ANALYTICS_PRODUCT_DISPLAY_STRATEGY_VERSION =
+  'product-display-v1' as const
 
 export interface SalesAnalyticsProductDisplay {
   title: string

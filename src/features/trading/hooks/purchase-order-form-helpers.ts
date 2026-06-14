@@ -1,15 +1,30 @@
-import { toast } from 'sonner'
 import { type TranslationKey } from '@/locales'
+import { toast } from 'sonner'
 import { type PurchaseOrder, type PurchaseOrderLine } from '../data/schema'
-import { previewLineAmount, previewOrderTotals } from '../utils/sales-order-calc'
-import { DEFAULT_PURCHASE_ORDER, EMPTY_PURCHASE_ORDER_LINE } from './purchase-order-form-defaults'
+import {
+  previewLineAmount,
+  previewOrderTotals,
+} from '../utils/sales-order-calc'
+import {
+  DEFAULT_PURCHASE_ORDER,
+  EMPTY_PURCHASE_ORDER_LINE,
+} from './purchase-order-form-defaults'
 
-type PurchaseOrderTranslate = (key: TranslationKey, params?: Record<string, string | number>) => string
+type PurchaseOrderTranslate = (
+  key: TranslationKey,
+  params?: Record<string, string | number>
+) => string
 
-export function createNewPurchaseOrderDraft(purchaserName: string, exchangeRate: number): PurchaseOrder {
+export function createNewPurchaseOrderDraft(
+  purchaserName: string,
+  exchangeRate: number
+): PurchaseOrder {
   const now = new Date()
   const date = now.toISOString().split('T')[0]
-  const newId = `PO${now.toISOString().replace(/[-:T.Z]/g, '').slice(0, 14)}`
+  const newId = `PO${now
+    .toISOString()
+    .replace(/[-:T.Z]/g, '')
+    .slice(0, 14)}`
 
   return {
     ...DEFAULT_PURCHASE_ORDER,
@@ -27,10 +42,7 @@ export function appendPurchaseOrderLine(lines: PurchaseOrderLine[]): {
   lines: PurchaseOrderLine[]
   amount: number
 } {
-  const nextLines = [
-    ...lines,
-    EMPTY_PURCHASE_ORDER_LINE,
-  ]
+  const nextLines = [...lines, EMPTY_PURCHASE_ORDER_LINE]
   const { lines: reindexedLines, amount } = previewOrderTotals(nextLines)
 
   return {
@@ -39,12 +51,17 @@ export function appendPurchaseOrderLine(lines: PurchaseOrderLine[]): {
   }
 }
 
-export function removePurchaseOrderLine(lines: PurchaseOrderLine[], index: number): {
+export function removePurchaseOrderLine(
+  lines: PurchaseOrderLine[],
+  index: number
+): {
   lines: PurchaseOrderLine[]
   amount: number
 } {
   if (index < 0 || index >= lines.length) {
-    throw new Error(`[CRITICAL] Cannot remove purchase order line at index ${index}: Lines missing or index out of bounds`)
+    throw new Error(
+      `[CRITICAL] Cannot remove purchase order line at index ${index}: Lines missing or index out of bounds`
+    )
   }
 
   const nextRawLines = lines.filter((_, lineIndex) => lineIndex !== index)
@@ -70,7 +87,9 @@ export function updatePurchaseOrderLine(
   const targetLine = nextLines[index]
 
   if (!targetLine) {
-    throw new Error(`[CRITICAL] Update failed: Purchase line at index ${index} not found in state`)
+    throw new Error(
+      `[CRITICAL] Update failed: Purchase line at index ${index} not found in state`
+    )
   }
 
   nextLines[index] = { ...targetLine, [field]: value, ...extraData }
@@ -105,7 +124,9 @@ export function validatePurchaseOrderForm(
     return false
   }
 
-  const hasInvalidLine = formData.lines.some((line) => !line.materialName || (Number(line.qty) || 0) <= 0)
+  const hasInvalidLine = formData.lines.some(
+    (line) => !line.materialName || (Number(line.qty) || 0) <= 0
+  )
   if (hasInvalidLine) {
     toast.error(t('purchase.orders.validation.lineInvalid'))
     return false

@@ -68,7 +68,9 @@ export function useProductOwnersMap(): {
         existing.push({
           type: ownerType,
           customerId,
-          customerName: customerId ? customerNameMap.get(customerId) : undefined,
+          customerName: customerId
+            ? customerNameMap.get(customerId)
+            : undefined,
           dedupKey,
         })
       } else {
@@ -76,7 +78,9 @@ export function useProductOwnersMap(): {
           {
             type: ownerType,
             customerId,
-            customerName: customerId ? customerNameMap.get(customerId) : undefined,
+            customerName: customerId
+              ? customerNameMap.get(customerId)
+              : undefined,
             dedupKey,
           },
         ])

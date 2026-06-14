@@ -1,11 +1,27 @@
 import type { TranslationKey } from '@/locales'
 
-export const TRADING_LEDGER_STATUS_OPTIONS = ['OPEN', 'PARTIAL', 'OVERDUE', 'SETTLED'] as const
-export const TRADING_LEDGER_STATUS_LABEL_OPTIONS = [...TRADING_LEDGER_STATUS_OPTIONS, 'CANCELLED'] as const
-export const TRADING_LEDGER_AGING_BUCKET_OPTIONS = ['OPEN', 'CURRENT', 'OVERDUE', 'SETTLED', 'CANCELLED'] as const
+export const TRADING_LEDGER_STATUS_OPTIONS = [
+  'OPEN',
+  'PARTIAL',
+  'OVERDUE',
+  'SETTLED',
+] as const
+export const TRADING_LEDGER_STATUS_LABEL_OPTIONS = [
+  ...TRADING_LEDGER_STATUS_OPTIONS,
+  'CANCELLED',
+] as const
+export const TRADING_LEDGER_AGING_BUCKET_OPTIONS = [
+  'OPEN',
+  'CURRENT',
+  'OVERDUE',
+  'SETTLED',
+  'CANCELLED',
+] as const
 
-export type TradingLedgerStatus = (typeof TRADING_LEDGER_STATUS_LABEL_OPTIONS)[number]
-export type TradingLedgerAgingBucket = (typeof TRADING_LEDGER_AGING_BUCKET_OPTIONS)[number]
+export type TradingLedgerStatus =
+  (typeof TRADING_LEDGER_STATUS_LABEL_OPTIONS)[number]
+export type TradingLedgerAgingBucket =
+  (typeof TRADING_LEDGER_AGING_BUCKET_OPTIONS)[number]
 
 type LedgerTranslator = (key: TranslationKey) => string
 
@@ -51,9 +67,7 @@ export function getTradingLedgerAgingLabel(
   }
 }
 
-export function getTradingLedgerStatusOptions(
-  t: LedgerTranslator
-) {
+export function getTradingLedgerStatusOptions(t: LedgerTranslator) {
   return TRADING_LEDGER_STATUS_OPTIONS.map((value) => ({
     value,
     label: getTradingLedgerStatusLabel(value, t),

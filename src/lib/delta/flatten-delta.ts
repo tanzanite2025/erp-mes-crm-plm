@@ -37,10 +37,19 @@ function buildFlattenedDelta(
   path: string,
   options: Required<FlattenDeltaOptions>
 ) {
-  const normalizedCurrent = normalizeValue(currentValue, options.normalizeUndefinedToNull)
-  const normalizedNext = normalizeValue(nextValue, options.normalizeUndefinedToNull)
+  const normalizedCurrent = normalizeValue(
+    currentValue,
+    options.normalizeUndefinedToNull
+  )
+  const normalizedNext = normalizeValue(
+    nextValue,
+    options.normalizeUndefinedToNull
+  )
 
-  if (!options.includeEqual && isEqualValue(normalizedCurrent, normalizedNext)) {
+  if (
+    !options.includeEqual &&
+    isEqualValue(normalizedCurrent, normalizedNext)
+  ) {
     return
   }
 
@@ -62,17 +71,32 @@ function buildFlattenedDelta(
       const maxLen = Math.max(currentArray.length, nextArray.length)
       for (let index = 0; index < maxLen; index += 1) {
         const nextPath = path ? `${path}.${index}` : `${index}`
-        buildFlattenedDelta(delta, currentArray[index], nextArray[index], nextPath, options)
+        buildFlattenedDelta(
+          delta,
+          currentArray[index],
+          nextArray[index],
+          nextPath,
+          options
+        )
       }
       return
     }
 
     const currentObject = (normalizedCurrent ?? {}) as Record<string, unknown>
     const nextObject = (normalizedNext ?? {}) as Record<string, unknown>
-    const keys = new Set([...Object.keys(currentObject), ...Object.keys(nextObject)])
+    const keys = new Set([
+      ...Object.keys(currentObject),
+      ...Object.keys(nextObject),
+    ])
     keys.forEach((key) => {
       const nextPath = path ? `${path}.${key}` : key
-      buildFlattenedDelta(delta, currentObject[key], nextObject[key], nextPath, options)
+      buildFlattenedDelta(
+        delta,
+        currentObject[key],
+        nextObject[key],
+        nextPath,
+        options
+      )
     })
     return
   }
@@ -91,6 +115,12 @@ export function buildFlattenDelta(
     includeEqual: options.includeEqual ?? false,
   }
   const delta: DeltaSet = {}
-  buildFlattenedDelta(delta, current, next, resolvedOptions.basePath, resolvedOptions)
+  buildFlattenedDelta(
+    delta,
+    current,
+    next,
+    resolvedOptions.basePath,
+    resolvedOptions
+  )
   return delta
 }

@@ -1,11 +1,11 @@
 import { useMemo } from 'react'
+import type { AppLocale, TranslationKey } from '@/locales'
 import { auditUtils } from '@/lib/audit-utils'
 import {
   getSalesOrderClassificationLabel,
   getSalesOrderTypeLabel,
 } from '../data/sales-order-options'
 import type { SalesOrder } from '../data/schema'
-import type { AppLocale, TranslationKey } from '@/locales'
 
 interface UseSalesOrderDetailSummaryViewModelParams {
   order: SalesOrder
@@ -41,13 +41,25 @@ export function useSalesOrderDetailSummaryViewModel({
         label: t('tradingSalesOrder.detail.info.orderType'),
         value: getSalesOrderTypeLabel(order.type, locale) || order.type,
       },
-      { label: t('tradingSalesOrder.detail.info.currency'), value: order.currency },
+      {
+        label: t('tradingSalesOrder.detail.info.currency'),
+        value: order.currency,
+      },
       {
         label: t('tradingSalesOrder.detail.info.classification'),
-        value: getSalesOrderClassificationLabel(order.classification, locale) || order.classification,
+        value:
+          getSalesOrderClassificationLabel(order.classification, locale) ||
+          order.classification,
       },
-      { label: t('tradingSalesOrder.detail.info.orderDate'), value: order.orderDate },
-      { label: t('tradingSalesOrder.detail.info.deliveryDate'), value: order.deliveryDate, highlight: true },
+      {
+        label: t('tradingSalesOrder.detail.info.orderDate'),
+        value: order.orderDate,
+      },
+      {
+        label: t('tradingSalesOrder.detail.info.deliveryDate'),
+        value: order.deliveryDate,
+        highlight: true,
+      },
       {
         label: t('tradingSalesOrder.detail.info.paymentMethod'),
         value: order.paymentMethodName || order.paymentMethod,
@@ -77,14 +89,21 @@ export function useSalesOrderDetailSummaryViewModel({
           auditUtils.formatOperatorName(order.updatedBy) ||
           t('tradingSalesOrder.detail.info.originalVersion'),
       },
-      { label: t('tradingSalesOrder.detail.info.customerPo'), value: order.purchaseOrderNo },
-      { label: t('tradingSalesOrder.detail.info.barcode'), value: order.barcode },
+      {
+        label: t('tradingSalesOrder.detail.info.customerPo'),
+        value: order.purchaseOrderNo,
+      },
+      {
+        label: t('tradingSalesOrder.detail.info.barcode'),
+        value: order.barcode,
+      },
       { label: t('tradingSalesOrder.detail.info.orderId'), value: order.id },
     ]
 
     return {
       infoRows,
-      requirementsText: order.requirements || t('tradingSalesOrder.detail.requirementsEmpty'),
+      requirementsText:
+        order.requirements || t('tradingSalesOrder.detail.requirementsEmpty'),
       evidences: order.evidences || [],
     }
   }, [order, locale, t])

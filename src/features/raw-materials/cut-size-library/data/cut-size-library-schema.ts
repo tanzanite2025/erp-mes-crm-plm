@@ -1,10 +1,10 @@
-export type CutSizeUnitStatus = 'Active' | 'Inactive' | 'Archived'
-
+import { resolveSupportedCutAngleValue } from '../../utils/cut-orientation'
 import {
   deriveCutSizeAreaM2,
   deriveCutSizeWeightG,
 } from '../domain/cut-size-geometry'
-import { resolveSupportedCutAngleValue } from '../../utils/cut-orientation'
+
+export type CutSizeUnitStatus = 'Active' | 'Inactive' | 'Archived'
 
 export interface CutSizeUnit {
   id: string
@@ -27,7 +27,10 @@ export interface CutSizeUnit {
   updatedAt?: string
 }
 
-export type CutSizeUnitFormState = Omit<CutSizeUnit, 'id' | 'version' | 'createdAt' | 'updatedAt'>
+export type CutSizeUnitFormState = Omit<
+  CutSizeUnit,
+  'id' | 'version' | 'createdAt' | 'updatedAt'
+>
 
 export const EMPTY_CUT_SIZE_UNIT_FORM: CutSizeUnitFormState = {
   code: '',
@@ -75,7 +78,9 @@ export function normalizeCutSizeUnit(item: Partial<CutSizeUnit>): CutSizeUnit {
   }
 }
 
-export function formFromCutSizeUnit(unit: CutSizeUnit | null): CutSizeUnitFormState {
+export function formFromCutSizeUnit(
+  unit: CutSizeUnit | null
+): CutSizeUnitFormState {
   if (!unit) return EMPTY_CUT_SIZE_UNIT_FORM
   return {
     code: unit.code || '',

@@ -1,22 +1,25 @@
 'use client'
 
-import { type MaterialRequirement } from '../../data/requirement-schema'
-import { useLanguage } from '@/context/language-provider'
-import { cn } from '@/lib/utils'
 import { Box, Factory, HelpCircle, Lock, Truck } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { useLanguage } from '@/context/language-provider'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { type MaterialRequirement } from '../../data/requirement-schema'
 
 interface SupplyAnalysisDetailsProps {
   item: MaterialRequirement
   className?: string
 }
 
-export function SupplyAnalysisDetails({ item, className }: SupplyAnalysisDetailsProps) {
+export function SupplyAnalysisDetails({
+  item,
+  className,
+}: SupplyAnalysisDetailsProps) {
   const { t } = useLanguage()
 
   const buckets = [
@@ -58,16 +61,18 @@ export function SupplyAnalysisDetails({ item, className }: SupplyAnalysisDetails
 
   return (
     <div className={cn('flex flex-col gap-1.5', className)}>
-      <div className='flex items-center gap-1 flex-wrap'>
+      <div className='flex flex-wrap items-center gap-1'>
         {buckets.map((bucket) => (
           <TooltipProvider key={bucket.key}>
             <Tooltip>
               <TooltipTrigger asChild>
                 <div
                   className={cn(
-                    'flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-[10px] font-black tracking-tighter truncate max-w-[110px]',
+                    'flex max-w-[110px] items-center gap-1 truncate rounded-md border px-1.5 py-0.5 text-[10px] font-black tracking-tighter',
                     bucket.bgColor,
-                    bucket.isPending ? 'border-dashed border-muted-foreground/20' : 'border-transparent'
+                    bucket.isPending
+                      ? 'border-dashed border-muted-foreground/20'
+                      : 'border-transparent'
                   )}
                 >
                   <bucket.icon className={cn('size-2.5', bucket.color)} />
@@ -76,15 +81,20 @@ export function SupplyAnalysisDetails({ item, className }: SupplyAnalysisDetails
                     {bucket.value}
                   </span>
                   {bucket.isPending && (
-                    <span className='text-[8px] opacity-40 font-normal italic ml-0.5'>
+                    <span className='ml-0.5 text-[8px] font-normal italic opacity-40'>
                       [{t('mrp.requirements.list.pendingIntegration')}]
                     </span>
                   )}
                 </div>
               </TooltipTrigger>
-              <TooltipContent side='top' className='text-[10px] font-black uppercase'>
+              <TooltipContent
+                side='top'
+                className='text-[10px] font-black uppercase'
+              >
                 {bucket.label}: {bucket.value} {item.unit}
-                {bucket.isPending ? ` (${t('mrp.requirements.list.pendingIntegrationHint')})` : ''}
+                {bucket.isPending
+                  ? ` (${t('mrp.requirements.list.pendingIntegrationHint')})`
+                  : ''}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -93,17 +103,17 @@ export function SupplyAnalysisDetails({ item, className }: SupplyAnalysisDetails
 
       <div className='flex items-center gap-2'>
         <div className='h-px flex-1 bg-gradient-to-r from-muted via-muted/50 to-transparent' />
-        <div className='text-[9px] font-black uppercase italic text-muted-foreground/60 flex items-center gap-1.5'>
+        <div className='flex items-center gap-1.5 text-[9px] font-black text-muted-foreground/60 uppercase italic'>
           <span>{t('mrp.requirements.list.totalSupplyLabel')}:</span>
-          <span className='text-primary text-[11px] non-italic'>
+          <span className='non-italic text-[11px] text-primary'>
             {item.totalSupply} {item.unit}
           </span>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <HelpCircle className='size-2.5 cursor-help opacity-40 hover:opacity-100 transition-opacity' />
+                <HelpCircle className='size-2.5 cursor-help opacity-40 transition-opacity hover:opacity-100' />
               </TooltipTrigger>
-              <TooltipContent className='max-w-[220px] text-[10px] font-bold p-3 leading-relaxed'>
+              <TooltipContent className='max-w-[220px] p-3 text-[10px] leading-relaxed font-bold'>
                 <div>{t('mrp.requirements.list.formulaTitle')}</div>
                 <div>
                   {t('mrp.requirements.list.formulaLineUsable', {

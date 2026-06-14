@@ -1,9 +1,6 @@
 import { type BusinessEventSource } from '../../workflow-core/data/business-event-source-schema'
 import { getBusinessEventStatusLabel } from '../../workflow-core/data/business-event-status-catalog'
-import {
-  getBusinessEventFieldSummary,
-  getBusinessEventStatusSummary,
-} from './business-event-source-card-model'
+import { type BusinessEventSourceChangeOverviewSection } from './business-event-source-card-change-panel'
 import {
   getBusinessEventSourceDiff,
   getBusinessEventSourceGeneralChangedFields,
@@ -14,7 +11,10 @@ import {
   type BusinessEventSourceRemovedItemSummary,
   type BusinessEventSourceSection,
 } from './business-event-source-card-diff'
-import { type BusinessEventSourceChangeOverviewSection } from './business-event-source-card-change-panel'
+import {
+  getBusinessEventFieldSummary,
+  getBusinessEventStatusSummary,
+} from './business-event-source-card-model'
 import {
   validateBusinessEventSource,
   validateBusinessEventSourceSection,
@@ -70,7 +70,9 @@ export function buildBusinessEventSourceCardPresentation({
   } satisfies Record<BusinessEventSourceSection, string[]>
   const diff = getBusinessEventSourceDiff(committedSource, draft)
   const isIdentityLocked = Boolean(committedSource.id)
-  const persistedActionIds = collectConfigItemIds(committedSource.config.actions)
+  const persistedActionIds = collectConfigItemIds(
+    committedSource.config.actions
+  )
   const persistedStatusIds = collectConfigItemIds(
     committedSource.config.statuses
   )

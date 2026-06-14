@@ -13,7 +13,8 @@ export const aiAssistant = {
     },
     permissions: {
       title: 'Permission Access Distribution',
-      description: 'Only users with explicitly granted permissions can access AI insights',
+      description:
+        'Only users with explicitly granted permissions can access AI insights',
     },
     api: {
       title: 'Engine Gateway Settings',
@@ -22,7 +23,8 @@ export const aiAssistant = {
       saveSuccess: 'Engine gateway updated successfully',
       saveSuccessDescription: 'Switched to provider: {{provider}}',
       policySuccess: 'Governance policy updated',
-      policySuccessDescription: 'The new configuration has been persisted and synced to all terminals.',
+      policySuccessDescription:
+        'The new configuration has been persisted and synced to all terminals.',
       provider: 'Model Provider',
       providerPlaceholder: 'Select a provider',
       providerGemini: 'Google Gemini (Recommended)',
@@ -33,9 +35,11 @@ export const aiAssistant = {
       baseUrl: 'API Base URL (Optional)',
       groupIdRequired: 'GROUP_ID (Required for MiniMax)',
       groupIdOptional: 'GROUP_ID (Optional for MiniMax)',
-      groupIdAlert: 'Missing GROUP_ID in MiniMax mode will cause authentication failures',
+      groupIdAlert:
+        'Missing GROUP_ID in MiniMax mode will cause authentication failures',
       minimaxNoteTitle: 'Subscription Tip',
-      minimaxNoteBody: 'If you are using a token subscription plan, use a token-plan key (sk-cp-...). A standard API key may fail authentication.',
+      minimaxNoteBody:
+        'If you are using a token subscription plan, use a token-plan key (sk-cp-...). A standard API key may fail authentication.',
     },
     governance: {
       title: 'Governance Note',

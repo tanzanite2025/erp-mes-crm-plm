@@ -7,6 +7,9 @@ import type { QuoteDetail } from '@/features/quotes/data/quote-detail'
 export async function getQuoteDetail(id: string): Promise<QuoteDetail> {
   const response = await apiFetch<QuoteDetailApiDTO>(`/quotes/${id}`)
   return toQuoteDetailContract(
-    ensureObjectResponse<QuoteDetailApiDTO & Record<string, unknown>>(response, 'QuoteDetailService.getQuoteDetail')
+    ensureObjectResponse<QuoteDetailApiDTO & Record<string, unknown>>(
+      response,
+      'QuoteDetailService.getQuoteDetail'
+    )
   )
 }

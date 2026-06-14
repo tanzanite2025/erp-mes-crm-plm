@@ -52,9 +52,13 @@ const parseModuleStats = (value: unknown): AuditEngineModuleStats => {
   }
 }
 
-export const parseAuditEngineStatsResponse = (value: unknown): AuditEngineStatsResponse => {
+export const parseAuditEngineStatsResponse = (
+  value: unknown
+): AuditEngineStatsResponse => {
   const record = isRecord(value) ? value : {}
-  const modules = Array.isArray(record.modules) ? record.modules.map(parseModuleStats) : []
+  const modules = Array.isArray(record.modules)
+    ? record.modules.map(parseModuleStats)
+    : []
 
   return { modules }
 }

@@ -1,7 +1,10 @@
+import { type AppLocale, translate } from '@/locales'
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
-import { type AppLocale, translate } from '@/locales'
-import { type MaterialRequirement, type MrpStats } from '../data/requirement-schema'
+import {
+  type MaterialRequirement,
+  type MrpStats,
+} from '../data/requirement-schema'
 
 type MrpRequirementsResponse = {
   requirements: MaterialRequirement[]
@@ -10,7 +13,9 @@ type MrpRequirementsResponse = {
 }
 
 export const RequirementCoreService = {
-  async getMrpRequirements(selectedKeys: string[] = []): Promise<MrpRequirementsResponse> {
+  async getMrpRequirements(
+    selectedKeys: string[] = []
+  ): Promise<MrpRequirementsResponse> {
     const params = new URLSearchParams()
     if (selectedKeys.length > 0) {
       params.set('selectedKeys', selectedKeys.join(','))
@@ -19,16 +24,25 @@ export const RequirementCoreService = {
     const query = params.toString()
     const endpoint = query ? `/mrp/requirements?${query}` : '/mrp/requirements'
     const res = await apiFetch<MrpRequirementsResponse>(endpoint)
-    return ensureObjectResponse<MrpRequirementsResponse & Record<string, unknown>>(
+    return ensureObjectResponse<
+      MrpRequirementsResponse & Record<string, unknown>
+    >(
       res,
       'RequirementCoreService.getMrpRequirements'
     ) as MrpRequirementsResponse
   },
 
-  getUniqueProductsSummary(data: MaterialRequirement[], locale: AppLocale): string {
+  getUniqueProductsSummary(
+    data: MaterialRequirement[],
+    locale: AppLocale
+  ): string {
     const separator = translate(locale, 'mrp.requirements.export.separator')
     const uniqueProducts = Array.from(
-      new Set(data.flatMap((item) => item.sourceOrders.map((order) => order.productName)))
+      new Set(
+        data.flatMap((item) =>
+          item.sourceOrders.map((order) => order.productName)
+        )
+      )
     )
 
     if (uniqueProducts.length > 3) {

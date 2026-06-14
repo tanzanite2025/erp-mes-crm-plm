@@ -1,6 +1,9 @@
 export type ScanPlatformMode = 'submit' | 'view'
 export type ScanCaptureSource = 'camera' | 'manual' | 'hardware'
-export type ScanHostSurface = 'standalone' | 'embedded-dialog' | 'embedded-inline'
+export type ScanHostSurface =
+  | 'standalone'
+  | 'embedded-dialog'
+  | 'embedded-inline'
 
 export interface ScanPermissionContract {
   page: string

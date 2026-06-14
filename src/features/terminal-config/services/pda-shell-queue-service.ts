@@ -1,6 +1,3 @@
-import type { PDAIngestRequest } from './pda-ingest-service'
-import { StorageService } from '@/features/system-mgmt/services/storage-service'
-import { createLogger } from '@/lib/logger'
 import {
   normalizeDeviceCode,
   normalizeMachineCode,
@@ -8,6 +5,9 @@ import {
   normalizeSceneKey,
   normalizeTaskKey,
 } from '@/lib/codecs/code-normalization'
+import { createLogger } from '@/lib/logger'
+import { StorageService } from '@/features/system-mgmt/services/storage-service'
+import type { PDAIngestRequest } from './pda-ingest-service'
 
 const PDA_SHELL_QUEUE_KEY = 'xdfc_pda_shell_retry_queue_v1'
 
@@ -43,14 +43,18 @@ function buildDedupeKey(payload: PDAIngestRequest) {
   ].join('|')
 }
 
-function normalizeRetryItem(item: Partial<PDAIngestRetryItem> & { payload?: PDAIngestRequest }) {
+function normalizeRetryItem(
+  item: Partial<PDAIngestRetryItem> & { payload?: PDAIngestRequest }
+) {
   const payload = item.payload || { rawCode: '' }
   const scene = normalizeSceneKey(item.scene || payload.scene)
   const dedupeKey = item.dedupeKey || buildDedupeKey(payload)
   const createdAt = item.createdAt || new Date().toISOString()
 
   return {
-    id: item.id || `retry_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    id:
+      item.id ||
+      `retry_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
     payload: {
       ...payload,
       scene,
@@ -70,7 +74,9 @@ function normalizeRetryItem(item: Partial<PDAIngestRetryItem> & { payload?: PDAI
 }
 
 function isLegacyStorageAvailable() {
-  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
+  return (
+    typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
+  )
 }
 
 function parseStoredQueue(raw: unknown, context: string) {
@@ -84,10 +90,14 @@ function parseStoredQueue(raw: unknown, context: string) {
 
   return raw.map((item) => {
     if (!item || typeof item !== 'object') {
-      throw new Error(`[CRITICAL] ${context} encountered an invalid PDA queue item`)
+      throw new Error(
+        `[CRITICAL] ${context} encountered an invalid PDA queue item`
+      )
     }
 
-    return normalizeRetryItem(item as Partial<PDAIngestRetryItem> & { payload?: PDAIngestRequest })
+    return normalizeRetryItem(
+      item as Partial<PDAIngestRetryItem> & { payload?: PDAIngestRequest }
+    )
   })
 }
 
@@ -101,7 +111,10 @@ async function migrateLegacyQueueIfNeeded() {
     return null
   }
 
-  const migratedQueue = parseStoredQueue(JSON.parse(legacyRaw), 'PDAShellQueue.migrateLegacyQueueIfNeeded')
+  const migratedQueue = parseStoredQueue(
+    JSON.parse(legacyRaw),
+    'PDAShellQueue.migrateLegacyQueueIfNeeded'
+  )
   await StorageService.setItem(PDA_SHELL_QUEUE_KEY, migratedQueue)
   window.localStorage.removeItem(PDA_SHELL_QUEUE_KEY)
   logger.info('Migrated PDA shell retry queue from localStorage to IndexedDB', {
@@ -124,14 +137,18 @@ async function writeQueue(queue: PDAIngestRetryItem[]) {
   await StorageService.setItem(PDA_SHELL_QUEUE_KEY, queue)
 }
 
-export async function listPDAShellRetryQueue(scene?: string): Promise<PDAIngestRetryItem[]> {
+export async function listPDAShellRetryQueue(
+  scene?: string
+): Promise<PDAIngestRetryItem[]> {
   const queue = await readQueue()
   if (!scene) return queue
   const normalizedScene = normalizeSceneKey(scene)
   return queue.filter((item) => item.scene === normalizedScene)
 }
 
-export async function listPDAShellRetryQueueByScene(): Promise<PDAIngestRetrySceneGroup[]> {
+export async function listPDAShellRetryQueueByScene(): Promise<
+  PDAIngestRetrySceneGroup[]
+> {
   const sceneMap = new Map<string, PDAIngestRetrySceneGroup>()
 
   for (const item of await readQueue()) {
@@ -182,7 +199,10 @@ export async function enqueuePDAShellRetry(
       lastError,
       duplicateCount: existing.duplicateCount + 1,
     })
-    const nextQueue = [nextItem, ...queue.filter((item) => item.id !== existing.id)].slice(0, 100)
+    const nextQueue = [
+      nextItem,
+      ...queue.filter((item) => item.id !== existing.id),
+    ].slice(0, 100)
     await writeQueue(nextQueue)
     return nextItem
   }
@@ -203,7 +223,9 @@ export async function enqueuePDAShellRetry(
 export async function updatePDAShellRetry(item: PDAIngestRetryItem) {
   const normalized = normalizeRetryItem(item)
   const queue = await readQueue()
-  const next = queue.map((current) => (current.id === normalized.id ? normalized : current))
+  const next = queue.map((current) =>
+    current.id === normalized.id ? normalized : current
+  )
   await writeQueue(next)
 }
 

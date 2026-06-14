@@ -1,30 +1,28 @@
 import { z } from 'zod'
 import { DEFAULT_SALES_ORDER_EVENT_SOURCE } from './business-event-source-templates/sales-order'
 import {
+  EMPTY_BUSINESS_EVENT_SOURCE_CONFIG,
+  businessEventSourceSchema,
+  businessEventSourceCreateSchema,
+  businessEventSourceTemplateSchema,
+  businessEventSourceUpdateSchema,
+  type BusinessConfigItemBase,
+  type BusinessEventSource,
+  type BusinessEventSourceConfig,
+  type BusinessEventSourceCreatePayload,
+  type BusinessEventSourceTemplate,
+  type BusinessEventSourceUpdatePayload,
+} from './business-event-source-types'
+import {
   getBusinessEventStatusCatalogCandidates,
   getBusinessEventStatusLabel,
 } from './business-event-status-catalog'
-import {
-	EMPTY_BUSINESS_EVENT_SOURCE_CONFIG,
-	businessEventSourceSchema,
-	businessEventSourceCreateSchema,
-	businessEventSourceTemplateSchema,
-	businessEventSourceUpdateSchema,
-	type BusinessConfigItemBase,
-	type BusinessEventSource,
-	type BusinessEventSourceConfig,
-	type BusinessEventSourceCreatePayload,
-	type BusinessEventSourceTemplate,
-	type BusinessEventSourceUpdatePayload,
-} from './business-event-source-types'
 
 const NON_ID_CHAR_PATTERN = /[^a-z0-9]+/g
 let businessEventConfigItemCounter = 0
 
 function splitBusinessStatusCodeWords(value?: string | null) {
-  return (value ?? '')
-    .trim()
-    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+  return (value ?? '').trim().replace(/([a-z0-9])([A-Z])/g, '$1_$2')
 }
 
 function collapseBusinessStatusCodeSeparators(value?: string | null) {
@@ -35,7 +33,9 @@ function collapseBusinessStatusCodeSeparators(value?: string | null) {
 }
 
 function buildBusinessStatusCodeSignature(value?: string | null) {
-  return collapseBusinessStatusCodeSeparators(value).replace(/_/g, '').toLowerCase()
+  return collapseBusinessStatusCodeSeparators(value)
+    .replace(/_/g, '')
+    .toLowerCase()
 }
 
 function slugifyBusinessEventIdPart(value?: string) {
@@ -65,7 +65,9 @@ export function createBusinessEventConfigItemId(prefix: string) {
     .slice(2, 8)}`
 }
 
-export function normalizeBusinessStatusCodeInput(value?: string | null): string {
+export function normalizeBusinessStatusCodeInput(
+  value?: string | null
+): string {
   return collapseBusinessStatusCodeSeparators(value)
 }
 
@@ -79,7 +81,9 @@ export function canonicalizeBusinessStatusCode(
   }
 
   const inputSignature = buildBusinessStatusCodeSignature(normalizedInput)
-  const existingEntry = getBusinessEventStatusCatalogCandidates(sourceCode).find(
+  const existingEntry = getBusinessEventStatusCatalogCandidates(
+    sourceCode
+  ).find(
     (entry) => buildBusinessStatusCodeSignature(entry.code) === inputSignature
   )
 
@@ -242,7 +246,9 @@ export function deserializeBusinessEventSourceTemplate(
 
 export function materializeBusinessEventSourceTemplate(
   template: BusinessEventSourceTemplate,
-  overrides: Partial<Pick<BusinessEventSource, 'id' | 'createdAt' | 'updatedAt'>> = {}
+  overrides: Partial<
+    Pick<BusinessEventSource, 'id' | 'createdAt' | 'updatedAt'>
+  > = {}
 ): BusinessEventSource {
   return normalizeBusinessEventSource({
     ...template,
@@ -253,7 +259,8 @@ export function materializeBusinessEventSourceTemplate(
 }
 
 export function getEventSourceStatusOptions(source?: BusinessEventSource) {
-  const fallbackSourceCode = source?.code ?? DEFAULT_SALES_ORDER_EVENT_SOURCE.code
+  const fallbackSourceCode =
+    source?.code ?? DEFAULT_SALES_ORDER_EVENT_SOURCE.code
   return (
     source?.config.statuses ?? DEFAULT_SALES_ORDER_EVENT_SOURCE.config.statuses
   ).map((status) => ({

@@ -8,7 +8,6 @@
  * 后端：`bom.go` 上原本带 `DisplayVersion` 字段（标 `gorm:"-"` 不入库）已删除，
  * 出参由 `MapBOMToDetailResponse` 阶段不再附加，前端在使用处通过本选择器派生。
  */
-
 import { deriveBomDisplayVersion } from '@/lib/codecs/code-normalization'
 import { type BOM } from '../data/schema'
 
@@ -22,6 +21,8 @@ import { type BOM } from '../data/schema'
  * 调用方约定：UI、打印、消息、Diff 标签都应通过本函数获取展示版本号，
  * 不要直接读 `bom.bomDisplayVersion`（该字段在 schema 中已被移除）。
  */
-export function selectBOMDisplayVersion(bom: Pick<BOM, 'bomVersion'> | null | undefined): string {
+export function selectBOMDisplayVersion(
+  bom: Pick<BOM, 'bomVersion'> | null | undefined
+): string {
   return deriveBomDisplayVersion(bom?.bomVersion)
 }

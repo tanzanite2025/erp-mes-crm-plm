@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
-import { type Customer, type CustomerFormValues } from '../data/schema'
 import type { TranslationKey } from '@/locales'
+import { type Customer, type CustomerFormValues } from '../data/schema'
 
 interface CustomerActionViewModelOptions {
   customer?: Customer | null
@@ -30,29 +30,34 @@ const DEFAULT_FORM_DATA: CustomerFormValues = {
   version: 1,
 }
 
-export function useCustomerActionViewModel({ customer, t }: CustomerActionViewModelOptions) {
+export function useCustomerActionViewModel({
+  customer,
+  t,
+}: CustomerActionViewModelOptions) {
   const allowedEditStatuses = ['Active', 'Pending']
-  const initialFormData = useMemo<CustomerFormValues>(() => (
-    customer
-      ? {
-          name: customer.name,
-          code: customer.code,
-          contactPerson: customer.contactPerson,
-          contactPhone: customer.contactPhone,
-          wechat: customer.wechat,
-          whatsapp: customer.whatsapp,
-          facebook: customer.facebook,
-          instagram: customer.instagram,
-          telegram: customer.telegram,
-          email: customer.email,
-          address: customer.address,
-          status: customer.status,
-          creditLimit: customer.creditLimit,
-          balance: customer.balance,
-          version: customer.version,
-        }
-      : DEFAULT_FORM_DATA
-  ), [customer])
+  const initialFormData = useMemo<CustomerFormValues>(
+    () =>
+      customer
+        ? {
+            name: customer.name,
+            code: customer.code,
+            contactPerson: customer.contactPerson,
+            contactPhone: customer.contactPhone,
+            wechat: customer.wechat,
+            whatsapp: customer.whatsapp,
+            facebook: customer.facebook,
+            instagram: customer.instagram,
+            telegram: customer.telegram,
+            email: customer.email,
+            address: customer.address,
+            status: customer.status,
+            creditLimit: customer.creditLimit,
+            balance: customer.balance,
+            version: customer.version,
+          }
+        : DEFAULT_FORM_DATA,
+    [customer]
+  )
   const statusOptions = useMemo<CustomerStatusOption[]>(
     () => [
       { value: 'Active', label: t('trading.customerStatus.active') },

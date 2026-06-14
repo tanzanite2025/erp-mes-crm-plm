@@ -1,5 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
+import { createFileRoute } from '@tanstack/react-router'
 import { PackagingAssemblyMobileCapturePage } from '@/features/warehouse/pages/packaging-assembly-mobile-capture-page'
 
 const searchSchema = z.object({

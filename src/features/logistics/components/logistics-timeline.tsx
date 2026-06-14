@@ -1,8 +1,12 @@
 import type { ReactNode } from 'react'
 import { AlertCircle, CheckCircle2, Clock, MapPin, Truck } from 'lucide-react'
-import { useLanguage } from '@/context/language-provider'
 import { cn } from '@/lib/utils'
-import { type LogisticsEvent, type LogisticsStatus, logisticsStatuses } from '../data/schema'
+import { useLanguage } from '@/context/language-provider'
+import {
+  type LogisticsEvent,
+  type LogisticsStatus,
+  logisticsStatuses,
+} from '../data/schema'
 
 interface LogisticsTimelineProps {
   events: LogisticsEvent[]
@@ -21,9 +25,9 @@ export function LogisticsTimeline({ events }: LogisticsTimelineProps) {
 
   if (events.length === 0) {
     return (
-      <div className='py-20 flex flex-col items-center justify-center space-y-3 opacity-30'>
+      <div className='flex flex-col items-center justify-center space-y-3 py-20 opacity-30'>
         <Truck className='size-10 stroke-1' />
-        <p className='text-[10px] font-black uppercase tracking-widest'>
+        <p className='text-[10px] font-black tracking-widest uppercase'>
           {t('trading.logistics.timelineEmpty')}
         </p>
       </div>
@@ -31,20 +35,24 @@ export function LogisticsTimeline({ events }: LogisticsTimelineProps) {
   }
 
   return (
-    <div className='relative pl-4 space-y-6 before:absolute before:left-[19px] before:top-2 before:bottom-2 before:w-[1.5px] before:bg-linear-to-b before:from-primary/40 before:via-muted before:to-transparent'>
+    <div className='relative space-y-6 pl-4 before:absolute before:top-2 before:bottom-2 before:left-[19px] before:w-[1.5px] before:bg-linear-to-b before:from-primary/40 before:via-muted before:to-transparent'>
       {events.map((event, index) => {
-        const statusMeta = logisticsStatuses.find((status) => status.value === event.status)
+        const statusMeta = logisticsStatuses.find(
+          (status) => status.value === event.status
+        )
 
         return (
           <div
             key={event.id}
-            className='relative flex gap-4 animate-in slide-in-from-left-2 duration-300'
+            className='relative flex animate-in gap-4 duration-300 slide-in-from-left-2'
             style={{ animationDelay: `${index * 100}ms` }}
           >
             <div
               className={cn(
-                'relative z-10 size-8 rounded-full flex items-center justify-center border-2 border-background shadow-sm ring-4 ring-background',
-                index === 0 ? 'bg-primary text-primary-foreground scale-110' : 'bg-muted text-muted-foreground'
+                'relative z-10 flex size-8 items-center justify-center rounded-full border-2 border-background shadow-sm ring-4 ring-background',
+                index === 0
+                  ? 'scale-110 bg-primary text-primary-foreground'
+                  : 'bg-muted text-muted-foreground'
               )}
             >
               {statusIcons[event.status] || <MapPin className='size-3.5' />}
@@ -54,7 +62,7 @@ export function LogisticsTimeline({ events }: LogisticsTimelineProps) {
               <div className='flex items-center justify-between'>
                 <span
                   className={cn(
-                    'text-[10px] font-black uppercase tracking-tighter px-2 py-0.5 rounded-md border',
+                    'rounded-md border px-2 py-0.5 text-[10px] font-black tracking-tighter uppercase',
                     statusMeta?.color
                   )}
                 >
@@ -65,9 +73,11 @@ export function LogisticsTimeline({ events }: LogisticsTimelineProps) {
                 </span>
               </div>
 
-              <div className='bg-muted/30 p-3 rounded-2xl border border-dashed border-muted-foreground/10'>
-                <p className='text-[12px] font-black text-secondary leading-snug'>{event.description}</p>
-                <div className='flex items-center gap-1 mt-1.5 opacity-60'>
+              <div className='rounded-2xl border border-dashed border-muted-foreground/10 bg-muted/30 p-3'>
+                <p className='text-[12px] leading-snug font-black text-secondary'>
+                  {event.description}
+                </p>
+                <div className='mt-1.5 flex items-center gap-1 opacity-60'>
                   <MapPin className='size-2.5' />
                   <span className='text-[10px] font-bold uppercase'>
                     {event.location || t('trading.logistics.unknownSite')}

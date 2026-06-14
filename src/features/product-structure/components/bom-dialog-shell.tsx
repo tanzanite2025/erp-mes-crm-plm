@@ -2,7 +2,9 @@
 
 import type { ReactNode } from 'react'
 import { Layers, XIcon } from 'lucide-react'
-import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
+import { normalizeBomStatus } from '@/lib/codecs/code-normalization'
+import { cn } from '@/lib/utils'
+import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import {
   Dialog,
@@ -11,10 +13,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { useLanguage } from '@/context/language-provider'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
-import { normalizeBomStatus } from '@/lib/codecs/code-normalization'
-import { cn } from '@/lib/utils'
 
 type BOMDialogHeaderMeta = {
   version?: string
@@ -35,7 +35,10 @@ function resolveBOMStatusMeta(statusValue: string | undefined): {
   className: string
 } {
   const status = normalizeBomStatus(statusValue)
-  const config: Record<string, { labelKey: BOMStatusLabelKey; className: string }> = {
+  const config: Record<
+    string,
+    { labelKey: BOMStatusLabelKey; className: string }
+  > = {
     draft: {
       labelKey: 'engineering.bomArchive.status.draft',
       className: 'bg-slate-500/10 text-slate-600',
@@ -96,12 +99,15 @@ export function BOMDialogShell({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent showCloseButton={false} className='flex h-[94vh] max-h-[94vh] max-w-[98vw] flex-col gap-0 overflow-hidden rounded-[32px] border-none p-0 shadow-2xl sm:max-w-[95vw]'>
-        <DialogHeader className='relative flex-none px-3 pb-1 pt-2.5 text-start sm:px-4 sm:pb-1 sm:pt-3'>
+      <DialogContent
+        showCloseButton={false}
+        className='flex h-[94vh] max-h-[94vh] max-w-[98vw] flex-col gap-0 overflow-hidden rounded-[32px] border-none p-0 shadow-2xl sm:max-w-[95vw]'
+      >
+        <DialogHeader className='relative flex-none px-3 pt-2.5 pb-1 text-start sm:px-4 sm:pt-3 sm:pb-1'>
           <div className='flex w-full items-start justify-between gap-3'>
             <div className='flex min-w-0 flex-1 items-center gap-2.5 overflow-hidden'>
               <DialogTitle className='flex min-w-0 flex-1 items-center gap-2 text-base font-black tracking-tighter uppercase italic sm:gap-3 sm:text-xl'>
-                <Layers className='size-5 shrink-0 text-blue-600 stroke-3 sm:size-6' />
+                <Layers className='size-5 shrink-0 stroke-3 text-blue-600 sm:size-6' />
                 <span className='truncate sm:whitespace-normal'>
                   {isEdit
                     ? t('engineering.bomArchive.dialog.editTitle')
@@ -112,10 +118,10 @@ export function BOMDialogShell({
                 <div className='flex shrink-0 items-center gap-2.5'>
                   {version ? (
                     <div className='inline-flex h-6 items-center gap-1.5 rounded-full border border-dashed border-blue-200 bg-blue-600/5 px-2.5'>
-                      <span className='text-[10px] font-black uppercase tracking-widest text-blue-700/60'>
+                      <span className='text-[10px] font-black tracking-widest text-blue-700/60 uppercase'>
                         {t('engineering.bomArchive.form.version')}
                       </span>
-                      <span className='text-[11px] font-mono text-blue-700'>
+                      <span className='font-mono text-[11px] text-blue-700'>
                         {version}
                       </span>
                     </div>
@@ -124,7 +130,7 @@ export function BOMDialogShell({
                     <Badge
                       variant='outline'
                       className={cn(
-                        'h-6 rounded-full border-none px-2.5 text-[10px] font-black uppercase tracking-widest',
+                        'h-6 rounded-full border-none px-2.5 text-[10px] font-black tracking-widest uppercase',
                         statusMeta.className
                       )}
                     >
@@ -140,10 +146,10 @@ export function BOMDialogShell({
                   module={AUDIT_MODULES.bom}
                   targetId={auditTarget.id}
                   targetName={auditTarget.name}
-                  className='h-9 rounded-full border-dashed bg-background/80 px-4 text-[10px] font-black uppercase tracking-widest'
+                  className='h-9 rounded-full border-dashed bg-background/80 px-4 text-[10px] font-black tracking-widest uppercase'
                 />
               ) : null}
-              <DialogClose className='inline-flex size-9 items-center justify-center rounded-full border border-dashed border-border/50 bg-background/85 text-muted-foreground transition-all hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'>
+              <DialogClose className='inline-flex size-9 items-center justify-center rounded-full border border-dashed border-border/50 bg-background/85 text-muted-foreground transition-all hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none'>
                 <XIcon className='size-4' />
                 <span className='sr-only'>Close</span>
               </DialogClose>

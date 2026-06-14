@@ -1,7 +1,4 @@
-import {
-  Dialog,
-  DialogContent,
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { QuoteWorkspaceDetailContent } from '@/features/quotes/components/quote-workspace-detail-content'
 import { QuoteWorkspaceFooter } from '@/features/quotes/components/quote-workspace-footer'
 import { QuoteWorkspaceHeader } from '@/features/quotes/components/quote-workspace-header'
@@ -62,7 +59,7 @@ export function QuoteWorkspaceDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='max-h-[95vh] w-[96vw] max-w-[96vw] sm:max-w-[96vw] xl:w-[1480px] xl:max-w-[1480px] overflow-hidden rounded-3xl border border-primary/20 p-0'>
+      <DialogContent className='max-h-[95vh] w-[96vw] max-w-[96vw] overflow-hidden rounded-3xl border border-primary/20 p-0 sm:max-w-[96vw] xl:w-[1480px] xl:max-w-[1480px]'>
         <QuoteWorkspaceHeader
           detail={detail}
           isCreateMode={isCreateMode}
@@ -70,9 +67,11 @@ export function QuoteWorkspaceDialog({
           detailError={detailError}
         />
 
-        <div className='min-h-0 max-h-[calc(95vh-150px)] overflow-hidden'>
+        <div className='max-h-[calc(95vh-150px)] min-h-0 overflow-hidden'>
           {isCreateMode ? (
-            <div className='min-w-0 overflow-y-auto px-6 py-5'>{createEditor ?? null}</div>
+            <div className='min-w-0 overflow-y-auto px-6 py-5'>
+              {createEditor ?? null}
+            </div>
           ) : (
             <QuoteWorkspaceDetailContent
               detail={detail}

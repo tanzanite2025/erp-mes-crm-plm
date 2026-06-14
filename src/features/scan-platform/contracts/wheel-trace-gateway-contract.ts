@@ -1,4 +1,7 @@
-import type { WheelTraceStageSnapshot, WheelTraceTimelineNode } from '../models/wheel-trace'
+import type {
+  WheelTraceStageSnapshot,
+  WheelTraceTimelineNode,
+} from '../models/wheel-trace'
 
 export interface WheelTraceLookupRequestContract {
   rawCode: string

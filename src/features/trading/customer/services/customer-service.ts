@@ -8,12 +8,26 @@ import {
 } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { buildVersionedPatchMetadata } from '@/lib/version-guard'
-import { toCustomerApiDTO, toCustomerContract, toCustomerContracts } from '../adapters/customer-api-adapter'
-import { type CustomerApiDTO, type CustomerListApiResponseDTO } from '../contracts/customer-api-dto'
-import { customerArraySchema, customerSchema, type Customer, type CustomerFormValues } from '../../data/schema'
+import {
+  customerArraySchema,
+  customerSchema,
+  type Customer,
+  type CustomerFormValues,
+} from '../../data/schema'
+import {
+  toCustomerApiDTO,
+  toCustomerContract,
+  toCustomerContracts,
+} from '../adapters/customer-api-adapter'
+import {
+  type CustomerApiDTO,
+  type CustomerListApiResponseDTO,
+} from '../contracts/customer-api-dto'
 
-export const CUSTOMER_TRANSACTION_INTENT_STATUS_CHANGE = 'CUSTOMER_STATUS_CHANGE'
-export const CUSTOMER_TRANSACTION_INTENT_IDENTITY_CHANGE = 'CUSTOMER_IDENTITY_CHANGE'
+export const CUSTOMER_TRANSACTION_INTENT_STATUS_CHANGE =
+  'CUSTOMER_STATUS_CHANGE'
+export const CUSTOMER_TRANSACTION_INTENT_IDENTITY_CHANGE =
+  'CUSTOMER_IDENTITY_CHANGE'
 export const CUSTOMER_TRANSACTION_INTENT_SAVE = 'CUSTOMER_SAVE'
 export const CUSTOMER_PATCH_INTENT_SAVE = 'CUSTOMER_PATCH_SAVE'
 
@@ -65,26 +79,41 @@ export interface CustomerSavePayload {
 export const getCustomers = async (): Promise<Customer[]> => {
   const res = await apiFetch<CustomerApiDTO[]>('/customers?options=true')
   return customerArraySchema.parse(
-    toCustomerContracts(ensureArrayResponse<CustomerApiDTO>(res, 'CustomerService.getCustomers'))
+    toCustomerContracts(
+      ensureArrayResponse<CustomerApiDTO>(res, 'CustomerService.getCustomers')
+    )
   )
 }
 
 export const getCustomerList = async (): Promise<CustomerListResponse> => {
   const context = 'CustomerService.getCustomerList'
   const res = await apiFetch<CustomerListApiResponseDTO>('/customers')
-  const objectResponse = ensureObjectResponse<CustomerListApiResponseDTO & Record<string, unknown>>(
-    res,
-    context
-  )
+  const objectResponse = ensureObjectResponse<
+    CustomerListApiResponseDTO & Record<string, unknown>
+  >(res, context)
   const items = customerArraySchema.parse(
-    toCustomerContracts(ensureArrayField<CustomerApiDTO>(objectResponse, 'items', context))
+    toCustomerContracts(
+      ensureArrayField<CustomerApiDTO>(objectResponse, 'items', context)
+    )
   )
   const total = ensureNumberField(objectResponse, 'total', context)
   const page = ensureNumberField(objectResponse, 'page', context)
   const pageSize = ensureNumberField(objectResponse, 'pageSize', context)
-  const metadata = ensureObjectField<Record<string, unknown>>(objectResponse, 'metadata', context)
-  const pagination = ensureObjectField<Record<string, unknown>>(metadata, 'pagination', context)
-  const stats = ensureObjectField<Record<string, unknown>>(metadata, 'stats', context)
+  const metadata = ensureObjectField<Record<string, unknown>>(
+    objectResponse,
+    'metadata',
+    context
+  )
+  const pagination = ensureObjectField<Record<string, unknown>>(
+    metadata,
+    'pagination',
+    context
+  )
+  const stats = ensureObjectField<Record<string, unknown>>(
+    metadata,
+    'stats',
+    context
+  )
 
   return {
     items,
@@ -110,18 +139,22 @@ export const executeCustomerTransaction = async <TPayload>(
   customerId: string,
   request: CustomerTransactionRequest<TPayload>
 ): Promise<Customer> => {
-  const res = await apiFetch<CustomerApiDTO>(`/customers/${customerId}/transactions`, {
-    method: 'POST',
-    body: JSON.stringify(request),
-  })
-  const response = ensureObjectResponse<CustomerApiDTO & Record<string, unknown>>(
-    res,
-    'CustomerService.executeCustomerTransaction'
+  const res = await apiFetch<CustomerApiDTO>(
+    `/customers/${customerId}/transactions`,
+    {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }
   )
+  const response = ensureObjectResponse<
+    CustomerApiDTO & Record<string, unknown>
+  >(res, 'CustomerService.executeCustomerTransaction')
   return customerSchema.parse(toCustomerContract(response))
 }
 
-export const createCustomer = async (customer: CustomerFormValues): Promise<Customer> => {
+export const createCustomer = async (
+  customer: CustomerFormValues
+): Promise<Customer> => {
   const now = new Date().toISOString()
   const createdCustomer: Customer = {
     ...customer,
@@ -136,7 +169,9 @@ export const createCustomer = async (customer: CustomerFormValues): Promise<Cust
     method: 'POST',
     body: JSON.stringify(toCustomerApiDTO(createdCustomer)),
   })
-  const response = ensureObjectResponse<CustomerApiDTO & Record<string, unknown>>(res, 'CustomerService.createCustomer')
+  const response = ensureObjectResponse<
+    CustomerApiDTO & Record<string, unknown>
+  >(res, 'CustomerService.createCustomer')
   return customerSchema.parse(toCustomerContract(response))
 }
 
@@ -208,19 +243,30 @@ export const saveCustomer = async (
   })
 }
 
-export const patchCustomer = async (id: string, delta: DeltaSet, version: number): Promise<Customer> => {
+export const patchCustomer = async (
+  id: string,
+  delta: DeltaSet,
+  version: number
+): Promise<Customer> => {
   const payload: DeltaPayload = {
     op: 'PATCH',
     delta,
-    metadata: buildVersionedPatchMetadata(id, version, 'CustomerService.patchCustomer', {
-      intent: CUSTOMER_PATCH_INTENT_SAVE,
-    }),
+    metadata: buildVersionedPatchMetadata(
+      id,
+      version,
+      'CustomerService.patchCustomer',
+      {
+        intent: CUSTOMER_PATCH_INTENT_SAVE,
+      }
+    ),
   }
 
   const res = await apiFetch<CustomerApiDTO>(`/customers/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(payload),
   })
-  const response = ensureObjectResponse<CustomerApiDTO & Record<string, unknown>>(res, 'CustomerService.patchCustomer')
+  const response = ensureObjectResponse<
+    CustomerApiDTO & Record<string, unknown>
+  >(res, 'CustomerService.patchCustomer')
   return customerSchema.parse(toCustomerContract(response))
 }

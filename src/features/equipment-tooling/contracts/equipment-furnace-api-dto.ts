@@ -1,4 +1,9 @@
-export type FurnaceStatusApiDTO = 'IDLE' | 'HEATING' | 'COOLING' | 'MAINTENANCE' | 'FAULT'
+export type FurnaceStatusApiDTO =
+  | 'IDLE'
+  | 'HEATING'
+  | 'COOLING'
+  | 'MAINTENANCE'
+  | 'FAULT'
 
 export interface FurnaceApiDTO {
   id: string

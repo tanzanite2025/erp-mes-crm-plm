@@ -33,10 +33,16 @@ export function reportRemoteLog(payload: RemoteLogPayload) {
   const body = JSON.stringify({
     ...payload,
     url: typeof window !== 'undefined' ? window.location.href : payload.url,
-    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : payload.userAgent,
+    userAgent:
+      typeof navigator !== 'undefined'
+        ? navigator.userAgent
+        : payload.userAgent,
   })
 
-  if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+  if (
+    typeof navigator !== 'undefined' &&
+    typeof navigator.sendBeacon === 'function'
+  ) {
     const blob = new Blob([body], { type: 'application/json' })
     navigator.sendBeacon(remoteLogUrl, blob)
     return

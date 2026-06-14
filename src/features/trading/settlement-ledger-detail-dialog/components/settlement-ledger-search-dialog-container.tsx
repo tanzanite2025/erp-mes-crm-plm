@@ -1,5 +1,5 @@
-import { LedgerSearchDialog } from './ledger-search-dialog'
 import type { SettlementLedgerDetailDialogViewModel } from '../types'
+import { LedgerSearchDialog } from './ledger-search-dialog'
 
 interface SettlementLedgerSearchDialogContainerProps {
   vm: Pick<
@@ -48,7 +48,9 @@ export function SettlementLedgerSearchDialogContainer({
       onOpenChange={vm.setIsLedgerSearchDialogOpen}
       onConfirm={vm.handleLedgerSelected}
       searchResults={vm.displayLedgerOptions.map((option) => {
-        const matched = vm.remoteLedgerOptions.find((item) => item.id === option.id)
+        const matched = vm.remoteLedgerOptions.find(
+          (item) => item.id === option.id
+        )
         return {
           id: option.id,
           documentNo: option.documentNo,

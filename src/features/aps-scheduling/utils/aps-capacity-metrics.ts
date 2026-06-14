@@ -1,4 +1,7 @@
-import type { ApsJob, ApsSchedulingSource } from '../adapters/aps-scheduling.adapter'
+import type {
+  ApsJob,
+  ApsSchedulingSource,
+} from '../adapters/aps-scheduling.adapter'
 
 function parseTime(value: string): number | null {
   const parsed = new Date(value)
@@ -45,16 +48,25 @@ export function getApsCapacityMetrics(source: ApsSchedulingSource) {
   const lineCount = Math.max(source.lanes.length, 1)
   const shiftHours = 8
   const availableHours = lineCount * shiftHours
-  const occupiedHours = source.jobs.reduce((sum, job) => sum + estimateJobDurationHours(job), 0)
+  const occupiedHours = source.jobs.reduce(
+    (sum, job) => sum + estimateJobDurationHours(job),
+    0
+  )
   const timeWindowHours = getWindowHours(source.jobs)
   const linePressure = Math.min(1, occupiedHours / availableHours)
   const windowPressure = Math.min(1, occupiedHours / timeWindowHours)
-  const stagePressure = totalJobs > 0 ? (runningJobs + riskJobs * 0.5) / totalJobs : 0
+  const stagePressure =
+    totalJobs > 0 ? (runningJobs + riskJobs * 0.5) / totalJobs : 0
   const capacityRate =
     totalJobs > 0
       ? Math.min(
           95,
-          Math.round((linePressure * 0.45 + windowPressure * 0.35 + stagePressure * 0.2) * 100),
+          Math.round(
+            (linePressure * 0.45 +
+              windowPressure * 0.35 +
+              stagePressure * 0.2) *
+              100
+          )
         )
       : 0
 

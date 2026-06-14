@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
-import type { BatchOptimizerPlan, BatchOptimizerSolveResponse } from '../types'
 import { getActiveDiffSummary } from '../services/batch-engine-diff'
+import type { BatchOptimizerPlan, BatchOptimizerSolveResponse } from '../types'
 
 export type BatchEngineSelectedPlanContext = {
   selectedPlan?: BatchOptimizerPlan
@@ -17,7 +17,9 @@ type UseBatchEnginePlanSelectionOptions = {
   solution?: BatchOptimizerSolveResponse
 }
 
-export function useBatchEnginePlanSelection(options: UseBatchEnginePlanSelectionOptions) {
+export function useBatchEnginePlanSelection(
+  options: UseBatchEnginePlanSelectionOptions
+) {
   const { solution } = options
   const [selectedPlanRank, setSelectedPlanRank] = useState<number | null>(null)
   const [baselinePlanRank, setBaselinePlanRank] = useState<number | null>(null)
@@ -26,14 +28,20 @@ export function useBatchEnginePlanSelection(options: UseBatchEnginePlanSelection
     if (!solution?.plans.length) {
       return undefined
     }
-    return solution.plans.find((plan) => plan.rank === selectedPlanRank) ?? solution.plans[0]
+    return (
+      solution.plans.find((plan) => plan.rank === selectedPlanRank) ??
+      solution.plans[0]
+    )
   }, [selectedPlanRank, solution])
 
   const activeBaselinePlanRank = useMemo(() => {
     if (!solution?.plans.length) {
       return null
     }
-    if (baselinePlanRank && solution.plans.some((plan) => plan.rank === baselinePlanRank)) {
+    if (
+      baselinePlanRank &&
+      solution.plans.some((plan) => plan.rank === baselinePlanRank)
+    ) {
       return baselinePlanRank
     }
     return solution.plans[0]?.rank ?? null
@@ -53,9 +61,12 @@ export function useBatchEnginePlanSelection(options: UseBatchEnginePlanSelection
       baselinePlanRank: activeBaselinePlanRank,
       activeDiffSummary,
       effectiveDiffSummary: activeDiffSummary,
-      breakSliceCount: selectedPlan?.explainabilitySummary.breakSlices.length ?? 0,
-      zoneClusterCount: selectedPlan?.explainabilitySummary.zoneClusters.length ?? 0,
-      dynamicStrategyCount: selectedPlan?.candidateBudgetSummary.dynamicStrategyStats.length ?? 0,
+      breakSliceCount:
+        selectedPlan?.explainabilitySummary.breakSlices.length ?? 0,
+      zoneClusterCount:
+        selectedPlan?.explainabilitySummary.zoneClusters.length ?? 0,
+      dynamicStrategyCount:
+        selectedPlan?.candidateBudgetSummary.dynamicStrategyStats.length ?? 0,
     }),
     [activeBaselinePlanRank, activeDiffSummary, selectedPlan]
   )

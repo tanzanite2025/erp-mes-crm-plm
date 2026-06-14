@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useLanguage } from '@/context/language-provider'
 import { createLogger } from '@/lib/logger'
-import { type CompositeReadResource, type ReadResource, resolveQueryFailure } from '@/lib/read-resource'
-import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
+import {
+  type CompositeReadResource,
+  type ReadResource,
+  resolveQueryFailure,
+} from '@/lib/read-resource'
 import { failLoudly } from '@/lib/safe-catch'
+import { useLanguage } from '@/context/language-provider'
+import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import {
   WarehouseCategoryCoreService,
   type WarehouseCategoryOption,
@@ -22,7 +26,10 @@ import {
   filterWarehouseCategoriesByScene,
   getDefaultWarehouseCategoryCode,
 } from '../utils/warehouse-category-config'
-import { createWarehouseUiFeedback, type WarehouseUiFeedback } from './warehouse-ui-feedback'
+import {
+  createWarehouseUiFeedback,
+  type WarehouseUiFeedback,
+} from './warehouse-ui-feedback'
 
 const logger = createLogger('useProductInbound')
 
@@ -76,7 +83,9 @@ function resolveInboundCategoryLookup(
     preferredCode
   )
   if (!defaultCategoryCode) {
-    throw new Error(`[CRITICAL] Missing default warehouse category for ${scene}`)
+    throw new Error(
+      `[CRITICAL] Missing default warehouse category for ${scene}`
+    )
   }
 
   return {
@@ -104,18 +113,18 @@ export function useProductInbound(options?: UseProductInboundOptions) {
   const enabled = options?.enabled ?? true
   const ui = useMemo(
     () => options?.feedback ?? createWarehouseUiFeedback(),
-    [options?.feedback],
+    [options?.feedback]
   )
   const { allowsAction } = useNonBlockingPermissionActions()
   const queryClient = useQueryClient()
 
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
-  const [selectedItem, setSelectedItem] = useState<MasterDataSearchResult | null>(
-    null
-  )
+  const [selectedItem, setSelectedItem] =
+    useState<MasterDataSearchResult | null>(null)
   const [isInboundOpen, setIsInboundOpen] = useState(false)
-  const [formData, setFormData] = useState<InboundFormData>(DEFAULT_INBOUND_DATA)
+  const [formData, setFormData] =
+    useState<InboundFormData>(DEFAULT_INBOUND_DATA)
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -138,11 +147,15 @@ export function useProductInbound(options?: UseProductInboundOptions) {
   })
 
   const searchQueryResult = useQuery({
-    queryKey: warehouseQueryKeys.masterDataSearch('INBOUND', debouncedSearchQuery),
-    queryFn: () => WarehouseMasterDataService.searchSelectableItems({
-      query: debouncedSearchQuery,
-      scope: 'INBOUND',
-    }),
+    queryKey: warehouseQueryKeys.masterDataSearch(
+      'INBOUND',
+      debouncedSearchQuery
+    ),
+    queryFn: () =>
+      WarehouseMasterDataService.searchSelectableItems({
+        query: debouncedSearchQuery,
+        scope: 'INBOUND',
+      }),
     enabled: enabled && debouncedSearchQuery.length > 0,
   })
 
@@ -168,7 +181,8 @@ export function useProductInbound(options?: UseProductInboundOptions) {
       error: categoriesQuery.error,
       isPending: categoriesQuery.isPending,
       scope: 'useProductInbound.categories',
-      missingMessage: '[CRITICAL] Warehouse category options missing after load',
+      missingMessage:
+        '[CRITICAL] Warehouse category options missing after load',
       failureMessage: '[CRITICAL] Warehouse category options query failed',
     })
     if (categoriesFailure) {
@@ -207,7 +221,8 @@ export function useProductInbound(options?: UseProductInboundOptions) {
       error: searchQueryResult.error,
       isPending: searchQueryResult.isPending,
       scope: 'useProductInbound.search',
-      missingMessage: '[CRITICAL] Product inbound search results missing after load',
+      missingMessage:
+        '[CRITICAL] Product inbound search results missing after load',
       failureMessage: '[CRITICAL] Product inbound search query failed',
     })
     if (searchFailure) {
@@ -239,7 +254,10 @@ export function useProductInbound(options?: UseProductInboundOptions) {
     }
 
     ui.error(t('warehouse.inbound.toast.failed'))
-    logger.error(`Failed to load product inbound resources: ${readResource.scope}`, readResource.error)
+    logger.error(
+      `Failed to load product inbound resources: ${readResource.scope}`,
+      readResource.error
+    )
     failLoudly(readResource.error, readResource.scope)
   }, [readResource, t, ui])
 
@@ -249,7 +267,10 @@ export function useProductInbound(options?: UseProductInboundOptions) {
     }
 
     ui.error(t('warehouse.inbound.toast.failed'))
-    logger.error(`Product inbound search failed: ${searchResource.scope}`, searchResource.error)
+    logger.error(
+      `Product inbound search failed: ${searchResource.scope}`,
+      searchResource.error
+    )
     failLoudly(searchResource.error, searchResource.scope)
   }, [searchResource, t, ui])
 
@@ -268,7 +289,9 @@ export function useProductInbound(options?: UseProductInboundOptions) {
         queryClient.invalidateQueries({
           queryKey: warehouseQueryKeys.inboundHistory(),
         }),
-        queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.inventoryList() }),
+        queryClient.invalidateQueries({
+          queryKey: warehouseQueryKeys.inventoryList(),
+        }),
         queryClient.invalidateQueries({
           queryKey: warehouseQueryKeys.inventoryValuation(),
         }),
@@ -297,7 +320,8 @@ export function useProductInbound(options?: UseProductInboundOptions) {
     [readResource]
   )
   const warehouseCategories = useMemo(
-    () => (readResource.status === 'ready' ? readResource.warehouseCategories : []),
+    () =>
+      readResource.status === 'ready' ? readResource.warehouseCategories : [],
     [readResource]
   )
 
@@ -353,7 +377,9 @@ export function useProductInbound(options?: UseProductInboundOptions) {
       return
     }
 
-    await submitInboundMutation.mutateAsync(buildInboundTDO(selectedItem, formData))
+    await submitInboundMutation.mutateAsync(
+      buildInboundTDO(selectedItem, formData)
+    )
   }
 
   const closeInboundDialog = () => {

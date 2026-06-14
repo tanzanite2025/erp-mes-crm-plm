@@ -1,8 +1,11 @@
 import type { Permission } from '@/features/authz/data/permission-schema'
-import type { PermissionPageNode, PermissionTreeNode } from './permission-tree-types'
+import type {
+  PermissionPageNode,
+  PermissionTreeNode,
+} from './permission-tree-types'
 
 export function buildPermissionTreeNodes(
-  permissions: ReadonlyArray<Permission>,
+  permissions: ReadonlyArray<Permission>
 ): PermissionTreeNode[] {
   const byParentId = new Map<string, Permission[]>()
   const byCategory = new Map<string, Permission[]>()
@@ -23,13 +26,21 @@ export function buildPermissionTreeNodes(
 
   return menuPermissions.map((modulePermission) => {
     const directChildren = byParentId.get(modulePermission.id) || []
-    const pages = directChildren.filter((permission) => permission.category === 'page')
+    const pages = directChildren.filter(
+      (permission) => permission.category === 'page'
+    )
     const pageNodes: PermissionPageNode[] = pages.map((pagePermission) => ({
       page: pagePermission,
-      tabs: (byParentId.get(pagePermission.id) || []).filter((permission) => permission.category === 'tab'),
+      tabs: (byParentId.get(pagePermission.id) || []).filter(
+        (permission) => permission.category === 'tab'
+      ),
     }))
-    const directTabs = directChildren.filter((permission) => permission.category === 'tab')
-    const directActions = directChildren.filter((permission) => permission.category === 'action')
+    const directTabs = directChildren.filter(
+      (permission) => permission.category === 'tab'
+    )
+    const directActions = directChildren.filter(
+      (permission) => permission.category === 'action'
+    )
 
     return {
       module: modulePermission,
@@ -45,7 +56,9 @@ export function buildPermissionTreeNodes(
   })
 }
 
-export function buildPermissionTree(permissions: Permission[]): PermissionTreeNode[] {
+export function buildPermissionTree(
+  permissions: Permission[]
+): PermissionTreeNode[] {
   return buildPermissionTreeNodes(permissions)
 }
 

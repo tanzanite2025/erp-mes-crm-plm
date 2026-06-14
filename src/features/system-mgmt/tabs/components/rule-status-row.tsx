@@ -255,7 +255,7 @@ export function RuleStatusRow({
             <select
               value={segment?.dynamicTargetField ?? ''}
               onChange={(event) => onDynamicNotifyChange(event.target.value)}
-              className='h-10 rounded-2xl border border-input bg-background px-3 text-xs font-bold normal-case tracking-normal text-foreground'
+              className='h-10 rounded-2xl border border-input bg-background px-3 text-xs font-bold tracking-normal text-foreground normal-case'
             >
               <option value=''>不使用动态对象</option>
               {resolverOptions.map((resolver) => (
@@ -271,7 +271,7 @@ export function RuleStatusRow({
             <select
               value={approval.dynamicApproverField ?? ''}
               onChange={(event) => onApprovalDynamicChange(event.target.value)}
-              className='h-10 rounded-2xl border border-input bg-background px-3 text-xs font-bold normal-case tracking-normal text-foreground'
+              className='h-10 rounded-2xl border border-input bg-background px-3 text-xs font-bold tracking-normal text-foreground normal-case'
             >
               <option value=''>不使用动态审批人</option>
               {resolverOptions.map((resolver) => (
@@ -286,7 +286,7 @@ export function RuleStatusRow({
 
       <div
         className={cn(
-          'mt-4 rounded-2xl border px-4 py-3 text-[12px] font-bold leading-relaxed',
+          'mt-4 rounded-2xl border px-4 py-3 text-[12px] leading-relaxed font-bold',
           enabled
             ? 'border-primary/15 bg-primary/5 text-foreground'
             : 'border-muted/30 bg-muted/20 text-muted-foreground'

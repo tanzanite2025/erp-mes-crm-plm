@@ -181,10 +181,12 @@ export const trading = {
         'First choose the products to return from the order, then fill the return quantity in the selected list.',
       availableLinesTitle: 'Available order items',
       availableLinesDescription: 'Click + to add items to this return',
-      availableLinesEmpty: 'No more returnable items can be added from this order',
+      availableLinesEmpty:
+        'No more returnable items can be added from this order',
       selectedLinesTitle: 'Selected return items',
       selectedLinesDescription: 'Fill return quantities only in this list',
-      selectedLinesEmpty: 'Add the products you want to return from the available items list first',
+      selectedLinesEmpty:
+        'Add the products you want to return from the available items list first',
       addLine: 'Add',
       removeLine: 'Remove',
       itemInfo: 'Item info',
@@ -282,7 +284,8 @@ export const trading = {
     activeCustomers: 'Active Customers',
     activeCustomersDesc: 'Active entities involved in trading',
     top10ProductVolume: 'Top 10 Product Volume',
-    top10ProductVolumeDesc: 'Combined ordered quantity across the current Top 10 list',
+    top10ProductVolumeDesc:
+      'Combined ordered quantity across the current Top 10 list',
     analyzedLines: 'Analyzed Lines',
     analyzedLinesDesc: 'Rows of audited data transactions',
     customerProductRanking: 'Customer Product Ranking',
@@ -483,7 +486,8 @@ export const trading = {
     detailSourceTrusted: 'Trusted Tracking',
     detailSourceLocal: 'Local Timeline',
     detailRefreshCheckedAt: 'Last refresh',
-    detailFallback: 'This detail is still showing the local timeline because no trusted tracking order has been established yet.',
+    detailFallback:
+      'This detail is still showing the local timeline because no trusted tracking order has been established yet.',
     notAvailable: 'N/A',
     typeOutbound: 'Outbound',
     typeInbound: 'Inbound',
@@ -547,9 +551,12 @@ export const trading = {
       updateStatusSuccess: 'Logistics timeline updated',
       updateStatusFailed: 'Failed to update logistics timeline: {{message}}',
       trackingRefreshSuccess: 'Real-time tracking refreshed',
-      trackingRefreshManualReview: 'This tracking number requires manual review',
-      trackingRefreshInvalidConfig: 'The logistics provider configuration is incomplete',
-      trackingRefreshUnavailable: 'No trusted tracking order is available for this record yet',
+      trackingRefreshManualReview:
+        'This tracking number requires manual review',
+      trackingRefreshInvalidConfig:
+        'The logistics provider configuration is incomplete',
+      trackingRefreshUnavailable:
+        'No trusted tracking order is available for this record yet',
       trackingRefreshFailed: 'Real-time tracking refresh failed: {{message}}',
       deleteSuccess: 'Record removed',
       deleteFailed: 'Failed to remove record: {{message}}',

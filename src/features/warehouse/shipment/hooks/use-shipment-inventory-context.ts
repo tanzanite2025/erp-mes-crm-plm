@@ -3,9 +3,15 @@
 import { useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { createLogger } from '@/lib/logger'
-import { type CompositeReadResource, resolveQueryFailure } from '@/lib/read-resource'
+import {
+  type CompositeReadResource,
+  resolveQueryFailure,
+} from '@/lib/read-resource'
 import { failLoudly } from '@/lib/safe-catch'
-import { InventoryCoreService, type MasterDataSearchResult } from '../../inventory'
+import {
+  InventoryCoreService,
+  type MasterDataSearchResult,
+} from '../../inventory'
 import { warehouseQueryKeys } from '../../query-keys'
 
 const logger = createLogger('useShipmentInventoryContext')
@@ -33,8 +39,12 @@ export function useShipmentInventoryContext({
   })
 
   const categoryStockQuery = useQuery({
-    queryKey: warehouseQueryKeys.categoryStock(selectedItem?.id ?? '', sourceCategory),
-    queryFn: () => InventoryCoreService.getCategoryStock(selectedItem!.id, sourceCategory),
+    queryKey: warehouseQueryKeys.categoryStock(
+      selectedItem?.id ?? '',
+      sourceCategory
+    ),
+    queryFn: () =>
+      InventoryCoreService.getCategoryStock(selectedItem!.id, sourceCategory),
     enabled: Boolean(selectedItem && sourceCategory),
   })
 
@@ -48,7 +58,8 @@ export function useShipmentInventoryContext({
       error: inventoryBreakdownQuery.error,
       isPending: inventoryBreakdownQuery.isPending,
       scope: 'useShipmentInventoryContext.inventoryBreakdown',
-      missingMessage: '[CRITICAL] Shipment inventory breakdown missing after load',
+      missingMessage:
+        '[CRITICAL] Shipment inventory breakdown missing after load',
       failureMessage: '[CRITICAL] Shipment inventory breakdown query failed',
     })
     if (inventoryBreakdownFailure) {
@@ -87,7 +98,10 @@ export function useShipmentInventoryContext({
     return {
       status: 'ready',
       categoryStock: sourceCategory ? (categoryStockQuery.data as number) : 0,
-      inventoryBreakdown: inventoryBreakdownQuery.data as Record<string, number>,
+      inventoryBreakdown: inventoryBreakdownQuery.data as Record<
+        string,
+        number
+      >,
     }
   }, [
     categoryStockQuery.data,
@@ -105,7 +119,10 @@ export function useShipmentInventoryContext({
       return
     }
 
-    logger.error(`Failed to load shipment inventory context: ${readResource.scope}`, readResource.error)
+    logger.error(
+      `Failed to load shipment inventory context: ${readResource.scope}`,
+      readResource.error
+    )
     failLoudly(readResource.error, readResource.scope)
   }, [readResource])
 
@@ -114,7 +131,9 @@ export function useShipmentInventoryContext({
     retryRead: async () => {
       await Promise.all([
         inventoryBreakdownQuery.refetch(),
-        sourceCategory ? categoryStockQuery.refetch() : Promise.resolve(undefined),
+        sourceCategory
+          ? categoryStockQuery.refetch()
+          : Promise.resolve(undefined),
       ])
     },
   }

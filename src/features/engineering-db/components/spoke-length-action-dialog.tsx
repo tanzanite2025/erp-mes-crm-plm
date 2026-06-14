@@ -2,29 +2,34 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Ruler, Tag, Info, Save, Box, Nut } from 'lucide-react'
+import { toast } from 'sonner'
+import type { DeltaSet } from '@/lib/delta/types'
+import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { SelectDropdown } from '@/components/select-dropdown'
+import { ActionDialogShell } from '@/components/action-dialog-shell'
+import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
 import { FileUploader } from '@/components/file-uploader'
+import { SelectDropdown } from '@/components/select-dropdown'
+import { type Hub } from '../data/hub-schema'
+import { type Nipple } from '../data/nipple-schema'
 import {
   spokeLengthInputSchema,
   type SpokeLength,
   type SpokeLengthInput,
 } from '../data/schema'
+import { useEngineeringDbProductDisplayOptions } from '../hooks/use-engineering-db-product-display-options'
 import { hubService } from '../services/hub-service'
 import { nippleService } from '../services/nipple-service'
-import { type Hub } from '../data/hub-schema'
-import { type Nipple } from '../data/nipple-schema'
-import { ActionDialogShell } from '@/components/action-dialog-shell'
-import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
-import { useDeltaTracker } from '@/hooks/use-delta-tracker'
-import { toast } from 'sonner'
-import type { DeltaSet } from '@/lib/delta/types'
-import { useEngineeringDbProductDisplayOptions } from '../hooks/use-engineering-db-product-display-options'
 
-type SpokeLengthFormState = SpokeLengthInput & { id?: string; createdAt?: string }
-type SpokeLengthFormUpdater = SpokeLengthFormState | ((prev: SpokeLengthFormState) => SpokeLengthFormState)
+type SpokeLengthFormState = SpokeLengthInput & {
+  id?: string
+  createdAt?: string
+}
+type SpokeLengthFormUpdater =
+  | SpokeLengthFormState
+  | ((prev: SpokeLengthFormState) => SpokeLengthFormState)
 
 interface SpokeLengthActionDialogProps {
   currentRow?: SpokeLength | null
@@ -59,17 +64,21 @@ export function SpokeLengthActionDialog({
   onSave,
   isLoading,
 }: SpokeLengthActionDialogProps) {
-  const { productOptions } = useEngineeringDbProductDisplayOptions({ enabled: open })
+  const { productOptions } = useEngineeringDbProductDisplayOptions({
+    enabled: open,
+  })
   const [hubs, setHubs] = useState<Hub[]>([])
   const [nipples, setNipples] = useState<Nipple[]>([])
 
   const shellClasses = buildActionDialogShellClasses({
     content: 'sm:max-w-[700px] rounded-[32px] overflow-hidden',
     header: 'p-8 pb-4 border-none bg-muted/5',
-    title: 'text-xl font-black uppercase italic tracking-tighter flex items-center gap-2',
+    title:
+      'text-xl font-black uppercase italic tracking-tighter flex items-center gap-2',
     description: 'text-[10px] font-black uppercase tracking-widest opacity-60',
     body: 'p-8 pt-4 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar',
-    footer: 'p-8 pt-4 flex items-center justify-between w-full border-t border-dashed border-muted/20 bg-muted/5',
+    footer:
+      'p-8 pt-4 flex items-center justify-between w-full border-t border-dashed border-muted/20 bg-muted/5',
   })
 
   useEffect(() => {
@@ -84,7 +93,9 @@ export function SpokeLengthActionDialog({
         setHubs(hubData)
         setNipples(nippleData)
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : '结构关联件加载失败')
+        toast.error(
+          error instanceof Error ? error.message : '结构关联件加载失败'
+        )
       }
     }
 
@@ -103,7 +114,7 @@ export function SpokeLengthActionDialog({
         label: `${hub.brand} ${hub.name}`,
         value: hub.id,
       })),
-    [hubs],
+    [hubs]
   )
 
   const nippleOptions = useMemo(
@@ -112,26 +123,39 @@ export function SpokeLengthActionDialog({
         label: `${nipple.brand} ${nipple.name}`,
         value: nipple.id,
       })),
-    [nipples],
+    [nipples]
   )
 
-  const { data: formData, tracker, isDirty } = useDeltaTracker(initialFormData, open)
+  const {
+    data: formData,
+    tracker,
+    isDirty,
+  } = useDeltaTracker(initialFormData, open)
 
-  const setFormData = useCallback((updater: SpokeLengthFormUpdater) => {
-    if (typeof updater === 'function') {
-      const next = updater(formData)
-      Object.assign(formData, next)
-    } else {
-      Object.assign(formData, updater)
-    }
-  }, [formData])
+  const setFormData = useCallback(
+    (updater: SpokeLengthFormUpdater) => {
+      if (typeof updater === 'function') {
+        const next = updater(formData)
+        Object.assign(formData, next)
+      } else {
+        Object.assign(formData, updater)
+      }
+    },
+    [formData]
+  )
 
-  const updateField = useCallback(<K extends keyof SpokeLengthFormState>(field: K, value: SpokeLengthFormState[K]) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }))
-  }, [setFormData])
+  const updateField = useCallback(
+    <K extends keyof SpokeLengthFormState>(
+      field: K,
+      value: SpokeLengthFormState[K]
+    ) => {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: value,
+      }))
+    },
+    [setFormData]
+  )
 
   const handleSave = async () => {
     const parsed = spokeLengthInputSchema.safeParse(formData)
@@ -182,22 +206,22 @@ export function SpokeLengthActionDialog({
       descriptionClassName={shellClasses.description}
       footer={
         <>
-          <p className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50'>
-            <span className='inline-block size-1.5 rounded-full bg-blue-500 animate-pulse' />
+          <p className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground uppercase opacity-50'>
+            <span className='inline-block size-1.5 animate-pulse rounded-full bg-blue-500' />
             Sync_to_BOM_Hierarchy
           </p>
           <div className='flex items-center gap-3'>
             <Button
               variant='ghost'
               onClick={() => onOpenChange(false)}
-              className='rounded-full px-6 text-[10px] font-black uppercase tracking-widest'
+              className='rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
             >
               取消 / Cancel
             </Button>
             <Button
               disabled={isLoading || (isEdit && !isDirty())}
               onClick={handleSave}
-              className='h-11 gap-2 rounded-full bg-blue-600 px-10 text-[10px] font-black uppercase tracking-widest text-white shadow-xl shadow-blue-600/20 transition-all active:scale-95 hover:bg-blue-700'
+              className='h-11 gap-2 rounded-full bg-blue-600 px-10 text-[10px] font-black tracking-widest text-white uppercase shadow-xl shadow-blue-600/20 transition-all hover:bg-blue-700 active:scale-95'
             >
               {isLoading ? (
                 <span className='size-4 animate-spin rounded-full border-2 border-current border-t-transparent' />
@@ -215,7 +239,7 @@ export function SpokeLengthActionDialog({
       <div className='relative grid gap-8'>
         <div className='grid grid-cols-2 gap-6'>
           <div className='space-y-2'>
-            <Label className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>
+            <Label className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
               <Tag className='size-3' /> 名称 / Display Name
             </Label>
             <Input
@@ -226,7 +250,7 @@ export function SpokeLengthActionDialog({
             />
           </div>
           <div className='space-y-2 text-blue-600'>
-            <Label className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-70'>
+            <Label className='flex items-center gap-2 text-[10px] font-black tracking-widest uppercase opacity-70'>
               <Box className='size-3' /> 成品 SKU / Parent Product
             </Label>
             <SelectDropdown
@@ -241,7 +265,9 @@ export function SpokeLengthActionDialog({
 
         <div className='grid grid-cols-2 gap-6 rounded-[32px] border border-dashed border-muted-foreground/10 bg-muted/20 p-6'>
           <div className='space-y-2'>
-            <Label className='text-[10px] font-black uppercase tracking-widest'>长度 / Spoke Length (mm)</Label>
+            <Label className='text-[10px] font-black tracking-widest uppercase'>
+              长度 / Spoke Length (mm)
+            </Label>
             <Input
               placeholder='例如：298'
               className='h-12 rounded-2xl border-none bg-background px-5 font-mono text-sm font-black shadow-sm'
@@ -250,7 +276,9 @@ export function SpokeLengthActionDialog({
             />
           </div>
           <div className='space-y-2'>
-            <Label className='text-[10px] font-black uppercase tracking-widest'>材质 / Material</Label>
+            <Label className='text-[10px] font-black tracking-widest uppercase'>
+              材质 / Material
+            </Label>
             <Input
               placeholder='例如：SUS304 / Steel'
               className='h-12 rounded-2xl border-none bg-background px-5 text-sm font-bold shadow-sm'
@@ -261,12 +289,12 @@ export function SpokeLengthActionDialog({
         </div>
 
         <div className='space-y-6 rounded-[32px] border border-dashed border-muted-foreground/10 bg-muted/10 p-6'>
-          <p className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/40'>
+          <p className='text-[9px] font-black tracking-widest text-muted-foreground/40 uppercase'>
             Linked_Components / 结构关联件
           </p>
           <div className='grid grid-cols-2 gap-6'>
             <div className='space-y-2'>
-              <Label className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-70'>
+              <Label className='flex items-center gap-2 text-[10px] font-black tracking-widest uppercase opacity-70'>
                 <Box className='size-3 text-indigo-500' /> 花鼓 / Hub
               </Label>
               <SelectDropdown
@@ -278,7 +306,7 @@ export function SpokeLengthActionDialog({
               />
             </div>
             <div className='space-y-2'>
-              <Label className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-70'>
+              <Label className='flex items-center gap-2 text-[10px] font-black tracking-widest uppercase opacity-70'>
                 <Nut className='size-3 text-orange-500' /> 条帽 / Nipple
               </Label>
               <SelectDropdown
@@ -293,7 +321,7 @@ export function SpokeLengthActionDialog({
         </div>
 
         <div className='space-y-3 rounded-[32px] border border-dashed border-blue-500/20 bg-blue-500/5 p-6'>
-          <Label className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-blue-600/60'>
+          <Label className='flex items-center gap-2 text-[10px] font-black tracking-widest text-blue-600/60 uppercase'>
             <Info className='size-3' /> 附件 / Technical Attachment
           </Label>
           <FileUploader

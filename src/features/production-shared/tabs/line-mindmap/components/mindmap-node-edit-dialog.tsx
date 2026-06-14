@@ -34,8 +34,10 @@ export function MindmapNodeEditDialog({
                 <PencilLine className='size-4 text-primary' />
               </div>
               <div className='space-y-1 pr-8'>
-                <DialogTitle className='text-sm font-black italic tracking-tighter uppercase'>节点编辑</DialogTitle>
-                <DialogDescription className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                <DialogTitle className='text-sm font-black tracking-tighter uppercase italic'>
+                  节点编辑
+                </DialogTitle>
+                <DialogDescription className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                   {selectedNode
                     ? `编辑 ${levelNames[selectedNode.level]} 节点，保持脑图主视图整宽可扫视。`
                     : '选中一个节点后，可在弹窗中查看详情与执行编辑。'}

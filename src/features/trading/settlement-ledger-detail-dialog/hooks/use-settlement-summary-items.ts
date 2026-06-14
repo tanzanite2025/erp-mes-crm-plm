@@ -1,11 +1,10 @@
 import { useMemo } from 'react'
-
-import { formatSettlementMoney } from '../utils/format-settlement-money'
 import type {
   SettlementDetailLike,
   SettlementLedgerDetailDialogConfig,
   SettlementLocalLedgerLike,
 } from '../types'
+import { formatSettlementMoney } from '../utils/format-settlement-money'
 
 interface UseSettlementSummaryItemsParams<
   TDetail extends SettlementDetailLike,
@@ -16,14 +15,23 @@ interface UseSettlementSummaryItemsParams<
   isCurrencyLoading: boolean
   config: Pick<
     SettlementLedgerDetailDialogConfig<TDetail, TLocalLedger>,
-    'partnerLabel' | 'amountLabel' | 'getDetailPartnerName' | 'summaryAmountLabel' | 'getDetailSummaryAmount'
+    | 'partnerLabel'
+    | 'amountLabel'
+    | 'getDetailPartnerName'
+    | 'summaryAmountLabel'
+    | 'getDetailSummaryAmount'
   >
 }
 
 export function useSettlementSummaryItems<
   TDetail extends SettlementDetailLike,
   TLocalLedger extends SettlementLocalLedgerLike,
->({ detail, currencies, isCurrencyLoading, config }: UseSettlementSummaryItemsParams<TDetail, TLocalLedger>) {
+>({
+  detail,
+  currencies,
+  isCurrencyLoading,
+  config,
+}: UseSettlementSummaryItemsParams<TDetail, TLocalLedger>) {
   const currencyOptions = useMemo(
     () => currencies.filter((item) => item.status === 'Active'),
     [currencies]
@@ -31,17 +39,25 @@ export function useSettlementSummaryItems<
   const summaryItems = useMemo(
     () => [
       { label: '单据编号', value: detail?.documentNo ?? '-' },
-      { label: config.partnerLabel, value: detail ? config.getDetailPartnerName(detail) : '-' },
+      {
+        label: config.partnerLabel,
+        value: detail ? config.getDetailPartnerName(detail) : '-',
+      },
       {
         label: config.summaryAmountLabel ?? '单据金额',
         value:
           detail && config.getDetailSummaryAmount
-            ? formatSettlementMoney(config.getDetailSummaryAmount(detail), detail.currency)
+            ? formatSettlementMoney(
+                config.getDetailSummaryAmount(detail),
+                detail.currency
+              )
             : '-',
       },
       {
         label: `${config.amountLabel}金额`,
-        value: detail ? formatSettlementMoney(detail.outstandingAmount, detail.currency) : '-',
+        value: detail
+          ? formatSettlementMoney(detail.outstandingAmount, detail.currency)
+          : '-',
       },
     ],
     [config, detail]
@@ -49,7 +65,8 @@ export function useSettlementSummaryItems<
 
   return {
     currencyOptions,
-    isCurrencyOptionsUnavailable: !isCurrencyLoading && currencyOptions.length === 0,
+    isCurrencyOptionsUnavailable:
+      !isCurrencyLoading && currencyOptions.length === 0,
     summaryItems,
   }
 }

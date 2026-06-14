@@ -1,10 +1,10 @@
 import { ChevronDown, Settings2 } from 'lucide-react'
+import { useLanguage } from '@/context/language-provider'
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
-import { useLanguage } from '@/context/language-provider'
 import type { BatchEngineControls } from '../types'
 import type { CuttingEngineInput } from '../types/cutting-engine-wasm'
 
@@ -21,7 +21,9 @@ function formatLengthBoundary(controls: BatchEngineControls) {
     : `${controls.minSupportedLengthMm || '--'} - ${controls.maxSupportedLengthMm || '--'} mm`
 }
 
-export function BatchEngineConfigDebugPanel(props: BatchEngineConfigDebugPanelProps) {
+export function BatchEngineConfigDebugPanel(
+  props: BatchEngineConfigDebugPanelProps
+) {
   const { t } = useLanguage()
   const { controls, request, isResultStale } = props
   const requestJson = request
@@ -30,7 +32,7 @@ export function BatchEngineConfigDebugPanel(props: BatchEngineConfigDebugPanelPr
 
   return (
     <section className='relative rounded-[24px] border border-dashed border-border/60 bg-muted/5 p-4'>
-      <div className='absolute inset-0 rounded-[24px] bg-linear-to-br from-primary/5 via-transparent pointer-events-none' />
+      <div className='pointer-events-none absolute inset-0 rounded-[24px] bg-linear-to-br from-primary/5 via-transparent' />
       <div className='relative flex flex-col gap-4'>
         <div className='flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between'>
           <div className='flex items-start gap-3'>
@@ -38,19 +40,19 @@ export function BatchEngineConfigDebugPanel(props: BatchEngineConfigDebugPanelPr
               <Settings2 className='size-4' />
             </div>
             <div>
-              <p className='text-[10px] font-black uppercase tracking-[0.24em] text-primary/70'>
+              <p className='text-[10px] font-black tracking-[0.24em] text-primary/70 uppercase'>
                 {t('rawMaterials.batchEngine.debug.kicker')}
               </p>
-              <h2 className='mt-2 text-sm font-black tracking-tighter italic uppercase text-foreground'>
+              <h2 className='mt-2 text-sm font-black tracking-tighter text-foreground uppercase italic'>
                 {t('rawMaterials.batchEngine.debug.title')}
               </h2>
-              <p className='mt-1 text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>
+              <p className='mt-1 text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                 {t('rawMaterials.batchEngine.debug.description')}
               </p>
             </div>
           </div>
           {isResultStale ? (
-            <span className='rounded-full bg-amber-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-amber-600'>
+            <span className='rounded-full bg-amber-500/10 px-3 py-1 text-[10px] font-black tracking-widest text-amber-600 uppercase'>
               {t('rawMaterials.batchEngine.debug.resultStale')}
             </span>
           ) : null}
@@ -78,10 +80,10 @@ export function BatchEngineConfigDebugPanel(props: BatchEngineConfigDebugPanelPr
         <Collapsible className='rounded-[18px] border border-dashed border-border/50 bg-background/60 p-3'>
           <CollapsibleTrigger className='group flex w-full items-center justify-between gap-3 text-left'>
             <div>
-              <p className='text-[10px] font-black uppercase tracking-[0.2em] text-foreground/70'>
+              <p className='text-[10px] font-black tracking-[0.2em] text-foreground/70 uppercase'>
                 {t('rawMaterials.batchEngine.debug.payload.title')}
               </p>
-              <p className='mt-1 text-[8px] font-black uppercase tracking-widest text-muted-foreground/60'>
+              <p className='mt-1 text-[8px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                 {t('rawMaterials.batchEngine.debug.payload.description')}
               </p>
             </div>
@@ -103,8 +105,12 @@ export function BatchEngineConfigDebugPanel(props: BatchEngineConfigDebugPanelPr
 function ConfigChip({ label, value }: { label: string; value: string }) {
   return (
     <div className='rounded-2xl border border-dashed border-border/50 bg-background/70 px-3 py-2'>
-      <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>{label}</p>
-      <p className='mt-1 truncate font-mono text-[11px] font-black text-foreground'>{value}</p>
+      <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+        {label}
+      </p>
+      <p className='mt-1 truncate font-mono text-[11px] font-black text-foreground'>
+        {value}
+      </p>
     </div>
   )
 }

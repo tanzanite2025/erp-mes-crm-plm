@@ -4,12 +4,12 @@ import {
   type RuleSegment,
 } from '../data/notification-rule-schema'
 import { type StandardCommand } from '../data/schema'
+import { recordExecutionLog } from './execution-log-writer'
 import {
   type RuleExecutionEvent,
   type RuleExecutionMetadata,
   type RuleExecutionMode,
 } from './rule-execution-core'
-import { recordExecutionLog } from './execution-log-writer'
 import {
   buildBusinessKey,
   getMetadataRecord,
@@ -39,7 +39,10 @@ export interface NotificationExecutionResult {
   skippedCount: number
 }
 
-function shouldSkipRetroactiveNotification(uniqueKey: string, snoozeMs: number) {
+function shouldSkipRetroactiveNotification(
+  uniqueKey: string,
+  snoozeMs: number
+) {
   const isAlreadyVisible = NotificationGateway.hasMessage((message) => {
     const metadata = getMetadataRecord(message.metadata)
     return (
@@ -113,7 +116,10 @@ export function executeNotificationAction({
       }
 
       const resolvedContent = resolveTemplate(command.content, metadata)
-      const resolvedTitle = resolveTemplate(event.title || segment.title, metadata)
+      const resolvedTitle = resolveTemplate(
+        event.title || segment.title,
+        metadata
+      )
       const resolvedActionUrl = command.targetLink
         ? resolveTemplate(command.targetLink, metadata)
         : event.actionUrl

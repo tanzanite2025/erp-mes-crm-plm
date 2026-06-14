@@ -2,13 +2,13 @@ import { useCallback, useMemo, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useLanguage } from '@/context/language-provider'
 import type { Standard } from '../data/schema'
-import { useQualityMutations } from './use-quality'
 import { dispatchQualityStandardRoutingEvent } from '../services/quality-routing-service'
 import {
   buildQualityStandardWorkflowMutation,
   type QualityStandardWorkflowActionInput,
 } from '../services/quality-standard-workflow-service'
 import { getQualityStandardAvailableActions } from '../utils/quality-utils'
+import { useQualityMutations } from './use-quality'
 
 interface UseQualityStandardPreviewActionsOptions {
   standard?: Standard
@@ -128,7 +128,13 @@ export function useQualityStandardPreviewActions({
     if (saved) {
       setIsApproveDialogOpen(false)
     }
-  }, [approveComment, availableActions.canApprove, runWorkflowAction, standard, t])
+  }, [
+    approveComment,
+    availableActions.canApprove,
+    runWorkflowAction,
+    standard,
+    t,
+  ])
 
   const handleReject = useCallback(async () => {
     if (!standard || !availableActions.canReject) {
@@ -169,7 +175,13 @@ export function useQualityStandardPreviewActions({
     if (saved) {
       setIsArchiveDialogOpen(false)
     }
-  }, [archiveReason, availableActions.canArchive, runWorkflowAction, standard, t])
+  }, [
+    archiveReason,
+    availableActions.canArchive,
+    runWorkflowAction,
+    standard,
+    t,
+  ])
 
   const primaryActionLabel = availableActions.canApprove
     ? t('quality.standards.workspace.approve')

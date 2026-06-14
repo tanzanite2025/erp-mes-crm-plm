@@ -44,4 +44,7 @@ export {
   resolveRoutePermissionIds,
 } from './route-permission-queries'
 
-export { generatePermissionMatrixUI, type PermissionMatrixUI } from './permission-matrix-generator'
+export {
+  generatePermissionMatrixUI,
+  type PermissionMatrixUI,
+} from './permission-matrix-generator'

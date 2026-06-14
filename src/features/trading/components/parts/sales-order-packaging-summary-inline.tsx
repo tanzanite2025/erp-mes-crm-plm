@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { Boxes, PackageSearch, TriangleAlert } from 'lucide-react'
-import { useLanguage } from '@/context/language-provider'
 import { failLoudly } from '@/lib/safe-catch'
+import { useLanguage } from '@/context/language-provider'
 import type { SalesOrderPackagingCardViewModel } from '../../utils/sales-order-packaging-card-view-model'
 
 export function SalesOrderPackagingSummaryInline({
@@ -31,7 +31,9 @@ export function SalesOrderPackagingSummaryInline({
     return (
       <div className='mt-2 inline-flex items-center gap-1 rounded-full border border-dashed border-muted-foreground/20 bg-muted/20 px-2 py-1 text-[8px] font-black text-muted-foreground'>
         <PackageSearch className='size-3' />
-        <span>{t('tradingSalesOrder.packagingPreview.summary.loadingInline')}</span>
+        <span>
+          {t('tradingSalesOrder.packagingPreview.summary.loadingInline')}
+        </span>
       </div>
     )
   }
@@ -45,20 +47,24 @@ export function SalesOrderPackagingSummaryInline({
       <span className='inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/5 px-2 py-1 text-[8px] font-black text-primary'>
         <Boxes className='size-3' />
         <span>
-          {t('tradingSalesOrder.packagingPreview.summary.boxes')}: {data.summary.totalBoxCount}
+          {t('tradingSalesOrder.packagingPreview.summary.boxes')}:{' '}
+          {data.summary.totalBoxCount}
         </span>
       </span>
       <span className='inline-flex items-center rounded-full border border-muted-foreground/15 bg-background/80 px-2 py-1 text-[8px] font-black text-muted-foreground'>
-        {t('tradingSalesOrder.packagingPreview.summary.volume')}: {data.summary.totalVolume.toFixed(2)}
+        {t('tradingSalesOrder.packagingPreview.summary.volume')}:{' '}
+        {data.summary.totalVolume.toFixed(2)}
       </span>
       <span className='inline-flex items-center rounded-full border border-muted-foreground/15 bg-background/80 px-2 py-1 text-[8px] font-black text-muted-foreground'>
-        {t('tradingSalesOrder.packagingPreview.summary.grossWeight')}: {data.summary.totalGrossWeight.toFixed(2)}
+        {t('tradingSalesOrder.packagingPreview.summary.grossWeight')}:{' '}
+        {data.summary.totalGrossWeight.toFixed(2)}
       </span>
       {data.summary.warnings.length > 0 && (
         <span className='inline-flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/5 px-2 py-1 text-[8px] font-black text-amber-700'>
           <TriangleAlert className='size-3' />
           <span>
-            {t('tradingSalesOrder.packagingPreview.summary.warnings')}: {data.summary.warnings.length}
+            {t('tradingSalesOrder.packagingPreview.summary.warnings')}:{' '}
+            {data.summary.warnings.length}
           </span>
         </span>
       )}

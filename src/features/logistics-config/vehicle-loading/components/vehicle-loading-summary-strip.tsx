@@ -1,4 +1,12 @@
-export function VehicleLoadingSummaryStrip({ boxesPerLayer, layerCount, maxBoxes }: { boxesPerLayer: number; layerCount: number; maxBoxes: number }) {
+export function VehicleLoadingSummaryStrip({
+  boxesPerLayer,
+  layerCount,
+  maxBoxes,
+}: {
+  boxesPerLayer: number
+  layerCount: number
+  maxBoxes: number
+}) {
   return (
     <div className='mt-2 flex items-center justify-between text-[10px] font-black text-primary/60'>
       <span>每层 {boxesPerLayer} 箱</span>

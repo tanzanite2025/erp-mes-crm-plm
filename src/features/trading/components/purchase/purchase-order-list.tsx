@@ -1,23 +1,26 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Loader2 } from 'lucide-react'
 import { Route } from '@/routes/_authenticated/purchase/orders'
-import { PurchaseOrderListToolbar } from './purchase-order-list-toolbar'
-import { ForbiddenState } from '@/components/forbidden-state'
-import { Button } from '@/components/ui/button'
-import { PurchaseOrderDetailSheet } from './purchase-order-detail-sheet'
-import { useLanguage } from '@/context/language-provider'
-import { createLogger } from '@/lib/logger'
-import { type CompositeReadResource, resolveQueryFailure } from '@/lib/read-resource'
-import { failLoudly } from '@/lib/safe-catch'
+import { Loader2 } from 'lucide-react'
 import { isForbiddenError } from '@/lib/error-status'
-import { PurchaseOrderMaster } from './purchase-order-master'
-import { PurchaseOrderActionDialog } from './purchase-order-action-dialog'
+import { createLogger } from '@/lib/logger'
+import {
+  type CompositeReadResource,
+  resolveQueryFailure,
+} from '@/lib/read-resource'
+import { failLoudly } from '@/lib/safe-catch'
+import { useLanguage } from '@/context/language-provider'
+import { Button } from '@/components/ui/button'
+import { ForbiddenState } from '@/components/forbidden-state'
+import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
+import { type PurchaseOrderListItem } from '../../data/schema'
+import { usePurchaseOrderFilterOptions } from '../../hooks/use-purchase-order-filter-options'
+import { usePurchaseOrderListViewModel } from '../../hooks/use-purchase-order-list-view-model'
 import { PurchaseOrderPayableDetailDialogBridge } from '../../payables/components/purchase-order-payable-detail-dialog-bridge'
 import { useGetPurchaseOrders, usePurchaseOrderMutations } from '../../purchase'
-import { type PurchaseOrderListItem } from '../../data/schema'
-import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
-import { usePurchaseOrderListViewModel } from '../../hooks/use-purchase-order-list-view-model'
-import { usePurchaseOrderFilterOptions } from '../../hooks/use-purchase-order-filter-options'
+import { PurchaseOrderActionDialog } from './purchase-order-action-dialog'
+import { PurchaseOrderDetailSheet } from './purchase-order-detail-sheet'
+import { PurchaseOrderListToolbar } from './purchase-order-list-toolbar'
+import { PurchaseOrderMaster } from './purchase-order-master'
 
 const logger = createLogger('PurchaseOrderList')
 
@@ -35,11 +38,14 @@ export function PurchaseOrderList() {
   const ordersQuery = useGetPurchaseOrders(page, pageSize)
   const { deleteMutation } = usePurchaseOrderMutations()
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false)
-  const [editingOrder, setEditingOrder] = useState<PurchaseOrderListItem | null>(null)
+  const [editingOrder, setEditingOrder] =
+    useState<PurchaseOrderListItem | null>(null)
   const [statusFilter, setStatusFilter] = useState('ALL')
   const [paymentMethodFilter, setPaymentMethodFilter] = useState('ALL')
   const [paymentTermFilter, setPaymentTermFilter] = useState('ALL')
-  const [viewingPayableOrderId, setViewingPayableOrderId] = useState<string | null>(null)
+  const [viewingPayableOrderId, setViewingPayableOrderId] = useState<
+    string | null
+  >(null)
   const navigate = Route.useNavigate()
   const searchTerm = search || ''
   const selectedId = detailId || undefined
@@ -87,7 +93,10 @@ export function PurchaseOrderList() {
       return
     }
 
-    logger.error(`Failed to load purchase order list: ${listResource.scope}`, listResource.error)
+    logger.error(
+      `Failed to load purchase order list: ${listResource.scope}`,
+      listResource.error
+    )
     failLoudly(listResource.error, listResource.scope)
   }, [listResource])
 
@@ -124,7 +133,11 @@ export function PurchaseOrderList() {
   const handleDeleteOrder = (id: string) => {
     if (!allowsAction('action_trading_purchase_order_delete')) return
     const order = orders.find((item) => item.id === id)
-    if (order?.status !== 'Canceled' && !confirm(t('purchase.orders.deleteConfirm'))) return
+    if (
+      order?.status !== 'Canceled' &&
+      !confirm(t('purchase.orders.deleteConfirm'))
+    )
+      return
     deleteMutation.mutate(id)
   }
 
@@ -140,9 +153,9 @@ export function PurchaseOrderList() {
 
   if (listResource.status === 'loading') {
     return (
-      <div className='h-[60vh] flex flex-col items-center justify-center space-y-4 animate-in fade-in duration-500'>
-        <Loader2 className='size-10 text-primary animate-spin opacity-20' />
-        <p className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground animate-pulse'>
+      <div className='flex h-[60vh] animate-in flex-col items-center justify-center space-y-4 duration-500 fade-in'>
+        <Loader2 className='size-10 animate-spin text-primary opacity-20' />
+        <p className='animate-pulse text-[10px] font-black tracking-[0.2em] text-muted-foreground uppercase'>
           {t('purchase.orders.loading')}
         </p>
       </div>
@@ -155,16 +168,18 @@ export function PurchaseOrderList() {
 
   if (listResource.status === 'error') {
     return (
-      <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+      <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
         <div className='flex min-h-[360px] flex-col items-center justify-center rounded-[32px] border border-dashed border-rose-500/25 bg-rose-500/3 px-6 text-center'>
-          <p className='text-[10px] font-black uppercase tracking-widest text-rose-700'>采购订单列表加载失败</p>
-          <p className='mt-3 max-w-2xl text-[11px] font-bold leading-5 text-rose-700/80'>
+          <p className='text-[10px] font-black tracking-widest text-rose-700 uppercase'>
+            采购订单列表加载失败
+          </p>
+          <p className='mt-3 max-w-2xl text-[11px] leading-5 font-bold text-rose-700/80'>
             {listResource.error.message || '请重试后再查看采购订单列表。'}
           </p>
           <Button
             type='button'
             variant='outline'
-            className='mt-5 h-10 rounded-full border-dashed px-6 text-[10px] font-black uppercase tracking-widest'
+            className='mt-5 h-10 rounded-full border-dashed px-6 text-[10px] font-black tracking-widest uppercase'
             onClick={() => {
               void ordersQuery.refetch()
             }}
@@ -209,14 +224,24 @@ export function PurchaseOrderList() {
   }
 
   return (
-    <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+    <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
       <PurchaseOrderListToolbar
         searchTerm={searchTerm}
         statusFilter={statusFilter}
         paymentMethodFilter={paymentMethodFilter}
         paymentTermFilter={paymentTermFilter}
-        financeFilterStatus={financeFilterOptions.readResource.status === 'error' ? 'error' : financeFilterOptions.readResource.status === 'loading' ? 'loading' : 'ready'}
-        financeFilterErrorMessage={financeFilterOptions.readResource.status === 'error' ? financeFilterOptions.readResource.error.message : undefined}
+        financeFilterStatus={
+          financeFilterOptions.readResource.status === 'error'
+            ? 'error'
+            : financeFilterOptions.readResource.status === 'loading'
+              ? 'loading'
+              : 'ready'
+        }
+        financeFilterErrorMessage={
+          financeFilterOptions.readResource.status === 'error'
+            ? financeFilterOptions.readResource.error.message
+            : undefined
+        }
         onRetryFinanceFilters={() => {
           void financeFilterOptions.retry()
         }}
@@ -229,7 +254,7 @@ export function PurchaseOrderList() {
         onAddOrder={handleAddOrder}
       />
 
-      <div className='flex flex-col gap-4 bg-background/50 rounded-[32px] border border-dashed border-muted/50 p-2 shadow-sm'>
+      <div className='flex flex-col gap-4 rounded-[32px] border border-dashed border-muted/50 bg-background/50 p-2 shadow-sm'>
         <PurchaseOrderMaster
           orders={filteredOrders}
           selectedId={selectedId}
@@ -240,13 +265,13 @@ export function PurchaseOrderList() {
         />
 
         {total > pageSize && (
-          <div className='flex items-center justify-center gap-6 py-4 bg-muted/5 rounded-2xl border border-dashed border-muted/30'>
+          <div className='flex items-center justify-center gap-6 rounded-2xl border border-dashed border-muted/30 bg-muted/5 py-4'>
             <Button
               variant='ghost'
               size='sm'
               disabled={page === 1}
               onClick={() => setPage((prev) => prev - 1)}
-              className='h-9 px-6 text-[10px] font-black uppercase tracking-widest hover:bg-white hover:shadow-md transition-all'
+              className='h-9 px-6 text-[10px] font-black tracking-widest uppercase transition-all hover:bg-white hover:shadow-md'
             >
               {t('purchase.orders.prevPage')}
             </Button>
@@ -254,7 +279,7 @@ export function PurchaseOrderList() {
               <span className='text-[10px] font-black text-muted-foreground/40'>
                 {t('purchase.orders.page')}
               </span>
-              <span className='text-[12px] font-black tabular-nums border-b-2 border-primary/20 pb-0.5'>
+              <span className='border-b-2 border-primary/20 pb-0.5 text-[12px] font-black tabular-nums'>
                 {page}
               </span>
               <span className='text-[10px] font-black text-muted-foreground/40'>
@@ -266,7 +291,7 @@ export function PurchaseOrderList() {
               size='sm'
               disabled={page >= Math.ceil(total / pageSize)}
               onClick={() => setPage((prev) => prev + 1)}
-              className='h-9 px-6 text-[10px] font-black uppercase tracking-widest hover:bg-white hover:shadow-md transition-all'
+              className='h-9 px-6 text-[10px] font-black tracking-widest uppercase transition-all hover:bg-white hover:shadow-md'
             >
               {t('purchase.orders.nextPage')}
             </Button>

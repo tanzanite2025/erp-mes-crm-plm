@@ -93,7 +93,8 @@ export const quality = {
       archiveDescription:
         'Please provide the archive reason. After archiving, the standard remains available only for traceability and audit.',
       reviewCommentLabel: 'Review Comment',
-      reviewCommentPlaceholder: 'Add the approval note for this review (optional)...',
+      reviewCommentPlaceholder:
+        'Add the approval note for this review (optional)...',
       rejectReasonLabel: 'Rejection Reason',
       rejectReasonPlaceholder: 'Please enter the rejection reason...',
       archiveReasonLabel: 'Archive Reason',
@@ -203,9 +204,11 @@ export const quality = {
         validation: {
           productRequired: 'Please select a product first.',
           selectionRequired: 'Please add at least one level-3 item.',
-          weightRequired: 'Please fill in the weight for every selected level-3 item.',
+          weightRequired:
+            'Please fill in the weight for every selected level-3 item.',
         },
-        toastDraftReady: 'Controlled protocol draft captured with {{count}} items.',
+        toastDraftReady:
+          'Controlled protocol draft captured with {{count}} items.',
       },
       detail: {
         title: 'Standard Details',

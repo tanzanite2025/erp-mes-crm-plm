@@ -6,7 +6,9 @@ import {
 
 export type SalesExchangesSearch = SalesExchangeRouteSearch
 
-export const Route = createFileRoute('/_authenticated/trading/sales-exchanges')({
-  validateSearch: (search: Record<string, unknown>): SalesExchangesSearch =>
-    parseSalesExchangeRouteSearch(search),
-})
+export const Route = createFileRoute('/_authenticated/trading/sales-exchanges')(
+  {
+    validateSearch: (search: Record<string, unknown>): SalesExchangesSearch =>
+      parseSalesExchangeRouteSearch(search),
+  }
+)

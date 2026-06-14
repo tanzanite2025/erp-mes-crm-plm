@@ -18,20 +18,26 @@ export const ProductAttributeOptionService = {
     const res = await apiFetch<ProductAttributeOption[]>(
       `/engineering/product-attribute-options${qs ? `?${qs}` : ''}`
     )
-    return ensureArrayResponse<ProductAttributeOption>(res, 'ProductAttributeOptionService.getProductAttributeOptions')
+    return ensureArrayResponse<ProductAttributeOption>(
+      res,
+      'ProductAttributeOptionService.getProductAttributeOptions'
+    )
   },
 
   async saveProductAttributeOption(
     option: SaveProductAttributeOptionInput
   ): Promise<ProductAttributeOption> {
     const normalizedOption = buildProductAttributeOptionSaveInput(option)
-    const res = await apiFetch<ProductAttributeOption>('/engineering/product-attribute-options', {
-      method: 'POST',
-      body: JSON.stringify({
-        ...normalizedOption,
-        metadata: { intent: 'PRODUCT_ATTRIBUTE_OPTION_UPSERT' },
-      }),
-    })
+    const res = await apiFetch<ProductAttributeOption>(
+      '/engineering/product-attribute-options',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          ...normalizedOption,
+          metadata: { intent: 'PRODUCT_ATTRIBUTE_OPTION_UPSERT' },
+        }),
+      }
+    )
     return ensureObjectResponse<ProductAttributeOption>(
       res,
       'ProductAttributeOptionService.saveProductAttributeOption'
@@ -44,7 +50,10 @@ export const ProductAttributeOptionService = {
     })
   },
 
-  async reorderProductAttributeOptions(categoryKey: string, ids: string[]): Promise<void> {
+  async reorderProductAttributeOptions(
+    categoryKey: string,
+    ids: string[]
+  ): Promise<void> {
     await apiFetch('/engineering/product-attribute-options/reorder', {
       method: 'POST',
       body: JSON.stringify({ categoryKey, ids }),

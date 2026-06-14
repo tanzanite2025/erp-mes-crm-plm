@@ -29,13 +29,18 @@ function toRelationSidecar(value: unknown): BOMRelationSidecar | undefined {
   if (!isRecord(value)) {
     return undefined
   }
-  if (toString(value.kind) !== 'parent_children_protocol' || toString(value.version) !== 'v1' || !isRecord(value.protocolDraft)) {
+  if (
+    toString(value.kind) !== 'parent_children_protocol' ||
+    toString(value.version) !== 'v1' ||
+    !isRecord(value.protocolDraft)
+  ) {
     return undefined
   }
   return {
     kind: 'parent_children_protocol',
     version: 'v1',
-    protocolDraft: value.protocolDraft as unknown as BOMRelationSidecar['protocolDraft'],
+    protocolDraft:
+      value.protocolDraft as unknown as BOMRelationSidecar['protocolDraft'],
   }
 }
 
@@ -65,7 +70,9 @@ export interface BOMVersionRecordDetail extends BOMVersionRecordSummary {
   relationSidecar?: BOMRelationSidecar
 }
 
-export function parseBOMVersionRecordSummary(value: unknown): BOMVersionRecordSummary {
+export function parseBOMVersionRecordSummary(
+  value: unknown
+): BOMVersionRecordSummary {
   const record = isRecord(value) ? value : {}
   return {
     id: toString(record.id),
@@ -89,7 +96,9 @@ export function parseBOMVersionRecordSummary(value: unknown): BOMVersionRecordSu
   }
 }
 
-export function parseBOMVersionRecordDetail(value: unknown): BOMVersionRecordDetail {
+export function parseBOMVersionRecordDetail(
+  value: unknown
+): BOMVersionRecordDetail {
   const record = isRecord(value) ? value : {}
   const summary = parseBOMVersionRecordSummary(record)
   return {
@@ -99,7 +108,9 @@ export function parseBOMVersionRecordDetail(value: unknown): BOMVersionRecordDet
   }
 }
 
-export function parseBOMVersionRecordList(value: unknown): BOMVersionRecordSummary[] {
+export function parseBOMVersionRecordList(
+  value: unknown
+): BOMVersionRecordSummary[] {
   if (!Array.isArray(value)) {
     return []
   }

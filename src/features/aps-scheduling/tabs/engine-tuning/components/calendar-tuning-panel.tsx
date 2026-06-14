@@ -1,7 +1,13 @@
 import { useState } from 'react'
 import { Calendar } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useLanguage } from '@/context/language-provider'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import {
   ENGINE_CARD_SHELL_CLASS,
   ENGINE_CARD_TITLE_CLASS,
@@ -20,19 +26,19 @@ export function CalendarTuningPanel() {
       <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-amber-500/5 via-transparent' />
       <CardHeader className='relative flex flex-row items-center gap-2 p-2.5 pb-1'>
         <Calendar className='size-4 shrink-0 text-amber-600' />
-        <div className='flex flex-col min-w-0'>
+        <div className='flex min-w-0 flex-col'>
           <CardTitle className={`${ENGINE_CARD_TITLE_CLASS} leading-none`}>
             {t('apsScheduling.engineConfig.dateRuleCard.title')} - 参数微调
           </CardTitle>
-          <CardDescription className='text-[8px] font-black uppercase tracking-widest text-muted-foreground/50 leading-tight mt-0.5 truncate'>
+          <CardDescription className='mt-0.5 truncate text-[8px] leading-tight font-black tracking-widest text-muted-foreground/50 uppercase'>
             调节日历寻优计算权重分值。
           </CardDescription>
         </div>
       </CardHeader>
-      <CardContent className='relative p-3 pt-0 space-y-2'>
+      <CardContent className='relative space-y-2 p-3 pt-0'>
         {/* Toggle Switches */}
-        <div className='flex items-center justify-between rounded-xl bg-background px-2.5 py-1.5 border border-dashed border-muted/50'>
-          <span className='text-[10px] font-black uppercase tracking-wider text-muted-foreground/70'>
+        <div className='flex items-center justify-between rounded-xl border border-dashed border-muted/50 bg-background px-2.5 py-1.5'>
+          <span className='text-[10px] font-black tracking-wider text-muted-foreground/70 uppercase'>
             法定节假日停排计划
           </span>
           <button
@@ -49,8 +55,8 @@ export function CalendarTuningPanel() {
           </button>
         </div>
 
-        <div className='flex items-center justify-between rounded-xl bg-background px-2.5 py-1.5 border border-dashed border-muted/50'>
-          <span className='text-[10px] font-black uppercase tracking-wider text-muted-foreground/70'>
+        <div className='flex items-center justify-between rounded-xl border border-dashed border-muted/50 bg-background px-2.5 py-1.5'>
+          <span className='text-[10px] font-black tracking-wider text-muted-foreground/70 uppercase'>
             优先选择标准工作日
           </span>
           <button
@@ -69,7 +75,7 @@ export function CalendarTuningPanel() {
 
         {/* Inputs */}
         <div className='grid gap-1'>
-          <label className='text-[9px] font-black uppercase tracking-wider text-muted-foreground/60 leading-none'>
+          <label className='text-[9px] leading-none font-black tracking-wider text-muted-foreground/60 uppercase'>
             工作日优选奖励分 (分)
           </label>
           <input
@@ -82,7 +88,7 @@ export function CalendarTuningPanel() {
         </div>
 
         <div className='grid gap-1'>
-          <label className='text-[9px] font-black uppercase tracking-wider text-muted-foreground/60 leading-none'>
+          <label className='text-[9px] leading-none font-black tracking-wider text-muted-foreground/60 uppercase'>
             加班时间奖励分 (分)
           </label>
           <input
@@ -95,7 +101,7 @@ export function CalendarTuningPanel() {
         </div>
 
         <div className='grid gap-1'>
-          <label className='text-[9px] font-black uppercase tracking-wider text-muted-foreground/60 leading-none'>
+          <label className='text-[9px] leading-none font-black tracking-wider text-muted-foreground/60 uppercase'>
             节假日扣减惩罚分 (分)
           </label>
           <input

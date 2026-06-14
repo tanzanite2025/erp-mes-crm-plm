@@ -17,7 +17,9 @@ export function useProductWriteActions() {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: productManagementQueryKey() }),
       queryClient.invalidateQueries({ queryKey: productOptionsQueryKey() }),
-      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.salesOrderPackagingProductOptions() }),
+      queryClient.invalidateQueries({
+        queryKey: tradingQueryKeys.salesOrderPackagingProductOptions(),
+      }),
       queryClient.invalidateQueries({ queryKey: productListQueryKeyPrefix() }),
       queryClient.invalidateQueries({
         predicate: (query) => isProductDetailQueryKey(query.queryKey),
@@ -29,7 +31,12 @@ export function useProductWriteActions() {
     mutationFn: async (products: SaveProductOperation[]) => {
       const savedProducts: Product[] = []
       for (const product of products) {
-        savedProducts.push(await ProductMaintenanceService.saveProduct(product.data, product.currentRow))
+        savedProducts.push(
+          await ProductMaintenanceService.saveProduct(
+            product.data,
+            product.currentRow
+          )
+        )
       }
       return savedProducts
     },

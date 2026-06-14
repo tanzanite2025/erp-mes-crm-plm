@@ -34,14 +34,32 @@ export const KNOWLEDGE_BASE_CATEGORIES: Array<{
   labelKey: string
 }> = [
   { value: 'all', labelKey: 'basicSettings.knowledgeBase.categories.all' },
-  { value: 'workflow', labelKey: 'basicSettings.knowledgeBase.categories.workflow' },
-  { value: 'status', labelKey: 'basicSettings.knowledgeBase.categories.status' },
-  { value: 'operation', labelKey: 'basicSettings.knowledgeBase.categories.operation' },
-  { value: 'exception', labelKey: 'basicSettings.knowledgeBase.categories.exception' },
-  { value: 'terminology', labelKey: 'basicSettings.knowledgeBase.categories.terminology' },
+  {
+    value: 'workflow',
+    labelKey: 'basicSettings.knowledgeBase.categories.workflow',
+  },
+  {
+    value: 'status',
+    labelKey: 'basicSettings.knowledgeBase.categories.status',
+  },
+  {
+    value: 'operation',
+    labelKey: 'basicSettings.knowledgeBase.categories.operation',
+  },
+  {
+    value: 'exception',
+    labelKey: 'basicSettings.knowledgeBase.categories.exception',
+  },
+  {
+    value: 'terminology',
+    labelKey: 'basicSettings.knowledgeBase.categories.terminology',
+  },
 ]
 
-export const EMPTY_KNOWLEDGE_BASE_ENTRY: Omit<KnowledgeBaseEntry, 'id' | 'updatedAt'> = {
+export const EMPTY_KNOWLEDGE_BASE_ENTRY: Omit<
+  KnowledgeBaseEntry,
+  'id' | 'updatedAt'
+> = {
   title: '',
   category: 'operation',
   summary: '',
@@ -97,7 +115,10 @@ export function serializeKnowledgeKeywords(keywords: string[]) {
   return keywords.join('，')
 }
 
-export function matchesKnowledgeBaseEntry(entry: KnowledgeBaseEntry, keyword: string) {
+export function matchesKnowledgeBaseEntry(
+  entry: KnowledgeBaseEntry,
+  keyword: string
+) {
   const normalizedKeyword = keyword.trim().toLowerCase()
   if (!normalizedKeyword) return true
 

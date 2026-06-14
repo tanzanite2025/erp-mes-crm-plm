@@ -1,11 +1,4 @@
 import { useMemo } from 'react'
-
-import {
-  buildAllocationHistoryGroups,
-  buildLedgerDisplayMap,
-  filterAllocationHistoryGroups,
-  filterRecordsByEvidence,
-} from '../utils/settlement-record-dialog-selectors'
 import type {
   SettlementAllocationLike,
   SettlementDetailLike,
@@ -14,6 +7,12 @@ import type {
   SettlementRecordLike,
   SettlementRemoteLedgerLike,
 } from '../types'
+import {
+  buildAllocationHistoryGroups,
+  buildLedgerDisplayMap,
+  filterAllocationHistoryGroups,
+  filterRecordsByEvidence,
+} from '../utils/settlement-record-dialog-selectors'
 
 interface UseSettlementAllocationHistoryParams<
   TDetail extends SettlementDetailLike,
@@ -31,7 +30,10 @@ interface UseSettlementAllocationHistoryParams<
   showOnlyMissingEvidenceRecords: boolean
   config: Pick<
     SettlementLedgerDetailDialogConfig<TDetail, TLocalLedger>,
-    'amountLabel' | 'relationKey' | 'getDetailPartnerName' | 'getLocalLedgerPartnerName'
+    | 'amountLabel'
+    | 'relationKey'
+    | 'getDetailPartnerName'
+    | 'getLocalLedgerPartnerName'
   >
 }
 
@@ -61,7 +63,9 @@ export function useSettlementAllocationHistory<
     () =>
       buildLedgerDisplayMap({
         detail,
-        detailPartnerName: detail ? config.getDetailPartnerName(detail) : undefined,
+        detailPartnerName: detail
+          ? config.getDetailPartnerName(detail)
+          : undefined,
         localLedgers: ledgerOptions,
         getLocalPartnerName: config.getLocalLedgerPartnerName,
         remoteLedgers: remoteLedgerOptions,

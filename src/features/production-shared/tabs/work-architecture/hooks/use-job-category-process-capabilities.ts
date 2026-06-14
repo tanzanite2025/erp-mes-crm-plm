@@ -1,12 +1,15 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { useHierarchyLevelLabels } from '../../hierarchy-config/hooks/use-hierarchy-level-labels'
 import { createLogger } from '@/lib/logger'
-import type { ProductionJobCategory, ProductionLine } from '../../../data/production-line'
+import type {
+  ProductionJobCategory,
+  ProductionLine,
+} from '../../../data/production-line'
 import type { ProductionProcessStep } from '../../../data/production-process'
 import { productionResourceQueryKeys } from '../../../data/production-resource-query-keys'
 import { productionJobCategoryCapabilitiesService } from '../../../services/production-job-category-capabilities-service'
 import { productionResourceSync } from '../../../services/production-resource-sync'
+import { useHierarchyLevelLabels } from '../../hierarchy-config/hooks/use-hierarchy-level-labels'
 
 const logger = createLogger('JobCategoryProcessCapabilities')
 
@@ -21,7 +24,10 @@ function appendUniqueProcess(
   return [...current, process]
 }
 
-function removeProcess(current: ProductionProcessStep[], processId: string): ProductionProcessStep[] {
+function removeProcess(
+  current: ProductionProcessStep[],
+  processId: string
+): ProductionProcessStep[] {
   return current.filter((process) => process.id !== processId)
 }
 
@@ -45,30 +51,47 @@ export function useJobCategoryProcessCapabilities() {
   const queryClient = useQueryClient()
   const { level3Name } = useHierarchyLevelLabels()
 
-  const patchLines = (updater: (current: ProductionLine[]) => ProductionLine[]) => {
-    queryClient.setQueryData<ProductionLine[]>(productionResourceQueryKeys.lines(), (current) =>
-      updater(current ?? [])
+  const patchLines = (
+    updater: (current: ProductionLine[]) => ProductionLine[]
+  ) => {
+    queryClient.setQueryData<ProductionLine[]>(
+      productionResourceQueryKeys.lines(),
+      (current) => updater(current ?? [])
     )
   }
 
-  const assignProcessCapability = async (jobCategoryId: string, processId: string) => {
+  const assignProcessCapability = async (
+    jobCategoryId: string,
+    processId: string
+  ) => {
     try {
-      await productionJobCategoryCapabilitiesService.assignProcessCapability(jobCategoryId, processId)
+      await productionJobCategoryCapabilitiesService.assignProcessCapability(
+        jobCategoryId,
+        processId
+      )
 
-      const process = (queryClient.getQueryData<ProductionProcessStep[]>(
-        productionResourceQueryKeys.processes()
-      ) ?? []).find((item) => item.id === processId)
+      const process = (
+        queryClient.getQueryData<ProductionProcessStep[]>(
+          productionResourceQueryKeys.processes()
+        ) ?? []
+      ).find((item) => item.id === processId)
 
       if (!process) {
-        logger.warn('Assigned process capability but process is missing from cache', {
-          jobCategoryId,
-          processId,
-        })
+        logger.warn(
+          'Assigned process capability but process is missing from cache',
+          {
+            jobCategoryId,
+            processId,
+          }
+        )
       } else {
         patchLines((current) =>
           updateJobCategoryInLines(current, jobCategoryId, (jobCategory) => ({
             ...jobCategory,
-            processes: appendUniqueProcess(jobCategory.processes || [], process),
+            processes: appendUniqueProcess(
+              jobCategory.processes || [],
+              process
+            ),
           }))
         )
       }
@@ -86,9 +109,15 @@ export function useJobCategoryProcessCapabilities() {
     }
   }
 
-  const removeProcessCapability = async (jobCategoryId: string, processId: string) => {
+  const removeProcessCapability = async (
+    jobCategoryId: string,
+    processId: string
+  ) => {
     try {
-      await productionJobCategoryCapabilitiesService.removeProcessCapability(jobCategoryId, processId)
+      await productionJobCategoryCapabilitiesService.removeProcessCapability(
+        jobCategoryId,
+        processId
+      )
       patchLines((current) =>
         updateJobCategoryInLines(current, jobCategoryId, (jobCategory) => ({
           ...jobCategory,

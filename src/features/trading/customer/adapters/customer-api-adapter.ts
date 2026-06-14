@@ -1,7 +1,9 @@
 import type { Customer } from '../../data/schema'
 import type { CustomerApiDTO } from '../contracts/customer-api-dto'
 
-function normalizeCustomerStatus(status: CustomerApiDTO['status']): Customer['status'] {
+function normalizeCustomerStatus(
+  status: CustomerApiDTO['status']
+): Customer['status'] {
   return status === 'Active' || status === 'Inactive' || status === 'Pending'
     ? status
     : 'Pending'

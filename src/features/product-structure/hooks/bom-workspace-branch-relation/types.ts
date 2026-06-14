@@ -1,9 +1,8 @@
 /**
  * BOM Workspace Branch Relation Types
- * 
+ *
  * 定义分支关系构建器的通用类型和接口
  */
-
 import type { BOMSectionOption } from '../../data/bom-section-schema'
 import type { BOM } from '../../data/schema'
 

@@ -44,9 +44,9 @@ function isIncludedAuthenticatedRoutePath(routePath: string): boolean {
 const AUTHENTICATED_ROUTE_PATHS = Array.from(
   new Set([
     '/',
-    ...AUTHENTICATED_ROUTE_CATALOG
-      .map((routePath) => normalizePath(routePath))
-      .filter((routePath) => isIncludedAuthenticatedRoutePath(routePath)),
+    ...AUTHENTICATED_ROUTE_CATALOG.map((routePath) =>
+      normalizePath(routePath)
+    ).filter((routePath) => isIncludedAuthenticatedRoutePath(routePath)),
   ])
 ).sort(comparePathsBySpecificity)
 

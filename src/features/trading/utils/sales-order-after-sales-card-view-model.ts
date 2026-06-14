@@ -5,7 +5,11 @@ import type {
   SalesOrderAfterSalesSummary,
 } from '../sales/services/sales-order-after-sales-summary-service'
 
-export type SalesOrderAfterSalesCardState = 'empty' | 'healthy' | 'alert' | 'critical'
+export type SalesOrderAfterSalesCardState =
+  | 'empty'
+  | 'healthy'
+  | 'alert'
+  | 'critical'
 
 export interface SalesOrderAfterSalesCardViewModel {
   salesOrderId: string

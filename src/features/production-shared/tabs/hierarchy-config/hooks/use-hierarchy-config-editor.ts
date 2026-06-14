@@ -22,15 +22,26 @@ export interface HierarchyConfigEditorController {
   resetConfig: () => Promise<void>
   updateLevelName: (level: number, name: string) => void
   addLevelOption: (level: number, name: string, code: string) => boolean
-  updateLevelOption: (level: number, optionId: string, patch: { name?: string; code?: string }) => void
+  updateLevelOption: (
+    level: number,
+    optionId: string,
+    patch: { name?: string; code?: string }
+  ) => void
   toggleLevelOptionEnabled: (level: number, optionId: string) => void
-  moveLevelOption: (level: number, optionId: string, direction: 'up' | 'down') => void
+  moveLevelOption: (
+    level: number,
+    optionId: string,
+    direction: 'up' | 'down'
+  ) => void
   removeLevelOption: (level: number, optionId: string) => void
 }
 
 export function useHierarchyConfigEditor(): HierarchyConfigEditorController {
-  const [snapshot, setSnapshot] = useState<HierarchyConfigSnapshot>(createDefaultHierarchyConfigSnapshot())
-  const [persistedSnapshot, setPersistedSnapshot] = useState<HierarchyConfigSnapshot>(createDefaultHierarchyConfigSnapshot())
+  const [snapshot, setSnapshot] = useState<HierarchyConfigSnapshot>(
+    createDefaultHierarchyConfigSnapshot()
+  )
+  const [persistedSnapshot, setPersistedSnapshot] =
+    useState<HierarchyConfigSnapshot>(createDefaultHierarchyConfigSnapshot())
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
 
@@ -39,12 +50,16 @@ export function useHierarchyConfigEditor(): HierarchyConfigEditorController {
 
     const loadSnapshot = async () => {
       try {
-        const storedSnapshot = await StorageService.getItem<HierarchyConfigSnapshot>(HIERARCHY_CONFIG_STORAGE_KEY)
+        const storedSnapshot =
+          await StorageService.getItem<HierarchyConfigSnapshot>(
+            HIERARCHY_CONFIG_STORAGE_KEY
+          )
         if (!isMounted) {
           return
         }
 
-        const normalizedSnapshot = normalizeHierarchyConfigSnapshot(storedSnapshot)
+        const normalizedSnapshot =
+          normalizeHierarchyConfigSnapshot(storedSnapshot)
         setSnapshot(normalizedSnapshot)
         setPersistedSnapshot(normalizedSnapshot)
       } catch {
@@ -66,26 +81,38 @@ export function useHierarchyConfigEditor(): HierarchyConfigEditorController {
   }, [])
 
   const isDirty = useMemo(() => {
-    const levelsDirty = snapshot.levels.some((level, index) => level.name !== persistedSnapshot.levels[index]?.name)
+    const levelsDirty = snapshot.levels.some(
+      (level, index) => level.name !== persistedSnapshot.levels[index]?.name
+    )
 
     const optionCatalogsDirty = snapshot.optionCatalogs.some((catalog) => {
-      const persistedOptions = getHierarchyLevelOptions(persistedSnapshot.optionCatalogs, catalog.level)
+      const persistedOptions = getHierarchyLevelOptions(
+        persistedSnapshot.optionCatalogs,
+        catalog.level
+      )
       if (catalog.items.length !== persistedOptions.length) {
         return true
       }
 
       return catalog.items.some((item, index) => {
         const persistedItem = persistedOptions[index]
-        return item.id !== persistedItem?.id
-          || item.name !== persistedItem?.name
-          || item.code !== persistedItem?.code
-          || item.enabled !== persistedItem?.enabled
-          || item.sortOrder !== persistedItem?.sortOrder
+        return (
+          item.id !== persistedItem?.id ||
+          item.name !== persistedItem?.name ||
+          item.code !== persistedItem?.code ||
+          item.enabled !== persistedItem?.enabled ||
+          item.sortOrder !== persistedItem?.sortOrder
+        )
       })
     })
 
     return levelsDirty || optionCatalogsDirty
-  }, [persistedSnapshot.levels, persistedSnapshot.optionCatalogs, snapshot.levels, snapshot.optionCatalogs])
+  }, [
+    persistedSnapshot.levels,
+    persistedSnapshot.optionCatalogs,
+    snapshot.levels,
+    snapshot.optionCatalogs,
+  ])
 
   const updateLevelName = (level: number, name: string) => {
     setSnapshot((current) => ({
@@ -96,12 +123,14 @@ export function useHierarchyConfigEditor(): HierarchyConfigEditorController {
               ...item,
               name,
             }
-          : item,
+          : item
       ),
     }))
   }
 
-  const validateOptionCatalogs = (catalogs: HierarchyConfigSnapshot['optionCatalogs']) => {
+  const validateOptionCatalogs = (
+    catalogs: HierarchyConfigSnapshot['optionCatalogs']
+  ) => {
     for (const catalog of catalogs) {
       const nameSet = new Set<string>()
       const codeSet = new Set<string>()
@@ -142,7 +171,9 @@ export function useHierarchyConfigEditor(): HierarchyConfigEditorController {
       return false
     }
 
-    const currentCatalog = snapshot.optionCatalogs.find((catalog) => catalog.level === level)
+    const currentCatalog = snapshot.optionCatalogs.find(
+      (catalog) => catalog.level === level
+    )
     if (!currentCatalog) {
       return false
     }
@@ -152,7 +183,10 @@ export function useHierarchyConfigEditor(): HierarchyConfigEditorController {
       return false
     }
 
-    if (trimmedCode !== '' && currentCatalog.items.some((item) => item.code === trimmedCode)) {
+    if (
+      trimmedCode !== '' &&
+      currentCatalog.items.some((item) => item.code === trimmedCode)
+    ) {
       toast.error('同一层级下候选项编码不能重复')
       return false
     }
@@ -166,7 +200,14 @@ export function useHierarchyConfigEditor(): HierarchyConfigEditorController {
 
         return {
           ...catalog,
-          items: [...catalog.items, createHierarchyOptionItem(trimmedName, trimmedCode, catalog.items.length)],
+          items: [
+            ...catalog.items,
+            createHierarchyOptionItem(
+              trimmedName,
+              trimmedCode,
+              catalog.items.length
+            ),
+          ],
         }
       }),
     }))
@@ -174,7 +215,11 @@ export function useHierarchyConfigEditor(): HierarchyConfigEditorController {
     return true
   }
 
-  const updateLevelOption = (level: number, optionId: string, patch: { name?: string; code?: string }) => {
+  const updateLevelOption = (
+    level: number,
+    optionId: string,
+    patch: { name?: string; code?: string }
+  ) => {
     setSnapshot((current) => ({
       ...current,
       optionCatalogs: current.optionCatalogs.map((catalog) => {
@@ -195,17 +240,21 @@ export function useHierarchyConfigEditor(): HierarchyConfigEditorController {
         }
 
         if (
-          typeof normalizedName === 'string'
-          && catalog.items.some((item) => item.id !== optionId && item.name === normalizedName)
+          typeof normalizedName === 'string' &&
+          catalog.items.some(
+            (item) => item.id !== optionId && item.name === normalizedName
+          )
         ) {
           toast.error('同一层级下候选项名称不能重复')
           return catalog
         }
 
         if (
-          typeof normalizedCode === 'string'
-          && normalizedCode !== ''
-          && catalog.items.some((item) => item.id !== optionId && item.code === normalizedCode)
+          typeof normalizedCode === 'string' &&
+          normalizedCode !== '' &&
+          catalog.items.some(
+            (item) => item.id !== optionId && item.code === normalizedCode
+          )
         ) {
           toast.error('同一层级下候选项编码不能重复')
           return catalog
@@ -220,8 +269,10 @@ export function useHierarchyConfigEditor(): HierarchyConfigEditorController {
 
             return {
               ...item,
-              name: typeof normalizedName === 'string' ? normalizedName : item.name,
-              code: typeof normalizedCode === 'string' ? normalizedCode : item.code,
+              name:
+                typeof normalizedName === 'string' ? normalizedName : item.name,
+              code:
+                typeof normalizedCode === 'string' ? normalizedCode : item.code,
             }
           }),
         }
@@ -240,16 +291,18 @@ export function useHierarchyConfigEditor(): HierarchyConfigEditorController {
         return {
           ...catalog,
           items: catalog.items.map((item) =>
-            item.id === optionId
-              ? { ...item, enabled: !item.enabled }
-              : item,
+            item.id === optionId ? { ...item, enabled: !item.enabled } : item
           ),
         }
       }),
     }))
   }
 
-  const moveLevelOption = (level: number, optionId: string, direction: 'up' | 'down') => {
+  const moveLevelOption = (
+    level: number,
+    optionId: string,
+    direction: 'up' | 'down'
+  ) => {
     setSnapshot((current) => ({
       ...current,
       optionCatalogs: current.optionCatalogs.map((catalog) => {
@@ -257,12 +310,15 @@ export function useHierarchyConfigEditor(): HierarchyConfigEditorController {
           return catalog
         }
 
-        const currentIndex = catalog.items.findIndex((item) => item.id === optionId)
+        const currentIndex = catalog.items.findIndex(
+          (item) => item.id === optionId
+        )
         if (currentIndex === -1) {
           return catalog
         }
 
-        const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
+        const targetIndex =
+          direction === 'up' ? currentIndex - 1 : currentIndex + 1
         if (targetIndex < 0 || targetIndex >= catalog.items.length) {
           return catalog
         }
@@ -332,8 +388,13 @@ export function useHierarchyConfigEditor(): HierarchyConfigEditorController {
     setIsSaving(true)
 
     try {
-      const defaultSnapshot = createDefaultHierarchyConfigSnapshot(new Date().toISOString())
-      await StorageService.setItem(HIERARCHY_CONFIG_STORAGE_KEY, defaultSnapshot)
+      const defaultSnapshot = createDefaultHierarchyConfigSnapshot(
+        new Date().toISOString()
+      )
+      await StorageService.setItem(
+        HIERARCHY_CONFIG_STORAGE_KEY,
+        defaultSnapshot
+      )
       setSnapshot(defaultSnapshot)
       setPersistedSnapshot(defaultSnapshot)
       toast.success('已恢复默认层级配置')

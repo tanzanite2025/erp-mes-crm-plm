@@ -1,7 +1,10 @@
-import type { TabItem } from '@/components/module-tabs'
 import type { TranslationKey } from '@/locales'
+import type { TabItem } from '@/components/module-tabs'
 
-type TranslateFn = (key: TranslationKey, params?: Record<string, string | number>) => string
+type TranslateFn = (
+  key: TranslationKey,
+  params?: Record<string, string | number>
+) => string
 
 export const warehouseConfigTabs: TabItem[] = [
   {

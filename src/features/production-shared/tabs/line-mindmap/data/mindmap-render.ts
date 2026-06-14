@@ -7,13 +7,15 @@ export interface LineMindmapFlatRow {
   ancestorHasNextSiblings: boolean[]
 }
 
-export function flattenMindmapNodes(nodes: LineMindmapNode[]): LineMindmapFlatRow[] {
+export function flattenMindmapNodes(
+  nodes: LineMindmapNode[]
+): LineMindmapFlatRow[] {
   const rows: LineMindmapFlatRow[] = []
 
   const visit = (
     currentNodes: LineMindmapNode[],
     depth: number,
-    ancestorHasNextSiblings: boolean[],
+    ancestorHasNextSiblings: boolean[]
   ) => {
     currentNodes.forEach((node, index) => {
       const hasNextSibling = index < currentNodes.length - 1
@@ -31,7 +33,7 @@ export function flattenMindmapNodes(nodes: LineMindmapNode[]): LineMindmapFlatRo
           depth + 1,
           depth > 0
             ? [...ancestorHasNextSiblings, hasNextSibling]
-            : ancestorHasNextSiblings,
+            : ancestorHasNextSiblings
         )
       }
     })

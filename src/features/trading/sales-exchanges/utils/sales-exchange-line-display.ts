@@ -22,8 +22,5 @@ export function resolveSalesExchangeLineDisplayTitle(
 export function resolveSalesExchangeLineDisplaySubtitle(
   line: SalesExchangeLineDisplaySource
 ): string {
-  return (
-    line.productDisplaySubtitleSnapshot?.trim() ||
-    '--'
-  )
+  return line.productDisplaySubtitleSnapshot?.trim() || '--'
 }

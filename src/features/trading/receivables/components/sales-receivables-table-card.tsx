@@ -1,8 +1,24 @@
-import { useLanguage } from '@/context/language-provider'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { cn } from '@/lib/utils'
-import { getTradingLedgerAgingLabel, getTradingLedgerStatusLabel } from '@/features/trading/utils/ledger-display'
+import { useLanguage } from '@/context/language-provider'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
+  getTradingLedgerAgingLabel,
+  getTradingLedgerStatusLabel,
+} from '@/features/trading/utils/ledger-display'
 import type { ReceivableRecord } from '../adapters/receivable-api-adapter'
 
 interface SalesReceivablesTableColumnLabels {
@@ -58,8 +74,10 @@ export function SalesReceivablesTableCard({
   return (
     <Card className='overflow-hidden rounded-[24px] border border-dashed border-muted/60 bg-muted/5 shadow-inner'>
       <CardHeader className='gap-2 border-b border-dashed border-muted/50 bg-muted/20 px-5 py-4'>
-        <CardTitle className='text-base font-black leading-tight tracking-tight'>{title}</CardTitle>
-        <CardDescription className='max-w-3xl text-[11px] font-medium leading-5 text-muted-foreground/70'>
+        <CardTitle className='text-base leading-tight font-black tracking-tight'>
+          {title}
+        </CardTitle>
+        <CardDescription className='max-w-3xl text-[11px] leading-5 font-medium text-muted-foreground/70'>
           {description}
         </CardDescription>
       </CardHeader>
@@ -67,28 +85,28 @@ export function SalesReceivablesTableCard({
         <Table>
           <TableHeader className='bg-background/60'>
             <TableRow className='hover:bg-transparent'>
-              <TableHead className='h-11 px-4 text-[10px] font-black uppercase tracking-[0.14em] text-muted-foreground/55'>
+              <TableHead className='h-11 px-4 text-[10px] font-black tracking-[0.14em] text-muted-foreground/55 uppercase'>
                 {columnLabels.documentNo}
               </TableHead>
-              <TableHead className='h-11 px-4 text-[10px] font-black uppercase tracking-[0.14em] text-muted-foreground/55'>
+              <TableHead className='h-11 px-4 text-[10px] font-black tracking-[0.14em] text-muted-foreground/55 uppercase'>
                 {columnLabels.customerName}
               </TableHead>
-              <TableHead className='h-11 px-4 text-right text-[10px] font-black uppercase tracking-[0.14em] text-muted-foreground/55'>
+              <TableHead className='h-11 px-4 text-right text-[10px] font-black tracking-[0.14em] text-muted-foreground/55 uppercase'>
                 {columnLabels.orderAmount}
               </TableHead>
-              <TableHead className='h-11 px-4 text-right text-[10px] font-black uppercase tracking-[0.14em] text-muted-foreground/55'>
+              <TableHead className='h-11 px-4 text-right text-[10px] font-black tracking-[0.14em] text-muted-foreground/55 uppercase'>
                 {columnLabels.receivedAmount}
               </TableHead>
-              <TableHead className='h-11 px-4 text-right text-[10px] font-black uppercase tracking-[0.14em] text-muted-foreground/55'>
+              <TableHead className='h-11 px-4 text-right text-[10px] font-black tracking-[0.14em] text-muted-foreground/55 uppercase'>
                 {columnLabels.outstandingAmount}
               </TableHead>
-              <TableHead className='h-11 px-4 text-[10px] font-black uppercase tracking-[0.14em] text-muted-foreground/55'>
+              <TableHead className='h-11 px-4 text-[10px] font-black tracking-[0.14em] text-muted-foreground/55 uppercase'>
                 {columnLabels.dueDate}
               </TableHead>
-              <TableHead className='h-11 px-4 text-[10px] font-black uppercase tracking-[0.14em] text-muted-foreground/55'>
+              <TableHead className='h-11 px-4 text-[10px] font-black tracking-[0.14em] text-muted-foreground/55 uppercase'>
                 {columnLabels.agingBucket}
               </TableHead>
-              <TableHead className='h-11 px-4 text-[10px] font-black uppercase tracking-[0.14em] text-muted-foreground/55'>
+              <TableHead className='h-11 px-4 text-[10px] font-black tracking-[0.14em] text-muted-foreground/55 uppercase'>
                 {columnLabels.status}
               </TableHead>
             </TableRow>
@@ -96,7 +114,10 @@ export function SalesReceivablesTableCard({
           <TableBody>
             {items.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className='h-24 text-center text-[11px] font-bold text-muted-foreground/50'>
+                <TableCell
+                  colSpan={8}
+                  className='h-24 text-center text-[11px] font-bold text-muted-foreground/50'
+                >
                   暂无应收记录
                 </TableCell>
               </TableRow>
@@ -107,8 +128,12 @@ export function SalesReceivablesTableCard({
                   className='cursor-pointer border-muted/40 transition-colors hover:bg-muted/25'
                   onClick={() => onSelectReceivable(item.id)}
                 >
-                  <TableCell className='px-4 py-3 text-xs font-black tracking-tight'>{item.documentNo}</TableCell>
-                  <TableCell className='px-4 py-3 text-xs font-medium text-muted-foreground'>{item.customerName}</TableCell>
+                  <TableCell className='px-4 py-3 text-xs font-black tracking-tight'>
+                    {item.documentNo}
+                  </TableCell>
+                  <TableCell className='px-4 py-3 text-xs font-medium text-muted-foreground'>
+                    {item.customerName}
+                  </TableCell>
                   <TableCell className='px-4 py-3 text-right text-xs font-semibold tabular-nums'>
                     {formatAmount(item.orderAmount, item.currency)}
                   </TableCell>
@@ -118,12 +143,16 @@ export function SalesReceivablesTableCard({
                   <TableCell className='px-4 py-3 text-right text-xs font-black tabular-nums'>
                     {formatAmount(item.outstandingAmount, item.currency)}
                   </TableCell>
-                  <TableCell className='px-4 py-3 text-xs font-medium text-muted-foreground'>{item.dueDate}</TableCell>
-                  <TableCell className='px-4 py-3 text-xs font-medium text-muted-foreground'>{getTradingLedgerAgingLabel(item.agingBucket, t)}</TableCell>
+                  <TableCell className='px-4 py-3 text-xs font-medium text-muted-foreground'>
+                    {item.dueDate}
+                  </TableCell>
+                  <TableCell className='px-4 py-3 text-xs font-medium text-muted-foreground'>
+                    {getTradingLedgerAgingLabel(item.agingBucket, t)}
+                  </TableCell>
                   <TableCell className='px-4 py-3 text-xs'>
                     <span
                       className={cn(
-                        'inline-flex h-6 items-center rounded-full border px-2.5 text-[10px] font-black uppercase tracking-[0.12em]',
+                        'inline-flex h-6 items-center rounded-full border px-2.5 text-[10px] font-black tracking-[0.12em] uppercase',
                         getStatusClassName(item.status)
                       )}
                     >

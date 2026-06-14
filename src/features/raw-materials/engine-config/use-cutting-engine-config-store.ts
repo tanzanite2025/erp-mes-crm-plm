@@ -44,11 +44,16 @@ export const useCuttingEngineConfigStore = create<CuttingEngineConfigState>()(
         revision: state.revision,
       }),
       merge: (persistedState, currentState) => {
-        const persisted = persistedState as Partial<CuttingEngineConfigState> | undefined
+        const persisted = persistedState as
+          | Partial<CuttingEngineConfigState>
+          | undefined
         return {
           ...currentState,
           config: normalizeCuttingEngineConfig(persisted?.config),
-          revision: typeof persisted?.revision === 'number' ? persisted.revision : currentState.revision,
+          revision:
+            typeof persisted?.revision === 'number'
+              ? persisted.revision
+              : currentState.revision,
         }
       },
     }

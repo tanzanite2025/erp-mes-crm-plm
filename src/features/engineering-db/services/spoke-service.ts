@@ -1,10 +1,14 @@
-import { type SpokeLength, type SpokeLengthInput, spokeLengthSchema } from '../data/schema'
+import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import {
   engineeringSpecService,
   type EngineeringSpec,
   type EngineeringSpecInput,
 } from '@/features/engineering/services/engineering-spec-service'
-import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+import {
+  type SpokeLength,
+  type SpokeLengthInput,
+  spokeLengthSchema,
+} from '../data/schema'
 
 function toSpokeLength(spec: EngineeringSpec): SpokeLength {
   return spokeLengthSchema.parse({
@@ -32,16 +36,16 @@ export const SpokeService = {
    * 保存辐条长度记录
    */
   saveSpokeLength: async (data: SpokeLengthInput[]) => {
-    if (data.length === 0) return;
-    const item = data[0];
+    if (data.length === 0) return
+    const item = data[0]
     const spec: EngineeringSpecInput = {
       name: item.name,
       type: 'SPOKE_LENGTH',
       active: true,
       spokeLengthData: item,
-      version: item.version || 1
+      version: item.version || 1,
     }
-    await engineeringSpecService.saveSpec(spec);
+    await engineeringSpecService.saveSpec(spec)
   },
 
   saveSpokeLengthItem: async (item: SpokeLengthInput) => {
@@ -64,8 +68,8 @@ export const SpokeService = {
       metadata: {
         id,
         version,
-        intent: 'SPOKE_SPEC_ADJUSTMENT' // 注入辐条规格调整意图
-      }
+        intent: 'SPOKE_SPEC_ADJUSTMENT', // 注入辐条规格调整意图
+      },
     }
 
     await engineeringSpecService.patchSpec(id, payload.delta, version)

@@ -1,14 +1,14 @@
 import { type ColumnDef } from '@tanstack/react-table'
+import { ShieldAlert } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { LongText } from '@/components/long-text'
-import { cn } from '@/lib/utils'
-import { ShieldAlert } from 'lucide-react'
-import { DataTableRowActions } from './data-table-row-actions'
 import { callTypes } from '../data/data'
 import { type User, type UserStatus } from '../data/schema'
 import { isProtectedSystemAccount } from '../utils/user-utils'
+import { DataTableRowActions } from './data-table-row-actions'
 
 export type UsersTableMode = 'management' | 'permissions'
 
@@ -39,7 +39,7 @@ type TranslateFn = (
 export function getUsersColumns(
   t: TranslateFn,
   mode: UsersTableMode = 'management',
-  showSelection = true,
+  showSelection = true
 ): ColumnDef<User>[] {
   const isPermissionsMode = mode === 'permissions'
 
@@ -48,17 +48,20 @@ export function getUsersColumns(
       ? [
           {
             id: 'select',
-            header: ({ table }) => isPermissionsMode ? null : (
-              <Checkbox
-                checked={
-                  table.getIsAllPageRowsSelected() ||
-                  (table.getIsSomePageRowsSelected() && 'indeterminate')
-                }
-                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                aria-label={t('users.dialogs.buttons.confirm')}
-                className='translate-y-[2px]'
-              />
-            ),
+            header: ({ table }) =>
+              isPermissionsMode ? null : (
+                <Checkbox
+                  checked={
+                    table.getIsAllPageRowsSelected() ||
+                    (table.getIsSomePageRowsSelected() && 'indeterminate')
+                  }
+                  onCheckedChange={(value) =>
+                    table.toggleAllPageRowsSelected(!!value)
+                  }
+                  aria-label={t('users.dialogs.buttons.confirm')}
+                  className='translate-y-[2px]'
+                />
+              ),
             meta: {
               className: cn('max-md:sticky start-0 z-10 rounded-tl-[inherit]'),
             },
@@ -73,7 +76,11 @@ export function getUsersColumns(
 
                   row.toggleSelected(!!value)
                 }}
-                aria-label={isPermissionsMode ? t('users.actions.managePermissions') : t('users.dialogs.buttons.confirm')}
+                aria-label={
+                  isPermissionsMode
+                    ? t('users.actions.managePermissions')
+                    : t('users.dialogs.buttons.confirm')
+                }
                 className='translate-y-[2px]'
               />
             ),
@@ -85,17 +92,28 @@ export function getUsersColumns(
     {
       accessorKey: 'username',
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t('users.columns.username')} />
+        <DataTableColumnHeader
+          column={column}
+          title={t('users.columns.username')}
+        />
       ),
       cell: ({ row }) => {
         const protected_ = isProtectedSystemAccount(row.original)
         return (
           <div className='flex items-center gap-2 ps-3'>
-            <LongText className={cn('max-w-36', protected_ && 'font-black text-amber-600 italic')}>
+            <LongText
+              className={cn(
+                'max-w-36',
+                protected_ && 'font-black text-amber-600 italic'
+              )}
+            >
               {row.getValue('username')}
             </LongText>
             {protected_ && (
-              <ShieldAlert size={12} className='text-amber-500 animate-pulse shrink-0' />
+              <ShieldAlert
+                size={12}
+                className='shrink-0 animate-pulse text-amber-500'
+              />
             )}
           </div>
         )
@@ -103,7 +121,7 @@ export function getUsersColumns(
       meta: {
         className: cn(
           'drop-shadow-[0_1px_2px_rgb(0_0_0_/_0.1)] dark:drop-shadow-[0_1px_2px_rgb(255_255_255_/_0.1)]',
-          'ps-0.5 max-md:sticky start-6 @4xl/content:table-cell @4xl/content:drop-shadow-none',
+          'ps-0.5 max-md:sticky start-6 @4xl/content:table-cell @4xl/content:drop-shadow-none'
         ),
       },
       enableHiding: false,
@@ -111,7 +129,10 @@ export function getUsersColumns(
     {
       id: 'fullName',
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t('users.columns.name')} />
+        <DataTableColumnHeader
+          column={column}
+          title={t('users.columns.name')}
+        />
       ),
       cell: ({ row }) => {
         const { firstName, lastName } = row.original
@@ -123,12 +144,18 @@ export function getUsersColumns(
     {
       accessorKey: 'role',
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t('users.columns.role')} />
+        <DataTableColumnHeader
+          column={column}
+          title={t('users.columns.role')}
+        />
       ),
       cell: ({ row }) => {
         const role = String(row.getValue('role') || '').trim()
         return (
-          <Badge variant='outline' className='rounded-full border-dashed text-[8px] font-mono uppercase'>
+          <Badge
+            variant='outline'
+            className='rounded-full border-dashed font-mono text-[8px] uppercase'
+          >
             {role || 'UNASSIGNED'}
           </Badge>
         )
@@ -138,7 +165,10 @@ export function getUsersColumns(
     {
       accessorKey: 'phoneNumber',
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t('users.columns.phone')} />
+        <DataTableColumnHeader
+          column={column}
+          title={t('users.columns.phone')}
+        />
       ),
       cell: ({ row }) => <div>{row.getValue('phoneNumber')}</div>,
       enableSorting: false,
@@ -146,7 +176,10 @@ export function getUsersColumns(
     {
       accessorKey: 'status',
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t('users.columns.status')} />
+        <DataTableColumnHeader
+          column={column}
+          title={t('users.columns.status')}
+        />
       ),
       cell: ({ row }) => {
         const { status } = row.original
@@ -158,8 +191,8 @@ export function getUsersColumns(
             <Badge
               variant='outline'
               className={cn(
-                'h-7 rounded-full border-dashed px-3 text-[10px] font-black uppercase tracking-widest',
-                badgeColor,
+                'h-7 rounded-full border-dashed px-3 text-[10px] font-black tracking-widest uppercase',
+                badgeColor
               )}
             >
               {label}

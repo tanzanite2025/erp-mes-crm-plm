@@ -15,16 +15,23 @@ export function useProductTemplateWriteActions() {
 
   const saveTemplateMutation = useMutation({
     mutationFn: ({ formData, currentRow }: SaveProductTemplateParams) =>
-      productTemplateService.saveTemplate(normalizeProductTemplateInput(formData), currentRow),
+      productTemplateService.saveTemplate(
+        normalizeProductTemplateInput(formData),
+        currentRow
+      ),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: PRODUCT_TEMPLATES_QUERY_KEY })
+      await queryClient.invalidateQueries({
+        queryKey: PRODUCT_TEMPLATES_QUERY_KEY,
+      })
     },
   })
 
   const deleteTemplateMutation = useMutation({
     mutationFn: (id: string) => productTemplateService.deleteTemplate(id),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: PRODUCT_TEMPLATES_QUERY_KEY })
+      await queryClient.invalidateQueries({
+        queryKey: PRODUCT_TEMPLATES_QUERY_KEY,
+      })
     },
   })
 

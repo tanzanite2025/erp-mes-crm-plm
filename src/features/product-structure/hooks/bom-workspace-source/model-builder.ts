@@ -1,16 +1,15 @@
 /**
  * BOM Workspace Source Model Builder
- * 
+ *
  * 提供构建 BOM workspace 源数据模型的功能
  */
-
 import type { BOMSectionOption } from '../../data/bom-section-schema'
 import type { BOM } from '../../data/schema'
+import { resolveBOMWorkspaceBranchRelationBuilder } from '../bom-workspace-branch-relation/builder-resolver'
 import type {
   BOMWorkspaceBranchRelationBuilder,
   BOMWorkspaceParentChildrenProtocolDraft,
 } from '../bom-workspace-branch-relation/types'
-import { resolveBOMWorkspaceBranchRelationBuilder } from '../bom-workspace-branch-relation/builder-resolver'
 import type {
   BOMWorkspaceSourceModel,
   BOMWorkspaceSourceRootNode,
@@ -41,7 +40,7 @@ export interface BuildBOMWorkspaceSourceModelParams {
 
 /**
  * 获取根节点 ID
- * 
+ *
  * @returns 根节点的固定 ID
  */
 export function resolveBOMWorkspaceSourceRootNodeId(): string {
@@ -50,16 +49,16 @@ export function resolveBOMWorkspaceSourceRootNodeId(): string {
 
 /**
  * 构建 BOM Workspace Source Model
- * 
+ *
  * 根据提供的参数构建完整的 workspace 源数据模型，包括：
  * - 根节点
  * - 分支节点（section 和 collection）
  * - 叶子节点（items）
  * - 节点关系映射
- * 
+ *
  * @param params - 构建参数
  * @returns 完整的 BOM Workspace Source Model
- * 
+ *
  * @example
  * ```typescript
  * const model = buildBOMWorkspaceSourceModel({
@@ -81,10 +80,11 @@ export function buildBOMWorkspaceSourceModel({
   protocolDraft,
 }: BuildBOMWorkspaceSourceModelParams): BOMWorkspaceSourceModel {
   const rootNodeId = resolveBOMWorkspaceSourceRootNodeId()
-  const resolvedBranchRelationBuilder = resolveBOMWorkspaceBranchRelationBuilder({
-    branchRelationBuilder,
-    protocolDraft,
-  })
+  const resolvedBranchRelationBuilder =
+    resolveBOMWorkspaceBranchRelationBuilder({
+      branchRelationBuilder,
+      protocolDraft,
+    })
 
   const {
     rootChildNodeIds,
@@ -109,7 +109,11 @@ export function buildBOMWorkspaceSourceModel({
     sectionName: '',
   }
 
-  const sourceNodes: BOMWorkspaceSourceNode[] = [rootNode, ...branchNodes, ...leafNodes]
+  const sourceNodes: BOMWorkspaceSourceNode[] = [
+    rootNode,
+    ...branchNodes,
+    ...leafNodes,
+  ]
   const nodeById = new Map(sourceNodes.map((node) => [node.nodeId, node]))
 
   return {

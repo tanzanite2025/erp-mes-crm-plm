@@ -3,15 +3,16 @@
 这份清单记录了本轮从 `src/locales/messages` 中移除的、已被 `src/locales/overrides` 长期接管的重复 key。
 
 处理原则：
+
 - 只删除 base messages 中与 override 同路径的叶子 key。
 - 仍承担兜底职责、或 override 未完整接管的 key 继续保留在 base messages。
 - 删除后仍通过 `src/locales/index.ts` 的 deep merge 输出同一份最终词典。
 
 ## 本轮去重范围
 
-| Base 文件 | Override 文件 | 原叶子数 | 删除数 | 保留数 |
-| --- | --- | ---: | ---: | ---: |
-| `src/locales/messages/zh-CN/purchase.ts` | `src/locales/overrides/purchase/zh-CN/index.ts` | 189 | 124 | 65 |
+| Base 文件                                | Override 文件                                   | 原叶子数 | 删除数 | 保留数 |
+| ---------------------------------------- | ----------------------------------------------- | -------: | -----: | -----: |
+| `src/locales/messages/zh-CN/purchase.ts` | `src/locales/overrides/purchase/zh-CN/index.ts` |      189 |    124 |     65 |
 
 ### purchase zh-CN
 

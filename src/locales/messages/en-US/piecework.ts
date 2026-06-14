@@ -1,7 +1,8 @@
 export const piecework = {
   layout: {
     title: 'Digital Piecework Center',
-    subtitle: 'Core Piecework rules, team efficiency and digital allocation logic',
+    subtitle:
+      'Core Piecework rules, team efficiency and digital allocation logic',
     tabs: {
       query: 'Query Detail',
       rules: 'Unit Price Rules',
@@ -11,7 +12,8 @@ export const piecework = {
   },
   placeholders: {
     moduleTitle: '{{title}} Functional Center',
-    moduleSubtitle: 'Digital Factory: Deep data analysis and controlled management logic',
+    moduleSubtitle:
+      'Digital Factory: Deep data analysis and controlled management logic',
     notAvailable: '{{title}} Module Not Available',
     underDevelopment: 'Current module is under development and encryption',
   },
@@ -22,7 +24,8 @@ export const piecework = {
     title: 'Piecework Rules',
     page: {
       headerTitle: 'Piecework Rate Standards',
-      headerDescription: 'Manage {{levelName}}-level piecework unit price baselines under a controlled tracking flow.',
+      headerDescription:
+        'Manage {{levelName}}-level piecework unit price baselines under a controlled tracking flow.',
       statusBadge: 'Audit Tracking Active',
       searchPlaceholder: 'Search {{levelName}} names or related product SKU...',
       add: 'Add Rate Standard',
@@ -43,7 +46,8 @@ export const piecework = {
     dialog: {
       titleEdit: 'Edit Piecework Rate Rule',
       titleCreate: 'Define New Piecework Standard',
-      description: 'Set atomic {{levelName}}-level rates and route every change into the audit stream.',
+      description:
+        'Set atomic {{levelName}}-level rates and route every change into the audit stream.',
       footerTracking: 'Rule Tracking Active',
       cancel: 'Cancel',
       save: 'Sync Rate Standard',
@@ -64,7 +68,8 @@ export const piecework = {
       },
     },
     toast: {
-      validationRequired: 'Missing required inputs: product, {{levelName}}, or rate',
+      validationRequired:
+        'Missing required inputs: product, {{levelName}}, or rate',
       saveSuccess: 'Piecework rate updated',
       saveFailed: 'Failed to save rate: {{message}}',
       patchSuccess: 'Rate delta synced successfully',
@@ -77,10 +82,12 @@ export const piecework = {
     title: 'Team Management',
     page: {
       headerTitle: 'Piecework Team Management',
-      headerDescription: 'Maintain team structure, responsibility classification, and settlement ownership for piecework operations.',
+      headerDescription:
+        'Maintain team structure, responsibility classification, and settlement ownership for piecework operations.',
       searchPlaceholder: 'Search team code, name, or section...',
       add: 'Add Team',
-      confirmDelete: 'Delete this production team? This action cannot be undone.',
+      confirmDelete:
+        'Delete this production team? This action cannot be undone.',
       table: {
         code: 'Team Code',
         name: 'Team Name',
@@ -114,11 +121,13 @@ export const piecework = {
     dialog: {
       titleEdit: 'Edit Team Definition',
       titleCreate: 'Create New Work Team',
-      description: 'Define collaborative production units and improve scheduling plus piecework settlement flow.',
+      description:
+        'Define collaborative production units and improve scheduling plus piecework settlement flow.',
       footerTracking: 'Team archive sync active',
       cancel: 'Cancel',
       save: 'Sync Team',
-      validationRequired: 'Please complete the core fields: code, name, and section',
+      validationRequired:
+        'Please complete the core fields: code, name, and section',
       fields: {
         code: 'Team Code',
         name: 'Team Name',
@@ -135,7 +144,8 @@ export const piecework = {
         name: 'e.g. Production Dispatch Team',
         shortName: 'Enter the external system identifier',
         section: 'Select a business section',
-        remarks: 'Enter additional descriptions or special rules for this team...',
+        remarks:
+          'Enter additional descriptions or special rules for this team...',
       },
       sectionOptions: {
         productionControl: 'Production Control',

@@ -9,9 +9,13 @@ import {
   type PayableDetailApiDTO,
 } from '../contracts/payable-api-dto'
 
-export async function getPayableLedgerDetail(id: string): Promise<PayableDetailApiDTO> {
+export async function getPayableLedgerDetail(
+  id: string
+): Promise<PayableDetailApiDTO> {
   const res = await apiFetch<PayableDetailApiDTO>(`/payables/${id}`)
-  const payload = ensureObjectResponse<PayableDetailApiDTO & Record<string, unknown>>(
+  const payload = ensureObjectResponse<
+    PayableDetailApiDTO & Record<string, unknown>
+  >(
     res,
     'PayableLedgerDetailService.getPayableLedgerDetail'
   ) as PayableDetailApiDTO
@@ -20,15 +24,20 @@ export async function getPayableLedgerDetail(id: string): Promise<PayableDetailA
 
 export async function createPaymentRecord(
   id: string,
-  payload: CreatePaymentRecordApiDTO,
+  payload: CreatePaymentRecordApiDTO
 ): Promise<CreatePaymentRecordResponseApiDTO> {
   const request = deserializeCreateSettlementRecordApiDTO(payload)
-  const res = await apiFetch<CreatePaymentRecordResponseApiDTO>(`/payables/${id}/payments`, {
-    method: 'POST',
-    body: JSON.stringify(request),
-  })
+  const res = await apiFetch<CreatePaymentRecordResponseApiDTO>(
+    `/payables/${id}/payments`,
+    {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }
+  )
 
-  const response = ensureObjectResponse<CreatePaymentRecordResponseApiDTO & Record<string, unknown>>(
+  const response = ensureObjectResponse<
+    CreatePaymentRecordResponseApiDTO & Record<string, unknown>
+  >(
     res,
     'PayableLedgerDetailService.createPaymentRecord'
   ) as CreatePaymentRecordResponseApiDTO

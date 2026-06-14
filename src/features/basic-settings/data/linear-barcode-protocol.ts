@@ -46,7 +46,9 @@ function isLegacyCombinedHoleRule(rule: BarcodeRuleSegment) {
   return rule.id === 'holes' && (rule.range === '09-11' || rule.length === 3)
 }
 
-export function shouldNormalizeLinearBarcodeRules(rules: BarcodeRuleSegment[] | null | undefined) {
+export function shouldNormalizeLinearBarcodeRules(
+  rules: BarcodeRuleSegment[] | null | undefined
+) {
   if (!Array.isArray(rules) || rules.length === 0) {
     return false
   }
@@ -62,17 +64,21 @@ export function shouldNormalizeLinearBarcodeRules(rules: BarcodeRuleSegment[] | 
     return true
   }
 
-  return holePrefixRule.range !== '09'
-    || holePrefixRule.length !== 1
-    || holeCountRule.range !== '10-11'
-    || holeCountRule.length !== 2
+  return (
+    holePrefixRule.range !== '09' ||
+    holePrefixRule.length !== 1 ||
+    holeCountRule.range !== '10-11' ||
+    holeCountRule.length !== 2
+  )
 }
 
 export function createDefaultLinearBarcodeRules(): BarcodeRuleSegment[] {
   return LINEAR_BARCODE_RULES_CONFIG.map((rule) => cloneRule(rule))
 }
 
-export function normalizeLinearBarcodeRules(rules: BarcodeRuleSegment[] | null | undefined): BarcodeRuleSegment[] {
+export function normalizeLinearBarcodeRules(
+  rules: BarcodeRuleSegment[] | null | undefined
+): BarcodeRuleSegment[] {
   const defaultRules = createDefaultLinearBarcodeRules()
 
   if (!Array.isArray(rules) || rules.length === 0) {
@@ -100,12 +106,16 @@ export function normalizeLinearBarcodeRules(rules: BarcodeRuleSegment[] | null |
     return {
       ...defaultRule,
       ...incomingRule,
-      examples: Array.isArray(incomingRule.examples) ? [...incomingRule.examples] : [...defaultRule.examples],
+      examples: Array.isArray(incomingRule.examples)
+        ? [...incomingRule.examples]
+        : [...defaultRule.examples],
     }
   })
 }
 
-export function normalizeLinearBarcodeProtocolConfig(config: LinearBarcodeProtocolConfig): LinearBarcodeProtocolConfig {
+export function normalizeLinearBarcodeProtocolConfig(
+  config: LinearBarcodeProtocolConfig
+): LinearBarcodeProtocolConfig {
   return {
     ...config,
     rules: normalizeLinearBarcodeRules(config.rules),
@@ -140,7 +150,9 @@ export function formatLinearBarcodeMonthValue(date: Date) {
   return 'D'
 }
 
-export function createDefaultLinearBarcodeMockInputs(date: Date = new Date()): LinearBarcodeMockInputs {
+export function createDefaultLinearBarcodeMockInputs(
+  date: Date = new Date()
+): LinearBarcodeMockInputs {
   return {
     year: date.getFullYear().toString().slice(-2),
     month: formatLinearBarcodeMonthValue(date),

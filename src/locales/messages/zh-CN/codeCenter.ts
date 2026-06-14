@@ -10,7 +10,8 @@ export const codeCenter = {
       page: {
         title: '一维码打印中心',
         subtitle: 'LINEAR BARCODE PRINT / 协议联动、模板承载与打印任务骨架页',
-        notice: '当前页面先收口一维码打印的最小解析链路：选择销售订单、读取订单详情中的归一字段、识别阻断项并展示参数预览。真实打印提交将在后续阶段接入。',
+        notice:
+          '当前页面先收口一维码打印的最小解析链路：选择销售订单、读取订单详情中的归一字段、识别阻断项并展示参数预览。真实打印提交将在后续阶段接入。',
         badges: {
           placeholder: '骨架占位',
           awaitingOrder: '等待选择订单',
@@ -27,7 +28,8 @@ export const codeCenter = {
         templates: {
           title: '订单读取区',
           description: '选择销售订单并读取订单详情，为打印前解析提供权威输入。',
-          placeholder: '订单读取能力已接入。这里将优先消费销售订单详情中的归一字段，而不是重新跨多来源二次推断。',
+          placeholder:
+            '订单读取能力已接入。这里将优先消费销售订单详情中的归一字段，而不是重新跨多来源二次推断。',
           selectLabel: '选择销售订单',
           selectPlaceholder: '-- 请选择订单 --',
           summary: {
@@ -46,8 +48,10 @@ export const codeCenter = {
         },
         parameters: {
           title: '解析规则区',
-          description: '展示协议配置摘要，以及打印 TAB 当前采用的最小字段解析规则。',
-          placeholder: '解析规则区已接入。这里仅说明当前字段来源与阻断规则，不承载打印机参数。',
+          description:
+            '展示协议配置摘要，以及打印 TAB 当前采用的最小字段解析规则。',
+          placeholder:
+            '解析规则区已接入。这里仅说明当前字段来源与阻断规则，不承载打印机参数。',
           ruleTitle: '当前最小解析规则',
           summary: {
             protocolVersion: '协议版本',
@@ -60,15 +64,18 @@ export const codeCenter = {
           rules: {
             modelCode: 'modelCode 来自订单行 `modelCodeSnapshot`',
             holePrefix: 'holePrefix 来自订单行 `holePrefixSnapshot`',
-            appearanceCode: 'appearanceCode 来自订单行 `appearanceBarcodeCodeSnapshot`',
+            appearanceCode:
+              'appearanceCode 来自订单行 `appearanceBarcodeCodeSnapshot`',
             holeCount: 'holes 来自订单行 `holeCount`',
             quantity: 'quantity 来自订单行 `qty`',
           },
         },
         preview: {
           title: '解析预览区',
-          description: '展示订单行是否满足最小打印解析条件，以及当前可用的条码参数快照。',
-          placeholder: '解析预览区已接入。这里先做可解析/不可解析判断与参数预览，暂不接真实打印任务。',
+          description:
+            '展示订单行是否满足最小打印解析条件，以及当前可用的条码参数快照。',
+          placeholder:
+            '解析预览区已接入。这里先做可解析/不可解析判断与参数预览，暂不接真实打印任务。',
           actions: {
             issueRealNumbers: '获取真实发号',
             issuingNumbers: '发号中',
@@ -87,7 +94,8 @@ export const codeCenter = {
             linePrintSuccessDescription: '起始 SN: {{serialNumber}}',
             linePrintFailed: '打印指令发送失败',
             batchPrintSuccess: '整单批量打印已提交，共 {{count}} 行。',
-            batchPrintPartial: '整单批量打印部分成功：成功 {{successCount}} 行，失败 {{failureCount}} 行。',
+            batchPrintPartial:
+              '整单批量打印部分成功：成功 {{successCount}} 行，失败 {{failureCount}} 行。',
             batchPrintFailed: '整单批量打印失败，请稍后重试。',
           },
           states: {
@@ -123,7 +131,8 @@ export const codeCenter = {
         },
         result: {
           title: '本次任务结果',
-          description: '保留最近一次整单批量打印的执行结果，方便快速回看成功/失败行。',
+          description:
+            '保留最近一次整单批量打印的执行结果，方便快速回看成功/失败行。',
           actions: {
             retryFailedOnly: '仅重打失败行',
             retryingFailedOnly: '重打失败行中',
@@ -255,7 +264,8 @@ export const codeCenter = {
       sections: {
         linearBarcode: {
           title: '一维码发号规则',
-          description: '复用当前一维码发号规则与后端 /numbering/rules 配置能力。',
+          description:
+            '复用当前一维码发号规则与后端 /numbering/rules 配置能力。',
           status: '后端发号已接入',
         },
       },

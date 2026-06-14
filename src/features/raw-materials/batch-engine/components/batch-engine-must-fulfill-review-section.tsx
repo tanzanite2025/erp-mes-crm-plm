@@ -44,7 +44,9 @@ function getMustDiagnosticConstraintLabel(
   }
 }
 
-export function BatchEngineMustFulfillReviewSection(props: BatchEngineMustFulfillReviewSectionProps) {
+export function BatchEngineMustFulfillReviewSection(
+  props: BatchEngineMustFulfillReviewSectionProps
+) {
   const { t } = useLanguage()
   const { selectedPlan } = props
 
@@ -54,7 +56,7 @@ export function BatchEngineMustFulfillReviewSection(props: BatchEngineMustFulfil
 
   return (
     <div className='rounded-[24px] border border-dashed border-slate-300 bg-white/90 p-4'>
-      <p className='text-[10px] font-black uppercase tracking-[0.18em] text-slate-500'>
+      <p className='text-[10px] font-black tracking-[0.18em] text-slate-500 uppercase'>
         {t('rawMaterials.batchEngine.mustReview.title')}
       </p>
       <div className='mt-3 grid gap-2'>
@@ -65,28 +67,30 @@ export function BatchEngineMustFulfillReviewSection(props: BatchEngineMustFulfil
               className={`rounded-2xl border px-3 py-3 text-xs font-semibold ${getMustDiagnosticTone(item.status)}`}
             >
               <div className='flex flex-wrap items-center justify-between gap-2'>
-                <p className='text-[10px] font-black uppercase tracking-[0.16em]'>
+                <p className='text-[10px] font-black tracking-[0.16em] uppercase'>
                   {item.demandLineId}
                 </p>
-                <span className='rounded-full border border-current/20 bg-white/60 px-2 py-1 text-[8px] font-mono'>
+                <span className='rounded-full border border-current/20 bg-white/60 px-2 py-1 font-mono text-[8px]'>
                   {getMustDiagnosticStatusLabel(item, t)}
                 </span>
               </div>
               <div className='mt-2 flex flex-wrap gap-2'>
-                <span className='rounded-full border border-current/20 bg-white/60 px-2 py-1 text-[8px] font-mono'>
+                <span className='rounded-full border border-current/20 bg-white/60 px-2 py-1 font-mono text-[8px]'>
                   {getMustDiagnosticConstraintLabel(item, t)}
                 </span>
-                <span className='rounded-full border border-current/20 bg-white/60 px-2 py-1 text-[8px] font-mono'>
+                <span className='rounded-full border border-current/20 bg-white/60 px-2 py-1 font-mono text-[8px]'>
                   {item.reasonCode}
                 </span>
               </div>
               <div className='mt-2 grid gap-1.5'>
                 <p>{item.message}</p>
                 <p>
-                  {t('rawMaterials.batchEngine.mustReview.labels.constraint')}: {item.blockingConstraint}
+                  {t('rawMaterials.batchEngine.mustReview.labels.constraint')}:{' '}
+                  {item.blockingConstraint}
                 </p>
                 <p>
-                  {t('rawMaterials.batchEngine.mustReview.labels.suggestion')}: {item.suggestion}
+                  {t('rawMaterials.batchEngine.mustReview.labels.suggestion')}:{' '}
+                  {item.suggestion}
                 </p>
               </div>
             </div>

@@ -1,5 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { PersonalRecordReorderPayloadItem, PersonalRecordUpsertPayload } from '../data/schema'
+import type {
+  PersonalRecordReorderPayloadItem,
+  PersonalRecordUpsertPayload,
+} from '../data/schema'
 import {
   createPersonalRecord,
   getPersonalRecords,
@@ -8,7 +11,10 @@ import {
 } from '../services/personal-workbench-service'
 
 export const personalWorkbenchQueryKeys = {
-  records: (): readonly ['personal-workbench', 'records'] => ['personal-workbench', 'records'],
+  records: (): readonly ['personal-workbench', 'records'] => [
+    'personal-workbench',
+    'records',
+  ],
 } as const
 
 export function usePersonalWorkbenchRecords() {
@@ -22,23 +28,37 @@ export function usePersonalWorkbenchMutations() {
   const queryClient = useQueryClient()
 
   const createMutation = useMutation({
-    mutationFn: (payload: PersonalRecordUpsertPayload) => createPersonalRecord(payload),
+    mutationFn: (payload: PersonalRecordUpsertPayload) =>
+      createPersonalRecord(payload),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: personalWorkbenchQueryKeys.records() })
+      await queryClient.invalidateQueries({
+        queryKey: personalWorkbenchQueryKeys.records(),
+      })
     },
   })
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: PersonalRecordUpsertPayload }) => patchPersonalRecord(id, payload),
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string
+      payload: PersonalRecordUpsertPayload
+    }) => patchPersonalRecord(id, payload),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: personalWorkbenchQueryKeys.records() })
+      await queryClient.invalidateQueries({
+        queryKey: personalWorkbenchQueryKeys.records(),
+      })
     },
   })
 
   const reorderMutation = useMutation({
-    mutationFn: (payload: PersonalRecordReorderPayloadItem[]) => reorderPersonalRecords(payload),
+    mutationFn: (payload: PersonalRecordReorderPayloadItem[]) =>
+      reorderPersonalRecords(payload),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: personalWorkbenchQueryKeys.records() })
+      await queryClient.invalidateQueries({
+        queryKey: personalWorkbenchQueryKeys.records(),
+      })
     },
   })
 

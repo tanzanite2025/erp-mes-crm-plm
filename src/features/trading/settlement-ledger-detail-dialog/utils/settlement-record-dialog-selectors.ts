@@ -44,7 +44,13 @@ interface BuildLedgerDisplayMapParams<
   amountLabel: string
 }
 
-function buildLedgerDisplayName(documentNo: string, partnerName: string, amountLabel: string, amount: number, currency?: string) {
+function buildLedgerDisplayName(
+  documentNo: string,
+  partnerName: string,
+  amountLabel: string,
+  amount: number,
+  currency?: string
+) {
   return `${documentNo} / ${partnerName} / ${amountLabel} ${formatSettlementMoney(amount, currency)}`
 }
 
@@ -59,7 +65,10 @@ export function buildLedgerDisplayMap<
   getLocalPartnerName,
   remoteLedgers,
   amountLabel,
-}: BuildLedgerDisplayMapParams<TDetail, TLocalLedger, TRemoteLedger>): Map<string, string> {
+}: BuildLedgerDisplayMapParams<TDetail, TLocalLedger, TRemoteLedger>): Map<
+  string,
+  string
+> {
   const entries: Array<[string, string]> = localLedgers.map((ledger) => [
     ledger.id,
     buildLedgerDisplayName(
@@ -116,7 +125,9 @@ export function filterLocalLedgers<TLedger extends LedgerLike>({
     return ledgers
   }
 
-  return ledgers.filter((ledger) => getSearchText(ledger).toLowerCase().includes(normalizedKeyword))
+  return ledgers.filter((ledger) =>
+    getSearchText(ledger).toLowerCase().includes(normalizedKeyword)
+  )
 }
 
 interface BuildDisplayLedgerOptionsParams<
@@ -139,7 +150,10 @@ export function buildDisplayLedgerOptions<
   getLocalPartnerName,
   remoteLedgers,
   amountLabel,
-}: BuildDisplayLedgerOptionsParams<TLocalLedger, TRemoteLedger>): DisplayLedgerOptionLike[] {
+}: BuildDisplayLedgerOptionsParams<
+  TLocalLedger,
+  TRemoteLedger
+>): DisplayLedgerOptionLike[] {
   if (debouncedKeyword.trim().length >= 2) {
     return remoteLedgers.map((ledger) => ({
       id: ledger.id,
@@ -186,7 +200,9 @@ export function buildAllocationHistoryGroups<
 }: BuildAllocationHistoryGroupsParams<TRecord, TAllocation>) {
   return records.map((record) => ({
     record,
-    allocations: allocations.filter((allocation) => allocation[relationKey] === record.id),
+    allocations: allocations.filter(
+      (allocation) => allocation[relationKey] === record.id
+    ),
   }))
 }
 
@@ -227,7 +243,8 @@ export function filterAllocationHistoryGroups<
     .map(({ record, allocations }) => ({
       record,
       allocations: allocations.filter((allocation) => {
-        const targetLedgerDisplay = ledgerDisplayMap.get(allocation.ledgerId) ?? allocation.ledgerId
+        const targetLedgerDisplay =
+          ledgerDisplayMap.get(allocation.ledgerId) ?? allocation.ledgerId
         const haystack =
           `${record.recordNo} ${record.recordDate} ${allocation.remark} ${targetLedgerDisplay} ${allocation.allocatedAmount}`.toLowerCase()
         return haystack.includes(keyword)
@@ -238,6 +255,8 @@ export function filterAllocationHistoryGroups<
         return true
       }
 
-      return `${record.recordNo} ${record.recordDate} ${record.amount}`.toLowerCase().includes(keyword)
+      return `${record.recordNo} ${record.recordDate} ${record.amount}`
+        .toLowerCase()
+        .includes(keyword)
     })
 }

@@ -5,7 +5,9 @@ import type {
 } from '../contracts/warehouse-category-api-dto'
 import type { WarehouseCategory, WarehouseCategoryOption } from '../data/schema'
 
-export function toWarehouseCategoryContract(dto: WarehouseCategoryApiDTO): WarehouseCategory {
+export function toWarehouseCategoryContract(
+  dto: WarehouseCategoryApiDTO
+): WarehouseCategory {
   return {
     id: dto.id,
     createdAt: dto.createdAt,
@@ -27,12 +29,17 @@ export function toWarehouseCategoryContract(dto: WarehouseCategoryApiDTO): Wareh
   }
 }
 
-export function toWarehouseCategoryContracts(dtos: WarehouseCategoryApiDTO[]): WarehouseCategory[] {
+export function toWarehouseCategoryContracts(
+  dtos: WarehouseCategoryApiDTO[]
+): WarehouseCategory[] {
   return dtos.map(toWarehouseCategoryContract)
 }
 
 export function toWarehouseCategoryApiDTO(
-  contract: Omit<WarehouseCategory, 'id' | 'version' | 'createdAt' | 'updatedAt'>
+  contract: Omit<
+    WarehouseCategory,
+    'id' | 'version' | 'createdAt' | 'updatedAt'
+  >
 ): Omit<WarehouseCategoryApiDTO, 'id' | 'version' | 'createdAt' | 'updatedAt'> {
   return {
     name: contract.name,
@@ -51,7 +58,9 @@ export function toWarehouseCategoryApiDTO(
   }
 }
 
-export function toWarehouseCategoryOptionContract(dto: WarehouseCategoryOptionApiDTO): WarehouseCategoryOption {
+export function toWarehouseCategoryOptionContract(
+  dto: WarehouseCategoryOptionApiDTO
+): WarehouseCategoryOption {
   return {
     value: dto.value,
     label: dto.label,
@@ -69,10 +78,14 @@ export function toWarehouseCategoryOptionContract(dto: WarehouseCategoryOptionAp
   }
 }
 
-export function toWarehouseCategoryOptionContracts(dtos: WarehouseCategoryOptionApiDTO[]): WarehouseCategoryOption[] {
+export function toWarehouseCategoryOptionContracts(
+  dtos: WarehouseCategoryOptionApiDTO[]
+): WarehouseCategoryOption[] {
   return dtos.map(toWarehouseCategoryOptionContract)
 }
 
-export function toWarehouseCategoryListPageContract(dto: WarehouseCategoryListPageApiDTO): WarehouseCategory[] {
+export function toWarehouseCategoryListPageContract(
+  dto: WarehouseCategoryListPageApiDTO
+): WarehouseCategory[] {
   return toWarehouseCategoryContracts(dto.items)
 }

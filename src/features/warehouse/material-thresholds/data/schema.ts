@@ -1,6 +1,10 @@
 import { z } from 'zod'
 
-const optionalStringSchema = z.string().nullable().optional().transform((value) => value ?? undefined)
+const optionalStringSchema = z
+  .string()
+  .nullable()
+  .optional()
+  .transform((value) => value ?? undefined)
 
 export const inventoryThresholdTargetTypeSchema = z.enum(['MATERIAL', 'BOM'])
 
@@ -55,9 +59,21 @@ export const inventoryThresholdRuleWritePayloadSchema = z.object({
   notes: z.string(),
 })
 
-export type InventoryThresholdTargetType = z.infer<typeof inventoryThresholdTargetTypeSchema>
-export type InventoryThresholdRule = z.infer<typeof inventoryThresholdRuleSchema>
-export type InventoryThresholdMaterialOption = z.infer<typeof inventoryThresholdMaterialOptionSchema>
-export type InventoryThresholdBOMOption = z.infer<typeof inventoryThresholdBOMOptionSchema>
-export type InventoryThresholdTargetOptionsResponse = z.infer<typeof inventoryThresholdTargetOptionsResponseSchema>
-export type InventoryThresholdRuleWritePayload = z.infer<typeof inventoryThresholdRuleWritePayloadSchema>
+export type InventoryThresholdTargetType = z.infer<
+  typeof inventoryThresholdTargetTypeSchema
+>
+export type InventoryThresholdRule = z.infer<
+  typeof inventoryThresholdRuleSchema
+>
+export type InventoryThresholdMaterialOption = z.infer<
+  typeof inventoryThresholdMaterialOptionSchema
+>
+export type InventoryThresholdBOMOption = z.infer<
+  typeof inventoryThresholdBOMOptionSchema
+>
+export type InventoryThresholdTargetOptionsResponse = z.infer<
+  typeof inventoryThresholdTargetOptionsResponseSchema
+>
+export type InventoryThresholdRuleWritePayload = z.infer<
+  typeof inventoryThresholdRuleWritePayloadSchema
+>

@@ -1,5 +1,13 @@
 import { type ChangeEvent, useMemo, useState } from 'react'
-import { AlertCircle, CheckCircle2, FileSpreadsheet, Upload } from 'lucide-react'
+import {
+  AlertCircle,
+  CheckCircle2,
+  FileSpreadsheet,
+  Upload,
+} from 'lucide-react'
+import { toast } from 'sonner'
+import { createLogger } from '@/lib/logger'
+import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -13,9 +21,6 @@ import {
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { createLogger } from '@/lib/logger'
-import { toast } from 'sonner'
-import { useLanguage } from '@/context/language-provider'
 import {
   EmployeeTransactionService,
   type EmployeeImportMode,
@@ -29,7 +34,7 @@ const logger = createLogger('ImportPersonnelDialog')
 function buildPreviewNames(
   employees: EmployeeImportPreviewItem[],
   fallback: string,
-  limit = 3,
+  limit = 3
 ) {
   const names = employees
     .slice(0, limit)
@@ -56,7 +61,9 @@ export function ImportPersonnelDialog({
   const { locale, t } = useLanguage()
   const isChinese = locale === 'zh-CN'
   const [file, setFile] = useState<File | null>(null)
-  const [preview, setPreview] = useState<EmployeeImportPreviewResponse | null>(null)
+  const [preview, setPreview] = useState<EmployeeImportPreviewResponse | null>(
+    null
+  )
   const [error, setError] = useState<string | null>(null)
   const [isParsing, setIsParsing] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
@@ -75,9 +82,11 @@ export function ImportPersonnelDialog({
 
   const executionPlan = useMemo(() => {
     const createCount = preview?.createCount ?? 0
-    const updateCount = importMode === 'sync' ? preview?.updateCount ?? 0 : 0
-    const payloadCount = importMode === 'sync' ? (preview?.importedCount ?? 0) : createCount
-    const skippedCount = importMode === 'add-only' ? preview?.updateCount ?? 0 : 0
+    const updateCount = importMode === 'sync' ? (preview?.updateCount ?? 0) : 0
+    const payloadCount =
+      importMode === 'sync' ? (preview?.importedCount ?? 0) : createCount
+    const skippedCount =
+      importMode === 'add-only' ? (preview?.updateCount ?? 0) : 0
 
     return {
       payloadCount,
@@ -88,16 +97,28 @@ export function ImportPersonnelDialog({
   }, [importMode, preview])
 
   const newPreview = useMemo(
-    () => buildPreviewNames(preview?.newEmployees ?? [], isChinese ? '新人员' : 'New employee'),
-    [preview, isChinese],
+    () =>
+      buildPreviewNames(
+        preview?.newEmployees ?? [],
+        isChinese ? '新人员' : 'New employee'
+      ),
+    [preview, isChinese]
   )
   const updatePreview = useMemo(
-    () => buildPreviewNames(preview?.existingEmployees ?? [], isChinese ? '待更新人员' : 'Matched employee'),
-    [preview, isChinese],
+    () =>
+      buildPreviewNames(
+        preview?.existingEmployees ?? [],
+        isChinese ? '待更新人员' : 'Matched employee'
+      ),
+    [preview, isChinese]
   )
   const missingPreview = useMemo(
-    () => buildPreviewNames(preview?.missingEmployees ?? [], isChinese ? '缺失人员' : 'Missing employee'),
-    [preview, isChinese],
+    () =>
+      buildPreviewNames(
+        preview?.missingEmployees ?? [],
+        isChinese ? '缺失人员' : 'Missing employee'
+      ),
+    [preview, isChinese]
   )
 
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -109,12 +130,17 @@ export function ImportPersonnelDialog({
     setIsParsing(true)
 
     try {
-      const nextPreview = await EmployeeTransactionService.previewEmployeeImport(selectedFile)
+      const nextPreview =
+        await EmployeeTransactionService.previewEmployeeImport(selectedFile)
       setPreview(nextPreview)
       setError(null)
     } catch (err) {
       logger.error('Preview failed', err)
-      setError(err instanceof Error ? err.message : t('orgPersonnel.importDialog.parseFailed'))
+      setError(
+        err instanceof Error
+          ? err.message
+          : t('orgPersonnel.importDialog.parseFailed')
+      )
     } finally {
       setIsParsing(false)
     }
@@ -125,7 +151,10 @@ export function ImportPersonnelDialog({
     setIsImporting(true)
 
     try {
-      const result = await EmployeeTransactionService.commitEmployeeImport(preview.previewToken, importMode)
+      const result = await EmployeeTransactionService.commitEmployeeImport(
+        preview.previewToken,
+        importMode
+      )
 
       toast.success(
         importMode === 'add-only'
@@ -145,7 +174,7 @@ export function ImportPersonnelDialog({
       toast.error(
         t('orgPersonnel.importDialog.importFailed', {
           message: err instanceof Error ? err.message : 'Unknown error',
-        }),
+        })
       )
     } finally {
       setIsImporting(false)
@@ -160,52 +189,58 @@ export function ImportPersonnelDialog({
         onOpenChange(nextOpen)
       }}
     >
-      <DialogContent className='sm:max-w-2xl rounded-[32px] border-none shadow-2xl p-0 gap-0 overflow-hidden bg-background'>
-        <DialogHeader className='text-start bg-muted/5 p-8 border-b border-dashed border-muted/50'>
-          <DialogTitle className='text-lg font-black tracking-tighter italic uppercase flex items-center gap-2'>
+      <DialogContent className='gap-0 overflow-hidden rounded-[32px] border-none bg-background p-0 shadow-2xl sm:max-w-2xl'>
+        <DialogHeader className='border-b border-dashed border-muted/50 bg-muted/5 p-8 text-start'>
+          <DialogTitle className='flex items-center gap-2 text-lg font-black tracking-tighter uppercase italic'>
             <FileSpreadsheet className='size-5 text-blue-600' />
             {t('orgPersonnel.importDialog.title')}
           </DialogTitle>
-          <DialogDescription className='text-[9px] font-black uppercase tracking-widest opacity-60 flex items-center justify-between'>
+          <DialogDescription className='flex items-center justify-between text-[9px] font-black tracking-widest uppercase opacity-60'>
             <span>{t('orgPersonnel.importDialog.description')}</span>
             <Button
               variant='link'
               size='sm'
-              className='h-auto p-0 text-[10px] font-black uppercase tracking-widest text-blue-600 hover:text-blue-700 underline underline-offset-4'
+              className='h-auto p-0 text-[10px] font-black tracking-widest text-blue-600 uppercase underline underline-offset-4 hover:text-blue-700'
               onClick={() => downloadPersonnelTemplate(locale)}
             >
-              <FileSpreadsheet className='mr-1 size-3' /> {t('orgPersonnel.importDialog.downloadTemplate')}
+              <FileSpreadsheet className='mr-1 size-3' />{' '}
+              {t('orgPersonnel.importDialog.downloadTemplate')}
             </Button>
           </DialogDescription>
         </DialogHeader>
 
-        <div className='p-8 space-y-6'>
+        <div className='space-y-6 p-8'>
           {!file ? (
-            <label className='flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-muted/50 rounded-[24px] bg-muted/20 hover:bg-muted/30 transition-all cursor-pointer group'>
+            <label className='group flex h-48 w-full cursor-pointer flex-col items-center justify-center rounded-[24px] border-2 border-dashed border-muted/50 bg-muted/20 transition-all hover:bg-muted/30'>
               <div className='flex flex-col items-center justify-center pt-5 pb-6'>
-                <div className='p-4 rounded-full bg-blue-500/10 mb-4 group-hover:scale-110 transition-transform'>
+                <div className='mb-4 rounded-full bg-blue-500/10 p-4 transition-transform group-hover:scale-110'>
                   <Upload className='size-8 text-blue-600' />
                 </div>
-                <p className='text-sm font-black uppercase tracking-tighter italic'>
+                <p className='text-sm font-black tracking-tighter uppercase italic'>
                   {t('orgPersonnel.importDialog.clickToUpload')}
                 </p>
-                <p className='text-[10px] mt-2 font-black uppercase tracking-widest opacity-40'>
+                <p className='mt-2 text-[10px] font-black tracking-widest uppercase opacity-40'>
                   {t('orgPersonnel.importDialog.support')}
                 </p>
               </div>
-              <input type='file' className='hidden' accept='.xlsx' onChange={handleFileChange} />
+              <input
+                type='file'
+                className='hidden'
+                accept='.xlsx'
+                onChange={handleFileChange}
+              />
             </label>
           ) : (
-            <div className='space-y-4 animate-in fade-in slide-in-from-bottom-2'>
+            <div className='animate-in space-y-4 fade-in slide-in-from-bottom-2'>
               {error ? (
-                <div className='flex items-start justify-between p-4 rounded-2xl bg-rose-50 border border-rose-200'>
+                <div className='flex items-start justify-between rounded-2xl border border-rose-200 bg-rose-50 p-4'>
                   <div className='flex items-start gap-3'>
-                    <AlertCircle className='size-5 text-rose-500 mt-0.5' />
+                    <AlertCircle className='mt-0.5 size-5 text-rose-500' />
                     <div className='overflow-hidden'>
                       <p className='text-[11px] font-bold text-rose-900 uppercase'>
                         {t('orgPersonnel.importDialog.auditFailed')}
                       </p>
-                      <pre className='text-[10px] text-rose-600 mt-1.5 leading-relaxed font-mono whitespace-pre-wrap break-all'>
+                      <pre className='mt-1.5 font-mono text-[10px] leading-relaxed break-all whitespace-pre-wrap text-rose-600'>
                         {error}
                       </pre>
                     </div>
@@ -213,19 +248,21 @@ export function ImportPersonnelDialog({
                   <Button
                     variant='ghost'
                     size='sm'
-                    className='text-[10px] font-black uppercase text-rose-600 hover:bg-rose-100 hover:text-rose-700 shrink-0'
+                    className='shrink-0 text-[10px] font-black text-rose-600 uppercase hover:bg-rose-100 hover:text-rose-700'
                     onClick={reset}
                   >
                     {t('orgPersonnel.importDialog.retry')}
                   </Button>
                 </div>
               ) : (
-                <div className='flex items-center justify-between p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/20'>
+                <div className='flex items-center justify-between rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4'>
                   <div className='flex items-center gap-3'>
                     <CheckCircle2 className='size-5 text-emerald-500' />
                     <div>
-                      <p className='text-xs font-bold text-emerald-950 uppercase'>{preview?.fileName || file.name}</p>
-                      <p className='text-[10px] text-emerald-600/60 font-black tracking-widest uppercase'>
+                      <p className='text-xs font-bold text-emerald-950 uppercase'>
+                        {preview?.fileName || file.name}
+                      </p>
+                      <p className='text-[10px] font-black tracking-widest text-emerald-600/60 uppercase'>
                         {t('orgPersonnel.importDialog.previewReady', {
                           sheetName: preview?.sheetName || '-',
                           count: preview?.importedCount ?? 0,
@@ -233,7 +270,12 @@ export function ImportPersonnelDialog({
                       </p>
                     </div>
                   </div>
-                  <Button variant='ghost' size='sm' className='text-[10px] font-black uppercase' onClick={reset}>
+                  <Button
+                    variant='ghost'
+                    size='sm'
+                    className='text-[10px] font-black uppercase'
+                    onClick={reset}
+                  >
                     {t('orgPersonnel.importDialog.changeFile')}
                   </Button>
                 </div>
@@ -241,8 +283,8 @@ export function ImportPersonnelDialog({
 
               {preview && !error ? (
                 <div className='space-y-4'>
-                  <div className='rounded-2xl border border-dashed border-muted overflow-hidden'>
-                    <p className='bg-muted/30 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 border-b border-dashed'>
+                  <div className='overflow-hidden rounded-2xl border border-dashed border-muted'>
+                    <p className='border-b border-dashed bg-muted/30 px-3 py-1.5 text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                       {isChinese ? '导入模式' : 'Import mode'}
                     </p>
                     <div className='p-3'>
@@ -256,9 +298,13 @@ export function ImportPersonnelDialog({
                       >
                         <Label
                           htmlFor='employee-import-add-only'
-                          className='items-start gap-3 rounded-2xl border border-dashed border-emerald-300/60 bg-emerald-50/40 p-4 cursor-pointer'
+                          className='cursor-pointer items-start gap-3 rounded-2xl border border-dashed border-emerald-300/60 bg-emerald-50/40 p-4'
                         >
-                          <RadioGroupItem id='employee-import-add-only' value='add-only' className='mt-0.5' />
+                          <RadioGroupItem
+                            id='employee-import-add-only'
+                            value='add-only'
+                            className='mt-0.5'
+                          />
                           <div className='space-y-1'>
                             <p className='text-xs font-black text-emerald-900'>
                               {isChinese ? '只新增' : 'Add only'}
@@ -273,12 +319,18 @@ export function ImportPersonnelDialog({
 
                         <Label
                           htmlFor='employee-import-sync'
-                          className='items-start gap-3 rounded-2xl border border-dashed border-blue-300/60 bg-blue-50/40 p-4 cursor-pointer'
+                          className='cursor-pointer items-start gap-3 rounded-2xl border border-dashed border-blue-300/60 bg-blue-50/40 p-4'
                         >
-                          <RadioGroupItem id='employee-import-sync' value='sync' className='mt-0.5' />
+                          <RadioGroupItem
+                            id='employee-import-sync'
+                            value='sync'
+                            className='mt-0.5'
+                          />
                           <div className='space-y-1'>
                             <p className='text-xs font-black text-blue-900'>
-                              {isChinese ? '批量同步（新增 + 更新）' : 'Sync (create + update)'}
+                              {isChinese
+                                ? '批量同步（新增 + 更新）'
+                                : 'Sync (create + update)'}
                             </p>
                             <p className='text-[10px] leading-relaxed text-blue-700'>
                               {isChinese
@@ -291,57 +343,73 @@ export function ImportPersonnelDialog({
                     </div>
                   </div>
 
-                  <div className='rounded-2xl border border-dashed border-muted overflow-hidden'>
-                    <p className='bg-muted/30 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 border-b border-dashed'>
+                  <div className='overflow-hidden rounded-2xl border border-dashed border-muted'>
+                    <p className='border-b border-dashed bg-muted/30 px-3 py-1.5 text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                       {isChinese ? '差异预览' : 'Diff preview'}
                     </p>
                     <div className='grid gap-3 p-3 md:grid-cols-3'>
                       <div className='rounded-2xl border border-emerald-200 bg-emerald-50/60 p-3'>
-                        <p className='text-[9px] font-black uppercase tracking-widest text-emerald-600/70'>
+                        <p className='text-[9px] font-black tracking-widest text-emerald-600/70 uppercase'>
                           {isChinese ? '将新增' : 'To create'}
                         </p>
-                        <p className='mt-1 text-2xl font-black text-emerald-900'>{preview.createCount}</p>
+                        <p className='mt-1 text-2xl font-black text-emerald-900'>
+                          {preview.createCount}
+                        </p>
                         {newPreview.names ? (
                           <p className='mt-2 text-[10px] leading-relaxed text-emerald-700'>
                             {newPreview.names}
-                            {newPreview.extra > 0 ? ` +${newPreview.extra}` : ''}
+                            {newPreview.extra > 0
+                              ? ` +${newPreview.extra}`
+                              : ''}
                           </p>
                         ) : null}
                       </div>
 
                       <div className='rounded-2xl border border-blue-200 bg-blue-50/60 p-3'>
-                        <p className='text-[9px] font-black uppercase tracking-widest text-blue-600/70'>
-                          {isChinese ? 'Excel 命中现有人员' : 'Matched existing'}
+                        <p className='text-[9px] font-black tracking-widest text-blue-600/70 uppercase'>
+                          {isChinese
+                            ? 'Excel 命中现有人员'
+                            : 'Matched existing'}
                         </p>
-                        <p className='mt-1 text-2xl font-black text-blue-900'>{preview.updateCount}</p>
+                        <p className='mt-1 text-2xl font-black text-blue-900'>
+                          {preview.updateCount}
+                        </p>
                         {updatePreview.names ? (
                           <p className='mt-2 text-[10px] leading-relaxed text-blue-700'>
                             {updatePreview.names}
-                            {updatePreview.extra > 0 ? ` +${updatePreview.extra}` : ''}
+                            {updatePreview.extra > 0
+                              ? ` +${updatePreview.extra}`
+                              : ''}
                           </p>
                         ) : null}
                       </div>
 
                       <div className='rounded-2xl border border-amber-200 bg-amber-50/60 p-3'>
-                        <p className='text-[9px] font-black uppercase tracking-widest text-amber-700/70'>
-                          {isChinese ? 'Excel 缺失但系统保留' : 'Missing in Excel, kept'}
+                        <p className='text-[9px] font-black tracking-widest text-amber-700/70 uppercase'>
+                          {isChinese
+                            ? 'Excel 缺失但系统保留'
+                            : 'Missing in Excel, kept'}
                         </p>
-                        <p className='mt-1 text-2xl font-black text-amber-900'>{preview.missingCount}</p>
+                        <p className='mt-1 text-2xl font-black text-amber-900'>
+                          {preview.missingCount}
+                        </p>
                         {missingPreview.names ? (
                           <p className='mt-2 text-[10px] leading-relaxed text-amber-700'>
                             {missingPreview.names}
-                            {missingPreview.extra > 0 ? ` +${missingPreview.extra}` : ''}
+                            {missingPreview.extra > 0
+                              ? ` +${missingPreview.extra}`
+                              : ''}
                           </p>
                         ) : null}
                       </div>
                     </div>
                   </div>
 
-                  <div className='rounded-2xl border border-dashed border-muted overflow-hidden'>
-                    <p className='bg-muted/30 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 border-b border-dashed'>
+                  <div className='overflow-hidden rounded-2xl border border-dashed border-muted'>
+                    <p className='border-b border-dashed bg-muted/30 px-3 py-1.5 text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                       {isChinese ? '执行预期' : 'Execution plan'}
                     </p>
-                    <div className='p-3 space-y-3'>
+                    <div className='space-y-3 p-3'>
                       <div className='rounded-2xl border border-dashed border-muted/60 bg-background p-3'>
                         <p className='text-[11px] font-black text-slate-800'>
                           {importMode === 'add-only'
@@ -364,16 +432,23 @@ export function ImportPersonnelDialog({
                       </div>
 
                       <div className='rounded-2xl border border-amber-200 bg-amber-50/80 p-3'>
-                        <Label htmlFor='employee-import-confirm' className='items-start gap-3 cursor-pointer'>
+                        <Label
+                          htmlFor='employee-import-confirm'
+                          className='cursor-pointer items-start gap-3'
+                        >
                           <Checkbox
                             id='employee-import-confirm'
                             checked={confirmImpact}
-                            onCheckedChange={(checked) => setConfirmImpact(checked === true)}
+                            onCheckedChange={(checked) =>
+                              setConfirmImpact(checked === true)
+                            }
                             className='mt-0.5'
                           />
                           <div className='space-y-1'>
                             <p className='text-[11px] font-black text-amber-900'>
-                              {isChinese ? '我已确认本次导入规则' : 'I understand the import rules'}
+                              {isChinese
+                                ? '我已确认本次导入规则'
+                                : 'I understand the import rules'}
                             </p>
                             <p className='text-[10px] leading-relaxed text-amber-700'>
                               {importMode === 'add-only'
@@ -390,21 +465,31 @@ export function ImportPersonnelDialog({
                     </div>
                   </div>
 
-                  <div className='rounded-2xl border border-dashed border-muted overflow-hidden'>
-                    <p className='bg-muted/30 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 border-b border-dashed'>
+                  <div className='overflow-hidden rounded-2xl border border-dashed border-muted'>
+                    <p className='border-b border-dashed bg-muted/30 px-3 py-1.5 text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                       {t('orgPersonnel.importDialog.preview')}
                     </p>
                     <ScrollArea className='h-32'>
-                      <div className='p-3 space-y-2'>
+                      <div className='space-y-2 p-3'>
                         {preview.previewRows.map((row, index) => (
                           <div
                             key={`${row.staffId}-${index}`}
-                            className='flex gap-4 text-[10px] font-mono text-muted-foreground/80 border-b border-muted/20 pb-1 last:border-0'
+                            className='flex gap-4 border-b border-muted/20 pb-1 font-mono text-[10px] text-muted-foreground/80 last:border-0'
                           >
-                            <span className='w-[100px] shrink-0 font-bold text-primary'>{row.staffId || '-'}</span>
-                            <span className='w-[80px] shrink-0 font-bold text-slate-700'>{row.name || '-'}</span>
-                            <span className='w-[80px] shrink-0'>{row.gender || '-'}</span>
-                            <span className='truncate'>{[row.deptName, row.positionName, row.phone].filter(Boolean).join(' / ') || '-'}</span>
+                            <span className='w-[100px] shrink-0 font-bold text-primary'>
+                              {row.staffId || '-'}
+                            </span>
+                            <span className='w-[80px] shrink-0 font-bold text-slate-700'>
+                              {row.name || '-'}
+                            </span>
+                            <span className='w-[80px] shrink-0'>
+                              {row.gender || '-'}
+                            </span>
+                            <span className='truncate'>
+                              {[row.deptName, row.positionName, row.phone]
+                                .filter(Boolean)
+                                .join(' / ') || '-'}
+                            </span>
                           </div>
                         ))}
                       </div>
@@ -413,9 +498,9 @@ export function ImportPersonnelDialog({
                 </div>
               ) : null}
 
-              <div className='flex items-start gap-2 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10'>
-                <AlertCircle className='size-4 text-amber-500 shrink-0 mt-0.5' />
-                <p className='text-[9px] text-amber-700 font-medium leading-relaxed italic'>
+              <div className='flex items-start gap-2 rounded-xl border border-amber-500/10 bg-amber-500/5 p-3'>
+                <AlertCircle className='mt-0.5 size-4 shrink-0 text-amber-500' />
+                <p className='text-[9px] leading-relaxed font-medium text-amber-700 italic'>
                   {t('orgPersonnel.importDialog.warning')}
                 </p>
               </div>
@@ -423,18 +508,20 @@ export function ImportPersonnelDialog({
           )}
         </div>
 
-        <DialogFooter className='p-6 bg-muted/5 border-t border-dashed border-muted/50'>
+        <DialogFooter className='border-t border-dashed border-muted/50 bg-muted/5 p-6'>
           <Button
             variant='ghost'
             onClick={() => onOpenChange(false)}
-            className='h-11 px-8 font-black text-[10px] uppercase tracking-widest'
+            className='h-11 px-8 text-[10px] font-black tracking-widest uppercase'
           >
             {t('orgPersonnel.importDialog.cancel')}
           </Button>
           <Button
             onClick={startImport}
-            disabled={!preview || isImporting || isParsing || !!error || !confirmImpact}
-            className='rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-500/20 active:scale-95 transition-all'
+            disabled={
+              !preview || isImporting || isParsing || !!error || !confirmImpact
+            }
+            className='h-11 rounded-full px-8 text-[10px] font-black tracking-widest uppercase shadow-xl shadow-blue-500/20 transition-all active:scale-95'
           >
             {isImporting
               ? t('orgPersonnel.importDialog.syncing')

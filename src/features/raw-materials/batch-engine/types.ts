@@ -1,11 +1,14 @@
- import type { TranslationKey } from '@/locales'
+import type { TranslationKey } from '@/locales'
 
 export type BatchEngineTranslate = (
   key: TranslationKey,
   params?: Record<string, string | number>
 ) => string
 
-export type { BatchEngineControls, BatchEngineSimulation } from './types/batch-engine-domain'
+export type {
+  BatchEngineControls,
+  BatchEngineSimulation,
+} from './types/batch-engine-domain'
 export type {
   BatchEngineNormalizedControls,
   BatchEngineResolvedControls,

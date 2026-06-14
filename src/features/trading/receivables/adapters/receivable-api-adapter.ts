@@ -1,9 +1,12 @@
 import type {
+  TradingLedgerAgingBucket,
+  TradingLedgerStatus,
+} from '../../utils/ledger-display'
+import type {
   ReceivableListPageApiDTO,
   ReceivableRecordApiDTO,
   ReceivableSummaryApiDTO,
 } from '../contracts/receivable-api-dto'
-import type { TradingLedgerAgingBucket, TradingLedgerStatus } from '../../utils/ledger-display'
 
 export interface ReceivableRecord {
   id: string
@@ -32,7 +35,9 @@ export interface PaginatedReceivables {
   summary: ReceivableSummary
 }
 
-export function toReceivableRecordContract(dto: ReceivableRecordApiDTO): ReceivableRecord {
+export function toReceivableRecordContract(
+  dto: ReceivableRecordApiDTO
+): ReceivableRecord {
   return {
     id: dto.id,
     documentNo: dto.documentNo,
@@ -47,7 +52,9 @@ export function toReceivableRecordContract(dto: ReceivableRecordApiDTO): Receiva
   }
 }
 
-export function toReceivableSummaryContract(dto: ReceivableSummaryApiDTO): ReceivableSummary {
+export function toReceivableSummaryContract(
+  dto: ReceivableSummaryApiDTO
+): ReceivableSummary {
   return {
     totalReceivable: dto.totalReceivable,
     overdueReceivable: dto.overdueReceivable,
@@ -55,7 +62,9 @@ export function toReceivableSummaryContract(dto: ReceivableSummaryApiDTO): Recei
   }
 }
 
-export function toReceivableListPageContract(dto: ReceivableListPageApiDTO): PaginatedReceivables {
+export function toReceivableListPageContract(
+  dto: ReceivableListPageApiDTO
+): PaginatedReceivables {
   return {
     items: dto.items.map(toReceivableRecordContract),
     total: dto.total,

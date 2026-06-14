@@ -30,5 +30,8 @@ export {
   type PurchaseReturnDictionaryItem,
   type PurchaseReturnDictionaryType,
 } from './services/purchase-return-dictionary-service'
-export { useGetPurchaseReturns, usePurchaseReturnMutations } from './hooks/use-purchase-returns'
+export {
+  useGetPurchaseReturns,
+  usePurchaseReturnMutations,
+} from './hooks/use-purchase-returns'
 export { usePurchaseReturnDictionaryOptions } from './hooks/use-purchase-return-dictionaries'

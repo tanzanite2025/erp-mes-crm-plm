@@ -1,6 +1,12 @@
 import type { NavGroup, NavNode } from '@/components/layout/types'
-import { hasAnyId, parseRequiredIds } from '@/features/authz/core/permission-kernel'
-import { getAuthSessionPermissionIds, type AuthSessionUserLike } from '@/features/authz/utils/auth-session'
+import {
+  hasAnyId,
+  parseRequiredIds,
+} from '@/features/authz/core/permission-kernel'
+import {
+  getAuthSessionPermissionIds,
+  type AuthSessionUserLike,
+} from '@/features/authz/utils/auth-session'
 import { matchesPathPermissionProjection } from './route-access'
 
 type NavigationAccessOptions = {
@@ -21,7 +27,7 @@ function cloneNavNode(node: NavNode): NavNode {
 function matchesNodePermission(
   user: AuthSessionUserLike | null | undefined,
   permissionIds: string[],
-  node: NavNode,
+  node: NavNode
 ): boolean {
   if (node.permissionId) {
     return hasAnyId(permissionIds, parseRequiredIds(node.permissionId))
@@ -37,7 +43,7 @@ function matchesNodePermission(
 function filterNavNodeByPermission(
   user: AuthSessionUserLike | null | undefined,
   permissionIds: string[],
-  node: NavNode,
+  node: NavNode
 ): NavNode | null {
   const visibleChildren = node.children
     ?.map((child) => filterNavNodeByPermission(user, permissionIds, child))
@@ -63,7 +69,7 @@ function filterNavNodeByPermission(
 export function getNonBlockingNavGroups(
   user: AuthSessionUserLike | null | undefined,
   groups: NavGroup[],
-  options: NavigationAccessOptions = {},
+  options: NavigationAccessOptions = {}
 ): NavGroup[] {
   const isIdentitySynced = options.isIdentitySynced ?? true
 
@@ -76,7 +82,8 @@ export function getNonBlockingNavGroups(
 
   const permissionIds = getAuthSessionPermissionIds(user)
 
-  return groups.map((group) => ({
+  return groups
+    .map((group) => ({
       ...group,
       children: group.children
         .map((item) => filterNavNodeByPermission(user, permissionIds, item))

@@ -4,11 +4,16 @@ import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Archive, Plus, Ruler } from 'lucide-react'
 import { toast } from 'sonner'
-import { ModuleTabbedLayout } from '@/components/layout/module-tabbed-layout'
-import { IndustrialHeader } from '@/components/uds/industrial-header'
+import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -19,13 +24,12 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { useLanguage } from '@/context/language-provider'
-import {
-  type CutSizeUnit,
-} from '@/features/raw-materials/cut-size-library/data/cut-size-library-schema'
+import { ModuleTabbedLayout } from '@/components/layout/module-tabbed-layout'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
+import { getCuttingOperationTabs } from '@/features/cutting-operations/tab-config'
+import { type CutSizeUnit } from '@/features/raw-materials/cut-size-library/data/cut-size-library-schema'
 import { formatCutSizeExpression } from '@/features/raw-materials/cut-size-library/domain/cut-size-geometry'
 import { CutSizeLibraryService } from '@/features/raw-materials/cut-size-library/services/cut-size-library-service'
-import { getCuttingOperationTabs } from '@/features/cutting-operations/tab-config'
 import {
   CutSizeInventoryService,
   type RecordCutSizeInventoryInput,
@@ -68,7 +72,11 @@ export function CuttingSizeInventoryTab() {
   const [location, setLocation] = useState('')
   const [remarks, setRemarks] = useState('')
 
-  const { data = [], isLoading, error } = useQuery({
+  const {
+    data = [],
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: CUTTING_SIZE_INVENTORY_QUERY_KEY,
     queryFn: () => CutSizeLibraryService.list(''),
   })
@@ -83,27 +91,27 @@ export function CuttingSizeInventoryTab() {
 
   const activeUnits = useMemo(
     () => data.filter((item) => item.status === 'Active'),
-    [data],
+    [data]
   )
 
   const inventoryByUnitId = useMemo(
     () =>
-      new Map(
-        inventoryRecords.map((record) => [record.cutSizeUnitId, record]),
-      ),
-    [inventoryRecords],
+      new Map(inventoryRecords.map((record) => [record.cutSizeUnitId, record])),
+    [inventoryRecords]
   )
 
   const usageTypeCount = useMemo(() => {
     const types = new Set(
-      data.map((item) => item.usageType.trim()).filter((item) => item.length > 0)
+      data
+        .map((item) => item.usageType.trim())
+        .filter((item) => item.length > 0)
     )
     return types.size
   }, [data])
 
   const selectedUnit = useMemo(
     () => data.find((item) => item.id === selectedUnitId) ?? null,
-    [data, selectedUnitId],
+    [data, selectedUnitId]
   )
 
   const recordMutation = useMutation({
@@ -156,10 +164,8 @@ export function CuttingSizeInventoryTab() {
   const tableLoading = isLoading || isInventoryLoading
 
   return (
-    <ModuleTabbedLayout
-      tabs={getCuttingOperationTabs(t)}
-    >
-      <div className='flex animate-in flex-col gap-5 fade-in duration-700'>
+    <ModuleTabbedLayout tabs={getCuttingOperationTabs(t)}>
+      <div className='flex animate-in flex-col gap-5 duration-700 fade-in'>
         <IndustrialHeader
           icon={Archive}
           title={t('cuttingOperations.sizeInventory.header.title')}
@@ -173,7 +179,7 @@ export function CuttingSizeInventoryTab() {
               <p className='truncate text-xs font-bold text-muted-foreground'>
                 {t('cuttingOperations.sizeInventory.metrics.total')}
               </p>
-              <p className='text-xl font-black tabular-nums leading-none text-slate-900'>
+              <p className='text-xl leading-none font-black text-slate-900 tabular-nums'>
                 {data.length}
               </p>
             </CardContent>
@@ -183,7 +189,7 @@ export function CuttingSizeInventoryTab() {
               <p className='truncate text-xs font-bold text-muted-foreground'>
                 {t('cuttingOperations.sizeInventory.metrics.active')}
               </p>
-              <p className='text-xl font-black tabular-nums leading-none text-slate-900'>
+              <p className='text-xl leading-none font-black text-slate-900 tabular-nums'>
                 {data.filter((item) => item.status === 'Active').length}
               </p>
             </CardContent>
@@ -193,7 +199,7 @@ export function CuttingSizeInventoryTab() {
               <p className='truncate text-xs font-bold text-muted-foreground'>
                 {t('cuttingOperations.sizeInventory.metrics.usageTypes')}
               </p>
-              <p className='text-xl font-black tabular-nums leading-none text-slate-900'>
+              <p className='text-xl leading-none font-black text-slate-900 tabular-nums'>
                 {usageTypeCount}
               </p>
             </CardContent>
@@ -207,17 +213,17 @@ export function CuttingSizeInventoryTab() {
                 <div className='flex size-8 shrink-0 items-center justify-center rounded-2xl border border-primary/15 bg-primary/8'>
                   <Ruler className='size-4 text-primary/75' />
                 </div>
-                <p className='truncate text-[13px] font-black uppercase tracking-tight text-foreground md:text-sm'>
+                <p className='truncate text-[13px] font-black tracking-tight text-foreground uppercase md:text-sm'>
                   {t('cuttingOperations.sizeInventory.table.title')}
                 </p>
               </div>
               <div className='flex shrink-0 items-center gap-3'>
-                <p className='hidden max-w-md truncate text-[9px] font-black uppercase tracking-widest text-muted-foreground/55 md:block'>
+                <p className='hidden max-w-md truncate text-[9px] font-black tracking-widest text-muted-foreground/55 uppercase md:block'>
                   {t('cuttingOperations.sizeInventory.table.hint')}
                 </p>
                 <Button
                   onClick={openRecordDialog}
-                  className='h-9 rounded-full px-4 text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/10'
+                  className='h-9 rounded-full px-4 text-[10px] font-black tracking-widest uppercase shadow-lg shadow-primary/10'
                 >
                   <Plus className='size-4' />
                   {t('cuttingOperations.sizeInventory.actions.recordInventory')}
@@ -225,9 +231,10 @@ export function CuttingSizeInventoryTab() {
               </div>
             </div>
             {tableError ? (
-              <div className='px-5 py-6 text-[11px] font-black uppercase tracking-widest text-rose-600'>
+              <div className='px-5 py-6 text-[11px] font-black tracking-widest text-rose-600 uppercase'>
                 {t('cuttingOperations.sizeInventory.table.error', {
-                  message: tableError instanceof Error ? tableError.message : '--',
+                  message:
+                    tableError instanceof Error ? tableError.message : '--',
                 })}
               </div>
             ) : null}
@@ -235,25 +242,47 @@ export function CuttingSizeInventoryTab() {
               <table className='w-full min-w-[900px]'>
                 <thead className='bg-muted/30'>
                   <tr>
-                    <th className='px-5 py-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{t('cuttingOperations.sizeInventory.table.columns.code')}</th>
-                    <th className='px-5 py-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{t('cuttingOperations.sizeInventory.table.columns.name')}</th>
-                    <th className='px-5 py-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{t('cuttingOperations.sizeInventory.table.columns.size')}</th>
-                    <th className='px-5 py-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{t('cuttingOperations.sizeInventory.table.columns.usage')}</th>
-                    <th className='px-5 py-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{t('cuttingOperations.sizeInventory.table.columns.sourceStatus')}</th>
-                    <th className='px-5 py-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{t('cuttingOperations.sizeInventory.table.columns.inventoryQty')}</th>
+                    <th className='px-5 py-3 text-left text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
+                      {t('cuttingOperations.sizeInventory.table.columns.code')}
+                    </th>
+                    <th className='px-5 py-3 text-left text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
+                      {t('cuttingOperations.sizeInventory.table.columns.name')}
+                    </th>
+                    <th className='px-5 py-3 text-left text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
+                      {t('cuttingOperations.sizeInventory.table.columns.size')}
+                    </th>
+                    <th className='px-5 py-3 text-left text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
+                      {t('cuttingOperations.sizeInventory.table.columns.usage')}
+                    </th>
+                    <th className='px-5 py-3 text-left text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
+                      {t(
+                        'cuttingOperations.sizeInventory.table.columns.sourceStatus'
+                      )}
+                    </th>
+                    <th className='px-5 py-3 text-left text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
+                      {t(
+                        'cuttingOperations.sizeInventory.table.columns.inventoryQty'
+                      )}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {tableLoading ? (
                     <tr>
-                      <td className='px-5 py-8 text-center text-[11px] font-black uppercase tracking-widest text-muted-foreground/35' colSpan={6}>
+                      <td
+                        className='px-5 py-8 text-center text-[11px] font-black tracking-widest text-muted-foreground/35 uppercase'
+                        colSpan={6}
+                      >
                         {t('cuttingOperations.sizeInventory.table.loading')}
                       </td>
                     </tr>
                   ) : null}
                   {!tableLoading && data.length === 0 ? (
                     <tr>
-                      <td className='px-5 py-8 text-center text-[11px] font-black uppercase tracking-widest text-muted-foreground/35' colSpan={6}>
+                      <td
+                        className='px-5 py-8 text-center text-[11px] font-black tracking-widest text-muted-foreground/35 uppercase'
+                        colSpan={6}
+                      >
                         {t('cuttingOperations.sizeInventory.table.empty')}
                       </td>
                     </tr>
@@ -269,7 +298,9 @@ export function CuttingSizeInventoryTab() {
                             <td className='px-5 py-3.5 align-top font-mono text-[11px] font-black tracking-wide text-foreground'>
                               {item.code || '--'}
                             </td>
-                            <td className='px-5 py-3.5 align-top text-[12px] font-bold text-foreground/85'>{item.name || '--'}</td>
+                            <td className='px-5 py-3.5 align-top text-[12px] font-bold text-foreground/85'>
+                              {item.name || '--'}
+                            </td>
                             <td className='px-5 py-3.5 align-top text-[12px] font-bold text-foreground/80'>
                               {formatCutSizeExpression(item) || '--'}
                             </td>
@@ -278,19 +309,25 @@ export function CuttingSizeInventoryTab() {
                             </td>
                             <td className='px-5 py-3.5 align-top'>
                               <span
-                                className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-widest ${statusClass(item.status)}`}
+                                className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-black tracking-widest uppercase ${statusClass(item.status)}`}
                               >
                                 {t(STATUS_LABEL_KEY[item.status])}
                               </span>
                             </td>
                             <td className='px-5 py-3.5 align-top'>
-                              <div className='text-sm font-black tabular-nums leading-none text-foreground'>
-                                {(inventory?.quantity ?? 0).toLocaleString()} {inventory?.unit || 'pcs'}
+                              <div className='text-sm leading-none font-black text-foreground tabular-nums'>
+                                {(inventory?.quantity ?? 0).toLocaleString()}{' '}
+                                {inventory?.unit || 'pcs'}
                               </div>
-                              <div className='mt-1.5 text-[10px] font-black uppercase tracking-widest text-muted-foreground/45'>
+                              <div className='mt-1.5 text-[10px] font-black tracking-widest text-muted-foreground/45 uppercase'>
                                 {inventory
-                                  ? inventory.location || t('cuttingOperations.sizeInventory.table.noLocation')
-                                  : t('cuttingOperations.sizeInventory.table.noInventory')}
+                                  ? inventory.location ||
+                                    t(
+                                      'cuttingOperations.sizeInventory.table.noLocation'
+                                    )
+                                  : t(
+                                      'cuttingOperations.sizeInventory.table.noInventory'
+                                    )}
                               </div>
                             </td>
                           </tr>
@@ -317,10 +354,15 @@ export function CuttingSizeInventoryTab() {
                 <Label className='text-xs font-black text-muted-foreground'>
                   {t('cuttingOperations.sizeInventory.dialog.unit')}
                 </Label>
-                <Select value={selectedUnitId} onValueChange={setSelectedUnitId}>
+                <Select
+                  value={selectedUnitId}
+                  onValueChange={setSelectedUnitId}
+                >
                   <SelectTrigger className='h-11 rounded-xl'>
                     <SelectValue
-                      placeholder={t('cuttingOperations.sizeInventory.dialog.unitPlaceholder')}
+                      placeholder={t(
+                        'cuttingOperations.sizeInventory.dialog.unitPlaceholder'
+                      )}
                     />
                   </SelectTrigger>
                   <SelectContent>
@@ -367,7 +409,9 @@ export function CuttingSizeInventoryTab() {
                   <Input
                     value={location}
                     onChange={(event) => setLocation(event.target.value)}
-                    placeholder={t('cuttingOperations.sizeInventory.dialog.locationPlaceholder')}
+                    placeholder={t(
+                      'cuttingOperations.sizeInventory.dialog.locationPlaceholder'
+                    )}
                     className='h-11 rounded-xl'
                   />
                 </div>
@@ -380,7 +424,9 @@ export function CuttingSizeInventoryTab() {
                 <Textarea
                   value={remarks}
                   onChange={(event) => setRemarks(event.target.value)}
-                  placeholder={t('cuttingOperations.sizeInventory.dialog.remarksPlaceholder')}
+                  placeholder={t(
+                    'cuttingOperations.sizeInventory.dialog.remarksPlaceholder'
+                  )}
                   className='min-h-20 resize-none rounded-xl'
                 />
               </div>

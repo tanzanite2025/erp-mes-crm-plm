@@ -1,8 +1,11 @@
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
-import { SettlementRecordEvidencePanel } from '../../settlement-evidences/components/settlement-record-evidence-panel'
 import { getTradingLedgerStatusOptions } from '@/features/trading/utils/ledger-display'
-import type { SettlementAllocationMode, SettlementLedgerDetailDialogViewModel } from '../types'
+import { SettlementRecordEvidencePanel } from '../../settlement-evidences/components/settlement-record-evidence-panel'
+import type {
+  SettlementAllocationMode,
+  SettlementLedgerDetailDialogViewModel,
+} from '../types'
 import { SettlementAllocationHistorySection } from './settlement-allocation-history-section'
 import { SettlementLedgerSummarySection } from './settlement-ledger-summary-section'
 import { SettlementRecordFormSection } from './settlement-record-form-section'
@@ -45,12 +48,20 @@ export function SettlementLedgerDetailDialogBody({
   return (
     <div className='grid gap-3'>
       {financeResourceStatus !== 'ready' ? (
-        <div className={`flex items-center justify-between gap-3 rounded-[22px] border border-dashed px-4 py-3 ${financeResourceStatus === 'loading' ? 'border-amber-500/30 bg-amber-500/5' : 'border-rose-500/30 bg-rose-500/5'}`}>
+        <div
+          className={`flex items-center justify-between gap-3 rounded-[22px] border border-dashed px-4 py-3 ${financeResourceStatus === 'loading' ? 'border-amber-500/30 bg-amber-500/5' : 'border-rose-500/30 bg-rose-500/5'}`}
+        >
           <div className='space-y-1'>
-            <p className={`text-[10px] font-black uppercase tracking-widest ${financeResourceStatus === 'loading' ? 'text-amber-700' : 'text-rose-700'}`}>
-              {financeResourceStatus === 'loading' ? '财务字典加载中' : '财务字典加载失败'}
+            <p
+              className={`text-[10px] font-black tracking-widest uppercase ${financeResourceStatus === 'loading' ? 'text-amber-700' : 'text-rose-700'}`}
+            >
+              {financeResourceStatus === 'loading'
+                ? '财务字典加载中'
+                : '财务字典加载失败'}
             </p>
-            <p className={`text-[9px] font-bold ${financeResourceStatus === 'loading' ? 'text-amber-700/80' : 'text-rose-700/80'}`}>
+            <p
+              className={`text-[9px] font-bold ${financeResourceStatus === 'loading' ? 'text-amber-700/80' : 'text-rose-700/80'}`}
+            >
               {financeResourceStatus === 'loading'
                 ? '币种与支付方式暂不可用。'
                 : financeResourceErrorMessage || '请重试后再登记结算记录。'}
@@ -60,7 +71,7 @@ export function SettlementLedgerDetailDialogBody({
             <Button
               type='button'
               variant='outline'
-              className='h-9 rounded-full border-dashed px-4 text-[10px] font-black uppercase tracking-widest'
+              className='h-9 rounded-full border-dashed px-4 text-[10px] font-black tracking-widest uppercase'
               onClick={onRetryFinanceResources}
             >
               重试
@@ -82,8 +93,12 @@ export function SettlementLedgerDetailDialogBody({
         paymentMethodPlaceholder={`选择${config.actionLabel}方式`}
         paymentMethodLoadingLabel='支付方式加载中...'
         paymentMethodUnavailableLabel='支付方式加载失败，请稍后重试'
-        isPaymentMethodLoading={showDetailedFields && financeResourceStatus === 'loading'}
-        isPaymentMethodOptionsUnavailable={showDetailedFields && financeResourceStatus === 'error'}
+        isPaymentMethodLoading={
+          showDetailedFields && financeResourceStatus === 'loading'
+        }
+        isPaymentMethodOptionsUnavailable={
+          showDetailedFields && financeResourceStatus === 'error'
+        }
         dateFieldId={`${vm.fieldPrefix}-date`}
         dateLabel={`${config.actionLabel}日期`}
         recordDate={vm.recordDate}
@@ -96,7 +111,9 @@ export function SettlementLedgerDetailDialogBody({
         referenceLabel='参考号'
         referenceNo={vm.referenceNo}
         onReferenceNoChange={vm.setReferenceNo}
-        totalAllocatedLabel={isSingleLedgerMode ? `本次${config.actionLabel}合计` : '分摊合计'}
+        totalAllocatedLabel={
+          isSingleLedgerMode ? `本次${config.actionLabel}合计` : '分摊合计'
+        }
         totalAllocatedAmount={vm.totalAllocatedAmount}
         currencyCode={vm.currencyCode}
         addAllocationLabel='新增分摊行'
@@ -157,7 +174,9 @@ export function SettlementLedgerDetailDialogBody({
         ledgerDisplayMap={vm.ledgerDisplayMap}
         selectLedgerLabel='选择台账'
         onOpenLedgerSearchDialog={vm.openLedgerSearchDialog}
-        allocatedAmountLabel={isSingleLedgerMode ? `本次${config.actionLabel}金额` : '分摊金额'}
+        allocatedAmountLabel={
+          isSingleLedgerMode ? `本次${config.actionLabel}金额` : '分摊金额'
+        }
         onUpdateAllocationRow={vm.updateAllocationRow}
         remarkLabel='备注'
         removeAllocationLabel='删除'

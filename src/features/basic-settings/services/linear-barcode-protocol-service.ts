@@ -8,8 +8,15 @@ import {
 
 export const linearBarcodeProtocolService = {
   async getConfig(): Promise<LinearBarcodeProtocolConfig> {
-    const res = await apiFetch<LinearBarcodeProtocolConfig>('/protocols/linear-barcode')
-    const config = ensureObjectResponse<LinearBarcodeProtocolConfig & Record<string, unknown>>(res, 'LinearBarcodeProtocolService.getConfig') as LinearBarcodeProtocolConfig
+    const res = await apiFetch<LinearBarcodeProtocolConfig>(
+      '/protocols/linear-barcode'
+    )
+    const config = ensureObjectResponse<
+      LinearBarcodeProtocolConfig & Record<string, unknown>
+    >(
+      res,
+      'LinearBarcodeProtocolService.getConfig'
+    ) as LinearBarcodeProtocolConfig
     const normalized = normalizeLinearBarcodeProtocolConfig(config)
 
     if (shouldNormalizeLinearBarcodeRules(config.rules)) {
@@ -19,13 +26,23 @@ export const linearBarcodeProtocolService = {
     return normalized
   },
 
-  async updateConfig(config: LinearBarcodeProtocolConfig): Promise<LinearBarcodeProtocolConfig> {
+  async updateConfig(
+    config: LinearBarcodeProtocolConfig
+  ): Promise<LinearBarcodeProtocolConfig> {
     const normalized = normalizeLinearBarcodeProtocolConfig(config)
-    const res = await apiFetch<LinearBarcodeProtocolConfig>('/protocols/linear-barcode', {
-      method: 'POST',
-      body: JSON.stringify(normalized),
-    })
-    const saved = ensureObjectResponse<LinearBarcodeProtocolConfig & Record<string, unknown>>(res, 'LinearBarcodeProtocolService.updateConfig') as LinearBarcodeProtocolConfig
+    const res = await apiFetch<LinearBarcodeProtocolConfig>(
+      '/protocols/linear-barcode',
+      {
+        method: 'POST',
+        body: JSON.stringify(normalized),
+      }
+    )
+    const saved = ensureObjectResponse<
+      LinearBarcodeProtocolConfig & Record<string, unknown>
+    >(
+      res,
+      'LinearBarcodeProtocolService.updateConfig'
+    ) as LinearBarcodeProtocolConfig
     return normalizeLinearBarcodeProtocolConfig(saved)
   },
 }

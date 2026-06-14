@@ -1,21 +1,27 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useLanguage } from '@/context/language-provider'
 import { failLoudly } from '@/lib/safe-catch'
+import { useLanguage } from '@/context/language-provider'
 import { AdjustmentService, type InventoryAdjustment } from '../adjustment'
 import { warehouseQueryKeys } from '../query-keys'
-import { createWarehouseUiFeedback, type WarehouseUiFeedback } from './warehouse-ui-feedback'
+import {
+  createWarehouseUiFeedback,
+  type WarehouseUiFeedback,
+} from './warehouse-ui-feedback'
 
-export function useAdjustmentHistory(feedback?: Pick<WarehouseUiFeedback, 'error' | 'success'>) {
+export function useAdjustmentHistory(
+  feedback?: Pick<WarehouseUiFeedback, 'error' | 'success'>
+) {
   const queryClient = useQueryClient()
   const { t } = useLanguage()
-  const ui = useMemo(
-    () => feedback ?? createWarehouseUiFeedback(),
-    [feedback],
+  const ui = useMemo(() => feedback ?? createWarehouseUiFeedback(), [feedback])
+  const [selectedAdj, setSelectedAdj] = useState<InventoryAdjustment | null>(
+    null
   )
-  const [selectedAdj, setSelectedAdj] = useState<InventoryAdjustment | null>(null)
   const [executeConfirmOpen, setExecuteConfirmOpen] = useState(false)
-  const [adjToExecute, setAdjToExecute] = useState<InventoryAdjustment | null>(null)
+  const [adjToExecute, setAdjToExecute] = useState<InventoryAdjustment | null>(
+    null
+  )
 
   const adjustmentsQuery = useQuery({
     queryKey: warehouseQueryKeys.inventoryAdjustments(),
@@ -52,8 +58,12 @@ export function useAdjustmentHistory(feedback?: Pick<WarehouseUiFeedback, 'error
 
   const onConfirmExecute = async () => {
     if (!adjToExecute) {
-      const error = new Error('[CRITICAL] Missing adjustment execute target in useAdjustmentHistory.onConfirmExecute')
-      failLoudly(error, 'useAdjustmentHistory.onConfirmExecute', { silentUI: true })
+      const error = new Error(
+        '[CRITICAL] Missing adjustment execute target in useAdjustmentHistory.onConfirmExecute'
+      )
+      failLoudly(error, 'useAdjustmentHistory.onConfirmExecute', {
+        silentUI: true,
+      })
       ui.error(t('warehouse.adjustment.toast.executeMissingTarget'))
       setExecuteConfirmOpen(false)
       setAdjToExecute(null)

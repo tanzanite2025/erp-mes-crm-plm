@@ -7,10 +7,10 @@ import {
   Loader2,
   Wand2,
 } from 'lucide-react'
+import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { useLanguage } from '@/context/language-provider'
 import type { PrepregFormState } from '../data/prepreg-material-spec-schema'
 import { PrepregLabelCaptureSessionService } from '../services/prepreg-label-capture-session-service'
 import { parsePrepregLabelText } from '../utils/prepreg-label-parser'
@@ -39,7 +39,9 @@ export function PrepregLabelMobileCapturePage({
       code: t('rawMaterials.catalog.form.code.label'),
       name: t('rawMaterials.catalog.form.name.label'),
       supplierProductCode: t('rawMaterials.catalog.form.supplier.label'),
-      resinContentBatchRaw: t('rawMaterials.catalog.form.resinContentBatchRaw.label'),
+      resinContentBatchRaw: t(
+        'rawMaterials.catalog.form.resinContentBatchRaw.label'
+      ),
       widthMm: t('rawMaterials.catalog.form.widthMm.label'),
       nominalAreaM2: t('rawMaterials.catalog.form.nominalAreaM2.label'),
       inspector: t('rawMaterials.catalog.form.inspector.label'),
@@ -50,7 +52,9 @@ export function PrepregLabelMobileCapturePage({
   )
 
   const fields = useMemo(() => parsePrepregLabelText(rawText), [rawText])
-  const entries = Object.entries(fields) as Array<[keyof PrepregFormState, string]>
+  const entries = Object.entries(fields) as Array<
+    [keyof PrepregFormState, string]
+  >
 
   const handlePickImage = () => {
     inputRef.current?.click()
@@ -104,10 +108,10 @@ export function PrepregLabelMobileCapturePage({
           <div className='flex size-20 items-center justify-center rounded-[28px] bg-emerald-500/10 text-emerald-600'>
             <CheckCircle2 className='size-10' />
           </div>
-          <h1 className='mt-6 text-3xl font-black italic tracking-tighter'>
+          <h1 className='mt-6 text-3xl font-black tracking-tighter italic'>
             {t('rawMaterials.catalog.mobileCapture.submitted.title')}
           </h1>
-          <p className='mt-3 text-sm font-semibold leading-6 text-muted-foreground'>
+          <p className='mt-3 text-sm leading-6 font-semibold text-muted-foreground'>
             {t('rawMaterials.catalog.mobileCapture.submitted.description')}
           </p>
         </section>
@@ -124,10 +128,10 @@ export function PrepregLabelMobileCapturePage({
               <Camera className='size-7' />
             </div>
             <div>
-              <h1 className='text-2xl font-black italic tracking-tighter'>
+              <h1 className='text-2xl font-black tracking-tighter italic'>
                 {t('rawMaterials.catalog.mobileCapture.title')}
               </h1>
-              <p className='mt-1 text-xs font-bold leading-5 text-muted-foreground'>
+              <p className='mt-1 text-xs leading-5 font-bold text-muted-foreground'>
                 {t('rawMaterials.catalog.mobileCapture.description')}
               </p>
             </div>
@@ -171,8 +175,10 @@ export function PrepregLabelMobileCapturePage({
           <Textarea
             value={rawText}
             onChange={(event) => setRawText(event.target.value)}
-            placeholder={t('rawMaterials.catalog.mobileCapture.textPlaceholder')}
-            className='min-h-[160px] rounded-2xl text-base font-semibold leading-7'
+            placeholder={t(
+              'rawMaterials.catalog.mobileCapture.textPlaceholder'
+            )}
+            className='min-h-[160px] rounded-2xl text-base leading-7 font-semibold'
           />
           <div className='mt-3 flex flex-wrap gap-2'>
             {entries.length === 0 ? (

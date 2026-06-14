@@ -1,10 +1,7 @@
 import { type SVGProps, useEffect, useState } from 'react'
 import { Item, Root as Radio } from '@radix-ui/react-radio-group'
 import { CircleCheck, Play, RotateCcw, Settings } from 'lucide-react'
-import { useLanguage } from '@/context/language-provider'
-import { useDirection } from '@/context/direction-provider'
-import { type Collapsible, useLayout } from '@/context/layout-provider'
-import { useTheme } from '@/context/theme-provider'
+import { toast } from 'sonner'
 import { IconDir } from '@/assets/custom/icon-dir'
 import { IconLayoutDefault } from '@/assets/custom/icon-layout-default'
 import { IconLayoutFull } from '@/assets/custom/icon-layout-full'
@@ -14,7 +11,19 @@ import { IconSidebarSidebar } from '@/assets/custom/icon-sidebar-sidebar'
 import { IconThemeDark } from '@/assets/custom/icon-theme-dark'
 import { IconThemeLight } from '@/assets/custom/icon-theme-light'
 import { IconThemeSystem } from '@/assets/custom/icon-theme-system'
+import { cn } from '@/lib/utils'
+import { useDirection } from '@/context/direction-provider'
+import { useLanguage } from '@/context/language-provider'
+import { type Collapsible, useLayout } from '@/context/layout-provider'
+import { useTheme } from '@/context/theme-provider'
 import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   Sheet,
   SheetContent,
@@ -24,17 +33,11 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { cn } from '@/lib/utils'
-import { aiAgentService, type AgentSettings } from '@/features/ai-assistant/services/ai-agent-service'
-import { toast } from 'sonner'
+import {
+  aiAgentService,
+  type AgentSettings,
+} from '@/features/ai-assistant/services/ai-agent-service'
 import { useSidebar } from './ui/sidebar'
 
 export function ConfigDrawer() {
@@ -64,7 +67,7 @@ export function ConfigDrawer() {
           <Settings aria-hidden='true' />
         </Button>
       </SheetTrigger>
-      <SheetContent className='flex flex-col w-[350px] sm:w-[450px] overflow-hidden'>
+      <SheetContent className='flex w-[350px] flex-col overflow-hidden sm:w-[450px]'>
         <SheetHeader className='pb-0 text-start'>
           <SheetTitle>{t('configDrawer.title')}</SheetTitle>
           <SheetDescription id='config-drawer-description'>
@@ -77,10 +80,10 @@ export function ConfigDrawer() {
           <LayoutConfig />
           <DirConfig />
 
-          <div className='h-px bg-border/50 border-dashed border-t' />
+          <div className='h-px border-t border-dashed bg-border/50' />
           <AgentConfigSection />
         </div>
-        <SheetFooter className='gap-2 pt-4 border-t'>
+        <SheetFooter className='gap-2 border-t pt-4'>
           <Button
             variant='destructive'
             size='sm'
@@ -124,13 +127,13 @@ function AgentConfigSection() {
   if (!settings) return null
 
   return (
-    <div className='space-y-5 animate-in fade-in duration-500'>
+    <div className='animate-in space-y-5 duration-500 fade-in'>
       <SectionTitle title={t('configDrawer.agent.title')} />
 
-      <div className='bg-muted/30 p-4 rounded-2xl border border-dashed border-border/50 space-y-4'>
+      <div className='space-y-4 rounded-2xl border border-dashed border-border/50 bg-muted/30 p-4'>
         <div className='flex items-center justify-between'>
           <div className='space-y-0.5'>
-            <div className='text-[10px] font-black uppercase tracking-widest text-primary'>
+            <div className='text-[10px] font-black tracking-widest text-primary uppercase'>
               {t('configDrawer.agent.dailyBriefing')}
             </div>
             <div className='text-[9px] opacity-60'>
@@ -139,25 +142,27 @@ function AgentConfigSection() {
           </div>
           <Switch
             checked={settings.dailyEnabled}
-            onCheckedChange={val => update({ dailyEnabled: val })}
+            onCheckedChange={(val) => update({ dailyEnabled: val })}
           />
         </div>
 
         {settings.dailyEnabled && (
-          <div className='grid grid-cols-2 gap-3 animate-in slide-in-from-top-1 duration-300'>
+          <div className='grid animate-in grid-cols-2 gap-3 duration-300 slide-in-from-top-1'>
             <div className='space-y-1.5'>
               <label className='text-[8px] font-black uppercase opacity-40'>
                 {t('configDrawer.agent.amSession')}
               </label>
               <Select
                 value={String(settings.amHour)}
-                onValueChange={value => update({ amHour: parseInt(value, 10) })}
+                onValueChange={(value) =>
+                  update({ amHour: parseInt(value, 10) })
+                }
               >
-                <SelectTrigger className='h-8 text-[10px] rounded-lg'>
+                <SelectTrigger className='h-8 rounded-lg text-[10px]'>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {[7, 8, 9, 10, 11].map(hour => (
+                  {[7, 8, 9, 10, 11].map((hour) => (
                     <SelectItem key={hour} value={String(hour)}>
                       {hour}:00
                     </SelectItem>
@@ -171,13 +176,15 @@ function AgentConfigSection() {
               </label>
               <Select
                 value={String(settings.pmHour)}
-                onValueChange={value => update({ pmHour: parseInt(value, 10) })}
+                onValueChange={(value) =>
+                  update({ pmHour: parseInt(value, 10) })
+                }
               >
-                <SelectTrigger className='h-8 text-[10px] rounded-lg'>
+                <SelectTrigger className='h-8 rounded-lg text-[10px]'>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {[16, 17, 18, 19, 20].map(hour => (
+                  {[16, 17, 18, 19, 20].map((hour) => (
                     <SelectItem key={hour} value={String(hour)}>
                       {hour}:00
                     </SelectItem>
@@ -189,10 +196,10 @@ function AgentConfigSection() {
         )}
       </div>
 
-      <div className='bg-muted/30 p-4 rounded-2xl border border-dashed border-border/50 space-y-4'>
+      <div className='space-y-4 rounded-2xl border border-dashed border-border/50 bg-muted/30 p-4'>
         <div className='flex items-center justify-between'>
           <div className='space-y-0.5'>
-            <div className='text-[10px] font-black uppercase tracking-widest text-primary'>
+            <div className='text-[10px] font-black tracking-widest text-primary uppercase'>
               {t('configDrawer.agent.weeklyAudit')}
             </div>
             <div className='text-[9px] opacity-60'>
@@ -201,16 +208,16 @@ function AgentConfigSection() {
           </div>
           <Switch
             checked={settings.weeklyEnabled}
-            onCheckedChange={val => update({ weeklyEnabled: val })}
+            onCheckedChange={(val) => update({ weeklyEnabled: val })}
           />
         </div>
 
         {settings.weeklyEnabled && (
-          <div className='space-y-1.5 animate-in slide-in-from-top-1 duration-300'>
+          <div className='animate-in space-y-1.5 duration-300 slide-in-from-top-1'>
             <label className='text-[8px] font-black uppercase opacity-40'>
               {t('configDrawer.agent.scheduleDay')}
             </label>
-            <div className='text-[10px] font-medium px-3 py-1.5 bg-background rounded-lg border border-dashed text-muted-foreground'>
+            <div className='rounded-lg border border-dashed bg-background px-3 py-1.5 text-[10px] font-medium text-muted-foreground'>
               {t('configDrawer.agent.weeklySchedule')}
             </div>
           </div>
@@ -219,7 +226,7 @@ function AgentConfigSection() {
 
       <Button
         variant='outline'
-        className='w-full h-10 rounded-xl bg-primary/5 border-dashed border-primary/30 text-[9px] font-black uppercase tracking-[0.2em] gap-2 hover:bg-primary/10'
+        className='h-10 w-full gap-2 rounded-xl border-dashed border-primary/30 bg-primary/5 text-[9px] font-black tracking-[0.2em] uppercase hover:bg-primary/10'
         onClick={handleForceRun}
       >
         <Play className='size-3 fill-primary text-primary' />
@@ -249,7 +256,12 @@ function SectionTitle({
     >
       {title}
       {showReset && onReset && (
-        <Button size='icon' variant='secondary' className='size-4 rounded-full' onClick={onReset}>
+        <Button
+          size='icon'
+          variant='secondary'
+          className='size-4 rounded-full'
+          onClick={onReset}
+        >
           <RotateCcw className='size-3' />
         </Button>
       )}
@@ -301,7 +313,11 @@ function RadioGroupItem({
           aria-hidden='true'
         />
       </div>
-      <div className='mt-1 text-xs' id={`${item.value}-description`} aria-live='polite'>
+      <div
+        className='mt-1 text-xs'
+        id={`${item.value}-description`}
+        aria-live='polite'
+      >
         {item.label}
       </div>
     </Item>
@@ -327,10 +343,18 @@ function ThemeConfig() {
         aria-describedby='theme-description'
       >
         {[
-          { value: 'system', label: t('common.theme.system'), icon: IconThemeSystem },
-          { value: 'light', label: t('common.theme.light'), icon: IconThemeLight },
+          {
+            value: 'system',
+            label: t('common.theme.system'),
+            icon: IconThemeSystem,
+          },
+          {
+            value: 'light',
+            label: t('common.theme.light'),
+            icon: IconThemeLight,
+          },
           { value: 'dark', label: t('common.theme.dark'), icon: IconThemeDark },
-        ].map(item => (
+        ].map((item) => (
           <RadioGroupItem key={item.value} item={item} isTheme />
         ))}
       </Radio>
@@ -375,7 +399,7 @@ function SidebarConfig() {
             label: t('configDrawer.sidebarOptions.sidebar'),
             icon: IconSidebarSidebar,
           },
-        ].map(item => (
+        ].map((item) => (
           <RadioGroupItem key={item.value} item={item} />
         ))}
       </Radio>
@@ -405,7 +429,7 @@ function LayoutConfig() {
       />
       <Radio
         value={radioState}
-        onValueChange={value => {
+        onValueChange={(value) => {
           if (value === 'default') {
             setOpen(true)
             return
@@ -428,7 +452,7 @@ function LayoutConfig() {
             label: t('configDrawer.layoutOptions.fullLayout'),
             icon: IconLayoutFull,
           },
-        ].map(item => (
+        ].map((item) => (
           <RadioGroupItem key={item.value} item={item} />
         ))}
       </Radio>
@@ -461,14 +485,18 @@ function DirConfig() {
           {
             value: 'ltr',
             label: t('configDrawer.directionOptions.ltr'),
-            icon: (props: SVGProps<SVGSVGElement>) => <IconDir dir='ltr' {...props} />,
+            icon: (props: SVGProps<SVGSVGElement>) => (
+              <IconDir dir='ltr' {...props} />
+            ),
           },
           {
             value: 'rtl',
             label: t('configDrawer.directionOptions.rtl'),
-            icon: (props: SVGProps<SVGSVGElement>) => <IconDir dir='rtl' {...props} />,
+            icon: (props: SVGProps<SVGSVGElement>) => (
+              <IconDir dir='rtl' {...props} />
+            ),
           },
-        ].map(item => (
+        ].map((item) => (
           <RadioGroupItem key={item.value} item={item} />
         ))}
       </Radio>

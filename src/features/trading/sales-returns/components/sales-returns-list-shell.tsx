@@ -1,5 +1,4 @@
 import { Loader2, RotateCcw, Search } from 'lucide-react'
-import { CompactPaginationControls } from '@/components/pagination/compact-pagination-controls'
 import { isForbiddenError } from '@/lib/error-status'
 import { useLanguage } from '@/context/language-provider'
 import { Input } from '@/components/ui/input'
@@ -12,6 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { ForbiddenState } from '@/components/forbidden-state'
+import { CompactPaginationControls } from '@/components/pagination/compact-pagination-controls'
 import { TradingQueryErrorState } from '@/features/trading/components/trading-query-error-state'
 import type { SalesReturnRecord } from '@/features/trading/sales/services/sales-return-service'
 import { SalesReturnRecordMaster } from './sales-return-record-master'

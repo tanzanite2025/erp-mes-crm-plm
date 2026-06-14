@@ -11,8 +11,10 @@ export const apsScheduling = {
   },
   board: {
     title: 'APS Scheduling Workspace',
-    subtitle: 'A unified scheduling workspace for capacity, priority, and due-date coordination.',
-    statusSummary: 'Current schedule: {{total}} orders, {{running}} running, {{draft}} pending, {{late}} at risk.',
+    subtitle:
+      'A unified scheduling workspace for capacity, priority, and due-date coordination.',
+    statusSummary:
+      'Current schedule: {{total}} orders, {{running}} running, {{draft}} pending, {{late}} at risk.',
     searchPlaceholder: 'Search order no., product, or line...',
     rules: 'Rules',
     create: 'Create Schedule',
@@ -24,18 +26,22 @@ export const apsScheduling = {
     laneLabel: 'Line / Time',
     live: 'Live',
     noResultsTitle: 'No matching schedules found',
-    noResultsSubtitle: 'Try different keywords or clear the filter to view the schedule board again.',
+    noResultsSubtitle:
+      'Try different keywords or clear the filter to view the schedule board again.',
     loading: 'Loading APS scheduling data...',
     refreshing: 'Refreshing APS scheduling data...',
-    fallbackNotice: 'If the backend is unavailable, the page will fall back to local sample data.',
-    capacityNote: 'Load {{occupiedHours}} / Capacity {{availableHours}} / Window {{timeWindowHours}}',
+    fallbackNotice:
+      'If the backend is unavailable, the page will fall back to local sample data.',
+    capacityNote:
+      'Load {{occupiedHours}} / Capacity {{availableHours}} / Window {{timeWindowHours}}',
     segmentCategoryCount: '{{count}} {{levelName}} groups',
     processCount: '{{count}} {{levelName}}',
   },
   cuttingIssuance: {
     header: {
       title: 'Cutting Issuance',
-      description: 'Close the loop for sales orders, template auto-matching, and execution issuance on a single page.',
+      description:
+        'Close the loop for sales orders, template auto-matching, and execution issuance on a single page.',
       status: {
         loading: 'Loading',
         awaitingOrder: 'Awaiting Order',
@@ -52,11 +58,14 @@ export const apsScheduling = {
         'Select an order line first and confirm that a cutting template has been matched automatically.',
       createSuccess: 'Execution created: {{id}}',
       createFailed: 'Failed to create execution.',
-      responseMissingId: 'Failed to create execution: response is missing an execution ID.',
+      responseMissingId:
+        'Failed to create execution: response is missing an execution ID.',
       templateHintAwaitingLine:
         'Select an order line first and the system will match a cutting template automatically.',
-      templateHintNoTemplate: 'There is no available template for the current order line yet.',
-      templateHintSingleTemplate: 'A template has been matched automatically by model and hole count.',
+      templateHintNoTemplate:
+        'There is no available template for the current order line yet.',
+      templateHintSingleTemplate:
+        'A template has been matched automatically by model and hole count.',
       templateHintMultipleTemplate:
         '{{count}} templates matched for the same model and hole count. The latest version is selected by default.',
       missingTemplateMessage:
@@ -88,7 +97,8 @@ export const apsScheduling = {
       refreshing: 'Refreshing...',
       countLabel: 'Showing {{count}} / {{total}} executions',
       emptyFiltered: 'No executions match the current search criteria.',
-      emptyInitial: 'No executions have been created yet. They will appear here after creation.',
+      emptyInitial:
+        'No executions have been created yet. They will appear here after creation.',
       lineValue: 'Line {{lineNo}}',
       modelHoleValue: '{{productModel}} / {{holeCount}} holes',
       columns: {
@@ -105,7 +115,8 @@ export const apsScheduling = {
     trace: {
       kicker: 'Trace Summary',
       title: 'Trace Report',
-      description: 'Real-time summary of executions, batches, and cutting-line quantities.',
+      description:
+        'Real-time summary of executions, batches, and cutting-line quantities.',
       refreshing: 'Refreshing...',
       summary: {
         executionCount: 'Executions',
@@ -137,14 +148,16 @@ export const apsScheduling = {
   },
   engineConfig: {
     title: 'Greedy Engine Config',
-    subtitle: 'Declare which factors the greedy engine should consider during scheduling and how those factors participate in calculation.',
+    subtitle:
+      'Declare which factors the greedy engine should consider during scheduling and how those factors participate in calculation.',
     sections: {
       factorDeckTitle: 'Engine Factors',
       boundaryTableTitle: 'APS Concept Boundaries',
     },
     dateCard: {
       title: 'Date / Rest Days / Holidays',
-      description: 'Use the system-default workday, rest-day, and holiday policy as the engine\'s date-factor input.',
+      description:
+        "Use the system-default workday, rest-day, and holiday policy as the engine's date-factor input.",
       sourceLabel: 'Rule Source',
       sourceType: {
         systemDefault: 'System Default Rules',
@@ -158,15 +171,19 @@ export const apsScheduling = {
         'This card only declares whether the engine should consider workdays, rest days, and holidays, together with the active default rule policy. It does not explain any specific scheduling outcome.',
       summary: {
         defaultWorkdayLabel: 'Default Workdays',
-        defaultWorkdayValue: 'Workdays participate as schedulable dates in engine calculation.',
-        defaultWorkdayDisabledValue: 'Workdays are currently not treated as a date-factor input.',
+        defaultWorkdayValue:
+          'Workdays participate as schedulable dates in engine calculation.',
+        defaultWorkdayDisabledValue:
+          'Workdays are currently not treated as a date-factor input.',
         weekendRestLabel: 'Weekend Handling',
         weekendRestValue: 'Weekends are treated as rest days.',
         weekendWorkdayValue: 'Weekends are treated as workdays.',
         holidayStopLabel: 'Holiday Handling',
         holidayStopValue: 'Statutory holidays are treated as stop days.',
-        holidayReducedCapacityValue: 'Statutory holidays are treated as reduced-capacity days.',
-        holidayIgnoreValue: 'The current system-default rules do not apply an extra holiday stop override.',
+        holidayReducedCapacityValue:
+          'Statutory holidays are treated as reduced-capacity days.',
+        holidayIgnoreValue:
+          'The current system-default rules do not apply an extra holiday stop override.',
         unknownValue: 'The current rule source does not provide a clear value.',
       },
     },
@@ -175,7 +192,8 @@ export const apsScheduling = {
     },
     slackTimeCard: {
       title: 'Due Date Alert / Slack Time',
-      description: 'Declare whether the engine enables due date and slack time calculation constraints, together with the overdue penalty score.',
+      description:
+        'Declare whether the engine enables due date and slack time calculation constraints, together with the overdue penalty score.',
       sourceLabel: 'Rule Source',
       sourceType: {
         systemDefault: 'System Default Rules',
@@ -189,17 +207,22 @@ export const apsScheduling = {
         'This card only declares whether the engine enables due date and slack time constraints, together with the overdue penalty weight. It does not dictate specific scheduling outcomes.',
       summary: {
         enableSlackLabel: 'Due Date Constraint Status',
-        enableSlackValue: 'Due date and slack time constraints participate as scoring factors in calculations.',
-        enableSlackDisabledValue: 'Due date and slack time are currently not active scoring factor inputs.',
+        enableSlackValue:
+          'Due date and slack time constraints participate as scoring factors in calculations.',
+        enableSlackDisabledValue:
+          'Due date and slack time are currently not active scoring factor inputs.',
         slackThresholdLabel: 'Warning Window Days',
-        slackThresholdValue: 'Enters slack time degradation range {{days}} days before due date.',
+        slackThresholdValue:
+          'Enters slack time degradation range {{days}} days before due date.',
         overduePenaltyLabel: 'Overdue Penalty Weight',
-        overduePenaltyValue: 'Score penalty deducted when completed after due date: {{penalty}} pts.',
+        overduePenaltyValue:
+          'Score penalty deducted when completed after due date: {{penalty}} pts.',
       },
     },
     attendanceCard: {
       title: 'Personnel Attendance / Crew Constraints',
-      description: 'Declare whether the engine links attendance clock-in status, and scheduling filter or derating policies when short-staffed.',
+      description:
+        'Declare whether the engine links attendance clock-in status, and scheduling filter or derating policies when short-staffed.',
       sourceLabel: 'Rule Source',
       sourceType: {
         systemDefault: 'System Default Rules',
@@ -213,12 +236,16 @@ export const apsScheduling = {
         'This card only declares whether attendance and crew constraints participate as input factors in engine calculation; it does not collect shopfloor check-in logs.',
       summary: {
         enableAttendanceLabel: 'Attendance Link Status',
-        enableAttendanceValue: 'Attendance and check-in statuses participate in scheduling lock.',
-        enableAttendanceDisabledValue: 'Attendance check-in link is currently not active.',
+        enableAttendanceValue:
+          'Attendance and check-in statuses participate in scheduling lock.',
+        enableAttendanceDisabledValue:
+          'Attendance check-in link is currently not active.',
         minCrewRateLabel: 'Min Attendance Rate',
-        minCrewRateValue: 'Triggers Hard Block (blocks scheduling) when crew attendance is below {{rate}}%.',
+        minCrewRateValue:
+          'Triggers Hard Block (blocks scheduling) when crew attendance is below {{rate}}%.',
         capacityDerateLabel: 'Absence Derating Factor',
-        capacityDerateValue: 'Capacity scales to {{derate}}% when understaffed (processing time is extended).',
+        capacityDerateValue:
+          'Capacity scales to {{derate}}% when understaffed (processing time is extended).',
       },
     },
     boundaryTable: {
@@ -248,23 +275,28 @@ export const apsScheduling = {
         },
         resource: {
           layer: 'Resource Constraints',
-          responsibility: 'Defines whether a resource can be scheduled now and how much it can carry.',
+          responsibility:
+            'Defines whether a resource can be scheduled now and how much it can carry.',
           notResponsibility: 'Does not explain whether a date is a holiday.',
           inputs: 'Machine state, line state, shifts, workforce availability.',
-          outputs: 'Resource schedulability, capacity, time-window constraints.',
+          outputs:
+            'Resource schedulability, capacity, time-window constraints.',
           example: 'Line maintenance, missing shift crew.',
         },
         event: {
           layer: 'Event Hooks',
-          responsibility: 'Receives real-world events and triggers state changes or recalculation.',
+          responsibility:
+            'Receives real-world events and triggers state changes or recalculation.',
           notResponsibility: 'Does not decide the optimal schedule by itself.',
-          inputs: 'Scans, start, completion, downtime, rush insertions, material arrival.',
+          inputs:
+            'Scans, start, completion, downtime, rush insertions, material arrival.',
           outputs: 'Events, recalculation requests, state transitions.',
           example: 'Barcode-scan start, abnormal machine stop.',
         },
         solver: {
           layer: 'Greedy Solver',
-          responsibility: 'Finds the current best solution under the active constraint set.',
+          responsibility:
+            'Finds the current best solution under the active constraint set.',
           notResponsibility: 'Does not manufacture business-truth data.',
           inputs: 'Orders, resources, calendar rules, post-event state.',
           outputs: 'Candidate schedules, best schedule, scoring results.',
@@ -272,7 +304,8 @@ export const apsScheduling = {
         },
         execution: {
           layer: 'Execution Feedback',
-          responsibility: 'Records execution outcomes and feeds them back into the loop.',
+          responsibility:
+            'Records execution outcomes and feeds them back into the loop.',
           notResponsibility: 'Does not define calendar rules.',
           inputs: 'Execution progress, reporting, scans, equipment feedback.',
           outputs: 'Actual start/completion/deviation data.',
@@ -283,6 +316,7 @@ export const apsScheduling = {
   },
   process: {
     title: '{{levelName}} Overview',
-    subtitle: 'This view is now bound to the live line-management {{levelName}} mapping.',
+    subtitle:
+      'This view is now bound to the live line-management {{levelName}} mapping.',
   },
 }

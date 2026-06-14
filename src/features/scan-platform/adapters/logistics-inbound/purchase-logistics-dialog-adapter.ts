@@ -1,9 +1,9 @@
+import type { ScanHostAdapter } from '../../core/host-adapter-contract'
 import type {
   LogisticsInboundDraftPatch,
   LogisticsInboundHostContext,
   LogisticsInboundScanPayload,
 } from '../../models/logistics-inbound'
-import type { ScanHostAdapter } from '../../core/host-adapter-contract'
 
 export interface PurchaseLogisticsDialogFormValue {
   purchaseOrderId: string

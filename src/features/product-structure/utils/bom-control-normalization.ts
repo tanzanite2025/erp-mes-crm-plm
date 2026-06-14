@@ -10,7 +10,10 @@ import {
 } from '@/lib/codecs/code-normalization'
 import { type SaveBOMInput } from '../mutation-types'
 
-export function normalizeEngineeringRevisionNo(value?: string | null, fallback = 'R1'): string {
+export function normalizeEngineeringRevisionNo(
+  value?: string | null,
+  fallback = 'R1'
+): string {
   return normalizeRevisionNo(value, fallback)
 }
 
@@ -26,7 +29,10 @@ function normalizeBOMNoValue(value?: string | null): string {
   return normalizeBomNo(value)
 }
 
-export function normalizeEngineeringBomVersion(value?: string | null, fallback = 'V1.0'): string {
+export function normalizeEngineeringBomVersion(
+  value?: string | null,
+  fallback = 'V1.0'
+): string {
   return normalizeBomVersion(value, fallback)
 }
 
@@ -44,36 +50,47 @@ export function normalizeEngineeringBomStatus(
   return normalizeBomStatus(value, fallback) as BomStatus
 }
 
-export function normalizeBOMControlFieldPatch<T extends {
-  changeType?: string | null
-  status?: string | null
-  revisionNo?: string | null
-  siteCode?: string | null
-  effectiveFrom?: string | null
-  effectiveTo?: string | null
-  isDefaultSite?: boolean | null
-}>(data: T): T {
+export function normalizeBOMControlFieldPatch<
+  T extends {
+    changeType?: string | null
+    status?: string | null
+    revisionNo?: string | null
+    siteCode?: string | null
+    effectiveFrom?: string | null
+    effectiveTo?: string | null
+    isDefaultSite?: boolean | null
+  },
+>(data: T): T {
   const normalized = { ...data } as T
 
   if ('changeType' in data) {
-    normalized.changeType = normalizeEngineeringBomChangeType(data.changeType) as T['changeType']
+    normalized.changeType = normalizeEngineeringBomChangeType(
+      data.changeType
+    ) as T['changeType']
   }
   if ('status' in data) {
-    normalized.status = normalizeEngineeringBomStatus(data.status as any) as T['status']
+    normalized.status = normalizeEngineeringBomStatus(
+      data.status as any
+    ) as T['status']
   }
   if ('revisionNo' in data) {
-    normalized.revisionNo = normalizeEngineeringRevisionNo(data.revisionNo) as T['revisionNo']
+    normalized.revisionNo = normalizeEngineeringRevisionNo(
+      data.revisionNo
+    ) as T['revisionNo']
   }
   if ('effectiveFrom' in data) {
-    normalized.effectiveFrom = (normalizeBOMEffectiveDate(data.effectiveFrom) || '') as T['effectiveFrom']
+    normalized.effectiveFrom = (normalizeBOMEffectiveDate(data.effectiveFrom) ||
+      '') as T['effectiveFrom']
   }
   if ('effectiveTo' in data) {
-    normalized.effectiveTo = (normalizeBOMEffectiveDate(data.effectiveTo) || '') as T['effectiveTo']
+    normalized.effectiveTo = (normalizeBOMEffectiveDate(data.effectiveTo) ||
+      '') as T['effectiveTo']
   }
   if ('siteCode' in data) {
     const normalizedSiteCode = normalizeBOMSiteCode(data.siteCode)
     normalized.siteCode = normalizedSiteCode as T['siteCode']
-    normalized.isDefaultSite = (data.isDefaultSite ?? !normalizedSiteCode) as T['isDefaultSite']
+    normalized.isDefaultSite = (data.isDefaultSite ??
+      !normalizedSiteCode) as T['isDefaultSite']
   }
 
   return normalized

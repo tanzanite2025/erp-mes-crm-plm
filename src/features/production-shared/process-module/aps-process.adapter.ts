@@ -14,15 +14,39 @@ export const processModuleApsConfig: ProcessModuleConfig = {
         {
           title: '基础信息',
           fields: [
-            { key: 'line', label: '产线', value: '1# 产线', tone: 'accent', width: 'md' },
-            { key: 'duration', label: '时长', value: '12 min', tone: 'muted', width: 'sm' },
+            {
+              key: 'line',
+              label: '产线',
+              value: '1# 产线',
+              tone: 'accent',
+              width: 'md',
+            },
+            {
+              key: 'duration',
+              label: '时长',
+              value: '12 min',
+              tone: 'muted',
+              width: 'sm',
+            },
           ],
         },
         {
           title: '排产指标',
           fields: [
-            { key: 'capacity', label: '排产负载', value: '82%', tone: 'accent', width: 'sm' },
-            { key: 'note', label: '说明', value: '适用于标准板材裁切', tone: 'muted', width: 'lg' },
+            {
+              key: 'capacity',
+              label: '排产负载',
+              value: '82%',
+              tone: 'accent',
+              width: 'sm',
+            },
+            {
+              key: 'note',
+              label: '说明',
+              value: '适用于标准板材裁切',
+              tone: 'muted',
+              width: 'lg',
+            },
           ],
         },
       ],
@@ -37,15 +61,39 @@ export const processModuleApsConfig: ProcessModuleConfig = {
         {
           title: '基础信息',
           fields: [
-            { key: 'line', label: '产线', value: '2# 产线', tone: 'accent', width: 'md' },
-            { key: 'duration', label: '时长', value: '24 min', tone: 'muted', width: 'sm' },
+            {
+              key: 'line',
+              label: '产线',
+              value: '2# 产线',
+              tone: 'accent',
+              width: 'md',
+            },
+            {
+              key: 'duration',
+              label: '时长',
+              value: '24 min',
+              tone: 'muted',
+              width: 'sm',
+            },
           ],
         },
         {
           title: '排产指标',
           fields: [
-            { key: 'capacity', label: '排产负载', value: '54%', tone: 'accent', width: 'sm' },
-            { key: 'note', label: '说明', value: '当前等待材料回温', tone: 'muted', width: 'lg' },
+            {
+              key: 'capacity',
+              label: '排产负载',
+              value: '54%',
+              tone: 'accent',
+              width: 'sm',
+            },
+            {
+              key: 'note',
+              label: '说明',
+              value: '当前等待材料回温',
+              tone: 'muted',
+              width: 'lg',
+            },
           ],
         },
       ],
@@ -60,15 +108,39 @@ export const processModuleApsConfig: ProcessModuleConfig = {
         {
           title: '基础信息',
           fields: [
-            { key: 'line', label: '产线', value: '3# 产线', tone: 'accent', width: 'md' },
-            { key: 'duration', label: '时长', value: '45 min', tone: 'muted', width: 'sm' },
+            {
+              key: 'line',
+              label: '产线',
+              value: '3# 产线',
+              tone: 'accent',
+              width: 'md',
+            },
+            {
+              key: 'duration',
+              label: '时长',
+              value: '45 min',
+              tone: 'muted',
+              width: 'sm',
+            },
           ],
         },
         {
           title: '排产指标',
           fields: [
-            { key: 'capacity', label: '排产负载', value: '96%', tone: 'danger', width: 'sm' },
-            { key: 'note', label: '说明', value: '炉位资源冲突', tone: 'danger', width: 'lg' },
+            {
+              key: 'capacity',
+              label: '排产负载',
+              value: '96%',
+              tone: 'danger',
+              width: 'sm',
+            },
+            {
+              key: 'note',
+              label: '说明',
+              value: '炉位资源冲突',
+              tone: 'danger',
+              width: 'lg',
+            },
           ],
         },
       ],

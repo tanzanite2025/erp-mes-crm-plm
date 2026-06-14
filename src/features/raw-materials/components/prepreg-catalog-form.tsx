@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Calendar, Hash, type LucideIcon, Tag } from 'lucide-react'
+import { useLanguage } from '@/context/language-provider'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -10,14 +11,13 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { useLanguage } from '@/context/language-provider'
-import { PrepregCleanedPreview } from './prepreg-cleaned-preview'
 import type {
   PrepregCleanedDimensionFields,
   PrepregCleanedResinBatchFields,
   PrepregFormState,
   PrepregMaterialSpecStatus,
 } from '../data/prepreg-material-spec-schema'
+import { PrepregCleanedPreview } from './prepreg-cleaned-preview'
 
 export interface PrepregSupplierOption {
   value: string
@@ -224,7 +224,7 @@ function Field({
 }) {
   return (
     <div className={className}>
-      <Label className='mb-1.5 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+      <Label className='mb-1.5 flex items-center gap-1.5 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
         {Icon ? <Icon className='size-3.5 text-primary/70' /> : null}
         {label}
         {required ? <span className='text-destructive'>*</span> : null}

@@ -14,13 +14,13 @@
 
 模板预置只代表前端有可导入的事件源骨架，不代表业务模块已经接入真实触发链。
 
-| 业务事件源 | Source Code | 模块 | 实体 | 当前状态 |
-| --- | --- | --- | --- | --- |
-| 销售订单 | `SALES_ORDER` | `Trading` | `ORDER` | 已接入执行链 |
-| 采购订单 | `PURCHASE_ORDER` | `Trading` | `ORDER` | 已接入执行链 |
-| 生产计划 | `PRODUCTION_PLAN` | `Production` | `SYSTEM` | 预接入，待 APS 确认 |
-| 生产任务 | `PRODUCTION_TASK` | `Production` | `SYSTEM` | 预接入，待 APS 确认 |
-| 物流单 | `LOGISTICS_RECORD` | `Trading` | `ORDER` | 仅模板预置 |
+| 业务事件源 | Source Code        | 模块         | 实体     | 当前状态            |
+| ---------- | ------------------ | ------------ | -------- | ------------------- |
+| 销售订单   | `SALES_ORDER`      | `Trading`    | `ORDER`  | 已接入执行链        |
+| 采购订单   | `PURCHASE_ORDER`   | `Trading`    | `ORDER`  | 已接入执行链        |
+| 生产计划   | `PRODUCTION_PLAN`  | `Production` | `SYSTEM` | 预接入，待 APS 确认 |
+| 生产任务   | `PRODUCTION_TASK`  | `Production` | `SYSTEM` | 预接入，待 APS 确认 |
+| 物流单     | `LOGISTICS_RECORD` | `Trading`    | `ORDER`  | 仅模板预置          |
 
 模板定义来源：
 
@@ -31,13 +31,13 @@
 
 系统启动后会按 `code` 确保默认事件源存在。
 
-| 业务事件源 | Source Code | 默认落库 |
-| --- | --- | --- |
-| 销售订单 | `SALES_ORDER` | 是 |
-| 采购订单 | `PURCHASE_ORDER` | 是 |
-| 生产计划 | `PRODUCTION_PLAN` | 是 |
-| 生产任务 | `PRODUCTION_TASK` | 是 |
-| 物流单 | `LOGISTICS_RECORD` | 否 |
+| 业务事件源 | Source Code        | 默认落库 |
+| ---------- | ------------------ | -------- |
+| 销售订单   | `SALES_ORDER`      | 是       |
+| 采购订单   | `PURCHASE_ORDER`   | 是       |
+| 生产计划   | `PRODUCTION_PLAN`  | 是       |
+| 生产任务   | `PRODUCTION_TASK`  | 是       |
+| 物流单     | `LOGISTICS_RECORD` | 否       |
 
 ### C. 执行链状态层
 
@@ -46,13 +46,13 @@
 - 业务已接入：业务状态、写入口、规则触发都已经按当前业务模块确认。
 - 技术预接入：事件源、状态字典、追溯/实时技术入口已经准备好，但 APS 或生产业务定义还没最终确认，不能当作生产业务已闭环。
 
-| 业务事件源 | 实时入口 | 追溯扫描 | 审批创建 | 结论 |
-| --- | --- | --- | --- | --- |
-| 销售订单 `SALES_ORDER` | 是 | 是 | 是 | 已闭环 |
-| 采购订单 `PURCHASE_ORDER` | 是 | 是 | 是 | 已闭环 |
+| 业务事件源                 | 实时入口                     | 追溯扫描       | 审批创建       | 结论                |
+| -------------------------- | ---------------------------- | -------------- | -------------- | ------------------- |
+| 销售订单 `SALES_ORDER`     | 是                           | 是             | 是             | 已闭环              |
+| 采购订单 `PURCHASE_ORDER`  | 是                           | 是             | 是             | 已闭环              |
 | 生产计划 `PRODUCTION_PLAN` | 技术入口已准备，页面调用待接 | 技术入口已准备 | 技术入口已准备 | 预接入，待 APS 确认 |
 | 生产任务 `PRODUCTION_TASK` | 技术入口已准备，页面调用待接 | 技术入口已准备 | 技术入口已准备 | 预接入，待 APS 确认 |
-| 物流单 `LOGISTICS_RECORD` | 否 | 否 | 否 | 仅模板预置 |
+| 物流单 `LOGISTICS_RECORD`  | 否                           | 否             | 否             | 仅模板预置          |
 
 关键入口：
 

@@ -1,4 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react'
+import { useLanguage } from '@/context/language-provider'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -9,7 +10,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { useLanguage } from '@/context/language-provider'
 import { getProviderCategory } from '@/features/logistics-config/provider-directory'
 import type { LogisticsProviderDraft } from '@/features/sandbox/logistics-api/types'
 
@@ -27,7 +27,7 @@ export function LogisticsSupplierDirectoryFieldsSection({
   return (
     <div className='space-y-4 rounded-3xl border border-dashed border-slate-200 p-5'>
       <div className='space-y-1'>
-        <h4 className='text-[11px] font-black uppercase tracking-widest text-slate-500'>
+        <h4 className='text-[11px] font-black tracking-widest text-slate-500 uppercase'>
           {t('logisticsConfig.providerShared.sectionDirectory.title')}
         </h4>
         <p className='text-xs text-muted-foreground'>
@@ -37,7 +37,7 @@ export function LogisticsSupplierDirectoryFieldsSection({
 
       <div className='grid grid-cols-2 gap-4'>
         <div className='space-y-2'>
-          <Label className='pl-1 text-[10px] font-black uppercase tracking-widest opacity-50'>
+          <Label className='pl-1 text-[10px] font-black tracking-widest uppercase opacity-50'>
             {t('logisticsConfig.suppliers.fields.category')}
           </Label>
           <Select
@@ -63,7 +63,7 @@ export function LogisticsSupplierDirectoryFieldsSection({
           </Select>
         </div>
         <div className='space-y-2'>
-          <Label className='pl-1 text-[10px] font-black uppercase tracking-widest opacity-50'>
+          <Label className='pl-1 text-[10px] font-black tracking-widest uppercase opacity-50'>
             {t('logisticsConfig.suppliers.fields.website')}
           </Label>
           <Input
@@ -74,7 +74,9 @@ export function LogisticsSupplierDirectoryFieldsSection({
                 website: event.target.value,
               }))
             }
-            placeholder={t('logisticsConfig.suppliers.fields.websitePlaceholder')}
+            placeholder={t(
+              'logisticsConfig.suppliers.fields.websitePlaceholder'
+            )}
             className='h-12 rounded-2xl border-slate-200'
           />
         </div>
@@ -82,7 +84,7 @@ export function LogisticsSupplierDirectoryFieldsSection({
 
       <div className='grid grid-cols-2 gap-4'>
         <div className='space-y-2'>
-          <Label className='pl-1 text-[10px] font-black uppercase tracking-widest opacity-50'>
+          <Label className='pl-1 text-[10px] font-black tracking-widest uppercase opacity-50'>
             {t('logisticsConfig.suppliers.fields.contact')}
           </Label>
           <Input
@@ -93,12 +95,14 @@ export function LogisticsSupplierDirectoryFieldsSection({
                 contact: event.target.value,
               }))
             }
-            placeholder={t('logisticsConfig.suppliers.fields.contactPlaceholder')}
+            placeholder={t(
+              'logisticsConfig.suppliers.fields.contactPlaceholder'
+            )}
             className='h-12 rounded-2xl border-slate-200'
           />
         </div>
         <div className='space-y-2'>
-          <Label className='pl-1 text-[10px] font-black uppercase tracking-widest opacity-50'>
+          <Label className='pl-1 text-[10px] font-black tracking-widest uppercase opacity-50'>
             {t('logisticsConfig.suppliers.fields.phone')}
           </Label>
           <Input
@@ -116,7 +120,7 @@ export function LogisticsSupplierDirectoryFieldsSection({
       </div>
 
       <div className='space-y-2'>
-        <Label className='pl-1 text-[10px] font-black uppercase tracking-widest opacity-50'>
+        <Label className='pl-1 text-[10px] font-black tracking-widest uppercase opacity-50'>
           {t('logisticsConfig.suppliers.fields.note')}
         </Label>
         <Textarea

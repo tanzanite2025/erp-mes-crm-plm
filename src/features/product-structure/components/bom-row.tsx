@@ -1,40 +1,44 @@
 /**
  * Optimized BOM Row Component
- * 
+ *
  * Memoized BOM row component that only re-renders when its data changes.
  * Uses React.memo with custom comparison function to prevent unnecessary re-renders.
- * 
+ *
  * Performance Goals:
  * - Only re-render when row data actually changes
  * - Memoize computed values (className, styles)
  * - Memoize event handlers to prevent child re-renders
  */
 
-'use client';
+'use client'
 
-import { memo, useMemo, useCallback, type CSSProperties } from 'react';
-import { BOMCell } from './bom-cell';
-import { cn } from '@/lib/utils';
+import { memo, useMemo, useCallback, type CSSProperties } from 'react'
+import { cn } from '@/lib/utils'
+import { BOMCell } from './bom-cell'
 
 /**
  * BOM row data interface
  */
 export interface BOMRowData {
-  id: string;
-  [key: string]: unknown;
+  id: string
+  [key: string]: unknown
 }
 
 /**
  * Column definition for BOM table
  */
 export interface BOMColumnDef<T extends BOMRowData = BOMRowData> {
-  id: string;
-  field: keyof T;
-  label: string;
-  width?: number;
-  minWidth?: number;
-  editable?: boolean;
-  render?: (value: unknown, row: T, onChange: (value: unknown) => void) => React.ReactNode;
+  id: string
+  field: keyof T
+  label: string
+  width?: number
+  minWidth?: number
+  editable?: boolean
+  render?: (
+    value: unknown,
+    row: T,
+    onChange: (value: unknown) => void
+  ) => React.ReactNode
 }
 
 /**
@@ -44,47 +48,47 @@ export interface BOMRowProps<T extends BOMRowData = BOMRowData> {
   /**
    * Row data (should be a Proxy for change tracking)
    */
-  row: T;
-  
+  row: T
+
   /**
    * Column definitions
    */
-  columns: BOMColumnDef<T>[];
-  
+  columns: BOMColumnDef<T>[]
+
   /**
    * Custom style for the row
    */
-  style?: CSSProperties;
-  
+  style?: CSSProperties
+
   /**
    * Custom className for the row
    */
-  className?: string;
-  
+  className?: string
+
   /**
    * Callback when row data changes
    */
-  onRowChange?: (row: T) => void;
-  
+  onRowChange?: (row: T) => void
+
   /**
    * Whether the row is dirty (has unsaved changes)
    */
-  isDirty?: boolean;
-  
+  isDirty?: boolean
+
   /**
    * Whether the row is selected
    */
-  isSelected?: boolean;
-  
+  isSelected?: boolean
+
   /**
    * Callback when row is clicked
    */
-  onClick?: (row: T) => void;
+  onClick?: (row: T) => void
 }
 
 /**
  * Optimized BOM Row Component
- * 
+ *
  * Features:
  * - React.memo with custom comparison to prevent unnecessary re-renders
  * - useMemo for computed className
@@ -103,47 +107,45 @@ function BOMRowComponent<T extends BOMRowData = BOMRowData>({
 }: BOMRowProps<T>) {
   // Memoize row className based on state
   const rowClassName = useMemo(
-    () => cn(
-      'bom-row flex items-center border-b border-dashed border-muted/30',
-      'hover:bg-amber-500/5 transition-colors',
-      isDirty && 'bom-row--dirty bg-amber-50',
-      isSelected && 'bom-row--selected bg-blue-50',
-      className
-    ),
+    () =>
+      cn(
+        'bom-row flex items-center border-b border-dashed border-muted/30',
+        'hover:bg-amber-500/5 transition-colors',
+        isDirty && 'bom-row--dirty bg-amber-50',
+        isSelected && 'bom-row--selected bg-blue-50',
+        className
+      ),
     [isDirty, isSelected, className]
-  );
-  
+  )
+
   // Memoize field change handler
   const handleFieldChange = useCallback(
     (fieldName: string, value: unknown) => {
       // Update the row data (row should be a Proxy)
-      (row as any)[fieldName] = value;
-      
+      ;(row as any)[fieldName] = value
+
       // Notify parent component
-      onRowChange?.(row);
+      onRowChange?.(row)
     },
     [row, onRowChange]
-  );
-  
+  )
+
   // Memoize row click handler
-  const handleRowClick = useCallback(
-    () => {
-      onClick?.(row);
-    },
-    [row, onClick]
-  );
-  
+  const handleRowClick = useCallback(() => {
+    onClick?.(row)
+  }, [row, onClick])
+
   return (
     <div
       className={rowClassName}
       style={style}
       onClick={handleRowClick}
-      role="row"
+      role='row'
       aria-selected={isSelected}
     >
       {columns.map((column) => {
-        const value = row[column.field];
-        
+        const value = row[column.field]
+
         return (
           <BOMCell
             key={column.id}
@@ -152,15 +154,15 @@ function BOMRowComponent<T extends BOMRowData = BOMRowData>({
             row={row}
             onChange={handleFieldChange}
           />
-        );
+        )
       })}
     </div>
-  );
+  )
 }
 
 /**
  * Custom comparison function for React.memo
- * 
+ *
  * Only re-render if:
  * - Row data reference changed
  * - Columns reference changed
@@ -174,55 +176,58 @@ function arePropsEqual<T extends BOMRowData>(
 ): boolean {
   // Check if row reference changed
   if (prevProps.row !== nextProps.row) {
-    return false;
+    return false
   }
-  
+
   // Check if columns reference changed
   if (prevProps.columns !== nextProps.columns) {
-    return false;
+    return false
   }
-  
+
   // Check if style changed
   if (prevProps.style !== nextProps.style) {
-    return false;
+    return false
   }
-  
+
   // Check if className changed
   if (prevProps.className !== nextProps.className) {
-    return false;
+    return false
   }
-  
+
   // Check if isDirty changed
   if (prevProps.isDirty !== nextProps.isDirty) {
-    return false;
+    return false
   }
-  
+
   // Check if isSelected changed
   if (prevProps.isSelected !== nextProps.isSelected) {
-    return false;
+    return false
   }
-  
+
   // Check if callbacks changed (reference equality)
   if (prevProps.onRowChange !== nextProps.onRowChange) {
-    return false;
+    return false
   }
-  
+
   if (prevProps.onClick !== nextProps.onClick) {
-    return false;
+    return false
   }
-  
+
   // Props are equal, don't re-render
-  return true;
+  return true
 }
 
 /**
  * Memoized BOM Row Component
- * 
+ *
  * Export memoized version with custom comparison function
  */
-export const BOMRow = memo(BOMRowComponent, arePropsEqual) as typeof BOMRowComponent;
+export const BOMRow = memo(
+  BOMRowComponent,
+  arePropsEqual
+) as typeof BOMRowComponent
 
 /**
  * Type helper for BOMRow with generic support
  */
-export type BOMRowType = typeof BOMRow;
+export type BOMRowType = typeof BOMRow

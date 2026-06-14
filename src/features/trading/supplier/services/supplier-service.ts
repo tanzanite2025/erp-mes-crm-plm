@@ -8,12 +8,26 @@ import {
 } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { buildVersionedPatchMetadata } from '@/lib/version-guard'
-import { toSupplierApiDTO, toSupplierContract, toSupplierContracts } from '../adapters/supplier-api-adapter'
-import { type SupplierApiDTO, type SupplierListApiResponseDTO } from '../contracts/supplier-api-dto'
-import { supplierArraySchema, supplierSchema, type Supplier, type SupplierFormValues } from '../../data/schema'
+import {
+  supplierArraySchema,
+  supplierSchema,
+  type Supplier,
+  type SupplierFormValues,
+} from '../../data/schema'
+import {
+  toSupplierApiDTO,
+  toSupplierContract,
+  toSupplierContracts,
+} from '../adapters/supplier-api-adapter'
+import {
+  type SupplierApiDTO,
+  type SupplierListApiResponseDTO,
+} from '../contracts/supplier-api-dto'
 
-export const SUPPLIER_TRANSACTION_INTENT_STATUS_CHANGE = 'SUPPLIER_STATUS_CHANGE'
-export const SUPPLIER_TRANSACTION_INTENT_IDENTITY_CHANGE = 'SUPPLIER_IDENTITY_CHANGE'
+export const SUPPLIER_TRANSACTION_INTENT_STATUS_CHANGE =
+  'SUPPLIER_STATUS_CHANGE'
+export const SUPPLIER_TRANSACTION_INTENT_IDENTITY_CHANGE =
+  'SUPPLIER_IDENTITY_CHANGE'
 export const SUPPLIER_TRANSACTION_INTENT_SAVE = 'SUPPLIER_SAVE'
 export const SUPPLIER_PATCH_INTENT_SAVE = 'SUPPLIER_PATCH_SAVE'
 
@@ -65,26 +79,41 @@ export interface SupplierSavePayload {
 export const getSuppliers = async (): Promise<Supplier[]> => {
   const raw = await apiFetch<SupplierApiDTO[]>('/suppliers?options=true')
   return supplierArraySchema.parse(
-    toSupplierContracts(ensureArrayResponse<SupplierApiDTO>(raw, 'SupplierService.getSuppliers'))
+    toSupplierContracts(
+      ensureArrayResponse<SupplierApiDTO>(raw, 'SupplierService.getSuppliers')
+    )
   )
 }
 
 export const getSupplierList = async (): Promise<SupplierListResponse> => {
   const context = 'SupplierService.getSupplierList'
   const res = await apiFetch<SupplierListApiResponseDTO>('/suppliers')
-  const objectResponse = ensureObjectResponse<SupplierListApiResponseDTO & Record<string, unknown>>(
-    res,
-    context
-  )
+  const objectResponse = ensureObjectResponse<
+    SupplierListApiResponseDTO & Record<string, unknown>
+  >(res, context)
   const items = supplierArraySchema.parse(
-    toSupplierContracts(ensureArrayField<SupplierApiDTO>(objectResponse, 'items', context))
+    toSupplierContracts(
+      ensureArrayField<SupplierApiDTO>(objectResponse, 'items', context)
+    )
   )
   const total = ensureNumberField(objectResponse, 'total', context)
   const page = ensureNumberField(objectResponse, 'page', context)
   const pageSize = ensureNumberField(objectResponse, 'pageSize', context)
-  const metadata = ensureObjectField<Record<string, unknown>>(objectResponse, 'metadata', context)
-  const pagination = ensureObjectField<Record<string, unknown>>(metadata, 'pagination', context)
-  const stats = ensureObjectField<Record<string, unknown>>(metadata, 'stats', context)
+  const metadata = ensureObjectField<Record<string, unknown>>(
+    objectResponse,
+    'metadata',
+    context
+  )
+  const pagination = ensureObjectField<Record<string, unknown>>(
+    metadata,
+    'pagination',
+    context
+  )
+  const stats = ensureObjectField<Record<string, unknown>>(
+    metadata,
+    'stats',
+    context
+  )
 
   return {
     items,
@@ -110,10 +139,13 @@ export const executeSupplierTransaction = async <TPayload>(
   supplierId: string,
   request: SupplierTransactionRequest<TPayload>
 ): Promise<Supplier> => {
-  const res = await apiFetch<SupplierApiDTO>(`/suppliers/${supplierId}/transactions`, {
-    method: 'POST',
-    body: JSON.stringify(request),
-  })
+  const res = await apiFetch<SupplierApiDTO>(
+    `/suppliers/${supplierId}/transactions`,
+    {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }
+  )
   return supplierSchema.parse(
     toSupplierContract(
       ensureObjectResponse<SupplierApiDTO & Record<string, unknown>>(
@@ -124,14 +156,21 @@ export const executeSupplierTransaction = async <TPayload>(
   )
 }
 
-export const createSupplier = async (supplier: SupplierFormValues): Promise<Supplier> => {
+export const createSupplier = async (
+  supplier: SupplierFormValues
+): Promise<Supplier> => {
   const res = await apiFetch<SupplierApiDTO>('/suppliers', {
     method: 'POST',
-    body: JSON.stringify(toSupplierApiDTO({ ...supplier, id: '', version: 1 } as Supplier)),
+    body: JSON.stringify(
+      toSupplierApiDTO({ ...supplier, id: '', version: 1 } as Supplier)
+    ),
   })
   return supplierSchema.parse(
     toSupplierContract(
-      ensureObjectResponse<SupplierApiDTO & Record<string, unknown>>(res, 'SupplierService.createSupplier') as SupplierApiDTO
+      ensureObjectResponse<SupplierApiDTO & Record<string, unknown>>(
+        res,
+        'SupplierService.createSupplier'
+      ) as SupplierApiDTO
     )
   )
 }
@@ -204,13 +243,22 @@ export const saveSupplier = async (
   })
 }
 
-export const patchSupplier = async (id: string, delta: DeltaSet, version: number): Promise<Supplier> => {
+export const patchSupplier = async (
+  id: string,
+  delta: DeltaSet,
+  version: number
+): Promise<Supplier> => {
   const payload: DeltaPayload = {
     op: 'PATCH',
     delta,
-    metadata: buildVersionedPatchMetadata(id, version, 'SupplierService.patchSupplier', {
-      intent: SUPPLIER_PATCH_INTENT_SAVE,
-    }),
+    metadata: buildVersionedPatchMetadata(
+      id,
+      version,
+      'SupplierService.patchSupplier',
+      {
+        intent: SUPPLIER_PATCH_INTENT_SAVE,
+      }
+    ),
   }
 
   const res = await apiFetch<SupplierApiDTO>(`/suppliers/${id}`, {
@@ -219,7 +267,10 @@ export const patchSupplier = async (id: string, delta: DeltaSet, version: number
   })
   return supplierSchema.parse(
     toSupplierContract(
-      ensureObjectResponse<SupplierApiDTO & Record<string, unknown>>(res, 'SupplierService.patchSupplier') as SupplierApiDTO
+      ensureObjectResponse<SupplierApiDTO & Record<string, unknown>>(
+        res,
+        'SupplierService.patchSupplier'
+      ) as SupplierApiDTO
     )
   )
 }

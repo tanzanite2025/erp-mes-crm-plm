@@ -1,34 +1,38 @@
 import { z } from 'zod'
 import type { OrderEvidence } from '../../data/schema'
 
-const orderEvidenceSchema = z.object({
-  id: z.string(),
-  url: z.string(),
-  name: z.string(),
-  uploadedAt: z.string(),
-  note: z.string().optional(),
-  location: z.string().optional(),
-  defectPart: z.string().optional(),
-}).strict()
+const orderEvidenceSchema = z
+  .object({
+    id: z.string(),
+    url: z.string(),
+    name: z.string(),
+    uploadedAt: z.string(),
+    note: z.string().optional(),
+    location: z.string().optional(),
+    defectPart: z.string().optional(),
+  })
+  .strict()
 
-export const purchaseOrderLineApiDTOSchema = z.object({
-  id: z.number().optional(),
-  version: z.number().optional(),
-  lineNo: z.number(),
-  materialId: z.string(),
-  materialName: z.string(),
-  materialCode: z.string(),
-  specification: z.string(),
-  qty: z.number(),
-  uom: z.string(),
-  price: z.number(),
-  amount: z.number(),
-  expectedDate: z.string(),
-  receivedQty: z.number(),
-  returnedQty: z.number(),
-  status: z.string(),
-  note: z.string().optional(),
-}).strict()
+export const purchaseOrderLineApiDTOSchema = z
+  .object({
+    id: z.number().optional(),
+    version: z.number().optional(),
+    lineNo: z.number(),
+    materialId: z.string(),
+    materialName: z.string(),
+    materialCode: z.string(),
+    specification: z.string(),
+    qty: z.number(),
+    uom: z.string(),
+    price: z.number(),
+    amount: z.number(),
+    expectedDate: z.string(),
+    receivedQty: z.number(),
+    returnedQty: z.number(),
+    status: z.string(),
+    note: z.string().optional(),
+  })
+  .strict()
 
 export interface PurchaseOrderLineApiDTO {
   id?: number
@@ -49,43 +53,51 @@ export interface PurchaseOrderLineApiDTO {
   note?: string
 }
 
-const purchaseOrderListItemBaseSchema = z.object({
-  id: z.string(),
-  orderNo: z.string(),
-  supplierName: z.string(),
-  supplierId: z.string(),
-  status: z.string(),
-  amount: z.number(),
-  orderDate: z.string(),
-  expectedDate: z.string(),
-  purchaser: z.string(),
-  currency: z.string(),
-  exchangeRate: z.number().optional(),
-  paymentMethod: z.string().optional(),
-  paymentMethodName: z.string().optional(),
-  paymentTerm: z.string().optional(),
-  paymentTermName: z.string().optional(),
-  note: z.string().optional(),
-  isDeleted: z.boolean().optional(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-  version: z.number().optional(),
-  evidences: z.array(orderEvidenceSchema).optional(),
-}).strict()
+const purchaseOrderListItemBaseSchema = z
+  .object({
+    id: z.string(),
+    orderNo: z.string(),
+    supplierName: z.string(),
+    supplierId: z.string(),
+    status: z.string(),
+    amount: z.number(),
+    orderDate: z.string(),
+    expectedDate: z.string(),
+    purchaser: z.string(),
+    currency: z.string(),
+    exchangeRate: z.number().optional(),
+    paymentMethod: z.string().optional(),
+    paymentMethodName: z.string().optional(),
+    paymentTerm: z.string().optional(),
+    paymentTermName: z.string().optional(),
+    note: z.string().optional(),
+    isDeleted: z.boolean().optional(),
+    createdAt: z.string(),
+    updatedAt: z.string(),
+    version: z.number().optional(),
+    evidences: z.array(orderEvidenceSchema).optional(),
+  })
+  .strict()
 
-export const purchaseOrderApiDTOSchema = purchaseOrderListItemBaseSchema.extend({
-  lines: z.array(purchaseOrderLineApiDTOSchema),
-}).strict()
+export const purchaseOrderApiDTOSchema = purchaseOrderListItemBaseSchema
+  .extend({
+    lines: z.array(purchaseOrderLineApiDTOSchema),
+  })
+  .strict()
 
 export const purchaseOrderListItemWithoutLinesApiDTOSchema =
-  purchaseOrderListItemBaseSchema.extend({
-    lines: z.undefined().optional(),
-  }).strict()
+  purchaseOrderListItemBaseSchema
+    .extend({
+      lines: z.undefined().optional(),
+    })
+    .strict()
 
 export const purchaseOrderListItemWithLinesApiDTOSchema =
-  purchaseOrderListItemBaseSchema.extend({
-    lines: z.array(purchaseOrderLineApiDTOSchema),
-  }).strict()
+  purchaseOrderListItemBaseSchema
+    .extend({
+      lines: z.array(purchaseOrderLineApiDTOSchema),
+    })
+    .strict()
 
 export interface PurchaseOrderApiDTO {
   id: string
@@ -120,22 +132,29 @@ export type PurchaseOrderListItemWithLinesApiDTO = z.infer<
   typeof purchaseOrderListItemWithLinesApiDTOSchema
 >
 
-export const purchaseOrderListPageWithoutLinesApiDTOSchema = z.object({
-  items: z.array(purchaseOrderListItemWithoutLinesApiDTOSchema),
-  total: z.number(),
-  page: z.number(),
-  pageSize: z.number(),
-}).strict()
+export const purchaseOrderListPageWithoutLinesApiDTOSchema = z
+  .object({
+    items: z.array(purchaseOrderListItemWithoutLinesApiDTOSchema),
+    total: z.number(),
+    page: z.number(),
+    pageSize: z.number(),
+  })
+  .strict()
 
-export const purchaseOrderListPageWithLinesApiDTOSchema = z.object({
-  items: z.array(purchaseOrderListItemWithLinesApiDTOSchema),
-  total: z.number(),
-  page: z.number(),
-  pageSize: z.number(),
-}).strict()
+export const purchaseOrderListPageWithLinesApiDTOSchema = z
+  .object({
+    items: z.array(purchaseOrderListItemWithLinesApiDTOSchema),
+    total: z.number(),
+    page: z.number(),
+    pageSize: z.number(),
+  })
+  .strict()
 
 export interface PurchaseOrderListPageApiDTO {
-  items: Array<PurchaseOrderListItemWithoutLinesApiDTO | PurchaseOrderListItemWithLinesApiDTO>
+  items: Array<
+    | PurchaseOrderListItemWithoutLinesApiDTO
+    | PurchaseOrderListItemWithLinesApiDTO
+  >
   total: number
   page: number
   pageSize: number
@@ -146,14 +165,22 @@ export interface ConfirmPurchaseReceiptResponseApiDTO {
   createdInboundRecords: Array<{ id: string }>
 }
 
-export const confirmPurchaseReceiptResponseApiDTOSchema = z.object({
-  purchaseOrder: purchaseOrderApiDTOSchema,
-  createdInboundRecords: z.array(z.object({
-    id: z.string(),
-  }).strict()),
-}).strict()
+export const confirmPurchaseReceiptResponseApiDTOSchema = z
+  .object({
+    purchaseOrder: purchaseOrderApiDTOSchema,
+    createdInboundRecords: z.array(
+      z
+        .object({
+          id: z.string(),
+        })
+        .strict()
+    ),
+  })
+  .strict()
 
-export function deserializePurchaseOrderApiDTO(input: unknown): PurchaseOrderApiDTO {
+export function deserializePurchaseOrderApiDTO(
+  input: unknown
+): PurchaseOrderApiDTO {
   return purchaseOrderApiDTOSchema.parse(input)
 }
 
@@ -168,6 +195,8 @@ export function deserializePurchaseOrderListPageApiDTO(
     : purchaseOrderListPageWithoutLinesApiDTOSchema.parse(input)
 }
 
-export function deserializeConfirmPurchaseReceiptResponseApiDTO(input: unknown): ConfirmPurchaseReceiptResponseApiDTO {
+export function deserializeConfirmPurchaseReceiptResponseApiDTO(
+  input: unknown
+): ConfirmPurchaseReceiptResponseApiDTO {
   return confirmPurchaseReceiptResponseApiDTOSchema.parse(input)
 }

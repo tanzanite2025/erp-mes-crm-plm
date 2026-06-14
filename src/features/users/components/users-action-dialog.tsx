@@ -5,9 +5,9 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link2Off, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
-import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
-import { Combobox } from '@/components/ui/combobox'
+import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
+import { Combobox } from '@/components/ui/combobox'
 import {
   Dialog,
   DialogContent,
@@ -25,7 +25,6 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { PasswordInput } from '@/components/password-input'
 import {
   Select,
   SelectContent,
@@ -33,7 +32,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useLanguage } from '@/context/language-provider'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
+import { PasswordInput } from '@/components/password-input'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { useRolesQuery } from '@/features/system-mgmt/hooks/use-roles'
 import { type User } from '../data/schema'
 import { useUserMutations, useUserOptionsQuery } from '../hooks/use-users'
@@ -46,7 +47,6 @@ import {
   buildUserCreatePayload,
   buildUserReplacePayload,
 } from './users-action-dialog.submit'
-import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 
 const UNASSIGNED_ROLE_VALUE = '__unassigned_role__'
 
@@ -197,16 +197,22 @@ export function UsersActionDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleDialogOpenChange}>
-      <DialogContent className='sm:max-w-xl rounded-[32px] border-none shadow-2xl p-0 gap-0 overflow-hidden bg-background'>
-        <DialogHeader className='text-start bg-muted/5 p-8 border-b border-dashed border-muted/50 relative'>
-          <div className='absolute right-8 top-8 opacity-5 select-none pointer-events-none'>
+      <DialogContent className='gap-0 overflow-hidden rounded-[32px] border-none bg-background p-0 shadow-2xl sm:max-w-xl'>
+        <DialogHeader className='relative border-b border-dashed border-muted/50 bg-muted/5 p-8 text-start'>
+          <div className='pointer-events-none absolute top-8 right-8 opacity-5 select-none'>
             <UserPlus className='h-12 w-12' />
           </div>
           <div className='flex items-start justify-between gap-3'>
-            <DialogTitle className='text-lg font-black tracking-tighter italic uppercase flex flex-col gap-0.5'>
-              <span>{isEdit ? t('users.dialogs.editTitle') : t('users.dialogs.createTitle')}</span>
-              <span className='text-[9px] font-mono opacity-40 tracking-widest'>
-                {isEdit ? 'ACCOUNT_PROFILE_RECOVERY' : 'PROVISION_CONTROL_CLUSTER'}
+            <DialogTitle className='flex flex-col gap-0.5 text-lg font-black tracking-tighter uppercase italic'>
+              <span>
+                {isEdit
+                  ? t('users.dialogs.editTitle')
+                  : t('users.dialogs.createTitle')}
+              </span>
+              <span className='font-mono text-[9px] tracking-widest opacity-40'>
+                {isEdit
+                  ? 'ACCOUNT_PROFILE_RECOVERY'
+                  : 'PROVISION_CONTROL_CLUSTER'}
               </span>
             </DialogTitle>
             {isEdit && currentRow ? (
@@ -218,23 +224,29 @@ export function UsersActionDialog({
               />
             ) : null}
           </div>
-          <DialogDescription className='text-[10px] font-black uppercase tracking-widest opacity-60 mt-2'>
-            {isEdit ? t('users.dialogs.editSubtitle') : t('users.dialogs.createSubtitle')}
+          <DialogDescription className='mt-2 text-[10px] font-black tracking-widest uppercase opacity-60'>
+            {isEdit
+              ? t('users.dialogs.editSubtitle')
+              : t('users.dialogs.createSubtitle')}
           </DialogDescription>
         </DialogHeader>
         <div className='h-105 w-[calc(100%+0.75rem)] overflow-y-auto py-1 pe-3'>
           <Form {...form}>
-            <form id='user-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-6 p-8'>
+            <form
+              id='user-form'
+              onSubmit={form.handleSubmit(onSubmit)}
+              className='space-y-6 p-8'
+            >
               <FormField
                 control={form.control}
                 name='employeeId'
                 render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-6 gap-y-1 bg-primary/5 p-6 rounded-[28px] border border-dashed border-primary/20 mb-6'>
+                  <FormItem className='mb-6 grid grid-cols-6 items-center space-y-0 gap-x-6 gap-y-1 rounded-[28px] border border-dashed border-primary/20 bg-primary/5 p-6'>
                     <div className='col-span-2 flex flex-col items-end gap-0.5'>
-                      <FormLabel className='text-[11px] font-black tracking-tight text-primary leading-none'>
+                      <FormLabel className='text-[11px] leading-none font-black tracking-tight text-primary'>
                         {t('users.dialogs.labels.sync')}
                       </FormLabel>
-                      <span className='text-[8px] font-mono font-black uppercase tracking-widest opacity-40 leading-none'>
+                      <span className='font-mono text-[8px] leading-none font-black tracking-widest uppercase opacity-40'>
                         IDENTITY_SYNC
                       </span>
                     </div>
@@ -248,7 +260,9 @@ export function UsersActionDialog({
                             handleEmployeeSync(value)
                           }}
                           placeholder={t('users.dialogs.placeholders.sync')}
-                          searchPlaceholder={t('users.dialogs.placeholders.syncSearch')}
+                          searchPlaceholder={t(
+                            'users.dialogs.placeholders.syncSearch'
+                          )}
                           emptyText={t('users.dialogs.placeholders.syncEmpty')}
                           options={employees}
                         />
@@ -265,7 +279,7 @@ export function UsersActionDialog({
                         </Button>
                       ) : null}
                     </div>
-                    <div className='col-span-4 col-start-3 text-[9px] font-black uppercase tracking-widest opacity-50 mt-1'>
+                    <div className='col-span-4 col-start-3 mt-1 text-[9px] font-black tracking-widest uppercase opacity-50'>
                       {t('users.dialogs.hints.sync')}
                     </div>
                     <FormMessage className='col-span-4 col-start-3' />
@@ -279,10 +293,10 @@ export function UsersActionDialog({
                 render={({ field }) => (
                   <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-6 gap-y-1'>
                     <div className='col-span-2 flex flex-col items-end gap-0.5'>
-                      <FormLabel className='text-[11px] font-black tracking-tight text-muted-foreground/60 leading-none'>
+                      <FormLabel className='text-[11px] leading-none font-black tracking-tight text-muted-foreground/60'>
                         {t('users.dialogs.labels.firstName')}
                       </FormLabel>
-                      <span className='text-[8px] font-mono font-black uppercase tracking-widest opacity-20 leading-none'>
+                      <span className='font-mono text-[8px] leading-none font-black tracking-widest uppercase opacity-20'>
                         FIRST_NAME
                       </span>
                     </div>
@@ -290,7 +304,7 @@ export function UsersActionDialog({
                       <Input
                         disabled
                         placeholder={t('users.dialogs.placeholders.firstName')}
-                        className='col-span-4 h-11 rounded-2xl bg-muted/40 border-none shadow-inner font-bold text-xs px-4 opacity-70 cursor-not-allowed'
+                        className='col-span-4 h-11 cursor-not-allowed rounded-2xl border-none bg-muted/40 px-4 text-xs font-bold opacity-70 shadow-inner'
                         autoComplete='off'
                         {...field}
                       />
@@ -306,10 +320,10 @@ export function UsersActionDialog({
                 render={({ field }) => (
                   <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-6 gap-y-1'>
                     <div className='col-span-2 flex flex-col items-end gap-0.5'>
-                      <FormLabel className='text-[11px] font-black tracking-tight text-muted-foreground/60 leading-none'>
+                      <FormLabel className='text-[11px] leading-none font-black tracking-tight text-muted-foreground/60'>
                         {t('users.dialogs.labels.lastName')}
                       </FormLabel>
-                      <span className='text-[8px] font-mono font-black uppercase tracking-widest opacity-20 leading-none'>
+                      <span className='font-mono text-[8px] leading-none font-black tracking-widest uppercase opacity-20'>
                         LAST_NAME
                       </span>
                     </div>
@@ -317,7 +331,7 @@ export function UsersActionDialog({
                       <Input
                         disabled
                         placeholder={t('users.dialogs.placeholders.lastName')}
-                        className='col-span-4 h-11 rounded-2xl bg-muted/40 border-none shadow-inner font-bold text-xs px-4 opacity-70 cursor-not-allowed'
+                        className='col-span-4 h-11 cursor-not-allowed rounded-2xl border-none bg-muted/40 px-4 text-xs font-bold opacity-70 shadow-inner'
                         autoComplete='off'
                         {...field}
                       />
@@ -333,10 +347,10 @@ export function UsersActionDialog({
                 render={({ field }) => (
                   <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-6 gap-y-1'>
                     <div className='col-span-2 flex flex-col items-end gap-0.5'>
-                      <FormLabel className='text-[11px] font-black tracking-tight text-muted-foreground/60 leading-none'>
+                      <FormLabel className='text-[11px] leading-none font-black tracking-tight text-muted-foreground/60'>
                         {t('users.dialogs.labels.username')}
                       </FormLabel>
-                      <span className='text-[8px] font-mono font-black uppercase tracking-widest opacity-20 leading-none'>
+                      <span className='font-mono text-[8px] leading-none font-black tracking-widest uppercase opacity-20'>
                         AUTH_IDENTIFIER
                       </span>
                     </div>
@@ -358,14 +372,16 @@ export function UsersActionDialog({
                 render={({ field }) => (
                   <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-6 gap-y-1'>
                     {(() => {
-                      const selectedRole = roles.find((role) => role.id === (field.value || ''))
+                      const selectedRole = roles.find(
+                        (role) => role.id === (field.value || '')
+                      )
                       return (
                         <>
                           <div className='col-span-2 flex flex-col items-end gap-0.5'>
-                            <FormLabel className='text-[11px] font-black tracking-tight text-muted-foreground/60 leading-none'>
+                            <FormLabel className='text-[11px] leading-none font-black tracking-tight text-muted-foreground/60'>
                               {t('users.dialogs.labels.role')}
                             </FormLabel>
-                            <span className='text-[8px] font-mono font-black uppercase tracking-widest opacity-20 leading-none'>
+                            <span className='font-mono text-[8px] leading-none font-black tracking-widest uppercase opacity-20'>
                               ROLE_BINDING
                             </span>
                           </div>
@@ -373,13 +389,23 @@ export function UsersActionDialog({
                             <FormControl>
                               <Select
                                 value={field.value || UNASSIGNED_ROLE_VALUE}
-                                onValueChange={(value) => field.onChange(value === UNASSIGNED_ROLE_VALUE ? '' : value)}
+                                onValueChange={(value) =>
+                                  field.onChange(
+                                    value === UNASSIGNED_ROLE_VALUE ? '' : value
+                                  )
+                                }
                               >
                                 <SelectTrigger className='h-11 w-full rounded-2xl border-none bg-muted/50 px-4 text-xs font-bold shadow-inner'>
-                                  <SelectValue placeholder={t('users.dialogs.placeholders.role')} />
+                                  <SelectValue
+                                    placeholder={t(
+                                      'users.dialogs.placeholders.role'
+                                    )}
+                                  />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value={UNASSIGNED_ROLE_VALUE}>{t('users.dialogs.placeholders.roleEmpty')}</SelectItem>
+                                  <SelectItem value={UNASSIGNED_ROLE_VALUE}>
+                                    {t('users.dialogs.placeholders.roleEmpty')}
+                                  </SelectItem>
                                   {roles.map((role) => (
                                     <SelectItem key={role.id} value={role.id}>
                                       {role.label || role.id}
@@ -392,7 +418,11 @@ export function UsersActionDialog({
                               <AuditTimelineTriggerButton
                                 module={AUDIT_MODULES.role}
                                 targetId={field.value}
-                                targetName={selectedRole?.label || selectedRole?.id || field.value}
+                                targetName={
+                                  selectedRole?.label ||
+                                  selectedRole?.id ||
+                                  field.value
+                                }
                                 label={t('common.audit.roleTrigger')}
                                 className='shrink-0'
                               />
@@ -412,10 +442,10 @@ export function UsersActionDialog({
                 render={({ field }) => (
                   <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-6 gap-y-1'>
                     <div className='col-span-2 flex flex-col items-end gap-0.5'>
-                      <FormLabel className='text-[11px] font-black tracking-tight text-muted-foreground/60 leading-none'>
+                      <FormLabel className='text-[11px] leading-none font-black tracking-tight text-muted-foreground/60'>
                         {t('users.dialogs.labels.phone')}
                       </FormLabel>
-                      <span className='text-[8px] font-mono font-black uppercase tracking-widest opacity-20 leading-none'>
+                      <span className='font-mono text-[8px] leading-none font-black tracking-widest uppercase opacity-20'>
                         CONTACT_PROTO
                       </span>
                     </div>
@@ -423,7 +453,7 @@ export function UsersActionDialog({
                       <Input
                         disabled
                         placeholder={t('users.dialogs.placeholders.phone')}
-                        className='col-span-4 h-11 rounded-2xl bg-muted/40 border-none shadow-inner font-bold text-xs px-4 opacity-70 cursor-not-allowed'
+                        className='col-span-4 h-11 cursor-not-allowed rounded-2xl border-none bg-muted/40 px-4 text-xs font-bold opacity-70 shadow-inner'
                         {...field}
                       />
                     </FormControl>
@@ -438,10 +468,10 @@ export function UsersActionDialog({
                 render={({ field }) => (
                   <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-6 gap-y-1'>
                     <div className='col-span-2 flex flex-col items-end gap-0.5'>
-                      <FormLabel className='text-[11px] font-black tracking-tight text-muted-foreground/60 leading-none'>
+                      <FormLabel className='text-[11px] leading-none font-black tracking-tight text-muted-foreground/60'>
                         {t('users.dialogs.labels.password')}
                       </FormLabel>
-                      <span className='text-[8px] font-mono font-black uppercase tracking-widest opacity-20 leading-none'>
+                      <span className='font-mono text-[8px] leading-none font-black tracking-widest uppercase opacity-20'>
                         SECURITY_CRED
                       </span>
                     </div>
@@ -468,10 +498,10 @@ export function UsersActionDialog({
                 render={({ field }) => (
                   <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-6 gap-y-1'>
                     <div className='col-span-2 flex flex-col items-end gap-0.5'>
-                      <FormLabel className='text-[11px] font-black tracking-tight text-muted-foreground/60 leading-none'>
+                      <FormLabel className='text-[11px] leading-none font-black tracking-tight text-muted-foreground/60'>
                         {t('users.dialogs.labels.confirm')}
                       </FormLabel>
-                      <span className='text-[8px] font-mono font-black uppercase tracking-widest opacity-20 leading-none'>
+                      <span className='font-mono text-[8px] leading-none font-black tracking-widest uppercase opacity-20'>
                         CRED_VERIFICATION
                       </span>
                     </div>
@@ -495,11 +525,11 @@ export function UsersActionDialog({
             </form>
           </Form>
         </div>
-        <DialogFooter className='p-6 bg-muted/5 border-t border-dashed border-muted/50'>
+        <DialogFooter className='border-t border-dashed border-muted/50 bg-muted/5 p-6'>
           <Button
             type='submit'
             form='user-form'
-            className='rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-500/20 active:scale-95 transition-all'
+            className='h-11 rounded-full px-8 text-[10px] font-black tracking-widest uppercase shadow-xl shadow-blue-500/20 transition-all active:scale-95'
           >
             {t('users.dialogs.buttons.save')}
           </Button>

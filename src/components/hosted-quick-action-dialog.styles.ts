@@ -6,9 +6,12 @@ const hostedQuickActionMobileSheetBase =
 const hostedQuickActionDesktopReset =
   'md:top-[50%] md:bottom-auto md:translate-y-[-50%] md:h-auto md:max-h-[calc(100dvh-2rem)]'
 
-export const hostedQuickActionDialogScrollableBodyClassName = 'min-h-0 flex-1 overflow-y-auto'
+export const hostedQuickActionDialogScrollableBodyClassName =
+  'min-h-0 flex-1 overflow-y-auto'
 
-export function buildHostedQuickActionDialogContentClassName(desktopClassName?: string) {
+export function buildHostedQuickActionDialogContentClassName(
+  desktopClassName?: string
+) {
   return cn(
     hostedQuickActionMobileSheetBase,
     hostedQuickActionDesktopReset,

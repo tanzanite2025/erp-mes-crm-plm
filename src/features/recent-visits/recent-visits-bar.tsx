@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from '@tanstack/react-router'
 import { ChevronDown, Clock3, MoreHorizontal } from 'lucide-react'
+import { useAuthStore } from '@/stores/auth-store'
+import { cn } from '@/lib/utils'
+import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -10,9 +13,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { useLanguage } from '@/context/language-provider'
-import { cn } from '@/lib/utils'
-import { useAuthStore } from '@/stores/auth-store'
 import {
   canReadRecentVisit,
   getRecentVisitsStorageKey,
@@ -45,7 +45,9 @@ export function RecentVisitsBar() {
   const pathname = useLocation({ select: (location) => location.pathname })
   const user = useAuthStore((state) => state.user)
   const [visits, setVisits] = useState<RecentVisit[]>([])
-  const [desktopVisibleLimit, setDesktopVisibleLimit] = useState(DESKTOP_MAX_VISIBLE_LIMIT)
+  const [desktopVisibleLimit, setDesktopVisibleLimit] = useState(
+    DESKTOP_MAX_VISIBLE_LIMIT
+  )
   const desktopSlotRef = useRef<HTMLDivElement | null>(null)
   const storageKey = useMemo(() => getRecentVisitsStorageKey(user), [user])
 
@@ -54,7 +56,8 @@ export function RecentVisitsBar() {
 
     const load = async () => {
       const records = await readRecentVisits(user)
-      if (alive) setVisits(records.filter((visit) => canReadRecentVisit(user, visit)))
+      if (alive)
+        setVisits(records.filter((visit) => canReadRecentVisit(user, visit)))
     }
 
     void load()
@@ -66,7 +69,10 @@ export function RecentVisitsBar() {
     }
 
     const handleUpdate = (event: Event) => {
-      const detail = event instanceof CustomEvent ? event.detail as { key?: string } | undefined : undefined
+      const detail =
+        event instanceof CustomEvent
+          ? (event.detail as { key?: string } | undefined)
+          : undefined
       if (!detail?.key || detail.key === storageKey) void load()
     }
 
@@ -80,7 +86,10 @@ export function RecentVisitsBar() {
     return () => {
       alive = false
       window.removeEventListener(RECENT_VISITS_UPDATED_EVENT, handleUpdate)
-      window.removeEventListener(`${storageKey}_updated`, handleStorageKeyUpdate)
+      window.removeEventListener(
+        `${storageKey}_updated`,
+        handleStorageKeyUpdate
+      )
     }
   }, [storageKey, user])
 
@@ -91,9 +100,14 @@ export function RecentVisitsBar() {
 
     const updateVisibleLimit = () => {
       const availableWidth = element.getBoundingClientRect().width
-      const reservedWidth = DESKTOP_RECENT_TRIGGER_WIDTH + DESKTOP_OVERFLOW_TRIGGER_WIDTH
-      const nextLimit = Math.floor((availableWidth - reservedWidth) / DESKTOP_VISIT_SLOT_WIDTH)
-      setDesktopVisibleLimit(Math.min(DESKTOP_MAX_VISIBLE_LIMIT, Math.max(1, nextLimit)))
+      const reservedWidth =
+        DESKTOP_RECENT_TRIGGER_WIDTH + DESKTOP_OVERFLOW_TRIGGER_WIDTH
+      const nextLimit = Math.floor(
+        (availableWidth - reservedWidth) / DESKTOP_VISIT_SLOT_WIDTH
+      )
+      setDesktopVisibleLimit(
+        Math.min(DESKTOP_MAX_VISIBLE_LIMIT, Math.max(1, nextLimit))
+      )
     }
 
     updateVisibleLimit()
@@ -122,7 +136,9 @@ export function RecentVisitsBar() {
       className='flex min-w-0 cursor-pointer items-center justify-between gap-4 rounded-xl px-3 py-2'
     >
       <div className='min-w-0'>
-        <div className='truncate text-xs font-black tracking-tight'>{visit.label}</div>
+        <div className='truncate text-xs font-black tracking-tight'>
+          {visit.label}
+        </div>
         <div className='truncate text-[10px] font-semibold text-muted-foreground/70'>
           {visit.path}
         </div>
@@ -136,52 +152,58 @@ export function RecentVisitsBar() {
   const renderRecentVisitsContent = (title: string, items = displayVisits) => {
     const menuItems = items.slice(0, RECENT_VISITS_MENU_LIMIT)
     return (
-    <>
-      <DropdownMenuLabel className='px-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
-        {title}
-      </DropdownMenuLabel>
-      <DropdownMenuSeparator />
-      {menuItems.length > 0 ? (
-        menuItems.map(renderVisitItem)
-      ) : (
-        <div className='px-3 py-4 text-center'>
-          <div className='text-xs font-black tracking-tight text-foreground'>
-            {t('recentVisits.emptyTitle')}
+      <>
+        <DropdownMenuLabel className='px-3 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+          {title}
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {menuItems.length > 0 ? (
+          menuItems.map(renderVisitItem)
+        ) : (
+          <div className='px-3 py-4 text-center'>
+            <div className='text-xs font-black tracking-tight text-foreground'>
+              {t('recentVisits.emptyTitle')}
+            </div>
+            <div className='mt-1 text-[10px] leading-4 font-semibold text-muted-foreground/70'>
+              {t('recentVisits.emptyDescription')}
+            </div>
           </div>
-          <div className='mt-1 text-[10px] font-semibold leading-4 text-muted-foreground/70'>
-            {t('recentVisits.emptyDescription')}
-          </div>
-        </div>
-      )}
-    </>
+        )}
+      </>
     )
   }
 
   return (
-    <div ref={desktopSlotRef} className='flex w-full min-w-0 items-center justify-center'>
+    <div
+      ref={desktopSlotRef}
+      className='flex w-full min-w-0 items-center justify-center'
+    >
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
             variant='outline'
-            className='flex h-9 max-w-[150px] items-center gap-2 rounded-full border-dashed bg-background/80 px-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground shadow-none md:hidden'
+            className='flex h-9 max-w-[150px] items-center gap-2 rounded-full border-dashed bg-background/80 px-3 text-[10px] font-black tracking-widest text-muted-foreground uppercase shadow-none md:hidden'
           >
             <Clock3 className='size-3.5' />
             <span className='truncate'>{t('recentVisits.shortLabel')}</span>
             <ChevronDown className='size-3' />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align='center' className='w-[min(92vw,360px)] rounded-2xl p-2'>
+        <DropdownMenuContent
+          align='center'
+          className='w-[min(92vw,360px)] rounded-2xl p-2'
+        >
           {renderRecentVisitsContent(t('recentVisits.title'))}
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <div className='hidden w-full min-w-0 max-w-[min(62vw,960px)] items-center justify-center gap-2 md:flex'>
+      <div className='hidden w-full max-w-[min(62vw,960px)] min-w-0 items-center justify-center gap-2 md:flex'>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               type='button'
               variant='outline'
-              className='flex h-9 shrink-0 items-center gap-1.5 rounded-full border-dashed bg-background/60 px-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 shadow-none hover:text-foreground'
+              className='flex h-9 shrink-0 items-center gap-1.5 rounded-full border-dashed bg-background/60 px-3 text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase shadow-none hover:text-foreground'
             >
               <Clock3 className='size-3.5' />
               {t('recentVisits.shortLabel')}
@@ -223,8 +245,14 @@ export function RecentVisitsBar() {
                 <MoreHorizontal className='size-4' />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align='center' className='w-80 rounded-2xl p-2'>
-              {renderRecentVisitsContent(t('recentVisits.moreTitle'), overflowVisits)}
+            <DropdownMenuContent
+              align='center'
+              className='w-80 rounded-2xl p-2'
+            >
+              {renderRecentVisitsContent(
+                t('recentVisits.moreTitle'),
+                overflowVisits
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         ) : null}

@@ -57,12 +57,21 @@ export const BOM_SECTION_SEED_CONFIGS = [
   },
 ] as const
 
-export const DEFAULT_BOM_SECTION_CODE = BOM_SECTION_SEED_CONFIGS.find((item) => item.isDefault)?.code ?? BOM_SECTION_SEED_CONFIGS[0].code
+export const DEFAULT_BOM_SECTION_CODE =
+  BOM_SECTION_SEED_CONFIGS.find((item) => item.isDefault)?.code ??
+  BOM_SECTION_SEED_CONFIGS[0].code
 
-export const BOM_SECTIONS = BOM_SECTION_SEED_CONFIGS.map((item) => item.name) as readonly string[]
+export const BOM_SECTIONS = BOM_SECTION_SEED_CONFIGS.map(
+  (item) => item.name
+) as readonly string[]
 
-export const BOM_DEFAULT_SECTION = BOM_SECTION_SEED_CONFIGS.find((item) => item.isDefault)?.name ?? BOM_SECTION_SEED_CONFIGS[0].name
+export const BOM_DEFAULT_SECTION =
+  BOM_SECTION_SEED_CONFIGS.find((item) => item.isDefault)?.name ??
+  BOM_SECTION_SEED_CONFIGS[0].name
 
-export const LEGACY_BOM_SECTION_CODE_MAP: Record<string, string> = Object.fromEntries(
-  BOM_SECTION_SEED_CONFIGS.flatMap((item) => [item.name, ...item.legacyNames].map((name) => [name, item.code]))
-)
+export const LEGACY_BOM_SECTION_CODE_MAP: Record<string, string> =
+  Object.fromEntries(
+    BOM_SECTION_SEED_CONFIGS.flatMap((item) =>
+      [item.name, ...item.legacyNames].map((name) => [name, item.code])
+    )
+  )

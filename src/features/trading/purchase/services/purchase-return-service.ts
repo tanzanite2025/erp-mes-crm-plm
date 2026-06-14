@@ -78,7 +78,9 @@ export interface CreatePurchaseReturnResponse {
   purchaseOrder: PurchaseOrder
 }
 
-function toPurchaseReturnLineContract(dto: PurchaseReturnLineApiDTO): PurchaseReturnLine {
+function toPurchaseReturnLineContract(
+  dto: PurchaseReturnLineApiDTO
+): PurchaseReturnLine {
   return {
     id: dto.id,
     purchaseOrderLineId: dto.purchaseOrderLineId,
@@ -97,7 +99,9 @@ function toPurchaseReturnLineContract(dto: PurchaseReturnLineApiDTO): PurchaseRe
   }
 }
 
-function toPurchaseReturnContract(dto: PurchaseReturnApiDTO): PurchaseReturnRecord {
+function toPurchaseReturnContract(
+  dto: PurchaseReturnApiDTO
+): PurchaseReturnRecord {
   return {
     id: dto.id,
     returnNo: dto.returnNo,
@@ -124,9 +128,16 @@ function toPurchaseReturnContract(dto: PurchaseReturnApiDTO): PurchaseReturnReco
   }
 }
 
-export async function getPurchaseReturns(page = 1, pageSize = 50): Promise<PaginatedPurchaseReturns> {
-  const res = await apiFetch<PurchaseReturnListPageApiDTO>(`/purchase/returns?page=${page}&pageSize=${pageSize}`)
-  const dto = ensureObjectResponse<PurchaseReturnListPageApiDTO & Record<string, unknown>>(
+export async function getPurchaseReturns(
+  page = 1,
+  pageSize = 50
+): Promise<PaginatedPurchaseReturns> {
+  const res = await apiFetch<PurchaseReturnListPageApiDTO>(
+    `/purchase/returns?page=${page}&pageSize=${pageSize}`
+  )
+  const dto = ensureObjectResponse<
+    PurchaseReturnListPageApiDTO & Record<string, unknown>
+  >(
     res,
     'PurchaseReturnService.getPurchaseReturns'
   ) as PurchaseReturnListPageApiDTO
@@ -147,11 +158,16 @@ export async function createPurchaseReturn(
   purchaseOrderId: string,
   payload: CreatePurchaseReturnPayload
 ): Promise<CreatePurchaseReturnResponse> {
-  const res = await apiFetch<CreatePurchaseReturnResponseApiDTO>(`/purchase/orders/${purchaseOrderId}/returns`, {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  })
-  const dto = ensureObjectResponse<CreatePurchaseReturnResponseApiDTO & Record<string, unknown>>(
+  const res = await apiFetch<CreatePurchaseReturnResponseApiDTO>(
+    `/purchase/orders/${purchaseOrderId}/returns`,
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }
+  )
+  const dto = ensureObjectResponse<
+    CreatePurchaseReturnResponseApiDTO & Record<string, unknown>
+  >(
     res,
     'PurchaseReturnService.createPurchaseReturn'
   ) as CreatePurchaseReturnResponseApiDTO

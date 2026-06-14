@@ -2,15 +2,18 @@
 
 import { useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { useLanguage } from '@/context/language-provider'
+import {
+  type CompositeReadResource,
+  resolveQueryFailure,
+} from '@/lib/read-resource'
 import { failLoudly } from '@/lib/safe-catch'
-import { type CompositeReadResource, resolveQueryFailure } from '@/lib/read-resource'
+import { useLanguage } from '@/context/language-provider'
 import { WarehouseCategoryCoreService } from '../../category'
+import { type WarehouseCategoryOption } from '../../category/data/schema'
 import {
   InventoryMaintenanceService,
   type MasterDataSearchResult,
 } from '../../inventory'
-import { type WarehouseCategoryOption } from '../../category/data/schema'
 import { warehouseQueryKeys } from '../../query-keys'
 import { WarehouseMasterDataService } from '../../services/warehouse-master-data-service'
 import { filterWarehouseCategoriesByScene } from '../../utils/warehouse-category-config'
@@ -26,7 +29,9 @@ export type ShipmentBootstrapResource = CompositeReadResource<{
   masterDataMap: Record<string, MasterDataSearchResult>
 }>
 
-export function useShipmentBootstrap(feedback: Pick<ShipmentUiFeedback, 'error'>) {
+export function useShipmentBootstrap(
+  feedback: Pick<ShipmentUiFeedback, 'error'>
+) {
   const { t } = useLanguage()
 
   const historyQuery = useQuery({
@@ -46,10 +51,11 @@ export function useShipmentBootstrap(feedback: Pick<ShipmentUiFeedback, 'error'>
 
   const masterDataQuery = useQuery({
     queryKey: warehouseQueryKeys.masterDataAll(),
-    queryFn: () => WarehouseMasterDataService.searchSelectableItems({
-      query: '',
-      scope: 'ALL',
-    }),
+    queryFn: () =>
+      WarehouseMasterDataService.searchSelectableItems({
+        query: '',
+        scope: 'ALL',
+      }),
   })
 
   const materialThresholdMapQuery = useQuery({
@@ -95,7 +101,8 @@ export function useShipmentBootstrap(feedback: Pick<ShipmentUiFeedback, 'error'>
       error: categoriesQuery.error,
       isPending: categoriesQuery.isPending,
       scope: 'useShipmentBootstrap.categories',
-      missingMessage: '[CRITICAL] Shipment warehouse categories missing after load',
+      missingMessage:
+        '[CRITICAL] Shipment warehouse categories missing after load',
       failureMessage: '[CRITICAL] Shipment warehouse categories query failed',
     })
     if (categoriesFailure) {
@@ -148,16 +155,23 @@ export function useShipmentBootstrap(feedback: Pick<ShipmentUiFeedback, 'error'>
       return { status: 'loading' }
     }
 
-    const filteredCategories = filterWarehouseCategoriesByScene(categoriesQuery.data as WarehouseCategoryOption[], 'shipment')
+    const filteredCategories = filterWarehouseCategoriesByScene(
+      categoriesQuery.data as WarehouseCategoryOption[],
+      'shipment'
+    )
     if (filteredCategories.length === 0) {
       return {
         status: 'error',
-        error: new Error('[CRITICAL] No warehouse categories allowed for shipment scene'),
+        error: new Error(
+          '[CRITICAL] No warehouse categories allowed for shipment scene'
+        ),
         scope: 'useShipmentBootstrap.categories',
       }
     }
 
-    const nextMasterDataMap = (masterDataQuery.data as MasterDataSearchResult[]).reduce<Record<string, MasterDataSearchResult>>((map, item) => {
+    const nextMasterDataMap = (
+      masterDataQuery.data as MasterDataSearchResult[]
+    ).reduce<Record<string, MasterDataSearchResult>>((map, item) => {
       map[item.id] = item
       return map
     }, {})
@@ -167,7 +181,10 @@ export function useShipmentBootstrap(feedback: Pick<ShipmentUiFeedback, 'error'>
       history: historyQuery.data as ShipmentRecord[],
       shipmentDemands: demandsQuery.data as ShipmentDemand[],
       warehouseCategories: filteredCategories,
-      materialThresholdMap: materialThresholdMapQuery.data as Record<string, number>,
+      materialThresholdMap: materialThresholdMapQuery.data as Record<
+        string,
+        number
+      >,
       masterDataMap: nextMasterDataMap,
     }
   }, [

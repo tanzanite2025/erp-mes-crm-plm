@@ -1,11 +1,6 @@
 'use client'
 
 import { createElement, type ReactNode } from 'react'
-
-import { GenericSpecOverview } from './generic-spec'
-import { RimSpecForm, RimSpecOverview } from './rim-spec'
-import { StemSpecForm, StemSpecOverview } from './stem-spec'
-import { ForkSpecForm, ForkSpecOverview } from './fork-spec'
 import { type Product } from '../../data/schema'
 import { productTemplateService } from '../../services/product-template-service'
 import {
@@ -13,6 +8,10 @@ import {
   type ProductEffectiveTemplateParams,
   type ProductTemplateResolution,
 } from '../../utils/product-template-resolution'
+import { ForkSpecForm, ForkSpecOverview } from './fork-spec'
+import { GenericSpecOverview } from './generic-spec'
+import { RimSpecForm, RimSpecOverview } from './rim-spec'
+import { StemSpecForm, StemSpecOverview } from './stem-spec'
 
 type TranslationFn<T extends string = string> = (
   key: T,
@@ -71,7 +70,9 @@ export function renderProductSpecOverview({
   }
 }
 
-export function getLocalizedSpecComponents<T extends string>(t: TranslationFn<T>): Record<
+export function getLocalizedSpecComponents<T extends string>(
+  t: TranslationFn<T>
+): Record<
   SpecType,
   {
     label: string

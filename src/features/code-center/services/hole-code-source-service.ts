@@ -54,7 +54,9 @@ function sortHoleCodeCounts(items: HoleCodeCountItem[]) {
   })
 }
 
-function sortHoleCodeSourceBundle(bundle: HoleCodeSourceBundle): HoleCodeSourceBundle {
+function sortHoleCodeSourceBundle(
+  bundle: HoleCodeSourceBundle
+): HoleCodeSourceBundle {
   return {
     prefixes: sortHoleCodePrefixes(bundle.prefixes),
     counts: sortHoleCodeCounts(bundle.counts),
@@ -71,12 +73,12 @@ function getNextSortOrder<T extends { sortOrder: number }>(items: T[]) {
 
 function isHoleCodeSourceBundle(value: unknown): value is HoleCodeSourceBundle {
   return Boolean(
-    value
-    && typeof value === 'object'
-    && 'prefixes' in value
-    && 'counts' in value
-    && Array.isArray((value as HoleCodeSourceBundle).prefixes)
-    && Array.isArray((value as HoleCodeSourceBundle).counts),
+    value &&
+    typeof value === 'object' &&
+    'prefixes' in value &&
+    'counts' in value &&
+    Array.isArray((value as HoleCodeSourceBundle).prefixes) &&
+    Array.isArray((value as HoleCodeSourceBundle).counts)
   )
 }
 
@@ -87,7 +89,9 @@ async function writeHoleCodeSources(bundle: HoleCodeSourceBundle) {
 }
 
 async function readHoleCodeSources() {
-  const stored = await StorageService.getItem<unknown>(SHARED_HOLE_CODE_SOURCE_STORAGE_KEY)
+  const stored = await StorageService.getItem<unknown>(
+    SHARED_HOLE_CODE_SOURCE_STORAGE_KEY
+  )
 
   if (isHoleCodeSourceBundle(stored)) {
     return sortHoleCodeSourceBundle(stored)
@@ -101,7 +105,7 @@ async function readHoleCodeSources() {
 function normalizePrefixDraft(
   draft: HoleCodePrefixDraft,
   current: HoleCodePrefixItem | undefined,
-  nextSortOrder: number,
+  nextSortOrder: number
 ): HoleCodePrefixItem {
   const code = normalizeHolePrefix(draft.code || current?.code || 'R') || 'R'
   const now = new Date().toISOString()
@@ -123,7 +127,7 @@ function normalizePrefixDraft(
 function normalizeCountDraft(
   draft: HoleCodeCountDraft,
   current: HoleCodeCountItem | undefined,
-  nextSortOrder: number,
+  nextSortOrder: number
 ): HoleCodeCountItem {
   const value = normalizeHoles(draft.value || current?.value || '14')
   const now = new Date().toISOString()
@@ -147,10 +151,16 @@ export const holeCodeSourceService = {
     return readHoleCodeSources()
   },
 
-  async saveHoleCodePrefix(draft: HoleCodePrefixDraft): Promise<HoleCodeSourceBundle> {
+  async saveHoleCodePrefix(
+    draft: HoleCodePrefixDraft
+  ): Promise<HoleCodeSourceBundle> {
     const bundle = await readHoleCodeSources()
     const current = bundle.prefixes.find((item) => item.id === draft.id)
-    const nextItem = normalizePrefixDraft(draft, current, getNextSortOrder(bundle.prefixes))
+    const nextItem = normalizePrefixDraft(
+      draft,
+      current,
+      getNextSortOrder(bundle.prefixes)
+    )
 
     const duplicated = bundle.prefixes.find(
       (item) => item.id !== nextItem.id && item.code === nextItem.code
@@ -163,17 +173,25 @@ export const holeCodeSourceService = {
     const nextBundle: HoleCodeSourceBundle = {
       ...bundle,
       prefixes: current
-        ? bundle.prefixes.map((item) => (item.id === nextItem.id ? nextItem : item))
+        ? bundle.prefixes.map((item) =>
+            item.id === nextItem.id ? nextItem : item
+          )
         : [...bundle.prefixes, nextItem],
     }
 
     return writeHoleCodeSources(nextBundle)
   },
 
-  async saveHoleCodeCount(draft: HoleCodeCountDraft): Promise<HoleCodeSourceBundle> {
+  async saveHoleCodeCount(
+    draft: HoleCodeCountDraft
+  ): Promise<HoleCodeSourceBundle> {
     const bundle = await readHoleCodeSources()
     const current = bundle.counts.find((item) => item.id === draft.id)
-    const nextItem = normalizeCountDraft(draft, current, getNextSortOrder(bundle.counts))
+    const nextItem = normalizeCountDraft(
+      draft,
+      current,
+      getNextSortOrder(bundle.counts)
+    )
 
     const duplicated = bundle.counts.find(
       (item) => item.id !== nextItem.id && item.value === nextItem.value
@@ -186,7 +204,9 @@ export const holeCodeSourceService = {
     const nextBundle: HoleCodeSourceBundle = {
       ...bundle,
       counts: current
-        ? bundle.counts.map((item) => (item.id === nextItem.id ? nextItem : item))
+        ? bundle.counts.map((item) =>
+            item.id === nextItem.id ? nextItem : item
+          )
         : [...bundle.counts, nextItem],
     }
 

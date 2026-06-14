@@ -1,2 +1,2 @@
-export * from './pdf-viewer';
-export * from './pdf-viewer-dialog';
+export * from './pdf-viewer'
+export * from './pdf-viewer-dialog'

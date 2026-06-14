@@ -1,11 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { useLanguage } from '@/context/language-provider'
-import { handleServerError } from '@/lib/handle-server-error'
 import { type DeltaSet } from '@/lib/delta/types'
+import { handleServerError } from '@/lib/handle-server-error'
+import { useLanguage } from '@/context/language-provider'
 import { type Supplier, type SupplierFormValues } from '../../data/schema'
 import { tradingQueryKeys } from '../../query-keys'
-import { changeSupplierIdentity, changeSupplierStatus, createSupplier, deleteSupplier, getSupplierList, getSuppliers, patchSupplier, saveSupplier } from '../services/supplier-service'
+import {
+  changeSupplierIdentity,
+  changeSupplierStatus,
+  createSupplier,
+  deleteSupplier,
+  getSupplierList,
+  getSuppliers,
+  patchSupplier,
+  saveSupplier,
+} from '../services/supplier-service'
 
 export const useGetSuppliers = (options = {}) => {
   return useQuery({
@@ -34,19 +43,31 @@ export const useSupplierMutations = () => {
     onSuccess: () => {
       toast.success(t('purchase.suppliers.toasts.saved'))
       queryClient.invalidateQueries({ queryKey: tradingQueryKeys.suppliers() })
-      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.supplierList() })
+      queryClient.invalidateQueries({
+        queryKey: tradingQueryKeys.supplierList(),
+      })
     },
     onError: handleServerError,
   })
 
   const patchMutation = useMutation({
-    mutationFn: ({ id, delta, version }: { id: string; delta: DeltaSet; version: number }) => {
+    mutationFn: ({
+      id,
+      delta,
+      version,
+    }: {
+      id: string
+      delta: DeltaSet
+      version: number
+    }) => {
       return patchSupplier(id, delta, version)
     },
     onSuccess: () => {
       toast.success(t('purchase.suppliers.toasts.saved'))
       queryClient.invalidateQueries({ queryKey: tradingQueryKeys.suppliers() })
-      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.supplierList() })
+      queryClient.invalidateQueries({
+        queryKey: tradingQueryKeys.supplierList(),
+      })
     },
     onError: handleServerError,
   })
@@ -66,11 +87,20 @@ export const useSupplierMutations = () => {
       operator: string
       expectedVersion: number
       actorId?: string
-    }) => saveSupplier(id, { delta, finalData, operator, expectedVersion, actorId }),
+    }) =>
+      saveSupplier(id, {
+        delta,
+        finalData,
+        operator,
+        expectedVersion,
+        actorId,
+      }),
     onSuccess: () => {
       toast.success(t('purchase.suppliers.toasts.saved'))
       queryClient.invalidateQueries({ queryKey: tradingQueryKeys.suppliers() })
-      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.supplierList() })
+      queryClient.invalidateQueries({
+        queryKey: tradingQueryKeys.supplierList(),
+      })
     },
     onError: handleServerError,
   })
@@ -88,11 +118,14 @@ export const useSupplierMutations = () => {
       operator: string
       expectedVersion: number
       actorId?: string
-    }) => changeSupplierStatus(id, { status, operator, expectedVersion, actorId }),
+    }) =>
+      changeSupplierStatus(id, { status, operator, expectedVersion, actorId }),
     onSuccess: () => {
       toast.success(t('purchase.suppliers.toasts.saved'))
       queryClient.invalidateQueries({ queryKey: tradingQueryKeys.suppliers() })
-      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.supplierList() })
+      queryClient.invalidateQueries({
+        queryKey: tradingQueryKeys.supplierList(),
+      })
     },
     onError: handleServerError,
   })
@@ -112,11 +145,20 @@ export const useSupplierMutations = () => {
       operator: string
       expectedVersion: number
       actorId?: string
-    }) => changeSupplierIdentity(id, { code, name, operator, expectedVersion, actorId }),
+    }) =>
+      changeSupplierIdentity(id, {
+        code,
+        name,
+        operator,
+        expectedVersion,
+        actorId,
+      }),
     onSuccess: () => {
       toast.success(t('purchase.suppliers.toasts.saved'))
       queryClient.invalidateQueries({ queryKey: tradingQueryKeys.suppliers() })
-      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.supplierList() })
+      queryClient.invalidateQueries({
+        queryKey: tradingQueryKeys.supplierList(),
+      })
     },
     onError: handleServerError,
   })
@@ -126,10 +168,19 @@ export const useSupplierMutations = () => {
     onSuccess: () => {
       toast.success(t('purchase.suppliers.toasts.deleted'))
       queryClient.invalidateQueries({ queryKey: tradingQueryKeys.suppliers() })
-      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.supplierList() })
+      queryClient.invalidateQueries({
+        queryKey: tradingQueryKeys.supplierList(),
+      })
     },
     onError: handleServerError,
   })
 
-  return { createMutation, saveMutation, patchMutation, statusChangeMutation, identityChangeMutation, deleteMutation }
+  return {
+    createMutation,
+    saveMutation,
+    patchMutation,
+    statusChangeMutation,
+    identityChangeMutation,
+    deleteMutation,
+  }
 }

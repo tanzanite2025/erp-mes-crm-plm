@@ -1,6 +1,9 @@
 import { useQuoteWorkspaceSalesOrderAdapter } from '@/features/quotes/adapters/quote-sales-order-adapter'
 
-export function useQuoteCreateEditor(open: boolean, onCreated: (quoteId: string) => void) {
+export function useQuoteCreateEditor(
+  open: boolean,
+  onCreated: (quoteId: string) => void
+) {
   const {
     quoteDraft,
     updateQuoteDraft,

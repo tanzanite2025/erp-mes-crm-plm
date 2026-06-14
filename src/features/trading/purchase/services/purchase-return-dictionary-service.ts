@@ -19,10 +19,11 @@ export interface PurchaseReturnDictionaryItem {
 export async function getPurchaseReturnDictionaries(
   dictType: PurchaseReturnDictionaryType
 ): Promise<PurchaseReturnDictionaryItem[]> {
-  const res = await apiFetch<PurchaseReturnDictionaryItem[]>(`/purchase/return-dictionaries?type=${dictType}`)
+  const res = await apiFetch<PurchaseReturnDictionaryItem[]>(
+    `/purchase/return-dictionaries?type=${dictType}`
+  )
   return ensureArrayResponse<PurchaseReturnDictionaryItem>(
     res,
     'PurchaseReturnDictionaryService.getPurchaseReturnDictionaries'
   )
 }
-

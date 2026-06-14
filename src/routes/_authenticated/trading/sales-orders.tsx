@@ -7,5 +7,6 @@ import {
 export type SalesOrderSearch = SalesOrderRouteSearch
 
 export const Route = createFileRoute('/_authenticated/trading/sales-orders')({
-  validateSearch: (search: Record<string, unknown>): SalesOrderSearch => parseSalesOrderRouteSearch(search),
+  validateSearch: (search: Record<string, unknown>): SalesOrderSearch =>
+    parseSalesOrderRouteSearch(search),
 })

@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import { History } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 import { BOMVersionTraceDialog } from './bom-version-trace-dialog'
 
 interface BOMVersionTraceTriggerProps {
@@ -34,9 +34,9 @@ export function BOMVersionTraceTrigger({
         onClick={() => setOpen(true)}
         aria-label={label}
         className={cn(
-          'h-9 rounded-full border-dashed px-4 text-[10px] font-black uppercase tracking-widest',
+          'h-9 rounded-full border-dashed px-4 text-[10px] font-black tracking-widest uppercase',
           iconOnly && 'size-8 rounded-full px-0',
-          className,
+          className
         )}
       >
         <History className='size-3.5' />

@@ -1,18 +1,22 @@
 import { useMemo, useState } from 'react'
+import { useProductOwnersMap } from '@/features/product-structure/hooks/use-product-owners-map'
 import { type Product } from '../data/schema'
 import { useEngineeringBootstrap } from './use-engineering-bootstrap'
 import { useEngineeringProductDisplayMetadata } from './use-engineering-product-display-metadata'
-import { useProductWriteActions } from './use-product-write-actions'
-import { useProductOwnersMap } from '@/features/product-structure/hooks/use-product-owners-map'
 import { type ProductSubmitPayload } from './use-product-form'
+import { useProductWriteActions } from './use-product-write-actions'
 
 const EMPTY_PRODUCTS: Product[] = []
 
 export function useEngineeringWorkspaceViewModel() {
-  const [selectedProductId, setSelectedProductId] = useState<string | null>(null)
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(
+    null
+  )
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false)
   const [isTypeDialogOpen, setIsTypeDialogOpen] = useState(false)
-  const [editingProduct, setEditingProduct] = useState<Product | undefined>(undefined)
+  const [editingProduct, setEditingProduct] = useState<Product | undefined>(
+    undefined
+  )
 
   const { saveProducts } = useProductWriteActions()
   const bootstrap = useEngineeringBootstrap()
@@ -50,7 +54,9 @@ export function useEngineeringWorkspaceViewModel() {
       return null
     }
 
-    return displayMetadata.productDisplayMetadataMap.get(selectedProduct.id) || null
+    return (
+      displayMetadata.productDisplayMetadataMap.get(selectedProduct.id) || null
+    )
   }, [displayMetadata.productDisplayMetadataMap, selectedProduct])
 
   const handleSelectProduct = (id: string) => {
@@ -82,9 +88,14 @@ export function useEngineeringWorkspaceViewModel() {
     setIsTypeDialogOpen(open)
   }
 
-  const handleProductSubmit = async ({ products: incoming, currentRow }: ProductSubmitPayload) => {
+  const handleProductSubmit = async ({
+    products: incoming,
+    currentRow,
+  }: ProductSubmitPayload) => {
     if (incoming.length === 0) {
-      throw new Error('[CRITICAL] useEngineeringWorkspaceViewModel.handleProductSubmit received empty products payload')
+      throw new Error(
+        '[CRITICAL] useEngineeringWorkspaceViewModel.handleProductSubmit received empty products payload'
+      )
     }
 
     const savedProducts = await saveProducts(

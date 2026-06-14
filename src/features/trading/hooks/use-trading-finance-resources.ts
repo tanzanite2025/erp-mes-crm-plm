@@ -1,13 +1,20 @@
 import { useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { type Currency, type PaymentMethod, type PaymentTerm } from '@/features/finance/data/schema'
+import { createLogger } from '@/lib/logger'
+import {
+  type CompositeReadResource,
+  resolveQueryFailure,
+} from '@/lib/read-resource'
+import { failLoudly } from '@/lib/safe-catch'
+import {
+  type Currency,
+  type PaymentMethod,
+  type PaymentTerm,
+} from '@/features/finance/data/schema'
 import { financeQueryKeys } from '@/features/finance/query-keys'
 import { CurrencyCoreService } from '@/features/finance/services/currency-core-service'
 import { PaymentMethodCoreService } from '@/features/finance/services/payment-method-core-service'
 import { PaymentTermCoreService } from '@/features/finance/services/payment-term-core-service'
-import { createLogger } from '@/lib/logger'
-import { type CompositeReadResource, resolveQueryFailure } from '@/lib/read-resource'
-import { failLoudly } from '@/lib/safe-catch'
 
 const logger = createLogger('useTradingFinanceResources')
 
@@ -40,7 +47,9 @@ export type TradingFinanceFilterOptionsReadResource = CompositeReadResource<{
   paymentTermOptions: FinanceOption[]
 }>
 
-export function useTradingFinanceResources(options: UseTradingFinanceResourcesOptions = {}) {
+export function useTradingFinanceResources(
+  options: UseTradingFinanceResourcesOptions = {}
+) {
   const {
     includeCurrencies = false,
     includePaymentMethods = true,
@@ -132,10 +141,14 @@ export function useTradingFinanceResources(options: UseTradingFinanceResourcesOp
       status: 'ready',
       currencies: includeCurrencies ? (currenciesQuery.data as Currency[]) : [],
       paymentMethods: includePaymentMethods
-        ? (paymentMethodsQuery.data as PaymentMethod[]).filter((item) => item.status === 'Active')
+        ? (paymentMethodsQuery.data as PaymentMethod[]).filter(
+            (item) => item.status === 'Active'
+          )
         : [],
       paymentTerms: includePaymentTerms
-        ? (paymentTermsQuery.data as PaymentTerm[]).filter((item) => item.status === 'Active')
+        ? (paymentTermsQuery.data as PaymentTerm[]).filter(
+            (item) => item.status === 'Active'
+          )
         : [],
     }
   }, [
@@ -155,13 +168,19 @@ export function useTradingFinanceResources(options: UseTradingFinanceResourcesOp
 
   useEffect(() => {
     if (readResource.status !== 'error') return
-    logger.error(`Failed to load trading finance resources: ${readResource.scope}`, readResource.error)
+    logger.error(
+      `Failed to load trading finance resources: ${readResource.scope}`,
+      readResource.error
+    )
     failLoudly(readResource.error, readResource.scope)
   }, [readResource])
 
-  const currencies = readResource.status === 'ready' ? readResource.currencies : []
-  const paymentMethods = readResource.status === 'ready' ? readResource.paymentMethods : []
-  const paymentTerms = readResource.status === 'ready' ? readResource.paymentTerms : []
+  const currencies =
+    readResource.status === 'ready' ? readResource.currencies : []
+  const paymentMethods =
+    readResource.status === 'ready' ? readResource.paymentMethods : []
+  const paymentTerms =
+    readResource.status === 'ready' ? readResource.paymentTerms : []
   const retry = async () => {
     await Promise.all([
       includeCurrencies ? currenciesQuery.refetch() : Promise.resolve(),
@@ -180,13 +199,16 @@ export function useTradingFinanceResources(options: UseTradingFinanceResourcesOp
   }
 }
 
-export function useTradingFinanceFilterOptions<TOrder extends PaymentLikeOrder>(orders: TOrder[]) {
+export function useTradingFinanceFilterOptions<TOrder extends PaymentLikeOrder>(
+  orders: TOrder[]
+) {
   const financeResources = useTradingFinanceResources()
 
   const paymentMethodOptions = useMemo(() => {
-    const paymentMethods = financeResources.readResource.status === 'ready'
-      ? financeResources.readResource.paymentMethods
-      : []
+    const paymentMethods =
+      financeResources.readResource.status === 'ready'
+        ? financeResources.readResource.paymentMethods
+        : []
     const entries = new Map<string, string>()
 
     paymentMethods.forEach((item) => {
@@ -197,7 +219,9 @@ export function useTradingFinanceFilterOptions<TOrder extends PaymentLikeOrder>(
       if (order.paymentMethod) {
         entries.set(
           order.paymentMethod,
-          order.paymentMethodName || entries.get(order.paymentMethod) || order.paymentMethod,
+          order.paymentMethodName ||
+            entries.get(order.paymentMethod) ||
+            order.paymentMethod
         )
       }
     })
@@ -208,9 +232,10 @@ export function useTradingFinanceFilterOptions<TOrder extends PaymentLikeOrder>(
   }, [financeResources.readResource, orders])
 
   const paymentTermOptions = useMemo(() => {
-    const paymentTerms = financeResources.readResource.status === 'ready'
-      ? financeResources.readResource.paymentTerms
-      : []
+    const paymentTerms =
+      financeResources.readResource.status === 'ready'
+        ? financeResources.readResource.paymentTerms
+        : []
     const entries = new Map<string, string>()
 
     paymentTerms.forEach((item) => {
@@ -221,7 +246,9 @@ export function useTradingFinanceFilterOptions<TOrder extends PaymentLikeOrder>(
       if (order.paymentTerm) {
         entries.set(
           order.paymentTerm,
-          order.paymentTermName || entries.get(order.paymentTerm) || order.paymentTerm,
+          order.paymentTermName ||
+            entries.get(order.paymentTerm) ||
+            order.paymentTerm
         )
       }
     })
@@ -232,13 +259,14 @@ export function useTradingFinanceFilterOptions<TOrder extends PaymentLikeOrder>(
   }, [financeResources.readResource, orders])
 
   return {
-    readResource: financeResources.readResource.status === 'ready'
-      ? {
-          status: 'ready' as const,
-          paymentMethodOptions,
-          paymentTermOptions,
-        }
-      : financeResources.readResource,
+    readResource:
+      financeResources.readResource.status === 'ready'
+        ? {
+            status: 'ready' as const,
+            paymentMethodOptions,
+            paymentTermOptions,
+          }
+        : financeResources.readResource,
     paymentMethodOptions,
     paymentTermOptions,
     retry: financeResources.retry,

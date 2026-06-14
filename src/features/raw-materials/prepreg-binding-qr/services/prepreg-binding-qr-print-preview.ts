@@ -33,7 +33,9 @@ function buildCardsHtml(items: PrintablePrepregBindingQrItem[]) {
     .join('')
 }
 
-export function openPrepregBindingQrPrintPreview(items: PrintablePrepregBindingQrItem[]) {
+export function openPrepregBindingQrPrintPreview(
+  items: PrintablePrepregBindingQrItem[]
+) {
   if (!items.length) return
   const printWindow = window.open('', '_blank', 'width=1280,height=900')
   if (!printWindow) {

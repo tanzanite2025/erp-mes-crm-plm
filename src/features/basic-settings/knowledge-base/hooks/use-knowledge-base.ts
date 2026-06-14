@@ -10,11 +10,19 @@ import { knowledgeBaseService } from '../services/knowledge-base-service'
 import type { KnowledgeBaseDraft } from '../types'
 
 export function useKnowledgeBase() {
-  const [entries, setEntries] = useState<KnowledgeBaseEntry[]>(DEFAULT_KNOWLEDGE_BASE_ENTRIES)
+  const [entries, setEntries] = useState<KnowledgeBaseEntry[]>(
+    DEFAULT_KNOWLEDGE_BASE_ENTRIES
+  )
   const [searchTerm, setSearchTerm] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState<KnowledgeBaseCategory | 'all'>('all')
-  const [editingEntry, setEditingEntry] = useState<KnowledgeBaseEntry | null>(null)
-  const [draft, setDraft] = useState<KnowledgeBaseDraft>(EMPTY_KNOWLEDGE_BASE_ENTRY)
+  const [categoryFilter, setCategoryFilter] = useState<
+    KnowledgeBaseCategory | 'all'
+  >('all')
+  const [editingEntry, setEditingEntry] = useState<KnowledgeBaseEntry | null>(
+    null
+  )
+  const [draft, setDraft] = useState<KnowledgeBaseDraft>(
+    EMPTY_KNOWLEDGE_BASE_ENTRY
+  )
   const [isEditorOpen, setIsEditorOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -46,7 +54,10 @@ export function useKnowledgeBase() {
   const filteredEntries = useMemo(
     () =>
       entries
-        .filter((entry) => categoryFilter === 'all' || entry.category === categoryFilter)
+        .filter(
+          (entry) =>
+            categoryFilter === 'all' || entry.category === categoryFilter
+        )
         .filter((entry) => matchesKnowledgeBaseEntry(entry, searchTerm))
         .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)),
     [categoryFilter, entries, searchTerm]
@@ -89,7 +100,11 @@ export function useKnowledgeBase() {
       version: draft.version,
     }
 
-    if (!normalizedDraft.title || !normalizedDraft.summary || !normalizedDraft.content) {
+    if (
+      !normalizedDraft.title ||
+      !normalizedDraft.summary ||
+      !normalizedDraft.content
+    ) {
       return false
     }
 
@@ -97,7 +112,10 @@ export function useKnowledgeBase() {
     setErrorMessage(null)
     try {
       const savedEntry = editingEntry
-        ? await knowledgeBaseService.updateEntry(editingEntry.id, normalizedDraft)
+        ? await knowledgeBaseService.updateEntry(
+            editingEntry.id,
+            normalizedDraft
+          )
         : await knowledgeBaseService.createEntry(normalizedDraft)
       setEntries((currentEntries) =>
         editingEntry
@@ -119,7 +137,9 @@ export function useKnowledgeBase() {
 
   const deleteEntry = async (entryId: string) => {
     const previousEntries = entries
-    setEntries((currentEntries) => currentEntries.filter((entry) => entry.id !== entryId))
+    setEntries((currentEntries) =>
+      currentEntries.filter((entry) => entry.id !== entryId)
+    )
     setErrorMessage(null)
     await knowledgeBaseService.deleteEntry(entryId).catch((error) => {
       setEntries(previousEntries)

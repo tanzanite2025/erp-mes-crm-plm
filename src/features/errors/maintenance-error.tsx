@@ -1,10 +1,10 @@
-import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
+import { Button } from '@/components/ui/button'
 
 export function MaintenanceError() {
   const { t } = useLanguage()
   return (
-    <div className='flex-1 h-full'>
+    <div className='h-full flex-1'>
       <div className='m-auto flex h-full w-full flex-col items-center justify-center gap-2 py-12'>
         <h1 className='text-[7rem] leading-tight font-bold'>503</h1>
         <span className='font-medium'>{t('errors.maintenance.subtitle')}</span>

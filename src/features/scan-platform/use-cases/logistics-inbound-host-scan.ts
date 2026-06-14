@@ -21,8 +21,14 @@ export async function runLogisticsInboundHostScan(
     context: hostContext,
   })
 
-  const nextForm = purchaseLogisticsDialogAdapter.applyScanPayload(session.form, resolved.payload)
-  const submitDraft = purchaseLogisticsDialogAdapter.toSubmissionDraft(nextForm, resolved.payload)
+  const nextForm = purchaseLogisticsDialogAdapter.applyScanPayload(
+    session.form,
+    resolved.payload
+  )
+  const submitDraft = purchaseLogisticsDialogAdapter.toSubmissionDraft(
+    nextForm,
+    resolved.payload
+  )
 
   return {
     nextForm,

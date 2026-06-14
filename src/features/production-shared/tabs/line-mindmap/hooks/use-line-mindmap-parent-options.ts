@@ -9,7 +9,7 @@ interface UseLineMindmapParentOptionsOptions {
 
 function collectNodesByPredicate(
   nodes: LineMindmapNode[],
-  predicate: (node: LineMindmapNode) => boolean,
+  predicate: (node: LineMindmapNode) => boolean
 ): LineMindmapNode[] {
   return nodes.flatMap((node) => [
     ...(predicate(node) ? [node] : []),
@@ -30,22 +30,31 @@ export function useLineMindmapParentOptions({
   selectedNode,
 }: UseLineMindmapParentOptionsOptions) {
   const rootParentNodeOptions = useMemo(
-    () => collectNodesByPredicate(nodes, (node) => node.level === 1).map(toParentNodeOption),
-    [nodes],
+    () =>
+      collectNodesByPredicate(nodes, (node) => node.level === 1).map(
+        toParentNodeOption
+      ),
+    [nodes]
   )
 
   const jobCategoryParentNodeOptions = useMemo(
-    () => collectNodesByPredicate(nodes, (node) => node.level === 2 && node.sourceType === 'jobCategory').map(toParentNodeOption),
-    [nodes],
+    () =>
+      collectNodesByPredicate(
+        nodes,
+        (node) => node.level === 2 && node.sourceType === 'jobCategory'
+      ).map(toParentNodeOption),
+    [nodes]
   )
 
-  const defaultLevel2ParentId = selectedNode?.sourceType === 'segment'
-    ? selectedNode.id
-    : rootParentNodeOptions[0]?.id
+  const defaultLevel2ParentId =
+    selectedNode?.sourceType === 'segment'
+      ? selectedNode.id
+      : rootParentNodeOptions[0]?.id
 
-  const defaultLevel3ParentId = selectedNode?.sourceType === 'jobCategory'
-    ? selectedNode.id
-    : jobCategoryParentNodeOptions[0]?.id
+  const defaultLevel3ParentId =
+    selectedNode?.sourceType === 'jobCategory'
+      ? selectedNode.id
+      : jobCategoryParentNodeOptions[0]?.id
 
   return {
     defaultLevel2ParentId,

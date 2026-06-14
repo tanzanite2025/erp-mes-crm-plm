@@ -1,14 +1,15 @@
 import type { CuttingPlan } from '@/features/engineering-db/data/cutting-plan-schema'
 import { type CutSizeUnit } from '../../cut-size-library/data/cut-size-library-schema'
-import {
-  resolveCutSizeGeometryProjection,
-} from '../../cut-size-library/domain/cut-size-geometry'
+import { resolveCutSizeGeometryProjection } from '../../cut-size-library/domain/cut-size-geometry'
 import {
   type BatchEngineInvalidDemandLine,
   type BatchEngineResolvedDemandLine,
   type BuildBatchEngineDemandLinesResult,
 } from './batch-engine-demand-line-types'
-import { mapBatchEngineDemandLine, getBatchEngineDemandLineLabel } from './map-batch-engine-demand-line'
+import {
+  mapBatchEngineDemandLine,
+  getBatchEngineDemandLineLabel,
+} from './map-batch-engine-demand-line'
 import { resolveBatchEngineDemandLineRules } from './resolve-batch-engine-demand-line-rules'
 import { validateBatchEngineDemandLine } from './validate-batch-engine-demand-line'
 
@@ -55,7 +56,8 @@ export function buildBatchEngineDemandLinesFromCuttingPlan(
       return
     }
 
-    const { geometry: cutSizeGeometry, display: cutSizeDisplay } = resolveCutSizeGeometryProjection(cutSizeUnit)
+    const { geometry: cutSizeGeometry, display: cutSizeDisplay } =
+      resolveCutSizeGeometryProjection(cutSizeUnit)
     const invalidLine = validateBatchEngineDemandLine(
       line,
       demandLineId,

@@ -13,7 +13,8 @@ export const finance = {
   settlements: {
     page: {
       title: 'Receivables & Payables',
-      description: 'Unified management of sales receivables and purchase payables',
+      description:
+        'Unified management of sales receivables and purchase payables',
     },
     tabs: {
       receivables: 'Receivables',
@@ -71,18 +72,21 @@ export const finance = {
     },
     syncConfig: {
       title: 'Exchange Rate Sync Config',
-      description: 'Maintain the provider, endpoint, path template, and enable flag for the third-party exchange rate API directly on this page.',
+      description:
+        'Maintain the provider, endpoint, path template, and enable flag for the third-party exchange rate API directly on this page.',
       enabled: 'Sync Enabled',
       providerLabel: 'Provider Key',
       providerPlaceholder: 'e.g. exchangerate-api',
       apiBaseUrlLabel: 'API Base URL',
       apiBaseUrlPlaceholder: 'e.g. https://v6.exchangerate-api.com/v6',
       apiKeyLabel: 'API Key',
-      apiKeyPlaceholder: 'Enter the active API key for the current exchange service',
+      apiKeyPlaceholder:
+        'Enter the active API key for the current exchange service',
       latestPathTemplateLabel: 'Latest Rate Path Template',
       latestPathTemplatePlaceholder: 'e.g. /{apiKey}/latest/{baseCode}',
       hintTitle: 'Template Placeholders',
-      hintContent: 'The path template supports {apiKey} and {baseCode}. After saving, the Sync Rates action on this page will use this configuration directly.',
+      hintContent:
+        'The path template supports {apiKey} and {baseCode}. After saving, the Sync Rates action on this page will use this configuration directly.',
       fallbackLabel: 'Fallback Enabled',
       addFallbackProvider: 'Add Fallback API',
       providerTagPrimary: 'Primary API',
@@ -91,7 +95,8 @@ export const finance = {
       providerEnabledLabel: 'Provider Enabled',
       providerPriority: 'Priority #{{priority}}',
       removeProvider: 'Remove',
-      fallbackHint: 'Enabled APIs execute in priority order. When fallback is enabled, the system switches to the next enabled API only for fallback-eligible failures.',
+      fallbackHint:
+        'Enabled APIs execute in priority order. When fallback is enabled, the system switches to the next enabled API only for fallback-eligible failures.',
       save: 'Save Sync Config',
       saving: 'Saving...',
       toast: {
@@ -164,7 +169,8 @@ export const finance = {
         VAT0: 'Zero-Rated VAT (0%) - Export Trade',
       },
       descriptions: {
-        VAT13: 'Standard output tax rate for finished goods sales and most industrial manufacturing segments.',
+        VAT13:
+          'Standard output tax rate for finished goods sales and most industrial manufacturing segments.',
         VAT9: 'Reduced tax rate for transportation, construction, basic telecom, and agricultural products.',
         VAT6: 'Applicable to R&D, technical services, information technology services, and financial services.',
         VAT0: 'Tax exemption policy applicable to export segments and specified cross-border trade.',
@@ -198,12 +204,16 @@ export const finance = {
       nameLabel: 'Name / Plan Name',
       namePlaceholder: 'e.g. Net 30 Days',
       descriptionLabel: 'Description / Details',
-      descriptionPlaceholder: 'Enter contract details, including payment milestones, discount ratios, and breach notes...',
+      descriptionPlaceholder:
+        'Enter contract details, including payment milestones, discount ratios, and breach notes...',
       sortOrderLabel: 'Sort Order',
       statusLabel: 'Status',
-      defaultHint: 'Use this as the preferred settlement term in order dialogs.',
-      codeLockedHint: 'Codes are locked after creation to keep historical documents searchable and stable.',
-      systemHint: 'This is a system preset. Keep the code stable and disable it instead of deleting it.',
+      defaultHint:
+        'Use this as the preferred settlement term in order dialogs.',
+      codeLockedHint:
+        'Codes are locked after creation to keep historical documents searchable and stable.',
+      systemHint:
+        'This is a system preset. Keep the code stable and disable it instead of deleting it.',
       save: 'Save Settlement Plan',
     },
     card: {
@@ -222,10 +232,14 @@ export const finance = {
       },
       descriptions: {
         COD: 'Full payment mandatory within 3 business days of material receipt and validation.',
-        PREPAY: 'Full payment required immediately upon order confirmation and commercial seal.',
-        INST_30_60_10: '30% Prepayment / 60% Delivery Milestone / 10% Quality Retainage (365 days).',
-        NET30: 'Full settlement required within 30 calendar days of statement verification and reconciliation.',
-        NET60: 'Full settlement required within 60 calendar days of statement verification and reconciliation.',
+        PREPAY:
+          'Full payment required immediately upon order confirmation and commercial seal.',
+        INST_30_60_10:
+          '30% Prepayment / 60% Delivery Milestone / 10% Quality Retainage (365 days).',
+        NET30:
+          'Full settlement required within 30 calendar days of statement verification and reconciliation.',
+        NET60:
+          'Full settlement required within 60 calendar days of statement verification and reconciliation.',
       },
     },
     status: {
@@ -251,7 +265,8 @@ export const finance = {
   paymentMethods: {
     page: {
       title: 'Payment Method Dictionary',
-      subtitle: 'Manage the payment channels used across purchase and sales orders',
+      subtitle:
+        'Manage the payment channels used across purchase and sales orders',
       refresh: 'Refresh Config',
       add: 'New Method',
     },
@@ -263,12 +278,15 @@ export const finance = {
       nameLabel: 'Name / Method Name',
       namePlaceholder: 'e.g. Bank Transfer',
       descriptionLabel: 'Description / Details',
-      descriptionPlaceholder: 'Describe how this payment method should be used in business scenarios...',
+      descriptionPlaceholder:
+        'Describe how this payment method should be used in business scenarios...',
       sortOrderLabel: 'Sort Order',
       statusLabel: 'Status',
       defaultHint: 'Use this as the preferred payment method in order dialogs.',
-      codeLockedHint: 'Codes are locked after creation to keep historical documents searchable and stable.',
-      systemHint: 'This is a system preset. Keep the code stable and disable it instead of deleting it.',
+      codeLockedHint:
+        'Codes are locked after creation to keep historical documents searchable and stable.',
+      systemHint:
+        'This is a system preset. Keep the code stable and disable it instead of deleting it.',
       save: 'Save Payment Method',
     },
     card: {

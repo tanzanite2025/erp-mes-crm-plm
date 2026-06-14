@@ -28,15 +28,19 @@ function buildUrl(input: string, params?: ApiFetchOptions['params']): string {
   return url.toString()
 }
 
-export async function apiFetch<T>(input: string, options: ApiFetchOptions = {}): Promise<T> {
+export async function apiFetch<T>(
+  input: string,
+  options: ApiFetchOptions = {}
+): Promise<T> {
   const { params, headers, ...init } = options
   const accessToken = useAuthStore.getState().accessToken
   const requestHeaders: Record<string, string> = {
-    ...(headers as Record<string, string> | undefined ?? {}),
+    ...((headers as Record<string, string> | undefined) ?? {}),
   }
 
   if (!(init.body instanceof FormData)) {
-    requestHeaders['Content-Type'] = requestHeaders['Content-Type'] ?? 'application/json'
+    requestHeaders['Content-Type'] =
+      requestHeaders['Content-Type'] ?? 'application/json'
   }
 
   if (accessToken && !requestHeaders.Authorization) {
@@ -50,7 +54,10 @@ export async function apiFetch<T>(input: string, options: ApiFetchOptions = {}):
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}))
-    const errorMessage = errorData.error || errorData.message || `Request failed: ${response.status} ${response.statusText}`
+    const errorMessage =
+      errorData.error ||
+      errorData.message ||
+      `Request failed: ${response.status} ${response.statusText}`
     throw new Error(errorMessage)
   }
 

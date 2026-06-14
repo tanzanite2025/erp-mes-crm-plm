@@ -17,7 +17,10 @@ export function isValidProductAttributeMachineValue(value: string): boolean {
   return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value)
 }
 
-export function areSameProductAttributeCategoryKey(left: string, right: string): boolean {
+export function areSameProductAttributeCategoryKey(
+  left: string,
+  right: string
+): boolean {
   const normalizedLeft = normalizeProductAttributeMachineValue(left)
   const normalizedRight = normalizeProductAttributeMachineValue(right)
   if (!normalizedLeft || !normalizedRight) {
@@ -99,11 +102,15 @@ export function resolveProductAttributeCategoryKey<T extends { key: string }>(
   }
 
   const normalizedKey = normalizeProductAttributeMachineValue(trimmedKey)
-  const compatibleMatch = categories.find((item) => normalizeProductAttributeMachineValue(item.key) === normalizedKey)
+  const compatibleMatch = categories.find(
+    (item) => normalizeProductAttributeMachineValue(item.key) === normalizedKey
+  )
   return compatibleMatch?.key ?? trimmedKey
 }
 
-export function getProductAttributeMachineValueFormatHint(locale: string): string {
+export function getProductAttributeMachineValueFormatHint(
+  locale: string
+): string {
   if (locale === 'zh-CN') {
     return '机器值仅允许小写字母、数字与连字符，例如 matte-black'
   }

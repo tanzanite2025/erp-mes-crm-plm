@@ -8,6 +8,8 @@ function PermissionTreeSmokePage() {
   )
 }
 
-export const Route = createFileRoute('/_authenticated/basic-settings/permission-tree-smoke')({
+export const Route = createFileRoute(
+  '/_authenticated/basic-settings/permission-tree-smoke'
+)({
   component: PermissionTreeSmokePage,
 })

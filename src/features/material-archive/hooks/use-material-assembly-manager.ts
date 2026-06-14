@@ -1,12 +1,11 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { useLanguage } from '@/context/language-provider'
 import { isConflictError } from '@/lib/handle-server-error'
 import { failLoudly } from '@/lib/safe-catch'
+import { useLanguage } from '@/context/language-provider'
 import { type SavePackagingRuleInput } from '../adapters/packaging-api-adapter'
 import { type MaterialOption, type PackagingRule } from '../data/schema'
-import { useMaterialAssemblyData } from './use-material-assembly-data'
 import { PACKAGING_RULES_QUERY_KEY } from '../query-keys'
 import { packagingService } from '../services/packaging-service'
 import {
@@ -20,6 +19,7 @@ import {
   togglePackagingRuleDirection,
   updatePackagingRuleDraftField,
 } from '../utils/packaging-rule-draft'
+import { useMaterialAssemblyData } from './use-material-assembly-data'
 
 export interface MaterialAssemblyRow {
   id: string
@@ -40,7 +40,9 @@ function requireMaterialOption(
 ) {
   const material = materialMap.get(materialId)
   if (!material) {
-    const error = new Error(`[CRITICAL] Missing material ${materialId} in ${scope}`)
+    const error = new Error(
+      `[CRITICAL] Missing material ${materialId} in ${scope}`
+    )
     failLoudly(error, `useMaterialAssemblyManager.${scope}`)
     throw error
   }
@@ -72,14 +74,18 @@ export function useMaterialAssemblyManager() {
   const [searchTerm, setSearchTerm] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isComboboxOpen, setIsComboboxOpen] = useState(false)
-  const [editingRule, setEditingRule] = useState<PackagingRuleDraft | null>(null)
+  const [editingRule, setEditingRule] = useState<PackagingRuleDraft | null>(
+    null
+  )
   const assemblyData = useMaterialAssemblyData()
 
   const saveRuleMutation = useMutation({
-    mutationFn: (rule: SavePackagingRuleInput) => packagingService.saveRule(rule),
+    mutationFn: (rule: SavePackagingRuleInput) =>
+      packagingService.saveRule(rule),
     onSuccess: (savedRule) => {
-      queryClient.setQueryData<PackagingRule[]>(PACKAGING_RULES_QUERY_KEY, (current) =>
-        mergePackagingRulesCache(current, savedRule)
+      queryClient.setQueryData<PackagingRule[]>(
+        PACKAGING_RULES_QUERY_KEY,
+        (current) => mergePackagingRulesCache(current, savedRule)
       )
     },
   })
@@ -87,8 +93,9 @@ export function useMaterialAssemblyManager() {
   const deleteRuleMutation = useMutation({
     mutationFn: (id: string) => packagingService.deleteRule(id),
     onSuccess: (_result, deletedId) => {
-      queryClient.setQueryData<PackagingRule[]>(PACKAGING_RULES_QUERY_KEY, (current) =>
-        removePackagingRuleFromCache(current, deletedId)
+      queryClient.setQueryData<PackagingRule[]>(
+        PACKAGING_RULES_QUERY_KEY,
+        (current) => removePackagingRuleFromCache(current, deletedId)
       )
     },
   })
@@ -108,7 +115,11 @@ export function useMaterialAssemblyManager() {
 
   const rows = useMemo<MaterialAssemblyRow[]>(() => {
     return rules.map((rule) => {
-      const material = requireMaterialOption(materialMap, rule.materialId, 'buildRow')
+      const material = requireMaterialOption(
+        materialMap,
+        rule.materialId,
+        'buildRow'
+      )
 
       return {
         id: rule.id,
@@ -143,7 +154,11 @@ export function useMaterialAssemblyManager() {
 
   const selectedMaterial = useMemo(() => {
     if (!editingRule?.materialId || isLoading) return null
-    return requireMaterialOption(materialMap, editingRule.materialId, 'selectedMaterial')
+    return requireMaterialOption(
+      materialMap,
+      editingRule.materialId,
+      'selectedMaterial'
+    )
   }, [editingRule, isLoading, materialMap])
 
   const handleDialogOpenChange = useCallback((open: boolean) => {
@@ -160,27 +175,41 @@ export function useMaterialAssemblyManager() {
     setIsComboboxOpen(false)
   }, [])
 
-  const handleOpenEdit = useCallback((rule: PackagingRule, baseUnit: string) => {
-    setEditingRule(toPackagingRuleDraft(rule, baseUnit))
-    setIsDialogOpen(true)
-    setIsComboboxOpen(false)
-  }, [])
+  const handleOpenEdit = useCallback(
+    (rule: PackagingRule, baseUnit: string) => {
+      setEditingRule(toPackagingRuleDraft(rule, baseUnit))
+      setIsDialogOpen(true)
+      setIsComboboxOpen(false)
+    },
+    []
+  )
 
   const handleSelectMaterial = useCallback((material: MaterialOption) => {
-    setEditingRule((current) => applySelectedMaterialToPackagingRuleDraft(current, material))
+    setEditingRule((current) =>
+      applySelectedMaterialToPackagingRuleDraft(current, material)
+    )
     setIsComboboxOpen(false)
   }, [])
 
-  const handleDraftFieldChange = useCallback(<K extends keyof SavePackagingRuleInput>(
-    field: K,
-    value: SavePackagingRuleInput[K]
-  ) => {
-    setEditingRule((current) => updatePackagingRuleDraftField(current, field, value))
-  }, [])
+  const handleDraftFieldChange = useCallback(
+    <K extends keyof SavePackagingRuleInput>(
+      field: K,
+      value: SavePackagingRuleInput[K]
+    ) => {
+      setEditingRule((current) =>
+        updatePackagingRuleDraftField(current, field, value)
+      )
+    },
+    []
+  )
 
   const handleFactorChange = useCallback((rawValue: string) => {
     setEditingRule((current) =>
-      updatePackagingRuleDraftField(current, 'conversionFactor', parsePackagingRuleFactor(rawValue))
+      updatePackagingRuleDraftField(
+        current,
+        'conversionFactor',
+        parsePackagingRuleFactor(rawValue)
+      )
     )
   }, [])
 
@@ -207,7 +236,9 @@ export function useMaterialAssemblyManager() {
         'code' in error &&
         error.code === 'PACKAGING_RULE_DUPLICATE_MATERIAL'
       ) {
-        toast.error(t('materialArchive.assemblyManager.toasts.duplicateMaterial'))
+        toast.error(
+          t('materialArchive.assemblyManager.toasts.duplicateMaterial')
+        )
         return
       }
 
@@ -220,16 +251,24 @@ export function useMaterialAssemblyManager() {
     }
   }, [editingRule, handleDialogOpenChange, saveRule, t])
 
-  const handleDelete = useCallback(async (id: string) => {
-    if (!window.confirm(t('materialArchive.assemblyManager.toasts.deleteConfirm'))) return
+  const handleDelete = useCallback(
+    async (id: string) => {
+      if (
+        !window.confirm(
+          t('materialArchive.assemblyManager.toasts.deleteConfirm')
+        )
+      )
+        return
 
-    try {
-      await deleteRule(id)
-      toast.success(t('materialArchive.assemblyManager.toasts.deleteSuccess'))
-    } catch (error) {
-      failLoudly(error, 'useMaterialAssemblyManager.handleDelete')
-    }
-  }, [deleteRule, t])
+      try {
+        await deleteRule(id)
+        toast.success(t('materialArchive.assemblyManager.toasts.deleteSuccess'))
+      } catch (error) {
+        failLoudly(error, 'useMaterialAssemblyManager.handleDelete')
+      }
+    },
+    [deleteRule, t]
+  )
 
   return {
     searchTerm,

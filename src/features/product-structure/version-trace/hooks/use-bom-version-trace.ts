@@ -42,8 +42,14 @@ function toDayBoundaryTime(value: string, boundary: 'start' | 'end') {
   return Number.isFinite(timestamp) ? timestamp : undefined
 }
 
-function filterHistoryByCreatedAt(records: BOMVersionRecordSummary[], createdFrom?: string, createdTo?: string) {
-  const fromTime = createdFrom ? toDayBoundaryTime(createdFrom, 'start') : undefined
+function filterHistoryByCreatedAt(
+  records: BOMVersionRecordSummary[],
+  createdFrom?: string,
+  createdTo?: string
+) {
+  const fromTime = createdFrom
+    ? toDayBoundaryTime(createdFrom, 'start')
+    : undefined
   const toTime = createdTo ? toDayBoundaryTime(createdTo, 'end') : undefined
   if (fromTime === undefined && toTime === undefined) {
     return records
@@ -63,7 +69,9 @@ function filterHistoryByCreatedAt(records: BOMVersionRecordSummary[], createdFro
   })
 }
 
-function groupHistory(records: BOMVersionRecordSummary[]): BOMVersionTraceGroup[] {
+function groupHistory(
+  records: BOMVersionRecordSummary[]
+): BOMVersionTraceGroup[] {
   const grouped = new Map<string, BOMVersionTraceGroup>()
   records.forEach((record) => {
     const bomId = normalizeID(record.bomId) || '__unknown__'
@@ -82,19 +90,40 @@ function groupHistory(records: BOMVersionRecordSummary[]): BOMVersionTraceGroup[
   return Array.from(grouped.values())
     .map((group) => ({
       ...group,
-      records: [...group.records].sort((left, right) => toTimeValue(right.createdAt) - toTimeValue(left.createdAt)),
+      records: [...group.records].sort(
+        (left, right) =>
+          toTimeValue(right.createdAt) - toTimeValue(left.createdAt)
+      ),
     }))
-    .sort((left, right) => toTimeValue(right.records[0]?.createdAt) - toTimeValue(left.records[0]?.createdAt))
+    .sort(
+      (left, right) =>
+        toTimeValue(right.records[0]?.createdAt) -
+        toTimeValue(left.records[0]?.createdAt)
+    )
 }
 
-function resolveNextRightVersion(records: BOMVersionRecordSummary[], leftVersionId: string, currentRightVersionId: string) {
-  if (currentRightVersionId && currentRightVersionId !== leftVersionId && records.some((record) => record.id === currentRightVersionId)) {
+function resolveNextRightVersion(
+  records: BOMVersionRecordSummary[],
+  leftVersionId: string,
+  currentRightVersionId: string
+) {
+  if (
+    currentRightVersionId &&
+    currentRightVersionId !== leftVersionId &&
+    records.some((record) => record.id === currentRightVersionId)
+  ) {
     return currentRightVersionId
   }
   return records.find((record) => record.id !== leftVersionId)?.id || ''
 }
 
-export function useBOMVersionTrace(params: { bomId?: string; productId?: string; createdFrom?: string; createdTo?: string; open: boolean }) {
+export function useBOMVersionTrace(params: {
+  bomId?: string
+  productId?: string
+  createdFrom?: string
+  createdTo?: string
+  open: boolean
+}) {
   const bomId = normalizeID(params.bomId)
   const productId = normalizeID(params.productId)
   const createdFrom = normalizeDateFilter(params.createdFrom)
@@ -105,12 +134,14 @@ export function useBOMVersionTrace(params: { bomId?: string; productId?: string;
 
   const historyQuery = useQuery({
     queryKey: bomVersionTraceQueryKeys.list({ bomId, productId }),
-    queryFn: () => bomVersionTraceService.getVersionHistory({ bomId, productId }),
+    queryFn: () =>
+      bomVersionTraceService.getVersionHistory({ bomId, productId }),
     enabled: params.open,
   })
 
   const filteredHistory = useMemo(
-    () => filterHistoryByCreatedAt(historyQuery.data ?? [], createdFrom, createdTo),
+    () =>
+      filterHistoryByCreatedAt(historyQuery.data ?? [], createdFrom, createdTo),
     [createdFrom, createdTo, historyQuery.data]
   )
 
@@ -120,7 +151,10 @@ export function useBOMVersionTrace(params: { bomId?: string; productId?: string;
     if (bomId) {
       return bomId
     }
-    if (selectedBomIdState && groups.some((group) => group.bomId === selectedBomIdState)) {
+    if (
+      selectedBomIdState &&
+      groups.some((group) => group.bomId === selectedBomIdState)
+    ) {
       return selectedBomIdState
     }
     return groups[0]?.bomId || ''
@@ -134,14 +168,22 @@ export function useBOMVersionTrace(params: { bomId?: string; productId?: string;
   }, [activeBomId, filteredHistory])
 
   const leftVersionId = useMemo(() => {
-    if (leftVersionIdState && activeRecords.some((record) => record.id === leftVersionIdState)) {
+    if (
+      leftVersionIdState &&
+      activeRecords.some((record) => record.id === leftVersionIdState)
+    ) {
       return leftVersionIdState
     }
     return activeRecords[0]?.id || ''
   }, [activeRecords, leftVersionIdState])
 
   const rightVersionId = useMemo(
-    () => resolveNextRightVersion(activeRecords, leftVersionId, rightVersionIdState),
+    () =>
+      resolveNextRightVersion(
+        activeRecords,
+        leftVersionId,
+        rightVersionIdState
+      ),
     [activeRecords, leftVersionId, rightVersionIdState]
   )
 
@@ -154,16 +196,23 @@ export function useBOMVersionTrace(params: { bomId?: string; productId?: string;
   const rightDetailQuery = useQuery({
     queryKey: bomVersionTraceQueryKeys.detail(rightVersionId),
     queryFn: () => bomVersionTraceService.getVersionRecord(rightVersionId),
-    enabled: params.open && rightVersionId.length > 0 && rightVersionId !== leftVersionId,
+    enabled:
+      params.open &&
+      rightVersionId.length > 0 &&
+      rightVersionId !== leftVersionId,
   })
 
   const leftDetail = leftDetailQuery.data
-  const rightDetail: BOMVersionRecordDetail | undefined = rightVersionId === leftVersionId
-    ? leftDetailQuery.data
-    : rightDetailQuery.data
+  const rightDetail: BOMVersionRecordDetail | undefined =
+    rightVersionId === leftVersionId
+      ? leftDetailQuery.data
+      : rightDetailQuery.data
 
   const diffSummary = useMemo(
-    () => (leftDetail && rightDetail && leftDetail.id !== rightDetail.id ? buildBOMVersionDiffSummary(leftDetail, rightDetail) : null),
+    () =>
+      leftDetail && rightDetail && leftDetail.id !== rightDetail.id
+        ? buildBOMVersionDiffSummary(leftDetail, rightDetail)
+        : null,
     [leftDetail, rightDetail]
   )
 
@@ -181,7 +230,8 @@ export function useBOMVersionTrace(params: { bomId?: string; productId?: string;
     diffSummary,
     isLoadingHistory: historyQuery.isLoading,
     isLoadingDetails: leftDetailQuery.isLoading || rightDetailQuery.isLoading,
-    error: historyQuery.error || leftDetailQuery.error || rightDetailQuery.error,
+    error:
+      historyQuery.error || leftDetailQuery.error || rightDetailQuery.error,
     hasAnyRecord: filteredHistory.length > 0,
   }
 }

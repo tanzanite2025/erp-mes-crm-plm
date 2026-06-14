@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
-import { useLanguage } from '@/context/language-provider'
 import type { DeltaSet } from '@/lib/delta/types'
+import { useLanguage } from '@/context/language-provider'
 import type { TeamModuleAdapter, TeamRecord } from '@/features/shared/team'
 import type { Team } from '../data/schema'
 import { useGetTeams, usePieceworkMutations } from './use-piecework'
@@ -8,15 +8,26 @@ import { useGetTeams, usePieceworkMutations } from './use-piecework'
 export function usePieceworkTeamAdapter(): TeamModuleAdapter {
   const { t } = useLanguage()
   const { data: teams = [], isLoading } = useGetTeams()
-  const { saveTeamMutation, patchTeamMutation, deleteTeamMutation } = usePieceworkMutations()
+  const { saveTeamMutation, patchTeamMutation, deleteTeamMutation } =
+    usePieceworkMutations()
 
   const saveTeam = useCallback(
-    ({ data, isPatch, delta, version }: { data: Partial<TeamRecord>; isPatch: boolean; delta?: DeltaSet; version?: number }) => {
+    ({
+      data,
+      isPatch,
+      delta,
+      version,
+    }: {
+      data: Partial<TeamRecord>
+      isPatch: boolean
+      delta?: DeltaSet
+      version?: number
+    }) => {
       if (isPatch && delta && version !== undefined) {
         patchTeamMutation.mutate({
           id: data.id as string,
           delta,
-          version
+          version,
         })
       } else {
         saveTeamMutation.mutate(data as Partial<Team>)
@@ -97,7 +108,9 @@ export function usePieceworkTeamAdapter(): TeamModuleAdapter {
           remarks: t('piecework.teams.dialog.placeholders.remarks'),
         },
         sectionOptions: {
-          productionControl: t('piecework.teams.dialog.sectionOptions.productionControl'),
+          productionControl: t(
+            'piecework.teams.dialog.sectionOptions.productionControl'
+          ),
           materialPrep: t('piecework.teams.dialog.sectionOptions.materialPrep'),
           batching: t('piecework.teams.dialog.sectionOptions.batching'),
           molding: t('piecework.teams.dialog.sectionOptions.molding'),
@@ -110,7 +123,9 @@ export function usePieceworkTeamAdapter(): TeamModuleAdapter {
           transfer: t('piecework.teams.dialog.typeOptions.transfer'),
           receive: t('piecework.teams.dialog.typeOptions.receive'),
         },
-        maintenanceDescription: t('piecework.teams.dialog.maintenanceDescription'),
+        maintenanceDescription: t(
+          'piecework.teams.dialog.maintenanceDescription'
+        ),
         statusDescription: t('piecework.teams.dialog.statusDescription'),
         statusOptions: {
           active: t('piecework.teams.dialog.statusOptions.active'),

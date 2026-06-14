@@ -7,19 +7,25 @@ import {
   type SalesOrderApiDTO,
 } from '../contracts/sales-order-api-dto'
 
-export const SALES_TRANSACTION_INTENT_CLASSIFICATION_TYPE_CHANGE = 'ORDER_CLASSIFICATION_TYPE_CHANGE'
+export const SALES_TRANSACTION_INTENT_CLASSIFICATION_TYPE_CHANGE =
+  'ORDER_CLASSIFICATION_TYPE_CHANGE'
 export const SALES_TRANSACTION_INTENT_CUSTOMER_CHANGE = 'ORDER_CUSTOMER_CHANGE'
-export const SALES_TRANSACTION_INTENT_DELIVERY_DATE_CHANGE = 'ORDER_DELIVERY_DATE_CHANGE'
+export const SALES_TRANSACTION_INTENT_DELIVERY_DATE_CHANGE =
+  'ORDER_DELIVERY_DATE_CHANGE'
 export const SALES_TRANSACTION_INTENT_NAME_CHANGE = 'ORDER_NAME_CHANGE'
-export const SALES_TRANSACTION_INTENT_PURCHASE_ORDER_NO_CHANGE = 'ORDER_PURCHASE_ORDER_NO_CHANGE'
-export const SALES_TRANSACTION_INTENT_REQUIREMENTS_CHANGE = 'ORDER_REQUIREMENTS_CHANGE'
+export const SALES_TRANSACTION_INTENT_PURCHASE_ORDER_NO_CHANGE =
+  'ORDER_PURCHASE_ORDER_NO_CHANGE'
+export const SALES_TRANSACTION_INTENT_REQUIREMENTS_CHANGE =
+  'ORDER_REQUIREMENTS_CHANGE'
 export const SALES_TRANSACTION_INTENT_ORDER_LINE_ADD = 'ORDER_LINE_ADD'
 export const SALES_TRANSACTION_INTENT_ORDER_LINE_REMOVE = 'ORDER_LINE_REMOVE'
-export const SALES_TRANSACTION_INTENT_ORDER_LINE_CONTENT_CHANGE = 'ORDER_LINE_CONTENT_CHANGE'
+export const SALES_TRANSACTION_INTENT_ORDER_LINE_CONTENT_CHANGE =
+  'ORDER_LINE_CONTENT_CHANGE'
 export const SALES_TRANSACTION_INTENT_ORDER_LINES_CHANGE = 'ORDER_LINES_CHANGE'
 export const SALES_TRANSACTION_INTENT_ORDER_LINE_CLAIM = 'ORDER_LINE_CLAIM'
 export const SALES_TRANSACTION_INTENT_ORDER_CANCEL = 'ORDER_CANCEL'
-export const SALES_TRANSACTION_INTENT_STATUS_TRANSITION = 'ORDER_STATUS_TRANSITION'
+export const SALES_TRANSACTION_INTENT_STATUS_TRANSITION =
+  'ORDER_STATUS_TRANSITION'
 
 export interface SalesOrderTransactionRequest<TPayload> {
   intent: string
@@ -105,10 +111,9 @@ export const executeSalesOrderTransaction = async <TPayload>(
     method: 'POST',
     body: JSON.stringify(request),
   })
-  const response = ensureObjectResponse<SalesOrderApiDTO & Record<string, unknown>>(
-    res,
-    'SalesTransactionService.executeSalesOrderTransaction'
-  )
+  const response = ensureObjectResponse<
+    SalesOrderApiDTO & Record<string, unknown>
+  >(res, 'SalesTransactionService.executeSalesOrderTransaction')
   return toSalesOrderContract(deserializeSalesOrderApiDTO(response))
 }
 
@@ -142,16 +147,19 @@ export const changeSalesOrderCustomer = async (
     expectedVersion: number
   }
 ): Promise<SalesOrder> => {
-  return executeSalesOrderTransaction<SalesOrderCustomerChangePayload>(orderId, {
-    intent: SALES_TRANSACTION_INTENT_CUSTOMER_CHANGE,
-    actorId: params.actorId,
-    expectedVersion: params.expectedVersion,
-    payload: {
-      customerId: params.customerId,
-      customerName: params.customerName,
-      operator: params.operator,
-    },
-  })
+  return executeSalesOrderTransaction<SalesOrderCustomerChangePayload>(
+    orderId,
+    {
+      intent: SALES_TRANSACTION_INTENT_CUSTOMER_CHANGE,
+      actorId: params.actorId,
+      expectedVersion: params.expectedVersion,
+      payload: {
+        customerId: params.customerId,
+        customerName: params.customerName,
+        operator: params.operator,
+      },
+    }
+  )
 }
 
 export const changeSalesOrderClassificationType = async (
@@ -165,17 +173,20 @@ export const changeSalesOrderClassificationType = async (
     expectedVersion: number
   }
 ): Promise<SalesOrder> => {
-  return executeSalesOrderTransaction<SalesOrderClassificationTypeChangePayload>(orderId, {
-    intent: SALES_TRANSACTION_INTENT_CLASSIFICATION_TYPE_CHANGE,
-    actorId: params.actorId,
-    expectedVersion: params.expectedVersion,
-    payload: {
-      classification: params.classification,
-      type: params.type,
-      barcode: params.barcode,
-      operator: params.operator,
-    },
-  })
+  return executeSalesOrderTransaction<SalesOrderClassificationTypeChangePayload>(
+    orderId,
+    {
+      intent: SALES_TRANSACTION_INTENT_CLASSIFICATION_TYPE_CHANGE,
+      actorId: params.actorId,
+      expectedVersion: params.expectedVersion,
+      payload: {
+        classification: params.classification,
+        type: params.type,
+        barcode: params.barcode,
+        operator: params.operator,
+      },
+    }
+  )
 }
 
 export const changeSalesOrderDeliveryDate = async (
@@ -187,15 +198,18 @@ export const changeSalesOrderDeliveryDate = async (
     expectedVersion: number
   }
 ): Promise<SalesOrder> => {
-  return executeSalesOrderTransaction<SalesOrderDeliveryDateChangePayload>(orderId, {
-    intent: SALES_TRANSACTION_INTENT_DELIVERY_DATE_CHANGE,
-    actorId: params.actorId,
-    expectedVersion: params.expectedVersion,
-    payload: {
-      deliveryDate: params.deliveryDate,
-      operator: params.operator,
-    },
-  })
+  return executeSalesOrderTransaction<SalesOrderDeliveryDateChangePayload>(
+    orderId,
+    {
+      intent: SALES_TRANSACTION_INTENT_DELIVERY_DATE_CHANGE,
+      actorId: params.actorId,
+      expectedVersion: params.expectedVersion,
+      payload: {
+        deliveryDate: params.deliveryDate,
+        operator: params.operator,
+      },
+    }
+  )
 }
 
 export const changeSalesOrderName = async (
@@ -227,15 +241,18 @@ export const changeSalesOrderPurchaseOrderNo = async (
     expectedVersion: number
   }
 ): Promise<SalesOrder> => {
-  return executeSalesOrderTransaction<SalesOrderPurchaseOrderNoChangePayload>(orderId, {
-    intent: SALES_TRANSACTION_INTENT_PURCHASE_ORDER_NO_CHANGE,
-    actorId: params.actorId,
-    expectedVersion: params.expectedVersion,
-    payload: {
-      purchaseOrderNo: params.purchaseOrderNo,
-      operator: params.operator,
-    },
-  })
+  return executeSalesOrderTransaction<SalesOrderPurchaseOrderNoChangePayload>(
+    orderId,
+    {
+      intent: SALES_TRANSACTION_INTENT_PURCHASE_ORDER_NO_CHANGE,
+      actorId: params.actorId,
+      expectedVersion: params.expectedVersion,
+      payload: {
+        purchaseOrderNo: params.purchaseOrderNo,
+        operator: params.operator,
+      },
+    }
+  )
 }
 
 export const changeSalesOrderRequirements = async (
@@ -247,15 +264,18 @@ export const changeSalesOrderRequirements = async (
     expectedVersion: number
   }
 ): Promise<SalesOrder> => {
-  return executeSalesOrderTransaction<SalesOrderRequirementsChangePayload>(orderId, {
-    intent: SALES_TRANSACTION_INTENT_REQUIREMENTS_CHANGE,
-    actorId: params.actorId,
-    expectedVersion: params.expectedVersion,
-    payload: {
-      requirements: params.requirements,
-      operator: params.operator,
-    },
-  })
+  return executeSalesOrderTransaction<SalesOrderRequirementsChangePayload>(
+    orderId,
+    {
+      intent: SALES_TRANSACTION_INTENT_REQUIREMENTS_CHANGE,
+      actorId: params.actorId,
+      expectedVersion: params.expectedVersion,
+      payload: {
+        requirements: params.requirements,
+        operator: params.operator,
+      },
+    }
+  )
 }
 
 export const changeSalesOrderLines = async (
@@ -287,15 +307,18 @@ export const changeSalesOrderLineContent = async (
     expectedVersion: number
   }
 ): Promise<SalesOrder> => {
-  return executeSalesOrderTransaction<SalesOrderLineContentChangePayload>(orderId, {
-    intent: SALES_TRANSACTION_INTENT_ORDER_LINE_CONTENT_CHANGE,
-    actorId: params.actorId,
-    expectedVersion: params.expectedVersion,
-    payload: {
-      lines: params.lines,
-      operator: params.operator,
-    },
-  })
+  return executeSalesOrderTransaction<SalesOrderLineContentChangePayload>(
+    orderId,
+    {
+      intent: SALES_TRANSACTION_INTENT_ORDER_LINE_CONTENT_CHANGE,
+      actorId: params.actorId,
+      expectedVersion: params.expectedVersion,
+      payload: {
+        lines: params.lines,
+        operator: params.operator,
+      },
+    }
+  )
 }
 
 export const addSalesOrderLine = async (
@@ -368,14 +391,17 @@ export const transitionSalesOrderStatus = async (
     expectedVersion: number
   }
 ): Promise<SalesOrder> => {
-  return executeSalesOrderTransaction<SalesOrderStatusTransitionPayload>(orderId, {
-    intent: SALES_TRANSACTION_INTENT_STATUS_TRANSITION,
-    actorId: params.actorId,
-    expectedVersion: params.expectedVersion,
-    payload: {
-      status: params.status,
-      statusNote: params.statusNote,
-      operator: params.operator,
-    },
-  })
+  return executeSalesOrderTransaction<SalesOrderStatusTransitionPayload>(
+    orderId,
+    {
+      intent: SALES_TRANSACTION_INTENT_STATUS_TRANSITION,
+      actorId: params.actorId,
+      expectedVersion: params.expectedVersion,
+      payload: {
+        status: params.status,
+        statusNote: params.statusNote,
+        operator: params.operator,
+      },
+    }
+  )
 }

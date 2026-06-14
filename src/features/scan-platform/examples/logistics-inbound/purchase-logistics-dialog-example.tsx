@@ -21,7 +21,8 @@ export function PurchaseLogisticsDialogScanExample({
   initialForm = DEFAULT_FORM,
   adapterOptions,
 }: PurchaseLogisticsDialogScanExampleProps) {
-  const [form, setForm] = useState<PurchaseLogisticsDialogFormValue>(initialForm)
+  const [form, setForm] =
+    useState<PurchaseLogisticsDialogFormValue>(initialForm)
   const [rawCode, setRawCode] = useState('')
   const [summary, setSummary] = useState('')
   const [warnings, setWarnings] = useState<string[]>([])
@@ -41,7 +42,10 @@ export function PurchaseLogisticsDialogScanExample({
   return (
     <section>
       <h3>Purchase Logistics Dialog Integration Example</h3>
-      <p>Use this as a reference when wiring scan-platform into the existing purchase logistics dialog.</p>
+      <p>
+        Use this as a reference when wiring scan-platform into the existing
+        purchase logistics dialog.
+      </p>
 
       <div>
         <label>
@@ -49,7 +53,10 @@ export function PurchaseLogisticsDialogScanExample({
           <input
             value={form.purchaseOrderId}
             onChange={(event) =>
-              setForm((current) => ({ ...current, purchaseOrderId: event.target.value }))
+              setForm((current) => ({
+                ...current,
+                purchaseOrderId: event.target.value,
+              }))
             }
           />
         </label>
@@ -60,7 +67,12 @@ export function PurchaseLogisticsDialogScanExample({
           Order No
           <input
             value={form.orderNo}
-            onChange={(event) => setForm((current) => ({ ...current, orderNo: event.target.value }))}
+            onChange={(event) =>
+              setForm((current) => ({
+                ...current,
+                orderNo: event.target.value,
+              }))
+            }
           />
         </label>
       </div>
@@ -70,7 +82,12 @@ export function PurchaseLogisticsDialogScanExample({
           Carrier
           <input
             value={form.carrier}
-            onChange={(event) => setForm((current) => ({ ...current, carrier: event.target.value }))}
+            onChange={(event) =>
+              setForm((current) => ({
+                ...current,
+                carrier: event.target.value,
+              }))
+            }
           />
         </label>
       </div>
@@ -78,7 +95,10 @@ export function PurchaseLogisticsDialogScanExample({
       <div>
         <label>
           Incoming Scan Value
-          <input value={rawCode} onChange={(event) => setRawCode(event.target.value)} />
+          <input
+            value={rawCode}
+            onChange={(event) => setRawCode(event.target.value)}
+          />
         </label>
         <button type='button' onClick={() => void handleScan()}>
           Resolve Scan

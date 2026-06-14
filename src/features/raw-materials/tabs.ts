@@ -1,5 +1,5 @@
-import type { TabItem } from '@/components/module-tabs'
 import type { TranslationKey } from '@/locales'
+import type { TabItem } from '@/components/module-tabs'
 
 type TranslateFn = (
   key: TranslationKey,

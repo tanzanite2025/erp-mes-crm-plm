@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { type AppLocale, DEFAULT_LOCALE, translate } from '@/locales'
 import { toast } from 'sonner'
 import { getCookie } from '@/lib/cookies'
-import { handleServerError } from '@/lib/handle-server-error'
-import { LANGUAGE_COOKIE_NAME } from '@/lib/locale'
-import { useLanguage } from '@/context/language-provider'
-import { createLogger } from '@/lib/logger'
-import { type AppLocale, DEFAULT_LOCALE, translate } from '@/locales'
 import { buildFlattenDelta } from '@/lib/delta/flatten-delta'
 import { type DeltaSet } from '@/lib/delta/types'
+import { handleServerError } from '@/lib/handle-server-error'
+import { LANGUAGE_COOKIE_NAME } from '@/lib/locale'
+import { createLogger } from '@/lib/logger'
+import { useLanguage } from '@/context/language-provider'
 import { type OrgNode } from '../data/org-schema'
 import { personnelQueryKeys } from '../query-keys'
 import { OrgService } from '../services/org-service'
@@ -58,7 +58,9 @@ export function useOrgMgmt() {
 
   const loadData = async () => {
     try {
-      await queryClient.invalidateQueries({ queryKey: personnelQueryKeys.orgTree() })
+      await queryClient.invalidateQueries({
+        queryKey: personnelQueryKeys.orgTree(),
+      })
       await orgTreeQuery.refetch()
     } catch (err) {
       logger.error('Failed to reload org tree', err)
@@ -76,7 +78,11 @@ export function useOrgMgmt() {
       delta?: DeltaSet
     }) => {
       if (isPatch && delta && data.id) {
-        const savedNode = await OrgService.patchOrgNode(data.id, delta, data.version || 1)
+        const savedNode = await OrgService.patchOrgNode(
+          data.id,
+          delta,
+          data.version || 1
+        )
         return { savedNode, isCreate: false }
       }
 
@@ -85,8 +91,14 @@ export function useOrgMgmt() {
     },
     onSuccess: async ({ savedNode, isCreate }) => {
       setSelectedNodeId(savedNode.id ?? null)
-      await queryClient.invalidateQueries({ queryKey: personnelQueryKeys.orgTree() })
-      toast.success(isCreate ? t('orgPersonnel.org.createSuccess') : t('orgPersonnel.org.saveSuccess'))
+      await queryClient.invalidateQueries({
+        queryKey: personnelQueryKeys.orgTree(),
+      })
+      toast.success(
+        isCreate
+          ? t('orgPersonnel.org.createSuccess')
+          : t('orgPersonnel.org.saveSuccess')
+      )
     },
   })
 
@@ -99,31 +111,49 @@ export function useOrgMgmt() {
       if (selectedNodeId === deletedId) {
         setSelectedNodeId(null)
       }
-      await queryClient.invalidateQueries({ queryKey: personnelQueryKeys.orgTree() })
+      await queryClient.invalidateQueries({
+        queryKey: personnelQueryKeys.orgTree(),
+      })
       toast.success(t('orgPersonnel.org.deleteSuccess'))
     },
   })
 
   const linkMutation = useMutation({
-    mutationFn: async (items: { type: 'line' | 'segment'; id: string; name: string }[]) => {
+    mutationFn: async (
+      items: { type: 'line' | 'segment'; id: string; name: string }[]
+    ) => {
       if (!selectedNode || !selectedNode.id) {
         throw new Error('Missing selected organization node')
       }
 
-      const delta: DeltaSet = buildFlattenDelta(selectedNode.linkedArchitecture || [], items, {
-        basePath: 'linkedArchitecture',
-      })
+      const delta: DeltaSet = buildFlattenDelta(
+        selectedNode.linkedArchitecture || [],
+        items,
+        {
+          basePath: 'linkedArchitecture',
+        }
+      )
 
-      return OrgService.patchOrgNode(selectedNode.id, delta, selectedNode.version || 1)
+      return OrgService.patchOrgNode(
+        selectedNode.id,
+        delta,
+        selectedNode.version || 1
+      )
     },
     onSuccess: async (savedNode) => {
       setSelectedNodeId(savedNode.id ?? null)
-      await queryClient.invalidateQueries({ queryKey: personnelQueryKeys.orgTree() })
+      await queryClient.invalidateQueries({
+        queryKey: personnelQueryKeys.orgTree(),
+      })
       toast.success(t('orgPersonnel.org.saveSuccess'))
     },
   })
 
-  const handleOrgSubmit = async (data: OrgNode, isPatch?: boolean, delta?: DeltaSet) => {
+  const handleOrgSubmit = async (
+    data: OrgNode,
+    isPatch?: boolean,
+    delta?: DeltaSet
+  ) => {
     try {
       await submitMutation.mutateAsync({ data, isPatch, delta })
     } catch (err) {
@@ -144,7 +174,7 @@ export function useOrgMgmt() {
   }
 
   const handleLinkSave = async (
-    items: { type: 'line' | 'segment'; id: string; name: string }[],
+    items: { type: 'line' | 'segment'; id: string; name: string }[]
   ) => {
     if (!selectedNode || !selectedNode.id) return
 
@@ -158,7 +188,7 @@ export function useOrgMgmt() {
 
   const loadError = orgTreeQuery.error
     ? translate(
-        ((getCookie(LANGUAGE_COOKIE_NAME) as AppLocale) || DEFAULT_LOCALE),
+        (getCookie(LANGUAGE_COOKIE_NAME) as AppLocale) || DEFAULT_LOCALE,
         'orgPersonnel.org.saveFailed'
       )
     : null
@@ -166,9 +196,12 @@ export function useOrgMgmt() {
   return {
     orgData,
     selectedNode,
-    setSelectedNode: (node: OrgNode | null) => setSelectedNodeId(node?.id ?? null),
+    setSelectedNode: (node: OrgNode | null) =>
+      setSelectedNodeId(node?.id ?? null),
     error: orgTreeQuery.error,
-    isLoading: orgTreeQuery.isLoading || (orgTreeQuery.isFetching && orgData.length === 0),
+    isLoading:
+      orgTreeQuery.isLoading ||
+      (orgTreeQuery.isFetching && orgData.length === 0),
     loadError,
     loadData,
     handleOrgSubmit,

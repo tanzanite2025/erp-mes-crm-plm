@@ -4,7 +4,9 @@ interface PayableListItemLike {
   id: string
 }
 
-interface UsePurchasePayablesPageStateParams<TItem extends PayableListItemLike> {
+interface UsePurchasePayablesPageStateParams<
+  TItem extends PayableListItemLike,
+> {
   sourceType?: string
   sourceRefId?: string
   autoOpen?: boolean
@@ -15,7 +17,9 @@ interface UsePurchasePayablesPageStateParams<TItem extends PayableListItemLike> 
  * 应付页面状态管理 hook — 与 AR 的 useSalesReceivablesPageState 对称。
  * 管理选中的 ledger ID 和 autoOpen 行为。
  */
-export function usePurchasePayablesPageState<TItem extends PayableListItemLike>({
+export function usePurchasePayablesPageState<
+  TItem extends PayableListItemLike,
+>({
   sourceType,
   sourceRefId,
   autoOpen,

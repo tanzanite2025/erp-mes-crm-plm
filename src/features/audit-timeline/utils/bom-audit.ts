@@ -171,8 +171,13 @@ function toLineChange(item: BomAuditItemSnapshot): BomAuditLineChange {
   }
 }
 
-function compareItems(before: BomAuditItemSnapshot, after: BomAuditItemSnapshot): BomAuditModifiedLineChange | null {
-  const changedFields = BOM_ITEM_FIELDS.filter((field) => !isSameValue(before[field], after[field]))
+function compareItems(
+  before: BomAuditItemSnapshot,
+  after: BomAuditItemSnapshot
+): BomAuditModifiedLineChange | null {
+  const changedFields = BOM_ITEM_FIELDS.filter(
+    (field) => !isSameValue(before[field], after[field])
+  )
 
   if (changedFields.length === 0) {
     return null
@@ -184,9 +189,19 @@ function compareItems(before: BomAuditItemSnapshot, after: BomAuditItemSnapshot)
   }
 }
 
-function deriveOperation(log: AuditLog, beforeItems: BomAuditItemSnapshot[], afterItems: BomAuditItemSnapshot[]): BomAuditOperation {
-  const operation = normalizeAuditString(readDiffValue(log, 'operation')).toLowerCase()
-  if (operation === 'create' || operation === 'update' || operation === 'delete') {
+function deriveOperation(
+  log: AuditLog,
+  beforeItems: BomAuditItemSnapshot[],
+  afterItems: BomAuditItemSnapshot[]
+): BomAuditOperation {
+  const operation = normalizeAuditString(
+    readDiffValue(log, 'operation')
+  ).toLowerCase()
+  if (
+    operation === 'create' ||
+    operation === 'update' ||
+    operation === 'delete'
+  ) {
     return operation
   }
 
@@ -206,7 +221,10 @@ function deriveOperation(log: AuditLog, beforeItems: BomAuditItemSnapshot[], aft
   return 'unknown'
 }
 
-function buildControlChanges(log: AuditLog, operation: BomAuditOperation): BomAuditControlChange[] {
+function buildControlChanges(
+  log: AuditLog,
+  operation: BomAuditOperation
+): BomAuditControlChange[] {
   return BOM_CONTROL_FIELDS.flatMap((field) => {
     const entry = readDiffEntry(log, field)
     if (!entry) {
@@ -233,8 +251,12 @@ export function buildBomAuditSummary(log: AuditLog): BomAuditSummary {
   const operation = deriveOperation(log, beforeItemsRaw, afterItemsRaw)
   const effectiveAfterItems = operation === 'delete' ? [] : afterItemsRaw
 
-  const beforeMap = new Map(beforeItemsRaw.map((item) => [buildLineKey(item), item]))
-  const afterMap = new Map(effectiveAfterItems.map((item) => [buildLineKey(item), item]))
+  const beforeMap = new Map(
+    beforeItemsRaw.map((item) => [buildLineKey(item), item])
+  )
+  const afterMap = new Map(
+    effectiveAfterItems.map((item) => [buildLineKey(item), item])
+  )
 
   const addedItems: BomAuditLineChange[] = []
   const removedItems: BomAuditLineChange[] = []
@@ -259,7 +281,8 @@ export function buildBomAuditSummary(log: AuditLog): BomAuditSummary {
     }
   })
 
-  const targetBomNo = normalizeAuditString(readDiffValue(log, 'bomNo')) || log.target_id
+  const targetBomNo =
+    normalizeAuditString(readDiffValue(log, 'bomNo')) || log.target_id
   const controlChanges = buildControlChanges(log, operation)
 
   return {

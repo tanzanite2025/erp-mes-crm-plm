@@ -17,7 +17,9 @@ import type {
   WarehouseCommandAck,
 } from '../data/schema'
 
-export function toStocktakeTaskContract(dto: StocktakeTaskApiDTO): StocktakeTask {
+export function toStocktakeTaskContract(
+  dto: StocktakeTaskApiDTO
+): StocktakeTask {
   return {
     id: dto.id,
     createdAt: dto.createdAt,
@@ -33,11 +35,15 @@ export function toStocktakeTaskContract(dto: StocktakeTaskApiDTO): StocktakeTask
   }
 }
 
-export function toStocktakeTaskContracts(dtos: StocktakeTaskApiDTO[]): StocktakeTask[] {
+export function toStocktakeTaskContracts(
+  dtos: StocktakeTaskApiDTO[]
+): StocktakeTask[] {
   return dtos.map(toStocktakeTaskContract)
 }
 
-export function toStocktakeItemContract(dto: StocktakeItemApiDTO): StocktakeItem {
+export function toStocktakeItemContract(
+  dto: StocktakeItemApiDTO
+): StocktakeItem {
   return {
     id: dto.id,
     createdAt: dto.createdAt,
@@ -57,7 +63,9 @@ export function toStocktakeItemContract(dto: StocktakeItemApiDTO): StocktakeItem
   }
 }
 
-export function toStocktakeItemContracts(dtos: StocktakeItemApiDTO[]): StocktakeItem[] {
+export function toStocktakeItemContracts(
+  dtos: StocktakeItemApiDTO[]
+): StocktakeItem[] {
   return dtos.map(toStocktakeItemContract)
 }
 
@@ -71,7 +79,9 @@ export function toStocktakeCreateRequestApiDTO(
   }
 }
 
-export function toPDAScanPayloadApiDTO(contract: PDAScanPayload): PDAScanPayloadApiDTO {
+export function toPDAScanPayloadApiDTO(
+  contract: PDAScanPayload
+): PDAScanPayloadApiDTO {
   return {
     taskId: contract.taskId,
     materialCode: contract.materialCode,
@@ -107,7 +117,9 @@ export function toPDABulkSyncResponseContract(
   }
 }
 
-export function toWarehouseCommandAckContract(dto: WarehouseCommandAckApiDTO): WarehouseCommandAck {
+export function toWarehouseCommandAckContract(
+  dto: WarehouseCommandAckApiDTO
+): WarehouseCommandAck {
   return {
     message: dto.message,
   }

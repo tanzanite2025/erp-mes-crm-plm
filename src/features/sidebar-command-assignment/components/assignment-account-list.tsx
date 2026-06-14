@@ -1,6 +1,6 @@
 import { UserRound } from 'lucide-react'
-import { useLanguage } from '@/context/language-provider'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import type { SidebarCommandAccount } from '../types'
@@ -83,7 +83,9 @@ export function AssignmentAccountList({
                   {account.username} / {account.accountLabel}
                 </span>
               </button>
-              {isActive ? <Badge className='shrink-0'>{assignedCount}</Badge> : null}
+              {isActive ? (
+                <Badge className='shrink-0'>{assignedCount}</Badge>
+              ) : null}
             </div>
           )
         })}

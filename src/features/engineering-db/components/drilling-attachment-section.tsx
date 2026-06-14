@@ -1,6 +1,6 @@
 import { Info } from 'lucide-react'
-import { FileUploader } from '@/components/file-uploader'
 import { Label } from '@/components/ui/label'
+import { FileUploader } from '@/components/file-uploader'
 
 interface DrillingAttachmentSectionProps {
   fileUrl: string
@@ -12,8 +12,8 @@ export function DrillingAttachmentSection({
   onChange,
 }: DrillingAttachmentSectionProps) {
   return (
-    <div className='bg-indigo-500/5 p-6 rounded-[32px] border border-dashed border-indigo-500/20 space-y-3'>
-      <Label className='text-[10px] font-black uppercase tracking-widest text-indigo-600/60 flex items-center gap-2'>
+    <div className='space-y-3 rounded-[32px] border border-dashed border-indigo-500/20 bg-indigo-500/5 p-6'>
+      <Label className='flex items-center gap-2 text-[10px] font-black tracking-widest text-indigo-600/60 uppercase'>
         <Info className='size-3' /> 钻孔工程图纸 / ENGINEERING_DWG
       </Label>
       <FileUploader

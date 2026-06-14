@@ -1,8 +1,8 @@
-import { ImageIcon, Loader2 } from 'lucide-react'
-import { useLanguage } from '@/context/language-provider'
-import { getStaticEvidenceUrl } from '@/lib/url-utils'
-import { type OrderEvidence } from '../../data/schema'
 import { type TranslationKey } from '@/locales'
+import { ImageIcon, Loader2 } from 'lucide-react'
+import { getStaticEvidenceUrl } from '@/lib/url-utils'
+import { useLanguage } from '@/context/language-provider'
+import { type OrderEvidence } from '../../data/schema'
 
 interface OrderEvidenceGalleryProps {
   evidences: OrderEvidence[]
@@ -23,7 +23,7 @@ export function OrderEvidenceGallery({
     <div className='mt-3 border-t border-muted-foreground/10 pt-3'>
       <div className='mb-2 flex items-center gap-2'>
         <ImageIcon className='size-3.5 text-primary' />
-        <h4 className='text-[9px] font-black uppercase tracking-wide text-muted-foreground/60'>
+        <h4 className='text-[9px] font-black tracking-wide text-muted-foreground/60 uppercase'>
           {t(titleKey)}
         </h4>
       </div>
@@ -32,7 +32,11 @@ export function OrderEvidenceGallery({
           <div key={ev.id} className='w-[96px] space-y-1.5'>
             <div className='group relative size-16 overflow-hidden rounded-xl border bg-background shadow-sm transition-all hover:ring-2 hover:ring-primary/20'>
               {ev.url ? (
-                <a href={getStaticEvidenceUrl(ev.url)} target='_blank' rel='noreferrer'>
+                <a
+                  href={getStaticEvidenceUrl(ev.url)}
+                  target='_blank'
+                  rel='noreferrer'
+                >
                   <img
                     src={getStaticEvidenceUrl(ev.url)}
                     alt={ev.name}
@@ -45,7 +49,11 @@ export function OrderEvidenceGallery({
                 </div>
               )}
             </div>
-            {ev.note ? <p className='text-[10px] font-medium leading-4 text-muted-foreground'>{ev.note}</p> : null}
+            {ev.note ? (
+              <p className='text-[10px] leading-4 font-medium text-muted-foreground'>
+                {ev.note}
+              </p>
+            ) : null}
           </div>
         ))}
       </div>

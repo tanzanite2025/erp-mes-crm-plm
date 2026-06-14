@@ -1,7 +1,10 @@
 import { buildFlattenDelta } from '@/lib/delta/flatten-delta'
 import { type DeltaSet } from '@/lib/delta/types'
+import {
+  type ProductTypeApiDTO,
+  type ProductTypeListPageApiDTO,
+} from '../contracts/product-type-api-dto'
 import { type ProductType } from '../data/schema'
-import { type ProductTypeApiDTO, type ProductTypeListPageApiDTO } from '../contracts/product-type-api-dto'
 import { type SaveProductTypeInput } from '../mutation-types'
 import { normalizeEngineeringProductTypeCode } from '../utils/product-code-normalization'
 
@@ -25,7 +28,9 @@ type ProductTypeWriteCandidate = Omit<ProductTypeApiDTO, 'version'> & {
   version: number
 }
 
-function toProductTypeWriteCandidate(type: SaveProductTypeInput): ProductTypeWriteCandidate {
+function toProductTypeWriteCandidate(
+  type: SaveProductTypeInput
+): ProductTypeWriteCandidate {
   return {
     id: type.id || '',
     parentId: type.parentId ?? null,
@@ -41,11 +46,16 @@ function toProductTypeWriteCandidate(type: SaveProductTypeInput): ProductTypeWri
   }
 }
 
-function toProductTypeWriteApiDTO(candidate: ProductTypeWriteCandidate): ProductTypeApiDTO {
+function toProductTypeWriteApiDTO(
+  candidate: ProductTypeWriteCandidate
+): ProductTypeApiDTO {
   return candidate as ProductTypeApiDTO
 }
 
-function collectProductTypes(items: ProductTypeApiDTO[], bucket: Map<string, ProductType>) {
+function collectProductTypes(
+  items: ProductTypeApiDTO[],
+  bucket: Map<string, ProductType>
+) {
   for (const item of items) {
     if (!bucket.has(item.id)) {
       bucket.set(item.id, toProductTypeContract(item))
@@ -56,17 +66,23 @@ function collectProductTypes(items: ProductTypeApiDTO[], bucket: Map<string, Pro
   }
 }
 
-export function toProductTypeArrayContract(items: ProductTypeApiDTO[]): ProductType[] {
+export function toProductTypeArrayContract(
+  items: ProductTypeApiDTO[]
+): ProductType[] {
   const bucket = new Map<string, ProductType>()
   collectProductTypes(items, bucket)
   return Array.from(bucket.values())
 }
 
-export function toProductTypeListContract(dto: ProductTypeListPageApiDTO): ProductType[] {
+export function toProductTypeListContract(
+  dto: ProductTypeListPageApiDTO
+): ProductType[] {
   return toProductTypeArrayContract(dto.items)
 }
 
-export function toProductTypeApiDTO(type: SaveProductTypeInput): ProductTypeApiDTO {
+export function toProductTypeApiDTO(
+  type: SaveProductTypeInput
+): ProductTypeApiDTO {
   return toProductTypeWriteApiDTO(toProductTypeWriteCandidate(type))
 }
 
@@ -80,7 +96,10 @@ const PRODUCT_TYPE_PATCH_FIELDS: Array<keyof ProductType> = [
   'sortOrder',
 ]
 
-export function buildProductTypeDelta(current: ProductType, next: SaveProductTypeInput): DeltaSet {
+export function buildProductTypeDelta(
+  current: ProductType,
+  next: SaveProductTypeInput
+): DeltaSet {
   const delta: DeltaSet = {}
 
   for (const field of PRODUCT_TYPE_PATCH_FIELDS) {

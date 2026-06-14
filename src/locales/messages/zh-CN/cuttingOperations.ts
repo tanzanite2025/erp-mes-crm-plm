@@ -7,25 +7,30 @@ export const cuttingOperations = {
   productBinding: {
     header: {
       title: '产品绑定',
-      description: '本页用于将编码中心一维码绑定到已在预浸料页面完成扫码与 OCR 激活的卷实例二维码，并记录卷实例上的多条产品绑定事件。',
+      description:
+        '本页用于将编码中心一维码绑定到已在预浸料页面完成扫码与 OCR 激活的卷实例二维码，并记录卷实例上的多条产品绑定事件。',
     },
     cards: {
       scope: {
         title: '正式业务定位',
-        description: '产品绑定的主对象是已激活的预浸料卷实例二维码，而不是裁纱执行单或抽象规格 token。',
+        description:
+          '产品绑定的主对象是已激活的预浸料卷实例二维码，而不是裁纱执行单或抽象规格 token。',
       },
       nextStep: {
         title: '当前处理对象',
-        description: '每次绑定只需录入产品一维码和卷实例二维码；同一卷允许对应多个产品码，但单个产品码只能保留一条当前绑定。',
+        description:
+          '每次绑定只需录入产品一维码和卷实例二维码；同一卷允许对应多个产品码，但单个产品码只能保留一条当前绑定。',
       },
       boundary: {
         title: '稳定性边界',
-        description: '本页优先保证产品码唯一性、卷实例有效性以及同一卷多产品绑定事件的历史回显一致性。',
+        description:
+          '本页优先保证产品码唯一性、卷实例有效性以及同一卷多产品绑定事件的历史回显一致性。',
       },
     },
     form: {
       title: '正式绑定作业区',
-      description: '提交产品一维码与已激活的卷实例二维码，系统会校验卷实例状态并写入产品绑定事件。',
+      description:
+        '提交产品一维码与已激活的卷实例二维码，系统会校验卷实例状态并写入产品绑定事件。',
       steps: {
         step0: '步骤 00',
         step1: '步骤 01',
@@ -54,7 +59,8 @@ export const cuttingOperations = {
     },
     mobileCapture: {
       title: '手机扫码回填一维码',
-      description: '创建手机扫码会话后，可用手机打开二维码链接，直接扫描编码中心一维码并自动回填当前表单。',
+      description:
+        '创建手机扫码会话后，可用手机打开二维码链接，直接扫描编码中心一维码并自动回填当前表单。',
       actions: {
         create: '创建手机扫码会话',
         copyLink: '复制手机链接',
@@ -74,11 +80,13 @@ export const cuttingOperations = {
       },
       link: {
         title: '手机扫码链接',
-        description: '手机打开该链接后，可直接调起摄像头扫码并把结果回填到当前页面。',
+        description:
+          '手机打开该链接后，可直接调起摄像头扫码并把结果回填到当前页面。',
       },
       page: {
         title: '产品一维码扫码',
-        description: '请直接扫描编码中心一维码；识别成功后会自动提交到当前产品绑定页面。',
+        description:
+          '请直接扫描编码中心一维码；识别成功后会自动提交到当前产品绑定页面。',
         placeholder: '请扫描或输入编码中心一维码',
         actions: {
           submit: '提交扫码结果',
@@ -97,7 +105,8 @@ export const cuttingOperations = {
     feedback: {
       idle: {
         title: '等待绑定输入',
-        description: '请录入产品一维码，并扫描已在预浸料页面完成激活的卷实例二维码后再提交绑定。',
+        description:
+          '请录入产品一维码，并扫描已在预浸料页面完成激活的卷实例二维码后再提交绑定。',
       },
       missingExecution: {
         title: '缺少执行单',
@@ -113,23 +122,28 @@ export const cuttingOperations = {
       },
       submitting: {
         title: '正在提交正式绑定',
-        description: '系统正在校验产品码唯一性、卷实例激活状态以及绑定事件写入条件，请稍候。',
+        description:
+          '系统正在校验产品码唯一性、卷实例激活状态以及绑定事件写入条件，请稍候。',
       },
       success: {
         title: '绑定提交成功',
-        description: '产品绑定当前状态与卷实例绑定事件已写入正式链路，页面已同步回显最新结果。',
+        description:
+          '产品绑定当前状态与卷实例绑定事件已写入正式链路，页面已同步回显最新结果。',
       },
       duplicate: {
         title: '检测到重复提交',
-        description: '本次提交命中了同卷既有绑定记录，系统已按既有绑定事件回显当前正式结果。',
+        description:
+          '本次提交命中了同卷既有绑定记录，系统已按既有绑定事件回显当前正式结果。',
       },
       conflict: {
         title: '检测到产品码冲突',
-        description: '该产品码已绑定到其它预浸料卷，系统已回显当前既有绑定记录供你核对冲突来源。',
+        description:
+          '该产品码已绑定到其它预浸料卷，系统已回显当前既有绑定记录供你核对冲突来源。',
       },
       error: {
         title: '绑定提交失败',
-        description: '本次正式绑定未成功，请检查卷实例二维码是否已激活、条码内容或产品码冲突信息。',
+        description:
+          '本次正式绑定未成功，请检查卷实例二维码是否已激活、条码内容或产品码冲突信息。',
       },
       snapshot: {
         executionLabel: '卷实例规格快照',
@@ -148,7 +162,8 @@ export const cuttingOperations = {
     },
     history: {
       title: '卷实例绑定记录',
-      description: '当前筛选条件下已加载 {{count}} 条绑定记录，用于核对卷实例上的产品绑定事件。',
+      description:
+        '当前筛选条件下已加载 {{count}} 条绑定记录，用于核对卷实例上的产品绑定事件。',
       loading: '正在加载卷实例绑定记录...',
       empty: '当前没有匹配的卷实例绑定记录，请先完成一条正式绑定。',
       error: '加载绑定记录失败：{{message}}',
@@ -181,7 +196,8 @@ export const cuttingOperations = {
   sizeInventory: {
     header: {
       title: '裁纱尺寸库存',
-      description: '尺寸主数据直接读取裁切尺寸库，可选择启用的尺寸单元录入库存并回显当前库存数量。',
+      description:
+        '尺寸主数据直接读取裁切尺寸库，可选择启用的尺寸单元录入库存并回显当前库存数量。',
     },
     actions: {
       recordInventory: '录入库存',

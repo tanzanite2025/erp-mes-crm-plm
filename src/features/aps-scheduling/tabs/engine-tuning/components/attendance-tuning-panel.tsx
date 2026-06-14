@@ -1,7 +1,13 @@
 import { useState } from 'react'
 import { UserCheck } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useLanguage } from '@/context/language-provider'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import {
   ENGINE_CARD_SHELL_CLASS,
   ENGINE_CARD_TITLE_CLASS,
@@ -19,19 +25,19 @@ export function AttendanceTuningPanel() {
       <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-emerald-500/5 via-transparent' />
       <CardHeader className='relative flex flex-row items-center gap-2 p-2.5 pb-1'>
         <UserCheck className='size-4 shrink-0 text-emerald-600' />
-        <div className='flex flex-col min-w-0'>
+        <div className='flex min-w-0 flex-col'>
           <CardTitle className={`${ENGINE_CARD_TITLE_CLASS} leading-none`}>
             {t('apsScheduling.engineConfig.attendanceCard.title')} - 参数微调
           </CardTitle>
-          <CardDescription className='text-[8px] font-black uppercase tracking-widest text-muted-foreground/50 leading-tight mt-0.5 truncate'>
+          <CardDescription className='mt-0.5 truncate text-[8px] leading-tight font-black tracking-widest text-muted-foreground/50 uppercase'>
             调节出勤阈值与折减系数。
           </CardDescription>
         </div>
       </CardHeader>
-      <CardContent className='relative p-3 pt-0 space-y-2'>
+      <CardContent className='relative space-y-2 p-3 pt-0'>
         {/* Toggle Switch */}
-        <div className='flex items-center justify-between rounded-xl bg-background px-2.5 py-1.5 border border-dashed border-muted/50'>
-          <span className='text-[10px] font-black uppercase tracking-wider text-muted-foreground/70'>
+        <div className='flex items-center justify-between rounded-xl border border-dashed border-muted/50 bg-background px-2.5 py-1.5'>
+          <span className='text-[10px] font-black tracking-wider text-muted-foreground/70 uppercase'>
             启用考勤打卡联锁
           </span>
           <button
@@ -50,7 +56,7 @@ export function AttendanceTuningPanel() {
 
         {/* Min Attendance Rate Input */}
         <div className='grid gap-1'>
-          <label className='text-[9px] font-black uppercase tracking-wider text-muted-foreground/60 leading-none'>
+          <label className='text-[9px] leading-none font-black tracking-wider text-muted-foreground/60 uppercase'>
             最低出勤率阈值 (%)
           </label>
           <div className='relative flex items-center'>
@@ -63,13 +69,15 @@ export function AttendanceTuningPanel() {
               min='0'
               max='100'
             />
-            <span className='absolute right-4 text-[10px] font-black text-muted-foreground'>%</span>
+            <span className='absolute right-4 text-[10px] font-black text-muted-foreground'>
+              %
+            </span>
           </div>
         </div>
 
         {/* Capacity Derating Factor Input */}
         <div className='grid gap-1'>
-          <label className='text-[9px] font-black uppercase tracking-wider text-muted-foreground/60 leading-none'>
+          <label className='text-[9px] leading-none font-black tracking-wider text-muted-foreground/60 uppercase'>
             缺勤产能折算系数 (%)
           </label>
           <div className='relative flex items-center'>
@@ -82,13 +90,15 @@ export function AttendanceTuningPanel() {
               min='0'
               max='100'
             />
-            <span className='absolute right-4 text-[10px] font-black text-muted-foreground'>%</span>
+            <span className='absolute right-4 text-[10px] font-black text-muted-foreground'>
+              %
+            </span>
           </div>
         </div>
 
         {/* Attendance Source Association */}
         <div className='grid gap-1'>
-          <label className='text-[9px] font-black uppercase tracking-wider text-muted-foreground/60 leading-none'>
+          <label className='text-[9px] leading-none font-black tracking-wider text-muted-foreground/60 uppercase'>
             打卡考勤源集成配置
           </label>
           <select

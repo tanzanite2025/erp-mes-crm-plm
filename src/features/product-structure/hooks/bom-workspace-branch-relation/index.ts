@@ -1,16 +1,16 @@
 /**
  * BOM Workspace Branch Relation Builders
- * 
+ *
  * 提供两种构建模式：
  * - **Synthetic**: 合成模式，自动为每个 section 创建层级结构
  * - **Protocol**: 协议模式，基于父子关系协议构建
- * 
+ *
  * ## 使用示例
- * 
+ *
  * ### 合成模式
  * ```typescript
  * import { buildSyntheticBOMWorkspaceBranchRelations } from './bom-workspace-branch-relation'
- * 
+ *
  * const result = buildSyntheticBOMWorkspaceBranchRelations({
  *   activeSections: sections,
  *   fields: fields,
@@ -19,11 +19,11 @@
  *   rootNodeId: 'root',
  * })
  * ```
- * 
+ *
  * ### 协议模式
  * ```typescript
  * import { buildParentChildrenProtocolBranchRelations } from './bom-workspace-branch-relation'
- * 
+ *
  * const builder = buildParentChildrenProtocolBranchRelations(protocolDraft)
  * const result = builder({
  *   activeSections: sections,
@@ -33,16 +33,16 @@
  *   rootNodeId: 'root',
  * })
  * ```
- * 
+ *
  * ### 自动选择
  * ```typescript
  * import { resolveBOMWorkspaceBranchRelationBuilder } from './bom-workspace-branch-relation'
- * 
+ *
  * const builder = resolveBOMWorkspaceBranchRelationBuilder({
  *   protocolDraft: myProtocol, // 如果提供，使用协议模式
  * })
  * ```
- * 
+ *
  * @module bom-workspace-branch-relation
  */
 

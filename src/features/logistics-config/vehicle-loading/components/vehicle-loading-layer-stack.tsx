@@ -1,15 +1,18 @@
-import { VehicleLoadingLayerGrid } from './vehicle-loading-layer-grid'
 import type { VehicleLoadingDiagramProps } from './vehicle-loading-diagram-types'
+import { VehicleLoadingLayerGrid } from './vehicle-loading-layer-grid'
 
 export function VehicleLoadingLayerStack({
   boxesPerLayer,
   orientationLabel,
   orientationAxis,
   layerCount,
-}: Pick<VehicleLoadingDiagramProps, 'boxesPerLayer' | 'orientationLabel' | 'orientationAxis' | 'layerCount'>) {
+}: Pick<
+  VehicleLoadingDiagramProps,
+  'boxesPerLayer' | 'orientationLabel' | 'orientationAxis' | 'layerCount'
+>) {
   return (
     <div className='flex min-h-0 flex-1 flex-col overflow-hidden rounded-[12px] border border-primary/15 bg-white/65 p-3'>
-      <div className='mb-2 flex items-center justify-between text-[9px] font-black uppercase tracking-widest text-primary/45'>
+      <div className='mb-2 flex items-center justify-between text-[9px] font-black tracking-widest text-primary/45 uppercase'>
         <span>车头 ←</span>
         <span>车尾</span>
       </div>

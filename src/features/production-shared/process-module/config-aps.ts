@@ -14,10 +14,34 @@ export const processModuleApsConfig: ProcessModuleConfig = {
         {
           title: '基础信息',
           fields: [
-            { key: 'line', label: '产线', value: '1# 产线', tone: 'accent', width: 'md' },
-            { key: 'duration', label: '时长', value: '12 min', tone: 'muted', width: 'sm' },
-            { key: 'priority', label: '优先级', value: 'P1', tone: 'accent', width: 'sm' },
-            { key: 'window', label: '排产窗口', value: '08:00 - 10:30', tone: 'muted', width: 'lg' },
+            {
+              key: 'line',
+              label: '产线',
+              value: '1# 产线',
+              tone: 'accent',
+              width: 'md',
+            },
+            {
+              key: 'duration',
+              label: '时长',
+              value: '12 min',
+              tone: 'muted',
+              width: 'sm',
+            },
+            {
+              key: 'priority',
+              label: '优先级',
+              value: 'P1',
+              tone: 'accent',
+              width: 'sm',
+            },
+            {
+              key: 'window',
+              label: '排产窗口',
+              value: '08:00 - 10:30',
+              tone: 'muted',
+              width: 'lg',
+            },
           ],
         },
         {
@@ -35,8 +59,18 @@ export const processModuleApsConfig: ProcessModuleConfig = {
                   meta: '12 min · 已排入',
                   status: 'normal',
                   children: [
-                    { key: 'aps-001-step-1', label: '上料', meta: '准备完成', status: 'normal' },
-                    { key: 'aps-001-step-2', label: '定位裁切', meta: '执行中', status: 'normal' },
+                    {
+                      key: 'aps-001-step-1',
+                      label: '上料',
+                      meta: '准备完成',
+                      status: 'normal',
+                    },
+                    {
+                      key: 'aps-001-step-2',
+                      label: '定位裁切',
+                      meta: '执行中',
+                      status: 'normal',
+                    },
                   ],
                 },
                 {
@@ -45,8 +79,18 @@ export const processModuleApsConfig: ProcessModuleConfig = {
                   meta: '18 min · 待切换',
                   status: 'warning',
                   children: [
-                    { key: 'aps-001-step-3', label: '转运', meta: '等待设备', status: 'warning' },
-                    { key: 'aps-001-step-4', label: '整形校准', meta: '待开始', status: 'warning' },
+                    {
+                      key: 'aps-001-step-3',
+                      label: '转运',
+                      meta: '等待设备',
+                      status: 'warning',
+                    },
+                    {
+                      key: 'aps-001-step-4',
+                      label: '整形校准',
+                      meta: '待开始',
+                      status: 'warning',
+                    },
                   ],
                 },
               ],
@@ -63,8 +107,18 @@ export const processModuleApsConfig: ProcessModuleConfig = {
                   meta: '24 min · 可排产',
                   status: 'warning',
                   children: [
-                    { key: 'aps-001-step-5', label: '展开', meta: '待开始', status: 'warning' },
-                    { key: 'aps-001-step-6', label: '铺底', meta: '待开始', status: 'warning' },
+                    {
+                      key: 'aps-001-step-5',
+                      label: '展开',
+                      meta: '待开始',
+                      status: 'warning',
+                    },
+                    {
+                      key: 'aps-001-step-6',
+                      label: '铺底',
+                      meta: '待开始',
+                      status: 'warning',
+                    },
                   ],
                 },
                 {
@@ -73,8 +127,18 @@ export const processModuleApsConfig: ProcessModuleConfig = {
                   meta: '45 min · 资源待确认',
                   status: 'danger',
                   children: [
-                    { key: 'aps-001-step-7', label: '炉位预约', meta: '冲突', status: 'danger' },
-                    { key: 'aps-001-step-8', label: '升温校验', meta: '待处理', status: 'warning' },
+                    {
+                      key: 'aps-001-step-7',
+                      label: '炉位预约',
+                      meta: '冲突',
+                      status: 'danger',
+                    },
+                    {
+                      key: 'aps-001-step-8',
+                      label: '升温校验',
+                      meta: '待处理',
+                      status: 'warning',
+                    },
                   ],
                 },
               ],
@@ -93,10 +157,34 @@ export const processModuleApsConfig: ProcessModuleConfig = {
         {
           title: '基础信息',
           fields: [
-            { key: 'line', label: '产线', value: '2# 产线', tone: 'accent', width: 'md' },
-            { key: 'duration', label: '时长', value: '24 min', tone: 'muted', width: 'sm' },
-            { key: 'priority', label: '优先级', value: 'P2', tone: 'accent', width: 'sm' },
-            { key: 'window', label: '排产窗口', value: '10:30 - 13:00', tone: 'muted', width: 'lg' },
+            {
+              key: 'line',
+              label: '产线',
+              value: '2# 产线',
+              tone: 'accent',
+              width: 'md',
+            },
+            {
+              key: 'duration',
+              label: '时长',
+              value: '24 min',
+              tone: 'muted',
+              width: 'sm',
+            },
+            {
+              key: 'priority',
+              label: '优先级',
+              value: 'P2',
+              tone: 'accent',
+              width: 'sm',
+            },
+            {
+              key: 'window',
+              label: '排产窗口',
+              value: '10:30 - 13:00',
+              tone: 'muted',
+              width: 'lg',
+            },
           ],
         },
         {
@@ -114,8 +202,18 @@ export const processModuleApsConfig: ProcessModuleConfig = {
                   meta: '24 min · 材料回温',
                   status: 'warning',
                   children: [
-                    { key: 'aps-002-step-1', label: '材料回温', meta: '30 min', status: 'warning' },
-                    { key: 'aps-002-step-2', label: '表面检查', meta: '待开始', status: 'warning' },
+                    {
+                      key: 'aps-002-step-1',
+                      label: '材料回温',
+                      meta: '30 min',
+                      status: 'warning',
+                    },
+                    {
+                      key: 'aps-002-step-2',
+                      label: '表面检查',
+                      meta: '待开始',
+                      status: 'warning',
+                    },
                   ],
                 },
                 {
@@ -124,7 +222,12 @@ export const processModuleApsConfig: ProcessModuleConfig = {
                   meta: '18 min · 待排入',
                   status: 'warning',
                   children: [
-                    { key: 'aps-002-step-3', label: '压机预约', meta: '未锁定', status: 'warning' },
+                    {
+                      key: 'aps-002-step-3',
+                      label: '压机预约',
+                      meta: '未锁定',
+                      status: 'warning',
+                    },
                   ],
                 },
               ],
@@ -141,8 +244,18 @@ export const processModuleApsConfig: ProcessModuleConfig = {
                   meta: '24 min · 已预留',
                   status: 'normal',
                   children: [
-                    { key: 'aps-002-step-4', label: '预裁', meta: '完成', status: 'normal' },
-                    { key: 'aps-002-step-5', label: '铺层定位', meta: '待开始', status: 'normal' },
+                    {
+                      key: 'aps-002-step-4',
+                      label: '预裁',
+                      meta: '完成',
+                      status: 'normal',
+                    },
+                    {
+                      key: 'aps-002-step-5',
+                      label: '铺层定位',
+                      meta: '待开始',
+                      status: 'normal',
+                    },
                   ],
                 },
               ],
@@ -161,10 +274,34 @@ export const processModuleApsConfig: ProcessModuleConfig = {
         {
           title: '基础信息',
           fields: [
-            { key: 'line', label: '产线', value: '3# 产线', tone: 'accent', width: 'md' },
-            { key: 'duration', label: '时长', value: '45 min', tone: 'muted', width: 'sm' },
-            { key: 'priority', label: '优先级', value: 'P1', tone: 'danger', width: 'sm' },
-            { key: 'window', label: '排产窗口', value: '13:00 - 16:00', tone: 'muted', width: 'lg' },
+            {
+              key: 'line',
+              label: '产线',
+              value: '3# 产线',
+              tone: 'accent',
+              width: 'md',
+            },
+            {
+              key: 'duration',
+              label: '时长',
+              value: '45 min',
+              tone: 'muted',
+              width: 'sm',
+            },
+            {
+              key: 'priority',
+              label: '优先级',
+              value: 'P1',
+              tone: 'danger',
+              width: 'sm',
+            },
+            {
+              key: 'window',
+              label: '排产窗口',
+              value: '13:00 - 16:00',
+              tone: 'muted',
+              width: 'lg',
+            },
           ],
         },
         {
@@ -182,8 +319,18 @@ export const processModuleApsConfig: ProcessModuleConfig = {
                   meta: '45 min · 炉位冲突',
                   status: 'danger',
                   children: [
-                    { key: 'aps-003-step-1', label: '炉位预约', meta: '冲突', status: 'danger' },
-                    { key: 'aps-003-step-2', label: '升温', meta: '待处理', status: 'warning' },
+                    {
+                      key: 'aps-003-step-1',
+                      label: '炉位预约',
+                      meta: '冲突',
+                      status: 'danger',
+                    },
+                    {
+                      key: 'aps-003-step-2',
+                      label: '升温',
+                      meta: '待处理',
+                      status: 'warning',
+                    },
                   ],
                 },
                 {
@@ -192,8 +339,18 @@ export const processModuleApsConfig: ProcessModuleConfig = {
                   meta: '15 min · 被阻塞',
                   status: 'blocked',
                   children: [
-                    { key: 'aps-003-step-3', label: '冷却', meta: '排队中', status: 'warning' },
-                    { key: 'aps-003-step-4', label: '脱模检查', meta: '未开始', status: 'blocked' },
+                    {
+                      key: 'aps-003-step-3',
+                      label: '冷却',
+                      meta: '排队中',
+                      status: 'warning',
+                    },
+                    {
+                      key: 'aps-003-step-4',
+                      label: '脱模检查',
+                      meta: '未开始',
+                      status: 'blocked',
+                    },
                   ],
                 },
               ],
@@ -210,7 +367,12 @@ export const processModuleApsConfig: ProcessModuleConfig = {
                   meta: '30 min · 排队中',
                   status: 'warning',
                   children: [
-                    { key: 'aps-003-step-5', label: '预热', meta: '待开始', status: 'warning' },
+                    {
+                      key: 'aps-003-step-5',
+                      label: '预热',
+                      meta: '待开始',
+                      status: 'warning',
+                    },
                   ],
                 },
               ],

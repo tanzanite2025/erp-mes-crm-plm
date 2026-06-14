@@ -57,11 +57,7 @@ export function LayoutProvider({ children }: LayoutProviderProps) {
   const setCollapsible = (newCollapsible: Collapsible) => {
     const normalized = normalizeCollapsible(newCollapsible)
     _setCollapsible(normalized)
-    setCookie(
-      LAYOUT_COLLAPSIBLE_COOKIE_NAME,
-      normalized,
-      LAYOUT_COOKIE_MAX_AGE
-    )
+    setCookie(LAYOUT_COLLAPSIBLE_COOKIE_NAME, normalized, LAYOUT_COOKIE_MAX_AGE)
   }
 
   const setVariant = (newVariant: Variant) => {

@@ -1,5 +1,5 @@
-import { createSalesOrder } from '@/features/trading/sales/services/sales-service'
 import type { SalesOrderFormValues } from '@/features/trading/data/schema'
+import { createSalesOrder } from '@/features/trading/sales/services/sales-service'
 
 export type CreateQuotePayload = {
   customerId: string
@@ -8,7 +8,9 @@ export type CreateQuotePayload = {
   requirements: string
 }
 
-export async function createQuoteAsSalesOrderDraft(payload: CreateQuotePayload) {
+export async function createQuoteAsSalesOrderDraft(
+  payload: CreateQuotePayload
+) {
   const orderDate = new Date().toISOString().slice(0, 10)
   const quote: SalesOrderFormValues = {
     orderNo: '',

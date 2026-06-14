@@ -12,8 +12,8 @@ import {
   Trash2,
   TriangleAlert,
 } from 'lucide-react'
-import { failLoudly } from '@/lib/safe-catch'
 import { isForbiddenError } from '@/lib/error-status'
+import { failLoudly } from '@/lib/safe-catch'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
@@ -23,8 +23,8 @@ import { ConfirmDialog } from '@/components/confirm-dialog'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { MaterialThresholdDialog } from '@/features/warehouse/material-thresholds/components/material-threshold-dialog'
-import { useMaterialThresholds } from '@/features/warehouse/material-thresholds/hooks/use-material-thresholds'
 import { type InventoryThresholdRule } from '@/features/warehouse/material-thresholds/data/schema'
+import { useMaterialThresholds } from '@/features/warehouse/material-thresholds/hooks/use-material-thresholds'
 
 type RuleFilter = 'ALL' | 'MATERIAL' | 'BOM'
 type StatusFilter = 'ALL' | 'ENABLED' | 'DISABLED'
@@ -48,8 +48,11 @@ export default function MaterialThresholdsTab() {
   const [ruleFilter, setRuleFilter] = useState<RuleFilter>('ALL')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL')
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [editingRule, setEditingRule] = useState<InventoryThresholdRule | null>(null)
-  const [deleteTarget, setDeleteTarget] = useState<InventoryThresholdRule | null>(null)
+  const [editingRule, setEditingRule] = useState<InventoryThresholdRule | null>(
+    null
+  )
+  const [deleteTarget, setDeleteTarget] =
+    useState<InventoryThresholdRule | null>(null)
 
   const canManage = allowsAction('action_warehouse_category_manage')
 
@@ -64,7 +67,8 @@ export default function MaterialThresholdsTab() {
             .toLowerCase()
             .includes(normalizedSearch)
 
-        const matchesType = ruleFilter === 'ALL' || rule.targetType === ruleFilter
+        const matchesType =
+          ruleFilter === 'ALL' || rule.targetType === ruleFilter
         const matchesStatus =
           statusFilter === 'ALL' ||
           (statusFilter === 'ENABLED' ? rule.enabled : !rule.enabled)
@@ -85,15 +89,33 @@ export default function MaterialThresholdsTab() {
   )
 
   const filterOptions: Array<{ value: RuleFilter; label: string }> = [
-    { value: 'ALL', label: t('warehouseConfig.materialThresholds.filters.allTargets') },
-    { value: 'MATERIAL', label: t('warehouseConfig.materialThresholds.filters.materialOnly') },
-    { value: 'BOM', label: t('warehouseConfig.materialThresholds.filters.bomOnly') },
+    {
+      value: 'ALL',
+      label: t('warehouseConfig.materialThresholds.filters.allTargets'),
+    },
+    {
+      value: 'MATERIAL',
+      label: t('warehouseConfig.materialThresholds.filters.materialOnly'),
+    },
+    {
+      value: 'BOM',
+      label: t('warehouseConfig.materialThresholds.filters.bomOnly'),
+    },
   ]
 
   const statusOptions: Array<{ value: StatusFilter; label: string }> = [
-    { value: 'ALL', label: t('warehouseConfig.materialThresholds.filters.allStatus') },
-    { value: 'ENABLED', label: t('warehouseConfig.materialThresholds.filters.enabledOnly') },
-    { value: 'DISABLED', label: t('warehouseConfig.materialThresholds.filters.disabledOnly') },
+    {
+      value: 'ALL',
+      label: t('warehouseConfig.materialThresholds.filters.allStatus'),
+    },
+    {
+      value: 'ENABLED',
+      label: t('warehouseConfig.materialThresholds.filters.enabledOnly'),
+    },
+    {
+      value: 'DISABLED',
+      label: t('warehouseConfig.materialThresholds.filters.disabledOnly'),
+    },
   ]
 
   const openCreateDialog = () => {
@@ -151,12 +173,12 @@ export default function MaterialThresholdsTab() {
 
   if (readResource.status === 'error') {
     return (
-      <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+      <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
         <div className='flex min-h-[320px] flex-col items-center justify-center rounded-[32px] border border-dashed border-rose-500/25 bg-rose-500/[0.03] px-6 text-center'>
           <p className='text-[10px] font-black tracking-widest text-rose-700 uppercase'>
             {t('warehouseConfig.materialThresholds.errorTitle')}
           </p>
-          <p className='mt-3 max-w-2xl text-[11px] font-bold leading-5 text-rose-700/80'>
+          <p className='mt-3 max-w-2xl text-[11px] leading-5 font-bold text-rose-700/80'>
             {readResource.error.message}
           </p>
           <Button
@@ -176,7 +198,7 @@ export default function MaterialThresholdsTab() {
 
   if (readResource.status === 'loading') {
     return (
-      <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+      <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
         <div className='flex min-h-[320px] flex-col items-center justify-center rounded-[32px] border border-dashed border-muted/50 bg-muted/5 px-6 text-center'>
           <Loader2 className='size-8 animate-spin text-primary/40' />
           <p className='mt-4 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
@@ -189,7 +211,7 @@ export default function MaterialThresholdsTab() {
 
   return (
     <>
-      <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+      <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
         <div className='relative overflow-hidden rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-8'>
           <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 via-transparent' />
           <div className='relative z-10 flex items-center gap-3 text-primary'>
@@ -245,9 +267,16 @@ export default function MaterialThresholdsTab() {
                     <div className='text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                       {item.label}
                     </div>
-                    <div className='mt-2 text-2xl font-black tracking-tighter'>{item.value}</div>
+                    <div className='mt-2 text-2xl font-black tracking-tighter'>
+                      {item.value}
+                    </div>
                   </div>
-                  <div className={cn('flex size-11 items-center justify-center rounded-2xl', item.accent)}>
+                  <div
+                    className={cn(
+                      'flex size-11 items-center justify-center rounded-2xl',
+                      item.accent
+                    )}
+                  >
                     <Icon className='size-5' />
                   </div>
                 </div>
@@ -263,7 +292,9 @@ export default function MaterialThresholdsTab() {
               <Input
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder={t('warehouseConfig.materialThresholds.searchPlaceholder')}
+                placeholder={t(
+                  'warehouseConfig.materialThresholds.searchPlaceholder'
+                )}
                 className='h-12 rounded-2xl border-none bg-muted/50 pl-10 text-sm font-medium focus-visible:ring-primary/20'
               />
             </div>
@@ -325,107 +356,119 @@ export default function MaterialThresholdsTab() {
                 : t('warehouseConfig.materialThresholds.card.thresholdMaterial')
               const thresholdHint = isBomRule
                 ? t('warehouseConfig.materialThresholds.card.thresholdBomHint')
-                : t('warehouseConfig.materialThresholds.card.thresholdMaterialHint')
+                : t(
+                    'warehouseConfig.materialThresholds.card.thresholdMaterialHint'
+                  )
 
               return (
                 <div
                   key={rule.id}
                   className='rounded-[24px] border border-dashed border-muted/60 bg-background p-6 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5'
                 >
-                <div className='flex items-start justify-between gap-4'>
-                  <div className='min-w-0'>
-                    <div className='flex flex-wrap items-center gap-2'>
-                      <h2 className='truncate text-sm font-black tracking-tighter uppercase italic md:text-base'>
-                        {rule.targetNameSnapshot}
-                      </h2>
-                      <Badge
-                        className={cn(
-                          'h-5 rounded-full border-none px-2 text-[8px] font-black tracking-widest uppercase',
-                          rule.enabled
-                            ? 'bg-emerald-500/10 text-emerald-600'
-                            : 'bg-muted text-muted-foreground/60'
-                        )}
+                  <div className='flex items-start justify-between gap-4'>
+                    <div className='min-w-0'>
+                      <div className='flex flex-wrap items-center gap-2'>
+                        <h2 className='truncate text-sm font-black tracking-tighter uppercase italic md:text-base'>
+                          {rule.targetNameSnapshot}
+                        </h2>
+                        <Badge
+                          className={cn(
+                            'h-5 rounded-full border-none px-2 text-[8px] font-black tracking-widest uppercase',
+                            rule.enabled
+                              ? 'bg-emerald-500/10 text-emerald-600'
+                              : 'bg-muted text-muted-foreground/60'
+                          )}
+                        >
+                          {rule.enabled
+                            ? t(
+                                'warehouseConfig.materialThresholds.card.enabled'
+                              )
+                            : t(
+                                'warehouseConfig.materialThresholds.card.disabled'
+                              )}
+                        </Badge>
+                        <Badge
+                          className={cn(
+                            'h-5 rounded-full border-none px-2 text-[8px] font-black tracking-widest uppercase',
+                            rule.targetType === 'MATERIAL'
+                              ? 'bg-amber-500/10 text-amber-600'
+                              : 'bg-blue-500/10 text-blue-600'
+                          )}
+                        >
+                          {rule.targetType === 'MATERIAL'
+                            ? t(
+                                'warehouseConfig.materialThresholds.card.material'
+                              )
+                            : t('warehouseConfig.materialThresholds.card.bom')}
+                        </Badge>
+                      </div>
+                      <div className='mt-2 font-mono text-[8px] text-muted-foreground/60'>
+                        {t('warehouseConfig.materialThresholds.card.code')}:{' '}
+                        {rule.targetCodeSnapshot || '--'}
+                      </div>
+                    </div>
+                    <div className='flex items-center gap-1'>
+                      <Button
+                        type='button'
+                        variant='ghost'
+                        size='icon'
+                        disabled={!canManage}
+                        className='size-9 rounded-xl text-muted-foreground/60 hover:bg-primary/10 hover:text-primary'
+                        onClick={() => openEditDialog(rule)}
                       >
-                        {rule.enabled
-                          ? t('warehouseConfig.materialThresholds.card.enabled')
-                          : t('warehouseConfig.materialThresholds.card.disabled')}
-                      </Badge>
-                      <Badge
-                        className={cn(
-                          'h-5 rounded-full border-none px-2 text-[8px] font-black tracking-widest uppercase',
-                          rule.targetType === 'MATERIAL'
-                            ? 'bg-amber-500/10 text-amber-600'
-                            : 'bg-blue-500/10 text-blue-600'
-                        )}
+                        <Edit2 className='size-4' />
+                      </Button>
+                      <Button
+                        type='button'
+                        variant='ghost'
+                        size='icon'
+                        disabled={!canManage}
+                        className='size-9 rounded-xl text-muted-foreground/60 hover:bg-rose-500/10 hover:text-rose-600'
+                        onClick={() => setDeleteTarget(rule)}
                       >
-                        {rule.targetType === 'MATERIAL'
-                          ? t('warehouseConfig.materialThresholds.card.material')
-                          : t('warehouseConfig.materialThresholds.card.bom')}
-                      </Badge>
-                    </div>
-                    <div className='mt-2 text-[8px] font-mono text-muted-foreground/60'>
-                      {t('warehouseConfig.materialThresholds.card.code')}: {rule.targetCodeSnapshot || '--'}
+                        <Trash2 className='size-4' />
+                      </Button>
                     </div>
                   </div>
-                  <div className='flex items-center gap-1'>
-                    <Button
-                      type='button'
-                      variant='ghost'
-                      size='icon'
-                      disabled={!canManage}
-                      className='size-9 rounded-xl text-muted-foreground/60 hover:bg-primary/10 hover:text-primary'
-                      onClick={() => openEditDialog(rule)}
-                    >
-                      <Edit2 className='size-4' />
-                    </Button>
-                    <Button
-                      type='button'
-                      variant='ghost'
-                      size='icon'
-                      disabled={!canManage}
-                      className='size-9 rounded-xl text-muted-foreground/60 hover:bg-rose-500/10 hover:text-rose-600'
-                      onClick={() => setDeleteTarget(rule)}
-                    >
-                      <Trash2 className='size-4' />
-                    </Button>
-                  </div>
-                </div>
 
-                <div className='mt-5 grid grid-cols-1 gap-4 md:grid-cols-2'>
-                  <div className='rounded-2xl bg-muted/30 px-4 py-3'>
-                    <div className='text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'>
-                      {thresholdLabel}
+                  <div className='mt-5 grid grid-cols-1 gap-4 md:grid-cols-2'>
+                    <div className='rounded-2xl bg-muted/30 px-4 py-3'>
+                      <div className='text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'>
+                        {thresholdLabel}
+                      </div>
+                      <div className='mt-2 text-xl font-black tracking-tighter'>
+                        {rule.thresholdQty}
+                        {isBomRule ? (
+                          <span className='ml-2 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+                            {t(
+                              'warehouseConfig.materialThresholds.card.thresholdBomUnit'
+                            )}
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className='mt-2 text-[9px] font-black tracking-widest text-muted-foreground/50 uppercase'>
+                        {thresholdHint}
+                      </div>
                     </div>
-                    <div className='mt-2 text-xl font-black tracking-tighter'>
-                      {rule.thresholdQty}
-                      {isBomRule ? (
-                        <span className='ml-2 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
-                          {t('warehouseConfig.materialThresholds.card.thresholdBomUnit')}
-                        </span>
-                      ) : null}
-                    </div>
-                    <div className='mt-2 text-[9px] font-black tracking-widest text-muted-foreground/50 uppercase'>
-                      {thresholdHint}
+                    <div className='rounded-2xl bg-muted/30 px-4 py-3'>
+                      <div className='text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'>
+                        {t('warehouseConfig.materialThresholds.card.updatedAt')}
+                      </div>
+                      <div className='mt-2 font-mono text-[11px] text-muted-foreground/80'>
+                        {new Date(rule.updatedAt).toLocaleString()}
+                      </div>
                     </div>
                   </div>
-                  <div className='rounded-2xl bg-muted/30 px-4 py-3'>
-                    <div className='text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'>
-                      {t('warehouseConfig.materialThresholds.card.updatedAt')}
-                    </div>
-                    <div className='mt-2 text-[11px] font-mono text-muted-foreground/80'>
-                      {new Date(rule.updatedAt).toLocaleString()}
-                    </div>
-                  </div>
-                </div>
 
-                <div className='mt-4 rounded-2xl border border-dashed border-muted/60 bg-muted/10 px-4 py-3'>
-                  <div className='text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'>
-                    {t('warehouseConfig.materialThresholds.card.notes')}
+                  <div className='mt-4 rounded-2xl border border-dashed border-muted/60 bg-muted/10 px-4 py-3'>
+                    <div className='text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'>
+                      {t('warehouseConfig.materialThresholds.card.notes')}
+                    </div>
+                    <p className='mt-2 text-[11px] leading-5 text-muted-foreground'>
+                      {rule.notes ||
+                        t('warehouseConfig.materialThresholds.card.notesEmpty')}
+                    </p>
                   </div>
-                  <p className='mt-2 text-[11px] leading-5 text-muted-foreground'>
-                    {rule.notes || t('warehouseConfig.materialThresholds.card.notesEmpty')}
-                  </p>
-                </div>
                 </div>
               )
             })
@@ -437,7 +480,7 @@ export default function MaterialThresholdsTab() {
               <p className='text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase italic'>
                 {t('warehouseConfig.materialThresholds.emptyTitle')}
               </p>
-              <p className='mt-3 max-w-xl text-[11px] font-bold leading-5 text-muted-foreground/70'>
+              <p className='mt-3 max-w-xl text-[11px] leading-5 font-bold text-muted-foreground/70'>
                 {t('warehouseConfig.materialThresholds.emptyDescription')}
               </p>
             </div>

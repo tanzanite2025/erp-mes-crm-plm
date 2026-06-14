@@ -7,4 +7,3 @@ export type RecentVisit = {
   visitedAt: string
   count: number
 }
-

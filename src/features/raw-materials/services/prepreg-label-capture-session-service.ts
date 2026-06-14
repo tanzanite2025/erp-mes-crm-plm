@@ -24,7 +24,9 @@ export interface SubmitPrepregLabelCaptureSessionInput {
   imageSize?: number
 }
 
-function normalizeSession(item: Partial<PrepregLabelCaptureSession>): PrepregLabelCaptureSession {
+function normalizeSession(
+  item: Partial<PrepregLabelCaptureSession>
+): PrepregLabelCaptureSession {
   return {
     sessionId: item.sessionId || '',
     uploadToken: item.uploadToken,
@@ -40,29 +42,35 @@ function normalizeSession(item: Partial<PrepregLabelCaptureSession>): PrepregLab
 
 export const PrepregLabelCaptureSessionService = {
   async create(): Promise<PrepregLabelCaptureSession> {
-    const res = await apiFetch<PrepregLabelCaptureSession>('/raw-materials/prepreg-label-ocr-sessions', {
-      method: 'POST',
-      body: JSON.stringify({}),
-    })
+    const res = await apiFetch<PrepregLabelCaptureSession>(
+      '/raw-materials/prepreg-label-ocr-sessions',
+      {
+        method: 'POST',
+        body: JSON.stringify({}),
+      }
+    )
     return normalizeSession(
-      ensureObjectResponse<PrepregLabelCaptureSession & Record<string, unknown>>(
-        res,
-        'PrepregLabelCaptureSessionService.create'
-      )
+      ensureObjectResponse<
+        PrepregLabelCaptureSession & Record<string, unknown>
+      >(res, 'PrepregLabelCaptureSessionService.create')
     )
   },
 
   async get(sessionId: string): Promise<PrepregLabelCaptureSession> {
-    const res = await apiFetch<PrepregLabelCaptureSession>(`/raw-materials/prepreg-label-ocr-sessions/${sessionId}`)
+    const res = await apiFetch<PrepregLabelCaptureSession>(
+      `/raw-materials/prepreg-label-ocr-sessions/${sessionId}`
+    )
     return normalizeSession(
-      ensureObjectResponse<PrepregLabelCaptureSession & Record<string, unknown>>(
-        res,
-        'PrepregLabelCaptureSessionService.get'
-      )
+      ensureObjectResponse<
+        PrepregLabelCaptureSession & Record<string, unknown>
+      >(res, 'PrepregLabelCaptureSessionService.get')
     )
   },
 
-  async submit(sessionId: string, input: SubmitPrepregLabelCaptureSessionInput): Promise<PrepregLabelCaptureSession> {
+  async submit(
+    sessionId: string,
+    input: SubmitPrepregLabelCaptureSessionInput
+  ): Promise<PrepregLabelCaptureSession> {
     const res = await apiFetch<PrepregLabelCaptureSession>(
       `/raw-materials/prepreg-label-ocr-sessions/${sessionId}/submit`,
       {

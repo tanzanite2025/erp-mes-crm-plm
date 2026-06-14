@@ -1,20 +1,22 @@
 import { useCallback, useMemo, useRef } from 'react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
+import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { numberingService } from '@/features/basic-settings/services/numbering-service'
 import { type TechnicalSpec } from '@/features/engineering-db/data/schema'
-import { type ProductDisplayProjectionV2 } from '@/features/engineering/display/product-display-v2'
 import { type Product } from '@/features/engineering/data/schema'
-import { type SalesOrder, type SalesOrderFormValues } from '../data/schema'
+import { type ProductDisplayProjectionV2 } from '@/features/engineering/display/product-display-v2'
 import { getSalesOrderClassificationExt } from '../data/sales-order-options'
+import { type SalesOrder, type SalesOrderFormValues } from '../data/schema'
 import { mergeSalesOrderLineProductFields } from '../utils/sales-order-line-product-fields'
 import { validateSalesOrder } from '../utils/sales-order-validator'
 import { useSalesOrderInit } from './use-sales-order-init'
 import { useSalesOrderOps } from './use-sales-order-ops'
-import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 
 type SalesOrderFormState = SalesOrderFormValues
-type SalesOrderFormUpdater = SalesOrderFormState | ((prev: SalesOrderFormState) => SalesOrderFormState)
+type SalesOrderFormUpdater =
+  | SalesOrderFormState
+  | ((prev: SalesOrderFormState) => SalesOrderFormState)
 type SalesOrderPlanOption = { label: string; value: string }
 
 function formatEngineeringSpecLabel(spec: TechnicalSpec): string {
@@ -24,7 +26,9 @@ function formatEngineeringSpecLabel(spec: TechnicalSpec): string {
 
 function resolveEngineeringSpecId(product: Product): string {
   const legacyProduct = product as Product & { techSpecId?: string }
-  return product.engineeringSpecId?.trim() || legacyProduct.techSpecId?.trim() || ''
+  return (
+    product.engineeringSpecId?.trim() || legacyProduct.techSpecId?.trim() || ''
+  )
 }
 
 export function useSalesOrderForm(
@@ -38,55 +42,79 @@ export function useSalesOrderForm(
 ) {
   const { t } = useLanguage()
   const classificationPreviewRequestIdRef = useRef(0)
-  const { initialFormData, isInitializing, initError, retryInit } = useSalesOrderInit(initialOrder, open)
+  const { initialFormData, isInitializing, initError, retryInit } =
+    useSalesOrderInit(initialOrder, open)
   const productById = useMemo(
     () => new Map(products.map((product) => [product.id, product])),
     [products]
   )
   const drillingPlanNameMap = useMemo(
-    () => new Map(drillingOptions.map((option) => [option.value, option.label])),
+    () =>
+      new Map(drillingOptions.map((option) => [option.value, option.label])),
     [drillingOptions]
   )
   const labelingPlanNameMap = useMemo(
-    () => new Map(labelingOptions.map((option) => [option.value, option.label])),
+    () =>
+      new Map(labelingOptions.map((option) => [option.value, option.label])),
     [labelingOptions]
   )
   const engineeringSpecNameMap = useMemo(
-    () => new Map(engineeringSpecs.map((spec) => [spec.id, formatEngineeringSpecLabel(spec)])),
+    () =>
+      new Map(
+        engineeringSpecs.map((spec) => [
+          spec.id,
+          formatEngineeringSpecLabel(spec),
+        ])
+      ),
     [engineeringSpecs]
   )
 
-  const memoizedInitial = useMemo<SalesOrderFormValues>(() => initialFormData, [initialFormData])
-  const { data: formData, commit, replace, isDirty } = useDeltaTracker(memoizedInitial, open)
+  const memoizedInitial = useMemo<SalesOrderFormValues>(
+    () => initialFormData,
+    [initialFormData]
+  )
+  const {
+    data: formData,
+    commit,
+    replace,
+    isDirty,
+  } = useDeltaTracker(memoizedInitial, open)
 
-  const setFormData = useCallback((updater: SalesOrderFormUpdater) => {
-    if (typeof updater === 'function') {
-      const next = updater(formData)
-      replace(next)
-    } else {
-      replace(updater)
-    }
-  }, [formData, replace])
+  const setFormData = useCallback(
+    (updater: SalesOrderFormUpdater) => {
+      if (typeof updater === 'function') {
+        const next = updater(formData)
+        replace(next)
+      } else {
+        replace(updater)
+      }
+    },
+    [formData, replace]
+  )
 
-  const { handleAddLine, handleRemoveLine, updateLine } = useSalesOrderOps(setFormData)
+  const { handleAddLine, handleRemoveLine, updateLine } =
+    useSalesOrderOps(setFormData)
 
-  const handleClassificationChange = useCallback(async (value: string) => {
-    const requestId = classificationPreviewRequestIdRef.current + 1
-    classificationPreviewRequestIdRef.current = requestId
-    const newBarcode = await numberingService.previewContractBarcode(
-      getSalesOrderClassificationExt(value)
-    )
-    if (requestId !== classificationPreviewRequestIdRef.current) {
-      return
-    }
+  const handleClassificationChange = useCallback(
+    async (value: string) => {
+      const requestId = classificationPreviewRequestIdRef.current + 1
+      classificationPreviewRequestIdRef.current = requestId
+      const newBarcode = await numberingService.previewContractBarcode(
+        getSalesOrderClassificationExt(value)
+      )
+      if (requestId !== classificationPreviewRequestIdRef.current) {
+        return
+      }
 
-    setFormData((prev) => ({
-      ...prev,
-      classification: value,
-      orderNo: newBarcode,
-      barcode: newBarcode,
-    }))
-  }, [setFormData])
+      setFormData((prev) => ({
+        ...prev,
+        classification: value,
+        orderNo: newBarcode,
+        barcode: newBarcode,
+      }))
+    },
+    [setFormData]
+  )
 
   const validate = (): boolean => {
     const { isValid, errorKey } = validateSalesOrder(formData, initialOrder)
@@ -111,7 +139,9 @@ export function useSalesOrderForm(
         }
 
         const product = productById.get(line.productId)
-        const displayProjection = productDisplayProjectionMap.get(line.productId)
+        const displayProjection = productDisplayProjectionMap.get(
+          line.productId
+        )
         if (!product) {
           throw new Error(
             t('tradingSalesOrder.errors.lineProductMissing', {
@@ -124,17 +154,27 @@ export function useSalesOrderForm(
           throw new Error(`第 ${line.lineNo} 行产品展示快照缺失，请刷新后重试`)
         }
 
-        const productFields = mergeSalesOrderLineProductFields(line, product, displayProjection)
+        const productFields = mergeSalesOrderLineProductFields(
+          line,
+          product,
+          displayProjection
+        )
         const engineeringSpecId = resolveEngineeringSpecId(product)
         const engineeringSpecNameSnapshot = !engineeringSpecId
           ? ''
-          : engineeringSpecNameMap.get(engineeringSpecId) || line.engineeringSpecNameSnapshot?.trim() || ''
+          : engineeringSpecNameMap.get(engineeringSpecId) ||
+            line.engineeringSpecNameSnapshot?.trim() ||
+            ''
         const drillingPlanNameSnapshot = !line.drillingPlanId
           ? ''
-          : drillingPlanNameMap.get(line.drillingPlanId) || line.drillingPlanNameSnapshot?.trim() || ''
+          : drillingPlanNameMap.get(line.drillingPlanId) ||
+            line.drillingPlanNameSnapshot?.trim() ||
+            ''
         const labelingPlanNameSnapshot = !line.labelingPlanId
           ? ''
-          : labelingPlanNameMap.get(line.labelingPlanId) || line.labelingPlanNameSnapshot?.trim() || ''
+          : labelingPlanNameMap.get(line.labelingPlanId) ||
+            line.labelingPlanNameSnapshot?.trim() ||
+            ''
 
         return {
           ...line,
@@ -145,7 +185,11 @@ export function useSalesOrderForm(
         }
       })
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t('tradingSalesOrder.toasts.saveFailed'))
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t('tradingSalesOrder.toasts.saveFailed')
+      )
       return undefined
     }
 

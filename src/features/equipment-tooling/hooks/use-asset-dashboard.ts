@@ -42,6 +42,7 @@ export function useAssetDashboard() {
 
   return {
     ...query,
-    refresh: () => queryClient.invalidateQueries({ queryKey: ASSET_DASHBOARD_QUERY_KEY }),
+    refresh: () =>
+      queryClient.invalidateQueries({ queryKey: ASSET_DASHBOARD_QUERY_KEY }),
   }
 }

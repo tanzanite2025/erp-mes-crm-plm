@@ -49,17 +49,20 @@ export const approval = {
   requests: {
     loading: 'Loading approval tasks...',
     heroTitle: 'Inbox & Requests',
-    heroSubtitle: 'You have {{count}} requests waiting for authorization. Complete secondary approval for sensitive operations here.',
+    heroSubtitle:
+      'You have {{count}} requests waiting for authorization. Complete secondary approval for sensitive operations here.',
     emptyPending: 'No pending tasks right now',
     noReasonProvided: 'No reason provided',
     reject: 'Reject',
     confirm: 'Confirm PIN',
     l1Pass: 'Pass L1',
     myLogsTitle: 'My Request Timeline',
-    myLogsSubtitle: 'Track every approval request you initiated across its full lifecycle.',
+    myLogsSubtitle:
+      'Track every approval request you initiated across its full lifecycle.',
     emptyMine: 'No requests initiated by you',
     pinDialogTitle: 'Set a 6-digit PIN',
-    pinDialogDescription: 'Enter a 6-digit numeric PIN. The requester can complete the protected action after entering it.',
+    pinDialogDescription:
+      'Enter a 6-digit numeric PIN. The requester can complete the protected action after entering it.',
     issuePin: 'Issue PIN',
     approvedToast: 'Request approved',
     rejectedToast: 'Request rejected',
@@ -72,21 +75,26 @@ export const approval = {
   },
   history: {
     heroTitle: 'Approval History',
-    heroSubtitle: 'Historical authorization trail for sensitive operations across the system, with {{count}} approval records.',
+    heroSubtitle:
+      'Historical authorization trail for sensitive operations across the system, with {{count}} approval records.',
     searchPlaceholder: 'Search module, action, or requester...',
     empty: 'No matching approval records',
   },
   guard: {
     title: 'Security Authorization Required',
-    verifyDescription: 'This operation is protected. Enter the 6-digit authorization PIN issued by the approver.',
+    verifyDescription:
+      'This operation is protected. Enter the 6-digit authorization PIN issued by the approver.',
     verifyPlaceholder: 'Enter PIN',
     requestAnother: 'Lost it or no request yet? Submit again',
-    requestDescription: 'The approval flow is missing or the request has expired. Enter a reason to submit a new request:',
-    requestPlaceholder: 'Reason (for example: business reversal, data correction)',
+    requestDescription:
+      'The approval flow is missing or the request has expired. Enter a reason to submit a new request:',
+    requestPlaceholder:
+      'Reason (for example: business reversal, data correction)',
     verifyAction: 'Verify and Continue',
     submitRequest: 'Submit Request',
     verifySuccess: 'Authorization successful',
     verifyFailed: 'Invalid PIN or approval not granted yet',
-    requestSuccess: 'Request submitted. Please contact the approver for the 6-digit PIN',
+    requestSuccess:
+      'Request submitted. Please contact the approver for the 6-digit PIN',
   },
 } as const

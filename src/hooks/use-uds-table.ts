@@ -45,9 +45,15 @@ export interface UseUdsTableOptions<TData> {
   getRowId?: TableOptions<TData>['getRowId']
 }
 
-export type UseUdsClientTableOptions<TData> = Omit<UseUdsTableOptions<TData>, 'mode'>
+export type UseUdsClientTableOptions<TData> = Omit<
+  UseUdsTableOptions<TData>,
+  'mode'
+>
 
-export type UseUdsManualPaginationTableOptions<TData> = Omit<UseUdsTableOptions<TData>, 'mode'>
+export type UseUdsManualPaginationTableOptions<TData> = Omit<
+  UseUdsTableOptions<TData>,
+  'mode'
+>
 
 export function useUdsTable<TData>({
   data,
@@ -72,7 +78,8 @@ export function useUdsTable<TData>({
   getRowId,
 }: UseUdsTableOptions<TData>): Table<TData> {
   const shouldUseClientPagination = mode === 'client'
-  const shouldUseManualPagination = mode === 'manual-pagination' || mode === 'manual-table'
+  const shouldUseManualPagination =
+    mode === 'manual-pagination' || mode === 'manual-table'
 
   return useReactTable({
     data,
@@ -93,11 +100,15 @@ export function useUdsTable<TData>({
     getColumnCanGlobalFilter,
     getRowId,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: shouldUseClientPagination ? getPaginationRowModel() : undefined,
+    getPaginationRowModel: shouldUseClientPagination
+      ? getPaginationRowModel()
+      : undefined,
     getSortedRowModel: enableSorting ? getSortedRowModel() : undefined,
     getFilteredRowModel: enableFiltering ? getFilteredRowModel() : undefined,
     getFacetedRowModel: enableFaceting ? getFacetedRowModel() : undefined,
-    getFacetedUniqueValues: enableFaceting ? getFacetedUniqueValues() : undefined,
+    getFacetedUniqueValues: enableFaceting
+      ? getFacetedUniqueValues()
+      : undefined,
   })
 }
 

@@ -1,13 +1,17 @@
-import type { Employee } from '../data/schema'
 import type { EmployeeApiDTO } from '../contracts/employee-api-dto'
+import type { Employee } from '../data/schema'
 
-function normalizeOptionalString(value: string | null | undefined): string | undefined {
+function normalizeOptionalString(
+  value: string | null | undefined
+): string | undefined {
   if (typeof value !== 'string') return undefined
   const normalized = value.trim()
   return normalized === '' ? undefined : normalized
 }
 
-function normalizeOptionalDate(value: string | null | undefined): string | undefined {
+function normalizeOptionalDate(
+  value: string | null | undefined
+): string | undefined {
   if (typeof value !== 'string') return undefined
   const normalized = value.trim()
   return normalized === '' ? undefined : normalized

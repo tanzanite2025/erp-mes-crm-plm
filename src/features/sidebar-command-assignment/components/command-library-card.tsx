@@ -1,10 +1,10 @@
 import { ArrowDown, ArrowUp, Pencil, Power } from 'lucide-react'
-import { useLanguage } from '@/context/language-provider'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import type { SidebarCommandDefinitionDto } from '../services'
 import { SidebarCommandIcon } from '../data/command-icons'
+import type { SidebarCommandDefinitionDto } from '../services'
 
 type CommandLibraryCardProps = {
   command: SidebarCommandDefinitionDto

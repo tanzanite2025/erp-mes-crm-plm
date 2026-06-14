@@ -116,7 +116,9 @@ export function useStandardEditorForm({
         isPatch: true,
         delta,
       }
-    }, [commit, formData, isEdit, memoizedInitial, t])
+    },
+    [commit, formData, isEdit, memoizedInitial, t]
+  )
 
   const buildSubmitPayload = useCallback(
     (): StandardEditorSubmitPayload | null => buildSubmitPayloadWithOverrides(),

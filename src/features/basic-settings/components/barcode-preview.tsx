@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { createLogger } from '@/lib/logger'
 import { renderBwipBarcode } from '@/lib/bwip-renderer'
+import { createLogger } from '@/lib/logger'
 import { cn } from '@/lib/utils'
 
 const logger = createLogger('BarcodePreview')
@@ -67,23 +67,23 @@ export function BarcodePreview({
   return (
     <div
       className={cn(
-        'relative p-6 rounded-2xl shadow-2xl flex flex-col sm:flex-row items-center sm:items-stretch gap-4 sm:gap-6 overflow-hidden w-full max-w-[560px] h-auto backdrop-blur-xl transition-all duration-500',
-        'bg-white/40 border-white/50',
-        'dark:bg-slate-900/60 dark:border-white/10',
+        'relative flex h-auto w-full max-w-[560px] flex-col items-center gap-4 overflow-hidden rounded-2xl p-6 shadow-2xl backdrop-blur-xl transition-all duration-500 sm:flex-row sm:items-stretch sm:gap-6',
+        'border-white/50 bg-white/40',
+        'dark:border-white/10 dark:bg-slate-900/60',
         className
       )}
     >
-      <div className='absolute top-0 right-0 w-32 h-32 bg-blue-500/10 blur-[50px] pointer-events-none' />
+      <div className='pointer-events-none absolute top-0 right-0 h-32 w-32 bg-blue-500/10 blur-[50px]' />
 
       <div
         className={cn(
-          'relative z-20 shrink-0 bg-white rounded-xl flex items-center justify-center p-2.5 shadow-lg ring-4 ring-white/5',
-          isLinearBarcode ? 'w-[176px] h-[88px]' : 'w-[100px] h-[100px]'
+          'relative z-20 flex shrink-0 items-center justify-center rounded-xl bg-white p-2.5 shadow-lg ring-4 ring-white/5',
+          isLinearBarcode ? 'h-[88px] w-[176px]' : 'h-[100px] w-[100px]'
         )}
       >
         <canvas
           ref={canvasRef}
-          className='block w-full h-full bg-white'
+          className='block h-full w-full bg-white'
           style={{
             imageRendering: 'pixelated',
             aspectRatio: isLinearBarcode ? '3 / 1' : '1 / 1',
@@ -91,27 +91,29 @@ export function BarcodePreview({
         />
       </div>
 
-      <div className='flex-1 flex flex-col justify-center items-center sm:items-start min-w-0 z-10 text-center sm:text-left sm:min-w-[260px]'>
+      <div className='z-10 flex min-w-0 flex-1 flex-col items-center justify-center text-center sm:min-w-[260px] sm:items-start sm:text-left'>
         {headerLabel ? (
-          <div className='text-[10px] font-black text-blue-600/60 dark:text-blue-400/60 uppercase tracking-widest mb-1'>
+          <div className='mb-1 text-[10px] font-black tracking-widest text-blue-600/60 uppercase dark:text-blue-400/60'>
             {headerLabel}
           </div>
         ) : null}
         <div
-          className='flex max-w-full flex-wrap items-center gap-1.5 text-base sm:text-lg font-mono font-black tracking-[0.2em] drop-shadow-sm select-none pointer-events-none'
+          className='pointer-events-none flex max-w-full flex-wrap items-center gap-1.5 font-mono text-base font-black tracking-[0.2em] drop-shadow-sm select-none sm:text-lg'
           style={{ WebkitTouchCallout: 'none' }}
         >
           {isDrainHole ? <span className='text-red-500'>H</span> : null}
-          <span className='min-w-0 break-all text-slate-900 dark:text-white'>{shortCode || '--------------'}</span>
+          <span className='min-w-0 break-all text-slate-900 dark:text-white'>
+            {shortCode || '--------------'}
+          </span>
           {finalSuffix ? (
-            <span className='ml-2 px-1.5 py-0.5 border-2 border-red-500 text-red-500 text-xs leading-none inline-flex items-center rounded-sm font-black italic'>
+            <span className='ml-2 inline-flex items-center rounded-sm border-2 border-red-500 px-1.5 py-0.5 text-xs leading-none font-black text-red-500 italic'>
               {finalSuffix}
             </span>
           ) : null}
         </div>
         {statusLabel ? (
           <div className='mt-2 flex gap-1.5'>
-            <span className='text-[7px] font-black bg-blue-500/10 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/10 uppercase tracking-tighter'>
+            <span className='rounded border border-blue-500/10 bg-blue-500/10 px-1.5 py-0.5 text-[7px] font-black tracking-tighter text-blue-600 uppercase dark:text-blue-400'>
               {statusLabel}
             </span>
           </div>

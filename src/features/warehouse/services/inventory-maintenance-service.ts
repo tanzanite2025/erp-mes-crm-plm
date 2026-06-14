@@ -1,44 +1,51 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
-import { AdjustmentService } from '../adjustment'
-import { InventoryMaintenanceService as InventoryDomainMaintenanceService } from '../inventory'
-import { StocktakeMaintenanceService } from '../stocktake'
 import {
   toShipmentRecordContract,
   type ShipmentRecord,
 } from '../adapters/warehouse-api-adapter'
-import {
-  type InventoryShipmentRecordApiDTO,
-} from '../contracts/warehouse-api-dto'
+import { AdjustmentService } from '../adjustment'
+import { type InventoryShipmentRecordApiDTO } from '../contracts/warehouse-api-dto'
+import { InventoryMaintenanceService as InventoryDomainMaintenanceService } from '../inventory'
+import { StocktakeMaintenanceService } from '../stocktake'
 
 export interface ReconcileResult {
   totalItems: number
   fixedNegatives: number
 }
 
-export type { AdjustmentItem, InventoryAdjustment } from '../adapters/warehouse-api-adapter'
+export type {
+  AdjustmentItem,
+  InventoryAdjustment,
+} from '../adapters/warehouse-api-adapter'
 export type { InventoryRecord } from '../inventory'
 
 export const InventoryMaintenanceService = {
   reconcileInventory: InventoryDomainMaintenanceService.reconcileInventory,
 
-  deleteShipmentRecord: async (id: string, approvalId?: string): Promise<ShipmentRecord> => {
-    const res = await apiFetch<InventoryShipmentRecordApiDTO>(`/inventory/shipment/${id}/void`, {
-      method: 'POST',
-      body: JSON.stringify({
-        approvalId,
-        metadata: { intent: 'SHIPMENT_VOID' },
-      }),
-    })
-    const response = ensureObjectResponse<InventoryShipmentRecordApiDTO & Record<string, unknown>>(
-      res,
-      'InventoryMaintenanceService.deleteShipmentRecord'
+  deleteShipmentRecord: async (
+    id: string,
+    approvalId?: string
+  ): Promise<ShipmentRecord> => {
+    const res = await apiFetch<InventoryShipmentRecordApiDTO>(
+      `/inventory/shipment/${id}/void`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          approvalId,
+          metadata: { intent: 'SHIPMENT_VOID' },
+        }),
+      }
     )
+    const response = ensureObjectResponse<
+      InventoryShipmentRecordApiDTO & Record<string, unknown>
+    >(res, 'InventoryMaintenanceService.deleteShipmentRecord')
     const record = toShipmentRecordContract(response)
     return record
   },
 
-  submitAdjustmentForApproval: StocktakeMaintenanceService.submitAdjustmentForApproval,
+  submitAdjustmentForApproval:
+    StocktakeMaintenanceService.submitAdjustmentForApproval,
 
   getAdjustmentHistory: AdjustmentService.getHistory,
 
@@ -46,5 +53,6 @@ export const InventoryMaintenanceService = {
 
   patchInventory: InventoryDomainMaintenanceService.patchInventory,
 
-  getMaterialThresholdMap: InventoryDomainMaintenanceService.getMaterialThresholdMap,
+  getMaterialThresholdMap:
+    InventoryDomainMaintenanceService.getMaterialThresholdMap,
 }

@@ -3,14 +3,20 @@
 import { useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { createLogger } from '@/lib/logger'
-import { type CompositeReadResource, resolveQueryFailure } from '@/lib/read-resource'
+import {
+  type CompositeReadResource,
+  resolveQueryFailure,
+} from '@/lib/read-resource'
 import { failLoudly } from '@/lib/safe-catch'
 import { type MaterialOption } from '../../material-archive/data/schema'
 import { type BOMSectionOption } from '../data/bom-section-schema'
 import { type BOM, type Product } from '../data/schema'
 import { BOMS_QUERY_KEY } from '../query-keys'
 import { bomService } from '../services/bom-service'
-import { ALL_BOM_REFERENCES, useBOMReferenceResource } from './use-bom-reference-resource'
+import {
+  ALL_BOM_REFERENCES,
+  useBOMReferenceResource,
+} from './use-bom-reference-resource'
 
 const logger = createLogger('useBOMReadData')
 
@@ -22,12 +28,18 @@ export type BOMReadDataResource = CompositeReadResource<{
   sections: BOMSectionOption[]
 }>
 
-export function useBOMReadData(filters?: { productId?: string; status?: string; bomType?: string }): BOMReadDataResource {
+export function useBOMReadData(filters?: {
+  productId?: string
+  status?: string
+  bomType?: string
+}): BOMReadDataResource {
   const bomsQuery = useQuery({
     queryKey: filters ? [...BOMS_QUERY_KEY, filters] : BOMS_QUERY_KEY,
     queryFn: () => bomService.getBOMs(filters),
   })
-  const referenceResource = useBOMReferenceResource({ include: ALL_BOM_REFERENCES })
+  const referenceResource = useBOMReferenceResource({
+    include: ALL_BOM_REFERENCES,
+  })
 
   const resource = useMemo<BOMReadDataResource>(() => {
     const bomFailure = resolveQueryFailure({
@@ -65,7 +77,10 @@ export function useBOMReadData(filters?: { productId?: string; status?: string; 
   }, [bomsQuery.data, bomsQuery.error, bomsQuery.isLoading, referenceResource])
 
   useEffect(() => {
-    if (resource.status !== 'error' || resource.scope !== 'useBOMReadData.boms') {
+    if (
+      resource.status !== 'error' ||
+      resource.scope !== 'useBOMReadData.boms'
+    ) {
       return
     }
 

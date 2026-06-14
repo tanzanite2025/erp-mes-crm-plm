@@ -1,7 +1,13 @@
 import { buildFlattenDelta } from '@/lib/delta/flatten-delta'
 import { type DeltaSet } from '@/lib/delta/types'
-import { type ProductTemplate, type ProductTemplateAttributeBinding } from '../data/schema'
-import { type ProductTemplateApiDTO, type ProductTemplateAttributeBindingApiDTO } from '../contracts/product-template-api-dto'
+import {
+  type ProductTemplateApiDTO,
+  type ProductTemplateAttributeBindingApiDTO,
+} from '../contracts/product-template-api-dto'
+import {
+  type ProductTemplate,
+  type ProductTemplateAttributeBinding,
+} from '../data/schema'
 import { type SaveProductTemplateInput } from '../mutation-types'
 import {
   normalizeEngineeringTemplateCode,
@@ -36,8 +42,13 @@ function toProductTemplateAttributeBindingApiDTO(
   }
 }
 
-export function toProductTemplateContract(dto: ProductTemplateApiDTO): ProductTemplate {
-  if (!dto.attributeBindings) throw new Error('[CRITICAL] Missing attributeBindings array in ProductTemplate DTO')
+export function toProductTemplateContract(
+  dto: ProductTemplateApiDTO
+): ProductTemplate {
+  if (!dto.attributeBindings)
+    throw new Error(
+      '[CRITICAL] Missing attributeBindings array in ProductTemplate DTO'
+    )
 
   return {
     id: dto.id,
@@ -46,7 +57,9 @@ export function toProductTemplateContract(dto: ProductTemplateApiDTO): ProductTe
     componentKey: normalizeEngineeringTemplateComponentKey(dto.componentKey),
     description: dto.description || '',
     active: dto.active,
-    attributeBindings: dto.attributeBindings.map(toProductTemplateAttributeBindingContract),
+    attributeBindings: dto.attributeBindings.map(
+      toProductTemplateAttributeBindingContract
+    ),
     createdAt: dto.createdAt || new Date().toISOString(),
     version: dto.version ?? 1,
     masterDataControl: dto.masterDataControl ?? undefined,
@@ -57,27 +70,38 @@ type ProductTemplateWriteCandidate = Omit<ProductTemplateApiDTO, 'version'> & {
   version: number
 }
 
-function toProductTemplateWriteCandidate(template: SaveProductTemplateInput): ProductTemplateWriteCandidate {
-  if (!template.attributeBindings) throw new Error('[CRITICAL] attributeBindings missing during save')
+function toProductTemplateWriteCandidate(
+  template: SaveProductTemplateInput
+): ProductTemplateWriteCandidate {
+  if (!template.attributeBindings)
+    throw new Error('[CRITICAL] attributeBindings missing during save')
 
   return {
     id: template.id || '',
     name: template.name || '',
     code: normalizeEngineeringTemplateCode(template.code),
-    componentKey: normalizeEngineeringTemplateComponentKey(template.componentKey),
+    componentKey: normalizeEngineeringTemplateComponentKey(
+      template.componentKey
+    ),
     description: template.description || '',
     active: template.active ?? true,
-    attributeBindings: template.attributeBindings.map(toProductTemplateAttributeBindingApiDTO),
+    attributeBindings: template.attributeBindings.map(
+      toProductTemplateAttributeBindingApiDTO
+    ),
     createdAt: template.createdAt,
     version: template.version ?? 1,
   }
 }
 
-function toProductTemplateWriteApiDTO(candidate: ProductTemplateWriteCandidate): ProductTemplateApiDTO {
+function toProductTemplateWriteApiDTO(
+  candidate: ProductTemplateWriteCandidate
+): ProductTemplateApiDTO {
   return candidate as ProductTemplateApiDTO
 }
 
-export function toProductTemplateApiDTO(template: SaveProductTemplateInput): ProductTemplateApiDTO {
+export function toProductTemplateApiDTO(
+  template: SaveProductTemplateInput
+): ProductTemplateApiDTO {
   return toProductTemplateWriteApiDTO(toProductTemplateWriteCandidate(template))
 }
 
@@ -90,10 +114,15 @@ const PRODUCT_TEMPLATE_PATCH_FIELDS: Array<keyof ProductTemplate> = [
   'attributeBindings',
 ]
 
-export function buildProductTemplateDelta(current: ProductTemplate, next: SaveProductTemplateInput): DeltaSet {
+export function buildProductTemplateDelta(
+  current: ProductTemplate,
+  next: SaveProductTemplateInput
+): DeltaSet {
   const delta: DeltaSet = {}
   for (const field of PRODUCT_TEMPLATE_PATCH_FIELDS) {
-    const fieldDelta = buildFlattenDelta(current[field], next[field], { basePath: String(field) })
+    const fieldDelta = buildFlattenDelta(current[field], next[field], {
+      basePath: String(field),
+    })
     Object.assign(delta, fieldDelta)
   }
   return delta

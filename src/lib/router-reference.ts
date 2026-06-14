@@ -1,5 +1,8 @@
 export type AppRouterReference = {
-  navigate: (options: { to: string; search?: Record<string, unknown> }) => unknown
+  navigate: (options: {
+    to: string
+    search?: Record<string, unknown>
+  }) => unknown
   history: {
     location: {
       href: string

@@ -12,7 +12,6 @@
  * 大于 500 行因为单卡片承担"展示 + 编辑 + 校验 + 操作"四态,后续可拆 RuleCardView / RuleCardForm。
  */
 import { useEffect, useMemo, useState } from 'react'
-import { toast } from 'sonner'
 import {
   BellRing,
   ChevronDown,
@@ -20,6 +19,7 @@ import {
   ShieldCheck,
   Trash2,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -28,11 +28,12 @@ import {
   ApprovalService,
   type ApprovalUserOption,
 } from '@/features/approval/services/approval-service'
-import { DEFAULT_SALES_ORDER_EVENT_SOURCE } from '../../workflow-core/data/business-event-source-templates/sales-order'
+import { CommandForm } from '../../workflow-core/components/command-mgmt/command-form'
 import {
   type BusinessEventSource,
   type BusinessStatus,
 } from '../../workflow-core/data/business-event-source-schema'
+import { DEFAULT_SALES_ORDER_EVENT_SOURCE } from '../../workflow-core/data/business-event-source-templates/sales-order'
 import {
   type NotificationRule,
   type RuleSegment,
@@ -42,7 +43,6 @@ import {
   getStandardCommandContextGuard,
   type StandardCommand,
 } from '../../workflow-core/data/schema'
-import { CommandForm } from '../../workflow-core/components/command-mgmt/command-form'
 import { useCommands } from '../../workflow-core/hooks/use-commands'
 import {
   createStatusSegment,
@@ -79,7 +79,10 @@ export function RuleCard({
   const [templateDialog, setTemplateDialog] = useState<{
     status: BusinessStatus
     initialData?: StandardCommand
-    contextDefaults: Pick<StandardCommand, 'sourceCode' | 'actionCode' | 'statusCodes'>
+    contextDefaults: Pick<
+      StandardCommand,
+      'sourceCode' | 'actionCode' | 'statusCodes'
+    >
   } | null>(null)
   const { commands, addCommand } = useCommands()
   const expanded = autoExpand || isExpanded
@@ -90,7 +93,8 @@ export function RuleCard({
     ) ??
     eventSources[0] ??
     DEFAULT_SALES_ORDER_EVENT_SOURCE
-  const currentActionCode = rule.actionCode || getStatusActionCode(currentSource)
+  const currentActionCode =
+    rule.actionCode || getStatusActionCode(currentSource)
 
   const statusRows = useMemo(
     () =>
@@ -98,7 +102,9 @@ export function RuleCard({
         const segment = rule.segments.find((item) =>
           item.targetStatuses.includes(status.code)
         )
-        const normalizedSegment = segment ? normalizeSegment(segment) : undefined
+        const normalizedSegment = segment
+          ? normalizeSegment(segment)
+          : undefined
         const completeness = getSegmentCompleteness({
           segment: normalizedSegment,
           commands,
@@ -298,18 +304,22 @@ export function RuleCard({
         const command = commandByID.get(commandID)
         if (!command) return []
 
-        const hasBlockingStatus = segment.targetStatuses.some((targetStatus) => {
-          return (
-            getStandardCommandContextGuard(command, {
-              sourceCode: currentSource.code,
-              actionCode: nextActionCode,
-              statusCode: targetStatus,
-            }).tone === 'blocking'
-          )
-        })
+        const hasBlockingStatus = segment.targetStatuses.some(
+          (targetStatus) => {
+            return (
+              getStandardCommandContextGuard(command, {
+                sourceCode: currentSource.code,
+                actionCode: nextActionCode,
+                statusCode: targetStatus,
+              }).tone === 'blocking'
+            )
+          }
+        )
 
         return hasBlockingStatus
-          ? [`${segment.title} / ${getStandardCommandDisplayTitle(command, eventSources)}`]
+          ? [
+              `${segment.title} / ${getStandardCommandDisplayTitle(command, eventSources)}`,
+            ]
           : []
       })
     })
@@ -376,7 +386,7 @@ export function RuleCard({
           />
           <div className='min-w-0 flex-1'>
             <div className='flex flex-wrap items-center gap-2'>
-              <h3 className='text-sm font-bold leading-5 tracking-normal text-foreground'>
+              <h3 className='text-sm leading-5 font-bold tracking-normal text-foreground'>
                 {currentSource.name} 状态通知与审批
               </h3>
               <Badge
@@ -433,7 +443,9 @@ export function RuleCard({
             <>
               <select
                 value={currentSource.code}
-                onChange={(event) => void handleSourceChange(event.target.value)}
+                onChange={(event) =>
+                  void handleSourceChange(event.target.value)
+                }
                 className='h-10 rounded-2xl border border-input bg-background px-3 text-xs font-black'
               >
                 {eventSources.map((source) => (
@@ -444,7 +456,9 @@ export function RuleCard({
               </select>
               <select
                 value={currentActionCode}
-                onChange={(event) => void handleActionChange(event.target.value)}
+                onChange={(event) =>
+                  void handleActionChange(event.target.value)
+                }
                 className='h-10 rounded-2xl border border-input bg-background px-3 text-xs font-black'
               >
                 {currentSource.config.actions.map((action) => (
@@ -564,8 +578,7 @@ export function RuleCard({
               />
             ))}
 
-            {statusFilter === 'incomplete' &&
-            visibleStatusRows.length === 0 ? (
+            {statusFilter === 'incomplete' && visibleStatusRows.length === 0 ? (
               <div className='rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-8 text-center text-[12px] font-black text-emerald-700'>
                 当前没有待补全状态。
               </div>

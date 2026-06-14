@@ -11,21 +11,34 @@ import {
   type WarehouseCommandAckApiDTO,
 } from '../../contracts/warehouse-api-dto'
 
-export type { AdjustmentItem, InventoryAdjustment } from '../../adapters/warehouse-api-adapter'
+export type {
+  AdjustmentItem,
+  InventoryAdjustment,
+} from '../../adapters/warehouse-api-adapter'
 
 export const AdjustmentService = {
   async getHistory(): Promise<InventoryAdjustment[]> {
-    const res = await apiFetch<InventoryAdjustmentApiDTO[]>('/warehouse/adjustments')
+    const res = await apiFetch<InventoryAdjustmentApiDTO[]>(
+      '/warehouse/adjustments'
+    )
     return toInventoryAdjustmentContracts(
-      ensureArrayResponse<InventoryAdjustmentApiDTO>(res, 'AdjustmentService.getHistory')
+      ensureArrayResponse<InventoryAdjustmentApiDTO>(
+        res,
+        'AdjustmentService.getHistory'
+      )
     )
   },
 
   async execute(id: string): Promise<WarehouseCommandAck> {
-    const res = await apiFetch<WarehouseCommandAckApiDTO>(`/warehouse/adjustments/${id}/execute`, {
-      method: 'POST',
-      body: JSON.stringify({ metadata: { intent: 'STOCK_ADJUSTMENT_EXECUTE' } }),
-    })
+    const res = await apiFetch<WarehouseCommandAckApiDTO>(
+      `/warehouse/adjustments/${id}/execute`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          metadata: { intent: 'STOCK_ADJUSTMENT_EXECUTE' },
+        }),
+      }
+    )
 
     return toWarehouseCommandAckContract(
       ensureObjectResponse<WarehouseCommandAckApiDTO & Record<string, unknown>>(

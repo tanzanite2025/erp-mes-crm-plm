@@ -8,7 +8,10 @@ import {
 } from './route-permissions-generator'
 
 function getGeneratedRoutePermissions() {
-  return getPermissionsWithCache(PERMISSION_VERSION, getAuthenticatedRoutePaths())
+  return getPermissionsWithCache(
+    PERMISSION_VERSION,
+    getAuthenticatedRoutePaths()
+  )
 }
 
 export { clearRoutePermissionsCache, getPermissionsWithCache }
@@ -26,5 +29,7 @@ export function getRoutePermissionMap(): Record<string, string> {
 }
 
 export function getRouteDerivedMenuPermissions(): Permission[] {
-  return getRouteDerivedPermissions().filter((permission) => permission.category === 'menu')
+  return getRouteDerivedPermissions().filter(
+    (permission) => permission.category === 'menu'
+  )
 }

@@ -1,3 +1,4 @@
+import type { TranslationKey } from '@/locales'
 import {
   BookOpen,
   Droplets,
@@ -9,11 +10,13 @@ import {
   Zap,
   type LucideIcon,
 } from 'lucide-react'
-import type { TranslationKey } from '@/locales'
 
 type EngineeringDbCategory = 'SPEC' | 'DRILLING' | 'CUTTING' | 'LABELING'
 type LabelingType = 'Water' | 'Paint' | 'Laser' | 'Other'
-type TranslationFn = (key: TranslationKey, params?: Record<string, string | number>) => string
+type TranslationFn = (
+  key: TranslationKey,
+  params?: Record<string, string | number>
+) => string
 
 export type EngineeringDbPreviewKind = 'excel' | 'cad' | 'pdf'
 
@@ -46,7 +49,9 @@ export function isEngineeringDbCadFile(extension?: string) {
   return normalized ? CAD_EXTENSIONS.has(normalized) : false
 }
 
-export function getEngineeringDbPreviewKind(extension?: string): EngineeringDbPreviewKind {
+export function getEngineeringDbPreviewKind(
+  extension?: string
+): EngineeringDbPreviewKind {
   if (isEngineeringDbExcelFile(extension)) {
     return 'excel'
   }
@@ -117,7 +122,10 @@ export function getEngineeringDbFileVisual(options: {
   }
 }
 
-export function getEngineeringDbCategoryLabel(t: TranslationFn, category: EngineeringDbCategory) {
+export function getEngineeringDbCategoryLabel(
+  t: TranslationFn,
+  category: EngineeringDbCategory
+) {
   if (category === 'SPEC') {
     return t('engineering.db.categories.spec')
   }
@@ -130,7 +138,9 @@ export function getEngineeringDbCategoryLabel(t: TranslationFn, category: Engine
   return t('engineering.db.categories.labeling')
 }
 
-export function getEngineeringDbCategoryBadgeClass(category: EngineeringDbCategory) {
+export function getEngineeringDbCategoryBadgeClass(
+  category: EngineeringDbCategory
+) {
   if (category === 'SPEC') {
     return 'text-blue-500 bg-blue-500/10'
   }
@@ -143,7 +153,10 @@ export function getEngineeringDbCategoryBadgeClass(category: EngineeringDbCatego
   return 'text-teal-500 bg-teal-500/10'
 }
 
-export function getEngineeringDbSubtypeLabel(t: TranslationFn, subType: string) {
+export function getEngineeringDbSubtypeLabel(
+  t: TranslationFn,
+  subType: string
+) {
   if (subType === 'DRILLING_PLAN') {
     return t('engineering.db.categories.drilling')
   }
@@ -156,7 +169,10 @@ export function getEngineeringDbSubtypeLabel(t: TranslationFn, subType: string) 
   return subType
 }
 
-export function getEngineeringDbLabelingTypeLabel(t: TranslationFn, type: LabelingType) {
+export function getEngineeringDbLabelingTypeLabel(
+  t: TranslationFn,
+  type: LabelingType
+) {
   if (type === 'Water') {
     return t('engineering.labeling.types.water')
   }
@@ -169,7 +185,9 @@ export function getEngineeringDbLabelingTypeLabel(t: TranslationFn, type: Labeli
   return t('engineering.labeling.types.other')
 }
 
-export function getEngineeringDbLabelingTypeVisual(type: LabelingType): LabelingTypeVisual {
+export function getEngineeringDbLabelingTypeVisual(
+  type: LabelingType
+): LabelingTypeVisual {
   if (type === 'Water') {
     return {
       icon: Droplets,

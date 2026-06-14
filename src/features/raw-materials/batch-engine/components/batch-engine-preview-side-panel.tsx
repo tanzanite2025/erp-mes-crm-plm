@@ -1,9 +1,9 @@
+import type { BatchEngineExplainabilityTargetKind } from '../services/batch-engine-phase7-visualization'
+import type { BatchEnginePreviewDisplayState } from '../services/batch-engine-preview-display'
 import type {
   BatchOptimizerPlan,
   BatchOptimizerPlanLayoutDemandSummary,
 } from '../types'
-import type { BatchEnginePreviewDisplayState } from '../services/batch-engine-preview-display'
-import type { BatchEngineExplainabilityTargetKind } from '../services/batch-engine-phase7-visualization'
 import { BatchEngineDiffBaselineSelector } from './batch-engine-diff-baseline-selector'
 import { BatchEnginePreviewDemandDetailCard } from './batch-engine-preview-demand-detail-card'
 import { BatchEnginePreviewDiffSummaryCard } from './batch-engine-preview-diff-summary-card'
@@ -27,10 +27,15 @@ type BatchEnginePreviewSidePanelProps = {
   onSelectBaselinePlan: (rank: number) => void
   selectedExplainabilityTargetId: string
   selectedExplainabilityTargetKind: BatchEngineExplainabilityTargetKind
-  onSelectExplainabilityTarget: (targetId: string, targetKind: Exclude<BatchEngineExplainabilityTargetKind, ''>) => void
+  onSelectExplainabilityTarget: (
+    targetId: string,
+    targetKind: Exclude<BatchEngineExplainabilityTargetKind, ''>
+  ) => void
 }
 
-export function BatchEnginePreviewSidePanel(props: BatchEnginePreviewSidePanelProps) {
+export function BatchEnginePreviewSidePanel(
+  props: BatchEnginePreviewSidePanelProps
+) {
   const {
     displayState,
     plans,
@@ -68,9 +73,15 @@ export function BatchEnginePreviewSidePanel(props: BatchEnginePreviewSidePanelPr
           effectiveSelectedDemand={effectiveSelectedDemand}
         />
 
-        <BatchEnginePreviewRollSummaryCard displayState={displayState} relatedRollIds={relatedRollIds} filteredRollIds={filteredRollIds} />
+        <BatchEnginePreviewRollSummaryCard
+          displayState={displayState}
+          relatedRollIds={relatedRollIds}
+          filteredRollIds={filteredRollIds}
+        />
 
-        {selectedPlan ? <BatchEngineScoreBreakdownPanel plan={selectedPlan} compact /> : null}
+        {selectedPlan ? (
+          <BatchEngineScoreBreakdownPanel plan={selectedPlan} compact />
+        ) : null}
 
         <BatchEnginePreviewMustDiagnosticsCard displayState={displayState} />
 
@@ -81,18 +92,31 @@ export function BatchEnginePreviewSidePanel(props: BatchEnginePreviewSidePanelPr
           title='Break Slice 联动'
           emptyText='当前方案没有 break slice 归因。'
           previewText='本地 preview 不包含 break slice 联动信息。'
-          items={selectedPlan?.explainabilitySummary.breakSlices.slice(0, 6).map((item) => ({
-            key: item.id,
-            active: selectedExplainabilityTargetKind === 'break-slice' && selectedExplainabilityTargetId === item.id,
-            onClick: () => onSelectExplainabilityTarget(item.id, 'break-slice'),
-            content: (
-              <>
-                <p>{item.segmentKind}:{item.segmentKey}</p>
-                <p className='mt-1'>位置: {item.breakBeforeDemandLineId || '--'} → {item.breakAfterDemandLineId || '--'}</p>
-                <p className='mt-1'>Severity: {item.severityScore.toFixed(2)} / 热区 {item.zoneIds.length}</p>
-              </>
-            ),
-          }))}
+          items={selectedPlan?.explainabilitySummary.breakSlices
+            .slice(0, 6)
+            .map((item) => ({
+              key: item.id,
+              active:
+                selectedExplainabilityTargetKind === 'break-slice' &&
+                selectedExplainabilityTargetId === item.id,
+              onClick: () =>
+                onSelectExplainabilityTarget(item.id, 'break-slice'),
+              content: (
+                <>
+                  <p>
+                    {item.segmentKind}:{item.segmentKey}
+                  </p>
+                  <p className='mt-1'>
+                    位置: {item.breakBeforeDemandLineId || '--'} →{' '}
+                    {item.breakAfterDemandLineId || '--'}
+                  </p>
+                  <p className='mt-1'>
+                    Severity: {item.severityScore.toFixed(2)} / 热区{' '}
+                    {item.zoneIds.length}
+                  </p>
+                </>
+              ),
+            }))}
           activeClassName='rounded-2xl border border-violet-300 bg-violet-500/10 px-3 py-3 text-left text-xs font-semibold text-violet-800'
           idleClassName='rounded-2xl border border-slate-200 bg-slate-50/70 px-3 py-3 text-left text-xs font-semibold text-slate-700'
         />
@@ -102,19 +126,29 @@ export function BatchEnginePreviewSidePanel(props: BatchEnginePreviewSidePanelPr
           title='Zone Cluster 联动'
           emptyText='当前方案没有 zone cluster 归因。'
           previewText='本地 preview 不包含 zone cluster 联动信息。'
-          items={selectedPlan?.explainabilitySummary.zoneClusters.slice(0, 6).map((item) => ({
-            key: item.clusterId,
-            active: selectedExplainabilityTargetKind === 'zone-cluster' && selectedExplainabilityTargetId === item.clusterId,
-            onClick: () => onSelectExplainabilityTarget(item.clusterId, 'zone-cluster'),
-            content: (
-              <>
-                <p>{item.clusterId}</p>
-                <p className='mt-1'>主因: {item.dominantReason || '--'}</p>
-                <p className='mt-1'>主需求: {item.dominantDemandLineId || '--'}</p>
-                <p className='mt-1'>Density: {item.densityScore.toFixed(2)} / 热区 {item.zoneIds.length}</p>
-              </>
-            ),
-          }))}
+          items={selectedPlan?.explainabilitySummary.zoneClusters
+            .slice(0, 6)
+            .map((item) => ({
+              key: item.clusterId,
+              active:
+                selectedExplainabilityTargetKind === 'zone-cluster' &&
+                selectedExplainabilityTargetId === item.clusterId,
+              onClick: () =>
+                onSelectExplainabilityTarget(item.clusterId, 'zone-cluster'),
+              content: (
+                <>
+                  <p>{item.clusterId}</p>
+                  <p className='mt-1'>主因: {item.dominantReason || '--'}</p>
+                  <p className='mt-1'>
+                    主需求: {item.dominantDemandLineId || '--'}
+                  </p>
+                  <p className='mt-1'>
+                    Density: {item.densityScore.toFixed(2)} / 热区{' '}
+                    {item.zoneIds.length}
+                  </p>
+                </>
+              ),
+            }))}
           activeClassName='rounded-2xl border border-amber-300 bg-amber-500/10 px-3 py-3 text-left text-xs font-semibold text-amber-800'
           idleClassName='rounded-2xl border border-slate-200 bg-slate-50/70 px-3 py-3 text-left text-xs font-semibold text-slate-700'
         />

@@ -39,7 +39,11 @@ import { ForbiddenState } from '@/components/forbidden-state'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { canOpenWeChat, openWeChat } from '@/features/contact-channels'
-import { type Supplier, type SupplierFormValues, type SupplierStatus } from '../data/schema'
+import {
+  type Supplier,
+  type SupplierFormValues,
+  type SupplierStatus,
+} from '../data/schema'
 import { tradingQueryKeys } from '../query-keys'
 import { useGetSupplierList, useSupplierMutations } from '../supplier'
 import { requireTradingCommandActor } from '../utils/command-actor'
@@ -98,14 +102,18 @@ export function SupplierList() {
     setIsActionDialogOpen(true)
   }
 
-  const handleSaveSupplier = (payload: {
-    mode: 'create'
-    data: SupplierFormValues
-  } | {
-    mode: 'edit'
-    delta: DeltaSet
-    finalData: Supplier
-  }) => {
+  const handleSaveSupplier = (
+    payload:
+      | {
+          mode: 'create'
+          data: SupplierFormValues
+        }
+      | {
+          mode: 'edit'
+          delta: DeltaSet
+          finalData: Supplier
+        }
+  ) => {
     if (!allowsAction('action_trading_supplier_manage')) return
 
     if (payload.mode === 'edit') {

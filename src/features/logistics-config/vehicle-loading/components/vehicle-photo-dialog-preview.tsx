@@ -1,6 +1,6 @@
-import { Badge } from '@/components/ui/badge'
-import { useLanguage } from '@/context/language-provider'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/context/language-provider'
+import { Badge } from '@/components/ui/badge'
 import {
   VEHICLE_PHOTO_VIEW_TYPES,
   type VehiclePhotoAnnotation,
@@ -35,12 +35,19 @@ export function VehiclePhotoDialogPreview({
       <div className='rounded-[22px] border border-dashed border-border/60 bg-muted/10 p-3'>
         <div className='mb-3 flex flex-wrap gap-2'>
           {(photoEntry?.tags ?? []).map((tag) => (
-            <Badge key={tag} variant='outline' className='px-2 py-0 text-[10px] font-semibold leading-none'>
+            <Badge
+              key={tag}
+              variant='outline'
+              className='px-2 py-0 text-[10px] leading-none font-semibold'
+            >
               {tag}
             </Badge>
           ))}
           {activeImage ? (
-            <Badge variant='secondary' className='px-2 py-0 text-[10px] font-semibold leading-none'>
+            <Badge
+              variant='secondary'
+              className='px-2 py-0 text-[10px] leading-none font-semibold'
+            >
               {viewTypeLabel(activeImage.viewType)}
             </Badge>
           ) : null}
@@ -49,7 +56,11 @@ export function VehiclePhotoDialogPreview({
         <div className='relative overflow-hidden rounded-[18px] border border-border/55 bg-black/5'>
           {activeImage ? (
             <div className='relative aspect-16/10 w-full bg-muted/10'>
-              <img src={activeImage.url} alt={activeImage.alt} className='size-full object-contain' />
+              <img
+                src={activeImage.url}
+                alt={activeImage.alt}
+                className='size-full object-contain'
+              />
               {activeAnnotations.map((annotation, index) => {
                 const active = activeAnnotationId === annotation.id
                 return (
@@ -63,7 +74,10 @@ export function VehiclePhotoDialogPreview({
                         ? 'border-primary bg-primary text-primary-foreground'
                         : 'border-white/80 bg-background/95 text-foreground hover:border-primary hover:text-primary'
                     )}
-                    style={{ left: `${annotation.xPercent}%`, top: `${annotation.yPercent}%` }}
+                    style={{
+                      left: `${annotation.xPercent}%`,
+                      top: `${annotation.yPercent}%`,
+                    }}
                   >
                     {index + 1}
                   </button>
@@ -73,7 +87,7 @@ export function VehiclePhotoDialogPreview({
           ) : (
             <div className='flex aspect-16/10 items-center justify-center px-6 py-8'>
               <div className='max-w-xl text-center'>
-                <div className='text-[13px] font-black leading-none text-foreground'>
+                <div className='text-[13px] leading-none font-black text-foreground'>
                   {t('logisticsConfig.vehiclePhotos.emptyTitle')}
                 </div>
                 <div className='mt-1.5 text-[12px] leading-5 text-muted-foreground'>
@@ -81,7 +95,11 @@ export function VehiclePhotoDialogPreview({
                 </div>
                 <div className='mt-3 flex flex-wrap justify-center gap-2'>
                   {VEHICLE_PHOTO_VIEW_TYPES.map((viewType) => (
-                    <Badge key={viewType} variant='outline' className='px-2 py-0 text-[10px] font-semibold leading-none'>
+                    <Badge
+                      key={viewType}
+                      variant='outline'
+                      className='px-2 py-0 text-[10px] leading-none font-semibold'
+                    >
                       {viewTypeLabel(viewType)}
                     </Badge>
                   ))}
@@ -109,15 +127,25 @@ export function VehiclePhotoDialogPreview({
                 onClick={() => onSelectImage(image.id)}
                 className={cn(
                   'overflow-hidden rounded-[20px] border bg-background text-left transition',
-                  selected ? 'border-primary shadow-md shadow-primary/10' : 'border-border/55 hover:border-primary/50'
+                  selected
+                    ? 'border-primary shadow-md shadow-primary/10'
+                    : 'border-border/55 hover:border-primary/50'
                 )}
               >
                 <div className='aspect-16/10 w-full bg-muted/10'>
-                  <img src={image.url} alt={image.alt} className='size-full object-cover' />
+                  <img
+                    src={image.url}
+                    alt={image.alt}
+                    className='size-full object-cover'
+                  />
                 </div>
                 <div className='px-3 py-2'>
-                  <div className='text-[11px] font-black text-foreground'>{viewTypeLabel(image.viewType)}</div>
-                  <div className='mt-1 text-[11px] leading-relaxed text-muted-foreground'>{image.caption || image.alt}</div>
+                  <div className='text-[11px] font-black text-foreground'>
+                    {viewTypeLabel(image.viewType)}
+                  </div>
+                  <div className='mt-1 text-[11px] leading-relaxed text-muted-foreground'>
+                    {image.caption || image.alt}
+                  </div>
                 </div>
               </button>
             )

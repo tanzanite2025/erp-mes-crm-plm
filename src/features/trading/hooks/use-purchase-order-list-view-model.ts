@@ -31,21 +31,32 @@ export function usePurchaseOrderListViewModel({
           order.paymentMethodName,
           order.paymentTerm,
           order.paymentTermName,
-        ].some((value) => (value?.toLowerCase() ?? '').includes(normalizedSearch))
+        ].some((value) =>
+          (value?.toLowerCase() ?? '').includes(normalizedSearch)
+        )
 
-      const matchesStatus = statusFilter === 'ALL' || order.status === statusFilter
+      const matchesStatus =
+        statusFilter === 'ALL' || order.status === statusFilter
       const matchesPaymentMethod =
-        paymentMethodFilter === 'ALL' || order.paymentMethod === paymentMethodFilter
-      const matchesPaymentTerm = paymentTermFilter === 'ALL' || order.paymentTerm === paymentTermFilter
+        paymentMethodFilter === 'ALL' ||
+        order.paymentMethod === paymentMethodFilter
+      const matchesPaymentTerm =
+        paymentTermFilter === 'ALL' || order.paymentTerm === paymentTermFilter
 
-      return matchesSearch && matchesStatus && matchesPaymentMethod && matchesPaymentTerm
+      return (
+        matchesSearch &&
+        matchesStatus &&
+        matchesPaymentMethod &&
+        matchesPaymentTerm
+      )
     })
   }, [orders, paymentMethodFilter, paymentTermFilter, searchTerm, statusFilter])
 
   const selectedOrder = useMemo(
     () =>
-      filteredOrders.find((order) => order.id === (selectedId || filteredOrders[0]?.id)) ??
-      filteredOrders[0],
+      filteredOrders.find(
+        (order) => order.id === (selectedId || filteredOrders[0]?.id)
+      ) ?? filteredOrders[0],
     [filteredOrders, selectedId]
   )
 

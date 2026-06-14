@@ -1,7 +1,7 @@
 'use client'
 
-import { CheckCircle2, Loader2 } from 'lucide-react'
 import { useEffect, useReducer } from 'react'
+import { CheckCircle2, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
@@ -66,13 +66,17 @@ interface MaterialThresholdDialogSeed {
   notes?: string
 }
 
-function getInitialDialogState(seed?: MaterialThresholdDialogSeed): MaterialThresholdDialogState {
+function getInitialDialogState(
+  seed?: MaterialThresholdDialogSeed
+): MaterialThresholdDialogState {
   return {
     targetType: seed?.targetType ?? 'MATERIAL',
     materialId: seed?.materialId ?? '',
     bomId: seed?.bomId ?? '',
     thresholdQty:
-      seed && Number.isFinite(seed.thresholdQty) ? String(seed.thresholdQty) : '',
+      seed && Number.isFinite(seed.thresholdQty)
+        ? String(seed.thresholdQty)
+        : '',
     enabled: seed?.enabled ?? true,
     notes: seed?.notes ?? '',
   }
@@ -230,7 +234,9 @@ export function MaterialThresholdDialog({
   const effectiveTargetType = lockedTargetType ?? formState.targetType
   const effectiveMaterialId = lockedMaterialId ?? formState.materialId
   const effectiveBomId = lockedBomId ?? formState.bomId
-  const targetContextLocked = Boolean(lockedTargetType || lockedMaterialId || lockedBomId)
+  const targetContextLocked = Boolean(
+    lockedTargetType || lockedMaterialId || lockedBomId
+  )
   const currentTarget = resolveDialogTargetSummary(
     effectiveTargetType,
     effectiveMaterialId,
@@ -244,7 +250,9 @@ export function MaterialThresholdDialog({
       : t('warehouseConfig.materialThresholds.dialog.targetModeTitleBom')
   const targetModeDescription =
     effectiveTargetType === 'MATERIAL'
-      ? t('warehouseConfig.materialThresholds.dialog.targetModeDescriptionMaterial')
+      ? t(
+          'warehouseConfig.materialThresholds.dialog.targetModeDescriptionMaterial'
+        )
       : t('warehouseConfig.materialThresholds.dialog.targetModeDescriptionBom')
   const thresholdFieldLabel =
     effectiveTargetType === 'MATERIAL'
@@ -252,7 +260,9 @@ export function MaterialThresholdDialog({
       : t('warehouseConfig.materialThresholds.dialog.thresholdLabelBom')
   const thresholdPlaceholder =
     effectiveTargetType === 'MATERIAL'
-      ? t('warehouseConfig.materialThresholds.dialog.thresholdPlaceholderMaterial')
+      ? t(
+          'warehouseConfig.materialThresholds.dialog.thresholdPlaceholderMaterial'
+        )
       : t('warehouseConfig.materialThresholds.dialog.thresholdPlaceholderBom')
   const thresholdHint =
     effectiveTargetType === 'MATERIAL'
@@ -262,7 +272,9 @@ export function MaterialThresholdDialog({
   const handleSave = async () => {
     const thresholdQty = Number(formState.thresholdQty)
     if (!Number.isFinite(thresholdQty) || thresholdQty < 0) {
-      toast.error(t('warehouseConfig.materialThresholds.toast.invalidThreshold'))
+      toast.error(
+        t('warehouseConfig.materialThresholds.toast.invalidThreshold')
+      )
       return
     }
 
@@ -278,7 +290,8 @@ export function MaterialThresholdDialog({
 
     await onSubmit({
       targetType: effectiveTargetType,
-      materialId: effectiveTargetType === 'MATERIAL' ? effectiveMaterialId : undefined,
+      materialId:
+        effectiveTargetType === 'MATERIAL' ? effectiveMaterialId : undefined,
       bomId: effectiveTargetType === 'BOM' ? effectiveBomId : undefined,
       thresholdQty,
       enabled: formState.enabled,
@@ -306,12 +319,18 @@ export function MaterialThresholdDialog({
             <MaterialThresholdTargetPicker
               targetType={effectiveTargetType}
               onTargetTypeChange={(targetType) =>
-                dispatchFormState({ type: 'setTargetType', payload: targetType })
+                dispatchFormState({
+                  type: 'setTargetType',
+                  payload: targetType,
+                })
               }
               materialId={effectiveMaterialId}
               bomId={effectiveBomId}
               onMaterialIdChange={(materialId) =>
-                dispatchFormState({ type: 'setMaterialId', payload: materialId })
+                dispatchFormState({
+                  type: 'setMaterialId',
+                  payload: materialId,
+                })
               }
               onBomIdChange={(bomId) =>
                 dispatchFormState({ type: 'setBomId', payload: bomId })
@@ -326,26 +345,28 @@ export function MaterialThresholdDialog({
             <div className='rounded-[24px] border border-dashed border-muted/50 bg-muted/10 p-5'>
               <div className='flex flex-col gap-4 md:flex-row md:items-start md:justify-between'>
                 <div className='space-y-2'>
-                  <p className='text-sm font-black tracking-tighter uppercase italic text-foreground'>
+                  <p className='text-sm font-black tracking-tighter text-foreground uppercase italic'>
                     {targetModeTitle}
                   </p>
-                  <p className='max-w-2xl text-[11px] font-bold leading-5 text-muted-foreground/80'>
+                  <p className='max-w-2xl text-[11px] leading-5 font-bold text-muted-foreground/80'>
                     {targetModeDescription}
                   </p>
                 </div>
 
                 <div className='min-w-[220px] rounded-2xl bg-background/80 px-4 py-3 shadow-inner'>
                   <div className='text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'>
-                    {t('warehouseConfig.materialThresholds.dialog.currentTargetLabel')}
+                    {t(
+                      'warehouseConfig.materialThresholds.dialog.currentTargetLabel'
+                    )}
                   </div>
                   <div className='mt-2 text-sm font-black tracking-tighter'>
                     {currentTarget?.primary || '--'}
                   </div>
-                  <div className='mt-1 text-[8px] font-mono text-muted-foreground/60'>
+                  <div className='mt-1 font-mono text-[8px] text-muted-foreground/60'>
                     {currentTarget?.code || '--'}
                   </div>
                   {currentTarget?.secondary ? (
-                    <div className='mt-2 text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60'>
+                    <div className='mt-2 text-[9px] font-bold tracking-widest text-muted-foreground/60 uppercase'>
                       {currentTarget.secondary}
                     </div>
                   ) : null}
@@ -392,7 +413,10 @@ export function MaterialThresholdDialog({
                     checked={formState.enabled}
                     disabled={isSubmitting}
                     onCheckedChange={(enabled) =>
-                      dispatchFormState({ type: 'setEnabled', payload: enabled })
+                      dispatchFormState({
+                        type: 'setEnabled',
+                        payload: enabled,
+                      })
                     }
                   />
                 </div>
@@ -407,9 +431,14 @@ export function MaterialThresholdDialog({
                 value={formState.notes}
                 disabled={isSubmitting}
                 onChange={(event) =>
-                  dispatchFormState({ type: 'setNotes', payload: event.target.value })
+                  dispatchFormState({
+                    type: 'setNotes',
+                    payload: event.target.value,
+                  })
                 }
-                placeholder={t('warehouseConfig.materialThresholds.dialog.notesPlaceholder')}
+                placeholder={t(
+                  'warehouseConfig.materialThresholds.dialog.notesPlaceholder'
+                )}
                 className='min-h-[108px] resize-none rounded-2xl border-none bg-muted/50 px-4 py-3 text-sm shadow-inner focus-visible:ring-primary/20'
               />
             </div>

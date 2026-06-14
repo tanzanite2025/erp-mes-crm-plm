@@ -152,7 +152,9 @@ function toDateOnlyString(value?: string): string {
   return value.slice(0, 10)
 }
 
-export function toWarehouseCategoryContract(dto: WarehouseCategoryApiDTO): WarehouseCategory {
+export function toWarehouseCategoryContract(
+  dto: WarehouseCategoryApiDTO
+): WarehouseCategory {
   return {
     id: dto.id,
     createdAt: dto.createdAt,
@@ -174,12 +176,17 @@ export function toWarehouseCategoryContract(dto: WarehouseCategoryApiDTO): Wareh
   }
 }
 
-export function toWarehouseCategoryContracts(dtos: WarehouseCategoryApiDTO[]): WarehouseCategory[] {
+export function toWarehouseCategoryContracts(
+  dtos: WarehouseCategoryApiDTO[]
+): WarehouseCategory[] {
   return dtos.map(toWarehouseCategoryContract)
 }
 
 export function toWarehouseCategoryApiDTO(
-  contract: Omit<WarehouseCategory, 'id' | 'version' | 'createdAt' | 'updatedAt'>
+  contract: Omit<
+    WarehouseCategory,
+    'id' | 'version' | 'createdAt' | 'updatedAt'
+  >
 ): Omit<WarehouseCategoryApiDTO, 'id' | 'version' | 'createdAt' | 'updatedAt'> {
   return {
     name: contract.name,
@@ -224,7 +231,9 @@ export function toWarehouseCategoryOptionContracts(
   return dtos.map(toWarehouseCategoryOptionContract)
 }
 
-export function toInventoryRecordContract(dto: InventoryItemApiDTO): InventoryRecord {
+export function toInventoryRecordContract(
+  dto: InventoryItemApiDTO
+): InventoryRecord {
   return {
     id: dto.id,
     materialId: dto.materialId,
@@ -237,7 +246,9 @@ export function toInventoryRecordContract(dto: InventoryItemApiDTO): InventoryRe
   }
 }
 
-export function toInventoryViewContract(dto: InventoryItemApiDTO): InventoryView {
+export function toInventoryViewContract(
+  dto: InventoryItemApiDTO
+): InventoryView {
   return {
     ...toInventoryRecordContract(dto),
     materialName: dto.materialName,
@@ -251,7 +262,9 @@ export function toInventoryViewContract(dto: InventoryItemApiDTO): InventoryView
   }
 }
 
-export function toInventoryViewContracts(dtos: InventoryItemApiDTO[]): InventoryView[] {
+export function toInventoryViewContracts(
+  dtos: InventoryItemApiDTO[]
+): InventoryView[] {
   return dtos.map(toInventoryViewContract)
 }
 
@@ -276,7 +289,9 @@ export function toMasterDataSearchResultContracts(
   return dtos.map(toMasterDataSearchResultContract)
 }
 
-export function toInboundRecordContract(dto: InventoryInboundRecordApiDTO): InboundRecord {
+export function toInboundRecordContract(
+  dto: InventoryInboundRecordApiDTO
+): InboundRecord {
   return {
     id: dto.id,
     materialId: dto.materialId,
@@ -296,7 +311,9 @@ export function toInboundRecordContract(dto: InventoryInboundRecordApiDTO): Inbo
   }
 }
 
-export function toInboundRecordContracts(dtos: InventoryInboundRecordApiDTO[]): InboundRecord[] {
+export function toInboundRecordContracts(
+  dtos: InventoryInboundRecordApiDTO[]
+): InboundRecord[] {
   return dtos.map(toInboundRecordContract)
 }
 
@@ -319,7 +336,9 @@ export function toInboundRecordApiDTO(
   }
 }
 
-export function toShipmentRecordContract(dto: InventoryShipmentRecordApiDTO): ShipmentRecord {
+export function toShipmentRecordContract(
+  dto: InventoryShipmentRecordApiDTO
+): ShipmentRecord {
   return {
     id: dto.id,
     materialId: dto.materialId,
@@ -342,7 +361,9 @@ export function toShipmentRecordContract(dto: InventoryShipmentRecordApiDTO): Sh
   }
 }
 
-export function toShipmentRecordContracts(dtos: InventoryShipmentRecordApiDTO[]): ShipmentRecord[] {
+export function toShipmentRecordContracts(
+  dtos: InventoryShipmentRecordApiDTO[]
+): ShipmentRecord[] {
   return dtos.map(toShipmentRecordContract)
 }
 
@@ -368,11 +389,15 @@ export function toShipmentRecordApiDTO(
   }
 }
 
-export function toInventoryValuationContract(dto: InventoryValuationApiDTO): number {
+export function toInventoryValuationContract(
+  dto: InventoryValuationApiDTO
+): number {
   return dto.totalValue
 }
 
-export function toInventoryAlertSummaryContract(dto: InventoryAlertSummaryApiDTO): { alertCount: number } {
+export function toInventoryAlertSummaryContract(
+  dto: InventoryAlertSummaryApiDTO
+): { alertCount: number } {
   return { alertCount: dto.alertCount }
 }
 
@@ -445,7 +470,9 @@ export interface WarehouseCommandAck {
   message: string
 }
 
-export function toStocktakeTaskContract(dto: StocktakeTaskApiDTO): StocktakeTask {
+export function toStocktakeTaskContract(
+  dto: StocktakeTaskApiDTO
+): StocktakeTask {
   return {
     id: dto.id,
     createdAt: dto.createdAt,
@@ -460,11 +487,15 @@ export function toStocktakeTaskContract(dto: StocktakeTaskApiDTO): StocktakeTask
   }
 }
 
-export function toStocktakeTaskContracts(dtos: StocktakeTaskApiDTO[]): StocktakeTask[] {
+export function toStocktakeTaskContracts(
+  dtos: StocktakeTaskApiDTO[]
+): StocktakeTask[] {
   return dtos.map(toStocktakeTaskContract)
 }
 
-export function toStocktakeItemContract(dto: StocktakeItemApiDTO): StocktakeItem {
+export function toStocktakeItemContract(
+  dto: StocktakeItemApiDTO
+): StocktakeItem {
   return {
     id: dto.id,
     createdAt: dto.createdAt,
@@ -484,7 +515,9 @@ export function toStocktakeItemContract(dto: StocktakeItemApiDTO): StocktakeItem
   }
 }
 
-export function toStocktakeItemContracts(dtos: StocktakeItemApiDTO[]): StocktakeItem[] {
+export function toStocktakeItemContracts(
+  dtos: StocktakeItemApiDTO[]
+): StocktakeItem[] {
   return dtos.map(toStocktakeItemContract)
 }
 
@@ -498,7 +531,9 @@ export function toStocktakeCreateRequestApiDTO(
   }
 }
 
-export function toPDAScanPayloadApiDTO(contract: PDAScanPayload): PDAScanPayloadApiDTO {
+export function toPDAScanPayloadApiDTO(
+  contract: PDAScanPayload
+): PDAScanPayloadApiDTO {
   return {
     taskId: contract.taskId,
     materialCode: contract.materialCode,
@@ -534,7 +569,9 @@ export function toPDABulkSyncResponseContract(
   }
 }
 
-export function toWarehouseCommandAckContract(dto: WarehouseCommandAckApiDTO): WarehouseCommandAck {
+export function toWarehouseCommandAckContract(
+  dto: WarehouseCommandAckApiDTO
+): WarehouseCommandAck {
   return {
     message: dto.message,
   }
@@ -578,7 +615,9 @@ export interface InventoryAdjustment {
   items?: AdjustmentItem[]
 }
 
-export function toAdjustmentItemContract(dto: InventoryAdjustmentItemApiDTO): AdjustmentItem {
+export function toAdjustmentItemContract(
+  dto: InventoryAdjustmentItemApiDTO
+): AdjustmentItem {
   return {
     id: dto.id,
     createdAt: dto.createdAt,
@@ -596,11 +635,15 @@ export function toAdjustmentItemContract(dto: InventoryAdjustmentItemApiDTO): Ad
   }
 }
 
-export function toAdjustmentItemContracts(dtos: InventoryAdjustmentItemApiDTO[]): AdjustmentItem[] {
+export function toAdjustmentItemContracts(
+  dtos: InventoryAdjustmentItemApiDTO[]
+): AdjustmentItem[] {
   return dtos.map(toAdjustmentItemContract)
 }
 
-export function toInventoryAdjustmentContract(dto: InventoryAdjustmentApiDTO): InventoryAdjustment {
+export function toInventoryAdjustmentContract(
+  dto: InventoryAdjustmentApiDTO
+): InventoryAdjustment {
   return {
     id: dto.id,
     createdAt: dto.createdAt,

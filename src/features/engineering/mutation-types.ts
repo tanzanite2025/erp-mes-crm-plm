@@ -23,21 +23,34 @@ export type SaveProductTypeInput = Omit<ProductType, 'id' | 'version'> & {
   version?: number
 }
 
-export type SaveProductTemplateInput = Omit<ProductTemplate, 'id' | 'version'> & {
+export type SaveProductTemplateInput = Omit<
+  ProductTemplate,
+  'id' | 'version'
+> & {
   id?: string
   version?: number
 }
 
-export type SaveProductAttributeCategoryInput = Omit<ProductAttributeCategory, 'id' | 'version'> & {
+export type SaveProductAttributeCategoryInput = Omit<
+  ProductAttributeCategory,
+  'id' | 'version'
+> & {
   id?: string
   version?: number
 }
 
-export type SaveProductAttributeOptionInput = Omit<ProductAttributeOption, 'id' | 'version'> & {
+export type SaveProductAttributeOptionInput = Omit<
+  ProductAttributeOption,
+  'id' | 'version'
+> & {
   id?: string
   version?: number
 }
 
 export type ProductDraftOverrides = { [K in keyof Product]?: Product[K] }
-export type ProductTemplateDraftOverrides = { [K in keyof ProductTemplate]?: ProductTemplate[K] }
-export type BarcodeConfigUpdates = { [K in keyof BarcodeConfig]?: BarcodeConfig[K] }
+export type ProductTemplateDraftOverrides = {
+  [K in keyof ProductTemplate]?: ProductTemplate[K]
+}
+export type BarcodeConfigUpdates = {
+  [K in keyof BarcodeConfig]?: BarcodeConfig[K]
+}

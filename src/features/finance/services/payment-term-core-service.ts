@@ -11,6 +11,9 @@ export const PaymentTermCoreService = {
    */
   async getPaymentTerms(): Promise<PaymentTerm[]> {
     const res = await apiFetch<PaymentTerm[]>('/finance/payment-terms')
-    return ensureArrayResponse<PaymentTerm>(res, 'PaymentTermCoreService.getPaymentTerms')
+    return ensureArrayResponse<PaymentTerm>(
+      res,
+      'PaymentTermCoreService.getPaymentTerms'
+    )
   },
 }

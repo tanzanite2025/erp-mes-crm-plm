@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { BookOpen, Plug, Truck } from 'lucide-react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useLanguage } from '@/context/language-provider'
-import { LogisticsSandboxDashboard } from '@/features/sandbox/logistics-api/components/logistics-sandbox-dashboard'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { LogisticsSupplierCard } from '@/features/logistics-config/components/logistics-supplier-card'
 import { LogisticsSupplierFormDialog } from '@/features/logistics-config/components/logistics-supplier-form-dialog'
 import { LogisticsSupplierState } from '@/features/logistics-config/components/logistics-supplier-state'
 import { LogisticsSupplierToolbar } from '@/features/logistics-config/components/logistics-supplier-toolbar'
 import { useLogisticsSupplierDirectoryAdmin } from '@/features/logistics-config/hooks/use-logistics-supplier-directory-admin'
+import { LogisticsSandboxDashboard } from '@/features/sandbox/logistics-api/components/logistics-sandbox-dashboard'
 
 type ViewMode = 'directory' | 'integration'
 
@@ -49,19 +49,19 @@ export function UnifiedProvidersTab() {
   }
 
   return (
-    <div className='flex flex-col gap-5 animate-in fade-in duration-700'>
+    <div className='flex animate-in flex-col gap-5 duration-700 fade-in'>
       {/* 页面标题 */}
       <div className='flex flex-col gap-1.5 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-4 md:p-5'>
         <div className='flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between'>
           <div className='flex flex-col gap-1'>
             <div className='flex items-center gap-2 text-primary'>
               <Truck className='size-5' />
-              <h2 className='text-base font-black tracking-tighter italic uppercase'>
+              <h2 className='text-base font-black tracking-tighter uppercase italic'>
                 {t('logisticsConfig.unified.title')}
               </h2>
             </div>
             <div className='flex flex-col justify-between gap-2 md:flex-row md:items-center'>
-              <p className='text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-60 max-w-2xl'>
+              <p className='max-w-2xl text-[9px] font-black tracking-widest text-muted-foreground uppercase opacity-60'>
                 {t('logisticsConfig.unified.description')}
               </p>
             </div>
@@ -73,14 +73,18 @@ export function UnifiedProvidersTab() {
       </div>
 
       {/* 视图切换 Tabs */}
-      <Tabs value={viewMode} onValueChange={handleViewChange} className='w-full'>
+      <Tabs
+        value={viewMode}
+        onValueChange={handleViewChange}
+        className='w-full'
+      >
         <TabsList className='grid w-full max-w-md grid-cols-2 rounded-full bg-muted/50 p-1'>
           <TabsTrigger
             value='directory'
             className='rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm'
           >
             <BookOpen className='mr-2 size-4' />
-            <span className='text-xs font-black uppercase tracking-wider'>
+            <span className='text-xs font-black tracking-wider uppercase'>
               {t('logisticsConfig.unified.views.directory')}
             </span>
           </TabsTrigger>
@@ -89,7 +93,7 @@ export function UnifiedProvidersTab() {
             className='rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm'
           >
             <Plug className='mr-2 size-4' />
-            <span className='text-xs font-black uppercase tracking-wider'>
+            <span className='text-xs font-black tracking-wider uppercase'>
               {t('logisticsConfig.unified.views.integration')}
             </span>
           </TabsTrigger>

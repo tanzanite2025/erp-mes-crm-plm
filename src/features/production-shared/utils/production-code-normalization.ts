@@ -6,18 +6,24 @@ export function normalizeProductionLineCode(value?: string | null): string {
   return normalizeMachineCode(value)
 }
 
-export function normalizeProductionProcessStepCode(value?: string | null): string {
+export function normalizeProductionProcessStepCode(
+  value?: string | null
+): string {
   return normalizeMachineCode(value)
 }
 
-export function normalizeProductionLineEntity(line: ProductionLine): ProductionLine {
+export function normalizeProductionLineEntity(
+  line: ProductionLine
+): ProductionLine {
   return {
     ...line,
     code: normalizeProductionLineCode(line.code),
   }
 }
 
-export function normalizeProductionProcessStepEntity(step: ProductionProcessStep): ProductionProcessStep {
+export function normalizeProductionProcessStepEntity(
+  step: ProductionProcessStep
+): ProductionProcessStep {
   return {
     ...step,
     code: normalizeProductionProcessStepCode(step.code),

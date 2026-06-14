@@ -1,8 +1,8 @@
+import { ZodError } from 'zod'
 import { apiFetch } from '@/lib/api-client'
 import { createApiClientError } from '@/lib/api-error'
-import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { ensureObjectResponse } from '@/lib/api-response'
-import { ZodError } from 'zod'
+import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import {
   toUserContract,
   toUserAccessSnapshotContract,
@@ -74,7 +74,9 @@ export interface UserTransactionRequest<TPayload> {
 type UsersQueryValue = string | number | boolean | null | undefined | string[]
 type UsersQueryParams = Record<string, UsersQueryValue>
 
-const buildUserTransactionBody = <TPayload extends object>(request: UserTransactionRequest<TPayload>) => ({
+const buildUserTransactionBody = <TPayload extends object>(
+  request: UserTransactionRequest<TPayload>
+) => ({
   ...request.payload,
   metadata: {
     intent: request.intent,
@@ -85,7 +87,7 @@ const buildUserTransactionBody = <TPayload extends object>(request: UserTransact
 const deserializeUsersApiDTO = <T>(
   input: unknown,
   context: string,
-  deserializer: (value: unknown) => T,
+  deserializer: (value: unknown) => T
 ): T => {
   try {
     return deserializer(input)
@@ -123,7 +125,7 @@ export const fetchUsers = async (params: UsersQueryParams = {}) => {
     deserializeUsersApiDTO(
       ensureObjectResponse(res, 'UserApi.fetchUsers'),
       'UserApi.fetchUsers',
-      deserializeUserListPageApiDTO,
+      deserializeUserListPageApiDTO
     )
   )
 }
@@ -147,21 +149,29 @@ export const fetchUserOptions = async (params: UsersQueryParams = {}) => {
 
   const res = await apiFetch<unknown>(`/users?${query.toString()}`)
   return toUserOptionContracts(
-    deserializeUsersApiDTO(res, 'UserApi.fetchUserOptions', deserializeUserOptionListApiDTO)
+    deserializeUsersApiDTO(
+      res,
+      'UserApi.fetchUserOptions',
+      deserializeUserOptionListApiDTO
+    )
   )
 }
 
 export const executeUserTransaction = async <TPayload extends object>(
   endpoint: string,
   request: UserTransactionRequest<TPayload>,
-  context = 'UserApi.executeUserTransaction',
+  context = 'UserApi.executeUserTransaction'
 ) => {
   const res = await apiFetch<unknown>(endpoint, {
     method: 'POST',
     body: JSON.stringify(buildUserTransactionBody(request)),
   })
   return toUserContract(
-    deserializeUsersApiDTO(ensureObjectResponse(res, context), context, deserializeUserApiDTO)
+    deserializeUsersApiDTO(
+      ensureObjectResponse(res, context),
+      context,
+      deserializeUserApiDTO
+    )
   )
 }
 
@@ -169,16 +179,24 @@ export const executeUserTransaction = async <TPayload extends object>(
  * 创建用户
  */
 export const createUser = async (userData: CreateUserPayload) => {
-  return executeUserTransaction<CreateUserPayload>('/users', {
-    intent: USER_TRANSACTION_INTENT_CREATE,
-    payload: userData,
-  }, 'UserApi.createUser')
+  return executeUserTransaction<CreateUserPayload>(
+    '/users',
+    {
+      intent: USER_TRANSACTION_INTENT_CREATE,
+      payload: userData,
+    },
+    'UserApi.createUser'
+  )
 }
 
 /**
  * 局部更新用户 (SDRTS 结构化差量更新)
  */
-export const patchUser = async (id: string, delta: DeltaSet, version: number) => {
+export const patchUser = async (
+  id: string,
+  delta: DeltaSet,
+  version: number
+) => {
   const payload: DeltaPayload = {
     op: 'PATCH',
     delta,
@@ -193,7 +211,11 @@ export const patchUser = async (id: string, delta: DeltaSet, version: number) =>
     body: JSON.stringify(payload),
   })
   return toUserContract(
-    deserializeUsersApiDTO(ensureObjectResponse(res, 'UserApi.patchUser'), 'UserApi.patchUser', deserializeUserApiDTO)
+    deserializeUsersApiDTO(
+      ensureObjectResponse(res, 'UserApi.patchUser'),
+      'UserApi.patchUser',
+      deserializeUserApiDTO
+    )
   )
 }
 
@@ -203,7 +225,11 @@ export const replaceUser = async (id: string, userData: UserReplacePayload) => {
     body: JSON.stringify(userData),
   })
   return toUserContract(
-    deserializeUsersApiDTO(ensureObjectResponse(res, 'UserApi.replaceUser'), 'UserApi.replaceUser', deserializeUserApiDTO)
+    deserializeUsersApiDTO(
+      ensureObjectResponse(res, 'UserApi.replaceUser'),
+      'UserApi.replaceUser',
+      deserializeUserApiDTO
+    )
   )
 }
 
@@ -244,12 +270,10 @@ export const fetchUserAccessSnapshot = async (id: string) => {
   const payload = deserializeUsersApiDTO(
     ensureObjectResponse(res, context),
     context,
-    deserializeUserAccessSnapshotApiDTO,
+    deserializeUserAccessSnapshotApiDTO
   )
 
-  return toUserAccessSnapshotContract(
-    payload,
-  )
+  return toUserAccessSnapshotContract(payload)
 }
 
 export const fetchUserPermissions = async (id: string) => {
@@ -258,15 +282,16 @@ export const fetchUserPermissions = async (id: string) => {
   const payload = deserializeUsersApiDTO(
     ensureObjectResponse(res, context),
     context,
-    deserializeUserPermissionsApiDTO,
+    deserializeUserPermissionsApiDTO
   )
 
-  return toUserPermissionsResponseContract(
-    payload,
-  )
+  return toUserPermissionsResponseContract(payload)
 }
 
-export const replaceUserPermissions = async (id: string, payload: ReplaceUserPermissionsPayload) => {
+export const replaceUserPermissions = async (
+  id: string,
+  payload: ReplaceUserPermissionsPayload
+) => {
   const context = 'UserApi.replaceUserPermissions'
   const res = await apiFetch<unknown>(`/users/${id}/permissions`, {
     method: 'PUT',
@@ -275,24 +300,30 @@ export const replaceUserPermissions = async (id: string, payload: ReplaceUserPer
   const responsePayload = deserializeUsersApiDTO(
     ensureObjectResponse(res, context),
     context,
-    deserializeUserPermissionsReplaceResultApiDTO,
+    deserializeUserPermissionsReplaceResultApiDTO
   )
 
-  return toUserPermissionsReplaceResultContract(
-    responsePayload,
-  )
+  return toUserPermissionsReplaceResultContract(responsePayload)
 }
 
 export const bindUserEmployee = async (id: string, employeeId: string) => {
-  return executeUserTransaction<{ employeeId: string }>(`/users/${id}/bind-employee`, {
-    intent: USER_TRANSACTION_INTENT_BIND_EMPLOYEE,
-    payload: { employeeId },
-  }, 'UserApi.bindUserEmployee')
+  return executeUserTransaction<{ employeeId: string }>(
+    `/users/${id}/bind-employee`,
+    {
+      intent: USER_TRANSACTION_INTENT_BIND_EMPLOYEE,
+      payload: { employeeId },
+    },
+    'UserApi.bindUserEmployee'
+  )
 }
 
 export const unbindUserEmployee = async (id: string) => {
-  return executeUserTransaction<Record<string, never>>(`/users/${id}/unbind-employee`, {
-    intent: USER_TRANSACTION_INTENT_UNBIND_EMPLOYEE,
-    payload: {},
-  }, 'UserApi.unbindUserEmployee')
+  return executeUserTransaction<Record<string, never>>(
+    `/users/${id}/unbind-employee`,
+    {
+      intent: USER_TRANSACTION_INTENT_UNBIND_EMPLOYEE,
+      payload: {},
+    },
+    'UserApi.unbindUserEmployee'
+  )
 }

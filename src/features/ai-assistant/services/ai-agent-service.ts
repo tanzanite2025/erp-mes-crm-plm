@@ -1,12 +1,12 @@
-import { callProviderStream } from './ai-service'
-import { aiContextService } from './ai-context-service'
-import { 
-  generateAgentBriefPrompt, 
-  generateWeeklyAgentPrompt,
-  type AgentSessionType 
-} from './prompt-builder'
-import { StorageService } from '@/features/system-mgmt/services/storage-service'
 import { createLogger } from '@/lib/logger'
+import { StorageService } from '@/features/system-mgmt/services/storage-service'
+import { aiContextService } from './ai-context-service'
+import { callProviderStream } from './ai-service'
+import {
+  generateAgentBriefPrompt,
+  generateWeeklyAgentPrompt,
+  type AgentSessionType,
+} from './prompt-builder'
 
 const logger = createLogger('AiAgentService')
 
@@ -88,13 +88,17 @@ class AiAgentService {
   }
 
   async getSettings(): Promise<AgentSettings> {
-    const saved = await StorageService.getItem<AgentSettings>(AGENT_SETTINGS_KEY)
+    const saved =
+      await StorageService.getItem<AgentSettings>(AGENT_SETTINGS_KEY)
     return saved || DEFAULT_SETTINGS
   }
 
   async updateSettings(settings: Partial<AgentSettings>) {
     const current = await this.getSettings()
-    await StorageService.setItem(AGENT_SETTINGS_KEY, { ...current, ...settings })
+    await StorageService.setItem(AGENT_SETTINGS_KEY, {
+      ...current,
+      ...settings,
+    })
   }
 
   async forceRun(type: AgentSessionType) {
@@ -114,7 +118,11 @@ class AiAgentService {
 
     const status = await this.getRunStatus()
 
-    if (settings.weeklyEnabled && day === settings.weeklyDay && hour >= settings.weeklyHour) {
+    if (
+      settings.weeklyEnabled &&
+      day === settings.weeklyDay &&
+      hour >= settings.weeklyHour
+    ) {
       if (status.lastWeeklyId !== weekStr) {
         await this.executeAgentTask('WEEKLY_REPORT', weekStr)
         return
@@ -153,11 +161,12 @@ class AiAgentService {
     try {
       // 1. 统一数据采集
       const data = await aiContextService.grabFullSnapshot(false) // PC 端全量载荷
-      
+
       // 2. 统一协议注入 (通过 prompt-builder 生成基于 DCL 的提示词)
-      const prompt = type === 'WEEKLY_REPORT' 
-        ? generateWeeklyAgentPrompt(data) 
-        : generateAgentBriefPrompt(data, type)
+      const prompt =
+        type === 'WEEKLY_REPORT'
+          ? generateWeeklyAgentPrompt(data)
+          : generateAgentBriefPrompt(data, type)
 
       let fullContent = ''
       await callProviderStream([{ role: 'user', content: prompt }], (chunk) => {
@@ -183,7 +192,8 @@ class AiAgentService {
 
   private getYearWeek(date: Date): string {
     const firstDayOfYear = new Date(date.getFullYear(), 0, 1)
-    const pastDaysOfYear = (date.getTime() - firstDayOfYear.getTime()) / 86400000
+    const pastDaysOfYear =
+      (date.getTime() - firstDayOfYear.getTime()) / 86400000
     return `${date.getFullYear()}_W${Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7)}`
   }
 

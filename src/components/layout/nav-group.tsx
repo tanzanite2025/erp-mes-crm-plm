@@ -3,18 +3,6 @@ import { Link, useLocation } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
-} from '../ui/dropdown-menu'
-import { Badge } from '../ui/badge'
-import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
@@ -25,12 +13,18 @@ import {
   SidebarMenuSubItem,
   useSidebar,
 } from '@/components/ui/sidebar'
-import type {
-  NavBranch,
-  NavGroup as NavGroupProps,
-  NavItem,
-  NavLink,
-} from './types'
+import { Badge } from '../ui/badge'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu'
 import {
   checkIsActive,
   checkIsDirectlySelected,
@@ -41,6 +35,12 @@ import {
   isNavLink,
   isSystemAlertBadge,
 } from './sidebar-nav-utils'
+import type {
+  NavBranch,
+  NavGroup as NavGroupProps,
+  NavItem,
+  NavLink,
+} from './types'
 
 const branchButtonClassName =
   'ms-3 w-[calc(100%-0.75rem)] min-h-8 rounded-xl border border-transparent px-2.5 py-1 transition-all hover:bg-sidebar-accent/28 data-[active=true]:bg-sidebar-accent/45 data-[active=true]:text-sidebar-accent-foreground'
@@ -89,7 +89,8 @@ export function NavGroup({
             'flex w-full items-center justify-between rounded-full border border-sidebar-border/45 bg-sidebar-accent/18 px-2.5 py-1.5 text-left shadow-[0_1px_2px_hsl(var(--sidebar-border)/0.18)] transition-colors',
             isExpanded ? 'mb-1.5' : 'mb-1',
             'text-sidebar-foreground/70 hover:bg-sidebar-accent/28 hover:text-sidebar-accent-foreground',
-            isExpanded && 'border-sidebar-border/55 bg-sidebar-accent/40 text-sidebar-accent-foreground'
+            isExpanded &&
+              'border-sidebar-border/55 bg-sidebar-accent/40 text-sidebar-accent-foreground'
           )}
           onClick={() => {
             setManualExpanded((current) => {
@@ -101,24 +102,42 @@ export function NavGroup({
             })
           }}
         >
-          <SidebarGroupLabel className='mb-0 min-h-0 flex-1 px-0 py-0 text-[13px] leading-tight whitespace-normal font-black italic tracking-tight text-sidebar-foreground/78'>
+          <SidebarGroupLabel className='mb-0 min-h-0 flex-1 px-0 py-0 text-[13px] leading-tight font-black tracking-tight whitespace-normal text-sidebar-foreground/78 italic'>
             {title}
           </SidebarGroupLabel>
-          <ChevronRight className={cn('size-4 shrink-0 transition-transform opacity-80', isExpanded && 'rotate-90 opacity-100')} />
+          <ChevronRight
+            className={cn(
+              'size-4 shrink-0 opacity-80 transition-transform',
+              isExpanded && 'rotate-90 opacity-100'
+            )}
+          />
         </button>
       )}
       {shouldRenderMenu ? (
         <SidebarMenu className='gap-px'>
           {itemsWithBadges.map((item) => {
             if (isNavLink(item) && !hasChildren(item)) {
-              return <SidebarMenuLink key={item.id} item={item} pathname={pathname} />
+              return (
+                <SidebarMenuLink
+                  key={item.id}
+                  item={item}
+                  pathname={pathname}
+                />
+              )
             }
 
             if (!hasChildren(item) && !isEmptyPreservedBranch(item)) {
               return null
             }
 
-            return <SidebarMenuBranch key={item.id} item={item} pathname={pathname} isCollapsed={isCollapsed} />
+            return (
+              <SidebarMenuBranch
+                key={item.id}
+                item={item}
+                pathname={pathname}
+                isCollapsed={isCollapsed}
+              />
+            )
           })}
         </SidebarMenu>
       ) : null}
@@ -148,16 +167,28 @@ function NavBadge({
   )
 }
 
-function SidebarMenuLink({ item, pathname }: { item: NavLink; pathname: string }) {
+function SidebarMenuLink({
+  item,
+  pathname,
+}: {
+  item: NavLink
+  pathname: string
+}) {
   const { setOpenMobile } = useSidebar()
   const showSystemAlertBadge = isSystemAlertBadge(item)
 
   return (
     <SidebarMenuItem>
-      <SidebarMenuButton asChild isActive={checkIsActive(pathname, item)} tooltip={item.title}>
+      <SidebarMenuButton
+        asChild
+        isActive={checkIsActive(pathname, item)}
+        tooltip={item.title}
+      >
         <Link to={item.url} onClick={() => setOpenMobile(false)}>
           {item.icon && <item.icon />}
-          <span className='px-0.5 py-0 text-[12px] italic font-black leading-normal'>{item.title}</span>
+          <span className='px-0.5 py-0 text-[12px] leading-normal font-black italic'>
+            {item.title}
+          </span>
           {item.badge && (
             <NavBadge danger={showSystemAlertBadge} dot={showSystemAlertBadge}>
               {item.badge}
@@ -182,20 +213,33 @@ function SidebarMenuCollapsedDropdown({
     <SidebarMenuItem>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <SidebarMenuButton tooltip={item.title} isActive={checkIsActive(pathname, item)}>
+          <SidebarMenuButton
+            tooltip={item.title}
+            isActive={checkIsActive(pathname, item)}
+          >
             <div className='flex items-center gap-2'>
               {item.icon && <item.icon />}
-              <span className='px-0.5 py-0 text-[12px] italic leading-normal'>{item.title}</span>
+              <span className='px-0.5 py-0 text-[12px] leading-normal italic'>
+                {item.title}
+              </span>
             </div>
             {item.badge && (
-              <NavBadge danger={showSystemAlertBadge} dot={showSystemAlertBadge}>
+              <NavBadge
+                danger={showSystemAlertBadge}
+                dot={showSystemAlertBadge}
+              >
                 {item.badge}
               </NavBadge>
             )}
             <ChevronRight className='ms-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90' />
           </SidebarMenuButton>
         </DropdownMenuTrigger>
-        <DropdownMenuContent side='right' align='start' sideOffset={4} className={dropdownContentClassName}>
+        <DropdownMenuContent
+          side='right'
+          align='start'
+          sideOffset={4}
+          className={dropdownContentClassName}
+        >
           <DropdownMenuLabel className={cn(dropdownLabelClassName, 'italic')}>
             {item.title} {item.badge ? `(${item.badge})` : ''}
           </DropdownMenuLabel>
@@ -205,7 +249,10 @@ function SidebarMenuCollapsedDropdown({
               if (hasChildren(subItem)) {
                 const nestedChildLinks = subItem.children.filter(isNavLink)
 
-                if (nestedChildLinks.length === 0 && !subItem.preserveEmptyChildren) {
+                if (
+                  nestedChildLinks.length === 0 &&
+                  !subItem.preserveEmptyChildren
+                ) {
                   return null
                 }
 
@@ -214,11 +261,12 @@ function SidebarMenuCollapsedDropdown({
                     <DropdownMenuSubTrigger
                       className={cn(
                         dropdownSubTriggerClassName,
-                        checkIsActive(pathname, subItem) && 'border-border/50 bg-accent/65 text-accent-foreground'
+                        checkIsActive(pathname, subItem) &&
+                          'border-border/50 bg-accent/65 text-accent-foreground'
                       )}
                     >
                       {subItem.icon && <subItem.icon />}
-                      <span className='max-w-52 px-0.5 py-0.5 text-[13px] text-wrap italic font-black leading-normal'>
+                      <span className='max-w-52 px-0.5 py-0.5 text-[13px] leading-normal font-black text-wrap italic'>
                         {subItem.title}
                       </span>
                       {subItem.badge ? (
@@ -228,15 +276,25 @@ function SidebarMenuCollapsedDropdown({
                       ) : null}
                     </DropdownMenuSubTrigger>
                     {nestedChildLinks.length > 0 ? (
-                      <DropdownMenuSubContent className={dropdownSubContentClassName}>
+                      <DropdownMenuSubContent
+                        className={dropdownSubContentClassName}
+                      >
                         {nestedChildLinks.map((nestedItem) => (
-                          <DropdownMenuItem key={nestedItem.id} asChild className={dropdownItemClassName}>
+                          <DropdownMenuItem
+                            key={nestedItem.id}
+                            asChild
+                            className={dropdownItemClassName}
+                          >
                             <Link
                               to={nestedItem.url}
-                              className={cn(checkIsActive(pathname, nestedItem) ? 'bg-secondary' : '')}
+                              className={cn(
+                                checkIsActive(pathname, nestedItem)
+                                  ? 'bg-secondary'
+                                  : ''
+                              )}
                             >
                               {nestedItem.icon && <nestedItem.icon />}
-                              <span className='max-w-52 px-0.5 py-0.5 text-[12px] text-wrap italic font-black leading-normal'>
+                              <span className='max-w-52 px-0.5 py-0.5 text-[12px] leading-normal font-black text-wrap italic'>
                                 {nestedItem.title}
                               </span>
                               {nestedItem.badge ? (
@@ -258,13 +316,19 @@ function SidebarMenuCollapsedDropdown({
               }
 
               return (
-                <DropdownMenuItem key={subItem.id} asChild className={dropdownItemClassName}>
+                <DropdownMenuItem
+                  key={subItem.id}
+                  asChild
+                  className={dropdownItemClassName}
+                >
                   <Link
                     to={subItem.url}
-                    className={cn(checkIsActive(pathname, subItem) ? 'bg-secondary' : '')}
+                    className={cn(
+                      checkIsActive(pathname, subItem) ? 'bg-secondary' : ''
+                    )}
                   >
                     {subItem.icon && <subItem.icon />}
-                    <span className='max-w-52 px-0.5 py-0.5 text-[13px] text-wrap italic font-black leading-normal'>
+                    <span className='max-w-52 px-0.5 py-0.5 text-[13px] leading-normal font-black text-wrap italic'>
                       {subItem.title}
                     </span>
                     {subItem.badge ? (
@@ -297,7 +361,8 @@ export function SidebarMenuBranch({
   }
 
   const childLinks = item.children.filter(isNavLink)
-  const shouldRenderEmptyBranch = childLinks.length === 0 && item.preserveEmptyChildren
+  const shouldRenderEmptyBranch =
+    childLinks.length === 0 && item.preserveEmptyChildren
   const showSystemAlertBadge = isSystemAlertBadge(item)
   const branchIsActive = checkIsActive(pathname, item)
   const branchIsDirectlySelected = checkIsDirectlySelected(pathname, item)
@@ -323,16 +388,19 @@ export function SidebarMenuBranch({
           <Link to={item.url}>
             <div className='flex min-w-0 items-center gap-2.5'>
               {item.icon ? <item.icon className='size-3.5 opacity-70' /> : null}
-              <span className='px-0.5 py-0 text-[12px] leading-normal font-black italic tracking-tight'>
+              <span className='px-0.5 py-0 text-[12px] leading-normal font-black tracking-tight italic'>
                 {item.title}
               </span>
             </div>
             {item.badge && (
-              <NavBadge danger={showSystemAlertBadge} dot={showSystemAlertBadge}>
+              <NavBadge
+                danger={showSystemAlertBadge}
+                dot={showSystemAlertBadge}
+              >
                 {item.badge}
               </NavBadge>
             )}
-            <div className='ms-auto size-4 flex items-center justify-center'>
+            <div className='ms-auto flex size-4 items-center justify-center'>
               <div className={branchIndicatorClassName} />
             </div>
           </Link>
@@ -345,7 +413,7 @@ export function SidebarMenuBranch({
         >
           <div className='flex min-w-0 items-center gap-2.5'>
             {item.icon ? <item.icon className='size-3.5 opacity-70' /> : null}
-            <span className='px-0.5 py-0 text-[12px] leading-normal font-black italic tracking-tight'>
+            <span className='px-0.5 py-0 text-[12px] leading-normal font-black tracking-tight italic'>
               {item.title}
             </span>
           </div>
@@ -354,7 +422,7 @@ export function SidebarMenuBranch({
               {item.badge}
             </NavBadge>
           )}
-          <div className='ms-auto size-4 flex items-center justify-center'>
+          <div className='ms-auto flex size-4 items-center justify-center'>
             <div className={branchIndicatorClassName} />
           </div>
         </SidebarMenuButton>
@@ -365,11 +433,14 @@ export function SidebarMenuBranch({
             const subItemIsActive = checkIsActive(pathname, subItem)
 
             return (
-              <SidebarMenuSubItem key={subItem.id} className='before:absolute before:-left-3 before:top-1/2 before:h-px before:w-3 before:bg-sidebar-border/35 before:content-[""]'>
+              <SidebarMenuSubItem
+                key={subItem.id}
+                className='before:absolute before:top-1/2 before:-left-3 before:h-px before:w-3 before:bg-sidebar-border/35 before:content-[""]'
+              >
                 <SidebarMenuSubButton asChild isActive={subItemIsActive}>
                   <Link to={subItem.url}>
                     {subItem.icon && <subItem.icon />}
-                    <span className='min-w-0 flex-1 truncate italic font-black text-[12px] tracking-tight'>
+                    <span className='min-w-0 flex-1 truncate text-[12px] font-black tracking-tight italic'>
                       {subItem.title}
                     </span>
                     {subItem.badge ? (
@@ -379,12 +450,12 @@ export function SidebarMenuBranch({
                     ) : null}
                     <div
                       className={cn(
-                        'size-4 shrink-0 flex items-center justify-center',
+                        'flex size-4 shrink-0 items-center justify-center',
                         !subItem.badge && 'ms-auto'
                       )}
                     >
                       {subItemIsActive ? (
-                        <span className='size-1.5 rounded-full bg-orange-500 animate-pulse ring-2 ring-orange-500/25' />
+                        <span className='size-1.5 animate-pulse rounded-full bg-orange-500 ring-2 ring-orange-500/25' />
                       ) : null}
                     </div>
                   </Link>
@@ -393,7 +464,9 @@ export function SidebarMenuBranch({
             )
           })}
         </SidebarMenuSub>
-      ) : shouldRenderEmptyBranch ? <SidebarMenuSub /> : null}
+      ) : shouldRenderEmptyBranch ? (
+        <SidebarMenuSub />
+      ) : null}
     </SidebarMenuItem>
   )
 }

@@ -14,11 +14,10 @@ export function Main({ fixed, className, fluid, ...props }: MainProps) {
         'min-w-0 px-4 pt-4 pb-6',
 
         // If layout is fixed, make the main container flex and grow
-        fixed && 'flex grow min-h-0 flex-col overflow-hidden',
+        fixed && 'flex min-h-0 grow flex-col overflow-hidden',
 
         // If layout is not fluid, set the max-width
-        !fluid &&
-          '@7xl/content:w-full @7xl/content:max-w-none',
+        !fluid && '@7xl/content:w-full @7xl/content:max-w-none',
         className
       )}
       {...props}

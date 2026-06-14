@@ -1,6 +1,6 @@
 import { useLanguage } from '@/context/language-provider'
-import type { BatchEngineControls, BatchEngineSimulation } from '../types'
 import type { BatchEnginePreviewDisplayState } from '../services/batch-engine-preview-display'
+import type { BatchEngineControls, BatchEngineSimulation } from '../types'
 
 type BatchEnginePreviewSummaryStripProps = {
   displayState: BatchEnginePreviewDisplayState
@@ -8,7 +8,9 @@ type BatchEnginePreviewSummaryStripProps = {
   simulation: BatchEngineSimulation
 }
 
-export function BatchEnginePreviewSummaryStrip(props: BatchEnginePreviewSummaryStripProps) {
+export function BatchEnginePreviewSummaryStrip(
+  props: BatchEnginePreviewSummaryStripProps
+) {
   const { t } = useLanguage()
   const { displayState, controls, simulation } = props
   const { selectedPlan } = displayState
@@ -16,11 +18,23 @@ export function BatchEnginePreviewSummaryStrip(props: BatchEnginePreviewSummaryS
   return (
     <div className='flex flex-wrap items-center gap-1.5 border-b border-dashed border-slate-200 bg-white px-4 py-2.5'>
       <SummaryPill
-        label={displayState.mode === 'solved-plan' ? '视图模式' : t('rawMaterials.batchEngine.canvasPreview.summary.roll')}
-        value={selectedPlan ? `方案 #${selectedPlan.rank} / ${selectedPlan.strategyKey}` : `${controls.rollLengthM || '--'}m x ${controls.rollWidthMm || '--'}mm`}
+        label={
+          displayState.mode === 'solved-plan'
+            ? '视图模式'
+            : t('rawMaterials.batchEngine.canvasPreview.summary.roll')
+        }
+        value={
+          selectedPlan
+            ? `方案 #${selectedPlan.rank} / ${selectedPlan.strategyKey}`
+            : `${controls.rollLengthM || '--'}m x ${controls.rollWidthMm || '--'}mm`
+        }
       />
       <SummaryPill
-        label={displayState.mode === 'solved-plan' ? '卷材数' : t('rawMaterials.batchEngine.canvasPreview.summary.unit')}
+        label={
+          displayState.mode === 'solved-plan'
+            ? '卷材数'
+            : t('rawMaterials.batchEngine.canvasPreview.summary.unit')
+        }
         value={
           selectedPlan
             ? `${selectedPlan.layoutSummary.rollCount}`
@@ -30,16 +44,38 @@ export function BatchEnginePreviewSummaryStrip(props: BatchEnginePreviewSummaryS
         }
       />
       <SummaryPill
-        label={displayState.mode === 'solved-plan' ? '分配条目' : t('rawMaterials.batchEngine.canvasPreview.summary.executableSets')}
-        value={selectedPlan ? `${selectedPlan.layoutSummary.assignmentCount}` : `${simulation.demandLineCount}`}
+        label={
+          displayState.mode === 'solved-plan'
+            ? '分配条目'
+            : t('rawMaterials.batchEngine.canvasPreview.summary.executableSets')
+        }
+        value={
+          selectedPlan
+            ? `${selectedPlan.layoutSummary.assignmentCount}`
+            : `${simulation.demandLineCount}`
+        }
       />
       <SummaryPill
-        label={displayState.mode === 'solved-plan' ? '未满足需求' : t('rawMaterials.batchEngine.canvasPreview.summary.executablePieces')}
-        value={selectedPlan ? `${selectedPlan.layoutSummary.unfulfilledDemandLineCount}` : `${simulation.totalRequiredPieces}`}
+        label={
+          displayState.mode === 'solved-plan'
+            ? '未满足需求'
+            : t(
+                'rawMaterials.batchEngine.canvasPreview.summary.executablePieces'
+              )
+        }
+        value={
+          selectedPlan
+            ? `${selectedPlan.layoutSummary.unfulfilledDemandLineCount}`
+            : `${simulation.totalRequiredPieces}`
+        }
       />
       <SummaryPill
         label={t('rawMaterials.batchEngine.canvasPreview.summary.utilization')}
-        value={selectedPlan ? `${selectedPlan.utilizationPercent.toFixed(2)}%` : `${simulation.utilizationPercent.toFixed(2)}%`}
+        value={
+          selectedPlan
+            ? `${selectedPlan.utilizationPercent.toFixed(2)}%`
+            : `${simulation.utilizationPercent.toFixed(2)}%`
+        }
       />
     </div>
   )

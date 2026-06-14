@@ -1,15 +1,18 @@
 import { useState } from 'react'
 import { Plus, Search } from 'lucide-react'
-import { ForbiddenState } from '@/components/forbidden-state'
+import { isForbiddenError } from '@/lib/error-status'
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { isForbiddenError } from '@/lib/error-status'
-import { getStandardCommandDisplayTitle, type StandardCommand } from '../../data/schema'
+import { ForbiddenState } from '@/components/forbidden-state'
+import {
+  getStandardCommandDisplayTitle,
+  type StandardCommand,
+} from '../../data/schema'
 import { useBusinessEventSources } from '../../hooks/use-business-event-sources'
-import { RoutingQueryErrorState } from '../routing-query-error-state'
 import { useCommands } from '../../hooks/use-commands'
+import { RoutingQueryErrorState } from '../routing-query-error-state'
 import { CommandForm } from './command-form.tsx'
 import { CommandList } from './command-list.tsx'
 
@@ -53,7 +56,10 @@ export function CommandMgmt({
     if (!command) return false
 
     const keyword = (search || '').toLowerCase()
-    const displayTitle = getStandardCommandDisplayTitle(command, sources).toLowerCase()
+    const displayTitle = getStandardCommandDisplayTitle(
+      command,
+      sources
+    ).toLowerCase()
     return (
       displayTitle.includes(keyword) ||
       (command.content || '').toLowerCase().includes(keyword) ||
@@ -72,7 +78,7 @@ export function CommandMgmt({
 
   if (loading) {
     return (
-      <div className='animate-in space-y-6 fade-in duration-500'>
+      <div className='animate-in space-y-6 duration-500 fade-in'>
         <div className='rounded-[24px] border border-dashed border-muted/50 bg-muted/5 p-10 text-center text-muted-foreground'>
           正在同步通知内容模板...
         </div>
@@ -103,10 +109,10 @@ export function CommandMgmt({
   }
 
   return (
-    <div className='animate-in space-y-5 fade-in duration-500'>
+    <div className='animate-in space-y-5 duration-500 fade-in'>
       <div className='flex flex-col gap-3 rounded-[24px] border border-dashed border-muted/40 bg-muted/5 px-5 py-4 lg:flex-row lg:items-center lg:justify-between'>
         <div className='relative min-w-56 flex-1'>
-          <Search className='absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/50' />
+          <Search className='absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/50' />
           <Input
             placeholder={t('workflowCore.commands.page.searchPlaceholder')}
             className='h-10 rounded-2xl pl-9 text-sm font-bold'

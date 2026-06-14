@@ -1,8 +1,8 @@
-import type { EquipmentPartner } from '../data/schema'
 import type {
   EquipmentPartnerApiDTO,
   SaveEquipmentPartnerApiDTO,
 } from '../contracts/equipment-partner-api-dto'
+import type { EquipmentPartner } from '../data/schema'
 
 export type SaveEquipmentPartnerInput = {
   id?: string
@@ -13,7 +13,10 @@ export type SaveEquipmentPartnerInput = {
   address?: string
 }
 
-function optimisticVersionFromTimestamps(updatedAt?: string, createdAt?: string): number {
+function optimisticVersionFromTimestamps(
+  updatedAt?: string,
+  createdAt?: string
+): number {
   const versionSource = updatedAt || createdAt
   if (!versionSource) return 1
 
@@ -22,7 +25,9 @@ function optimisticVersionFromTimestamps(updatedAt?: string, createdAt?: string)
   return version
 }
 
-export function toEquipmentPartnerContract(dto: EquipmentPartnerApiDTO): EquipmentPartner {
+export function toEquipmentPartnerContract(
+  dto: EquipmentPartnerApiDTO
+): EquipmentPartner {
   return {
     id: dto.id,
     name: dto.name,
@@ -30,13 +35,17 @@ export function toEquipmentPartnerContract(dto: EquipmentPartnerApiDTO): Equipme
     contactPerson: dto.contactPerson || '',
     phone: dto.phone || '',
     address: dto.address || '',
-    version: dto.version || optimisticVersionFromTimestamps(dto.updatedAt, dto.createdAt),
+    version:
+      dto.version ||
+      optimisticVersionFromTimestamps(dto.updatedAt, dto.createdAt),
     createdAt: dto.createdAt,
     updatedAt: dto.updatedAt,
   }
 }
 
-export function toEquipmentPartnerContracts(dtos: EquipmentPartnerApiDTO[]): EquipmentPartner[] {
+export function toEquipmentPartnerContracts(
+  dtos: EquipmentPartnerApiDTO[]
+): EquipmentPartner[] {
   return dtos.map(toEquipmentPartnerContract)
 }
 

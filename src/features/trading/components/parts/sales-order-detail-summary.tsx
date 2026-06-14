@@ -18,11 +18,13 @@ function InfoRow({
 
   return (
     <div className='group flex min-w-[72px] flex-col'>
-      <span className={`uppercase transition-colors group-hover:text-primary ${
-        isAmount
-          ? 'text-[9px] font-black tracking-wide text-muted-foreground/50'
-          : 'text-[9px] font-black tracking-wide text-muted-foreground/50'
-      }`}>
+      <span
+        className={`uppercase transition-colors group-hover:text-primary ${
+          isAmount
+            ? 'text-[9px] font-black tracking-wide text-muted-foreground/50'
+            : 'text-[9px] font-black tracking-wide text-muted-foreground/50'
+        }`}
+      >
         {label}
       </span>
       <span
@@ -31,7 +33,11 @@ function InfoRow({
             ? 'text-sm font-black tracking-tight text-foreground'
             : 'text-[11px] font-black tracking-tight'
         } ${
-          highlight ? 'text-primary' : isAmount ? 'text-foreground' : 'text-foreground/90'
+          highlight
+            ? 'text-primary'
+            : isAmount
+              ? 'text-foreground'
+              : 'text-foreground/90'
         }`}
       >
         {value || '-'}
@@ -42,11 +48,8 @@ function InfoRow({
 
 export function SalesOrderDetailSummary({ order }: { order: SalesOrder }) {
   const { t, locale } = useLanguage()
-  const {
-    infoRows,
-    requirementsText,
-    evidences,
-  } = useSalesOrderDetailSummaryViewModel({ order, locale, t })
+  const { infoRows, requirementsText, evidences } =
+    useSalesOrderDetailSummaryViewModel({ order, locale, t })
 
   return (
     <div className='space-y-2 rounded-xl border border-dashed border-muted/50 bg-muted/5 px-4 py-2.5 shadow-inner'>
@@ -70,10 +73,10 @@ export function SalesOrderDetailSummary({ order }: { order: SalesOrder }) {
       <div className='border-t border-muted-foreground/10 pt-2'>
         <div className='flex items-start gap-2'>
           <div className='min-w-0 flex-1'>
-            <p className='mb-1 text-[9px] font-black uppercase tracking-wide text-muted-foreground/60 leading-none'>
+            <p className='mb-1 text-[9px] leading-none font-black tracking-wide text-muted-foreground/60 uppercase'>
               {t('tradingSalesOrder.detail.requirementsTitle')}
             </p>
-            <p className='max-h-10 overflow-y-auto pr-2 text-[11px] font-medium leading-snug text-foreground/80'>
+            <p className='max-h-10 overflow-y-auto pr-2 text-[11px] leading-snug font-medium text-foreground/80'>
               {requirementsText}
             </p>
           </div>

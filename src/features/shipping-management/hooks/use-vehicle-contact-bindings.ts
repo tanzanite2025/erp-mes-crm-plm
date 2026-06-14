@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { type ReadResource, resolveQueryFailure } from '@/lib/read-resource'
 import { failLoudly } from '@/lib/safe-catch'
 import { type VehicleContactRemoteFilters } from '../contact-filters.shared'
@@ -7,7 +7,9 @@ import { vehicleContactQueryKeys } from '../query-keys'
 import { vehicleContactService } from '../services/vehicle-contact-service'
 import { type VehicleContactBinding } from '../vehicle-contact.types'
 
-export function useVehicleContactBindings(filters: VehicleContactRemoteFilters) {
+export function useVehicleContactBindings(
+  filters: VehicleContactRemoteFilters
+) {
   const query = useQuery({
     queryKey: vehicleContactQueryKeys.list(filters),
     queryFn: () => vehicleContactService.listBindings(filters),
@@ -56,4 +58,3 @@ export function useVehicleContactBindings(filters: VehicleContactRemoteFilters) 
     },
   }
 }
-

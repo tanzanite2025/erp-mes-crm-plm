@@ -1,9 +1,26 @@
 import { useRef } from 'react'
-import { ArrowDown, ArrowUp, Edit, GripVertical, Plus, Trash2 } from 'lucide-react'
+import {
+  ArrowDown,
+  ArrowUp,
+  Edit,
+  GripVertical,
+  Plus,
+  Trash2,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { type ProductAttributeCategory, type ProductAttributeOption } from '../../data/schema'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
+  type ProductAttributeCategory,
+  type ProductAttributeOption,
+} from '../../data/schema'
 
 interface ProductAttributeOptionCardProps {
   locale: string
@@ -11,8 +28,14 @@ interface ProductAttributeOptionCardProps {
   selectedCategoryKey: string
   options: ProductAttributeOption[]
   isReordering: boolean
-  getLocalizedCategoryName: (locale: string, category: ProductAttributeCategory) => string
-  getLocalizedOptionLabel: (locale: string, option: ProductAttributeOption) => string
+  getLocalizedCategoryName: (
+    locale: string,
+    category: ProductAttributeCategory
+  ) => string
+  getLocalizedOptionLabel: (
+    locale: string,
+    option: ProductAttributeOption
+  ) => string
   onCreateOption: () => void
   onEditOption: (row: ProductAttributeOption) => void
   onDeleteOption: (id: string) => void
@@ -42,10 +65,10 @@ export function ProductAttributeOptionCard({
       <CardContent className='p-0'>
         <div className='flex items-center justify-between gap-4 border-b border-dashed border-muted/40 bg-background/50 px-5 py-5 sm:px-7'>
           <div>
-            <div className='text-base font-black tracking-tight italic text-foreground'>
+            <div className='text-base font-black tracking-tight text-foreground italic'>
               {isZh ? '分类项定义' : 'Category Options'}
             </div>
-            <div className='mt-1.5 text-[9px] font-black uppercase tracking-[0.24em] text-muted-foreground/50'>
+            <div className='mt-1.5 text-[9px] font-black tracking-[0.24em] text-muted-foreground/50 uppercase'>
               {selectedCategory
                 ? `${isZh ? '当前分类' : 'Current category'} · ${getLocalizedCategoryName(locale, selectedCategory)}`
                 : isZh
@@ -54,7 +77,7 @@ export function ProductAttributeOptionCard({
             </div>
           </div>
           <Button
-            className='h-11 rounded-full px-6 text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-primary/10 disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none'
+            className='h-11 rounded-full px-6 text-[10px] font-black tracking-[0.2em] uppercase shadow-lg shadow-primary/10 disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none'
             onClick={onCreateOption}
             disabled={!selectedCategoryKey}
           >
@@ -67,18 +90,33 @@ export function ProductAttributeOptionCard({
           <TableHeader className='border-b border-dashed border-muted/30 bg-muted/10'>
             <TableRow className='border-none hover:bg-transparent'>
               <TableHead className='w-10' />
-              <TableHead className='h-13 text-[9px] font-black uppercase tracking-[0.24em] text-primary/40'>{isZh ? '值' : 'Value'}</TableHead>
-              <TableHead className='text-[9px] font-black uppercase tracking-[0.24em] text-primary/40'>{isZh ? '名称' : 'Name'}</TableHead>
-              <TableHead className='text-[9px] font-black uppercase tracking-[0.24em] text-primary/40'>{isZh ? '显示顺序' : 'Order'}</TableHead>
-              <TableHead className='text-[9px] font-black uppercase tracking-[0.24em] text-primary/40'>{isZh ? '状态' : 'Active'}</TableHead>
-              <TableHead className='text-right text-[9px] font-black uppercase tracking-[0.24em] text-primary/40'>{isZh ? '操作' : 'Actions'}</TableHead>
+              <TableHead className='h-13 text-[9px] font-black tracking-[0.24em] text-primary/40 uppercase'>
+                {isZh ? '值' : 'Value'}
+              </TableHead>
+              <TableHead className='text-[9px] font-black tracking-[0.24em] text-primary/40 uppercase'>
+                {isZh ? '名称' : 'Name'}
+              </TableHead>
+              <TableHead className='text-[9px] font-black tracking-[0.24em] text-primary/40 uppercase'>
+                {isZh ? '显示顺序' : 'Order'}
+              </TableHead>
+              <TableHead className='text-[9px] font-black tracking-[0.24em] text-primary/40 uppercase'>
+                {isZh ? '状态' : 'Active'}
+              </TableHead>
+              <TableHead className='text-right text-[9px] font-black tracking-[0.24em] text-primary/40 uppercase'>
+                {isZh ? '操作' : 'Actions'}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {options.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className='py-16 text-center text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/45'>
-                  {isZh ? '当前分类下暂无分类项' : 'No options in this category'}
+                <TableCell
+                  colSpan={6}
+                  className='py-16 text-center text-[10px] font-black tracking-[0.24em] text-muted-foreground/45 uppercase'
+                >
+                  {isZh
+                    ? '当前分类下暂无分类项'
+                    : 'No options in this category'}
                 </TableCell>
               </TableRow>
             ) : (
@@ -98,33 +136,72 @@ export function ProductAttributeOptionCard({
                   onDragOver={(event) => event.preventDefault()}
                   onDrop={(event) => {
                     event.preventDefault()
-                    const sourceId = event.dataTransfer.getData('text/plain') || draggingOptionIdRef.current
+                    const sourceId =
+                      event.dataTransfer.getData('text/plain') ||
+                      draggingOptionIdRef.current
                     if (sourceId && sourceId !== row.id) {
                       onDropOption(sourceId, row.id)
                     }
                   }}
                 >
                   <TableCell className='py-4'>
-                    <GripVertical className='size-4 text-muted-foreground/35' aria-hidden='true' />
+                    <GripVertical
+                      className='size-4 text-muted-foreground/35'
+                      aria-hidden='true'
+                    />
                   </TableCell>
-                  <TableCell className='py-4 font-mono text-[11px] font-black'>{row.value}</TableCell>
-                  <TableCell className='py-4 text-[11px] font-black tracking-tight text-foreground'>{getLocalizedOptionLabel(locale, row)}</TableCell>
-                  <TableCell className='py-4 text-[11px] font-bold text-muted-foreground'>{row.sortOrder}</TableCell>
+                  <TableCell className='py-4 font-mono text-[11px] font-black'>
+                    {row.value}
+                  </TableCell>
+                  <TableCell className='py-4 text-[11px] font-black tracking-tight text-foreground'>
+                    {getLocalizedOptionLabel(locale, row)}
+                  </TableCell>
                   <TableCell className='py-4 text-[11px] font-bold text-muted-foreground'>
-                    {row.active ? (isZh ? '启用' : 'Active') : (isZh ? '停用' : 'Inactive')}
+                    {row.sortOrder}
+                  </TableCell>
+                  <TableCell className='py-4 text-[11px] font-bold text-muted-foreground'>
+                    {row.active
+                      ? isZh
+                        ? '启用'
+                        : 'Active'
+                      : isZh
+                        ? '停用'
+                        : 'Inactive'}
                   </TableCell>
                   <TableCell className='py-4'>
                     <div className='flex items-center justify-end gap-2'>
-                      <Button variant='ghost' size='icon' className='size-9 rounded-full' disabled={index === 0 || isReordering} onClick={() => onMoveOption(row.id, 'up')}>
+                      <Button
+                        variant='ghost'
+                        size='icon'
+                        className='size-9 rounded-full'
+                        disabled={index === 0 || isReordering}
+                        onClick={() => onMoveOption(row.id, 'up')}
+                      >
                         <ArrowUp className='size-4' />
                       </Button>
-                      <Button variant='ghost' size='icon' className='size-9 rounded-full' disabled={index === options.length - 1 || isReordering} onClick={() => onMoveOption(row.id, 'down')}>
+                      <Button
+                        variant='ghost'
+                        size='icon'
+                        className='size-9 rounded-full'
+                        disabled={index === options.length - 1 || isReordering}
+                        onClick={() => onMoveOption(row.id, 'down')}
+                      >
                         <ArrowDown className='size-4' />
                       </Button>
-                      <Button variant='ghost' size='icon' className='size-9 rounded-full' onClick={() => onEditOption(row)}>
+                      <Button
+                        variant='ghost'
+                        size='icon'
+                        className='size-9 rounded-full'
+                        onClick={() => onEditOption(row)}
+                      >
                         <Edit className='size-4' />
                       </Button>
-                      <Button variant='ghost' size='icon' className='size-9 rounded-full text-destructive' onClick={() => onDeleteOption(row.id)}>
+                      <Button
+                        variant='ghost'
+                        size='icon'
+                        className='size-9 rounded-full text-destructive'
+                        onClick={() => onDeleteOption(row.id)}
+                      >
                         <Trash2 className='size-4' />
                       </Button>
                     </div>

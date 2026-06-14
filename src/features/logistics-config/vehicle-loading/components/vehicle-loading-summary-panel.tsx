@@ -1,20 +1,24 @@
 import type { Dispatch, SetStateAction } from 'react'
+import { useLanguage } from '@/context/language-provider'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useLanguage } from '@/context/language-provider'
 import type { ShipmentSummary } from '../data/vehicle-loading.types'
 import { FieldCard } from './field-card'
 
 const fieldClass =
   'w-full h-11 min-h-11 rounded-2xl border border-border/50 bg-muted/40 px-4 py-0 text-sm font-medium leading-none shadow-sm shadow-black/5 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/15 focus-visible:border-primary/30'
-const labelClass = 'ml-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'
+const labelClass =
+  'ml-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'
 
 type Props = {
   summary: ShipmentSummary
   onSummaryChange: Dispatch<SetStateAction<ShipmentSummary>>
 }
 
-export function VehicleLoadingSummaryPanel({ summary, onSummaryChange }: Props) {
+export function VehicleLoadingSummaryPanel({
+  summary,
+  onSummaryChange,
+}: Props) {
   const { t } = useLanguage()
 
   return (
@@ -26,7 +30,9 @@ export function VehicleLoadingSummaryPanel({ summary, onSummaryChange }: Props) 
       <div className='space-y-4'>
         <div className='grid grid-cols-3 gap-3'>
           <div className='space-y-2'>
-            <Label className={labelClass}>{t('logisticsConfig.vehicleLoading.summary.boxes')}</Label>
+            <Label className={labelClass}>
+              {t('logisticsConfig.vehicleLoading.summary.boxes')}
+            </Label>
             <Input
               className={fieldClass}
               inputMode='numeric'
@@ -40,7 +46,9 @@ export function VehicleLoadingSummaryPanel({ summary, onSummaryChange }: Props) 
             />
           </div>
           <div className='space-y-2'>
-            <Label className={labelClass}>{t('logisticsConfig.vehicleLoading.summary.volume')}</Label>
+            <Label className={labelClass}>
+              {t('logisticsConfig.vehicleLoading.summary.volume')}
+            </Label>
             <Input
               className={fieldClass}
               inputMode='decimal'
@@ -54,7 +62,9 @@ export function VehicleLoadingSummaryPanel({ summary, onSummaryChange }: Props) 
             />
           </div>
           <div className='space-y-2'>
-            <Label className={labelClass}>{t('logisticsConfig.vehicleLoading.summary.weight')}</Label>
+            <Label className={labelClass}>
+              {t('logisticsConfig.vehicleLoading.summary.weight')}
+            </Label>
             <Input
               className={fieldClass}
               inputMode='decimal'

@@ -3,7 +3,9 @@ import type { VehicleSpec } from '../data/vehicle-loading.types'
 
 export function useVehiclePhotoDialogState() {
   const [photoDialogOpen, setPhotoDialogOpen] = useState(false)
-  const [selectedVehicle, setSelectedVehicle] = useState<VehicleSpec | null>(null)
+  const [selectedVehicle, setSelectedVehicle] = useState<VehicleSpec | null>(
+    null
+  )
 
   const selectedPhotoEntry = useMemo(
     () => selectedVehicle?.photoEntry ?? null,

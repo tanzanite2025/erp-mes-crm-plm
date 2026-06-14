@@ -34,7 +34,8 @@ export function SalesReturnActualAmountSummaryCard({
             {t('trading.salesReturns.createSheet.estimatedAmount')}
           </div>
           <p className='text-sm font-black text-foreground'>
-            ¥ {record.totalAmount.toLocaleString(undefined, {
+            ¥{' '}
+            {record.totalAmount.toLocaleString(undefined, {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
             })}
@@ -47,7 +48,9 @@ export function SalesReturnActualAmountSummaryCard({
           </div>
           <p className='text-xs font-black text-foreground'>
             {record.actualReturnAmountRecordedAt
-              ? record.actualReturnAmountRecordedAt.replace('T', ' ').slice(0, 16)
+              ? record.actualReturnAmountRecordedAt
+                  .replace('T', ' ')
+                  .slice(0, 16)
               : '--'}
           </p>
         </div>

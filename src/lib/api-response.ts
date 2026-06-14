@@ -14,7 +14,7 @@ export function ensureArrayResponse<T>(value: unknown, context: string): T[] {
 
 export function ensureObjectResponse<T extends Record<string, unknown>>(
   value: unknown,
-  context: string,
+  context: string
 ): T {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw createApiClientError({
@@ -30,10 +30,14 @@ export function ensureObjectResponse<T extends Record<string, unknown>>(
 export function ensureObjectField<T extends Record<string, unknown>>(
   value: Record<string, unknown>,
   fieldName: string,
-  context: string,
+  context: string
 ): T {
   const fieldValue = value[fieldName]
-  if (!fieldValue || typeof fieldValue !== 'object' || Array.isArray(fieldValue)) {
+  if (
+    !fieldValue ||
+    typeof fieldValue !== 'object' ||
+    Array.isArray(fieldValue)
+  ) {
     throw createApiClientError({
       kind: 'invalid_response',
       message: `[INVALID_RESPONSE] ${context} expected "${fieldName}" to be an object.`,
@@ -47,7 +51,7 @@ export function ensureObjectField<T extends Record<string, unknown>>(
 export function ensureNumberField(
   value: Record<string, unknown>,
   fieldName: string,
-  context: string,
+  context: string
 ): number {
   const fieldValue = value[fieldName]
   if (typeof fieldValue !== 'number' || Number.isNaN(fieldValue)) {
@@ -64,9 +68,12 @@ export function ensureNumberField(
 export function ensureArrayField<T>(
   value: unknown,
   fieldName: string,
-  context: string,
+  context: string
 ): T[] {
-  const objectValue = ensureObjectResponse<Record<string, unknown>>(value, context)
+  const objectValue = ensureObjectResponse<Record<string, unknown>>(
+    value,
+    context
+  )
   const fieldValue = objectValue[fieldName]
 
   if (!Array.isArray(fieldValue)) {

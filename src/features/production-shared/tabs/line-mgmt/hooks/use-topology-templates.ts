@@ -4,13 +4,17 @@ import { StorageService } from '@/features/system-mgmt/services/storage-service'
 import { type TopologyTemplate } from '../types'
 
 const TEMPLATE_STORAGE_KEY = 'xdfc_topology_templates_v1'
-const TOPOLOGY_TEMPLATES_QUERY_KEY = ['production-shared', 'topology-templates'] as const
+const TOPOLOGY_TEMPLATES_QUERY_KEY = [
+  'production-shared',
+  'topology-templates',
+] as const
 
 const logger = createLogger('useTopologyTemplates')
 
 async function loadTopologyTemplates() {
   try {
-    const stored = await StorageService.getItem<TopologyTemplate[]>(TEMPLATE_STORAGE_KEY)
+    const stored =
+      await StorageService.getItem<TopologyTemplate[]>(TEMPLATE_STORAGE_KEY)
     return stored || []
   } catch (error) {
     logger.error('Failed to load templates from storage', error)
@@ -41,17 +45,21 @@ export function useTopologyTemplates() {
   }
 
   const removeTemplate = async (id: string) => {
-    await saveTemplatesMutation.mutateAsync(templates.filter((template) => template.id !== id))
+    await saveTemplatesMutation.mutateAsync(
+      templates.filter((template) => template.id !== id)
+    )
   }
 
   const updateTemplate = async (template: TopologyTemplate) => {
     await saveTemplatesMutation.mutateAsync(
-      templates.map((item) => (item.id === template.id ? template : item)),
+      templates.map((item) => (item.id === template.id ? template : item))
     )
   }
 
   const refresh = async () => {
-    await queryClient.invalidateQueries({ queryKey: TOPOLOGY_TEMPLATES_QUERY_KEY })
+    await queryClient.invalidateQueries({
+      queryKey: TOPOLOGY_TEMPLATES_QUERY_KEY,
+    })
   }
 
   return {

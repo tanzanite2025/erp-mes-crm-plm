@@ -11,7 +11,7 @@ export function VehicleSpecCardRules({ spec }: Props) {
   return (
     <div className='grid grid-cols-1 gap-3 md:grid-cols-2'>
       <div className='rounded-[22px] border border-dashed border-border/60 bg-background/70 px-4 py-3'>
-        <div className='text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60'>
+        <div className='text-[10px] font-semibold tracking-[0.18em] text-muted-foreground/60 uppercase'>
           {t('logisticsConfig.vehicleSpecsLibrary.allowances')}
         </div>
         <div className='mt-1.5 space-y-1.5 text-[13px] leading-5 text-muted-foreground'>
@@ -22,7 +22,7 @@ export function VehicleSpecCardRules({ spec }: Props) {
       </div>
 
       <div className='rounded-[22px] border border-dashed border-border/60 bg-background/70 px-4 py-3'>
-        <div className='text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60'>
+        <div className='text-[10px] font-semibold tracking-[0.18em] text-muted-foreground/60 uppercase'>
           {t('logisticsConfig.vehicleSpecsLibrary.constraints')}
         </div>
         <div className='mt-1.5 space-y-1.5 text-[13px] leading-5 text-muted-foreground'>

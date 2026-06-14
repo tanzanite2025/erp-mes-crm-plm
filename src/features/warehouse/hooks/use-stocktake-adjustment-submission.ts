@@ -3,15 +3,17 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useLanguage } from '@/context/language-provider'
 import { warehouseQueryKeys } from '../query-keys'
 import { StocktakeMaintenanceService } from '../stocktake'
-import { createWarehouseUiFeedback, type WarehouseUiFeedback } from './warehouse-ui-feedback'
+import {
+  createWarehouseUiFeedback,
+  type WarehouseUiFeedback,
+} from './warehouse-ui-feedback'
 
-export function useStocktakeAdjustmentSubmission(feedback?: Pick<WarehouseUiFeedback, 'error' | 'success'>) {
+export function useStocktakeAdjustmentSubmission(
+  feedback?: Pick<WarehouseUiFeedback, 'error' | 'success'>
+) {
   const queryClient = useQueryClient()
   const { t } = useLanguage()
-  const ui = useMemo(
-    () => feedback ?? createWarehouseUiFeedback(),
-    [feedback],
-  )
+  const ui = useMemo(() => feedback ?? createWarehouseUiFeedback(), [feedback])
 
   const postAdjustmentMutation = useMutation({
     mutationFn: (taskId: string) =>

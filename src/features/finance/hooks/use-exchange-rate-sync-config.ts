@@ -11,14 +11,18 @@ function createProviderId(): string {
   return `provider-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 }
 
-function normalizeProviderPriorities(providers: ExchangeRateSyncProviderConfig[]): ExchangeRateSyncProviderConfig[] {
+function normalizeProviderPriorities(
+  providers: ExchangeRateSyncProviderConfig[]
+): ExchangeRateSyncProviderConfig[] {
   return providers.map((provider, index) => ({
     ...provider,
     priority: index + 1,
   }))
 }
 
-export function createDefaultExchangeRateSyncProvider(index = 0): ExchangeRateSyncProviderConfig {
+export function createDefaultExchangeRateSyncProvider(
+  index = 0
+): ExchangeRateSyncProviderConfig {
   return {
     id: createProviderId(),
     provider: 'exchangerate-api',
@@ -40,7 +44,9 @@ export function createDefaultExchangeRateSyncConfig(): ExchangeRateSyncConfig {
 
 export function useExchangeRateSyncConfig() {
   const { t } = useLanguage()
-  const [config, setConfig] = useState<ExchangeRateSyncConfig>(createDefaultExchangeRateSyncConfig())
+  const [config, setConfig] = useState<ExchangeRateSyncConfig>(
+    createDefaultExchangeRateSyncConfig()
+  )
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
@@ -72,7 +78,9 @@ export function useExchangeRateSyncConfig() {
     }
   }, [t])
 
-  const updateConfig = (updater: (current: ExchangeRateSyncConfig) => ExchangeRateSyncConfig) => {
+  const updateConfig = (
+    updater: (current: ExchangeRateSyncConfig) => ExchangeRateSyncConfig
+  ) => {
     setConfig((current) => updater(current))
   }
 
@@ -110,7 +118,9 @@ export function useExchangeRateSyncConfig() {
         return current
       }
 
-      const nextProviders = current.providers.filter((provider) => provider.id !== providerId)
+      const nextProviders = current.providers.filter(
+        (provider) => provider.id !== providerId
+      )
       if (nextProviders.length === 0) {
         return current
       }
@@ -126,7 +136,10 @@ export function useExchangeRateSyncConfig() {
     updateProvider(providerId, 'enabled', enabled)
   }
 
-  const toggleConfigFlag = (field: 'enabled' | 'fallbackEnabled', value: boolean) => {
+  const toggleConfigFlag = (
+    field: 'enabled' | 'fallbackEnabled',
+    value: boolean
+  ) => {
     updateConfig((current) => ({
       ...current,
       [field]: value,

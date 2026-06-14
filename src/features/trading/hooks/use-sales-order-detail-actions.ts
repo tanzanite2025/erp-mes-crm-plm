@@ -1,5 +1,5 @@
-import { toast } from 'sonner'
 import type { TranslationKey } from '@/locales'
+import { toast } from 'sonner'
 import { failLoudly } from '@/lib/safe-catch'
 import type { SalesOrder, SalesOrderStatus } from '../data/schema'
 import { requireTradingCommandActor } from '../utils/command-actor'
@@ -69,7 +69,9 @@ export function useSalesOrderDetailActions({
       return order
     }
 
-    const error = new Error(`[CRITICAL] Missing sales order detail context in ${scope}`)
+    const error = new Error(
+      `[CRITICAL] Missing sales order detail context in ${scope}`
+    )
     failLoudly(error, scope, { silentUI: true })
     toast.error(t('tradingSalesOrder.errors.missingDetailOrder'))
     return null
@@ -98,7 +100,11 @@ export function useSalesOrderDetailActions({
       return
     }
 
-    if (nextStatus === currentOrder.status && (nextStatusNote ?? '') === (currentOrder.statusNote ?? '')) return
+    if (
+      nextStatus === currentOrder.status &&
+      (nextStatusNote ?? '') === (currentOrder.statusNote ?? '')
+    )
+      return
 
     statusTransitionMutation.mutate({
       orderId: currentOrder.id,

@@ -51,28 +51,36 @@ export function DataTableFacetedFilter<TData, TValue>({
           <Button
             variant='outline'
             className={cn(
-              'w-[105px] h-12 rounded-2xl flex flex-col items-center justify-center gap-0.5 border-dashed border-muted shadow-sm hover:bg-muted active:scale-95 transition-all p-0',
-              triggerClassName,
+              'flex h-12 w-[105px] flex-col items-center justify-center gap-0.5 rounded-2xl border-dashed border-muted p-0 shadow-sm transition-all hover:bg-muted active:scale-95',
+              triggerClassName
             )}
           >
             <div className='flex items-center gap-1.5'>
               <PlusCircledIcon className='size-3 text-blue-600' />
-              <span className='text-[10px] font-black tracking-tighter leading-none'>{title}</span>
+              <span className='text-[10px] leading-none font-black tracking-tighter'>
+                {title}
+              </span>
               {selectedValues?.size > 0 && (
                 <Badge
                   variant='secondary'
-                  className='h-3.5 rounded-full px-1 text-[8px] font-mono bg-blue-500/10 text-blue-600 border-none ml-1'
+                  className='ml-1 h-3.5 rounded-full border-none bg-blue-500/10 px-1 font-mono text-[8px] text-blue-600'
                 >
                   {selectedValues.size}
                 </Badge>
               )}
             </div>
             {subtitle && (
-              <span className='text-[7px] font-mono opacity-40 uppercase tracking-widest leading-none'>{subtitle}</span>
+              <span className='font-mono text-[7px] leading-none tracking-widest uppercase opacity-40'>
+                {subtitle}
+              </span>
             )}
           </Button>
         ) : (
-          <Button variant='outline' size='sm' className={cn('h-8 border-dashed', triggerClassName)}>
+          <Button
+            variant='outline'
+            size='sm'
+            className={cn('h-8 border-dashed', triggerClassName)}
+          >
             <PlusCircledIcon className='size-4' />
             {title}
             {selectedValues?.size > 0 && (
@@ -111,7 +119,10 @@ export function DataTableFacetedFilter<TData, TValue>({
           </Button>
         )}
       </PopoverTrigger>
-      <PopoverContent className='w-[220px] rounded-[24px] border border-dashed border-muted/40 p-0 shadow-2xl' align='start'>
+      <PopoverContent
+        className='w-[220px] rounded-[24px] border border-dashed border-muted/40 p-0 shadow-2xl'
+        align='start'
+      >
         <Command>
           <CommandInput placeholder={title} />
           <CommandList>
@@ -164,7 +175,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                 <CommandGroup>
                   <CommandItem
                     onSelect={() => column?.setFilterValue(undefined)}
-                    className='mx-1 my-1 justify-center rounded-xl px-3 py-2 text-center text-[10px] font-black uppercase tracking-widest'
+                    className='mx-1 my-1 justify-center rounded-xl px-3 py-2 text-center text-[10px] font-black tracking-widest uppercase'
                   >
                     Clear filters
                   </CommandItem>

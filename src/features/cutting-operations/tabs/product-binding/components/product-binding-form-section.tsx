@@ -1,11 +1,11 @@
 import { Barcode, Link2, QrCode } from 'lucide-react'
-import { TrackingNumberInput } from '@/components/tracking-number-input'
+import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useLanguage } from '@/context/language-provider'
-import { ProductBarcodeMobileCapturePanel } from './product-barcode-mobile-capture-panel'
+import { TrackingNumberInput } from '@/components/tracking-number-input'
 import type { ProductBarcodeCaptureSession } from '../services/product-barcode-capture-session-service'
+import { ProductBarcodeMobileCapturePanel } from './product-barcode-mobile-capture-panel'
 
 type ProductBindingFormSectionProps = {
   productBarcode: string
@@ -22,7 +22,9 @@ type ProductBindingFormSectionProps = {
   onCopyCaptureLink: () => void
 }
 
-export function ProductBindingFormSection(props: ProductBindingFormSectionProps) {
+export function ProductBindingFormSection(
+  props: ProductBindingFormSectionProps
+) {
   const { t } = useLanguage()
   const {
     productBarcode,
@@ -48,26 +50,28 @@ export function ProductBindingFormSection(props: ProductBindingFormSectionProps)
               <Barcode className='size-5 text-foreground' />
             </div>
             <div>
-              <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+              <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                 {t('cuttingOperations.productBinding.form.steps.step1')}
               </p>
-              <p className='mt-1 text-sm font-black italic tracking-tighter text-foreground'>
+              <p className='mt-1 text-sm font-black tracking-tighter text-foreground italic'>
                 {t('cuttingOperations.productBinding.form.barcode.label')}
               </p>
             </div>
           </div>
           <div className='mt-3 grid gap-2'>
-            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+            <Label className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
               {t('cuttingOperations.productBinding.form.barcode.label')}
             </Label>
             <TrackingNumberInput
               value={productBarcode}
               onValueChange={onProductBarcodeChange}
-              placeholder={t('cuttingOperations.productBinding.form.barcode.placeholder')}
+              placeholder={t(
+                'cuttingOperations.productBinding.form.barcode.placeholder'
+              )}
               inputClassName='h-12 rounded-2xl border-none bg-muted/50 text-sm'
               disabled={isSubmitting}
             />
-            <p className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>
+            <p className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
               {t('cuttingOperations.productBinding.form.barcode.hint')}
             </p>
           </div>
@@ -91,26 +95,28 @@ export function ProductBindingFormSection(props: ProductBindingFormSectionProps)
               <QrCode className='size-5 text-foreground' />
             </div>
             <div>
-              <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+              <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                 {t('cuttingOperations.productBinding.form.steps.step2')}
               </p>
-              <p className='mt-1 text-sm font-black italic tracking-tighter text-foreground'>
+              <p className='mt-1 text-sm font-black tracking-tighter text-foreground italic'>
                 {t('cuttingOperations.productBinding.form.qr.label')}
               </p>
             </div>
           </div>
           <div className='mt-3 grid gap-2'>
-            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+            <Label className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
               {t('cuttingOperations.productBinding.form.qr.label')}
             </Label>
             <Input
               value={prepregQrCode}
               onChange={(event) => onPrepregQrCodeChange(event.target.value)}
-              placeholder={t('cuttingOperations.productBinding.form.qr.placeholder')}
+              placeholder={t(
+                'cuttingOperations.productBinding.form.qr.placeholder'
+              )}
               className='h-12 rounded-2xl border-none bg-muted/50 text-sm'
               disabled={isSubmitting}
             />
-            <p className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>
+            <p className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
               {t('cuttingOperations.productBinding.form.qr.hint')}
             </p>
           </div>
@@ -122,7 +128,7 @@ export function ProductBindingFormSection(props: ProductBindingFormSectionProps)
           type='button'
           onClick={onSubmit}
           disabled={isSubmitting}
-          className='h-11 rounded-full px-6 text-[10px] font-black uppercase tracking-widest'
+          className='h-11 rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
         >
           <Link2 className='size-4' />
           {isSubmitting

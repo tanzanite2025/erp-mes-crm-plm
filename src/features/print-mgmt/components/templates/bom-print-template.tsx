@@ -23,20 +23,29 @@ export interface BOMPrintTemplateProps {
   items: BOMPrintItem[]
 }
 
-export const BOMPrintTemplate = forwardRef<HTMLDivElement, BOMPrintTemplateProps>(
-  ({ bomNo, bomDisplayVersion, changeOrderNo, productName, items = [] }, ref) => {
+export const BOMPrintTemplate = forwardRef<
+  HTMLDivElement,
+  BOMPrintTemplateProps
+>(
+  (
+    { bomNo, bomDisplayVersion, changeOrderNo, productName, items = [] },
+    ref
+  ) => {
     const { locale, t } = useLanguage()
     const { level3Name } = useHierarchyLevelLabels()
-    const today = new Intl.DateTimeFormat(locale === 'zh-CN' ? 'zh-CN' : 'en-US', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    }).format(new Date())
+    const today = new Intl.DateTimeFormat(
+      locale === 'zh-CN' ? 'zh-CN' : 'en-US',
+      {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }
+    ).format(new Date())
 
     return (
       <div
         ref={ref}
-        className='bg-white text-black p-8 w-[210mm] min-h-[297mm] mx-auto box-border text-sm font-sans'
+        className='mx-auto box-border min-h-[297mm] w-[210mm] bg-white p-8 font-sans text-sm text-black'
       >
         <style type='text/css'>
           {`
@@ -76,20 +85,30 @@ export const BOMPrintTemplate = forwardRef<HTMLDivElement, BOMPrintTemplateProps
         <table className='print-table' style={{ borderBottom: 'none' }}>
           <tbody>
             <tr>
-              <td rowSpan={3} className='font-bold text-xl tracking-widest' style={{ width: '15%' }}>
-                <div className='flex flex-col items-center justify-center h-full'>
+              <td
+                rowSpan={3}
+                className='text-xl font-bold tracking-widest'
+                style={{ width: '15%' }}
+              >
+                <div className='flex h-full flex-col items-center justify-center'>
                   <span>{t('printMgmt.bomTemplate.companyLine1')}</span>
                   <span>{t('printMgmt.bomTemplate.companyLine2')}</span>
                 </div>
               </td>
-              <td rowSpan={3} className='font-bold text-2xl' style={{ width: '55%' }}>
+              <td
+                rowSpan={3}
+                className='text-2xl font-bold'
+                style={{ width: '55%' }}
+              >
                 {productName} - {t('printMgmt.bomTemplate.titleSuffix')}
-                <div className='mt-2 text-sm font-mono'>
+                <div className='mt-2 font-mono text-sm'>
                   {bomNo}
                   {bomDisplayVersion ? ` / ${bomDisplayVersion}` : ''}
                 </div>
               </td>
-              <td style={{ width: '15%' }}>{t('printMgmt.bomTemplate.documentCode')}</td>
+              <td style={{ width: '15%' }}>
+                {t('printMgmt.bomTemplate.documentCode')}
+              </td>
               <td style={{ width: '15%' }}>{changeOrderNo || '-'}</td>
             </tr>
             <tr>
@@ -101,52 +120,85 @@ export const BOMPrintTemplate = forwardRef<HTMLDivElement, BOMPrintTemplateProps
               <td>{today}</td>
             </tr>
             <tr>
-              <td colSpan={4} className='font-bold py-3 bg-gray-50/50'>
+              <td colSpan={4} className='bg-gray-50/50 py-3 font-bold'>
                 {t('printMgmt.bomTemplate.technicalStandard')}
               </td>
             </tr>
             <tr>
-              <td colSpan={2} className='text-left pl-4 font-bold border-r-0'>
+              <td colSpan={2} className='border-r-0 pl-4 text-left font-bold'>
                 {t('printMgmt.bomTemplate.nameLabel')}
               </td>
-              <td colSpan={2} className='text-left pl-4 font-bold border-l-0'>
+              <td colSpan={2} className='border-l-0 pl-4 text-left font-bold'>
                 {t('printMgmt.bomTemplate.productSpec', { productName })}
               </td>
             </tr>
           </tbody>
         </table>
 
-        <table className='print-table' style={{ borderTop: 'none', borderBottom: 'none' }}>
+        <table
+          className='print-table'
+          style={{ borderTop: 'none', borderBottom: 'none' }}
+        >
           <thead>
             <tr>
-              <th className='font-bold' style={{ width: '8%', borderTop: 'none' }}>
+              <th
+                className='font-bold'
+                style={{ width: '8%', borderTop: 'none' }}
+              >
                 {level3Name}
               </th>
-              <th className='font-bold' style={{ width: '12%', borderTop: 'none' }}>
+              <th
+                className='font-bold'
+                style={{ width: '12%', borderTop: 'none' }}
+              >
                 {t('printMgmt.bomTemplate.columns.materialCode')}
               </th>
-              <th className='font-bold' style={{ width: '15%', borderTop: 'none' }}>
+              <th
+                className='font-bold'
+                style={{ width: '15%', borderTop: 'none' }}
+              >
                 {t('printMgmt.bomTemplate.columns.materialName')}
               </th>
-              <th className='font-bold' style={{ width: '25%', borderTop: 'none' }}>
+              <th
+                className='font-bold'
+                style={{ width: '25%', borderTop: 'none' }}
+              >
                 {t('printMgmt.bomTemplate.columns.materialSpec')}
               </th>
-              <th className='font-bold' style={{ width: '6%', borderTop: 'none' }}>
+              <th
+                className='font-bold'
+                style={{ width: '6%', borderTop: 'none' }}
+              >
                 {t('printMgmt.bomTemplate.columns.unit')}
               </th>
-              <th className='font-bold' style={{ width: '6%', borderTop: 'none' }}>
+              <th
+                className='font-bold'
+                style={{ width: '6%', borderTop: 'none' }}
+              >
                 {t('printMgmt.bomTemplate.columns.unitPrice')}
               </th>
-              <th className='font-bold' style={{ width: '8%', borderTop: 'none' }}>
+              <th
+                className='font-bold'
+                style={{ width: '8%', borderTop: 'none' }}
+              >
                 {t('printMgmt.bomTemplate.columns.unitUsage')}
               </th>
-              <th className='font-bold' style={{ width: '6%', borderTop: 'none' }}>
+              <th
+                className='font-bold'
+                style={{ width: '6%', borderTop: 'none' }}
+              >
                 {t('printMgmt.bomTemplate.columns.wastagePercent')}
               </th>
-              <th className='font-bold' style={{ width: '8%', borderTop: 'none' }}>
+              <th
+                className='font-bold'
+                style={{ width: '8%', borderTop: 'none' }}
+              >
                 {t('printMgmt.bomTemplate.columns.standardUsage')}
               </th>
-              <th className='font-bold' style={{ width: '6%', borderTop: 'none' }}>
+              <th
+                className='font-bold'
+                style={{ width: '6%', borderTop: 'none' }}
+              >
                 {t('printMgmt.bomTemplate.columns.supplyChannel')}
               </th>
             </tr>
@@ -163,7 +215,9 @@ export const BOMPrintTemplate = forwardRef<HTMLDivElement, BOMPrintTemplateProps
                   <td>{item.unitPrice}</td>
                   <td className='font-bold text-blue-800'>{item.unitUsage}</td>
                   <td>{item.wastagePercent}%</td>
-                  <td className='font-bold text-blue-800'>{item.standardUsage}</td>
+                  <td className='font-bold text-blue-800'>
+                    {item.standardUsage}
+                  </td>
                   <td>{item.supplyChannel}</td>
                 </tr>
               ))
@@ -189,21 +243,31 @@ export const BOMPrintTemplate = forwardRef<HTMLDivElement, BOMPrintTemplateProps
               <td style={{ width: '20%', borderTop: 'none' }}>
                 {t('printMgmt.bomTemplate.recipientDept')}
               </td>
-              <td colSpan={5} className='text-xs' style={{ width: '40%', borderTop: 'none' }}>
+              <td
+                colSpan={5}
+                className='text-xs'
+                style={{ width: '40%', borderTop: 'none' }}
+              >
                 {t('printMgmt.bomTemplate.recipients')}
               </td>
             </tr>
             <tr>
-              <td style={{ width: '10%' }}>{t('printMgmt.bomTemplate.proofread')}</td>
-              <td style={{ width: '10%' }}>{t('printMgmt.bomTemplate.approve')}</td>
+              <td style={{ width: '10%' }}>
+                {t('printMgmt.bomTemplate.proofread')}
+              </td>
+              <td style={{ width: '10%' }}>
+                {t('printMgmt.bomTemplate.approve')}
+              </td>
               <td colSpan={2} style={{ width: '20%' }}>
                 {t('printMgmt.bomTemplate.preparedBy')}
               </td>
-              <td style={{ width: '20%' }}>{t('printMgmt.bomTemplate.preparedDate')}</td>
+              <td style={{ width: '20%' }}>
+                {t('printMgmt.bomTemplate.preparedDate')}
+              </td>
               <td style={{ width: '10%' }}>{today}</td>
               <td
                 colSpan={4}
-                className='font-bold tracking-widest print-dashed-bottom'
+                className='print-dashed-bottom font-bold tracking-widest'
                 style={{ width: '30%' }}
               >
                 {t('printMgmt.bomTemplate.revisionNotes')}

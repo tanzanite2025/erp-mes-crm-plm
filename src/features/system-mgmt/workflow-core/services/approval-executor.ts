@@ -3,12 +3,12 @@ import {
   type NotificationRule,
   type RuleSegment,
 } from '../data/notification-rule-schema'
+import { recordExecutionLog } from './execution-log-writer'
 import {
   type RuleExecutionEvent,
   type RuleExecutionMetadata,
   type RuleExecutionMode,
 } from './rule-execution-core'
-import { recordExecutionLog } from './execution-log-writer'
 import {
   buildApprovalProcessKey,
   resolveApprovalChain,
@@ -88,7 +88,12 @@ export async function executeApprovalAction({
       content: approvalReason,
       targets: finalTargets,
       metadata,
-      result: { approvalProcessKey, mode, reason: 'already processed', executionId },
+      result: {
+        approvalProcessKey,
+        mode,
+        reason: 'already processed',
+        executionId,
+      },
     })
     return result
   }
@@ -108,7 +113,8 @@ export async function executeApprovalAction({
       executionStatus: 'failed',
       targets: finalTargets,
       metadata,
-      errorMessage: 'Approval targetId could not be resolved from event metadata',
+      errorMessage:
+        'Approval targetId could not be resolved from event metadata',
       result: {
         approvalProcessKey,
         configuredModule: approval.module,

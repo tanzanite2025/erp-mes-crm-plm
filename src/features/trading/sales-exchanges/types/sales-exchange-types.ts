@@ -23,8 +23,7 @@ export interface SalesExchangeRecognizedLabelCode {
   recognitionSource: 'scannerInput' | 'manualInput'
 }
 
-export interface SalesExchangeUnmatchedLabelCode
-  extends SalesExchangeRecognizedLabelCode {
+export interface SalesExchangeUnmatchedLabelCode extends SalesExchangeRecognizedLabelCode {
   unmatchedReason: string
 }
 
@@ -81,4 +80,3 @@ export interface SalesExchangeSourceOrderCandidate {
   exchangeableLines: SalesOrderLine[]
   canCreateSalesExchangeDraft: boolean
 }
-

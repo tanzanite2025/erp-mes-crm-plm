@@ -45,7 +45,10 @@ export function getApprovalStatusLabel(t: ApprovalTranslator, status: string) {
   return key ? t(key) : status
 }
 
-export function getApprovalStatusMeta(t: ApprovalTranslator, status: string): AuditStatusDisplayMeta {
+export function getApprovalStatusMeta(
+  t: ApprovalTranslator,
+  status: string
+): AuditStatusDisplayMeta {
   const label = getApprovalStatusLabel(t, status)
 
   switch (status) {

@@ -1,7 +1,7 @@
 import { apiFetch } from '@/lib/api-client'
-import { type TaxRate } from '../data/taxation'
 import { type DeltaSet, type DeltaPayload } from '@/lib/delta/types'
 import { buildVersionedPatchMetadata } from '@/lib/version-guard'
+import { type TaxRate } from '../data/taxation'
 
 const TAX_RATE_PATCH_INTENT_SAVE = 'TAX_RATE_PATCH_SAVE'
 
@@ -20,19 +20,28 @@ class TaxService {
   /**
    * 局部更新税率 (SDRTS 协议)
    */
-  async patchTaxRate(id: string, delta: DeltaSet, version: number): Promise<TaxRate> {
+  async patchTaxRate(
+    id: string,
+    delta: DeltaSet,
+    version: number
+  ): Promise<TaxRate> {
     const payload: DeltaPayload = {
       op: 'PATCH',
       delta,
-      metadata: buildVersionedPatchMetadata(id, version, 'TaxService.patchTaxRate', {
-        intent: TAX_RATE_PATCH_INTENT_SAVE,
-      })
-    };
+      metadata: buildVersionedPatchMetadata(
+        id,
+        version,
+        'TaxService.patchTaxRate',
+        {
+          intent: TAX_RATE_PATCH_INTENT_SAVE,
+        }
+      ),
+    }
 
     return apiFetch<TaxRate>(`/finance/tax-rates/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(payload),
-    });
+    })
   }
 
   /**

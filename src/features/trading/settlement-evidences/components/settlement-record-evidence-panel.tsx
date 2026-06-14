@@ -1,11 +1,9 @@
 import { AlertCircle, ImageIcon, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
-
+import { failLoudly } from '@/lib/safe-catch'
 import { Button } from '@/components/ui/button'
 import { DocumentEvidenceManager } from '@/features/sales-document/components/document-evidence-manager'
 import type { OrderEvidence } from '@/features/trading/data/schema'
-import { failLoudly } from '@/lib/safe-catch'
-
 import type { SettlementRecordEvidenceApiDTO } from '../contracts/settlement-evidence-api-dto'
 import {
   useCreateSettlementRecordEvidence,
@@ -21,7 +19,9 @@ interface SettlementRecordEvidencePanelProps {
   title: string
 }
 
-function toDocumentEvidence(evidence: SettlementRecordEvidenceApiDTO): OrderEvidence {
+function toDocumentEvidence(
+  evidence: SettlementRecordEvidenceApiDTO
+): OrderEvidence {
   return {
     id: evidence.id,
     url: evidence.asset.fileUrl,
@@ -35,7 +35,9 @@ function EvidenceEmptyState({ text }: { text: string }) {
   return (
     <div className='flex min-h-[92px] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-muted/60 bg-background/60 p-3 text-center text-muted-foreground/45'>
       <ImageIcon className='size-7' />
-      <p className='text-[10px] font-black uppercase tracking-[0.14em]'>{text}</p>
+      <p className='text-[10px] font-black tracking-[0.14em] uppercase'>
+        {text}
+      </p>
     </div>
   )
 }
@@ -50,7 +52,10 @@ export function SettlementRecordEvidencePanel({
   const createMutation = useCreateSettlementRecordEvidence(recordType)
   const deleteMutation = useDeleteSettlementRecordEvidence(recordType)
 
-  const evidences = evidencesQuery.readResource.status === 'ready' ? evidencesQuery.readResource.data : []
+  const evidences =
+    evidencesQuery.readResource.status === 'ready'
+      ? evidencesQuery.readResource.data
+      : []
   const documentEvidences = evidences.map(toDocumentEvidence)
   const isMutating = createMutation.isPending || deleteMutation.isPending
 
@@ -61,8 +66,12 @@ export function SettlementRecordEvidencePanel({
 
     const currentIds = new Set(evidences.map((evidence) => evidence.id))
     const nextIds = new Set(nextEvidences.map((evidence) => evidence.id))
-    const deletedEvidences = evidences.filter((evidence) => !nextIds.has(evidence.id))
-    const addedEvidences = nextEvidences.filter((evidence) => !currentIds.has(evidence.id))
+    const deletedEvidences = evidences.filter(
+      (evidence) => !nextIds.has(evidence.id)
+    )
+    const addedEvidences = nextEvidences.filter(
+      (evidence) => !currentIds.has(evidence.id)
+    )
 
     for (const evidence of deletedEvidences) {
       await deleteMutation.mutateAsync({ recordId, evidenceId: evidence.id })
@@ -77,7 +86,8 @@ export function SettlementRecordEvidencePanel({
           fileUrl: evidence.url,
           category: 'IMAGE',
           note: evidence.note,
-          sortOrder: nextEvidences.findIndex((item) => item.id === evidence.id) + 1,
+          sortOrder:
+            nextEvidences.findIndex((item) => item.id === evidence.id) + 1,
         },
       })
     }
@@ -88,11 +98,11 @@ export function SettlementRecordEvidencePanel({
       <div className='flex items-center justify-between'>
         <div className='flex items-center gap-2'>
           <ImageIcon className='size-4 text-primary' />
-          <h4 className='text-[10px] font-black uppercase tracking-[0.14em] text-muted-foreground/60'>
+          <h4 className='text-[10px] font-black tracking-[0.14em] text-muted-foreground/60 uppercase'>
             {title}
           </h4>
         </div>
-        <span className='rounded-full border border-dashed border-muted/60 bg-background px-2 py-0.5 text-[10px] font-black tabular-nums text-muted-foreground/60'>
+        <span className='rounded-full border border-dashed border-muted/60 bg-background px-2 py-0.5 text-[10px] font-black text-muted-foreground/60 tabular-nums'>
           {evidences.length}
         </span>
       </div>
@@ -102,14 +112,18 @@ export function SettlementRecordEvidencePanel({
       ) : evidencesQuery.readResource.status === 'loading' ? (
         <div className='flex min-h-[92px] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-muted/60 bg-background/60 p-3 text-center text-muted-foreground/60'>
           <Loader2 className='size-6 animate-spin' />
-          <p className='text-[10px] font-black uppercase tracking-[0.14em]'>记录凭证加载中</p>
+          <p className='text-[10px] font-black tracking-[0.14em] uppercase'>
+            记录凭证加载中
+          </p>
         </div>
       ) : evidencesQuery.readResource.status === 'error' ? (
         <div className='flex min-h-[110px] flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-rose-300/60 bg-rose-50/60 p-4 text-center'>
           <AlertCircle className='size-6 text-rose-500' />
           <div className='space-y-1'>
-            <p className='text-[10px] font-black uppercase tracking-[0.14em] text-rose-700'>记录凭证加载失败</p>
-            <p className='text-[10px] font-bold leading-5 text-rose-700/80'>
+            <p className='text-[10px] font-black tracking-[0.14em] text-rose-700 uppercase'>
+              记录凭证加载失败
+            </p>
+            <p className='text-[10px] leading-5 font-bold text-rose-700/80'>
               {evidencesQuery.readResource.error.message || '请稍后重试。'}
             </p>
           </div>
@@ -117,7 +131,7 @@ export function SettlementRecordEvidencePanel({
             type='button'
             variant='outline'
             size='sm'
-            className='h-8 rounded-full border-dashed px-4 text-[9px] font-black uppercase tracking-widest'
+            className='h-8 rounded-full border-dashed px-4 text-[9px] font-black tracking-widest uppercase'
             onClick={() => {
               void evidencesQuery.retryRead()
             }}
@@ -133,11 +147,17 @@ export function SettlementRecordEvidencePanel({
             evidences={documentEvidences}
             onChange={(nextEvidences) => {
               void handleEvidenceChange(nextEvidences).catch((error) => {
-                failLoudly(error, 'SettlementRecordEvidencePanel.handleEvidenceChange', { silentUI: true })
+                failLoudly(
+                  error,
+                  'SettlementRecordEvidencePanel.handleEvidenceChange',
+                  { silentUI: true }
+                )
                 toast.error('凭证挂接失败，请稍后重试')
               })
             }}
-            disabled={isMutating || evidencesQuery.readResource.status !== 'ready'}
+            disabled={
+              isMutating || evidencesQuery.readResource.status !== 'ready'
+            }
             uploadPath={uploadPath}
             maxCount={20}
             compact

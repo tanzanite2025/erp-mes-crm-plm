@@ -16,7 +16,8 @@ export const labExperimental = {
   },
   equipment: {
     title: 'Lab Equipment Archive',
-    description: 'Centralized governance of laboratory equipment, precision instruments, and inspection assets',
+    description:
+      'Centralized governance of laboratory equipment, precision instruments, and inspection assets',
     initializeFirstDomain: 'Initialize First Domain',
     addTopCategory: 'Add Top Category',
     noAssetVectors: 'No lab asset domains initialized',
@@ -30,13 +31,15 @@ export const labExperimental = {
       confirmWordPrompt: 'Type "{{confirmWord}}" to confirm:',
       confirmWordPlaceholder: 'Type "{{confirmWord}}" here',
       dangerTitle: 'High-risk operation warning',
-      dangerDescription: 'Deleting a top-level category will remove the entire hierarchy under this branch. Please verify carefully before proceeding.',
+      dangerDescription:
+        'Deleting a top-level category will remove the entire hierarchy under this branch. Please verify carefully before proceeding.',
       confirmAction: 'Confirm Delete Category',
     },
   },
   tests: {
     title: 'Lab Project Queue',
-    description: 'Lifecycle tracking for R&D projects, performance validation, and destructive tests',
+    description:
+      'Lifecycle tracking for R&D projects, performance validation, and destructive tests',
     searchPlaceholder: 'Search test order...',
     tabPressure: 'Pressure Test',
     tabTemperature: 'Thermal Response',
@@ -45,7 +48,8 @@ export const labExperimental = {
   },
   reports: {
     title: 'Lab Report Archive',
-    description: 'Centralized storage for lab conclusions, technical parameters, and digital reports',
+    description:
+      'Centralized storage for lab conclusions, technical parameters, and digital reports',
     totalReports: 'Total Reports',
     files: 'files',
     searchPlaceholder: 'Search conclusions...',

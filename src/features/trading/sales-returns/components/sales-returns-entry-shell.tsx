@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Loader2, Search } from 'lucide-react'
-import { CompactPaginationControls } from '@/components/pagination/compact-pagination-controls'
 import { isForbiddenError } from '@/lib/error-status'
 import { useLanguage } from '@/context/language-provider'
 import { Input } from '@/components/ui/input'
@@ -13,10 +12,11 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { ForbiddenState } from '@/components/forbidden-state'
+import { CompactPaginationControls } from '@/components/pagination/compact-pagination-controls'
 import { TradingQueryErrorState } from '@/features/trading/components/trading-query-error-state'
 import type { SalesOrder } from '@/features/trading/data/schema'
-import type { SalesReturnRecord } from '@/features/trading/sales/services/sales-return-service'
 import { useSalesReturnMutations } from '@/features/trading/sales/hooks/use-sales-returns'
+import type { SalesReturnRecord } from '@/features/trading/sales/services/sales-return-service'
 import type {
   SalesReturnRecordsResource,
   SalesReturnSourceOrdersResource,
@@ -27,11 +27,7 @@ import { SalesReturnRecordSpotlight } from './sales-return-record-spotlight'
 import { SalesReturnSourceOrderMaster } from './sales-return-source-order-master'
 import { SalesReturnSourceOrderSpotlight } from './sales-return-source-order-spotlight'
 
-const sourceOrderStatusOptions = [
-  'all',
-  'InProgress',
-  'Done',
-]
+const sourceOrderStatusOptions = ['all', 'InProgress', 'Done']
 
 function canCreateReturn(order: SalesOrder) {
   if (!order.availableActions || order.availableActions.length === 0) {

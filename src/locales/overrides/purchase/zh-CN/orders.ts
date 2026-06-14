@@ -145,11 +145,14 @@ export const orders = {
     totalQty: '累计退货数量',
     totalAmount: '累计退货金额',
     empty: '暂无采购退货记录',
-    emptyDescription: '如果采购订单到货后在验收阶段发现异常且尚未入库，可以在这里登记退货。',
+    emptyDescription:
+      '如果采购订单到货后在验收阶段发现异常且尚未入库，可以在这里登记退货。',
     emptySelection: '请选择采购单查看可退货明细',
-    emptySelectionDescription: '左侧会展示已到货且仍有可退货数量的采购单，选中后即可查看本次可退货的物料行。',
+    emptySelectionDescription:
+      '左侧会展示已到货且仍有可退货数量的采购单，选中后即可查看本次可退货的物料行。',
     noEligibleOrders: '当前没有可做“入库前退货”的采购订单。',
-    noEligibleOrdersDescription: '只有已到货且仍存在未入库异常数量的采购单，才会出现在此处进行退货登记。',
+    noEligibleOrdersDescription:
+      '只有已到货且仍存在未入库异常数量的采购单，才会出现在此处进行退货登记。',
     tip: '该操作只会冲减采购单剩余待收数量，不会影响库存数量，也不会生成库存退货流水。',
   },
   headerFields: {

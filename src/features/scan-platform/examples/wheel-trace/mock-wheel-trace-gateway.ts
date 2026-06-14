@@ -4,7 +4,9 @@ import type {
 } from '../../contracts/wheel-trace-gateway-contract'
 import type { WheelTraceQueryGateway } from '../../services/wheel-trace-query-service'
 
-function buildTimeline(rawCode: string): WheelTraceLookupResponseContract['timeline'] {
+function buildTimeline(
+  rawCode: string
+): WheelTraceLookupResponseContract['timeline'] {
   return [
     {
       id: `${rawCode}-production`,

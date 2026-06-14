@@ -6,6 +6,7 @@ import { Loader2, RotateCcw, Save, Settings2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth-store'
 import { createLogger } from '@/lib/logger'
+import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -18,7 +19,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { cn } from '@/lib/utils'
 import { canOpenRouteEntryNonBlocking } from '@/features/authz/guards/route-entry-access'
 import { linearBarcodeProtocolService } from '@/features/basic-settings/services/linear-barcode-protocol-service'
 import { numberingService } from '@/features/basic-settings/services/numbering-service'
@@ -58,12 +58,12 @@ export function LinearBarcodeMgmt() {
   )
 
   // --- UI 状态 ---
-  const [selectedSegment, setSelectedSegment] = useState<BarcodeRuleSegment | null>(
-    null
-  )
+  const [selectedSegment, setSelectedSegment] =
+    useState<BarcodeRuleSegment | null>(null)
   const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false)
   const [isAppearanceDialogOpen, setIsAppearanceDialogOpen] = useState(false)
-  const [isHoleCodeSourceDialogOpen, setIsHoleCodeSourceDialogOpen] = useState(false)
+  const [isHoleCodeSourceDialogOpen, setIsHoleCodeSourceDialogOpen] =
+    useState(false)
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
   const [confirmText, setConfirmText] = useState('')
   const [isConfigSaving, setIsConfigSaving] = useState(false)
@@ -76,7 +76,8 @@ export function LinearBarcodeMgmt() {
     activeCounts: holeCountSources,
     combinationLabelMap,
   } = useActiveHoleCodeSource()
-  const { protocolConfig, isConfigLoading, cacheProtocolConfig } = useLinearBarcodeProtocol()
+  const { protocolConfig, isConfigLoading, cacheProtocolConfig } =
+    useLinearBarcodeProtocol()
 
   // --- 水合逻辑：仅在 protocolConfig 加载完成后初始化本地状态一次 ---
   useEffect(() => {
@@ -260,32 +261,36 @@ export function LinearBarcodeMgmt() {
   }
 
   return (
-    <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-      <div className='flex flex-col md:flex-row md:items-center justify-between gap-4'>
+    <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
+      <div className='flex flex-col justify-between gap-4 md:flex-row md:items-center'>
         <div className='flex-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-6'>
-          <h2 className='text-lg font-black italic tracking-tighter uppercase'>
+          <h2 className='text-lg font-black tracking-tighter uppercase italic'>
             {t('basicSettings.linearBarcode.page.title')}
           </h2>
-          <p className='text-[10px] text-muted-foreground font-black tracking-widest uppercase opacity-60'>
+          <p className='text-[10px] font-black tracking-widest text-muted-foreground uppercase opacity-60'>
             {t('basicSettings.linearBarcode.page.subtitle')}
           </p>
         </div>
         <div className='flex flex-wrap items-center gap-2'>
-          <div className='flex items-center gap-3 px-4 py-1.5 rounded-full bg-emerald-500/5 border border-dashed border-emerald-500/20 h-9 shrink-0'>
-            <span className='text-[9px] font-black text-emerald-600/70 uppercase tracking-widest italic'>
+          <div className='flex h-9 shrink-0 items-center gap-3 rounded-full border border-dashed border-emerald-500/20 bg-emerald-500/5 px-4 py-1.5'>
+            <span className='text-[9px] font-black tracking-widest text-emerald-600/70 uppercase italic'>
               {t('basicSettings.linearBarcode.page.badges.active')}
             </span>
-            <div className='size-1.5 rounded-full bg-emerald-500 animate-pulse' />
+            <div className='size-1.5 animate-pulse rounded-full bg-emerald-500' />
           </div>
           <Button
             variant='outline'
             size='sm'
             onClick={() => void handleSaveProtocol()}
             disabled={isConfigSaving}
-            className='rounded-full h-9 font-black text-[10px] uppercase tracking-widest border-dashed hover:bg-primary/5 hover:text-primary transition-all'
+            className='h-9 rounded-full border-dashed text-[10px] font-black tracking-widest uppercase transition-all hover:bg-primary/5 hover:text-primary'
           >
-            <Save className={cn('size-3 mr-2', isConfigSaving && 'animate-pulse')} />
-            {isConfigSaving ? t('basicSettings.linearBarcode.page.actions.saving') : t('basicSettings.linearBarcode.page.actions.save')}
+            <Save
+              className={cn('mr-2 size-3', isConfigSaving && 'animate-pulse')}
+            />
+            {isConfigSaving
+              ? t('basicSettings.linearBarcode.page.actions.saving')
+              : t('basicSettings.linearBarcode.page.actions.save')}
           </Button>
         </div>
       </div>
@@ -303,7 +308,9 @@ export function LinearBarcodeMgmt() {
               variant='ghost'
               className='h-11 w-full rounded-full px-8 text-[10px] font-black tracking-widest uppercase sm:w-auto'
               onClick={() =>
-                navigate({ to: '/code-center/shared-code-source/numbering-engine' })
+                navigate({
+                  to: '/code-center/shared-code-source/numbering-engine',
+                })
               }
             >
               <Settings2 className='mr-2 size-4' />

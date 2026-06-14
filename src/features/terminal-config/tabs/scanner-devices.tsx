@@ -227,9 +227,11 @@ export function ScannerDevicesTab() {
         title='USB扫码配置'
         description='仅面向接入后像键盘一样输入的 USB HID 扫码枪。现场只需要让光标停在输入框内，扫码后由页面判断回车、前后缀和一维码协议。'
         icon={ScanLine}
-        statusBadge={<Badge className='rounded-full border-none bg-emerald-500/10 px-4 py-1.5 text-[10px] font-black text-emerald-700'>
-          当前接入模式：USB HID 键盘模式
-        </Badge>}
+        statusBadge={
+          <Badge className='rounded-full border-none bg-emerald-500/10 px-4 py-1.5 text-[10px] font-black text-emerald-700'>
+            当前接入模式：USB HID 键盘模式
+          </Badge>
+        }
       />
 
       <section className='rounded-[28px] border border-dashed border-emerald-500/25 bg-emerald-500/5 p-5 md:p-6'>

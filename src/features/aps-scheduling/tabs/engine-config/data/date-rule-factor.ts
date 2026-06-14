@@ -7,7 +7,10 @@ import type {
   GreedyEngineFactorSummaryItem,
 } from '../types'
 
-type EngineConfigTranslator = (key: TranslationKey, params?: Record<string, string | number>) => string
+type EngineConfigTranslator = (
+  key: TranslationKey,
+  params?: Record<string, string | number>
+) => string
 
 export type EngineFactorViewModel = {
   id: string
@@ -42,13 +45,18 @@ function buildSystemDefaultCalendarDay(date: Date): GreedyEngineCalendarDay {
   }
 }
 
-export function buildSystemDefaultGreedyDateRuleSnapshot(now: Date = new Date()): GreedyEngineDateRuleSnapshot {
+export function buildSystemDefaultGreedyDateRuleSnapshot(
+  now: Date = new Date()
+): GreedyEngineDateRuleSnapshot {
   const startDate = normalizeDate(now)
-  const calendarDays: GreedyEngineCalendarDay[] = Array.from({ length: DEFAULT_APS_ENGINE_RANGE_DAYS }, (_, index) => {
-    const date = new Date(startDate)
-    date.setDate(startDate.getDate() + index)
-    return buildSystemDefaultCalendarDay(date)
-  })
+  const calendarDays: GreedyEngineCalendarDay[] = Array.from(
+    { length: DEFAULT_APS_ENGINE_RANGE_DAYS },
+    (_, index) => {
+      const date = new Date(startDate)
+      date.setDate(startDate.getDate() + index)
+      return buildSystemDefaultCalendarDay(date)
+    }
+  )
   const endDate = new Date(startDate)
   endDate.setDate(startDate.getDate() + DEFAULT_APS_ENGINE_RANGE_DAYS - 1)
 
@@ -67,7 +75,9 @@ export function buildSystemDefaultGreedyDateRuleSnapshot(now: Date = new Date())
   }
 }
 
-function resolveWeekendPolicyValueKey(snapshot: GreedyEngineDateRuleSnapshot): TranslationKey {
+function resolveWeekendPolicyValueKey(
+  snapshot: GreedyEngineDateRuleSnapshot
+): TranslationKey {
   switch (snapshot.weekendPolicy) {
     case 'rest_day':
       return 'apsScheduling.engineConfig.dateCard.summary.weekendRestValue'
@@ -78,7 +88,9 @@ function resolveWeekendPolicyValueKey(snapshot: GreedyEngineDateRuleSnapshot): T
   }
 }
 
-function resolveHolidayPolicyValueKey(snapshot: GreedyEngineDateRuleSnapshot): TranslationKey {
+function resolveHolidayPolicyValueKey(
+  snapshot: GreedyEngineDateRuleSnapshot
+): TranslationKey {
   switch (snapshot.holidayPolicy) {
     case 'stop_day':
       return 'apsScheduling.engineConfig.dateCard.summary.holidayStopValue'
@@ -93,15 +105,19 @@ function resolveHolidayPolicyValueKey(snapshot: GreedyEngineDateRuleSnapshot): T
 
 export function buildGreedyDateRuleSummaryItems(
   snapshot: GreedyEngineDateRuleSnapshot,
-  t: EngineConfigTranslator,
+  t: EngineConfigTranslator
 ): GreedyEngineFactorSummaryItem[] {
   return [
     {
       id: 'default-workday',
-      label: t('apsScheduling.engineConfig.dateCard.summary.defaultWorkdayLabel'),
+      label: t(
+        'apsScheduling.engineConfig.dateCard.summary.defaultWorkdayLabel'
+      ),
       value: snapshot.considersWorkdays
         ? t('apsScheduling.engineConfig.dateCard.summary.defaultWorkdayValue')
-        : t('apsScheduling.engineConfig.dateCard.summary.defaultWorkdayDisabledValue'),
+        : t(
+            'apsScheduling.engineConfig.dateCard.summary.defaultWorkdayDisabledValue'
+          ),
     },
     {
       id: 'weekend-rest',
@@ -120,7 +136,7 @@ export function buildGreedyDateRuleSummaryItems(
 
 export function buildDateRuleFactorViewModel(
   snapshot: GreedyEngineDateRuleSnapshot,
-  t: EngineConfigTranslator,
+  t: EngineConfigTranslator
 ): EngineFactorViewModel {
   const sourceTone: GreedyEngineFactorStatusTone = 'healthy'
   const sourceStatusTone: GreedyEngineFactorStatusTone = 'healthy'
@@ -135,7 +151,9 @@ export function buildDateRuleFactorViewModel(
       },
       {
         id: 'date-rule-source',
-        value: t('apsScheduling.engineConfig.dateCard.sourceType.systemDefault'),
+        value: t(
+          'apsScheduling.engineConfig.dateCard.sourceType.systemDefault'
+        ),
         tone: sourceTone,
       },
     ],

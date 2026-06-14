@@ -1,6 +1,6 @@
 import { AlertTriangle, Clock3, ShieldCheck } from 'lucide-react'
-import type { ProcessModuleStatus } from './types'
 import { sharedProcessNodeStatusMap } from './status-mapping'
+import type { ProcessModuleStatus } from './types'
 
 export type { ProcessModuleStatus } from './types'
 
@@ -20,7 +20,12 @@ export type ProcessBadgeConfig = {
   tone: string
 }
 
-export type ProcessTreeNodeStatus = 'normal' | 'disabled' | 'warning' | 'danger' | 'blocked'
+export type ProcessTreeNodeStatus =
+  | 'normal'
+  | 'disabled'
+  | 'warning'
+  | 'danger'
+  | 'blocked'
 
 export type ProcessTreeNodeConfig = {
   key: string
@@ -51,10 +56,25 @@ export type ProcessModuleConfig = {
   cards: ProcessCardConfig[]
 }
 
-export const statusMeta: Record<ProcessModuleStatus, { label: string; className: string; icon: React.ElementType }> = {
-  active: { label: '运行中', className: 'bg-cyan-500/10 text-cyan-700 border-cyan-500/20', icon: ShieldCheck },
-  idle: { label: '待机', className: 'bg-amber-500/10 text-amber-700 border-amber-500/20', icon: Clock3 },
-  blocked: { label: '受阻', className: 'bg-rose-500/10 text-rose-700 border-rose-500/20', icon: AlertTriangle },
+export const statusMeta: Record<
+  ProcessModuleStatus,
+  { label: string; className: string; icon: React.ElementType }
+> = {
+  active: {
+    label: '运行中',
+    className: 'bg-cyan-500/10 text-cyan-700 border-cyan-500/20',
+    icon: ShieldCheck,
+  },
+  idle: {
+    label: '待机',
+    className: 'bg-amber-500/10 text-amber-700 border-amber-500/20',
+    icon: Clock3,
+  },
+  blocked: {
+    label: '受阻',
+    className: 'bg-rose-500/10 text-rose-700 border-rose-500/20',
+    icon: AlertTriangle,
+  },
 }
 
 export const treeNodeStatusMeta = sharedProcessNodeStatusMap

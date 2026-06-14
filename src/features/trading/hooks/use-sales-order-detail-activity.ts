@@ -14,7 +14,9 @@ export function useSalesOrderDetailActivity({
   onHardDelete,
   confirmText,
 }: UseSalesOrderDetailActivityParams) {
-  const canDelete = Boolean(order.status === 'Canceled' && canHardDelete && onHardDelete)
+  const canDelete = Boolean(
+    order.status === 'Canceled' && canHardDelete && onHardDelete
+  )
 
   const handleHardDelete = useCallback(() => {
     if (!onHardDelete) return

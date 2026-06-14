@@ -7,12 +7,8 @@ export function SidebarCommandShell({ children }: PropsWithChildren) {
   const { t } = useLanguage()
 
   return (
-    <ModuleTabbedLayout
-      tabs={getSidebarCommandTabs(t)}
-    >
-      <div className='flex min-h-0 flex-col gap-8 p-1 md:p-2'>
-        {children}
-      </div>
+    <ModuleTabbedLayout tabs={getSidebarCommandTabs(t)}>
+      <div className='flex min-h-0 flex-col gap-8 p-1 md:p-2'>{children}</div>
     </ModuleTabbedLayout>
   )
 }

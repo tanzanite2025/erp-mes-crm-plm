@@ -57,7 +57,11 @@ function isPositiveInteger(value: number): boolean {
 }
 
 function calculateVolume(profile: PackagingCalculationProfileInput): number {
-  return normalizeNumber(profile.length) * normalizeNumber(profile.width) * normalizeNumber(profile.height)
+  return (
+    normalizeNumber(profile.length) *
+    normalizeNumber(profile.width) *
+    normalizeNumber(profile.height)
+  )
 }
 
 function buildLine(
@@ -69,7 +73,9 @@ function buildLine(
   productWeight: number
 ): PackagingCalculationLine {
   const volumePerBox = calculateVolume(profile)
-  const grossWeightPerBox = normalizeNumber(profile.netWeight) + normalizeNumber(productWeight) * normalizeNumber(profile.capacity)
+  const grossWeightPerBox =
+    normalizeNumber(profile.netWeight) +
+    normalizeNumber(productWeight) * normalizeNumber(profile.capacity)
 
   return {
     profileId: profile.profileId,
@@ -105,7 +111,9 @@ function validateProfiles(profiles: PackagingCalculationProfileInput[]): {
 
   profiles.forEach((profile) => {
     if (!isPositiveInteger(profile.capacity)) {
-      warnings.push(`Packaging profile ${profile.profileName} has invalid capacity and was ignored.`)
+      warnings.push(
+        `Packaging profile ${profile.profileName} has invalid capacity and was ignored.`
+      )
       return
     }
 
@@ -130,7 +138,10 @@ export function calculatePackagingPlan(
 ): PackagingCalculationResult {
   const strategy = input.strategy ?? 'min_box_count'
   const warnings: string[] = []
-  const orderedQuantity = Math.max(0, Math.floor(normalizeNumber(input.orderedQuantity)))
+  const orderedQuantity = Math.max(
+    0,
+    Math.floor(normalizeNumber(input.orderedQuantity))
+  )
   const productWeight = Math.max(0, normalizeNumber(input.productWeight))
 
   if (orderedQuantity === 0) {
@@ -147,7 +158,9 @@ export function calculatePackagingPlan(
     }
   }
 
-  const { validProfiles, warnings: profileWarnings } = validateProfiles(input.profiles)
+  const { validProfiles, warnings: profileWarnings } = validateProfiles(
+    input.profiles
+  )
   warnings.push(...profileWarnings)
 
   if (validProfiles.length === 0) {
@@ -185,16 +198,30 @@ export function calculatePackagingPlan(
     const packedQuantity = boxCount * profile.capacity
     remainingQuantity -= packedQuantity
 
-    lines.push(buildLine(profile, boxCount, packedQuantity, remainingQuantity, false, productWeight))
+    lines.push(
+      buildLine(
+        profile,
+        boxCount,
+        packedQuantity,
+        remainingQuantity,
+        false,
+        productWeight
+      )
+    )
   })
 
   const packedQuantity = orderedQuantity - remainingQuantity
   const boxCount = lines.reduce((sum, line) => sum + line.boxCount, 0)
   const totalVolume = lines.reduce((sum, line) => sum + line.totalVolume, 0)
-  const totalGrossWeight = lines.reduce((sum, line) => sum + line.totalGrossWeight, 0)
+  const totalGrossWeight = lines.reduce(
+    (sum, line) => sum + line.totalGrossWeight,
+    0
+  )
 
   if (remainingQuantity > 0) {
-    warnings.push('Remaining quantity could not be packed exactly with current packaging profiles.')
+    warnings.push(
+      'Remaining quantity could not be packed exactly with current packaging profiles.'
+    )
   }
 
   return {

@@ -1,4 +1,7 @@
-import { personalWorkbenchColumns, type PersonalWorkbenchColumnKey } from '../data/constants'
+import {
+  personalWorkbenchColumns,
+  type PersonalWorkbenchColumnKey,
+} from '../data/constants'
 import type { PersonalRecord } from '../data/schema'
 
 export interface PersonalRecordReorderItem {
@@ -12,7 +15,10 @@ export interface PersonalRecordDragPosition {
   index: number
 }
 
-function normalizeColumnRecords(records: PersonalRecord[], columnKey: PersonalWorkbenchColumnKey): PersonalRecord[] {
+function normalizeColumnRecords(
+  records: PersonalRecord[],
+  columnKey: PersonalWorkbenchColumnKey
+): PersonalRecord[] {
   return records
     .filter((record) => record.columnKey === columnKey)
     .sort((left, right) => {
@@ -44,13 +50,18 @@ export function reorderPersonalRecords(
       ? sourceColumnRecords
       : [...(columnMap.get(destination.columnKey) ?? [])]
 
-  const sourceIndex = sourceColumnRecords.findIndex((record) => record.id === sourceRecordId)
+  const sourceIndex = sourceColumnRecords.findIndex(
+    (record) => record.id === sourceRecordId
+  )
   if (sourceIndex < 0) {
     return { records, updates: [] }
   }
 
   const [draggedRecord] = sourceColumnRecords.splice(sourceIndex, 1)
-  const boundedDestinationIndex = Math.max(0, Math.min(destination.index, destinationColumnRecords.length))
+  const boundedDestinationIndex = Math.max(
+    0,
+    Math.min(destination.index, destinationColumnRecords.length)
+  )
   const nextRecord = { ...draggedRecord, columnKey: destination.columnKey }
 
   if (sourceRecord.columnKey === destination.columnKey) {
@@ -66,18 +77,28 @@ export function reorderPersonalRecords(
   const nextRecords: PersonalRecord[] = []
 
   for (const column of personalWorkbenchColumns) {
-    const columnRecords = (columnMap.get(column.key) ?? []).map((record, index) => {
-      const next = {
-        ...record,
-        columnKey: column.key,
-        sortOrder: index,
+    const columnRecords = (columnMap.get(column.key) ?? []).map(
+      (record, index) => {
+        const next = {
+          ...record,
+          columnKey: column.key,
+          sortOrder: index,
+        }
+        const original = records.find((item) => item.id === record.id)
+        if (
+          !original ||
+          original.columnKey !== next.columnKey ||
+          original.sortOrder !== next.sortOrder
+        ) {
+          updates.push({
+            id: next.id,
+            columnKey: next.columnKey,
+            sortOrder: next.sortOrder,
+          })
+        }
+        return next
       }
-      const original = records.find((item) => item.id === record.id)
-      if (!original || original.columnKey !== next.columnKey || original.sortOrder !== next.sortOrder) {
-        updates.push({ id: next.id, columnKey: next.columnKey, sortOrder: next.sortOrder })
-      }
-      return next
-    })
+    )
     nextRecords.push(...columnRecords)
   }
 

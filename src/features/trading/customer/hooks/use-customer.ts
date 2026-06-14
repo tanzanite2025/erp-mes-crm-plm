@@ -1,12 +1,22 @@
 import { useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { useLanguage } from '@/context/language-provider'
 import { type DeltaSet } from '@/lib/delta/types'
 import { type ReadResource, resolveQueryFailure } from '@/lib/read-resource'
+import { useLanguage } from '@/context/language-provider'
 import { type Customer, type CustomerFormValues } from '../../data/schema'
 import { tradingQueryKeys } from '../../query-keys'
-import { type CustomerListResponse, changeCustomerIdentity, changeCustomerStatus, createCustomer, deleteCustomer, getCustomerList, getCustomers, patchCustomer, saveCustomer } from '../services/customer-service'
+import {
+  type CustomerListResponse,
+  changeCustomerIdentity,
+  changeCustomerStatus,
+  createCustomer,
+  deleteCustomer,
+  getCustomerList,
+  getCustomers,
+  patchCustomer,
+  saveCustomer,
+} from '../services/customer-service'
 
 export const useGetCustomers = (options = {}) => {
   return useQuery({
@@ -67,16 +77,24 @@ export const useCustomerMutations = () => {
 
   const resolveCustomerErrorMessage = (
     error: unknown,
-    fallbackKey: 'trading.customers.errors.saveFailed' | 'trading.customers.errors.deleteFailed'
+    fallbackKey:
+      | 'trading.customers.errors.saveFailed'
+      | 'trading.customers.errors.deleteFailed'
   ) => {
     if (error && typeof error === 'object' && 'code' in error) {
-      if (error.code === 'CONFLICT') return t('trading.customers.errors.conflict')
+      if (error.code === 'CONFLICT')
+        return t('trading.customers.errors.conflict')
       if (error.code === 'CUSTOMER_DELETE_BLOCKED') {
         return t('trading.customers.errors.deleteBlocked')
       }
     }
 
-    if (error && typeof error === 'object' && 'status' in error && Number(error.status) === 409) {
+    if (
+      error &&
+      typeof error === 'object' &&
+      'status' in error &&
+      Number(error.status) === 409
+    ) {
       return t('trading.customers.errors.conflict')
     }
 
@@ -90,24 +108,46 @@ export const useCustomerMutations = () => {
     onSuccess: () => {
       toast.success(t('trading.customers.toasts.created'))
       queryClient.invalidateQueries({ queryKey: tradingQueryKeys.customers() })
-      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.customerList() })
+      queryClient.invalidateQueries({
+        queryKey: tradingQueryKeys.customerList(),
+      })
     },
     onError: (error) => {
-      toast.error(resolveCustomerErrorMessage(error, 'trading.customers.errors.saveFailed'))
+      toast.error(
+        resolveCustomerErrorMessage(
+          error,
+          'trading.customers.errors.saveFailed'
+        )
+      )
     },
   })
 
   const patchMutation = useMutation({
-    mutationFn: ({ id, delta, version }: { id: string; delta: DeltaSet; version: number }) => {
+    mutationFn: ({
+      id,
+      delta,
+      version,
+    }: {
+      id: string
+      delta: DeltaSet
+      version: number
+    }) => {
       return patchCustomer(id, delta, version)
     },
     onSuccess: () => {
       toast.success(t('trading.customers.toasts.updated'))
       queryClient.invalidateQueries({ queryKey: tradingQueryKeys.customers() })
-      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.customerList() })
+      queryClient.invalidateQueries({
+        queryKey: tradingQueryKeys.customerList(),
+      })
     },
     onError: (error) => {
-      toast.error(resolveCustomerErrorMessage(error, 'trading.customers.errors.saveFailed'))
+      toast.error(
+        resolveCustomerErrorMessage(
+          error,
+          'trading.customers.errors.saveFailed'
+        )
+      )
     },
   })
 
@@ -126,14 +166,28 @@ export const useCustomerMutations = () => {
       operator: string
       expectedVersion: number
       actorId?: string
-    }) => saveCustomer(id, { delta, finalData, operator, expectedVersion, actorId }),
+    }) =>
+      saveCustomer(id, {
+        delta,
+        finalData,
+        operator,
+        expectedVersion,
+        actorId,
+      }),
     onSuccess: () => {
       toast.success(t('trading.customers.toasts.updated'))
       queryClient.invalidateQueries({ queryKey: tradingQueryKeys.customers() })
-      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.customerList() })
+      queryClient.invalidateQueries({
+        queryKey: tradingQueryKeys.customerList(),
+      })
     },
     onError: (error) => {
-      toast.error(resolveCustomerErrorMessage(error, 'trading.customers.errors.saveFailed'))
+      toast.error(
+        resolveCustomerErrorMessage(
+          error,
+          'trading.customers.errors.saveFailed'
+        )
+      )
     },
   })
 
@@ -150,14 +204,22 @@ export const useCustomerMutations = () => {
       operator: string
       expectedVersion: number
       actorId?: string
-    }) => changeCustomerStatus(id, { status, operator, expectedVersion, actorId }),
+    }) =>
+      changeCustomerStatus(id, { status, operator, expectedVersion, actorId }),
     onSuccess: () => {
       toast.success(t('trading.customers.toasts.updated'))
       queryClient.invalidateQueries({ queryKey: tradingQueryKeys.customers() })
-      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.customerList() })
+      queryClient.invalidateQueries({
+        queryKey: tradingQueryKeys.customerList(),
+      })
     },
     onError: (error) => {
-      toast.error(resolveCustomerErrorMessage(error, 'trading.customers.errors.saveFailed'))
+      toast.error(
+        resolveCustomerErrorMessage(
+          error,
+          'trading.customers.errors.saveFailed'
+        )
+      )
     },
   })
 
@@ -176,14 +238,28 @@ export const useCustomerMutations = () => {
       operator: string
       expectedVersion: number
       actorId?: string
-    }) => changeCustomerIdentity(id, { code, name, operator, expectedVersion, actorId }),
+    }) =>
+      changeCustomerIdentity(id, {
+        code,
+        name,
+        operator,
+        expectedVersion,
+        actorId,
+      }),
     onSuccess: () => {
       toast.success(t('trading.customers.toasts.updated'))
       queryClient.invalidateQueries({ queryKey: tradingQueryKeys.customers() })
-      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.customerList() })
+      queryClient.invalidateQueries({
+        queryKey: tradingQueryKeys.customerList(),
+      })
     },
     onError: (error) => {
-      toast.error(resolveCustomerErrorMessage(error, 'trading.customers.errors.saveFailed'))
+      toast.error(
+        resolveCustomerErrorMessage(
+          error,
+          'trading.customers.errors.saveFailed'
+        )
+      )
     },
   })
 
@@ -192,12 +268,26 @@ export const useCustomerMutations = () => {
     onSuccess: () => {
       toast.success(t('trading.customers.toasts.deleted'))
       queryClient.invalidateQueries({ queryKey: tradingQueryKeys.customers() })
-      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.customerList() })
+      queryClient.invalidateQueries({
+        queryKey: tradingQueryKeys.customerList(),
+      })
     },
     onError: (error) => {
-      toast.error(resolveCustomerErrorMessage(error, 'trading.customers.errors.deleteFailed'))
+      toast.error(
+        resolveCustomerErrorMessage(
+          error,
+          'trading.customers.errors.deleteFailed'
+        )
+      )
     },
   })
 
-  return { createMutation, saveMutation, patchMutation, statusChangeMutation, identityChangeMutation, deleteMutation }
+  return {
+    createMutation,
+    saveMutation,
+    patchMutation,
+    statusChangeMutation,
+    identityChangeMutation,
+    deleteMutation,
+  }
 }

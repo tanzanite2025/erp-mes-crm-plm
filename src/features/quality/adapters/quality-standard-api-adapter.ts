@@ -164,7 +164,9 @@ export function toQualityStandardContract(
     operator: undefined,
     operateTime: dto.updatedAt || undefined,
     remarks: dto.remarks ?? dto.description ?? '',
-    approvalRequestSummary: normalizeApprovalRequestSummary(dto.approvalRequestSummary),
+    approvalRequestSummary: normalizeApprovalRequestSummary(
+      dto.approvalRequestSummary
+    ),
     items: normalizeStandardItems(dto.items),
   }
 }

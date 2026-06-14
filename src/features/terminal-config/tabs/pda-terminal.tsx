@@ -23,14 +23,26 @@ import {
   Workflow,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
+import {
+  normalizeDeviceCode,
+  normalizeMachineCode,
+  normalizeMaterialCode,
+  normalizeSceneKey,
+  normalizeTaskKey,
+} from '@/lib/codecs/code-normalization'
+import { isForbiddenError } from '@/lib/error-status'
+import { createLogger } from '@/lib/logger'
 import { useLanguage } from '@/context/language-provider'
-import { canOpenRouteEntryNonBlocking } from '@/features/authz/guards/route-entry-access'
-import { ForbiddenState } from '@/components/forbidden-state'
-import { IndustrialHeader } from '@/components/uds/industrial-header'
-import { TrackingNumberInput } from '@/components/tracking-number-input'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -40,27 +52,21 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
+import { ForbiddenState } from '@/components/forbidden-state'
+import { TrackingNumberInput } from '@/components/tracking-number-input'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
+import { canOpenRouteEntryNonBlocking } from '@/features/authz/guards/route-entry-access'
 import {
   createDefaultLinearBarcodeProtocolConfig,
   type LinearBarcodeProtocolConfig,
 } from '@/features/basic-settings/data/linear-barcode-protocol'
 import { linearBarcodeProtocolService } from '@/features/basic-settings/services/linear-barcode-protocol-service'
+import { getPdaCategories } from '../data'
 import {
   pdaIngestService,
   type PDAIngestRequest,
   type PDAIngestResponse,
 } from '../services/pda-ingest-service'
-import { getPdaCategories } from '../data'
-import { isForbiddenError } from '@/lib/error-status'
-import { useAuthStore } from '@/stores/auth-store'
-import { createLogger } from '@/lib/logger'
-import {
-  normalizeDeviceCode,
-  normalizeMachineCode,
-  normalizeMaterialCode,
-  normalizeSceneKey,
-  normalizeTaskKey,
-} from '@/lib/codecs/code-normalization'
 
 type PDAWorkbenchForm = {
   rawCode: string
@@ -82,7 +88,9 @@ const SYMBOLOGY_OPTIONS = [
 
 const logger = createLogger('TerminalPdaTab')
 
-function createDefaultWorkbenchForm(config: LinearBarcodeProtocolConfig): PDAWorkbenchForm {
+function createDefaultWorkbenchForm(
+  config: LinearBarcodeProtocolConfig
+): PDAWorkbenchForm {
   return {
     rawCode: '',
     symbology: config.ingestDefaults.symbology,
@@ -99,9 +107,10 @@ export function PDATerminalTab() {
   const { t } = useLanguage()
   const user = useAuthStore((state) => state.user)
   const canOpenShell = canOpenRouteEntryNonBlocking(user, '/pda-shell')
-  const [protocolConfig, setProtocolConfig] = useState<LinearBarcodeProtocolConfig>(
-    createDefaultLinearBarcodeProtocolConfig
-  )
+  const [protocolConfig, setProtocolConfig] =
+    useState<LinearBarcodeProtocolConfig>(
+      createDefaultLinearBarcodeProtocolConfig
+    )
   const [form, setForm] = useState<PDAWorkbenchForm>(() =>
     createDefaultWorkbenchForm(createDefaultLinearBarcodeProtocolConfig())
   )
@@ -116,9 +125,18 @@ export function PDATerminalTab() {
 
   const sceneOptions = [
     { value: 'general', label: t('terminalConfig.pda.sceneOptions.general') },
-    { value: 'stocktake', label: t('terminalConfig.pda.sceneOptions.stocktake') },
-    { value: 'production', label: t('terminalConfig.pda.sceneOptions.production') },
-    { value: 'traceability', label: t('terminalConfig.pda.sceneOptions.traceability') },
+    {
+      value: 'stocktake',
+      label: t('terminalConfig.pda.sceneOptions.stocktake'),
+    },
+    {
+      value: 'production',
+      label: t('terminalConfig.pda.sceneOptions.production'),
+    },
+    {
+      value: 'traceability',
+      label: t('terminalConfig.pda.sceneOptions.traceability'),
+    },
   ]
   const pdaCategories = getPdaCategories(t)
 
@@ -162,7 +180,10 @@ export function PDATerminalTab() {
     }
   }, [])
 
-  const normalizedRawCode = useMemo(() => normalizeMachineCode(form.rawCode), [form.rawCode])
+  const normalizedRawCode = useMemo(
+    () => normalizeMachineCode(form.rawCode),
+    [form.rawCode]
+  )
 
   const payloadPreview = useMemo<PDAIngestRequest>(() => {
     const parsedQty = Number(form.scannedQty)
@@ -185,7 +206,9 @@ export function PDATerminalTab() {
     async (overrideRawCode?: string) => {
       const payload: PDAIngestRequest = {
         ...payloadPreview,
-        rawCode: normalizeMachineCode(overrideRawCode || payloadPreview.rawCode),
+        rawCode: normalizeMachineCode(
+          overrideRawCode || payloadPreview.rawCode
+        ),
       }
 
       if (!payload.rawCode) {
@@ -208,7 +231,9 @@ export function PDATerminalTab() {
         return response
       } catch (error) {
         const message =
-          error instanceof Error ? error.message : t('terminalConfig.pda.toast.submitFailed')
+          error instanceof Error
+            ? error.message
+            : t('terminalConfig.pda.toast.submitFailed')
         setLastError(message)
         toast.error(message)
         return null
@@ -240,7 +265,9 @@ export function PDATerminalTab() {
         ingestDefaults: {
           symbology: form.symbology,
           scene: normalizeSceneKey(form.scene),
-          deviceId: normalizeDeviceCode(form.deviceId) || protocolConfig.ingestDefaults.deviceId,
+          deviceId:
+            normalizeDeviceCode(form.deviceId) ||
+            protocolConfig.ingestDefaults.deviceId,
           scannedQty:
             Number.isFinite(parsedQty) && parsedQty > 0
               ? parsedQty
@@ -257,10 +284,20 @@ export function PDATerminalTab() {
     } finally {
       setIsSavingDefaults(false)
     }
-  }, [autoSubmit, form.deviceId, form.scene, form.scannedQty, form.symbology, protocolConfig, t])
+  }, [
+    autoSubmit,
+    form.deviceId,
+    form.scene,
+    form.scannedQty,
+    form.symbology,
+    protocolConfig,
+    t,
+  ])
 
   const bridgeReady = Boolean(
-    payloadPreview.taskId && payloadPreview.materialCode && payloadPreview.scannedQty
+    payloadPreview.taskId &&
+    payloadPreview.materialCode &&
+    payloadPreview.scannedQty
   )
   const bridgeSignals = [
     {
@@ -278,7 +315,9 @@ export function PDATerminalTab() {
     {
       key: 'scannedQty',
       label: t('terminalConfig.pda.fields.scannedQty'),
-      value: payloadPreview.scannedQty ? String(payloadPreview.scannedQty) : undefined,
+      value: payloadPreview.scannedQty
+        ? String(payloadPreview.scannedQty)
+        : undefined,
       ready: Boolean(payloadPreview.scannedQty),
     },
   ]
@@ -288,66 +327,75 @@ export function PDATerminalTab() {
   }
 
   return (
-    <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+    <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
       <IndustrialHeader
         title={t('terminalConfig.pda.page.title')}
         description={t('terminalConfig.pda.page.description')}
         icon={MonitorSmartphone}
-        statusBadge={<div className='flex flex-wrap items-center gap-2'>
-          {canOpenShell ? (
-            <Button asChild variant='outline' className='rounded-full text-[10px] font-black uppercase tracking-widest'>
-              <Link to='/pda-shell'>
-                <MoveUpRight className='mr-2 size-3.5' />
-                {t('terminalConfig.pda.page.openShell')}
-              </Link>
-            </Button>
-          ) : null}
-          <Badge className='bg-emerald-500/6 text-emerald-600 border-none'>
-            {isConfigLoading
-              ? t('terminalConfig.pda.page.configLoading')
-              : t('terminalConfig.pda.page.configReady')}
-          </Badge>
-          <Badge className='bg-amber-500/6 text-amber-600 border-none'>
-            {autoSubmit
-              ? t('terminalConfig.pda.page.autoSubmitOn')
-              : t('terminalConfig.pda.page.autoSubmitOff')}
-          </Badge>
-        </div>}
+        statusBadge={
+          <div className='flex flex-wrap items-center gap-2'>
+            {canOpenShell ? (
+              <Button
+                asChild
+                variant='outline'
+                className='rounded-full text-[10px] font-black tracking-widest uppercase'
+              >
+                <Link to='/pda-shell'>
+                  <MoveUpRight className='mr-2 size-3.5' />
+                  {t('terminalConfig.pda.page.openShell')}
+                </Link>
+              </Button>
+            ) : null}
+            <Badge className='border-none bg-emerald-500/6 text-emerald-600'>
+              {isConfigLoading
+                ? t('terminalConfig.pda.page.configLoading')
+                : t('terminalConfig.pda.page.configReady')}
+            </Badge>
+            <Badge className='border-none bg-amber-500/6 text-amber-600'>
+              {autoSubmit
+                ? t('terminalConfig.pda.page.autoSubmitOn')
+                : t('terminalConfig.pda.page.autoSubmitOff')}
+            </Badge>
+          </div>
+        }
       />
 
-      <div className='grid grid-cols-1 xl:grid-cols-12 gap-6'>
-        <Card className='xl:col-span-8 rounded-[28px] border-dashed bg-muted/5 shadow-inner border-muted/50'>
+      <div className='grid grid-cols-1 gap-6 xl:grid-cols-12'>
+        <Card className='rounded-[28px] border-dashed border-muted/50 bg-muted/5 shadow-inner xl:col-span-8'>
           <CardHeader className='pb-4'>
-            <CardTitle className='text-sm md:text-base font-black tracking-tight uppercase flex items-center gap-2'>
+            <CardTitle className='flex items-center gap-2 text-sm font-black tracking-tight uppercase md:text-base'>
               <ScanLine className='size-4 text-primary' />
               {t('terminalConfig.pda.workbench.title')}
             </CardTitle>
-            <CardDescription className='text-[10px] md:text-[11px] font-medium text-muted-foreground/70'>
+            <CardDescription className='text-[10px] font-medium text-muted-foreground/70 md:text-[11px]'>
               {t('terminalConfig.pda.workbench.description')}
             </CardDescription>
           </CardHeader>
 
           <CardContent className='space-y-6'>
-            <div className='rounded-[24px] border border-dashed border-primary/20 bg-primary/5 p-4 md:p-5 space-y-4'>
+            <div className='space-y-4 rounded-[24px] border border-dashed border-primary/20 bg-primary/5 p-4 md:p-5'>
               <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between'>
                 <div className='space-y-1'>
-                  <p className='text-[10px] font-black uppercase tracking-widest text-primary/80'>
+                  <p className='text-[10px] font-black tracking-widest text-primary/80 uppercase'>
                     {t('terminalConfig.pda.workbench.inputTitle')}
                   </p>
-                  <p className='text-xs text-muted-foreground/70 font-medium'>
+                  <p className='text-xs font-medium text-muted-foreground/70'>
                     {t('terminalConfig.pda.workbench.inputDescription')}
                   </p>
                 </div>
                 <div className='flex items-center gap-3'>
                   <div className='flex items-center gap-2'>
-                    <Switch checked={autoSubmit} onCheckedChange={setAutoSubmit} />
-                    <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>
+                    <Switch
+                      checked={autoSubmit}
+                      onCheckedChange={setAutoSubmit}
+                    />
+                    <span className='text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
                       {t('terminalConfig.pda.workbench.autoSubmit')}
                     </span>
                   </div>
                   <Button
                     variant='outline'
-                    className='rounded-full text-[10px] font-black uppercase tracking-widest'
+                    className='rounded-full text-[10px] font-black tracking-widest uppercase'
                     onClick={() => void handleSaveDefaults()}
                     disabled={isSavingDefaults}
                   >
@@ -364,8 +412,12 @@ export function PDATerminalTab() {
               <TrackingNumberInput
                 value={form.rawCode}
                 onValueChange={(value) => {
-                  lastAutoSubmittedRef.current = value === form.rawCode ? lastAutoSubmittedRef.current : ''
-                  setForm((current) => ({ ...current, rawCode: normalizeMachineCode(value) }))
+                  lastAutoSubmittedRef.current =
+                    value === form.rawCode ? lastAutoSubmittedRef.current : ''
+                  setForm((current) => ({
+                    ...current,
+                    rawCode: normalizeMachineCode(value),
+                  }))
                   setLastError(null)
                 }}
                 placeholder={t('terminalConfig.pda.workbench.inputPlaceholder')}
@@ -373,17 +425,23 @@ export function PDATerminalTab() {
               />
             </div>
 
-            <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4'>
+            <div className='grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4'>
               <div className='space-y-2'>
-                <label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                <label className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                   {t('terminalConfig.pda.fields.symbology')}
                 </label>
                 <Select
                   value={form.symbology}
-                  onValueChange={(value) => setForm((current) => ({ ...current, symbology: value }))}
+                  onValueChange={(value) =>
+                    setForm((current) => ({ ...current, symbology: value }))
+                  }
                 >
                   <SelectTrigger className='h-11 rounded-2xl'>
-                    <SelectValue placeholder={t('terminalConfig.pda.fields.symbologyPlaceholder')} />
+                    <SelectValue
+                      placeholder={t(
+                        'terminalConfig.pda.fields.symbologyPlaceholder'
+                      )}
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {SYMBOLOGY_OPTIONS.map((option) => (
@@ -396,15 +454,24 @@ export function PDATerminalTab() {
               </div>
 
               <div className='space-y-2'>
-                <label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                <label className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                   {t('terminalConfig.pda.fields.scene')}
                 </label>
                 <Select
                   value={form.scene}
-                  onValueChange={(value) => setForm((current) => ({ ...current, scene: normalizeSceneKey(value) }))}
+                  onValueChange={(value) =>
+                    setForm((current) => ({
+                      ...current,
+                      scene: normalizeSceneKey(value),
+                    }))
+                  }
                 >
                   <SelectTrigger className='h-11 rounded-2xl'>
-                    <SelectValue placeholder={t('terminalConfig.pda.fields.scenePlaceholder')} />
+                    <SelectValue
+                      placeholder={t(
+                        'terminalConfig.pda.fields.scenePlaceholder'
+                      )}
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {sceneOptions.map((option) => (
@@ -417,13 +484,16 @@ export function PDATerminalTab() {
               </div>
 
               <div className='space-y-2'>
-                <label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                <label className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                   {t('terminalConfig.pda.fields.deviceId')}
                 </label>
                 <Input
                   value={form.deviceId}
                   onChange={(event) =>
-                    setForm((current) => ({ ...current, deviceId: normalizeDeviceCode(event.target.value) }))
+                    setForm((current) => ({
+                      ...current,
+                      deviceId: normalizeDeviceCode(event.target.value),
+                    }))
                   }
                   placeholder='PDA-01'
                   className='h-11 rounded-2xl'
@@ -431,7 +501,7 @@ export function PDATerminalTab() {
               </div>
 
               <div className='space-y-2'>
-                <label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                <label className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                   {t('terminalConfig.pda.fields.scannedQty')}
                 </label>
                 <Input
@@ -440,7 +510,10 @@ export function PDATerminalTab() {
                   step='1'
                   value={form.scannedQty}
                   onChange={(event) =>
-                    setForm((current) => ({ ...current, scannedQty: event.target.value }))
+                    setForm((current) => ({
+                      ...current,
+                      scannedQty: event.target.value,
+                    }))
                   }
                   placeholder='1'
                   className='h-11 rounded-2xl'
@@ -448,15 +521,18 @@ export function PDATerminalTab() {
               </div>
             </div>
 
-            <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+            <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
               <div className='space-y-2'>
-                <label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                <label className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                   {t('terminalConfig.pda.fields.taskId')}
                 </label>
                 <Input
                   value={form.taskId}
                   onChange={(event) =>
-                    setForm((current) => ({ ...current, taskId: normalizeTaskKey(event.target.value) }))
+                    setForm((current) => ({
+                      ...current,
+                      taskId: normalizeTaskKey(event.target.value),
+                    }))
                   }
                   placeholder={t('terminalConfig.pda.fields.taskIdPlaceholder')}
                   className='h-11 rounded-2xl'
@@ -464,7 +540,7 @@ export function PDATerminalTab() {
               </div>
 
               <div className='space-y-2'>
-                <label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                <label className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                   {t('terminalConfig.pda.fields.materialCode')}
                 </label>
                 <Input
@@ -481,15 +557,20 @@ export function PDATerminalTab() {
               </div>
 
               <div className='space-y-2'>
-                <label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                <label className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                   {t('terminalConfig.pda.fields.batchNo')}
                 </label>
                 <Input
                   value={form.batchNo}
                   onChange={(event) =>
-                    setForm((current) => ({ ...current, batchNo: event.target.value.toUpperCase() }))
+                    setForm((current) => ({
+                      ...current,
+                      batchNo: event.target.value.toUpperCase(),
+                    }))
                   }
-                  placeholder={t('terminalConfig.pda.fields.batchNoPlaceholder')}
+                  placeholder={t(
+                    'terminalConfig.pda.fields.batchNoPlaceholder'
+                  )}
                   className='h-11 rounded-2xl'
                 />
               </div>
@@ -497,7 +578,7 @@ export function PDATerminalTab() {
 
             <div className='flex flex-col gap-4 rounded-[24px] border border-dashed border-muted/50 bg-background/60 p-4 md:flex-row md:items-stretch md:justify-between'>
               <div
-                className={`flex-1 rounded-[20px] border border-dashed p-4 space-y-3 ${
+                className={`flex-1 space-y-3 rounded-[20px] border border-dashed p-4 ${
                   bridgeReady
                     ? 'border-emerald-500/25 bg-emerald-500/6'
                     : 'border-amber-500/25 bg-amber-500/6'
@@ -506,13 +587,15 @@ export function PDATerminalTab() {
                 <div className='flex flex-wrap items-start justify-between gap-3'>
                   <div className='space-y-1'>
                     <p
-                      className={`text-[10px] font-black uppercase tracking-widest ${
-                        bridgeReady ? 'text-emerald-700/80' : 'text-amber-700/80'
+                      className={`text-[10px] font-black tracking-widest uppercase ${
+                        bridgeReady
+                          ? 'text-emerald-700/80'
+                          : 'text-amber-700/80'
                       }`}
                     >
                       {t('terminalConfig.pda.routing.title')}
                     </p>
-                    <p className='text-sm font-bold leading-relaxed text-foreground/90'>
+                    <p className='text-sm leading-relaxed font-bold text-foreground/90'>
                       {bridgeReady
                         ? t('terminalConfig.pda.routing.ready')
                         : t('terminalConfig.pda.routing.idle')}
@@ -544,7 +627,9 @@ export function PDATerminalTab() {
                       <span
                         className={`size-1.5 rounded-full ${signal.ready ? 'bg-emerald-500' : 'bg-amber-500'}`}
                       />
-                      <span className='uppercase tracking-widest opacity-70'>{signal.label}</span>
+                      <span className='tracking-widest uppercase opacity-70'>
+                        {signal.label}
+                      </span>
                       <span className='max-w-[16rem] truncate text-foreground/80'>
                         {signal.value || '-'}
                       </span>
@@ -554,7 +639,7 @@ export function PDATerminalTab() {
               </div>
 
               <Button
-                className='rounded-full px-8 h-11 text-[10px] font-black uppercase tracking-widest'
+                className='h-11 rounded-full px-8 text-[10px] font-black tracking-widest uppercase'
                 onClick={() => void submitIngest()}
                 disabled={isSubmitting || !normalizedRawCode}
               >
@@ -569,24 +654,24 @@ export function PDATerminalTab() {
           </CardContent>
         </Card>
 
-        <div className='xl:col-span-4 space-y-6'>
-          <Card className='rounded-[28px] border-dashed bg-muted/5 shadow-inner border-muted/50'>
+        <div className='space-y-6 xl:col-span-4'>
+          <Card className='rounded-[28px] border-dashed border-muted/50 bg-muted/5 shadow-inner'>
             <CardHeader className='pb-4'>
-              <CardTitle className='text-sm md:text-base font-black tracking-tight uppercase flex items-center gap-2'>
+              <CardTitle className='flex items-center gap-2 text-sm font-black tracking-tight uppercase md:text-base'>
                 <Workflow className='size-4 text-primary' />
                 {t('terminalConfig.pda.defaults.title')}
               </CardTitle>
-              <CardDescription className='text-[10px] md:text-[11px] font-medium text-muted-foreground/70'>
+              <CardDescription className='text-[10px] font-medium text-muted-foreground/70 md:text-[11px]'>
                 {t('terminalConfig.pda.defaults.description')}
               </CardDescription>
             </CardHeader>
             <CardContent className='space-y-3 text-sm'>
-              <div className='rounded-2xl border border-dashed border-muted/50 bg-background/70 p-4 space-y-2'>
+              <div className='space-y-2 rounded-2xl border border-dashed border-muted/50 bg-background/70 p-4'>
                 <div className='flex items-center justify-between gap-3'>
-                  <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                  <span className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                     {t('terminalConfig.pda.defaults.sequenceRule')}
                   </span>
-                  <Badge className='bg-primary/10 text-primary border-none'>
+                  <Badge className='border-none bg-primary/10 text-primary'>
                     {protocolConfig.sequenceRuleKey}
                   </Badge>
                 </div>
@@ -595,20 +680,44 @@ export function PDATerminalTab() {
                 </p>
               </div>
 
-              <div className='rounded-2xl border border-dashed border-muted/50 bg-background/70 p-4 space-y-2'>
-                <div className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+              <div className='space-y-2 rounded-2xl border border-dashed border-muted/50 bg-background/70 p-4'>
+                <div className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                   <Radio className='size-3.5 text-primary' />
                   {t('terminalConfig.pda.defaults.payloadPreview')}
                 </div>
                 <div className='grid grid-cols-1 gap-2 text-xs font-medium text-muted-foreground/80'>
-                  <div>{t('terminalConfig.pda.payload.rawCode')}: {payloadPreview.rawCode || '-'}</div>
-                  <div>{t('terminalConfig.pda.payload.symbology')}: {payloadPreview.symbology || '-'}</div>
-                  <div>{t('terminalConfig.pda.payload.scene')}: {payloadPreview.scene || '-'}</div>
-                  <div>{t('terminalConfig.pda.payload.deviceId')}: {payloadPreview.deviceId || '-'}</div>
-                  <div>{t('terminalConfig.pda.payload.taskId')}: {payloadPreview.taskId || '-'}</div>
-                  <div>{t('terminalConfig.pda.payload.materialCode')}: {payloadPreview.materialCode || '-'}</div>
-                  <div>{t('terminalConfig.pda.payload.batchNo')}: {payloadPreview.batchNo || '-'}</div>
-                  <div>{t('terminalConfig.pda.payload.scannedQty')}: {payloadPreview.scannedQty ?? '-'}</div>
+                  <div>
+                    {t('terminalConfig.pda.payload.rawCode')}:{' '}
+                    {payloadPreview.rawCode || '-'}
+                  </div>
+                  <div>
+                    {t('terminalConfig.pda.payload.symbology')}:{' '}
+                    {payloadPreview.symbology || '-'}
+                  </div>
+                  <div>
+                    {t('terminalConfig.pda.payload.scene')}:{' '}
+                    {payloadPreview.scene || '-'}
+                  </div>
+                  <div>
+                    {t('terminalConfig.pda.payload.deviceId')}:{' '}
+                    {payloadPreview.deviceId || '-'}
+                  </div>
+                  <div>
+                    {t('terminalConfig.pda.payload.taskId')}:{' '}
+                    {payloadPreview.taskId || '-'}
+                  </div>
+                  <div>
+                    {t('terminalConfig.pda.payload.materialCode')}:{' '}
+                    {payloadPreview.materialCode || '-'}
+                  </div>
+                  <div>
+                    {t('terminalConfig.pda.payload.batchNo')}:{' '}
+                    {payloadPreview.batchNo || '-'}
+                  </div>
+                  <div>
+                    {t('terminalConfig.pda.payload.scannedQty')}:{' '}
+                    {payloadPreview.scannedQty ?? '-'}
+                  </div>
                 </div>
               </div>
 
@@ -620,51 +729,85 @@ export function PDATerminalTab() {
             </CardContent>
           </Card>
 
-          <Card className='rounded-[28px] border-dashed bg-muted/5 shadow-inner border-muted/50'>
+          <Card className='rounded-[28px] border-dashed border-muted/50 bg-muted/5 shadow-inner'>
             <CardHeader className='pb-4'>
-              <CardTitle className='text-sm md:text-base font-black tracking-tight uppercase flex items-center gap-2'>
+              <CardTitle className='flex items-center gap-2 text-sm font-black tracking-tight uppercase md:text-base'>
                 <CheckCircle2 className='size-4 text-primary' />
                 {t('terminalConfig.pda.response.title')}
               </CardTitle>
-              <CardDescription className='text-[10px] md:text-[11px] font-medium text-muted-foreground/70'>
+              <CardDescription className='text-[10px] font-medium text-muted-foreground/70 md:text-[11px]'>
                 {t('terminalConfig.pda.response.description')}
               </CardDescription>
             </CardHeader>
             <CardContent className='space-y-3'>
               {result ? (
                 <>
-                  <div className='rounded-2xl border border-dashed border-emerald-500/20 bg-emerald-500/5 p-4 space-y-2'>
+                  <div className='space-y-2 rounded-2xl border border-dashed border-emerald-500/20 bg-emerald-500/5 p-4'>
                     <div className='flex items-center justify-between gap-3'>
-                      <span className='text-[10px] font-black uppercase tracking-widest text-emerald-700'>
+                      <span className='text-[10px] font-black tracking-widest text-emerald-700 uppercase'>
                         {result.protocol}
                       </span>
-                      <Badge className='bg-emerald-500/10 text-emerald-700 border-none'>
+                      <Badge className='border-none bg-emerald-500/10 text-emerald-700'>
                         {result.bridge?.applied
                           ? t('terminalConfig.pda.response.bridged')
                           : t('terminalConfig.pda.response.ingestOnly')}
                       </Badge>
                     </div>
-                    <p className='text-sm font-bold text-foreground/90'>{result.parsed.summary}</p>
+                    <p className='text-sm font-bold text-foreground/90'>
+                      {result.parsed.summary}
+                    </p>
                     <p className='text-xs text-muted-foreground/70'>
-                      {t('terminalConfig.pda.response.productionDate')} {result.parsed.productionDate} /{' '}
-                      {t('terminalConfig.pda.response.shortTag')} {result.parsed.shortTag}
+                      {t('terminalConfig.pda.response.productionDate')}{' '}
+                      {result.parsed.productionDate} /{' '}
+                      {t('terminalConfig.pda.response.shortTag')}{' '}
+                      {result.parsed.shortTag}
                     </p>
                   </div>
 
                   <div className='grid grid-cols-2 gap-3 text-xs font-medium text-muted-foreground/80'>
-                    <div className='rounded-xl bg-background/70 border border-dashed border-muted/50 p-3'>
-                      <div>{t('terminalConfig.pda.response.year')}: {result.parsed.segments.year}</div>
-                      <div>{t('terminalConfig.pda.response.month')}: {result.parsed.segments.monthCode}</div>
-                      <div>{t('terminalConfig.pda.response.day')}: {result.parsed.segments.day}</div>
-                      <div>{t('terminalConfig.pda.response.model')}: {result.parsed.segments.modelCode}</div>
-                      <div>{t('terminalConfig.pda.response.appearance')}: {result.parsed.segments.appearanceCode}</div>
+                    <div className='rounded-xl border border-dashed border-muted/50 bg-background/70 p-3'>
+                      <div>
+                        {t('terminalConfig.pda.response.year')}:{' '}
+                        {result.parsed.segments.year}
+                      </div>
+                      <div>
+                        {t('terminalConfig.pda.response.month')}:{' '}
+                        {result.parsed.segments.monthCode}
+                      </div>
+                      <div>
+                        {t('terminalConfig.pda.response.day')}:{' '}
+                        {result.parsed.segments.day}
+                      </div>
+                      <div>
+                        {t('terminalConfig.pda.response.model')}:{' '}
+                        {result.parsed.segments.modelCode}
+                      </div>
+                      <div>
+                        {t('terminalConfig.pda.response.appearance')}:{' '}
+                        {result.parsed.segments.appearanceCode}
+                      </div>
                     </div>
-                    <div className='rounded-xl bg-background/70 border border-dashed border-muted/50 p-3'>
-                      <div>{t('terminalConfig.pda.response.holePrefix')}: {result.parsed.segments.holePrefix}</div>
-                      <div>{t('terminalConfig.pda.response.holes')}: {result.parsed.segments.holes}</div>
-                      <div>{t('terminalConfig.pda.response.serial')}: {result.parsed.segments.serial}</div>
-                      <div>{t('terminalConfig.pda.response.product')}: {result.resolved?.product?.name || '-'}</div>
-                      <div>{t('terminalConfig.pda.response.material')}: {result.resolved?.material?.name || '-'}</div>
+                    <div className='rounded-xl border border-dashed border-muted/50 bg-background/70 p-3'>
+                      <div>
+                        {t('terminalConfig.pda.response.holePrefix')}:{' '}
+                        {result.parsed.segments.holePrefix}
+                      </div>
+                      <div>
+                        {t('terminalConfig.pda.response.holes')}:{' '}
+                        {result.parsed.segments.holes}
+                      </div>
+                      <div>
+                        {t('terminalConfig.pda.response.serial')}:{' '}
+                        {result.parsed.segments.serial}
+                      </div>
+                      <div>
+                        {t('terminalConfig.pda.response.product')}:{' '}
+                        {result.resolved?.product?.name || '-'}
+                      </div>
+                      <div>
+                        {t('terminalConfig.pda.response.material')}:{' '}
+                        {result.resolved?.material?.name || '-'}
+                      </div>
                     </div>
                   </div>
                 </>
@@ -678,20 +821,20 @@ export function PDATerminalTab() {
         </div>
       </div>
 
-      <div className='grid grid-cols-1 xl:grid-cols-2 gap-6'>
+      <div className='grid grid-cols-1 gap-6 xl:grid-cols-2'>
         {pdaCategories.map((section) => {
           const SectionIcon = section.icon
           return (
             <Card
               key={section.title}
-              className='rounded-[28px] border-dashed bg-muted/5 shadow-inner border-muted/50'
+              className='rounded-[28px] border-dashed border-muted/50 bg-muted/5 shadow-inner'
             >
               <CardHeader className='pb-4'>
-                <CardTitle className='text-sm md:text-base font-black tracking-tight uppercase flex items-center gap-2'>
+                <CardTitle className='flex items-center gap-2 text-sm font-black tracking-tight uppercase md:text-base'>
                   <SectionIcon className='size-4 text-primary' />
                   {section.title}
                 </CardTitle>
-                <CardDescription className='text-[10px] md:text-[11px] font-medium text-muted-foreground/70'>
+                <CardDescription className='text-[10px] font-medium text-muted-foreground/70 md:text-[11px]'>
                   {section.description}
                 </CardDescription>
               </CardHeader>
@@ -699,18 +842,22 @@ export function PDATerminalTab() {
                 {section.items.map((item) => (
                   <div
                     key={item.title}
-                    className='rounded-2xl border border-dashed border-muted/50 bg-background/70 p-4 space-y-3'
+                    className='space-y-3 rounded-2xl border border-dashed border-muted/50 bg-background/70 p-4'
                   >
                     <div className='flex items-start justify-between gap-3'>
                       <div className='space-y-1'>
-                        <h4 className='text-sm font-black tracking-tight'>{item.title}</h4>
-                        <p className='text-[10px] font-bold text-muted-foreground/60'>{item.target}</p>
+                        <h4 className='text-sm font-black tracking-tight'>
+                          {item.title}
+                        </h4>
+                        <p className='text-[10px] font-bold text-muted-foreground/60'>
+                          {item.target}
+                        </p>
                       </div>
                       <Badge
                         className={
                           item.status === 'pendingUpload'
-                            ? 'bg-amber-500/10 text-amber-600 border-none'
-                            : 'bg-emerald-500/10 text-emerald-600 border-none'
+                            ? 'border-none bg-amber-500/10 text-amber-600'
+                            : 'border-none bg-emerald-500/10 text-emerald-600'
                         }
                       >
                         {item.status === 'pendingUpload'
@@ -718,11 +865,13 @@ export function PDATerminalTab() {
                           : t('terminalConfig.shared.statusPlanned')}
                       </Badge>
                     </div>
-                    <div className='grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px] font-bold text-muted-foreground/70'>
+                    <div className='grid grid-cols-1 gap-2 text-[10px] font-bold text-muted-foreground/70 sm:grid-cols-2'>
                       <div>{`${t('terminalConfig.shared.versionLabel')}: ${item.version}`}</div>
                       <div>{`${t('terminalConfig.shared.packageTypeLabel')}: ${item.packageType}`}</div>
                     </div>
-                    <p className='text-[11px] leading-relaxed text-muted-foreground/80'>{item.note}</p>
+                    <p className='text-[11px] leading-relaxed text-muted-foreground/80'>
+                      {item.note}
+                    </p>
                   </div>
                 ))}
               </CardContent>

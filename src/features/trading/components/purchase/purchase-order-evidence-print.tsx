@@ -56,7 +56,10 @@ export const PurchaseOrderEvidencePrint = React.forwardRef<
                   photoUrl={evidence.url}
                   metaRows={[
                     { label: '图片备注', value: evidence.note },
-                    { label: '上传时间', value: formatPurchasePrintDateTime(evidence.uploadedAt) },
+                    {
+                      label: '上传时间',
+                      value: formatPurchasePrintDateTime(evidence.uploadedAt),
+                    },
                   ]}
                 />
               ))}

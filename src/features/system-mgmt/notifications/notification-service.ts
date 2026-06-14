@@ -1,17 +1,14 @@
 import { createLogger } from '@/lib/logger'
 import { type NotificationRule } from '../workflow-core/data/notification-rule-schema'
 import { type StandardCommand } from '../workflow-core/data/schema'
+import { RoutingService } from '../workflow-core/services/routing-service'
 import {
   executeRoutingRules,
   resolveTemplate,
   type RuleExecutionMetadata,
 } from '../workflow-core/services/rule-execution-core'
 import { buildLiveRuleExecutionEvent } from '../workflow-core/services/rule-execution-event-builder'
-import { RoutingService } from '../workflow-core/services/routing-service'
-import {
-  type NotificationPriority,
-  type NotificationType,
-} from './types'
+import { type NotificationPriority, type NotificationType } from './types'
 
 const logger = createLogger('NotificationService')
 

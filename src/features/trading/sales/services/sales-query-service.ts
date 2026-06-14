@@ -22,15 +22,15 @@ import {
   type PaginatedSalesOrders,
 } from '../adapters/sales-order-api-adapter'
 import {
+  deserializeCustomerAnalyticsListResponseApiDTO,
+  deserializeGlobalProductRankingResponseApiDTO,
+} from '../contracts/sales-analytics-api-dto'
+import {
   deserializeSalesOrderApiDTO,
   deserializeSalesOrderListPageApiDTO,
   type SalesOrderApiDTO,
   type SalesOrderListPageApiDTO,
 } from '../contracts/sales-order-api-dto'
-import {
-  deserializeCustomerAnalyticsListResponseApiDTO,
-  deserializeGlobalProductRankingResponseApiDTO,
-} from '../contracts/sales-analytics-api-dto'
 
 export interface PaginatedResponse<T> {
   items: T[]

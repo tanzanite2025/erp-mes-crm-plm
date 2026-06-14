@@ -1,7 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { ensureAuthenticatedRouteSession } from '@/features/authz/guards/ensure-authenticated-route-session'
 import { MaterialsRouteLayout } from '@/features/material-archive/components/materials-route-layout'
-import { getMaterialListQueryKey, MATERIAL_OPTIONS_QUERY_KEY } from '@/features/material-archive/query-keys'
+import {
+  getMaterialListQueryKey,
+  MATERIAL_OPTIONS_QUERY_KEY,
+} from '@/features/material-archive/query-keys'
 import { MaterialCoreService } from '@/features/material-archive/services/material-core-service'
 
 export const Route = createFileRoute('/_authenticated/materials')({

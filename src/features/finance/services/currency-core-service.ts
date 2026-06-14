@@ -12,7 +12,10 @@ export const CurrencyCoreService = {
    */
   async getCurrencies(): Promise<Currency[]> {
     const res = await apiFetch<Currency[]>('/finance/currencies')
-    return ensureArrayResponse<Currency>(res, 'CurrencyCoreService.getCurrencies')
+    return ensureArrayResponse<Currency>(
+      res,
+      'CurrencyCoreService.getCurrencies'
+    )
   },
 
   /**
@@ -20,6 +23,6 @@ export const CurrencyCoreService = {
    */
   async getBaseCurrency(): Promise<Currency | undefined> {
     const currencies = await this.getCurrencies()
-    return currencies.find(c => c.isBase)
-  }
+    return currencies.find((c) => c.isBase)
+  },
 }

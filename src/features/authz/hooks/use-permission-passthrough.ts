@@ -4,19 +4,13 @@ import { useAuthStore } from '@/stores/auth-store'
 export function useNonBlockingPermissionActions() {
   const isSyncing = useAuthStore((state) => state.isSyncing)
 
-  const allowsPermission = useCallback(
-    (_required: string | string[]) => {
-      return true
-    },
-    [],
-  )
+  const allowsPermission = useCallback((_required: string | string[]) => {
+    return true
+  }, [])
 
-  const allowsAction = useCallback(
-    (_required: string | string[]) => {
-      return true
-    },
-    [],
-  )
+  const allowsAction = useCallback((_required: string | string[]) => {
+    return true
+  }, [])
 
   return {
     isChecking: isSyncing,
@@ -25,7 +19,9 @@ export function useNonBlockingPermissionActions() {
   }
 }
 
-export function useNonBlockingPermissionBoundary(permission: string | string[]) {
+export function useNonBlockingPermissionBoundary(
+  permission: string | string[]
+) {
   const access = useNonBlockingPermissionActions()
   const isAllowed = access.allowsPermission(permission)
 

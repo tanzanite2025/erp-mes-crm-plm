@@ -1,13 +1,9 @@
-import { Button } from '@/components/ui/button'
+import { Loader2, Plus, RefreshCw } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
-import {
-  Loader2,
-  Plus,
-  RefreshCw,
-} from 'lucide-react'
-import { LogisticsProviderFormDialog } from '@/features/sandbox/logistics-api/components/logistics-provider-form-dialog'
-import { LogisticsProviderCard } from '@/features/sandbox/logistics-api/components/logistics-provider-card'
+import { Button } from '@/components/ui/button'
 import { LogisticsPlatformState } from '@/features/sandbox/logistics-api/components/logistics-platform-state'
+import { LogisticsProviderCard } from '@/features/sandbox/logistics-api/components/logistics-provider-card'
+import { LogisticsProviderFormDialog } from '@/features/sandbox/logistics-api/components/logistics-provider-form-dialog'
 import { useLogisticsPlatformAdmin } from '@/features/sandbox/logistics-api/hooks/use-logistics-platform-admin'
 import type { LogisticsProvider } from '../types'
 
@@ -47,7 +43,7 @@ export function LogisticsSandboxDashboard() {
   } = useLogisticsPlatformAdmin()
 
   return (
-    <div className='rounded-[32px] border border-dashed border-slate-200 bg-slate-50/50 px-4 py-5 shadow-inner animate-in fade-in zoom-in-95 duration-500 sm:px-5 lg:px-6 lg:py-6'>
+    <div className='animate-in rounded-[32px] border border-dashed border-slate-200 bg-slate-50/50 px-4 py-5 shadow-inner duration-500 zoom-in-95 fade-in sm:px-5 lg:px-6 lg:py-6'>
       <div className='space-y-5 lg:space-y-6'>
         <div className='flex flex-wrap justify-end gap-2'>
           <Button
@@ -55,14 +51,18 @@ export function LogisticsSandboxDashboard() {
             variant='outline'
             onClick={() => void refetch()}
             disabled={isFetching}
-            className='h-11 rounded-full px-5 font-black text-[10px] uppercase tracking-widest'
+            className='h-11 rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
           >
-            {isFetching ? <Loader2 className='mr-2 size-4 animate-spin' /> : <RefreshCw className='mr-2 size-4' />}
+            {isFetching ? (
+              <Loader2 className='mr-2 size-4 animate-spin' />
+            ) : (
+              <RefreshCw className='mr-2 size-4' />
+            )}
             {t('logisticsConfig.platforms.actions.refresh')}
           </Button>
 
           <Button
-            className='h-11 rounded-full bg-slate-900 px-6 text-[10px] font-black uppercase tracking-widest shadow-lg shadow-slate-900/20 transition-all'
+            className='h-11 rounded-full bg-slate-900 px-6 text-[10px] font-black tracking-widest uppercase shadow-lg shadow-slate-900/20 transition-all'
             onClick={openCreateDialog}
           >
             <Plus className='mr-2 size-4' />

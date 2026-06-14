@@ -36,7 +36,7 @@ export function TopNav({ className, links, ...props }: TopNavProps) {
                 <Link
                   to={href}
                   className={cn(
-                    'text-xs font-bold uppercase tracking-widest',
+                    'text-xs font-bold tracking-widest uppercase',
                     !isActive && 'text-muted-foreground/60'
                   )}
                   disabled={disabled}
@@ -62,8 +62,8 @@ export function TopNav({ className, links, ...props }: TopNavProps) {
             to={href}
             disabled={disabled}
             className={cn(
-                'text-[10px] font-black uppercase tracking-[0.2em] transition-all hover:text-primary',
-                isActive ? 'text-primary' : 'text-muted-foreground/40'
+              'text-[10px] font-black tracking-[0.2em] uppercase transition-all hover:text-primary',
+              isActive ? 'text-primary' : 'text-muted-foreground/40'
             )}
           >
             {title}

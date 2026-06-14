@@ -35,14 +35,18 @@ export function AuditStamp({
   // 仅当传入了 module 和 targetId 时才启用可交互模式
   const isInteractive = !!(module && targetId)
   // 安全清洗日期格式，防止原始数据不规范导致 UI 异常
-  const formattedCreatedAt = createdAt ? createdAt.replace('T', ' ').split('.')[0] : '-'
-  const formattedUpdatedAt = updatedAt ? updatedAt.replace('T', ' ').split('.')[0] : null
+  const formattedCreatedAt = createdAt
+    ? createdAt.replace('T', ' ').split('.')[0]
+    : '-'
+  const formattedUpdatedAt = updatedAt
+    ? updatedAt.replace('T', ' ').split('.')[0]
+    : null
 
   return (
     <div
       className={cn(
         'flex flex-col gap-1.5 border-l border-dashed border-muted-foreground/20 pl-4 transition-all duration-300',
-        'group/audit font-mono text-[9px] uppercase tracking-tighter opacity-50 hover:opacity-100',
+        'group/audit font-mono text-[9px] tracking-tighter uppercase opacity-50 hover:opacity-100',
         isInteractive && 'hover:border-primary/50',
         className
       )}
@@ -50,9 +54,11 @@ export function AuditStamp({
       {/* Created Trace */}
       <div className='flex items-center gap-2'>
         <span className='font-black text-primary/60'>CREATED:</span>
-        <span className='font-medium text-foreground/80'>{formattedCreatedAt}</span>
+        <span className='font-medium text-foreground/80'>
+          {formattedCreatedAt}
+        </span>
         <div className='size-0.5 rounded-full bg-muted-foreground/30' />
-        <span className='font-black italic text-slate-500'>
+        <span className='font-black text-slate-500 italic'>
           @{auditUtils.formatOperatorName(createdBy)}
         </span>
         {isInteractive && showTimelineButton && (
@@ -72,11 +78,13 @@ export function AuditStamp({
 
       {/* Updated Trace (Only if exists and different from creation) */}
       {formattedUpdatedAt && updatedAt !== createdAt && (
-        <div className='flex items-center gap-2 animate-in fade-in slide-in-from-left-1'>
+        <div className='flex animate-in items-center gap-2 fade-in slide-in-from-left-1'>
           <span className='font-black text-amber-600/60'>UPDATED:</span>
-          <span className='font-medium text-foreground/80'>{formattedUpdatedAt}</span>
+          <span className='font-medium text-foreground/80'>
+            {formattedUpdatedAt}
+          </span>
           <div className='size-0.5 rounded-full bg-muted-foreground/30' />
-          <span className='font-black italic text-slate-500'>
+          <span className='font-black text-slate-500 italic'>
             @{auditUtils.formatOperatorName(updatedBy)}
           </span>
         </div>
@@ -84,7 +92,7 @@ export function AuditStamp({
 
       {/* Data Timeline Sheet */}
       {isInteractive && (
-        <DataTimeline 
+        <DataTimeline
           module={module}
           targetId={targetId}
           open={isTimelineOpen}

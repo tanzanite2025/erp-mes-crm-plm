@@ -13,8 +13,7 @@ export interface SalesExchangeRecognizedLabelApiDTO {
   unmatchedReason?: string
 }
 
-export interface SalesExchangeUnmatchedLabelApiDTO
-  extends SalesExchangeRecognizedLabelApiDTO {
+export interface SalesExchangeUnmatchedLabelApiDTO extends SalesExchangeRecognizedLabelApiDTO {
   unmatchedReason: string
 }
 

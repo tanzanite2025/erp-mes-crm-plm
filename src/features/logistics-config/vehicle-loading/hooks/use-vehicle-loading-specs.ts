@@ -2,7 +2,8 @@ import { useEffect } from 'react'
 import { useVehicleSpecsQuery } from './use-vehicle-specs-query'
 
 export function useVehicleLoadingSpecs(reloadToken: number) {
-  const { vehicleSpecs, isLoadingSpecs, specsError, reload } = useVehicleSpecsQuery()
+  const { vehicleSpecs, isLoadingSpecs, specsError, reload } =
+    useVehicleSpecsQuery()
 
   useEffect(() => {
     if (reloadToken > 0) {

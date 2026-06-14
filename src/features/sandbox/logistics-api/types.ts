@@ -1,7 +1,18 @@
 export type LogisticsStatus = 'Enabled' | 'Disabled'
 export type LogisticsDirectoryCategory = 'domestic' | 'international'
-export type LogisticsCapability = 'tracking' | 'callback' | 'label' | 'order_create'
-export type LogisticsVerificationStatus = 'unverified' | 'reachable' | 'healthy' | 'error' | 'invalid_config' | 'manual_review' | 'disabled'
+export type LogisticsCapability =
+  | 'tracking'
+  | 'callback'
+  | 'label'
+  | 'order_create'
+export type LogisticsVerificationStatus =
+  | 'unverified'
+  | 'reachable'
+  | 'healthy'
+  | 'error'
+  | 'invalid_config'
+  | 'manual_review'
+  | 'disabled'
 
 export interface LogisticsProviderCommonFields {
   id?: number

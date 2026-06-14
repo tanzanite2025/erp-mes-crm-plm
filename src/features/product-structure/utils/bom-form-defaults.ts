@@ -2,22 +2,28 @@ import { type BOMSectionOption } from '../data/bom-section-schema'
 import { type BOM } from '../data/schema'
 import { type BOMItemDraft } from '../mutation-types'
 import {
-  getDefaultBOMSectionCode,
-  normalizeBOMSectionValue,
-} from './bom-section-utils'
-import {
   normalizeBOMControlFieldPatch,
   normalizeEngineeringBomChangeType,
   normalizeEngineeringBomStatus,
   normalizeEngineeringBomVersion,
   normalizeEngineeringRevisionNo,
 } from './bom-control-normalization'
+import {
+  getDefaultBOMSectionCode,
+  normalizeBOMSectionValue,
+} from './bom-section-utils'
 
-function normalizeDraftItems(items?: BOMItemDraft[], sections: BOMSectionOption[] = []): BOM['items'] {
+function normalizeDraftItems(
+  items?: BOMItemDraft[],
+  sections: BOMSectionOption[] = []
+): BOM['items'] {
   const defaultSectionCode = getDefaultBOMSectionCode(sections)
   return (items || []).map((item) => ({
     ...item,
-    section: normalizeBOMSectionValue(sections, item.section || defaultSectionCode),
+    section: normalizeBOMSectionValue(
+      sections,
+      item.section || defaultSectionCode
+    ),
   })) as BOM['items']
 }
 
@@ -39,7 +45,10 @@ export function createEmptyBOMItem(sectionCode: string): BOM['items'][number] {
   }
 }
 
-export function createEmptyBOMFormValue(overrides: Partial<BOM> = {}, _sections: BOMSectionOption[] = []): BOM {
+export function createEmptyBOMFormValue(
+  overrides: Partial<BOM> = {},
+  _sections: BOMSectionOption[] = []
+): BOM {
   return normalizeBOMControlFieldPatch({
     id: '',
     bomNo: '',
@@ -69,17 +78,24 @@ export function createBOMFormValue(params: {
   sections: BOMSectionOption[]
   isEdit: boolean
 }): BOM {
-  const { currentRow, initialItems, initialProductId, sections, isEdit } = params
+  const { currentRow, initialItems, initialProductId, sections, isEdit } =
+    params
 
   if (isEdit && currentRow) {
-    return createEmptyBOMFormValue({
-      ...currentRow,
-      items: normalizeDraftItems(currentRow.items, sections),
-    }, sections)
+    return createEmptyBOMFormValue(
+      {
+        ...currentRow,
+        items: normalizeDraftItems(currentRow.items, sections),
+      },
+      sections
+    )
   }
 
-  return createEmptyBOMFormValue({
-    productId: initialProductId || '',
-    items: normalizeDraftItems(initialItems, sections),
-  }, sections)
+  return createEmptyBOMFormValue(
+    {
+      productId: initialProductId || '',
+      items: normalizeDraftItems(initialItems, sections),
+    },
+    sections
+  )
 }

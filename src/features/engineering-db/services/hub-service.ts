@@ -1,5 +1,8 @@
+import {
+  engineeringSpecService,
+  type EngineeringSpecInput,
+} from '@/features/engineering/services/engineering-spec-service'
 import { hubSchema, type Hub } from '../data/hub-schema'
-import { engineeringSpecService, type EngineeringSpecInput } from '@/features/engineering/services/engineering-spec-service'
 
 export const hubService = {
   getHubs: async (): Promise<Hub[]> => {
@@ -32,12 +35,16 @@ export const hubService = {
       type: 'HUB_DATA',
       active: true,
       hubData: data,
-      version: data.version || 1
+      version: data.version || 1,
     }
-    await engineeringSpecService.saveSpec(spec);
+    await engineeringSpecService.saveSpec(spec)
   },
 
-  patchHub: async (id: string, delta: Record<string, unknown>, version: number) => {
+  patchHub: async (
+    id: string,
+    delta: Record<string, unknown>,
+    version: number
+  ) => {
     // 映射 delta 路径：工艺数据存储在 hubData 字段下
     const mappedDelta: Record<string, unknown> = {}
     Object.entries(delta).forEach(([path, value]) => {
@@ -47,12 +54,12 @@ export const hubService = {
   },
 
   saveHubs: async (data: Hub[]) => {
-    if (data.length === 0) return;
+    if (data.length === 0) return
     // 兼容 UI 层面的全量保存逻辑（取第一项进行云端同步）
-    await hubService.saveHub(data[0]);
+    await hubService.saveHub(data[0])
   },
 
   deleteHub: async (id: string) => {
-    await engineeringSpecService.deleteSpec(id);
-  }
+    await engineeringSpecService.deleteSpec(id)
+  },
 }

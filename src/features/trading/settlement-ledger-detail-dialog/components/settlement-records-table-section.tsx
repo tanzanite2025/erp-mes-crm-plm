@@ -1,6 +1,13 @@
-import { Button } from '@/components/ui/button'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { formatSettlementMoney } from '../utils/format-settlement-money'
 
 export interface SettlementRecordTableItem {
@@ -46,12 +53,15 @@ export function SettlementRecordsTableSection({
   showDetailedColumns = false,
   showRecordStatusColumn = true,
 }: SettlementRecordsTableSectionProps) {
-  const columnCount = 5 + (showDetailedColumns ? 2 : 0) + (showRecordStatusColumn ? 1 : 0)
+  const columnCount =
+    5 + (showDetailedColumns ? 2 : 0) + (showRecordStatusColumn ? 1 : 0)
 
   return (
     <div className='overflow-hidden rounded-[22px] border border-dashed border-muted/60 bg-muted/5 shadow-inner'>
       <div className='flex flex-col gap-2 border-b border-dashed border-muted/50 bg-muted/20 px-4 py-3 sm:flex-row sm:items-center sm:justify-between'>
-        <div className='text-sm font-black leading-tight tracking-tight'>{title}</div>
+        <div className='text-sm leading-tight font-black tracking-tight'>
+          {title}
+        </div>
         <Button
           type='button'
           variant={showOnlyMissingEvidenceRecords ? 'default' : 'outline'}
@@ -66,21 +76,48 @@ export function SettlementRecordsTableSection({
         <Table>
           <TableHeader className='sticky top-0 z-10 bg-background'>
             <TableRow className='hover:bg-transparent'>
-              <TableHead className='h-9 px-3 text-[9px] font-black uppercase tracking-[0.12em] text-muted-foreground/55'>记录号</TableHead>
-              <TableHead className='h-9 px-3 text-right text-[9px] font-black uppercase tracking-[0.12em] text-muted-foreground/55'>金额</TableHead>
-              <TableHead className='h-9 px-3 text-[9px] font-black uppercase tracking-[0.12em] text-muted-foreground/55'>日期</TableHead>
-              {showDetailedColumns ? <TableHead className='h-9 px-3 text-[9px] font-black uppercase tracking-[0.12em] text-muted-foreground/55'>收款方式</TableHead> : null}
-              {showDetailedColumns ? <TableHead className='h-9 px-3 text-[9px] font-black uppercase tracking-[0.12em] text-muted-foreground/55'>收款账号</TableHead> : null}
-              <TableHead className='h-9 px-3 text-center text-[9px] font-black uppercase tracking-[0.12em] text-muted-foreground/55'>凭证</TableHead>
-              <TableHead className='h-9 px-3 text-[9px] font-black uppercase tracking-[0.12em] text-muted-foreground/55'>凭证状态</TableHead>
-              {showRecordStatusColumn ? <TableHead className='h-9 px-3 text-[9px] font-black uppercase tracking-[0.12em] text-muted-foreground/55'>状态</TableHead> : null}
+              <TableHead className='h-9 px-3 text-[9px] font-black tracking-[0.12em] text-muted-foreground/55 uppercase'>
+                记录号
+              </TableHead>
+              <TableHead className='h-9 px-3 text-right text-[9px] font-black tracking-[0.12em] text-muted-foreground/55 uppercase'>
+                金额
+              </TableHead>
+              <TableHead className='h-9 px-3 text-[9px] font-black tracking-[0.12em] text-muted-foreground/55 uppercase'>
+                日期
+              </TableHead>
+              {showDetailedColumns ? (
+                <TableHead className='h-9 px-3 text-[9px] font-black tracking-[0.12em] text-muted-foreground/55 uppercase'>
+                  收款方式
+                </TableHead>
+              ) : null}
+              {showDetailedColumns ? (
+                <TableHead className='h-9 px-3 text-[9px] font-black tracking-[0.12em] text-muted-foreground/55 uppercase'>
+                  收款账号
+                </TableHead>
+              ) : null}
+              <TableHead className='h-9 px-3 text-center text-[9px] font-black tracking-[0.12em] text-muted-foreground/55 uppercase'>
+                凭证
+              </TableHead>
+              <TableHead className='h-9 px-3 text-[9px] font-black tracking-[0.12em] text-muted-foreground/55 uppercase'>
+                凭证状态
+              </TableHead>
+              {showRecordStatusColumn ? (
+                <TableHead className='h-9 px-3 text-[9px] font-black tracking-[0.12em] text-muted-foreground/55 uppercase'>
+                  状态
+                </TableHead>
+              ) : null}
             </TableRow>
           </TableHeader>
           <TableBody>
             {records.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={columnCount} className='h-20 text-center text-[11px] font-bold text-muted-foreground/50'>
-                  {showOnlyMissingEvidenceRecords ? emptyMissingOnlyLabel : emptyLabel}
+                <TableCell
+                  colSpan={columnCount}
+                  className='h-20 text-center text-[11px] font-bold text-muted-foreground/50'
+                >
+                  {showOnlyMissingEvidenceRecords
+                    ? emptyMissingOnlyLabel
+                    : emptyLabel}
                 </TableCell>
               </TableRow>
             ) : (
@@ -95,15 +132,33 @@ export function SettlementRecordsTableSection({
                       selectedRecordId === record.id && 'bg-primary/5',
                       !hasEvidence && 'bg-destructive/5 hover:bg-destructive/10'
                     )}
-                    data-state={selectedRecordId === record.id ? 'selected' : undefined}
+                    data-state={
+                      selectedRecordId === record.id ? 'selected' : undefined
+                    }
                     onClick={() => onSelectRecord(record.id)}
                   >
-                    <TableCell className='px-3 py-2 text-xs font-black tracking-tight'>{record.recordNo}</TableCell>
-                    <TableCell className='px-3 py-2 text-right text-xs font-black tabular-nums'>{formatSettlementMoney(record.amount, currencyCode)}</TableCell>
-                    <TableCell className='px-3 py-2 text-xs font-medium text-muted-foreground'>{record.recordDate}</TableCell>
-                    {showDetailedColumns ? <TableCell className='px-3 py-2 text-xs font-medium text-muted-foreground'>{record.paymentMethod || '-'}</TableCell> : null}
-                    {showDetailedColumns ? <TableCell className='px-3 py-2 text-xs font-medium text-muted-foreground'>{record.receiptAccount || '-'}</TableCell> : null}
-                    <TableCell className='px-3 py-2 text-center text-xs font-black tabular-nums'>{record.evidences.length}</TableCell>
+                    <TableCell className='px-3 py-2 text-xs font-black tracking-tight'>
+                      {record.recordNo}
+                    </TableCell>
+                    <TableCell className='px-3 py-2 text-right text-xs font-black tabular-nums'>
+                      {formatSettlementMoney(record.amount, currencyCode)}
+                    </TableCell>
+                    <TableCell className='px-3 py-2 text-xs font-medium text-muted-foreground'>
+                      {record.recordDate}
+                    </TableCell>
+                    {showDetailedColumns ? (
+                      <TableCell className='px-3 py-2 text-xs font-medium text-muted-foreground'>
+                        {record.paymentMethod || '-'}
+                      </TableCell>
+                    ) : null}
+                    {showDetailedColumns ? (
+                      <TableCell className='px-3 py-2 text-xs font-medium text-muted-foreground'>
+                        {record.receiptAccount || '-'}
+                      </TableCell>
+                    ) : null}
+                    <TableCell className='px-3 py-2 text-center text-xs font-black tabular-nums'>
+                      {record.evidences.length}
+                    </TableCell>
                     <TableCell className='px-3 py-2 text-xs'>
                       <span
                         className={cn(
@@ -116,7 +171,11 @@ export function SettlementRecordsTableSection({
                         {hasEvidence ? '已挂凭证' : '缺少凭证'}
                       </span>
                     </TableCell>
-                    {showRecordStatusColumn ? <TableCell className='px-3 py-2 text-xs font-semibold text-muted-foreground'>{record.status}</TableCell> : null}
+                    {showRecordStatusColumn ? (
+                      <TableCell className='px-3 py-2 text-xs font-semibold text-muted-foreground'>
+                        {record.status}
+                      </TableCell>
+                    ) : null}
                   </TableRow>
                 )
               })

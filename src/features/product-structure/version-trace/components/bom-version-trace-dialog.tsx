@@ -1,6 +1,8 @@
 'use client'
 
 import { History } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -8,8 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { BOMVersionTraceContent } from './bom-version-trace-content'
 
 interface BOMVersionTraceDialogProps {
@@ -41,29 +41,41 @@ export function BOMVersionTraceDialog({
             <div className='space-y-2'>
               <div className='flex items-center gap-2 text-primary'>
                 <History className='size-4' />
-                <DialogTitle className='text-lg font-black tracking-tighter italic uppercase'>BOM追溯</DialogTitle>
+                <DialogTitle className='text-lg font-black tracking-tighter uppercase italic'>
+                  BOM追溯
+                </DialogTitle>
               </div>
-              <DialogDescription className='text-[9px] font-black uppercase tracking-widest opacity-60'>
-                {targetName ? `${targetName} / 版本记录、差异比对与结构追踪` : '按 BOM 或产品查看版本记录、差异比对与结构追踪'}
+              <DialogDescription className='text-[9px] font-black tracking-widest uppercase opacity-60'>
+                {targetName
+                  ? `${targetName} / 版本记录、差异比对与结构追踪`
+                  : '按 BOM 或产品查看版本记录、差异比对与结构追踪'}
               </DialogDescription>
             </div>
             <div className='flex flex-wrap items-center gap-2'>
-              <Badge variant='outline' className='h-5 rounded-full border-dashed bg-background text-[8px] font-mono'>
+              <Badge
+                variant='outline'
+                className='h-5 rounded-full border-dashed bg-background font-mono text-[8px]'
+              >
                 {bomId ? '当前 BOM' : productId ? '当前产品' : '全量范围'}
               </Badge>
               <Button
                 type='button'
                 variant='outline'
                 onClick={() => onOpenChange(false)}
-                className='h-11 rounded-full border-dashed px-5 text-[10px] font-black uppercase tracking-widest'
+                className='h-11 rounded-full border-dashed px-5 text-[10px] font-black tracking-widest uppercase'
               >
                 关闭
               </Button>
             </div>
           </div>
         </DialogHeader>
- 
-        <BOMVersionTraceContent open={open} bomId={bomId} productId={productId} className='min-h-0' />
+
+        <BOMVersionTraceContent
+          open={open}
+          bomId={bomId}
+          productId={productId}
+          className='min-h-0'
+        />
       </DialogContent>
     </Dialog>
   )

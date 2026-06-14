@@ -19,23 +19,29 @@ export function moveProductAttributeItem<T extends ProductAttributeOrderedItem>(
   return nextItems
 }
 
-export function dropProductAttributeItemToTarget<T extends ProductAttributeOrderedItem>(
-  items: T[],
-  sourceId: string,
-  targetId: string
-): T[] | null {
+export function dropProductAttributeItemToTarget<
+  T extends ProductAttributeOrderedItem,
+>(items: T[], sourceId: string, targetId: string): T[] | null {
   const sourceIndex = items.findIndex((item) => item.id === sourceId)
   const targetIndex = items.findIndex((item) => item.id === targetId)
-  if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) return null
+  if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex)
+    return null
 
   const nextItems = [...items]
   const [sourceItem] = nextItems.splice(sourceIndex, 1)
   const insertionIndex = nextItems.findIndex((item) => item.id === targetId)
-  const adjustedInsertionIndex = sourceIndex < targetIndex ? insertionIndex + 1 : insertionIndex
-  nextItems.splice(insertionIndex < 0 ? nextItems.length : adjustedInsertionIndex, 0, sourceItem)
+  const adjustedInsertionIndex =
+    sourceIndex < targetIndex ? insertionIndex + 1 : insertionIndex
+  nextItems.splice(
+    insertionIndex < 0 ? nextItems.length : adjustedInsertionIndex,
+    0,
+    sourceItem
+  )
   return nextItems
 }
 
-export function toProductAttributeOrderedIds<T extends ProductAttributeOrderedItem>(items: T[]): string[] {
+export function toProductAttributeOrderedIds<
+  T extends ProductAttributeOrderedItem,
+>(items: T[]): string[] {
   return items.map((item) => item.id)
 }

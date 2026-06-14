@@ -1,7 +1,9 @@
 import type { ShipmentSummary } from '@/features/logistics-config/vehicle-loading/data/vehicle-loading.types'
 import type { ShippingVehicleMatchItem } from '../types'
 
-export function resolveShippingVehicleMatchRecommendationSummary(item: ShippingVehicleMatchItem | null): {
+export function resolveShippingVehicleMatchRecommendationSummary(
+  item: ShippingVehicleMatchItem | null
+): {
   summary: ShipmentSummary | null
   error: Error | null
 } {

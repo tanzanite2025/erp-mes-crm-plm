@@ -29,7 +29,12 @@ export interface UseUdsUrlTableStateParams {
 export interface UseUdsUrlTableStateReturn {
   tableState: Pick<
     TableState,
-    'sorting' | 'pagination' | 'rowSelection' | 'columnFilters' | 'columnVisibility' | 'globalFilter'
+    | 'sorting'
+    | 'pagination'
+    | 'rowSelection'
+    | 'columnFilters'
+    | 'columnVisibility'
+    | 'globalFilter'
   >
   tableHandlers: {
     onPaginationChange: OnChangeFn<PaginationState>
@@ -72,8 +77,11 @@ export function useUdsUrlTableState({
   })
 
   const [sorting, setSorting] = useState<SortingState>(initialSorting)
-  const [rowSelection, setRowSelection] = useState<RowSelectionState>(initialRowSelection)
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(initialColumnVisibility)
+  const [rowSelection, setRowSelection] =
+    useState<RowSelectionState>(initialRowSelection)
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
+    initialColumnVisibility
+  )
 
   return {
     tableState: {

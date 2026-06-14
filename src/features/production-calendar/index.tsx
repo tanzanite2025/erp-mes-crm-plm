@@ -1,12 +1,15 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { TrendingUp, Package, AlertCircle } from 'lucide-react'
+import { useLanguage } from '@/context/language-provider'
+import { Button } from '@/components/ui/button'
 import { CalendarView } from './components/calendar-view'
 import { DayDetailSheet } from './components/day-detail-sheet'
-import { TrendingUp, Package, AlertCircle } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { ProductionCalendarService, type MonthlyStats } from './services/production-calendar-service'
-import { useLanguage } from '@/context/language-provider'
+import {
+  ProductionCalendarService,
+  type MonthlyStats,
+} from './services/production-calendar-service'
 
 export default function ProductionCalendar() {
   const { t } = useLanguage()
@@ -16,7 +19,7 @@ export default function ProductionCalendar() {
 
   const [monthlyStats, setMonthlyStats] = useState<MonthlyStats>({
     totalOutput: 0,
-    estimatedValue: '--'
+    estimatedValue: '--',
   })
 
   // 当用户点击日历上的某天
@@ -31,17 +34,20 @@ export default function ProductionCalendar() {
     const loadStatsAndRecords = async () => {
       try {
         setStatsError(null)
-        const stats = await ProductionCalendarService.getMonthlyStats(new Date())
+        const stats = await ProductionCalendarService.getMonthlyStats(
+          new Date()
+        )
         setMonthlyStats(stats)
       } catch (_error) {
         setStatsError(t('dashboard.page.calendar.error.loadStats'))
       }
     }
     void loadStatsAndRecords()
-    
+
     const handleSync = () => void loadStatsAndRecords()
     window.addEventListener('xdfc_production_plans_updated', handleSync)
-    return () => window.removeEventListener('xdfc_production_plans_updated', handleSync)
+    return () =>
+      window.removeEventListener('xdfc_production_plans_updated', handleSync)
   }, [t])
 
   const retryLoadStats = async () => {
@@ -54,36 +60,42 @@ export default function ProductionCalendar() {
     }
   }
 
-
   return (
-    <div className='space-y-2.5 animate-in fade-in duration-700'>
+    <div className='animate-in space-y-2.5 duration-700 fade-in'>
       <div className='flex flex-col justify-between gap-2.5 border-b border-dashed border-muted/50 pb-2.5 xl:flex-row xl:items-end'>
-        <div className='flex-1 min-w-0'>
-          <h1 className='text-sm font-black tracking-tighter italic text-slate-800 flex items-center gap-2 uppercase truncate'>
-            <div className='size-2 bg-blue-600 rounded-full animate-pulse shrink-0' />
+        <div className='min-w-0 flex-1'>
+          <h1 className='flex items-center gap-2 truncate text-sm font-black tracking-tighter text-slate-800 uppercase italic'>
+            <div className='size-2 shrink-0 animate-pulse rounded-full bg-blue-600' />
             {t('dashboard.page.calendar.title')}
           </h1>
-          <p className='mt-0.5 flex items-center gap-2 text-[9px] font-black uppercase leading-snug tracking-widest text-muted-foreground/60'>
+          <p className='mt-0.5 flex items-center gap-2 text-[9px] leading-snug font-black tracking-widest text-muted-foreground/60 uppercase'>
             {t('dashboard.page.calendar.description')}
           </p>
         </div>
 
         {/* 顶部快速汇总 */}
         <div className='flex flex-col items-stretch gap-1 overflow-hidden rounded-[20px] border border-dashed border-muted/50 bg-muted/5 p-0.5 shadow-inner sm:flex-row sm:items-center'>
-          <div className='border-b border-dashed border-muted/50 px-2.5 py-1 sm:border-b-0 sm:border-r'>
-            <div className='mb-0.5 text-[8px] font-black uppercase tracking-widest text-muted-foreground/50'>
+          <div className='border-b border-dashed border-muted/50 px-2.5 py-1 sm:border-r sm:border-b-0'>
+            <div className='mb-0.5 text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'>
               {t('dashboard.page.calendar.stats.totalOutput')}
             </div>
-            <div className='flex items-center gap-1.5 text-[11px] font-black italic text-blue-600'>
-              <Package className='size-3.5' /> {monthlyStats.totalOutput.toLocaleString()} <span className='text-[8px] font-black uppercase text-muted-foreground/40'>{t('dashboard.page.calendar.units.pcs')}</span>
+            <div className='flex items-center gap-1.5 text-[11px] font-black text-blue-600 italic'>
+              <Package className='size-3.5' />{' '}
+              {monthlyStats.totalOutput.toLocaleString()}{' '}
+              <span className='text-[8px] font-black text-muted-foreground/40 uppercase'>
+                {t('dashboard.page.calendar.units.pcs')}
+              </span>
             </div>
           </div>
           <div className='px-2.5 py-1'>
-            <div className='mb-0.5 text-[8px] font-black uppercase tracking-widest text-muted-foreground/50'>
+            <div className='mb-0.5 text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'>
               {t('dashboard.page.calendar.stats.estPerformance')}
             </div>
-            <div className='flex items-center gap-1.5 text-[11px] font-black italic text-emerald-600'>
-              <TrendingUp className='size-3.5' /> {monthlyStats.estimatedValue === 'SYNC_REALTIME' ? t('dashboard.page.calendar.stats.syncRealtime') : monthlyStats.estimatedValue}
+            <div className='flex items-center gap-1.5 text-[11px] font-black text-emerald-600 italic'>
+              <TrendingUp className='size-3.5' />{' '}
+              {monthlyStats.estimatedValue === 'SYNC_REALTIME'
+                ? t('dashboard.page.calendar.stats.syncRealtime')
+                : monthlyStats.estimatedValue}
             </div>
           </div>
         </div>
@@ -95,11 +107,21 @@ export default function ProductionCalendar() {
             <div className='flex items-start gap-3'>
               <AlertCircle className='mt-0.5 size-4 shrink-0' />
               <div>
-                <p className='text-[10px] font-black uppercase tracking-widest'>{t('dashboard.page.calendar.title')}</p>
-                <p className='text-xs font-bold wrap-break-word'>{statsError}</p>
+                <p className='text-[10px] font-black tracking-widest uppercase'>
+                  {t('dashboard.page.calendar.title')}
+                </p>
+                <p className='text-xs font-bold wrap-break-word'>
+                  {statsError}
+                </p>
               </div>
             </div>
-            <Button variant='outline' className='rounded-full border-dashed text-xs h-8' onClick={() => { void retryLoadStats() }}>
+            <Button
+              variant='outline'
+              className='h-8 rounded-full border-dashed text-xs'
+              onClick={() => {
+                void retryLoadStats()
+              }}
+            >
               {t('common.actions.retry')}
             </Button>
           </div>
@@ -107,9 +129,9 @@ export default function ProductionCalendar() {
       )}
 
       {/* Calendar View */}
-      <div className='relative overflow-hidden rounded-[24px] border border-dashed border-muted/50 bg-muted/5 shadow-inner p-2 sm:p-2.5'>
-        <div className='absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent pointer-events-none' />
-        <div className='z-10 relative'>
+      <div className='relative overflow-hidden rounded-[24px] border border-dashed border-muted/50 bg-muted/5 p-2 shadow-inner sm:p-2.5'>
+        <div className='pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent' />
+        <div className='relative z-10'>
           <CalendarView onDateClick={handleDateClick} />
         </div>
       </div>

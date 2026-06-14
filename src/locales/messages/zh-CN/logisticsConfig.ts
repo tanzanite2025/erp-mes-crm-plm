@@ -1,5 +1,6 @@
 export const logisticsConfig = {
-  moduleDescription: '统一承载物流供应商、包装规则、扫描配置与接口平台的配置中心。',
+  moduleDescription:
+    '统一承载物流供应商、包装规则、扫描配置与接口平台的配置中心。',
   tabs: {
     suppliers: '供应商',
     vehicleLoading: '装载/配车',
@@ -19,7 +20,8 @@ export const logisticsConfig = {
   },
   vehicleSpecsLibrary: {
     title: '车型规格库',
-    description: '集中维护车型主数据，区分物理车厢尺寸、可用装载空间、安全余量与装载约束，供配车试算与联系人绑定统一复用。',
+    description:
+      '集中维护车型主数据，区分物理车厢尺寸、可用装载空间、安全余量与装载约束，供配车试算与联系人绑定统一复用。',
     loading: '车型规格库加载中...',
     errorTitle: '车型规格库读取失败',
     retry: '重新加载',
@@ -62,7 +64,8 @@ export const logisticsConfig = {
   },
   vehicleLoading: {
     title: '装载与配车计算',
-    description: '基于本批出货的箱数、体积和重量汇总，结合车型规格库给出配车推荐。',
+    description:
+      '基于本批出货的箱数、体积和重量汇总，结合车型规格库给出配车推荐。',
     mockBadge: '规则试算',
     source: {
       title: '输入来源',
@@ -77,7 +80,8 @@ export const logisticsConfig = {
       boxes: '箱数',
       volume: '总体积（m³）',
       weight: '总毛重（kg）',
-      disclaimer: '当前用于验证页面结构与交互，后续将接入真实车型库与装载约束。',
+      disclaimer:
+        '当前用于验证页面结构与交互，后续将接入真实车型库与装载约束。',
     },
     filters: {
       category: '车型类别',
@@ -102,14 +106,16 @@ export const logisticsConfig = {
       },
       emptyState: {
         title: '暂无可用车型',
-        description: '当前筛选条件没有匹配到车型，请放宽最小体积、最小载重或切换类别。',
+        description:
+          '当前筛选条件没有匹配到车型，请放宽最小体积、最小载重或切换类别。',
       },
     },
     recommendation: {
       title: '推荐结果',
       vehiclesNeeded: '建议车辆数：{{count}}',
       emptyStateTitle: '暂无推荐结果',
-      emptyStateDescription: '当前条件下没有可推荐车型，请调整货量或放宽车型筛选条件。',
+      emptyStateDescription:
+        '当前条件下没有可推荐车型，请调整货量或放宽车型筛选条件。',
       volumeUtilization: '体积利用率',
       weightUtilization: '重量利用率',
     },
@@ -141,12 +147,14 @@ export const logisticsConfig = {
     dialogTitle: '车型实拍图',
     dialogDescription: '查看真实车型照片、不同开门状态与关键装载位置标注。',
     emptyTitle: '当前车型还没有挂载实拍图',
-    emptyDescription: '请后续补充外观、侧门开启、尾门/内部空间等多视角图片；挂载完成后可在这里直接查看并核对关键位置标注。',
+    emptyDescription:
+      '请后续补充外观、侧门开启、尾门/内部空间等多视角图片；挂载完成后可在这里直接查看并核对关键位置标注。',
     metadataTitle: '图片 Metadata',
     currentView: '当前视角',
     noImageSelected: '未选择图片',
     annotationTitle: '位置标注',
-    annotationEmpty: '当前图片没有配置标注信息。后续可在图片清单里补充轮包、门洞、尾门空间等位置说明。',
+    annotationEmpty:
+      '当前图片没有配置标注信息。后续可在图片清单里补充轮包、门洞、尾门空间等位置说明。',
     toasts: {
       uploadSuccess: '车型图片上传成功。',
       uploadFailed: '车型图片上传失败：{{message}}',
@@ -159,8 +167,10 @@ export const logisticsConfig = {
   },
   suppliers: {
     title: '物流供应商与集合信息',
-    description: '集中整理承运商、国内/国际平台入口、联系人、电话和对接备注，便于后续交接快速定位。',
-    directoryNote: '这里保留目录卡片与人工记录能力，同时也支持在目录页弹窗里直接补齐 endpoint 与凭证，适合把物流方建档和接口接入一次做完。',
+    description:
+      '集中整理承运商、国内/国际平台入口、联系人、电话和对接备注，便于后续交接快速定位。',
+    directoryNote:
+      '这里保留目录卡片与人工记录能力，同时也支持在目录页弹窗里直接补齐 endpoint 与凭证，适合把物流方建档和接口接入一次做完。',
     categoryDomestic: '国内物流',
     categoryInternational: '国际物流',
     website: '网站 / 平台入口',
@@ -168,13 +178,16 @@ export const logisticsConfig = {
     phone: '联系电话',
     loading: '正在同步物流目录卡片...',
     emptyTitle: '暂无物流目录卡片',
-    emptyDescription: '你可以先从常用模板创建，也可以手工新增未对接 API 的物流目录卡片。',
+    emptyDescription:
+      '你可以先从常用模板创建，也可以手工新增未对接 API 的物流目录卡片。',
     unset: '未填写',
     noteEmpty: '当前未填写备注信息。',
     apiConnected: '已接 API',
     apiNotConnected: '未对接 API',
-    apiConnectedHint: '当前卡片已具备平台对接基础条件，可在目录页弹窗或平台配置页继续维护凭证与 endpoint。',
-    apiNotConnectedHint: '当前卡片也可以只作为目录记录使用；如果想一次完成接入，也可以直接在这里补齐联系人、备注、endpoint 和凭证。',
+    apiConnectedHint:
+      '当前卡片已具备平台对接基础条件，可在目录页弹窗或平台配置页继续维护凭证与 endpoint。',
+    apiNotConnectedHint:
+      '当前卡片也可以只作为目录记录使用；如果想一次完成接入，也可以直接在这里补齐联系人、备注、endpoint 和凭证。',
     templateLinked: '模板同步',
     customEntry: '自定义卡片',
     actions: {
@@ -232,7 +245,8 @@ export const logisticsConfig = {
       missing: '凭证未配置',
     },
     states: {
-      credentialsIncomplete: '当前凭证仍不完整，保存后仅完成目录建档与部分接口配置。',
+      credentialsIncomplete:
+        '当前凭证仍不完整，保存后仅完成目录建档与部分接口配置。',
     },
   },
   providerShared: {
@@ -289,7 +303,8 @@ export const logisticsConfig = {
       unverified: '当前仅完成建档，尚未执行测试连接。',
       reachable: '当前已确认系统内置可信网关可达，但不代表真实业务鉴权已通过。',
       healthy: '当前平台状态稳定，可继续按既有流程使用。',
-      manual_review: '当前厂商未启用系统内置自动验证，需要通过人工联调确认配置是否可用。',
+      manual_review:
+        '当前厂商未启用系统内置自动验证，需要通过人工联调确认配置是否可用。',
       error: '最近一次测试连接出现异常，请先处理错误后再继续联调。',
       invalid_config: '当前配置仍缺关键项，暂不具备稳定联调条件。',
       disabled: '当前平台已停用，不参与日常调用和验证。',
@@ -301,7 +316,8 @@ export const logisticsConfig = {
       reachable17Track: '请继续在 17TRACK 控制台用真实 token 做样例联调。',
       reachableGeneric: '请继续执行真实平台鉴权或沙箱请求，确认业务链可用。',
       healthy: '保持当前配置，并定期复核凭证、额度与网关可用性。',
-      manualReview: '当前厂商不支持系统内置自动验证，请改用人工联调或选择受支持模板。',
+      manualReview:
+        '当前厂商不支持系统内置自动验证，请改用人工联调或选择受支持模板。',
       error: '请先检查网络、平台网关状态和平台侧白名单后再重试。',
       invalidConfigEndpoint: '请先补齐有效的 endpoint 地址，再重新测试连接。',
       invalidConfigCredentials: '请先补齐接口凭证，再重新测试连接。',
@@ -316,11 +332,13 @@ export const logisticsConfig = {
   },
   scanning: {
     title: '物流扫描配置',
-    description: '统一查看物流相关扫码模组、宿主说明、权限与接入状态，避免散落在终端配置和业务页之间。',
+    description:
+      '统一查看物流相关扫码模组、宿主说明、权限与接入状态，避免散落在终端配置和业务页之间。',
   },
   platforms: {
     title: '物流接口与平台配置',
-    description: '集中维护物流 provider、endpoint 与平台对接参数，作为后续国内/国际物流扩展位。',
+    description:
+      '集中维护物流 provider、endpoint 与平台对接参数，作为后续国内/国际物流扩展位。',
     badgeProduction: '生产环境',
     hubTitle: '物流接口中心',
     hubSubtitle: '统一承运商 API 集成配置中心',
@@ -375,7 +393,8 @@ export const logisticsConfig = {
       duplicate: '已存在重复物流服务商：{{name}}',
       missingCredentials: '凭证缺失',
       credentialsIncomplete: '当前配置缺少凭证，保存后仅完成面板建档。',
-      noteEmpty: '当前未填写目录备注，可在编辑弹窗中补充联系人职责、适用场景和交接说明。',
+      noteEmpty:
+        '当前未填写目录备注，可在编辑弹窗中补充联系人职责、适用场景和交接说明。',
     },
     prompts: {
       deleteConfirm: '确认删除该物流接口配置？若已被业务引用，系统会阻止删除。',
@@ -392,7 +411,8 @@ export const logisticsConfig = {
   },
   packagingRules: {
     title: '包装定义与装箱规则',
-    description: '在一个地方定义包装名称、长宽高、包装自重，并选择产品与装箱数量，直接得到体积与毛重。',
+    description:
+      '在一个地方定义包装名称、长宽高、包装自重，并选择产品与装箱数量，直接得到体积与毛重。',
     addRule: '新增规则',
     edit: '编辑',
     save: '保存',
@@ -459,7 +479,8 @@ export const logisticsConfig = {
     },
     dialog: {
       title: '包装规则编辑',
-      description: '先定义包装本身，再选择产品与装箱数量，系统根据产品已有重量自动算出毛重与体积。',
+      description:
+        '先定义包装本身，再选择产品与装箱数量，系统根据产品已有重量自动算出毛重与体积。',
     },
     summary: {
       volume: '包装体积',

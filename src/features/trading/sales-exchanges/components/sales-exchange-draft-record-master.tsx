@@ -84,7 +84,9 @@ export function SalesExchangeDraftRecordMaster({
                 </p>
               </div>
               <span className='inline-flex rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[10px] font-black text-amber-600 uppercase'>
-                {getSalesExchangeRecordStatusLabel(salesExchangeDraftRecord.status)}
+                {getSalesExchangeRecordStatusLabel(
+                  salesExchangeDraftRecord.status
+                )}
               </span>
             </div>
 
@@ -144,7 +146,9 @@ export function SalesExchangeDraftRecordMaster({
                 disabled={salesExchangeDraftRecord.status !== 'Draft'}
                 onClick={(event) => {
                   event.stopPropagation()
-                  void onRemoveSalesExchangeDraftRecord(salesExchangeDraftRecord.id)
+                  void onRemoveSalesExchangeDraftRecord(
+                    salesExchangeDraftRecord.id
+                  )
                 }}
               >
                 <Trash2 className='mr-1 size-3.5' />

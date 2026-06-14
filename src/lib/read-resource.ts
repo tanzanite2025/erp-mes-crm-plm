@@ -23,7 +23,10 @@ export function resolveQueryFailure(params: {
 }): QueryFailure | null {
   if (params.error) {
     return {
-      error: params.error instanceof Error ? params.error : new Error(params.failureMessage),
+      error:
+        params.error instanceof Error
+          ? params.error
+          : new Error(params.failureMessage),
       scope: params.scope,
     }
   }

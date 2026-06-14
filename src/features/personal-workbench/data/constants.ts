@@ -5,4 +5,5 @@ export const personalWorkbenchColumns = [
   { key: 'ARCHIVED', label: '归档' },
 ] as const
 
-export type PersonalWorkbenchColumnKey = (typeof personalWorkbenchColumns)[number]['key']
+export type PersonalWorkbenchColumnKey =
+  (typeof personalWorkbenchColumns)[number]['key']

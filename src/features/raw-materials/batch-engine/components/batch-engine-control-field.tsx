@@ -10,7 +10,9 @@ export function BatchEngineControlField(props: BatchEngineControlFieldProps) {
 
   return (
     <div>
-      <p className='mb-1 text-[10px] font-black tracking-widest text-slate-500/70'>{label}</p>
+      <p className='mb-1 text-[10px] font-black tracking-widest text-slate-500/70'>
+        {label}
+      </p>
       {children}
     </div>
   )

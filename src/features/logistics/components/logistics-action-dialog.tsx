@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Phone, Truck, User, X } from 'lucide-react'
+import { useLanguage } from '@/context/language-provider'
+import { useDeltaTracker } from '@/hooks/use-delta-tracker'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -7,19 +10,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { TrackingNumberInput } from '@/components/tracking-number-input'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { SelectDropdown } from '@/components/select-dropdown'
-import { useLanguage } from '@/context/language-provider'
+import { TrackingNumberInput } from '@/components/tracking-number-input'
 import { useGetSalesOrders } from '@/features/trading/sales'
-import { ShipmentCoreService, type ShipmentRecord } from '@/features/warehouse/shipment'
-import { getCarrierLabelKey, type LogisticsRecord, type SaveLogisticsRecordInput } from '../data/schema'
+import {
+  ShipmentCoreService,
+  type ShipmentRecord,
+} from '@/features/warehouse/shipment'
+import {
+  getCarrierLabelKey,
+  type LogisticsRecord,
+  type SaveLogisticsRecordInput,
+} from '../data/schema'
 import { useLogisticsMutations } from '../hooks/use-logistics'
 import { getPreferredCarriers } from '../utils/carriers'
 import { inferCarrierFromTrackingNo } from '../utils/tracking-no'
-import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 
 interface LogisticsActionDialogProps {
   open: boolean
@@ -41,28 +48,30 @@ export function LogisticsActionDialog({
   const { data } = useGetSalesOrders(1, 1000, { enabled: open })
   const salesOrders = useMemo(() => data?.items ?? [], [data?.items])
   const sanitizedDefaultOrderNo = defaultOrderNo.trim()
-  
+
   const initialValues = useMemo<SaveLogisticsRecordInput>(() => {
     if (record) return record
     return {
-        orderNo: sanitizedDefaultOrderNo,
-        carrier: '',
-        trackingNo: '',
-        status: 'Pending' as const,
-        type: 'Shipment' as const,
-        contactPerson: '',
-        contactPhone: '',
-        shipmentId: defaultShipmentId || '',
-        lastLocation: '',
-        events: [],
-        version: 1,
-        isDeleted: false,
+      orderNo: sanitizedDefaultOrderNo,
+      carrier: '',
+      trackingNo: '',
+      status: 'Pending' as const,
+      type: 'Shipment' as const,
+      contactPerson: '',
+      contactPhone: '',
+      shipmentId: defaultShipmentId || '',
+      lastLocation: '',
+      events: [],
+      version: 1,
+      isDeleted: false,
     }
   }, [record, sanitizedDefaultOrderNo, defaultShipmentId])
 
   const { data: formData, tracker } = useDeltaTracker(initialValues, open)
 
-  const [associatedShipments, setAssociatedShipments] = useState<ShipmentRecord[]>([])
+  const [associatedShipments, setAssociatedShipments] = useState<
+    ShipmentRecord[]
+  >([])
   const [isLoadingShipments, setIsLoadingShipments] = useState(false)
   const [isCarrierTouched, setIsCarrierTouched] = useState(false)
   const [inferredCarrier, setInferredCarrier] = useState('')
@@ -83,15 +92,17 @@ export function LogisticsActionDialog({
     () =>
       preferredCarriers.map((carrier) => ({
         value: carrier,
-        label: getCarrierLabelKey(carrier) ? t(getCarrierLabelKey(carrier)!) : carrier,
+        label: getCarrierLabelKey(carrier)
+          ? t(getCarrierLabelKey(carrier)!)
+          : carrier,
       })),
     [preferredCarriers, t]
   )
 
   useEffect(() => {
     if (!open) {
-        setIsCarrierTouched(false)
-        setInferredCarrier('')
+      setIsCarrierTouched(false)
+      setInferredCarrier('')
     }
   }, [open])
 
@@ -106,7 +117,9 @@ export function LogisticsActionDialog({
       try {
         const history = await ShipmentCoreService.getShipmentHistory()
         const filtered = history.filter(
-          (shipment: ShipmentRecord) => shipment.orderNo === formData.orderNo && shipment.status === 'COMMITTED'
+          (shipment: ShipmentRecord) =>
+            shipment.orderNo === formData.orderNo &&
+            shipment.status === 'COMMITTED'
         )
         setAssociatedShipments(filtered)
       } finally {
@@ -120,27 +133,35 @@ export function LogisticsActionDialog({
   const handleTrackingNoChange = (trackingNo: string) => {
     const autoDetectedCarrier = inferCarrierFromTrackingNo(trackingNo)
     setInferredCarrier(autoDetectedCarrier || '')
-    
+
     formData.trackingNo = trackingNo
     if (!isCarrierTouched && autoDetectedCarrier) {
-        formData.carrier = autoDetectedCarrier
-    } else if (!isCarrierTouched && !autoDetectedCarrier && inferredCarrier && formData.carrier === inferredCarrier) {
-        formData.carrier = ''
+      formData.carrier = autoDetectedCarrier
+    } else if (
+      !isCarrierTouched &&
+      !autoDetectedCarrier &&
+      inferredCarrier &&
+      formData.carrier === inferredCarrier
+    ) {
+      formData.carrier = ''
     }
   }
 
   const handleSave = async () => {
-    if (!formData.orderNo) return alert(t('trading.logistics.dialog.validationOrder'))
-    if (!formData.carrier) return alert(t('trading.logistics.dialog.validationCarrier'))
-    if (!formData.trackingNo) return alert(t('trading.logistics.dialog.validationTracking'))
+    if (!formData.orderNo)
+      return alert(t('trading.logistics.dialog.validationOrder'))
+    if (!formData.carrier)
+      return alert(t('trading.logistics.dialog.validationCarrier'))
+    if (!formData.trackingNo)
+      return alert(t('trading.logistics.dialog.validationTracking'))
 
     const delta = tracker.commit()
     const isEdit = !!record
     const isDirty = Object.keys(delta).length > 0
 
     if (isEdit && !isDirty) {
-        onOpenChange(false)
-        return
+      onOpenChange(false)
+      return
     }
 
     if (isEdit && record?.id) {
@@ -181,17 +202,17 @@ export function LogisticsActionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className='max-w-[500px] border-none shadow-2xl p-0 rounded-[32px] overflow-hidden'
+        className='max-w-[500px] overflow-hidden rounded-[32px] border-none p-0 shadow-2xl'
       >
-        <div className='bg-primary/5 px-8 py-6 border-b border-dashed border-primary/20 relative'>
+        <div className='relative border-b border-dashed border-primary/20 bg-primary/5 px-8 py-6'>
           <DialogHeader>
-            <DialogTitle className='text-lg font-black uppercase tracking-tight flex items-center gap-2'>
+            <DialogTitle className='flex items-center gap-2 text-lg font-black tracking-tight uppercase'>
               <Truck className='size-5 text-primary' />
               {record
                 ? t('trading.logistics.dialog.editTitle')
                 : t('trading.logistics.dialog.createTitle')}
             </DialogTitle>
-            <DialogDescription className='text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60'>
+            <DialogDescription className='text-[10px] font-bold tracking-widest text-muted-foreground/60 uppercase'>
               {t('trading.logistics.dialog.description')}
             </DialogDescription>
           </DialogHeader>
@@ -199,16 +220,16 @@ export function LogisticsActionDialog({
             variant='ghost'
             size='icon'
             onClick={() => onOpenChange(false)}
-            className='absolute right-4 top-4 rounded-full'
+            className='absolute top-4 right-4 rounded-full'
           >
             <X className='size-4' />
           </Button>
         </div>
 
-        <div className='p-8 space-y-5'>
+        <div className='space-y-5 p-8'>
           <div className='grid grid-cols-2 gap-4'>
             <div className='space-y-1.5'>
-              <Label className='text-[10px] font-black uppercase tracking-widest text-secondary pl-1'>
+              <Label className='pl-1 text-[10px] font-black tracking-widest text-secondary uppercase'>
                 {t('trading.logistics.dialog.orderLabel')}
               </Label>
               <SelectDropdown
@@ -219,12 +240,12 @@ export function LogisticsActionDialog({
                   formData.orderNo = value
                   formData.shipmentId = ''
                 }}
-                className='h-11 rounded-2xl font-black bg-muted/20 border-none'
+                className='h-11 rounded-2xl border-none bg-muted/20 font-black'
               />
             </div>
 
             <div className='space-y-1.5'>
-              <Label className='text-[10px] font-black uppercase tracking-widest text-secondary pl-1'>
+              <Label className='pl-1 text-[10px] font-black tracking-widest text-secondary uppercase'>
                 {t('trading.logistics.dialog.shipmentLabel')}
               </Label>
               <SelectDropdown
@@ -232,7 +253,9 @@ export function LogisticsActionDialog({
                   isLoadingShipments
                     ? t('trading.logistics.dialog.shipmentPlaceholderLoading')
                     : associatedShipments.length > 0
-                      ? t('trading.logistics.dialog.shipmentPlaceholderAvailable')
+                      ? t(
+                          'trading.logistics.dialog.shipmentPlaceholderAvailable'
+                        )
                       : t('trading.logistics.dialog.shipmentPlaceholderEmpty')
                 }
                 items={associatedShipments.map((shipment) => ({
@@ -243,8 +266,10 @@ export function LogisticsActionDialog({
                   value: shipment.id,
                 }))}
                 defaultValue={formData.shipmentId}
-                onValueChange={(value) => { formData.shipmentId = value }}
-                className='h-11 rounded-2xl font-bold bg-muted/20 border-none'
+                onValueChange={(value) => {
+                  formData.shipmentId = value
+                }}
+                className='h-11 rounded-2xl border-none bg-muted/20 font-bold'
                 disabled={associatedShipments.length === 0}
               />
             </div>
@@ -252,7 +277,7 @@ export function LogisticsActionDialog({
 
           <div className='grid grid-cols-2 gap-4'>
             <div className='space-y-1.5'>
-              <Label className='text-[10px] font-black uppercase tracking-widest text-secondary pl-1'>
+              <Label className='pl-1 text-[10px] font-black tracking-widest text-secondary uppercase'>
                 {t('trading.logistics.dialog.carrierLabel')}
               </Label>
               <SelectDropdown
@@ -264,7 +289,7 @@ export function LogisticsActionDialog({
                   setInferredCarrier('')
                   formData.carrier = value
                 }}
-                className='h-11 rounded-2xl font-bold bg-muted/20 border-none'
+                className='h-11 rounded-2xl border-none bg-muted/20 font-bold'
               />
               <div className='flex flex-wrap gap-2 pt-2'>
                 {preferredCarriers.slice(0, 2).map((carrier) => {
@@ -279,13 +304,15 @@ export function LogisticsActionDialog({
                         setInferredCarrier('')
                         formData.carrier = carrier
                       }}
-                      className={`h-8 rounded-full px-4 text-[10px] font-black uppercase tracking-widest transition-all ${
+                      className={`h-8 rounded-full px-4 text-[10px] font-black tracking-widest uppercase transition-all ${
                         isActive
                           ? 'border-primary bg-primary text-white hover:bg-primary/90 hover:text-white'
                           : 'border-dashed border-primary/30 bg-background text-primary/70 hover:border-primary/50 hover:text-primary'
                       }`}
                     >
-                      {getCarrierLabelKey(carrier) ? t(getCarrierLabelKey(carrier)!) : carrier}
+                      {getCarrierLabelKey(carrier)
+                        ? t(getCarrierLabelKey(carrier)!)
+                        : carrier}
                     </Button>
                   )
                 })}
@@ -293,7 +320,7 @@ export function LogisticsActionDialog({
             </div>
 
             <div className='space-y-1.5'>
-              <Label className='text-[10px] font-black uppercase tracking-widest text-secondary pl-1'>
+              <Label className='pl-1 text-[10px] font-black tracking-widest text-secondary uppercase'>
                 {t('trading.logistics.dialog.trackingLabel')}
               </Label>
               <TrackingNumberInput
@@ -316,48 +343,52 @@ export function LogisticsActionDialog({
 
           <div className='grid grid-cols-2 gap-4'>
             <div className='space-y-1.5'>
-              <Label className='text-[10px] font-black uppercase tracking-widest text-secondary pl-1'>
+              <Label className='pl-1 text-[10px] font-black tracking-widest text-secondary uppercase'>
                 {t('trading.logistics.dialog.contactLabel')}
               </Label>
               <div className='relative'>
-                <User className='absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground' />
+                <User className='absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted-foreground' />
                 <Input
                   value={formData.contactPerson || ''}
-                  onChange={(event) => { formData.contactPerson = event.target.value }}
+                  onChange={(event) => {
+                    formData.contactPerson = event.target.value
+                  }}
                   placeholder={t('trading.logistics.dialog.contactPlaceholder')}
-                  className='pl-9 h-11 rounded-2xl font-bold bg-muted/20 border-none'
+                  className='h-11 rounded-2xl border-none bg-muted/20 pl-9 font-bold'
                 />
               </div>
             </div>
 
             <div className='space-y-1.5'>
-              <Label className='text-[10px] font-black uppercase tracking-widest text-secondary pl-1'>
+              <Label className='pl-1 text-[10px] font-black tracking-widest text-secondary uppercase'>
                 {t('trading.logistics.dialog.phoneLabel')}
               </Label>
               <div className='relative'>
-                <Phone className='absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground' />
+                <Phone className='absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted-foreground' />
                 <Input
                   value={formData.contactPhone || ''}
-                  onChange={(event) => { formData.contactPhone = event.target.value }}
+                  onChange={(event) => {
+                    formData.contactPhone = event.target.value
+                  }}
                   placeholder={t('trading.logistics.dialog.phonePlaceholder')}
-                  className='pl-9 h-11 rounded-2xl font-bold bg-muted/20 border-none'
+                  className='h-11 rounded-2xl border-none bg-muted/20 pl-9 font-bold'
                 />
               </div>
             </div>
           </div>
         </div>
 
-        <div className='px-8 py-5 border-t flex items-center justify-end gap-3'>
+        <div className='flex items-center justify-end gap-3 border-t px-8 py-5'>
           <Button
             variant='ghost'
             onClick={() => onOpenChange(false)}
-            className='font-black text-[11px] uppercase p-5 rounded-2xl'
+            className='rounded-2xl p-5 text-[11px] font-black uppercase'
           >
             {t('trading.logistics.dialog.cancel')}
           </Button>
           <Button
             onClick={handleSave}
-            className='font-black text-[11px] uppercase p-5 px-8 rounded-2xl shadow-xl shadow-primary/20 bg-primary'
+            className='rounded-2xl bg-primary p-5 px-8 text-[11px] font-black uppercase shadow-xl shadow-primary/20'
           >
             {t('trading.logistics.dialog.save')}
           </Button>

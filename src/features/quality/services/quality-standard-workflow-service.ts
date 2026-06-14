@@ -30,10 +30,9 @@ export function buildQualityStandardDelta(
 ): DeltaSet {
   const delta: DeltaSet = {}
 
-  for (const [key, value] of Object.entries(nextFields) as Array<[
-    keyof Standard,
-    Standard[keyof Standard],
-  ]>) {
+  for (const [key, value] of Object.entries(nextFields) as Array<
+    [keyof Standard, Standard[keyof Standard]]
+  >) {
     const previous = current[key]
 
     if (previous !== value) {

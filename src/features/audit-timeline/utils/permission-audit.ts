@@ -67,7 +67,7 @@ function normalizePermissionIdList(value: unknown): string[] {
 
 function mapPermissionBadgeItems(
   permissionIds: string[],
-  permissionLabelMap: ReadonlyMap<string, string>,
+  permissionLabelMap: ReadonlyMap<string, string>
 ): PermissionAuditBadgeItem[] {
   return permissionIds.map((permissionId) => ({
     key: permissionId,
@@ -95,22 +95,26 @@ function parseTarget(value: unknown): PermissionAuditTarget | null {
 
 export function buildPermissionLabelMap(
   permissions: ReadonlyArray<PermissionLabelSource>,
-  normalizeLabel: (label: string) => string,
+  normalizeLabel: (label: string) => string
 ): ReadonlyMap<string, string> {
   return new Map(
     permissions.map((permission) => [
       normalizePermissionId(permission.id),
       normalizeLabel(permission.label),
-    ]),
+    ])
   )
 }
 
 export function buildUserPermissionAuditSummary(
   log: AuditLog,
-  permissionLabelMap: ReadonlyMap<string, string>,
+  permissionLabelMap: ReadonlyMap<string, string>
 ): UserPermissionAuditSummary {
-  const beforePermissionIds = normalizePermissionIdList(readDiffValue(log, 'beforePermissions'))
-  const afterPermissionIds = normalizePermissionIdList(readDiffValue(log, 'afterPermissions'))
+  const beforePermissionIds = normalizePermissionIdList(
+    readDiffValue(log, 'beforePermissions')
+  )
+  const afterPermissionIds = normalizePermissionIdList(
+    readDiffValue(log, 'afterPermissions')
+  )
   const source = normalizeAuditString(readDiffValue(log, 'source'))
   const reason = normalizeAuditString(readDiffValue(log, 'reason'))
   const grantedBy = normalizeAuditString(readDiffValue(log, 'grantedBy'))
@@ -119,16 +123,32 @@ export function buildUserPermissionAuditSummary(
   const beforePermissionIdSet = new Set(beforePermissionIds)
   const afterPermissionIdSet = new Set(afterPermissionIds)
 
-  const addedPermissionIds = afterPermissionIds.filter((permissionId) => !beforePermissionIdSet.has(permissionId))
-  const removedPermissionIds = beforePermissionIds.filter((permissionId) => !afterPermissionIdSet.has(permissionId))
+  const addedPermissionIds = afterPermissionIds.filter(
+    (permissionId) => !beforePermissionIdSet.has(permissionId)
+  )
+  const removedPermissionIds = beforePermissionIds.filter(
+    (permissionId) => !afterPermissionIdSet.has(permissionId)
+  )
 
   return {
     beforePermissionIds,
     afterPermissionIds,
-    beforePermissionItems: mapPermissionBadgeItems(beforePermissionIds, permissionLabelMap),
-    afterPermissionItems: mapPermissionBadgeItems(afterPermissionIds, permissionLabelMap),
-    addedPermissionItems: mapPermissionBadgeItems(addedPermissionIds, permissionLabelMap),
-    removedPermissionItems: mapPermissionBadgeItems(removedPermissionIds, permissionLabelMap),
+    beforePermissionItems: mapPermissionBadgeItems(
+      beforePermissionIds,
+      permissionLabelMap
+    ),
+    afterPermissionItems: mapPermissionBadgeItems(
+      afterPermissionIds,
+      permissionLabelMap
+    ),
+    addedPermissionItems: mapPermissionBadgeItems(
+      addedPermissionIds,
+      permissionLabelMap
+    ),
+    removedPermissionItems: mapPermissionBadgeItems(
+      removedPermissionIds,
+      permissionLabelMap
+    ),
     source,
     reason,
     grantedBy,

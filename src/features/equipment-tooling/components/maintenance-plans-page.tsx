@@ -1,10 +1,18 @@
 'use client'
 
 import { useState } from 'react'
-import { Calendar, Wrench, ShieldCheck, AlertTriangle, Plus, ChevronLeft, ChevronRight } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import {
+  Calendar,
+  Wrench,
+  ShieldCheck,
+  AlertTriangle,
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useMaintenanceRecordsGlobal } from '../hooks/use-maintenance-records-global'
 
@@ -24,24 +32,61 @@ export function MaintenancePlansPage() {
     switch (priority) {
       case 'CRITICAL':
       case 'HIGH':
-        return <Badge variant='outline' className='text-[8px] font-black tracking-widest text-rose-500 border-rose-500/20 bg-rose-500/5'>一级保养</Badge>
+        return (
+          <Badge
+            variant='outline'
+            className='border-rose-500/20 bg-rose-500/5 text-[8px] font-black tracking-widest text-rose-500'
+          >
+            一级保养
+          </Badge>
+        )
       case 'MEDIUM':
-        return <Badge variant='outline' className='text-[8px] font-black tracking-widest text-amber-500 border-amber-500/20 bg-amber-50/5'>二级保养</Badge>
+        return (
+          <Badge
+            variant='outline'
+            className='border-amber-500/20 bg-amber-50/5 text-[8px] font-black tracking-widest text-amber-500'
+          >
+            二级保养
+          </Badge>
+        )
       default:
-        return <Badge variant='outline' className='text-[8px] font-black tracking-widest text-blue-500 border-blue-500/20 bg-blue-500/5'>常规检查</Badge>
+        return (
+          <Badge
+            variant='outline'
+            className='border-blue-500/20 bg-blue-500/5 text-[8px] font-black tracking-widest text-blue-500'
+          >
+            常规检查
+          </Badge>
+        )
     }
   }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'OPEN':
-        return <Badge className='bg-blue-500/10 text-blue-600 border-blue-200 text-[8px] font-black'>待处理</Badge>
+        return (
+          <Badge className='border-blue-200 bg-blue-500/10 text-[8px] font-black text-blue-600'>
+            待处理
+          </Badge>
+        )
       case 'IN_PROGRESS':
-        return <Badge className='bg-amber-500/10 text-amber-600 border-amber-200 text-[8px] font-black'>进行中</Badge>
+        return (
+          <Badge className='border-amber-200 bg-amber-500/10 text-[8px] font-black text-amber-600'>
+            进行中
+          </Badge>
+        )
       case 'COMPLETED':
-        return <Badge className='bg-emerald-500/10 text-emerald-600 border-emerald-200 text-[8px] font-black'>已完成</Badge>
+        return (
+          <Badge className='border-emerald-200 bg-emerald-500/10 text-[8px] font-black text-emerald-600'>
+            已完成
+          </Badge>
+        )
       case 'CANCELLED':
-        return <Badge className='bg-slate-500/10 text-slate-500 border-slate-200 text-[8px] font-black'>已取消</Badge>
+        return (
+          <Badge className='border-slate-200 bg-slate-500/10 text-[8px] font-black text-slate-500'>
+            已取消
+          </Badge>
+        )
       default:
         return <Badge className='text-[8px] font-black'>{status}</Badge>
     }
@@ -89,32 +134,65 @@ export function MaintenancePlansPage() {
 
   // 基于真实数据计算 KPI
   const totalPlansCount = planTasks.length
-  const overdueCount = planTasks.filter((r) => r.status === 'OPEN' && new Date(r.createdAt) < new Date()).length
-  const completedCount = planTasks.filter((r) => r.status === 'COMPLETED').length
-  const coveredAssetsCount = Array.from(new Set(planTasks.map((r) => r.assetSn))).length
+  const overdueCount = planTasks.filter(
+    (r) => r.status === 'OPEN' && new Date(r.createdAt) < new Date()
+  ).length
+  const completedCount = planTasks.filter(
+    (r) => r.status === 'COMPLETED'
+  ).length
+  const coveredAssetsCount = Array.from(
+    new Set(planTasks.map((r) => r.assetSn))
+  ).length
 
   return (
-    <div className='flex flex-col gap-4 animate-in fade-in duration-700'>
+    <div className='flex animate-in flex-col gap-4 duration-700 fade-in'>
       <IndustrialHeader
         icon={Calendar}
-        title="保养与计划调度"
-        description="PREVENTIVE_MAINTENANCE_SCHEDULER / 系统根据运行时间与模次寿命自动生成预防性维护"
+        title='保养与计划调度'
+        description='PREVENTIVE_MAINTENANCE_SCHEDULER / 系统根据运行时间与模次寿命自动生成预防性维护'
         gradient
       />
 
       {/* KPI Cards Container - Ultra Compact */}
-      <div className='grid grid-cols-2 md:grid-cols-4 gap-3'>
+      <div className='grid grid-cols-2 gap-3 md:grid-cols-4'>
         {[
-          { label: '预防性保养总数', count: totalPlansCount, icon: Calendar, color: 'text-blue-500' },
-          { label: '超期未保养数', count: overdueCount, icon: AlertTriangle, color: 'text-rose-500' },
-          { label: '已完成预防性维保', count: completedCount, icon: ShieldCheck, color: 'text-emerald-500' },
-          { label: '已覆盖设备数', count: coveredAssetsCount, icon: Wrench, color: 'text-cyan-500' },
+          {
+            label: '预防性保养总数',
+            count: totalPlansCount,
+            icon: Calendar,
+            color: 'text-blue-500',
+          },
+          {
+            label: '超期未保养数',
+            count: overdueCount,
+            icon: AlertTriangle,
+            color: 'text-rose-500',
+          },
+          {
+            label: '已完成预防性维保',
+            count: completedCount,
+            icon: ShieldCheck,
+            color: 'text-emerald-500',
+          },
+          {
+            label: '已覆盖设备数',
+            count: coveredAssetsCount,
+            icon: Wrench,
+            color: 'text-cyan-500',
+          },
         ].map((card, i) => (
-          <Card key={i} className='border-dashed rounded-[20px] bg-muted/5 p-3 flex items-center justify-between relative overflow-hidden group'>
-            <div className='absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent pointer-events-none' />
+          <Card
+            key={i}
+            className='group relative flex items-center justify-between overflow-hidden rounded-[20px] border-dashed bg-muted/5 p-3'
+          >
+            <div className='pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent' />
             <div className='space-y-0.5'>
-              <p className='text-[9px] font-black uppercase tracking-wider text-muted-foreground/50'>{card.label}</p>
-              <p className='text-xl font-black tracking-tighter italic'>{isLoading ? '...' : card.count}</p>
+              <p className='text-[9px] font-black tracking-wider text-muted-foreground/50 uppercase'>
+                {card.label}
+              </p>
+              <p className='text-xl font-black tracking-tighter italic'>
+                {isLoading ? '...' : card.count}
+              </p>
             </div>
             <card.icon className={`size-5 ${card.color} opacity-80`} />
           </Card>
@@ -122,69 +200,105 @@ export function MaintenancePlansPage() {
       </div>
 
       {/* Main Grid */}
-      <div className='grid grid-cols-1 lg:grid-cols-12 gap-3.5'>
+      <div className='grid grid-cols-1 gap-3.5 lg:grid-cols-12'>
         {/* Left Side: Weekly Calendar */}
-        <Card className='border-dashed rounded-[24px] bg-muted/5 lg:col-span-8 flex flex-col p-4'>
-          <CardHeader className='p-0 pb-3 flex flex-row items-center justify-between'>
-            <CardTitle className='text-sm font-black uppercase tracking-tight italic flex items-center gap-1.5'>
+        <Card className='flex flex-col rounded-[24px] border-dashed bg-muted/5 p-4 lg:col-span-8'>
+          <CardHeader className='flex flex-row items-center justify-between p-0 pb-3'>
+            <CardTitle className='flex items-center gap-1.5 text-sm font-black tracking-tight uppercase italic'>
               <Calendar className='size-4 text-primary' />
               保养排班日程周历
             </CardTitle>
             <div className='flex items-center gap-2'>
-              <span className='text-[10px] font-mono font-black text-muted-foreground'>{weekLabel}</span>
+              <span className='font-mono text-[10px] font-black text-muted-foreground'>
+                {weekLabel}
+              </span>
               <div className='flex gap-1'>
-                <Button variant='outline' size='icon' className='h-6 w-6 rounded-lg' onClick={handlePrevWeek}>
+                <Button
+                  variant='outline'
+                  size='icon'
+                  className='h-6 w-6 rounded-lg'
+                  onClick={handlePrevWeek}
+                >
                   <ChevronLeft className='size-3' />
                 </Button>
-                <Button variant='outline' size='icon' className='h-6 w-6 rounded-lg' onClick={handleNextWeek}>
+                <Button
+                  variant='outline'
+                  size='icon'
+                  className='h-6 w-6 rounded-lg'
+                  onClick={handleNextWeek}
+                >
                   <ChevronRight className='size-3' />
                 </Button>
               </div>
             </div>
           </CardHeader>
 
-          <CardContent className='p-0 flex-1 grid grid-cols-1 md:grid-cols-7 gap-2 border border-dashed border-muted/50 rounded-2xl p-2 bg-background/50'>
+          <CardContent className='grid flex-1 grid-cols-1 gap-2 rounded-2xl border border-dashed border-muted/50 bg-background/50 p-0 p-2 md:grid-cols-7'>
             {weekDays.map((day, i) => {
               const tasks = getTasksForDay(day)
               const isToday = new Date().toDateString() === day.toDateString()
               return (
                 <div
                   key={i}
-                  className={`flex flex-col min-h-[140px] md:min-h-0 md:h-[220px] rounded-xl border border-dashed p-2 transition-colors ${
+                  className={`flex min-h-[140px] flex-col rounded-xl border border-dashed p-2 transition-colors md:h-[220px] md:min-h-0 ${
                     isToday
                       ? 'border-primary/50 bg-primary/5 shadow-inner'
                       : 'border-muted/30 hover:bg-muted/10'
                   }`}
                 >
-                  <div className='flex items-center justify-between mb-2'>
-                    <span className='text-[9px] font-black uppercase text-muted-foreground'>
-                      {['周一', '周二', '周三', '周四', '周五', '周六', '周日'][day.getDay() === 0 ? 6 : day.getDay() - 1]}
+                  <div className='mb-2 flex items-center justify-between'>
+                    <span className='text-[9px] font-black text-muted-foreground uppercase'>
+                      {
+                        [
+                          '周一',
+                          '周二',
+                          '周三',
+                          '周四',
+                          '周五',
+                          '周六',
+                          '周日',
+                        ][day.getDay() === 0 ? 6 : day.getDay() - 1]
+                      }
                     </span>
-                    <span className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded-md ${
-                      isToday ? 'bg-primary text-primary-foreground' : 'text-foreground/60'
-                    }`}>
+                    <span
+                      className={`rounded-md px-1.5 py-0.5 font-mono text-[10px] font-black ${
+                        isToday
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-foreground/60'
+                      }`}
+                    >
                       {day.getDate()}
                     </span>
                   </div>
 
-                  <div className='flex-1 overflow-y-auto space-y-1.5 pr-0.5 scrollbar-thin'>
+                  <div className='scrollbar-thin flex-1 space-y-1.5 overflow-y-auto pr-0.5'>
                     {isLoading ? (
-                      <span className='text-[8px] text-muted-foreground/30 block mt-4 text-center'>拉取中...</span>
+                      <span className='mt-4 block text-center text-[8px] text-muted-foreground/30'>
+                        拉取中...
+                      </span>
                     ) : tasks.length === 0 ? (
-                      <span className='text-[8px] font-bold text-muted-foreground/20 italic block mt-4 text-center'>无任务</span>
+                      <span className='mt-4 block text-center text-[8px] font-bold text-muted-foreground/20 italic'>
+                        无任务
+                      </span>
                     ) : (
                       tasks.map((task) => (
                         <div
                           key={task.id}
-                          className='p-1.5 rounded-lg border border-dashed bg-background/80 hover:bg-background transition-shadow shadow-xs text-[9px] flex flex-col gap-1 cursor-pointer'
+                          className='flex cursor-pointer flex-col gap-1 rounded-lg border border-dashed bg-background/80 p-1.5 text-[9px] shadow-xs transition-shadow hover:bg-background'
                         >
                           <div className='flex items-center justify-between'>
-                            <span className='font-mono font-black text-muted-foreground/70 text-[8px] truncate max-w-[50px]'>{task.assetSn}</span>
+                            <span className='max-w-[50px] truncate font-mono text-[8px] font-black text-muted-foreground/70'>
+                              {task.assetSn}
+                            </span>
                             {getCycleBadge(task.priority)}
                           </div>
-                          <p className='font-bold text-foreground/80 leading-tight line-clamp-2'>{task.title}</p>
-                          <div className='flex justify-between items-center mt-1 border-t border-dashed border-muted/20 pt-1'>
-                            <span className='text-[8px] text-muted-foreground/60'>{task.assetType === 'MOLD' ? '模具' : '炉台'}</span>
+                          <p className='line-clamp-2 leading-tight font-bold text-foreground/80'>
+                            {task.title}
+                          </p>
+                          <div className='mt-1 flex items-center justify-between border-t border-dashed border-muted/20 pt-1'>
+                            <span className='text-[8px] text-muted-foreground/60'>
+                              {task.assetType === 'MOLD' ? '模具' : '炉台'}
+                            </span>
                             {getStatusBadge(task.status)}
                           </div>
                         </div>
@@ -198,52 +312,70 @@ export function MaintenancePlansPage() {
         </Card>
 
         {/* Right Side: Preventive Task List */}
-        <Card className='border-dashed rounded-[24px] bg-muted/5 lg:col-span-4 p-4 flex flex-col justify-between'>
+        <Card className='flex flex-col justify-between rounded-[24px] border-dashed bg-muted/5 p-4 lg:col-span-4'>
           <div>
-            <CardHeader className='p-0 pb-3 flex flex-row items-center justify-between'>
-              <CardTitle className='text-sm font-black uppercase tracking-tight italic flex items-center gap-1.5'>
+            <CardHeader className='flex flex-row items-center justify-between p-0 pb-3'>
+              <CardTitle className='flex items-center gap-1.5 text-sm font-black tracking-tight uppercase italic'>
                 <Wrench className='size-4 text-primary' />
                 保养计划任务看板
               </CardTitle>
-              <Button size='sm' className='h-6 rounded-full text-[9px] font-black uppercase tracking-wider px-2'>
-                <Plus className='size-3 mr-0.5' /> 新建计划
+              <Button
+                size='sm'
+                className='h-6 rounded-full px-2 text-[9px] font-black tracking-wider uppercase'
+              >
+                <Plus className='mr-0.5 size-3' /> 新建计划
               </Button>
             </CardHeader>
-            <CardContent className='p-0 space-y-2 max-h-[360px] overflow-y-auto pr-1 scrollbar-thin'>
+            <CardContent className='scrollbar-thin max-h-[360px] space-y-2 overflow-y-auto p-0 pr-1'>
               {isLoading ? (
-                <div className='text-center py-8 text-muted-foreground text-xs font-bold'>载入任务库...</div>
+                <div className='py-8 text-center text-xs font-bold text-muted-foreground'>
+                  载入任务库...
+                </div>
               ) : planTasks.length === 0 ? (
-                <div className='text-center py-8 text-muted-foreground text-xs italic font-bold'>暂无预防性保养任务</div>
+                <div className='py-8 text-center text-xs font-bold text-muted-foreground italic'>
+                  暂无预防性保养任务
+                </div>
               ) : (
                 planTasks.map((task) => (
                   <div
                     key={task.id}
-                    className='p-2.5 rounded-xl border border-dashed border-muted/40 bg-background/50 hover:bg-background/90 transition-colors flex flex-col gap-1.5 relative overflow-hidden group'
+                    className='group relative flex flex-col gap-1.5 overflow-hidden rounded-xl border border-dashed border-muted/40 bg-background/50 p-2.5 transition-colors hover:bg-background/90'
                   >
-                    <div className='absolute inset-y-0 left-0 w-1 bg-primary/20 group-hover:bg-primary transition-colors' />
+                    <div className='absolute inset-y-0 left-0 w-1 bg-primary/20 transition-colors group-hover:bg-primary' />
                     <div className='flex items-center justify-between pl-1'>
                       <div className='flex items-center gap-1.5'>
-                        <span className='text-[8px] font-mono font-black text-muted-foreground/60 bg-muted/30 px-1 rounded-sm'>{task.assetSn}</span>
-                        <span className='text-[9px] font-bold text-muted-foreground'>{task.assetType === 'MOLD' ? '模具' : '炉台'}</span>
+                        <span className='rounded-sm bg-muted/30 px-1 font-mono text-[8px] font-black text-muted-foreground/60'>
+                          {task.assetSn}
+                        </span>
+                        <span className='text-[9px] font-bold text-muted-foreground'>
+                          {task.assetType === 'MOLD' ? '模具' : '炉台'}
+                        </span>
                       </div>
                       {getStatusBadge(task.status)}
                     </div>
-                    <p className='text-xs font-bold pl-1 leading-tight text-foreground/80'>{task.title}</p>
-                    <div className='flex items-center justify-between pl-1 pt-1.5 border-t border-dashed border-muted/20 text-[9px] font-black text-muted-foreground/60'>
+                    <p className='pl-1 text-xs leading-tight font-bold text-foreground/80'>
+                      {task.title}
+                    </p>
+                    <div className='flex items-center justify-between border-t border-dashed border-muted/20 pt-1.5 pl-1 text-[9px] font-black text-muted-foreground/60'>
                       <div className='flex items-center gap-1'>
                         <span>级别：</span>
                         {getCycleBadge(task.priority)}
                       </div>
-                      <span>创建：{new Date(task.createdAt).toLocaleDateString('zh-CN')}</span>
+                      <span>
+                        创建：
+                        {new Date(task.createdAt).toLocaleDateString('zh-CN')}
+                      </span>
                     </div>
                   </div>
                 ))
               )}
             </CardContent>
           </div>
-          <div className='border-t border-dashed border-muted/30 pt-3 mt-3 flex justify-between items-center text-[9px] font-black text-muted-foreground/50'>
+          <div className='mt-3 flex items-center justify-between border-t border-dashed border-muted/30 pt-3 text-[9px] font-black text-muted-foreground/50'>
             <span>共 {planTasks.length} 项常规保养</span>
-            <span className='text-primary hover:underline cursor-pointer'>配置维护保养规则 &rarr;</span>
+            <span className='cursor-pointer text-primary hover:underline'>
+              配置维护保养规则 &rarr;
+            </span>
           </div>
         </Card>
       </div>

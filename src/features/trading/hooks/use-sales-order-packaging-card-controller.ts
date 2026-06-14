@@ -11,10 +11,14 @@ interface ActivePackagingRuleContext {
   lineNo: number
 }
 
-export function useSalesOrderPackagingCardController(orders: ReadonlyArray<SalesOrder>) {
+export function useSalesOrderPackagingCardController(
+  orders: ReadonlyArray<SalesOrder>
+) {
   const resources = useSalesOrderPackagingCardResources(orders)
-  const { persistLineSelection, isSelectionPending } = useSalesOrderPackagingCardCommands()
-  const [activeRuleContext, setActiveRuleContext] = useState<ActivePackagingRuleContext | null>(null)
+  const { persistLineSelection, isSelectionPending } =
+    useSalesOrderPackagingCardCommands()
+  const [activeRuleContext, setActiveRuleContext] =
+    useState<ActivePackagingRuleContext | null>(null)
 
   const formController = usePackagingProfileFormController({
     onSaveSuccess: (saved) => {
@@ -23,9 +27,11 @@ export function useSalesOrderPackagingCardController(orders: ReadonlyArray<Sales
         return
       }
 
-      void persistLineSelection(context.order, context.lineNo, saved).finally(() => {
-        setActiveRuleContext(null)
-      })
+      void persistLineSelection(context.order, context.lineNo, saved).finally(
+        () => {
+          setActiveRuleContext(null)
+        }
+      )
     },
   })
 
@@ -41,7 +47,11 @@ export function useSalesOrderPackagingCardController(orders: ReadonlyArray<Sales
       error: resources.error,
     })
 
-  const startCreateRule = (order: SalesOrder, lineNo: number, productId?: string) => {
+  const startCreateRule = (
+    order: SalesOrder,
+    lineNo: number,
+    productId?: string
+  ) => {
     if (!productId) {
       return
     }

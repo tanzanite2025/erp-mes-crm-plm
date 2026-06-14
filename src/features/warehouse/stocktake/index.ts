@@ -12,7 +12,10 @@ export type {
   WarehouseCommandAck,
 } from './data/schema'
 export type { StocktakeOfflineSubmitResult } from './offline/stocktake-offline-types'
-export type { StocktakeFlushResult, StocktakePendingScanRecord } from './offline/stocktake-offline-types'
+export type {
+  StocktakeFlushResult,
+  StocktakePendingScanRecord,
+} from './offline/stocktake-offline-types'
 export type {
   StocktakeConflictRecord,
   StocktakePatchFlushResult,

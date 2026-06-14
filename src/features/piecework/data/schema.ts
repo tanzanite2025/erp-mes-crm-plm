@@ -1,9 +1,17 @@
 import { z } from 'zod'
 import type { TranslationKey } from '@/locales'
 
-export const teamTypeEnum = z.enum(['dispatch', 'quality', 'transfer', 'receive']) // 派工, 品质, 移转, 接收
+export const teamTypeEnum = z.enum([
+  'dispatch',
+  'quality',
+  'transfer',
+  'receive',
+]) // 派工, 品质, 移转, 接收
 
-type PieceworkTranslate = (key: TranslationKey, params?: Record<string, string | number>) => string
+type PieceworkTranslate = (
+  key: TranslationKey,
+  params?: Record<string, string | number>
+) => string
 
 type TeamValidationKey =
   | 'piecework.validation.teamCodeRequired'
@@ -21,7 +29,10 @@ const teamValidationFallbacks: Record<TeamValidationKey, string> = {
   'piecework.validation.teamSectionRequired': '请输入归属区段',
 }
 
-const pieceworkRateValidationFallbacks: Record<PieceworkRateValidationKey, string> = {
+const pieceworkRateValidationFallbacks: Record<
+  PieceworkRateValidationKey,
+  string
+> = {
   'piecework.validation.pieceworkRateProductRequired': '请选择关联产品 SKU',
   'piecework.validation.pieceworkRateProcessNameRequired': '请输入末级层级名称',
   'piecework.validation.pieceworkRatePriceNonNegative': '单价不能为负数',
@@ -44,11 +55,26 @@ function getPieceworkValidationMessage(
 export function createTeamSchema(t?: PieceworkTranslate) {
   return z.object({
     id: z.string(),
-    code: z.string().min(1, getTeamValidationMessage(t, 'piecework.validation.teamCodeRequired')),
-    name: z.string().min(1, getTeamValidationMessage(t, 'piecework.validation.teamNameRequired')),
+    code: z
+      .string()
+      .min(
+        1,
+        getTeamValidationMessage(t, 'piecework.validation.teamCodeRequired')
+      ),
+    name: z
+      .string()
+      .min(
+        1,
+        getTeamValidationMessage(t, 'piecework.validation.teamNameRequired')
+      ),
     shortName: z.string().optional(),
     step: z.number().optional(),
-    section: z.string().min(1, getTeamValidationMessage(t, 'piecework.validation.teamSectionRequired')),
+    section: z
+      .string()
+      .min(
+        1,
+        getTeamValidationMessage(t, 'piecework.validation.teamSectionRequired')
+      ),
     process: z.string().optional(),
     processCommand: z.string().optional(),
     type: teamTypeEnum.default('dispatch'),
@@ -71,9 +97,33 @@ export type TeamType = z.infer<typeof teamTypeEnum>
 export function createPieceworkRateSchema(t?: PieceworkTranslate) {
   return z.object({
     id: z.string(),
-    productId: z.string().min(1, getPieceworkValidationMessage(t, 'piecework.validation.pieceworkRateProductRequired')),
-    processName: z.string().min(1, getPieceworkValidationMessage(t, 'piecework.validation.pieceworkRateProcessNameRequired')),
-    piecePrice: z.number().min(0, getPieceworkValidationMessage(t, 'piecework.validation.pieceworkRatePriceNonNegative')),
+    productId: z
+      .string()
+      .min(
+        1,
+        getPieceworkValidationMessage(
+          t,
+          'piecework.validation.pieceworkRateProductRequired'
+        )
+      ),
+    processName: z
+      .string()
+      .min(
+        1,
+        getPieceworkValidationMessage(
+          t,
+          'piecework.validation.pieceworkRateProcessNameRequired'
+        )
+      ),
+    piecePrice: z
+      .number()
+      .min(
+        0,
+        getPieceworkValidationMessage(
+          t,
+          'piecework.validation.pieceworkRatePriceNonNegative'
+        )
+      ),
     unit: z.string().default('PCS'),
     status: z.enum(['active', 'inactive']).default('active'),
     remarks: z.string().optional(),
@@ -83,4 +133,6 @@ export function createPieceworkRateSchema(t?: PieceworkTranslate) {
 
 export const pieceworkRateSchema = createPieceworkRateSchema()
 
-export type PieceworkRate = z.infer<ReturnType<typeof createPieceworkRateSchema>>
+export type PieceworkRate = z.infer<
+  ReturnType<typeof createPieceworkRateSchema>
+>

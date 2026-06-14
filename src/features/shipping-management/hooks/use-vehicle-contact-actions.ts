@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
-import { type VehicleContactBindingSaveInput } from '../vehicle-contact.types'
 import { vehicleContactService } from '../services/vehicle-contact-service'
+import { type VehicleContactBindingSaveInput } from '../vehicle-contact.types'
 
 export function useVehicleContactActions() {
   const saveBinding = useCallback(
@@ -10,12 +10,9 @@ export function useVehicleContactActions() {
     []
   )
 
-  const deleteBinding = useCallback(
-    async (id: string) => {
-      await vehicleContactService.deleteBinding(id)
-    },
-    []
-  )
+  const deleteBinding = useCallback(async (id: string) => {
+    await vehicleContactService.deleteBinding(id)
+  }, [])
 
   return {
     saveBinding,

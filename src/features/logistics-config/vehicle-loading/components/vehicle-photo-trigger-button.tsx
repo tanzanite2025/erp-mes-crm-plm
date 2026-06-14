@@ -1,13 +1,19 @@
 import { Images } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { useLanguage } from '@/context/language-provider'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/context/language-provider'
+import { Button } from '@/components/ui/button'
 
 type Props = {
   onClick: () => void
   className?: string
   size?: 'default' | 'sm' | 'lg' | 'icon'
-  variant?: 'default' | 'outline' | 'secondary' | 'ghost' | 'link' | 'destructive'
+  variant?:
+    | 'default'
+    | 'outline'
+    | 'secondary'
+    | 'ghost'
+    | 'link'
+    | 'destructive'
 }
 
 export function VehiclePhotoTriggerButton({
@@ -24,7 +30,10 @@ export function VehiclePhotoTriggerButton({
       size={size}
       variant={variant}
       onClick={onClick}
-      className={cn('gap-2 border-dashed px-3 text-[10px] font-black uppercase tracking-[0.18em]', className)}
+      className={cn(
+        'gap-2 border-dashed px-3 text-[10px] font-black tracking-[0.18em] uppercase',
+        className
+      )}
     >
       <Images className='size-4' />
       {t('logisticsConfig.vehiclePhotos.viewButton')}

@@ -1,17 +1,18 @@
 import { useMemo } from 'react'
-
-import {
-  buildDisplayLedgerOptions,
-  filterLocalLedgers,
-} from '../utils/settlement-record-dialog-selectors'
 import type {
   SettlementLedgerSearchHookParams,
   SettlementLedgerSearchHookResult,
   SettlementLocalLedgerLike,
   SettlementRemoteLedgerLike,
 } from '../types'
+import {
+  buildDisplayLedgerOptions,
+  filterLocalLedgers,
+} from '../utils/settlement-record-dialog-selectors'
 
-interface SettlementLedgerSearchConfig<TLocalLedger extends SettlementLocalLedgerLike> {
+interface SettlementLedgerSearchConfig<
+  TLocalLedger extends SettlementLocalLedgerLike,
+> {
   amountLabel: string
   getLocalLedgerPartnerName: (ledger: TLocalLedger) => string
 }
@@ -61,7 +62,10 @@ export function useSettlementLedgerSearch<
     sortOrder: ledgerSortOrder,
   })
 
-  const remoteLedgerOptions = useMemo(() => searchLedgersQuery.data ?? [], [searchLedgersQuery.data])
+  const remoteLedgerOptions = useMemo(
+    () => searchLedgersQuery.data ?? [],
+    [searchLedgersQuery.data]
+  )
   const fallbackFilteredLedgerOptions = useMemo(
     () =>
       filterLocalLedgers({
@@ -81,7 +85,12 @@ export function useSettlementLedgerSearch<
         remoteLedgers: remoteLedgerOptions,
         amountLabel: config.amountLabel,
       }),
-    [config, debouncedLedgerSearchTerm, fallbackFilteredLedgerOptions, remoteLedgerOptions]
+    [
+      config,
+      debouncedLedgerSearchTerm,
+      fallbackFilteredLedgerOptions,
+      remoteLedgerOptions,
+    ]
   )
 
   return {

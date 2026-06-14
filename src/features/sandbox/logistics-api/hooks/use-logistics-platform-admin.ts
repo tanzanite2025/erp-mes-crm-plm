@@ -2,11 +2,6 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
-import { toLogisticsProviderDraft } from '@/features/sandbox/logistics-api/adapters/logistics-provider-adapter'
-import {
-  isLogisticsProviderCredentialsComplete,
-  isLogisticsProviderDraftValid,
-} from '@/features/sandbox/logistics-api/data/logistics-provider-rules'
 import {
   applyLogisticsTemplate,
   createEmptyLogisticsProvider,
@@ -17,15 +12,26 @@ import {
   isProviderApiConnected,
   logisticsProviderQueryKey,
 } from '@/features/logistics-config/provider-directory'
+import { toLogisticsProviderDraft } from '@/features/sandbox/logistics-api/adapters/logistics-provider-adapter'
+import {
+  isLogisticsProviderCredentialsComplete,
+  isLogisticsProviderDraftValid,
+} from '@/features/sandbox/logistics-api/data/logistics-provider-rules'
 import { logisticsProviderService } from '@/features/sandbox/logistics-api/services/logistics-provider-service'
-import { LOGISTICS_TEMPLATES, type LogisticsProvider, type LogisticsProviderDraft } from '@/features/sandbox/logistics-api/types'
+import {
+  LOGISTICS_TEMPLATES,
+  type LogisticsProvider,
+  type LogisticsProviderDraft,
+} from '@/features/sandbox/logistics-api/types'
 
 export function useLogisticsPlatformAdmin() {
   const { t } = useLanguage()
   const queryClient = useQueryClient()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({})
-  const [formData, setFormData] = useState<LogisticsProviderDraft>(createEmptyLogisticsProvider())
+  const [formData, setFormData] = useState<LogisticsProviderDraft>(
+    createEmptyLogisticsProvider()
+  )
   const [selectedNote, setSelectedNote] = useState('')
 
   const {
@@ -41,7 +47,8 @@ export function useLogisticsPlatformAdmin() {
   })
 
   const saveMutation = useMutation({
-    mutationFn: (provider: LogisticsProviderDraft) => logisticsProviderService.saveProvider(provider),
+    mutationFn: (provider: LogisticsProviderDraft) =>
+      logisticsProviderService.saveProvider(provider),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: logisticsProviderQueryKey })
       toast.success(t('logisticsConfig.platforms.toasts.saveSuccess'))
@@ -50,7 +57,10 @@ export function useLogisticsPlatformAdmin() {
       setSelectedNote('')
     },
     onError: (mutationError: unknown) => {
-      const message = mutationError instanceof Error ? mutationError.message : t('logisticsConfig.platforms.toasts.unknownError')
+      const message =
+        mutationError instanceof Error
+          ? mutationError.message
+          : t('logisticsConfig.platforms.toasts.unknownError')
       toast.error(t('logisticsConfig.platforms.toasts.saveFailed', { message }))
     },
   })
@@ -62,8 +72,13 @@ export function useLogisticsPlatformAdmin() {
       toast.success(t('logisticsConfig.platforms.toasts.deleteSuccess'))
     },
     onError: (mutationError: unknown) => {
-      const message = mutationError instanceof Error ? mutationError.message : t('logisticsConfig.platforms.toasts.unknownError')
-      toast.error(t('logisticsConfig.platforms.toasts.deleteFailed', { message }))
+      const message =
+        mutationError instanceof Error
+          ? mutationError.message
+          : t('logisticsConfig.platforms.toasts.unknownError')
+      toast.error(
+        t('logisticsConfig.platforms.toasts.deleteFailed', { message })
+      )
     },
   })
 
@@ -71,11 +86,20 @@ export function useLogisticsPlatformAdmin() {
     mutationFn: (id: number) => logisticsProviderService.verifyProvider(id),
     onSuccess: (provider) => {
       queryClient.invalidateQueries({ queryKey: logisticsProviderQueryKey })
-      toast.success(t('logisticsConfig.platforms.toasts.verifySuccess', { summary: t(getProviderVerificationSummaryKey(provider)) }))
+      toast.success(
+        t('logisticsConfig.platforms.toasts.verifySuccess', {
+          summary: t(getProviderVerificationSummaryKey(provider)),
+        })
+      )
     },
     onError: (mutationError: unknown) => {
-      const message = mutationError instanceof Error ? mutationError.message : t('logisticsConfig.platforms.toasts.unknownError')
-      toast.error(t('logisticsConfig.platforms.toasts.verifyFailed', { message }))
+      const message =
+        mutationError instanceof Error
+          ? mutationError.message
+          : t('logisticsConfig.platforms.toasts.unknownError')
+      toast.error(
+        t('logisticsConfig.platforms.toasts.verifyFailed', { message })
+      )
     },
   })
 
@@ -119,7 +143,11 @@ export function useLogisticsPlatformAdmin() {
   const handleSave = () => {
     const duplicate = findDuplicateProvider(providers, formData)
     if (duplicate) {
-      toast.error(t('logisticsConfig.platforms.states.duplicate', { name: duplicate.name }))
+      toast.error(
+        t('logisticsConfig.platforms.states.duplicate', {
+          name: duplicate.name,
+        })
+      )
       return
     }
 
@@ -131,7 +159,10 @@ export function useLogisticsPlatformAdmin() {
 
   const handleDelete = (id?: number) => {
     if (!id) return
-    if (typeof window !== 'undefined' && !window.confirm(t('logisticsConfig.platforms.prompts.deleteConfirm'))) {
+    if (
+      typeof window !== 'undefined' &&
+      !window.confirm(t('logisticsConfig.platforms.prompts.deleteConfirm'))
+    ) {
       return
     }
     deleteMutation.mutate(id)
@@ -146,7 +177,10 @@ export function useLogisticsPlatformAdmin() {
   const isCredentialsComplete = isLogisticsProviderCredentialsComplete(formData)
   const previewConnected = isProviderApiConnected(formData)
   const previewVerificationStatus = getProviderVerificationStatus(formData)
-  const pageError = error instanceof Error ? error.message : t('logisticsConfig.platforms.states.loadErrorTitle')
+  const pageError =
+    error instanceof Error
+      ? error.message
+      : t('logisticsConfig.platforms.states.loadErrorTitle')
 
   return {
     providers,

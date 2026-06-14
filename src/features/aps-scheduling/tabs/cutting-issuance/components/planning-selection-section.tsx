@@ -1,7 +1,13 @@
 import { CalendarClock, Lock, WandSparkles } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useLanguage } from '@/context/language-provider'
+import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import type { CuttingIssuanceOrder, CuttingIssuanceTemplate } from '../types'
 import {
   APS_BADGE_CLASS,
@@ -50,7 +56,9 @@ export function PlanningSelectionSection(props: PlanningSelectionSectionProps) {
     onCreateExecution,
   } = props
 
-  const selectedTemplate = templates.find((template) => template.id === templateId)
+  const selectedTemplate = templates.find(
+    (template) => template.id === templateId
+  )
 
   return (
     <section className={`${APS_PRIMARY_SECTION_CLASS} p-3`}>
@@ -62,7 +70,9 @@ export function PlanningSelectionSection(props: PlanningSelectionSectionProps) {
             <WandSparkles className='size-4' />
           </div>
           <div>
-            <span className={`${APS_SECTION_MARKER_CLASS} ${APS_PRIMARY_SECTION_MARKER_CLASS}`}>
+            <span
+              className={`${APS_SECTION_MARKER_CLASS} ${APS_PRIMARY_SECTION_MARKER_CLASS}`}
+            >
               {t('apsScheduling.cuttingIssuance.planning.kicker')}
             </span>
             <h3 className='mt-2 text-base font-black tracking-tight text-slate-950'>
@@ -93,10 +103,20 @@ export function PlanningSelectionSection(props: PlanningSelectionSectionProps) {
 
       <div className='grid gap-1.5 md:grid-cols-2 xl:grid-cols-4'>
         <div className='space-y-0.5'>
-          <p className={APS_KICKER_CLASS}>{t('apsScheduling.cuttingIssuance.planning.orderLabel')}</p>
-          <Select value={orderId} onValueChange={onOrderIdChange} disabled={isLoading || !orders.length}>
+          <p className={APS_KICKER_CLASS}>
+            {t('apsScheduling.cuttingIssuance.planning.orderLabel')}
+          </p>
+          <Select
+            value={orderId}
+            onValueChange={onOrderIdChange}
+            disabled={isLoading || !orders.length}
+          >
             <SelectTrigger className={`${APS_INPUT_CLASS} w-full`}>
-              <SelectValue placeholder={t('apsScheduling.cuttingIssuance.planning.orderPlaceholder')} />
+              <SelectValue
+                placeholder={t(
+                  'apsScheduling.cuttingIssuance.planning.orderPlaceholder'
+                )}
+              />
             </SelectTrigger>
             <SelectContent>
               {orders.map((order) => (
@@ -109,10 +129,20 @@ export function PlanningSelectionSection(props: PlanningSelectionSectionProps) {
         </div>
 
         <div className='space-y-0.5'>
-          <p className={APS_KICKER_CLASS}>{t('apsScheduling.cuttingIssuance.planning.lineLabel')}</p>
-          <Select value={lineNo} onValueChange={onLineNoChange} disabled={!selectedOrder}>
+          <p className={APS_KICKER_CLASS}>
+            {t('apsScheduling.cuttingIssuance.planning.lineLabel')}
+          </p>
+          <Select
+            value={lineNo}
+            onValueChange={onLineNoChange}
+            disabled={!selectedOrder}
+          >
             <SelectTrigger className={`${APS_INPUT_CLASS} w-full`}>
-              <SelectValue placeholder={t('apsScheduling.cuttingIssuance.planning.linePlaceholder')} />
+              <SelectValue
+                placeholder={t(
+                  'apsScheduling.cuttingIssuance.planning.linePlaceholder'
+                )}
+              />
             </SelectTrigger>
             <SelectContent>
               {selectedOrder?.lines.map((line) => (
@@ -129,8 +159,12 @@ export function PlanningSelectionSection(props: PlanningSelectionSectionProps) {
         </div>
 
         <div className='space-y-0.5'>
-          <p className={APS_KICKER_CLASS}>{t('apsScheduling.cuttingIssuance.planning.templateLabel')}</p>
-          <div className={`${APS_INPUT_CLASS} flex items-center gap-2 px-3 text-sm`}>
+          <p className={APS_KICKER_CLASS}>
+            {t('apsScheduling.cuttingIssuance.planning.templateLabel')}
+          </p>
+          <div
+            className={`${APS_INPUT_CLASS} flex items-center gap-2 px-3 text-sm`}
+          >
             <Lock className='size-4 shrink-0 text-muted-foreground' />
             <span className='truncate font-semibold'>
               {selectedTemplate
@@ -141,8 +175,12 @@ export function PlanningSelectionSection(props: PlanningSelectionSectionProps) {
         </div>
 
         <div className='space-y-0.5'>
-          <p className={APS_KICKER_CLASS}>{t('apsScheduling.cuttingIssuance.planning.dueDateLabel')}</p>
-          <div className={`${APS_INPUT_CLASS} flex items-center gap-2 px-3 text-sm`}>
+          <p className={APS_KICKER_CLASS}>
+            {t('apsScheduling.cuttingIssuance.planning.dueDateLabel')}
+          </p>
+          <div
+            className={`${APS_INPUT_CLASS} flex items-center gap-2 px-3 text-sm`}
+          >
             <CalendarClock className='size-4 text-muted-foreground' />
             <span>{formatDateLabel(selectedOrder?.deliveryDate, locale)}</span>
           </div>
@@ -150,7 +188,9 @@ export function PlanningSelectionSection(props: PlanningSelectionSectionProps) {
       </div>
 
       {templateMatchHint ? (
-        <p className='mt-2 text-xs text-muted-foreground/70'>{templateMatchHint}</p>
+        <p className='mt-2 text-xs text-muted-foreground/70'>
+          {templateMatchHint}
+        </p>
       ) : null}
     </section>
   )

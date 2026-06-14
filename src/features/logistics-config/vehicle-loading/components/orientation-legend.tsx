@@ -4,13 +4,21 @@ type Props = {
   className?: string
 }
 
-function LegendItem({ label, description }: { label: string; description: ReactNode }) {
+function LegendItem({
+  label,
+  description,
+}: {
+  label: string
+  description: ReactNode
+}) {
   return (
     <div className='flex items-start gap-2 rounded-2xl border border-dashed border-border/60 bg-background/80 px-3 py-2'>
       <div className='flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-black text-primary'>
         {label}
       </div>
-      <div className='text-[11px] leading-relaxed text-muted-foreground'>{description}</div>
+      <div className='text-[11px] leading-relaxed text-muted-foreground'>
+        {description}
+      </div>
     </div>
   )
 }

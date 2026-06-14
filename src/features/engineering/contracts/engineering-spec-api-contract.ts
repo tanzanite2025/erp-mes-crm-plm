@@ -2,7 +2,10 @@ import { z } from 'zod'
 import { technicalSpecSchema } from '@/features/engineering-db/data/schema'
 
 const optionalControlDateSchema = z.string().trim().nullable().optional()
-const nullableOptionalBucketSchema = z.record(z.string(), z.unknown()).nullable().optional()
+const nullableOptionalBucketSchema = z
+  .record(z.string(), z.unknown())
+  .nullable()
+  .optional()
 const engineeringSpecInputBaseSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1),
@@ -46,18 +49,22 @@ export const engineeringSpecApiDTOSchema = z.object({
   updatedAt: z.string().optional(),
   version: z.number(),
   /** MasterDataControl 嵌套命名空间 */
-  masterDataControl: z.object({
-    revisionNo: z.string().optional(),
-    effectiveFrom: optionalControlDateSchema,
-    effectiveTo: optionalControlDateSchema,
-    changeType: z.enum(['MANUAL', 'ECO', 'ECN']).optional(),
-    changeOrderNo: z.string().optional(),
-    siteCode: z.string().optional(),
-    isDefaultSite: z.boolean().optional(),
-  }).optional(),
+  masterDataControl: z
+    .object({
+      revisionNo: z.string().optional(),
+      effectiveFrom: optionalControlDateSchema,
+      effectiveTo: optionalControlDateSchema,
+      changeType: z.enum(['MANUAL', 'ECO', 'ECN']).optional(),
+      changeOrderNo: z.string().optional(),
+      siteCode: z.string().optional(),
+      isDefaultSite: z.boolean().optional(),
+    })
+    .optional(),
 })
 
-export const engineeringSpecApiDTOArraySchema = z.array(engineeringSpecApiDTOSchema)
+export const engineeringSpecApiDTOArraySchema = z.array(
+  engineeringSpecApiDTOSchema
+)
 
 export const engineeringSpecListPageApiDTOSchema = z.object({
   items: engineeringSpecApiDTOArraySchema,
@@ -71,14 +78,21 @@ export const engineeringSpecPatchRequestSchema = z.object({
   version: z.number(),
 })
 
-export const engineeringSpecInputApiSchema = engineeringSpecInputBaseSchema.extend({
-  version: z.number(),
-})
+export const engineeringSpecInputApiSchema =
+  engineeringSpecInputBaseSchema.extend({
+    version: z.number(),
+  })
 
-export const engineeringSpecInputSchema = engineeringSpecInputBaseSchema.extend({
-  version: z.number(),
-})
+export const engineeringSpecInputSchema = engineeringSpecInputBaseSchema.extend(
+  {
+    version: z.number(),
+  }
+)
 
 export type EngineeringSpecApiDTO = z.infer<typeof engineeringSpecApiDTOSchema>
-export type EngineeringSpecListPageApiDTO = z.infer<typeof engineeringSpecListPageApiDTOSchema>
-export type EngineeringSpecInputDTO = z.infer<typeof engineeringSpecInputApiSchema>
+export type EngineeringSpecListPageApiDTO = z.infer<
+  typeof engineeringSpecListPageApiDTOSchema
+>
+export type EngineeringSpecInputDTO = z.infer<
+  typeof engineeringSpecInputApiSchema
+>

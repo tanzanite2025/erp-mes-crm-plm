@@ -11,7 +11,10 @@ export interface PendingTopologyMutation {
 
 interface UseLineMindmapTopologyAuthOptions {
   settleSelection: (nextSelectedNodeId: string | null) => void
-  updateLineStrict: (payload: LineMutationPayload, authCode?: string) => Promise<void>
+  updateLineStrict: (
+    payload: LineMutationPayload,
+    authCode?: string
+  ) => Promise<void>
 }
 
 export function useLineMindmapTopologyAuth({
@@ -19,31 +22,38 @@ export function useLineMindmapTopologyAuth({
   updateLineStrict,
 }: UseLineMindmapTopologyAuthOptions) {
   const [authDialogOpen, setAuthDialogOpen] = useState(false)
-  const [pendingTopologyMutation, setPendingTopologyMutation] = useState<PendingTopologyMutation | null>(null)
+  const [pendingTopologyMutation, setPendingTopologyMutation] =
+    useState<PendingTopologyMutation | null>(null)
 
-  const requestTopologyAuth = useCallback((mutation: PendingTopologyMutation) => {
-    setPendingTopologyMutation(mutation)
-    setAuthDialogOpen(true)
-  }, [])
+  const requestTopologyAuth = useCallback(
+    (mutation: PendingTopologyMutation) => {
+      setPendingTopologyMutation(mutation)
+      setAuthDialogOpen(true)
+    },
+    []
+  )
 
-  const handleAuthConfirm = useCallback(async (password: string) => {
-    if (!pendingTopologyMutation) {
-      return false
-    }
+  const handleAuthConfirm = useCallback(
+    async (password: string) => {
+      if (!pendingTopologyMutation) {
+        return false
+      }
 
-    await updateLineStrict(
-      {
-        type: 'UPDATE',
-        id: pendingTopologyMutation.lineId,
-        delta: pendingTopologyMutation.delta,
-        version: pendingTopologyMutation.version,
-      },
-      password,
-    )
-    settleSelection(pendingTopologyMutation.nextSelectedNodeId)
-    setPendingTopologyMutation(null)
-    return true
-  }, [pendingTopologyMutation, settleSelection, updateLineStrict])
+      await updateLineStrict(
+        {
+          type: 'UPDATE',
+          id: pendingTopologyMutation.lineId,
+          delta: pendingTopologyMutation.delta,
+          version: pendingTopologyMutation.version,
+        },
+        password
+      )
+      settleSelection(pendingTopologyMutation.nextSelectedNodeId)
+      setPendingTopologyMutation(null)
+      return true
+    },
+    [pendingTopologyMutation, settleSelection, updateLineStrict]
+  )
 
   const handleAuthOpenChange = useCallback((open: boolean) => {
     setAuthDialogOpen(open)

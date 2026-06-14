@@ -85,7 +85,9 @@ export function SalesReturnLogisticsPanel({
     toDateTimeLocalValue(record.shippedAt)
   )
   const [logisticsNote, setLogisticsNote] = useState(record.logisticsNote ?? '')
-  const [status, setStatus] = useState(normalizeSalesReturnStatus(record.status))
+  const [status, setStatus] = useState(
+    normalizeSalesReturnStatus(record.status)
+  )
 
   const handleSubmit = () => {
     patchLogisticsMutation.mutate({
@@ -144,7 +146,9 @@ export function SalesReturnLogisticsPanel({
           <Input
             value={trackingNo}
             onChange={(event) => setTrackingNo(event.target.value)}
-            placeholder={t('trading.salesReturns.createSheet.trackingNoPlaceholder')}
+            placeholder={t(
+              'trading.salesReturns.createSheet.trackingNoPlaceholder'
+            )}
           />
         </div>
 
@@ -155,7 +159,9 @@ export function SalesReturnLogisticsPanel({
           <Input
             value={carrier}
             onChange={(event) => setCarrier(event.target.value)}
-            placeholder={t('trading.salesReturns.createSheet.carrierPlaceholder')}
+            placeholder={t(
+              'trading.salesReturns.createSheet.carrierPlaceholder'
+            )}
           />
         </div>
 
@@ -174,7 +180,9 @@ export function SalesReturnLogisticsPanel({
         <div className='space-y-2 rounded-2xl border border-dashed border-muted/50 bg-muted/10 p-4'>
           <div className='grid gap-2 text-[11px] font-bold text-muted-foreground'>
             <div className='flex items-center justify-between gap-4'>
-              <span>{t('trading.salesReturns.queryShell.trackingFilledAt')}</span>
+              <span>
+                {t('trading.salesReturns.queryShell.trackingFilledAt')}
+              </span>
               <span className='text-right text-foreground'>
                 {record.trackingFilledAt
                   ? record.trackingFilledAt.replace('T', ' ').slice(0, 16)
@@ -182,7 +190,9 @@ export function SalesReturnLogisticsPanel({
               </span>
             </div>
             <div className='flex items-center justify-between gap-4'>
-              <span>{t('trading.salesReturns.queryShell.trackingFilledBy')}</span>
+              <span>
+                {t('trading.salesReturns.queryShell.trackingFilledBy')}
+              </span>
               <span className='text-right text-foreground'>
                 {record.trackingFilledBy?.trim() || '--'}
               </span>
@@ -197,7 +207,9 @@ export function SalesReturnLogisticsPanel({
           <Textarea
             value={logisticsNote}
             onChange={(event) => setLogisticsNote(event.target.value)}
-            placeholder={t('trading.salesReturns.createSheet.logisticsNotePlaceholder')}
+            placeholder={t(
+              'trading.salesReturns.createSheet.logisticsNotePlaceholder'
+            )}
             rows={3}
           />
         </div>

@@ -1,11 +1,11 @@
 import { type BusinessEventSource } from '../../workflow-core/data/business-event-source-schema'
+import { type UndoPatchState } from './business-event-source-card-actions'
 import {
   applyBusinessEventSourceSectionPatch,
   buildBusinessEventSourceSectionPatch,
   getBusinessEventSourceDiff,
   type BusinessEventSourceSection,
 } from './business-event-source-card-diff'
-import { type UndoPatchState } from './business-event-source-card-actions'
 import { cloneBusinessEventSource } from './business-event-source-card-utils'
 
 export type BusinessEventSourceCardSavingState = Record<

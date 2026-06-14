@@ -16,11 +16,15 @@ export type UndoPatchState = Record<
   BusinessEventSourceSectionPatch | null
 >
 
-interface RestoreRemovedBusinessEventSourceItemOptions<T extends { id?: string }> {
+interface RestoreRemovedBusinessEventSourceItemOptions<
+  T extends { id?: string },
+> {
   sectionLabel: string
   id: string
   items: T[]
-  applyDraft: (updater: (current: BusinessEventSource) => BusinessEventSource) => void
+  applyDraft: (
+    updater: (current: BusinessEventSource) => BusinessEventSource
+  ) => void
   updater: (source: BusinessEventSource, item: T) => BusinessEventSource
 }
 

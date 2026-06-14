@@ -98,7 +98,7 @@ function hasResolverTarget(
 ) {
   return Boolean(
     resolverCode &&
-      resolverOptions.some((resolver) => resolver.code === resolverCode)
+    resolverOptions.some((resolver) => resolver.code === resolverCode)
   )
 }
 

@@ -8,12 +8,21 @@ interface JobCategoryProcessMappingApiDTO {
 }
 
 export const productionJobCategoryCapabilitiesService = {
-  assignProcessCapability: async (jobCategoryId: string, processId: string): Promise<void> => {
-    const payload: JobCategoryProcessMappingApiDTO = { jobCategoryId, processId }
-    const res = await apiFetch<ProductionMessageApiDTO>('/production/mappings/assign', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    })
+  assignProcessCapability: async (
+    jobCategoryId: string,
+    processId: string
+  ): Promise<void> => {
+    const payload: JobCategoryProcessMappingApiDTO = {
+      jobCategoryId,
+      processId,
+    }
+    const res = await apiFetch<ProductionMessageApiDTO>(
+      '/production/mappings/assign',
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }
+    )
 
     ensureObjectResponse<ProductionMessageApiDTO & Record<string, unknown>>(
       res,
@@ -21,12 +30,21 @@ export const productionJobCategoryCapabilitiesService = {
     )
   },
 
-  removeProcessCapability: async (jobCategoryId: string, processId: string): Promise<void> => {
-    const payload: JobCategoryProcessMappingApiDTO = { jobCategoryId, processId }
-    const res = await apiFetch<ProductionMessageApiDTO>('/production/mappings/remove', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    })
+  removeProcessCapability: async (
+    jobCategoryId: string,
+    processId: string
+  ): Promise<void> => {
+    const payload: JobCategoryProcessMappingApiDTO = {
+      jobCategoryId,
+      processId,
+    }
+    const res = await apiFetch<ProductionMessageApiDTO>(
+      '/production/mappings/remove',
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }
+    )
 
     ensureObjectResponse<ProductionMessageApiDTO & Record<string, unknown>>(
       res,

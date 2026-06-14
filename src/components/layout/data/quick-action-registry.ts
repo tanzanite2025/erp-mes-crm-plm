@@ -96,7 +96,13 @@ export const QUICK_ACTION_DEFINITIONS: QuickActionDefinition[] = [
     href: '/basic-settings/knowledge-base?action=create',
     titleKey: 'basicSettings.knowledgeBase.actions.create',
     parentKey: 'commandMenu.parents.basicSettings',
-    keywords: ['knowledge', 'knowledge base', 'create', '新建知识条目', '新增知识库'],
+    keywords: [
+      'knowledge',
+      'knowledge base',
+      'create',
+      '新建知识条目',
+      '新增知识库',
+    ],
     pinyin: 'xzzstk',
     requiredPermissions: ['perm_manage'],
   },
@@ -186,7 +192,10 @@ export function getQuickActionDefinition(id: string) {
 
 export function getHostedQuickActionDefinition(id: HostedQuickActionId) {
   return QUICK_ACTION_DEFINITIONS.find(
-    (definition): definition is QuickActionDefinition & { hostKind: QuickActionHostKind } =>
-      definition.id === id && !!definition.hostKind
+    (
+      definition
+    ): definition is QuickActionDefinition & {
+      hostKind: QuickActionHostKind
+    } => definition.id === id && !!definition.hostKind
   )
 }

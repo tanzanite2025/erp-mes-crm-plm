@@ -1,6 +1,7 @@
 export const orders = {
   title: 'Purchase Order Processing',
-  description: 'Strategic procurement, staged delivery monitoring, and supplier performance reconciliation',
+  description:
+    'Strategic procurement, staged delivery monitoring, and supplier performance reconciliation',
   tabOrders: 'Order List',
   tabLogs: 'Statistics & Logs',
   tabReturns: 'Pre-Inbound Returns',
@@ -84,13 +85,15 @@ export const orders = {
   },
   returns: {
     title: 'Purchase Return Registration',
-    description: 'Register return quantities and issue details against the purchase order for arrived goods before inbound.',
+    description:
+      'Register return quantities and issue details against the purchase order for arrived goods before inbound.',
     loading: 'Loading purchase return records...',
     eligibleOrders: 'Eligible Purchase Orders',
     pendingLines: 'Returnable Lines',
     pendingQty: 'Returnable Quantity',
     availableOrders: 'Purchase Orders Ready for Return Registration',
-    availableOrdersDescription: 'Select a purchase order first, then register this return line by line.',
+    availableOrdersDescription:
+      'Select a purchase order first, then register this return line by line.',
     selectedOrder: 'Purchase Order for This Return',
     draftSummary: 'Return Draft Summary',
     selectedLines: 'Selected Lines',
@@ -102,7 +105,8 @@ export const orders = {
     fillRemaining: 'Fill Remaining',
     clearLine: 'Clear',
     recentRecords: 'Return Registration Records',
-    recentRecordsDescription: 'Prioritizes return registration records for the currently selected purchase order.',
+    recentRecordsDescription:
+      'Prioritizes return registration records for the currently selected purchase order.',
     historySearchPlaceholder: 'Search history by purchase order no.',
     viewCurrentOrderHistory: 'Current Purchase Order',
     viewAllHistory: 'All Records',
@@ -111,19 +115,24 @@ export const orders = {
     operator: 'Operator',
     createAction: 'New Return Registration',
     createTitle: 'New Purchase Return Registration',
-    createDescription: 'Only quantities that have not yet been inbound can be returned here. Inventory will not be affected.',
+    createDescription:
+      'Only quantities that have not yet been inbound can be returned here. Inventory will not be affected.',
     order: 'Purchase Order',
     selectOrder: 'Select an eligible purchase order',
     date: 'Return Date',
     reason: 'Return Reason',
-    reasonPlaceholder: 'Example: appearance defect / spec mismatch / packaging damage',
+    reasonPlaceholder:
+      'Example: appearance defect / spec mismatch / packaging damage',
     remarks: 'Remarks',
-    remarksPlaceholder: 'Optional notes for supplier communication or follow-up handling',
+    remarksPlaceholder:
+      'Optional notes for supplier communication or follow-up handling',
     evidenceTitle: 'Return Photos',
-    evidenceHint: 'Take photos on mobile or upload images. They will be printed together with the return note.',
+    evidenceHint:
+      'Take photos on mobile or upload images. They will be printed together with the return note.',
     evidenceEmpty: 'No return photos yet',
     lineEvidenceTitle: 'Line Issue Photos',
-    lineEvidenceHint: 'Attach defect, packaging, or quantity issue photos for this line if needed.',
+    lineEvidenceHint:
+      'Attach defect, packaging, or quantity issue photos for this line if needed.',
     lineEvidenceEmpty: 'No photos for this line yet',
     cameraAction: 'Take Photo',
     uploadAction: 'Upload Images',
@@ -134,7 +143,8 @@ export const orders = {
     photoLocation: 'Photo Location',
     photoLocationPlaceholder: 'Example: front side of carton, left pallet edge',
     photoDefectPart: 'Defect Area',
-    photoDefectPartPlaceholder: 'Example: carton corner, label area, material edge',
+    photoDefectPartPlaceholder:
+      'Example: carton corner, label area, material edge',
     lineReason: 'Line Reason',
     lineReasonPlaceholder: 'Optional line-level issue note',
     remainingQty: 'Remaining Receivable',
@@ -145,11 +155,15 @@ export const orders = {
     totalQty: 'Total Returned Quantity',
     totalAmount: 'Returned Amount',
     empty: 'No purchase return records',
-    emptyDescription: 'If goods are rejected during arrival inspection before inbound, register the returned quantity here.',
+    emptyDescription:
+      'If goods are rejected during arrival inspection before inbound, register the returned quantity here.',
     emptySelection: 'Select a purchase order to view returnable lines',
-    emptySelectionDescription: 'The left panel lists arrived purchase orders that still have returnable quantities. Select one to inspect the lines for this return.',
-    noEligibleOrders: 'There are currently no purchase orders eligible for pre-inbound return.',
-    noEligibleOrdersDescription: 'Only arrived purchase orders with unresolved pre-inbound issue quantities will appear here for return registration.',
+    emptySelectionDescription:
+      'The left panel lists arrived purchase orders that still have returnable quantities. Select one to inspect the lines for this return.',
+    noEligibleOrders:
+      'There are currently no purchase orders eligible for pre-inbound return.',
+    noEligibleOrdersDescription:
+      'Only arrived purchase orders with unresolved pre-inbound issue quantities will appear here for return registration.',
     tip: 'This action only reduces the purchase order receivable balance. It does not create negative inventory or an inventory return transaction.',
   },
   headerFields: {
@@ -162,7 +176,8 @@ export const orders = {
     exchangeRateAuto: 'Loaded from finance rates and locked from manual edits',
     exchangeRateBase: 'Base Currency: {{base}}',
     exchangeRatePair: 'Current quote: 1 {{currency}} = {{rate}} {{base}}',
-    exchangeRateBaseLocked: '{{currency}} is the base currency, so the rate is fixed at 1.0000',
+    exchangeRateBaseLocked:
+      '{{currency}} is the base currency, so the rate is fixed at 1.0000',
     status: 'Status',
     expectedArrival: 'Expected Arrival',
     paymentMethod: 'Payment Method',
@@ -171,7 +186,8 @@ export const orders = {
     paymentTermPlaceholder: 'Select payment term',
     purchaser: 'Purchaser',
     note: 'Note',
-    notePlaceholder: 'Enter contract notes, delivery requirements, or inspection standards...',
+    notePlaceholder:
+      'Enter contract notes, delivery requirements, or inspection standards...',
   },
   linesEditor: {
     title: 'Purchase Material Lines',

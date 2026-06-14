@@ -1,11 +1,20 @@
+import {
+  translate,
+  DEFAULT_LOCALE,
+  type AppLocale,
+  type TranslationKey,
+} from '@/locales'
 import { toast } from 'sonner'
-import { getErrorKind, getErrorStatus, isForbiddenError } from '@/lib/error-status'
-import { createLogger } from '@/lib/logger'
-import { ERROR_ACTION_REGISTRY } from '@/lib/error-action-registry'
-import { getAppRouter } from '@/lib/router-reference'
-import { translate, DEFAULT_LOCALE, type AppLocale, type TranslationKey } from '@/locales'
 import { getCookie } from '@/lib/cookies'
+import { ERROR_ACTION_REGISTRY } from '@/lib/error-action-registry'
+import {
+  getErrorKind,
+  getErrorStatus,
+  isForbiddenError,
+} from '@/lib/error-status'
 import { LANGUAGE_COOKIE_NAME } from '@/lib/locale'
+import { createLogger } from '@/lib/logger'
+import { getAppRouter } from '@/lib/router-reference'
 
 const logger = createLogger('handleServerError')
 
@@ -22,7 +31,8 @@ export interface ServerErrorPresentation {
 }
 
 const FORBIDDEN_SUBTITLE_KEY: TranslationKey = 'errors.forbidden.subtitle'
-const INVALID_CREDENTIALS_KEY: TranslationKey = 'common.auth.signInForm.invalidCredentials'
+const INVALID_CREDENTIALS_KEY: TranslationKey =
+  'common.auth.signInForm.invalidCredentials'
 const API_NOT_READY_KEY: TranslationKey = 'common.auth.signInForm.apiNotReady'
 const TIMEOUT_KEY: TranslationKey = 'common.auth.signInForm.timeout'
 const EMPTY_NO_DATA_KEY: TranslationKey = 'common.empty.noData'
@@ -72,12 +82,15 @@ export function isConflictError(error: unknown) {
   return false
 }
 
-export function getServerErrorPresentation(error: unknown): ServerErrorPresentation {
+export function getServerErrorPresentation(
+  error: unknown
+): ServerErrorPresentation {
   const status = getErrorStatus(error)
   const kind = getErrorKind(error)
   const errorMessage = extractErrorMessage(error)
 
-  const locale = (getCookie(LANGUAGE_COOKIE_NAME) as AppLocale) || DEFAULT_LOCALE
+  const locale =
+    (getCookie(LANGUAGE_COOKIE_NAME) as AppLocale) || DEFAULT_LOCALE
 
   // 结构化后台日志上报
   logger.error('Server error intercepted', {
@@ -101,9 +114,12 @@ export function getServerErrorPresentation(error: unknown): ServerErrorPresentat
           onClick: () => {
             const router = getAppRouter()
             if (!router) {
-              logger.error('Router reference unavailable for error action navigation', {
-                target: navigationTarget,
-              })
+              logger.error(
+                'Router reference unavailable for error action navigation',
+                {
+                  target: navigationTarget,
+                }
+              )
               return
             }
 
@@ -138,7 +154,11 @@ export function getServerErrorPresentation(error: unknown): ServerErrorPresentat
     return { message: translate(locale, TIMEOUT_KEY), status }
   }
 
-  if (kind === 'network' || kind === 'invalid_response' || kind === 'auth_required') {
+  if (
+    kind === 'network' ||
+    kind === 'invalid_response' ||
+    kind === 'auth_required'
+  ) {
     return { message: errorMessage, status }
   }
 

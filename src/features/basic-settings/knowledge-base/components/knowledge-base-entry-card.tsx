@@ -1,7 +1,13 @@
 import { Link } from '@tanstack/react-router'
-import { Edit3, ExternalLink, Image as ImageIcon, Trash2, Video } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import {
+  Edit3,
+  ExternalLink,
+  Image as ImageIcon,
+  Trash2,
+  Video,
+} from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
+import { Button } from '@/components/ui/button'
 import type { KnowledgeBaseEntry } from '../data/knowledge-base'
 import { getKnowledgeContentMediaFlags } from '../data/knowledge-content'
 import { KnowledgeBaseCategoryBadge } from './knowledge-base-category-badge'
@@ -39,10 +45,10 @@ export function KnowledgeBaseEntryCard({
               </span>
             ) : null}
           </div>
-          <h3 className='mt-2 line-clamp-1 text-[14px] font-black leading-5 text-foreground'>
+          <h3 className='mt-2 line-clamp-1 text-[14px] leading-5 font-black text-foreground'>
             {entry.title}
           </h3>
-          <p className='mt-1 line-clamp-1 text-[12px] font-bold leading-5 text-muted-foreground'>
+          <p className='mt-1 line-clamp-1 text-[12px] leading-5 font-bold text-muted-foreground'>
             {entry.summary}
           </p>
           <KnowledgeBaseRichContent
@@ -118,14 +124,20 @@ export function KnowledgeBaseMediaIndicators({
   if (!hasImage && !hasVideo) return null
 
   return (
-    <span className={compact ? 'flex items-center gap-0.5' : 'flex items-center gap-1'}>
+    <span
+      className={
+        compact ? 'flex items-center gap-0.5' : 'flex items-center gap-1'
+      }
+    >
       {hasImage ? (
         <span
           title={imageLabel}
           aria-label={imageLabel}
-          className={compact
-            ? 'flex size-5 items-center justify-center rounded-full border border-sky-500/20 bg-sky-500/10 text-sky-600'
-            : 'flex size-6 items-center justify-center rounded-full border border-sky-500/20 bg-sky-500/10 text-sky-600'}
+          className={
+            compact
+              ? 'flex size-5 items-center justify-center rounded-full border border-sky-500/20 bg-sky-500/10 text-sky-600'
+              : 'flex size-6 items-center justify-center rounded-full border border-sky-500/20 bg-sky-500/10 text-sky-600'
+          }
         >
           <ImageIcon className={compact ? 'size-3' : 'size-3.5'} />
         </span>
@@ -134,9 +146,11 @@ export function KnowledgeBaseMediaIndicators({
         <span
           title={videoLabel}
           aria-label={videoLabel}
-          className={compact
-            ? 'flex size-5 items-center justify-center rounded-full border border-amber-500/20 bg-amber-500/10 text-amber-600'
-            : 'flex size-6 items-center justify-center rounded-full border border-amber-500/20 bg-amber-500/10 text-amber-600'}
+          className={
+            compact
+              ? 'flex size-5 items-center justify-center rounded-full border border-amber-500/20 bg-amber-500/10 text-amber-600'
+              : 'flex size-6 items-center justify-center rounded-full border border-amber-500/20 bg-amber-500/10 text-amber-600'
+          }
         >
           <Video className={compact ? 'size-3' : 'size-3.5'} />
         </span>

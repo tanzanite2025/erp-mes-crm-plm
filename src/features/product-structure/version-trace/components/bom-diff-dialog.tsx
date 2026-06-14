@@ -1,6 +1,8 @@
 'use client'
 
 import { GitCompare } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -8,8 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { useBomPairDiff } from '../hooks/use-bom-pair-diff'
 import { BomDiffContent } from './bom-diff-content'
 
@@ -68,19 +68,20 @@ export function BomDiffDialog({
             <div className='space-y-2'>
               <div className='flex items-center gap-2 text-primary'>
                 <GitCompare className='size-4' />
-                <DialogTitle className='text-lg font-black tracking-tighter italic uppercase'>
+                <DialogTitle className='text-lg font-black tracking-tighter uppercase italic'>
                   {title}
                 </DialogTitle>
               </div>
-              <DialogDescription className='text-[9px] font-black uppercase tracking-widest opacity-60'>
-                {description ?? '对比两个 BOM 版本快照的字段、结构与物料明细差异'}
+              <DialogDescription className='text-[9px] font-black tracking-widest uppercase opacity-60'>
+                {description ??
+                  '对比两个 BOM 版本快照的字段、结构与物料明细差异'}
               </DialogDescription>
             </div>
             <div className='flex flex-wrap items-center gap-2'>
               {leftLabel ? (
                 <Badge
                   variant='outline'
-                  className='h-5 rounded-full border-dashed border-rose-300 bg-rose-50 text-[8px] font-mono text-rose-700'
+                  className='h-5 rounded-full border-dashed border-rose-300 bg-rose-50 font-mono text-[8px] text-rose-700'
                 >
                   左 · {leftLabel}
                 </Badge>
@@ -88,7 +89,7 @@ export function BomDiffDialog({
               {rightLabel ? (
                 <Badge
                   variant='outline'
-                  className='h-5 rounded-full border-dashed border-emerald-300 bg-emerald-50 text-[8px] font-mono text-emerald-700'
+                  className='h-5 rounded-full border-dashed border-emerald-300 bg-emerald-50 font-mono text-[8px] text-emerald-700'
                 >
                   右 · {rightLabel}
                 </Badge>
@@ -97,7 +98,7 @@ export function BomDiffDialog({
                 type='button'
                 variant='outline'
                 onClick={() => onOpenChange(false)}
-                className='h-11 rounded-full border-dashed px-5 text-[10px] font-black uppercase tracking-widest'
+                className='h-11 rounded-full border-dashed px-5 text-[10px] font-black tracking-widest uppercase'
               >
                 关闭
               </Button>

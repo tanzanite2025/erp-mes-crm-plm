@@ -3,8 +3,8 @@ import { type MaterialOption } from '../../../material-archive/data/schema'
 import { type BOMSectionOption } from '../../data/bom-section-schema'
 import { type BOM } from '../../data/schema'
 import { type BOMWorkspaceParentChildrenProtocolDraft } from '../../hooks/bom-workspace-source-model'
-import { useBOMWorkspace } from '../../hooks/use-bom-workspace'
 import { type BOMPermissionGuard } from '../../hooks/use-bom-permission-guard'
+import { useBOMWorkspace } from '../../hooks/use-bom-workspace'
 import { BOMFlatWorkspaceView } from './bom-flat-workspace-view'
 
 interface BOMWorkspaceProps {
@@ -18,7 +18,16 @@ interface BOMWorkspaceProps {
   permissionGuard?: BOMPermissionGuard
 }
 
-export function BOMWorkspace({ form, fields, materials, sections, append, remove, protocolDraft, permissionGuard }: BOMWorkspaceProps) {
+export function BOMWorkspace({
+  form,
+  fields,
+  materials,
+  sections,
+  append,
+  remove,
+  protocolDraft,
+  permissionGuard,
+}: BOMWorkspaceProps) {
   const workspace = useBOMWorkspace({
     form,
     fields,

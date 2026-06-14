@@ -50,7 +50,10 @@ export function toPositiveNumber(value?: string): number {
 
 function normalizeDecimalString(value: number, fractionDigits = 6): string {
   if (!Number.isFinite(value) || value <= 0) return ''
-  return value.toFixed(fractionDigits).replace(/\.0+$|(?<=\.[0-9]*?)0+$/g, '').replace(/\.$/, '')
+  return value
+    .toFixed(fractionDigits)
+    .replace(/\.0+$|(?<=\.[0-9]*?)0+$/g, '')
+    .replace(/\.$/, '')
 }
 
 export function formatCutSizeExpression(
@@ -76,15 +79,22 @@ export function deriveCutSizeAreaM2(
 }
 
 export function resolveCutSizeAreaM2(
-  unit: Pick<CutSizeGeometrySource, 'areaM2' | 'widthMm' | 'lengthMm' | 'pieceCount'>
+  unit: Pick<
+    CutSizeGeometrySource,
+    'areaM2' | 'widthMm' | 'lengthMm' | 'pieceCount'
+  >
 ): string {
   return deriveCutSizeAreaM2(unit) || unit.areaM2?.trim() || ''
 }
 
 export function deriveCutSizeWeightG(
-  unit: Pick<CutSizeGeometrySource, 'widthMm' | 'lengthMm' | 'pieceCount' | 'areaM2' | 'areaWeightGsm'>
+  unit: Pick<
+    CutSizeGeometrySource,
+    'widthMm' | 'lengthMm' | 'pieceCount' | 'areaM2' | 'areaWeightGsm'
+  >
 ): string {
-  const areaM2 = toPositiveNumber(unit.areaM2) || toPositiveNumber(deriveCutSizeAreaM2(unit))
+  const areaM2 =
+    toPositiveNumber(unit.areaM2) || toPositiveNumber(deriveCutSizeAreaM2(unit))
   const areaWeightGsm = toPositiveNumber(unit.areaWeightGsm)
   if (!areaM2 || !areaWeightGsm) return ''
 
@@ -93,7 +103,15 @@ export function deriveCutSizeWeightG(
 }
 
 export function resolveCutSizeWeightG(
-  unit: Pick<CutSizeGeometrySource, 'weightG' | 'areaM2' | 'areaWeightGsm' | 'widthMm' | 'lengthMm' | 'pieceCount'>
+  unit: Pick<
+    CutSizeGeometrySource,
+    | 'weightG'
+    | 'areaM2'
+    | 'areaWeightGsm'
+    | 'widthMm'
+    | 'lengthMm'
+    | 'pieceCount'
+  >
 ): string {
   return deriveCutSizeWeightG(unit) || unit.weightG?.trim() || ''
 }
@@ -103,8 +121,14 @@ export function resolveCutSizeGeometryProjection(
 ): ResolvedCutSizeGeometryProjection {
   const widthMm = toPositiveNumber(unit.widthMm)
   const lengthMm = toPositiveNumber(unit.lengthMm)
-  const pieceCountPerSet = Math.max(1, Math.floor(toPositiveNumber(unit.pieceCount || '1') || 1))
-  const layupCount = Math.max(1, Math.floor(toPositiveNumber(unit.layupCount || '1') || 1))
+  const pieceCountPerSet = Math.max(
+    1,
+    Math.floor(toPositiveNumber(unit.pieceCount || '1') || 1)
+  )
+  const layupCount = Math.max(
+    1,
+    Math.floor(toPositiveNumber(unit.layupCount || '1') || 1)
+  )
   const cutAngleValue = resolveSupportedCutAngleValue(unit.cutAngle)
   const cutAngleDeg = toCutAngleDegrees(cutAngleValue)
   const orientationGeometry = resolveCutOrientationGeometry({

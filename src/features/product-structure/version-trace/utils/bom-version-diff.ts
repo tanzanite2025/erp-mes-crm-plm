@@ -153,8 +153,13 @@ function toLineChange(item: BOMVersionItemSnapshot): BOMVersionLineChange {
   }
 }
 
-function compareItems(before: BOMVersionItemSnapshot, after: BOMVersionItemSnapshot): BOMVersionModifiedLineChange | null {
-  const changedFields = ITEM_FIELDS.filter((field) => !isSameValue(before[field], after[field]))
+function compareItems(
+  before: BOMVersionItemSnapshot,
+  after: BOMVersionItemSnapshot
+): BOMVersionModifiedLineChange | null {
+  const changedFields = ITEM_FIELDS.filter(
+    (field) => !isSameValue(before[field], after[field])
+  )
   if (changedFields.length === 0) {
     return null
   }
@@ -164,7 +169,10 @@ function compareItems(before: BOMVersionItemSnapshot, after: BOMVersionItemSnaps
   }
 }
 
-function buildControlChanges(leftSnapshot: Record<string, unknown>, rightSnapshot: Record<string, unknown>): BOMVersionControlChange[] {
+function buildControlChanges(
+  leftSnapshot: Record<string, unknown>,
+  rightSnapshot: Record<string, unknown>
+): BOMVersionControlChange[] {
   return CONTROL_FIELDS.flatMap((field) => {
     const beforeValue = leftSnapshot[field]
     const afterValue = rightSnapshot[field]
@@ -175,8 +183,15 @@ function buildControlChanges(leftSnapshot: Record<string, unknown>, rightSnapsho
   })
 }
 
-function buildStructureChanges(left: BOMVersionRecordDetail, right: BOMVersionRecordDetail): BOMVersionStructureChange[] {
-  const fields: Array<{ key: string; beforeValue: unknown; afterValue: unknown }> = [
+function buildStructureChanges(
+  left: BOMVersionRecordDetail,
+  right: BOMVersionRecordDetail
+): BOMVersionStructureChange[] {
+  const fields: Array<{
+    key: string
+    beforeValue: unknown
+    afterValue: unknown
+  }> = [
     {
       key: 'kind',
       beforeValue: left.relationSidecar?.kind,
@@ -208,15 +223,20 @@ function buildStructureChanges(left: BOMVersionRecordDetail, right: BOMVersionRe
     if (isSameValue(field.beforeValue, field.afterValue)) {
       return []
     }
-    return [{
-      key: field.key,
-      beforeValue: field.beforeValue,
-      afterValue: field.afterValue,
-    }]
+    return [
+      {
+        key: field.key,
+        beforeValue: field.beforeValue,
+        afterValue: field.afterValue,
+      },
+    ]
   })
 }
 
-export function buildBOMVersionDiffSummary(left: BOMVersionRecordDetail, right: BOMVersionRecordDetail): BOMVersionDiffSummary {
+export function buildBOMVersionDiffSummary(
+  left: BOMVersionRecordDetail,
+  right: BOMVersionRecordDetail
+): BOMVersionDiffSummary {
   const leftSnapshot = left.snapshot
   const rightSnapshot = right.snapshot
   const leftItems = normalizeItems(leftSnapshot.items)
@@ -247,7 +267,8 @@ export function buildBOMVersionDiffSummary(left: BOMVersionRecordDetail, right: 
   })
 
   return {
-    targetBomNo: normalizeString(rightSnapshot.bomNo) || right.bomNo || left.bomNo,
+    targetBomNo:
+      normalizeString(rightSnapshot.bomNo) || right.bomNo || left.bomNo,
     leftVersionLabel: left.displayVersionLabel,
     rightVersionLabel: right.displayVersionLabel,
     leftItemCount: leftItems.length,

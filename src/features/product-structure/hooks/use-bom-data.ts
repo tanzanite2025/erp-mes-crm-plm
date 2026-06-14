@@ -3,8 +3,8 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getCustomers } from '@/features/trading/customer'
-import { tradingQueryKeys } from '@/features/trading/query-keys'
 import { type Customer } from '@/features/trading/data/schema'
+import { tradingQueryKeys } from '@/features/trading/query-keys'
 import { type BOM } from '../data/schema'
 import { type SaveBOMInput } from '../mutation-types'
 import { useBOMImportExport } from './use-bom-import-export'
@@ -17,8 +17,15 @@ interface BOMDataResult {
   customerNameMap: Map<string, string>
   saveBOM: (params: { data: SaveBOMInput }) => Promise<boolean>
   deleteBOM: (id: string) => Promise<boolean>
-  promoteBOM: (id: string, status: string, expectedVersion: number) => Promise<boolean>
-  deriveMBOM: (id: string, params: { description: string; revisionNo: string }) => Promise<boolean>
+  promoteBOM: (
+    id: string,
+    status: string,
+    expectedVersion: number
+  ) => Promise<boolean>
+  deriveMBOM: (
+    id: string,
+    params: { description: string; revisionNo: string }
+  ) => Promise<boolean>
   reviseMBOM: (
     id: string,
     params: { reason: string; changeOrderNo?: string; revisionNo?: string }
@@ -62,7 +69,10 @@ export function useBOMData(): BOMDataResult {
   } = useBOMWriteActions()
   const { downloadTemplate, parseExcel } = useBOMImportExport({
     products: readResource.status === 'ready' ? readResource.products : [],
-    productDisplayLabelMap: readResource.status === 'ready' ? readResource.productDisplayLabelMap : new Map(),
+    productDisplayLabelMap:
+      readResource.status === 'ready'
+        ? readResource.productDisplayLabelMap
+        : new Map(),
     sections: readResource.status === 'ready' ? readResource.sections : [],
   })
 
@@ -77,7 +87,9 @@ export function useBOMData(): BOMDataResult {
   }
 
   /** 把 mutation 的 promise 转成 boolean。Toast 已由 mutation 内部 onError 负责。 */
-  const resolveAsBool = async (op: () => Promise<unknown>): Promise<boolean> => {
+  const resolveAsBool = async (
+    op: () => Promise<unknown>
+  ): Promise<boolean> => {
     try {
       await op()
       return true
@@ -88,7 +100,9 @@ export function useBOMData(): BOMDataResult {
 
   const saveBOM = (params: { data: SaveBOMInput }) => {
     const candidateId = (params.data.id || '').trim()
-    const previousBom = candidateId ? getCurrentBomSnapshot(candidateId) : undefined
+    const previousBom = candidateId
+      ? getCurrentBomSnapshot(candidateId)
+      : undefined
     return resolveAsBool(() => persistBOM({ data: params.data, previousBom }))
   }
 
@@ -99,12 +113,19 @@ export function useBOMData(): BOMDataResult {
 
   const promoteBOM = (id: string, status: string, expectedVersion: number) => {
     const previousBom = getCurrentBomSnapshot(id)
-    return resolveAsBool(() => promoteStatus({ id, status, expectedVersion, previousBom }))
+    return resolveAsBool(() =>
+      promoteStatus({ id, status, expectedVersion, previousBom })
+    )
   }
 
-  const deriveMBOM = (id: string, params: { description: string; revisionNo: string }) => {
+  const deriveMBOM = (
+    id: string,
+    params: { description: string; revisionNo: string }
+  ) => {
     const sourceEbom = getCurrentBomSnapshot(id)
-    return resolveAsBool(() => deriveMBOMAction({ ebomId: id, input: params, sourceEbom }))
+    return resolveAsBool(() =>
+      deriveMBOMAction({ ebomId: id, input: params, sourceEbom })
+    )
   }
 
   const reviseMBOM = (

@@ -4,8 +4,14 @@ import React from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
+import { type DeltaSet } from '@/lib/delta/types'
+import { createLogger } from '@/lib/logger'
+import { useSearch } from '@/context/search-provider'
 import { ProductActionDialog } from '@/features/engineering/components/product-action-dialog'
-import { type Product, type ProductType } from '@/features/engineering/data/schema'
+import {
+  type Product,
+  type ProductType,
+} from '@/features/engineering/data/schema'
 import { type ProductSubmitPayload } from '@/features/engineering/hooks/use-product-form'
 import { useProductWriteActions } from '@/features/engineering/hooks/use-product-write-actions'
 import { PRODUCT_TYPES_QUERY_KEY } from '@/features/engineering/query-keys'
@@ -20,13 +26,14 @@ import { personnelQueryKeys } from '@/features/org-personnel/query-keys'
 import { EmployeeMaintenanceService } from '@/features/org-personnel/services/employee-maintenance-service'
 import { CustomerActionDialog } from '@/features/trading/components/customer-action-dialog'
 import { SalesOrderActionDialog } from '@/features/trading/components/sales-order-action-dialog'
-import { type Customer, type CustomerFormValues, type SalesOrder } from '@/features/trading/data/schema'
 import { useCustomerMutations } from '@/features/trading/customer'
+import {
+  type Customer,
+  type CustomerFormValues,
+  type SalesOrder,
+} from '@/features/trading/data/schema'
 import { ProductInboundActionDialog } from '@/features/warehouse/components/product-inbound-action-dialog'
 import { type InboundRecord } from '@/features/warehouse/inventory'
-import { useSearch } from '@/context/search-provider'
-import { createLogger } from '@/lib/logger'
-import { type DeltaSet } from '@/lib/delta/types'
 import {
   getHostedQuickActionDefinition,
   type HostedQuickActionId,
@@ -123,7 +130,10 @@ export function QuickActionHost({
 
       hasHandledProductTypeErrorRef.current = true
       setIsProductDialogReady((current) => (current ? false : current))
-      logger.error('Load product types for quick action failed', productTypesQuery.error)
+      logger.error(
+        'Load product types for quick action failed',
+        productTypesQuery.error
+      )
       toast.error('产品类型加载失败')
       completeAction({ status: 'failed', error: productTypesQuery.error })
       return
@@ -218,7 +228,9 @@ export function QuickActionHost({
         return undefined
       }
 
-      return createCustomerMutation.mutateAsync(payload.data as CustomerFormValues)
+      return createCustomerMutation.mutateAsync(
+        payload.data as CustomerFormValues
+      )
     },
     [createCustomerMutation]
   )
@@ -242,7 +254,9 @@ export function QuickActionHost({
       }
 
       const savedEmployee = await createEmployee(data)
-      await queryClient.invalidateQueries({ queryKey: personnelQueryKeys.employees() })
+      await queryClient.invalidateQueries({
+        queryKey: personnelQueryKeys.employees(),
+      })
       return savedEmployee
     },
     [createEmployee, queryClient]
@@ -296,7 +310,9 @@ export function QuickActionHost({
         currentRow={undefined}
         onSubmit={handleProductCreate}
         onSaved={handleProductCreated}
-        productTypes={(productTypesQuery.data as ProductType[] | undefined) ?? []}
+        productTypes={
+          (productTypesQuery.data as ProductType[] | undefined) ?? []
+        }
       />
       <ProductInboundActionDialog
         open={actionId === 'action-inbound'}

@@ -1,4 +1,3 @@
-import type { Material, MaterialDimensions, MaterialOption } from '../data/schema'
 import type {
   BulkSyncMaterialsApiDTO,
   MaterialApiDTO,
@@ -7,6 +6,11 @@ import type {
   SaveMaterialApiDTO,
 } from '../contracts/material-api-contract'
 import type { MaterialDimensionsApiDTO } from '../contracts/material-api-dto'
+import type {
+  Material,
+  MaterialDimensions,
+  MaterialOption,
+} from '../data/schema'
 
 export interface MaterialListPageContract {
   items: Material[]
@@ -68,7 +72,9 @@ export function toMaterialContract(dto: MaterialApiDTO): Material {
   }
 }
 
-export function toMaterialOptionContract(dto: MaterialOptionApiDTO): MaterialOption {
+export function toMaterialOptionContract(
+  dto: MaterialOptionApiDTO
+): MaterialOption {
   return {
     id: dto.id,
     code: dto.code,
@@ -85,11 +91,15 @@ export function toMaterialContracts(dtos: MaterialApiDTO[]): Material[] {
   return dtos.map(toMaterialContract)
 }
 
-export function toMaterialOptionContracts(dtos: MaterialOptionApiDTO[]): MaterialOption[] {
+export function toMaterialOptionContracts(
+  dtos: MaterialOptionApiDTO[]
+): MaterialOption[] {
   return dtos.map(toMaterialOptionContract)
 }
 
-export function toMaterialListPageContract(dto: MaterialListPageApiDTO): MaterialListPageContract {
+export function toMaterialListPageContract(
+  dto: MaterialListPageApiDTO
+): MaterialListPageContract {
   return {
     items: toMaterialContracts(dto.items),
     total: dto.total,
@@ -99,7 +109,9 @@ export function toMaterialListPageContract(dto: MaterialListPageApiDTO): Materia
   }
 }
 
-function toDimensionsApiDTO(value: MaterialDimensions | undefined): MaterialDimensionsApiDTO | undefined {
+function toDimensionsApiDTO(
+  value: MaterialDimensions | undefined
+): MaterialDimensionsApiDTO | undefined {
   if (!value) return undefined
 
   return {
@@ -110,7 +122,9 @@ function toDimensionsApiDTO(value: MaterialDimensions | undefined): MaterialDime
   }
 }
 
-export function toSaveMaterialApiDTO(material: Partial<Material>): SaveMaterialApiDTO {
+export function toSaveMaterialApiDTO(
+  material: Partial<Material>
+): SaveMaterialApiDTO {
   return {
     id: material.id || undefined,
     code: material.code || '',
@@ -142,7 +156,9 @@ export function toBulkSyncMaterialsApiDTO(
   options?: { globalVersion?: number | string }
 ): BulkSyncMaterialsApiDTO {
   const parsedVersion =
-    options?.globalVersion === undefined || options.globalVersion === null || options.globalVersion === ''
+    options?.globalVersion === undefined ||
+    options.globalVersion === null ||
+    options.globalVersion === ''
       ? undefined
       : Number(options.globalVersion)
 

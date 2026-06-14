@@ -36,7 +36,9 @@ export function StandardPreviewHero({ standard }: StandardPreviewHeroProps) {
           </div>
         </div>
         <div className='flex shrink-0 items-center gap-3 rounded-xl border border-white/5 bg-background/40 p-1.5'>
-          <Badge className={`rounded-lg border-none px-3 py-1 text-[9px] font-black tracking-widest uppercase lg:px-4 lg:text-[10px] ${statusMeta.className}`}>
+          <Badge
+            className={`rounded-lg border-none px-3 py-1 text-[9px] font-black tracking-widest uppercase lg:px-4 lg:text-[10px] ${statusMeta.className}`}
+          >
             {getQualityStandardStatusLabel(t, standard.status)}
           </Badge>
           <div className='h-3 w-px bg-white/10' />

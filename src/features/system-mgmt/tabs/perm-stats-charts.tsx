@@ -1,3 +1,4 @@
+import { LayoutDashboard, TrendingUp } from 'lucide-react'
 import {
   Bar,
   BarChart,
@@ -11,11 +12,23 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { LayoutDashboard, TrendingUp } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useLanguage } from '@/context/language-provider'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
+const COLORS = [
+  '#3b82f6',
+  '#10b981',
+  '#f59e0b',
+  '#ef4444',
+  '#8b5cf6',
+  '#ec4899',
+]
 const CHART_TICK_COLOR = 'var(--muted-foreground)'
 
 interface PermStatsChartsProps {
@@ -31,12 +44,16 @@ export function PermStatsCharts({ userDist, permLoad }: PermStatsChartsProps) {
     <div className='flex flex-col gap-6 lg:grid lg:grid-cols-7'>
       <Card className='col-span-3 overflow-hidden rounded-[24px] border-dashed border-muted/50 bg-muted/5'>
         <CardHeader className='pb-0'>
-          <CardTitle className='flex items-center gap-2 text-sm font-black uppercase italic tracking-tighter'>
+          <CardTitle className='flex items-center gap-2 text-sm font-black tracking-tighter uppercase italic'>
             <LayoutDashboard className='size-4 text-blue-600/60' />
-            {t('systemManagement.permissionAudit.charts.userDistribution.title')}
+            {t(
+              'systemManagement.permissionAudit.charts.userDistribution.title'
+            )}
           </CardTitle>
-          <CardDescription className='text-[9px] font-black uppercase tracking-widest opacity-40'>
-            {t('systemManagement.permissionAudit.charts.userDistribution.description')}
+          <CardDescription className='text-[9px] font-black tracking-widest uppercase opacity-40'>
+            {t(
+              'systemManagement.permissionAudit.charts.userDistribution.description'
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -65,10 +82,17 @@ export function PermStatsCharts({ userDist, permLoad }: PermStatsChartsProps) {
                       {`${name} ${((percent || 0) * 100).toFixed(0)}%`}
                     </text>
                   )}
-                  labelLine={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '2 2' }}
+                  labelLine={{
+                    stroke: '#cbd5e1',
+                    strokeWidth: 1,
+                    strokeDasharray: '2 2',
+                  }}
                 >
                   {visibleUserDist.map((_, index) => (
-                    <Cell key={`perm-user-dist-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell
+                      key={`perm-user-dist-${index}`}
+                      fill={COLORS[index % COLORS.length]}
+                    />
                   ))}
                 </Pie>
                 <Tooltip
@@ -84,7 +108,7 @@ export function PermStatsCharts({ userDist, permLoad }: PermStatsChartsProps) {
                   verticalAlign='bottom'
                   height={36}
                   formatter={(value) => (
-                    <span className='text-[10px] font-black uppercase italic tracking-widest opacity-60'>
+                    <span className='text-[10px] font-black tracking-widest uppercase italic opacity-60'>
                       {value}
                     </span>
                   )}
@@ -97,29 +121,43 @@ export function PermStatsCharts({ userDist, permLoad }: PermStatsChartsProps) {
 
       <Card className='col-span-4 overflow-hidden rounded-[24px] border-dashed border-muted/50 bg-muted/5'>
         <CardHeader className='pb-0'>
-          <CardTitle className='flex items-center gap-2 text-sm font-black uppercase italic tracking-tighter'>
+          <CardTitle className='flex items-center gap-2 text-sm font-black tracking-tighter uppercase italic'>
             <TrendingUp className='size-4 text-indigo-600/60' />
             {t('systemManagement.permissionAudit.charts.permissionLoad.title')}
           </CardTitle>
-          <CardDescription className='text-[9px] font-black uppercase tracking-widest opacity-40'>
-            {t('systemManagement.permissionAudit.charts.permissionLoad.description')}
+          <CardDescription className='text-[9px] font-black tracking-widest uppercase opacity-40'>
+            {t(
+              'systemManagement.permissionAudit.charts.permissionLoad.description'
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className='mt-2 h-[300px] w-full'>
             <ResponsiveContainer width='100%' height='100%'>
               <BarChart data={permLoad}>
-                <CartesianGrid strokeDasharray='3 3' vertical={false} stroke='#e2e8f0' />
+                <CartesianGrid
+                  strokeDasharray='3 3'
+                  vertical={false}
+                  stroke='#e2e8f0'
+                />
                 <XAxis
                   dataKey='name'
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 10, fontWeight: 900, fill: CHART_TICK_COLOR }}
+                  tick={{
+                    fontSize: 10,
+                    fontWeight: 900,
+                    fill: CHART_TICK_COLOR,
+                  }}
                 />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 10, fontWeight: 900, fill: CHART_TICK_COLOR }}
+                  tick={{
+                    fontSize: 10,
+                    fontWeight: 900,
+                    fill: CHART_TICK_COLOR,
+                  }}
                 />
                 <Tooltip
                   cursor={{ fill: 'rgba(0,0,0,0.02)' }}
@@ -133,7 +171,9 @@ export function PermStatsCharts({ userDist, permLoad }: PermStatsChartsProps) {
                 />
                 <Bar
                   dataKey='count'
-                  name={t('systemManagement.permissionAudit.charts.permissionLoad.barLabel')}
+                  name={t(
+                    'systemManagement.permissionAudit.charts.permissionLoad.barLabel'
+                  )}
                   fill='#3b82f6'
                   radius={[8, 8, 0, 0]}
                   barSize={32}

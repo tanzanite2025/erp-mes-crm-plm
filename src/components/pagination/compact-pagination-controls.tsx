@@ -1,7 +1,7 @@
 import { ChevronLeftIcon, ChevronRightIcon } from '@radix-ui/react-icons'
-import { Button } from '@/components/ui/button'
-import { useLanguage } from '@/context/language-provider'
 import { cn, getPageNumbers } from '@/lib/utils'
+import { useLanguage } from '@/context/language-provider'
+import { Button } from '@/components/ui/button'
 
 type CompactPaginationControlsProps = {
   page: number
@@ -30,19 +30,21 @@ export function CompactPaginationControls({
   const currentPage = hasPages
     ? Math.min(Math.max(Math.floor(page), 1), normalizedTotalPages)
     : 0
-  const pageNumbers = showPageNumbers && hasPages
-    ? getPageNumbers(currentPage, normalizedTotalPages)
-    : []
-  const pageSummary = typeof total === 'number'
-    ? t('common.table.pageSummaryWithTotal', {
-        current: currentPage,
-        totalPages: normalizedTotalPages,
-        total,
-      })
-    : t('common.table.pageSummary', {
-        current: currentPage,
-        total: normalizedTotalPages,
-      })
+  const pageNumbers =
+    showPageNumbers && hasPages
+      ? getPageNumbers(currentPage, normalizedTotalPages)
+      : []
+  const pageSummary =
+    typeof total === 'number'
+      ? t('common.table.pageSummaryWithTotal', {
+          current: currentPage,
+          totalPages: normalizedTotalPages,
+          total,
+        })
+      : t('common.table.pageSummary', {
+          current: currentPage,
+          total: normalizedTotalPages,
+        })
 
   const goToPage = (nextPage: number) => {
     if (!hasPages) return
@@ -101,7 +103,12 @@ export function CompactPaginationControls({
           })}
         </div>
       ) : (
-        <span className={cn('min-w-[78px] text-center tracking-tight', summaryClassName)}>
+        <span
+          className={cn(
+            'min-w-[78px] text-center tracking-tight',
+            summaryClassName
+          )}
+        >
           {pageSummary}
         </span>
       )}

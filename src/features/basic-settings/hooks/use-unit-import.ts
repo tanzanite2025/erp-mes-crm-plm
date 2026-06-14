@@ -1,12 +1,16 @@
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
+import { translate, type AppLocale } from '@/locales'
 import { toast } from 'sonner'
-import { useLanguage } from '@/context/language-provider'
 import { loadXLSX } from '@/lib/lazy-vendors'
 import { createLogger } from '@/lib/logger'
-import { translate, type AppLocale } from '@/locales'
+import { useLanguage } from '@/context/language-provider'
 import { BASIC_SETTINGS_UNITS_QUERY_KEY } from '../query-keys'
-import { unitService, type Unit, type UnitCategory } from '../services/unit-service'
+import {
+  unitService,
+  type Unit,
+  type UnitCategory,
+} from '../services/unit-service'
 
 const logger = createLogger('useUnitImport')
 
@@ -53,9 +57,9 @@ function normalizeCategory(input: string): UnitCategory {
 
   for (const option of CATEGORY_OPTIONS) {
     const aliases = new Set(
-      LOCALES.map((locale) => translate(locale, option.labelKey as any).toLowerCase()).concat(
-        option.value.toLowerCase(),
-      ),
+      LOCALES.map((locale) =>
+        translate(locale, option.labelKey as any).toLowerCase()
+      ).concat(option.value.toLowerCase())
     )
 
     if (aliases.has(normalized)) {
@@ -83,7 +87,9 @@ export function useUnitImport(onSuccess: () => void) {
       const XLSX = await loadXLSX()
       const workbook = XLSX.read(new Uint8Array(buffer), { type: 'array' })
       const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
-      const rows = XLSX.utils.sheet_to_json(firstSheet) as Array<Record<string, unknown>>
+      const rows = XLSX.utils.sheet_to_json(firstSheet) as Array<
+        Record<string, unknown>
+      >
 
       const unitsToSync: Array<Omit<Unit, 'id' | 'isSystem'>> = []
       const validationErrors: string[] = []
@@ -112,7 +118,7 @@ export function useUnitImport(onSuccess: () => void) {
 
         if (!code || !name) {
           validationErrors.push(
-            t('basicSettings.units.import.missingRequired', { line: index + 2 }),
+            t('basicSettings.units.import.missingRequired', { line: index + 2 })
           )
           return
         }
@@ -136,7 +142,7 @@ export function useUnitImport(onSuccess: () => void) {
                 })}`
               : ''
           }`,
-          { id: toastId },
+          { id: toastId }
         )
 
         if (unitsToSync.length === 0) {
@@ -147,21 +153,31 @@ export function useUnitImport(onSuccess: () => void) {
       }
 
       if (unitsToSync.length === 0) {
-        toast.error(t('basicSettings.units.import.noValidData'), { id: toastId })
+        toast.error(t('basicSettings.units.import.noValidData'), {
+          id: toastId,
+        })
         setIsImporting(false)
         e.target.value = ''
         return
       }
 
-      toast.loading(t('basicSettings.units.import.syncing', { count: unitsToSync.length }), {
-        id: toastId,
-      })
+      toast.loading(
+        t('basicSettings.units.import.syncing', { count: unitsToSync.length }),
+        {
+          id: toastId,
+        }
+      )
 
       await unitService.sync(unitsToSync)
-      await queryClient.invalidateQueries({ queryKey: BASIC_SETTINGS_UNITS_QUERY_KEY })
-      toast.success(t('basicSettings.units.import.success', { count: unitsToSync.length }), {
-        id: toastId,
+      await queryClient.invalidateQueries({
+        queryKey: BASIC_SETTINGS_UNITS_QUERY_KEY,
       })
+      toast.success(
+        t('basicSettings.units.import.success', { count: unitsToSync.length }),
+        {
+          id: toastId,
+        }
+      )
       onSuccess()
     } catch (error: any) {
       logger.error('Unit import failed', error)

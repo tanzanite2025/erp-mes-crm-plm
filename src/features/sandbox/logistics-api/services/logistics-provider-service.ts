@@ -4,7 +4,11 @@ import {
   fromLogisticsProviderDtoArray,
   toLogisticsProviderPayload,
 } from '@/features/sandbox/logistics-api/adapters/logistics-provider-adapter'
-import { type LogisticsProvider, type LogisticsProviderDraft, type LogisticsProviderDto } from '../types'
+import {
+  type LogisticsProvider,
+  type LogisticsProviderDraft,
+  type LogisticsProviderDto,
+} from '../types'
 
 const PROVIDERS_ENDPOINT = '/logistics-push/providers'
 
@@ -14,7 +18,9 @@ export const logisticsProviderService = {
     return fromLogisticsProviderDtoArray(response)
   },
 
-  async saveProvider(provider: LogisticsProviderDraft): Promise<LogisticsProvider> {
+  async saveProvider(
+    provider: LogisticsProviderDraft
+  ): Promise<LogisticsProvider> {
     const response = await apiFetch<LogisticsProviderDto>(PROVIDERS_ENDPOINT, {
       method: 'POST',
       body: JSON.stringify(toLogisticsProviderPayload(provider)),
@@ -29,9 +35,12 @@ export const logisticsProviderService = {
   },
 
   async verifyProvider(id: number): Promise<LogisticsProvider> {
-    const response = await apiFetch<LogisticsProviderDto>(`${PROVIDERS_ENDPOINT}/${id}/verify`, {
-      method: 'POST',
-    })
+    const response = await apiFetch<LogisticsProviderDto>(
+      `${PROVIDERS_ENDPOINT}/${id}/verify`,
+      {
+        method: 'POST',
+      }
+    )
     return fromLogisticsProviderDto(response)
   },
 }

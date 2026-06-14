@@ -1,5 +1,5 @@
-import { ShipmentTransactionService } from '../shipment'
 import { InventoryTransactionService as InventoryTransactionDomainService } from '../inventory'
+import { ShipmentTransactionService } from '../shipment'
 
 export type { InboundRecord, InboundTDO } from '../inventory'
 export type { ShipmentRecord, ShipmentStatus } from '../shipment'

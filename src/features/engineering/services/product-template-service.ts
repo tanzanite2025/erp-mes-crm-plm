@@ -1,11 +1,13 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
-import { toProductTemplateApiDTO, toProductTemplateContract } from '../adapters/product-template-api-adapter'
+import {
+  toProductTemplateApiDTO,
+  toProductTemplateContract,
+} from '../adapters/product-template-api-adapter'
 import { type ProductTemplateApiDTO } from '../contracts/product-template-api-dto'
-import { normalizeProductTemplateInput } from '../utils/product-code-normalization'
-
 import { type ProductTemplate } from '../data/schema'
 import { type SaveProductTemplateInput } from '../mutation-types'
+import { normalizeProductTemplateInput } from '../utils/product-code-normalization'
 
 export { type ProductTemplate }
 
@@ -18,12 +20,16 @@ function invalidateTemplateCache() {
 }
 
 export const productTemplateService = {
-  getTemplates: async (options?: { fresh?: boolean }): Promise<ProductTemplate[]> => {
+  getTemplates: async (options?: {
+    fresh?: boolean
+  }): Promise<ProductTemplate[]> => {
     if (options?.fresh) invalidateTemplateCache()
     if (templateCache) return templateCache
 
     if (!templateRequest) {
-      templateRequest = apiFetch<ProductTemplateApiDTO[]>('/engineering/templates?options=true')
+      templateRequest = apiFetch<ProductTemplateApiDTO[]>(
+        '/engineering/templates?options=true'
+      )
         .then((response) => {
           const templates = ensureArrayResponse<ProductTemplateApiDTO>(
             response,
@@ -40,12 +46,19 @@ export const productTemplateService = {
     return templateRequest
   },
 
-  createTemplate: async (template: SaveProductTemplateInput): Promise<ProductTemplate> => {
+  createTemplate: async (
+    template: SaveProductTemplateInput
+  ): Promise<ProductTemplate> => {
     const normalizedTemplate = normalizeProductTemplateInput(template)
-    const saved = await apiFetch<ProductTemplateApiDTO>('/engineering/templates', {
-      method: 'POST',
-      body: JSON.stringify(toProductTemplateApiDTO({ ...normalizedTemplate, id: '', version: 1 })),
-    })
+    const saved = await apiFetch<ProductTemplateApiDTO>(
+      '/engineering/templates',
+      {
+        method: 'POST',
+        body: JSON.stringify(
+          toProductTemplateApiDTO({ ...normalizedTemplate, id: '', version: 1 })
+        ),
+      }
+    )
     invalidateTemplateCache()
     return toProductTemplateContract(
       ensureObjectResponse<ProductTemplateApiDTO & Record<string, unknown>>(
@@ -55,17 +68,25 @@ export const productTemplateService = {
     )
   },
 
-  patchTemplate: async (current: ProductTemplate, next: SaveProductTemplateInput): Promise<ProductTemplate> => {
+  patchTemplate: async (
+    current: ProductTemplate,
+    next: SaveProductTemplateInput
+  ): Promise<ProductTemplate> => {
     const normalizedNext = normalizeProductTemplateInput(next)
-    const saved = await apiFetch<ProductTemplateApiDTO>('/engineering/templates', {
-      method: 'POST',
-      body: JSON.stringify(toProductTemplateApiDTO({
-        ...current,
-        ...normalizedNext,
-        id: current.id,
-        version: current.version,
-      })),
-    })
+    const saved = await apiFetch<ProductTemplateApiDTO>(
+      '/engineering/templates',
+      {
+        method: 'POST',
+        body: JSON.stringify(
+          toProductTemplateApiDTO({
+            ...current,
+            ...normalizedNext,
+            id: current.id,
+            version: current.version,
+          })
+        ),
+      }
+    )
     invalidateTemplateCache()
     return toProductTemplateContract(
       ensureObjectResponse<ProductTemplateApiDTO & Record<string, unknown>>(
@@ -75,11 +96,19 @@ export const productTemplateService = {
     )
   },
 
-  saveTemplate: async (template: SaveProductTemplateInput, current?: ProductTemplate): Promise<ProductTemplate> => {
+  saveTemplate: async (
+    template: SaveProductTemplateInput,
+    current?: ProductTemplate
+  ): Promise<ProductTemplate> => {
     if (current?.id) {
-      return productTemplateService.patchTemplate(current, normalizeProductTemplateInput(template))
+      return productTemplateService.patchTemplate(
+        current,
+        normalizeProductTemplateInput(template)
+      )
     }
-    return productTemplateService.createTemplate(normalizeProductTemplateInput(template))
+    return productTemplateService.createTemplate(
+      normalizeProductTemplateInput(template)
+    )
   },
 
   deleteTemplate: async (id: string): Promise<void> => {
@@ -91,10 +120,13 @@ export const productTemplateService = {
 
   sync: async (templates: ProductTemplate[]) => {
     const normalizedTemplates = templates.map(normalizeProductTemplateInput)
-    const result = await apiFetch<{ count: number }>('/engineering/templates/sync', {
-      method: 'POST',
-      body: JSON.stringify(normalizedTemplates),
-    })
+    const result = await apiFetch<{ count: number }>(
+      '/engineering/templates/sync',
+      {
+        method: 'POST',
+        body: JSON.stringify(normalizedTemplates),
+      }
+    )
     invalidateTemplateCache()
     return result
   },

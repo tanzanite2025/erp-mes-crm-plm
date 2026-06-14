@@ -16,13 +16,15 @@ export function createLedgerListPageApiDTOSchema<
   ItemSchema extends z.ZodTypeAny,
   SummarySchema extends z.ZodTypeAny,
 >(itemSchema: ItemSchema, summarySchema: SummarySchema) {
-  return z.object({
-    items: z.array(itemSchema),
-    total: z.number(),
-    page: z.number(),
-    pageSize: z.number(),
-    summary: summarySchema,
-  }).strict()
+  return z
+    .object({
+      items: z.array(itemSchema),
+      total: z.number(),
+      page: z.number(),
+      pageSize: z.number(),
+      summary: summarySchema,
+    })
+    .strict()
 }
 
 export function createLedgerDetailApiDTOSchema<
@@ -36,10 +38,16 @@ export function createSettlementMutationResponseApiDTOSchema<
   LedgerSchema extends z.ZodTypeAny,
   RecordSchema extends z.ZodTypeAny,
   AllocationSchema extends z.ZodTypeAny,
->(ledgerSchema: LedgerSchema, recordSchema: RecordSchema, allocationSchema: AllocationSchema) {
-  return z.object({
-    ledger: ledgerSchema,
-    record: recordSchema,
-    allocations: z.array(allocationSchema),
-  }).strict()
+>(
+  ledgerSchema: LedgerSchema,
+  recordSchema: RecordSchema,
+  allocationSchema: AllocationSchema
+) {
+  return z
+    .object({
+      ledger: ledgerSchema,
+      record: recordSchema,
+      allocations: z.array(allocationSchema),
+    })
+    .strict()
 }

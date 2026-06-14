@@ -1,7 +1,8 @@
 export const dashboard = {
   page: {
     title: 'Digital Factory Real-Time Operations Center',
-    description: 'End-to-end production monitoring, real-time KPI tracking, and delivery gap alerts',
+    description:
+      'End-to-end production monitoring, real-time KPI tracking, and delivery gap alerts',
     tabs: {
       overview: 'Overview',
       calendar: 'Production Calendar',
@@ -22,15 +23,18 @@ export const dashboard = {
     },
     segmentDialog: {
       title: 'Configure Visible {{levelName}}',
-      description: 'Choose which {{levelName}} entries should appear in the overview chart.',
+      description:
+        'Choose which {{levelName}} entries should appear in the overview chart.',
       emptyTitle: 'No {{levelName}} defined',
-      emptyDescription: 'Please go to "Production Config -> Line Management" and add {{levelName}} first.',
+      emptyDescription:
+        'Please go to "Production Config -> Line Management" and add {{levelName}} first.',
       cancel: 'Cancel',
       save: 'Save Configuration',
     },
     pendingConnection: {
       label: 'Pending Connection',
-      description: 'The real data pipeline for this metric is not connected yet',
+      description:
+        'The real data pipeline for this metric is not connected yet',
     },
     kpi: {
       wip: {
@@ -95,11 +99,13 @@ export const dashboard = {
     reports: {
       empty: {
         title: 'No Sales Orders',
-        description: 'No sales orders were found. Please create or sync orders in the Sales module first.',
+        description:
+          'No sales orders were found. Please create or sync orders in the Sales module first.',
       },
       error: {
         title: 'Failed to Load Delivery Progress',
-        description: 'The page remains available. Please troubleshoot based on the reason below and retry.',
+        description:
+          'The page remains available. Please troubleshoot based on the reason below and retry.',
         reasonPrefix: 'Reason: ',
         reasons: {
           unauthorized: 'Session expired. Please sign in again.',
@@ -121,7 +127,8 @@ export const dashboard = {
     },
     calendar: {
       title: 'Manufacturing Execution Calendar',
-      description: 'Multi-dimensional tracking of output, quality, and performance',
+      description:
+        'Multi-dimensional tracking of output, quality, and performance',
       error: {
         loadStats: 'Failed to load production stats.',
         loadCalendar: 'Error loading production calendar data.',

@@ -1,6 +1,10 @@
 import { useMemo } from 'react'
-import { type Supplier, type SupplierFormValues, type SupplierStatus } from '../data/schema'
 import type { TranslationKey } from '@/locales'
+import {
+  type Supplier,
+  type SupplierFormValues,
+  type SupplierStatus,
+} from '../data/schema'
 
 interface SupplierActionViewModelOptions {
   supplier?: Supplier | null
@@ -31,7 +35,10 @@ const DEFAULT_FORM_DATA: SupplierFormValues = {
   rating: 5,
 }
 
-export function useSupplierActionViewModel({ supplier, t }: SupplierActionViewModelOptions) {
+export function useSupplierActionViewModel({
+  supplier,
+  t,
+}: SupplierActionViewModelOptions) {
   const initialFormData = useMemo<SupplierFormValues>(
     () =>
       supplier
@@ -57,10 +64,22 @@ export function useSupplierActionViewModel({ supplier, t }: SupplierActionViewMo
   )
   const categoryOptions = useMemo<SupplierOption[]>(
     () => [
-      { value: '原材料', label: t('purchase.suppliers.categories.rawMaterial') },
-      { value: '标准件', label: t('purchase.suppliers.categories.standardPart') },
-      { value: '外协加工', label: t('purchase.suppliers.categories.outsourcing') },
-      { value: '设备工装', label: t('purchase.suppliers.categories.equipmentTooling') },
+      {
+        value: '原材料',
+        label: t('purchase.suppliers.categories.rawMaterial'),
+      },
+      {
+        value: '标准件',
+        label: t('purchase.suppliers.categories.standardPart'),
+      },
+      {
+        value: '外协加工',
+        label: t('purchase.suppliers.categories.outsourcing'),
+      },
+      {
+        value: '设备工装',
+        label: t('purchase.suppliers.categories.equipmentTooling'),
+      },
     ],
     [t]
   )

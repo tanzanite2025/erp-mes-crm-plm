@@ -1,7 +1,5 @@
 import { z } from 'zod'
-import {
-  type CutSizeUnit,
-} from '@/features/raw-materials/cut-size-library/data/cut-size-library-schema'
+import { type CutSizeUnit } from '@/features/raw-materials/cut-size-library/data/cut-size-library-schema'
 import {
   deriveCutSizeAreaM2,
   deriveCutSizeWeightG,
@@ -19,15 +17,18 @@ export const cuttingPlanLineConstraintProfileSchema = z.object({
   noteKeywords: z.array(z.string()).default([]),
 })
 
-export type CuttingPlanLineConstraintProfile = z.infer<typeof cuttingPlanLineConstraintProfileSchema>
+export type CuttingPlanLineConstraintProfile = z.infer<
+  typeof cuttingPlanLineConstraintProfileSchema
+>
 
-export const EMPTY_CUTTING_PLAN_LINE_CONSTRAINT_PROFILE: CuttingPlanLineConstraintProfile = {
-  rollGroupKey: '',
-  orderSequence: '',
-  yarnDirectionMode: '',
-  processTags: [],
-  noteKeywords: [],
-}
+export const EMPTY_CUTTING_PLAN_LINE_CONSTRAINT_PROFILE: CuttingPlanLineConstraintProfile =
+  {
+    rollGroupKey: '',
+    orderSequence: '',
+    yarnDirectionMode: '',
+    processTags: [],
+    noteKeywords: [],
+  }
 
 export const cuttingPlanLineSchema = z.object({
   id: z.string(),
@@ -77,7 +78,10 @@ export const cuttingPlanSchema = z.object({
 
 export type CuttingPlan = z.infer<typeof cuttingPlanSchema>
 
-export const cuttingPlanInputSchema = cuttingPlanSchema.omit({ id: true, createdAt: true })
+export const cuttingPlanInputSchema = cuttingPlanSchema.omit({
+  id: true,
+  createdAt: true,
+})
 export type CuttingPlanInput = z.infer<typeof cuttingPlanInputSchema>
 
 export type CuttingPlanLineAuthorityIssue = {
@@ -125,9 +129,7 @@ export const EMPTY_CUTTING_PLAN_INPUT: CuttingPlanInput = {
 
 function normalizeStringArray(value: unknown): string[] {
   if (Array.isArray(value)) {
-    return value
-      .map((item) => String(item || '').trim())
-      .filter(Boolean)
+    return value.map((item) => String(item || '').trim()).filter(Boolean)
   }
   if (typeof value === 'string') {
     return value
@@ -138,7 +140,9 @@ function normalizeStringArray(value: unknown): string[] {
   return []
 }
 
-export function createEmptyCuttingPlanLine(sequenceNo: number): CuttingPlanLine {
+export function createEmptyCuttingPlanLine(
+  sequenceNo: number
+): CuttingPlanLine {
   return {
     id: `cutting-line-${Date.now()}-${sequenceNo}`,
     sequenceNo,
@@ -188,7 +192,9 @@ function buildCuttingPlanLineSnapshotFromCutSizeUnit(unit: CutSizeUnit) {
   }
 }
 
-function clearCuttingPlanLineAuthoritySnapshot(line: CuttingPlanLine): CuttingPlanLine {
+function clearCuttingPlanLineAuthoritySnapshot(
+  line: CuttingPlanLine
+): CuttingPlanLine {
   return {
     ...line,
     cutSizeId: trimLineValue(line.cutSizeId),
@@ -203,7 +209,7 @@ function clearCuttingPlanLineAuthoritySnapshot(line: CuttingPlanLine): CuttingPl
 
 export function syncCuttingPlanLineWithCutSizeUnit(
   line: CuttingPlanLine,
-  cutSizeUnit?: CutSizeUnit | null,
+  cutSizeUnit?: CutSizeUnit | null
 ): CuttingPlanLine {
   if (!cutSizeUnit || !trimLineValue(line.cutSizeId)) {
     return clearCuttingPlanLineAuthoritySnapshot(line)
@@ -217,7 +223,7 @@ export function syncCuttingPlanLineWithCutSizeUnit(
 
 export function collectCuttingPlanLineAuthorityIssues(
   lines: Array<CuttingPlanLine | CuttingPlanInput['lines'][number]>,
-  cutSizeUnits: CutSizeUnit[],
+  cutSizeUnits: CutSizeUnit[]
 ): CuttingPlanLineAuthorityIssue[] {
   const issues: CuttingPlanLineAuthorityIssue[] = []
 
@@ -240,7 +246,7 @@ export function collectCuttingPlanLineAuthorityIssues(
 
 export function collectCuttingPlanPreparationIssues(
   plan: CuttingPlanInput | CuttingPlan,
-  cutSizeUnits: CutSizeUnit[],
+  cutSizeUnits: CutSizeUnit[]
 ): CuttingPlanPreparationIssue[] {
   const issues: CuttingPlanPreparationIssue[] = []
 
@@ -265,13 +271,20 @@ export function collectCuttingPlanPreparationIssues(
     issues.push({ kind: 'name_generate_failed' })
   }
 
-  issues.push(...collectCuttingPlanLineAuthorityIssues(plan.lines || [], cutSizeUnits))
+  issues.push(
+    ...collectCuttingPlanLineAuthorityIssues(plan.lines || [], cutSizeUnits)
+  )
 
   return issues
 }
 
-export function normalizeCuttingPlanLine(line: unknown, index: number): CuttingPlanLine {
-  const raw = (typeof line === 'object' && line ? line : {}) as Partial<CuttingPlanLine>
+export function normalizeCuttingPlanLine(
+  line: unknown,
+  index: number
+): CuttingPlanLine {
+  const raw = (
+    typeof line === 'object' && line ? line : {}
+  ) as Partial<CuttingPlanLine>
 
   return cuttingPlanLineSchema.parse({
     id: raw.id || `cutting-line-${Date.now()}-${index + 1}`,
@@ -302,13 +315,17 @@ export function normalizeCuttingPlanLine(line: unknown, index: number): CuttingP
 }
 
 export function normalizeCuttingPlan(plan: unknown): CuttingPlan {
-  const raw = (typeof plan === 'object' && plan ? plan : {}) as Partial<CuttingPlan>
+  const raw = (
+    typeof plan === 'object' && plan ? plan : {}
+  ) as Partial<CuttingPlan>
 
   return cuttingPlanSchema.parse({
     ...EMPTY_CUTTING_PLAN_INPUT,
     ...raw,
     id: raw.id || '',
-    lines: Array.isArray(raw.lines) ? raw.lines.map(normalizeCuttingPlanLine) : [],
+    lines: Array.isArray(raw.lines)
+      ? raw.lines.map(normalizeCuttingPlanLine)
+      : [],
   })
 }
 
@@ -323,7 +340,10 @@ export function buildCuttingPlanName(params: {
   return `${model}-${holeCount}孔裁纱单`
 }
 
-export function buildCuttingPlanInput(plan: CuttingPlanInput | CuttingPlan, cutSizeUnits: CutSizeUnit[]): CuttingPlanInput {
+export function buildCuttingPlanInput(
+  plan: CuttingPlanInput | CuttingPlan,
+  cutSizeUnits: CutSizeUnit[]
+): CuttingPlanInput {
   const generatedName = buildCuttingPlanName({
     productName: plan.productName,
     productCode: plan.productCode,
@@ -350,7 +370,7 @@ export function buildCuttingPlanInput(plan: CuttingPlanInput | CuttingPlan, cutS
     lines: (plan.lines || []).map((line, index) => {
       const syncedLine = syncCuttingPlanLineWithCutSizeUnit(
         line,
-        cutSizeUnits.find((item) => item.id === trimLineValue(line.cutSizeId)),
+        cutSizeUnits.find((item) => item.id === trimLineValue(line.cutSizeId))
       )
 
       return {
@@ -371,11 +391,18 @@ export function buildCuttingPlanInput(plan: CuttingPlanInput | CuttingPlan, cutS
         areaM2: syncedLine.areaM2?.trim() || '',
         operationNote: syncedLine.operationNote?.trim() || '',
         constraintProfile: {
-          rollGroupKey: syncedLine.constraintProfile?.rollGroupKey?.trim() || '',
-          orderSequence: syncedLine.constraintProfile?.orderSequence?.trim() || '',
-          yarnDirectionMode: syncedLine.constraintProfile?.yarnDirectionMode?.trim() || '',
-          processTags: normalizeStringArray(syncedLine.constraintProfile?.processTags),
-          noteKeywords: normalizeStringArray(syncedLine.constraintProfile?.noteKeywords),
+          rollGroupKey:
+            syncedLine.constraintProfile?.rollGroupKey?.trim() || '',
+          orderSequence:
+            syncedLine.constraintProfile?.orderSequence?.trim() || '',
+          yarnDirectionMode:
+            syncedLine.constraintProfile?.yarnDirectionMode?.trim() || '',
+          processTags: normalizeStringArray(
+            syncedLine.constraintProfile?.processTags
+          ),
+          noteKeywords: normalizeStringArray(
+            syncedLine.constraintProfile?.noteKeywords
+          ),
         },
         manualGroupBreakBefore: Boolean(syncedLine.manualGroupBreakBefore),
       }
@@ -385,7 +412,7 @@ export function buildCuttingPlanInput(plan: CuttingPlanInput | CuttingPlan, cutS
 
 export function prepareCuttingPlanForPersistence(
   plan: CuttingPlanInput | CuttingPlan,
-  cutSizeUnits: CutSizeUnit[],
+  cutSizeUnits: CutSizeUnit[]
 ): CuttingPlanInput {
   const issues = collectCuttingPlanPreparationIssues(plan, cutSizeUnits)
   if (issues.length > 0) {

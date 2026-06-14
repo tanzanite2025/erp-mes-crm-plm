@@ -67,7 +67,6 @@ export function TeamSwitcher({ teams }: TeamSwitcherProps) {
                   <team.logo className='size-4 shrink-0' />
                 </div>
                 {team.name}
-
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />

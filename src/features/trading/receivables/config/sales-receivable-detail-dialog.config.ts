@@ -2,7 +2,10 @@ import type { SettlementLedgerDetailDialogConfig } from '../../settlement-ledger
 import type { ReceivableRecord } from '../adapters/receivable-api-adapter'
 import type { ReceivableDetailApiDTO } from '../contracts/receivable-api-dto'
 
-export const salesReceivableDetailDialogConfig: SettlementLedgerDetailDialogConfig<ReceivableDetailApiDTO, ReceivableRecord> = {
+export const salesReceivableDetailDialogConfig: SettlementLedgerDetailDialogConfig<
+  ReceivableDetailApiDTO,
+  ReceivableRecord
+> = {
   dialogTitle: '应收详情',
   ledgerKindLabel: '应收',
   actionLabel: '收款',
@@ -17,4 +20,7 @@ export const salesReceivableDetailDialogConfig: SettlementLedgerDetailDialogConf
   getDetailPartnerName: (item: ReceivableDetailApiDTO) => item.customerName,
   getLocalLedgerPartnerName: (item: ReceivableRecord) => item.customerName,
   getDetailSummaryAmount: (item: ReceivableDetailApiDTO) => item.orderAmount,
-} satisfies SettlementLedgerDetailDialogConfig<ReceivableDetailApiDTO, ReceivableRecord>
+} satisfies SettlementLedgerDetailDialogConfig<
+  ReceivableDetailApiDTO,
+  ReceivableRecord
+>

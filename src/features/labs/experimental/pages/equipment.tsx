@@ -1,37 +1,51 @@
 import { useEffect, useState } from 'react'
 import { Microscope, Settings2 } from 'lucide-react'
+import { isForbiddenError } from '@/lib/error-status'
+import { useLanguage } from '@/context/language-provider'
+import { Button } from '@/components/ui/button'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
-import { Button } from '@/components/ui/button'
-import { useLanguage } from '@/context/language-provider'
 import { CategoryActionDialog } from '../components/category-action-dialog'
 import { EquipmentActionDialog } from '../components/equipment-action-dialog'
 import { EquipmentCategoryNav } from '../components/equipment-category-nav'
 import { EquipmentHierarchy } from '../components/equipment-hierarchy'
 import { type EquipmentCategory, type Equipment } from '../data/schema'
-import { useLabExperimentalMutations, useLabExperimentalCategories } from '../hooks/use-lab-experimental'
-import { isForbiddenError } from '@/lib/error-status'
+import {
+  useLabExperimentalMutations,
+  useLabExperimentalCategories,
+} from '../hooks/use-lab-experimental'
 
 export function LabEquipmentPage() {
   const { t } = useLanguage()
-  const { data: categories = [], isLoading, error } = useLabExperimentalCategories()
-  const { 
-    saveCategoryMutation, 
-    patchCategoryMutation, 
+  const {
+    data: categories = [],
+    isLoading,
+    error,
+  } = useLabExperimentalCategories()
+  const {
+    saveCategoryMutation,
+    patchCategoryMutation,
     deleteCategoryMutation,
     saveEquipmentMutation,
     patchEquipmentMutation,
-    deleteEquipmentMutation
+    deleteEquipmentMutation,
   } = useLabExperimentalMutations()
 
-  const [activeCategoryId, setActiveCategoryId] = useState<string | undefined>(undefined)
+  const [activeCategoryId, setActiveCategoryId] = useState<string | undefined>(
+    undefined
+  )
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [editingCategory, setEditingCategory] = useState<EquipmentCategory | null>(null)
-  const [pendingParentId, setPendingParentId] = useState<string | undefined>(undefined)
+  const [editingCategory, setEditingCategory] =
+    useState<EquipmentCategory | null>(null)
+  const [pendingParentId, setPendingParentId] = useState<string | undefined>(
+    undefined
+  )
 
   // 设备相关状态
   const [isEquipDialogOpen, setIsEquipDialogOpen] = useState(false)
-  const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null)
+  const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(
+    null
+  )
 
   useEffect(() => {
     if (!activeCategoryId && categories.length > 0) {
@@ -48,12 +62,22 @@ export function LabEquipmentPage() {
     }
   }, [categories, activeCategoryId])
 
-  const handleSaveCategory = async ({ data, isPatch, delta, version }: { data: EquipmentCategory; isPatch: boolean; delta?: any; version?: number }) => {
+  const handleSaveCategory = async ({
+    data,
+    isPatch,
+    delta,
+    version,
+  }: {
+    data: EquipmentCategory
+    isPatch: boolean
+    delta?: any
+    version?: number
+  }) => {
     if (isPatch && delta && version !== undefined) {
       patchCategoryMutation.mutate({
         id: data.id,
         delta,
-        version
+        version,
       })
     } else {
       saveCategoryMutation.mutate({
@@ -71,12 +95,22 @@ export function LabEquipmentPage() {
     }
   }
 
-  const handleSaveEquipment = async ({ data, isPatch, delta, version }: { data: Equipment; isPatch: boolean; delta?: any; version?: number }) => {
+  const handleSaveEquipment = async ({
+    data,
+    isPatch,
+    delta,
+    version,
+  }: {
+    data: Equipment
+    isPatch: boolean
+    delta?: any
+    version?: number
+  }) => {
     if (isPatch && delta && version !== undefined) {
       patchEquipmentMutation.mutate({
         id: data.id,
         delta,
-        version
+        version,
       })
     } else {
       saveEquipmentMutation.mutate(data)
@@ -90,7 +124,7 @@ export function LabEquipmentPage() {
 
   if (isLoading && categories.length === 0) {
     return (
-      <div className='flex flex-col gap-8 animate-pulse'>
+      <div className='flex animate-pulse flex-col gap-8'>
         <div className='h-32 rounded-[32px] bg-muted/20' />
         <div className='h-20 rounded-2xl bg-muted/10' />
         <div className='h-[400px] rounded-[32px] bg-muted/5' />
@@ -103,7 +137,7 @@ export function LabEquipmentPage() {
   }
 
   return (
-    <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+    <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
       <IndustrialHeader
         title={t('labExperimental.equipment.title')}
         description={t('labExperimental.equipment.description')}
@@ -125,8 +159,8 @@ export function LabEquipmentPage() {
         </div>
 
         {activeCategoryId ? (
-          <div className='relative rounded-[32px] border border-dashed border-muted/50 bg-muted/5 overflow-hidden shadow-inner p-8'>
-            <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent pointer-events-none' />
+          <div className='relative overflow-hidden rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-8 shadow-inner'>
+            <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 via-transparent' />
             <EquipmentHierarchy
               categories={categories}
               parentCategoryId={activeCategoryId}
@@ -152,10 +186,10 @@ export function LabEquipmentPage() {
             />
           </div>
         ) : (
-          <div className='rounded-[40px] border-2 border-dashed border-muted-foreground/10 h-[400px] flex flex-col items-center justify-center text-muted-foreground/20 bg-muted/5 group overflow-hidden relative'>
-            <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent pointer-events-none' />
-            <Settings2 className='size-16 mb-6 opacity-20 group-hover:rotate-90 transition-transform duration-1000' />
-            <p className='text-[11px] font-black uppercase tracking-[0.4em] italic mb-6'>
+          <div className='group relative flex h-[400px] flex-col items-center justify-center overflow-hidden rounded-[40px] border-2 border-dashed border-muted-foreground/10 bg-muted/5 text-muted-foreground/20'>
+            <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 via-transparent' />
+            <Settings2 className='mb-6 size-16 opacity-20 transition-transform duration-1000 group-hover:rotate-90' />
+            <p className='mb-6 text-[11px] font-black tracking-[0.4em] uppercase italic'>
               {t('labExperimental.equipment.noAssetVectors')}
             </p>
             <Button
@@ -165,7 +199,7 @@ export function LabEquipmentPage() {
                 setPendingParentId(undefined)
                 setIsDialogOpen(true)
               }}
-              className='h-12 rounded-full border-dashed border-2 font-black text-[10px] uppercase tracking-widest px-10 hover:bg-primary hover:text-white hover:border-primary transition-all active:scale-95'
+              className='h-12 rounded-full border-2 border-dashed px-10 text-[10px] font-black tracking-widest uppercase transition-all hover:border-primary hover:bg-primary hover:text-white active:scale-95'
             >
               {t('labExperimental.equipment.initializeFirstDomain')}
             </Button>
@@ -180,7 +214,9 @@ export function LabEquipmentPage() {
         parentId={pendingParentId}
         onSave={handleSaveCategory}
         onDelete={handleDeleteCategory}
-        isLoading={saveCategoryMutation.isPending || patchCategoryMutation.isPending}
+        isLoading={
+          saveCategoryMutation.isPending || patchCategoryMutation.isPending
+        }
       />
 
       <EquipmentActionDialog
@@ -190,7 +226,9 @@ export function LabEquipmentPage() {
         categoryId={activeCategoryId}
         onSave={handleSaveEquipment}
         onDelete={handleDeleteEquipment}
-        isLoading={saveEquipmentMutation.isPending || patchEquipmentMutation.isPending}
+        isLoading={
+          saveEquipmentMutation.isPending || patchEquipmentMutation.isPending
+        }
       />
     </div>
   )

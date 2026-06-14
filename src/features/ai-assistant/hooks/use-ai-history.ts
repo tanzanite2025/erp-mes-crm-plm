@@ -16,7 +16,9 @@ export function useAiHistory() {
   // 1. 初始化时恢复历史
   useEffect(() => {
     async function restore() {
-      const history = await StorageService.getItem<ChatMessage[]>(AI_HISTORY_STORAGE_KEY)
+      const history = await StorageService.getItem<ChatMessage[]>(
+        AI_HISTORY_STORAGE_KEY
+      )
       if (history && Array.isArray(history)) {
         setMessages(history)
       }
@@ -33,7 +35,7 @@ export function useAiHistory() {
   }, [messages, isLoading])
 
   const appendMessage = useCallback((msg: ChatMessage) => {
-    setMessages(prev => {
+    setMessages((prev) => {
       const next = [...prev, msg]
       // 自动滑动窗口：保留最近的 MAX_MESSAGES 条
       return next.length > MAX_MESSAGES ? next.slice(-MAX_MESSAGES) : next
@@ -41,7 +43,7 @@ export function useAiHistory() {
   }, [])
 
   const updateLastAssistantMessage = useCallback((chunk: string) => {
-    setMessages(prev => {
+    setMessages((prev) => {
       const last = prev[prev.length - 1]
       if (last && last.role === 'assistant') {
         const nextContent = last.content + chunk
@@ -50,9 +52,9 @@ export function useAiHistory() {
       return prev
     })
   }, [])
-  
+
   const setAssistantPlaceholder = useCallback(() => {
-    setMessages(prev => [...prev, { role: 'assistant', content: '' }])
+    setMessages((prev) => [...prev, { role: 'assistant', content: '' }])
   }, [])
 
   const clearHistory = useCallback(async () => {
@@ -67,6 +69,6 @@ export function useAiHistory() {
     updateLastAssistantMessage,
     setAssistantPlaceholder,
     clearHistory,
-    isLoading
+    isLoading,
   }
 }

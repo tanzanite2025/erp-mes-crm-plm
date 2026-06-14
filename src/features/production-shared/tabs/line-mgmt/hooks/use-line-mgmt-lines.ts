@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { useLanguage } from '@/context/language-provider'
 import { type DeltaSet } from '@/lib/delta/types'
 import { failLoudly } from '@/lib/safe-catch'
+import { useLanguage } from '@/context/language-provider'
 import type { ProductionLine } from '../../../data/production-line'
 import { productionResourceQueryKeys } from '../../../data/production-resource-query-keys'
 import { useProductionLinesQuery } from '../../../hooks/use-production-resources'
@@ -28,19 +28,33 @@ function isTopologyAuthForbidden(error: unknown): boolean {
     return false
   }
 
-  return /topology authorization code is invalid/i.test(error.message) || /^UNAUTHORIZED$/i.test(error.message)
+  return (
+    /topology authorization code is invalid/i.test(error.message) ||
+    /^UNAUTHORIZED$/i.test(error.message)
+  )
 }
 
-function isComplexLineDeltaEntry(path: string, value: DeltaSet[string]): boolean {
-  return path.includes('.') || isStructuredValue(value.o) || isStructuredValue(value.n)
+function isComplexLineDeltaEntry(
+  path: string,
+  value: DeltaSet[string]
+): boolean {
+  return (
+    path.includes('.') ||
+    isStructuredValue(value.o) ||
+    isStructuredValue(value.n)
+  )
 }
 
 function canApplyOptimisticDelta(delta: DeltaSet): boolean {
-  return Object.entries(delta).every(([path, value]) => !isComplexLineDeltaEntry(path, value))
+  return Object.entries(delta).every(
+    ([path, value]) => !isComplexLineDeltaEntry(path, value)
+  )
 }
 
 function shouldInvalidateAfterUpdate(delta: DeltaSet): boolean {
-  return Object.entries(delta).some(([path, value]) => isComplexLineDeltaEntry(path, value))
+  return Object.entries(delta).some(([path, value]) =>
+    isComplexLineDeltaEntry(path, value)
+  )
 }
 
 function createOptimisticLine(line: ProductionLine): ProductionLine {
@@ -56,7 +70,10 @@ function createOptimisticLine(line: ProductionLine): ProductionLine {
   }
 }
 
-function applyOptimisticDelta(line: ProductionLine, delta: DeltaSet): ProductionLine {
+function applyOptimisticDelta(
+  line: ProductionLine,
+  delta: DeltaSet
+): ProductionLine {
   const updated: ProductionLine & Record<string, unknown> = {
     ...line,
     updatedAt: new Date().toISOString(),
@@ -75,7 +92,9 @@ function applyLineOverlays(
   pendingUpdates: PendingUpdateEntry[],
   pendingDeletes: string[]
 ): ProductionLine[] {
-  const pendingUpdateMap = new Map(pendingUpdates.map((entry) => [entry.id, entry.delta]))
+  const pendingUpdateMap = new Map(
+    pendingUpdates.map((entry) => [entry.id, entry.delta])
+  )
 
   const confirmedLines = queryLines
     .filter((line) => !pendingDeletes.includes(line.id))
@@ -100,15 +119,30 @@ export function useLineMgmtLines() {
   const [pendingDeletes, setPendingDeletes] = useState<string[]>([])
 
   const lines = useMemo(
-    () => applyLineOverlays(queryLines ?? [], pendingCreates, pendingUpdates, pendingDeletes),
+    () =>
+      applyLineOverlays(
+        queryLines ?? [],
+        pendingCreates,
+        pendingUpdates,
+        pendingDeletes
+      ),
     [queryLines, pendingCreates, pendingUpdates, pendingDeletes]
   )
 
-  const setConfirmedLines = (updater: (current: ProductionLine[]) => ProductionLine[]) => {
-    queryClient.setQueryData<ProductionLine[]>(productionResourceQueryKeys.lines(), (current) => updater(current ?? []))
+  const setConfirmedLines = (
+    updater: (current: ProductionLine[]) => ProductionLine[]
+  ) => {
+    queryClient.setQueryData<ProductionLine[]>(
+      productionResourceQueryKeys.lines(),
+      (current) => updater(current ?? [])
+    )
   }
 
-  const handleUpdateLine = async (payload: LineMutationPayload, authCode?: string, rethrowError = false) => {
+  const handleUpdateLine = async (
+    payload: LineMutationPayload,
+    authCode?: string,
+    rethrowError = false
+  ) => {
     const isUpdate = payload.type === 'UPDATE'
     let optimisticTempId: string | null = null
     let shouldInvalidateOnSuccess = false
@@ -117,7 +151,10 @@ export function useLineMgmtLines() {
       const { id, delta } = payload
       shouldInvalidateOnSuccess = shouldInvalidateAfterUpdate(delta)
       if (canApplyOptimisticDelta(delta)) {
-        setPendingUpdates((prev) => [...prev.filter((entry) => entry.id !== id), { id, delta }])
+        setPendingUpdates((prev) => [
+          ...prev.filter((entry) => entry.id !== id),
+          { id, delta },
+        ])
       }
     } else {
       const { data: line } = payload
@@ -129,31 +166,63 @@ export function useLineMgmtLines() {
     try {
       if (isUpdate) {
         const { id, delta, version } = payload
-        const saved = await productionLinesService.patchLine(id, delta, version, authCode)
-        setConfirmedLines((current) => current.map((line) => (line.id === id ? saved : line)))
+        const saved = await productionLinesService.patchLine(
+          id,
+          delta,
+          version,
+          authCode
+        )
+        setConfirmedLines((current) =>
+          current.map((line) => (line.id === id ? saved : line))
+        )
         setPendingUpdates((prev) => prev.filter((entry) => entry.id !== id))
       } else {
         const { data: line } = payload
         const lineToSave = { ...line, id: '' }
-        const saved = await productionLinesService.saveLine(lineToSave, authCode)
-        setPendingCreates((prev) => prev.filter((currentLine) => currentLine.id !== optimisticTempId))
+        const saved = await productionLinesService.saveLine(
+          lineToSave,
+          authCode
+        )
+        setPendingCreates((prev) =>
+          prev.filter((currentLine) => currentLine.id !== optimisticTempId)
+        )
         setConfirmedLines((current) => [saved, ...current])
       }
 
       // Complex nested payloads may be normalized further on the server, so they still revalidate after cache patch.
-      productionResourceSync.emitLinesUpdated({ invalidate: shouldInvalidateOnSuccess })
-      toast.success(t(isUpdate ? 'orgPersonnel.lineMgmt.list.updateSuccess' : 'orgPersonnel.lineMgmt.list.addSuccess'))
+      productionResourceSync.emitLinesUpdated({
+        invalidate: shouldInvalidateOnSuccess,
+      })
+      toast.success(
+        t(
+          isUpdate
+            ? 'orgPersonnel.lineMgmt.list.updateSuccess'
+            : 'orgPersonnel.lineMgmt.list.addSuccess'
+        )
+      )
     } catch (error: unknown) {
       if (isUpdate) {
         const { id } = payload
         setPendingUpdates((prev) => prev.filter((entry) => entry.id !== id))
       } else {
-        setPendingCreates((prev) => prev.filter((currentLine) => currentLine.id !== optimisticTempId))
+        setPendingCreates((prev) =>
+          prev.filter((currentLine) => currentLine.id !== optimisticTempId)
+        )
       }
 
-      if (error && typeof error === 'object' && 'status' in error && Number(error.status) === 409) {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'status' in error &&
+        Number(error.status) === 409
+      ) {
         toast.error(t('orgPersonnel.lineMgmt.toasts.saveConflict'))
-      } else if (error && typeof error === 'object' && 'status' in error && Number(error.status) === 403) {
+      } else if (
+        error &&
+        typeof error === 'object' &&
+        'status' in error &&
+        Number(error.status) === 403
+      ) {
         toast.error(
           isTopologyAuthForbidden(error)
             ? t('orgPersonnel.lineMgmt.toasts.saveForbiddenAuthCode')
@@ -188,7 +257,9 @@ export function useLineMgmtLines() {
     error,
     isLoading,
     lines,
-    updateLine: (payload: LineMutationPayload, authCode?: string) => handleUpdateLine(payload, authCode),
-    updateLineStrict: (payload: LineMutationPayload, authCode?: string) => handleUpdateLine(payload, authCode, true),
+    updateLine: (payload: LineMutationPayload, authCode?: string) =>
+      handleUpdateLine(payload, authCode),
+    updateLineStrict: (payload: LineMutationPayload, authCode?: string) =>
+      handleUpdateLine(payload, authCode, true),
   }
 }

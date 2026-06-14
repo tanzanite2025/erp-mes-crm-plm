@@ -1,9 +1,9 @@
 import { useCallback, useMemo } from 'react'
 import { type Unit } from '@/features/basic-settings/services/unit-service'
 import { useActiveHoleCodeSource } from '@/features/code-center/hooks/use-hole-code-source'
-import { type ProductDisplayProjectionV2 } from '@/features/engineering/display/product-display-v2'
 import { type ProductAppearance } from '@/features/engineering/data/product-appearance'
 import { type Product } from '@/features/engineering/data/schema'
+import { type ProductDisplayProjectionV2 } from '@/features/engineering/display/product-display-v2'
 import { type SalesOrderLine } from '../data/schema'
 import { buildSalesOrderLineProductFields } from '../utils/sales-order-line-product-fields'
 
@@ -31,7 +31,9 @@ interface LinesEditorViewModel {
   productById: Map<string, Product>
   productOptions: { id: string; label: string }[]
   activeUnitOptions: { id: string; code: string }[]
-  getHoleCountOptions: (currentValue?: number) => { value: string; label: string }[]
+  getHoleCountOptions: (
+    currentValue?: number
+  ) => { value: string; label: string }[]
   handleAppearanceChange: (index: number, appearanceId: string) => void
   handleProductChange: (index: number, productId: string) => void
 }
@@ -126,7 +128,10 @@ export function useSalesOrderLinesEditorViewModel({
         return
       }
 
-      const productFields = buildSalesOrderLineProductFields(product, displayProjection)
+      const productFields = buildSalesOrderLineProductFields(
+        product,
+        displayProjection
+      )
 
       onLineChange(index, 'productId', productId, {
         ...productFields,
@@ -154,7 +159,8 @@ export function useSalesOrderLinesEditorViewModel({
         appearanceNameSnapshot: appearance.name,
         appearanceBarcodeCodeSnapshot: appearance.barcodeCode,
         appearanceDescriptionSnapshot: appearance.description,
-        appearanceImageUrlSnapshot: appearance.imageThumbnailUrl || appearance.imageUrl || '',
+        appearanceImageUrlSnapshot:
+          appearance.imageThumbnailUrl || appearance.imageUrl || '',
       })
     },
     [appearanceById, onLineChange]

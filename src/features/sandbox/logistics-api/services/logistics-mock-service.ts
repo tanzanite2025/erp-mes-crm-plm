@@ -3,7 +3,11 @@ import {
   toLogisticsProviderDraft,
   toLogisticsProviderPayload,
 } from '@/features/sandbox/logistics-api/adapters/logistics-provider-adapter'
-import { type LogisticsProvider, type LogisticsProviderDraft, type LogisticsProviderDto } from '../types'
+import {
+  type LogisticsProvider,
+  type LogisticsProviderDraft,
+  type LogisticsProviderDto,
+} from '../types'
 
 const STORAGE_KEY = 'xdfc_logistics_sandbox_data'
 
@@ -15,7 +19,11 @@ const STORAGE_KEY = 'xdfc_logistics_sandbox_data'
 export const logisticsMockService = {
   getProviders: (): LogisticsProvider[] => {
     const data = localStorage.getItem(STORAGE_KEY)
-    return data ? fromLogisticsProviderDtoArray(JSON.parse(data) as LogisticsProviderDto[]) : []
+    return data
+      ? fromLogisticsProviderDtoArray(
+          JSON.parse(data) as LogisticsProviderDto[]
+        )
+      : []
   },
 
   saveProvider: (provider: LogisticsProviderDraft): LogisticsProvider => {
@@ -29,20 +37,20 @@ export const logisticsMockService = {
       createdAt: provider.createdAt || now,
     })
 
-    const index = providers.findIndex(p => p.id === newProvider.id)
+    const index = providers.findIndex((p) => p.id === newProvider.id)
     if (index > -1) {
       providers[index] = newProvider
     } else {
       providers.unshift(newProvider)
     }
-    
+
     localStorage.setItem(STORAGE_KEY, JSON.stringify(providers))
     return newProvider
   },
 
   deleteProvider: (id: number): void => {
     const providers = logisticsMockService.getProviders()
-    const filtered = providers.filter(p => p.id !== id)
+    const filtered = providers.filter((p) => p.id !== id)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered))
-  }
+  },
 }

@@ -1,13 +1,12 @@
 import type { CuttingIssuanceOrderLine, CuttingIssuanceTemplate } from './types'
 
 function normalizeModelKey(value: string | undefined): string {
-  return (value || '')
-    .trim()
-    .replace(/\s+/g, '')
-    .toUpperCase()
+  return (value || '').trim().replace(/\s+/g, '').toUpperCase()
 }
 
-function buildCandidateModelKeys(values: Array<string | undefined>): Set<string> {
+function buildCandidateModelKeys(
+  values: Array<string | undefined>
+): Set<string> {
   const keys = new Set<string>()
   values.forEach((value) => {
     const normalized = normalizeModelKey(value)
@@ -34,14 +33,20 @@ function parseTemplateTimestamp(raw: string): number {
 
 export function isTemplateCompatible(
   line: CuttingIssuanceOrderLine | undefined,
-  template: CuttingIssuanceTemplate,
+  template: CuttingIssuanceTemplate
 ): boolean {
   if (!line) {
     return false
   }
 
-  const lineKeys = buildCandidateModelKeys([line.productModel, line.productCode])
-  const templateKeys = buildCandidateModelKeys([template.productModel, template.productCode])
+  const lineKeys = buildCandidateModelKeys([
+    line.productModel,
+    line.productCode,
+  ])
+  const templateKeys = buildCandidateModelKeys([
+    template.productModel,
+    template.productCode,
+  ])
 
   if (!intersectsModelKeys(lineKeys, templateKeys)) {
     return false
@@ -56,18 +61,20 @@ export function isTemplateCompatible(
 
 export function getCompatibleTemplates(
   line: CuttingIssuanceOrderLine | undefined,
-  templates: CuttingIssuanceTemplate[],
+  templates: CuttingIssuanceTemplate[]
 ): CuttingIssuanceTemplate[] {
   return templates
     .filter((template) => isTemplateCompatible(line, template))
     .sort(
-      (left, right) => parseTemplateTimestamp(right.updatedAt) - parseTemplateTimestamp(left.updatedAt),
+      (left, right) =>
+        parseTemplateTimestamp(right.updatedAt) -
+        parseTemplateTimestamp(left.updatedAt)
     )
 }
 
 export function findTemplateForOrder(
   line: CuttingIssuanceOrderLine | undefined,
-  templates: CuttingIssuanceTemplate[],
+  templates: CuttingIssuanceTemplate[]
 ): CuttingIssuanceTemplate | undefined {
   const compatibleTemplates = getCompatibleTemplates(line, templates)
   return compatibleTemplates[0]

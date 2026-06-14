@@ -1,16 +1,19 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
-import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
-import { createLogger } from '@/lib/logger'
-import { type CompositeReadResource, resolveQueryFailure } from '@/lib/read-resource'
-import { failLoudly } from '@/lib/safe-catch'
 import { useAuthStore } from '@/stores/auth-store'
-import { useTradingFinanceResources } from './use-trading-finance-resources'
-import { useSalesOrderPreassembleSubmit } from './use-sales-order-preassemble-submit'
+import { createLogger } from '@/lib/logger'
+import {
+  type CompositeReadResource,
+  resolveQueryFailure,
+} from '@/lib/read-resource'
+import { failLoudly } from '@/lib/safe-catch'
+import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
 import { type SalesOrder, type SalesOrderStatus } from '../data/schema'
-import { type PaginatedSalesOrders } from '../sales/adapters/sales-order-api-adapter'
 import { useGetSalesOrders, useSalesOrderMutations } from '../sales'
+import { type PaginatedSalesOrders } from '../sales/adapters/sales-order-api-adapter'
 import { requireTradingCommandActor } from '../utils/command-actor'
+import { useSalesOrderPreassembleSubmit } from './use-sales-order-preassemble-submit'
+import { useTradingFinanceResources } from './use-trading-finance-resources'
 
 const logger = createLogger('useSalesOrderListController')
 
@@ -54,19 +57,26 @@ export function useSalesOrderListController() {
   const [paymentTermFilter, setPaymentTermFilter] = useState('ALL')
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false)
   const [editingOrder, setEditingOrder] = useState<SalesOrder | null>(null)
-  const [isCanceledSectionExpanded, setIsCanceledSectionExpanded] = useState(false)
-  const page = pagingState.customerContextKey === customerContextKey ? pagingState.page : 1
+  const [isCanceledSectionExpanded, setIsCanceledSectionExpanded] =
+    useState(false)
+  const page =
+    pagingState.customerContextKey === customerContextKey ? pagingState.page : 1
   const canceledPage =
-    pagingState.customerContextKey === customerContextKey ? pagingState.canceledPage : 1
+    pagingState.customerContextKey === customerContextKey
+      ? pagingState.canceledPage
+      : 1
 
   const normalizedSearchTerm = searchTerm.trim()
   const isAllStatusesFilter = statusFilter === 'all'
   const isCanceledOnlyFilter = statusFilter.toLowerCase() === 'canceled'
   const shouldLoadCanceledSection = isAllStatusesFilter
   const hasCustomerContext = Boolean(routeCustomerId || routeCustomerName)
-  const customerContextLabel = routeCustomerName?.trim() || routeCustomerId || ''
-  const normalizedPaymentMethodFilter = paymentMethodFilter !== 'ALL' ? paymentMethodFilter : undefined
-  const normalizedPaymentTermFilter = paymentTermFilter !== 'ALL' ? paymentTermFilter : undefined
+  const customerContextLabel =
+    routeCustomerName?.trim() || routeCustomerId || ''
+  const normalizedPaymentMethodFilter =
+    paymentMethodFilter !== 'ALL' ? paymentMethodFilter : undefined
+  const normalizedPaymentTermFilter =
+    paymentTermFilter !== 'ALL' ? paymentTermFilter : undefined
 
   const primaryStatusFilter = useMemo<SalesOrderStatus[]>(
     () =>
@@ -83,7 +93,8 @@ export function useSalesOrderListController() {
     status: primaryStatusFilter,
     paymentMethod: normalizedPaymentMethodFilter,
     paymentTerm: normalizedPaymentTermFilter,
-    placeholderData: (previousData: PaginatedSalesOrders | undefined) => previousData,
+    placeholderData: (previousData: PaginatedSalesOrders | undefined) =>
+      previousData,
   })
   const canceledOrdersQuery = useGetSalesOrders(canceledPage, pageSize, {
     withLines: true,
@@ -93,13 +104,17 @@ export function useSalesOrderListController() {
     paymentMethod: normalizedPaymentMethodFilter,
     paymentTerm: normalizedPaymentTermFilter,
     enabled: shouldLoadCanceledSection,
-    placeholderData: (previousData: PaginatedSalesOrders | undefined) => previousData,
+    placeholderData: (previousData: PaginatedSalesOrders | undefined) =>
+      previousData,
   })
 
   const listResource = useMemo<SalesOrderListResource>(() => {
-    const isPrimaryBlockingLoad = primaryOrdersQuery.isPending && !primaryOrdersQuery.data
+    const isPrimaryBlockingLoad =
+      primaryOrdersQuery.isPending && !primaryOrdersQuery.data
     const isCanceledBlockingLoad =
-      shouldLoadCanceledSection && canceledOrdersQuery.isPending && !canceledOrdersQuery.data
+      shouldLoadCanceledSection &&
+      canceledOrdersQuery.isPending &&
+      !canceledOrdersQuery.data
     const primaryFailure = resolveQueryFailure({
       data: primaryOrdersQuery.data,
       error: primaryOrdersQuery.error,
@@ -122,7 +137,8 @@ export function useSalesOrderListController() {
         error: canceledOrdersQuery.error,
         isPending: isCanceledBlockingLoad,
         scope: 'SalesOrderList.canceledOrders',
-        missingMessage: '[CRITICAL] Canceled sales order list missing after load',
+        missingMessage:
+          '[CRITICAL] Canceled sales order list missing after load',
         failureMessage: '[CRITICAL] Canceled sales order list query failed',
       })
       if (canceledFailure) {
@@ -152,7 +168,9 @@ export function useSalesOrderListController() {
       if (!canceledData) {
         return {
           status: 'error',
-          error: new Error('[CRITICAL] Canceled sales order list missing after load'),
+          error: new Error(
+            '[CRITICAL] Canceled sales order list missing after load'
+          ),
           scope: 'SalesOrderList.canceledOrders',
         }
       }
@@ -188,7 +206,10 @@ export function useSalesOrderListController() {
       return
     }
 
-    logger.error(`Failed to load sales order list resources: ${listResource.scope}`, listResource.error)
+    logger.error(
+      `Failed to load sales order list resources: ${listResource.scope}`,
+      listResource.error
+    )
     failLoudly(listResource.error, listResource.scope)
   }, [listResource])
 
@@ -201,11 +222,15 @@ export function useSalesOrderListController() {
     [listResource]
   )
   const allLoadedOrders = useMemo(
-    () => (shouldLoadCanceledSection ? [...primaryOrders, ...canceledOrders] : primaryOrders),
+    () =>
+      shouldLoadCanceledSection
+        ? [...primaryOrders, ...canceledOrders]
+        : primaryOrders,
     [canceledOrders, primaryOrders, shouldLoadCanceledSection]
   )
   const total = listResource.status === 'ready' ? listResource.total : 0
-  const canceledTotal = listResource.status === 'ready' ? listResource.canceledTotal : 0
+  const canceledTotal =
+    listResource.status === 'ready' ? listResource.canceledTotal : 0
 
   const financeResources = useTradingFinanceResources()
   const { paymentMethods, paymentTerms } = financeResources
@@ -250,7 +275,9 @@ export function useSalesOrderListController() {
     (shouldLoadCanceledSection && canceledOrdersQuery.isFetching)
   const showCanceledSection =
     shouldLoadCanceledSection &&
-    (isCanceledOnlyFilter || selectedOrder?.status === 'Canceled' || isCanceledSectionExpanded)
+    (isCanceledOnlyFilter ||
+      selectedOrder?.status === 'Canceled' ||
+      isCanceledSectionExpanded)
 
   const { deleteMutation, cancelMutation } = useSalesOrderMutations()
 
@@ -266,14 +293,17 @@ export function useSalesOrderListController() {
     setPagingState((previous) => ({
       page: nextPage,
       canceledPage:
-        previous.customerContextKey === customerContextKey ? previous.canceledPage : 1,
+        previous.customerContextKey === customerContextKey
+          ? previous.canceledPage
+          : 1,
       customerContextKey,
     }))
   }
 
   const handleCanceledPageChange = (nextPage: number) => {
     setPagingState((previous) => ({
-      page: previous.customerContextKey === customerContextKey ? previous.page : 1,
+      page:
+        previous.customerContextKey === customerContextKey ? previous.page : 1,
       canceledPage: nextPage,
       customerContextKey,
     }))

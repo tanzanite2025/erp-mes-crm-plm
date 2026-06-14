@@ -8,7 +8,10 @@ function hasExplicitTime(value: string): boolean {
   return value.includes('T') || /\s\d{1,2}:\d{2}/.test(value)
 }
 
-export function formatDateLabel(value: string | undefined, locale: AppLocale): string {
+export function formatDateLabel(
+  value: string | undefined,
+  locale: AppLocale
+): string {
   if (!value) {
     return '--'
   }
@@ -38,7 +41,10 @@ export function formatDateLabel(value: string | undefined, locale: AppLocale): s
   }).format(date)
 }
 
-export function formatNumber(value: number | undefined, locale: AppLocale): string {
+export function formatNumber(
+  value: number | undefined,
+  locale: AppLocale
+): string {
   if (!Number.isFinite(value)) {
     return '0'
   }

@@ -5,8 +5,10 @@ export const mrp = {
   },
   requirements: {
     pageTitle: 'MRP 技术需求聚合',
-    pageDescription: '基于 BOM 架构的物料需求分析：实时库存对冲、缺料预警与供应商交期协同',
-    helperText: '请选择下方销售订单及明细后执行分析，查看合并后的物料需求清单与层级分布。',
+    pageDescription:
+      '基于 BOM 架构的物料需求分析：实时库存对冲、缺料预警与供应商交期协同',
+    helperText:
+      '请选择下方销售订单及明细后执行分析，查看合并后的物料需求清单与层级分布。',
     analyze: '聚合分析',
     empty: '未选择任何待分析订单或产品',
     loading: '正在进行多维 BOM 聚合计算...',
@@ -15,9 +17,11 @@ export const mrp = {
       title: '物料需求清单',
       description: '{{count}} 个已选生产项的实时物料需求分析',
       stageErrorTitle: '分析失败：BOM / MRP 链路返回异常',
-      stageErrorDescription: '请根据下方错误信息直接定位问题来源；这不是正常空态。',
+      stageErrorDescription:
+        '请根据下方错误信息直接定位问题来源；这不是正常空态。',
       emptyAnalyzedTitle: '本次分析未生成任何物料需求明细。',
-      emptyAnalyzedDescription: '这通常不是正常空态，请优先检查所选订单对应产品的 BOM、物料行以及关联主数据是否完整。',
+      emptyAnalyzedDescription:
+        '这通常不是正常空态，请优先检查所选订单对应产品的 BOM、物料行以及关联主数据是否完整。',
       printList: '打印清单',
       exportExcel: '导出 Excel',
       exportSuccess: '导出成功',
@@ -95,7 +99,8 @@ export const mrp = {
       otherSection: '其他',
       moreComponents: '+ {{count}} 个更多关键组件',
       selectedCount: '已选中 {{count}} 个生产项',
-      blockedByMissingBom: '{{count}} 个已选生产项缺少可用 BOM，需先修复后再分析',
+      blockedByMissingBom:
+        '{{count}} 个已选生产项缺少可用 BOM，需先修复后再分析',
       analyzeReady: '准备进行物料聚合计算',
       cancel: '取消',
       analyze: '分析需求',
@@ -105,7 +110,8 @@ export const mrp = {
       orderDemand: '{{count}} 台订单需求',
       totalRemaining: '关联模具总余量：{{count}} 次',
       shortage: '缺口：{{count}} 次',
-      insufficient: '产能严重不足：现有模具寿命无法支撑本次下发，请先安排模具维保或更换。',
+      insufficient:
+        '产能严重不足：现有模具寿命无法支撑本次下发，请先安排模具维保或更换。',
     },
     export: {
       sheetName: 'BOM需求下发单',
@@ -115,7 +121,8 @@ export const mrp = {
       docCode: '文件编号',
       version: '版本',
       effectiveDate: '生效日期',
-      description: '技术标准：[{{products}}] 生产物料聚合需求统计（包含 {{count}} 项物料）',
+      description:
+        '技术标准：[{{products}}] 生产物料聚合需求统计（包含 {{count}} 项物料）',
       headers: {
         section: '层级',
         code: '物料编码',
@@ -134,7 +141,8 @@ export const mrp = {
       shortageEnough: '充足',
       shortageWithPack: '{{gap}} {{unit}}（约 {{packQty}} {{packUnit}}）',
       issueDept: '制定单位：购销决策中心',
-      recipientInfo: '收文单位：采购、物控、备料、生产现场各1份（注：本报表已含实时库存差额）',
+      recipientInfo:
+        '收文单位：采购、物控、备料、生产现场各1份（注：本报表已含实时库存差额）',
       proofread: '校对',
       review: '审核',
       preparedBy: '制表',
@@ -142,5 +150,5 @@ export const mrp = {
       separator: '、',
       productsMore: '等 {{count}} 款产品',
     },
-  }
+  },
 }

@@ -1,5 +1,5 @@
-import type { MasterDataSearchResult } from '../../inventory'
 import type { WarehouseCategoryOption } from '../../category/data/schema'
+import type { MasterDataSearchResult } from '../../inventory'
 
 export type ShipmentStatus = 'DRAFT' | 'COMMITTED' | 'VOID'
 
@@ -76,8 +76,12 @@ export interface ShipmentBootstrapState {
   error: unknown
 }
 
-export const createShipmentFormDraft = (item: MasterDataSearchResult): ShipmentFormData => ({
+export const createShipmentFormDraft = (
+  item: MasterDataSearchResult
+): ShipmentFormData => ({
   ...DEFAULT_SHIPMENT_FORM_DATA,
-  sourceCategory: item.category || (item.sourceModule === 'PRODUCT' ? 'FINISHED' : 'MATERIAL'),
+  sourceCategory:
+    item.category ||
+    (item.sourceModule === 'PRODUCT' ? 'FINISHED' : 'MATERIAL'),
   batchNo: `S${new Date().toISOString().slice(2, 10).replace(/-/g, '')}`,
 })

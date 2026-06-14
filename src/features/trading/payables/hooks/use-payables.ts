@@ -26,7 +26,15 @@ export function useGetPayables(
 }
 
 export function useSearchPayableLedgers(params: PayableLedgerSearchParams) {
-  const { keyword, status, currency, outstandingMin, outstandingMax, sortBy, sortOrder } = params
+  const {
+    keyword,
+    status,
+    currency,
+    outstandingMin,
+    outstandingMax,
+    sortBy,
+    sortOrder,
+  } = params
 
   return useQuery({
     queryKey: tradingQueryKeys.payableSearch(
@@ -39,7 +47,15 @@ export function useSearchPayableLedgers(params: PayableLedgerSearchParams) {
       sortOrder
     ),
     queryFn: () =>
-      searchPayableLedgers({ keyword, status, currency, outstandingMin, outstandingMax, sortBy, sortOrder }),
+      searchPayableLedgers({
+        keyword,
+        status,
+        currency,
+        outstandingMin,
+        outstandingMax,
+        sortBy,
+        sortOrder,
+      }),
     enabled: keyword.trim().length >= 2,
   })
 }

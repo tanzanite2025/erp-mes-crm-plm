@@ -1,8 +1,8 @@
-import { tabs } from './tabs'
-import { suppliers } from './suppliers'
-import { orders } from './orders'
-import { logs } from './logs'
 import { logistics } from './logistics'
+import { logs } from './logs'
+import { orders } from './orders'
+import { suppliers } from './suppliers'
+import { tabs } from './tabs'
 
 export const purchaseZhCNOverrides = {
   purchase: {

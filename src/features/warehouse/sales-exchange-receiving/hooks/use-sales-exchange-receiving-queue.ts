@@ -1,15 +1,15 @@
 import { useMemo } from 'react'
-import type { SalesExchangeDraftRecord } from '@/features/trading/sales-exchanges/types/sales-exchange-types'
+import { resolveQueryFailure } from '@/lib/read-resource'
 import {
   useGetSalesExchanges,
   useSalesExchangeMutations,
 } from '@/features/trading/sales-exchanges/hooks/use-sales-exchanges'
+import type { SalesExchangeDraftRecord } from '@/features/trading/sales-exchanges/types/sales-exchange-types'
 import { useWarehouseCategoryOptions } from '@/features/warehouse/category'
 import {
   getDefaultWarehouseCategoryCode,
   SALES_EXCHANGE_VIRTUAL_WAREHOUSE_CODE,
 } from '@/features/warehouse/utils/warehouse-category-config'
-import { resolveQueryFailure } from '@/lib/read-resource'
 
 export type SalesExchangeReceivingQueueReadResource =
   | {
@@ -57,7 +57,8 @@ export function useSalesExchangeReceivingQueue() {
       error: queueQuery.error,
       isPending: queueQuery.isPending,
       scope: 'useSalesExchangeReceivingQueue.queue',
-      missingMessage: '[CRITICAL] Sales exchange receiving queue missing after load',
+      missingMessage:
+        '[CRITICAL] Sales exchange receiving queue missing after load',
       failureMessage: '[CRITICAL] Sales exchange receiving queue query failed',
     })
     if (queueFailure) {
@@ -73,7 +74,8 @@ export function useSalesExchangeReceivingQueue() {
       error: categoryOptionsQuery.error,
       isPending: categoryOptionsQuery.isPending,
       scope: 'useSalesExchangeReceivingQueue.categoryOptions',
-      missingMessage: '[CRITICAL] Warehouse category options missing after load',
+      missingMessage:
+        '[CRITICAL] Warehouse category options missing after load',
       failureMessage: '[CRITICAL] Warehouse category options query failed',
     })
     if (categoryFailure) {

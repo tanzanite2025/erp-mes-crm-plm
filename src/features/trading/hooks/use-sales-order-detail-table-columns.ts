@@ -18,12 +18,14 @@ export function useSalesOrderDetailTableColumns(
     },
     {
       key: 'product',
-      className: 'px-2 py-1 text-[10px] font-black uppercase tracking-wide text-muted-foreground/50',
+      className:
+        'px-2 py-1 text-[10px] font-black uppercase tracking-wide text-muted-foreground/50',
       label: t('tradingSalesOrder.detail.headers.product'),
     },
     {
       key: 'snapshot',
-      className: 'px-2 py-1 text-[10px] font-black uppercase tracking-wide text-muted-foreground/50',
+      className:
+        'px-2 py-1 text-[10px] font-black uppercase tracking-wide text-muted-foreground/50',
       label: t('tradingSalesOrder.detail.headers.snapshot'),
     },
     {
@@ -40,7 +42,8 @@ export function useSalesOrderDetailTableColumns(
     },
     {
       key: 'process',
-      className: 'px-2 py-1 text-[10px] font-black uppercase tracking-wide text-muted-foreground/50',
+      className:
+        'px-2 py-1 text-[10px] font-black uppercase tracking-wide text-muted-foreground/50',
       label: t('tradingSalesOrder.detail.headers.process'),
     },
     {

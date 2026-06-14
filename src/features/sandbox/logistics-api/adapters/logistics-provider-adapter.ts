@@ -13,21 +13,37 @@ import {
   type LogisticsVerificationStatus,
 } from '@/features/sandbox/logistics-api/types'
 
-const allowedCapabilities: LogisticsCapability[] = ['tracking', 'callback', 'label', 'order_create']
+const allowedCapabilities: LogisticsCapability[] = [
+  'tracking',
+  'callback',
+  'label',
+  'order_create',
+]
 
-export function fromLogisticsProviderDto(dto: LogisticsProviderDto): LogisticsProvider {
+export function fromLogisticsProviderDto(
+  dto: LogisticsProviderDto
+): LogisticsProvider {
   return normalizeLogisticsProviderLike(dto)
 }
 
-export function fromLogisticsProviderDtoArray(items: LogisticsProviderDto[]): LogisticsProvider[] {
+export function fromLogisticsProviderDtoArray(
+  items: LogisticsProviderDto[]
+): LogisticsProvider[] {
   return items.map(fromLogisticsProviderDto)
 }
 
-export function toLogisticsProviderDraft(source?: Partial<LogisticsProvider> | Partial<LogisticsProviderDraft> | Partial<LogisticsProviderDto>): LogisticsProviderDraft {
+export function toLogisticsProviderDraft(
+  source?:
+    | Partial<LogisticsProvider>
+    | Partial<LogisticsProviderDraft>
+    | Partial<LogisticsProviderDto>
+): LogisticsProviderDraft {
   return normalizeLogisticsProviderLike(source)
 }
 
-export function toLogisticsProviderPayload(source: LogisticsProviderDraft): LogisticsProviderPayload {
+export function toLogisticsProviderPayload(
+  source: LogisticsProviderDraft
+): LogisticsProviderPayload {
   const normalized = normalizeLogisticsProviderLike(source)
 
   return {
@@ -50,7 +66,12 @@ export function toLogisticsProviderPayload(source: LogisticsProviderDraft): Logi
   }
 }
 
-function normalizeLogisticsProviderLike(source?: Partial<LogisticsProvider> | Partial<LogisticsProviderDraft> | Partial<LogisticsProviderDto>): LogisticsProviderDraft {
+function normalizeLogisticsProviderLike(
+  source?:
+    | Partial<LogisticsProvider>
+    | Partial<LogisticsProviderDraft>
+    | Partial<LogisticsProviderDto>
+): LogisticsProviderDraft {
   const base = createEmptyLogisticsProviderDraft()
   const input = source ?? {}
 
@@ -73,7 +94,10 @@ function normalizeLogisticsProviderLike(source?: Partial<LogisticsProvider> | Pa
     endpoint: normalizeString(input.endpoint),
     status: normalizeStatus(input.status),
     capabilities: normalizeCapabilities(input.capabilities),
-    verificationStatus: normalizeVerificationStatus(input.verificationStatus, input.status),
+    verificationStatus: normalizeVerificationStatus(
+      input.verificationStatus,
+      input.status
+    ),
     lastVerifiedAt: normalizeOptionalString(input.lastVerifiedAt),
     lastVerificationMessage: normalizeString(input.lastVerificationMessage),
     lastVerificationAction: normalizeString(input.lastVerificationAction),
@@ -105,7 +129,10 @@ function normalizeStatus(value: unknown): LogisticsStatus {
   return value === 'Disabled' ? 'Disabled' : 'Enabled'
 }
 
-function normalizeVerificationStatus(value: unknown, status: unknown): LogisticsVerificationStatus {
+function normalizeVerificationStatus(
+  value: unknown,
+  status: unknown
+): LogisticsVerificationStatus {
   if (status === 'Disabled') {
     return 'disabled'
   }
@@ -129,8 +156,12 @@ function normalizeCapabilities(value: unknown) {
   }
 
   const normalized = value
-    .map((capability) => (typeof capability === 'string' ? capability.trim().toLowerCase() : ''))
-    .filter((capability): capability is LogisticsCapability => allowedCapabilities.includes(capability as LogisticsCapability))
+    .map((capability) =>
+      typeof capability === 'string' ? capability.trim().toLowerCase() : ''
+    )
+    .filter((capability): capability is LogisticsCapability =>
+      allowedCapabilities.includes(capability as LogisticsCapability)
+    )
 
   return Array.from(new Set(normalized))
 }
@@ -157,4 +188,6 @@ function normalizeCount(value: unknown) {
   return normalizeNumber(value, 0)
 }
 
-export const logisticsProviderPersistedFieldKeys = [...LOGISTICS_PROVIDER_PERSISTED_FIELD_KEYS]
+export const logisticsProviderPersistedFieldKeys = [
+  ...LOGISTICS_PROVIDER_PERSISTED_FIELD_KEYS,
+]

@@ -1,16 +1,22 @@
 import { ClipboardList, Plus } from 'lucide-react'
+import { useLanguage } from '@/context/language-provider'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   type AuditStatusDisplayMeta,
   AuditStatusDisplay,
 } from '@/components/common/audit-status-display'
 import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useLanguage } from '@/context/language-provider'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
-import { type PurchaseOrder } from '../../data/schema'
 import { getPurchaseStatusDisplayMeta } from '../../data/purchase-status'
+import { type PurchaseOrder } from '../../data/schema'
 
 type PaymentOption = {
   value: string
@@ -34,7 +40,13 @@ interface PurchaseOrderListToolbarProps {
   onAddOrder: () => void
 }
 
-const PURCHASE_ORDER_STATUSES: PurchaseOrder['status'][] = ['Draft', 'Sent', 'Awaiting', 'Received', 'Canceled']
+const PURCHASE_ORDER_STATUSES: PurchaseOrder['status'][] = [
+  'Draft',
+  'Sent',
+  'Awaiting',
+  'Received',
+  'Canceled',
+]
 
 export function PurchaseOrderListToolbar({
   searchTerm,
@@ -65,7 +77,7 @@ export function PurchaseOrderListToolbar({
       <div className='flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between'>
         <div className='flex min-w-0 flex-1 flex-col gap-3'>
           <div className='relative w-full xl:max-w-80'>
-            <ClipboardList className='absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/40' />
+            <ClipboardList className='absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground/40' />
             <Input
               placeholder={t('purchase.orders.searchPlaceholder')}
               value={searchTerm}
@@ -77,14 +89,17 @@ export function PurchaseOrderListToolbar({
           <div className='flex min-w-0 flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-start'>
             <div className='no-scrollbar flex w-full min-w-0 items-center gap-0.5 overflow-x-auto rounded-2xl border border-dashed bg-muted/30 p-1 font-bold sm:gap-1 sm:p-1.5 lg:flex-1'>
               {['ALL', ...PURCHASE_ORDER_STATUSES].map((status) => {
-                const meta = status === 'ALL' ? allStatusMeta : getPurchaseStatusDisplayMeta(status, t)
+                const meta =
+                  status === 'ALL'
+                    ? allStatusMeta
+                    : getPurchaseStatusDisplayMeta(status, t)
                 const isActive = statusFilter === status
 
                 return (
                   <button
                     key={status}
                     onClick={() => onStatusFilterChange(status)}
-                    className={`shrink-0 whitespace-nowrap rounded-xl px-0.5 py-0.5 transition-all sm:px-1.5 sm:py-1 ${
+                    className={`shrink-0 rounded-xl px-0.5 py-0.5 whitespace-nowrap transition-all sm:px-1.5 sm:py-1 ${
                       isActive
                         ? 'bg-background shadow-md ring-1 ring-primary/10'
                         : 'opacity-65 hover:bg-muted/60 hover:opacity-100'
@@ -102,12 +117,20 @@ export function PurchaseOrderListToolbar({
             </div>
 
             <div className='grid w-full grid-cols-2 gap-1.5 sm:gap-2 lg:w-auto lg:flex-none'>
-              <Select value={paymentMethodFilter} onValueChange={onPaymentMethodFilterChange} disabled={!isFinanceFilterReady}>
+              <Select
+                value={paymentMethodFilter}
+                onValueChange={onPaymentMethodFilterChange}
+                disabled={!isFinanceFilterReady}
+              >
                 <SelectTrigger className='h-11 w-full rounded-2xl border-dashed bg-background/80 font-bold shadow-sm lg:w-[180px]'>
-                  <SelectValue placeholder={t('purchase.orders.filters.paymentMethod')} />
+                  <SelectValue
+                    placeholder={t('purchase.orders.filters.paymentMethod')}
+                  />
                 </SelectTrigger>
                 <SelectContent className='rounded-2xl'>
-                  <SelectItem value='ALL'>{t('purchase.orders.filters.allPaymentMethods')}</SelectItem>
+                  <SelectItem value='ALL'>
+                    {t('purchase.orders.filters.allPaymentMethods')}
+                  </SelectItem>
                   {paymentMethodOptions.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
@@ -116,12 +139,20 @@ export function PurchaseOrderListToolbar({
                 </SelectContent>
               </Select>
 
-              <Select value={paymentTermFilter} onValueChange={onPaymentTermFilterChange} disabled={!isFinanceFilterReady}>
+              <Select
+                value={paymentTermFilter}
+                onValueChange={onPaymentTermFilterChange}
+                disabled={!isFinanceFilterReady}
+              >
                 <SelectTrigger className='h-11 w-full rounded-2xl border-dashed bg-background/80 font-bold shadow-sm lg:w-[180px]'>
-                  <SelectValue placeholder={t('purchase.orders.filters.paymentTerm')} />
+                  <SelectValue
+                    placeholder={t('purchase.orders.filters.paymentTerm')}
+                  />
                 </SelectTrigger>
                 <SelectContent className='rounded-2xl'>
-                  <SelectItem value='ALL'>{t('purchase.orders.filters.allPaymentTerms')}</SelectItem>
+                  <SelectItem value='ALL'>
+                    {t('purchase.orders.filters.allPaymentTerms')}
+                  </SelectItem>
                   {paymentTermOptions.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
@@ -136,7 +167,7 @@ export function PurchaseOrderListToolbar({
         <div className='flex w-full flex-row gap-1.5 sm:gap-2 xl:w-auto xl:flex-none xl:items-center xl:justify-end'>
           <Button
             size='sm'
-            className='h-10 flex-1 shrink-0 gap-1.5 rounded-full bg-primary px-3 text-[9px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95 sm:h-11 sm:gap-2 sm:px-8 sm:text-[10px] xl:w-auto xl:flex-none'
+            className='h-10 flex-1 shrink-0 gap-1.5 rounded-full bg-primary px-3 text-[9px] font-black tracking-widest uppercase shadow-xl shadow-primary/20 transition-all active:scale-95 sm:h-11 sm:gap-2 sm:px-8 sm:text-[10px] xl:w-auto xl:flex-none'
             onClick={onAddOrder}
           >
             <Plus className='h-4 w-4' />
@@ -152,7 +183,7 @@ export function PurchaseOrderListToolbar({
       </div>
 
       {financeFilterStatus !== 'ready' ? (
-        <div className='flex w-full flex-wrap items-center justify-end gap-3 text-right text-[9px] font-black uppercase tracking-widest text-muted-foreground/50'>
+        <div className='flex w-full flex-wrap items-center justify-end gap-3 text-right text-[9px] font-black tracking-widest text-muted-foreground/50 uppercase'>
           <span>
             {financeFilterStatus === 'loading'
               ? t('purchase.orders.loading')
@@ -163,7 +194,7 @@ export function PurchaseOrderListToolbar({
               type='button'
               variant='outline'
               size='sm'
-              className='h-8 rounded-full border-dashed px-3 text-[10px] font-black uppercase tracking-widest'
+              className='h-8 rounded-full border-dashed px-3 text-[10px] font-black tracking-widest uppercase'
               onClick={onRetryFinanceFilters}
             >
               重试

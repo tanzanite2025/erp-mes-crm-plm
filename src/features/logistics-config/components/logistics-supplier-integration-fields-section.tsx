@@ -1,8 +1,8 @@
 import type { Dispatch, SetStateAction } from 'react'
+import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useLanguage } from '@/context/language-provider'
 import {
   getLogisticsCapabilityLabelKey,
   getProviderApiConnectionLabelKey,
@@ -16,7 +16,10 @@ import {
   LOGISTICS_CAPABILITY_OPTIONS,
   toggleProviderCapability,
 } from '@/features/logistics-config/provider-directory'
-import type { LogisticsProviderDraft, LogisticsVerificationStatus } from '@/features/sandbox/logistics-api/types'
+import type {
+  LogisticsProviderDraft,
+  LogisticsVerificationStatus,
+} from '@/features/sandbox/logistics-api/types'
 
 type LogisticsSupplierIntegrationFieldsSectionProps = {
   formData: LogisticsProviderDraft
@@ -36,7 +39,7 @@ export function LogisticsSupplierIntegrationFieldsSection({
   return (
     <div className='space-y-4 rounded-3xl border border-dashed border-primary/20 bg-primary/5 p-5'>
       <div className='space-y-1'>
-        <h4 className='text-[11px] font-black uppercase tracking-widest text-primary/80'>
+        <h4 className='text-[11px] font-black tracking-widest text-primary/80 uppercase'>
           {t('logisticsConfig.providerShared.sectionIntegration.title')}
         </h4>
         <p className='text-xs text-primary/70'>
@@ -46,7 +49,7 @@ export function LogisticsSupplierIntegrationFieldsSection({
 
       <div className='grid grid-cols-2 gap-4'>
         <div className='space-y-2'>
-          <Label className='pl-1 text-[10px] font-black uppercase tracking-widest opacity-50'>
+          <Label className='pl-1 text-[10px] font-black tracking-widest uppercase opacity-50'>
             {t('logisticsConfig.suppliers.fields.endpoint')}
           </Label>
           <Input
@@ -57,12 +60,14 @@ export function LogisticsSupplierIntegrationFieldsSection({
                 endpoint: event.target.value,
               }))
             }
-            placeholder={t('logisticsConfig.suppliers.fields.endpointPlaceholder')}
+            placeholder={t(
+              'logisticsConfig.suppliers.fields.endpointPlaceholder'
+            )}
             className='h-12 rounded-2xl border-slate-200 font-mono text-[11px]'
           />
         </div>
         <div className='space-y-2'>
-          <Label className='pl-1 text-[10px] font-black uppercase tracking-widest opacity-50'>
+          <Label className='pl-1 text-[10px] font-black tracking-widest uppercase opacity-50'>
             {t('logisticsConfig.suppliers.fields.apiStatus')}
           </Label>
           <div className='flex h-12 items-center rounded-2xl border border-dashed bg-white/70 px-3 text-[11px] font-bold text-slate-600'>
@@ -72,19 +77,25 @@ export function LogisticsSupplierIntegrationFieldsSection({
       </div>
 
       <div className='space-y-2'>
-        <Label className='pl-1 text-[10px] font-black uppercase tracking-widest opacity-50'>
+        <Label className='pl-1 text-[10px] font-black tracking-widest uppercase opacity-50'>
           {t('logisticsConfig.providerShared.labels.capabilities')}
         </Label>
         <div className='flex flex-wrap gap-2'>
           {LOGISTICS_CAPABILITY_OPTIONS.map((capability) => {
-            const selected = getProviderCapabilities(formData).includes(capability.value)
+            const selected = getProviderCapabilities(formData).includes(
+              capability.value
+            )
             return (
               <Button
                 key={capability.value}
                 type='button'
                 variant={selected ? 'default' : 'outline'}
-                className='rounded-full text-[10px] font-black uppercase tracking-widest'
-                onClick={() => setFormData((prev) => toggleProviderCapability(prev, capability.value))}
+                className='rounded-full text-[10px] font-black tracking-widest uppercase'
+                onClick={() =>
+                  setFormData((prev) =>
+                    toggleProviderCapability(prev, capability.value)
+                  )
+                }
               >
                 {t(getLogisticsCapabilityLabelKey(capability.value))}
               </Button>
@@ -93,13 +104,23 @@ export function LogisticsSupplierIntegrationFieldsSection({
         </div>
       </div>
 
-      <div className={getProviderCalloutClass(getProviderVerificationActionTone(formData))}>
+      <div
+        className={getProviderCalloutClass(
+          getProviderVerificationActionTone(formData)
+        )}
+      >
         {t(getProviderVerificationActionKey(formData))}
       </div>
 
       {formData.id ? (
-        <div className={getProviderCalloutClass(getProviderReferenceTone(formData))}>
-          {t(getProviderReferenceRiskLabelKey(formData), { count: formData.referenceCount || 0 })}
+        <div
+          className={getProviderCalloutClass(
+            getProviderReferenceTone(formData)
+          )}
+        >
+          {t(getProviderReferenceRiskLabelKey(formData), {
+            count: formData.referenceCount || 0,
+          })}
         </div>
       ) : null}
     </div>

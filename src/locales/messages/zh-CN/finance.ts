@@ -52,7 +52,8 @@ export const finance = {
       baseRateHint: '本位币汇率固定为 1.0',
       manualRateWarning: '* 建议优先使用外部汇率同步，而非手工维护',
       syncModeTitle: '自动同步模式已启用',
-      syncModeDesc: '新增币种保存后，可回到页面点击“同步汇率”拉取当天最新对价。',
+      syncModeDesc:
+        '新增币种保存后，可回到页面点击“同步汇率”拉取当天最新对价。',
       save: '保存参数',
       confirm: '确认新增',
     },
@@ -70,7 +71,8 @@ export const finance = {
     },
     syncConfig: {
       title: '汇率同步配置',
-      description: '直接在币种页维护第三方汇率 API 的供应商、地址、路径模板与启用状态',
+      description:
+        '直接在币种页维护第三方汇率 API 的供应商、地址、路径模板与启用状态',
       enabled: '启用同步',
       providerLabel: '供应商标识',
       providerPlaceholder: '如 exchangerate-api',
@@ -81,7 +83,8 @@ export const finance = {
       latestPathTemplateLabel: '最新汇价路径模板',
       latestPathTemplatePlaceholder: '如 /{apiKey}/latest/{baseCode}',
       hintTitle: '模板占位符',
-      hintContent: '路径模板支持 {apiKey} 与 {baseCode} 占位符。保存后，页面上的“同步汇率”按钮会直接使用这里的配置。',
+      hintContent:
+        '路径模板支持 {apiKey} 与 {baseCode} 占位符。保存后，页面上的“同步汇率”按钮会直接使用这里的配置。',
       fallbackLabel: '启用回退',
       addFallbackProvider: '添加备用 API',
       providerTagPrimary: '主 API',
@@ -90,7 +93,8 @@ export const finance = {
       providerEnabledLabel: '单条启用',
       providerPriority: '优先级 #{{priority}}',
       removeProvider: '删除',
-      fallbackHint: '已启用的 API 会按 priority 顺序执行；当开启 fallback 时，仅在可回退失败上自动切换到下一条已启用 API。',
+      fallbackHint:
+        '已启用的 API 会按 priority 顺序执行；当开启 fallback 时，仅在可回退失败上自动切换到下一条已启用 API。',
       save: '保存同步配置',
       saving: '保存中...',
       toast: {
@@ -110,7 +114,8 @@ export const finance = {
       setBaseFailed: '本位币切换失败',
     },
     confirm: {
-      setBase: '确定将该币种设置为系统本位币吗？此操作会重置原有本位币并锁定新本位币汇率为 1.0。',
+      setBase:
+        '确定将该币种设置为系统本位币吗？此操作会重置原有本位币并锁定新本位币汇率为 1.0。',
     },
     names: {
       CNY: '人民币',
@@ -221,7 +226,8 @@ export const finance = {
       descriptions: {
         COD: '到货并验收完成后付款。',
         PREPAY: '订单确认后需立即全额预付，再进入排产或发货流程。',
-        INST_30_60_10: '预付 30%，交付节点支付 60%，余下 10% 作为质保尾款保留。',
+        INST_30_60_10:
+          '预付 30%，交付节点支付 60%，余下 10% 作为质保尾款保留。',
         NET30: '对账确认后 30 天内完成结算。',
         NET60: '对账确认后 60 天内完成结算。',
       },

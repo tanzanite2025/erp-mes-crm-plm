@@ -27,9 +27,13 @@ function dispatchStorageWindowEvent(key: string, action: StorageAction) {
     return
   }
 
-  window.dispatchEvent(new CustomEvent(XDFC_STORAGE_EVENT, { detail: { key, action } }))
+  window.dispatchEvent(
+    new CustomEvent(XDFC_STORAGE_EVENT, { detail: { key, action } })
+  )
   if (action === 'SET') {
-    window.dispatchEvent(new CustomEvent(`${key}_updated`, { detail: { action } }))
+    window.dispatchEvent(
+      new CustomEvent(`${key}_updated`, { detail: { action } })
+    )
   }
 }
 
@@ -39,8 +43,12 @@ function getStorageBroadcastChannel() {
   }
 
   if (!storageBroadcastChannel) {
-    storageBroadcastChannel = new BroadcastChannel(STORAGE_BROADCAST_CHANNEL_NAME)
-    storageBroadcastChannel.onmessage = (event: MessageEvent<StorageBroadcastMessage>) => {
+    storageBroadcastChannel = new BroadcastChannel(
+      STORAGE_BROADCAST_CHANNEL_NAME
+    )
+    storageBroadcastChannel.onmessage = (
+      event: MessageEvent<StorageBroadcastMessage>
+    ) => {
       const message = event.data
       if (!message || message.source === storageBroadcastSource) {
         return
@@ -74,13 +82,15 @@ export const StorageService = {
         }
       }
 
-      request.onsuccess = (event: Event) => resolve((event.target as IDBOpenDBRequest).result)
-      request.onerror = (event: Event) => reject((event.target as IDBOpenDBRequest).error)
+      request.onsuccess = (event: Event) =>
+        resolve((event.target as IDBOpenDBRequest).result)
+      request.onerror = (event: Event) =>
+        reject((event.target as IDBOpenDBRequest).error)
     })
   },
 
-  /** 
-   * Read one key. 
+  /**
+   * Read one key.
    * Use this for non-critical paths where null is an acceptable state.
    */
   getItem: async <T>(key: string): Promise<T | null> => {
@@ -111,7 +121,9 @@ export const StorageService = {
   getCriticalItem: async <T>(key: string): Promise<T> => {
     const data = await StorageService.getItem<T>(key)
     if (data === null || data === undefined) {
-      throw new Error(`[CRITICAL] Storage key "${key}" not found in IndexedDB. Ensure initial sync is complete.`)
+      throw new Error(
+        `[CRITICAL] Storage key "${key}" not found in IndexedDB. Ensure initial sync is complete.`
+      )
     }
     return data
   },
@@ -173,8 +185,12 @@ export const StorageService = {
 }
 
 // Expose in development for quick debugging in browser console.
-if (typeof window !== 'undefined' && (import.meta.env.DEV || window.location.hostname === 'localhost')) {
+if (
+  typeof window !== 'undefined' &&
+  (import.meta.env.DEV || window.location.hostname === 'localhost')
+) {
   getStorageBroadcastChannel()
-  ;(window as Window & { StorageService?: typeof StorageService }).StorageService = StorageService
+  ;(
+    window as Window & { StorageService?: typeof StorageService }
+  ).StorageService = StorageService
 }
-

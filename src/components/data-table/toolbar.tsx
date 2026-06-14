@@ -30,7 +30,6 @@ export function DataTableToolbar<TData>({
   leadingViewSlot,
   filters = [],
 }: DataTableToolbarProps<TData>) {
-
   const isFiltered =
     table.getState().columnFilters.length > 0 || table.getState().globalFilter
 

@@ -1,10 +1,10 @@
-import { moldSchema, type Mold } from '../data/schema'
 import type {
   MoldApiDTO,
   MoldDuplicateCheckApiDTO,
   MoldListPageApiDTO,
   SaveMoldApiDTO,
 } from '../contracts/equipment-mold-api-dto'
+import { moldSchema, type Mold } from '../data/schema'
 
 export interface MoldListPage {
   items: Mold[]
@@ -53,7 +53,10 @@ export function toMoldListPageContract(dto: MoldListPageApiDTO): MoldListPage {
 }
 
 export function toSaveMoldApiDTO(
-  contract: Omit<Mold, 'version' | 'createdAt' | 'createdBy' | 'updatedBy' | 'updatedAt'>
+  contract: Omit<
+    Mold,
+    'version' | 'createdAt' | 'createdBy' | 'updatedBy' | 'updatedAt'
+  >
 ): SaveMoldApiDTO {
   return {
     id: contract.id || undefined,
@@ -73,6 +76,8 @@ export function toSaveMoldApiDTO(
   }
 }
 
-export function toMoldDuplicateCheckContract(dto: MoldDuplicateCheckApiDTO): boolean {
+export function toMoldDuplicateCheckContract(
+  dto: MoldDuplicateCheckApiDTO
+): boolean {
   return dto.duplicate
 }

@@ -3,11 +3,20 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { type BOM } from '../data/schema'
-import { bomService } from '../services/bom-service'
 import { bomQueryKeys } from '../query-keys'
-import { byCreatedAtDesc, pickReleasedBOM, type BOMSelector } from '../utils/pick-released-bom'
+import { bomService } from '../services/bom-service'
+import {
+  byCreatedAtDesc,
+  pickReleasedBOM,
+  type BOMSelector,
+} from '../utils/pick-released-bom'
 
-export type ActiveBOMStatus = 'loading' | 'released' | 'draft' | 'none' | 'error'
+export type ActiveBOMStatus =
+  | 'loading'
+  | 'released'
+  | 'draft'
+  | 'none'
+  | 'error'
 
 /**
  * 一个产品在某个时刻的"激活 BOM"。
@@ -70,5 +79,13 @@ export function useActiveBOM(
     if (draft) return { status: 'draft', draftBom: draft }
 
     return { status: 'none' }
-  }, [trimmedId, query.isPending, query.isError, query.data, query.error, selector?.customerId, selector?.versionLevel])
+  }, [
+    trimmedId,
+    query.isPending,
+    query.isError,
+    query.data,
+    query.error,
+    selector?.customerId,
+    selector?.versionLevel,
+  ])
 }

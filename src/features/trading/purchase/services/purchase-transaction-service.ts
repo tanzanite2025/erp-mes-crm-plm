@@ -2,7 +2,11 @@ import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaSet } from '@/lib/delta/types'
 import { type PurchaseOrder, type PurchaseOrderLine } from '../../data/schema'
-import { toConfirmPurchaseReceiptContract, toPurchaseOrderContract, type ConfirmPurchaseReceiptContract } from '../adapters/purchase-order-api-adapter'
+import {
+  toConfirmPurchaseReceiptContract,
+  toPurchaseOrderContract,
+  type ConfirmPurchaseReceiptContract,
+} from '../adapters/purchase-order-api-adapter'
 import {
   deserializeConfirmPurchaseReceiptResponseApiDTO,
   deserializePurchaseOrderApiDTO,
@@ -11,11 +15,14 @@ import {
 } from '../contracts/purchase-order-api-dto'
 
 export const PURCHASE_TRANSACTION_INTENT_ORDER_SAVE = 'ORDER_SAVE'
-export const PURCHASE_TRANSACTION_INTENT_DELIVERY_DATE_CHANGE = 'ORDER_DELIVERY_DATE_CHANGE'
-export const PURCHASE_TRANSACTION_INTENT_SUPPLIER_CHANGE = 'ORDER_SUPPLIER_CHANGE'
+export const PURCHASE_TRANSACTION_INTENT_DELIVERY_DATE_CHANGE =
+  'ORDER_DELIVERY_DATE_CHANGE'
+export const PURCHASE_TRANSACTION_INTENT_SUPPLIER_CHANGE =
+  'ORDER_SUPPLIER_CHANGE'
 export const PURCHASE_TRANSACTION_INTENT_ORDER_LINE_ADD = 'ORDER_LINE_ADD'
 export const PURCHASE_TRANSACTION_INTENT_ORDER_LINE_REMOVE = 'ORDER_LINE_REMOVE'
-export const PURCHASE_TRANSACTION_INTENT_ORDER_LINE_CONTENT_CHANGE = 'ORDER_LINE_CONTENT_CHANGE'
+export const PURCHASE_TRANSACTION_INTENT_ORDER_LINE_CONTENT_CHANGE =
+  'ORDER_LINE_CONTENT_CHANGE'
 export const PURCHASE_TRANSACTION_INTENT_RECEIPT_CONFIRM = 'PURCHASE_CONFIRM'
 
 export interface PurchaseOrderTransactionRequest<TPayload> {
@@ -85,14 +92,16 @@ export const executePurchaseOrderTransaction = async <TPayload>(
   orderId: string,
   request: PurchaseOrderTransactionRequest<TPayload>
 ): Promise<PurchaseOrder> => {
-  const res = await apiFetch<unknown>(`/purchase/orders/${orderId}/transactions`, {
-    method: 'POST',
-    body: JSON.stringify(request),
-  })
-  const response = ensureObjectResponse<PurchaseOrderApiDTO & Record<string, unknown>>(
-      res,
-      'PurchaseTransactionService.executePurchaseOrderTransaction'
-    )
+  const res = await apiFetch<unknown>(
+    `/purchase/orders/${orderId}/transactions`,
+    {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }
+  )
+  const response = ensureObjectResponse<
+    PurchaseOrderApiDTO & Record<string, unknown>
+  >(res, 'PurchaseTransactionService.executePurchaseOrderTransaction')
   return toPurchaseOrderContract(deserializePurchaseOrderApiDTO(response))
 }
 
@@ -107,26 +116,30 @@ export const executePurchaseOrderReceiptConfirmation = async (
     expectedVersion: number
   }
 ): Promise<ConfirmPurchaseReceiptContract> => {
-  const res = await apiFetch<ConfirmPurchaseReceiptResponseApiDTO>(`/purchase/orders/${orderId}/transactions`, {
-    method: 'POST',
-    body: JSON.stringify({
-      intent: PURCHASE_TRANSACTION_INTENT_RECEIPT_CONFIRM,
-      actorId: params.actorId,
-      expectedVersion: params.expectedVersion,
-      payload: {
-        operator: params.operator,
-        remarks: params.remarks,
-        receiptDate: params.receiptDate,
-        lines: params.lines,
-      },
-    }),
-  })
+  const res = await apiFetch<ConfirmPurchaseReceiptResponseApiDTO>(
+    `/purchase/orders/${orderId}/transactions`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        intent: PURCHASE_TRANSACTION_INTENT_RECEIPT_CONFIRM,
+        actorId: params.actorId,
+        expectedVersion: params.expectedVersion,
+        payload: {
+          operator: params.operator,
+          remarks: params.remarks,
+          receiptDate: params.receiptDate,
+          lines: params.lines,
+        },
+      }),
+    }
+  )
 
-  const response = ensureObjectResponse<ConfirmPurchaseReceiptResponseApiDTO & Record<string, unknown>>(
-      res,
-      'PurchaseTransactionService.executePurchaseOrderReceiptConfirmation'
-    )
-  return toConfirmPurchaseReceiptContract(deserializeConfirmPurchaseReceiptResponseApiDTO(response))
+  const response = ensureObjectResponse<
+    ConfirmPurchaseReceiptResponseApiDTO & Record<string, unknown>
+  >(res, 'PurchaseTransactionService.executePurchaseOrderReceiptConfirmation')
+  return toConfirmPurchaseReceiptContract(
+    deserializeConfirmPurchaseReceiptResponseApiDTO(response)
+  )
 }
 
 export const changePurchaseOrderExpectedDate = async (
@@ -138,15 +151,18 @@ export const changePurchaseOrderExpectedDate = async (
     expectedVersion: number
   }
 ): Promise<PurchaseOrder> => {
-  return executePurchaseOrderTransaction<PurchaseOrderExpectedDateChangePayload>(orderId, {
-    intent: PURCHASE_TRANSACTION_INTENT_DELIVERY_DATE_CHANGE,
-    actorId: params.actorId,
-    expectedVersion: params.expectedVersion,
-    payload: {
-      expectedDate: params.expectedDate,
-      operator: params.operator,
-    },
-  })
+  return executePurchaseOrderTransaction<PurchaseOrderExpectedDateChangePayload>(
+    orderId,
+    {
+      intent: PURCHASE_TRANSACTION_INTENT_DELIVERY_DATE_CHANGE,
+      actorId: params.actorId,
+      expectedVersion: params.expectedVersion,
+      payload: {
+        expectedDate: params.expectedDate,
+        operator: params.operator,
+      },
+    }
+  )
 }
 
 export const savePurchaseOrder = async (
@@ -181,16 +197,19 @@ export const changePurchaseOrderSupplier = async (
     expectedVersion: number
   }
 ): Promise<PurchaseOrder> => {
-  return executePurchaseOrderTransaction<PurchaseOrderSupplierChangePayload>(orderId, {
-    intent: PURCHASE_TRANSACTION_INTENT_SUPPLIER_CHANGE,
-    actorId: params.actorId,
-    expectedVersion: params.expectedVersion,
-    payload: {
-      supplierId: params.supplierId,
-      supplierName: params.supplierName,
-      operator: params.operator,
-    },
-  })
+  return executePurchaseOrderTransaction<PurchaseOrderSupplierChangePayload>(
+    orderId,
+    {
+      intent: PURCHASE_TRANSACTION_INTENT_SUPPLIER_CHANGE,
+      actorId: params.actorId,
+      expectedVersion: params.expectedVersion,
+      payload: {
+        supplierId: params.supplierId,
+        supplierName: params.supplierName,
+        operator: params.operator,
+      },
+    }
+  )
 }
 
 export const changePurchaseOrderLineAdd = async (
@@ -222,15 +241,18 @@ export const changePurchaseOrderLineRemove = async (
     expectedVersion: number
   }
 ): Promise<PurchaseOrder> => {
-  return executePurchaseOrderTransaction<PurchaseOrderLineRemovePayload>(orderId, {
-    intent: PURCHASE_TRANSACTION_INTENT_ORDER_LINE_REMOVE,
-    actorId: params.actorId,
-    expectedVersion: params.expectedVersion,
-    payload: {
-      lines: params.lines,
-      operator: params.operator,
-    },
-  })
+  return executePurchaseOrderTransaction<PurchaseOrderLineRemovePayload>(
+    orderId,
+    {
+      intent: PURCHASE_TRANSACTION_INTENT_ORDER_LINE_REMOVE,
+      actorId: params.actorId,
+      expectedVersion: params.expectedVersion,
+      payload: {
+        lines: params.lines,
+        operator: params.operator,
+      },
+    }
+  )
 }
 
 export const changePurchaseOrderLineContent = async (
@@ -242,15 +264,18 @@ export const changePurchaseOrderLineContent = async (
     expectedVersion: number
   }
 ): Promise<PurchaseOrder> => {
-  return executePurchaseOrderTransaction<PurchaseOrderLineContentChangePayload>(orderId, {
-    intent: PURCHASE_TRANSACTION_INTENT_ORDER_LINE_CONTENT_CHANGE,
-    actorId: params.actorId,
-    expectedVersion: params.expectedVersion,
-    payload: {
-      lines: params.lines,
-      operator: params.operator,
-    },
-  })
+  return executePurchaseOrderTransaction<PurchaseOrderLineContentChangePayload>(
+    orderId,
+    {
+      intent: PURCHASE_TRANSACTION_INTENT_ORDER_LINE_CONTENT_CHANGE,
+      actorId: params.actorId,
+      expectedVersion: params.expectedVersion,
+      payload: {
+        lines: params.lines,
+        operator: params.operator,
+      },
+    }
+  )
 }
 
 export const purchaseOrderTransactionCore = {

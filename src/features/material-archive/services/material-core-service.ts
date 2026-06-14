@@ -12,14 +12,18 @@ import { type Material, type MaterialOption } from '../data/schema'
 
 export const MaterialCoreService = {
   async getMaterialOptions(): Promise<MaterialOption[]> {
-    const res = await apiFetch<MaterialOptionsResponseApiDTO>('/materials?options=true')
-    const checked = ensureObjectResponse<MaterialOptionsResponseApiDTO & Record<string, unknown>>(
-      res,
-      'MaterialCoreService.getMaterialOptions'
+    const res = await apiFetch<MaterialOptionsResponseApiDTO>(
+      '/materials?options=true'
     )
+    const checked = ensureObjectResponse<
+      MaterialOptionsResponseApiDTO & Record<string, unknown>
+    >(res, 'MaterialCoreService.getMaterialOptions')
 
     return toMaterialOptionContracts(
-      ensureArrayResponse(checked.items, 'MaterialCoreService.getMaterialOptions.items')
+      ensureArrayResponse(
+        checked.items,
+        'MaterialCoreService.getMaterialOptions.items'
+      )
     )
   },
 
@@ -29,7 +33,12 @@ export const MaterialCoreService = {
     pageSize: number = 20,
     search: string = ''
   ): Promise<{ data: Material[]; total: number }> {
-    const { data, total } = await this.getMaterialsWithVersion(category, page, pageSize, search)
+    const { data, total } = await this.getMaterialsWithVersion(
+      category,
+      page,
+      pageSize,
+      search
+    )
     return { data, total }
   },
 
@@ -40,16 +49,18 @@ export const MaterialCoreService = {
     search: string = ''
   ): Promise<{ data: Material[]; total: number; version: string }> {
     const params = new URLSearchParams()
-    if (category && category !== 'all') params.append('category', category.toUpperCase())
+    if (category && category !== 'all')
+      params.append('category', category.toUpperCase())
     params.append('page', page.toString())
     params.append('pageSize', pageSize.toString())
     if (search) params.append('search', search)
 
-    const res = await apiFetch<MaterialListPageApiDTO>(`/materials?${params.toString()}`)
-    const checked = ensureObjectResponse<MaterialListPageApiDTO & Record<string, unknown>>(
-      res,
-      'MaterialCoreService.getMaterialsWithVersion'
+    const res = await apiFetch<MaterialListPageApiDTO>(
+      `/materials?${params.toString()}`
     )
+    const checked = ensureObjectResponse<
+      MaterialListPageApiDTO & Record<string, unknown>
+    >(res, 'MaterialCoreService.getMaterialsWithVersion')
     const pageResult = toMaterialListPageContract(checked)
 
     return {

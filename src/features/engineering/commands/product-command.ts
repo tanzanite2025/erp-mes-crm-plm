@@ -47,7 +47,8 @@ export const ProductCommand = {
     }
 
     return {
-      formValues: baseValues ?? buildDefaultProductValues({ includeVersion: false }),
+      formValues:
+        baseValues ?? buildDefaultProductValues({ includeVersion: false }),
     }
   },
 

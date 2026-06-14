@@ -12,7 +12,8 @@ export const trading = {
   },
   salesAnalysis: {
     moduleTitle: '销售分析',
-    moduleDescription: '独立承载订单分析与后续客户、产品、趋势、履约等经营分析能力。',
+    moduleDescription:
+      '独立承载订单分析与后续客户、产品、趋势、履约等经营分析能力。',
   },
   salesReturns: {
     title: '销售退货',
@@ -140,8 +141,7 @@ export const trading = {
       description:
         '基于销售订单 {{orderNo}} 先加入本次要退的商品，再填写退货数量并创建真实退货单。',
       emptyLinesTitle: '还没有填写退货明细',
-      emptyLinesDescription:
-        '请先加入至少一个商品，并填写大于 0 的退货数量。',
+      emptyLinesDescription: '请先加入至少一个商品，并填写大于 0 的退货数量。',
       summaryOrderNo: '来源订单号',
       summaryCustomer: '客户',
       summarySelectedLines: '已加入退货商品数',
@@ -211,7 +211,8 @@ export const trading = {
       amountLabel: '实际退货金额',
       amountPlaceholder: '请输入本次确认的实际退货金额',
       amountNoteLabel: '金额说明',
-      amountNotePlaceholder: '请输入本次退货金额的依据、处理说明或客户沟通结论...',
+      amountNotePlaceholder:
+        '请输入本次退货金额的依据、处理说明或客户沟通结论...',
       evidenceTitle: '退货金额凭证图片',
       evidenceEmpty: '暂无退货金额凭证图片',
       evidenceUploadAction: '上传金额凭证图片',
@@ -224,7 +225,8 @@ export const trading = {
     },
     actualAmountHistory: {
       title: '退货金额记录',
-      description: '每次登记都会沉淀为独立记录，后续用于应收冲减卡片与财务追溯。',
+      description:
+        '每次登记都会沉淀为独立记录，后续用于应收冲减卡片与财务追溯。',
       empty: '当前退货单还没有金额登记记录',
       note: '金额说明',
       viewDetail: '查看记录',
@@ -409,7 +411,8 @@ export const trading = {
       '查看应收台账余额、账龄状态，并进入明细弹层执行收款登记与分摊。',
     returnAdjustments: {
       title: '销售退货冲减记录',
-      description: '集中展示已同步到当前应收单据的销售退货金额记录，财务可直接点开核对来源与凭证。',
+      description:
+        '集中展示已同步到当前应收单据的销售退货金额记录，财务可直接点开核对来源与凭证。',
       empty: '当前应收单据还没有销售退货冲减记录',
       note: '金额说明',
     },

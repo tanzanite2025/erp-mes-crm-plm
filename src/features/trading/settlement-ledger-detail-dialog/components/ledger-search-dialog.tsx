@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react'
-
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import {
@@ -13,11 +12,26 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
+  getTradingLedgerStatusLabel,
+  getTradingLedgerStatusOptions,
+} from '@/features/trading/utils/ledger-display'
 import { useTradingFinanceResources } from '../../hooks/use-trading-finance-resources'
-import { getTradingLedgerStatusLabel, getTradingLedgerStatusOptions } from '@/features/trading/utils/ledger-display'
 
 export interface LedgerSearchCandidate {
   id: string
@@ -70,7 +84,8 @@ const amountFormatter = new Intl.NumberFormat('zh-CN', {
   minimumFractionDigits: 2,
 })
 
-const fieldLabelClassName = 'text-[10px] font-black uppercase tracking-[0.12em] text-muted-foreground/60'
+const fieldLabelClassName =
+  'text-[10px] font-black uppercase tracking-[0.12em] text-muted-foreground/60'
 const controlClassName = 'h-10 rounded-xl text-xs'
 
 export function LedgerSearchDialog({
@@ -106,10 +121,12 @@ export function LedgerSearchDialog({
     includePaymentTerms: false,
   })
   const currencyOptions = useMemo(
-    () => financeResources.currencies.filter((item) => item.status === 'Active'),
+    () =>
+      financeResources.currencies.filter((item) => item.status === 'Active'),
     [financeResources.currencies]
   )
-  const isCurrencyOptionsUnavailable = !financeResources.isLoading && currencyOptions.length === 0
+  const isCurrencyOptionsUnavailable =
+    !financeResources.isLoading && currencyOptions.length === 0
   const [pendingLedgerId, setPendingLedgerId] = useState(selectedLedgerId)
 
   const canConfirm = pendingLedgerId.trim().length > 0
@@ -123,17 +140,27 @@ export function LedgerSearchDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent size='6xl' className='gap-0 overflow-hidden rounded-[28px] border-dashed p-0 shadow-2xl'>
+      <DialogContent
+        size='6xl'
+        className='gap-0 overflow-hidden rounded-[28px] border-dashed p-0 shadow-2xl'
+      >
         <DialogHeader className='border-b border-dashed border-muted/60 bg-muted/20 px-6 py-5'>
-          <DialogTitle className='text-base font-black leading-tight tracking-tight'>{title}</DialogTitle>
-          <DialogDescription className='text-[11px] font-medium leading-5 text-muted-foreground/70'>
+          <DialogTitle className='text-base leading-tight font-black tracking-tight'>
+            {title}
+          </DialogTitle>
+          <DialogDescription className='text-[11px] leading-5 font-medium text-muted-foreground/70'>
             {description}
           </DialogDescription>
         </DialogHeader>
 
         <div className='grid max-h-[calc(100dvh-13rem)] gap-4 overflow-y-auto px-6 py-5'>
           <div className='grid gap-2'>
-            <Label htmlFor='ledger-search-dialog-keyword' className={fieldLabelClassName}>搜索台账</Label>
+            <Label
+              htmlFor='ledger-search-dialog-keyword'
+              className={fieldLabelClassName}
+            >
+              搜索台账
+            </Label>
             <Input
               id='ledger-search-dialog-keyword'
               value={searchTerm}
@@ -145,12 +172,22 @@ export function LedgerSearchDialog({
 
           <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-4'>
             <div className='grid gap-2'>
-              <Label htmlFor='ledger-search-dialog-status' className={fieldLabelClassName}>状态</Label>
+              <Label
+                htmlFor='ledger-search-dialog-status'
+                className={fieldLabelClassName}
+              >
+                状态
+              </Label>
               <Select
                 value={statusFilter || '__all__'}
-                onValueChange={(value) => onStatusFilterChange(value === '__all__' ? '' : value)}
+                onValueChange={(value) =>
+                  onStatusFilterChange(value === '__all__' ? '' : value)
+                }
               >
-                <SelectTrigger id='ledger-search-dialog-status' className={controlClassName}>
+                <SelectTrigger
+                  id='ledger-search-dialog-status'
+                  className={controlClassName}
+                >
                   <SelectValue placeholder='全部状态' />
                 </SelectTrigger>
                 <SelectContent>
@@ -165,13 +202,25 @@ export function LedgerSearchDialog({
             </div>
 
             <div className='grid gap-2'>
-              <Label htmlFor='ledger-search-dialog-currency' className={fieldLabelClassName}>币种</Label>
+              <Label
+                htmlFor='ledger-search-dialog-currency'
+                className={fieldLabelClassName}
+              >
+                币种
+              </Label>
               <Select
                 value={currencyFilter || '__all__'}
-                onValueChange={(value) => onCurrencyFilterChange(value === '__all__' ? '' : value)}
-                disabled={financeResources.isLoading || isCurrencyOptionsUnavailable}
+                onValueChange={(value) =>
+                  onCurrencyFilterChange(value === '__all__' ? '' : value)
+                }
+                disabled={
+                  financeResources.isLoading || isCurrencyOptionsUnavailable
+                }
               >
-                <SelectTrigger id='ledger-search-dialog-currency' className={controlClassName}>
+                <SelectTrigger
+                  id='ledger-search-dialog-currency'
+                  className={controlClassName}
+                >
                   <SelectValue placeholder='全部币种' />
                 </SelectTrigger>
                 <SelectContent>
@@ -184,15 +233,24 @@ export function LedgerSearchDialog({
                 </SelectContent>
               </Select>
               {financeResources.isLoading ? (
-                <div className='text-[10px] font-bold text-muted-foreground/60'>币种字典加载中...</div>
+                <div className='text-[10px] font-bold text-muted-foreground/60'>
+                  币种字典加载中...
+                </div>
               ) : null}
               {isCurrencyOptionsUnavailable ? (
-                <div className='text-[10px] font-bold text-destructive'>币种字典加载失败，请稍后重试</div>
+                <div className='text-[10px] font-bold text-destructive'>
+                  币种字典加载失败，请稍后重试
+                </div>
               ) : null}
             </div>
 
             <div className='grid gap-2'>
-              <Label htmlFor='ledger-search-dialog-outstanding-min' className={fieldLabelClassName}>{outstandingLabel}最小值</Label>
+              <Label
+                htmlFor='ledger-search-dialog-outstanding-min'
+                className={fieldLabelClassName}
+              >
+                {outstandingLabel}最小值
+              </Label>
               <Input
                 id='ledger-search-dialog-outstanding-min'
                 type='number'
@@ -203,7 +261,12 @@ export function LedgerSearchDialog({
             </div>
 
             <div className='grid gap-2'>
-              <Label htmlFor='ledger-search-dialog-outstanding-max' className={fieldLabelClassName}>{outstandingLabel}最大值</Label>
+              <Label
+                htmlFor='ledger-search-dialog-outstanding-max'
+                className={fieldLabelClassName}
+              >
+                {outstandingLabel}最大值
+              </Label>
               <Input
                 id='ledger-search-dialog-outstanding-max'
                 type='number'
@@ -216,9 +279,17 @@ export function LedgerSearchDialog({
 
           <div className='grid gap-4 md:grid-cols-2'>
             <div className='grid gap-2'>
-              <Label htmlFor='ledger-search-dialog-sort-by' className={fieldLabelClassName}>排序字段</Label>
+              <Label
+                htmlFor='ledger-search-dialog-sort-by'
+                className={fieldLabelClassName}
+              >
+                排序字段
+              </Label>
               <Select value={sortBy} onValueChange={onSortByChange}>
-                <SelectTrigger id='ledger-search-dialog-sort-by' className={controlClassName}>
+                <SelectTrigger
+                  id='ledger-search-dialog-sort-by'
+                  className={controlClassName}
+                >
                   <SelectValue placeholder='选择排序字段' />
                 </SelectTrigger>
                 <SelectContent>
@@ -232,9 +303,17 @@ export function LedgerSearchDialog({
             </div>
 
             <div className='grid gap-2'>
-              <Label htmlFor='ledger-search-dialog-sort-order' className={fieldLabelClassName}>排序方向</Label>
+              <Label
+                htmlFor='ledger-search-dialog-sort-order'
+                className={fieldLabelClassName}
+              >
+                排序方向
+              </Label>
               <Select value={sortOrder} onValueChange={onSortOrderChange}>
-                <SelectTrigger id='ledger-search-dialog-sort-order' className={controlClassName}>
+                <SelectTrigger
+                  id='ledger-search-dialog-sort-order'
+                  className={controlClassName}
+                >
                   <SelectValue placeholder='选择排序方向' />
                 </SelectTrigger>
                 <SelectContent>
@@ -249,16 +328,32 @@ export function LedgerSearchDialog({
           </div>
 
           <div className='overflow-hidden rounded-[24px] border border-dashed border-muted/60 bg-muted/5 shadow-inner'>
-            <RadioGroup value={pendingLedgerId} onValueChange={setPendingLedgerId} className='gap-0'>
+            <RadioGroup
+              value={pendingLedgerId}
+              onValueChange={setPendingLedgerId}
+              className='gap-0'
+            >
               <Table>
                 <TableHeader className='bg-muted/20'>
                   <TableRow className='hover:bg-transparent'>
-                    <TableHead className='h-10 w-14 px-4 text-[10px] font-black uppercase tracking-[0.14em] text-muted-foreground/55'>选择</TableHead>
-                    <TableHead className='h-10 px-4 text-[10px] font-black uppercase tracking-[0.14em] text-muted-foreground/55'>台账编号</TableHead>
-                    <TableHead className='h-10 px-4 text-[10px] font-black uppercase tracking-[0.14em] text-muted-foreground/55'>{partnerLabel}</TableHead>
-                    <TableHead className='h-10 px-4 text-[10px] font-black uppercase tracking-[0.14em] text-muted-foreground/55'>币种</TableHead>
-                    <TableHead className='h-10 px-4 text-right text-[10px] font-black uppercase tracking-[0.14em] text-muted-foreground/55'>{outstandingLabel}</TableHead>
-                    <TableHead className='h-10 px-4 text-[10px] font-black uppercase tracking-[0.14em] text-muted-foreground/55'>状态</TableHead>
+                    <TableHead className='h-10 w-14 px-4 text-[10px] font-black tracking-[0.14em] text-muted-foreground/55 uppercase'>
+                      选择
+                    </TableHead>
+                    <TableHead className='h-10 px-4 text-[10px] font-black tracking-[0.14em] text-muted-foreground/55 uppercase'>
+                      台账编号
+                    </TableHead>
+                    <TableHead className='h-10 px-4 text-[10px] font-black tracking-[0.14em] text-muted-foreground/55 uppercase'>
+                      {partnerLabel}
+                    </TableHead>
+                    <TableHead className='h-10 px-4 text-[10px] font-black tracking-[0.14em] text-muted-foreground/55 uppercase'>
+                      币种
+                    </TableHead>
+                    <TableHead className='h-10 px-4 text-right text-[10px] font-black tracking-[0.14em] text-muted-foreground/55 uppercase'>
+                      {outstandingLabel}
+                    </TableHead>
+                    <TableHead className='h-10 px-4 text-[10px] font-black tracking-[0.14em] text-muted-foreground/55 uppercase'>
+                      状态
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -272,17 +367,32 @@ export function LedgerSearchDialog({
                         <TableCell className='px-4 py-3'>
                           <RadioGroupItem value={item.id} />
                         </TableCell>
-                        <TableCell className='px-4 py-3 text-xs font-black tracking-tight'>{item.documentNo}</TableCell>
-                        <TableCell className='px-4 py-3 text-xs font-medium text-muted-foreground'>{item.partnerName}</TableCell>
-                        <TableCell className='px-4 py-3 text-xs font-semibold text-muted-foreground'>{item.currency}</TableCell>
-                        <TableCell className='px-4 py-3 text-right text-xs font-black tabular-nums'>{amountFormatter.format(item.outstandingAmount)}</TableCell>
-                        <TableCell className='px-4 py-3 text-xs font-semibold text-muted-foreground'>{getTradingLedgerStatusLabel(item.status, t)}</TableCell>
+                        <TableCell className='px-4 py-3 text-xs font-black tracking-tight'>
+                          {item.documentNo}
+                        </TableCell>
+                        <TableCell className='px-4 py-3 text-xs font-medium text-muted-foreground'>
+                          {item.partnerName}
+                        </TableCell>
+                        <TableCell className='px-4 py-3 text-xs font-semibold text-muted-foreground'>
+                          {item.currency}
+                        </TableCell>
+                        <TableCell className='px-4 py-3 text-right text-xs font-black tabular-nums'>
+                          {amountFormatter.format(item.outstandingAmount)}
+                        </TableCell>
+                        <TableCell className='px-4 py-3 text-xs font-semibold text-muted-foreground'>
+                          {getTradingLedgerStatusLabel(item.status, t)}
+                        </TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={6} className='h-20 text-center text-[11px] font-bold text-muted-foreground/50'>
-                        {isSearching ? '正在搜索台账候选...' : '请输入至少 2 个字符进行搜索'}
+                      <TableCell
+                        colSpan={6}
+                        className='h-20 text-center text-[11px] font-bold text-muted-foreground/50'
+                      >
+                        {isSearching
+                          ? '正在搜索台账候选...'
+                          : '请输入至少 2 个字符进行搜索'}
                       </TableCell>
                     </TableRow>
                   )}

@@ -1,9 +1,9 @@
-import type { Furnace } from '../data/schema'
 import type {
   FurnaceApiDTO,
   FurnaceListPageApiDTO,
   SaveFurnaceApiDTO,
 } from '../contracts/equipment-furnace-api-dto'
+import type { Furnace } from '../data/schema'
 
 export interface FurnaceListPage {
   items: Furnace[]
@@ -37,7 +37,9 @@ export function toFurnaceContracts(dtos: FurnaceApiDTO[]): Furnace[] {
   return dtos.map(toFurnaceContract)
 }
 
-export function toFurnaceListPageContract(dto: FurnaceListPageApiDTO): FurnaceListPage {
+export function toFurnaceListPageContract(
+  dto: FurnaceListPageApiDTO
+): FurnaceListPage {
   return {
     items: toFurnaceContracts(dto.items),
     total: dto.total,
@@ -47,7 +49,9 @@ export function toFurnaceListPageContract(dto: FurnaceListPageApiDTO): FurnaceLi
   }
 }
 
-export function toSaveFurnaceApiDTO(contract: Partial<Furnace>): SaveFurnaceApiDTO {
+export function toSaveFurnaceApiDTO(
+  contract: Partial<Furnace>
+): SaveFurnaceApiDTO {
   return {
     id: contract.id || undefined,
     sn: contract.sn || '',

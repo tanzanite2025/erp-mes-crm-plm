@@ -75,7 +75,6 @@ export function buildBusinessEventStatusReferenceMap(
         if (!summary) return
         collectSegmentStatusReference(summary, rule, segment, 'target')
       })
-
       ;(segment.resolveOnStatuses ?? []).forEach((statusCode) => {
         const summary = summaries.get(statusCode)
         if (!summary) return
@@ -85,8 +84,15 @@ export function buildBusinessEventStatusReferenceMap(
       source.config.statuses.forEach((status) => {
         const summary = summaries.get(status.code)
         if (!summary) return
-        if (segment.approval?.action === `${source.code}_${status.code}_APPROVAL`) {
-          collectSegmentStatusReference(summary, rule, segment, 'approvalAction')
+        if (
+          segment.approval?.action === `${source.code}_${status.code}_APPROVAL`
+        ) {
+          collectSegmentStatusReference(
+            summary,
+            rule,
+            segment,
+            'approvalAction'
+          )
         }
       })
     })

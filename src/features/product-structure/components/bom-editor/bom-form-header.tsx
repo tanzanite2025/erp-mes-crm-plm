@@ -1,19 +1,24 @@
 import { useMemo, type CSSProperties } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
+import { useQuery } from '@tanstack/react-query'
+import { getBomStatusOrderByType } from '@/lib/codecs/code-normalization'
+import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
-import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form'
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+} from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { SelectDropdown } from '@/components/select-dropdown'
-import { cn } from '@/lib/utils'
-import { getBomStatusOrderByType } from '@/lib/codecs/code-normalization'
 import { useUnitsQuery } from '@/features/basic-settings/hooks/use-units-query'
+import { PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY } from '@/features/engineering/query-keys'
+import { ProductAttributeOptionService } from '@/features/engineering/services/product-attribute-option-service'
+import { areSameProductAttributeCategoryKey } from '@/features/engineering/utils/product-attribute-machine-value'
+import { PRODUCT_ATTRIBUTE_CATEGORY_KEYS } from '@/features/engineering/utils/product-attribute-utils'
 import { getCustomers } from '@/features/trading/customer'
 import { tradingQueryKeys } from '@/features/trading/query-keys'
-import { useQuery } from '@tanstack/react-query'
-import { ProductAttributeOptionService } from '@/features/engineering/services/product-attribute-option-service'
-import { PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY } from '@/features/engineering/query-keys'
-import { PRODUCT_ATTRIBUTE_CATEGORY_KEYS } from '@/features/engineering/utils/product-attribute-utils'
-import { areSameProductAttributeCategoryKey } from '@/features/engineering/utils/product-attribute-machine-value'
 import { type BOM, type Product } from '../../data/schema'
 import {
   buildHeaderGridTemplate,
@@ -35,7 +40,12 @@ interface BOMFormHeaderProps {
  * 字段顺序 / 列宽 / 类型 / 校验规则 全部来源于 bom-header-fields.config.ts，
  * 这里仅负责把 config 项落到 react-hook-form 的 FormField 上。
  */
-export function BOMFormHeader({ form, products, productDisplayLabelMap, isEdit }: BOMFormHeaderProps) {
+export function BOMFormHeader({
+  form,
+  products,
+  productDisplayLabelMap,
+  isEdit,
+}: BOMFormHeaderProps) {
   const { t, locale } = useLanguage()
 
   type BOMStatusLabelKey =
@@ -76,7 +86,9 @@ export function BOMFormHeader({ form, products, productDisplayLabelMap, isEdit }
   const weightUnitItems = useMemo(
     () =>
       units
-        .filter((unit) => unit.category === 'WEIGHT' && unit.status === 'active')
+        .filter(
+          (unit) => unit.category === 'WEIGHT' && unit.status === 'active'
+        )
         .map((unit) => ({
           label: unit.code ? `${unit.code} (${unit.name})` : unit.name,
           value: unit.code,
@@ -91,8 +103,14 @@ export function BOMFormHeader({ form, products, productDisplayLabelMap, isEdit }
   })
   const ownerTypeItems = useMemo(
     () => [
-      { label: t('engineering.bomArchive.form.ownerTypeInternal'), value: 'INTERNAL' },
-      { label: t('engineering.bomArchive.form.ownerTypeCustomer'), value: 'CUSTOMER' },
+      {
+        label: t('engineering.bomArchive.form.ownerTypeInternal'),
+        value: 'INTERNAL',
+      },
+      {
+        label: t('engineering.bomArchive.form.ownerTypeCustomer'),
+        value: 'CUSTOMER',
+      },
     ],
     [t]
   )
@@ -109,17 +127,26 @@ export function BOMFormHeader({ form, products, productDisplayLabelMap, isEdit }
   // category=versionLevel 的 active options。
   const productAttributeOptionsQuery = useQuery({
     queryKey: PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY,
-    queryFn: () => ProductAttributeOptionService.getProductAttributeOptions({ activeOnly: true }),
+    queryFn: () =>
+      ProductAttributeOptionService.getProductAttributeOptions({
+        activeOnly: true,
+      }),
   })
   const versionLevelItems = useMemo(() => {
     const data = productAttributeOptionsQuery.data ?? []
     return data
-      .filter((option) =>
-        areSameProductAttributeCategoryKey(option.categoryKey, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version)
-        && option.active
+      .filter(
+        (option) =>
+          areSameProductAttributeCategoryKey(
+            option.categoryKey,
+            PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version
+          ) && option.active
       )
       .map((option) => ({
-        label: locale === 'en-US' && option.labelEn?.trim() ? option.labelEn : option.labelZh,
+        label:
+          locale === 'en-US' && option.labelEn?.trim()
+            ? option.labelEn
+            : option.labelZh,
         value: option.value,
       }))
   }, [productAttributeOptionsQuery.data, locale])
@@ -138,7 +165,18 @@ export function BOMFormHeader({ form, products, productDisplayLabelMap, isEdit }
       customerItems,
       versionLevelItems,
     }),
-    [isEdit, bomType, ownerType, t, productItems, statusItems, weightUnitItems, ownerTypeItems, customerItems, versionLevelItems]
+    [
+      isEdit,
+      bomType,
+      ownerType,
+      t,
+      productItems,
+      statusItems,
+      weightUnitItems,
+      ownerTypeItems,
+      customerItems,
+      versionLevelItems,
+    ]
   )
 
   const headerFields = useMemo(() => getBOMHeaderFields(ctx), [ctx])
@@ -150,7 +188,7 @@ export function BOMFormHeader({ form, products, productDisplayLabelMap, isEdit }
     [headerFields]
   )
   const headerGridStyle = useMemo<CSSProperties>(
-    () => ({ '--bom-header-grid': lgGridTemplateColumns } as CSSProperties),
+    () => ({ '--bom-header-grid': lgGridTemplateColumns }) as CSSProperties,
     [lgGridTemplateColumns]
   )
 
@@ -179,14 +217,18 @@ interface BOMHeaderFormFieldProps {
   ctx: BOMHeaderFieldContext
 }
 
-function BOMHeaderFormField({ form, fieldConfig, ctx }: BOMHeaderFormFieldProps) {
+function BOMHeaderFormField({
+  form,
+  fieldConfig,
+  ctx,
+}: BOMHeaderFormFieldProps) {
   return (
     <FormField
       control={form.control}
       name={fieldConfig.name as keyof BOM}
       render={({ field }) => (
         <FormItem className='min-w-0'>
-          <FormLabel className='mb-1.5 block text-[10px] font-black uppercase tracking-widest text-primary/80'>
+          <FormLabel className='mb-1.5 block text-[10px] font-black tracking-widest text-primary/80 uppercase'>
             {fieldConfig.label}
           </FormLabel>
 
@@ -194,7 +236,9 @@ function BOMHeaderFormField({ form, fieldConfig, ctx }: BOMHeaderFormFieldProps)
             <SelectDropdown
               value={(field.value as string | undefined) ?? ''}
               onValueChange={(value) => {
-                const next = fieldConfig.transformOnChange ? fieldConfig.transformOnChange(value) : value
+                const next = fieldConfig.transformOnChange
+                  ? fieldConfig.transformOnChange(value)
+                  : value
                 field.onChange(next)
                 // ownerType 切回 INTERNAL 时,强制清空 ownerCustomerId,避免脏数据被提交。
                 if (fieldConfig.name === 'ownerType' && next !== 'CUSTOMER') {
@@ -253,8 +297,8 @@ function BOMHeaderFormField({ form, fieldConfig, ctx }: BOMHeaderFormFieldProps)
                 }}
                 className={cn(
                   'h-11! rounded-2xl border-none bg-muted/50 text-[11px]! font-bold shadow-inner',
-                  fieldConfig.inputType === 'date'
-                    && '[&::-webkit-datetime-edit]:text-[11px]! [&::-webkit-datetime-edit]:font-bold [&::-webkit-calendar-picker-indicator]:opacity-60',
+                  fieldConfig.inputType === 'date' &&
+                    '[&::-webkit-calendar-picker-indicator]:opacity-60 [&::-webkit-datetime-edit]:text-[11px]! [&::-webkit-datetime-edit]:font-bold',
                   fieldConfig.className
                 )}
               />

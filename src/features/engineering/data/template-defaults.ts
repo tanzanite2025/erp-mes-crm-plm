@@ -50,19 +50,25 @@ export function localizeTemplateDefinition<T extends string>(
       return {
         ...template,
         name: t('engineering.templateMgmt.presets.RIM_STD.name' as T),
-        description: t('engineering.templateMgmt.presets.RIM_STD.description' as T),
+        description: t(
+          'engineering.templateMgmt.presets.RIM_STD.description' as T
+        ),
       }
     case 'STEM_STD':
       return {
         ...template,
         name: t('engineering.templateMgmt.presets.STEM_STD.name' as T),
-        description: t('engineering.templateMgmt.presets.STEM_STD.description' as T),
+        description: t(
+          'engineering.templateMgmt.presets.STEM_STD.description' as T
+        ),
       }
     case 'FORK_STD':
       return {
         ...template,
         name: t('engineering.templateMgmt.presets.FORK_STD.name' as T),
-        description: t('engineering.templateMgmt.presets.FORK_STD.description' as T),
+        description: t(
+          'engineering.templateMgmt.presets.FORK_STD.description' as T
+        ),
       }
     default:
       return template

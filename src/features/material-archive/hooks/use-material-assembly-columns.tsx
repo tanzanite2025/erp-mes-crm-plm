@@ -1,9 +1,9 @@
 import { useMemo } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { Settings2, Trash2 } from 'lucide-react'
+import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { useLanguage } from '@/context/language-provider'
 import { type PackagingRule } from '../data/schema'
 import { type MaterialAssemblyRow } from './use-material-assembly-manager'
 
@@ -42,7 +42,9 @@ export function useMaterialAssemblyColumns({
           </div>
         ),
         cell: ({ row }) => (
-          <div className='text-sm font-bold tracking-tight'>{row.original.materialName}</div>
+          <div className='text-sm font-bold tracking-tight'>
+            {row.original.materialName}
+          </div>
         ),
       },
       {

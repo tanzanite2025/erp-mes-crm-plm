@@ -1,15 +1,15 @@
 'use client'
 
+import type { TranslationKey } from '@/locales'
 import { Link2 } from 'lucide-react'
+import { useLanguage } from '@/context/language-provider'
 import { ModuleTabbedLayout } from '@/components/layout/module-tabbed-layout'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
-import { useLanguage } from '@/context/language-provider'
 import { getCuttingOperationTabs } from '@/features/cutting-operations/tab-config'
-import type { TranslationKey } from '@/locales'
 import { ProductBindingFeedbackCard } from './components/product-binding-feedback-card'
 import { ProductBindingFormSection } from './components/product-binding-form-section'
-import { HistoryTableActionTrigger } from './product-binding-history-entry'
 import { useProductBindingPageState } from './hooks/use-product-binding-page-state'
+import { HistoryTableActionTrigger } from './product-binding-history-entry'
 
 type CuttingOperationTabTranslator = (
   key: TranslationKey,
@@ -22,10 +22,8 @@ export function ProductBindingTab() {
   const state = useProductBindingPageState()
 
   return (
-    <ModuleTabbedLayout
-      tabs={getCuttingOperationTabs(tabTranslator)}
-    >
-      <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+    <ModuleTabbedLayout tabs={getCuttingOperationTabs(tabTranslator)}>
+      <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
         <IndustrialHeader
           icon={Link2}
           title={t('cuttingOperations.productBinding.header.title')}
@@ -37,10 +35,10 @@ export function ProductBindingTab() {
           <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-transparent' />
           <div className='relative p-4'>
             <div className='flex flex-col gap-2'>
-              <p className='text-sm font-black italic tracking-tighter text-foreground'>
+              <p className='text-sm font-black tracking-tighter text-foreground italic'>
                 {t('cuttingOperations.productBinding.form.title')}
               </p>
-              <p className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>
+              <p className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                 {t('cuttingOperations.productBinding.form.description')}
               </p>
             </div>
@@ -63,9 +61,15 @@ export function ProductBindingTab() {
                   captureSession={state.barcodeCaptureSession}
                   captureUrl={state.barcodeCaptureUrl}
                   captureStatusMessage={state.barcodeCaptureStatusMessage}
-                  isCreatingCaptureSession={state.isCreatingBarcodeCaptureSession}
-                  onCreateCaptureSession={() => void state.handleCreateBarcodeCaptureSession()}
-                  onCopyCaptureLink={() => void state.handleCopyBarcodeCaptureLink()}
+                  isCreatingCaptureSession={
+                    state.isCreatingBarcodeCaptureSession
+                  }
+                  onCreateCaptureSession={() =>
+                    void state.handleCreateBarcodeCaptureSession()
+                  }
+                  onCopyCaptureLink={() =>
+                    void state.handleCopyBarcodeCaptureLink()
+                  }
                 />
               </div>
 

@@ -19,13 +19,16 @@ import {
 export type { InboundRecord, InboundTDO } from '../data/schema'
 
 export const INVENTORY_TRANSACTION_INTENT_INBOUND_RECEIPT = 'INBOUND_RECEIPT'
-export const INVENTORY_TRANSACTION_INTENT_INTER_WAREHOUSE_TRANSFER = 'INTER_WAREHOUSE_TRANSFER'
+export const INVENTORY_TRANSACTION_INTENT_INTER_WAREHOUSE_TRANSFER =
+  'INTER_WAREHOUSE_TRANSFER'
 
 export const InventoryTransactionService = {
   recordInbound: async (data: InboundTDO): Promise<InboundRecord> => {
     const command = inboundTDOSchema.parse(data)
 
-    const res = await apiFetch<InventoryInboundRecordApiDTO | CreateInventoryInboundApiDTO>('/inventory/inbound', {
+    const res = await apiFetch<
+      InventoryInboundRecordApiDTO | CreateInventoryInboundApiDTO
+    >('/inventory/inbound', {
       method: 'POST',
       body: JSON.stringify({
         ...toInboundTDOApiDTO(command),
@@ -33,7 +36,9 @@ export const InventoryTransactionService = {
       }),
     })
 
-    const response = ensureObjectResponse<InventoryInboundRecordApiDTO & Record<string, unknown>>(res, 'InventoryTransactionService.recordInbound')
+    const response = ensureObjectResponse<
+      InventoryInboundRecordApiDTO & Record<string, unknown>
+    >(res, 'InventoryTransactionService.recordInbound')
     const contract = toInboundRecordContract(response)
     return inboundRecordSchema.parse(contract)
   },
@@ -59,7 +64,9 @@ export const InventoryTransactionService = {
         fromCategory: fromCat,
         toCategory: toCat,
         version: expectedVersion,
-        metadata: { intent: INVENTORY_TRANSACTION_INTENT_INTER_WAREHOUSE_TRANSFER },
+        metadata: {
+          intent: INVENTORY_TRANSACTION_INTENT_INTER_WAREHOUSE_TRANSFER,
+        },
       }),
     })
   },

@@ -7,25 +7,30 @@ export const cuttingOperations = {
   productBinding: {
     header: {
       title: 'Product Binding',
-      description: 'This page binds code-center product barcodes to prepreg roll-instance QR labels that have already been activated in the prepreg page through scan plus OCR.',
+      description:
+        'This page binds code-center product barcodes to prepreg roll-instance QR labels that have already been activated in the prepreg page through scan plus OCR.',
     },
     cards: {
       scope: {
         title: 'Formal Business Position',
-        description: 'The formal binding target is an activated prepreg roll-instance QR record rather than a cutting issuance execution or a bare specification token.',
+        description:
+          'The formal binding target is an activated prepreg roll-instance QR record rather than a cutting issuance execution or a bare specification token.',
       },
       nextStep: {
         title: 'Current Work Object',
-        description: 'Each binding submits a product barcode together with a roll-instance QR code. One roll may serve multiple product barcodes, while one product barcode keeps only one current binding.',
+        description:
+          'Each binding submits a product barcode together with a roll-instance QR code. One roll may serve multiple product barcodes, while one product barcode keeps only one current binding.',
       },
       boundary: {
         title: 'Stability Boundary',
-        description: 'This page prioritizes product barcode uniqueness, roll-instance validity, and consistent event history over the same roll instance.',
+        description:
+          'This page prioritizes product barcode uniqueness, roll-instance validity, and consistent event history over the same roll instance.',
       },
     },
     form: {
       title: 'Formal Binding Work Area',
-      description: 'Submit the product barcode together with an activated prepreg roll-instance QR code. The system validates the roll instance and records the binding event.',
+      description:
+        'Submit the product barcode together with an activated prepreg roll-instance QR code. The system validates the roll instance and records the binding event.',
       steps: {
         step0: 'Step 00',
         step1: 'Step 01',
@@ -54,16 +59,20 @@ export const cuttingOperations = {
     },
     mobileCapture: {
       title: 'Mobile Barcode Fill-Back',
-      description: 'Create a mobile capture session, open the QR link on your phone, scan the code-center barcode, and auto-fill the current form.',
+      description:
+        'Create a mobile capture session, open the QR link on your phone, scan the code-center barcode, and auto-fill the current form.',
       actions: {
         create: 'Create Mobile Session',
         copyLink: 'Copy Mobile Link',
       },
       status: {
         idle: 'No mobile capture session has been created yet',
-        created: 'Mobile capture session created. Scan the QR code with your phone.',
-        filled: 'The mobile scan result has been received and filled back automatically.',
-        expired: 'The mobile capture session has expired. Please create a new one.',
+        created:
+          'Mobile capture session created. Scan the QR code with your phone.',
+        filled:
+          'The mobile scan result has been received and filled back automatically.',
+        expired:
+          'The mobile capture session has expired. Please create a new one.',
         pollingFailed: 'Mobile capture polling failed. Please try again later.',
       },
       toasts: {
@@ -74,21 +83,25 @@ export const cuttingOperations = {
       },
       link: {
         title: 'Mobile Capture Link',
-        description: 'Open this link on your phone to launch the camera scanner and fill the result back to this page.',
+        description:
+          'Open this link on your phone to launch the camera scanner and fill the result back to this page.',
       },
       page: {
         title: 'Product Barcode Scan',
-        description: 'Scan the code-center linear barcode directly. Once recognized, the result will be submitted back to the current product-binding page.',
+        description:
+          'Scan the code-center linear barcode directly. Once recognized, the result will be submitted back to the current product-binding page.',
         placeholder: 'Scan or enter the code-center linear barcode',
         actions: {
           submit: 'Submit Scan Result',
         },
         submitted: {
           title: 'Scan Result Submitted',
-          description: 'Return to the desktop page and continue the roll-instance product binding flow.',
+          description:
+            'Return to the desktop page and continue the roll-instance product binding flow.',
         },
         errors: {
-          missingToken: 'The capture token is missing. Reopen the mobile capture link.',
+          missingToken:
+            'The capture token is missing. Reopen the mobile capture link.',
           missingBarcode: 'Scan or enter the code-center linear barcode first.',
           submitFailed: 'Failed to submit the scan result. Please try again.',
         },
@@ -97,39 +110,48 @@ export const cuttingOperations = {
     feedback: {
       idle: {
         title: 'Waiting for Binding Input',
-        description: 'Provide the product barcode and an activated prepreg roll-instance QR code before submitting the formal binding.',
+        description:
+          'Provide the product barcode and an activated prepreg roll-instance QR code before submitting the formal binding.',
       },
       missingExecution: {
         title: 'Execution Missing',
-        description: 'The formal scheme requires each binding to be attached to a cutting issuance execution. Select one first.',
+        description:
+          'The formal scheme requires each binding to be attached to a cutting issuance execution. Select one first.',
       },
       missingBarcode: {
         title: 'Barcode Missing',
-        description: 'Enter the code-center product barcode before submitting the formal binding.',
+        description:
+          'Enter the code-center product barcode before submitting the formal binding.',
       },
       missingQr: {
         title: 'QR Code Missing',
-        description: 'Enter the prepreg roll-instance QR code before submitting the formal binding.',
+        description:
+          'Enter the prepreg roll-instance QR code before submitting the formal binding.',
       },
       submitting: {
         title: 'Submitting Formal Binding',
-        description: 'The system is validating product-barcode uniqueness, roll-instance activation status, and binding-event persistence. Please wait.',
+        description:
+          'The system is validating product-barcode uniqueness, roll-instance activation status, and binding-event persistence. Please wait.',
       },
       success: {
         title: 'Binding Submitted Successfully',
-        description: 'The current binding state and roll-instance event trail have been written, and the page has already refreshed the latest result.',
+        description:
+          'The current binding state and roll-instance event trail have been written, and the page has already refreshed the latest result.',
       },
       duplicate: {
         title: 'Duplicate Submission Detected',
-        description: 'This submission matched an existing binding on the same roll, and the system has replayed the formal result from the existing event.',
+        description:
+          'This submission matched an existing binding on the same roll, and the system has replayed the formal result from the existing event.',
       },
       conflict: {
         title: 'Product Barcode Conflict Detected',
-        description: 'This product barcode is already bound to another prepreg roll, and the system has replayed the existing binding record for review.',
+        description:
+          'This product barcode is already bound to another prepreg roll, and the system has replayed the existing binding record for review.',
       },
       error: {
         title: 'Binding Submission Failed',
-        description: 'The formal binding did not succeed. Check whether the roll-instance QR is activated, the barcode content, or the product-barcode conflict details.',
+        description:
+          'The formal binding did not succeed. Check whether the roll-instance QR is activated, the barcode content, or the product-barcode conflict details.',
       },
       snapshot: {
         executionLabel: 'Roll Spec Snapshot',
@@ -148,9 +170,11 @@ export const cuttingOperations = {
     },
     history: {
       title: 'Roll-Instance Binding Records',
-      description: '{{count}} binding records are loaded for the current filters to verify roll-instance binding events.',
+      description:
+        '{{count}} binding records are loaded for the current filters to verify roll-instance binding events.',
       loading: 'Loading roll-instance binding records...',
-      empty: 'No matching roll-instance binding records yet. Submit a formal binding first.',
+      empty:
+        'No matching roll-instance binding records yet. Submit a formal binding first.',
       error: 'Failed to load binding records: {{message}}',
       latestBadge: 'Latest Submission',
       actions: {
@@ -196,7 +220,8 @@ export const cuttingOperations = {
       title: 'Size Inventory Ledger (sourced from Cut-Size Library)',
       hint: 'Inventory records are selected from cut-size library units and accumulated by inbound entry.',
       loading: 'Loading cut-size library records...',
-      empty: 'No available sizes yet. Maintain size units in Cut-Size Library first.',
+      empty:
+        'No available sizes yet. Maintain size units in Cut-Size Library first.',
       noInventory: 'No inventory record',
       noLocation: 'No location',
       error: 'Failed to load size inventory: {{message}}',
@@ -223,7 +248,8 @@ export const cuttingOperations = {
       saving: 'Recording...',
     },
     toasts: {
-      noActiveUnit: 'No active cut-size unit is available. Maintain the cut-size library first.',
+      noActiveUnit:
+        'No active cut-size unit is available. Maintain the cut-size library first.',
       selectUnit: 'Select a size unit first.',
       invalidQuantity: 'Enter an inbound quantity greater than 0.',
       recordSuccess: 'Size inventory recorded.',

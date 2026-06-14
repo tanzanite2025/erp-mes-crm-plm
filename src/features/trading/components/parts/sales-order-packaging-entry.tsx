@@ -1,8 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronDown, PackageSearch, Plus, Settings2, TriangleAlert } from 'lucide-react'
+import {
+  ChevronDown,
+  PackageSearch,
+  Plus,
+  Settings2,
+  TriangleAlert,
+} from 'lucide-react'
+import { failLoudly } from '@/lib/safe-catch'
 import { useLanguage } from '@/context/language-provider'
 import type { PackagingProfile } from '@/features/logistics-config/packaging-rules-service'
-import { failLoudly } from '@/lib/safe-catch'
 import type { SalesOrder } from '../../data/schema'
 import type { SalesOrderPackagingCardViewModel } from '../../utils/sales-order-packaging-card-view-model'
 import {
@@ -16,8 +22,16 @@ interface SalesOrderPackagingEntryProps {
   readonly?: boolean
   isSelectionPending: boolean
   isFormSavePending: boolean
-  onPersistLineSelection: (order: SalesOrder, lineNo: number, profile: PackagingProfile) => void
-  onStartCreateRule: (order: SalesOrder, lineNo: number, productId?: string) => void
+  onPersistLineSelection: (
+    order: SalesOrder,
+    lineNo: number,
+    profile: PackagingProfile
+  ) => void
+  onStartCreateRule: (
+    order: SalesOrder,
+    lineNo: number,
+    productId?: string
+  ) => void
   onEditRule: (profile: PackagingProfile) => void
 }
 
@@ -34,7 +48,8 @@ export function SalesOrderPackagingEntry({
   const { t } = useLanguage()
   const [selectOpen, setSelectOpen] = useState(false)
   const { target, preview, profiles, isLoading, isError, error } = viewModel
-  const actionLine = target && target.state !== 'no_lines' ? target.actionLine : null
+  const actionLine =
+    target && target.state !== 'no_lines' ? target.actionLine : null
 
   const persistLineSelection = (lineNo: number, profile: PackagingProfile) => {
     if (readonly) {
@@ -52,7 +67,8 @@ export function SalesOrderPackagingEntry({
   const stateMeta = useMemo<SalesOrderPackagingEntryStateMeta>(() => {
     if (!target) {
       return {
-        badgeClassName: 'border-muted-foreground/20 bg-muted/20 text-muted-foreground',
+        badgeClassName:
+          'border-muted-foreground/20 bg-muted/20 text-muted-foreground',
         surfaceClassName: 'border-muted/40 bg-background/80 hover:bg-muted/10',
         icon: PackageSearch,
         title: '准备中',
@@ -63,7 +79,8 @@ export function SalesOrderPackagingEntry({
     if (target.state === 'no_lines') {
       return {
         badgeClassName: 'border-amber-500/20 bg-amber-500/10 text-amber-600',
-        surfaceClassName: 'border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10',
+        surfaceClassName:
+          'border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10',
         icon: TriangleAlert,
         title: t('tradingSalesOrder.packagingPreview.entry.noLinesTitle'),
         hint: t('tradingSalesOrder.packagingPreview.entry.noLinesHint'),
@@ -72,8 +89,10 @@ export function SalesOrderPackagingEntry({
 
     if (target.state === 'resolved') {
       return {
-        badgeClassName: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600',
-        surfaceClassName: 'border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10',
+        badgeClassName:
+          'border-emerald-500/20 bg-emerald-500/10 text-emerald-600',
+        surfaceClassName:
+          'border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10',
         icon: Settings2,
         title: '已选包装',
         hint:
@@ -86,7 +105,8 @@ export function SalesOrderPackagingEntry({
     if (target.state === 'needs_selection') {
       return {
         badgeClassName: 'border-amber-500/20 bg-amber-500/10 text-amber-600',
-        surfaceClassName: 'border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10',
+        surfaceClassName:
+          'border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10',
         icon: ChevronDown,
         title: '待选包装',
         hint: `还有 ${target.pendingSelectionLineCount} 行待选择包装`,
@@ -96,7 +116,8 @@ export function SalesOrderPackagingEntry({
     if (target.state === 'create_new') {
       return {
         badgeClassName: 'border-rose-500/20 bg-rose-500/10 text-rose-600',
-        surfaceClassName: 'border-rose-500/20 bg-rose-500/5 hover:bg-rose-500/10',
+        surfaceClassName:
+          'border-rose-500/20 bg-rose-500/5 hover:bg-rose-500/10',
         icon: Plus,
         title: '待建规则',
         hint: `还有 ${target.createRuleLineCount} 行缺少可用包装规则`,
@@ -105,7 +126,8 @@ export function SalesOrderPackagingEntry({
 
     return {
       badgeClassName: 'border-amber-500/20 bg-amber-500/10 text-amber-600',
-      surfaceClassName: 'border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10',
+      surfaceClassName:
+        'border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10',
       icon: TriangleAlert,
       title: '缺少产品',
       hint: `还有 ${target.missingProductLineCount} 行未绑定产品`,

@@ -1,6 +1,12 @@
 import { useMemo, useState } from 'react'
-import { createDefaultVehicleContactUiFilters, type VehicleContactUiFilters } from '../contact-filters.shared'
-import { type VehicleContactBinding, type VehicleCategory } from '../vehicle-contact.types'
+import {
+  createDefaultVehicleContactUiFilters,
+  type VehicleContactUiFilters,
+} from '../contact-filters.shared'
+import {
+  type VehicleContactBinding,
+  type VehicleCategory,
+} from '../vehicle-contact.types'
 
 const CATEGORY_LABELS: Record<VehicleCategory, string> = {
   van: '面包车',
@@ -31,8 +37,10 @@ export function filterVehicleContactBindings(
   const keyword = uiFilters.keyword.trim().toLowerCase()
 
   return bindings.filter((item) => {
-    if (uiFilters.category !== 'all' && item.category !== uiFilters.category) return false
-    if (uiFilters.vehicleId !== 'all' && item.vehicleId !== uiFilters.vehicleId) return false
+    if (uiFilters.category !== 'all' && item.category !== uiFilters.category)
+      return false
+    if (uiFilters.vehicleId !== 'all' && item.vehicleId !== uiFilters.vehicleId)
+      return false
 
     if (uiFilters.enabled !== 'all') {
       const expectedEnabled = uiFilters.enabled === 'enabled'
@@ -46,9 +54,14 @@ export function filterVehicleContactBindings(
 }
 
 export function useVehicleContactUiFilters(bindings: VehicleContactBinding[]) {
-  const [uiFilters, setUiFilters] = useState<VehicleContactUiFilters>(createDefaultVehicleContactUiFilters())
+  const [uiFilters, setUiFilters] = useState<VehicleContactUiFilters>(
+    createDefaultVehicleContactUiFilters()
+  )
 
-  const filteredBindings = useMemo(() => filterVehicleContactBindings(bindings, uiFilters), [bindings, uiFilters])
+  const filteredBindings = useMemo(
+    () => filterVehicleContactBindings(bindings, uiFilters),
+    [bindings, uiFilters]
+  )
 
   const categoryLabels = CATEGORY_LABELS
 

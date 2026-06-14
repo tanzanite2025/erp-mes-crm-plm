@@ -1,16 +1,19 @@
 import type { TranslationKey } from '@/locales'
 import {
-  type LogisticsCapability,
-  type LogisticsProvider,
-  type LogisticsVerificationStatus,
-} from '@/features/sandbox/logistics-api/types'
-import {
   getProviderVerificationStatus,
   hasProviderCredentials,
   supportsProviderAutomaticVerification,
 } from '@/features/logistics-config/provider-directory.domain'
+import {
+  type LogisticsCapability,
+  type LogisticsProvider,
+  type LogisticsVerificationStatus,
+} from '@/features/sandbox/logistics-api/types'
 
-export const LOGISTICS_CAPABILITY_OPTIONS: Array<{ value: LogisticsCapability; label: string }> = [
+export const LOGISTICS_CAPABILITY_OPTIONS: Array<{
+  value: LogisticsCapability
+  label: string
+}> = [
   { value: 'tracking', label: '轨迹查询' },
   { value: 'callback', label: '回调推送' },
   { value: 'label', label: '电子面单' },
@@ -20,10 +23,15 @@ export const LOGISTICS_CAPABILITY_OPTIONS: Array<{ value: LogisticsCapability; l
 type ProviderCalloutTone = 'info' | 'warning' | 'neutral'
 
 export function getLogisticsCapabilityLabel(capability: LogisticsCapability) {
-  return LOGISTICS_CAPABILITY_OPTIONS.find((item) => item.value === capability)?.label || capability
+  return (
+    LOGISTICS_CAPABILITY_OPTIONS.find((item) => item.value === capability)
+      ?.label || capability
+  )
 }
 
-export function getLogisticsCapabilityLabelKey(capability: LogisticsCapability): TranslationKey {
+export function getLogisticsCapabilityLabelKey(
+  capability: LogisticsCapability
+): TranslationKey {
   switch (capability) {
     case 'tracking':
       return 'logisticsConfig.providerShared.capabilityLabels.tracking'
@@ -36,14 +44,19 @@ export function getLogisticsCapabilityLabelKey(capability: LogisticsCapability):
   }
 }
 
-export function formatProviderVerifiedAt(value?: string, locale: string = 'zh-CN') {
+export function formatProviderVerifiedAt(
+  value?: string,
+  locale: string = 'zh-CN'
+) {
   if (!value) return ''
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
   return date.toLocaleString(locale, { hour12: false })
 }
 
-export function getProviderVerificationLabel(status: LogisticsVerificationStatus) {
+export function getProviderVerificationLabel(
+  status: LogisticsVerificationStatus
+) {
   switch (status) {
     case 'reachable':
       return '已探测可达'
@@ -62,7 +75,9 @@ export function getProviderVerificationLabel(status: LogisticsVerificationStatus
   }
 }
 
-export function getProviderVerificationLabelKey(status: LogisticsVerificationStatus): TranslationKey {
+export function getProviderVerificationLabelKey(
+  status: LogisticsVerificationStatus
+): TranslationKey {
   switch (status) {
     case 'reachable':
       return 'logisticsConfig.providerShared.verificationStatus.reachable'
@@ -81,7 +96,9 @@ export function getProviderVerificationLabelKey(status: LogisticsVerificationSta
   }
 }
 
-export function getProviderVerificationBadgeClass(status: LogisticsVerificationStatus) {
+export function getProviderVerificationBadgeClass(
+  status: LogisticsVerificationStatus
+) {
   switch (status) {
     case 'reachable':
       return 'border-none bg-cyan-100 text-cyan-700'
@@ -106,7 +123,9 @@ export function getProviderApiConnectionBadgeClass(isConnected: boolean) {
     : 'border-none bg-slate-200 text-slate-700'
 }
 
-export function getProviderApiConnectionLabelKey(isConnected: boolean): TranslationKey {
+export function getProviderApiConnectionLabelKey(
+  isConnected: boolean
+): TranslationKey {
   return isConnected
     ? 'logisticsConfig.providerShared.apiConnection.connected'
     : 'logisticsConfig.providerShared.apiConnection.notConnected'
@@ -118,7 +137,9 @@ export function getProviderCredentialsBadgeClass(hasCredentials: boolean) {
     : 'border-none bg-amber-100 text-amber-700'
 }
 
-export function getProviderCredentialsLabelKey(hasCredentials: boolean): TranslationKey {
+export function getProviderCredentialsLabelKey(
+  hasCredentials: boolean
+): TranslationKey {
   return hasCredentials
     ? 'logisticsConfig.providerShared.credentials.configured'
     : 'logisticsConfig.providerShared.credentials.missing'
@@ -134,13 +155,17 @@ export function getProviderReferenceBadgeLabelKey(): TranslationKey {
   return 'logisticsConfig.providerShared.reference.badge'
 }
 
-export function getProviderLifecycleBadgeClass(status: LogisticsProvider['status']) {
+export function getProviderLifecycleBadgeClass(
+  status: LogisticsProvider['status']
+) {
   return status === 'Enabled'
     ? 'rounded-full bg-emerald-100/50 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-emerald-600'
     : 'rounded-full bg-slate-200/70 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-slate-500'
 }
 
-export function getProviderLifecycleLabelKey(status: LogisticsProvider['status']): TranslationKey {
+export function getProviderLifecycleLabelKey(
+  status: LogisticsProvider['status']
+): TranslationKey {
   return status === 'Enabled'
     ? 'logisticsConfig.providerShared.lifecycle.enabled'
     : 'logisticsConfig.providerShared.lifecycle.disabled'
@@ -157,25 +182,39 @@ export function getProviderCalloutClass(tone: ProviderCalloutTone) {
   }
 }
 
-export function getProviderVerificationActionTone(provider: LogisticsProvider): ProviderCalloutTone {
+export function getProviderVerificationActionTone(
+  provider: LogisticsProvider
+): ProviderCalloutTone {
   const status = getProviderVerificationStatus(provider)
 
-  if (status === 'healthy' || status === 'reachable' || status === 'unverified' || status === 'manual_review') {
+  if (
+    status === 'healthy' ||
+    status === 'reachable' ||
+    status === 'unverified' ||
+    status === 'manual_review'
+  ) {
     return 'info'
   }
 
   return 'warning'
 }
 
-export function getProviderReferenceTone(provider: LogisticsProvider): ProviderCalloutTone {
+export function getProviderReferenceTone(
+  provider: LogisticsProvider
+): ProviderCalloutTone {
   return (provider.referenceCount || 0) > 0 ? 'warning' : 'neutral'
 }
 
 export function getProviderVerificationAction(provider: LogisticsProvider) {
-  return (provider.lastVerificationAction || '').trim() || '请根据当前状态补齐配置后重新测试连接。'
+  return (
+    (provider.lastVerificationAction || '').trim() ||
+    '请根据当前状态补齐配置后重新测试连接。'
+  )
 }
 
-export function getProviderVerificationActionKey(provider: LogisticsProvider): TranslationKey {
+export function getProviderVerificationActionKey(
+  provider: LogisticsProvider
+): TranslationKey {
   const status = getProviderVerificationStatus(provider)
   const normalizedCode = (provider.code || '').trim().toUpperCase()
 
@@ -215,14 +254,19 @@ export function getProviderVerificationActionKey(provider: LogisticsProvider): T
     return 'logisticsConfig.providerShared.nextActions.invalidConfigGeneral'
   }
 
-  if (!supportsProviderAutomaticVerification(provider) && hasProviderCredentials(provider)) {
+  if (
+    !supportsProviderAutomaticVerification(provider) &&
+    hasProviderCredentials(provider)
+  ) {
     return 'logisticsConfig.providerShared.nextActions.manualReview'
   }
 
   return 'logisticsConfig.providerShared.nextActions.unverified'
 }
 
-export function getProviderVerificationSummaryKey(provider: LogisticsProvider): TranslationKey {
+export function getProviderVerificationSummaryKey(
+  provider: LogisticsProvider
+): TranslationKey {
   const status = getProviderVerificationStatus(provider)
 
   switch (status) {
@@ -251,7 +295,9 @@ export function getProviderReferenceRiskLabel(provider: LogisticsProvider) {
   return '当前未发现业务引用，可继续维护或删除'
 }
 
-export function getProviderReferenceRiskLabelKey(provider: LogisticsProvider): TranslationKey {
+export function getProviderReferenceRiskLabelKey(
+  provider: LogisticsProvider
+): TranslationKey {
   return (provider.referenceCount || 0) > 0
     ? 'logisticsConfig.providerShared.reference.risk'
     : 'logisticsConfig.providerShared.reference.safe'

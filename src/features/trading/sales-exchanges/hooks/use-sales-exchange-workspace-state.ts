@@ -1,13 +1,16 @@
 import { useMemo, useState } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
-import { useGetSalesOrderDetail, useGetSalesOrders } from '@/features/trading/sales'
 import type { SalesOrder } from '@/features/trading/data/schema'
+import {
+  useGetSalesOrderDetail,
+  useGetSalesOrders,
+} from '@/features/trading/sales'
+import { toCreateSalesExchangePayload } from '../services/sales-exchange-service'
 import type {
   SalesExchangeLineDraft,
   SalesExchangeSourceOrderCandidate,
   SalesExchangeUnmatchedLabelCode,
 } from '../types/sales-exchange-types'
-import { toCreateSalesExchangePayload } from '../services/sales-exchange-service'
 import {
   useGetSalesExchanges,
   useSalesExchangeMutations,
@@ -106,22 +109,19 @@ export function useSalesExchangeWorkspaceState() {
     [salesExchangeRecordsQuery.data?.items]
   )
 
-  const sourceSalesOrderCandidates = useMemo(
-    () => {
-      const sourceOrders = [...(sourceSalesOrdersQuery.data?.items ?? [])]
-      const selectedSourceSalesOrder = selectedSourceSalesOrderQuery.data
+  const sourceSalesOrderCandidates = useMemo(() => {
+    const sourceOrders = [...(sourceSalesOrdersQuery.data?.items ?? [])]
+    const selectedSourceSalesOrder = selectedSourceSalesOrderQuery.data
 
-      if (
-        selectedSourceSalesOrder &&
-        !sourceOrders.some((order) => order.id === selectedSourceSalesOrder.id)
-      ) {
-        sourceOrders.unshift(selectedSourceSalesOrder)
-      }
+    if (
+      selectedSourceSalesOrder &&
+      !sourceOrders.some((order) => order.id === selectedSourceSalesOrder.id)
+    ) {
+      sourceOrders.unshift(selectedSourceSalesOrder)
+    }
 
-      return sourceOrders.map(createSalesExchangeSourceOrderCandidate)
-    },
-    [selectedSourceSalesOrderQuery.data, sourceSalesOrdersQuery.data?.items]
-  )
+    return sourceOrders.map(createSalesExchangeSourceOrderCandidate)
+  }, [selectedSourceSalesOrderQuery.data, sourceSalesOrdersQuery.data?.items])
 
   const selectedSourceSalesOrder = useMemo(
     () =>
@@ -129,7 +129,11 @@ export function useSalesExchangeWorkspaceState() {
       sourceSalesOrderCandidates.find(
         (candidate) => candidate.order.id === selectedSourceSalesOrderId
       )?.order,
-    [selectedSourceSalesOrderId, selectedSourceSalesOrderQuery.data, sourceSalesOrderCandidates]
+    [
+      selectedSourceSalesOrderId,
+      selectedSourceSalesOrderQuery.data,
+      sourceSalesOrderCandidates,
+    ]
   )
 
   const selectedSalesExchangeDraftRecord = useMemo(
@@ -177,7 +181,9 @@ export function useSalesExchangeWorkspaceState() {
     })
   }
 
-  const handleOpenCreateSalesExchangeDialog = (sourceSalesOrder: SalesOrder) => {
+  const handleOpenCreateSalesExchangeDialog = (
+    sourceSalesOrder: SalesOrder
+  ) => {
     handleSelectSourceSalesOrder(sourceSalesOrder.id)
     setSourceSalesOrderForCreateDialog(sourceSalesOrder)
   }

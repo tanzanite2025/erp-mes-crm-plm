@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Card, CardContent } from '@/components/ui/card'
 import { useLanguage } from '@/context/language-provider'
+import { Card, CardContent } from '@/components/ui/card'
+import { RoutingQueryErrorState } from '../workflow-core/components/routing-query-error-state'
 import {
   type RuleExecutionStatus,
   type RuleExecutionType,
 } from '../workflow-core/data/rule-execution-log-schema'
-import { RoutingQueryErrorState } from '../workflow-core/components/routing-query-error-state'
 import { RoutingService } from '../workflow-core/services/routing-service'
 import { RuleExecutionLogList } from './components/rule-execution-log-list'
 import { shouldHideExecutionLogByDefault } from './components/rule-execution-log-presenter'
@@ -30,16 +30,20 @@ export function RuleExecutionLogTab({
   onSearchStateChange,
 }: {
   searchState?: RuleExecutionLogTabSearchState
-  onSearchStateChange?: (partial: Partial<RuleExecutionLogTabSearchState>) => void
+  onSearchStateChange?: (
+    partial: Partial<RuleExecutionLogTabSearchState>
+  ) => void
 } = {}) {
   const { locale } = useLanguage()
   const [localPage, setLocalPage] = useState(1)
   const [localKeyword, setLocalKeyword] = useState('')
   const [localSourceCode, setLocalSourceCode] = useState('all')
-  const [localExecutionType, setLocalExecutionType] =
-    useState<'all' | RuleExecutionType>('all')
-  const [localExecutionStatus, setLocalExecutionStatus] =
-    useState<'all' | RuleExecutionStatus>('all')
+  const [localExecutionType, setLocalExecutionType] = useState<
+    'all' | RuleExecutionType
+  >('all')
+  const [localExecutionStatus, setLocalExecutionStatus] = useState<
+    'all' | RuleExecutionStatus
+  >('all')
   const [listVisibilityState, setListVisibilityState] = useState<{
     key: string
     visibleCount: number
@@ -101,8 +105,7 @@ export function RuleExecutionLogTab({
       pageSize: PAGE_SIZE,
       sourceCode: sourceCode === 'all' ? undefined : sourceCode,
       executionType: executionType === 'all' ? undefined : executionType,
-      executionStatus:
-        executionStatus === 'all' ? undefined : executionStatus,
+      executionStatus: executionStatus === 'all' ? undefined : executionStatus,
     }),
     [executionStatus, executionType, page, sourceCode]
   )
@@ -142,7 +145,8 @@ export function RuleExecutionLogTab({
   const hiddenConfigurationPendingCount = useMemo(
     () =>
       shouldAutoHideConfigurationPendingLogs
-        ? rawItems.filter((item) => shouldHideExecutionLogByDefault(item)).length
+        ? rawItems.filter((item) => shouldHideExecutionLogByDefault(item))
+            .length
         : 0,
     [rawItems, shouldAutoHideConfigurationPendingLogs]
   )
@@ -228,10 +232,11 @@ export function RuleExecutionLogTab({
           isFetching={isFetching}
           onRefresh={() => void refetch()}
         />
-        <CardContent className='space-y-0 px-0 pb-0 pt-0'>
+        <CardContent className='space-y-0 px-0 pt-0 pb-0'>
           {hiddenConfigurationPendingCount > 0 ? (
             <div className='rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-3 py-0.5 text-[11px] font-bold text-slate-600'>
-              已默认收起 {hiddenConfigurationPendingCount} 条“待配置 / 预期跳过”日志，避免在规则尚未配完时制造失败错觉；如需查看，可把“执行结果”切换为“跳过”。
+              已默认收起 {hiddenConfigurationPendingCount} 条“待配置 /
+              预期跳过”日志，避免在规则尚未配完时制造失败错觉；如需查看，可把“执行结果”切换为“跳过”。
             </div>
           ) : null}
 
@@ -250,7 +255,8 @@ export function RuleExecutionLogTab({
             </div>
           ) : items.length === 0 && hiddenConfigurationPendingCount > 0 ? (
             <div className='rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-600'>
-              当前页日志都属于“待配置 / 预期跳过”记录，已默认收起；如需查看，可把“执行结果”切换为“跳过”。
+              当前页日志都属于“待配置 /
+              预期跳过”记录，已默认收起；如需查看，可把“执行结果”切换为“跳过”。
             </div>
           ) : items.length === 0 ? (
             <div className='rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-600'>

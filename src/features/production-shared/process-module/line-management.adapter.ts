@@ -1,7 +1,9 @@
-import type { ProcessModuleItem } from './types'
 import type { ProcessModuleViewItem } from './adapter'
+import type { ProcessModuleItem } from './types'
 
-export function adaptLineManagementProcessModuleItems(items: ProcessModuleItem[]): ProcessModuleViewItem[] {
+export function adaptLineManagementProcessModuleItems(
+  items: ProcessModuleItem[]
+): ProcessModuleViewItem[] {
   return items.map((item) => ({
     ...item,
     contextLabel: '产线管理',

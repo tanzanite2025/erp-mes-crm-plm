@@ -56,10 +56,13 @@ export const ProductionPlanCommandService = {
   ): Promise<ProductionPlanCommand> {
     const payload = toProductionPlanPayload(plan)
 
-    const savedPlan = await apiFetch<ProductionPlanCommand>('/production/plans', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    })
+    const savedPlan = await apiFetch<ProductionPlanCommand>(
+      '/production/plans',
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }
+    )
 
     if (savedPlan.status !== undefined) {
       normalizeProductionPlanStatus(savedPlan.status)

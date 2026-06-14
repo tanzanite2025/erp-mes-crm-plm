@@ -19,7 +19,11 @@ export interface BuildBOMWorkspaceParentChildrenProtocolBranchRelationsParams {
   activeSections: BOMSectionOption[]
   fields: Array<{ id: string }>
   watchedItems?: BOM['items']
-  resolveNumericField: (index: number, fieldName: 'unitPrice' | 'standardUsage', value: unknown) => number
+  resolveNumericField: (
+    index: number,
+    fieldName: 'unitPrice' | 'standardUsage',
+    value: unknown
+  ) => number
   rootNodeId: string
 }
 
@@ -31,7 +35,9 @@ interface BOMWorkspaceResolvedFormItemReference {
 
 function throwProtocolAdapterError(message: string): never {
   const error = new Error(`[CRITICAL] ${message}`)
-  failLoudly(error, 'buildParentChildrenProtocolBranchRelations', { silentUI: true })
+  failLoudly(error, 'buildParentChildrenProtocolBranchRelations', {
+    silentUI: true,
+  })
   throw error
 }
 
@@ -56,7 +62,9 @@ function resolveSectionOption(
 ) {
   const section = activeSectionsByCode.get(sectionCode)
   if (!section) {
-    throwProtocolAdapterError(`Missing active BOM section for protocol sectionCode: ${sectionCode}`)
+    throwProtocolAdapterError(
+      `Missing active BOM section for protocol sectionCode: ${sectionCode}`
+    )
   }
 
   return {
@@ -70,14 +78,17 @@ function resolveRootChildNodeIds(
   branchDraftById: Map<string, BOMParentChildrenProtocolBranchDraft>,
   rootNodeId: string
 ) {
-  const derivedRootChildNodeIds = protocolDraft.rootChildren.length > 0
-    ? protocolDraft.rootChildren
-    : protocolDraft.branchNodes
-        .filter((branchNode: BOMParentChildrenProtocolBranchDraft) => {
-          const parentId = normalizeOptionalId(branchNode.parentId)
-          return parentId === null || parentId === rootNodeId
-        })
-        .map((branchNode: BOMParentChildrenProtocolBranchDraft) => branchNode.id)
+  const derivedRootChildNodeIds =
+    protocolDraft.rootChildren.length > 0
+      ? protocolDraft.rootChildren
+      : protocolDraft.branchNodes
+          .filter((branchNode: BOMParentChildrenProtocolBranchDraft) => {
+            const parentId = normalizeOptionalId(branchNode.parentId)
+            return parentId === null || parentId === rootNodeId
+          })
+          .map(
+            (branchNode: BOMParentChildrenProtocolBranchDraft) => branchNode.id
+          )
 
   ensureUniqueIds(derivedRootChildNodeIds, 'protocol root child')
 
@@ -89,7 +100,9 @@ function resolveRootChildNodeIds(
 
     const parentId = normalizeOptionalId(branchDraft.parentId)
     if (parentId !== null && parentId !== rootNodeId) {
-      throwProtocolAdapterError(`Root child branch ${nodeId} must use root parent`)
+      throwProtocolAdapterError(
+        `Root child branch ${nodeId} must use root parent`
+      )
     }
   })
 
@@ -100,8 +113,14 @@ function createResolvedFormItemReferences(
   fields: Array<{ id: string }>,
   watchedItems?: BOM['items']
 ) {
-  const referencesByItemId = new Map<string, BOMWorkspaceResolvedFormItemReference>()
-  const referencesByFieldId = new Map<string, BOMWorkspaceResolvedFormItemReference>()
+  const referencesByItemId = new Map<
+    string,
+    BOMWorkspaceResolvedFormItemReference
+  >()
+  const referencesByFieldId = new Map<
+    string,
+    BOMWorkspaceResolvedFormItemReference
+  >()
 
   fields.forEach((field, index) => {
     const item = watchedItems?.[index]
@@ -160,10 +179,17 @@ function resolveFormItemReference(
   const normalizedDraftItemId = itemDraft.itemId
 
   return (
-    (normalizedDraftItemId ? referencesByItemId.get(normalizedDraftItemId) : undefined)
-    ?? referencesByItemId.get(normalizedDraftNodeId)
-    ?? resolveFieldReferenceByProtocolNodeId(normalizedDraftNodeId, referencesByFieldId)
-    ?? throwProtocolAdapterError(`Unable to resolve protocol item node to current form row: ${normalizedDraftNodeId}`)
+    (normalizedDraftItemId
+      ? referencesByItemId.get(normalizedDraftItemId)
+      : undefined) ??
+    referencesByItemId.get(normalizedDraftNodeId) ??
+    resolveFieldReferenceByProtocolNodeId(
+      normalizedDraftNodeId,
+      referencesByFieldId
+    ) ??
+    throwProtocolAdapterError(
+      `Unable to resolve protocol item node to current form row: ${normalizedDraftNodeId}`
+    )
   )
 }
 
@@ -173,14 +199,20 @@ function resolveBranchRole(
 ): BOMWorkspaceSourceBranchRole {
   const branchId = branchDraft.id
   const isRootChild = rootChildNodeIds.has(branchId)
-  const branchRole = (branchDraft.branchRole as BOMWorkspaceSourceBranchRole) ?? (isRootChild ? 'section' : 'collection')
+  const branchRole =
+    (branchDraft.branchRole as BOMWorkspaceSourceBranchRole) ??
+    (isRootChild ? 'section' : 'collection')
 
   if (isRootChild && branchRole !== 'section') {
-    throwProtocolAdapterError(`Root child branch must use section role: ${branchId}`)
+    throwProtocolAdapterError(
+      `Root child branch must use section role: ${branchId}`
+    )
   }
 
   if (!isRootChild && branchRole === 'section') {
-    throwProtocolAdapterError(`Nested branch cannot use section role: ${branchId}`)
+    throwProtocolAdapterError(
+      `Nested branch cannot use section role: ${branchId}`
+    )
   }
 
   return branchRole
@@ -198,156 +230,247 @@ export function buildParentChildrenProtocolBranchRelations(
     rootNodeId,
   } = params
 
-  const activeSectionsByCode = new Map<string, BOMSectionOption>(activeSections.map((section) => [section.code, section]))
+  const activeSectionsByCode = new Map<string, BOMSectionOption>(
+    activeSections.map((section) => [section.code, section])
+  )
 
-  const branchDraftIds = protocolDraft.branchNodes.map((branchNode: BOMParentChildrenProtocolBranchDraft) => branchNode.id)
-  const itemDraftIds = protocolDraft.itemNodes.map((itemNode: BOMParentChildrenProtocolItemDraft) => itemNode.id)
+  const branchDraftIds = protocolDraft.branchNodes.map(
+    (branchNode: BOMParentChildrenProtocolBranchDraft) => branchNode.id
+  )
+  const itemDraftIds = protocolDraft.itemNodes.map(
+    (itemNode: BOMParentChildrenProtocolItemDraft) => itemNode.id
+  )
 
   ensureUniqueIds(branchDraftIds, 'protocol branch')
   ensureUniqueIds(itemDraftIds, 'protocol item')
 
-  const duplicateNodeId = itemDraftIds.find((itemId: string) => branchDraftIds.includes(itemId))
+  const duplicateNodeId = itemDraftIds.find((itemId: string) =>
+    branchDraftIds.includes(itemId)
+  )
   if (duplicateNodeId) {
-    throwProtocolAdapterError(`Protocol branch and item node ids must be unique: ${duplicateNodeId}`)
+    throwProtocolAdapterError(
+      `Protocol branch and item node ids must be unique: ${duplicateNodeId}`
+    )
   }
 
-  if (branchDraftIds.includes(rootNodeId) || itemDraftIds.includes(rootNodeId)) {
-    throwProtocolAdapterError(`Protocol node id cannot reuse root node id: ${rootNodeId}`)
+  if (
+    branchDraftIds.includes(rootNodeId) ||
+    itemDraftIds.includes(rootNodeId)
+  ) {
+    throwProtocolAdapterError(
+      `Protocol node id cannot reuse root node id: ${rootNodeId}`
+    )
   }
 
   const branchDraftById = new Map<string, BOMParentChildrenProtocolBranchDraft>(
-    protocolDraft.branchNodes.map((branchNode: BOMParentChildrenProtocolBranchDraft) => [branchNode.id, branchNode])
+    protocolDraft.branchNodes.map(
+      (branchNode: BOMParentChildrenProtocolBranchDraft) => [
+        branchNode.id,
+        branchNode,
+      ]
+    )
   )
   const allNodeIds = new Set<string>([...branchDraftIds, ...itemDraftIds])
 
-  const rootChildNodeIds = resolveRootChildNodeIds(protocolDraft, branchDraftById, rootNodeId)
+  const rootChildNodeIds = resolveRootChildNodeIds(
+    protocolDraft,
+    branchDraftById,
+    rootNodeId
+  )
   const rootChildNodeIdSet = new Set<string>(rootChildNodeIds)
 
-  const branchNodes = protocolDraft.branchNodes.map<BOMWorkspaceSourceBranchNode>((branchDraft: BOMParentChildrenProtocolBranchDraft) => {
-    const branchNodeId = branchDraft.id
-    const parentId = normalizeOptionalId(branchDraft.parentId)
-    const branchRole = resolveBranchRole(branchDraft, rootChildNodeIdSet)
-    const { section, sectionName } = resolveSectionOption(branchDraft.sectionCode, branchDraft.sectionName, activeSectionsByCode)
-    const childNodeIds = branchDraft.children
+  const branchNodes =
+    protocolDraft.branchNodes.map<BOMWorkspaceSourceBranchNode>(
+      (branchDraft: BOMParentChildrenProtocolBranchDraft) => {
+        const branchNodeId = branchDraft.id
+        const parentId = normalizeOptionalId(branchDraft.parentId)
+        const branchRole = resolveBranchRole(branchDraft, rootChildNodeIdSet)
+        const { section, sectionName } = resolveSectionOption(
+          branchDraft.sectionCode,
+          branchDraft.sectionName,
+          activeSectionsByCode
+        )
+        const childNodeIds = branchDraft.children
 
-    ensureUniqueIds(childNodeIds, `protocol child node for branch ${branchNodeId}`)
+        ensureUniqueIds(
+          childNodeIds,
+          `protocol child node for branch ${branchNodeId}`
+        )
 
-    childNodeIds.forEach((childNodeId: string) => {
-      if (!allNodeIds.has(childNodeId)) {
-        throwProtocolAdapterError(`Branch ${branchNodeId} references missing child node: ${childNodeId}`)
+        childNodeIds.forEach((childNodeId: string) => {
+          if (!allNodeIds.has(childNodeId)) {
+            throwProtocolAdapterError(
+              `Branch ${branchNodeId} references missing child node: ${childNodeId}`
+            )
+          }
+        })
+
+        if (rootChildNodeIdSet.has(branchNodeId)) {
+          if (parentId !== null && parentId !== rootNodeId) {
+            throwProtocolAdapterError(
+              `Root child branch ${branchNodeId} must use root parent`
+            )
+          }
+
+          return {
+            nodeId: branchNodeId,
+            parentNodeId: rootNodeId,
+            childNodeIds,
+            nodeKind: 'branch',
+            branchRole,
+            sectionCode: section.code,
+            sectionName,
+            label: branchDraft.label || section.name,
+            section,
+          }
+        }
+
+        if (!parentId || parentId === rootNodeId) {
+          throwProtocolAdapterError(
+            `Nested branch ${branchNodeId} must reference a non-root branch parent`
+          )
+        }
+
+        if (!branchDraftById.has(parentId)) {
+          throwProtocolAdapterError(
+            `Nested branch ${branchNodeId} references missing parent branch: ${parentId}`
+          )
+        }
+
+        return {
+          nodeId: branchNodeId,
+          parentNodeId: parentId,
+          childNodeIds,
+          nodeKind: 'branch',
+          branchRole,
+          sectionCode: section.code,
+          sectionName,
+          label: branchDraft.label || section.name,
+          section,
+        }
       }
-    })
+    )
 
-    if (rootChildNodeIdSet.has(branchNodeId)) {
-      if (parentId !== null && parentId !== rootNodeId) {
-        throwProtocolAdapterError(`Root child branch ${branchNodeId} must use root parent`)
+  const { referencesByItemId, referencesByFieldId } =
+    createResolvedFormItemReferences(fields, watchedItems)
+
+  const leafNodes = protocolDraft.itemNodes.map<BOMWorkspaceSourceLeafNode>(
+    (itemDraft: BOMParentChildrenProtocolItemDraft) => {
+      const itemNodeId = itemDraft.id
+      const parentId = normalizeOptionalId(itemDraft.parentId)
+      const { section, sectionName } = resolveSectionOption(
+        itemDraft.sectionCode,
+        itemDraft.sectionName,
+        activeSectionsByCode
+      )
+      const childNodeIds = itemDraft.children
+
+      if (childNodeIds.length > 0) {
+        throwProtocolAdapterError(
+          `Leaf item node cannot have children: ${itemNodeId}`
+        )
+      }
+
+      if (!parentId || parentId === rootNodeId) {
+        throwProtocolAdapterError(
+          `Leaf item node must reference a branch parent: ${itemNodeId}`
+        )
+      }
+
+      if (!branchDraftById.has(parentId)) {
+        throwProtocolAdapterError(
+          `Leaf item node references missing parent branch: ${itemNodeId}`
+        )
+      }
+
+      const resolvedItemReference = resolveFormItemReference(
+        itemDraft,
+        referencesByItemId,
+        referencesByFieldId
+      )
+      if (resolvedItemReference.item.section !== section.code) {
+        throwProtocolAdapterError(
+          `Protocol item section does not match current form row: ${itemNodeId}`
+        )
       }
 
       return {
-        nodeId: branchNodeId,
-        parentNodeId: rootNodeId,
-        childNodeIds,
-        nodeKind: 'branch',
-        branchRole,
+        nodeId: itemNodeId,
+        parentNodeId: parentId,
+        childNodeIds: [],
+        nodeKind: 'leaf',
         sectionCode: section.code,
         sectionName,
-        label: branchDraft.label || section.name,
-        section,
+        itemId: resolvedItemReference.item.id || itemDraft.itemId || '',
+        fieldId: resolvedItemReference.fieldId,
+        index: resolvedItemReference.index,
+        materialId: resolvedItemReference.item.materialId ?? '',
+        materialName: resolvedItemReference.item.materialName ?? '',
+        unitPrice: resolveNumericField(
+          resolvedItemReference.index,
+          'unitPrice',
+          resolvedItemReference.item.unitPrice
+        ),
+        standardUsage: resolveNumericField(
+          resolvedItemReference.index,
+          'standardUsage',
+          resolvedItemReference.item.standardUsage
+        ),
       }
     }
+  )
 
-    if (!parentId || parentId === rootNodeId) {
-      throwProtocolAdapterError(`Nested branch ${branchNodeId} must reference a non-root branch parent`)
-    }
-
-    if (!branchDraftById.has(parentId)) {
-      throwProtocolAdapterError(`Nested branch ${branchNodeId} references missing parent branch: ${parentId}`)
-    }
-
-    return {
-      nodeId: branchNodeId,
-      parentNodeId: parentId,
-      childNodeIds,
-      nodeKind: 'branch',
-      branchRole,
-      sectionCode: section.code,
-      sectionName,
-      label: branchDraft.label || section.name,
-      section,
-    }
-  })
-
-  const { referencesByItemId, referencesByFieldId } = createResolvedFormItemReferences(fields, watchedItems)
-
-  const leafNodes = protocolDraft.itemNodes.map<BOMWorkspaceSourceLeafNode>((itemDraft: BOMParentChildrenProtocolItemDraft) => {
-    const itemNodeId = itemDraft.id
-    const parentId = normalizeOptionalId(itemDraft.parentId)
-    const { section, sectionName } = resolveSectionOption(itemDraft.sectionCode, itemDraft.sectionName, activeSectionsByCode)
-    const childNodeIds = itemDraft.children
-
-    if (childNodeIds.length > 0) {
-      throwProtocolAdapterError(`Leaf item node cannot have children: ${itemNodeId}`)
-    }
-
-    if (!parentId || parentId === rootNodeId) {
-      throwProtocolAdapterError(`Leaf item node must reference a branch parent: ${itemNodeId}`)
-    }
-
-    if (!branchDraftById.has(parentId)) {
-      throwProtocolAdapterError(`Leaf item node references missing parent branch: ${itemNodeId}`)
-    }
-
-    const resolvedItemReference = resolveFormItemReference(itemDraft, referencesByItemId, referencesByFieldId)
-    if (resolvedItemReference.item.section !== section.code) {
-      throwProtocolAdapterError(`Protocol item section does not match current form row: ${itemNodeId}`)
-    }
-
-    return {
-      nodeId: itemNodeId,
-      parentNodeId: parentId,
-      childNodeIds: [],
-      nodeKind: 'leaf',
-      sectionCode: section.code,
-      sectionName,
-      itemId: resolvedItemReference.item.id || itemDraft.itemId || '',
-      fieldId: resolvedItemReference.fieldId,
-      index: resolvedItemReference.index,
-      materialId: resolvedItemReference.item.materialId ?? '',
-      materialName: resolvedItemReference.item.materialName ?? '',
-      unitPrice: resolveNumericField(resolvedItemReference.index, 'unitPrice', resolvedItemReference.item.unitPrice),
-      standardUsage: resolveNumericField(resolvedItemReference.index, 'standardUsage', resolvedItemReference.item.standardUsage),
-    }
-  })
-
-  const branchNodeById = new Map<string, BOMWorkspaceSourceBranchNode>(branchNodes.map((branchNode: BOMWorkspaceSourceBranchNode) => [branchNode.nodeId, branchNode]))
-  const leafNodeById = new Map<string, BOMWorkspaceSourceLeafNode>(leafNodes.map((leafNode: BOMWorkspaceSourceLeafNode) => [leafNode.nodeId, leafNode]))
+  const branchNodeById = new Map<string, BOMWorkspaceSourceBranchNode>(
+    branchNodes.map((branchNode: BOMWorkspaceSourceBranchNode) => [
+      branchNode.nodeId,
+      branchNode,
+    ])
+  )
+  const leafNodeById = new Map<string, BOMWorkspaceSourceLeafNode>(
+    leafNodes.map((leafNode: BOMWorkspaceSourceLeafNode) => [
+      leafNode.nodeId,
+      leafNode,
+    ])
+  )
 
   branchNodes.forEach((branchNode: BOMWorkspaceSourceBranchNode) => {
     if (branchNode.parentNodeId === rootNodeId) {
       if (!rootChildNodeIdSet.has(branchNode.nodeId)) {
-        throwProtocolAdapterError(`Top-level branch must be declared in protocol root children: ${branchNode.nodeId}`)
+        throwProtocolAdapterError(
+          `Top-level branch must be declared in protocol root children: ${branchNode.nodeId}`
+        )
       }
       return
     }
 
-    const parentBranchNode = branchNode.parentNodeId ? branchNodeById.get(branchNode.parentNodeId) : undefined
+    const parentBranchNode = branchNode.parentNodeId
+      ? branchNodeById.get(branchNode.parentNodeId)
+      : undefined
     if (!parentBranchNode) {
-      throwProtocolAdapterError(`Branch references missing mapped parent branch: ${branchNode.nodeId}`)
+      throwProtocolAdapterError(
+        `Branch references missing mapped parent branch: ${branchNode.nodeId}`
+      )
     }
 
     if (!parentBranchNode.childNodeIds.includes(branchNode.nodeId)) {
-      throwProtocolAdapterError(`Parent branch is missing child relation for branch: ${branchNode.nodeId}`)
+      throwProtocolAdapterError(
+        `Parent branch is missing child relation for branch: ${branchNode.nodeId}`
+      )
     }
   })
 
   leafNodes.forEach((leafNode: BOMWorkspaceSourceLeafNode) => {
     const parentBranchNode = branchNodeById.get(leafNode.parentNodeId || '')
     if (!parentBranchNode) {
-      throwProtocolAdapterError(`Leaf node references missing mapped parent branch: ${leafNode.nodeId}`)
+      throwProtocolAdapterError(
+        `Leaf node references missing mapped parent branch: ${leafNode.nodeId}`
+      )
     }
 
     if (!parentBranchNode.childNodeIds.includes(leafNode.nodeId)) {
-      throwProtocolAdapterError(`Parent branch is missing child relation for leaf: ${leafNode.nodeId}`)
+      throwProtocolAdapterError(
+        `Parent branch is missing child relation for leaf: ${leafNode.nodeId}`
+      )
     }
   })
 
@@ -356,20 +479,38 @@ export function buildParentChildrenProtocolBranchRelations(
       const childBranchNode = branchNodeById.get(childNodeId)
       const childLeafNode = leafNodeById.get(childNodeId)
 
-      if (childBranchNode && childBranchNode.parentNodeId !== branchNode.nodeId) {
-        throwProtocolAdapterError(`Child branch parent relation mismatch: ${childNodeId}`)
+      if (
+        childBranchNode &&
+        childBranchNode.parentNodeId !== branchNode.nodeId
+      ) {
+        throwProtocolAdapterError(
+          `Child branch parent relation mismatch: ${childNodeId}`
+        )
       }
 
       if (childLeafNode && childLeafNode.parentNodeId !== branchNode.nodeId) {
-        throwProtocolAdapterError(`Child leaf parent relation mismatch: ${childNodeId}`)
+        throwProtocolAdapterError(
+          `Child leaf parent relation mismatch: ${childNodeId}`
+        )
       }
     })
   })
 
-  const sectionBranchNodes = branchNodes.filter((branchNode: BOMWorkspaceSourceBranchNode) => branchNode.branchRole === 'section')
-  const collectionBranchNodes = branchNodes.filter((branchNode: BOMWorkspaceSourceBranchNode) => branchNode.branchRole === 'collection')
+  const sectionBranchNodes = branchNodes.filter(
+    (branchNode: BOMWorkspaceSourceBranchNode) =>
+      branchNode.branchRole === 'section'
+  )
+  const collectionBranchNodes = branchNodes.filter(
+    (branchNode: BOMWorkspaceSourceBranchNode) =>
+      branchNode.branchRole === 'collection'
+  )
 
-  ensureUniqueIds(sectionBranchNodes.map((branchNode: BOMWorkspaceSourceBranchNode) => branchNode.sectionCode), 'section branch sectionCode')
+  ensureUniqueIds(
+    sectionBranchNodes.map(
+      (branchNode: BOMWorkspaceSourceBranchNode) => branchNode.sectionCode
+    ),
+    'section branch sectionCode'
+  )
 
   return {
     rootChildNodeIds,

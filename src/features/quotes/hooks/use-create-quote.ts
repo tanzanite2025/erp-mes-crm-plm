@@ -1,7 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { quoteQueryKeys } from '@/features/quotes/query-keys'
-import { createQuote, type CreateQuotePayload } from '@/features/quotes/services/quote-create-service'
+import {
+  createQuote,
+  type CreateQuotePayload,
+} from '@/features/quotes/services/quote-create-service'
 
 export function useCreateQuote() {
   const queryClient = useQueryClient()
@@ -20,6 +23,7 @@ export function useCreateQuote() {
   return {
     createQuote: mutation.mutateAsync,
     isCreating: mutation.isPending,
-    createError: mutation.error instanceof Error ? mutation.error.message : null,
+    createError:
+      mutation.error instanceof Error ? mutation.error.message : null,
   }
 }

@@ -1,7 +1,7 @@
-import { AlertTriangle, CloudOff, RefreshCcw } from 'lucide-react'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { cn } from '@/lib/utils'
 import { useOfflineSyncStore } from '@/offline-sync/stores/offline-sync-store'
+import { AlertTriangle, CloudOff, RefreshCcw } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 
 /**
  * Persistent root-level banner for offline sync risk visibility.
@@ -17,7 +17,12 @@ export function OfflineSyncStatusBanner() {
   const lastFlushAt = useOfflineSyncStore((state) => state.lastFlushAt)
   const updatedAt = useOfflineSyncStore((state) => state.updatedAt)
 
-  const shouldShow = isEngineStarted && (severity !== 'healthy' || isSyncing || summary.pendingCount > 0 || summary.conflictCount > 0)
+  const shouldShow =
+    isEngineStarted &&
+    (severity !== 'healthy' ||
+      isSyncing ||
+      summary.pendingCount > 0 ||
+      summary.conflictCount > 0)
 
   if (!shouldShow) {
     return null
@@ -31,19 +36,19 @@ export function OfflineSyncStatusBanner() {
         variant={severity === 'critical' ? 'destructive' : 'default'}
         className={cn(
           'rounded-[32px] border-dashed bg-muted/5 shadow-sm',
-          severity === 'critical' && 'animate-in fade-in duration-300',
+          severity === 'critical' && 'animate-in duration-300 fade-in',
           isSyncing && 'border-primary/40'
         )}
       >
         <Icon className={cn('mt-1 size-4', isSyncing && 'animate-spin')} />
-        <AlertTitle className='text-sm font-black tracking-tighter italic uppercase'>
+        <AlertTitle className='text-sm font-black tracking-tighter uppercase italic'>
           {headline || 'OFFLINE SYNC STATUS'}
         </AlertTitle>
         <AlertDescription className='gap-2'>
-          <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/80'>
+          <p className='text-[10px] font-black tracking-widest text-muted-foreground/80 uppercase'>
             {detail || '离线同步状态正常。'}
           </p>
-          <div className='flex flex-wrap gap-2 text-[8px] font-mono uppercase text-muted-foreground/80'>
+          <div className='flex flex-wrap gap-2 font-mono text-[8px] text-muted-foreground/80 uppercase'>
             <span>online={String(isOnline)}</span>
             <span>pending={summary.pendingCount}</span>
             <span>conflicts={summary.conflictCount}</span>

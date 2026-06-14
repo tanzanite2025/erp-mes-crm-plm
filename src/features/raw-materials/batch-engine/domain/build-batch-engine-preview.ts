@@ -1,6 +1,9 @@
 import type { CuttingPlan } from '@/features/engineering-db/data/cutting-plan-schema'
+import type {
+  BatchEngineNormalizedControls,
+  BatchEngineSimulation,
+} from '../types'
 import type { BuildBatchEngineDemandLinesResult } from './build-batch-engine-demand-lines-from-cutting-plan'
-import type { BatchEngineNormalizedControls, BatchEngineSimulation } from '../types'
 
 function round(value: number, digits = 2): number {
   const factor = 10 ** digits
@@ -47,7 +50,10 @@ export function buildBatchEnginePreview(
   if (!selectedUnit || validDemandLineCount <= 0) {
     return {
       ready: false,
-      reason: invalidDemandLineCount > 0 ? '裁纱单据缺少可用于求解的有效行' : '裁纱单据暂无可求解行',
+      reason:
+        invalidDemandLineCount > 0
+          ? '裁纱单据缺少可用于求解的有效行'
+          : '裁纱单据暂无可求解行',
       selectedPlanName: selectedCuttingPlan.name,
       demandLineCount,
       validDemandLineCount,
@@ -74,12 +80,21 @@ export function buildBatchEnginePreview(
   const rollLengthMm = controls.rollLengthM * 1000
   const knifeGapMm = controls.knifeGapMm
   const edgeTrimMm = controls.edgeTrimMm
-  const pieceWidthMm = validLines[0]?.occupiedWidthMm || selectedUnit.envelopeWidthMm
-  const pieceLengthMm = validLines[0]?.occupiedLengthMm || selectedUnit.envelopeLengthMm
-  const pieceCountPerSet = validLines[0]?.pieceCountPerSet || selectedUnit.pieceCountPerSet
+  const pieceWidthMm =
+    validLines[0]?.occupiedWidthMm || selectedUnit.envelopeWidthMm
+  const pieceLengthMm =
+    validLines[0]?.occupiedLengthMm || selectedUnit.envelopeLengthMm
+  const pieceCountPerSet =
+    validLines[0]?.pieceCountPerSet || selectedUnit.pieceCountPerSet
   const layupCount = validLines[0]?.layupCount || selectedUnit.layupCount
-  const totalDemandAreaM2 = round(validLines.reduce((total, item) => total + item.areaM2, 0), 3)
-  const totalOccupiedAreaM2 = round(validLines.reduce((total, item) => total + item.occupiedAreaM2, 0), 3)
+  const totalDemandAreaM2 = round(
+    validLines.reduce((total, item) => total + item.areaM2, 0),
+    3
+  )
+  const totalOccupiedAreaM2 = round(
+    validLines.reduce((total, item) => total + item.occupiedAreaM2, 0),
+    3
+  )
 
   if (!rollWidthMm || !rollLengthMm || !pieceWidthMm || !pieceLengthMm) {
     return {
@@ -90,8 +105,14 @@ export function buildBatchEnginePreview(
       demandLineCount,
       validDemandLineCount,
       invalidDemandLineCount,
-      totalRequiredSets: validLines.reduce((total, item) => total + item.requiredSets, 0),
-      totalRequiredPieces: validLines.reduce((total, item) => total + item.requiredPieces, 0),
+      totalRequiredSets: validLines.reduce(
+        (total, item) => total + item.requiredSets,
+        0
+      ),
+      totalRequiredPieces: validLines.reduce(
+        (total, item) => total + item.requiredPieces,
+        0
+      ),
       totalDemandAreaM2,
       totalOccupiedAreaM2,
       stripsPerRoll: 0,
@@ -112,8 +133,14 @@ export function buildBatchEnginePreview(
   const usableLengthMm = Math.max(rollLengthMm - edgeTrimMm * 2, 0)
   const stripPitchMm = pieceWidthMm + knifeGapMm
   const piecePitchMm = pieceLengthMm + knifeGapMm
-  const stripsPerRoll = stripPitchMm > 0 ? Math.floor((usableWidthMm + knifeGapMm) / stripPitchMm) : 0
-  const piecesPerStrip = piecePitchMm > 0 ? Math.floor((usableLengthMm + knifeGapMm) / piecePitchMm) : 0
+  const stripsPerRoll =
+    stripPitchMm > 0
+      ? Math.floor((usableWidthMm + knifeGapMm) / stripPitchMm)
+      : 0
+  const piecesPerStrip =
+    piecePitchMm > 0
+      ? Math.floor((usableLengthMm + knifeGapMm) / piecePitchMm)
+      : 0
 
   if (stripsPerRoll <= 0 || piecesPerStrip <= 0) {
     return {
@@ -124,8 +151,14 @@ export function buildBatchEnginePreview(
       demandLineCount,
       validDemandLineCount,
       invalidDemandLineCount,
-      totalRequiredSets: validLines.reduce((total, item) => total + item.requiredSets, 0),
-      totalRequiredPieces: validLines.reduce((total, item) => total + item.requiredPieces, 0),
+      totalRequiredSets: validLines.reduce(
+        (total, item) => total + item.requiredSets,
+        0
+      ),
+      totalRequiredPieces: validLines.reduce(
+        (total, item) => total + item.requiredPieces,
+        0
+      ),
       totalDemandAreaM2,
       totalOccupiedAreaM2,
       stripsPerRoll,
@@ -145,20 +178,31 @@ export function buildBatchEnginePreview(
   const rawPieces = stripsPerRoll * piecesPerStrip
   const executablePieceCount = Math.floor(rawPieces / layupCount)
   const executableSets = Math.floor(executablePieceCount / pieceCountPerSet)
-  const totalRequiredSets = validLines.reduce((total, item) => total + item.requiredSets, 0)
-  const totalRequiredPieces = validLines.reduce((total, item) => total + item.requiredPieces, 0)
+  const totalRequiredSets = validLines.reduce(
+    (total, item) => total + item.requiredSets,
+    0
+  )
+  const totalRequiredPieces = validLines.reduce(
+    (total, item) => total + item.requiredPieces,
+    0
+  )
   const consumedPieces = validLines.reduce(
-    (total, item) => total + item.pieceCountPerSet * item.layupCount * item.requiredSets,
+    (total, item) =>
+      total + item.pieceCountPerSet * item.layupCount * item.requiredSets,
     0
   )
 
   const rollAreaM2 = round((rollWidthMm * rollLengthMm) / 1_000_000, 3)
   const netAreaM2 = round(Math.min(totalOccupiedAreaM2, rollAreaM2), 3)
   const lossAreaM2 = round(Math.max(rollAreaM2 - netAreaM2, 0), 3)
-  const utilizationPercent = rollAreaM2 > 0 ? round((netAreaM2 / rollAreaM2) * 100, 2) : 0
+  const utilizationPercent =
+    rollAreaM2 > 0 ? round((netAreaM2 / rollAreaM2) * 100, 2) : 0
 
-  const usedWidthMm = stripsPerRoll * pieceWidthMm + Math.max(stripsPerRoll - 1, 0) * knifeGapMm
-  const usedLengthMm = piecesPerStrip * pieceLengthMm + Math.max(piecesPerStrip - 1, 0) * knifeGapMm
+  const usedWidthMm =
+    stripsPerRoll * pieceWidthMm + Math.max(stripsPerRoll - 1, 0) * knifeGapMm
+  const usedLengthMm =
+    piecesPerStrip * pieceLengthMm +
+    Math.max(piecesPerStrip - 1, 0) * knifeGapMm
   const leftoverWidthMm = Math.max(usableWidthMm - usedWidthMm, 0)
   const leftoverLengthMm = Math.max(usableLengthMm - usedLengthMm, 0)
 

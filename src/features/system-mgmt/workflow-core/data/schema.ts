@@ -1,12 +1,22 @@
 ﻿import { z } from 'zod'
-import { getBusinessEventStatusDerivedLabel } from './business-event-status-contract'
 import { type BusinessEventSource } from './business-event-source-types'
+import { getBusinessEventStatusDerivedLabel } from './business-event-status-contract'
 import { productionPlanStatuses } from './production-plan-status'
 
-export const workflowNodeStatusSchema = z.enum(['PENDING', 'ACTIVE', 'DONE', 'REJECTED'])
+export const workflowNodeStatusSchema = z.enum([
+  'PENDING',
+  'ACTIVE',
+  'DONE',
+  'REJECTED',
+])
 export type WorkflowNodeStatus = z.infer<typeof workflowNodeStatusSchema>
 
-export const workflowNodeTypeSchema = z.enum(['START', 'APPROVAL', 'CHECK', 'PRODUCTION'])
+export const workflowNodeTypeSchema = z.enum([
+  'START',
+  'APPROVAL',
+  'CHECK',
+  'PRODUCTION',
+])
 export type WorkflowNodeType = z.infer<typeof workflowNodeTypeSchema>
 
 export const workflowNodeSchema = z.object({
@@ -22,11 +32,13 @@ export const workflowNodeSchema = z.object({
   comment: z.string().optional(),
   completedAt: z.string().optional(),
   completedBy: z.string().optional(),
-  triggerConfig: z.object({
-    entity: z.enum(['ORDER', 'BOM', 'PRODUCT', 'MOLD', 'SYSTEM', 'QUALITY']),
-    action: z.enum(['CREATED', 'UPDATED', 'DELETED', 'STATUS_CHANGED']),
-    targetStatus: z.string().optional(),
-  }).optional(),
+  triggerConfig: z
+    .object({
+      entity: z.enum(['ORDER', 'BOM', 'PRODUCT', 'MOLD', 'SYSTEM', 'QUALITY']),
+      action: z.enum(['CREATED', 'UPDATED', 'DELETED', 'STATUS_CHANGED']),
+      targetStatus: z.string().optional(),
+    })
+    .optional(),
 })
 
 export type WorkflowNode = z.infer<typeof workflowNodeSchema>
@@ -73,19 +85,26 @@ export function getStandardCommandDisplayTitle(
   command: Pick<StandardCommand, 'sourceCode' | 'actionCode' | 'statusCodes'>,
   sources: Pick<BusinessEventSource, 'code' | 'name' | 'config'>[] = []
 ) {
-  const matchedSource = sources.find((source) => source.code === command.sourceCode)
-  const sourceLabel = matchedSource?.name || command.sourceCode || '全部业务事件源'
+  const matchedSource = sources.find(
+    (source) => source.code === command.sourceCode
+  )
+  const sourceLabel =
+    matchedSource?.name || command.sourceCode || '全部业务事件源'
   const actionLabel = command.actionCode
-    ? matchedSource?.config.actions.find((action) => action.code === command.actionCode)?.name ||
-      command.actionCode
+    ? matchedSource?.config.actions.find(
+        (action) => action.code === command.actionCode
+      )?.name || command.actionCode
     : '全部动作'
   const statusLabel =
     command.statusCodes.length > 0
       ? command.statusCodes
           .map((statusCode) =>
-            getBusinessEventStatusDerivedLabel(command.sourceCode || matchedSource?.code, {
-              code: statusCode,
-            })
+            getBusinessEventStatusDerivedLabel(
+              command.sourceCode || matchedSource?.code,
+              {
+                code: statusCode,
+              }
+            )
           )
           .join(' / ')
       : '全部状态'
@@ -93,10 +112,15 @@ export function getStandardCommandDisplayTitle(
   return `${sourceLabel} · ${actionLabel} · ${statusLabel}`
 }
 
-export function getStandardCommandScopeSummary(command: Pick<StandardCommand, 'sourceCode' | 'actionCode' | 'statusCodes'>) {
+export function getStandardCommandScopeSummary(
+  command: Pick<StandardCommand, 'sourceCode' | 'actionCode' | 'statusCodes'>
+) {
   const sourceLabel = command.sourceCode || '全部业务源'
   const actionLabel = command.actionCode || '全部动作'
-  const statusLabel = command.statusCodes.length > 0 ? command.statusCodes.join(' / ') : '全部状态'
+  const statusLabel =
+    command.statusCodes.length > 0
+      ? command.statusCodes.join(' / ')
+      : '全部状态'
   return `${sourceLabel} · ${actionLabel} · ${statusLabel}`
 }
 
@@ -123,10 +147,18 @@ export function getStandardCommandContextGuard(
 ): StandardCommandContextGuard {
   const reasons: string[] = []
 
-  if (command.sourceCode && context.sourceCode && command.sourceCode !== context.sourceCode) {
+  if (
+    command.sourceCode &&
+    context.sourceCode &&
+    command.sourceCode !== context.sourceCode
+  ) {
     reasons.push(`模板业务源限定为 ${command.sourceCode}`)
   }
-  if (command.actionCode && context.actionCode && command.actionCode !== context.actionCode) {
+  if (
+    command.actionCode &&
+    context.actionCode &&
+    command.actionCode !== context.actionCode
+  ) {
     reasons.push(`模板动作限定为 ${command.actionCode}`)
   }
   if (

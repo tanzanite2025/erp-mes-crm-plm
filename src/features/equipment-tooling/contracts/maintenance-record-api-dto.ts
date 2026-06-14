@@ -1,8 +1,19 @@
-export type MaintenanceRecordTypeApiDTO = 'PREVENTIVE' | 'CORRECTIVE' | 'INSPECTION'
+export type MaintenanceRecordTypeApiDTO =
+  | 'PREVENTIVE'
+  | 'CORRECTIVE'
+  | 'INSPECTION'
 
-export type MaintenanceRecordStatusApiDTO = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'
+export type MaintenanceRecordStatusApiDTO =
+  | 'OPEN'
+  | 'IN_PROGRESS'
+  | 'COMPLETED'
+  | 'CANCELLED'
 
-export type MaintenanceRecordPriorityApiDTO = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+export type MaintenanceRecordPriorityApiDTO =
+  | 'LOW'
+  | 'MEDIUM'
+  | 'HIGH'
+  | 'CRITICAL'
 
 export interface MaintenanceRecordApiDTO {
   id: string

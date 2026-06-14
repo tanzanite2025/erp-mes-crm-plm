@@ -1,6 +1,6 @@
 /**
  * 维保记录状态流转 Hook
- * 
+ *
  * 提供状态流转规则和标签映射
  */
 
@@ -44,7 +44,10 @@ export function useStatusTransition() {
   /**
    * 检查状态流转是否有效
    */
-  const isValidTransition = (currentStatus: string, newStatus: string): boolean => {
+  const isValidTransition = (
+    currentStatus: string,
+    newStatus: string
+  ): boolean => {
     return getValidNextStatuses(currentStatus).includes(newStatus)
   }
 

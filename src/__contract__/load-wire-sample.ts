@@ -16,8 +16,8 @@ export function loadWireSample<T = unknown>(name: string): T {
   const samplePath = path.join(rootDir, 'server', 'contract-samples', name)
   if (!fs.existsSync(samplePath)) {
     throw new Error(
-      `[CONTRACT_SAMPLE_MISSING] ${name} not found at ${samplePath}. `
-      + `Run \`go test ./services/ -run TestExportContractSamples -update\` to regenerate.`,
+      `[CONTRACT_SAMPLE_MISSING] ${name} not found at ${samplePath}. ` +
+        `Run \`go test ./services/ -run TestExportContractSamples -update\` to regenerate.`
     )
   }
   const raw = fs.readFileSync(samplePath, 'utf-8')

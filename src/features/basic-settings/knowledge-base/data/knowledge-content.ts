@@ -18,7 +18,8 @@ const ALLOWED_RICH_TEXT_TAGS = new Set([
   'UL',
 ])
 
-const IMAGE_SRC_PATTERN = /^(data:image\/(png|jpe?g|gif|webp);base64,|https?:\/\/|\/(?!\/))/i
+const IMAGE_SRC_PATTERN =
+  /^(data:image\/(png|jpe?g|gif|webp);base64,|https?:\/\/|\/(?!\/))/i
 const IMAGE_TAG_PATTERN = /<img\b/i
 const VIDEO_TAG_PATTERN = /<(video|source)\b/i
 
@@ -40,7 +41,10 @@ export function knowledgeContentToEditorHtml(value: string) {
   if (isKnowledgeContentHtml(value)) return sanitizeKnowledgeContentHtml(value)
   return value
     .split(/\n{2,}/)
-    .map((paragraph) => `<p>${escapeKnowledgeHtml(paragraph).replace(/\n/g, '<br>')}</p>`)
+    .map(
+      (paragraph) =>
+        `<p>${escapeKnowledgeHtml(paragraph).replace(/\n/g, '<br>')}</p>`
+    )
     .join('')
 }
 

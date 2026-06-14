@@ -1,12 +1,12 @@
-import { list } from './list'
-import { status } from './status'
-import { master } from './master'
 import { detail } from './detail'
 import { dialog } from './dialog'
+import { footer } from './footer'
 import { headerFields } from './headerFields'
 import { linesEditor } from './linesEditor'
-import { footer } from './footer'
+import { list } from './list'
+import { master } from './master'
 import { preview } from './preview'
+import { status } from './status'
 
 export const salesEnUSOverrides = {
   tradingSalesOrder: {

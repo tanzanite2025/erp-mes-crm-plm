@@ -4,20 +4,23 @@ import { useMemo, useRef } from 'react'
 import { ChevronLeft, Printer } from 'lucide-react'
 import { useReactToPrint } from 'react-to-print'
 import { toast } from 'sonner'
+import {
+  normalizeBomChangeType,
+  normalizeEngineeringDateProtocol,
+} from '@/lib/codecs/code-normalization'
 import { failLoudly } from '@/lib/safe-catch'
 import { useLanguage } from '@/context/language-provider'
-import { normalizeBomChangeType, normalizeEngineeringDateProtocol } from '@/lib/codecs/code-normalization'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { BOMDetailTable } from '../bom-detail-table'
+import { Button } from '@/components/ui/button'
+import { type MaterialOption } from '@/features/material-archive/data/schema'
 import { BOMPrintTemplate } from '@/features/print-mgmt/components/templates/bom-print-template'
 import { PrintRecordService } from '@/features/print-mgmt/services/print-record-service'
 import { type BOMSectionOption } from '../../data/bom-section-schema'
-import { selectBOMDisplayVersion } from '../../utils/bom-display-version'
 import { type BOM, type Product } from '../../data/schema'
+import { selectBOMDisplayVersion } from '../../utils/bom-display-version'
 import { resolveBOMProductDisplaySummary } from '../../utils/bom-product-display'
-import { type MaterialOption } from '@/features/material-archive/data/schema'
 import { resolveBOMSectionLabel } from '../../utils/bom-section-utils'
+import { BOMDetailTable } from '../bom-detail-table'
 
 interface BOMPreviewProps {
   bom: BOM
@@ -44,15 +47,22 @@ export function BOMPreview({
   )
   const product = bom.product || productMap.get(bom.productId)
   const productName = product
-    ? (productDisplayLabelMap.get(product.id) ?? t('printMgmt.bomPreview.unknownProduct'))
+    ? (productDisplayLabelMap.get(product.id) ??
+      t('printMgmt.bomPreview.unknownProduct'))
     : t('printMgmt.bomPreview.unknownProduct')
-  const productSummary = product ? resolveBOMProductDisplaySummary(product, bom) : null
+  const productSummary = product
+    ? resolveBOMProductDisplaySummary(product, bom)
+    : null
   const bomDisplayVersion = selectBOMDisplayVersion(bom)
   const bomChangeType = normalizeBomChangeType(bom.changeType)
   const effectiveFrom = normalizeEngineeringDateProtocol(bom.effectiveFrom)
 
   const printItems = bom.items.map((item) => ({
-    section: resolveBOMSectionLabel(sections, item.section, t('printMgmt.bomPreview.defaultSection')),
+    section: resolveBOMSectionLabel(
+      sections,
+      item.section,
+      t('printMgmt.bomPreview.defaultSection')
+    ),
     materialCode: item.materialId,
     materialName: item.materialName || '',
     materialSpec: item.materialSpec || '',
@@ -112,14 +122,18 @@ export function BOMPreview({
               </Badge>
             </div>
             <div className='mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted-foreground'>
-              <span className='text-slate-500'>{t('printMgmt.bomPreview.productLabel')}:</span>
+              <span className='text-slate-500'>
+                {t('printMgmt.bomPreview.productLabel')}:
+              </span>
               <span className='font-bold text-slate-900'>{productName}</span>
               <span className='font-mono text-xs text-slate-500'>
                 {bom.changeOrderNo || t('printMgmt.bomPreview.noEcoEcn')}
               </span>
               <span className='text-xs text-slate-500'>
                 {effectiveFrom
-                  ? t('printMgmt.bomPreview.effectivePrefix', { date: effectiveFrom })
+                  ? t('printMgmt.bomPreview.effectivePrefix', {
+                      date: effectiveFrom,
+                    })
                   : t('printMgmt.bomPreview.noEffectiveDate')}
               </span>
               <div className='flex items-center gap-1.5'>
@@ -146,7 +160,9 @@ export function BOMPreview({
                     <span className='rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-500'>
                       {product.sku}
                     </span>
-                    <span className='text-xs font-medium text-slate-400'>{productSummary.weightLabel}</span>
+                    <span className='text-xs font-medium text-slate-400'>
+                      {productSummary.weightLabel}
+                    </span>
                   </>
                 )}
               </div>
@@ -155,12 +171,17 @@ export function BOMPreview({
         </div>
         <div className='flex gap-2'>
           <Button variant='outline' onClick={handlePrint}>
-            <Printer className='mr-2 size-4' /> {t('printMgmt.bomPreview.print')}
+            <Printer className='mr-2 size-4' />{' '}
+            {t('printMgmt.bomPreview.print')}
           </Button>
         </div>
       </div>
 
-      <BOMDetailTable items={bom.items} materials={materials} sections={sections} />
+      <BOMDetailTable
+        items={bom.items}
+        materials={materials}
+        sections={sections}
+      />
     </div>
   )
 }

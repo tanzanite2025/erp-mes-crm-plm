@@ -1,8 +1,8 @@
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
+import { TasksProvider } from './store/tasks-context'
 import { TasksDialogs } from './views/tasks-dialogs'
 import { TasksPrimaryButtons } from './views/tasks-primary-buttons'
-import { TasksProvider } from './store/tasks-context'
 import { TasksTable } from './views/tasks-table'
 
 export function Tasks() {

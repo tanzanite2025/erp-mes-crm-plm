@@ -36,7 +36,9 @@ export function BOMToolbar({
 }: BOMToolbarProps) {
   const { t } = useLanguage()
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const showOwnerFilter = Boolean(ownerOptions && ownerOptions.length > 0 && onOwnerChange)
+  const showOwnerFilter = Boolean(
+    ownerOptions && ownerOptions.length > 0 && onOwnerChange
+  )
 
   return (
     <div className='flex flex-col gap-3 rounded-[24px] border border-dashed border-muted/50 bg-muted/5 p-3 sm:p-4 lg:flex-row lg:items-center lg:justify-between lg:gap-4'>
@@ -52,11 +54,19 @@ export function BOMToolbar({
                 aria-label={t('engineering.bomArchive.filter.ownerLabel')}
                 className='h-9 w-full min-w-0 rounded-xl border-dashed border-indigo-200 bg-indigo-50/40 px-3 text-[11px] font-bold text-indigo-700 shadow-sm hover:bg-indigo-50 sm:min-w-[180px] lg:w-[210px]'
               >
-                <SelectValue placeholder={t('engineering.bomArchive.filter.ownerPlaceholder')} />
+                <SelectValue
+                  placeholder={t(
+                    'engineering.bomArchive.filter.ownerPlaceholder'
+                  )}
+                />
               </SelectTrigger>
               <SelectContent>
                 {ownerOptions!.map((option) => (
-                  <SelectItem key={option.value} value={option.value} className='text-[11px] font-medium'>
+                  <SelectItem
+                    key={option.value}
+                    value={option.value}
+                    className='text-[11px] font-medium'
+                  >
                     {option.label}
                   </SelectItem>
                 ))}
@@ -82,7 +92,7 @@ export function BOMToolbar({
         <Button
           variant='outline'
           onClick={onDownloadTemplate}
-          className='h-11 w-full min-w-0 rounded-[18px] border-dashed border-blue-200 bg-blue-50/20 px-1.5 shadow-sm transition-all active:scale-95 hover:bg-blue-100 lg:min-w-[116px] lg:px-3'
+          className='h-11 w-full min-w-0 rounded-[18px] border-dashed border-blue-200 bg-blue-50/20 px-1.5 shadow-sm transition-all hover:bg-blue-100 active:scale-95 lg:min-w-[116px] lg:px-3'
         >
           <div className='flex items-center justify-center gap-1 whitespace-nowrap'>
             <Download className='size-3 text-blue-600' />
@@ -94,7 +104,7 @@ export function BOMToolbar({
         <Button
           variant='outline'
           onClick={() => fileInputRef.current?.click()}
-          className='h-11 w-full min-w-0 rounded-[18px] border-dashed border-muted px-1.5 shadow-sm transition-all active:scale-95 hover:bg-muted lg:min-w-[116px] lg:px-3'
+          className='h-11 w-full min-w-0 rounded-[18px] border-dashed border-muted px-1.5 shadow-sm transition-all hover:bg-muted active:scale-95 lg:min-w-[116px] lg:px-3'
         >
           <div className='flex items-center justify-center gap-1 whitespace-nowrap'>
             <Upload className='size-3 text-blue-600' />
@@ -105,7 +115,7 @@ export function BOMToolbar({
         </Button>
         <Button
           onClick={onAddBOM}
-          className='h-11 w-full min-w-0 rounded-[18px] bg-blue-600 px-1.5 text-white shadow-lg shadow-blue-600/20 transition-all active:scale-95 hover:bg-blue-700 lg:min-w-[116px] lg:px-3'
+          className='h-11 w-full min-w-0 rounded-[18px] bg-blue-600 px-1.5 text-white shadow-lg shadow-blue-600/20 transition-all hover:bg-blue-700 active:scale-95 lg:min-w-[116px] lg:px-3'
         >
           <div className='flex items-center justify-center gap-1 whitespace-nowrap'>
             <Plus className='size-3 text-white' />

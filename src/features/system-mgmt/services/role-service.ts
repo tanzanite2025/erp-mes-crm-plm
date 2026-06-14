@@ -27,7 +27,10 @@ function toRoleContract(dto: RoleApiDTO): Role {
 
 export async function fetchRoles() {
   const response = await apiFetch<RoleApiDTO[]>('/roles')
-  return ensureArrayResponse<RoleApiDTO>(response, 'RoleService.fetchRoles').map(toRoleContract)
+  return ensureArrayResponse<RoleApiDTO>(
+    response,
+    'RoleService.fetchRoles'
+  ).map(toRoleContract)
 }
 
 export async function upsertRole(payload: UpsertRolePayload) {
@@ -39,8 +42,8 @@ export async function upsertRole(payload: UpsertRolePayload) {
   return toRoleContract(
     ensureObjectResponse<RoleApiDTO & Record<string, unknown>>(
       response,
-      'RoleService.upsertRole',
-    ) as RoleApiDTO,
+      'RoleService.upsertRole'
+    ) as RoleApiDTO
   )
 }
 

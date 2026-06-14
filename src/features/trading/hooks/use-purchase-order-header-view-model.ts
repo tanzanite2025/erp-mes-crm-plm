@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react'
-import { type PurchaseOrder, type Supplier } from '../data/schema'
-import { getPurchaseStatusDisplayMeta } from '../data/purchase-status'
 import type { TranslationKey } from '@/locales'
+import { getPurchaseStatusDisplayMeta } from '../data/purchase-status'
+import { type PurchaseOrder, type Supplier } from '../data/schema'
 
 type PurchaseOrderFieldValue = PurchaseOrder[keyof PurchaseOrder]
 
@@ -24,7 +24,10 @@ interface PurchaseOrderHeaderViewModelOptions {
   paymentMethods: PaymentOption[]
   paymentTerms: PaymentOption[]
   t: (key: TranslationKey, vars?: Record<string, string | number>) => string
-  handleHeaderChange: (field: keyof PurchaseOrder, value: PurchaseOrderFieldValue) => void
+  handleHeaderChange: (
+    field: keyof PurchaseOrder,
+    value: PurchaseOrderFieldValue
+  ) => void
 }
 
 export function usePurchaseOrderHeaderViewModel({
@@ -37,7 +40,11 @@ export function usePurchaseOrderHeaderViewModel({
   handleHeaderChange,
 }: PurchaseOrderHeaderViewModelOptions) {
   const supplierOptions = useMemo(
-    () => suppliers.map((supplier) => ({ label: supplier.name, value: supplier.id })),
+    () =>
+      suppliers.map((supplier) => ({
+        label: supplier.name,
+        value: supplier.id,
+      })),
     [suppliers]
   )
 
@@ -69,13 +76,16 @@ export function usePurchaseOrderHeaderViewModel({
   )
 
   const baseCurrency = currencies.find((currency) => currency.isBase) ?? null
-  const selectedCurrency = currencies.find((currency) => currency.code === formData.currency) ?? null
+  const selectedCurrency =
+    currencies.find((currency) => currency.code === formData.currency) ?? null
   const baseCurrencyCode = baseCurrency?.code || 'CNY'
-  const selectedCurrencyCode = formData.currency || selectedCurrency?.code || baseCurrencyCode
+  const selectedCurrencyCode =
+    formData.currency || selectedCurrency?.code || baseCurrencyCode
   const effectiveExchangeRate =
-    typeof formData.exchangeRate === 'number' && Number.isFinite(formData.exchangeRate)
+    typeof formData.exchangeRate === 'number' &&
+    Number.isFinite(formData.exchangeRate)
       ? formData.exchangeRate
-      : selectedCurrency?.rate ?? 1
+      : (selectedCurrency?.rate ?? 1)
   const exchangeRateText =
     selectedCurrencyCode === baseCurrencyCode
       ? t('purchase.orders.headerFields.exchangeRateBaseLocked', {

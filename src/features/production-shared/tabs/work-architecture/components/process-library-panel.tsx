@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ListTree, Pencil, Plus, Trash2, Workflow } from 'lucide-react'
 import { toast } from 'sonner'
+import { createLogger } from '@/lib/logger'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,14 +29,13 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
-import { useHierarchyLevelLabels } from '../../hierarchy-config/hooks/use-hierarchy-level-labels'
-import { createLogger } from '@/lib/logger'
 import type { ProductionProcessStep as ProcessStep } from '../../../data/production-process'
-import { useProcessLibraryProcesses } from '../hooks/use-process-library-processes'
 import {
   normalizeProductionProcessStepCode,
   normalizeProductionProcessStepEntity,
 } from '../../../utils/production-code-normalization'
+import { useHierarchyLevelLabels } from '../../hierarchy-config/hooks/use-hierarchy-level-labels'
+import { useProcessLibraryProcesses } from '../hooks/use-process-library-processes'
 
 const logger = createLogger('ProcessLibraryPanel')
 
@@ -83,11 +83,14 @@ export function ProcessLibraryPanel() {
   const { level3Name } = useHierarchyLevelLabels()
   const [searchTerm, setSearchTerm] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [formState, setFormState] = useState<ProcessFormState>(createEmptyProcessState())
+  const [formState, setFormState] = useState<ProcessFormState>(
+    createEmptyProcessState()
+  )
   const [isSaving, setIsSaving] = useState(false)
   const [pendingDelete, setPendingDelete] = useState<ProcessStep | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
-  const { processes, isLoading, error, saveProcess, deleteProcess } = useProcessLibraryProcesses()
+  const { processes, isLoading, error, saveProcess, deleteProcess } =
+    useProcessLibraryProcesses()
   const availableProcesses = useMemo(() => processes, [processes])
 
   useEffect(() => {
@@ -106,7 +109,9 @@ export function ProcessLibraryPanel() {
     }
 
     return availableProcesses.filter((process) => {
-      const haystack = [process.code, process.name, process.description].join(' ').toLowerCase()
+      const haystack = [process.code, process.name, process.description]
+        .join(' ')
+        .toLowerCase()
       return haystack.includes(keyword)
     })
   }, [availableProcesses, searchTerm])
@@ -122,7 +127,10 @@ export function ProcessLibraryPanel() {
   }
 
   const handleSave = async () => {
-    if (!normalizeProductionProcessStepCode(formState.code) || !formState.name.trim()) {
+    if (
+      !normalizeProductionProcessStepCode(formState.code) ||
+      !formState.name.trim()
+    ) {
       toast.error(`${level3Name}编码和名称不能为空`)
       return
     }
@@ -130,15 +138,19 @@ export function ProcessLibraryPanel() {
     setIsSaving(true)
 
     try {
-      await saveProcess(normalizeProductionProcessStepEntity({
-        id: formState.id,
-        code: formState.code,
-        name: formState.name.trim(),
-        description: formState.description.trim(),
-        sortOrder: Number.isFinite(formState.sortOrder) ? formState.sortOrder : 0,
-        isActive: formState.isActive,
-        createdAt: formState.createdAt,
-      }))
+      await saveProcess(
+        normalizeProductionProcessStepEntity({
+          id: formState.id,
+          code: formState.code,
+          name: formState.name.trim(),
+          description: formState.description.trim(),
+          sortOrder: Number.isFinite(formState.sortOrder)
+            ? formState.sortOrder
+            : 0,
+          isActive: formState.isActive,
+          createdAt: formState.createdAt,
+        })
+      )
       setIsDialogOpen(false)
     } catch {
       // Errors are already surfaced by the domain hook.
@@ -172,7 +184,7 @@ export function ProcessLibraryPanel() {
             <div className='space-y-2'>
               <div className='flex items-center gap-2 text-primary'>
                 <Workflow className='size-4' />
-                <CardTitle className='text-base font-black italic tracking-tighter text-slate-800'>
+                <CardTitle className='text-base font-black tracking-tighter text-slate-800 italic'>
                   全局{level3Name}库
                 </CardTitle>
               </div>
@@ -183,7 +195,7 @@ export function ProcessLibraryPanel() {
 
             <Button
               onClick={openCreateDialog}
-              className='h-11 rounded-full px-5 text-[10px] font-black uppercase tracking-widest'
+              className='h-11 rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
             >
               <Plus className='mr-2 size-4' />
               新增{level3Name}
@@ -192,7 +204,7 @@ export function ProcessLibraryPanel() {
 
           <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between'>
             <div className='relative max-w-md flex-1'>
-              <ListTree className='absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/40' />
+              <ListTree className='absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/40' />
               <Input
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
@@ -200,7 +212,10 @@ export function ProcessLibraryPanel() {
                 className='h-11 rounded-2xl border-none bg-background pl-10 text-sm font-medium'
               />
             </div>
-            <Badge variant='outline' className='h-8 rounded-full px-3 font-mono text-[10px]'>
+            <Badge
+              variant='outline'
+              className='h-8 rounded-full px-3 font-mono text-[10px]'
+            >
               {filteredProcesses.length} / {availableProcesses.length}
             </Badge>
           </div>
@@ -210,7 +225,10 @@ export function ProcessLibraryPanel() {
           {isLoading && availableProcesses.length === 0 ? (
             <div className='space-y-3'>
               {[1, 2, 3].map((item) => (
-                <div key={item} className='rounded-[20px] border border-dashed border-muted/50 p-4'>
+                <div
+                  key={item}
+                  className='rounded-[20px] border border-dashed border-muted/50 p-4'
+                >
                   <div className='flex items-center justify-between gap-3'>
                     <div className='space-y-2'>
                       <Skeleton className='h-4 w-36' />
@@ -223,7 +241,7 @@ export function ProcessLibraryPanel() {
             </div>
           ) : filteredProcesses.length === 0 ? (
             <div className='rounded-[24px] border border-dashed border-muted/50 bg-background/70 px-6 py-12 text-center'>
-              <p className='text-sm font-black italic tracking-tighter text-muted-foreground/70'>
+              <p className='text-sm font-black tracking-tighter text-muted-foreground/70 italic'>
                 暂无{level3Name}资源
               </p>
               <p className='mt-1 text-[10px] font-black tracking-widest text-muted-foreground/40'>
@@ -238,12 +256,20 @@ export function ProcessLibraryPanel() {
               >
                 <div className='min-w-0 space-y-1'>
                   <div className='flex flex-wrap items-center gap-2'>
-                    <h4 className='text-sm font-black tracking-tight text-slate-800'>{process.name}</h4>
-                    <Badge variant='outline' className='rounded-full font-mono text-[10px]'>
+                    <h4 className='text-sm font-black tracking-tight text-slate-800'>
+                      {process.name}
+                    </h4>
+                    <Badge
+                      variant='outline'
+                      className='rounded-full font-mono text-[10px]'
+                    >
                       {process.code}
                     </Badge>
                     {!process.isActive && (
-                      <Badge variant='outline' className='rounded-full text-[10px] text-muted-foreground'>
+                      <Badge
+                        variant='outline'
+                        className='rounded-full text-[10px] text-muted-foreground'
+                      >
                         INACTIVE
                       </Badge>
                     )}
@@ -286,21 +312,30 @@ export function ProcessLibraryPanel() {
         <DialogContent className='max-w-2xl rounded-[32px] border-none p-0 shadow-2xl'>
           <div className='space-y-6 p-8'>
             <DialogHeader className='space-y-1 text-left'>
-              <DialogTitle className='text-lg font-black tracking-tighter italic text-slate-800'>
-                {formState.id ? `编辑${level3Name}资源` : `创建${level3Name}资源`}
+              <DialogTitle className='text-lg font-black tracking-tighter text-slate-800 italic'>
+                {formState.id
+                  ? `编辑${level3Name}资源`
+                  : `创建${level3Name}资源`}
               </DialogTitle>
-              <DialogDescription className='text-[10px] font-black uppercase tracking-widest opacity-60'>
+              <DialogDescription className='text-[10px] font-black tracking-widest uppercase opacity-60'>
                 GLOBAL {level3Name.toUpperCase()} LIBRARY ENTRY
               </DialogDescription>
             </DialogHeader>
 
             <div className='grid gap-4 md:grid-cols-2'>
               <div className='space-y-2'>
-                <p className='text-[10px] font-black tracking-widest text-muted-foreground/50'>CODE</p>
+                <p className='text-[10px] font-black tracking-widest text-muted-foreground/50'>
+                  CODE
+                </p>
                 <Input
                   value={formState.code}
                   onChange={(event) =>
-                    setFormState((prev) => ({ ...prev, code: normalizeProductionProcessStepCode(event.target.value) }))
+                    setFormState((prev) => ({
+                      ...prev,
+                      code: normalizeProductionProcessStepCode(
+                        event.target.value
+                      ),
+                    }))
                   }
                   placeholder='e.g. PROC-ANODIZE'
                   className='h-11 rounded-2xl'
@@ -308,14 +343,17 @@ export function ProcessLibraryPanel() {
               </div>
 
               <div className='space-y-2'>
-                <p className='text-[10px] font-black tracking-widest text-muted-foreground/50'>SORT ORDER</p>
+                <p className='text-[10px] font-black tracking-widest text-muted-foreground/50'>
+                  SORT ORDER
+                </p>
                 <Input
                   type='number'
                   value={formState.sortOrder}
                   onChange={(event) =>
                     setFormState((prev) => ({
                       ...prev,
-                      sortOrder: Number.parseInt(event.target.value || '0', 10) || 0,
+                      sortOrder:
+                        Number.parseInt(event.target.value || '0', 10) || 0,
                     }))
                   }
                   className='h-11 rounded-2xl'
@@ -323,21 +361,33 @@ export function ProcessLibraryPanel() {
               </div>
 
               <div className='space-y-2 md:col-span-2'>
-                <p className='text-[10px] font-black tracking-widest text-muted-foreground/50'>NAME</p>
+                <p className='text-[10px] font-black tracking-widest text-muted-foreground/50'>
+                  NAME
+                </p>
                 <Input
                   value={formState.name}
-                  onChange={(event) => setFormState((prev) => ({ ...prev, name: event.target.value }))}
+                  onChange={(event) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      name: event.target.value,
+                    }))
+                  }
                   placeholder={`标准${level3Name}名称`}
                   className='h-11 rounded-2xl'
                 />
               </div>
 
               <div className='space-y-2 md:col-span-2'>
-                <p className='text-[10px] font-black tracking-widest text-muted-foreground/50'>DESCRIPTION</p>
+                <p className='text-[10px] font-black tracking-widest text-muted-foreground/50'>
+                  DESCRIPTION
+                </p>
                 <Textarea
                   value={formState.description}
                   onChange={(event) =>
-                    setFormState((prev) => ({ ...prev, description: event.target.value }))
+                    setFormState((prev) => ({
+                      ...prev,
+                      description: event.target.value,
+                    }))
                   }
                   placeholder={`描述该${level3Name}的适用场景与约束`}
                   className='min-h-28 rounded-2xl'
@@ -346,7 +396,9 @@ export function ProcessLibraryPanel() {
 
               <div className='flex items-center justify-between rounded-[24px] border border-dashed border-muted/50 bg-muted/5 px-4 py-3 md:col-span-2'>
                 <div>
-                  <p className='text-sm font-black tracking-tight text-slate-800'>启用状态</p>
+                  <p className='text-sm font-black tracking-tight text-slate-800'>
+                    启用状态
+                  </p>
                   <p className='text-[10px] font-black tracking-widest text-muted-foreground/45'>
                     控制该{level3Name}是否继续可用
                   </p>
@@ -354,7 +406,10 @@ export function ProcessLibraryPanel() {
                 <Switch
                   checked={formState.isActive}
                   onCheckedChange={(checked) =>
-                    setFormState((prev) => ({ ...prev, isActive: Boolean(checked) }))
+                    setFormState((prev) => ({
+                      ...prev,
+                      isActive: Boolean(checked),
+                    }))
                   }
                 />
               </div>
@@ -364,23 +419,30 @@ export function ProcessLibraryPanel() {
               <Button
                 variant='outline'
                 onClick={() => setIsDialogOpen(false)}
-                className='h-11 rounded-full px-6 text-[10px] font-black uppercase tracking-widest'
+                className='h-11 rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
               >
                 取消
               </Button>
               <Button
                 onClick={() => void handleSave()}
                 disabled={isSaving}
-                className='h-11 rounded-full px-6 text-[10px] font-black uppercase tracking-widest'
+                className='h-11 rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
               >
-                {isSaving ? '保存中...' : formState.id ? '保存变更' : `创建${level3Name}`}
+                {isSaving
+                  ? '保存中...'
+                  : formState.id
+                    ? '保存变更'
+                    : `创建${level3Name}`}
               </Button>
             </DialogFooter>
           </div>
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={Boolean(pendingDelete)} onOpenChange={(open) => !open && setPendingDelete(null)}>
+      <AlertDialog
+        open={Boolean(pendingDelete)}
+        onOpenChange={(open) => !open && setPendingDelete(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>删除{level3Name}资源？</AlertDialogTitle>
@@ -390,7 +452,10 @@ export function ProcessLibraryPanel() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={() => void handleDelete()} disabled={isDeleting}>
+            <AlertDialogAction
+              onClick={() => void handleDelete()}
+              disabled={isDeleting}
+            >
               {isDeleting ? '删除中...' : '删除'}
             </AlertDialogAction>
           </AlertDialogFooter>

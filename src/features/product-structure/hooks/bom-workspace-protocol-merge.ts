@@ -1,13 +1,13 @@
 import { type BOMSectionOption } from '../data/bom-section-schema'
 import {
+  resolveSectionBranchNodeId,
+  resolveCollectionBranchNodeId,
+} from '../utils/bom-node-id-resolver'
+import {
   type BOMWorkspaceParentChildrenProtocolBranchDraft,
   type BOMWorkspaceParentChildrenProtocolDraft,
   type BOMWorkspaceParentChildrenProtocolItemDraft,
 } from './bom-workspace-branch-relation-builder'
-import {
-  resolveSectionBranchNodeId,
-  resolveCollectionBranchNodeId,
-} from '../utils/bom-node-id-resolver'
 
 interface MergeBOMWorkspaceParentChildrenProtocolDraftsParams {
   activeSections: BOMSectionOption[]
@@ -15,7 +15,9 @@ interface MergeBOMWorkspaceParentChildrenProtocolDraftsParams {
   authoritativeProtocolDraft?: BOMWorkspaceParentChildrenProtocolDraft
 }
 
-function createFallbackSectionBranchDraft(section: BOMSectionOption): BOMWorkspaceParentChildrenProtocolBranchDraft {
+function createFallbackSectionBranchDraft(
+  section: BOMSectionOption
+): BOMWorkspaceParentChildrenProtocolBranchDraft {
   return {
     id: resolveSectionBranchNodeId(section.code),
     parentId: 'root',
@@ -49,20 +51,26 @@ function isSectionRootCandidate(
   branchDraft: BOMWorkspaceParentChildrenProtocolBranchDraft,
   rootChildIdSet: Set<string>
 ) {
-  return branchDraft.branchRole === 'section'
-    || rootChildIdSet.has(branchDraft.id)
-    || branchDraft.parentId === 'root'
-    || branchDraft.parentId === null
+  return (
+    branchDraft.branchRole === 'section' ||
+    rootChildIdSet.has(branchDraft.id) ||
+    branchDraft.parentId === 'root' ||
+    branchDraft.parentId === null
+  )
 }
 
-function cloneBranchDraft(branchDraft: BOMWorkspaceParentChildrenProtocolBranchDraft): BOMWorkspaceParentChildrenProtocolBranchDraft {
+function cloneBranchDraft(
+  branchDraft: BOMWorkspaceParentChildrenProtocolBranchDraft
+): BOMWorkspaceParentChildrenProtocolBranchDraft {
   return {
     ...branchDraft,
     children: [...branchDraft.children],
   }
 }
 
-function cloneItemDraft(itemDraft: BOMWorkspaceParentChildrenProtocolItemDraft): BOMWorkspaceParentChildrenProtocolItemDraft {
+function cloneItemDraft(
+  itemDraft: BOMWorkspaceParentChildrenProtocolItemDraft
+): BOMWorkspaceParentChildrenProtocolItemDraft {
   return {
     ...itemDraft,
     children: [...itemDraft.children],
@@ -89,7 +97,9 @@ export function mergeBOMWorkspaceParentChildrenProtocolDrafts({
   activeSections,
   liveProtocolDraft,
   authoritativeProtocolDraft,
-}: MergeBOMWorkspaceParentChildrenProtocolDraftsParams): BOMWorkspaceParentChildrenProtocolDraft | undefined {
+}: MergeBOMWorkspaceParentChildrenProtocolDraftsParams):
+  | BOMWorkspaceParentChildrenProtocolDraft
+  | undefined {
   if (!liveProtocolDraft) {
     return undefined
   }
@@ -98,13 +108,21 @@ export function mergeBOMWorkspaceParentChildrenProtocolDrafts({
     return liveProtocolDraft
   }
 
-  const activeSectionsByCode = new Map(activeSections.map((section) => [section.code, section]))
-  const activeSectionCodeSet = new Set(activeSections.map((section) => section.code))
-  const authoritativeRootChildIdSet = new Set(authoritativeProtocolDraft.rootChildren)
+  const activeSectionsByCode = new Map(
+    activeSections.map((section) => [section.code, section])
+  )
+  const activeSectionCodeSet = new Set(
+    activeSections.map((section) => section.code)
+  )
+  const authoritativeRootChildIdSet = new Set(
+    authoritativeProtocolDraft.rootChildren
+  )
   const liveRootChildIdSet = new Set(liveProtocolDraft.rootChildren)
   const liveBranchById = new Map(
     liveProtocolDraft.branchNodes
-      .filter((branchDraft) => activeSectionCodeSet.has(branchDraft.sectionCode))
+      .filter((branchDraft) =>
+        activeSectionCodeSet.has(branchDraft.sectionCode)
+      )
       .map((branchDraft) => [branchDraft.id, cloneBranchDraft(branchDraft)])
   )
   const liveItemByNodeId = new Map(
@@ -115,7 +133,10 @@ export function mergeBOMWorkspaceParentChildrenProtocolDrafts({
   const liveItemByItemId = new Map(
     liveProtocolDraft.itemNodes.flatMap((itemDraft) => {
       const normalizedItemId = itemDraft.itemId?.trim()
-      if (!normalizedItemId || !activeSectionCodeSet.has(itemDraft.sectionCode)) {
+      if (
+        !normalizedItemId ||
+        !activeSectionCodeSet.has(itemDraft.sectionCode)
+      ) {
         return []
       }
 
@@ -123,18 +144,24 @@ export function mergeBOMWorkspaceParentChildrenProtocolDrafts({
     })
   )
 
-  const authoritativeBranchDrafts = authoritativeProtocolDraft.branchNodes.filter((branchDraft) =>
-    activeSectionCodeSet.has(branchDraft.sectionCode)
-  )
-  const authoritativeItemDrafts = authoritativeProtocolDraft.itemNodes.filter((itemDraft) =>
-    activeSectionCodeSet.has(itemDraft.sectionCode)
+  const authoritativeBranchDrafts =
+    authoritativeProtocolDraft.branchNodes.filter((branchDraft) =>
+      activeSectionCodeSet.has(branchDraft.sectionCode)
+    )
+  const authoritativeItemDrafts = authoritativeProtocolDraft.itemNodes.filter(
+    (itemDraft) => activeSectionCodeSet.has(itemDraft.sectionCode)
   )
 
-  const finalBranchById = new Map<string, BOMWorkspaceParentChildrenProtocolBranchDraft>()
+  const finalBranchById = new Map<
+    string,
+    BOMWorkspaceParentChildrenProtocolBranchDraft
+  >()
   const branchOrder: string[] = []
   const sectionRootIdByCode = new Map<string, string>()
 
-  const addBranchDraft = (branchDraft: BOMWorkspaceParentChildrenProtocolBranchDraft) => {
+  const addBranchDraft = (
+    branchDraft: BOMWorkspaceParentChildrenProtocolBranchDraft
+  ) => {
     if (finalBranchById.has(branchDraft.id)) {
       return
     }
@@ -148,21 +175,26 @@ export function mergeBOMWorkspaceParentChildrenProtocolDrafts({
 
   activeSections.forEach((section) => {
     const authoritativeSectionRoot = authoritativeBranchDrafts.find(
-      (branchDraft) => branchDraft.sectionCode === section.code && isSectionRootCandidate(branchDraft, authoritativeRootChildIdSet)
+      (branchDraft) =>
+        branchDraft.sectionCode === section.code &&
+        isSectionRootCandidate(branchDraft, authoritativeRootChildIdSet)
     )
     const liveSectionRoot = liveProtocolDraft.branchNodes.find(
-      (branchDraft) => branchDraft.sectionCode === section.code && isSectionRootCandidate(branchDraft, liveRootChildIdSet)
+      (branchDraft) =>
+        branchDraft.sectionCode === section.code &&
+        isSectionRootCandidate(branchDraft, liveRootChildIdSet)
     )
     const selectedSectionRoot = cloneBranchDraft(
-      authoritativeSectionRoot
-      ?? liveSectionRoot
-      ?? createFallbackSectionBranchDraft(section)
+      authoritativeSectionRoot ??
+        liveSectionRoot ??
+        createFallbackSectionBranchDraft(section)
     )
 
     selectedSectionRoot.parentId = 'root'
     selectedSectionRoot.branchRole = 'section'
     selectedSectionRoot.label = selectedSectionRoot.label || section.name
-    selectedSectionRoot.sectionName = selectedSectionRoot.sectionName || section.name
+    selectedSectionRoot.sectionName =
+      selectedSectionRoot.sectionName || section.name
 
     addBranchDraft(selectedSectionRoot)
     sectionRootIdByCode.set(section.code, selectedSectionRoot.id)
@@ -188,8 +220,12 @@ export function mergeBOMWorkspaceParentChildrenProtocolDrafts({
       return preferredBranchId
     }
 
-    const retainedCollectionBranches = Array.from(finalBranchById.values()).filter(
-      (branchDraft) => branchDraft.sectionCode === sectionCode && branchDraft.branchRole !== 'section'
+    const retainedCollectionBranches = Array.from(
+      finalBranchById.values()
+    ).filter(
+      (branchDraft) =>
+        branchDraft.sectionCode === sectionCode &&
+        branchDraft.branchRole !== 'section'
     )
     if (retainedCollectionBranches.length === 1) {
       return retainedCollectionBranches[0].id
@@ -207,11 +243,18 @@ export function mergeBOMWorkspaceParentChildrenProtocolDrafts({
       return preferredBranchId
     }
 
-    const overlayBranchId = retainedCollectionBranches.length === 0
-      ? preferredBranchId
-      : `${preferredBranchId}:overlay`
+    const overlayBranchId =
+      retainedCollectionBranches.length === 0
+        ? preferredBranchId
+        : `${preferredBranchId}:overlay`
 
-    addBranchDraft(createFallbackCollectionBranchDraft(section, sectionRootId, overlayBranchId))
+    addBranchDraft(
+      createFallbackCollectionBranchDraft(
+        section,
+        sectionRootId,
+        overlayBranchId
+      )
+    )
     return overlayBranchId
   }
 
@@ -219,7 +262,11 @@ export function mergeBOMWorkspaceParentChildrenProtocolDrafts({
   const finalItemDrafts: BOMWorkspaceParentChildrenProtocolItemDraft[] = []
 
   authoritativeItemDrafts.forEach((authoritativeItemDraft) => {
-    const liveItemDraft = resolveLiveItemMatch(authoritativeItemDraft, liveItemByItemId, liveItemByNodeId)
+    const liveItemDraft = resolveLiveItemMatch(
+      authoritativeItemDraft,
+      liveItemByItemId,
+      liveItemByNodeId
+    )
     if (!liveItemDraft) {
       return
     }
@@ -229,15 +276,19 @@ export function mergeBOMWorkspaceParentChildrenProtocolDrafts({
     const retainedParentBranch = authoritativeItemDraft.parentId
       ? finalBranchById.get(authoritativeItemDraft.parentId)
       : undefined
-    const nextParentId = retainedParentBranch && retainedParentBranch.sectionCode === liveItemDraft.sectionCode
-      ? retainedParentBranch.id
-      : resolveAppendCollectionBranchId(liveItemDraft.sectionCode)
+    const nextParentId =
+      retainedParentBranch &&
+      retainedParentBranch.sectionCode === liveItemDraft.sectionCode
+        ? retainedParentBranch.id
+        : resolveAppendCollectionBranchId(liveItemDraft.sectionCode)
 
     if (!nextParentId) {
       return
     }
 
-    const resolvedSectionName = liveItemDraft.sectionName || activeSectionsByCode.get(liveItemDraft.sectionCode)?.name
+    const resolvedSectionName =
+      liveItemDraft.sectionName ||
+      activeSectionsByCode.get(liveItemDraft.sectionCode)?.name
 
     finalItemDrafts.push({
       ...cloneItemDraft(authoritativeItemDraft),
@@ -250,16 +301,23 @@ export function mergeBOMWorkspaceParentChildrenProtocolDrafts({
   })
 
   liveProtocolDraft.itemNodes.forEach((liveItemDraft) => {
-    if (!activeSectionCodeSet.has(liveItemDraft.sectionCode) || matchedLiveNodeIds.has(liveItemDraft.id)) {
+    if (
+      !activeSectionCodeSet.has(liveItemDraft.sectionCode) ||
+      matchedLiveNodeIds.has(liveItemDraft.id)
+    ) {
       return
     }
 
-    const nextParentId = resolveAppendCollectionBranchId(liveItemDraft.sectionCode)
+    const nextParentId = resolveAppendCollectionBranchId(
+      liveItemDraft.sectionCode
+    )
     if (!nextParentId) {
       return
     }
 
-    const resolvedSectionName = liveItemDraft.sectionName || activeSectionsByCode.get(liveItemDraft.sectionCode)?.name
+    const resolvedSectionName =
+      liveItemDraft.sectionName ||
+      activeSectionsByCode.get(liveItemDraft.sectionCode)?.name
 
     finalItemDrafts.push({
       ...cloneItemDraft(liveItemDraft),
@@ -269,7 +327,9 @@ export function mergeBOMWorkspaceParentChildrenProtocolDrafts({
     })
   })
 
-  const childNodeIdsByBranchId = new Map(branchOrder.map((branchId) => [branchId, [] as string[]]))
+  const childNodeIdsByBranchId = new Map(
+    branchOrder.map((branchId) => [branchId, [] as string[]])
+  )
 
   branchOrder.forEach((branchId) => {
     const branchDraft = finalBranchById.get(branchId)

@@ -83,68 +83,72 @@ export function SalesReturnRecordSpotlight({
       </CardHeader>
       <CardContent className='space-y-4 px-5 pb-5'>
         <div className='grid gap-4 md:grid-cols-2'>
-        <div className='space-y-1'>
-          <div className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
-            <Truck className='size-3.5' />
-            {t('trading.salesReturns.queryShell.trackingNo')}
+          <div className='space-y-1'>
+            <div className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+              <Truck className='size-3.5' />
+              {t('trading.salesReturns.queryShell.trackingNo')}
+            </div>
+            <div className='flex flex-wrap items-center gap-2'>
+              <p className='text-xs font-black text-foreground'>
+                {record.trackingNo?.trim() || '--'}
+              </p>
+              {record.pendingTrackingFill ? (
+                <span className='inline-flex items-center rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[10px] font-black text-amber-600 uppercase'>
+                  {t('trading.salesReturns.queryShell.pendingTrackingBadge')}
+                </span>
+              ) : null}
+            </div>
           </div>
-          <div className='flex flex-wrap items-center gap-2'>
+
+          <div className='space-y-1'>
+            <div className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+              <Truck className='size-3.5' />
+              {t('trading.salesReturns.queryShell.carrier')}
+            </div>
             <p className='text-xs font-black text-foreground'>
-              {record.trackingNo?.trim() || '--'}
+              {record.carrier?.trim() || '--'}
             </p>
-            {record.pendingTrackingFill ? (
-              <span className='inline-flex items-center rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[10px] font-black text-amber-600 uppercase'>
-                {t('trading.salesReturns.queryShell.pendingTrackingBadge')}
-              </span>
-            ) : null}
           </div>
-        </div>
 
-        <div className='space-y-1'>
-          <div className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
-            <Truck className='size-3.5' />
-            {t('trading.salesReturns.queryShell.carrier')}
+          <div className='space-y-1'>
+            <div className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+              <CalendarDays className='size-3.5' />
+              {t('trading.salesReturns.queryShell.shippedAt')}
+            </div>
+            <p className='text-xs font-black text-foreground'>
+              {record.shippedAt
+                ? record.shippedAt.replace('T', ' ').slice(0, 16)
+                : '--'}
+            </p>
           </div>
-          <p className='text-xs font-black text-foreground'>
-            {record.carrier?.trim() || '--'}
-          </p>
-        </div>
 
-        <div className='space-y-1'>
-          <div className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
-            <CalendarDays className='size-3.5' />
-            {t('trading.salesReturns.queryShell.shippedAt')}
+          <div className='space-y-1 md:col-span-2'>
+            <div className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+              <FileStack className='size-3.5' />
+              {t('trading.salesReturns.queryShell.reason')}
+            </div>
+            <p className='text-xs leading-6 font-bold text-foreground'>
+              {record.reason?.trim() ||
+                t('trading.salesReturns.queryShell.emptyReason')}
+            </p>
           </div>
-          <p className='text-xs font-black text-foreground'>
-            {record.shippedAt ? record.shippedAt.replace('T', ' ').slice(0, 16) : '--'}
-          </p>
-        </div>
 
-        <div className='space-y-1 md:col-span-2'>
-          <div className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
-            <FileStack className='size-3.5' />
-            {t('trading.salesReturns.queryShell.reason')}
+          <div className='space-y-1 md:col-span-2'>
+            <div className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+              <Truck className='size-3.5' />
+              {t('trading.salesReturns.queryShell.logisticsNote')}
+            </div>
+            <p className='text-xs leading-6 font-bold text-foreground'>
+              {record.logisticsNote?.trim() || '--'}
+            </p>
           </div>
-          <p className='text-xs leading-6 font-bold text-foreground'>
-            {record.reason?.trim() ||
-              t('trading.salesReturns.queryShell.emptyReason')}
-          </p>
+
+          <SalesReturnActualAmountSummaryCard record={record} />
         </div>
 
-        <div className='space-y-1 md:col-span-2'>
-          <div className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
-            <Truck className='size-3.5' />
-            {t('trading.salesReturns.queryShell.logisticsNote')}
-          </div>
-          <p className='text-xs leading-6 font-bold text-foreground'>
-            {record.logisticsNote?.trim() || '--'}
-          </p>
-        </div>
-
-        <SalesReturnActualAmountSummaryCard record={record} />
-        </div>
-
-        <SalesReturnActualAmountRecordHistorySection salesReturnId={record.id} />
+        <SalesReturnActualAmountRecordHistorySection
+          salesReturnId={record.id}
+        />
 
         <SalesReturnLogisticsPanel
           key={`${record.id}-${record.updatedAt}`}

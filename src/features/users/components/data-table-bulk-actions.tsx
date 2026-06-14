@@ -3,6 +3,7 @@ import { type Table } from '@tanstack/react-table'
 import { Trash2, UserX, UserCheck, Mail } from 'lucide-react'
 import { toast } from 'sonner'
 import { sleep } from '@/lib/utils'
+import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import {
   Tooltip,
@@ -11,9 +12,8 @@ import {
 } from '@/components/ui/tooltip'
 import { DataTableBulkActions as BulkActionsToolbar } from '@/components/data-table'
 import { type User } from '../data/schema'
-import { UsersMultiDeleteDialog } from './users-multi-delete-dialog'
-import { useLanguage } from '@/context/language-provider'
 import { isProtectedSystemAccount } from '../utils/user-utils'
+import { UsersMultiDeleteDialog } from './users-multi-delete-dialog'
 
 type DataTableBulkActionsProps<TData> = {
   table: Table<TData>
@@ -25,10 +25,12 @@ export function DataTableBulkActions<TData>({
   const { t } = useLanguage()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const selectedRows = table.getFilteredSelectedRowModel().rows
-  
+
   const handleBulkStatusChange = (status: 'active' | 'inactive') => {
     const allSelected = selectedRows.map((row) => row.original as User)
-    const actionableUsers = allSelected.filter(user => !isProtectedSystemAccount(user))
+    const actionableUsers = allSelected.filter(
+      (user) => !isProtectedSystemAccount(user)
+    )
     const skippedCount = allSelected.length - actionableUsers.length
 
     if (actionableUsers.length === 0) {
@@ -42,10 +44,17 @@ export function DataTableBulkActions<TData>({
     }
 
     toast.promise(sleep(2000), {
-      loading: status === 'active' ? t('users.toast.activateSyncing') : t('users.toast.deactivateSyncing'),
+      loading:
+        status === 'active'
+          ? t('users.toast.activateSyncing')
+          : t('users.toast.deactivateSyncing'),
       success: () => {
         table.resetRowSelection()
-        return status === 'active' ? t('users.toast.activateSuccess', { count: actionableUsers.length }) : t('users.toast.deactivateSuccess', { count: actionableUsers.length })
+        return status === 'active'
+          ? t('users.toast.activateSuccess', { count: actionableUsers.length })
+          : t('users.toast.deactivateSuccess', {
+              count: actionableUsers.length,
+            })
       },
       error: t('users.toast.protectedAccountActionFailed'),
     })
@@ -54,7 +63,9 @@ export function DataTableBulkActions<TData>({
 
   const handleBulkInvite = () => {
     const allSelected = selectedRows.map((row) => row.original as User)
-    const actionableUsers = allSelected.filter(user => !isProtectedSystemAccount(user))
+    const actionableUsers = allSelected.filter(
+      (user) => !isProtectedSystemAccount(user)
+    )
     const skippedCount = allSelected.length - actionableUsers.length
 
     if (actionableUsers.length === 0) {
@@ -80,7 +91,10 @@ export function DataTableBulkActions<TData>({
 
   return (
     <>
-      <BulkActionsToolbar table={table} entityName={t('users.layout.listTitle')}>
+      <BulkActionsToolbar
+        table={table}
+        entityName={t('users.layout.listTitle')}
+      >
         <Tooltip>
           <TooltipTrigger asChild>
             <Button

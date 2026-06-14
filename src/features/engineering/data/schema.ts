@@ -7,7 +7,10 @@ import {
 const optionalControlDateSchema = z
   .string()
   .trim()
-  .regex(ENGINEERING_OPTIONAL_DATE_PROTOCOL_REGEX, ENGINEERING_DATE_PROTOCOL_VALIDATION_MESSAGE)
+  .regex(
+    ENGINEERING_OPTIONAL_DATE_PROTOCOL_REGEX,
+    ENGINEERING_DATE_PROTOCOL_VALIDATION_MESSAGE
+  )
   .nullable()
   .optional()
 
@@ -22,15 +25,24 @@ export const masterDataControlSchema = z.object({
 })
 
 export const barcodeConfigSchema = z.object({
-  modelCode: z.string().regex(/^\d{2}$/, 'Model code must be 2 digits').default('01'),
-  appearanceCode: z.string().length(1, 'Appearance code must be 1 character').default('1'),
+  modelCode: z
+    .string()
+    .regex(/^\d{2}$/, 'Model code must be 2 digits')
+    .default('01'),
+  appearanceCode: z
+    .string()
+    .length(1, 'Appearance code must be 1 character')
+    .default('1'),
   category: z.enum(['R', 'D']).default('R'),
   holes: z.number().min(8).max(36).default(24),
   isDrainHole: z.boolean().default(false),
   wheelType: z.enum(['F', 'R', 'H']).default('H'),
   scopeCode: z.string().default(''),
   suffix: z.string().optional().default(''),
-  serialNumber: z.string().length(5, 'Serial number must be 5 characters').default('00001'),
+  serialNumber: z
+    .string()
+    .length(5, 'Serial number must be 5 characters')
+    .default('00001'),
 })
 
 export type BarcodeConfig = z.infer<typeof barcodeConfigSchema>
@@ -39,7 +51,10 @@ export const productSchema = z.object({
   id: z.string(),
   sku: z.string().min(1, 'SKU is required'),
   name: z.string().min(1, 'Product name is required'),
-  modelCode: z.string().regex(/^\d{2}$/, 'Model code must be 2 digits').default('01'),
+  modelCode: z
+    .string()
+    .regex(/^\d{2}$/, 'Model code must be 2 digits')
+    .default('01'),
   typeId: z.string().min(1, 'Product type is required'),
   depth: z.number().optional(),
   widthInternal: z.number().optional(),
@@ -57,24 +72,32 @@ export const productSchema = z.object({
   description: z.string().optional(),
   engineeringSpecId: z.string().optional(),
   bomId: z.string().optional(),
-  attributeValues: z.array(z.object({
-    id: z.string().optional(),
-    productId: z.string().optional(),
-    categoryKey: z.string().min(1, 'Category key is required'),
-    optionValue: z.string().min(1, 'Option value is required'),
-    sortOrder: z.number().default(0),
-    version: z.number().default(1),
-  })).default([]),
+  attributeValues: z
+    .array(
+      z.object({
+        id: z.string().optional(),
+        productId: z.string().optional(),
+        categoryKey: z.string().min(1, 'Category key is required'),
+        optionValue: z.string().min(1, 'Option value is required'),
+        sortOrder: z.number().default(0),
+        version: z.number().default(1),
+      })
+    )
+    .default([]),
   techSpecs: z.any().optional(),
   barcodeConfig: barcodeConfigSchema.optional(),
-  attachments: z.array(z.object({
-    id: z.string(),
-    name: z.string(),
-    url: z.string(),
-    type: z.string(),
-    size: z.number(),
-    createdAt: z.string(),
-  })).default([]),
+  attachments: z
+    .array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        url: z.string(),
+        type: z.string(),
+        size: z.number(),
+        createdAt: z.string(),
+      })
+    )
+    .default([]),
   status: z.enum(['Active', 'Draft', 'Archived']).default('Active'),
   // ownerType / ownerCustomerId 已迁移到 BOM(方案 B + 1:1)
   templateKey: z.string().optional(),
@@ -104,7 +127,9 @@ export const productTemplateAttributeBindingSchema = z.object({
   version: z.number().default(1),
 })
 
-export type ProductTemplateAttributeBinding = z.infer<typeof productTemplateAttributeBindingSchema>
+export type ProductTemplateAttributeBinding = z.infer<
+  typeof productTemplateAttributeBindingSchema
+>
 
 export const productTemplateSchema = z.object({
   id: z.string(),
@@ -168,7 +193,9 @@ export const productAttributeCategorySchema = z.object({
   version: z.number().default(1),
 })
 
-export type ProductAttributeCategory = z.infer<typeof productAttributeCategorySchema>
+export type ProductAttributeCategory = z.infer<
+  typeof productAttributeCategorySchema
+>
 
 export const productAttributeOptionSchema = z.object({
   id: z.string(),
@@ -191,4 +218,6 @@ export const productAttributeOptionSchema = z.object({
   version: z.number().default(1),
 })
 
-export type ProductAttributeOption = z.infer<typeof productAttributeOptionSchema>
+export type ProductAttributeOption = z.infer<
+  typeof productAttributeOptionSchema
+>

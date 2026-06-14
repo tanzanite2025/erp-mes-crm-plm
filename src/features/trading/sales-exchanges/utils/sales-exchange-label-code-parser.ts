@@ -114,7 +114,9 @@ export function normalizeSalesExchangeLabelCodeForComparison(value: string) {
   return value.trim().toUpperCase()
 }
 
-export function extractSalesExchangeLabelCodesFromScannerInput(rawInput: string) {
+export function extractSalesExchangeLabelCodesFromScannerInput(
+  rawInput: string
+) {
   const extractedLabelCodes = new Set<string>()
   const trimmedInput = rawInput.trim()
 
@@ -192,9 +194,11 @@ export function buildSalesExchangeLineDraftFromSalesOrderLine(
     productModel: salesOrderLine.productModel,
     specification: salesOrderLine.specification,
     productDisplayTitleSnapshot: salesOrderLine.productDisplayTitleSnapshot,
-    productDisplaySubtitleSnapshot: salesOrderLine.productDisplaySubtitleSnapshot,
+    productDisplaySubtitleSnapshot:
+      salesOrderLine.productDisplaySubtitleSnapshot,
     productDisplayCodeSnapshot: salesOrderLine.productDisplayCodeSnapshot,
-    productDisplayFullLabelSnapshot: salesOrderLine.productDisplayFullLabelSnapshot,
+    productDisplayFullLabelSnapshot:
+      salesOrderLine.productDisplayFullLabelSnapshot,
     productDisplayStrategyVersionSnapshot:
       salesOrderLine.productDisplayStrategyVersionSnapshot,
     description: salesOrderLine.description,
@@ -259,10 +263,14 @@ export function buildSalesExchangeLineDraftsFromRecognizedLabelCodes(params: {
       recognizedLabelCode.normalizedLabelCode
     )
 
-    if (!matchedSalesOrderLine || typeof matchedSalesOrderLine.id !== 'number') {
+    if (
+      !matchedSalesOrderLine ||
+      typeof matchedSalesOrderLine.id !== 'number'
+    ) {
       unmatchedLabelCodes.push({
         ...recognizedLabelCode,
-        unmatchedReason: 'Unable to automatically match label code to a sales order line',
+        unmatchedReason:
+          'Unable to automatically match label code to a sales order line',
       })
       return
     }

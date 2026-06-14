@@ -1,7 +1,7 @@
 import { memo } from 'react'
-import { MindmapNodeCard } from './mindmap-node-card'
-import type { MindmapLevel } from '../data/sample-mindmap'
 import type { LineMindmapFlatRow } from '../data/mindmap-render'
+import type { MindmapLevel } from '../data/sample-mindmap'
+import { MindmapNodeCard } from './mindmap-node-card'
 
 const INDENT_PX = 24
 const CONNECTOR_WIDTH_PX = 20
@@ -54,7 +54,9 @@ function MindmapCanvasRowComponent({
             style={{
               left: connectorLeft,
               top: 0,
-              bottom: row.hasNextSibling ? 0 : `calc(100% - ${CONNECTOR_Y_PX}px)`,
+              bottom: row.hasNextSibling
+                ? 0
+                : `calc(100% - ${CONNECTOR_Y_PX}px)`,
             }}
           />
         </>

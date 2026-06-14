@@ -34,7 +34,10 @@ export function MaterialForm({ form, selectedCategory }: MaterialFormProps) {
   const { t, locale } = useLanguage()
   const [isUnitMgmtOpen, setIsUnitMgmtOpen] = useState(false)
   const { units } = useUnitsQuery()
-  const categoryOptions = useMemo(() => getMaterialCategoryOptions(locale), [locale])
+  const categoryOptions = useMemo(
+    () => getMaterialCategoryOptions(locale),
+    [locale]
+  )
 
   const renderOptions = categoryOptions
 
@@ -46,18 +49,27 @@ export function MaterialForm({ form, selectedCategory }: MaterialFormProps) {
           name='category'
           render={({ field }) => (
             <FormItem>
-              <FormLabel className='mb-3 block pl-1 text-[10px] font-black italic tracking-widest text-muted-foreground/50 decoration-primary/30'>
-                {t('materialArchive.form.categoryLabel')} <span className='text-destructive'>*</span>
+              <FormLabel className='mb-3 block pl-1 text-[10px] font-black tracking-widest text-muted-foreground/50 italic decoration-primary/30'>
+                {t('materialArchive.form.categoryLabel')}{' '}
+                <span className='text-destructive'>*</span>
               </FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger className='h-12 rounded-2xl border-none bg-muted/50 shadow-sm focus:ring-1 focus:ring-primary/20'>
-                    <SelectValue placeholder={t('materialArchive.form.categoryPlaceholder')} />
+                    <SelectValue
+                      placeholder={t(
+                        'materialArchive.form.categoryPlaceholder'
+                      )}
+                    />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent className='rounded-2xl border-none shadow-2xl'>
                   {renderOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value} className='rounded-xl'>
+                    <SelectItem
+                      key={option.value}
+                      value={option.value}
+                      className='rounded-xl'
+                    >
                       {option.label}
                     </SelectItem>
                   ))}
@@ -73,15 +85,13 @@ export function MaterialForm({ form, selectedCategory }: MaterialFormProps) {
           name='code'
           render={({ field }) => (
             <FormItem>
-              <FormLabel className='mb-3 block pl-1 text-[10px] font-black italic tracking-widest text-muted-foreground/30'>
+              <FormLabel className='mb-3 block pl-1 text-[10px] font-black tracking-widest text-muted-foreground/30 italic'>
                 {t('materialArchive.form.codeLabel')}
               </FormLabel>
               <FormControl>
-                <div className='flex h-12 cursor-default select-none items-center gap-3 rounded-2xl border border-dashed border-primary/20 bg-primary/5 px-4 font-mono text-xs font-black text-primary/80'>
+                <div className='flex h-12 cursor-default items-center gap-3 rounded-2xl border border-dashed border-primary/20 bg-primary/5 px-4 font-mono text-xs font-black text-primary/80 select-none'>
                   <Sparkles className='size-3.5 animate-pulse text-primary' />
-                  <span className='tracking-tight'>
-                    {field.value}
-                  </span>
+                  <span className='tracking-tight'>{field.value}</span>
                 </div>
               </FormControl>
               <FormMessage />
@@ -95,8 +105,9 @@ export function MaterialForm({ form, selectedCategory }: MaterialFormProps) {
         name='name'
         render={({ field }) => (
           <FormItem>
-            <FormLabel className='mb-3 block pl-1 text-[10px] font-black italic tracking-widest text-muted-foreground/50 opacity-70'>
-              {t('materialArchive.form.nameLabel')} <span className='text-destructive'>*</span>
+            <FormLabel className='mb-3 block pl-1 text-[10px] font-black tracking-widest text-muted-foreground/50 italic opacity-70'>
+              {t('materialArchive.form.nameLabel')}{' '}
+              <span className='text-destructive'>*</span>
             </FormLabel>
             <FormControl>
               <Input
@@ -115,7 +126,7 @@ export function MaterialForm({ form, selectedCategory }: MaterialFormProps) {
         name='spec'
         render={({ field }) => (
           <FormItem>
-            <FormLabel className='mb-3 block pl-1 text-[10px] font-black italic tracking-widest text-muted-foreground/50'>
+            <FormLabel className='mb-3 block pl-1 text-[10px] font-black tracking-widest text-muted-foreground/50 italic'>
               {t('materialArchive.form.specLabel')}
             </FormLabel>
             <FormControl>
@@ -134,7 +145,7 @@ export function MaterialForm({ form, selectedCategory }: MaterialFormProps) {
       {selectedCategory === 'PACKAGING' && (
         <div className='relative space-y-4 overflow-hidden rounded-[24px] border border-dashed border-primary/10 bg-muted/5 p-6 shadow-inner'>
           <div className='pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent' />
-          <div className='mb-4 flex items-center gap-2 text-[10px] font-black italic tracking-widest text-primary/80'>
+          <div className='mb-4 flex items-center gap-2 text-[10px] font-black tracking-widest text-primary/80 italic'>
             <Box className='size-3.5' />
             {t('materialArchive.form.dimensionsTitle')}
           </div>
@@ -142,23 +153,29 @@ export function MaterialForm({ form, selectedCategory }: MaterialFormProps) {
             <TabsList className='mb-6 grid h-10 w-full grid-cols-2 rounded-full border border-dashed border-muted/50 bg-muted/30 p-1'>
               <TabsTrigger
                 value='internal'
-                className='rounded-full text-[10px] font-black italic tracking-widest data-[state=active]:bg-card data-[state=active]:shadow-sm'
+                className='rounded-full text-[10px] font-black tracking-widest italic data-[state=active]:bg-card data-[state=active]:shadow-sm'
               >
                 {t('materialArchive.form.internalTab')}
               </TabsTrigger>
               <TabsTrigger
                 value='external'
-                className='rounded-full text-[10px] font-black italic tracking-widest data-[state=active]:bg-card data-[state=active]:shadow-sm'
+                className='rounded-full text-[10px] font-black tracking-widest italic data-[state=active]:bg-card data-[state=active]:shadow-sm'
               >
                 {t('materialArchive.form.externalTab')}
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value='internal' className='pt-4'>
-              <DimensionInputs prefix='internalDimensions' control={form.control} />
+              <DimensionInputs
+                prefix='internalDimensions'
+                control={form.control}
+              />
             </TabsContent>
             <TabsContent value='external' className='pt-4'>
-              <DimensionInputs prefix='externalDimensions' control={form.control} />
+              <DimensionInputs
+                prefix='externalDimensions'
+                control={form.control}
+              />
             </TabsContent>
           </Tabs>
         </div>
@@ -170,8 +187,9 @@ export function MaterialForm({ form, selectedCategory }: MaterialFormProps) {
         render={({ field }) => (
           <FormItem>
             <div className='mb-2 flex items-center justify-between'>
-              <FormLabel className='block pl-1 text-[10px] font-black italic tracking-widest text-muted-foreground/50'>
-                {t('materialArchive.form.uomLabel')} <span className='text-destructive'>*</span>
+              <FormLabel className='block pl-1 text-[10px] font-black tracking-widest text-muted-foreground/50 italic'>
+                {t('materialArchive.form.uomLabel')}{' '}
+                <span className='text-destructive'>*</span>
               </FormLabel>
               <Button
                 type='button'
@@ -187,12 +205,18 @@ export function MaterialForm({ form, selectedCategory }: MaterialFormProps) {
             <Select onValueChange={field.onChange} value={field.value}>
               <FormControl>
                 <SelectTrigger className='h-12 rounded-2xl border-none bg-muted/50 shadow-sm'>
-                  <SelectValue placeholder={t('materialArchive.form.uomPlaceholder')} />
+                  <SelectValue
+                    placeholder={t('materialArchive.form.uomPlaceholder')}
+                  />
                 </SelectTrigger>
               </FormControl>
               <SelectContent className='rounded-2xl border-none shadow-2xl'>
                 {units.map((unit) => (
-                  <SelectItem key={unit.id} value={unit.code} className='rounded-xl'>
+                  <SelectItem
+                    key={unit.id}
+                    value={unit.code}
+                    className='rounded-xl'
+                  >
                     <div className='flex w-full items-center justify-between gap-8'>
                       <span className='font-bold'>{unit.name}</span>
                       <span className='font-mono text-[10px] text-muted-foreground/40 uppercase'>
@@ -213,7 +237,7 @@ export function MaterialForm({ form, selectedCategory }: MaterialFormProps) {
         name='description'
         render={({ field }) => (
           <FormItem>
-            <FormLabel className='mb-2 block text-[10px] font-black italic tracking-widest text-muted-foreground/60'>
+            <FormLabel className='mb-2 block text-[10px] font-black tracking-widest text-muted-foreground/60 italic'>
               {t('materialArchive.form.descriptionLabel')}
             </FormLabel>
             <FormControl>
@@ -251,7 +275,7 @@ function DimensionInputs({
         name={`${prefix}.length`}
         render={({ field }) => (
           <FormItem>
-            <FormLabel className='text-[9px] font-black italic tracking-widest text-muted-foreground/40'>
+            <FormLabel className='text-[9px] font-black tracking-widest text-muted-foreground/40 italic'>
               {t('materialArchive.form.length')}
             </FormLabel>
             <FormControl>
@@ -271,7 +295,7 @@ function DimensionInputs({
         name={`${prefix}.width`}
         render={({ field }) => (
           <FormItem>
-            <FormLabel className='text-[9px] font-black italic tracking-widest text-muted-foreground/40'>
+            <FormLabel className='text-[9px] font-black tracking-widest text-muted-foreground/40 italic'>
               {t('materialArchive.form.width')}
             </FormLabel>
             <FormControl>
@@ -291,7 +315,7 @@ function DimensionInputs({
         name={`${prefix}.height`}
         render={({ field }) => (
           <FormItem>
-            <FormLabel className='text-[9px] font-black italic tracking-widest text-muted-foreground/40'>
+            <FormLabel className='text-[9px] font-black tracking-widest text-muted-foreground/40 italic'>
               {t('materialArchive.form.height')}
             </FormLabel>
             <FormControl>

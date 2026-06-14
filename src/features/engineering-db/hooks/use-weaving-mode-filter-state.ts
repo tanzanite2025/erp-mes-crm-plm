@@ -10,12 +10,17 @@ export function useWeavingModeFilterState(data: WeavingMode[]) {
       return data
     }
 
-    return data.filter((item) => [
-      item.label,
-      item.normalizedRatioKey,
-      item.description,
-      item.isSystemPreset ? 'system preset' : 'custom',
-    ].join(' ').toLowerCase().includes(normalizedSearch))
+    return data.filter((item) =>
+      [
+        item.label,
+        item.normalizedRatioKey,
+        item.description,
+        item.isSystemPreset ? 'system preset' : 'custom',
+      ]
+        .join(' ')
+        .toLowerCase()
+        .includes(normalizedSearch)
+    )
   }, [data, searchTerm])
 
   return {

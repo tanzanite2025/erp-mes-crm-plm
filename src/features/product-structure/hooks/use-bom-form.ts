@@ -17,14 +17,15 @@ interface UseBOMFormProps {
   isEdit: boolean
 }
 
-export function useBOMForm({ currentRow, initialItems, initialProductId, open, isEdit }: UseBOMFormProps) {
+export function useBOMForm({
+  currentRow,
+  initialItems,
+  initialProductId,
+  open,
+  isEdit,
+}: UseBOMFormProps) {
   const initialValues = useMemo<BOM>(() => createEmptyBOMFormValue(), [])
-  const {
-    form,
-    fields,
-    append,
-    remove,
-  } = useBOMFormState({
+  const { form, fields, append, remove } = useBOMFormState({
     initialValues,
   })
 
@@ -36,7 +37,10 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
     [optionsResource]
   )
   const productDisplayLabelMap = useMemo(
-    () => (optionsResource.status === 'ready' ? optionsResource.productDisplayLabelMap : new Map<string, string>()),
+    () =>
+      optionsResource.status === 'ready'
+        ? optionsResource.productDisplayLabelMap
+        : new Map<string, string>(),
     [optionsResource]
   )
   const materials = useMemo(
@@ -62,22 +66,24 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
       : undefined
     : currentRow
   const liveProtocolDraft = useMemo(
-    () => buildBOMWorkspaceParentChildrenProtocolDraftFromBOMDetailSource({
-      sourceBOM: {
-        ...form.getValues(),
-        items: watchedItems,
-      } as BOM,
-      activeSections: sections,
-      fields,
-      watchedItems,
-    }),
+    () =>
+      buildBOMWorkspaceParentChildrenProtocolDraftFromBOMDetailSource({
+        sourceBOM: {
+          ...form.getValues(),
+          items: watchedItems,
+        } as BOM,
+        activeSections: sections,
+        fields,
+        watchedItems,
+      }),
     [fields, form, sections, watchedItems]
   )
-  
-  const authoritativeProtocolDraft = isEdit && detailSourceResource?.status === 'ready'
-    ? detailSourceResource.data.protocolDraft
-    : undefined
-  
+
+  const authoritativeProtocolDraft =
+    isEdit && detailSourceResource?.status === 'ready'
+      ? detailSourceResource.data.protocolDraft
+      : undefined
+
   const rawProtocolDraft = isEdit
     ? authoritativeProtocolDraft
     : liveProtocolDraft

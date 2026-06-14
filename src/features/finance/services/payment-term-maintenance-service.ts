@@ -18,26 +18,41 @@ export const PaymentTermMaintenanceService = {
       method: 'POST',
       body: JSON.stringify(data),
     })
-    return ensureObjectResponse<PaymentTerm & Record<string, unknown>>(res, 'PaymentTermMaintenanceService.savePaymentTerm') as PaymentTerm
+    return ensureObjectResponse<PaymentTerm & Record<string, unknown>>(
+      res,
+      'PaymentTermMaintenanceService.savePaymentTerm'
+    ) as PaymentTerm
   },
 
   /**
    * 局部更新结算方式 (SDRTS 协议)
    */
-  async patchPaymentTerm(id: number, delta: DeltaSet, version: number): Promise<PaymentTerm> {
+  async patchPaymentTerm(
+    id: number,
+    delta: DeltaSet,
+    version: number
+  ): Promise<PaymentTerm> {
     const payload: DeltaPayload = {
       op: 'PATCH',
       delta,
-      metadata: buildVersionedPatchMetadata(String(id), version, 'PaymentTermMaintenanceService.patchPaymentTerm', {
-        intent: PAYMENT_TERM_PATCH_INTENT_SAVE,
-      })
-    };
+      metadata: buildVersionedPatchMetadata(
+        String(id),
+        version,
+        'PaymentTermMaintenanceService.patchPaymentTerm',
+        {
+          intent: PAYMENT_TERM_PATCH_INTENT_SAVE,
+        }
+      ),
+    }
 
     const res = await apiFetch<PaymentTerm>(`/finance/payment-terms/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(payload),
-    });
+    })
 
-    return ensureObjectResponse<PaymentTerm & Record<string, unknown>>(res, 'PaymentTermMaintenanceService.patchPaymentTerm') as PaymentTerm
+    return ensureObjectResponse<PaymentTerm & Record<string, unknown>>(
+      res,
+      'PaymentTermMaintenanceService.patchPaymentTerm'
+    ) as PaymentTerm
   },
 }

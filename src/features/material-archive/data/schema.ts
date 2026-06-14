@@ -10,7 +10,9 @@ export const masterDataControlSchema = z.object({
   isDefaultSite: z.boolean().optional(),
 })
 
-export const materialCategorySchema = z.string().min(1, 'Material category is required')
+export const materialCategorySchema = z
+  .string()
+  .min(1, 'Material category is required')
 
 export type MaterialCategory = string
 

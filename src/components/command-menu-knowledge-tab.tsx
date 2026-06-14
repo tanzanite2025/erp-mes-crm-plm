@@ -1,17 +1,14 @@
 import { BookOpenText, Plus } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
+import { Button } from '@/components/ui/button'
+import { CommandGroup, CommandItem } from '@/components/ui/command'
+import { KnowledgeBaseCategoryBadge } from '@/features/basic-settings/knowledge-base/components/knowledge-base-category-badge'
+import { KnowledgeBaseMediaIndicators } from '@/features/basic-settings/knowledge-base/components/knowledge-base-entry-card'
 import {
   getKnowledgeContentText,
   type KnowledgeBaseEntry,
 } from '@/features/basic-settings/knowledge-base/data/knowledge-base'
 import { getKnowledgeContentMediaFlags } from '@/features/basic-settings/knowledge-base/data/knowledge-content'
-import { KnowledgeBaseCategoryBadge } from '@/features/basic-settings/knowledge-base/components/knowledge-base-category-badge'
-import { KnowledgeBaseMediaIndicators } from '@/features/basic-settings/knowledge-base/components/knowledge-base-entry-card'
-import {
-  CommandGroup,
-  CommandItem,
-} from '@/components/ui/command'
 import { TabsContent } from './ui/tabs'
 
 interface CommandMenuKnowledgeTabProps {
@@ -35,7 +32,7 @@ export function CommandMenuKnowledgeTab({
         {canCreateEntry ? (
           <div className='mb-2 flex justify-end'>
             <Button
-              className='h-8 rounded-full px-3 text-[9px] font-black uppercase tracking-[0.18em]'
+              className='h-8 rounded-full px-3 text-[9px] font-black tracking-[0.18em] uppercase'
               onClick={onCreateEntry}
             >
               <Plus className='mr-1.5 size-3' />
@@ -45,7 +42,7 @@ export function CommandMenuKnowledgeTab({
         ) : null}
         {entries.length === 0 ? (
           <div className='space-y-2'>
-            <div className='text-center text-[7px] font-black uppercase tracking-[0.2em] text-sky-600/70 italic'>
+            <div className='text-center text-[7px] font-black tracking-[0.2em] text-sky-600/70 uppercase italic'>
               {t('commandMenu.headings.knowledgeBase')}
             </div>
             <div className='flex min-h-28 items-center justify-center rounded-2xl border border-dashed border-muted/60 bg-muted/10 px-4 py-6 text-center text-[10px] font-bold text-muted-foreground'>
@@ -55,7 +52,7 @@ export function CommandMenuKnowledgeTab({
         ) : (
           <CommandGroup
             heading={t('commandMenu.headings.knowledgeBase')}
-            className='**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1 **:[[cmdk-group-heading]]:text-[8px] **:[[cmdk-group-heading]]:font-black **:[[cmdk-group-heading]]:italic **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-[0.2em] **:[[cmdk-group-heading]]:text-sky-600/70'
+            className='**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1 **:[[cmdk-group-heading]]:text-[8px] **:[[cmdk-group-heading]]:font-black **:[[cmdk-group-heading]]:tracking-[0.2em] **:[[cmdk-group-heading]]:text-sky-600/70 **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:italic'
           >
             <div className='grid grid-cols-1 gap-0'>
               {entries.map((entry) => (
@@ -94,7 +91,10 @@ function KnowledgeSearchListItem({
       </div>
       <div className='min-w-0 flex-1 leading-tight'>
         <div className='mb-0.5 flex flex-wrap items-center gap-0.5'>
-          <KnowledgeBaseCategoryBadge category={entry.category} className='h-4 px-1.5 py-0 text-[8px] leading-none' />
+          <KnowledgeBaseCategoryBadge
+            category={entry.category}
+            className='h-4 px-1.5 py-0 text-[8px] leading-none'
+          />
           <KnowledgeBaseMediaIndicators
             hasImage={mediaFlags.hasImage}
             hasVideo={mediaFlags.hasVideo}
@@ -108,8 +108,10 @@ function KnowledgeSearchListItem({
             </span>
           ) : null}
         </div>
-        <div className='truncate text-[12px] font-bold tracking-tight'>{entry.title}</div>
-        <div className='line-clamp-1 text-[9px] font-semibold leading-3 text-muted-foreground'>
+        <div className='truncate text-[12px] font-bold tracking-tight'>
+          {entry.title}
+        </div>
+        <div className='line-clamp-1 text-[9px] leading-3 font-semibold text-muted-foreground'>
           {entry.summary}
         </div>
       </div>

@@ -1,11 +1,20 @@
 'use client'
 
 import { useMemo } from 'react'
-import { AlertCircle, Database, Loader2, Package, Plus, RefreshCw, Search } from 'lucide-react'
-import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
-import { buildHostedQuickActionDialogContentClassName } from '@/components/hosted-quick-action-dialog.styles'
-import { Button } from '@/components/ui/button'
+import {
+  AlertCircle,
+  Database,
+  Loader2,
+  Package,
+  Plus,
+  RefreshCw,
+  Search,
+} from 'lucide-react'
+import { isForbiddenError } from '@/lib/error-status'
+import { cn } from '@/lib/utils'
+import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -14,12 +23,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { useLanguage } from '@/context/language-provider'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
+import { buildHostedQuickActionDialogContentClassName } from '@/components/hosted-quick-action-dialog.styles'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
-import { isForbiddenError } from '@/lib/error-status'
-import { cn } from '@/lib/utils'
-import { type InboundRecord } from '../inventory'
 import { useProductInbound } from '../hooks/use-product-inbound'
+import { type InboundRecord } from '../inventory'
 import { ProductInboundFormDialog } from './product-inbound-form-dialog'
 
 type ProductInboundActionDialogProps = {
@@ -60,7 +68,10 @@ export function ProductInboundActionDialog({
     inbound.closeInboundDialog()
   }
 
-  if (inbound.readResource.status === 'error' && isForbiddenError(inbound.readResource.error)) {
+  if (
+    inbound.readResource.status === 'error' &&
+    isForbiddenError(inbound.readResource.error)
+  ) {
     return null
   }
 
@@ -72,18 +83,20 @@ export function ProductInboundActionDialog({
             'flex flex-col gap-0 overflow-hidden rounded-[32px] border-none p-0 shadow-2xl md:max-w-[760px]'
           )}
         >
-          <div className='absolute inset-0 bg-linear-to-br from-emerald-600/5 via-transparent pointer-events-none' />
-          <div className='relative min-h-0 flex flex-1 flex-col gap-6 p-5 md:p-8'>
+          <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-emerald-600/5 via-transparent' />
+          <div className='relative flex min-h-0 flex-1 flex-col gap-6 p-5 md:p-8'>
             <DialogHeader className='text-left'>
               <div className='flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between'>
                 <div className='min-w-0'>
-                  <DialogTitle className='text-lg md:text-xl font-black tracking-tighter uppercase italic flex items-center gap-3'>
-                    <div className='size-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 shrink-0'>
+                  <DialogTitle className='flex items-center gap-3 text-lg font-black tracking-tighter uppercase italic md:text-xl'>
+                    <div className='flex size-10 shrink-0 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/10'>
                       <Package className='size-5 text-emerald-600' />
                     </div>
-                    <span className='truncate'>{t('commandMenu.items.inboundAction')}</span>
+                    <span className='truncate'>
+                      {t('commandMenu.items.inboundAction')}
+                    </span>
                   </DialogTitle>
-                  <DialogDescription className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/40'>
+                  <DialogDescription className='text-[9px] font-black tracking-widest text-muted-foreground/40 uppercase'>
                     {t('warehouse.inbound.subtitle')}
                   </DialogDescription>
                 </div>
@@ -91,21 +104,24 @@ export function ProductInboundActionDialog({
                   module={AUDIT_MODULES.inventory}
                   targetName={t('commandMenu.items.inboundAction')}
                   label={t('common.audit.trigger')}
-                  className='h-10 rounded-full px-4 self-start'
+                  className='h-10 self-start rounded-full px-4'
                 />
               </div>
             </DialogHeader>
 
             {inbound.readResource.status === 'error' ? (
               <div className='flex min-h-[260px] flex-col items-center justify-center rounded-[24px] border border-dashed border-rose-500/25 bg-rose-500/3 px-6 text-center'>
-                <p className='text-[10px] font-black uppercase tracking-widest text-rose-700'>入库基础数据加载失败</p>
-                <p className='mt-3 max-w-xl text-[11px] font-bold leading-5 text-rose-700/80'>
-                  {inbound.readResource.error.message || '请重试后再进行成品入库。'}
+                <p className='text-[10px] font-black tracking-widest text-rose-700 uppercase'>
+                  入库基础数据加载失败
+                </p>
+                <p className='mt-3 max-w-xl text-[11px] leading-5 font-bold text-rose-700/80'>
+                  {inbound.readResource.error.message ||
+                    '请重试后再进行成品入库。'}
                 </p>
                 <Button
                   type='button'
                   variant='outline'
-                  className='mt-5 h-10 rounded-full border-dashed px-6 text-[10px] font-black uppercase tracking-widest'
+                  className='mt-5 h-10 rounded-full border-dashed px-6 text-[10px] font-black tracking-widest uppercase'
                   onClick={() => {
                     void inbound.retryRead()
                   }}
@@ -116,50 +132,59 @@ export function ProductInboundActionDialog({
             ) : inbound.readResource.status === 'loading' ? (
               <div className='flex min-h-[260px] flex-col items-center justify-center gap-4 rounded-[24px] border border-dashed border-muted/50 bg-muted/5 px-6 text-center'>
                 <Loader2 className='size-8 animate-spin text-primary/40' />
-                <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>入库基础数据加载中</p>
+                <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+                  入库基础数据加载中
+                </p>
               </div>
             ) : (
               <div className='flex min-h-0 flex-1 flex-col gap-6'>
-                <div className='flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4'>
+                <div className='flex flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-center'>
                   <div className='relative flex-1'>
-                    <Search className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/40' />
+                    <Search className='absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/40' />
                     <Input
                       placeholder={t('warehouse.inbound.searchPlaceholder')}
-                      className='pl-10 h-12 rounded-2xl border-none bg-muted/50 focus-visible:ring-1 focus-visible:ring-emerald-500/20 text-sm font-medium transition-all'
+                      className='h-12 rounded-2xl border-none bg-muted/50 pl-10 text-sm font-medium transition-all focus-visible:ring-1 focus-visible:ring-emerald-500/20'
                       value={inbound.searchQuery}
                       onChange={(e) => inbound.setSearchQuery(e.target.value)}
                     />
                     {inbound.isSearching ? (
-                      <div className='absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none'>
-                        <RefreshCw className='size-3.5 text-emerald-500 animate-spin' />
+                      <div className='pointer-events-none absolute top-1/2 right-4 -translate-y-1/2'>
+                        <RefreshCw className='size-3.5 animate-spin text-emerald-500' />
                       </div>
                     ) : null}
                   </div>
-                  <div className='flex items-center gap-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-500/5 px-3 md:px-4 py-2 rounded-full border border-dashed border-emerald-500/30 shrink-0'>
+                  <div className='flex shrink-0 items-center gap-2 rounded-full border border-dashed border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-[8px] font-black tracking-widest text-emerald-600 uppercase md:px-4 md:text-[10px]'>
                     <AlertCircle className='size-3 md:size-3.5' />
                     {t('warehouse.inbound.archiveValidation')}
                   </div>
                 </div>
 
-                <div className='min-h-0 flex-1 rounded-[24px] border border-dashed border-muted/50 bg-muted/5 overflow-hidden shadow-inner flex flex-col'>
-                  <div className='bg-muted/30 px-4 md:px-6 py-3 md:py-4 border-b border-dashed border-muted/50 flex justify-between items-center text-left'>
-                    <span className='text-[8px] md:text-[10px] font-black text-muted-foreground/50 uppercase tracking-widest truncate'>{t('warehouse.inbound.results')}</span>
-                    <span className='text-[9px] md:text-[10px] font-black text-muted-foreground/60 italic shrink-0'>
-                      {t('warehouse.inbound.resultCount', { count: inbound.searchResults.length })}
+                <div className='flex min-h-0 flex-1 flex-col overflow-hidden rounded-[24px] border border-dashed border-muted/50 bg-muted/5 shadow-inner'>
+                  <div className='flex items-center justify-between border-b border-dashed border-muted/50 bg-muted/30 px-4 py-3 text-left md:px-6 md:py-4'>
+                    <span className='truncate text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase md:text-[10px]'>
+                      {t('warehouse.inbound.results')}
+                    </span>
+                    <span className='shrink-0 text-[9px] font-black text-muted-foreground/60 italic md:text-[10px]'>
+                      {t('warehouse.inbound.resultCount', {
+                        count: inbound.searchResults.length,
+                      })}
                     </span>
                   </div>
-                  <div className='min-h-0 flex-1 overflow-y-auto divide-y divide-dashed divide-muted px-2'>
+                  <div className='min-h-0 flex-1 divide-y divide-dashed divide-muted overflow-y-auto px-2'>
                     {inbound.searchResource.status === 'error' ? (
                       <div className='flex h-full flex-col items-center justify-center px-6 text-center'>
                         <AlertCircle className='size-8 text-rose-500' />
-                        <p className='mt-4 text-[10px] font-black uppercase tracking-widest text-rose-700'>搜索结果加载失败</p>
-                        <p className='mt-2 max-w-md text-[10px] font-bold leading-5 text-rose-700/80'>
-                          {inbound.searchResource.error.message || '请重试后再搜索主数据。'}
+                        <p className='mt-4 text-[10px] font-black tracking-widest text-rose-700 uppercase'>
+                          搜索结果加载失败
+                        </p>
+                        <p className='mt-2 max-w-md text-[10px] leading-5 font-bold text-rose-700/80'>
+                          {inbound.searchResource.error.message ||
+                            '请重试后再搜索主数据。'}
                         </p>
                         <Button
                           type='button'
                           variant='outline'
-                          className='mt-5 h-9 rounded-full border-dashed px-4 text-[10px] font-black uppercase tracking-widest'
+                          className='mt-5 h-9 rounded-full border-dashed px-4 text-[10px] font-black tracking-widest uppercase'
                           onClick={() => {
                             void inbound.retrySearch()
                           }}
@@ -170,61 +195,81 @@ export function ProductInboundActionDialog({
                     ) : inbound.searchResource.status === 'loading' ? (
                       <div className='flex h-full flex-col items-center justify-center px-6 text-center text-muted-foreground/40'>
                         <Loader2 className='size-6 animate-spin text-emerald-500/60' />
-                        <p className='mt-4 text-[10px] font-black uppercase tracking-widest'>搜索中</p>
+                        <p className='mt-4 text-[10px] font-black tracking-widest uppercase'>
+                          搜索中
+                        </p>
                       </div>
-                    ) : inbound.searchResource.status === 'ready' && inbound.searchResults.length > 0 ? (
+                    ) : inbound.searchResource.status === 'ready' &&
+                      inbound.searchResults.length > 0 ? (
                       inbound.searchResults.map((item) => (
                         <div
                           key={item.id}
                           className={cn(
-                            'flex flex-col sm:flex-row items-stretch sm:items-center justify-between p-3 md:p-4 transition-all group rounded-xl md:rounded-[20px] my-1 gap-4',
-                            'hover:bg-emerald-500/5 cursor-pointer',
+                            'group my-1 flex flex-col items-stretch justify-between gap-4 rounded-xl p-3 transition-all sm:flex-row sm:items-center md:rounded-[20px] md:p-4',
+                            'cursor-pointer hover:bg-emerald-500/5'
                           )}
                           onClick={() => inbound.openInboundForm(item)}
                         >
-                          <div className='flex items-center gap-3 md:gap-5 overflow-hidden'>
-                            <div className='size-10 md:size-12 rounded-xl md:rounded-2xl bg-background border border-muted/50 flex items-center justify-center shrink-0 shadow-sm group-hover:border-emerald-500/30 group-hover:scale-105 transition-all'>
-                              <Package className='size-5 md:size-6 text-muted-foreground/30 group-hover:text-emerald-500 transition-colors' />
+                          <div className='flex items-center gap-3 overflow-hidden md:gap-5'>
+                            <div className='flex size-10 shrink-0 items-center justify-center rounded-xl border border-muted/50 bg-background shadow-sm transition-all group-hover:scale-105 group-hover:border-emerald-500/30 md:size-12 md:rounded-2xl'>
+                              <Package className='size-5 text-muted-foreground/30 transition-colors group-hover:text-emerald-500 md:size-6' />
                             </div>
-                            <div className='overflow-hidden space-y-0.5 md:space-y-1'>
+                            <div className='space-y-0.5 overflow-hidden md:space-y-1'>
                               <div className='flex items-center gap-2 md:gap-3'>
-                                <h4 className='font-black text-sm md:text-[15px] text-slate-800 tracking-tighter uppercase transition-colors group-hover:text-emerald-700 italic truncate max-w-[150px] md:max-w-xs'>{item.name}</h4>
-                                <Badge className={cn(
-                                  'h-3.5 md:h-4 text-[7px] md:text-[8px] font-black px-1.5 md:px-2 uppercase tracking-widest border-none rounded-full shrink-0',
-                                  item.sourceModule === 'PRODUCT' ? 'bg-blue-500/10 text-blue-600' : 'bg-amber-500/10 text-amber-600'
-                                )}>
-                                  {item.sourceModule === 'PRODUCT' ? t('warehouse.inbound.product') : t('warehouse.inbound.material')}
+                                <h4 className='max-w-[150px] truncate text-sm font-black tracking-tighter text-slate-800 uppercase italic transition-colors group-hover:text-emerald-700 md:max-w-xs md:text-[15px]'>
+                                  {item.name}
+                                </h4>
+                                <Badge
+                                  className={cn(
+                                    'h-3.5 shrink-0 rounded-full border-none px-1.5 text-[7px] font-black tracking-widest uppercase md:h-4 md:px-2 md:text-[8px]',
+                                    item.sourceModule === 'PRODUCT'
+                                      ? 'bg-blue-500/10 text-blue-600'
+                                      : 'bg-amber-500/10 text-amber-600'
+                                  )}
+                                >
+                                  {item.sourceModule === 'PRODUCT'
+                                    ? t('warehouse.inbound.product')
+                                    : t('warehouse.inbound.material')}
                                 </Badge>
                               </div>
-                              <div className='flex items-center gap-3 md:gap-4 truncate'>
-                                <span className='text-[9px] md:text-[10px] font-black font-mono text-muted-foreground/30 uppercase tracking-widest shrink-0'>SKU: {item.code}</span>
-                                {item.spec ? <span className='text-[9px] md:text-[10px] font-bold text-muted-foreground/40 truncate italic opacity-60'>SPEC: {item.spec}</span> : null}
+                              <div className='flex items-center gap-3 truncate md:gap-4'>
+                                <span className='shrink-0 font-mono text-[9px] font-black tracking-widest text-muted-foreground/30 uppercase md:text-[10px]'>
+                                  SKU: {item.code}
+                                </span>
+                                {item.spec ? (
+                                  <span className='truncate text-[9px] font-bold text-muted-foreground/40 italic opacity-60 md:text-[10px]'>
+                                    SPEC: {item.spec}
+                                  </span>
+                                ) : null}
                               </div>
                             </div>
                           </div>
                           <Button
                             size='sm'
                             variant='ghost'
-                            className='h-9 md:h-10 rounded-full px-4 md:px-5 text-[9px] md:text-[10px] font-black uppercase tracking-widest gap-2 bg-emerald-500/10 text-emerald-700 border border-emerald-500/30 transition-all shadow-lg shadow-emerald-500/10 shrink-0 hover:bg-emerald-500/15'
+                            className='h-9 shrink-0 gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 text-[9px] font-black tracking-widest text-emerald-700 uppercase shadow-lg shadow-emerald-500/10 transition-all hover:bg-emerald-500/15 md:h-10 md:px-5 md:text-[10px]'
                             onClick={(event) => {
                               event.stopPropagation()
                               inbound.openInboundForm(item)
                             }}
                           >
-                            {t('warehouse.inbound.startInbound')} <Plus className='size-3' />
+                            {t('warehouse.inbound.startInbound')}{' '}
+                            <Plus className='size-3' />
                           </Button>
                         </div>
                       ))
                     ) : (
-                      <div className='h-full flex flex-col items-center justify-center px-6 text-center text-muted-foreground/20 italic'>
+                      <div className='flex h-full flex-col items-center justify-center px-6 text-center text-muted-foreground/20 italic'>
                         <div className='relative mb-4'>
                           <Search className='size-16 opacity-5' />
                           <div className='absolute inset-0 flex items-center justify-center'>
-                            <Database className='size-8 opacity-10 animate-pulse' />
+                            <Database className='size-8 animate-pulse opacity-10' />
                           </div>
                         </div>
-                        <p className='text-[10px] font-black uppercase tracking-widest'>{t('warehouse.inbound.idleTitle')}</p>
-                        <p className='mt-3 max-w-md text-[10px] md:text-[11px] font-bold not-italic text-muted-foreground/45 leading-5'>
+                        <p className='text-[10px] font-black tracking-widest uppercase'>
+                          {t('warehouse.inbound.idleTitle')}
+                        </p>
+                        <p className='mt-3 max-w-md text-[10px] leading-5 font-bold text-muted-foreground/45 not-italic md:text-[11px]'>
                           {inbound.hasSearched
                             ? t('warehouse.inbound.emptyAfterSearchGuide')
                             : t('warehouse.inbound.emptyBeforeSearchGuide')}
@@ -252,7 +297,10 @@ export function ProductInboundActionDialog({
         itemUnit={inbound.selectedItem?.uom}
         isSubmittingInbound={inbound.isSubmittingInbound}
         onTargetCategoryChange={(value) => {
-          inbound.setFormData((current) => ({ ...current, targetCategory: value }))
+          inbound.setFormData((current) => ({
+            ...current,
+            targetCategory: value,
+          }))
         }}
         onEntryDateChange={(value) => {
           inbound.setFormData((current) => ({ ...current, entryDate: value }))

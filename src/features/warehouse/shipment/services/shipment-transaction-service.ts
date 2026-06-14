@@ -23,17 +23,24 @@ export interface PrepareVirtualShipmentInput {
 }
 
 export const ShipmentTransactionService = {
-  recordShipment: async (data: ShipmentRecordCreateInput): Promise<ShipmentRecord> => {
-    const res = await apiFetch<InventoryShipmentRecordApiDTO>('/inventory/shipment', {
-      method: 'POST',
-      body: JSON.stringify({
-        ...toShipmentRecordApiDTO(data),
-        metadata: { intent: 'SHIPMENT_DISPATCH' },
-      }),
-    })
+  recordShipment: async (
+    data: ShipmentRecordCreateInput
+  ): Promise<ShipmentRecord> => {
+    const res = await apiFetch<InventoryShipmentRecordApiDTO>(
+      '/inventory/shipment',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          ...toShipmentRecordApiDTO(data),
+          metadata: { intent: 'SHIPMENT_DISPATCH' },
+        }),
+      }
+    )
 
     return toShipmentRecordContract(
-      ensureObjectResponse<InventoryShipmentRecordApiDTO & Record<string, unknown>>(
+      ensureObjectResponse<
+        InventoryShipmentRecordApiDTO & Record<string, unknown>
+      >(
         res,
         'ShipmentTransactionService.recordShipment'
       ) as InventoryShipmentRecordApiDTO
@@ -41,39 +48,55 @@ export const ShipmentTransactionService = {
   },
 
   commitShipment: async (id: string): Promise<ShipmentRecord> => {
-    const res = await apiFetch<InventoryShipmentRecordApiDTO>(`/inventory/shipment/${id}/commit`, {
-      method: 'POST',
-      body: JSON.stringify({
-        metadata: { intent: 'COMMITTED_SETTLEMENT' },
-      }),
-    })
+    const res = await apiFetch<InventoryShipmentRecordApiDTO>(
+      `/inventory/shipment/${id}/commit`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          metadata: { intent: 'COMMITTED_SETTLEMENT' },
+        }),
+      }
+    )
 
     return toShipmentRecordContract(
-      ensureObjectResponse<InventoryShipmentRecordApiDTO & Record<string, unknown>>(
+      ensureObjectResponse<
+        InventoryShipmentRecordApiDTO & Record<string, unknown>
+      >(
         res,
         'ShipmentTransactionService.commitShipment'
       ) as InventoryShipmentRecordApiDTO
     )
   },
 
-  prepareVirtualShipment: async (data: PrepareVirtualShipmentInput): Promise<ShipmentRecord> => {
-    const res = await apiFetch<InventoryShipmentRecordApiDTO>('/inventory/shipment/virtual-lock', {
-      method: 'POST',
-      body: JSON.stringify({
-        ...data,
-        metadata: { intent: 'WAREHOUSE_VIRTUAL_SHIPMENT_LOCK' },
-      }),
-    })
+  prepareVirtualShipment: async (
+    data: PrepareVirtualShipmentInput
+  ): Promise<ShipmentRecord> => {
+    const res = await apiFetch<InventoryShipmentRecordApiDTO>(
+      '/inventory/shipment/virtual-lock',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          ...data,
+          metadata: { intent: 'WAREHOUSE_VIRTUAL_SHIPMENT_LOCK' },
+        }),
+      }
+    )
 
     return toShipmentRecordContract(
-      ensureObjectResponse<InventoryShipmentRecordApiDTO & Record<string, unknown>>(
+      ensureObjectResponse<
+        InventoryShipmentRecordApiDTO & Record<string, unknown>
+      >(
         res,
         'ShipmentTransactionService.prepareVirtualShipment'
       ) as InventoryShipmentRecordApiDTO
     )
   },
 
-  patchShipmentDraft: async (id: string, delta: DeltaSet, version: number): Promise<ShipmentRecord> => {
+  patchShipmentDraft: async (
+    id: string,
+    delta: DeltaSet,
+    version: number
+  ): Promise<ShipmentRecord> => {
     const payload: DeltaPayload = {
       op: 'PATCH',
       delta,
@@ -84,13 +107,18 @@ export const ShipmentTransactionService = {
       },
     }
 
-    const res = await apiFetch<InventoryShipmentRecordApiDTO>(`/inventory/shipment/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(payload),
-    })
+    const res = await apiFetch<InventoryShipmentRecordApiDTO>(
+      `/inventory/shipment/${id}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      }
+    )
 
     return toShipmentRecordContract(
-      ensureObjectResponse<InventoryShipmentRecordApiDTO & Record<string, unknown>>(
+      ensureObjectResponse<
+        InventoryShipmentRecordApiDTO & Record<string, unknown>
+      >(
         res,
         'ShipmentTransactionService.patchShipmentDraft'
       ) as InventoryShipmentRecordApiDTO

@@ -1,13 +1,13 @@
 'use client'
 
-import { AlertCircle, ArrowUpRight, Layers, Plus } from 'lucide-react'
 import { useNavigate } from '@tanstack/react-router'
+import { AlertCircle, ArrowUpRight, Layers, Plus } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { useActiveBOM } from '@/features/product-structure/hooks/use-active-bom'
-import { cn } from '@/lib/utils'
 
 interface ProductActiveBOMCardProps {
   productId: string
@@ -23,7 +23,10 @@ interface ProductActiveBOMCardProps {
  *  - none → 引导建首份 BOM
  *  - error / loading → 占位骨架
  */
-export function ProductActiveBOMCard({ productId, productName }: ProductActiveBOMCardProps) {
+export function ProductActiveBOMCard({
+  productId,
+  productName,
+}: ProductActiveBOMCardProps) {
   const { t } = useLanguage()
   const navigate = useNavigate()
   const resource = useActiveBOM(productId)
@@ -34,9 +37,9 @@ export function ProductActiveBOMCard({ productId, productName }: ProductActiveBO
 
   if (resource.status === 'loading') {
     return (
-      <Card className='rounded-[20px] border-2 border-dashed border-emerald-600/15 bg-emerald-600/3 shadow-none overflow-hidden'>
-        <div className='px-3 sm:px-4 py-3 sm:py-4'>
-          <div className='h-12 rounded-xl bg-muted/50 animate-pulse' />
+      <Card className='overflow-hidden rounded-[20px] border-2 border-dashed border-emerald-600/15 bg-emerald-600/3 shadow-none'>
+        <div className='px-3 py-3 sm:px-4 sm:py-4'>
+          <div className='h-12 animate-pulse rounded-xl bg-muted/50' />
         </div>
       </Card>
     )
@@ -44,10 +47,10 @@ export function ProductActiveBOMCard({ productId, productName }: ProductActiveBO
 
   if (resource.status === 'error') {
     return (
-      <Card className='rounded-[20px] border-2 border-dashed border-rose-400/40 bg-rose-50/40 shadow-none overflow-hidden'>
-        <div className='px-3 sm:px-4 py-3 sm:py-4 flex items-center gap-3'>
+      <Card className='overflow-hidden rounded-[20px] border-2 border-dashed border-rose-400/40 bg-rose-50/40 shadow-none'>
+        <div className='flex items-center gap-3 px-3 py-3 sm:px-4 sm:py-4'>
           <AlertCircle className='size-4 text-rose-500' />
-          <span className='text-[11px] font-black uppercase tracking-widest text-rose-600'>
+          <span className='text-[11px] font-black tracking-widest text-rose-600 uppercase'>
             {t('engineering.productMgmt.activeBom.loadFailed')}
           </span>
         </div>
@@ -57,19 +60,21 @@ export function ProductActiveBOMCard({ productId, productName }: ProductActiveBO
 
   if (resource.status === 'none') {
     return (
-      <Card className='rounded-[20px] border-2 border-dashed border-slate-300 bg-slate-50/40 shadow-none overflow-hidden'>
-        <div className='px-3 sm:px-4 py-3 sm:py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3'>
+      <Card className='overflow-hidden rounded-[20px] border-2 border-dashed border-slate-300 bg-slate-50/40 shadow-none'>
+        <div className='flex flex-col items-start justify-between gap-3 px-3 py-3 sm:flex-row sm:items-center sm:px-4 sm:py-4'>
           <div className='flex items-center gap-3'>
-            <div className='px-3 py-1 bg-slate-500 text-white text-[9px] font-black uppercase tracking-widest italic rounded-md shadow-lg shadow-slate-500/20'>
+            <div className='rounded-md bg-slate-500 px-3 py-1 text-[9px] font-black tracking-widest text-white uppercase italic shadow-lg shadow-slate-500/20'>
               {t('engineering.productMgmt.activeBom.label')}
             </div>
             <span className='text-[11px] font-bold text-slate-600'>
-              {t('engineering.productMgmt.activeBom.noBomYet', { product: productName })}
+              {t('engineering.productMgmt.activeBom.noBomYet', {
+                product: productName,
+              })}
             </span>
           </div>
           <Button
             onClick={goToBomMgmt}
-            className='h-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white px-4 text-[10px] font-black uppercase tracking-widest gap-1.5 active:scale-95 transition-all'
+            className='h-8 gap-1.5 rounded-full bg-blue-600 px-4 text-[10px] font-black tracking-widest text-white uppercase transition-all hover:bg-blue-700 active:scale-95'
           >
             <Plus className='size-3' />
             {t('engineering.productMgmt.activeBom.createFirstBom')}
@@ -82,15 +87,17 @@ export function ProductActiveBOMCard({ productId, productName }: ProductActiveBO
   if (resource.status === 'draft') {
     const draft = resource.draftBom!
     return (
-      <Card className='rounded-[20px] border-2 border-dashed border-amber-400/40 bg-amber-50/40 shadow-none overflow-hidden'>
-        <div className='px-3 sm:px-4 py-3 sm:py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3'>
+      <Card className='overflow-hidden rounded-[20px] border-2 border-dashed border-amber-400/40 bg-amber-50/40 shadow-none'>
+        <div className='flex flex-col items-start justify-between gap-3 px-3 py-3 sm:flex-row sm:items-center sm:px-4 sm:py-4'>
           <div className='flex items-center gap-3'>
-            <div className='px-3 py-1 bg-amber-500 text-white text-[9px] font-black uppercase tracking-widest italic rounded-md shadow-lg shadow-amber-500/20'>
+            <div className='rounded-md bg-amber-500 px-3 py-1 text-[9px] font-black tracking-widest text-white uppercase italic shadow-lg shadow-amber-500/20'>
               {t('engineering.productMgmt.activeBom.label')}
             </div>
             <div className='flex flex-col gap-0.5'>
-              <span className='text-[11px] font-black uppercase tracking-widest text-amber-700'>
-                {t('engineering.productMgmt.activeBom.draftStatus', { version: draft.bomVersion })}
+              <span className='text-[11px] font-black tracking-widest text-amber-700 uppercase'>
+                {t('engineering.productMgmt.activeBom.draftStatus', {
+                  version: draft.bomVersion,
+                })}
               </span>
               <span className='text-[10px] font-bold text-muted-foreground/60'>
                 {t('engineering.productMgmt.activeBom.draftHint')}
@@ -100,7 +107,7 @@ export function ProductActiveBOMCard({ productId, productName }: ProductActiveBO
           <Button
             variant='outline'
             onClick={goToBomMgmt}
-            className='h-8 rounded-full border-amber-300 bg-background hover:bg-amber-100 text-amber-700 px-4 text-[10px] font-black uppercase tracking-widest gap-1.5 active:scale-95 transition-all'
+            className='h-8 gap-1.5 rounded-full border-amber-300 bg-background px-4 text-[10px] font-black tracking-widest text-amber-700 uppercase transition-all hover:bg-amber-100 active:scale-95'
           >
             <ArrowUpRight className='size-3' />
             {t('engineering.productMgmt.activeBom.openBom')}
@@ -113,55 +120,58 @@ export function ProductActiveBOMCard({ productId, productName }: ProductActiveBO
   // released
   const bom = resource.bom!
   const isMfg = bom.bomType === 'MBOM'
-  const weightLabel = bom.measuredWeight && bom.measuredWeight > 0
-    ? `${bom.measuredWeight}${(bom.measuredWeightUnit || 'g').trim() || 'g'}`
-    : '—'
+  const weightLabel =
+    bom.measuredWeight && bom.measuredWeight > 0
+      ? `${bom.measuredWeight}${(bom.measuredWeightUnit || 'g').trim() || 'g'}`
+      : '—'
 
   return (
-    <Card className='rounded-[20px] border-2 border-dashed border-emerald-600/30 bg-emerald-600/5 shadow-none overflow-hidden hover:bg-emerald-600/10 transition-all'>
-      <div className='px-3 sm:px-4 py-3 sm:py-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-5'>
-        <div className='flex flex-col gap-1 shrink-0'>
-          <div className='px-3 py-1 bg-emerald-600 text-white text-[9px] font-black uppercase tracking-widest italic rounded-md shadow-lg shadow-emerald-600/20'>
+    <Card className='overflow-hidden rounded-[20px] border-2 border-dashed border-emerald-600/30 bg-emerald-600/5 shadow-none transition-all hover:bg-emerald-600/10'>
+      <div className='flex flex-col items-start gap-3 px-3 py-3 sm:flex-row sm:items-center sm:gap-5 sm:px-4 sm:py-4'>
+        <div className='flex shrink-0 flex-col gap-1'>
+          <div className='rounded-md bg-emerald-600 px-3 py-1 text-[9px] font-black tracking-widest text-white uppercase italic shadow-lg shadow-emerald-600/20'>
             {t('engineering.productMgmt.activeBom.label')}
           </div>
           <Badge
             variant='outline'
             className={cn(
-              'h-4 px-1.5 text-[8px] font-black uppercase tracking-widest border-none',
-              isMfg ? 'bg-indigo-500/10 text-indigo-700' : 'bg-blue-500/10 text-blue-700'
+              'h-4 border-none px-1.5 text-[8px] font-black tracking-widest uppercase',
+              isMfg
+                ? 'bg-indigo-500/10 text-indigo-700'
+                : 'bg-blue-500/10 text-blue-700'
             )}
           >
             {t(`engineering.dict.${bom.bomType}` as any)}
           </Badge>
         </div>
 
-        <div className='flex-1 grid grid-cols-2 sm:grid-cols-4 gap-3'>
+        <div className='grid flex-1 grid-cols-2 gap-3 sm:grid-cols-4'>
           <div className='rounded-[14px] border border-dashed border-emerald-600/20 bg-background/80 px-3 py-2'>
-            <div className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>
+            <div className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
               {t('engineering.productMgmt.activeBom.bomNo')}
             </div>
-            <div className='mt-0.5 break-all font-mono text-[12px] font-black text-slate-800'>
+            <div className='mt-0.5 font-mono text-[12px] font-black break-all text-slate-800'>
               {bom.bomNo}
             </div>
           </div>
           <div className='rounded-[14px] border border-dashed border-emerald-600/20 bg-background/80 px-3 py-2'>
-            <div className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>
+            <div className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
               {t('engineering.productMgmt.activeBom.version')}
             </div>
-            <div className='mt-0.5 font-mono text-[14px] font-black text-blue-600 tracking-tighter italic'>
+            <div className='mt-0.5 font-mono text-[14px] font-black tracking-tighter text-blue-600 italic'>
               {bom.bomVersion}
             </div>
           </div>
           <div className='rounded-[14px] border border-dashed border-emerald-600/20 bg-background/80 px-3 py-2'>
-            <div className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>
+            <div className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
               {t('engineering.productMgmt.activeBom.weight')}
             </div>
-            <div className='mt-0.5 font-mono text-[14px] font-black text-emerald-700 tracking-tighter italic'>
+            <div className='mt-0.5 font-mono text-[14px] font-black tracking-tighter text-emerald-700 italic'>
               {weightLabel}
             </div>
           </div>
           <div className='rounded-[14px] border border-dashed border-emerald-600/20 bg-background/80 px-3 py-2'>
-            <div className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>
+            <div className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
               {t('engineering.productMgmt.activeBom.lines')}
             </div>
             <div className='mt-0.5 flex items-center gap-1 text-[12px] font-black text-slate-700'>
@@ -174,7 +184,7 @@ export function ProductActiveBOMCard({ productId, productName }: ProductActiveBO
         <Button
           variant='outline'
           onClick={goToBomMgmt}
-          className='h-8 rounded-full border-emerald-400 bg-background hover:bg-emerald-100 text-emerald-700 px-4 text-[10px] font-black uppercase tracking-widest gap-1.5 active:scale-95 transition-all shrink-0'
+          className='h-8 shrink-0 gap-1.5 rounded-full border-emerald-400 bg-background px-4 text-[10px] font-black tracking-widest text-emerald-700 uppercase transition-all hover:bg-emerald-100 active:scale-95'
         >
           <ArrowUpRight className='size-3' />
           {t('engineering.productMgmt.activeBom.openBom')}

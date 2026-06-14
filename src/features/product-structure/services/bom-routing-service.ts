@@ -45,10 +45,13 @@ export async function dispatchBomEngineeringRoutingEvent(
   input: DispatchEbomEventInput
 ) {
   if (!isEBOM(input.bom)) {
-    logger.warn('dispatchBomEngineeringRoutingEvent invoked with non-EBOM bom', {
-      bomId: input.bom.id,
-      bomType: input.bom.bomType,
-    })
+    logger.warn(
+      'dispatchBomEngineeringRoutingEvent invoked with non-EBOM bom',
+      {
+        bomId: input.bom.id,
+        bomType: input.bom.bomType,
+      }
+    )
     return null
   }
 
@@ -81,10 +84,13 @@ export async function dispatchBomManufacturingRoutingEvent(
   input: DispatchMbomEventInput
 ) {
   if (!isMBOM(input.bom)) {
-    logger.warn('dispatchBomManufacturingRoutingEvent invoked with non-MBOM bom', {
-      bomId: input.bom.id,
-      bomType: input.bom.bomType,
-    })
+    logger.warn(
+      'dispatchBomManufacturingRoutingEvent invoked with non-MBOM bom',
+      {
+        bomId: input.bom.id,
+        bomType: input.bom.bomType,
+      }
+    )
     return null
   }
 

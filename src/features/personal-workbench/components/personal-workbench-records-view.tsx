@@ -2,8 +2,14 @@ import { useMemo, useState } from 'react'
 import { AlertTriangle, NotebookPen, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
-import type { PersonalRecord, PersonalRecordUpsertPayload } from '../data/schema'
-import { usePersonalWorkbenchMutations, usePersonalWorkbenchRecords } from '../hooks/use-personal-workbench'
+import type {
+  PersonalRecord,
+  PersonalRecordUpsertPayload,
+} from '../data/schema'
+import {
+  usePersonalWorkbenchMutations,
+  usePersonalWorkbenchRecords,
+} from '../hooks/use-personal-workbench'
 import { PersonalWorkbenchBoard } from './personal-workbench-board'
 import { PersonalWorkbenchCardEditor } from './personal-workbench-card-editor'
 
@@ -11,10 +17,15 @@ interface PersonalWorkbenchRecordsViewProps {
   searchQuery: string
 }
 
-export function PersonalWorkbenchRecordsView({ searchQuery }: PersonalWorkbenchRecordsViewProps) {
-  const { data, error, isError, isPending, refetch } = usePersonalWorkbenchRecords()
+export function PersonalWorkbenchRecordsView({
+  searchQuery,
+}: PersonalWorkbenchRecordsViewProps) {
+  const { data, error, isError, isPending, refetch } =
+    usePersonalWorkbenchRecords()
   const { createMutation, updateMutation } = usePersonalWorkbenchMutations()
-  const [editingRecord, setEditingRecord] = useState<PersonalRecord | undefined>(undefined)
+  const [editingRecord, setEditingRecord] = useState<
+    PersonalRecord | undefined
+  >(undefined)
   const [isEditorOpen, setIsEditorOpen] = useState(false)
   const records = useMemo(() => data?.items ?? [], [data?.items])
   const normalizedQuery = searchQuery.trim().toLowerCase()
@@ -23,7 +34,9 @@ export function PersonalWorkbenchRecordsView({ searchQuery }: PersonalWorkbenchR
       return records
     }
     return records.filter((record) => {
-      const haystack = [record.title, record.note, record.columnKey].join(' ').toLowerCase()
+      const haystack = [record.title, record.note, record.columnKey]
+        .join(' ')
+        .toLowerCase()
       return haystack.includes(normalizedQuery)
     })
   }, [normalizedQuery, records])
@@ -33,7 +46,7 @@ export function PersonalWorkbenchRecordsView({ searchQuery }: PersonalWorkbenchR
       <div className='flex items-center justify-end'>
         <Button
           type='button'
-          className='rounded-full shrink-0 text-[11px] font-black tracking-widest'
+          className='shrink-0 rounded-full text-[11px] font-black tracking-widest'
           onClick={() => {
             setEditingRecord(undefined)
             setIsEditorOpen(true)
@@ -52,11 +65,19 @@ export function PersonalWorkbenchRecordsView({ searchQuery }: PersonalWorkbenchR
         <div className='flex min-h-[320px] items-center justify-center rounded-[28px] border border-dashed border-amber-300 bg-amber-50/70 p-6'>
           <div className='flex max-w-md flex-col items-center text-center'>
             <AlertTriangle className='size-8 text-amber-600' />
-            <p className='mt-3 text-base font-black tracking-tight text-foreground'>个人记录页面暂时无法加载</p>
-            <p className='mt-2 text-sm text-muted-foreground'>
-              {error instanceof Error ? error.message : '接口当前不可用，请稍后重试。'}
+            <p className='mt-3 text-base font-black tracking-tight text-foreground'>
+              个人记录页面暂时无法加载
             </p>
-            <Button type='button' className='mt-4 rounded-full' onClick={() => void refetch()}>
+            <p className='mt-2 text-sm text-muted-foreground'>
+              {error instanceof Error
+                ? error.message
+                : '接口当前不可用，请稍后重试。'}
+            </p>
+            <Button
+              type='button'
+              className='mt-4 rounded-full'
+              onClick={() => void refetch()}
+            >
               重新加载
             </Button>
           </div>
@@ -68,8 +89,12 @@ export function PersonalWorkbenchRecordsView({ searchQuery }: PersonalWorkbenchR
       ) : filteredRecords.length === 0 && records.length > 0 ? (
         <div className='flex min-h-[320px] items-center justify-center rounded-[28px] border border-dashed border-border/70 bg-muted/10 p-6 text-center'>
           <div className='max-w-md'>
-            <p className='text-base font-black tracking-tight text-foreground'>未找到匹配的个人记录</p>
-            <p className='mt-2 text-sm text-muted-foreground'>当前搜索只会在你自己的个人记录中查找标题、内容和状态列。</p>
+            <p className='text-base font-black tracking-tight text-foreground'>
+              未找到匹配的个人记录
+            </p>
+            <p className='mt-2 text-sm text-muted-foreground'>
+              当前搜索只会在你自己的个人记录中查找标题、内容和状态列。
+            </p>
           </div>
         </div>
       ) : (
@@ -91,7 +116,10 @@ export function PersonalWorkbenchRecordsView({ searchQuery }: PersonalWorkbenchR
         open={isEditorOpen}
         onOpenChange={setIsEditorOpen}
         record={editingRecord}
-        onSubmit={async (payload: PersonalRecordUpsertPayload, recordId?: string) => {
+        onSubmit={async (
+          payload: PersonalRecordUpsertPayload,
+          recordId?: string
+        ) => {
           if (recordId) {
             await updateMutation.mutateAsync({ id: recordId, payload })
             return

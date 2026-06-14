@@ -26,7 +26,9 @@ function toDateOnlyString(value?: string): string {
   return value.slice(0, 10)
 }
 
-export function toInventoryRecordContract(dto: InventoryItemApiDTO): InventoryRecord {
+export function toInventoryRecordContract(
+  dto: InventoryItemApiDTO
+): InventoryRecord {
   return {
     id: dto.id,
     materialId: dto.materialId,
@@ -42,7 +44,9 @@ export function toInventoryRecordContract(dto: InventoryItemApiDTO): InventoryRe
   }
 }
 
-export function toInventoryViewContract(dto: InventoryItemApiDTO): InventoryView {
+export function toInventoryViewContract(
+  dto: InventoryItemApiDTO
+): InventoryView {
   return {
     ...toInventoryRecordContract(dto),
     materialName: dto.materialName,
@@ -56,7 +60,9 @@ export function toInventoryViewContract(dto: InventoryItemApiDTO): InventoryView
   }
 }
 
-export function toInventoryViewContracts(dtos: InventoryItemApiDTO[]): InventoryView[] {
+export function toInventoryViewContracts(
+  dtos: InventoryItemApiDTO[]
+): InventoryView[] {
   return dtos.map(toInventoryViewContract)
 }
 
@@ -81,7 +87,9 @@ export function toMasterDataSearchResultContracts(
   return dtos.map(toMasterDataSearchResultContract)
 }
 
-export function toInboundRecordContract(dto: InventoryInboundRecordApiDTO): InboundRecord {
+export function toInboundRecordContract(
+  dto: InventoryInboundRecordApiDTO
+): InboundRecord {
   return {
     id: dto.id,
     materialId: dto.materialId,
@@ -101,11 +109,15 @@ export function toInboundRecordContract(dto: InventoryInboundRecordApiDTO): Inbo
   }
 }
 
-export function toInboundRecordContracts(dtos: InventoryInboundRecordApiDTO[]): InboundRecord[] {
+export function toInboundRecordContracts(
+  dtos: InventoryInboundRecordApiDTO[]
+): InboundRecord[] {
   return dtos.map(toInboundRecordContract)
 }
 
-export function toInboundTDOApiDTO(contract: InboundTDO): CreateInventoryInboundApiDTO {
+export function toInboundTDOApiDTO(
+  contract: InboundTDO
+): CreateInventoryInboundApiDTO {
   return {
     materialId: contract.materialId,
     quantity: contract.quantity,
@@ -116,7 +128,9 @@ export function toInboundTDOApiDTO(contract: InboundTDO): CreateInventoryInbound
   }
 }
 
-export function toInventoryValuationContract(dto: InventoryValuationApiDTO): number {
+export function toInventoryValuationContract(
+  dto: InventoryValuationApiDTO
+): number {
   return dto.totalValue
 }
 

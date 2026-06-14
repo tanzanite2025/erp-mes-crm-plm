@@ -1,5 +1,5 @@
-import { quickActionRegistry } from '../data/quick-action-registry'
 import type { SidebarCommandDefinitionDto } from '@/features/sidebar-command-assignment/services'
+import { quickActionRegistry } from '../data/quick-action-registry'
 import type { QuickActionDefinition, SidebarQuickActionView } from '../types'
 
 const privateQuickActionIds = [

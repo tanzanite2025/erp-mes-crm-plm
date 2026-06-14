@@ -1,13 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
 import { type MaterialOption } from '../../material-archive/data/schema'
-import { MaterialUsageService, type UsageStat } from '../services/material-usage-service'
+import {
+  MaterialUsageService,
+  type UsageStat,
+} from '../services/material-usage-service'
 
 export type EnrichedMaterialOption = MaterialOption & {
   usageStats: UsageStat[]
 }
 
 export function useEnrichedMaterialOptions(materials: MaterialOption[]) {
-  const [usageStatsMap, setUsageStatsMap] = useState<Record<string, UsageStat[]>>({})
+  const [usageStatsMap, setUsageStatsMap] = useState<
+    Record<string, UsageStat[]>
+  >({})
 
   useEffect(() => {
     let cancelled = false
@@ -16,13 +21,17 @@ export function useEnrichedMaterialOptions(materials: MaterialOption[]) {
       const data = await Promise.all(
         materials.map(async (material) => ({
           ...material,
-          usageStats: await MaterialUsageService.getStageUsageStats(material.id),
+          usageStats: await MaterialUsageService.getStageUsageStats(
+            material.id
+          ),
         }))
       )
 
       if (!cancelled) {
         setUsageStatsMap(
-          Object.fromEntries(data.map((material) => [material.id, material.usageStats]))
+          Object.fromEntries(
+            data.map((material) => [material.id, material.usageStats])
+          )
         )
       }
     }
@@ -43,7 +52,10 @@ export function useEnrichedMaterialOptions(materials: MaterialOption[]) {
     [materials, usageStatsMap]
   )
 
-  const materialMap = useMemo(() => new Map(materials.map((material) => [material.id, material])), [materials])
+  const materialMap = useMemo(
+    () => new Map(materials.map((material) => [material.id, material])),
+    [materials]
+  )
 
   return {
     enrichedMaterials,

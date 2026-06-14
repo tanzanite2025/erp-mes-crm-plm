@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
 import { ChevronDown } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -7,8 +9,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { useLanguage } from '@/context/language-provider'
-import { cn } from '@/lib/utils'
 import type { HierarchyLevelOptionItem } from '../data/hierarchy-config'
 
 type HierarchyOptionDropdownButtonProps = {
@@ -31,9 +31,10 @@ export function HierarchyOptionDropdownButton({
   align = 'center',
 }: HierarchyOptionDropdownButtonProps) {
   const { locale } = useLanguage()
-  const emptyText = locale === 'zh-CN'
-    ? '暂无候选项，请先到“层级配置”中维护。'
-    : 'No options yet. Please configure them in Hierarchy Config first.'
+  const emptyText =
+    locale === 'zh-CN'
+      ? '暂无候选项，请先到“层级配置”中维护。'
+      : 'No options yet. Please configure them in Hierarchy Config first.'
 
   return (
     <DropdownMenu>
@@ -43,7 +44,10 @@ export function HierarchyOptionDropdownButton({
           <ChevronDown className='ml-2 size-3.5 shrink-0' />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align={align} className='w-72 rounded-[22px] border border-dashed border-muted/40 bg-background/95 p-1 shadow-2xl backdrop-blur-md'>
+      <DropdownMenuContent
+        align={align}
+        className='w-72 rounded-[22px] border border-dashed border-muted/40 bg-background/95 p-1 shadow-2xl backdrop-blur-md'
+      >
         {options.length > 0 ? (
           options.map((option) => (
             <DropdownMenuItem
@@ -55,7 +59,7 @@ export function HierarchyOptionDropdownButton({
             </DropdownMenuItem>
           ))
         ) : (
-          <div className='px-4 py-3 text-[11px] font-bold leading-relaxed text-muted-foreground'>
+          <div className='px-4 py-3 text-[11px] leading-relaxed font-bold text-muted-foreground'>
             {emptyText}
           </div>
         )}

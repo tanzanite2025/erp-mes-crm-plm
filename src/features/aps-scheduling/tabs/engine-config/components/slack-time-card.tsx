@@ -1,6 +1,9 @@
 import { CalendarClock } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
-import type { GreedyEngineFactorBadgeItem, GreedyEngineFactorSummaryItem } from '../types'
+import type {
+  GreedyEngineFactorBadgeItem,
+  GreedyEngineFactorSummaryItem,
+} from '../types'
 import { FactorCard } from './factor-card'
 
 type SlackTimeCardProps = {
@@ -8,10 +11,7 @@ type SlackTimeCardProps = {
   summaryItems: GreedyEngineFactorSummaryItem[]
 }
 
-export function SlackTimeCard({
-  badges,
-  summaryItems,
-}: SlackTimeCardProps) {
+export function SlackTimeCard({ badges, summaryItems }: SlackTimeCardProps) {
   const { t } = useLanguage()
 
   return (

@@ -1,11 +1,14 @@
-import type { MoldDrawing, MoldDrawingLog } from '../data/schema'
 import type {
   MoldDrawingApiDTO,
   MoldDrawingLogApiDTO,
   SaveMoldDrawingApiDTO,
 } from '../contracts/equipment-drawing-api-dto'
+import type { MoldDrawing, MoldDrawingLog } from '../data/schema'
 
-function optimisticVersionFromTimestamps(updatedAt?: string, createdAt?: string): number {
+function optimisticVersionFromTimestamps(
+  updatedAt?: string,
+  createdAt?: string
+): number {
   const versionSource = updatedAt || createdAt
   if (!versionSource) return 1
 
@@ -23,18 +26,24 @@ export function toMoldDrawingContract(dto: MoldDrawingApiDTO): MoldDrawing {
     type: dto.type,
     fileUrl: dto.fileUrl,
     version: dto.version,
-    sysVersion: dto.sysVersion || optimisticVersionFromTimestamps(dto.updatedAt, dto.createdAt),
+    sysVersion:
+      dto.sysVersion ||
+      optimisticVersionFromTimestamps(dto.updatedAt, dto.createdAt),
     status: dto.status,
     uploadedAt: dto.uploadedAt,
     remarks: dto.remarks || '',
   }
 }
 
-export function toMoldDrawingContracts(dtos: MoldDrawingApiDTO[]): MoldDrawing[] {
+export function toMoldDrawingContracts(
+  dtos: MoldDrawingApiDTO[]
+): MoldDrawing[] {
   return dtos.map(toMoldDrawingContract)
 }
 
-export function toMoldDrawingLogContract(dto: MoldDrawingLogApiDTO): MoldDrawingLog {
+export function toMoldDrawingLogContract(
+  dto: MoldDrawingLogApiDTO
+): MoldDrawingLog {
   return {
     id: dto.id,
     drawingId: dto.drawingId,
@@ -45,11 +54,15 @@ export function toMoldDrawingLogContract(dto: MoldDrawingLogApiDTO): MoldDrawing
   }
 }
 
-export function toMoldDrawingLogContracts(dtos: MoldDrawingLogApiDTO[]): MoldDrawingLog[] {
+export function toMoldDrawingLogContracts(
+  dtos: MoldDrawingLogApiDTO[]
+): MoldDrawingLog[] {
   return dtos.map(toMoldDrawingLogContract)
 }
 
-export function toSaveMoldDrawingApiDTO(contract: MoldDrawing): SaveMoldDrawingApiDTO {
+export function toSaveMoldDrawingApiDTO(
+  contract: MoldDrawing
+): SaveMoldDrawingApiDTO {
   return {
     id: contract.id || undefined,
     moldId: contract.moldId || '',

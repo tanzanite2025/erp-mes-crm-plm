@@ -1,6 +1,11 @@
 import type { TranslationKey } from '@/locales'
 
-export type LogisticsStatus = 'Pending' | 'InTransit' | 'Delivered' | 'Exception' | 'Canceled'
+export type LogisticsStatus =
+  | 'Pending'
+  | 'InTransit'
+  | 'Delivered'
+  | 'Exception'
+  | 'Canceled'
 
 export type LogisticsType = 'Shipment' | 'Receipt'
 
@@ -112,11 +117,31 @@ export const logisticsStatuses: Array<{
   labelKey: TranslationKey
   color: string
 }> = [
-  { value: 'Pending', labelKey: 'trading.logistics.statuses.pending', color: 'bg-slate-500/10 text-slate-500 border-slate-500/20' },
-  { value: 'InTransit', labelKey: 'trading.logistics.statuses.inTransit', color: 'bg-blue-500/10 text-blue-500 border-blue-500/20' },
-  { value: 'Delivered', labelKey: 'trading.logistics.statuses.delivered', color: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' },
-  { value: 'Exception', labelKey: 'trading.logistics.statuses.exception', color: 'bg-amber-500/10 text-amber-500 border-amber-500/20' },
-  { value: 'Canceled', labelKey: 'trading.logistics.statuses.canceled', color: 'bg-red-500/10 text-red-500 border-red-500/20' },
+  {
+    value: 'Pending',
+    labelKey: 'trading.logistics.statuses.pending',
+    color: 'bg-slate-500/10 text-slate-500 border-slate-500/20',
+  },
+  {
+    value: 'InTransit',
+    labelKey: 'trading.logistics.statuses.inTransit',
+    color: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+  },
+  {
+    value: 'Delivered',
+    labelKey: 'trading.logistics.statuses.delivered',
+    color: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
+  },
+  {
+    value: 'Exception',
+    labelKey: 'trading.logistics.statuses.exception',
+    color: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+  },
+  {
+    value: 'Canceled',
+    labelKey: 'trading.logistics.statuses.canceled',
+    color: 'bg-red-500/10 text-red-500 border-red-500/20',
+  },
 ]
 
 export const commonCarriers = [
@@ -141,7 +166,9 @@ const carrierTranslationKeyMap: Record<string, TranslationKey> = {
   其他: 'trading.logistics.carriers.other',
 }
 
-export function getCarrierLabelKey(carrier: string | undefined): TranslationKey | null {
+export function getCarrierLabelKey(
+  carrier: string | undefined
+): TranslationKey | null {
   if (!carrier) return null
   return carrierTranslationKeyMap[carrier] ?? null
 }

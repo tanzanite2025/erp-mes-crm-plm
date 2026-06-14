@@ -1,5 +1,5 @@
-import type { AuditStatusDisplayMeta } from '@/components/common/audit-status-display'
 import type { TranslationKey } from '@/locales'
+import type { AuditStatusDisplayMeta } from '@/components/common/audit-status-display'
 
 type WarehouseTranslator = (
   key: TranslationKey,

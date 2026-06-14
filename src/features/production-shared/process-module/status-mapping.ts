@@ -1,5 +1,11 @@
-import { AlertTriangle, Circle, CircleAlert, CircleSlash, ShieldCheck } from 'lucide-react'
 import type { ElementType } from 'react'
+import {
+  AlertTriangle,
+  Circle,
+  CircleAlert,
+  CircleSlash,
+  ShieldCheck,
+} from 'lucide-react'
 import type { ProcessTreeNodeStatus } from './config'
 
 export const sharedProcessNodeStatusMap: Record<

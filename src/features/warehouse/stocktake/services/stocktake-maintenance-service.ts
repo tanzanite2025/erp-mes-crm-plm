@@ -41,11 +41,18 @@ export const StocktakeMaintenanceService = {
     )
   },
 
-  async submitAdjustmentForApproval(taskId: string): Promise<WarehouseCommandAck> {
-    const res = await apiFetch<WarehouseCommandAckApiDTO>(`/stocktakes/${taskId}/post-adjustment`, {
-      method: 'POST',
-      body: JSON.stringify({ metadata: { intent: 'STOCK_ADJUSTMENT_SUBMIT' } }),
-    })
+  async submitAdjustmentForApproval(
+    taskId: string
+  ): Promise<WarehouseCommandAck> {
+    const res = await apiFetch<WarehouseCommandAckApiDTO>(
+      `/stocktakes/${taskId}/post-adjustment`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          metadata: { intent: 'STOCK_ADJUSTMENT_SUBMIT' },
+        }),
+      }
+    )
 
     return toWarehouseCommandAckContract(
       ensureObjectResponse<WarehouseCommandAckApiDTO & Record<string, unknown>>(
@@ -83,7 +90,11 @@ export const StocktakeMaintenanceService = {
     )
   },
 
-  async pdaPatchItem(id: string, delta: DeltaSet, version: number): Promise<WarehouseCommandAck> {
+  async pdaPatchItem(
+    id: string,
+    delta: DeltaSet,
+    version: number
+  ): Promise<WarehouseCommandAck> {
     const payload: DeltaPayload = {
       op: 'PATCH',
       delta,
@@ -94,10 +105,13 @@ export const StocktakeMaintenanceService = {
       },
     }
 
-    const res = await apiFetch<WarehouseCommandAckApiDTO>(`/stocktakes/items/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(payload),
-    })
+    const res = await apiFetch<WarehouseCommandAckApiDTO>(
+      `/stocktakes/items/${id}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      }
+    )
 
     return toWarehouseCommandAckContract(
       ensureObjectResponse<WarehouseCommandAckApiDTO & Record<string, unknown>>(

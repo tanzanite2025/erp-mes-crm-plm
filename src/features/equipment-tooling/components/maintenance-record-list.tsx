@@ -3,25 +3,6 @@
 import { useState } from 'react'
 import { Plus, Trash2, Edit2, Calendar } from 'lucide-react'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,11 +13,39 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { useMaintenanceRecords } from '../hooks/use-maintenance-records'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
+import type {
+  MaintenanceRecord,
+  MaintenanceRecordPriority,
+  MaintenanceRecordType,
+} from '../data/schema'
 import { useMaintenanceRecordForm } from '../hooks/use-maintenance-record-form'
+import { useMaintenanceRecords } from '../hooks/use-maintenance-records'
 import { useStatusTransition } from '../hooks/use-status-transition'
-import type { MaintenanceRecord, MaintenanceRecordPriority, MaintenanceRecordType } from '../data/schema'
-import { getStatusBadge, getPriorityBadge, getTypeBadge, formatMaintenanceDate } from '../utils/maintenance-badges'
+import {
+  getStatusBadge,
+  getPriorityBadge,
+  getTypeBadge,
+  formatMaintenanceDate,
+} from '../utils/maintenance-badges'
 
 interface MaintenanceRecordListProps {
   assetType: 'MOLD' | 'FURNACE'
@@ -44,9 +53,15 @@ interface MaintenanceRecordListProps {
   assetSn: string
 }
 
-export function MaintenanceRecordList({ assetType, assetId, assetSn }: MaintenanceRecordListProps) {
-  const { records, isLoading, create, patch, remove, reload } = useMaintenanceRecords({ assetType, assetId })
-  const { formData, updateField, validate, reset, getSubmitData } = useMaintenanceRecordForm()
+export function MaintenanceRecordList({
+  assetType,
+  assetId,
+  assetSn,
+}: MaintenanceRecordListProps) {
+  const { records, isLoading, create, patch, remove, reload } =
+    useMaintenanceRecords({ assetType, assetId })
+  const { formData, updateField, validate, reset, getSubmitData } =
+    useMaintenanceRecordForm()
   const { getValidNextStatuses, getStatusLabel } = useStatusTransition()
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
@@ -86,7 +101,10 @@ export function MaintenanceRecordList({ assetType, assetId, assetSn }: Maintenan
     }
   }
 
-  const handleStatusChange = async (record: MaintenanceRecord, newStatus: string) => {
+  const handleStatusChange = async (
+    record: MaintenanceRecord,
+    newStatus: string
+  ) => {
     if (newStatus === record.status) return
 
     try {
@@ -101,7 +119,9 @@ export function MaintenanceRecordList({ assetType, assetId, assetSn }: Maintenan
       })
     } catch (error: unknown) {
       if (isConflictMessage(error)) {
-        toast.error('更新失败', { description: '记录已被他人修改，请刷新后重试' })
+        toast.error('更新失败', {
+          description: '记录已被他人修改，请刷新后重试',
+        })
         reload()
       } else {
         toast.error('更新失败', {
@@ -111,7 +131,10 @@ export function MaintenanceRecordList({ assetType, assetId, assetSn }: Maintenan
     }
   }
 
-  const handleRemarksUpdate = async (record: MaintenanceRecord, newRemarks: string) => {
+  const handleRemarksUpdate = async (
+    record: MaintenanceRecord,
+    newRemarks: string
+  ) => {
     try {
       await patch({
         id: record.id,
@@ -123,7 +146,9 @@ export function MaintenanceRecordList({ assetType, assetId, assetSn }: Maintenan
       toast.success('备注已更新')
     } catch (error: unknown) {
       if (isConflictMessage(error)) {
-        toast.error('更新失败', { description: '记录已被他人修改，请刷新后重试' })
+        toast.error('更新失败', {
+          description: '记录已被他人修改，请刷新后重试',
+        })
         reload()
       } else {
         toast.error('更新失败', {
@@ -160,7 +185,7 @@ export function MaintenanceRecordList({ assetType, assetId, assetSn }: Maintenan
   return (
     <div className='space-y-4'>
       <div className='flex items-center justify-between'>
-        <h4 className='text-xs font-black uppercase tracking-tight text-muted-foreground'>
+        <h4 className='text-xs font-black tracking-tight text-muted-foreground uppercase'>
           维保记录 ({records.length})
         </h4>
         <Button
@@ -169,13 +194,13 @@ export function MaintenanceRecordList({ assetType, assetId, assetSn }: Maintenan
           className='h-7 text-[10px] font-black'
           onClick={() => setIsCreateDialogOpen(true)}
         >
-          <Plus className='size-3 mr-1' />
+          <Plus className='mr-1 size-3' />
           新建
         </Button>
       </div>
 
       {records.length === 0 ? (
-        <div className='text-center py-8 text-muted-foreground text-xs'>
+        <div className='py-8 text-center text-xs text-muted-foreground'>
           暂无维保记录
         </div>
       ) : (
@@ -183,18 +208,18 @@ export function MaintenanceRecordList({ assetType, assetId, assetSn }: Maintenan
           {records.map((record) => (
             <div
               key={record.id}
-              className='p-3 rounded-xl border border-dashed bg-muted/30 hover:bg-muted/50 transition-colors space-y-2'
+              className='space-y-2 rounded-xl border border-dashed bg-muted/30 p-3 transition-colors hover:bg-muted/50'
             >
               <div className='flex items-start justify-between gap-2'>
-                <div className='flex-1 min-w-0 space-y-1'>
-                  <div className='flex items-center gap-2 flex-wrap'>
+                <div className='min-w-0 flex-1 space-y-1'>
+                  <div className='flex flex-wrap items-center gap-2'>
                     {getStatusBadge(record.status)}
                     {getPriorityBadge(record.priority)}
                     {getTypeBadge(record.type)}
                   </div>
-                  <p className='text-xs font-bold truncate'>{record.title}</p>
+                  <p className='truncate text-xs font-bold'>{record.title}</p>
                   {record.description && (
-                    <p className='text-[10px] text-muted-foreground line-clamp-2'>
+                    <p className='line-clamp-2 text-[10px] text-muted-foreground'>
                       {record.description}
                     </p>
                   )}
@@ -222,7 +247,7 @@ export function MaintenanceRecordList({ assetType, assetId, assetSn }: Maintenan
 
               {/* Status Edit */}
               <div className='flex items-center gap-2'>
-                <Label className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                <Label className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                   状态:
                 </Label>
                 <Select
@@ -234,7 +259,11 @@ export function MaintenanceRecordList({ assetType, assetId, assetSn }: Maintenan
                   </SelectTrigger>
                   <SelectContent>
                     {getValidNextStatuses(record.status).map((status) => (
-                      <SelectItem key={status} value={status} className='text-[10px]'>
+                      <SelectItem
+                        key={status}
+                        value={status}
+                        className='text-[10px]'
+                      >
                         {getStatusLabel(status)}
                       </SelectItem>
                     ))}
@@ -247,21 +276,25 @@ export function MaintenanceRecordList({ assetType, assetId, assetSn }: Maintenan
                 <div className='space-y-2'>
                   <Textarea
                     defaultValue={record.remarks}
-                    className='text-[10px] min-h-[60px]'
+                    className='min-h-[60px] text-[10px]'
                     placeholder='备注...'
                     onBlur={(e) => handleRemarksUpdate(record, e.target.value)}
                   />
                 </div>
               ) : (
                 <div className='flex items-start gap-2'>
-                  <Label className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 shrink-0'>
+                  <Label className='shrink-0 text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                     备注:
                   </Label>
-                  <div className='flex-1 min-w-0'>
+                  <div className='min-w-0 flex-1'>
                     {record.remarks ? (
-                      <p className='text-[10px] text-muted-foreground'>{record.remarks}</p>
+                      <p className='text-[10px] text-muted-foreground'>
+                        {record.remarks}
+                      </p>
                     ) : (
-                      <p className='text-[10px] text-muted-foreground/40 italic'>无</p>
+                      <p className='text-[10px] text-muted-foreground/40 italic'>
+                        无
+                      </p>
                     )}
                   </div>
                   <Button
@@ -284,9 +317,7 @@ export function MaintenanceRecordList({ assetType, assetId, assetSn }: Maintenan
         <DialogContent className='sm:max-w-[500px]'>
           <DialogHeader>
             <DialogTitle>新建维保记录</DialogTitle>
-            <DialogDescription>
-              为 {assetSn} 创建维保记录
-            </DialogDescription>
+            <DialogDescription>为 {assetSn} 创建维保记录</DialogDescription>
           </DialogHeader>
 
           <div className='space-y-4 py-4'>
@@ -294,7 +325,9 @@ export function MaintenanceRecordList({ assetType, assetId, assetSn }: Maintenan
               <Label htmlFor='type'>类型</Label>
               <Select
                 value={formData.type}
-                onValueChange={(value) => updateField('type', value as MaintenanceRecordType)}
+                onValueChange={(value) =>
+                  updateField('type', value as MaintenanceRecordType)
+                }
               >
                 <SelectTrigger id='type'>
                   <SelectValue />
@@ -335,7 +368,9 @@ export function MaintenanceRecordList({ assetType, assetId, assetSn }: Maintenan
                 <Label htmlFor='priority'>优先级</Label>
                 <Select
                   value={formData.priority}
-                  onValueChange={(value) => updateField('priority', value as MaintenanceRecordPriority)}
+                  onValueChange={(value) =>
+                    updateField('priority', value as MaintenanceRecordPriority)
+                  }
                 >
                   <SelectTrigger id='priority'>
                     <SelectValue />
@@ -357,7 +392,9 @@ export function MaintenanceRecordList({ assetType, assetId, assetSn }: Maintenan
                   min='0'
                   step='0.01'
                   value={formData.cost}
-                  onChange={(e) => updateField('cost', parseFloat(e.target.value) || 0)}
+                  onChange={(e) =>
+                    updateField('cost', parseFloat(e.target.value) || 0)
+                  }
                 />
               </div>
             </div>
@@ -376,7 +413,10 @@ export function MaintenanceRecordList({ assetType, assetId, assetSn }: Maintenan
           </div>
 
           <DialogFooter>
-            <Button variant='outline' onClick={() => setIsCreateDialogOpen(false)}>
+            <Button
+              variant='outline'
+              onClick={() => setIsCreateDialogOpen(false)}
+            >
               取消
             </Button>
             <Button onClick={handleCreate} disabled={!formData.title.trim()}>
@@ -387,7 +427,10 @@ export function MaintenanceRecordList({ assetType, assetId, assetSn }: Maintenan
       </Dialog>
 
       {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteRecordId} onOpenChange={() => setDeleteRecordId(null)}>
+      <AlertDialog
+        open={!!deleteRecordId}
+        onOpenChange={() => setDeleteRecordId(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>确定删除此维保记录？</AlertDialogTitle>
@@ -397,7 +440,10 @@ export function MaintenanceRecordList({ assetType, assetId, assetSn }: Maintenan
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className='bg-rose-600 hover:bg-rose-700'>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className='bg-rose-600 hover:bg-rose-700'
+            >
               删除
             </AlertDialogAction>
           </AlertDialogFooter>

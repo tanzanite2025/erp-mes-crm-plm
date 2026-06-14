@@ -1,14 +1,14 @@
-import { Outlet, useLocation } from '@tanstack/react-router'
 import { useEffect } from 'react'
-import { Toaster } from '@/components/ui/sonner'
-import { NavigationProgress } from '@/components/navigation-progress'
-import { SearchProvider } from '@/context/search-provider'
+import { Outlet, useLocation } from '@tanstack/react-router'
+import { OfflineSyncStatusBanner } from '@/offline-sync/components/offline-sync-status-banner'
 import { OfflineSyncBootstrapService } from '@/offline-sync/services/offline-sync-bootstrap-service'
-import { PersistenceService } from '@/features/system-mgmt/services/persistence-service'
+import { useAuthStore } from '@/stores/auth-store'
 import { createLogger } from '@/lib/logger'
 import { failLoudly } from '@/lib/safe-catch'
-import { OfflineSyncStatusBanner } from '@/offline-sync/components/offline-sync-status-banner'
-import { useAuthStore } from '@/stores/auth-store'
+import { SearchProvider } from '@/context/search-provider'
+import { Toaster } from '@/components/ui/sonner'
+import { NavigationProgress } from '@/components/navigation-progress'
+import { PersistenceService } from '@/features/system-mgmt/services/persistence-service'
 
 const logger = createLogger('RootRoute')
 
@@ -17,7 +17,8 @@ const logger = createLogger('RootRoute')
  */
 export function RootRouteComponent() {
   const { pathname } = useLocation()
-  const isAuthPage = pathname.includes('/sign-in') || pathname.includes('/forgot-password')
+  const isAuthPage =
+    pathname.includes('/sign-in') || pathname.includes('/forgot-password')
 
   // 【性能优化】拆分选择器以避免因返回对象字面量导致的渲染死循环
   const user = useAuthStore((state) => state.user)

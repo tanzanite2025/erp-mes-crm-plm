@@ -3,11 +3,12 @@
 import React from 'react'
 import { type FieldErrors, useWatch } from 'react-hook-form'
 import { Box, Trash2 } from 'lucide-react'
-import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
+import { createLogger } from '@/lib/logger'
+import { cn } from '@/lib/utils'
+import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
-import { buildHostedQuickActionDialogContentClassName } from '@/components/hosted-quick-action-dialog.styles'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -17,18 +18,20 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Form } from '@/components/ui/form'
-import { useLanguage } from '@/context/language-provider'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
+import { buildHostedQuickActionDialogContentClassName } from '@/components/hosted-quick-action-dialog.styles'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
-import { createLogger } from '@/lib/logger'
-import { cn } from '@/lib/utils'
-import { getLocalizedSpecComponents } from './specs'
-import { ProductBasicInfo } from './product/product-basic-info'
-import { DynamicAttributeSection } from './product/dynamic-attribute-section'
-import { ProductionRestrictions } from './product/production-restrictions'
-import { useProductForm, type ProductSubmitPayload } from '../hooks/use-product-form'
-import { useProductWriteActions } from '../hooks/use-product-write-actions'
 import { type Product, type ProductType } from '../data/schema'
+import {
+  useProductForm,
+  type ProductSubmitPayload,
+} from '../hooks/use-product-form'
+import { useProductWriteActions } from '../hooks/use-product-write-actions'
 import { PRODUCT_ATTRIBUTE_CATEGORY_KEYS } from '../utils/product-attribute-utils'
+import { DynamicAttributeSection } from './product/dynamic-attribute-section'
+import { ProductBasicInfo } from './product/product-basic-info'
+import { ProductionRestrictions } from './product/production-restrictions'
+import { getLocalizedSpecComponents } from './specs'
 
 const logger = createLogger('ProductActionDialog')
 
@@ -36,12 +39,17 @@ interface ProductActionDialogProps {
   currentRow?: Product
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit?: (payload: ProductSubmitPayload) => Promise<Product[] | void> | Product[] | void
+  onSubmit?: (
+    payload: ProductSubmitPayload
+  ) => Promise<Product[] | void> | Product[] | void
   onSaved?: (products: Product[]) => void
   productTypes?: ProductType[]
 }
 
-function getFirstErrorPath(errors: FieldErrors<Product>, prefix = ''): string | null {
+function getFirstErrorPath(
+  errors: FieldErrors<Product>,
+  prefix = ''
+): string | null {
   for (const [key, value] of Object.entries(errors)) {
     if (!value) continue
 
@@ -52,7 +60,10 @@ function getFirstErrorPath(errors: FieldErrors<Product>, prefix = ''): string | 
     }
 
     if (typeof value === 'object') {
-      const nestedPath = getFirstErrorPath(value as FieldErrors<Product>, nextPath)
+      const nestedPath = getFirstErrorPath(
+        value as FieldErrors<Product>,
+        nextPath
+      )
       if (nestedPath) return nestedPath
     }
   }
@@ -95,7 +106,14 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
     specPreviewItems = [],
     selectedBomContext = null,
     handleFormSubmit,
-  } = useProductForm({ currentRow, open, productTypes, onOpenChange, onSubmit, onSaved })
+  } = useProductForm({
+    currentRow,
+    open,
+    productTypes,
+    onOpenChange,
+    onSubmit,
+    onSaved,
+  })
   const { deleteProduct, isDeletingProduct } = useProductWriteActions()
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -114,22 +132,31 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
     reader.readAsDataURL(file)
   }
 
-  const componentKey = boundTemplate?.componentKey as keyof typeof specComponents | undefined
+  const componentKey = boundTemplate?.componentKey as
+    | keyof typeof specComponents
+    | undefined
   const activeSpec = componentKey ? specComponents[componentKey] : null
   const SpecComponent = activeSpec?.form
   const effectiveAttributeBindings = React.useMemo(
     () => boundTemplate?.attributeBindings ?? [],
     [boundTemplate?.attributeBindings]
   )
-  const watchedModelCode = useWatch({ control: form.control, name: 'modelCode' })
-  const issuanceBlocked = Boolean(!isEdit && nextCodeDeriveError && (!watchedModelCode || watchedModelCode === '01'))
+  const watchedModelCode = useWatch({
+    control: form.control,
+    name: 'modelCode',
+  })
+  const issuanceBlocked = Boolean(
+    !isEdit &&
+    nextCodeDeriveError &&
+    (!watchedModelCode || watchedModelCode === '01')
+  )
   const metadataPending = Boolean(open && !metadataInitError && !metadataReady)
   const submissionBlocked = Boolean(
-    metadataInitError
-      || metadataPending
-      || templateResolveError
-      || templateResolutionPending
-      || issuanceBlocked
+    metadataInitError ||
+    metadataPending ||
+    templateResolveError ||
+    templateResolutionPending ||
+    issuanceBlocked
   )
   const errorLabelMap: Record<string, string> = {
     typeId: t('engineering.productMgmt.form.category'),
@@ -141,17 +168,25 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
     moldGroup: t('engineering.productMgmt.form.mold'),
     description: t('engineering.productMgmt.form.memo'),
     barcodeConfig: t('engineering.productMgmt.barcode.configTitle'),
-    'barcodeConfig.appearanceCode': t('engineering.productMgmt.barcode.appearanceCodeLabel'),
+    'barcodeConfig.appearanceCode': t(
+      'engineering.productMgmt.barcode.appearanceCodeLabel'
+    ),
     'barcodeConfig.holes': t('engineering.productMgmt.barcode.holesLabel'),
-    'barcodeConfig.serialNumber': t('engineering.productMgmt.barcode.serialLabel'),
+    'barcodeConfig.serialNumber': t(
+      'engineering.productMgmt.barcode.serialLabel'
+    ),
     attachments: t('engineering.productMgmt.attachments.uploadTitle'),
   }
-  const baseModelError = form.formState.errors.typeId ? t('engineering.productMgmt.form.categoryRequired') : null
+  const baseModelError = form.formState.errors.typeId
+    ? t('engineering.productMgmt.form.categoryRequired')
+    : null
 
   const handleDelete = async () => {
     if (!currentRow) return
 
-    const confirmed = window.confirm(t('engineering.productArchive.toasts.deleteConfirm'))
+    const confirmed = window.confirm(
+      t('engineering.productArchive.toasts.deleteConfirm')
+    )
     if (!confirmed) return
 
     try {
@@ -173,26 +208,30 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className={buildHostedQuickActionDialogContentClassName(
-          'rounded-[32px] border-none shadow-2xl p-0 gap-0 overflow-hidden flex flex-col md:w-[85vw] md:max-w-[85vw] md:h-[90vh] md:max-h-[90vh]'
+          'flex flex-col gap-0 overflow-hidden rounded-[32px] border-none p-0 shadow-2xl md:h-[90vh] md:max-h-[90vh] md:w-[85vw] md:max-w-[85vw]'
         )}
         aria-describedby={undefined}
       >
-        <DialogHeader className='shrink-0 text-start px-8 py-3 bg-muted/5 border-b border-dashed border-muted/50'>
-          <DialogTitle className='text-lg font-black tracking-tighter italic text-slate-800 flex items-center gap-3'>
-            <div className='size-2 bg-blue-600 rounded-full animate-pulse' />
-            {isEdit ? t('engineering.productMgmt.dialog.titleEdit') : t('engineering.productMgmt.dialog.titleCreate')}
+        <DialogHeader className='shrink-0 border-b border-dashed border-muted/50 bg-muted/5 px-8 py-3 text-start'>
+          <DialogTitle className='flex items-center gap-3 text-lg font-black tracking-tighter text-slate-800 italic'>
+            <div className='size-2 animate-pulse rounded-full bg-blue-600' />
+            {isEdit
+              ? t('engineering.productMgmt.dialog.titleEdit')
+              : t('engineering.productMgmt.dialog.titleCreate')}
           </DialogTitle>
           <DialogDescription className='sr-only'>
             {t('engineering.productMgmt.dialog.description')}
           </DialogDescription>
         </DialogHeader>
-        <div className='flex-1 overflow-y-auto px-6 sm:px-8 py-3 scrollbar-hide'>
+        <div className='scrollbar-hide flex-1 overflow-y-auto px-6 py-3 sm:px-8'>
           <Form {...form}>
             <form
               id='product-form'
               onSubmit={form.handleSubmit(handleFormSubmit, (errors) => {
                 const firstErrorPath = getFirstErrorPath(errors)
-                const invalidFieldLabel = firstErrorPath ? errorLabelMap[firstErrorPath] ?? firstErrorPath : null
+                const invalidFieldLabel = firstErrorPath
+                  ? (errorLabelMap[firstErrorPath] ?? firstErrorPath)
+                  : null
 
                 logger.error('Form validation failed', errors)
                 toast.error(
@@ -203,25 +242,25 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
               })}
               className='space-y-3'
             >
-                <ProductBasicInfo
-                  form={form}
-                  dynamicTypes={dynamicTypes}
+              <ProductBasicInfo
+                form={form}
+                dynamicTypes={dynamicTypes}
                 productTypes={productTypes}
                 handleImageUpload={handleImageUpload}
-                  bomOptions={bomOptions}
-                  isBomOptionsPending={isBomOptionsPending}
-                  specOptions={specOptions}
-                  moldOptions={moldOptions}
-                  isEdit={isEdit}
-                  templateLabel={boundTemplate?.name ?? activeSpec?.label}
-                />
+                bomOptions={bomOptions}
+                isBomOptionsPending={isBomOptionsPending}
+                specOptions={specOptions}
+                moldOptions={moldOptions}
+                isEdit={isEdit}
+                templateLabel={boundTemplate?.name ?? activeSpec?.label}
+              />
 
               {baseModelError ? (
                 <div className='rounded-[20px] border border-dashed border-amber-300 bg-amber-50 px-4 py-2 text-amber-900'>
-                  <div className='text-[10px] font-black uppercase tracking-widest'>
+                  <div className='text-[10px] font-black tracking-widest uppercase'>
                     {t('engineering.productMgmt.form.category')}
                   </div>
-                  <p className='mt-1 text-[11px] font-bold leading-relaxed'>
+                  <p className='mt-1 text-[11px] leading-relaxed font-bold'>
                     {baseModelError}
                   </p>
                 </div>
@@ -231,12 +270,17 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
                 <div className='rounded-2xl border border-dashed border-red-300 bg-red-50/90 px-4 py-2 text-red-900'>
                   <div className='flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between'>
                     <div className='min-w-0'>
-                      <div className='text-[9px] font-black uppercase tracking-widest text-red-700'>Template Binding Broken</div>
-                      <p className='text-[10px] font-black leading-tight'>
+                      <div className='text-[9px] font-black tracking-widest text-red-700 uppercase'>
+                        Template Binding Broken
+                      </div>
+                      <p className='text-[10px] leading-tight font-black'>
                         {templateResolveError}
                       </p>
                     </div>
-                    <Badge variant='outline' className='h-5 w-fit border-red-200 bg-white text-red-700'>
+                    <Badge
+                      variant='outline'
+                      className='h-5 w-fit border-red-200 bg-white text-red-700'
+                    >
                       BLOCKED
                     </Badge>
                   </div>
@@ -247,21 +291,35 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
                 <div className='rounded-2xl border border-dashed border-blue-300 bg-blue-50/90 px-3 py-1.5 text-blue-900'>
                   <div className='flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between'>
                     <div className='min-w-0'>
-                      <div className='text-[9px] font-black uppercase tracking-widest text-blue-700'>Template Status</div>
-                      <p className='truncate text-[10px] font-black leading-tight'>
-                        {t('engineering.productMgmt.dialog.attributeBindingTemplateLabel', {
-                          name: boundTemplate.name,
-                        })}
+                      <div className='text-[9px] font-black tracking-widest text-blue-700 uppercase'>
+                        Template Status
+                      </div>
+                      <p className='truncate text-[10px] leading-tight font-black'>
+                        {t(
+                          'engineering.productMgmt.dialog.attributeBindingTemplateLabel',
+                          {
+                            name: boundTemplate.name,
+                          }
+                        )}
                       </p>
                     </div>
                     <div className='flex items-center gap-2'>
-                      <Badge variant='outline' className='h-5 border-blue-200 bg-white text-blue-700'>
+                      <Badge
+                        variant='outline'
+                        className='h-5 border-blue-200 bg-white text-blue-700'
+                      >
                         {activeSpec?.label || boundTemplate.componentKey}
                       </Badge>
-                      <Badge variant='outline' className='h-5 border-blue-200 bg-white text-blue-700'>
-                        {t('engineering.categoryArchive.dialog.templateAssemblyCount', {
-                          count: effectiveAttributeBindings.length,
-                        })}
+                      <Badge
+                        variant='outline'
+                        className='h-5 border-blue-200 bg-white text-blue-700'
+                      >
+                        {t(
+                          'engineering.categoryArchive.dialog.templateAssemblyCount',
+                          {
+                            count: effectiveAttributeBindings.length,
+                          }
+                        )}
                       </Badge>
                     </div>
                   </div>
@@ -270,10 +328,10 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
 
               {metadataInitError ? (
                 <div className='rounded-[24px] border border-dashed border-amber-300 bg-amber-50 px-4 py-3 text-amber-900'>
-                  <div className='text-[10px] font-black uppercase tracking-widest'>
+                  <div className='text-[10px] font-black tracking-widest uppercase'>
                     {t('engineering.productMgmt.metadata.errorTitle')}
                   </div>
-                  <p className='mt-1 text-[11px] font-bold leading-relaxed'>
+                  <p className='mt-1 text-[11px] leading-relaxed font-bold'>
                     {metadataInitError}
                   </p>
                   <p className='mt-1 text-[10px] font-medium opacity-80'>
@@ -284,8 +342,10 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
 
               {nextCodeDeriveError ? (
                 <div className='rounded-[24px] border border-dashed border-orange-300 bg-orange-50 px-4 py-3 text-orange-900'>
-                  <div className='text-[10px] font-black uppercase tracking-widest'>Code Issuance Failed</div>
-                  <p className='mt-1 text-[11px] font-bold leading-relaxed'>
+                  <div className='text-[10px] font-black tracking-widest uppercase'>
+                    Code Issuance Failed
+                  </div>
+                  <p className='mt-1 text-[11px] leading-relaxed font-bold'>
                     {nextCodeDeriveError}
                   </p>
                   <p className='mt-1 text-[10px] font-medium opacity-80'>
@@ -307,31 +367,41 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
 
               {SpecComponent ? (
                 <div className='space-y-2'>
-                  <SpecComponent
-                    form={form}
-                  />
+                  <SpecComponent form={form} />
                   <div className='rounded-[18px] border border-dashed border-indigo-200/60 bg-indigo-50/30 p-2'>
                     <div className='mb-1.5 flex items-center justify-between gap-2 border-b border-dashed border-indigo-200/50 pb-1.5'>
-                      <div className='text-[8px] font-black uppercase tracking-widest text-indigo-700/60'>
-                        {locale.startsWith('zh') ? 'BOM 承接信息' : 'BOM Context'}
+                      <div className='text-[8px] font-black tracking-widest text-indigo-700/60 uppercase'>
+                        {locale.startsWith('zh')
+                          ? 'BOM 承接信息'
+                          : 'BOM Context'}
                       </div>
-                      <div className={cn(
-                        'text-[8px] font-black uppercase tracking-widest',
-                        selectedBomContext?.hasSelection ? 'text-emerald-700/70' : 'text-amber-700/70'
-                      )}>
-                        {selectedBomContext?.hint || (locale.startsWith('zh') ? '待绑定' : 'Pending')}
+                      <div
+                        className={cn(
+                          'text-[8px] font-black tracking-widest uppercase',
+                          selectedBomContext?.hasSelection
+                            ? 'text-emerald-700/70'
+                            : 'text-amber-700/70'
+                        )}
+                      >
+                        {selectedBomContext?.hint ||
+                          (locale.startsWith('zh') ? '待绑定' : 'Pending')}
                       </div>
                     </div>
                     <div className='grid grid-cols-1 gap-1.5 sm:grid-cols-2 xl:grid-cols-5'>
                       {(selectedBomContext?.items ?? []).map((item) => (
-                        <div key={item.key} className='rounded-xl border border-dashed border-indigo-100/80 bg-white/90 px-2.5 py-2'>
-                          <div className='text-[8px] font-black uppercase tracking-widest text-indigo-700/60'>
+                        <div
+                          key={item.key}
+                          className='rounded-xl border border-dashed border-indigo-100/80 bg-white/90 px-2.5 py-2'
+                        >
+                          <div className='text-[8px] font-black tracking-widest text-indigo-700/60 uppercase'>
                             {item.label}
                           </div>
-                          <div className={cn(
-                            'mt-1 truncate text-[11px] font-black tracking-tight',
-                            item.empty ? 'text-slate-400' : 'text-slate-800'
-                          )}>
+                          <div
+                            className={cn(
+                              'mt-1 truncate text-[11px] font-black tracking-tight',
+                              item.empty ? 'text-slate-400' : 'text-slate-800'
+                            )}
+                          >
                             {item.value}
                           </div>
                         </div>
@@ -340,15 +410,15 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
                   </div>
                 </div>
               ) : (
-                <div className='p-6 border-2 border-dashed rounded-[24px] bg-muted/5 flex flex-col items-center justify-center text-center gap-2 transition-all hover:bg-muted/10'>
-                  <div className='p-2 rounded-full bg-background shadow-lg shadow-muted/20'>
-                    <Box className='size-5 text-blue-600/30 animate-pulse' />
+                <div className='flex flex-col items-center justify-center gap-2 rounded-[24px] border-2 border-dashed bg-muted/5 p-6 text-center transition-all hover:bg-muted/10'>
+                  <div className='rounded-full bg-background p-2 shadow-lg shadow-muted/20'>
+                    <Box className='size-5 animate-pulse text-blue-600/30' />
                   </div>
                   <div className='space-y-1'>
                     <p className='text-[10px] font-black text-slate-800 italic'>
                       {t('engineering.productMgmt.dialog.templatePending')}
                     </p>
-                    <p className='text-[9px] font-black text-muted-foreground/30 max-w-[280px]'>
+                    <p className='max-w-[280px] text-[9px] font-black text-muted-foreground/30'>
                       {t('engineering.productMgmt.dialog.templateHint')}
                     </p>
                   </div>
@@ -358,24 +428,33 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
               <ProductionRestrictions
                 restrictions={form.watch('restrictions') || []}
                 setRestrictions={(nextRestrictions) => {
-                  form.setValue('restrictions', nextRestrictions, { shouldDirty: true })
+                  form.setValue('restrictions', nextRestrictions, {
+                    shouldDirty: true,
+                  })
                 }}
               />
             </form>
           </Form>
         </div>
-        <DialogFooter className='shrink-0 px-4 sm:px-8 py-2.5 border-t border-dashed border-muted/50 bg-white flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+        <DialogFooter className='flex shrink-0 flex-col gap-2 border-t border-dashed border-muted/50 bg-white px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:px-8'>
           <div className='min-w-0 flex-1 rounded-[20px] border border-dashed border-blue-600/30 bg-blue-600/5 px-3 py-2'>
             <div className='flex items-center justify-between gap-3 border-b border-dashed border-blue-600/30 pb-1'>
               <span className='text-[10px] font-black text-blue-800 italic'>
                 {t('engineering.productMgmt.dialog.previewTitle')}
               </span>
-              <Badge variant='outline' className='h-4 text-[8px] font-black border-blue-300 text-blue-700 bg-white px-1'>
+              <Badge
+                variant='outline'
+                className='h-4 border-blue-300 bg-white px-1 text-[8px] font-black text-blue-700'
+              >
                 {t('engineering.productArchive.states.live')}
               </Badge>
             </div>
-            <p className='mt-1 text-[11px] font-black text-blue-900 dark:text-blue-200 tracking-tighter italic break-all leading-tight'>
-              {specPreviewAggregateLabel || (specPreviewV2 ? (specPreviewTitle || specPreviewV2.title) : (specPreviewSummary || t('engineering.productArchive.states.unnamed')))}
+            <p className='mt-1 text-[11px] leading-tight font-black tracking-tighter break-all text-blue-900 italic dark:text-blue-200'>
+              {specPreviewAggregateLabel ||
+                (specPreviewV2
+                  ? specPreviewTitle || specPreviewV2.title
+                  : specPreviewSummary ||
+                    t('engineering.productArchive.states.unnamed'))}
             </p>
             {specPreviewItems.length > 0 && (
               <div className='mt-2 flex flex-wrap gap-1.5'>
@@ -384,7 +463,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
                     key={item.key}
                     variant='outline'
                     className={cn(
-                      'h-5 rounded-full border-dashed px-2 text-[8px] font-mono uppercase tracking-wide',
+                      'h-5 rounded-full border-dashed px-2 font-mono text-[8px] tracking-wide uppercase',
                       item.empty
                         ? 'border-slate-200 bg-white text-slate-400'
                         : 'border-blue-300 bg-white text-blue-700'
@@ -411,17 +490,19 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
                 variant='outline'
                 disabled={isDeletingProduct}
                 onClick={() => void handleDelete()}
-                className='h-11 sm:h-9 rounded-full px-10 text-[11px] font-black transition-all hover:scale-105 active:scale-95 shadow-xl border-destructive/20 bg-white text-destructive hover:bg-destructive/5 hover:text-destructive shadow-destructive/10'
+                className='h-11 rounded-full border-destructive/20 bg-white px-10 text-[11px] font-black text-destructive shadow-xl shadow-destructive/10 transition-all hover:scale-105 hover:bg-destructive/5 hover:text-destructive active:scale-95 sm:h-9'
               >
                 <Trash2 className='mr-2 size-4' />
-                {isDeletingProduct ? t('engineering.productMgmt.dialog.deleting') : t('engineering.productMgmt.dialog.delete')}
+                {isDeletingProduct
+                  ? t('engineering.productMgmt.dialog.deleting')
+                  : t('engineering.productMgmt.dialog.delete')}
               </Button>
             ) : null}
             <Button
               type='submit'
               form='product-form'
               disabled={submissionBlocked || isDeletingProduct}
-              className='h-11 sm:h-9 rounded-full px-10 text-[11px] font-black transition-all hover:scale-105 active:scale-95 shadow-xl bg-blue-600 hover:bg-blue-700 shadow-blue-500/30'
+              className='h-11 rounded-full bg-blue-600 px-10 text-[11px] font-black shadow-xl shadow-blue-500/30 transition-all hover:scale-105 hover:bg-blue-700 active:scale-95 sm:h-9'
             >
               {t('engineering.productMgmt.dialog.saveStandard')}
             </Button>

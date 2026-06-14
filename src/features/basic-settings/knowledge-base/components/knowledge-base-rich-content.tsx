@@ -29,13 +29,17 @@ export function KnowledgeBaseRichContent({
   tone = 'primary',
   className,
 }: KnowledgeBaseRichContentProps) {
-  const contentHtml = sanitizeKnowledgeContentHtml(knowledgeContentToEditorHtml(content))
+  const contentHtml = sanitizeKnowledgeContentHtml(
+    knowledgeContentToEditorHtml(content)
+  )
 
   return (
     <div
       className={cn(
         knowledgeBaseRichContentClass,
-        tone === 'amber' ? amberBlockquoteClass : knowledgeBasePrimaryBlockquoteClass,
+        tone === 'amber'
+          ? amberBlockquoteClass
+          : knowledgeBasePrimaryBlockquoteClass,
         variant === 'compact' && compactRichContentClass,
         className
       )}

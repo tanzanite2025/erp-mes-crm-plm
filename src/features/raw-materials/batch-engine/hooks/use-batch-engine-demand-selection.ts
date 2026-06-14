@@ -1,9 +1,24 @@
 import { useMemo, useState } from 'react'
-import type { BatchOptimizerPlan, BatchOptimizerPlanDiffSummary, BatchOptimizerPlanLayoutDemandSummary } from '../types'
+import type {
+  BatchOptimizerPlan,
+  BatchOptimizerPlanDiffSummary,
+  BatchOptimizerPlanLayoutDemandSummary,
+} from '../types'
 
-export type BatchEngineDemandFilterMode = 'all' | 'unfulfilled' | 'split' | 'must-fulfill' | 'diff'
-export type BatchEngineRollFilterMode = 'all-rolls' | 'used-rolls' | 'related-rolls'
-export type BatchEngineDemandGroupMode = 'status' | 'must-fulfill' | 'usage-type'
+export type BatchEngineDemandFilterMode =
+  | 'all'
+  | 'unfulfilled'
+  | 'split'
+  | 'must-fulfill'
+  | 'diff'
+export type BatchEngineRollFilterMode =
+  | 'all-rolls'
+  | 'used-rolls'
+  | 'related-rolls'
+export type BatchEngineDemandGroupMode =
+  | 'status'
+  | 'must-fulfill'
+  | 'usage-type'
 
 type UseBatchEngineDemandSelectionOptions = {
   selectedPlan?: BatchOptimizerPlan
@@ -13,16 +28,24 @@ type UseBatchEngineDemandSelectionOptions = {
 /**
  * 管理 batch-engine 正式方案下的需求行选择、搜索与筛选状态。
  */
-export function useBatchEngineDemandSelection(options: UseBatchEngineDemandSelectionOptions) {
+export function useBatchEngineDemandSelection(
+  options: UseBatchEngineDemandSelectionOptions
+) {
   const { selectedPlan, activeDiffSummary } = options
   const [selectedDemandLineId, setSelectedDemandLineId] = useState<string>('')
   const [searchQuery, setSearchQuery] = useState('')
-  const [filterMode, setFilterMode] = useState<BatchEngineDemandFilterMode>('all')
-  const [rollFilterMode, setRollFilterMode] = useState<BatchEngineRollFilterMode>('all-rolls')
-  const [groupMode, setGroupMode] = useState<BatchEngineDemandGroupMode>('status')
+  const [filterMode, setFilterMode] =
+    useState<BatchEngineDemandFilterMode>('all')
+  const [rollFilterMode, setRollFilterMode] =
+    useState<BatchEngineRollFilterMode>('all-rolls')
+  const [groupMode, setGroupMode] =
+    useState<BatchEngineDemandGroupMode>('status')
 
   const normalizedQuery = searchQuery.trim().toLowerCase()
-  const demandLines = useMemo(() => selectedPlan?.layoutSummary.demandLines ?? [], [selectedPlan])
+  const demandLines = useMemo(
+    () => selectedPlan?.layoutSummary.demandLines ?? [],
+    [selectedPlan]
+  )
   const changedDemandLineIdSet = useMemo(
     () => new Set(activeDiffSummary?.changedDemandLineIds ?? []),
     [activeDiffSummary]
@@ -30,7 +53,9 @@ export function useBatchEngineDemandSelection(options: UseBatchEngineDemandSelec
 
   const filteredDemandLines = useMemo(() => {
     return demandLines.filter((line) => {
-      const matchesQuery = !normalizedQuery || line.demandLineId.toLowerCase().includes(normalizedQuery)
+      const matchesQuery =
+        !normalizedQuery ||
+        line.demandLineId.toLowerCase().includes(normalizedQuery)
       if (!matchesQuery) {
         return false
       }
@@ -51,28 +76,43 @@ export function useBatchEngineDemandSelection(options: UseBatchEngineDemandSelec
     })
   }, [changedDemandLineIdSet, demandLines, filterMode, normalizedQuery])
 
-  const explicitSelectedDemand = useMemo<BatchOptimizerPlanLayoutDemandSummary | undefined>(() => {
+  const explicitSelectedDemand = useMemo<
+    BatchOptimizerPlanLayoutDemandSummary | undefined
+  >(() => {
     if (!selectedDemandLineId) {
       return undefined
     }
-    return demandLines.find((line) => line.demandLineId === selectedDemandLineId)
+    return demandLines.find(
+      (line) => line.demandLineId === selectedDemandLineId
+    )
   }, [demandLines, selectedDemandLineId])
 
-  const effectiveSelectedDemand = useMemo<BatchOptimizerPlanLayoutDemandSummary | undefined>(() => {
+  const effectiveSelectedDemand = useMemo<
+    BatchOptimizerPlanLayoutDemandSummary | undefined
+  >(() => {
     if (!filteredDemandLines.length) {
       return undefined
     }
-    return filteredDemandLines.find((line) => line.demandLineId === selectedDemandLineId) ?? filteredDemandLines[0]
+    return (
+      filteredDemandLines.find(
+        (line) => line.demandLineId === selectedDemandLineId
+      ) ?? filteredDemandLines[0]
+    )
   }, [filteredDemandLines, selectedDemandLineId])
 
-  const relatedRollIds = useMemo(() => effectiveSelectedDemand?.rollIds ?? [], [effectiveSelectedDemand])
+  const relatedRollIds = useMemo(
+    () => effectiveSelectedDemand?.rollIds ?? [],
+    [effectiveSelectedDemand]
+  )
   const filteredRollIds = useMemo(() => {
     const rolls = selectedPlan?.layoutSummary.rolls ?? []
     if (rollFilterMode === 'used-rolls') {
       return rolls.filter((roll) => roll.isUsed).map((roll) => roll.rollId)
     }
     if (rollFilterMode === 'related-rolls') {
-      return relatedRollIds.length ? relatedRollIds : rolls.map((roll) => roll.rollId)
+      return relatedRollIds.length
+        ? relatedRollIds
+        : rolls.map((roll) => roll.rollId)
     }
     return rolls.map((roll) => roll.rollId)
   }, [relatedRollIds, rollFilterMode, selectedPlan])
@@ -91,7 +131,10 @@ export function useBatchEngineDemandSelection(options: UseBatchEngineDemandSelec
       bucket.push(line)
       groups.set(key, bucket)
     }
-    return Array.from(groups.entries()).map(([groupKey, items]) => ({ groupKey, items }))
+    return Array.from(groups.entries()).map(([groupKey, items]) => ({
+      groupKey,
+      items,
+    }))
   }, [filteredDemandLines, groupMode])
 
   return {
@@ -113,6 +156,7 @@ export function useBatchEngineDemandSelection(options: UseBatchEngineDemandSelec
     selectedDemand: effectiveSelectedDemand,
     relatedRollIds,
     filteredRollIds,
-    selectDemandLine: (demandLineId: string) => setSelectedDemandLineId(demandLineId),
+    selectDemandLine: (demandLineId: string) =>
+      setSelectedDemandLineId(demandLineId),
   }
 }

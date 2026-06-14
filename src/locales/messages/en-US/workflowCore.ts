@@ -1,55 +1,61 @@
 export const workflowCore = {
   commands: {
     page: {
-      title: "Notification Content Templates",
-      description: "Manage reusable notification titles, content, and jump links for routing rules.",
-      add: "Add Content Template",
-      searchPlaceholder: "Search template title, content, or jump link...",
+      title: 'Notification Content Templates',
+      description:
+        'Manage reusable notification titles, content, and jump links for routing rules.',
+      add: 'Add Content Template',
+      searchPlaceholder: 'Search template title, content, or jump link...',
       tabs: {
-        all: "All Templates"
-      }
+        all: 'All Templates',
+      },
     },
     list: {
-      empty: "No notification content templates",
-      scope: "Scope",
-      nodeType: "Node"
+      empty: 'No notification content templates',
+      scope: 'Scope',
+      nodeType: 'Node',
     },
     form: {
-      editTitle: "Edit Notification Content Template",
-      newTitle: "New Notification Content Template",
-      description: "Configure the notification content and the jump path after clicking. Variables like [OrderNo] and [ProductName] are supported.",
+      editTitle: 'Edit Notification Content Template',
+      newTitle: 'New Notification Content Template',
+      description:
+        'Configure the notification content and the jump path after clicking. Variables like [OrderNo] and [ProductName] are supported.',
       fields: {
-        title: "Content Template Name",
-        nodeType: "Node Type",
-        params: "Params (Comma Separated)",
-        targetLink: "Target Link",
-        content: "Notification Content"
+        title: 'Content Template Name',
+        nodeType: 'Node Type',
+        params: 'Params (Comma Separated)',
+        targetLink: 'Target Link',
+        content: 'Notification Content',
       },
       placeholders: {
-        title: "e.g. Order approval reminder",
-        nodeType: "Select a related node",
-        params: "e.g. OrderNo, ProductName",
-        targetLink: "e.g. /trading/sales-orders/[OrderId]",
-        content: "Enter the notification content here. Parameters are supported..."
+        title: 'e.g. Order approval reminder',
+        nodeType: 'Select a related node',
+        params: 'e.g. OrderNo, ProductName',
+        targetLink: 'e.g. /trading/sales-orders/[OrderId]',
+        content:
+          'Enter the notification content here. Parameters are supported...',
       },
-      targetLinkHint: "* Clicking the notification will automatically navigate to this page."
+      targetLinkHint:
+        '* Clicking the notification will automatically navigate to this page.',
     },
     nodeTypes: {
-      none: "None",
-      start: "Start Node",
-      approval: "Approval Node",
-      check: "Check Node",
-      production: "Production Node"
+      none: 'None',
+      start: 'Start Node',
+      approval: 'Approval Node',
+      check: 'Check Node',
+      production: 'Production Node',
     },
     defaults: {
       pendingApproval: {
-        title: "Order pending approval notice",
-        content: "New order [OrderNo] ([ProductName]) has been submitted. Please click the action button to review it."
+        title: 'Order pending approval notice',
+        content:
+          'New order [OrderNo] ([ProductName]) has been submitted. Please click the action button to review it.',
       },
       productionDone: {
-        title: "Production task completed",
-        content: "The production tasks for order [OrderNo] have all been completed. Please review the status."
-      }
-    }
-  }
+        title: 'Production task completed',
+        content:
+          'The production tasks for order [OrderNo] have all been completed. Please review the status.',
+      },
+    },
+  },
 } as const

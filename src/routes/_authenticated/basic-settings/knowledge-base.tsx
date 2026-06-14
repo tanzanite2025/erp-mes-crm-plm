@@ -6,7 +6,9 @@ const knowledgeBaseSearchSchema = z.object({
   action: z.enum(['create']).optional(),
 })
 
-export const Route = createFileRoute('/_authenticated/basic-settings/knowledge-base')({
+export const Route = createFileRoute(
+  '/_authenticated/basic-settings/knowledge-base'
+)({
   validateSearch: (search) => knowledgeBaseSearchSchema.parse(search),
   component: KnowledgeBaseRouteEntry,
 })

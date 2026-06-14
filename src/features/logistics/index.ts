@@ -1,5 +1,9 @@
 export { LogisticsMgmt } from './components/logistics-mgmt'
-export { useGetLogistics, useGetLogisticsDetail, useLogisticsMutations } from './hooks/use-logistics'
+export {
+  useGetLogistics,
+  useGetLogisticsDetail,
+  useLogisticsMutations,
+} from './hooks/use-logistics'
 export type {
   LogisticsEvent,
   LogisticsListPage,

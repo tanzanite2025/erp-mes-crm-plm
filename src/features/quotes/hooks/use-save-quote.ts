@@ -1,11 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { quoteQueryKeys } from '@/features/quotes/query-keys'
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
 import { toQuoteDetailContract } from '@/features/quotes/adapters/quote-api-adapter'
 import type { QuoteDetailApiDTO } from '@/features/quotes/contracts/quote-detail-api-dto'
 import type { QuoteDetail } from '@/features/quotes/data/quote-detail'
+import { quoteQueryKeys } from '@/features/quotes/query-keys'
 
 export type PatchQuoteDraftPayload = {
   id: string
@@ -15,7 +15,9 @@ export type PatchQuoteDraftPayload = {
   previousRequirements: string
 }
 
-async function patchQuoteDraftRequest(payload: PatchQuoteDraftPayload): Promise<QuoteDetail> {
+async function patchQuoteDraftRequest(
+  payload: PatchQuoteDraftPayload
+): Promise<QuoteDetail> {
   const delta = {
     amount: { o: payload.previousAmount, n: payload.amount },
     requirements: { o: payload.previousRequirements, n: payload.requirements },
@@ -30,7 +32,9 @@ async function patchQuoteDraftRequest(payload: PatchQuoteDraftPayload): Promise<
     }),
   })
 
-  const normalized = ensureObjectResponse<QuoteDetailApiDTO & Record<string, unknown>>(response, 'useSaveQuote.patchQuoteDraftRequest')
+  const normalized = ensureObjectResponse<
+    QuoteDetailApiDTO & Record<string, unknown>
+  >(response, 'useSaveQuote.patchQuoteDraftRequest')
   return toQuoteDetailContract(normalized)
 }
 
@@ -38,11 +42,14 @@ export function useSaveQuote() {
   const queryClient = useQueryClient()
 
   const mutation = useMutation({
-    mutationFn: (payload: PatchQuoteDraftPayload) => patchQuoteDraftRequest(payload),
+    mutationFn: (payload: PatchQuoteDraftPayload) =>
+      patchQuoteDraftRequest(payload),
     onSuccess: async (_data, variables) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: quoteQueryKeys.all() }),
-        queryClient.invalidateQueries({ queryKey: quoteQueryKeys.detail(variables.id) }),
+        queryClient.invalidateQueries({
+          queryKey: quoteQueryKeys.detail(variables.id),
+        }),
       ])
       toast.success('报价已保存')
     },

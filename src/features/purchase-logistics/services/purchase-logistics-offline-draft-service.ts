@@ -1,8 +1,9 @@
-import { PurchaseLogisticsService } from './purchase-logistics-service'
-import { StorageService } from '@/features/system-mgmt/services/storage-service'
 import { createLogger } from '@/lib/logger'
+import { StorageService } from '@/features/system-mgmt/services/storage-service'
+import { PurchaseLogisticsService } from './purchase-logistics-service'
 
-export const PURCHASE_LOGISTICS_DRAFT_KEY = 'xdfc_purchase_logistics_offline_drafts_v1'
+export const PURCHASE_LOGISTICS_DRAFT_KEY =
+  'xdfc_purchase_logistics_offline_drafts_v1'
 const PURCHASE_LOGISTICS_DRAFT_LIMIT = 200
 
 const logger = createLogger('PurchaseLogisticsOfflineDrafts')
@@ -84,11 +85,18 @@ function getErrorMessage(error: unknown) {
 
 function isBlockedSyncError(error: unknown) {
   const status = (error as ApiLikeError | undefined)?.status
-  return typeof status === 'number' && status >= 400 && status < 500 && status !== 408 && status !== 429
+  return (
+    typeof status === 'number' &&
+    status >= 400 &&
+    status < 500 &&
+    status !== 408 &&
+    status !== 429
+  )
 }
 
 function normalizeDraft(
-  draft: Partial<PurchaseLogisticsOfflineDraft> & PurchaseLogisticsOfflineDraftInput
+  draft: Partial<PurchaseLogisticsOfflineDraft> &
+    PurchaseLogisticsOfflineDraftInput
 ): PurchaseLogisticsOfflineDraft {
   const now = new Date().toISOString()
   return {
@@ -109,7 +117,9 @@ async function readDrafts() {
   if (!canUseStorage()) return []
 
   try {
-    const raw = await StorageService.getItem<unknown>(PURCHASE_LOGISTICS_DRAFT_KEY)
+    const raw = await StorageService.getItem<unknown>(
+      PURCHASE_LOGISTICS_DRAFT_KEY
+    )
     if (!raw) return []
     if (!Array.isArray(raw)) return []
     return raw
@@ -183,7 +193,10 @@ export async function queuePurchaseLogisticsOfflineDraft(
       attempts: 0,
       syncStatus: 'pending',
     })
-    await writeDrafts([nextDraft, ...drafts.filter((draft) => draft.id !== existing.id)])
+    await writeDrafts([
+      nextDraft,
+      ...drafts.filter((draft) => draft.id !== existing.id),
+    ])
     return nextDraft
   }
 
@@ -215,7 +228,8 @@ export async function syncPurchaseLogisticsOfflineDrafts(): Promise<SyncPurchase
     return {
       syncedCount: 0,
       failedCount: 0,
-      blockedCount: drafts.filter((draft) => draft.syncStatus === 'blocked').length,
+      blockedCount: drafts.filter((draft) => draft.syncStatus === 'blocked')
+        .length,
       remainingCount: drafts.length,
     }
   }
@@ -224,7 +238,9 @@ export async function syncPurchaseLogisticsOfflineDrafts(): Promise<SyncPurchase
   let syncedCount = 0
   let failedCount = 0
 
-  for (const draft of drafts.sort((a, b) => a.createdAt.localeCompare(b.createdAt))) {
+  for (const draft of drafts.sort((a, b) =>
+    a.createdAt.localeCompare(b.createdAt)
+  )) {
     if (draft.syncStatus === 'blocked') {
       nextDrafts.push(draft)
       continue
@@ -257,7 +273,8 @@ export async function syncPurchaseLogisticsOfflineDrafts(): Promise<SyncPurchase
   return {
     syncedCount,
     failedCount,
-    blockedCount: nextDrafts.filter((draft) => draft.syncStatus === 'blocked').length,
+    blockedCount: nextDrafts.filter((draft) => draft.syncStatus === 'blocked')
+      .length,
     remainingCount: nextDrafts.length,
   }
 }
