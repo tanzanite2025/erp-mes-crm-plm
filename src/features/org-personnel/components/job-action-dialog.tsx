@@ -3,6 +3,7 @@
 import { useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import type { z } from 'zod'
 import type { TranslationKey } from '@/locales'
 import { toast } from 'sonner'
 import { type DeltaSet } from '@/lib/delta/types'
@@ -23,6 +24,7 @@ import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.
 import { jobTypeSchema, type JobType } from '../data/schema'
 
 type JobTypeForm = JobType
+type JobTypeFormInput = z.input<typeof jobTypeSchema>
 
 const jobDialogKeys = {
   successEdit: 'orgPersonnel.org.jobDialog.successEdit',
@@ -87,7 +89,7 @@ function JobActionDialogForm({
     open
   )
 
-  const form = useForm<JobTypeForm>({
+  const form = useForm<JobTypeFormInput, unknown, JobTypeForm>({
     resolver: zodResolver(jobTypeSchema),
     defaultValues: initialValues,
   })

@@ -13,12 +13,12 @@ export interface ScanPluginDefinition<TPayload = unknown, TContext = unknown> {
   entryPath: string
   mode: ScanPlatformMode
   permissions: ScanPermissionContract
-  resolveScan: (
-    input: ScanResolveInput<TContext>
-  ) => Promise<ScanResolvedContext<TPayload>>
-  submitAction?: (
+  resolveScan(input: ScanResolveInput<TContext>): Promise<
+    ScanResolvedContext<TPayload>
+  >
+  submitAction?(
     context: ScanResolvedContext<TPayload>
-  ) => Promise<ScanSubmitResult>
+  ): Promise<ScanSubmitResult>
 }
 
 export type AnyScanPluginDefinition = ScanPluginDefinition<unknown, unknown>

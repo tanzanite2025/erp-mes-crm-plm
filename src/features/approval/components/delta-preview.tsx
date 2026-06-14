@@ -4,7 +4,7 @@ import { AlertCircle, ArrowRight, Layers } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface DeltaPreviewProps {
-  delta?: Record<string, unknown>
+  delta?: unknown
   className?: string
 }
 
@@ -21,12 +21,16 @@ function isDeltaChange(value: unknown): value is DeltaChange {
   )
 }
 
+function isDeltaRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
 /**
  * SDRTS 差量预览器 (Delta Previewer)
  * 专门用于解析并可视化展示 [旧值 -> 新值] 的补丁变化。
  */
 export function DeltaPreview({ delta, className }: DeltaPreviewProps) {
-  if (!delta || typeof delta !== 'object' || Object.keys(delta).length === 0) {
+  if (!isDeltaRecord(delta) || Object.keys(delta).length === 0) {
     return (
       <div className='flex items-center gap-2 rounded-xl border border-dashed border-muted-foreground/10 bg-muted/5 p-4 opacity-50'>
         <AlertCircle className='size-3.5' />

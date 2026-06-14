@@ -56,16 +56,18 @@ type ExcelBorderSide = {
   }
 }
 
-const HORIZONTAL_ALIGNMENTS: CSSProperties['textAlign'][] = [
-  'left',
-  'center',
-  'right',
-]
 const VERTICAL_ALIGNMENTS: CSSProperties['verticalAlign'][] = [
   'top',
   'middle',
   'bottom',
 ]
+
+function toTextAlign(value: unknown): CSSProperties['textAlign'] | undefined {
+  if (value === 'left' || value === 'center' || value === 'right') {
+    return value
+  }
+  return undefined
+}
 
 function getCellMaster(cell: Cell): Cell {
   return 'master' in cell ? (cell as Cell & { master: Cell }).master : cell
@@ -159,13 +161,8 @@ export function ExcelViewer({ fileUrl, className }: ExcelViewerProps) {
 
                     // 对齐
                     if (cell.alignment) {
-                      if (
-                        cell.alignment.horizontal &&
-                        HORIZONTAL_ALIGNMENTS.includes(
-                          cell.alignment.horizontal
-                        )
-                      )
-                        style.textAlign = cell.alignment.horizontal
+                      const textAlign = toTextAlign(cell.alignment.horizontal)
+                      if (textAlign) style.textAlign = textAlign
                       if (
                         cell.alignment.vertical &&
                         VERTICAL_ALIGNMENTS.includes(cell.alignment.vertical)
