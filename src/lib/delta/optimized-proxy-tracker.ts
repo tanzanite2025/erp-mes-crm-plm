@@ -14,8 +14,11 @@
  * - Commit operation: ≤50ms for 1000 rows with 10% dirty (vs 500ms baseline)
  * - Memory usage: Scales with dirty rows, not total rows
  */
+import { createLogger } from '@/lib/logger'
 import { type DirtyMarker } from './dirty-marker'
 import { type DeltaSet } from './types'
+
+const logger = createLogger('OptimizedProxyTracker')
 
 type TrackableObject = object
 type PathReadableObject = Record<string, unknown>
@@ -208,7 +211,7 @@ export class OptimizedProxyTracker<T extends TrackableObject> {
       }
     } catch (error) {
       // If row ID extraction fails, log warning but don't throw
-      console.warn('Failed to extract row ID for dirty marking:', error)
+      logger.warn('Failed to extract row ID for dirty marking', error)
     }
   }
 

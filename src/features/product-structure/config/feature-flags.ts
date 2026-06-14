@@ -1,15 +1,18 @@
 /**
  * BOM Performance Feature Flags
- * 
+ *
  * Feature flags for gradual rollout of BOM performance optimizations.
  * Supports environment variable configuration for different deployment stages.
- * 
+ *
  * Rollout Strategy:
  * 1. Internal testing (development environment)
  * 2. 10% of users (staging environment)
  * 3. 50% of users (production with flag)
  * 4. 100% of users (production default)
  */
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('BOMPerformanceFeatureFlags')
 
 /**
  * BOM Performance Feature Flags Interface
@@ -19,53 +22,53 @@ export interface BOMPerformanceFeatureFlags {
    * Master switch - enables/disables all optimizations
    * When false, all other flags are ignored and system uses legacy behavior
    */
-  enableAllOptimizations: boolean;
-  
+  enableAllOptimizations: boolean
+
   /**
    * Enable dirty marking system for incremental diff calculation
    * Requirement: 1.2, 1.3
    */
-  enableDirtyMarking: boolean;
-  
+  enableDirtyMarking: boolean
+
   /**
    * Enable lazy Proxy creation for memory optimization
    * Requirement: 4.1, 4.2
    */
-  enableLazyProxy: boolean;
-  
+  enableLazyProxy: boolean
+
   /**
    * Enable virtual scrolling for large datasets
    * Requirement: 2.1, 2.3
    */
-  enableVirtualScrolling: boolean;
-  
+  enableVirtualScrolling: boolean
+
   /**
    * Enable React rendering optimizations (memo, useMemo, useCallback)
    * Requirement: 3.1, 3.2, 3.3
    */
-  enableReactOptimizations: boolean;
-  
+  enableReactOptimizations: boolean
+
   /**
    * Enable performance monitoring and metrics collection
    * Requirement: 5.1, 5.2, 5.3
    */
-  enablePerformanceMonitoring: boolean;
-  
+  enablePerformanceMonitoring: boolean
+
   /**
    * Enable error recovery strategies (retry, fallback, state persistence)
    * Requirement: 9.1, 9.2, 9.3
    */
-  enableErrorRecovery: boolean;
-  
+  enableErrorRecovery: boolean
+
   /**
    * Show performance dashboard in UI
    */
-  showPerformanceDashboard: boolean;
-  
+  showPerformanceDashboard: boolean
+
   /**
    * Enable debug logging for troubleshooting
    */
-  enableDebugLogging: boolean;
+  enableDebugLogging: boolean
 }
 
 /**
@@ -81,7 +84,7 @@ export const DEFAULT_FEATURE_FLAGS: BOMPerformanceFeatureFlags = {
   enableErrorRecovery: true,
   showPerformanceDashboard: false, // Hidden by default in production
   enableDebugLogging: false,
-};
+}
 
 /**
  * Legacy feature flags (all optimizations disabled)
@@ -97,7 +100,7 @@ export const LEGACY_FEATURE_FLAGS: BOMPerformanceFeatureFlags = {
   enableErrorRecovery: false,
   showPerformanceDashboard: false,
   enableDebugLogging: false,
-};
+}
 
 /**
  * Development feature flags (all optimizations enabled + debug tools)
@@ -106,12 +109,12 @@ export const DEVELOPMENT_FEATURE_FLAGS: BOMPerformanceFeatureFlags = {
   ...DEFAULT_FEATURE_FLAGS,
   showPerformanceDashboard: true,
   enableDebugLogging: true,
-};
+}
 
 /**
  * Environment variable names for feature flags
  */
-const ENV_VAR_PREFIX = 'VITE_BOM_PERF_';
+const ENV_VAR_PREFIX = 'VITE_BOM_PERF_'
 
 const ENV_VAR_NAMES = {
   ENABLE_ALL: `${ENV_VAR_PREFIX}ENABLE_ALL`,
@@ -123,28 +126,41 @@ const ENV_VAR_NAMES = {
   ENABLE_ERROR_RECOVERY: `${ENV_VAR_PREFIX}ENABLE_ERROR_RECOVERY`,
   SHOW_PERFORMANCE_DASHBOARD: `${ENV_VAR_PREFIX}SHOW_PERFORMANCE_DASHBOARD`,
   ENABLE_DEBUG_LOGGING: `${ENV_VAR_PREFIX}ENABLE_DEBUG_LOGGING`,
-} as const;
+} as const
 
 /**
  * Parse boolean from environment variable
  * Supports: 'true', '1', 'yes', 'on' (case-insensitive)
  */
-function parseBooleanEnv(value: string | undefined, defaultValue: boolean): boolean {
+function parseBooleanEnv(
+  value: string | undefined,
+  defaultValue: boolean
+): boolean {
   if (value === undefined) {
-    return defaultValue;
+    return defaultValue
   }
-  
-  const normalized = value.toLowerCase().trim();
-  
-  if (normalized === 'true' || normalized === '1' || normalized === 'yes' || normalized === 'on') {
-    return true;
+
+  const normalized = value.toLowerCase().trim()
+
+  if (
+    normalized === 'true' ||
+    normalized === '1' ||
+    normalized === 'yes' ||
+    normalized === 'on'
+  ) {
+    return true
   }
-  
-  if (normalized === 'false' || normalized === '0' || normalized === 'no' || normalized === 'off') {
-    return false;
+
+  if (
+    normalized === 'false' ||
+    normalized === '0' ||
+    normalized === 'no' ||
+    normalized === 'off'
+  ) {
+    return false
   }
-  
-  return defaultValue;
+
+  return defaultValue
 }
 
 /**
@@ -156,13 +172,13 @@ function getFeatureFlagsFromEnv(): BOMPerformanceFeatureFlags {
   const enableAll = parseBooleanEnv(
     import.meta.env[ENV_VAR_NAMES.ENABLE_ALL],
     DEFAULT_FEATURE_FLAGS.enableAllOptimizations
-  );
-  
+  )
+
   // If master switch is off, return legacy flags
   if (!enableAll) {
-    return LEGACY_FEATURE_FLAGS;
+    return LEGACY_FEATURE_FLAGS
   }
-  
+
   // Parse individual flags
   return {
     enableAllOptimizations: enableAll,
@@ -198,85 +214,87 @@ function getFeatureFlagsFromEnv(): BOMPerformanceFeatureFlags {
       import.meta.env[ENV_VAR_NAMES.ENABLE_DEBUG_LOGGING],
       DEFAULT_FEATURE_FLAGS.enableDebugLogging
     ),
-  };
+  }
 }
 
 /**
  * Cached feature flags instance
  */
-let cachedFeatureFlags: BOMPerformanceFeatureFlags | null = null;
+let cachedFeatureFlags: BOMPerformanceFeatureFlags | null = null
 
 /**
  * Get BOM performance feature flags
- * 
+ *
  * Reads from environment variables on first call, then caches the result.
  * Use `resetFeatureFlags()` to clear cache and re-read from environment.
- * 
+ *
  * @returns Current feature flags configuration
  */
 export function getBOMPerformanceFeatureFlags(): BOMPerformanceFeatureFlags {
   if (cachedFeatureFlags === null) {
-    cachedFeatureFlags = getFeatureFlagsFromEnv();
-    
+    cachedFeatureFlags = getFeatureFlagsFromEnv()
+
     // Log feature flags in development
     if (import.meta.env.DEV) {
-      console.info('[BOM Performance] Feature flags:', cachedFeatureFlags);
+      logger.info('Feature flags loaded', cachedFeatureFlags)
     }
   }
-  
-  return cachedFeatureFlags;
+
+  return cachedFeatureFlags
 }
 
 /**
  * Reset cached feature flags
  * Forces re-reading from environment variables on next call to getBOMPerformanceFeatureFlags()
- * 
+ *
  * Useful for testing or dynamic configuration changes
  */
 export function resetFeatureFlags(): void {
-  cachedFeatureFlags = null;
+  cachedFeatureFlags = null
 }
 
 /**
  * Override feature flags programmatically
- * 
+ *
  * WARNING: This is intended for testing only.
  * In production, use environment variables instead.
- * 
+ *
  * @param flags - Feature flags to set
  */
-export function setFeatureFlagsForTesting(flags: Partial<BOMPerformanceFeatureFlags>): void {
+export function setFeatureFlagsForTesting(
+  flags: Partial<BOMPerformanceFeatureFlags>
+): void {
   cachedFeatureFlags = {
     ...DEFAULT_FEATURE_FLAGS,
     ...flags,
-  };
+  }
 }
 
 /**
  * Check if a specific optimization is enabled
- * 
+ *
  * Respects the master switch - if enableAllOptimizations is false,
  * all individual optimizations are considered disabled.
  */
 export function isOptimizationEnabled(
   optimization: keyof Omit<BOMPerformanceFeatureFlags, 'enableAllOptimizations'>
 ): boolean {
-  const flags = getBOMPerformanceFeatureFlags();
-  
+  const flags = getBOMPerformanceFeatureFlags()
+
   // Master switch overrides all
   if (!flags.enableAllOptimizations) {
-    return false;
+    return false
   }
-  
-  return flags[optimization];
+
+  return flags[optimization]
 }
 
 /**
  * Get feature flag status summary for debugging
  */
 export function getFeatureFlagSummary(): string {
-  const flags = getBOMPerformanceFeatureFlags();
-  
+  const flags = getBOMPerformanceFeatureFlags()
+
   const lines = [
     'BOM Performance Feature Flags:',
     `  Master Switch: ${flags.enableAllOptimizations ? '✓ ON' : '✗ OFF'}`,
@@ -288,28 +306,28 @@ export function getFeatureFlagSummary(): string {
     `  Error Recovery: ${flags.enableErrorRecovery ? '✓' : '✗'}`,
     `  Performance Dashboard: ${flags.showPerformanceDashboard ? '✓' : '✗'}`,
     `  Debug Logging: ${flags.enableDebugLogging ? '✓' : '✗'}`,
-  ];
-  
-  return lines.join('\n');
+  ]
+
+  return lines.join('\n')
 }
 
 /**
- * Log feature flags to console (development only)
+ * Log feature flags during development
  */
 export function logFeatureFlags(): void {
   if (import.meta.env.DEV) {
-    console.info(getFeatureFlagSummary());
+    logger.info(getFeatureFlagSummary())
   }
 }
 
 /**
  * Environment configuration examples
- * 
+ *
  * Add these to your .env file:
- * 
+ *
  * # Enable all optimizations (master switch)
  * VITE_BOM_PERF_ENABLE_ALL=true
- * 
+ *
  * # Enable specific optimizations
  * VITE_BOM_PERF_ENABLE_DIRTY_MARKING=true
  * VITE_BOM_PERF_ENABLE_LAZY_PROXY=true
@@ -317,13 +335,13 @@ export function logFeatureFlags(): void {
  * VITE_BOM_PERF_ENABLE_REACT_OPTIMIZATIONS=true
  * VITE_BOM_PERF_ENABLE_PERFORMANCE_MONITORING=true
  * VITE_BOM_PERF_ENABLE_ERROR_RECOVERY=true
- * 
+ *
  * # Show performance dashboard (development/staging only)
  * VITE_BOM_PERF_SHOW_PERFORMANCE_DASHBOARD=true
- * 
+ *
  * # Enable debug logging (development only)
  * VITE_BOM_PERF_ENABLE_DEBUG_LOGGING=true
- * 
+ *
  * # Disable all optimizations (rollback)
  * VITE_BOM_PERF_ENABLE_ALL=false
  */

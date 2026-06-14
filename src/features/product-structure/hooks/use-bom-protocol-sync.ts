@@ -1,29 +1,30 @@
 /**
  * BOM Protocol Lifecycle Synchronization
- * 
+ *
  * Solves the "Protocol Lifecycle Drift" problem by ensuring RelationSidecar
  * stays synchronized with the actual form data (SourceModel).
- * 
+ *
  * Addresses two critical risks:
  * 1. Projection Drift: When user modifies sectionCode in table but RelationSidecar is not updated
  * 2. ID Volatility: When backend Upsert changes physical IDs during BOM derive/refactor
- * 
+ *
  * @module use-bom-protocol-sync
  */
-
 import { useEffect, useRef, useCallback, useState } from 'react'
 import { type UseFormReturn } from 'react-hook-form'
-import { type BOM } from '../data/schema'
+import { createLogger } from '@/lib/logger'
 import { type BOMSectionOption } from '../data/bom-section-schema'
+import { type BOM } from '../data/schema'
+import { parseLeafNodeId } from '../utils/bom-node-id-resolver'
 import { type BOMWorkspaceParentChildrenProtocolDraft } from './bom-workspace-branch-relation-builder'
 import { buildBOMWorkspaceParentChildrenProtocolDraftFromBOMDetailSource } from './bom-workspace-protocol-source-adapter'
-import { parseLeafNodeId } from '../utils/bom-node-id-resolver'
 
 /**
  * Debounce delay for protocol sync (in milliseconds).
  * Prevents excessive recalculation on rapid form changes.
  */
 const PROTOCOL_SYNC_DEBOUNCE_MS = 300
+const logger = createLogger('useBOMProtocolSync')
 
 export interface ProtocolSyncValidationResult {
   isValid: boolean
@@ -72,7 +73,7 @@ interface UseBOMProtocolSyncParams {
 
 /**
  * Validates that the protocol draft is consistent with the current form state.
- * 
+ *
  * Checks for:
  * - Missing nodes (protocol references non-existent items)
  * - Section mismatches (protocol sectionCode differs from item.section)
@@ -89,7 +90,9 @@ function validateProtocolConsistency(
   const warnings: ProtocolSyncWarning[] = []
 
   const activeSectionCodes = new Set(sections.map((s) => s.code))
-  const itemIdSet = new Set(watchedItems.map((item) => item.id?.trim()).filter(Boolean))
+  const itemIdSet = new Set(
+    watchedItems.map((item) => item.id?.trim()).filter(Boolean)
+  )
   const fieldIdSet = new Set(fields.map((f) => f.id))
   const branchNodeIdSet = new Set(protocolDraft.branchNodes.map((b) => b.id))
 
@@ -106,7 +109,11 @@ function validateProtocolConsistency(
     }
 
     // Check parent exists (if not root)
-    if (branchNode.parentId && branchNode.parentId !== 'root' && !branchNodeIdSet.has(branchNode.parentId)) {
+    if (
+      branchNode.parentId &&
+      branchNode.parentId !== 'root' &&
+      !branchNodeIdSet.has(branchNode.parentId)
+    ) {
       errors.push({
         type: 'invalid-parent',
         nodeId: branchNode.id,
@@ -139,7 +146,10 @@ function validateProtocolConsistency(
     }
 
     // Check parent exists
-    if (!itemNode.parentId || (!branchNodeIdSet.has(itemNode.parentId) && itemNode.parentId !== 'root')) {
+    if (
+      !itemNode.parentId ||
+      (!branchNodeIdSet.has(itemNode.parentId) && itemNode.parentId !== 'root')
+    ) {
       errors.push({
         type: 'invalid-parent',
         nodeId: itemNode.id,
@@ -208,21 +218,21 @@ function validateProtocolConsistency(
 
 /**
  * Hook for synchronizing BOM RelationSidecar protocol with form state.
- * 
+ *
  * Automatically detects and fixes:
  * - Section code changes in table rows
  * - Item ID changes from backend Upsert operations
  * - Orphaned nodes after item deletion
  * - Invalid parent references
- * 
+ *
  * Performance optimizations:
  * - Debounced sync (default 300ms) to prevent excessive recalculation
  * - Manual sync mode for on-demand triggering (e.g., only on save)
  * - Incremental validation to minimize computation
- * 
+ *
  * @param params - Sync parameters
  * @returns Sync result with validation and synced protocol
- * 
+ *
  * @example
  * ```tsx
  * // Default: Auto-sync with 300ms debounce
@@ -234,28 +244,28 @@ function validateProtocolConsistency(
  *   authoritativeProtocolDraft,
  *   sourceBOM,
  * })
- * 
+ *
  * // Custom debounce delay (500ms)
  * const result = useBOMProtocolSync({
  *   ...params,
  *   debounceMs: 500,
  * })
- * 
+ *
  * // Manual sync only (no auto-sync)
  * const result = useBOMProtocolSync({
  *   ...params,
  *   manualSyncOnly: true,
  * })
- * 
+ *
  * // Use syncedProtocol instead of protocolDraft for rendering
  * const projection = useBOMWorkspaceProjection({
  *   ...otherParams,
  *   protocolDraft: syncedProtocol || protocolDraft,
  * })
- * 
+ *
  * // Show validation warnings to user
  * if (validation.warnings.length > 0) {
- *   console.warn('Protocol sync warnings:', validation.warnings)
+ *   logger.warn('Protocol sync warnings', validation.warnings)
  * }
  * ```
  */
@@ -287,7 +297,12 @@ export function useBOMProtocolSync({
       return { isValid: true, errors: [], warnings: [] }
     }
 
-    return validateProtocolConsistency(protocolDraft, watchedItems, fields, sections)
+    return validateProtocolConsistency(
+      protocolDraft,
+      watchedItems,
+      fields,
+      sections
+    )
   }, [protocolDraft, watchedItems, fields, sections])
 
   // Check if sync is needed (memoized to prevent infinite loops)
@@ -297,14 +312,19 @@ export function useBOMProtocolSync({
     }
 
     const currentValidation = validation()
-    
+
     // Sync needed if there are errors or warnings
-    if (currentValidation.errors.length > 0 || currentValidation.warnings.length > 0) {
+    if (
+      currentValidation.errors.length > 0 ||
+      currentValidation.warnings.length > 0
+    ) {
       return true
     }
 
     // Sync needed if items changed
-    const itemsChanged = JSON.stringify(watchedItems) !== JSON.stringify(lastSyncedItemsRef.current)
+    const itemsChanged =
+      JSON.stringify(watchedItems) !==
+      JSON.stringify(lastSyncedItemsRef.current)
     if (itemsChanged) {
       return true
     }
@@ -325,29 +345,39 @@ export function useBOMProtocolSync({
     }
 
     // Inline validation to avoid callback dependency
-    const currentValidation = validateProtocolConsistency(protocolDraft, watchedItems, fields, sections)
-    
+    const currentValidation = validateProtocolConsistency(
+      protocolDraft,
+      watchedItems,
+      fields,
+      sections
+    )
+
     // Only log if validation changed (prevent spam)
-    const validationChanged = 
-      JSON.stringify(currentValidation) !== JSON.stringify(lastValidationRef.current)
-    
+    const validationChanged =
+      JSON.stringify(currentValidation) !==
+      JSON.stringify(lastValidationRef.current)
+
     if (validationChanged) {
       lastValidationRef.current = currentValidation
-      
+
       // Log validation issues for debugging
       if (currentValidation.errors.length > 0) {
-        console.error('[BOM Protocol Sync] Validation errors:', currentValidation.errors)
+        logger.error('Validation errors', currentValidation.errors)
       }
       if (currentValidation.warnings.length > 0) {
-        console.warn('[BOM Protocol Sync] Validation warnings:', currentValidation.warnings)
+        logger.warn('Validation warnings', currentValidation.warnings)
       }
     }
 
     // Inline check if sync is needed
-    const hasValidationIssues = currentValidation.errors.length > 0 || currentValidation.warnings.length > 0
-    const itemsChanged = JSON.stringify(watchedItems) !== JSON.stringify(lastSyncedItemsRef.current)
+    const hasValidationIssues =
+      currentValidation.errors.length > 0 ||
+      currentValidation.warnings.length > 0
+    const itemsChanged =
+      JSON.stringify(watchedItems) !==
+      JSON.stringify(lastSyncedItemsRef.current)
     const shouldSync = hasValidationIssues || itemsChanged
-    
+
     if (!shouldSync) {
       return
     }
@@ -359,13 +389,14 @@ export function useBOMProtocolSync({
 
     // Inline sync function
     const doSync = () => {
-      const syncedProtocol = buildBOMWorkspaceParentChildrenProtocolDraftFromBOMDetailSource({
-        sourceBOM,
-        activeSections: sections,
-        fields,
-        watchedItems,
-        authoritativeProtocolDraft,
-      })
+      const syncedProtocol =
+        buildBOMWorkspaceParentChildrenProtocolDraftFromBOMDetailSource({
+          sourceBOM,
+          activeSections: sections,
+          fields,
+          watchedItems,
+          authoritativeProtocolDraft,
+        })
       lastSyncedItemsRef.current = [...watchedItems]
       setDebouncedSyncedProtocol(syncedProtocol)
     }
@@ -390,7 +421,16 @@ export function useBOMProtocolSync({
       }
     }
     // Only depend on primitive values and stable data, not callbacks
-  }, [watchedItems, protocolDraft, sections, fields, sourceBOM, authoritativeProtocolDraft, debounceMs, manualSyncOnly])
+  }, [
+    watchedItems,
+    protocolDraft,
+    sections,
+    fields,
+    sourceBOM,
+    authoritativeProtocolDraft,
+    debounceMs,
+    manualSyncOnly,
+  ])
 
   // In manual mode, return the original protocol without auto-sync
   if (manualSyncOnly) {
