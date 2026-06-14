@@ -172,10 +172,7 @@ export function UniversalScanner({
         <div className='relative animate-in space-y-6 duration-300 zoom-in-95'>
           <div className='rounded-[28px] border border-dashed border-emerald-500/20 bg-emerald-500/5 p-6'>
             <div className='mb-4 flex items-center justify-between'>
-              <Badge
-                variant='outline'
-                className='border-none bg-emerald-500/10 px-3 font-mono font-black text-emerald-600 italic'
-              >
+              <Badge className='border-none bg-emerald-500/10 px-3 font-mono font-black text-emerald-600 italic'>
                 RESOLVED_MATCH
               </Badge>
               <div

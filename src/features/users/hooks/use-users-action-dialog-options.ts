@@ -45,7 +45,7 @@ export function useUsersActionDialogOptions({
       const nameMap: Record<string, string> = {}
       const flattenOrg = (nodes: OrgNode[]) => {
         nodes.forEach((node) => {
-          nameMap[node.id] = node.name
+          if (node.id) nameMap[node.id] = node.name
           if (node.children) flattenOrg(node.children)
         })
       }

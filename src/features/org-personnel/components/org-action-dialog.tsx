@@ -25,7 +25,7 @@ type OrgForm = {
   manager?: string
   type: 'company' | 'department' | 'team'
   description?: string
-  version?: number
+  version: number
 }
 
 type OrgActionDialogProps = {
@@ -118,6 +118,7 @@ function getOrgFormDefaults(
     manager: '',
     type: inferOrgTypeFromParent(parentNode),
     description: '',
+    version: 1,
   }
 }
 
@@ -151,7 +152,10 @@ function OrgActionDialogForm({
     manager: z.string().optional(),
     type: z.enum(['company', 'department', 'team']),
     description: z.string().optional(),
+    version: z.number().default(1),
   })
+  type OrgFormInput = z.input<typeof formSchema>
+  type OrgFormOutput = z.output<typeof formSchema>
 
   const initialValues = useMemo(
     () => getOrgFormDefaults(currentRow, parentNode),
@@ -160,12 +164,12 @@ function OrgActionDialogForm({
   const { data: deltaProxy, tracker } = useDeltaTracker(initialValues, open)
   const typeHint = getOrgTypeHint(isEdit, currentRow, parentNode, locale)
 
-  const form = useForm<OrgForm>({
+  const form = useForm<OrgFormInput, unknown, OrgFormOutput>({
     resolver: zodResolver(formSchema),
     defaultValues: initialValues,
   })
 
-  function handleFormSubmit(values: OrgForm) {
+  function handleFormSubmit(values: OrgFormOutput) {
     Object.assign(deltaProxy, values)
     const delta = tracker.commit()
     const isDirty = Object.keys(delta).length > 0
@@ -175,7 +179,7 @@ function OrgActionDialogForm({
       return
     }
 
-    const nodeData = {
+    const nodeData: OrgNode = {
       ...(isEdit && currentRow ? { id: currentRow.id } : {}),
       parentId: isEdit && currentRow ? currentRow.parentId : parentNode?.id,
       ...values,

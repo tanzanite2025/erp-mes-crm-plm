@@ -7,6 +7,7 @@ import ReactFlow, {
   useNodesState,
   useEdgesState,
   ConnectionLineType,
+  BackgroundVariant,
   Panel,
   MarkerType,
   type Edge,
@@ -84,7 +85,7 @@ export function BlueprintLab({ orderNo }: BlueprintLabProps) {
           minZoom={0.2}
           maxZoom={2}
         >
-          <Background color='#ccc' variant='dots' gap={20} />
+          <Background color='#ccc' variant={BackgroundVariant.Dots} gap={20} />
           <Controls />
           <MiniMap
             nodeStrokeColor={(n: Node) => {
