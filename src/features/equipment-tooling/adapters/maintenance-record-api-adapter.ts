@@ -1,15 +1,20 @@
-import { maintenanceRecordSchema, type MaintenanceRecord } from '../data/schema'
+import { createLogger } from '@/lib/logger'
 import type {
   MaintenanceRecordApiDTO,
   SaveMaintenanceRecordApiDTO,
 } from '../contracts/maintenance-record-api-dto'
+import { maintenanceRecordSchema, type MaintenanceRecord } from '../data/schema'
+
+const logger = createLogger('MaintenanceRecordApiAdapter')
 
 /**
  * Transform API DTO to domain contract with runtime validation
  * @param dto - MaintenanceRecordApiDTO from backend
  * @returns MaintenanceRecord - validated domain object
  */
-export function toMaintenanceRecordContract(dto: MaintenanceRecordApiDTO): MaintenanceRecord {
+export function toMaintenanceRecordContract(
+  dto: MaintenanceRecordApiDTO
+): MaintenanceRecord {
   const parseResult = maintenanceRecordSchema.safeParse({
     id: dto.id,
     assetType: dto.assetType,
@@ -32,10 +37,15 @@ export function toMaintenanceRecordContract(dto: MaintenanceRecordApiDTO): Maint
   })
 
   if (!parseResult.success) {
-    console.error('MaintenanceRecord schema validation failed:', parseResult.error)
-    console.error('DTO that failed validation:', dto)
+    logger.error(
+      'MaintenanceRecord schema validation failed',
+      parseResult.error
+    )
+    logger.error('DTO that failed validation', dto)
     // Re-throw to surface the validation error
-    throw new Error(`MaintenanceRecord validation failed: ${parseResult.error.message}`)
+    throw new Error(
+      `MaintenanceRecord validation failed: ${parseResult.error.message}`
+    )
   }
 
   return parseResult.data
@@ -46,7 +56,9 @@ export function toMaintenanceRecordContract(dto: MaintenanceRecordApiDTO): Maint
  * @param dtos - Array of MaintenanceRecordApiDTO from backend
  * @returns Array of validated MaintenanceRecord domain objects
  */
-export function toMaintenanceRecordContracts(dtos: MaintenanceRecordApiDTO[]): MaintenanceRecord[] {
+export function toMaintenanceRecordContracts(
+  dtos: MaintenanceRecordApiDTO[]
+): MaintenanceRecord[] {
   return dtos.map(toMaintenanceRecordContract)
 }
 
@@ -56,7 +68,10 @@ export function toMaintenanceRecordContracts(dtos: MaintenanceRecordApiDTO[]): M
  * @returns SaveMaintenanceRecordApiDTO - wire format for backend
  */
 export function toSaveMaintenanceRecordApiDTO(
-  formData: Omit<SaveMaintenanceRecordApiDTO, 'assetType' | 'assetId' | 'assetSn'> & {
+  formData: Omit<
+    SaveMaintenanceRecordApiDTO,
+    'assetType' | 'assetId' | 'assetSn'
+  > & {
     assetType: string
     assetId: string
     assetSn: string

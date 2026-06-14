@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo } from 'react'
 import { useQueries } from '@tanstack/react-query'
+import { createLogger } from '@/lib/logger'
 import { type BOM } from '../data/schema'
-import { bomService } from '../services/bom-service'
 import { bomQueryKeys } from '../query-keys'
+import { bomService } from '../services/bom-service'
 import { pickReleasedBOM } from '../utils/pick-released-bom'
 
 export interface ActiveBOMWeightInfo {
@@ -16,7 +17,12 @@ export interface ActiveBOMWeightInfo {
   available: boolean
 }
 
-const EMPTY_WEIGHT: ActiveBOMWeightInfo = { weight: 0, unit: '', available: false }
+const EMPTY_WEIGHT: ActiveBOMWeightInfo = {
+  weight: 0,
+  unit: '',
+  available: false,
+}
+const logger = createLogger('useActiveBOMWeightMap')
 
 /**
  * 产品 ID + 客户 ID 元组,用于在多归属 BOM 场景下定位"当前订单线对应的 BOM"。
@@ -61,9 +67,16 @@ export function useActiveBOMWeightMap(
       const key = probeKey({ productId, customerId: raw.customerId })
       if (seen.has(key)) continue
       seen.add(key)
-      result.push({ productId, customerId: raw.customerId?.trim() || undefined })
+      result.push({
+        productId,
+        customerId: raw.customerId?.trim() || undefined,
+      })
     }
-    result.sort((a, b) => a.productId.localeCompare(b.productId) || (a.customerId ?? '').localeCompare(b.customerId ?? ''))
+    result.sort(
+      (a, b) =>
+        a.productId.localeCompare(b.productId) ||
+        (a.customerId ?? '').localeCompare(b.customerId ?? '')
+    )
     return result
   }, [probes])
 
@@ -84,12 +97,10 @@ export function useActiveBOMWeightMap(
   useEffect(() => {
     queries.forEach((q, idx) => {
       if (q.isError && q.error) {
-        // eslint-disable-next-line no-console
-        console.warn(
-          '[useActiveBOMWeightMap] BOM query failed for productId',
-          uniqueProductIds[idx],
-          q.error
-        )
+        logger.warn('BOM query failed for productId', {
+          productId: uniqueProductIds[idx],
+          error: q.error,
+        })
       }
     })
   }, [queries, uniqueProductIds])
@@ -115,7 +126,11 @@ export function useActiveBOMWeightMap(
         continue
       }
       const released = pickReleasedBOM(boms, { customerId: probe.customerId })
-      if (!released || !released.measuredWeight || released.measuredWeight <= 0) {
+      if (
+        !released ||
+        !released.measuredWeight ||
+        released.measuredWeight <= 0
+      ) {
         map.set(key, EMPTY_WEIGHT)
         continue
       }
@@ -137,5 +152,12 @@ export function getActiveBOMWeight(
 ): ActiveBOMWeightInfo {
   const trimmedProductId = (productId ?? '').trim()
   if (!trimmedProductId) return EMPTY_WEIGHT
-  return map.get(probeKey({ productId: trimmedProductId, customerId: customerId ?? undefined })) ?? EMPTY_WEIGHT
+  return (
+    map.get(
+      probeKey({
+        productId: trimmedProductId,
+        customerId: customerId ?? undefined,
+      })
+    ) ?? EMPTY_WEIGHT
+  )
 }

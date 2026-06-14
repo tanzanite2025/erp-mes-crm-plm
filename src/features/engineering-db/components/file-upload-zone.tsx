@@ -3,8 +3,11 @@
 import { useState, useRef } from 'react'
 import { Upload, FolderPlus, FileCode, X } from 'lucide-react'
 import { toast } from 'sonner'
+import { createLogger } from '@/lib/logger'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+
+const logger = createLogger('FileUploadZone')
 
 interface FileUploadZoneProps {
   fileUrl?: string
@@ -44,7 +47,7 @@ export function FileUploadZone({
       onFileSelected(name, ext, fileId)
       toast.success(`文件已永久存入本地库: ${file.name}`)
     } catch (e) {
-      console.error('Failed to save file binary', e)
+      logger.error('Failed to save file binary', e)
       toast.error('文件存入本地失败，请重试')
     }
   }

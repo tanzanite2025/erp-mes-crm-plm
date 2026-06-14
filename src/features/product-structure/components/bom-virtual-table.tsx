@@ -17,10 +17,13 @@ import { useRef, useEffect, useMemo, type CSSProperties } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { BOMDirtyMarker } from '@/lib/delta/dirty-marker'
 import { BOMProxyManager } from '@/lib/delta/lazy-proxy-manager'
+import { createLogger } from '@/lib/logger'
 import {
   DEFAULT_BOM_VIRTUAL_CONFIG,
   type BOMVirtualScrollerConfig,
 } from '../config/virtual-scroller-config'
+
+const logger = createLogger('BOMVirtualTable')
 
 /**
  * BOM row data structure (simplified for virtual table)
@@ -193,7 +196,7 @@ export function BOMVirtualTable<T extends BOMVirtualRow = BOMVirtualRow>({
       () => {
         // Mutation callback - could be used for performance monitoring
         if (enablePerformanceMonitoring) {
-          console.debug('[BOMVirtualTable] Row mutated')
+          logger.debug('Row mutated')
         }
       }
     )
@@ -211,9 +214,7 @@ export function BOMVirtualTable<T extends BOMVirtualRow = BOMVirtualRow>({
   useEffect(() => {
     if (enablePerformanceMonitoring && renderStartTime.current > 0) {
       const renderTime = performance.now() - renderStartTime.current
-      console.debug(
-        `[BOMVirtualTable] Initial render time: ${renderTime.toFixed(2)}ms`
-      )
+      logger.debug('Initial render completed', { renderTimeMs: renderTime })
       renderStartTime.current = 0
     }
   })
@@ -251,11 +252,11 @@ export function BOMVirtualTable<T extends BOMVirtualRow = BOMVirtualRow>({
     })
 
     if (enablePerformanceMonitoring) {
-      console.debug(
-        `[BOMVirtualTable] Active Proxies: ${proxyManager.current.getActiveProxyCount()}, ` +
-          `Dirty Rows: ${dirtyMarker.current.getDirtyCount()}, ` +
-          `Visible Rows: ${visibleRowIds.size}`
-      )
+      logger.debug('Proxy cache stats', {
+        activeProxies: proxyManager.current.getActiveProxyCount(),
+        dirtyRows: dirtyMarker.current.getDirtyCount(),
+        visibleRows: visibleRowIds.size,
+      })
     }
   }, [visibleRowIds, enablePerformanceMonitoring])
 

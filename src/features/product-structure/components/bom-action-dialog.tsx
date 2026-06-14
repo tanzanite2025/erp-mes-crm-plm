@@ -2,24 +2,30 @@
 
 import { useEffect, useMemo } from 'react'
 import { type UseFormReturn } from 'react-hook-form'
+import { createLogger } from '@/lib/logger'
 import { Form } from '@/components/ui/form'
-import { BOMFormHeader } from './bom-editor/bom-form-header'
-import { BOMWorkspace } from './bom-editor/bom-workspace'
-import { BOMDialogFooter } from './bom-dialog-footer'
-import { BOMDialogResourceBoundary } from './bom-dialog-resource-boundary'
-import { BOMDialogShell } from './bom-dialog-shell'
 import { type BOM } from '../data/schema'
 import { useBOMForm } from '../hooks/use-bom-form'
-import { useBOMRelationDeltaTracker } from '../hooks/use-bom-relation-delta-tracker'
 import { useBOMOptimisticLock } from '../hooks/use-bom-optimistic-lock'
+import {
+  useBOMPermissionGuard,
+  createBOMPermissionContext,
+} from '../hooks/use-bom-permission-guard'
 import { useBOMProtocolRecovery } from '../hooks/use-bom-protocol-recovery'
-import { useBOMPermissionGuard, createBOMPermissionContext } from '../hooks/use-bom-permission-guard'
+import { useBOMRelationDeltaTracker } from '../hooks/use-bom-relation-delta-tracker'
 import { useBOMSubmitOrchestrator } from '../hooks/use-bom-submit-orchestrator'
 import { type BOMItemDraft, type SaveBOMInput } from '../mutation-types'
 import { buildBOMRelationSidecar } from '../utils/bom-relation-sidecar'
-import { BOMVersionConflictDialog } from './bom-version-conflict-dialog'
+import { BOMDialogFooter } from './bom-dialog-footer'
+import { BOMDialogResourceBoundary } from './bom-dialog-resource-boundary'
+import { BOMDialogShell } from './bom-dialog-shell'
+import { BOMFormHeader } from './bom-editor/bom-form-header'
+import { BOMWorkspace } from './bom-editor/bom-workspace'
 import { BOMProtocolRecoveryDialog } from './bom-protocol-recovery-dialog'
 import { BOMReadOnlyBanner } from './bom-readonly-banner'
+import { BOMVersionConflictDialog } from './bom-version-conflict-dialog'
+
+const logger = createLogger('BOMActionDialog')
 
 type BOMActionDialogProps = {
   currentRow?: BOM
@@ -28,7 +34,11 @@ type BOMActionDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSubmit?: (data: SaveBOMInput) => BOM | Promise<BOM | null>
-  onPromote?: (id: string, status: string, expectedVersion?: number) => Promise<boolean>
+  onPromote?: (
+    id: string,
+    status: string,
+    expectedVersion?: number
+  ) => Promise<boolean>
 }
 
 export function BOMActionDialog({
@@ -73,7 +83,7 @@ export function BOMActionDialog({
     context: permissionContext,
     form: typedForm,
     onPermissionDenied: (action, reason) => {
-      console.warn(`[BOM Permission] ${action} denied: ${reason}`)
+      logger.warn('Permission denied', { action, reason })
     },
   })
 
@@ -82,11 +92,7 @@ export function BOMActionDialog({
 
   // Optimistic lock
   const optimisticLock = useBOMOptimisticLock(currentRow)
-  const {
-    hasConflict,
-    conflictError,
-    clearConflict,
-  } = optimisticLock
+  const { hasConflict, conflictError, clearConflict } = optimisticLock
 
   // Protocol recovery
   const protocolRecovery = useBOMProtocolRecovery({
@@ -99,10 +105,10 @@ export function BOMActionDialog({
     watchedItems: form.watch('items'),
     protocolDraft,
     onRecoverySuccess: () => {
-      console.log('[BOM] Protocol recovered successfully')
+      logger.info('Protocol recovered successfully')
     },
     onRecoveryFailed: (error) => {
-      console.error('[BOM] Protocol recovery failed:', error)
+      logger.error('Protocol recovery failed', error)
     },
   })
   const {
@@ -126,24 +132,27 @@ export function BOMActionDialog({
 
   useEffect(() => {
     if (effectiveProtocolDraft) {
-      deltaTracker.updateSidecar(buildBOMRelationSidecar(effectiveProtocolDraft))
+      deltaTracker.updateSidecar(
+        buildBOMRelationSidecar(effectiveProtocolDraft)
+      )
     }
   }, [effectiveProtocolDraft, deltaTracker])
 
   // 提交编排（submit + promote）
-  const { submit: handleFormSubmit, promote: handlePromote } = useBOMSubmitOrchestrator({
-    isEdit,
-    currentRow,
-    form: typedForm,
-    effectiveProtocolDraft,
-    isSidecarDirty: deltaTracker.isDirty,
-    permissionGuard,
-    optimisticLock,
-    deltaTracker,
-    onSubmit,
-    onPromote,
-    onClose: () => onOpenChange(false),
-  })
+  const { submit: handleFormSubmit, promote: handlePromote } =
+    useBOMSubmitOrchestrator({
+      isEdit,
+      currentRow,
+      form: typedForm,
+      effectiveProtocolDraft,
+      isSidecarDirty: deltaTracker.isDirty,
+      permissionGuard,
+      optimisticLock,
+      deltaTracker,
+      onSubmit,
+      onPromote,
+      onClose: () => onOpenChange(false),
+    })
 
   const isLocked = currentRow?.isLocked || false
 
@@ -157,7 +166,11 @@ export function BOMActionDialog({
           version: typeof bomVersion === 'string' ? bomVersion : '',
           status: typeof status === 'string' ? status : '',
         }}
-        auditTarget={isEdit && currentRow?.id ? { id: currentRow.id, name: currentRow.bomNo } : undefined}
+        auditTarget={
+          isEdit && currentRow?.id
+            ? { id: currentRow.id, name: currentRow.bomNo }
+            : undefined
+        }
       >
         <Form {...typedForm}>
           <form
@@ -165,11 +178,17 @@ export function BOMActionDialog({
             onSubmit={typedForm.handleSubmit(handleFormSubmit)}
             className='flex min-h-0 flex-1 flex-col overflow-hidden'
           >
-            <BOMDialogResourceBoundary resource={optionsResource} detailResource={detailSourceResource}>
+            <BOMDialogResourceBoundary
+              resource={optionsResource}
+              detailResource={detailSourceResource}
+            >
               <div className='flex min-h-0 flex-1 flex-col'>
-                <div className='custom-scrollbar min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-3 pt-0 sm:px-4'>
+                <div className='custom-scrollbar min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pt-0 sm:px-4'>
                   <div className='flex flex-col gap-2 pb-3 sm:pb-4 lg:min-h-0 lg:flex-1'>
-                    <BOMReadOnlyBanner isLocked={isLocked} version={currentRow?.version} />
+                    <BOMReadOnlyBanner
+                      isLocked={isLocked}
+                      version={currentRow?.version}
+                    />
 
                     <BOMFormHeader
                       form={typedForm}

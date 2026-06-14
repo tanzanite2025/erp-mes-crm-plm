@@ -10,11 +10,14 @@
  * @module use-bom-protocol-recovery
  */
 import { useState, useCallback, useEffect } from 'react'
+import { createLogger } from '@/lib/logger'
 import { type BOMSectionOption } from '../data/bom-section-schema'
 import { type BOM } from '../data/schema'
 import { parseLeafNodeId } from '../utils/bom-node-id-resolver'
 import { type BOMWorkspaceParentChildrenProtocolDraft } from './bom-workspace-branch-relation-builder'
 import { buildBOMWorkspaceParentChildrenProtocolDraftFromBOMDetailSource } from './bom-workspace-protocol-source-adapter'
+
+const logger = createLogger('useBOMProtocolRecovery')
 
 export type ProtocolRecoveryStrategy =
   | 'rebuild'
@@ -94,9 +97,9 @@ function filterInvalidReferences(
   // Filter branch nodes with invalid sections
   const filteredBranchNodes = protocolDraft.branchNodes.filter((branchNode) => {
     if (!validSectionCodes.has(branchNode.sectionCode)) {
-      console.warn(
-        `[Protocol Recovery] Filtering branch node with invalid section: ${branchNode.id}`
-      )
+      logger.warn('Filtering branch node with invalid section', {
+        nodeId: branchNode.id,
+      })
       return false
     }
     return true
@@ -106,9 +109,9 @@ function filterInvalidReferences(
   const filteredItemNodes = protocolDraft.itemNodes.filter((itemNode) => {
     // Check section
     if (!validSectionCodes.has(itemNode.sectionCode)) {
-      console.warn(
-        `[Protocol Recovery] Filtering item node with invalid section: ${itemNode.id}`
-      )
+      logger.warn('Filtering item node with invalid section', {
+        nodeId: itemNode.id,
+      })
       return false
     }
 
@@ -118,9 +121,9 @@ function filterInvalidReferences(
       !validBranchIds.has(itemNode.parentId) &&
       itemNode.parentId !== 'root'
     ) {
-      console.warn(
-        `[Protocol Recovery] Filtering item node with invalid parent: ${itemNode.id}`
-      )
+      logger.warn('Filtering item node with invalid parent', {
+        nodeId: itemNode.id,
+      })
       return false
     }
 
@@ -131,17 +134,17 @@ function filterInvalidReferences(
     const isFieldIdBased = parsed && 'fieldId' in parsed
 
     if (isItemIdBased && itemId && !validItemIds.has(itemId)) {
-      console.warn(
-        `[Protocol Recovery] Filtering item node with deleted item: ${itemNode.id}`
-      )
+      logger.warn('Filtering item node with deleted item', {
+        nodeId: itemNode.id,
+      })
       return false
     }
 
     if (isFieldIdBased && parsed && 'fieldId' in parsed) {
       if (!validFieldIds.has(parsed.fieldId)) {
-        console.warn(
-          `[Protocol Recovery] Filtering item node with invalid field: ${itemNode.id}`
-        )
+        logger.warn('Filtering item node with invalid field', {
+          nodeId: itemNode.id,
+        })
         return false
       }
     }
@@ -197,7 +200,7 @@ function filterInvalidReferences(
  *   watchedItems,
  *   protocolDraft,
  *   onRecoverySuccess: (recovered) => {
- *     console.log('Protocol recovered:', recovered)
+ *     logger.info('Protocol recovered', recovered)
  *   },
  * })
  *
@@ -313,7 +316,7 @@ export function useBOMProtocolRecovery({
                 fields,
                 watchedItems,
               })
-            console.log('[Protocol Recovery] Rebuilt protocol from form state')
+            logger.info('Rebuilt protocol from form state')
             break
 
           case 'filter': {
@@ -332,19 +335,19 @@ export function useBOMProtocolRecovery({
               validFieldIds,
               validSectionCodes
             )
-            console.log('[Protocol Recovery] Filtered invalid references')
+            logger.info('Filtered invalid references')
             break
           }
 
           case 'ignore':
             // Use empty protocol (all items in default section)
             recovered = undefined
-            console.log('[Protocol Recovery] Using empty protocol')
+            logger.info('Using empty protocol')
             break
 
           case 'manual':
             // User will manually fix
-            console.log('[Protocol Recovery] Manual recovery selected')
+            logger.info('Manual recovery selected')
             return false
 
           default:

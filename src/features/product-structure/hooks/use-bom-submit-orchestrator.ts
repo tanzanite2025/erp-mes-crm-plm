@@ -2,6 +2,7 @@
 
 import { useCallback } from 'react'
 import { type UseFormReturn } from 'react-hook-form'
+import { createLogger } from '@/lib/logger'
 import { failLoudly } from '@/lib/safe-catch'
 import { type BOM, type BOMParentChildrenProtocolDraft } from '../data/schema'
 import { type SaveBOMInput } from '../mutation-types'
@@ -12,6 +13,8 @@ import {
 import { type OptimisticLockResult } from './use-bom-optimistic-lock'
 import { type BOMPermissionGuard } from './use-bom-permission-guard'
 import { type BOMRelationDeltaTrackerResult } from './use-bom-relation-delta-tracker'
+
+const logger = createLogger('useBOMSubmitOrchestrator')
 
 /**
  * BOMActionDialog 的提交编排（submit + promote）。
@@ -110,7 +113,7 @@ export function useBOMSubmitOrchestrator(
       // 权限守卫
       if (!permissionGuard.canSave) {
         const reason = permissionGuard.getDenialReason()
-        console.warn('[BOM] Save blocked:', reason)
+        logger.warn('Save blocked', { reason })
         return null
       }
 
@@ -144,7 +147,7 @@ export function useBOMSubmitOrchestrator(
       // 版本冲突 → 弹窗已由 useBOMOptimisticLock 内部触发，这里只让调用方知道结果
       const conflict = optimisticLock.validateVersion(result.version)
       if (conflict) {
-        console.warn('[BOM] Version conflict detected:', conflict)
+        logger.warn('Version conflict detected', conflict)
         return null
       }
 
@@ -172,7 +175,7 @@ export function useBOMSubmitOrchestrator(
       // 权限守卫
       if (!permissionGuard.canPromote) {
         const reason = permissionGuard.getDenialReason()
-        console.warn('[BOM] Promote blocked:', reason)
+        logger.warn('Promote blocked', { reason })
         return
       }
 
@@ -194,7 +197,7 @@ export function useBOMSubmitOrchestrator(
 
         const conflict = optimisticLock.validateVersion(saved.version)
         if (conflict) {
-          console.warn('[BOM] Version conflict during promote:', conflict)
+          logger.warn('Version conflict during promote', conflict)
           return
         }
         optimisticLock.updateVersion(saved.version)

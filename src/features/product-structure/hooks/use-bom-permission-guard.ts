@@ -1,15 +1,17 @@
 /**
  * BOM Permission Guard Hook
- * 
+ *
  * Enforces read-only state across all BOM workspace interactions.
  * Prevents edit operations when BOM is locked, even through console manipulation.
- * 
+ *
  * @module use-bom-permission-guard
  */
-
 import { useCallback, useMemo } from 'react'
 import { type UseFormReturn } from 'react-hook-form'
+import { createLogger } from '@/lib/logger'
 import { type BOM } from '../data/schema'
+
+const logger = createLogger('useBOMPermissionGuard')
 
 export interface BOMPermissionContext {
   /** Whether the BOM is locked (read-only) */
@@ -33,7 +35,7 @@ export interface BOMPermissionGuard {
   canSave: boolean
   /** Whether user can promote BOM status */
   canPromote: boolean
-  
+
   /** Guard wrapper for append operations */
   guardedAppend: <T>(fn: (item: T) => void) => (item: T) => void
   /** Guard wrapper for remove operations */
@@ -42,7 +44,7 @@ export interface BOMPermissionGuard {
   guardedFieldChange: <T>(fn: (value: T) => void) => (value: T) => void
   /** Guard wrapper for save operations */
   guardedSave: <T>(fn: () => T | Promise<T>) => () => T | Promise<T> | null
-  
+
   /** Get permission denial reason for UI display */
   getDenialReason: () => string | null
 }
@@ -55,7 +57,7 @@ interface UseBOMPermissionGuardParams {
 
 /**
  * Hook to enforce permission-based access control for BOM operations
- * 
+ *
  * @example
  * ```tsx
  * const guard = useBOMPermissionGuard({
@@ -64,7 +66,7 @@ interface UseBOMPermissionGuardParams {
  *     toast.error(`Cannot ${action}: ${reason}`)
  *   }
  * })
- * 
+ *
  * // Wrap operations with guards
  * const safeAppend = guard.guardedAppend(append)
  * const safeRemove = guard.guardedRemove(remove)
@@ -94,65 +96,80 @@ export function useBOMPermissionGuard({
   }, [isLocked])
 
   // Log permission denial with audit context
-  const logPermissionDenial = useCallback((action: string) => {
-    const reason = getDenialReason()
-    if (!reason) return
+  const logPermissionDenial = useCallback(
+    (action: string) => {
+      const reason = getDenialReason()
+      if (!reason) return
 
-    console.warn('[BOM Permission Guard] Operation blocked:', {
-      action,
-      reason,
-      isLocked,
-      isEdit,
-      version,
-      timestamp: new Date().toISOString(),
-    })
+      logger.warn('Operation blocked', {
+        action,
+        reason,
+        isLocked,
+        isEdit,
+        version,
+        timestamp: new Date().toISOString(),
+      })
 
-    onPermissionDenied?.(action, reason)
-  }, [getDenialReason, isLocked, isEdit, version, onPermissionDenied])
+      onPermissionDenied?.(action, reason)
+    },
+    [getDenialReason, isLocked, isEdit, version, onPermissionDenied]
+  )
 
   // Guard wrapper for append operations
-  const guardedAppend = useCallback(<T,>(fn: (item: T) => void) => {
-    return (item: T) => {
-      if (!canAdd) {
-        logPermissionDenial('add item')
-        return
+  const guardedAppend = useCallback(
+    <T>(fn: (item: T) => void) => {
+      return (item: T) => {
+        if (!canAdd) {
+          logPermissionDenial('add item')
+          return
+        }
+        fn(item)
       }
-      fn(item)
-    }
-  }, [canAdd, logPermissionDenial])
+    },
+    [canAdd, logPermissionDenial]
+  )
 
   // Guard wrapper for remove operations
-  const guardedRemove = useCallback((fn: (index: number) => void) => {
-    return (index: number) => {
-      if (!canRemove) {
-        logPermissionDenial('remove item')
-        return
+  const guardedRemove = useCallback(
+    (fn: (index: number) => void) => {
+      return (index: number) => {
+        if (!canRemove) {
+          logPermissionDenial('remove item')
+          return
+        }
+        fn(index)
       }
-      fn(index)
-    }
-  }, [canRemove, logPermissionDenial])
+    },
+    [canRemove, logPermissionDenial]
+  )
 
   // Guard wrapper for field change operations
-  const guardedFieldChange = useCallback(<T,>(fn: (value: T) => void) => {
-    return (value: T) => {
-      if (!canModifyFields) {
-        logPermissionDenial('modify field')
-        return
+  const guardedFieldChange = useCallback(
+    <T>(fn: (value: T) => void) => {
+      return (value: T) => {
+        if (!canModifyFields) {
+          logPermissionDenial('modify field')
+          return
+        }
+        fn(value)
       }
-      fn(value)
-    }
-  }, [canModifyFields, logPermissionDenial])
+    },
+    [canModifyFields, logPermissionDenial]
+  )
 
   // Guard wrapper for save operations
-  const guardedSave = useCallback(<T,>(fn: () => T | Promise<T>) => {
-    return () => {
-      if (!canSave) {
-        logPermissionDenial('save')
-        return null
+  const guardedSave = useCallback(
+    <T>(fn: () => T | Promise<T>) => {
+      return () => {
+        if (!canSave) {
+          logPermissionDenial('save')
+          return null
+        }
+        return fn()
       }
-      return fn()
-    }
-  }, [canSave, logPermissionDenial])
+    },
+    [canSave, logPermissionDenial]
+  )
 
   // Disable form fields when locked
   useMemo(() => {
@@ -162,7 +179,7 @@ export function useBOMPermissionGuard({
       if (formState && !formState.isSubmitting) {
         // React Hook Form doesn't have a global disable,
         // but we can prevent changes through our guards
-        console.log('[BOM Permission Guard] Form is in read-only mode')
+        logger.info('Form is in read-only mode')
       }
     }
   }, [form, isLocked])
@@ -185,7 +202,10 @@ export function useBOMPermissionGuard({
 /**
  * Utility to create a permission context from BOM data
  */
-export function createBOMPermissionContext(bom?: BOM, isEdit?: boolean): BOMPermissionContext {
+export function createBOMPermissionContext(
+  bom?: BOM,
+  isEdit?: boolean
+): BOMPermissionContext {
   return {
     isLocked: bom?.isLocked ?? false,
     isEdit: isEdit ?? false,
