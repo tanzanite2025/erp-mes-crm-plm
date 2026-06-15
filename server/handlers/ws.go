@@ -2,13 +2,17 @@ package handlers
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
 	"sync"
+	"time"
 	"xdfc-server/authz"
 	"xdfc-server/db"
 	"xdfc-server/dependencies"
@@ -23,6 +27,11 @@ import (
 var upgrader = websocket.Upgrader{
 	CheckOrigin: isWebSocketOriginAllowed,
 }
+
+const (
+	wsTicketRedisPrefix = "ws_ticket:"
+	wsTicketTTL         = 60 * time.Second
+)
 
 // Client wraps one websocket client session.
 type Client struct {
@@ -131,26 +140,68 @@ func (c *Client) WritePump() {
 	}
 }
 
+type wsTicketClaims struct {
+	UserID   string    `json:"userId"`
+	Username string    `json:"username"`
+	IssuedAt time.Time `json:"issuedAt"`
+}
+
+type wsTicketResponse struct {
+	Ticket    string    `json:"ticket"`
+	ExpiresAt time.Time `json:"expiresAt"`
+}
+
+func CreateWSTicketHandler(c *gin.Context) {
+	userID := strings.TrimSpace(middleware.GetSafeUserID(c))
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing authenticated user"})
+		return
+	}
+
+	username := strings.TrimSpace(middleware.GetSafeUsername(c))
+	ticket, err := generateRandomWSTicket(24)
+	if err != nil {
+		log.Printf("[WS_TICKET][ERROR] failed to generate ticket for userId=%s err=%v", userID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create websocket ticket"})
+		return
+	}
+
+	if db.RDB == nil {
+		log.Printf("[WS_TICKET][ERROR] redis unavailable while creating ticket for userId=%s", userID)
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Realtime ticket service unavailable"})
+		return
+	}
+
+	now := time.Now().UTC()
+	claimsBytes, err := json.Marshal(wsTicketClaims{
+		UserID:   userID,
+		Username: username,
+		IssuedAt: now,
+	})
+	if err != nil {
+		log.Printf("[WS_TICKET][ERROR] failed to marshal claims for userId=%s err=%v", userID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create websocket ticket"})
+		return
+	}
+
+	if err := db.RDB.Set(c.Request.Context(), wsTicketRedisPrefix+ticket, claimsBytes, wsTicketTTL).Err(); err != nil {
+		log.Printf("[WS_TICKET][ERROR] failed to persist ticket for userId=%s err=%v", userID, err)
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Realtime ticket service unavailable"})
+		return
+	}
+
+	c.JSON(http.StatusOK, wsTicketResponse{
+		Ticket:    ticket,
+		ExpiresAt: now.Add(wsTicketTTL),
+	})
+}
+
 // WSHandler handles websocket handshake and enforces JWT authentication.
 func WSHandler(c *gin.Context) {
-	tokenString := extractWSToken(c)
-	if tokenString == "" {
-		log.Printf("[WS_AUTH_FAIL] Missing websocket token, RemoteAddr=%s", c.Request.RemoteAddr)
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing websocket token"})
-		return
-	}
-
-	claims, err := middleware.ParseJWTClaims(tokenString)
+	userID, username, err := resolveWSIdentity(c)
 	if err != nil {
-		log.Printf("[WS_AUTH_FAIL] Invalid or expired token for websocket, err=%v", err)
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
-		return
-	}
-
-	userID, username := extractWSIdentity(claims)
-	if userID == "" {
-		log.Printf("[WS_AUTH_FAIL] Invalid websocket claims (missing sub), userId=%s username=%s", userID, username)
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid websocket claims"})
+		log.Printf("[WS_AUTH_FAIL] %v, RemoteAddr=%s", err, c.Request.RemoteAddr)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired websocket credentials"})
 		return
 	}
 
@@ -240,25 +291,73 @@ func clientHasPermission(client *Client, permissionID string) bool {
 	return ok
 }
 
-func extractWSToken(c *gin.Context) string {
-	if token := strings.TrimSpace(c.Query("token")); token != "" {
-		return token
+func resolveWSIdentity(c *gin.Context) (string, string, error) {
+	if ticket := strings.TrimSpace(c.Query("ticket")); ticket != "" {
+		return consumeWSTicket(c, ticket)
 	}
+
 	authHeader := strings.TrimSpace(c.GetHeader("Authorization"))
 	if authHeader == "" {
-		return ""
+		return "", "", errors.New("missing websocket credentials")
 	}
+
 	parts := strings.SplitN(authHeader, " ", 2)
 	if len(parts) == 2 && strings.EqualFold(parts[0], "Bearer") {
-		return strings.TrimSpace(parts[1])
+		claims, err := middleware.ParseJWTClaims(strings.TrimSpace(parts[1]))
+		if err != nil {
+			return "", "", errors.New("invalid or expired bearer token")
+		}
+		userID, username := extractWSIdentity(claims)
+		if strings.TrimSpace(userID) == "" {
+			return "", "", errors.New("missing websocket subject")
+		}
+		return userID, username, nil
 	}
-	return ""
+
+	return "", "", errors.New("invalid websocket authorization header")
 }
 
 func extractWSIdentity(claims jwt.MapClaims) (userID string, username string) {
 	userID = middleware.ClaimString(claims, "sub")
 	username = middleware.ClaimString(claims, "username")
 	return userID, username
+}
+
+func consumeWSTicket(c *gin.Context, ticket string) (string, string, error) {
+	if db.RDB == nil {
+		return "", "", errors.New("realtime ticket service unavailable")
+	}
+
+	key := wsTicketRedisPrefix + strings.TrimSpace(ticket)
+	claimsRaw, err := db.RDB.GetDel(c.Request.Context(), key).Bytes()
+	if err != nil {
+		return "", "", errors.New("invalid or expired websocket ticket")
+	}
+
+	var claims wsTicketClaims
+	if err := json.Unmarshal(claimsRaw, &claims); err != nil {
+		return "", "", errors.New("invalid websocket ticket payload")
+	}
+
+	userID := strings.TrimSpace(claims.UserID)
+	if userID == "" {
+		return "", "", errors.New("invalid websocket ticket subject")
+	}
+
+	return userID, strings.TrimSpace(claims.Username), nil
+}
+
+func generateRandomWSTicket(byteLen int) (string, error) {
+	if byteLen <= 0 {
+		byteLen = 24
+	}
+
+	buf := make([]byte, byteLen)
+	if _, err := rand.Read(buf); err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(buf), nil
 }
 
 func isWebSocketOriginAllowed(r *http.Request) bool {

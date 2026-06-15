@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { apiFetch } from '@/lib/api-client'
 import { useAuthStore } from '@/stores/auth-store'
 import { useNotificationStore as useLegacyNotificationStore } from '@/stores/notification-store'
 import { createLogger } from '@/lib/logger'
@@ -9,6 +10,12 @@ import { useNotificationStore as useSystemNotificationStore } from '@/features/s
 import type { NotificationPriority } from '@/features/system-mgmt/notifications/types'
 
 const logger = createLogger('useNotifications')
+const WS_RECONNECT_DELAY_MS = 5000
+
+type WSTicketPayload = {
+  ticket: string
+  expiresAt: string
+}
 
 function resolvePriorityFromSeverity(severity: string): NotificationPriority {
   const normalized = severity.toLowerCase()
@@ -38,9 +45,32 @@ export const useNotifications = () => {
     if (!user?.id || !accessToken) return
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const wsUrl = `${protocol}//${window.location.host}/api/v1/ws?token=${encodeURIComponent(accessToken)}`
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+    let cancelled = false
 
-    const connect = () => {
+    const scheduleReconnect = () => {
+      if (cancelled) return
+      reconnectTimer = setTimeout(() => {
+        void connect()
+      }, WS_RECONNECT_DELAY_MS)
+    }
+
+    const connect = async () => {
+      let ticketResponse: WSTicketPayload
+      try {
+        ticketResponse = await apiFetch<WSTicketPayload>('/auth/ws-ticket', {
+          method: 'POST',
+          suppressErrorStatuses: [401],
+        })
+      } catch (error) {
+        logger.error('WebSocket ticket request failed', error)
+        scheduleReconnect()
+        return
+      }
+
+      if (cancelled) return
+
+      const wsUrl = `${protocol}//${window.location.host}/api/v1/ws?ticket=${encodeURIComponent(ticketResponse.ticket)}`
       const socket = new WebSocket(wsUrl)
       socketRef.current = socket
 
@@ -157,7 +187,10 @@ export const useNotifications = () => {
         logger.warn(
           `WebSocket disconnected (Code: ${event.code}, Reason: ${event.reason || 'None'}). Retry scheduled in 5 seconds`
         )
-        setTimeout(connect, 5000)
+        if (socketRef.current === socket) {
+          socketRef.current = null
+        }
+        scheduleReconnect()
       }
 
       socket.onerror = (err) => {
@@ -166,10 +199,15 @@ export const useNotifications = () => {
       }
     }
 
-    connect()
+    void connect()
 
     return () => {
+      cancelled = true
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer)
+      }
       socketRef.current?.close()
+      socketRef.current = null
     }
   }, [
     user?.id,

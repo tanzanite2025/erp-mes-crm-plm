@@ -117,6 +117,7 @@ func SetupRoutes(r *gin.Engine) {
 		)
 
 		authorized.GET("/auth/snapshot", handlers.GetAuthSnapshotHandler)
+		authorized.POST("/auth/ws-ticket", handlers.CreateWSTicketHandler)
 		authorized.GET("/dashboard/stats", middleware.RequirePermissions(authz.MenuDashboard), handlers.GetDashboardStatsHandler)
 		authorized.GET("/audit/timeline", handlers.GetDataTimelineHandler)
 		authorized.GET("/audit/engine/stats", middleware.RequirePermissions(authz.MenuSystem), handlers.GetAuditEngineStatsHandler)
