@@ -245,12 +245,6 @@ export const deleteUser = async (id: string) => {
 /**
  * 根据员工 ID 批量删除用户
  */
-export const deleteUsersByEmployeeIds = async (employeeIds: string[]) => {
-  return apiFetch('/users/bulk-delete-by-employees', {
-    method: 'POST',
-    body: JSON.stringify({ employeeIds }),
-  })
-}
 
 /**
  * 校验管理员特权挑战 (后端裁决)

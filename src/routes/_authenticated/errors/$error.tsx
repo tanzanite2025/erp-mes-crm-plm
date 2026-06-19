@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { ConfigDrawer } from '@/components/config-drawer'
+import { ForbiddenError } from '@/features/errors/forbidden-error'
 import { Header } from '@/components/layout/header'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
@@ -17,6 +18,7 @@ function RouteComponent() {
   const { error } = Route.useParams()
 
   const errorMap: Record<string, React.ComponentType> = {
+    forbidden: ForbiddenError,
     unauthorized: UnauthorisedError,
     'not-found': NotFoundError,
     'internal-server-error': GeneralError,

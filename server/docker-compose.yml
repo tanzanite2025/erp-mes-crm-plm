@@ -120,7 +120,6 @@ services:
       - "127.0.0.1:8080:80"
     volumes:
       - ./deployment/nginx/internal_lb.conf:/etc/nginx/nginx.conf:ro
-      - ./uploads:/usr/share/nginx/html/uploads:ro
     depends_on:
       - app
     restart: always

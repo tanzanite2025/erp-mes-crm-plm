@@ -20,6 +20,7 @@ import (
 	"strings"
 	"xdfc-server/authz"
 	"xdfc-server/db"
+	"xdfc-server/middleware"
 	"xdfc-server/models"
 	"xdfc-server/services"
 
@@ -134,6 +135,53 @@ func hashUserPassword(raw string) (string, error) {
 		return "", err
 	}
 	return string(hashed), nil
+}
+
+type VerifyAdminChallengeRequest struct {
+	Passcode string `json:"passcode" binding:"required"`
+}
+
+func VerifyAdminChallengeHandler(c *gin.Context) {
+	if !hasContextPermission(c, authz.PermissionManage) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "[SECURITY] Only admin can verify protected account actions"})
+		return
+	}
+
+	var req VerifyAdminChallengeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] passcode is required"})
+		return
+	}
+
+	passcode := strings.TrimSpace(req.Passcode)
+	if passcode == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] passcode is required"})
+		return
+	}
+
+	currentUserID := strings.TrimSpace(middleware.GetSafeUserID(c))
+	if currentUserID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "[SECURITY] Unable to resolve current user"})
+		return
+	}
+
+	var currentUser models.User
+	if err := db.DB.Select("id", "password", "status").First(&currentUser, "id = ?", currentUserID).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "[SECURITY] Current user not found"})
+		return
+	}
+
+	if !strings.EqualFold(strings.TrimSpace(currentUser.Status), "active") {
+		c.JSON(http.StatusForbidden, gin.H{"error": "[SECURITY] Current user is not active"})
+		return
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(currentUser.Password), []byte(passcode)); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "[SECURITY] Invalid admin challenge"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 
 // GetUsersHandler 鑾峰彇鐢ㄦ埛鍒楄〃 (鏀寔鍒嗛〉涓庣畝鍗曟悳绱?

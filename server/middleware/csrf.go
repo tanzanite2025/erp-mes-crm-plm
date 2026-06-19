@@ -90,3 +90,9 @@ func SetCSRFToken(c *gin.Context) error {
 
 	return nil
 }
+
+func ClearCSRFToken(c *gin.Context) {
+	secure := os.Getenv("GIN_MODE") == "release"
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie(csrfCookieName, "", -1, "/", "", secure, false)
+}

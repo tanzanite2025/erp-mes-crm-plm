@@ -1,4 +1,5 @@
 import { apiFetch } from '@/lib/api-client'
+import { buildDeltaUpsertPayload } from '@/lib/delta/build-delta-upsert-payload'
 import { type DeltaSet } from '@/lib/delta/types'
 import { type Team, type PieceworkRate } from '../data/schema'
 
@@ -20,9 +21,11 @@ export const PieceworkMaintenanceService = {
     version: number
   }): Promise<void> => {
     const { id, delta, version } = params
-    await apiFetch(`/piecework/teams/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ delta, version }),
+    void version
+
+    await apiFetch('/piecework/teams', {
+      method: 'POST',
+      body: JSON.stringify(buildDeltaUpsertPayload(id, delta)),
     })
   },
 

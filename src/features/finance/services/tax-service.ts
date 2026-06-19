@@ -1,9 +1,7 @@
 import { apiFetch } from '@/lib/api-client'
-import { type DeltaSet, type DeltaPayload } from '@/lib/delta/types'
-import { buildVersionedPatchMetadata } from '@/lib/version-guard'
+import { buildDeltaUpsertPayload } from '@/lib/delta/build-delta-upsert-payload'
+import { type DeltaSet } from '@/lib/delta/types'
 import { type TaxRate } from '../data/taxation'
-
-const TAX_RATE_PATCH_INTENT_SAVE = 'TAX_RATE_PATCH_SAVE'
 
 class TaxService {
   async getTaxRates(): Promise<TaxRate[]> {
@@ -25,22 +23,11 @@ class TaxService {
     delta: DeltaSet,
     version: number
   ): Promise<TaxRate> {
-    const payload: DeltaPayload = {
-      op: 'PATCH',
-      delta,
-      metadata: buildVersionedPatchMetadata(
-        id,
-        version,
-        'TaxService.patchTaxRate',
-        {
-          intent: TAX_RATE_PATCH_INTENT_SAVE,
-        }
-      ),
-    }
+    void version
 
-    return apiFetch<TaxRate>(`/finance/tax-rates/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(payload),
+    return apiFetch<TaxRate>('/finance/tax-rates', {
+      method: 'POST',
+      body: JSON.stringify(buildDeltaUpsertPayload(id, delta)),
     })
   }
 

@@ -213,7 +213,7 @@ const moduleGroups: CommandItemConfig[] = [
   },
   {
     id: 'tab-sales-analysis',
-    href: '/sales-management/analysis',
+    href: '/sales-analysis',
     titleKey: 'commandMenu.items.salesAnalysis',
     parentKey: 'commandMenu.parents.salesManagement',
     keywords: ['analysis', 'sales analysis', 'orders', '订单分析', '销售分析'],

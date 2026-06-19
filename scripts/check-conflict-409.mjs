@@ -4,30 +4,42 @@ import path from 'path';
 const repoRoot = process.cwd();
 
 const mustHaveConflictHandler = [
-  'server/handlers/sales_orders.go',
-  'server/handlers/purchase_orders.go',
-  'server/handlers/materials.go',
-  'server/handlers/products.go',
-  'server/handlers/engineering.go',
-  'server/handlers/customers.go',
-  'server/handlers/suppliers.go',
-  'server/handlers/logistics.go',
-  'server/handlers/print_batch.go',
-  'server/handlers/production_config.go',
+  { path: 'server/handlers/sales_orders.go', markers: ['respondVersionConflict('] },
+  { path: 'server/handlers/purchase_orders.go', markers: ['respondVersionConflict('] },
+  { path: 'server/handlers/materials.go', markers: ['respondVersionConflict('] },
+  {
+    path: 'server/handlers/products.go',
+    markers: ['respondVersionConflict(', 'respondDomainError(c, err,'],
+  },
+  { path: 'server/handlers/engineering.go', markers: ['respondVersionConflict('] },
+  { path: 'server/handlers/customers.go', markers: ['respondVersionConflict('] },
+  { path: 'server/handlers/suppliers.go', markers: ['respondVersionConflict('] },
+  { path: 'server/handlers/logistics.go', markers: ['respondVersionConflict('] },
+  { path: 'server/handlers/print_batch.go', markers: ['respondVersionConflict('] },
+  { path: 'server/handlers/production_topology_handlers.go', markers: ['respondVersionConflict('] },
+  {
+    path: 'server/handlers/enterprise_config.go',
+    markers: ['respondVersionConflict(', 'respondDomainError(c, err,'],
+  },
 ];
 
 const missing = [];
 
-for (const relPath of mustHaveConflictHandler) {
-  const absPath = path.join(repoRoot, relPath);
+for (const entry of mustHaveConflictHandler) {
+  const absPath = path.join(repoRoot, entry.path);
   if (!fs.existsSync(absPath)) {
-    missing.push(`${relPath} (file missing)`);
+    missing.push(`${entry.path} (file missing)`);
     continue;
   }
 
   const content = fs.readFileSync(absPath, 'utf8');
-  if (!content.includes('respondVersionConflict(')) {
-    missing.push(`${relPath} (respondVersionConflict not found)`);
+  const hasConflictResponse = entry.markers.some((marker) =>
+    content.includes(marker)
+  );
+  if (!hasConflictResponse) {
+    missing.push(
+      `${entry.path} (none of ${entry.markers.join(', ')} found)`
+    );
   }
 }
 

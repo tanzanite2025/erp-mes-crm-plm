@@ -13,13 +13,18 @@ const RECENT_VISITS_LIMIT = 20
 
 const IGNORED_EXACT_PATHS = new Set([
   '/',
+  '/401',
   '/403',
+  '/404',
+  '/500',
+  '/503',
   '/sign-in',
   '/forgot-password',
   '/pda-shell',
 ])
 
 const IGNORED_PREFIXES = [
+  '/errors/',
   '/product-barcode-capture',
   '/prepreg-label-capture',
   '/packaging-assembly-capture',

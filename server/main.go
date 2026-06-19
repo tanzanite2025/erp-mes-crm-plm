@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 	"xdfc-server/db"
@@ -22,7 +23,7 @@ import (
 	"github.com/robfig/cron/v3"
 	"github.com/rs/zerolog"
 	zlog "github.com/rs/zerolog/log"
-	
+
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	_ "xdfc-server/docs" // 导入生成的 Swagger 文档
@@ -112,6 +113,22 @@ func resolveServerAddr() string {
 	}
 
 	return ":" + port
+}
+
+func resolveSwaggerEnabled(ginMode string) bool {
+	defaultEnabled := strings.EqualFold(strings.TrimSpace(ginMode), gin.DebugMode)
+	configured := strings.TrimSpace(os.Getenv("ENABLE_SWAGGER"))
+	if configured == "" {
+		return defaultEnabled
+	}
+
+	enabled, err := strconv.ParseBool(configured)
+	if err != nil {
+		log.Printf("[WARN] Invalid ENABLE_SWAGGER value %q, falling back to default=%t", configured, defaultEnabled)
+		return defaultEnabled
+	}
+
+	return enabled
 }
 
 func isAddrInUseError(err error) bool {
@@ -343,10 +360,21 @@ func main() {
 	log.Println("[READY] 定时任务集群已就绪: 汇率 (11:00) | 备份 (02:00)")
 
 	routes.SetupRoutes(r)
-	
+
 	// Swagger 文档路由
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	log.Println("[READY] Swagger UI 可访问: http://localhost:8080/swagger/index.html")
+	swaggerEnabled := resolveSwaggerEnabled(ginMode)
+	r.GET("/swagger/*any", func(c *gin.Context) {
+		if !swaggerEnabled {
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+		ginSwagger.WrapHandler(swaggerFiles.Handler)(c)
+	})
+	if swaggerEnabled {
+		log.Println("[READY] Swagger UI 可访问: http://localhost:8080/swagger/index.html")
+	} else {
+		log.Println("[READY] Swagger UI disabled for this runtime")
+	}
 
 	serverAddr := resolveServerAddr()
 	log.Printf("Server starting on %s...", serverAddr)

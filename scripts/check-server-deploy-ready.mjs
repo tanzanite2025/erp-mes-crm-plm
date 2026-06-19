@@ -28,6 +28,12 @@ function expectIncludes(content, marker, filePath, failures) {
   }
 }
 
+function expectNotIncludes(content, marker, filePath, failures) {
+  if (content.includes(marker)) {
+    failures.push(`${filePath}: should not include "${marker}"`)
+  }
+}
+
 const files = {
   deploySh: 'deploy.sh',
   deployProdSh: 'server/deploy-prod.sh',
@@ -100,38 +106,38 @@ expectIncludes(
 // Compose volume and service-chain expectations.
 expectIncludes(compose, './uploads:/app/uploads', files.compose, failures)
 expectIncludes(compose, './backups:/app/backups', files.compose, failures)
-expectIncludes(
-  compose,
-  './uploads:/usr/share/nginx/html/uploads:ro',
-  files.compose,
-  failures
-)
+expectNotIncludes(compose, './uploads:/usr/share/nginx/html/uploads:ro', files.compose, failures)
 expectIncludes(compose, 'db:', files.compose, failures)
 expectIncludes(compose, 'redis:', files.compose, failures)
 expectIncludes(compose, 'app:', files.compose, failures)
 expectIncludes(compose, 'watchdog:', files.compose, failures)
 expectIncludes(compose, 'nginx_lb:', files.compose, failures)
 
-// Nginx static uploads route expectations.
+// Nginx authenticated uploads proxy expectations.
 expectIncludes(nginxInternalLb, 'location /uploads/', files.nginxInternalLb, failures)
 expectIncludes(
   nginxInternalLb,
-  'alias /usr/share/nginx/html/uploads/',
+  'proxy_pass $app_upstream;',
   files.nginxInternalLb,
   failures
 )
 expectIncludes(
   nginxServerSite,
-  'alias /var/www/erp/server/uploads/',
+  'location /uploads/',
   files.nginxServerSite,
   failures
 )
 expectIncludes(
   nginxRootSite,
-  'alias /var/www/erp/server/uploads/',
+  'location /uploads/',
   files.nginxRootSite,
   failures
 )
+expectIncludes(nginxServerSite, 'proxy_pass http://localhost:8080;', files.nginxServerSite, failures)
+expectIncludes(nginxRootSite, 'proxy_pass http://localhost:8080;', files.nginxRootSite, failures)
+expectNotIncludes(nginxInternalLb, 'alias /usr/share/nginx/html/uploads/', files.nginxInternalLb, failures)
+expectNotIncludes(nginxServerSite, 'alias /var/www/erp/server/uploads/', files.nginxServerSite, failures)
+expectNotIncludes(nginxRootSite, 'alias /var/www/erp/server/uploads/', files.nginxRootSite, failures)
 
 if (failures.length > 0) {
   fail(
@@ -140,4 +146,4 @@ if (failures.length > 0) {
   )
 }
 
-console.log('[SERVER_DEPLOY_CHECK] OK: deploy scripts, compose, and nginx upload path are aligned.')
+console.log('[SERVER_DEPLOY_CHECK] OK: deploy scripts, compose, and authenticated upload proxy are aligned.')

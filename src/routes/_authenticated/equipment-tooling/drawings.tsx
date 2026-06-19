@@ -1,8 +1,14 @@
+import { z } from 'zod'
 import { createFileRoute } from '@tanstack/react-router'
-import { DrawingMgmt } from '@/features/equipment-tooling/tabs/drawing-mgmt'
+import { DrawingsRouteEntry } from '@/features/equipment-tooling/pages/drawings-route-entry'
+
+const drawingsSearchSchema = z.object({
+  action: z.enum(['import']).optional(),
+})
 
 export const Route = createFileRoute(
   '/_authenticated/equipment-tooling/drawings'
 )({
-  component: DrawingMgmt,
+  validateSearch: (search) => drawingsSearchSchema.parse(search),
+  component: DrawingsRouteEntry,
 })

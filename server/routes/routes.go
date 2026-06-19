@@ -43,6 +43,7 @@ func SetupRoutes(r *gin.Engine) {
 
 	// 应用全局限流到所有路由
 	r.Use(globalLimiter.Middleware())
+	r.GET("/uploads/*filepath", middleware.AuthMiddleware(), handlers.ServeUploadedAssetHandler)
 	// ========================================
 
 	api := r.Group("/api/v1")
@@ -118,6 +119,7 @@ func SetupRoutes(r *gin.Engine) {
 
 		authorized.GET("/auth/snapshot", handlers.GetAuthSnapshotHandler)
 		authorized.POST("/auth/ws-ticket", handlers.CreateWSTicketHandler)
+		authorized.GET("/search/global", handlers.GlobalSearchHandler)
 		authorized.GET("/dashboard/stats", middleware.RequirePermissions(authz.MenuDashboard), handlers.GetDashboardStatsHandler)
 		authorized.GET("/audit/timeline", handlers.GetDataTimelineHandler)
 		authorized.GET("/audit/engine/stats", middleware.RequirePermissions(authz.MenuSystem), handlers.GetAuditEngineStatsHandler)
@@ -395,6 +397,7 @@ func registerPublicRoutes(api *gin.RouterGroup) {
 	})
 
 	api.POST("/auth/login", middleware.LoginRateLimitMiddleware(), handlers.LoginHandler)
+	api.POST("/auth/logout", middleware.CSRFProtection(), handlers.LogoutHandler)
 	api.POST("/raw-materials/prepreg-label-ocr-sessions/:sessionId/submit", handlers.SubmitPrepregLabelOcrSessionHandler)
 	api.POST("/production/product-barcode-capture-sessions/:sessionId/submit", handlers.SubmitProductBarcodeCaptureSessionHandler)
 	api.POST("/warehouse/packaging-assemblies/capture-sessions/:sessionId/submit", handlers.SubmitPackagingAssemblyCaptureSessionHandler)
@@ -411,6 +414,7 @@ func registerPublicRoutes(api *gin.RouterGroup) {
 
 func registerUserRoutes(authorized *gin.RouterGroup) {
 	authorized.GET("/users", middleware.RequirePermissions(authz.MenuOrg, authz.PermissionUserView), handlers.GetUsersHandler)
+	authorized.POST("/users/admin/verify", middleware.RequirePermissions(authz.PermissionManage), handlers.VerifyAdminChallengeHandler)
 	authorized.GET("/users/:id/access", middleware.RequirePermissions(authz.MenuOrg, authz.PermissionUserView), handlers.GetUserAccessSnapshotHandler)
 	authorized.GET("/users/:id/permissions", middleware.RequirePermissions(authz.MenuOrg, authz.PermissionUserView), handlers.GetUserPermissionsHandler)
 	authorized.PUT("/users/:id/permissions", middleware.RequirePermissions(authz.PermissionUserEdit), handlers.ReplaceUserPermissionsHandler)

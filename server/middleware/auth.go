@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 	"xdfc-server/db"
 	"xdfc-server/dependencies"
 	"xdfc-server/models"
@@ -15,6 +16,8 @@ import (
 )
 
 var JwtSecret []byte
+
+const authCookieName = "xdfc_access_token"
 
 // InitJwt initializes JWT secret from environment.
 func InitJwt() {
@@ -64,21 +67,14 @@ func ClaimString(claims jwt.MapClaims, key string) string {
 // AuthMiddleware validates JWT bearer token from Authorization header.
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing authorization header"})
+		tokenString, err := readAccessToken(c)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			c.Abort()
 			return
 		}
 
-		parts := strings.SplitN(authHeader, " ", 2)
-		if !(len(parts) == 2 && parts[0] == "Bearer") {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization header format"})
-			c.Abort()
-			return
-		}
-
-		claims, err := ParseJWTClaims(parts[1])
+		claims, err := ParseJWTClaims(tokenString)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			c.Abort()
@@ -127,6 +123,44 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+func readAccessToken(c *gin.Context) (string, error) {
+	authHeader := strings.TrimSpace(c.GetHeader("Authorization"))
+	if authHeader != "" {
+		parts := strings.SplitN(authHeader, " ", 2)
+		if !(len(parts) == 2 && parts[0] == "Bearer") {
+			return "", fmt.Errorf("Invalid authorization header format")
+		}
+		return strings.TrimSpace(parts[1]), nil
+	}
+
+	cookieToken, err := c.Cookie(authCookieName)
+	if err != nil || strings.TrimSpace(cookieToken) == "" {
+		return "", fmt.Errorf("Missing authorization header")
+	}
+
+	return strings.TrimSpace(cookieToken), nil
+}
+
+func SetAuthTokenCookie(c *gin.Context, token string) {
+	secure := os.Getenv("GIN_MODE") == "release"
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie(
+		authCookieName,
+		token,
+		int((24 * time.Hour).Seconds()),
+		"/",
+		"",
+		secure,
+		true,
+	)
+}
+
+func ClearAuthTokenCookie(c *gin.Context) {
+	secure := os.Getenv("GIN_MODE") == "release"
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie(authCookieName, "", -1, "/", "", secure, true)
 }
 
 // GetSafeUsername safely gets username from context.

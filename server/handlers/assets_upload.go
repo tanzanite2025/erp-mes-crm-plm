@@ -140,3 +140,32 @@ func UploadAssetHandler(c *gin.Context) {
 		"size":     file.Size,
 	})
 }
+
+func ServeUploadedAssetHandler(c *gin.Context) {
+	requestedPath := strings.TrimSpace(strings.TrimPrefix(c.Param("filepath"), "/"))
+	if requestedPath == "" || strings.Contains(requestedPath, "\\") {
+		c.Status(http.StatusNotFound)
+		return
+	}
+
+	cleanedPath := filepath.Clean(requestedPath)
+	if cleanedPath == "." ||
+		cleanedPath == ".." ||
+		strings.HasPrefix(cleanedPath, ".."+string(os.PathSeparator)) ||
+		cleanedPath != filepath.Base(cleanedPath) {
+		c.Status(http.StatusNotFound)
+		return
+	}
+
+	fullPath := filepath.Join("uploads", cleanedPath)
+	fileInfo, err := os.Stat(fullPath)
+	if err != nil || fileInfo.IsDir() {
+		c.Status(http.StatusNotFound)
+		return
+	}
+
+	c.Header("Cache-Control", "private, no-store, max-age=0")
+	c.Header("Pragma", "no-cache")
+	c.Header("X-Content-Type-Options", "nosniff")
+	c.File(fullPath)
+}

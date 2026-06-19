@@ -146,6 +146,7 @@ func LoginHandler(c *gin.Context) {
 		// CSRF Token 设置失败不影响登录,继续返回
 	}
 
+	middleware.SetAuthTokenCookie(c, tokenString)
 	c.JSON(http.StatusOK, gin.H{
 		"accessToken": tokenString,
 		"user": gin.H{
@@ -156,6 +157,12 @@ func LoginHandler(c *gin.Context) {
 			"permissions": []string{},
 		},
 	})
+}
+
+func LogoutHandler(c *gin.Context) {
+	middleware.ClearAuthTokenCookie(c)
+	middleware.ClearCSRFToken(c)
+	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
 
 func GetAuthSnapshotHandler(c *gin.Context) {

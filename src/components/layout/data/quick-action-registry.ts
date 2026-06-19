@@ -65,7 +65,7 @@ export const QUICK_ACTION_DEFINITIONS: QuickActionDefinition[] = [
   },
   {
     id: 'action-import-drawing',
-    href: '/engineering/drawings?action=import',
+    href: '/equipment-tooling/drawings?action=import',
     titleKey: 'commandMenu.items.importDrawing',
     parentKey: 'commandMenu.parents.engineeringManagement',
     keywords: ['drawing', 'import', 'upload', '导入图纸', '上传'],

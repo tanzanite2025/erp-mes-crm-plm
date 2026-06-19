@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from '@tanstack/react-router'
 import { useAuthStore } from '@/stores/auth-store'
+import { apiFetch } from '@/lib/api-client'
 import { useLanguage } from '@/context/language-provider'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 
@@ -14,14 +15,22 @@ export function SignOutDialog({ open, onOpenChange }: SignOutDialogProps) {
   const location = useLocation()
   const { reset } = useAuthStore()
 
-  const handleSignOut = () => {
-    reset()
-    const currentPath = location.href
-    navigate({
-      to: '/sign-in',
-      search: { redirect: currentPath },
-      replace: true,
-    })
+  const handleSignOut = async () => {
+    try {
+      await apiFetch<{ status: string }>('/auth/logout', {
+        method: 'POST',
+        ignoreBreaker: true,
+      })
+    } catch {
+    } finally {
+      reset()
+      const currentPath = location.href
+      navigate({
+        to: '/sign-in',
+        search: { redirect: currentPath },
+        replace: true,
+      })
+    }
   }
 
   return (

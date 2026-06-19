@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   FilePlus,
@@ -45,7 +45,19 @@ import { MoldCoreService } from '../services/mold-core-service'
 
 const MOLD_DRAWINGS_QUERY_KEY = ['equipment-tooling', 'drawings'] as const
 
-export function DrawingMgmt() {
+type DrawingMgmtSearch = {
+  action?: 'import'
+}
+
+type DrawingMgmtProps = {
+  search?: DrawingMgmtSearch
+  onActionConsumed?: () => void
+}
+
+export function DrawingMgmt({
+  search,
+  onActionConsumed,
+}: DrawingMgmtProps = {}) {
   const { t } = useLanguage()
   const queryClient = useQueryClient()
   const { runConfirmedAction } = useConfirmedActionFlow()
@@ -53,6 +65,7 @@ export function DrawingMgmt() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isLogOpen, setIsLogOpen] = useState(false)
   const [currentLogs, setCurrentLogs] = useState<MoldDrawingLog[]>([])
+  const hasConsumedRouteActionRef = useRef(false)
   const [selectedDrawing, setSelectedDrawing] = useState<MoldDrawing | null>(
     null
   )
@@ -66,6 +79,21 @@ export function DrawingMgmt() {
     queryFn: () => MoldCoreService.getMolds(),
   })
   const error = drawingsError ?? moldsError
+
+  useEffect(() => {
+    if (search?.action !== 'import') {
+      hasConsumedRouteActionRef.current = false
+      return
+    }
+
+    if (hasConsumedRouteActionRef.current) {
+      return
+    }
+
+    hasConsumedRouteActionRef.current = true
+    openCreateDialog()
+    onActionConsumed?.()
+  }, [onActionConsumed, search?.action])
 
   const filteredDrawings = useMemo(() => {
     const keyword = searchTerm.trim().toLowerCase()

@@ -318,44 +318,6 @@ func AtomicPrintHandler(c *gin.Context) {
 	})
 }
 
-// GetNextSequenceHandler returns the next sequence value in base36.
-func GetNextSequenceHandler(c *gin.Context) {
-	key := c.Query("key")
-	if key == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 缺少 Key 参数"})
-		return
-	}
-
-	var seq models.Sequence
-	var sn string
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where(models.Sequence{Key: key}).FirstOrCreate(&seq).Error; err != nil {
-			return err
-		}
-		if err := tx.Raw("SELECT * FROM sequences WHERE key = ? FOR UPDATE", key).Scan(&seq).Error; err != nil {
-			return err
-		}
-
-		seq.Value++
-		if seq.Value > 60466175 {
-			return fmt.Errorf("溢出")
-		}
-		if err := tx.Model(&seq).Update("value", seq.Value).Error; err != nil {
-			return err
-		}
-
-		sn = toBase36(seq.Value)
-		return nil
-	})
-
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取流水号失败: " + err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"value": seq.Value, "sn": sn})
-}
-
 // toBase36 converts a number to a zero-padded five-character base36 string.
 func toBase36(n int64) string {
 	const charset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"

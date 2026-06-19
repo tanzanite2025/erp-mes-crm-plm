@@ -1,10 +1,10 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
-import { type DeltaSet, type DeltaPayload } from '@/lib/delta/types'
+import { buildDeltaUpsertPayload } from '@/lib/delta/build-delta-upsert-payload'
+import { type DeltaSet } from '@/lib/delta/types'
 import { type Currency } from '../data/schema'
 
 export type CreateCurrencyPayload = Omit<Currency, 'id' | 'version'>
-export const CURRENCY_PATCH_INTENT_SAVE = 'FINANCE_CURRENCY_UPDATE'
 
 export interface ExchangeRateSyncProviderConfig {
   id: string
@@ -49,15 +49,11 @@ export const CurrencyMaintenanceService = {
     delta: DeltaSet,
     version: number
   ): Promise<Currency> {
-    const payload: DeltaPayload = {
-      op: 'PATCH',
-      delta,
-      metadata: { id: String(id), version, intent: CURRENCY_PATCH_INTENT_SAVE },
-    }
+    void version
 
-    const res = await apiFetch<Currency>(`/finance/currencies/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(payload),
+    const res = await apiFetch<Currency>('/finance/currencies', {
+      method: 'POST',
+      body: JSON.stringify(buildDeltaUpsertPayload(id, delta)),
     })
 
     return ensureObjectResponse<Currency & Record<string, unknown>>(

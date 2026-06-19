@@ -423,14 +423,30 @@ function sanitizeRedirectTarget(redirectTo?: string): string {
   const fallback = '/'
   const trimmed = redirectTo?.trim()
   if (!trimmed) return fallback
+  const blockedExactPaths = new Set([
+    '/401',
+    '/403',
+    '/404',
+    '/500',
+    '/503',
+  ])
+  const blockedPrefixes = ['/errors/']
 
   try {
     const url = new URL(trimmed, window.location.origin)
     if (url.origin !== window.location.origin) return fallback
-    if (url.pathname === '/403') return fallback
+    if (
+      blockedExactPaths.has(url.pathname) ||
+      blockedPrefixes.some((prefix) => url.pathname.startsWith(prefix))
+    ) {
+      return fallback
+    }
 
     return `${url.pathname}${url.search}${url.hash}` || fallback
   } catch {
-    return trimmed === '/403' ? fallback : trimmed
+    return blockedExactPaths.has(trimmed) ||
+      blockedPrefixes.some((prefix) => trimmed.startsWith(prefix))
+      ? fallback
+      : trimmed
   }
 }

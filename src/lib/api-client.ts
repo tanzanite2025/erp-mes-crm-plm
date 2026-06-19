@@ -67,7 +67,11 @@ function shouldSuppressErrorLog(
 let unauthorizedRedirectInFlight = false
 
 function isPublicEndpoint(endpoint: string): boolean {
-  return endpoint === '/auth/login' || endpoint === '/health'
+  return (
+    endpoint === '/auth/login' ||
+    endpoint === '/auth/logout' ||
+    endpoint === '/health'
+  )
 }
 
 function buildSignInRedirectHref(): string {
