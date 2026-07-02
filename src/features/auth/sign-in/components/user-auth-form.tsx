@@ -423,13 +423,7 @@ function sanitizeRedirectTarget(redirectTo?: string): string {
   const fallback = '/'
   const trimmed = redirectTo?.trim()
   if (!trimmed) return fallback
-  const blockedExactPaths = new Set([
-    '/401',
-    '/403',
-    '/404',
-    '/500',
-    '/503',
-  ])
+  const blockedExactPaths = new Set(['/401', '/403', '/404', '/500', '/503'])
   const blockedPrefixes = ['/errors/']
 
   try {

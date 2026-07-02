@@ -21,11 +21,7 @@ type LegalPageProps = {
   sections: LegalPageSection[]
 }
 
-export function LegalPage({
-  title,
-  description,
-  sections,
-}: LegalPageProps) {
+export function LegalPage({ title, description, sections }: LegalPageProps) {
   return (
     <AuthLayout>
       <Card className='mx-auto max-w-3xl gap-0'>
@@ -34,9 +30,7 @@ export function LegalPage({
             Internal Policy Summary
           </p>
           <CardTitle className='text-2xl'>{title}</CardTitle>
-          <CardDescription className='leading-6'>
-            {description}
-          </CardDescription>
+          <CardDescription className='leading-6'>{description}</CardDescription>
         </CardHeader>
         <CardContent className='space-y-8 py-6'>
           {sections.map((section) => (
