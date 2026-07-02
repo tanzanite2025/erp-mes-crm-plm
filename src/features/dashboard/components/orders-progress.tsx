@@ -33,7 +33,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { ForbiddenState } from '@/components/forbidden-state'
-import { BlueprintLab } from '@/features/labs/blueprint'
+import { OrderBlueprint } from '@/features/dashboard/order-blueprint'
 import {
   ProductionCalendarService,
   type OrderProgress,
@@ -395,7 +395,7 @@ export function OrdersProgress() {
           </DialogHeader>
           {selectedOrder && (
             <div className='h-full w-full overflow-hidden p-4'>
-              <BlueprintLab orderNo={selectedOrder.orderNo} />
+              <OrderBlueprint order={selectedOrder} />
             </div>
           )}
         </DialogContent>
