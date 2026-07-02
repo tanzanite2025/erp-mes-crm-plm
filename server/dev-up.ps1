@@ -211,9 +211,9 @@ if (-not (Test-DbCredentials -PgUser $pgUser -PgPassword $pgPassword -PgDb $pgDb
 if (-not $FullStack) {
     $modeLabel = if ($InfraOnly) { "InfraOnly" } else { "Default stable mode" }
     Write-Step "$modeLabel enabled. Leaving local stack at db + redis + search-engine."
-    Write-Host "  Postgres: localhost:5432 (container: xdfc-postgres)"
-    Write-Host "  Redis: localhost:16379 (container: xdfc-redis)"
-    Write-Host "  Search Engine: localhost:18081 (container port: 8081)"
+    Write-Host "  Postgres: localhost:8040 (container: xdfc-postgres)"
+    Write-Host "  Redis: localhost:8050 (container: xdfc-redis)"
+    Write-Host "  Search Engine: localhost:8030 (container port: 8081)"
     Write-Host ""
     Write-Host "Next step:"
     Write-Host "  pnpm run dev:server:debug"
@@ -232,9 +232,9 @@ Write-Step "Recreating nginx_lb so it picks up fresh app upstream resolution..."
 Invoke-Compose @("up", "-d", "--force-recreate", "nginx_lb")
 
 Write-Step "Done. Local stack is ready."
-Write-Host "  Search engine: http://localhost:18081"
-Write-Host "  API/LB: http://localhost:8080"
-Write-Host "  Postgres: localhost:5432 (container: xdfc-postgres)"
-Write-Host "  Redis: localhost:16379 (container: xdfc-redis)"
+Write-Host "  Search engine: http://localhost:8030"
+Write-Host "  API/LB: http://localhost:8020"
+Write-Host "  Postgres: localhost:8040 (container: xdfc-postgres)"
+Write-Host "  Redis: localhost:8050 (container: xdfc-redis)"
 Write-Host ""
 Invoke-Compose @("ps")

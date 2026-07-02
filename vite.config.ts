@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
   // 代理目标解析：优先读取环境变量 VITE_PROXY_TARGET，缺失则默认为本地后端
-  const proxyTarget = env.VITE_PROXY_TARGET || 'http://localhost:8080'
+  const proxyTarget = env.VITE_PROXY_TARGET || 'http://localhost:8020'
 
   return {
     plugins: [tanstackRouter(tanstackRouterConfig), react(), tailwindcss()],
@@ -34,7 +34,7 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       host: '127.0.0.1',
-      port: 5173,
+      port: 8010,
       proxy: {
         '/api': {
           target: proxyTarget,

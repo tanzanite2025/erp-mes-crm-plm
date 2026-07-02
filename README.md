@@ -89,21 +89,21 @@ Run the full Docker business stack:
 pnpm run dev:stack:full
 ```
 
-Then run the frontend against the same `localhost:8080` entrypoint used by the local load balancer:
+Then run the frontend against the same `localhost:8020` entrypoint used by the local load balancer:
 
 ```bash
 pnpm dev
 ```
 
-No root `.env.local` file is required for this mode because Vite defaults the API proxy to `http://localhost:8080`. If you do keep a root `.env.local`, set:
+No root `.env.local` file is required for this mode because Vite defaults the API proxy to `http://localhost:8020`. If you do keep a root `.env.local`, set:
 
 ```bash
-VITE_PROXY_TARGET=http://localhost:8080
+VITE_PROXY_TARGET=http://localhost:8020
 ```
 
 Flow:
 
-- `frontend -> nginx_lb:8080 -> app -> search-engine/db/redis`
+- `frontend:8010 -> nginx_lb:8020 -> app -> search-engine/db/redis`
 
 Use this mode when you want behavior that matches production as closely as possible.
 
@@ -132,14 +132,16 @@ pnpm run dev:frontend:debug
 
 Ports in this mode:
 
-- Frontend proxy target: `http://localhost:18080`
-- Host Go API: `http://localhost:18080`
-- Host-accessible search engine: `http://localhost:18081`
-- `localhost:8080` remains reserved for the production-consistent Docker entrypoint
+- Frontend dev server: `http://localhost:8010`
+- Frontend proxy target: `http://localhost:8020`
+- Host Go API: `http://localhost:8020`
+- Host-accessible search engine: `http://localhost:8030`
+- Host-accessible Postgres: `localhost:8040`
+- Host-accessible Redis: `localhost:8050`
 
 Flow:
 
-- `frontend(vite) -> host go api:18080 -> search-engine:18081/db/redis`
+- `frontend(vite):8010 -> host go api:8020 -> search-engine:8030/db/redis`
 
 If your existing local `server/postgres_data` was initialized with different credentials, run:
 
@@ -149,7 +151,7 @@ powershell -ExecutionPolicy Bypass -File .\server\dev-up.ps1 -ResetDb
 
 Notes:
 
-- Do not run host Go on `8080`; reserve that port for the Docker load balancer.
+- Do not run host Go on `8080`; use `8020` through `pnpm run dev:server:debug`.
 - Use `pnpm run dev:server:debug` for host-side Go development. `pnpm run dev:server` loads the Docker-oriented `server/.env.dev` values and can collide with the local load balancer.
 - `server/.env.dev` should stay production-consistent for Dockerized app routing.
 - Host Go hot-debug mode overrides `PORT` and `SEARCH_ENGINE_URL` at runtime instead of editing `server/.env.dev`.
