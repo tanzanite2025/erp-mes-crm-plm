@@ -40,13 +40,18 @@ import (
 // @license.name Proprietary
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 
-// @host localhost:8080
+// @host localhost:8020
 // @BasePath /api/v1
 
 // @securityDefinitions.apikey BearerAuth
 // @in header
 // @name Authorization
 // @description JWT Token (格式: Bearer {token})
+
+const (
+	defaultServerPort    = "8020"
+	defaultAllowedOrigin = "http://localhost:8010,http://127.0.0.1:8010,http://localhost:8020,http://127.0.0.1:8020"
+)
 
 func loadBackendEnv() {
 	candidates := []string{
@@ -105,7 +110,7 @@ func resolveTrustedProxies() []string {
 func resolveServerAddr() string {
 	port := strings.TrimSpace(os.Getenv("PORT"))
 	if port == "" {
-		port = "8080"
+		port = defaultServerPort
 	}
 
 	if strings.HasPrefix(port, ":") {
@@ -292,7 +297,7 @@ func main() {
 
 	allowedOriginStr := os.Getenv("ALLOWED_ORIGIN")
 	if allowedOriginStr == "" {
-		allowedOriginStr = "http://localhost:5173"
+		allowedOriginStr = defaultAllowedOrigin
 	}
 	log.Printf("[READY] System Booting up with ALLOWED_ORIGIN: [%s]", allowedOriginStr)
 
@@ -370,13 +375,13 @@ func main() {
 		}
 		ginSwagger.WrapHandler(swaggerFiles.Handler)(c)
 	})
+	serverAddr := resolveServerAddr()
 	if swaggerEnabled {
-		log.Println("[READY] Swagger UI 可访问: http://localhost:8080/swagger/index.html")
+		log.Printf("[READY] Swagger UI available: http://127.0.0.1%s/swagger/index.html", serverAddr)
 	} else {
 		log.Println("[READY] Swagger UI disabled for this runtime")
 	}
 
-	serverAddr := resolveServerAddr()
 	log.Printf("Server starting on %s...", serverAddr)
 	if err := r.Run(serverAddr); err != nil {
 		if isAddrInUseError(err) {

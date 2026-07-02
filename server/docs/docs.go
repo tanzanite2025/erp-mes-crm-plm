@@ -646,7 +646,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "2.2.1",
-	Host:             "localhost:8080",
+	Host:             "localhost:8020",
 	BasePath:         "/api/v1",
 	Schemes:          []string{},
 	Title:            "XDFC 数字化管理 ERP API",
