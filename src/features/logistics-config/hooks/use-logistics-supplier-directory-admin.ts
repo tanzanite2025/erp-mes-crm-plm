@@ -12,16 +12,16 @@ import {
   isProviderApiConnected,
   logisticsProviderQueryKey,
 } from '@/features/logistics-config/provider-directory'
-import { toLogisticsProviderDraft } from '@/features/sandbox/logistics-api/adapters/logistics-provider-adapter'
+import { toLogisticsProviderDraft } from '@/features/logistics-config/provider-directory/adapters/logistics-provider-adapter'
 import {
   isLogisticsProviderCredentialsComplete,
   isLogisticsProviderDraftValid,
-} from '@/features/sandbox/logistics-api/data/logistics-provider-rules'
-import { logisticsProviderService } from '@/features/sandbox/logistics-api/services/logistics-provider-service'
+} from '@/features/logistics-config/provider-directory/data/logistics-provider-rules'
+import { logisticsProviderService } from '@/features/logistics-config/provider-directory/services/logistics-provider-service'
 import type {
   LogisticsProvider,
   LogisticsProviderDraft,
-} from '@/features/sandbox/logistics-api/types'
+} from '@/features/logistics-config/provider-directory/types'
 
 export function useLogisticsSupplierDirectoryAdmin() {
   const { t } = useLanguage()

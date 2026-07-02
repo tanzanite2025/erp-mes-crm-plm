@@ -1,6 +1,6 @@
 import { Truck } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
-import { LogisticsSandboxDashboard } from '@/features/sandbox/logistics-api/components/logistics-sandbox-dashboard'
+import { LogisticsPlatformDashboard } from '@/features/logistics-config/provider-directory/components/logistics-platform-dashboard'
 
 export function LogisticsPlatformsTab() {
   const { t } = useLanguage()
@@ -19,7 +19,7 @@ export function LogisticsPlatformsTab() {
         </p>
       </div>
 
-      <LogisticsSandboxDashboard />
+      <LogisticsPlatformDashboard />
     </div>
   )
 }

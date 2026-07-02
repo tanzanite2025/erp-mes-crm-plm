@@ -2,8 +2,8 @@ import type { Dispatch, SetStateAction } from 'react'
 import { useLanguage } from '@/context/language-provider'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { getLogisticsProviderVisibleCredentialFields } from '@/features/sandbox/logistics-api/data/logistics-provider-rules'
-import type { LogisticsProviderDraft } from '@/features/sandbox/logistics-api/types'
+import { getLogisticsProviderVisibleCredentialFields } from '@/features/logistics-config/provider-directory/data/logistics-provider-rules'
+import type { LogisticsProviderDraft } from '@/features/logistics-config/provider-directory/types'
 
 type SupplierCredentialFieldKey = keyof Pick<
   LogisticsProviderDraft,

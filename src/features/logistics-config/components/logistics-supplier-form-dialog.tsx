@@ -12,7 +12,7 @@ import {
 import type {
   LogisticsProviderDraft,
   LogisticsVerificationStatus,
-} from '@/features/sandbox/logistics-api/types'
+} from '@/features/logistics-config/provider-directory/types'
 import { LogisticsSupplierBasicFieldsSection } from './logistics-supplier-basic-fields-section'
 import { LogisticsSupplierCredentialsSection } from './logistics-supplier-credentials-section'
 import { LogisticsSupplierDirectoryFieldsSection } from './logistics-supplier-directory-fields-section'

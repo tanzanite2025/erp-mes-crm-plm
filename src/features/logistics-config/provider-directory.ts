@@ -1,2 +1,7 @@
 export * from './provider-directory.domain'
 export * from './provider-directory.presentation'
+export * from './provider-directory/types'
+export * from './provider-directory/adapters/logistics-provider-adapter'
+export * from './provider-directory/data/logistics-provider-field-registry'
+export * from './provider-directory/data/logistics-provider-rules'
+export * from './provider-directory/services/logistics-provider-service'

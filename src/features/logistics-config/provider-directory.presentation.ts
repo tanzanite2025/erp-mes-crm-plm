@@ -8,7 +8,7 @@ import {
   type LogisticsCapability,
   type LogisticsProvider,
   type LogisticsVerificationStatus,
-} from '@/features/sandbox/logistics-api/types'
+} from '@/features/logistics-config/provider-directory/types'
 
 export const LOGISTICS_CAPABILITY_OPTIONS: Array<{
   value: LogisticsCapability

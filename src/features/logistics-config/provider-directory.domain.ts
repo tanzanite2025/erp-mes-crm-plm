@@ -1,8 +1,8 @@
-import { createEmptyLogisticsProviderDraft } from '@/features/sandbox/logistics-api/data/logistics-provider-field-registry'
+import { createEmptyLogisticsProviderDraft } from '@/features/logistics-config/provider-directory/data/logistics-provider-field-registry'
 import {
   isLogisticsProviderCredentialsComplete,
   supportsAutomaticLogisticsVerification,
-} from '@/features/sandbox/logistics-api/data/logistics-provider-rules'
+} from '@/features/logistics-config/provider-directory/data/logistics-provider-rules'
 import {
   LOGISTICS_TEMPLATES,
   type LogisticsDirectoryCategory,
@@ -10,7 +10,7 @@ import {
   type LogisticsProvider,
   type LogisticsTemplate,
   type LogisticsVerificationStatus,
-} from '@/features/sandbox/logistics-api/types'
+} from '@/features/logistics-config/provider-directory/types'
 
 export const logisticsProviderQueryKey = ['logistics-push-providers'] as const
 

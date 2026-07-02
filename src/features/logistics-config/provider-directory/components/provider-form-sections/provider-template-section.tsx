@@ -10,27 +10,27 @@ import {
 } from '@/components/ui/select'
 import { LOGISTICS_TEMPLATES } from '@/features/logistics-config/provider-directory/types'
 
-type LogisticsSupplierTemplateSectionProps = {
-  selectedTemplateNote: string
+type ProviderTemplateSectionProps = {
+  selectedNote: string
   onApplyTemplate: (code: string) => void
 }
 
-export function LogisticsSupplierTemplateSection({
-  selectedTemplateNote,
+export function ProviderTemplateSection({
+  selectedNote,
   onApplyTemplate,
-}: LogisticsSupplierTemplateSectionProps) {
+}: ProviderTemplateSectionProps) {
   const { t } = useLanguage()
 
   return (
-    <div className='space-y-2 border-b border-dashed border-slate-200 pb-4'>
-      <Label className='pl-1 text-[10px] font-black tracking-widest text-primary uppercase'>
-        {t('logisticsConfig.suppliers.fields.template')}
+    <div className='space-y-1.5 border-b border-dashed border-slate-200 pb-3'>
+      <Label className='pl-1 text-[10px] font-black tracking-widest text-blue-600 uppercase'>
+        {t('logisticsConfig.platforms.sections.templateTitle')}
       </Label>
       <Select onValueChange={onApplyTemplate}>
-        <SelectTrigger className='h-12 rounded-2xl border-primary/10 bg-primary/5 font-bold text-primary'>
+        <SelectTrigger className='h-11 rounded-2xl border-blue-500/10 bg-blue-500/5 font-bold text-blue-800'>
           <SelectValue
             placeholder={t(
-              'logisticsConfig.suppliers.fields.templatePlaceholder'
+              'logisticsConfig.platforms.fields.templatePlaceholder'
             )}
           />
         </SelectTrigger>
@@ -48,10 +48,10 @@ export function LogisticsSupplierTemplateSection({
           ))}
         </SelectContent>
       </Select>
-      {selectedTemplateNote ? (
-        <p className='flex items-center gap-1 pl-1 text-[11px] text-primary/70'>
+      {selectedNote ? (
+        <p className='flex items-center gap-1 pl-1 text-[9px] font-bold text-blue-500'>
           <Info className='size-3' />
-          {selectedTemplateNote}
+          {selectedNote}
         </p>
       ) : null}
     </div>

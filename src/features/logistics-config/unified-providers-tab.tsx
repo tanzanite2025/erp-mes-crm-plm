@@ -7,7 +7,7 @@ import { LogisticsSupplierFormDialog } from '@/features/logistics-config/compone
 import { LogisticsSupplierState } from '@/features/logistics-config/components/logistics-supplier-state'
 import { LogisticsSupplierToolbar } from '@/features/logistics-config/components/logistics-supplier-toolbar'
 import { useLogisticsSupplierDirectoryAdmin } from '@/features/logistics-config/hooks/use-logistics-supplier-directory-admin'
-import { LogisticsSandboxDashboard } from '@/features/sandbox/logistics-api/components/logistics-sandbox-dashboard'
+import { LogisticsPlatformDashboard } from '@/features/logistics-config/provider-directory/components/logistics-platform-dashboard'
 
 type ViewMode = 'directory' | 'integration'
 
@@ -146,7 +146,7 @@ export function UnifiedProvidersTab() {
 
         {/* 接口视图 */}
         <TabsContent value='integration' className='mt-6'>
-          <LogisticsSandboxDashboard />
+          <LogisticsPlatformDashboard />
         </TabsContent>
       </Tabs>
     </div>

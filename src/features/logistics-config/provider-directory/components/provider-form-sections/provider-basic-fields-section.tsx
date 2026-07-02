@@ -4,22 +4,22 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { LogisticsProviderDraft } from '@/features/logistics-config/provider-directory/types'
 
-type LogisticsSupplierBasicFieldsSectionProps = {
+type ProviderBasicFieldsSectionProps = {
   formData: LogisticsProviderDraft
   setFormData: Dispatch<SetStateAction<LogisticsProviderDraft>>
 }
 
-export function LogisticsSupplierBasicFieldsSection({
+export function ProviderBasicFieldsSection({
   formData,
   setFormData,
-}: LogisticsSupplierBasicFieldsSectionProps) {
+}: ProviderBasicFieldsSectionProps) {
   const { t } = useLanguage()
 
   return (
-    <div className='grid grid-cols-2 gap-4'>
-      <div className='space-y-2'>
+    <div className='grid grid-cols-2 gap-3'>
+      <div className='space-y-1.5'>
         <Label className='pl-1 text-[10px] font-black tracking-widest uppercase opacity-50'>
-          {t('logisticsConfig.suppliers.fields.name')}
+          {t('logisticsConfig.platforms.fields.name')}
         </Label>
         <Input
           value={formData.name}
@@ -29,12 +29,12 @@ export function LogisticsSupplierBasicFieldsSection({
               name: event.target.value,
             }))
           }
-          className='h-12 rounded-2xl border-slate-200 focus-visible:ring-primary/20'
+          className='h-11 rounded-2xl border-slate-200 focus-visible:ring-blue-500/30'
         />
       </div>
-      <div className='space-y-2'>
+      <div className='space-y-1.5'>
         <Label className='pl-1 text-[10px] font-black tracking-widest uppercase opacity-50'>
-          {t('logisticsConfig.suppliers.fields.code')}
+          {t('logisticsConfig.platforms.fields.code')}
         </Label>
         <Input
           value={formData.code}
@@ -44,7 +44,7 @@ export function LogisticsSupplierBasicFieldsSection({
               code: event.target.value.toUpperCase(),
             }))
           }
-          className='h-12 rounded-2xl border-slate-200 font-black tracking-tighter italic'
+          className='h-11 rounded-2xl border-slate-200 font-black tracking-tighter italic'
         />
       </div>
     </div>

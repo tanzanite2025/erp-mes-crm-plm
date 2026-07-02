@@ -34,7 +34,7 @@ import {
   findLogisticsTemplateByCode,
   hasProviderCredentials,
 } from '@/features/logistics-config/provider-directory'
-import type { LogisticsProvider } from '@/features/sandbox/logistics-api/types'
+import type { LogisticsProvider } from '@/features/logistics-config/provider-directory/types'
 
 type LogisticsSupplierCardProps = {
   provider: LogisticsProvider
