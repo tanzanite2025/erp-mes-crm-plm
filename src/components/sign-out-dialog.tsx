@@ -21,7 +21,8 @@ export function SignOutDialog({ open, onOpenChange }: SignOutDialogProps) {
         method: 'POST',
         ignoreBreaker: true,
       })
-    } catch {
+    } catch (_error) {
+      // Continue local sign-out even if the server logout request fails.
     } finally {
       reset()
       const currentPath = location.href
