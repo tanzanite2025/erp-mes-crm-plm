@@ -1,5 +1,5 @@
 import type { HierarchyLevelOptionItem } from '../../hierarchy-config/data/hierarchy-config'
-import type { LineMindmapNode, MindmapLevel } from '../data/sample-mindmap'
+import type { LineMindmapNode, MindmapLevel } from '../data/line-mindmap-domain'
 import type { LineMindmapProcessOption } from '../types'
 import { MindmapDetailAddChildActions } from './mindmap-detail-add-child-actions'
 import { MindmapDetailStructureWriteback } from './mindmap-detail-structure-writeback'

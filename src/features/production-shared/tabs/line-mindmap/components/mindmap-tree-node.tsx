@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import type { LineMindmapNode, MindmapLevel } from '../data/sample-mindmap'
+import type { LineMindmapNode, MindmapLevel } from '../data/line-mindmap-domain'
 import { MindmapNodeCard } from './mindmap-node-card'
 
 interface MindmapTreeNodeProps {

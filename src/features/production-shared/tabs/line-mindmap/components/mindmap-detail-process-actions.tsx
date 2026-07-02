@@ -1,5 +1,5 @@
 import type { ProductionProcessStep } from '../../../data/production-process'
-import type { LineMindmapNode, MindmapLevel } from '../data/sample-mindmap'
+import type { LineMindmapNode, MindmapLevel } from '../data/line-mindmap-domain'
 import { MindmapDetailProcessCapabilityActions } from './mindmap-detail-process-capability-actions'
 import { MindmapDetailProcessEntityEditor } from './mindmap-detail-process-entity-editor'
 

@@ -11,7 +11,7 @@ import {
   getNextMindmapLevel,
   type LineMindmapNode,
   type MindmapLevel,
-} from '../data/sample-mindmap'
+} from '../data/line-mindmap-domain'
 import type { LineMindmapProcessOption } from '../types'
 
 interface MindmapDetailAddChildActionsProps {

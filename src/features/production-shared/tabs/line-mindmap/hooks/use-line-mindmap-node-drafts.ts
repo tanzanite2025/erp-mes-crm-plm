@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { LineMindmapNode } from '../data/sample-mindmap'
+import type { LineMindmapNode } from '../data/line-mindmap-domain'
 
 export type LineMindmapNodeDraft = Pick<
   LineMindmapNode,

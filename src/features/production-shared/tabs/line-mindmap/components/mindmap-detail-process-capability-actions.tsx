@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button'
-import type { MindmapLevel } from '../data/sample-mindmap'
+import type { MindmapLevel } from '../data/line-mindmap-domain'
 
 interface MindmapDetailProcessCapabilityActionsProps {
   levelNames: Record<MindmapLevel, string>

@@ -1,4 +1,4 @@
-import type { LineMindmapNode, MindmapLevel } from '../data/sample-mindmap'
+import type { LineMindmapNode, MindmapLevel } from '../data/line-mindmap-domain'
 import { MindmapTreeChildren } from './mindmap-tree-children'
 import { MindmapTreeNode } from './mindmap-tree-node'
 

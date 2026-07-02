@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import type { ProductionProcessStep } from '../../../data/production-process'
-import type { MindmapLevel } from '../data/sample-mindmap'
+import type { MindmapLevel } from '../data/line-mindmap-domain'
 import type { LineMindmapProcessDraft } from '../types'
 
 interface MindmapDetailProcessEntityEditorProps {

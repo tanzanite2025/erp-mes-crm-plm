@@ -13,7 +13,10 @@ import {
   renameJobCategoryInLine,
   renameSegmentInLine,
 } from '../../line-mgmt/utils/line-topology-helpers'
-import { findMindmapNode, type LineMindmapNode } from '../data/sample-mindmap'
+import {
+  findMindmapNode,
+  type LineMindmapNode,
+} from '../data/line-mindmap-domain'
 import type { PendingTopologyMutation } from './use-line-mindmap-topology-auth'
 
 interface UseLineMindmapActionsOptions {

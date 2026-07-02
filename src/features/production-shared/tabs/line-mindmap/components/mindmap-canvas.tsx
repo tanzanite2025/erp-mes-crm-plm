@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import type { LineMindmapNode, MindmapLevel } from '../data/line-mindmap-domain'
 import { flattenMindmapNodes } from '../data/mindmap-render'
-import type { LineMindmapNode, MindmapLevel } from '../data/sample-mindmap'
 import { MindmapCanvasEmptyState } from './mindmap-canvas-empty-state'
 import { MindmapCanvasRow } from './mindmap-canvas-row'
 

@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
-import type { LineMindmapNode } from '../data/sample-mindmap'
+import type { LineMindmapNode } from '../data/line-mindmap-domain'
 
 interface MindmapNodeCardProps {
   node: LineMindmapNode

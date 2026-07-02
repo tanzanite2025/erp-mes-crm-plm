@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import type { ProductionProcessStep } from '../../../data/production-process'
 import { useProductionProcessesQuery } from '../../../hooks/use-production-resources'
-import type { LineMindmapNode } from '../data/sample-mindmap'
+import type { LineMindmapNode } from '../data/line-mindmap-domain'
 import type { LineMindmapProcessDraft } from '../types'
 import { useLineMindmapProcessCapabilities } from './use-line-mindmap-process-capabilities'
 import { useLineMindmapProcessLibrary } from './use-line-mindmap-process-library'

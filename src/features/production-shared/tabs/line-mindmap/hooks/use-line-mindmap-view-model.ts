@@ -5,7 +5,7 @@ import {
   toLineMindmapLineOptions,
   toLineMindmapNodes,
 } from '../adapters/line-mindmap-adapter'
-import type { LineMindmapNode } from '../data/sample-mindmap'
+import type { LineMindmapNode } from '../data/line-mindmap-domain'
 import type { LineMindmapNodeDraftMap } from './use-line-mindmap-node-drafts'
 
 function applyNodeDraftMap(

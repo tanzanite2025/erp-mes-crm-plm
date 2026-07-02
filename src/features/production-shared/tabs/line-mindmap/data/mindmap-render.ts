@@ -1,4 +1,4 @@
-import type { LineMindmapNode } from './sample-mindmap'
+import type { LineMindmapNode } from './line-mindmap-domain'
 
 export interface LineMindmapFlatRow {
   node: LineMindmapNode

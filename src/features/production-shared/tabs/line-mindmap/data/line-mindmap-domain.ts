@@ -66,7 +66,7 @@ export function createMindmapNodeFromOption(
   }
 }
 
-export function createDemoMindmap(options: {
+export function createInitialMindmapFromOptions(options: {
   level1Options: HierarchyLevelOptionItem[]
   level2Options: HierarchyLevelOptionItem[]
   level3Options: HierarchyLevelOptionItem[]

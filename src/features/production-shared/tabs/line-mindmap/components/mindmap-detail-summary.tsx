@@ -1,4 +1,4 @@
-import type { LineMindmapNode, MindmapLevel } from '../data/sample-mindmap'
+import type { LineMindmapNode, MindmapLevel } from '../data/line-mindmap-domain'
 
 interface MindmapDetailSummaryProps {
   selectedNode: LineMindmapNode

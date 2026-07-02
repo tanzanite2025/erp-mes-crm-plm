@@ -1,7 +1,7 @@
 import type { ProductionProcessStep } from '../../../data/production-process'
 import type { HierarchyLevelOptionItem } from '../../hierarchy-config/data/hierarchy-config'
 import { SecurityAuthDialog } from '../../line-mgmt/components/topology/security-auth-dialog'
-import type { LineMindmapNode, MindmapLevel } from '../data/sample-mindmap'
+import type { LineMindmapNode, MindmapLevel } from '../data/line-mindmap-domain'
 import type { LineMindmapNodeDraft } from '../hooks/use-line-mindmap-node-drafts'
 import type { LineMindmapProcessDraft, MindmapParentNodeOption } from '../types'
 import { HierarchyConfigDialog } from './hierarchy-config-dialog'

@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { ProductionProcessStep } from '../../../data/production-process'
 import type { HierarchyLevelOptionItem } from '../../hierarchy-config/data/hierarchy-config'
-import type { LineMindmapNode, MindmapLevel } from '../data/sample-mindmap'
+import type { LineMindmapNode, MindmapLevel } from '../data/line-mindmap-domain'
 import type { LineMindmapProcessOption } from '../types'
 import { MindmapDetailEmbeddedActions } from './mindmap-detail-embedded-actions'
 import { MindmapDetailProcessActions } from './mindmap-detail-process-actions'

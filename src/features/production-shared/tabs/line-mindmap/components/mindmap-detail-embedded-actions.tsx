@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import {
   type LineMindmapNode,
   type MindmapNodeActionType,
-} from '../data/sample-mindmap'
+} from '../data/line-mindmap-domain'
 
 interface MindmapDetailEmbeddedActionsProps {
   selectedNode: LineMindmapNode

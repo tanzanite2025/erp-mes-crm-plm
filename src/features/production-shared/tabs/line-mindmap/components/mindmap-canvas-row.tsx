@@ -1,6 +1,6 @@
 import { memo } from 'react'
+import type { MindmapLevel } from '../data/line-mindmap-domain'
 import type { LineMindmapFlatRow } from '../data/mindmap-render'
-import type { MindmapLevel } from '../data/sample-mindmap'
 import { MindmapNodeCard } from './mindmap-node-card'
 
 const INDENT_PX = 24

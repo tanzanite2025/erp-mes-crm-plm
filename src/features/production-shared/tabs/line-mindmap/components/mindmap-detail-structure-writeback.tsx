@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import type { HierarchyLevelOptionItem } from '../../hierarchy-config/data/hierarchy-config'
-import type { LineMindmapNode, MindmapLevel } from '../data/sample-mindmap'
+import type { LineMindmapNode, MindmapLevel } from '../data/line-mindmap-domain'
 
 interface MindmapDetailStructureWritebackProps {
   selectedNode: LineMindmapNode

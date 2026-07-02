@@ -1,6 +1,6 @@
 import { Layers3 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import type { MindmapLevel } from '../data/sample-mindmap'
+import type { MindmapLevel } from '../data/line-mindmap-domain'
 
 interface MindmapCanvasEmptyStateProps {
   levelNames: Record<MindmapLevel, string>
