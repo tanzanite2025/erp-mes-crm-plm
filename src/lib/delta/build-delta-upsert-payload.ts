@@ -1,7 +1,14 @@
 import { type DeltaSet } from './types'
 
+type DeltaContainer = Record<string, unknown> | unknown[]
+type DeltaContainerIndex = Record<string | number, unknown>
+
 function isArrayIndexSegment(segment: string): boolean {
   return /^\d+$/.test(segment)
+}
+
+function asDeltaContainerIndex(container: DeltaContainer): DeltaContainerIndex {
+  return container as DeltaContainerIndex
 }
 
 function assignDeltaValue(
@@ -14,7 +21,7 @@ function assignDeltaValue(
     return
   }
 
-  let current: Record<string, unknown> | unknown[] = target
+  let current: DeltaContainer = target
 
   for (let index = 0; index < segments.length - 1; index += 1) {
     const segment = segments[index]!
@@ -23,13 +30,14 @@ function assignDeltaValue(
       Array.isArray(current) && isArrayIndexSegment(segment)
         ? Number(segment)
         : segment
-    const existing = current[key]
+    const currentIndex = asDeltaContainerIndex(current)
+    const existing = currentIndex[key]
 
     if (existing === null || typeof existing !== 'object') {
-      current[key] = isArrayIndexSegment(nextSegment) ? [] : {}
+      currentIndex[key] = isArrayIndexSegment(nextSegment) ? [] : {}
     }
 
-    current = current[key] as Record<string, unknown> | unknown[]
+    current = currentIndex[key] as DeltaContainer
   }
 
   const lastSegment = segments[segments.length - 1]!
@@ -38,7 +46,7 @@ function assignDeltaValue(
       ? Number(lastSegment)
       : lastSegment
 
-  current[lastKey] = value
+  asDeltaContainerIndex(current)[lastKey] = value
 }
 
 export function buildDeltaUpsertPayload<TId extends string | number>(
