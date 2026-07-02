@@ -1,4 +1,5 @@
 const PREPREG_BINDING_TOKEN_PREFIX = 'PREPREG-BIND-'
+const PREPREG_BINDING_TOKEN_PARSE_BASE_URL = 'https://erp.invalid'
 
 function normalizePrepregBindingToken(value: string): string {
   return value.trim().toUpperCase()
@@ -19,7 +20,7 @@ export function extractPrepregBindingToken(input: string): string {
     const baseOrigin =
       typeof window !== 'undefined'
         ? window.location.origin
-        : 'http://localhost'
+        : PREPREG_BINDING_TOKEN_PARSE_BASE_URL
     const url = new URL(raw, baseOrigin)
     const bindToken = normalizePrepregBindingToken(
       url.searchParams.get('bindToken') || ''

@@ -13,6 +13,8 @@ import (
 	"time"
 )
 
+const defaultSearchEngineURL = "http://127.0.0.1:8030"
+
 // SearchServiceClient 负责与 Rust 搜索微服务通信情况情况总量针对。
 type SearchServiceClient struct {
 	BaseURL    string
@@ -34,9 +36,9 @@ var (
 )
 
 func InitSearchClient() {
-	baseURL := os.Getenv("SEARCH_ENGINE_URL")
+	baseURL := strings.TrimSpace(os.Getenv("SEARCH_ENGINE_URL"))
 	if baseURL == "" {
-		baseURL = "http://localhost:8081"
+		baseURL = defaultSearchEngineURL
 	}
 
 	GlobalSearchClient = &SearchServiceClient{
