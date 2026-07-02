@@ -69,10 +69,11 @@ For the current file responsibility and layering assessment, see `docs/architect
 corepack enable
 corepack prepare pnpm@10.33.0 --activate
 pnpm install
-pnpm dev
 ```
 
 `pnpm install` runs `scripts/setup-git-hooks.mjs`, which configures `.githooks` as the repository hook path.
+
+Do not start with `pnpm dev` alone unless a backend is already running. Pick one of the modes below so the frontend proxy, backend port, database, Redis, and Rust search engine all point at the same local stack.
 
 ## Local Development Modes
 
@@ -92,6 +93,12 @@ Then run the frontend against the same `localhost:8080` entrypoint used by the l
 
 ```bash
 pnpm dev
+```
+
+No root `.env.local` file is required for this mode because Vite defaults the API proxy to `http://localhost:8080`. If you do keep a root `.env.local`, set:
+
+```bash
+VITE_PROXY_TARGET=http://localhost:8080
 ```
 
 Flow:
@@ -143,6 +150,7 @@ powershell -ExecutionPolicy Bypass -File .\server\dev-up.ps1 -ResetDb
 Notes:
 
 - Do not run host Go on `8080`; reserve that port for the Docker load balancer.
+- Use `pnpm run dev:server:debug` for host-side Go development. `pnpm run dev:server` loads the Docker-oriented `server/.env.dev` values and can collide with the local load balancer.
 - `server/.env.dev` should stay production-consistent for Dockerized app routing.
 - Host Go hot-debug mode overrides `PORT` and `SEARCH_ENGINE_URL` at runtime instead of editing `server/.env.dev`.
 - This flow is for local dev only and should never point to production database endpoints.

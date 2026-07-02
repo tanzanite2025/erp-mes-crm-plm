@@ -232,7 +232,7 @@ Write-Step "Recreating nginx_lb so it picks up fresh app upstream resolution..."
 Invoke-Compose @("up", "-d", "--force-recreate", "nginx_lb")
 
 Write-Step "Done. Local stack is ready."
-Write-Host "  Search engine: http://localhost:8081"
+Write-Host "  Search engine: http://localhost:18081"
 Write-Host "  API/LB: http://localhost:8080"
 Write-Host "  Postgres: localhost:5432 (container: xdfc-postgres)"
 Write-Host "  Redis: localhost:16379 (container: xdfc-redis)"
