@@ -52,8 +52,8 @@ src/locales/messages/
 
 基础词条的根入口保持薄封装：
 
-- [`src/locales/en-US.ts`](C:\Users\P16V\Desktop\纤镀软件开发\XDFC\src\locales\en-US.ts)
-- [`src/locales/zh-CN.ts`](C:\Users\P16V\Desktop\纤镀软件开发\XDFC\src\locales\zh-CN.ts)
+- [`src/locales/en-US.ts`](../en-US.ts)
+- [`src/locales/zh-CN.ts`](../zh-CN.ts)
 
 这两个文件只 re-export 聚合后的基础消息对象。真正维护内容在对应语言目录和分模块文件里，不再回到单个超大文件里堆对象。
 

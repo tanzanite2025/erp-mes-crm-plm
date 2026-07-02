@@ -764,7 +764,7 @@ The BOM performance optimization provides significant performance improvements t
 
 For current integration points, see `src/features/product-structure/components/bom-virtual-table.tsx`, `src/features/product-structure/components/bom-performance-dashboard.tsx`, and `src/lib/performance/use-bom-performance-monitor.ts`.
 
-For troubleshooting, see [BOM Performance Troubleshooting Guide](./bom-performance-troubleshooting.md).
+For troubleshooting, see [BOM Performance Troubleshooting Guide](./troubleshooting.md).
 
 ---
 

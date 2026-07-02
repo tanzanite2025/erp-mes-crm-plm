@@ -790,7 +790,7 @@ If you encounter issues not covered in this guide:
 **Support Channels**:
 - Internal Slack: #frontend-support
 - Email: frontend-team@company.com
-- Documentation: [BOM Performance Optimization Guide](./bom-performance-optimization.md)
+- Documentation: [BOM Performance Optimization Guide](./optimization.md)
 
 ---
 

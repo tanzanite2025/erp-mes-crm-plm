@@ -63,4 +63,3 @@ go test ./...
 - Use `README.md` for setup and the high-level repository map.
 - Use `docs/architecture/**` for durable architecture decisions and topology maps.
 - Use `docs/ops/**` for deployment, monitoring, and recovery procedures.
-- Keep `.kiro/specs/**` limited to active `requirements.md`, `design.md`, `tasks.md`, and short `README.md` files.

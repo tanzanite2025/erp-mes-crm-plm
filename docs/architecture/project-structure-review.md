@@ -19,7 +19,6 @@ The project already has recognizable layers, but the boundaries are uneven. Fron
 | `server/models` | GORM persistence models | Clear. |
 | `server/modules` | Newer cohesive backend domain modules | Clearer than the flat `handlers`/`services` areas and worth using as the future direction. |
 | `docs` | Durable architecture, analysis, and ops knowledge | Clearer after pruning generated/historical docs. |
-| `.kiro/specs` | Active spec artifacts | Should stay limited to `requirements.md`, `design.md`, `tasks.md`, and short `README.md` files. |
 
 ## Layering Assessment
 
@@ -73,7 +72,6 @@ README.md                Entry point, setup, repo map, and key commands.
 docs/architecture/**     Architecture decisions, topology, and durable design notes.
 docs/analysis/**         Time-stamped audits and retrospectives that remain useful.
 docs/ops/**              Deployment, monitoring, rollout, and recovery procedures.
-.kiro/specs/**           Active requirements/design/tasks only.
 ```
 
 ## Cleanup Performed

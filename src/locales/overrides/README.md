@@ -2,7 +2,7 @@
 
 `src/locales/overrides` 用来存放对基础词条的局部覆盖。
 
-这里的内容会在 [`src/locales/index.ts`](C:\Users\P16V\Desktop\纤镀软件开发\XDFC\src\locales\index.ts) 里通过 `deepMerge` 合并到基础字典上，所以 override 只需要声明要覆盖的那一小块，不需要复制整份基础词条。
+这里的内容会在 [`src/locales/index.ts`](../index.ts) 里通过 `deepMerge` 合并到基础字典上，所以 override 只需要声明要覆盖的那一小块，不需要复制整份基础词条。
 
 ## 什么时候放到 overrides
 
@@ -53,10 +53,10 @@ src/locales/overrides/
 
 根入口文件保持薄封装，不直接堆大对象：
 
-- [`src/locales/purchase.en-US.ts`](C:\Users\P16V\Desktop\纤镀软件开发\XDFC\src\locales\purchase.en-US.ts)
-- [`src/locales/purchase.zh-CN.ts`](C:\Users\P16V\Desktop\纤镀软件开发\XDFC\src\locales\purchase.zh-CN.ts)
-- [`src/locales/sales.en-US.ts`](C:\Users\P16V\Desktop\纤镀软件开发\XDFC\src\locales\sales.en-US.ts)
-- [`src/locales/sales.zh-CN.ts`](C:\Users\P16V\Desktop\纤镀软件开发\XDFC\src\locales\sales.zh-CN.ts)
+- [`src/locales/purchase.en-US.ts`](../purchase.en-US.ts)
+- [`src/locales/purchase.zh-CN.ts`](../purchase.zh-CN.ts)
+- [`src/locales/sales.en-US.ts`](../sales.en-US.ts)
+- [`src/locales/sales.zh-CN.ts`](../sales.zh-CN.ts)
 
 这些文件只 re-export 对应 override 聚合对象，避免再次退回“大文件手工维护”。
 

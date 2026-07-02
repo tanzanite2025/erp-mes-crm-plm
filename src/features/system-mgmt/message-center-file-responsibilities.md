@@ -41,7 +41,7 @@ workflow-core
 
 文件：
 
-- [routing-tab.tsx](C:/Users/P16V/Desktop/纤镀软件开发/XDFC/src/features/system-mgmt/tabs/routing-tab.tsx)
+- [routing-tab.tsx](./tabs/routing-tab.tsx)
 
 职责：
 
@@ -69,17 +69,17 @@ workflow-core
 
 主文件：
 
-- [notification-rule-list.tsx](C:/Users/P16V/Desktop/纤镀软件开发/XDFC/src/features/system-mgmt/tabs/notification-rule-list.tsx)
+- [notification-rule-list.tsx](./tabs/notification-rule-list.tsx)
 
 子组件：
 
-- [notification-rule-list-toolbar.tsx](C:/Users/P16V/Desktop/纤镀软件开发/XDFC/src/features/system-mgmt/tabs/components/notification-rule-list-toolbar.tsx)
-- [notification-rule-create-actions.tsx](C:/Users/P16V/Desktop/纤镀软件开发/XDFC/src/features/system-mgmt/tabs/components/notification-rule-create-actions.tsx)
-- [notification-rule-list-empty.tsx](C:/Users/P16V/Desktop/纤镀软件开发/XDFC/src/features/system-mgmt/tabs/components/notification-rule-list-empty.tsx)
-- [rule-card.tsx](C:/Users/P16V/Desktop/纤镀软件开发/XDFC/src/features/system-mgmt/tabs/components/rule-card.tsx)
-- [rule-card-model.ts](C:/Users/P16V/Desktop/纤镀软件开发/XDFC/src/features/system-mgmt/tabs/components/rule-card-model.ts)
-- [rule-status-row.tsx](C:/Users/P16V/Desktop/纤镀软件开发/XDFC/src/features/system-mgmt/tabs/components/rule-status-row.tsx)
-- [rule-template-panel.tsx](C:/Users/P16V/Desktop/纤镀软件开发/XDFC/src/features/system-mgmt/tabs/components/rule-template-panel.tsx)
+- [notification-rule-list-toolbar.tsx](./tabs/components/notification-rule-list-toolbar.tsx)
+- `src/features/system-mgmt/tabs/components/notification-rule-create-actions.tsx` (historical target; file not present in current tree)
+- [notification-rule-list-empty.tsx](./tabs/components/notification-rule-list-empty.tsx)
+- [rule-card.tsx](./tabs/components/rule-card.tsx)
+- [rule-card-model.ts](./tabs/components/rule-card-model.ts)
+- [rule-status-row.tsx](./tabs/components/rule-status-row.tsx)
+- [rule-template-panel.tsx](./tabs/components/rule-template-panel.tsx)
 
 #### `notification-rule-list.tsx`
 
@@ -168,13 +168,13 @@ workflow-core
 
 主文件：
 
-- [business-event-source-list.tsx](C:/Users/P16V/Desktop/纤镀软件开发/XDFC/src/features/system-mgmt/tabs/business-event-source-list.tsx)
+- [business-event-source-list.tsx](./tabs/business-event-source-list.tsx)
 
 相关文件：
 
-- [business-event-source-list-helpers.ts](C:/Users/P16V/Desktop/纤镀软件开发/XDFC/src/features/system-mgmt/tabs/business-event-source-list-helpers.ts)
-- [business-event-source-list-header.tsx](C:/Users/P16V/Desktop/纤镀软件开发/XDFC/src/features/system-mgmt/tabs/components/business-event-source-list-header.tsx)
-- [business-event-source-list-hint.tsx](C:/Users/P16V/Desktop/纤镀软件开发/XDFC/src/features/system-mgmt/tabs/components/business-event-source-list-hint.tsx)
+- [business-event-source-list-helpers.ts](./tabs/business-event-source-list-helpers.ts)
+- [business-event-source-list-header.tsx](./tabs/components/business-event-source-list-header.tsx)
+- [business-event-source-list-hint.tsx](./tabs/components/business-event-source-list-hint.tsx)
 - `business-event-source-card*.ts(x)` 一组文件
 
 职责：
@@ -201,12 +201,12 @@ workflow-core
 
 主文件：
 
-- [index.tsx](C:/Users/P16V/Desktop/纤镀软件开发/XDFC/src/features/system-mgmt/workflow-core/components/command-mgmt/index.tsx)
+- [index.tsx](./workflow-core/components/command-mgmt/index.tsx)
 
 相关文件：
 
-- [command-list.tsx](C:/Users/P16V/Desktop/纤镀软件开发/XDFC/src/features/system-mgmt/workflow-core/components/command-mgmt/command-list.tsx)
-- [command-form.tsx](C:/Users/P16V/Desktop/纤镀软件开发/XDFC/src/features/system-mgmt/workflow-core/components/command-mgmt/command-form.tsx)
+- [command-list.tsx](./workflow-core/components/command-mgmt/command-list.tsx)
+- [command-form.tsx](./workflow-core/components/command-mgmt/command-form.tsx)
 
 职责：
 
@@ -227,7 +227,7 @@ workflow-core
 
 主文件：
 
-- [rule-execution-log-tab.tsx](C:/Users/P16V/Desktop/纤镀软件开发/XDFC/src/features/system-mgmt/tabs/rule-execution-log-tab.tsx)
+- [rule-execution-log-tab.tsx](./tabs/rule-execution-log-tab.tsx)
 
 职责：
 
@@ -256,7 +256,7 @@ workflow-core
 
 文件：
 
-- [use-notification-rules.ts](C:/Users/P16V/Desktop/纤镀软件开发/XDFC/src/features/system-mgmt/workflow-core/hooks/use-notification-rules.ts)
+- [use-notification-rules.ts](./workflow-core/hooks/use-notification-rules.ts)
 
 职责：
 
@@ -279,7 +279,7 @@ workflow-core
 
 文件：
 
-- [use-business-event-sources.ts](C:/Users/P16V/Desktop/纤镀软件开发/XDFC/src/features/system-mgmt/workflow-core/hooks/use-business-event-sources.ts)
+- [use-business-event-sources.ts](./workflow-core/hooks/use-business-event-sources.ts)
 
 职责：
 
@@ -290,7 +290,7 @@ workflow-core
 
 文件：
 
-- [use-commands.ts](C:/Users/P16V/Desktop/纤镀软件开发/XDFC/src/features/system-mgmt/workflow-core/hooks/use-commands.ts)
+- [use-commands.ts](./workflow-core/hooks/use-commands.ts)
 
 职责：
 

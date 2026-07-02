@@ -82,6 +82,15 @@
 5. `docs/architecture/aps-scheduling-engine/implementation-roadmap.md`
    - 讲落地分期：先静态排产，再动态修正，再版本化与仿真
 
+核心实现深挖文档保留在 `core/` 下：
+
+- `docs/architecture/aps-scheduling-engine/core/dynamic-hooks-design.md`
+  - 讲动态排程钩子、事件接入和重排触发边界
+- `docs/architecture/aps-scheduling-engine/core/greedy-heuristic-design.md`
+  - 讲启发式 + 贪婪排产的后端实现方案
+- `docs/architecture/aps-scheduling-engine/core/models/order-model.md`
+  - 讲 Order 输入模型的字段边界
+
 ## 5. 建议的系统边界
 
 该引擎不应直接承担以下职责：

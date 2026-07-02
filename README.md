@@ -43,7 +43,6 @@ docs/analysis/       Durable audits, retrospectives, and migration analysis.
 docs/frontend/       Frontend-specific implementation guidance.
 docs/ops/            Deployment, monitoring, and operations checklists.
 cutting-engine/      Rust/WASM cutting optimization engine.
-.kiro/specs/         Active spec artifacts only.
 ```
 
 For the current file responsibility and layering assessment, see `docs/architecture/project-structure-review.md`.
@@ -51,7 +50,6 @@ For the current file responsibility and layering assessment, see `docs/architect
 ## Documentation Hygiene
 
 - Keep durable source-of-truth docs under `README.md`, `GEMINI.md`, `DELTA_SYSTEM.md`, `docs/architecture/`, `docs/analysis/`, `docs/frontend/`, `docs/ops/`, or feature-local `README.md` files.
-- Keep `.kiro/specs/**` focused on active spec artifacts (`requirements.md`, `design.md`, `tasks.md`, and short `README.md` files).
 - Do not commit one-off repair notes, local cleanup scripts, generated completion reports, date-stamped local checklists, or docs that reference another upstream template project.
 - When a checklist becomes permanent practice, move the durable rule into the nearest source-of-truth doc and delete the historical checklist.
 - Prefer linking from this README to canonical docs instead of duplicating long instructions in multiple places.
