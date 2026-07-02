@@ -19,7 +19,7 @@
 | Security test artifacts | `docs/security/postman/**` | Keep | Security Postman collections are indexed by a local README. |
 | Server-local docs | `server/contract-samples/README.md`, `server/migrations/README.md`, `server/security/**`, `server/docs/swagger.yaml` | Keep near code | These are tightly coupled to backend contracts, migrations, security scripts, or API schema. |
 | Feature-local docs | `src/features/**/README.md`, feature-local `docs/**`, `src/locales/**/README.md` | Keep near feature | Keep only when the doc is directly scoped to nearby code. |
-| Deployment config | `deployment/loki/**`, `server/deployment/loki/**`, `server/docker-compose.yml` | Not prose docs | Treat as runnable config; deduplicate only after confirming the deployment source of truth. |
+| Deployment config | `deployment/monitoring/**`, `deployment/nginx/**`, `server/deployment/loki/**`, `server/docker-compose.yml` | Not prose docs | Treat as runnable config; keep paths that are referenced by deployment entry points. |
 
 ## Stale Or Risky References
 
@@ -30,7 +30,7 @@
 | Broken absolute-link targets | Resolved on 2026-07-02: 8 missing targets were converted to inline historical notes instead of links | Do not blindly recreate files; add current equivalent links only when verified. |
 | Root-level docs are noisy | Resolved on 2026-07-02: seven Markdown files were moved into category folders | Keep future docs under the nearest category instead of directly under `docs/`. |
 | APS docs overlap | Resolved on 2026-07-02: parent docs are canonical; `core/` keeps only implementation deep dives | Do not recreate same-name short stubs under `core/`. |
-| Loki config duplicated | `deployment/loki/datasource.yaml` and `promtail-config.yaml` match `server/deployment/loki`; `loki-config.yaml` differs | Pick one deployment source of truth before deleting either copy. |
+| Loki config duplicated | Resolved on 2026-07-02: `server/docker-compose.yml` mounts `server/deployment/loki/**`; unused root `deployment/loki/**` copy was removed | Keep `server/deployment/loki/**` as the compose-local source of truth. |
 | Security CVE docs are date-sensitive | `server/security/**` documents CVE-2026-31431 procedures | Do not delete as stale without security review; keep server-local because scripts live there, optionally link from `docs/ops`. |
 
 ## Completed Moves
@@ -57,4 +57,5 @@ These were organization changes only; content was not rewritten during the move.
 
 ## Safe Next Batch
 
-1. Choose a Loki config source of truth before deleting either config tree.
+1. Review historical migration/checklist docs only with domain-owner confirmation.
+2. Review `server/security/**` CVE guides only with ops/security confirmation.
