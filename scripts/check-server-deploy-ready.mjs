@@ -38,17 +38,21 @@ const files = {
   deploySh: 'deploy.sh',
   deployProdSh: 'server/deploy-prod.sh',
   compose: 'server/docker-compose.yml',
+  dockerignore: 'server/.dockerignore',
   nginxInternalLb: 'server/deployment/nginx/internal_lb.conf',
   nginxServerSite: 'server/deployment/nginx/erp.tanzanite.site.conf',
   nginxRootSite: 'deployment/nginx/erp.tanzanite.site.conf',
+  nginxTemplate: 'nginx.conf.template',
 }
 
 const deploySh = load(files.deploySh)
 const deployProdSh = load(files.deployProdSh)
 const compose = load(files.compose)
+const dockerignore = load(files.dockerignore)
 const nginxInternalLb = load(files.nginxInternalLb)
 const nginxServerSite = load(files.nginxServerSite)
 const nginxRootSite = load(files.nginxRootSite)
+const nginxTemplate = load(files.nginxTemplate)
 
 const failures = []
 
@@ -57,12 +61,15 @@ expectIncludes(deploySh, '-e server/.env', files.deploySh, failures)
 expectIncludes(deploySh, '-e server/uploads', files.deploySh, failures)
 expectIncludes(deploySh, '-e server/backups', files.deploySh, failures)
 expectIncludes(deploySh, '-e server/postgres_data', files.deploySh, failures)
+expectIncludes(deploySh, '-e server/redis_data', files.deploySh, failures)
 expectIncludes(deploySh, './server/deploy-prod.sh', files.deploySh, failures)
+expectIncludes(deploySh, 'docker compose version', files.deploySh, failures)
+expectIncludes(deploySh, 'chmod +x "$0"', files.deploySh, failures)
 
 // Production deploy script expectations.
 expectIncludes(
   deployProdSh,
-  'mkdir -p ./uploads ./backups ./postgres_data',
+  'mkdir -p ./uploads ./backups ./postgres_data ./redis_data',
   files.deployProdSh,
   failures
 )
@@ -98,7 +105,27 @@ expectIncludes(
 )
 expectIncludes(
   deployProdSh,
-  'cp ./deployment/nginx/erp.tanzanite.site.conf /etc/nginx/sites-available/xdfc_erp',
+  'run_as_root install -m 0644 ./deployment/nginx/erp.tanzanite.site.conf "${NGINX_SITE}"',
+  files.deployProdSh,
+  failures
+)
+expectIncludes(deployProdSh, 'docker compose "${COMPOSE_ENV_ARGS[@]}" config', files.deployProdSh, failures)
+expectIncludes(deployProdSh, 'sudo -v', files.deployProdSh, failures)
+expectIncludes(
+  deployProdSh,
+  'run_as_root chown "${XDFC_APP_UID}:${XDFC_APP_GID}" "${path}"',
+  files.deployProdSh,
+  failures
+)
+expectIncludes(
+  deployProdSh,
+  'run_as_root chmod 0755 "${path}"',
+  files.deployProdSh,
+  failures
+)
+expectIncludes(
+  deployProdSh,
+  'run_as_root nginx -t && run_as_root systemctl reload nginx',
   files.deployProdSh,
   failures
 )
@@ -106,12 +133,22 @@ expectIncludes(
 // Compose volume and service-chain expectations.
 expectIncludes(compose, './uploads:/app/uploads', files.compose, failures)
 expectIncludes(compose, './backups:/app/backups', files.compose, failures)
+expectIncludes(compose, './redis_data:/data', files.compose, failures)
+expectIncludes(compose, '--appendonly yes --appendfsync everysec', files.compose, failures)
 expectNotIncludes(compose, './uploads:/usr/share/nginx/html/uploads:ro', files.compose, failures)
 expectIncludes(compose, 'db:', files.compose, failures)
 expectIncludes(compose, 'redis:', files.compose, failures)
 expectIncludes(compose, 'app:', files.compose, failures)
 expectIncludes(compose, 'watchdog:', files.compose, failures)
 expectIncludes(compose, 'nginx_lb:', files.compose, failures)
+expectIncludes(compose, 'ENABLE_SWAGGER=${ENABLE_SWAGGER:-false}', files.compose, failures)
+expectIncludes(
+  compose,
+  'TOPOLOGY_AUTH_PASSWORD=${TOPOLOGY_AUTH_PASSWORD:?TOPOLOGY_AUTH_PASSWORD is required}',
+  files.compose,
+  failures
+)
+expectIncludes(dockerignore, 'redis_data', files.dockerignore, failures)
 
 // Nginx authenticated uploads proxy expectations.
 expectIncludes(nginxInternalLb, 'location /uploads/', files.nginxInternalLb, failures)
@@ -133,8 +170,26 @@ expectIncludes(
   files.nginxRootSite,
   failures
 )
-expectIncludes(nginxServerSite, 'proxy_pass http://localhost:8080;', files.nginxServerSite, failures)
-expectIncludes(nginxRootSite, 'proxy_pass http://localhost:8080;', files.nginxRootSite, failures)
+expectIncludes(nginxServerSite, 'proxy_pass http://127.0.0.1:8020;', files.nginxServerSite, failures)
+expectIncludes(nginxRootSite, 'proxy_pass http://127.0.0.1:8020;', files.nginxRootSite, failures)
+expectIncludes(nginxTemplate, 'proxy_pass http://127.0.0.1:8020;', files.nginxTemplate, failures)
+expectIncludes(nginxServerSite, 'client_max_body_size 100M;', files.nginxServerSite, failures)
+expectIncludes(nginxRootSite, 'client_max_body_size 100M;', files.nginxRootSite, failures)
+expectIncludes(
+  nginxServerSite,
+  'root /var/www/erp/.deploy-runtime/frontend/current;',
+  files.nginxServerSite,
+  failures
+)
+expectIncludes(
+  nginxRootSite,
+  'root /var/www/erp/.deploy-runtime/frontend/current;',
+  files.nginxRootSite,
+  failures
+)
+expectNotIncludes(nginxServerSite, 'proxy_pass http://localhost:8080;', files.nginxServerSite, failures)
+expectNotIncludes(nginxRootSite, 'proxy_pass http://localhost:8080;', files.nginxRootSite, failures)
+expectNotIncludes(nginxTemplate, 'proxy_pass http://localhost:8080;', files.nginxTemplate, failures)
 expectNotIncludes(nginxInternalLb, 'alias /usr/share/nginx/html/uploads/', files.nginxInternalLb, failures)
 expectNotIncludes(nginxServerSite, 'alias /var/www/erp/server/uploads/', files.nginxServerSite, failures)
 expectNotIncludes(nginxRootSite, 'alias /var/www/erp/server/uploads/', files.nginxRootSite, failures)

@@ -14,6 +14,25 @@ cd "$(dirname "$0")"
 ROOT_DIR="$(pwd)"
 
 echo -e "${YELLOW}>>> [PRE-CHECK] Working directory: ${ROOT_DIR}${NC}"
+
+for required_command in git docker; do
+  if ! command -v "${required_command}" >/dev/null 2>&1; then
+    echo -e "${RED}ERR: required command is not available: ${required_command}${NC}"
+    exit 1
+  fi
+done
+
+if ! docker compose version >/dev/null 2>&1; then
+  echo -e "${RED}ERR: Docker Compose v2 is required (docker compose).${NC}"
+  exit 1
+fi
+
+if [[ ! -f ./server/.env && ! -f ./server/.env.production ]]; then
+  echo -e "${RED}ERR: missing server/.env or server/.env.production.${NC}"
+  echo -e "${YELLOW}Copy server/.env.production.example to server/.env and replace all placeholders.${NC}"
+  exit 1
+fi
+
 echo -e "${CYAN}>>> [STAGE 1/4] Hard sync to ${TARGET_REMOTE}/${TARGET_BRANCH}...${NC}"
 
 git fetch --all --prune
@@ -29,6 +48,7 @@ if [[ "${CURRENT_BRANCH}" != "${TARGET_BRANCH}" ]]; then
 fi
 
 git reset --hard "${TARGET_REMOTE}/${TARGET_BRANCH}"
+chmod +x "$0"
 
 # Keep runtime data and env files used by production services.
 git clean -fd \
@@ -42,6 +62,7 @@ git clean -fd \
   -e server/uploads \
   -e server/backups \
   -e server/postgres_data \
+  -e server/redis_data \
   -e server/storage \
   -e server/logs \
   -e uploads \

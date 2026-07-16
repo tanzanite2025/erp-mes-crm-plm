@@ -34,6 +34,7 @@ server/search-engine/target/
 .vs/
 .tanstack/
 .tanzanite/
+.codex/config.toml
 .vscode/
 
 # --- Generated Files ---
@@ -61,6 +62,7 @@ bin/
 
 # 忽略本地数据库数据（由 Docker 挂载产生）
 server/postgres_data/
+server/redis_data/
 
 # 忽略日志与监控中间数据
 server/deployment/loki/tmp/

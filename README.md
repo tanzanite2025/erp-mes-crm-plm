@@ -197,10 +197,13 @@ git commit -m "chore: sync pnpm lockfile"
 
 ## Production Deployment
 
+Hostinger VPS deployment and Docker runbook: `docs/ops/hostinger-vps-docker-runbook.md`
 Single-VPS deployment roadmap: `docs/ops/single-vps-deployment-roadmap.md`
 Monitoring/alerting deploy checklist: `docs/ops/monitoring-deploy-checklist.md`
 
-Server one-time bootstrap (when script updates are pulled):
+The current Hostinger phase uses the repository's Git-based deployment flow. Run `deploy.sh` over SSH; use Hostinger Docker Manager for status and logs, not as a second copy of the Compose configuration. Full image-based Stack deployment is a later optimization.
+
+After completing the Hostinger prerequisites, production environment, and certificate steps in the runbook:
 
 ```bash
 cd /var/www/erp

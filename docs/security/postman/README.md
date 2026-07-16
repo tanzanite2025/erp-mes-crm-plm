@@ -12,7 +12,7 @@ This folder stores Postman collections for security regression checks.
 
 1. Import the collection into Postman.
 2. Set collection variables before running:
-   - `baseUrl`: backend base URL, for example `http://localhost:8080` or the current dev backend port.
+   - `baseUrl`: backend base URL, for example `http://localhost:8020` or the current dev backend port.
    - `jwt`: a valid test JWT for authenticated requests.
    - `vendorAuth`: vendor API authorization header used by positive proxy cases.
    - `geminiKey`: Gemini API key used by the Gemini positive case, if applicable.
@@ -24,4 +24,3 @@ This folder stores Postman collections for security regression checks.
 - Do not commit real JWTs, vendor API keys, or environment exports.
 - Keep secrets in a local Postman environment, not in the collection JSON.
 - Treat failed rejection cases as security regressions until verified otherwise.
-

@@ -42,11 +42,66 @@ load_deploy_env() {
   XDFC_APP_GID="${XDFC_APP_GID:-10001}"
 }
 
+run_as_root() {
+  if [[ "${EUID}" -eq 0 ]]; then
+    "$@"
+    return
+  fi
+
+  sudo "$@"
+}
+
+preflight() {
+  if ! command -v docker >/dev/null 2>&1; then
+    echo -e "${RED}[ERROR] Docker is not installed or not available in PATH.${NC}"
+    exit 1
+  fi
+
+  if [[ "${EUID}" -ne 0 ]]; then
+    if ! command -v sudo >/dev/null 2>&1; then
+      echo -e "${RED}[ERROR] sudo is required to install and reload the host Nginx config.${NC}"
+      exit 1
+    fi
+    echo -e "${YELLOW}>>> Validating sudo access before deployment...${NC}"
+    sudo -v
+  fi
+
+  if [[ -n "${DEPLOY_ENV_FILE}" ]] && grep -Eq '^[A-Za-z_][A-Za-z0-9_]*=CHANGE_ME' "${DEPLOY_ENV_FILE}"; then
+    echo -e "${RED}[ERROR] ${DEPLOY_ENV_FILE} still contains CHANGE_ME placeholders.${NC}"
+    exit 1
+  fi
+
+  if [[ "${GIN_MODE:-release}" != "release" ]]; then
+    echo -e "${RED}[ERROR] Production deployment requires GIN_MODE=release.${NC}"
+    exit 1
+  fi
+
+  if [[ "${ENABLE_SWAGGER:-false}" != "false" ]]; then
+    echo -e "${RED}[ERROR] Production deployment requires ENABLE_SWAGGER=false.${NC}"
+    exit 1
+  fi
+
+  if [[ ! "${XDFC_APP_UID}" =~ ^[0-9]+$ || ! "${XDFC_APP_GID}" =~ ^[0-9]+$ ]]; then
+    echo -e "${RED}[ERROR] XDFC_APP_UID and XDFC_APP_GID must be numeric.${NC}"
+    exit 1
+  fi
+
+  echo -e "${YELLOW}>>> Validating Docker Compose configuration...${NC}"
+  docker compose "${COMPOSE_ENV_ARGS[@]}" config >/dev/null
+
+  if ! run_as_root test -r /etc/nginx/ssl/xdfc_origin.crt \
+    || ! run_as_root test -r /etc/nginx/ssl/xdfc_origin.key; then
+    echo -e "${RED}[ERROR] Missing or unreadable Cloudflare Origin certificate files.${NC}"
+    echo -e "Expected: /etc/nginx/ssl/xdfc_origin.crt and /etc/nginx/ssl/xdfc_origin.key"
+    exit 1
+  fi
+}
+
 prepare_app_runtime_dir() {
   local path="$1"
   mkdir -p "${path}"
-  chown "${XDFC_APP_UID}:${XDFC_APP_GID}" "${path}"
-  chmod 0755 "${path}"
+  run_as_root chown "${XDFC_APP_UID}:${XDFC_APP_GID}" "${path}"
+  run_as_root chmod 0755 "${path}"
 }
 
 BUILD_MODE="app"
@@ -76,9 +131,10 @@ done
 cd "$(dirname "$0")"
 
 load_deploy_env
+preflight
 
 echo -e "${GREEN}>>> [1/6] Ensure runtime directories...${NC}"
-mkdir -p ./uploads ./backups ./postgres_data
+mkdir -p ./uploads ./backups ./postgres_data ./redis_data
 
 # Backward compatibility: if legacy /var/www/erp/uploads has data and new path is empty,
 # copy once into /var/www/erp/server/uploads to avoid file-access regression after path switch.
@@ -86,7 +142,7 @@ if [[ -d ../uploads ]]; then
   if find ../uploads -mindepth 1 -print -quit | grep -q .; then
     if ! find ./uploads -mindepth 1 -print -quit | grep -q .; then
       echo -e "${YELLOW}>>> Detected legacy uploads data, migrating into server/uploads...${NC}"
-      cp -a ../uploads/. ./uploads/
+      run_as_root cp -a ../uploads/. ./uploads/
     fi
   fi
 fi
@@ -122,26 +178,34 @@ esac
 echo -e "${GREEN}>>> [3/6] Prune dangling images...${NC}"
 docker image prune -f
 
-echo -e "${GREEN}>>> [4/6] Verify SSL certificates...${NC}"
-if [[ ! -f "/etc/nginx/ssl/xdfc_origin.crt" || ! -f "/etc/nginx/ssl/xdfc_origin.key" ]]; then
-  echo -e "${RED}[ERROR] Missing SSL cert/key in /etc/nginx/ssl/${NC}"
-  echo -e "Expected: /etc/nginx/ssl/xdfc_origin.crt and /etc/nginx/ssl/xdfc_origin.key"
-  exit 1
+echo -e "${GREEN}>>> [4/6] Sync Nginx site config...${NC}"
+NGINX_SITE=/etc/nginx/sites-available/xdfc_erp
+NGINX_SITE_BACKUP=/etc/nginx/sites-available/xdfc_erp.pre-deploy
+if run_as_root test -f "${NGINX_SITE}"; then
+  run_as_root cp "${NGINX_SITE}" "${NGINX_SITE_BACKUP}"
+else
+  run_as_root rm -f "${NGINX_SITE_BACKUP}"
 fi
+run_as_root install -m 0644 ./deployment/nginx/erp.tanzanite.site.conf "${NGINX_SITE}"
+run_as_root ln -sfn "${NGINX_SITE}" /etc/nginx/sites-enabled/xdfc_erp
 
-echo -e "${GREEN}>>> [5/6] Sync Nginx site config...${NC}"
-cp ./deployment/nginx/erp.tanzanite.site.conf /etc/nginx/sites-available/xdfc_erp
-ln -sf /etc/nginx/sites-available/xdfc_erp /etc/nginx/sites-enabled/xdfc_erp
-
-echo -e "${GREEN}>>> [6/6] Validate & reload Nginx...${NC}"
-if nginx -t; then
-  systemctl reload nginx
+echo -e "${GREEN}>>> [5/6] Validate & reload Nginx...${NC}"
+if run_as_root nginx -t && run_as_root systemctl reload nginx; then
   echo -e "${GREEN}>>> [SUCCESS] Production deploy done: https://erp.tanzanite.site${NC}"
 else
-  echo -e "${RED}[ERROR] Nginx config test failed, reload aborted.${NC}"
+  echo -e "${RED}[ERROR] Nginx validation or reload failed; restoring the previous site config.${NC}"
+  if run_as_root test -f "${NGINX_SITE_BACKUP}"; then
+    run_as_root cp "${NGINX_SITE_BACKUP}" "${NGINX_SITE}"
+  else
+    run_as_root rm -f "${NGINX_SITE}" /etc/nginx/sites-enabled/xdfc_erp
+  fi
+  if run_as_root nginx -t; then
+    run_as_root systemctl reload nginx || true
+  fi
   exit 1
 fi
 
+echo -e "${GREEN}>>> [6/6] Report Docker status...${NC}"
 echo "--------------------------------------------------------"
 echo "Docker status:"
 docker compose "${COMPOSE_ENV_ARGS[@]}" ps

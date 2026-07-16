@@ -5,6 +5,7 @@
 uploads
 backups
 postgres_data
+redis_data
 storage
 logs
 *.log

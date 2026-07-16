@@ -6,13 +6,13 @@ services:
     ports:
       - "127.0.0.1:8040:5432"
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
     volumes:
       - ./postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:?POSTGRES_USER is required} -d ${POSTGRES_DB:?POSTGRES_DB is required}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -22,7 +22,19 @@ services:
     container_name: xdfc-redis
     ports:
       - "127.0.0.1:8050:6379"
-    command: redis-server --requirepass ${REDIS_PASSWORD:-xdfc_default_redis_password}
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+    command:
+      - sh
+      - -c
+      - exec redis-server --requirepass "$$REDIS_PASSWORD" --appendonly yes --appendfsync everysec
+    volumes:
+      - ./redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "REDISCLI_AUTH=$$REDIS_PASSWORD redis-cli ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     restart: always
 
   loki:
@@ -74,18 +86,21 @@ services:
     expose:
       - "8080"
     environment:
-      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?sslmode=disable
-      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
-      - JWT_SECRET=${JWT_SECRET}
-      - ALLOWED_ORIGIN=${ALLOWED_ORIGIN}
-      - GIN_MODE=${GIN_MODE}
-      - ALERT_WEBHOOK_TOKEN=${ALERT_WEBHOOK_TOKEN}
-      - INITIAL_ADMIN_PASSWORD=${INITIAL_ADMIN_PASSWORD}
+      - DATABASE_URL=postgres://${POSTGRES_USER:?POSTGRES_USER is required}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@db:5432/${POSTGRES_DB:?POSTGRES_DB is required}?sslmode=disable
+      - REDIS_URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379/0
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
+      - ALLOWED_ORIGIN=${ALLOWED_ORIGIN:?ALLOWED_ORIGIN is required}
+      - GIN_MODE=${GIN_MODE:-release}
+      - ENABLE_SWAGGER=${ENABLE_SWAGGER:-false}
+      - TRUSTED_PROXIES=${TRUSTED_PROXIES:-127.0.0.1,::1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16}
+      - ALERT_WEBHOOK_TOKEN=${ALERT_WEBHOOK_TOKEN:?ALERT_WEBHOOK_TOKEN is required}
+      - INITIAL_ADMIN_PASSWORD=${INITIAL_ADMIN_PASSWORD:?INITIAL_ADMIN_PASSWORD is required}
+      - TOPOLOGY_AUTH_PASSWORD=${TOPOLOGY_AUTH_PASSWORD:?TOPOLOGY_AUTH_PASSWORD is required}
       - EXCHANGERATE_API_KEY=${EXCHANGERATE_API_KEY}
       - SEARCH_ENGINE_URL=http://search-engine:8081
       - REDIS_HOST=${REDIS_HOST:-redis}
       - REDIS_PORT=${REDIS_PORT:-6379}
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-xdfc_default_redis_password}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD is required}
       - AI_PROXY_STREAM_TIMEOUT_MS=${AI_PROXY_STREAM_TIMEOUT_MS:-120000}
       - AI_PROXY_ALLOW_PRIVATE_IP=${AI_PROXY_ALLOW_PRIVATE_IP:-false}
       - AI_PROXY_ALLOWED_HOSTS=${AI_PROXY_ALLOWED_HOSTS:-api.openai.com,generativelanguage.googleapis.com,api.minimax.io,api.minimaxi.com}
@@ -93,7 +108,7 @@ services:
       db:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
       search-engine:
         condition: service_started
     volumes:
@@ -131,13 +146,13 @@ services:
     container_name: xdfc-watchdog
     restart: always
     environment:
-      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?sslmode=disable
-      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+      - DATABASE_URL=postgres://${POSTGRES_USER:?POSTGRES_USER is required}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@db:5432/${POSTGRES_DB:?POSTGRES_DB is required}?sslmode=disable
+      - REDIS_URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379/0
     depends_on:
       db:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     volumes:
       - ./uploads:/app/uploads
       - ./backups:/app/backups
