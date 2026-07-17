@@ -185,7 +185,7 @@ pnpm run predeploy:check
 ```
 
 This checks whether `package.json` and `pnpm-lock.yaml` are in sync and prevents the common deploy failure with `--frozen-lockfile`.
-It also runs server deployment self-checks to ensure deploy scripts, docker-compose volumes, and nginx uploads path are aligned.
+It also verifies that the image-based ERP stack, shared edge network, gateway, and container ingress remain aligned and that production services do not publish database or API ports.
 
 If it fails:
 
@@ -201,9 +201,14 @@ Hostinger VPS deployment and Docker runbook: `docs/ops/hostinger-vps-docker-runb
 Single-VPS deployment roadmap: `docs/ops/single-vps-deployment-roadmap.md`
 Monitoring/alerting deploy checklist: `docs/ops/monitoring-deploy-checklist.md`
 
-The current Hostinger phase uses the repository's Git-based deployment flow. Run `deploy.sh` over SSH; use Hostinger Docker Manager for status and logs, not as a second copy of the Compose configuration. Full image-based Stack deployment is a later optimization.
+Production uses two independent Docker Compose projects:
 
-After completing the Hostinger prerequisites, production environment, and certificate steps in the runbook:
+- `deployment/gateway/compose.yml`: the shared Caddy gateway and the `tanzanite-edge` network; this is the only stack that publishes `80/443`.
+- `compose.prod.yml`: the ERP application, data services, and the single `erp-web` edge endpoint; it publishes no host ports.
+
+GitHub Actions publishes immutable `sha-*` images to GHCR. Hostinger Docker Manager is the source of truth for production Compose content and environment variables. Do not paste `server/docker-compose.yml` into Hostinger because that file is for local development.
+
+The SSH compatibility path pulls the same production images and never builds source code or installs a host Nginx:
 
 ```bash
 cd /var/www/erp
@@ -213,7 +218,7 @@ chmod +x deploy.sh
 ./deploy.sh
 ```
 
-Daily deploy:
+Daily releases should update `IMAGE_TAG` to a tested `sha-*` tag and reconcile the ERP project from Hostinger Docker Manager. The SSH fallback is:
 
 ```bash
 cd /var/www/erp && ./deploy.sh

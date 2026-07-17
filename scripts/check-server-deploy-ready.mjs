@@ -4,9 +4,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-const repoRoot = resolve(__dirname, '..')
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 
 function fail(message, details = '') {
   console.error(`\n[SERVER_DEPLOY_CHECK_FAILED] ${message}`)
@@ -15,190 +13,110 @@ function fail(message, details = '') {
 }
 
 function load(pathFromRoot) {
-  const absPath = resolve(repoRoot, pathFromRoot)
-  if (!existsSync(absPath)) {
+  const absolutePath = resolve(repoRoot, pathFromRoot)
+  if (!existsSync(absolutePath)) {
     fail('Missing required file.', `Path: ${pathFromRoot}`)
   }
-  return readFileSync(absPath, 'utf8')
+  return readFileSync(absolutePath, 'utf8')
 }
 
 function expectIncludes(content, marker, filePath, failures) {
-  if (!content.includes(marker)) {
-    failures.push(`${filePath}: missing "${marker}"`)
-  }
+  if (!content.includes(marker)) failures.push(`${filePath}: missing "${marker}"`)
 }
 
 function expectNotIncludes(content, marker, filePath, failures) {
-  if (content.includes(marker)) {
-    failures.push(`${filePath}: should not include "${marker}"`)
-  }
+  if (content.includes(marker)) failures.push(`${filePath}: should not include "${marker}"`)
 }
 
 const files = {
-  deploySh: 'deploy.sh',
-  deployProdSh: 'server/deploy-prod.sh',
-  compose: 'server/docker-compose.yml',
-  dockerignore: 'server/.dockerignore',
-  nginxInternalLb: 'server/deployment/nginx/internal_lb.conf',
-  nginxServerSite: 'server/deployment/nginx/erp.tanzanite.site.conf',
-  nginxRootSite: 'deployment/nginx/erp.tanzanite.site.conf',
-  nginxTemplate: 'nginx.conf.template',
+  deploy: 'deploy.sh',
+  compatibilityDeploy: 'server/deploy-prod.sh',
+  productionCompose: 'compose.prod.yml',
+  gatewayCompose: 'deployment/gateway/compose.yml',
+  apiDockerfile: 'server/Dockerfile',
+  webDockerfile: 'deployment/docker/web.Dockerfile',
+  webNginx: 'deployment/nginx/erp-web.conf',
+  imageWorkflow: '.github/workflows/publish-images.yml',
 }
 
-const deploySh = load(files.deploySh)
-const deployProdSh = load(files.deployProdSh)
-const compose = load(files.compose)
-const dockerignore = load(files.dockerignore)
-const nginxInternalLb = load(files.nginxInternalLb)
-const nginxServerSite = load(files.nginxServerSite)
-const nginxRootSite = load(files.nginxRootSite)
-const nginxTemplate = load(files.nginxTemplate)
-
+const deploy = load(files.deploy)
+const compatibilityDeploy = load(files.compatibilityDeploy)
+const productionCompose = load(files.productionCompose)
+const gatewayCompose = load(files.gatewayCompose)
+const apiDockerfile = load(files.apiDockerfile)
+const webDockerfile = load(files.webDockerfile)
+const webNginx = load(files.webNginx)
+const imageWorkflow = load(files.imageWorkflow)
 const failures = []
 
-// Root deploy script safety expectations.
-expectIncludes(deploySh, '-e server/.env', files.deploySh, failures)
-expectIncludes(deploySh, '-e server/uploads', files.deploySh, failures)
-expectIncludes(deploySh, '-e server/backups', files.deploySh, failures)
-expectIncludes(deploySh, '-e server/postgres_data', files.deploySh, failures)
-expectIncludes(deploySh, '-e server/redis_data', files.deploySh, failures)
-expectIncludes(deploySh, './server/deploy-prod.sh', files.deploySh, failures)
-expectIncludes(deploySh, 'docker compose version', files.deploySh, failures)
-expectIncludes(deploySh, 'chmod +x "$0"', files.deploySh, failures)
+expectIncludes(deploy, 'COMPOSE_FILE="compose.prod.yml"', files.deploy, failures)
+expectIncludes(deploy, 'EDGE_NETWORK="tanzanite-edge"', files.deploy, failures)
+expectIncludes(deploy, 'docker network inspect', files.deploy, failures)
+expectIncludes(deploy, '^sha-[0-9a-f]{7,40}$', files.deploy, failures)
+expectIncludes(deploy, '"${COMPOSE[@]}" pull', files.deploy, failures)
+expectIncludes(deploy, '"${COMPOSE[@]}" up -d --remove-orphans', files.deploy, failures)
+expectNotIncludes(deploy, 'pnpm build', files.deploy, failures)
+expectNotIncludes(deploy, 'systemctl reload nginx', files.deploy, failures)
+expectIncludes(compatibilityDeploy, 'exec ./deploy.sh "$@"', files.compatibilityDeploy, failures)
 
-// Production deploy script expectations.
-expectIncludes(
-  deployProdSh,
-  'mkdir -p ./uploads ./backups ./postgres_data ./redis_data',
-  files.deployProdSh,
-  failures
-)
-expectIncludes(
-  deployProdSh,
-  'DEFAULT_SERVICES=(db redis search-engine app nginx_lb)',
-  files.deployProdSh,
-  failures
-)
-expectIncludes(
-  deployProdSh,
-  'FULL_BUILD_SERVICES=(db redis search-engine app watchdog nginx_lb)',
-  files.deployProdSh,
-  failures
-)
-expectIncludes(
-  deployProdSh,
-  'docker compose "${COMPOSE_ENV_ARGS[@]}" up -d --remove-orphans db redis nginx_lb',
-  files.deployProdSh,
-  failures
-)
-expectIncludes(
-  deployProdSh,
-  'docker compose "${COMPOSE_ENV_ARGS[@]}" up -d --build search-engine app',
-  files.deployProdSh,
-  failures
-)
-expectIncludes(
-  deployProdSh,
-  'docker compose "${COMPOSE_ENV_ARGS[@]}" up -d --build --remove-orphans "${FULL_BUILD_SERVICES[@]}"',
-  files.deployProdSh,
-  failures
-)
-expectIncludes(
-  deployProdSh,
-  'run_as_root install -m 0644 ./deployment/nginx/erp.tanzanite.site.conf "${NGINX_SITE}"',
-  files.deployProdSh,
-  failures
-)
-expectIncludes(deployProdSh, 'docker compose "${COMPOSE_ENV_ARGS[@]}" config', files.deployProdSh, failures)
-expectIncludes(deployProdSh, 'sudo -v', files.deployProdSh, failures)
-expectIncludes(
-  deployProdSh,
-  'run_as_root chown "${XDFC_APP_UID}:${XDFC_APP_GID}" "${path}"',
-  files.deployProdSh,
-  failures
-)
-expectIncludes(
-  deployProdSh,
-  'run_as_root chmod 0755 "${path}"',
-  files.deployProdSh,
-  failures
-)
-expectIncludes(
-  deployProdSh,
-  'run_as_root nginx -t && run_as_root systemctl reload nginx',
-  files.deployProdSh,
-  failures
-)
-
-// Compose volume and service-chain expectations.
-expectIncludes(compose, './uploads:/app/uploads', files.compose, failures)
-expectIncludes(compose, './backups:/app/backups', files.compose, failures)
-expectIncludes(compose, './redis_data:/data', files.compose, failures)
-expectIncludes(compose, '--appendonly yes --appendfsync everysec', files.compose, failures)
-expectNotIncludes(compose, './uploads:/usr/share/nginx/html/uploads:ro', files.compose, failures)
-expectIncludes(compose, 'db:', files.compose, failures)
-expectIncludes(compose, 'redis:', files.compose, failures)
-expectIncludes(compose, 'app:', files.compose, failures)
-expectIncludes(compose, 'watchdog:', files.compose, failures)
-expectIncludes(compose, 'nginx_lb:', files.compose, failures)
-expectIncludes(compose, 'ENABLE_SWAGGER=${ENABLE_SWAGGER:-false}', files.compose, failures)
-expectIncludes(
-  compose,
-  'TOPOLOGY_AUTH_PASSWORD=${TOPOLOGY_AUTH_PASSWORD:?TOPOLOGY_AUTH_PASSWORD is required}',
-  files.compose,
-  failures
-)
-expectIncludes(dockerignore, 'redis_data', files.dockerignore, failures)
-
-// Nginx authenticated uploads proxy expectations.
-expectIncludes(nginxInternalLb, 'location /uploads/', files.nginxInternalLb, failures)
-expectIncludes(
-  nginxInternalLb,
-  'proxy_pass $app_upstream;',
-  files.nginxInternalLb,
-  failures
-)
-expectIncludes(
-  nginxServerSite,
-  'location /uploads/',
-  files.nginxServerSite,
-  failures
-)
-expectIncludes(
-  nginxRootSite,
-  'location /uploads/',
-  files.nginxRootSite,
-  failures
-)
-expectIncludes(nginxServerSite, 'proxy_pass http://127.0.0.1:8020;', files.nginxServerSite, failures)
-expectIncludes(nginxRootSite, 'proxy_pass http://127.0.0.1:8020;', files.nginxRootSite, failures)
-expectIncludes(nginxTemplate, 'proxy_pass http://127.0.0.1:8020;', files.nginxTemplate, failures)
-expectIncludes(nginxServerSite, 'client_max_body_size 100M;', files.nginxServerSite, failures)
-expectIncludes(nginxRootSite, 'client_max_body_size 100M;', files.nginxRootSite, failures)
-expectIncludes(
-  nginxServerSite,
-  'root /var/www/erp/.deploy-runtime/frontend/current;',
-  files.nginxServerSite,
-  failures
-)
-expectIncludes(
-  nginxRootSite,
-  'root /var/www/erp/.deploy-runtime/frontend/current;',
-  files.nginxRootSite,
-  failures
-)
-expectNotIncludes(nginxServerSite, 'proxy_pass http://localhost:8080;', files.nginxServerSite, failures)
-expectNotIncludes(nginxRootSite, 'proxy_pass http://localhost:8080;', files.nginxRootSite, failures)
-expectNotIncludes(nginxTemplate, 'proxy_pass http://localhost:8080;', files.nginxTemplate, failures)
-expectNotIncludes(nginxInternalLb, 'alias /usr/share/nginx/html/uploads/', files.nginxInternalLb, failures)
-expectNotIncludes(nginxServerSite, 'alias /var/www/erp/server/uploads/', files.nginxServerSite, failures)
-expectNotIncludes(nginxRootSite, 'alias /var/www/erp/server/uploads/', files.nginxRootSite, failures)
-
-if (failures.length > 0) {
-  fail(
-    'Server deployment self-check failed.',
-    `Please fix the following items:\n- ${failures.join('\n- ')}`
+for (const image of ['erp-web', 'erp-api', 'erp-search', 'erp-watchdog']) {
+  expectIncludes(
+    productionCompose,
+    `ghcr.io/tanzanite2025/${image}:`,
+    files.productionCompose,
+    failures
   )
+  expectIncludes(imageWorkflow, `image: ${image}`, files.imageWorkflow, failures)
 }
 
-console.log('[SERVER_DEPLOY_CHECK] OK: deploy scripts, compose, and authenticated upload proxy are aligned.')
+expectIncludes(productionCompose, 'name: erp', files.productionCompose, failures)
+expectIncludes(productionCompose, 'external: true', files.productionCompose, failures)
+expectIncludes(productionCompose, 'name: tanzanite-edge', files.productionCompose, failures)
+expectIncludes(productionCompose, '- erp-web', files.productionCompose, failures)
+expectIncludes(productionCompose, 'internal: true', files.productionCompose, failures)
+expectIncludes(productionCompose, 'pull_policy: always', files.productionCompose, failures)
+expectIncludes(productionCompose, '${IMAGE_TAG:?IMAGE_TAG is required}', files.productionCompose, failures)
+expectIncludes(productionCompose, 'no-new-privileges:true', files.productionCompose, failures)
+expectIncludes(productionCompose, '- storage:/app/storage', files.productionCompose, failures)
+expectIncludes(productionCompose, 'mem_limit:', files.productionCompose, failures)
+expectIncludes(productionCompose, 'cpus:', files.productionCompose, failures)
+expectNotIncludes(productionCompose, 'container_name:', files.productionCompose, failures)
+expectNotIncludes(productionCompose, 'ports:', files.productionCompose, failures)
+expectNotIncludes(productionCompose, 'build:', files.productionCompose, failures)
+expectNotIncludes(productionCompose, '${IMAGE_TAG:-master}', files.productionCompose, failures)
+expectNotIncludes(productionCompose, 'docker.sock', files.productionCompose, failures)
+
+expectIncludes(gatewayCompose, 'image: caddy:', files.gatewayCompose, failures)
+expectIncludes(gatewayCompose, '"80:80"', files.gatewayCompose, failures)
+expectIncludes(gatewayCompose, '"443:443"', files.gatewayCompose, failures)
+expectIncludes(gatewayCompose, 'name: tanzanite-edge', files.gatewayCompose, failures)
+expectIncludes(gatewayCompose, 'reverse_proxy erp-web:8080', files.gatewayCompose, failures)
+expectIncludes(gatewayCompose, 'trusted_proxies static', files.gatewayCompose, failures)
+expectIncludes(gatewayCompose, 'ERP_SITE: ${ERP_SITE:-http://erp.tanzanite.site}', files.gatewayCompose, failures)
+expectIncludes(gatewayCompose, 'admin off', files.gatewayCompose, failures)
+expectIncludes(gatewayCompose, 'caddy fmt --overwrite /tmp/Caddyfile', files.gatewayCompose, failures)
+expectIncludes(gatewayCompose, 'http://127.0.0.1/__edge/health', files.gatewayCompose, failures)
+expectIncludes(gatewayCompose, 'mem_limit: 256m', files.gatewayCompose, failures)
+expectNotIncludes(gatewayCompose, 'docker.sock', files.gatewayCompose, failures)
+expectNotIncludes(gatewayCompose, 'network_mode: host', files.gatewayCompose, failures)
+expectNotIncludes(gatewayCompose, 'configs:', files.gatewayCompose, failures)
+expectNotIncludes(gatewayCompose, '"443:443/udp"', files.gatewayCompose, failures)
+
+expectIncludes(apiDockerfile, '/app/uploads /app/backups /app/storage', files.apiDockerfile, failures)
+expectIncludes(webDockerfile, 'USER nginx', files.webDockerfile, failures)
+expectIncludes(webDockerfile, 'pnpm install --frozen-lockfile', files.webDockerfile, failures)
+expectIncludes(webNginx, 'location = /api/v1/system/metrics', files.webNginx, failures)
+expectIncludes(webNginx, 'return 404;', files.webNginx, failures)
+expectIncludes(webNginx, 'set $app_upstream http://app:8080;', files.webNginx, failures)
+expectIncludes(webNginx, 'location /uploads/', files.webNginx, failures)
+expectIncludes(webNginx, 'map $uri $cache_control', files.webNginx, failures)
+expectIncludes(webNginx, 'add_header Cache-Control $cache_control always;', files.webNginx, failures)
+expectNotIncludes(webNginx, '/tmp/nginx/', files.webNginx, failures)
+
+if (failures.length > 0) {
+  fail('Production deployment baseline is inconsistent.', `- ${failures.join('\n- ')}`)
+}
+
+console.log(
+  '[SERVER_DEPLOY_CHECK] OK: image-based ERP stack and shared edge gateway are aligned.'
+)

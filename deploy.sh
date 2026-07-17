@@ -9,6 +9,9 @@ NC='\033[0m'
 
 TARGET_REMOTE="origin"
 TARGET_BRANCH="master"
+COMPOSE_FILE="compose.prod.yml"
+ENV_FILE="server/.env"
+EDGE_NETWORK="tanzanite-edge"
 
 cd "$(dirname "$0")"
 ROOT_DIR="$(pwd)"
@@ -23,23 +26,38 @@ for required_command in git docker; do
 done
 
 if ! docker compose version >/dev/null 2>&1; then
-  echo -e "${RED}ERR: Docker Compose v2 is required (docker compose).${NC}"
+  echo -e "${RED}ERR: Docker Compose v2 is required.${NC}"
   exit 1
 fi
 
-if [[ ! -f ./server/.env && ! -f ./server/.env.production ]]; then
-  echo -e "${RED}ERR: missing server/.env or server/.env.production.${NC}"
-  echo -e "${YELLOW}Copy server/.env.production.example to server/.env and replace all placeholders.${NC}"
+if [[ ! -f "${ENV_FILE}" ]]; then
+  echo -e "${RED}ERR: missing ${ENV_FILE}.${NC}"
+  echo -e "${YELLOW}Create it from server/.env.production.example and replace every placeholder.${NC}"
   exit 1
 fi
 
-echo -e "${CYAN}>>> [STAGE 1/4] Hard sync to ${TARGET_REMOTE}/${TARGET_BRANCH}...${NC}"
+if grep -Eq '^[A-Za-z_][A-Za-z0-9_]*=CHANGE_ME' "${ENV_FILE}"; then
+  echo -e "${RED}ERR: ${ENV_FILE} still contains CHANGE_ME placeholders.${NC}"
+  exit 1
+fi
 
+IMAGE_TAG="$(sed -n 's/^IMAGE_TAG=//p' "${ENV_FILE}" | tail -n 1 | tr -d '\r')"
+if [[ ! "${IMAGE_TAG}" =~ ^sha-[0-9a-f]{7,40}$ ]]; then
+  echo -e "${RED}ERR: IMAGE_TAG must be an immutable sha-* tag.${NC}"
+  exit 1
+fi
+
+if ! docker network inspect "${EDGE_NETWORK}" >/dev/null 2>&1; then
+  echo -e "${RED}ERR: shared edge network ${EDGE_NETWORK} does not exist.${NC}"
+  echo -e "${YELLOW}Deploy deployment/gateway/compose.yml before the ERP stack.${NC}"
+  exit 1
+fi
+
+echo -e "${CYAN}>>> [1/5] Sync repository to ${TARGET_REMOTE}/${TARGET_BRANCH}...${NC}"
 git fetch --all --prune
 
 CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 if [[ "${CURRENT_BRANCH}" != "${TARGET_BRANCH}" ]]; then
-  echo -e "${YELLOW}>>> Switching branch: ${CURRENT_BRANCH} -> ${TARGET_BRANCH}${NC}"
   if git show-ref --verify --quiet "refs/heads/${TARGET_BRANCH}"; then
     git checkout "${TARGET_BRANCH}"
   else
@@ -48,57 +66,26 @@ if [[ "${CURRENT_BRANCH}" != "${TARGET_BRANCH}" ]]; then
 fi
 
 git reset --hard "${TARGET_REMOTE}/${TARGET_BRANCH}"
-chmod +x "$0"
-
-# Keep runtime data and env files used by production services.
 git clean -fd \
   -e .env \
   -e .env.local \
   -e .env.production \
-  -e .deploy-runtime \
-  -e server/.env \
-  -e server/.env.production \
-  -e server/.env.dev \
-  -e server/uploads \
-  -e server/backups \
-  -e server/postgres_data \
-  -e server/redis_data \
-  -e server/storage \
-  -e server/logs \
-  -e uploads \
-  -e storage \
-  -e logs
+  -e server/.env
+chmod +x "$0"
 
-echo -e "${CYAN}>>> [STAGE 2/4] Install deps and build frontend...${NC}"
-PNPM_CMD=(pnpm)
-if ! command -v pnpm >/dev/null 2>&1; then
-  if command -v corepack >/dev/null 2>&1; then
-    echo -e "${YELLOW}>>> pnpm not found, bootstrapping via corepack (pnpm@10.33.0)...${NC}"
-    corepack prepare pnpm@10.33.0 --activate
-    PNPM_CMD=(corepack pnpm)
-  else
-    echo -e "${RED}ERR: pnpm is required for this repository (npm fallback removed).${NC}"
-    echo -e "${YELLOW}Install pnpm or enable corepack, then retry deploy.${NC}"
-    exit 1
-  fi
-fi
+COMPOSE=(docker compose --env-file "${ENV_FILE}" -f "${COMPOSE_FILE}")
 
-"${PNPM_CMD[@]}" install --frozen-lockfile
-"${PNPM_CMD[@]}" build
+echo -e "${CYAN}>>> [2/5] Validate production Compose...${NC}"
+"${COMPOSE[@]}" config --quiet
 
-echo -e "${CYAN}>>> [STAGE 2.5/4] Publish frontend release atomically...${NC}"
-chmod +x ./scripts/publish-frontend-release.sh
-./scripts/publish-frontend-release.sh
+echo -e "${CYAN}>>> [3/5] Pull immutable production images...${NC}"
+"${COMPOSE[@]}" pull
 
-echo -e "${CYAN}>>> [STAGE 3/4] Run backend deploy script (default app rebuild path)...${NC}"
-if [[ -f "./server/deploy-prod.sh" ]]; then
-  cd server
-  chmod +x deploy-prod.sh
-  ./deploy-prod.sh
-else
-  echo -e "${RED}ERR: missing backend deploy script: ./server/deploy-prod.sh${NC}"
-  exit 1
-fi
+echo -e "${CYAN}>>> [4/5] Reconcile ERP services...${NC}"
+"${COMPOSE[@]}" up -d --remove-orphans
 
-echo -e "${GREEN}>>> [SUCCESS] Deploy completed.${NC}"
-echo -e "${YELLOW}Repository is synced to ${TARGET_REMOTE}/${TARGET_BRANCH}.${NC}"
+echo -e "${CYAN}>>> [5/5] Report service status...${NC}"
+"${COMPOSE[@]}" ps
+
+echo -e "${GREEN}>>> [SUCCESS] ERP stack reconciled.${NC}"
+echo -e "${YELLOW}Gateway and DNS are managed separately; this script never modifies them.${NC}"

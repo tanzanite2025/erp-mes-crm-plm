@@ -27,7 +27,7 @@ RUN apk add --no-cache ca-certificates tzdata curl postgresql-client
 RUN addgroup -S -g "${XDFC_APP_GID}" xdfcgroup \
     && adduser -S -D -H -u "${XDFC_APP_UID}" -G xdfcgroup xdfcuser
 WORKDIR /app
-RUN mkdir -p /app/uploads /app/backups \
+RUN mkdir -p /app/uploads /app/backups /app/storage \
     && chown -R "${XDFC_APP_UID}:${XDFC_APP_GID}" /app
 
 COPY --from=builder /app/xdfc-server /app/xdfc-server
