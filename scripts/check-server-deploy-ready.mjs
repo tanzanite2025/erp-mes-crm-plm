@@ -104,6 +104,12 @@ expectNotIncludes(gatewayCompose, '"443:443/udp"', files.gatewayCompose, failure
 
 expectIncludes(apiDockerfile, '/app/uploads /app/backups /app/storage', files.apiDockerfile, failures)
 expectIncludes(webDockerfile, 'USER nginx', files.webDockerfile, failures)
+expectIncludes(
+  webDockerfile,
+  'COPY scripts/setup-git-hooks.mjs ./scripts/setup-git-hooks.mjs',
+  files.webDockerfile,
+  failures
+)
 expectIncludes(webDockerfile, 'pnpm install --frozen-lockfile', files.webDockerfile, failures)
 expectIncludes(webNginx, 'location = /api/v1/system/metrics', files.webNginx, failures)
 expectIncludes(webNginx, 'return 404;', files.webNginx, failures)
