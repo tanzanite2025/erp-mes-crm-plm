@@ -117,6 +117,8 @@ expectIncludes(webNginx, 'set $app_upstream http://app:8080;', files.webNginx, f
 expectIncludes(webNginx, 'location /uploads/', files.webNginx, failures)
 expectIncludes(webNginx, 'map $uri $cache_control', files.webNginx, failures)
 expectIncludes(webNginx, 'add_header Cache-Control $cache_control always;', files.webNginx, failures)
+expectIncludes(webNginx, 'uwsgi_temp_path /tmp/uwsgi_temp;', files.webNginx, failures)
+expectIncludes(webNginx, 'scgi_temp_path /tmp/scgi_temp;', files.webNginx, failures)
 expectNotIncludes(webNginx, '/tmp/nginx/', files.webNginx, failures)
 
 if (failures.length > 0) {
