@@ -9,7 +9,7 @@ import {
 } from '@/lib/read-resource'
 import { failLoudly } from '@/lib/safe-catch'
 import { useLanguage } from '@/context/language-provider'
-import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
+import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import { type SalesOrder } from '@/features/trading/data/schema'
 import { getSalesOrderById, useGetSalesOrders } from '@/features/trading/sales'
 import { shippingManagementQueryKeys } from '@/features/trading/shipping-management/query-keys'
@@ -55,7 +55,7 @@ export function useShipment(feedback?: ShipmentUiFeedback) {
     [feedback, locale]
   )
   const queryClient = useQueryClient()
-  const { allowsAction } = useNonBlockingPermissionActions()
+  const { allowsAction } = usePermissionActions()
   const shipmentSearch = useShipmentSearch(ui)
   const shipmentBootstrap = useShipmentBootstrap(ui)
   const shipmentForm = useShipmentFormState()

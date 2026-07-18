@@ -21,7 +21,7 @@ import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ForbiddenState } from '@/components/forbidden-state'
-import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
+import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import { QuoteWorkspaceHost } from '@/features/quotes/components/quote-workspace-host'
 import { quoteQueryKeys } from '@/features/quotes/query-keys'
 import { listCustomerQuoteSummary } from '@/features/quotes/services/customer-quote-summary-service'
@@ -49,7 +49,7 @@ type CustomerDashboardResource = CompositeReadResource<{
 
 export function CustomerList() {
   const { locale, t } = useLanguage()
-  const { allowsAction } = useNonBlockingPermissionActions()
+  const { allowsAction } = usePermissionActions()
   const [searchTerm, setSearchTerm] = useState('')
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false)
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(

@@ -74,7 +74,7 @@ import {
   AuditStatusDisplay,
 } from '@/components/common/audit-status-display'
 import { ForbiddenState } from '@/components/forbidden-state'
-import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
+import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import { getPurchaseStatusDisplayMeta } from '../../data/purchase-status'
 import type { OrderEvidence, PurchaseOrder } from '../../data/schema'
 import { usePurchaseReturnActions } from '../../hooks/use-purchase-return-actions'
@@ -232,7 +232,7 @@ function EvidencePreviewGrid({ evidences }: { evidences?: OrderEvidence[] }) {
 
 export function PurchaseOrderReturns() {
   const { t, locale } = useLanguage()
-  const { allowsAction } = useNonBlockingPermissionActions()
+  const { allowsAction } = usePermissionActions()
   const ordersQuery = useGetPurchaseOrdersWithLines(1, 100)
   const returnsQuery = useGetPurchaseReturns(1, 100)
   const returnReasonQuery = usePurchaseReturnDictionaryOptions('return_reason')

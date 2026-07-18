@@ -36,6 +36,7 @@ export function buildUserCreatePayload(params: {
   values: UserForm
 }): CreateUserPayload {
   const { values } = params
+  const normalizedRole = values.role?.trim().toLowerCase() || undefined
 
   return {
     username: values.username.trim(),
@@ -44,7 +45,11 @@ export function buildUserCreatePayload(params: {
     firstName: values.firstName.trim(),
     lastName: values.lastName.trim(),
     employeeId: values.employeeId?.trim() || undefined,
-    role: values.role?.trim() || undefined,
+    role: normalizedRole,
+    adminChallenge:
+      normalizedRole === 'admin'
+        ? values.adminChallenge.trim() || undefined
+        : undefined,
   }
 }
 
@@ -53,6 +58,10 @@ export function buildUserReplacePayload(params: {
   values: UserForm
 }): UserReplacePayload {
   const { currentRow, values } = params
+  const normalizedRole = values.role?.trim().toLowerCase() || undefined
+  const promotesToAdmin =
+    (currentRow.role || '').trim().toLowerCase() !== 'admin' &&
+    normalizedRole === 'admin'
 
   return {
     username: values.username.trim(),
@@ -62,7 +71,10 @@ export function buildUserReplacePayload(params: {
     lastName: values.lastName.trim(),
     status: currentRow.status,
     employeeId: values.employeeId?.trim() || undefined,
-    role: values.role?.trim() || undefined,
+    role: normalizedRole,
+    adminChallenge: promotesToAdmin
+      ? values.adminChallenge.trim() || undefined
+      : undefined,
   }
 }
 

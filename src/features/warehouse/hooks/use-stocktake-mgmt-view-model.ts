@@ -5,7 +5,7 @@ import {
   resolveQueryFailure,
 } from '@/lib/read-resource'
 import { failLoudly } from '@/lib/safe-catch'
-import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
+import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import { type WarehouseCategoryOption } from '../category'
 import { type StocktakeTask } from '../stocktake'
 import { filterWarehouseCategoriesByScene } from '../utils/warehouse-category-config'
@@ -21,7 +21,7 @@ type StocktakeMgmtShellResource = CompositeReadResource<{
 }>
 
 export function useStocktakeMgmtViewModel() {
-  const { allowsAction } = useNonBlockingPermissionActions()
+  const { allowsAction } = usePermissionActions()
 
   const {
     readResource,

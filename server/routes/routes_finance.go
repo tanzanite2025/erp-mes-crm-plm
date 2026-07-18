@@ -9,8 +9,8 @@ import (
 )
 
 func registerFinanceRoutes(authorized *gin.RouterGroup) {
-	adminOnly := middleware.RequirePermissions(authz.PermissionManage)
-	settingsAccess := middleware.RequirePermissions(authz.MenuSettings, authz.MenuTrading)
+	adminOnly := middleware.RequireAnyPermission(authz.PermissionManage)
+	settingsAccess := middleware.RequireAnyPermission(authz.MenuSettings, authz.MenuTrading)
 
 	financeGroup := authorized.Group("/finance")
 	financeGroup.Use(settingsAccess)

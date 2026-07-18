@@ -48,7 +48,7 @@ import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { ForbiddenState } from '@/components/forbidden-state'
-import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
+import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import {
   useWarehouseCategory,
   type WarehouseCategory as Category,
@@ -73,7 +73,7 @@ const DEFAULT_FORM_DATA: CategoryFormState = {
 }
 
 export default function WarehouseCategory() {
-  const { allowsAction } = useNonBlockingPermissionActions()
+  const { allowsAction } = usePermissionActions()
   const { t } = useLanguage()
   const {
     readResource,

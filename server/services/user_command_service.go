@@ -9,9 +9,30 @@ import (
 	"xdfc-server/db"
 	"xdfc-server/models"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
+
+var (
+	ErrProtectedUserMutation = errors.New("protected user account cannot be modified")
+	ErrUserUsernameConflict  = errors.New("username is already in use")
+)
+
+func mapUserUniqueViolation(err error) error {
+	var pgError *pgconn.PgError
+	if !errors.As(err, &pgError) || pgError.Code != "23505" {
+		return err
+	}
+	constraintName := strings.ToLower(strings.TrimSpace(pgError.ConstraintName))
+	if strings.Contains(constraintName, "employee") {
+		return ErrUserEmployeeAlreadyBound
+	}
+	if strings.Contains(constraintName, "username") {
+		return ErrUserUsernameConflict
+	}
+	return err
+}
 
 func userAuditSnapshot(user models.User) map[string]any {
 	return map[string]any{
@@ -22,6 +43,7 @@ func userAuditSnapshot(user models.User) map[string]any {
 		"firstName":   strings.TrimSpace(user.FirstName),
 		"lastName":    strings.TrimSpace(user.LastName),
 		"status":      strings.TrimSpace(user.Status),
+		"isProtected": user.IsSystemProtected(),
 		"role":        strings.TrimSpace(user.Role),
 		"employeeId":  strings.TrimSpace(user.EmployeeID),
 	}
@@ -60,19 +82,41 @@ func writeUserAuditEntryWithContext(ctx context.Context, tx *gorm.DB, targetID s
 func CreateUser(ctx context.Context, user models.User) (models.User, error) {
 	created := user
 	if err := db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Create(&created).Error; err != nil {
+		var existing models.User
+		existingResult := tx.Unscoped().Where("LOWER(username) = ?", strings.ToLower(strings.TrimSpace(created.Username))).First(&existing)
+		if existingResult.Error == nil {
+			if !existing.DeletedAt.Valid {
+				return ErrUserUsernameConflict
+			}
+			if existing.IsSystemProtected() {
+				return ErrProtectedUserMutation
+			}
+			if err := tx.Unscoped().Delete(&existing).Error; err != nil {
+				return err
+			}
+		} else if !errors.Is(existingResult.Error, gorm.ErrRecordNotFound) {
+			return existingResult.Error
+		}
+
+		if err := normalizeCreatedUserRole(tx, &created); err != nil {
 			return err
 		}
+		if err := normalizeCreatedUserEmployeeBinding(tx, &created); err != nil {
+			return err
+		}
+		if err := tx.Create(&created).Error; err != nil {
+			return mapUserUniqueViolation(err)
+		}
 		updates := sanitizeUserAuditUpdates(map[string]interface{}{
-			"username":       strings.TrimSpace(created.Username),
-			"email":          strings.TrimSpace(created.Email),
-			"phone_number":   strings.TrimSpace(created.PhoneNumber),
-			"first_name":     strings.TrimSpace(created.FirstName),
-			"last_name":      strings.TrimSpace(created.LastName),
-			"status":         strings.TrimSpace(created.Status),
-			"role":           strings.TrimSpace(created.Role),
-			"employee_id":    strings.TrimSpace(created.EmployeeID),
-			"password":       true,
+			"username":     strings.TrimSpace(created.Username),
+			"email":        strings.TrimSpace(created.Email),
+			"phone_number": strings.TrimSpace(created.PhoneNumber),
+			"first_name":   strings.TrimSpace(created.FirstName),
+			"last_name":    strings.TrimSpace(created.LastName),
+			"status":       strings.TrimSpace(created.Status),
+			"role":         strings.TrimSpace(created.Role),
+			"employee_id":  strings.TrimSpace(created.EmployeeID),
+			"password":     true,
 		})
 		return writeUserAuditEntryWithContext(ctx, tx, created.ID, "CREATE", nil, userAuditSnapshot(created), updates, "create")
 	}); err != nil {
@@ -88,9 +132,18 @@ func updateUserWithAudit(ctx context.Context, userID string, updates map[string]
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&current, "id = ?", strings.TrimSpace(userID)).Error; err != nil {
 			return err
 		}
+		if current.IsSystemProtected() {
+			return ErrProtectedUserMutation
+		}
+		if err := normalizeUserRoleUpdate(tx, updates); err != nil {
+			return err
+		}
+		if err := normalizeEmployeeBindingUpdate(tx, current.ID, updates); err != nil {
+			return err
+		}
 		before := userAuditSnapshot(current)
 		if err := tx.Model(&current).Updates(updates).Error; err != nil {
-			return err
+			return mapUserUniqueViolation(err)
 		}
 		if err := tx.First(&updated, "id = ?", strings.TrimSpace(userID)).Error; err != nil {
 			return err
@@ -120,6 +173,9 @@ func DeleteUser(ctx context.Context, userID string) error {
 				return tx.Delete(&models.User{}, "id = ?", strings.TrimSpace(userID)).Error
 			}
 			return err
+		}
+		if current.IsSystemProtected() {
+			return ErrProtectedUserMutation
 		}
 		before := userAuditSnapshot(current)
 		if err := tx.Delete(&current).Error; err != nil {

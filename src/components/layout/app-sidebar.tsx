@@ -15,7 +15,7 @@ import {
   SidebarRail,
   useSidebar,
 } from '@/components/ui/sidebar'
-import { getNonBlockingNavGroups } from '@/features/authz/guards/navigation-access'
+import { getAccessibleNavGroups } from '@/features/authz/guards/navigation-access'
 import { EnterpriseService } from '@/features/basic-settings/services/enterprise-service'
 import { getSidebarData } from './data/sidebar-data'
 import { NavGroup, SidebarMenuBranch } from './nav-group'
@@ -97,7 +97,7 @@ export function AppSidebar() {
   })
   const visibleNavGroups = useMemo(
     () =>
-      getNonBlockingNavGroups(user, localizedSidebarData.navGroups, {
+      getAccessibleNavGroups(user, localizedSidebarData.navGroups, {
         isIdentitySynced,
       }),
     [localizedSidebarData.navGroups, user, isIdentitySynced]

@@ -15,6 +15,7 @@ export const userApiDTOSchema = z
     firstName: z.string().optional(),
     lastName: z.string().optional(),
     status: userStatusApiDTOSchema,
+    isProtected: z.boolean().optional(),
     role: z.string().optional(),
     employeeId: z.string().optional(),
     password: z.string().optional(),
@@ -32,6 +33,7 @@ export const userOptionApiDTOSchema = z
     employeeId: z.string().optional(),
     firstName: z.string().optional(),
     lastName: z.string().optional(),
+    isProtected: z.boolean().optional(),
     role: z.string().optional(),
     status: userStatusApiDTOSchema.optional(),
   })
@@ -68,7 +70,10 @@ export const userPermissionsApiDTOSchema = z
     username: z.string(),
     status: userStatusApiDTOSchema,
     employeeId: z.string().optional(),
+    role: z.string().optional(),
     permissions: z.array(userPermissionItemApiDTOSchema),
+    inheritedPermissions: z.array(z.string()),
+    effectivePermissions: z.array(z.string()),
     total: z.number(),
   })
   .strict()

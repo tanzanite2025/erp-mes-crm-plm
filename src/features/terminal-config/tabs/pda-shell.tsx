@@ -41,7 +41,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { TrackingNumberInput } from '@/components/tracking-number-input'
-import { canOpenRouteEntryNonBlocking } from '@/features/authz/guards/route-entry-access'
+import { canOpenRouteEntry } from '@/features/authz/guards/route-entry-access'
 import {
   createDefaultLinearBarcodeProtocolConfig,
   type LinearBarcodeProtocolConfig,
@@ -137,10 +137,7 @@ async function exitFullscreen() {
 export function PDAShellTab() {
   const { t } = useLanguage()
   const user = useAuthStore((state) => state.user)
-  const canOpenWorkbench = canOpenRouteEntryNonBlocking(
-    user,
-    '/terminal-config/pda'
-  )
+  const canOpenWorkbench = canOpenRouteEntry(user, '/terminal-config/pda')
   const [protocolConfig, setProtocolConfig] =
     useState<LinearBarcodeProtocolConfig>(
       createDefaultLinearBarcodeProtocolConfig

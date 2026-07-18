@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { buildHostedQuickActionDialogContentClassName } from '@/components/hosted-quick-action-dialog.styles'
-import { NonBlockingPermissionBoundary } from '@/components/permission-passthrough'
+import { PermissionBoundary } from '@/components/permission-boundary'
 import { type WarehouseCategoryOption } from '../category'
 import { type InboundFormData } from '../hooks/use-product-inbound'
 
@@ -187,7 +187,7 @@ export function ProductInboundFormDialog({
           >
             {t('warehouse.inbound.dialog.cancel')}
           </Button>
-          <NonBlockingPermissionBoundary permission='action_warehouse_inbound_record'>
+          <PermissionBoundary permission='action_warehouse_inbound_record'>
             <Button
               className='h-11 flex-1 gap-2 rounded-full bg-emerald-600 text-[10px] font-black tracking-widest uppercase shadow-lg shadow-emerald-500/20 transition-all hover:bg-emerald-700 active:scale-95'
               onClick={() => {
@@ -198,7 +198,7 @@ export function ProductInboundFormDialog({
               <CheckCircle2 className='size-4' />{' '}
               {t('warehouse.inbound.dialog.commit')}
             </Button>
-          </NonBlockingPermissionBoundary>
+          </PermissionBoundary>
         </DialogFooter>
       </DialogContent>
     </Dialog>

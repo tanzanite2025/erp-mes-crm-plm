@@ -37,7 +37,7 @@ import { Input } from '@/components/ui/input'
 import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
-import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
+import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import { canOpenWeChat, openWeChat } from '@/features/contact-channels'
 import {
   type Supplier,
@@ -52,7 +52,7 @@ import { SupplierActionDialog } from './supplier-action-dialog'
 export function SupplierList() {
   const { locale, t } = useLanguage()
   const queryClient = useQueryClient()
-  const { allowsAction } = useNonBlockingPermissionActions()
+  const { allowsAction } = usePermissionActions()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<SupplierStatus | 'All'>(
     'All'

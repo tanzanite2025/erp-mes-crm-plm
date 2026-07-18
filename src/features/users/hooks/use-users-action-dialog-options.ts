@@ -15,6 +15,7 @@ import { type UserOption } from '../data/schema'
 
 type UseUsersActionDialogOptionsParams = {
   open: boolean
+  enabled?: boolean
   currentRow?: UserOption
   usersData?: UserOption[]
   t: TranslateFn
@@ -22,6 +23,7 @@ type UseUsersActionDialogOptionsParams = {
 
 export function useUsersActionDialogOptions({
   open,
+  enabled = true,
   currentRow,
   usersData,
   t,
@@ -30,7 +32,7 @@ export function useUsersActionDialogOptions({
   const [rawOrgNodes, setRawOrgNodes] = useState<OrgNode[]>([])
 
   useEffect(() => {
-    if (!open) return
+    if (!open || !enabled) return
 
     let isCancelled = false
 
@@ -114,7 +116,7 @@ export function useUsersActionDialogOptions({
     return () => {
       isCancelled = true
     }
-  }, [open, currentRow?.employeeId, usersData, t])
+  }, [open, enabled, currentRow?.employeeId, usersData, t])
 
   return {
     employees,

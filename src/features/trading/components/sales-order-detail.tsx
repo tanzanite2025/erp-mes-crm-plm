@@ -1,7 +1,7 @@
 import { Loader2 } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
 import { useLanguage } from '@/context/language-provider'
-import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
+import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import type { SalesOrder } from '../data/schema'
 import { useSalesOrderCommandState } from '../hooks/use-sales-order-command-state'
 import { useSalesOrderDetailActions } from '../hooks/use-sales-order-detail-actions'
@@ -21,7 +21,7 @@ export function SalesOrderDetail({
   onDelete?: (order: SalesOrder) => void
 }) {
   const { t } = useLanguage()
-  const { allowsAction } = useNonBlockingPermissionActions()
+  const { allowsAction } = usePermissionActions()
   const detailQueryId = orderId || initialOrder?.id || ''
   const { data: detailedOrder, isLoading: isDetailLoading } =
     useGetSalesOrderDetail(detailQueryId)

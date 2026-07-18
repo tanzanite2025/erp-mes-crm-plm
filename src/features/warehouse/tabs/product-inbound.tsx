@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { ForbiddenState } from '@/components/forbidden-state'
-import { NonBlockingPermissionBoundary } from '@/components/permission-passthrough'
+import { PermissionBoundary } from '@/components/permission-boundary'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { ProductInboundFormDialog } from '../components/product-inbound-form-dialog'
@@ -232,7 +232,7 @@ export default function ProductInbound() {
                     </div>
                   </div>
                 </div>
-                <NonBlockingPermissionBoundary permission='action_warehouse_inbound_record'>
+                <PermissionBoundary permission='action_warehouse_inbound_record'>
                   <Button
                     size='sm'
                     variant='ghost'
@@ -245,7 +245,7 @@ export default function ProductInbound() {
                     {t('warehouse.inbound.startInbound')}{' '}
                     <Plus className='size-3' />
                   </Button>
-                </NonBlockingPermissionBoundary>
+                </PermissionBoundary>
               </div>
             ))
           ) : (

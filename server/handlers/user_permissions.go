@@ -19,17 +19,19 @@ type userPermissionItemResponse struct {
 }
 
 type getUserPermissionsResponse struct {
-	UserID      string                       `json:"userId"`
-	Username    string                       `json:"username"`
-	Status      string                       `json:"status"`
-	EmployeeID  string                       `json:"employeeId,omitempty"`
-	Permissions []userPermissionItemResponse `json:"permissions"`
-	Total       int                          `json:"total"`
+	UserID               string                       `json:"userId"`
+	Username             string                       `json:"username"`
+	Status               string                       `json:"status"`
+	EmployeeID           string                       `json:"employeeId,omitempty"`
+	Role                 string                       `json:"role,omitempty"`
+	Permissions          []userPermissionItemResponse `json:"permissions"`
+	InheritedPermissions []string                     `json:"inheritedPermissions"`
+	EffectivePermissions []string                     `json:"effectivePermissions"`
+	Total                int                          `json:"total"`
 }
 
 type replaceUserPermissionsRequest struct {
 	Permissions []string `json:"permissions"`
-	Source      string   `json:"source"`
 	Reason      string   `json:"reason"`
 }
 
@@ -59,12 +61,15 @@ func buildUserPermissionsResponse(view services.UserPermissionsView) getUserPerm
 	}
 
 	return getUserPermissionsResponse{
-		UserID:      view.UserID,
-		Username:    view.Username,
-		Status:      view.Status,
-		EmployeeID:  view.EmployeeID,
-		Permissions: permissions,
-		Total:       len(permissions),
+		UserID:               view.UserID,
+		Username:             view.Username,
+		Status:               view.Status,
+		EmployeeID:           view.EmployeeID,
+		Role:                 view.Role,
+		Permissions:          permissions,
+		InheritedPermissions: append([]string(nil), view.InheritedPermissionIDs...),
+		EffectivePermissions: append([]string(nil), view.EffectivePermissionIDs...),
+		Total:                len(permissions),
 	}
 }
 
@@ -109,7 +114,7 @@ func ReplaceUserPermissionsHandler(c *gin.Context) {
 	grantedBy, _ := c.Get("userId")
 	result, err := services.ReplaceUserPermissions(auditContextFromGin(c), userID, services.ReplaceUserPermissionsInput{
 		PermissionIDs: input.Permissions,
-		Source:        input.Source,
+		Source:        "manual",
 		Reason:        input.Reason,
 		GrantedBy:     strings.TrimSpace(toString(grantedBy)),
 	})
@@ -120,6 +125,9 @@ func ReplaceUserPermissionsHandler(c *gin.Context) {
 			return
 		case errors.Is(err, services.ErrUserPermissionsInvalidPayload):
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		case errors.Is(err, services.ErrProtectedUserMutation):
+			c.JSON(http.StatusForbidden, gin.H{"error": "Protected account permissions cannot be modified"})
 			return
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to replace user permissions"})

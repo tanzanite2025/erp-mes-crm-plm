@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Link } from '@tanstack/react-router'
 import { AlertCircle, ArrowRight, Loader2, ShieldCheck } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
-import { canOpenRouteEntryNonBlocking } from '@/features/authz/guards/route-entry-access'
+import { canOpenRouteEntry } from '@/features/authz/guards/route-entry-access'
 import { useNotificationStore } from '@/features/system-mgmt/notifications/notification-store'
 
 type SystemAnomalyMetadata = {
@@ -19,10 +19,7 @@ type SystemAnomalyMetadata = {
 export function SystemAnomalyBanner() {
   const messages = useNotificationStore((s) => s.messages)
   const user = useAuthStore((state) => state.user)
-  const canOpenBasicSettings = canOpenRouteEntryNonBlocking(
-    user,
-    '/basic-settings'
-  )
+  const canOpenBasicSettings = canOpenRouteEntry(user, '/basic-settings')
   const bannerRef = useRef<HTMLDivElement>(null)
 
   // 提取系统级核心异常

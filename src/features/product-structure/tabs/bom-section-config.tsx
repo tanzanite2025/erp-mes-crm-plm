@@ -31,7 +31,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { ConfirmDialog } from '@/components/confirm-dialog'
-import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
+import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import { type BOMSectionConfig } from '../data/bom-section-schema'
 import { useBOMSectionConfig } from '../hooks/use-bom-section-config'
 
@@ -113,7 +113,7 @@ function isBOMSectionDeleteLinkedError(error: unknown) {
 }
 
 export function BOMSectionConfigTab() {
-  const { allowsAction } = useNonBlockingPermissionActions()
+  const { allowsAction } = usePermissionActions()
   const { t } = useLanguage()
   const {
     readResource,

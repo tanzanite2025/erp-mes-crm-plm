@@ -26,6 +26,7 @@ export function toUserContract(dto: UserApiDTO): User {
     username: dto.username,
     phoneNumber: dto.phoneNumber ?? '',
     status: dto.status,
+    isProtected: dto.isProtected ?? false,
     role: dto.role,
     version: dto.version ?? 1,
     password: dto.password,
@@ -45,6 +46,7 @@ export function toUserOptionContract(dto: UserOptionApiDTO): UserOption {
     employeeId: dto.employeeId,
     firstName: dto.firstName,
     lastName: dto.lastName,
+    isProtected: dto.isProtected ?? false,
     role: dto.role,
     status: dto.status,
   }
@@ -72,6 +74,7 @@ export function toUserApiDTO(contract: User): UserApiDTO {
     firstName: contract.firstName,
     lastName: contract.lastName,
     status: contract.status,
+    isProtected: contract.isProtected,
     role: contract.role,
     employeeId: contract.employeeId,
     password: contract.password,
@@ -100,7 +103,10 @@ export function toUserPermissionsResponseContract(
     username: dto.username,
     status: dto.status,
     employeeId: dto.employeeId,
+    role: dto.role,
     permissions: dto.permissions.map(toUserPermissionItemContract),
+    inheritedPermissions: [...dto.inheritedPermissions],
+    effectivePermissions: [...dto.effectivePermissions],
     total: dto.total,
   }
 }

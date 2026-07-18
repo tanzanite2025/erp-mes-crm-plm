@@ -65,7 +65,8 @@ func IsSupportedPermissionID(value string) bool {
 	}
 
 	if strings.HasPrefix(normalized, "page_") || strings.HasPrefix(normalized, "tab_") {
-		return true
+		_, exists := KnownRoutePermissionIDs[normalized]
+		return exists
 	}
 
 	for _, permissionID := range ManagedPermissionIDs {

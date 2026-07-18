@@ -9,10 +9,10 @@ import (
 )
 
 func registerArApRoutes(authorized *gin.RouterGroup) {
-	tradingRead := middleware.RequirePermissions(authz.MenuTrading)
-	purchaseRead := middleware.RequirePermissions(authz.MenuPurchase)
+	tradingRead := middleware.RequireAnyPermission(authz.MenuTrading)
+	purchaseRead := middleware.RequireAnyPermission(authz.MenuPurchase)
 
-	financeSettlement := middleware.RequirePermissions(authz.ActionFinanceSettlementManage)
+	financeSettlement := middleware.RequireAnyPermission(authz.ActionFinanceSettlementManage)
 
 	receivables := authorized.Group("/receivables")
 	{

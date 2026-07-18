@@ -1,6 +1,6 @@
 import type { TranslationKey } from '@/locales'
 import { useLanguage } from '@/context/language-provider'
-import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
+import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 
 interface ConfirmedActionOptions {
   /** 权限标识符。如果传入，将自动调用非阻断动作许可辅助。 */
@@ -17,7 +17,7 @@ interface ConfirmedActionOptions {
  * useConfirmedActionFlow - 统一处理“非阻断动作许可 + 二次确认”的操作钩子
  */
 export function useConfirmedActionFlow() {
-  const { allowsAction } = useNonBlockingPermissionActions()
+  const { allowsAction } = usePermissionActions()
   const { t } = useLanguage()
 
   const runConfirmedAction = (options: ConfirmedActionOptions) => {

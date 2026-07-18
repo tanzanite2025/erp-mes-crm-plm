@@ -28,11 +28,14 @@ type UserPermissionItem struct {
 }
 
 type UserPermissionsView struct {
-	UserID      string
-	Username    string
-	Status      string
-	EmployeeID  string
-	Permissions []UserPermissionItem
+	UserID                 string
+	Username               string
+	Status                 string
+	EmployeeID             string
+	Role                   string
+	Permissions            []UserPermissionItem
+	InheritedPermissionIDs []string
+	EffectivePermissionIDs []string
 }
 
 type ReplaceUserPermissionsInput struct {
@@ -87,7 +90,7 @@ func GetUserPermissions(userID string) (UserPermissionsView, error) {
 	}
 
 	var user models.User
-	if err := db.DB.Select("id", "username", "status", "employee_id").First(&user, "id = ?", normalizedUserID).Error; err != nil {
+	if err := db.DB.Select("id", "username", "status", "employee_id", "role").First(&user, "id = ?", normalizedUserID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return UserPermissionsView{}, ErrUserPermissionsUserNotFound
 		}
@@ -103,25 +106,53 @@ func GetUserPermissions(userID string) (UserPermissionsView, error) {
 	}
 
 	permissions := make([]UserPermissionItem, 0, len(rows))
+	directPermissionIDs := make([]string, 0, len(rows))
 	for _, row := range rows {
 		grantedBy := ""
 		if row.GrantedBy != nil {
 			grantedBy = strings.TrimSpace(*row.GrantedBy)
 		}
 		permissions = append(permissions, UserPermissionItem{
-			PermissionID: strings.TrimSpace(row.PermissionID),
+			PermissionID: authz.NormalizePermissionID(row.PermissionID),
 			Source:       strings.TrimSpace(row.Source),
 			GrantedBy:    grantedBy,
 			UpdatedAt:    row.UpdatedAt,
 		})
+		if authz.IsSupportedPermissionID(row.PermissionID) {
+			directPermissionIDs = append(directPermissionIDs, row.PermissionID)
+		}
 	}
 
+	inheritedPermissionIDs := make([]string, 0)
+	normalizedRoleID := strings.ToLower(strings.TrimSpace(user.Role))
+	if normalizedRoleID != "" {
+		var role models.Role
+		err := db.DB.Select("permissions").Where("LOWER(role_id) = ?", normalizedRoleID).First(&role).Error
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return UserPermissionsView{}, err
+		}
+		if err == nil {
+			for _, permissionID := range authz.ParsePermissionIDs(role.Permissions) {
+				if authz.IsSupportedPermissionID(permissionID) {
+					inheritedPermissionIDs = append(inheritedPermissionIDs, permissionID)
+				}
+			}
+		}
+	}
+	effectivePermissionIDs := authz.DeduplicatePermissionIDs(append(
+		append([]string(nil), inheritedPermissionIDs...),
+		directPermissionIDs...,
+	))
+
 	return UserPermissionsView{
-		UserID:      user.ID,
-		Username:    user.Username,
-		Status:      user.Status,
-		EmployeeID:  strings.TrimSpace(user.EmployeeID),
-		Permissions: permissions,
+		UserID:                 user.ID,
+		Username:               user.Username,
+		Status:                 user.Status,
+		EmployeeID:             strings.TrimSpace(user.EmployeeID),
+		Role:                   normalizedRoleID,
+		Permissions:            permissions,
+		InheritedPermissionIDs: inheritedPermissionIDs,
+		EffectivePermissionIDs: effectivePermissionIDs,
 	}, nil
 }
 
@@ -208,12 +239,15 @@ func ReplaceUserPermissions(ctx context.Context, userID string, input ReplaceUse
 	err := db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var user models.User
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
-			Select("id", "username", "status", "employee_id").
+			Select("id", "username", "status", "employee_id", "is_protected").
 			First(&user, "id = ?", normalizedUserID).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return ErrUserPermissionsUserNotFound
 			}
 			return err
+		}
+		if user.IsSystemProtected() {
+			return ErrProtectedUserMutation
 		}
 
 		replaced, err := replaceUserPermissionsTx(tx, user, input, "")

@@ -25,6 +25,8 @@ export const getFormSchema = (t: TranslateFn) =>
       isEdit: z.boolean(),
       employeeId: z.string().optional(),
       role: z.string().optional(),
+      initialRole: z.string(),
+      adminChallenge: z.string().transform((value) => value.trim()),
     })
     .refine(
       (data) => {
@@ -34,6 +36,18 @@ export const getFormSchema = (t: TranslateFn) =>
       {
         message: t('users.validation.passwordRequired'),
         path: ['password'],
+      }
+    )
+    .refine(
+      ({ role, initialRole, adminChallenge }) => {
+        const promotesToAdmin =
+          initialRole.trim().toLowerCase() !== 'admin' &&
+          role?.trim().toLowerCase() === 'admin'
+        return !promotesToAdmin || adminChallenge.length > 0
+      },
+      {
+        message: t('users.validation.adminChallengeRequired'),
+        path: ['adminChallenge'],
       }
     )
     .refine(

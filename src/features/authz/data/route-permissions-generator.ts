@@ -19,6 +19,10 @@ export type GeneratedRoutePermissions = {
 }
 
 const HIDDEN_PAGE_PATHS = new Set(['/', '/dashboard'])
+const ROUTE_PERMISSION_FALLBACK_OVERRIDES: Record<string, string[]> = {
+  '/personnel/accounts': ['user_view', 'perm_manage'],
+  '/personnel/rights': ['perm_manage'],
+}
 
 function normalizePath(path: string): string {
   const normalized = path.replace(/\/+/g, '/').replace(/\/$/, '')
@@ -206,11 +210,16 @@ export class RoutePermissionsGenerator {
 
         const tabPermissionId = tabPermissionByPath.get(path)?.id
         const permissionId = tabPermissionId || menuId
+        const fallbackPermissionIds = ROUTE_PERMISSION_FALLBACK_OVERRIDES[
+          path
+        ] || [menuId]
 
         return {
           path,
           permissionId,
-          fallbackPermissionIds: [],
+          fallbackPermissionIds: toUniqueIds(fallbackPermissionIds).filter(
+            (id) => id !== permissionId
+          ),
         }
       }
     )

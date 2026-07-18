@@ -3,6 +3,9 @@ package services
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 	"xdfc-server/authz"
@@ -14,8 +17,25 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+var (
+	ErrRoleInvalidPayload    = errors.New("role payload is invalid")
+	ErrProtectedRoleMutation = errors.New("protected role cannot be modified")
+)
+
+var roleIDPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]{0,99}$`)
+
 func normalizeRolePermissionIDsForCommand(permissionIDs []string) []string {
 	return authz.DeduplicatePermissionIDs(permissionIDs)
+}
+
+func validateRolePermissionIDs(permissionIDs []string) ([]string, error) {
+	normalized := normalizeRolePermissionIDsForCommand(permissionIDs)
+	for _, permissionID := range normalized {
+		if !authz.IsSupportedPermissionID(permissionID) {
+			return nil, fmt.Errorf("%w: unsupported permission id %s", ErrRoleInvalidPayload, permissionID)
+		}
+	}
+	return normalized, nil
 }
 
 func sortedRolePermissionIDs(permissionIDs []string) []string {
@@ -99,15 +119,27 @@ func writeRoleAuditEntryWithContext(ctx context.Context, tx *gorm.DB, targetID s
 
 func UpsertRole(ctx context.Context, input models.Role) (models.Role, error) {
 	normalizedRoleID := strings.ToLower(strings.TrimSpace(input.RoleID))
-	payloadPermissions := normalizeRolePermissionIDsForCommand(authz.ParsePermissionIDs(input.Permissions))
+	if !roleIDPattern.MatchString(normalizedRoleID) {
+		return models.Role{}, fmt.Errorf("%w: invalid role id", ErrRoleInvalidPayload)
+	}
+	if normalizedRoleID == "admin" {
+		return models.Role{}, ErrProtectedRoleMutation
+	}
+	payloadPermissions, err := validateRolePermissionIDs(authz.ParsePermissionIDs(input.Permissions))
+	if err != nil {
+		return models.Role{}, err
+	}
 	label := strings.TrimSpace(input.Label)
+	if label == "" {
+		return models.Role{}, fmt.Errorf("%w: role label is required", ErrRoleInvalidPayload)
+	}
 	color := strings.TrimSpace(input.Color)
 	if color == "" {
 		color = "bg-slate-500/10 text-slate-600 border-slate-200"
 	}
 
 	var saved models.Role
-	err := db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	err = db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var existing models.Role
 		result := tx.Unscoped().Clauses(clause.Locking{Strength: "UPDATE"}).Where("LOWER(role_id) = ?", normalizedRoleID).First(&existing)
 		if result.Error == nil {
@@ -128,7 +160,7 @@ func UpsertRole(ctx context.Context, input models.Role) (models.Role, error) {
 			}
 			return writeRoleAuditEntryWithContext(ctx, tx, saved.ID, "UPSERT", before, roleAuditSnapshot(saved), nil)
 		}
-		if result.Error != nil && result.Error != gorm.ErrRecordNotFound {
+		if result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return result.Error
 		}
 
@@ -155,11 +187,14 @@ func UpsertRole(ctx context.Context, input models.Role) (models.Role, error) {
 
 func DeleteRole(ctx context.Context, roleID string) error {
 	normalizedID := strings.ToLower(strings.TrimSpace(roleID))
+	if normalizedID == "admin" {
+		return ErrProtectedRoleMutation
+	}
 	return db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var role models.Role
 		result := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("LOWER(role_id) = ?", normalizedID).First(&role)
 		if result.Error != nil {
-			if result.Error == gorm.ErrRecordNotFound {
+			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 				return tx.Where("LOWER(role_id) = ?", normalizedID).Delete(&models.Role{}).Error
 			}
 			return result.Error

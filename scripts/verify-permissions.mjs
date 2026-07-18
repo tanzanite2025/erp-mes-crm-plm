@@ -102,6 +102,10 @@ const routePermissionsGeneratorModulePath = path.resolve(
   'src/features/authz/data/route-permissions-generator.ts',
 )
 const authenticatedRoutesDir = path.resolve(projectRoot, 'src/routes/_authenticated')
+const backendRoutePermissionContractPath = path.resolve(
+  projectRoot,
+  'server/authz/route_permission_contract.gen.go',
+)
 
 const { PERMISSION_VERSION, exportPermissionCatalog, migratePermissions } = loadTsModule(
   permissionCatalogModulePath,
@@ -135,6 +139,34 @@ entries.forEach((entry) => {
 })
 
 console.log(`Total unique permission ids: ${allPermissionIds.size}`)
+
+const expectedRoutePermissionIds = Array.from(allPermissionIds)
+  .filter((permissionId) => /^(page_|tab_)/.test(permissionId))
+  .sort()
+const backendRoutePermissionContract = fs.readFileSync(
+  backendRoutePermissionContractPath,
+  'utf8',
+)
+const backendRoutePermissionIds = Array.from(
+  backendRoutePermissionContract.matchAll(
+    /"((?:page|tab)_[^"]+)":\s*\{\},/g,
+  ),
+  (match) => match[1],
+).sort()
+
+if (
+  expectedRoutePermissionIds.length !== backendRoutePermissionIds.length ||
+  expectedRoutePermissionIds.some(
+    (permissionId, index) => permissionId !== backendRoutePermissionIds[index],
+  )
+) {
+  throw new Error(
+    '[verify-permissions] Backend route permission contract is stale. Run pnpm gen:route-permission-contract.',
+  )
+}
+console.log(
+  `Backend route permission contract: ${backendRoutePermissionIds.length} ids aligned`,
+)
 
 const duplicatePaths = entries
   .map((entry) => entry.path)

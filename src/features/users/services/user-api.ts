@@ -34,6 +34,7 @@ export interface CreateUserPayload {
   status?: string
   role?: string
   employeeId?: string
+  adminChallenge?: string
 }
 
 export interface UserUpdatePayload {
@@ -46,6 +47,7 @@ export interface UserUpdatePayload {
   status?: string
   role?: string
   employeeId?: string
+  adminChallenge?: string
 }
 
 export interface UserReplacePayload {
@@ -57,11 +59,11 @@ export interface UserReplacePayload {
   status: string
   role?: string
   employeeId?: string
+  adminChallenge?: string
 }
 
 export interface ReplaceUserPermissionsPayload {
   permissions: string[]
-  source?: string
   reason?: string
 }
 
@@ -132,7 +134,6 @@ export const fetchUsers = async (params: UsersQueryParams = {}) => {
 
 export const fetchUserOptions = async (params: UsersQueryParams = {}) => {
   const query = new URLSearchParams()
-  query.append('options', 'true')
 
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null) {
@@ -147,7 +148,7 @@ export const fetchUserOptions = async (params: UsersQueryParams = {}) => {
     }
   })
 
-  const res = await apiFetch<unknown>(`/users?${query.toString()}`)
+  const res = await apiFetch<unknown>(`/users/options?${query.toString()}`)
   return toUserOptionContracts(
     deserializeUsersApiDTO(
       res,
@@ -239,6 +240,13 @@ export const replaceUser = async (id: string, userData: UserReplacePayload) => {
 export const deleteUser = async (id: string) => {
   return apiFetch(`/users/${id}`, {
     method: 'DELETE',
+  })
+}
+
+export const bulkDeleteUsers = async (userIds: string[]) => {
+  return apiFetch<{ deleted: number }>('/users/bulk-delete', {
+    method: 'POST',
+    body: JSON.stringify({ userIds }),
   })
 }
 

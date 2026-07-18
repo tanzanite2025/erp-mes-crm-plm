@@ -152,8 +152,9 @@ func (GormOrganizationRepository) DeleteEmployees(database *gorm.DB, ids []strin
 func (GormOrganizationRepository) DisableUsersByEmployeeIDs(database *gorm.DB, ids []string) error {
 	return database.Model(&models.User{}).
 		Where("employee_id IN ?", ids).
+		Where("is_protected = ?", false).
 		Where("LOWER(username) <> ?", "admin").
-		Update("status", "disabled").Error
+		Update("status", "inactive").Error
 }
 
 func (GormOrganizationRepository) FindEmployeeByIDOrStaffID(database *gorm.DB, id string, staffID string) (models.Employee, bool, error) {

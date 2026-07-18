@@ -34,10 +34,14 @@ export const useUsersQuery = (params: UsersQueryParams = {}) => {
   })
 }
 
-export const useUserOptionsQuery = (params: UsersQueryParams = {}) => {
+export const useUserOptionsQuery = (
+  params: UsersQueryParams = {},
+  enabled = true
+) => {
   return useQuery<UserOption[]>({
     queryKey: [...USERS_QUERY_KEY, 'options', params],
     queryFn: () => userApi.fetchUserOptions(params),
+    enabled,
   })
 }
 
@@ -141,6 +145,19 @@ export const useUserMutations = () => {
     }),
   })
 
+  const bulkDeleteMutation = useMutation({
+    mutationFn: ({ userIds }: { userIds: string[] }) =>
+      userApi.bulkDeleteUsers(userIds),
+    ...buildMutationOptions<
+      { deleted: number },
+      unknown,
+      { userIds: string[] }
+    >({
+      queryClient,
+      invalidateQueryKeys: [USERS_QUERY_KEY],
+    }),
+  })
+
   const bindEmployeeMutation = useMutation({
     mutationFn: ({ id, employeeId }: { id: string; employeeId: string }) =>
       userApi.bindUserEmployee(id, employeeId),
@@ -185,6 +202,7 @@ export const useUserMutations = () => {
     updateMutation,
     replaceMutation,
     deleteMutation,
+    bulkDeleteMutation,
     bindEmployeeMutation,
     unbindEmployeeMutation,
     replaceUserPermissionsMutation,

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -16,9 +17,14 @@ type User struct {
 	FirstName   string         `gorm:"size:50" json:"firstName"`
 	LastName    string         `gorm:"size:50" json:"lastName"`
 	Status      string         `gorm:"size:20;default:'active'" json:"status"`
+	IsProtected bool           `gorm:"not null;default:false;index" json:"isProtected"`
 	Role        string         `gorm:"size:100;index" json:"role"`
 	EmployeeID  string         `gorm:"size:100" json:"employeeId"`
 	CreatedAt   time.Time      `json:"createdAt"`
 	UpdatedAt   time.Time      `json:"updatedAt"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
+}
+
+func (user User) IsSystemProtected() bool {
+	return user.IsProtected || strings.EqualFold(strings.TrimSpace(user.Username), "admin")
 }

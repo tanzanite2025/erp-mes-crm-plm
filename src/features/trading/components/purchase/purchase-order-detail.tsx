@@ -17,7 +17,7 @@ import { Separator } from '@/components/ui/separator'
 import { AuditStamp } from '@/components/common/audit-stamp'
 import { AuditStatusDisplay } from '@/components/common/audit-status-display'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
-import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
+import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import { canPerformPurchaseOrderAction } from '../../data/purchase-order-state-machine'
 import {
   canReceivePurchaseOrder,
@@ -51,7 +51,7 @@ export function PurchaseOrderDetail({
   onDelete,
 }: PurchaseOrderDetailProps) {
   const { t } = useLanguage()
-  const { allowsAction } = useNonBlockingPermissionActions()
+  const { allowsAction } = usePermissionActions()
   const user = useAuthStore((state) => state.user)
   const { data: detailedOrder, isLoading: isDetailLoading } =
     useGetPurchaseOrderDetail(initialOrder?.id || '')

@@ -19,7 +19,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { canOpenRouteEntryNonBlocking } from '@/features/authz/guards/route-entry-access'
+import { canOpenRouteEntry } from '@/features/authz/guards/route-entry-access'
 import { linearBarcodeProtocolService } from '@/features/basic-settings/services/linear-barcode-protocol-service'
 import { numberingService } from '@/features/basic-settings/services/numbering-service'
 import { HoleCodeSourceActionDialog } from '@/features/code-center/components/hole-code-source-action-dialog'
@@ -46,7 +46,7 @@ export function LinearBarcodeMgmt() {
   const { t, locale } = useLanguage()
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
-  const canOpenSharedNumberingEngine = canOpenRouteEntryNonBlocking(
+  const canOpenSharedNumberingEngine = canOpenRouteEntry(
     user,
     '/code-center/shared-code-source/numbering-engine'
   )

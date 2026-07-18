@@ -1,13 +1,12 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Link2Off, UserPlus } from 'lucide-react'
+import { UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
-import { Combobox } from '@/components/ui/combobox'
 import {
   Dialog,
   DialogContent,
@@ -16,30 +15,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { Form } from '@/components/ui/form'
 import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
-import { PasswordInput } from '@/components/password-input'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
+import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import { useRolesQuery } from '@/features/system-mgmt/hooks/use-roles'
 import { type User } from '../data/schema'
 import { useUserMutations, useUserOptionsQuery } from '../hooks/use-users'
 import { useUsersActionDialogOptions } from '../hooks/use-users-action-dialog-options'
 import { useUsersActionDialogSync } from '../hooks/use-users-action-dialog-sync'
+import { UserActionIdentityFields } from './user-action-identity-fields'
+import { UserActionSecurityFields } from './user-action-security-fields'
 import { getFormSchema, type UserForm } from './users-action-dialog.shared'
 import {
   buildDialogCloseHandler,
@@ -48,12 +34,38 @@ import {
   buildUserReplacePayload,
 } from './users-action-dialog.submit'
 
-const UNASSIGNED_ROLE_VALUE = '__unassigned_role__'
-
 type UserActionDialogProps = {
   currentRow?: User
   open: boolean
   onOpenChange: (open: boolean) => void
+}
+
+function buildEmptyUserForm(isEdit: boolean): UserForm {
+  return {
+    firstName: '',
+    lastName: '',
+    username: '',
+    phoneNumber: '',
+    password: '',
+    confirmPassword: '',
+    isEdit,
+    employeeId: '',
+    role: '',
+    initialRole: '',
+    adminChallenge: '',
+  }
+}
+
+function buildExistingUserForm(user: User): UserForm {
+  return {
+    ...user,
+    password: '',
+    confirmPassword: '',
+    isEdit: true,
+    role: user.role || '',
+    initialRole: user.role || '',
+    adminChallenge: '',
+  }
 }
 
 export function UsersActionDialog({
@@ -62,34 +74,24 @@ export function UsersActionDialog({
   onOpenChange,
 }: UserActionDialogProps) {
   const { t } = useLanguage()
-  const { data: userOptions } = useUserOptionsQuery({})
-  const { data: roles = [] } = useRolesQuery()
   const isEdit = !!currentRow
-
+  const { allowsPermission } = usePermissionActions()
+  const canManageAccountBindings = allowsPermission('perm_manage')
+  const { data: userOptions } = useUserOptionsQuery(
+    {},
+    canManageAccountBindings
+  )
+  const { data: roles = [] } = useRolesQuery(canManageAccountBindings)
   const form = useForm<UserForm>({
     resolver: zodResolver(getFormSchema(t)),
-    defaultValues: isEdit
-      ? {
-          ...currentRow,
-          password: '',
-          confirmPassword: '',
-          isEdit,
-        }
-      : {
-          firstName: '',
-          lastName: '',
-          username: '',
-          phoneNumber: '',
-          password: '',
-          confirmPassword: '',
-          isEdit,
-          employeeId: '',
-          role: '',
-        },
+    defaultValues: currentRow
+      ? buildExistingUserForm(currentRow)
+      : buildEmptyUserForm(false),
   })
 
   const { employees } = useUsersActionDialogOptions({
     open,
+    enabled: canManageAccountBindings,
     currentRow,
     usersData: userOptions,
     t,
@@ -99,43 +101,18 @@ export function UsersActionDialog({
     form,
     isEdit,
   })
+  const { createMutation, replaceMutation } = useUserMutations()
 
   useEffect(() => {
     if (!open) return
+    form.reset(
+      currentRow ? buildExistingUserForm(currentRow) : buildEmptyUserForm(false)
+    )
+  }, [open, currentRow, form])
 
-    if (isEdit && currentRow) {
-      form.reset({
-        ...currentRow,
-        password: '',
-        confirmPassword: '',
-        isEdit: true,
-        role: currentRow.role || '',
-      })
-      return
-    }
-
-    form.reset({
-      firstName: '',
-      lastName: '',
-      username: '',
-      phoneNumber: '',
-      password: '',
-      confirmPassword: '',
-      isEdit: false,
-      employeeId: '',
-      role: '',
-    })
-  }, [open, isEdit, currentRow, form])
-
-  const {
-    createMutation,
-    replaceMutation,
-    bindEmployeeMutation,
-    unbindEmployeeMutation,
-  } = useUserMutations()
   const handleDialogOpenChange = buildDialogCloseHandler({
     onOpenChange,
-    reset: () => {},
+    reset: () => form.reset(),
   })
   const handleCreateSuccess = buildSubmitSuccessHandler({
     closeDialog: handleDialogOpenChange,
@@ -150,50 +127,31 @@ export function UsersActionDialog({
 
   const onSubmit = async (values: UserForm) => {
     try {
-      if (isEdit && currentRow) {
-        const payload = buildUserReplacePayload({
-          currentRow,
-          values,
-        })
-        const nextEmployeeID = values.employeeId?.trim() || ''
-        const currentEmployeeID = currentRow.employeeId?.trim() || ''
-        const employeeChanged = nextEmployeeID !== currentEmployeeID
-
+      if (currentRow) {
         await replaceMutation.mutateAsync({
           id: currentRow.id,
-          data: payload,
+          data: buildUserReplacePayload({ currentRow, values }),
           user: currentRow,
         })
-
-        if (employeeChanged) {
-          if (nextEmployeeID) {
-            await bindEmployeeMutation.mutateAsync({
-              id: currentRow.id,
-              employeeId: nextEmployeeID,
-            })
-          } else if (currentEmployeeID) {
-            await unbindEmployeeMutation.mutateAsync({
-              id: currentRow.id,
-            })
-          }
-        }
-
         handleUpdateSuccess()
         return
       }
 
-      const payload = buildUserCreatePayload({
-        values,
-      })
-
-      await createMutation.mutateAsync(payload)
+      await createMutation.mutateAsync(buildUserCreatePayload({ values }))
       handleCreateSuccess()
     } catch {
       // Mutation-level error handling is centralized in React Query helpers.
     }
   }
 
-  const isPasswordTouched = !!form.formState.dirtyFields.password
+  const selectedRole =
+    useWatch({ control: form.control, name: 'role' })?.trim().toLowerCase() ||
+    ''
+  const initialRole = useWatch({ control: form.control, name: 'initialRole' })
+    .trim()
+    .toLowerCase()
+  const requiresAdminChallenge =
+    selectedRole === 'admin' && initialRole !== 'admin'
 
   return (
     <Dialog open={open} onOpenChange={handleDialogOpenChange}>
@@ -215,7 +173,7 @@ export function UsersActionDialog({
                   : 'PROVISION_CONTROL_CLUSTER'}
               </span>
             </DialogTitle>
-            {isEdit && currentRow ? (
+            {currentRow ? (
               <AuditTimelineTriggerButton
                 module={AUDIT_MODULES.user}
                 targetId={currentRow.id}
@@ -230,6 +188,7 @@ export function UsersActionDialog({
               : t('users.dialogs.createSubtitle')}
           </DialogDescription>
         </DialogHeader>
+
         <div className='h-105 w-[calc(100%+0.75rem)] overflow-y-auto py-1 pe-3'>
           <Form {...form}>
             <form
@@ -237,294 +196,25 @@ export function UsersActionDialog({
               onSubmit={form.handleSubmit(onSubmit)}
               className='space-y-6 p-8'
             >
-              <FormField
-                control={form.control}
-                name='employeeId'
-                render={({ field }) => (
-                  <FormItem className='mb-6 grid grid-cols-6 items-center space-y-0 gap-x-6 gap-y-1 rounded-[28px] border border-dashed border-primary/20 bg-primary/5 p-6'>
-                    <div className='col-span-2 flex flex-col items-end gap-0.5'>
-                      <FormLabel className='text-[11px] leading-none font-black tracking-tight text-primary'>
-                        {t('users.dialogs.labels.sync')}
-                      </FormLabel>
-                      <span className='font-mono text-[8px] leading-none font-black tracking-widest uppercase opacity-40'>
-                        IDENTITY_SYNC
-                      </span>
-                    </div>
-                    <div className='col-span-4 flex items-center gap-2'>
-                      <div className='min-w-0 flex-1'>
-                        <Combobox
-                          variant='industrial'
-                          value={field.value}
-                          onValueChange={(value) => {
-                            field.onChange(value)
-                            handleEmployeeSync(value)
-                          }}
-                          placeholder={t('users.dialogs.placeholders.sync')}
-                          searchPlaceholder={t(
-                            'users.dialogs.placeholders.syncSearch'
-                          )}
-                          emptyText={t('users.dialogs.placeholders.syncEmpty')}
-                          options={employees}
-                        />
-                      </div>
-                      {isEdit && field.value ? (
-                        <Button
-                          type='button'
-                          variant='outline'
-                          size='icon'
-                          className='size-10 rounded-2xl border-dashed'
-                          onClick={() => field.onChange('')}
-                        >
-                          <Link2Off className='size-4' />
-                        </Button>
-                      ) : null}
-                    </div>
-                    <div className='col-span-4 col-start-3 mt-1 text-[9px] font-black tracking-widest uppercase opacity-50'>
-                      {t('users.dialogs.hints.sync')}
-                    </div>
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
-                )}
+              <UserActionIdentityFields
+                form={form}
+                employees={employees}
+                isEdit={isEdit}
+                canManageEmployeeBinding={canManageAccountBindings}
+                onEmployeeSync={handleEmployeeSync}
               />
-
-              <FormField
-                control={form.control}
-                name='firstName'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-6 gap-y-1'>
-                    <div className='col-span-2 flex flex-col items-end gap-0.5'>
-                      <FormLabel className='text-[11px] leading-none font-black tracking-tight text-muted-foreground/60'>
-                        {t('users.dialogs.labels.firstName')}
-                      </FormLabel>
-                      <span className='font-mono text-[8px] leading-none font-black tracking-widest uppercase opacity-20'>
-                        FIRST_NAME
-                      </span>
-                    </div>
-                    <FormControl>
-                      <Input
-                        disabled
-                        placeholder={t('users.dialogs.placeholders.firstName')}
-                        className='col-span-4 h-11 cursor-not-allowed rounded-2xl border-none bg-muted/40 px-4 text-xs font-bold opacity-70 shadow-inner'
-                        autoComplete='off'
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name='lastName'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-6 gap-y-1'>
-                    <div className='col-span-2 flex flex-col items-end gap-0.5'>
-                      <FormLabel className='text-[11px] leading-none font-black tracking-tight text-muted-foreground/60'>
-                        {t('users.dialogs.labels.lastName')}
-                      </FormLabel>
-                      <span className='font-mono text-[8px] leading-none font-black tracking-widest uppercase opacity-20'>
-                        LAST_NAME
-                      </span>
-                    </div>
-                    <FormControl>
-                      <Input
-                        disabled
-                        placeholder={t('users.dialogs.placeholders.lastName')}
-                        className='col-span-4 h-11 cursor-not-allowed rounded-2xl border-none bg-muted/40 px-4 text-xs font-bold opacity-70 shadow-inner'
-                        autoComplete='off'
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name='username'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-6 gap-y-1'>
-                    <div className='col-span-2 flex flex-col items-end gap-0.5'>
-                      <FormLabel className='text-[11px] leading-none font-black tracking-tight text-muted-foreground/60'>
-                        {t('users.dialogs.labels.username')}
-                      </FormLabel>
-                      <span className='font-mono text-[8px] leading-none font-black tracking-widest uppercase opacity-20'>
-                        AUTH_IDENTIFIER
-                      </span>
-                    </div>
-                    <FormControl>
-                      <Input
-                        placeholder={t('users.dialogs.placeholders.username')}
-                        className='col-span-4 h-11 rounded-2xl border-none bg-muted/50 px-4 text-xs font-bold shadow-inner transition-all focus-visible:ring-primary/20'
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name='role'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-6 gap-y-1'>
-                    {(() => {
-                      const selectedRole = roles.find(
-                        (role) => role.id === (field.value || '')
-                      )
-                      return (
-                        <>
-                          <div className='col-span-2 flex flex-col items-end gap-0.5'>
-                            <FormLabel className='text-[11px] leading-none font-black tracking-tight text-muted-foreground/60'>
-                              {t('users.dialogs.labels.role')}
-                            </FormLabel>
-                            <span className='font-mono text-[8px] leading-none font-black tracking-widest uppercase opacity-20'>
-                              ROLE_BINDING
-                            </span>
-                          </div>
-                          <div className='col-span-4 flex items-center gap-2'>
-                            <FormControl>
-                              <Select
-                                value={field.value || UNASSIGNED_ROLE_VALUE}
-                                onValueChange={(value) =>
-                                  field.onChange(
-                                    value === UNASSIGNED_ROLE_VALUE ? '' : value
-                                  )
-                                }
-                              >
-                                <SelectTrigger className='h-11 w-full rounded-2xl border-none bg-muted/50 px-4 text-xs font-bold shadow-inner'>
-                                  <SelectValue
-                                    placeholder={t(
-                                      'users.dialogs.placeholders.role'
-                                    )}
-                                  />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value={UNASSIGNED_ROLE_VALUE}>
-                                    {t('users.dialogs.placeholders.roleEmpty')}
-                                  </SelectItem>
-                                  {roles.map((role) => (
-                                    <SelectItem key={role.id} value={role.id}>
-                                      {role.label || role.id}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </FormControl>
-                            {field.value ? (
-                              <AuditTimelineTriggerButton
-                                module={AUDIT_MODULES.role}
-                                targetId={field.value}
-                                targetName={
-                                  selectedRole?.label ||
-                                  selectedRole?.id ||
-                                  field.value
-                                }
-                                label={t('common.audit.roleTrigger')}
-                                className='shrink-0'
-                              />
-                            ) : null}
-                          </div>
-                          <FormMessage className='col-span-4 col-start-3' />
-                        </>
-                      )
-                    })()}
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name='phoneNumber'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-6 gap-y-1'>
-                    <div className='col-span-2 flex flex-col items-end gap-0.5'>
-                      <FormLabel className='text-[11px] leading-none font-black tracking-tight text-muted-foreground/60'>
-                        {t('users.dialogs.labels.phone')}
-                      </FormLabel>
-                      <span className='font-mono text-[8px] leading-none font-black tracking-widest uppercase opacity-20'>
-                        CONTACT_PROTO
-                      </span>
-                    </div>
-                    <FormControl>
-                      <Input
-                        disabled
-                        placeholder={t('users.dialogs.placeholders.phone')}
-                        className='col-span-4 h-11 cursor-not-allowed rounded-2xl border-none bg-muted/40 px-4 text-xs font-bold opacity-70 shadow-inner'
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name='password'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-6 gap-y-1'>
-                    <div className='col-span-2 flex flex-col items-end gap-0.5'>
-                      <FormLabel className='text-[11px] leading-none font-black tracking-tight text-muted-foreground/60'>
-                        {t('users.dialogs.labels.password')}
-                      </FormLabel>
-                      <span className='font-mono text-[8px] leading-none font-black tracking-widest uppercase opacity-20'>
-                        SECURITY_CRED
-                      </span>
-                    </div>
-                    <FormControl>
-                      <PasswordInput
-                        placeholder={
-                          isEdit
-                            ? t('users.dialogs.placeholders.passwordEdit')
-                            : t('users.dialogs.placeholders.passwordCreate')
-                        }
-                        containerClassName='col-span-4'
-                        className='h-11 rounded-2xl border-none bg-muted/50 px-4 text-xs font-bold shadow-inner transition-all focus-visible:ring-primary/20'
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name='confirmPassword'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-6 gap-y-1'>
-                    <div className='col-span-2 flex flex-col items-end gap-0.5'>
-                      <FormLabel className='text-[11px] leading-none font-black tracking-tight text-muted-foreground/60'>
-                        {t('users.dialogs.labels.confirm')}
-                      </FormLabel>
-                      <span className='font-mono text-[8px] leading-none font-black tracking-widest uppercase opacity-20'>
-                        CRED_VERIFICATION
-                      </span>
-                    </div>
-                    <FormControl>
-                      <PasswordInput
-                        disabled={!isPasswordTouched}
-                        placeholder={
-                          isEdit
-                            ? t('users.dialogs.placeholders.confirmEdit')
-                            : t('users.dialogs.placeholders.confirmCreate')
-                        }
-                        containerClassName='col-span-4'
-                        className='h-11 rounded-2xl border-none bg-muted/50 px-4 text-xs font-bold shadow-inner transition-all focus-visible:ring-primary/20 disabled:opacity-30'
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
-                )}
+              <UserActionSecurityFields
+                form={form}
+                roles={roles}
+                isEdit={isEdit}
+                isPasswordTouched={!!form.formState.dirtyFields.password}
+                canManageRoles={canManageAccountBindings}
+                requiresAdminChallenge={requiresAdminChallenge}
               />
             </form>
           </Form>
         </div>
+
         <DialogFooter className='border-t border-dashed border-muted/50 bg-muted/5 p-6'>
           <Button
             type='submit'

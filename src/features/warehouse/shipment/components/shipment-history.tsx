@@ -18,7 +18,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { ApprovalGuard } from '@/features/approval/components/approval-guard'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
-import { canOpenRouteEntryNonBlocking } from '@/features/authz/guards/route-entry-access'
+import { canOpenRouteEntry } from '@/features/authz/guards/route-entry-access'
 import type { WarehouseCategoryOption } from '../../category/data/schema'
 import type { MasterDataSearchResult } from '../../inventory'
 import type { ShipmentRecord } from '../data/schema'
@@ -53,7 +53,7 @@ export function ShipmentHistory({
   const { t } = useLanguage()
   const router = useRouter()
   const user = useAuthStore((state) => state.user)
-  const canOpenShippingLogistics = canOpenRouteEntryNonBlocking(
+  const canOpenShippingLogistics = canOpenRouteEntry(
     user,
     '/shipping-management/logistics'
   )

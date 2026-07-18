@@ -9,8 +9,8 @@ import (
 )
 
 func registerCuttingOperationRoutes(authorized *gin.RouterGroup) {
-	cuttingAccess := middleware.RequirePermissions(authz.MenuPiecework)
-	sizeInventoryRecord := middleware.RequirePermissions(authz.ActionCuttingSizeInventoryRecord)
+	cuttingAccess := middleware.RequireAnyPermission(authz.MenuPiecework)
+	sizeInventoryRecord := middleware.RequireAnyPermission(authz.ActionCuttingSizeInventoryRecord)
 
 	cuttingGroup := authorized.Group("/cutting-operations")
 	cuttingGroup.Use(cuttingAccess)

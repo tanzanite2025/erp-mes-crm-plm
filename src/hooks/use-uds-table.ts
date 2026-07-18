@@ -30,7 +30,7 @@ export interface UseUdsTableOptions<TData> {
   initialState?: InitialTableState
   pageCount?: number
   rowCount?: number
-  enableRowSelection?: boolean
+  enableRowSelection?: TableOptions<TData>['enableRowSelection']
   enableSorting?: boolean
   enableFiltering?: boolean
   enableFaceting?: boolean

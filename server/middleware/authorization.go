@@ -78,7 +78,32 @@ func HasAnyPermission(c *gin.Context, required ...string) bool {
 	return false
 }
 
-func RequirePermissions(required ...string) gin.HandlerFunc {
+func HasAllPermissions(c *gin.Context, required ...string) bool {
+	if len(required) == 0 {
+		return true
+	}
+
+	rawPermissions, exists := c.Get("permissions")
+	if !exists {
+		return false
+	}
+	currentPermissionSet := make(map[string]struct{})
+	for _, permission := range normalizePermissionsFromContext(rawPermissions) {
+		currentPermissionSet[permission] = struct{}{}
+	}
+	for _, permission := range required {
+		normalized := strings.ToLower(strings.TrimSpace(permission))
+		if normalized == "" {
+			continue
+		}
+		if _, exists := currentPermissionSet[normalized]; !exists {
+			return false
+		}
+	}
+	return true
+}
+
+func RequireAnyPermission(required ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if HasAnyPermission(c, required...) {
 			c.Next()
@@ -88,6 +113,18 @@ func RequirePermissions(required ...string) gin.HandlerFunc {
 		c.JSON(http.StatusForbidden, gin.H{
 			"error": "insufficient permissions",
 		})
+		c.Abort()
+	}
+}
+
+func RequireAllPermissions(required ...string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if HasAllPermissions(c, required...) {
+			c.Next()
+			return
+		}
+
+		c.JSON(http.StatusForbidden, gin.H{"error": "insufficient permissions"})
 		c.Abort()
 	}
 }

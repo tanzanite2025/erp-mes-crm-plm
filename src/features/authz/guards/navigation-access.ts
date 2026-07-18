@@ -66,7 +66,7 @@ function filterNavNodeByPermission(
   }
 }
 
-export function getNonBlockingNavGroups(
+export function getAccessibleNavGroups(
   user: AuthSessionUserLike | null | undefined,
   groups: NavGroup[],
   options: NavigationAccessOptions = {}

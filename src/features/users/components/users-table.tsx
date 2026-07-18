@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect, useMemo } from 'react'
 import { flexRender } from '@tanstack/react-table'
 import { ShieldAlert, ShieldPlus } from 'lucide-react'
+import { useAuthStore } from '@/stores/auth-store'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { type NavigateFn } from '@/hooks/use-table-url-state'
@@ -24,7 +25,8 @@ import {
   DataTablePagination,
   DataTableToolbar,
 } from '@/components/data-table'
-import { NonBlockingPermissionBoundary } from '@/components/permission-passthrough'
+import { PermissionBoundary } from '@/components/permission-boundary'
+import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import { callTypes } from '../data/data'
 import { type User, type UserStatus } from '../data/schema'
 import { isProtectedSystemAccount } from '../utils/user-utils'
@@ -67,10 +69,15 @@ export function UsersTable({
   const { t } = useLanguage()
   const { setCurrentRow, setOpen } = useUsers()
   const isPermissionsMode = mode === 'permissions'
+  const currentUserID = useAuthStore((state) => state.user?.id || '')
+  const { allowsPermission } = usePermissionActions()
+  const selectionEnabled =
+    showSelection &&
+    allowsPermission(isPermissionsMode ? 'perm_manage' : 'user_delete')
 
   const columns = useMemo(
-    () => getUsersColumns(t, mode, showSelection),
-    [mode, showSelection, t]
+    () => getUsersColumns(t, mode, selectionEnabled),
+    [mode, selectionEnabled, t]
   )
 
   const { tableState, tableHandlers, ensurePageInRange } = useUdsUrlTableState({
@@ -92,7 +99,11 @@ export function UsersTable({
     enableFaceting: true,
     rowCount: total,
     state: tableState,
-    enableRowSelection: showSelection,
+    enableRowSelection: selectionEnabled
+      ? (row) =>
+          !isProtectedSystemAccount(row.original) &&
+          (isPermissionsMode || row.original.id !== currentUserID)
+      : false,
     getRowId: (row) => row.id,
     ...tableHandlers,
   })
@@ -104,6 +115,9 @@ export function UsersTable({
     isPermissionsMode && selectedRowIds.length === 1
       ? (data.find((user) => user.id === selectedRowIds[0]) ?? null)
       : null
+  const selectedPermissionUserIsProtected = selectedPermissionUser
+    ? isProtectedSystemAccount(selectedPermissionUser)
+    : false
 
   const toolbarFilters = [
     {
@@ -135,13 +149,16 @@ export function UsersTable({
 
   const permissionActionButtons = isPermissionsMode ? (
     <>
-      <NonBlockingPermissionBoundary permission='user_edit'>
+      <PermissionBoundary permission='perm_manage'>
         <Button
           type='button'
           variant='outline'
-          disabled={!selectedPermissionUser}
+          disabled={
+            !selectedPermissionUser || selectedPermissionUserIsProtected
+          }
           onClick={() => {
-            if (!selectedPermissionUser) return
+            if (!selectedPermissionUser || selectedPermissionUserIsProtected)
+              return
 
             setCurrentRow(selectedPermissionUser)
             setOpen('permissions')
@@ -151,7 +168,7 @@ export function UsersTable({
           <ShieldPlus className='mr-2 size-3.5' />
           {t('users.actions.managePermissions')}
         </Button>
-      </NonBlockingPermissionBoundary>
+      </PermissionBoundary>
       {leadingViewSlot}
     </>
   ) : null
@@ -238,6 +255,7 @@ export function UsersTable({
               const user = row.original
               const isSelected = row.getIsSelected()
               const isProtected = isProtectedSystemAccount(user)
+              const canSelect = row.getCanSelect()
               const fullName =
                 `${user.firstName || ''} ${user.lastName || ''}`.trim() || '-'
               const role = String(user.role || '').trim() || 'UNASSIGNED'
@@ -260,6 +278,7 @@ export function UsersTable({
                   <div
                     className='flex cursor-pointer flex-col gap-3'
                     onClick={() => {
+                      if (!canSelect) return
                       togglePermissionRowSelection(row.id, isSelected)
                     }}
                   >
@@ -267,7 +286,9 @@ export function UsersTable({
                       <div className='flex min-w-0 items-start gap-3'>
                         <Checkbox
                           checked={isSelected}
+                          disabled={!canSelect}
                           onCheckedChange={(value) => {
+                            if (!canSelect) return
                             setPermissionRowSelection(row.id, value === true)
                           }}
                           onPointerDown={(event) => {
@@ -438,7 +459,9 @@ export function UsersTable({
         </div>
       </Card>
       <DataTablePagination table={table} className='mt-auto' />
-      {showBulkActions ? <DataTableBulkActions table={table} /> : null}
+      {showBulkActions && selectionEnabled ? (
+        <DataTableBulkActions table={table} />
+      ) : null}
     </div>
   )
 }

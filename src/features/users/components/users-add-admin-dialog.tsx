@@ -110,6 +110,9 @@ export function UsersAddAdminDialog({
       firstName: 'System',
       lastName: 'Admin',
       phoneNumber: '',
+      status: 'active',
+      role: 'admin',
+      adminChallenge: verifyPass,
     }
 
     createMutation.mutate(adminRequestPayload, {

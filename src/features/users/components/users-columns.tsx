@@ -65,25 +65,30 @@ export function getUsersColumns(
             meta: {
               className: cn('max-md:sticky start-0 z-10 rounded-tl-[inherit]'),
             },
-            cell: ({ row, table }) => (
-              <Checkbox
-                checked={row.getIsSelected()}
-                onCheckedChange={(value) => {
-                  if (isPermissionsMode) {
-                    table.setRowSelection(value ? { [row.id]: true } : {})
-                    return
-                  }
+            cell: ({ row, table }) => {
+              const canSelect = row.getCanSelect()
+              return (
+                <Checkbox
+                  checked={row.getIsSelected()}
+                  disabled={!canSelect}
+                  onCheckedChange={(value) => {
+                    if (!canSelect) return
+                    if (isPermissionsMode) {
+                      table.setRowSelection(value ? { [row.id]: true } : {})
+                      return
+                    }
 
-                  row.toggleSelected(!!value)
-                }}
-                aria-label={
-                  isPermissionsMode
-                    ? t('users.actions.managePermissions')
-                    : t('users.dialogs.buttons.confirm')
-                }
-                className='translate-y-[2px]'
-              />
-            ),
+                    row.toggleSelected(!!value)
+                  }}
+                  aria-label={
+                    isPermissionsMode
+                      ? t('users.actions.managePermissions')
+                      : t('users.dialogs.buttons.confirm')
+                  }
+                  className='translate-y-[2px]'
+                />
+              )
+            },
             enableSorting: false,
             enableHiding: false,
           } satisfies ColumnDef<User>,

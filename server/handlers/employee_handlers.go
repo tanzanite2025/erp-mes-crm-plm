@@ -333,5 +333,5 @@ func DeleteEmployeeHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Employees deleted and linked users disabled"})
+	c.JSON(http.StatusOK, gin.H{"message": "Employees deleted and linked users deactivated"})
 }

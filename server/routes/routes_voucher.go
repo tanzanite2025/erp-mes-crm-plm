@@ -9,7 +9,7 @@ import (
 )
 
 func registerVoucherRoutes(authorized *gin.RouterGroup) {
-	voucherRead := middleware.RequirePermissions(authz.MenuTrading, authz.MenuSettings)
+	voucherRead := middleware.RequireAnyPermission(authz.MenuTrading, authz.MenuSettings)
 
 	vouchers := authorized.Group("/vouchers")
 	{

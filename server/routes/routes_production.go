@@ -9,13 +9,13 @@ import (
 )
 
 func registerProductionRoutes(authorized *gin.RouterGroup) {
-	productionAccess := middleware.RequirePermissions(authz.MenuProdConfig)
-	adminOnly := middleware.RequirePermissions(authz.PermissionManage)
-	productionLineUpdate := middleware.RequirePermissions(authz.ActionProductionLineUpdate)
+	productionAccess := middleware.RequireAnyPermission(authz.MenuProdConfig)
+	adminOnly := middleware.RequireAnyPermission(authz.PermissionManage)
+	productionLineUpdate := middleware.RequireAnyPermission(authz.ActionProductionLineUpdate)
 
-	productionPlanManage := middleware.RequirePermissions(authz.ActionProductionPlanManage)
-	productionIssuanceExecute := middleware.RequirePermissions(authz.ActionProductionIssuanceExecute)
-	barcodeBindingManage := middleware.RequirePermissions(authz.ActionBarcodeBindingManage)
+	productionPlanManage := middleware.RequireAnyPermission(authz.ActionProductionPlanManage)
+	productionIssuanceExecute := middleware.RequireAnyPermission(authz.ActionProductionIssuanceExecute)
+	barcodeBindingManage := middleware.RequireAnyPermission(authz.ActionBarcodeBindingManage)
 
 	productionGroup := authorized.Group("/production")
 	productionGroup.Use(productionAccess)

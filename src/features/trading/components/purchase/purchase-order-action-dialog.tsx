@@ -4,7 +4,7 @@ import { useLanguage } from '@/context/language-provider'
 import { AuditStatusDisplay } from '@/components/common/audit-status-display'
 import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
-import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
+import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import { getPurchaseStatusDisplayMeta } from '../../data/purchase-status'
 import {
   type PurchaseOrder,
@@ -42,7 +42,7 @@ export function PurchaseOrderActionDialog({
   order: summaryOrder,
 }: PurchaseOrderActionDialogProps) {
   const { t } = useLanguage()
-  const { allowsAction } = useNonBlockingPermissionActions()
+  const { allowsAction } = usePermissionActions()
   const user = useAuthStore((state) => state.user)
   const { data: suppliers = [] } = useGetSuppliers({ enabled: open })
   const { data: detailedOrder } = useGetPurchaseOrderDetail(

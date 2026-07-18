@@ -55,7 +55,10 @@ func (s *IdentityAccessService) ResolveSnapshotByUserID(userID string) (Identity
 }
 
 func (s *IdentityAccessService) ResolveSnapshotForUser(user models.User) (IdentityAccessSnapshot, error) {
-	profile := s.effectiveAccess.ResolveEffectiveAccessProfileForUser(user)
+	profile, err := s.effectiveAccess.ResolveEffectiveAccessProfileForUser(user)
+	if err != nil {
+		return IdentityAccessSnapshot{}, err
+	}
 
 	snapshot := IdentityAccessSnapshot{
 		UserID:      strings.TrimSpace(user.ID),
@@ -66,6 +69,8 @@ func (s *IdentityAccessService) ResolveSnapshotForUser(user models.User) (Identi
 	snapshot.Diagnostics = []string{"role_plus_user_permissions_authoritative"}
 	if strings.TrimSpace(user.Role) == "" {
 		snapshot.Diagnostics = append(snapshot.Diagnostics, "role_unassigned")
+	} else if profile.RoleMissing {
+		snapshot.Diagnostics = append(snapshot.Diagnostics, "role_not_found")
 	}
 	if len(snapshot.Permissions) == 0 {
 		snapshot.Diagnostics = append(snapshot.Diagnostics, "effective_permissions_empty")

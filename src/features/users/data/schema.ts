@@ -15,6 +15,7 @@ const userSchema = z.object({
   username: z.string(),
   phoneNumber: z.string(),
   status: userStatusSchema,
+  isProtected: z.boolean().default(false),
   role: z.string().optional(),
   version: z.number().default(1), // 为 SDRTS 增加版本号支持
   password: z.string().optional(), // 移除硬编码默认值
@@ -29,6 +30,7 @@ const userOptionSchema = z.object({
   employeeId: z.string().optional(),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
+  isProtected: z.boolean().default(false),
   role: z.string().optional(),
   status: userStatusSchema.optional(),
 })
@@ -67,7 +69,10 @@ export const userPermissionsResponseSchema = z.object({
   username: z.string(),
   status: userStatusSchema,
   employeeId: z.string().optional(),
+  role: z.string().optional(),
   permissions: z.array(userPermissionItemSchema),
+  inheritedPermissions: z.array(z.string()),
+  effectivePermissions: z.array(z.string()),
   total: z.number(),
 })
 export type UserPermissionsResponse = z.infer<

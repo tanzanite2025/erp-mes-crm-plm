@@ -11,7 +11,7 @@ import { failLoudly } from '@/lib/safe-catch'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { ForbiddenState } from '@/components/forbidden-state'
-import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
+import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import { type PurchaseOrderListItem } from '../../data/schema'
 import { usePurchaseOrderFilterOptions } from '../../hooks/use-purchase-order-filter-options'
 import { usePurchaseOrderListViewModel } from '../../hooks/use-purchase-order-list-view-model'
@@ -31,7 +31,7 @@ type PurchaseOrderListResource = CompositeReadResource<{
 
 export function PurchaseOrderList() {
   const { t } = useLanguage()
-  const { allowsAction } = useNonBlockingPermissionActions()
+  const { allowsAction } = usePermissionActions()
   const { search, detailId } = Route.useSearch()
   const [page, setPage] = useState(1)
   const [pageSize] = useState(50)

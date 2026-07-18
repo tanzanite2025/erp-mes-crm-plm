@@ -325,7 +325,7 @@ func main() {
 		}
 
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, PATCH")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, X-Requested-With")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, X-AI-Route-Permission, Authorization, X-Requested-With")
 		c.Writer.Header().Set("Access-Control-Expose-Headers", "X-Response-Time")
 		c.Writer.Header().Set("Access-Control-Max-Age", "86400")
 

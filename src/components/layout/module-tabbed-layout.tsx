@@ -1,9 +1,12 @@
+import { useMemo } from 'react'
 import { useLocation } from '@tanstack/react-router'
+import { useAuthStore } from '@/stores/auth-store'
 import { cn } from '@/lib/utils'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { ModuleHeaderSummary } from '@/components/layout/module-header-summary'
 import { ModuleTabs, type TabItem } from '@/components/module-tabs'
+import { getProjectedTabsFromPermissionSnapshot } from '@/features/authz/guards/route-access'
 
 interface ModuleTabbedLayoutProps {
   tabs: TabItem[]
@@ -30,7 +33,15 @@ export function ModuleTabbedLayout({
   contentClassName,
 }: ModuleTabbedLayoutProps) {
   const { pathname } = useLocation()
-  const visibleTabs = tabs
+  const user = useAuthStore((state) => state.user)
+  const isIdentitySynced = useAuthStore((state) => state.isIdentitySynced)
+  const visibleTabs = useMemo(
+    () =>
+      isIdentitySynced
+        ? getProjectedTabsFromPermissionSnapshot(user, tabs)
+        : tabs,
+    [isIdentitySynced, tabs, user]
+  )
 
   // 找到当前激活的 tab (根据当前路由匹配，优先匹配更长、更具体的路径)
   const activeTabKey =

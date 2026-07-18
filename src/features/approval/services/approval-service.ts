@@ -42,7 +42,7 @@ export interface ApprovalRequest {
 }
 
 export const ApprovalService = {
-  fetchUserOptions: () => apiFetch<ApprovalUserOption[]>('/users?options=true'),
+  fetchUserOptions: () => apiFetch<ApprovalUserOption[]>('/users/options'),
 
   requestApproval: (data: {
     module: string

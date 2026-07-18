@@ -55,7 +55,7 @@ import { Switch } from '@/components/ui/switch'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { TrackingNumberInput } from '@/components/tracking-number-input'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
-import { canOpenRouteEntryNonBlocking } from '@/features/authz/guards/route-entry-access'
+import { canOpenRouteEntry } from '@/features/authz/guards/route-entry-access'
 import {
   createDefaultLinearBarcodeProtocolConfig,
   type LinearBarcodeProtocolConfig,
@@ -106,7 +106,7 @@ function createDefaultWorkbenchForm(
 export function PDATerminalTab() {
   const { t } = useLanguage()
   const user = useAuthStore((state) => state.user)
-  const canOpenShell = canOpenRouteEntryNonBlocking(user, '/pda-shell')
+  const canOpenShell = canOpenRouteEntry(user, '/pda-shell')
   const [protocolConfig, setProtocolConfig] =
     useState<LinearBarcodeProtocolConfig>(
       createDefaultLinearBarcodeProtocolConfig

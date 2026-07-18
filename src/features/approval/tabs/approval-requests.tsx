@@ -23,7 +23,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { AuditStatusDisplay } from '@/components/common/audit-status-display'
 import { ForbiddenState } from '@/components/forbidden-state'
-import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
+import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import {
   getApprovalActionLabel,
   getApprovalModuleLabel,
@@ -37,7 +37,7 @@ import {
 
 export function ApprovalRequests() {
   const { t, locale } = useLanguage()
-  const { allowsAction } = useNonBlockingPermissionActions()
+  const { allowsAction } = usePermissionActions()
   const [requests, setRequests] = useState<ApprovalRequest[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)

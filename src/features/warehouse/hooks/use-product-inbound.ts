@@ -8,7 +8,7 @@ import {
 } from '@/lib/read-resource'
 import { failLoudly } from '@/lib/safe-catch'
 import { useLanguage } from '@/context/language-provider'
-import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
+import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import {
   WarehouseCategoryCoreService,
   type WarehouseCategoryOption,
@@ -115,7 +115,7 @@ export function useProductInbound(options?: UseProductInboundOptions) {
     () => options?.feedback ?? createWarehouseUiFeedback(),
     [options?.feedback]
   )
-  const { allowsAction } = useNonBlockingPermissionActions()
+  const { allowsAction } = usePermissionActions()
   const queryClient = useQueryClient()
 
   const [searchQuery, setSearchQuery] = useState('')

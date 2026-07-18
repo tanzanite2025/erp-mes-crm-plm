@@ -1,0 +1,117 @@
+// @vitest-environment jsdom
+import { createElement, type PropsWithChildren } from 'react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { renderHook, waitFor } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createTestUser } from '../test-factories'
+import { useUserMutations, useUserPermissionsQuery } from './use-users'
+
+const userApiMocks = vi.hoisted(() => ({
+  bindUserEmployee: vi.fn(),
+  bulkDeleteUsers: vi.fn(),
+  createUser: vi.fn(),
+  deleteUser: vi.fn(),
+  fetchUserAccessSnapshot: vi.fn(),
+  fetchUserOptions: vi.fn(),
+  fetchUserPermissions: vi.fn(),
+  fetchUsers: vi.fn(),
+  patchUser: vi.fn(),
+  replaceUser: vi.fn(),
+  replaceUserPermissions: vi.fn(),
+  unbindUserEmployee: vi.fn(),
+}))
+
+vi.mock('../services/user-api', () => userApiMocks)
+vi.mock('@/lib/react-query-mutation', () => ({
+  buildMutationOptions: () => ({}),
+}))
+
+function createQueryWrapper() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  })
+
+  return function QueryWrapper({ children }: PropsWithChildren) {
+    return createElement(QueryClientProvider, { client: queryClient }, children)
+  }
+}
+
+describe('user query and mutation guards', () => {
+  beforeEach(() => {
+    Object.values(userApiMocks).forEach((mock) => mock.mockReset())
+  })
+
+  it('normalizes a user id before loading sensitive permissions', async () => {
+    userApiMocks.fetchUserPermissions.mockResolvedValue({
+      userId: 'user-1',
+      username: 'buyer',
+      status: 'active',
+      permissions: [],
+      inheritedPermissions: [],
+      effectivePermissions: [],
+      total: 0,
+    })
+
+    const { result } = renderHook(() => useUserPermissionsQuery('  user-1  '), {
+      wrapper: createQueryWrapper(),
+    })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(userApiMocks.fetchUserPermissions).toHaveBeenCalledWith('user-1')
+  })
+
+  it('does not query permissions for an empty user id', async () => {
+    const { result } = renderHook(() => useUserPermissionsQuery('   '), {
+      wrapper: createQueryWrapper(),
+    })
+
+    await waitFor(() => expect(result.current.fetchStatus).toBe('idle'))
+    expect(userApiMocks.fetchUserPermissions).not.toHaveBeenCalled()
+  })
+
+  it('blocks every destructive mutation for a protected account', async () => {
+    const protectedUser = createTestUser({
+      id: 'admin-id',
+      username: 'admin',
+      isProtected: true,
+    })
+    const { result } = renderHook(() => useUserMutations(), {
+      wrapper: createQueryWrapper(),
+    })
+
+    await expect(
+      result.current.updateMutation.mutateAsync({
+        id: protectedUser.id,
+        delta: {},
+        version: protectedUser.version,
+        user: protectedUser,
+      })
+    ).rejects.toThrow('Cannot modify protected system account')
+    await expect(
+      result.current.replaceMutation.mutateAsync({
+        id: protectedUser.id,
+        data: {
+          username: protectedUser.username,
+          phoneNumber: protectedUser.phoneNumber,
+          firstName: protectedUser.firstName,
+          lastName: protectedUser.lastName,
+          status: protectedUser.status,
+        },
+        user: protectedUser,
+      })
+    ).rejects.toThrow('Cannot replace protected system account')
+    await expect(
+      result.current.deleteMutation.mutateAsync({
+        id: protectedUser.id,
+        user: protectedUser,
+      })
+    ).rejects.toThrow('Cannot delete protected system account')
+
+    expect(userApiMocks.patchUser).not.toHaveBeenCalled()
+    expect(userApiMocks.replaceUser).not.toHaveBeenCalled()
+    expect(userApiMocks.deleteUser).not.toHaveBeenCalled()
+  })
+})

@@ -7,7 +7,7 @@ import {
 } from '@/lib/read-resource'
 import { failLoudly } from '@/lib/safe-catch'
 import { useLanguage } from '@/context/language-provider'
-import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
+import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import { WarehouseCategoryCoreService } from '../category'
 import type { WarehouseCategory } from '../category/services/warehouse-category-core-service'
 import {
@@ -39,7 +39,7 @@ type StockMgmtReadResource = CompositeReadResource<StockMgmtReadyData>
 export function useStockMgmt(feedback?: Pick<WarehouseUiFeedback, 'success'>) {
   const ui = useMemo(() => feedback ?? createWarehouseUiFeedback(), [feedback])
   const queryClient = useQueryClient()
-  const { allowsAction } = useNonBlockingPermissionActions()
+  const { allowsAction } = usePermissionActions()
   const { t } = useLanguage()
 
   // 【归一化查询】：并行获取所有依赖数据情况情况总量针对。

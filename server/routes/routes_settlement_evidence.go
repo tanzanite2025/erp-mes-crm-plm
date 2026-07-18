@@ -9,7 +9,7 @@ import (
 )
 
 func registerSettlementEvidenceRoutes(authorized *gin.RouterGroup) {
-	tradingRead := middleware.RequirePermissions(authz.MenuTrading)
+	tradingRead := middleware.RequireAnyPermission(authz.MenuTrading)
 
 	receiptRecords := authorized.Group("/receipt-records")
 	{

@@ -16,10 +16,10 @@ interface AiTriggerProps {
 /**
  * AI 极光分析按钮 (V4.1 架构纯化版)
  * 职责：UI 交互触发器、语音入口、实时快照协调。
- * 特点：按钮永久显示 (Always Visible)，实时抓取快照 (Live Context)。
+ * 特点：仅在当前路由已开放 AI 能力时显示，实时抓取页面快照。
  */
 export function AiTrigger({ placement = 'floating' }: AiTriggerProps) {
-  const { canUseDashboardSnapshot } = useAiPermissions()
+  const { isVisible, isChecking } = useAiPermissions()
   const { getSnapshot } = useDashboardSnapshot()
 
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -57,7 +57,7 @@ export function AiTrigger({ placement = 'floating' }: AiTriggerProps) {
     aiAgentService.subscribe(updateStatus)
     updateStatus()
 
-    if (!canUseDashboardSnapshot) return
+    if (!isVisible) return
 
     // 极光管家后台静默分析
     const checkTimer = setTimeout(() => {
@@ -65,7 +65,11 @@ export function AiTrigger({ placement = 'floating' }: AiTriggerProps) {
     }, 5000)
 
     return () => clearTimeout(checkTimer)
-  }, [canUseDashboardSnapshot])
+  }, [isVisible])
+
+  if (isChecking || !isVisible) {
+    return null
+  }
 
   const startPress = (e: React.MouseEvent | React.TouchEvent) => {
     if (pressTimerRef.current) clearTimeout(pressTimerRef.current)

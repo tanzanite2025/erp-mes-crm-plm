@@ -19,7 +19,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { ActionDialogShell } from '@/components/action-dialog-shell'
-import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
+import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import {
   createFurnaceDraft,
   createFurnaceSchema,
@@ -43,7 +43,7 @@ export function FurnaceActionDialog({
   editData,
 }: FurnaceActionDialogProps) {
   const { t } = useLanguage()
-  const { allowsAction } = useNonBlockingPermissionActions()
+  const { allowsAction } = usePermissionActions()
   const defaultFurnaceType = t('equipmentTooling.furnaces.dialog.defaults.type')
   const furnaceFormSchema = useMemo(() => createFurnaceSchema(t), [t])
   const defaultDraft = useMemo(

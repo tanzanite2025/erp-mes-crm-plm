@@ -21,7 +21,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { ForbiddenState } from '@/components/forbidden-state'
-import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
+import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import { MaterialThresholdDialog } from '@/features/warehouse/material-thresholds/components/material-threshold-dialog'
 import { type InventoryThresholdRule } from '@/features/warehouse/material-thresholds/data/schema'
 import { useMaterialThresholds } from '@/features/warehouse/material-thresholds/hooks/use-material-thresholds'
@@ -30,7 +30,7 @@ type RuleFilter = 'ALL' | 'MATERIAL' | 'BOM'
 type StatusFilter = 'ALL' | 'ENABLED' | 'DISABLED'
 
 export default function MaterialThresholdsTab() {
-  const { allowsAction } = useNonBlockingPermissionActions()
+  const { allowsAction } = usePermissionActions()
   const { t } = useLanguage()
   const {
     readResource,

@@ -22,6 +22,11 @@ const (
 )
 
 const (
+	TabPersonnelAccounts = "tab_personnel_accounts"
+	TabPersonnelRights   = "tab_personnel_rights"
+)
+
+const (
 	PermissionUserView   = "user_view"
 	PermissionUserCreate = "user_create"
 	PermissionUserEdit   = "user_edit"
@@ -67,18 +72,18 @@ const (
 )
 
 const (
-	ActionEquipmentMoldManage           = "action_equipment_mold_manage"
-	ActionEquipmentMoldSync             = "action_equipment_mold_sync"
-	ActionEquipmentDrawingManage        = "action_equipment_drawing_manage"
-	ActionEquipmentDrawingUpdate        = "action_equipment_drawing_update"
-	ActionEquipmentDrawingDelete        = "action_equipment_drawing_delete"
-	ActionEquipmentFurnaceManage        = "action_equipment_furnace_manage"
-	ActionEquipmentFurnaceSync          = "action_equipment_furnace_sync"
-	ActionEquipmentPartnerManage        = "action_equipment_partner_manage"
-	ActionEquipmentPartnerUpdate        = "action_equipment_partner_update"
-	ActionEquipmentLoanManage           = "action_equipment_loan_manage"
-	ActionEquipmentTelemetryUpdate      = "action_equipment_telemetry_update"
-	ActionEquipmentMaintenanceManage    = "action_equipment_maintenance_manage"
+	ActionEquipmentMoldManage        = "action_equipment_mold_manage"
+	ActionEquipmentMoldSync          = "action_equipment_mold_sync"
+	ActionEquipmentDrawingManage     = "action_equipment_drawing_manage"
+	ActionEquipmentDrawingUpdate     = "action_equipment_drawing_update"
+	ActionEquipmentDrawingDelete     = "action_equipment_drawing_delete"
+	ActionEquipmentFurnaceManage     = "action_equipment_furnace_manage"
+	ActionEquipmentFurnaceSync       = "action_equipment_furnace_sync"
+	ActionEquipmentPartnerManage     = "action_equipment_partner_manage"
+	ActionEquipmentPartnerUpdate     = "action_equipment_partner_update"
+	ActionEquipmentLoanManage        = "action_equipment_loan_manage"
+	ActionEquipmentTelemetryUpdate   = "action_equipment_telemetry_update"
+	ActionEquipmentMaintenanceManage = "action_equipment_maintenance_manage"
 )
 
 const (
@@ -104,8 +109,8 @@ const (
 )
 
 const (
-	ActionProductionLineUpdate     = "action_production_line_update"
-	ActionProductionPlanManage     = "action_production_plan_manage"
+	ActionProductionLineUpdate      = "action_production_line_update"
+	ActionProductionPlanManage      = "action_production_plan_manage"
 	ActionProductionIssuanceExecute = "action_production_issuance_execute"
 	ActionBarcodeBindingManage      = "action_barcode_binding_manage"
 )

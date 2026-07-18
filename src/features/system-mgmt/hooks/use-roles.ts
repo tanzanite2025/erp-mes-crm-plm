@@ -6,10 +6,11 @@ import * as roleService from '../services/role-service'
 
 export const ROLES_QUERY_KEY = ['roles'] as const
 
-export function useRolesQuery() {
+export function useRolesQuery(enabled = true) {
   return useQuery<Role[]>({
     queryKey: ROLES_QUERY_KEY,
     queryFn: roleService.fetchRoles,
+    enabled,
   })
 }
 

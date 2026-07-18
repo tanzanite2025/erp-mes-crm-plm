@@ -9,12 +9,12 @@ import (
 )
 
 func registerApprovalRoutes(authorized *gin.RouterGroup) {
-	approvalReview := middleware.RequirePermissions(authz.ActionApprovalReview)
+	approvalReview := middleware.RequireAnyPermission(authz.ActionApprovalReview)
 
 	approvals := authorized.Group("/approvals")
 	{
 		approvals.POST("/request", handlers.RequestApprovalHandler)
-		approvals.GET("/my", middleware.RequirePermissions(authz.MenuApproval), handlers.GetMyApprovalsHandler)
+		approvals.GET("/my", middleware.RequireAnyPermission(authz.MenuApproval), handlers.GetMyApprovalsHandler)
 		approvals.PATCH("/:id/approve", approvalReview, handlers.ApproveRequestHandler)
 		approvals.POST("/verify", handlers.VerifyAuthCodeHandler)
 	}

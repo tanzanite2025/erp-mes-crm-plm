@@ -34,8 +34,8 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { ActionDialogShell } from '@/components/action-dialog-shell'
 import { UdsHealthProgress } from '@/components/uds/uds-health-progress'
-import { canOpenRouteEntryNonBlocking } from '@/features/authz/guards/route-entry-access'
-import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
+import { canOpenRouteEntry } from '@/features/authz/guards/route-entry-access'
+import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import {
   createMoldDraft,
   createMoldSchema,
@@ -64,12 +64,9 @@ export function MoldActionDialog({
   editData,
 }: MoldActionDialogProps) {
   const { t } = useLanguage()
-  const { allowsAction } = useNonBlockingPermissionActions()
+  const { allowsAction } = usePermissionActions()
   const user = useAuthStore((state) => state.user)
-  const canOpenDrawings = canOpenRouteEntryNonBlocking(
-    user,
-    '/equipment-tooling/drawings'
-  )
+  const canOpenDrawings = canOpenRouteEntry(user, '/equipment-tooling/drawings')
   const [isAddingNewGroup, setIsAddingNewGroup] = useState(false)
   const moldFormSchema = useMemo(() => createMoldSchema(t), [t])
   const defaultDraft = useMemo(

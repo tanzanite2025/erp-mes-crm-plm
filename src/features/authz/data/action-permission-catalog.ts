@@ -79,9 +79,9 @@ const systemActions: LegacyActionPermissionEntry[] = [
     category: 'action',
     parentId: 'menu_system',
     routeBindings: [
-      'GET /users (menu_org 或 user_view)',
-      'GET /users/:id/access',
-      'GET /users/:id/permissions',
+      'GET /users (personnel/accounts、personnel/rights、user_view 或 perm_manage)',
+      'GET /users/options (menu_system、user_view 或 perm_manage)',
+      'GET /roles (personnel/accounts、personnel/rights、user_view 或 perm_manage)',
     ],
   },
   {
@@ -101,9 +101,6 @@ const systemActions: LegacyActionPermissionEntry[] = [
     routeBindings: [
       'PATCH /users/:id',
       'PUT /users/:id',
-      'PUT /users/:id/permissions',
-      'POST /users/:id/bind-employee',
-      'POST /users/:id/unbind-employee',
       'PATCH /employees/status',
     ],
   },
@@ -115,6 +112,7 @@ const systemActions: LegacyActionPermissionEntry[] = [
     parentId: 'menu_system',
     routeBindings: [
       'DELETE /users/:id',
+      'POST /users/bulk-delete',
       'DELETE /org/:id',
       'DELETE /employees/:id',
     ],
@@ -134,7 +132,15 @@ const systemActions: LegacyActionPermissionEntry[] = [
     category: 'action',
     parentId: 'menu_system',
     routeBindings: [
+      'POST /users/admin/verify',
+      'GET /users/:id/access (personnel/rights 或 perm_manage)',
+      'GET /users/:id/permissions (personnel/rights 或 perm_manage)',
+      'PUT /users/:id/permissions',
+      'POST /users/:id/bind-employee',
+      'POST /users/:id/unbind-employee',
       'POST /users/sync',
+      'GET /ai/policy/admin',
+      'POST /ai/policy/admin',
       'POST /system/configs',
       'POST /org',
       'POST /org/sync',

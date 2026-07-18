@@ -12,7 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { canOpenRouteEntryNonBlocking } from '@/features/authz/guards/route-entry-access'
+import { canOpenRouteEntry } from '@/features/authz/guards/route-entry-access'
 import { getScanModuleCatalogItem } from '../registry/scan-module-catalog'
 import { scanPluginRegistry } from '../registry/scan-plugin-registry'
 
@@ -89,8 +89,8 @@ export function ScanPlatformModulePanel() {
       return {
         plugin,
         catalog,
-        canOpenPath: canOpenRouteEntryNonBlocking(user, catalog.openPath),
-        canInstallPath: canOpenRouteEntryNonBlocking(user, catalog.installPath),
+        canOpenPath: canOpenRouteEntry(user, catalog.openPath),
+        canInstallPath: canOpenRouteEntry(user, catalog.installPath),
       }
     })
     .filter(

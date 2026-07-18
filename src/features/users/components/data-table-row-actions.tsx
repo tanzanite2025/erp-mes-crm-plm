@@ -1,6 +1,7 @@
 import { DotsHorizontalIcon } from '@radix-ui/react-icons'
 import { type Row } from '@tanstack/react-table'
 import { Trash2, UserPen, Lock, ShieldPlus } from 'lucide-react'
+import { useAuthStore } from '@/stores/auth-store'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import {
@@ -10,7 +11,8 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { NonBlockingPermissionBoundary } from '@/components/permission-passthrough'
+import { PermissionBoundary } from '@/components/permission-boundary'
+import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import { type User } from '../data/schema'
 import { isProtectedSystemAccount } from '../utils/user-utils'
 import { useUsers } from './users-provider'
@@ -28,15 +30,25 @@ export function DataTableRowActions({
   const { setOpen, setCurrentRow } = useUsers()
   const isProtected = isProtectedSystemAccount(row.original)
   const isPermissionsMode = mode === 'permissions'
+  const currentUserID = useAuthStore((state) => state.user?.id || '')
+  const { allowsPermission } = usePermissionActions()
+  const canManagePermissions = allowsPermission('perm_manage')
+  const canEdit =
+    allowsPermission('user_edit') &&
+    (canManagePermissions || row.original.id === currentUserID)
+  const canDelete =
+    allowsPermission('user_delete') && row.original.id !== currentUserID
 
   if (isPermissionsMode) {
     return (
-      <NonBlockingPermissionBoundary permission='user_edit'>
+      <PermissionBoundary permission='perm_manage'>
         <Button
           type='button'
           variant='outline'
           size='sm'
+          disabled={isProtected}
           onClick={() => {
+            if (isProtected) return
             setCurrentRow(row.original)
             setOpen('permissions')
           }}
@@ -44,8 +56,12 @@ export function DataTableRowActions({
         >
           {t('users.actions.managePermissions')}
         </Button>
-      </NonBlockingPermissionBoundary>
+      </PermissionBoundary>
     )
+  }
+
+  if (!canManagePermissions && !canEdit && !canDelete) {
+    return null
   }
 
   return (
@@ -63,7 +79,7 @@ export function DataTableRowActions({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align='end' className='w-[160px]'>
-          <NonBlockingPermissionBoundary permission='user_edit'>
+          <PermissionBoundary permission='perm_manage'>
             <DropdownMenuItem
               disabled={isProtected}
               onClick={() => {
@@ -84,7 +100,9 @@ export function DataTableRowActions({
                 )}
               </DropdownMenuShortcut>
             </DropdownMenuItem>
+          </PermissionBoundary>
 
+          {canEdit ? (
             <DropdownMenuItem
               disabled={isProtected}
               onClick={() => {
@@ -105,9 +123,9 @@ export function DataTableRowActions({
                 )}
               </DropdownMenuShortcut>
             </DropdownMenuItem>
-          </NonBlockingPermissionBoundary>
+          ) : null}
 
-          <NonBlockingPermissionBoundary permission='user_delete'>
+          {canDelete ? (
             <DropdownMenuItem
               disabled={isProtected}
               onClick={() => {
@@ -129,7 +147,7 @@ export function DataTableRowActions({
                 )}
               </DropdownMenuShortcut>
             </DropdownMenuItem>
-          </NonBlockingPermissionBoundary>
+          ) : null}
         </DropdownMenuContent>
       </DropdownMenu>
     </>

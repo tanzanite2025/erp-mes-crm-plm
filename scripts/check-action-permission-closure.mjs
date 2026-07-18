@@ -20,8 +20,8 @@ const FRONTEND_ACTION_USAGE_EXCLUSIONS = new Set([
 ])
 const GROUP_DECLARATION_PATTERN = /(\w+)\s*:=\s*(\w+)\.Group\("([^"]*)"\)/g
 const ROUTE_DECLARATION_PATTERN = /(\w+)\.(GET|POST|PUT|PATCH|DELETE)\("([^"]*)"/g
-const MIDDLEWARE_ASSIGNMENT_PATTERN = /(\w+)\s*:=\s*middleware\.RequirePermissions\(([^\)]*)\)/g
-const REQUIRE_PERMISSIONS_PATTERN = /RequirePermissions\(([^\)]*)\)/g
+const MIDDLEWARE_ASSIGNMENT_PATTERN = /(\w+)\s*:=\s*middleware\.RequireAnyPermission\(([^\)]*)\)/g
+const REQUIRE_PERMISSIONS_PATTERN = /RequireAnyPermission\(([^\)]*)\)/g
 const AUTHZ_SYMBOL_PATTERN = /authz\.([A-Za-z0-9_]+)/g
 const GO_CONST_ENTRY_PATTERN = /^\s*([A-Za-z0-9_]+)\s*=\s*"([^"]+)"/gm
 const UNBOUND_ROUTE_EXCLUSION_KEYS = new Set([
@@ -229,7 +229,11 @@ function parseActionCatalog() {
 
 function scanFrontendActionUsage() {
   const srcRoot = path.resolve(projectRoot, 'src')
-  const files = walkFiles(srcRoot, (filePath) => /\.(ts|tsx)$/.test(filePath))
+  const files = walkFiles(
+    srcRoot,
+    (filePath) =>
+      /\.(ts|tsx)$/.test(filePath) && !/\.(?:test|spec)\.(?:ts|tsx)$/.test(filePath),
+  )
   const usageMap = new Map()
 
   files.forEach((filePath) => {

@@ -42,6 +42,9 @@ export const users = {
     summary: {
       title: 'Permission Overview',
       explicitPermissionCount: 'Current Explicit Permission Count',
+      inheritedPermissionCount: 'Inherited',
+      effectivePermissionCount: 'Effective',
+      role: 'Role',
       status: 'Status',
       diagnostics: 'Diagnostics',
       unsavedChanges: 'Unsaved Changes',
@@ -55,6 +58,7 @@ export const users = {
       page: 'Page',
       tab: 'Tab',
       action: 'Action',
+      inherited: 'Inherited from role',
     },
     selected: {
       title: 'Selected Permissions',
@@ -116,8 +120,8 @@ export const users = {
       'Complete highest-level verification before management changes to ensure system integrity.',
     protectedAccountCreateSubtitle:
       'Verification passed. You can now create a protected account with full-system management permissions.',
-    accessVerifyHint: 'Requires developer-level access code to unlock',
-    accessVerifyPlaceholder: 'ENTER 8-BIT ACCESS CODE',
+    accessVerifyHint: 'Re-enter the current operator password',
+    accessVerifyPlaceholder: 'Current operator password',
     accessVerifyButton: 'Verify Access VERIFY_ACCESS',
     accessProvisionExecuteButton: 'EXECUTE_PROVISIONING',
     protectedAccountCreateButton: 'Complete Provisioning EXECUTE_PROVISIONING',
@@ -130,6 +134,7 @@ export const users = {
       phone: 'Phone',
       password: 'Security',
       confirm: 'Confirm',
+      adminChallenge: 'Operator Verification',
     },
     placeholders: {
       sync: 'Sync from existing profile...',
@@ -145,6 +150,7 @@ export const users = {
       passwordCreate: 'At least 8 chars, incl. letters/digits',
       confirmEdit: 'Confirm new password (leave blank to skip)',
       confirmCreate: 'Re-enter to confirm',
+      adminChallenge: 'Enter your current account password',
     },
     hints: {
       sync: 'HINT: Selected profile syncs name, phone, and metadata.',
@@ -187,6 +193,8 @@ export const users = {
     passwordDigit: 'Password must contain at least one digit.',
     passwordMismatch: 'Passwords do not match.',
     accessCodeError: 'Access code incorrect. Please contact system developer.',
+    adminChallengeRequired:
+      'Current operator password is required to assign the admin role.',
     permissionDenied:
       'Insufficient permissions. Only users with full-system management permissions can perform this.',
   },

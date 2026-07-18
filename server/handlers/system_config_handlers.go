@@ -4,12 +4,30 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
 	"xdfc-server/db"
 	"xdfc-server/models"
+	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
+
+func redactAIPolicyConfigValue(rawValue string) string {
+	var payload map[string]any
+	if err := json.Unmarshal([]byte(rawValue), &payload); err != nil {
+		return ""
+	}
+	if api, ok := payload["api"].(map[string]any); ok {
+		delete(api, "apiKey")
+		delete(api, "groupId")
+	}
+	redacted, err := json.Marshal(payload)
+	if err != nil {
+		return ""
+	}
+	return string(redacted)
+}
 
 // GetSystemConfigsHandler returns all system configs.
 func GetSystemConfigsHandler(c *gin.Context) {
@@ -17,6 +35,11 @@ func GetSystemConfigsHandler(c *gin.Context) {
 	if err := db.DB.Order("key asc").Find(&configs).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取系统配置失败"})
 		return
+	}
+	for index := range configs {
+		if strings.EqualFold(strings.TrimSpace(configs[index].Key), services.AIPolicyConfigKey) {
+			configs[index].Value = redactAIPolicyConfigValue(configs[index].Value)
+		}
 	}
 	c.JSON(http.StatusOK, configs)
 }
@@ -76,6 +99,10 @@ func UpdateSystemConfigHandler(c *gin.Context) {
 	var key string
 	if err := json.Unmarshal(rawKey, &key); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 无效的 KEY 格式"})
+		return
+	}
+	if strings.EqualFold(strings.TrimSpace(key), services.AIPolicyConfigKey) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] Use the dedicated AI policy endpoint"})
 		return
 	}
 

@@ -1,6 +1,7 @@
 package dependencies
 
 import (
+	"errors"
 	"strings"
 	"xdfc-server/authz"
 	"xdfc-server/db"
@@ -12,6 +13,7 @@ import (
 type EffectiveAccessProfile struct {
 	Permissions []string
 	EmployeeID  string
+	RoleMissing bool
 }
 
 type EffectiveAccessService struct {
@@ -28,11 +30,11 @@ func NewEffectiveAccessServiceWithDB(tx *gorm.DB) *EffectiveAccessService {
 
 var defaultEffectiveAccessService = NewEffectiveAccessService()
 
-func ResolveEffectiveAccessProfileForUser(user models.User) EffectiveAccessProfile {
+func ResolveEffectiveAccessProfileForUser(user models.User) (EffectiveAccessProfile, error) {
 	return defaultEffectiveAccessService.ResolveEffectiveAccessProfileForUser(user)
 }
 
-func ResolveEffectiveAccessProfileForUserWithDB(tx *gorm.DB, user models.User) EffectiveAccessProfile {
+func ResolveEffectiveAccessProfileForUserWithDB(tx *gorm.DB, user models.User) (EffectiveAccessProfile, error) {
 	return NewEffectiveAccessServiceWithDB(tx).ResolveEffectiveAccessProfileForUser(user)
 }
 
@@ -43,7 +45,7 @@ func (s *EffectiveAccessService) database() *gorm.DB {
 	return db.DB
 }
 
-func (s *EffectiveAccessService) ResolveEffectiveAccessProfileForUser(user models.User) EffectiveAccessProfile {
+func (s *EffectiveAccessService) ResolveEffectiveAccessProfileForUser(user models.User) (EffectiveAccessProfile, error) {
 	tx := s.database()
 	profile := EffectiveAccessProfile{
 		EmployeeID:  strings.TrimSpace(user.EmployeeID),
@@ -51,23 +53,30 @@ func (s *EffectiveAccessService) ResolveEffectiveAccessProfileForUser(user model
 	}
 
 	userID := strings.TrimSpace(user.ID)
-	if tx == nil || userID == "" {
-		return profile
+	if tx == nil {
+		return profile, gorm.ErrInvalidDB
+	}
+	if userID == "" {
+		return profile, gorm.ErrInvalidValue
 	}
 
 	permissionIDs := make([]string, 0, 32)
 
 	normalizedRoleID := strings.TrimSpace(user.Role)
-	if normalizedRoleID != "" && hasTable(tx, "roles") {
+	if normalizedRoleID != "" {
 		var role models.Role
-		if err := tx.Select("permissions").Where("LOWER(role_id) = ?", strings.ToLower(normalizedRoleID)).First(&role).Error; err == nil {
-			permissionIDs = append(permissionIDs, authz.ParsePermissionIDs(role.Permissions)...)
+		err := tx.Select("permissions").Where("LOWER(role_id) = ?", strings.ToLower(normalizedRoleID)).First(&role).Error
+		if err == nil {
+			for _, permissionID := range authz.ParsePermissionIDs(role.Permissions) {
+				if authz.IsSupportedPermissionID(permissionID) {
+					permissionIDs = append(permissionIDs, permissionID)
+				}
+			}
+		} else if errors.Is(err, gorm.ErrRecordNotFound) {
+			profile.RoleMissing = true
+		} else {
+			return profile, err
 		}
-	}
-
-	if !hasTable(tx, "user_permissions") {
-		profile.Permissions = authz.DeduplicatePermissionIDs(permissionIDs)
-		return profile
 	}
 
 	var rows []models.UserPermission
@@ -76,19 +85,14 @@ func (s *EffectiveAccessService) ResolveEffectiveAccessProfileForUser(user model
 		Where("deleted_at IS NULL").
 		Order("permission_id asc").
 		Find(&rows).Error; err != nil {
-		return profile
+		return profile, err
 	}
 
 	for _, row := range rows {
-		permissionIDs = append(permissionIDs, row.PermissionID)
+		if authz.IsSupportedPermissionID(row.PermissionID) {
+			permissionIDs = append(permissionIDs, row.PermissionID)
+		}
 	}
 	profile.Permissions = authz.DeduplicatePermissionIDs(permissionIDs)
-	return profile
-}
-
-func hasTable(tx *gorm.DB, tableName string) bool {
-	if tx == nil || strings.TrimSpace(tableName) == "" {
-		return false
-	}
-	return tx.Migrator().HasTable(tableName)
+	return profile, nil
 }

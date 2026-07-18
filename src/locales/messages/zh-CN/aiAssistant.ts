@@ -12,8 +12,15 @@ export const aiAssistant = {
       enable: '立即激活',
     },
     permissions: {
-      title: '授权权限下发',
-      description: '仅显式授予对应权限的用户可以访问 AI 分析能力',
+      title: 'AI 页面能力下发',
+      description: '按实际路由页面控制 AI 对话能力，每个页面对应一项授权',
+      searchPlaceholder: '搜索业务模块或路由页面',
+      clearSearch: '清除搜索',
+      selectedSummary: '已选 {{selected}} / {{total}} 项',
+      groupSummary: '已选 {{selected}} / {{total}}',
+      selectGroup: '全选本组',
+      clearGroup: '清空本组',
+      empty: '没有匹配的权限',
     },
     api: {
       title: '引擎网关配置',
@@ -23,6 +30,7 @@ export const aiAssistant = {
       saveSuccessDescription: '已切换至 {{provider}} 提供方',
       policySuccess: '治理中心策略已更新',
       policySuccessDescription: '新的配置已持久化并同步至所有终端。',
+      policyError: 'AI 策略保存失败，请稍后重试',
       provider: '模型提供方',
       providerPlaceholder: '选择提供方',
       providerGemini: 'Google Gemini（推荐）',
@@ -40,7 +48,7 @@ export const aiAssistant = {
     },
     governance: {
       title: '治理说明',
-      body: '建议仅为具备明确业务权限的账号开放 AI 分析能力。此处开关优先级高于页面级资源权限，API 密钥仅存储在当前浏览器本地缓存中。',
+      body: 'AI 对话能力按当前路由页面独立开放。账号能否进入页面仍由账号权限体系决定，此处仅控制该页面是否启用 AI；网关密钥保存在后端配置中，仅由服务端代理注入上游请求。',
     },
   },
 } as const

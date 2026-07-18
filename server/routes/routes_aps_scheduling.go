@@ -9,7 +9,7 @@ import (
 )
 
 func registerApsSchedulingRoutes(authorized *gin.RouterGroup) {
-	apsSchedulingRead := middleware.RequirePermissions(authz.MenuApsScheduling)
+	apsSchedulingRead := middleware.RequireAnyPermission(authz.MenuApsScheduling)
 	apsEngineAPIHandler := apsenginehandler.NewAPIHandler(nil)
 
 	apsSchedulingGroup := authorized.Group("/aps-scheduling")

@@ -8,7 +8,6 @@ import (
 	"os"
 	"strings"
 	"xdfc-server/audit"
-	"xdfc-server/authz"
 	"xdfc-server/models"
 	"xdfc-server/productidentity"
 	"xdfc-server/salesorderidentity"
@@ -514,31 +513,6 @@ func ensureDefaultBOMSectionFlag(code string) {
 	}
 }
 
-func ensureUserIntegrityConstraints() {
-	if DB == nil || !DB.Migrator().HasTable(&models.User{}) {
-		return
-	}
-
-	if err := DB.Exec(`
-		DO $$
-		BEGIN
-			IF NOT EXISTS (
-				SELECT 1 FROM pg_constraint WHERE conname = 'chk_users_status_allowed'
-			) THEN
-				ALTER TABLE users
-				ADD CONSTRAINT chk_users_status_allowed
-				CHECK (
-					status IS NOT NULL
-					AND status IN ('active', 'inactive', 'suspended')
-				) NOT VALID;
-			END IF;
-		END
-		$$;
-	`).Error; err != nil {
-		log.Fatal("Failed to add users status integrity constraint:", err)
-	}
-}
-
 func ensureProductIntegrityConstraints() {
 	if DB == nil || !DB.Migrator().HasTable(&models.Product{}) {
 		return
@@ -653,9 +627,9 @@ func dropLegacyProductWeightColumn() {
 // BOM.owner_type / owner_customer_id 成为新的权威字段。
 //
 // 迁移流程：
-//   1. AutoMigrate 自动给 boms 加列（NOT NULL DEFAULT 'INTERNAL'）
-//   2. 把每个产品的归属信息回填到该产品的所有 BOM（保留历史归属一致性）
-//   3. 幂等地 DROP COLUMN products.owner_type / owner_customer_id
+//  1. AutoMigrate 自动给 boms 加列（NOT NULL DEFAULT 'INTERNAL'）
+//  2. 把每个产品的归属信息回填到该产品的所有 BOM（保留历史归属一致性）
+//  3. 幂等地 DROP COLUMN products.owner_type / owner_customer_id
 //
 // 用户已确认接受 D1 干净切换：没 BOM 的产品归属信息丢失。
 func migrateProductOwnershipToBOMs() {
@@ -713,9 +687,9 @@ func migrateProductOwnershipToBOMs() {
 // Product 实体。重构后 versionLevel 是配方层标签,挂到 BOM 上,1 个 Product 可以挂多份不同档次的 BOM。
 //
 // 迁移流程（Step R7 完整态,D1 干净切换）：
-//   1. AutoMigrate 自动给 boms 加 version_level 列(允许为空)
-//   2. 若 products 仍有 version_level 列,先把每个产品的 versionLevel 回填到该产品所有 BOM
-//   3. 物理删除 products.version_level 列(R7 切换:Product 不再持有该字段)
+//  1. AutoMigrate 自动给 boms 加 version_level 列(允许为空)
+//  2. 若 products 仍有 version_level 列,先把每个产品的 versionLevel 回填到该产品所有 BOM
+//  3. 物理删除 products.version_level 列(R7 切换:Product 不再持有该字段)
 //
 // 幂等：可重复执行(列已删则跳过)。
 func migrateProductVersionLevelToBOMs() {
@@ -755,11 +729,11 @@ func migrateProductVersionLevelToBOMs() {
 
 // normalizeBOMOwnershipAndVersionFields 思路 3 重构 Step R8 + 性能改进:
 //
-// 把 boms.owner_customer_id 从 uuid 类型改为 text + NOT NULL DEFAULT '',
-// boms.version_level 改为 NOT NULL DEFAULT '',让唯一索引可以使用纯列索引(去掉 COALESCE)。
+// 把 boms.owner_customer_id 从 uuid 类型改为 text + NOT NULL DEFAULT ”,
+// boms.version_level 改为 NOT NULL DEFAULT ”,让唯一索引可以使用纯列索引(去掉 COALESCE)。
 //
 // 业务语义:
-//   - INTERNAL BOM 的 owner_customer_id = '' (空字符串)
+//   - INTERNAL BOM 的 owner_customer_id = ” (空字符串)
 //   - CUSTOMER BOM 的 owner_customer_id = 客户 UUID 字符串
 //
 // 幂等:可重复执行,迁移完成后第二次调用 NOOP。
@@ -825,7 +799,7 @@ func normalizeBOMOwnershipAndVersionFields() {
 //   - 但 (productId, bomType, owner_type, owner_customer_id, version_level) 同时只能 1 份 RELEASED
 //   - OBSOLETE / DRAFT / 已软删的 BOM 不参与唯一性，所以用 partial index
 //
-// Step R8 改进: 字段全部 NOT NULL DEFAULT '',索引为纯列索引(去掉 COALESCE),
+// Step R8 改进: 字段全部 NOT NULL DEFAULT ”,索引为纯列索引(去掉 COALESCE),
 // PostgreSQL planner 命中更确定。
 //
 // 应用层不再做 SELECT COUNT 软校验,改为乐观写入 + 捕获 unique violation 转友好错误。
@@ -935,39 +909,6 @@ func backfillBlankSalesOrderNos() {
 			plan.DerivedOrderNo,
 			plan.Barcode,
 		)
-	}
-}
-
-func ensureUserPermissionUniqueIndex() {
-	if DB == nil || !DB.Migrator().HasTable(&models.UserPermission{}) {
-		return
-	}
-
-	if err := DB.Exec(`
-		CREATE UNIQUE INDEX IF NOT EXISTS idx_user_permissions_user_permission_active_unique
-		ON user_permissions (user_id, permission_id)
-		WHERE deleted_at IS NULL;
-	`).Error; err != nil {
-		log.Fatal("Failed to enforce unique active permission per user:", err)
-	}
-}
-
-func dropLegacyRoleArtifacts() {
-	if DB == nil {
-		return
-	}
-
-	for _, tableName := range []string{
-		"employee_roles",
-		"user_roles",
-		"position_roles",
-		"org_default_roles",
-	} {
-		if DB.Migrator().HasTable(tableName) {
-			if err := DB.Migrator().DropTable(tableName); err != nil {
-				log.Fatal("Failed to drop legacy role table ", tableName, ": ", err)
-			}
-		}
 	}
 }
 
@@ -1128,113 +1069,6 @@ func ensureDefaultSidebarCommandDefinitions() {
 		if err := DB.Create(&command).Error; err != nil {
 			log.Fatal("Failed to seed default sidebar command definition:", err)
 		}
-	}
-}
-
-func ensureSeedAdminUserPermissions() {
-	if DB == nil || !DB.Migrator().HasTable(&models.User{}) || !DB.Migrator().HasTable(&models.UserPermission{}) {
-		return
-	}
-
-	var users []models.User
-	if err := DB.Select("id", "username").
-		Where("LOWER(username) = ?", "admin").
-		Find(&users).Error; err != nil {
-		log.Fatal("Failed to query admin accounts for explicit permission seed:", err)
-	}
-
-	for _, user := range users {
-		var rows []models.UserPermission
-		if err := DB.Select("permission_id").
-			Where("user_id = ?", user.ID).
-			Where("deleted_at IS NULL").
-			Find(&rows).Error; err != nil {
-			log.Fatal("Failed to query existing admin explicit permissions:", err)
-		}
-
-		existing := make(map[string]struct{}, len(rows))
-		for _, row := range rows {
-			existing[strings.ToLower(strings.TrimSpace(row.PermissionID))] = struct{}{}
-		}
-
-		for _, permissionID := range authz.AdminFallbackPermissions {
-			normalizedPermissionID := strings.ToLower(strings.TrimSpace(permissionID))
-			if normalizedPermissionID == "" {
-				continue
-			}
-			if _, exists := existing[normalizedPermissionID]; exists {
-				continue
-			}
-
-			row := models.UserPermission{
-				UserID:       user.ID,
-				PermissionID: normalizedPermissionID,
-				Source:       "seed_admin",
-			}
-			if err := DB.Create(&row).Error; err != nil {
-				log.Fatal("Failed to seed admin explicit permissions:", err)
-			}
-		}
-	}
-}
-
-func ensureDefaultAdminRole() {
-	if DB == nil || !DB.Migrator().HasTable(&models.Role{}) {
-		return
-	}
-
-	permissionJSON, err := json.Marshal(authz.AdminFallbackPermissions)
-	if err != nil {
-		log.Fatal("[CRITICAL_SECURITY] Failed to serialize default admin role permissions: ", err)
-	}
-
-	defaultRole := models.Role{
-		RoleID:      "admin",
-		Label:       "Admin",
-		Color:       "bg-red-500/10 text-red-600 border-red-200",
-		Permissions: string(permissionJSON),
-	}
-
-	var existing models.Role
-	err = DB.Where("LOWER(role_id) = ?", "admin").First(&existing).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		if createErr := DB.Create(&defaultRole).Error; createErr != nil {
-			log.Fatal("Failed to create default admin role:", createErr)
-		}
-		return
-	}
-	if err != nil {
-		log.Fatal("Failed to query default admin role:", err)
-	}
-
-	updates := map[string]any{}
-	if existing.Label != defaultRole.Label {
-		updates["label"] = defaultRole.Label
-	}
-	if existing.Color != defaultRole.Color {
-		updates["color"] = defaultRole.Color
-	}
-	if strings.TrimSpace(existing.Permissions) != defaultRole.Permissions {
-		updates["permissions"] = defaultRole.Permissions
-	}
-	if len(updates) == 0 {
-		return
-	}
-	if updateErr := DB.Model(&existing).Updates(updates).Error; updateErr != nil {
-		log.Fatal("Failed to align default admin role:", updateErr)
-	}
-}
-
-func ensureSeedAdminUserRole() {
-	if DB == nil || !DB.Migrator().HasTable(&models.User{}) {
-		return
-	}
-
-	if err := DB.Model(&models.User{}).
-		Where("LOWER(username) = ?", "admin").
-		Where("COALESCE(role, '') = ''").
-		Update("role", "admin").Error; err != nil {
-		log.Fatal("Failed to seed admin user role:", err)
 	}
 }
 
@@ -1444,6 +1278,8 @@ func InitDB(dsn string) {
 	ensureProductIntegrityConstraints()
 	ensureSalesOrderIntegrityConstraints()
 	ensureUserPermissionUniqueIndex()
+	normalizeUserEmployeeBindings()
+	ensureUserEmployeeBindingUniqueIndex()
 	ensureSidebarCommandAssignmentUniqueIndex()
 	ensureSidebarCommandCategoryAssignmentUniqueIndex()
 	ensureDefaultSidebarCommandCategories()
@@ -1486,16 +1322,18 @@ func InitDB(dsn string) {
 			log.Fatal("[CRITICAL_SECURITY] Failed to hash initial admin password: ", err)
 		}
 		admin := models.User{
-			Username: "admin",
-			Password: string(hashedPassword),
-			Status:   "active",
+			Username:    "admin",
+			Password:    string(hashedPassword),
+			Status:      "active",
+			IsProtected: true,
+			Role:        "admin",
 		}
 		DB.Create(&admin)
 		fmt.Println("Initial admin 'admin' created.")
 	}
 
 	ensureDefaultAdminRole()
-	ensureSeedAdminUserRole()
+	ensureSeedAdminUserInvariants()
 	ensureSeedAdminUserPermissions()
 	ensureDefaultProductAttributeCategories()
 	ensureDefaultProductAttributeOptions()

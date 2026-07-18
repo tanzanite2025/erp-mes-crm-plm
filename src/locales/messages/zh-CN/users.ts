@@ -40,6 +40,9 @@
     summary: {
       title: '权限概览',
       explicitPermissionCount: '当前显式权限数',
+      inheritedPermissionCount: '角色继承',
+      effectivePermissionCount: '最终有效',
+      role: '角色',
       status: '状态',
       diagnostics: '诊断',
       unsavedChanges: '未保存变更',
@@ -53,6 +56,7 @@
       page: '页面',
       tab: '标签页',
       action: '动作',
+      inherited: '角色继承',
     },
     selected: {
       title: '已选权限',
@@ -108,8 +112,8 @@
     accessVerifySubtitle: '为了确保系统安全，请先完成高等级身份校验。',
     protectedAccountCreateSubtitle:
       '校验通过。现在可以创建具备全系统管理权限的受保护账户。',
-    accessVerifyHint: '需要开发者级操作码以解锁权限',
-    accessVerifyPlaceholder: 'ENTER 8-BIT ACCESS CODE',
+    accessVerifyHint: '请重新输入当前操作员账号密码',
+    accessVerifyPlaceholder: '当前操作员账号密码',
     accessVerifyButton: '验证权限 VERIFY_ACCESS',
     accessProvisionExecuteButton: '执行创建 EXECUTE_PROVISIONING',
     protectedAccountCreateButton: '立即完成开通 EXECUTE_PROVISIONING',
@@ -122,6 +126,7 @@
       phone: '联系方式',
       password: '安全凭据',
       confirm: '确认凭据',
+      adminChallenge: '操作员身份复核',
     },
     placeholders: {
       sync: '关联现有档案自动填充',
@@ -137,6 +142,7 @@
       passwordCreate: '至少 8 位，包含字母与数字',
       confirmEdit: '确认新凭据（留空则不修改）',
       confirmCreate: '再次输入凭据以确认',
+      adminChallenge: '输入当前账号密码',
     },
     hints: {
       sync: 'HINT: 选中后将自动同步姓名、电话等档案元数据。',
@@ -177,6 +183,7 @@
     passwordDigit: '密码必须包含至少一个数字。',
     passwordMismatch: '两次输入的密码不一致。',
     accessCodeError: '操作码错误，请联系系统开发者。',
+    adminChallengeRequired: '分配 admin 角色必须输入当前操作员账号密码。',
     permissionDenied: '权限不足，只有具备全系统管理权限的用户可以执行该操作。',
   },
   toast: {

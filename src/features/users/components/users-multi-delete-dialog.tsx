@@ -5,7 +5,6 @@ import { type Table } from '@tanstack/react-table'
 import { AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import { createLogger } from '@/lib/logger'
-import { sleep } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Input } from '@/components/ui/input'
@@ -31,7 +30,7 @@ export function UsersMultiDeleteDialog<TData>({
 }: UserMultiDeleteDialogProps<TData>) {
   const { t } = useLanguage()
   const [value, setValue] = useState('')
-  const { deleteMutation } = useUserMutations()
+  const { bulkDeleteMutation } = useUserMutations()
 
   const selectedRows = table.getFilteredSelectedRowModel().rows
 
@@ -44,12 +43,8 @@ export function UsersMultiDeleteDialog<TData>({
     }
 
     const deletePromise = async () => {
-      // 串行删除以保证本地存储状态一致性，避免并发写入竞态
-      for (const row of selectedRows) {
-        const user = row.original as User
-        await deleteMutation.mutateAsync({ id: user.id, user })
-      }
-      await sleep(500) // 视觉停留，确保反馈平滑
+      const userIds = selectedRows.map((row) => (row.original as User).id)
+      await bulkDeleteMutation.mutateAsync({ userIds })
     }
 
     toast.promise(deletePromise(), {

@@ -91,6 +91,19 @@ func LoginHandler(c *gin.Context) {
 		})
 		return
 	}
+	if !strings.EqualFold(strings.TrimSpace(user.Status), "active") {
+		log.Warn().
+			Str("request_id", c.GetString("requestId")).
+			Str("ip", c.ClientIP()).
+			Str("user_id", user.ID).
+			Msg("AUTH_LOGIN_ACCOUNT_INACTIVE")
+
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "Account is inactive",
+			"code":  "auth_account_inactive",
+		})
+		return
+	}
 
 	accessSnapshot, err := dependencies.NewIdentityAccessServiceWithDB(db.DB).ResolveSnapshotForUser(user)
 	if err != nil {
@@ -154,7 +167,7 @@ func LoginHandler(c *gin.Context) {
 			"username":    user.Username,
 			"email":       user.Email,
 			"employeeId":  user.EmployeeID,
-			"permissions": []string{},
+			"permissions": accessSnapshot.Permissions,
 		},
 	})
 }

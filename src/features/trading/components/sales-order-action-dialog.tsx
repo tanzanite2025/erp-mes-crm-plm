@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { buildHostedQuickActionDialogContentClassName } from '@/components/hosted-quick-action-dialog.styles'
-import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
+import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import { DocumentFooterStats } from '@/features/sales-document/components/document-footer-stats'
 import { DocumentHeaderFields } from '@/features/sales-document/components/document-header-fields'
 import { DocumentLinesEditor } from '@/features/sales-document/components/document-lines-editor'
@@ -37,7 +37,7 @@ export function SalesOrderActionDialog({
   onSaved,
 }: SalesOrderActionDialogProps) {
   const { t } = useLanguage()
-  const { allowsAction } = useNonBlockingPermissionActions()
+  const { allowsAction } = usePermissionActions()
   const {
     readResource: dialogResource,
     resources: dialogResources,

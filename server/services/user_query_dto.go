@@ -8,7 +8,6 @@ import (
 type UserQuery struct {
 	Page     int
 	PageSize int
-	Options  bool
 	Username string
 	Statuses []string
 }
@@ -21,6 +20,7 @@ type UserResponse struct {
 	FirstName   string    `json:"firstName"`
 	LastName    string    `json:"lastName"`
 	Status      string    `json:"status"`
+	IsProtected bool      `json:"isProtected"`
 	Role        string    `json:"role,omitempty"`
 	EmployeeID  string    `json:"employeeId"`
 	CreatedAt   time.Time `json:"createdAt"`
@@ -28,13 +28,14 @@ type UserResponse struct {
 }
 
 type UserOptionResponse struct {
-	ID         string `json:"id"`
-	Username   string `json:"username"`
-	EmployeeID string `json:"employeeId,omitempty"`
-	FirstName  string `json:"firstName,omitempty"`
-	LastName   string `json:"lastName,omitempty"`
-	Role       string `json:"role,omitempty"`
-	Status     string `json:"status,omitempty"`
+	ID          string `json:"id"`
+	Username    string `json:"username"`
+	EmployeeID  string `json:"employeeId,omitempty"`
+	FirstName   string `json:"firstName,omitempty"`
+	LastName    string `json:"lastName,omitempty"`
+	IsProtected bool   `json:"isProtected"`
+	Role        string `json:"role,omitempty"`
+	Status      string `json:"status,omitempty"`
 }
 
 type UserListResponse struct {
@@ -53,6 +54,7 @@ func MapUserToResponse(user models.User) UserResponse {
 		FirstName:   user.FirstName,
 		LastName:    user.LastName,
 		Status:      user.Status,
+		IsProtected: user.IsSystemProtected(),
 		Role:        user.Role,
 		EmployeeID:  user.EmployeeID,
 		CreatedAt:   user.CreatedAt,
@@ -70,13 +72,14 @@ func MapUsersToResponse(items []models.User) []UserResponse {
 
 func MapUserToOptionResponse(user models.User) UserOptionResponse {
 	return UserOptionResponse{
-		ID:         user.ID,
-		Username:   user.Username,
-		EmployeeID: user.EmployeeID,
-		FirstName:  user.FirstName,
-		LastName:   user.LastName,
-		Role:       user.Role,
-		Status:     user.Status,
+		ID:          user.ID,
+		Username:    user.Username,
+		EmployeeID:  user.EmployeeID,
+		FirstName:   user.FirstName,
+		LastName:    user.LastName,
+		IsProtected: user.IsSystemProtected(),
+		Role:        user.Role,
+		Status:      user.Status,
 	}
 }
 

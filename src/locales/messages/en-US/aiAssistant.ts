@@ -12,9 +12,16 @@ export const aiAssistant = {
       enable: 'Enable Now',
     },
     permissions: {
-      title: 'Permission Access Distribution',
+      title: 'AI Page Capability Access',
       description:
-        'Only users with explicitly granted permissions can access AI insights',
+        'Control AI conversations by actual route page, with one permission per page',
+      searchPlaceholder: 'Search business modules or route pages',
+      clearSearch: 'Clear search',
+      selectedSummary: '{{selected}} / {{total}} selected',
+      groupSummary: '{{selected}} / {{total}} selected',
+      selectGroup: 'Select Group',
+      clearGroup: 'Clear Group',
+      empty: 'No matching permissions',
     },
     api: {
       title: 'Engine Gateway Settings',
@@ -25,6 +32,7 @@ export const aiAssistant = {
       policySuccess: 'Governance policy updated',
       policySuccessDescription:
         'The new configuration has been persisted and synced to all terminals.',
+      policyError: 'Failed to save the AI policy. Please try again.',
       provider: 'Model Provider',
       providerPlaceholder: 'Select a provider',
       providerGemini: 'Google Gemini (Recommended)',
@@ -43,7 +51,7 @@ export const aiAssistant = {
     },
     governance: {
       title: 'Governance Note',
-      body: 'We recommend enabling AI access only for accounts with explicitly granted business permissions. The switch here has higher priority than page-level permissions, and API keys are stored only in the current browser cache.',
+      body: 'AI conversations are enabled independently for each route page. Account permissions still determine whether a user can enter that page; this policy only controls whether AI is available there. Gateway credentials stay in backend configuration and are injected only by the server proxy.',
     },
   },
 } as const

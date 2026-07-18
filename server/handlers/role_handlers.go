@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 	"xdfc-server/authz"
@@ -89,6 +90,14 @@ func UpsertRoleHandler(c *gin.Context) {
 		Permissions: serializeRolePermissionIDs(payloadPermissions),
 	})
 	if err != nil {
+		if errors.Is(err, services.ErrProtectedRoleMutation) {
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+			return
+		}
+		if errors.Is(err, services.ErrRoleInvalidPayload) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create role"})
 		return
 	}
@@ -107,6 +116,10 @@ func DeleteRoleHandler(c *gin.Context) {
 	}
 
 	if err := services.DeleteRole(auditContextFromGin(c), normalizedID); err != nil {
+		if errors.Is(err, services.ErrProtectedRoleMutation) {
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete role"})
 		return
 	}
