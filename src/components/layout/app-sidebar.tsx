@@ -194,20 +194,10 @@ export function AppSidebar() {
           data-sidebar-nav-viewport
           className='no-scrollbar min-h-0 flex-1 overflow-x-hidden overflow-y-auto [overflow-anchor:none]'
         >
-          <div className='flex min-h-full w-full flex-col py-1'>
-            <div
-              aria-hidden='true'
-              className='h-[var(--sidebar-focus-padding,0px)] shrink-0'
-            />
-            <div className='my-auto w-full'>
-              {renderedNavGroups.map((props) => (
-                <NavGroup key={props.id} {...props} />
-              ))}
-            </div>
-            <div
-              aria-hidden='true'
-              className='h-[var(--sidebar-focus-padding,0px)] shrink-0'
-            />
+          <div className='flex min-h-full w-full flex-col justify-center py-1'>
+            {renderedNavGroups.map((props) => (
+              <NavGroup key={props.id} {...props} />
+            ))}
           </div>
         </div>
       </SidebarContent>

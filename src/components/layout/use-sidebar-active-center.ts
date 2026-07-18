@@ -1,6 +1,7 @@
 import { useEffect, useRef, type RefObject } from 'react'
 
 const ACTIVE_PATH_SELECTOR = '[data-sidebar-active-path="true"]'
+const ACTIVE_FOCUS_SELECTOR = '[data-sidebar-active-focus="true"]'
 
 type SidebarCenterMetrics = {
   viewportTop: number
@@ -38,27 +39,27 @@ export function centerActiveSidebarPath(
   viewport: HTMLDivElement,
   behavior: ScrollBehavior
 ): boolean {
-  const activeElements = Array.from(
-    viewport.querySelectorAll<HTMLElement>(ACTIVE_PATH_SELECTOR)
+  const explicitFocus = viewport.querySelector<HTMLElement>(
+    ACTIVE_FOCUS_SELECTOR
   )
+  const activeElements =
+    viewport.querySelectorAll<HTMLElement>(ACTIVE_PATH_SELECTOR)
+  const focusElement =
+    explicitFocus ?? activeElements.item(activeElements.length - 1)
 
-  if (activeElements.length === 0) {
+  if (!focusElement) {
     return false
   }
 
   const viewportRect = viewport.getBoundingClientRect()
-  const activeRects = activeElements.map((element) =>
-    element.getBoundingClientRect()
-  )
-  const activeTop = Math.min(...activeRects.map((rect) => rect.top))
-  const activeBottom = Math.max(...activeRects.map((rect) => rect.bottom))
+  const focusRect = focusElement.getBoundingClientRect()
   const top = calculateSidebarCenterScrollTop({
     viewportTop: viewportRect.top,
     viewportHeight: viewport.clientHeight,
     currentScrollTop: viewport.scrollTop,
     scrollHeight: viewport.scrollHeight,
-    activeTop,
-    activeBottom,
+    activeTop: focusRect.top,
+    activeBottom: focusRect.bottom,
   })
 
   viewport.scrollTo({ top, behavior })
@@ -100,17 +101,12 @@ export function useSidebarActiveCenter({
       }
 
       if (!activePathKey) {
-        viewport.style.setProperty('--sidebar-focus-padding', '0px')
         viewport.scrollTo({ top: 0, behavior: 'auto' })
         return
       }
 
       const scheduleCenter = () => {
         cancelCenterFrames()
-        viewport.style.setProperty(
-          '--sidebar-focus-padding',
-          `${viewport.clientHeight / 2}px`
-        )
 
         layoutFrame = window.requestAnimationFrame(() => {
           centerFrame = window.requestAnimationFrame(() => {
@@ -132,6 +128,9 @@ export function useSidebarActiveCenter({
       if (typeof ResizeObserver !== 'undefined') {
         resizeObserver = new ResizeObserver(scheduleCenter)
         resizeObserver.observe(viewport)
+        if (viewport.firstElementChild instanceof HTMLElement) {
+          resizeObserver.observe(viewport.firstElementChild)
+        }
       }
     }
 

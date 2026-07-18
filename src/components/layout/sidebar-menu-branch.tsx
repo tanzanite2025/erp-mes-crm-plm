@@ -74,6 +74,7 @@ export function SidebarMenuBranch({ item, pathname }: SidebarMenuBranchProps) {
           tooltip={item.title}
           className={cn(branchButtonClassName, activeBranchClassName)}
           data-sidebar-active-path={branchIsActive}
+          data-sidebar-active-focus={branchIsDirectlySelected}
         >
           <Link
             to={item.url}
@@ -90,6 +91,7 @@ export function SidebarMenuBranch({ item, pathname }: SidebarMenuBranchProps) {
           tooltip={item.title}
           className={cn(branchButtonClassName, activeBranchClassName)}
           data-sidebar-active-path={branchIsActive}
+          data-sidebar-active-focus={branchIsDirectlySelected}
         >
           <div>{branchContents}</div>
         </SidebarMenuButton>
@@ -109,6 +111,7 @@ export function SidebarMenuBranch({ item, pathname }: SidebarMenuBranchProps) {
                   asChild
                   isActive={subItemIsActive}
                   data-sidebar-active-path={subItemIsActive}
+                  data-sidebar-active-focus={subItemIsActive}
                 >
                   <Link
                     to={subItem.url}

@@ -139,6 +139,7 @@ function SidebarMenuLink({
         isActive={isActive}
         tooltip={item.title}
         data-sidebar-active-path={isActive}
+        data-sidebar-active-focus={isActive}
       >
         <Link
           to={item.url}
