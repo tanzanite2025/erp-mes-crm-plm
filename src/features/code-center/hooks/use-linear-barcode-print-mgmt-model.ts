@@ -202,6 +202,7 @@ export function useLinearBarcodePrintMgmtModel() {
       productId: line.printInput.productId,
       quantity: line.printInput.quantity,
       templateName,
+      barcodeInput: line.printInput.mockInputs,
       barcodeConfig: line.printInput.barcodeConfig,
     })
   }

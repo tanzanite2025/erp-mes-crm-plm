@@ -1,4 +1,8 @@
 import { createLogger } from '@/lib/logger'
+import {
+  assembleCanonicalLinearBarcodeCode,
+  type LinearBarcodeMockInputs,
+} from '@/features/basic-settings/data/linear-barcode-protocol'
 import { type BarcodeConfig } from '@/features/engineering/data/schema'
 import { BarcodeService } from '@/features/print-mgmt/services/barcode-service'
 import {
@@ -12,6 +16,7 @@ export interface LinearBarcodePrintExecutionParams {
   productId: string
   quantity: number
   templateName: string
+  barcodeInput: LinearBarcodeMockInputs
   barcodeConfig: BarcodeConfig
 }
 
@@ -27,9 +32,10 @@ export async function executeLinearBarcodePrint({
   productId,
   quantity,
   templateName,
+  barcodeInput,
   barcodeConfig,
 }: LinearBarcodePrintExecutionParams): Promise<LinearBarcodePrintExecutionResult> {
-  const code = BarcodeService.generateCode(barcodeConfig)
+  const code = assembleCanonicalLinearBarcodeCode(barcodeInput)
   const fullText = BarcodeService.getFullText(barcodeConfig, code)
   logger.info(
     `Preparing linear barcode print: quantity=${quantity}, template=${templateName}`

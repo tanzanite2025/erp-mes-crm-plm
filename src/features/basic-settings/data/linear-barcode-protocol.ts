@@ -35,6 +35,63 @@ export interface LinearBarcodeProtocolConfig {
   ingestDefaults: LinearBarcodeIngestDefaults
 }
 
+export type LinearBarcodeCoreInput = Pick<
+  LinearBarcodeMockInputs,
+  | 'year'
+  | 'month'
+  | 'day'
+  | 'model'
+  | 'appearance'
+  | 'holePrefix'
+  | 'holes'
+  | 'serial'
+>
+
+function normalizeLinearBarcodeSegments(input: LinearBarcodeCoreInput) {
+  return {
+    year: input.year.trim().toUpperCase(),
+    month: input.month.trim().toUpperCase(),
+    day: input.day.trim().toUpperCase(),
+    model: input.model.trim().toUpperCase(),
+    appearance: input.appearance.trim().toUpperCase(),
+    holePrefix: input.holePrefix.trim().toUpperCase(),
+    holes: input.holes.trim().toUpperCase(),
+    serial: input.serial.trim().toUpperCase(),
+  }
+}
+
+export function assembleLinearBarcodeCode(
+  input: LinearBarcodeCoreInput
+): string {
+  const segments = normalizeLinearBarcodeSegments(input)
+
+  return `${segments.year}${segments.month}${segments.day}${segments.model}${segments.appearance}${segments.holePrefix}${segments.holes}${segments.serial}`
+}
+
+export function assembleCanonicalLinearBarcodeCode(
+  input: LinearBarcodeCoreInput
+): string {
+  const segments = normalizeLinearBarcodeSegments(input)
+  const validators: Array<[keyof typeof segments, RegExp]> = [
+    ['year', /^\d{2}$/],
+    ['month', /^(?:[1-9]|0|N|D)$/],
+    ['day', /^(?:0[1-9]|[12]\d|3[01])$/],
+    ['model', /^\d{2}$/],
+    ['appearance', /^\d$/],
+    ['holePrefix', /^[RD]$/],
+    ['holes', /^\d{2}$/],
+    ['serial', /^\d{4}$/],
+  ]
+
+  for (const [field, pattern] of validators) {
+    if (!pattern.test(segments[field])) {
+      throw new Error(`Invalid linear barcode segment: ${field}`)
+    }
+  }
+
+  return assembleLinearBarcodeCode(segments)
+}
+
 function cloneRule(rule: BarcodeRuleSegment): BarcodeRuleSegment {
   return {
     ...rule,

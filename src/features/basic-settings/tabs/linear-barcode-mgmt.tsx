@@ -30,6 +30,7 @@ import { BarcodeRuleConfigDialog } from '../components/barcode-rule-config-dialo
 import { BarcodeRulesTable } from '../components/barcode-rules-table'
 import { LinearBarcodeSimulationSection } from '../components/linear-barcode-simulation-section'
 import {
+  assembleLinearBarcodeCode,
   createDefaultLinearBarcodeProtocolConfig,
   DAY_OPTIONS,
   type LinearBarcodeProtocolConfig,
@@ -108,9 +109,7 @@ export function LinearBarcodeMgmt() {
 
   const assembledCode = useMemo(() => {
     if (!mockInputs) return ''
-    const { year, month, day, model, appearance, holePrefix, holes, serial } =
-      mockInputs
-    return `${year}${month}${day}${model}${appearance}${holePrefix}${holes}${serial}`.toUpperCase()
+    return assembleLinearBarcodeCode(mockInputs)
   }, [mockInputs])
 
   const parsedResult = useMemo(
