@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation } from '@tanstack/react-router'
 import { useAuthStore } from '@/stores/auth-store'
 import { cn } from '@/lib/utils'
@@ -18,10 +18,11 @@ import {
 import { getAccessibleNavGroups } from '@/features/authz/guards/navigation-access'
 import { EnterpriseService } from '@/features/basic-settings/services/enterprise-service'
 import { getSidebarData } from './data/sidebar-data'
-import { NavGroup, SidebarMenuBranch } from './nav-group'
+import { NavGroup } from './nav-group'
+import { resolveActiveSidebarPath } from './sidebar-active-path'
 import { SidebarBrand } from './sidebar-brand'
-import { checkIsActive, hasChildren } from './sidebar-nav-utils'
-import type { NavBranch, NavGroup as SidebarNavGroup, NavLink } from './types'
+import type { NavLink } from './types'
+import { useSidebarActiveCenter } from './use-sidebar-active-center'
 import { useSidebarNavGroupsWithBadges } from './use-sidebar-nav-badges'
 
 function isSidebarLink(node: { url?: unknown }): node is NavLink {
@@ -36,58 +37,11 @@ function isHomeCardActive(pathname: string, activeTarget?: string) {
   return pathname === activeTarget || pathname.startsWith(`${activeTarget}/`)
 }
 
-type CurrentSidebarContext = {
-  groupTitle: string
-  branch: NavBranch
-}
-
-function resolveCurrentSidebarContext(
-  navGroups: SidebarNavGroup[],
-  pathname: string
-): CurrentSidebarContext | null {
-  for (const group of navGroups) {
-    for (const item of group.children) {
-      if (hasChildren(item) && checkIsActive(pathname, item)) {
-        return {
-          groupTitle: group.title,
-          branch: item,
-        }
-      }
-    }
-  }
-
-  return null
-}
-
-function PinnedCurrentSidebarBranch({
-  context,
-  pathname,
-}: {
-  context: CurrentSidebarContext | null
-  pathname: string
-}) {
-  if (!context) {
-    return null
-  }
-
-  return (
-    <SidebarGroup className='pt-0 pb-1 group-data-[collapsible=icon]:hidden'>
-      <SidebarMenu className='gap-px'>
-        <SidebarMenuBranch
-          item={context.branch}
-          pathname={pathname}
-          isCollapsed={false}
-        />
-      </SidebarMenu>
-    </SidebarGroup>
-  )
-}
-
 export function AppSidebar() {
   const { collapsible, variant } = useLayout()
   const { t } = useLanguage()
   const pathname = useLocation({ select: (location) => location.pathname })
-  const { setOpenMobile, state } = useSidebar()
+  const { isMobile, openMobile, setOpenMobile, state } = useSidebar()
   const user = useAuthStore((state) => state.user)
   const isIdentitySynced = useAuthStore((state) => state.isIdentitySynced)
   const localizedSidebarData = useMemo(() => getSidebarData(t), [t])
@@ -103,7 +57,7 @@ export function AppSidebar() {
     [localizedSidebarData.navGroups, user, isIdentitySynced]
   )
   const navGroupsWithBadges = useSidebarNavGroupsWithBadges(visibleNavGroups)
-  const isCollapsed = state === 'collapsed'
+  const navViewportRef = useRef<HTMLDivElement>(null)
 
   /**
    * 品牌信息加载：对接后端 EnterpriseService，移除 StorageService 依赖。
@@ -163,10 +117,20 @@ export function AppSidebar() {
     [navGroupsWithBadges]
   )
 
-  const currentSidebarContext = useMemo(
-    () => resolveCurrentSidebarContext(renderedNavGroups, pathname),
+  const activeSidebarPath = useMemo(
+    () => resolveActiveSidebarPath(renderedNavGroups, pathname),
     [pathname, renderedNavGroups]
   )
+
+  const sidebarIsVisible = isMobile
+    ? openMobile
+    : collapsible === 'none' || state === 'expanded'
+
+  useSidebarActiveCenter({
+    viewportRef: navViewportRef,
+    activePathKey: activeSidebarPath?.key,
+    enabled: sidebarIsVisible,
+  })
 
   const homeCardActive = isHomeCardActive(
     pathname,
@@ -224,23 +188,27 @@ export function AppSidebar() {
               </SidebarMenu>
             </SidebarGroup>
           ) : null}
-          {!isCollapsed ? (
-            <PinnedCurrentSidebarBranch
-              context={currentSidebarContext}
-              pathname={pathname}
-            />
-          ) : null}
         </div>
-        <div className='no-scrollbar min-h-0 flex-1 overflow-x-hidden overflow-y-auto'>
-          {renderedNavGroups.map((props) => (
-            <NavGroup
-              key={props.id}
-              {...props}
-              excludeBranchId={
-                !isCollapsed ? currentSidebarContext?.branch.id : undefined
-              }
+        <div
+          ref={navViewportRef}
+          data-sidebar-nav-viewport
+          className='no-scrollbar min-h-0 flex-1 overflow-x-hidden overflow-y-auto [overflow-anchor:none]'
+        >
+          <div className='flex min-h-full w-full flex-col py-1'>
+            <div
+              aria-hidden='true'
+              className='h-[var(--sidebar-focus-padding,0px)] shrink-0'
             />
-          ))}
+            <div className='my-auto w-full'>
+              {renderedNavGroups.map((props) => (
+                <NavGroup key={props.id} {...props} />
+              ))}
+            </div>
+            <div
+              aria-hidden='true'
+              className='h-[var(--sidebar-focus-padding,0px)] shrink-0'
+            />
+          </div>
         </div>
       </SidebarContent>
       {collapsible === 'icon' ? <SidebarRail /> : null}
