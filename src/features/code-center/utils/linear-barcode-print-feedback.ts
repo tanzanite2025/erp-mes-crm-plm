@@ -3,6 +3,12 @@ import type { TranslationKey } from '@/locales'
 import { toast } from 'sonner'
 import { type BatchPrintResultItem } from '@/features/code-center/utils/linear-barcode-print-result-builder'
 import { PRINT_BATCHES_QUERY_KEY } from '@/features/print-mgmt/query-keys'
+import {
+  LinearBarcodePrintPreviewBlockedError,
+  LinearBarcodePrintPreviewClosedError,
+  LinearBarcodePrintRenderError,
+} from '../services/linear-barcode-print-preview'
+import { LinearBarcodeUniqueCodesRequiredError } from '../services/linear-barcode-print-safety'
 
 type TranslateFn = (
   key: TranslationKey,
@@ -53,7 +59,7 @@ export function getLinearBarcodeInlineFeedbackClassName(
 export interface SinglePrintSuccessFeedbackParams {
   queryClient: QueryClient
   quantity: number
-  serialNumber: string
+  code: string
   t: TranslateFn
 }
 
@@ -85,7 +91,7 @@ async function invalidatePrintBatches(queryClient: QueryClient) {
 export async function handleSinglePrintSuccessFeedback({
   queryClient,
   quantity,
-  serialNumber,
+  code,
   t,
 }: SinglePrintSuccessFeedbackParams) {
   await invalidatePrintBatches(queryClient)
@@ -98,7 +104,7 @@ export async function handleSinglePrintSuccessFeedback({
       description: t(
         'codeCenter.linearBarcode.print.sections.preview.toasts.linePrintSuccessDescription',
         {
-          serialNumber,
+          code,
         }
       ),
     }
@@ -109,13 +115,40 @@ export function handleSinglePrintFailureFeedback({
   error,
   t,
 }: SinglePrintFailureFeedbackParams) {
-  toast.error(
-    error instanceof Error && error.message
-      ? error.message
-      : t(
-          'codeCenter.linearBarcode.print.sections.preview.toasts.linePrintFailed'
-        )
-  )
+  toast.error(resolveLinearBarcodePrintErrorMessage(error, t))
+}
+
+export function resolveLinearBarcodePrintErrorMessage(
+  error: unknown,
+  t: TranslateFn
+) {
+  if (error instanceof LinearBarcodeUniqueCodesRequiredError) {
+    return t(
+      'codeCenter.linearBarcode.print.sections.preview.errors.uniqueCodesRequired',
+      { quantity: error.quantity }
+    )
+  }
+  if (error instanceof LinearBarcodePrintPreviewBlockedError) {
+    return t(
+      'codeCenter.linearBarcode.print.sections.preview.errors.previewBlocked'
+    )
+  }
+  if (error instanceof LinearBarcodePrintPreviewClosedError) {
+    return t(
+      'codeCenter.linearBarcode.print.sections.preview.errors.previewClosed'
+    )
+  }
+  if (error instanceof LinearBarcodePrintRenderError) {
+    return t(
+      'codeCenter.linearBarcode.print.sections.preview.errors.renderFailed'
+    )
+  }
+
+  return error instanceof Error && error.message
+    ? error.message
+    : t(
+        'codeCenter.linearBarcode.print.sections.preview.toasts.linePrintFailed'
+      )
 }
 
 export async function handleBatchPrintCompletionFeedback({

@@ -10,9 +10,9 @@ export const codeCenter = {
       page: {
         title: 'Linear Barcode Print Center',
         subtitle:
-          'LINEAR BARCODE PRINT / Skeleton page for protocol linkage, templates, and print tasks',
+          'LINEAR BARCODE PRINT / Unique numbering, batch records, and Code128 previews',
         notice:
-          'This page now focuses on the minimum parsing path for linear barcode printing: select a sales order, read normalized fields from order details, detect blocking issues, and preview resolved parameters. Real print submission will be connected later.',
+          'A task succeeds only after unique numbering, 15-character validation, batch persistence, and a printable preview all complete. Repeating one code is blocked until batch unique-number issuance is available.',
         badges: {
           placeholder: 'Skeleton Placeholder',
           awaitingOrder: 'Awaiting Order',
@@ -78,15 +78,16 @@ export const codeCenter = {
         preview: {
           title: 'Parse Preview',
           description:
-            'Shows whether each order line satisfies the minimum print-parsing requirements and previews available barcode parameters.',
+            'Shows whether each order line satisfies safe-print requirements and previews available barcode parameters.',
           placeholder:
-            'The parse-preview area is connected. It currently provides ready/blocked checks and parameter preview, without real print submission.',
+            'Lines without unique codes are blocked to prevent duplicate physical labels.',
           actions: {
             issueRealNumbers: 'Issue Real Numbers',
             issuingNumbers: 'Issuing Numbers',
             numbersReady: 'Real Numbers Loaded',
             printNow: 'Print {{quantity}} Now',
-            printing: 'Sending ({{quantity}})...',
+            printing: 'Preparing Preview ({{quantity}})...',
+            previewReady: 'Print Preview Ready',
             batchPrintAll: 'Batch Print Order',
             batchPrinting: 'Batch Printing',
           },
@@ -95,13 +96,26 @@ export const codeCenter = {
             blocked: 'Blocked {{count}} lines',
           },
           toasts: {
-            linePrintSuccess: 'Sent {{quantity}} labels to the print queue',
-            linePrintSuccessDescription: 'Starting SN: {{serialNumber}}',
-            linePrintFailed: 'Failed to send the print command',
-            batchPrintSuccess: 'Batch print submitted for {{count}} lines.',
+            linePrintSuccess:
+              'Created a printable preview for {{quantity}} label',
+            linePrintSuccessDescription: 'Full code: {{code}}',
+            linePrintFailed: 'Failed to create the print preview',
+            batchPrintSuccess:
+              'Created order print previews for {{count}} lines.',
             batchPrintPartial:
-              'Batch print partially succeeded: {{successCount}} succeeded, {{failureCount}} failed.',
-            batchPrintFailed: 'Batch print failed. Please retry later.',
+              'Order print previews partially succeeded: {{successCount}} succeeded, {{failureCount}} failed.',
+            batchPrintFailed:
+              'Failed to create order print previews. Please retry later.',
+          },
+          errors: {
+            uniqueCodesRequired:
+              'Printing {{quantity}} labels was blocked because only one unique serial exists.',
+            previewBlocked:
+              'The browser blocked the print preview. Allow pop-ups for this site and retry.',
+            previewClosed:
+              'The print preview was closed. Any newly created batch is scrapped automatically.',
+            renderFailed:
+              'The Code128 label could not be rendered, so no print batch was created.',
           },
           states: {
             awaitingSelection: 'Select an order to inspect parsing results.',
@@ -132,6 +146,8 @@ export const codeCenter = {
             appearanceCodeMissing: 'Missing appearance-code snapshot',
             holeCountMissing: 'Missing hole count',
             quantityInvalid: 'Quantity must be greater than 0',
+            uniqueCodesRequired:
+              'Quantity is {{quantity}}, but this line has only one unique serial. Printing is blocked until batch unique-number issuance is available.',
             sequenceRuleKeyMissing:
               'Protocol sequence rule key is not configured',
           },
@@ -175,12 +191,14 @@ export const codeCenter = {
             barcodeSerial: 'Barcode Serial',
           },
           messages: {
-            success: 'Print submitted successfully',
-            failed: 'Print submission failed',
+            success: 'Print preview created',
+            failed: 'Print preview creation failed',
             skippedBlocked:
               'This line does not satisfy print conditions and was skipped.',
             skippedUnnumbered:
               'This line has not received a real number yet and was skipped.',
+            skippedPreviewReady:
+              'This line already has an open print preview and was skipped.',
           },
         },
       },

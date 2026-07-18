@@ -95,6 +95,23 @@ export function buildSkippedUnnumberedResultItem(
   }
 }
 
+export function buildSkippedPreviewReadyResultItem(
+  line: LinearBarcodeResolvedPrintLine,
+  t: TranslateFn
+): BatchPrintResultItem {
+  return {
+    key: line.key,
+    lineNo: line.lineNo,
+    productLabel: line.productLabel,
+    status: 'skipped',
+    message: t(
+      'codeCenter.linearBarcode.print.sections.result.messages.skippedPreviewReady'
+    ),
+    serial: line.printInput?.mockInputs.serial || '--',
+    barcodeSerial: line.printInput?.barcodeConfig.serialNumber || '--',
+  }
+}
+
 export function buildSuccessResultItem(
   line: LinearBarcodeResolvedPrintLine,
   barcodeSerial: string,

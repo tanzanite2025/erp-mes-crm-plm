@@ -31,6 +31,7 @@ export function LinearBarcodePrintMgmt() {
     setSelectedOrderId,
     issuedSerialByLine,
     printingKeys,
+    openedPreviewKeys,
     isIssuingNumbers,
     isBatchPrinting,
     retryingKeys,
@@ -461,6 +462,9 @@ export function LinearBarcodePrintMgmt() {
                           key={line.key}
                           line={line}
                           hasRealNumber={hasRealNumber}
+                          hasOpenedPreview={Boolean(
+                            openedPreviewKeys[line.key]
+                          )}
                           isPrinting={Boolean(printingKeys[line.key])}
                           onPrint={() => void handlePrintLine(line.key)}
                         />

@@ -7,6 +7,8 @@ export interface PrintBatch {
   templateName: string
   productId?: string
   bomId?: string
+  startSn?: string
+  fullCode?: string
   quantity: number
   activatedCount: number
   status: 'Printed' | 'PartiallyActivated' | 'Activated' | 'Scrapped'
@@ -20,6 +22,8 @@ interface PrintBatchApiDTO {
   templateName: string
   productId?: string
   bomId?: string
+  startSn?: string
+  fullCode?: string
   quantity: number
   activatedCount: number
   status: 'Printed' | 'PartiallyActivated' | 'Activated' | 'Scrapped'
@@ -40,6 +44,8 @@ function toPrintBatchContract(dto: PrintBatchApiDTO): PrintBatch {
     templateName: dto.templateName,
     productId: dto.productId,
     bomId: dto.bomId,
+    startSn: dto.startSn,
+    fullCode: dto.fullCode,
     quantity: dto.quantity,
     activatedCount: dto.activatedCount,
     status: dto.status,

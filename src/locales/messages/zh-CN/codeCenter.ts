@@ -9,9 +9,9 @@ export const codeCenter = {
     print: {
       page: {
         title: '一维码打印中心',
-        subtitle: 'LINEAR BARCODE PRINT / 协议联动、模板承载与打印任务骨架页',
+        subtitle: 'LINEAR BARCODE PRINT / 唯一码发号、批次留痕与 Code128 预览',
         notice:
-          '当前页面先收口一维码打印的最小解析链路：选择销售订单、读取订单详情中的归一字段、识别阻断项并展示参数预览。真实打印提交将在后续阶段接入。',
+          '只有唯一发号、15 位协议校验、批次落库与可打印预览全部完成，任务才会记为成功。批量唯一发号接入前，系统禁止重复打印同一条码。',
         badges: {
           placeholder: '骨架占位',
           awaitingOrder: '等待选择订单',
@@ -73,15 +73,16 @@ export const codeCenter = {
         preview: {
           title: '解析预览区',
           description:
-            '展示订单行是否满足最小打印解析条件，以及当前可用的条码参数快照。',
+            '展示订单行是否满足安全打印条件，以及当前可用的条码参数快照。',
           placeholder:
-            '解析预览区已接入。这里先做可解析/不可解析判断与参数预览，暂不接真实打印任务。',
+            '解析预览区会阻断缺少唯一条码的数据，避免同一流水号被重复打印。',
           actions: {
             issueRealNumbers: '获取真实发号',
             issuingNumbers: '发号中',
             numbersReady: '真实发号已加载',
             printNow: '立即打印 {{quantity}} 张',
-            printing: '正在发送 ({{quantity}})...',
+            printing: '正在生成预览 ({{quantity}})...',
+            previewReady: '打印预览已生成',
             batchPrintAll: '整单批量打印',
             batchPrinting: '整单打印中',
           },
@@ -90,13 +91,22 @@ export const codeCenter = {
             blocked: '阻断 {{count}} 行',
           },
           toasts: {
-            linePrintSuccess: '成功发送 {{quantity}} 枚标签至打印机队列',
-            linePrintSuccessDescription: '起始 SN: {{serialNumber}}',
-            linePrintFailed: '打印指令发送失败',
-            batchPrintSuccess: '整单批量打印已提交，共 {{count}} 行。',
+            linePrintSuccess: '已生成 {{quantity}} 枚标签的打印预览',
+            linePrintSuccessDescription: '完整条码：{{code}}',
+            linePrintFailed: '打印预览生成失败',
+            batchPrintSuccess: '整单打印预览已生成，共 {{count}} 行。',
             batchPrintPartial:
-              '整单批量打印部分成功：成功 {{successCount}} 行，失败 {{failureCount}} 行。',
-            batchPrintFailed: '整单批量打印失败，请稍后重试。',
+              '整单打印预览部分成功：成功 {{successCount}} 行，失败 {{failureCount}} 行。',
+            batchPrintFailed: '整单打印预览生成失败，请稍后重试。',
+          },
+          errors: {
+            uniqueCodesRequired:
+              '已阻止打印 {{quantity}} 张：当前只有一个唯一流水号，不能重复生成相同条码。',
+            previewBlocked:
+              '浏览器阻止了打印预览窗口，请允许本站打开弹窗后重试。',
+            previewClosed:
+              '打印预览窗口已关闭；如批次已创建，系统会自动将其报废。',
+            renderFailed: 'Code128 标签渲染失败，未创建打印批次。',
           },
           states: {
             awaitingSelection: '请选择订单后查看解析结果。',
@@ -126,6 +136,8 @@ export const codeCenter = {
             appearanceCodeMissing: '缺少外观位值快照',
             holeCountMissing: '缺少孔数',
             quantityInvalid: '数量必须大于 0',
+            uniqueCodesRequired:
+              '数量为 {{quantity}}，但当前订单行只有一个唯一流水号；批量唯一发号接入前禁止打印。',
             sequenceRuleKeyMissing: '协议未配置发号规则键',
           },
         },
@@ -167,10 +179,11 @@ export const codeCenter = {
             barcodeSerial: '打印流水号',
           },
           messages: {
-            success: '打印提交成功',
-            failed: '打印提交失败',
+            success: '打印预览已生成',
+            failed: '打印预览生成失败',
             skippedBlocked: '该行不满足打印条件，已跳过。',
             skippedUnnumbered: '该行尚未获取真实发号，已跳过。',
+            skippedPreviewReady: '该行已生成打印预览，已阻止重复生成。',
           },
         },
       },

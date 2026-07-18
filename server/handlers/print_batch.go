@@ -1,19 +1,33 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 	"xdfc-server/db"
 	"xdfc-server/models"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
 const maxPrintSequenceValue int64 = 60466175
+
+var canonicalLinearBarcodeFullCodePattern = regexp.MustCompile(
+	`^\d{2}[1-90ND](?:0[1-9]|[12]\d|3[01])\d{3}[RD]\d{6}$`,
+)
+
+func isPrintBatchFullCodeConflict(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) &&
+		pgErr.Code == "23505" &&
+		strings.Contains(strings.ToLower(pgErr.ConstraintName), "full_code")
+}
 
 // generateBatchNo generates a daily incremental batch number like P20260327-001.
 func generateBatchNo(tx *gorm.DB) (string, error) {
@@ -47,6 +61,45 @@ func SavePrintBatchHandler(c *gin.Context) {
 	}
 
 	input.TemplateName = strings.TrimSpace(input.TemplateName)
+	input.FullCode = strings.ToUpper(strings.TrimSpace(input.FullCode))
+	input.StartSN = strings.ToUpper(strings.TrimSpace(input.StartSN))
+
+	if input.TemplateName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] templateName 不能为空"})
+		return
+	}
+	if input.Quantity <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] quantity 必须大于 0"})
+		return
+	}
+	if input.FullCode != "" {
+		if input.Quantity != 1 {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "[BUSINESS_RULE_VIOLATION] 单个完整条码只能对应一枚标签，批量打印必须先生成并保存逐枚唯一条码",
+				"code":  "LINEAR_BARCODE_UNIQUE_CODES_REQUIRED",
+			})
+			return
+		}
+		if !canonicalLinearBarcodeFullCodePattern.MatchString(input.FullCode) {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "[VALIDATION] fullCode 必须是符合当前协议的 15 位一维码",
+				"code":  "LINEAR_BARCODE_INVALID_FULL_CODE",
+			})
+			return
+		}
+
+		expectedStartSN := input.FullCode[len(input.FullCode)-4:]
+		if input.StartSN == "" {
+			input.StartSN = expectedStartSN
+		}
+		if input.StartSN != expectedStartSN {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "[VALIDATION] startSn 必须与 fullCode 末四位流水号一致",
+				"code":  "LINEAR_BARCODE_START_SN_MISMATCH",
+			})
+			return
+		}
+	}
 
 	productID, err := normalizeOptionalUUIDString(input.ProductID)
 	if err != nil {
@@ -124,6 +177,13 @@ func SavePrintBatchHandler(c *gin.Context) {
 	if err != nil {
 		if err == ErrVersionConflict {
 			respondVersionConflict(c)
+			return
+		}
+		if isPrintBatchFullCodeConflict(err) {
+			c.JSON(http.StatusConflict, gin.H{
+				"error": "[BUSINESS_RULE_VIOLATION] 该一维码已存在打印批次，禁止重复生成",
+				"code":  "LINEAR_BARCODE_DUPLICATE_FULL_CODE",
+			})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 保存失败: " + err.Error()})

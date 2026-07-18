@@ -7,9 +7,9 @@ import {
 import { numberingService } from '@/features/basic-settings/services/numbering-service'
 import { type BarcodeConfig } from '@/features/engineering/data/schema'
 import { type SalesOrder } from '@/features/trading/data/schema'
+import { isSupportedLinearBarcodePrintQuantity } from '../services/linear-barcode-print-safety'
 
 const PREVIEW_SERIAL_LENGTH = 4
-const PREVIEW_BARCODE_SERIAL_LENGTH = 5
 
 export interface LinearBarcodePrintInput {
   productId: string
@@ -26,6 +26,8 @@ export interface LinearBarcodeResolvedPrintLine {
   key: string
   lineNo: number
   productLabel: string
+  quantity: number
+  uom: string
   issues: string[]
   isReady: boolean
   printInput?: LinearBarcodePrintInput
@@ -90,9 +92,7 @@ function buildBarcodeConfig(
     wheelType: normalizeWheelType(mockInputs.wheelType),
     scopeCode: mockInputs.scopeCode,
     suffix: '',
-    serialNumber: numberingService.previewSequence(
-      PREVIEW_BARCODE_SERIAL_LENGTH
-    ),
+    serialNumber: numberingService.previewSequence(PREVIEW_SERIAL_LENGTH),
   }
 }
 
@@ -144,10 +144,17 @@ export function resolveLinearBarcodePrintLines({
         )
       )
     }
-    if (!line.qty || line.qty <= 0) {
+    if (!Number.isInteger(line.qty) || line.qty <= 0) {
       issues.push(
         t(
           'codeCenter.linearBarcode.print.sections.preview.issues.quantityInvalid'
+        )
+      )
+    } else if (!isSupportedLinearBarcodePrintQuantity(line.qty)) {
+      issues.push(
+        t(
+          'codeCenter.linearBarcode.print.sections.preview.issues.uniqueCodesRequired',
+          { quantity: line.qty }
         )
       )
     }
@@ -167,6 +174,8 @@ export function resolveLinearBarcodePrintLines({
         key,
         lineNo: line.lineNo,
         productLabel,
+        quantity: line.qty,
+        uom: line.uom,
         issues,
         isReady: false,
       }
@@ -179,6 +188,8 @@ export function resolveLinearBarcodePrintLines({
       key,
       lineNo: line.lineNo,
       productLabel,
+      quantity: line.qty,
+      uom: line.uom,
       issues,
       isReady: true,
       printInput: {

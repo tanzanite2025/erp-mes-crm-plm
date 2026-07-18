@@ -7,6 +7,7 @@ import { type LinearBarcodeResolvedPrintLine } from '../utils/linear-barcode-pri
 interface LinearBarcodePreviewLineCardProps {
   line: LinearBarcodeResolvedPrintLine
   hasRealNumber: boolean
+  hasOpenedPreview: boolean
   isPrinting: boolean
   onPrint: () => void | Promise<void>
 }
@@ -14,6 +15,7 @@ interface LinearBarcodePreviewLineCardProps {
 export function LinearBarcodePreviewLineCard({
   line,
   hasRealNumber,
+  hasOpenedPreview,
   isPrinting,
   onPrint,
 }: LinearBarcodePreviewLineCardProps) {
@@ -52,19 +54,23 @@ export function LinearBarcodePreviewLineCard({
               <Button
                 type='button'
                 onClick={() => void onPrint()}
-                disabled={isPrinting}
+                disabled={isPrinting || hasOpenedPreview}
                 className='bg-blue-600 font-bold text-white hover:bg-blue-700'
               >
                 <Printer className='mr-2 h-4 w-4' />
-                {isPrinting
+                {hasOpenedPreview
                   ? t(
-                      'codeCenter.linearBarcode.print.sections.preview.actions.printing',
-                      { quantity: line.printInput.quantity }
+                      'codeCenter.linearBarcode.print.sections.preview.actions.previewReady'
                     )
-                  : t(
-                      'codeCenter.linearBarcode.print.sections.preview.actions.printNow',
-                      { quantity: line.printInput.quantity }
-                    )}
+                  : isPrinting
+                    ? t(
+                        'codeCenter.linearBarcode.print.sections.preview.actions.printing',
+                        { quantity: line.printInput.quantity }
+                      )
+                    : t(
+                        'codeCenter.linearBarcode.print.sections.preview.actions.printNow',
+                        { quantity: line.printInput.quantity }
+                      )}
               </Button>
             ) : (
               <span className='text-[9px] font-bold text-muted-foreground/60'>
@@ -103,10 +109,7 @@ export function LinearBarcodePreviewLineCard({
         </div>
         <div>
           {t('codeCenter.linearBarcode.print.sections.preview.fields.quantity')}
-          :{' '}
-          {line.printInput
-            ? `${line.printInput.quantity.toLocaleString()} ${line.printInput.uom}`
-            : '--'}
+          : {`${line.quantity.toLocaleString()} ${line.uom}`}
         </div>
         <div>
           {t(
