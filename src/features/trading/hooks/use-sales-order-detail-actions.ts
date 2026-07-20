@@ -1,8 +1,8 @@
 import type { TranslationKey } from '@/locales'
 import { toast } from 'sonner'
+import { requireCommandActor } from '@/lib/command-actor'
 import { failLoudly } from '@/lib/safe-catch'
 import type { SalesOrder, SalesOrderStatus } from '../data/schema'
-import { requireCommandActor } from '@/lib/command-actor'
 
 export interface SalesOrderStatusCommandPayload {
   status: SalesOrderStatus

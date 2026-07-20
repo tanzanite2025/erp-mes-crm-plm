@@ -9,12 +9,6 @@ import {
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { buildVersionedPatchMetadata } from '@/lib/version-guard'
 import {
-  supplierArraySchema,
-  supplierSchema,
-  type Supplier,
-  type SupplierFormValues,
-} from '../data/schema'
-import {
   toSupplierApiDTO,
   toSupplierContract,
   toSupplierContracts,
@@ -23,6 +17,12 @@ import {
   type SupplierApiDTO,
   type SupplierListApiResponseDTO,
 } from '../contracts/supplier-api-dto'
+import {
+  supplierArraySchema,
+  supplierSchema,
+  type Supplier,
+  type SupplierFormValues,
+} from '../data/schema'
 
 export const SUPPLIER_TRANSACTION_INTENT_STATUS_CHANGE =
   'SUPPLIER_STATUS_CHANGE'

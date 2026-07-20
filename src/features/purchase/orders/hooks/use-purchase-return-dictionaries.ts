@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
+import { purchaseOrderQueryKeys } from '../query-keys'
 import {
   getPurchaseReturnDictionaries,
   type PurchaseReturnDictionaryItem,
   type PurchaseReturnDictionaryType,
 } from '../services/purchase-return-dictionary-service'
-import { purchaseOrderQueryKeys } from '../query-keys'
 
 export function usePurchaseReturnDictionaryOptions(
   dictType: PurchaseReturnDictionaryType

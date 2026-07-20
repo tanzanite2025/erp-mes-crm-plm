@@ -53,7 +53,9 @@ describe('purchase orders TAB ownership', () => {
       .filter((file) => !file.endsWith('.spec.ts'))
       .flatMap((file) => {
         const source = readFileSync(file, 'utf8')
-        return source.includes('@/features/trading') ? [relativeSourcePath(file)] : []
+        return source.includes('@/features/trading')
+          ? [relativeSourcePath(file)]
+          : []
       })
 
     expect(tradingImports).toEqual([

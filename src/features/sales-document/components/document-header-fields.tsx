@@ -11,12 +11,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { StatusGuard } from '@/components/status-guard'
+import { useFinanceResources } from '@/features/finance/hooks/use-finance-resources'
 import {
   type Customer,
   type SalesOrderDraft,
 } from '@/features/trading/data/schema'
 import { useSalesOrderHeaderFieldsViewModel } from '@/features/trading/hooks/use-sales-order-header-fields-view-model'
-import { useFinanceResources } from '@/features/finance/hooks/use-finance-resources'
 import { SALES_ORDER_EDITABLE_STATUSES } from '@/features/trading/utils/sales-order-actions'
 import { DocumentEvidenceManager } from './document-evidence-manager'
 

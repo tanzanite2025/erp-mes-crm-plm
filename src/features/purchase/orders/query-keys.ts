@@ -25,8 +25,6 @@ export const purchaseOrderQueryKeys = {
     pageSize,
   ],
   returnsRoot: (): readonly ['purchase-returns'] => ['purchase-returns'],
-  returnDictionaries: (dictType: string) => [
-    'purchase-return-dictionaries',
-    dictType,
-  ] as const,
+  returnDictionaries: (dictType: string) =>
+    ['purchase-return-dictionaries', dictType] as const,
 } as const

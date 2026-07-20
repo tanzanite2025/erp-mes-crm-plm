@@ -47,9 +47,7 @@ export type FinanceFilterOptionsReadResource = CompositeReadResource<{
   paymentTermOptions: FinanceOption[]
 }>
 
-export function useFinanceResources(
-  options: UseFinanceResourcesOptions = {}
-) {
+export function useFinanceResources(options: UseFinanceResourcesOptions = {}) {
   const {
     includeCurrencies = false,
     includePaymentMethods = true,

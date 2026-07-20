@@ -18,9 +18,7 @@ export function requireCommandActor(
   const operator = actor.operator?.trim()
 
   if (!actorId || !operator) {
-    const error = new Error(
-      `[CRITICAL] Missing command actor in ${scope}`
-    )
+    const error = new Error(`[CRITICAL] Missing command actor in ${scope}`)
     failLoudly(error, scope)
     throw error
   }

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useAuthStore } from '@/stores/auth-store'
+import { requireCommandActor } from '@/lib/command-actor'
 import { createLogger } from '@/lib/logger'
 import {
   type CompositeReadResource,
@@ -8,12 +9,11 @@ import {
 } from '@/lib/read-resource'
 import { failLoudly } from '@/lib/safe-catch'
 import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
+import { useFinanceResources } from '@/features/finance/hooks/use-finance-resources'
 import { type SalesOrder, type SalesOrderStatus } from '../data/schema'
 import { useGetSalesOrders, useSalesOrderMutations } from '../sales'
 import { type PaginatedSalesOrders } from '../sales/adapters/sales-order-api-adapter'
-import { requireCommandActor } from '@/lib/command-actor'
 import { useSalesOrderPreassembleSubmit } from './use-sales-order-preassemble-submit'
-import { useFinanceResources } from '@/features/finance/hooks/use-finance-resources'
 
 const logger = createLogger('useSalesOrderListController')
 

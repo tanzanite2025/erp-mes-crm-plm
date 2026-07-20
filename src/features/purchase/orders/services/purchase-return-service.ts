@@ -1,7 +1,6 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayField, ensureObjectResponse } from '@/lib/api-response'
 import type { OrderEvidence } from '@/features/sales-document/data/order-evidence'
-import type { PurchaseOrder } from '../data/schema'
 import { toPurchaseOrderContract } from '../adapters/purchase-order-api-adapter'
 import type {
   CreatePurchaseReturnResponseApiDTO,
@@ -9,6 +8,7 @@ import type {
   PurchaseReturnLineApiDTO,
   PurchaseReturnListPageApiDTO,
 } from '../contracts/purchase-return-api-dto'
+import type { PurchaseOrder } from '../data/schema'
 
 export interface PurchaseReturnLine {
   id: number

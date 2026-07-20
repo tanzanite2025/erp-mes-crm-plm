@@ -2,13 +2,6 @@ import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { buildVersionedPatchMetadata } from '@/lib/version-guard'
-import { type PurchaseOrder } from '../data/schema'
-import {
-  PURCHASE_QUERY_PARAM_PAGE,
-  PURCHASE_QUERY_PARAM_PAGE_SIZE,
-  PURCHASE_QUERY_PARAM_STATUS,
-  PURCHASE_QUERY_PARAM_WITH_LINES,
-} from '../query-params'
 import {
   toPurchaseOrderApiDTO,
   toPurchaseOrderContract,
@@ -24,6 +17,13 @@ import {
   type PurchaseOrderApiDTO,
   type PurchaseOrderListPageApiDTO,
 } from '../contracts/purchase-order-api-dto'
+import { type PurchaseOrder } from '../data/schema'
+import {
+  PURCHASE_QUERY_PARAM_PAGE,
+  PURCHASE_QUERY_PARAM_PAGE_SIZE,
+  PURCHASE_QUERY_PARAM_STATUS,
+  PURCHASE_QUERY_PARAM_WITH_LINES,
+} from '../query-params'
 
 export const PURCHASE_ORDER_PATCH_INTENT_SAVE = 'PURCHASE_ORDER_PATCH_SAVE'
 

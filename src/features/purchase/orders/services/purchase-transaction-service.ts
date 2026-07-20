@@ -1,7 +1,6 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaSet } from '@/lib/delta/types'
-import { type PurchaseOrder, type PurchaseOrderLine } from '../data/schema'
 import {
   toConfirmPurchaseReceiptContract,
   toPurchaseOrderContract,
@@ -13,6 +12,7 @@ import {
   type ConfirmPurchaseReceiptResponseApiDTO,
   type PurchaseOrderApiDTO,
 } from '../contracts/purchase-order-api-dto'
+import { type PurchaseOrder, type PurchaseOrderLine } from '../data/schema'
 
 export const PURCHASE_TRANSACTION_INTENT_ORDER_SAVE = 'ORDER_SAVE'
 export const PURCHASE_TRANSACTION_INTENT_DELIVERY_DATE_CHANGE =

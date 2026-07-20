@@ -1,10 +1,4 @@
 import { ensureArrayField } from '@/lib/api-response'
-import { normalizePurchaseOrderStatus } from '../data/purchase-status'
-import type {
-  PurchaseOrder,
-  PurchaseOrderLine,
-  PurchaseOrderListItem,
-} from '../data/schema'
 import type {
   ConfirmPurchaseReceiptResponseApiDTO,
   PurchaseOrderApiDTO,
@@ -12,6 +6,12 @@ import type {
   PurchaseOrderListItemWithLinesApiDTO,
   PurchaseOrderListPageApiDTO,
 } from '../contracts/purchase-order-api-dto'
+import { normalizePurchaseOrderStatus } from '../data/purchase-status'
+import type {
+  PurchaseOrder,
+  PurchaseOrderLine,
+  PurchaseOrderListItem,
+} from '../data/schema'
 
 export interface PaginatedPurchaseOrders {
   items: PurchaseOrder[]

@@ -1,7 +1,7 @@
 import { useLanguage } from '@/context/language-provider'
+import { OrderEvidenceGallery } from '@/features/sales-document/components/order-evidence-gallery'
 import { type SalesOrder } from '../../data/schema'
 import { useSalesOrderDetailSummaryViewModel } from '../../hooks/use-sales-order-detail-summary-view-model'
-import { OrderEvidenceGallery } from '@/features/sales-document/components/order-evidence-gallery'
 
 function InfoRow({
   label,

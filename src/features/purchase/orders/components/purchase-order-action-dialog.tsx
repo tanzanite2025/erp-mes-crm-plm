@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useAuthStore } from '@/stores/auth-store'
+import { requireCommandActor } from '@/lib/command-actor'
 import { useLanguage } from '@/context/language-provider'
 import { AuditStatusDisplay } from '@/components/common/audit-status-display'
 import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
@@ -7,10 +8,7 @@ import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import { useGetSuppliers } from '@/features/purchase/suppliers'
 import { getPurchaseStatusDisplayMeta } from '../data/purchase-status'
-import {
-  type PurchaseOrder,
-  type PurchaseOrderListItem,
-} from '../data/schema'
+import { type PurchaseOrder, type PurchaseOrderListItem } from '../data/schema'
 import { usePurchaseOrderDialogResources } from '../hooks/use-purchase-order-dialog-resources'
 import { usePurchaseOrderForm } from '../hooks/use-purchase-order-form'
 import { usePurchaseOrderSavePreparation } from '../hooks/use-purchase-order-save-preparation'
@@ -18,7 +16,6 @@ import {
   useGetPurchaseOrderDetail,
   usePurchaseOrderMutations,
 } from '../hooks/use-purchase-orders'
-import { requireCommandActor } from '@/lib/command-actor'
 import { PurchaseOrderEvidenceSection } from './parts/purchase-order-evidence-section'
 import { PurchaseOrderHeaderFields } from './parts/purchase-order-header-fields'
 import { PurchaseOrderLinesEditor } from './parts/purchase-order-lines-editor'

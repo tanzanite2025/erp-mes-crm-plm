@@ -1,5 +1,5 @@
-import type { Supplier } from '../data/schema'
 import type { SupplierApiDTO } from '../contracts/supplier-api-dto'
+import type { Supplier } from '../data/schema'
 
 function normalizeMainProducts(value: string | string[]): string[] {
   if (Array.isArray(value)) {

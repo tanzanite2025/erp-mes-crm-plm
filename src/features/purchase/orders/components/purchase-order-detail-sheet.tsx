@@ -6,10 +6,7 @@ import {
 } from '@/components/ui/sheet'
 import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
-import {
-  type PurchaseOrder,
-  type PurchaseOrderListItem,
-} from '../data/schema'
+import { type PurchaseOrder, type PurchaseOrderListItem } from '../data/schema'
 import { PurchaseOrderDetail } from './purchase-order-detail'
 
 interface PurchaseOrderDetailSheetProps {

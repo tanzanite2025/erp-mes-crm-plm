@@ -1,13 +1,10 @@
 import { useCallback } from 'react'
+import { previewLineAmount, previewOrderTotals } from '@/lib/order-preview-calc'
 import {
   type SalesOrderFormValues,
   type SalesOrderLine,
   createEmptySalesOrderLine,
 } from '../data/schema'
-import {
-  previewLineAmount,
-  previewOrderTotals,
-} from '@/lib/order-preview-calc'
 
 type SalesOrderLineFieldValue = SalesOrderLine[keyof SalesOrderLine]
 

@@ -3,6 +3,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import { createLogger } from '@/lib/logger'
 import { useLanguage } from '@/context/language-provider'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
+import { useFinanceResources } from '@/features/finance/hooks/use-finance-resources'
 import { type PurchaseOrder, type PurchaseOrderLine } from '../data/schema'
 import { DEFAULT_PURCHASE_ORDER } from './purchase-order-form-defaults'
 import {
@@ -18,7 +19,6 @@ import {
   updatePurchaseOrderLine,
   validatePurchaseOrderForm,
 } from './purchase-order-form-helpers'
-import { useFinanceResources } from '@/features/finance/hooks/use-finance-resources'
 
 const logger = createLogger('usePurchaseOrderForm')
 type PurchaseOrderLineFieldValue = PurchaseOrderLine[keyof PurchaseOrderLine]
@@ -34,12 +34,11 @@ export function usePurchaseOrderForm(
   const user = useAuthStore((state) => state.user)
   const { t } = useLanguage()
   const purchaserName = user?.username || user?.accountNo || ''
-  const { currencies, isLoading: isFinanceLoading } =
-    useFinanceResources({
-      includeCurrencies: open,
-      includePaymentMethods: false,
-      includePaymentTerms: false,
-    })
+  const { currencies, isLoading: isFinanceLoading } = useFinanceResources({
+    includeCurrencies: open,
+    includePaymentMethods: false,
+    includePaymentTerms: false,
+  })
 
   const memoizedInitial = useMemo(
     () => initialOrder ?? DEFAULT_PURCHASE_ORDER,

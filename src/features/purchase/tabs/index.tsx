@@ -4,12 +4,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
-import { SupplierList } from '@/features/purchase/suppliers'
 import {
   PurchaseOrderList,
   PurchaseOrderLogs,
   PurchaseOrderReturns,
 } from '@/features/purchase/orders'
+import { SupplierList } from '@/features/purchase/suppliers'
 
 export function SupplierMgmt() {
   const { t } = useLanguage()

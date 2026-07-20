@@ -18,20 +18,17 @@ import { AuditStamp } from '@/components/common/audit-stamp'
 import { AuditStatusDisplay } from '@/components/common/audit-status-display'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
+import { OrderEvidenceGallery } from '@/features/sales-document/components/order-evidence-gallery'
 import { canPerformPurchaseOrderAction } from '../data/purchase-order-state-machine'
 import {
   canReceivePurchaseOrder,
   getPurchaseStatusDisplayMeta,
 } from '../data/purchase-status'
-import {
-  type PurchaseOrder,
-  type PurchaseOrderListItem,
-} from '../data/schema'
+import { type PurchaseOrder, type PurchaseOrderListItem } from '../data/schema'
 import {
   useGetPurchaseOrderDetail,
   usePurchaseOrderMutations,
 } from '../hooks/use-purchase-orders'
-import { OrderEvidenceGallery } from '@/features/sales-document/components/order-evidence-gallery'
 import { PurchaseOrderEvidencePrint } from './purchase-order-evidence-print'
 import { PurchaseReceiptConfirmDialog } from './purchase-receipt-confirm-dialog'
 

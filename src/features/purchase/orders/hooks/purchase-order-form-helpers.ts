@@ -1,10 +1,7 @@
 import { type TranslationKey } from '@/locales'
 import { toast } from 'sonner'
+import { previewLineAmount, previewOrderTotals } from '@/lib/order-preview-calc'
 import { type PurchaseOrder, type PurchaseOrderLine } from '../data/schema'
-import {
-  previewLineAmount,
-  previewOrderTotals,
-} from '@/lib/order-preview-calc'
 import {
   DEFAULT_PURCHASE_ORDER,
   EMPTY_PURCHASE_ORDER_LINE,

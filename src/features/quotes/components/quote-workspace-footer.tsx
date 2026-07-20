@@ -72,7 +72,9 @@ export function QuoteWorkspaceFooter({
             variant='outline'
             className='h-11 rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
             onClick={onConvert}
-            disabled={isConverting || isCreateMode || !detail || !quoteIsEditable}
+            disabled={
+              isConverting || isCreateMode || !detail || !quoteIsEditable
+            }
           >
             <ArrowRightLeft className='size-4' />
             {isConverting ? '正在转正式销售订单…' : '转正式销售订单'}

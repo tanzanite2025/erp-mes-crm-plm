@@ -1,9 +1,9 @@
 import { useCallback } from 'react'
 import { useAuthStore } from '@/stores/auth-store'
+import { requireCommandActor } from '@/lib/command-actor'
 import type { PackagingProfile } from '@/features/logistics-config/packaging-rules-service'
 import type { SalesOrder } from '../data/schema'
 import { useSalesOrderMutations } from '../sales'
-import { requireCommandActor } from '@/lib/command-actor'
 import { buildSalesOrderLinePackagingSelection } from '../utils/sales-order-packaging-selection'
 
 export function useSalesOrderPackagingCardCommands() {

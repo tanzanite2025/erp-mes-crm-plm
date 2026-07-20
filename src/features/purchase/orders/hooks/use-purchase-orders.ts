@@ -3,12 +3,12 @@ import { toast } from 'sonner'
 import { type DeltaSet } from '@/lib/delta/types'
 import { handleServerError } from '@/lib/handle-server-error'
 import { useLanguage } from '@/context/language-provider'
-import { purchaseOrderQueryKeys } from '../query-keys'
 import {
   type PurchaseOrder,
   type PurchaseOrderLine,
   type PurchaseOrderListItem,
 } from '../data/schema'
+import { purchaseOrderQueryKeys } from '../query-keys'
 import {
   createPurchaseOrder,
   deletePurchaseOrder,
@@ -52,12 +52,7 @@ export const useGetPurchaseOrdersWithLines = (
   status?: string[]
 ) => {
   return useQuery<PaginatedResponse<PurchaseOrder>, Error>({
-    queryKey: purchaseOrderQueryKeys.list(
-      page,
-      pageSize,
-      true,
-      status ?? []
-    ),
+    queryKey: purchaseOrderQueryKeys.list(page, pageSize, true, status ?? []),
     queryFn: () =>
       getPurchaseOrders({ page, pageSize, withLines: true, status }),
   })

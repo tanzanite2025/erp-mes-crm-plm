@@ -19,7 +19,9 @@ describe('supplier TAB ownership', () => {
   it('keeps supplier implementation out of the trading feature', () => {
     const legacyFiles = sourceFiles
       .map((file) => path.relative(sourceRoot, file).split('\\').join('/'))
-      .filter((file) => /^features\/trading\/(supplier\/|.*\/supplier-)/.test(file))
+      .filter((file) =>
+        /^features\/trading\/(supplier\/|.*\/supplier-)/.test(file)
+      )
 
     expect(legacyFiles).toEqual([])
   })
