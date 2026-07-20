@@ -41,7 +41,7 @@ import type {
   SalesOrder,
   SalesOrderLine,
 } from '@/features/trading/data/schema'
-import { usePurchaseReturnDictionaryOptions } from '@/features/trading/purchase/hooks/use-purchase-return-dictionaries'
+import { usePurchaseReturnDictionaryOptions } from '@/features/purchase/orders'
 import { useGetSalesReturnSourceOrderDetail } from '@/features/trading/sales/hooks/use-sales-return-queries'
 import { useSalesReturnMutations } from '@/features/trading/sales/hooks/use-sales-returns'
 import type {

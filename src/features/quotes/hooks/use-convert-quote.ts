@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { quoteQueryKeys } from '@/features/quotes/query-keys'
 import { convertQuote } from '@/features/quotes/services/quote-convert-service'
+import { tradingQueryKeys } from '@/features/trading/query-keys'
 
 export function useConvertQuote() {
   const queryClient = useQueryClient()
@@ -13,6 +14,9 @@ export function useConvertQuote() {
         queryClient.invalidateQueries({ queryKey: quoteQueryKeys.all() }),
         queryClient.invalidateQueries({
           queryKey: quoteQueryKeys.detail(data.quoteId),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: tradingQueryKeys.salesOrdersRoot(),
         }),
       ])
       toast.success(`已转正式销售订单：${data.targetSalesOrderNo}`)

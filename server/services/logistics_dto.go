@@ -16,22 +16,30 @@ type LogisticsEventDTO struct {
 }
 
 type LogisticsRecordResponse struct {
-	ID              string              `json:"id"`
-	OrderNo         string              `json:"orderNo"`
-	SalesOrderID    string              `json:"salesOrderId"`
-	PurchaseOrderID string              `json:"purchaseOrderId"`
-	ProductID       string              `json:"productId"`
-	ShipmentID      string              `json:"shipmentId"`
-	Type            string              `json:"type"`
-	Carrier         string              `json:"carrier"`
-	TrackingNo      string              `json:"trackingNo"`
-	Status          string              `json:"status"`
-	LastLocation    string              `json:"lastLocation"`
-	Events          []LogisticsEventDTO `json:"events"`
-	Version         int                 `json:"version"`
-	IsDeleted       bool                `json:"isDeleted"`
-	CreatedAt       time.Time           `json:"createdAt"`
-	UpdatedAt       time.Time           `json:"updatedAt"`
+	ID              string                         `json:"id"`
+	OrderNo         string                         `json:"orderNo"`
+	SalesOrderID    string                         `json:"salesOrderId"`
+	PurchaseOrderID string                         `json:"purchaseOrderId"`
+	PurchaseOrder   *LogisticsPurchaseOrderSummary `json:"purchaseOrder,omitempty"`
+	ProductID       string                         `json:"productId"`
+	ShipmentID      string                         `json:"shipmentId"`
+	Type            string                         `json:"type"`
+	Carrier         string                         `json:"carrier"`
+	TrackingNo      string                         `json:"trackingNo"`
+	Status          string                         `json:"status"`
+	LastLocation    string                         `json:"lastLocation"`
+	Events          []LogisticsEventDTO            `json:"events"`
+	Version         int                            `json:"version"`
+	IsDeleted       bool                           `json:"isDeleted"`
+	CreatedAt       time.Time                      `json:"createdAt"`
+	UpdatedAt       time.Time                      `json:"updatedAt"`
+}
+
+type LogisticsPurchaseOrderSummary struct {
+	ID           string `json:"id"`
+	OrderNo      string `json:"orderNo"`
+	SupplierName string `json:"supplierName"`
+	Status       string `json:"status"`
 }
 
 type LogisticsRecordListResponse struct {
@@ -51,11 +59,22 @@ func MapLogisticsRecordToResponse(record models.LogisticsRecord) LogisticsRecord
 		events = []LogisticsEventDTO{}
 	}
 
+	var purchaseOrder *LogisticsPurchaseOrderSummary
+	if record.PurchaseOrder != nil {
+		purchaseOrder = &LogisticsPurchaseOrderSummary{
+			ID:           record.PurchaseOrder.ID,
+			OrderNo:      record.PurchaseOrder.OrderNo,
+			SupplierName: record.PurchaseOrder.SupplierName,
+			Status:       record.PurchaseOrder.Status,
+		}
+	}
+
 	return LogisticsRecordResponse{
 		ID:              record.ID,
 		OrderNo:         record.OrderNo,
 		SalesOrderID:    record.SalesOrderID,
 		PurchaseOrderID: record.PurchaseOrderID,
+		PurchaseOrder:   purchaseOrder,
 		ProductID:       record.ProductID,
 		ShipmentID:      record.ShipmentID,
 		Type:            record.Type,

@@ -251,8 +251,10 @@ func (s *MaintenanceRecordService) Patch(input PatchInput) (*models.MaintenanceR
 
 	// 使用事务更新记录并写入审计日志
 	err = s.db.Transaction(func(tx *gorm.DB) error {
+		txRepo := repositories.NewMaintenanceRecordRepository(tx)
+
 		// 更新记录
-		if err := s.repo.Update(existing, updates); err != nil {
+		if err := txRepo.Update(existing, updates); err != nil {
 			return err
 		}
 
@@ -325,8 +327,10 @@ func (s *MaintenanceRecordService) Delete(id string, operator string, userID str
 
 	// 使用事务软删除并写入审计日志
 	return s.db.Transaction(func(tx *gorm.DB) error {
+		txRepo := repositories.NewMaintenanceRecordRepository(tx)
+
 		// 删除记录
-		if err := s.repo.Delete(existing); err != nil {
+		if err := txRepo.Delete(existing); err != nil {
 			return err
 		}
 

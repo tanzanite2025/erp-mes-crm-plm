@@ -14,7 +14,3 @@ type UserOptionResponse = services.UserOptionResponse
 func mapUserToResponse(user models.User) UserResponse {
 	return services.MapUserToResponse(user)
 }
-
-func mapUsersToResponse(items []models.User) []UserResponse {
-	return services.MapUsersToResponse(items)
-}

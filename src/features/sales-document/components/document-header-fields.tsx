@@ -16,7 +16,7 @@ import {
   type SalesOrderDraft,
 } from '@/features/trading/data/schema'
 import { useSalesOrderHeaderFieldsViewModel } from '@/features/trading/hooks/use-sales-order-header-fields-view-model'
-import { useTradingFinanceResources } from '@/features/trading/hooks/use-trading-finance-resources'
+import { useFinanceResources } from '@/features/finance/hooks/use-finance-resources'
 import { SALES_ORDER_EDITABLE_STATUSES } from '@/features/trading/utils/sales-order-actions'
 import { DocumentEvidenceManager } from './document-evidence-manager'
 
@@ -45,7 +45,7 @@ export function DocumentHeaderFields({
   denseContractFields = false,
 }: DocumentHeaderFieldsProps) {
   const { t, locale } = useLanguage()
-  const financeResources = useTradingFinanceResources({
+  const financeResources = useFinanceResources({
     includeCurrencies: true,
   })
   const { currencies, paymentMethods, paymentTerms } = financeResources

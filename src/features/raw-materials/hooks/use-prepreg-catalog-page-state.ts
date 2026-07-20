@@ -4,7 +4,7 @@ import { getRouteApi } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { getErrorStatus, isNotFoundError } from '@/lib/error-status'
 import { useLanguage } from '@/context/language-provider'
-import { useGetSuppliers } from '@/features/trading/supplier'
+import { useGetSuppliers } from '@/features/purchase/suppliers'
 import type { PrepregSupplierOption } from '../components/prepreg-catalog-form'
 import {
   buildPrepregSpecPayload,

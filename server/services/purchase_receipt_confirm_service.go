@@ -5,7 +5,6 @@ import (
 	"errors"
 	"strings"
 	"time"
-	"xdfc-server/db"
 	"xdfc-server/models"
 	statemachine "xdfc-server/services/state_machine"
 
@@ -69,27 +68,6 @@ func normalizeConfirmPurchaseReceiptInput(input ConfirmPurchaseReceiptInput) (Co
 	input.Operator = strings.TrimSpace(input.Operator)
 	input.Remarks = strings.TrimSpace(input.Remarks)
 	return input, nil
-}
-
-func ConfirmPurchaseReceipt(input ConfirmPurchaseReceiptInput) (ConfirmPurchaseReceiptResponse, error) {
-	normalized, err := normalizeConfirmPurchaseReceiptInput(input)
-	if err != nil {
-		return ConfirmPurchaseReceiptResponse{}, err
-	}
-
-	result := ConfirmPurchaseReceiptResult{}
-	err = db.DB.Transaction(func(tx *gorm.DB) error {
-		confirmed, err := confirmPurchaseReceiptTx(tx, normalized)
-		if err != nil {
-			return err
-		}
-		result = confirmed
-		return nil
-	})
-	if err != nil {
-		return ConfirmPurchaseReceiptResponse{}, err
-	}
-	return MapConfirmPurchaseReceiptResultToResponse(result), nil
 }
 
 func ExecutePurchaseOrderReceiptConfirmation(command ExecutePurchaseOrderReceiptConfirmationCommand) (ConfirmPurchaseReceiptResponse, error) {

@@ -3,7 +3,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import type { PackagingProfile } from '@/features/logistics-config/packaging-rules-service'
 import type { SalesOrder } from '../data/schema'
 import { useSalesOrderMutations } from '../sales'
-import { requireTradingCommandActor } from '../utils/command-actor'
+import { requireCommandActor } from '@/lib/command-actor'
 import { buildSalesOrderLinePackagingSelection } from '../utils/sales-order-packaging-selection'
 
 export function useSalesOrderPackagingCardCommands() {
@@ -16,7 +16,7 @@ export function useSalesOrderPackagingCardCommands() {
     async (order: SalesOrder, lineNo: number, profile: PackagingProfile) => {
       let actor
       try {
-        actor = requireTradingCommandActor(
+        actor = requireCommandActor(
           { operator: accountNo, actorId },
           'SalesOrderPackagingCard.persistLineSelection'
         )

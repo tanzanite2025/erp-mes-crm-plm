@@ -59,7 +59,7 @@
 - 实时入口
   - `src/features/system-mgmt/notifications/notification-service.ts`
   - `src/features/trading/sales/hooks/use-sales-transactions.ts`
-  - `src/features/trading/purchase/hooks/use-purchase-orders.ts`
+  - `src/features/purchase/orders/hooks/use-purchase-orders.ts`
   - `src/features/production-calendar/services/production-plan-command-service.ts`
 - 追溯扫描
   - `src/features/system-mgmt/workflow-core/hooks/use-notification-rules.ts`

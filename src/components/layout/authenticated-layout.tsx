@@ -16,6 +16,7 @@ import { useNotifications } from '@/hooks/use-notifications'
 import { Button } from '@/components/ui/button'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/layout/app-sidebar'
+import { DashboardDockButton } from '@/components/layout/dashboard-dock-button'
 import { GlobalBottomDock } from '@/components/layout/global-bottom-dock'
 import { Search } from '@/components/search'
 import { SkipToMain } from '@/components/skip-to-main'
@@ -276,6 +277,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
         </SidebarInset>
         {!isPDAShellRoute && (
           <GlobalBottomDock>
+            <DashboardDockButton />
             <QuickActionsFloating placement='dock' />
             <Search placement='dock' />
             <Suspense fallback={null}>

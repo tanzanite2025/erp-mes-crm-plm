@@ -13,10 +13,8 @@ import (
 	"gorm.io/gorm"
 )
 
-const linearBarcodeProtocolConfigKey = "linear_barcode_protocol_v1"
-
 func GetLinearBarcodeProtocolConfigHandler(c *gin.Context) {
-	config, err := loadLinearBarcodeProtocolConfig()
+	config, err := services.LoadLinearBarcodeProtocolConfig(db.DB)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取一维码协议配置失败"})
 		return
@@ -45,14 +43,14 @@ func UpdateLinearBarcodeProtocolConfigHandler(c *gin.Context) {
 	}
 
 	record := models.SystemConfig{
-		Key:         linearBarcodeProtocolConfigKey,
+		Key:         services.LinearBarcodeProtocolConfigKey,
 		Value:       string(payload),
 		Label:       "Linear Barcode Protocol",
 		Description: "Persisted code128 wheel barcode protocol config used by management and PDA ingest clients.",
 	}
 
 	var existing models.SystemConfig
-	err = db.DB.Where("key = ?", linearBarcodeProtocolConfigKey).First(&existing).Error
+	err = db.DB.Where("key = ?", services.LinearBarcodeProtocolConfigKey).First(&existing).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		if err := db.DB.Create(&record).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 创建一维码协议配置失败"})
@@ -73,28 +71,4 @@ func UpdateLinearBarcodeProtocolConfigHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, normalized)
-}
-
-func loadLinearBarcodeProtocolConfig() (services.LinearBarcodeProtocolConfig, error) {
-	defaults := services.DefaultLinearBarcodeProtocolConfig()
-
-	var record models.SystemConfig
-	err := db.DB.Where("key = ?", linearBarcodeProtocolConfigKey).First(&record).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return defaults, nil
-	}
-	if err != nil {
-		return defaults, err
-	}
-
-	if strings.TrimSpace(record.Value) == "" {
-		return defaults, nil
-	}
-
-	var stored services.LinearBarcodeProtocolConfig
-	if err := json.Unmarshal([]byte(record.Value), &stored); err != nil {
-		return defaults, nil
-	}
-
-	return services.NormalizeLinearBarcodeProtocolConfig(stored), nil
 }

@@ -1,6 +1,16 @@
 package services
 
-import "time"
+import (
+	"encoding/json"
+	"errors"
+	"strings"
+	"time"
+	"xdfc-server/models"
+
+	"gorm.io/gorm"
+)
+
+const LinearBarcodeProtocolConfigKey = "linear_barcode_protocol_v1"
 
 type LinearBarcodeProtocolRule struct {
 	ID          string   `json:"id"`
@@ -153,4 +163,26 @@ func NormalizeLinearBarcodeProtocolConfig(input LinearBarcodeProtocolConfig) Lin
 	defaults.IngestDefaults.AutoSubmit = input.IngestDefaults.AutoSubmit
 
 	return defaults
+}
+
+func LoadLinearBarcodeProtocolConfig(database *gorm.DB) (LinearBarcodeProtocolConfig, error) {
+	defaults := DefaultLinearBarcodeProtocolConfig()
+
+	var record models.SystemConfig
+	err := database.Where("key = ?", LinearBarcodeProtocolConfigKey).First(&record).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return defaults, nil
+	}
+	if err != nil {
+		return defaults, err
+	}
+	if strings.TrimSpace(record.Value) == "" {
+		return defaults, nil
+	}
+
+	var stored LinearBarcodeProtocolConfig
+	if err := json.Unmarshal([]byte(record.Value), &stored); err != nil {
+		return defaults, nil
+	}
+	return NormalizeLinearBarcodeProtocolConfig(stored), nil
 }

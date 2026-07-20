@@ -155,47 +155,6 @@ func CheckMoldCapacityAlertsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, alerts)
 }
 
-func buildMoldUpdates(payload map[string]json.RawMessage) (map[string]interface{}, error) {
-	updates := make(map[string]interface{})
-	for key, raw := range payload {
-		switch key {
-		case "sn", "name", "groupName", "status", "location", "description", "imageUrl":
-			var value string
-			if err := json.Unmarshal(raw, &value); err != nil {
-				return nil, err
-			}
-			updates[key] = value
-		case "maxCycles", "currentCycles", "maintenanceThreshold", "totalLifeCycles":
-			var value int
-			if err := json.Unmarshal(raw, &value); err != nil {
-				return nil, err
-			}
-			updates[key] = value
-		case "isAlerted":
-			var value bool
-			if err := json.Unmarshal(raw, &value); err != nil {
-				return nil, err
-			}
-			updates["is_alerted"] = value
-		case "lastCheckedAt":
-			if string(raw) == "null" {
-				updates["last_checked_at"] = nil
-				continue
-			}
-			var value time.Time
-			if err := json.Unmarshal(raw, &value); err != nil {
-				return nil, err
-			}
-			updates["last_checked_at"] = value
-		case "id", "createdAt", "updatedAt", "createdBy", "updatedBy":
-			// Skip metadata handled by server
-		default:
-			// log.Printf("[WARN] Unsupported mold field: %s", key)
-		}
-	}
-	return updates, nil
-}
-
 func saveMoldRecord(mold *models.Mold) error {
 	if mold.ID == "" {
 		return db.DB.Create(mold).Error
@@ -223,14 +182,6 @@ func saveMoldRecord(mold *models.Mold) error {
 		"updated_by":            mold.UpdatedBy,
 	}
 
-	return db.DB.Model(&existing).Updates(updates).Error
-}
-
-func patchMoldRecord(id string, updates map[string]interface{}) error {
-	var existing models.Mold
-	if err := db.DB.First(&existing, "id = ?", id).Error; err != nil {
-		return err
-	}
 	return db.DB.Model(&existing).Updates(updates).Error
 }
 

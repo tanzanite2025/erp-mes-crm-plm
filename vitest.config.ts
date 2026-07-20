@@ -1,6 +1,6 @@
 import path from 'path'
 import react from '@vitejs/plugin-react-swc'
-import { defineConfig } from 'vitest/config'
+import { configDefaults, defineConfig } from 'vitest/config'
 
 /**
  * Vitest 配置。
@@ -24,5 +24,7 @@ export default defineConfig({
     clearMocks: true,
     restoreMocks: true,
     setupFiles: ['./vitest.setup.ts'],
+    include: ['src/**/*.{test,spec}.{ts,tsx,js,jsx}'],
+    exclude: [...configDefaults.exclude, 'e2e/**'],
   },
 })

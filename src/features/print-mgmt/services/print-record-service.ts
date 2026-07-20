@@ -8,12 +8,49 @@ export interface PrintBatch {
   productId?: string
   bomId?: string
   startSn?: string
+  endSn?: string
   fullCode?: string
+  salesOrderId?: string
+  salesOrderLineNo?: number
   quantity: number
   activatedCount: number
   status: 'Printed' | 'PartiallyActivated' | 'Activated' | 'Scrapped'
   createdAt: string
+  expiresAt?: string
   version: number
+}
+
+export type LinearBarcodeInventoryStatus =
+  | 'AVAILABLE'
+  | 'BOUND'
+  | 'EXPIRED'
+  | 'SCRAPPED'
+
+export interface LinearBarcodeInventoryItem {
+  id: string
+  batchId: string
+  batchNo: string
+  productId: string
+  salesOrderId: string
+  salesOrderLineNo: number
+  code: string
+  serialNumber: string
+  status: LinearBarcodeInventoryStatus
+  expiresAt: string
+  boundAt?: string
+  createdAt: string
+  version: number
+}
+
+export interface CreateLinearBarcodeBatchInput {
+  salesOrderId: string
+  salesOrderLineNo: number
+  quantity: number
+}
+
+export interface LinearBarcodeInventoryList {
+  items: LinearBarcodeInventoryItem[]
+  total: number
 }
 
 interface PrintBatchApiDTO {
@@ -23,10 +60,30 @@ interface PrintBatchApiDTO {
   productId?: string
   bomId?: string
   startSn?: string
+  endSn?: string
   fullCode?: string
+  salesOrderId?: string
+  salesOrderLineNo?: number
   quantity: number
   activatedCount: number
   status: 'Printed' | 'PartiallyActivated' | 'Activated' | 'Scrapped'
+  createdAt: string
+  expiresAt?: string
+  version?: number
+}
+
+interface LinearBarcodeInventoryItemApiDTO {
+  id: string
+  batchId: string
+  batchNo: string
+  productId: string
+  salesOrderId: string
+  salesOrderLineNo: number
+  code: string
+  serialNumber: string
+  status: LinearBarcodeInventoryStatus
+  expiresAt: string
+  boundAt?: string
   createdAt: string
   version?: number
 }
@@ -45,11 +102,29 @@ function toPrintBatchContract(dto: PrintBatchApiDTO): PrintBatch {
     productId: dto.productId,
     bomId: dto.bomId,
     startSn: dto.startSn,
+    endSn: dto.endSn,
     fullCode: dto.fullCode,
+    salesOrderId: dto.salesOrderId,
+    salesOrderLineNo: dto.salesOrderLineNo,
     quantity: dto.quantity,
     activatedCount: dto.activatedCount,
     status: dto.status,
     createdAt: dto.createdAt,
+    expiresAt: dto.expiresAt,
+    version: dto.version ?? 1,
+  }
+}
+
+function toLinearBarcodeInventoryItem(
+  dto: LinearBarcodeInventoryItemApiDTO
+): LinearBarcodeInventoryItem {
+  return {
+    ...dto,
+    batchNo: String(dto.batchNo ?? '').trim(),
+    code: String(dto.code ?? '')
+      .trim()
+      .toUpperCase(),
+    serialNumber: String(dto.serialNumber ?? '').trim(),
     version: dto.version ?? 1,
   }
 }
@@ -70,6 +145,69 @@ function toPrintBatchContracts(dtos: PrintBatchApiDTO[]): PrintBatch[] {
 }
 
 export const PrintRecordService = {
+  async createLinearBarcodeBatch(
+    input: CreateLinearBarcodeBatchInput
+  ): Promise<{
+    batch: PrintBatch
+    items: LinearBarcodeInventoryItem[]
+  }> {
+    const res = await apiFetch<{
+      batch: PrintBatchApiDTO
+      items: LinearBarcodeInventoryItemApiDTO[]
+    }>('/print-batches/linear-barcode', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    })
+    const checked = ensureObjectResponse<
+      {
+        batch: PrintBatchApiDTO
+        items: LinearBarcodeInventoryItemApiDTO[]
+      } & Record<string, unknown>
+    >(res, 'PrintRecordService.createLinearBarcodeBatch')
+
+    if (!Array.isArray(checked.items)) {
+      throw new Error(
+        '[API_CONTRACT] PrintRecordService.createLinearBarcodeBatch.items must be an array'
+      )
+    }
+    return {
+      batch: toPrintBatchContract(checked.batch),
+      items: checked.items.map(toLinearBarcodeInventoryItem),
+    }
+  },
+
+  async getLinearBarcodeInventory(input?: {
+    salesOrderId?: string
+    batchId?: string
+    status?: LinearBarcodeInventoryStatus
+    limit?: number
+  }): Promise<LinearBarcodeInventoryList> {
+    const query = new URLSearchParams()
+    if (input?.salesOrderId) query.set('salesOrderId', input.salesOrderId)
+    if (input?.batchId) query.set('batchId', input.batchId)
+    if (input?.status) query.set('status', input.status)
+    query.set('limit', String(input?.limit ?? 200))
+    const res = await apiFetch<{
+      items: LinearBarcodeInventoryItemApiDTO[]
+      total: number
+    }>(`/print-batches/linear-barcode-inventory?${query.toString()}`)
+    const checked = ensureObjectResponse<
+      {
+        items: LinearBarcodeInventoryItemApiDTO[]
+        total: number
+      } & Record<string, unknown>
+    >(res, 'PrintRecordService.getLinearBarcodeInventory')
+    if (!Array.isArray(checked.items)) {
+      throw new Error(
+        '[API_CONTRACT] PrintRecordService.getLinearBarcodeInventory.items must be an array'
+      )
+    }
+    return {
+      items: checked.items.map(toLinearBarcodeInventoryItem),
+      total: Number(checked.total ?? checked.items.length),
+    }
+  },
+
   async getBatches(): Promise<PrintBatch[]> {
     const res = await apiFetch<PrintBatchApiDTO[]>('/print-batches')
     return toPrintBatchContracts(res)

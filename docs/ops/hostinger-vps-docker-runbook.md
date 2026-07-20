@@ -18,11 +18,12 @@
 | ERP 域名 | `erp.tanzanite.site` |
 | Cloudflare Zone | `tanzanite.site` |
 
-当前 Cloudflare 仍指向旧环境：
+当前生产流量：
 
-- `erp.tanzanite.site -> 139.180.129.0`，Proxied。
-- `tanzanite.site` 和 `www.tanzanite.site` 仍属于现有主站环境。
-- 新 VPS 完成容器、TLS 和健康检查前不得切换这些记录。
+- `erp.tanzanite.site -> 2.25.85.201`，Proxied，TTL Auto。
+- Cloudflare Zone 和 ERP 主机覆盖规则均使用 `Full (strict)`。
+- Caddy 使用 Let's Encrypt 证书并自动续期，Cloudflare 到源站执行证书校验。
+- `tanzanite.site` 和 `www.tanzanite.site` 仍属于现有主站环境，本次切流未修改。
 
 ## 2. 生产架构
 
@@ -142,7 +143,7 @@ PermitRootLogin prohibit-password
 ```text
 Project name: tanzanite-edge
 Compose source: deployment/gateway/compose.yml 的完整内容
-Environment: ERP_SITE=http://erp.tanzanite.site
+Environment（首次容器验收）: ERP_SITE=http://erp.tanzanite.site
 ```
 
 验收项：
@@ -154,6 +155,8 @@ Environment: ERP_SITE=http://erp.tanzanite.site
 - `http://2.25.85.201/__edge/health` 返回 `200` 和 `ok`。
 
 网关可以早于 ERP Project 启动。`erp-web` 尚不存在时，ERP 域名路由返回 `502` 是预期状态，但网关自身必须保持 Healthy。
+
+完成第 9 节 TLS 切流后，生产环境必须使用 `ERP_SITE=erp.tanzanite.site`，不能保留 `http://` 前缀。
 
 ## 8. 部署 ERP Stack
 
@@ -202,10 +205,17 @@ Caddy 自动申请并续期公开可信的 Let's Encrypt 证书，不再维护�
 4. 等待 Caddy 日志显示证书签发成功。
 5. 验证 `https://erp.tanzanite.site/api/v1/health` 和登录流程。
 6. 将记录恢复为 Proxied。
-7. Cloudflare SSL/TLS 模式保持 `Full (strict)`，不得使用 `Flexible`。
+7. Cloudflare Zone 和 ERP 主机级 Configuration Rule 均保持 `Full (strict)`，不得被旧规则覆盖为 `Full` 或 `Flexible`。
 8. 对 `/api/*`、`/uploads/*` 和 `/sw.js` 配置 Bypass cache，并确认 WebSockets 可用。
 
 切换时只更新现有 DNS 记录，不删除重建，以保留记录 ID 和审计连续性。
+
+Cloudflare 安全规则：
+
+- 免费版 Bot Fight Mode 无法按路径 Skip，会误伤 Postman、监控和程序化 API 客户端，因此该 Zone 保持关闭。
+- Browser Integrity Check 继续全局启用，仅通过 Configuration Rule 对 `erp.tanzanite.site/api/*` 关闭。
+- Cache Rule 对 `erp.tanzanite.site` 的 `/api/*`、`/uploads/*` 和 `/sw.js` 显式设置 `cache=false`。
+- Minimum TLS 保持 `1.2`，`Always Use HTTPS` 和 WebSockets 保持启用。
 
 ## 10. 发布与回滚
 
@@ -287,13 +297,15 @@ Cloudflare MCP 可读写，但 DNS 写入必须满足：
 ## 14. 当前执行状态
 
 - [x] Hostinger 防火墙仅开放 `22/80/443` 并已同步。
-- [x] VPS Docker Manager 当前无旧 Project，可按新基线全新部署。
+- [x] VPS Docker Manager 使用独立的 `tanzanite-edge` 和 `erp` Compose Projects。
 - [x] Hostinger 账号已注册本机公钥 `P16V-workstation`。
 - [ ] Hostinger API 绑定公钥后 SSH 仍未接受该 key；需在 hPanel 控制台确认 authorized key 后再使用 SSH 路径。
 - [x] `tanzanite-edge` Project 已部署，容器 Healthy，公网 `/__edge/health` 返回 `ok`。
-- [ ] GHCR 四个 ERP Package 已构建并确认可拉取。
-- [ ] ERP Project 已创建并全部 Healthy。
-- [ ] Caddy 已签发 `erp.tanzanite.site` 证书。
-- [ ] Cloudflare ERP A 记录已切换到 `2.25.85.201`。
-- [ ] Cloudflare MCP 当前读取 Zone Settings 返回 `9109 Unauthorized`；切流前需重新授权或在 Dashboard 核验 `Full (strict)`、WebSockets 和 HTTPS 设置。
+- [x] GHCR 四个 ERP Package 已构建并确认可匿名拉取，生产使用不可变 `sha-*` 标签。
+- [x] ERP Project 已创建，`db`、`redis`、`search-engine`、`app` 和 `web` 全部 Healthy。
+- [x] Caddy 已为 `erp.tanzanite.site` 签发 Let's Encrypt 证书，源站 TLS 1.3 验证通过。
+- [x] Cloudflare ERP A 记录已原位切换到 `2.25.85.201` 并恢复 Proxied。
+- [x] Cloudflare Zone 与 ERP 主机规则均为 `Full (strict)`，WebSockets 和 Always Use HTTPS 已启用。
+- [x] ERP API 客户端例外、动态路径 Cache Bypass 和未认证 WebSocket Upgrade 链路已验收。
+- [x] Cloudflare Minimum TLS 已提升到 `1.2`，TLS 1.0 被拒绝且 TLS 1.2 API 验证返回 `200`。
 - [ ] PostgreSQL 与上传文件备份已建立并完成恢复演练。

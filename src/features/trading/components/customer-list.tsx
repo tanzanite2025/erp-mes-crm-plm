@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { useQueries } from '@tanstack/react-query'
 import {
   AlertCircle,
@@ -11,6 +11,7 @@ import {
   User,
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
+import { requireCommandActor } from '@/lib/command-actor'
 import { type DeltaSet } from '@/lib/delta/types'
 import { isForbiddenError } from '@/lib/error-status'
 import { createLogger } from '@/lib/logger'
@@ -21,6 +22,7 @@ import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ForbiddenState } from '@/components/forbidden-state'
+import { CompactPaginationControls } from '@/components/pagination/compact-pagination-controls'
 import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import { QuoteWorkspaceHost } from '@/features/quotes/components/quote-workspace-host'
 import { quoteQueryKeys } from '@/features/quotes/query-keys'
@@ -33,13 +35,13 @@ import type { CustomerSalesClosureSummaryListResponse } from '../customer/servic
 import type { CustomerSalesReturnSummaryListResponse } from '../customer/services/customer-sales-return-summary-service'
 import type { CustomerListResponse } from '../customer/services/customer-service'
 import { type Customer, type CustomerFormValues } from '../data/schema'
-import { requireTradingCommandActor } from '../utils/command-actor'
 import { CustomerActionDialog } from './customer-action-dialog'
 import { CustomerListItem } from './customer-list-item'
 
 type QuoteStatusFilter = 'all' | 'withQuote' | 'withoutQuote'
 
 const logger = createLogger('CustomerList')
+const CUSTOMER_PAGE_SIZE = 20
 
 type CustomerDashboardResource = CompositeReadResource<{
   customerList: CustomerListResponse
@@ -59,12 +61,19 @@ export function CustomerList() {
   const [showDeleted, setShowDeleted] = useState(false)
   const [quoteStatusFilter, setQuoteStatusFilter] =
     useState<QuoteStatusFilter>('all')
+  const [page, setPage] = useState(1)
   const [quoteWorkspaceRequest, setQuoteWorkspaceRequest] = useState<{
     open: boolean
     mode: 'create' | 'detail' | null
     quoteId: string | null
   }>({ open: false, mode: null, quoteId: null })
-  const customerListQuery = useGetCustomerList()
+  const deferredSearchTerm = useDeferredValue(searchTerm.trim())
+  const customerListQuery = useGetCustomerList({
+    page,
+    pageSize: CUSTOMER_PAGE_SIZE,
+    search: deferredSearchTerm,
+    includeDeleted: showDeleted,
+  })
   const salesClosureSummaryQuery = useGetCustomerSalesClosureSummary()
   const salesReturnSummaryQuery = useGetCustomerSalesReturnSummary()
   const user = useAuthStore((state) => state.user)
@@ -131,6 +140,11 @@ export function CustomerList() {
     dashboardResource.status === 'ready'
       ? dashboardResource.customerList.metadata.stats
       : null
+  const customerTotal =
+    dashboardResource.status === 'ready'
+      ? dashboardResource.customerList.total
+      : 0
+  const totalPages = Math.max(1, Math.ceil(customerTotal / CUSTOMER_PAGE_SIZE))
   const salesClosureSummaryMap = useMemo(
     () =>
       new Map(
@@ -237,7 +251,7 @@ export function CustomerList() {
       return Promise.resolve(undefined)
 
     if (payload.isPatch && payload.delta && selectedCustomer) {
-      const actor = requireTradingCommandActor(
+      const actor = requireCommandActor(
         { operator: user?.accountNo, actorId: user?.id },
         'CustomerList.handleSaveCustomer'
       )
@@ -413,7 +427,10 @@ export function CustomerList() {
           <Input
             placeholder={t('trading.customers.searchPlaceholder')}
             value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
+            onChange={(event) => {
+              setSearchTerm(event.target.value)
+              setPage(1)
+            }}
             className='h-11 rounded-2xl border-none bg-muted/50 pl-10 text-[13px] font-medium shadow-inner transition-all focus-visible:ring-1 focus-visible:ring-primary/20 sm:h-12'
           />
         </div>
@@ -447,7 +464,10 @@ export function CustomerList() {
           <div className='flex w-full items-center gap-2 sm:w-auto sm:gap-3'>
             <Button
               variant='ghost'
-              onClick={() => setShowDeleted((value) => !value)}
+              onClick={() => {
+                setShowDeleted((value) => !value)
+                setPage(1)
+              }}
               className={cn(
                 'h-10 min-w-0 flex-1 rounded-full px-3 text-[8px] font-black tracking-widest uppercase transition-all sm:h-11 sm:flex-none sm:px-6 sm:text-[10px]',
                 showDeleted ? 'bg-primary/10 text-primary' : 'opacity-60'
@@ -503,6 +523,18 @@ export function CustomerList() {
           </Button>
         </div>
       )}
+
+      {customerTotal > CUSTOMER_PAGE_SIZE ? (
+        <CompactPaginationControls
+          page={page}
+          totalPages={totalPages}
+          total={customerTotal}
+          disabled={customerListQuery.isFetching}
+          showPageNumbers
+          onPageChange={setPage}
+          className='border-t border-dashed border-border/60 pt-5'
+        />
+      ) : null}
 
       <CustomerActionDialog
         open={isActionDialogOpen}

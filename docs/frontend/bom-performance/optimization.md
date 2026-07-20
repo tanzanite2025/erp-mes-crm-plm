@@ -1,8 +1,16 @@
-# BOM Performance Optimization Guide
+# BOM Performance Optimization Guide (Historical)
 
 **Version**: 1.0  
-**Last Updated**: May 13, 2026  
+**Last Updated**: July 20, 2026
+**Status**: Historical; the dedicated BOM performance experiment has been retired
 **Target Audience**: Frontend Developers, System Architects
+
+> This guide preserves a retired virtual-table and performance-monitoring design.
+> Its dedicated BOM row/cell, virtual table, dashboard, feature-flag,
+> virtual-scroller configuration, and optimized-data modules are no longer part of
+> the application. Current BOM editing starts at
+> `src/features/product-structure/components/bom-action-dialog.tsx` and renders
+> through `src/features/product-structure/components/bom-editor/bom-workspace.tsx`.
 
 ## Table of Contents
 
@@ -20,7 +28,9 @@
 
 ## Overview
 
-The BOM frontend performance optimization delivers **8-10x performance improvements** for large-scale BOM datasets (500-2000+ rows) through five key strategies:
+The retired BOM frontend experiment reported **8-10x performance improvements**
+for large-scale BOM datasets (500-2000+ rows) through five strategies. These
+figures are historical results, not current production benchmarks:
 
 1. **Incremental Diff Optimization**: Dirty marking and shallow comparison
 2. **Virtual Scrolling Enhancement**: Lazy Proxy creation and optimized configuration
@@ -28,7 +38,10 @@ The BOM frontend performance optimization delivers **8-10x performance improveme
 4. **SDRTS Proxy Memory Management**: Lifecycle-aware Proxy creation and garbage collection
 5. **Performance Monitoring Infrastructure**: Comprehensive measurement and reporting
 
-### Performance Targets Achieved
+### Historical Performance Results
+
+The table records the retired experiment's measurements and does not establish a
+current service-level target.
 
 | Metric | Baseline | Optimized | Improvement |
 |--------|----------|-----------|-------------|
@@ -39,7 +52,10 @@ The BOM frontend performance optimization delivers **8-10x performance improveme
 
 ---
 
-## Architecture
+## Historical Architecture
+
+The diagram below describes the removed experiment, not the active BOM component
+graph.
 
 ### System Components
 
@@ -104,7 +120,10 @@ User Edit → Mark Row Dirty → Update Proxy → Re-render Row Only
 
 ---
 
-## Dirty Marking System
+## Dirty Marking System (Retired)
+
+The dirty marker and optimized proxy tracker described here were removed. This
+section records the former design and does not describe a current integration.
 
 ### Concept
 
@@ -180,7 +199,10 @@ async function handleCommit() {
 
 ---
 
-## Lazy Proxy Lifecycle
+## Lazy Proxy Lifecycle (Retired)
+
+The lazy proxy manager was removed with the experiment. The lifecycle and usage
+examples below are historical.
 
 ### Concept
 
@@ -294,7 +316,10 @@ function renderVisibleRows(visibleRange: Range) {
 
 ---
 
-## Virtual Scrolling Configuration
+## Virtual Scrolling Configuration (Retired)
+
+The dedicated virtual table and its configuration module were removed. The
+following snippets are retained as design sketches only.
 
 ### Concept
 
@@ -471,7 +496,10 @@ function BOMTable({ rows, onUpdate }: Props) {
 
 ---
 
-## Performance Monitoring
+## Performance Monitoring (Retired)
+
+The BOM-specific performance monitor and React hook were removed. The following
+metrics and examples are retained as design history only.
 
 ### Concept
 
@@ -529,18 +557,10 @@ function BOMManagement() {
 }
 ```
 
-### Dashboard Component
+### Dashboard Component (Removed)
 
-```typescript
-<BOMPerformanceDashboard
-  metrics={metrics}
-  variant="compact"  // or "full"
-  onExport={() => {
-    const json = monitor.exportMetrics();
-    downloadJSON(json, 'bom-performance-metrics.json');
-  }}
-/>
-```
+The BOM performance dashboard is no longer shipped. There is no current component
+or import path for the example that previously appeared here.
 
 ### Threshold Alerts
 
@@ -565,36 +585,29 @@ function BOMManagement() {
 
 ### General Guidelines
 
-1. **Enable optimizations gradually** using feature flags
+1. **Profile the active workspace** before changing rendering behavior
 2. **Monitor performance metrics** in production
 3. **Profile before optimizing** - measure, don't guess
 4. **Test with realistic data** (1000+ rows)
 5. **Validate backward compatibility** with existing tests
 
-### Code Organization
+### Current BOM Editor Organization
+
+The active editor uses the following paths:
 
 ```
-src/
-├── lib/
-│   ├── delta/
-│   │   ├── dirty-marker.ts          # Dirty marking system
-│   │   ├── lazy-proxy-manager.ts    # Lazy Proxy management
-│   │   ├── optimized-proxy-tracker.ts # Optimized diff engine
-│   │   └── errors.ts                 # Error handling
-│   └── performance/
-│       ├── bom-performance-monitor.ts # Performance tracking
-│       └── use-bom-performance-monitor.ts # React hook
-├── features/
-│   └── product-structure/
-│       ├── components/
-│       │   ├── bom-virtual-table.tsx # Virtual scrolling
-│       │   ├── bom-row.tsx           # Memoized row
-│       │   └── bom-performance-dashboard.tsx # Metrics UI
-│       ├── hooks/
-│       │   └── use-bom-data.ts       # State management
-│       └── config/
-│           ├── virtual-scroller-config.ts # Virtual config
-│           └── feature-flags.ts       # Feature flags
+src/features/product-structure/
+├── tabs/bom-mgmt.tsx
+├── components/
+│   ├── bom-action-dialog.tsx
+│   └── bom-editor/
+│       ├── bom-workspace.tsx
+│       ├── bom-flat-workspace-view.tsx
+│       └── bom-tree-workspace-view.tsx
+└── hooks/
+    ├── use-bom-data.ts
+    ├── use-bom-workspace.ts
+    └── use-bom-workspace-projection.ts
 ```
 
 ### Testing Strategy
@@ -615,14 +628,15 @@ src/
 
 ## Code Examples
 
-### Complete Integration Example
+### Retired Integration Example
+
+This example is historical pseudocode and is not expected to compile against the
+current application.
 
 ```typescript
 import { useBOMData } from '@/features/product-structure/hooks/use-bom-data';
 import { useBOMPerformanceMonitor } from '@/lib/performance/use-bom-performance-monitor';
-import { BOMVirtualTable } from '@/features/product-structure/components/bom-virtual-table';
-import { BOMPerformanceDashboard } from '@/features/product-structure/components/bom-performance-dashboard';
-import { getBOMPerformanceFeatureFlags } from '@/features/product-structure/config/feature-flags';
+// The retired virtual table, dashboard, and feature flags have no import paths.
 
 function BOMManagement() {
   const flags = getBOMPerformanceFeatureFlags();
@@ -694,7 +708,10 @@ function BOMManagement() {
 }
 ```
 
-### Custom Hook Example
+### Retired Custom Hook Example
+
+This example depends on the removed dirty-marker and lazy-proxy-manager modules
+and is not expected to compile against the current application.
 
 ```typescript
 import { useMemo, useCallback } from 'react';
@@ -753,21 +770,27 @@ export function useBOMData({ initialRows, onCommitSuccess, onCommitError }: Prop
 
 ## Conclusion
 
-The BOM performance optimization provides significant performance improvements through a combination of incremental diff calculation, lazy Proxy management, virtual scrolling, and React rendering optimizations.
+The retired BOM performance experiment explored incremental diff calculation,
+lazy Proxy management, virtual scrolling, and React rendering optimizations. Its
+results and rollout notes below are preserved for historical context only.
 
-**Key Takeaways**:
+**Historical claims (not current guarantees)**:
 - ✅ **99.95% average performance improvement** across all metrics
 - ✅ **Backward compatible** with existing functionality
 - ✅ **Feature flag controlled** for gradual rollout
 - ✅ **Comprehensive monitoring** for production validation
 - ✅ **Well-tested** with unit, integration, and property-based tests
 
-For current integration points, see `src/features/product-structure/components/bom-virtual-table.tsx`, `src/features/product-structure/components/bom-performance-dashboard.tsx`, and `src/lib/performance/use-bom-performance-monitor.ts`.
+For current integration points, see
+`src/features/product-structure/tabs/bom-mgmt.tsx`,
+`src/features/product-structure/components/bom-action-dialog.tsx`,
+`src/features/product-structure/components/bom-editor/bom-workspace.tsx`, and
+`src/features/product-structure/hooks/use-bom-workspace.ts`.
 
 For troubleshooting, see [BOM Performance Troubleshooting Guide](./troubleshooting.md).
 
 ---
 
 **Document Version**: 1.0  
-**Last Updated**: May 13, 2026  
+**Last Updated**: July 20, 2026
 **Maintained By**: Frontend Team

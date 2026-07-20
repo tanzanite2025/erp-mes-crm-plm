@@ -2,18 +2,21 @@ import { useEffect, useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLanguage } from '@/context/language-provider'
 import { linearBarcodeProtocolService } from '@/features/basic-settings/services/linear-barcode-protocol-service'
-import { numberingService } from '@/features/basic-settings/services/numbering-service'
-import { executeLinearBarcodePrint } from '@/features/code-center/services/linear-barcode-print-executor'
+import {
+  executeLinearBarcodePrint,
+  executeLinearBarcodePrintJobs,
+  type LinearBarcodePrintExecutionResult,
+  type LinearBarcodePrintJob,
+  type LinearBarcodePrintJobResult,
+} from '@/features/code-center/services/linear-barcode-print-executor'
+import { clampLinearBarcodePrintQuantity } from '@/features/code-center/services/linear-barcode-print-safety'
 import {
   handleBatchPrintCompletionFeedback,
   handlePrintBatchesInvalidateFeedback,
   handleSinglePrintFailureFeedback,
   handleSinglePrintSuccessFeedback,
   hasSuccessfulPrintResultItem,
-  hasSuccessfulPrintResultItems,
   resolveLinearBarcodePrintErrorMessage,
-  resolveIssueNumbersFailureFeedback,
-  type LinearBarcodeInlineFeedbackState,
 } from '@/features/code-center/utils/linear-barcode-print-feedback'
 import {
   resolveLinearBarcodePrintLines,
@@ -24,13 +27,14 @@ import {
   buildFailedResultItem,
   buildSkippedBlockedResultItem,
   buildSkippedPreviewReadyResultItem,
-  buildSkippedUnnumberedResultItem,
   buildSuccessResultItem,
   resolveBatchPrintResultFilter,
   type BatchPrintResult,
   type BatchPrintResultFilter,
   type BatchPrintResultItem,
 } from '@/features/code-center/utils/linear-barcode-print-result-builder'
+import { LINEAR_BARCODE_INVENTORY_QUERY_KEY } from '@/features/print-mgmt/query-keys'
+import { PrintRecordService } from '@/features/print-mgmt/services/print-record-service'
 import { getSalesStatusLabel } from '@/features/trading/data/sales-status'
 import type {
   SalesOrder,
@@ -53,23 +57,32 @@ export function isLinearBarcodePrintableSalesOrder(
   )
 }
 
+function formatSerialRange(execution: LinearBarcodePrintExecutionResult) {
+  return execution.startSerialNumber === execution.endSerialNumber
+    ? execution.startSerialNumber
+    : `${execution.startSerialNumber}-${execution.endSerialNumber}`
+}
+
+function formatCodeRange(execution: LinearBarcodePrintExecutionResult) {
+  const firstCode = execution.codes[0] || '--'
+  const lastCode = execution.codes[execution.codes.length - 1] || firstCode
+  return firstCode === lastCode ? firstCode : `${firstCode} ... ${lastCode}`
+}
+
 export function useLinearBarcodePrintMgmtModel() {
   const { t } = useLanguage()
   const queryClient = useQueryClient()
   const [selectedOrderId, setSelectedOrderId] = useState('')
-  const [issuedSerialByLine, setIssuedSerialByLine] = useState<
-    Record<string, string>
+  const [printQuantityByLine, setPrintQuantityByLine] = useState<
+    Record<string, number>
   >({})
   const [printingKeys, setPrintingKeys] = useState<Record<string, boolean>>({})
   const [openedPreviewKeys, setOpenedPreviewKeys] = useState<
     Record<string, boolean>
   >({})
-  const [isIssuingNumbers, setIsIssuingNumbers] = useState(false)
   const [isBatchPrinting, setIsBatchPrinting] = useState(false)
   const [retryingKeys, setRetryingKeys] = useState<Record<string, boolean>>({})
   const [isRetryingFailedOnly, setIsRetryingFailedOnly] = useState(false)
-  const [issueFeedback, setIssueFeedback] =
-    useState<LinearBarcodeInlineFeedbackState | null>(null)
   const [batchPrintResult, setBatchPrintResult] =
     useState<BatchPrintResult | null>(null)
   const [resultFilter, setResultFilter] =
@@ -82,6 +95,17 @@ export function useLinearBarcodePrintMgmtModel() {
   const protocolQuery = useQuery({
     queryKey: ['code-center', 'linear-barcode', 'print', 'protocol'],
     queryFn: () => linearBarcodeProtocolService.getConfig(),
+  })
+  const inventoryQuery = useQuery({
+    queryKey: [
+      ...LINEAR_BARCODE_INVENTORY_QUERY_KEY,
+      selectedOrderId || 'recent',
+    ],
+    queryFn: () =>
+      PrintRecordService.getLinearBarcodeInventory({
+        salesOrderId: selectedOrderId || undefined,
+        limit: 500,
+      }),
   })
 
   const orderOptions = useMemo(
@@ -104,19 +128,20 @@ export function useLinearBarcodePrintMgmtModel() {
   const selectedOrderStatusLabel = selectedOrder
     ? getSalesStatusLabel(selectedOrder.status, t)
     : ''
-  const resolvedLines = useMemo(() => {
-    return resolveLinearBarcodePrintLines({
-      order: printableSelectedOrder,
-      protocol: protocolQuery.data,
-      t,
-    })
-  }, [printableSelectedOrder, protocolQuery.data, t])
+  const resolvedLines = useMemo(
+    () =>
+      resolveLinearBarcodePrintLines({
+        order: printableSelectedOrder,
+        protocol: protocolQuery.data,
+        t,
+      }),
+    [printableSelectedOrder, protocolQuery.data, t]
+  )
 
   useEffect(() => {
-    setIssuedSerialByLine({})
+    setPrintQuantityByLine({})
     setPrintingKeys({})
     setOpenedPreviewKeys({})
-    setIssueFeedback(null)
     setRetryingKeys({})
     setIsRetryingFailedOnly(false)
     setBatchPrintResult(null)
@@ -126,172 +151,98 @@ export function useLinearBarcodePrintMgmtModel() {
   const previewLines = useMemo(
     () =>
       resolvedLines.map((line) => {
-        const issuedSerial = issuedSerialByLine[line.key]
-        if (!issuedSerial || !line.printInput) {
-          return line
-        }
-
+        const quantity = clampLinearBarcodePrintQuantity(
+          printQuantityByLine[line.key] ?? line.orderQuantity
+        )
         return {
           ...line,
-          printInput: {
-            ...line.printInput,
-            mockInputs: {
-              ...line.printInput.mockInputs,
-              serial: issuedSerial,
-            },
-            barcodeConfig: {
-              ...line.printInput.barcodeConfig,
-              serialNumber: issuedSerial,
-            },
-          },
+          quantity,
+          printInput: line.printInput
+            ? { ...line.printInput, quantity }
+            : undefined,
         }
       }),
-    [issuedSerialByLine, resolvedLines]
+    [printQuantityByLine, resolvedLines]
   )
 
   const readyCount = previewLines.filter((line) => line.isReady).length
   const blockedCount = previewLines.length - readyCount
-  const issuedCount = Object.keys(issuedSerialByLine).length
-  const allReadyLinesNumbered = readyCount > 0 && issuedCount >= readyCount
   const printableCount = previewLines.filter(
-    (line) =>
-      line.isReady &&
-      !!line.printInput &&
-      Boolean(issuedSerialByLine[line.key]) &&
-      !openedPreviewKeys[line.key]
+    (line) => line.isReady && !!line.printInput && !openedPreviewKeys[line.key]
   ).length
 
   const filteredResultItems = useMemo(() => {
-    if (!batchPrintResult) {
-      return []
-    }
-
-    if (resultFilter === 'all') {
-      return batchPrintResult.items
-    }
-
+    if (!batchPrintResult) return []
+    if (resultFilter === 'all') return batchPrintResult.items
     return batchPrintResult.items.filter((item) => item.status === resultFilter)
   }, [batchPrintResult, resultFilter])
 
   useEffect(() => {
-    if (!batchPrintResult) {
-      return
+    if (batchPrintResult) {
+      setResultFilter(resolveBatchPrintResultFilter(batchPrintResult.items))
     }
-
-    setResultFilter(resolveBatchPrintResultFilter(batchPrintResult.items))
   }, [batchPrintResult])
 
-  const buildTemplateName = (line: LinearBarcodeResolvedPrintLine) => {
-    if (!selectedOrder) {
-      return null
-    }
+  const setLinePrintQuantity = (itemKey: string, quantity: number) => {
+    setPrintQuantityByLine((prev) => ({
+      ...prev,
+      [itemKey]: clampLinearBarcodePrintQuantity(quantity),
+    }))
+  }
 
-    return `SO-LINEAR-${selectedOrder.orderNo}-L${line.lineNo}`
+  const buildExecutionParams = (line: LinearBarcodeResolvedPrintLine) => {
+    if (!line.printInput) return null
+    return {
+      salesOrderId: line.printInput.salesOrderId,
+      salesOrderLineNo: line.printInput.lineNo,
+      quantity: line.printInput.quantity,
+      barcodeConfig: line.printInput.barcodeConfig,
+    }
   }
 
   const submitPrintLine = async (line: LinearBarcodeResolvedPrintLine) => {
-    if (!line.printInput) {
+    const params = buildExecutionParams(line)
+    if (!params) {
       throw new Error(
         t(
           'codeCenter.linearBarcode.print.sections.result.messages.skippedBlocked'
         )
       )
     }
-
-    const templateName = buildTemplateName(line)
-    if (!templateName) {
-      throw new Error(
-        t(
-          'codeCenter.linearBarcode.print.sections.result.messages.skippedBlocked'
-        )
-      )
-    }
-
-    return executeLinearBarcodePrint({
-      productId: line.printInput.productId,
-      quantity: line.printInput.quantity,
-      templateName,
-      barcodeInput: line.printInput.mockInputs,
-      barcodeConfig: line.printInput.barcodeConfig,
-    })
+    return executeLinearBarcodePrint(params)
   }
 
-  const executePrintForLine = async (
-    line: LinearBarcodeResolvedPrintLine
-  ): Promise<BatchPrintResultItem> => {
-    if (!selectedOrder || !line.printInput) {
-      return buildSkippedBlockedResultItem(line, t)
+  const toResultItem = (
+    line: LinearBarcodeResolvedPrintLine,
+    execution: LinearBarcodePrintExecutionResult | undefined,
+    error: unknown
+  ) => {
+    if (execution) {
+      return buildSuccessResultItem(line, formatSerialRange(execution), t)
     }
-
-    try {
-      const execution = await submitPrintLine(line)
-
-      return buildSuccessResultItem(line, execution.serialNumber, t)
-    } catch (error) {
-      return buildFailedResultItem(
-        line,
-        new Error(resolveLinearBarcodePrintErrorMessage(error, t)),
-        t
-      )
-    }
-  }
-
-  const handleIssueRealNumbers = async () => {
-    const readyLines = resolvedLines.filter(
-      (line) => line.isReady && line.printInput
+    return buildFailedResultItem(
+      line,
+      new Error(resolveLinearBarcodePrintErrorMessage(error, t)),
+      t
     )
-    if (readyLines.length === 0 || allReadyLinesNumbered) {
-      return
-    }
-
-    setIsIssuingNumbers(true)
-    setIssueFeedback(null)
-
-    try {
-      const nextIssuedSerials: Record<string, string> = {}
-      for (const line of readyLines) {
-        if (!line.printInput) {
-          continue
-        }
-        nextIssuedSerials[line.key] = await numberingService.generateNumber(
-          line.printInput.sequenceRuleKey
-        )
-      }
-      setIssuedSerialByLine(nextIssuedSerials)
-    } catch (_error) {
-      setIssueFeedback(resolveIssueNumbersFailureFeedback({ t }))
-    } finally {
-      setIsIssuingNumbers(false)
-    }
   }
 
   const handlePrintLine = async (itemKey: string) => {
     const targetLine = previewLines.find((line) => line.key === itemKey)
-    if (
-      !targetLine ||
-      !targetLine.printInput ||
-      !issuedSerialByLine[itemKey] ||
-      openedPreviewKeys[itemKey]
-    ) {
-      return
-    }
+    if (!targetLine?.printInput || openedPreviewKeys[itemKey]) return
 
-    setPrintingKeys((prev) => ({
-      ...prev,
-      [itemKey]: true,
-    }))
-
+    setPrintingKeys((prev) => ({ ...prev, [itemKey]: true }))
     try {
       const execution = await submitPrintLine(targetLine)
       setOpenedPreviewKeys((prev) => ({ ...prev, [itemKey]: true }))
       await handleSinglePrintSuccessFeedback({
         queryClient,
         quantity: targetLine.printInput.quantity,
-        code: execution.code,
+        code: formatCodeRange(execution),
         t,
       })
     } catch (error) {
-      handleSinglePrintFailureFeedback({ error, t })
+      await handleSinglePrintFailureFeedback({ queryClient, error, t })
     } finally {
       setPrintingKeys((prev) => {
         const next = { ...prev }
@@ -302,58 +253,60 @@ export function useLinearBarcodePrintMgmtModel() {
   }
 
   const handleBatchPrint = async () => {
-    if (!selectedOrder) {
-      return
-    }
-
+    if (!selectedOrder) return
     setIsBatchPrinting(true)
     setBatchPrintResult(null)
     setResultFilter('all')
 
-    let successCount = 0
-    let failureCount = 0
-    const resultItems: BatchPrintResultItem[] = []
-    const nextOpenedPreviewKeys: string[] = []
-
     try {
-      for (const line of previewLines) {
+      const fixedItems = new Map<string, BatchPrintResultItem>()
+      const jobs: LinearBarcodePrintJob[] = []
+      previewLines.forEach((line) => {
         if (!line.isReady || !line.printInput) {
-          resultItems.push(buildSkippedBlockedResultItem(line, t))
-          continue
+          fixedItems.set(line.key, buildSkippedBlockedResultItem(line, t))
+          return
         }
-
-        if (!issuedSerialByLine[line.key]) {
-          resultItems.push(buildSkippedUnnumberedResultItem(line, t))
-          continue
-        }
-
         if (openedPreviewKeys[line.key]) {
-          resultItems.push(buildSkippedPreviewReadyResultItem(line, t))
-          continue
+          fixedItems.set(line.key, buildSkippedPreviewReadyResultItem(line, t))
+          return
         }
+        const params = buildExecutionParams(line)
+        if (params) jobs.push({ key: line.key, params })
+      })
 
-        const resultItem = await executePrintForLine(line)
-        resultItems.push(resultItem)
-        if (resultItem.status === 'success') {
-          successCount += 1
-          nextOpenedPreviewKeys.push(line.key)
-        }
-        if (resultItem.status === 'failed') {
-          failureCount += 1
-        }
+      let outcomes: LinearBarcodePrintJobResult[]
+      try {
+        outcomes = await executeLinearBarcodePrintJobs(jobs)
+      } catch (error) {
+        outcomes = jobs.map((job) => ({ key: job.key, error }))
       }
+      const outcomeMap = new Map(
+        outcomes.map((outcome) => [outcome.key, outcome])
+      )
+      const successfulKeys: string[] = []
+      const resultItems = previewLines.map((line) => {
+        const fixed = fixedItems.get(line.key)
+        if (fixed) return fixed
+        const outcome = outcomeMap.get(line.key)
+        if (outcome?.result) successfulKeys.push(line.key)
+        return toResultItem(line, outcome?.result, outcome?.error)
+      })
 
+      const successCount = successfulKeys.length
+      const failureCount = resultItems.filter(
+        (item) => item.status === 'failed'
+      ).length
       setBatchPrintResult(
         buildBatchPrintResult({
           items: resultItems,
           totalLines: previewLines.length,
-          printableLines: printableCount,
+          printableLines: jobs.length,
         })
       )
-      if (nextOpenedPreviewKeys.length > 0) {
+      if (successfulKeys.length > 0) {
         setOpenedPreviewKeys((prev) => {
           const next = { ...prev }
-          nextOpenedPreviewKeys.forEach((key) => {
+          successfulKeys.forEach((key) => {
             next[key] = true
           })
           return next
@@ -372,29 +325,24 @@ export function useLinearBarcodePrintMgmtModel() {
 
   const handleRetryItem = async (itemKey: string) => {
     const targetLine = previewLines.find((line) => line.key === itemKey)
-    if (!targetLine || !targetLine.printInput || !issuedSerialByLine[itemKey]) {
-      return
-    }
-
-    setRetryingKeys((prev) => ({
-      ...prev,
-      [itemKey]: true,
-    }))
-
+    if (!targetLine?.printInput) return
+    setRetryingKeys((prev) => ({ ...prev, [itemKey]: true }))
     try {
-      const nextItem = await executePrintForLine(targetLine)
+      let nextItem: BatchPrintResultItem
+      try {
+        const execution = await submitPrintLine(targetLine)
+        nextItem = toResultItem(targetLine, execution, undefined)
+      } catch (error) {
+        nextItem = toResultItem(targetLine, undefined, error)
+      }
       if (hasSuccessfulPrintResultItem(nextItem)) {
         setOpenedPreviewKeys((prev) => ({ ...prev, [itemKey]: true }))
       }
       setBatchPrintResult((prev) => {
-        if (!prev) {
-          return prev
-        }
-
+        if (!prev) return prev
         const nextItems = prev.items.map((item) =>
           item.key === itemKey ? nextItem : item
         )
-
         return buildBatchPrintResult({
           items: nextItems,
           totalLines: previewLines.length,
@@ -404,7 +352,6 @@ export function useLinearBarcodePrintMgmtModel() {
       })
       await handlePrintBatchesInvalidateFeedback({
         queryClient,
-        hasSuccess: hasSuccessfulPrintResultItem(nextItem),
       })
     } finally {
       setRetryingKeys((prev) => {
@@ -416,42 +363,41 @@ export function useLinearBarcodePrintMgmtModel() {
   }
 
   const handleRetryFailedOnly = async () => {
-    if (!batchPrintResult) {
-      return
-    }
-
+    if (!batchPrintResult) return
     const failedItems = batchPrintResult.items.filter(
       (item) => item.status === 'failed'
     )
-    if (failedItems.length === 0) {
-      return
-    }
-
+    if (failedItems.length === 0) return
     setIsRetryingFailedOnly(true)
 
     try {
-      const failedKeySet = new Set(failedItems.map((item) => item.key))
-      const resultItemEntries = await Promise.all(
-        failedItems.map(async (item) => {
-          const targetLine = previewLines.find((line) => line.key === item.key)
-          if (
-            !targetLine ||
-            !targetLine.printInput ||
-            !issuedSerialByLine[item.key]
-          ) {
-            return [item.key, item] as const
-          }
-
-          const nextItem = await executePrintForLine(targetLine)
-          return [item.key, nextItem] as const
-        })
+      const jobs = failedItems.flatMap((item) => {
+        const line = previewLines.find(
+          (candidate) => candidate.key === item.key
+        )
+        const params = line ? buildExecutionParams(line) : null
+        return params ? [{ key: item.key, params }] : []
+      })
+      let outcomes: LinearBarcodePrintJobResult[]
+      try {
+        outcomes = await executeLinearBarcodePrintJobs(jobs)
+      } catch (error) {
+        outcomes = jobs.map((job) => ({ key: job.key, error }))
+      }
+      const outcomeMap = new Map(
+        outcomes.map((outcome) => [outcome.key, outcome])
       )
-
-      const resultMap = new Map(resultItemEntries)
-      const nextItems = batchPrintResult.items.map((item) =>
-        failedKeySet.has(item.key) ? (resultMap.get(item.key) ?? item) : item
-      )
-
+      const successfulKeys: string[] = []
+      const nextItems = batchPrintResult.items.map((item) => {
+        if (item.status !== 'failed') return item
+        const line = previewLines.find(
+          (candidate) => candidate.key === item.key
+        )
+        const outcome = outcomeMap.get(item.key)
+        if (!line || !outcome) return item
+        if (outcome.result) successfulKeys.push(item.key)
+        return toResultItem(line, outcome.result, outcome.error)
+      })
       setBatchPrintResult(
         buildBatchPrintResult({
           items: nextItems,
@@ -460,13 +406,10 @@ export function useLinearBarcodePrintMgmtModel() {
           previous: batchPrintResult,
         })
       )
-      const successfulRetryKeys = resultItemEntries
-        .filter(([, item]) => hasSuccessfulPrintResultItem(item))
-        .map(([key]) => key)
-      if (successfulRetryKeys.length > 0) {
+      if (successfulKeys.length > 0) {
         setOpenedPreviewKeys((prev) => {
           const next = { ...prev }
-          successfulRetryKeys.forEach((key) => {
+          successfulKeys.forEach((key) => {
             next[key] = true
           })
           return next
@@ -474,7 +417,6 @@ export function useLinearBarcodePrintMgmtModel() {
       }
       await handlePrintBatchesInvalidateFeedback({
         queryClient,
-        hasSuccess: hasSuccessfulPrintResultItems(nextItems),
       })
     } finally {
       setIsRetryingFailedOnly(false)
@@ -494,14 +436,11 @@ export function useLinearBarcodePrintMgmtModel() {
   return {
     selectedOrderId,
     setSelectedOrderId,
-    issuedSerialByLine,
     printingKeys,
     openedPreviewKeys,
-    isIssuingNumbers,
     isBatchPrinting,
     retryingKeys,
     isRetryingFailedOnly,
-    issueFeedback,
     batchPrintResult,
     filteredResultItems,
     resultFilter,
@@ -509,16 +448,15 @@ export function useLinearBarcodePrintMgmtModel() {
     ordersQuery,
     detailQuery,
     protocolQuery,
+    inventoryQuery,
     orderOptions,
     selectedOrder,
     selectedOrderStatusLabel,
-    resolvedLines,
     previewLines,
     readyCount,
     blockedCount,
-    allReadyLinesNumbered,
     printableCount,
-    handleIssueRealNumbers,
+    setLinePrintQuantity,
     handlePrintLine,
     handleBatchPrint,
     handleRetryItem,

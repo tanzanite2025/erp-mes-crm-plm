@@ -7,7 +7,7 @@ import {
 import {
   previewLineAmount,
   previewOrderTotals,
-} from '../utils/sales-order-calc'
+} from '@/lib/order-preview-calc'
 
 type SalesOrderLineFieldValue = SalesOrderLine[keyof SalesOrderLine]
 

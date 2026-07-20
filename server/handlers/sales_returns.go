@@ -164,6 +164,10 @@ func DeleteSalesReturnHandler(c *gin.Context) {
 		switch {
 		case errors.Is(err, gorm.ErrRecordNotFound):
 			c.JSON(http.StatusNotFound, gin.H{"error": "销售退货单不存在"})
+		case errors.Is(err, services.ErrSalesReturnDeleteRequiresCreated):
+			c.JSON(http.StatusBadRequest, gin.H{"error": "只有尚未进入执行链的已创建退货单可以删除"})
+		case errors.Is(err, services.ErrSalesReturnDeleteHasActualAmountRecords):
+			c.JSON(http.StatusBadRequest, gin.H{"error": "该销售退货单已有实际退款记录，禁止删除"})
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 删除销售退货单失败: " + err.Error()})
 		}

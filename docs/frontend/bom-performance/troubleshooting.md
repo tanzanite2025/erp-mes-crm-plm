@@ -1,8 +1,16 @@
-# BOM Performance Troubleshooting Guide
+# BOM Performance Troubleshooting Guide (Historical)
 
 **Version**: 1.0  
-**Last Updated**: May 13, 2026  
+**Last Updated**: July 20, 2026
+**Status**: Historical; the dedicated BOM performance experiment has been retired
 **Target Audience**: Frontend Developers, DevOps Engineers, Support Team
+
+> The feature flags, virtual-scroller configuration, row/cell components, and
+> performance dashboard referenced by the original guide were removed. Treat the
+> remaining examples as historical diagnostics, not runnable current APIs. For the
+> active editor, begin with
+> `src/features/product-structure/components/bom-editor/bom-workspace.tsx` and
+> `src/features/product-structure/hooks/use-bom-workspace.ts`.
 
 ## Table of Contents
 
@@ -22,7 +30,7 @@
 
 **Symptoms**:
 - Initial page load takes longer than expected
-- Performance dashboard shows high initial render time
+- A browser profiler trace shows a long initial render
 - Users report slow loading
 
 **Possible Causes**:
@@ -31,28 +39,12 @@
 3. Heavy computations in render path
 4. Large overscan buffer
 
-**Solutions**:
+**Current checks**:
 
-```typescript
-// 1. Verify virtual scrolling is enabled
-const flags = getBOMPerformanceFeatureFlags();
-console.log('Virtual scrolling enabled:', flags.enableVirtualScrolling);
-
-// 2. Check overscan configuration
-import { DEFAULT_BOM_VIRTUAL_CONFIG } from '@/features/product-structure/config/virtual-scroller-config';
-console.log('Overscan:', DEFAULT_BOM_VIRTUAL_CONFIG.overscan);
-
-// 3. Reduce overscan if too high
-const config = {
-  ...DEFAULT_BOM_VIRTUAL_CONFIG,
-  overscan: 5, // Reduce from higher value
-};
-
-// 4. Profile render performance
-import { useBOMPerformanceMonitor } from '@/lib/performance/use-bom-performance-monitor';
-const { monitor } = useBOMPerformanceMonitor();
-console.log('Initial render time:', monitor.getLatestMetrics()?.initialRenderTime);
-```
+1. Capture a React Profiler trace around `BOMWorkspace`.
+2. Inspect the projection work in `hooks/use-bom-workspace-projection.ts`.
+3. Confirm whether the summary or tree view is rendering the unexpected node set.
+4. Measure before changing the active workspace behavior.
 
 **Prevention**:
 - Keep overscan between 5-10 rows
@@ -77,12 +69,7 @@ console.log('Initial render time:', monitor.getLatestMetrics()?.initialRenderTim
 **Solutions**:
 
 ```typescript
-// 1. Verify React optimizations are enabled
-const flags = getBOMPerformanceFeatureFlags();
-console.log('React optimizations enabled:', flags.enableReactOptimizations);
-
-// 2. Check if BOMRow is memoized
-// In bom-row.tsx
+// Historical memoization sketch; there is no current BOMRow module.
 export const BOMRow = React.memo(
   function BOMRow({ row, onUpdate }: Props) {
     // Component implementation
@@ -116,7 +103,7 @@ const handleEdit = (row: BOMRow) => {
 ```
 
 **Prevention**:
-- Use React.memo for all row/cell components
+- Profile current workspace nodes before adding memoization
 - Memoize callbacks with useCallback
 - Avoid inline objects/arrays in props
 - Profile edit operations regularly
@@ -127,7 +114,7 @@ const handleEdit = (row: BOMRow) => {
 
 **Symptoms**:
 - Save button takes long to complete
-- Performance dashboard shows high commit time
+- A measured save operation has high end-to-end latency
 - Users report slow saves
 
 **Possible Causes**:
@@ -139,22 +126,18 @@ const handleEdit = (row: BOMRow) => {
 **Solutions**:
 
 ```typescript
-// 1. Verify dirty marking is enabled
-const flags = getBOMPerformanceFeatureFlags();
-console.log('Dirty marking enabled:', flags.enableDirtyMarking);
-
-// 2. Check dirty row count
+// Historical prototype diagnostic: check dirty row count
 const { dirtyCount, rows } = useBOMData({ initialRows });
 console.log('Dirty rows:', dirtyCount, 'Total rows:', rows.length);
 console.log('Dirty percentage:', (dirtyCount / rows.length * 100).toFixed(1) + '%');
 
-// 3. Verify only dirty rows are compared
+// Historical prototype diagnostic: verify only dirty rows are compared
 import { BOMDirtyMarker } from '@/lib/delta/dirty-marker';
 const dirtyMarker = new BOMDirtyMarker();
 const dirtyRowIds = dirtyMarker.getDirtyRows();
 console.log('Dirty row IDs:', dirtyRowIds);
 
-// 4. Profile commit performance
+// Profile commit performance
 const handleCommit = async () => {
   const start = performance.now();
   await monitorCommit(async () => {
@@ -192,22 +175,18 @@ const handleCommit = async () => {
 **Solutions**:
 
 ```typescript
-// 1. Verify lazy Proxy is enabled
-const flags = getBOMPerformanceFeatureFlags();
-console.log('Lazy Proxy enabled:', flags.enableLazyProxy);
-
-// 2. Check active Proxy count
+// Historical prototype diagnostic: check active Proxy count
 const { activeProxyCount } = useBOMData({ initialRows });
 console.log('Active Proxies:', activeProxyCount);
 console.log('Expected max:', rows.length * 0.2); // Should be ~20% of total
 
-// 3. Force release clean Proxies
+// Historical prototype diagnostic: force release clean Proxies
 import { BOMProxyManager } from '@/lib/delta/lazy-proxy-manager';
 const proxyManager = new BOMProxyManager(dirtyMarker, (row) => row.id);
 proxyManager.releaseCleanProxies();
 console.log('Active Proxies after cleanup:', proxyManager.getActiveProxyCount());
 
-// 4. Monitor Proxy lifecycle
+// Historical prototype diagnostic: monitor Proxy lifecycle
 const handleScroll = () => {
   console.log('Before scroll - Active Proxies:', activeProxyCount);
   // Scroll happens
@@ -282,7 +261,11 @@ recoveryHandler.persistLocalState(rows, dirtyMarker.getDirtyRows());
 
 ---
 
-## Error Messages
+## Error Messages (Historical)
+
+The delta, proxy-tracker, and virtual-scroller error classes in this section were
+removed with the experiment. Use current runtime errors and logs when diagnosing
+the active workspace.
 
 ### Error: "DiffEngineError: Failed to calculate delta"
 
@@ -375,7 +358,10 @@ try {
 
 ## Performance Debugging
 
-### Using Performance Monitor
+### Using Performance Monitor (Removed)
+
+The BOM-specific monitor and hook are no longer available. This example is kept
+only to document the former diagnostic flow.
 
 ```typescript
 import { useBOMPerformanceMonitor } from '@/lib/performance/use-bom-performance-monitor';
@@ -527,27 +513,12 @@ const handleCommit = async () => {
 
 ---
 
-## Monitoring Dashboard Usage
+## Monitoring Dashboard Usage (Removed)
 
 ### Dashboard Variants
 
-```typescript
-// Compact variant (minimal UI)
-<BOMPerformanceDashboard
-  metrics={metrics}
-  variant="compact"
-/>
-
-// Full variant (detailed metrics)
-<BOMPerformanceDashboard
-  metrics={metrics}
-  variant="full"
-  onExport={() => {
-    const json = monitor.exportMetrics();
-    downloadJSON(json, 'metrics.json');
-  }}
-/>
-```
+The compact and full dashboard variants were removed. Use browser profiling and
+the active workspace code paths for current investigations.
 
 ### Interpreting Metrics
 
@@ -569,7 +540,10 @@ const handleCommit = async () => {
 
 ## Diagnostic Tools
 
-### Tool 1: Performance Report Generator
+### Tool 1: Performance Report Generator (Removed)
+
+This generator depends on the removed BOM performance monitor and is historical
+pseudocode, not a current diagnostic tool.
 
 ```typescript
 import { BOMPerformanceMonitor } from '@/lib/performance/bom-performance-monitor';
@@ -659,25 +633,9 @@ function profileRenderPerformance() {
 
 ### Q: How do I enable/disable optimizations?
 
-**A**: Use feature flags:
-
-```typescript
-import { setFeatureFlagsForTesting } from '@/features/product-structure/config/feature-flags';
-
-// Enable all optimizations
-setFeatureFlagsForTesting({
-  enableAllOptimizations: true,
-});
-
-// Disable specific optimization
-setFeatureFlagsForTesting({
-  enableDirtyMarking: false,
-});
-
-// Reset to defaults
-import { resetFeatureFlags } from '@/features/product-structure/config/feature-flags';
-resetFeatureFlags();
-```
+**A**: There is no current BOM-specific performance feature-flag API. The retired
+flags have no supported replacement; evaluate changes in the active workspace
+implementation instead.
 
 ### Q: How do I know if optimizations are working?
 
@@ -708,22 +666,9 @@ console.log('Optimizations working:', {
 
 ### Q: Can I use optimizations with nested BOM structures?
 
-**A**: Yes, but with considerations:
-
-```typescript
-// Enable dynamic row heights for nested structures
-const config = {
-  ...DEFAULT_BOM_VIRTUAL_CONFIG,
-  enableDynamicSize: true,
-};
-
-// Track parent-child relationships
-const isRowDirty = (rowId: string) => {
-  // Check if row or any children are dirty
-  return dirtyMarker.isDirty(rowId) || 
-         getChildRows(rowId).some(child => dirtyMarker.isDirty(child.id));
-};
-```
+**A**: The retired virtual-scroller configuration cannot be enabled. Nested BOM
+structures are handled by the current workspace projection in
+`src/features/product-structure/hooks/use-bom-workspace-projection.ts`.
 
 ### Q: How do I debug "Changes not persisting" issues?
 
@@ -758,23 +703,8 @@ function debugChangePersistence(rowId: string) {
 
 ### Q: How do I rollback if optimizations cause issues?
 
-**A**:
-
-```typescript
-// 1. Disable all optimizations via feature flags
-setFeatureFlagsForTesting({
-  enableAllOptimizations: false,
-});
-
-// 2. Clear local storage
-localStorage.removeItem('bom-performance-state');
-
-// 3. Refresh page
-window.location.reload();
-
-// 4. Verify legacy behavior
-console.log('Using legacy rendering:', !flags.enableAllOptimizations);
-```
+**A**: The retired feature flags cannot roll back the active editor. Revert a
+specific workspace change through the normal source-control and release process.
 
 ---
 
@@ -783,7 +713,7 @@ console.log('Using legacy rendering:', !flags.enableAllOptimizations);
 If you encounter issues not covered in this guide:
 
 1. **Check logs**: Look for error messages in browser console
-2. **Export metrics**: Use performance dashboard to export metrics
+2. **Capture evidence**: Attach a browser profiler trace and reproduction steps
 3. **Create issue**: Include error messages, metrics, and reproduction steps
 4. **Contact team**: Reach out to frontend team for assistance
 
@@ -795,5 +725,5 @@ If you encounter issues not covered in this guide:
 ---
 
 **Document Version**: 1.0  
-**Last Updated**: May 13, 2026  
+**Last Updated**: July 20, 2026
 **Maintained By**: Frontend Team

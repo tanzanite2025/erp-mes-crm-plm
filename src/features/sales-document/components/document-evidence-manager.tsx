@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { type OrderEvidence } from '@/features/trading/data/schema'
+import type { OrderEvidence } from '../data/order-evidence'
 
 interface DocumentEvidenceManagerProps {
   evidences: OrderEvidence[]

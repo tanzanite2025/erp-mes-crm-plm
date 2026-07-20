@@ -125,7 +125,7 @@ func loadShippingVehicleMatchOrders(shipments []models.ShipmentRecord) (map[stri
 		return map[string]models.SalesOrder{}, map[string]models.SalesOrder{}, nil
 	}
 
-	query := db.DB.Model(&models.SalesOrder{})
+	query := applySalesOrderRecordScope(db.DB.Model(&models.SalesOrder{}))
 	switch {
 	case len(salesOrderIDs) > 0 && len(orderNos) > 0:
 		query = query.Where("id IN ? OR order_no IN ?", salesOrderIDs, orderNos)

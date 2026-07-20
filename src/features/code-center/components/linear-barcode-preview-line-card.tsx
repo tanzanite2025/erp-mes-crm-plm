@@ -2,21 +2,22 @@ import { Printer } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { type LinearBarcodeResolvedPrintLine } from '../utils/linear-barcode-print-resolver'
 
 interface LinearBarcodePreviewLineCardProps {
   line: LinearBarcodeResolvedPrintLine
-  hasRealNumber: boolean
   hasOpenedPreview: boolean
   isPrinting: boolean
+  onQuantityChange: (quantity: number) => void
   onPrint: () => void | Promise<void>
 }
 
 export function LinearBarcodePreviewLineCard({
   line,
-  hasRealNumber,
   hasOpenedPreview,
   isPrinting,
+  onQuantityChange,
   onPrint,
 }: LinearBarcodePreviewLineCardProps) {
   const { t } = useLanguage()
@@ -50,35 +51,27 @@ export function LinearBarcodePreviewLineCard({
                 )}
           </Badge>
           {line.isReady && line.printInput ? (
-            hasRealNumber ? (
-              <Button
-                type='button'
-                onClick={() => void onPrint()}
-                disabled={isPrinting || hasOpenedPreview}
-                className='bg-blue-600 font-bold text-white hover:bg-blue-700'
-              >
-                <Printer className='mr-2 h-4 w-4' />
-                {hasOpenedPreview
+            <Button
+              type='button'
+              onClick={() => void onPrint()}
+              disabled={isPrinting || hasOpenedPreview}
+              className='bg-blue-600 font-bold text-white hover:bg-blue-700'
+            >
+              <Printer className='mr-2 h-4 w-4' />
+              {hasOpenedPreview
+                ? t(
+                    'codeCenter.linearBarcode.print.sections.preview.actions.previewReady'
+                  )
+                : isPrinting
                   ? t(
-                      'codeCenter.linearBarcode.print.sections.preview.actions.previewReady'
+                      'codeCenter.linearBarcode.print.sections.preview.actions.printing',
+                      { quantity: line.printInput.quantity }
                     )
-                  : isPrinting
-                    ? t(
-                        'codeCenter.linearBarcode.print.sections.preview.actions.printing',
-                        { quantity: line.printInput.quantity }
-                      )
-                    : t(
-                        'codeCenter.linearBarcode.print.sections.preview.actions.printNow',
-                        { quantity: line.printInput.quantity }
-                      )}
-              </Button>
-            ) : (
-              <span className='text-[9px] font-bold text-muted-foreground/60'>
-                {t(
-                  'codeCenter.linearBarcode.print.sections.preview.states.awaitingRealNumber'
-                )}
-              </span>
-            )
+                  : t(
+                      'codeCenter.linearBarcode.print.sections.preview.actions.printNow',
+                      { quantity: line.printInput.quantity }
+                    )}
+            </Button>
           ) : null}
         </div>
       </div>
@@ -107,9 +100,31 @@ export function LinearBarcodePreviewLineCard({
           )}
           : {line.printInput?.mockInputs.holes || '--'}
         </div>
-        <div>
-          {t('codeCenter.linearBarcode.print.sections.preview.fields.quantity')}
-          : {`${line.quantity.toLocaleString()} ${line.uom}`}
+        <div className='grid grid-cols-2 gap-2 py-1'>
+          <div>
+            {t(
+              'codeCenter.linearBarcode.print.sections.preview.fields.orderQuantity'
+            )}
+            : {`${line.orderQuantity.toLocaleString()} ${line.uom}`}
+          </div>
+          <label className='grid gap-1'>
+            <span>
+              {t(
+                'codeCenter.linearBarcode.print.sections.preview.fields.printQuantity'
+              )}
+            </span>
+            <Input
+              type='number'
+              min={1}
+              max={200}
+              value={line.quantity}
+              disabled={!line.isReady || isPrinting || hasOpenedPreview}
+              onChange={(event) =>
+                onQuantityChange(Number.parseInt(event.target.value || '1', 10))
+              }
+              className='h-8 bg-background px-2 text-[11px] font-bold'
+            />
+          </label>
         </div>
         <div>
           {t(

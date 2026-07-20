@@ -20,14 +20,6 @@ func NewAPIHandler(engine *apsengine.Engine) *APIHandler {
 	return &APIHandler{Engine: engine}
 }
 
-func (h *APIHandler) Register(rg *gin.RouterGroup) {
-	rg.POST("/aps-scheduling/plans", h.CreatePlan)
-	rg.GET("/aps-scheduling/plans", h.ListPlans)
-	rg.GET("/aps-scheduling/plans/:id", h.GetPlan)
-	rg.POST("/aps-scheduling/plans/:id/recalculate", h.RecalculatePlan)
-	rg.POST("/aps-scheduling/events", h.IngestEvent)
-}
-
 func (h *APIHandler) ensureEngine() *apsengine.Engine {
 	if h.Engine == nil {
 		h.Engine = apsengine.NewEngine()

@@ -4,7 +4,7 @@ import { auditUtils } from '@/lib/audit-utils'
 import { type DeltaSet } from '@/lib/delta/types'
 import { type SalesOrder, type SalesOrderFormValues } from '../data/schema'
 import { useSalesOrderMutations } from '../sales'
-import { requireTradingCommandActor } from '../utils/command-actor'
+import { requireCommandActor } from '@/lib/command-actor'
 import {
   sanitizeSalesOrderDelta,
   sanitizeSalesOrderSubmitValues,
@@ -60,7 +60,7 @@ export function useSalesOrderSave({
         return
       }
 
-      const actor = requireTradingCommandActor(
+      const actor = requireCommandActor(
         { operator: user?.accountNo, actorId: user?.id },
         'useSalesOrderSave.handleSave'
       )

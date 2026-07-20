@@ -11,7 +11,7 @@ export const codeCenter = {
         title: '一维码打印中心',
         subtitle: 'LINEAR BARCODE PRINT / 唯一码发号、批次留痕与 Code128 预览',
         notice:
-          '只有唯一发号、15 位协议校验、批次落库与可打印预览全部完成，任务才会记为成功。批量唯一发号接入前，系统禁止重复打印同一条码。',
+          '每次打印会在同一事务内批量保留唯一流水号、生成 15 位码并逐码写入可用库存；打印预览只使用已落库的唯一条码。',
         badges: {
           placeholder: '骨架占位',
           awaitingOrder: '等待选择订单',
@@ -67,19 +67,15 @@ export const codeCenter = {
             appearanceCode:
               'appearanceCode 来自订单行 `appearanceBarcodeCodeSnapshot`',
             holeCount: 'holes 来自订单行 `holeCount`',
-            quantity: 'quantity 来自订单行 `qty`',
+            quantity: '预打数量默认取订单行 `qty`，可独立调整为 1-200',
           },
         },
         preview: {
           title: '解析预览区',
           description:
-            '展示订单行是否满足安全打印条件，以及当前可用的条码参数快照。',
-          placeholder:
-            '解析预览区会阻断缺少唯一条码的数据，避免同一流水号被重复打印。',
+            '按订单行设置独立预打数量，并一次生成对应数量的唯一 Code128 标签。',
+          placeholder: '预打数量独立于订单数量，单次支持 1 到 200 枚唯一条码。',
           actions: {
-            issueRealNumbers: '获取真实发号',
-            issuingNumbers: '发号中',
-            numbersReady: '真实发号已加载',
             printNow: '立即打印 {{quantity}} 张',
             printing: '正在生成预览 ({{quantity}})...',
             previewReady: '打印预览已生成',
@@ -100,8 +96,8 @@ export const codeCenter = {
             batchPrintFailed: '整单打印预览生成失败，请稍后重试。',
           },
           errors: {
-            uniqueCodesRequired:
-              '已阻止打印 {{quantity}} 张：当前只有一个唯一流水号，不能重复生成相同条码。',
+            quantityInvalid:
+              '预打数量 {{quantity}} 无效，单次必须是 1 到 200 的整数。',
             previewBlocked:
               '浏览器阻止了打印预览窗口，请允许本站打开弹窗后重试。',
             previewClosed:
@@ -114,8 +110,6 @@ export const codeCenter = {
             noLines: '当前订单没有可用于解析的订单行。',
             lineReady: '可解析',
             lineBlocked: '已阻断',
-            awaitingRealNumber: '请先获取真实发号',
-            numberingFailed: '真实发号失败，请稍后重试。',
           },
           fields: {
             lineNo: '订单行',
@@ -124,6 +118,8 @@ export const codeCenter = {
             appearanceCode: '外观位值',
             holeCount: '孔数',
             quantity: '数量',
+            orderQuantity: '订单数量',
+            printQuantity: '预打数量（1-200）',
             sequenceRuleKey: '发号规则键',
             mockSerial: '预览流水号',
             barcodeSerial: '打印配置流水号',
@@ -136,8 +132,6 @@ export const codeCenter = {
             appearanceCodeMissing: '缺少外观位值快照',
             holeCountMissing: '缺少孔数',
             quantityInvalid: '数量必须大于 0',
-            uniqueCodesRequired:
-              '数量为 {{quantity}}，但当前订单行只有一个唯一流水号；批量唯一发号接入前禁止打印。',
             sequenceRuleKeyMissing: '协议未配置发号规则键',
           },
         },
@@ -182,8 +176,32 @@ export const codeCenter = {
             success: '打印预览已生成',
             failed: '打印预览生成失败',
             skippedBlocked: '该行不满足打印条件，已跳过。',
-            skippedUnnumbered: '该行尚未获取真实发号，已跳过。',
             skippedPreviewReady: '该行已生成打印预览，已阻止重复生成。',
+          },
+        },
+        inventory: {
+          title: '一维码库存',
+          description:
+            '逐枚展示已发号条码、所属批次、订单行、可用状态与失效时间。',
+          total: '库存 {{count}}',
+          available: '可用 {{count}}',
+          refresh: '刷新一维码库存',
+          loading: '一维码库存加载中',
+          loadFailed: '一维码库存加载失败，请重试。',
+          empty: '当前范围内还没有已生成的一维码库存。',
+          fields: {
+            code: '完整条码',
+            batchNo: '打印批次',
+            lineNo: '订单行',
+            status: '状态',
+            expiresAt: '失效时间',
+            createdAt: '生成时间',
+          },
+          status: {
+            AVAILABLE: '可用',
+            BOUND: '已绑定',
+            EXPIRED: '已失效',
+            SCRAPPED: '已报废',
           },
         },
       },

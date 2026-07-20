@@ -7,11 +7,11 @@ import {
 import { numberingService } from '@/features/basic-settings/services/numbering-service'
 import { type BarcodeConfig } from '@/features/engineering/data/schema'
 import { type SalesOrder } from '@/features/trading/data/schema'
-import { isSupportedLinearBarcodePrintQuantity } from '../services/linear-barcode-print-safety'
 
 const PREVIEW_SERIAL_LENGTH = 4
 
 export interface LinearBarcodePrintInput {
+  salesOrderId: string
   productId: string
   productLabel: string
   lineNo: number
@@ -26,6 +26,7 @@ export interface LinearBarcodeResolvedPrintLine {
   key: string
   lineNo: number
   productLabel: string
+  orderQuantity: number
   quantity: number
   uom: string
   issues: string[]
@@ -62,9 +63,9 @@ function buildMockInputs(
   const protocolMockInput = protocol?.mockInput
 
   return {
-    year: protocolMockInput?.year || now.getFullYear().toString().slice(-2),
-    month: protocolMockInput?.month || formatLinearBarcodeMonthValue(now),
-    day: protocolMockInput?.day || String(now.getDate()).padStart(2, '0'),
+    year: now.getFullYear().toString().slice(-2),
+    month: formatLinearBarcodeMonthValue(now),
+    day: String(now.getDate()).padStart(2, '0'),
     model: line.modelCodeSnapshot || '',
     appearance: line.appearanceBarcodeCodeSnapshot || '',
     holePrefix: line.holePrefixSnapshot || '',
@@ -72,7 +73,7 @@ function buildMockInputs(
       line.holeCount !== undefined
         ? String(line.holeCount).padStart(2, '0')
         : '',
-    serial: protocolMockInput?.serial || defaultSerial,
+    serial: defaultSerial,
     isDrainHole: protocolMockInput?.isDrainHole ?? false,
     wheelType: protocolMockInput?.wheelType || 'H',
     scopeCode: protocolMockInput?.scopeCode || '',
@@ -150,13 +151,6 @@ export function resolveLinearBarcodePrintLines({
           'codeCenter.linearBarcode.print.sections.preview.issues.quantityInvalid'
         )
       )
-    } else if (!isSupportedLinearBarcodePrintQuantity(line.qty)) {
-      issues.push(
-        t(
-          'codeCenter.linearBarcode.print.sections.preview.issues.uniqueCodesRequired',
-          { quantity: line.qty }
-        )
-      )
     }
     if (!protocol?.sequenceRuleKey) {
       issues.push(
@@ -174,6 +168,7 @@ export function resolveLinearBarcodePrintLines({
         key,
         lineNo: line.lineNo,
         productLabel,
+        orderQuantity: line.qty,
         quantity: line.qty,
         uom: line.uom,
         issues,
@@ -188,11 +183,13 @@ export function resolveLinearBarcodePrintLines({
       key,
       lineNo: line.lineNo,
       productLabel,
+      orderQuantity: line.qty,
       quantity: line.qty,
       uom: line.uom,
       issues,
       isReady: true,
       printInput: {
+        salesOrderId: order.id,
         productId: line.productId,
         productLabel,
         lineNo: line.lineNo,

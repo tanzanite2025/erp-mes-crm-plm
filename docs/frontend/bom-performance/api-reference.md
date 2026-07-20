@@ -1,8 +1,17 @@
-# BOM Performance Optimization - API Reference
+# BOM Performance Optimization - Historical API Reference
 
 **Version**: 1.0  
-**Last Updated**: May 13, 2026  
+**Last Updated**: July 20, 2026
+**Status**: Historical; the dedicated BOM performance experiment has been retired
 **Target Audience**: Frontend Developers
+
+> This page preserves the retired performance experiment for design context. The
+> virtual table, row/cell, performance dashboard, BOM-specific feature flags,
+> virtual-scroller configuration, optimized-data hook, and related error-boundary
+> modules described below are no longer importable APIs. The active editor flow is
+> `src/features/product-structure/components/bom-action-dialog.tsx` ->
+> `src/features/product-structure/components/bom-editor/bom-workspace.tsx` ->
+> `src/features/product-structure/hooks/use-bom-workspace.ts`.
 
 ## Table of Contents
 
@@ -54,7 +63,11 @@ interface BOMRowData {
 
 ---
 
-## Dirty Marking API
+## Dirty Marking API (Removed)
+
+The dedicated dirty-marker and optimized-proxy-tracker modules were removed. The
+signatures and imports in this section are historical and cannot be used by the
+current BOM editor.
 
 ### DirtyMarker Interface
 
@@ -143,7 +156,10 @@ dirtyMarker.clearAll();
 
 ---
 
-## Lazy Proxy Management API
+## Lazy Proxy Management API (Removed)
+
+The lazy proxy manager was removed with the experiment. The examples below
+preserve its former contract but no longer point to an importable module.
 
 ### LazyProxyManager Interface
 
@@ -246,7 +262,10 @@ console.log(proxyManager.hasProxy('row-1')); // false
 
 ---
 
-## Performance Monitoring API
+## Performance Monitoring API (Removed)
+
+The BOM-specific performance monitor was removed. These metrics and examples are
+retained only as a record of the retired experiment.
 
 ### BOMPerformanceMetrics Interface
 
@@ -378,7 +397,10 @@ monitor.clearMetrics();
 
 ---
 
-## Feature Flags API
+## Feature Flags API (Removed)
+
+The BOM-specific performance feature-flag module was removed. The signatures in
+this section are retained only to explain the historical experiment.
 
 ### BOMPerformanceFeatureFlags Interface
 
@@ -445,33 +467,8 @@ function getPresetConfiguration(
 ): BOMPerformanceFeatureFlags;
 ```
 
-**Example**:
-
-```typescript
-import {
-  getBOMPerformanceFeatureFlags,
-  setFeatureFlagsForTesting,
-  resetFeatureFlags,
-  getPresetConfiguration,
-} from '@/features/product-structure/config/feature-flags';
-
-// Get current flags
-const flags = getBOMPerformanceFeatureFlags();
-console.log('Current flags:', flags);
-
-// Set flags for testing
-setFeatureFlagsForTesting({
-  enableAllOptimizations: true,
-  enablePerformanceMonitoring: true,
-});
-
-// Get preset configuration
-const devFlags = getPresetConfiguration('development');
-console.log('Development flags:', devFlags);
-
-// Reset to defaults
-resetFeatureFlags();
-```
+There is no supported replacement feature-flag import. Current BOM behavior is
+implemented directly by the active workspace flow linked at the top of this page.
 
 ---
 
@@ -568,7 +565,10 @@ function BOMManagement() {
 }
 ```
 
-### useBOMPerformanceMonitor Hook
+### useBOMPerformanceMonitor Hook (Removed)
+
+This hook was removed with the BOM-specific performance monitor. The example is
+historical and has no current import path.
 
 ```typescript
 interface UseBOMPerformanceMonitorReturn {
@@ -616,7 +616,6 @@ function BOMManagement() {
   
   return (
     <div>
-      <BOMPerformanceDashboard metrics={metrics} />
       <BOMTable onEdit={handleEdit} onCommit={handleCommit} />
     </div>
   );
@@ -625,9 +624,12 @@ function BOMManagement() {
 
 ---
 
-## React Components API
+## React Components API (Removed)
 
-### BOMVirtualTable Component
+The dedicated virtual table and performance dashboard were removed. Their
+signatures remain below as historical design records, not supported components.
+
+### BOMVirtualTable Component (Removed)
 
 ```typescript
 interface BOMVirtualTableProps {
@@ -659,32 +661,10 @@ interface BOMVirtualTableProps {
 function BOMVirtualTable(props: BOMVirtualTableProps): JSX.Element;
 ```
 
-**Example**:
+No current import path exists. The active BOM editor renders through
+`components/bom-editor/bom-workspace.tsx`.
 
-```typescript
-import { BOMVirtualTable } from '@/features/product-structure/components/bom-virtual-table';
-
-function BOMManagement() {
-  const { rows, handleRowUpdate, isRowDirty } = useBOMData({ initialRows });
-  
-  return (
-    <BOMVirtualTable
-      rows={rows}
-      columns={columns}
-      onRowUpdate={handleRowUpdate}
-      isRowDirty={isRowDirty}
-      config={{
-        overscan: 5,
-        estimateSize: 48,
-        enableDynamicSize: true,
-        scrollThrottle: 16,
-      }}
-    />
-  );
-}
-```
-
-### BOMPerformanceDashboard Component
+### BOMPerformanceDashboard Component (Removed)
 
 ```typescript
 interface BOMPerformanceDashboardProps {
@@ -707,31 +687,14 @@ interface BOMPerformanceDashboardProps {
 function BOMPerformanceDashboard(props: BOMPerformanceDashboardProps): JSX.Element;
 ```
 
-**Example**:
-
-```typescript
-import { BOMPerformanceDashboard } from '@/features/product-structure/components/bom-performance-dashboard';
-
-function BOMManagement() {
-  const { monitor } = useBOMPerformanceMonitor();
-  const metrics = monitor.getLatestMetrics();
-  
-  return (
-    <BOMPerformanceDashboard
-      metrics={metrics}
-      variant="full"
-      onExport={() => {
-        const json = monitor.exportMetrics();
-        downloadJSON(json, 'metrics.json');
-      }}
-    />
-  );
-}
-```
+No current performance-dashboard component is shipped for the BOM editor.
 
 ---
 
-## Error Handling API
+## Error Handling API (Removed)
+
+The experiment-specific delta error module was removed. The class shapes below
+are historical and are not current application error APIs.
 
 ### Error Classes
 
@@ -863,9 +826,12 @@ if (result.success) {
 
 ---
 
-## Configuration API
+## Configuration API (Removed)
 
-### BOMVirtualScrollerConfig Interface
+### BOMVirtualScrollerConfig Interface (Removed)
+
+The dedicated virtual-scroller configuration module was removed with the virtual
+table experiment. The shape below is historical and has no current import path.
 
 ```typescript
 interface BOMVirtualScrollerConfig {
@@ -897,79 +863,25 @@ function validateVirtualScrollerConfig(
 ): boolean;
 ```
 
-**Example**:
-
-```typescript
-import {
-  DEFAULT_BOM_VIRTUAL_CONFIG,
-  validateVirtualScrollerConfig,
-} from '@/features/product-structure/config/virtual-scroller-config';
-
-// Use default configuration
-const config = DEFAULT_BOM_VIRTUAL_CONFIG;
-
-// Create custom configuration
-const customConfig = {
-  overscan: 10,
-  estimateSize: 60,
-  enableDynamicSize: false,
-  scrollThrottle: 32,
-};
-
-// Validate configuration
-if (validateVirtualScrollerConfig(customConfig)) {
-  console.log('Configuration is valid');
-} else {
-  console.error('Configuration is invalid');
-}
-```
+Use the active workspace implementation as the source of truth for current
+rendering behavior; there is no replacement configuration API.
 
 ---
 
-## Type Exports
+## Type Exports (Historical)
 
-All types are exported from their respective modules:
-
-```typescript
-// Dirty marking types
-export type { DirtyMarker } from '@/lib/delta/dirty-marker';
-
-// Lazy Proxy types
-export type { LazyProxyManager } from '@/lib/delta/lazy-proxy-manager';
-
-// Performance monitoring types
-export type { BOMPerformanceMetrics } from '@/lib/performance/bom-performance-monitor';
-
-// Feature flags types
-export type { BOMPerformanceFeatureFlags } from '@/features/product-structure/config/feature-flags';
-
-// Hook types
-export type {
-  UseBOMDataOptions,
-  UseBOMDataReturn,
-} from '@/features/product-structure/hooks/use-bom-data';
-
-// Component types
-export type { BOMVirtualTableProps } from '@/features/product-structure/components/bom-virtual-table';
-export type { BOMPerformanceDashboardProps } from '@/features/product-structure/components/bom-performance-dashboard';
-
-// Configuration types
-export type { BOMVirtualScrollerConfig } from '@/features/product-structure/config/virtual-scroller-config';
-
-// Error types
-export type {
-  BOMDeltaError,
-  DiffEngineError,
-  ProxyTrackerError,
-  VirtualScrollerError,
-} from '@/lib/delta/errors';
-```
+The retired component, feature-flag, optimized-data, error-boundary, and
+virtual-scroller types are no longer exported. Import current types from the
+active module that declares them; this historical page is not an export catalog.
 
 ---
 
 ## Migration Guide
 
-### From Legacy to Optimized
+### Retired Prototype Example
+
+The comparison below records the old prototype migration. It does not represent
+the current BOM editor implementation.
 
 ```typescript
 // Before (Legacy)
@@ -988,7 +900,7 @@ function BOMManagement() {
   return <BOMTable rows={rows} onUpdate={handleUpdate} onCommit={handleCommit} />;
 }
 
-// After (Optimized)
+// Retired prototype (no longer available)
 function BOMManagement() {
   const {
     rows,
@@ -1018,10 +930,11 @@ function BOMManagement() {
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.1 | July 20, 2026 | Marked retired APIs and removed stale import paths |
 | 1.0 | May 13, 2026 | Initial API documentation |
 
 ---
 
 **Document Version**: 1.0  
-**Last Updated**: May 13, 2026  
+**Last Updated**: July 20, 2026
 **Maintained By**: Frontend Team

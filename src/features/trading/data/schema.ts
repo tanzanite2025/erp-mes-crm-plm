@@ -1,9 +1,6 @@
 ﻿import { z } from 'zod'
 import { type BaseEntity } from '@/types/base'
-import {
-  type PurchaseOrderStatus,
-  purchaseOrderStatuses,
-} from './purchase-status'
+import type { OrderEvidence } from '@/features/sales-document/data/order-evidence'
 
 export type CustomerStatus = 'Active' | 'Inactive' | 'Pending'
 
@@ -40,35 +37,6 @@ export type CustomerDraft = Omit<
 export type CustomerFormValues = CustomerDraft
 
 export const customerArraySchema = z.array(customerSchema)
-
-export type SupplierStatus = 'Active' | 'Inactive' | 'OnReview'
-
-export const supplierSchema = baseEntitySchema.extend({
-  name: z.string(),
-  code: z.string(),
-  category: z.string(),
-  mainProducts: z.array(z.string()),
-  contactPerson: z.string(),
-  contactPhone: z.string(),
-  wechat: z.string(),
-  whatsapp: z.string(),
-  facebook: z.string(),
-  instagram: z.string(),
-  telegram: z.string(),
-  email: z.string(),
-  address: z.string(),
-  status: z.enum(['Active', 'Inactive', 'OnReview']),
-  rating: z.number(),
-  version: z.number(),
-})
-
-export type Supplier = z.infer<typeof supplierSchema>
-export type SupplierFormValues = Omit<
-  Supplier,
-  'id' | 'createdAt' | 'updatedAt' | 'isDeleted' | 'version'
->
-
-export const supplierArraySchema = z.array(supplierSchema)
 
 export type SalesOrderStatus =
   | 'Draft'
@@ -223,15 +191,7 @@ export const createEmptySalesOrderLine = (): SalesOrderLine => ({
   remainingReturnableQuantity: 0,
 })
 
-export interface OrderEvidence {
-  id: string
-  url: string
-  name: string
-  uploadedAt: string
-  note?: string
-  location?: string
-  defectPart?: string
-}
+export type { OrderEvidence } from '@/features/sales-document/data/order-evidence'
 
 export interface SalesOrder extends BaseEntity {
   orderNo: string
@@ -345,53 +305,3 @@ export const salesOrderStatuses: {
     color: 'bg-red-500/10 text-red-500 border-red-500/20',
   },
 ]
-
-// --- Purchase Order Types ---
-
-export type { PurchaseOrderStatus }
-
-export interface PurchaseOrderLine {
-  id?: number
-  version?: number
-  lineNo: number
-  materialId: string
-  materialName: string
-  materialCode: string
-  specification: string
-  qty: number
-  uom: string
-  price: number
-  amount: number
-  expectedDate: string
-  receivedQty: number
-  returnedQty: number
-  status: PurchaseOrderStatus
-  note?: string
-}
-
-export interface PurchaseOrderListItem extends BaseEntity {
-  orderNo: string
-  supplierName: string
-  supplierId: string
-  status: PurchaseOrderStatus
-  evidences?: OrderEvidence[]
-  amount: number
-  orderDate: string
-  expectedDate: string
-  purchaser: string
-  currency: string
-  exchangeRate?: number
-  paymentMethod?: string
-  paymentMethodName?: string
-  paymentTerm?: string
-  paymentTermName?: string
-  note?: string
-  isDeleted: boolean
-  version: number
-}
-
-export interface PurchaseOrder extends PurchaseOrderListItem {
-  lines: PurchaseOrderLine[]
-}
-
-export { purchaseOrderStatuses }

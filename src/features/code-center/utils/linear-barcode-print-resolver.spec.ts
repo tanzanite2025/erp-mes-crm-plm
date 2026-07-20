@@ -55,18 +55,24 @@ function buildOrder(quantity: number) {
 }
 
 describe('resolveLinearBarcodePrintLines', () => {
-  it('blocks a multi-quantity line until every label has a unique code', () => {
+  it('accepts a 100-unit order line for atomic unique-code issuance', () => {
     const [line] = resolveLinearBarcodePrintLines({
       order: buildOrder(100),
       protocol,
       t: translate,
+      now: new Date('2026-07-19T08:00:00+08:00'),
     })
 
-    expect(line.isReady).toBe(false)
+    expect(line.isReady).toBe(true)
+    expect(line.orderQuantity).toBe(100)
     expect(line.quantity).toBe(100)
-    expect(line.issues).toContain(
-      'codeCenter.linearBarcode.print.sections.preview.issues.uniqueCodesRequired:100'
-    )
+    expect(line.printInput?.salesOrderId).toBe('order-1')
+    expect(line.printInput?.mockInputs).toMatchObject({
+      year: '26',
+      month: '7',
+      day: '19',
+      serial: '****',
+    })
   })
 
   it('keeps the canonical preview serial at four characters', () => {

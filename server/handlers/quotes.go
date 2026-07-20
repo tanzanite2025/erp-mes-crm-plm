@@ -61,17 +61,23 @@ func ConvertQuoteHandler(c *gin.Context) {
 	id := c.Param("id")
 	response, err := services.ConvertQuoteToSalesOrder(id, middleware.GetSafeUsername(c))
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound):
 			c.JSON(http.StatusNotFound, gin.H{
 				"error": "[CRITICAL] quote not found: " + id,
 				"code":  "QUOTE_CONVERT_NOT_FOUND",
 			})
-			return
+		case errors.Is(err, services.ErrQuoteConversionNotAllowed):
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+				"code":  "QUOTE_CONVERT_REJECTED",
+			})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "[SERVER] failed to convert quote: " + err.Error(),
+				"code":  "QUOTE_CONVERT_FAILED",
+			})
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[SERVER] failed to convert quote: " + err.Error(),
-			"code":  "QUOTE_CONVERT_FAILED",
-		})
 		return
 	}
 
@@ -93,6 +99,53 @@ func GetQuoteDetailHandler(c *gin.Context) {
 			"error": "[SERVER] failed to load quote detail: " + err.Error(),
 			"code":  "QUOTE_DETAIL_FETCH_FAILED",
 		})
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+func PatchQuoteHandler(c *gin.Context) {
+	id := strings.TrimSpace(c.Param("id"))
+	if id == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "quote id is required",
+			"code":  "QUOTE_PATCH_ID_REQUIRED",
+		})
+		return
+	}
+
+	var req services.SDRTSDeltaHandlerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[VALIDATION] invalid quote patch payload: " + err.Error(),
+			"code":  "QUOTE_PATCH_INVALID_PAYLOAD",
+		})
+		return
+	}
+
+	response, err := services.PatchQuoteDraft(id, req, middleware.GetSafeUsername(c))
+	if err != nil {
+		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "[CRITICAL] quote not found: " + id,
+				"code":  "QUOTE_PATCH_NOT_FOUND",
+			})
+		case errors.Is(err, services.ErrQuotePatchConflict):
+			respondVersionConflict(c)
+		case errors.Is(err, services.ErrQuotePatchNotEditable),
+			strings.Contains(err.Error(), "invalid quote patch"):
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+				"code":  "QUOTE_PATCH_REJECTED",
+			})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "[SERVER] failed to patch quote: " + err.Error(),
+				"code":  "QUOTE_PATCH_FAILED",
+			})
+		}
 		return
 	}
 

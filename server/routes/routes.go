@@ -260,8 +260,13 @@ func SetupRoutes(r *gin.Engine) {
 			logisticsPush.POST("/providers/:id/verify", tradingProviderManage, handlers.VerifyLogisticsProviderHandler)
 			logisticsPush.DELETE("/providers/:id", tradingProviderManage, handlers.DeleteLogisticsProviderHandler)
 			logisticsPush.GET("/orders", handlers.GetDeliveryOrdersHandler)
-			logisticsPush.GET("/tracking/:trackingNo", handlers.GetDeliveryTrackingHandler)
 			logisticsPush.POST("/callback", handlers.HandlePushCallbackHandler)
+		}
+
+		logisticsTracking := authorized.Group("/logistics-push")
+		logisticsTracking.Use(tradingOrPurchaseAccess)
+		{
+			logisticsTracking.GET("/tracking/:trackingNo", handlers.GetDeliveryTrackingHandler)
 		}
 
 		packagingGroup := authorized.Group("/packaging")
@@ -329,6 +334,8 @@ func SetupRoutes(r *gin.Engine) {
 		{
 			printGroup.GET("", handlers.GetPrintBatchesHandler)
 			printGroup.POST("", handlers.SavePrintBatchHandler)
+			printGroup.GET("/linear-barcode-inventory", handlers.ListLinearBarcodeInventoryHandler)
+			printGroup.POST("/linear-barcode", handlers.CreateLinearBarcodeBatchHandler)
 			printGroup.POST("/atomic-print", handlers.AtomicPrintHandler)
 			printGroup.POST("/:id/activate", handlers.ActivateBatchHandler)
 			printGroup.POST("/:id/scrap", handlers.ScrapBatchHandler)

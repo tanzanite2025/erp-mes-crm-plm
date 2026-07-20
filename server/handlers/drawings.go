@@ -40,33 +40,6 @@ func GetDrawingsByMoldHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, mapMoldDrawingResponses(drawings))
 }
 
-func buildDrawingUpdates(payload map[string]json.RawMessage) (map[string]interface{}, error) {
-	updates := make(map[string]interface{})
-	for key, raw := range payload {
-		switch key {
-		case "moldId", "moldSn", "name", "type", "fileUrl", "version", "status", "remarks":
-			var value string
-			if err := json.Unmarshal(raw, &value); err != nil {
-				return nil, err
-			}
-			updates[key] = value
-		case "uploadedAt":
-			if string(raw) == "null" {
-				updates["uploaded_at"] = nil
-				continue
-			}
-			var value time.Time
-			if err := json.Unmarshal(raw, &value); err != nil {
-				return nil, err
-			}
-			updates["uploaded_at"] = value
-		case "id", "createdAt", "updatedAt", "sysVersion":
-		default:
-		}
-	}
-	return updates, nil
-}
-
 func saveDrawingRecord(drawing *models.MoldDrawing) error {
 	if drawing.ID == "" {
 		return db.DB.Create(drawing).Error

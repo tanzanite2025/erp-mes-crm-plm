@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 	"strings"
 	"xdfc-server/db"
@@ -61,25 +60,6 @@ func buildSystemConfigUpdates(payload map[string]json.RawMessage) (map[string]in
 		}
 	}
 	return updates, nil
-}
-
-func saveSystemConfigRecord(config *models.SystemConfig) error {
-	var existing models.SystemConfig
-	err := db.DB.First(&existing, "key = ?", config.Key).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return db.DB.Create(config).Error
-	}
-	if err != nil {
-		return err
-	}
-
-	updates := map[string]interface{}{
-		"value":       config.Value,
-		"label":       config.Label,
-		"description": config.Description,
-	}
-
-	return db.DB.Model(&existing).Updates(updates).Error
 }
 
 // UpdateSystemConfigHandler upserts one system config item.

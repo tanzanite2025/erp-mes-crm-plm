@@ -22,9 +22,11 @@ func GetCustomersHandler(c *gin.Context) {
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "50"))
 	isOptions := c.Query("options") == "true"
 	response, err := services.ListCustomers(services.CustomerListQuery{
-		Page:     page,
-		PageSize: pageSize,
-		Options:  isOptions,
+		Page:           page,
+		PageSize:       pageSize,
+		Options:        isOptions,
+		Search:         c.Query("search"),
+		IncludeDeleted: c.Query("includeDeleted") == "true",
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

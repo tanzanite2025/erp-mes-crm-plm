@@ -1,8 +1,14 @@
-# BOM Performance Optimization - Production Monitoring Setup
+# BOM Performance Optimization - Production Monitoring Setup (Historical)
 
 **Version**: 1.0  
-**Last Updated**: May 13, 2026  
+**Last Updated**: July 20, 2026
+**Status**: Historical; the BOM-specific monitoring experiment has been retired
 **Target Audience**: DevOps Engineers, SRE Team, Frontend Team
+
+> The BOM performance monitor, React hook, delta errors, dirty marker, and proxy
+> managers referenced here were removed. The collectors, alerts, dashboards, and
+> deployment steps below are archived design material and must not be treated as
+> current production setup instructions.
 
 ## Table of Contents
 
@@ -57,7 +63,7 @@ This document describes the production monitoring setup for the BOM performance 
 
 ---
 
-## Metrics Collection
+## Metrics Collection (Historical)
 
 ### Frontend Metrics Collection
 
@@ -165,7 +171,7 @@ export const metricsReporter = new MetricsReporter({
 });
 ```
 
-#### Integration with Performance Monitor
+#### Integration with Performance Monitor (Removed)
 
 ```typescript
 // src/lib/performance/use-bom-performance-monitor.ts
@@ -396,7 +402,7 @@ receivers:
 
 ---
 
-## Monitoring Dashboard
+## Monitoring Dashboard (Historical)
 
 ### Grafana Dashboard Configuration
 
@@ -728,7 +734,7 @@ output {
 
 ---
 
-## Incident Response
+## Incident Response (Historical)
 
 ### Incident Severity Levels
 
@@ -867,6 +873,6 @@ source:"bom-performance" AND userId:"user-123"
 ---
 
 **Document Version**: 1.0  
-**Last Updated**: May 13, 2026  
+**Last Updated**: July 20, 2026
 **Maintained By**: DevOps Team, SRE Team  
 **Review Frequency**: Quarterly

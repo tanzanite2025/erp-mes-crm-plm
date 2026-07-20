@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { createLogger } from '@/lib/logger'
 import { resolveQueryFailure } from '@/lib/read-resource'
-import { useTradingFinanceResources } from '../../hooks/use-trading-finance-resources'
+import { useFinanceResources } from '@/features/finance/hooks/use-finance-resources'
 import { SettlementLedgerDetailDialog } from '../../settlement-ledger-detail-dialog'
 import { purchasePayableDetailDialogConfig } from '../config/purchase-payable-detail-dialog.config'
 import {
@@ -26,7 +26,7 @@ export function PurchasePayableDetailDialog({
   const payablesQuery = useGetPayables()
   const detailQuery = usePayableLedgerDetail(open ? ledgerId : null)
   const createMutation = useCreatePaymentRecord()
-  const financeResources = useTradingFinanceResources({
+  const financeResources = useFinanceResources({
     includeCurrencies: true,
     includePaymentMethods: false,
     includePaymentTerms: false,

@@ -3,19 +3,21 @@ package services
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 	"xdfc-server/db"
 	"xdfc-server/models"
+	"xdfc-server/numbering"
 
 	"gorm.io/gorm"
 )
 
 type CustomerListQuery struct {
-	Page     int
-	PageSize int
-	Options  bool
+	Page           int
+	PageSize       int
+	Options        bool
+	Search         string
+	IncludeDeleted bool
 }
 
 type SupplierListQuery struct {
@@ -23,6 +25,8 @@ type SupplierListQuery struct {
 	PageSize int
 	Options  bool
 }
+
+const supplierNumberingRuleKey = "PURCHASE_SUPPLIER"
 
 func BuildCustomerListMetadata(total int64, page int, pageSize int) (CustomerListMetadata, error) {
 	statsBaseQuery := db.DB.Model(&models.Customer{})
@@ -70,6 +74,18 @@ func ListCustomers(query CustomerListQuery) (CustomerListResponse, error) {
 	}
 
 	baseQuery := db.DB.Model(&models.Customer{})
+	if query.IncludeDeleted {
+		baseQuery = baseQuery.Unscoped()
+	}
+	if search := strings.ToLower(strings.TrimSpace(query.Search)); search != "" {
+		pattern := "%" + search + "%"
+		baseQuery = baseQuery.Where(
+			"LOWER(name) LIKE ? OR LOWER(code) LIKE ? OR LOWER(contact_person) LIKE ?",
+			pattern,
+			pattern,
+			pattern,
+		)
+	}
 
 	if query.Options {
 		var customers []models.Customer
@@ -79,7 +95,7 @@ func ListCustomers(query CustomerListQuery) (CustomerListResponse, error) {
 		return CustomerListResponse{Items: MapCustomersToResponse(customers)}, nil
 	}
 	var total int64
-	if err := db.DB.Model(&models.Customer{}).Count(&total).Error; err != nil {
+	if err := baseQuery.Session(&gorm.Session{}).Count(&total).Error; err != nil {
 		return CustomerListResponse{}, err
 	}
 
@@ -269,25 +285,31 @@ func SaveSupplier(input SaveSupplierRequest, actorID string, operator string, ip
 	model := MapSaveSupplierRequestToModel(input)
 	model.Name = strings.TrimSpace(model.Name)
 	model.Code = strings.TrimSpace(model.Code)
-	
+
 	// Name is always required
 	if model.Name == "" {
 		return SupplierResponse{}, fmt.Errorf("%w: name must not be empty", ErrSupplierTransactionInvalidPayload)
 	}
-	
+
 	// For new suppliers (no ID), auto-generate code if empty
 	if strings.TrimSpace(model.ID) == "" {
-		if model.Code == "" {
-			model.Code = generateSupplierCode()
-		}
 		model.Version = 1
-		if err := db.DB.Create(&model).Error; err != nil {
+		if err := db.DB.Transaction(func(tx *gorm.DB) error {
+			if model.Code == "" {
+				generatedCode, err := numbering.GenerateNextNumberTx(tx, supplierNumberingRuleKey)
+				if err != nil {
+					return fmt.Errorf("generate supplier code: %w", err)
+				}
+				model.Code = generatedCode
+			}
+			return tx.Create(&model).Error
+		}); err != nil {
 			return SupplierResponse{}, err
 		}
 		syncSupplierToSearch(model)
 		return MapSupplierToResponse(model), nil
 	}
-	
+
 	// For existing suppliers, code must not be empty
 	if model.Code == "" {
 		return SupplierResponse{}, fmt.Errorf("%w: code must not be empty for existing supplier", ErrSupplierTransactionInvalidPayload)
@@ -318,33 +340,6 @@ func SaveSupplier(input SaveSupplierRequest, actorID string, operator string, ip
 	}
 
 	return MapSupplierToResponse(*updated), nil
-}
-
-// generateSupplierCode generates a unique supplier code
-// Format: XD-S-YYYYMMDD-NNNN where NNNN is a sequential number
-func generateSupplierCode() string {
-	now := time.Now()
-	datePrefix := now.Format("20060102")
-	
-	var maxCode string
-	db.DB.Model(&models.Supplier{}).
-		Where("code LIKE ?", fmt.Sprintf("XD-S-%s-%%", datePrefix)).
-		Order("code DESC").
-		Limit(1).
-		Pluck("code", &maxCode)
-	
-	sequence := 1
-	if maxCode != "" {
-		// Extract sequence number from code like "XD-S-20240514-0001"
-		parts := strings.Split(maxCode, "-")
-		if len(parts) == 4 {
-			if seq, err := strconv.Atoi(parts[3]); err == nil {
-				sequence = seq + 1
-			}
-		}
-	}
-	
-	return fmt.Sprintf("XD-S-%s-%04d", datePrefix, sequence)
 }
 
 func PatchSupplier(input PatchSupplierRequest, actorID string, operator string, ip string) (SupplierResponse, error) {

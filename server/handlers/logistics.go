@@ -5,7 +5,9 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"xdfc-server/authz"
 	"xdfc-server/db"
+	"xdfc-server/middleware"
 	"xdfc-server/models"
 	"xdfc-server/services"
 
@@ -18,6 +20,19 @@ func GetLogisticsRecordsHandler(c *gin.Context) {
 	orderNo := c.Query("orderNo")
 	shipmentID := c.Query("shipmentId")
 	purchaseOrderID := c.Query("purchaseOrderId")
+	recordType, scopeErr := resolveLogisticsRecordTypeScope(
+		c.Query("type"),
+		middleware.HasAnyPermission(c, authz.MenuTrading),
+		middleware.HasAnyPermission(c, authz.MenuPurchase),
+	)
+	if scopeErr != nil {
+		if errors.Is(scopeErr, errInvalidLogisticsRecordType) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] type 必须为 Receipt 或 Shipment"})
+			return
+		}
+		c.JSON(http.StatusForbidden, gin.H{"error": "insufficient permissions"})
+		return
+	}
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "50"))
 	if page < 1 {
@@ -36,6 +51,9 @@ func GetLogisticsRecordsHandler(c *gin.Context) {
 	}
 	if purchaseOrderID != "" {
 		query = query.Where("purchase_order_id = ?", purchaseOrderID)
+	}
+	if recordType != "" {
+		query = query.Where("type = ?", recordType)
 	}
 
 	var records []models.LogisticsRecord
@@ -62,8 +80,20 @@ func GetLogisticsRecordsHandler(c *gin.Context) {
 func GetLogisticsRecordHandler(c *gin.Context) {
 	id := c.Param("id")
 	var record models.LogisticsRecord
-	if err := db.DB.First(&record, "id = ? AND is_deleted = ?", id, false).Error; err != nil {
+	if err := db.DB.Preload("PurchaseOrder").First(&record, "id = ? AND is_deleted = ?", id, false).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "[VALIDATION] 记录不找到"})
+		return
+	}
+	recordType := strings.TrimSpace(record.Type)
+	if recordType == "" {
+		recordType = "Shipment"
+	}
+	if _, err := resolveLogisticsRecordTypeScope(
+		recordType,
+		middleware.HasAnyPermission(c, authz.MenuTrading),
+		middleware.HasAnyPermission(c, authz.MenuPurchase),
+	); err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": "insufficient permissions"})
 		return
 	}
 	c.JSON(http.StatusOK, services.MapLogisticsRecordToResponse(record))

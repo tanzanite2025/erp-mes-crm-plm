@@ -111,6 +111,7 @@ server/route_snapshot*.txt
 # Coverage artifacts
 coverage.out
 *.coverprofile
+/server/coverage
 
 # Local test/output artifacts
 output/
@@ -136,7 +137,6 @@ action-closure-report.json
 **/*.test.tsx
 **/*.test.js
 **/*.test.jsx
-**/*test*.go
 *.test
 test-results/
 coverage/

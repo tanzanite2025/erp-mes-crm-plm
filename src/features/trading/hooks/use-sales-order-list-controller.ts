@@ -11,9 +11,9 @@ import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
 import { type SalesOrder, type SalesOrderStatus } from '../data/schema'
 import { useGetSalesOrders, useSalesOrderMutations } from '../sales'
 import { type PaginatedSalesOrders } from '../sales/adapters/sales-order-api-adapter'
-import { requireTradingCommandActor } from '../utils/command-actor'
+import { requireCommandActor } from '@/lib/command-actor'
 import { useSalesOrderPreassembleSubmit } from './use-sales-order-preassemble-submit'
-import { useTradingFinanceResources } from './use-trading-finance-resources'
+import { useFinanceResources } from '@/features/finance/hooks/use-finance-resources'
 
 const logger = createLogger('useSalesOrderListController')
 
@@ -232,7 +232,7 @@ export function useSalesOrderListController() {
   const canceledTotal =
     listResource.status === 'ready' ? listResource.canceledTotal : 0
 
-  const financeResources = useTradingFinanceResources()
+  const financeResources = useFinanceResources()
   const { paymentMethods, paymentTerms } = financeResources
   const paymentMethodOptions = useMemo<SalesOrderListFilterOption[]>(
     () =>
@@ -363,7 +363,7 @@ export function useSalesOrderListController() {
           return
         }
 
-        const actor = requireTradingCommandActor(
+        const actor = requireCommandActor(
           { operator: user?.accountNo, actorId: user?.id },
           'useSalesOrderListController.handleDeleteOrder'
         )
@@ -389,7 +389,7 @@ export function useSalesOrderListController() {
           return
         }
 
-        const actor = requireTradingCommandActor(
+        const actor = requireCommandActor(
           { operator: user?.accountNo, actorId: user?.id },
           'useSalesOrderListController.handleDeleteOrderFromDetail'
         )

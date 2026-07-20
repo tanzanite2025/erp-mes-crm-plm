@@ -51,6 +51,15 @@ func CreateProductBarcodeBindingHandler(c *gin.Context) {
 		case errors.Is(err, services.ErrPrepregBindingTokenExpired):
 			c.JSON(http.StatusGone, gin.H{"error": "[VALIDATION] 预浸料二维码已过期，请重新生成"})
 			return
+		case errors.Is(err, services.ErrLinearBarcodeInventoryNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": "[VALIDATION] 产品一维码未在打印库存中签发"})
+			return
+		case errors.Is(err, services.ErrLinearBarcodeInventoryExpired):
+			c.JSON(http.StatusGone, gin.H{"error": "[VALIDATION] 产品一维码已过期，不能再绑定"})
+			return
+		case errors.Is(err, services.ErrLinearBarcodeInventoryUnavailable):
+			c.JSON(http.StatusConflict, gin.H{"error": "[CONFLICT] 产品一维码已绑定或已报废"})
+			return
 		case errors.As(err, &conflictErr):
 			c.JSON(http.StatusConflict, gin.H{"error": "[CONFLICT] " + conflictErr.Error()})
 			return

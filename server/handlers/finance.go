@@ -263,18 +263,6 @@ func respondExchangeRateSyncError(c *gin.Context, err error) {
 	}
 }
 
-func SyncExchangeRates(c *gin.Context) {
-	count, err := RunExchangeRateSync()
-	if err != nil {
-		respondExchangeRateSyncError(c, err)
-		return
-	}
-
-	if c != nil {
-		c.JSON(http.StatusOK, gin.H{"message": "Exchange rates synced successfully", "count": count})
-	}
-}
-
 func respondFinanceValidation(c *gin.Context, message string, err error) {
 	respondFinance(c, http.StatusBadRequest, "[VALIDATION]", message, err)
 }

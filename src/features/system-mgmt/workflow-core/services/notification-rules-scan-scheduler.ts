@@ -1,7 +1,6 @@
 import { toast } from 'sonner'
 import { createLogger } from '@/lib/logger'
-import { type PurchaseOrder } from '@/features/trading/data/schema'
-import { getPurchaseOrders } from '@/features/trading/purchase'
+import { getPurchaseOrders, type PurchaseOrder } from '@/features/purchase/orders'
 import { type NotificationRule } from '../data/notification-rule-schema'
 import { DispatchService } from './dispatch-service'
 import { getProductionRuleSnapshots } from './production-task-query-service'

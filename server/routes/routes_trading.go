@@ -74,6 +74,7 @@ func registerTradingRoutes(authorized *gin.RouterGroup) {
 	quoteGroup.GET("", handlers.GetQuotesHandler)
 	quoteGroup.GET("/customer-summary", handlers.GetCustomerQuoteSummaryHandler)
 	quoteGroup.GET("/:id", handlers.GetQuoteDetailHandler)
+	quoteGroup.PATCH("/:id", salesOrderManage, handlers.PatchQuoteHandler)
 	quoteGroup.POST("/:id/convert", salesOrderManage, handlers.ConvertQuoteHandler)
 
 	supplierGroup := authorized.Group("/suppliers")

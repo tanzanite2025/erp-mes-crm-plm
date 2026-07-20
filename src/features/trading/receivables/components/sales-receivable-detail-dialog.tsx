@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { createLogger } from '@/lib/logger'
 import { resolveQueryFailure } from '@/lib/read-resource'
-import { useTradingFinanceResources } from '../../hooks/use-trading-finance-resources'
+import { useFinanceResources } from '@/features/finance/hooks/use-finance-resources'
 import { SettlementLedgerDetailDialog } from '../../settlement-ledger-detail-dialog'
 import { salesReceivableDetailDialogConfig } from '../config/sales-receivable-detail-dialog.config'
 import {
@@ -30,7 +30,7 @@ export function SalesReceivableDetailDialog({
   const receivablesQuery = useGetReceivables()
   const detailQuery = useReceivableLedgerDetail(open ? receivableId : null)
   const createMutation = useCreateReceiptRecord()
-  const financeResources = useTradingFinanceResources({
+  const financeResources = useFinanceResources({
     includeCurrencies: true,
     includePaymentMethods: true,
     includePaymentTerms: false,

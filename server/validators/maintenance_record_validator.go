@@ -5,8 +5,6 @@ import (
 	"strings"
 	"time"
 	"unicode"
-	"xdfc-server/db"
-	"xdfc-server/models"
 )
 
 // MaintenanceRecordValidator 维保记录验证器
@@ -106,33 +104,6 @@ func (v *MaintenanceRecordValidator) ValidateTimeOrder(startedAt, completedAt *t
 			return fmt.Errorf("[VALIDATION] 开始时间不能晚于完成时间")
 		}
 	}
-	return nil
-}
-
-// ValidateAssetExists 验证资产是否存在
-func (v *MaintenanceRecordValidator) ValidateAssetExists(assetType, assetID string) error {
-	if assetID == "" {
-		return nil // 允许空 assetID
-	}
-
-	if assetType == "MOLD" {
-		var count int64
-		if err := db.DB.Model(&models.Mold{}).Where("id = ?", assetID).Count(&count).Error; err != nil {
-			return fmt.Errorf("[SERVER] 验证资产失败: %v", err)
-		}
-		if count == 0 {
-			return fmt.Errorf("[VALIDATION] 指定的模具不存在")
-		}
-	} else if assetType == "FURNACE" {
-		var count int64
-		if err := db.DB.Model(&models.Furnace{}).Where("id = ?", assetID).Count(&count).Error; err != nil {
-			return fmt.Errorf("[SERVER] 验证资产失败: %v", err)
-		}
-		if count == 0 {
-			return fmt.Errorf("[VALIDATION] 指定的炉台不存在")
-		}
-	}
-
 	return nil
 }
 

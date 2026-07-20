@@ -8,6 +8,7 @@ import { type Customer, type CustomerFormValues } from '../../data/schema'
 import { tradingQueryKeys } from '../../query-keys'
 import {
   type CustomerListResponse,
+  type CustomerListParams,
   changeCustomerIdentity,
   changeCustomerStatus,
   createCustomer,
@@ -26,10 +27,24 @@ export const useGetCustomers = (options = {}) => {
   })
 }
 
-export const useGetCustomerList = (options = {}) => {
+export const useGetCustomerList = (
+  params: CustomerListParams = {},
+  options = {}
+) => {
+  const page = params.page ?? 1
+  const pageSize = params.pageSize ?? 50
+  const search = params.search?.trim() ?? ''
+  const includeDeleted = params.includeDeleted ?? false
   const query = useQuery({
-    queryKey: tradingQueryKeys.customerList(),
-    queryFn: getCustomerList,
+    queryKey: [
+      ...tradingQueryKeys.customerList(),
+      page,
+      pageSize,
+      search,
+      includeDeleted,
+    ],
+    queryFn: () => getCustomerList({ page, pageSize, search, includeDeleted }),
+    placeholderData: (previousData) => previousData,
     ...options,
   })
 
@@ -66,6 +81,7 @@ export const useGetCustomerList = (options = {}) => {
     isLoading: query.isLoading,
     isError: query.isError,
     isPending: query.isPending,
+    isFetching: query.isFetching,
     refetch: query.refetch,
     readResource,
   }

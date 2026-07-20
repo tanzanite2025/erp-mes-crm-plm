@@ -37,6 +37,10 @@ function getSalesReturnStatusLabel(
   }
 }
 
+function canDeleteSalesReturn(record: SalesReturnRecord) {
+  return record.status === 'Created' && !record.actualReturnAmountRecordedAt
+}
+
 type SalesReturnRecordMasterProps = {
   records: SalesReturnRecord[]
   selectedId?: string
@@ -182,7 +186,7 @@ export function SalesReturnRecordMaster({
                       'trading.salesReturns.queryShell.actualAmountEntryAction'
                     )}
                   </Button>
-                  {onDelete ? (
+                  {onDelete && canDeleteSalesReturn(record) ? (
                     <Button
                       type='button'
                       variant='outline'

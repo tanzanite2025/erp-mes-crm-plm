@@ -15,6 +15,9 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+var ErrSalesReturnDeleteRequiresCreated = errors.New("only created sales returns can be deleted")
+var ErrSalesReturnDeleteHasActualAmountRecords = errors.New("sales return with actual amount records cannot be deleted")
+
 type SalesReturnListQuery struct {
 	Page            int
 	PageSize        int
@@ -190,11 +193,11 @@ func PatchSalesReturn(input PatchSalesReturnInput) (SalesReturnResponse, error) 
 			input.ReturnDate = record.ReturnDate
 		}
 
-		returnedQuantityMap, err := loadSalesReturnReturnedQuantityMap(tx, order.Lines, record.ID)
+		consumedQuantityMap, err := loadSalesAfterSalesConsumedQuantityMap(tx, order.Lines, record.ID)
 		if err != nil {
 			return err
 		}
-		lines, totalQty, totalAmount, err := buildSalesReturnLines(order, returnedQuantityMap, input.Lines)
+		lines, totalQty, totalAmount, err := buildSalesReturnLines(order, consumedQuantityMap, input.Lines)
 		if err != nil {
 			return err
 		}
@@ -259,8 +262,18 @@ func DeleteSalesReturn(id string) error {
 			return err
 		}
 
-		if err := tx.Where("sales_return_id = ?", record.ID).Delete(&models.SalesReturnActualAmountRecord{}).Error; err != nil {
+		if normalizeSalesReturnStatus(record.Status) != SalesReturnStatusCreated {
+			return ErrSalesReturnDeleteRequiresCreated
+		}
+
+		var actualAmountRecordCount int64
+		if err := tx.Unscoped().Model(&models.SalesReturnActualAmountRecord{}).
+			Where("sales_return_id = ?", record.ID).
+			Count(&actualAmountRecordCount).Error; err != nil {
 			return err
+		}
+		if actualAmountRecordCount > 0 {
+			return ErrSalesReturnDeleteHasActualAmountRecords
 		}
 
 		if err := tx.Delete(&models.SalesReturn{}, "id = ?", record.ID).Error; err != nil {
@@ -280,11 +293,11 @@ func createSalesReturnTx(tx *gorm.DB, input CreateSalesReturnInput) (CreateSales
 	if err != nil {
 		return CreateSalesReturnResult{}, err
 	}
-	returnedQuantityMap, err := loadSalesReturnReturnedQuantityMap(tx, order.Lines, "")
+	consumedQuantityMap, err := loadSalesAfterSalesConsumedQuantityMap(tx, order.Lines, "")
 	if err != nil {
 		return CreateSalesReturnResult{}, err
 	}
-	if guard := statemachine.CanCreateSalesReturn(order, returnedQuantityMap, nil); !guard.Allowed {
+	if guard := statemachine.CanCreateSalesReturn(order, consumedQuantityMap, nil); !guard.Allowed {
 		return CreateSalesReturnResult{}, guard.Err()
 	}
 
@@ -296,7 +309,7 @@ func createSalesReturnTx(tx *gorm.DB, input CreateSalesReturnInput) (CreateSales
 	if err != nil {
 		return CreateSalesReturnResult{}, err
 	}
-	lines, totalQty, totalAmount, err := buildSalesReturnLines(order, returnedQuantityMap, input.Lines)
+	lines, totalQty, totalAmount, err := buildSalesReturnLines(order, consumedQuantityMap, input.Lines)
 	if err != nil {
 		return CreateSalesReturnResult{}, err
 	}
@@ -348,42 +361,7 @@ func loadSalesReturnOrderForUpdate(tx *gorm.DB, salesOrderID string) (models.Sal
 	return order, nil
 }
 
-func loadSalesReturnReturnedQuantityMap(tx *gorm.DB, orderLines []models.SalesOrderLine, excludedSalesReturnID string) (map[uint]float64, error) {
-	returnedQuantityMap := make(map[uint]float64)
-	if len(orderLines) == 0 {
-		return returnedQuantityMap, nil
-	}
-
-	lineIDs := make([]uint, 0, len(orderLines))
-	for _, line := range orderLines {
-		lineIDs = append(lineIDs, line.ID)
-	}
-
-	type aggregatedReturnedQuantityRow struct {
-		SalesOrderLineID uint    `gorm:"column:sales_order_line_id"`
-		ReturnedQuantity float64 `gorm:"column:returned_quantity"`
-	}
-
-	query := tx.Table("sales_return_lines AS srl").
-		Select("srl.sales_order_line_id AS sales_order_line_id, COALESCE(SUM(srl.quantity), 0) AS returned_quantity").
-		Joins("JOIN sales_returns AS sr ON sr.id = srl.sales_return_id").
-		Where("srl.sales_order_line_id IN ? AND sr.deleted_at IS NULL", lineIDs)
-	if strings.TrimSpace(excludedSalesReturnID) != "" {
-		query = query.Where("sr.id <> ?", strings.TrimSpace(excludedSalesReturnID))
-	}
-
-	var rows []aggregatedReturnedQuantityRow
-	if err := query.Group("srl.sales_order_line_id").Scan(&rows).Error; err != nil {
-		return returnedQuantityMap, err
-	}
-	for _, row := range rows {
-		returnedQuantityMap[row.SalesOrderLineID] = row.ReturnedQuantity
-	}
-
-	return returnedQuantityMap, nil
-}
-
-func buildSalesReturnLines(order models.SalesOrder, returnedQuantityMap map[uint]float64, inputLines []CreateSalesReturnLineInput) ([]models.SalesReturnLine, float64, float64, error) {
+func buildSalesReturnLines(order models.SalesOrder, consumedQuantityMap map[uint]float64, inputLines []CreateSalesReturnLineInput) ([]models.SalesReturnLine, float64, float64, error) {
 	lineMap := make(map[uint]models.SalesOrderLine, len(order.Lines))
 	for _, line := range order.Lines {
 		lineMap[line.ID] = line
@@ -411,7 +389,7 @@ func buildSalesReturnLines(order models.SalesOrder, returnedQuantityMap map[uint
 			return nil, 0, 0, errors.New("sales order line not found")
 		}
 
-		guard := statemachine.CanCreateSalesReturn(order, returnedQuantityMap, map[uint]float64{
+		guard := statemachine.CanCreateSalesReturn(order, consumedQuantityMap, map[uint]float64{
 			item.SalesOrderLineID: item.Quantity,
 		})
 		if !guard.Allowed {

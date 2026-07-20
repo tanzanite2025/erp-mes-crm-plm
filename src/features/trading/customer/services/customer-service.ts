@@ -52,6 +52,13 @@ export interface CustomerListResponse {
   }
 }
 
+export interface CustomerListParams {
+  page?: number
+  pageSize?: number
+  search?: string
+  includeDeleted?: boolean
+}
+
 export interface CustomerTransactionRequest<TPayload> {
   intent: string
   actorId?: string
@@ -85,9 +92,25 @@ export const getCustomers = async (): Promise<Customer[]> => {
   )
 }
 
-export const getCustomerList = async (): Promise<CustomerListResponse> => {
+export const getCustomerList = async (
+  params: CustomerListParams = {}
+): Promise<CustomerListResponse> => {
   const context = 'CustomerService.getCustomerList'
-  const res = await apiFetch<CustomerListApiResponseDTO>('/customers')
+  const searchParams = new URLSearchParams({
+    page: String(params.page ?? 1),
+    pageSize: String(params.pageSize ?? 50),
+  })
+  const search = params.search?.trim()
+  if (search) {
+    searchParams.set('search', search)
+  }
+  if (params.includeDeleted) {
+    searchParams.set('includeDeleted', 'true')
+  }
+
+  const res = await apiFetch<CustomerListApiResponseDTO>(
+    `/customers?${searchParams.toString()}`
+  )
   const objectResponse = ensureObjectResponse<
     CustomerListApiResponseDTO & Record<string, unknown>
   >(res, context)

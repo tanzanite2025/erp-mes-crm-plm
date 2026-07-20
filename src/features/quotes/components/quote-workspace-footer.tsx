@@ -31,6 +31,9 @@ export function QuoteWorkspaceFooter({
   onTransfer,
   onConvert,
 }: QuoteWorkspaceFooterProps) {
+  const quoteIsEditable =
+    isCreateMode || detail?.status === 'draft' || detail?.status === 'pending'
+
   return (
     <div className='border-t border-dashed border-border/60 px-6 py-4'>
       <div className='flex flex-wrap items-center justify-between gap-3'>
@@ -69,7 +72,7 @@ export function QuoteWorkspaceFooter({
             variant='outline'
             className='h-11 rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
             onClick={onConvert}
-            disabled={isConverting || isCreateMode || !detail}
+            disabled={isConverting || isCreateMode || !detail || !quoteIsEditable}
           >
             <ArrowRightLeft className='size-4' />
             {isConverting ? '正在转正式销售订单…' : '转正式销售订单'}
@@ -77,7 +80,12 @@ export function QuoteWorkspaceFooter({
           <Button
             className='h-11 rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
             onClick={onSave}
-            disabled={isSaving || saveDisabled || (!detail && !isCreateMode)}
+            disabled={
+              isSaving ||
+              saveDisabled ||
+              (!detail && !isCreateMode) ||
+              !quoteIsEditable
+            }
           >
             {isSaving
               ? isCreateMode

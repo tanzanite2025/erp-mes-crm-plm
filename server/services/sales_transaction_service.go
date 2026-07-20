@@ -1282,7 +1282,7 @@ func executeSalesOrderTransactionTx(tx *gorm.DB, input ExecuteSalesOrderTransact
 	}
 
 	var current models.SalesOrder
-	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Preload("Lines").Where("id = ?", strings.TrimSpace(input.OrderID)).First(&current).Error; err != nil {
+	if err := applySalesOrderRecordScope(tx.Clauses(clause.Locking{Strength: "UPDATE"}).Preload("Lines").Where("id = ?", strings.TrimSpace(input.OrderID))).First(&current).Error; err != nil {
 		return nil, err
 	}
 

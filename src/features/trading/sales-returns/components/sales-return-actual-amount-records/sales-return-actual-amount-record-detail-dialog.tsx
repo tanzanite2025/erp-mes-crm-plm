@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { OrderEvidenceGallery } from '@/features/trading/components/parts/order-evidence-gallery'
+import { OrderEvidenceGallery } from '@/features/sales-document/components/order-evidence-gallery'
 import type { SalesReturnActualAmountRecord } from '@/features/trading/sales/services/sales-return-service'
 import { formatSettlementMoney } from '@/features/trading/settlement-ledger-detail-dialog/utils/format-settlement-money'
 

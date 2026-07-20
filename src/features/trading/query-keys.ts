@@ -59,34 +59,6 @@ export const tradingQueryKeys = {
     sourceType ?? '',
     sourceRefId ?? '',
   ],
-  purchaseOrderDetail: (id: string): readonly ['purchase-orders', string] => [
-    'purchase-orders',
-    id,
-  ],
-  purchaseOrders: (
-    page: number,
-    pageSize: number,
-    withLines: boolean,
-    status: string[]
-  ): readonly ['purchase-orders', number, number, boolean, string[]] => [
-    'purchase-orders',
-    page,
-    pageSize,
-    withLines,
-    status,
-  ],
-  purchaseOrdersRoot: (): readonly ['purchase-orders'] => ['purchase-orders'],
-  purchaseReturns: (
-    page: number,
-    pageSize: number
-  ): readonly ['purchase-returns', number, number] => [
-    'purchase-returns',
-    page,
-    pageSize,
-  ],
-  purchaseReturnsRoot: (): readonly ['purchase-returns'] => [
-    'purchase-returns',
-  ],
   salesOrderAfterSalesSummary: (
     salesOrderIds: readonly string[]
   ): readonly ['sales-orders', 'after-sales-summary', readonly string[]] => [
@@ -215,6 +187,4 @@ export const tradingQueryKeys = {
     'preview-barcode',
     classificationAlias,
   ],
-  suppliers: (): readonly ['suppliers'] => ['suppliers'],
-  supplierList: (): readonly ['suppliers', 'list'] => ['suppliers', 'list'],
 } as const

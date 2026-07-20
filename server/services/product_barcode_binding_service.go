@@ -330,6 +330,9 @@ func CreateProductBarcodeBinding(input CreateProductBarcodeBindingRequest, opera
 	if resolvedOperator == "" {
 		resolvedOperator = "system"
 	}
+	if _, err := refreshLinearBarcodeInventoryCodeExpiry(parsedBarcode.RawCode, time.Now()); err != nil {
+		return ProductBarcodeBindingResponse{}, fmt.Errorf("failed to refresh scanned linear barcode expiry: %w", err)
+	}
 
 	var response ProductBarcodeBindingResponse
 	err = db.DB.Transaction(func(tx *gorm.DB) error {
@@ -349,6 +352,22 @@ func CreateProductBarcodeBinding(input CreateProductBarcodeBindingRequest, opera
 		}
 
 		now := time.Now().UTC()
+		if err := bindLinearBarcodeInventoryTx(tx, parsedBarcode.RawCode, now); err != nil {
+			if errors.Is(err, ErrLinearBarcodeInventoryUnavailable) {
+				item, exists, queryErr := findProductBarcodeBindingByProductBarcodeTx(tx, parsedBarcode.RawCode)
+				if queryErr != nil {
+					return queryErr
+				}
+				if exists {
+					if strings.TrimSpace(item.PrepregRollInstanceID) == strings.TrimSpace(roll.ID) {
+						response = mapProductBarcodeBindingToResponse(item, "重复提交已按既有绑定记录回显")
+						return nil
+					}
+					return buildProductBarcodeBindingConflictByProduct(item)
+				}
+			}
+			return err
+		}
 		record := models.ProductBarcodeBinding{
 			BaseModel:             models.BaseModel{ID: uuid.NewString()},
 			ProductBarcode:        parsedBarcode.RawCode,

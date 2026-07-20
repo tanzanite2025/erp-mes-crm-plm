@@ -5,11 +5,11 @@
 //   - ConfirmSalesExchangeOldItemInbound 老货收货确认(扫码识别 → 入库 → 状态推进)
 //
 // 关键流程(createSalesExchangeTx):
-//   1. 加锁查找原销售订单(loadSalesExchangeOrderForUpdate)
-//   2. 校验剩余可换数量(loadSalesExchangeQuantityMap 防超额)
-//   3. 派发换货行(buildSalesExchangeLines)
-//   4. 关联标签码(buildSalesExchangeLabelCode* 系列,匹配/未匹配双轨)
-//   5. 生成换货单号(generateSalesExchangeNoTx,日期 + 序号)
+//  1. 加锁查找原销售订单(loadSalesExchangeOrderForUpdate)
+//  2. 校验剩余可换数量(loadSalesAfterSalesConsumedQuantityMap 防退换合计超额)
+//  3. 派发换货行(buildSalesExchangeLines)
+//  4. 关联标签码(buildSalesExchangeLabelCode* 系列,匹配/未匹配双轨)
+//  5. 生成换货单号(generateSalesExchangeNoTx,日期 + 序号)
 //
 // 关键不变量:
 //   - 一次换货 ≤ 销售订单线剩余数量
@@ -261,11 +261,11 @@ func createSalesExchangeTx(tx *gorm.DB, input CreateSalesExchangeInput) (CreateS
 	if err != nil {
 		return CreateSalesExchangeResult{}, err
 	}
-	exchangedQuantityMap, err := loadSalesExchangeQuantityMap(tx, order.Lines)
+	consumedQuantityMap, err := loadSalesAfterSalesConsumedQuantityMap(tx, order.Lines, "")
 	if err != nil {
 		return CreateSalesExchangeResult{}, err
 	}
-	if guard := statemachine.CanCreateSalesReturn(order, exchangedQuantityMap, nil); !guard.Allowed {
+	if guard := statemachine.CanCreateSalesReturn(order, consumedQuantityMap, nil); !guard.Allowed {
 		return CreateSalesExchangeResult{}, guard.Err()
 	}
 
@@ -273,7 +273,7 @@ func createSalesExchangeTx(tx *gorm.DB, input CreateSalesExchangeInput) (CreateS
 	if err != nil {
 		return CreateSalesExchangeResult{}, err
 	}
-	lines, lineLabelInputsByOrderLineID, totalQuantity, err := buildSalesExchangeLines(order, exchangedQuantityMap, input.Lines)
+	lines, lineLabelInputsByOrderLineID, totalQuantity, err := buildSalesExchangeLines(order, consumedQuantityMap, input.Lines)
 	if err != nil {
 		return CreateSalesExchangeResult{}, err
 	}
@@ -403,36 +403,7 @@ func loadSalesExchangeOrderForUpdate(tx *gorm.DB, salesOrderID string) (models.S
 	return order, nil
 }
 
-func loadSalesExchangeQuantityMap(tx *gorm.DB, orderLines []models.SalesOrderLine) (map[uint]float64, error) {
-	exchangedQuantityMap := make(map[uint]float64)
-	if len(orderLines) == 0 {
-		return exchangedQuantityMap, nil
-	}
-	lineIDs := make([]uint, 0, len(orderLines))
-	for _, line := range orderLines {
-		lineIDs = append(lineIDs, line.ID)
-	}
-
-	type exchangedQuantityRow struct {
-		SalesOrderLineID  uint    `gorm:"column:sales_order_line_id"`
-		ExchangedQuantity float64 `gorm:"column:exchanged_quantity"`
-	}
-	var rows []exchangedQuantityRow
-	if err := tx.Table("sales_exchange_lines AS sel").
-		Select("sel.sales_order_line_id AS sales_order_line_id, COALESCE(SUM(sel.exchange_quantity), 0) AS exchanged_quantity").
-		Joins("JOIN sales_exchanges AS se ON se.id = sel.sales_exchange_id").
-		Where("sel.sales_order_line_id IN ? AND se.deleted_at IS NULL AND se.status <> ?", lineIDs, SalesExchangeStatusCanceled).
-		Group("sel.sales_order_line_id").
-		Scan(&rows).Error; err != nil {
-		return exchangedQuantityMap, err
-	}
-	for _, row := range rows {
-		exchangedQuantityMap[row.SalesOrderLineID] = row.ExchangedQuantity
-	}
-	return exchangedQuantityMap, nil
-}
-
-func buildSalesExchangeLines(order models.SalesOrder, exchangedQuantityMap map[uint]float64, inputLines []CreateSalesExchangeLineInput) ([]models.SalesExchangeLine, map[uint][]SalesExchangeRecognizedLabelInput, float64, error) {
+func buildSalesExchangeLines(order models.SalesOrder, consumedQuantityMap map[uint]float64, inputLines []CreateSalesExchangeLineInput) ([]models.SalesExchangeLine, map[uint][]SalesExchangeRecognizedLabelInput, float64, error) {
 	lineMap := make(map[uint]models.SalesOrderLine, len(order.Lines))
 	for _, line := range order.Lines {
 		lineMap[line.ID] = line
@@ -459,7 +430,7 @@ func buildSalesExchangeLines(order models.SalesOrder, exchangedQuantityMap map[u
 		if !ok {
 			return nil, nil, 0, errors.New("sales order line not found")
 		}
-		guard := statemachine.CanCreateSalesReturn(order, exchangedQuantityMap, map[uint]float64{
+		guard := statemachine.CanCreateSalesReturn(order, consumedQuantityMap, map[uint]float64{
 			item.SalesOrderLineID: item.ExchangeQuantity,
 		})
 		if !guard.Allowed {

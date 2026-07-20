@@ -19,24 +19,21 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card'
+import { LinearBarcodeInventoryPanel } from '@/features/code-center/components/linear-barcode-inventory-panel'
 import { LinearBarcodePreviewLineCard } from '@/features/code-center/components/linear-barcode-preview-line-card'
 import { LinearBarcodePrintResultPanel } from '@/features/code-center/components/linear-barcode-print-result-panel'
 import { useLinearBarcodePrintMgmtModel } from '@/features/code-center/hooks/use-linear-barcode-print-mgmt-model'
-import { getLinearBarcodeInlineFeedbackClassName } from '@/features/code-center/utils/linear-barcode-print-feedback'
 
 export function LinearBarcodePrintMgmt() {
   const { t } = useLanguage()
   const {
     selectedOrderId,
     setSelectedOrderId,
-    issuedSerialByLine,
     printingKeys,
     openedPreviewKeys,
-    isIssuingNumbers,
     isBatchPrinting,
     retryingKeys,
     isRetryingFailedOnly,
-    issueFeedback,
     batchPrintResult,
     filteredResultItems,
     resultFilter,
@@ -44,15 +41,15 @@ export function LinearBarcodePrintMgmt() {
     ordersQuery,
     detailQuery,
     protocolQuery,
+    inventoryQuery,
     orderOptions,
     selectedOrder,
     selectedOrderStatusLabel,
     previewLines,
     readyCount,
     blockedCount,
-    allReadyLinesNumbered,
     printableCount,
-    handleIssueRealNumbers,
+    setLinePrintQuantity,
     handlePrintLine,
     handleBatchPrint,
     handleRetryItem,
@@ -393,29 +390,6 @@ export function LinearBarcodePrintMgmt() {
                     <Button
                       type='button'
                       size='sm'
-                      onClick={() => void handleIssueRealNumbers()}
-                      disabled={
-                        isIssuingNumbers ||
-                        readyCount === 0 ||
-                        allReadyLinesNumbered
-                      }
-                      className='h-8 rounded-full px-4 text-[10px] font-black tracking-[0.18em] uppercase'
-                    >
-                      {isIssuingNumbers
-                        ? t(
-                            'codeCenter.linearBarcode.print.sections.preview.actions.issuingNumbers'
-                          )
-                        : allReadyLinesNumbered
-                          ? t(
-                              'codeCenter.linearBarcode.print.sections.preview.actions.numbersReady'
-                            )
-                          : t(
-                              'codeCenter.linearBarcode.print.sections.preview.actions.issueRealNumbers'
-                            )}
-                    </Button>
-                    <Button
-                      type='button'
-                      size='sm'
                       variant='outline'
                       onClick={() => void handleBatchPrint()}
                       disabled={isBatchPrinting || printableCount === 0}
@@ -430,15 +404,6 @@ export function LinearBarcodePrintMgmt() {
                           )}
                     </Button>
                   </div>
-                  {issueFeedback && (
-                    <div
-                      className={getLinearBarcodeInlineFeedbackClassName(
-                        issueFeedback
-                      )}
-                    >
-                      {issueFeedback.message}
-                    </div>
-                  )}
                   {batchPrintResult && (
                     <LinearBarcodePrintResultPanel
                       batchPrintResult={batchPrintResult}
@@ -452,24 +417,18 @@ export function LinearBarcodePrintMgmt() {
                     />
                   )}
                   <div className='space-y-3'>
-                    {previewLines.map((line) => {
-                      const hasRealNumber = Boolean(
-                        issuedSerialByLine[line.key]
-                      )
-
-                      return (
-                        <LinearBarcodePreviewLineCard
-                          key={line.key}
-                          line={line}
-                          hasRealNumber={hasRealNumber}
-                          hasOpenedPreview={Boolean(
-                            openedPreviewKeys[line.key]
-                          )}
-                          isPrinting={Boolean(printingKeys[line.key])}
-                          onPrint={() => void handlePrintLine(line.key)}
-                        />
-                      )
-                    })}
+                    {previewLines.map((line) => (
+                      <LinearBarcodePreviewLineCard
+                        key={line.key}
+                        line={line}
+                        hasOpenedPreview={Boolean(openedPreviewKeys[line.key])}
+                        isPrinting={Boolean(printingKeys[line.key])}
+                        onQuantityChange={(quantity) =>
+                          setLinePrintQuantity(line.key, quantity)
+                        }
+                        onPrint={() => void handlePrintLine(line.key)}
+                      />
+                    ))}
                   </div>
                 </>
               )}
@@ -477,6 +436,15 @@ export function LinearBarcodePrintMgmt() {
           </CardContent>
         </Card>
       </div>
+
+      <LinearBarcodeInventoryPanel
+        items={inventoryQuery.data?.items ?? []}
+        total={inventoryQuery.data?.total ?? 0}
+        isLoading={inventoryQuery.isLoading}
+        isRefreshing={inventoryQuery.isFetching}
+        hasError={Boolean(inventoryQuery.error)}
+        onRefresh={() => void inventoryQuery.refetch()}
+      />
     </div>
   )
 }

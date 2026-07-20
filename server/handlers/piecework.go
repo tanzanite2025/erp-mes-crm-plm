@@ -179,14 +179,6 @@ func buildPieceworkRateUpdates(payload map[string]json.RawMessage) (map[string]i
 	return updates, nil
 }
 
-func patchPieceworkRateRecord(id string, updates map[string]interface{}) error {
-	var existing models.PieceworkRate
-	if err := db.DB.First(&existing, "id = ?", id).Error; err != nil {
-		return err
-	}
-	return db.DB.Model(&existing).Updates(updates).Error
-}
-
 func SavePieceworkRateHandler(c *gin.Context) {
 	payload, body, err := decodeJSONBodyMap(c)
 	if err != nil {

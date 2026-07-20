@@ -13,6 +13,7 @@ import (
 
 var ErrSalesOrderDeleteRequiresCanceled = errors.New("sales order must be canceled before delete")
 var ErrSalesOrderDeleteHasReturns = errors.New("sales order with sales returns cannot be deleted")
+var ErrSalesOrderDeleteHasExchanges = errors.New("sales order with sales exchanges cannot be deleted")
 
 type SalesOrderListQuery struct {
 	Page            int
@@ -33,6 +34,14 @@ type PurchaseOrderListQuery struct {
 	StatusFilterRaw string
 }
 
+func applySalesOrderRecordScope(query *gorm.DB) *gorm.DB {
+	return query.Where(
+		"NOT (LOWER(TRIM(COALESCE(classification, ''))) = ? OR LOWER(TRIM(COALESCE(type, ''))) = ?)",
+		"quote",
+		"quote",
+	)
+}
+
 func ListSalesOrders(query SalesOrderListQuery) (SalesOrderListResponse, error) {
 	page := query.Page
 	pageSize := query.PageSize
@@ -46,7 +55,7 @@ func ListSalesOrders(query SalesOrderListQuery) (SalesOrderListResponse, error) 
 	var orders []models.SalesOrder
 	var total int64
 
-	tx := db.DB.Model(&models.SalesOrder{})
+	tx := applySalesOrderRecordScope(db.DB.Model(&models.SalesOrder{}))
 	customerID := strings.TrimSpace(query.CustomerID)
 	if customerID != "" {
 		tx = tx.Where("customer_id = ?", customerID)
@@ -130,7 +139,7 @@ func ListSalesOrders(query SalesOrderListQuery) (SalesOrderListResponse, error) 
 
 func GetSalesOrderByID(id string) (SalesOrderResponse, error) {
 	var order models.SalesOrder
-	if err := db.DB.Preload("Lines").Where("id = ?", id).First(&order).Error; err != nil {
+	if err := applySalesOrderRecordScope(db.DB.Preload("Lines").Where("id = ?", id)).First(&order).Error; err != nil {
 		return SalesOrderResponse{}, err
 	}
 	returnedQuantityMap, err := loadSalesOrderReturnedQuantityMap(db.DB, []models.SalesOrder{order})
@@ -142,7 +151,7 @@ func GetSalesOrderByID(id string) (SalesOrderResponse, error) {
 
 func GetSalesOrderByNo(orderNo string) (SalesOrderResponse, error) {
 	var order models.SalesOrder
-	if err := db.DB.Preload("Lines").Where("order_no = ?", orderNo).First(&order).Error; err != nil {
+	if err := applySalesOrderRecordScope(db.DB.Preload("Lines").Where("order_no = ?", orderNo)).First(&order).Error; err != nil {
 		return SalesOrderResponse{}, err
 	}
 	returnedQuantityMap, err := loadSalesOrderReturnedQuantityMap(db.DB, []models.SalesOrder{order})
@@ -154,7 +163,7 @@ func GetSalesOrderByNo(orderNo string) (SalesOrderResponse, error) {
 
 func DeleteSalesOrder(id string) error {
 	var order models.SalesOrder
-	if err := db.DB.Preload("Lines").Where("id = ?", id).First(&order).Error; err != nil {
+	if err := applySalesOrderRecordScope(db.DB.Preload("Lines").Where("id = ?", id)).First(&order).Error; err != nil {
 		return err
 	}
 
@@ -170,6 +179,16 @@ func DeleteSalesOrder(id string) error {
 	}
 	if relatedReturns > 0 {
 		return ErrSalesOrderDeleteHasReturns
+	}
+
+	var relatedExchanges int64
+	if err := db.DB.Model(&models.SalesExchange{}).
+		Where("sales_order_id = ? AND deleted_at IS NULL", order.ID).
+		Count(&relatedExchanges).Error; err != nil {
+		return err
+	}
+	if relatedExchanges > 0 {
+		return ErrSalesOrderDeleteHasExchanges
 	}
 
 	if err := db.DB.Transaction(func(tx *gorm.DB) error {

@@ -128,6 +128,8 @@ func DeleteSalesOrderHandler(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "sales order must be canceled before delete"})
 		case errors.Is(err, services.ErrSalesOrderDeleteHasReturns):
 			c.JSON(http.StatusBadRequest, gin.H{"error": "该销售订单已关联真实退货单，禁止删除"})
+		case errors.Is(err, services.ErrSalesOrderDeleteHasExchanges):
+			c.JSON(http.StatusBadRequest, gin.H{"error": "该销售订单已关联真实换货单，禁止删除"})
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to delete sales order: " + err.Error()})
 		}

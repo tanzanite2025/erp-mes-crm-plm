@@ -87,7 +87,7 @@
 当前参考实现：
 
 - 审批：`src/features/approval/approval-i18n.ts`
-- 采购：`src/features/trading/data/purchase-status.ts`
+- 采购：`src/features/purchase/orders/data/purchase-status.ts`
 - 仓库：`src/features/warehouse/utils/warehouse-status-display.ts`
 - 质量：`src/features/quality/utils/quality-utils.ts`
 
@@ -116,13 +116,13 @@
 
 ### 状态类
 
-- 采购订单列表筛选：`src/features/trading/components/purchase/purchase-order-list.tsx`
-- 采购主列表：`src/features/trading/components/purchase/purchase-order-master.tsx`
-- 采购详情：`src/features/trading/components/purchase/purchase-order-detail.tsx`
-- 采购表单头部：`src/features/trading/components/purchase/parts/purchase-order-header-fields.tsx`
-- 采购收货确认：`src/features/trading/components/purchase/purchase-receipt-confirm-dialog.tsx`
-- 采购退货：`src/features/trading/components/purchase/purchase-order-returns.tsx`
-- 采购日志里的删除归档状态：`src/features/trading/components/purchase/purchase-order-logs.tsx`
+- 采购订单列表筛选：`src/features/purchase/orders/components/purchase-order-list.tsx`
+- 采购主列表：`src/features/purchase/orders/components/purchase-order-master.tsx`
+- 采购详情：`src/features/purchase/orders/components/purchase-order-detail.tsx`
+- 采购表单头部：`src/features/purchase/orders/components/parts/purchase-order-header-fields.tsx`
+- 采购收货确认：`src/features/purchase/orders/components/purchase-receipt-confirm-dialog.tsx`
+- 采购退货：`src/features/purchase/orders/components/purchase-order-returns.tsx`
+- 采购日志里的删除归档状态：`src/features/purchase/orders/components/purchase-order-logs.tsx`
 - 审批历史/待办：`src/features/approval/tabs/approval-history.tsx`、`src/features/approval/tabs/approval-requests.tsx`
 - 仓库调整/盘点：`src/features/warehouse/tabs/adjustment-history.tsx`、`src/features/warehouse/tabs/stocktake-mgmt.tsx`
 - 质量标准列表/详情：`src/features/quality/components/*`、`src/features/quality/utils/quality-utils.ts`

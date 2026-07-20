@@ -1,33 +1,21 @@
 # Wire Contract Samples
 
-本目录存放后端 wire format 的真实样本 JSON，作为前后端 schema 契约的"金样本"。
+本目录保留后端 wire format 的历史样本 JSON。
+
+> 状态：休眠参考数据。仓库当前没有生成这些样本的 Go 测试，也没有消费它们的
+> 前端契约测试；这些文件不会被 CI 自动验证，不能作为当前 schema 的权威金样本。
 
 ## 用途
 
-前端 `src/__contract__/*-wire-contract.test.ts` 读取这些 sample，跑 service 层
-的 wire→schema 映射 / adapter / zod parse 完整链路。一旦后端 wire format 字段
-改名 / 类型改变 / 字段被删除，前端测试会立即失败。
+这些 sample 只用于追溯曾经设计的 wire→schema 映射、adapter 和 zod parse
+覆盖范围。重新启用前必须同时补齐样本生成器、前端消费测试和 CI 门禁。
 
 ## 工作流程
 
-### 后端改了 model 时
+当前没有可执行工作流。不要手工修改 sample 后宣称契约已通过；恢复该机制时应先
+实现生成/校验测试，再新增对应 package scripts 和 CI 步骤。
 
-1. 跑 `pnpm wire-contracts:refresh`（等价于 `cd server && go test ./services/ -run TestExportContractSamples -update`）重新生成所有 sample
-2. 检查 `git diff server/contract-samples/` 确认变更符合预期
-3. 如果是不兼容变更，前端 `src/__contract__/` 测试会立即 fail，提示同步 mapper / adapter / schema
-4. 提交 sample + model 改动一起 commit
-
-### 不带 `-update` 跑测试
-
-- 后端 `TestExportContractSamples` 验证当前 sample 与从 model 生成的内容一致
-- 不一致就失败（防止 sample 与代码 drift）
-
-### 前端契约测试
-
-- `pnpm test:wire-contracts`（等价于 `vitest run src/__contract__/`）跑所有契约测试
-- 也已纳入 `pnpm test:contracts` 一并执行
-
-## 当前覆盖
+## 历史样本清单（当前未自动验证）
 
 | Sample | 说明 | 验证方式 | 已发现的 wire/schema 不一致 |
 |---|---|---|---|
@@ -51,10 +39,10 @@
 - Warehouse（PackagingAssembly）—— 字段简单，风险低
 - 其它模块按"风险/价值"优先级铺开
 
-## 为什么这样设计
+## 原设计目标（当前未实现）
 
 - 不依赖运行中的数据库或环境变量（sample 是纯 JSON 静态资源）
 - 跨语言（前端 TS / 后端 Go）共享同一份事实
-- CI 可以并行跑前后端测试，互不依赖
+- CI 可以并行跑前后端测试，互不依赖（当前尚未接入）
 - Golden file pattern 让 sample drift 在 PR 中可见可审
 

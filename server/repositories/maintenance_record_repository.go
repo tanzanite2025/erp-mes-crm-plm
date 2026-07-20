@@ -78,11 +78,11 @@ func (r *MaintenanceRecordRepository) List(params ListParams) (*ListResult, erro
 		// 使用全文搜索
 		searchQuery := strings.ReplaceAll(params.Search, " ", " & ")
 		query = query.Where("search_vector @@ plainto_tsquery('simple', ?)", searchQuery)
-		
+
 		// 按相关性排序
 		query = query.Order(r.db.Raw("ts_rank(search_vector, plainto_tsquery('simple', ?)) DESC", searchQuery))
 	}
-	
+
 	// 默认按创建时间排序（如果没有搜索）
 	if params.Search == "" {
 		query = query.Order("created_at DESC")
@@ -113,11 +113,6 @@ func (r *MaintenanceRecordRepository) GetByID(id string) (*models.MaintenanceRec
 		return nil, err
 	}
 	return &record, nil
-}
-
-// Create 创建维保记录
-func (r *MaintenanceRecordRepository) Create(record *models.MaintenanceRecord) error {
-	return r.db.Create(record).Error
 }
 
 // Update 更新维保记录
@@ -171,12 +166,4 @@ func (r *MaintenanceRecordRepository) GetStats() (*StatsResult, error) {
 	}
 
 	return stats, nil
-}
-
-// escapeLikePattern 转义 LIKE 特殊字符
-func escapeLikePattern(s string) string {
-	s = strings.ReplaceAll(s, "\\", "\\\\")
-	s = strings.ReplaceAll(s, "%", "\\%")
-	s = strings.ReplaceAll(s, "_", "\\_")
-	return s
 }

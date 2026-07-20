@@ -31,7 +31,7 @@ import {
   getTradingLedgerStatusLabel,
   getTradingLedgerStatusOptions,
 } from '@/features/trading/utils/ledger-display'
-import { useTradingFinanceResources } from '../../hooks/use-trading-finance-resources'
+import { useFinanceResources } from '@/features/finance/hooks/use-finance-resources'
 
 export interface LedgerSearchCandidate {
   id: string
@@ -115,7 +115,7 @@ export function LedgerSearchDialog({
   onSortOrderChange,
 }: LedgerSearchDialogProps) {
   const { t } = useLanguage()
-  const financeResources = useTradingFinanceResources({
+  const financeResources = useFinanceResources({
     includeCurrencies: true,
     includePaymentMethods: false,
     includePaymentTerms: false,

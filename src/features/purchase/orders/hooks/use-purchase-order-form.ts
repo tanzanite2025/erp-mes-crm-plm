@@ -1,0 +1,192 @@
+import { useMemo, useEffect, useCallback } from 'react'
+import { useAuthStore } from '@/stores/auth-store'
+import { createLogger } from '@/lib/logger'
+import { useLanguage } from '@/context/language-provider'
+import { useDeltaTracker } from '@/hooks/use-delta-tracker'
+import { type PurchaseOrder, type PurchaseOrderLine } from '../data/schema'
+import { DEFAULT_PURCHASE_ORDER } from './purchase-order-form-defaults'
+import {
+  buildPurchaseOrderCurrencyStateUpdater,
+  buildPurchaseOrderHeaderStateUpdater,
+  normalizePurchaseOrderCurrencyValue,
+  resolvePurchaseOrderExchangeRate,
+} from './purchase-order-form-header-helpers'
+import {
+  appendPurchaseOrderLine,
+  createNewPurchaseOrderDraft,
+  removePurchaseOrderLine,
+  updatePurchaseOrderLine,
+  validatePurchaseOrderForm,
+} from './purchase-order-form-helpers'
+import { useFinanceResources } from '@/features/finance/hooks/use-finance-resources'
+
+const logger = createLogger('usePurchaseOrderForm')
+type PurchaseOrderLineFieldValue = PurchaseOrderLine[keyof PurchaseOrderLine]
+type PurchaseOrderFormState = PurchaseOrder
+type PurchaseOrderFormUpdater =
+  | PurchaseOrderFormState
+  | ((prev: PurchaseOrderFormState) => PurchaseOrderFormState)
+
+export function usePurchaseOrderForm(
+  initialOrder: PurchaseOrder | null | undefined,
+  open: boolean
+) {
+  const user = useAuthStore((state) => state.user)
+  const { t } = useLanguage()
+  const purchaserName = user?.username || user?.accountNo || ''
+  const { currencies, isLoading: isFinanceLoading } =
+    useFinanceResources({
+      includeCurrencies: open,
+      includePaymentMethods: false,
+      includePaymentTerms: false,
+    })
+
+  const memoizedInitial = useMemo(
+    () => initialOrder ?? DEFAULT_PURCHASE_ORDER,
+    [initialOrder]
+  )
+  const { data: formData, commit } = useDeltaTracker(memoizedInitial, open)
+
+  const setFormData = useCallback(
+    (updater: PurchaseOrderFormUpdater) => {
+      if (typeof updater === 'function') {
+        const next = updater(formData)
+        Object.assign(formData, next)
+      } else {
+        Object.assign(formData, updater)
+      }
+    },
+    [formData]
+  )
+
+  const handleHeaderChange = useCallback(
+    (field: keyof PurchaseOrder, value: PurchaseOrder[keyof PurchaseOrder]) => {
+      if (field === 'currency') {
+        const currencyValue = normalizePurchaseOrderCurrencyValue(value)
+        setFormData((prev) =>
+          buildPurchaseOrderCurrencyStateUpdater(
+            currencyValue,
+            resolvePurchaseOrderExchangeRate(
+              currencies,
+              currencyValue,
+              prev.exchangeRate
+            )
+          )(prev)
+        )
+      } else {
+        setFormData((prev) =>
+          buildPurchaseOrderHeaderStateUpdater(field, value)(prev)
+        )
+      }
+    },
+    [currencies, setFormData]
+  )
+
+  useEffect(() => {
+    if (!open || initialOrder) return
+    if (isFinanceLoading) return
+
+    const defaultCurrency = DEFAULT_PURCHASE_ORDER.currency || 'CNY'
+    const defaultExchangeRate =
+      resolvePurchaseOrderExchangeRate(
+        currencies,
+        defaultCurrency,
+        DEFAULT_PURCHASE_ORDER.exchangeRate ?? 1
+      ) ??
+      DEFAULT_PURCHASE_ORDER.exchangeRate ??
+      1
+
+    const nextDraft = createNewPurchaseOrderDraft(
+      purchaserName,
+      defaultExchangeRate
+    )
+    setFormData((prev) => ({
+      ...prev,
+      ...nextDraft,
+      currency: defaultCurrency,
+    }))
+  }, [
+    currencies,
+    initialOrder,
+    isFinanceLoading,
+    open,
+    purchaserName,
+    setFormData,
+  ])
+
+  const handleAddLine = useCallback(() => {
+    setFormData((prev) => {
+      const { lines, amount } = appendPurchaseOrderLine(prev.lines || [])
+
+      return {
+        ...prev,
+        lines,
+        amount,
+      }
+    })
+  }, [setFormData])
+
+  const handleRemoveLine = useCallback(
+    (index: number) => {
+      setFormData((prev) => {
+        const { lines, amount } = removePurchaseOrderLine(
+          prev.lines || [],
+          index
+        )
+
+        return {
+          ...prev,
+          lines,
+          amount,
+        }
+      })
+    },
+    [setFormData]
+  )
+
+  const updateLine = useCallback(
+    (
+      index: number,
+      field: keyof PurchaseOrderLine,
+      value: PurchaseOrderLineFieldValue,
+      extraData?: Partial<PurchaseOrderLine>
+    ) => {
+      setFormData((prev) => {
+        const { lines, amount } = updatePurchaseOrderLine(
+          prev.lines || [],
+          index,
+          field,
+          value,
+          extraData
+        )
+
+        return {
+          ...prev,
+          lines,
+          amount,
+        }
+      })
+    },
+    [setFormData]
+  )
+
+  const validate = (): boolean => {
+    return validatePurchaseOrderForm(formData, t, () => {
+      logger.error(
+        'Validation failed: missing supplierId in formData',
+        formData
+      )
+    })
+  }
+
+  return {
+    formData,
+    handleHeaderChange,
+    handleAddLine,
+    handleRemoveLine,
+    updateLine,
+    validate,
+    commit,
+    isFinanceLoading,
+  }
+}

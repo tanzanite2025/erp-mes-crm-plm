@@ -2,7 +2,7 @@ import type { TranslationKey } from '@/locales'
 import { toast } from 'sonner'
 import { failLoudly } from '@/lib/safe-catch'
 import type { SalesOrder, SalesOrderStatus } from '../data/schema'
-import { requireTradingCommandActor } from '../utils/command-actor'
+import { requireCommandActor } from '@/lib/command-actor'
 
 export interface SalesOrderStatusCommandPayload {
   status: SalesOrderStatus
@@ -57,7 +57,7 @@ export function useSalesOrderDetailActions({
 }: UseSalesOrderDetailActionsParams) {
   const ensureCommandActor = (scope: string) => {
     try {
-      return requireTradingCommandActor({ operator, actorId }, scope)
+      return requireCommandActor({ operator, actorId }, scope)
     } catch {
       toast.error(t('tradingSalesOrder.errors.missingActor'))
       return null

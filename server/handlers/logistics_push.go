@@ -5,7 +5,6 @@
 //     VerifyLogisticsProviderHandler / DeleteLogisticsProviderHandler
 //   - 单号查询代理: GetDeliveryOrdersHandler / GetDeliveryTrackingHandler(失效条件 shouldRefreshDeliveryTracking)
 //   - Webhook 接收: HandlePushCallbackHandler(物流商主动推单)
-//   - 异常补偿: RunLogisticsCompensation(漏推单的批量回填)
 //
 // 安全关键点:
 //   - 物流商配置 verify 后才生效,VerifyLogisticsProviderHandler 是密钥的活性测试入口
@@ -26,7 +25,9 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"xdfc-server/authz"
 	"xdfc-server/db"
+	"xdfc-server/middleware"
 	"xdfc-server/models"
 	"xdfc-server/services"
 
@@ -470,6 +471,14 @@ func GetDeliveryTrackingHandler(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "[LOGISTICS-PUSH] 单号不存在"})
 		return
 	}
+	if !canReadDeliveryOrderBusinessType(
+		order.BizType,
+		middleware.HasAnyPermission(c, authz.MenuTrading),
+		middleware.HasAnyPermission(c, authz.MenuPurchase),
+	) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "insufficient permissions"})
+		return
+	}
 
 	var refreshResult *services.LogisticsTrackingRefreshResult
 	if refreshRequested {
@@ -706,55 +715,4 @@ func mapPushStatus(s string) string {
 	default:
 		return DOStatusInTransit
 	}
-}
-
-// =========================================================================
-// 补偿任务：漏抓取自动对冲 (由 main.go Cron 调用)
-// =========================================================================
-
-// RunLogisticsCompensation 扫描失联订单并主动查询补偿
-func RunLogisticsCompensation() {
-	log.Println("[LOGISTICS-JANITOR] Starting compensation scan...")
-
-	threshold := time.Now().Add(-12 * time.Hour)
-	var staleOrders []models.DeliveryOrder
-	result := db.DB.Where(
-		"status NOT IN (?, ?, ?) AND (last_push_at IS NULL OR last_push_at < ?)",
-		DOStatusSigned, DOStatusException, DOStatusReturned,
-		threshold,
-	).Limit(100).Find(&staleOrders)
-
-	if result.Error != nil {
-		log.Printf("[LOGISTICS-JANITOR][CRITICAL] Query failed: %v", result.Error)
-		return
-	}
-
-	if len(staleOrders) == 0 {
-		log.Println("[LOGISTICS-JANITOR] No stale orders. System healthy.")
-		return
-	}
-
-	log.Printf("[LOGISTICS-JANITOR] Found %d stale order(s). Initiating polling...", len(staleOrders))
-
-	for _, order := range staleOrders {
-		var provider models.LogisticsAPIProvider
-		if err := db.DB.Where("code = ? AND status = 'Enabled'", order.CarrierCode).First(&provider).Error; err != nil {
-			log.Printf("[LOGISTICS-JANITOR] Provider %s not found, skipping %s", order.CarrierCode, order.TrackingNo)
-			continue
-		}
-
-		// 砂箱占位：正式并网时替换为真实 HTTP 调用
-		log.Printf("[LOGISTICS-JANITOR][STUB] Would poll %s for %s", provider.Name, order.TrackingNo)
-
-		// 记录额度消耗
-		db.DB.Model(&provider).Update("quota_used", gorm.Expr("quota_used + 1"))
-
-		// 额度告警
-		remaining := provider.QuotaTotal - provider.QuotaUsed
-		if remaining <= provider.QuotaAlertAt && provider.QuotaTotal > 0 {
-			log.Printf("[LOGISTICS-JANITOR][WARNING] API quota LOW for %s: remaining=%d", provider.Name, remaining)
-		}
-	}
-
-	log.Println("[LOGISTICS-JANITOR] Compensation scan complete.")
 }

@@ -272,29 +272,6 @@ func mapInboundRecordsToResponse(records []models.InboundRecord) []InboundRecord
 	return items
 }
 
-func MapConfirmPurchaseReceiptRequestToInput(request ConfirmPurchaseReceiptRequest, purchaseOrderID string, operator string, receiptDate string) ConfirmPurchaseReceiptInput {
-	lines := make([]ConfirmPurchaseReceiptLineInput, 0, len(request.Lines))
-	for _, line := range request.Lines {
-		lines = append(lines, ConfirmPurchaseReceiptLineInput{
-			PurchaseOrderLineID: line.PurchaseOrderLineID,
-			OrderLineVersion:    line.OrderLineVersion,
-			MaterialID:          line.MaterialID,
-			Quantity:            line.Quantity,
-			PurchasePrice:       line.PurchasePrice,
-			BatchNo:             line.BatchNo,
-			TargetCategory:      line.TargetCategory,
-		})
-	}
-
-	return ConfirmPurchaseReceiptInput{
-		PurchaseOrderID: purchaseOrderID,
-		Operator:        operator,
-		Remarks:         request.Remarks,
-		ReceiptDateRaw:  receiptDate,
-		Lines:           lines,
-	}
-}
-
 func MapConfirmPurchaseReceiptResultToResponse(result ConfirmPurchaseReceiptResult) ConfirmPurchaseReceiptResponse {
 	return ConfirmPurchaseReceiptResponse{
 		PurchaseOrder:         MapPurchaseOrderToResponse(result.PurchaseOrder),

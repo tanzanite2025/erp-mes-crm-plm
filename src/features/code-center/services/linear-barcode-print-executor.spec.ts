@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { PrintRecordService } from '@/features/print-mgmt/services/print-record-service'
-import { executeLinearBarcodePrint } from './linear-barcode-print-executor'
-import { LinearBarcodeUniqueCodesRequiredError } from './linear-barcode-print-safety'
+import {
+  executeLinearBarcodePrint,
+  executeLinearBarcodePrintJobs,
+} from './linear-barcode-print-executor'
+import { LinearBarcodePrintQuantityError } from './linear-barcode-print-safety'
 
 const previewSession = vi.hoisted(() => ({
   close: vi.fn(),
@@ -18,22 +21,9 @@ vi.mock('./linear-barcode-print-preview', () => ({
 }))
 
 const executionParams = {
-  productId: '8bf75715-c08b-4a99-b192-3cb2d6883e21',
-  quantity: 1,
-  templateName: 'SO-LINEAR-SO-001-L1',
-  barcodeInput: {
-    year: '25',
-    month: '1',
-    day: '01',
-    model: '01',
-    appearance: '1',
-    holePrefix: 'R',
-    holes: '14',
-    serial: '0001',
-    isDrainHole: false,
-    wheelType: 'H',
-    scopeCode: '',
-  },
+  salesOrderId: '9ae028c3-6540-4353-9240-d2385cd3b755',
+  salesOrderLineNo: 1,
+  quantity: 100,
   barcodeConfig: {
     modelCode: '01',
     appearanceCode: '1',
@@ -43,22 +33,51 @@ const executionParams = {
     wheelType: 'H' as const,
     scopeCode: '',
     suffix: '',
-    serialNumber: '0001',
+    serialNumber: '****',
   },
 }
 
-const batch = {
-  id: 'batch-1',
-  batchNo: 'P20260719-001',
-  templateName: executionParams.templateName,
-  productId: executionParams.productId,
-  startSn: '0001',
-  fullCode: '25101011R140001',
-  quantity: 1,
-  activatedCount: 0,
-  status: 'Printed' as const,
-  createdAt: '2026-07-19T00:00:00Z',
-  version: 1,
+function createReservation(
+  quantity: number,
+  batchId = 'batch-1',
+  startSequence = 1
+) {
+  const items = Array.from({ length: quantity }, (_, index) => {
+    const serialNumber = String(startSequence + index).padStart(4, '0')
+    return {
+      id: `${batchId}-item-${index + 1}`,
+      batchId,
+      batchNo: 'P20260719-001',
+      productId: '8bf75715-c08b-4a99-b192-3cb2d6883e21',
+      salesOrderId: executionParams.salesOrderId,
+      salesOrderLineNo: executionParams.salesOrderLineNo,
+      code: `26719011R14${serialNumber}`,
+      serialNumber,
+      status: 'AVAILABLE' as const,
+      expiresAt: '2026-08-18T00:00:00Z',
+      createdAt: '2026-07-19T00:00:00Z',
+      version: 1,
+    }
+  })
+  return {
+    batch: {
+      id: batchId,
+      batchNo: 'P20260719-001',
+      templateName: 'SO-LINEAR-SO-001-L1',
+      productId: items[0]?.productId,
+      startSn: items[0]?.serialNumber,
+      endSn: items[items.length - 1]?.serialNumber,
+      salesOrderId: executionParams.salesOrderId,
+      salesOrderLineNo: executionParams.salesOrderLineNo,
+      quantity,
+      activatedCount: 0,
+      status: 'Printed' as const,
+      expiresAt: '2026-08-18T00:00:00Z',
+      createdAt: '2026-07-19T00:00:00Z',
+      version: 1,
+    },
+    items,
+  }
 }
 
 describe('executeLinearBarcodePrint', () => {
@@ -68,50 +87,86 @@ describe('executeLinearBarcodePrint', () => {
     )
   })
 
-  it('blocks duplicate physical labels before opening or persisting anything', async () => {
-    const addBatch = vi.spyOn(PrintRecordService, 'addBatch')
+  it('blocks quantities above the atomic batch limit before opening a preview', async () => {
+    const createBatch = vi.spyOn(PrintRecordService, 'createLinearBarcodeBatch')
 
     await expect(
-      executeLinearBarcodePrint({ ...executionParams, quantity: 100 })
-    ).rejects.toBeInstanceOf(LinearBarcodeUniqueCodesRequiredError)
+      executeLinearBarcodePrint({ ...executionParams, quantity: 201 })
+    ).rejects.toBeInstanceOf(LinearBarcodePrintQuantityError)
     expect(openPreview).not.toHaveBeenCalled()
-    expect(addBatch).not.toHaveBeenCalled()
+    expect(createBatch).not.toHaveBeenCalled()
   })
 
-  it('persists the exact 15-character code before exposing the printable label', async () => {
-    const addBatch = vi
-      .spyOn(PrintRecordService, 'addBatch')
-      .mockResolvedValue(batch)
+  it('renders 100 distinct persisted codes in one printable preview', async () => {
+    const reservation = createReservation(100)
+    const createBatch = vi
+      .spyOn(PrintRecordService, 'createLinearBarcodeBatch')
+      .mockResolvedValue(reservation)
 
     const result = await executeLinearBarcodePrint(executionParams)
 
-    expect(previewSession.renderBarcode).toHaveBeenCalledWith('25101011R140001')
-    expect(addBatch).toHaveBeenCalledWith({
-      templateName: executionParams.templateName,
-      productId: executionParams.productId,
-      quantity: 1,
-      startSn: '0001',
-      fullCode: '25101011R140001',
+    expect(createBatch).toHaveBeenCalledWith({
+      salesOrderId: executionParams.salesOrderId,
+      salesOrderLineNo: 1,
+      quantity: 100,
     })
-    expect(previewSession.showLabels).toHaveBeenCalledWith([
-      expect.objectContaining({
-        batchNo: batch.batchNo,
-        code: '25101011R140001',
-      }),
-    ])
-    expect(result.code).toBe('25101011R140001')
+    expect(previewSession.renderBarcode).toHaveBeenCalledTimes(100)
+    expect(previewSession.showLabels).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({ code: '26719011R140001' }),
+        expect.objectContaining({ code: '26719011R140100' }),
+      ])
+    )
+    expect(new Set(result.codes).size).toBe(100)
+    expect(result.startSerialNumber).toBe('0001')
+    expect(result.endSerialNumber).toBe('0100')
   })
 
-  it('scraps the new batch when the printable document cannot be exposed', async () => {
-    vi.spyOn(PrintRecordService, 'addBatch').mockResolvedValue(batch)
+  it('scraps every stored code when the printable document cannot be exposed', async () => {
+    const reservation = createReservation(3)
+    vi.spyOn(PrintRecordService, 'createLinearBarcodeBatch').mockResolvedValue(
+      reservation
+    )
     const scrap = vi.spyOn(PrintRecordService, 'scrap').mockResolvedValue(true)
     previewSession.showLabels.mockImplementationOnce(() => {
       throw new Error('preview closed')
     })
 
-    await expect(executeLinearBarcodePrint(executionParams)).rejects.toThrow(
-      'preview closed'
+    await expect(
+      executeLinearBarcodePrint({ ...executionParams, quantity: 3 })
+    ).rejects.toThrow('preview closed')
+    expect(scrap).toHaveBeenCalledWith(reservation.batch.id)
+  })
+})
+
+describe('executeLinearBarcodePrintJobs', () => {
+  it('combines multiple order lines into one preview window', async () => {
+    vi.spyOn(PrintRecordService, 'createLinearBarcodeBatch')
+      .mockResolvedValueOnce(createReservation(2, 'batch-1'))
+      .mockResolvedValueOnce(createReservation(2, 'batch-2', 3))
+
+    const outcomes = await executeLinearBarcodePrintJobs([
+      { key: 'line-1', params: { ...executionParams, quantity: 2 } },
+      {
+        key: 'line-2',
+        params: { ...executionParams, salesOrderLineNo: 2, quantity: 2 },
+      },
+    ])
+
+    expect(openPreview).toHaveBeenCalledTimes(1)
+    expect(previewSession.showLabels).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({ code: '26719011R140001' }),
+        expect.objectContaining({ code: '26719011R140004' }),
+      ])
     )
-    expect(scrap).toHaveBeenCalledWith(batch.id)
+    const labels = previewSession.showLabels.mock.calls[0]?.[0] ?? []
+    expect(
+      new Set(labels.map((label: { code: string }) => label.code)).size
+    ).toBe(4)
+    expect(outcomes).toHaveLength(2)
+    expect(
+      outcomes.every((outcome) => outcome.result?.codes.length === 2)
+    ).toBe(true)
   })
 })

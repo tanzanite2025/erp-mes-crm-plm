@@ -23,49 +23,6 @@ func applyQuoteRecordScope(query *gorm.DB) *gorm.DB {
 	return query.Where("(LOWER(TRIM(classification)) = ? OR LOWER(TRIM(type)) = ?)", "quote", "quote")
 }
 
-func ConvertQuoteToSalesOrder(id string, operator string) (QuoteConvertResponse, error) {
-	orderID := strings.TrimSpace(id)
-	if orderID == "" {
-		return QuoteConvertResponse{}, fmt.Errorf("quote id is required")
-	}
-
-	var order models.SalesOrder
-	if err := applyQuoteRecordScope(db.DB.Where("id = ?", orderID)).First(&order).Error; err != nil {
-		return QuoteConvertResponse{}, err
-	}
-
-	nextStatus := strings.TrimSpace(order.Status)
-	if !strings.EqualFold(nextStatus, "converted") {
-		nextStatus = "converted"
-		updates := map[string]any{
-			"status":     nextStatus,
-			"updated_at": time.Now(),
-		}
-		if strings.TrimSpace(operator) != "" {
-			updates["updated_by"] = strings.TrimSpace(operator)
-		}
-		if err := db.DB.Model(&models.SalesOrder{}).Where("id = ?", orderID).Updates(updates).Error; err != nil {
-			return QuoteConvertResponse{}, err
-		}
-		order.Status = nextStatus
-	}
-
-	targetOrderNo := strings.TrimSpace(order.OrderNo)
-	if targetOrderNo == "" {
-		targetOrderNo = strings.TrimSpace(order.Barcode)
-	}
-	if targetOrderNo == "" {
-		targetOrderNo = order.ID
-	}
-
-	return QuoteConvertResponse{
-		QuoteID:            order.ID,
-		TargetSalesOrderID: order.ID,
-		TargetSalesOrderNo: targetOrderNo,
-		Status:             order.Status,
-	}, nil
-}
-
 func ListQuotes(query QuoteListQuery) (QuoteListResponse, error) {
 	page := query.Page
 	if page < 1 {

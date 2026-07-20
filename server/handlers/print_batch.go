@@ -9,6 +9,7 @@ import (
 	"time"
 	"xdfc-server/db"
 	"xdfc-server/models"
+	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -31,15 +32,7 @@ func isPrintBatchFullCodeConflict(err error) bool {
 
 // generateBatchNo generates a daily incremental batch number like P20260327-001.
 func generateBatchNo(tx *gorm.DB) (string, error) {
-	dateStr := time.Now().Format("20060102")
-	prefix := "P" + dateStr
-
-	var count int64
-	if err := tx.Model(&models.PrintBatch{}).Where("batch_no LIKE ?", prefix+"%").Count(&count).Error; err != nil {
-		return "", err
-	}
-
-	return fmt.Sprintf("%s-%03d", prefix, count+1), nil
+	return services.GeneratePrintBatchNoTx(tx, time.Now())
 }
 
 // GetPrintBatchesHandler returns all print batches.
@@ -259,6 +252,9 @@ func ScrapBatchHandler(c *gin.Context) {
 		}
 
 		if err := tx.Model(&batch).Update("status", "Scrapped").Error; err != nil {
+			return err
+		}
+		if err := services.ScrapLinearBarcodeInventoryForBatchTx(tx, batch.ID); err != nil {
 			return err
 		}
 

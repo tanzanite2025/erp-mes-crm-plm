@@ -21,25 +21,6 @@ func GetEquipmentPartnersHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, mapEquipmentPartnerResponses(partners))
 }
 
-func buildPartnerUpdates(payload map[string]json.RawMessage) (map[string]interface{}, error) {
-	updates := make(map[string]interface{})
-	for key, raw := range payload {
-		switch key {
-		case "name", "type", "contactPerson", "phone", "address":
-			var value string
-			if err := json.Unmarshal(raw, &value); err != nil {
-				return nil, err
-			}
-			updates[key] = value
-		case "id", "createdAt", "updatedAt":
-			// Skip metadata
-		default:
-			// IGNORED
-		}
-	}
-	return updates, nil
-}
-
 func savePartnerRecord(partner *models.EquipmentPartner) error {
 	if partner.ID == "" {
 		return db.DB.Create(partner).Error
