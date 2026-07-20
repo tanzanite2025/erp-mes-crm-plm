@@ -226,7 +226,7 @@ func dispatchBusinessStatusChangedApprovalTx(tx *gorm.DB, event BusinessStatusCh
 		})
 	}
 
-	result, err := RequestApprovalTx(tx, RequestApprovalInput{
+	result, err := RequestApprovalTxWithContext(approvalAuditContext(event.ActorID, event.Operator, "workflow"), tx, RequestApprovalInput{
 		Module:      segment.Approval.Module,
 		Action:      segment.Approval.Action,
 		TargetID:    event.TargetID,

@@ -1,17 +1,13 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
-	"time"
 	"xdfc-server/db"
-	"xdfc-server/middleware"
 	"xdfc-server/models"
 	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 // GetFurnacesHandler 获取所有炉台 (支持分页)
@@ -62,62 +58,6 @@ func GetFurnacesHandler(c *gin.Context) {
 	})
 }
 
-func saveFurnaceRecord(furnace *models.Furnace) error {
-	if furnace.ID == "" {
-		return db.DB.Create(furnace).Error
-	}
-
-	var existing models.Furnace
-	if err := db.DB.First(&existing, "id = ?", furnace.ID).Error; err != nil {
-		return err
-	}
-
-	updates := map[string]interface{}{
-		"sn":           furnace.SN,
-		"name":         furnace.Name,
-		"type":         furnace.Type,
-		"max_temp":     furnace.MaxTemp,
-		"current_temp": furnace.CurrentTemp,
-		"status":       furnace.Status,
-		"location":     furnace.Location,
-		"description":  furnace.Description,
-		"updated_by":   furnace.UpdatedBy,
-	}
-
-	return db.DB.Model(&existing).Updates(updates).Error
-}
-
-func buildFurnacePatchUpdates(delta map[string]json.RawMessage) (map[string]interface{}, error) {
-	updates := make(map[string]interface{})
-	for key, raw := range delta {
-		valueRaw, err := extractDeltaNewValue(raw)
-		if err != nil {
-			return nil, err
-		}
-		switch key {
-		case "sn", "name", "type", "status", "location", "description":
-			var value string
-			if err := json.Unmarshal(valueRaw, &value); err != nil {
-				return nil, err
-			}
-			updates[key] = value
-		case "maxTemp":
-			var value float64
-			if err := json.Unmarshal(valueRaw, &value); err != nil {
-				return nil, err
-			}
-			updates["max_temp"] = value
-		case "currentTemp":
-			var value float64
-			if err := json.Unmarshal(valueRaw, &value); err != nil {
-				return nil, err
-			}
-			updates["current_temp"] = value
-		}
-	}
-	return updates, nil
-}
-
 // SaveFurnaceHandler 保存/创建炉台
 func SaveFurnaceHandler(c *gin.Context) {
 	var input services.SaveFurnaceRequest
@@ -126,29 +66,9 @@ func SaveFurnaceHandler(c *gin.Context) {
 		return
 	}
 
-	operator := middleware.GetSafeUsername(c)
-
-	furnace := models.Furnace{
-		ID:          input.ID,
-		SN:          input.SN,
-		Name:        input.Name,
-		Type:        input.Type,
-		MaxTemp:     input.MaxTemp,
-		CurrentTemp: input.CurrentTemp,
-		Status:      input.Status,
-		Location:    input.Location,
-		Description: input.Description,
-	}
-
-	furnace.CreatedBy = operator
-	furnace.UpdatedBy = operator
-
-	if err := saveFurnaceRecord(&furnace); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 保存炉台资产失败: " + err.Error()})
-		return
-	}
-	if err := db.DB.First(&furnace, "id = ?", furnace.ID).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取保存后的炉台失败: " + err.Error()})
+	furnace, err := services.NewEquipmentAssetService(db.DB).SaveFurnace(auditContextFromGin(c), input)
+	if err != nil {
+		respondDomainError(c, err, "[SERVER] 保存炉台资产失败: ")
 		return
 	}
 	c.JSON(http.StatusOK, mapFurnaceResponse(furnace))
@@ -163,24 +83,9 @@ func PatchFurnaceHandler(c *gin.Context) {
 		return
 	}
 
-	updates, err := buildFurnacePatchUpdates(input.Delta)
+	furnace, err := services.NewEquipmentAssetService(db.DB).PatchFurnace(auditContextFromGin(c), id, input.Delta)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 无效的炉台差量数据"})
-		return
-	}
-
-	operator := middleware.GetSafeUsername(c)
-	updates["updated_by"] = operator
-	updates["updated_at"] = time.Now()
-
-	if err := db.DB.Model(&models.Furnace{}).Where("id = ?", id).Updates(updates).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 更新炉台属性失败: " + err.Error()})
-		return
-	}
-
-	var furnace models.Furnace
-	if err := db.DB.First(&furnace, "id = ?", id).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取更新后的炉台失败: " + err.Error()})
+		respondDomainError(c, err, "[SERVER] 更新炉台属性失败: ")
 		return
 	}
 	c.JSON(http.StatusOK, mapFurnaceResponse(furnace))
@@ -197,12 +102,7 @@ func UpdateFurnaceTelemetryHandler(c *gin.Context) {
 		return
 	}
 
-	err := db.DB.Model(&models.Furnace{}).Where("id = ?", id).Updates(map[string]interface{}{
-		"current_temp": input.Temp,
-		"updated_at":   time.Now(),
-	}).Error
-
-	if err != nil {
+	if err := services.NewEquipmentAssetService(db.DB).UpdateFurnaceTelemetry(auditContextFromGin(c), id, input.Temp); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 更新遥测失败"})
 		return
 	}
@@ -221,22 +121,7 @@ func BulkSyncFurnacesHandler(c *gin.Context) {
 		return
 	}
 
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		for _, furnace := range furnaces {
-			if furnace.ID != "" {
-				if err := tx.Model(&models.Furnace{}).Where("id = ?", furnace.ID).Omit("CreatedAt", "CreatedBy").Updates(&furnace).Error; err != nil {
-					return err
-				}
-			} else {
-				if err := tx.Create(&furnace).Error; err != nil {
-					return err
-				}
-			}
-		}
-		return nil
-	})
-
-	if err != nil {
+	if err := services.NewEquipmentAssetService(db.DB).BulkSyncFurnaces(auditContextFromGin(c), furnaces); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 批量同步失败: " + err.Error()})
 		return
 	}

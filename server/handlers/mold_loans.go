@@ -2,13 +2,11 @@ package handlers
 
 import (
 	"net/http"
-	"time"
 	"xdfc-server/db"
-	"xdfc-server/middleware"
 	"xdfc-server/models"
+	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 // GetLoansHandler 获取借还记录
@@ -33,67 +31,21 @@ func CreateLoanWithStatusHandler(c *gin.Context) {
 		return
 	}
 
-	operatorStr := middleware.GetSafeUsername(c)
-	
-	input.Loan.LoanDate = time.Now()
-	input.Loan.CreatedAt = time.Now()
-	input.Loan.CreatedBy = operatorStr
-
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		// 1. 保存借还记录
-		if err := tx.Create(&input.Loan).Error; err != nil {
-			return err
-		}
-
-		// 2. 原子更新模具表状态
-		if err := tx.Model(&models.Mold{}).Where("id = ?", input.Loan.MoldID).Updates(map[string]interface{}{
-			"status":     input.MoldStatus,
-			"updated_at": time.Now(),
-			"updated_by": operatorStr,
-		}).Error; err != nil {
-			return err
-		}
-
-		return nil
-	})
-
+	loan, err := services.NewEquipmentAssetService(db.DB).CreateMoldLoan(auditContextFromGin(c), input.Loan, input.MoldStatus)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 原子操作执行失败: " + err.Error()})
+		respondDomainError(c, err, "[SERVER] 原子操作执行失败: ")
 		return
 	}
 
-	c.JSON(http.StatusOK, input.Loan)
+	c.JSON(http.StatusOK, loan)
 }
 
 // ReturnLoanHandler 归还记录处理
 func ReturnLoanHandler(c *gin.Context) {
 	id := c.Param("id")
-	var loan models.MoldLoan
-	
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("id = ?", id).First(&loan).Error; err != nil {
-			return err
-		}
-
-		now := time.Now()
-		// 1. 更新记录为已归还
-		if err := tx.Model(&loan).Updates(map[string]interface{}{
-			"status":             "RETURNED",
-			"actual_return_date": now,
-		}).Error; err != nil {
-			return err
-		}
-
-		// 2. 将模具状态拨回 IDLE (或 CHECKING)
-		if err := tx.Model(&models.Mold{}).Where("id = ?", loan.MoldID).Update("status", "IDLE").Error; err != nil {
-			return err
-		}
-
-		return nil
-	})
-
+	loan, err := services.NewEquipmentAssetService(db.DB).ReturnMoldLoan(auditContextFromGin(c), id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 归还失败: " + err.Error()})
+		respondDomainError(c, err, "[SERVER] 归还失败: ")
 		return
 	}
 	c.JSON(http.StatusOK, loan)

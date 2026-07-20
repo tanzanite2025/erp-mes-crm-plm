@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -219,7 +220,14 @@ func getEnabledExchangeRateSyncProviders(config ExchangeRateSyncConfig) []Exchan
 	return providers
 }
 
+// SaveExchangeRateSyncConfig keeps the original system-context API. HTTP
+// handlers should call SaveExchangeRateSyncConfigWithContext to preserve actor
+// information in the audit event.
 func SaveExchangeRateSyncConfig(config ExchangeRateSyncConfig) (ExchangeRateSyncConfig, error) {
+	return SaveExchangeRateSyncConfigWithContext(context.Background(), config)
+}
+
+func SaveExchangeRateSyncConfigWithContext(ctx context.Context, config ExchangeRateSyncConfig) (ExchangeRateSyncConfig, error) {
 	normalized := normalizeExchangeRateSyncConfig(config)
 	payload, err := json.Marshal(normalized)
 	if err != nil {
@@ -228,6 +236,10 @@ func SaveExchangeRateSyncConfig(config ExchangeRateSyncConfig) (ExchangeRateSync
 
 	primaryProvider := getPrimaryExchangeRateSyncProvider(normalized)
 	err = db.DB.Transaction(func(tx *gorm.DB) error {
+		before, err := loadExchangeRateSyncConfig(tx)
+		if err != nil {
+			return err
+		}
 		if err := upsertSystemConfigRecord(tx, exchangeRateSyncConfigConfigKey, string(payload), "汇率同步配置", "汇率同步 provider 列表与策略配置。"); err != nil {
 			return err
 		}
@@ -246,7 +258,15 @@ func SaveExchangeRateSyncConfig(config ExchangeRateSyncConfig) (ExchangeRateSync
 		if err := upsertSystemConfigRecord(tx, exchangeRateSyncEnabledConfigKey, strconv.FormatBool(normalized.Enabled), "汇率同步开关", "控制手动汇率同步是否启用。"); err != nil {
 			return err
 		}
-		return nil
+		return recordFinanceAuditChange(
+			ctx,
+			tx,
+			AuditModuleExchangeRateConfig,
+			exchangeRateSyncConfigConfigKey,
+			"UPDATE",
+			exchangeRateConfigAuditSnapshot(before),
+			exchangeRateConfigAuditSnapshot(normalized),
+		)
 	})
 	if err != nil {
 		return ExchangeRateSyncConfig{}, err

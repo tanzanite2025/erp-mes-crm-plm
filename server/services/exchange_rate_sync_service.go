@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -43,18 +44,22 @@ func (e *ExchangeRateSyncFallbackError) Unwrap() error {
 }
 
 func SyncExchangeRatesFromEnv() (int, error) {
+	return SyncExchangeRatesFromEnvWithContext(context.Background())
+}
+
+func SyncExchangeRatesFromEnvWithContext(ctx context.Context) (int, error) {
 	provider := defaultExchangeRateSyncProviderConfig()
 	provider.APIKey = strings.TrimSpace(provider.APIKey)
 	if provider.APIKey == "" {
 		return 0, ErrExchangeRateAPIKeyMissing
 	}
-	return syncExchangeRatesWithProvider(provider)
+	return syncExchangeRatesWithProvider(ctx, provider)
 }
 
-func syncExchangeRatesWithProvider(provider ExchangeRateSyncProviderConfig) (int, error) {
+func syncExchangeRatesWithProvider(ctx context.Context, provider ExchangeRateSyncProviderConfig) (int, error) {
 	switch strings.TrimSpace(provider.Provider) {
 	case "", defaultExchangeRateProvider:
-		return syncExchangeRatesWithExchangeRateAPI(provider)
+		return syncExchangeRatesWithExchangeRateAPI(ctx, provider)
 	default:
 		return 0, fmt.Errorf("unsupported exchange rate provider: %s", provider.Provider)
 	}
@@ -100,12 +105,12 @@ func selectPrimaryExchangeRateSyncProvider(providers []ExchangeRateSyncProviderC
 	return providers[0], true
 }
 
-func tryExchangeRateSyncProviders(providers []ExchangeRateSyncProviderConfig) (int, error) {
+func tryExchangeRateSyncProviders(ctx context.Context, providers []ExchangeRateSyncProviderConfig) (int, error) {
 	var attempts []ExchangeRateSyncAttemptResult
 	var lastErr error
 
 	for _, provider := range providers {
-		count, err := syncExchangeRatesWithProvider(provider)
+		count, err := syncExchangeRatesWithProvider(ctx, provider)
 		if err == nil {
 			return count, nil
 		}
@@ -134,6 +139,14 @@ func tryExchangeRateSyncProviders(providers []ExchangeRateSyncProviderConfig) (i
 }
 
 func SyncExchangeRates() (int, error) {
+	return SyncExchangeRatesWithContext(context.Background())
+}
+
+func SyncExchangeRatesWithContext(ctx context.Context) (int, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
 	config, err := GetExchangeRateSyncConfig()
 	if err != nil {
 		return 0, err
@@ -152,8 +165,8 @@ func SyncExchangeRates() (int, error) {
 		if !ok {
 			return 0, ErrExchangeRateSyncDisabled
 		}
-		return syncExchangeRatesWithProvider(primaryProvider)
+		return syncExchangeRatesWithProvider(ctx, primaryProvider)
 	}
 
-	return tryExchangeRateSyncProviders(providers)
+	return tryExchangeRateSyncProviders(ctx, providers)
 }

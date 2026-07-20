@@ -1,18 +1,14 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 	"xdfc-server/db"
-	"xdfc-server/middleware"
 	"xdfc-server/models"
 	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 type moldGroupNameRow struct {
@@ -155,73 +151,6 @@ func CheckMoldCapacityAlertsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, alerts)
 }
 
-func saveMoldRecord(mold *models.Mold) error {
-	if mold.ID == "" {
-		return db.DB.Create(mold).Error
-	}
-
-	var existing models.Mold
-	if err := db.DB.First(&existing, "id = ?", mold.ID).Error; err != nil {
-		return err
-	}
-
-	updates := map[string]interface{}{
-		"sn":                    mold.SN,
-		"name":                  mold.Name,
-		"max_cycles":            mold.MaxCycles,
-		"current_cycles":        mold.CurrentCycles,
-		"maintenance_threshold": mold.MaintenanceThreshold,
-		"total_life_cycles":     mold.TotalLifeCycles,
-		"group_name":            mold.GroupName,
-		"status":                mold.Status,
-		"location":              mold.Location,
-		"description":           mold.Description,
-		"is_alerted":            mold.IsAlerted,
-		"last_checked_at":       mold.LastCheckedAt,
-		"image_url":             mold.ImageURL,
-		"updated_by":            mold.UpdatedBy,
-	}
-
-	return db.DB.Model(&existing).Updates(updates).Error
-}
-
-func buildMoldPatchUpdates(delta map[string]json.RawMessage) (map[string]interface{}, error) {
-	updates := make(map[string]interface{})
-	for key, raw := range delta {
-		valueRaw, err := extractDeltaNewValue(raw)
-		if err != nil {
-			return nil, err
-		}
-		switch key {
-		case "sn", "name", "groupName", "status", "location", "description", "imageUrl":
-			var value string
-			if err := json.Unmarshal(valueRaw, &value); err != nil {
-				return nil, err
-			}
-			updates[key] = value
-		case "maxCycles", "currentCycles", "maintenanceThreshold", "totalLifeCycles":
-			var value int
-			if err := json.Unmarshal(valueRaw, &value); err != nil {
-				return nil, err
-			}
-			updates[key] = value
-		case "isAlerted":
-			var value bool
-			if err := json.Unmarshal(valueRaw, &value); err != nil {
-				return nil, err
-			}
-			updates["is_alerted"] = value
-		case "lastCheckedAt":
-			value, err := parseOptionalTimeValue(valueRaw)
-			if err != nil {
-				return nil, err
-			}
-			updates["last_checked_at"] = value
-		}
-	}
-	return updates, nil
-}
-
 // SaveMoldHandler 保存/创建模具
 func SaveMoldHandler(c *gin.Context) {
 	var input services.SaveMoldRequest
@@ -230,44 +159,9 @@ func SaveMoldHandler(c *gin.Context) {
 		return
 	}
 
-	operator := middleware.GetSafeUsername(c)
-
-	var lastCheckedAt *time.Time
-	if input.LastCheckedAt != nil && *input.LastCheckedAt != "" {
-		parsed, err := time.Parse(time.RFC3339, *input.LastCheckedAt)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] lastCheckedAt 格式错误"})
-			return
-		}
-		lastCheckedAt = &parsed
-	}
-
-	mold := models.Mold{
-		ID:                   input.ID,
-		SN:                   input.SN,
-		Name:                 input.Name,
-		MaxCycles:            input.MaxCycles,
-		CurrentCycles:        input.CurrentCycles,
-		MaintenanceThreshold: input.MaintenanceThreshold,
-		TotalLifeCycles:      input.TotalLifeCycles,
-		GroupName:            input.GroupName,
-		Status:               input.Status,
-		Location:             input.Location,
-		Description:          input.Description,
-		IsAlerted:            input.IsAlerted,
-		LastCheckedAt:        lastCheckedAt,
-		ImageURL:             input.ImageURL,
-	}
-
-	mold.CreatedBy = operator
-	mold.UpdatedBy = operator
-
-	if err := saveMoldRecord(&mold); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 保存模具资产失败: " + err.Error()})
-		return
-	}
-	if err := db.DB.First(&mold, "id = ?", mold.ID).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 鑾峰彇淇濆瓨鍚庣殑妯″叿澶辫触: " + err.Error()})
+	mold, err := services.NewEquipmentAssetService(db.DB).SaveMold(auditContextFromGin(c), input)
+	if err != nil {
+		respondDomainError(c, err, "[SERVER] 保存模具资产失败: ")
 		return
 	}
 	c.JSON(http.StatusOK, mapMoldResponse(mold))
@@ -282,23 +176,9 @@ func PatchMoldHandler(c *gin.Context) {
 		return
 	}
 
-	updates, err := buildMoldPatchUpdates(input.Delta)
+	mold, err := services.NewEquipmentAssetService(db.DB).PatchMold(auditContextFromGin(c), id, input.Delta)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 无效的模具差量数据"})
-		return
-	}
-
-	operator := middleware.GetSafeUsername(c)
-	updates["updated_by"] = operator
-	updates["updated_at"] = time.Now()
-
-	if err := db.DB.Model(&models.Mold{}).Where("id = ?", id).Updates(updates).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 更新模具属性失败: " + err.Error()})
-		return
-	}
-	var mold models.Mold
-	if err := db.DB.First(&mold, "id = ?", id).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取更新后的模具失败: " + err.Error()})
+		respondDomainError(c, err, "[SERVER] 更新模具属性失败: ")
 		return
 	}
 	c.JSON(http.StatusOK, mapMoldResponse(mold))
@@ -315,13 +195,7 @@ func UpdateTelemetryHandler(c *gin.Context) {
 		return
 	}
 
-	err := db.DB.Model(&models.Mold{}).Where("id = ?", id).Updates(map[string]interface{}{
-		"current_cycles":    gorm.Expr("current_cycles + ?", input.Cycles),
-		"total_life_cycles": gorm.Expr("total_life_cycles + ?", input.Cycles),
-		"updated_at":        time.Now(),
-	}).Error
-
-	if err != nil {
+	if err := services.NewEquipmentAssetService(db.DB).UpdateMoldTelemetry(auditContextFromGin(c), id, input.Cycles); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 更新遥测失败"})
 		return
 	}
@@ -340,24 +214,7 @@ func BulkSyncMoldsHandler(c *gin.Context) {
 		return
 	}
 
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		for _, m := range molds {
-			if m.ID != "" {
-				// 更新模式：锁定审计元数据
-				if err := tx.Model(&models.Mold{}).Where("id = ?", m.ID).Omit("CreatedAt", "CreatedBy").Updates(&m).Error; err != nil {
-					return err
-				}
-			} else {
-				// 新增模式
-				if err := tx.Create(&m).Error; err != nil {
-					return err
-				}
-			}
-		}
-		return nil
-	})
-
-	if err != nil {
+	if err := services.NewEquipmentAssetService(db.DB).BulkSyncMolds(auditContextFromGin(c), molds); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 批量同步失败: " + err.Error()})
 		return
 	}

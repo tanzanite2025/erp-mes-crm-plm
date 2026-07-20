@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -28,7 +29,7 @@ func SaveCurrency(c *gin.Context) {
 		return
 	}
 
-	currency, err := services.SaveCurrencyFromJSON(payload, body)
+	currency, err := services.SaveCurrencyFromJSONWithContext(auditContextFromGin(c), payload, body)
 	if err != nil {
 		switch {
 		case isFinanceValidationError(err):
@@ -60,7 +61,7 @@ func SavePaymentTerm(c *gin.Context) {
 		return
 	}
 
-	term, err := services.SavePaymentTermFromJSON(payload, body)
+	term, err := services.SavePaymentTermFromJSONWithContext(auditContextFromGin(c), payload, body)
 	if err != nil {
 		switch {
 		case isFinanceValidationError(err):
@@ -89,7 +90,7 @@ func PatchPaymentTerm(c *gin.Context) {
 		return
 	}
 
-	term, err := services.SavePaymentTermFromJSON(payload, nil)
+	term, err := services.SavePaymentTermFromJSONWithContext(auditContextFromGin(c), payload, nil)
 	if err != nil {
 		switch {
 		case isFinanceValidationError(err):
@@ -121,7 +122,7 @@ func SavePaymentMethod(c *gin.Context) {
 		return
 	}
 
-	method, err := services.SavePaymentMethodFromJSON(payload, body)
+	method, err := services.SavePaymentMethodFromJSONWithContext(auditContextFromGin(c), payload, body)
 	if err != nil {
 		switch {
 		case isFinanceValidationError(err):
@@ -150,7 +151,7 @@ func PatchPaymentMethod(c *gin.Context) {
 		return
 	}
 
-	method, err := services.SavePaymentMethodFromJSON(payload, nil)
+	method, err := services.SavePaymentMethodFromJSONWithContext(auditContextFromGin(c), payload, nil)
 	if err != nil {
 		switch {
 		case isFinanceValidationError(err):
@@ -182,7 +183,7 @@ func SaveTaxRate(c *gin.Context) {
 		return
 	}
 
-	rate, err := services.SaveTaxRateFromJSON(payload, body)
+	rate, err := services.SaveTaxRateFromJSONWithContext(auditContextFromGin(c), payload, body)
 	if err != nil {
 		switch {
 		case isFinanceValidationError(err):
@@ -199,7 +200,7 @@ func SaveTaxRate(c *gin.Context) {
 }
 
 func SetBaseCurrency(c *gin.Context) {
-	if err := services.SetBaseCurrency(c.Param("id")); err != nil {
+	if err := services.SetBaseCurrencyWithContext(auditContextFromGin(c), c.Param("id")); err != nil {
 		respondFinanceServer(c, "Failed to switch base currency", err)
 		return
 	}
@@ -207,7 +208,7 @@ func SetBaseCurrency(c *gin.Context) {
 }
 
 func SeedFinanceData(c *gin.Context) {
-	if err := services.SeedFinanceData(); err != nil {
+	if err := services.SeedFinanceDataWithContext(auditContextFromGin(c)); err != nil {
 		respondFinanceServer(c, "Failed to seed finance data", err)
 		return
 	}
@@ -231,7 +232,7 @@ func SaveExchangeRateSyncConfigHandler(c *gin.Context) {
 		return
 	}
 
-	saved, err := services.SaveExchangeRateSyncConfig(config)
+	saved, err := services.SaveExchangeRateSyncConfigWithContext(auditContextFromGin(c), config)
 	if err != nil {
 		respondFinanceServer(c, "Failed to save exchange rate sync config", err)
 		return
@@ -242,6 +243,10 @@ func SaveExchangeRateSyncConfigHandler(c *gin.Context) {
 
 func RunExchangeRateSync() (int, error) {
 	return services.SyncExchangeRates()
+}
+
+func RunExchangeRateSyncWithContext(ctx context.Context) (int, error) {
+	return services.SyncExchangeRatesWithContext(ctx)
 }
 
 func respondExchangeRateSyncError(c *gin.Context, err error) {

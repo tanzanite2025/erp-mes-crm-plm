@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,6 +13,7 @@ import (
 	"xdfc-server/models"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type ExchangeRateResponse struct {
@@ -28,7 +30,7 @@ func normalizeRateAgainstBase(rawRate float64) (float64, error) {
 	return math.Round((1/rawRate)*1_000_000) / 1_000_000, nil
 }
 
-func syncExchangeRatesWithExchangeRateAPI(provider ExchangeRateSyncProviderConfig) (int, error) {
+func syncExchangeRatesWithExchangeRateAPI(ctx context.Context, provider ExchangeRateSyncProviderConfig) (int, error) {
 	var baseCurrency models.Currency
 	if err := db.DB.Where("is_base = ?", true).First(&baseCurrency).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -61,7 +63,11 @@ func syncExchangeRatesWithExchangeRateAPI(provider ExchangeRateSyncProviderConfi
 	}
 
 	apiURL := strings.TrimRight(resolvedBaseURL, "/") + resolvedPath
-	resp, err := http.Get(apiURL)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiURL, nil)
+	if err != nil {
+		return 0, fmt.Errorf("build exchange rate api request: %w", err)
+	}
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return 0, fmt.Errorf("request exchange rate api: %w", err)
 	}
@@ -87,7 +93,7 @@ func syncExchangeRatesWithExchangeRateAPI(provider ExchangeRateSyncProviderConfi
 	updatedCount := 0
 	err = db.DB.Transaction(func(tx *gorm.DB) error {
 		var currencies []models.Currency
-		if err := tx.Find(&currencies).Error; err != nil {
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Find(&currencies).Error; err != nil {
 			return fmt.Errorf("load currencies for sync: %w", err)
 		}
 
@@ -102,6 +108,17 @@ func syncExchangeRatesWithExchangeRateAPI(provider ExchangeRateSyncProviderConfi
 				}
 				if err := tx.Model(&curr).Update("rate", normalizedRate).Error; err != nil {
 					return fmt.Errorf("update rate for %s: %w", curr.Code, err)
+				}
+				if err := recordFinanceAuditChange(
+					ctx,
+					tx,
+					AuditModuleCurrency,
+					fmt.Sprint(curr.ID),
+					"UPDATE",
+					map[string]any{"rate": curr.Rate},
+					map[string]any{"rate": normalizedRate},
+				); err != nil {
+					return fmt.Errorf("audit rate update for %s: %w", curr.Code, err)
 				}
 				updatedCount++
 			}

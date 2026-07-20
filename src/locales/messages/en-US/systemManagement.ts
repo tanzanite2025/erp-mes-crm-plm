@@ -129,19 +129,41 @@ export const systemManagement = {
   },
   auditEngine: {
     title: 'Audit Engine Monitor',
-    subtitle: 'Real-time synchronization status & data timeline coverage',
+    subtitle:
+      'Transactional audit integration and hot-window activity coverage',
     systemStatus: 'System Status',
+    integrated: 'Integrated',
+    // Kept for older consumers; the audit engine header uses `integrated`.
     connected: 'Connected',
     modulesCount: '{{connected}}/{{total}} Modules',
+    integratedModulesCount: '{{integrated}}/{{total}} Modules',
+    loading: 'Loading audit engine data',
+    loadFailed: 'Failed to load audit engine data',
+    loadFailedDescription:
+      'The latest statistics could not be read. The page will not replace real data with zeros.',
+    refreshFailed: 'Latest refresh failed',
+    refreshFailedDescription:
+      'Showing the last successfully loaded statistics. This data may be stale.',
+    retry: 'Retry',
+    noModules: 'The backend returned no audit module directory.',
+    noHotActivity: 'No activity in the last {{days}} days',
+    pendingEntities: 'Pending integration ({{count}})',
+    unmappedEntities: 'Unmapped log entities found ({{count}})',
     status: {
       operational: 'OPERATIONAL',
-      partial: 'PARTIAL MIGRATION',
-      healthy: 'HEALTHY',
-      alert: 'ALERT',
-      critical: 'CRITICAL',
+      partial: 'PARTIALLY INTEGRATED',
+      unavailable: 'DATA UNAVAILABLE',
+      noData: 'WAITING FOR DATA',
+      healthy: 'INTEGRATED',
+      alert: 'PARTIALLY INTEGRATED',
+      critical: 'NOT INTEGRATED',
     },
     metrics: {
       coverage: 'Audit Coverage',
+      integrationCoverage: 'Integration Coverage',
+      activityCoverage: 'Activity Coverage',
+      integratedEntities: 'integrated entities',
+      activeEntities: 'active entities',
       hotStorage: 'Hot Storage',
       latency: 'Latency',
       days: '30 Days',
@@ -150,7 +172,7 @@ export const systemManagement = {
     footer: {
       policyTitle: 'Engine Archival Policy',
       policyDesc:
-        'The audit engine automatically archives hot data to cold JSON storage after 30 days. Field-level diffing is computed on the backend to ensure database leanness.',
+        'Integration coverage is the share of entities with transactional audit wiring. Activity coverage only counts entities with events in the last {{days}} hot-window days; archived history does not mean an entity is unintegrated.',
     },
     modules: {
       trading: 'Trading & Sales',
@@ -158,6 +180,11 @@ export const systemManagement = {
       equipment: 'Equipment & Tooling',
       engineering: 'Engineering DB',
       warehouse: 'Warehouse & Inventory',
+      production: 'Production Execution',
+      quality: 'Quality Management',
+      organization: 'Organization & People',
+      system: 'System Foundation',
+      workflow: 'Workflow & Approvals',
     },
   },
 } as const

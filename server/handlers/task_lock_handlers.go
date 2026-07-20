@@ -30,8 +30,9 @@ func runWithTaskLock(lockKey string, lockTTL time.Duration, fn func() error) err
 // SyncExchangeRatesWithLock ensures manual trigger shares the same lock as cron trigger.
 func SyncExchangeRatesWithLock(c *gin.Context) {
 	var syncedCount int
+	ctx := auditContextFromGin(c)
 	err := runWithTaskLock(ExchangeRatesSyncLockKey, ExchangeRatesSyncLockTTL, func() error {
-		count, err := RunExchangeRateSync()
+		count, err := RunExchangeRateSyncWithContext(ctx)
 		if err != nil {
 			return err
 		}

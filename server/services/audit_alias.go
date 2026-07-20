@@ -81,6 +81,82 @@ var auditModuleAliasMap = map[string][]string{
 		AuditModuleProductionLine,
 		"ProductionLine",
 	},
+	AuditModuleCurrency: {
+		AuditModuleCurrency,
+		"Currency",
+	},
+	AuditModulePaymentTerm: {
+		AuditModulePaymentTerm,
+		"PaymentTerm",
+	},
+	AuditModulePaymentMethod: {
+		AuditModulePaymentMethod,
+		"PaymentMethod",
+	},
+	AuditModuleTaxRate: {
+		AuditModuleTaxRate,
+		"TaxRate",
+	},
+	AuditModuleExchangeRateConfig: {
+		AuditModuleExchangeRateConfig,
+		"ExchangeRateConfig",
+	},
+	AuditModuleMold: {
+		AuditModuleMold,
+		"Mold",
+	},
+	AuditModuleFurnace: {
+		AuditModuleFurnace,
+		"Furnace",
+	},
+	AuditModuleMaintenanceRecord: {
+		AuditModuleMaintenanceRecord,
+		"MaintenanceRecord",
+	},
+	AuditModuleMoldDrawing: {
+		AuditModuleMoldDrawing,
+		"MoldDrawing",
+	},
+	AuditModuleEquipmentPartner: {
+		AuditModuleEquipmentPartner,
+		"EquipmentPartner",
+	},
+	AuditModuleMoldLoan: {
+		AuditModuleMoldLoan,
+		"MoldLoan",
+	},
+	AuditModuleStocktake: {
+		AuditModuleStocktake,
+		"Stocktake",
+	},
+	AuditModulePieceworkRate: {
+		AuditModulePieceworkRate,
+		"PieceworkRate",
+	},
+	AuditModuleTeam: {
+		AuditModuleTeam,
+		"Team",
+	},
+	AuditModuleInspectionStandard: {
+		AuditModuleInspectionStandard,
+		"InspectionStandard",
+	},
+	AuditModuleInspectionTask: {
+		AuditModuleInspectionTask,
+		"InspectionTask",
+	},
+	AuditModuleOrganization: {
+		AuditModuleOrganization,
+		"Organization",
+	},
+	AuditModuleEnterpriseConfig: {
+		AuditModuleEnterpriseConfig,
+		"EnterpriseConfig",
+	},
+	AuditModuleApprovalRequest: {
+		AuditModuleApprovalRequest,
+		"ApprovalRequest",
+	},
 }
 
 func NormalizeAuditModule(module string) string {

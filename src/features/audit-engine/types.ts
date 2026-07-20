@@ -1,19 +1,21 @@
 export interface AuditEngineModuleStats {
   id: string
   targetEntityCount: number
-  loggedEntityCount: number
-  entryEntityCount: number
-  coverage: number
-  logCoverage: number
-  entryCoverage: number
+  integratedEntityCount: number
+  activeEntityCount: number
+  integrationCoverage: number
+  activityCoverage: number
   connected: boolean
   status: 'HEALTHY' | 'ALERT' | 'CRITICAL'
   lastEvent?: string
-  connectedEntities: string[]
-  loggedEntities: string[]
-  entryEntities: string[]
+  integratedEntities: string[]
+  activeEntities: string[]
+  missingIntegrationEntities: string[]
 }
 
 export interface AuditEngineStatsResponse {
   modules: AuditEngineModuleStats[]
+  hotWindowDays: number
+  unmappedLogEntities: string[]
+  unmappedLogEntityCount: number
 }

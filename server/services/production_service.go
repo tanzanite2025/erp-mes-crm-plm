@@ -119,6 +119,8 @@ func (s *ProductionService) ListProductionLines() ([]ProductionLineDTO, error) {
 func (s *ProductionService) SaveProductionLine(req SaveProductionLineRequest) (ProductionLineDTO, error) {
 	line := mapProductionLineDTOToModel(req.Line)
 	err := s.txManager.WithinTransaction(func(tx *gorm.DB) error {
+		var before *ProductionLineDTO
+		auditAction := audit.AuditActionCreate
 		if line.ID != "" && !strings.HasPrefix(line.ID, "temp-") {
 			existing, err := s.repository.GetProductionLineByID(tx, line.ID)
 			if err != nil {
@@ -127,6 +129,9 @@ func (s *ProductionService) SaveProductionLine(req SaveProductionLineRequest) (P
 			if existing.Version != line.Version {
 				return ErrProductionLineVersionConflict
 			}
+			beforeDTO := mapProductionLineToDTO(existing)
+			before = &beforeDTO
+			auditAction = audit.AuditActionUpdate
 		}
 
 		currentAuthCode, err := s.systemConfigRepo.GetSystemConfigValue(tx, "topology_auth_password", "622575")
@@ -163,7 +168,25 @@ func (s *ProductionService) SaveProductionLine(req SaveProductionLineRequest) (P
 			line.Version = 1
 		}
 
-		return s.repository.SaveProductionLine(tx, &line)
+		if err := s.repository.SaveProductionLine(tx, &line); err != nil {
+			return err
+		}
+
+		after := mapProductionLineToDTO(line)
+		event := audit.NewAuditEvent(
+			audit.AuditEntityProductionLine,
+			line.ID,
+			auditAction,
+			audit.AuditActor{
+				Username: strings.TrimSpace(req.Operator),
+				IP:       strings.TrimSpace(req.IP),
+				Source:   "http",
+			},
+		)
+		if before != nil {
+			event = event.WithChanges(audit.DiffModelValues(*before, after)...)
+		}
+		return recordAuditEventTx(tx, event.Normalize())
 	})
 	return mapProductionLineToDTO(line), err
 }

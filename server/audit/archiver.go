@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	archiveRetention = 30 * 24 * time.Hour
+	HotRetentionDays = 30
+	HotRetention     = HotRetentionDays * 24 * time.Hour
 	archiveDir       = "storage/audit_archive"
 )
 
@@ -36,7 +37,7 @@ func StartArchiver(db *gorm.DB) {
 
 func runArchive(db *gorm.DB) {
 	fmt.Println("[AUDIT_ARCHIVER] Starting archival task...")
-	cutoff := time.Now().Add(-archiveRetention)
+	cutoff := time.Now().Add(-HotRetention)
 
 	var oldLogs []models.AuditLog
 	// 分批处理，避免内存溢出
@@ -71,7 +72,7 @@ func processBatch(db *gorm.DB, logs []models.AuditLog) error {
 		}
 
 		filePath := filepath.Join(dir, fmt.Sprintf("%s.json", log.Module))
-		
+
 		// 以追加模式打开文件
 		f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {

@@ -12,14 +12,26 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"strconv"
 	"strings"
 	"xdfc-server/db"
 	"xdfc-server/models"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
+
+func defaultFinanceCurrencies() []models.Currency {
+	return []models.Currency{
+		{Code: "CNY", Name: "人民币", Symbol: "¥", Rate: 1.0, Precision: 2, IsBase: true, Status: "Active"},
+		{Code: "USD", Name: "美元", Symbol: "$", Rate: 7.24, Precision: 2, IsBase: false, Status: "Active"},
+		{Code: "EUR", Name: "欧元", Symbol: "EUR", Rate: 7.85, Precision: 2, IsBase: false, Status: "Active"},
+		{Code: "HKD", Name: "港币", Symbol: "HK$", Rate: 0.92, Precision: 2, IsBase: false, Status: "Active"},
+	}
+}
 
 func fallbackCNYCurrency() models.Currency {
 	return models.Currency{
@@ -33,6 +45,10 @@ func fallbackCNYCurrency() models.Currency {
 }
 
 func ensureFallbackCurrency() error {
+	return ensureFallbackCurrencyWithContext(financeSystemAuditContext())
+}
+
+func ensureFallbackCurrencyWithContext(ctx context.Context) error {
 	return db.DB.Transaction(func(tx *gorm.DB) error {
 		var baseCount int64
 		if err := tx.Model(&models.Currency{}).Where("is_base = ?", true).Count(&baseCount).Error; err != nil {
@@ -40,20 +56,39 @@ func ensureFallbackCurrency() error {
 		}
 
 		var cny models.Currency
-		err := tx.Where("code = ?", "CNY").First(&cny).Error
+		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("code = ?", "CNY").First(&cny).Error
 		switch {
 		case errors.Is(err, gorm.ErrRecordNotFound):
 			cny = fallbackCNYCurrency()
 			cny.IsBase = baseCount == 0
-			return tx.Create(&cny).Error
+			if err := tx.Create(&cny).Error; err != nil {
+				return err
+			}
+			return recordFinanceAuditChange(ctx, tx, AuditModuleCurrency, strconv.FormatUint(uint64(cny.ID), 10), "CREATE", nil, cny)
 		case err != nil:
 			return err
 		case baseCount == 0:
-			return tx.Model(&cny).Updates(map[string]interface{}{
+			before := map[string]any{
+				"isBase": cny.IsBase,
+				"rate":   cny.Rate,
+				"status": cny.Status,
+			}
+			if err := tx.Model(&cny).Updates(map[string]interface{}{
 				"is_base": true,
 				"rate":    1.0,
 				"status":  "Active",
-			}).Error
+			}).Error; err != nil {
+				return err
+			}
+			if err := tx.First(&cny, cny.ID).Error; err != nil {
+				return err
+			}
+			after := map[string]any{
+				"isBase": cny.IsBase,
+				"rate":   cny.Rate,
+				"status": cny.Status,
+			}
+			return recordFinanceAuditChange(ctx, tx, AuditModuleCurrency, strconv.FormatUint(uint64(cny.ID), 10), "UPDATE", before, after)
 		default:
 			return nil
 		}
@@ -72,34 +107,52 @@ func ListCurrencies() ([]models.Currency, error) {
 	return currencies, nil
 }
 
+// SaveCurrencyFromJSON keeps the original service API for non-HTTP callers.
+// New request paths should use SaveCurrencyFromJSONWithContext so the actor is
+// carried into the transactional audit event.
 func SaveCurrencyFromJSON(payload map[string]json.RawMessage, body []byte) (models.Currency, error) {
-	if rawID, ok := payload["id"]; ok {
-		var id uint
-		if err := json.Unmarshal(rawID, &id); err != nil {
-			return models.Currency{}, err
-		}
-		updates, err := buildCurrencyUpdates(payload)
-		if err != nil {
-			return models.Currency{}, err
-		}
-		if err := patchCurrencyRecord(id, updates); err != nil {
-			return models.Currency{}, err
-		}
-		var currency models.Currency
-		if err := db.DB.First(&currency, id).Error; err != nil {
-			return models.Currency{}, err
-		}
-		return currency, nil
-	}
+	return SaveCurrencyFromJSONWithContext(context.Background(), payload, body)
+}
 
-	var currency models.Currency
-	if err := json.Unmarshal(body, &currency); err != nil {
-		return models.Currency{}, err
-	}
-	if err := saveCurrencyRecord(&currency); err != nil {
-		return models.Currency{}, err
-	}
-	return currency, nil
+func SaveCurrencyFromJSONWithContext(ctx context.Context, payload map[string]json.RawMessage, body []byte) (models.Currency, error) {
+	var saved models.Currency
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		var before any
+		action := "CREATE"
+
+		if rawID, ok := payload["id"]; ok {
+			var id uint
+			if err := json.Unmarshal(rawID, &id); err != nil {
+				return err
+			}
+			updates, err := buildCurrencyUpdates(payload)
+			if err != nil {
+				return err
+			}
+			var existing models.Currency
+			if err := tx.First(&existing, id).Error; err != nil {
+				return err
+			}
+			before = existing
+			action = "UPDATE"
+			if err := patchCurrencyRecord(tx, id, updates); err != nil {
+				return err
+			}
+			if err := tx.First(&saved, id).Error; err != nil {
+				return err
+			}
+		} else {
+			if err := json.Unmarshal(body, &saved); err != nil {
+				return err
+			}
+			if err := saveCurrencyRecord(tx, &saved); err != nil {
+				return err
+			}
+		}
+
+		return recordFinanceAuditChange(ctx, tx, AuditModuleCurrency, strconv.FormatUint(uint64(saved.ID), 10), action, before, saved)
+	})
+	return saved, err
 }
 
 func ListPaymentTerms() ([]models.PaymentTerm, error) {
@@ -126,64 +179,130 @@ func ListPaymentMethods() ([]models.PaymentMethod, error) {
 	return methods, nil
 }
 
+// SavePaymentTermFromJSON is the backwards-compatible system-context wrapper.
 func SavePaymentTermFromJSON(payload map[string]json.RawMessage, body []byte) (models.PaymentTerm, error) {
-	if rawID, ok := payload["id"]; ok {
-		var id uint
-		if err := json.Unmarshal(rawID, &id); err != nil {
-			return models.PaymentTerm{}, err
-		}
-		updates, err := buildPaymentTermUpdates(payload)
-		if err != nil {
-			return models.PaymentTerm{}, err
-		}
-		if err := patchPaymentTermRecord(id, updates); err != nil {
-			return models.PaymentTerm{}, err
-		}
-		var term models.PaymentTerm
-		if err := db.DB.First(&term, id).Error; err != nil {
-			return models.PaymentTerm{}, err
-		}
-		return term, nil
-	}
-
-	var term models.PaymentTerm
-	if err := json.Unmarshal(body, &term); err != nil {
-		return models.PaymentTerm{}, err
-	}
-	if err := savePaymentTermRecord(&term); err != nil {
-		return models.PaymentTerm{}, err
-	}
-	return term, nil
+	return SavePaymentTermFromJSONWithContext(context.Background(), payload, body)
 }
 
-func SavePaymentMethodFromJSON(payload map[string]json.RawMessage, body []byte) (models.PaymentMethod, error) {
-	if rawID, ok := payload["id"]; ok {
-		var id uint
-		if err := json.Unmarshal(rawID, &id); err != nil {
-			return models.PaymentMethod{}, err
+func SavePaymentTermFromJSONWithContext(ctx context.Context, payload map[string]json.RawMessage, body []byte) (models.PaymentTerm, error) {
+	var saved models.PaymentTerm
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		var before any
+		action := "CREATE"
+		if rawID, ok := payload["id"]; ok {
+			var id uint
+			if err := json.Unmarshal(rawID, &id); err != nil {
+				return err
+			}
+			updates, err := buildPaymentTermUpdates(payload)
+			if err != nil {
+				return err
+			}
+			var existing models.PaymentTerm
+			var defaultsToUnset []models.PaymentTerm
+			if value, enablesDefault := updates["is_default"].(bool); enablesDefault && value {
+				existing, defaultsToUnset, err = lockPaymentTermDefaultSelectionTx(tx, id)
+				if err != nil {
+					return err
+				}
+			} else if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&existing, id).Error; err != nil {
+				return err
+			}
+			before = existing
+			action = "UPDATE"
+			if err := unsetPaymentTermDefaultsWithAudit(ctx, tx, defaultsToUnset); err != nil {
+				return err
+			}
+			if err := patchPaymentTermRecord(tx, id, updates); err != nil {
+				return err
+			}
+			if err := tx.First(&saved, id).Error; err != nil {
+				return err
+			}
+		} else {
+			if err := json.Unmarshal(body, &saved); err != nil {
+				return err
+			}
+			if saved.IsDefault {
+				_, defaultsToUnset, err := lockPaymentTermDefaultSelectionTx(tx, 0)
+				if err != nil {
+					return err
+				}
+				if err := unsetPaymentTermDefaultsWithAudit(ctx, tx, defaultsToUnset); err != nil {
+					return err
+				}
+			}
+			if err := savePaymentTermRecord(tx, &saved); err != nil {
+				return err
+			}
 		}
-		updates, err := buildPaymentMethodUpdates(payload)
-		if err != nil {
-			return models.PaymentMethod{}, err
-		}
-		if err := patchPaymentMethodRecord(id, updates); err != nil {
-			return models.PaymentMethod{}, err
-		}
-		var method models.PaymentMethod
-		if err := db.DB.First(&method, id).Error; err != nil {
-			return models.PaymentMethod{}, err
-		}
-		return method, nil
-	}
 
-	var method models.PaymentMethod
-	if err := json.Unmarshal(body, &method); err != nil {
-		return models.PaymentMethod{}, err
-	}
-	if err := savePaymentMethodRecord(&method); err != nil {
-		return models.PaymentMethod{}, err
-	}
-	return method, nil
+		return recordFinanceAuditChange(ctx, tx, AuditModulePaymentTerm, strconv.FormatUint(uint64(saved.ID), 10), action, before, saved)
+	})
+	return saved, err
+}
+
+// SavePaymentMethodFromJSON is the backwards-compatible system-context wrapper.
+func SavePaymentMethodFromJSON(payload map[string]json.RawMessage, body []byte) (models.PaymentMethod, error) {
+	return SavePaymentMethodFromJSONWithContext(context.Background(), payload, body)
+}
+
+func SavePaymentMethodFromJSONWithContext(ctx context.Context, payload map[string]json.RawMessage, body []byte) (models.PaymentMethod, error) {
+	var saved models.PaymentMethod
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		var before any
+		action := "CREATE"
+		if rawID, ok := payload["id"]; ok {
+			var id uint
+			if err := json.Unmarshal(rawID, &id); err != nil {
+				return err
+			}
+			updates, err := buildPaymentMethodUpdates(payload)
+			if err != nil {
+				return err
+			}
+			var existing models.PaymentMethod
+			var defaultsToUnset []models.PaymentMethod
+			if value, enablesDefault := updates["is_default"].(bool); enablesDefault && value {
+				existing, defaultsToUnset, err = lockPaymentMethodDefaultSelectionTx(tx, id)
+				if err != nil {
+					return err
+				}
+			} else if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&existing, id).Error; err != nil {
+				return err
+			}
+			before = existing
+			action = "UPDATE"
+			if err := unsetPaymentMethodDefaultsWithAudit(ctx, tx, defaultsToUnset); err != nil {
+				return err
+			}
+			if err := patchPaymentMethodRecord(tx, id, updates); err != nil {
+				return err
+			}
+			if err := tx.First(&saved, id).Error; err != nil {
+				return err
+			}
+		} else {
+			if err := json.Unmarshal(body, &saved); err != nil {
+				return err
+			}
+			if saved.IsDefault {
+				_, defaultsToUnset, err := lockPaymentMethodDefaultSelectionTx(tx, 0)
+				if err != nil {
+					return err
+				}
+				if err := unsetPaymentMethodDefaultsWithAudit(ctx, tx, defaultsToUnset); err != nil {
+					return err
+				}
+			}
+			if err := savePaymentMethodRecord(tx, &saved); err != nil {
+				return err
+			}
+		}
+
+		return recordFinanceAuditChange(ctx, tx, AuditModulePaymentMethod, strconv.FormatUint(uint64(saved.ID), 10), action, before, saved)
+	})
+	return saved, err
 }
 
 func ListTaxRates() ([]models.TaxRate, error) {
@@ -193,7 +312,7 @@ func ListTaxRates() ([]models.TaxRate, error) {
 	}
 
 	if len(rates) == 0 {
-		if err := seedDefaultTaxRates(db.DB); err != nil {
+		if err := ensureDefaultTaxRatesWithAudit(financeSystemAuditContext()); err != nil {
 			return nil, err
 		}
 		if err := db.DB.Order("rate desc, code asc").Find(&rates).Error; err != nil {
@@ -204,71 +323,98 @@ func ListTaxRates() ([]models.TaxRate, error) {
 	return rates, nil
 }
 
+// SaveTaxRateFromJSON is the backwards-compatible system-context wrapper.
 func SaveTaxRateFromJSON(payload map[string]json.RawMessage, body []byte) (models.TaxRate, error) {
-	if rawID, ok := payload["id"]; ok {
-		var id string
-		if err := json.Unmarshal(rawID, &id); err != nil {
-			return models.TaxRate{}, err
-		}
-		updates, err := buildTaxRateUpdates(payload)
-		if err != nil {
-			return models.TaxRate{}, err
-		}
-		if err := patchTaxRateRecord(id, updates); err != nil {
-			return models.TaxRate{}, err
-		}
-		var rate models.TaxRate
-		if err := db.DB.First(&rate, "id = ?", id).Error; err != nil {
-			return models.TaxRate{}, err
-		}
-		return rate, nil
-	}
-
-	var rate models.TaxRate
-	if err := json.Unmarshal(body, &rate); err != nil {
-		return models.TaxRate{}, err
-	}
-	if err := saveTaxRateRecord(&rate); err != nil {
-		return models.TaxRate{}, err
-	}
-	return rate, nil
+	return SaveTaxRateFromJSONWithContext(context.Background(), payload, body)
 }
 
+func SaveTaxRateFromJSONWithContext(ctx context.Context, payload map[string]json.RawMessage, body []byte) (models.TaxRate, error) {
+	var saved models.TaxRate
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		var before any
+		action := "CREATE"
+		if rawID, ok := payload["id"]; ok {
+			var id string
+			if err := json.Unmarshal(rawID, &id); err != nil {
+				return err
+			}
+			updates, err := buildTaxRateUpdates(payload)
+			if err != nil {
+				return err
+			}
+			var existing models.TaxRate
+			if err := tx.First(&existing, "id = ?", id).Error; err != nil {
+				return err
+			}
+			before = existing
+			action = "UPDATE"
+			if err := patchTaxRateRecord(tx, id, updates); err != nil {
+				return err
+			}
+			if err := tx.First(&saved, "id = ?", id).Error; err != nil {
+				return err
+			}
+		} else {
+			if err := json.Unmarshal(body, &saved); err != nil {
+				return err
+			}
+			if err := saveTaxRateRecord(tx, &saved); err != nil {
+				return err
+			}
+		}
+
+		return recordFinanceAuditChange(ctx, tx, AuditModuleTaxRate, saved.ID, action, before, saved)
+	})
+	return saved, err
+}
+
+// SetBaseCurrency keeps the original system-level service API.
 func SetBaseCurrency(id string) error {
+	return SetBaseCurrencyWithContext(context.Background(), id)
+}
+
+func SetBaseCurrencyWithContext(ctx context.Context, id string) error {
 	return db.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(&models.Currency{}).Where("1 = 1").Update("is_base", false).Error; err != nil {
-			return err
-		}
-		if err := tx.Model(&models.Currency{}).Where("id = ?", id).Updates(map[string]interface{}{
-			"is_base": true,
-			"rate":    1.0,
-		}).Error; err != nil {
-			return err
-		}
-		return nil
+		return setBaseCurrencyTx(ctx, tx, id)
 	})
 }
 
 func SeedFinanceData() error {
-	currencies := []models.Currency{
-		{Code: "CNY", Name: "人民币", Symbol: "¥", Rate: 1.0, Precision: 2, IsBase: true, Status: "Active"},
-		{Code: "USD", Name: "美元", Symbol: "$", Rate: 7.24, Precision: 2, IsBase: false, Status: "Active"},
-		{Code: "EUR", Name: "欧元", Symbol: "EUR", Rate: 7.85, Precision: 2, IsBase: false, Status: "Active"},
-		{Code: "HKD", Name: "港币", Symbol: "HK$", Rate: 0.92, Precision: 2, IsBase: false, Status: "Active"},
-	}
-	for _, curr := range currencies {
+	return SeedFinanceDataWithContext(financeSystemAuditContext())
+}
+
+func SeedFinanceDataWithContext(ctx context.Context) error {
+	return db.DB.Transaction(func(tx *gorm.DB) error {
+		before, err := loadFinanceSeedSnapshot(tx)
+		if err != nil {
+			return err
+		}
+
+		if err := seedFinanceDefaultsTx(tx); err != nil {
+			return err
+		}
+
+		after, err := loadFinanceSeedSnapshot(tx)
+		if err != nil {
+			return err
+		}
+		return recordFinanceSeedAuditChanges(ctx, tx, before, after)
+	})
+}
+
+func seedFinanceDefaultsTx(tx *gorm.DB) error {
+	for _, curr := range defaultFinanceCurrencies() {
 		item := curr
-		db.DB.Where(models.Currency{Code: item.Code}).FirstOrCreate(&item)
+		if err := tx.Where(models.Currency{Code: item.Code}).FirstOrCreate(&item).Error; err != nil {
+			return err
+		}
 	}
 
-	if err := ensureDefaultPaymentMethods(); err != nil {
-		return err
-	}
-	if err := ensureDefaultPaymentTerms(); err != nil {
+	if err := ensureDefaultFinanceDictionariesTx(tx); err != nil {
 		return err
 	}
 
-	return seedDefaultTaxRates(db.DB)
+	return seedDefaultTaxRates(tx)
 }
 
 func EnsureFinanceDictionaryCompatibility() error {
@@ -418,13 +564,13 @@ func buildTaxRateUpdates(payload map[string]json.RawMessage) (map[string]interfa
 	return updates, nil
 }
 
-func saveCurrencyRecord(currency *models.Currency) error {
+func saveCurrencyRecord(tx *gorm.DB, currency *models.Currency) error {
 	if currency.ID == 0 {
-		return db.DB.Create(currency).Error
+		return tx.Create(currency).Error
 	}
 
 	var existing models.Currency
-	if err := db.DB.First(&existing, currency.ID).Error; err != nil {
+	if err := tx.First(&existing, currency.ID).Error; err != nil {
 		return err
 	}
 
@@ -437,137 +583,97 @@ func saveCurrencyRecord(currency *models.Currency) error {
 		"is_base":   currency.IsBase,
 		"status":    currency.Status,
 	}
-	return db.DB.Model(&existing).Updates(updates).Error
+	return tx.Model(&existing).Updates(updates).Error
 }
 
-func patchCurrencyRecord(id uint, updates map[string]interface{}) error {
+func patchCurrencyRecord(tx *gorm.DB, id uint, updates map[string]interface{}) error {
 	var existing models.Currency
-	if err := db.DB.First(&existing, id).Error; err != nil {
+	if err := tx.First(&existing, id).Error; err != nil {
 		return err
 	}
-	return db.DB.Model(&existing).Updates(updates).Error
+	return tx.Model(&existing).Updates(updates).Error
 }
 
-func savePaymentTermRecord(term *models.PaymentTerm) error {
+func savePaymentTermRecord(tx *gorm.DB, term *models.PaymentTerm) error {
 	normalizePaymentTerm(term)
 
-	return db.DB.Transaction(func(tx *gorm.DB) error {
-		if term.ID == 0 {
-			if term.Version == 0 {
-				term.Version = 1
-			}
-			if term.IsDefault {
-				if err := tx.Model(&models.PaymentTerm{}).Where("id <> 0").Update("is_default", false).Error; err != nil {
-					return err
-				}
-			}
-			return tx.Create(term).Error
+	if term.ID == 0 {
+		if term.Version == 0 {
+			term.Version = 1
 		}
+		return tx.Create(term).Error
+	}
 
-		var existing models.PaymentTerm
-		if err := tx.First(&existing, term.ID).Error; err != nil {
-			return err
-		}
+	var existing models.PaymentTerm
+	if err := tx.First(&existing, term.ID).Error; err != nil {
+		return err
+	}
 
-		if term.IsDefault {
-			if err := tx.Model(&models.PaymentTerm{}).Where("id <> ?", existing.ID).Update("is_default", false).Error; err != nil {
-				return err
-			}
-		}
-
-		updates := map[string]interface{}{
-			"code":        term.Code,
-			"name":        term.Name,
-			"description": term.Description,
-			"installment": term.Installment,
-			"is_default":  term.IsDefault,
-			"sort_order":  term.SortOrder,
-			"status":      term.Status,
-			"version":     existing.Version + 1,
-		}
-		return tx.Model(&existing).Updates(updates).Error
-	})
+	updates := map[string]interface{}{
+		"code":        term.Code,
+		"name":        term.Name,
+		"description": term.Description,
+		"installment": term.Installment,
+		"is_default":  term.IsDefault,
+		"sort_order":  term.SortOrder,
+		"status":      term.Status,
+		"version":     existing.Version + 1,
+	}
+	return tx.Model(&existing).Updates(updates).Error
 }
 
-func patchPaymentTermRecord(id uint, updates map[string]interface{}) error {
-	return db.DB.Transaction(func(tx *gorm.DB) error {
-		var existing models.PaymentTerm
-		if err := tx.First(&existing, id).Error; err != nil {
-			return err
-		}
-		if value, ok := updates["is_default"].(bool); ok && value {
-			if err := tx.Model(&models.PaymentTerm{}).Where("id <> ?", existing.ID).Update("is_default", false).Error; err != nil {
-				return err
-			}
-		}
-		updates["version"] = existing.Version + 1
-		return tx.Model(&existing).Updates(updates).Error
-	})
+func patchPaymentTermRecord(tx *gorm.DB, id uint, updates map[string]interface{}) error {
+	var existing models.PaymentTerm
+	if err := tx.First(&existing, id).Error; err != nil {
+		return err
+	}
+	updates["version"] = existing.Version + 1
+	return tx.Model(&existing).Updates(updates).Error
 }
 
-func savePaymentMethodRecord(method *models.PaymentMethod) error {
+func savePaymentMethodRecord(tx *gorm.DB, method *models.PaymentMethod) error {
 	normalizePaymentMethod(method)
 
-	return db.DB.Transaction(func(tx *gorm.DB) error {
-		if method.ID == 0 {
-			if method.Version == 0 {
-				method.Version = 1
-			}
-			if method.IsDefault {
-				if err := tx.Model(&models.PaymentMethod{}).Where("id <> 0").Update("is_default", false).Error; err != nil {
-					return err
-				}
-			}
-			return tx.Create(method).Error
+	if method.ID == 0 {
+		if method.Version == 0 {
+			method.Version = 1
 		}
+		return tx.Create(method).Error
+	}
 
-		var existing models.PaymentMethod
-		if err := tx.First(&existing, method.ID).Error; err != nil {
-			return err
-		}
+	var existing models.PaymentMethod
+	if err := tx.First(&existing, method.ID).Error; err != nil {
+		return err
+	}
 
-		if method.IsDefault {
-			if err := tx.Model(&models.PaymentMethod{}).Where("id <> ?", existing.ID).Update("is_default", false).Error; err != nil {
-				return err
-			}
-		}
-
-		updates := map[string]interface{}{
-			"code":        method.Code,
-			"name":        method.Name,
-			"description": method.Description,
-			"is_default":  method.IsDefault,
-			"sort_order":  method.SortOrder,
-			"status":      method.Status,
-			"version":     existing.Version + 1,
-		}
-		return tx.Model(&existing).Updates(updates).Error
-	})
+	updates := map[string]interface{}{
+		"code":        method.Code,
+		"name":        method.Name,
+		"description": method.Description,
+		"is_default":  method.IsDefault,
+		"sort_order":  method.SortOrder,
+		"status":      method.Status,
+		"version":     existing.Version + 1,
+	}
+	return tx.Model(&existing).Updates(updates).Error
 }
 
-func patchPaymentMethodRecord(id uint, updates map[string]interface{}) error {
-	return db.DB.Transaction(func(tx *gorm.DB) error {
-		var existing models.PaymentMethod
-		if err := tx.First(&existing, id).Error; err != nil {
-			return err
-		}
-		if value, ok := updates["is_default"].(bool); ok && value {
-			if err := tx.Model(&models.PaymentMethod{}).Where("id <> ?", existing.ID).Update("is_default", false).Error; err != nil {
-				return err
-			}
-		}
-		updates["version"] = existing.Version + 1
-		return tx.Model(&existing).Updates(updates).Error
-	})
+func patchPaymentMethodRecord(tx *gorm.DB, id uint, updates map[string]interface{}) error {
+	var existing models.PaymentMethod
+	if err := tx.First(&existing, id).Error; err != nil {
+		return err
+	}
+	updates["version"] = existing.Version + 1
+	return tx.Model(&existing).Updates(updates).Error
 }
 
-func saveTaxRateRecord(rate *models.TaxRate) error {
+func saveTaxRateRecord(tx *gorm.DB, rate *models.TaxRate) error {
 	if rate.ID == "" {
-		return db.DB.Create(rate).Error
+		return tx.Create(rate).Error
 	}
 
 	var existing models.TaxRate
-	if err := db.DB.First(&existing, "id = ?", rate.ID).Error; err != nil {
+	if err := tx.First(&existing, "id = ?", rate.ID).Error; err != nil {
 		return err
 	}
 
@@ -578,15 +684,15 @@ func saveTaxRateRecord(rate *models.TaxRate) error {
 		"status":      rate.Status,
 		"description": rate.Description,
 	}
-	return db.DB.Model(&existing).Updates(updates).Error
+	return tx.Model(&existing).Updates(updates).Error
 }
 
-func patchTaxRateRecord(id string, updates map[string]interface{}) error {
+func patchTaxRateRecord(tx *gorm.DB, id string, updates map[string]interface{}) error {
 	var existing models.TaxRate
-	if err := db.DB.First(&existing, "id = ?", id).Error; err != nil {
+	if err := tx.First(&existing, "id = ?", id).Error; err != nil {
 		return err
 	}
-	return db.DB.Model(&existing).Updates(updates).Error
+	return tx.Model(&existing).Updates(updates).Error
 }
 
 func defaultFinanceTaxRates() []models.TaxRate {
@@ -616,15 +722,11 @@ func defaultPaymentMethods() []models.PaymentMethod {
 }
 
 func ensureDefaultPaymentTerms() error {
-	return db.DB.Transaction(func(tx *gorm.DB) error {
-		return ensureDefaultFinanceDictionariesTx(tx)
-	})
+	return ensureDefaultFinanceDictionariesWithAudit(financeSystemAuditContext())
 }
 
 func ensureDefaultPaymentMethods() error {
-	return db.DB.Transaction(func(tx *gorm.DB) error {
-		return ensureDefaultFinanceDictionariesTx(tx)
-	})
+	return ensureDefaultFinanceDictionariesWithAudit(financeSystemAuditContext())
 }
 
 func ensureDefaultFinanceDictionariesTx(tx *gorm.DB) error {
@@ -661,8 +763,11 @@ func ensureDefaultPaymentTermsTx(tx *gorm.DB) error {
 }
 
 func removeDisallowedSystemPaymentTermsTx(tx *gorm.DB) error {
-	disallowedCodes := []string{"PREPAY100", "PREPAY30_BAL70"}
-	return tx.Where("is_system = ? AND code IN ?", true, disallowedCodes).Delete(&models.PaymentTerm{}).Error
+	return tx.Where("is_system = ? AND code IN ?", true, disallowedSystemPaymentTermCodes()).Delete(&models.PaymentTerm{}).Error
+}
+
+func disallowedSystemPaymentTermCodes() []string {
+	return []string{"PREPAY100", "PREPAY30_BAL70"}
 }
 
 func ensureDefaultPaymentMethodsTx(tx *gorm.DB) error {

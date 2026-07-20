@@ -14,6 +14,7 @@ import (
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var (
@@ -89,9 +90,38 @@ func effectiveApprover2(request models.ApprovalRequest) string {
 	return ""
 }
 
+func approvalAuditContext(actorID, operator, source string) context.Context {
+	return audit.NewContextWithActor(context.Background(), audit.AuditActor{
+		UserID:   strings.TrimSpace(actorID),
+		Username: strings.TrimSpace(operator),
+		Source:   strings.TrimSpace(source),
+	})
+}
+
+// RequestApprovalTx creates an approval request and records its audit event in
+// the same transaction. Callers that already have an actor should use
+// RequestApprovalTxWithContext so the audit row retains that identity.
 func RequestApprovalTx(tx *gorm.DB, input RequestApprovalInput) (ApprovalWorkflowResult, error) {
+	return RequestApprovalTxWithContext(context.Background(), tx, input)
+}
+
+// RequestApprovalTxWithContext is the transaction-safe approval creation
+// primitive. The supplied *gorm.DB is used as-is so an outer business
+// transaction can atomically include the request, audit row, and any related
+// writes. A nil transaction gets its own transaction for compatibility with
+// legacy callers.
+func RequestApprovalTxWithContext(ctx context.Context, tx *gorm.DB, input RequestApprovalInput) (ApprovalWorkflowResult, error) {
 	if tx == nil {
-		tx = db.DB
+		var result ApprovalWorkflowResult
+		err := db.DB.Transaction(func(inner *gorm.DB) error {
+			var err error
+			result, err = RequestApprovalTxWithContext(ctx, inner, input)
+			return err
+		})
+		if err != nil {
+			return ApprovalWorkflowResult{}, err
+		}
+		return result, nil
 	}
 
 	approver1ID, approver2ID := resolveRequestApprovers(input)
@@ -119,6 +149,9 @@ func RequestApprovalTx(tx *gorm.DB, input RequestApprovalInput) (ApprovalWorkflo
 	if err := createTx.Create(&request).Error; err != nil {
 		return ApprovalWorkflowResult{}, err
 	}
+	if err := recordLegacyAuditEntryWithContext(ctx, tx, AuditModuleApprovalRequest, request.ID, "request", nil); err != nil {
+		return ApprovalWorkflowResult{}, err
+	}
 
 	return ApprovalWorkflowResult{
 		Request:          request,
@@ -129,28 +162,33 @@ func RequestApprovalTx(tx *gorm.DB, input RequestApprovalInput) (ApprovalWorkflo
 }
 
 func RequestApproval(ctx context.Context, input RequestApprovalInput) (ApprovalWorkflowResult, error) {
-	result, err := RequestApprovalTx(db.DB, input)
+	var result ApprovalWorkflowResult
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		var err error
+		result, err = RequestApprovalTxWithContext(ctx, tx, input)
+		return err
+	})
 	if err != nil {
 		return ApprovalWorkflowResult{}, err
 	}
 	syncApprovalRequestToSearch(result.Request)
-	// 记录发起申请的审计日志
-	_ = recordLegacyAuditEntryWithContext(ctx, db.DB, "ApprovalRequest", result.Request.ID, "request", nil)
 	return result, nil
 }
 
 func ApproveRequest(ctx context.Context, input ApproveRequestInput, now time.Time, generateCode func() string) (ApprovalWorkflowResult, error) {
 	var request models.ApprovalRequest
-	if err := db.DB.First(&request, "id = ?", input.RequestID).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return ApprovalWorkflowResult{}, ErrApprovalRequestNotFound
-		}
-		return ApprovalWorkflowResult{}, err
-	}
-
 	result := ApprovalWorkflowResult{Request: request}
 
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&request, "id = ?", input.RequestID).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrApprovalRequestNotFound
+			}
+			return err
+		}
+		result.Request = request
+		auditAction := "approve_" + strings.ToLower(input.Status)
+
 		switch request.CurrentLevel {
 		case 1:
 			if effectiveApprover1(request) != input.ApproverUserID {
@@ -159,7 +197,10 @@ func ApproveRequest(ctx context.Context, input ApproveRequestInput, now time.Tim
 
 			if input.Status == "REJECTED" {
 				request.Status = "REJECTED"
-				return tx.Model(&request).Update("status", request.Status).Error
+				if err := tx.Model(&request).Update("status", request.Status).Error; err != nil {
+					return err
+				}
+				return recordLegacyAuditEntryWithContext(ctx, tx, "ApprovalRequest", request.ID, auditAction, nil)
 			}
 
 			if effectiveApprover2(request) != "" {
@@ -175,7 +216,7 @@ func ApproveRequest(ctx context.Context, input ApproveRequestInput, now time.Tim
 				result.NotifyAction = "L2_WAITING"
 				result.NotifyTitle = "一级审批已通过，等待二级审批"
 				result.NotifyTargetUser = effectiveApprover2(request)
-				return nil
+				return recordLegacyAuditEntryWithContext(ctx, tx, "ApprovalRequest", request.ID, auditAction, nil)
 			}
 
 			code := strings.TrimSpace(input.AuthCode)
@@ -197,7 +238,7 @@ func ApproveRequest(ctx context.Context, input ApproveRequestInput, now time.Tim
 			result.NotifyAction = "APPROVED"
 			result.NotifyTitle = "您的审批申请已被批准，授权码已发送"
 			result.NotifyTargetUser = request.RequesterID
-			return nil
+			return recordLegacyAuditEntryWithContext(ctx, tx, "ApprovalRequest", request.ID, auditAction, nil)
 
 		case 2:
 			if effectiveApprover2(request) != input.ApproverUserID {
@@ -206,7 +247,10 @@ func ApproveRequest(ctx context.Context, input ApproveRequestInput, now time.Tim
 
 			if input.Status == "REJECTED" {
 				request.Status = "REJECTED"
-				return tx.Model(&request).Update("status", request.Status).Error
+				if err := tx.Model(&request).Update("status", request.Status).Error; err != nil {
+					return err
+				}
+				return recordLegacyAuditEntryWithContext(ctx, tx, "ApprovalRequest", request.ID, auditAction, nil)
 			}
 
 			code := strings.TrimSpace(input.AuthCode)
@@ -228,7 +272,7 @@ func ApproveRequest(ctx context.Context, input ApproveRequestInput, now time.Tim
 			result.NotifyAction = "APPROVED"
 			result.NotifyTitle = "您的二级审批已通过，内容已授权"
 			result.NotifyTargetUser = request.RequesterID
-			return nil
+			return recordLegacyAuditEntryWithContext(ctx, tx, "ApprovalRequest", request.ID, auditAction, nil)
 
 		default:
 			return errors.New("unrecognized approval level")
@@ -238,14 +282,8 @@ func ApproveRequest(ctx context.Context, input ApproveRequestInput, now time.Tim
 		return ApprovalWorkflowResult{}, err
 	}
 
-	if err := db.DB.First(&request, "id = ?", input.RequestID).Error; err == nil {
-		result.Request = request
-		syncApprovalRequestToSearch(request)
-	}
-
 	result.Request = request
-	// 记录审批决策的审计日志
-	_ = recordLegacyAuditEntryWithContext(ctx, db.DB, "ApprovalRequest", request.ID, "approve_"+strings.ToLower(input.Status), nil)
+	syncApprovalRequestToSearch(request)
 	return result, nil
 }
 
@@ -356,42 +394,42 @@ func VerifyAuthCode(ctx context.Context, input VerifyAuthCodeInput, now time.Tim
 	}
 
 	var request models.ApprovalRequest
-	err := db.DB.Where(
-		"module = ? AND action = ? AND target_id = ? AND auth_code = ? AND status = 'APPROVED'",
-		input.Module, input.Action, input.TargetID, input.AuthCode,
-	).First(&request).Error
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where(
+			"module = ? AND action = ? AND target_id = ? AND auth_code = ? AND status = 'APPROVED'",
+			input.Module, input.Action, input.TargetID, input.AuthCode,
+		).First(&request).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrApprovalAuthCodeInvalid
+			}
+			return err
+		}
 
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return models.ApprovalRequest{}, ErrApprovalAuthCodeInvalid
-	}
+		if request.ExpiresAt != nil && now.After(*request.ExpiresAt) {
+			return ErrApprovalAuthCodeExpired
+		}
+
+		if err := tx.Model(&request).Updates(map[string]interface{}{
+			"status":      "VERIFIED",
+			"verifier_id": actor.UserID,
+		}).Error; err != nil {
+			return err
+		}
+
+		request.Status = "VERIFIED"
+		request.VerifierID = actor.UserID
+		request.UpdatedAt = now
+		verifyDiff, _ := json.Marshal(map[string]any{
+			"module":   input.Module,
+			"action":   input.Action,
+			"targetId": input.TargetID,
+		})
+		return recordLegacyAuditEntryWithContext(ctx, tx, "ApprovalRequest", request.ID, "verify_code", verifyDiff)
+	})
 	if err != nil {
 		return models.ApprovalRequest{}, err
 	}
-
-	if request.ExpiresAt != nil && now.After(*request.ExpiresAt) {
-		return models.ApprovalRequest{}, ErrApprovalAuthCodeExpired
-	}
-
-	// 记录验证者身份并更新状态
-	if err := db.DB.Model(&request).Updates(map[string]interface{}{
-		"status":      "VERIFIED",
-		"verifier_id": actor.UserID,
-	}).Error; err != nil {
-		return models.ApprovalRequest{}, err
-	}
-
-	request.Status = "VERIFIED"
-	request.VerifierID = actor.UserID
-	request.UpdatedAt = now
 	syncApprovalRequestToSearch(request)
-
-	// 记录验证行为的审计日志 (关键合规环节)
-	verifyDiff, _ := json.Marshal(map[string]any{
-		"module":   input.Module,
-		"action":   input.Action,
-		"targetId": input.TargetID,
-	})
-	_ = recordLegacyAuditEntryWithContext(ctx, db.DB, "ApprovalRequest", request.ID, "verify_code", verifyDiff)
 
 	return request, nil
 }

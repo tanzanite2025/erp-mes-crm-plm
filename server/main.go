@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"xdfc-server/audit"
 	"xdfc-server/db"
 	"xdfc-server/handlers"
 	"xdfc-server/middleware"
@@ -340,7 +341,12 @@ func main() {
 	_, err := c.AddFunc("0 11 * * *", func() {
 		runCronWithDistributedLock("exchange-rates-daily", handlers.ExchangeRatesSyncLockKey, handlers.ExchangeRatesSyncLockTTL, func() error {
 			log.Println("[CRON] 触发每日汇率同步任务...")
-			_, err := handlers.RunExchangeRateSync()
+			ctx := audit.NewContextWithActor(context.Background(), audit.AuditActor{
+				UserID:   "system",
+				Username: "system",
+				Source:   "cron",
+			})
+			_, err := handlers.RunExchangeRateSyncWithContext(ctx)
 			return err
 		})
 	})

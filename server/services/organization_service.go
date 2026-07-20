@@ -218,24 +218,26 @@ func (s *OrganizationService) validateOrganizationHierarchyWithDB(database *gorm
 }
 
 func (s *OrganizationService) DeleteOrganization(ctx context.Context, id string) error {
-	childCount, err := s.repository.CountChildOrganizations(s.txManager.DB(), id)
-	if err != nil {
-		return err
-	}
-	if childCount > 0 {
-		return ErrOrganizationHasChildren
-	}
-	employeeCount, err := s.repository.CountEmployeesByDeptID(s.txManager.DB(), id)
-	if err != nil {
-		return err
-	}
-	if employeeCount > 0 {
-		return ErrOrganizationHasEmployees
-	}
-	if err := recordLegacyAuditEntryWithContext(ctx, s.txManager.DB(), "Organization", id, "delete", nil); err != nil {
-		return err
-	}
-	return s.repository.DeleteOrganization(s.txManager.DB(), id)
+	return s.txManager.WithinTransaction(func(tx *gorm.DB) error {
+		childCount, err := s.repository.CountChildOrganizations(tx, id)
+		if err != nil {
+			return err
+		}
+		if childCount > 0 {
+			return ErrOrganizationHasChildren
+		}
+		employeeCount, err := s.repository.CountEmployeesByDeptID(tx, id)
+		if err != nil {
+			return err
+		}
+		if employeeCount > 0 {
+			return ErrOrganizationHasEmployees
+		}
+		if err := s.repository.DeleteOrganization(tx, id); err != nil {
+			return err
+		}
+		return recordLegacyAuditEntryWithContext(ctx, tx, "Organization", id, "delete", nil)
+	})
 }
 
 func (s *OrganizationService) ListEmployees() ([]EmployeeListItemResponse, error) {
