@@ -45,7 +45,7 @@ export const cuttingOperations = {
       barcode: {
         label: 'Code-Center Linear Barcode',
         placeholder: 'Scan or enter the code-center linear barcode',
-        hint: 'Supports scan-gun input, manual typing, or automatic fill-back from the mobile capture session below.',
+        hint: 'Supports the local camera scanner, photo recognition, a scan gun, or manual typing; use the mobile session below when no camera is available.',
       },
       qr: {
         label: 'Prepreg QR Code',
@@ -58,12 +58,14 @@ export const cuttingOperations = {
       },
     },
     mobileCapture: {
-      title: 'Mobile Barcode Fill-Back',
+      title: 'Mobile Scan Fill-Back (Fallback)',
       description:
-        'Create a mobile capture session, open the QR link on your phone, scan the code-center barcode, and auto-fill the current form.',
+        'Use this fallback when the computer has no usable camera or another device should perform the scan, then fill the result back here.',
       actions: {
         create: 'Create Mobile Session',
         copyLink: 'Copy Mobile Link',
+        expand: 'Expand mobile scan fill-back',
+        collapse: 'Collapse mobile scan fill-back',
       },
       status: {
         idle: 'No mobile capture session has been created yet',

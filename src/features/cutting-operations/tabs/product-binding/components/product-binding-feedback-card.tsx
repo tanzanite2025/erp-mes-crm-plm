@@ -121,126 +121,128 @@ export function ProductBindingFeedbackCard(
 
   return (
     <div
-      className={`rounded-[24px] border border-dashed p-5 ${feedbackToneClass(feedbackState)}`}
+      role='status'
+      aria-live='polite'
+      className={`min-w-0 rounded-[20px] border border-dashed p-4 sm:p-5 ${feedbackToneClass(feedbackState)}`}
     >
-      <p className='text-sm font-black tracking-tighter italic'>
+      <p className='text-base font-black tracking-tight italic'>
         {feedback.title}
       </p>
-      <p className='mt-3 text-[9px] font-black tracking-widest uppercase opacity-80'>
+      <p className='mt-2 text-sm leading-6 font-medium opacity-80'>
         {feedback.description}
       </p>
 
       {showBindingSnapshot ? (
-        <div className='mt-5 grid gap-3'>
+        <div className='mt-5 grid gap-3 sm:grid-cols-2'>
           <div className='rounded-[20px] border border-dashed border-current/20 bg-background/80 px-4 py-3'>
-            <p className='text-[8px] font-black tracking-[0.16em] uppercase opacity-60'>
+            <p className='text-xs font-semibold opacity-60'>
               {t(
                 'cuttingOperations.productBinding.feedback.snapshot.barcodeLabel'
               )}
             </p>
-            <p className='mt-2 font-mono text-[11px] leading-5'>
+            <p className='mt-2 font-mono text-xs leading-5 [overflow-wrap:anywhere] break-words'>
               {productBarcode.trim() || '--'}
             </p>
           </div>
           <div className='rounded-[20px] border border-dashed border-current/20 bg-background/80 px-4 py-3'>
-            <p className='text-[8px] font-black tracking-[0.16em] uppercase opacity-60'>
+            <p className='text-xs font-semibold opacity-60'>
               {t('cuttingOperations.productBinding.feedback.snapshot.qrLabel')}
             </p>
-            <p className='mt-2 font-mono text-[11px] leading-5'>
+            <p className='mt-2 font-mono text-xs leading-5 [overflow-wrap:anywhere] break-words'>
               {prepregQrCode.trim() || '--'}
             </p>
           </div>
           <div className='rounded-[20px] border border-dashed border-current/20 bg-background/80 px-4 py-3'>
-            <p className='text-[8px] font-black tracking-[0.16em] uppercase opacity-60'>
+            <p className='text-xs font-semibold opacity-60'>
               {t(
                 'cuttingOperations.productBinding.feedback.snapshot.executionLabel'
               )}
             </p>
-            <p className='mt-2 font-mono text-[11px] leading-5'>
+            <p className='mt-2 font-mono text-xs leading-5 [overflow-wrap:anywhere] break-words'>
               {bindingResult?.prepregRollInstance?.specCode ||
                 bindingResult?.prepregBindingToken ||
                 '--'}
             </p>
           </div>
           <div className='rounded-[20px] border border-dashed border-current/20 bg-background/80 px-4 py-3'>
-            <p className='text-[8px] font-black tracking-[0.16em] uppercase opacity-60'>
+            <p className='text-xs font-semibold opacity-60'>
               {t(
                 'cuttingOperations.productBinding.feedback.snapshot.executionDetailLabel'
               )}
             </p>
-            <p className='mt-2 font-mono text-[11px] leading-5'>
+            <p className='mt-2 font-mono text-xs leading-5 [overflow-wrap:anywhere] break-words'>
               {bindingResult?.prepregRollInstance?.specName || '--'} /{' '}
               {bindingResult?.prepregRollInstance?.supplierBatchNo || '--'} /{' '}
               {bindingResult?.prepregRollInstance?.boxNo || '--'}
             </p>
           </div>
           <div className='rounded-[20px] border border-dashed border-current/20 bg-background/80 px-4 py-3'>
-            <p className='text-[8px] font-black tracking-[0.16em] uppercase opacity-60'>
+            <p className='text-xs font-semibold opacity-60'>
               {t(
                 'cuttingOperations.productBinding.feedback.snapshot.tokenLabel'
               )}
             </p>
-            <p className='mt-2 font-mono text-[11px] leading-5'>
+            <p className='mt-2 font-mono text-xs leading-5 [overflow-wrap:anywhere] break-words'>
               {bindingResult?.prepregBindingToken || '--'}
             </p>
           </div>
           <div className='rounded-[20px] border border-dashed border-current/20 bg-background/80 px-4 py-3'>
-            <p className='text-[8px] font-black tracking-[0.16em] uppercase opacity-60'>
+            <p className='text-xs font-semibold opacity-60'>
               {t(
                 'cuttingOperations.productBinding.feedback.snapshot.protocolLabel'
               )}
             </p>
-            <p className='mt-2 font-mono text-[11px] leading-5'>
+            <p className='mt-2 font-mono text-xs leading-5 [overflow-wrap:anywhere] break-words'>
               {bindingResult?.barcodeProtocol || '--'}
             </p>
           </div>
           <div className='rounded-[20px] border border-dashed border-current/20 bg-background/80 px-4 py-3'>
-            <p className='text-[8px] font-black tracking-[0.16em] uppercase opacity-60'>
+            <p className='text-xs font-semibold opacity-60'>
               {t(
                 'cuttingOperations.productBinding.feedback.snapshot.summaryLabel'
               )}
             </p>
-            <p className='mt-2 font-mono text-[11px] leading-5'>
+            <p className='mt-2 font-mono text-xs leading-5 [overflow-wrap:anywhere] break-words'>
               {bindingResult?.barcodeSummary || '--'}
             </p>
           </div>
           <div className='rounded-[20px] border border-dashed border-current/20 bg-background/80 px-4 py-3'>
-            <p className='text-[8px] font-black tracking-[0.16em] uppercase opacity-60'>
+            <p className='text-xs font-semibold opacity-60'>
               {t(
                 'cuttingOperations.productBinding.feedback.snapshot.boundByLabel'
               )}
             </p>
-            <p className='mt-2 font-mono text-[11px] leading-5'>
+            <p className='mt-2 font-mono text-xs leading-5 [overflow-wrap:anywhere] break-words'>
               {bindingResult?.boundBy || '--'}
             </p>
           </div>
           <div className='rounded-[20px] border border-dashed border-current/20 bg-background/80 px-4 py-3'>
-            <p className='text-[8px] font-black tracking-[0.16em] uppercase opacity-60'>
+            <p className='text-xs font-semibold opacity-60'>
               {t(
                 'cuttingOperations.productBinding.feedback.snapshot.bindingIdLabel'
               )}
             </p>
-            <p className='mt-2 font-mono text-[11px] leading-5'>
+            <p className='mt-2 font-mono text-xs leading-5 [overflow-wrap:anywhere] break-words'>
               {bindingResult?.id || '--'}
             </p>
           </div>
           <div className='rounded-[20px] border border-dashed border-current/20 bg-background/80 px-4 py-3'>
-            <p className='text-[8px] font-black tracking-[0.16em] uppercase opacity-60'>
+            <p className='text-xs font-semibold opacity-60'>
               {t(
                 'cuttingOperations.productBinding.feedback.snapshot.boundAtLabel'
               )}
             </p>
-            <p className='mt-2 font-mono text-[11px] leading-5'>
+            <p className='mt-2 font-mono text-xs leading-5 [overflow-wrap:anywhere] break-words'>
               {bindingResult?.boundAt || '--'}
             </p>
           </div>
           <div className='rounded-[20px] border border-dashed border-current/20 bg-background/80 px-4 py-3'>
-            <p className='text-[8px] font-black tracking-[0.16em] uppercase opacity-60'>
+            <p className='text-xs font-semibold opacity-60'>
               {t(
                 'cuttingOperations.productBinding.feedback.snapshot.statusLabel'
               )}
             </p>
-            <p className='mt-2 font-mono text-[11px] leading-5'>
+            <p className='mt-2 font-mono text-xs leading-5 [overflow-wrap:anywhere] break-words'>
               {bindingResult?.status || '--'}
             </p>
           </div>
@@ -249,10 +251,10 @@ export function ProductBindingFeedbackCard(
 
       {feedbackState === 'error' ? (
         <div className='mt-5 rounded-[20px] border border-dashed border-current/20 bg-background/80 px-4 py-3'>
-          <p className='text-[8px] font-black tracking-[0.16em] uppercase opacity-60'>
+          <p className='text-xs font-semibold opacity-60'>
             {t('cuttingOperations.productBinding.feedback.snapshot.errorLabel')}
           </p>
-          <p className='mt-2 font-mono text-[11px] leading-5'>
+          <p className='mt-2 font-mono text-xs leading-5 [overflow-wrap:anywhere] break-words'>
             {submitError || '--'}
           </p>
         </div>

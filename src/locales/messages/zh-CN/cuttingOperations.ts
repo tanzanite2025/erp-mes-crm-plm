@@ -45,7 +45,7 @@ export const cuttingOperations = {
       barcode: {
         label: '编码中心一维码',
         placeholder: '请扫描或输入编码中心一维码',
-        hint: '支持扫码枪、手动输入，或通过下方手机扫码会话自动回填产品一维码。',
+        hint: '支持本机摄像头扫码、拍照识别、扫码枪或手动输入；没有可用摄像头时可使用下方手机扫码回填。',
       },
       qr: {
         label: '预浸料二维码',
@@ -58,12 +58,14 @@ export const cuttingOperations = {
       },
     },
     mobileCapture: {
-      title: '手机扫码回填一维码',
+      title: '手机扫码回填（备用）',
       description:
-        '创建手机扫码会话后，可用手机打开二维码链接，直接扫描编码中心一维码并自动回填当前表单。',
+        '电脑没有摄像头或现场需要用另一台设备时，再创建手机会话并将扫描结果回填到当前表单。',
       actions: {
         create: '创建手机扫码会话',
         copyLink: '复制手机链接',
+        expand: '展开手机扫码回填',
+        collapse: '收起手机扫码回填',
       },
       status: {
         idle: '尚未创建手机扫码会话',

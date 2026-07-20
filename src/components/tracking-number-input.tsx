@@ -58,6 +58,8 @@ interface TrackingNumberInputProps {
   value: string
   onValueChange: (value: string) => void
   onScanComplete?: (value: string) => void
+  inputId?: string
+  inputAriaLabel?: string
   placeholder?: string
   disabled?: boolean
   className?: string
@@ -164,6 +166,8 @@ export function TrackingNumberInput({
   value,
   onValueChange,
   onScanComplete,
+  inputId,
+  inputAriaLabel,
   placeholder,
   disabled,
   className,
@@ -511,9 +515,11 @@ export function TrackingNumberInput({
   return (
     <div className={cn('space-y-3', className)}>
       <Input
+        id={inputId}
         value={value}
         disabled={disabled}
         onChange={(event) => onValueChange(event.target.value)}
+        aria-label={inputAriaLabel}
         placeholder={placeholder}
         className={cn(inputClassName)}
       />

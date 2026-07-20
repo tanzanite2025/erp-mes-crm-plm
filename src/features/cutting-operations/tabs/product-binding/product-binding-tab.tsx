@@ -33,53 +33,51 @@ export function ProductBindingTab() {
 
         <section className='relative overflow-hidden rounded-[24px] border border-dashed border-border/70 bg-background'>
           <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-transparent' />
-          <div className='relative p-4'>
-            <div className='flex flex-col gap-2'>
-              <p className='text-sm font-black tracking-tighter text-foreground italic'>
+          <div className='relative p-4 sm:p-5'>
+            <div className='flex flex-col gap-1.5'>
+              <p className='text-base font-black tracking-tight text-foreground italic'>
                 {t('cuttingOperations.productBinding.form.title')}
               </p>
-              <p className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+              <p className='max-w-3xl text-xs leading-5 font-medium text-muted-foreground'>
                 {t('cuttingOperations.productBinding.form.description')}
               </p>
             </div>
 
-            <div className='mt-4 grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,1fr)] xl:items-start'>
-              <div className='grid gap-4'>
-                <ProductBindingFormSection
-                  productBarcode={state.productBarcode}
-                  onProductBarcodeChange={(value) => {
-                    state.setProductBarcode(value)
-                    state.resetFeedback()
-                  }}
-                  prepregQrCode={state.prepregQrCode}
-                  onPrepregQrCodeChange={(value) => {
-                    state.setPrepregQrCode(value)
-                    state.resetFeedback()
-                  }}
-                  onSubmit={() => void state.handleSubmitBinding()}
-                  isSubmitting={state.submitBindingMutation.isPending}
-                  captureSession={state.barcodeCaptureSession}
-                  captureUrl={state.barcodeCaptureUrl}
-                  captureStatusMessage={state.barcodeCaptureStatusMessage}
-                  isCreatingCaptureSession={
-                    state.isCreatingBarcodeCaptureSession
-                  }
-                  onCreateCaptureSession={() =>
-                    void state.handleCreateBarcodeCaptureSession()
-                  }
-                  onCopyCaptureLink={() =>
-                    void state.handleCopyBarcodeCaptureLink()
-                  }
-                />
-              </div>
-
-              <ProductBindingFeedbackCard
-                feedbackState={state.feedbackState}
-                bindingResult={state.bindingResult}
-                submitError={state.submitError}
+            <div className='mt-5 grid min-w-0 gap-5'>
+              <ProductBindingFormSection
                 productBarcode={state.productBarcode}
+                onProductBarcodeChange={(value) => {
+                  state.setProductBarcode(value)
+                  state.resetFeedback()
+                }}
                 prepregQrCode={state.prepregQrCode}
+                onPrepregQrCodeChange={(value) => {
+                  state.setPrepregQrCode(value)
+                  state.resetFeedback()
+                }}
+                onSubmit={() => void state.handleSubmitBinding()}
+                isSubmitting={state.submitBindingMutation.isPending}
+                captureSession={state.barcodeCaptureSession}
+                captureUrl={state.barcodeCaptureUrl}
+                captureStatusMessage={state.barcodeCaptureStatusMessage}
+                isCreatingCaptureSession={state.isCreatingBarcodeCaptureSession}
+                onCreateCaptureSession={() =>
+                  void state.handleCreateBarcodeCaptureSession()
+                }
+                onCopyCaptureLink={() =>
+                  void state.handleCopyBarcodeCaptureLink()
+                }
               />
+
+              {state.feedbackState !== 'idle' ? (
+                <ProductBindingFeedbackCard
+                  feedbackState={state.feedbackState}
+                  bindingResult={state.bindingResult}
+                  submitError={state.submitError}
+                  productBarcode={state.productBarcode}
+                  prepregQrCode={state.prepregQrCode}
+                />
+              ) : null}
             </div>
           </div>
         </section>
