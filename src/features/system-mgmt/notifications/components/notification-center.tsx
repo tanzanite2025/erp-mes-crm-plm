@@ -28,9 +28,6 @@ import { resolveTemplate } from '../notification-service'
 import { useNotificationStore } from '../notification-store'
 import { type NotificationPriority, type SystemMessage } from '../types'
 
-const NOTIFY_SOUND_URL =
-  'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'
-
 const logger = createLogger('NotificationCenter')
 
 type SalesOrderLike = { id: string }
@@ -41,9 +38,54 @@ type NotificationVisualConfig = {
   badge: string
   gradient: string
 }
+type AudioContextRef = { current: AudioContext | null }
+type WindowWithWebkitAudioContext = Window & {
+  webkitAudioContext?: typeof AudioContext
+}
 
 interface NotificationCenterProps {
   placement?: 'header' | 'dock'
+}
+
+function resolveAudioContextConstructor() {
+  if (typeof window === 'undefined') return null
+  const audioWindow = window as WindowWithWebkitAudioContext
+  return window.AudioContext ?? audioWindow.webkitAudioContext ?? null
+}
+
+async function playNotificationTone(audioContextRef: AudioContextRef) {
+  try {
+    const AudioContextCtor = resolveAudioContextConstructor()
+    if (!AudioContextCtor) return
+
+    let audioContext = audioContextRef.current
+    if (!audioContext || audioContext.state === 'closed') {
+      audioContext = new AudioContextCtor()
+      audioContextRef.current = audioContext
+    }
+
+    if (audioContext.state === 'suspended') {
+      await audioContext.resume()
+    }
+
+    const now = audioContext.currentTime
+    const oscillator = audioContext.createOscillator()
+    const gain = audioContext.createGain()
+
+    oscillator.type = 'sine'
+    oscillator.frequency.setValueAtTime(880, now)
+    gain.gain.setValueAtTime(0.0001, now)
+    gain.gain.exponentialRampToValueAtTime(0.08, now + 0.02)
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.22)
+
+    oscillator.connect(gain)
+    gain.connect(audioContext.destination)
+    oscillator.start(now)
+    oscillator.stop(now + 0.24)
+  } catch {
+    // Browser autoplay policies can block notification sounds. The visual
+    // notification remains authoritative, so audio failure stays non-fatal.
+  }
 }
 
 /**
@@ -61,7 +103,17 @@ export function NotificationCenter({
     useNotificationStore()
   const [stdCommands, setStdCommands] = useState<StandardCommand[]>([])
   const lastMessagesLength = useRef(messages.length)
-  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const audioContextRef = useRef<AudioContext | null>(null)
+
+  useEffect(() => {
+    return () => {
+      const audioContext = audioContextRef.current
+      audioContextRef.current = null
+      if (audioContext && audioContext.state !== 'closed') {
+        void audioContext.close().catch(() => undefined)
+      }
+    }
+  }, [])
 
   // 挂载时从后端获取指令全库，用于动态内容解析 (已移除 StorageService 依赖)
   useEffect(() => {
@@ -89,9 +141,6 @@ export function NotificationCenter({
 
   // 初始化音效与数据完整性同步
   useEffect(() => {
-    audioRef.current = new Audio(NOTIFY_SOUND_URL)
-    audioRef.current.volume = 0.5
-
     const checkIntegrity = async () => {
       try {
         // ─── 核心变更：对接后端事实源 ───
@@ -136,7 +185,7 @@ export function NotificationCenter({
 
   useEffect(() => {
     if (messages.length > lastMessagesLength.current) {
-      audioRef.current?.play().catch(() => {})
+      void playNotificationTone(audioContextRef)
     }
     lastMessagesLength.current = messages.length
   }, [messages.length])

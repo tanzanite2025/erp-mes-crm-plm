@@ -121,7 +121,7 @@ func (GormOrganizationRepository) ListPositions(database *gorm.DB) ([]models.Pos
 	query := database.Table("positions")
 	if database.Migrator().HasTable("organizations") {
 		selectClause += ", organizations.name as org_unit_name"
-		query = query.Joins("LEFT JOIN organizations ON positions.org_unit_id = CAST(organizations.id AS TEXT)")
+		query = query.Joins(positionOrganizationJoinClause())
 	} else {
 		selectClause += ", '' as org_unit_name"
 	}
@@ -134,6 +134,10 @@ func (GormOrganizationRepository) ListPositions(database *gorm.DB) ([]models.Pos
 		Order("positions.name asc").
 		Find(&positions).Error
 	return positions, err
+}
+
+func positionOrganizationJoinClause() string {
+	return "LEFT JOIN organizations ON positions.org_unit_id = organizations.id"
 }
 
 func (GormOrganizationRepository) BulkUpdateEmployeeStatus(database *gorm.DB, ids []string, status string) (int64, error) {
