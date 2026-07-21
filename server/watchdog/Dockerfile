@@ -24,8 +24,10 @@ WORKDIR /app
 # 从构建阶段拷贝编译好的二进制
 COPY --from=builder /usr/src/watchdog/target/release/xdfc-watchdog /app/watchdog
 
-# 默认环境变量配置
-ENV RUST_LOG=info
+# 默认环境变量配置：固定 UTF-8，避免容器日志在中文输出时被运行时环境误解码
+ENV RUST_LOG=info \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8
 
 # 启动极致监控哨兵
 CMD ["./watchdog"]

@@ -23,13 +23,13 @@ async fn main() -> Result<()> {
         .map_err(|_| anyhow!("DATABASE_URL is required for watchdog startup"))?;
     let redis_url = env::var("REDIS_URL").unwrap_or_else(|_| "redis://redis:6379".to_string());
 
-    println!("[WATCHDOG] XDFC 鏋佽嚧鐩戞帶鍝ㄥ叺宸插惎鍔?(Rust Engine)");
+    println!("[WATCHDOG] XDFC 极致监控哨兵已启动 (Rust Engine)");
     println!(
-        "[WATCHDOG] 鐩爣鏁版嵁搴? {}",
+        "[WATCHDOG] 目标数据库: {}",
         database_url.split('@').last().unwrap_or("unknown")
     );
 
-    // 1. 鍒濆鍖栬祫婧愯繛鎺ユ睜
+    // 1. 初始化资源连接池
     let pool = PgPoolOptions::new()
         .max_connections(5)
         .acquire_timeout(Duration::from_secs(3))
@@ -48,15 +48,15 @@ async fn main() -> Result<()> {
 
                 if current_count != last_anomaly_count {
                     println!(
-                        "[WATCHDOG][SIGNAL] 绯荤粺鐘舵€佷粠 {} 婕傜Щ鑷?{}锛屽悓姝ヨ嚦鎬荤嚎...",
+                        "[WATCHDOG][SIGNAL] 系统状态从 {} 漂移至 {}，同步至总线...",
                         last_anomaly_count, current_count
                     );
 
-                    // A. 鍐欏叆 Redis KV 缂撳瓨渚?Go 鍚庣璇诲彇
+                    // A. 写入 Redis KV 缓存供 Go 后端读取
                     let json = serde_json::to_string(&current_status)?;
                     let _: () = con.set("global:integrity:status", json).await?;
 
-                    // B. 鍙戝竷瀹炴椂鐨?PubSub 鍒锋柊鎸囦护
+                    // B. 发布实时 PubSub 刷新指令
                     let signal = serde_json::json!({
                         "type": "SYSTEM_STATUS_CHANGE",
                         "ts": chrono::Utc::now().timestamp(),
@@ -70,7 +70,7 @@ async fn main() -> Result<()> {
                 }
             }
             Err(e) => {
-                eprintln!("[WATCHDOG][ERROR] 瀹¤浠诲姟鐢变簬鐗╃悊鏁呴殰涓柇: {}", e);
+                eprintln!("[WATCHDOG][ERROR] 审计任务因底层资源故障中断: {}", e);
                 let busy_status = IntegrityResult {
                     anomalies: vec!["DATABASE_QUERY_BUSY".to_string()],
                     details: vec![format!("Probe Failed: {}", e)],
@@ -82,19 +82,19 @@ async fn main() -> Result<()> {
             }
         }
 
-        // 宸ヤ笟绾ч噰鏍烽鐜囷細姣?15 绉掓墽琛屼竴娆″叏閾捐矾鎸囩汗婧簮
+        // 工业级采样频率：每 15 秒执行一次全链路指纹溯源
         sleep(Duration::from_secs(15)).await;
     }
 }
 
-/// 鎵ц娣卞害鎸囩汗瀹¤
-async fn perform_audit(pool: &sqlx::PgPool) -> Result<IntegrityResult> {
+/// 执行深度指纹审计
+async fn perform_audit(_pool: &sqlx::PgPool) -> Result<IntegrityResult> {
     let mut result = IntegrityResult::default();
 
     // --- Infrastructure Rule ---
     let dirs = vec!["uploads", "backups"];
     for d in dirs {
-        // Rust 鐨?FS 鎺㈡祴鍑犱箮闆跺紑閿€
+        // Rust 的文件系统探测几乎零开销
         if !std::path::Path::new(d).exists() {
             let _ = std::fs::create_dir_all(d);
         }
@@ -112,5 +112,3 @@ async fn perform_audit(pool: &sqlx::PgPool) -> Result<IntegrityResult> {
 
     Ok(result)
 }
-
-

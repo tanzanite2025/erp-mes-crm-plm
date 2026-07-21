@@ -49,6 +49,7 @@ erp project
 | --- | --- | --- | --- |
 | `tanzanite-edge` | `deployment/gateway/compose.yml` | Caddy、TLS、域名路由、共享 `tanzanite-edge` 网络 | `80/443` |
 | `erp` | `compose.prod.yml` | ERP Web、API、Search、PostgreSQL、Redis、可选 Watchdog | 无 |
+| `host-kernel-tuning` | 一次性 Hostinger Docker Manager Project | 写入宿主机内核参数，例如 Redis 所需的 `vm.overcommit_memory=1` | 无 |
 
 `server/docker-compose.yml` 只用于本地开发，不得复制到 Hostinger Docker Manager。
 
@@ -68,6 +69,24 @@ erp project
 10. 共享网关不挂载 `/var/run/docker.sock`。
 
 `TANZANITE-THEME` 当前根 Compose 是开发配置，包含公开数据库端口、开发默认密码和固定容器名。该文件不能为了兼容而直接接入生产；项目完成独立审计后应按本章重构。
+
+## 3.1 宿主机内核调优
+
+Redis 在生产环境需要宿主机启用内存 overcommit，否则容器启动日志会提示：
+
+```text
+WARNING Memory overcommit must be enabled!
+```
+
+`vm.overcommit_memory` 是宿主机内核参数，不属于 Docker 可命名空间化的 sysctl，不能写进 ERP Redis 服务的 `sysctls`，也不能为了消除告警给 ERP 项目增加长期 `privileged` 权限。生产基线是：
+
+```bash
+sysctl -w vm.overcommit_memory=1
+printf '%s\n' 'vm.overcommit_memory = 1' > /etc/sysctl.d/99-redis-overcommit.conf
+sysctl --system
+```
+
+当 SSH 暂不可用时，允许使用独立的一次性 Hostinger Docker Manager Project `host-kernel-tuning`，通过短生命周期 `privileged` Alpine 容器写入宿主机 `/etc/sysctl.d/99-redis-overcommit.conf` 并立即执行 `sysctl -w`。该 Project 只负责宿主机基线，不加入 `erp` 或 `tanzanite-edge`，也不挂载业务数据卷。
 
 ## 4. 网络与防火墙
 
@@ -298,6 +317,7 @@ Cloudflare MCP 可读写，但 DNS 写入必须满足：
 
 - [x] Hostinger 防火墙仅开放 `22/80/443` 并已同步。
 - [x] VPS Docker Manager 使用独立的 `tanzanite-edge` 和 `erp` Compose Projects。
+- [x] `host-kernel-tuning` 已将宿主机 `vm.overcommit_memory` 固定为 `1`，满足 Redis 生产内存基线。
 - [x] Hostinger 账号已注册本机公钥 `P16V-workstation`。
 - [ ] Hostinger API 绑定公钥后 SSH 仍未接受该 key；需在 hPanel 控制台确认 authorized key 后再使用 SSH 路径。
 - [x] `tanzanite-edge` Project 已部署，容器 Healthy，公网 `/__edge/health` 返回 `ok`。
