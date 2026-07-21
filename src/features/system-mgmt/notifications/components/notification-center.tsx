@@ -269,10 +269,13 @@ export function NotificationCenter({
       </Button>
 
       <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
-        <DialogContent className='w-[95vw] max-w-[860px] rounded-[32px] border-none p-0 shadow-2xl'>
-          <div className='relative overflow-hidden rounded-[32px] bg-background'>
+        <DialogContent
+          size='full'
+          className='h-[70dvh] max-h-[calc(100dvh-2rem)] w-[min(60vw,1120px)] min-w-[min(860px,calc(100vw-2rem))] overflow-hidden rounded-[32px] border-none p-0 shadow-2xl'
+        >
+          <div className='relative h-full overflow-hidden rounded-[32px] bg-background'>
             <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-transparent' />
-            <div className='relative flex flex-col gap-0'>
+            <div className='relative flex h-full min-h-0 flex-col gap-0'>
               <DialogHeader className='border-b border-dashed border-border/60 px-6 py-5 text-left'>
                 <div className='flex items-center justify-between gap-4'>
                   <div className='space-y-1'>
@@ -289,7 +292,7 @@ export function NotificationCenter({
                 </div>
               </DialogHeader>
 
-              <div className='max-h-[65vh] overflow-y-auto px-6 py-5'>
+              <div className='flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-5'>
                 {visibleMessages.length > 0 ? (
                   <div className='flex flex-col gap-3'>
                     {visibleMessages.map((msg) => {
@@ -407,7 +410,7 @@ export function NotificationCenter({
                     })}
                   </div>
                 ) : (
-                  <div className='flex flex-col items-center justify-center gap-3 rounded-[28px] border border-dashed border-border/60 bg-muted/10 px-6 py-14 text-center'>
+                  <div className='flex flex-1 flex-col items-center justify-center gap-3 rounded-[28px] border border-dashed border-border/60 bg-muted/10 px-6 py-14 text-center'>
                     <div className='flex size-14 items-center justify-center rounded-[20px] bg-muted text-muted-foreground/50'>
                       <Bell className='size-7' />
                     </div>
