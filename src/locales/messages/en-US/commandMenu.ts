@@ -109,7 +109,6 @@ export const commandMenu = {
     engineeringBom: 'BOM Formulas',
     engineeringTemplates: 'Product Templates',
     qualityStandards: 'Quality Standards',
-    qualityFormulas: 'Inspection Formulas',
     qualityAbnormalities: 'Abnormality Handling',
     qualityInspection: 'Inspection Execution',
     qualitySpecialBuy: 'Special Acceptance Release',

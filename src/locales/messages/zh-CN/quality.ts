@@ -6,7 +6,6 @@ export const quality = {
       abnormalities: '异常处置',
       inspection: '检验执行',
       specialBuy: '特采放行',
-      formulas: '检验公式',
     },
   },
   common: {
@@ -298,28 +297,6 @@ export const quality = {
       title: '特采放行',
       description: '针对可让步接收产品进行放行审批、追溯留档与风险评估',
       placeholder: '特采申请功能建设中',
-    },
-  },
-  formulas: {
-    page: {
-      title: '检验公式引擎',
-      description: '集中化管理产品检验环节的数学模型与逻辑算法',
-      registered: '已登记公式',
-      algorithms: '个',
-      searchPlaceholder: '检索公式或逻辑...',
-      add: '新建计算公式',
-    },
-    table: {
-      no: '序号',
-      name: '公式名称',
-      logic: '计算逻辑',
-      status: '状态',
-      operator: '操作员',
-      operateTime: '更新时间',
-      remarks: '备注说明',
-      actions: '操作',
-      normal: '正常',
-      disabled: '停用',
     },
   },
   hooks: {

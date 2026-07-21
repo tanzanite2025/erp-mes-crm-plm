@@ -13,10 +13,5 @@ export function getQualityTabs(t: TranslateFn): TabItem[] {
       label: t('quality.layout.tabs.standards'),
       href: '/quality/standards',
     },
-    {
-      key: 'formulas',
-      label: t('quality.layout.tabs.formulas'),
-      href: '/quality/formulas',
-    },
   ]
 }

@@ -6,7 +6,6 @@ export const quality = {
       abnormalities: 'Abnormality Handling',
       inspection: 'Inspection Execution',
       specialBuy: 'Special Acceptance Release',
-      formulas: 'Inspection Formulas',
     },
   },
   common: {
@@ -317,29 +316,6 @@ export const quality = {
       description:
         'Release approval, traceability archival, and risk evaluation for concession-accepted products',
       placeholder: 'Special acceptance workflow is under construction',
-    },
-  },
-  formulas: {
-    page: {
-      title: 'Inspection Formula Engine',
-      description:
-        'Centralized management of mathematical models and logic used in inspection workflows',
-      registered: 'Registered Formulas',
-      algorithms: 'algorithms',
-      searchPlaceholder: 'Search formulas or logic...',
-      add: 'Create Formula',
-    },
-    table: {
-      no: 'No.',
-      name: 'Formula Name',
-      logic: 'Calculation Logic',
-      status: 'Status',
-      operator: 'Operator',
-      operateTime: 'Updated At',
-      remarks: 'Remarks',
-      actions: 'Actions',
-      normal: 'Normal',
-      disabled: 'Disabled',
     },
   },
   hooks: {

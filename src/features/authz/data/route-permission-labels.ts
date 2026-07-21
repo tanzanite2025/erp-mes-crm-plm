@@ -74,7 +74,6 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/engineering-reference/nipples': 'engineering.nipples.overview.title',
   '/quality': 'sidebar.items.qualityAudit',
   '/quality/standards': 'quality.layout.tabs.standards',
-  '/quality/formulas': 'quality.layout.tabs.formulas',
   '/labs/experimental': 'labExperimental.tabs.centerTitle',
   '/labs/experimental/equipment': 'labExperimental.tabs.equipment',
   '/labs/experimental/tests': 'labExperimental.tabs.tests',

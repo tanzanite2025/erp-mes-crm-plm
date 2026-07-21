@@ -139,7 +139,6 @@ var KnownRoutePermissionIDs = map[string]struct{}{
 	"tab_purchase_logistics": {},
 	"tab_purchase_orders": {},
 	"tab_purchase_suppliers": {},
-	"tab_quality_formulas": {},
 	"tab_quality_standards": {},
 	"tab_quality_standards__standardid_edit": {},
 	"tab_quality_standards__standardid_preview": {},

@@ -352,14 +352,6 @@ const moduleGroups: CommandItemConfig[] = [
     pinyin: 'pzjybz',
   },
   {
-    id: 'tab-quality-formulas',
-    href: '/quality/formulas',
-    titleKey: 'commandMenu.items.qualityFormulas',
-    parentKey: 'commandMenu.parents.qualityStandards',
-    keywords: ['quality', 'formulas', 'inspection', '公式'],
-    pinyin: 'jygs',
-  },
-  {
     id: 'tab-quality-abnormalities',
     href: '/production-quality/abnormalities',
     titleKey: 'commandMenu.items.qualityAbnormalities',

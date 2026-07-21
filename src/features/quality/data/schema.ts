@@ -17,11 +17,6 @@ const standardStatusSchema = z.union([
   z.enum(['草稿', '待审核', '审批通过', '已驳回', '已发布', '已归档']),
 ])
 
-const formulaStatusSchema = z.union([
-  z.enum(['NORMAL', 'DISABLED']),
-  z.enum(['正常', '停用']),
-])
-
 export const levelConfigSchema = z.object({
   level: z.enum(['A', 'B', 'C', 'S']),
   tolerance: z.number().optional(),
@@ -97,15 +92,4 @@ export const standardSchema = z.object({
   items: z.array(standardItemSchema).default([]),
 })
 
-export const inspectionFormulaSchema = z.object({
-  id: z.string(),
-  name: z.string().min(1, '请输入公式名称'),
-  formula: z.string().min(1, '请输入计算逻辑'),
-  status: formulaStatusSchema.default('NORMAL'),
-  operator: z.string().optional(),
-  operateTime: z.string().nullable().optional(),
-  remarks: z.string().optional(),
-})
-
-export type InspectionFormula = z.infer<typeof inspectionFormulaSchema>
 export type Standard = z.infer<typeof standardSchema>

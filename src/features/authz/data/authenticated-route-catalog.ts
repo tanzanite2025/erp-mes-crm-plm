@@ -119,7 +119,6 @@ export const AUTHENTICATED_ROUTE_PATHS = [
   '/approval/routing',
   '/mrp/requirements',
   '/personnel/rights',
-  '/quality/formulas',
   '/quotes/wholesale',
   '/engineering/bom',
   '/personnel/leave',

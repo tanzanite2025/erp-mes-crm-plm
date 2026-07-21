@@ -109,7 +109,6 @@ export const commandMenu = {
     engineeringBom: 'BOM物料配方管理',
     engineeringTemplates: '产品模板配置',
     qualityStandards: '品质标准',
-    qualityFormulas: '检验公式',
     qualityAbnormalities: '异常处置',
     qualityInspection: '检验执行',
     qualitySpecialBuy: '特采放行',
