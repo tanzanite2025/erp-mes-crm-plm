@@ -351,6 +351,12 @@ export const basicSettings = {
       namePlaceholder: 'e.g. Example Enterprise',
       planLabel: 'Description & Version / PLATFORM DESC',
       planPlaceholder: 'e.g. Digital Management Platform',
+      logoLabel: 'Sidebar Logo / BRAND ICON',
+      logoHint:
+        'PNG or JPEG only. Maximum 512KB and 1024 x 1024 px. SVG is blocked for security.',
+      logoUploadButton: 'Upload Logo',
+      logoResetButton: 'Reset Default',
+      logoPreviewAlt: 'Enterprise logo preview',
       saveButton: 'Save & Sync Configuration',
       saving: 'Syncing...',
     },
@@ -361,6 +367,10 @@ export const basicSettings = {
       successDesc:
         'Enterprise info updated. Sidebar will refresh automatically.',
       error: 'Save Failed',
+      logoUploaded: 'Logo Uploaded',
+      logoReset: 'Default Logo Restored',
+      logoTypeInvalid: 'Only PNG or JPEG logos are allowed',
+      logoSizeInvalid: 'Logo must be 512KB or smaller',
     },
   },
   linearBarcode: {

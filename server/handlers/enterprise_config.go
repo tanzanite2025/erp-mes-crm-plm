@@ -15,12 +15,14 @@ func GetEnterpriseConfigHandler(c *gin.Context) {
 	if err := db.DB.First(&config).Error; err != nil {
 		// 如果不存在，返回默认值
 		defaultConfig := models.EnterpriseConfig{
-			Name: "",
-			Plan: "",
+			Name:    "",
+			Plan:    "",
+			LogoURL: services.DefaultEnterpriseLogoURL,
 		}
 		c.JSON(http.StatusOK, defaultConfig)
 		return
 	}
+	services.ApplyEnterpriseConfigDefaults(&config)
 	c.JSON(http.StatusOK, config)
 }
 
@@ -39,5 +41,6 @@ func SaveEnterpriseConfigHandler(c *gin.Context) {
 
 	var updated models.EnterpriseConfig
 	db.DB.First(&updated)
+	services.ApplyEnterpriseConfigDefaults(&updated)
 	c.JSON(http.StatusOK, updated)
 }

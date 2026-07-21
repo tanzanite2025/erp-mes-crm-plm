@@ -6,8 +6,9 @@ package models
  */
 type EnterpriseConfig struct {
 	BaseModel
-	Name string `json:"name" gorm:"type:string"`
+	Name     string `json:"name" gorm:"type:string"`
 	Plan     string `json:"plan" gorm:"type:string"`
+	LogoURL  string `json:"logoUrl" gorm:"size:512"`
 	Operator string `json:"operator" gorm:"type:string"`
 	Version  int    `json:"version" gorm:"type:int;default:1"`
 }

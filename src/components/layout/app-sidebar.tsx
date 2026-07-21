@@ -11,7 +11,10 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import { getAccessibleNavGroups } from '@/features/authz/guards/navigation-access'
-import { EnterpriseService } from '@/features/basic-settings/services/enterprise-service'
+import {
+  DEFAULT_ENTERPRISE_LOGO_URL,
+  EnterpriseService,
+} from '@/features/basic-settings/services/enterprise-service'
 import { getSidebarData } from './data/sidebar-data'
 import { NavGroup } from './nav-group'
 import { resolveActiveSidebarPath } from './sidebar-active-path'
@@ -30,6 +33,7 @@ export function AppSidebar() {
   const [brand, setBrand] = useState({
     name: localizedSidebarData.teams[0].name,
     plan: localizedSidebarData.teams[0].plan,
+    logoUrl: DEFAULT_ENTERPRISE_LOGO_URL,
   })
   const visibleNavGroups = useMemo(
     () =>
@@ -58,6 +62,7 @@ export function AppSidebar() {
       setBrand({
         name: config.name ?? defaultName,
         plan: config.plan ?? defaultPlan,
+        logoUrl: config.logoUrl ?? DEFAULT_ENTERPRISE_LOGO_URL,
       })
     }, 0)
   }, [defaultPlan, defaultName])
@@ -80,6 +85,7 @@ export function AppSidebar() {
     ...localizedSidebarData.teams[0],
     name: brand.name,
     plan: brand.plan,
+    logoUrl: brand.logoUrl,
   }
 
   const renderedNavGroups = useMemo(

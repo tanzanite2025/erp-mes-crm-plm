@@ -304,6 +304,7 @@ func SetupRoutes(r *gin.Engine) {
 		// --- 企业配置 (Enterprise Config) ---
 		authorized.GET("/enterprise/config", middleware.RequireAnyPermission(authz.MenuSettings), handlers.GetEnterpriseConfigHandler)
 		authorized.POST("/enterprise/config", adminOnly, handlers.SaveEnterpriseConfigHandler)
+		authorized.POST("/enterprise/config/logo", adminOnly, handlers.UploadEnterpriseLogoHandler)
 
 		// --- 工作流引擎路由 (Workflow Routing) ---
 		routingGroup := authorized.Group("/system/routing")

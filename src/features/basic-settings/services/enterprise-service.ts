@@ -7,11 +7,22 @@ import { ensureObjectResponse } from '@/lib/api-response'
 export interface EnterpriseConfig {
   name: string
   plan: string
+  logoUrl?: string
 }
+
+export const DEFAULT_ENTERPRISE_LOGO_URL = '/brand/hackgripe.png'
 
 const DEFAULT_ENTERPRISE_CONFIG: EnterpriseConfig = {
   name: '',
   plan: '',
+  logoUrl: DEFAULT_ENTERPRISE_LOGO_URL,
+}
+
+export interface EnterpriseLogoUploadResponse {
+  status: string
+  logoUrl: string
+  size: number
+  config: EnterpriseConfig
 }
 
 /**
@@ -57,5 +68,21 @@ export const EnterpriseService = {
       res,
       'EnterpriseService.saveConfig'
     ) as EnterpriseConfig
+  },
+
+  uploadLogo: async (file: File): Promise<EnterpriseLogoUploadResponse> => {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const res = await apiFetch<EnterpriseLogoUploadResponse>(
+      '/enterprise/config/logo',
+      {
+        method: 'POST',
+        body: formData,
+      }
+    )
+    return ensureObjectResponse<
+      EnterpriseLogoUploadResponse & Record<string, unknown>
+    >(res, 'EnterpriseService.uploadLogo') as EnterpriseLogoUploadResponse
   },
 }

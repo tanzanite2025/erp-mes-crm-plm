@@ -335,6 +335,12 @@ export const basicSettings = {
       namePlaceholder: '例如：示例企业',
       planLabel: '描述与版本 / PLATFORM DESC',
       planPlaceholder: '例如：数字化管理平台',
+      logoLabel: '侧边栏图标 / BRAND ICON',
+      logoHint:
+        '仅支持 PNG 或 JPEG，最大 512KB，最大尺寸 1024 x 1024 px。为避免脚本注入，SVG 不允许上传。',
+      logoUploadButton: '上传图标',
+      logoResetButton: '恢复默认',
+      logoPreviewAlt: '企业图标预览',
       saveButton: '保存配置并同步',
       saving: '正在同步...',
     },
@@ -344,6 +350,10 @@ export const basicSettings = {
       success: '保存成功',
       successDesc: '企业信息已更新，侧边栏将同步刷新。',
       error: '保存出错',
+      logoUploaded: '图标已上传',
+      logoReset: '已恢复默认图标',
+      logoTypeInvalid: '仅允许上传 PNG 或 JPEG 图标',
+      logoSizeInvalid: '图标大小不能超过 512KB',
     },
   },
 } as const
