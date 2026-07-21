@@ -104,6 +104,24 @@ function resolveFieldOptions(
   return field.options ?? []
 }
 
+function getEmployeeDialogFieldGridClassName(
+  field: PersonnelFormFieldConfig
+): string {
+  if (field.span === 2) {
+    return 'md:col-span-2 xl:col-span-4'
+  }
+
+  if (field.key === 'deptId') {
+    return 'md:col-span-2 xl:col-span-2'
+  }
+
+  if (field.key === 'idCard') {
+    return 'xl:col-span-2'
+  }
+
+  return ''
+}
+
 export function EmployeeActionDialog({
   currentRow,
   open,
@@ -264,10 +282,10 @@ export function EmployeeActionDialog({
     >
       <DialogContent
         className={buildHostedQuickActionDialogContentClassName(
-          'flex flex-col gap-0 overflow-hidden rounded-[32px] border-none bg-background p-0 shadow-2xl md:max-w-3xl'
+          'flex w-[calc(100vw-1.5rem)] max-w-[calc(100vw-1.5rem)] flex-col gap-0 overflow-hidden rounded-[32px] border-none bg-background p-0 shadow-2xl sm:w-[calc(100vw-2rem)] sm:max-w-[calc(100vw-2rem)] md:w-[80vw] md:max-w-[80vw]'
         )}
       >
-        <DialogHeader className='shrink-0 border-b border-dashed border-muted/50 bg-muted/5 p-8 text-start'>
+        <DialogHeader className='shrink-0 border-b border-dashed border-muted/50 bg-muted/5 px-6 py-5 text-start md:px-8 md:py-6'>
           <DialogTitle className='text-lg font-black tracking-tighter uppercase italic'>
             {isEdit
               ? t('orgPersonnel.org.employeeDialog.editTitle')
@@ -295,9 +313,9 @@ export function EmployeeActionDialog({
           <form
             id='employee-form'
             onSubmit={form.handleSubmit(onSubmitHandler)}
-            className='min-h-0 flex-1 space-y-6 overflow-y-auto p-8'
+            className='space-y-4 overflow-visible px-6 py-5 md:px-8 md:py-6'
           >
-            <div className='grid grid-cols-2 gap-x-8 gap-y-4'>
+            <div className='grid grid-cols-1 gap-x-5 gap-y-3 md:grid-cols-2 xl:grid-cols-4'>
               {PERSONNEL_FORM_FIELDS.map((fieldConfig) => (
                 <FormField
                   key={fieldConfig.key}
@@ -305,7 +323,7 @@ export function EmployeeActionDialog({
                   name={fieldConfig.key}
                   render={({ field }) => (
                     <FormItem
-                      className={`space-y-1 ${fieldConfig.span === 2 ? 'col-span-2' : ''}`}
+                      className={`space-y-1 ${getEmployeeDialogFieldGridClassName(fieldConfig)}`}
                     >
                       <FormLabel className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                         {fieldConfig.key === 'deptId'
@@ -313,7 +331,7 @@ export function EmployeeActionDialog({
                           : getColumnLabel(fieldConfig.key)}
                       </FormLabel>
                       {fieldConfig.input === 'select' ? (
-                        <div className='pt-1'>
+                        <div className='pt-0.5'>
                           <SelectDropdown
                             isControlled
                             value={field.value}
@@ -330,7 +348,7 @@ export function EmployeeActionDialog({
                               ...opt,
                               label: getOptionLabel(opt.label),
                             }))}
-                            className='h-11 rounded-2xl border-none bg-muted/50 text-xs font-bold shadow-inner'
+                            className='h-10 rounded-2xl border-none bg-muted/50 text-xs font-bold shadow-inner'
                           />
                         </div>
                       ) : (
@@ -342,7 +360,7 @@ export function EmployeeActionDialog({
                                 ? deptFieldLabel
                                 : getColumnLabel(fieldConfig.key)
                             }
-                            className='h-11 rounded-2xl border-none bg-muted/50 px-4 text-xs font-bold shadow-inner transition-all focus-visible:ring-primary/20'
+                            className='h-10 rounded-2xl border-none bg-muted/50 px-4 text-xs font-bold shadow-inner transition-all focus-visible:ring-primary/20'
                             {...field}
                           />
                         </FormControl>
@@ -361,18 +379,18 @@ export function EmployeeActionDialog({
                 control={form.control}
                 name='positionId'
                 render={({ field }) => (
-                  <FormItem className='space-y-1'>
+                  <FormItem className='space-y-1 md:col-span-2 xl:col-span-2'>
                     <FormLabel className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                       {positionFieldLabel}
                     </FormLabel>
-                    <div className='pt-1'>
+                    <div className='pt-0.5'>
                       <SelectDropdown
                         isControlled
                         value={field.value}
                         onValueChange={field.onChange}
                         placeholder={positionFieldLabel}
                         items={positionOptions}
-                        className='h-11 rounded-2xl border-none bg-muted/50 text-xs font-bold shadow-inner'
+                        className='h-10 rounded-2xl border-none bg-muted/50 text-xs font-bold shadow-inner'
                       />
                     </div>
                     <p className='text-[10px] leading-relaxed text-muted-foreground'>
@@ -386,11 +404,11 @@ export function EmployeeActionDialog({
           </form>
         </Form>
 
-        <DialogFooter className='shrink-0 border-t border-dashed border-muted/50 bg-muted/5 p-6'>
+        <DialogFooter className='shrink-0 border-t border-dashed border-muted/50 bg-muted/5 px-6 py-5 md:px-8'>
           <Button
             type='submit'
             form='employee-form'
-            className='h-11 rounded-full px-8 text-[10px] font-black tracking-widest uppercase shadow-xl shadow-blue-500/20 transition-all active:scale-95'
+            className='h-10 rounded-full px-8 text-[10px] font-black tracking-widest uppercase shadow-xl shadow-blue-500/20 transition-all active:scale-95'
           >
             {t('orgPersonnel.org.employeeDialog.submit')}
           </Button>

@@ -14,29 +14,27 @@ export function SidebarBrand({ team }: SidebarBrandProps) {
   const logoAlt = team.name ? `${team.name} logo` : 'Enterprise logo'
 
   return (
-    <div className='group/brand relative mx-1 my-2 flex min-h-[64px] items-center justify-center p-2 transition-all duration-300 group-data-[collapsible=icon]:h-14 group-data-[collapsible=icon]:w-14 group-data-[collapsible=icon]:p-0'>
-      <div className='flex h-[48px] w-full items-center gap-3 rounded-xl border border-sidebar-border/40 bg-sidebar-accent/18 px-2.5 shadow-sm transition-all duration-300 group-data-[collapsible=icon]:size-12 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:rounded-xl group-data-[collapsible=icon]:p-1.5'>
-        <div className='flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-background/80 ring-1 ring-sidebar-border/50'>
-          {team.logoUrl ? (
-            <img
-              src={team.logoUrl}
-              alt={logoAlt}
-              className='size-full object-contain p-1'
-              loading='eager'
-              decoding='async'
-            />
-          ) : (
-            <Logo className='size-5 text-sidebar-foreground/80' />
-          )}
-        </div>
+    <div className='group/brand relative mx-1 my-2 flex min-h-[122px] flex-col items-center justify-center gap-2 p-2 transition-all duration-300 group-data-[collapsible=icon]:h-14 group-data-[collapsible=icon]:min-h-14 group-data-[collapsible=icon]:w-14 group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:p-0'>
+      <div className='flex h-16 w-full shrink-0 items-center justify-center transition-all duration-300 group-data-[collapsible=icon]:h-12 group-data-[collapsible=icon]:w-12'>
+        {team.logoUrl ? (
+          <img
+            src={team.logoUrl}
+            alt={logoAlt}
+            className='h-16 w-auto max-w-[8.5rem] object-contain transition-all duration-300 group-data-[collapsible=icon]:h-9 group-data-[collapsible=icon]:max-w-9'
+            loading='eager'
+            decoding='async'
+          />
+        ) : (
+          <Logo className='size-11 text-sidebar-foreground/80 transition-all duration-300 group-data-[collapsible=icon]:size-7' />
+        )}
+      </div>
 
-        <div className='flex min-w-0 flex-1 flex-col justify-center group-data-[collapsible=icon]:hidden'>
-          <div className='truncate text-[15px] leading-none font-black text-sidebar-foreground'>
-            {team.name}
-          </div>
-          <div className='mt-1.5 truncate text-[11px] leading-none font-semibold text-sidebar-foreground/60'>
-            {team.plan}
-          </div>
+      <div className='flex h-[48px] w-full min-w-0 flex-col items-center justify-center text-center group-data-[collapsible=icon]:hidden'>
+        <div className='min-h-[15px] max-w-full truncate text-[15px] leading-none font-black text-sidebar-foreground'>
+          {team.name}
+        </div>
+        <div className='mt-1.5 min-h-[11px] max-w-full truncate text-[11px] leading-none font-semibold text-sidebar-foreground/60'>
+          {team.plan}
         </div>
       </div>
     </div>
