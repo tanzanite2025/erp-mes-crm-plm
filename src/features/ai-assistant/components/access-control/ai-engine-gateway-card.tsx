@@ -5,6 +5,7 @@ import {
   Loader2,
   Save,
   ShieldCheck,
+  Sparkles,
   Zap,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -29,8 +30,10 @@ import {
 import type { AiGatewayConfig } from '../../services/ai-policy-service'
 
 interface AiEngineGatewayCardProps {
+  enabled: boolean
   config: AiGatewayConfig
   isSaving: boolean
+  onEnabledChange: (enabled: boolean) => void
   onConfigChange: (config: AiGatewayConfig) => void
   onSave: () => void
   className?: string
@@ -42,8 +45,10 @@ function usesMiniMaxGateway(config: AiGatewayConfig) {
 }
 
 export function AiEngineGatewayCard({
+  enabled,
   config,
   isSaving,
+  onEnabledChange,
   onConfigChange,
   onSave,
   className,
@@ -88,6 +93,44 @@ export function AiEngineGatewayCard({
       </CardHeader>
 
       <CardContent className='grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 md:p-5 xl:grid-cols-3'>
+        <div className='flex flex-col gap-4 rounded-2xl border border-indigo-50 bg-white p-4 shadow-sm sm:col-span-2 sm:flex-row sm:items-center sm:justify-between xl:col-span-3'>
+          <div className='flex min-w-0 items-center gap-3'>
+            <div
+              className={cn(
+                'flex size-10 shrink-0 items-center justify-center rounded-xl transition-colors',
+                enabled
+                  ? 'bg-emerald-500 text-white'
+                  : 'bg-slate-100 text-slate-400'
+              )}
+            >
+              <Sparkles className='size-5' />
+            </div>
+            <div className='min-w-0 flex-1'>
+              <p className='text-[9px] font-black tracking-widest text-indigo-400 uppercase'>
+                {t('aiAssistant.accessControl.global.title')}
+              </p>
+              <p className='text-sm leading-tight font-bold text-slate-700'>
+                {enabled
+                  ? t('aiAssistant.accessControl.global.enabledTitle')
+                  : t('aiAssistant.accessControl.global.disabledTitle')}
+              </p>
+              <p className='text-[10px] font-medium text-slate-400'>
+                {t('aiAssistant.accessControl.global.hint')}
+              </p>
+            </div>
+          </div>
+          <Button
+            type='button'
+            variant={enabled ? 'destructive' : 'default'}
+            className='h-9 w-full rounded-full px-4 text-[10px] font-black tracking-widest uppercase sm:w-auto'
+            onClick={() => onEnabledChange(!enabled)}
+          >
+            {enabled
+              ? t('aiAssistant.accessControl.global.disable')
+              : t('aiAssistant.accessControl.global.enable')}
+          </Button>
+        </div>
+
         <div className='space-y-2'>
           <Label className='flex items-center gap-2 text-[10px] font-black tracking-widest uppercase opacity-60'>
             <Zap className='size-3' />

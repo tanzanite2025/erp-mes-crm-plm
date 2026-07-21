@@ -10,6 +10,14 @@ export type AiPermissionGroup = {
   permissionIds: string[]
 }
 
+function isSelectableAiRoutePermissionId(permissionId: string) {
+  const normalizedPermissionId = permissionId.trim().toLowerCase()
+  return (
+    normalizedPermissionId.startsWith('page_') ||
+    normalizedPermissionId.startsWith('tab_')
+  )
+}
+
 function permissionMatches(permission: Permission, query: string) {
   return [
     permission.id,
@@ -25,7 +33,9 @@ function permissionMatches(permission: Permission, query: string) {
 export function getAiRoutePermissionIds(): string[] {
   return Array.from(
     new Set(
-      getRoutePermissionEntries().map((routeEntry) => routeEntry.permissionId)
+      getRoutePermissionEntries()
+        .map((routeEntry) => routeEntry.permissionId)
+        .filter(isSelectableAiRoutePermissionId)
     )
   )
 }
@@ -40,11 +50,12 @@ export function buildAiPermissionGroups(
 
   return buildPermissionTreeNodes(permissions).flatMap((node) => {
     const groupPermissions = [
-      node.module,
       ...node.pages.flatMap((pageNode) => [pageNode.page, ...pageNode.tabs]),
       ...node.directTabs,
-    ].filter((permission) =>
-      routePermissionIdSet.has(permission.id.toLowerCase())
+    ].filter(
+      (permission) =>
+        isSelectableAiRoutePermissionId(permission.id) &&
+        routePermissionIdSet.has(permission.id.toLowerCase())
     )
 
     if (groupPermissions.length === 0) {
@@ -89,7 +100,10 @@ export function isAiRoutePermissionAllowed(
   allowedPermissionIds: ReadonlyArray<string>
 ): boolean {
   const routePermissionId = findRoutePermissionEntry(pathname)?.permissionId
-  if (!routePermissionId) {
+  if (
+    !routePermissionId ||
+    !isSelectableAiRoutePermissionId(routePermissionId)
+  ) {
     return false
   }
 

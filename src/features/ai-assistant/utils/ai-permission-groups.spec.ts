@@ -80,6 +80,9 @@ describe('AI permission groups', () => {
       .sort()
 
     expect(groupedPermissionIds).toEqual([...aiRoutePermissionIds].sort())
+    expect(aiRoutePermissionIds.some((id) => id.startsWith('menu_'))).toBe(
+      false
+    )
     expect(
       groups
         .flatMap((group) => group.permissions)
@@ -93,6 +96,9 @@ describe('AI permission groups', () => {
         'TAB_SYSTEM_MANAGEMENT_AI_CAPABILITY',
       ])
     ).toBe(true)
+    expect(isAiRoutePermissionAllowed('/dashboard', ['menu_dashboard'])).toBe(
+      false
+    )
     expect(
       isAiRoutePermissionAllowed('/system-management/audit-engine', [
         'tab_system_management_ai_capability',

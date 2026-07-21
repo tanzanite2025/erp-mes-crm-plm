@@ -12,7 +12,6 @@ import { createLogger } from '@/lib/logger'
 import { useLanguage } from '@/context/language-provider'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { AiEngineGatewayCard } from '@/features/ai-assistant/components/access-control/ai-engine-gateway-card'
-import { AiGlobalControlCard } from '@/features/ai-assistant/components/access-control/ai-global-control-card'
 import { AiRoutePermissionsCard } from '@/features/ai-assistant/components/access-control/ai-route-permissions-card'
 import {
   aiPolicyService,
@@ -181,17 +180,14 @@ export function AiAccessControl() {
       </header>
 
       <div className='grid grid-cols-1 items-start gap-4 lg:grid-cols-12 lg:gap-6'>
-        <AiGlobalControlCard
-          enabled={policy.enabled}
-          onEnabledChange={handleGlobalCapabilityChange}
-          className='lg:col-span-4'
-        />
         <AiEngineGatewayCard
+          enabled={policy.enabled}
           config={gatewayDraft}
           isSaving={isGatewaySaving}
+          onEnabledChange={handleGlobalCapabilityChange}
           onConfigChange={setGatewayDraft}
           onSave={() => void saveGatewayConfiguration()}
-          className='lg:col-span-8'
+          className='lg:col-span-12'
         />
         <AiRoutePermissionsCard
           permissionGroups={permissionGroups}
