@@ -35,6 +35,94 @@
   textarea::placeholder {
     @apply text-[10px] font-black tracking-widest uppercase italic opacity-30;
   }
+
+  .dark input::placeholder,
+  .dark textarea::placeholder {
+    opacity: 0.55;
+  }
+}
+
+@layer utilities {
+  /* Keep the light theme's subtle gray hierarchy, but lift muted alpha text in dark mode. */
+  .dark .text-muted-foreground\/10 {
+    color: color-mix(in oklab, var(--muted-foreground) 36%, transparent);
+  }
+
+  .dark .text-muted-foreground\/20 {
+    color: color-mix(in oklab, var(--muted-foreground) 44%, transparent);
+  }
+
+  .dark .text-muted-foreground\/25 {
+    color: color-mix(in oklab, var(--muted-foreground) 48%, transparent);
+  }
+
+  .dark .text-muted-foreground\/30 {
+    color: color-mix(in oklab, var(--muted-foreground) 52%, transparent);
+  }
+
+  .dark .text-muted-foreground\/35 {
+    color: color-mix(in oklab, var(--muted-foreground) 56%, transparent);
+  }
+
+  .dark .text-muted-foreground\/40 {
+    color: color-mix(in oklab, var(--muted-foreground) 60%, transparent);
+  }
+
+  .dark .text-muted-foreground\/45 {
+    color: color-mix(in oklab, var(--muted-foreground) 64%, transparent);
+  }
+
+  .dark .text-muted-foreground\/50 {
+    color: color-mix(in oklab, var(--muted-foreground) 68%, transparent);
+  }
+
+  .dark .text-muted-foreground\/55 {
+    color: color-mix(in oklab, var(--muted-foreground) 72%, transparent);
+  }
+
+  .dark .text-muted-foreground\/60 {
+    color: color-mix(in oklab, var(--muted-foreground) 76%, transparent);
+  }
+
+  .dark .text-muted-foreground\/65 {
+    color: color-mix(in oklab, var(--muted-foreground) 80%, transparent);
+  }
+
+  .dark .text-muted-foreground\/70 {
+    color: color-mix(in oklab, var(--muted-foreground) 84%, transparent);
+  }
+
+  .dark .text-muted-foreground\/75 {
+    color: color-mix(in oklab, var(--muted-foreground) 88%, transparent);
+  }
+
+  .dark .text-muted-foreground\/80 {
+    color: color-mix(in oklab, var(--muted-foreground) 92%, transparent);
+  }
+
+  .dark .text-muted-foreground\/85 {
+    color: color-mix(in oklab, var(--muted-foreground) 95%, transparent);
+  }
+
+  .dark .placeholder\:text-muted-foreground\/20::placeholder {
+    color: color-mix(in oklab, var(--muted-foreground) 44%, transparent);
+  }
+
+  .dark .placeholder\:text-muted-foreground\/30::placeholder {
+    color: color-mix(in oklab, var(--muted-foreground) 52%, transparent);
+  }
+
+  .dark .placeholder\:text-muted-foreground\/35::placeholder {
+    color: color-mix(in oklab, var(--muted-foreground) 56%, transparent);
+  }
+
+  .dark .placeholder\:text-muted-foreground\/40::placeholder {
+    color: color-mix(in oklab, var(--muted-foreground) 60%, transparent);
+  }
+
+  .dark .placeholder\:text-muted-foreground\/45::placeholder {
+    color: color-mix(in oklab, var(--muted-foreground) 64%, transparent);
+  }
 }
 
 @utility container {
