@@ -117,8 +117,6 @@ export const vehicleRecommendationSchema = z.object({
 export const vehicleRecommendationRequestSchema = z.object({
   summary: shipmentSummarySchema,
   vehicleSpecs: z.array(vehicleSpecSchema).min(1),
-  source: z.enum(['manual', 'packing-rule', 'api']).optional(),
-  sourceLabel: z.string().min(1).optional(),
   packageInput: vehicleLoadingPackageInputSchema.optional(),
 })
 

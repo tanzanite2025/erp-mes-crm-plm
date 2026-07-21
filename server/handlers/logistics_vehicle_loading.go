@@ -19,8 +19,7 @@ func GetVehicleLoadingRecommendationsHandler(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, services.ErrVehicleLoadingVehicleSpecsRequired),
-			errors.Is(err, services.ErrVehicleLoadingSummaryInvalid),
-			errors.Is(err, services.ErrVehicleLoadingSourceInvalid):
+			errors.Is(err, services.ErrVehicleLoadingSummaryInvalid):
 			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] " + err.Error()})
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 生成配车推荐失败: " + err.Error()})

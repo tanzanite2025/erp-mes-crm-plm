@@ -12,7 +12,6 @@ import (
 var (
 	ErrVehicleLoadingVehicleSpecsRequired = errors.New("vehicle specs are required")
 	ErrVehicleLoadingSummaryInvalid       = errors.New("vehicle loading summary is invalid")
-	ErrVehicleLoadingSourceInvalid        = errors.New("vehicle loading source is invalid")
 )
 
 type VehicleLoadingSummaryPayload struct {
@@ -24,8 +23,6 @@ type VehicleLoadingSummaryPayload struct {
 type VehicleLoadingRecommendationsRequest struct {
 	Summary      VehicleLoadingSummaryPayload       `json:"summary"`
 	VehicleSpecs []VehicleSpecResponse              `json:"vehicleSpecs"`
-	Source       string                             `json:"source,omitempty"`
-	SourceLabel  string                             `json:"sourceLabel,omitempty"`
 	PackageInput *VehicleLoadingPackageInputPayload `json:"packageInput,omitempty"`
 }
 
@@ -96,20 +93,11 @@ type vehicleLoadingPlan struct {
 const vehicleLoadingRecommendationEngineVersion = "load-planning-0.2.0"
 
 var defaultVehiclePackageDimension = VehiclePackageDimensionResponse{
-	LengthMm:  660,
-	WidthMm:   660,
-	HeightMm:  800,
+	LengthMm:  420,
+	WidthMm:   420,
+	HeightMm:  400,
 	CanRotate: true,
 	CanInvert: false,
-}
-
-func validateVehicleLoadingSource(source string) error {
-	switch strings.TrimSpace(source) {
-	case "", "manual", "packing-rule", "api":
-		return nil
-	default:
-		return ErrVehicleLoadingSourceInvalid
-	}
 }
 
 func buildVehicleLoadingPackageProfile(request VehicleLoadingRecommendationsRequest) vehicleLoadingPackageProfile {
@@ -119,9 +107,6 @@ func buildVehicleLoadingPackageProfile(request VehicleLoadingRecommendationsRequ
 			packageID = "explicit-package-input"
 		}
 		name := strings.TrimSpace(request.PackageInput.Name)
-		if name == "" {
-			name = strings.TrimSpace(request.SourceLabel)
-		}
 		if name == "" {
 			name = "显式箱型输入"
 		}
@@ -134,29 +119,13 @@ func buildVehicleLoadingPackageProfile(request VehicleLoadingRecommendationsRequ
 		}
 	}
 
-	source := strings.TrimSpace(request.Source)
-	label := strings.TrimSpace(request.SourceLabel)
-	if label == "" {
-		switch source {
-		case "packing-rule":
-			label = "包装规则结果"
-		case "api":
-			label = "API 结果"
-		default:
-			label = "手动试算"
-		}
-	}
-	packageID := source
-	if packageID == "" {
-		packageID = "manual"
-	}
 	unitWeightKg := request.Summary.TotalWeightKg
 	if request.Summary.Boxes > 0 {
 		unitWeightKg = request.Summary.TotalWeightKg / float64(request.Summary.Boxes)
 	}
 	return vehicleLoadingPackageProfile{
-		PackageID:    packageID + "-shipment",
-		Name:         label,
+		PackageID:    "shipment-summary",
+		Name:         "装箱汇总输入",
 		Quantity:     request.Summary.Boxes,
 		Dimension:    defaultVehiclePackageDimension,
 		UnitWeightKg: unitWeightKg,
@@ -358,9 +327,6 @@ func resolveVehicleOrientationAxis(label string) string {
 }
 
 func BuildVehicleLoadingRecommendations(request VehicleLoadingRecommendationsRequest) (VehicleLoadingRecommendationsResponse, error) {
-	if err := validateVehicleLoadingSource(request.Source); err != nil {
-		return VehicleLoadingRecommendationsResponse{}, err
-	}
 	if request.Summary.Boxes < 0 || request.Summary.TotalVolumeM3 < 0 || request.Summary.TotalWeightKg < 0 {
 		return VehicleLoadingRecommendationsResponse{}, ErrVehicleLoadingSummaryInvalid
 	}

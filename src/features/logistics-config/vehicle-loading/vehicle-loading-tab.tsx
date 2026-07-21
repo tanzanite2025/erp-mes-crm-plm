@@ -5,10 +5,9 @@ import { ConfigErrorPanel } from './components/config-error-panel'
 import { VehicleFilterPanel } from './components/vehicle-filter-panel'
 import type { VehicleSize } from './components/vehicle-loading-diagram-types'
 import { VehicleLoadingHeader } from './components/vehicle-loading-header'
+import { VehicleLoadingPackageInputPanel } from './components/vehicle-loading-package-input-panel'
 import { VehicleLoadingPlanDialog } from './components/vehicle-loading-plan-dialog'
 import { VehicleLoadingPlanOverview } from './components/vehicle-loading-plan-overview'
-import { VehicleLoadingSourceInputPanel } from './components/vehicle-loading-source-input-panel'
-import { VehicleLoadingSourceSwitch } from './components/vehicle-loading-source-switch'
 import { VehicleLoadingSummaryPanel } from './components/vehicle-loading-summary-panel'
 import { VehicleRecommendationPanel } from './components/vehicle-recommendation-panel'
 import type { VehicleRecommendation } from './data/vehicle-loading.types'
@@ -18,16 +17,10 @@ export function LogisticsVehicleLoadingTab() {
   const {
     summary,
     setSummary,
-    source,
-    setSource,
     packageInput,
     packageInputError,
-    isLoadingPackageInput,
-    packagingProfiles,
-    selectedPackagingProfileId,
-    setSelectedPackagingProfileId,
-    apiPackageDraft,
-    setApiPackageDraft,
+    packageDraft,
+    setPackageDraft,
     category,
     setCategory,
     minVolumeM3,
@@ -37,7 +30,6 @@ export function LogisticsVehicleLoadingTab() {
     filteredSpecs,
     recommendations,
     categoryOptions,
-    sourceLabel,
     activeFilters,
     isLoadingSpecs,
     isLoadingRecommendations,
@@ -87,32 +79,11 @@ export function LogisticsVehicleLoadingTab() {
         }}
       />
 
-      <VehicleLoadingSourceSwitch value={source} onChange={setSource} />
-
-      {source === 'packing-rule' ? (
-        <div className='rounded-[28px] border border-dashed border-primary/30 bg-primary/5 px-6 py-5 text-[11px] leading-relaxed text-primary/80 shadow-none'>
-          当前切换到包装规则来源。页面会读取活动包装定义，并将其尺寸与单箱重量映射为推荐输入；
-          当前箱数仍以本页 summary 为准，尚未扩大到动态装箱计划 authority。
-        </div>
-      ) : null}
-
-      {source === 'api' ? (
-        <div className='rounded-[28px] border border-dashed border-primary/30 bg-primary/5 px-6 py-5 text-[11px] leading-relaxed text-primary/80 shadow-none'>
-          当前切换到 API 输入来源。推荐计算会通过统一后端接口执行，
-          并直接使用你在下方填写的显式箱型参数，不再回落默认箱型冒充真实来源。
-        </div>
-      ) : null}
-
-      <VehicleLoadingSourceInputPanel
-        source={source}
+      <VehicleLoadingPackageInputPanel
         packageInput={packageInput}
         packageInputError={packageInputError}
-        isLoadingPackageInput={isLoadingPackageInput}
-        packagingProfiles={packagingProfiles}
-        selectedPackagingProfileId={selectedPackagingProfileId}
-        onSelectedPackagingProfileIdChange={setSelectedPackagingProfileId}
-        apiPackageDraft={apiPackageDraft}
-        onApiPackageDraftChange={setApiPackageDraft}
+        packageDraft={packageDraft}
+        onPackageDraftChange={setPackageDraft}
       />
 
       <VehicleLoadingPlanOverview
@@ -123,7 +94,6 @@ export function LogisticsVehicleLoadingTab() {
           categoryOptions.find((item) => item.value === category)?.label ??
           '全部'
         }
-        sourceLabel={sourceLabel}
         activeFilters={activeFilters}
         isLoadingSpecs={isLoadingSpecs}
         isLoadingRecommendations={isLoadingRecommendations}

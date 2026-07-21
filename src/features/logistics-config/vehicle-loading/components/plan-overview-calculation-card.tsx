@@ -2,13 +2,13 @@ import { Badge } from '@/components/ui/badge'
 
 type Props = {
   title: string
-  sourceLabel: string
+  statusLabel: string
   description: string
 }
 
-export function PlanOverviewInputSourceCard({
+export function PlanOverviewCalculationCard({
   title,
-  sourceLabel,
+  statusLabel,
   description,
 }: Props) {
   return (
@@ -18,10 +18,10 @@ export function PlanOverviewInputSourceCard({
           {title}
         </div>
         <Badge className='border-none bg-primary/10 text-primary'>
-          {sourceLabel}
+          {statusLabel}
         </Badge>
       </div>
-      <div className='mt-2 text-sm font-black'>当前来源</div>
+      <div className='mt-2 text-sm font-black'>后端装载建议</div>
       <div className='mt-1 text-[11px] leading-relaxed text-muted-foreground'>
         {description}
       </div>

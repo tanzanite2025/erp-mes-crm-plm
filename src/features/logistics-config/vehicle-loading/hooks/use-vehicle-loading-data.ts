@@ -1,5 +1,4 @@
 import { useCallback, useState } from 'react'
-import { type VehicleLoadingSourceType } from '../data/vehicle-loading-sources'
 import type {
   ShipmentSummary,
   VehicleLoadingPackageInput,
@@ -10,7 +9,6 @@ import { useVehicleLoadingSpecs } from './use-vehicle-loading-specs'
 
 export function useVehicleLoadingData(
   summary: ShipmentSummary,
-  source: VehicleLoadingSourceType,
   packageInput: VehicleLoadingPackageInput | null,
   enabled: boolean
 ) {
@@ -21,7 +19,6 @@ export function useVehicleLoadingData(
     useVehicleLoadingRecommendations(
       summary,
       vehicleSpecs,
-      source,
       packageInput,
       enabled,
       reloadToken

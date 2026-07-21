@@ -1,10 +1,9 @@
 import { useState } from 'react'
-import { type VehicleLoadingSourceType } from '../data/vehicle-loading-sources'
 import type {
   ShipmentSummary,
   VehicleCategory,
 } from '../data/vehicle-loading.types'
-import { createDefaultVehicleLoadingApiPackageDraft } from '../services/vehicle-loading-package-input'
+import { createDefaultVehicleLoadingPackageDraft } from '../services/vehicle-loading-package-input'
 
 export function useVehicleLoadingState() {
   const initialSummary: ShipmentSummary = {
@@ -15,30 +14,23 @@ export function useVehicleLoadingState() {
 
   const [summary, setSummary] = useState<ShipmentSummary>(initialSummary)
 
-  const [source, setSource] = useState<VehicleLoadingSourceType>('manual')
   const [category, setCategory] = useState<VehicleCategory | 'all'>('all')
   const [minVolumeM3, setMinVolumeM3] = useState<string>('')
   const [minPayloadKg, setMinPayloadKg] = useState<string>('')
-  const [selectedPackagingProfileId, setSelectedPackagingProfileId] =
-    useState<string>('')
-  const [apiPackageDraft, setApiPackageDraft] = useState(() =>
-    createDefaultVehicleLoadingApiPackageDraft(initialSummary)
+  const [packageDraft, setPackageDraft] = useState(() =>
+    createDefaultVehicleLoadingPackageDraft()
   )
 
   return {
     summary,
     setSummary,
-    source,
-    setSource,
     category,
     setCategory,
     minVolumeM3,
     setMinVolumeM3,
     minPayloadKg,
     setMinPayloadKg,
-    selectedPackagingProfileId,
-    setSelectedPackagingProfileId,
-    apiPackageDraft,
-    setApiPackageDraft,
+    packageDraft,
+    setPackageDraft,
   }
 }

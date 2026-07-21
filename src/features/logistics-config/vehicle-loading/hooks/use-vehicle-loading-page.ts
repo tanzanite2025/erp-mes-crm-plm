@@ -1,33 +1,41 @@
 import { useMemo } from 'react'
 import { useLanguage } from '@/context/language-provider'
-import {
-  getVehicleLoadingSourceConfig,
-  type VehicleLoadingSourceType,
-} from '../data/vehicle-loading-sources'
+import type { VehicleLoadingPackageInput } from '../data/vehicle-loading.types'
 import { categoryLabelKey } from '../data/vehicle-loading.utils'
+import { buildVehicleLoadingPackageInputFromDraft } from '../services/vehicle-loading-package-input'
 import { useVehicleLoadingData } from './use-vehicle-loading-data'
-import { useVehicleLoadingSourcePackageInput } from './use-vehicle-loading-source-package-input'
 import { useVehicleLoadingState } from './use-vehicle-loading-state'
-
-export type VehicleLoadingSource = VehicleLoadingSourceType
 
 export function useVehicleLoadingPage() {
   const { t } = useLanguage()
   const state = useVehicleLoadingState()
-  const sourceConfig = useMemo(
-    () => getVehicleLoadingSourceConfig(state.source),
-    [state.source]
-  )
-  const packageInputState = useVehicleLoadingSourcePackageInput({
-    source: state.source,
-    summary: state.summary,
-    selectedPackagingProfileId: state.selectedPackagingProfileId,
-    apiPackageDraft: state.apiPackageDraft,
-    sourceLabel: sourceConfig.label,
-  })
+  const packageInputState = useMemo<{
+    packageInput: VehicleLoadingPackageInput | null
+    packageInputError: Error | null
+    isPackageInputReady: boolean
+  }>(() => {
+    try {
+      return {
+        packageInput: buildVehicleLoadingPackageInputFromDraft(
+          state.packageDraft,
+          state.summary
+        ),
+        packageInputError: null,
+        isPackageInputReady: true,
+      }
+    } catch (error) {
+      return {
+        packageInput: null,
+        packageInputError:
+          error instanceof Error
+            ? error
+            : new Error('Failed to build vehicle loading package input'),
+        isPackageInputReady: false,
+      }
+    }
+  }, [state.packageDraft, state.summary])
   const data = useVehicleLoadingData(
     state.summary,
-    state.source,
     packageInputState.packageInput,
     packageInputState.isPackageInputReady
   )
@@ -85,29 +93,16 @@ export function useVehicleLoadingPage() {
       items.push({ label: '最小体积', value: `${state.minVolumeM3} m³` })
     if (state.minPayloadKg.trim() !== '')
       items.push({ label: '最小载重', value: `${state.minPayloadKg} kg` })
-    items.push({ label: '来源', value: sourceConfig.label })
     return items
-  }, [
-    categoryOptions,
-    sourceConfig.label,
-    state.category,
-    state.minPayloadKg,
-    state.minVolumeM3,
-  ])
+  }, [categoryOptions, state.category, state.minPayloadKg, state.minVolumeM3])
 
   return {
     summary: state.summary,
     setSummary: state.setSummary,
-    source: state.source,
-    setSource: state.setSource,
     packageInput: packageInputState.packageInput,
     packageInputError: packageInputState.packageInputError,
-    isLoadingPackageInput: packageInputState.isLoadingPackageInput,
-    packagingProfiles: packageInputState.packagingProfiles,
-    selectedPackagingProfileId: packageInputState.resolvedPackagingProfileId,
-    setSelectedPackagingProfileId: state.setSelectedPackagingProfileId,
-    apiPackageDraft: state.apiPackageDraft,
-    setApiPackageDraft: state.setApiPackageDraft,
+    packageDraft: state.packageDraft,
+    setPackageDraft: state.setPackageDraft,
     category: state.category,
     setCategory: state.setCategory,
     minVolumeM3: state.minVolumeM3,
@@ -118,7 +113,6 @@ export function useVehicleLoadingPage() {
     recommendations: data.recommendations,
     categoryOptions,
     activeFilters,
-    sourceLabel: sourceConfig.label,
     isLoadingSpecs: data.isLoadingSpecs,
     isLoadingRecommendations: data.isLoadingRecommendations,
     specsError: data.specsError,

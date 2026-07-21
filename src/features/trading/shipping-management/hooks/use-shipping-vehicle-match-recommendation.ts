@@ -75,8 +75,7 @@ function buildManualPackageInputState(summary: ShipmentSummary) {
   } catch (error) {
     return {
       packageInput: null,
-      error:
-        error instanceof Error ? error : new Error('无法构造手动试算包装输入'),
+      error: error instanceof Error ? error : new Error('无法构造装箱汇总输入'),
       ready: false,
     }
   }
@@ -210,8 +209,7 @@ export function useShippingVehicleMatchRecommendation(
           sourceLabel: getVehicleLoadingSourceConfig('manual').label,
           packageInputNotice: null,
           selectedPackagingProfile: null,
-          error:
-            manualPackageState.error ?? new Error('无法构造手动试算包装输入'),
+          error: manualPackageState.error ?? new Error('无法构造装箱汇总输入'),
           scope: 'useShippingVehicleMatchRecommendation.manualPackageInput',
         }
       }
@@ -317,7 +315,6 @@ export function useShippingVehicleMatchRecommendation(
 
   const recommendationData = useVehicleLoadingData(
     summary,
-    packageInputResource.source,
     packageInputResource.status === 'ready'
       ? packageInputResource.packageInput
       : null,

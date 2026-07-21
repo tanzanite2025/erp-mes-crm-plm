@@ -66,22 +66,21 @@ export const logisticsConfig = {
     title: '装载与配车计算',
     description:
       '基于本批出货的箱数、体积和重量汇总，结合车型规格库给出配车推荐。',
-    mockBadge: '规则试算',
+    mockBadge: '后端推荐',
     source: {
-      title: '输入来源',
-      description: '选择当前装载试算的来源',
-      manual: '手动试算',
-      packingRule: '包装规则结果',
-      api: 'API 结果',
+      title: '箱型输入',
+      description: '维护当前装载建议使用的箱型参数',
+      manual: '装箱汇总输入',
+      packingRule: '包装规则箱型',
     },
     summary: {
       title: '出货汇总',
-      note: '你可以临时调整示例数据，后续这里会接入真实装箱汇总结果。',
+      note: '按本批出货填写箱数、总体积和总毛重，后端会结合箱型参数统一返回配车建议。',
       boxes: '箱数',
       volume: '总体积（m³）',
       weight: '总毛重（kg）',
       disclaimer:
-        '当前用于验证页面结构与交互，后续将接入真实车型库与装载约束。',
+        '出货汇总只描述本批货量；单箱尺寸、重量和朝向约束在箱型输入卡片中维护。',
     },
     filters: {
       category: '车型类别',
@@ -96,7 +95,7 @@ export const logisticsConfig = {
     },
     vehicleSpecs: {
       title: '车型规格库',
-      note: '当前展示的是常见车型规格，后续会替换为可维护的车型字典。',
+      note: '车型规格库提供物理尺寸、可用装载空间、安全余量与装载约束，供后端推荐统一复用。',
       table: {
         name: '车型',
         category: '类别',
@@ -111,7 +110,7 @@ export const logisticsConfig = {
       },
     },
     recommendation: {
-      title: '推荐结果',
+      title: '后端装载建议',
       vehiclesNeeded: '建议车辆数：{{count}}',
       emptyStateTitle: '暂无推荐结果',
       emptyStateDescription:
@@ -133,7 +132,7 @@ export const logisticsConfig = {
     },
     badges: {
       source: '来源',
-      rules: '规则',
+      rules: '后端推荐',
     },
   },
   vehiclePhotos: {

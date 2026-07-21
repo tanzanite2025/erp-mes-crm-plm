@@ -10,8 +10,8 @@ import type {
   ShipmentSummary,
   VehicleRecommendation,
 } from '../data/vehicle-loading.types'
+import { PlanOverviewCalculationCard } from './plan-overview-calculation-card'
 import { PlanOverviewFilterTags } from './plan-overview-filter-tags'
-import { PlanOverviewInputSourceCard } from './plan-overview-input-source-card'
 import { PlanOverviewMetricCard } from './plan-overview-metric-card'
 import { PlanOverviewRecommendationCard } from './plan-overview-recommendation-card'
 import { PlanOverviewRiskCard } from './plan-overview-risk-card'
@@ -28,7 +28,6 @@ type Props = {
   isLoadingRecommendations: boolean
   specsError: Error | null
   recommendationsError: Error | null
-  sourceLabel: string
 }
 
 function formatPercent(value: number): string {
@@ -49,7 +48,6 @@ export function VehicleLoadingPlanOverview({
   isLoadingRecommendations,
   specsError,
   recommendationsError,
-  sourceLabel,
 }: Props) {
   const best = getBestRecommendation(recommendations)
   const highestLoadRate = recommendations.reduce(
@@ -153,10 +151,10 @@ export function VehicleLoadingPlanOverview({
           }
         />
 
-        <PlanOverviewInputSourceCard
-          title='输入来源'
-          sourceLabel={sourceLabel}
-          description='后续可切换为包装规则结果或后端方案。'
+        <PlanOverviewCalculationCard
+          title='计算链路'
+          statusLabel='后端返回'
+          description='页面只提交出货汇总、箱型参数和车型筛选，推荐结果由后端装载引擎统一返回。'
         />
       </CardContent>
     </Card>

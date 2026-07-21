@@ -1,7 +1,6 @@
 import { z } from 'zod'
 import { apiFetch } from '@/lib/api'
 import { ensureObjectResponse } from '@/lib/api-response'
-import type { VehicleLoadingSourceType } from '../data/vehicle-loading-sources'
 import type {
   ShipmentSummary,
   VehicleLoadingPackageInput,
@@ -40,15 +39,11 @@ function resolveSummary(summary: ShipmentSummary): ShipmentSummaryDTO {
 function buildRecommendationRequest(
   summary: ShipmentSummary,
   vehicleSpecs?: VehicleSpec[],
-  source?: VehicleLoadingSourceType,
-  sourceLabel?: string,
   packageInput?: VehicleLoadingPackageInput
 ): VehicleRecommendationRequestDTO {
   return vehicleRecommendationRequestSchema.parse({
     summary: resolveSummary(summary),
     vehicleSpecs: resolveVehicleSpecs(vehicleSpecs),
-    source,
-    sourceLabel,
     packageInput,
   })
 }
@@ -61,15 +56,11 @@ export async function getVehicleSpecs(): Promise<VehicleSpecDTO[]> {
 export async function getVehicleRecommendations(
   summary: ShipmentSummary,
   vehicleSpecs?: VehicleSpec[],
-  source?: VehicleLoadingSourceType,
-  sourceLabel?: string,
   packageInput?: VehicleLoadingPackageInput
 ): Promise<VehicleRecommendationResponseDTO> {
   const request = buildRecommendationRequest(
     summary,
     vehicleSpecs,
-    source,
-    sourceLabel,
     packageInput
   )
   const response = await apiFetch<unknown>(VEHICLE_RECOMMENDATIONS_ENDPOINT, {

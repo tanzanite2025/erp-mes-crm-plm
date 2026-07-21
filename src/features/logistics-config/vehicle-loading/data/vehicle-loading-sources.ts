@@ -1,4 +1,4 @@
-export type VehicleLoadingSourceType = 'manual' | 'packing-rule' | 'api'
+export type VehicleLoadingSourceType = 'manual' | 'packing-rule'
 
 export type VehicleLoadingSourceOption = {
   id: VehicleLoadingSourceType
@@ -9,15 +9,14 @@ export type VehicleLoadingSourceOption = {
 export const VEHICLE_LOADING_SOURCE_OPTIONS: VehicleLoadingSourceOption[] = [
   {
     id: 'manual',
-    label: '手动试算',
-    description: '使用页面内输入作为装载试算来源',
+    label: '装箱汇总输入',
+    description: '使用当前出货汇总估算单箱重量与箱型参数',
   },
   {
     id: 'packing-rule',
-    label: '包装规则结果',
-    description: '后续接入包装规则页计算结果',
+    label: '包装规则箱型',
+    description: '使用已维护的包装规则箱型参数参与推荐',
   },
-  { id: 'api', label: 'API 结果', description: '直接使用后端返回的装箱结果' },
 ]
 
 export function getVehicleLoadingSourceConfig(

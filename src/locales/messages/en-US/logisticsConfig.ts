@@ -68,22 +68,21 @@ export const logisticsConfig = {
     title: 'Vehicle Loading & Recommendation',
     description:
       'Shows shipment summary (boxes/volume/weight) and recommends vehicles based on a vehicle spec library.',
-    mockBadge: 'Rules Trial',
+    mockBadge: 'Backend Recommendation',
     source: {
-      title: 'Input Source',
-      description: 'Choose the source used for the current loading trial',
-      manual: 'Manual Trial',
-      packingRule: 'Packaging Rule Result',
-      api: 'API Result',
+      title: 'Package Input',
+      description: 'Maintain package parameters used by vehicle loading',
+      manual: 'Shipment Summary Input',
+      packingRule: 'Packaging Rule Package',
     },
     summary: {
       title: 'Shipment Summary',
-      note: 'You can adjust the sample numbers. Later this will connect to real boxing summary results.',
+      note: 'Enter boxes, total volume, and gross weight for the current shipment. The backend returns one unified vehicle recommendation result.',
       boxes: 'Boxes',
       volume: 'Total Volume (m³)',
       weight: 'Total Gross Weight (kg)',
       disclaimer:
-        'Used to validate the page structure and interactions. Real vehicle specs and loading constraints will be added later.',
+        'Shipment summary describes the batch quantity only. Package size, unit weight, and orientation constraints are maintained in the package input card.',
     },
     filters: {
       category: 'Category',
@@ -98,7 +97,7 @@ export const logisticsConfig = {
     },
     vehicleSpecs: {
       title: 'Vehicle Specs',
-      note: 'This shows common vehicle specs and will later be replaced by a maintainable vehicle dictionary.',
+      note: 'Vehicle specs provide physical size, usable loading space, safety allowance, and loading constraints for backend recommendations.',
       table: {
         name: 'Vehicle',
         category: 'Category',
@@ -113,7 +112,7 @@ export const logisticsConfig = {
       },
     },
     recommendation: {
-      title: 'Recommendations',
+      title: 'Backend Loading Recommendations',
       vehiclesNeeded: 'Vehicles needed: {{count}}',
       emptyStateTitle: 'No recommendation results',
       emptyStateDescription:
@@ -135,7 +134,7 @@ export const logisticsConfig = {
     },
     badges: {
       source: 'Source',
-      rules: 'Rules',
+      rules: 'Backend',
     },
   },
   vehiclePhotos: {

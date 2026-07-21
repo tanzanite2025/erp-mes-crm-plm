@@ -1,9 +1,4 @@
-import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import {
-  getVehicleLoadingSourceConfig,
-  type VehicleLoadingSourceType,
-} from '../data/vehicle-loading-sources'
 import type {
   ShipmentSummary,
   VehicleLoadingPackageInput,
@@ -14,23 +9,15 @@ import { getVehicleRecommendations } from '../services/vehicle-loading-service'
 export function useVehicleLoadingRecommendations(
   summary: ShipmentSummary,
   vehicleSpecs: VehicleSpec[],
-  source: VehicleLoadingSourceType,
   packageInput: VehicleLoadingPackageInput | null,
   enabled: boolean,
   reloadToken: number
 ) {
-  const sourceConfig = useMemo(
-    () => getVehicleLoadingSourceConfig(source),
-    [source]
-  )
-
   const query = useQuery({
     queryKey: [
       'vehicle-loading',
       'recommendations',
-      source,
       summary,
-      sourceConfig.label,
       packageInput,
       vehicleSpecs,
       reloadToken,
@@ -39,8 +26,6 @@ export function useVehicleLoadingRecommendations(
       getVehicleRecommendations(
         summary,
         vehicleSpecs,
-        source,
-        sourceConfig.label,
         packageInput ?? undefined
       ),
     enabled: vehicleSpecs.length > 0 && enabled && packageInput !== null,

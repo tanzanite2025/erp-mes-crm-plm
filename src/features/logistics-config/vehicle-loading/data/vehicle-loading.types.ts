@@ -61,9 +61,8 @@ export type VehicleLoadingPackageInput = {
   dimension: PackageDimension
 }
 
-export type VehicleLoadingApiPackageDraft = {
+export type VehicleLoadingPackageDraft = {
   name: string
-  unitWeightKg: string
   lengthMm: string
   widthMm: string
   heightMm: string

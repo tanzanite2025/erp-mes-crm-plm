@@ -2,14 +2,14 @@ import type { PackagingProfile } from '@/features/logistics-config/packaging-rul
 import type {
   PackageDimension,
   ShipmentSummary,
-  VehicleLoadingApiPackageDraft,
+  VehicleLoadingPackageDraft,
   VehicleLoadingPackageInput,
 } from '../data/vehicle-loading.types'
 
 export const DEFAULT_VEHICLE_LOADING_PACKAGE_DIMENSION: PackageDimension = {
-  lengthMm: 660,
-  widthMm: 660,
-  heightMm: 800,
+  lengthMm: 420,
+  widthMm: 420,
+  heightMm: 400,
   canRotate: true,
   canInvert: false,
 }
@@ -51,39 +51,35 @@ function toKilograms(value: number, unitCode: string): number {
 
 function validatePositiveNumber(value: number, label: string): number {
   if (!Number.isFinite(value) || value <= 0) {
-    throw new Error(`${label} must be greater than 0`)
+    throw new Error(`${label}必须大于 0`)
   }
   return value
 }
 
+function resolveUnitWeightFromSummary(
+  summary: ShipmentSummary,
+  label: string
+): number {
+  return summary.boxes > 0
+    ? validatePositiveNumber(summary.totalWeightKg / summary.boxes, label)
+    : validatePositiveNumber(summary.totalWeightKg, label)
+}
+
 export function buildManualVehicleLoadingPackageInput(
   summary: ShipmentSummary,
-  sourceLabel = '手动试算'
+  sourceLabel = '装箱汇总输入'
 ): VehicleLoadingPackageInput {
   return {
     packageId: 'manual-shipment',
     name: sourceLabel,
-    unitWeightKg:
-      summary.boxes > 0
-        ? validatePositiveNumber(
-            summary.totalWeightKg / summary.boxes,
-            'Manual unit weight'
-          )
-        : validatePositiveNumber(summary.totalWeightKg, 'Manual total weight'),
+    unitWeightKg: resolveUnitWeightFromSummary(summary, '单箱重量'),
     dimension: DEFAULT_VEHICLE_LOADING_PACKAGE_DIMENSION,
   }
 }
 
-export function createDefaultVehicleLoadingApiPackageDraft(
-  summary: ShipmentSummary
-): VehicleLoadingApiPackageDraft {
+export function createDefaultVehicleLoadingPackageDraft(): VehicleLoadingPackageDraft {
   return {
-    name: 'API 输入箱型',
-    unitWeightKg: String(
-      summary.boxes > 0
-        ? Number((summary.totalWeightKg / summary.boxes).toFixed(3))
-        : summary.totalWeightKg
-    ),
+    name: '装箱汇总箱型',
     lengthMm: String(DEFAULT_VEHICLE_LOADING_PACKAGE_DIMENSION.lengthMm),
     widthMm: String(DEFAULT_VEHICLE_LOADING_PACKAGE_DIMENSION.widthMm),
     heightMm: String(DEFAULT_VEHICLE_LOADING_PACKAGE_DIMENSION.heightMm),
@@ -94,7 +90,7 @@ export function createDefaultVehicleLoadingApiPackageDraft(
 
 export function buildVehicleLoadingPackageInputFromProfile(
   profile: PackagingProfile,
-  sourceLabel = '包装规则结果'
+  sourceLabel = '包装规则箱型'
 ): VehicleLoadingPackageInput {
   const unitWeightBase =
     profile.grossWeight > 0 ? profile.grossWeight : profile.netWeight
@@ -105,20 +101,20 @@ export function buildVehicleLoadingPackageInputFromProfile(
     name: profile.name || sourceLabel,
     unitWeightKg: validatePositiveNumber(
       toKilograms(unitWeightBase, profile.weightUnitCode),
-      'Packaging profile gross weight'
+      '包装规则毛重'
     ),
     dimension: {
       lengthMm: validatePositiveNumber(
         toMillimeters(profile.length, profile.dimensionUnitCode),
-        'Packaging profile length'
+        '包装规则长度'
       ),
       widthMm: validatePositiveNumber(
         toMillimeters(profile.width, profile.dimensionUnitCode),
-        'Packaging profile width'
+        '包装规则宽度'
       ),
       heightMm: validatePositiveNumber(
         toMillimeters(profile.height, profile.dimensionUnitCode),
-        'Packaging profile height'
+        '包装规则高度'
       ),
       canRotate: true,
       canInvert: false,
@@ -126,21 +122,19 @@ export function buildVehicleLoadingPackageInputFromProfile(
   }
 }
 
-export function buildVehicleLoadingPackageInputFromApiDraft(
-  draft: VehicleLoadingApiPackageDraft,
-  sourceLabel = 'API 结果'
+export function buildVehicleLoadingPackageInputFromDraft(
+  draft: VehicleLoadingPackageDraft,
+  summary: ShipmentSummary,
+  sourceLabel = '装箱汇总输入'
 ): VehicleLoadingPackageInput {
   return {
-    packageId: 'api-package-input',
+    packageId: 'shipment-package-input',
     name: draft.name.trim() || sourceLabel,
-    unitWeightKg: validatePositiveNumber(
-      Number(draft.unitWeightKg),
-      'API unit weight'
-    ),
+    unitWeightKg: resolveUnitWeightFromSummary(summary, '单箱重量'),
     dimension: {
-      lengthMm: validatePositiveNumber(Number(draft.lengthMm), 'API length'),
-      widthMm: validatePositiveNumber(Number(draft.widthMm), 'API width'),
-      heightMm: validatePositiveNumber(Number(draft.heightMm), 'API height'),
+      lengthMm: validatePositiveNumber(Number(draft.lengthMm), '箱型长度'),
+      widthMm: validatePositiveNumber(Number(draft.widthMm), '箱型宽度'),
+      heightMm: validatePositiveNumber(Number(draft.heightMm), '箱型高度'),
       canRotate: draft.canRotate,
       canInvert: draft.canInvert,
     },
