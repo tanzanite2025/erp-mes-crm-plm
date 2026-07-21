@@ -140,6 +140,8 @@ var auditModuleAliasMap = map[string][]string{
 	AuditModuleInspectionStandard: {
 		AuditModuleInspectionStandard,
 		"InspectionStandard",
+		"QualityStandard",
+		"quality-standard",
 	},
 	AuditModuleInspectionTask: {
 		AuditModuleInspectionTask,

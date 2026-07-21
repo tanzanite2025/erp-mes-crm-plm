@@ -5,11 +5,12 @@ import { fetchAuditTimeline } from '../services/audit-timeline-service'
 
 export const useAuditTimeline = (
   module: AuditModuleValue,
-  targetId?: string
+  targetId?: string,
+  enabled = true
 ) => {
   return useQuery({
     queryKey: auditTimelineQueryKeys.detail(module, targetId),
     queryFn: () => fetchAuditTimeline(module, targetId),
-    enabled: !!module,
+    enabled: enabled && !!module,
   })
 }

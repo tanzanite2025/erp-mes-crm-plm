@@ -113,7 +113,7 @@ export const DataTimeline: React.FC<DataTimelineProps> = ({
   onOpenChange,
 }) => {
   const { t } = useLanguage()
-  const { data: logs, isLoading } = useAuditTimeline(module, targetId)
+  const { data: logs, isLoading } = useAuditTimeline(module, targetId, open)
   const permissionLabelMap = useMemo(() => {
     if (module !== AUDIT_MODULES.userPermission) {
       return new Map<string, string>()
