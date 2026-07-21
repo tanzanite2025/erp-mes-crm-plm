@@ -2,6 +2,7 @@ package services
 
 import (
 	"math"
+	"sort"
 	"time"
 	"xdfc-server/models"
 	"xdfc-server/repositories"
@@ -12,9 +13,9 @@ import (
  * 负责全员绩效评分、出勤率统计等重计算逻辑，确保“后端权威”。
  */
 type PersonnelAnalyticsService struct {
-	txManager   transactionManager
-	orgRepo     repositories.OrganizationRepository
-	leaveRepo   repositories.LeaveRepository
+	txManager transactionManager
+	orgRepo   repositories.OrganizationRepository
+	leaveRepo repositories.LeaveRepository
 }
 
 func NewPersonnelAnalyticsService(
@@ -40,27 +41,19 @@ var DefaultPersonnelAnalyticsService = NewPersonnelAnalyticsService(
 func (s *PersonnelAnalyticsService) GetExcellentRanking() ([]models.EmployeeStats, error) {
 	db := s.txManager.DB()
 
-	// 1. 获取全量员工与请假数据
-	employees, err := s.orgRepo.ListEmployees(db)
+	// 1. 获取荣誉榜所需的轻量员工资料，并在数据库侧聚合已批准请假天数。
+	employees, err := s.orgRepo.ListExcellentEmployeeInputs(db)
 	if err != nil {
 		return nil, err
 	}
 
-	leaves, err := s.leaveRepo.ListLeaves(db)
+	leaveMap, err := s.leaveRepo.SumApprovedLeaveDaysByEmployeeID(db)
 	if err != nil {
 		return nil, err
-	}
-
-	// 按员工 ID 对请假数据进行分组归并 (后端聚合)
-	leaveMap := make(map[string]float64)
-	for _, l := range leaves {
-		if l.Status == "APPROVED" {
-			leaveMap[l.EmployeeID] += l.DurationDays
-		}
 	}
 
 	now := time.Now()
-	var rankings []models.EmployeeStats
+	rankings := make([]models.EmployeeStats, 0, len(employees))
 
 	// 2. 权威计算逻辑收拢
 	for _, emp := range employees {
@@ -88,6 +81,16 @@ func (s *PersonnelAnalyticsService) GetExcellentRanking() ([]models.EmployeeStat
 			Score:          math.Round(score*10) / 10,
 		})
 	}
+
+	sort.SliceStable(rankings, func(i, j int) bool {
+		if rankings[i].Score != rankings[j].Score {
+			return rankings[i].Score > rankings[j].Score
+		}
+		if rankings[i].AttendanceRate != rankings[j].AttendanceRate {
+			return rankings[i].AttendanceRate > rankings[j].AttendanceRate
+		}
+		return rankings[i].Name < rankings[j].Name
+	})
 
 	return rankings, nil
 }

@@ -17,6 +17,7 @@ type OrganizationRepository interface {
 	CountEmployeesByDeptID(database *gorm.DB, deptID string) (int64, error)
 	DeleteOrganization(database *gorm.DB, id string) error
 	ListEmployees(database *gorm.DB) ([]models.Employee, error)
+	ListExcellentEmployeeInputs(database *gorm.DB) ([]models.Employee, error)
 	ListPositions(database *gorm.DB) ([]models.Position, error)
 	BulkUpdateEmployeeStatus(database *gorm.DB, ids []string, status string) (int64, error)
 	SaveEmployee(database *gorm.DB, employee *models.Employee) error
@@ -107,6 +108,16 @@ func (GormOrganizationRepository) ListEmployees(database *gorm.DB) ([]models.Emp
 	err := query.
 		Where("employees.deleted_at IS NULL").
 		Order("employees.created_at desc").
+		Find(&employees).Error
+	return employees, err
+}
+
+func (GormOrganizationRepository) ListExcellentEmployeeInputs(database *gorm.DB) ([]models.Employee, error) {
+	var employees []models.Employee
+	err := database.Table("employees").
+		Select("employees.id, employees.name, employees.joined_date, COALESCE(organizations.name, '') AS dept_name").
+		Joins("LEFT JOIN organizations ON employees.dept_id = CAST(organizations.id AS TEXT)").
+		Where("employees.deleted_at IS NULL").
 		Find(&employees).Error
 	return employees, err
 }

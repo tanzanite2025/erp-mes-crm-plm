@@ -940,6 +940,32 @@ func ensureSidebarCommandCategoryAssignmentUniqueIndex() {
 	}
 }
 
+func ensurePersonnelExcellenceIndexes() {
+	if DB == nil {
+		return
+	}
+
+	if DB.Migrator().HasTable(&models.LeaveRequest{}) {
+		if err := DB.Exec(`
+			CREATE INDEX IF NOT EXISTS idx_leave_requests_approved_employee
+			ON leave_requests (employee_id)
+			WHERE status = 'APPROVED' AND deleted_at IS NULL;
+		`).Error; err != nil {
+			log.Fatal("Failed to create personnel excellence leave index:", err)
+		}
+	}
+
+	if DB.Migrator().HasTable(&models.Employee{}) {
+		if err := DB.Exec(`
+			CREATE INDEX IF NOT EXISTS idx_employees_active_dept_id
+			ON employees (dept_id)
+			WHERE deleted_at IS NULL;
+		`).Error; err != nil {
+			log.Fatal("Failed to create personnel excellence employee index:", err)
+		}
+	}
+}
+
 func ensureDefaultSidebarCommandCategories() {
 	if DB == nil || !DB.Migrator().HasTable(&models.SidebarCommandCategory{}) {
 		return
@@ -1284,6 +1310,7 @@ func InitDB(dsn string) {
 	ensureUserEmployeeBindingUniqueIndex()
 	ensureSidebarCommandAssignmentUniqueIndex()
 	ensureSidebarCommandCategoryAssignmentUniqueIndex()
+	ensurePersonnelExcellenceIndexes()
 	ensureDefaultSidebarCommandCategories()
 	ensureDefaultSidebarCommandDefinitions()
 
