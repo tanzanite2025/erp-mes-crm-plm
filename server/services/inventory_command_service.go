@@ -208,11 +208,11 @@ func writeAuditEntry(tx *gorm.DB, module string, targetID string, action string,
 }
 
 func writeInventoryAuditEntry(tx *gorm.DB, targetID string, action string, before map[string]any, payload map[string]any, operator string, ip string) error {
-	return writeAuditEntry(tx, "Inventory", targetID, action, before, payload, operator, ip)
+	return writeAuditEntry(tx, AuditModuleInventory, targetID, action, before, payload, operator, ip)
 }
 
 func writeShipmentAuditEntry(tx *gorm.DB, targetID string, action string, before map[string]any, payload map[string]any, operator string, ip string) error {
-	return writeAuditEntry(tx, "Shipment", targetID, action, before, payload, operator, ip)
+	return writeAuditEntry(tx, AuditModuleShipment, targetID, action, before, payload, operator, ip)
 }
 
 func writeInventoryAuditEntryWithContext(ctx context.Context, tx *gorm.DB, targetID string, action string, before map[string]any, payload map[string]any, fallbackOperator string) error {
@@ -269,7 +269,7 @@ func PatchInventoryRecord(ctx context.Context, id string, patch PatchInventoryRe
 		}
 
 		if err := defaultServiceRuntime().auditLogger.Write(tx, AuditEntry{
-			Module:   "Inventory",
+			Module:   AuditModuleInventory,
 			TargetID: inventory.ID,
 			Action:   "INVENTORY_SAVE",
 			Diff:     auditDeltaKeys(deltaKeys),
@@ -334,7 +334,7 @@ func PatchShipmentDraftRecord(ctx context.Context, id string, patch PatchShipmen
 		}
 
 		if err := defaultServiceRuntime().auditLogger.Write(tx, AuditEntry{
-			Module:   "Shipment",
+			Module:   AuditModuleShipment,
 			TargetID: shipment.ID,
 			Action:   "SHIPMENT_SAVE",
 			Diff:     auditDeltaKeys(deltaKeys),

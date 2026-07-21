@@ -42,18 +42,14 @@ var auditEntityRegistry = []AuditEntityRegistration{
 	{EntityKey: AuditModuleBOM, EngineModule: AuditEngineModuleEngineering, Integrated: true, AllowModuleTimeline: true, DisplayName: "BOM"},
 
 	{EntityKey: AuditModuleMaterial, EngineModule: AuditEngineModuleWarehouse, Integrated: true, DisplayName: "Material"},
-	// Inventory and shipment still have legacy write paths without mandatory
-	// audit errors; keep them visible as pending until those paths are unified.
-	{EntityKey: AuditModuleInventory, EngineModule: AuditEngineModuleWarehouse, Integrated: false, AllowModuleTimeline: true, DisplayName: "Inventory"},
-	{EntityKey: AuditModuleShipment, EngineModule: AuditEngineModuleWarehouse, Integrated: false, AllowModuleTimeline: true, DisplayName: "Shipment"},
+	{EntityKey: AuditModuleInventory, EngineModule: AuditEngineModuleWarehouse, Integrated: true, AllowModuleTimeline: true, DisplayName: "Inventory"},
+	{EntityKey: AuditModuleShipment, EngineModule: AuditEngineModuleWarehouse, Integrated: true, AllowModuleTimeline: true, DisplayName: "Shipment"},
 	{EntityKey: AuditModulePackagingAssembly, EngineModule: AuditEngineModuleWarehouse, Integrated: true, AllowModuleTimeline: true, DisplayName: "PackagingAssembly"},
-	// Stocktake create, PDA scan, and adjustment flows are not yet unified.
-	{EntityKey: AuditModuleStocktake, EngineModule: AuditEngineModuleWarehouse, Integrated: false, DisplayName: "Stocktake"},
+	{EntityKey: AuditModuleStocktake, EngineModule: AuditEngineModuleWarehouse, Integrated: true, DisplayName: "Stocktake"},
 
 	{EntityKey: AuditModuleProductionLine, EngineModule: AuditEngineModuleProduction, Integrated: true, DisplayName: "ProductionLine"},
 	{EntityKey: AuditModulePieceworkRate, EngineModule: AuditEngineModuleProduction, Integrated: true, DisplayName: "PieceworkRate"},
-	// Team CRUD is still handler-owned and ignores audit failures.
-	{EntityKey: AuditModuleTeam, EngineModule: AuditEngineModuleProduction, Integrated: false, DisplayName: "Team"},
+	{EntityKey: AuditModuleTeam, EngineModule: AuditEngineModuleProduction, Integrated: true, DisplayName: "Team"},
 
 	{EntityKey: AuditModuleInspectionStandard, EngineModule: AuditEngineModuleQuality, Integrated: true, DisplayName: "InspectionStandard"},
 	{EntityKey: AuditModuleInspectionTask, EngineModule: AuditEngineModuleQuality, Integrated: true, DisplayName: "InspectionTask"},

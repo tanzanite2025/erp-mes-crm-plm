@@ -127,6 +127,48 @@ func TestBuildAuditEngineStatsKeepsEntityOwnershipAndHotActivitySeparate(t *test
 	}
 }
 
+func TestBuildAuditEngineStatsTreatsWarehouseAndTeamAuditPathsAsIntegrated(t *testing.T) {
+	testDB := openAuditStatsTestDB(t)
+	now := time.Now().UTC()
+
+	insertAuditStatsLog(t, testDB, "inventory-recent", "Inventory", now.Add(-time.Hour))
+	insertAuditStatsLog(t, testDB, "shipment-recent", "Shipment", now.Add(-2*time.Hour))
+	insertAuditStatsLog(t, testDB, "stocktake-recent", "Stocktake", now.Add(-3*time.Hour))
+	insertAuditStatsLog(t, testDB, "team-recent", "Team", now.Add(-4*time.Hour))
+
+	response, err := BuildAuditEngineStats(testDB)
+	if err != nil {
+		t.Fatalf("build audit engine stats: %v", err)
+	}
+
+	warehouse := findAuditModuleStats(t, response, AuditEngineModuleWarehouse)
+	for _, entity := range []string{AuditModuleInventory, AuditModuleShipment, AuditModuleStocktake} {
+		if !containsString(warehouse.IntegratedEntities, entity) {
+			t.Fatalf("%s should be integrated in Warehouse, got %v", entity, warehouse.IntegratedEntities)
+		}
+		if !containsString(warehouse.ActiveEntities, entity) {
+			t.Fatalf("%s should be active in Warehouse, got %v", entity, warehouse.ActiveEntities)
+		}
+		if containsString(warehouse.MissingIntegrationEntities, entity) {
+			t.Fatalf("%s must not be pending in Warehouse, got %v", entity, warehouse.MissingIntegrationEntities)
+		}
+	}
+	if warehouse.Status != "HEALTHY" || !warehouse.Connected {
+		t.Fatalf("Warehouse should be fully integrated, got status=%s connected=%v missing=%v", warehouse.Status, warehouse.Connected, warehouse.MissingIntegrationEntities)
+	}
+
+	production := findAuditModuleStats(t, response, AuditEngineModuleProduction)
+	if !containsString(production.IntegratedEntities, AuditModuleTeam) {
+		t.Fatalf("team should be integrated in Production, got %v", production.IntegratedEntities)
+	}
+	if !containsString(production.ActiveEntities, AuditModuleTeam) {
+		t.Fatalf("team should be active in Production, got %v", production.ActiveEntities)
+	}
+	if production.Status != "HEALTHY" || !production.Connected {
+		t.Fatalf("Production should be fully integrated, got status=%s connected=%v missing=%v", production.Status, production.Connected, production.MissingIntegrationEntities)
+	}
+}
+
 func containsString(values []string, expected string) bool {
 	for _, value := range values {
 		if value == expected {

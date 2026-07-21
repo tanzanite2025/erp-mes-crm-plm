@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -65,7 +66,7 @@ func CreateStocktakeTaskHandler(c *gin.Context) {
 		return
 	}
 
-	if err := services.CreateStocktakeTask(input, middleware.GetSafeUsername(c)); err != nil {
+	if err := services.CreateStocktakeTask(auditContextFromGin(c), input, middleware.GetSafeUsername(c)); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 发起盘点失败: " + err.Error()})
 		return
 	}
@@ -129,7 +130,7 @@ func PatchStocktakeItemHandler(c *gin.Context) {
 		deltaKeys = append(deltaKeys, key)
 	}
 
-	updated, err := services.PatchStocktakeItem(id, patch, deltaKeys, middleware.GetSafeUsername(c), c.ClientIP())
+	updated, err := services.PatchStocktakeItem(auditContextFromGin(c), id, patch, deltaKeys, middleware.GetSafeUsername(c), c.ClientIP())
 	if err != nil {
 		switch {
 		case errors.Is(err, services.ErrStocktakeItemPatchVersionConflict):
@@ -165,7 +166,7 @@ func PDASubmitScanHandler(c *gin.Context) {
 
 	scannerID := middleware.GetSafeUsername(c)
 
-	if err := services.SubmitPDAScanRequest(input, scannerID); err != nil {
+	if err := services.SubmitPDAScanRequestWithContext(auditContextFromGin(c), input, scannerID); err != nil {
 		status := mapPDAScanErrorToStatus(err)
 		prefix := "[SERVER]"
 		if status < http.StatusInternalServerError {
@@ -189,7 +190,7 @@ func PDASyncResultsHandler(c *gin.Context) {
 		return
 	}
 
-	result, err := services.SyncPDAScans(scans, middleware.GetSafeUsername(c))
+	result, err := services.SyncPDAScansWithContext(auditContextFromGin(c), scans, middleware.GetSafeUsername(c))
 	if err != nil {
 		status := mapPDAScanErrorToStatus(err)
 		prefix := "[SERVER]"
@@ -203,8 +204,8 @@ func PDASyncResultsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-func processPDAScan(scan pdaScanPayload, scannerID string) error {
-	return services.SubmitPDAScan(scan, scannerID)
+func processPDAScan(ctx context.Context, scan pdaScanPayload, scannerID string) error {
+	return services.SubmitPDAScanWithContext(ctx, scan, scannerID)
 }
 
 func mapPDAScanErrorToStatus(err error) int {

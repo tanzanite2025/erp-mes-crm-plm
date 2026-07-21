@@ -125,6 +125,69 @@ func materialAuditTargetID(material models.Material, fallbackCode string) string
 	return strings.TrimSpace(fallbackCode)
 }
 
+func stocktakeAuditDiff(before map[string]any, payload map[string]any) json.RawMessage {
+	diff, _ := json.Marshal(map[string]any{
+		"before":  before,
+		"payload": payload,
+	})
+	return diff
+}
+
+func stocktakeTaskAuditSnapshot(task models.StocktakeTask) map[string]any {
+	return map[string]any{
+		"id":                    strings.TrimSpace(task.ID),
+		"title":                 strings.TrimSpace(task.Title),
+		"warehouseCategoryCode": strings.TrimSpace(task.WarehouseCategoryCode),
+		"status":                strings.TrimSpace(task.Status),
+		"createdBy":             strings.TrimSpace(task.CreatedBy),
+		"startTime":             task.StartTime,
+		"endTime":               task.EndTime,
+		"remarks":               strings.TrimSpace(task.Remarks),
+	}
+}
+
+func stocktakeItemAuditSnapshot(item models.StocktakeItem) map[string]any {
+	difference := item.Difference
+	if difference == 0 {
+		difference = item.ActualQty - item.TheoryQty
+	}
+	return map[string]any{
+		"id":           strings.TrimSpace(item.ID),
+		"taskId":       strings.TrimSpace(item.TaskID),
+		"materialId":   strings.TrimSpace(item.MaterialID),
+		"materialCode": strings.TrimSpace(item.MaterialCode),
+		"materialName": strings.TrimSpace(item.MaterialName),
+		"batchNo":      strings.TrimSpace(item.BatchNo),
+		"theoryQty":    item.TheoryQty,
+		"actualQty":    item.ActualQty,
+		"difference":   difference,
+		"uom":          strings.TrimSpace(item.UOM),
+		"scannerId":    strings.TrimSpace(item.ScannerID),
+		"scanTime":     item.ScanTime,
+	}
+}
+
+func inventoryAdjustmentAuditSnapshot(adjustment models.InventoryAdjustment) map[string]any {
+	return map[string]any{
+		"id":           strings.TrimSpace(adjustment.ID),
+		"taskId":       strings.TrimSpace(adjustment.TaskID),
+		"adjustmentNo": strings.TrimSpace(adjustment.AdjustmentNo),
+		"type":         strings.TrimSpace(adjustment.Type),
+		"status":       strings.TrimSpace(adjustment.Status),
+		"reason":       strings.TrimSpace(adjustment.Reason),
+		"createdBy":    strings.TrimSpace(adjustment.CreatedBy),
+		"approvedBy":   strings.TrimSpace(adjustment.ApprovedBy),
+		"approvedAt":   adjustment.ApprovedAt,
+		"executedBy":   strings.TrimSpace(adjustment.ExecutedBy),
+		"executedAt":   adjustment.ExecutedAt,
+		"totalItems":   adjustment.TotalItems,
+	}
+}
+
+func writeStocktakeAuditEntryWithContext(ctx context.Context, tx *gorm.DB, targetID string, action string, before map[string]any, payload map[string]any) error {
+	return recordLegacyAuditEntryWithContext(ctx, tx, AuditModuleStocktake, strings.TrimSpace(targetID), strings.TrimSpace(action), stocktakeAuditDiff(before, payload))
+}
+
 type CreateStocktakeTaskInput struct {
 	Title                 string `json:"title" binding:"required"`
 	WarehouseCategoryCode string `json:"warehouseCategoryCode" binding:"required"`
@@ -368,9 +431,9 @@ func ListStocktakeTasks() ([]models.StocktakeTask, error) {
 	return tasks, nil
 }
 
-func CreateStocktakeTask(input CreateStocktakeTaskInput, username string) error {
+func CreateStocktakeTask(ctx context.Context, input CreateStocktakeTaskInput, username string) error {
 	now := time.Now()
-	return db.DB.Transaction(func(tx *gorm.DB) error {
+	return db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		task := models.StocktakeTask{
 			Title:                 input.Title,
 			WarehouseCategoryCode: input.WarehouseCategoryCode,
@@ -406,7 +469,10 @@ func CreateStocktakeTask(input CreateStocktakeTaskInput, username string) error 
 				return err
 			}
 		}
-		return nil
+		payload := stocktakeTaskAuditSnapshot(task)
+		payload["itemCount"] = len(inventory)
+		payload["operation"] = "create_stocktake_task"
+		return writeStocktakeAuditEntryWithContext(ctx, tx, task.ID, "STOCKTAKE_TASK_CREATE", nil, payload)
 	})
 }
 
@@ -421,10 +487,10 @@ func ListStocktakeItems(taskID string) ([]models.StocktakeItem, error) {
 	return items, nil
 }
 
-func PatchStocktakeItem(id string, patch PatchStocktakeItemRequest, deltaKeys []string, operator string, ip string) (models.StocktakeItem, error) {
+func PatchStocktakeItem(ctx context.Context, id string, patch PatchStocktakeItemRequest, deltaKeys []string, operator string, ip string) (models.StocktakeItem, error) {
 	var updated models.StocktakeItem
 
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
+	err := db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var item models.StocktakeItem
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&item, "id = ?", id).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -447,6 +513,7 @@ func PatchStocktakeItem(id string, patch PatchStocktakeItemRequest, deltaKeys []
 		if task.Status != "IN_PROGRESS" && task.Status != "COMPLETED" {
 			return ErrStocktakeTaskStatusUnsupported
 		}
+		beforeItem := item
 
 		updates := make(map[string]any)
 		if patch.ActualQty != nil {
@@ -486,15 +553,19 @@ func PatchStocktakeItem(id string, patch PatchStocktakeItemRequest, deltaKeys []
 		if err := tx.First(&item, "id = ?", id).Error; err != nil {
 			return err
 		}
+		item.Difference = item.ActualQty - item.TheoryQty
 
-		if err := defaultServiceRuntime().auditLogger.Write(tx, AuditEntry{
-			Module:   "Stocktake",
-			TargetID: item.ID,
-			Action:   "STOCKTAKE_ITEM_PATCH",
-			Diff:     auditDeltaKeys(deltaKeys),
-			Operator: strings.TrimSpace(operator),
-			IP:       strings.TrimSpace(ip),
-		}); err != nil {
+		before := map[string]any{
+			"item": stocktakeItemAuditSnapshot(beforeItem),
+		}
+		payload := map[string]any{
+			"item":      stocktakeItemAuditSnapshot(item),
+			"deltaKeys": append([]string{}, deltaKeys...),
+			"operator":  strings.TrimSpace(operator),
+			"ip":        strings.TrimSpace(ip),
+			"operation": "patch_stocktake_item",
+		}
+		if err := writeStocktakeAuditEntryWithContext(ctx, tx, item.ID, "STOCKTAKE_ITEM_PATCH", before, payload); err != nil {
 			return err
 		}
 
@@ -510,6 +581,10 @@ func PatchStocktakeItem(id string, patch PatchStocktakeItemRequest, deltaKeys []
 }
 
 func SubmitPDAScan(scan PDAScanPayload, scannerID string) error {
+	return SubmitPDAScanWithContext(context.Background(), scan, scannerID)
+}
+
+func SubmitPDAScanWithContext(ctx context.Context, scan PDAScanPayload, scannerID string) error {
 	taskID := strings.TrimSpace(scan.TaskID)
 	materialCode := strings.ToUpper(strings.TrimSpace(scan.MaterialCode))
 	batchNo := strings.TrimSpace(scan.BatchNo)
@@ -526,7 +601,7 @@ func SubmitPDAScan(scan PDAScanPayload, scannerID string) error {
 		scanTime = scan.ScanTime.UTC()
 	}
 
-	return db.DB.Transaction(func(tx *gorm.DB) error {
+	return db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var task models.StocktakeTask
 		if err := tx.Select("id", "status").Where("id = ?", taskID).First(&task).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -561,11 +636,21 @@ func SubmitPDAScan(scan PDAScanPayload, scannerID string) error {
 				ScannerID:    scannerID,
 				ScanTime:     &scanTime,
 			}
-			return tx.Create(&newItem).Error
+			if err := tx.Create(&newItem).Error; err != nil {
+				return err
+			}
+			newItem.Difference = newItem.ActualQty - newItem.TheoryQty
+			payload := map[string]any{
+				"item":       stocktakeItemAuditSnapshot(newItem),
+				"scannedQty": scan.ScannedQty,
+				"operation":  "pda_scan_create_item",
+			}
+			return writeStocktakeAuditEntryWithContext(ctx, tx, newItem.ID, "STOCKTAKE_PDA_SCAN", nil, payload)
 		}
 		if err != nil {
 			return err
 		}
+		beforeItem := item
 
 		updates := map[string]interface{}{
 			"actual_qty": gorm.Expr("actual_qty + ?", scan.ScannedQty),
@@ -574,11 +659,30 @@ func SubmitPDAScan(scan PDAScanPayload, scannerID string) error {
 		if scannerID != "" {
 			updates["scanner_id"] = scannerID
 		}
-		return tx.Model(&models.StocktakeItem{}).Where("id = ?", item.ID).Updates(updates).Error
+		if err := tx.Model(&models.StocktakeItem{}).Where("id = ?", item.ID).Updates(updates).Error; err != nil {
+			return err
+		}
+		if err := tx.First(&item, "id = ?", item.ID).Error; err != nil {
+			return err
+		}
+		item.Difference = item.ActualQty - item.TheoryQty
+		before := map[string]any{
+			"item": stocktakeItemAuditSnapshot(beforeItem),
+		}
+		payload := map[string]any{
+			"item":       stocktakeItemAuditSnapshot(item),
+			"scannedQty": scan.ScannedQty,
+			"operation":  "pda_scan_update_item",
+		}
+		return writeStocktakeAuditEntryWithContext(ctx, tx, item.ID, "STOCKTAKE_PDA_SCAN", before, payload)
 	})
 }
 
 func SyncPDAScans(scans []PDASyncScanRequest, scannerID string) (PDASyncResult, error) {
+	return SyncPDAScansWithContext(context.Background(), scans, scannerID)
+}
+
+func SyncPDAScansWithContext(ctx context.Context, scans []PDASyncScanRequest, scannerID string) (PDASyncResult, error) {
 	if len(scans) == 0 {
 		return PDASyncResult{}, fmt.Errorf("%w: sync list is empty", ErrPDAScanInvalidPayload)
 	}
@@ -590,7 +694,7 @@ func SyncPDAScans(scans []PDASyncScanRequest, scannerID string) (PDASyncResult, 
 
 	for idx, scan := range scans {
 		currentScanTime := scan.ScanTime
-		err := SubmitPDAScan(PDAScanPayload{
+		err := SubmitPDAScanWithContext(ctx, PDAScanPayload{
 			TaskID:       scan.TaskID,
 			MaterialCode: scan.MaterialCode,
 			BatchNo:      scan.BatchNo,
@@ -621,7 +725,11 @@ func SyncPDAScans(scans []PDASyncScanRequest, scannerID string) (PDASyncResult, 
 }
 
 func SubmitPDAScanRequest(input PDAScanSubmitRequest, scannerID string) error {
-	return SubmitPDAScan(PDAScanPayload{
+	return SubmitPDAScanRequestWithContext(context.Background(), input, scannerID)
+}
+
+func SubmitPDAScanRequestWithContext(ctx context.Context, input PDAScanSubmitRequest, scannerID string) error {
+	return SubmitPDAScanWithContext(ctx, PDAScanPayload{
 		TaskID:       input.TaskID,
 		MaterialCode: input.MaterialCode,
 		BatchNo:      input.BatchNo,
@@ -629,9 +737,9 @@ func SubmitPDAScanRequest(input PDAScanSubmitRequest, scannerID string) error {
 	}, scannerID)
 }
 
-func SubmitAdjustmentApproval(taskID string, username string) error {
+func SubmitAdjustmentApproval(ctx context.Context, taskID string, username string) error {
 	var task models.StocktakeTask
-	if err := db.DB.First(&task, "id = ?", taskID).Error; err != nil {
+	if err := db.DB.WithContext(ctx).First(&task, "id = ?", taskID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return ErrStocktakeTaskNotFound
 		}
@@ -643,7 +751,7 @@ func SubmitAdjustmentApproval(taskID string, username string) error {
 	}
 
 	var existCount int64
-	if err := db.DB.Model(&models.InventoryAdjustment{}).Where("task_id = ? AND status = ?", taskID, "PENDING").Count(&existCount).Error; err != nil {
+	if err := db.DB.WithContext(ctx).Model(&models.InventoryAdjustment{}).Where("task_id = ? AND status = ?", taskID, "PENDING").Count(&existCount).Error; err != nil {
 		return err
 	}
 	if existCount > 0 {
@@ -651,11 +759,11 @@ func SubmitAdjustmentApproval(taskID string, username string) error {
 	}
 
 	var items []models.StocktakeItem
-	if err := db.DB.Where("task_id = ?", taskID).Find(&items).Error; err != nil {
+	if err := db.DB.WithContext(ctx).Where("task_id = ?", taskID).Find(&items).Error; err != nil {
 		return err
 	}
 
-	return db.DB.Transaction(func(tx *gorm.DB) error {
+	return db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		adjustment := models.InventoryAdjustment{
 			TaskID:       taskID,
 			AdjustmentNo: GenerateAdjustmentNo(tx),
@@ -669,11 +777,13 @@ func SubmitAdjustmentApproval(taskID string, username string) error {
 			return err
 		}
 
+		diffItemCount := 0
 		for _, item := range items {
 			diff := item.ActualQty - item.TheoryQty
 			if diff == 0 {
 				continue
 			}
+			diffItemCount++
 
 			adjItem := models.InventoryAdjustmentItem{
 				AdjustmentID: adjustment.ID,
@@ -692,7 +802,11 @@ func SubmitAdjustmentApproval(taskID string, username string) error {
 			}
 		}
 
-		return nil
+		payload := inventoryAdjustmentAuditSnapshot(adjustment)
+		payload["task"] = stocktakeTaskAuditSnapshot(task)
+		payload["diffItemCount"] = diffItemCount
+		payload["operation"] = "submit_stocktake_adjustment"
+		return writeStocktakeAuditEntryWithContext(ctx, tx, adjustment.ID, "STOCKTAKE_ADJUSTMENT_SUBMIT", nil, payload)
 	})
 }
 
@@ -703,8 +817,8 @@ func GenerateAdjustmentNo(tx *gorm.DB) string {
 	return fmt.Sprintf("ADJUST-%s-%03d", dateStr, count+1)
 }
 
-func ExecuteAdjustment(id string, username string) error {
-	return db.DB.Transaction(func(tx *gorm.DB) error {
+func ExecuteAdjustment(ctx context.Context, id string, username string) error {
+	return db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		now := time.Now()
 		var adj models.InventoryAdjustment
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Preload("Items").First(&adj, "id = ?", id).Error; err != nil {
@@ -716,6 +830,7 @@ func ExecuteAdjustment(id string, username string) error {
 		if adj.Status == "EXECUTED" {
 			return ErrAdjustmentAlreadyExecuted
 		}
+		beforeAdjustment := adj
 
 		for _, item := range adj.Items {
 			var inv models.Inventory
@@ -735,13 +850,31 @@ func ExecuteAdjustment(id string, username string) error {
 				if err := tx.Create(&inv).Error; err != nil {
 					return err
 				}
+				payload := inventoryAuditSnapshot(inv)
+				payload["adjustmentId"] = strings.TrimSpace(adj.ID)
+				payload["adjustmentNo"] = strings.TrimSpace(adj.AdjustmentNo)
+				payload["taskId"] = strings.TrimSpace(adj.TaskID)
+				payload["operation"] = "stocktake_adjustment_create_inventory"
+				if err := writeInventoryAuditEntryWithContext(ctx, tx, inv.ID, "INVENTORY_STOCKTAKE_ADJUST", nil, payload, username); err != nil {
+					return err
+				}
 				continue
 			}
 			if err != nil {
 				return err
 			}
 
+			beforeInventory := inventoryAuditSnapshot(inv)
+			inv.Quantity = item.ActualQty
 			if err := tx.Model(&inv).Update("quantity", item.ActualQty).Error; err != nil {
+				return err
+			}
+			payload := inventoryAuditSnapshot(inv)
+			payload["adjustmentId"] = strings.TrimSpace(adj.ID)
+			payload["adjustmentNo"] = strings.TrimSpace(adj.AdjustmentNo)
+			payload["taskId"] = strings.TrimSpace(adj.TaskID)
+			payload["operation"] = "stocktake_adjustment_update_inventory"
+			if err := writeInventoryAuditEntryWithContext(ctx, tx, inv.ID, "INVENTORY_STOCKTAKE_ADJUST", beforeInventory, payload, username); err != nil {
 				return err
 			}
 		}
@@ -758,7 +891,16 @@ func ExecuteAdjustment(id string, username string) error {
 				return err
 			}
 		}
-		return nil
+		adj.Status = "EXECUTED"
+		adj.ExecutedBy = username
+		adj.ExecutedAt = &now
+		before := map[string]any{
+			"adjustment": inventoryAdjustmentAuditSnapshot(beforeAdjustment),
+		}
+		payload := inventoryAdjustmentAuditSnapshot(adj)
+		payload["itemCount"] = len(adj.Items)
+		payload["operation"] = "execute_stocktake_adjustment"
+		return writeStocktakeAuditEntryWithContext(ctx, tx, adj.ID, "STOCKTAKE_ADJUSTMENT_EXECUTE", before, payload)
 	})
 }
 

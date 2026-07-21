@@ -12,7 +12,7 @@ import (
 // SubmitAdjustmentApprovalHandler creates an inventory adjustment from a stocktake task.
 func SubmitAdjustmentApprovalHandler(c *gin.Context) {
 	taskID := c.Param("taskId")
-	err := services.SubmitAdjustmentApproval(taskID, middleware.GetSafeUsername(c))
+	err := services.SubmitAdjustmentApproval(auditContextFromGin(c), taskID, middleware.GetSafeUsername(c))
 	if err != nil {
 		switch {
 		case errors.Is(err, services.ErrStocktakeTaskNotFound):
@@ -33,7 +33,7 @@ func SubmitAdjustmentApprovalHandler(c *gin.Context) {
 // ExecuteAdjustmentHandler executes an inventory adjustment.
 func ExecuteAdjustmentHandler(c *gin.Context) {
 	id := c.Param("id")
-	err := services.ExecuteAdjustment(id, middleware.GetSafeUsername(c))
+	err := services.ExecuteAdjustment(auditContextFromGin(c), id, middleware.GetSafeUsername(c))
 	if err != nil {
 		switch {
 		case errors.Is(err, services.ErrAdjustmentNotFound):

@@ -3,10 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
-	"xdfc-server/audit"
 	"xdfc-server/db"
-	"xdfc-server/middleware"
 	"xdfc-server/models"
 	"xdfc-server/services"
 
@@ -29,12 +26,24 @@ func buildTeamUpdates(payload map[string]json.RawMessage) (map[string]interface{
 	updates := make(map[string]interface{})
 	for key, raw := range payload {
 		switch key {
-		case "code", "name", "shortName", "section", "process", "processCommand", "type", "status", "remarks":
+		case "code", "name", "section", "process", "type", "status", "remarks":
 			var value string
 			if err := json.Unmarshal(raw, &value); err != nil {
 				return nil, err
 			}
 			updates[key] = value
+		case "shortName":
+			var value string
+			if err := json.Unmarshal(raw, &value); err != nil {
+				return nil, err
+			}
+			updates["short_name"] = value
+		case "processCommand":
+			var value string
+			if err := json.Unmarshal(raw, &value); err != nil {
+				return nil, err
+			}
+			updates["process_command"] = value
 		case "step":
 			var value int
 			if err := json.Unmarshal(raw, &value); err != nil {
@@ -56,28 +65,6 @@ func buildTeamUpdates(payload map[string]json.RawMessage) (map[string]interface{
 	return updates, nil
 }
 
-func patchTeamRecord(id string, updates map[string]interface{}) error {
-	var existing models.Team
-	if err := db.DB.First(&existing, "id = ?", id).Error; err != nil {
-		return err
-	}
-	return db.DB.Model(&existing).Updates(updates).Error
-}
-
-func writeTeamAuditEntry(c *gin.Context, targetID string, action string) error {
-	return services.RecordAuditEventTx(db.DB, audit.NewAuditEvent(
-		audit.AuditEntityKey("team"),
-		strings.TrimSpace(targetID),
-		audit.AuditAction(strings.TrimSpace(action)),
-		audit.AuditActor{
-			UserID:   middleware.GetSafeUserID(c),
-			Username: middleware.GetSafeUsername(c),
-			IP:       c.ClientIP(),
-			Source:   "http",
-		},
-	).Normalize())
-}
-
 // SaveTeamHandler 保存/更新班组
 func SaveTeamHandler(c *gin.Context) {
 	payload, body, err := decodeJSONBodyMap(c)
@@ -97,15 +84,11 @@ func SaveTeamHandler(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		updates["operator"] = middleware.GetSafeUsername(c)
-		if err := patchTeamRecord(id, updates); err != nil {
+		team, err := services.PatchTeam(auditContextFromGin(c), id, updates)
+		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 差分保存班组失败: " + err.Error()})
 			return
 		}
-		// 记录审计日志
-		_ = writeTeamAuditEntry(c, id, "PATCH")
-		var team models.Team
-		db.DB.First(&team, "id = ?", id)
 		c.JSON(http.StatusOK, team)
 		return
 	}
@@ -116,13 +99,10 @@ func SaveTeamHandler(c *gin.Context) {
 		return
 	}
 
-	team.Operator = middleware.GetSafeUsername(c)
-
-	if err := db.DB.Create(&team).Error; err != nil {
+	if err := services.SaveTeam(auditContextFromGin(c), &team); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 创建班组失败: " + err.Error()})
 		return
 	}
-	_ = writeTeamAuditEntry(c, team.ID, "CREATE")
 
 	c.JSON(http.StatusOK, team)
 }
@@ -134,7 +114,7 @@ func DeleteTeamHandler(c *gin.Context) {
 		return
 	}
 
-	if err := db.DB.Delete(&models.Team{}, "id = ?", id).Error; err != nil {
+	if err := services.DeleteTeam(auditContextFromGin(c), id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 删除班组失败"})
 		return
 	}

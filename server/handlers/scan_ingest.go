@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -84,7 +85,7 @@ func PDAIngestScanHandler(c *gin.Context) {
 
 	scannerID := middleware.GetSafeUsername(c)
 
-	bridge, bridgeErr := bridgeStocktakeScanIfRequested(input, scannerID)
+	bridge, bridgeErr := bridgeStocktakeScanIfRequested(auditContextFromGin(c), input, scannerID)
 	if bridgeErr != nil {
 		status := mapPDAScanErrorToStatus(bridgeErr)
 		prefix := "[SERVER]"
@@ -131,7 +132,7 @@ func PDAIngestScanHandler(c *gin.Context) {
 	})
 }
 
-func bridgeStocktakeScanIfRequested(input scanIngestRequest, scannerID string) (scanBridgeResult, error) {
+func bridgeStocktakeScanIfRequested(ctx context.Context, input scanIngestRequest, scannerID string) (scanBridgeResult, error) {
 	taskID := strings.TrimSpace(input.TaskID)
 	materialCode := strings.TrimSpace(input.MaterialCode)
 	batchNo := strings.TrimSpace(input.BatchNo)
@@ -146,7 +147,7 @@ func bridgeStocktakeScanIfRequested(input scanIngestRequest, scannerID string) (
 		return scanBridgeResult{}, errInvalidStocktakeBridgePayload(scene, taskID, materialCode, input.ScannedQty)
 	}
 
-	err := processPDAScan(pdaScanPayload{
+	err := processPDAScan(ctx, pdaScanPayload{
 		TaskID:       taskID,
 		MaterialCode: materialCode,
 		BatchNo:      batchNo,
