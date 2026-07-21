@@ -144,14 +144,14 @@ export function Header({
         {/* === 右翼 (Right Wing) === */}
         <div className='flex h-full items-center justify-end gap-2 px-2 md:gap-4'>
           {(showThemeSwitch || showProfileDropdown || showConfigDrawer) && (
-            <div className='relative z-50 flex shrink-0 items-center justify-end gap-2 md:gap-4'>
+            <div className='relative z-50 flex shrink-0 items-center justify-end gap-2 md:gap-3'>
               {showThemeSwitch && <AuthDebugIndicator />}
               {showThemeSwitch && (
-                <div className='flex items-center gap-2 rounded-full border border-dashed border-border/70 bg-muted/20 px-2 py-1 shadow-sm backdrop-blur-xl'>
+                <>
                   <LanguageSwitch />
                   {showProfileDropdown && <ProfileDropdown />}
                   <ThemeSwitch />
-                </div>
+                </>
               )}
               {!showThemeSwitch && showProfileDropdown && <ProfileDropdown />}
               {showConfigDrawer && <ConfigDrawer />}
