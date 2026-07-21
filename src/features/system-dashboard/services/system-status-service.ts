@@ -16,6 +16,8 @@ export interface SystemStatusData {
     memory: {
       alloc_mb: number
       sys_mb: number
+      container_used_mb: number
+      container_limit_mb: number
       num_gc: number
       goroutines: number
     }
@@ -139,6 +141,10 @@ export function normalizeSystemStatusData(input: unknown): SystemStatusData {
       memory: {
         alloc_mb: readNumber(memory, 'alloc_mb', 'allocMB') || 0,
         sys_mb: readNumber(memory, 'sys_mb', 'sysMB') || 0,
+        container_used_mb:
+          readNumber(memory, 'container_used_mb', 'containerUsedMB') || 0,
+        container_limit_mb:
+          readNumber(memory, 'container_limit_mb', 'containerLimitMB') || 0,
         num_gc: readNumber(memory, 'num_gc', 'numGC') || 0,
         goroutines: readNumber(memory, 'goroutines') || 0,
       },

@@ -21,8 +21,10 @@ export const systemManagement = {
     environmentValue: 'Production Cluster',
   },
   infrastructure: {
-    runtimeMemory: 'Runtime Memory',
-    heapAllocation: 'Heap Allocation',
+    runtimeMemory: 'Container Memory',
+    containerUsage: 'Container Usage',
+    heapAllocation: 'Go Heap Live',
+    runtimeReserved: 'Runtime Reserved',
     goroutines: 'Goroutines',
     cpuCores: 'CPU Cores',
     databasePool: 'Database Pool',

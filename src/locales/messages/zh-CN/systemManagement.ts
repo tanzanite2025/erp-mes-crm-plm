@@ -21,8 +21,10 @@ export const systemManagement = {
     environmentValue: '生产集群',
   },
   infrastructure: {
-    runtimeMemory: '运行内存',
-    heapAllocation: '堆内存分配',
+    runtimeMemory: '容器内存',
+    containerUsage: '容器占用',
+    heapAllocation: 'Go 堆使用',
+    runtimeReserved: 'Runtime 保留',
     goroutines: '并发协程',
     cpuCores: '处理器核心',
     databasePool: '数据库连接池',

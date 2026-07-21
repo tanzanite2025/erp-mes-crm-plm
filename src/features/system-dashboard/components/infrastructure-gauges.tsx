@@ -8,6 +8,8 @@ interface Props {
   memory: {
     alloc_mb: number
     sys_mb: number
+    container_used_mb: number
+    container_limit_mb: number
     goroutines: number
   }
   db: {
@@ -28,10 +30,25 @@ export function InfrastructureGauges({ memory, db, cpu_cores }: Props) {
     db.max_open_connections > 0
       ? Math.min(100, (db.in_use / db.max_open_connections) * 100)
       : null
+  const hasContainerLimit =
+    memory.container_used_mb > 0 && memory.container_limit_mb > 0
+  const memoryUsed = hasContainerLimit
+    ? memory.container_used_mb
+    : memory.alloc_mb
+  const memoryLimit = hasContainerLimit
+    ? memory.container_limit_mb
+    : memory.sys_mb
   const memUsage =
-    memory.sys_mb > 0
-      ? Math.min(100, (memory.alloc_mb / memory.sys_mb) * 100)
-      : null
+    memoryLimit > 0 ? Math.min(100, (memoryUsed / memoryLimit) * 100) : null
+  const memoryBadge = hasContainerLimit
+    ? `${memory.container_limit_mb} MB LIMIT`
+    : `${memory.sys_mb} MB RUNTIME`
+  const memoryUsageLabel = hasContainerLimit
+    ? t('systemManagement.infrastructure.containerUsage')
+    : t('systemManagement.infrastructure.heapAllocation')
+  const memoryUsageValue = hasContainerLimit
+    ? `${memory.container_used_mb} / ${memory.container_limit_mb} MB`
+    : `${memory.alloc_mb} / ${memory.sys_mb} MB`
 
   return (
     <div className='grid grid-cols-1 gap-2.5 md:grid-cols-2 md:gap-3'>
@@ -43,15 +60,15 @@ export function InfrastructureGauges({ memory, db, cpu_cores }: Props) {
               {t('systemManagement.infrastructure.runtimeMemory')}
             </div>
             <span className='font-mono text-[10px] text-slate-400 dark:text-slate-500'>
-              {memory.sys_mb} MB SYS
+              {memoryBadge}
             </span>
           </CardTitle>
         </CardHeader>
         <CardContent className='space-y-2 p-3 pt-0 sm:p-3.5 sm:pt-0'>
           <div className='space-y-0.5'>
             <div className='flex items-center justify-between text-[10px] font-black tracking-widest text-slate-500 uppercase dark:text-slate-400'>
-              <span>{t('systemManagement.infrastructure.heapAllocation')}</span>
-              <span>{memory.alloc_mb} MB</span>
+              <span>{memoryUsageLabel}</span>
+              <span>{memoryUsageValue}</span>
             </div>
             <Progress
               value={memUsage ?? 0}
@@ -59,23 +76,37 @@ export function InfrastructureGauges({ memory, db, cpu_cores }: Props) {
               indicatorClassName='bg-emerald-500'
             />
           </div>
-          <div className='flex items-center justify-between rounded-2xl border border-dashed border-slate-200 bg-slate-100/50 p-1.5 sm:p-2 dark:border-white/10 dark:bg-white/5'>
-            <div className='flex flex-col'>
-              <span className='text-[10px] font-black tracking-widest text-slate-400 uppercase dark:text-slate-500'>
-                {t('systemManagement.infrastructure.goroutines')}
-              </span>
-              <span className='font-mono text-sm font-bold text-slate-700 dark:text-slate-200'>
-                {memory.goroutines}
-              </span>
-            </div>
-            <div className='flex flex-col text-right'>
-              <span className='text-[10px] font-black tracking-widest text-slate-400 uppercase dark:text-slate-500'>
-                {t('systemManagement.infrastructure.cpuCores')}
-              </span>
-              <span className='font-mono text-sm font-bold text-slate-700 dark:text-slate-200'>
-                {cpu_cores} vCPU
-              </span>
-            </div>
+          <div className='grid grid-cols-2 gap-1 sm:grid-cols-4'>
+            {[
+              {
+                label: t('systemManagement.infrastructure.heapAllocation'),
+                value: `${memory.alloc_mb} MB`,
+              },
+              {
+                label: t('systemManagement.infrastructure.runtimeReserved'),
+                value: `${memory.sys_mb} MB`,
+              },
+              {
+                label: t('systemManagement.infrastructure.goroutines'),
+                value: memory.goroutines,
+              },
+              {
+                label: t('systemManagement.infrastructure.cpuCores'),
+                value: `${cpu_cores} vCPU`,
+              },
+            ].map((item) => (
+              <div
+                key={item.label}
+                className='flex flex-col rounded-2xl border border-dashed border-slate-200 bg-slate-100/50 p-1.5 sm:p-2 dark:border-white/10 dark:bg-white/5'
+              >
+                <span className='text-[8px] font-black tracking-widest text-slate-400 uppercase dark:text-slate-500'>
+                  {item.label}
+                </span>
+                <span className='font-mono text-xs font-bold text-slate-700 dark:text-slate-200'>
+                  {item.value}
+                </span>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>

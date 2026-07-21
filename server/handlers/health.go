@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 	"xdfc-server/db"
@@ -61,10 +62,12 @@ type systemStatusResponse struct {
 	Resources struct {
 		CPUCores int `json:"cpu_cores"`
 		Memory   struct {
-			AllocMB    uint64 `json:"alloc_mb"`
-			SysMB      uint64 `json:"sys_mb"`
-			NumGC      uint32 `json:"num_gc"`
-			Goroutines int    `json:"goroutines"`
+			AllocMB          uint64 `json:"alloc_mb"`
+			SysMB            uint64 `json:"sys_mb"`
+			ContainerUsedMB  uint64 `json:"container_used_mb,omitempty"`
+			ContainerLimitMB uint64 `json:"container_limit_mb,omitempty"`
+			NumGC            uint32 `json:"num_gc"`
+			Goroutines       int    `json:"goroutines"`
 		} `json:"memory"`
 	} `json:"resources"`
 	Infrastructure struct {
@@ -221,6 +224,54 @@ func probeLokiComponentStatus(ctx context.Context) systemComponentStatus {
 	return systemComponentStatus{Status: "disconnected", Detail: lastDetail}
 }
 
+func readUint64File(path string) (uint64, bool) {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return 0, false
+	}
+	value := strings.TrimSpace(string(raw))
+	if value == "" || value == "max" {
+		return 0, false
+	}
+	parsed, err := strconv.ParseUint(value, 10, 64)
+	if err != nil {
+		return 0, false
+	}
+	return parsed, true
+}
+
+func bytesToMB(bytes uint64) uint64 {
+	return bytes / 1024 / 1024
+}
+
+func collectContainerMemorySnapshot() (uint64, uint64) {
+	const noPracticalLimitBytes uint64 = 1 << 60
+
+	var usedBytes uint64
+	for _, path := range []string{
+		"/sys/fs/cgroup/memory.current",
+		"/sys/fs/cgroup/memory/memory.usage_in_bytes",
+	} {
+		if value, ok := readUint64File(path); ok {
+			usedBytes = value
+			break
+		}
+	}
+
+	var limitBytes uint64
+	for _, path := range []string{
+		"/sys/fs/cgroup/memory.max",
+		"/sys/fs/cgroup/memory/memory.limit_in_bytes",
+	} {
+		if value, ok := readUint64File(path); ok && value < noPracticalLimitBytes {
+			limitBytes = value
+			break
+		}
+	}
+
+	return bytesToMB(usedBytes), bytesToMB(limitBytes)
+}
+
 func HealthHandler(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
@@ -246,6 +297,7 @@ func SystemStatusHandler(c *gin.Context) {
 
 	var mem runtime.MemStats
 	runtime.ReadMemStats(&mem)
+	containerUsedMB, containerLimitMB := collectContainerMemorySnapshot()
 
 	response := systemStatusResponse{}
 	response.Identity.Hostname = hostname
@@ -257,6 +309,8 @@ func SystemStatusHandler(c *gin.Context) {
 	response.Resources.CPUCores = runtime.NumCPU()
 	response.Resources.Memory.AllocMB = mem.Alloc / 1024 / 1024
 	response.Resources.Memory.SysMB = mem.Sys / 1024 / 1024
+	response.Resources.Memory.ContainerUsedMB = containerUsedMB
+	response.Resources.Memory.ContainerLimitMB = containerLimitMB
 	response.Resources.Memory.NumGC = mem.NumGC
 	response.Resources.Memory.Goroutines = runtime.NumGoroutine()
 	response.Infrastructure.DB = toSystemDBStatus(dbStatus)
