@@ -7,7 +7,7 @@
  *   - 默认工作台快捷指令(createDefaultWorkbenchForm 按当前协议生成默认表单)
  *   - 扫码协议(linear barcode 解析规则) 由 LinearBarcodeProtocolConfig 提供
  *
- * 此组件只负责 UI 配置呈现,真正下发协议到 PDA 设备由后端 sidebarCommandAssignment 链路处理。
+ * 此组件只负责 UI 配置呈现,真正下发协议到 PDA 设备由后端 sidebarCommandConfig 链路处理。
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from '@tanstack/react-router'

@@ -113,11 +113,11 @@ export function CommandCategoryFormDialog({
         <DialogHeader>
           <DialogTitle className='text-base font-black tracking-tight'>
             {isEditing
-              ? t('sidebarCommandAssignment.categoryForm.editTitle')
-              : t('sidebarCommandAssignment.categoryForm.createTitle')}
+              ? t('sidebarCommandConfig.categoryForm.editTitle')
+              : t('sidebarCommandConfig.categoryForm.createTitle')}
           </DialogTitle>
           <DialogDescription>
-            {t('sidebarCommandAssignment.categoryForm.description')}
+            {t('sidebarCommandConfig.categoryForm.description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -125,14 +125,14 @@ export function CommandCategoryFormDialog({
           <div className='grid gap-4 md:grid-cols-2'>
             <div className='space-y-2'>
               <Label htmlFor='sidebar-command-category-id'>
-                {t('sidebarCommandAssignment.categoryForm.categoryId')}
+                {t('sidebarCommandConfig.categoryForm.categoryId')}
               </Label>
               <Input
                 id='sidebar-command-category-id'
                 value={form.categoryId}
                 disabled={isEditing}
                 placeholder={t(
-                  'sidebarCommandAssignment.categoryForm.categoryIdPlaceholder'
+                  'sidebarCommandConfig.categoryForm.categoryIdPlaceholder'
                 )}
                 onChange={(event) =>
                   updateField('categoryId', event.target.value)
@@ -141,13 +141,13 @@ export function CommandCategoryFormDialog({
             </div>
             <div className='space-y-2'>
               <Label htmlFor='sidebar-command-category-name'>
-                {t('sidebarCommandAssignment.categoryForm.name')}
+                {t('sidebarCommandConfig.categoryForm.name')}
               </Label>
               <Input
                 id='sidebar-command-category-name'
                 value={form.name}
                 placeholder={t(
-                  'sidebarCommandAssignment.categoryForm.namePlaceholder'
+                  'sidebarCommandConfig.categoryForm.namePlaceholder'
                 )}
                 onChange={(event) => updateField('name', event.target.value)}
               />
@@ -156,13 +156,13 @@ export function CommandCategoryFormDialog({
 
           <div className='space-y-2'>
             <Label htmlFor='sidebar-command-category-description'>
-              {t('sidebarCommandAssignment.categoryForm.categoryDescription')}
+              {t('sidebarCommandConfig.categoryForm.categoryDescription')}
             </Label>
             <Textarea
               id='sidebar-command-category-description'
               value={form.description}
               placeholder={t(
-                'sidebarCommandAssignment.categoryForm.descriptionPlaceholder'
+                'sidebarCommandConfig.categoryForm.descriptionPlaceholder'
               )}
               onChange={(event) =>
                 updateField('description', event.target.value)
@@ -172,7 +172,7 @@ export function CommandCategoryFormDialog({
 
           <div className='grid gap-4 md:grid-cols-[1fr_160px_auto] md:items-end'>
             <div className='space-y-2'>
-              <Label>{t('sidebarCommandAssignment.categoryForm.status')}</Label>
+              <Label>{t('sidebarCommandConfig.categoryForm.status')}</Label>
               <Select
                 value={form.status}
                 onValueChange={(value) => updateField('status', value)}
@@ -182,17 +182,17 @@ export function CommandCategoryFormDialog({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value='active'>
-                    {t('sidebarCommandAssignment.categoryForm.activeStatus')}
+                    {t('sidebarCommandConfig.categoryForm.activeStatus')}
                   </SelectItem>
                   <SelectItem value='disabled'>
-                    {t('sidebarCommandAssignment.categoryForm.disabledStatus')}
+                    {t('sidebarCommandConfig.categoryForm.disabledStatus')}
                   </SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className='space-y-2'>
               <Label htmlFor='sidebar-command-category-sort'>
-                {t('sidebarCommandAssignment.categoryForm.sortOrder')}
+                {t('sidebarCommandConfig.categoryForm.sortOrder')}
               </Label>
               <Input
                 id='sidebar-command-category-sort'
@@ -208,7 +208,7 @@ export function CommandCategoryFormDialog({
                 checked={form.enabled}
                 onCheckedChange={(value) => updateField('enabled', value)}
               />
-              {t('sidebarCommandAssignment.categoryForm.enabled')}
+              {t('sidebarCommandConfig.categoryForm.enabled')}
             </label>
           </div>
 
@@ -218,13 +218,13 @@ export function CommandCategoryFormDialog({
               variant='outline'
               onClick={() => onOpenChange(false)}
             >
-              {t('sidebarCommandAssignment.categoryForm.cancel')}
+              {t('sidebarCommandConfig.categoryForm.cancel')}
             </Button>
             <Button type='submit' disabled={!canSubmit || isSaving}>
               <Save className='size-4' />
               {isSaving
-                ? t('sidebarCommandAssignment.categoryForm.saving')
-                : t('sidebarCommandAssignment.categoryForm.save')}
+                ? t('sidebarCommandConfig.categoryForm.saving')
+                : t('sidebarCommandConfig.categoryForm.save')}
             </Button>
           </DialogFooter>
         </form>

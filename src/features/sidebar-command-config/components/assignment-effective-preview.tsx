@@ -18,10 +18,10 @@ export function AssignmentEffectivePreview({
       <div className='mb-2 flex items-center justify-between gap-3'>
         <div>
           <h2 className='text-sm font-black tracking-tighter italic'>
-            {t('sidebarCommandAssignment.preview.title')}
+            {t('sidebarCommandConfig.preview.title')}
           </h2>
           <p className='mt-1 text-[9px] font-black tracking-widest text-muted-foreground/55 uppercase'>
-            {t('sidebarCommandAssignment.preview.description')}
+            {t('sidebarCommandConfig.preview.description')}
           </p>
         </div>
         <ListChecks className='size-4 text-muted-foreground' />
@@ -56,15 +56,15 @@ export function AssignmentEffectivePreview({
             >
               {command.assignmentSource === 'category'
                 ? command.sourceCategoryName ||
-                  t('sidebarCommandAssignment.preview.categorySource')
-                : t('sidebarCommandAssignment.preview.directSource')}
+                  t('sidebarCommandConfig.preview.categorySource')
+                : t('sidebarCommandConfig.preview.directSource')}
             </Badge>
           </div>
         ))}
 
         {commands.length === 0 ? (
           <div className='rounded-xl border border-dashed border-muted/50 bg-background/60 px-4 py-5 text-center text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase md:col-span-2 xl:col-span-3'>
-            {t('sidebarCommandAssignment.preview.empty')}
+            {t('sidebarCommandConfig.preview.empty')}
           </div>
         ) : null}
       </div>

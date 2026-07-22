@@ -58,16 +58,16 @@ const defaultIconOptions: Array<{
 }> = [
   {
     value: 'SearchCheck',
-    labelKey: 'sidebarCommandAssignment.form.icons.trace',
+    labelKey: 'sidebarCommandConfig.form.icons.trace',
   },
   {
     value: 'PackagePlus',
-    labelKey: 'sidebarCommandAssignment.form.icons.inbound',
+    labelKey: 'sidebarCommandConfig.form.icons.inbound',
   },
-  { value: 'ScanLine', labelKey: 'sidebarCommandAssignment.form.icons.scan' },
+  { value: 'ScanLine', labelKey: 'sidebarCommandConfig.form.icons.scan' },
   {
     value: 'ClipboardCheck',
-    labelKey: 'sidebarCommandAssignment.form.icons.stocktake',
+    labelKey: 'sidebarCommandConfig.form.icons.stocktake',
   },
 ]
 
@@ -123,8 +123,8 @@ export function CommandLibraryFormDialog({
   const isEditing = Boolean(command)
 
   const title = isEditing
-    ? t('sidebarCommandAssignment.form.editTitle')
-    : t('sidebarCommandAssignment.form.createTitle')
+    ? t('sidebarCommandConfig.form.editTitle')
+    : t('sidebarCommandConfig.form.createTitle')
   const canSubmit = useMemo(() => {
     return (
       form.commandId.trim() !== '' &&
@@ -138,7 +138,7 @@ export function CommandLibraryFormDialog({
       : [
           {
             categoryId: 'business',
-            name: t('sidebarCommandAssignment.form.defaultCategory'),
+            name: t('sidebarCommandConfig.form.defaultCategory'),
           },
         ]
     const options = source.map((category) => ({
@@ -169,7 +169,7 @@ export function CommandLibraryFormDialog({
     try {
       searchParams = JSON.parse(form.searchParamsText || '{}')
     } catch {
-      setParamsError(t('sidebarCommandAssignment.form.paramsInvalidJson'))
+      setParamsError(t('sidebarCommandConfig.form.paramsInvalidJson'))
       return
     }
 
@@ -178,7 +178,7 @@ export function CommandLibraryFormDialog({
       searchParams === null ||
       Array.isArray(searchParams)
     ) {
-      setParamsError(t('sidebarCommandAssignment.form.paramsMustObject'))
+      setParamsError(t('sidebarCommandConfig.form.paramsMustObject'))
       return
     }
 
@@ -205,7 +205,7 @@ export function CommandLibraryFormDialog({
             {title}
           </DialogTitle>
           <DialogDescription>
-            {t('sidebarCommandAssignment.form.description')}
+            {t('sidebarCommandConfig.form.description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -213,14 +213,14 @@ export function CommandLibraryFormDialog({
           <div className='grid gap-4 md:grid-cols-2'>
             <div className='space-y-2'>
               <Label htmlFor='sidebar-command-id'>
-                {t('sidebarCommandAssignment.form.commandId')}
+                {t('sidebarCommandConfig.form.commandId')}
               </Label>
               <Input
                 id='sidebar-command-id'
                 value={form.commandId}
                 disabled={isEditing}
                 placeholder={t(
-                  'sidebarCommandAssignment.form.commandIdPlaceholder'
+                  'sidebarCommandConfig.form.commandIdPlaceholder'
                 )}
                 onChange={(event) =>
                   updateField('commandId', event.target.value)
@@ -229,13 +229,13 @@ export function CommandLibraryFormDialog({
             </div>
             <div className='space-y-2'>
               <Label htmlFor='sidebar-command-title'>
-                {t('sidebarCommandAssignment.form.title')}
+                {t('sidebarCommandConfig.form.title')}
               </Label>
               <Input
                 id='sidebar-command-title'
                 value={form.title}
                 placeholder={t(
-                  'sidebarCommandAssignment.form.titlePlaceholder'
+                  'sidebarCommandConfig.form.titlePlaceholder'
                 )}
                 onChange={(event) => updateField('title', event.target.value)}
               />
@@ -245,20 +245,20 @@ export function CommandLibraryFormDialog({
           <div className='grid gap-4 md:grid-cols-[minmax(0,1fr)_160px]'>
             <div className='space-y-2'>
               <Label htmlFor='sidebar-command-route'>
-                {t('sidebarCommandAssignment.form.route')}
+                {t('sidebarCommandConfig.form.route')}
               </Label>
               <Input
                 id='sidebar-command-route'
                 value={form.route}
                 placeholder={t(
-                  'sidebarCommandAssignment.form.routePlaceholder'
+                  'sidebarCommandConfig.form.routePlaceholder'
                 )}
                 onChange={(event) => updateField('route', event.target.value)}
               />
             </div>
             <div className='space-y-2'>
               <Label htmlFor='sidebar-command-sort'>
-                {t('sidebarCommandAssignment.form.sortOrder')}
+                {t('sidebarCommandConfig.form.sortOrder')}
               </Label>
               <Input
                 id='sidebar-command-sort'
@@ -273,13 +273,13 @@ export function CommandLibraryFormDialog({
 
           <div className='space-y-2'>
             <Label htmlFor='sidebar-command-description'>
-              {t('sidebarCommandAssignment.form.commandDescription')}
+              {t('sidebarCommandConfig.form.commandDescription')}
             </Label>
             <Textarea
               id='sidebar-command-description'
               value={form.description}
               placeholder={t(
-                'sidebarCommandAssignment.form.descriptionPlaceholder'
+                'sidebarCommandConfig.form.descriptionPlaceholder'
               )}
               onChange={(event) =>
                 updateField('description', event.target.value)
@@ -289,7 +289,7 @@ export function CommandLibraryFormDialog({
 
           <div className='grid gap-4 md:grid-cols-3'>
             <div className='space-y-2'>
-              <Label>{t('sidebarCommandAssignment.form.icon')}</Label>
+              <Label>{t('sidebarCommandConfig.form.icon')}</Label>
               <Select
                 value={form.icon}
                 onValueChange={(value) => updateField('icon', value)}
@@ -307,7 +307,7 @@ export function CommandLibraryFormDialog({
               </Select>
             </div>
             <div className='space-y-2'>
-              <Label>{t('sidebarCommandAssignment.form.category')}</Label>
+              <Label>{t('sidebarCommandConfig.form.category')}</Label>
               <Select
                 value={form.category}
                 onValueChange={(value) => updateField('category', value)}
@@ -325,7 +325,7 @@ export function CommandLibraryFormDialog({
               </Select>
             </div>
             <div className='space-y-2'>
-              <Label>{t('sidebarCommandAssignment.form.status')}</Label>
+              <Label>{t('sidebarCommandConfig.form.status')}</Label>
               <Select
                 value={form.status}
                 onValueChange={(value) => updateField('status', value)}
@@ -335,10 +335,10 @@ export function CommandLibraryFormDialog({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value='active'>
-                    {t('sidebarCommandAssignment.form.activeStatus')}
+                    {t('sidebarCommandConfig.form.activeStatus')}
                   </SelectItem>
                   <SelectItem value='disabled'>
-                    {t('sidebarCommandAssignment.form.disabledStatus')}
+                    {t('sidebarCommandConfig.form.disabledStatus')}
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -348,7 +348,7 @@ export function CommandLibraryFormDialog({
           <div className='grid gap-4 md:grid-cols-[1fr_auto_auto] md:items-end'>
             <div className='space-y-2'>
               <Label htmlFor='sidebar-command-params'>
-                {t('sidebarCommandAssignment.form.params')}
+                {t('sidebarCommandConfig.form.params')}
               </Label>
               <Textarea
                 id='sidebar-command-params'
@@ -370,14 +370,14 @@ export function CommandLibraryFormDialog({
                 checked={form.assignable}
                 onCheckedChange={(value) => updateField('assignable', value)}
               />
-              {t('sidebarCommandAssignment.form.assignable')}
+              {t('sidebarCommandConfig.form.assignable')}
             </label>
             <label className='flex h-11 items-center gap-3 rounded-full border border-dashed border-muted/60 px-4 text-xs font-black'>
               <Switch
                 checked={form.enabled}
                 onCheckedChange={(value) => updateField('enabled', value)}
               />
-              {t('sidebarCommandAssignment.form.enabled')}
+              {t('sidebarCommandConfig.form.enabled')}
             </label>
           </div>
 
@@ -387,13 +387,13 @@ export function CommandLibraryFormDialog({
               variant='outline'
               onClick={() => onOpenChange(false)}
             >
-              {t('sidebarCommandAssignment.form.cancel')}
+              {t('sidebarCommandConfig.form.cancel')}
             </Button>
             <Button type='submit' disabled={!canSubmit || isSaving}>
               <Save className='size-4' />
               {isSaving
-                ? t('sidebarCommandAssignment.form.saving')
-                : t('sidebarCommandAssignment.form.save')}
+                ? t('sidebarCommandConfig.form.saving')
+                : t('sidebarCommandConfig.form.save')}
             </Button>
           </DialogFooter>
         </form>

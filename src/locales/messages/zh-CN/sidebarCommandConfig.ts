@@ -1,4 +1,4 @@
-export const sidebarCommandAssignment = {
+export const sidebarCommandConfig = {
   moduleTitle: '快捷操作配置',
   tabs: {
     library: '指令库',

@@ -83,7 +83,7 @@ export const sidebar = {
     vehicleMatching: '车型匹配',
     logisticsSettings: '物流配置',
     terminalConfig: '终端配置',
-    sidebarCommandAssignment: '快捷操作配置',
+    sidebarCommandConfig: '快捷操作配置',
     systemManagement: '系统配置',
     approvalCenter: '审批中心',
     messageCenter: '消息中心',

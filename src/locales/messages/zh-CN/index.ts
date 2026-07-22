@@ -33,7 +33,7 @@ import { recentVisits } from './recentVisits'
 import { scanPlatform } from './scanPlatform'
 import { search } from './search'
 import { sidebar } from './sidebar'
-import { sidebarCommandAssignment } from './sidebarCommandAssignment'
+import { sidebarCommandConfig } from './sidebarCommandConfig'
 import { systemManagement } from './systemManagement'
 import { terminalConfig } from './terminalConfig'
 import { toolingFurnaces } from './toolingFurnaces'
@@ -76,7 +76,7 @@ export const zhCNMessages = {
   productionShared,
   scanPlatform,
   quickActions,
-  sidebarCommandAssignment,
+  sidebarCommandConfig,
   logisticsConfig,
   terminalConfig,
   users,

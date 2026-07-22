@@ -1,4 +1,4 @@
-export const sidebarCommandAssignment = {
+export const sidebarCommandConfig = {
   moduleTitle: 'Quick Action Config',
   tabs: {
     library: 'Command Library',

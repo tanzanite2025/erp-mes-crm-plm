@@ -25,10 +25,10 @@ export function AssignmentCommandGrid({
       <div className='mb-2 flex items-center justify-between gap-3'>
         <div>
           <h2 className='text-sm font-black tracking-tighter italic'>
-            {t('sidebarCommandAssignment.commandGrid.title')}
+            {t('sidebarCommandConfig.commandGrid.title')}
           </h2>
           <p className='mt-1 text-[9px] font-black tracking-widest text-muted-foreground/55 uppercase'>
-            {t('sidebarCommandAssignment.commandGrid.description')}
+            {t('sidebarCommandConfig.commandGrid.description')}
           </p>
         </div>
         <ListPlus className='size-4 text-muted-foreground' />
@@ -70,7 +70,7 @@ export function AssignmentCommandGrid({
                     onCheckedChange={(value) =>
                       onToggleCommand(command.code, value)
                     }
-                    aria-label={`${t('sidebarCommandAssignment.tabs.assignment')} ${command.title}`}
+                    aria-label={`${t('sidebarCommandConfig.tabs.assignment')} ${command.title}`}
                   />
                 </div>
               </div>

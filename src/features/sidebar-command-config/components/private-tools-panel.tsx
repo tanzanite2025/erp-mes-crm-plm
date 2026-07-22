@@ -28,11 +28,11 @@ export function PrivateToolsPanel() {
   const getToolTitle = (toolId: PrivateSidebarTool['id']) => {
     switch (toolId) {
       case 'photo':
-        return t('sidebarCommandAssignment.privateTools.photo')
+        return t('sidebarCommandConfig.privateTools.photo')
       case 'video':
-        return t('sidebarCommandAssignment.privateTools.video')
+        return t('sidebarCommandConfig.privateTools.video')
       case 'buffer':
-        return t('sidebarCommandAssignment.privateTools.buffer')
+        return t('sidebarCommandConfig.privateTools.buffer')
     }
   }
 
@@ -44,10 +44,10 @@ export function PrivateToolsPanel() {
         </div>
         <div>
           <h2 className='text-sm font-black tracking-tighter italic'>
-            {t('sidebarCommandAssignment.privateTools.title')}
+            {t('sidebarCommandConfig.privateTools.title')}
           </h2>
           <p className='mt-1 text-[9px] font-black tracking-widest text-muted-foreground/55 uppercase'>
-            {t('sidebarCommandAssignment.privateTools.description')}
+            {t('sidebarCommandConfig.privateTools.description')}
           </p>
         </div>
       </div>

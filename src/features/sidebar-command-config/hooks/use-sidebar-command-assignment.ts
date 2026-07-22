@@ -81,7 +81,7 @@ export function useSidebarCommandAssignmentViewModel() {
       commandsQuery.data?.map((command) =>
         toPresentedSidebarCommand(
           command,
-          t('sidebarCommandAssignment.fallback.commandDescription')
+          t('sidebarCommandConfig.fallback.commandDescription')
         )
       ) ?? []
     return commands.sort((left, right) => left.sortOrder - right.sortOrder)
@@ -161,10 +161,10 @@ export function useSidebarCommandAssignmentViewModel() {
         [data.userId]: data.categoryIds,
       }))
       queryClient.invalidateQueries({ queryKey: ['quick-actions', 'sidebar'] })
-      toast.success(t('sidebarCommandAssignment.toast.assignmentSaveSuccess'))
+      toast.success(t('sidebarCommandConfig.toast.assignmentSaveSuccess'))
     },
     onError: () =>
-      toast.error(t('sidebarCommandAssignment.toast.assignmentSaveError')),
+      toast.error(t('sidebarCommandConfig.toast.assignmentSaveError')),
   })
 
   const batchMutation = useMutation({
@@ -178,12 +178,12 @@ export function useSidebarCommandAssignmentViewModel() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['quick-actions', 'sidebar'] })
       toast.success(
-        t('sidebarCommandAssignment.toast.batchSuccess', {
+        t('sidebarCommandConfig.toast.batchSuccess', {
           count: data.updated,
         })
       )
     },
-    onError: () => toast.error(t('sidebarCommandAssignment.toast.batchError')),
+    onError: () => toast.error(t('sidebarCommandConfig.toast.batchError')),
   })
 
   const copyMutation = useMutation({
@@ -192,12 +192,12 @@ export function useSidebarCommandAssignmentViewModel() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['quick-actions', 'sidebar'] })
       toast.success(
-        t('sidebarCommandAssignment.toast.copySuccess', {
+        t('sidebarCommandConfig.toast.copySuccess', {
           count: data.updated,
         })
       )
     },
-    onError: () => toast.error(t('sidebarCommandAssignment.toast.copyError')),
+    onError: () => toast.error(t('sidebarCommandConfig.toast.copyError')),
   })
 
   const setCurrentDraftCommandIds = (

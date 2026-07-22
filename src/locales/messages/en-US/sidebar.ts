@@ -83,7 +83,7 @@ export const sidebar = {
     vehicleMatching: 'Vehicle Matching',
     logisticsSettings: 'Logistics Settings',
     terminalConfig: 'Terminal Config',
-    sidebarCommandAssignment: 'Quick Action Config',
+    sidebarCommandConfig: 'Quick Action Config',
     systemManagement: 'System Config',
     approvalCenter: 'Approval Center',
     messageCenter: 'Message Center',

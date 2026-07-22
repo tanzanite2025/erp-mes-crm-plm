@@ -56,31 +56,31 @@ export function CommandLibraryCard({
                 className='rounded-full px-2 py-0.5 text-[9px] font-black tracking-widest'
               >
                 {command.enabled
-                  ? t('sidebarCommandAssignment.commandCard.enabled')
-                  : t('sidebarCommandAssignment.commandCard.disabled')}
+                  ? t('sidebarCommandConfig.commandCard.enabled')
+                  : t('sidebarCommandConfig.commandCard.disabled')}
               </Badge>
               <Badge
                 variant={command.assignable ? 'outline' : 'secondary'}
                 className='rounded-full px-2 py-0.5 text-[9px] font-black tracking-widest'
               >
                 {command.assignable
-                  ? t('sidebarCommandAssignment.commandCard.assignable')
-                  : t('sidebarCommandAssignment.commandCard.notAssignable')}
+                  ? t('sidebarCommandConfig.commandCard.assignable')
+                  : t('sidebarCommandConfig.commandCard.notAssignable')}
               </Badge>
             </div>
           </div>
 
           <p className='mt-2 line-clamp-2 text-[11px] leading-4 font-medium text-muted-foreground/75'>
             {command.description ||
-              t('sidebarCommandAssignment.commandCard.noDescription')}
+              t('sidebarCommandConfig.commandCard.noDescription')}
           </p>
 
           <div className='mt-3 grid gap-2 text-[10px] font-black text-muted-foreground/60 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]'>
             <p className='truncate rounded-xl bg-muted/25 px-3 py-2 font-mono'>
-              {t('sidebarCommandAssignment.commandCard.route')} {command.route}
+              {t('sidebarCommandConfig.commandCard.route')} {command.route}
             </p>
             <p className='truncate rounded-xl bg-muted/25 px-3 py-2 font-mono'>
-              {t('sidebarCommandAssignment.commandCard.params')}{' '}
+              {t('sidebarCommandConfig.commandCard.params')}{' '}
               {JSON.stringify(command.searchParams ?? {})}
             </p>
           </div>
@@ -118,7 +118,7 @@ export function CommandLibraryCard({
                 onClick={() => onEdit(command)}
               >
                 <Pencil className='size-3.5' />
-                {t('sidebarCommandAssignment.commandCard.edit')}
+                {t('sidebarCommandConfig.commandCard.edit')}
               </Button>
               <Button
                 type='button'
@@ -130,8 +130,8 @@ export function CommandLibraryCard({
               >
                 <Power className='size-3.5' />
                 {command.enabled
-                  ? t('sidebarCommandAssignment.commandCard.disabled')
-                  : t('sidebarCommandAssignment.commandCard.enabled')}
+                  ? t('sidebarCommandConfig.commandCard.disabled')
+                  : t('sidebarCommandConfig.commandCard.enabled')}
               </Button>
             </div>
           </div>

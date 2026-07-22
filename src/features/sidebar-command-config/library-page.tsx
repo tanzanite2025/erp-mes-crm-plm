@@ -66,8 +66,8 @@ export function SidebarCommandLibraryPage() {
     <SidebarCommandShell>
       <IndustrialHeader
         icon={ListChecks}
-        title={t('sidebarCommandAssignment.library.title')}
-        description={t('sidebarCommandAssignment.library.description')}
+        title={t('sidebarCommandConfig.library.title')}
+        description={t('sidebarCommandConfig.library.description')}
         gradient
         statusBadge={
           <div className='flex w-fit shrink-0 items-center gap-4 rounded-full border border-primary/10 bg-primary/5 px-4 py-1'>
@@ -81,7 +81,7 @@ export function SidebarCommandLibraryPage() {
 
       <IndustrialActionBar
         searchPlaceholder={t(
-          'sidebarCommandAssignment.library.searchPlaceholder'
+          'sidebarCommandConfig.library.searchPlaceholder'
         )}
         searchValue={query}
         onSearchChange={setQuery}
@@ -93,10 +93,10 @@ export function SidebarCommandLibraryPage() {
               <CheckCircle2 className='size-3.5' />
             )}
             {isCategorySection
-              ? t('sidebarCommandAssignment.library.categoryTotal', {
+              ? t('sidebarCommandConfig.library.categoryTotal', {
                   count: totalCategoryCount,
                 })
-              : t('sidebarCommandAssignment.library.total', {
+              : t('sidebarCommandConfig.library.total', {
                   count: totalCount,
                 })}
           </div>
@@ -105,10 +105,10 @@ export function SidebarCommandLibraryPage() {
           <>
             <div className='flex min-w-fit items-center gap-2 rounded-full border border-dashed border-muted/50 bg-background/60 px-4 py-2 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase shadow-sm'>
               {isCategorySection
-                ? t('sidebarCommandAssignment.library.enabledCategories', {
+                ? t('sidebarCommandConfig.library.enabledCategories', {
                     count: enabledCategoryCount,
                   })
-                : t('sidebarCommandAssignment.library.assignable', {
+                : t('sidebarCommandConfig.library.assignable', {
                     count: assignableCount,
                   })}
             </div>
@@ -120,8 +120,8 @@ export function SidebarCommandLibraryPage() {
             >
               <Plus className='size-4' />
               {isCategorySection
-                ? t('sidebarCommandAssignment.library.addCategory')
-                : t('sidebarCommandAssignment.library.add')}
+                ? t('sidebarCommandConfig.library.addCategory')
+                : t('sidebarCommandConfig.library.add')}
             </Button>
           </>
         }
@@ -139,13 +139,13 @@ export function SidebarCommandLibraryPage() {
             value='commands'
             className='rounded-full text-[10px] font-black tracking-widest'
           >
-            {t('sidebarCommandAssignment.library.sections.commands')}
+            {t('sidebarCommandConfig.library.sections.commands')}
           </TabsTrigger>
           <TabsTrigger
             value='categories'
             className='rounded-full text-[10px] font-black tracking-widest'
           >
-            {t('sidebarCommandAssignment.library.sections.categories')}
+            {t('sidebarCommandConfig.library.sections.categories')}
           </TabsTrigger>
         </TabsList>
 
@@ -167,8 +167,8 @@ export function SidebarCommandLibraryPage() {
                 <ShieldAlert className='mx-auto mb-4 size-8 text-muted-foreground/40' />
                 <p className='text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                   {commandsQuery.isLoading
-                    ? t('sidebarCommandAssignment.library.loading')
-                    : t('sidebarCommandAssignment.library.empty')}
+                    ? t('sidebarCommandConfig.library.loading')
+                    : t('sidebarCommandConfig.library.empty')}
                 </p>
               </div>
             ) : null}
@@ -192,8 +192,8 @@ export function SidebarCommandLibraryPage() {
                 <ShieldAlert className='mx-auto mb-4 size-8 text-muted-foreground/40' />
                 <p className='text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                   {categoriesQuery.isLoading
-                    ? t('sidebarCommandAssignment.library.categoryLoading')
-                    : t('sidebarCommandAssignment.library.categoryEmpty')}
+                    ? t('sidebarCommandConfig.library.categoryLoading')
+                    : t('sidebarCommandConfig.library.categoryEmpty')}
                 </p>
               </div>
             ) : null}

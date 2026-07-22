@@ -572,7 +572,7 @@ const navGroupConfigs: SidebarGroupConfig[] = [
         children: [
           {
             id: 'sidebar-command-config',
-            titleKey: 'sidebar.items.sidebarCommandAssignment',
+            titleKey: 'sidebar.items.sidebarCommandConfig',
             url: '/sidebar-command/library',
             activeMatch: '/sidebar-command',
             icon: ListChecks,

@@ -24,10 +24,10 @@ export function AssignmentCategoryGrid({
       <div className='mb-1.5 flex items-center justify-between gap-3'>
         <div>
           <h2 className='text-[13px] font-black tracking-tighter italic'>
-            {t('sidebarCommandAssignment.categoryGrid.title')}
+            {t('sidebarCommandConfig.categoryGrid.title')}
           </h2>
           <p className='mt-0.5 text-[8px] font-black tracking-widest text-muted-foreground/55 uppercase'>
-            {t('sidebarCommandAssignment.categoryGrid.description')}
+            {t('sidebarCommandConfig.categoryGrid.description')}
           </p>
         </div>
         <FolderTree className='size-4 text-muted-foreground' />
@@ -53,7 +53,7 @@ export function AssignmentCategoryGrid({
                 onCheckedChange={(value) =>
                   onToggleCategory(category.categoryId, value === true)
                 }
-                aria-label={`${t('sidebarCommandAssignment.categoryGrid.title')} ${category.name}`}
+                aria-label={`${t('sidebarCommandConfig.categoryGrid.title')} ${category.name}`}
               />
               <span className='min-w-0 flex-1'>
                 <span className='block truncate text-[13px] font-black tracking-tight'>
@@ -64,7 +64,7 @@ export function AssignmentCategoryGrid({
                 </span>
               </span>
               <span className='shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[8px] font-black text-muted-foreground tabular-nums'>
-                {t('sidebarCommandAssignment.categoryGrid.commandCount', {
+                {t('sidebarCommandConfig.categoryGrid.commandCount', {
                   count: category.commandCount,
                 })}
               </span>
@@ -74,7 +74,7 @@ export function AssignmentCategoryGrid({
 
         {categories.length === 0 ? (
           <div className='rounded-xl border border-dashed border-muted/50 bg-muted/5 px-4 py-5 text-center text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase md:col-span-2 xl:col-span-3'>
-            {t('sidebarCommandAssignment.categoryGrid.empty')}
+            {t('sidebarCommandConfig.categoryGrid.empty')}
           </div>
         ) : null}
       </div>

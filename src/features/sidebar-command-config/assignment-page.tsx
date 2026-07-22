@@ -54,8 +54,8 @@ export function SidebarCommandAssignmentPage() {
     <SidebarCommandShell>
       <IndustrialHeader
         icon={ListChecks}
-        title={t('sidebarCommandAssignment.assignment.title')}
-        description={t('sidebarCommandAssignment.assignment.description')}
+        title={t('sidebarCommandConfig.assignment.title')}
+        description={t('sidebarCommandConfig.assignment.description')}
         gradient
         statusBadge={
           <div className='flex w-fit shrink-0 items-center gap-4 rounded-full border border-primary/10 bg-primary/5 px-4 py-1'>
@@ -69,7 +69,7 @@ export function SidebarCommandAssignmentPage() {
 
       <IndustrialActionBar
         searchPlaceholder={t(
-          'sidebarCommandAssignment.assignment.searchPlaceholder'
+          'sidebarCommandConfig.assignment.searchPlaceholder'
         )}
         searchValue={query}
         onSearchChange={setQuery}
@@ -77,8 +77,8 @@ export function SidebarCommandAssignmentPage() {
           <div className='flex min-w-fit items-center gap-2 rounded-full border border-dashed border-muted/50 bg-background/60 px-4 py-2 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase shadow-sm'>
             <UserRound className='size-3.5' />
             {usersQuery.isLoading
-              ? t('sidebarCommandAssignment.assignment.syncingAccounts')
-              : t('sidebarCommandAssignment.assignment.accountCount', {
+              ? t('sidebarCommandConfig.assignment.syncingAccounts')
+              : t('sidebarCommandConfig.assignment.accountCount', {
                   count: accounts.length,
                 })}
           </div>
@@ -91,7 +91,7 @@ export function SidebarCommandAssignmentPage() {
               disabled={filteredAccounts.length === 0}
               onClick={selectFilteredTargets}
             >
-              {t('sidebarCommandAssignment.assignment.selectCurrentList')}
+              {t('sidebarCommandConfig.assignment.selectCurrentList')}
             </Button>
             <Button
               variant='outline'
@@ -99,7 +99,7 @@ export function SidebarCommandAssignmentPage() {
               disabled={selectedTargetCount === 0}
               onClick={clearTargets}
             >
-              {t('sidebarCommandAssignment.assignment.clearTargets')}
+              {t('sidebarCommandConfig.assignment.clearTargets')}
             </Button>
             <Button
               onClick={() => saveMutation.mutate()}
@@ -108,8 +108,8 @@ export function SidebarCommandAssignmentPage() {
             >
               <Save className='size-4' />
               {saveMutation.isPending
-                ? t('sidebarCommandAssignment.assignment.savePending')
-                : t('sidebarCommandAssignment.assignment.save')}
+                ? t('sidebarCommandConfig.assignment.savePending')
+                : t('sidebarCommandConfig.assignment.save')}
             </Button>
           </>
         }

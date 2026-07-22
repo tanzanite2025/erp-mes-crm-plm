@@ -35,10 +35,10 @@ export function AssignmentBatchPanel({
           </div>
           <div>
             <h2 className='text-sm font-black tracking-tighter italic'>
-              {t('sidebarCommandAssignment.batch.title')}
+              {t('sidebarCommandConfig.batch.title')}
             </h2>
             <p className='mt-1 text-[9px] font-black tracking-widest text-muted-foreground/55 uppercase'>
-              {t('sidebarCommandAssignment.batch.description')}
+              {t('sidebarCommandConfig.batch.description')}
             </p>
           </div>
         </div>
@@ -48,14 +48,14 @@ export function AssignmentBatchPanel({
             className='h-8 rounded-full px-4 text-[10px] font-black tracking-widest'
             onClick={() => onBatchModeChange('replace')}
           >
-            {t('sidebarCommandAssignment.batch.replace')}
+            {t('sidebarCommandConfig.batch.replace')}
           </Button>
           <Button
             variant={batchMode === 'append' ? 'default' : 'outline'}
             className='h-8 rounded-full px-4 text-[10px] font-black tracking-widest'
             onClick={() => onBatchModeChange('append')}
           >
-            {t('sidebarCommandAssignment.batch.append')}
+            {t('sidebarCommandConfig.batch.append')}
           </Button>
           <Button
             className='h-8 gap-2 rounded-full px-4 text-[10px] font-black tracking-widest'
@@ -65,7 +65,7 @@ export function AssignmentBatchPanel({
             onClick={onApplyBatch}
           >
             <CheckCircle2 className='size-4' />
-            {t('sidebarCommandAssignment.batch.apply')}
+            {t('sidebarCommandConfig.batch.apply')}
           </Button>
           <Button
             variant='outline'
@@ -76,7 +76,7 @@ export function AssignmentBatchPanel({
             onClick={onCopyCurrent}
           >
             <Copy className='size-4' />
-            {t('sidebarCommandAssignment.batch.copy')}
+            {t('sidebarCommandConfig.batch.copy')}
           </Button>
         </div>
       </div>

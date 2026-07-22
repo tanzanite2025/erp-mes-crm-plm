@@ -35,7 +35,7 @@ export function AssignmentSummary({
       <div className='flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between'>
         <div className='min-w-0'>
           <p className='text-[9px] font-black tracking-[0.18em] text-muted-foreground/50 uppercase'>
-            {t('sidebarCommandAssignment.summary.currentAccount')}
+            {t('sidebarCommandConfig.summary.currentAccount')}
           </p>
           <h2 className='truncate text-base font-black tracking-tighter italic'>
             {selectedAccount?.name || '-'}
@@ -52,7 +52,7 @@ export function AssignmentSummary({
             onClick={onSelectAll}
           >
             <CheckCircle2 className='size-3' />
-            {t('sidebarCommandAssignment.summary.selectAll')}
+            {t('sidebarCommandConfig.summary.selectAll')}
           </Button>
           <Button
             variant='ghost'
@@ -61,7 +61,7 @@ export function AssignmentSummary({
             onClick={onClear}
           >
             <RotateCcw className='size-3' />
-            {t('sidebarCommandAssignment.summary.clear')}
+            {t('sidebarCommandConfig.summary.clear')}
           </Button>
         </div>
       </div>
@@ -69,7 +69,7 @@ export function AssignmentSummary({
       <div className='mt-2 grid gap-1.5 sm:grid-cols-2 xl:grid-cols-5'>
         <div className='flex items-center justify-between gap-2 rounded-full bg-muted/25 px-2.5 py-1.5'>
           <p className='text-[8px] font-black tracking-widest text-muted-foreground/55 uppercase'>
-            {t('sidebarCommandAssignment.summary.assigned')}
+            {t('sidebarCommandConfig.summary.assigned')}
           </p>
           <p className='text-base font-black tracking-tighter italic tabular-nums'>
             {isFetchingAssignment ? '...' : assignedCount}
@@ -77,7 +77,7 @@ export function AssignmentSummary({
         </div>
         <div className='flex items-center justify-between gap-2 rounded-full bg-muted/25 px-2.5 py-1.5'>
           <p className='text-[8px] font-black tracking-widest text-muted-foreground/55 uppercase'>
-            {t('sidebarCommandAssignment.summary.categories')}
+            {t('sidebarCommandConfig.summary.categories')}
           </p>
           <p className='text-base font-black tracking-tighter italic tabular-nums'>
             {isFetchingAssignment ? '...' : assignedCategoryCount}
@@ -85,7 +85,7 @@ export function AssignmentSummary({
         </div>
         <div className='flex items-center justify-between gap-2 rounded-full bg-muted/25 px-2.5 py-1.5'>
           <p className='text-[8px] font-black tracking-widest text-muted-foreground/55 uppercase'>
-            {t('sidebarCommandAssignment.summary.directCommands')}
+            {t('sidebarCommandConfig.summary.directCommands')}
           </p>
           <p className='text-base font-black tracking-tighter italic tabular-nums'>
             {isFetchingAssignment ? '...' : directCommandCount}
@@ -93,7 +93,7 @@ export function AssignmentSummary({
         </div>
         <div className='flex items-center justify-between gap-2 rounded-full bg-muted/25 px-2.5 py-1.5'>
           <p className='text-[8px] font-black tracking-widest text-muted-foreground/55 uppercase'>
-            {t('sidebarCommandAssignment.summary.assignablePool')}
+            {t('sidebarCommandConfig.summary.assignablePool')}
           </p>
           <p className='text-base font-black tracking-tighter italic tabular-nums'>
             {assignableCount}
@@ -101,7 +101,7 @@ export function AssignmentSummary({
         </div>
         <div className='flex items-center justify-between gap-2 rounded-full bg-muted/25 px-2.5 py-1.5'>
           <p className='text-[8px] font-black tracking-widest text-muted-foreground/55 uppercase'>
-            {t('sidebarCommandAssignment.summary.batchTargets')}
+            {t('sidebarCommandConfig.summary.batchTargets')}
           </p>
           <p className='text-base font-black tracking-tighter italic tabular-nums'>
             {selectedTargetCount}

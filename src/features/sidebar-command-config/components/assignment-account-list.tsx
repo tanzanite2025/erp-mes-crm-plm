@@ -33,12 +33,12 @@ export function AssignmentAccountList({
       <div className='mb-5 flex items-center justify-between gap-3'>
         <div>
           <h2 className='text-sm font-black tracking-tighter italic'>
-            {t('sidebarCommandAssignment.accountList.title')}
+            {t('sidebarCommandConfig.accountList.title')}
           </h2>
           <p className='mt-1 text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
             {isLoading
-              ? t('sidebarCommandAssignment.accountList.syncing')
-              : t('sidebarCommandAssignment.accountList.available', {
+              ? t('sidebarCommandConfig.accountList.syncing')
+              : t('sidebarCommandConfig.accountList.available', {
                   count: accounts.length,
                 })}
           </p>
@@ -67,7 +67,7 @@ export function AssignmentAccountList({
                   onToggleTarget(account.id, checked === true)
                 }
                 aria-label={t(
-                  'sidebarCommandAssignment.accountList.targetAria',
+                  'sidebarCommandConfig.accountList.targetAria',
                   { name: account.name }
                 )}
               />
@@ -93,8 +93,8 @@ export function AssignmentAccountList({
         {filteredAccounts.length === 0 ? (
           <div className='rounded-[24px] border border-dashed border-muted/50 bg-background/60 px-4 py-10 text-center text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
             {isLoading
-              ? t('sidebarCommandAssignment.accountList.loading')
-              : t('sidebarCommandAssignment.accountList.empty')}
+              ? t('sidebarCommandConfig.accountList.loading')
+              : t('sidebarCommandConfig.accountList.empty')}
           </div>
         ) : null}
       </div>

@@ -42,19 +42,19 @@ export function CommandCategoryCard({
           className='shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black tracking-widest'
         >
           {category.enabled
-            ? t('sidebarCommandAssignment.categoryCard.enabled')
-            : t('sidebarCommandAssignment.categoryCard.disabled')}
+            ? t('sidebarCommandConfig.categoryCard.enabled')
+            : t('sidebarCommandConfig.categoryCard.disabled')}
         </Badge>
       </div>
 
       <p className='mt-2 line-clamp-2 min-h-8 text-[11px] leading-4 font-medium text-muted-foreground/75'>
         {category.description ||
-          t('sidebarCommandAssignment.categoryCard.noDescription')}
+          t('sidebarCommandConfig.categoryCard.noDescription')}
       </p>
 
       <div className='mt-3 flex items-center justify-between gap-2 rounded-xl bg-muted/25 px-3 py-2'>
         <span className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
-          {t('sidebarCommandAssignment.categoryCard.commandCount')}
+          {t('sidebarCommandConfig.categoryCard.commandCount')}
         </span>
         <span className='text-sm font-black tabular-nums'>
           {category.commandCount}
@@ -71,7 +71,7 @@ export function CommandCategoryCard({
           onClick={() => onEdit(category)}
         >
           <Pencil className='size-3.5' />
-          {t('sidebarCommandAssignment.categoryCard.edit')}
+          {t('sidebarCommandConfig.categoryCard.edit')}
         </Button>
         <Button
           type='button'
@@ -83,8 +83,8 @@ export function CommandCategoryCard({
         >
           <Power className='size-3.5' />
           {category.enabled
-            ? t('sidebarCommandAssignment.categoryCard.disabled')
-            : t('sidebarCommandAssignment.categoryCard.enabled')}
+            ? t('sidebarCommandConfig.categoryCard.disabled')
+            : t('sidebarCommandConfig.categoryCard.enabled')}
         </Button>
       </div>
     </div>

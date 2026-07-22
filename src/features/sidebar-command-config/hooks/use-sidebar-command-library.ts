@@ -92,9 +92,9 @@ export function useSidebarCommandLibraryViewModel() {
       invalidateSidebarCommandQueries()
       setIsFormOpen(false)
       setEditingCommand(null)
-      toast.success(t('sidebarCommandAssignment.toast.createSuccess'))
+      toast.success(t('sidebarCommandConfig.toast.createSuccess'))
     },
-    onError: () => toast.error(t('sidebarCommandAssignment.toast.createError')),
+    onError: () => toast.error(t('sidebarCommandConfig.toast.createError')),
   })
 
   const updateMutation = useMutation({
@@ -109,9 +109,9 @@ export function useSidebarCommandLibraryViewModel() {
       invalidateSidebarCommandQueries()
       setIsFormOpen(false)
       setEditingCommand(null)
-      toast.success(t('sidebarCommandAssignment.toast.updateSuccess'))
+      toast.success(t('sidebarCommandConfig.toast.updateSuccess'))
     },
-    onError: () => toast.error(t('sidebarCommandAssignment.toast.updateError')),
+    onError: () => toast.error(t('sidebarCommandConfig.toast.updateError')),
   })
 
   const enabledMutation = useMutation({
@@ -124,9 +124,9 @@ export function useSidebarCommandLibraryViewModel() {
     }) => setSidebarCommandDefinitionEnabled(commandId, enabled),
     onSuccess: () => {
       invalidateSidebarCommandQueries()
-      toast.success(t('sidebarCommandAssignment.toast.statusSuccess'))
+      toast.success(t('sidebarCommandConfig.toast.statusSuccess'))
     },
-    onError: () => toast.error(t('sidebarCommandAssignment.toast.statusError')),
+    onError: () => toast.error(t('sidebarCommandConfig.toast.statusError')),
   })
 
   const createCategoryMutation = useMutation({
@@ -135,10 +135,10 @@ export function useSidebarCommandLibraryViewModel() {
       invalidateSidebarCommandQueries()
       setIsCategoryFormOpen(false)
       setEditingCategory(null)
-      toast.success(t('sidebarCommandAssignment.toast.categoryCreateSuccess'))
+      toast.success(t('sidebarCommandConfig.toast.categoryCreateSuccess'))
     },
     onError: () =>
-      toast.error(t('sidebarCommandAssignment.toast.categoryCreateError')),
+      toast.error(t('sidebarCommandConfig.toast.categoryCreateError')),
   })
 
   const updateCategoryMutation = useMutation({
@@ -153,10 +153,10 @@ export function useSidebarCommandLibraryViewModel() {
       invalidateSidebarCommandQueries()
       setIsCategoryFormOpen(false)
       setEditingCategory(null)
-      toast.success(t('sidebarCommandAssignment.toast.categoryUpdateSuccess'))
+      toast.success(t('sidebarCommandConfig.toast.categoryUpdateSuccess'))
     },
     onError: () =>
-      toast.error(t('sidebarCommandAssignment.toast.categoryUpdateError')),
+      toast.error(t('sidebarCommandConfig.toast.categoryUpdateError')),
   })
 
   const categoryEnabledMutation = useMutation({
@@ -169,10 +169,10 @@ export function useSidebarCommandLibraryViewModel() {
     }) => setSidebarCommandCategoryEnabled(categoryId, enabled),
     onSuccess: () => {
       invalidateSidebarCommandQueries()
-      toast.success(t('sidebarCommandAssignment.toast.categoryStatusSuccess'))
+      toast.success(t('sidebarCommandConfig.toast.categoryStatusSuccess'))
     },
     onError: () =>
-      toast.error(t('sidebarCommandAssignment.toast.categoryStatusError')),
+      toast.error(t('sidebarCommandConfig.toast.categoryStatusError')),
   })
 
   const reorderMutation = useMutation({
@@ -180,9 +180,9 @@ export function useSidebarCommandLibraryViewModel() {
     onSuccess: (data) => {
       queryClient.setQueryData(['quick-actions', 'sidebar', 'library'], data)
       invalidateSidebarCommandQueries()
-      toast.success(t('sidebarCommandAssignment.toast.sortSuccess'))
+      toast.success(t('sidebarCommandConfig.toast.sortSuccess'))
     },
-    onError: () => toast.error(t('sidebarCommandAssignment.toast.sortError')),
+    onError: () => toast.error(t('sidebarCommandConfig.toast.sortError')),
   })
 
   const openCreateForm = () => {
