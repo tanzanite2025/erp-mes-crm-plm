@@ -1,4 +1,4 @@
-import type { SidebarCommandDefinitionDto } from '@/features/sidebar-command-assignment/services'
+import type { SidebarCommandDefinitionDto } from '@/features/sidebar-command-config/services'
 import { quickActionRegistry } from '../data/quick-action-registry'
 import type { QuickActionDefinition, SidebarQuickActionView } from '../types'
 

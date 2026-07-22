@@ -17,7 +17,7 @@ import {
 import { useLocalMediaDrafts } from '@/features/personal-workbench/hooks/use-local-media-drafts'
 import { usePersonalWorkbenchBottomDrawerStore } from '@/features/personal-workbench/hooks/use-personal-workbench-bottom-drawer-store'
 import { usePageInstall } from '@/features/scan-platform/hooks/use-page-install'
-import { fetchMySidebarCommands } from '@/features/sidebar-command-assignment/services'
+import { fetchMySidebarCommands } from '@/features/sidebar-command-config/services'
 import { getSidebarQuickActions } from '../services/quick-action-access'
 import { QuickActionIcon } from './quick-action-icon'
 
