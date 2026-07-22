@@ -63,7 +63,10 @@ export function getProjectedTabsFromPermissionSnapshot(
 ): TabItem[] {
   return tabs.filter((tab) => {
     if (tab.permissionId) {
-      return matchesPermissionSnapshot(user, tab.permissionId)
+      return (
+        matchesPermissionSnapshot(user, tab.permissionId) ||
+        matchesPathPermissionProjection(user, tab.href, options)
+      )
     }
 
     return matchesPathPermissionProjection(user, tab.href, options)

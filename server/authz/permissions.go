@@ -1,5 +1,7 @@
 package authz
 
+import "sort"
+
 const (
 	MenuDashboard       = "menu_dashboard"
 	MenuWarehouse       = "menu_warehouse"
@@ -123,7 +125,7 @@ const (
 	ActionApprovalReview = "action_approval_review"
 )
 
-var AdminFallbackPermissions = []string{
+var baseAdminFallbackPermissions = []string{
 	PermissionUserView,
 	PermissionUserCreate,
 	PermissionUserEdit,
@@ -207,6 +209,19 @@ var AdminFallbackPermissions = []string{
 	MenuPDA,
 }
 
+var AdminFallbackPermissions = buildAdminFallbackPermissions()
+
 var ManagedPermissionIDs = DeduplicatePermissionIDs(append([]string{
 	PermissionUserInvite,
 }, AdminFallbackPermissions...))
+
+func buildAdminFallbackPermissions() []string {
+	permissions := append([]string(nil), baseAdminFallbackPermissions...)
+	routePermissionIDs := make([]string, 0, len(KnownRoutePermissionIDs))
+	for permissionID := range KnownRoutePermissionIDs {
+		routePermissionIDs = append(routePermissionIDs, permissionID)
+	}
+	sort.Strings(routePermissionIDs)
+	permissions = append(permissions, routePermissionIDs...)
+	return DeduplicatePermissionIDs(permissions)
+}
