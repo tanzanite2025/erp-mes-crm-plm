@@ -52,7 +52,8 @@ export function FurnaceActionDialog({
   )
 
   const { commit, deltaProxy, reset } = useDeltaTracker<Furnace>(
-    editData || createFurnaceDraft(defaultFurnaceType)
+    defaultDraft,
+    open
   )
   const isEdit = !!editData
 

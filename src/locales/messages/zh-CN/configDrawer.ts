@@ -1,7 +1,7 @@
 export const configDrawer = {
   triggerLabel: '打开系统设置',
   title: '系统偏好设置',
-  description: '调整操作环境与 AI 管家行为。',
+  description: '调整操作环境偏好。',
   resetAll: '全部重置',
   resetAriaLabel: '将所有设置恢复为默认值',
   sections: {
@@ -27,21 +27,5 @@ export const configDrawer = {
   directionOptions: {
     ltr: '从左到右',
     rtl: '从右到左',
-  },
-  agent: {
-    title: 'AI 管家设置',
-    dailyBriefing: '每日简报',
-    dailyDescription: '推送每日经营摘要',
-    weeklyAudit: '每周审计',
-    weeklyDescription: '每周一推送深度审计总结',
-    amSession: '上午时段',
-    pmSession: '下午时段',
-    scheduleDay: '执行时间',
-    weeklySchedule: '每周一 @ 08:30',
-    runNow: '立即运行经营分析',
-    toasts: {
-      updated: '管家设置已更新',
-      running: '正在启动即时经营分析...',
-    },
   },
 }

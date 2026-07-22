@@ -1,7 +1,6 @@
-import { type SVGProps, useEffect, useState } from 'react'
+import { type SVGProps } from 'react'
 import { Item, Root as Radio } from '@radix-ui/react-radio-group'
-import { CircleCheck, Play, RotateCcw, Settings } from 'lucide-react'
-import { toast } from 'sonner'
+import { CircleCheck, RotateCcw, Settings } from 'lucide-react'
 import { IconDir } from '@/assets/custom/icon-dir'
 import { IconLayoutDefault } from '@/assets/custom/icon-layout-default'
 import { IconLayoutFull } from '@/assets/custom/icon-layout-full'
@@ -18,13 +17,6 @@ import { type Collapsible, useLayout } from '@/context/layout-provider'
 import { useTheme } from '@/context/theme-provider'
 import { Button } from '@/components/ui/button'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
   Sheet,
   SheetContent,
   SheetDescription,
@@ -33,11 +25,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet'
-import { Switch } from '@/components/ui/switch'
-import {
-  aiAgentService,
-  type AgentSettings,
-} from '@/features/ai-assistant/services/ai-agent-service'
 import { useSidebar } from './ui/sidebar'
 
 export function ConfigDrawer() {
@@ -79,9 +66,6 @@ export function ConfigDrawer() {
           <SidebarConfig />
           <LayoutConfig />
           <DirConfig />
-
-          <div className='h-px border-t border-dashed bg-border/50' />
-          <AgentConfigSection />
         </div>
         <SheetFooter className='gap-2 border-t pt-4'>
           <Button
@@ -95,144 +79,6 @@ export function ConfigDrawer() {
         </SheetFooter>
       </SheetContent>
     </Sheet>
-  )
-}
-
-function AgentConfigSection() {
-  const { t } = useLanguage()
-  const [settings, setSettings] = useState<AgentSettings | null>(null)
-
-  useEffect(() => {
-    aiAgentService.getSettings().then(setSettings)
-  }, [])
-
-  const update = async (patch: Partial<AgentSettings>) => {
-    if (!settings) return
-    const newSettings = { ...settings, ...patch }
-    setSettings(newSettings)
-    await aiAgentService.updateSettings(patch)
-    toast.success(t('configDrawer.agent.toasts.updated'))
-  }
-
-  const handleForceRun = async () => {
-    toast.info(t('configDrawer.agent.toasts.running'))
-    try {
-      await aiAgentService.forceRun('AM_REVIEW')
-    } catch (error) {
-      const message = error instanceof Error ? error.message : '未知错误'
-      toast.error(`[AI 任务异常] ${message}`)
-    }
-  }
-
-  if (!settings) return null
-
-  return (
-    <div className='animate-in space-y-5 duration-500 fade-in'>
-      <SectionTitle title={t('configDrawer.agent.title')} />
-
-      <div className='space-y-4 rounded-2xl border border-dashed border-border/50 bg-muted/30 p-4'>
-        <div className='flex items-center justify-between'>
-          <div className='space-y-0.5'>
-            <div className='text-[10px] font-black tracking-widest text-primary uppercase'>
-              {t('configDrawer.agent.dailyBriefing')}
-            </div>
-            <div className='text-[9px] opacity-60'>
-              {t('configDrawer.agent.dailyDescription')}
-            </div>
-          </div>
-          <Switch
-            checked={settings.dailyEnabled}
-            onCheckedChange={(val) => update({ dailyEnabled: val })}
-          />
-        </div>
-
-        {settings.dailyEnabled && (
-          <div className='grid animate-in grid-cols-2 gap-3 duration-300 slide-in-from-top-1'>
-            <div className='space-y-1.5'>
-              <label className='text-[8px] font-black uppercase opacity-40'>
-                {t('configDrawer.agent.amSession')}
-              </label>
-              <Select
-                value={String(settings.amHour)}
-                onValueChange={(value) =>
-                  update({ amHour: parseInt(value, 10) })
-                }
-              >
-                <SelectTrigger className='h-8 rounded-lg text-[10px]'>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[7, 8, 9, 10, 11].map((hour) => (
-                    <SelectItem key={hour} value={String(hour)}>
-                      {hour}:00
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className='space-y-1.5'>
-              <label className='text-[8px] font-black uppercase opacity-40'>
-                {t('configDrawer.agent.pmSession')}
-              </label>
-              <Select
-                value={String(settings.pmHour)}
-                onValueChange={(value) =>
-                  update({ pmHour: parseInt(value, 10) })
-                }
-              >
-                <SelectTrigger className='h-8 rounded-lg text-[10px]'>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[16, 17, 18, 19, 20].map((hour) => (
-                    <SelectItem key={hour} value={String(hour)}>
-                      {hour}:00
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className='space-y-4 rounded-2xl border border-dashed border-border/50 bg-muted/30 p-4'>
-        <div className='flex items-center justify-between'>
-          <div className='space-y-0.5'>
-            <div className='text-[10px] font-black tracking-widest text-primary uppercase'>
-              {t('configDrawer.agent.weeklyAudit')}
-            </div>
-            <div className='text-[9px] opacity-60'>
-              {t('configDrawer.agent.weeklyDescription')}
-            </div>
-          </div>
-          <Switch
-            checked={settings.weeklyEnabled}
-            onCheckedChange={(val) => update({ weeklyEnabled: val })}
-          />
-        </div>
-
-        {settings.weeklyEnabled && (
-          <div className='animate-in space-y-1.5 duration-300 slide-in-from-top-1'>
-            <label className='text-[8px] font-black uppercase opacity-40'>
-              {t('configDrawer.agent.scheduleDay')}
-            </label>
-            <div className='rounded-lg border border-dashed bg-background px-3 py-1.5 text-[10px] font-medium text-muted-foreground'>
-              {t('configDrawer.agent.weeklySchedule')}
-            </div>
-          </div>
-        )}
-      </div>
-
-      <Button
-        variant='outline'
-        className='h-10 w-full gap-2 rounded-xl border-dashed border-primary/30 bg-primary/5 text-[9px] font-black tracking-[0.2em] uppercase hover:bg-primary/10'
-        onClick={handleForceRun}
-      >
-        <Play className='size-3 fill-primary text-primary' />
-        {t('configDrawer.agent.runNow')}
-      </Button>
-    </div>
   )
 }
 

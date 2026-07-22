@@ -1,7 +1,7 @@
 export const configDrawer = {
   triggerLabel: 'Open system preferences',
   title: 'System Preferences',
-  description: 'Adjust your operation environment and AI agent behavior.',
+  description: 'Adjust your operation environment preferences.',
   resetAll: 'Reset All',
   resetAriaLabel: 'Reset all settings to default values',
   sections: {
@@ -30,21 +30,5 @@ export const configDrawer = {
   directionOptions: {
     ltr: 'Left to Right',
     rtl: 'Right to Left',
-  },
-  agent: {
-    title: 'AI Agent Settings',
-    dailyBriefing: 'Daily Briefing',
-    dailyDescription: 'Push the daily operations summary',
-    weeklyAudit: 'Weekly Audit',
-    weeklyDescription: 'Deep audit summary every Monday',
-    amSession: 'AM Session',
-    pmSession: 'PM Session',
-    scheduleDay: 'Schedule Day',
-    weeklySchedule: 'Every Monday @ 08:30',
-    runNow: 'Run Intelligence Analysis Now',
-    toasts: {
-      updated: 'Agent settings updated',
-      running: 'Launching the realtime operations analysis...',
-    },
   },
 }

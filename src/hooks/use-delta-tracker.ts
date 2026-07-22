@@ -44,6 +44,13 @@ export function useDeltaTracker<T extends object>(
     [tracker]
   )
 
+  const reset = useCallback(
+    (newData: T) => {
+      tracker.reset(newData)
+    },
+    [tracker]
+  )
+
   /**
    * 检查当前是否发生了变更
    */
@@ -64,6 +71,6 @@ export function useDeltaTracker<T extends object>(
     isDirty,
     mutationCount,
     tracker,
-    reset: (newData: T) => tracker.reset(newData),
+    reset,
   }
 }

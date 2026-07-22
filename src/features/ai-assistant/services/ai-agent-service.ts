@@ -1,49 +1,17 @@
-import { createLogger } from '@/lib/logger'
-import { StorageService } from '@/features/system-mgmt/services/storage-service'
-import { aiContextService } from './ai-context-service'
-import { callProviderStream } from './ai-service'
-import {
-  generateAgentBriefPrompt,
-  generateWeeklyAgentPrompt,
-  type AgentSessionType,
-} from './prompt-builder'
-
-const logger = createLogger('AiAgentService')
+export type AgentSessionType = 'AM_REVIEW' | 'PM_FORECAST' | 'WEEKLY_REPORT'
 
 export interface AgentServiceState {
   hasUnread: boolean
   lastError: string | null
 }
 
-export interface AgentSettings {
-  dailyEnabled: boolean
-  weeklyEnabled: boolean
-  amHour: number
-  pmHour: number
-  weeklyDay: number
-  weeklyHour: number
-}
-
-interface AgentRunStatus {
-  lastDailyId: string | null
-  lastWeeklyId: string | null
-  timestamp: number
-}
-
-const AGENT_STATUS_KEY = 'xdfc_ai_agent_run_status'
-const AGENT_SETTINGS_KEY = 'xdfc_ai_agent_settings'
-
-const DEFAULT_SETTINGS: AgentSettings = {
-  dailyEnabled: true,
-  weeklyEnabled: true,
-  amHour: 9,
-  pmHour: 18,
-  weeklyDay: 1,
-  weeklyHour: 8,
-}
-
+/**
+ * AI 对话入口的轻量状态协调器。
+ *
+ * 这里不启动任何后台任务；模型调用只发生在用户打开 AI 弹窗并输入问题之后。
+ * hasUnread / lastInsight 仅用于兼容 AI 弹窗的“简报模式”展示状态。
+ */
 class AiAgentService {
-  private isRunning = false
   private hasUnread = false
   private lastInsight = ''
   private lastType: AgentSessionType = 'AM_REVIEW'
@@ -63,7 +31,7 @@ class AiAgentService {
   }
 
   getLastType() {
-    return this.lastType ?? 'AM_REVIEW'
+    return this.lastType
   }
 
   getLastError() {
@@ -86,130 +54,6 @@ class AiAgentService {
     this.hasUnread = false
     this.onStatusChange?.()
   }
-
-  async getSettings(): Promise<AgentSettings> {
-    const saved =
-      await StorageService.getItem<AgentSettings>(AGENT_SETTINGS_KEY)
-    return saved || DEFAULT_SETTINGS
-  }
-
-  async updateSettings(settings: Partial<AgentSettings>) {
-    const current = await this.getSettings()
-    await StorageService.setItem(AGENT_SETTINGS_KEY, {
-      ...current,
-      ...settings,
-    })
-  }
-
-  async forceRun(type: AgentSessionType) {
-    logger.info(`Force running ${type}...`)
-    await this.executeAgentTask(type, `FORCE_${Date.now()}`)
-  }
-
-  async checkAndRun() {
-    if (this.isRunning) return
-
-    const settings = await this.getSettings()
-    const now = new Date()
-    const hour = now.getHours()
-    const day = now.getDay()
-    const dateStr = now.toISOString().split('T')[0]
-    const weekStr = this.getYearWeek(now)
-
-    const status = await this.getRunStatus()
-
-    if (
-      settings.weeklyEnabled &&
-      day === settings.weeklyDay &&
-      hour >= settings.weeklyHour
-    ) {
-      if (status.lastWeeklyId !== weekStr) {
-        await this.executeAgentTask('WEEKLY_REPORT', weekStr)
-        return
-      }
-    }
-
-    if (settings.dailyEnabled) {
-      let sessionType: AgentSessionType | null = null
-      let sessionId: string | null = null
-
-      if (hour >= settings.amHour && hour < 12) {
-        sessionType = 'AM_REVIEW'
-        sessionId = `${dateStr}_AM`
-      } else if (hour >= settings.pmHour && hour < 21) {
-        sessionType = 'PM_FORECAST'
-        sessionId = `${dateStr}_PM`
-      }
-
-      if (sessionType && sessionId) {
-        if (status.lastDailyId !== sessionId) {
-          await this.executeAgentTask(sessionType, sessionId)
-        }
-      }
-    }
-  }
-
-  private getErrorMessage(error: unknown) {
-    if (error instanceof Error) return error.message
-    return '未知错误'
-  }
-
-  private async executeAgentTask(type: AgentSessionType, id: string) {
-    if (this.isRunning) return
-    this.isRunning = true
-
-    try {
-      // 1. 统一数据采集
-      const data = await aiContextService.grabFullSnapshot(false) // PC 端全量载荷
-
-      // 2. 统一协议注入 (通过 prompt-builder 生成基于 DCL 的提示词)
-      const prompt =
-        type === 'WEEKLY_REPORT'
-          ? generateWeeklyAgentPrompt(data)
-          : generateAgentBriefPrompt(data, type)
-
-      let fullContent = ''
-      await callProviderStream([{ role: 'user', content: prompt }], (chunk) => {
-        fullContent += chunk
-        this.lastInsight = fullContent
-        this.lastType = type
-      })
-
-      this.hasUnread = true
-      this.onStatusChange?.()
-
-      if (!id.startsWith('FORCE_')) {
-        await this.markRunComplete(type, id)
-      }
-    } catch (error: unknown) {
-      logger.error('Critical failure during task execution', error)
-      this.lastError = `[AI 任务异常] 场景: ${type}，详情: ${this.getErrorMessage(error)}`
-      this.onStatusChange?.()
-    } finally {
-      this.isRunning = false
-    }
-  }
-
-  private getYearWeek(date: Date): string {
-    const firstDayOfYear = new Date(date.getFullYear(), 0, 1)
-    const pastDaysOfYear =
-      (date.getTime() - firstDayOfYear.getTime()) / 86400000
-    return `${date.getFullYear()}_W${Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7)}`
-  }
-
-  private async getRunStatus(): Promise<AgentRunStatus> {
-    const saved = await StorageService.getItem<AgentRunStatus>(AGENT_STATUS_KEY)
-    return saved || { lastDailyId: null, lastWeeklyId: null, timestamp: 0 }
-  }
-
-  private async markRunComplete(type: AgentSessionType, id: string) {
-    const status = await this.getRunStatus()
-    if (type === 'WEEKLY_REPORT') status.lastWeeklyId = id
-    else status.lastDailyId = id
-    status.timestamp = Date.now()
-    await StorageService.setItem(AGENT_STATUS_KEY, status)
-  }
 }
 
 export const aiAgentService = new AiAgentService()
-export type { AgentSessionType } from './prompt-builder'

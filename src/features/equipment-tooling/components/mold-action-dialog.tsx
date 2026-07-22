@@ -75,7 +75,8 @@ export function MoldActionDialog({
   )
 
   const { commit, deltaProxy, reset } = useDeltaTracker<Mold>(
-    editData || createMoldDraft()
+    defaultDraft,
+    open
   )
   const isEdit = !!editData
 

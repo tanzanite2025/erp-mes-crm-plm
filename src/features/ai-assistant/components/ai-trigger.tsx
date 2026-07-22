@@ -62,16 +62,7 @@ export function AiTrigger({ placement = 'floating' }: AiTriggerProps) {
     }
     aiAgentService.subscribe(updateStatus)
     updateStatus()
-
-    if (!isVisible) return
-
-    // 极光管家后台静默分析
-    const checkTimer = setTimeout(() => {
-      aiAgentService.checkAndRun()
-    }, 5000)
-
-    return () => clearTimeout(checkTimer)
-  }, [isVisible])
+  }, [])
 
   if (!isVisible && isChecking) {
     return null
