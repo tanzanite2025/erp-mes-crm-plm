@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
+import type { VehicleSpec } from '../../vehicle-specs/data/vehicle-specs.types'
 import type {
   ShipmentSummary,
   VehicleLoadingPackageInput,
-  VehicleSpec,
 } from '../data/vehicle-loading.types'
 import { vehicleLoadingQueryKeys } from '../query-keys'
 import { getVehicleRecommendations } from '../services/vehicle-loading-service'

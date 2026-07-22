@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react'
+import type { VehicleSpec } from '../../vehicle-specs/data/vehicle-specs.types'
 import type {
   ShipmentSummary,
   VehicleLoadingPackageInput,
-  VehicleSpec,
 } from '../data/vehicle-loading.types'
 import { useVehicleLoadingRecommendations } from './use-vehicle-loading-recommendations'
 import { useVehicleLoadingSpecs } from './use-vehicle-loading-specs'
