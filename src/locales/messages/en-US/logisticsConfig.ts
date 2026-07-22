@@ -6,7 +6,6 @@ export const logisticsConfig = {
     vehicleLoading: 'Vehicle Loading',
     vehicleSpecsLibrary: 'Vehicle Specs Library',
     packagingRules: 'Packaging Rules',
-    scanning: 'Scanning',
     platforms: 'Platforms & Suppliers',
   },
   unified: {
@@ -359,11 +358,6 @@ export const logisticsConfig = {
       notVerified: 'Not Verified',
       notConfigured: 'Not Configured',
     },
-  },
-  scanning: {
-    title: 'Logistics Scanning Configuration',
-    description:
-      'Shows logistics-related scan modules, host notes, permissions, and integration status in one place.',
   },
   platforms: {
     title: 'Logistics API & Platform Config',

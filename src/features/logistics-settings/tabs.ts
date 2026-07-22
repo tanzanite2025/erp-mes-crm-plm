@@ -13,10 +13,5 @@ export function getLogisticsSettingsTabs(t: TranslateFn): TabItem[] {
       label: t('logisticsConfig.tabs.platforms'),
       href: '/logistics-settings/platforms',
     },
-    {
-      key: 'scanning',
-      label: t('logisticsConfig.tabs.scanning'),
-      href: '/logistics-settings/scanning',
-    },
   ]
 }

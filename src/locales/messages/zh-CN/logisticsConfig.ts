@@ -6,7 +6,6 @@ export const logisticsConfig = {
     vehicleLoading: '装载/配车',
     vehicleSpecsLibrary: '车型规格库',
     packagingRules: '包装规则',
-    scanning: '扫描配置',
     platforms: '接口与供应商',
   },
   unified: {
@@ -332,11 +331,6 @@ export const logisticsConfig = {
       notVerified: '未验证',
       notConfigured: '未配置',
     },
-  },
-  scanning: {
-    title: '物流扫描配置',
-    description:
-      '统一查看物流相关扫码模组、宿主说明、权限与接入状态，避免散落在终端配置和业务页之间。',
   },
   platforms: {
     title: '物流接口与平台配置',
