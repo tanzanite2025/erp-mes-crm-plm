@@ -45,6 +45,7 @@ interface DailyInsightModalProps {
   session: AgentSessionType
   content: string
   getLatestSnapshot: () => Promise<DashboardSummary>
+  canUsePageContext?: boolean
   initialQuery?: string
   hasUnread: boolean
 }
@@ -59,6 +60,7 @@ export function DailyInsightModal({
   session,
   content,
   getLatestSnapshot,
+  canUsePageContext = true,
   initialQuery,
   hasUnread,
 }: DailyInsightModalProps) {
@@ -71,7 +73,7 @@ export function DailyInsightModal({
     isHistoryLoading,
     sendMessage,
     clearHistory,
-  } = useAiChatEngine({ getLatestSnapshot })
+  } = useAiChatEngine({ getLatestSnapshot, canUsePageContext })
   const isInsightMode = hasUnread && !!content.trim()
   const modalTitle = isInsightMode
     ? isAM
@@ -83,7 +85,9 @@ export function DailyInsightModal({
     : 'AI 对话弹窗，可输入问询并查看流式分析结果。'
   const modalStatusLabel = isInsightMode
     ? '智能行动中心已就绪'
-    : '统一 AI 交互入口已就绪'
+    : canUsePageContext
+      ? '统一 AI 交互入口已就绪'
+      : '当前页面未下发专属能力，已切换通用对话'
 
   useEffect(() => {
     if (

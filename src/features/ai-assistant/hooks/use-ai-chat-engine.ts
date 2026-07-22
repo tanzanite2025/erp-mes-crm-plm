@@ -12,6 +12,7 @@ const logger = createLogger('useAiChatEngine')
 
 interface UseAiChatEngineOptions {
   getLatestSnapshot: () => Promise<DashboardSummary>
+  canUsePageContext?: boolean
 }
 
 /**
@@ -19,7 +20,10 @@ interface UseAiChatEngineOptions {
  * 职责：管理消息流控制、实时快照注入、历史持久化同步。
  * 特点：Live Context 感知、流式状态管理、错误大声报错。
  */
-export function useAiChatEngine({ getLatestSnapshot }: UseAiChatEngineOptions) {
+export function useAiChatEngine({
+  getLatestSnapshot,
+  canUsePageContext = true,
+}: UseAiChatEngineOptions) {
   const {
     messages,
     appendMessage,
@@ -50,7 +54,7 @@ export function useAiChatEngine({ getLatestSnapshot }: UseAiChatEngineOptions) {
         const snapshot = await getLatestSnapshot()
 
         // 3. 注入局部页面上下文
-        if (localContext && contextTitle) {
+        if (canUsePageContext && localContext && contextTitle) {
           snapshot.localContext = {
             title: contextTitle,
             data: localContext,
@@ -81,6 +85,7 @@ export function useAiChatEngine({ getLatestSnapshot }: UseAiChatEngineOptions) {
       messages,
       isGenerating,
       getLatestSnapshot,
+      canUsePageContext,
       localContext,
       contextTitle,
       appendMessage,

@@ -16,10 +16,10 @@ interface AiTriggerProps {
 /**
  * AI 极光分析按钮 (V4.1 架构纯化版)
  * 职责：UI 交互触发器、语音入口、实时快照协调。
- * 特点：仅在当前路由已开放 AI 能力时显示，实时抓取页面快照。
+ * 特点：全局入口稳定显示；当前路由未下发 AI 能力时，仅禁用页面上下文注入。
  */
 export function AiTrigger({ placement = 'floating' }: AiTriggerProps) {
-  const { isVisible, isChecking } = useAiPermissions()
+  const { isVisible, isChecking, canUsePageContext } = useAiPermissions()
   const { getSnapshot } = useDashboardSnapshot()
 
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -27,10 +27,16 @@ export function AiTrigger({ placement = 'floating' }: AiTriggerProps) {
   const [hasUnread, setHasUnread] = useState(false)
   const pressTimerRef = useRef<NodeJS.Timeout | null>(null)
 
-  const handleTrigger = useCallback((query: string = '') => {
-    setInitialQuery(query)
-    setIsModalOpen(true)
-  }, [])
+  const handleTrigger = useCallback(
+    (query: string = '') => {
+      if (!canUsePageContext) {
+        toast.info('当前页面未下发 AI 页面能力，已按通用经营助手打开')
+      }
+      setInitialQuery(query)
+      setIsModalOpen(true)
+    },
+    [canUsePageContext]
+  )
 
   // 语音识别集成
   const handleVoiceResult = useCallback(
@@ -67,7 +73,11 @@ export function AiTrigger({ placement = 'floating' }: AiTriggerProps) {
     return () => clearTimeout(checkTimer)
   }, [isVisible])
 
-  if (isChecking || !isVisible) {
+  if (!isVisible && isChecking) {
+    return null
+  }
+
+  if (!isVisible) {
     return null
   }
 
@@ -103,6 +113,9 @@ export function AiTrigger({ placement = 'floating' }: AiTriggerProps) {
     <div className={cn('relative', !isDock && 'scale-90 sm:scale-100')}>
       <Button
         size='icon'
+        title={
+          canUsePageContext ? 'AI 助手' : 'AI 助手（当前页面未下发专属能力）'
+        }
         onMouseDown={startPress}
         onMouseUp={endPress}
         onTouchStart={startPress}
@@ -112,7 +125,9 @@ export function AiTrigger({ placement = 'floating' }: AiTriggerProps) {
           isDock ? 'size-11' : 'size-14',
           isRecording
             ? 'scale-110 animate-pulse border-rose-100/50 bg-rose-600 opacity-100'
-            : 'border-indigo-500/20 bg-indigo-600 opacity-90 hover:scale-105 hover:opacity-100 active:scale-95 dark:border-indigo-400/20',
+            : canUsePageContext
+              ? 'border-indigo-500/20 bg-indigo-600 opacity-90 hover:scale-105 hover:opacity-100 active:scale-95 dark:border-indigo-400/20'
+              : 'border-sky-400/45 bg-sky-500/15 text-sky-700 opacity-95 hover:scale-105 hover:bg-sky-500/20 hover:opacity-100 active:scale-95 dark:border-sky-300/30 dark:bg-sky-300/15 dark:text-sky-100',
           isModalOpen && 'pointer-events-none scale-0 opacity-0'
         )}
       >
@@ -126,7 +141,10 @@ export function AiTrigger({ placement = 'floating' }: AiTriggerProps) {
             />
           ) : (
             <Sparkles
-              className={cn('text-white', isDock ? 'size-5' : 'size-6')}
+              className={cn(
+                canUsePageContext ? 'text-white' : 'text-current',
+                isDock ? 'size-5' : 'size-6'
+              )}
             />
           )}
 
@@ -135,7 +153,12 @@ export function AiTrigger({ placement = 'floating' }: AiTriggerProps) {
           )}
 
           {!isRecording && !hasUnread && (
-            <span className='absolute -top-1 -right-1 block size-2.5 animate-ping rounded-full bg-indigo-300' />
+            <span
+              className={cn(
+                'absolute -top-1 -right-1 block size-2.5 animate-ping rounded-full',
+                canUsePageContext ? 'bg-indigo-300' : 'bg-sky-300'
+              )}
+            />
           )}
         </div>
       </Button>
@@ -158,6 +181,7 @@ export function AiTrigger({ placement = 'floating' }: AiTriggerProps) {
         session={aiAgentService.getLastType()}
         content={aiAgentService.getLastInsight()}
         getLatestSnapshot={getSnapshot}
+        canUsePageContext={canUsePageContext}
         initialQuery={initialQuery}
         hasUnread={hasUnread}
       />

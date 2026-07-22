@@ -11,32 +11,36 @@ const logger = createLogger('useAiPermissions')
 
 /**
  * AI 权限判定 Hook
- * 职责：根据当前路由页面判断 AI 功能是否开放。
+ * 职责：拆分全局 AI 入口与当前路由页面能力。
  * 账号能否访问页面由独立的账号权限体系负责。
  */
 export function useAiPermissions() {
-  const user = useAuthStore((s) => s.user)
+  const hasSignedInUser = useAuthStore((s) => !!s.user)
   const pathname = useLocation({ select: (location) => location.pathname })
   const [isVisible, setIsVisible] = useState(false)
+  const [isRouteAllowed, setIsRouteAllowed] = useState(false)
   const [isChecking, setIsChecking] = useState(true)
 
   const checkVisibility = useCallback(async () => {
     setIsChecking(true)
     try {
       const config = await aiPolicyService.getRuntimePolicy()
+      const globalEnabledForUser = config.enabled && hasSignedInUser
       const routeAllowed = isAiRoutePermissionAllowed(
         pathname,
         config.allowedPermissions
       )
 
-      setIsVisible(config.enabled && !!user && routeAllowed)
+      setIsVisible(globalEnabledForUser)
+      setIsRouteAllowed(globalEnabledForUser && routeAllowed)
     } catch (e) {
       logger.error('Permission check failed', e)
       setIsVisible(false)
+      setIsRouteAllowed(false)
     } finally {
       setIsChecking(false)
     }
-  }, [pathname, user])
+  }, [hasSignedInUser, pathname])
 
   useEffect(() => {
     void checkVisibility()
@@ -51,8 +55,10 @@ export function useAiPermissions() {
 
   return {
     isVisible,
+    isRouteAllowed,
     isChecking,
-    canUseDashboardSnapshot: isVisible,
+    canUsePageContext: isVisible && isRouteAllowed,
+    canUseDashboardSnapshot: isVisible && isRouteAllowed,
     refreshPermissions: checkVisibility,
   }
 }
