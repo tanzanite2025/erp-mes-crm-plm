@@ -10,8 +10,6 @@ import { shouldTrackRecentVisit } from './recent-visits-store'
 const RECENT_VISIT_REDIRECT_AND_INTERNAL_PATHS = [
   '/personal-workbench',
   '/personal-workbench/capture',
-  '/approval/routing',
-  '/system-management/routing',
   '/quotes/wholesale',
   '/quotes/retail',
   '/trading/quotes',

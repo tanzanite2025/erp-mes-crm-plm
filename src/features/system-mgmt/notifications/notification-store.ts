@@ -105,7 +105,7 @@ export const useNotificationStore = create<NotificationState>()(
             messages: state.messages.map((m) =>
               m.id === id ? { ...m, isRead: true, isDismissed: true } : m
             ),
-            unreadCount: state.unreadCount - 1,
+            unreadCount: Math.max(0, state.unreadCount - 1),
             dismissedKeys: newDismissed,
           }
         })
@@ -141,7 +141,7 @@ export const useNotificationStore = create<NotificationState>()(
 
           return {
             messages: newMessages,
-            unreadCount: state.unreadCount - unreadAdjustment,
+            unreadCount: Math.max(0, state.unreadCount - unreadAdjustment),
           }
         })
       },
@@ -274,42 +274,14 @@ export const useNotificationStore = create<NotificationState>()(
           dismissedKeys: {},
         })
       },
-
-      // --- 以下为兼容旧版逻辑的空实现 (防崩溃) ---
-      rules: [],
-      updateRule: () => {},
-      initializeRules: () => {},
-      cleanupGroups: () => {},
     }),
     {
       name: 'xdfc_notifications_v3', // 协议升级，重置存储
       onRehydrateStorage: () => (state) => {
         if (state) {
-          // 消息纠偏与计数回正 (500 防崩溃与计数同步)
-          const validMessages = (state.messages || []).map((m) => {
-            if (
-              m.actionUrl &&
-              (m.actionUrl.includes('ordersv2') ||
-                (m.actionUrl.includes('sales-orders') &&
-                  !m.actionUrl.includes('detailId')))
-            ) {
-              const orderId = m.actionUrl.match(/SO\d{14}/)?.[0] || ''
-              if (m.actionUrl.includes('ordersv2')) {
-                return {
-                  ...m,
-                  actionUrl:
-                    m.actionUrl
-                      .replace('ordersv2/', 'sales-orders?search=')
-                      .replace(orderId, '') + `&detailId=${orderId}`,
-                }
-              }
-              return { ...m, actionUrl: `${m.actionUrl}&detailId=${orderId}` }
-            }
-            return m
-          })
-
+          // 仅做消息数组和未读计数回正，不再维护旧路由兼容修正。
+          const validMessages = state.messages || []
           state.messages = validMessages
-          // 同步修正未读计数，解决“信息1乱跳”问题
           state.unreadCount = validMessages.filter((m) => !m.isRead).length
         }
       },

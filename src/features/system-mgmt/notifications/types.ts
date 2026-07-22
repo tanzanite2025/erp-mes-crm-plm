@@ -22,7 +22,7 @@ export interface SystemMessage {
   timestamp: string
   isRead: boolean
   isDismissed?: boolean // 是否已在屏幕上被手动关闭 (临时隐藏)
-  isArchived?: boolean // 是否被系统自动归档（订单状态已解除触发条件�?
+  isArchived?: boolean // 是否被系统自动归档（业务状态已解除触发条件）
   targetGroups?: string[] // message recipient groups
   targetUsers?: string[] // 特定用户接收
   actionUrl?: string // 点击跳转路径
@@ -42,18 +42,12 @@ export interface NotificationState {
   ) => void
   markAsRead: (id: string) => void
   dismissMessage: (id: string) => void // 仅从屏幕点击关闭，不删除
-  archiveMessage: (id: string) => void // 系统自动归档（订单已解决�?
-  archiveByOrderId: (orderId: string) => void // 按订�?ID 批量归档
+  archiveMessage: (id: string) => void // 系统自动归档（业务已解决）
+  archiveByOrderId: (orderId: string) => void // 按订单 ID 批量归档
   syncWithCommands: (validCommandIds: string[]) => void // 彻底清理已删除指令的消息
   syncWithOrders: (validOrderIds: string[]) => void // 彻底清理已删除订单的消息
-  syncWithRules: (validRuleIds: string[]) => void // 彻底清理已删除或停用规则的消�?
-  pruneOldMessages: (days: number) => void // 滚动清理 N 天前的已�?归档消息
+  syncWithRules: (validRuleIds: string[]) => void // 彻底清理已删除或停用规则的消息
+  pruneOldMessages: (days: number) => void // 滚动清理 N 天前的已读/归档消息
   clearAll: () => void
   removeMessage: (id: string) => void
-
-  // --- 兼容性占�?(不再使用路由规则逻辑) ---
-  rules: unknown[]
-  updateRule: (type: NotificationType, updates: unknown) => void
-  initializeRules: (groups: string[]) => void
-  cleanupGroups: (validGroupIds: string[]) => void
 }

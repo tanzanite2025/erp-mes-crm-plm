@@ -223,7 +223,7 @@ export function NotificationRuleList({
       <RoutingQueryErrorState
         error={error}
         resourceLabel='通知规则'
-        endpoint='/system/routing/rules'
+        endpoint='/message-center/rules'
         protocolShape='通知规则列表协议'
         onRetry={() => void reloadRules()}
       />
@@ -235,7 +235,7 @@ export function NotificationRuleList({
       <RoutingQueryErrorState
         error={sourceError}
         resourceLabel='业务事件源'
-        endpoint='/system/routing/event-sources'
+        endpoint='/message-center/event-sources'
         protocolShape='业务事件源列表协议'
         onRetry={() => void reloadSources()}
       />

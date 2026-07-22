@@ -91,7 +91,7 @@ export function CommandMgmt({
       <RoutingQueryErrorState
         error={error}
         resourceLabel='通知内容模板'
-        endpoint='/system/routing/commands'
+        endpoint='/message-center/commands'
         protocolShape='通知内容模板列表协议'
         onRetry={() => void reload()}
       />

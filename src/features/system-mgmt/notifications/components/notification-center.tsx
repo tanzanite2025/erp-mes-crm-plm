@@ -53,6 +53,17 @@ function resolveAudioContextConstructor() {
   return window.AudioContext ?? audioWindow.webkitAudioContext ?? null
 }
 
+function isTargetedToCurrentUser(
+  targetUsers: string[] | undefined,
+  user: { id?: string; username?: string; accountNo?: string } | null
+) {
+  if (!targetUsers?.length) return false
+  const userKeys = [user?.id, user?.username, user?.accountNo]
+    .map((value) => value?.trim())
+    .filter((value): value is string => Boolean(value))
+  return targetUsers.some((targetUser) => userKeys.includes(targetUser.trim()))
+}
+
 async function playNotificationTone(audioContextRef: AudioContextRef) {
   try {
     const AudioContextCtor = resolveAudioContextConstructor()
@@ -194,8 +205,7 @@ export function NotificationCenter({
     if (msg.isArchived) return false
     if (!msg.targetGroups?.length && !msg.targetUsers?.length) return true
 
-    const isTargetUser = (msg.targetUsers || []).includes(user?.username || '')
-    return isTargetUser
+    return isTargetedToCurrentUser(msg.targetUsers, user)
   })
 
   const visibleUnreadCount = visibleMessages.filter((m) => !m.isRead).length

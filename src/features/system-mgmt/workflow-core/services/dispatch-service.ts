@@ -213,7 +213,7 @@ export const DispatchService = {
         addMessage({
           type: 'ORDER_EVENT',
           title: `[${node.title}] 待处理`,
-          content: `订单 ${order.orderNo} 的状态已变更�?${order.status}，请相关负责人及时处理。`,
+          content: `订单 ${order.orderNo} 的状态已变更为 ${order.status}，请相关负责人及时处理。`,
           priority: 'info',
           targetGroups: node.assigneeGroups,
           actionUrl: `/trading/sales-orders?search=${order.orderNo}&detailId=${order.id}`,
@@ -338,7 +338,7 @@ export const DispatchService = {
         processedApprovalKey,
         Array.from(processedApprovalIds)
       )
-      logger.info(`追溯扫描已创�?${approvalCount} 条审批申请`)
+      logger.info(`追溯扫描已创建 ${approvalCount} 条审批申请`)
     }
 
     return newCount

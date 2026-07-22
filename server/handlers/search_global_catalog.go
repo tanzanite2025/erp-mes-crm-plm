@@ -30,15 +30,6 @@ var globalSearchCategoryMetaCatalog = map[string]globalSearchCategoryMeta{
 	},
 }
 
-func normalizeGlobalSearchHref(href string) string {
-	switch href {
-	case "/system-management/routing":
-		return "/approval/routing"
-	default:
-		return href
-	}
-}
-
 func resolveGlobalSearchCategoryMeta(category string) globalSearchCategoryMeta {
 	meta, ok := globalSearchCategoryMetaCatalog[category]
 	if !ok {
@@ -48,6 +39,5 @@ func resolveGlobalSearchCategoryMeta(category string) globalSearchCategoryMeta {
 		}
 	}
 
-	meta.Href = normalizeGlobalSearchHref(meta.Href)
 	return meta
 }

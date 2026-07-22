@@ -13,8 +13,6 @@ export function SystemMgmt() {
         switch (tab.key) {
           case 'status':
             return { ...tab, label: t('systemManagement.layout.tabs.status') }
-          case 'routing':
-            return { ...tab, label: t('systemManagement.layout.tabs.routing') }
           case 'ai-capability':
             return {
               ...tab,

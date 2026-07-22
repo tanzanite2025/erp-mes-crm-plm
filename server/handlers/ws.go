@@ -255,7 +255,9 @@ func shouldDeliverNotification(client *Client, targetUser string) bool {
 	if permissionID, ok := parseNotificationPermissionTarget(targetUser); ok {
 		return clientHasPermission(client, permissionID)
 	}
-	return targetUser == client.UserID
+	normalizedTarget := strings.TrimSpace(targetUser)
+	return normalizedTarget == strings.TrimSpace(client.UserID) ||
+		normalizedTarget == strings.TrimSpace(client.Username)
 }
 
 func notificationTargetPermission(permissionID string) string {

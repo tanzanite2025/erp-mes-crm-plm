@@ -244,7 +244,7 @@ export function RuleExecutionLogTab({
             <RoutingQueryErrorState
               error={error}
               resourceLabel='执行日志'
-              endpoint='/system/routing/execution-logs'
+              endpoint='/message-center/execution-logs'
               protocolShape='`{ items, total, page, pageSize }`'
               retryLabel='重新加载执行日志'
               onRetry={() => void refetch()}

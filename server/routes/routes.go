@@ -306,27 +306,27 @@ func SetupRoutes(r *gin.Engine) {
 		authorized.POST("/enterprise/config", adminOnly, handlers.SaveEnterpriseConfigHandler)
 		authorized.POST("/enterprise/config/logo", adminOnly, handlers.UploadEnterpriseLogoHandler)
 
-		// --- 工作流引擎路由 (Workflow Routing) ---
-		routingGroup := authorized.Group("/system/routing")
+		// --- 消息中心路由 (Message Center Routing) ---
+		routingGroup := authorized.Group("/message-center")
 		{
-			routingGroup.GET("/event-source-phase-catalog", middleware.RequireAnyPermission(authz.MenuSystem), handlers.GetBusinessEventPhaseCatalogHandler)
-			routingGroup.GET("/event-sources", middleware.RequireAnyPermission(authz.MenuSystem), handlers.GetBusinessEventSourcesHandler)
+			routingGroup.GET("/event-source-phase-catalog", middleware.RequireAnyPermission(authz.MenuApproval), handlers.GetBusinessEventPhaseCatalogHandler)
+			routingGroup.GET("/event-sources", middleware.RequireAnyPermission(authz.MenuApproval), handlers.GetBusinessEventSourcesHandler)
 			routingGroup.POST("/event-sources", adminOnly, handlers.SaveBusinessEventSourceHandler)
 			routingGroup.POST("/event-sources/:id/status-rename-transaction", adminOnly, handlers.CommitBusinessEventStatusRenameTransactionHandler)
 			routingGroup.PUT("/event-sources/:id", adminOnly, handlers.UpdateBusinessEventSourceHandler)
 			routingGroup.DELETE("/event-sources/:id", adminOnly, handlers.DeleteBusinessEventSourceHandler)
 
-			routingGroup.GET("/commands", middleware.RequireAnyPermission(authz.MenuSystem), handlers.GetCommandsHandler)
+			routingGroup.GET("/commands", middleware.RequireAnyPermission(authz.MenuApproval), handlers.GetCommandsHandler)
 			routingGroup.POST("/commands", adminOnly, handlers.SaveCommandHandler)
 			routingGroup.PUT("/commands/:id", adminOnly, handlers.UpdateCommandHandler)
 			routingGroup.DELETE("/commands/:id", adminOnly, handlers.DeleteCommandHandler)
 
-			routingGroup.GET("/rules", middleware.RequireAnyPermission(authz.MenuSystem), handlers.GetRulesHandler)
+			routingGroup.GET("/rules", middleware.RequireAnyPermission(authz.MenuApproval), handlers.GetRulesHandler)
 			routingGroup.POST("/rules", adminOnly, handlers.SaveRuleHandler)
 			routingGroup.PUT("/rules/:id", adminOnly, handlers.UpdateRuleHandler)
 			routingGroup.DELETE("/rules/:id", adminOnly, handlers.DeleteRuleHandler)
 
-			routingGroup.GET("/execution-logs", middleware.RequireAnyPermission(authz.MenuSystem), handlers.GetRuleExecutionLogsHandler)
+			routingGroup.GET("/execution-logs", middleware.RequireAnyPermission(authz.MenuApproval), handlers.GetRuleExecutionLogsHandler)
 			routingGroup.POST("/execution-logs", handlers.SaveRuleExecutionLogHandler)
 		}
 

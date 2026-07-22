@@ -49,18 +49,18 @@ export interface BusinessEventStatusRenameTransactionResult {
 }
 
 /**
- * 路由与指令模板服务 - 统一对接后端
+ * 消息中心路由与通知内容模板服务 - 统一对接后端
  */
 export const RoutingService = {
   getEventSources: async (): Promise<BusinessEventSource[]> => {
-    const response = await apiFetch<unknown>('/system/routing/event-sources')
+    const response = await apiFetch<unknown>('/message-center/event-sources')
     return deserializeBusinessEventSources(response)
   },
 
   saveEventSource: async (
     source: BusinessEventSourceCreatePayload
   ): Promise<BusinessEventSource> => {
-    const response = await apiFetch<unknown>('/system/routing/event-sources', {
+    const response = await apiFetch<unknown>('/message-center/event-sources', {
       method: 'POST',
       body: JSON.stringify(serializeBusinessEventSourceCreate(source)),
     })
@@ -72,7 +72,7 @@ export const RoutingService = {
     updates: BusinessEventSourceUpdatePayload
   ): Promise<BusinessEventSource> => {
     const response = await apiFetch<unknown>(
-      `/system/routing/event-sources/${id}`,
+      `/message-center/event-sources/${id}`,
       {
         method: 'PUT',
         body: JSON.stringify(serializeBusinessEventSourceUpdate(updates)),
@@ -89,7 +89,7 @@ export const RoutingService = {
       eventSource: unknown
       rules: unknown
       summary: BusinessEventStatusRenameTransactionResult['summary']
-    }>(`/system/routing/event-sources/${id}/status-rename-transaction`, {
+    }>(`/message-center/event-sources/${id}/status-rename-transaction`, {
       method: 'POST',
       body: JSON.stringify({
         expectedUpdatedAt: payload.expectedUpdatedAt,
@@ -110,20 +110,20 @@ export const RoutingService = {
   },
 
   deleteEventSource: async (id: string): Promise<void> => {
-    return apiFetch(`/system/routing/event-sources/${id}`, {
+    return apiFetch(`/message-center/event-sources/${id}`, {
       method: 'DELETE',
     })
   },
 
   // --- 指令模板 (Commands) ---
   getCommands: async (): Promise<StandardCommand[]> => {
-    return apiFetch<StandardCommand[]>('/system/routing/commands')
+    return apiFetch<StandardCommand[]>('/message-center/commands')
   },
 
   saveCommand: async (
     command: Partial<StandardCommand>
   ): Promise<StandardCommand> => {
-    return apiFetch<StandardCommand>('/system/routing/commands', {
+    return apiFetch<StandardCommand>('/message-center/commands', {
       method: 'POST',
       body: JSON.stringify(command),
     })
@@ -133,14 +133,14 @@ export const RoutingService = {
     id: string,
     updates: Partial<StandardCommand>
   ): Promise<StandardCommand> => {
-    return apiFetch<StandardCommand>(`/system/routing/commands/${id}`, {
+    return apiFetch<StandardCommand>(`/message-center/commands/${id}`, {
       method: 'PUT',
       body: JSON.stringify(updates),
     })
   },
 
   deleteCommand: async (id: string): Promise<void> => {
-    return apiFetch(`/system/routing/commands/${id}`, {
+    return apiFetch(`/message-center/commands/${id}`, {
       method: 'DELETE',
     })
   },
@@ -151,7 +151,7 @@ export const RoutingService = {
     delta: DeltaSet,
     version: number
   ): Promise<StandardCommand> => {
-    return apiFetch<StandardCommand>(`/system/routing/commands/${id}`, {
+    return apiFetch<StandardCommand>(`/message-center/commands/${id}`, {
       method: 'PATCH',
       body: JSON.stringify({ op: 'PATCH', delta, metadata: { id, version } }),
     })
@@ -159,14 +159,14 @@ export const RoutingService = {
 
   // --- 通知规则 (Rules) ---
   getRules: async (): Promise<NotificationRule[]> => {
-    const response = await apiFetch<unknown>('/system/routing/rules')
+    const response = await apiFetch<unknown>('/message-center/rules')
     return deserializeNotificationRules(response)
   },
 
   saveRule: async (
     rule: NotificationRuleWritePayload
   ): Promise<NotificationRule> => {
-    const response = await apiFetch<unknown>('/system/routing/rules', {
+    const response = await apiFetch<unknown>('/message-center/rules', {
       method: 'POST',
       body: JSON.stringify(serializeNotificationRule(rule)),
     })
@@ -177,7 +177,7 @@ export const RoutingService = {
     id: string,
     updates: NotificationRuleWritePayload
   ): Promise<NotificationRule> => {
-    const response = await apiFetch<unknown>(`/system/routing/rules/${id}`, {
+    const response = await apiFetch<unknown>(`/message-center/rules/${id}`, {
       method: 'PUT',
       body: JSON.stringify(serializeNotificationRule(updates)),
     })
@@ -185,7 +185,7 @@ export const RoutingService = {
   },
 
   deleteRule: async (id: string): Promise<void> => {
-    return apiFetch(`/system/routing/rules/${id}`, {
+    return apiFetch(`/message-center/rules/${id}`, {
       method: 'DELETE',
     })
   },
@@ -196,7 +196,7 @@ export const RoutingService = {
     delta: DeltaSet,
     version: number
   ): Promise<NotificationRule> => {
-    return apiFetch<NotificationRule>(`/system/routing/rules/${id}`, {
+    return apiFetch<NotificationRule>(`/message-center/rules/${id}`, {
       method: 'PATCH',
       body: JSON.stringify({ op: 'PATCH', delta, metadata: { id, version } }),
     })
@@ -224,7 +224,7 @@ export const RoutingService = {
     })
     const suffix = params.toString() ? `?${params.toString()}` : ''
     const response = await apiFetch<unknown>(
-      `/system/routing/execution-logs${suffix}`
+      `/message-center/execution-logs${suffix}`
     )
     return deserializeRuleExecutionLogPage(response)
   },
@@ -232,7 +232,7 @@ export const RoutingService = {
   recordExecutionLog: async (
     payload: RuleExecutionLogWritePayload
   ): Promise<RuleExecutionLog> => {
-    const response = await apiFetch<unknown>('/system/routing/execution-logs', {
+    const response = await apiFetch<unknown>('/message-center/execution-logs', {
       method: 'POST',
       body: JSON.stringify(serializeRuleExecutionLog(payload)),
     })

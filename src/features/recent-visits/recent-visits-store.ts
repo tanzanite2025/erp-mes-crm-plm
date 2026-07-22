@@ -26,8 +26,6 @@ const RECENT_VISIT_INTERNAL_UTILITY_EXACT_PATHS = [
 ] as const
 
 const RECENT_VISIT_REDIRECT_ONLY_EXACT_PATHS = [
-  '/approval/routing',
-  '/system-management/routing',
   '/quotes/wholesale',
   '/quotes/retail',
   '/trading/quotes',

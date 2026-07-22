@@ -40,10 +40,6 @@ export function routeFilePathToRoutePath(authenticatedRoutesDir, filePath) {
     return null
   }
 
-  if (relativeWithoutExt === 'system-management/logistics-api') {
-    return null
-  }
-
   const fileParts = relativeWithoutExt.split('/').filter(Boolean)
   const basename = fileParts[fileParts.length - 1]
   if (basename === 'route') {

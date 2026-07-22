@@ -34,6 +34,7 @@ var allowedBusinessEventEntities = map[string]struct{}{
 	"BOM":     {},
 	"PRODUCT": {},
 	"MOLD":    {},
+	"QUALITY": {},
 	"SYSTEM":  {},
 }
 
