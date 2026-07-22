@@ -13,12 +13,14 @@ interface PurchaseOrderNoteSectionProps {
     field: keyof PurchaseOrder,
     value: PurchaseOrderFieldValue
   ) => void
+  className?: string
   variant?: 'card' | 'field'
 }
 
 export function PurchaseOrderNoteSection({
   note,
   handleHeaderChange,
+  className,
   variant = 'card',
 }: PurchaseOrderNoteSectionProps) {
   const { t } = useLanguage()
@@ -30,7 +32,8 @@ export function PurchaseOrderNoteSection({
         'space-y-1.5',
         isField
           ? ''
-          : 'rounded-[32px] border border-dashed border-muted-foreground/20 bg-muted/5 p-5'
+          : 'rounded-[32px] border border-dashed border-muted-foreground/20 bg-muted/5 p-5',
+        className
       )}
     >
       <Label className='pl-1 text-[10px] font-black tracking-[0.2em] text-muted-foreground/50 uppercase'>

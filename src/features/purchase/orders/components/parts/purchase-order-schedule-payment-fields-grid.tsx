@@ -39,8 +39,8 @@ export function PurchaseOrderSchedulePaymentFieldsGrid({
   const { t } = useLanguage()
 
   return (
-    <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-[repeat(3,minmax(0,1fr))_minmax(0,3fr)]'>
-      <div className='space-y-1.5'>
+    <div className='grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-[repeat(3,minmax(0,1fr))_minmax(0,3fr)]'>
+      <div className='min-w-0 space-y-1.5'>
         <Label className='pl-1 text-[10px] font-black tracking-[0.2em] text-muted-foreground/50 uppercase'>
           {t('purchase.orders.headerFields.paymentMethod')}
         </Label>
@@ -53,11 +53,11 @@ export function PurchaseOrderSchedulePaymentFieldsGrid({
           onValueChange={handlePaymentMethodChange}
           isPending={isFinanceLoading}
           disabled={!isFinanceReady}
-          className='h-10 rounded-2xl bg-background font-bold'
+          className='h-10 w-full min-w-0 rounded-2xl bg-background font-bold'
         />
       </div>
 
-      <div className='space-y-1.5'>
+      <div className='min-w-0 space-y-1.5'>
         <Label className='pl-1 text-[10px] font-black tracking-[0.2em] text-muted-foreground/50 uppercase'>
           {t('purchase.orders.headerFields.paymentTerm')}
         </Label>
@@ -68,11 +68,11 @@ export function PurchaseOrderSchedulePaymentFieldsGrid({
           onValueChange={handlePaymentTermChange}
           isPending={isFinanceLoading}
           disabled={!isFinanceReady}
-          className='h-10 rounded-2xl bg-background font-bold'
+          className='h-10 w-full min-w-0 rounded-2xl bg-background font-bold'
         />
       </div>
 
-      <div className='space-y-1.5'>
+      <div className='col-span-2 min-w-0 space-y-1.5 sm:col-span-1'>
         <Label className='pl-1 text-[10px] font-black tracking-[0.2em] text-muted-foreground/50 uppercase'>
           {t('purchase.orders.headerFields.purchaser')}
         </Label>
@@ -86,6 +86,7 @@ export function PurchaseOrderSchedulePaymentFieldsGrid({
       <PurchaseOrderNoteSection
         note={formData.note}
         handleHeaderChange={handleHeaderChange}
+        className='col-span-2 lg:col-span-1'
         variant='field'
       />
     </div>
