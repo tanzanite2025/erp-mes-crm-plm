@@ -3,18 +3,20 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import type { UserOption } from '@/features/users/data/schema'
-import { buildSidebarCommandAssignmentPreview } from '../data/assignment-preview'
-import { toPresentedSidebarCommand } from '../data/command-presentation'
 import {
   batchAssignSidebarCommands,
   copySidebarCommandAssignment,
-  fetchAssignableSidebarCommands,
-  fetchSidebarCommandCategories,
   fetchSidebarCommandUsers,
   fetchUserSidebarCommandAssignment,
   replaceUserSidebarCommandAssignment,
-  type BatchSidebarCommandMode,
-} from '../services'
+} from '../api/assignment-api'
+import {
+  fetchAssignableSidebarCommands,
+  fetchSidebarCommandCategories,
+} from '../api/library-api'
+import type { BatchSidebarCommandMode } from '../api/shared'
+import { buildSidebarCommandAssignmentPreview } from '../data/assignment-preview'
+import { toPresentedSidebarCommand } from '../data/command-presentation'
 import type { PresentedSidebarCommand, SidebarCommandAccount } from '../types'
 
 function toSidebarCommandAccount(user: UserOption): SidebarCommandAccount {

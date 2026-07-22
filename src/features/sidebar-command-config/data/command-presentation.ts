@@ -1,4 +1,4 @@
-import type { SidebarCommandDefinitionDto } from '../services'
+import type { SidebarCommandDefinitionDto } from '../api/shared'
 import type { PresentedSidebarCommand } from '../types'
 
 export function toPresentedSidebarCommand(

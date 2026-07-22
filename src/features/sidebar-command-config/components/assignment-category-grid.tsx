@@ -2,7 +2,7 @@ import { FolderTree } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { Checkbox } from '@/components/ui/checkbox'
-import type { SidebarCommandCategoryDto } from '../services'
+import type { SidebarCommandCategoryDto } from '../api/shared'
 
 type AssignmentCategoryGridProps = {
   categories: SidebarCommandCategoryDto[]

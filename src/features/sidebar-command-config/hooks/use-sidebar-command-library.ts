@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
-import { sidebarCommandMatchesSearch } from '../data/command-presentation'
 import {
   createSidebarCommandCategory,
   createSidebarCommandDefinition,
@@ -13,11 +12,14 @@ import {
   setSidebarCommandDefinitionEnabled,
   updateSidebarCommandCategory,
   updateSidebarCommandDefinition,
-  type SaveSidebarCommandCategoryPayload,
-  type SaveSidebarCommandDefinitionPayload,
-  type SidebarCommandCategoryDto,
-  type SidebarCommandDefinitionDto,
-} from '../services'
+} from '../api/library-api'
+import type {
+  SaveSidebarCommandCategoryPayload,
+  SaveSidebarCommandDefinitionPayload,
+  SidebarCommandCategoryDto,
+  SidebarCommandDefinitionDto,
+} from '../api/shared'
+import { sidebarCommandMatchesSearch } from '../data/command-presentation'
 
 export function useSidebarCommandLibraryViewModel() {
   const { t } = useLanguage()

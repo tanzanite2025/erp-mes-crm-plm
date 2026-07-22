@@ -1,7 +1,7 @@
 import { CheckCircle2, Copy, UsersRound } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
-import type { BatchSidebarCommandMode } from '../services'
+import type { BatchSidebarCommandMode } from '../api/shared'
 
 type AssignmentBatchPanelProps = {
   batchMode: BatchSidebarCommandMode

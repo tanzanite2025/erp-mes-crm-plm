@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import type { SidebarCommandCategoryDto } from '../services'
+import type { SidebarCommandCategoryDto } from '../api/shared'
 
 type CommandCategoryCardProps = {
   category: SidebarCommandCategoryDto

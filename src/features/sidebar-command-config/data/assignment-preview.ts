@@ -1,4 +1,4 @@
-import type { SidebarCommandCategoryDto } from '../services'
+import type { SidebarCommandCategoryDto } from '../api/shared'
 import type { PresentedSidebarCommand } from '../types'
 
 export type AssignmentPreviewCommand = PresentedSidebarCommand & {

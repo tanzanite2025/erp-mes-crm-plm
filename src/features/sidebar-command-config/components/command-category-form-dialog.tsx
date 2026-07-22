@@ -24,7 +24,7 @@ import { Textarea } from '@/components/ui/textarea'
 import type {
   SaveSidebarCommandCategoryPayload,
   SidebarCommandCategoryDto,
-} from '../services'
+} from '../api/shared'
 
 type CommandCategoryFormDialogProps = {
   open: boolean

@@ -26,7 +26,7 @@ import type {
   SaveSidebarCommandDefinitionPayload,
   SidebarCommandCategoryDto,
   SidebarCommandDefinitionDto,
-} from '../services'
+} from '../api/shared'
 
 type CommandLibraryFormDialogProps = {
   open: boolean
