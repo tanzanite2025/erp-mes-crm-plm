@@ -49,8 +49,8 @@ export function WorkspaceNoteCard({
         <p
           className={
             isCompactLayout
-              ? 'whitespace-pre-wrap text-xs leading-5 text-foreground/80'
-              : 'whitespace-pre-wrap text-sm leading-6 text-foreground/80'
+              ? 'text-xs leading-5 whitespace-pre-wrap text-foreground/80'
+              : 'text-sm leading-6 whitespace-pre-wrap text-foreground/80'
           }
         >
           {item.content || '这张便签还没有内容。'}

@@ -21,9 +21,9 @@ function isPersonalWorkbenchBottomDrawerInteractiveElement(
 ) {
   return Boolean(
     target instanceof HTMLElement &&
-      target.closest(
-        'button, a, input, textarea, select, option, [role="button"], [contenteditable="true"]'
-      )
+    target.closest(
+      'button, a, input, textarea, select, option, [role="button"], [contenteditable="true"]'
+    )
   )
 }
 
@@ -116,7 +116,8 @@ export function PersonalWorkbenchBottomDrawer() {
       const clientYDelta = dragSession.startClientY - event.clientY
       if (
         !dragSession.hasExceededActivationDistance &&
-        Math.abs(clientYDelta) < PERSONAL_WORKBENCH_BOTTOM_DRAWER_DRAG_ACTIVATION_DISTANCE_PX
+        Math.abs(clientYDelta) <
+          PERSONAL_WORKBENCH_BOTTOM_DRAWER_DRAG_ACTIVATION_DISTANCE_PX
       ) {
         return
       }
@@ -164,7 +165,7 @@ export function PersonalWorkbenchBottomDrawer() {
       style={personalWorkbenchBottomDrawerPanelStyle}
     >
       <div
-        className='relative shrink-0 cursor-row-resize border-b border-border/70 bg-gradient-to-b from-sky-500/12 via-background/98 to-background/100 px-3 py-2 touch-none md:px-5'
+        className='relative shrink-0 cursor-row-resize touch-none border-b border-border/70 bg-gradient-to-b from-sky-500/12 via-background/98 to-background/100 px-3 py-2 md:px-5'
         onPointerDown={startPersonalWorkbenchBottomDrawerHeightDrag}
         onPointerMove={continuePersonalWorkbenchBottomDrawerHeightDrag}
         onPointerUp={stopPersonalWorkbenchBottomDrawerHeightDrag}
@@ -182,11 +183,11 @@ export function PersonalWorkbenchBottomDrawer() {
             <div className='min-w-0'>
               <p
                 id='personal-workbench-bottom-drawer-title'
-                className='truncate whitespace-nowrap text-sm font-black leading-none tracking-tight text-foreground italic'
+                className='truncate text-sm leading-none font-black tracking-tight whitespace-nowrap text-foreground italic'
               >
                 个人记录
               </p>
-              <p className='truncate whitespace-nowrap text-[10px] font-semibold leading-none tracking-[0.08em] text-muted-foreground/70'>
+              <p className='truncate text-[10px] leading-none font-semibold tracking-[0.08em] whitespace-nowrap text-muted-foreground/70'>
                 记录、备注和收纳内容
               </p>
             </div>

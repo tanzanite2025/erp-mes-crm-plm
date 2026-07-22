@@ -47,21 +47,29 @@ export function WorkspaceLinkCard({
       </CardHeader>
       <CardContent
         className={
-          isCompactLayout
-            ? 'space-y-2 px-4 pb-0'
-            : 'space-y-3 px-5 pb-0'
+          isCompactLayout ? 'space-y-2 px-4 pb-0' : 'space-y-3 px-5 pb-0'
         }
       >
         <a
           href={item.url}
           target='_blank'
           rel='noreferrer'
-          className='flex items-center gap-2 break-all text-sm font-medium text-primary underline-offset-4 hover:underline'
+          className='flex items-center gap-2 text-sm font-medium break-all text-primary underline-offset-4 hover:underline'
         >
-          <ExternalLink className={isCompactLayout ? 'size-3.5 shrink-0' : 'size-4 shrink-0'} />
+          <ExternalLink
+            className={
+              isCompactLayout ? 'size-3.5 shrink-0' : 'size-4 shrink-0'
+            }
+          />
           {item.url}
         </a>
-        <p className={isCompactLayout ? 'text-xs leading-5 text-muted-foreground' : 'text-sm leading-6 text-muted-foreground'}>
+        <p
+          className={
+            isCompactLayout
+              ? 'text-xs leading-5 text-muted-foreground'
+              : 'text-sm leading-6 text-muted-foreground'
+          }
+        >
           {item.remark || '这条链接还没有备注。'}
         </p>
       </CardContent>

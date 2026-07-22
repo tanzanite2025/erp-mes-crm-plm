@@ -73,7 +73,9 @@ export function PersonalWorkbenchCard({
           type='button'
           variant='ghost'
           size='icon'
-          className={isCompactLayout ? 'size-7 rounded-xl' : 'size-8 rounded-xl'}
+          className={
+            isCompactLayout ? 'size-7 rounded-xl' : 'size-8 rounded-xl'
+          }
           onClick={() => onEdit(record)}
         >
           <PencilLine className={isCompactLayout ? 'size-3.5' : 'size-4'} />

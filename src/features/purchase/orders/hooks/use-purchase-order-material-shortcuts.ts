@@ -11,8 +11,9 @@ import { MaterialMaintenanceService } from '@/features/material-archive/services
 import { type PurchaseOrderLine } from '../data/schema'
 
 const MATERIAL_ARCHIVE_PATH = '/materials'
-const MATERIAL_ARCHIVE_MENU_PERMISSION_ID =
-  getMenuPermissionForPath(MATERIAL_ARCHIVE_PATH)
+const MATERIAL_ARCHIVE_MENU_PERMISSION_ID = getMenuPermissionForPath(
+  MATERIAL_ARCHIVE_PATH
+)
 const MATERIAL_ARCHIVE_WRITE_PERMISSION_ID = 'action_material_update'
 
 type UpdatePurchaseLine = (
@@ -50,9 +51,12 @@ export function usePurchaseOrderMaterialShortcuts({
   const [materialCreateTargetLineIndex, setMaterialCreateTargetLineIndex] =
     useState<number | null>(null)
 
-  const canMaintainMaterials = allowsAction(MATERIAL_ARCHIVE_WRITE_PERMISSION_ID)
+  const canMaintainMaterials = allowsAction(
+    MATERIAL_ARCHIVE_WRITE_PERMISSION_ID
+  )
   const canOpenMaterialArchive =
-    canMaintainMaterials || allowsPermission(MATERIAL_ARCHIVE_MENU_PERMISSION_ID)
+    canMaintainMaterials ||
+    allowsPermission(MATERIAL_ARCHIVE_MENU_PERMISSION_ID)
 
   const openMaterialArchive = useCallback(() => {
     if (!canOpenMaterialArchive) return
@@ -98,7 +102,10 @@ export function usePurchaseOrderMaterialShortcuts({
       ])
 
       if (materialCreateTargetLineIndex !== null) {
-        fillPurchaseLineWithMaterial(savedMaterial, materialCreateTargetLineIndex)
+        fillPurchaseLineWithMaterial(
+          savedMaterial,
+          materialCreateTargetLineIndex
+        )
       }
       toast.success(t('purchase.orders.linesEditor.materialCreatedAndSelected'))
     },

@@ -194,7 +194,8 @@ export const orders = {
     addLine: 'Add Line',
     createMaterial: 'Register Material',
     openMaterialArchive: 'Open Material Archive',
-    materialPermissionRequired: 'Material archive maintenance permission is required',
+    materialPermissionRequired:
+      'Material archive maintenance permission is required',
     materialCreatedAndSelected:
       'Material archive saved and filled into the purchase line',
     materialName: 'Material',
