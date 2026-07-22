@@ -6,13 +6,26 @@ import {
   useState,
   type PointerEvent,
 } from 'react'
-import { GripHorizontal, NotebookPen, X } from 'lucide-react'
+import { NotebookPen, X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { usePersonalWorkbenchBottomDrawerStore } from '../hooks/use-personal-workbench-bottom-drawer-store'
 import { PersonalWorkbenchBottomDrawerRecordsAndWorkspaceContent } from './personal-workbench-bottom-drawer-records-and-workspace-content'
+
+const PERSONAL_WORKBENCH_BOTTOM_DRAWER_DRAG_ACTIVATION_DISTANCE_PX = 6
+
+function isPersonalWorkbenchBottomDrawerInteractiveElement(
+  target: EventTarget | null
+) {
+  return Boolean(
+    target instanceof HTMLElement &&
+      target.closest(
+        'button, a, input, textarea, select, option, [role="button"], [contenteditable="true"]'
+      )
+  )
+}
 
 export function PersonalWorkbenchBottomDrawer() {
   const isOpen = usePersonalWorkbenchBottomDrawerStore((state) => state.isOpen)
@@ -36,6 +49,7 @@ export function PersonalWorkbenchBottomDrawer() {
     pointerId: number
     startClientY: number
     startHeightVh: number
+    hasExceededActivationDistance: boolean
   } | null>(null)
   const closePersonalWorkbenchBottomDrawerAndResetDragState =
     useCallback(() => {
@@ -62,13 +76,21 @@ export function PersonalWorkbenchBottomDrawer() {
   }, [closePersonalWorkbenchBottomDrawerAndResetDragState, isOpen])
 
   const startPersonalWorkbenchBottomDrawerHeightDrag = useCallback(
-    (event: PointerEvent<HTMLButtonElement>) => {
+    (event: PointerEvent<HTMLElement>) => {
+      if (
+        event.button !== 0 ||
+        isPersonalWorkbenchBottomDrawerInteractiveElement(event.target)
+      ) {
+        return
+      }
+
       event.preventDefault()
       event.stopPropagation()
       personalWorkbenchBottomDrawerDragSessionRef.current = {
         pointerId: event.pointerId,
         startClientY: event.clientY,
         startHeightVh: personalWorkbenchBottomDrawerHeightVh,
+        hasExceededActivationDistance: false,
       }
       setIsPersonalWorkbenchBottomDrawerHeightBeingDragged(true)
       event.currentTarget.setPointerCapture(event.pointerId)
@@ -77,7 +99,7 @@ export function PersonalWorkbenchBottomDrawer() {
   )
 
   const continuePersonalWorkbenchBottomDrawerHeightDrag = useCallback(
-    (event: PointerEvent<HTMLButtonElement>) => {
+    (event: PointerEvent<HTMLElement>) => {
       const dragSession = personalWorkbenchBottomDrawerDragSessionRef.current
       if (!isPersonalWorkbenchBottomDrawerHeightBeingDragged || !dragSession) {
         return
@@ -91,9 +113,17 @@ export function PersonalWorkbenchBottomDrawer() {
         return
       }
 
+      const clientYDelta = dragSession.startClientY - event.clientY
+      if (
+        !dragSession.hasExceededActivationDistance &&
+        Math.abs(clientYDelta) < PERSONAL_WORKBENCH_BOTTOM_DRAWER_DRAG_ACTIVATION_DISTANCE_PX
+      ) {
+        return
+      }
+
+      dragSession.hasExceededActivationDistance = true
       const nextHeightVh =
-        dragSession.startHeightVh +
-        ((dragSession.startClientY - event.clientY) / window.innerHeight) * 100
+        dragSession.startHeightVh + (clientYDelta / window.innerHeight) * 100
       setPersonalWorkbenchBottomDrawerHeightVh(nextHeightVh)
     },
     [
@@ -103,7 +133,7 @@ export function PersonalWorkbenchBottomDrawer() {
   )
 
   const stopPersonalWorkbenchBottomDrawerHeightDrag = useCallback(
-    (event: PointerEvent<HTMLButtonElement>) => {
+    (event: PointerEvent<HTMLElement>) => {
       setIsPersonalWorkbenchBottomDrawerHeightBeingDragged(false)
       personalWorkbenchBottomDrawerDragSessionRef.current = null
       if (event.currentTarget.hasPointerCapture(event.pointerId)) {
@@ -133,40 +163,30 @@ export function PersonalWorkbenchBottomDrawer() {
       role='dialog'
       style={personalWorkbenchBottomDrawerPanelStyle}
     >
-      <div className='relative shrink-0 border-b border-border/70 bg-gradient-to-b from-primary/10 via-background/98 to-background/100 px-3 py-2 md:px-5'>
+      <div
+        className='relative shrink-0 cursor-row-resize border-b border-border/70 bg-gradient-to-b from-sky-500/12 via-background/98 to-background/100 px-3 py-2 touch-none md:px-5'
+        onPointerDown={startPersonalWorkbenchBottomDrawerHeightDrag}
+        onPointerMove={continuePersonalWorkbenchBottomDrawerHeightDrag}
+        onPointerUp={stopPersonalWorkbenchBottomDrawerHeightDrag}
+        onPointerCancel={stopPersonalWorkbenchBottomDrawerHeightDrag}
+        onLostPointerCapture={stopPersonalWorkbenchBottomDrawerHeightDrag}
+      >
         <div
           aria-hidden='true'
-          className='pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-transparent via-primary/40 to-transparent'
+          className='pointer-events-none absolute inset-x-3 top-0 h-1.5 rounded-full bg-gradient-to-r from-amber-500 via-sky-500 to-cyan-500 shadow-[0_0_0_1px_rgba(255,255,255,0.35)]'
         />
 
-        <div className='flex min-h-9 items-center gap-3'>
-          <button
-            type='button'
-            aria-label='拖拽调整个人记录抽屉高度'
-            className='group relative -ml-1 flex h-8 w-24 shrink-0 cursor-row-resize touch-none items-center justify-center rounded-full text-muted-foreground transition-colors select-none hover:bg-primary/10 hover:text-foreground'
-            onPointerDown={startPersonalWorkbenchBottomDrawerHeightDrag}
-            onPointerMove={continuePersonalWorkbenchBottomDrawerHeightDrag}
-            onPointerUp={stopPersonalWorkbenchBottomDrawerHeightDrag}
-            onPointerCancel={stopPersonalWorkbenchBottomDrawerHeightDrag}
-            onLostPointerCapture={stopPersonalWorkbenchBottomDrawerHeightDrag}
-          >
-            <span
-              aria-hidden='true'
-              className='h-1.5 w-14 rounded-full bg-muted-foreground/25 transition-colors group-hover:bg-primary/45'
-            />
-            <GripHorizontal className='absolute size-4 opacity-90' />
-          </button>
-
+        <div className='flex min-h-9 items-center gap-2.5'>
           <div className='flex min-w-0 flex-1 items-center gap-2.5'>
-            <NotebookPen className='size-4 shrink-0 text-primary' />
+            <NotebookPen className='size-4 shrink-0 text-sky-500' />
             <div className='min-w-0'>
               <p
                 id='personal-workbench-bottom-drawer-title'
-                className='truncate text-sm font-black tracking-tight text-foreground italic'
+                className='truncate whitespace-nowrap text-sm font-black leading-none tracking-tight text-foreground italic'
               >
                 个人记录
               </p>
-              <p className='truncate text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+              <p className='truncate whitespace-nowrap text-[10px] font-semibold leading-none tracking-[0.08em] text-muted-foreground/70'>
                 记录、备注和收纳内容
               </p>
             </div>
