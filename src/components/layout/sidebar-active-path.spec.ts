@@ -56,6 +56,24 @@ const navGroups: NavGroup[] = [
       },
     ],
   },
+  {
+    id: 'system-management-root',
+    title: 'System Management',
+    children: [
+      {
+        id: 'quick-actions-group',
+        title: 'Quick Actions',
+        children: [
+          {
+            id: 'sidebar-command-config',
+            title: 'Quick Action Command Config',
+            url: '/sidebar-command/library',
+            activeMatch: '/sidebar-command',
+          },
+        ],
+      },
+    ],
+  },
 ]
 
 describe('resolveActiveSidebarPath', () => {
@@ -91,6 +109,16 @@ describe('resolveActiveSidebarPath', () => {
       groupId: 'org',
       nodeIds: ['org-personnel', 'attendance-management'],
       key: 'org/org-personnel/attendance-management',
+    })
+  })
+
+  it('keeps command assignment under the quick action configuration domain', () => {
+    expect(
+      resolveActiveSidebarPath(navGroups, '/sidebar-command/assignment')
+    ).toEqual({
+      groupId: 'system-management-root',
+      nodeIds: ['quick-actions-group', 'sidebar-command-config'],
+      key: 'system-management-root/quick-actions-group/sidebar-command-config',
     })
   })
 })

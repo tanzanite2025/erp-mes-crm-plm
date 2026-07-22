@@ -37,4 +37,20 @@ describe('sidebar nav active matching', () => {
       checkIsActive('/attendance-management/hall-of-fame', attendanceItem)
     ).toBe(true)
   })
+
+  it('keeps quick action command tabs under the same sidebar domain', () => {
+    const commandConfigItem: NavLink = {
+      id: 'sidebar-command-config',
+      title: 'Quick Action Command Config',
+      url: '/sidebar-command/library',
+      activeMatch: '/sidebar-command',
+    }
+
+    expect(checkIsActive('/sidebar-command/library', commandConfigItem)).toBe(
+      true
+    )
+    expect(
+      checkIsActive('/sidebar-command/assignment', commandConfigItem)
+    ).toBe(true)
+  })
 })

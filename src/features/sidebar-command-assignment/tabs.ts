@@ -8,12 +8,12 @@ export function getSidebarCommandTabs(t: Translate): TabItem[] {
     {
       key: 'sidebar-command-library',
       label: t('sidebarCommandAssignment.tabs.library'),
-      href: '/sidebar-command-library',
+      href: '/sidebar-command/library',
     },
     {
       key: 'sidebar-command-assignment',
       label: t('sidebarCommandAssignment.tabs.assignment'),
-      href: '/sidebar-command-assignment',
+      href: '/sidebar-command/assignment',
     },
   ]
 }

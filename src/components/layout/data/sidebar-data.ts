@@ -571,11 +571,12 @@ const navGroupConfigs: SidebarGroupConfig[] = [
         icon: ListChecks,
         children: [
           {
-            id: 'sidebar-command-assignment',
+            id: 'sidebar-command-config',
             titleKey: 'sidebar.items.sidebarCommandAssignment',
-            url: '/sidebar-command-library',
+            url: '/sidebar-command/library',
+            activeMatch: '/sidebar-command',
             icon: ListChecks,
-            permissionId: permissionIdForPath('/sidebar-command-library'),
+            permissionId: permissionIdForPath('/sidebar-command/library'),
           },
         ],
       },
