@@ -26,7 +26,8 @@ export const logisticsConfig = {
     emptyTitle: '暂无车型规格',
     emptyDescription: '车型规格接口已返回空列表，请先确认后端车型目录数据。',
     noSearchResults: '没有匹配车型',
-    noSearchResultsDescription: '当前搜索条件没有命中车型名称、编码、类别或备注。',
+    noSearchResultsDescription:
+      '当前搜索条件没有命中车型名称、编码、类别或备注。',
     retry: '重新加载',
     physicalSize: '物理车厢尺寸',
     usableSize: '可用装载空间',

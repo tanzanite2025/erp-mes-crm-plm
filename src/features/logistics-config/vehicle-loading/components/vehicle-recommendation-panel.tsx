@@ -1,11 +1,9 @@
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import type { VehicleSpec } from '../../vehicle-specs/data/vehicle-specs.types'
 import { VehiclePhotoTriggerButton } from '../../vehicle-specs/components/vehicle-photo-trigger-button'
-import type {
-  VehicleRecommendation,
-} from '../data/vehicle-loading.types'
+import type { VehicleSpec } from '../../vehicle-specs/data/vehicle-specs.types'
+import type { VehicleRecommendation } from '../data/vehicle-loading.types'
 import { VehicleEmptyState } from './vehicle-empty-state'
 
 type Props = {

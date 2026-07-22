@@ -1,11 +1,11 @@
 import { Card } from '@/components/ui/card'
 import { VehiclePhotoTriggerButton } from '../../vehicle-specs/components/vehicle-photo-trigger-button'
 import { VehiclePhotoUploadPanel } from '../../vehicle-specs/components/vehicle-photo-upload-panel'
-import type { VehicleSpec } from '../../vehicle-specs/data/vehicle-specs.types'
 import { VehicleSpecCardHeader } from '../../vehicle-specs/components/vehicle-spec-card-header'
 import { VehicleSpecCardMetrics } from '../../vehicle-specs/components/vehicle-spec-card-metrics'
 import { VehicleSpecCardNotes } from '../../vehicle-specs/components/vehicle-spec-card-notes'
 import { VehicleSpecCardRules } from '../../vehicle-specs/components/vehicle-spec-card-rules'
+import type { VehicleSpec } from '../../vehicle-specs/data/vehicle-specs.types'
 
 type Props = {
   spec: VehicleSpec

@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useLanguage } from '@/context/language-provider'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
-import type { VehicleSpec } from '../data/vehicle-specs.types'
 import {
   type VehiclePhotoAnnotation,
   type VehiclePhotoEntry,
@@ -9,6 +8,7 @@ import {
   type VehiclePhotoViewType,
 } from '../data/vehicle-photo-manifest'
 import { getVehiclePhotoViewTypeLabel } from '../data/vehicle-photo-view-type-label'
+import type { VehicleSpec } from '../data/vehicle-specs.types'
 import { VehiclePhotoDialogFooter } from './vehicle-photo-dialog-footer'
 import { VehiclePhotoDialogHeader } from './vehicle-photo-dialog-header'
 import { VehiclePhotoDialogPreview } from './vehicle-photo-dialog-preview'

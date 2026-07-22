@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { ConfigErrorPanel } from '@/features/logistics-config/vehicle-loading/components/config-error-panel'
 import { VehiclePhotoDialog } from '@/features/logistics-config/vehicle-specs/components/vehicle-photo-dialog'
 import { VehicleSpecSummaryCard } from '@/features/logistics-config/vehicle-specs/components/vehicle-spec-summary-card'
 import {
@@ -21,7 +22,6 @@ import {
 import { filterVehicleSpecsByKeyword } from '@/features/logistics-config/vehicle-specs/data/vehicle-specs-search'
 import { useVehiclePhotoDialogState } from '@/features/logistics-config/vehicle-specs/hooks/use-vehicle-photo-dialog-state'
 import { useVehicleSpecsQuery } from '@/features/logistics-config/vehicle-specs/hooks/use-vehicle-specs-query'
-import { ConfigErrorPanel } from '@/features/logistics-config/vehicle-loading/components/config-error-panel'
 
 const VEHICLE_SPECS_LIBRARY_PATH = '/logistics-config/vehicle-specs-library'
 

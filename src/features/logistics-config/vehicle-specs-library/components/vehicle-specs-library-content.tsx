@@ -1,6 +1,6 @@
 import type { VehicleSpec } from '../../vehicle-specs/data/vehicle-specs.types'
-import { VehicleSpecsLibraryEmptyState } from './vehicle-specs-library-state'
 import { VehicleSpecMaintenanceCard } from './vehicle-spec-maintenance-card'
+import { VehicleSpecsLibraryEmptyState } from './vehicle-specs-library-state'
 
 type Props = {
   vehicleSpecs: VehicleSpec[]
