@@ -71,6 +71,7 @@ jobs:
           tags: |
             type=raw,value=master
             type=sha,prefix=sha-
+            type=sha,prefix=sha-,format=long
 
       - name: Build and push image
         uses: docker/build-push-action@v6
