@@ -18,9 +18,10 @@ export function ProfileDropdown() {
   const { t } = useLanguage()
   const user = useAuthStore((state) => state.user)
   const [open, setOpen] = useDialogState()
-  const openPersonalWorkbenchBottomDrawer = usePersonalWorkbenchBottomDrawerStore(
-    (state) => state.openPersonalWorkbenchBottomDrawer
-  )
+  const openPersonalWorkbenchBottomDrawer =
+    usePersonalWorkbenchBottomDrawerStore(
+      (state) => state.openPersonalWorkbenchBottomDrawer
+    )
 
   const displayName = user?.username || user?.accountNo || 'User'
   const email = user?.email || 'No email'

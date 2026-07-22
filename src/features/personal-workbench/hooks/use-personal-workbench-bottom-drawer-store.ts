@@ -10,10 +10,7 @@ export function clampPersonalWorkbenchBottomDrawerHeightToAllowedViewportRange(
 ) {
   return Math.min(
     PERSONAL_WORKBENCH_BOTTOM_DRAWER_MAX_HEIGHT_VH,
-    Math.max(
-      PERSONAL_WORKBENCH_BOTTOM_DRAWER_MIN_HEIGHT_VH,
-      requestedHeightVh
-    )
+    Math.max(PERSONAL_WORKBENCH_BOTTOM_DRAWER_MIN_HEIGHT_VH, requestedHeightVh)
   )
 }
 
@@ -55,8 +52,7 @@ export const usePersonalWorkbenchBottomDrawerStore =
             | Partial<PersonalWorkbenchBottomDrawerState>
             | undefined
           const persistedHeightVh =
-            typeof persisted?.personalWorkbenchBottomDrawerHeightVh ===
-            'number'
+            typeof persisted?.personalWorkbenchBottomDrawerHeightVh === 'number'
               ? persisted.personalWorkbenchBottomDrawerHeightVh
               : currentState.personalWorkbenchBottomDrawerHeightVh
 

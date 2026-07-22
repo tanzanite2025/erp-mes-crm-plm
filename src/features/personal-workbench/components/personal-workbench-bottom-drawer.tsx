@@ -1,17 +1,24 @@
-import { useCallback, useEffect, useMemo, useState, type PointerEvent } from 'react'
-import { createPortal } from 'react-dom'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type PointerEvent,
+} from 'react'
 import { GripHorizontal, NotebookPen, X } from 'lucide-react'
+import { createPortal } from 'react-dom'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { cn } from '@/lib/utils'
-import { PersonalWorkbenchBottomDrawerRecordsAndWorkspaceContent } from './personal-workbench-bottom-drawer-records-and-workspace-content'
 import { usePersonalWorkbenchBottomDrawerStore } from '../hooks/use-personal-workbench-bottom-drawer-store'
+import { PersonalWorkbenchBottomDrawerRecordsAndWorkspaceContent } from './personal-workbench-bottom-drawer-records-and-workspace-content'
 
 export function PersonalWorkbenchBottomDrawer() {
   const isOpen = usePersonalWorkbenchBottomDrawerStore((state) => state.isOpen)
-  const closePersonalWorkbenchBottomDrawer = usePersonalWorkbenchBottomDrawerStore(
-    (state) => state.closePersonalWorkbenchBottomDrawer
-  )
+  const closePersonalWorkbenchBottomDrawer =
+    usePersonalWorkbenchBottomDrawerStore(
+      (state) => state.closePersonalWorkbenchBottomDrawer
+    )
   const personalWorkbenchBottomDrawerHeightVh =
     usePersonalWorkbenchBottomDrawerStore(
       (state) => state.personalWorkbenchBottomDrawerHeightVh
@@ -24,10 +31,11 @@ export function PersonalWorkbenchBottomDrawer() {
     isPersonalWorkbenchBottomDrawerHeightBeingDragged,
     setIsPersonalWorkbenchBottomDrawerHeightBeingDragged,
   ] = useState(false)
-  const closePersonalWorkbenchBottomDrawerAndResetDragState = useCallback(() => {
-    setIsPersonalWorkbenchBottomDrawerHeightBeingDragged(false)
-    closePersonalWorkbenchBottomDrawer()
-  }, [closePersonalWorkbenchBottomDrawer])
+  const closePersonalWorkbenchBottomDrawerAndResetDragState =
+    useCallback(() => {
+      setIsPersonalWorkbenchBottomDrawerHeightBeingDragged(false)
+      closePersonalWorkbenchBottomDrawer()
+    }, [closePersonalWorkbenchBottomDrawer])
 
   useEffect(() => {
     if (!isOpen) {
@@ -47,15 +55,18 @@ export function PersonalWorkbenchBottomDrawer() {
   }, [closePersonalWorkbenchBottomDrawerAndResetDragState, isOpen])
 
   const updatePersonalWorkbenchBottomDrawerHeightFromPointerClientY =
-    useCallback((clientY: number) => {
-      if (typeof window === 'undefined') {
-        return
-      }
+    useCallback(
+      (clientY: number) => {
+        if (typeof window === 'undefined') {
+          return
+        }
 
-      const nextHeightVh =
-        ((window.innerHeight - clientY) / window.innerHeight) * 100
-      setPersonalWorkbenchBottomDrawerHeightVh(nextHeightVh)
-    }, [setPersonalWorkbenchBottomDrawerHeightVh])
+        const nextHeightVh =
+          ((window.innerHeight - clientY) / window.innerHeight) * 100
+        setPersonalWorkbenchBottomDrawerHeightVh(nextHeightVh)
+      },
+      [setPersonalWorkbenchBottomDrawerHeightVh]
+    )
 
   const startPersonalWorkbenchBottomDrawerHeightDrag = useCallback(
     (event: PointerEvent<HTMLButtonElement>) => {
@@ -111,7 +122,7 @@ export function PersonalWorkbenchBottomDrawer() {
       role='dialog'
       style={personalWorkbenchBottomDrawerPanelStyle}
     >
-      <div className='flex shrink-0 flex-col border-b border-dashed border-border/70 px-4 pb-3 pt-3 md:px-5'>
+      <div className='flex shrink-0 flex-col border-b border-dashed border-border/70 px-4 pt-3 pb-3 md:px-5'>
         <div className='flex items-start justify-between gap-4'>
           <div className='flex min-w-0 items-center gap-2.5'>
             <NotebookPen className='size-4 shrink-0 text-primary' />
@@ -122,19 +133,19 @@ export function PersonalWorkbenchBottomDrawer() {
               >
                 个人记录底部抽屉
               </p>
-              <p className='truncate text-sm font-black tracking-tight italic text-foreground'>
+              <p className='truncate text-sm font-black tracking-tight text-foreground italic'>
                 查看记录、备注和收纳内容，不打断当前操作
               </p>
             </div>
           </div>
           <Button
             type='button'
-          aria-label='关闭个人记录底部抽屉'
-          variant='ghost'
-          size='icon'
-          className='size-8 rounded-full'
-          onClick={closePersonalWorkbenchBottomDrawerAndResetDragState}
-        >
+            aria-label='关闭个人记录底部抽屉'
+            variant='ghost'
+            size='icon'
+            className='size-8 rounded-full'
+            onClick={closePersonalWorkbenchBottomDrawerAndResetDragState}
+          >
             <X className='size-4' />
           </Button>
         </div>
@@ -142,7 +153,7 @@ export function PersonalWorkbenchBottomDrawer() {
         <button
           type='button'
           aria-label='拖拽调整个人记录抽屉高度'
-          className='mt-3 flex h-7 touch-none cursor-row-resize select-none items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground'
+          className='mt-3 flex h-7 cursor-row-resize touch-none items-center justify-center rounded-full text-muted-foreground transition-colors select-none hover:text-foreground'
           onPointerDown={startPersonalWorkbenchBottomDrawerHeightDrag}
           onPointerMove={continuePersonalWorkbenchBottomDrawerHeightDrag}
           onPointerUp={stopPersonalWorkbenchBottomDrawerHeightDrag}

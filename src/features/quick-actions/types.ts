@@ -1,9 +1,7 @@
 import type { LucideIcon } from 'lucide-react'
 
 export type QuickActionScanMode = 'scan' | 'photo' | 'video'
-export type QuickActionTargetKind =
-  | 'route'
-  | 'personal-workbench-bottom-drawer'
+export type QuickActionTargetKind = 'route' | 'personal-workbench-bottom-drawer'
 export type QuickActionTranslationKey =
   | 'quickActions.actions.wheelTraceScan.title'
   | 'quickActions.actions.wheelTraceScan.description'

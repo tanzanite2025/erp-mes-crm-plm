@@ -46,11 +46,11 @@ const NotificationCenter = lazy(() =>
 )
 
 const PersonalWorkbenchBottomDrawer = lazy(() =>
-  import(
-    '@/features/personal-workbench/components/personal-workbench-bottom-drawer'
-  ).then((module) => ({
-    default: module.PersonalWorkbenchBottomDrawer,
-  }))
+  import('@/features/personal-workbench/components/personal-workbench-bottom-drawer').then(
+    (module) => ({
+      default: module.PersonalWorkbenchBottomDrawer,
+    })
+  )
 )
 
 function useDeferredActivation(enabled: boolean, delayMs = 0) {

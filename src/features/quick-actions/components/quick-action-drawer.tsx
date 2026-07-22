@@ -197,8 +197,7 @@ export function QuickActionDrawer({
                     className='flex min-w-0 flex-1 items-center justify-between gap-2.5 text-left'
                     onClick={() => {
                       if (
-                        action.targetKind ===
-                        'personal-workbench-bottom-drawer'
+                        action.targetKind === 'personal-workbench-bottom-drawer'
                       ) {
                         onOpenChange(false)
                         openPersonalWorkbenchBottomDrawer()

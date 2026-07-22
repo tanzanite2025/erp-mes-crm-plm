@@ -7,10 +7,10 @@ import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { PersonalWorkbenchCardEditor } from '../components/personal-workbench-card-editor'
 import { PersonalWorkbenchImagePicker } from '../components/personal-workbench-image-picker'
-import { usePersonalWorkbenchBottomDrawerStore } from '../hooks/use-personal-workbench-bottom-drawer-store'
 import type { PersonalRecordUpsertPayload } from '../data/schema'
 import { useLocalMediaDrafts } from '../hooks/use-local-media-drafts'
 import { usePersonalWorkbenchMutations } from '../hooks/use-personal-workbench'
+import { usePersonalWorkbenchBottomDrawerStore } from '../hooks/use-personal-workbench-bottom-drawer-store'
 
 interface PersonalWorkbenchCapturePageProps {
   autoOpenEditor?: boolean
