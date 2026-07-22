@@ -548,6 +548,18 @@ export const trading = {
       title: '车型匹配',
       description:
         '从待发货货物列表进入车型匹配，后续在这里查看推荐车型、装载率与发货前确认信息。',
+      catalogHint:
+        '车型匹配结果来自车型规格库。需要核对车型尺寸、载方或实车图时，可先在当前页打开只读车型库。',
+      openVehicleCatalog: '查看车型库',
+      catalog: {
+        title: '车型规格库',
+        description:
+          '只读查看车型规格、可用装载空间、装载约束与实车图；新增和维护仍进入完整车型规格库页面。',
+        openFullLibrary: '完整车型库',
+        searchPlaceholder: '搜索车型名称、编码、类别或备注',
+        visibleCount: '当前显示 {{visible}} / {{total}}',
+        loadFailed: '车型规格库读取失败',
+      },
     },
     vehicleContacts: {
       title: '车型联系人',

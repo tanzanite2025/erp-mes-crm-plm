@@ -10,10 +10,17 @@ export type VehicleSpecsLoadState =
   | 'failed'
   | 'empty'
 
-export function useVehicleSpecsQuery() {
+type UseVehicleSpecsQueryOptions = {
+  enabled?: boolean
+}
+
+export function useVehicleSpecsQuery({
+  enabled = true,
+}: UseVehicleSpecsQueryOptions = {}) {
   const query = useQuery({
     queryKey: vehicleSpecsQueryKeys.list(),
     queryFn: getVehicleSpecs,
+    enabled,
     retry: false,
     staleTime: 5 * 60 * 1000,
   })

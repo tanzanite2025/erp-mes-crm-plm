@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { AlertCircle, Truck } from 'lucide-react'
+import { AlertCircle, LibraryBig, Truck } from 'lucide-react'
 import { isForbiddenError } from '@/lib/error-status'
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { ShippingVehicleMatchRecommendationDialog } from './components/shipping-vehicle-match-recommendation-dialog'
+import { ShippingVehicleSpecsCatalogDialog } from './components/shipping-vehicle-specs-catalog-dialog'
 import { useShippingVehicleMatch } from './hooks/use-shipping-vehicle-match'
 import { VirtualShipmentRow } from './shared'
 import type { ShippingVehicleMatchItem } from './types'
@@ -19,6 +20,8 @@ export function ShippingVehicleMatchPage() {
   const [selectedItem, setSelectedItem] =
     useState<ShippingVehicleMatchItem | null>(null)
   const [recommendationDialogOpen, setRecommendationDialogOpen] =
+    useState(false)
+  const [vehicleCatalogDialogOpen, setVehicleCatalogDialogOpen] =
     useState(false)
 
   if (readResource.status === 'error' && isForbiddenError(readResource.error)) {
@@ -48,16 +51,30 @@ export function ShippingVehicleMatchPage() {
       />
 
       <Card className='rounded-[28px] border-dashed border-border/60 bg-muted/5 p-5 shadow-none'>
-        <div className='flex items-center justify-between gap-4'>
-          <div>
+        <div className='flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between'>
+          <div className='min-w-0'>
             <div className='text-[10px] font-black tracking-widest text-primary/70 uppercase'>
               虚拟发货仓
             </div>
             <div className='mt-2 text-sm font-black'>待发货货物列表</div>
+            <div className='mt-1 max-w-2xl text-[11px] leading-5 text-muted-foreground'>
+              {t('trading.shippingManagement.vehicleMatch.catalogHint')}
+            </div>
           </div>
-          <Badge className='h-6 rounded-full border-none bg-primary/10 px-3 text-[10px] font-black text-primary'>
-            系统保护仓
-          </Badge>
+          <div className='flex flex-wrap items-center gap-2'>
+            <Button
+              type='button'
+              variant='outline'
+              className='h-10 gap-2 rounded-full border-dashed px-5 text-[10px] font-black tracking-widest uppercase'
+              onClick={() => setVehicleCatalogDialogOpen(true)}
+            >
+              <LibraryBig className='size-4' />
+              {t('trading.shippingManagement.vehicleMatch.openVehicleCatalog')}
+            </Button>
+            <Badge className='h-6 rounded-full border-none bg-primary/10 px-3 text-[10px] font-black text-primary'>
+              系统保护仓
+            </Badge>
+          </div>
         </div>
       </Card>
 
@@ -122,6 +139,10 @@ export function ShippingVehicleMatchPage() {
         item={selectedItem}
         open={recommendationDialogOpen}
         onOpenChange={handleRecommendationDialogOpenChange}
+      />
+      <ShippingVehicleSpecsCatalogDialog
+        open={vehicleCatalogDialogOpen}
+        onOpenChange={setVehicleCatalogDialogOpen}
       />
     </div>
   )

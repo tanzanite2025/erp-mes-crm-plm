@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { VehiclePhotoDialog } from '../vehicle-specs/components/vehicle-photo-dialog'
+import { filterVehicleSpecsByKeyword } from '../vehicle-specs/data/vehicle-specs-search'
 import { useVehiclePhotoDialogState } from '../vehicle-specs/hooks/use-vehicle-photo-dialog-state'
 import { useVehicleSpecsQuery } from '../vehicle-specs/hooks/use-vehicle-specs-query'
 import { VehicleSpecsLibraryContent } from './components/vehicle-specs-library-content'
@@ -22,23 +23,7 @@ export function VehicleSpecsLibraryPage() {
     openVehiclePhotos,
   } = useVehiclePhotoDialogState()
   const filteredVehicleSpecs = useMemo(() => {
-    const keyword = search.trim().toLowerCase()
-    if (!keyword) return vehicleSpecs
-
-    return vehicleSpecs.filter((spec) =>
-      [
-        spec.id,
-        spec.name,
-        spec.category,
-        spec.notes,
-        `${spec.payloadKg}`,
-        `${spec.volumeM3}`,
-        `${spec.nominalVolumeM3}`,
-      ]
-        .join(' ')
-        .toLowerCase()
-        .includes(keyword)
-    )
+    return filterVehicleSpecsByKeyword(vehicleSpecs, search)
   }, [search, vehicleSpecs])
 
   return (

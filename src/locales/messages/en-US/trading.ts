@@ -574,6 +574,18 @@ export const trading = {
       title: 'Vehicle Match',
       description:
         'Enter vehicle matching from the pending shipment list and later review recommended vehicles, load rate, and pre-shipment confirmation details here.',
+      catalogHint:
+        'Vehicle matching results come from the vehicle specs library. Open the read-only catalog here when you need to confirm dimensions, usable volume, or real vehicle photos.',
+      openVehicleCatalog: 'View Vehicle Catalog',
+      catalog: {
+        title: 'Vehicle Specs Library',
+        description:
+          'Read-only access to vehicle specs, usable loading space, loading constraints, and real vehicle photos. Creation and maintenance remain in the full vehicle specs library page.',
+        openFullLibrary: 'Full Vehicle Library',
+        searchPlaceholder: 'Search vehicle name, code, category, or notes',
+        visibleCount: 'Showing {{visible}} / {{total}}',
+        loadFailed: 'Unable to load vehicle specs library',
+      },
     },
     vehicleContacts: {
       title: 'Vehicle Contacts',
