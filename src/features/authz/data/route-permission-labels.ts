@@ -26,6 +26,7 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/raw-materials/binding-qr': 'rawMaterials.tabs.bindingQr',
   '/raw-materials/cut-size-library': 'rawMaterials.tabs.cutSizeLibrary',
   '/raw-materials/cutting-plan': 'rawMaterials.tabs.cuttingPlan',
+  '/raw-materials-engine': 'sidebar.items.cuttingEngine',
   '/raw-materials-engine/config': 'sidebar.items.cuttingEngine',
   '/raw-materials-engine/cutting-simulation': 'rawMaterials.tabs.batchEngine',
   '/cutting-operations': 'sidebar.items.cuttingOperations',
@@ -74,6 +75,11 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/engineering-reference/nipples': 'engineering.nipples.overview.title',
   '/quality': 'sidebar.items.qualityAudit',
   '/quality/standards': 'quality.layout.tabs.standards',
+  '/quality/standards/new': 'quality.standards.workspace.editorCreateTitle',
+  '/quality/standards/:standardid/edit':
+    'quality.standards.workspace.editorEditTitle',
+  '/quality/standards/:standardid/preview':
+    'quality.standards.workspace.previewTitle',
   '/labs/experimental': 'labExperimental.tabs.centerTitle',
   '/labs/experimental/equipment': 'labExperimental.tabs.equipment',
   '/labs/experimental/tests': 'labExperimental.tabs.tests',
@@ -114,6 +120,10 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
     'equipmentTooling.maintenanceCenter.tabs.overview',
   '/equipment-maintenance/records':
     'equipmentTooling.maintenanceCenter.tabs.records',
+  '/equipment-maintenance/plans':
+    'equipmentTooling.maintenanceCenter.tabs.plans',
+  '/equipment-maintenance/analytics':
+    'equipmentTooling.maintenanceCenter.tabs.analytics',
   '/tooling-furnaces': 'sidebar.items.furnaceAssets',
   '/tooling-furnaces/center': 'sidebar.items.furnaceAssets',
   '/personnel': 'sidebar.items.personnelCenter',
@@ -121,6 +131,9 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/personnel/employees': 'orgPersonnel.tabs.employees',
   '/personnel/accounts': 'orgPersonnel.tabs.accounts',
   '/personnel/rights': 'orgPersonnel.tabs.rights',
+  '/personnel/architecture': 'productionShared.workArchitecture.title',
+  '/personnel/leave': 'orgPersonnel.tabs.leave',
+  '/personnel/stats': 'orgPersonnel.tabs.stats',
   '/leave-management': 'orgPersonnel.tabs.leave',
   '/hall-of-fame': 'orgPersonnel.tabs.stats',
   '/logistics-config': 'sidebar.items.logisticsConfig',
@@ -157,6 +170,7 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/system-management': 'sidebar.items.systemManagement',
   '/system-management/ai-capability': 'aiAssistant.accessControl.title',
   '/system-management/audit-engine': 'systemManagement.layout.tabs.auditEngine',
+  '/system-management/routing': 'systemManagement.layout.tabs.routing',
   '/approval': 'sidebar.items.approvalCenter',
   '/approval/requests': 'approval.tabs.requests',
   '/approval/history': 'approval.tabs.history',
@@ -172,6 +186,7 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/basic-settings/enterprise': 'basicSettings.tabs.enterprise',
   '/basic-settings/security': 'basicSettings.tabs.security',
   '/pda-shell': 'sidebar.items.pdaShell',
+  '/wheel-trace': 'scanPlatform.modules.wheelTrace.name',
 }
 
 function normalizePath(path: string): string {

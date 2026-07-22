@@ -26,6 +26,7 @@
     "verify:i18n:baseline": "node scripts/verify-i18n-parity.mjs --write-baseline",
     "verify:zh-cn-encoding": "node scripts/verify-zh-cn-encoding.mjs",
     "verify:permissions": "node scripts/verify-permissions.mjs",
+    "verify:recent-visits": "vitest run src/features/recent-visits/recent-visit-labels.spec.ts",
     "verify:action-closure": "node scripts/check-action-permission-closure.mjs",
     "verify:account-authz": "node scripts/check-account-authz-contract.mjs",
     "verify:frontend-logging": "node scripts/check-frontend-logging.mjs",
@@ -40,7 +41,7 @@
     "check:conflict-409": "node scripts/check-conflict-409.mjs",
     "check:pnpm-lock": "node scripts/check-pnpm-lock-sync.mjs",
     "check:server-deploy": "node scripts/check-server-deploy-ready.mjs",
-    "predeploy:check": "pnpm run check:pnpm-lock && pnpm run check:server-deploy && pnpm run verify:zh-cn-encoding"
+    "predeploy:check": "pnpm run check:pnpm-lock && pnpm run check:server-deploy && pnpm run verify:zh-cn-encoding && pnpm run verify:recent-visits"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

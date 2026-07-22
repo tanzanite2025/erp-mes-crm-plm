@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from '@tanstack/react-router'
-import { ChevronDown, Clock3, MoreHorizontal } from 'lucide-react'
+import { ChevronDown, Clock3 } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
@@ -13,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { resolveRecentVisitLabelKey } from './recent-visit-labels'
 import {
   canReadRecentVisit,
   getRecentVisitsStorageKey,
@@ -23,7 +24,6 @@ import type { RecentVisit } from './types'
 
 const DESKTOP_MAX_VISIBLE_LIMIT = 6
 const DESKTOP_RECENT_TRIGGER_WIDTH = 118
-const DESKTOP_OVERFLOW_TRIGGER_WIDTH = 44
 const DESKTOP_VISIT_SLOT_WIDTH = 112
 const RECENT_VISITS_MENU_LIMIT = 12
 
@@ -100,8 +100,7 @@ export function RecentVisitsBar() {
 
     const updateVisibleLimit = () => {
       const availableWidth = element.getBoundingClientRect().width
-      const reservedWidth =
-        DESKTOP_RECENT_TRIGGER_WIDTH + DESKTOP_OVERFLOW_TRIGGER_WIDTH
+      const reservedWidth = DESKTOP_RECENT_TRIGGER_WIDTH
       const nextLimit = Math.floor(
         (availableWidth - reservedWidth) / DESKTOP_VISIT_SLOT_WIDTH
       )
@@ -116,14 +115,20 @@ export function RecentVisitsBar() {
     return () => observer.disconnect()
   }, [])
 
-  const displayVisits = visits.map((visit) => ({
-    ...visit,
-    label: visit.labelKey ? t(visit.labelKey) : visit.fallbackLabel,
-    isActive: pathname === visit.path || pathname.startsWith(`${visit.path}/`),
-  }))
+  const displayVisits = visits.map((visit) => {
+    const labelKey = resolveRecentVisitLabelKey(visit.path) ?? visit.labelKey
+    return {
+      ...visit,
+      labelKey,
+      label: labelKey
+        ? t(labelKey)
+        : t('recentVisits.unknownRoute', { path: visit.path }),
+      isActive:
+        pathname === visit.path || pathname.startsWith(`${visit.path}/`),
+    }
+  })
 
   const visibleVisits = displayVisits.slice(0, desktopVisibleLimit)
-  const overflowVisits = displayVisits.slice(desktopVisibleLimit)
 
   const goToVisit = (path: string) => {
     navigate({ to: path as never })
@@ -233,29 +238,6 @@ export function RecentVisitsBar() {
             </Button>
           ))}
         </div>
-
-        {overflowVisits.length > 0 ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant='outline'
-                size='icon'
-                className='size-9 shrink-0 rounded-full border-dashed bg-background/70 text-muted-foreground shadow-none'
-              >
-                <MoreHorizontal className='size-4' />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align='center'
-              className='w-80 rounded-2xl p-2'
-            >
-              {renderRecentVisitsContent(
-                t('recentVisits.moreTitle'),
-                overflowVisits
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : null}
       </div>
     </div>
   )

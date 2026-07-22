@@ -1,17 +1,14 @@
 import type { AuthUser } from '@/stores/auth-store'
 import { getMenuPermissionForPath } from '@/features/authz/data/permission-catalog'
 import { StorageService } from '@/features/system-mgmt/services/storage-service'
-import {
-  resolveRecentVisitFallbackLabel,
-  resolveRecentVisitLabelKey,
-} from './recent-visit-labels'
+import { resolveRecentVisitLabelKey } from './recent-visit-labels'
 import type { RecentVisit } from './types'
 
 export const RECENT_VISITS_UPDATED_EVENT = 'xdfc_recent_visits_updated'
 const RECENT_VISITS_STORAGE_PREFIX = 'xdfc_recent_visits'
 const RECENT_VISITS_LIMIT = 20
 
-const IGNORED_EXACT_PATHS = new Set([
+const RECENT_VISIT_SYSTEM_SHELL_EXACT_PATHS = [
   '/',
   '/401',
   '/403',
@@ -21,10 +18,32 @@ const IGNORED_EXACT_PATHS = new Set([
   '/sign-in',
   '/forgot-password',
   '/pda-shell',
+] as const
+
+const RECENT_VISIT_INTERNAL_UTILITY_EXACT_PATHS = [
+  '/personal-workbench',
+  '/basic-settings/permission-tree-smoke',
+] as const
+
+const RECENT_VISIT_REDIRECT_ONLY_EXACT_PATHS = [
+  '/approval/routing',
+  '/system-management/routing',
+  '/personnel/leave',
+  '/personnel/stats',
+  '/quotes/wholesale',
+  '/quotes/retail',
+  '/trading/quotes',
+] as const
+
+const RECENT_VISIT_IGNORED_EXACT_PATHS = new Set<string>([
+  ...RECENT_VISIT_SYSTEM_SHELL_EXACT_PATHS,
+  ...RECENT_VISIT_INTERNAL_UTILITY_EXACT_PATHS,
+  ...RECENT_VISIT_REDIRECT_ONLY_EXACT_PATHS,
 ])
 
-const IGNORED_PREFIXES = [
+const RECENT_VISIT_IGNORED_PREFIXES = [
   '/errors/',
+  '/personal-workbench/',
   '/product-barcode-capture',
   '/prepreg-label-capture',
   '/packaging-assembly-capture',
@@ -54,8 +73,10 @@ export function getRecentVisitsStorageKey(
 
 export function shouldTrackRecentVisit(path: string): boolean {
   const normalized = normalizePath(path)
-  if (IGNORED_EXACT_PATHS.has(normalized)) return false
-  return !IGNORED_PREFIXES.some((prefix) => normalized.startsWith(prefix))
+  if (RECENT_VISIT_IGNORED_EXACT_PATHS.has(normalized)) return false
+  return !RECENT_VISIT_IGNORED_PREFIXES.some((prefix) =>
+    normalized.startsWith(prefix)
+  )
 }
 
 function isRecentVisit(value: unknown): value is RecentVisit {
@@ -63,7 +84,6 @@ function isRecentVisit(value: unknown): value is RecentVisit {
   const record = value as Partial<RecentVisit>
   return (
     typeof record.path === 'string' &&
-    typeof record.fallbackLabel === 'string' &&
     typeof record.visitedAt === 'string' &&
     typeof record.count === 'number'
   )
@@ -77,7 +97,6 @@ function normalizeVisits(raw: unknown): RecentVisit[] {
       ...visit,
       path: normalizePath(visit.path),
       labelKey: resolveRecentVisitLabelKey(normalizePath(visit.path)),
-      fallbackLabel: resolveRecentVisitFallbackLabel(normalizePath(visit.path)),
       count: Math.max(1, Math.floor(visit.count)),
     }))
     .filter((visit) => shouldTrackRecentVisit(visit.path))
@@ -123,7 +142,6 @@ export async function recordRecentVisit(
   const nextVisit: RecentVisit = {
     path: normalizedPath,
     labelKey: resolveRecentVisitLabelKey(normalizedPath),
-    fallbackLabel: resolveRecentVisitFallbackLabel(normalizedPath),
     visitedAt: now,
     count: existing ? existing.count + 1 : 1,
   }

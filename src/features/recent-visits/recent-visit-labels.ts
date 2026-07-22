@@ -1,5 +1,8 @@
-import { DEFAULT_LOCALE, translate, type TranslationKey } from '@/locales'
-import { resolveExactRoutePermissionLabelKey } from '@/features/authz/data/route-permission-labels'
+import type { TranslationKey } from '@/locales'
+import {
+  resolveExactRoutePermissionLabelKey,
+  resolveRoutePermissionLabelKey,
+} from '@/features/authz/data/route-permission-labels'
 import { resolveMaterialCategoryLabelKey } from '@/features/material-archive/data/material-category-options'
 
 const RECENT_VISIT_EXACT_LABEL_KEYS: Record<string, TranslationKey> = {
@@ -10,6 +13,14 @@ const RECENT_VISIT_EXACT_LABEL_KEYS: Record<string, TranslationKey> = {
   '/materials': 'sidebar.items.materialArchive',
   '/materials/all': 'materialArchive.layout.tabs.all',
   '/materials/assembly': 'materialArchive.layout.tabs.assembly',
+  '/quality/standards/new': 'quality.standards.workspace.editorCreateTitle',
+  '/equipment-maintenance/plans':
+    'equipmentTooling.maintenanceCenter.tabs.plans',
+  '/equipment-maintenance/analytics':
+    'equipmentTooling.maintenanceCenter.tabs.analytics',
+  '/personnel/architecture': 'productionShared.workArchitecture.title',
+  '/raw-materials-engine': 'sidebar.items.cuttingEngine',
+  '/wheel-trace': 'scanPlatform.modules.wheelTrace.name',
 }
 
 function normalizePath(path: string): string {
@@ -21,32 +32,33 @@ function normalizePath(path: string): string {
   return normalized || '/'
 }
 
-function toFallbackLabel(path: string): string {
-  const segments = path.split('/').filter(Boolean)
-  const lastSegment = segments[segments.length - 1]
-  if (!lastSegment) return 'Dashboard'
-  return lastSegment
-    .split('-')
-    .filter(Boolean)
-    .map(
-      (segment: string) => segment.charAt(0).toUpperCase() + segment.slice(1)
-    )
-    .join(' ')
-}
-
 function resolveDynamicRecentVisitLabelKey(
   path: string
 ): TranslationKey | undefined {
   const segments = path.split('/').filter(Boolean)
   if (segments[0] === 'materials' && segments.length === 2) {
-    return resolveMaterialCategoryLabelKey(
-      decodeURIComponent(segments[1] ?? '')
+    return (
+      resolveMaterialCategoryLabelKey(decodeURIComponent(segments[1] ?? '')) ??
+      'sidebar.items.materialArchive'
     )
   }
+  if (
+    segments[0] === 'quality' &&
+    segments[1] === 'standards' &&
+    segments.length === 4
+  ) {
+    if (segments[3] === 'edit') {
+      return 'quality.standards.workspace.editorEditTitle'
+    }
+    if (segments[3] === 'preview') {
+      return 'quality.standards.workspace.previewTitle'
+    }
+  }
+
   return undefined
 }
 
-export function resolveRecentVisitLabelKey(
+export function resolveRecentVisitCanonicalLabelKey(
   path: string
 ): TranslationKey | undefined {
   const normalizedPath = normalizePath(path)
@@ -57,7 +69,12 @@ export function resolveRecentVisitLabelKey(
   )
 }
 
-export function resolveRecentVisitFallbackLabel(path: string): string {
-  const labelKey = resolveRecentVisitLabelKey(path)
-  return labelKey ? translate(DEFAULT_LOCALE, labelKey) : toFallbackLabel(path)
+export function resolveRecentVisitLabelKey(
+  path: string
+): TranslationKey | undefined {
+  const normalizedPath = normalizePath(path)
+  return (
+    resolveRecentVisitCanonicalLabelKey(normalizedPath) ??
+    resolveRoutePermissionLabelKey(normalizedPath)
+  )
 }
