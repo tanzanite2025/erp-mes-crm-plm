@@ -166,7 +166,7 @@ export function SalesOrderListToolbar({
             className='h-11 w-full rounded-full bg-primary px-6 text-[10px] font-black tracking-widest text-primary-foreground uppercase shadow-xl shadow-primary/10 sm:w-auto'
           >
             <Plus className='mr-2 size-4' />
-            {t('tradingSalesOrder.linesEditor.addLine')}
+            {t('tradingSalesOrder.list.addOrder')}
           </Button>
         </div>
       </div>

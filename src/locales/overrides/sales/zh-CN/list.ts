@@ -1,7 +1,7 @@
 export const list = {
   title: '销售订单中心',
   description: '商业合同与交付进度实时审计',
-  addOrder: '建立新订单',
+  addOrder: '新建销售订单',
   loading: '同步销售订单数据中...',
   searchPlaceholder: '搜索单号/客户/PO...',
   allOrders: '全部单据',

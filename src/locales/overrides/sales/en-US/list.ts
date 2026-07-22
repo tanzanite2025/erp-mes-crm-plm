@@ -1,7 +1,7 @@
 export const list = {
   title: 'Sales Order Center',
   description: 'Realtime auditing for contracts and delivery progress',
-  addOrder: 'Create Order',
+  addOrder: 'Create Sales Order',
   loading: 'Synchronizing sales order data...',
   searchPlaceholder: 'Search order no. / customer / PO...',
   allOrders: 'All Orders',
