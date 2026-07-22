@@ -9,6 +9,7 @@
  * 关键不变量:
  *   - id 稳定(权限/最近访问/搜索都依赖 id)
  *   - permissionId 通过 permissionIdForPath 派生,与路由权限映射保持一致
+ *   - activeMatches 用于不共享 URL 前缀、但属于同一个侧边栏域的 TAB 路由
  *   - getSidebarData(t) 调用时根据 locale 注入 i18n title
  *   - 侧边栏 L2 菜单进入后看到的 tabs 在 features/<module>/tabs.ts 单独维护(不在本文件)
  */
@@ -52,6 +53,7 @@ type SidebarNodeConfig = {
   permissionId?: string
   preserveEmptyChildren?: boolean
   activeMatch?: string
+  activeMatches?: string[]
   badgeKey?: string
   children?: SidebarNodeConfig[]
 }
@@ -456,6 +458,7 @@ const navGroupConfigs: SidebarGroupConfig[] = [
             id: 'hall-of-fame',
             titleKey: 'sidebar.items.hallOfFame',
             url: '/hall-of-fame',
+            activeMatches: ['/leave-management'],
             icon: Trophy,
             permissionId: permissionIdForPath('/hall-of-fame'),
           },
@@ -613,6 +616,7 @@ function localizeNavNode(t: TranslateFn, node: SidebarNodeConfig): NavNode {
     permissionId: node.permissionId,
     preserveEmptyChildren: node.preserveEmptyChildren,
     activeMatch: node.activeMatch,
+    activeMatches: node.activeMatches,
     badgeKey: node.badgeKey,
     children: node.children?.map((child) => localizeNavNode(t, child)),
   }

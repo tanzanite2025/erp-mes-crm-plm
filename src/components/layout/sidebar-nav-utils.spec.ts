@@ -21,4 +21,16 @@ describe('sidebar nav active matching', () => {
       )
     ).toBe(true)
   })
+
+  it('keeps a sidebar domain active across disjoint tab route paths', () => {
+    const hallOfFameItem: NavLink = {
+      id: 'hall-of-fame',
+      title: 'Hall of Fame',
+      url: '/hall-of-fame',
+      activeMatches: ['/leave-management'],
+    }
+
+    expect(checkIsActive('/hall-of-fame', hallOfFameItem)).toBe(true)
+    expect(checkIsActive('/leave-management', hallOfFameItem)).toBe(true)
+  })
 })

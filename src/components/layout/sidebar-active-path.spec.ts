@@ -38,6 +38,24 @@ const navGroups: NavGroup[] = [
       },
     ],
   },
+  {
+    id: 'org',
+    title: 'Organization',
+    children: [
+      {
+        id: 'org-personnel',
+        title: 'Organization & Personnel',
+        children: [
+          {
+            id: 'hall-of-fame',
+            title: 'Hall of Fame',
+            url: '/hall-of-fame',
+            activeMatches: ['/leave-management'],
+          },
+        ],
+      },
+    ],
+  },
 ]
 
 describe('resolveActiveSidebarPath', () => {
@@ -64,5 +82,13 @@ describe('resolveActiveSidebarPath', () => {
 
   it('returns null when the filtered navigation has no matching route', () => {
     expect(resolveActiveSidebarPath(navGroups, '/system-management')).toBeNull()
+  })
+
+  it('keeps disjoint tab routes under their owning sidebar domain', () => {
+    expect(resolveActiveSidebarPath(navGroups, '/leave-management')).toEqual({
+      groupId: 'org',
+      nodeIds: ['org-personnel', 'hall-of-fame'],
+      key: 'org/org-personnel/hall-of-fame',
+    })
   })
 })

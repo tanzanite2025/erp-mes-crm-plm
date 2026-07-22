@@ -25,6 +25,7 @@ type BaseNavItem = {
 type NavNode = BaseNavItem & {
   url?: LinkProps['to'] | (string & {})
   activeMatch?: LinkProps['to'] | (string & {})
+  activeMatches?: Array<LinkProps['to'] | (string & {})>
   badgeKey?: string
   children?: NavNode[]
 }

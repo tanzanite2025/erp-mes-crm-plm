@@ -50,6 +50,19 @@ function isExactPathMatch(pathname: string, target?: string): boolean {
   return normalizePath(pathname) === normalizePath(target)
 }
 
+function getActiveTargets(item: NavItem): string[] {
+  const itemUrl = item.url ? String(item.url) : undefined
+  const activeMatch = item.activeMatch ? String(item.activeMatch) : undefined
+
+  if (item.activeMatches?.length) {
+    return [itemUrl, activeMatch, ...item.activeMatches.map(String)].filter(
+      Boolean
+    ) as string[]
+  }
+
+  return [activeMatch || itemUrl].filter(Boolean) as string[]
+}
+
 export function withDynamicBadges(
   items: NavItem[],
   unreadApprovals: number,
@@ -69,9 +82,9 @@ export function checkIsActive(
   item: NavItem,
   mainNav = false
 ): boolean {
-  const itemUrl = item.url ? String(item.url) : undefined
-  const activeTarget = item.activeMatch ? String(item.activeMatch) : itemUrl
-  const selfActive = isPathMatch(pathname, activeTarget)
+  const selfActive = getActiveTargets(item).some((target) =>
+    isPathMatch(pathname, target)
+  )
   const childActive = !!item.children?.some((child) =>
     checkIsActive(pathname, child)
   )
@@ -80,6 +93,7 @@ export function checkIsActive(
     return true
   }
 
+  const itemUrl = item.url ? String(item.url) : undefined
   return !!(
     itemUrl &&
     mainNav &&
@@ -91,9 +105,9 @@ export function checkIsDirectlySelected(
   pathname: string,
   item: NavItem
 ): boolean {
-  const itemUrl = item.url ? String(item.url) : undefined
-  const activeTarget = item.activeMatch ? String(item.activeMatch) : itemUrl
-  return isExactPathMatch(pathname, activeTarget)
+  return getActiveTargets(item).some((target) =>
+    isExactPathMatch(pathname, target)
+  )
 }
 
 export function hasActiveDescendant(pathname: string, item: NavItem): boolean {
