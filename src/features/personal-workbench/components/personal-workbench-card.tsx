@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import type { PersonalRecord } from '../data/schema'
 
 interface PersonalWorkbenchCardProps {
+  isCompactLayout?: boolean
   isDragging?: boolean
   onDragStart?: (record: PersonalRecord) => void
   onDragEnd?: () => void
@@ -12,6 +13,7 @@ interface PersonalWorkbenchCardProps {
 }
 
 export function PersonalWorkbenchCard({
+  isCompactLayout = false,
   isDragging = false,
   onDragEnd,
   onDragStart,
@@ -24,7 +26,9 @@ export function PersonalWorkbenchCard({
       onDragStart={() => onDragStart?.(record)}
       onDragEnd={onDragEnd}
       className={cn(
-        'space-y-3 rounded-[24px] border border-dashed border-muted/50 bg-background/80 p-3 shadow-sm transition-opacity',
+        isCompactLayout
+          ? 'space-y-2 rounded-[20px] border border-dashed border-muted/50 bg-background/80 p-2.5 shadow-sm transition-opacity'
+          : 'space-y-3 rounded-[24px] border border-dashed border-muted/50 bg-background/80 p-3 shadow-sm transition-opacity',
         isDragging && 'opacity-40'
       )}
     >
@@ -36,14 +40,26 @@ export function PersonalWorkbenchCard({
         />
       ) : (
         <div className='flex aspect-video items-center justify-center rounded-2xl border border-dashed border-muted/50 bg-muted/10 text-muted-foreground/40'>
-          <ImageIcon className='size-5' />
+          <ImageIcon className={isCompactLayout ? 'size-4' : 'size-5'} />
         </div>
       )}
       <div className='space-y-1'>
-        <div className='line-clamp-2 text-sm font-black tracking-tight text-foreground'>
+        <div
+          className={
+            isCompactLayout
+              ? 'line-clamp-2 text-xs font-black tracking-tight text-foreground'
+              : 'line-clamp-2 text-sm font-black tracking-tight text-foreground'
+          }
+        >
           {record.title}
         </div>
-        <p className='line-clamp-3 text-[11px] leading-relaxed font-medium text-muted-foreground'>
+        <p
+          className={
+            isCompactLayout
+              ? 'line-clamp-2 text-[10px] leading-relaxed font-medium text-muted-foreground'
+              : 'line-clamp-3 text-[11px] leading-relaxed font-medium text-muted-foreground'
+          }
+        >
           {record.note || '暂无备注'}
         </p>
       </div>
@@ -57,10 +73,10 @@ export function PersonalWorkbenchCard({
           type='button'
           variant='ghost'
           size='icon'
-          className='size-8 rounded-xl'
+          className={isCompactLayout ? 'size-7 rounded-xl' : 'size-8 rounded-xl'}
           onClick={() => onEdit(record)}
         >
-          <PencilLine className='size-4' />
+          <PencilLine className={isCompactLayout ? 'size-3.5' : 'size-4'} />
         </Button>
       </div>
     </div>

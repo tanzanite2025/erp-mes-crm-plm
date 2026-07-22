@@ -13,10 +13,12 @@ import { PersonalWorkbenchBoard } from './personal-workbench-board'
 import { PersonalWorkbenchCardEditor } from './personal-workbench-card-editor'
 
 interface PersonalWorkbenchRecordsViewProps {
+  isCompactLayout?: boolean
   searchQuery: string
 }
 
 export function PersonalWorkbenchRecordsView({
+  isCompactLayout = false,
   searchQuery,
 }: PersonalWorkbenchRecordsViewProps) {
   const { data, error, isError, isPending, refetch } =
@@ -41,17 +43,17 @@ export function PersonalWorkbenchRecordsView({
   }, [normalizedQuery, records])
 
   return (
-    <div className='flex min-h-0 flex-1 flex-col items-stretch gap-3'>
+    <div className='flex min-h-0 flex-1 flex-col items-stretch gap-2'>
       <div className='flex items-center justify-end'>
         <Button
           type='button'
-          className='shrink-0 rounded-full text-[11px] font-black tracking-widest'
+          className='h-8 shrink-0 rounded-full px-3 text-[10px] font-black tracking-widest md:h-9 md:px-4 md:text-[11px]'
           onClick={() => {
             setEditingRecord(undefined)
             setIsEditorOpen(true)
           }}
         >
-          <Plus className='size-4' />
+          <Plus className='size-3.5' />
           新建记录
         </Button>
       </div>
@@ -93,6 +95,7 @@ export function PersonalWorkbenchRecordsView({
         </div>
       ) : (
         <PersonalWorkbenchBoard
+          isCompactLayout={isCompactLayout}
           hideCreateAction
           hideHeading
           records={filteredRecords}

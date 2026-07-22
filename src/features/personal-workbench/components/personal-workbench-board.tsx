@@ -10,6 +10,7 @@ import { reorderPersonalRecords } from '../utils/record-reorder'
 import { PersonalWorkbenchColumn } from './personal-workbench-column'
 
 interface PersonalWorkbenchBoardProps {
+  isCompactLayout?: boolean
   hideCreateAction?: boolean
   hideHeading?: boolean
   records: PersonalRecord[]
@@ -18,6 +19,7 @@ interface PersonalWorkbenchBoardProps {
 }
 
 export function PersonalWorkbenchBoard({
+  isCompactLayout = false,
   hideCreateAction = false,
   hideHeading = false,
   records,
@@ -70,11 +72,23 @@ export function PersonalWorkbenchBoard({
   }
 
   return (
-    <div className='flex min-h-0 flex-1 flex-col gap-4'>
-      <div className='flex items-center justify-between gap-4'>
+    <div
+      className={
+        isCompactLayout
+          ? 'flex min-h-0 flex-1 flex-col gap-2'
+          : 'flex min-h-0 flex-1 flex-col gap-4'
+      }
+    >
+      <div className='flex items-center justify-between gap-3'>
         <div>
           {!hideHeading && (
-            <h2 className='text-lg font-black tracking-tight uppercase italic'>
+            <h2
+              className={
+                isCompactLayout
+                  ? 'text-base font-black tracking-tight uppercase italic'
+                  : 'text-lg font-black tracking-tight uppercase italic'
+              }
+            >
               个人记录缓冲区
             </h2>
           )}
@@ -85,17 +99,28 @@ export function PersonalWorkbenchBoard({
           )}
         </div>
         {!hideCreateAction && (
-          <Button type='button' className='rounded-full' onClick={onCreate}>
-            <Plus className='mr-2 size-4' />
+          <Button
+            type='button'
+            className='h-8 rounded-full px-3 text-[10px] font-black tracking-widest md:h-9 md:px-4 md:text-[11px]'
+            onClick={onCreate}
+          >
+            <Plus className='mr-1.5 size-3.5' />
             新建记录
           </Button>
         )}
       </div>
       <ScrollArea className='flex-1'>
-        <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-4'>
+        <div
+          className={
+            isCompactLayout
+              ? 'grid gap-3 md:grid-cols-2 xl:grid-cols-4'
+              : 'grid gap-4 md:grid-cols-2 xl:grid-cols-4'
+          }
+        >
           {recordsByColumn.map((column) => (
             <PersonalWorkbenchColumn
               key={column.key}
+              isCompactLayout={isCompactLayout}
               columnKey={column.key}
               draggingRecordId={draggingRecordId}
               onCardDragEnd={() => setDraggingRecordId(null)}

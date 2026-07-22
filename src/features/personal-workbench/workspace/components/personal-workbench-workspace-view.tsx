@@ -11,10 +11,12 @@ import { WorkspaceBoard } from './workspace-board'
 import { WorkspaceItemEditor } from './workspace-item-editor'
 
 interface PersonalWorkbenchWorkspaceViewProps {
+  isCompactLayout?: boolean
   searchQuery: string
 }
 
 export function PersonalWorkbenchWorkspaceView({
+  isCompactLayout = false,
   searchQuery,
 }: PersonalWorkbenchWorkspaceViewProps) {
   const { createItem, isReady, items, removeItem, updateItem } =
@@ -50,31 +52,31 @@ export function PersonalWorkbenchWorkspaceView({
   }
 
   return (
-    <div className='flex min-h-0 flex-1 flex-col items-stretch gap-3'>
+    <div className='flex min-h-0 flex-1 flex-col items-stretch gap-2'>
       <div className='flex items-center justify-end gap-2'>
         <Button
           type='button'
           variant='outline'
-          className='rounded-full text-[11px] font-black tracking-widest'
+          className='h-8 rounded-full px-3 text-[10px] font-black tracking-widest md:h-9 md:px-4 md:text-[11px]'
           onClick={() => {
             setEditingItemId(null)
             setEditorType('note')
             setIsEditorOpen(true)
           }}
         >
-          <StickyNote className='size-4' />
+          <StickyNote className='size-3.5' />
           新建便签
         </Button>
         <Button
           type='button'
-          className='rounded-full text-[11px] font-black tracking-widest'
+          className='h-8 rounded-full px-3 text-[10px] font-black tracking-widest md:h-9 md:px-4 md:text-[11px]'
           onClick={() => {
             setEditingItemId(null)
             setEditorType('link')
             setIsEditorOpen(true)
           }}
         >
-          <Plus className='size-4' />
+          <Plus className='size-3.5' />
           新增链接
         </Button>
       </div>
@@ -95,6 +97,7 @@ export function PersonalWorkbenchWorkspaceView({
         </div>
       ) : (
         <WorkspaceBoard
+          isCompactLayout={isCompactLayout}
           items={filteredItems}
           onDelete={(id) => {
             void (async () => {
