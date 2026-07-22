@@ -42,6 +42,9 @@ jobs:
       - name: Verify i18n parity
         run: pnpm run verify:i18n
 
+      - name: Verify authenticated route catalog
+        run: pnpm run check:auth-route-catalog
+
       - name: Verify recent visit route labels
         run: pnpm run verify:recent-visits
 

@@ -7,15 +7,15 @@
   "scripts": {
     "prepare": "node scripts/setup-git-hooks.mjs",
     "setup:git-hooks": "node scripts/setup-git-hooks.mjs",
-    "dev": "node scripts/generate-route-tree.mjs && node scripts/generate-route-permission-contract.mjs && node scripts/generate-permission-contract.mjs && vite",
+    "dev": "node scripts/generate-route-tree.mjs && node scripts/generate-authenticated-route-catalog.mjs && node scripts/generate-route-permission-contract.mjs && node scripts/generate-permission-contract.mjs && vite",
     "dev:server": "powershell -ExecutionPolicy Bypass -Command \"Set-Location ./server; go run main.go\"",
     "dev:server:debug": "powershell -ExecutionPolicy Bypass -Command \"Set-Location ./server; $env:PORT='8020'; $env:SEARCH_ENGINE_URL='http://127.0.0.1:8030'; $env:ALLOWED_ORIGIN='http://localhost:8010,http://127.0.0.1:8010,http://localhost:8020,http://127.0.0.1:8020'; go run main.go\"",
-    "dev:frontend:debug": "powershell -ExecutionPolicy Bypass -Command \"$env:VITE_PROXY_TARGET='http://localhost:8020'; node scripts/generate-route-tree.mjs; node scripts/generate-route-permission-contract.mjs; node scripts/generate-permission-contract.mjs; vite\"",
+    "dev:frontend:debug": "powershell -ExecutionPolicy Bypass -Command \"$env:VITE_PROXY_TARGET='http://localhost:8020'; node scripts/generate-route-tree.mjs; node scripts/generate-authenticated-route-catalog.mjs; node scripts/generate-route-permission-contract.mjs; node scripts/generate-permission-contract.mjs; vite\"",
     "dev:stack": "powershell -ExecutionPolicy Bypass -File ./server/dev-up.ps1",
     "dev:stack:reset-db": "powershell -ExecutionPolicy Bypass -File ./server/dev-up.ps1 -ResetDb",
     "dev:stack:full": "powershell -ExecutionPolicy Bypass -File ./server/dev-up.ps1 -FullStack",
     "dev:stack:full:reset-db": "powershell -ExecutionPolicy Bypass -File ./server/dev-up.ps1 -ResetDb -FullStack",
-    "build": "node scripts/generate-route-tree.mjs && node scripts/generate-route-permission-contract.mjs && node scripts/generate-permission-contract.mjs && node --max-old-space-size=4096 ./node_modules/typescript/bin/tsc -b && node --max-old-space-size=4096 ./node_modules/vite/bin/vite.js build",
+    "build": "node scripts/generate-route-tree.mjs && node scripts/generate-authenticated-route-catalog.mjs && node scripts/generate-route-permission-contract.mjs && node scripts/generate-permission-contract.mjs && node --max-old-space-size=4096 ./node_modules/typescript/bin/tsc -b && node --max-old-space-size=4096 ./node_modules/vite/bin/vite.js build",
     "test": "vitest run",
     "test:contracts": "pnpm run verify:account-authz && vitest run --passWithNoTests src/features/ai-assistant/utils/ai-permission-groups.spec.ts src/features/ai-assistant/utils/ai-policy-config.spec.ts src/features/authz/services/effective-permission-service.spec.ts src/features/users/services/user-api.spec.ts src/features/users/hooks/use-users.spec.ts src/features/users/components/users-action-dialog.submit.spec.ts",
     "gen:route-tree": "node scripts/generate-route-tree.mjs",
@@ -39,9 +39,10 @@
     "format": "prettier --write .",
     "knip": "knip",
     "check:conflict-409": "node scripts/check-conflict-409.mjs",
+    "check:auth-route-catalog": "node scripts/check-authenticated-route-catalog.mjs",
     "check:pnpm-lock": "node scripts/check-pnpm-lock-sync.mjs",
     "check:server-deploy": "node scripts/check-server-deploy-ready.mjs",
-    "predeploy:check": "pnpm run check:pnpm-lock && pnpm run check:server-deploy && pnpm run verify:zh-cn-encoding && pnpm run verify:recent-visits"
+    "predeploy:check": "pnpm run check:pnpm-lock && pnpm run check:server-deploy && pnpm run check:auth-route-catalog && pnpm run verify:zh-cn-encoding && pnpm run verify:recent-visits"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
