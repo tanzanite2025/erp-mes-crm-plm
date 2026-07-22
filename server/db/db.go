@@ -1285,6 +1285,7 @@ func InitDB(dsn string) {
 		&models.StandardCommand{},
 		&models.NotificationRule{},
 		&models.RuleExecutionLog{},
+		&models.AIUsageLog{},
 		&models.AuditLog{},
 	)
 	if err != nil {

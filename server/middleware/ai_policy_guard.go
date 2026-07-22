@@ -11,7 +11,9 @@ import (
 )
 
 const aiPolicyContextKey = "aiPolicy"
-const aiRoutePermissionHeader = "X-AI-Route-Permission"
+
+// AIRoutePermissionHeader carries the route permission ID used by AI capability policy checks.
+const AIRoutePermissionHeader = "X-AI-Route-Permission"
 
 func AIPolicyFromContext(c *gin.Context) (services.AIPolicy, bool) {
 	value, exists := c.Get(aiPolicyContextKey)
@@ -62,7 +64,7 @@ func AIPolicyGuard() gin.HandlerFunc {
 			return
 		}
 
-		routePermissionID := authz.NormalizePermissionID(c.GetHeader(aiRoutePermissionHeader))
+		routePermissionID := authz.NormalizePermissionID(c.GetHeader(AIRoutePermissionHeader))
 		if strings.HasPrefix(routePermissionID, "page_") || strings.HasPrefix(routePermissionID, "tab_") {
 			if authz.IsSupportedPermissionID(routePermissionID) && policyContainsPermission(policy, routePermissionID) {
 				c.Next()

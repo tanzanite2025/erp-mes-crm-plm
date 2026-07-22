@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 	"unicode/utf8"
+	appdb "xdfc-server/db"
 	"xdfc-server/middleware"
 	"xdfc-server/services"
 
@@ -89,6 +90,7 @@ func AiProxyHandler(c *gin.Context) {
 		writeSecurityError(c, http.StatusBadRequest, "AI_PROXY_BAD_MESSAGES", err.Error())
 		return
 	}
+	promptRunes := countAIProxyPromptRunes(proxyRequest.Messages)
 
 	upstreamRequest, err := buildAIProxyUpstreamRequest(policy, proxyRequest)
 	if err != nil {
@@ -131,6 +133,32 @@ func AiProxyHandler(c *gin.Context) {
 	}
 	clientRequest.Header.Set("Content-Type", "application/json")
 
+	startedAt := time.Now().UTC()
+	usageLogID, err := reserveAIProxyUsage(c, policy, upstreamRequest, bodyBytes, promptRunes)
+	if err != nil {
+		var limitErr *services.AIUsageLimitError
+		if errors.As(err, &limitErr) {
+			writeSecurityError(c, http.StatusTooManyRequests, limitErr.Code, limitErr.Error())
+			return
+		}
+		log.Printf("[AI_PROXY][ERROR] usage reservation failed: %v", err)
+		writeSecurityError(c, http.StatusInternalServerError, "AI_PROXY_USAGE_RESERVATION_FAILED", "Failed to reserve AI usage")
+		return
+	}
+	usageFinalized := false
+	finalizeUsage := func(status string, errorCode string, httpStatus int, responseBytes int) {
+		if usageFinalized {
+			return
+		}
+		usageFinalized = true
+		finalizeAIProxyUsage(usageLogID, startedAt, status, errorCode, httpStatus, responseBytes)
+	}
+	defer func() {
+		if !usageFinalized {
+			finalizeUsage(services.AIUsageStatusFailed, "AI_PROXY_INTERNAL_ERROR", http.StatusInternalServerError, 0)
+		}
+	}()
+
 	log.Printf(
 		"[AI_PROXY][OUTBOUND] Target: %s | Auth: %t | GroupID: %t | Stream: %t | Timeout: %s",
 		redactURL(targetURL),
@@ -151,6 +179,7 @@ func AiProxyHandler(c *gin.Context) {
 	response, err := client.Do(clientRequest)
 	if err != nil {
 		log.Printf("[AI_PROXY][ERROR] Connection failed: %v", err)
+		finalizeUsage(services.AIUsageStatusFailed, "AI_PROXY_UPSTREAM_TIMEOUT", http.StatusGatewayTimeout, 0)
 		writeSecurityError(c, http.StatusGatewayTimeout, "AI_PROXY_UPSTREAM_TIMEOUT", "Unable to connect to the upstream AI service")
 		return
 	}
@@ -164,16 +193,31 @@ func AiProxyHandler(c *gin.Context) {
 
 	contentType := strings.ToLower(response.Header.Get("Content-Type"))
 	if upstreamRequest.Stream || strings.Contains(contentType, "text/event-stream") {
-		streamUpstreamResponse(c, response)
+		responseBytes, streamErr := streamUpstreamResponse(c, response)
+		if streamErr != nil {
+			errorCode := "AI_PROXY_STREAM_FAILED"
+			if errors.Is(streamErr, errAIProxyStreamCancelled) {
+				errorCode = "AI_PROXY_STREAM_CANCELLED"
+			} else if errors.Is(streamErr, errAIProxyStreamWriteFailed) {
+				errorCode = "AI_PROXY_STREAM_WRITE_FAILED"
+			} else if errors.Is(streamErr, errAIProxyStreamReadFailed) {
+				errorCode = "AI_PROXY_STREAM_READ_FAILED"
+			}
+			finalizeUsage(services.AIUsageStatusFailed, errorCode, response.StatusCode, responseBytes)
+			return
+		}
+		finalizeUsage(services.ClassifyAIUsageStatus(response.StatusCode), "", response.StatusCode, responseBytes)
 		return
 	}
 
 	responseBody, err := readAIProxyResponseBody(response.Body, securityConfig.MaxResponseBytes)
 	if err != nil {
 		if errors.Is(err, errAIProxyResponseTooLarge) {
+			finalizeUsage(services.AIUsageStatusFailed, "AI_PROXY_RESPONSE_TOO_LARGE", response.StatusCode, len(responseBody))
 			writeSecurityError(c, http.StatusBadGateway, "AI_PROXY_RESPONSE_TOO_LARGE", "Upstream response exceeds allowed size")
 			return
 		}
+		finalizeUsage(services.AIUsageStatusFailed, "AI_PROXY_READ_FAIL", response.StatusCode, len(responseBody))
 		writeSecurityError(c, http.StatusInternalServerError, "AI_PROXY_READ_FAIL", "Failed to read upstream response")
 		return
 	}
@@ -181,6 +225,7 @@ func AiProxyHandler(c *gin.Context) {
 		log.Printf("[AI_PROXY][UPSTREAM_FAIL] Status: %d | Target: %s | Bytes: %d", response.StatusCode, redactURL(targetURL), len(responseBody))
 	}
 	c.Data(response.StatusCode, response.Header.Get("Content-Type"), responseBody)
+	finalizeUsage(services.ClassifyAIUsageStatus(response.StatusCode), "", response.StatusCode, len(responseBody))
 }
 
 func validateAIProxyMessages(messages []AiProxyMessage) error {
@@ -472,7 +517,12 @@ func writeSecurityError(c *gin.Context, status int, code string, message string)
 	})
 }
 
-var errAIProxyResponseTooLarge = errors.New("AI proxy response exceeds the limit")
+var (
+	errAIProxyResponseTooLarge  = errors.New("AI proxy response exceeds the limit")
+	errAIProxyStreamCancelled   = errors.New("AI proxy stream cancelled")
+	errAIProxyStreamWriteFailed = errors.New("AI proxy stream write failed")
+	errAIProxyStreamReadFailed  = errors.New("AI proxy stream read failed")
+)
 
 func readAIProxyResponseBody(body io.Reader, maxBytes int) ([]byte, error) {
 	if maxBytes <= 0 {
@@ -480,10 +530,10 @@ func readAIProxyResponseBody(body io.Reader, maxBytes int) ([]byte, error) {
 	}
 	payload, err := io.ReadAll(io.LimitReader(body, int64(maxBytes+aiProxyResponseOverflowDetectionBytes)))
 	if err != nil {
-		return nil, err
+		return payload, err
 	}
 	if len(payload) > maxBytes {
-		return nil, errAIProxyResponseTooLarge
+		return payload[:maxBytes], errAIProxyResponseTooLarge
 	}
 	return payload, nil
 }
@@ -563,7 +613,7 @@ func getAIProxySecurityConfig() aiProxySecurityConfig {
 	}
 }
 
-func streamUpstreamResponse(c *gin.Context, response *http.Response) {
+func streamUpstreamResponse(c *gin.Context, response *http.Response) (int, error) {
 	c.Header("Cache-Control", "no-cache, no-transform")
 	c.Header("Connection", "keep-alive")
 	c.Header("X-Accel-Buffering", "no")
@@ -571,32 +621,86 @@ func streamUpstreamResponse(c *gin.Context, response *http.Response) {
 
 	flusher, ok := c.Writer.(http.Flusher)
 	if !ok {
-		if _, err := io.Copy(c.Writer, response.Body); err != nil {
+		written, err := io.Copy(c.Writer, response.Body)
+		if err != nil {
 			log.Printf("[AI_PROXY][STREAM_ERROR] fallback copy failed: %v", err)
+			if c.Request.Context().Err() != nil {
+				return int(written), errAIProxyStreamCancelled
+			}
+			return int(written), errAIProxyStreamWriteFailed
 		}
-		return
+		return int(written), nil
 	}
 
 	buffer := make([]byte, 4*1024)
+	totalBytes := 0
 	for {
 		if err := c.Request.Context().Err(); err != nil {
-			return
+			return totalBytes, errAIProxyStreamCancelled
 		}
 
 		bytesRead, err := response.Body.Read(buffer)
 		if bytesRead > 0 {
-			if _, writeErr := c.Writer.Write(buffer[:bytesRead]); writeErr != nil {
+			bytesWritten, writeErr := c.Writer.Write(buffer[:bytesRead])
+			totalBytes += bytesWritten
+			if writeErr != nil {
 				log.Printf("[AI_PROXY][STREAM_ERROR] write failed: %v", writeErr)
-				return
+				return totalBytes, fmt.Errorf("%w: %v", errAIProxyStreamWriteFailed, writeErr)
 			}
 			flusher.Flush()
 		}
 		if err != nil {
 			if err != io.EOF {
 				log.Printf("[AI_PROXY][STREAM_ERROR] read failed: %v", err)
+				return totalBytes, fmt.Errorf("%w: %v", errAIProxyStreamReadFailed, err)
 			}
-			return
+			return totalBytes, nil
 		}
+	}
+}
+
+func countAIProxyPromptRunes(messages []AiProxyMessage) int {
+	total := 0
+	for _, message := range messages {
+		total += utf8.RuneCountInString(strings.TrimSpace(message.Content))
+	}
+	return total
+}
+
+func reserveAIProxyUsage(c *gin.Context, policy services.AIPolicy, upstreamRequest aiProxyUpstreamRequest, bodyBytes []byte, promptRunes int) (string, error) {
+	logEntry, err := services.ReserveAIUsage(appdb.DB, services.AIUsageReservationInput{
+		UserID:            middleware.GetSafeUserID(c),
+		Username:          middleware.GetSafeUsername(c),
+		RoutePermissionID: strings.ToLower(strings.TrimSpace(c.GetHeader(middleware.AIRoutePermissionHeader))),
+		Provider:          policy.API.Provider,
+		Model:             policy.API.Model,
+		IP:                c.ClientIP(),
+		Stream:            upstreamRequest.Stream,
+		PromptRunes:       promptRunes,
+		RequestBytes:      len(bodyBytes),
+	}, services.LoadAIUsageGovernanceConfigFromEnv())
+	if err != nil {
+		return "", err
+	}
+	return logEntry.ID, nil
+}
+
+func finalizeAIProxyUsage(usageLogID string, startedAt time.Time, status string, errorCode string, httpStatus int, responseBytes int) {
+	usageLogID = strings.TrimSpace(usageLogID)
+	if usageLogID == "" {
+		return
+	}
+	if strings.TrimSpace(status) == "" {
+		status = services.ClassifyAIUsageStatus(httpStatus)
+	}
+	if err := services.CompleteAIUsage(appdb.DB, usageLogID, services.AIUsageCompletionInput{
+		Status:        status,
+		ErrorCode:     errorCode,
+		HTTPStatus:    httpStatus,
+		ResponseBytes: responseBytes,
+		DurationMs:    time.Since(startedAt).Milliseconds(),
+	}); err != nil {
+		log.Printf("[AI_PROXY][WARN] failed to finalize usage log %s: %v", usageLogID, err)
 	}
 }
 

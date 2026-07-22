@@ -47,3 +47,14 @@ func TestReadAIProxyResponseBodyRejectsOversizedBody(t *testing.T) {
 		t.Fatalf("expected response size error, got %v", err)
 	}
 }
+
+func TestCountAIProxyPromptRunesTrimsMessageContent(t *testing.T) {
+	total := countAIProxyPromptRunes([]AiProxyMessage{
+		{Role: "system", Content: "  规则  "},
+		{Role: "user", Content: "hello"},
+	})
+
+	if total != 7 {
+		t.Fatalf("expected 7 prompt runes, got %d", total)
+	}
+}
