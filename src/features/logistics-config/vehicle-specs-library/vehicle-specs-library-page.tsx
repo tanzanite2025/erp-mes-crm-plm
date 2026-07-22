@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { VehiclePhotoDialog } from '../vehicle-loading/components/vehicle-photo-dialog'
-import { useVehiclePhotoDialogState } from '../vehicle-loading/hooks/use-vehicle-photo-dialog-state'
-import { useVehicleSpecsQuery } from '../vehicle-loading/hooks/use-vehicle-specs-query'
+import { useMemo, useState } from 'react'
+import { VehiclePhotoDialog } from '../vehicle-specs/components/vehicle-photo-dialog'
+import { useVehiclePhotoDialogState } from '../vehicle-specs/hooks/use-vehicle-photo-dialog-state'
+import { useVehicleSpecsQuery } from '../vehicle-specs/hooks/use-vehicle-specs-query'
 import { VehicleSpecsLibraryContent } from './components/vehicle-specs-library-content'
 import { VehicleSpecsLibraryHeader } from './components/vehicle-specs-library-header'
 import {
@@ -21,6 +21,25 @@ export function VehicleSpecsLibraryPage() {
     selectedPhotoEntry,
     openVehiclePhotos,
   } = useVehiclePhotoDialogState()
+  const filteredVehicleSpecs = useMemo(() => {
+    const keyword = search.trim().toLowerCase()
+    if (!keyword) return vehicleSpecs
+
+    return vehicleSpecs.filter((spec) =>
+      [
+        spec.id,
+        spec.name,
+        spec.category,
+        spec.notes,
+        `${spec.payloadKg}`,
+        `${spec.volumeM3}`,
+        `${spec.nominalVolumeM3}`,
+      ]
+        .join(' ')
+        .toLowerCase()
+        .includes(keyword)
+    )
+  }, [search, vehicleSpecs])
 
   return (
     <>
@@ -32,7 +51,7 @@ export function VehicleSpecsLibraryPage() {
             search={search}
             onSearchChange={setSearch}
             onRefresh={() => void reload()}
-            totalCount={vehicleSpecs.length}
+            totalCount={filteredVehicleSpecs.length}
           />
 
           {specsError ? (
@@ -48,7 +67,8 @@ export function VehicleSpecsLibraryPage() {
 
           {!specsError && !isLoadingSpecs ? (
             <VehicleSpecsLibraryContent
-              vehicleSpecs={vehicleSpecs}
+              vehicleSpecs={filteredVehicleSpecs}
+              search={search}
               onOpenPhotos={openVehiclePhotos}
             />
           ) : null}

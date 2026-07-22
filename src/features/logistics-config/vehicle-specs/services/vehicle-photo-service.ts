@@ -7,7 +7,7 @@ import type {
 import {
   vehiclePhotoEntrySchema,
   type VehiclePhotoEntryDTO,
-} from './vehicle-loading.schema'
+} from './vehicle-specs.schema'
 
 export type SaveVehiclePhotoInput = {
   url: string

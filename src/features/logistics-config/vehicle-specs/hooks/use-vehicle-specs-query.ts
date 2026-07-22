@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { isForbiddenError } from '@/lib/error-status'
-import { vehicleLoadingQueryKeys } from '../query-keys'
-import { getVehicleSpecs } from '../services/vehicle-loading-service'
+import { vehicleSpecsQueryKeys } from '../query-keys'
+import { getVehicleSpecs } from '../services/vehicle-specs-service'
 
 export type VehicleSpecsLoadState =
   | 'loading'
@@ -12,7 +12,7 @@ export type VehicleSpecsLoadState =
 
 export function useVehicleSpecsQuery() {
   const query = useQuery({
-    queryKey: vehicleLoadingQueryKeys.specs(),
+    queryKey: vehicleSpecsQueryKeys.list(),
     queryFn: getVehicleSpecs,
     retry: false,
     staleTime: 5 * 60 * 1000,

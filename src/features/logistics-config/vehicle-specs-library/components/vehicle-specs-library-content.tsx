@@ -1,19 +1,26 @@
-import type { VehicleSpec } from '../../vehicle-loading/data/vehicle-loading.types'
-import { VehicleSpecCard } from './vehicle-spec-card'
+import type { VehicleSpec } from '../../vehicle-specs/data/vehicle-specs.types'
+import { VehicleSpecsLibraryEmptyState } from './vehicle-specs-library-state'
+import { VehicleSpecMaintenanceCard } from './vehicle-spec-maintenance-card'
 
 type Props = {
   vehicleSpecs: VehicleSpec[]
+  search: string
   onOpenPhotos: (spec: VehicleSpec) => void
 }
 
 export function VehicleSpecsLibraryContent({
   vehicleSpecs,
+  search,
   onOpenPhotos,
 }: Props) {
+  if (vehicleSpecs.length === 0) {
+    return <VehicleSpecsLibraryEmptyState search={search} />
+  }
+
   return (
     <div className='grid grid-cols-1 gap-4 xl:grid-cols-2 xl:gap-5'>
       {vehicleSpecs.map((spec) => (
-        <VehicleSpecCard
+        <VehicleSpecMaintenanceCard
           key={spec.id}
           spec={spec}
           onOpenPhotos={onOpenPhotos}

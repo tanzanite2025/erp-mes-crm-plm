@@ -9,12 +9,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { VehicleSpec } from '../data/vehicle-loading.types'
 import {
   VEHICLE_PHOTO_VIEW_TYPES,
   type VehiclePhotoViewType,
 } from '../data/vehicle-photo-manifest'
 import { getVehiclePhotoViewTypeLabel } from '../data/vehicle-photo-view-type-label'
+import type { VehicleSpec } from '../data/vehicle-specs.types'
 import { useVehiclePhotoUpload } from '../hooks/use-vehicle-photo-upload'
 
 const DEFAULT_VIEW_TYPE: VehiclePhotoViewType = 'exterior'

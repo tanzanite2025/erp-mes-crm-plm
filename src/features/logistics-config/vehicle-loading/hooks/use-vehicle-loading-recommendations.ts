@@ -4,6 +4,7 @@ import type {
   VehicleLoadingPackageInput,
   VehicleSpec,
 } from '../data/vehicle-loading.types'
+import { vehicleLoadingQueryKeys } from '../query-keys'
 import { getVehicleRecommendations } from '../services/vehicle-loading-service'
 
 export function useVehicleLoadingRecommendations(
@@ -14,14 +15,12 @@ export function useVehicleLoadingRecommendations(
   reloadToken: number
 ) {
   const query = useQuery({
-    queryKey: [
-      'vehicle-loading',
-      'recommendations',
+    queryKey: vehicleLoadingQueryKeys.recommendationDetail(
       summary,
       packageInput,
       vehicleSpecs,
-      reloadToken,
-    ],
+      reloadToken
+    ),
     queryFn: () =>
       getVehicleRecommendations(
         summary,

@@ -4,8 +4,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import type { VehicleSpec } from '../data/vehicle-loading.types'
 import type { VehiclePhotoEntry } from '../data/vehicle-photo-manifest'
+import type { VehicleSpec } from '../data/vehicle-specs.types'
 
 type Props = {
   vehicle: VehicleSpec | null

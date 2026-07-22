@@ -1,4 +1,4 @@
-import type { VehicleCategory } from './vehicle-loading.types'
+import type { VehicleCategory } from './vehicle-specs.types'
 
 export type VehicleCategoryLabelKey =
   | 'logisticsConfig.vehicleSpecsLibrary.vehicleCategories.van'

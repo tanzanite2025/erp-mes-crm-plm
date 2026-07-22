@@ -1,4 +1,4 @@
-import type { VehicleSpec } from '../../vehicle-loading/data/vehicle-loading.types'
+import type { VehicleSpec } from '../data/vehicle-specs.types'
 
 type Props = {
   spec: VehicleSpec

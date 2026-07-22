@@ -1,18 +1,18 @@
 import { Card } from '@/components/ui/card'
-import { VehiclePhotoTriggerButton } from '../../vehicle-loading/components/vehicle-photo-trigger-button'
-import { VehiclePhotoUploadPanel } from '../../vehicle-loading/components/vehicle-photo-upload-panel'
-import type { VehicleSpec } from '../../vehicle-loading/data/vehicle-loading.types'
-import { VehicleSpecCardHeader } from './vehicle-spec-card-header'
-import { VehicleSpecCardMetrics } from './vehicle-spec-card-metrics'
-import { VehicleSpecCardNotes } from './vehicle-spec-card-notes'
-import { VehicleSpecCardRules } from './vehicle-spec-card-rules'
+import { VehiclePhotoTriggerButton } from '../../vehicle-specs/components/vehicle-photo-trigger-button'
+import { VehiclePhotoUploadPanel } from '../../vehicle-specs/components/vehicle-photo-upload-panel'
+import type { VehicleSpec } from '../../vehicle-specs/data/vehicle-specs.types'
+import { VehicleSpecCardHeader } from '../../vehicle-specs/components/vehicle-spec-card-header'
+import { VehicleSpecCardMetrics } from '../../vehicle-specs/components/vehicle-spec-card-metrics'
+import { VehicleSpecCardNotes } from '../../vehicle-specs/components/vehicle-spec-card-notes'
+import { VehicleSpecCardRules } from '../../vehicle-specs/components/vehicle-spec-card-rules'
 
 type Props = {
   spec: VehicleSpec
   onOpenPhotos: (spec: VehicleSpec) => void
 }
 
-export function VehicleSpecCard({ spec, onOpenPhotos }: Props) {
+export function VehicleSpecMaintenanceCard({ spec, onOpenPhotos }: Props) {
   return (
     <Card className='overflow-hidden rounded-[28px] border border-dashed border-border/50 bg-card/95 p-0 shadow-[0_1px_0_rgba(15,23,42,0.03)]'>
       <div className='flex flex-col gap-0'>

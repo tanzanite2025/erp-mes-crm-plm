@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useLanguage } from '@/context/language-provider'
 import type { VehicleLoadingPackageInput } from '../data/vehicle-loading.types'
-import { categoryLabelKey } from '../data/vehicle-loading.utils'
+import { categoryLabelKey } from '../../vehicle-specs/data/vehicle-specs.utils'
 import { buildVehicleLoadingPackageInputFromDraft } from '../services/vehicle-loading-package-input'
 import { useVehicleLoadingData } from './use-vehicle-loading-data'
 import { useVehicleLoadingState } from './use-vehicle-loading-state'

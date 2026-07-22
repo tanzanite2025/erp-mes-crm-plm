@@ -1,23 +1,23 @@
-import { z } from 'zod'
 import { apiFetch } from '@/lib/api'
 import { ensureObjectResponse } from '@/lib/api-response'
+import type { VehicleSpec } from '../../vehicle-specs/data/vehicle-specs.types'
+import {
+  vehicleSpecSchema,
+  type VehicleSpecDTO,
+} from '../../vehicle-specs/services/vehicle-specs.schema'
 import type {
   ShipmentSummary,
   VehicleLoadingPackageInput,
-  VehicleSpec,
 } from '../data/vehicle-loading.types'
 import {
   shipmentSummarySchema,
   vehicleRecommendationRequestSchema,
   vehicleRecommendationResponseSchema,
-  vehicleSpecSchema,
   type ShipmentSummaryDTO,
   type VehicleRecommendationRequestDTO,
   type VehicleRecommendationResponseDTO,
-  type VehicleSpecDTO,
 } from './vehicle-loading.schema'
 
-const VEHICLE_SPECS_ENDPOINT = '/api/v1/logistics-config/vehicle-specs'
 const VEHICLE_RECOMMENDATIONS_ENDPOINT =
   '/api/v1/logistics/vehicle-loading/recommendations'
 
@@ -46,11 +46,6 @@ function buildRecommendationRequest(
     vehicleSpecs: resolveVehicleSpecs(vehicleSpecs),
     packageInput,
   })
-}
-
-export async function getVehicleSpecs(): Promise<VehicleSpecDTO[]> {
-  const response = await apiFetch<unknown>(VEHICLE_SPECS_ENDPOINT)
-  return z.array(vehicleSpecSchema).parse(response)
 }
 
 export async function getVehicleRecommendations(

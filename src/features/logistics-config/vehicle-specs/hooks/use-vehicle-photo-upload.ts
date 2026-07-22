@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { AssetService } from '@/services/asset-service'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
-import { vehicleLoadingQueryKeys } from '../query-keys'
+import { vehicleSpecsQueryKeys } from '../query-keys'
 import {
   saveVehiclePhoto,
   type SaveVehiclePhotoInput,
@@ -33,7 +33,7 @@ export function useVehiclePhotoUpload() {
     onSuccess: async () => {
       toast.success(t('logisticsConfig.vehiclePhotos.toasts.uploadSuccess'))
       await queryClient.invalidateQueries({
-        queryKey: vehicleLoadingQueryKeys.specs(),
+        queryKey: vehicleSpecsQueryKeys.list(),
       })
     },
     onError: (error) => {

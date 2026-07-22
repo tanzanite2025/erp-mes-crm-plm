@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { VehicleCategory } from '../data/vehicle-loading.types'
+import type { VehicleCategory } from '../../vehicle-specs/data/vehicle-specs.types'
 import { FieldCard } from './field-card'
 
 const fieldClass =

@@ -1,8 +1,6 @@
 import { useState } from 'react'
-import type {
-  ShipmentSummary,
-  VehicleCategory,
-} from '../data/vehicle-loading.types'
+import type { VehicleCategory } from '../../vehicle-specs/data/vehicle-specs.types'
+import type { ShipmentSummary } from '../data/vehicle-loading.types'
 import { createDefaultVehicleLoadingPackageDraft } from '../services/vehicle-loading-package-input'
 
 export function useVehicleLoadingState() {

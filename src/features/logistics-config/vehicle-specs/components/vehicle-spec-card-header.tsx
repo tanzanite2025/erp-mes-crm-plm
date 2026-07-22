@@ -1,7 +1,7 @@
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
-import type { VehicleSpec } from '../../vehicle-loading/data/vehicle-loading.types'
-import { categoryLabelKey } from '../../vehicle-loading/data/vehicle-loading.utils'
+import type { VehicleSpec } from '../data/vehicle-specs.types'
+import { categoryLabelKey } from '../data/vehicle-specs.utils'
 
 type Props = {
   spec: VehicleSpec

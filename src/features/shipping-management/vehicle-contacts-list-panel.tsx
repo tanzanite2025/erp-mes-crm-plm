@@ -2,7 +2,7 @@ import { Plus, MapPinned } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { type VehicleSpecsLoadState } from '@/features/logistics-config/vehicle-loading/hooks/use-vehicle-specs-query'
+import { type VehicleSpecsLoadState } from '@/features/logistics-config/vehicle-specs/hooks/use-vehicle-specs-query'
 import {
   type VehicleCategory,
   type VehicleContactBinding,

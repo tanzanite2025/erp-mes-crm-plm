@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
-import { useVehicleSpecsQuery } from '@/features/logistics-config/vehicle-loading/hooks/use-vehicle-specs-query'
+import { useVehicleSpecsQuery } from '@/features/logistics-config/vehicle-specs/hooks/use-vehicle-specs-query'
 import { createDefaultVehicleContactRemoteFilters } from './contact-filters.shared'
 import { useVehicleContactActions } from './hooks/use-vehicle-contact-actions'
 import { useVehicleContactBindings } from './hooks/use-vehicle-contact-bindings'

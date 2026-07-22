@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import type { VehicleSpec } from '../data/vehicle-loading.types'
+import type { VehicleSpec } from '../data/vehicle-specs.types'
 
 export function useVehiclePhotoDialogState() {
   const [photoDialogOpen, setPhotoDialogOpen] = useState(false)

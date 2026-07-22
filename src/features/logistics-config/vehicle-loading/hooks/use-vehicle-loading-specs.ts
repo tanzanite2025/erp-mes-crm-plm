@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useVehicleSpecsQuery } from './use-vehicle-specs-query'
+import { useVehicleSpecsQuery } from '../../vehicle-specs/hooks/use-vehicle-specs-query'
 
 export function useVehicleLoadingSpecs(reloadToken: number) {
   const { vehicleSpecs, isLoadingSpecs, specsError, reload } =

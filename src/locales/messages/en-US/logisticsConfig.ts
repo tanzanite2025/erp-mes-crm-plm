@@ -25,6 +25,12 @@ export const logisticsConfig = {
       'Centralizes vehicle master data into a single source of truth, covering physical cabin dimensions, usable loading space, safety allowances, and loading constraints.',
     loading: 'Loading vehicle specs library...',
     errorTitle: 'Unable to load vehicle specs library',
+    emptyTitle: 'No vehicle specs',
+    emptyDescription:
+      'The vehicle specs API returned an empty list. Please verify backend catalog data first.',
+    noSearchResults: 'No matching vehicles',
+    noSearchResultsDescription:
+      'The current search does not match vehicle name, code, category, or notes.',
     retry: 'Reload',
     physicalSize: 'Physical Cabin Dimensions',
     usableSize: 'Usable Loading Space',
