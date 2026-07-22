@@ -109,10 +109,11 @@ export function Combobox({
       </PopoverTrigger>
       <PopoverContent
         className={cn(
-          'w-[580px] border-blue-500/20 p-0 shadow-2xl',
+          'w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] overflow-hidden border-blue-500/20 p-0 shadow-2xl sm:w-[580px] sm:max-w-[580px]',
           contentClassName
         )}
         align='start'
+        collisionPadding={8}
       >
         <Command filter={() => 1}>
           <div className='flex items-center border-b bg-muted/20 px-3 text-blue-600'>
@@ -124,13 +125,13 @@ export function Combobox({
               onValueChange={setSearch}
             />
           </div>
-          <CommandList className='relative max-h-[400px] min-h-[300px] w-full overflow-y-auto'>
+          <CommandList className='relative max-h-[48dvh] min-h-[12rem] w-full overflow-y-auto sm:max-h-[400px] sm:min-h-[300px]'>
             {isLoading ? (
-              <div className='animate-pulse py-20 text-center text-xs font-black tracking-widest text-muted-foreground uppercase'>
+              <div className='animate-pulse py-12 text-center text-xs font-black tracking-widest text-muted-foreground uppercase sm:py-20'>
                 Loading Archive / 数据加载中...
               </div>
             ) : filteredOptions.length === 0 ? (
-              <div className='py-20 text-center text-xs text-muted-foreground'>
+              <div className='px-4 py-12 text-center text-xs text-muted-foreground sm:py-20'>
                 <div
                   data-slot='combobox-empty-title'
                   className='mb-1 font-black tracking-tight uppercase'
@@ -139,7 +140,7 @@ export function Combobox({
                 </div>
                 <div
                   data-slot='combobox-empty-subtitle'
-                  className='text-[10px] uppercase opacity-40'
+                  className='truncate text-[10px] uppercase opacity-40'
                 >
                   No matching records found
                 </div>
