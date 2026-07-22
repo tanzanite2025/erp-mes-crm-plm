@@ -69,10 +69,10 @@ func auditContextFromGin(c *gin.Context) context.Context {
 		IP:       c.ClientIP(),
 		Source:   "http",
 	}
-	
+
 	// 获取用户权限
 	permissions := middleware.GetUserPermissions(c)
-	
+
 	return audit.NewContextWithActorAndPermissions(c.Request.Context(), actor, permissions)
 }
 
@@ -164,7 +164,7 @@ func invalidateUnitsCache() {
 	if db.RDB == nil {
 		return
 	}
-	_ = db.RDB.Del(context.Background(), "global:cache:units").Err()
+	_ = db.RDB.Del(context.Background(), db.UnitsCacheKey).Err()
 }
 
 func buildUnitUpdates(payload map[string]json.RawMessage) (map[string]interface{}, error) {
@@ -212,7 +212,7 @@ func patchUnitRecord(id string, updates map[string]interface{}) error {
 // GetUnitsHandler 获取所有计量单位
 func GetUnitsHandler(c *gin.Context) {
 	ctx := context.Background()
-	cacheKey := "global:cache:units"
+	cacheKey := db.UnitsCacheKey
 
 	// 1. 内存常驻直出 (Bypass GORM)
 	if db.RDB != nil {

@@ -44,6 +44,11 @@ function toKilograms(value: number, unitCode: string): number {
     case 'g':
     case '克':
       return value / 1000
+    case 't':
+    case 'ton':
+    case 'tonne':
+    case '吨':
+      return value * 1000
     default:
       throw new Error(`Unsupported weight unit code: ${unitCode}`)
   }

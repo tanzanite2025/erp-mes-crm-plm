@@ -1366,6 +1366,7 @@ func InitDB(dsn string) {
 	ensureSeedAdminUserPermissions()
 	ensureDefaultProductAttributeCategories()
 	ensureDefaultProductAttributeOptions()
+	ensureDefaultUnits()
 	ensureDefaultWarehouseCategories()
 	ensureDefaultBOMSections()
 
