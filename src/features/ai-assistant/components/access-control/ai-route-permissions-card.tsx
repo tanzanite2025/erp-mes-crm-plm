@@ -136,7 +136,7 @@ export function AiRoutePermissionsCard({
             defaultValue={
               searchQuery.trim() ? visiblePermissionGroups[0]?.id : undefined
             }
-            className='space-y-3'
+            className='grid grid-cols-1 items-start gap-3 space-y-0 lg:grid-cols-2 2xl:grid-cols-3'
           >
             {visiblePermissionGroups.map((group) => {
               const selectedCount = group.permissionIds.filter((permissionId) =>
