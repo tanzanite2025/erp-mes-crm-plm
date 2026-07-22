@@ -78,21 +78,21 @@ export function AiRoutePermissionsCard({
   return (
     <Card
       className={cn(
-        'overflow-hidden rounded-2xl border-2 border-dashed border-slate-100 bg-slate-50/30 shadow-none md:rounded-[32px]',
+        'gap-0 overflow-hidden rounded-2xl border-2 border-dashed border-slate-100 bg-slate-50/30 py-0 shadow-none md:rounded-[28px]',
         className
       )}
     >
-      <CardHeader className='border-b border-dashed border-slate-100 p-4 md:p-6'>
+      <CardHeader className='gap-1 border-b border-dashed border-slate-100 !px-4 !py-3'>
         <CardTitle className='text-[11px] font-black tracking-tight uppercase italic md:text-sm'>
           {t('aiAssistant.accessControl.permissions.title')}
         </CardTitle>
-        <CardDescription className='text-[8px] font-bold tracking-widest text-slate-400 uppercase md:text-[9px]'>
+        <CardDescription className='text-[8px] leading-none font-bold tracking-widest text-slate-400 uppercase md:text-[9px]'>
           {t('aiAssistant.accessControl.permissions.description')}
         </CardDescription>
       </CardHeader>
 
-      <CardContent className='space-y-4 p-4 md:p-6'>
-        <div className='flex flex-col gap-3 rounded-2xl border border-dashed border-slate-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between'>
+      <CardContent className='space-y-3 !p-4'>
+        <div className='flex flex-col gap-3 rounded-2xl border border-dashed border-slate-200 bg-white p-2.5 sm:flex-row sm:items-center sm:justify-between'>
           <div className='relative min-w-0 flex-1 sm:max-w-md'>
             <Search className='pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400' />
             <Input
@@ -104,14 +104,14 @@ export function AiRoutePermissionsCard({
               aria-label={t(
                 'aiAssistant.accessControl.permissions.searchPlaceholder'
               )}
-              className='h-10 rounded-xl border-slate-200 bg-slate-50 pr-10 pl-9 text-xs'
+              className='h-9 rounded-xl border-slate-200 bg-slate-50 pr-10 pl-9 text-xs'
             />
             {searchQuery ? (
               <Button
                 type='button'
                 variant='ghost'
                 size='icon'
-                className='absolute top-1/2 right-1 size-8 -translate-y-1/2 rounded-lg text-slate-400'
+                className='absolute top-1/2 right-1 size-7 -translate-y-1/2 rounded-lg text-slate-400'
                 onClick={() => setSearchQuery('')}
                 aria-label={t(
                   'aiAssistant.accessControl.permissions.clearSearch'
