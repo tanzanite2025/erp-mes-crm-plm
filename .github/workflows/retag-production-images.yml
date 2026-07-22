@@ -1,0 +1,52 @@
+name: Retag Production Images
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_tag:
+        description: Existing image tag to copy from, for example sha-119446a
+        required: true
+        type: string
+      target_tag:
+        description: New image tag to publish, for example sha-119446a646670805228a00035a62434e8e8df212
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: retag-production-images-${{ inputs.target_tag }}
+  cancel-in-progress: false
+
+jobs:
+  retag:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - erp-web
+          - erp-api
+          - erp-search
+          - erp-watchdog
+
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Copy image tag
+        run: |
+          set -euo pipefail
+          image="ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}"
+          docker buildx imagetools create \
+            --tag "${image}:${{ inputs.target_tag }}" \
+            "${image}:${{ inputs.source_tag }}"
