@@ -6,11 +6,13 @@ import { AuditStatusDisplay } from '@/components/common/audit-status-display'
 import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
+import { MaterialUpsertDialog } from '@/features/material-archive/components/material-upsert-dialog'
 import { useGetSuppliers } from '@/features/purchase/suppliers'
 import { getPurchaseStatusDisplayMeta } from '../data/purchase-status'
 import { type PurchaseOrder, type PurchaseOrderListItem } from '../data/schema'
 import { usePurchaseOrderDialogResources } from '../hooks/use-purchase-order-dialog-resources'
 import { usePurchaseOrderForm } from '../hooks/use-purchase-order-form'
+import { usePurchaseOrderMaterialShortcuts } from '../hooks/use-purchase-order-material-shortcuts'
 import { usePurchaseOrderSavePreparation } from '../hooks/use-purchase-order-save-preparation'
 import {
   useGetPurchaseOrderDetail,
@@ -68,6 +70,10 @@ export function PurchaseOrderActionDialog({
   })
 
   const { createMutation, saveMutation } = usePurchaseOrderMutations()
+  const materialShortcuts = usePurchaseOrderMaterialShortcuts({
+    lines: formData.lines || [],
+    updateLine,
+  })
 
   const handleSave = async () => {
     if (!allowsAction('action_trading_purchase_order_manage')) return
@@ -158,8 +164,12 @@ export function PurchaseOrderActionDialog({
         lines={formData.lines || []}
         materials={materials}
         isLoading={isDataLoading}
+        canMaintainMaterials={materialShortcuts.canMaintainMaterials}
+        canOpenMaterialArchive={materialShortcuts.canOpenMaterialArchive}
         currency={formData.currency || 'CNY'}
         onAddLine={handleAddLine}
+        onCreateMaterialForLine={materialShortcuts.openMaterialCreateDialog}
+        onOpenMaterialArchive={materialShortcuts.openMaterialArchive}
         onRemoveLine={handleRemoveLine}
         onLineChange={updateLine}
       />
@@ -169,6 +179,13 @@ export function PurchaseOrderActionDialog({
         onChange={(evidences) => {
           handleHeaderChange('evidences', evidences)
         }}
+      />
+
+      <MaterialUpsertDialog
+        open={materialShortcuts.isMaterialCreateDialogOpen}
+        onOpenChange={materialShortcuts.handleMaterialCreateDialogOpenChange}
+        material={null}
+        onSave={materialShortcuts.saveMaterialAndFillPurchaseLine}
       />
     </PurchaseOrderActionDialogShell>
   )

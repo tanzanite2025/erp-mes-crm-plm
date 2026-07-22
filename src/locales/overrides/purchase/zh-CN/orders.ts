@@ -179,6 +179,10 @@ export const orders = {
   linesEditor: {
     title: '采购物料明细录入',
     addLine: '新增子项',
+    createMaterial: '登记新物料',
+    openMaterialArchive: '打开物料档案',
+    materialPermissionRequired: '需要物料档案维护权限',
+    materialCreatedAndSelected: '物料档案已保存，并已回填到采购明细',
     materialName: '物料名称',
     materialPlaceholder: '选择物料档案...',
     materialSearchPlaceholder: '搜索名称、规格或编码...',

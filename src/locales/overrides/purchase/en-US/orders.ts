@@ -192,6 +192,11 @@ export const orders = {
   linesEditor: {
     title: 'Purchase Material Lines',
     addLine: 'Add Line',
+    createMaterial: 'Register Material',
+    openMaterialArchive: 'Open Material Archive',
+    materialPermissionRequired: 'Material archive maintenance permission is required',
+    materialCreatedAndSelected:
+      'Material archive saved and filled into the purchase line',
     materialName: 'Material',
     materialPlaceholder: 'Select material archive...',
     materialSearchPlaceholder: 'Search by name, spec, or code...',

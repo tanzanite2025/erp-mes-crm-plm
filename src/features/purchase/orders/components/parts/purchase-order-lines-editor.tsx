@@ -1,4 +1,4 @@
-import { Package, Plus, Trash2 } from 'lucide-react'
+import { ExternalLink, Package, Plus, Trash2 } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -15,8 +15,12 @@ interface PurchaseOrderLinesEditorProps {
   lines: PurchaseOrderLine[]
   materials: MaterialOption[]
   isLoading?: boolean
+  canMaintainMaterials?: boolean
+  canOpenMaterialArchive?: boolean
   currency: string
   onAddLine: () => void
+  onCreateMaterialForLine?: (index: number) => void
+  onOpenMaterialArchive?: () => void
   onRemoveLine: (index: number) => void
   onLineChange: (
     index: number,
@@ -30,12 +34,19 @@ export function PurchaseOrderLinesEditor({
   lines,
   materials = [],
   isLoading,
+  canMaintainMaterials = false,
+  canOpenMaterialArchive = false,
   currency,
   onAddLine,
+  onCreateMaterialForLine,
+  onOpenMaterialArchive,
   onRemoveLine,
   onLineChange,
 }: PurchaseOrderLinesEditorProps) {
   const { t } = useLanguage()
+  const firstEmptyMaterialLineIndex = lines.findIndex(
+    (line) => !line.materialId
+  )
   const { materialOptions, handleMaterialSelect } =
     usePurchaseOrderLinesEditorViewModel({
       materials,
@@ -45,21 +56,66 @@ export function PurchaseOrderLinesEditor({
 
   return (
     <section className='space-y-2.5'>
-      <div className='flex items-center justify-between px-1'>
+      <div className='flex flex-col gap-2 px-1 sm:flex-row sm:items-center sm:justify-between'>
         <h3 className='flex items-center gap-2 text-sm font-black tracking-tighter text-slate-800 uppercase italic dark:text-slate-200'>
           <Package className='size-4 text-primary' />
           {t('purchase.orders.linesEditor.title')}
         </h3>
-        <Button
-          type='button'
-          variant='outline'
-          size='sm'
-          onClick={onAddLine}
-          className='h-7 rounded-lg border-dashed text-[10px] font-black uppercase hover:bg-primary/5 hover:text-primary'
-        >
-          <Plus className='mr-1 size-3' />
-          {t('purchase.orders.linesEditor.addLine')}
-        </Button>
+        <div className='flex flex-wrap items-center gap-2'>
+          <Button
+            type='button'
+            variant='outline'
+            size='sm'
+            onClick={() => {
+              if (!canMaintainMaterials) return
+
+              const targetLineIndex =
+                firstEmptyMaterialLineIndex >= 0
+                  ? firstEmptyMaterialLineIndex
+                  : lines.length
+              if (firstEmptyMaterialLineIndex < 0) {
+                onAddLine()
+              }
+              onCreateMaterialForLine?.(targetLineIndex)
+            }}
+            disabled={!canMaintainMaterials}
+            title={
+              !canMaintainMaterials
+                ? t('purchase.orders.linesEditor.materialPermissionRequired')
+                : t('purchase.orders.linesEditor.createMaterial')
+            }
+            className='h-7 rounded-lg border-dashed text-[10px] font-black uppercase hover:bg-emerald-500/5 hover:text-emerald-600 disabled:opacity-45'
+          >
+            <Plus className='mr-1 size-3' />
+            {t('purchase.orders.linesEditor.createMaterial')}
+          </Button>
+          <Button
+            type='button'
+            variant='outline'
+            size='sm'
+            onClick={onOpenMaterialArchive}
+            disabled={!canOpenMaterialArchive}
+            title={
+              canOpenMaterialArchive
+                ? t('purchase.orders.linesEditor.openMaterialArchive')
+                : t('purchase.orders.linesEditor.materialPermissionRequired')
+            }
+            className='h-7 rounded-lg border-dashed text-[10px] font-black uppercase hover:bg-blue-500/5 hover:text-blue-600 disabled:opacity-45'
+          >
+            <ExternalLink className='mr-1 size-3' />
+            {t('purchase.orders.linesEditor.openMaterialArchive')}
+          </Button>
+          <Button
+            type='button'
+            variant='outline'
+            size='sm'
+            onClick={onAddLine}
+            className='h-7 rounded-lg border-dashed text-[10px] font-black uppercase hover:bg-primary/5 hover:text-primary'
+          >
+            <Plus className='mr-1 size-3' />
+            {t('purchase.orders.linesEditor.addLine')}
+          </Button>
+        </div>
       </div>
 
       <div className='space-y-2'>
