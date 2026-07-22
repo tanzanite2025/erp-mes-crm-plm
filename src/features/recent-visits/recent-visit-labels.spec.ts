@@ -12,8 +12,6 @@ const RECENT_VISIT_REDIRECT_AND_INTERNAL_PATHS = [
   '/personal-workbench/capture',
   '/approval/routing',
   '/system-management/routing',
-  '/personnel/leave',
-  '/personnel/stats',
   '/quotes/wholesale',
   '/quotes/retail',
   '/trading/quotes',

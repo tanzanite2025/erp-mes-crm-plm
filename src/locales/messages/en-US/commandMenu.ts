@@ -91,7 +91,6 @@ export const commandMenu = {
     productionLines: 'Production Lines',
     topology: 'Topology Templates',
     leaveManagement: 'Leave Management',
-    hallOfFame: 'Hall of Fame',
     stock: 'Stock List',
     reports: 'Reports',
     inbound: 'Product Inbound',

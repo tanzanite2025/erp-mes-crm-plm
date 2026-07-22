@@ -91,7 +91,6 @@ export const commandMenu = {
     productionLines: '产线管理',
     topology: '拓扑模板',
     leaveManagement: '请假管理',
-    hallOfFame: '荣誉榜',
     stock: '库存清单',
     reports: '报表',
     inbound: '产品入库',

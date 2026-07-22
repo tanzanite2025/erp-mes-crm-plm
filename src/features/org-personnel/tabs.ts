@@ -32,12 +32,12 @@ export function getOrgPersonnelBranchTabs(t: TranslateFn): TabItem[] {
     {
       key: 'leave',
       label: t('orgPersonnel.tabs.leave'),
-      href: '/leave-management',
+      href: '/attendance-management/leave',
     },
     {
       key: 'stats',
       label: t('orgPersonnel.tabs.stats'),
-      href: '/hall-of-fame',
+      href: '/attendance-management/hall-of-fame',
     },
   ]
 }

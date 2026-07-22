@@ -54,12 +54,6 @@ function getActiveTargets(item: NavItem): string[] {
   const itemUrl = item.url ? String(item.url) : undefined
   const activeMatch = item.activeMatch ? String(item.activeMatch) : undefined
 
-  if (item.activeMatches?.length) {
-    return [itemUrl, activeMatch, ...item.activeMatches.map(String)].filter(
-      Boolean
-    ) as string[]
-  }
-
   return [activeMatch || itemUrl].filter(Boolean) as string[]
 }
 

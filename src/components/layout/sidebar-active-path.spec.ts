@@ -47,10 +47,10 @@ const navGroups: NavGroup[] = [
         title: 'Organization & Personnel',
         children: [
           {
-            id: 'hall-of-fame',
-            title: 'Hall of Fame',
-            url: '/hall-of-fame',
-            activeMatches: ['/leave-management'],
+            id: 'attendance-management',
+            title: 'Attendance Management',
+            url: '/attendance-management/leave',
+            activeMatch: '/attendance-management',
           },
         ],
       },
@@ -84,11 +84,13 @@ describe('resolveActiveSidebarPath', () => {
     expect(resolveActiveSidebarPath(navGroups, '/system-management')).toBeNull()
   })
 
-  it('keeps disjoint tab routes under their owning sidebar domain', () => {
-    expect(resolveActiveSidebarPath(navGroups, '/leave-management')).toEqual({
+  it('keeps sibling tab routes under their owning sidebar domain', () => {
+    expect(
+      resolveActiveSidebarPath(navGroups, '/attendance-management/hall-of-fame')
+    ).toEqual({
       groupId: 'org',
-      nodeIds: ['org-personnel', 'hall-of-fame'],
-      key: 'org/org-personnel/hall-of-fame',
+      nodeIds: ['org-personnel', 'attendance-management'],
+      key: 'org/org-personnel/attendance-management',
     })
   })
 })

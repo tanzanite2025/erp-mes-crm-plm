@@ -22,15 +22,19 @@ describe('sidebar nav active matching', () => {
     ).toBe(true)
   })
 
-  it('keeps a sidebar domain active across disjoint tab route paths', () => {
-    const hallOfFameItem: NavLink = {
-      id: 'hall-of-fame',
-      title: 'Hall of Fame',
-      url: '/hall-of-fame',
-      activeMatches: ['/leave-management'],
+  it('keeps a sidebar domain active across sibling tab route paths', () => {
+    const attendanceItem: NavLink = {
+      id: 'attendance-management',
+      title: 'Attendance Management',
+      url: '/attendance-management/leave',
+      activeMatch: '/attendance-management',
     }
 
-    expect(checkIsActive('/hall-of-fame', hallOfFameItem)).toBe(true)
-    expect(checkIsActive('/leave-management', hallOfFameItem)).toBe(true)
+    expect(checkIsActive('/attendance-management/leave', attendanceItem)).toBe(
+      true
+    )
+    expect(
+      checkIsActive('/attendance-management/hall-of-fame', attendanceItem)
+    ).toBe(true)
   })
 })
