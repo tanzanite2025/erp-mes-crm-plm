@@ -10,32 +10,6 @@ export const moldStatusSchema = z.enum([
   'LENT_OUT',
   'BORROWED',
 ])
-export const furnaceStatusSchema = z.enum([
-  'IDLE',
-  'HEATING',
-  'COOLING',
-  'MAINTENANCE',
-  'FAULT',
-])
-
-// Maintenance Record schemas
-export const maintenanceRecordTypeSchema = z.enum([
-  'PREVENTIVE',
-  'CORRECTIVE',
-  'INSPECTION',
-])
-export const maintenanceRecordStatusSchema = z.enum([
-  'OPEN',
-  'IN_PROGRESS',
-  'COMPLETED',
-  'CANCELLED',
-])
-export const maintenanceRecordPrioritySchema = z.enum([
-  'LOW',
-  'MEDIUM',
-  'HIGH',
-  'CRITICAL',
-])
 
 type EquipmentToolingTranslate = (
   key: TranslationKey,
@@ -47,12 +21,6 @@ type MoldValidationKey =
   | 'equipmentTooling.molds.dialog.validation.nameRequired'
   | 'equipmentTooling.molds.dialog.validation.maxCyclesPositive'
   | 'equipmentTooling.molds.dialog.validation.maintenanceThresholdPositive'
-
-type FurnaceValidationKey =
-  | 'equipmentTooling.furnaces.dialog.validation.snRequired'
-  | 'equipmentTooling.furnaces.dialog.validation.nameRequired'
-  | 'equipmentTooling.furnaces.dialog.validation.typeRequired'
-  | 'equipmentTooling.furnaces.dialog.validation.maxTempPositive'
 
 type PartnerValidationKey = 'equipmentTooling.partners.validation.nameRequired'
 
@@ -69,14 +37,6 @@ const moldValidationFallbacks: Record<MoldValidationKey, string> = {
     '预警阈值必须大于 0',
 }
 
-const furnaceValidationFallbacks: Record<FurnaceValidationKey, string> = {
-  'equipmentTooling.furnaces.dialog.validation.snRequired': '请输入炉台编号',
-  'equipmentTooling.furnaces.dialog.validation.nameRequired': '请输入炉台名称',
-  'equipmentTooling.furnaces.dialog.validation.typeRequired': '请输入炉台类型',
-  'equipmentTooling.furnaces.dialog.validation.maxTempPositive':
-    '最高温度必须大于 0',
-}
-
 const partnerValidationFallbacks: Record<PartnerValidationKey, string> = {
   'equipmentTooling.partners.validation.nameRequired': '单位名称不能为空',
 }
@@ -87,11 +47,7 @@ const drawingValidationFallbacks: Record<DrawingValidationKey, string> = {
 }
 
 function getEquipmentToolingValidationMessage<
-  T extends
-    | MoldValidationKey
-    | FurnaceValidationKey
-    | PartnerValidationKey
-    | DrawingValidationKey,
+  T extends MoldValidationKey | PartnerValidationKey | DrawingValidationKey,
 >(
   t: EquipmentToolingTranslate | undefined,
   key: T,
@@ -192,62 +148,6 @@ export function createMoldSchema(t?: EquipmentToolingTranslate) {
     })
 }
 
-export function createFurnaceSchema(t?: EquipmentToolingTranslate) {
-  return z.object({
-    id: z.string(),
-    sn: z
-      .string()
-      .min(
-        1,
-        getEquipmentToolingValidationMessage(
-          t,
-          'equipmentTooling.furnaces.dialog.validation.snRequired',
-          furnaceValidationFallbacks
-        )
-      ),
-    name: z
-      .string()
-      .min(
-        1,
-        getEquipmentToolingValidationMessage(
-          t,
-          'equipmentTooling.furnaces.dialog.validation.nameRequired',
-          furnaceValidationFallbacks
-        )
-      ),
-    type: z
-      .string()
-      .min(
-        1,
-        getEquipmentToolingValidationMessage(
-          t,
-          'equipmentTooling.furnaces.dialog.validation.typeRequired',
-          furnaceValidationFallbacks
-        )
-      ),
-    maxTemp: z
-      .number()
-      .min(
-        1,
-        getEquipmentToolingValidationMessage(
-          t,
-          'equipmentTooling.furnaces.dialog.validation.maxTempPositive',
-          furnaceValidationFallbacks
-        )
-      ),
-    currentTemp: z.number(),
-    imageUrl: z.string().optional(),
-    version: z.number().default(1),
-    status: furnaceStatusSchema,
-    location: z.string().optional(),
-    description: z.string().optional(),
-    createdAt: z.string(),
-    createdBy: z.string().optional(),
-    updatedBy: z.string().optional(),
-    updatedAt: z.string().optional(),
-  })
-}
-
 export function createEquipmentPartnerSchema(t?: EquipmentToolingTranslate) {
   return z.object({
     id: z.string(),
@@ -306,14 +206,11 @@ export function createMoldDrawingSchema(t?: EquipmentToolingTranslate) {
 }
 
 export const moldSchema = createMoldSchema()
-export const furnaceSchema = createFurnaceSchema()
 export const equipmentPartnerSchema = createEquipmentPartnerSchema()
 export const moldDrawingSchema = createMoldDrawingSchema()
 
 export type MoldFormInput = z.input<ReturnType<typeof createMoldSchema>>
 export type MoldFormOutput = z.output<ReturnType<typeof createMoldSchema>>
-export type FurnaceFormInput = z.input<ReturnType<typeof createFurnaceSchema>>
-export type FurnaceFormOutput = z.output<ReturnType<typeof createFurnaceSchema>>
 
 export function createMoldDraft(
   overrides: Partial<MoldFormOutput> = {}
@@ -333,27 +230,6 @@ export function createMoldDraft(
     isAlerted: false,
     imageUrl: '',
     version: 1,
-    createdAt: new Date().toISOString(),
-    ...overrides,
-  }
-}
-
-export function createFurnaceDraft(
-  defaultType: string,
-  overrides: Partial<FurnaceFormOutput> = {}
-): FurnaceFormOutput {
-  return {
-    id: '',
-    sn: '',
-    name: '',
-    type: defaultType,
-    maxTemp: 1200,
-    currentTemp: 25,
-    version: 1,
-    status: 'IDLE',
-    location: '',
-    description: '',
-    imageUrl: '',
     createdAt: new Date().toISOString(),
     ...overrides,
   }
@@ -389,8 +265,6 @@ export const moldLoanSchema = z.object({
 
 export type Mold = z.infer<typeof moldSchema>
 export type MoldStatus = z.infer<typeof moldStatusSchema>
-export type Furnace = z.infer<typeof furnaceSchema>
-export type FurnaceStatus = z.infer<typeof furnaceStatusSchema>
 export type MoldLoan = z.infer<typeof moldLoanSchema>
 export type MoldLoanStatus = 'ACTIVE' | 'RETURNED' | 'OVERDUE'
 export type EquipmentPartner = z.infer<typeof equipmentPartnerSchema>
@@ -413,33 +287,3 @@ export const moldDrawingLogSchema = z.object({
 })
 
 export type MoldDrawingLog = z.infer<typeof moldDrawingLogSchema>
-
-export const maintenanceRecordSchema = z.object({
-  id: z.string(),
-  assetType: z.enum(['MOLD', 'FURNACE']),
-  assetId: z.string(),
-  assetSn: z.string(),
-  type: maintenanceRecordTypeSchema,
-  status: maintenanceRecordStatusSchema,
-  title: z.string().min(1),
-  description: z.string().optional(),
-  priority: maintenanceRecordPrioritySchema,
-  startedAt: z.string().nullable().optional(),
-  completedAt: z.string().nullable().optional(),
-  cost: z.number().min(0).default(0),
-  remarks: z.string().optional(),
-  createdBy: z.string().optional(),
-  updatedBy: z.string().optional(),
-  version: z.number().default(1),
-  createdAt: z.string(),
-  updatedAt: z.string().optional(),
-})
-
-export type MaintenanceRecord = z.infer<typeof maintenanceRecordSchema>
-export type MaintenanceRecordType = z.infer<typeof maintenanceRecordTypeSchema>
-export type MaintenanceRecordStatus = z.infer<
-  typeof maintenanceRecordStatusSchema
->
-export type MaintenanceRecordPriority = z.infer<
-  typeof maintenanceRecordPrioritySchema
->

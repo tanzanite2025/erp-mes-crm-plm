@@ -74,7 +74,7 @@ export const sidebar = {
     apsScheduling: 'APS排产',
     productionArchitecture: '生产架构',
     toolingAssets: '模具资产管理',
-    furnaceAssets: '炉台资产档案',
+    furnaceManagement: '炉台管理',
     maintenanceCenter: '设备维保中心',
     pdaShell: 'Pda Shell',
     personnelCenter: '组织人事',

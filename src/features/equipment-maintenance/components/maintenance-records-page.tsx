@@ -18,7 +18,19 @@ import { IndustrialHeader } from '@/components/uds/industrial-header'
 import type { MaintenanceRecord } from '../data/schema'
 import { useMaintenanceRecordsGlobal } from '../hooks/use-maintenance-records-global'
 
-export function MaintenanceRecordsPage() {
+interface MaintenanceRecordsPageProps {
+  assetTypeScope?: 'MOLD' | 'FURNACE'
+  assetId?: string
+  title?: string
+  description?: string
+}
+
+export function MaintenanceRecordsPage({
+  assetTypeScope,
+  assetId,
+  title = '设备维保中心',
+  description = 'EQUIPMENT_MAINTENANCE_CENTER / 系统自动监控设备运行状况与维保调度',
+}: MaintenanceRecordsPageProps = {}) {
   const navigate = useNavigate()
 
   // Filter state
@@ -31,6 +43,8 @@ export function MaintenanceRecordsPage() {
 
   // Build filters object
   const filters = {
+    ...(assetTypeScope && { assetType: assetTypeScope }),
+    ...(assetId && { assetId }),
     ...(status && { status }),
     ...(priority && { priority }),
     ...(type && { type }),
@@ -154,7 +168,7 @@ export function MaintenanceRecordsPage() {
     const path =
       record.assetType === 'MOLD'
         ? '/equipment-tooling/molds'
-        : '/tooling-furnaces'
+        : '/tooling-furnaces/archive'
     navigate({ to: path })
   }
 
@@ -172,8 +186,8 @@ export function MaintenanceRecordsPage() {
     <div className='flex animate-in flex-col gap-4 duration-700 fade-in'>
       <IndustrialHeader
         icon={Wrench}
-        title='设备维保中心'
-        description='EQUIPMENT_MAINTENANCE_CENTER / 系统自动监控设备运行状况与维保调度'
+        title={title}
+        description={description}
         gradient
       />
 

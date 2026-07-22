@@ -2,8 +2,8 @@ import type {
   FurnaceApiDTO,
   FurnaceListPageApiDTO,
   SaveFurnaceApiDTO,
-} from '../contracts/equipment-furnace-api-dto'
-import type { Furnace } from '../data/schema'
+} from '../contracts/furnace-api-dto'
+import type { Furnace } from '../data/furnace-schema'
 
 export interface FurnaceListPage {
   items: Furnace[]

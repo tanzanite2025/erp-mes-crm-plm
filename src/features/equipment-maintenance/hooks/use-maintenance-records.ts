@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { DeltaSet } from '@/lib/delta/types'
 import type { SaveMaintenanceRecordApiDTO } from '../contracts/maintenance-record-api-dto'
 import { MaintenanceRecordService } from '../services/maintenance-record-service'
+import { MAINTENANCE_RECORDS_STATS_QUERY_KEY } from './use-maintenance-records-global'
 
 /**
  * Query key factory for maintenance records by asset
@@ -27,6 +28,15 @@ export function useMaintenanceRecords({
 }: UseMaintenanceRecordsOptions) {
   const queryClient = useQueryClient()
   const queryKey = MAINTENANCE_RECORDS_QUERY_KEY(assetType, assetId)
+  const invalidateRecordViews = () => {
+    queryClient.invalidateQueries({ queryKey })
+    queryClient.invalidateQueries({
+      queryKey: ['maintenanceRecords', 'global'],
+    })
+    queryClient.invalidateQueries({
+      queryKey: MAINTENANCE_RECORDS_STATS_QUERY_KEY,
+    })
+  }
 
   // Query for fetching records
   const {
@@ -45,8 +55,7 @@ export function useMaintenanceRecords({
     mutationFn: (record: SaveMaintenanceRecordApiDTO) =>
       MaintenanceRecordService.create(record),
     onSuccess: () => {
-      // Invalidate only this asset's cache
-      queryClient.invalidateQueries({ queryKey })
+      invalidateRecordViews()
     },
   })
 
@@ -62,8 +71,7 @@ export function useMaintenanceRecords({
       version: number
     }) => MaintenanceRecordService.patch(id, delta, version),
     onSuccess: () => {
-      // Invalidate only this asset's cache
-      queryClient.invalidateQueries({ queryKey })
+      invalidateRecordViews()
     },
   })
 
@@ -71,8 +79,7 @@ export function useMaintenanceRecords({
   const deleteMutation = useMutation({
     mutationFn: (id: string) => MaintenanceRecordService.delete(id),
     onSuccess: () => {
-      // Invalidate only this asset's cache
-      queryClient.invalidateQueries({ queryKey })
+      invalidateRecordViews()
     },
   })
 

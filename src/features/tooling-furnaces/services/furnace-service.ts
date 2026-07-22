@@ -7,13 +7,13 @@ import {
   toFurnaceContract,
   toFurnaceListPageContract,
   toSaveFurnaceApiDTO,
-} from '../adapters/equipment-furnace-api-adapter'
+} from '../adapters/furnace-api-adapter'
 import {
   type FurnaceApiDTO,
   type FurnaceListPageApiDTO,
   type FurnaceTelemetryAckApiDTO,
-} from '../contracts/equipment-furnace-api-dto'
-import { type Furnace } from '../data/schema'
+} from '../contracts/furnace-api-dto'
+import { type Furnace } from '../data/furnace-schema'
 
 function containsTopLevelStatusDelta(delta: DeltaSet): boolean {
   return Object.prototype.hasOwnProperty.call(delta, 'status')

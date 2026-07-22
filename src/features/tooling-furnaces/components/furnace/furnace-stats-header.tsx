@@ -4,17 +4,9 @@ import { Activity, AlertTriangle, Cpu, Zap } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
+import type { FurnaceStats } from '../../data/furnace-stats'
 
-interface FurnaceStatsHeaderProps {
-  stats: {
-    total: number
-    running: number
-    maintenance: number
-    fault: number
-  }
-}
-
-export function FurnaceStatsHeader({ stats }: FurnaceStatsHeaderProps) {
+export function FurnaceStatsHeader({ stats }: { stats: FurnaceStats }) {
   const { t } = useLanguage()
 
   return (
@@ -26,7 +18,7 @@ export function FurnaceStatsHeader({ stats }: FurnaceStatsHeaderProps) {
           </div>
           <div>
             <p className='text-[10px] font-black tracking-widest uppercase italic opacity-80'>
-              {t('equipmentTooling.furnaces.stats.totalUnits')}
+              {t('toolingFurnaces.stats.totalUnits')}
             </p>
             <h3 className='font-mono text-3xl font-black tracking-tighter'>
               {stats.total}
@@ -40,7 +32,7 @@ export function FurnaceStatsHeader({ stats }: FurnaceStatsHeaderProps) {
           <Activity className='size-6 text-primary/60' />
           <div>
             <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'>
-              {t('equipmentTooling.furnaces.stats.runningNow')}
+              {t('toolingFurnaces.stats.runningNow')}
             </p>
             <div className='flex items-center gap-2'>
               <h3 className='font-mono text-3xl font-black tracking-tighter text-primary'>
@@ -50,7 +42,7 @@ export function FurnaceStatsHeader({ stats }: FurnaceStatsHeaderProps) {
                 variant='outline'
                 className='h-4 animate-pulse rounded-full border-primary/20 bg-background/50 px-1.5 font-mono text-[8px] font-bold text-primary'
               >
-                {t('equipmentTooling.furnaces.stats.live')}
+                {t('toolingFurnaces.stats.live')}
               </Badge>
             </div>
           </div>
@@ -62,7 +54,7 @@ export function FurnaceStatsHeader({ stats }: FurnaceStatsHeaderProps) {
           <Zap className='size-6 text-amber-500/60' />
           <div>
             <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'>
-              {t('equipmentTooling.furnaces.stats.maintenance')}
+              {t('toolingFurnaces.stats.maintenance')}
             </p>
             <h3 className='font-mono text-3xl font-black tracking-tighter text-amber-600'>
               {stats.maintenance}
@@ -76,7 +68,7 @@ export function FurnaceStatsHeader({ stats }: FurnaceStatsHeaderProps) {
           <AlertTriangle className='size-6 text-rose-500/60' />
           <div>
             <p className='text-[10px] font-black tracking-widest text-rose-600 uppercase italic opacity-60'>
-              {t('equipmentTooling.furnaces.stats.faultAlert')}
+              {t('toolingFurnaces.stats.faultAlert')}
             </p>
             <h3 className='font-mono text-3xl font-black tracking-tighter text-rose-600'>
               {stats.fault}

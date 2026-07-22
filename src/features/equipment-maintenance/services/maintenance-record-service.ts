@@ -15,6 +15,8 @@ import {
 import { type MaintenanceRecord } from '../data/schema'
 
 export interface MaintenanceRecordFilters {
+  assetType?: 'MOLD' | 'FURNACE'
+  assetId?: string
   status?: string
   priority?: string
   type?: string
@@ -39,8 +41,12 @@ export class MaintenanceRecordService {
     assetType: string,
     assetId: string
   ): Promise<MaintenanceRecord[]> {
+    const params = new URLSearchParams({
+      assetType,
+      assetId,
+    })
     const res = await apiFetch<MaintenanceRecordApiDTO[]>(
-      `/maintenance-records?assetType=${assetType}&assetId=${assetId}`
+      `/maintenance-records?${params.toString()}`
     )
     return toMaintenanceRecordContracts(
       ensureArrayResponse<MaintenanceRecordApiDTO>(
@@ -66,6 +72,8 @@ export class MaintenanceRecordService {
     offset: number
   }> {
     const params = new URLSearchParams()
+    if (filters?.assetType) params.append('assetType', filters.assetType)
+    if (filters?.assetId) params.append('assetId', filters.assetId)
     if (filters?.status) params.append('status', filters.status)
     if (filters?.priority) params.append('priority', filters.priority)
     if (filters?.type) params.append('type', filters.type)

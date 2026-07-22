@@ -422,7 +422,7 @@ const navGroupConfigs: SidebarGroupConfig[] = [
           },
           {
             id: 'furnace-assets',
-            titleKey: 'sidebar.items.furnaceAssets',
+            titleKey: 'sidebar.items.furnaceManagement',
             url: '/tooling-furnaces',
             activeMatch: '/tooling-furnaces',
             icon: Gauge,

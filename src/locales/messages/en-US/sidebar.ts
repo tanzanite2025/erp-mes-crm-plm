@@ -74,7 +74,7 @@ export const sidebar = {
     apsScheduling: 'APS Scheduling',
     productionArchitecture: 'Production Architecture',
     toolingAssets: 'Tooling Asset Management',
-    furnaceAssets: 'Furnace Asset Archive',
+    furnaceManagement: 'Furnace Management',
     maintenanceCenter: 'Maintenance Center',
     pdaShell: 'PDA Shell',
     personnelCenter: 'Organization & Personnel',

@@ -5,16 +5,17 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type DeltaSet } from '@/lib/delta/types'
 import { createLogger } from '@/lib/logger'
 import { failLoudly } from '@/lib/safe-catch'
-import { type Mold, type Furnace } from '../data/schema'
+import { type Furnace } from '@/features/tooling-furnaces/data/furnace-schema'
+import { FURNACES_QUERY_KEY } from '@/features/tooling-furnaces/hooks/use-furnaces'
+import { FurnaceService } from '@/features/tooling-furnaces/services/furnace-service'
+import { type Mold } from '../data/schema'
 import { AssetService } from '../services/asset-service'
-import { FurnaceService } from '../services/furnace-service'
 import { MoldMaintenanceService } from '../services/mold-maintenance-service'
 import { MoldTransactionService } from '../services/mold-transaction-service'
 
 const logger = createLogger('useAssets')
 
 export const MOLDS_QUERY_KEY = ['molds'] as const
-export const FURNACES_QUERY_KEY = ['furnaces'] as const
 export const MOLD_LOANS_QUERY_KEY = ['moldLoans'] as const
 
 export function useAssets() {

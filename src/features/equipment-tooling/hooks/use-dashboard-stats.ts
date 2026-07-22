@@ -1,4 +1,6 @@
-import { type Mold, type Furnace, type MoldLoan } from '../data/schema'
+import { type Furnace } from '@/features/tooling-furnaces/data/furnace-schema'
+import { calculateFurnaceStats } from '@/features/tooling-furnaces/data/furnace-stats'
+import { type Mold, type MoldLoan } from '../data/schema'
 import { useAssets } from './use-assets'
 
 export interface DashboardStats {
@@ -48,16 +50,8 @@ export function useDashboardStats(): DashboardStats {
       .length,
   }
 
-  // 炉台状态统计
-  const furnaceStats = {
-    total: furnaces.length,
-    idle: furnaces.filter((f) => f.status === 'IDLE').length,
-    running: furnaces.filter(
-      (f) => f.status === 'HEATING' || f.status === 'COOLING'
-    ).length,
-    maintenance: furnaces.filter((f) => f.status === 'MAINTENANCE').length,
-    fault: furnaces.filter((f) => f.status === 'FAULT').length,
-  }
+  // 炉台状态统计由炉台域提供，避免工装域复制炉台规则。
+  const furnaceStats = calculateFurnaceStats(furnaces)
 
   // 汇总统计
   const totalStats = {

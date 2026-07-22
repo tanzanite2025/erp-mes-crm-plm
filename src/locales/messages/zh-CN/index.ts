@@ -9,6 +9,7 @@ import { configDrawer } from './configDrawer'
 import { cuttingOperations } from './cuttingOperations'
 import { dashboard } from './dashboard'
 import { engineering } from './engineering'
+import { equipmentMaintenance } from './equipmentMaintenance'
 import { equipmentTooling } from './equipmentTooling'
 import { errors } from './errors'
 import { fileUploader } from './fileUploader'
@@ -35,6 +36,7 @@ import { sidebar } from './sidebar'
 import { sidebarCommandAssignment } from './sidebarCommandAssignment'
 import { systemManagement } from './systemManagement'
 import { terminalConfig } from './terminalConfig'
+import { toolingFurnaces } from './toolingFurnaces'
 import { trading } from './trading'
 import { tradingSalesOrder } from './tradingSalesOrder'
 import { users } from './users'
@@ -65,7 +67,9 @@ export const zhCNMessages = {
   finance,
   approval,
   systemManagement,
+  equipmentMaintenance,
   equipmentTooling,
+  toolingFurnaces,
   quality,
   aiAssistant,
   dashboard,

@@ -95,8 +95,8 @@ export const MENU_PERMISSIONS = {
   },
   equipment: {
     id: 'menu_equipment',
-    label: '访问：工装管理',
-    desc: '允许进入设备工装模块',
+    label: '访问：工装与设备资产',
+    desc: '允许进入模具工装、炉台管理与设备维保模块',
     icon: 'Cpu',
     rootPath: '/equipment-tooling',
   },

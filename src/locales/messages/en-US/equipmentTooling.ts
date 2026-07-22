@@ -3,19 +3,10 @@ export const equipmentTooling = {
     title: 'Equipment & Tooling Center',
     tabs: {
       overview: 'Asset Overview',
-      furnaces: 'Furnace Assets',
       molds: 'Mold Archive',
       loans: 'Mold Movement',
       drawings: 'Drawing Archive',
       partners: 'Partner Registry',
-    },
-  },
-  maintenanceCenter: {
-    tabs: {
-      overview: 'Overview',
-      records: 'Records',
-      plans: 'Maintenance Plans',
-      analytics: 'Performance Analytics',
     },
   },
   common: {
@@ -35,83 +26,6 @@ export const equipmentTooling = {
     toast: {
       uploaded: 'Image uploaded successfully',
       failed: 'Image upload failed: {{message}}',
-    },
-  },
-  furnaces: {
-    page: {
-      title: 'Furnace Asset Repository',
-      description: 'Digital heat-treatment equipment ledger',
-      searchPlaceholder: 'Search by furnace serial or name...',
-    },
-    actions: {
-      add: 'Add Furnace Asset',
-    },
-    confirm: {
-      remove: 'Are you sure you want to remove this furnace asset?',
-    },
-    toast: {
-      removed: 'Furnace removed',
-      updated: 'Furnace profile updated',
-      created: 'New furnace registered',
-    },
-    status: {
-      idle: 'Idle',
-      heating: 'Running',
-      cooling: 'Cooling',
-      maintenance: 'Maintenance',
-      fault: 'Fault',
-      unknown: 'Unknown',
-    },
-    card: {
-      type: 'Type',
-      location: 'Location',
-      none: 'None',
-      tempLive: 'Live Temp',
-      maxTemp: '{{value}}°C max',
-      sensorOffline: 'Sensor data offline',
-    },
-    stats: {
-      totalUnits: 'Total Units',
-      runningNow: 'Running Now',
-      live: 'Live',
-      maintenance: 'Maintenance',
-      faultAlert: 'Fault Alert',
-    },
-    dialog: {
-      title: {
-        edit: 'Edit Equipment Profile',
-        create: 'Register New Furnace Asset',
-      },
-      description:
-        'Input physical serial, maximum temperature, and location data',
-      fields: {
-        sn: 'Serial No.',
-        name: 'Alias',
-        type: 'Category',
-        location: 'Location',
-        maxTemp: 'Max Temp (°C)',
-        description: 'Description',
-      },
-      placeholders: {
-        sn: 'e.g. FURN-2024-01',
-        name: 'e.g. Vacuum Furnace #1',
-        type: 'e.g. Vacuum Furnace',
-        location: 'e.g. Zone A',
-        description: 'Detailed notes or history...',
-      },
-      defaults: {
-        type: 'Vacuum Furnace',
-      },
-      validation: {
-        snRequired: 'Please enter a furnace serial ID',
-        nameRequired: 'Please enter a furnace name',
-        typeRequired: 'Please enter a furnace category',
-        maxTempPositive: 'Max temperature must be greater than 0',
-      },
-      actions: {
-        cancel: 'Cancel',
-        save: 'Save',
-      },
     },
   },
   molds: {

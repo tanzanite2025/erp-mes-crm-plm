@@ -10,22 +10,22 @@ export function getMaintenanceCenterTabs(t: TranslateFn): TabItem[] {
   return [
     {
       key: 'overview',
-      label: t('equipmentTooling.maintenanceCenter.tabs.overview' as never),
+      label: t('equipmentMaintenance.tabs.overview'),
       href: '/equipment-maintenance/overview',
     },
     {
       key: 'records',
-      label: t('equipmentTooling.maintenanceCenter.tabs.records' as never),
+      label: t('equipmentMaintenance.tabs.records'),
       href: '/equipment-maintenance/records',
     },
     {
       key: 'plans',
-      label: t('equipmentTooling.maintenanceCenter.tabs.plans' as never),
+      label: t('equipmentMaintenance.tabs.plans'),
       href: '/equipment-maintenance/plans',
     },
     {
       key: 'analytics',
-      label: t('equipmentTooling.maintenanceCenter.tabs.analytics' as never),
+      label: t('equipmentMaintenance.tabs.analytics'),
       href: '/equipment-maintenance/analytics',
     },
   ]

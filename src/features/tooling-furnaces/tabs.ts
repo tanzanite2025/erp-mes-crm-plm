@@ -9,9 +9,14 @@ type TranslateFn = (
 export function getToolingFurnacesTabs(t: TranslateFn): TabItem[] {
   return [
     {
-      key: 'center',
-      label: t('sidebar.items.furnaceAssets'),
-      href: '/tooling-furnaces/center',
+      key: 'archive',
+      label: t('toolingFurnaces.tabs.archive'),
+      href: '/tooling-furnaces/archive',
+    },
+    {
+      key: 'maintenance',
+      label: t('toolingFurnaces.tabs.maintenance'),
+      href: '/tooling-furnaces/maintenance',
     },
   ]
 }

@@ -534,15 +534,15 @@ const equipmentActions: LegacyActionPermissionEntry[] = [
   },
   {
     id: 'action_equipment_furnace_manage',
-    label: '设备工装：管理炉台',
-    desc: '允许创建或编辑炉台记录。',
+    label: '炉台管理：维护炉台档案',
+    desc: '允许创建或编辑炉台主数据档案。',
     category: 'action',
     parentId: 'menu_equipment',
     routeBindings: ['POST /furnaces', 'PATCH /furnaces/:id'],
   },
   {
     id: 'action_equipment_furnace_sync',
-    label: '设备工装：同步炉台',
+    label: '炉台管理：同步炉台',
     desc: '允许批量同步炉台数据。',
     category: 'action',
     parentId: 'menu_equipment',
@@ -588,7 +588,7 @@ const equipmentActions: LegacyActionPermissionEntry[] = [
   },
   {
     id: 'action_equipment_maintenance_manage',
-    label: '设备工装：管理维保记录',
+    label: '设备维保：管理维保记录',
     desc: '允许创建、编辑和删除设备维保记录。',
     category: 'action',
     parentId: 'menu_equipment',

@@ -46,6 +46,12 @@ func (s *MaintenanceRecordService) ListRecords(params repositories.ListParams) (
 		return nil, err
 	}
 
+	if params.AssetType != "" {
+		if err := s.validator.ValidateAssetType(params.AssetType); err != nil {
+			return nil, err
+		}
+	}
+
 	if err := s.validator.ValidateSearchKeyword(params.Search); err != nil {
 		return nil, err
 	}

@@ -41,9 +41,12 @@ type ListResult struct {
 func (r *MaintenanceRecordRepository) List(params ListParams) (*ListResult, error) {
 	query := r.db.Model(&models.MaintenanceRecord{})
 
-	// 按设备筛选（可选）
-	if params.AssetType != "" && params.AssetID != "" {
-		query = query.Where("asset_type = ? AND asset_id = ?", params.AssetType, params.AssetID)
+	// 按设备域筛选（可选）：允许只按资产类型查看某一类设备的维保记录。
+	if params.AssetType != "" {
+		query = query.Where("asset_type = ?", params.AssetType)
+	}
+	if params.AssetID != "" {
+		query = query.Where("asset_id = ?", params.AssetID)
 	}
 
 	// 按状态筛选

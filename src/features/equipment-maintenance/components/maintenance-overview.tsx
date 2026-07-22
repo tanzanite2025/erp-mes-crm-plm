@@ -300,7 +300,7 @@ export function MaintenanceOverview() {
                       const path =
                         record.assetType === 'MOLD'
                           ? '/equipment-tooling/molds'
-                          : '/tooling-furnaces'
+                          : '/tooling-furnaces/archive'
                       navigate({ to: path })
                     }}
                   >
@@ -368,7 +368,7 @@ export function MaintenanceOverview() {
                       const path =
                         record.assetType === 'MOLD'
                           ? '/equipment-tooling/molds'
-                          : '/tooling-furnaces'
+                          : '/tooling-furnaces/archive'
                       navigate({ to: path })
                     }}
                   >

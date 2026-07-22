@@ -3,19 +3,10 @@ export const equipmentTooling = {
     title: '设备工装中心',
     tabs: {
       overview: '资产看板',
-      furnaces: '炉台资产',
       molds: '模具档案',
       loans: '模具流转',
       drawings: '图纸档案',
       partners: '合作单位',
-    },
-  },
-  maintenanceCenter: {
-    tabs: {
-      overview: '概览',
-      records: '维保记录',
-      plans: '维保计划',
-      analytics: '效能分析',
     },
   },
   common: {
@@ -35,82 +26,6 @@ export const equipmentTooling = {
     toast: {
       uploaded: '图片上传成功',
       failed: '图片上传失败：{{message}}',
-    },
-  },
-  furnaces: {
-    page: {
-      title: '炉台资产档案中心',
-      description: '数字化热处理设备台账',
-      searchPlaceholder: '搜索炉台编号或名称...',
-    },
-    actions: {
-      add: '新增炉台资产',
-    },
-    confirm: {
-      remove: '确定要移除这台炉台资产吗？',
-    },
-    toast: {
-      removed: '炉台已移除',
-      updated: '炉台档案已更新',
-      created: '新炉台已登记',
-    },
-    status: {
-      idle: '空闲',
-      heating: '运行中',
-      cooling: '冷却中',
-      maintenance: '维护中',
-      fault: '故障',
-      unknown: '未知',
-    },
-    card: {
-      type: '类型',
-      location: '位置',
-      none: '无',
-      tempLive: '实时温度',
-      maxTemp: '上限 {{value}}°C',
-      sensorOffline: '传感器离线',
-    },
-    stats: {
-      totalUnits: '总炉台数',
-      runningNow: '当前运行',
-      live: '实时',
-      maintenance: '维护中',
-      faultAlert: '故障预警',
-    },
-    dialog: {
-      title: {
-        edit: '编辑设备档案',
-        create: '登记新炉台资产',
-      },
-      description: '录入设备编号、最高温度和所在区域信息',
-      fields: {
-        sn: '设备编号',
-        name: '设备名称',
-        type: '设备类型',
-        location: '所在区域',
-        maxTemp: '最高温度 (°C)',
-        description: '备注说明',
-      },
-      placeholders: {
-        sn: '例如 FURN-2024-01',
-        name: '例如 1号真空炉',
-        type: '例如 真空电炉',
-        location: '例如 A区',
-        description: '填写详细说明或历史记录...',
-      },
-      defaults: {
-        type: '真空电炉',
-      },
-      validation: {
-        snRequired: '请输入炉台编号',
-        nameRequired: '请输入炉台名称',
-        typeRequired: '请输入炉台类型',
-        maxTempPositive: '最高温度必须大于 0',
-      },
-      actions: {
-        cancel: '取消',
-        save: '保存',
-      },
     },
   },
   molds: {

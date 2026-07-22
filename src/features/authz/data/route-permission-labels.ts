@@ -116,16 +116,13 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/equipment-tooling/drawings': 'equipmentTooling.layout.tabs.drawings',
   '/equipment-tooling/partners': 'equipmentTooling.layout.tabs.partners',
   '/equipment-maintenance': 'sidebar.items.maintenanceCenter',
-  '/equipment-maintenance/overview':
-    'equipmentTooling.maintenanceCenter.tabs.overview',
-  '/equipment-maintenance/records':
-    'equipmentTooling.maintenanceCenter.tabs.records',
-  '/equipment-maintenance/plans':
-    'equipmentTooling.maintenanceCenter.tabs.plans',
-  '/equipment-maintenance/analytics':
-    'equipmentTooling.maintenanceCenter.tabs.analytics',
-  '/tooling-furnaces': 'sidebar.items.furnaceAssets',
-  '/tooling-furnaces/center': 'sidebar.items.furnaceAssets',
+  '/equipment-maintenance/overview': 'equipmentMaintenance.tabs.overview',
+  '/equipment-maintenance/records': 'equipmentMaintenance.tabs.records',
+  '/equipment-maintenance/plans': 'equipmentMaintenance.tabs.plans',
+  '/equipment-maintenance/analytics': 'equipmentMaintenance.tabs.analytics',
+  '/tooling-furnaces': 'sidebar.items.furnaceManagement',
+  '/tooling-furnaces/archive': 'toolingFurnaces.tabs.archive',
+  '/tooling-furnaces/maintenance': 'toolingFurnaces.tabs.maintenance',
   '/personnel': 'sidebar.items.personnelCenter',
   '/personnel/org': 'orgPersonnel.tabs.org',
   '/personnel/employees': 'orgPersonnel.tabs.employees',

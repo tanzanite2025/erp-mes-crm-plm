@@ -1,5 +1,5 @@
+import { FurnaceService } from '@/features/tooling-furnaces/services/furnace-service'
 import { type MoldLoan } from '../data/schema'
-import { FurnaceService } from './furnace-service'
 import { MoldCoreService } from './mold-core-service'
 import { MoldLoanService } from './mold-loan-service'
 import { MoldTransactionService } from './mold-transaction-service'

@@ -20,14 +20,14 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { ActionDialogShell } from '@/components/action-dialog-shell'
 import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
+import { prepareTrackedDialogSubmit } from '@/features/equipment-tooling/utils/tracked-dialog-submit'
 import {
   createFurnaceDraft,
   createFurnaceSchema,
   type Furnace,
   type FurnaceFormInput,
   type FurnaceFormOutput,
-} from '@/features/equipment-tooling/data/schema'
-import { prepareTrackedDialogSubmit } from '@/features/equipment-tooling/utils/tracked-dialog-submit'
+} from '../data/furnace-schema'
 
 interface FurnaceActionDialogProps {
   open: boolean
@@ -44,7 +44,7 @@ export function FurnaceActionDialog({
 }: FurnaceActionDialogProps) {
   const { t } = useLanguage()
   const { allowsAction } = usePermissionActions()
-  const defaultFurnaceType = t('equipmentTooling.furnaces.dialog.defaults.type')
+  const defaultFurnaceType = t('toolingFurnaces.dialog.defaults.type')
   const furnaceFormSchema = useMemo(() => createFurnaceSchema(t), [t])
   const defaultDraft = useMemo(
     () => createFurnaceDraft(defaultFurnaceType, editData ?? {}),
@@ -106,12 +106,12 @@ export function FurnaceActionDialog({
           <Thermometer className='size-5' />
           <span>
             {editData
-              ? t('equipmentTooling.furnaces.dialog.title.edit')
-              : t('equipmentTooling.furnaces.dialog.title.create')}
+              ? t('toolingFurnaces.dialog.title.edit')
+              : t('toolingFurnaces.dialog.title.create')}
           </span>
         </div>
       }
-      description={t('equipmentTooling.furnaces.dialog.description')}
+      description={t('toolingFurnaces.dialog.description')}
       contentDecoration={
         <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 via-transparent' />
       }
@@ -129,14 +129,14 @@ export function FurnaceActionDialog({
             onClick={() => onOpenChange(false)}
             className='h-11 flex-1 rounded-full px-8 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase sm:flex-none'
           >
-            {t('equipmentTooling.furnaces.dialog.actions.cancel')}
+            {t('toolingFurnaces.dialog.actions.cancel')}
           </Button>
           <Button
             type='submit'
             onClick={form.handleSubmit(onSubmit)}
             className='h-11 flex-1 rounded-full bg-blue-600 px-10 text-[10px] font-black tracking-widest uppercase shadow-xl shadow-blue-500/20 transition-all hover:bg-blue-700 active:scale-95 sm:flex-none'
           >
-            {t('equipmentTooling.furnaces.dialog.actions.save')}
+            {t('toolingFurnaces.dialog.actions.save')}
           </Button>
         </>
       }
@@ -150,13 +150,11 @@ export function FurnaceActionDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'>
-                    {t('equipmentTooling.furnaces.dialog.fields.sn')}
+                    {t('toolingFurnaces.dialog.fields.sn')}
                   </FormLabel>
                   <FormControl>
                     <Input
-                      placeholder={t(
-                        'equipmentTooling.furnaces.dialog.placeholders.sn'
-                      )}
+                      placeholder={t('toolingFurnaces.dialog.placeholders.sn')}
                       className='h-12 rounded-2xl border-none bg-muted/50 font-mono font-black italic shadow-inner'
                       {...field}
                     />
@@ -171,12 +169,12 @@ export function FurnaceActionDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'>
-                    {t('equipmentTooling.furnaces.dialog.fields.name')}
+                    {t('toolingFurnaces.dialog.fields.name')}
                   </FormLabel>
                   <FormControl>
                     <Input
                       placeholder={t(
-                        'equipmentTooling.furnaces.dialog.placeholders.name'
+                        'toolingFurnaces.dialog.placeholders.name'
                       )}
                       className='h-12 rounded-2xl border-none bg-muted/50 font-bold shadow-inner'
                       {...field}
@@ -195,12 +193,12 @@ export function FurnaceActionDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'>
-                    {t('equipmentTooling.furnaces.dialog.fields.type')}
+                    {t('toolingFurnaces.dialog.fields.type')}
                   </FormLabel>
                   <FormControl>
                     <Input
                       placeholder={t(
-                        'equipmentTooling.furnaces.dialog.placeholders.type'
+                        'toolingFurnaces.dialog.placeholders.type'
                       )}
                       className='h-12 rounded-2xl border-none bg-muted/50 font-bold shadow-inner'
                       {...field}
@@ -216,12 +214,12 @@ export function FurnaceActionDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'>
-                    {t('equipmentTooling.furnaces.dialog.fields.location')}
+                    {t('toolingFurnaces.dialog.fields.location')}
                   </FormLabel>
                   <FormControl>
                     <Input
                       placeholder={t(
-                        'equipmentTooling.furnaces.dialog.placeholders.location'
+                        'toolingFurnaces.dialog.placeholders.location'
                       )}
                       className='h-12 rounded-2xl border-none bg-muted/50 font-bold shadow-inner'
                       {...field}
@@ -239,7 +237,7 @@ export function FurnaceActionDialog({
             render={({ field }) => (
               <FormItem>
                 <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'>
-                  {t('equipmentTooling.furnaces.dialog.fields.maxTemp')}
+                  {t('toolingFurnaces.dialog.fields.maxTemp')}
                 </FormLabel>
                 <FormControl>
                   <Input
@@ -262,12 +260,12 @@ export function FurnaceActionDialog({
             render={({ field }) => (
               <FormItem>
                 <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'>
-                  {t('equipmentTooling.furnaces.dialog.fields.description')}
+                  {t('toolingFurnaces.dialog.fields.description')}
                 </FormLabel>
                 <FormControl>
                   <Textarea
                     placeholder={t(
-                      'equipmentTooling.furnaces.dialog.placeholders.description'
+                      'toolingFurnaces.dialog.placeholders.description'
                     )}
                     className='min-h-[100px] resize-none rounded-2xl border-none bg-muted/50 font-medium'
                     {...field}

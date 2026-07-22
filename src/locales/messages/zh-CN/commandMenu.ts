@@ -72,7 +72,7 @@ export const commandMenu = {
     experimentalReportArchive: '实验报告归档',
     piecework: '计件管理',
     toolingAssets: '模具资产管理',
-    furnaces: '炉台资产档案',
+    furnaces: '炉台管理',
     personnel: '组织人事',
     printMgmt: '打印中心',
     terminalConfig: '终端配置',
