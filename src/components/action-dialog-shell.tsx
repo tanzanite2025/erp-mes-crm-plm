@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { cn } from '@/lib/utils'
 import {
   Dialog,
   DialogContent,
@@ -39,9 +40,11 @@ export function ActionDialogShell({
   titleClassName,
   descriptionClassName,
 }: ActionDialogShellProps) {
+  const viewportAnchoredContentClassName = cn(contentClassName, 'fixed')
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={contentClassName}>
+      <DialogContent className={viewportAnchoredContentClassName}>
         {contentDecoration}
         <DialogHeader className={headerClassName}>
           <DialogTitle className={titleClassName}>{title}</DialogTitle>

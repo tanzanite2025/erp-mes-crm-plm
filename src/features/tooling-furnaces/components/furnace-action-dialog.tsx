@@ -115,7 +115,7 @@ export function FurnaceActionDialog({
       contentDecoration={
         <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 via-transparent' />
       }
-      contentClassName='relative flex max-h-[92vh] w-[95vw] flex-col overflow-hidden rounded-[32px] border-none bg-background p-0 shadow-2xl sm:max-w-lg'
+      contentClassName='flex max-h-[92vh] w-[95vw] flex-col overflow-hidden rounded-[32px] border-none bg-background p-0 shadow-2xl sm:max-w-lg'
       headerClassName='shrink-0 border-b border-dashed bg-primary/5 p-6 pb-4 text-left sm:p-8'
       bodyClassName='custom-scrollbar flex-1 overflow-y-auto p-6 sm:p-8'
       footerClassName='flex shrink-0 flex-row gap-3 border-t border-dashed border-muted-foreground/10 bg-muted/5 p-6 sm:justify-end sm:p-8'

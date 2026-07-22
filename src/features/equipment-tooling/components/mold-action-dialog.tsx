@@ -184,7 +184,7 @@ export function MoldActionDialog({
       contentDecoration={
         <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 via-transparent' />
       }
-      contentClassName='relative w-[95vw] sm:max-w-[550px] max-h-[92vh] flex flex-col p-0 rounded-[32px] border-none shadow-2xl overflow-hidden bg-background'
+      contentClassName='w-[95vw] sm:max-w-[550px] max-h-[92vh] flex flex-col p-0 rounded-[32px] border-none shadow-2xl overflow-hidden bg-background'
       headerClassName='pb-4 pt-6 px-6 sm:px-8 relative z-10 shrink-0 text-left'
       bodyClassName='flex-1 overflow-y-auto px-6 sm:px-8 pb-8 custom-scrollbar'
       footerClassName='p-6 sm:px-8 bg-muted/5 border-t border-dashed border-muted-foreground/10 flex flex-row sm:justify-end gap-3 shrink-0'
