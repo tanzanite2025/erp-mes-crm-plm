@@ -55,7 +55,6 @@ export const AUTHENTICATED_ROUTE_PATHS = [
   '/aps-scheduling/engine-config',
   '/aps-scheduling/engine-tuning',
   '/logistics-settings/platforms',
-  '/personal-workbench/workspace',
   '/production-architecture/line',
   '/equipment-maintenance/plans',
   '/finance-management/taxation',

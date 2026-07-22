@@ -27,7 +27,7 @@ export const sidebarCommandAssignment = {
   assignment: {
     title: '侧边栏指令分配',
     description:
-      '为现场账号配置快捷扫描入口；个人拍照、个人录视频、个人缓冲区固定为用户私有工具。',
+      '为现场账号配置快捷扫描入口；个人拍照、个人录视频、个人记录抽屉固定为用户私有工具。',
     searchPlaceholder: '搜索姓名、账号、岗位',
     syncingAccounts: '同步账号中',
     accountCount: '{{count}} 个账号',
@@ -86,7 +86,7 @@ export const sidebarCommandAssignment = {
     description: '这些入口属于每个用户自己的默认工具，不写入管理员指令分配。',
     photo: '个人拍照',
     video: '个人录视频',
-    buffer: '个人缓冲区',
+    buffer: '个人记录抽屉',
   },
   commandCard: {
     enabled: '启用',

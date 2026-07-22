@@ -12,6 +12,7 @@ import type { QuickActionDefinition } from '../types'
 const quickActionRegistryEntries = [
   {
     id: 'wheel_trace_scan',
+    targetKind: 'route',
     titleKey: 'quickActions.actions.wheelTraceScan.title',
     descriptionKey: 'quickActions.actions.wheelTraceScan.description',
     icon: SearchCheck,
@@ -24,6 +25,7 @@ const quickActionRegistryEntries = [
   },
   {
     id: 'warehouse_inbound_scan',
+    targetKind: 'route',
     titleKey: 'quickActions.actions.warehouseInboundScan.title',
     descriptionKey: 'quickActions.actions.warehouseInboundScan.description',
     icon: PackagePlus,
@@ -35,6 +37,7 @@ const quickActionRegistryEntries = [
   },
   {
     id: 'warehouse_shipment_scan',
+    targetKind: 'route',
     titleKey: 'quickActions.actions.warehouseShipmentScan.title',
     descriptionKey: 'quickActions.actions.warehouseShipmentScan.description',
     icon: ScanLine,
@@ -46,6 +49,7 @@ const quickActionRegistryEntries = [
   },
   {
     id: 'warehouse_stocktake_scan',
+    targetKind: 'route',
     titleKey: 'quickActions.actions.warehouseStocktakeScan.title',
     descriptionKey: 'quickActions.actions.warehouseStocktakeScan.description',
     icon: ClipboardCheck,
@@ -57,6 +61,7 @@ const quickActionRegistryEntries = [
   },
   {
     id: 'personal_workbench_photo',
+    targetKind: 'route',
     titleKey: 'quickActions.actions.personalWorkbenchPhoto.title',
     descriptionKey: 'quickActions.actions.personalWorkbenchPhoto.description',
     icon: Camera,
@@ -68,6 +73,7 @@ const quickActionRegistryEntries = [
   },
   {
     id: 'personal_workbench_video',
+    targetKind: 'route',
     titleKey: 'quickActions.actions.personalWorkbenchVideo.title',
     descriptionKey: 'quickActions.actions.personalWorkbenchVideo.description',
     icon: Video,
@@ -79,11 +85,10 @@ const quickActionRegistryEntries = [
   },
   {
     id: 'personal_workbench_buffer',
+    targetKind: 'personal-workbench-bottom-drawer',
     titleKey: 'quickActions.actions.personalWorkbenchBuffer.title',
     descriptionKey: 'quickActions.actions.personalWorkbenchBuffer.description',
     icon: NotebookPen,
-    to: '/personal-workbench',
-    search: {},
     requiredPermissions: [],
     enabled: true,
     sortOrder: 60,

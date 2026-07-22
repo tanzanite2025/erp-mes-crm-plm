@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
-import { AlertTriangle, NotebookPen, Plus } from 'lucide-react'
+import { AlertTriangle, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { IndustrialHeader } from '@/components/uds/industrial-header'
 import type {
   PersonalRecord,
   PersonalRecordUpsertPayload,
@@ -42,7 +41,7 @@ export function PersonalWorkbenchRecordsView({
   }, [normalizedQuery, records])
 
   return (
-    <div className='flex flex-col items-stretch gap-4'>
+    <div className='flex min-h-0 flex-1 flex-col items-stretch gap-3'>
       <div className='flex items-center justify-end'>
         <Button
           type='button'
@@ -56,17 +55,12 @@ export function PersonalWorkbenchRecordsView({
           新建记录
         </Button>
       </div>
-      <IndustrialHeader
-        title='个人记录缓冲区'
-        description='只属于你自己的图片与碎片记录空间'
-        icon={NotebookPen}
-      />
       {isError ? (
-        <div className='flex min-h-[320px] items-center justify-center rounded-[28px] border border-dashed border-amber-300 bg-amber-50/70 p-6'>
+        <div className='flex min-h-0 flex-1 items-center justify-center rounded-[28px] border border-dashed border-amber-300 bg-amber-50/70 p-6'>
           <div className='flex max-w-md flex-col items-center text-center'>
             <AlertTriangle className='size-8 text-amber-600' />
             <p className='mt-3 text-base font-black tracking-tight text-foreground'>
-              个人记录页面暂时无法加载
+              个人记录底部抽屉暂时无法加载
             </p>
             <p className='mt-2 text-sm text-muted-foreground'>
               {error instanceof Error
@@ -83,11 +77,11 @@ export function PersonalWorkbenchRecordsView({
           </div>
         </div>
       ) : isPending ? (
-        <div className='flex min-h-[320px] items-center justify-center rounded-[28px] border border-dashed border-border/70 bg-muted/10 p-6 text-sm font-bold text-muted-foreground'>
+        <div className='flex min-h-0 flex-1 items-center justify-center rounded-[28px] border border-dashed border-border/70 bg-muted/10 p-6 text-sm font-bold text-muted-foreground'>
           正在加载个人记录缓冲区…
         </div>
       ) : filteredRecords.length === 0 && records.length > 0 ? (
-        <div className='flex min-h-[320px] items-center justify-center rounded-[28px] border border-dashed border-border/70 bg-muted/10 p-6 text-center'>
+        <div className='flex min-h-0 flex-1 items-center justify-center rounded-[28px] border border-dashed border-border/70 bg-muted/10 p-6 text-center'>
           <div className='max-w-md'>
             <p className='text-base font-black tracking-tight text-foreground'>
               未找到匹配的个人记录

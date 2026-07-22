@@ -45,6 +45,14 @@ const NotificationCenter = lazy(() =>
   )
 )
 
+const PersonalWorkbenchBottomDrawer = lazy(() =>
+  import(
+    '@/features/personal-workbench/components/personal-workbench-bottom-drawer'
+  ).then((module) => ({
+    default: module.PersonalWorkbenchBottomDrawer,
+  }))
+)
+
 function useDeferredActivation(enabled: boolean, delayMs = 0) {
   const [active, setActive] = useState(false)
 
@@ -290,6 +298,9 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
             )}
           </GlobalBottomDock>
         )}
+        <Suspense fallback={null}>
+          <PersonalWorkbenchBottomDrawer />
+        </Suspense>
       </SidebarProvider>
     </LayoutProvider>
   )

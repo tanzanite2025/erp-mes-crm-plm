@@ -15,6 +15,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { useLocalMediaDrafts } from '@/features/personal-workbench/hooks/use-local-media-drafts'
+import { usePersonalWorkbenchBottomDrawerStore } from '@/features/personal-workbench/hooks/use-personal-workbench-bottom-drawer-store'
 import { usePageInstall } from '@/features/scan-platform/hooks/use-page-install'
 import { fetchMySidebarCommands } from '@/features/sidebar-command-assignment/services'
 import { getSidebarQuickActions } from '../services/quick-action-access'
@@ -34,6 +35,10 @@ export function QuickActionDrawer({
   const photoInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
   const [isCapturing, setIsCapturing] = useState(false)
+  const openPersonalWorkbenchBottomDrawer =
+    usePersonalWorkbenchBottomDrawerStore(
+      (state) => state.openPersonalWorkbenchBottomDrawer
+    )
   const sidebarCommandsQuery = useQuery({
     queryKey: ['quick-actions', 'sidebar', 'me'],
     queryFn: fetchMySidebarCommands,
@@ -55,9 +60,6 @@ export function QuickActionDrawer({
   const videoInstall = usePageInstall({
     manifestHref: '/manifests/personal-workbench-video.webmanifest',
   })
-  const bufferInstall = usePageInstall({
-    manifestHref: '/manifests/personal-workbench-buffer.webmanifest',
-  })
   const wheelTraceInstall = usePageInstall({
     manifestHref: '/manifests/wheel-trace.webmanifest',
   })
@@ -67,9 +69,8 @@ export function QuickActionDrawer({
       wheel_trace_scan: wheelTraceInstall,
       personal_workbench_photo: photoInstall,
       personal_workbench_video: videoInstall,
-      personal_workbench_buffer: bufferInstall,
     }),
-    [bufferInstall, photoInstall, videoInstall, wheelTraceInstall]
+    [photoInstall, videoInstall, wheelTraceInstall]
   )
 
   const resolveInstallLabel = (installLabel: string) => {
@@ -195,6 +196,15 @@ export function QuickActionDrawer({
                     type='button'
                     className='flex min-w-0 flex-1 items-center justify-between gap-2.5 text-left'
                     onClick={() => {
+                      if (
+                        action.targetKind ===
+                        'personal-workbench-bottom-drawer'
+                      ) {
+                        onOpenChange(false)
+                        openPersonalWorkbenchBottomDrawer()
+                        return
+                      }
+
                       if (action.id === 'personal_workbench_photo') {
                         openDirectCapture('photo')
                         return
@@ -206,12 +216,16 @@ export function QuickActionDrawer({
                       }
 
                       onOpenChange(false)
+                      if (!action.to) {
+                        return
+                      }
+                      const actionSearch = action.search ?? {}
                       void navigate({
                         to: action.to as never,
                         search:
                           action.id === 'wheel_trace_scan'
-                            ? { ...action.search, scan: String(Date.now()) }
-                            : (action.search as never),
+                            ? { ...actionSearch, scan: String(Date.now()) }
+                            : (actionSearch as never),
                       } as never)
                     }}
                   >

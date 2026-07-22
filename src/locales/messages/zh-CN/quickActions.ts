@@ -46,8 +46,8 @@ export const quickActions = {
       description: '直接打开个人缓冲区录视频模式，现场短视频先落本地草稿。',
     },
     personalWorkbenchBuffer: {
-      title: '个人缓冲区',
-      description: '直接进入你自己的个人记录缓冲区，查看和处理本地草稿。',
+      title: '个人记录抽屉',
+      description: '打开个人记录底部抽屉，查看和处理自己的记录、便签与链接。',
     },
   },
 } as const

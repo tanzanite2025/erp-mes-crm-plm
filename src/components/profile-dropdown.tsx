@@ -1,4 +1,3 @@
-import { useNavigate } from '@tanstack/react-router'
 import { useAuthStore } from '@/stores/auth-store'
 import { useLanguage } from '@/context/language-provider'
 import useDialogState from '@/hooks/use-dialog-state'
@@ -13,16 +12,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { SignOutDialog } from '@/components/sign-out-dialog'
-import { PersonalWorkbenchDialog } from '@/features/personal-workbench/components/personal-workbench-dialog'
-import { usePersonalWorkbenchDialogStore } from '@/features/personal-workbench/hooks/use-personal-workbench-dialog-store'
+import { usePersonalWorkbenchBottomDrawerStore } from '@/features/personal-workbench/hooks/use-personal-workbench-bottom-drawer-store'
 
 export function ProfileDropdown() {
-  const navigate = useNavigate()
   const { t } = useLanguage()
   const user = useAuthStore((state) => state.user)
   const [open, setOpen] = useDialogState()
-  const setPersonalWorkbenchOpen = usePersonalWorkbenchDialogStore(
-    (state) => state.setOpen
+  const openPersonalWorkbenchBottomDrawer = usePersonalWorkbenchBottomDrawerStore(
+    (state) => state.openPersonalWorkbenchBottomDrawer
   )
 
   const displayName = user?.username || user?.accountNo || 'User'
@@ -73,15 +70,9 @@ export function ProfileDropdown() {
           <DropdownMenuSeparator className='my-2 bg-border/70' />
           <DropdownMenuItem
             className='rounded-2xl px-3 py-3 text-[12px] font-black tracking-tight text-foreground focus:bg-primary/5 focus:text-foreground'
-            onClick={() => setPersonalWorkbenchOpen(true)}
+            onClick={openPersonalWorkbenchBottomDrawer}
           >
-            个人记录缓冲区
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            className='rounded-2xl px-3 py-3 text-[12px] font-black tracking-tight text-foreground focus:bg-primary/5 focus:text-foreground'
-            onClick={() => navigate({ to: '/personal-workbench' })}
-          >
-            打开个人记录页面
+            打开个人记录底部抽屉
           </DropdownMenuItem>
           <DropdownMenuSeparator className='my-2 bg-border/70' />
           <DropdownMenuItem
@@ -95,7 +86,6 @@ export function ProfileDropdown() {
       </DropdownMenu>
 
       <SignOutDialog open={!!open} onOpenChange={setOpen} />
-      <PersonalWorkbenchDialog />
     </>
   )
 }

@@ -23,6 +23,7 @@ export function getSidebarQuickActions(
     if (command.enabled && command.status !== 'disabled') {
       result.push({
         id: command.commandId,
+        targetKind: 'route',
         title: command.title,
         iconName: command.icon,
         to: command.route,
@@ -50,10 +51,11 @@ function toSidebarQuickActionView(
 ): SidebarQuickActionView {
   return {
     id: action.id,
+    targetKind: action.targetKind,
     titleKey: action.titleKey,
     iconName: getRegistryActionIconName(action.id),
     to: action.to,
-    search: stringifySearchParams(action.search),
+    search: action.search ? stringifySearchParams(action.search) : undefined,
     enabled: action.enabled,
     sortOrder: action.sortOrder,
     isPrivate,

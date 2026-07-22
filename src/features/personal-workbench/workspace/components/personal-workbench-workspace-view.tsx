@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react'
-import { Link2, Plus, StickyNote } from 'lucide-react'
+import { Plus, StickyNote } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { IndustrialHeader } from '@/components/uds/industrial-header'
 import type {
   PersonalWorkspaceItemDraft,
   PersonalWorkspaceItemType,
@@ -51,7 +50,7 @@ export function PersonalWorkbenchWorkspaceView({
   }
 
   return (
-    <div className='flex flex-col items-stretch gap-4'>
+    <div className='flex min-h-0 flex-1 flex-col items-stretch gap-3'>
       <div className='flex items-center justify-end gap-2'>
         <Button
           type='button'
@@ -79,17 +78,12 @@ export function PersonalWorkbenchWorkspaceView({
           新增链接
         </Button>
       </div>
-      <IndustrialHeader
-        title='个人工作收纳箱'
-        description='先承接随手复制的文本和零散网址，把杂乱信息收回系统内。'
-        icon={Link2}
-      />
       {!isReady ? (
-        <div className='flex min-h-[320px] items-center justify-center rounded-[28px] border border-dashed border-border/70 bg-muted/10 p-6 text-sm font-bold text-muted-foreground'>
+        <div className='flex min-h-0 flex-1 items-center justify-center rounded-[28px] border border-dashed border-border/70 bg-muted/10 p-6 text-sm font-bold text-muted-foreground'>
           正在加载个人工作收纳箱…
         </div>
       ) : filteredItems.length === 0 && items.length > 0 ? (
-        <div className='flex min-h-[320px] items-center justify-center rounded-[28px] border border-dashed border-border/70 bg-muted/10 p-6 text-center'>
+        <div className='flex min-h-0 flex-1 items-center justify-center rounded-[28px] border border-dashed border-border/70 bg-muted/10 p-6 text-center'>
           <div className='max-w-md'>
             <p className='text-base font-black tracking-tight text-foreground'>
               未找到匹配的便签或链接

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from '@tanstack/react-router'
 import { Camera, Video } from 'lucide-react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
@@ -8,6 +7,7 @@ import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { PersonalWorkbenchCardEditor } from '../components/personal-workbench-card-editor'
 import { PersonalWorkbenchImagePicker } from '../components/personal-workbench-image-picker'
+import { usePersonalWorkbenchBottomDrawerStore } from '../hooks/use-personal-workbench-bottom-drawer-store'
 import type { PersonalRecordUpsertPayload } from '../data/schema'
 import { useLocalMediaDrafts } from '../hooks/use-local-media-drafts'
 import { usePersonalWorkbenchMutations } from '../hooks/use-personal-workbench'
@@ -23,7 +23,6 @@ export default function PersonalWorkbenchCapturePage({
   initialDraftId = null,
   mode,
 }: PersonalWorkbenchCapturePageProps) {
-  const navigate = useNavigate()
   const [mediaUrl, setMediaUrl] = useState('')
   const [isEditorOpen, setIsEditorOpen] = useState(
     autoOpenEditor && !!initialDraftId
@@ -33,6 +32,10 @@ export default function PersonalWorkbenchCapturePage({
   )
   const { getDraftById, updateDraft } = useLocalMediaDrafts()
   const { createMutation } = usePersonalWorkbenchMutations()
+  const openPersonalWorkbenchBottomDrawer =
+    usePersonalWorkbenchBottomDrawerStore(
+      (state) => state.openPersonalWorkbenchBottomDrawer
+    )
   const isVideoMode = mode === 'video'
 
   useEffect(() => {
@@ -133,8 +136,8 @@ export default function PersonalWorkbenchCapturePage({
             })
           }
           setActiveDraftId(null)
-          toast.success('个人记录已保存，正在返回个人缓冲区')
-          void navigate({ to: '/personal-workbench' })
+          toast.success('个人记录已保存，正在打开个人记录底部抽屉')
+          openPersonalWorkbenchBottomDrawer()
         }}
       />
     </>

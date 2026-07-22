@@ -114,7 +114,6 @@ var KnownRoutePermissionIDs = map[string]struct{}{
 	"tab_message_center_templates": {},
 	"tab_mrp_requirements": {},
 	"tab_personal_workbench_capture": {},
-	"tab_personal_workbench_workspace": {},
 	"tab_personnel_accounts": {},
 	"tab_personnel_architecture": {},
 	"tab_personnel_employees": {},

@@ -53,9 +53,9 @@ export const quickActions = {
         'Open the personal buffer video flow and save the on-site clip as a local draft.',
     },
     personalWorkbenchBuffer: {
-      title: 'Personal Buffer',
+      title: 'Personal Drawer',
       description:
-        'Open your personal record buffer to review and handle local drafts.',
+        'Open the personal record bottom drawer to review your records, notes, and links.',
     },
   },
 } as const

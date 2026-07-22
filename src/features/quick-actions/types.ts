@@ -1,6 +1,9 @@
 import type { LucideIcon } from 'lucide-react'
 
 export type QuickActionScanMode = 'scan' | 'photo' | 'video'
+export type QuickActionTargetKind =
+  | 'route'
+  | 'personal-workbench-bottom-drawer'
 export type QuickActionTranslationKey =
   | 'quickActions.actions.wheelTraceScan.title'
   | 'quickActions.actions.wheelTraceScan.description'
@@ -26,17 +29,17 @@ export interface QuickActionDefinition {
     | 'personal_workbench_photo'
     | 'personal_workbench_video'
     | 'personal_workbench_buffer'
+  targetKind: QuickActionTargetKind
   titleKey: QuickActionTranslationKey
   descriptionKey: QuickActionTranslationKey
   icon: LucideIcon
-  to:
+  to?:
     | '/wheel-trace'
     | '/warehouse/inbound'
     | '/warehouse/shipment'
     | '/warehouse/stocktake'
-    | '/personal-workbench'
     | '/personal-workbench/capture'
-  search: {
+  search?: {
     mode?: QuickActionScanMode
     scan?: string
   }
@@ -48,11 +51,12 @@ export interface QuickActionDefinition {
 
 export interface SidebarQuickActionView {
   id: string
+  targetKind: QuickActionTargetKind
   title?: string
   titleKey?: QuickActionTranslationKey
   iconName: string
-  to: string
-  search: Record<string, string>
+  to?: string
+  search?: Record<string, string>
   enabled: boolean
   sortOrder: number
   isPrivate: boolean
