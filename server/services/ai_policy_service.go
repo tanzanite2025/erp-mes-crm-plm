@@ -1,10 +1,18 @@
 package services
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"log"
 	"net/url"
+	"os"
 	"strings"
 	"xdfc-server/authz"
 	"xdfc-server/models"
@@ -12,9 +20,17 @@ import (
 	"gorm.io/gorm"
 )
 
-const AIPolicyConfigKey = "ai_capability_policy"
+const (
+	AIPolicyConfigKey             = "ai_capability_policy"
+	AIGatewaySecretConfigKey      = "ai_capability_gateway_secret"
+	AISecretEncryptionKeyEnv      = "AI_SECRET_ENCRYPTION_KEY"
+	aiGatewaySecretRecordVersion  = "v1"
+	aiGatewaySecretConfigLabel    = "AI gateway API key secret"
+	aiGatewaySecretConfigDescribe = "Encrypted backend-only API key for the configured AI gateway provider."
+)
 
 var ErrAIPolicyInvalidPayload = errors.New("AI policy payload is invalid")
+var ErrAISecretEncryptionKeyMissing = errors.New("AI secret encryption key is not configured")
 
 type AIGatewayConfig struct {
 	Provider string `json:"provider"`
@@ -27,8 +43,13 @@ type AIGatewayConfig struct {
 type AIPolicy struct {
 	Enabled            bool            `json:"enabled"`
 	AllowedPermissions []string        `json:"allowedPermissions"`
-	AllowedUsers       []string        `json:"allowedUsers,omitempty"`
 	API                AIGatewayConfig `json:"api"`
+}
+
+type AIGatewaySecretRecord struct {
+	Version    string `json:"version"`
+	Provider   string `json:"provider"`
+	Ciphertext string `json:"ciphertext"`
 }
 
 type AIRuntimeGatewayConfig struct {
@@ -69,9 +90,8 @@ func defaultAIGatewayConfig(provider string) AIGatewayConfig {
 
 func defaultAIPolicy() AIPolicy {
 	return AIPolicy{
-		Enabled:            true,
-		AllowedPermissions: []string{"perm_manage"},
-		AllowedUsers:       []string{},
+		Enabled:            false,
+		AllowedPermissions: []string{},
 		API:                defaultAIGatewayConfig("gemini"),
 	}
 }
@@ -104,7 +124,6 @@ func normalizeAIPolicy(policy AIPolicy) (AIPolicy, error) {
 
 	defaults := defaultAIGatewayConfig(provider)
 	policy.AllowedPermissions = normalizeAIPolicyIDs(policy.AllowedPermissions)
-	policy.AllowedUsers = normalizeAIPolicyIDs(policy.AllowedUsers)
 	policy.API.Provider = provider
 	policy.API.APIKey = strings.TrimSpace(policy.API.APIKey)
 	policy.API.BaseURL = strings.TrimRight(strings.TrimSpace(policy.API.BaseURL), "/")
@@ -117,6 +136,109 @@ func normalizeAIPolicy(policy AIPolicy) (AIPolicy, error) {
 		policy.API.Model = defaults.Model
 	}
 	return policy, nil
+}
+
+func resolveAISecretEncryptionKey() ([]byte, error) {
+	secretSeed := strings.TrimSpace(os.Getenv(AISecretEncryptionKeyEnv))
+	if secretSeed == "" {
+		secretSeed = strings.TrimSpace(os.Getenv("JWT_SECRET"))
+	}
+	if secretSeed == "" {
+		return nil, ErrAISecretEncryptionKeyMissing
+	}
+
+	sum := sha256.Sum256([]byte(secretSeed))
+	return sum[:], nil
+}
+
+func encryptAISecret(plaintext string) (string, error) {
+	key, err := resolveAISecretEncryptionKey()
+	if err != nil {
+		return "", err
+	}
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return "", err
+	}
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return "", err
+	}
+
+	nonce := make([]byte, gcm.NonceSize())
+	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+		return "", err
+	}
+	sealed := gcm.Seal(nonce, nonce, []byte(plaintext), nil)
+	return base64.StdEncoding.EncodeToString(sealed), nil
+}
+
+func decryptAISecret(ciphertext string) (string, error) {
+	key, err := resolveAISecretEncryptionKey()
+	if err != nil {
+		return "", err
+	}
+	raw, err := base64.StdEncoding.DecodeString(strings.TrimSpace(ciphertext))
+	if err != nil {
+		return "", err
+	}
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return "", err
+	}
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return "", err
+	}
+	nonceSize := gcm.NonceSize()
+	if len(raw) <= nonceSize {
+		return "", fmt.Errorf("AI gateway secret ciphertext is malformed")
+	}
+	nonce := raw[:nonceSize]
+	sealed := raw[nonceSize:]
+	plaintext, err := gcm.Open(nil, nonce, sealed, nil)
+	if err != nil {
+		return "", err
+	}
+	return string(plaintext), nil
+}
+
+func loadAIGatewaySecretRecord(database *gorm.DB) (AIGatewaySecretRecord, bool, error) {
+	var config models.SystemConfig
+	err := database.Where("key = ?", AIGatewaySecretConfigKey).First(&config).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return AIGatewaySecretRecord{}, false, nil
+	}
+	if err != nil {
+		return AIGatewaySecretRecord{}, false, err
+	}
+	if strings.TrimSpace(config.Value) == "" {
+		return AIGatewaySecretRecord{}, false, nil
+	}
+
+	var record AIGatewaySecretRecord
+	if err := json.Unmarshal([]byte(config.Value), &record); err != nil {
+		return AIGatewaySecretRecord{}, false, err
+	}
+	record.Version = strings.TrimSpace(record.Version)
+	record.Provider = strings.ToLower(strings.TrimSpace(record.Provider))
+	record.Ciphertext = strings.TrimSpace(record.Ciphertext)
+	if record.Version == "" || record.Provider == "" || record.Ciphertext == "" {
+		return AIGatewaySecretRecord{}, false, nil
+	}
+	return record, true, nil
+}
+
+func buildAIGatewaySecretRecord(provider string, apiKey string) (AIGatewaySecretRecord, error) {
+	ciphertext, err := encryptAISecret(apiKey)
+	if err != nil {
+		return AIGatewaySecretRecord{}, err
+	}
+	return AIGatewaySecretRecord{
+		Version:    aiGatewaySecretRecordVersion,
+		Provider:   strings.ToLower(strings.TrimSpace(provider)),
+		Ciphertext: ciphertext,
+	}, nil
 }
 
 func LoadAIPolicy(database *gorm.DB) (AIPolicy, error) {
@@ -140,7 +262,24 @@ func LoadAIPolicy(database *gorm.DB) (AIPolicy, error) {
 	if err := json.Unmarshal([]byte(config.Value), &policy); err != nil {
 		return AIPolicy{}, err
 	}
-	return normalizeAIPolicy(policy)
+	normalized, err := normalizeAIPolicy(policy)
+	if err != nil {
+		return AIPolicy{}, err
+	}
+
+	secretRecord, exists, err := loadAIGatewaySecretRecord(database)
+	if err != nil {
+		return AIPolicy{}, err
+	}
+	if exists && strings.EqualFold(secretRecord.Provider, normalized.API.Provider) {
+		decrypted, err := decryptAISecret(secretRecord.Ciphertext)
+		if err != nil {
+			log.Printf("[AI_POLICY][WARN] failed to decrypt gateway secret: %v", err)
+		} else {
+			normalized.API.APIKey = strings.TrimSpace(decrypted)
+		}
+	}
+	return normalized, nil
 }
 
 func BuildAIRuntimePolicy(policy AIPolicy) AIRuntimePolicy {
@@ -174,19 +313,6 @@ func SaveAIPolicy(database *gorm.DB, input AIPolicy) (AIPolicy, error) {
 		return AIPolicy{}, gorm.ErrInvalidDB
 	}
 
-	if strings.TrimSpace(input.API.APIKey) == "" {
-		currentPolicy, err := LoadAIPolicy(database)
-		if err != nil {
-			return AIPolicy{}, err
-		}
-		if strings.TrimSpace(currentPolicy.API.APIKey) != "" &&
-			!strings.EqualFold(strings.TrimSpace(currentPolicy.API.Provider), strings.TrimSpace(input.API.Provider)) {
-			return AIPolicy{}, fmt.Errorf("%w: a new API key is required when changing provider", ErrAIPolicyInvalidPayload)
-		}
-		input.API.APIKey = currentPolicy.API.APIKey
-	}
-	input.AllowedUsers = []string{}
-
 	normalized, err := normalizeAIPolicy(input)
 	if err != nil {
 		return AIPolicy{}, fmt.Errorf("%w: %v", ErrAIPolicyInvalidPayload, err)
@@ -195,23 +321,64 @@ func SaveAIPolicy(database *gorm.DB, input AIPolicy) (AIPolicy, error) {
 		return AIPolicy{}, err
 	}
 
-	serialized, err := json.Marshal(normalized)
+	currentPolicy, err := LoadAIPolicy(database)
 	if err != nil {
 		return AIPolicy{}, err
 	}
-	config := models.SystemConfig{
-		Key:         AIPolicyConfigKey,
-		Value:       string(serialized),
-		Label:       "AI capability policy",
-		Description: "Backend authoritative AI governance policy",
+	secretRecord, secretExists, err := loadAIGatewaySecretRecord(database)
+	if err != nil {
+		return AIPolicy{}, err
 	}
-	if err := database.Where("key = ?", AIPolicyConfigKey).
-		Assign(map[string]any{
-			"value":       config.Value,
-			"label":       config.Label,
-			"description": config.Description,
-		}).
-		FirstOrCreate(&config).Error; err != nil {
+
+	apiKeyToPersist := strings.TrimSpace(input.API.APIKey)
+	if apiKeyToPersist == "" {
+		if strings.TrimSpace(currentPolicy.API.APIKey) != "" &&
+			!strings.EqualFold(strings.TrimSpace(currentPolicy.API.Provider), normalized.API.Provider) {
+			return AIPolicy{}, fmt.Errorf("%w: a new API key is required when changing provider", ErrAIPolicyInvalidPayload)
+		}
+		if secretExists && !strings.EqualFold(secretRecord.Provider, normalized.API.Provider) {
+			return AIPolicy{}, fmt.Errorf("%w: a new API key is required when changing provider", ErrAIPolicyInvalidPayload)
+		}
+		apiKeyToPersist = strings.TrimSpace(currentPolicy.API.APIKey)
+	}
+
+	policyToPersist := normalized
+	policyToPersist.API.APIKey = ""
+	serialized, err := json.Marshal(policyToPersist)
+	if err != nil {
+		return AIPolicy{}, err
+	}
+
+	if err := database.Transaction(func(tx *gorm.DB) error {
+		if err := upsertSystemConfigRecord(
+			tx,
+			AIPolicyConfigKey,
+			string(serialized),
+			"AI capability policy",
+			"Backend authoritative AI governance policy",
+		); err != nil {
+			return err
+		}
+
+		if apiKeyToPersist == "" {
+			return nil
+		}
+		secretRecord, err := buildAIGatewaySecretRecord(normalized.API.Provider, apiKeyToPersist)
+		if err != nil {
+			return err
+		}
+		secretPayload, err := json.Marshal(secretRecord)
+		if err != nil {
+			return err
+		}
+		return upsertSystemConfigRecord(
+			tx,
+			AIGatewaySecretConfigKey,
+			string(secretPayload),
+			aiGatewaySecretConfigLabel,
+			aiGatewaySecretConfigDescribe,
+		)
+	}); err != nil {
 		return AIPolicy{}, err
 	}
 	return normalized, nil

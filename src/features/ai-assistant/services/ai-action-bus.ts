@@ -1,5 +1,5 @@
 import { createLogger } from '@/lib/logger'
-import { isValidRoute } from './ai-protocol-validator'
+import { isValidCommand, isValidRoute } from './ai-protocol-validator'
 
 const logger = createLogger('AiActionBus')
 
@@ -47,6 +47,14 @@ export const aiActionBus = {
       navigate(value)
       return { ok: true }
     } else if (type === 'CMD') {
+      if (!isValidCommand(value)) {
+        logger.error(`Blocked invalid command: ${label}`)
+        return {
+          ok: false,
+          errorMessage: `[安全拦截] 极光助手生成的分析指令无效或过长: ${label}`,
+        }
+      }
+
       logger.info(`Executing command: ${value}`)
       onCommand(value)
       return { ok: true }

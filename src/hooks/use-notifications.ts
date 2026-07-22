@@ -242,31 +242,27 @@ export const useNotifications = () => {
           }
 
           if (data.module === 'System' && data.action === 'ALERT') {
-            const payload = data.payload || {}
+            const payload = isRecord(data.payload) ? data.payload : {}
             const description =
-              payload.description ||
+              readString(payload, 'description') ||
               '检测到基础设施异常，请立即查看系统监控页面'
             const fingerprint = String(
-              payload.fingerprint ||
-                payload.id ||
-                payload.name ||
-                payload.description ||
+              readString(payload, 'fingerprint', 'id', 'name', 'description') ||
                 Date.now()
             )
+            const severity = readString(payload, 'severity') || 'critical'
 
             addSystemMessage({
               type: 'SYSTEM_NOTICE',
               title: data.title || '系统自诊断异常',
               content: description,
-              priority: resolvePriorityFromSeverity(
-                String(payload.severity || 'critical')
-              ),
+              priority: resolvePriorityFromSeverity(severity),
               metadata: {
                 uniqueKey: `system_alert_${fingerprint}`,
                 fingerprint,
-                severity: payload.severity,
-                startsAt: payload.startsAt,
-                status: payload.status || 'firing',
+                severity,
+                startsAt: readString(payload, 'startsAt') || undefined,
+                status: readString(payload, 'status') || 'firing',
               },
             })
 
@@ -280,8 +276,8 @@ export const useNotifications = () => {
           }
 
           if (data.module === 'System' && data.action === 'ALERT_RESOLVED') {
-            const payload = data.payload || {}
-            const fingerprint = String(payload.fingerprint || payload.id || '')
+            const payload = isRecord(data.payload) ? data.payload : {}
+            const fingerprint = readString(payload, 'fingerprint', 'id')
             if (fingerprint) {
               const uniqueKey = `system_alert_${fingerprint}`
               const target = useSystemNotificationStore

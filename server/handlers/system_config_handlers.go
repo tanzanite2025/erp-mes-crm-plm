@@ -19,8 +19,12 @@ func redactAIPolicyConfigValue(rawValue string) string {
 	}
 	if api, ok := payload["api"].(map[string]any); ok {
 		delete(api, "apiKey")
+		delete(api, "apiKeyCiphertext")
+		delete(api, "apiKeyEncrypted")
 		delete(api, "groupId")
 	}
+	delete(payload, "allowedUsers")
+	delete(payload, "allowedRoles")
 	redacted, err := json.Marshal(payload)
 	if err != nil {
 		return ""
@@ -35,12 +39,18 @@ func GetSystemConfigsHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取系统配置失败"})
 		return
 	}
+	filteredConfigs := make([]models.SystemConfig, 0, len(configs))
 	for index := range configs {
-		if strings.EqualFold(strings.TrimSpace(configs[index].Key), services.AIPolicyConfigKey) {
+		configKey := strings.TrimSpace(configs[index].Key)
+		if strings.EqualFold(configKey, services.AIGatewaySecretConfigKey) {
+			continue
+		}
+		if strings.EqualFold(configKey, services.AIPolicyConfigKey) {
 			configs[index].Value = redactAIPolicyConfigValue(configs[index].Value)
 		}
+		filteredConfigs = append(filteredConfigs, configs[index])
 	}
-	c.JSON(http.StatusOK, configs)
+	c.JSON(http.StatusOK, filteredConfigs)
 }
 
 func buildSystemConfigUpdates(payload map[string]json.RawMessage) (map[string]interface{}, error) {
@@ -81,7 +91,9 @@ func UpdateSystemConfigHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 无效的 KEY 格式"})
 		return
 	}
-	if strings.EqualFold(strings.TrimSpace(key), services.AIPolicyConfigKey) {
+	normalizedKey := strings.TrimSpace(key)
+	if strings.EqualFold(normalizedKey, services.AIPolicyConfigKey) ||
+		strings.EqualFold(normalizedKey, services.AIGatewaySecretConfigKey) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] Use the dedicated AI policy endpoint"})
 		return
 	}

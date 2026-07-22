@@ -11,7 +11,6 @@ describe('AI policy editing model', () => {
       {
         enabled: false,
         allowedPermissions: ['tab_orders', 'action_order_create'],
-        allowedUsers: ['admin'],
         api: {
           provider: 'openai',
           apiKey: 'secret',
@@ -24,7 +23,6 @@ describe('AI policy editing model', () => {
 
     expect(policy.enabled).toBe(false)
     expect(policy.allowedPermissions).toEqual(['tab_orders'])
-    expect(policy.allowedUsers).toEqual(['admin'])
     expect(policy.api.provider).toBe('openai')
     expect(policy.api.groupId).toBe('')
   })

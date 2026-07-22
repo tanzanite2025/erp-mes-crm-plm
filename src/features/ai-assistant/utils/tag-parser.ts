@@ -3,7 +3,7 @@
  * 核心目标：提高对 LLM 不规范输出的容错率。
  */
 import { createLogger } from '@/lib/logger'
-import { isValidRoute } from '../services/ai-protocol-validator'
+import { isValidCommand, isValidRoute } from '../services/ai-protocol-validator'
 
 const logger = createLogger('AiTagParser')
 
@@ -65,7 +65,13 @@ export function parseCommandTags(text: string): ActionItem[] {
     })
   }
 
-  return results
+  return results.filter((action) => {
+    const isValid = isValidCommand(action.value)
+    if (!isValid) {
+      logger.warn(`Ignored unsafe command payload: ${action.label}`)
+    }
+    return isValid
+  })
 }
 
 /**

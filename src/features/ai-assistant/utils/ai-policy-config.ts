@@ -8,7 +8,7 @@ export type EditableAiPolicyConfig = Omit<AiPolicyConfig, 'api'> & {
 }
 
 export const DEFAULT_AI_POLICY_CONFIG: EditableAiPolicyConfig = {
-  enabled: true,
+  enabled: false,
   allowedPermissions: [],
   api: {
     provider: 'gemini',

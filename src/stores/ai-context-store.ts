@@ -1,8 +1,13 @@
 import { create } from 'zustand'
+import {
+  buildSafeAiPageContext,
+  normalizeAiContextTitle,
+  type AiSafePageContext,
+} from '@/features/ai-assistant/utils/ai-page-context'
 
 interface AiContextState {
   /** 当前业务页面感知的核心数据 (JSON 模型) */
-  localContext: Record<string, unknown> | null
+  localContext: AiSafePageContext | null
   /** 当前感知的页面名称或业务实体类型 (如: 'BOM_DETAIL', 'SALES_ORDER') */
   contextTitle: string | null
 
@@ -21,6 +26,9 @@ export const useAiContextStore = create<AiContextState>((set) => ({
   contextTitle: null,
 
   setPageContext: (data, title) =>
-    set({ localContext: data, contextTitle: title }),
+    set({
+      localContext: buildSafeAiPageContext(data),
+      contextTitle: normalizeAiContextTitle(title),
+    }),
   clearPageContext: () => set({ localContext: null, contextTitle: null }),
 }))

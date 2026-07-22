@@ -19,6 +19,7 @@ export function useAiPermissions() {
   const pathname = useLocation({ select: (location) => location.pathname })
   const [isVisible, setIsVisible] = useState(false)
   const [isRouteAllowed, setIsRouteAllowed] = useState(false)
+  const [isApiConfigured, setIsApiConfigured] = useState(false)
   const [isChecking, setIsChecking] = useState(true)
 
   const checkVisibility = useCallback(async () => {
@@ -26,17 +27,20 @@ export function useAiPermissions() {
     try {
       const config = await aiPolicyService.getRuntimePolicy()
       const globalEnabledForUser = config.enabled && hasSignedInUser
+      const apiConfigured = config.api.configured
       const routeAllowed = isAiRoutePermissionAllowed(
         pathname,
         config.allowedPermissions
       )
 
       setIsVisible(globalEnabledForUser)
+      setIsApiConfigured(apiConfigured)
       setIsRouteAllowed(globalEnabledForUser && routeAllowed)
     } catch (e) {
       logger.error('Permission check failed', e)
       setIsVisible(false)
       setIsRouteAllowed(false)
+      setIsApiConfigured(false)
     } finally {
       setIsChecking(false)
     }
@@ -56,9 +60,10 @@ export function useAiPermissions() {
   return {
     isVisible,
     isRouteAllowed,
+    isApiConfigured,
     isChecking,
-    canUsePageContext: isVisible && isRouteAllowed,
-    canUseDashboardSnapshot: isVisible && isRouteAllowed,
+    canUsePageContext: isVisible && isRouteAllowed && isApiConfigured,
+    canUseDashboardSnapshot: isVisible && isRouteAllowed && isApiConfigured,
     refreshPermissions: checkVisibility,
   }
 }

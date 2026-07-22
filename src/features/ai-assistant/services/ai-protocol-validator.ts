@@ -3,47 +3,50 @@
  * 职责：防止 AI 幻觉生成的非法路由或高危指令。
  */
 import { createLogger } from '@/lib/logger'
+import { findRoutePermissionEntry } from '@/features/authz/data/route-permission-queries'
 
 const logger = createLogger('AiProtocolValidator')
 
-/** 合法业务路由白名单 */
-const ALLOWED_ROUTES = [
-  '/',
-  '/dashboard',
-  '/mrp',
-  '/mrp/requirements',
-  '/trading/sales-orders',
-  '/trading/customers',
-  '/engineering/products',
-  '/engineering-db/parts',
-  '/warehouse/stock',
-  '/warehouse/receipts',
-  '/warehouse/shipments',
-  '/tooling-furnaces',
-  '/finance/accounts',
-  '/system-mgmt/users',
-  '/system-mgmt/configs',
-]
+const MAX_AI_COMMAND_CHARS = 500
+const COMMAND_FORBIDDEN_TOKENS = ['[act:', '[cmd:', '<script', 'javascript:']
+
+function normalizeActionRoutePath(route: string): string | null {
+  const trimmedRoute = route.trim()
+  if (!trimmedRoute) return null
+
+  if (/^[a-z][a-z\d+.-]*:/i.test(trimmedRoute)) {
+    return null
+  }
+
+  const basePath = trimmedRoute.split(/[?#]/)[0]?.trim()
+  if (!basePath?.startsWith('/')) {
+    return null
+  }
+
+  const normalizedPath = basePath.replace(/\/+/g, '/').replace(/\/$/g, '')
+  return normalizedPath || '/'
+}
 
 /**
  * 验证跳转路由是否合法
  */
 export function isValidRoute(route: string): boolean {
-  if (!route) return false
+  const basePath = normalizeActionRoutePath(route)
+  if (!basePath) return false
 
-  // 移除查询参数进行基础路径匹配
-  const basePath = route.split('?')[0]
+  return Boolean(findRoutePermissionEntry(basePath))
+}
 
-  // 1. 精确匹配白名单
-  if (ALLOWED_ROUTES.includes(basePath)) return true
+/**
+ * 验证 AI CMD 是否仍是“分析指令”，而不是嵌套动作或脚本载荷。
+ */
+export function isValidCommand(command: string): boolean {
+  const normalizedCommand = command.trim()
+  if (!normalizedCommand) return false
+  if (normalizedCommand.length > MAX_AI_COMMAND_CHARS) return false
 
-  // 2. 动态路由匹配 (例: /trading/sales-orders/SO-001)
-  const isDynamicOrder = /^\/trading\/sales-orders\/[^/]+$/.test(basePath)
-  const isDynamicProduct = /^\/engineering\/products\/[^/]+$/.test(basePath)
-
-  if (isDynamicOrder || isDynamicProduct) return true
-
-  return false
+  const lowerCommand = normalizedCommand.toLowerCase()
+  return !COMMAND_FORBIDDEN_TOKENS.some((token) => lowerCommand.includes(token))
 }
 
 /**
@@ -57,7 +60,13 @@ export interface ActionItem {
 
 export function validateActions(actions: ActionItem[]): ActionItem[] {
   return actions.filter((action) => {
-    if (action.type === 'CMD') return true // CMD 逻辑在执行端有独立校验
+    if (action.type === 'CMD') {
+      const isValid = isValidCommand(action.value)
+      if (!isValid) {
+        logger.warn(`Blocked suspicious command payload: ${action.label}`)
+      }
+      return isValid
+    }
 
     const isValid = isValidRoute(action.value)
     if (!isValid) {

@@ -37,6 +37,7 @@ func AIProxyIngressGuard() gin.HandlerFunc {
 			return
 		}
 
+		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, int64(maxBody))
 		c.Next()
 	}
 }

@@ -11,7 +11,6 @@ export interface AiGatewayConfig {
 export interface AiPolicyConfig {
   enabled: boolean
   allowedPermissions: string[]
-  allowedUsers?: string[]
   api?: AiGatewayConfig
 }
 

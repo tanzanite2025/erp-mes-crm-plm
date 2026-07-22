@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -14,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 	"xdfc-server/middleware"
 	"xdfc-server/services"
 
@@ -38,12 +40,22 @@ type aiProxyUpstreamRequest struct {
 }
 
 type aiProxySecurityConfig struct {
-	AllowedHosts   []string
-	Timeout        time.Duration
-	StreamTimeout  time.Duration
-	MaxBodyBytes   int
-	AllowPrivateIP bool
+	AllowedHosts     []string
+	Timeout          time.Duration
+	StreamTimeout    time.Duration
+	MaxBodyBytes     int
+	MaxResponseBytes int
+	AllowPrivateIP   bool
 }
+
+const (
+	defaultAIProxyMaxBodyBytes            = 256 * 1024
+	defaultAIProxyMaxResponseBytes        = 2 * 1024 * 1024
+	defaultAIProxyMaxMessages             = 40
+	defaultAIProxyMaxMessageContentRunes  = 12_000
+	defaultAIProxyMaxTotalMessageRunes    = 60_000
+	aiProxyResponseOverflowDetectionBytes = 1
+)
 
 var blockedCIDRs = mustParseCIDRs([]string{
 	"100.64.0.0/10",
@@ -66,6 +78,10 @@ func AiProxyHandler(c *gin.Context) {
 
 	var proxyRequest AiProxyRequest
 	if err := c.ShouldBindJSON(&proxyRequest); err != nil {
+		if strings.Contains(strings.ToLower(err.Error()), "request body too large") {
+			writeSecurityError(c, http.StatusRequestEntityTooLarge, "AI_PROXY_BODY_TOO_LARGE", "Request body exceeds allowed size")
+			return
+		}
 		writeSecurityError(c, http.StatusBadRequest, "AI_PROXY_BAD_REQUEST", "Invalid AI proxy request")
 		return
 	}
@@ -152,8 +168,12 @@ func AiProxyHandler(c *gin.Context) {
 		return
 	}
 
-	responseBody, err := io.ReadAll(response.Body)
+	responseBody, err := readAIProxyResponseBody(response.Body, securityConfig.MaxResponseBytes)
 	if err != nil {
+		if errors.Is(err, errAIProxyResponseTooLarge) {
+			writeSecurityError(c, http.StatusBadGateway, "AI_PROXY_RESPONSE_TOO_LARGE", "Upstream response exceeds allowed size")
+			return
+		}
 		writeSecurityError(c, http.StatusInternalServerError, "AI_PROXY_READ_FAIL", "Failed to read upstream response")
 		return
 	}
@@ -167,16 +187,26 @@ func validateAIProxyMessages(messages []AiProxyMessage) error {
 	if len(messages) == 0 {
 		return fmt.Errorf("at least one message is required")
 	}
-	if len(messages) > 100 {
+	if len(messages) > defaultAIProxyMaxMessages {
 		return fmt.Errorf("message count exceeds the limit")
 	}
+	totalContentRunes := 0
 	for _, message := range messages {
 		role := strings.ToLower(strings.TrimSpace(message.Role))
 		if role != "user" && role != "assistant" && role != "system" {
 			return fmt.Errorf("unsupported message role")
 		}
-		if strings.TrimSpace(message.Content) == "" {
+		content := strings.TrimSpace(message.Content)
+		if content == "" {
 			return fmt.Errorf("message content cannot be empty")
+		}
+		contentRunes := utf8.RuneCountInString(content)
+		if contentRunes > defaultAIProxyMaxMessageContentRunes {
+			return fmt.Errorf("message content exceeds the single-message limit")
+		}
+		totalContentRunes += contentRunes
+		if totalContentRunes > defaultAIProxyMaxTotalMessageRunes {
+			return fmt.Errorf("message content exceeds the total limit")
 		}
 	}
 	return nil
@@ -217,6 +247,10 @@ func buildAIProxyUpstreamRequest(policy services.AIPolicy, request AiProxyReques
 		}, nil
 
 	case "openai", "custom":
+		model := strings.TrimSpace(gateway.Model)
+		if model == "" {
+			return aiProxyUpstreamRequest{}, fmt.Errorf("AI gateway model is not configured")
+		}
 		targetURL := resolveAIChatCompletionsURL(gateway.BaseURL)
 		headers := map[string]string{"Authorization": buildAIGatewayAuthorization(apiKey)}
 		if isMiniMaxGatewayURL(targetURL) {
@@ -230,7 +264,7 @@ func buildAIProxyUpstreamRequest(policy services.AIPolicy, request AiProxyReques
 			TargetURL: targetURL,
 			Headers:   headers,
 			Body: map[string]any{
-				"model":       strings.TrimSpace(gateway.Model),
+				"model":       model,
 				"messages":    request.Messages,
 				"temperature": 0.7,
 				"stream":      request.Stream,
@@ -438,6 +472,22 @@ func writeSecurityError(c *gin.Context, status int, code string, message string)
 	})
 }
 
+var errAIProxyResponseTooLarge = errors.New("AI proxy response exceeds the limit")
+
+func readAIProxyResponseBody(body io.Reader, maxBytes int) ([]byte, error) {
+	if maxBytes <= 0 {
+		return io.ReadAll(body)
+	}
+	payload, err := io.ReadAll(io.LimitReader(body, int64(maxBytes+aiProxyResponseOverflowDetectionBytes)))
+	if err != nil {
+		return nil, err
+	}
+	if len(payload) > maxBytes {
+		return nil, errAIProxyResponseTooLarge
+	}
+	return payload, nil
+}
+
 func redactURL(raw string) string {
 	parsedURL, err := url.Parse(raw)
 	if err != nil {
@@ -480,10 +530,17 @@ func getAIProxySecurityConfig() aiProxySecurityConfig {
 		}
 	}
 
-	maxBodyBytes := 256 * 1024
+	maxBodyBytes := defaultAIProxyMaxBodyBytes
 	if value := strings.TrimSpace(os.Getenv("AI_PROXY_MAX_BODY_BYTES")); value != "" {
 		if bytesLimit, err := strconv.Atoi(value); err == nil && bytesLimit > 0 {
 			maxBodyBytes = bytesLimit
+		}
+	}
+
+	maxResponseBytes := defaultAIProxyMaxResponseBytes
+	if value := strings.TrimSpace(os.Getenv("AI_PROXY_MAX_RESPONSE_BYTES")); value != "" {
+		if bytesLimit, err := strconv.Atoi(value); err == nil && bytesLimit > 0 {
+			maxResponseBytes = bytesLimit
 		}
 	}
 
@@ -491,13 +548,18 @@ func getAIProxySecurityConfig() aiProxySecurityConfig {
 	if value := strings.TrimSpace(os.Getenv("AI_PROXY_ALLOW_PRIVATE_IP")); value != "" {
 		allowPrivateIP, _ = strconv.ParseBool(value)
 	}
+	if allowPrivateIP && strings.EqualFold(strings.TrimSpace(os.Getenv("GIN_MODE")), "release") {
+		log.Printf("[AI_PROXY][SECURITY] AI_PROXY_ALLOW_PRIVATE_IP=true is ignored in release mode")
+		allowPrivateIP = false
+	}
 
 	return aiProxySecurityConfig{
-		AllowedHosts:   allowedHosts,
-		Timeout:        timeout,
-		StreamTimeout:  streamTimeout,
-		MaxBodyBytes:   maxBodyBytes,
-		AllowPrivateIP: allowPrivateIP,
+		AllowedHosts:     allowedHosts,
+		Timeout:          timeout,
+		StreamTimeout:    streamTimeout,
+		MaxBodyBytes:     maxBodyBytes,
+		MaxResponseBytes: maxResponseBytes,
+		AllowPrivateIP:   allowPrivateIP,
 	}
 }
 
