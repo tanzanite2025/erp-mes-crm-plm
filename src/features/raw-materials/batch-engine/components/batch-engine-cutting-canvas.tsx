@@ -2,11 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { RotateCcw, ZoomIn, ZoomOut } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
-import { buildBatchEngineGeometryLayout } from '../services/build-batch-engine-geometry-layout'
-import {
-  buildStripFirstLayout,
-  type StripLayoutZone,
-} from '../services/build-strip-first-layout'
+import { buildBatchEngineCanvasLayout } from '../services/build-batch-engine-canvas-layout'
 import {
   clampScale,
   createFitViewport,
@@ -18,12 +14,10 @@ import {
 import type {
   BatchEngineNormalizedControls,
   BatchEngineSimulation,
-  BatchOptimizerBreakSliceSummary,
-  BatchOptimizerHeatZoneAttribution,
   BatchOptimizerPlan,
   BatchOptimizerPlanDiffSummary,
-  BatchOptimizerZoneClusterSummary,
 } from '../types'
+import { BatchEngineCanvasZoneInspector } from './batch-engine-canvas-zone-inspector'
 
 type BatchEngineCuttingCanvasProps = {
   controls: BatchEngineNormalizedControls
@@ -85,10 +79,32 @@ export function BatchEngineCuttingCanvas(props: BatchEngineCuttingCanvasProps) {
     y: 24,
   })
   const viewMode = selectedPlan ? 'formal' : 'preview'
+  const canvasUnavailableReason = useMemo(() => {
+    if (selectedPlan) return ''
+    if (!controls.rollWidthMm || !controls.rollLengthM) {
+      return t('rawMaterials.batchEngine.canvas.empty.missingRoll')
+    }
+    if (!simulation.selectedUnit) {
+      return t('rawMaterials.batchEngine.canvas.empty.missingUnit')
+    }
+    return ''
+  }, [
+    controls.rollLengthM,
+    controls.rollWidthMm,
+    selectedPlan,
+    simulation.selectedUnit,
+    t,
+  ])
+  const canRenderCanvas = !canvasUnavailableReason
 
   const layout = useMemo(
     () =>
-      buildCanvasLayout(controls, simulation, selectedPlan, activeDiffSummary),
+      buildBatchEngineCanvasLayout(
+        controls,
+        simulation,
+        selectedPlan,
+        activeDiffSummary
+      ),
     [activeDiffSummary, controls, selectedPlan, simulation]
   )
 
@@ -100,7 +116,7 @@ export function BatchEngineCuttingCanvas(props: BatchEngineCuttingCanvasProps) {
     () => layout.zones.find((zone) => zone.id === selectedZoneId) || null,
     [layout.zones, selectedZoneId]
   )
-  const activeZone = selectedZone || hoveredZone
+  const activeZone = canRenderCanvas ? selectedZone || hoveredZone : null
 
   useEffect(() => {
     const element = wrapperRef.current
@@ -123,7 +139,7 @@ export function BatchEngineCuttingCanvas(props: BatchEngineCuttingCanvasProps) {
   }, [])
 
   useEffect(() => {
-    if (size.width <= 0 || size.height <= 0) return
+    if (!canRenderCanvas || size.width <= 0 || size.height <= 0) return
 
     const nextViewport = createFitViewport(layout, size.width, size.height)
     const frame = window.requestAnimationFrame(() => {
@@ -133,11 +149,13 @@ export function BatchEngineCuttingCanvas(props: BatchEngineCuttingCanvasProps) {
     })
 
     return () => window.cancelAnimationFrame(frame)
-  }, [layout, size.height, size.width])
+  }, [canRenderCanvas, layout, size.height, size.width])
 
   useEffect(() => {
     const canvas = canvasRef.current
-    if (!canvas || size.width <= 0 || size.height <= 0) return
+    if (!canRenderCanvas || !canvas || size.width <= 0 || size.height <= 0) {
+      return
+    }
 
     const ratio = window.devicePixelRatio || 1
     const pixelWidth = Math.max(Math.floor(size.width * ratio), 1)
@@ -174,14 +192,16 @@ export function BatchEngineCuttingCanvas(props: BatchEngineCuttingCanvasProps) {
     size.height,
     size.width,
     viewport,
+    canRenderCanvas,
   ])
 
   const resetViewport = () => {
-    if (size.width <= 0 || size.height <= 0) return
+    if (!canRenderCanvas || size.width <= 0 || size.height <= 0) return
     setViewport(createFitViewport(layout, size.width, size.height))
   }
 
   const zoomAtPoint = (pointX: number, pointY: number, factor: number) => {
+    if (!canRenderCanvas) return
     setViewport((current) => {
       const world = screenToWorld(current, pointX, pointY)
       const nextScale = clampScale(current.scale * factor)
@@ -194,6 +214,7 @@ export function BatchEngineCuttingCanvas(props: BatchEngineCuttingCanvasProps) {
   }
 
   const updateHoverZone = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!canRenderCanvas) return
     const rect = event.currentTarget.getBoundingClientRect()
     const next = hitTestZone(
       layout,
@@ -281,10 +302,11 @@ export function BatchEngineCuttingCanvas(props: BatchEngineCuttingCanvasProps) {
           </span>
           <span className='rounded-full border border-slate-300 bg-white px-3 py-1'>
             {t('rawMaterials.batchEngine.canvas.scale')}:{' '}
-            {(viewport.scale * 100).toFixed(1)}%
+            {canRenderCanvas ? `${(viewport.scale * 100).toFixed(1)}%` : '--'}
           </span>
           <span className='rounded-full border border-slate-300 bg-white px-3 py-1'>
-            {t('rawMaterials.batchEngine.canvas.zones')}: {layout.zones.length}
+            {t('rawMaterials.batchEngine.canvas.zones')}:{' '}
+            {canRenderCanvas ? layout.zones.length : 0}
           </span>
           {highlightedDemandLineId ? (
             <span className='rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-amber-700'>
@@ -314,6 +336,7 @@ export function BatchEngineCuttingCanvas(props: BatchEngineCuttingCanvasProps) {
             size='icon'
             className='size-8 rounded-full'
             onClick={() => zoomAtPoint(size.width / 2, size.height / 2, 1.15)}
+            disabled={!canRenderCanvas}
           >
             <ZoomIn className='size-4' />
           </Button>
@@ -325,6 +348,7 @@ export function BatchEngineCuttingCanvas(props: BatchEngineCuttingCanvasProps) {
             onClick={() =>
               zoomAtPoint(size.width / 2, size.height / 2, 1 / 1.15)
             }
+            disabled={!canRenderCanvas}
           >
             <ZoomOut className='size-4' />
           </Button>
@@ -334,6 +358,7 @@ export function BatchEngineCuttingCanvas(props: BatchEngineCuttingCanvasProps) {
             size='icon'
             className='size-8 rounded-full'
             onClick={resetViewport}
+            disabled={!canRenderCanvas}
           >
             <RotateCcw className='size-4' />
           </Button>
@@ -345,287 +370,68 @@ export function BatchEngineCuttingCanvas(props: BatchEngineCuttingCanvasProps) {
           ref={wrapperRef}
           className='relative min-h-[320px] overflow-hidden rounded-[18px] border border-dashed border-slate-300/70 bg-slate-950/95'
         >
-          <canvas
-            ref={canvasRef}
-            className='block h-full w-full cursor-grab touch-none active:cursor-grabbing'
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerCancel={handlePointerUp}
-            onPointerLeave={handlePointerLeave}
-          />
-          {hoveredZone?.tooltipLines?.length ? (
-            <div
-              className='pointer-events-none absolute z-10 w-[240px] rounded-[20px] border border-dashed border-slate-300 bg-white/95 p-3 shadow-2xl'
-              style={{
-                left: Math.min(
-                  tooltipPosition.x,
-                  Math.max(size.width - 260, 12)
-                ),
-                top: Math.min(
-                  tooltipPosition.y,
-                  Math.max(size.height - 180, 12)
-                ),
-              }}
-            >
-              <p className='text-[10px] font-black tracking-[0.18em] text-slate-500 uppercase'>
-                区域 Tooltip
-              </p>
-              <p className='mt-1 text-sm font-black text-slate-900'>
-                {hoveredZone.label}
-              </p>
-              <div className='mt-2 grid gap-1 text-xs font-semibold text-slate-700'>
-                {hoveredZone.tooltipLines.map((line) => (
-                  <p key={line}>{line}</p>
-                ))}
+          {canRenderCanvas ? (
+            <>
+              <canvas
+                ref={canvasRef}
+                className='block h-full w-full cursor-grab touch-none active:cursor-grabbing'
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerCancel={handlePointerUp}
+                onPointerLeave={handlePointerLeave}
+              />
+              {hoveredZone?.tooltipLines?.length ? (
+                <div
+                  className='pointer-events-none absolute z-10 w-[240px] rounded-[20px] border border-dashed border-slate-300 bg-white/95 p-3 shadow-2xl'
+                  style={{
+                    left: Math.min(
+                      tooltipPosition.x,
+                      Math.max(size.width - 260, 12)
+                    ),
+                    top: Math.min(
+                      tooltipPosition.y,
+                      Math.max(size.height - 180, 12)
+                    ),
+                  }}
+                >
+                  <p className='text-[10px] font-black tracking-[0.18em] text-slate-500 uppercase'>
+                    区域 Tooltip
+                  </p>
+                  <p className='mt-1 text-sm font-black text-slate-900'>
+                    {hoveredZone.label}
+                  </p>
+                  <div className='mt-2 grid gap-1 text-xs font-semibold text-slate-700'>
+                    {hoveredZone.tooltipLines.map((line) => (
+                      <p key={line}>{line}</p>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </>
+          ) : (
+            <div className='flex h-full min-h-[320px] items-center justify-center p-6 text-center'>
+              <div className='max-w-md rounded-[28px] border border-dashed border-slate-600/70 bg-slate-900/85 px-6 py-5 shadow-2xl'>
+                <p className='text-[11px] font-black tracking-[0.22em] text-cyan-200/80 uppercase'>
+                  {t('rawMaterials.batchEngine.canvas.empty.kicker')}
+                </p>
+                <p className='mt-2 text-lg font-black text-white'>
+                  {t('rawMaterials.batchEngine.canvas.empty.title')}
+                </p>
+                <p className='mt-2 text-sm leading-6 font-semibold text-slate-300'>
+                  {canvasUnavailableReason}
+                </p>
               </div>
             </div>
-          ) : null}
+          )}
         </div>
 
-        <ZoneInspector
+        <BatchEngineCanvasZoneInspector
           zone={activeZone}
           viewMode={viewMode}
           selectedPlan={selectedPlan}
         />
       </div>
-    </div>
-  )
-}
-
-function buildCanvasLayout(
-  controls: BatchEngineNormalizedControls,
-  simulation: BatchEngineSimulation,
-  selectedPlan?: BatchOptimizerPlan,
-  activeDiffSummary?: BatchOptimizerPlanDiffSummary
-) {
-  if (!selectedPlan) {
-    return buildStripFirstLayout(controls, simulation)
-  }
-
-  const geometryLayout = buildBatchEngineGeometryLayout(
-    selectedPlan,
-    activeDiffSummary
-  )
-  if (geometryLayout) {
-    return geometryLayout
-  }
-
-  const widthMm = Math.max(selectedPlan.layoutSummary.canvasWidthMm, 1)
-  const heightMm = Math.max(selectedPlan.layoutSummary.canvasHeightMm, 1)
-  const diffZoneIdSet = new Set(activeDiffSummary?.highlightZoneIds ?? [])
-  const zones: StripLayoutZone[] = selectedPlan.layoutSummary.zones.map(
-    (zone) => ({
-      id: zone.id,
-      kind: toCanvasZoneKind(zone.kind),
-      x: zone.x,
-      y: zone.y,
-      width: zone.width,
-      height: zone.height,
-      label: zone.label,
-      detail: zone.detail || '--',
-      usageCategory: zone.usageCategory,
-      rollId: zone.rollId,
-      demandLineId: zone.demandLineId,
-      areaM2: zone.areaM2,
-      allocatedSets: zone.allocatedSets,
-      allocatedPieces: zone.allocatedPieces,
-      coverageSharePercent: zone.coverageSharePercent,
-      tooltipLines: diffZoneIdSet.has(zone.id)
-        ? [
-            ...zone.tooltipLines,
-            `差异热区: 当前方案与 Top${activeDiffSummary?.baselinePlanRank ?? 1} 基准存在布局差异`,
-          ]
-        : zone.tooltipLines,
-      isDiffHighlighted: diffZoneIdSet.has(zone.id),
-      interactive: true,
-    })
-  )
-
-  return {
-    widthMm,
-    heightMm,
-    zones,
-    bounds: {
-      minX: 0,
-      minY: 0,
-      maxX: widthMm,
-      maxY: heightMm,
-    },
-  }
-}
-
-function toCanvasZoneKind(kind: string): StripLayoutZone['kind'] {
-  if (
-    kind === 'roll' ||
-    kind === 'loss' ||
-    kind === 'strip' ||
-    kind === 'piece' ||
-    kind === 'aggregate'
-  ) {
-    return kind
-  }
-  return 'aggregate'
-}
-
-function ZoneInspector({
-  zone,
-  viewMode,
-  selectedPlan,
-}: {
-  zone: StripLayoutZone | null
-  viewMode: 'preview' | 'formal'
-  selectedPlan?: BatchOptimizerPlan
-}) {
-  const { t } = useLanguage()
-
-  const zoneAttribution = useMemo<
-    BatchOptimizerHeatZoneAttribution | undefined
-  >(() => {
-    if (!zone || !selectedPlan) {
-      return undefined
-    }
-    return selectedPlan.explainabilitySummary.heatZoneAttributions.find(
-      (item) => item.zoneId === zone.id
-    )
-  }, [selectedPlan, zone])
-
-  const zoneCluster = useMemo<
-    BatchOptimizerZoneClusterSummary | undefined
-  >(() => {
-    if (!zoneAttribution?.clusterId || !selectedPlan) {
-      return undefined
-    }
-    return selectedPlan.explainabilitySummary.zoneClusters.find(
-      (item) => item.clusterId === zoneAttribution.clusterId
-    )
-  }, [selectedPlan, zoneAttribution])
-
-  const zoneBreakSlices = useMemo<BatchOptimizerBreakSliceSummary[]>(() => {
-    if (!selectedPlan || !zoneAttribution?.breakSliceIds.length) {
-      return []
-    }
-    return selectedPlan.explainabilitySummary.breakSlices.filter((item) =>
-      zoneAttribution.breakSliceIds.includes(item.id)
-    )
-  }, [selectedPlan, zoneAttribution])
-
-  if (!zone) {
-    return (
-      <aside className='rounded-[18px] border border-dashed border-slate-300 bg-slate-50/80 p-3'>
-        <p className='text-[10px] font-black tracking-[0.2em] text-slate-500/70 uppercase'>
-          {t('rawMaterials.batchEngine.canvas.selection')}
-        </p>
-        <p className='mt-1 text-[10px] font-black tracking-[0.18em] text-slate-400 uppercase'>
-          {viewMode === 'formal' ? 'formal plan view' : 'preview view'}
-        </p>
-        <p className='mt-1.5 text-sm font-semibold text-slate-700'>
-          {t('rawMaterials.batchEngine.canvas.hoverHint')}
-        </p>
-      </aside>
-    )
-  }
-
-  return (
-    <aside className='rounded-[18px] border border-slate-200 bg-white p-3'>
-      <p className='text-[10px] font-black tracking-[0.2em] text-slate-500/70 uppercase'>
-        {t('rawMaterials.batchEngine.canvas.selection')}
-      </p>
-      <p className='mt-1 text-[10px] font-black tracking-[0.18em] text-slate-400 uppercase'>
-        {viewMode === 'formal' ? 'formal plan view' : 'preview view'}
-      </p>
-      <p className='mt-1.5 text-base font-black text-slate-900'>{zone.label}</p>
-      <p className='mt-1 text-xs font-semibold text-slate-600'>
-        {zone.detail || '--'}
-      </p>
-
-      <div className='mt-3 grid gap-1.5 text-xs font-semibold text-slate-700'>
-        <InspectorRow
-          label={t('rawMaterials.batchEngine.canvas.type')}
-          value={zone.kind}
-        />
-        <InspectorRow label='类别' value={zone.usageCategory || '--'} />
-        <InspectorRow
-          label='差异热区'
-          value={zone.isDiffHighlighted ? '是' : '否'}
-        />
-        <InspectorRow
-          label='归因连续段'
-          value={
-            zoneAttribution
-              ? `${zoneAttribution.segmentKind}:${zoneAttribution.segmentKey}`
-              : '--'
-          }
-        />
-        <InspectorRow
-          label='归因 cluster'
-          value={zoneCluster?.clusterId || zoneAttribution?.clusterId || '--'}
-        />
-        <InspectorRow
-          label='归因 slice 数'
-          value={String(zoneBreakSlices.length)}
-        />
-        <InspectorRow label='需求行' value={zone.demandLineId || '--'} />
-        <InspectorRow label='卷材' value={zone.rollId || '--'} />
-        <InspectorRow
-          label='面积'
-          value={zone.areaM2 ? `${zone.areaM2.toFixed(3)} m2` : '--'}
-        />
-        <InspectorRow
-          label='覆盖占比'
-          value={
-            zone.coverageSharePercent
-              ? `${zone.coverageSharePercent.toFixed(2)}%`
-              : '--'
-          }
-        />
-        <InspectorRow
-          label={t('rawMaterials.batchEngine.canvas.position')}
-          value={`${zone.x.toFixed(1)} / ${zone.y.toFixed(1)}`}
-        />
-        <InspectorRow
-          label={t('rawMaterials.batchEngine.canvas.size')}
-          value={`${zone.width.toFixed(1)} x ${zone.height.toFixed(1)}`}
-        />
-      </div>
-
-      {zoneAttribution ? (
-        <div className='mt-3 rounded-2xl border border-dashed border-violet-300 bg-violet-500/5 p-3'>
-          <p className='text-[10px] font-black tracking-[0.18em] text-violet-700 uppercase'>
-            Heat Attribution
-          </p>
-          <div className='mt-2 grid gap-1 text-xs font-semibold text-slate-700'>
-            <p>原因: {zoneAttribution.reason || '--'}</p>
-            <p>关联需求: {zoneAttribution.demandLineIds.join(', ') || '--'}</p>
-            <p>
-              Break Slice: {zoneAttribution.breakSliceIds.join(', ') || '--'}
-            </p>
-          </div>
-        </div>
-      ) : null}
-
-      {zoneCluster ? (
-        <div className='mt-3 rounded-2xl border border-dashed border-amber-300 bg-amber-500/5 p-3'>
-          <p className='text-[10px] font-black tracking-[0.18em] text-amber-700 uppercase'>
-            Zone Cluster
-          </p>
-          <div className='mt-2 grid gap-1 text-xs font-semibold text-slate-700'>
-            <p>ID: {zoneCluster.clusterId}</p>
-            <p>主因: {zoneCluster.dominantReason || '--'}</p>
-            <p>主需求: {zoneCluster.dominantDemandLineId || '--'}</p>
-            <p>密度: {zoneCluster.densityScore.toFixed(2)}</p>
-          </div>
-        </div>
-      ) : null}
-    </aside>
-  )
-}
-
-function InspectorRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className='flex items-center justify-between rounded-xl bg-slate-50 px-2.5 py-1.5'>
-      <span className='text-slate-500'>{label}</span>
-      <span className='font-black text-slate-800'>{value}</span>
     </div>
   )
 }

@@ -606,6 +606,14 @@ export const rawMaterials = {
       type: 'Type',
       position: 'Position (mm)',
       size: 'Size (mm)',
+      empty: {
+        kicker: 'Preview not ready',
+        title: 'Preview canvas is not ready',
+        missingRoll:
+          'Select a prepreg spec first, or fill the roll width and roll length.',
+        missingUnit:
+          'Select a cutting plan and make sure demand rows can match active cut-size units.',
+      },
     },
   },
   engineConfig: {

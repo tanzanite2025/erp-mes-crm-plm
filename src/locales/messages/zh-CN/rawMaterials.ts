@@ -566,6 +566,13 @@ export const rawMaterials = {
       type: '类型',
       position: '坐标 (mm)',
       size: '尺寸 (mm)',
+      empty: {
+        kicker: '预览未就绪',
+        title: '预览画布尚未就绪',
+        missingRoll: '请先选择预浸料规格，或补齐卷材幅宽与卷材长度。',
+        missingUnit:
+          '请先选择裁纱单据，并确保需求行能够匹配到启用的裁切尺寸单元。',
+      },
     },
   },
   engineConfig: {
