@@ -14,6 +14,7 @@ type CuttingEnginePhysicalConstraintsPanelProps = {
   values: CuttingEnginePhysicalConstraintValues
   onChange: (key: CuttingEnginePhysicalConstraintKey, value: string) => void
   variant?: 'rows' | 'grid'
+  density?: 'normal' | 'compact'
   className?: string
 }
 
@@ -44,8 +45,15 @@ const PHYSICAL_CONSTRAINT_FIELDS = [
 export function CuttingEnginePhysicalConstraintsPanel(
   props: CuttingEnginePhysicalConstraintsPanelProps
 ) {
-  const { values, onChange, variant = 'rows', className } = props
+  const {
+    values,
+    onChange,
+    variant = 'rows',
+    density = 'normal',
+    className,
+  } = props
   const { t } = useLanguage()
+  const isCompact = density === 'compact'
   const containerClassName =
     className ??
     (variant === 'grid'
@@ -63,7 +71,9 @@ export function CuttingEnginePhysicalConstraintsPanel(
           key={item.key}
           className={
             variant === 'grid'
-              ? 'rounded-[14px] border border-dashed border-primary/15 bg-background/70 p-3'
+              ? isCompact
+                ? 'rounded-[12px] border border-dashed border-primary/15 bg-background/70 p-2'
+                : 'rounded-[14px] border border-dashed border-primary/15 bg-background/70 p-3'
               : 'flex items-center justify-between gap-4'
           }
         >
@@ -71,14 +81,18 @@ export function CuttingEnginePhysicalConstraintsPanel(
             <span className='text-[10px] font-black tracking-widest text-muted-foreground/80 uppercase'>
               {t(item.label)}
             </span>
-            <span className='mt-0.5 font-mono text-[8px] text-muted-foreground/60'>
-              {t(item.hint)}
-            </span>
+            {!isCompact ? (
+              <span className='mt-0.5 font-mono text-[8px] text-muted-foreground/60'>
+                {t(item.hint)}
+              </span>
+            ) : null}
           </div>
           <div
             className={
               variant === 'grid'
-                ? 'mt-2 flex items-center gap-2'
+                ? isCompact
+                  ? 'mt-1 flex items-center gap-2'
+                  : 'mt-2 flex items-center gap-2'
                 : 'flex items-center gap-2'
             }
           >

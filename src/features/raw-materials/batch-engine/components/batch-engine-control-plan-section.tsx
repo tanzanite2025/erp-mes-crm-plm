@@ -41,12 +41,12 @@ export function BatchEngineControlPlanSection(
   } = props
 
   return (
-    <div className='rounded-[22px] border border-dashed border-border/50 bg-muted/5 p-4'>
+    <div className='rounded-[18px] border border-dashed border-border/50 bg-muted/5 p-3'>
       <div className='flex items-center gap-2 text-[10px] font-black tracking-[0.2em] text-muted-foreground/70 uppercase'>
         <FolderKanban className='size-4 text-primary/80' />
         {t('rawMaterials.batchEngine.sections.control.blocks.plan.title')}
       </div>
-      <div className='mt-3'>
+      <div className='mt-2'>
         <BatchEngineControlField
           label={t(
             'rawMaterials.batchEngine.sections.control.fields.cuttingPlanRef'
@@ -80,7 +80,7 @@ export function BatchEngineControlPlanSection(
             </SelectContent>
           </Select>
         </BatchEngineControlField>
-        <p className='mt-2 min-h-5 text-xs font-semibold text-muted-foreground/80'>
+        <p className='mt-2 text-xs leading-4 font-semibold text-muted-foreground/80'>
           {selectedCuttingPlan
             ? `${t('rawMaterials.batchEngine.sections.control.cuttingPlanSummary.document')} ${selectedCuttingPlan.documentNo || '--'} / ${t('rawMaterials.batchEngine.sections.control.cuttingPlanSummary.revision')} ${selectedCuttingPlan.revisionNo || '--'} / ${t('rawMaterials.batchEngine.sections.control.cuttingPlanSummary.lines')} ${selectedCuttingPlan.lines.length} / ${t('rawMaterials.batchEngine.sections.control.cuttingPlanSummary.invalidLines')} ${simulation.invalidDemandLineCount}`
             : t(

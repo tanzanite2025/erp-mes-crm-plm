@@ -31,14 +31,15 @@ export function BatchEnginePage() {
   } = planSelection
 
   return (
-    <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
+    <div className='flex animate-in flex-col gap-4 duration-700 fade-in'>
       <IndustrialHeader
         icon={Blocks}
         title={t('rawMaterials.batchEngine.title')}
+        className='rounded-[24px] p-3 md:p-4'
       />
 
-      <section className='rounded-[32px] border border-dashed border-border/60 bg-card p-4 shadow-none sm:p-5'>
-        <div className='flex flex-col gap-6'>
+      <section className='rounded-[24px] border border-dashed border-border/60 bg-card p-2.5 shadow-none sm:p-3'>
+        <div className='flex flex-col gap-3'>
           <BatchEngineControlPanel
             controls={preview.controls}
             updateControl={preview.updateControl}
