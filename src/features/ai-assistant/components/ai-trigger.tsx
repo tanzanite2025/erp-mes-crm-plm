@@ -109,6 +109,9 @@ export function AiTrigger({ placement = 'floating' }: AiTriggerProps) {
   }
 
   const isDock = placement === 'dock'
+  const enabledButtonMotion = isDock
+    ? 'hover:opacity-100 active:scale-95 sm:active:scale-100'
+    : 'hover:scale-105 hover:opacity-100 active:scale-95'
   const triggerButton = (
     <div className={cn('relative', !isDock && 'scale-90 sm:scale-100')}>
       <Button
@@ -132,12 +135,21 @@ export function AiTrigger({ placement = 'floating' }: AiTriggerProps) {
           'rounded-full border-2 shadow-[0_0_40px_rgba(79,70,229,0.15)] transition-all duration-300',
           isDock ? 'size-11' : 'size-14',
           isRecording
-            ? 'scale-110 animate-pulse border-rose-100/50 bg-rose-600 opacity-100'
+            ? cn(
+                !isDock && 'scale-110',
+                'animate-pulse border-rose-100/50 bg-rose-600 opacity-100'
+              )
             : !isApiConfigured
               ? 'cursor-not-allowed border-amber-300/60 bg-amber-50 text-amber-600 opacity-90 dark:border-amber-300/30 dark:bg-amber-300/10 dark:text-amber-100'
               : canUsePageContext
-                ? 'border-indigo-500/20 bg-indigo-600 opacity-90 hover:scale-105 hover:opacity-100 active:scale-95 dark:border-indigo-400/20'
-                : 'border-sky-400/45 bg-sky-500/15 text-sky-700 opacity-95 hover:scale-105 hover:bg-sky-500/20 hover:opacity-100 active:scale-95 dark:border-sky-300/30 dark:bg-sky-300/15 dark:text-sky-100',
+                ? cn(
+                    'border-indigo-500/20 bg-indigo-600 opacity-90 dark:border-indigo-400/20',
+                    enabledButtonMotion
+                  )
+                : cn(
+                    'border-sky-400/45 bg-sky-500/15 text-sky-700 opacity-95 hover:bg-sky-500/20 dark:border-sky-300/30 dark:bg-sky-300/15 dark:text-sky-100',
+                    enabledButtonMotion
+                  ),
           isModalOpen && 'pointer-events-none scale-0 opacity-0'
         )}
       >

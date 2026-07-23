@@ -1,4 +1,5 @@
 import {
+  Children,
   useEffect,
   useMemo,
   useRef,
@@ -81,6 +82,7 @@ type DockMaskStyle = DockSurfaceStyle & {
 
 export function GlobalBottomDock({ children }: GlobalBottomDockProps) {
   const wrapperRef = useRef<HTMLDivElement>(null)
+  const dockItems = Children.toArray(children)
   const dockSurfaceVars: DockSurfaceStyle = {
     '--dock-surface': 'hsl(var(--muted) / 0.8)',
     '--dock-surface-dark': 'hsl(var(--background) / 0.95)',
@@ -175,11 +177,21 @@ export function GlobalBottomDock({ children }: GlobalBottomDockProps) {
         <div
           style={dockContentStyle}
           className={cn(
-            'pointer-events-auto relative z-10 flex min-w-0 items-center justify-center gap-3 px-(--dock-content-padding-x) pt-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] sm:rounded-full sm:border sm:border-border/70 sm:bg-(--dock-surface) sm:px-3 sm:py-2 sm:pb-2 sm:shadow-lg sm:shadow-black/10 sm:backdrop-blur-xl dark:sm:bg-(--dock-surface-dark)',
+            'group/dock pointer-events-auto relative z-10 flex min-w-0 items-center justify-center gap-3 px-(--dock-content-padding-x) pt-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] transition-[border-color,box-shadow,transform] duration-300 ease-out motion-reduce:transition-none sm:rounded-full sm:border sm:border-border/70 sm:bg-(--dock-surface) sm:px-3 sm:py-2 sm:pb-2 sm:shadow-lg sm:shadow-black/10 sm:backdrop-blur-xl sm:hover:-translate-y-1 sm:hover:border-primary/25 sm:hover:shadow-2xl sm:hover:shadow-primary/10 motion-reduce:sm:hover:translate-y-0 dark:sm:bg-(--dock-surface-dark)',
             'supports-backdrop-filter:sm:bg-(--dock-surface-supported) dark:supports-backdrop-filter:sm:bg-(--dock-surface-dark-supported)'
           )}
         >
-          {children}
+          {dockItems.map((child, index) => (
+            <div
+              key={index}
+              className={cn(
+                'group/dock-item relative flex items-center justify-center transition-[filter,transform] duration-300 ease-out will-change-transform motion-reduce:transition-none sm:focus-within:-translate-y-2 sm:focus-within:scale-110 sm:hover:-translate-y-2 sm:hover:scale-110 sm:active:scale-95 motion-reduce:sm:focus-within:translate-y-0 motion-reduce:sm:focus-within:scale-100 motion-reduce:sm:hover:translate-y-0 motion-reduce:sm:hover:scale-100',
+                'before:pointer-events-none before:absolute before:-inset-1.5 before:-z-10 before:rounded-full before:bg-primary/0 before:opacity-0 before:blur-lg before:transition-[background-color,opacity] before:duration-300 before:content-[""] sm:focus-within:before:bg-primary/15 sm:focus-within:before:opacity-100 sm:hover:before:bg-primary/15 sm:hover:before:opacity-100 dark:sm:focus-within:before:bg-primary/20 dark:sm:hover:before:bg-primary/20'
+              )}
+            >
+              {child}
+            </div>
+          ))}
         </div>
       </div>
     </div>

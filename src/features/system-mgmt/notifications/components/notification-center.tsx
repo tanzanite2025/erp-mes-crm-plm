@@ -258,7 +258,7 @@ export function NotificationCenter({
         onClick={() => setIsExpanded(!isExpanded)}
         className={cn(
           'relative rounded-full border border-dashed border-cyan-500/20 bg-cyan-500 text-white shadow-[0_0_0_1px_rgba(34,211,238,0.2),0_14px_32px_-16px_rgba(6,182,212,0.85)] transition-all hover:border-white/90 hover:bg-cyan-400 hover:text-white hover:shadow-[0_0_0_1px_rgba(103,232,249,0.3),0_16px_34px_-16px_rgba(34,211,238,0.9)] dark:border-cyan-400/20 dark:bg-cyan-500/90 dark:text-slate-950 dark:shadow-[0_0_0_1px_rgba(165,243,252,0.15),0_16px_34px_-16px_rgba(34,211,238,0.7)] dark:hover:border-cyan-300/40 dark:hover:bg-cyan-400 dark:hover:text-slate-950',
-          isDock ? 'size-11 hover:scale-105 active:scale-95' : 'h-10 w-10',
+          isDock ? 'size-11 active:scale-95 sm:active:scale-100' : 'h-10 w-10',
           isExpanded &&
             'border-white bg-cyan-300 text-slate-950 shadow-[0_0_0_1px_rgba(165,243,252,0.45),0_18px_36px_-16px_rgba(34,211,238,1)] dark:border-white dark:bg-cyan-200 dark:text-slate-950',
           visibleUnreadCount > 0 &&

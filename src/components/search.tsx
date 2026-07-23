@@ -21,7 +21,7 @@ export function Search({ className = '', placement = 'header' }: SearchProps) {
       className={cn(
         'group relative rounded-full text-xs font-bold shadow-none transition-all',
         isDock
-          ? 'size-11 border-primary/20 bg-primary/95 p-0 text-primary-foreground shadow-xl shadow-primary/15 hover:scale-105 hover:bg-primary hover:text-primary-foreground active:scale-95 dark:border-primary/30 dark:bg-primary/10 dark:text-primary dark:shadow-primary/5 dark:hover:bg-primary dark:hover:text-primary-foreground'
+          ? 'size-11 border-primary/20 bg-primary/95 p-0 text-primary-foreground shadow-xl shadow-primary/15 hover:bg-primary hover:text-primary-foreground active:scale-95 sm:active:scale-100 dark:border-primary/30 dark:bg-primary/10 dark:text-primary dark:shadow-primary/5 dark:hover:bg-primary dark:hover:text-primary-foreground'
           : 'h-9 w-9 justify-center border-dashed border-muted-foreground/20 bg-muted/10 p-0 text-muted-foreground/50 hover:bg-muted/20 hover:text-foreground md:w-44 md:flex-none md:justify-start md:px-3 lg:w-48 xl:w-52',
         className
       )}

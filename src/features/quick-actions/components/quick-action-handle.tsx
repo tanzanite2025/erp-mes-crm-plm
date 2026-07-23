@@ -29,7 +29,7 @@ export function QuickActionHandle({
         'border border-primary/20 bg-primary/95 text-primary-foreground shadow-xl shadow-primary/15 transition-all hover:bg-primary',
         'dark:border-primary/30 dark:bg-primary/10 dark:text-primary dark:shadow-primary/5 dark:hover:bg-primary dark:hover:text-primary-foreground',
         isDock
-          ? 'size-11 rounded-full px-0 hover:scale-105 active:scale-95'
+          ? 'size-11 rounded-full px-0 active:scale-95 sm:active:scale-100'
           : 'fixed top-1/2 right-0 z-40 h-28 w-11 -translate-y-1/2 rounded-l-2xl rounded-r-none border-r-0 px-0 shadow-2xl shadow-primary/20 hover:w-12',
         isOpen &&
           (isDock
