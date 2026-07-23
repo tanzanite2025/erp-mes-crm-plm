@@ -13,6 +13,10 @@ export interface ActionItem {
   type: 'ACT' | 'CMD'
 }
 
+function removeCommandTags(text: string): string {
+  return text.replace(/\[CMD\s*:\s*[\s\S]+?\]/gi, '')
+}
+
 /**
  * 解析业务跳转指令 [ACT: label | route]
  * 容错处理：不计较空格，不计较大小写。
@@ -20,13 +24,14 @@ export interface ActionItem {
 export function parseActionTags(text: string): ActionItem[] {
   if (!text) return []
   const results: ActionItem[] = []
+  const actionText = removeCommandTags(text)
 
   // 匹配 [ACT: label | value]
   // 容错点：\s* 处理不确定的空格，[i] 忽略大小写
   const actRegex = /\[ACT\s*:\s*([^|\]]+)\s*\|\s*([^\]]+)\]/gi
   let match
 
-  while ((match = actRegex.exec(text)) !== null) {
+  while ((match = actRegex.exec(actionText)) !== null) {
     const route = match[2].trim()
 
     // [SECURITY] 仅当路由在白名单内时才解析

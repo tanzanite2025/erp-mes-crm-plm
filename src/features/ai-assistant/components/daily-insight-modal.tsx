@@ -34,7 +34,11 @@ import {
   type AgentSessionType,
 } from '../services/ai-agent-service'
 import { type DashboardSummary } from '../services/ai-service'
-import { type ActionItem } from '../utils/tag-parser'
+import {
+  cleanActionTags,
+  parseActionTags,
+  type ActionItem,
+} from '../utils/tag-parser'
 import { AiMessageItem } from './ai-message-item'
 
 type AiRouteTarget = Parameters<ReturnType<typeof useNavigate>>[0]['to']
@@ -100,24 +104,14 @@ export function DailyInsightModal({
     }
   }, [open, initialQuery, isInsightMode, messages.length, sendMessage])
 
-  // 1. 解析指令解析器 [ACT: 文本 | 路径]
+  // 1. 解析已通过统一白名单验证的跳转动作。
   const actions = useMemo(() => {
-    const regex = /\[ACT:\s*([^|\]]+)\s*\|\s*([^\]]+)\]/g
-    const matches: ActionItem[] = []
-    let match
-    while ((match = regex.exec(content)) !== null) {
-      matches.push({
-        label: match[1].trim(),
-        value: match[2].trim(),
-        type: 'ACT',
-      })
-    }
-    return matches
+    return parseActionTags(content)
   }, [content])
 
   // 2. 清洗正文 (移除指令标签)
   const cleanContent = useMemo(() => {
-    return content.replace(/\[ACT:[^\]]+\]/g, '').trim()
+    return cleanActionTags(content)
   }, [content])
 
   const handleAction = (path: string) => {
