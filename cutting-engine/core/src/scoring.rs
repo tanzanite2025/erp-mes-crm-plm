@@ -1,7 +1,6 @@
 use crate::geometry::round3;
 use crate::{
-    CuttingAngleMixMode, CuttingEngineInput, CuttingMustFulfillMode, CuttingPlan,
-    CuttingUnitInput,
+    CuttingAngleMixMode, CuttingEngineInput, CuttingMustFulfillMode, CuttingPlan, CuttingUnitInput,
 };
 
 pub(crate) fn resolve_must_fulfill_satisfied(
@@ -59,23 +58,27 @@ pub(crate) fn score_plan(
     let angle_mix_penalty = f64::from(angle_mix_violation_count)
         * input.direction_rules.direction_switch_penalty_weight
         * angle_mix_multiplier;
-    round3(
-        utilization_percent
-            + direction_bonus
-            - loss_area_m2 * input.weights.split_penalty,
-    ) - round3(direction_penalty + angle_mix_penalty + must_fulfill_penalty)
+    round3(utilization_percent + direction_bonus - loss_area_m2 * input.weights.split_penalty)
+        - round3(direction_penalty + angle_mix_penalty + must_fulfill_penalty)
 }
 
 pub(crate) fn sort_plans(plans: &mut [CuttingPlan]) {
     plans.sort_by(|left, right| {
         right
-            .utilization_percent
-            .partial_cmp(&left.utilization_percent)
+            .score
+            .partial_cmp(&left.score)
             .unwrap_or(std::cmp::Ordering::Equal)
             .then_with(|| {
                 right
-                    .score
-                    .partial_cmp(&left.score)
+                    .rule_diagnostics
+                    .priority
+                    .partial_cmp(&left.rule_diagnostics.priority)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            })
+            .then_with(|| {
+                right
+                    .utilization_percent
+                    .partial_cmp(&left.utilization_percent)
                     .unwrap_or(std::cmp::Ordering::Equal)
             })
             .then_with(|| left.plan_id.cmp(&right.plan_id))

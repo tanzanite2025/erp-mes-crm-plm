@@ -440,6 +440,95 @@ mod tests {
     }
 
     #[test]
+    fn ranks_composite_score_before_raw_utilization() {
+        let mut input = base_input();
+        input.cut_units = vec![
+            CuttingUnitInput {
+                id: "unit-high-utilization-penalized".to_string(),
+                label: "High utilization but penalized".to_string(),
+                width_mm: 120.0,
+                length_mm: 91.0,
+                quantity: 1000,
+                cut_angle_deg: 0.0,
+                priority: 1.0,
+                must_fulfill: true,
+                allow_mixed_plan: true,
+                roll_group_key: "group-a".to_string(),
+                order_sequence: 1,
+                yarn_direction_mode: "warp".to_string(),
+                process_tags: vec!["trim".to_string()],
+            },
+            CuttingUnitInput {
+                id: "unit-lower-utilization-compliant".to_string(),
+                label: "Lower utilization but compliant".to_string(),
+                width_mm: 100.0,
+                length_mm: 91.0,
+                quantity: 700,
+                cut_angle_deg: 0.0,
+                priority: 1.0,
+                must_fulfill: false,
+                allow_mixed_plan: true,
+                roll_group_key: "group-a".to_string(),
+                order_sequence: 2,
+                yarn_direction_mode: "warp".to_string(),
+                process_tags: vec!["trim".to_string()],
+            },
+        ];
+
+        let output = solve(&input).expect("solver should rank by composite score");
+
+        assert_eq!(output.plans.len(), 2);
+        assert_eq!(
+            output.plans[0].plan_id,
+            "plan-unit-lower-utilization-compliant"
+        );
+        assert!(output.plans[0].score > output.plans[1].score);
+        assert!(output.plans[0].utilization_percent < output.plans[1].utilization_percent);
+    }
+
+    #[test]
+    fn uses_priority_as_a_stable_tie_breaker() {
+        let mut input = base_input();
+        input.cut_units = vec![
+            CuttingUnitInput {
+                id: "unit-a".to_string(),
+                label: "A".to_string(),
+                width_mm: 120.0,
+                length_mm: 91.0,
+                quantity: 100,
+                cut_angle_deg: 0.0,
+                priority: 1.0,
+                must_fulfill: false,
+                allow_mixed_plan: true,
+                roll_group_key: "group-a".to_string(),
+                order_sequence: 1,
+                yarn_direction_mode: "warp".to_string(),
+                process_tags: vec![],
+            },
+            CuttingUnitInput {
+                id: "unit-b".to_string(),
+                label: "B".to_string(),
+                width_mm: 120.0,
+                length_mm: 91.0,
+                quantity: 100,
+                cut_angle_deg: 0.0,
+                priority: 2.0,
+                must_fulfill: false,
+                allow_mixed_plan: true,
+                roll_group_key: "group-a".to_string(),
+                order_sequence: 2,
+                yarn_direction_mode: "warp".to_string(),
+                process_tags: vec![],
+            },
+        ];
+
+        let output = solve(&input).expect("solver should use priority as tie breaker");
+
+        assert_eq!(output.plans[0].plan_id, "plan-unit-b");
+        assert_eq!(output.plans[1].plan_id, "plan-unit-a");
+    }
+
+    #[test]
     fn sorts_equal_plans_by_plan_id() {
         let mut input = base_input();
         input.cut_units = vec![
