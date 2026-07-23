@@ -9,7 +9,6 @@ import {
 type CuttingEngineConfigState = {
   config: CuttingEngineConfig
   revision: number
-  updateDraft: (patch: Partial<CuttingEngineConfig>) => void
   saveConfig: (config: CuttingEngineConfig) => void
   resetConfig: () => void
 }
@@ -19,11 +18,6 @@ export const useCuttingEngineConfigStore = create<CuttingEngineConfigState>()(
     (set) => ({
       config: DEFAULT_CUTTING_ENGINE_CONFIG,
       revision: 0,
-      updateDraft: (patch) => {
-        set((state) => ({
-          config: normalizeCuttingEngineConfig({ ...state.config, ...patch }),
-        }))
-      },
       saveConfig: (config) => {
         set((state) => ({
           config: normalizeCuttingEngineConfig(config),

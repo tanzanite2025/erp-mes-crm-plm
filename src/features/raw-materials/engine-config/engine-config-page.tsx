@@ -9,6 +9,7 @@ import { SUPPORTED_CUT_ANGLE_OPTIONS } from '../utils/cut-orientation'
 import { CuttingEnginePhysicalConstraintsPanel } from './components/cutting-engine-physical-constraints-panel'
 import {
   DEFAULT_CUTTING_ENGINE_CONFIG,
+  normalizeCuttingEngineConfig,
   type CuttingEngineConfig,
   type CuttingEngineAngleMixMode,
   type CuttingEngineDirectionStrategy,
@@ -52,7 +53,6 @@ export function CuttingEngineConfigPage() {
   // 3. 物理与几何约束状态
   const [knifeGap, setKnifeGap] = useState(config.knifeGapMm)
   const [edgeTrim, setEdgeTrim] = useState(config.edgeTrimMm)
-  const [, setTolerance] = useState('0.5')
   const [maxSolveDurationSeconds, setMaxSolveDurationSeconds] = useState(
     config.maxSolveDurationSeconds
   )
@@ -66,8 +66,23 @@ export function CuttingEngineConfigPage() {
     config.fixedDecisionLengthMm
   )
 
-  // 5. 保存状态
-  const [isSaving, setIsSaving] = useState(false)
+  const applyConfigToForm = (nextConfig: CuttingEngineConfig) => {
+    setSplitPenalty(nextConfig.splitPenaltyWeight)
+    setMustFulfillPenalty(nextConfig.mustFulfillPenaltyWeight)
+    setDirectionSwitchPenalty(nextConfig.directionSwitchPenaltyWeight)
+    setSameDirectionPreferred(nextConfig.sameDirectionPreferred)
+    setAngleMixMode(nextConfig.angleMixMode)
+    setMustFulfillMode(nextConfig.ruleStrategy.mustFulfillMode)
+    setMixingStrategy(nextConfig.ruleStrategy.mixingStrategy)
+    setOrderStrategy(nextConfig.ruleStrategy.orderStrategy)
+    setDirectionStrategy(nextConfig.ruleStrategy.directionStrategy)
+    setKnifeGap(nextConfig.knifeGapMm)
+    setEdgeTrim(nextConfig.edgeTrimMm)
+    setMaxSolveDurationSeconds(nextConfig.maxSolveDurationSeconds)
+    setMinSupportedLength(nextConfig.minSupportedLengthMm)
+    setMaxSupportedLength(nextConfig.maxSupportedLengthMm)
+    setFixedDecisionLength(nextConfig.fixedDecisionLengthMm)
+  }
 
   const angleMixModeLabels: Record<CuttingEngineAngleMixMode, string> = {
     allow: t(
@@ -181,62 +196,34 @@ export function CuttingEngineConfigPage() {
   // 预设模式切换逻辑 - 自动填充工业推荐配置
   // 保存操作
   const handleSave = () => {
-    setIsSaving(true)
-    setTimeout(() => {
-      saveConfig({
-        splitPenaltyWeight: splitPenalty,
-        mustFulfillPenaltyWeight: mustFulfillPenalty,
-        directionSwitchPenaltyWeight: directionSwitchPenalty,
-        sameDirectionPreferred,
-        angleMixMode,
-        ruleStrategy: {
-          mustFulfillMode,
-          mixingStrategy,
-          orderStrategy,
-          directionStrategy,
-        },
-        knifeGapMm: knifeGap,
-        edgeTrimMm: edgeTrim,
-        maxSolveDurationSeconds,
-        minSupportedLengthMm: minSupportedLength,
-        maxSupportedLengthMm: maxSupportedLength,
-        fixedDecisionLengthMm: fixedDecisionLength,
-      })
-      setIsSaving(false)
-      toast.success(t('rawMaterials.engineConfig.toasts.saveSuccess'))
-    }, 1200)
+    const normalizedConfig = normalizeCuttingEngineConfig({
+      splitPenaltyWeight: splitPenalty,
+      mustFulfillPenaltyWeight: mustFulfillPenalty,
+      directionSwitchPenaltyWeight: directionSwitchPenalty,
+      sameDirectionPreferred,
+      angleMixMode,
+      ruleStrategy: {
+        mustFulfillMode,
+        mixingStrategy,
+        orderStrategy,
+        directionStrategy,
+      },
+      knifeGapMm: knifeGap,
+      edgeTrimMm: edgeTrim,
+      maxSolveDurationSeconds,
+      minSupportedLengthMm: minSupportedLength,
+      maxSupportedLengthMm: maxSupportedLength,
+      fixedDecisionLengthMm: fixedDecisionLength,
+    })
+
+    saveConfig(normalizedConfig)
+    applyConfigToForm(normalizedConfig)
+    toast.success(t('rawMaterials.engineConfig.toasts.saveSuccess'))
   }
 
   // 恢复默认
   const handleReset = () => {
-    setSplitPenalty(DEFAULT_CUTTING_ENGINE_CONFIG.splitPenaltyWeight)
-    setMustFulfillPenalty(
-      DEFAULT_CUTTING_ENGINE_CONFIG.mustFulfillPenaltyWeight
-    )
-    setDirectionSwitchPenalty(
-      DEFAULT_CUTTING_ENGINE_CONFIG.directionSwitchPenaltyWeight
-    )
-    setSameDirectionPreferred(
-      DEFAULT_CUTTING_ENGINE_CONFIG.sameDirectionPreferred
-    )
-    setAngleMixMode(DEFAULT_CUTTING_ENGINE_CONFIG.angleMixMode)
-    setMustFulfillMode(
-      DEFAULT_CUTTING_ENGINE_CONFIG.ruleStrategy.mustFulfillMode
-    )
-    setMixingStrategy(DEFAULT_CUTTING_ENGINE_CONFIG.ruleStrategy.mixingStrategy)
-    setOrderStrategy(DEFAULT_CUTTING_ENGINE_CONFIG.ruleStrategy.orderStrategy)
-    setDirectionStrategy(
-      DEFAULT_CUTTING_ENGINE_CONFIG.ruleStrategy.directionStrategy
-    )
-    setKnifeGap(DEFAULT_CUTTING_ENGINE_CONFIG.knifeGapMm)
-    setEdgeTrim(DEFAULT_CUTTING_ENGINE_CONFIG.edgeTrimMm)
-    setTolerance('0.5')
-    setMaxSolveDurationSeconds(
-      DEFAULT_CUTTING_ENGINE_CONFIG.maxSolveDurationSeconds
-    )
-    setMinSupportedLength(DEFAULT_CUTTING_ENGINE_CONFIG.minSupportedLengthMm)
-    setMaxSupportedLength(DEFAULT_CUTTING_ENGINE_CONFIG.maxSupportedLengthMm)
-    setFixedDecisionLength(DEFAULT_CUTTING_ENGINE_CONFIG.fixedDecisionLengthMm)
+    applyConfigToForm(DEFAULT_CUTTING_ENGINE_CONFIG)
     resetConfig()
     toast.info(t('rawMaterials.engineConfig.toasts.reset'))
   }
@@ -768,20 +755,10 @@ export function CuttingEngineConfigPage() {
           {/* 保存配置按钮 */}
           <Button
             onClick={handleSave}
-            disabled={isSaving}
             className='flex h-11 gap-2 rounded-full bg-primary px-8 text-[10px] font-black tracking-widest text-primary-foreground uppercase shadow-sm hover:bg-primary/90'
           >
-            {isSaving ? (
-              <>
-                <span className='size-3.5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent' />
-                {t('rawMaterials.engineConfig.actions.saving')}
-              </>
-            ) : (
-              <>
-                <Check className='size-3.5' />
-                {t('rawMaterials.engineConfig.actions.save')}
-              </>
-            )}
+            <Check className='size-3.5' />
+            {t('rawMaterials.engineConfig.actions.save')}
           </Button>
         </div>
       </div>

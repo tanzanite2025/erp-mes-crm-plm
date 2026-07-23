@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   DEFAULT_CUTTING_ENGINE_CONFIG,
   type CuttingEngineConfig,
@@ -47,49 +47,61 @@ const ENGINE_CONFIG_CONTROL_KEYS = new Set<keyof BatchEngineControls>([
   'fixedDecisionLengthMm',
 ])
 
-function applyEngineConfigToControls(
-  current: BatchEngineControls,
-  config: CuttingEngineConfig
-): BatchEngineControls {
-  return {
-    ...current,
-    knifeGapMm: config.knifeGapMm,
-    edgeTrimMm: config.edgeTrimMm,
-    maxSolveDurationSeconds: config.maxSolveDurationSeconds,
-    splitPenaltyWeight: config.splitPenaltyWeight,
-    mustFulfillPenaltyWeight: config.mustFulfillPenaltyWeight,
-    directionSwitchPenaltyWeight: config.directionSwitchPenaltyWeight,
-    sameDirectionPreferred: config.sameDirectionPreferred,
-    angleMixMode: config.angleMixMode,
-    ruleStrategy: config.ruleStrategy,
-    minSupportedLengthMm: config.minSupportedLengthMm,
-    maxSupportedLengthMm: config.maxSupportedLengthMm,
-    fixedDecisionLengthMm: config.fixedDecisionLengthMm,
-  }
+type BatchEngineLocalControlState = {
+  configRevision: number
+  values: Partial<BatchEngineControls>
+}
+
+function pickSimulationControlValues(
+  values: Partial<BatchEngineControls>
+): Partial<BatchEngineControls> {
+  return Object.fromEntries(
+    Object.entries(values).filter(
+      ([key]) =>
+        !ENGINE_CONFIG_CONTROL_KEYS.has(key as keyof BatchEngineControls)
+    )
+  ) as Partial<BatchEngineControls>
 }
 
 export function useBatchEnginePageState() {
   const engineConfig = useCuttingEngineConfigStore((state) => state.config)
-  const updateEngineConfigDraft = useCuttingEngineConfigStore(
-    (state) => state.updateDraft
+  const engineConfigRevision = useCuttingEngineConfigStore(
+    (state) => state.revision
   )
-  const [localControls, setLocalControls] = useState<BatchEngineControls>(() =>
-    buildBatchEngineControlsFromConfig(engineConfig)
-  )
-  const controls = useMemo(
-    () => applyEngineConfigToControls(localControls, engineConfig),
-    [engineConfig, localControls]
-  )
+  const [localControls, setLocalControls] =
+    useState<BatchEngineLocalControlState>(() => ({
+      configRevision: engineConfigRevision,
+      values: {},
+    }))
+  const controls = useMemo(() => {
+    const baseControls = buildBatchEngineControlsFromConfig(engineConfig)
+    const localValues =
+      localControls.configRevision === engineConfigRevision
+        ? localControls.values
+        : pickSimulationControlValues(localControls.values)
+    return {
+      ...baseControls,
+      ...localValues,
+    }
+  }, [engineConfig, engineConfigRevision, localControls])
 
   const updateControl = <K extends keyof BatchEngineControls>(
     key: K,
     value: BatchEngineControls[K]
   ) => {
-    if (ENGINE_CONFIG_CONTROL_KEYS.has(key)) {
-      updateEngineConfigDraft({ [key]: value } as Partial<CuttingEngineConfig>)
-      return
-    }
-    setLocalControls((current) => ({ ...current, [key]: value }))
+    setLocalControls((current) => {
+      const currentValues =
+        current.configRevision === engineConfigRevision
+          ? current.values
+          : pickSimulationControlValues(current.values)
+      return {
+        configRevision: engineConfigRevision,
+        values: {
+          ...currentValues,
+          [key]: value,
+        },
+      }
+    })
   }
 
   return {

@@ -58,12 +58,33 @@ export const DEFAULT_CUTTING_ENGINE_CONFIG: CuttingEngineConfig = {
   fixedDecisionLengthMm: '91.0',
 }
 
+function normalizeNumberText(
+  value: unknown,
+  fallback: string,
+  options: { allowZero?: boolean } = {}
+): string {
+  const text = typeof value === 'string' ? value.trim() : String(value ?? '')
+  const parsed = text ? Number(text) : Number.NaN
+  const minValue = options.allowZero ? 0 : Number.MIN_VALUE
+  if (!Number.isFinite(parsed) || parsed < minValue) {
+    return fallback
+  }
+  return text
+}
+
+function toConfigNumber(value: string): number {
+  const parsed = Number.parseFloat(value)
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
 export function normalizeCuttingEngineAngleMixMode(
   value: unknown
 ): CuttingEngineAngleMixMode {
-  return value === 'prefer-same-angle' || value === 'strict-same-angle'
+  return value === 'allow' ||
+    value === 'prefer-same-angle' ||
+    value === 'strict-same-angle'
     ? value
-    : 'allow'
+    : DEFAULT_CUTTING_ENGINE_CONFIG.angleMixMode
 }
 
 export function normalizeCuttingEngineMustFulfillMode(
@@ -122,16 +143,70 @@ export function normalizeCuttingEngineRuleStrategy(
 export function normalizeCuttingEngineConfig(
   value: Partial<CuttingEngineConfig> = {}
 ): CuttingEngineConfig {
+  const splitPenaltyWeight = normalizeNumberText(
+    value.splitPenaltyWeight,
+    DEFAULT_CUTTING_ENGINE_CONFIG.splitPenaltyWeight,
+    { allowZero: true }
+  )
+  const mustFulfillPenaltyWeight = normalizeNumberText(
+    value.mustFulfillPenaltyWeight,
+    DEFAULT_CUTTING_ENGINE_CONFIG.mustFulfillPenaltyWeight,
+    { allowZero: true }
+  )
+  const directionSwitchPenaltyWeight = normalizeNumberText(
+    value.directionSwitchPenaltyWeight,
+    DEFAULT_CUTTING_ENGINE_CONFIG.directionSwitchPenaltyWeight,
+    { allowZero: true }
+  )
+  const knifeGapMm = normalizeNumberText(
+    value.knifeGapMm,
+    DEFAULT_CUTTING_ENGINE_CONFIG.knifeGapMm
+  )
+  const edgeTrimMm = normalizeNumberText(
+    value.edgeTrimMm,
+    DEFAULT_CUTTING_ENGINE_CONFIG.edgeTrimMm,
+    { allowZero: true }
+  )
+  const maxSolveDurationSeconds = normalizeNumberText(
+    value.maxSolveDurationSeconds,
+    DEFAULT_CUTTING_ENGINE_CONFIG.maxSolveDurationSeconds
+  )
+  const minSupportedLengthMm = normalizeNumberText(
+    value.minSupportedLengthMm,
+    DEFAULT_CUTTING_ENGINE_CONFIG.minSupportedLengthMm
+  )
+  const rawMaxSupportedLengthMm = normalizeNumberText(
+    value.maxSupportedLengthMm,
+    DEFAULT_CUTTING_ENGINE_CONFIG.maxSupportedLengthMm
+  )
+  const maxSupportedLengthMm =
+    toConfigNumber(rawMaxSupportedLengthMm) >=
+    toConfigNumber(minSupportedLengthMm)
+      ? rawMaxSupportedLengthMm
+      : minSupportedLengthMm
+  const rawFixedDecisionLengthMm = normalizeNumberText(
+    value.fixedDecisionLengthMm,
+    DEFAULT_CUTTING_ENGINE_CONFIG.fixedDecisionLengthMm
+  )
+  const defaultFixedDecisionLengthMm =
+    toConfigNumber(DEFAULT_CUTTING_ENGINE_CONFIG.fixedDecisionLengthMm) >=
+      toConfigNumber(minSupportedLengthMm) &&
+    toConfigNumber(DEFAULT_CUTTING_ENGINE_CONFIG.fixedDecisionLengthMm) <=
+      toConfigNumber(maxSupportedLengthMm)
+      ? DEFAULT_CUTTING_ENGINE_CONFIG.fixedDecisionLengthMm
+      : minSupportedLengthMm
+  const fixedDecisionLengthMm =
+    toConfigNumber(rawFixedDecisionLengthMm) >=
+      toConfigNumber(minSupportedLengthMm) &&
+    toConfigNumber(rawFixedDecisionLengthMm) <=
+      toConfigNumber(maxSupportedLengthMm)
+      ? rawFixedDecisionLengthMm
+      : defaultFixedDecisionLengthMm
+
   return {
-    splitPenaltyWeight:
-      value.splitPenaltyWeight ??
-      DEFAULT_CUTTING_ENGINE_CONFIG.splitPenaltyWeight,
-    mustFulfillPenaltyWeight:
-      value.mustFulfillPenaltyWeight ??
-      DEFAULT_CUTTING_ENGINE_CONFIG.mustFulfillPenaltyWeight,
-    directionSwitchPenaltyWeight:
-      value.directionSwitchPenaltyWeight ??
-      DEFAULT_CUTTING_ENGINE_CONFIG.directionSwitchPenaltyWeight,
+    splitPenaltyWeight,
+    mustFulfillPenaltyWeight,
+    directionSwitchPenaltyWeight,
     sameDirectionPreferred:
       typeof value.sameDirectionPreferred === 'boolean'
         ? value.sameDirectionPreferred
@@ -140,19 +215,11 @@ export function normalizeCuttingEngineConfig(
       value.angleMixMode ?? DEFAULT_CUTTING_ENGINE_CONFIG.angleMixMode
     ),
     ruleStrategy: normalizeCuttingEngineRuleStrategy(value.ruleStrategy),
-    knifeGapMm: value.knifeGapMm ?? DEFAULT_CUTTING_ENGINE_CONFIG.knifeGapMm,
-    edgeTrimMm: value.edgeTrimMm ?? DEFAULT_CUTTING_ENGINE_CONFIG.edgeTrimMm,
-    maxSolveDurationSeconds:
-      value.maxSolveDurationSeconds ??
-      DEFAULT_CUTTING_ENGINE_CONFIG.maxSolveDurationSeconds,
-    minSupportedLengthMm:
-      value.minSupportedLengthMm ??
-      DEFAULT_CUTTING_ENGINE_CONFIG.minSupportedLengthMm,
-    maxSupportedLengthMm:
-      value.maxSupportedLengthMm ??
-      DEFAULT_CUTTING_ENGINE_CONFIG.maxSupportedLengthMm,
-    fixedDecisionLengthMm:
-      value.fixedDecisionLengthMm ??
-      DEFAULT_CUTTING_ENGINE_CONFIG.fixedDecisionLengthMm,
+    knifeGapMm,
+    edgeTrimMm,
+    maxSolveDurationSeconds,
+    minSupportedLengthMm,
+    maxSupportedLengthMm,
+    fixedDecisionLengthMm,
   }
 }
