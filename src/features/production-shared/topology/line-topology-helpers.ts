@@ -1,10 +1,10 @@
 import type {
-  ProductionLine,
   ProductionJobCategory,
+  ProductionLine,
   ProductionSegment,
-} from '../../../data/production-line'
-import type { ProductionProcessStep } from '../../../data/production-process'
-import type { HierarchyLevelOptionItem } from '../../hierarchy-config/data/hierarchy-config'
+} from '../data/production-line'
+import type { ProductionProcessStep } from '../data/production-process'
+import type { HierarchyLevelOptionItem } from '../tabs/hierarchy-config/data/hierarchy-config'
 
 function normalizeProcesses(
   processes: ProductionProcessStep[] = []
@@ -189,7 +189,11 @@ export function rebindJobCategoryInLine(
         ...segment,
         jobCategories: (segment.jobCategories || []).map((jobCategory) =>
           jobCategory.id === jobCategoryId
-            ? { ...jobCategory, name: nextName, hierarchyOptionId: option.id }
+            ? {
+                ...jobCategory,
+                name: nextName,
+                hierarchyOptionId: option.id,
+              }
             : jobCategory
         ),
       }

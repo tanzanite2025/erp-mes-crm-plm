@@ -20,6 +20,10 @@ export interface LineMindmapProcessOption {
 
 export interface LineMindmapToolbarProps {
   activeLine: boolean
+  activeLineIsActive: boolean
+  canManageLine: boolean
+  canUpdateLine: boolean
+  isCheckingPermissions: boolean
   level1Name: string
   level2Name: string
   level3Name: string
@@ -30,6 +34,10 @@ export interface LineMindmapToolbarProps {
   onCreateLevel1: () => void
   onCreateLevel2: () => void
   onCreateLevel3: () => void
+  onCreateLine: () => void
+  onDeleteLine: () => void
+  onEditLine: () => void
+  onToggleLine: () => void
   onEditNode: () => void
   onSelectLine: (value: string) => void
 }

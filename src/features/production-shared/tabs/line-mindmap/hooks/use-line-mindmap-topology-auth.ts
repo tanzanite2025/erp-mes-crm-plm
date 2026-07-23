@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import { type DeltaSet } from '@/lib/delta/types'
-import type { LineMutationPayload } from '../../line-mgmt/hooks/use-line-mgmt-lines'
+import type { ProductionLineMutationPayload } from '../../../contracts/production-line-mutation'
 
 export interface PendingTopologyMutation {
   delta: DeltaSet
@@ -12,9 +12,9 @@ export interface PendingTopologyMutation {
 interface UseLineMindmapTopologyAuthOptions {
   settleSelection: (nextSelectedNodeId: string | null) => void
   updateLineStrict: (
-    payload: LineMutationPayload,
+    payload: ProductionLineMutationPayload,
     authCode?: string
-  ) => Promise<void>
+  ) => Promise<unknown>
 }
 
 export function useLineMindmapTopologyAuth({

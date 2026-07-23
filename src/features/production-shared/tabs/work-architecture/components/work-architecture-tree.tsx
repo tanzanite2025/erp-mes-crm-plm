@@ -1,8 +1,8 @@
 'use client'
 
 import { useLanguage } from '@/context/language-provider'
+import type { Segment } from '../../../topology/types'
 import { useHierarchyLevelLabels } from '../../hierarchy-config/hooks/use-hierarchy-level-labels'
-import type { Segment } from '../../line-mgmt/types.ts'
 import { SegmentNode } from './segment-node.tsx'
 
 interface WorkArchitectureTreeProps {

@@ -9,11 +9,6 @@ type TranslateFn = (
 export function getProductionArchitectureTabs(t: TranslateFn): TabItem[] {
   return [
     {
-      key: 'line',
-      label: t('productionArchitecture.layout.tabs.line'),
-      href: '/production-architecture/line',
-    },
-    {
       key: 'mindmap',
       label: t('productionArchitecture.layout.tabs.mindmap'),
       href: '/production-architecture/mindmap',

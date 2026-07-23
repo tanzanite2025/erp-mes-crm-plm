@@ -1,14 +1,14 @@
 import { useState } from 'react'
-import { ShieldCheck, Lock } from 'lucide-react'
+import { Lock, ShieldCheck } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 
@@ -44,23 +44,25 @@ export function SecurityAuthDialog({
   }
 
   const handleVerify = async () => {
-    if (password.trim().length > 0) {
-      setIsSubmitting(true)
-      try {
-        const result = await onConfirm(password)
-        if (result !== false) {
-          handleOpenChange(false)
-        }
-      } catch {
-        return
-      } finally {
-        setIsSubmitting(false)
+    if (password.trim().length === 0) {
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      const result = await onConfirm(password)
+      if (result !== false) {
+        handleOpenChange(false)
       }
+    } catch {
+      return
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter') {
       void handleVerify()
     }
   }
@@ -81,19 +83,17 @@ export function SecurityAuthDialog({
         </DialogHeader>
 
         <div className='space-y-4 px-2 py-4'>
-          <div className='relative'>
-            <Input
-              type='password'
-              placeholder={t(
-                'orgPersonnel.lineMgmt.topology.authPasswordPlaceholder'
-              )}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className='h-12 rounded-2xl border-none bg-slate-100 text-center font-mono text-lg tracking-[0.5em] transition-all focus:ring-2 focus:ring-orange-500 dark:bg-white/6 dark:text-slate-100'
-              autoFocus
-            />
-          </div>
+          <Input
+            type='password'
+            placeholder={t(
+              'orgPersonnel.lineMgmt.topology.authPasswordPlaceholder'
+            )}
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            onKeyDown={handleKeyDown}
+            className='h-12 rounded-2xl border-none bg-slate-100 text-center font-mono text-lg tracking-[0.5em] transition-all focus:ring-2 focus:ring-orange-500 dark:bg-white/6 dark:text-slate-100'
+            autoFocus
+          />
         </div>
 
         <DialogFooter className='mt-2 gap-2 sm:justify-center'>

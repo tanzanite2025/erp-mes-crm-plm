@@ -31,11 +31,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
+import type { JobCategory, TopologyTemplate } from '../../../topology/types'
 import { HierarchyOptionDropdownButton } from '../../hierarchy-config/components/hierarchy-option-dropdown-button'
 import type { HierarchyLevelOptionItem } from '../../hierarchy-config/data/hierarchy-config'
 import { useHierarchyLevelLabels } from '../../hierarchy-config/hooks/use-hierarchy-level-labels'
 import { useHierarchyLevelOptions } from '../../hierarchy-config/hooks/use-hierarchy-level-options'
-import type { JobCategory, TopologyTemplate } from '../../line-mgmt/types'
 
 interface TemplateCardProps {
   template: TopologyTemplate

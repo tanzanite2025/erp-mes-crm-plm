@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/popover'
 import type { StandardCommand } from '@/features/system-mgmt/workflow-core/data/schema'
 import { useCommands } from '@/features/system-mgmt/workflow-core/hooks/use-commands'
-import type { Segment } from '../../line-mgmt/types'
+import type { Segment } from '../../../topology/types'
 import { JobCategoryNode } from './job-category-node'
 
 interface SegmentNodeProps {

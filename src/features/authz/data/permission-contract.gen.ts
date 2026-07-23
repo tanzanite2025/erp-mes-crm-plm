@@ -302,7 +302,6 @@ export const BACKEND_ADMIN_FALLBACK_PERMISSION_IDS = [
   "tab_product_structure_bom_records",
   "tab_product_structure_section_config",
   "tab_production_architecture_hierarchy_config",
-  "tab_production_architecture_line",
   "tab_production_architecture_mindmap",
   "tab_production_architecture_topology",
   "tab_production_quality_abnormalities",

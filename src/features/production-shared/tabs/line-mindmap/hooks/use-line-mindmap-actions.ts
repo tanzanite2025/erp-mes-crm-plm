@@ -1,8 +1,7 @@
 import { useCallback } from 'react'
 import { trackDelta } from '@/lib/delta/proxy-tracker'
+import type { ProductionLineMutationPayload } from '../../../contracts/production-line-mutation'
 import type { ProductionLine } from '../../../data/production-line'
-import type { HierarchyLevelOptionItem } from '../../hierarchy-config/data/hierarchy-config'
-import type { LineMutationPayload } from '../../line-mgmt/hooks/use-line-mgmt-lines'
 import {
   addJobCategoryToLine,
   addSegmentToLine,
@@ -12,7 +11,8 @@ import {
   rebindSegmentInLine,
   renameJobCategoryInLine,
   renameSegmentInLine,
-} from '../../line-mgmt/utils/line-topology-helpers'
+} from '../../../topology/line-topology-helpers'
+import type { HierarchyLevelOptionItem } from '../../hierarchy-config/data/hierarchy-config'
 import {
   findMindmapNode,
   type LineMindmapNode,
@@ -26,9 +26,9 @@ interface UseLineMindmapActionsOptions {
   selectedNode: LineMindmapNode | null
   settleSelection: (nextSelectedNodeId: string | null) => void
   updateLineStrict: (
-    payload: LineMutationPayload,
+    payload: ProductionLineMutationPayload,
     authCode?: string
-  ) => Promise<void>
+  ) => Promise<unknown>
 }
 
 export function useLineMindmapActions({

@@ -76,14 +76,6 @@ const moduleGroups: CommandItemConfig[] = [
     pinyin: 'yhqx',
   },
   {
-    id: 'tab-production-architecture-line',
-    href: '/production-architecture/line',
-    titleKey: 'commandMenu.items.productionLines',
-    parentKey: 'commandMenu.parents.productionCoordination',
-    keywords: ['line', 'production', '产线'],
-    pinyin: 'cxgl',
-  },
-  {
     id: 'tab-production-architecture-topology',
     href: '/production-architecture/topology',
     titleKey: 'commandMenu.items.topology',

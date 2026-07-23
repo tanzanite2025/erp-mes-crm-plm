@@ -4,6 +4,6 @@ export const Route = createFileRoute(
   '/_authenticated/production-architecture/'
 )({
   beforeLoad: () => {
-    throw redirect({ to: '/production-architecture/line' })
+    throw redirect({ to: '/production-architecture/mindmap' })
   },
 })

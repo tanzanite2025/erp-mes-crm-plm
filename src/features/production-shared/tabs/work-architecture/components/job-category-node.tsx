@@ -11,7 +11,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { useProductionProcessesQuery } from '../../../hooks/use-production-resources'
-import type { JobCategory } from '../../line-mgmt/types'
+import type { JobCategory } from '../../../topology/types'
 import { useJobCategoryProcessCapabilities } from '../hooks/use-job-category-process-capabilities'
 
 interface JobCategoryNodeProps {

@@ -110,7 +110,6 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/aps-scheduling/engine-config': 'apsScheduling.engineConfig.title',
   '/aps-scheduling/engine-tuning': 'apsScheduling.layout.tabs.engineTuning',
   '/production-architecture': 'sidebar.items.productionArchitecture',
-  '/production-architecture/line': 'productionArchitecture.layout.tabs.line',
   '/production-architecture/mindmap':
     'productionArchitecture.layout.tabs.mindmap',
   '/production-architecture/hierarchy-config':

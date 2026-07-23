@@ -22,8 +22,8 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import type { TopologyTemplate } from '../../../topology/types'
 import { useHierarchyLevelLabels } from '../../hierarchy-config/hooks/use-hierarchy-level-labels'
-import type { TopologyTemplate } from '../../line-mgmt/types'
 
 interface TemplateDialogProps {
   open: boolean

@@ -1,11 +1,16 @@
 import { useMemo, useState } from 'react'
+import { buildFlattenDelta } from '@/lib/delta/flatten-delta'
 import { isForbiddenError } from '@/lib/error-status'
 import { useLanguage } from '@/context/language-provider'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ForbiddenState } from '@/components/forbidden-state'
+import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
+import { ProductionLineProfileDialog } from '../../components/production-line-profile-dialog'
+import type { ProductionLineMutationPayload } from '../../contracts/production-line-mutation'
+import type { ProductionLine } from '../../data/production-line'
+import { useProductionLines } from '../../hooks/use-production-lines'
 import { useHierarchyLevelLabels } from '../hierarchy-config/hooks/use-hierarchy-level-labels'
 import { useHierarchyLevelOptions } from '../hierarchy-config/hooks/use-hierarchy-level-options'
-import { useLineMgmtLines } from '../line-mgmt/hooks/use-line-mgmt-lines'
 import { LineMindmapDialogs } from './components/line-mindmap-dialogs'
 import { LineMindmapToolbar } from './components/line-mindmap-toolbar'
 import { MindmapCanvas } from './components/mindmap-canvas'
@@ -19,15 +24,25 @@ import { useLineMindmapViewModel } from './hooks/use-line-mindmap-view-model'
 
 export function LineMindmap() {
   const { t } = useLanguage()
+  const { allowsAction, allowsPermission, isChecking } = usePermissionActions()
   const [createLevel1DialogOpen, setCreateLevel1DialogOpen] = useState(false)
   const [createLevel2DialogOpen, setCreateLevel2DialogOpen] = useState(false)
   const [createLevel3DialogOpen, setCreateLevel3DialogOpen] = useState(false)
   const [nodeEditDialogOpen, setNodeEditDialogOpen] = useState(false)
+  const [lineProfileDialogOpen, setLineProfileDialogOpen] = useState(false)
+  const [editingLine, setEditingLine] = useState<ProductionLine | null>(null)
   const [hierarchyConfigDialogOpen, setHierarchyConfigDialogOpen] =
     useState(false)
   const { level1Name, level2Name, level3Name } = useHierarchyLevelLabels()
   const { level1Options, level2Options } = useHierarchyLevelOptions()
-  const { lines, isLoading, error, updateLineStrict } = useLineMgmtLines()
+  const {
+    createLineStrict,
+    deleteLine,
+    lines,
+    isLoading,
+    error,
+    updateLineStrict,
+  } = useProductionLines()
   const { nodeDraftMap, patchNodeDraft } = useLineMindmapNodeDrafts()
 
   const levelNames = useMemo<Record<MindmapLevel, string>>(
@@ -90,6 +105,76 @@ export function LineMindmap() {
     processOptions,
   } = useLineMindmapProcessPanel(selectedNode)
   const handleOpenHierarchyConfig = () => setHierarchyConfigDialogOpen(true)
+  const canManageLine = allowsPermission('perm_manage')
+  const canUpdateLine = allowsAction('action_production_line_update')
+
+  const openCreateLineDialog = () => {
+    setEditingLine(null)
+    setLineProfileDialogOpen(true)
+  }
+
+  const openEditLineDialog = () => {
+    if (!activeLine) {
+      return
+    }
+    setEditingLine(activeLine)
+    setLineProfileDialogOpen(true)
+  }
+
+  const handleLineProfileSubmit = async (
+    payload: ProductionLineMutationPayload
+  ) => {
+    if (payload.type === 'CREATE') {
+      if (!canManageLine) {
+        return
+      }
+      await createLineStrict(payload.data)
+      return
+    }
+
+    if (!canUpdateLine) {
+      return
+    }
+
+    requestTopologyAuth({
+      delta: payload.delta,
+      lineId: payload.id,
+      nextSelectedNodeId: resolvedSelectedNodeId,
+      version: payload.version,
+    })
+  }
+
+  const handleDeleteLine = async () => {
+    if (!activeLine || !canManageLine) {
+      return
+    }
+
+    const confirmed = window.confirm(
+      t('orgPersonnel.lineMgmt.list.deleteConfirm')
+    )
+    if (!confirmed) {
+      return
+    }
+
+    await deleteLine(activeLine.id)
+    setActiveLineId('')
+  }
+
+  const handleToggleLine = () => {
+    if (!activeLine || !canUpdateLine) {
+      return
+    }
+
+    const delta = buildFlattenDelta(activeLine.isActive, !activeLine.isActive, {
+      basePath: 'isActive',
+    })
+    requestTopologyAuth({
+      delta,
+      lineId: activeLine.id,
+      nextSelectedNodeId: resolvedSelectedNodeId,
+      version: activeLine.version,
+    })
+  }
   const {
     defaultLevel2ParentId,
     defaultLevel3ParentId,
@@ -117,6 +202,10 @@ export function LineMindmap() {
     <div className='flex min-h-[calc(100dvh-9rem)] animate-in flex-col gap-2 duration-700 fade-in md:min-h-[calc(100dvh-10rem)]'>
       <LineMindmapToolbar
         activeLine={Boolean(activeLine)}
+        activeLineIsActive={activeLine?.isActive ?? false}
+        canManageLine={canManageLine}
+        canUpdateLine={canUpdateLine}
+        isCheckingPermissions={isChecking}
         level1Name={level1Name}
         level2Name={level2Name}
         level3Name={level3Name}
@@ -128,6 +217,10 @@ export function LineMindmap() {
         onCreateLevel2={() => setCreateLevel2DialogOpen(true)}
         onCreateLevel3={() => setCreateLevel3DialogOpen(true)}
         onEditNode={() => setNodeEditDialogOpen(true)}
+        onCreateLine={openCreateLineDialog}
+        onDeleteLine={() => void handleDeleteLine()}
+        onEditLine={openEditLineDialog}
+        onToggleLine={handleToggleLine}
         onSelectLine={setActiveLineId}
       />
 
@@ -180,6 +273,19 @@ export function LineMindmap() {
         rebindOptions={rebindOptions}
         rootParentNodeOptions={rootParentNodeOptions}
         selectedNode={selectedNode}
+      />
+
+      <ProductionLineProfileDialog
+        open={lineProfileDialogOpen}
+        onOpenChange={(open) => {
+          setLineProfileDialogOpen(open)
+          if (!open) {
+            setEditingLine(null)
+          }
+        }}
+        editingLine={editingLine}
+        lines={lines}
+        onSubmit={handleLineProfileSubmit}
       />
     </div>
   )
