@@ -54,14 +54,15 @@ export function SupplierActionDialog({
 }: SupplierActionDialogProps) {
   const { t } = useLanguage()
   const shellClasses = buildActionDialogShellClasses({
-    content: 'flex max-h-[90vh] flex-col sm:max-w-2xl',
+    content:
+      'flex max-h-[92dvh] flex-col overflow-y-auto sm:w-[80vw] sm:max-w-[80vw] sm:overflow-hidden xl:w-[72rem] xl:max-w-[72rem]',
     header:
-      'shrink-0 border-b border-dashed border-muted-foreground/5 bg-muted/5 px-6 pb-4 pt-6 sm:px-8',
+      'shrink-0 border-b border-dashed border-muted-foreground/5 bg-muted/5 px-5 py-4 sm:px-7',
     title: 'text-base sm:text-lg',
     description: 'mt-1 text-[9px]',
-    body: 'custom-scrollbar flex-1 space-y-6 overflow-y-auto px-6 py-6 sm:px-8',
+    body: 'flex-1 space-y-4 overflow-visible px-5 py-4 sm:px-7',
     footer:
-      'shrink-0 flex-row gap-3 border-t border-dashed border-muted-foreground/10 bg-muted/5 p-6 sm:justify-end sm:px-8',
+      'shrink-0 flex-row gap-3 border-t border-dashed border-muted-foreground/10 bg-muted/5 px-5 py-4 sm:justify-end sm:px-7',
   })
 
   const { initialFormData, categoryOptions, statusOptions } =
@@ -157,6 +158,14 @@ export function SupplierActionDialog({
     )
   }
 
+  const fieldLabelClass =
+    'pl-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'
+  const inputClass =
+    'h-10 rounded-xl border-none bg-muted/50 text-sm font-black transition-all focus:ring-2 focus:ring-primary/20'
+  const iconInputClass = `${inputClass} pl-10`
+  const selectTriggerClass =
+    'h-10 rounded-xl border-none bg-muted/50 text-sm font-black uppercase transition-all focus:ring-2 focus:ring-primary/20'
+
   return (
     <ActionDialogShell
       open={open}
@@ -204,31 +213,25 @@ export function SupplierActionDialog({
         </>
       }
     >
-      <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
-        <div className='grid gap-3'>
-          <Label
-            htmlFor='name'
-            className='pl-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'
-          >
+      <div className='grid grid-cols-1 gap-4 md:grid-cols-5'>
+        <div className='grid gap-3 md:col-span-2'>
+          <Label htmlFor='name' className={fieldLabelClass}>
             {t('purchase.suppliers.fields.name')}{' '}
             <span className='text-destructive'>*</span>
           </Label>
           <div className='group relative'>
-            <Building2 className='absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground/40 transition-colors group-focus-within:text-primary' />
+            <Building2 className='absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground/40 transition-colors group-focus-within:text-primary' />
             <Input
               id='name'
               placeholder={t('purchase.suppliers.fields.namePlaceholder')}
-              className='h-12 rounded-2xl border-none bg-muted/50 pl-11 text-sm font-black transition-all placeholder:text-muted-foreground/20 focus:ring-2 focus:ring-primary/20'
+              className={`${iconInputClass} placeholder:text-muted-foreground/20`}
               value={formData.name}
               onChange={(e) => updateField('name', e.target.value)}
             />
           </div>
         </div>
         <div className='grid gap-3'>
-          <Label
-            htmlFor='code'
-            className='pl-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'
-          >
+          <Label htmlFor='code' className={fieldLabelClass}>
             {t('purchase.suppliers.fields.code')}{' '}
             {supplier && <span className='text-destructive'>*</span>}
           </Label>
@@ -239,27 +242,21 @@ export function SupplierActionDialog({
                 ? t('purchase.suppliers.fields.codePlaceholder')
                 : t('purchase.suppliers.fields.codeAutoPlaceholder')
             }
-            className='h-12 rounded-2xl border-none bg-muted/50 font-mono text-sm font-black tabular-nums transition-all focus:ring-2 focus:ring-primary/20'
+            className={`${inputClass} font-mono tabular-nums`}
             value={formData.code}
             onChange={(e) => updateField('code', e.target.value)}
             disabled={!supplier}
           />
         </div>
-      </div>
-
-      <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
         <div className='grid gap-3'>
-          <Label
-            htmlFor='category'
-            className='pl-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'
-          >
+          <Label htmlFor='category' className={fieldLabelClass}>
             {t('purchase.suppliers.fields.category')}
           </Label>
           <Select
             value={formData.category}
             onValueChange={(value) => updateField('category', value)}
           >
-            <SelectTrigger className='h-12 rounded-2xl border-none bg-muted/50 text-sm font-black uppercase transition-all focus:ring-2 focus:ring-primary/20'>
+            <SelectTrigger className={selectTriggerClass}>
               <SelectValue
                 placeholder={t('purchase.suppliers.fields.categoryPlaceholder')}
               />
@@ -278,10 +275,7 @@ export function SupplierActionDialog({
           </Select>
         </div>
         <div className='grid gap-3'>
-          <Label
-            htmlFor='status'
-            className='pl-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'
-          >
+          <Label htmlFor='status' className={fieldLabelClass}>
             {t('purchase.suppliers.fields.status')}
           </Label>
           <Select
@@ -290,7 +284,7 @@ export function SupplierActionDialog({
               updateField('status', value as SupplierStatus)
             }
           >
-            <SelectTrigger className='h-12 rounded-2xl border-none bg-muted/50 text-sm font-black uppercase transition-all focus:ring-2 focus:ring-primary/20'>
+            <SelectTrigger className={selectTriggerClass}>
               <SelectValue
                 placeholder={t('purchase.suppliers.fields.statusPlaceholder')}
               />
@@ -311,10 +305,10 @@ export function SupplierActionDialog({
       </div>
 
       <div className='grid gap-3'>
-        <Label className='pl-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
+        <Label className={fieldLabelClass}>
           {t('purchase.suppliers.fields.productScope')}
         </Label>
-        <div className='mb-1 flex min-h-[50px] flex-wrap gap-2 rounded-2xl border-2 border-dashed border-muted-foreground/5 bg-muted/30 p-3'>
+        <div className='mb-1 flex min-h-10 flex-wrap gap-2 rounded-xl border-2 border-dashed border-muted-foreground/5 bg-muted/30 p-2.5'>
           {formData.mainProducts?.map((product) => (
             <Badge
               key={product}
@@ -338,10 +332,10 @@ export function SupplierActionDialog({
         </div>
         <div className='flex gap-3'>
           <div className='group relative flex-1'>
-            <Box className='absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground/40 transition-colors group-focus-within:text-primary' />
+            <Box className='absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground/40 transition-colors group-focus-within:text-primary' />
             <Input
               placeholder={t('purchase.suppliers.fields.productPlaceholder')}
-              className='h-11 rounded-xl border-none bg-muted/50 pl-11 text-[11px] font-black transition-all focus:ring-2 focus:ring-primary/20'
+              className='h-10 rounded-xl border-none bg-muted/50 pl-10 text-[11px] font-black transition-all focus:ring-2 focus:ring-primary/20'
               value={productInput}
               onChange={(e) => setProductInput(e.target.value)}
               onKeyDown={(e) => {
@@ -355,78 +349,69 @@ export function SupplierActionDialog({
             variant='outline'
             size='sm'
             onClick={addProduct}
-            className='h-11 rounded-xl border-dashed px-6 text-[10px] font-black tracking-widest uppercase transition-all hover:bg-primary/5 hover:text-primary'
+            className='h-10 rounded-xl border-dashed px-6 text-[10px] font-black tracking-widest uppercase transition-all hover:bg-primary/5 hover:text-primary'
           >
             {t('purchase.suppliers.fields.addProduct')}
           </Button>
         </div>
       </div>
 
-      <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+      <div className='grid grid-cols-1 gap-4 md:grid-cols-4'>
         <div className='grid gap-3'>
-          <Label
-            htmlFor='contactPerson'
-            className='pl-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'
-          >
+          <Label htmlFor='contactPerson' className={fieldLabelClass}>
             {t('purchase.suppliers.fields.contactPerson')}
           </Label>
           <div className='group relative'>
-            <User className='absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground/40 transition-colors group-focus-within:text-primary' />
+            <User className='absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground/40 transition-colors group-focus-within:text-primary' />
             <Input
               id='contactPerson'
               placeholder={t(
                 'purchase.suppliers.fields.contactPersonPlaceholder'
               )}
-              className='h-12 rounded-2xl border-none bg-muted/50 pl-11 text-sm font-black transition-all focus:ring-2 focus:ring-primary/20'
+              className={iconInputClass}
               value={formData.contactPerson}
               onChange={(e) => updateField('contactPerson', e.target.value)}
             />
           </div>
         </div>
         <div className='grid gap-3'>
-          <Label
-            htmlFor='contactPhone'
-            className='pl-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'
-          >
+          <Label htmlFor='contactPhone' className={fieldLabelClass}>
             {t('purchase.suppliers.fields.contactPhone')}
           </Label>
           <div className='group relative'>
-            <Phone className='absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground/40 transition-colors group-focus-within:text-primary' />
+            <Phone className='absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground/40 transition-colors group-focus-within:text-primary' />
             <Input
               id='contactPhone'
               placeholder={t(
                 'purchase.suppliers.fields.contactPhonePlaceholder'
               )}
-              className='h-12 rounded-2xl border-none bg-muted/50 pl-11 font-mono text-sm font-black tabular-nums transition-all focus:ring-2 focus:ring-primary/20'
+              className={`${iconInputClass} font-mono tabular-nums`}
               value={formData.contactPhone}
               onChange={(e) => updateField('contactPhone', e.target.value)}
             />
           </div>
         </div>
+
+        <div className='rounded-xl border border-dashed border-muted/40 bg-muted/10 px-3 py-2 md:col-span-2'>
+          <Label className={fieldLabelClass}>联系与沟通</Label>
+          <p className='mt-1 text-[10px] leading-relaxed font-bold text-muted-foreground'>
+            补充常用联系方式，方便采购跟进、询价与异常沟通。
+          </p>
+        </div>
       </div>
 
-      <div className='grid gap-4 rounded-2xl border border-dashed border-muted/40 bg-muted/10 p-4'>
-        <Label className='pl-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
-          联系与沟通
-        </Label>
-        <p className='pl-1 text-[10px] font-bold text-muted-foreground'>
-          补充常用联系方式，方便采购跟进、询价与异常沟通。
-        </p>
-
-        <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+      <div className='grid gap-3 rounded-2xl border border-dashed border-muted/40 bg-muted/10 p-3'>
+        <div className='grid grid-cols-1 gap-4 md:grid-cols-3 xl:grid-cols-6'>
           <div className='grid gap-3'>
-            <Label
-              htmlFor='email'
-              className='pl-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'
-            >
+            <Label htmlFor='email' className={fieldLabelClass}>
               邮箱
             </Label>
             <div className='group relative'>
-              <Mail className='absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground/40 transition-colors group-focus-within:text-primary' />
+              <Mail className='absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground/40 transition-colors group-focus-within:text-primary' />
               <Input
                 id='email'
                 placeholder='请输入邮箱地址'
-                className='h-12 rounded-2xl border-none bg-muted/50 pl-11 text-sm font-black transition-all focus:ring-2 focus:ring-primary/20'
+                className={iconInputClass}
                 value={formData.email}
                 onChange={(e) => updateField('email', e.target.value)}
               />
@@ -434,80 +419,65 @@ export function SupplierActionDialog({
           </div>
 
           <div className='grid gap-3'>
-            <Label
-              htmlFor='wechat'
-              className='pl-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'
-            >
+            <Label htmlFor='wechat' className={fieldLabelClass}>
               微信
             </Label>
             <Input
               id='wechat'
               placeholder='请输入微信号'
-              className='h-12 rounded-2xl border-none bg-muted/50 text-sm font-black transition-all focus:ring-2 focus:ring-primary/20'
+              className={inputClass}
               value={formData.wechat}
               onChange={(e) => updateField('wechat', e.target.value)}
             />
           </div>
 
           <div className='grid gap-3'>
-            <Label
-              htmlFor='whatsapp'
-              className='pl-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'
-            >
+            <Label htmlFor='whatsapp' className={fieldLabelClass}>
               WhatsApp
             </Label>
             <Input
               id='whatsapp'
               placeholder='请输入 WhatsApp 号码或账号'
-              className='h-12 rounded-2xl border-none bg-muted/50 text-sm font-black transition-all focus:ring-2 focus:ring-primary/20'
+              className={inputClass}
               value={formData.whatsapp}
               onChange={(e) => updateField('whatsapp', e.target.value)}
             />
           </div>
 
           <div className='grid gap-3'>
-            <Label
-              htmlFor='facebook'
-              className='pl-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'
-            >
+            <Label htmlFor='facebook' className={fieldLabelClass}>
               Facebook
             </Label>
             <Input
               id='facebook'
               placeholder='请输入 Facebook 链接或账号名'
-              className='h-12 rounded-2xl border-none bg-muted/50 text-sm font-black transition-all focus:ring-2 focus:ring-primary/20'
+              className={inputClass}
               value={formData.facebook}
               onChange={(e) => updateField('facebook', e.target.value)}
             />
           </div>
 
           <div className='grid gap-3'>
-            <Label
-              htmlFor='instagram'
-              className='pl-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'
-            >
+            <Label htmlFor='instagram' className={fieldLabelClass}>
               Instagram
             </Label>
             <Input
               id='instagram'
               placeholder='请输入 Instagram 账号'
-              className='h-12 rounded-2xl border-none bg-muted/50 text-sm font-black transition-all focus:ring-2 focus:ring-primary/20'
+              className={inputClass}
               value={formData.instagram}
               onChange={(e) => updateField('instagram', e.target.value)}
             />
           </div>
 
           <div className='grid gap-3'>
-            <Label
-              htmlFor='telegram'
-              className='pl-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'
-            >
+            <Label htmlFor='telegram' className={fieldLabelClass}>
               Telegram
             </Label>
             <Input
               id='telegram'
               placeholder='请输入 Telegram 用户名或链接'
-              className='h-12 rounded-2xl border-none bg-muted/50 text-sm font-black transition-all focus:ring-2 focus:ring-primary/20'
+              className={inputClass}
               value={formData.telegram}
               onChange={(e) => updateField('telegram', e.target.value)}
             />
@@ -515,20 +485,17 @@ export function SupplierActionDialog({
         </div>
       </div>
 
-      <div className='grid gap-3 pb-2'>
-        <Label
-          htmlFor='address'
-          className='pl-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'
-        >
+      <div className='grid gap-3'>
+        <Label htmlFor='address' className={fieldLabelClass}>
           {t('purchase.suppliers.fields.address')}
         </Label>
         <div className='group relative'>
-          <MapPin className='absolute top-4 left-4 size-4 text-muted-foreground/40 transition-colors group-focus-within:text-primary' />
+          <MapPin className='absolute top-3.5 left-3.5 size-4 text-muted-foreground/40 transition-colors group-focus-within:text-primary' />
           <Textarea
             id='address'
             placeholder={t('purchase.suppliers.fields.addressPlaceholder')}
             rows={2}
-            className='resize-none rounded-2xl border-none bg-muted/50 py-4 pr-4 pl-11 text-sm leading-relaxed font-bold transition-all focus:ring-2 focus:ring-primary/20'
+            className='min-h-18 resize-none rounded-xl border-none bg-muted/50 py-3 pr-4 pl-10 text-sm leading-relaxed font-bold transition-all focus:ring-2 focus:ring-primary/20'
             value={formData.address}
             onChange={(e) => updateField('address', e.target.value)}
           />
