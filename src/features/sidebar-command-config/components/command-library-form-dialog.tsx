@@ -234,9 +234,7 @@ export function CommandLibraryFormDialog({
               <Input
                 id='sidebar-command-title'
                 value={form.title}
-                placeholder={t(
-                  'sidebarCommandConfig.form.titlePlaceholder'
-                )}
+                placeholder={t('sidebarCommandConfig.form.titlePlaceholder')}
                 onChange={(event) => updateField('title', event.target.value)}
               />
             </div>
@@ -250,9 +248,7 @@ export function CommandLibraryFormDialog({
               <Input
                 id='sidebar-command-route'
                 value={form.route}
-                placeholder={t(
-                  'sidebarCommandConfig.form.routePlaceholder'
-                )}
+                placeholder={t('sidebarCommandConfig.form.routePlaceholder')}
                 onChange={(event) => updateField('route', event.target.value)}
               />
             </div>

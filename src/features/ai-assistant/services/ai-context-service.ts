@@ -1,10 +1,10 @@
 import { TraceService } from '@/features/dashboard/services/trace-service'
 import { NotificationGateway } from '@/features/system-mgmt/notifications/notification-gateway'
-import type { DashboardSummary } from './prompt-builder'
 import {
   buildSafeAiPageContext,
   normalizeAiContextTitle,
 } from '../utils/ai-page-context'
+import type { DashboardSummary } from './prompt-builder'
 
 /**
  * AI 工业上下文感知服务 (AI Context Sensing Service)

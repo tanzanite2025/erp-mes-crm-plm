@@ -80,9 +80,7 @@ export function SidebarCommandLibraryPage() {
       />
 
       <IndustrialActionBar
-        searchPlaceholder={t(
-          'sidebarCommandConfig.library.searchPlaceholder'
-        )}
+        searchPlaceholder={t('sidebarCommandConfig.library.searchPlaceholder')}
         searchValue={query}
         onSearchChange={setQuery}
         leftContent={

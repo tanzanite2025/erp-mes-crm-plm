@@ -31,7 +31,9 @@ export function AiTrigger({ placement = 'floating' }: AiTriggerProps) {
   const handleTrigger = useCallback(
     (query: string = '') => {
       if (!isApiConfigured) {
-        toast.warning('AI 功能已启用，但还没有配置 API Key，请先完成引擎网关配置')
+        toast.warning(
+          'AI 功能已启用，但还没有配置 API Key，请先完成引擎网关配置'
+        )
         return
       }
       if (!canUsePageContext) {

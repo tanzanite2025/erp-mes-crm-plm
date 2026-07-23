@@ -66,10 +66,9 @@ export function AssignmentAccountList({
                 onCheckedChange={(checked) =>
                   onToggleTarget(account.id, checked === true)
                 }
-                aria-label={t(
-                  'sidebarCommandConfig.accountList.targetAria',
-                  { name: account.name }
-                )}
+                aria-label={t('sidebarCommandConfig.accountList.targetAria', {
+                  name: account.name,
+                })}
               />
               <button
                 type='button'
