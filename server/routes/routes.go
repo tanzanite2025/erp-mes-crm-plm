@@ -155,6 +155,13 @@ func SetupRoutes(r *gin.Engine) {
 			rawMaterialGroup.POST("/prepreg-binding-tokens/:token/bind", adminOnly, handlers.BindPrepregBindingTokenToSpecHandler)
 		}
 
+		rawMaterialEngineGroup := authorized.Group("/raw-materials-engine")
+		rawMaterialEngineGroup.Use(middleware.RequireAnyPermission(authz.MenuCuttingEngine))
+		{
+			rawMaterialEngineGroup.GET("/config", handlers.GetCuttingEngineConfigHandler)
+			rawMaterialEngineGroup.POST("/config", middleware.RequireAnyPermission(authz.ActionCuttingEngineConfigManage, authz.PermissionManage), handlers.UpdateCuttingEngineConfigHandler)
+		}
+
 		appearanceGroup := authorized.Group("/engineering/product-appearances")
 		appearanceGroup.Use(middleware.RequireAnyPermission(authz.MenuEngineering, authz.MenuTrading))
 		{

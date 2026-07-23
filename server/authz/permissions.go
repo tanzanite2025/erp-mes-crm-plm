@@ -20,6 +20,7 @@ const (
 	MenuSettings        = "menu_settings"
 	MenuCodeCenter      = "menu_code_center"
 	MenuApproval        = "menu_approval"
+	MenuCuttingEngine   = "menu_cutting_engine"
 	MenuPDA             = "menu_pda"
 )
 
@@ -119,6 +120,7 @@ const (
 
 const (
 	ActionCuttingSizeInventoryRecord = "action_cutting_size_inventory_record"
+	ActionCuttingEngineConfigManage  = "action_cutting_engine_config_manage"
 )
 
 const (
@@ -148,6 +150,7 @@ var baseAdminFallbackPermissions = []string{
 	MenuSettings,
 	MenuCodeCenter,
 	MenuApproval,
+	MenuCuttingEngine,
 	ActionWarehouseInboundRecord,
 	ActionWarehouseShipmentRecord,
 	ActionWarehouseShipmentUpdate,
@@ -203,6 +206,7 @@ var baseAdminFallbackPermissions = []string{
 	ActionProductionIssuanceExecute,
 	ActionBarcodeBindingManage,
 	ActionCuttingSizeInventoryRecord,
+	ActionCuttingEngineConfigManage,
 	ActionApprovalReview,
 	ActionEngineeringBOMManage,
 	ActionEngineeringBOMPromote,

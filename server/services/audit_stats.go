@@ -239,6 +239,7 @@ func GetAuditEngineModuleOrder() []string {
 		AuditEngineModuleFinance,
 		AuditEngineModuleEquipment,
 		AuditEngineModuleEngineering,
+		AuditEngineModuleCuttingEngine,
 		AuditEngineModuleWarehouse,
 		AuditEngineModuleProduction,
 		AuditEngineModuleQuality,

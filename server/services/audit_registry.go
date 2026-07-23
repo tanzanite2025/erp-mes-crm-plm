@@ -41,6 +41,8 @@ var auditEntityRegistry = []AuditEntityRegistration{
 	{EntityKey: AuditModuleChangeOrder, EngineModule: AuditEngineModuleEngineering, Integrated: false, DisplayName: "ChangeOrder"},
 	{EntityKey: AuditModuleBOM, EngineModule: AuditEngineModuleEngineering, Integrated: true, AllowModuleTimeline: true, DisplayName: "BOM"},
 
+	{EntityKey: AuditModuleCuttingEngineConfig, EngineModule: AuditEngineModuleCuttingEngine, Integrated: true, AllowModuleTimeline: true, DisplayName: "CuttingEngineConfig"},
+
 	{EntityKey: AuditModuleMaterial, EngineModule: AuditEngineModuleWarehouse, Integrated: true, DisplayName: "Material"},
 	{EntityKey: AuditModuleInventory, EngineModule: AuditEngineModuleWarehouse, Integrated: true, AllowModuleTimeline: true, DisplayName: "Inventory"},
 	{EntityKey: AuditModuleShipment, EngineModule: AuditEngineModuleWarehouse, Integrated: true, AllowModuleTimeline: true, DisplayName: "Shipment"},

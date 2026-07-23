@@ -12,7 +12,7 @@ export type MenuPermissionDefinition = {
   rootPath: string
 }
 
-export const PERMISSION_VERSION = '1.1.1'
+export const PERMISSION_VERSION = '1.1.2'
 
 const LEGACY_PERMISSION_ID_ALIASES: Record<string, string> = {
   action_approval_config_manage: 'action_approval_review',
@@ -135,6 +135,13 @@ export const MENU_PERMISSIONS = {
     icon: 'Sliders',
     rootPath: '/basic-settings',
   },
+  cuttingEngine: {
+    id: 'menu_cutting_engine',
+    label: '访问：裁纱引擎',
+    desc: '允许进入裁纱引擎配置与模拟',
+    icon: 'Scissors',
+    rootPath: '/raw-materials-engine',
+  },
   codeCenter: {
     id: 'menu_code_center',
     label: '访问：编码中心',
@@ -160,7 +167,7 @@ export const ROUTE_TO_MENU_MAPPING: Record<
   '/warehouse-config': 'warehouseConfig',
   '/mrp': 'mrp',
   '/raw-materials': 'trading',
-  '/raw-materials-engine': 'trading',
+  '/raw-materials-engine': 'cuttingEngine',
   '/trading': 'trading',
   '/sales-analysis': 'trading',
   '/quotes': 'trading',

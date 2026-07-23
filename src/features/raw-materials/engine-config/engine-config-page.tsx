@@ -1,6 +1,5 @@
 ﻿import { useState } from 'react'
-import { Sliders, Check, RotateCcw, AlertTriangle } from 'lucide-react'
-import { toast } from 'sonner'
+import { Sliders, Check, RotateCcw, AlertTriangle, Loader2 } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,7 +7,6 @@ import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { SUPPORTED_CUT_ANGLE_OPTIONS } from '../utils/cut-orientation'
 import { CuttingEnginePhysicalConstraintsPanel } from './components/cutting-engine-physical-constraints-panel'
 import {
-  DEFAULT_CUTTING_ENGINE_CONFIG,
   normalizeCuttingEngineConfig,
   type CuttingEngineConfig,
   type CuttingEngineAngleMixMode,
@@ -17,13 +15,90 @@ import {
   type CuttingEngineMustFulfillMode,
   type CuttingEngineOrderStrategy,
 } from './types'
-import { useCuttingEngineConfigStore } from './use-cutting-engine-config-store'
+import { useCuttingEngineConfigQueryState } from './use-cutting-engine-config-query'
+
+type CuttingEngineConfigFormProps = {
+  config: CuttingEngineConfig
+  isLoading: boolean
+  isSaving: boolean
+  saveConfig: (nextConfig: CuttingEngineConfig) => Promise<CuttingEngineConfig>
+  resetConfig: () => Promise<CuttingEngineConfig>
+}
 
 export function CuttingEngineConfigPage() {
   const { t } = useLanguage()
-  const config = useCuttingEngineConfigStore((state) => state.config)
-  const saveConfig = useCuttingEngineConfigStore((state) => state.saveConfig)
-  const resetConfig = useCuttingEngineConfigStore((state) => state.resetConfig)
+  const {
+    config,
+    revision,
+    isLoading,
+    isLoadError,
+    refetchConfig,
+    saveConfig,
+    resetConfig,
+    isSaving,
+  } = useCuttingEngineConfigQueryState()
+
+  return (
+    <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
+      <IndustrialHeader
+        icon={Sliders}
+        title={t('rawMaterials.engineConfig.hero.title')}
+        description={t('rawMaterials.engineConfig.hero.description')}
+        gradient
+      />
+
+      {isLoading && (
+        <div className='flex items-center gap-3 rounded-[20px] border border-dashed border-primary/20 bg-primary/5 p-4 text-primary'>
+          <Loader2 className='size-4 animate-spin' />
+          <span className='text-[10px] font-black tracking-widest uppercase'>
+            {t('rawMaterials.engineConfig.toasts.loading')}
+          </span>
+        </div>
+      )}
+
+      {isLoadError && (
+        <div
+          role='alert'
+          className='flex flex-col gap-4 rounded-[20px] border border-dashed border-rose-500/40 bg-rose-500/5 p-4 sm:flex-row sm:items-center sm:justify-between'
+        >
+          <div className='flex items-start gap-3'>
+            <AlertTriangle className='mt-0.5 size-4 shrink-0 text-rose-600' />
+            <span className='text-[10px] font-black tracking-widest text-rose-700 uppercase dark:text-rose-400'>
+              {t('rawMaterials.engineConfig.toasts.loadFailed')}
+            </span>
+          </div>
+          <Button
+            type='button'
+            variant='outline'
+            size='sm'
+            onClick={() => void refetchConfig()}
+            className='self-start rounded-full text-[10px] font-black tracking-widest uppercase sm:self-auto'
+          >
+            {t('systemManagement.auditEngine.retry')}
+          </Button>
+        </div>
+      )}
+
+      <CuttingEngineConfigForm
+        key={revision}
+        config={config}
+        isLoading={isLoading}
+        isSaving={isSaving}
+        saveConfig={saveConfig}
+        resetConfig={resetConfig}
+      />
+    </div>
+  )
+}
+
+function CuttingEngineConfigForm({
+  config,
+  isLoading,
+  isSaving,
+  saveConfig,
+  resetConfig,
+}: CuttingEngineConfigFormProps) {
+  const { t } = useLanguage()
 
   // 规则与约束边界
   const [splitPenalty, setSplitPenalty] = useState(config.splitPenaltyWeight)
@@ -65,24 +140,6 @@ export function CuttingEngineConfigPage() {
   const [fixedDecisionLength, setFixedDecisionLength] = useState(
     config.fixedDecisionLengthMm
   )
-
-  const applyConfigToForm = (nextConfig: CuttingEngineConfig) => {
-    setSplitPenalty(nextConfig.splitPenaltyWeight)
-    setMustFulfillPenalty(nextConfig.mustFulfillPenaltyWeight)
-    setDirectionSwitchPenalty(nextConfig.directionSwitchPenaltyWeight)
-    setSameDirectionPreferred(nextConfig.sameDirectionPreferred)
-    setAngleMixMode(nextConfig.angleMixMode)
-    setMustFulfillMode(nextConfig.ruleStrategy.mustFulfillMode)
-    setMixingStrategy(nextConfig.ruleStrategy.mixingStrategy)
-    setOrderStrategy(nextConfig.ruleStrategy.orderStrategy)
-    setDirectionStrategy(nextConfig.ruleStrategy.directionStrategy)
-    setKnifeGap(nextConfig.knifeGapMm)
-    setEdgeTrim(nextConfig.edgeTrimMm)
-    setMaxSolveDurationSeconds(nextConfig.maxSolveDurationSeconds)
-    setMinSupportedLength(nextConfig.minSupportedLengthMm)
-    setMaxSupportedLength(nextConfig.maxSupportedLengthMm)
-    setFixedDecisionLength(nextConfig.fixedDecisionLengthMm)
-  }
 
   const angleMixModeLabels: Record<CuttingEngineAngleMixMode, string> = {
     allow: t(
@@ -176,10 +233,7 @@ export function CuttingEngineConfigPage() {
   }
 
   const handlePhysicalConstraintChange = (
-    key: keyof Pick<
-      CuttingEngineConfig,
-      'knifeGapMm' | 'edgeTrimMm' | 'maxSolveDurationSeconds'
-    >,
+    key: 'knifeGapMm' | 'edgeTrimMm' | 'maxSolveDurationSeconds',
     value: string
   ) => {
     if (key === 'knifeGapMm') {
@@ -216,28 +270,16 @@ export function CuttingEngineConfigPage() {
       fixedDecisionLengthMm: fixedDecisionLength,
     })
 
-    saveConfig(normalizedConfig)
-    applyConfigToForm(normalizedConfig)
-    toast.success(t('rawMaterials.engineConfig.toasts.saveSuccess'))
+    void saveConfig(normalizedConfig)
   }
 
   // 恢复默认
   const handleReset = () => {
-    applyConfigToForm(DEFAULT_CUTTING_ENGINE_CONFIG)
-    resetConfig()
-    toast.info(t('rawMaterials.engineConfig.toasts.reset'))
+    void resetConfig()
   }
 
   return (
-    <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
-      {/* 页头 */}
-      <IndustrialHeader
-        icon={Sliders}
-        title={t('rawMaterials.engineConfig.hero.title')}
-        description={t('rawMaterials.engineConfig.hero.description')}
-        gradient
-      />
-
+    <div className='flex flex-col gap-8'>
       {/* 主版面 */}
       <div className='grid gap-6 lg:grid-cols-3'>
         {/* 左列：规则边界与核心约束 */}
@@ -746,19 +788,33 @@ export function CuttingEngineConfigPage() {
           <Button
             variant='outline'
             onClick={handleReset}
+            disabled={isSaving || isLoading}
             className='flex h-11 gap-2 rounded-full border-slate-300 px-6 text-[10px] font-black tracking-widest uppercase hover:bg-slate-100/50'
           >
-            <RotateCcw className='size-3.5' />
+            {isSaving ? (
+              <Loader2 className='size-3.5 animate-spin' />
+            ) : (
+              <RotateCcw className='size-3.5' />
+            )}
             {t('rawMaterials.engineConfig.actions.reset')}
           </Button>
 
           {/* 保存配置按钮 */}
           <Button
             onClick={handleSave}
+            disabled={isSaving || isLoading}
             className='flex h-11 gap-2 rounded-full bg-primary px-8 text-[10px] font-black tracking-widest text-primary-foreground uppercase shadow-sm hover:bg-primary/90'
           >
-            <Check className='size-3.5' />
-            {t('rawMaterials.engineConfig.actions.save')}
+            {isSaving ? (
+              <Loader2 className='size-3.5 animate-spin' />
+            ) : (
+              <Check className='size-3.5' />
+            )}
+            {t(
+              isSaving
+                ? 'rawMaterials.engineConfig.actions.saving'
+                : 'rawMaterials.engineConfig.actions.save'
+            )}
           </Button>
         </div>
       </div>

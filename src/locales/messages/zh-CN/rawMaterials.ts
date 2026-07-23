@@ -729,9 +729,12 @@ export const rawMaterials = {
       saving: '正在保存...',
     },
     toasts: {
+      loading: '正在加载裁纱引擎配置...',
       presetChanged: '已切换为「{{preset}}」官方工艺推荐权重参数。',
       saveSuccess:
         '裁纱引擎计算配置固化成功！新裁切计算任务将自动加载此参数资产。',
+      saveFailed: '裁纱引擎配置保存失败，请稍后重试。',
+      loadFailed: '裁纱引擎配置加载失败，请刷新后重试。',
       reset: '配置参数已重置为系统出厂工艺默认值。',
     },
   },

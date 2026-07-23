@@ -20,6 +20,7 @@ export const BACKEND_PERMISSION_CONTRACT_IDS = [
   "menu_settings",
   "menu_code_center",
   "menu_approval",
+  "menu_cutting_engine",
   "menu_pda",
   "user_view",
   "user_create",
@@ -84,6 +85,7 @@ export const BACKEND_PERMISSION_CONTRACT_IDS = [
   "action_production_issuance_execute",
   "action_barcode_binding_manage",
   "action_cutting_size_inventory_record",
+  "action_cutting_engine_config_manage",
   "action_approval_review"
 ] as const
 
@@ -110,6 +112,7 @@ export const BACKEND_ADMIN_FALLBACK_PERMISSION_IDS = [
   "menu_settings",
   "menu_code_center",
   "menu_approval",
+  "menu_cutting_engine",
   "action_warehouse_inbound_record",
   "action_warehouse_shipment_record",
   "action_inventory_shipment_update",
@@ -165,6 +168,7 @@ export const BACKEND_ADMIN_FALLBACK_PERMISSION_IDS = [
   "action_production_issuance_execute",
   "action_barcode_binding_manage",
   "action_cutting_size_inventory_record",
+  "action_cutting_engine_config_manage",
   "action_approval_review",
   "action_engineering_bom_manage",
   "action_engineering_bom_promote",

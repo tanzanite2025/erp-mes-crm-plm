@@ -155,6 +155,10 @@ var auditModuleAliasMap = map[string][]string{
 		AuditModuleEnterpriseConfig,
 		"EnterpriseConfig",
 	},
+	AuditModuleCuttingEngineConfig: {
+		AuditModuleCuttingEngineConfig,
+		"CuttingEngineConfig",
+	},
 	AuditModuleApprovalRequest: {
 		AuditModuleApprovalRequest,
 		"ApprovalRequest",

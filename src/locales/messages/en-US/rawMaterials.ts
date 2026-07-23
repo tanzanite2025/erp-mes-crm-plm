@@ -770,10 +770,15 @@ export const rawMaterials = {
       saving: 'Saving...',
     },
     toasts: {
+      loading: 'Loading cutting engine configuration...',
       presetChanged:
         'Switched to the official process-recommended weight parameters for {{preset}}.',
       saveSuccess:
         'Cutting engine calculation configuration saved. New cutting calculation jobs will automatically load this parameter asset.',
+      saveFailed:
+        'Failed to save the cutting engine configuration. Please retry later.',
+      loadFailed:
+        'Failed to load the cutting engine configuration. Please refresh and retry.',
       reset:
         'Configuration parameters have been reset to system factory defaults.',
     },

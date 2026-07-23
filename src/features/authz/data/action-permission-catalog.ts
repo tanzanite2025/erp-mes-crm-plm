@@ -141,6 +141,8 @@ const systemActions: LegacyActionPermissionEntry[] = [
       'POST /users/sync',
       'GET /ai/policy/admin',
       'POST /ai/policy/admin',
+      'GET /ai/usage/summary',
+      'GET /ai/usage/logs',
       'POST /system/configs',
       'POST /org',
       'POST /org/sync',
@@ -171,6 +173,7 @@ const systemActions: LegacyActionPermissionEntry[] = [
       'POST /engineering/bom-sections',
       'PATCH /engineering/bom-sections/:id',
       'DELETE /engineering/bom-sections/:id',
+      'POST /raw-materials-engine/config',
       'POST /packaging/profiles',
       'DELETE /packaging/profiles/:id',
       'POST /message-center/event-sources',
@@ -755,6 +758,17 @@ const productionActions: LegacyActionPermissionEntry[] = [
   },
 ]
 
+const cuttingEngineActions: LegacyActionPermissionEntry[] = [
+  {
+    id: 'action_cutting_engine_config_manage',
+    label: '裁纱引擎：维护配置',
+    desc: '允许保存裁纱引擎规则与物理约束配置。',
+    category: 'action',
+    parentId: 'menu_cutting_engine',
+    routeBindings: ['POST /raw-materials-engine/config'],
+  },
+]
+
 export const ACTION_PERMISSION_CATALOG: Record<
   string,
   ActionPermissionEntry[]
@@ -767,6 +781,7 @@ export const ACTION_PERMISSION_CATALOG: Record<
   equipment: equipmentActions,
   org: orgActions,
   production: productionActions,
+  cuttingEngine: cuttingEngineActions,
   approval: approvalActions,
 })
 

@@ -181,6 +181,7 @@ export const systemManagement = {
       finance: 'Finance Management',
       equipment: 'Equipment & Tooling',
       engineering: 'Engineering DB',
+      cuttingEngine: 'Cutting Engine',
       warehouse: 'Warehouse & Inventory',
       production: 'Production Execution',
       quality: 'Quality Management',

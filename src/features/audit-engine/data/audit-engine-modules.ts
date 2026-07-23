@@ -6,6 +6,7 @@ export const AUDIT_ENGINE_MODULE_LABEL_KEYS = {
   finance: 'systemManagement.auditEngine.modules.finance',
   equipment: 'systemManagement.auditEngine.modules.equipment',
   engineering: 'systemManagement.auditEngine.modules.engineering',
+  'cutting-engine': 'systemManagement.auditEngine.modules.cuttingEngine',
   warehouse: 'systemManagement.auditEngine.modules.warehouse',
   production: 'systemManagement.auditEngine.modules.production',
   quality: 'systemManagement.auditEngine.modules.quality',
