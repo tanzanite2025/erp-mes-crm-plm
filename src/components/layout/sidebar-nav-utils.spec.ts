@@ -53,4 +53,27 @@ describe('sidebar nav active matching', () => {
       checkIsActive('/sidebar-command/assignment', commandConfigItem)
     ).toBe(true)
   })
+
+  it('keeps a merged sidebar domain active only for its declared tab paths', () => {
+    const productionAnalysisItem: NavLink = {
+      id: 'production-analysis-center',
+      title: 'Production Analysis Center',
+      url: '/business-analysis/production-capacity',
+      activeMatches: [
+        '/business-analysis/production-capacity',
+        '/business-analysis/production-load',
+        '/business-analysis/production-efficiency',
+      ],
+    }
+
+    expect(
+      checkIsActive(
+        '/business-analysis/production-load',
+        productionAnalysisItem
+      )
+    ).toBe(true)
+    expect(
+      checkIsActive('/business-analysis/scrap', productionAnalysisItem)
+    ).toBe(false)
+  })
 })

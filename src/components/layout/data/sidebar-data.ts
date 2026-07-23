@@ -2,9 +2,9 @@
  * 全局侧边栏菜单数据源(三层结构: group → L1 子组 → L2 菜单项)。
  *
  * 此文件是侧边栏的"配置即代码"——所有侧边栏入口在这里定义:
- *   - navGroupConfigs: 12 个顶级 group(资源管理 / 采销 / 生产 / 工程 / 仓储等)
- *   - 每个 group 下 1-3 个 L1 子组,每个 L1 下 1-N 个 L2 菜单项
- *   - 共 38 个 L2 菜单(可点击,带 URL),其余为分组容器
+ *   - navGroupConfigs: 顶级 group(资源管理 / 采销 / 生产 / 工程 / 仓储等)
+ *   - 每个 group 下 1-N 个 L1 子组或可点击域入口
+ *   - 三级菜单代表业务域入口,域内关联 TAB 在 features/<module>/tabs.ts 单独维护
  *
  * 关键不变量:
  *   - id 稳定(权限/最近访问/搜索都依赖 id)
@@ -49,9 +49,10 @@ type SidebarNodeConfig = {
   titleKey: TranslationKey
   url?: string
   icon?: React.ElementType
-  permissionId?: string
+  permissionId?: string | string[]
   preserveEmptyChildren?: boolean
   activeMatch?: string
+  activeMatches?: string[]
   badgeKey?: string
   children?: SidebarNodeConfig[]
 }
@@ -76,6 +77,25 @@ const defaultTeam = {
 
 const permissionIdForPath = (path: string): string =>
   getMenuPermissionForPath(path)
+
+const permissionIdsForPaths = (paths: readonly string[]): string[] =>
+  paths.map((path) => permissionIdForPath(path))
+
+const businessAnalysisProductionPaths = [
+  '/business-analysis/production-capacity',
+  '/business-analysis/production-load',
+  '/business-analysis/production-efficiency',
+] as const
+
+const businessAnalysisQualityPaths = [
+  '/business-analysis/scrap',
+  '/business-analysis/defect-trend',
+] as const
+
+const businessAnalysisCustomerSalesPaths = [
+  '/business-analysis/orders',
+  '/business-analysis/customers',
+] as const
 
 const navGroupConfigs: SidebarGroupConfig[] = [
   {
@@ -243,7 +263,6 @@ const navGroupConfigs: SidebarGroupConfig[] = [
             id: 'business-analysis-overview',
             titleKey: 'sidebar.items.businessAnalysisOverview',
             url: '/business-analysis/overview',
-            activeMatch: '/business-analysis',
             icon: BarChart3,
             permissionId: permissionIdForPath('/business-analysis'),
           },
@@ -255,30 +274,13 @@ const navGroupConfigs: SidebarGroupConfig[] = [
         icon: Gauge,
         children: [
           {
-            id: 'production-capacity-analysis',
-            titleKey: 'sidebar.items.productionCapacityAnalysis',
+            id: 'production-analysis-center',
+            titleKey: 'sidebar.items.productionAnalysisCenter',
             url: '/business-analysis/production-capacity',
+            activeMatches: [...businessAnalysisProductionPaths],
             icon: Gauge,
-            permissionId: permissionIdForPath(
-              '/business-analysis/production-capacity'
-            ),
-          },
-          {
-            id: 'production-load-analysis',
-            titleKey: 'sidebar.items.productionLoadAnalysis',
-            url: '/business-analysis/production-load',
-            icon: Gauge,
-            permissionId: permissionIdForPath(
-              '/business-analysis/production-load'
-            ),
-          },
-          {
-            id: 'production-efficiency-analysis',
-            titleKey: 'sidebar.items.productionEfficiencyAnalysis',
-            url: '/business-analysis/production-efficiency',
-            icon: Gauge,
-            permissionId: permissionIdForPath(
-              '/business-analysis/production-efficiency'
+            permissionId: permissionIdsForPaths(
+              businessAnalysisProductionPaths
             ),
           },
         ],
@@ -289,20 +291,12 @@ const navGroupConfigs: SidebarGroupConfig[] = [
         icon: ShieldCheck,
         children: [
           {
-            id: 'scrap-analysis',
-            titleKey: 'sidebar.items.scrapAnalysis',
+            id: 'quality-analysis-center',
+            titleKey: 'sidebar.items.qualityAnalysisCenter',
             url: '/business-analysis/scrap',
+            activeMatches: [...businessAnalysisQualityPaths],
             icon: ShieldCheck,
-            permissionId: permissionIdForPath('/business-analysis/scrap'),
-          },
-          {
-            id: 'defect-trend-analysis',
-            titleKey: 'sidebar.items.defectTrendAnalysis',
-            url: '/business-analysis/defect-trend',
-            icon: ShieldCheck,
-            permissionId: permissionIdForPath(
-              '/business-analysis/defect-trend'
-            ),
+            permissionId: permissionIdsForPaths(businessAnalysisQualityPaths),
           },
         ],
       },
@@ -312,18 +306,14 @@ const navGroupConfigs: SidebarGroupConfig[] = [
         icon: Users,
         children: [
           {
-            id: 'orders-analysis',
-            titleKey: 'sidebar.items.ordersAnalysis',
+            id: 'customer-sales-analysis-center',
+            titleKey: 'sidebar.items.customerSalesAnalysisCenter',
             url: '/business-analysis/orders',
-            icon: ShoppingBag,
-            permissionId: permissionIdForPath('/business-analysis/orders'),
-          },
-          {
-            id: 'customer-analysis',
-            titleKey: 'sidebar.items.customerAnalysis',
-            url: '/business-analysis/customers',
+            activeMatches: [...businessAnalysisCustomerSalesPaths],
             icon: Users,
-            permissionId: permissionIdForPath('/business-analysis/customers'),
+            permissionId: permissionIdsForPaths(
+              businessAnalysisCustomerSalesPaths
+            ),
           },
         ],
       },
@@ -707,6 +697,7 @@ function localizeNavNode(t: TranslateFn, node: SidebarNodeConfig): NavNode {
     permissionId: node.permissionId,
     preserveEmptyChildren: node.preserveEmptyChildren,
     activeMatch: node.activeMatch,
+    activeMatches: node.activeMatches,
     badgeKey: node.badgeKey,
     children: node.children?.map((child) => localizeNavNode(t, child)),
   }

@@ -74,6 +74,38 @@ const navGroups: NavGroup[] = [
       },
     ],
   },
+  {
+    id: 'business-analysis',
+    title: 'Business Analysis',
+    children: [
+      {
+        id: 'analysis-overview-group',
+        title: 'Analysis Overview',
+        children: [
+          {
+            id: 'business-analysis-overview',
+            title: 'Analysis Overview',
+            url: '/business-analysis/overview',
+          },
+        ],
+      },
+      {
+        id: 'quality-analysis-group',
+        title: 'Quality Analysis',
+        children: [
+          {
+            id: 'quality-analysis-center',
+            title: 'Quality Analysis Center',
+            url: '/business-analysis/scrap',
+            activeMatches: [
+              '/business-analysis/scrap',
+              '/business-analysis/defect-trend',
+            ],
+          },
+        ],
+      },
+    ],
+  },
 ]
 
 describe('resolveActiveSidebarPath', () => {
@@ -119,6 +151,16 @@ describe('resolveActiveSidebarPath', () => {
       groupId: 'system-management-root',
       nodeIds: ['quick-actions-group', 'sidebar-command-config'],
       key: 'system-management-root/quick-actions-group/sidebar-command-config',
+    })
+  })
+
+  it('does not keep analysis overview active for sibling business analysis tabs', () => {
+    expect(
+      resolveActiveSidebarPath(navGroups, '/business-analysis/scrap')
+    ).toEqual({
+      groupId: 'business-analysis',
+      nodeIds: ['quality-analysis-group', 'quality-analysis-center'],
+      key: 'business-analysis/quality-analysis-group/quality-analysis-center',
     })
   })
 })

@@ -53,8 +53,9 @@ function isExactPathMatch(pathname: string, target?: string): boolean {
 function getActiveTargets(item: NavItem): string[] {
   const itemUrl = item.url ? String(item.url) : undefined
   const activeMatch = item.activeMatch ? String(item.activeMatch) : undefined
+  const activeMatches = item.activeMatches?.map(String) ?? []
 
-  return [activeMatch || itemUrl].filter(Boolean) as string[]
+  return [itemUrl, activeMatch, ...activeMatches].filter(Boolean) as string[]
 }
 
 export function withDynamicBadges(
