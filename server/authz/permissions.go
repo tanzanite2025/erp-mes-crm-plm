@@ -3,25 +3,26 @@ package authz
 import "sort"
 
 const (
-	MenuDashboard       = "menu_dashboard"
-	MenuWarehouse       = "menu_warehouse"
-	MenuWarehouseConfig = "menu_warehouse_config"
-	MenuMrp             = "menu_mrp"
-	MenuApsScheduling   = "menu_aps_scheduling"
-	MenuTrading         = "menu_trading"
-	MenuPurchase        = "menu_purchase"
-	MenuOrg             = "menu_org"
-	MenuEngineering     = "menu_engineering"
-	MenuQuality         = "menu_quality"
-	MenuProdConfig      = "menu_prod_config"
-	MenuPiecework       = "menu_piecework"
-	MenuEquipment       = "menu_equipment"
-	MenuSystem          = "menu_system"
-	MenuSettings        = "menu_settings"
-	MenuCodeCenter      = "menu_code_center"
-	MenuApproval        = "menu_approval"
-	MenuCuttingEngine   = "menu_cutting_engine"
-	MenuPDA             = "menu_pda"
+	MenuDashboard        = "menu_dashboard"
+	MenuWarehouse        = "menu_warehouse"
+	MenuWarehouseConfig  = "menu_warehouse_config"
+	MenuMrp              = "menu_mrp"
+	MenuApsScheduling    = "menu_aps_scheduling"
+	MenuBusinessAnalysis = "menu_business_analysis"
+	MenuTrading          = "menu_trading"
+	MenuPurchase         = "menu_purchase"
+	MenuOrg              = "menu_org"
+	MenuEngineering      = "menu_engineering"
+	MenuQuality          = "menu_quality"
+	MenuProdConfig       = "menu_prod_config"
+	MenuPiecework        = "menu_piecework"
+	MenuEquipment        = "menu_equipment"
+	MenuSystem           = "menu_system"
+	MenuSettings         = "menu_settings"
+	MenuCodeCenter       = "menu_code_center"
+	MenuApproval         = "menu_approval"
+	MenuCuttingEngine    = "menu_cutting_engine"
+	MenuPDA              = "menu_pda"
 )
 
 const (
@@ -138,6 +139,7 @@ var baseAdminFallbackPermissions = []string{
 	MenuWarehouseConfig,
 	MenuMrp,
 	MenuApsScheduling,
+	MenuBusinessAnalysis,
 	MenuTrading,
 	MenuPurchase,
 	MenuOrg,

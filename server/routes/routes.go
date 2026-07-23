@@ -80,6 +80,7 @@ func SetupRoutes(r *gin.Engine) {
 		registerInventoryRoutes(authorized)
 		registerEquipmentRoutes(authorized)
 		registerProductionRoutes(authorized)
+		registerBusinessAnalysisRoutes(authorized)
 		registerCuttingOperationRoutes(authorized)
 		registerOrgRoutes(authorized)
 		registerLeaveRoutes(authorized)
