@@ -24,6 +24,20 @@ interface ProviderContext {
   provider: ProviderKind
 }
 
+const AI_PROXY_NON_RETRYABLE_CODES = new Set([
+  'AI_CAPABILITY_DISABLED',
+  'API_KEY_MISSING',
+  'AI_ROUTE_PERMISSION_MISSING',
+  'AI_POLICY_FORBIDDEN',
+  'AI_PROXY_BODY_TOO_LARGE',
+  'AI_PROXY_BAD_MESSAGES',
+  'AI_PROXY_CONCURRENCY_LIMIT',
+  'AI_PROXY_GLOBAL_RATE_LIMIT',
+  'AI_PROXY_USER_RATE_LIMIT',
+])
+
+const AI_PROXY_STREAM_TIMEOUT_MS = 120_000
+
 async function loadProviderContext(): Promise<ProviderContext> {
   const policy = await aiPolicyService.getRuntimePolicy()
   if (!policy.enabled) throw new Error('AI_CAPABILITY_DISABLED')
@@ -61,6 +75,55 @@ async function buildAIProxyRequestHeaders(): Promise<Record<string, string>> {
     headers['X-CSRF-Token'] = csrfToken
   }
   return headers
+}
+
+export function toAIUserFacingErrorMessage(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error)
+
+  if (message.includes('API_KEY_MISSING')) {
+    return 'AI 功能已启用，但引擎网关还没有配置 API Key。请到「系统管理 / AI 能力」完成引擎网关配置后再使用。'
+  }
+  if (message.includes('AI_CAPABILITY_DISABLED')) {
+    return 'AI 全局能力尚未启用，请先在「系统管理 / AI 能力」中开启。'
+  }
+  if (message.includes('AI_ROUTE_PERMISSION_MISSING')) {
+    return '当前页面还没有登记到路由权限表，暂不能使用页面级 AI 能力。'
+  }
+  if (message.includes('AI_POLICY_FORBIDDEN')) {
+    return '当前页面没有下发 AI 能力，请到「系统管理 / AI 能力」中为该页面授权。'
+  }
+  if (
+    message.includes('AI_PROXY_CONCURRENCY_LIMIT') ||
+    message.includes('AI_PROXY_GLOBAL_RATE_LIMIT') ||
+    message.includes('AI_PROXY_USER_RATE_LIMIT') ||
+    message.includes('429')
+  ) {
+    return 'AI 请求过于频繁，系统已自动限流保护。请稍后再试，避免连续点击或多窗口同时调用。'
+  }
+  if (
+    message.includes('AI_TIMEOUT') ||
+    message.includes('AbortError') ||
+    message.includes('TIMEOUT')
+  ) {
+    return 'AI 上游响应超时，本次请求已中断。请稍后重试，或检查当前模型/网关网络状态。'
+  }
+  if (message.includes('AI_PROXY_TARGET_BLOCKED')) {
+    return '当前 AI 网关地址被服务器安全策略拦截，请检查引擎网关配置的域名。'
+  }
+  if (message.includes('AI_PROXY_BODY_TOO_LARGE')) {
+    return '本次发送给 AI 的上下文过大，已被系统拦截。请减少页面上下文或缩短问题后重试。'
+  }
+  if (message.includes('AI_PROXY_BAD_MESSAGES')) {
+    return '本次 AI 消息格式不符合系统限制，请缩短内容或重新输入。'
+  }
+  if (
+    message.includes('AI_PROXY_ERROR') ||
+    message.includes('FETCH_FAILED') ||
+    message.includes('Failed to fetch')
+  ) {
+    return 'AI 网关暂时不可用，请检查网络、模型服务或服务器代理状态后重试。'
+  }
+  return message || 'AI 服务暂时不可用，请稍后重试。'
 }
 
 function mapProxyError(status: number, error: ProxyErrorPayload): string {
@@ -108,14 +171,23 @@ async function callWithRetry<T>(
         error instanceof Error ? error.message : String(error)
       const statusMatch = errorMessage.match(/\((\d+)\)/)
       const status = statusMatch ? parseInt(statusMatch[1], 10) : null
+      const errorCodeMatch = errorMessage.match(/\bAI_[A-Z0-9_]+\b/)
+      const errorCode = errorCodeMatch?.[0]
+      const isNonRetryable =
+        (errorCode && AI_PROXY_NON_RETRYABLE_CODES.has(errorCode)) ||
+        status === 400 ||
+        status === 401 ||
+        status === 403 ||
+        status === 413 ||
+        status === 429
 
       const isRetryable =
-        status === 429 ||
-        status === 502 ||
-        status === 503 ||
-        status === 504 ||
-        errorMessage.includes('FETCH_FAILED') ||
-        errorMessage.includes('TIMEOUT')
+        !isNonRetryable &&
+        (status === 502 ||
+          status === 503 ||
+          status === 504 ||
+          errorMessage.includes('FETCH_FAILED') ||
+          errorMessage.includes('TIMEOUT'))
 
       if (attempt < maxRetries && isRetryable) {
         const delay = baseDelay * Math.pow(2, attempt)
@@ -137,7 +209,8 @@ async function readProxyError(response: Response): Promise<string> {
   const error = (await response.json().catch(() => ({
     error: response.statusText,
   }))) as ProxyErrorPayload
-  return mapProxyError(response.status, error)
+  const mappedMessage = mapProxyError(response.status, error)
+  return error.code ? `${error.code}: ${mappedMessage}` : mappedMessage
 }
 
 export async function callProvider(messages: ChatMessage[]): Promise<string> {
@@ -194,18 +267,34 @@ export async function callProviderStream(
       return
     }
 
-    const response = await fetch('/api/v1/ai/proxy', {
-      method: 'POST',
-      headers: await buildAIProxyRequestHeaders(),
-      credentials: 'include',
-      body: JSON.stringify({ messages, stream: true }),
-    })
+    const controller = new AbortController()
+    const timeoutID = setTimeout(
+      () => controller.abort(),
+      AI_PROXY_STREAM_TIMEOUT_MS
+    )
 
-    if (!response.ok) {
-      const errorMessage = await readProxyError(response)
-      throw new Error(`AI_PROXY_ERROR (${response.status}): ${errorMessage}`)
+    try {
+      const response = await fetch('/api/v1/ai/proxy', {
+        method: 'POST',
+        headers: await buildAIProxyRequestHeaders(),
+        credentials: 'include',
+        signal: controller.signal,
+        body: JSON.stringify({ messages, stream: true }),
+      })
+
+      if (!response.ok) {
+        const errorMessage = await readProxyError(response)
+        throw new Error(`AI_PROXY_ERROR (${response.status}): ${errorMessage}`)
+      }
+      if (!response.body) throw new Error('RESPONSE_BODY_EMPTY')
+      await parseStream(response.body.getReader(), onChunk)
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('AI_TIMEOUT (120s)')
+      }
+      throw error
+    } finally {
+      clearTimeout(timeoutID)
     }
-    if (!response.body) throw new Error('RESPONSE_BODY_EMPTY')
-    await parseStream(response.body.getReader(), onChunk)
   })
 }

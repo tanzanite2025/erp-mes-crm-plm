@@ -6,6 +6,7 @@ import {
   type ChatMessage,
   type DashboardSummary,
 } from '../services/ai-service'
+import { toAIUserFacingErrorMessage } from '../services/provider-client'
 import { useAiHistory } from './use-ai-history'
 
 const logger = createLogger('useAiChatEngine')
@@ -73,9 +74,9 @@ export function useAiChatEngine({
         )
       } catch (error: unknown) {
         logger.error('Stream failed', error)
-        const message = error instanceof Error ? error.message : '未知错误'
+        const message = toAIUserFacingErrorMessage(error)
         updateLastAssistantMessage(
-          `\n\n> [!CAUTION]\n> **[CRITICAL ERROR]** 对话流中断: ${message}`
+          `\n\n> [!CAUTION]\n> **AI 对话已中断**：${message}`
         )
       } finally {
         setIsGenerating(false)
