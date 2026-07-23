@@ -26,6 +26,7 @@ import {
   DEFAULT_AI_POLICY_CONFIG,
   resolveAiPolicyForEditing,
   sanitizeAiPolicyForSave,
+  toAiPolicySaveErrorMessage,
   type EditableAiPolicyConfig,
 } from '@/features/ai-assistant/utils/ai-policy-config'
 import { getRouteDerivedPermissions } from '@/features/authz/data/route-permission-registry'
@@ -107,7 +108,9 @@ export function AiAccessControl() {
     } catch (error) {
       setPolicy(previousPolicy)
       logger.error('Failed to save AI policy', error)
-      toast.error(t('aiAssistant.accessControl.api.policyError'))
+      toast.error(t('aiAssistant.accessControl.api.policyError'), {
+        description: toAiPolicySaveErrorMessage(error),
+      })
       return false
     }
   }

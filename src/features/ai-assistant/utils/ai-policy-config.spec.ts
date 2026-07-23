@@ -3,6 +3,7 @@ import {
   DEFAULT_AI_POLICY_CONFIG,
   resolveAiPolicyForEditing,
   sanitizeAiPolicyForSave,
+  toAiPolicySaveErrorMessage,
 } from './ai-policy-config'
 
 describe('AI policy editing model', () => {
@@ -66,5 +67,23 @@ describe('AI policy editing model', () => {
       model: 'gpt-4o-mini',
       groupId: 'group-1',
     })
+  })
+
+  it('translates backend policy validation errors for administrators', () => {
+    expect(
+      toAiPolicySaveErrorMessage(
+        new Error(
+          'AI policy payload is invalid: gateway base URL must use HTTPS'
+        )
+      )
+    ).toContain('HTTPS')
+
+    expect(
+      toAiPolicySaveErrorMessage(
+        new Error(
+          'AI policy payload is invalid: MiniMax gateway group ID is required'
+        )
+      )
+    ).toContain('Group ID')
   })
 })
