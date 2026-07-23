@@ -1,5 +1,4 @@
-import type { LucideIcon } from 'lucide-react'
-import { Clock3 } from 'lucide-react'
+import { Clock3, type LucideIcon } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { Card, CardContent } from '@/components/ui/card'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
