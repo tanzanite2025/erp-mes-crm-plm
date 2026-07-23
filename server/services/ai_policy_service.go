@@ -27,6 +27,11 @@ const (
 	aiGatewaySecretRecordVersion  = "v1"
 	aiGatewaySecretConfigLabel    = "AI gateway API key secret"
 	aiGatewaySecretConfigDescribe = "Encrypted backend-only API key for the configured AI gateway provider."
+	maxAIPolicyPermissionCount    = 500
+	maxAIGatewayAPIKeyLength      = 8 * 1024
+	maxAIGatewayBaseURLLength     = 512
+	maxAIGatewayModelLength       = 160
+	maxAIGatewayGroupIDLength     = 160
 )
 
 var ErrAIPolicyInvalidPayload = errors.New("AI policy payload is invalid")
@@ -295,17 +300,47 @@ func BuildAIRuntimePolicy(policy AIPolicy) AIRuntimePolicy {
 }
 
 func validateAIPolicyForSave(policy AIPolicy) error {
+	if len(policy.AllowedPermissions) > maxAIPolicyPermissionCount {
+		return fmt.Errorf("%w: too many AI route permissions", ErrAIPolicyInvalidPayload)
+	}
 	for _, permissionID := range policy.AllowedPermissions {
 		if (!strings.HasPrefix(permissionID, "page_") && !strings.HasPrefix(permissionID, "tab_")) || !authz.IsSupportedPermissionID(permissionID) {
 			return fmt.Errorf("%w: unsupported route permission %s", ErrAIPolicyInvalidPayload, permissionID)
 		}
 	}
 
+	if len(policy.API.APIKey) > maxAIGatewayAPIKeyLength {
+		return fmt.Errorf("%w: gateway API key is too long", ErrAIPolicyInvalidPayload)
+	}
+	if len(policy.API.BaseURL) > maxAIGatewayBaseURLLength {
+		return fmt.Errorf("%w: gateway base URL is too long", ErrAIPolicyInvalidPayload)
+	}
+	if len(policy.API.Model) > maxAIGatewayModelLength {
+		return fmt.Errorf("%w: gateway model is too long", ErrAIPolicyInvalidPayload)
+	}
+	if len(policy.API.GroupID) > maxAIGatewayGroupIDLength {
+		return fmt.Errorf("%w: gateway group ID is too long", ErrAIPolicyInvalidPayload)
+	}
+
 	parsedBaseURL, err := url.Parse(policy.API.BaseURL)
 	if err != nil || !strings.EqualFold(parsedBaseURL.Scheme, "https") || strings.TrimSpace(parsedBaseURL.Hostname()) == "" {
 		return fmt.Errorf("%w: gateway base URL must use HTTPS", ErrAIPolicyInvalidPayload)
 	}
+	if parsedBaseURL.User != nil || parsedBaseURL.RawQuery != "" || parsedBaseURL.Fragment != "" {
+		return fmt.Errorf("%w: gateway base URL must not include credentials, query, or fragment", ErrAIPolicyInvalidPayload)
+	}
+	if parsedBaseURL.Port() != "" && parsedBaseURL.Port() != "443" {
+		return fmt.Errorf("%w: gateway base URL port must be 443", ErrAIPolicyInvalidPayload)
+	}
+	if isMiniMaxGatewayBaseURL(policy.API.BaseURL) && policy.API.GroupID == "" {
+		return fmt.Errorf("%w: MiniMax gateway group ID is required", ErrAIPolicyInvalidPayload)
+	}
 	return nil
+}
+
+func isMiniMaxGatewayBaseURL(baseURL string) bool {
+	normalized := strings.ToLower(strings.TrimSpace(baseURL))
+	return strings.Contains(normalized, "minimaxi.com") || strings.Contains(normalized, "minimax.io")
 }
 
 func SaveAIPolicy(database *gorm.DB, input AIPolicy) (AIPolicy, error) {

@@ -94,3 +94,55 @@ func TestSaveAIPolicyRejectsProviderChangeWithoutNewAPIKey(t *testing.T) {
 		t.Fatalf("expected invalid payload for provider change without key, got %v", err)
 	}
 }
+
+func TestSaveAIPolicyRejectsUnsafeGatewayBaseURL(t *testing.T) {
+	t.Setenv("JWT_SECRET", "test-jwt-secret-for-ai-secret-encryption")
+	database := openAIPolicyTestDB(t)
+
+	unsafeURLs := []string{
+		"http://api.openai.com",
+		"https://token@example.com",
+		"https://api.openai.com:8443",
+		"https://api.openai.com?token=secret",
+		"https://api.openai.com#secret",
+	}
+
+	for _, baseURL := range unsafeURLs {
+		policy := testAIPolicyWithKey("test-ai-key")
+		policy.API.Provider = "openai"
+		policy.API.BaseURL = baseURL
+		policy.API.Model = "gpt-4o-mini"
+
+		_, err := SaveAIPolicy(database, policy)
+		if !errors.Is(err, ErrAIPolicyInvalidPayload) {
+			t.Fatalf("expected invalid payload for base URL %q, got %v", baseURL, err)
+		}
+	}
+}
+
+func TestSaveAIPolicyRejectsMiniMaxGatewayWithoutGroupID(t *testing.T) {
+	t.Setenv("JWT_SECRET", "test-jwt-secret-for-ai-secret-encryption")
+	database := openAIPolicyTestDB(t)
+	policy := testAIPolicyWithKey("test-ai-key")
+	policy.API.Provider = "custom"
+	policy.API.BaseURL = "https://api.minimaxi.com"
+	policy.API.Model = "abab6.5s-chat"
+	policy.API.GroupID = ""
+
+	_, err := SaveAIPolicy(database, policy)
+	if !errors.Is(err, ErrAIPolicyInvalidPayload) {
+		t.Fatalf("expected invalid payload for missing MiniMax group ID, got %v", err)
+	}
+}
+
+func TestSaveAIPolicyRejectsOversizedGatewayFields(t *testing.T) {
+	t.Setenv("JWT_SECRET", "test-jwt-secret-for-ai-secret-encryption")
+	database := openAIPolicyTestDB(t)
+	policy := testAIPolicyWithKey("test-ai-key")
+	policy.API.Model = strings.Repeat("m", maxAIGatewayModelLength+1)
+
+	_, err := SaveAIPolicy(database, policy)
+	if !errors.Is(err, ErrAIPolicyInvalidPayload) {
+		t.Fatalf("expected invalid payload for oversized model, got %v", err)
+	}
+}

@@ -31,11 +31,40 @@ describe('AI policy editing model', () => {
     const policy = sanitizeAiPolicyForSave(
       {
         ...DEFAULT_AI_POLICY_CONFIG,
-        allowedPermissions: ['tab_orders', 'menu_sales', 'unknown'],
+        allowedPermissions: [
+          ' TAB_ORDERS ',
+          'tab_orders',
+          'menu_sales',
+          'unknown',
+        ],
       },
       ['tab_orders']
     )
 
     expect(policy.allowedPermissions).toEqual(['tab_orders'])
+  })
+
+  it('normalizes gateway drafts before persistence', () => {
+    const policy = sanitizeAiPolicyForSave(
+      {
+        ...DEFAULT_AI_POLICY_CONFIG,
+        api: {
+          provider: 'openai',
+          apiKey: '  secret  ',
+          baseUrl: ' https://api.openai.com/v1/ ',
+          model: '  ',
+          groupId: '  group-1  ',
+        },
+      },
+      []
+    )
+
+    expect(policy.api).toEqual({
+      provider: 'openai',
+      apiKey: 'secret',
+      baseUrl: 'https://api.openai.com/v1',
+      model: 'gpt-4o-mini',
+      groupId: 'group-1',
+    })
   })
 })

@@ -79,7 +79,7 @@ export function AiEngineGatewayCard({
         </div>
         <Button
           type='button'
-          disabled={isSaving}
+          disabled={isSaving || isGroupIdMissing}
           className='h-9 w-full shrink-0 rounded-full px-4 text-[10px] font-black tracking-widest uppercase shadow-lg shadow-indigo-100 sm:w-auto'
           onClick={onSave}
         >
@@ -172,6 +172,7 @@ export function AiEngineGatewayCard({
             placeholder={
               config.provider === 'gemini' ? 'gemini-1.5-flash' : 'gpt-4o-mini'
             }
+            maxLength={160}
             className='h-10 rounded-xl border-2 border-indigo-100 bg-white focus-visible:ring-indigo-200'
             value={config.model}
             onChange={(event) =>
@@ -188,6 +189,7 @@ export function AiEngineGatewayCard({
           <Input
             type='password'
             placeholder='AI_****************'
+            maxLength={8192}
             className='h-10 rounded-xl border-2 border-indigo-100 bg-white transition-all focus-visible:ring-indigo-200'
             value={config.apiKey}
             onChange={(event) =>
@@ -213,6 +215,7 @@ export function AiEngineGatewayCard({
           </Label>
           <Input
             placeholder='https://api.example.com'
+            maxLength={512}
             className='h-10 rounded-xl border-2 border-indigo-100 bg-white focus-visible:ring-indigo-200'
             value={config.baseUrl}
             onChange={(event) =>
@@ -235,6 +238,7 @@ export function AiEngineGatewayCard({
           </Label>
           <Input
             placeholder='20000****'
+            maxLength={160}
             className={cn(
               'h-10 rounded-xl border-2 bg-white transition-all focus-visible:ring-indigo-200',
               isGroupIdMissing
