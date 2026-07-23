@@ -23,7 +23,11 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 }
 
 function normalizeContextString(value: string): string {
-  const normalized = value.replace(/[\u0000-\u001f\u007f]/g, ' ').trim()
+  const normalized = value
+    .replace(/[\s\S]/g, (char) =>
+      char.charCodeAt(0) <= 0x1f || char.charCodeAt(0) === 0x7f ? ' ' : char
+    )
+    .trim()
   if (normalized.length <= AI_CONTEXT_MAX_STRING_CHARS) return normalized
   return `${normalized.slice(0, AI_CONTEXT_MAX_STRING_CHARS)}…`
 }

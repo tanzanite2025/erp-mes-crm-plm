@@ -30,10 +30,12 @@ function toDCLIdentifier(value: string, fallback: string): string {
 
 function toDCLString(value: string): string {
   return value
-    .replace(/[\u0000-\u001f\u007f]/g, ' ')
+    .replace(/[\s\S]/g, (char) =>
+      char.charCodeAt(0) <= 0x1f || char.charCodeAt(0) === 0x7f ? ' ' : char
+    )
     .replace(/\\/g, '\\\\')
     .replace(/"/g, "'")
-    .replace(/[{}\[\];]/g, ' ')
+    .replace(/[{}[\];]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
 }
