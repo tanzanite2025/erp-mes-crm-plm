@@ -320,6 +320,7 @@ export const quality = {
   },
   hooks: {
     saveStandardSuccess: 'Quality standard synced successfully',
+    saveAbnormalityDisposalSuccess: 'Quality abnormality disposal saved',
     submitForApprovalSuccess:
       'Quality standard submitted for approval and moved into pending review.',
     approveStandardSuccess:

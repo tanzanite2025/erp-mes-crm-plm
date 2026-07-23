@@ -80,6 +80,7 @@ type BusinessAnalysisDataQuality struct {
 	QualityScrapRecordCount           int64    `json:"qualityScrapRecordCount"`
 	UnlinkedQualityRecords            int64    `json:"unlinkedQualityRecords"`
 	MissingQuantityRecords            int64    `json:"missingQuantityRecords"`
+	MissingOccurrenceTimestampRecords int64    `json:"missingOccurrenceTimestampRecords"`
 	MissingCompletionTimestampRecords int64    `json:"missingCompletionTimestampRecords"`
 	UnlinkedProductionOrderRecords    int64    `json:"unlinkedProductionOrderRecords"`
 	QualityQuantityAvailable          bool     `json:"qualityQuantityAvailable"`
@@ -223,13 +224,10 @@ func (s *BusinessAnalysisService) QueryProductionCapacity(
 			ByDay:      make([]BusinessAnalysisDayBreakdown, 0),
 		},
 		DataQuality: BusinessAnalysisDataQuality{
-			QualityQuantityAvailable:          false,
-			QualityProductionLinkageAvailable: false,
+			QualityQuantityAvailable:          true,
+			QualityProductionLinkageAvailable: true,
 			IsComplete:                        false,
-			Notes: []string{
-				"QUALITY_SCRAP_QUANTITY_MISSING",
-				"QUALITY_PRODUCTION_LINKAGE_MISSING",
-			},
+			Notes:                             []string{"QUALITY_QUALIFIED_QUANTITY_MISSING"},
 		},
 	}
 
@@ -324,7 +322,16 @@ func (s *BusinessAnalysisService) QueryProductionCapacity(
 	}
 	response.DataQuality.QualityScrapRecordCount = qualityData.QualityScrapRecordCount
 	response.DataQuality.UnlinkedQualityRecords = qualityData.UnlinkedQualityRecords
-	response.DataQuality.MissingQuantityRecords = qualityData.QualityScrapRecordCount
+	response.DataQuality.MissingQuantityRecords = qualityData.MissingQuantityRecords
+	response.DataQuality.MissingOccurrenceTimestampRecords = qualityData.MissingOccurrenceTimestampRecords
+	response.DataQuality.QualityQuantityAvailable = qualityData.MissingQuantityRecords == 0
+	response.DataQuality.QualityProductionLinkageAvailable = qualityData.UnlinkedQualityRecords == 0
+	if response.DataQuality.QualityQuantityAvailable &&
+		response.DataQuality.QualityProductionLinkageAvailable {
+		scrapQuantity := qualityData.ScrapQuantity
+		response.Summary.ScrapQuantity = &scrapQuantity
+	}
+	response.DataQuality.Notes = businessAnalysisQualityNotes(qualityData)
 
 	if response.Summary.PlannedQuantity > 0 {
 		achievementRate := response.Summary.CompletedQuantity / response.Summary.PlannedQuantity
@@ -384,30 +391,201 @@ func (s *BusinessAnalysisService) loadProductionPlans(
 }
 
 type businessAnalysisQualityDataQuality struct {
-	QualityScrapRecordCount int64 `gorm:"column:quality_scrap_record_count"`
-	UnlinkedQualityRecords  int64 `gorm:"column:unlinked_quality_records"`
+	QualityScrapRecordCount           int64
+	UnlinkedQualityRecords            int64
+	MissingQuantityRecords            int64
+	MissingOccurrenceTimestampRecords int64
+	ScrapQuantity                     float64
 }
 
 func (s *BusinessAnalysisService) loadQualityDataQuality(
 	ctx context.Context,
 	query BusinessAnalysisProductionCapacityQuery,
 ) (businessAnalysisQualityDataQuality, error) {
-	var result businessAnalysisQualityDataQuality
+	var abnormalities []models.QualityAbnormality
 	err := s.database.WithContext(ctx).
-		Table("quality_abnormalities AS qa").
-		Joins("LEFT JOIN inspection_tasks AS it ON it.id = qa.task_id AND it.deleted_at IS NULL").
-		Select(`
-			COUNT(*) AS quality_scrap_record_count,
-			COALESCE(SUM(CASE WHEN qa.task_id IS NULL OR it.id IS NULL THEN 1 ELSE 0 END), 0) AS unlinked_quality_records
-		`).
-		Where("qa.deleted_at IS NULL").
-		Where("UPPER(TRIM(qa.disposal_method)) = ?", "SCRAP").
-		Where("qa.created_at >= ? AND qa.created_at < ?", query.From, query.To).
-		Scan(&result).Error
+		Model(&models.QualityAbnormality{}).
+		Preload("InspectionTask").
+		Where("quality_abnormalities.deleted_at IS NULL").
+		Where("UPPER(TRIM(quality_abnormalities.disposal_method)) = ?", "SCRAP").
+		Where(
+			"(quality_abnormalities.occurred_at >= ? AND quality_abnormalities.occurred_at < ?) OR "+
+				"(quality_abnormalities.occurred_at IS NULL AND quality_abnormalities.created_at >= ? AND quality_abnormalities.created_at < ?)",
+			query.From,
+			query.To,
+			query.From,
+			query.To,
+		).
+		Order("quality_abnormalities.created_at ASC").
+		Find(&abnormalities).Error
 	if err != nil {
 		return businessAnalysisQualityDataQuality{}, err
 	}
+
+	planIDs := make([]string, 0)
+	orderIDs := make([]string, 0)
+	seenPlanIDs := make(map[string]struct{})
+	seenOrderIDs := make(map[string]struct{})
+	for _, abnormality := range abnormalities {
+		planID := strings.TrimSpace(abnormality.ProductionPlanID)
+		orderID := strings.TrimSpace(abnormality.OrderID)
+		if abnormality.InspectionTask != nil {
+			if planID == "" {
+				planID = strings.TrimSpace(abnormality.InspectionTask.ProductionPlanID)
+			}
+			if orderID == "" {
+				orderID = strings.TrimSpace(abnormality.InspectionTask.OrderID)
+			}
+		}
+		if planID != "" {
+			if _, exists := seenPlanIDs[planID]; !exists {
+				seenPlanIDs[planID] = struct{}{}
+				planIDs = append(planIDs, planID)
+			}
+		}
+		if orderID != "" {
+			if _, exists := seenOrderIDs[orderID]; !exists {
+				seenOrderIDs[orderID] = struct{}{}
+				orderIDs = append(orderIDs, orderID)
+			}
+		}
+	}
+
+	plansByID := make(map[string]models.ProductionPlan, len(planIDs))
+	if len(planIDs) > 0 {
+		var plans []models.ProductionPlan
+		if err := s.database.WithContext(ctx).
+			Preload("SalesOrder").
+			Where("production_plans.id IN ?", planIDs).
+			Find(&plans).Error; err != nil {
+			return businessAnalysisQualityDataQuality{}, err
+		}
+		for _, plan := range plans {
+			plansByID[plan.ID] = plan
+		}
+	}
+
+	ordersByID := make(map[string]models.SalesOrder, len(orderIDs))
+	if len(orderIDs) > 0 {
+		var orders []models.SalesOrder
+		if err := s.database.WithContext(ctx).
+			Where("sales_orders.id IN ?", orderIDs).
+			Find(&orders).Error; err != nil {
+			return businessAnalysisQualityDataQuality{}, err
+		}
+		for _, order := range orders {
+			ordersByID[order.ID] = order
+		}
+	}
+
+	var result businessAnalysisQualityDataQuality
+	for _, abnormality := range abnormalities {
+		planID, orderID, productID, batchNo := qualityAbnormalityLinkage(abnormality)
+		plan := plansByID[planID]
+		if planID != "" {
+			if orderID == "" {
+				orderID = strings.TrimSpace(plan.OrderID)
+			}
+			if productID == "" {
+				productID = strings.TrimSpace(plan.ProductID)
+			}
+		}
+
+		if query.Status != "" && query.Status != "ALL" &&
+			(strings.TrimSpace(planID) == "" ||
+				!strings.EqualFold(strings.TrimSpace(plan.Status), strings.TrimSpace(query.Status))) {
+			continue
+		}
+		if !query.IncludeCanceled && strings.EqualFold(strings.TrimSpace(plan.Status), "CANCELED") {
+			continue
+		}
+		if productIDFilter := strings.TrimSpace(query.ProductID); productIDFilter != "" {
+			if productID == "" || productID != productIDFilter {
+				if productID == "" {
+					result.UnlinkedQualityRecords++
+				}
+				continue
+			}
+		}
+
+		customerID := ""
+		if orderID != "" {
+			if order, exists := ordersByID[orderID]; exists {
+				customerID = strings.TrimSpace(order.CustomerID)
+			}
+		}
+		if plan.SalesOrder != nil && customerID == "" {
+			customerID = strings.TrimSpace(plan.SalesOrder.CustomerID)
+		}
+		if customerIDFilter := strings.TrimSpace(query.CustomerID); customerIDFilter != "" {
+			if customerID == "" || customerID != customerIDFilter {
+				if customerID == "" {
+					result.UnlinkedQualityRecords++
+				}
+				continue
+			}
+		}
+
+		result.QualityScrapRecordCount++
+		if abnormality.OccurredAt == nil {
+			result.MissingOccurrenceTimestampRecords++
+		}
+		if abnormality.ScrapQuantity == nil || *abnormality.ScrapQuantity <= 0 {
+			result.MissingQuantityRecords++
+		} else {
+			result.ScrapQuantity += *abnormality.ScrapQuantity
+		}
+		if qualityAbnormalityMissingProductionLinkage(planID, orderID, productID, batchNo) {
+			result.UnlinkedQualityRecords++
+		}
+	}
+
 	return result, nil
+}
+
+func qualityAbnormalityMissingProductionLinkage(planID, orderID, productID, batchNo string) bool {
+	hasProductionAnchor := strings.TrimSpace(planID) != "" || strings.TrimSpace(orderID) != ""
+	return !hasProductionAnchor || strings.TrimSpace(productID) == "" || strings.TrimSpace(batchNo) == ""
+}
+
+func qualityAbnormalityLinkage(abnormality models.QualityAbnormality) (string, string, string, string) {
+	planID := strings.TrimSpace(abnormality.ProductionPlanID)
+	orderID := strings.TrimSpace(abnormality.OrderID)
+	productID := strings.TrimSpace(abnormality.ProductID)
+	batchNo := strings.TrimSpace(abnormality.BatchNo)
+	if abnormality.InspectionTask == nil {
+		return planID, orderID, productID, batchNo
+	}
+	if planID == "" {
+		planID = strings.TrimSpace(abnormality.InspectionTask.ProductionPlanID)
+	}
+	if orderID == "" {
+		orderID = strings.TrimSpace(abnormality.InspectionTask.OrderID)
+	}
+	if productID == "" {
+		productID = strings.TrimSpace(abnormality.InspectionTask.ProductID)
+	}
+	if batchNo == "" {
+		batchNo = strings.TrimSpace(abnormality.InspectionTask.BatchNo)
+	}
+	return planID, orderID, productID, batchNo
+}
+
+func businessAnalysisQualityNotes(data businessAnalysisQualityDataQuality) []string {
+	notes := make([]string, 0, 4)
+	if data.MissingQuantityRecords > 0 {
+		notes = append(notes, "QUALITY_SCRAP_QUANTITY_MISSING")
+	}
+	if data.UnlinkedQualityRecords > 0 {
+		notes = append(notes, "QUALITY_PRODUCTION_LINKAGE_MISSING")
+	}
+	if data.MissingOccurrenceTimestampRecords > 0 {
+		notes = append(notes, "QUALITY_OCCURRENCE_TIMESTAMP_MISSING")
+	}
+	// A scrap fact alone cannot prove the qualified quantity. That remains a
+	// separate quality contract and must not be inferred from production output.
+	notes = append(notes, "QUALITY_QUALIFIED_QUANTITY_MISSING")
+	return notes
 }
 
 func productionPlanAnalysisDate(plan models.ProductionPlan) time.Time {

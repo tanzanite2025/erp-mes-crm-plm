@@ -51,6 +51,7 @@ export type BusinessAnalysisProductionCapacityResponse = {
     qualityScrapRecordCount: number
     unlinkedQualityRecords: number
     missingQuantityRecords: number
+    missingOccurrenceTimestampRecords: number
     missingCompletionTimestampRecords: number
     unlinkedProductionOrderRecords: number
     qualityQuantityAvailable: boolean

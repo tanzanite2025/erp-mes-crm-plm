@@ -150,6 +150,80 @@ func TestBusinessAnalysisProductionCapacityCountsMissingCompletionTimestamp(t *t
 	require.Equal(t, float64(0), response.Summary.CompletedQuantity)
 }
 
+func TestBusinessAnalysisProductionCapacityIncludesValidatedScrapQuantity(t *testing.T) {
+	database, err := gorm.Open(sqlite.Open("file:business_analysis_valid_scrap?mode=memory&cache=shared"), &gorm.Config{})
+	require.NoError(t, err)
+	createBusinessAnalysisTestSchema(t, database)
+
+	loc := time.UTC
+	from := time.Date(2026, time.July, 1, 0, 0, 0, 0, loc)
+	to := time.Date(2026, time.August, 1, 0, 0, 0, 0, loc)
+	occurredAt := time.Date(2026, time.July, 6, 10, 0, 0, 0, loc)
+
+	orderID := "00000000-0000-0000-0000-000000000021"
+	planID := "00000000-0000-0000-0000-000000000022"
+	require.NoError(t, database.Exec(
+		"INSERT INTO sales_orders (id, order_no, customer_id, customer_name, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+		orderID,
+		"SO-BA-021",
+		"customer-021",
+		"客户 B",
+		occurredAt,
+		occurredAt,
+	).Error)
+	require.NoError(t, database.Exec(
+		"INSERT INTO production_plans (id, order_no, order_id, product_id, product_name, quantity, status, start_date, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		planID,
+		"SO-BA-021",
+		orderID,
+		"product-021",
+		"型号 B",
+		20,
+		"COMPLETED",
+		occurredAt,
+		occurredAt,
+		occurredAt,
+	).Error)
+	require.NoError(t, database.Exec(
+		"INSERT INTO quality_abnormalities (id, disposal_method, scrap_quantity, scrap_unit, production_plan_id, order_id, product_id, batch_no, occurred_at, status, description, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		"00000000-0000-0000-0000-000000000023",
+		"SCRAP",
+		2.5,
+		"pcs",
+		planID,
+		orderID,
+		"product-021",
+		"B-021",
+		occurredAt,
+		"CLOSED",
+		"已确认报废",
+		occurredAt,
+		occurredAt,
+	).Error)
+
+	response, err := NewBusinessAnalysisService(database).QueryProductionCapacity(
+		context.Background(),
+		BusinessAnalysisProductionCapacityQuery{From: from, To: to},
+	)
+	require.NoError(t, err)
+	require.NotNil(t, response.Summary.ScrapQuantity)
+	require.InDelta(t, 2.5, *response.Summary.ScrapQuantity, 0.0001)
+	require.Equal(t, int64(1), response.DataQuality.QualityScrapRecordCount)
+	require.Equal(t, int64(0), response.DataQuality.MissingQuantityRecords)
+	require.Equal(t, int64(0), response.DataQuality.UnlinkedQualityRecords)
+	require.True(t, response.DataQuality.QualityQuantityAvailable)
+	require.True(t, response.DataQuality.QualityProductionLinkageAvailable)
+	require.Contains(t, response.DataQuality.Notes, "QUALITY_QUALIFIED_QUANTITY_MISSING")
+}
+
+func TestBusinessAnalysisQualityLinkageRequiresAnchorProductAndBatch(t *testing.T) {
+	require.True(t, qualityAbnormalityMissingProductionLinkage("", "", "product-1", "batch-1"))
+	require.True(t, qualityAbnormalityMissingProductionLinkage("plan-1", "", "", "batch-1"))
+	require.True(t, qualityAbnormalityMissingProductionLinkage("plan-1", "", "product-1", ""))
+	require.False(t, qualityAbnormalityMissingProductionLinkage("plan-1", "", "product-1", "batch-1"))
+	require.False(t, qualityAbnormalityMissingProductionLinkage("", "order-1", "product-1", "batch-1"))
+}
+
 func ptrTime(value time.Time) *time.Time {
 	return &value
 }
@@ -196,12 +270,23 @@ func createBusinessAnalysisTestSchema(t *testing.T, database *gorm.DB) {
 		)`,
 		`CREATE TABLE inspection_tasks (
 			id TEXT PRIMARY KEY,
+			production_plan_id TEXT,
+			order_id TEXT,
+			batch_no TEXT,
+			product_id TEXT,
 			deleted_at DATETIME
 		)`,
 		`CREATE TABLE quality_abnormalities (
 			id TEXT PRIMARY KEY,
 			task_id TEXT,
 			disposal_method TEXT,
+			scrap_quantity REAL,
+			scrap_unit TEXT,
+			production_plan_id TEXT,
+			order_id TEXT,
+			product_id TEXT,
+			batch_no TEXT,
+			occurred_at DATETIME,
 			status TEXT,
 			description TEXT,
 			created_at DATETIME,

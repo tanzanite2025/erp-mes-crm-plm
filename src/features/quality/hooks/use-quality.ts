@@ -15,6 +15,7 @@ import {
 import {
   QualityMaintenanceService,
   type ExecuteInspectionPayload,
+  type RecordQualityAbnormalityDisposalPayload,
 } from '../services/quality-maintenance-service'
 import type { GetQualityStandardsParams } from '../types/quality-standards-list'
 
@@ -24,6 +25,7 @@ export type {
   QualityTasksResponse,
   QualityAbnormality,
   ExecuteInspectionPayload,
+  RecordQualityAbnormalityDisposalPayload,
   QualityTask,
 }
 
@@ -116,5 +118,35 @@ export function useQualityMutations() {
     }),
   })
 
-  return { saveStandardMutation, executeInspectionMutation }
+  const recordAbnormalityDisposalMutation = useMutation({
+    mutationFn: (params: {
+      id: string
+      data: RecordQualityAbnormalityDisposalPayload
+    }) =>
+      QualityMaintenanceService.recordAbnormalityDisposal(
+        params.id,
+        params.data
+      ),
+    ...buildMutationOptions<
+      unknown,
+      Error,
+      {
+        id: string
+        data: RecordQualityAbnormalityDisposalPayload
+      }
+    >({
+      queryClient,
+      invalidateQueryKeys: [['quality_abnormalities']],
+      onError: handleServerError,
+      onSuccess: () => {
+        toast.success(t('quality.hooks.saveAbnormalityDisposalSuccess'))
+      },
+    }),
+  })
+
+  return {
+    saveStandardMutation,
+    executeInspectionMutation,
+    recordAbnormalityDisposalMutation,
+  }
 }

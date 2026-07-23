@@ -61,6 +61,10 @@ const DATA_QUALITY_NOTE_LABEL_KEYS: Record<string, TranslationKey> = {
     'businessAnalysis.productionCapacity.qualityQuantityMissing',
   QUALITY_PRODUCTION_LINKAGE_MISSING:
     'businessAnalysis.productionCapacity.qualityLinkageMissing',
+  QUALITY_OCCURRENCE_TIMESTAMP_MISSING:
+    'businessAnalysis.productionCapacity.qualityOccurrenceTimestampMissing',
+  QUALITY_QUALIFIED_QUANTITY_MISSING:
+    'businessAnalysis.productionCapacity.qualifiedQuantityMissing',
 }
 
 function getCurrentMonthRange(): Pick<CapacityFilters, 'from' | 'to'> {

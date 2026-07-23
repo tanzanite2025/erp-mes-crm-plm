@@ -90,34 +90,38 @@ type InspectionStandardsListResponse struct {
 }
 
 type InspectionTaskRequest struct {
-	ID          string          `json:"id"`
-	StandardID  string          `json:"standardId"`
-	BatchNo     string          `json:"batchNo"`
-	ProductID   string          `json:"productId"`
-	ProductName string          `json:"productName"`
-	SampleQty   float64         `json:"sampleQty"`
-	Result      string          `json:"result"`
-	Inspector   string          `json:"inspector"`
-	InputData   json.RawMessage `json:"inputData"`
-	Remarks     string          `json:"remarks"`
-	CompletedAt *time.Time      `json:"completedAt"`
+	ID               string          `json:"id"`
+	StandardID       string          `json:"standardId"`
+	ProductionPlanID string          `json:"productionPlanId"`
+	OrderID          string          `json:"orderId"`
+	BatchNo          string          `json:"batchNo"`
+	ProductID        string          `json:"productId"`
+	ProductName      string          `json:"productName"`
+	SampleQty        float64         `json:"sampleQty"`
+	Result           string          `json:"result"`
+	Inspector        string          `json:"inspector"`
+	InputData        json.RawMessage `json:"inputData"`
+	Remarks          string          `json:"remarks"`
+	CompletedAt      *time.Time      `json:"completedAt"`
 }
 
 type InspectionTaskResponse struct {
-	ID          string                      `json:"id"`
-	CreatedAt   time.Time                   `json:"createdAt"`
-	UpdatedAt   time.Time                   `json:"updatedAt"`
-	StandardID  string                      `json:"standardId"`
-	Standard    *InspectionStandardResponse `json:"standard,omitempty"`
-	BatchNo     string                      `json:"batchNo"`
-	ProductID   string                      `json:"productId"`
-	ProductName string                      `json:"productName"`
-	SampleQty   float64                     `json:"sampleQty"`
-	Result      string                      `json:"result"`
-	Inspector   string                      `json:"inspector"`
-	InputData   json.RawMessage             `json:"inputData"`
-	Remarks     string                      `json:"remarks"`
-	CompletedAt *time.Time                  `json:"completedAt"`
+	ID               string                      `json:"id"`
+	CreatedAt        time.Time                   `json:"createdAt"`
+	UpdatedAt        time.Time                   `json:"updatedAt"`
+	StandardID       string                      `json:"standardId"`
+	Standard         *InspectionStandardResponse `json:"standard,omitempty"`
+	ProductionPlanID string                      `json:"productionPlanId,omitempty"`
+	OrderID          string                      `json:"orderId,omitempty"`
+	BatchNo          string                      `json:"batchNo"`
+	ProductID        string                      `json:"productId"`
+	ProductName      string                      `json:"productName"`
+	SampleQty        float64                     `json:"sampleQty"`
+	Result           string                      `json:"result"`
+	Inspector        string                      `json:"inspector"`
+	InputData        json.RawMessage             `json:"inputData"`
+	Remarks          string                      `json:"remarks"`
+	CompletedAt      *time.Time                  `json:"completedAt"`
 }
 
 type InspectionTasksListResponse struct {
@@ -134,18 +138,38 @@ type InspectionStatsResponse struct {
 }
 
 type QualityAbnormalityResponse struct {
-	ID             string                  `json:"id"`
-	CreatedAt      time.Time               `json:"createdAt"`
-	UpdatedAt      time.Time               `json:"updatedAt"`
-	TaskID         string                  `json:"taskId"`
-	InspectionTask *InspectionTaskResponse `json:"inspectionTask,omitempty"`
-	Severity       string                  `json:"severity"`
-	Description    string                  `json:"description"`
-	Analysis       string                  `json:"analysis"`
-	DisposalMethod string                  `json:"disposalMethod"`
-	Status         string                  `json:"status"`
-	Deadline       *time.Time              `json:"deadline"`
-	Resolver       string                  `json:"resolver"`
+	ID               string                  `json:"id"`
+	CreatedAt        time.Time               `json:"createdAt"`
+	UpdatedAt        time.Time               `json:"updatedAt"`
+	TaskID           string                  `json:"taskId"`
+	InspectionTask   *InspectionTaskResponse `json:"inspectionTask,omitempty"`
+	Severity         string                  `json:"severity"`
+	Description      string                  `json:"description"`
+	Analysis         string                  `json:"analysis"`
+	DisposalMethod   string                  `json:"disposalMethod"`
+	ScrapQuantity    *float64                `json:"scrapQuantity,omitempty"`
+	ScrapUnit        string                  `json:"scrapUnit,omitempty"`
+	ProductionPlanID string                  `json:"productionPlanId,omitempty"`
+	OrderID          string                  `json:"orderId,omitempty"`
+	ProductID        string                  `json:"productId,omitempty"`
+	BatchNo          string                  `json:"batchNo,omitempty"`
+	OccurredAt       *time.Time              `json:"occurredAt,omitempty"`
+	Status           string                  `json:"status"`
+	Deadline         *time.Time              `json:"deadline"`
+	Resolver         string                  `json:"resolver"`
+}
+
+// QualityAbnormalityDisposalRequest is the single command contract for recording
+// a quality abnormality's final disposal and its optional scrap fact.
+type QualityAbnormalityDisposalRequest struct {
+	DisposalMethod   string     `json:"disposalMethod"`
+	ScrapQuantity    *float64   `json:"scrapQuantity"`
+	ScrapUnit        string     `json:"scrapUnit"`
+	ProductionPlanID string     `json:"productionPlanId"`
+	OrderID          string     `json:"orderId"`
+	ProductID        string     `json:"productId"`
+	BatchNo          string     `json:"batchNo"`
+	OccurredAt       *time.Time `json:"occurredAt"`
 }
 
 func mapInspectionStandardRequestToModel(input InspectionStandardRequest) models.InspectionStandard {
@@ -218,17 +242,19 @@ func mapInspectionStandardsToResponse(items []models.InspectionStandard, approva
 
 func mapInspectionTaskRequestToModel(input InspectionTaskRequest) models.InspectionTask {
 	return models.InspectionTask{
-		BaseModel:   models.BaseModel{ID: input.ID},
-		StandardID:  input.StandardID,
-		BatchNo:     input.BatchNo,
-		ProductID:   input.ProductID,
-		ProductName: input.ProductName,
-		SampleQty:   input.SampleQty,
-		Result:      input.Result,
-		Inspector:   input.Inspector,
-		InputData:   input.InputData,
-		Remarks:     input.Remarks,
-		CompletedAt: input.CompletedAt,
+		BaseModel:        models.BaseModel{ID: input.ID},
+		StandardID:       input.StandardID,
+		ProductionPlanID: input.ProductionPlanID,
+		OrderID:          input.OrderID,
+		BatchNo:          input.BatchNo,
+		ProductID:        input.ProductID,
+		ProductName:      input.ProductName,
+		SampleQty:        input.SampleQty,
+		Result:           input.Result,
+		Inspector:        input.Inspector,
+		InputData:        input.InputData,
+		Remarks:          input.Remarks,
+		CompletedAt:      input.CompletedAt,
 	}
 }
 
@@ -239,20 +265,22 @@ func mapInspectionTaskToResponse(model models.InspectionTask) InspectionTaskResp
 		standard = &mapped
 	}
 	return InspectionTaskResponse{
-		ID:          model.ID,
-		CreatedAt:   model.CreatedAt,
-		UpdatedAt:   model.UpdatedAt,
-		StandardID:  model.StandardID,
-		Standard:    standard,
-		BatchNo:     model.BatchNo,
-		ProductID:   model.ProductID,
-		ProductName: model.ProductName,
-		SampleQty:   model.SampleQty,
-		Result:      model.Result,
-		Inspector:   model.Inspector,
-		InputData:   model.InputData,
-		Remarks:     model.Remarks,
-		CompletedAt: model.CompletedAt,
+		ID:               model.ID,
+		CreatedAt:        model.CreatedAt,
+		UpdatedAt:        model.UpdatedAt,
+		StandardID:       model.StandardID,
+		Standard:         standard,
+		ProductionPlanID: model.ProductionPlanID,
+		OrderID:          model.OrderID,
+		BatchNo:          model.BatchNo,
+		ProductID:        model.ProductID,
+		ProductName:      model.ProductName,
+		SampleQty:        model.SampleQty,
+		Result:           model.Result,
+		Inspector:        model.Inspector,
+		InputData:        model.InputData,
+		Remarks:          model.Remarks,
+		CompletedAt:      model.CompletedAt,
 	}
 }
 
@@ -271,18 +299,25 @@ func mapQualityAbnormalityToResponse(model models.QualityAbnormality) QualityAbn
 		inspectionTask = &mapped
 	}
 	return QualityAbnormalityResponse{
-		ID:             model.ID,
-		CreatedAt:      model.CreatedAt,
-		UpdatedAt:      model.UpdatedAt,
-		TaskID:         model.TaskID,
-		InspectionTask: inspectionTask,
-		Severity:       model.Severity,
-		Description:    model.Description,
-		Analysis:       model.Analysis,
-		DisposalMethod: model.DisposalMethod,
-		Status:         model.Status,
-		Deadline:       model.Deadline,
-		Resolver:       model.Resolver,
+		ID:               model.ID,
+		CreatedAt:        model.CreatedAt,
+		UpdatedAt:        model.UpdatedAt,
+		TaskID:           model.TaskID,
+		InspectionTask:   inspectionTask,
+		Severity:         model.Severity,
+		Description:      model.Description,
+		Analysis:         model.Analysis,
+		DisposalMethod:   model.DisposalMethod,
+		ScrapQuantity:    model.ScrapQuantity,
+		ScrapUnit:        model.ScrapUnit,
+		ProductionPlanID: model.ProductionPlanID,
+		OrderID:          model.OrderID,
+		ProductID:        model.ProductID,
+		BatchNo:          model.BatchNo,
+		OccurredAt:       model.OccurredAt,
+		Status:           model.Status,
+		Deadline:         model.Deadline,
+		Resolver:         model.Resolver,
 	}
 }
 

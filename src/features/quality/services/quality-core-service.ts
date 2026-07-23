@@ -28,6 +28,8 @@ export type QualityStandardsResponse = {
 
 export interface QualityTask {
   id: string
+  productionPlanId?: string
+  orderId?: string
   batchNo: string
   productName?: string
   result: 'PENDING' | 'PASS' | 'FAIL'
@@ -55,6 +57,13 @@ export interface QualityAbnormality {
   severity: 'CRITICAL' | 'MAJOR' | 'HIGH' | 'MEDIUM' | 'MINOR' | 'LOW'
   status: 'OPEN' | 'CLOSED' | 'REJECTED'
   disposalMethod?: string
+  scrapQuantity?: number
+  scrapUnit?: string
+  productionPlanId?: string
+  orderId?: string
+  productId?: string
+  batchNo?: string
+  occurredAt?: string
 }
 
 /**

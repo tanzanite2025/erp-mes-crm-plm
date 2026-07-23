@@ -14,6 +14,17 @@ export interface ExecuteInspectionPayload {
   remarks?: string
 }
 
+export interface RecordQualityAbnormalityDisposalPayload {
+  disposalMethod: 'SCRAP' | 'REWORK' | 'CONCESSION'
+  scrapQuantity?: number | null
+  scrapUnit?: string
+  productionPlanId?: string
+  orderId?: string
+  productId?: string
+  batchNo?: string
+  occurredAt?: string
+}
+
 /**
  * QualityMaintenanceService - 专门负责质量模块的维护与写入逻辑 (SDRTS 协议封装)情况情况总量。
  */
@@ -67,6 +78,16 @@ export const QualityMaintenanceService = {
    */
   executeInspection: async (data: ExecuteInspectionPayload): Promise<void> => {
     await apiFetch('/quality/tasks', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  },
+
+  recordAbnormalityDisposal: async (
+    id: string,
+    data: RecordQualityAbnormalityDisposalPayload
+  ) => {
+    return apiFetch(`/quality/abnormalities/${id}/disposal`, {
       method: 'POST',
       body: JSON.stringify(data),
     })

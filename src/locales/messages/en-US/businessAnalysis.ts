@@ -65,11 +65,15 @@ export const businessAnalysis = {
     unlinked: 'Unlinked customer',
     dataQualityTitle: 'Data quality',
     dataQualitySummary:
-      'There are {scrapRecords} quality scrap records in this range, {missingQuantity} without scrap quantity, and {unlinkedQuality} without a linked inspection task. Formal scrap metrics are excluded until the contract is complete.',
+      'There are {scrapRecords} quality scrap records in this range, {missingQuantity} without scrap quantity, and {unlinkedQuality} without complete production linkage; only contract-complete quantities enter the formal summary.',
     dataQualityLoading: 'Loading data quality information…',
     qualityQuantityMissing: 'Quality abnormalities do not store scrap quantity or unit.',
     qualityLinkageMissing:
       'Quality records do not yet have a stable production plan, order, or customer link.',
+    qualityOccurrenceTimestampMissing:
+      'Quality scrap records do not have an explicit occurrence timestamp.',
+    qualifiedQuantityMissing:
+      'The quality chain does not yet provide an auditable qualified quantity.',
     qualityNoteFallback: 'An unmapped data-quality condition was reported.',
     byProductTitle: 'By product model',
     byCustomerTitle: 'By customer',

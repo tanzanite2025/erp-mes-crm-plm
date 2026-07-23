@@ -387,3 +387,36 @@ func GetAbnormalitiesHandler(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, mapQualityAbnormalitiesToResponse(items))
 }
+
+// RecordQualityAbnormalityDisposalHandler records the quality-owned disposal
+// fact. SCRAP requires quantity, unit, and stable production linkage when
+// available; legacy rows remain readable until they are explicitly completed.
+func RecordQualityAbnormalityDisposalHandler(c *gin.Context) {
+	id := strings.TrimSpace(c.Param("id"))
+	var input QualityAbnormalityDisposalRequest
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 无效的品质异常处置数据: " + err.Error()})
+		return
+	}
+
+	updated, err := services.RecordQualityAbnormalityDisposal(
+		auditContextFromGin(c),
+		id,
+		&models.QualityAbnormality{
+			DisposalMethod:   input.DisposalMethod,
+			ScrapQuantity:    input.ScrapQuantity,
+			ScrapUnit:        input.ScrapUnit,
+			ProductionPlanID: input.ProductionPlanID,
+			OrderID:          input.OrderID,
+			ProductID:        input.ProductID,
+			BatchNo:          input.BatchNo,
+			OccurredAt:       input.OccurredAt,
+		},
+	)
+	if err != nil {
+		respondDomainError(c, err, "[SERVER] 保存品质异常处置失败: ")
+		return
+	}
+
+	c.JSON(http.StatusOK, mapQualityAbnormalityToResponse(updated))
+}

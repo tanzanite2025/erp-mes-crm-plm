@@ -301,6 +301,7 @@ export const quality = {
   },
   hooks: {
     saveStandardSuccess: '品质标准同步成功',
+    saveAbnormalityDisposalSuccess: '品质异常处置已保存',
     submitForApprovalSuccess: '品质标准已提交审批，当前进入待审核状态。',
     approveStandardSuccess: '品质标准已审批通过，当前进入待发布状态。',
     rejectStandardSuccess: '品质标准已驳回，当前返回待修订状态。',

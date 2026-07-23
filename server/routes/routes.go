@@ -377,6 +377,7 @@ func SetupRoutes(r *gin.Engine) {
 			quality.POST("/tasks", handlers.SaveInspectionTaskHandler)
 			quality.GET("/stats", handlers.GetInspectionStatsHandler)
 			quality.GET("/abnormalities", handlers.GetAbnormalitiesHandler)
+			quality.POST("/abnormalities/:id/disposal", handlers.RecordQualityAbnormalityDisposalHandler)
 		}
 
 		piecework := authorized.Group("/piecework")
