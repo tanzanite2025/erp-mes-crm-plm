@@ -28,6 +28,8 @@ src/features/raw-materials/batch-engine/hooks/use-batch-engine-solve.ts
 
 `cutting-engine/core` 是算法核心；`cutting-engine/wasm` 只负责 JSON 入参/出参适配；`src/features/raw-materials/batch-engine/wasm/pkg` 是前端实际加载的构建产物。修改 Rust 核心后必须重新生成 `wasm/pkg`，否则页面仍会运行旧二进制。
 
+当前实现状态、文件职责、数据链路和未完成能力见 [`IMPLEMENTATION-STATUS.md`](./IMPLEMENTATION-STATUS.md)。
+
 ## 当前算法边界
 
 当前内核提供“单卷/多卷矩形贪心候选模式”，并保留严格无混排时的单需求行候选回退。组合模式按规则排序需求行，在每卷材料的宽度方向依次分配矩形 strip；单个需求行数量超过当前卷容量时会跨卷拆分，所有 Material zone 会携带 `rollId`、`unitId` 和 `allocatedPieces`，前端据此将产量准确归属到需求行和卷材。
