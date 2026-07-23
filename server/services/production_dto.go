@@ -68,6 +68,43 @@ type ProcessStepsResponse struct {
 	Items []ProcessStepDTO `json:"items"`
 }
 
+type ProductionRouteStepDTO struct {
+	ID               string    `json:"id"`
+	CreatedAt        time.Time `json:"createdAt"`
+	UpdatedAt        time.Time `json:"updatedAt"`
+	RouteID          string    `json:"routeId"`
+	Sequence         int       `json:"sequence"`
+	ProcessStepID    string    `json:"processStepId"`
+	ProcessCode      string    `json:"processCode"`
+	ProcessName      string    `json:"processName"`
+	JobCategoryID    string    `json:"jobCategoryId"`
+	JobCategoryName  string    `json:"jobCategoryName"`
+	ExecutionMode    string    `json:"executionMode"`
+	QualityGate      string    `json:"qualityGate"`
+	EstimatedMinutes int       `json:"estimatedMinutes"`
+	TransferRequired bool      `json:"transferRequired"`
+	Description      string    `json:"description"`
+}
+
+type ProductionRouteDTO struct {
+	ID                string                   `json:"id"`
+	CreatedAt         time.Time                `json:"createdAt"`
+	UpdatedAt         time.Time                `json:"updatedAt"`
+	Code              string                   `json:"code"`
+	Name              string                   `json:"name"`
+	ProductID         string                   `json:"productId"`
+	ProductName       string                   `json:"productName"`
+	ProductTemplateID string                   `json:"productTemplateId"`
+	Description       string                   `json:"description"`
+	Version           int64                    `json:"version"`
+	Status            string                   `json:"status"`
+	Steps             []ProductionRouteStepDTO `json:"steps"`
+}
+
+type ProductionRoutesResponse struct {
+	Items []ProductionRouteDTO `json:"items"`
+}
+
 func mapProcessStepToDTO(step models.ProcessStep) ProcessStepDTO {
 	return ProcessStepDTO{
 		ID:          step.ID,
@@ -94,6 +131,110 @@ func mapProcessStepDTOToModel(step ProcessStepDTO) models.ProcessStep {
 		SortOrder:   step.SortOrder,
 		IsActive:    step.IsActive,
 	}
+}
+
+func mapProductionRouteStepToDTO(step models.ProductionRouteStep) ProductionRouteStepDTO {
+	processCode := ""
+	processName := ""
+	if step.ProcessStep != nil {
+		processCode = step.ProcessStep.Code
+		processName = step.ProcessStep.Name
+	}
+	jobCategoryName := ""
+	if step.JobCategory != nil {
+		jobCategoryName = step.JobCategory.Name
+	}
+
+	return ProductionRouteStepDTO{
+		ID:               step.ID,
+		CreatedAt:        step.CreatedAt,
+		UpdatedAt:        step.UpdatedAt,
+		RouteID:          step.RouteID,
+		Sequence:         step.Sequence,
+		ProcessStepID:    step.ProcessStepID,
+		ProcessCode:      processCode,
+		ProcessName:      processName,
+		JobCategoryID:    step.JobCategoryID,
+		JobCategoryName:  jobCategoryName,
+		ExecutionMode:    step.ExecutionMode,
+		QualityGate:      step.QualityGate,
+		EstimatedMinutes: step.EstimatedMinutes,
+		TransferRequired: step.TransferRequired,
+		Description:      step.Description,
+	}
+}
+
+func mapProductionRouteStepDTOToModel(step ProductionRouteStepDTO) models.ProductionRouteStep {
+	return models.ProductionRouteStep{
+		BaseModel: models.BaseModel{
+			ID:        step.ID,
+			CreatedAt: step.CreatedAt,
+			UpdatedAt: step.UpdatedAt,
+		},
+		RouteID:          step.RouteID,
+		Sequence:         step.Sequence,
+		ProcessStepID:    step.ProcessStepID,
+		JobCategoryID:    step.JobCategoryID,
+		ExecutionMode:    step.ExecutionMode,
+		QualityGate:      step.QualityGate,
+		EstimatedMinutes: step.EstimatedMinutes,
+		TransferRequired: step.TransferRequired,
+		Description:      step.Description,
+	}
+}
+
+func mapProductionRouteToDTO(route models.ProductionRoute) ProductionRouteDTO {
+	steps := make([]ProductionRouteStepDTO, 0, len(route.Steps))
+	for _, step := range route.Steps {
+		steps = append(steps, mapProductionRouteStepToDTO(step))
+	}
+
+	return ProductionRouteDTO{
+		ID:                route.ID,
+		CreatedAt:         route.CreatedAt,
+		UpdatedAt:         route.UpdatedAt,
+		Code:              route.Code,
+		Name:              route.Name,
+		ProductID:         route.ProductID,
+		ProductName:       route.ProductName,
+		ProductTemplateID: route.ProductTemplateID,
+		Description:       route.Description,
+		Version:           route.Version,
+		Status:            route.Status,
+		Steps:             steps,
+	}
+}
+
+func mapProductionRouteDTOToModel(route ProductionRouteDTO) models.ProductionRoute {
+	steps := make([]models.ProductionRouteStep, 0, len(route.Steps))
+	for _, step := range route.Steps {
+		steps = append(steps, mapProductionRouteStepDTOToModel(step))
+	}
+
+	return models.ProductionRoute{
+		BaseModel: models.BaseModel{
+			ID:        route.ID,
+			CreatedAt: route.CreatedAt,
+			UpdatedAt: route.UpdatedAt,
+		},
+		Code:              route.Code,
+		Name:              route.Name,
+		ProductID:         route.ProductID,
+		ProductName:       route.ProductName,
+		ProductTemplateID: route.ProductTemplateID,
+		Description:       route.Description,
+		Version:           route.Version,
+		Status:            route.Status,
+		Steps:             steps,
+	}
+}
+
+func mapProductionRoutesToDTO(routes []models.ProductionRoute) []ProductionRouteDTO {
+	result := make([]ProductionRouteDTO, 0, len(routes))
+	for _, route := range routes {
+		result = append(result, mapProductionRouteToDTO(route))
+	}
+	return result
 }
 
 func mapJobCategoryToDTO(category models.JobCategory) JobCategoryDTO {

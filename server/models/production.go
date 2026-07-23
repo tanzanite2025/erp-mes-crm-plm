@@ -15,6 +15,36 @@ type ProcessStep struct {
 	IsActive    bool   `gorm:"default:true" json:"isActive"`
 }
 
+// ProductionRoute defines the versioned process route for a product family.
+type ProductionRoute struct {
+	BaseModel
+	Code              string                `gorm:"size:50;uniqueIndex;not null" json:"code"`
+	Name              string                `gorm:"size:255;not null" json:"name"`
+	ProductID         string                `gorm:"size:36;index" json:"productId"`
+	ProductName       string                `gorm:"size:255" json:"productName"`
+	ProductTemplateID string                `gorm:"size:36;index" json:"productTemplateId"`
+	Description       string                `gorm:"type:text" json:"description"`
+	Version           int64                 `gorm:"default:1" json:"version"`
+	Status            string                `gorm:"size:20;index;default:'DRAFT'" json:"status"`
+	Steps             []ProductionRouteStep `gorm:"foreignKey:RouteID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"steps"`
+}
+
+// ProductionRouteStep binds a route sequence to the production topology capability map.
+type ProductionRouteStep struct {
+	BaseModel
+	RouteID          string       `gorm:"type:uuid;index;not null" json:"routeId"`
+	Sequence         int          `gorm:"not null;default:0" json:"sequence"`
+	ProcessStepID    string       `gorm:"type:uuid;index" json:"processStepId"`
+	ProcessStep      *ProcessStep `gorm:"foreignKey:ProcessStepID" json:"processStep,omitempty"`
+	JobCategoryID    string       `gorm:"type:uuid;index" json:"jobCategoryId"`
+	JobCategory      *JobCategory `gorm:"foreignKey:JobCategoryID" json:"jobCategory,omitempty"`
+	ExecutionMode    string       `gorm:"size:30;not null;default:'IN_HOUSE'" json:"executionMode"`
+	QualityGate      string       `gorm:"size:30;not null;default:'NONE'" json:"qualityGate"`
+	EstimatedMinutes int          `gorm:"not null;default:0" json:"estimatedMinutes"`
+	TransferRequired bool         `gorm:"not null;default:false" json:"transferRequired"`
+	Description      string       `gorm:"type:text" json:"description"`
+}
+
 // ProductionLine defines a production line and its nested topology.
 type ProductionLine struct {
 	BaseModel

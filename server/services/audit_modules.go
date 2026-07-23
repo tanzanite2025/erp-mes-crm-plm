@@ -23,6 +23,7 @@ const (
 	AuditModuleUserPermission      = "user-permission"
 	AuditModuleRole                = "role"
 	AuditModuleProductionLine      = "production-line"
+	AuditModuleProductionRoute     = "production-route"
 	AuditModuleCurrency            = "currency"
 	AuditModulePaymentTerm         = "payment-term"
 	AuditModulePaymentMethod       = "payment-method"

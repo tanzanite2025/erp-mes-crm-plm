@@ -23,5 +23,10 @@ export function getProductionArchitectureTabs(t: TranslateFn): TabItem[] {
       label: t('productionArchitecture.layout.tabs.topology'),
       href: '/production-architecture/topology',
     },
+    {
+      key: 'routes',
+      label: t('productionArchitecture.layout.tabs.routes'),
+      href: '/production-architecture/routes',
+    },
   ]
 }

@@ -90,6 +90,7 @@ export const commandMenu = {
     permissions: '权限审计',
     productionLines: '产线管理',
     topology: '拓扑模板',
+    productionRoutes: '生产路线',
     leaveManagement: '请假管理',
     stock: '库存清单',
     reports: '报表',

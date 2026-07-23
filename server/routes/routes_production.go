@@ -12,6 +12,7 @@ func registerProductionRoutes(authorized *gin.RouterGroup) {
 	productionAccess := middleware.RequireAnyPermission(authz.MenuProdConfig)
 	adminOnly := middleware.RequireAnyPermission(authz.PermissionManage)
 	productionLineUpdate := middleware.RequireAnyPermission(authz.ActionProductionLineUpdate)
+	productionRouteManage := middleware.RequireAnyPermission(authz.ActionProductionRouteManage)
 
 	productionPlanManage := middleware.RequireAnyPermission(authz.ActionProductionPlanManage)
 	productionIssuanceExecute := middleware.RequireAnyPermission(authz.ActionProductionIssuanceExecute)
@@ -24,6 +25,9 @@ func registerProductionRoutes(authorized *gin.RouterGroup) {
 		productionGroup.POST("/lines", adminOnly, handlers.SaveProductionLineHandler)
 		productionGroup.PATCH("/lines/:id", productionLineUpdate, handlers.PatchProductionLineHandler)
 		productionGroup.DELETE("/lines/:id", adminOnly, handlers.DeleteProductionLineHandler)
+		productionGroup.GET("/routes", handlers.GetProductionRoutesHandler)
+		productionGroup.POST("/routes", productionRouteManage, handlers.SaveProductionRouteHandler)
+		productionGroup.DELETE("/routes/:id", productionRouteManage, handlers.DeleteProductionRouteHandler)
 		productionGroup.GET("/processes", handlers.GetProcessStepsHandler)
 		productionGroup.POST("/processes", adminOnly, handlers.SaveProcessStepHandler)
 		productionGroup.DELETE("/processes/:id", adminOnly, handlers.DeleteProcessStepHandler)

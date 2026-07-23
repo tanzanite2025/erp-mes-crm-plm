@@ -5,8 +5,12 @@ import type {
   ProductionLinesResponseApiDTO,
   ProductionProcessStepApiDTO,
   ProductionProcessStepsResponseApiDTO,
+  ProductionRouteApiDTO,
+  ProductionRoutesResponseApiDTO,
+  ProductionRouteStepApiDTO,
   SaveProductionLineApiDTO,
   SaveProductionProcessStepApiDTO,
+  SaveProductionRouteApiDTO,
 } from '../contracts/production-resource-api-dto'
 import type {
   ProductionLine,
@@ -14,6 +18,13 @@ import type {
   ProductionSegment,
 } from '../data/production-line'
 import type { ProductionProcessStep } from '../data/production-process'
+import type {
+  ProductionRoute,
+  ProductionRouteExecutionMode,
+  ProductionRouteQualityGate,
+  ProductionRouteStatus,
+  ProductionRouteStep,
+} from '../data/production-route'
 import {
   normalizeProductionLineCode,
   normalizeProductionProcessStepCode,
@@ -92,6 +103,76 @@ export function toProductionLineContracts(
   dto: ProductionLinesResponseApiDTO
 ): ProductionLine[] {
   return (dto.items || []).map(toProductionLineContract)
+}
+
+function normalizeRouteStatus(value?: string): ProductionRouteStatus {
+  if (value === 'PUBLISHED' || value === 'ARCHIVED') {
+    return value
+  }
+  return 'DRAFT'
+}
+
+function normalizeRouteExecutionMode(
+  value?: string
+): ProductionRouteExecutionMode {
+  if (value === 'OUTSOURCE_ALLOWED' || value === 'OUTSOURCE_REQUIRED') {
+    return value
+  }
+  return 'IN_HOUSE'
+}
+
+function normalizeRouteQualityGate(value?: string): ProductionRouteQualityGate {
+  if (value === 'OPTIONAL' || value === 'REQUIRED') {
+    return value
+  }
+  return 'NONE'
+}
+
+function toProductionRouteStepContract(
+  dto: ProductionRouteStepApiDTO
+): ProductionRouteStep {
+  return {
+    id: dto.id,
+    routeId: dto.routeId || '',
+    sequence: Number(dto.sequence) || 1,
+    processStepId: dto.processStepId || '',
+    processCode: dto.processCode || '',
+    processName: dto.processName || '',
+    jobCategoryId: dto.jobCategoryId || '',
+    jobCategoryName: dto.jobCategoryName || '',
+    executionMode: normalizeRouteExecutionMode(dto.executionMode),
+    qualityGate: normalizeRouteQualityGate(dto.qualityGate),
+    estimatedMinutes: Number(dto.estimatedMinutes) || 0,
+    transferRequired: Boolean(dto.transferRequired),
+    description: dto.description || '',
+    createdAt: dto.createdAt || '',
+    updatedAt: dto.updatedAt || '',
+  }
+}
+
+export function toProductionRouteContract(
+  dto: ProductionRouteApiDTO
+): ProductionRoute {
+  return {
+    id: dto.id,
+    code: dto.code || '',
+    name: dto.name || '',
+    productId: dto.productId || '',
+    productName: dto.productName || '',
+    productTemplateId: dto.productTemplateId || '',
+    description: dto.description || '',
+    version: Number(dto.version) || 1,
+    status: normalizeRouteStatus(dto.status),
+    steps: (dto.steps || []).map(toProductionRouteStepContract),
+    createdAt: dto.createdAt || '',
+    updatedAt: dto.updatedAt || '',
+  }
+}
+
+export function toProductionRouteContracts(
+  dto: ProductionRoutesResponseApiDTO
+): ProductionRoute[] {
+  return (dto.items || []).map(toProductionRouteContract)
 }
 
 export function toProductionProcessContracts(
@@ -177,5 +258,46 @@ export function toSaveProductionProcessStepApiDTO(
     isActive: step.isActive ?? true,
     createdAt: step.createdAt || '',
     updatedAt: step.updatedAt || '',
+  }
+}
+
+function toProductionRouteStepApiDTO(
+  step: ProductionRouteStep
+): ProductionRouteStepApiDTO {
+  return {
+    id: step.id,
+    routeId: step.routeId || '',
+    sequence: step.sequence || 1,
+    processStepId: step.processStepId || '',
+    processCode: step.processCode || '',
+    processName: step.processName || '',
+    jobCategoryId: step.jobCategoryId || '',
+    jobCategoryName: step.jobCategoryName || '',
+    executionMode: step.executionMode || 'IN_HOUSE',
+    qualityGate: step.qualityGate || 'NONE',
+    estimatedMinutes: step.estimatedMinutes || 0,
+    transferRequired: step.transferRequired,
+    description: step.description || '',
+    createdAt: step.createdAt || '',
+    updatedAt: step.updatedAt || '',
+  }
+}
+
+export function toSaveProductionRouteApiDTO(
+  route: ProductionRoute
+): SaveProductionRouteApiDTO {
+  return {
+    id: route.id,
+    code: route.code.trim(),
+    name: route.name.trim(),
+    productId: route.productId || '',
+    productName: route.productName.trim(),
+    productTemplateId: route.productTemplateId || '',
+    description: route.description.trim(),
+    version: route.version || 1,
+    status: route.status || 'DRAFT',
+    steps: route.steps.map(toProductionRouteStepApiDTO),
+    createdAt: route.createdAt || '',
+    updatedAt: route.updatedAt || '',
   }
 }

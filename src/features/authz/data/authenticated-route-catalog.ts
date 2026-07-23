@@ -46,6 +46,7 @@ export const AUTHENTICATED_ROUTE_PATHS = [
   '/engineering/product-appearance',
   '/engineering/product-attributes',
   '/equipment-maintenance/overview',
+  '/production-architecture/routes',
   '/production-quality/special-buy',
   '/raw-materials/cut-size-library',
   '/system-management/audit-engine',

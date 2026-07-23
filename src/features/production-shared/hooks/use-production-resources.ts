@@ -1,6 +1,7 @@
 import { useQuery, type UseQueryOptions } from '@tanstack/react-query'
 import type { ProductionLine } from '../data/production-line'
 import type { ProductionProcessStep } from '../data/production-process'
+import type { ProductionRoute } from '../data/production-route'
 import { productionResourceQueryOptions } from '../data/production-resource-query-options'
 
 type ProductionLinesQueryOptions = Omit<
@@ -9,6 +10,10 @@ type ProductionLinesQueryOptions = Omit<
 >
 type ProductionProcessesQueryOptions = Omit<
   UseQueryOptions<ProductionProcessStep[], Error>,
+  'queryKey' | 'queryFn'
+>
+type ProductionRoutesQueryOptions = Omit<
+  UseQueryOptions<ProductionRoute[], Error>,
   'queryKey' | 'queryFn'
 >
 
@@ -24,6 +29,13 @@ export function useProductionProcessesQuery(
 ) {
   return useQuery({
     ...productionResourceQueryOptions.processes(),
+    ...options,
+  })
+}
+
+export function useProductionRoutesQuery(options?: ProductionRoutesQueryOptions) {
+  return useQuery({
+    ...productionResourceQueryOptions.routes(),
     ...options,
   })
 }

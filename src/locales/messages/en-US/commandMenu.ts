@@ -90,6 +90,7 @@ export const commandMenu = {
     permissions: 'Permission Audit',
     productionLines: 'Production Lines',
     topology: 'Topology Templates',
+    productionRoutes: 'Production Routes',
     leaveManagement: 'Leave Management',
     stock: 'Stock List',
     reports: 'Reports',

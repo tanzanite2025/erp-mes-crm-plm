@@ -51,6 +51,43 @@ export interface ProductionLinesResponseApiDTO {
   items: ProductionLineApiDTO[]
 }
 
+export interface ProductionRouteStepApiDTO {
+  id: string
+  createdAt?: string
+  updatedAt?: string
+  routeId?: string
+  sequence: number
+  processStepId: string
+  processCode?: string
+  processName?: string
+  jobCategoryId: string
+  jobCategoryName?: string
+  executionMode: string
+  qualityGate: string
+  estimatedMinutes: number
+  transferRequired: boolean
+  description?: string
+}
+
+export interface ProductionRouteApiDTO {
+  id: string
+  createdAt?: string
+  updatedAt?: string
+  code: string
+  name: string
+  productId?: string
+  productName?: string
+  productTemplateId?: string
+  description?: string
+  version: number
+  status: string
+  steps: ProductionRouteStepApiDTO[]
+}
+
+export interface ProductionRoutesResponseApiDTO {
+  items: ProductionRouteApiDTO[]
+}
+
 export interface ProductionProcessStepsResponseApiDTO {
   items: ProductionProcessStepApiDTO[]
 }
@@ -62,5 +99,7 @@ export interface ProductionMessageApiDTO {
 export interface SaveProductionLineApiDTO extends ProductionLineApiDTO {
   authCode?: string
 }
+
+export type SaveProductionRouteApiDTO = ProductionRouteApiDTO
 
 export type SaveProductionProcessStepApiDTO = ProductionProcessStepApiDTO

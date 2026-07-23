@@ -725,6 +725,14 @@ const productionActions: LegacyActionPermissionEntry[] = [
     routeBindings: ['PATCH /production/lines/:id'],
   },
   {
+    id: 'action_production_route_manage',
+    label: '生产：管理生产路线',
+    desc: '允许创建、更新和删除生产路线及其步骤。',
+    category: 'action',
+    parentId: 'menu_prod_config',
+    routeBindings: ['POST /production/routes', 'DELETE /production/routes/:id'],
+  },
+  {
     id: 'action_production_plan_manage',
     label: '生产：管理生产计划',
     desc: '允许创建和更新生产计划。',

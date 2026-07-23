@@ -1,0 +1,56 @@
+export const productionRouteStatuses = [
+  'DRAFT',
+  'PUBLISHED',
+  'ARCHIVED',
+] as const
+
+export const productionRouteExecutionModes = [
+  'IN_HOUSE',
+  'OUTSOURCE_ALLOWED',
+  'OUTSOURCE_REQUIRED',
+] as const
+
+export const productionRouteQualityGates = [
+  'NONE',
+  'OPTIONAL',
+  'REQUIRED',
+] as const
+
+export type ProductionRouteStatus = (typeof productionRouteStatuses)[number]
+export type ProductionRouteExecutionMode =
+  (typeof productionRouteExecutionModes)[number]
+export type ProductionRouteQualityGate =
+  (typeof productionRouteQualityGates)[number]
+
+export interface ProductionRouteStep {
+  id: string
+  routeId?: string
+  sequence: number
+  processStepId: string
+  processCode?: string
+  processName?: string
+  jobCategoryId: string
+  jobCategoryName?: string
+  executionMode: ProductionRouteExecutionMode
+  qualityGate: ProductionRouteQualityGate
+  estimatedMinutes: number
+  transferRequired: boolean
+  description: string
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface ProductionRoute {
+  id: string
+  code: string
+  name: string
+  productId: string
+  productName: string
+  productTemplateId: string
+  description: string
+  version: number
+  status: ProductionRouteStatus
+  steps: ProductionRouteStep[]
+  createdAt: string
+  updatedAt: string
+}

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"xdfc-server/middleware"
 	"xdfc-server/services"
@@ -81,6 +82,53 @@ func DeleteProductionLineHandler(c *gin.Context) {
 	id := c.Param("id")
 	if err := services.DeleteProductionLine(id, middleware.GetSafeUsername(c), c.ClientIP()); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete production line"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Deleted successfully"})
+}
+
+func GetProductionRoutesHandler(c *gin.Context) {
+	routes, err := services.ListProductionRoutes()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch production routes"})
+		return
+	}
+	c.JSON(http.StatusOK, services.ProductionRoutesResponse{Items: routes})
+}
+
+func SaveProductionRouteHandler(c *gin.Context) {
+	var input services.ProductionRouteDTO
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	route, err := services.SaveProductionRoute(services.SaveProductionRouteRequest{
+		Route:    input,
+		Operator: middleware.GetSafeUsername(c),
+		IP:       c.ClientIP(),
+	})
+	if err != nil {
+		if err == services.ErrProductionRouteVersionConflict {
+			respondVersionConflict(c)
+			return
+		}
+		if errors.Is(err, services.ErrInvalidProductionRoute) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save production route: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, route)
+}
+
+func DeleteProductionRouteHandler(c *gin.Context) {
+	id := c.Param("id")
+	if err := services.DeleteProductionRoute(id, middleware.GetSafeUsername(c), c.ClientIP()); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete production route"})
 		return
 	}
 

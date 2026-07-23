@@ -1184,6 +1184,8 @@ func InitDB(dsn string) {
 		&models.ProductionLine{},
 		&models.LineSegment{},
 		&models.JobCategory{},
+		&models.ProductionRoute{},
+		&models.ProductionRouteStep{},
 		&models.EngineeringSpec{},
 		&models.ProductAttributeCategory{},
 		&models.ProductAttributeOption{},

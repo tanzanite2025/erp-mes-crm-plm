@@ -84,6 +84,14 @@ const moduleGroups: CommandItemConfig[] = [
     pinyin: 'tpmb',
   },
   {
+    id: 'tab-production-architecture-routes',
+    href: '/production-architecture/routes',
+    titleKey: 'commandMenu.items.productionRoutes',
+    parentKey: 'commandMenu.parents.productionCoordination',
+    keywords: ['production route', 'process route', '路线', '工艺路线'],
+    pinyin: 'sclx',
+  },
+  {
     id: 'tab-attendance-leave-management',
     href: '/attendance-management/leave',
     titleKey: 'commandMenu.items.leaveManagement',
