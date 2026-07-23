@@ -46,6 +46,10 @@ export function PaymentMethodsTab() {
 
   const methods = methodsQuery.data ?? []
   const isLoading = methodsQuery.isLoading || methodsQuery.isFetching
+  const openCreateDialog = () => {
+    setEditingMethod(null)
+    setIsDialogOpen(true)
+  }
 
   return (
     <div className='animate-in space-y-6 duration-700 fade-in'>
@@ -70,10 +74,7 @@ export function PaymentMethodsTab() {
           </Button>
           <Button
             size='sm'
-            onClick={() => {
-              setEditingMethod(null)
-              setIsDialogOpen(true)
-            }}
+            onClick={openCreateDialog}
             className='h-9 rounded-full bg-primary text-[10px] font-black tracking-widest uppercase shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95'
           >
             <Plus className='mr-2 size-3' />
@@ -82,17 +83,17 @@ export function PaymentMethodsTab() {
         </div>
       </div>
 
-      <div className='grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3'>
+      <div className='grid grid-cols-1 items-start gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-5'>
         {methods.map((method) => (
           <Card
             key={method.id}
-            className='group rounded-[24px] border-dashed border-primary/20 bg-muted/5 transition-all hover:bg-muted/10'
+            className='group h-fit self-start rounded-[20px] border-dashed border-primary/20 bg-muted/5 transition-all hover:bg-muted/10 sm:rounded-[24px]'
           >
-            <CardHeader className='p-4 pb-2'>
+            <CardHeader className='p-3 pb-1.5 sm:p-4 sm:pb-2'>
               <div className='flex items-center justify-between'>
                 <div className='flex items-center gap-3'>
-                  <div className='flex size-9 items-center justify-center rounded-2xl bg-primary/10'>
-                    <CreditCard className='size-4 text-primary' />
+                  <div className='flex size-8 items-center justify-center rounded-xl bg-primary/10 sm:size-9 sm:rounded-2xl'>
+                    <CreditCard className='size-3.5 text-primary sm:size-4' />
                   </div>
                   <div>
                     <CardTitle className='text-sm font-black tracking-tighter uppercase italic'>
@@ -110,19 +111,19 @@ export function PaymentMethodsTab() {
                     setEditingMethod(method)
                     setIsDialogOpen(true)
                   }}
-                  className='size-8 rounded-full opacity-0 transition-opacity group-hover:opacity-100 hover:bg-primary/10 hover:text-primary'
+                  className='size-8 rounded-full opacity-100 transition-opacity hover:bg-primary/10 hover:text-primary sm:opacity-0 sm:group-hover:opacity-100'
                 >
                   <Edit2 className='size-3' />
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className='p-4 pt-0 pb-4'>
-              <div className='space-y-2'>
-                <div className='min-h-[40px] rounded-2xl border border-dashed border-muted/20 bg-background px-3 py-2 text-[10px] leading-relaxed font-medium text-muted-foreground/80'>
+            <CardContent className='p-3 pt-0 pb-3 sm:p-4 sm:pt-0 sm:pb-4'>
+              <div className='space-y-1.5 sm:space-y-2'>
+                <div className='min-h-0 rounded-xl border border-dashed border-muted/20 bg-background px-2.5 py-1.5 text-[10px] leading-relaxed font-medium break-words text-muted-foreground/80 sm:rounded-2xl sm:px-3 sm:py-2'>
                   {method.description ||
                     t('finance.paymentMethods.card.emptyDescription')}
                 </div>
-                <div className='flex flex-wrap items-center gap-2'>
+                <div className='flex flex-wrap items-center gap-1.5 sm:gap-2'>
                   <span
                     className={`rounded-full px-2 py-0.5 text-[8px] font-black tracking-widest uppercase ${method.isDefault ? 'border border-primary/20 bg-primary/10 text-primary' : 'bg-muted text-muted-foreground opacity-50'}`}
                   >
@@ -152,6 +153,35 @@ export function PaymentMethodsTab() {
             </CardContent>
           </Card>
         ))}
+        <Card
+          role='button'
+          tabIndex={0}
+          onClick={openCreateDialog}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault()
+              openCreateDialog()
+            }
+          }}
+          className='group h-fit cursor-pointer gap-3 self-start rounded-[20px] border-dashed border-primary/35 bg-primary/[0.03] p-4 text-left transition-all hover:border-primary/60 hover:bg-primary/[0.07] focus-visible:ring-2 focus-visible:ring-primary/40 sm:rounded-[24px] sm:p-5'
+        >
+          <div className='flex items-center gap-3'>
+            <div className='flex size-9 shrink-0 items-center justify-center rounded-xl border border-dashed border-primary/35 bg-primary/10 transition-transform group-hover:scale-105 sm:rounded-2xl'>
+              <Plus className='size-4 text-primary' />
+            </div>
+            <div className='min-w-0'>
+              <CardTitle className='text-sm font-black tracking-tighter uppercase italic'>
+                {t('finance.paymentMethods.card.customTitle')}
+              </CardTitle>
+              <CardDescription className='mt-1 text-[10px] leading-relaxed font-medium text-muted-foreground/80'>
+                {t('finance.paymentMethods.card.customDescription')}
+              </CardDescription>
+            </div>
+          </div>
+          <span className='pl-12 text-[8px] font-black tracking-widest text-primary uppercase sm:pl-12'>
+            {t('finance.paymentMethods.card.customAction')}
+          </span>
+        </Card>
       </div>
 
       <Card className='rounded-[32px] border-dashed border-blue-500/20 bg-blue-500/5 p-6'>
