@@ -18,11 +18,37 @@ interface DashboardSummaryLike {
   }
 }
 
+function toDCLIdentifier(value: string, fallback: string): string {
+  const normalized = value
+    .trim()
+    .replace(/[^\p{L}\p{N}_]+/gu, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 64)
+
+  return normalized || fallback
+}
+
+function toDCLString(value: string): string {
+  return value
+    .replace(/[\u0000-\u001f\u007f]/g, ' ')
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, "'")
+    .replace(/[{}\[\];]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 export const AgentProtocol = {
   toContextDCL(data: DashboardSummaryLike): string {
     const kpis = data.kpis
     const alerts = data.alerts
     const events = data.recentEvents.slice(0, 3)
+    const localTitle = data.localContext
+      ? toDCLString(data.localContext.title)
+      : ''
+    const localContextID = data.localContext
+      ? toDCLIdentifier(data.localContext.title, 'Page_Context')
+      : ''
 
     return `
 Context Factory_Snapshot {
@@ -37,15 +63,15 @@ Context Factory_Snapshot {
   }
 
   最近事件 [
-    ${events.map((e) => `"${e.replace(/"/g, "'")}"`).join('\n    ')}
+    ${events.map((event) => `"${toDCLString(event)}"`).join('\n    ')}
   ]
 }
 
 ${
   data.localContext
     ? `
-Context Local_${data.localContext.title.replace(/\s+/g, '_')} {
-  备注 = "这是当前用户正在点击/浏览的【${data.localContext.title}】实时局部数据。";
+Context Local_${localContextID} {
+  备注 = "这是当前用户正在点击/浏览的【${localTitle}】实时局部数据。";
   
   局部详情 {
     ${JSON.stringify(data.localContext.data, null, 2)}
@@ -59,8 +85,8 @@ Context Local_${data.localContext.title.replace(/\s+/g, '_')} {
 
   toActionDCL(label: string, intent: string): string {
     return `
-Action ${label.replace(/\s+/g, '_')} {
-  意图 = "${intent.replace(/"/g, "'")}";
+Action ${toDCLIdentifier(label, 'Custom_Analysis')} {
+  意图 = "${toDCLString(intent)}";
   策略 = Deep_Analysis;
   输出格式 = Markdown_Industrial_Report;
 }
