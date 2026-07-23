@@ -127,6 +127,8 @@ func SetupRoutes(r *gin.Engine) {
 		authorized.GET("/ai/policy", handlers.GetAIRuntimePolicyHandler)
 		authorized.GET("/ai/policy/admin", middleware.RequireAnyPermission(authz.PermissionManage), handlers.GetAIAdminPolicyHandler)
 		authorized.POST("/ai/policy/admin", middleware.RequireAnyPermission(authz.PermissionManage), handlers.UpdateAIAdminPolicyHandler)
+		authorized.GET("/ai/usage/summary", middleware.RequireAnyPermission(authz.PermissionManage), handlers.GetAIUsageSummaryHandler)
+		authorized.GET("/ai/usage/logs", middleware.RequireAnyPermission(authz.PermissionManage), handlers.ListAIUsageLogsHandler)
 		authorized.POST("/ai/proxy", middleware.AIPolicyGuard(), middleware.AIProxyIngressGuard(), handlers.AiProxyHandler)
 
 		materialGroup := authorized.Group("/materials")

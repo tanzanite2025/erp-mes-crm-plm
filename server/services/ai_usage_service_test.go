@@ -167,3 +167,87 @@ func TestReserveAIUsageRejectsUserWindowOverflow(t *testing.T) {
 		t.Fatalf("expected user rate limit code, got %s", limitErr.Code)
 	}
 }
+
+func TestGetAIUsageSummaryAggregatesRecentLogs(t *testing.T) {
+	database := openAIUsageServiceTestDB(t)
+	cfg := AIUsageGovernanceConfig{
+		MaxConcurrentRequests: 10,
+		MaxGlobalWindowCalls:  10,
+		MaxUserWindowCalls:    10,
+		Window:                time.Minute,
+		RunningTTL:            time.Minute,
+	}
+	first, err := ReserveAIUsage(database, testAIUsageReservationInput("user-1"), cfg)
+	if err != nil {
+		t.Fatalf("reserve first ai usage: %v", err)
+	}
+	if err := CompleteAIUsage(database, first.ID, AIUsageCompletionInput{
+		HTTPStatus:    200,
+		ResponseBytes: 100,
+		DurationMs:    20,
+	}); err != nil {
+		t.Fatalf("complete first ai usage: %v", err)
+	}
+	second, err := ReserveAIUsage(database, testAIUsageReservationInput("user-2"), cfg)
+	if err != nil {
+		t.Fatalf("reserve second ai usage: %v", err)
+	}
+	if err := CompleteAIUsage(database, second.ID, AIUsageCompletionInput{
+		Status:        AIUsageStatusUpstreamError,
+		HTTPStatus:    502,
+		ResponseBytes: 50,
+		DurationMs:    40,
+	}); err != nil {
+		t.Fatalf("complete second ai usage: %v", err)
+	}
+
+	summary, err := GetAIUsageSummary(database, time.Hour)
+	if err != nil {
+		t.Fatalf("load ai usage summary: %v", err)
+	}
+	if summary.TotalCalls != 2 || summary.SuccessCalls != 1 || summary.UpstreamErrorCalls != 1 {
+		t.Fatalf("unexpected summary counts: %+v", summary)
+	}
+	if summary.ResponseBytes != 150 || summary.AverageDurationMs != 30 {
+		t.Fatalf("unexpected summary metrics: %+v", summary)
+	}
+}
+
+func TestListAIUsageLogsAppliesFiltersAndLimit(t *testing.T) {
+	database := openAIUsageServiceTestDB(t)
+	cfg := AIUsageGovernanceConfig{
+		MaxConcurrentRequests: 10,
+		MaxGlobalWindowCalls:  10,
+		MaxUserWindowCalls:    10,
+		Window:                time.Minute,
+		RunningTTL:            time.Minute,
+	}
+	first, err := ReserveAIUsage(database, testAIUsageReservationInput("user-1"), cfg)
+	if err != nil {
+		t.Fatalf("reserve first ai usage: %v", err)
+	}
+	if err := CompleteAIUsage(database, first.ID, AIUsageCompletionInput{HTTPStatus: 200}); err != nil {
+		t.Fatalf("complete first ai usage: %v", err)
+	}
+	secondInput := testAIUsageReservationInput("user-2")
+	secondInput.Provider = "Gemini"
+	second, err := ReserveAIUsage(database, secondInput, cfg)
+	if err != nil {
+		t.Fatalf("reserve second ai usage: %v", err)
+	}
+	if err := CompleteAIUsage(database, second.ID, AIUsageCompletionInput{Status: AIUsageStatusFailed, HTTPStatus: 504}); err != nil {
+		t.Fatalf("complete second ai usage: %v", err)
+	}
+
+	logs, err := ListAIUsageLogs(database, AIUsageLogListOptions{
+		Limit:    1,
+		Status:   AIUsageStatusFailed,
+		Provider: "gemini",
+	})
+	if err != nil {
+		t.Fatalf("list ai usage logs: %v", err)
+	}
+	if len(logs) != 1 || logs[0].UserID != "user-2" {
+		t.Fatalf("unexpected filtered logs: %+v", logs)
+	}
+}

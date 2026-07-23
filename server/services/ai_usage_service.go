@@ -68,6 +68,27 @@ type AIUsageCompletionInput struct {
 	DurationMs    int64
 }
 
+type AIUsageSummary struct {
+	WindowSeconds      int64 `json:"windowSeconds"`
+	TotalCalls         int64 `json:"totalCalls"`
+	RunningCalls       int64 `json:"runningCalls"`
+	SuccessCalls       int64 `json:"successCalls"`
+	FailedCalls        int64 `json:"failedCalls"`
+	UpstreamErrorCalls int64 `json:"upstreamErrorCalls"`
+	RejectedCalls      int64 `json:"rejectedCalls"`
+	PromptRunes        int64 `json:"promptRunes"`
+	RequestBytes       int64 `json:"requestBytes"`
+	ResponseBytes      int64 `json:"responseBytes"`
+	AverageDurationMs  int64 `json:"averageDurationMs"`
+}
+
+type AIUsageLogListOptions struct {
+	Limit    int
+	UserID   string
+	Status   string
+	Provider string
+}
+
 func LoadAIUsageGovernanceConfigFromEnv() AIUsageGovernanceConfig {
 	return AIUsageGovernanceConfig{
 		MaxConcurrentRequests: readPositiveEnvInt("AI_PROXY_MAX_CONCURRENT_REQUESTS", 6),
@@ -76,6 +97,91 @@ func LoadAIUsageGovernanceConfigFromEnv() AIUsageGovernanceConfig {
 		Window:                time.Duration(readPositiveEnvInt("AI_PROXY_RATE_WINDOW_SECONDS", 60)) * time.Second,
 		RunningTTL:            time.Duration(readPositiveEnvInt("AI_PROXY_RUNNING_TTL_SECONDS", 180)) * time.Second,
 	}
+}
+
+func GetAIUsageSummary(database *gorm.DB, window time.Duration) (AIUsageSummary, error) {
+	if database == nil {
+		return AIUsageSummary{}, gorm.ErrInvalidDB
+	}
+	if window <= 0 {
+		window = time.Hour
+	}
+	cutoff := time.Now().UTC().Add(-window)
+
+	type aggregateRow struct {
+		TotalCalls         int64
+		RunningCalls       int64
+		SuccessCalls       int64
+		FailedCalls        int64
+		UpstreamErrorCalls int64
+		RejectedCalls      int64
+		PromptRunes        int64
+		RequestBytes       int64
+		ResponseBytes      int64
+		AverageDurationMs  int64
+	}
+	var row aggregateRow
+	err := database.Model(&models.AIUsageLog{}).
+		Where("created_at >= ?", cutoff).
+		Select(`
+			COUNT(*) AS total_calls,
+			COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) AS running_calls,
+			COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) AS success_calls,
+			COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) AS failed_calls,
+			COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) AS upstream_error_calls,
+			COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) AS rejected_calls,
+			COALESCE(SUM(prompt_runes), 0) AS prompt_runes,
+			COALESCE(SUM(request_bytes), 0) AS request_bytes,
+			COALESCE(SUM(response_bytes), 0) AS response_bytes,
+			CAST(COALESCE(AVG(CASE WHEN duration_ms > 0 THEN duration_ms ELSE NULL END), 0) AS INTEGER) AS average_duration_ms
+		`, AIUsageStatusRunning, AIUsageStatusSuccess, AIUsageStatusFailed, AIUsageStatusUpstreamError, AIUsageStatusRejected).
+		Scan(&row).Error
+	if err != nil {
+		return AIUsageSummary{}, err
+	}
+	return AIUsageSummary{
+		WindowSeconds:      int64(window.Seconds()),
+		TotalCalls:         row.TotalCalls,
+		RunningCalls:       row.RunningCalls,
+		SuccessCalls:       row.SuccessCalls,
+		FailedCalls:        row.FailedCalls,
+		UpstreamErrorCalls: row.UpstreamErrorCalls,
+		RejectedCalls:      row.RejectedCalls,
+		PromptRunes:        row.PromptRunes,
+		RequestBytes:       row.RequestBytes,
+		ResponseBytes:      row.ResponseBytes,
+		AverageDurationMs:  row.AverageDurationMs,
+	}, nil
+}
+
+func ListAIUsageLogs(database *gorm.DB, options AIUsageLogListOptions) ([]models.AIUsageLog, error) {
+	if database == nil {
+		return nil, gorm.ErrInvalidDB
+	}
+	limit := options.Limit
+	if limit <= 0 {
+		limit = 50
+	}
+	if limit > 100 {
+		limit = 100
+	}
+
+	query := database.Model(&models.AIUsageLog{})
+	if userID := strings.TrimSpace(options.UserID); userID != "" {
+		query = query.Where("user_id = ?", userID)
+	}
+	if status := strings.TrimSpace(options.Status); status != "" {
+		query = query.Where("status = ?", status)
+	}
+	if provider := strings.TrimSpace(options.Provider); provider != "" {
+		query = query.Where("provider = ?", strings.ToLower(provider))
+	}
+
+	var logs []models.AIUsageLog
+	if err := query.Order("created_at DESC").Limit(limit).Find(&logs).Error; err != nil {
+		return nil, err
+	}
+	return logs, nil
 }
 
 func readPositiveEnvInt(key string, fallback int) int {

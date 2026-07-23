@@ -3,6 +3,8 @@ package handlers
 import (
 	"errors"
 	"net/http"
+	"strconv"
+	"time"
 	"xdfc-server/db"
 	"xdfc-server/services"
 
@@ -61,4 +63,42 @@ func UpdateAIAdminPolicyHandler(c *gin.Context) {
 	}
 	saved.API.APIKey = ""
 	c.JSON(http.StatusOK, saved)
+}
+
+func GetAIUsageSummaryHandler(c *gin.Context) {
+	windowSeconds, _ := strconv.Atoi(c.DefaultQuery("windowSeconds", "3600"))
+	if windowSeconds <= 0 {
+		windowSeconds = 3600
+	}
+	if windowSeconds > 30*24*3600 {
+		windowSeconds = 30 * 24 * 3600
+	}
+
+	summary, err := services.GetAIUsageSummary(db.DB, time.Duration(windowSeconds)*time.Second)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":  "AI_USAGE_SUMMARY_FAILED",
+			"error": "Failed to load AI usage summary",
+		})
+		return
+	}
+	c.JSON(http.StatusOK, summary)
+}
+
+func ListAIUsageLogsHandler(c *gin.Context) {
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
+	logs, err := services.ListAIUsageLogs(db.DB, services.AIUsageLogListOptions{
+		Limit:    limit,
+		UserID:   c.Query("userId"),
+		Status:   c.Query("status"),
+		Provider: c.Query("provider"),
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":  "AI_USAGE_LOGS_FAILED",
+			"error": "Failed to load AI usage logs",
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"items": logs})
 }
