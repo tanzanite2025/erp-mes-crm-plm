@@ -136,13 +136,6 @@ const navGroupConfigs: SidebarGroupConfig[] = [
             icon: Package,
             permissionId: permissionIdForPath('/shipping-management'),
           },
-          {
-            id: 'sales-analysis',
-            titleKey: 'sidebar.items.salesAnalysis',
-            url: '/sales-analysis',
-            icon: BarChart3,
-            permissionId: permissionIdForPath('/sales-analysis'),
-          },
         ],
       },
     ],
@@ -232,6 +225,105 @@ const navGroupConfigs: SidebarGroupConfig[] = [
             activeMatch: '/raw-materials-engine',
             icon: Sliders,
             permissionId: permissionIdForPath('/raw-materials-engine/config'),
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'business-analysis-management',
+    titleKey: 'sidebar.groups.businessAnalysis',
+    children: [
+      {
+        id: 'analysis-overview-group',
+        titleKey: 'sidebar.groups.analysisOverview',
+        icon: BarChart3,
+        children: [
+          {
+            id: 'business-analysis-overview',
+            titleKey: 'sidebar.items.businessAnalysisOverview',
+            url: '/business-analysis/overview',
+            activeMatch: '/business-analysis',
+            icon: BarChart3,
+            permissionId: permissionIdForPath('/business-analysis'),
+          },
+        ],
+      },
+      {
+        id: 'production-analysis-group',
+        titleKey: 'sidebar.groups.productionAnalysis',
+        icon: Gauge,
+        children: [
+          {
+            id: 'production-capacity-analysis',
+            titleKey: 'sidebar.items.productionCapacityAnalysis',
+            url: '/business-analysis/production-capacity',
+            icon: Gauge,
+            permissionId: permissionIdForPath(
+              '/business-analysis/production-capacity'
+            ),
+          },
+          {
+            id: 'production-load-analysis',
+            titleKey: 'sidebar.items.productionLoadAnalysis',
+            url: '/business-analysis/production-load',
+            icon: Gauge,
+            permissionId: permissionIdForPath(
+              '/business-analysis/production-load'
+            ),
+          },
+          {
+            id: 'production-efficiency-analysis',
+            titleKey: 'sidebar.items.productionEfficiencyAnalysis',
+            url: '/business-analysis/production-efficiency',
+            icon: Gauge,
+            permissionId: permissionIdForPath(
+              '/business-analysis/production-efficiency'
+            ),
+          },
+        ],
+      },
+      {
+        id: 'quality-analysis-group',
+        titleKey: 'sidebar.groups.qualityAnalysis',
+        icon: ShieldCheck,
+        children: [
+          {
+            id: 'scrap-analysis',
+            titleKey: 'sidebar.items.scrapAnalysis',
+            url: '/business-analysis/scrap',
+            icon: ShieldCheck,
+            permissionId: permissionIdForPath('/business-analysis/scrap'),
+          },
+          {
+            id: 'defect-trend-analysis',
+            titleKey: 'sidebar.items.defectTrendAnalysis',
+            url: '/business-analysis/defect-trend',
+            icon: ShieldCheck,
+            permissionId: permissionIdForPath(
+              '/business-analysis/defect-trend'
+            ),
+          },
+        ],
+      },
+      {
+        id: 'customer-sales-analysis-group',
+        titleKey: 'sidebar.groups.customerSalesAnalysis',
+        icon: Users,
+        children: [
+          {
+            id: 'orders-analysis',
+            titleKey: 'sidebar.items.ordersAnalysis',
+            url: '/business-analysis/orders',
+            icon: ShoppingBag,
+            permissionId: permissionIdForPath('/business-analysis/orders'),
+          },
+          {
+            id: 'customer-analysis',
+            titleKey: 'sidebar.items.customerAnalysis',
+            url: '/business-analysis/customers',
+            icon: Users,
+            permissionId: permissionIdForPath('/business-analysis/customers'),
           },
         ],
       },

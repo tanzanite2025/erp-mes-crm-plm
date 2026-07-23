@@ -2,6 +2,7 @@ import { aiAssistant } from './aiAssistant'
 import { approval } from './approval'
 import { apsScheduling } from './apsScheduling'
 import { basicSettings } from './basicSettings'
+import { businessAnalysis } from './businessAnalysis'
 import { codeCenter } from './codeCenter'
 import { commandMenu } from './commandMenu'
 import { common } from './common'
@@ -52,6 +53,7 @@ export const zhCNMessages = {
   commandMenu,
   sidebar,
   basicSettings,
+  businessAnalysis,
   mrp,
   trading,
   orgPersonnel,

@@ -42,8 +42,17 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/trading/sales-exchanges': 'trading.tabs.salesExchanges',
   '/quotes': 'sidebar.items.quoteManagement',
   '/quotes/orders': 'commandMenu.items.quoteManagement',
-  '/sales-analysis': 'sidebar.items.salesAnalysis',
-  '/sales-analysis/orders-analysis': 'trading.tabs.ordersAnalysis',
+  '/business-analysis': 'sidebar.groups.businessAnalysis',
+  '/business-analysis/overview': 'businessAnalysis.tabs.overview',
+  '/business-analysis/production-capacity':
+    'businessAnalysis.tabs.productionCapacity',
+  '/business-analysis/production-load': 'businessAnalysis.tabs.productionLoad',
+  '/business-analysis/production-efficiency':
+    'businessAnalysis.tabs.productionEfficiency',
+  '/business-analysis/scrap': 'businessAnalysis.tabs.scrap',
+  '/business-analysis/defect-trend': 'businessAnalysis.tabs.defectTrend',
+  '/business-analysis/orders': 'businessAnalysis.tabs.orders',
+  '/business-analysis/customers': 'businessAnalysis.tabs.customers',
   '/shipping-management': 'sidebar.items.shippingManagement',
   '/shipping-management/vehicle-match':
     'trading.shippingManagement.tabs.vehicleMatch',

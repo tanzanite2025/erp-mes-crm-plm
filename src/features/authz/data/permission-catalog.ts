@@ -58,6 +58,13 @@ export const MENU_PERMISSIONS = {
     icon: 'Calendar',
     rootPath: '/aps-scheduling',
   },
+  businessAnalysis: {
+    id: 'menu_business_analysis',
+    label: '访问：经营分析',
+    desc: '允许进入生产、品质、销售与客户的跨域分析',
+    icon: 'BarChart3',
+    rootPath: '/business-analysis',
+  },
   trading: {
     id: 'menu_trading',
     label: '访问：销售管理',
@@ -169,7 +176,7 @@ export const ROUTE_TO_MENU_MAPPING: Record<
   '/raw-materials': 'trading',
   '/raw-materials-engine': 'cuttingEngine',
   '/trading': 'trading',
-  '/sales-analysis': 'trading',
+  '/business-analysis': 'businessAnalysis',
   '/quotes': 'trading',
   '/shipping-management': 'trading',
   '/purchase': 'purchase',

@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-export const Route = createFileRoute('/_authenticated/sales-analysis')({
+export const Route = createFileRoute('/_authenticated/business-analysis')({
   validateSearch: () => ({}),
 })

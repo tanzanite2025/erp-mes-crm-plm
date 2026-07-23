@@ -1,15 +1,16 @@
 import { Outlet } from '@tanstack/react-router'
 import { useLanguage } from '@/context/language-provider'
 import { ModuleTabbedLayout } from '@/components/layout/module-tabbed-layout'
-import { getSalesAnalysisTabs } from './tabs'
+import { getBusinessAnalysisTabs } from './tabs'
 
-export function SalesAnalysisModule() {
+export function BusinessAnalysisModule() {
   const { t } = useLanguage()
 
   return (
     <ModuleTabbedLayout
-      tabs={getSalesAnalysisTabs(t)}
-      headerTitle={t('trading.salesAnalysis.moduleTitle')}
+      tabs={getBusinessAnalysisTabs(t)}
+      headerTitle={t('businessAnalysis.moduleTitle')}
+      headerDescription={t('businessAnalysis.moduleDescription')}
     >
       <Outlet />
     </ModuleTabbedLayout>
