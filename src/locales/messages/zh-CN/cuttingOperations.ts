@@ -203,6 +203,7 @@ export const cuttingOperations = {
     },
     actions: {
       recordInventory: '录入库存',
+      openLibrary: '打开裁切尺寸库',
     },
     metrics: {
       total: '尺寸总数',
@@ -241,6 +242,7 @@ export const cuttingOperations = {
     },
     toasts: {
       noActiveUnit: '暂无启用的裁切尺寸单元，请先维护裁切尺寸库。',
+      noLibraryAccess: '当前账号没有裁切尺寸库访问权限。',
       selectUnit: '请先选择尺寸单元。',
       invalidQuantity: '请填写大于 0 的入库数量。',
       recordSuccess: '尺寸库存已录入。',

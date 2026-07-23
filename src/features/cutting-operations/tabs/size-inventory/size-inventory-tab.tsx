@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Archive, Plus, Ruler } from 'lucide-react'
+import { Archive, ExternalLink, Plus, Ruler } from 'lucide-react'
 import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -26,6 +27,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { ModuleTabbedLayout } from '@/components/layout/module-tabbed-layout'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
+import { matchesPathPermissionProjection } from '@/features/authz/guards/route-access'
 import { getCuttingOperationTabs } from '@/features/cutting-operations/tab-config'
 import { type CutSizeUnit } from '@/features/raw-materials/cut-size-library/data/cut-size-library-schema'
 import { formatCutSizeExpression } from '@/features/raw-materials/cut-size-library/domain/cut-size-geometry'
@@ -47,6 +49,8 @@ const CUTTING_SIZE_INVENTORY_RECORDS_QUERY_KEY = [
   'records',
 ] as const
 
+const CUT_SIZE_LIBRARY_PATH = '/raw-materials/cut-size-library'
+
 function statusClass(status: CutSizeUnit['status']): string {
   if (status === 'Active') {
     return 'border-emerald-200 bg-emerald-50 text-emerald-700'
@@ -66,11 +70,25 @@ const STATUS_LABEL_KEY = {
 export function CuttingSizeInventoryTab() {
   const { t } = useLanguage()
   const queryClient = useQueryClient()
+  const user = useAuthStore((state) => state.user)
+  const isIdentitySynced = useAuthStore((state) => state.isIdentitySynced)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedUnitId, setSelectedUnitId] = useState('')
   const [quantity, setQuantity] = useState('')
   const [location, setLocation] = useState('')
   const [remarks, setRemarks] = useState('')
+
+  const canOpenCutSizeLibrary =
+    !isIdentitySynced ||
+    matchesPathPermissionProjection(user, CUT_SIZE_LIBRARY_PATH)
+
+  const openCutSizeLibrary = () => {
+    if (!canOpenCutSizeLibrary) {
+      toast.error(t('cuttingOperations.sizeInventory.toasts.noLibraryAccess'))
+      return
+    }
+    window.open(CUT_SIZE_LIBRARY_PATH, '_blank', 'noopener,noreferrer')
+  }
 
   const {
     data = [],
@@ -132,7 +150,14 @@ export function CuttingSizeInventoryTab() {
 
   const openRecordDialog = () => {
     if (activeUnits.length === 0) {
-      toast.error(t('cuttingOperations.sizeInventory.toasts.noActiveUnit'))
+      toast.error(t('cuttingOperations.sizeInventory.toasts.noActiveUnit'), {
+        action: canOpenCutSizeLibrary
+          ? {
+              label: t('cuttingOperations.sizeInventory.actions.openLibrary'),
+              onClick: openCutSizeLibrary,
+            }
+          : undefined,
+      })
       return
     }
     setDialogOpen(true)
@@ -222,6 +247,25 @@ export function CuttingSizeInventoryTab() {
                   {t('cuttingOperations.sizeInventory.table.hint')}
                 </p>
                 <Button
+                  type='button'
+                  variant='outline'
+                  onClick={openCutSizeLibrary}
+                  aria-disabled={!canOpenCutSizeLibrary}
+                  title={
+                    canOpenCutSizeLibrary
+                      ? t('cuttingOperations.sizeInventory.actions.openLibrary')
+                      : t(
+                          'cuttingOperations.sizeInventory.toasts.noLibraryAccess'
+                        )
+                  }
+                  className={`h-9 rounded-full border-dashed px-4 text-[10px] font-black tracking-widest uppercase ${
+                    canOpenCutSizeLibrary ? '' : 'cursor-not-allowed opacity-50'
+                  }`}
+                >
+                  <ExternalLink className='size-4' />
+                  {t('cuttingOperations.sizeInventory.actions.openLibrary')}
+                </Button>
+                <Button
                   onClick={openRecordDialog}
                   className='h-9 rounded-full px-4 text-[10px] font-black tracking-widest uppercase shadow-lg shadow-primary/10'
                 >
@@ -283,7 +327,28 @@ export function CuttingSizeInventoryTab() {
                         className='px-5 py-8 text-center text-[11px] font-black tracking-widest text-muted-foreground/35 uppercase'
                         colSpan={6}
                       >
-                        {t('cuttingOperations.sizeInventory.table.empty')}
+                        <div className='flex flex-col items-center gap-3'>
+                          <span>
+                            {t('cuttingOperations.sizeInventory.table.empty')}
+                          </span>
+                          <Button
+                            type='button'
+                            variant='outline'
+                            size='sm'
+                            onClick={openCutSizeLibrary}
+                            aria-disabled={!canOpenCutSizeLibrary}
+                            className={`h-8 rounded-full border-dashed px-4 text-[10px] font-black tracking-widest uppercase ${
+                              canOpenCutSizeLibrary
+                                ? ''
+                                : 'cursor-not-allowed opacity-50'
+                            }`}
+                          >
+                            <ExternalLink className='size-3.5' />
+                            {t(
+                              'cuttingOperations.sizeInventory.actions.openLibrary'
+                            )}
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ) : null}

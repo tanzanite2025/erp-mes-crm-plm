@@ -212,6 +212,7 @@ export const cuttingOperations = {
     },
     actions: {
       recordInventory: 'Record Inventory',
+      openLibrary: 'Open Cut-Size Library',
     },
     metrics: {
       total: 'Total Sizes',
@@ -252,6 +253,8 @@ export const cuttingOperations = {
     toasts: {
       noActiveUnit:
         'No active cut-size unit is available. Maintain the cut-size library first.',
+      noLibraryAccess:
+        'The current account does not have access to the cut-size library.',
       selectUnit: 'Select a size unit first.',
       invalidQuantity: 'Enter an inbound quantity greater than 0.',
       recordSuccess: 'Size inventory recorded.',
