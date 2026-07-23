@@ -504,14 +504,14 @@ export const rawMaterials = {
       },
     },
     solutionOverview: {
-      title: '正式求解概览',
-      solving: '后端正在生成正式候选方案...',
-      empty: '尚未发起正式求解。',
+      title: 'Rust/WASM 候选概览',
+      solving: 'Rust/WASM 正在生成候选方案...',
+      empty: '尚未发起 Rust/WASM 候选求解。',
       currentPlan: '当前方案',
       optionalPlan: '可选方案',
       currentPlanDetail: '当前方案详情',
       summary: {
-        solverStatus: '求解状态',
+        solverStatus: '求解模式',
         planCount: '返回方案数',
         message: '摘要',
       },

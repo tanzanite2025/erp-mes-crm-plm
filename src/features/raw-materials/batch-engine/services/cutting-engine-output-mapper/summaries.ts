@@ -10,6 +10,10 @@ import type {
   BatchOptimizerSearchConfigSummary,
 } from '../../types/batch-engine-api'
 import type { CuttingPlan as CuttingEnginePlan } from '../../types/cutting-engine-wasm'
+import {
+  RUST_WASM_CUTTING_ENGINE_PRESET_KEY,
+  RUST_WASM_CUTTING_ENGINE_STRATEGY_KEY,
+} from './constants'
 import { round } from './math'
 
 export function buildAppliedWeights(
@@ -27,7 +31,7 @@ export function buildAppliedWeights(
 export function buildDiffSummary(rank: number): BatchOptimizerPlanDiffSummary {
   return {
     baselinePlanRank: rank,
-    baselineStrategyKey: 'rust-wasm-cutting-core',
+    baselineStrategyKey: RUST_WASM_CUTTING_ENGINE_STRATEGY_KEY,
     mode: 'none',
     addedZoneIds: [],
     removedZoneIds: [],
@@ -39,7 +43,7 @@ export function buildDiffSummary(rank: number): BatchOptimizerPlanDiffSummary {
 
 export function buildSearchConfig(): BatchOptimizerSearchConfigSummary {
   return {
-    presetKey: 'rust-wasm-cutting-core',
+    presetKey: RUST_WASM_CUTTING_ENGINE_PRESET_KEY,
     beamWidth: 0,
     maxSearchDepth: 0,
     perDemandBranchingLimit: 0,
@@ -57,7 +61,7 @@ export function buildCandidateBudgetSummary(
     mergedCandidateCount: planCount,
     strategyStats: [
       {
-        strategyKey: 'rust-wasm-cutting-core',
+        strategyKey: RUST_WASM_CUTTING_ENGINE_STRATEGY_KEY,
         inputCount: planCount,
         keptCount: planCount,
       },
@@ -127,10 +131,10 @@ export function buildReportSummary(options: {
   } = options
   return {
     planRank: rank,
-    strategyKey: 'rust-wasm-cutting-core',
+    strategyKey: RUST_WASM_CUTTING_ENGINE_STRATEGY_KEY,
     appliedWeights,
     baselinePlanRank: rank,
-    baselineStrategyKey: 'rust-wasm-cutting-core',
+    baselineStrategyKey: RUST_WASM_CUTTING_ENGINE_STRATEGY_KEY,
     score: plan.score,
     utilizationPercent: plan.utilizationPercent,
     lossAreaM2: plan.lossAreaM2,

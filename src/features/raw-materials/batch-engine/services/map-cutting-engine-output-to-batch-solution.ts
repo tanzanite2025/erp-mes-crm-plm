@@ -11,6 +11,11 @@ import type {
   CuttingEngineOutput,
 } from '../types/cutting-engine-wasm'
 import {
+  buildRustWasmCuttingEngineSummaryMessage,
+  RUST_WASM_CUTTING_ENGINE_SOLVER_STATUS,
+  RUST_WASM_CUTTING_ENGINE_STRATEGY_KEY,
+} from './cutting-engine-output-mapper/constants'
+import {
   buildDemandSummary,
   buildUnfulfilledLines,
   resolvePlanDemandLineId,
@@ -194,13 +199,13 @@ export function mapCuttingEngineOutputToBatchSolution(
 
     return {
       rank,
-      strategyKey: 'rust-wasm-cutting-core',
+      strategyKey: RUST_WASM_CUTTING_ENGINE_STRATEGY_KEY,
       score: plan.score,
       utilizationPercent: plan.utilizationPercent,
       lossAreaM2: plan.lossAreaM2,
       explanation: plan.warnings.length
         ? plan.warnings.join('；')
-        : 'Rust/WASM 裁纱核心输出',
+        : 'Rust/WASM 单需求行候选输出',
       assignments,
       unfulfilledLines,
       layoutSummary: {
@@ -254,10 +259,14 @@ export function mapCuttingEngineOutputToBatchSolution(
   return {
     requestId: `rust-wasm-${Date.now()}`,
     summary: {
-      solverStatus: plans.length ? 'SOLVED_BY_RUST_WASM' : 'NO_PLAN',
-      message: output.warnings.length
-        ? output.warnings.join('；')
-        : 'Rust/WASM 裁纱核心已完成求解',
+      solverStatus: plans.length
+        ? RUST_WASM_CUTTING_ENGINE_SOLVER_STATUS
+        : 'NO_PLAN',
+      message: buildRustWasmCuttingEngineSummaryMessage({
+        eligibleDemandLineCount: mappedDemandLines.validLines.length,
+        returnedPlanCount: plans.length,
+        warnings: output.warnings,
+      }),
       planCount: plans.length,
     },
     plans,

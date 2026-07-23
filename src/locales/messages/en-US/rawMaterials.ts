@@ -542,14 +542,14 @@ export const rawMaterials = {
       },
     },
     solutionOverview: {
-      title: 'Formal Solve Overview',
-      solving: 'Backend is generating formal candidate plans...',
-      empty: 'Formal solve has not been started yet.',
+      title: 'Rust/WASM Candidate Overview',
+      solving: 'Rust/WASM is generating candidate plans...',
+      empty: 'Rust/WASM candidate solving has not been started yet.',
       currentPlan: 'Current Plan',
       optionalPlan: 'Optional Plan',
       currentPlanDetail: 'Current Plan Detail',
       summary: {
-        solverStatus: 'Solver Status',
+        solverStatus: 'Solver Mode',
         planCount: 'Returned Plans',
         message: 'Summary',
       },
