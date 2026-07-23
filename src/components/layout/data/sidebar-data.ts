@@ -37,6 +37,7 @@ import {
   Warehouse,
 } from 'lucide-react'
 import { getMenuPermissionForPath } from '@/features/authz/data/permission-catalog'
+import { BUSINESS_ANALYSIS_DOMAIN_ROUTES } from '@/features/business-analysis/tabs'
 import type { NavGroup, NavNode, SidebarData } from '../types'
 
 type TranslateFn = (
@@ -80,22 +81,6 @@ const permissionIdForPath = (path: string): string =>
 
 const permissionIdsForPaths = (paths: readonly string[]): string[] =>
   paths.map((path) => permissionIdForPath(path))
-
-const businessAnalysisProductionPaths = [
-  '/business-analysis/production-capacity',
-  '/business-analysis/production-load',
-  '/business-analysis/production-efficiency',
-] as const
-
-const businessAnalysisQualityPaths = [
-  '/business-analysis/scrap',
-  '/business-analysis/defect-trend',
-] as const
-
-const businessAnalysisCustomerSalesPaths = [
-  '/business-analysis/orders',
-  '/business-analysis/customers',
-] as const
 
 const navGroupConfigs: SidebarGroupConfig[] = [
   {
@@ -255,20 +240,6 @@ const navGroupConfigs: SidebarGroupConfig[] = [
     titleKey: 'sidebar.groups.businessAnalysis',
     children: [
       {
-        id: 'analysis-overview-group',
-        titleKey: 'sidebar.groups.analysisOverview',
-        icon: BarChart3,
-        children: [
-          {
-            id: 'business-analysis-overview',
-            titleKey: 'sidebar.items.businessAnalysisOverview',
-            url: '/business-analysis/overview',
-            icon: BarChart3,
-            permissionId: permissionIdForPath('/business-analysis'),
-          },
-        ],
-      },
-      {
         id: 'production-analysis-group',
         titleKey: 'sidebar.groups.productionAnalysis',
         icon: Gauge,
@@ -277,10 +248,10 @@ const navGroupConfigs: SidebarGroupConfig[] = [
             id: 'production-analysis-center',
             titleKey: 'sidebar.items.productionAnalysisCenter',
             url: '/business-analysis/production-capacity',
-            activeMatches: [...businessAnalysisProductionPaths],
+            activeMatches: [...BUSINESS_ANALYSIS_DOMAIN_ROUTES.production],
             icon: Gauge,
             permissionId: permissionIdsForPaths(
-              businessAnalysisProductionPaths
+              BUSINESS_ANALYSIS_DOMAIN_ROUTES.production
             ),
           },
         ],
@@ -294,9 +265,11 @@ const navGroupConfigs: SidebarGroupConfig[] = [
             id: 'quality-analysis-center',
             titleKey: 'sidebar.items.qualityAnalysisCenter',
             url: '/business-analysis/scrap',
-            activeMatches: [...businessAnalysisQualityPaths],
+            activeMatches: [...BUSINESS_ANALYSIS_DOMAIN_ROUTES.quality],
             icon: ShieldCheck,
-            permissionId: permissionIdsForPaths(businessAnalysisQualityPaths),
+            permissionId: permissionIdsForPaths(
+              BUSINESS_ANALYSIS_DOMAIN_ROUTES.quality
+            ),
           },
         ],
       },
@@ -309,10 +282,10 @@ const navGroupConfigs: SidebarGroupConfig[] = [
             id: 'customer-sales-analysis-center',
             titleKey: 'sidebar.items.customerSalesAnalysisCenter',
             url: '/business-analysis/orders',
-            activeMatches: [...businessAnalysisCustomerSalesPaths],
+            activeMatches: [...BUSINESS_ANALYSIS_DOMAIN_ROUTES.customerSales],
             icon: Users,
             permissionId: permissionIdsForPaths(
-              businessAnalysisCustomerSalesPaths
+              BUSINESS_ANALYSIS_DOMAIN_ROUTES.customerSales
             ),
           },
         ],

@@ -1,14 +1,16 @@
-import { Outlet } from '@tanstack/react-router'
+import { Outlet, useLocation } from '@tanstack/react-router'
 import { useLanguage } from '@/context/language-provider'
 import { ModuleTabbedLayout } from '@/components/layout/module-tabbed-layout'
-import { getBusinessAnalysisTabs } from './tabs'
+import { getBusinessAnalysisDomain, getBusinessAnalysisTabs } from './tabs'
 
 export function BusinessAnalysisModule() {
   const { t } = useLanguage()
+  const { pathname } = useLocation()
+  const domain = getBusinessAnalysisDomain(pathname)
 
   return (
     <ModuleTabbedLayout
-      tabs={getBusinessAnalysisTabs(t)}
+      tabs={getBusinessAnalysisTabs(t, domain)}
       headerTitle={t('businessAnalysis.moduleTitle')}
       headerDescription={t('businessAnalysis.moduleDescription')}
     >

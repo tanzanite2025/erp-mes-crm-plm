@@ -43,7 +43,6 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/quotes': 'sidebar.items.quoteManagement',
   '/quotes/orders': 'commandMenu.items.quoteManagement',
   '/business-analysis': 'sidebar.groups.businessAnalysis',
-  '/business-analysis/overview': 'businessAnalysis.tabs.overview',
   '/business-analysis/production-capacity':
     'businessAnalysis.tabs.productionCapacity',
   '/business-analysis/production-load': 'businessAnalysis.tabs.productionLoad',

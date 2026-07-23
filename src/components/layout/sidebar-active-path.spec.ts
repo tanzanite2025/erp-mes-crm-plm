@@ -79,13 +79,18 @@ const navGroups: NavGroup[] = [
     title: 'Business Analysis',
     children: [
       {
-        id: 'analysis-overview-group',
-        title: 'Analysis Overview',
+        id: 'production-analysis-group',
+        title: 'Production Analysis',
         children: [
           {
-            id: 'business-analysis-overview',
-            title: 'Analysis Overview',
-            url: '/business-analysis/overview',
+            id: 'production-analysis-center',
+            title: 'Production Analysis Center',
+            url: '/business-analysis/production-capacity',
+            activeMatches: [
+              '/business-analysis/production-capacity',
+              '/business-analysis/production-load',
+              '/business-analysis/production-efficiency',
+            ],
           },
         ],
       },
@@ -154,7 +159,7 @@ describe('resolveActiveSidebarPath', () => {
     })
   })
 
-  it('does not keep analysis overview active for sibling business analysis tabs', () => {
+  it('keeps quality analysis tabs under the quality analysis domain', () => {
     expect(
       resolveActiveSidebarPath(navGroups, '/business-analysis/scrap')
     ).toEqual({

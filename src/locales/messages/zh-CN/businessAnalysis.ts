@@ -1,8 +1,7 @@
 export const businessAnalysis = {
   moduleTitle: '经营分析',
-  moduleDescription: '统一承载生产、品质、销售与客户的跨域只读分析能力。',
+  moduleDescription: '按业务域承载生产、品质、销售与客户的只读分析能力。',
   tabs: {
-    overview: '分析总览',
     productionCapacity: '月产能分析',
     productionLoad: '产能负荷',
     productionEfficiency: '生产效率',
@@ -10,23 +9,6 @@ export const businessAnalysis = {
     defectTrend: '不良趋势',
     orders: '订单分析',
     customers: '客户分析',
-  },
-  overview: {
-    title: '经营分析域已建立',
-    description:
-      '这里统一承载跨生产、品质、销售与客户的数据分析，不修改任何业务事实。',
-    ownershipTitle: '数据所有权边界',
-    ownershipDescription:
-      '生产、销售、品质模块继续维护各自事实；经营分析只负责聚合、比较、趋势与钻取。',
-    productionTitle: '生产分析',
-    productionDescription: '月产能、产能负荷和生产效率将从生产事实链路汇总。',
-    qualityTitle: '品质分析',
-    qualityDescription: '报废和不良趋势必须读取品质域确认的数据。',
-    customerTitle: '客户与销售',
-    customerDescription: '订单分析与客户分析统一归入经营分析入口。',
-    nextStepTitle: '当前实施阶段',
-    nextStepDescription:
-      '第一阶段先完成统一路由和菜单归属；月产能和报废统计待数据契约完成后接入。',
   },
   productionCapacity: {
     title: '月产能分析',

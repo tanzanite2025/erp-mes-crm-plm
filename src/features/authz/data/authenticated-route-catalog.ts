@@ -66,7 +66,6 @@ export const AUTHENTICATED_ROUTE_PATHS = [
   '/equipment-maintenance/plans',
   '/finance-management/taxation',
   '/raw-materials-engine/config',
-  '/business-analysis/overview',
   '/code-center/linear-barcode',
   '/engineering-reference/hubs',
   '/equipment-tooling/drawings',
