@@ -44,7 +44,11 @@ function isCuttingLayoutZone(value: unknown) {
     isFiniteNumber(value.yMm) &&
     isFiniteNumber(value.widthMm) &&
     isFiniteNumber(value.heightMm) &&
-    typeof value.label === 'string'
+    typeof value.label === 'string' &&
+    (value.unitId === undefined ||
+      value.unitId === null ||
+      typeof value.unitId === 'string') &&
+    isFiniteNumber(value.allocatedPieces)
   )
 }
 

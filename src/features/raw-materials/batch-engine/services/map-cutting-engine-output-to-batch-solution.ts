@@ -75,6 +75,48 @@ function buildMustFulfillDiagnostics(options: {
   ]
 }
 
+function resolveZoneDemandLineId(
+  zone: CuttingEngineOutput['plans'][number]['zones'][number],
+  fallbackDemandLineId: string
+) {
+  return zone.unitId || fallbackDemandLineId
+}
+
+function resolveZoneAllocatedPieces(
+  zone: CuttingEngineOutput['plans'][number]['zones'][number]
+) {
+  return zone.kind === 'Material' ? Math.max(zone.allocatedPieces, 0) : 0
+}
+
+function buildPlanDemandAllocationIndex(options: {
+  plan: CuttingEngineOutput['plans'][number]
+  fallbackDemandLineId: string
+}) {
+  const { plan, fallbackDemandLineId } = options
+  const allocatedPiecesByDemandLine = new Map<string, number>()
+  const zoneIdsByDemandLine = new Map<string, string[]>()
+
+  for (const zone of plan.zones) {
+    if (zone.kind !== 'Material') {
+      continue
+    }
+    const demandLineId = resolveZoneDemandLineId(zone, fallbackDemandLineId)
+    const allocatedPieces = resolveZoneAllocatedPieces(zone)
+    allocatedPiecesByDemandLine.set(
+      demandLineId,
+      (allocatedPiecesByDemandLine.get(demandLineId) || 0) + allocatedPieces
+    )
+    const zoneIds = zoneIdsByDemandLine.get(demandLineId) || []
+    zoneIds.push(zone.id)
+    zoneIdsByDemandLine.set(demandLineId, zoneIds)
+  }
+
+  return {
+    allocatedPiecesByDemandLine,
+    zoneIdsByDemandLine,
+  }
+}
+
 export function mapCuttingEngineOutputToBatchSolution(
   options: MapCuttingEngineOutputToBatchSolutionOptions
 ): BatchOptimizerSolveResponse {
@@ -94,64 +136,90 @@ export function mapCuttingEngineOutputToBatchSolution(
   const plans = output.plans.map<BatchOptimizerPlan>((plan, index) => {
     const rank = index + 1
     const demandLineId = resolvePlanDemandLineId(plan, input)
-    const activeDemand = mappedDemandLines.validLines.find(
-      (line) => line.demandLineId === demandLineId
-    )
-    const activeRequiredPieces =
-      activeDemand?.requiredPieces ?? plan.producedPieces
-    const coverageSharePercent = percent(
-      plan.producedPieces,
-      activeRequiredPieces
-    )
-    const materialZoneIds = plan.zones
-      .filter((zone) => zone.kind === 'Material')
-      .map((zone) => zone.id)
-    const layoutZones = plan.zones.map((zone) =>
-      buildLayoutZone(
-        zone,
-        demandLineId,
-        plan.producedPieces,
-        coverageSharePercent
+    const { allocatedPiecesByDemandLine, zoneIdsByDemandLine } =
+      buildPlanDemandAllocationIndex({
+        plan,
+        fallbackDemandLineId: demandLineId,
+      })
+    const layoutZones = plan.zones.map((zone) => {
+      const zoneDemandLineId = resolveZoneDemandLineId(zone, demandLineId)
+      const zoneDemand = mappedDemandLines.validLines.find(
+        (line) => line.demandLineId === zoneDemandLineId
       )
-    )
-    const geometryZones = plan.zones.map((zone) =>
-      buildGeometryZone(
+      const zoneAllocatedPieces = resolveZoneAllocatedPieces(zone)
+      const zoneCoverageSharePercent = zoneDemand
+        ? percent(zoneAllocatedPieces, zoneDemand.requiredPieces)
+        : 0
+      return buildLayoutZone(
         zone,
-        demandLineId,
-        plan.producedPieces,
-        coverageSharePercent
+        zoneDemandLineId,
+        zoneAllocatedPieces,
+        zoneCoverageSharePercent
       )
-    )
+    })
+    const geometryZones = plan.zones.map((zone) => {
+      const zoneDemandLineId = resolveZoneDemandLineId(zone, demandLineId)
+      const zoneDemand = mappedDemandLines.validLines.find(
+        (line) => line.demandLineId === zoneDemandLineId
+      )
+      const zoneAllocatedPieces = resolveZoneAllocatedPieces(zone)
+      const zoneCoverageSharePercent = zoneDemand
+        ? percent(zoneAllocatedPieces, zoneDemand.requiredPieces)
+        : 0
+      return buildGeometryZone(
+        zone,
+        zoneDemandLineId,
+        zoneAllocatedPieces,
+        zoneCoverageSharePercent
+      )
+    })
     const demandSummaries = mappedDemandLines.validLines.map((line) =>
       buildDemandSummary(
         line,
-        demandLineId,
-        plan.producedPieces,
-        materialZoneIds
+        allocatedPiecesByDemandLine.get(line.demandLineId) || 0,
+        zoneIdsByDemandLine.get(line.demandLineId) || []
       )
     )
     const unfulfilledLines = buildUnfulfilledLines(demandSummaries)
-    const assignments =
-      activeDemand && plan.producedPieces > 0
-        ? [
-            {
-              rollId: 'rust-wasm-roll-1',
-              demandLineId,
-              allocatedSets: Math.floor(
-                plan.producedPieces / Math.max(activeDemand.pieceCountPerSet, 1)
-              ),
-              allocatedPieces: Math.min(
-                plan.producedPieces,
-                activeDemand.requiredPieces
-              ),
-            },
-          ]
-        : []
-    const mustFulfillDiagnostics = buildMustFulfillDiagnostics({
-      activeDemand,
-      producedPieces: plan.producedPieces,
-      mustFulfillSatisfied: plan.mustFulfillSatisfied,
-    })
+    const assignments = mappedDemandLines.validLines
+      .map((line) => {
+        const allocatedPieces = Math.min(
+          allocatedPiecesByDemandLine.get(line.demandLineId) || 0,
+          line.requiredPieces
+        )
+        if (allocatedPieces <= 0) {
+          return null
+        }
+        return {
+          rollId: 'rust-wasm-roll-1',
+          demandLineId: line.demandLineId,
+          allocatedSets: Math.floor(
+            allocatedPieces / Math.max(line.pieceCountPerSet, 1)
+          ),
+          allocatedPieces,
+        }
+      })
+      .filter(
+        (
+          assignment
+        ): assignment is {
+          rollId: string
+          demandLineId: string
+          allocatedSets: number
+          allocatedPieces: number
+        } => Boolean(assignment)
+      )
+    const mustFulfillDiagnostics = mappedDemandLines.validLines.flatMap(
+      (line) =>
+        buildMustFulfillDiagnostics({
+          activeDemand: line,
+          producedPieces:
+            allocatedPiecesByDemandLine.get(line.demandLineId) || 0,
+          mustFulfillSatisfied:
+            (allocatedPiecesByDemandLine.get(line.demandLineId) || 0) >=
+            line.requiredPieces,
+        })
+    )
     const fulfilledDemandCount = demandSummaries.filter(
       (line) => line.fulfilled
     ).length
@@ -205,7 +273,7 @@ export function mapCuttingEngineOutputToBatchSolution(
       lossAreaM2: plan.lossAreaM2,
       explanation: plan.warnings.length
         ? plan.warnings.join('；')
-        : 'Rust/WASM 单需求行候选输出',
+        : 'Rust/WASM 单卷多需求行矩形贪心输出',
       assignments,
       unfulfilledLines,
       layoutSummary: {

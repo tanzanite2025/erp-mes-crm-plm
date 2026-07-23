@@ -68,6 +68,8 @@ export type CuttingLayoutZone = {
   widthMm: number
   heightMm: number
   label: string
+  unitId?: string | null
+  allocatedPieces: number
 }
 
 export type CuttingPlan = {

@@ -104,6 +104,8 @@ pub struct CuttingLayoutZone {
     pub width_mm: f64,
     pub height_mm: f64,
     pub label: String,
+    pub unit_id: Option<String>,
+    pub allocated_pieces: u32,
 }
 
 #[derive(Clone, Debug)]

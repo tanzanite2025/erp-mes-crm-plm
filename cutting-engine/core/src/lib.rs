@@ -1,10 +1,12 @@
 mod geometry;
+mod packing;
 mod rules;
 mod scoring;
 mod types;
 mod validation;
 
 use geometry::{build_zones, fit_count, percent, resolve_decision_length, round3};
+use packing::try_build_combined_plan;
 use rules::{
     build_plan_rule_diagnostics, build_plan_warnings, count_angle_mix_violations,
     count_direction_switches, resolve_plan_angle_mix_violation_count,
@@ -42,6 +44,17 @@ where
     F: FnMut() -> f64,
 {
     validate_input(input)?;
+
+    if input.rule_strategy.mixing_strategy != CuttingMixingStrategy::StrictNoMix {
+        if let Some((combined_plan, combined_warnings)) =
+            try_build_combined_plan(input, &mut elapsed_seconds)?
+        {
+            return Ok(CuttingEngineOutput {
+                plans: vec![combined_plan],
+                warnings: combined_warnings,
+            });
+        }
+    }
 
     let usable_width_mm = input.roll_width_mm - input.edge_trim_mm * 2.0;
     let usable_length_mm = input.roll_length_mm - input.edge_trim_mm * 2.0;
@@ -442,6 +455,7 @@ mod tests {
     #[test]
     fn ranks_composite_score_before_raw_utilization() {
         let mut input = base_input();
+        input.rule_strategy.mixing_strategy = CuttingMixingStrategy::StrictNoMix;
         input.cut_units = vec![
             CuttingUnitInput {
                 id: "unit-high-utilization-penalized".to_string(),
@@ -489,6 +503,7 @@ mod tests {
     #[test]
     fn uses_priority_as_a_stable_tie_breaker() {
         let mut input = base_input();
+        input.rule_strategy.mixing_strategy = CuttingMixingStrategy::StrictNoMix;
         input.cut_units = vec![
             CuttingUnitInput {
                 id: "unit-a".to_string(),
@@ -529,8 +544,105 @@ mod tests {
     }
 
     #[test]
+    fn combines_compatible_demand_lines_into_one_roll_plan() {
+        let mut input = base_input();
+        input.cut_units[0].allow_mixed_plan = true;
+        input.cut_units.push(CuttingUnitInput {
+            id: "unit-120".to_string(),
+            label: "120mm second demand".to_string(),
+            width_mm: 120.0,
+            length_mm: 91.0,
+            quantity: 100,
+            cut_angle_deg: 0.0,
+            priority: 0.5,
+            must_fulfill: false,
+            allow_mixed_plan: true,
+            roll_group_key: "group-a".to_string(),
+            order_sequence: 2,
+            yarn_direction_mode: "warp".to_string(),
+            process_tags: vec!["autoclave".to_string()],
+        });
+
+        let output = solve(&input).expect("compatible demand lines should combine");
+        assert_eq!(output.plans.len(), 1);
+        let plan = &output.plans[0];
+        assert_eq!(plan.plan_id, "plan-single-roll-greedy");
+        assert_eq!(plan.produced_pieces, 200);
+        assert_eq!(
+            plan.zones
+                .iter()
+                .filter(|zone| zone.kind == CuttingZoneKind::Material)
+                .count(),
+            2
+        );
+        assert!(plan
+            .zones
+            .iter()
+            .filter(|zone| zone.kind == CuttingZoneKind::Material)
+            .all(|zone| zone.unit_id.is_some() && zone.allocated_pieces == 100));
+    }
+
+    #[test]
+    fn same_group_only_skips_incompatible_demand_lines() {
+        let mut input = base_input();
+        input.cut_units[0].allow_mixed_plan = true;
+        input.cut_units.push(CuttingUnitInput {
+            id: "unit-other-group".to_string(),
+            label: "Other group".to_string(),
+            width_mm: 120.0,
+            length_mm: 91.0,
+            quantity: 100,
+            cut_angle_deg: 0.0,
+            priority: 0.5,
+            must_fulfill: false,
+            allow_mixed_plan: true,
+            roll_group_key: "group-b".to_string(),
+            order_sequence: 2,
+            yarn_direction_mode: "warp".to_string(),
+            process_tags: vec!["autoclave".to_string()],
+        });
+
+        let output = solve(&input).expect("incompatible demand lines should diagnose");
+        assert_eq!(output.plans.len(), 1);
+        assert_eq!(output.plans[0].produced_pieces, 100);
+        assert!(output
+            .warnings
+            .iter()
+            .any(|warning| warning.contains("sameGroupOnly")));
+    }
+
+    #[test]
+    fn allow_mixed_plan_false_skips_a_demand_line_from_combined_roll() {
+        let mut input = base_input();
+        input.cut_units.push(CuttingUnitInput {
+            id: "unit-120".to_string(),
+            label: "120mm second demand".to_string(),
+            width_mm: 120.0,
+            length_mm: 91.0,
+            quantity: 100,
+            cut_angle_deg: 0.0,
+            priority: 0.5,
+            must_fulfill: false,
+            allow_mixed_plan: true,
+            roll_group_key: "group-a".to_string(),
+            order_sequence: 2,
+            yarn_direction_mode: "warp".to_string(),
+            process_tags: vec!["autoclave".to_string()],
+        });
+
+        let output = solve(&input).expect("non-mix demand line should be diagnosed");
+        assert_eq!(output.plans.len(), 1);
+        assert_eq!(output.plans[0].produced_pieces, 100);
+        assert!(output
+            .warnings
+            .iter()
+            .any(|warning| warning.contains("allowMixedPlan=false")));
+    }
+
+    #[test]
     fn sorts_equal_plans_by_plan_id() {
         let mut input = base_input();
+        input.rule_strategy.mixing_strategy = CuttingMixingStrategy::StrictNoMix;
         input.cut_units = vec![
             CuttingUnitInput {
                 id: "unit-b".to_string(),

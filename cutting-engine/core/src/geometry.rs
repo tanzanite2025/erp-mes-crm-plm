@@ -51,6 +51,8 @@ pub(crate) fn build_zones(
             width_mm: round3(input.roll_width_mm),
             height_mm: round3(input.roll_length_mm),
             label: "Roll".to_string(),
+            unit_id: None,
+            allocated_pieces: 0,
         },
         CuttingLayoutZone {
             id: format!("material-{}", unit.id),
@@ -60,6 +62,8 @@ pub(crate) fn build_zones(
             width_mm: round3(material_width_mm),
             height_mm: round3(material_height_mm),
             label: unit.label.clone(),
+            unit_id: Some(unit.id.clone()),
+            allocated_pieces: produced_pieces,
         },
     ]
 }

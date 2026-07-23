@@ -30,7 +30,9 @@ src/features/raw-materials/batch-engine/hooks/use-batch-engine-solve.ts
 
 ## 当前算法边界
 
-当前内核处理单需求行候选方案的几何容量和综合评分：
+当前内核提供“单卷多需求行矩形贪心候选模式”，并保留严格无混排时的单需求行候选回退。组合模式按规则排序需求行，在一卷材料的宽度方向依次分配矩形 strip；每个 Material zone 会携带 `unitId` 和 `allocatedPieces`，前端据此将产量准确归属到需求行。
+
+当前已实际消费的能力：
 
 - 材料利用率
 - 排布稳定性
@@ -42,9 +44,18 @@ src/features/raw-materials/batch-engine/hooks/use-batch-engine-solve.ts
 - 固定决策长度
 - mustFulfill 严格/软惩罚
 - 角度混排与方向切换惩罚
-- 候选方案按综合评分优先排序，再按利用率和 plan_id 做稳定兜底排序
+- 候选方案按综合评分优先排序，再按 priority、利用率和 plan_id 做稳定兜底排序
+- `allowMixedPlan=false`、`sameGroupOnly`、`sameDirectionRequired`、`strict-same-angle` 在组合时作为硬约束处理；不兼容需求行会保留在结果摘要中并生成 warning
+- `strictNoMix` 明确走逐需求行候选回退，不伪装成组合求解
 
-当前内核尚未真正执行多需求行组合排样、多卷分配、跨工单混排、交期/订单顺序硬约束。`priority` 目前只在综合评分相同时作为稳定排序依据；`orderSequence`、`rollGroupKey`、`processTags` 等字段会进入诊断和解释性链路，但完整组合求解需要在后续版本升级输出协议和测试样本后再接入。
+当前明确尚未支持：
+
+- 多卷分配和跨卷拆分
+- 旋转排样、非矩形嵌套、全局最优搜索
+- 跨工单混排、交期/订单顺序硬约束优化
+- 完整的 `priority` 权重搜索、process tag 兼容矩阵和多卷 mustFulfill 全局满足率
+
+`priority`、`orderSequence`、`rollGroupKey`、`processTags` 等字段会进入排序、硬约束或诊断链路，但不能被解释为已经完成了上述未支持的全局优化。
 
 ## 验证
 
@@ -55,14 +66,16 @@ cargo test --manifest-path cutting-engine/Cargo.toml
 重新生成前端 WASM 产物：
 
 ```powershell
-wasm-pack build cutting-engine/wasm --target web --out-dir ../../src/features/raw-materials/batch-engine/wasm/pkg
+Push-Location cutting-engine/wasm
+wasm-pack build . --release --target web --out-dir ../../src/features/raw-materials/batch-engine/wasm/pkg --out-name xdfc_cutting_engine_wasm
+Pop-Location
 ```
 
 ## 后续升级方向
 
 后续算法升级应按阶段推进：
 
-1. 先补测试样本和输出协议，区分“单个物料区域”“单片 piece”“聚合 strip”。
-2. 再做同卷多需求行组合排样，明确 sameGroupOnly / strictNoMix 的硬约束。
-3. 再做多卷分配、订单顺序、优先级权重、mustFulfill 全局满足率。
-4. 最后考虑将同一核心能力暴露给后端 Go handler，用于服务端批量求解和审计留痕。
+1. 先补充多需求行组合的测试样本，覆盖容量不足、约束跳过、各需求行 zone 归属和产量守恒。
+2. 再做多卷分配、跨卷拆分和订单顺序硬约束。
+3. 再引入旋转/嵌套排样与可控的全局搜索预算。
+4. 最后将同一核心能力暴露给后端 Go handler，用于服务端批量求解和审计留痕。

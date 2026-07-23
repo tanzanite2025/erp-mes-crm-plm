@@ -48,6 +48,8 @@ pub(crate) fn output_to_json(
                         "widthMm": zone.width_mm,
                         "heightMm": zone.height_mm,
                         "label": zone.label,
+                        "unitId": zone.unit_id,
+                        "allocatedPieces": zone.allocated_pieces,
                     })
                 }).collect::<Vec<_>>()
             })

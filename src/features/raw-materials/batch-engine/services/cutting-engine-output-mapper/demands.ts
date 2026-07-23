@@ -20,6 +20,9 @@ export function resolvePlanDemandLineId(
     return fromPlanId
   }
   const materialZone = plan.zones.find((zone) => zone.kind === 'Material')
+  if (materialZone?.unitId) {
+    return materialZone.unitId
+  }
   const fromZoneId = materialZone?.id.startsWith('material-')
     ? materialZone.id.slice(9)
     : materialZone?.id
@@ -28,14 +31,10 @@ export function resolvePlanDemandLineId(
 
 export function buildDemandSummary(
   demandLine: BatchOptimizerDemandLineInput,
-  activeDemandLineId: string,
   producedPieces: number,
   zoneIds: string[]
 ): BatchOptimizerPlanLayoutDemandSummary {
-  const isActive = demandLine.demandLineId === activeDemandLineId
-  const allocatedPieces = isActive
-    ? Math.min(producedPieces, demandLine.requiredPieces)
-    : 0
+  const allocatedPieces = Math.min(producedPieces, demandLine.requiredPieces)
   const remainingPieces = Math.max(
     demandLine.requiredPieces - allocatedPieces,
     0
