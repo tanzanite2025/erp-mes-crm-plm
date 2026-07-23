@@ -30,6 +30,8 @@ src/features/raw-materials/batch-engine/hooks/use-batch-engine-solve.ts
 
 当前实现状态、文件职责、数据链路和未完成能力见 [`IMPLEMENTATION-STATUS.md`](./IMPLEMENTATION-STATUS.md)。
 
+重要边界：裁纱计算、卷材分配和卷材绑定是独立能力，只负责裁切准备、追溯和未来自动切割对接；产品一维码即使没有绑定卷材，也不能因此阻断后续下单和生产。
+
 ## 当前算法边界
 
 当前内核提供“单卷/多卷矩形贪心候选模式”，并保留严格无混排时的单需求行候选回退。组合模式按规则排序需求行，在每卷材料的宽度方向依次分配矩形 strip；单个需求行数量超过当前卷容量时会跨卷拆分，所有 Material zone 会携带 `rollId`、`unitId` 和 `allocatedPieces`，前端据此将产量准确归属到需求行和卷材。
