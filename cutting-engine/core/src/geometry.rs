@@ -46,6 +46,7 @@ pub(crate) fn build_zones(
         CuttingLayoutZone {
             id: "roll".to_string(),
             kind: CuttingZoneKind::Roll,
+            roll_id: Some("rust-wasm-roll-1".to_string()),
             x_mm: 0.0,
             y_mm: 0.0,
             width_mm: round3(input.roll_width_mm),
@@ -57,6 +58,7 @@ pub(crate) fn build_zones(
         CuttingLayoutZone {
             id: format!("material-{}", unit.id),
             kind: CuttingZoneKind::Material,
+            roll_id: Some("rust-wasm-roll-1".to_string()),
             x_mm: round3(input.edge_trim_mm),
             y_mm: round3(input.edge_trim_mm),
             width_mm: round3(material_width_mm),

@@ -28,6 +28,7 @@ function toPolygonPoints(zone: CuttingLayoutZone) {
 
 export function buildLayoutZone(
   zone: CuttingLayoutZone,
+  rollId: string,
   demandLineId: string,
   allocatedPieces: number,
   coverageSharePercent: number
@@ -40,7 +41,7 @@ export function buildLayoutZone(
     usageCategory: toUsageCategory(zone),
     label: zone.label,
     detail: `${round(zone.widthMm, 1)}mm x ${round(zone.heightMm, 1)}mm`,
-    rollId: 'rust-wasm-roll-1',
+    rollId,
     demandLineId: isMaterial ? demandLineId : undefined,
     areaM2,
     allocatedSets: 0,
@@ -56,12 +57,14 @@ export function buildLayoutZone(
 
 export function buildGeometryZone(
   zone: CuttingLayoutZone,
+  rollId: string,
   demandLineId: string,
   allocatedPieces: number,
   coverageSharePercent: number
 ): BatchOptimizerGeometryLayoutZone {
   const layoutZone = buildLayoutZone(
     zone,
+    rollId,
     demandLineId,
     allocatedPieces,
     coverageSharePercent

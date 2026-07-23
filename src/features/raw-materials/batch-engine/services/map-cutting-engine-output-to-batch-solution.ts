@@ -82,6 +82,37 @@ function resolveZoneDemandLineId(
   return zone.unitId || fallbackDemandLineId
 }
 
+function resolveMappedRollId(
+  coreRollId: string,
+  planRollCount: number,
+  selectedPrepregSpecId?: string
+) {
+  if (planRollCount === 1 && selectedPrepregSpecId) {
+    return selectedPrepregSpecId
+  }
+  if (selectedPrepregSpecId) {
+    return `${selectedPrepregSpecId}:${coreRollId}`
+  }
+  return coreRollId
+}
+
+function buildPlanRollIdIndex(options: {
+  plan: CuttingEngineOutput['plans'][number]
+  selectedPrepregSpec?: PrepregMaterialSpec
+}) {
+  const { plan, selectedPrepregSpec } = options
+  return new Map(
+    plan.rolls.map((roll) => [
+      roll.rollId,
+      resolveMappedRollId(
+        roll.rollId,
+        plan.rolls.length,
+        selectedPrepregSpec?.id
+      ),
+    ])
+  )
+}
+
 function resolveZoneAllocatedPieces(
   zone: CuttingEngineOutput['plans'][number]['zones'][number]
 ) {
@@ -91,30 +122,103 @@ function resolveZoneAllocatedPieces(
 function buildPlanDemandAllocationIndex(options: {
   plan: CuttingEngineOutput['plans'][number]
   fallbackDemandLineId: string
+  rollIdByCoreRollId: Map<string, string>
 }) {
-  const { plan, fallbackDemandLineId } = options
-  const allocatedPiecesByDemandLine = new Map<string, number>()
-  const zoneIdsByDemandLine = new Map<string, string[]>()
+  const { plan, fallbackDemandLineId, rollIdByCoreRollId } = options
+  const allocatedPiecesByDemandLine = new Map<string, Map<string, number>>()
+  const zoneIdsByDemandLine = new Map<string, Map<string, string[]>>()
 
   for (const zone of plan.zones) {
     if (zone.kind !== 'Material') {
       continue
     }
     const demandLineId = resolveZoneDemandLineId(zone, fallbackDemandLineId)
+    const rollId = rollIdByCoreRollId.get(zone.rollId) || zone.rollId
     const allocatedPieces = resolveZoneAllocatedPieces(zone)
-    allocatedPiecesByDemandLine.set(
-      demandLineId,
-      (allocatedPiecesByDemandLine.get(demandLineId) || 0) + allocatedPieces
+    const allocatedPiecesByRoll =
+      allocatedPiecesByDemandLine.get(demandLineId) || new Map<string, number>()
+    allocatedPiecesByRoll.set(
+      rollId,
+      (allocatedPiecesByRoll.get(rollId) || 0) + allocatedPieces
     )
-    const zoneIds = zoneIdsByDemandLine.get(demandLineId) || []
+    allocatedPiecesByDemandLine.set(demandLineId, allocatedPiecesByRoll)
+    const zoneIdsByRoll =
+      zoneIdsByDemandLine.get(demandLineId) || new Map<string, string[]>()
+    const zoneIds = zoneIdsByRoll.get(rollId) || []
     zoneIds.push(zone.id)
-    zoneIdsByDemandLine.set(demandLineId, zoneIds)
+    zoneIdsByRoll.set(rollId, zoneIds)
+    zoneIdsByDemandLine.set(demandLineId, zoneIdsByRoll)
   }
 
   return {
     allocatedPiecesByDemandLine,
     zoneIdsByDemandLine,
   }
+}
+
+function buildPlanAssignments(options: {
+  validLines: BuildBatchEngineDemandLinesResult['validLines']
+  allocatedPiecesByDemandLine: Map<string, Map<string, number>>
+}) {
+  const { validLines, allocatedPiecesByDemandLine } = options
+  return validLines.flatMap((line) => {
+    let remainingPieces = line.requiredPieces
+    const allocationsByRoll =
+      allocatedPiecesByDemandLine.get(line.demandLineId) ||
+      new Map<string, number>()
+    return Array.from(allocationsByRoll).flatMap(
+      ([rollId, allocatedPieces]) => {
+        const piecesForAssignment = Math.min(
+          Math.max(allocatedPieces, 0),
+          remainingPieces
+        )
+        remainingPieces -= piecesForAssignment
+        if (piecesForAssignment <= 0) {
+          return []
+        }
+        return [
+          {
+            rollId,
+            demandLineId: line.demandLineId,
+            allocatedSets: Math.floor(
+              piecesForAssignment / Math.max(line.pieceCountPerSet, 1)
+            ),
+            allocatedPieces: piecesForAssignment,
+          },
+        ]
+      }
+    )
+  })
+}
+
+function buildLayoutRollSummaries(options: {
+  plan: CuttingEngineOutput['plans'][number]
+  rollIdByCoreRollId: Map<string, string>
+  assignments: BatchOptimizerPlan['assignments']
+  rollAreaM2: number
+}) {
+  const { plan, rollIdByCoreRollId, assignments, rollAreaM2 } = options
+  return plan.rolls.map((roll) => {
+    const mappedRollId = rollIdByCoreRollId.get(roll.rollId) || roll.rollId
+    const rollAssignments = assignments.filter(
+      (assignment) => assignment.rollId === mappedRollId
+    )
+    return {
+      rollId: mappedRollId,
+      allocatedSets: rollAssignments.reduce(
+        (total, assignment) => total + assignment.allocatedSets,
+        0
+      ),
+      allocatedPieces: roll.producedPieces,
+      utilizedAreaM2: round(
+        (rollAreaM2 * Math.max(roll.utilizationPercent, 0)) / 100,
+        6
+      ),
+      utilizationPercent: roll.utilizationPercent,
+      unusedAreaM2: roll.lossAreaM2,
+      isUsed: roll.producedPieces > 0,
+    }
+  })
 }
 
 export function mapCuttingEngineOutputToBatchSolution(
@@ -136,13 +240,19 @@ export function mapCuttingEngineOutputToBatchSolution(
   const plans = output.plans.map<BatchOptimizerPlan>((plan, index) => {
     const rank = index + 1
     const demandLineId = resolvePlanDemandLineId(plan, input)
+    const rollIdByCoreRollId = buildPlanRollIdIndex({
+      plan,
+      selectedPrepregSpec,
+    })
     const { allocatedPiecesByDemandLine, zoneIdsByDemandLine } =
       buildPlanDemandAllocationIndex({
         plan,
         fallbackDemandLineId: demandLineId,
+        rollIdByCoreRollId,
       })
     const layoutZones = plan.zones.map((zone) => {
       const zoneDemandLineId = resolveZoneDemandLineId(zone, demandLineId)
+      const zoneRollId = rollIdByCoreRollId.get(zone.rollId) || zone.rollId
       const zoneDemand = mappedDemandLines.validLines.find(
         (line) => line.demandLineId === zoneDemandLineId
       )
@@ -152,6 +262,7 @@ export function mapCuttingEngineOutputToBatchSolution(
         : 0
       return buildLayoutZone(
         zone,
+        zoneRollId,
         zoneDemandLineId,
         zoneAllocatedPieces,
         zoneCoverageSharePercent
@@ -159,6 +270,7 @@ export function mapCuttingEngineOutputToBatchSolution(
     })
     const geometryZones = plan.zones.map((zone) => {
       const zoneDemandLineId = resolveZoneDemandLineId(zone, demandLineId)
+      const zoneRollId = rollIdByCoreRollId.get(zone.rollId) || zone.rollId
       const zoneDemand = mappedDemandLines.validLines.find(
         (line) => line.demandLineId === zoneDemandLineId
       )
@@ -168,6 +280,7 @@ export function mapCuttingEngineOutputToBatchSolution(
         : 0
       return buildGeometryZone(
         zone,
+        zoneRollId,
         zoneDemandLineId,
         zoneAllocatedPieces,
         zoneCoverageSharePercent
@@ -176,60 +289,62 @@ export function mapCuttingEngineOutputToBatchSolution(
     const demandSummaries = mappedDemandLines.validLines.map((line) =>
       buildDemandSummary(
         line,
-        allocatedPiecesByDemandLine.get(line.demandLineId) || 0,
-        zoneIdsByDemandLine.get(line.demandLineId) || []
+        new Map(
+          Array.from(
+            allocatedPiecesByDemandLine.get(line.demandLineId) || new Map()
+          ).map(([rollId, allocatedPieces]) => [
+            rollId,
+            {
+              allocatedPieces,
+              zoneIds:
+                zoneIdsByDemandLine.get(line.demandLineId)?.get(rollId) || [],
+            },
+          ])
+        )
       )
     )
     const unfulfilledLines = buildUnfulfilledLines(demandSummaries)
-    const assignments = mappedDemandLines.validLines
-      .map((line) => {
-        const allocatedPieces = Math.min(
-          allocatedPiecesByDemandLine.get(line.demandLineId) || 0,
-          line.requiredPieces
-        )
-        if (allocatedPieces <= 0) {
-          return null
-        }
-        return {
-          rollId: 'rust-wasm-roll-1',
-          demandLineId: line.demandLineId,
-          allocatedSets: Math.floor(
-            allocatedPieces / Math.max(line.pieceCountPerSet, 1)
-          ),
-          allocatedPieces,
-        }
-      })
-      .filter(
-        (
-          assignment
-        ): assignment is {
-          rollId: string
-          demandLineId: string
-          allocatedSets: number
-          allocatedPieces: number
-        } => Boolean(assignment)
-      )
+    const assignments = buildPlanAssignments({
+      validLines: mappedDemandLines.validLines,
+      allocatedPiecesByDemandLine,
+    })
+    const demandSummaryById = new Map(
+      demandSummaries.map((summary) => [summary.demandLineId, summary])
+    )
     const mustFulfillDiagnostics = mappedDemandLines.validLines.flatMap(
       (line) =>
         buildMustFulfillDiagnostics({
           activeDemand: line,
           producedPieces:
-            allocatedPiecesByDemandLine.get(line.demandLineId) || 0,
+            demandSummaryById.get(line.demandLineId)?.allocatedPieces || 0,
           mustFulfillSatisfied:
-            (allocatedPiecesByDemandLine.get(line.demandLineId) || 0) >=
-            line.requiredPieces,
+            demandSummaryById.get(line.demandLineId)?.fulfilled || false,
         })
     )
     const fulfilledDemandCount = demandSummaries.filter(
       (line) => line.fulfilled
     ).length
+    const layoutRolls = buildLayoutRollSummaries({
+      plan,
+      rollIdByCoreRollId,
+      assignments,
+      rollAreaM2,
+    })
+    const usedRollCount = plan.rolls.filter(
+      (roll) => roll.producedPieces > 0
+    ).length
     const comparisonSummary = {
       fulfilledDemandCount,
       mustFulfillSatisfied: plan.mustFulfillSatisfied,
-      splitDemandCount: 0,
-      usedRollCount: plan.producedPieces > 0 ? 1 : 0,
-      usedRollPercent: plan.producedPieces > 0 ? 100 : 0,
-      unusedRollAreaM2: plan.lossAreaM2,
+      splitDemandCount: demandSummaries.filter(
+        (line) => line.isSplitAcrossRolls
+      ).length,
+      usedRollCount,
+      usedRollPercent: percent(usedRollCount, plan.rolls.length),
+      unusedRollAreaM2: round(
+        plan.rolls.reduce((total, roll) => total + roll.lossAreaM2, 0),
+        6
+      ),
       unfulfilledAreaM2: round(
         unfulfilledLines.reduce((total, line) => {
           const demand = mappedDemandLines.validLines.find(
@@ -273,30 +388,17 @@ export function mapCuttingEngineOutputToBatchSolution(
       lossAreaM2: plan.lossAreaM2,
       explanation: plan.warnings.length
         ? plan.warnings.join('；')
-        : 'Rust/WASM 单卷多需求行矩形贪心输出',
+        : 'Rust/WASM 单卷/多卷矩形贪心输出',
       assignments,
       unfulfilledLines,
       layoutSummary: {
         canvasWidthMm: input.rollWidthMm,
         canvasHeightMm: input.rollLengthMm,
-        rollCount: 1,
+        rollCount: plan.rolls.length,
         assignmentCount: assignments.length,
         fulfilledDemandLineCount: fulfilledDemandCount,
         unfulfilledDemandLineCount: unfulfilledLines.length,
-        rolls: [
-          {
-            rollId: selectedPrepregSpec?.id || 'rust-wasm-roll-1',
-            allocatedSets: assignments.reduce(
-              (total, item) => total + item.allocatedSets,
-              0
-            ),
-            allocatedPieces: plan.producedPieces,
-            utilizedAreaM2: round(rollAreaM2 - plan.lossAreaM2, 6),
-            utilizationPercent: plan.utilizationPercent,
-            unusedAreaM2: plan.lossAreaM2,
-            isUsed: plan.producedPieces > 0,
-          },
-        ],
+        rolls: layoutRolls,
         demandLines: demandSummaries,
         zones: layoutZones,
       },

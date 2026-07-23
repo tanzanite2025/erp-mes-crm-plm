@@ -31,10 +31,31 @@ export function resolvePlanDemandLineId(
 
 export function buildDemandSummary(
   demandLine: BatchOptimizerDemandLineInput,
-  producedPieces: number,
-  zoneIds: string[]
+  allocationsByRoll: Map<
+    string,
+    {
+      allocatedPieces: number
+      zoneIds: string[]
+    }
+  >
 ): BatchOptimizerPlanLayoutDemandSummary {
-  const allocatedPieces = Math.min(producedPieces, demandLine.requiredPieces)
+  let remainingAllocatablePieces = demandLine.requiredPieces
+  let allocatedPieces = 0
+  const rollIds: string[] = []
+  const zoneIds: string[] = []
+  for (const [rollId, allocation] of allocationsByRoll) {
+    const rollAllocatedPieces = Math.min(
+      Math.max(allocation.allocatedPieces, 0),
+      remainingAllocatablePieces
+    )
+    if (rollAllocatedPieces <= 0) {
+      continue
+    }
+    allocatedPieces += rollAllocatedPieces
+    remainingAllocatablePieces -= rollAllocatedPieces
+    rollIds.push(rollId)
+    zoneIds.push(...allocation.zoneIds)
+  }
   const remainingPieces = Math.max(
     demandLine.requiredPieces - allocatedPieces,
     0
@@ -44,19 +65,19 @@ export function buildDemandSummary(
     demandLineId: demandLine.demandLineId,
     allocatedSets: Math.floor(allocatedPieces / pieceCountPerSet),
     allocatedPieces,
-    rollCount: allocatedPieces > 0 ? 1 : 0,
+    rollCount: rollIds.length,
     remainingSets: Math.ceil(remainingPieces / pieceCountPerSet),
     remainingPieces,
     requiredSets: demandLine.requiredSets,
     requiredPieces: demandLine.requiredPieces,
     fulfilled: remainingPieces <= 0,
     mustFulfill: demandLine.mustFulfill,
-    isSplitAcrossRolls: false,
+    isSplitAcrossRolls: rollIds.length > 1,
     coveragePercent: percent(allocatedPieces, demandLine.requiredPieces),
     usageType: demandLine.usageType || 'geometry',
     priority: demandLine.priority,
-    rollIds: allocatedPieces > 0 ? ['rust-wasm-roll-1'] : [],
-    zoneIds: allocatedPieces > 0 ? zoneIds : [],
+    rollIds,
+    zoneIds,
   }
 }
 

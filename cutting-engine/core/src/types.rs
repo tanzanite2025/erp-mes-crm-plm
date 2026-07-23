@@ -99,6 +99,7 @@ pub enum CuttingZoneKind {
 pub struct CuttingLayoutZone {
     pub id: String,
     pub kind: CuttingZoneKind,
+    pub roll_id: Option<String>,
     pub x_mm: f64,
     pub y_mm: f64,
     pub width_mm: f64,
@@ -106,6 +107,14 @@ pub struct CuttingLayoutZone {
     pub label: String,
     pub unit_id: Option<String>,
     pub allocated_pieces: u32,
+}
+
+#[derive(Clone, Debug)]
+pub struct CuttingRollSummary {
+    pub roll_id: String,
+    pub produced_pieces: u32,
+    pub utilization_percent: f64,
+    pub loss_area_m2: f64,
 }
 
 #[derive(Clone, Debug)]
@@ -147,6 +156,7 @@ pub struct CuttingPlan {
     pub angle_mix_violation_count: u32,
     pub must_fulfill_satisfied: bool,
     pub must_fulfill_penalty: f64,
+    pub rolls: Vec<CuttingRollSummary>,
     pub rule_diagnostics: CuttingPlanRuleDiagnostics,
     pub zones: Vec<CuttingLayoutZone>,
     pub warnings: Vec<String>,

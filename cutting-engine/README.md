@@ -30,7 +30,7 @@ src/features/raw-materials/batch-engine/hooks/use-batch-engine-solve.ts
 
 ## 当前算法边界
 
-当前内核提供“单卷多需求行矩形贪心候选模式”，并保留严格无混排时的单需求行候选回退。组合模式按规则排序需求行，在一卷材料的宽度方向依次分配矩形 strip；每个 Material zone 会携带 `unitId` 和 `allocatedPieces`，前端据此将产量准确归属到需求行。
+当前内核提供“单卷/多卷矩形贪心候选模式”，并保留严格无混排时的单需求行候选回退。组合模式按规则排序需求行，在每卷材料的宽度方向依次分配矩形 strip；单个需求行数量超过当前卷容量时会跨卷拆分，所有 Material zone 会携带 `rollId`、`unitId` 和 `allocatedPieces`，前端据此将产量准确归属到需求行和卷材。
 
 当前已实际消费的能力：
 
@@ -46,14 +46,14 @@ src/features/raw-materials/batch-engine/hooks/use-batch-engine-solve.ts
 - 角度混排与方向切换惩罚
 - 候选方案按综合评分优先排序，再按 priority、利用率和 plan_id 做稳定兜底排序
 - `allowMixedPlan=false`、`sameGroupOnly`、`sameDirectionRequired`、`strict-same-angle` 在组合时作为硬约束处理；不兼容需求行会保留在结果摘要中并生成 warning
+- 单卷/多卷分配、跨卷拆分和每卷产量/利用率/损耗摘要
 - `strictNoMix` 明确走逐需求行候选回退，不伪装成组合求解
 
 当前明确尚未支持：
 
-- 多卷分配和跨卷拆分
 - 旋转排样、非矩形嵌套、全局最优搜索
 - 跨工单混排、交期/订单顺序硬约束优化
-- 完整的 `priority` 权重搜索、process tag 兼容矩阵和多卷 mustFulfill 全局满足率
+- 完整的 `priority` 权重搜索、process tag 兼容矩阵和跨卷全局优化
 
 `priority`、`orderSequence`、`rollGroupKey`、`processTags` 等字段会进入排序、硬约束或诊断链路，但不能被解释为已经完成了上述未支持的全局优化。
 
@@ -75,7 +75,7 @@ Pop-Location
 
 后续算法升级应按阶段推进：
 
-1. 先补充多需求行组合的测试样本，覆盖容量不足、约束跳过、各需求行 zone 归属和产量守恒。
-2. 再做多卷分配、跨卷拆分和订单顺序硬约束。
-3. 再引入旋转/嵌套排样与可控的全局搜索预算。
+1. 继续补充多需求行、多卷拆分的测试样本，覆盖容量不足、约束跳过、各需求行/卷材 zone 归属和产量守恒。
+2. 引入旋转/嵌套排样与可控的全局搜索预算，并明确输出算法边界。
+3. 再完善跨工单混排、订单顺序硬约束和跨卷全局优化。
 4. 最后将同一核心能力暴露给后端 Go handler，用于服务端批量求解和审计留痕。

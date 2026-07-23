@@ -63,6 +63,7 @@ export type CuttingEngineInput = {
 export type CuttingLayoutZone = {
   id: string
   kind: 'Roll' | 'Material' | 'Loss'
+  rollId: string
   xMm: number
   yMm: number
   widthMm: number
@@ -70,6 +71,13 @@ export type CuttingLayoutZone = {
   label: string
   unitId?: string | null
   allocatedPieces: number
+}
+
+export type CuttingPlanRollSummary = {
+  rollId: string
+  producedPieces: number
+  utilizationPercent: number
+  lossAreaM2: number
 }
 
 export type CuttingPlan = {
@@ -83,6 +91,7 @@ export type CuttingPlan = {
   angleMixViolationCount: number
   mustFulfillSatisfied: boolean
   mustFulfillPenalty: number
+  rolls: CuttingPlanRollSummary[]
   ruleDiagnostics: CuttingPlanRuleDiagnostics
   zones: CuttingLayoutZone[]
   warnings: string[]

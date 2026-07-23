@@ -6,7 +6,7 @@ mod types;
 mod validation;
 
 use geometry::{build_zones, fit_count, percent, resolve_decision_length, round3};
-use packing::try_build_combined_plan;
+use packing::try_build_multi_roll_plan;
 use rules::{
     build_plan_rule_diagnostics, build_plan_warnings, count_angle_mix_violations,
     count_direction_switches, resolve_plan_angle_mix_violation_count,
@@ -19,7 +19,7 @@ pub use types::{
     CuttingAngleMixMode, CuttingDirectionStrategy, CuttingEngineDirectionRules, CuttingEngineError,
     CuttingEngineInput, CuttingEngineOutput, CuttingEngineRuleStrategy, CuttingEngineWeights,
     CuttingLayoutZone, CuttingMixingStrategy, CuttingMustFulfillMode, CuttingOrderStrategy,
-    CuttingPlan, CuttingPlanRuleDiagnostics, CuttingUnitInput, CuttingZoneKind,
+    CuttingPlan, CuttingPlanRuleDiagnostics, CuttingRollSummary, CuttingUnitInput, CuttingZoneKind,
 };
 use validation::validate_input;
 
@@ -46,12 +46,12 @@ where
     validate_input(input)?;
 
     if input.rule_strategy.mixing_strategy != CuttingMixingStrategy::StrictNoMix {
-        if let Some((combined_plan, combined_warnings)) =
-            try_build_combined_plan(input, &mut elapsed_seconds)?
+        if let Some((multi_roll_plan, multi_roll_warnings)) =
+            try_build_multi_roll_plan(input, &mut elapsed_seconds)?
         {
             return Ok(CuttingEngineOutput {
-                plans: vec![combined_plan],
-                warnings: combined_warnings,
+                plans: vec![multi_roll_plan],
+                warnings: multi_roll_warnings,
             });
         }
     }
@@ -180,6 +180,12 @@ where
             angle_mix_violation_count,
             must_fulfill_satisfied,
             must_fulfill_penalty,
+            rolls: vec![CuttingRollSummary {
+                roll_id: "rust-wasm-roll-1".to_string(),
+                produced_pieces,
+                utilization_percent: round3(utilization_percent),
+                loss_area_m2,
+            }],
             rule_diagnostics: build_plan_rule_diagnostics(&input_rule_diagnostics, unit),
             zones: build_zones(input, unit, produced_pieces, decision_length_mm),
             warnings: plan_warnings,
@@ -566,8 +572,9 @@ mod tests {
         let output = solve(&input).expect("compatible demand lines should combine");
         assert_eq!(output.plans.len(), 1);
         let plan = &output.plans[0];
-        assert_eq!(plan.plan_id, "plan-single-roll-greedy");
+        assert_eq!(plan.plan_id, "plan-multi-roll-greedy");
         assert_eq!(plan.produced_pieces, 200);
+        assert_eq!(plan.rolls.len(), 1);
         assert_eq!(
             plan.zones
                 .iter()
@@ -583,7 +590,61 @@ mod tests {
     }
 
     #[test]
-    fn same_group_only_skips_incompatible_demand_lines() {
+    fn splits_one_demand_line_across_multiple_rolls_when_quantity_exceeds_capacity() {
+        let mut input = base_input();
+        input.cut_units[0].quantity = 1000;
+
+        let output = solve(&input).expect("large demand should use multiple rolls");
+        assert_eq!(output.plans.len(), 1);
+        let plan = &output.plans[0];
+        assert_eq!(plan.produced_pieces, 1000);
+        assert_eq!(plan.rolls.len(), 2);
+        assert_eq!(
+            plan.rolls
+                .iter()
+                .map(|roll| roll.produced_pieces)
+                .sum::<u32>(),
+            1000
+        );
+        assert!(plan
+            .zones
+            .iter()
+            .filter(|zone| zone.kind == CuttingZoneKind::Material)
+            .all(|zone| zone.roll_id.is_some() && zone.allocated_pieces > 0));
+    }
+
+    #[test]
+    fn does_not_emit_empty_roll_for_unfittable_follow_up_demand() {
+        let mut input = base_input();
+        input.cut_units[0].allow_mixed_plan = true;
+        input.cut_units.push(CuttingUnitInput {
+            id: "unit-too-wide".to_string(),
+            label: "Too wide".to_string(),
+            width_mm: 10_000.0,
+            length_mm: 91.0,
+            quantity: 2,
+            cut_angle_deg: 0.0,
+            priority: 0.5,
+            must_fulfill: false,
+            allow_mixed_plan: true,
+            roll_group_key: "group-b".to_string(),
+            order_sequence: 2,
+            yarn_direction_mode: "warp".to_string(),
+            process_tags: vec![],
+        });
+
+        let output = solve(&input).expect("unfittable follow-up should keep valid plan");
+        let plan = &output.plans[0];
+        assert_eq!(plan.rolls.len(), 1);
+        assert_eq!(plan.rolls[0].produced_pieces, 100);
+        assert!(output
+            .warnings
+            .iter()
+            .any(|warning| warning.contains("cannot fit within the usable area of a new roll")));
+    }
+
+    #[test]
+    fn same_group_only_separates_incompatible_demand_lines_into_rolls() {
         let mut input = base_input();
         input.cut_units[0].allow_mixed_plan = true;
         input.cut_units.push(CuttingUnitInput {
@@ -604,7 +665,8 @@ mod tests {
 
         let output = solve(&input).expect("incompatible demand lines should diagnose");
         assert_eq!(output.plans.len(), 1);
-        assert_eq!(output.plans[0].produced_pieces, 100);
+        assert_eq!(output.plans[0].produced_pieces, 200);
+        assert_eq!(output.plans[0].rolls.len(), 2);
         assert!(output
             .warnings
             .iter()
@@ -612,7 +674,7 @@ mod tests {
     }
 
     #[test]
-    fn allow_mixed_plan_false_skips_a_demand_line_from_combined_roll() {
+    fn allow_mixed_plan_false_separates_a_demand_line_into_a_roll() {
         let mut input = base_input();
         input.cut_units.push(CuttingUnitInput {
             id: "unit-120".to_string(),
@@ -632,7 +694,8 @@ mod tests {
 
         let output = solve(&input).expect("non-mix demand line should be diagnosed");
         assert_eq!(output.plans.len(), 1);
-        assert_eq!(output.plans[0].produced_pieces, 100);
+        assert_eq!(output.plans[0].produced_pieces, 200);
+        assert_eq!(output.plans[0].rolls.len(), 2);
         assert!(output
             .warnings
             .iter()

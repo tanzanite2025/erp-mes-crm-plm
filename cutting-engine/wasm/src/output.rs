@@ -24,6 +24,14 @@ pub(crate) fn output_to_json(
                 "angleMixViolationCount": plan.angle_mix_violation_count,
                 "mustFulfillSatisfied": plan.must_fulfill_satisfied,
                 "mustFulfillPenalty": plan.must_fulfill_penalty,
+                "rolls": plan.rolls.into_iter().map(|roll| {
+                    serde_json::json!({
+                        "rollId": roll.roll_id,
+                        "producedPieces": roll.produced_pieces,
+                        "utilizationPercent": roll.utilization_percent,
+                        "lossAreaM2": roll.loss_area_m2,
+                    })
+                }).collect::<Vec<_>>(),
                 "ruleDiagnostics": {
                     "priority": plan.rule_diagnostics.priority,
                     "mustFulfill": plan.rule_diagnostics.must_fulfill,
@@ -43,6 +51,7 @@ pub(crate) fn output_to_json(
                     serde_json::json!({
                         "id": zone.id,
                         "kind": format!("{:?}", zone.kind),
+                        "rollId": zone.roll_id,
                         "xMm": zone.x_mm,
                         "yMm": zone.y_mm,
                         "widthMm": zone.width_mm,

@@ -40,6 +40,7 @@ function isCuttingLayoutZone(value: unknown) {
     (value.kind === 'Roll' ||
       value.kind === 'Material' ||
       value.kind === 'Loss') &&
+    typeof value.rollId === 'string' &&
     isFiniteNumber(value.xMm) &&
     isFiniteNumber(value.yMm) &&
     isFiniteNumber(value.widthMm) &&
@@ -49,6 +50,18 @@ function isCuttingLayoutZone(value: unknown) {
       value.unitId === null ||
       typeof value.unitId === 'string') &&
     isFiniteNumber(value.allocatedPieces)
+  )
+}
+
+function isCuttingPlanRollSummary(value: unknown) {
+  if (!isRecord(value)) {
+    return false
+  }
+  return (
+    typeof value.rollId === 'string' &&
+    isFiniteNumber(value.producedPieces) &&
+    isFiniteNumber(value.utilizationPercent) &&
+    isFiniteNumber(value.lossAreaM2)
   )
 }
 
@@ -87,6 +100,8 @@ function isCuttingPlan(value: unknown) {
     isFiniteNumber(value.angleMixViolationCount) &&
     typeof value.mustFulfillSatisfied === 'boolean' &&
     isFiniteNumber(value.mustFulfillPenalty) &&
+    Array.isArray(value.rolls) &&
+    value.rolls.every(isCuttingPlanRollSummary) &&
     isCuttingPlanRuleDiagnostics(value.ruleDiagnostics) &&
     Array.isArray(value.zones) &&
     value.zones.every(isCuttingLayoutZone) &&
