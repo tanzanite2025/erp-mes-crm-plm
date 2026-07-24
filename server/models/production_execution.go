@@ -45,6 +45,34 @@ func (ProductBarcodeStateEvent) TableName() string {
 	return "product_barcode_state_events"
 }
 
+// ProductBarcodeTransferEvent records an explicit movement between production
+// route steps or custody holders. It is intentionally separated from the
+// operation record: executing a process and moving the barcode are related but
+// different facts.
+type ProductBarcodeTransferEvent struct {
+	BaseModel
+	ProductBarcode    string     `gorm:"size:120;index;not null" json:"productBarcode"`
+	StateID           string     `gorm:"type:uuid;index" json:"stateId"`
+	OperationID       string     `gorm:"type:uuid;index" json:"operationId"`
+	TransferType      string     `gorm:"size:40;index;not null" json:"transferType"`
+	RouteID           string     `gorm:"type:uuid;index" json:"routeId"`
+	FromRouteStepID   string     `gorm:"type:uuid;index" json:"fromRouteStepId"`
+	ToRouteStepID     string     `gorm:"type:uuid;index" json:"toRouteStepId"`
+	FromProcessStepID string     `gorm:"type:uuid;index" json:"fromProcessStepId"`
+	ToProcessStepID   string     `gorm:"type:uuid;index" json:"toProcessStepId"`
+	FromHolderType    string     `gorm:"size:40;index" json:"fromHolderType"`
+	FromHolderID      string     `gorm:"type:uuid;index" json:"fromHolderId"`
+	ToHolderType      string     `gorm:"size:40;index" json:"toHolderType"`
+	ToHolderID        string     `gorm:"type:uuid;index" json:"toHolderId"`
+	Operator          string     `gorm:"size:120;not null" json:"operator"`
+	PayloadSnapshot   string     `gorm:"type:text;not null" json:"payloadSnapshot"`
+	OccurredAt        *time.Time `gorm:"index" json:"occurredAt,omitempty"`
+}
+
+func (ProductBarcodeTransferEvent) TableName() string {
+	return "product_barcode_transfer_events"
+}
+
 // ProductionExecutionLot optionally groups one product barcode into a plan/task/batch context.
 // Barcode process state does not depend on this table; it is for batching, analytics, and trace lookup.
 type ProductionExecutionLot struct {

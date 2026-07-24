@@ -76,6 +76,12 @@ type ProductionOperationExecutionListResponse struct {
 	Total int64                                  `json:"total"`
 }
 
+type productionOperationExecutionRecordResult struct {
+	Operation  models.ProductionOperationExecution
+	State      models.ProductBarcodeState
+	StateEvent models.ProductBarcodeStateEvent
+}
+
 type ProductionOperationExecutionService struct {
 	txManager transactionManager
 }
@@ -135,86 +141,101 @@ func (s *ProductionOperationExecutionService) RecordProductionOperationExecution
 		return ProductionOperationExecutionResponse{}, err
 	}
 
-	var saved models.ProductionOperationExecution
+	var saved productionOperationExecutionRecordResult
 	err := s.txManager.WithinTransaction(func(tx *gorm.DB) error {
-		state, exists, err := findProductBarcodeStateTx(tx, normalized.ProductBarcode)
+		result, err := recordProductionOperationExecutionTx(tx, normalized)
 		if err != nil {
 			return err
 		}
-
-		now := time.Now().UTC()
-		previousProcessStepID := strings.TrimSpace(state.CurrentProcessStepID)
-		stateStatus := mapProductionOperationActionToBarcodeStateStatus(normalized.Action)
-		stateReq := SaveProductBarcodeStateRequest{
-			ProductBarcode: normalized.ProductBarcode,
-			RouteID:        normalized.RouteID,
-			RouteStepID:    normalized.RouteStepID,
-			ProcessStepID:  normalized.ProcessStepID,
-			Status:         stateStatus,
-			Operator:       normalized.Operator,
-		}
-		applyProductBarcodeStateRequest(&state, stateReq, now)
-		if !exists {
-			state.BaseModel = models.BaseModel{ID: uuid.NewString()}
-			if err := tx.Create(&state).Error; err != nil {
-				return fmt.Errorf("failed to create product barcode state: %w", err)
-			}
-		} else if err := tx.Save(&state).Error; err != nil {
-			return fmt.Errorf("failed to update product barcode state: %w", err)
-		}
-
-		operation := models.ProductionOperationExecution{
-			BaseModel:      models.BaseModel{ID: uuid.NewString()},
-			ProductBarcode: normalized.ProductBarcode,
-			StateID:        state.ID,
-			ExecutionLotID: normalized.ExecutionLotID,
-			RouteID:        normalized.RouteID,
-			RouteStepID:    normalized.RouteStepID,
-			ProcessStepID:  normalized.ProcessStepID,
-			ExecutionMode:  normalized.ExecutionMode,
-			PartnerID:      normalized.PartnerID,
-			Action:         normalized.Action,
-			Status:         stateStatus,
-			Result:         normalized.Result,
-			Operator:       resolveProductionOperationOperator(normalized.Operator),
-			StartedAt:      resolveProductionOperationStartedAt(normalized.Action, now),
-			CompletedAt:    resolveProductionOperationCompletedAt(normalized.Action, now),
-			Notes:          normalized.Notes,
-		}
-		if err := tx.Create(&operation).Error; err != nil {
-			return fmt.Errorf("failed to create production operation execution: %w", err)
-		}
-
-		event := models.ProductBarcodeStateEvent{
-			BaseModel:         models.BaseModel{ID: uuid.NewString()},
-			StateID:           state.ID,
-			ProductBarcode:    state.ProductBarcode,
-			EventType:         mapProductionOperationActionToBarcodeStateEvent(normalized.Action),
-			FromProcessStepID: previousProcessStepID,
-			ToProcessStepID:   state.CurrentProcessStepID,
-			RouteID:           state.RouteID,
-			RouteStepID:       state.RouteStepID,
-			Operator:          operation.Operator,
-			PayloadSnapshot:   buildProductionOperationStateEventSnapshot(normalized, operation.ID),
-			OccurredAt:        &now,
-		}
-		if err := tx.Create(&event).Error; err != nil {
-			return fmt.Errorf("failed to create product barcode state event: %w", err)
-		}
-
-		if err := tx.Model(&models.ProductBarcodeState{}).
-			Where("id = ?", state.ID).
-			Update("last_event_id", event.ID).Error; err != nil {
-			return fmt.Errorf("failed to update product barcode last event: %w", err)
-		}
-
-		saved = operation
+		saved = result
 		return nil
 	})
 	if err != nil {
 		return ProductionOperationExecutionResponse{}, err
 	}
-	return mapProductionOperationExecutionToResponse(saved), nil
+	return mapProductionOperationExecutionToResponse(saved.Operation), nil
+}
+
+func recordProductionOperationExecutionTx(tx *gorm.DB, normalized RecordProductionOperationExecutionRequest) (productionOperationExecutionRecordResult, error) {
+	state, exists, err := findProductBarcodeStateTx(tx, normalized.ProductBarcode)
+	if err != nil {
+		return productionOperationExecutionRecordResult{}, err
+	}
+
+	now := time.Now().UTC()
+	previousProcessStepID := strings.TrimSpace(state.CurrentProcessStepID)
+	stateStatus := mapProductionOperationActionToBarcodeStateStatus(normalized.Action)
+	stateReq := SaveProductBarcodeStateRequest{
+		ProductBarcode: normalized.ProductBarcode,
+		ProductID:      strings.TrimSpace(state.ProductID),
+		ProductName:    strings.TrimSpace(state.ProductName),
+		RouteID:        normalized.RouteID,
+		RouteStepID:    normalized.RouteStepID,
+		ProcessStepID:  normalized.ProcessStepID,
+		Status:         stateStatus,
+		Operator:       normalized.Operator,
+	}
+	applyProductBarcodeStateRequest(&state, stateReq, now)
+	if !exists {
+		state.BaseModel = models.BaseModel{ID: uuid.NewString()}
+		if err := tx.Create(&state).Error; err != nil {
+			return productionOperationExecutionRecordResult{}, fmt.Errorf("failed to create product barcode state: %w", err)
+		}
+	} else if err := tx.Save(&state).Error; err != nil {
+		return productionOperationExecutionRecordResult{}, fmt.Errorf("failed to update product barcode state: %w", err)
+	}
+
+	operation := models.ProductionOperationExecution{
+		BaseModel:      models.BaseModel{ID: uuid.NewString()},
+		ProductBarcode: normalized.ProductBarcode,
+		StateID:        state.ID,
+		ExecutionLotID: normalized.ExecutionLotID,
+		RouteID:        normalized.RouteID,
+		RouteStepID:    normalized.RouteStepID,
+		ProcessStepID:  normalized.ProcessStepID,
+		ExecutionMode:  normalized.ExecutionMode,
+		PartnerID:      normalized.PartnerID,
+		Action:         normalized.Action,
+		Status:         stateStatus,
+		Result:         normalized.Result,
+		Operator:       resolveProductionOperationOperator(normalized.Operator),
+		StartedAt:      resolveProductionOperationStartedAt(normalized.Action, now),
+		CompletedAt:    resolveProductionOperationCompletedAt(normalized.Action, now),
+		Notes:          normalized.Notes,
+	}
+	if err := tx.Create(&operation).Error; err != nil {
+		return productionOperationExecutionRecordResult{}, fmt.Errorf("failed to create production operation execution: %w", err)
+	}
+
+	event := models.ProductBarcodeStateEvent{
+		BaseModel:         models.BaseModel{ID: uuid.NewString()},
+		StateID:           state.ID,
+		ProductBarcode:    state.ProductBarcode,
+		EventType:         mapProductionOperationActionToBarcodeStateEvent(normalized.Action),
+		FromProcessStepID: previousProcessStepID,
+		ToProcessStepID:   state.CurrentProcessStepID,
+		RouteID:           state.RouteID,
+		RouteStepID:       state.RouteStepID,
+		Operator:          operation.Operator,
+		PayloadSnapshot:   buildProductionOperationStateEventSnapshot(normalized, operation.ID),
+		OccurredAt:        &now,
+	}
+	if err := tx.Create(&event).Error; err != nil {
+		return productionOperationExecutionRecordResult{}, fmt.Errorf("failed to create product barcode state event: %w", err)
+	}
+
+	if err := tx.Model(&models.ProductBarcodeState{}).
+		Where("id = ?", state.ID).
+		Update("last_event_id", event.ID).Error; err != nil {
+		return productionOperationExecutionRecordResult{}, fmt.Errorf("failed to update product barcode last event: %w", err)
+	}
+	state.LastEventID = event.ID
+
+	return productionOperationExecutionRecordResult{
+		Operation:  operation,
+		State:      state,
+		StateEvent: event,
+	}, nil
 }
 
 func normalizeProductionOperationExecutionListQuery(query ProductionOperationExecutionListQuery) ProductionOperationExecutionListQuery {

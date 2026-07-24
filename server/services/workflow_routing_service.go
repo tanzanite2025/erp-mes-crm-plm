@@ -24,7 +24,7 @@ func normalizeNotificationRuleRouting(rule models.NotificationRule) models.Notif
 		entity = businessEventEntityOrder
 	}
 	if entity != businessEventEntityOrder {
-		if sourceCode == businessEventSourceProductionPlan || sourceCode == businessEventSourceProductionTask {
+		if sourceCode == businessEventSourceProductionPlan || sourceCode == businessEventSourceProductionTask || sourceCode == businessEventSourceProductionOperation {
 			rule.Entity = entity
 			rule.SourceCode = sourceCode
 			rule.ActionCode = businessEventActionStatusChange

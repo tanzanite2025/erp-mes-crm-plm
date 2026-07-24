@@ -85,6 +85,10 @@ var auditModuleAliasMap = map[string][]string{
 		AuditModuleProductionRoute,
 		"ProductionRoute",
 	},
+	AuditModuleProductionOperation: {
+		AuditModuleProductionOperation,
+		"ProductionOperation",
+	},
 	AuditModuleCurrency: {
 		AuditModuleCurrency,
 		"Currency",

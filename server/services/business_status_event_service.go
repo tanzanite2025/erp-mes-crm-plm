@@ -13,10 +13,11 @@ import (
 )
 
 const (
-	businessEventSourcePurchaseOrder  = "PURCHASE_ORDER"
-	businessEventSourceProductionPlan = "PRODUCTION_PLAN"
-	businessEventSourceProductionTask = "PRODUCTION_TASK"
-	businessEventEntitySystem         = "SYSTEM"
+	businessEventSourcePurchaseOrder       = "PURCHASE_ORDER"
+	businessEventSourceProductionPlan      = "PRODUCTION_PLAN"
+	businessEventSourceProductionTask      = "PRODUCTION_TASK"
+	businessEventSourceProductionOperation = "PRODUCTION_OPERATION"
+	businessEventEntitySystem              = "SYSTEM"
 )
 
 type BusinessStatusChangedEvent struct {

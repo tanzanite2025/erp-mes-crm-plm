@@ -24,6 +24,7 @@ const (
 	AuditModuleRole                  = "role"
 	AuditModuleProductionLine        = "production-line"
 	AuditModuleProductionRoute       = "production-route"
+	AuditModuleProductionOperation   = "production-operation"
 	AuditModuleCurrency              = "currency"
 	AuditModulePaymentTerm           = "payment-term"
 	AuditModulePaymentMethod         = "payment-method"

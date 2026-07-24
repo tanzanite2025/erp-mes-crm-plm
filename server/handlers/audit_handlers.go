@@ -37,6 +37,7 @@ var auditModulePermissionMap = map[string][]string{
 	services.AuditModuleRole:                {authz.TabPersonnelRights, authz.PermissionManage},
 	services.AuditModuleProductionLine:      {authz.MenuProdConfig},
 	services.AuditModuleProductionRoute:     {authz.MenuProdConfig},
+	services.AuditModuleProductionOperation: {authz.MenuProdConfig},
 	services.AuditModuleCurrency:            {authz.MenuSettings, authz.MenuTrading},
 	services.AuditModulePaymentTerm:         {authz.MenuSettings, authz.MenuTrading},
 	services.AuditModulePaymentMethod:       {authz.MenuSettings, authz.MenuTrading},

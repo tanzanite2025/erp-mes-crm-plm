@@ -44,6 +44,14 @@ func listBusinessEventSourceCompatibilityStatuses(sourceCode string) []BusinessS
 			{Code: "HOLD", Label: "已挂起", Phase: "custom", IsTerminal: false, DefaultResolve: false},
 			{Code: "DONE", Label: "已完工", Phase: "done", IsTerminal: true, DefaultResolve: true},
 		}
+	case "PRODUCTION_OPERATION":
+		return []BusinessStatusDTO{
+			{Code: ProductBarcodeStateStatusNotStarted, Label: "待开始", Phase: "pending", IsTerminal: false, DefaultResolve: false},
+			{Code: ProductBarcodeStateStatusInProgress, Label: "执行中", Phase: "active", IsTerminal: false, DefaultResolve: false},
+			{Code: ProductBarcodeStateStatusCompleted, Label: "已完成", Phase: "done", IsTerminal: true, DefaultResolve: true},
+			{Code: ProductBarcodeStateStatusHold, Label: "已挂起", Phase: "custom", IsTerminal: false, DefaultResolve: false},
+			{Code: ProductBarcodeStateStatusRework, Label: "返工中", Phase: "custom", IsTerminal: false, DefaultResolve: false},
+		}
 	default:
 		return []BusinessStatusDTO{}
 	}

@@ -1231,6 +1231,7 @@ func InitDB(dsn string) {
 		&models.ProductionRouteStep{},
 		&models.ProductBarcodeState{},
 		&models.ProductBarcodeStateEvent{},
+		&models.ProductBarcodeTransferEvent{},
 		&models.ProductionExecutionLot{},
 		&models.ProductionOperationExecution{},
 		&models.EngineeringSpec{},

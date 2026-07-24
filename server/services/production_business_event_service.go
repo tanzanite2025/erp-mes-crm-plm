@@ -105,3 +105,52 @@ func DispatchProductionTaskStatusChangedTx(tx *gorm.DB, plan models.ProductionPl
 		TemplateValues: templateValues,
 	})
 }
+
+func DispatchProductionOperationStatusChangedTx(tx *gorm.DB, operation models.ProductionOperationExecution, previousStatus string, nextStatus string, actorID string, operator string) error {
+	previous := strings.TrimSpace(previousStatus)
+	next := strings.TrimSpace(nextStatus)
+	if previous == "" {
+		previous = ProductBarcodeStateStatusNotStarted
+	}
+	if next == "" || previous == next {
+		return nil
+	}
+
+	operationOperator := strings.TrimSpace(operator)
+	if operationOperator == "" {
+		operationOperator = strings.TrimSpace(operation.Operator)
+	}
+	metadata := map[string]any{
+		"operationExecutionId": operation.ID,
+		"productBarcode":       operation.ProductBarcode,
+		"routeId":              operation.RouteID,
+		"routeStepId":          operation.RouteStepID,
+		"processStepId":        operation.ProcessStepID,
+		"action":               operation.Action,
+		"result":               operation.Result,
+		"operator":             operationOperator,
+	}
+	templateValues := map[string]string{
+		"OperationExecutionId": operation.ID,
+		"ProductBarcode":       operation.ProductBarcode,
+		"RouteId":              operation.RouteID,
+		"RouteStepId":          operation.RouteStepID,
+		"ProcessStepId":        operation.ProcessStepID,
+		"Action":               operation.Action,
+		"Result":               operation.Result,
+		"Operator":             operationOperator,
+	}
+	actionURL := renderTemplateValues("/production-architecture/routes?barcode=[ProductBarcode]", templateValues)
+	return DispatchBusinessStatusChangedTx(tx, BusinessStatusChangedEvent{
+		Entity:         businessEventEntitySystem,
+		SourceCode:     businessEventSourceProductionOperation,
+		TargetID:       operation.ID,
+		PreviousStatus: previous,
+		NextStatus:     next,
+		ActorID:        actorID,
+		Operator:       operationOperator,
+		ActionURL:      actionURL,
+		Metadata:       metadata,
+		TemplateValues: templateValues,
+	})
+}

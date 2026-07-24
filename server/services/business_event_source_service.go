@@ -64,6 +64,16 @@ var defaultBusinessEventSourceSeeds = []defaultBusinessEventSourceSeed{
 		Description: "生产计划围绕已排产、生产中、计划完成和取消等主计划状态事件。",
 		Config:      defaultProductionPlanEventSourceConfig(),
 	},
+	{
+		ID:          "55555555-5555-5555-5555-555555555555",
+		Code:        "PRODUCTION_OPERATION",
+		Name:        "生产扫码执行",
+		Module:      "Production",
+		Entity:      "SYSTEM",
+		Enabled:     true,
+		Description: "产品一维码扫码触发开始、完成、挂起、返工等工序执行状态事件。",
+		Config:      defaultProductionOperationEventSourceConfig(),
+	},
 }
 
 func ensureBusinessEventSourceIdentityImmutable(
