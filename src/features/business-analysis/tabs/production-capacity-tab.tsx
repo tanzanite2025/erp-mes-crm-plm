@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import type { TranslationKey } from '@/locales'
 import {
   AlertTriangle,
+  ArrowUpRight,
   CalendarRange,
   Download,
   Factory,
@@ -16,7 +17,15 @@ import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
 import {
   Select,
   SelectContent,
@@ -42,6 +51,12 @@ type CapacityFilters = {
   productId: string
   status: string
   includeCanceled: boolean
+}
+
+type DrilldownSelection = {
+  dimension: 'product' | 'customer'
+  value: string
+  label: string
 }
 
 const STATUS_VALUES = [
@@ -114,6 +129,8 @@ export function ProductionCapacityAnalysisTab() {
     includeCanceled: false,
   })
   const [isExporting, setIsExporting] = useState(false)
+  const [drilldownSelection, setDrilldownSelection] =
+    useState<DrilldownSelection | null>(null)
 
   const capacityQuery = useQuery({
     queryKey: ['business-analysis', 'production-capacity', filters],
@@ -150,6 +167,28 @@ export function ProductionCapacityAnalysisTab() {
   }
 
   const canExport = Boolean(filters.from && filters.to && filters.from < filters.to)
+
+  const drilldownQuery = useQuery({
+    queryKey: [
+      'business-analysis',
+      'production-capacity',
+      'drilldown',
+      normalizedQuery,
+      drilldownSelection,
+    ],
+    queryFn: () => {
+      if (!drilldownSelection) {
+        return Promise.reject(new Error('drilldown selection is missing'))
+      }
+      return BusinessAnalysisService.getProductionCapacityDrilldown({
+        ...normalizedQuery,
+        dimension: drilldownSelection.dimension,
+        value: drilldownSelection.value,
+      })
+    },
+    enabled: Boolean(drilldownSelection && canExport),
+    staleTime: 30_000,
+  })
 
   const handleExportCurrentAggregation = async () => {
     if (!canExport || isExporting) return
@@ -412,11 +451,24 @@ export function ProductionCapacityAnalysisTab() {
           title={t('businessAnalysis.productionCapacity.byProductTitle')}
           emptyLabel={t('businessAnalysis.productionCapacity.noRows')}
           firstColumn={t('businessAnalysis.productionCapacity.product')}
+          drilldownLabel={t(
+            'businessAnalysis.productionCapacity.viewDetails'
+          )}
           rows={response?.breakdowns.byProduct.map((row) => ({
+            key: row.productId || row.productName || '__unlinked__',
             label: row.productName || row.productId || '—',
+            value: row.productId || '__unlinked__',
             planned: row.plannedQuantity,
             completed: row.completedQuantity,
+            canDrilldown: true,
           }))}
+          onDrilldown={(row) =>
+            setDrilldownSelection({
+              dimension: 'product',
+              value: row.value,
+              label: row.label,
+            })
+          }
           locale={numberLocale}
           plannedLabel={t(
             'businessAnalysis.productionCapacity.plannedQuantity'
@@ -429,14 +481,27 @@ export function ProductionCapacityAnalysisTab() {
           title={t('businessAnalysis.productionCapacity.byCustomerTitle')}
           emptyLabel={t('businessAnalysis.productionCapacity.noRows')}
           firstColumn={t('businessAnalysis.productionCapacity.customer')}
+          drilldownLabel={t(
+            'businessAnalysis.productionCapacity.viewDetails'
+          )}
           rows={response?.breakdowns.byCustomer.map((row) => ({
+            key: row.customerId || '__unlinked__',
             label:
               row.customerName ||
               row.customerId ||
               t('businessAnalysis.productionCapacity.unlinked'),
+            value: row.customerId || '__unlinked__',
             planned: row.plannedQuantity,
             completed: row.completedQuantity,
+            canDrilldown: true,
           }))}
+          onDrilldown={(row) =>
+            setDrilldownSelection({
+              dimension: 'customer',
+              value: row.value,
+              label: row.label,
+            })
+          }
           locale={numberLocale}
           plannedLabel={t(
             'businessAnalysis.productionCapacity.plannedQuantity'
@@ -513,6 +578,189 @@ export function ProductionCapacityAnalysisTab() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog
+        open={Boolean(drilldownSelection)}
+        onOpenChange={(open) => {
+          if (!open) setDrilldownSelection(null)
+        }}
+      >
+        <DialogContent
+          size='6xl'
+          className='max-h-[85vh] overflow-hidden rounded-[24px] p-0'
+        >
+          <DialogHeader className='border-b px-6 py-5 pe-14'>
+            <DialogTitle className='flex items-center gap-2 text-base font-black'>
+              <Factory className='size-4 text-primary' />
+              {t('businessAnalysis.productionCapacity.drilldownTitle')}
+            </DialogTitle>
+            <DialogDescription className='text-xs'>
+              {drilldownSelection?.label ||
+                t('businessAnalysis.productionCapacity.drilldownValueFallback')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className='max-h-[calc(85vh-112px)] overflow-y-auto px-6 py-5'>
+            {drilldownQuery.isLoading ? (
+              <div className='py-16 text-center text-xs text-muted-foreground'>
+                {t('businessAnalysis.productionCapacity.drilldownLoading')}
+              </div>
+            ) : drilldownQuery.isError ? (
+              <div className='py-16 text-center text-xs text-destructive'>
+                {t('businessAnalysis.productionCapacity.drilldownError')}
+              </div>
+            ) : drilldownQuery.data?.items.length ? (
+              <div className='space-y-4'>
+                {drilldownQuery.data.items.map((plan) => (
+                  <Card
+                    key={plan.planId}
+                    className='rounded-2xl border bg-background shadow-none'
+                  >
+                    <CardHeader className='space-y-3 p-4 pb-2'>
+                      <div className='flex flex-wrap items-center justify-between gap-2'>
+                        <CardTitle className='text-sm font-black'>
+                          {plan.orderNo ||
+                            t(
+                              'businessAnalysis.productionCapacity.planFallback'
+                            )}
+                        </CardTitle>
+                        <Badge variant='outline' className='text-[10px]'>
+                          {STATUS_LABEL_KEYS[
+                            plan.status as keyof typeof STATUS_LABEL_KEYS
+                          ]
+                            ? t(
+                                STATUS_LABEL_KEYS[
+                                  plan.status as keyof typeof STATUS_LABEL_KEYS
+                                ]
+                              )
+                            : plan.status || '—'}
+                        </Badge>
+                      </div>
+                      <div className='grid gap-2 text-xs text-muted-foreground sm:grid-cols-4'>
+                        <span>
+                          {t('businessAnalysis.productionCapacity.planDate')}:{' '}
+                          <strong className='font-mono text-foreground'>
+                            {plan.planDate}
+                          </strong>
+                        </span>
+                        <span>
+                          {t('businessAnalysis.productionCapacity.product')}:{' '}
+                          <strong className='text-foreground'>
+                            {plan.productName || plan.productId || '—'}
+                          </strong>
+                        </span>
+                        <span>
+                          {t('businessAnalysis.productionCapacity.plannedQuantity')}:{' '}
+                          <strong className='font-mono text-foreground'>
+                            {formatQuantity(plan.plannedQuantity, numberLocale)}
+                          </strong>
+                        </span>
+                        <span>
+                          {t('businessAnalysis.productionCapacity.completedQuantity')}:{' '}
+                          <strong className='font-mono text-foreground'>
+                            {formatQuantity(
+                              plan.completedQuantity,
+                              numberLocale
+                            )}
+                          </strong>
+                        </span>
+                      </div>
+                    </CardHeader>
+                    <CardContent className='px-4 pb-4'>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>
+                              {t(
+                                'businessAnalysis.productionCapacity.batch'
+                              )}
+                            </TableHead>
+                            <TableHead>
+                              {t(
+                                'businessAnalysis.productionCapacity.process'
+                              )}
+                            </TableHead>
+                            <TableHead>
+                              {t(
+                                'businessAnalysis.productionCapacity.taskStatus'
+                              )}
+                            </TableHead>
+                            <TableHead className='text-end'>
+                              {t(
+                                'businessAnalysis.productionCapacity.targetQuantity'
+                              )}
+                            </TableHead>
+                            <TableHead className='text-end'>
+                              {t(
+                                'businessAnalysis.productionCapacity.actualQuantity'
+                              )}
+                            </TableHead>
+                            <TableHead>
+                              {t(
+                                'businessAnalysis.productionCapacity.completedAt'
+                              )}
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {plan.tasks.length ? (
+                            plan.tasks.map((task) => (
+                              <TableRow key={task.taskId}>
+                                <TableCell className='font-mono text-xs'>
+                                  {task.batchNo || '—'}
+                                </TableCell>
+                                <TableCell className='text-xs'>
+                                  {task.processName || task.processId || '—'}
+                                </TableCell>
+                                <TableCell className='text-xs'>
+                                  {task.status || '—'}
+                                </TableCell>
+                                <TableCell className='text-end font-mono text-xs'>
+                                  {formatQuantity(
+                                    task.targetQuantity,
+                                    numberLocale
+                                  )}
+                                </TableCell>
+                                <TableCell className='text-end font-mono text-xs'>
+                                  {formatQuantity(
+                                    task.actualQuantity,
+                                    numberLocale
+                                  )}
+                                </TableCell>
+                                <TableCell className='font-mono text-xs text-muted-foreground'>
+                                  {task.completedAt
+                                    ? new Date(
+                                        task.completedAt
+                                      ).toLocaleString(locale)
+                                    : '—'}
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          ) : (
+                            <TableRow>
+                              <TableCell
+                                colSpan={6}
+                                className='py-6 text-center text-xs text-muted-foreground'
+                              >
+                                {t(
+                                  'businessAnalysis.productionCapacity.noTasks'
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className='py-16 text-center text-xs text-muted-foreground'>
+                {t('businessAnalysis.productionCapacity.drilldownEmpty')}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
@@ -522,6 +770,8 @@ function BreakdownTable({
   emptyLabel,
   firstColumn,
   rows,
+  drilldownLabel,
+  onDrilldown,
   locale,
   plannedLabel,
   completedLabel,
@@ -531,11 +781,23 @@ function BreakdownTable({
   firstColumn: string
   rows:
     | {
+        key: string
         label: string
+        value: string
         planned: number
         completed: number
+        canDrilldown: boolean
       }[]
     | undefined
+  drilldownLabel: string
+  onDrilldown: (row: {
+    key: string
+    label: string
+    value: string
+    planned: number
+    completed: number
+    canDrilldown: boolean
+  }) => void
   locale: string
   plannedLabel: string
   completedLabel: string
@@ -559,9 +821,23 @@ function BreakdownTable({
           <TableBody>
             {rows?.length ? (
               rows.map((row) => (
-                <TableRow key={row.label}>
-                  <TableCell className='max-w-56 truncate text-xs font-bold'>
-                    {row.label}
+                <TableRow key={row.key}>
+                  <TableCell className='max-w-72 text-xs font-bold'>
+                    <div className='flex items-center gap-2'>
+                      <span className='min-w-0 truncate'>{row.label}</span>
+                      {row.canDrilldown ? (
+                        <Button
+                          type='button'
+                          variant='link'
+                          size='sm'
+                          className='h-7 shrink-0 px-0 text-[10px] font-black'
+                          onClick={() => onDrilldown(row)}
+                        >
+                          {drilldownLabel}
+                          <ArrowUpRight className='size-3' />
+                        </Button>
+                      ) : null}
+                    </div>
                   </TableCell>
                   <TableCell className='text-end font-mono text-xs'>
                     {formatQuantity(row.planned, locale)}

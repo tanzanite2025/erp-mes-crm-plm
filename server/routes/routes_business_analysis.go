@@ -19,6 +19,10 @@ func registerBusinessAnalysisRoutes(authorized *gin.RouterGroup) {
 			handlers.GetBusinessAnalysisProductionCapacityOptionsHandler,
 		)
 		analysisGroup.GET(
+			"/production-capacity/drilldown",
+			handlers.GetBusinessAnalysisProductionCapacityDrilldownHandler,
+		)
+		analysisGroup.GET(
 			"/production-capacity/export",
 			handlers.ExportBusinessAnalysisProductionCapacityCSVHandler,
 		)

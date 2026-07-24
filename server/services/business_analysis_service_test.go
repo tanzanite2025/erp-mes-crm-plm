@@ -336,6 +336,76 @@ func TestExportBusinessAnalysisProductionCapacityCSVUsesAggregatedResponse(t *te
 	require.NotEmpty(t, records)
 }
 
+func TestBusinessAnalysisProductionCapacityDrilldownUsesSamePlanAndTaskDateContract(t *testing.T) {
+	database, err := gorm.Open(sqlite.Open("file:business_analysis_capacity_drilldown?mode=memory&cache=shared"), &gorm.Config{})
+	require.NoError(t, err)
+	createBusinessAnalysisTestSchema(t, database)
+
+	loc := time.UTC
+	from := time.Date(2026, time.July, 1, 0, 0, 0, 0, loc)
+	to := time.Date(2026, time.August, 1, 0, 0, 0, 0, loc)
+	orderID := "00000000-0000-0000-0000-000000000051"
+	planID := "00000000-0000-0000-0000-000000000052"
+	taskID := "00000000-0000-0000-0000-000000000053"
+	planDate := time.Date(2026, time.June, 28, 0, 0, 0, 0, loc)
+	completedAt := time.Date(2026, time.July, 4, 10, 0, 0, 0, loc)
+
+	require.NoError(t, database.Exec(
+		"INSERT INTO sales_orders (id, order_no, customer_id, customer_name, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+		orderID,
+		"SO-BA-051",
+		"customer-051",
+		"客户 C",
+		planDate,
+		planDate,
+	).Error)
+	require.NoError(t, database.Exec(
+		"INSERT INTO production_plans (id, order_no, order_id, product_id, product_name, quantity, status, start_date, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		planID,
+		"SO-BA-051",
+		orderID,
+		"product-051",
+		"型号 E",
+		11,
+		"IN_PROGRESS",
+		planDate,
+		planDate,
+		planDate,
+	).Error)
+	require.NoError(t, database.Exec(
+		"INSERT INTO production_tasks (id, plan_id, batch_no, process_id, process_name, target_qty, actual_qty, status, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		taskID,
+		planID,
+		"B-051",
+		"process-051",
+		"裁切",
+		11,
+		7,
+		"DONE",
+		completedAt,
+	).Error)
+
+	response, err := NewBusinessAnalysisService(database).QueryProductionCapacityDrilldown(
+		context.Background(),
+		BusinessAnalysisProductionCapacityDrilldownQuery{
+			BusinessAnalysisProductionCapacityQuery: BusinessAnalysisProductionCapacityQuery{
+				From: from,
+				To:   to,
+			},
+			Dimension: "product",
+			Value:     "product-051",
+		},
+	)
+	require.NoError(t, err)
+	require.Equal(t, "product", response.Dimension)
+	require.Len(t, response.Items, 1)
+	require.Equal(t, float64(0), response.Items[0].PlannedQuantity)
+	require.Equal(t, float64(7), response.Items[0].CompletedQuantity)
+	require.Len(t, response.Items[0].Tasks, 1)
+	require.Equal(t, "B-051", response.Items[0].Tasks[0].BatchNo)
+	require.Equal(t, "裁切", response.Items[0].Tasks[0].ProcessName)
+}
+
 func ptrTime(value time.Time) *time.Time {
 	return &value
 }

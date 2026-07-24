@@ -82,6 +82,38 @@ func ExportBusinessAnalysisProductionCapacityCSVHandler(c *gin.Context) {
 	c.Data(http.StatusOK, export.ContentType, export.Content)
 }
 
+func GetBusinessAnalysisProductionCapacityDrilldownHandler(c *gin.Context) {
+	query, err := parseBusinessAnalysisProductionCapacityDrilldownQuery(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] " + err.Error()})
+		return
+	}
+
+	response, err := services.QueryBusinessAnalysisProductionCapacityDrilldown(
+		c.Request.Context(),
+		query,
+	)
+	if err != nil {
+		if errors.Is(err, services.ErrBusinessAnalysisInvalidDateRange) ||
+			errors.Is(err, services.ErrBusinessAnalysisInvalidDrilldown) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] " + err.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取经营分析明细失败"})
+		return
+	}
+
+	if err := services.RecordBusinessAnalysisProductionCapacityDrilldownAudit(
+		auditContextFromGin(c),
+		query,
+	); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 记录经营分析明细审计失败"})
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
 func GetBusinessAnalysisProductionCapacityOptionsHandler(c *gin.Context) {
 	response, err := services.ListBusinessAnalysisProductionCapacityOptions(
 		c.Request.Context(),
@@ -131,6 +163,34 @@ func parseBusinessAnalysisProductionCapacityQuery(
 		ProductID:       strings.TrimSpace(c.Query("productId")),
 		Status:          status,
 		IncludeCanceled: includeCanceled,
+	}, nil
+}
+
+func parseBusinessAnalysisProductionCapacityDrilldownQuery(
+	c *gin.Context,
+) (services.BusinessAnalysisProductionCapacityDrilldownQuery, error) {
+	baseQuery, err := parseBusinessAnalysisProductionCapacityQuery(c)
+	if err != nil {
+		return services.BusinessAnalysisProductionCapacityDrilldownQuery{}, err
+	}
+
+	dimension := strings.ToLower(strings.TrimSpace(c.Query("dimension")))
+	value := strings.TrimSpace(c.Query("value"))
+	if dimension != "product" && dimension != "customer" {
+		return services.BusinessAnalysisProductionCapacityDrilldownQuery{}, errors.New(
+			"dimension 必须是 product 或 customer",
+		)
+	}
+	if value == "" {
+		return services.BusinessAnalysisProductionCapacityDrilldownQuery{}, errors.New(
+			"value 不能为空",
+		)
+	}
+
+	return services.BusinessAnalysisProductionCapacityDrilldownQuery{
+		BusinessAnalysisProductionCapacityQuery: baseQuery,
+		Dimension:                               dimension,
+		Value:                                   value,
 	}, nil
 }
 

@@ -19,6 +19,8 @@ type businessAnalysisProductionCapacityAuditPayload struct {
 	ProductID       string `json:"productId,omitempty"`
 	Status          string `json:"status,omitempty"`
 	IncludeCanceled bool   `json:"includeCanceled"`
+	Dimension       string `json:"dimension,omitempty"`
+	Value           string `json:"value,omitempty"`
 }
 
 func businessAnalysisProductionCapacityAuditPayloadFromQuery(
@@ -57,6 +59,23 @@ func RecordBusinessAnalysisProductionCapacityExportAudit(
 	)
 }
 
+func RecordBusinessAnalysisProductionCapacityDrilldownAudit(
+	ctx context.Context,
+	query BusinessAnalysisProductionCapacityDrilldownQuery,
+) error {
+	if db.DB == nil {
+		return errors.New("business analysis audit database is unavailable")
+	}
+	return RecordBusinessAnalysisProductionCapacityDrilldownAuditWithRecorder(
+		ctx,
+		query,
+		audit.AuditAction("Drilldown"),
+		func(event audit.AuditEvent) error {
+			return recordAuditEventTx(db.DB, event)
+		},
+	)
+}
+
 func recordBusinessAnalysisProductionCapacityAudit(
 	ctx context.Context,
 	query BusinessAnalysisProductionCapacityQuery,
@@ -75,9 +94,9 @@ func recordBusinessAnalysisProductionCapacityAudit(
 	)
 }
 
-func RecordBusinessAnalysisProductionCapacityQueryAuditWithRecorder(
+func recordBusinessAnalysisProductionCapacityAuditWithPayload(
 	ctx context.Context,
-	query BusinessAnalysisProductionCapacityQuery,
+	payload businessAnalysisProductionCapacityAuditPayload,
 	action audit.AuditAction,
 	record func(audit.AuditEvent) error,
 ) error {
@@ -93,7 +112,6 @@ func RecordBusinessAnalysisProductionCapacityQueryAuditWithRecorder(
 		actor = audit.AuditActor{Source: "system"}
 	}
 
-	payload := businessAnalysisProductionCapacityAuditPayloadFromQuery(query)
 	metadata, err := json.Marshal(payload)
 	if err != nil {
 		return err
@@ -109,4 +127,41 @@ func RecordBusinessAnalysisProductionCapacityQueryAuditWithRecorder(
 		WithMetadata("source", "business-analysis")
 
 	return record(event.Normalize())
+}
+
+func RecordBusinessAnalysisProductionCapacityQueryAuditWithRecorder(
+	ctx context.Context,
+	query BusinessAnalysisProductionCapacityQuery,
+	action audit.AuditAction,
+	record func(audit.AuditEvent) error,
+) error {
+	if record == nil {
+		return nil
+	}
+	payload := businessAnalysisProductionCapacityAuditPayloadFromQuery(query)
+	return recordBusinessAnalysisProductionCapacityAuditWithPayload(
+		ctx,
+		payload,
+		action,
+		record,
+	)
+}
+
+func RecordBusinessAnalysisProductionCapacityDrilldownAuditWithRecorder(
+	ctx context.Context,
+	query BusinessAnalysisProductionCapacityDrilldownQuery,
+	action audit.AuditAction,
+	record func(audit.AuditEvent) error,
+) error {
+	payload := businessAnalysisProductionCapacityAuditPayloadFromQuery(
+		query.BusinessAnalysisProductionCapacityQuery,
+	)
+	payload.Dimension = strings.TrimSpace(query.Dimension)
+	payload.Value = strings.TrimSpace(query.Value)
+	return recordBusinessAnalysisProductionCapacityAuditWithPayload(
+		ctx,
+		payload,
+		action,
+		record,
+	)
 }

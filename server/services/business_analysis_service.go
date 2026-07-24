@@ -15,6 +15,7 @@ import (
 var (
 	ErrBusinessAnalysisDatabaseUnavailable = errors.New("business analysis database is unavailable")
 	ErrBusinessAnalysisInvalidDateRange    = errors.New("business analysis date range must have a positive duration")
+	ErrBusinessAnalysisInvalidDrilldown    = errors.New("business analysis drilldown requires a supported dimension and value")
 )
 
 // BusinessAnalysisProductionCapacityQuery is the stable read-only query contract
@@ -107,6 +108,45 @@ type BusinessAnalysisProductionCapacityOptionsResponse struct {
 	Products  []BusinessAnalysisFilterOption `json:"products"`
 }
 
+type BusinessAnalysisProductionCapacityDrilldownQuery struct {
+	BusinessAnalysisProductionCapacityQuery
+	Dimension string
+	Value     string
+}
+
+type BusinessAnalysisProductionCapacityTaskDetail struct {
+	TaskID         string     `json:"taskId"`
+	BatchNo        string     `json:"batchNo"`
+	ProcessID      string     `json:"processId"`
+	ProcessName    string     `json:"processName"`
+	Status         string     `json:"status"`
+	TargetQuantity float64    `json:"targetQuantity"`
+	ActualQuantity float64    `json:"actualQuantity"`
+	StartedAt      *time.Time `json:"startedAt,omitempty"`
+	CompletedAt    *time.Time `json:"completedAt,omitempty"`
+}
+
+type BusinessAnalysisProductionCapacityPlanDetail struct {
+	PlanID            string                                         `json:"planId"`
+	OrderNo           string                                         `json:"orderNo"`
+	ProductID         string                                         `json:"productId"`
+	ProductName       string                                         `json:"productName"`
+	CustomerID        string                                         `json:"customerId"`
+	CustomerName      string                                         `json:"customerName"`
+	PlannedQuantity   float64                                        `json:"plannedQuantity"`
+	CompletedQuantity float64                                        `json:"completedQuantity"`
+	Status            string                                         `json:"status"`
+	PlanDate          string                                         `json:"planDate"`
+	Tasks             []BusinessAnalysisProductionCapacityTaskDetail `json:"tasks"`
+}
+
+type BusinessAnalysisProductionCapacityDrilldownResponse struct {
+	Filters   BusinessAnalysisFilters                        `json:"filters"`
+	Dimension string                                         `json:"dimension"`
+	Value     string                                         `json:"value"`
+	Items     []BusinessAnalysisProductionCapacityPlanDetail `json:"items"`
+}
+
 type BusinessAnalysisService struct {
 	database *gorm.DB
 }
@@ -126,6 +166,13 @@ func ListBusinessAnalysisProductionCapacityOptions(
 	ctx context.Context,
 ) (BusinessAnalysisProductionCapacityOptionsResponse, error) {
 	return NewBusinessAnalysisService(db.DB).ListProductionCapacityOptions(ctx)
+}
+
+func QueryBusinessAnalysisProductionCapacityDrilldown(
+	ctx context.Context,
+	query BusinessAnalysisProductionCapacityDrilldownQuery,
+) (BusinessAnalysisProductionCapacityDrilldownResponse, error) {
+	return NewBusinessAnalysisService(db.DB).QueryProductionCapacityDrilldown(ctx, query)
 }
 
 func (s *BusinessAnalysisService) ListProductionCapacityOptions(
@@ -238,17 +285,10 @@ func (s *BusinessAnalysisService) QueryProductionCapacity(
 	for _, plan := range plans {
 		planDate := productionPlanAnalysisDate(plan)
 		planDateInRange := isWithinBusinessAnalysisRange(planDate, query.From, query.To)
-		completedTasks := make([]models.ProductionTask, 0, len(plan.Tasks))
-		for _, task := range plan.Tasks {
-			if isCompletedProductionTask(task) && task.CompletedAt != nil &&
-				task.ActualQty >= 0 &&
-				isWithinBusinessAnalysisRange(*task.CompletedAt, query.From, query.To) {
-				completedTasks = append(completedTasks, task)
-			}
-			if isCompletedProductionTask(task) && task.CompletedAt == nil && task.ActualQty > 0 {
-				response.DataQuality.MissingCompletionTimestampRecords++
-			}
-		}
+		completedTasks, missingCompletionTimestamps :=
+			businessAnalysisCompletedTasksInRange(plan.Tasks, query)
+		response.DataQuality.MissingCompletionTimestampRecords +=
+			missingCompletionTimestamps
 
 		if !planDateInRange && len(completedTasks) == 0 {
 			continue
@@ -345,6 +385,115 @@ func (s *BusinessAnalysisService) QueryProductionCapacity(
 	return response, nil
 }
 
+func (s *BusinessAnalysisService) QueryProductionCapacityDrilldown(
+	ctx context.Context,
+	query BusinessAnalysisProductionCapacityDrilldownQuery,
+) (BusinessAnalysisProductionCapacityDrilldownResponse, error) {
+	if s == nil || s.database == nil {
+		return BusinessAnalysisProductionCapacityDrilldownResponse{}, ErrBusinessAnalysisDatabaseUnavailable
+	}
+	if !query.To.After(query.From) {
+		return BusinessAnalysisProductionCapacityDrilldownResponse{}, ErrBusinessAnalysisInvalidDateRange
+	}
+
+	dimension := strings.ToLower(strings.TrimSpace(query.Dimension))
+	value := strings.TrimSpace(query.Value)
+	if (dimension != "product" && dimension != "customer") || value == "" {
+		return BusinessAnalysisProductionCapacityDrilldownResponse{}, ErrBusinessAnalysisInvalidDrilldown
+	}
+
+	plansQuery := query.BusinessAnalysisProductionCapacityQuery
+	if dimension == "product" && value != "__unlinked__" {
+		plansQuery.ProductID = value
+	}
+	if dimension == "customer" && value != "__unlinked__" {
+		plansQuery.CustomerID = value
+	}
+
+	plans, err := s.loadProductionPlans(ctx, plansQuery)
+	if err != nil {
+		return BusinessAnalysisProductionCapacityDrilldownResponse{}, err
+	}
+
+	items := make([]BusinessAnalysisProductionCapacityPlanDetail, 0)
+	for _, plan := range plans {
+		if !matchesBusinessAnalysisDrilldown(plan, dimension, value) {
+			continue
+		}
+
+		planDate := productionPlanAnalysisDate(plan)
+		completedTasks := completedProductionTasksInRange(plan.Tasks, plansQuery)
+		completedQuantity := 0.0
+		for _, task := range completedTasks {
+			completedQuantity += task.ActualQty
+		}
+
+		taskDetails := make([]BusinessAnalysisProductionCapacityTaskDetail, 0, len(plan.Tasks))
+		for _, task := range plan.Tasks {
+			taskDetails = append(taskDetails, BusinessAnalysisProductionCapacityTaskDetail{
+				TaskID:         task.ID,
+				BatchNo:        strings.TrimSpace(task.BatchNo),
+				ProcessID:      strings.TrimSpace(task.ProcessID),
+				ProcessName:    strings.TrimSpace(task.ProcessName),
+				Status:         strings.TrimSpace(task.Status),
+				TargetQuantity: task.TargetQty,
+				ActualQuantity: task.ActualQty,
+				StartedAt:      task.StartedAt,
+				CompletedAt:    task.CompletedAt,
+			})
+		}
+		sort.SliceStable(taskDetails, func(i, j int) bool {
+			if taskDetails[i].CompletedAt == nil && taskDetails[j].CompletedAt != nil {
+				return false
+			}
+			if taskDetails[i].CompletedAt != nil && taskDetails[j].CompletedAt == nil {
+				return true
+			}
+			if taskDetails[i].CompletedAt != nil && taskDetails[j].CompletedAt != nil &&
+				!taskDetails[i].CompletedAt.Equal(*taskDetails[j].CompletedAt) {
+				return taskDetails[i].CompletedAt.Before(*taskDetails[j].CompletedAt)
+			}
+			return taskDetails[i].TaskID < taskDetails[j].TaskID
+		})
+
+		customerID, customerName := productionPlanCustomer(plan)
+		items = append(items, BusinessAnalysisProductionCapacityPlanDetail{
+			PlanID:            plan.ID,
+			OrderNo:           strings.TrimSpace(plan.OrderNo),
+			ProductID:         strings.TrimSpace(plan.ProductID),
+			ProductName:       strings.TrimSpace(plan.ProductName),
+			CustomerID:        customerID,
+			CustomerName:      customerName,
+			PlannedQuantity:   plannedQuantityInRange(plan, plansQuery),
+			CompletedQuantity: completedQuantity,
+			Status:            strings.TrimSpace(plan.Status),
+			PlanDate:          planDate.Format("2006-01-02"),
+			Tasks:             taskDetails,
+		})
+	}
+
+	sort.SliceStable(items, func(i, j int) bool {
+		if items[i].PlanDate == items[j].PlanDate {
+			return items[i].PlanID < items[j].PlanID
+		}
+		return items[i].PlanDate < items[j].PlanDate
+	})
+
+	return BusinessAnalysisProductionCapacityDrilldownResponse{
+		Filters: BusinessAnalysisFilters{
+			From:            plansQuery.From.Format("2006-01-02"),
+			To:              plansQuery.To.Format("2006-01-02"),
+			CustomerID:      strings.TrimSpace(query.CustomerID),
+			ProductID:       strings.TrimSpace(query.ProductID),
+			Status:          strings.TrimSpace(query.Status),
+			IncludeCanceled: query.IncludeCanceled,
+		},
+		Dimension: dimension,
+		Value:     value,
+		Items:     items,
+	}, nil
+}
+
 func (s *BusinessAnalysisService) loadProductionPlans(
 	ctx context.Context,
 	query BusinessAnalysisProductionCapacityQuery,
@@ -388,6 +537,71 @@ func (s *BusinessAnalysisService) loadProductionPlans(
 		return nil, err
 	}
 	return plans, nil
+}
+
+func completedProductionTasksInRange(
+	tasks []models.ProductionTask,
+	query BusinessAnalysisProductionCapacityQuery,
+) []models.ProductionTask {
+	completedTasks, _ := businessAnalysisCompletedTasksInRange(tasks, query)
+	return completedTasks
+}
+
+func businessAnalysisCompletedTasksInRange(
+	tasks []models.ProductionTask,
+	query BusinessAnalysisProductionCapacityQuery,
+) ([]models.ProductionTask, int64) {
+	completedTasks := make([]models.ProductionTask, 0, len(tasks))
+	var missingCompletionTimestamps int64
+	for _, task := range tasks {
+		if !isCompletedProductionTask(task) {
+			continue
+		}
+		if task.CompletedAt == nil {
+			if task.ActualQty > 0 {
+				missingCompletionTimestamps++
+			}
+			continue
+		}
+		if task.ActualQty >= 0 &&
+			isWithinBusinessAnalysisRange(*task.CompletedAt, query.From, query.To) {
+			completedTasks = append(completedTasks, task)
+		}
+	}
+	return completedTasks, missingCompletionTimestamps
+}
+
+func plannedQuantityInRange(
+	plan models.ProductionPlan,
+	query BusinessAnalysisProductionCapacityQuery,
+) float64 {
+	if isWithinBusinessAnalysisRange(productionPlanAnalysisDate(plan), query.From, query.To) {
+		return plan.Quantity
+	}
+	return 0
+}
+
+func matchesBusinessAnalysisDrilldown(
+	plan models.ProductionPlan,
+	dimension string,
+	value string,
+) bool {
+	switch dimension {
+	case "product":
+		productID := strings.TrimSpace(plan.ProductID)
+		if value == "__unlinked__" {
+			return productID == ""
+		}
+		return productID == value
+	case "customer":
+		customerID, _ := productionPlanCustomer(plan)
+		if value == "__unlinked__" {
+			return customerID == ""
+		}
+		return customerID == value
+	default:
+		return false
+	}
 }
 
 type businessAnalysisQualityDataQuality struct {

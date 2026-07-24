@@ -77,3 +77,33 @@ func TestRecordBusinessAnalysisProductionCapacityExportAuditUsesExportAction(t *
 	require.Equal(t, audit.AuditAction("Export"), recorded.Action)
 	require.Equal(t, businessAnalysisProductionCapacityAuditTargetID, recorded.Metadata["report"])
 }
+
+func TestRecordBusinessAnalysisProductionCapacityDrilldownAuditIncludesDimensionAndValue(t *testing.T) {
+	query := BusinessAnalysisProductionCapacityDrilldownQuery{
+		BusinessAnalysisProductionCapacityQuery: BusinessAnalysisProductionCapacityQuery{
+			From: time.Date(2026, time.July, 1, 0, 0, 0, 0, time.UTC),
+			To:   time.Date(2026, time.August, 1, 0, 0, 0, 0, time.UTC),
+		},
+		Dimension: "customer",
+		Value:     "customer-001",
+	}
+
+	var recorded audit.AuditEvent
+	err := RecordBusinessAnalysisProductionCapacityDrilldownAuditWithRecorder(
+		context.Background(),
+		query,
+		audit.AuditAction("Drilldown"),
+		func(event audit.AuditEvent) error {
+			recorded = event
+			return nil
+		},
+	)
+
+	require.NoError(t, err)
+	require.Equal(t, audit.AuditAction("Drilldown"), recorded.Action)
+
+	var filters businessAnalysisProductionCapacityAuditPayload
+	require.NoError(t, json.Unmarshal([]byte(recorded.Metadata["filters"]), &filters))
+	require.Equal(t, "customer", filters.Dimension)
+	require.Equal(t, "customer-001", filters.Value)
+}

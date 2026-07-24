@@ -74,6 +74,45 @@ export type BusinessAnalysisProductionCapacityOptionsResponse = {
   products: BusinessAnalysisFilterOption[]
 }
 
+export type BusinessAnalysisProductionCapacityDrilldownQuery =
+  BusinessAnalysisProductionCapacityQuery & {
+    dimension: 'product' | 'customer'
+    value: string
+  }
+
+export type BusinessAnalysisProductionCapacityTaskDetail = {
+  taskId: string
+  batchNo: string
+  processId: string
+  processName: string
+  status: string
+  targetQuantity: number
+  actualQuantity: number
+  startedAt: string | null
+  completedAt: string | null
+}
+
+export type BusinessAnalysisProductionCapacityPlanDetail = {
+  planId: string
+  orderNo: string
+  productId: string
+  productName: string
+  customerId: string
+  customerName: string
+  plannedQuantity: number
+  completedQuantity: number
+  status: string
+  planDate: string
+  tasks: BusinessAnalysisProductionCapacityTaskDetail[]
+}
+
+export type BusinessAnalysisProductionCapacityDrilldownResponse = {
+  filters: BusinessAnalysisProductionCapacityQuery
+  dimension: 'product' | 'customer'
+  value: string
+  items: BusinessAnalysisProductionCapacityPlanDetail[]
+}
+
 type BusinessAnalysisDownloadFile = {
   blob: Blob
   fileName: string
@@ -87,6 +126,15 @@ function buildQueryString(query: BusinessAnalysisProductionCapacityQuery) {
   if (query.productId) params.set('productId', query.productId)
   if (query.status) params.set('status', query.status)
   if (query.includeCanceled) params.set('includeCanceled', 'true')
+  return params.toString()
+}
+
+function buildDrilldownQueryString(
+  query: BusinessAnalysisProductionCapacityDrilldownQuery
+) {
+  const params = new URLSearchParams(buildQueryString(query))
+  params.set('dimension', query.dimension)
+  params.set('value', query.value)
   return params.toString()
 }
 
@@ -197,6 +245,14 @@ export const BusinessAnalysisService = {
   getProductionCapacityOptions(): Promise<BusinessAnalysisProductionCapacityOptionsResponse> {
     return apiFetch<BusinessAnalysisProductionCapacityOptionsResponse>(
       '/business-analysis/production-capacity/options'
+    )
+  },
+
+  getProductionCapacityDrilldown(
+    query: BusinessAnalysisProductionCapacityDrilldownQuery
+  ): Promise<BusinessAnalysisProductionCapacityDrilldownResponse> {
+    return apiFetch<BusinessAnalysisProductionCapacityDrilldownResponse>(
+      `/business-analysis/production-capacity/drilldown?${buildDrilldownQueryString(query)}`
     )
   },
 
