@@ -31,6 +31,10 @@ const (
 )
 
 const (
+	TabBusinessAnalysisProductionCapacity = "tab_business_analysis_production_capacity"
+)
+
+const (
 	PermissionUserView   = "user_view"
 	PermissionUserCreate = "user_create"
 	PermissionUserEdit   = "user_edit"
