@@ -30,6 +30,7 @@ func TestRecordBusinessAnalysisProductionCapacityQueryAuditBuildsStableEvent(t *
 	err := RecordBusinessAnalysisProductionCapacityQueryAuditWithRecorder(
 		ctx,
 		query,
+		audit.AuditAction("Query"),
 		func(event audit.AuditEvent) error {
 			recorded = event
 			return nil
@@ -53,4 +54,26 @@ func TestRecordBusinessAnalysisProductionCapacityQueryAuditBuildsStableEvent(t *
 	require.Equal(t, "product-001", filters.ProductID)
 	require.Equal(t, "COMPLETED", filters.Status)
 	require.True(t, filters.IncludeCanceled)
+}
+
+func TestRecordBusinessAnalysisProductionCapacityExportAuditUsesExportAction(t *testing.T) {
+	query := BusinessAnalysisProductionCapacityQuery{
+		From: time.Date(2026, time.July, 1, 0, 0, 0, 0, time.UTC),
+		To:   time.Date(2026, time.August, 1, 0, 0, 0, 0, time.UTC),
+	}
+
+	var recorded audit.AuditEvent
+	err := RecordBusinessAnalysisProductionCapacityQueryAuditWithRecorder(
+		context.Background(),
+		query,
+		audit.AuditAction("Export"),
+		func(event audit.AuditEvent) error {
+			recorded = event
+			return nil
+		},
+	)
+
+	require.NoError(t, err)
+	require.Equal(t, audit.AuditAction("Export"), recorded.Action)
+	require.Equal(t, businessAnalysisProductionCapacityAuditTargetID, recorded.Metadata["report"])
 }

@@ -39,12 +39,36 @@ func RecordBusinessAnalysisProductionCapacityQueryAudit(
 	ctx context.Context,
 	query BusinessAnalysisProductionCapacityQuery,
 ) error {
+	return recordBusinessAnalysisProductionCapacityAudit(
+		ctx,
+		query,
+		audit.AuditAction("Query"),
+	)
+}
+
+func RecordBusinessAnalysisProductionCapacityExportAudit(
+	ctx context.Context,
+	query BusinessAnalysisProductionCapacityQuery,
+) error {
+	return recordBusinessAnalysisProductionCapacityAudit(
+		ctx,
+		query,
+		audit.AuditAction("Export"),
+	)
+}
+
+func recordBusinessAnalysisProductionCapacityAudit(
+	ctx context.Context,
+	query BusinessAnalysisProductionCapacityQuery,
+	action audit.AuditAction,
+) error {
 	if db.DB == nil {
 		return errors.New("business analysis audit database is unavailable")
 	}
 	return RecordBusinessAnalysisProductionCapacityQueryAuditWithRecorder(
 		ctx,
 		query,
+		action,
 		func(event audit.AuditEvent) error {
 			return recordAuditEventTx(db.DB, event)
 		},
@@ -54,10 +78,14 @@ func RecordBusinessAnalysisProductionCapacityQueryAudit(
 func RecordBusinessAnalysisProductionCapacityQueryAuditWithRecorder(
 	ctx context.Context,
 	query BusinessAnalysisProductionCapacityQuery,
+	action audit.AuditAction,
 	record func(audit.AuditEvent) error,
 ) error {
 	if record == nil {
 		return nil
+	}
+	if strings.TrimSpace(string(action)) == "" {
+		action = audit.AuditAction("Query")
 	}
 
 	actor, ok := audit.ActorFromContext(ctx)
@@ -74,7 +102,7 @@ func RecordBusinessAnalysisProductionCapacityQueryAuditWithRecorder(
 	event := audit.NewAuditEvent(
 		audit.AuditEntityKey(AuditModuleBusinessAnalysisQuery),
 		businessAnalysisProductionCapacityAuditTargetID,
-		audit.AuditAction("Query"),
+		action,
 		actor,
 	).WithMetadata("report", payload.Report).
 		WithMetadata("filters", string(metadata)).

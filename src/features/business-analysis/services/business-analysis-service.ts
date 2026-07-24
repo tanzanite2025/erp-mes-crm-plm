@@ -1,4 +1,6 @@
 import { apiFetch } from '@/lib/api-client'
+import { createApiClientError } from '@/lib/api-error'
+import { useAuthStore } from '@/stores/auth-store'
 
 export type BusinessAnalysisProductionCapacityQuery = {
   from: string
@@ -72,6 +74,11 @@ export type BusinessAnalysisProductionCapacityOptionsResponse = {
   products: BusinessAnalysisFilterOption[]
 }
 
+type BusinessAnalysisDownloadFile = {
+  blob: Blob
+  fileName: string
+}
+
 function buildQueryString(query: BusinessAnalysisProductionCapacityQuery) {
   const params = new URLSearchParams()
   params.set('from', query.from)
@@ -81,6 +88,101 @@ function buildQueryString(query: BusinessAnalysisProductionCapacityQuery) {
   if (query.status) params.set('status', query.status)
   if (query.includeCanceled) params.set('includeCanceled', 'true')
   return params.toString()
+}
+
+function businessAnalysisAPIBaseURL() {
+  return import.meta.env.VITE_API_BASE_URL || ''
+}
+
+function fallbackProductionCapacityCSVFileName(
+  query: BusinessAnalysisProductionCapacityQuery
+) {
+  return `business-analysis-production-capacity_${query.from}_${query.to}.csv`
+}
+
+function contentDispositionFileName(
+  disposition: string | null,
+  fallback: string
+) {
+  if (!disposition) return fallback
+
+  const encodedFileName = disposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1]
+  if (encodedFileName) {
+    return decodeURIComponent(encodedFileName.trim())
+  }
+
+  const plainFileName = disposition.match(/filename="?([^";]+)"?/i)?.[1]
+  return plainFileName?.trim() || fallback
+}
+
+async function businessAnalysisDownloadError(
+  endpoint: string,
+  response: Response
+) {
+  const errorData = await response.json().catch(() => ({}))
+  const errorMessage =
+    (errorData as { error?: string; message?: string }).error ||
+    (errorData as { error?: string; message?: string }).message ||
+    `[API_ERROR] ${response.status} ${response.statusText}`
+
+  return createApiClientError({
+    kind: 'http',
+    message: errorMessage,
+    endpoint,
+    status: response.status,
+    details: {
+      statusText: response.statusText,
+      errorData,
+    },
+  })
+}
+
+async function fetchBusinessAnalysisCSV(
+  endpoint: string,
+  fallbackFileName: string
+): Promise<BusinessAnalysisDownloadFile> {
+  const token = useAuthStore.getState().accessToken
+  if (!token) {
+    throw createApiClientError({
+      kind: 'auth_required',
+      message: `[AUTH_REQUIRED] Unauthenticated API request blocked: ${endpoint}`,
+      endpoint,
+    })
+  }
+
+  const response = await fetch(
+    `${businessAnalysisAPIBaseURL()}/api/v1${endpoint}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      credentials: 'include',
+    }
+  )
+
+  if (!response.ok) {
+    throw await businessAnalysisDownloadError(endpoint, response)
+  }
+
+  return {
+    blob: await response.blob(),
+    fileName: contentDispositionFileName(
+      response.headers.get('Content-Disposition'),
+      fallbackFileName
+    ),
+  }
+}
+
+function saveBusinessAnalysisBlobFile(file: BusinessAnalysisDownloadFile) {
+  const objectURL = URL.createObjectURL(file.blob)
+  const anchor = document.createElement('a')
+  anchor.href = objectURL
+  anchor.download = file.fileName
+  anchor.rel = 'noopener'
+  document.body.appendChild(anchor)
+  anchor.click()
+  anchor.remove()
+  window.setTimeout(() => URL.revokeObjectURL(objectURL), 0)
 }
 
 export const BusinessAnalysisService = {
@@ -96,5 +198,16 @@ export const BusinessAnalysisService = {
     return apiFetch<BusinessAnalysisProductionCapacityOptionsResponse>(
       '/business-analysis/production-capacity/options'
     )
+  },
+
+  async downloadProductionCapacityCSV(
+    query: BusinessAnalysisProductionCapacityQuery
+  ): Promise<void> {
+    const endpoint = `/business-analysis/production-capacity/export?${buildQueryString(query)}`
+    const file = await fetchBusinessAnalysisCSV(
+      endpoint,
+      fallbackProductionCapacityCSVFileName(query)
+    )
+    saveBusinessAnalysisBlobFile(file)
   },
 }

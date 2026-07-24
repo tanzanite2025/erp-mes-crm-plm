@@ -4,13 +4,17 @@ import type { TranslationKey } from '@/locales'
 import {
   AlertTriangle,
   CalendarRange,
+  Download,
   Factory,
   Filter,
+  Loader2,
   RefreshCw,
   ShieldCheck,
 } from 'lucide-react'
+import { handleServerError } from '@/lib/handle-server-error'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import {
@@ -109,6 +113,7 @@ export function ProductionCapacityAnalysisTab() {
     status: 'ALL',
     includeCanceled: false,
   })
+  const [isExporting, setIsExporting] = useState(false)
 
   const capacityQuery = useQuery({
     queryKey: ['business-analysis', 'production-capacity', filters],
@@ -137,6 +142,28 @@ export function ProductionCapacityAnalysisTab() {
     value: CapacityFilters[K]
   ) => {
     setFilters((current) => ({ ...current, [key]: value }))
+  }
+
+  const normalizedQuery = {
+    ...filters,
+    status: filters.status === 'ALL' ? undefined : filters.status,
+  }
+
+  const canExport = Boolean(filters.from && filters.to && filters.from < filters.to)
+
+  const handleExportCurrentAggregation = async () => {
+    if (!canExport || isExporting) return
+
+    try {
+      setIsExporting(true)
+      await BusinessAnalysisService.downloadProductionCapacityCSV(
+        normalizedQuery
+      )
+    } catch (err) {
+      handleServerError(err)
+    } finally {
+      setIsExporting(false)
+    }
   }
 
   const metricCards = [
@@ -177,6 +204,25 @@ export function ProductionCapacityAnalysisTab() {
         title={t('businessAnalysis.productionCapacity.title')}
         description={t('businessAnalysis.productionCapacity.description')}
         gradient
+        statusBadge={
+          <Button
+            type='button'
+            variant='outline'
+            size='sm'
+            disabled={!canExport || isExporting}
+            onClick={() => void handleExportCurrentAggregation()}
+            className='h-9 rounded-full border-dashed px-4 text-[10px] font-black tracking-widest uppercase'
+          >
+            {isExporting ? (
+              <Loader2 className='mr-2 size-3.5 animate-spin' />
+            ) : (
+              <Download className='mr-2 size-3.5' />
+            )}
+            {isExporting
+              ? t('businessAnalysis.productionCapacity.exportingCsv')
+              : t('businessAnalysis.productionCapacity.exportCsv')}
+          </Button>
+        }
       />
 
       <Card className='rounded-[24px] border bg-background shadow-none'>

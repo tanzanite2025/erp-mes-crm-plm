@@ -58,6 +58,8 @@ export const businessAnalysis = {
     loading: '正在读取经营分析数据…',
     loadError: '经营分析数据读取失败，请稍后重试。',
     refresh: '刷新',
+    exportCsv: '导出当前聚合',
+    exportingCsv: '导出中',
     sourceTitle: '当前数据边界',
     sourceDescription:
       '生产计划和任务提供生产事实，销售订单提供客户维度，品质域提供报废事实；页面不会使用异常条数冒充报废数量。',

@@ -48,6 +48,40 @@ func GetBusinessAnalysisProductionCapacityHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+func ExportBusinessAnalysisProductionCapacityCSVHandler(c *gin.Context) {
+	query, err := parseBusinessAnalysisProductionCapacityQuery(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] " + err.Error()})
+		return
+	}
+
+	export, err := services.ExportBusinessAnalysisProductionCapacityCSV(
+		c.Request.Context(),
+		query,
+	)
+	if err != nil {
+		if errors.Is(err, services.ErrBusinessAnalysisInvalidDateRange) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] " + err.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 导出经营分析产能数据失败"})
+		return
+	}
+
+	if err := services.RecordBusinessAnalysisProductionCapacityExportAudit(
+		auditContextFromGin(c),
+		query,
+	); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 记录经营分析导出审计失败"})
+		return
+	}
+
+	c.Header("Content-Type", export.ContentType)
+	c.Header("Content-Disposition", "attachment; filename="+export.FileName)
+	c.Header("X-Content-Type-Options", "nosniff")
+	c.Data(http.StatusOK, export.ContentType, export.Content)
+}
+
 func GetBusinessAnalysisProductionCapacityOptionsHandler(c *gin.Context) {
 	response, err := services.ListBusinessAnalysisProductionCapacityOptions(
 		c.Request.Context(),

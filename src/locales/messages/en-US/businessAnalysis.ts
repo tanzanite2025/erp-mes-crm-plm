@@ -63,6 +63,8 @@ export const businessAnalysis = {
     loading: 'Loading business analysis data…',
     loadError: 'Business analysis data could not be loaded. Try again later.',
     refresh: 'Refresh',
+    exportCsv: 'Export current aggregation',
+    exportingCsv: 'Exporting',
     sourceTitle: 'Current data boundary',
     sourceDescription:
       'Production plans and tasks provide production facts, sales orders provide customer dimensions, and quality provides scrap facts; anomaly counts will not be used as scrap quantities.',

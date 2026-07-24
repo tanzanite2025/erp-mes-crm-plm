@@ -30,6 +30,7 @@ func TestBusinessAnalysisRoutesRequireBusinessAnalysisMenuPermission(t *testing.
 
 	paths := []string{
 		"/api/v1/business-analysis/production-capacity?from=2026-07-01&to=2026-08-01",
+		"/api/v1/business-analysis/production-capacity/export?from=2026-07-01&to=2026-08-01",
 		"/api/v1/business-analysis/production-capacity/options",
 	}
 

@@ -2,6 +2,8 @@ package services
 
 import (
 	"context"
+	"encoding/csv"
+	"strings"
 	"testing"
 	"time"
 	"xdfc-server/models"
@@ -222,6 +224,64 @@ func TestBusinessAnalysisQualityLinkageRequiresAnchorProductAndBatch(t *testing.
 	require.True(t, qualityAbnormalityMissingProductionLinkage("plan-1", "", "product-1", ""))
 	require.False(t, qualityAbnormalityMissingProductionLinkage("plan-1", "", "product-1", "batch-1"))
 	require.False(t, qualityAbnormalityMissingProductionLinkage("", "order-1", "product-1", "batch-1"))
+}
+
+func TestExportBusinessAnalysisProductionCapacityCSVUsesAggregatedResponse(t *testing.T) {
+	database, err := gorm.Open(sqlite.Open("file:business_analysis_capacity_export?mode=memory&cache=shared"), &gorm.Config{})
+	require.NoError(t, err)
+	createBusinessAnalysisTestSchema(t, database)
+
+	loc := time.UTC
+	from := time.Date(2026, time.July, 1, 0, 0, 0, 0, loc)
+	to := time.Date(2026, time.August, 1, 0, 0, 0, 0, loc)
+	createdAt := time.Date(2026, time.July, 2, 8, 0, 0, 0, loc)
+	planID := "00000000-0000-0000-0000-000000000031"
+
+	require.NoError(t, database.Exec(
+		"INSERT INTO production_plans (id, order_no, product_id, product_name, quantity, status, start_date, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		planID,
+		"SO-BA-031",
+		"product-031",
+		"型号 C",
+		12,
+		"COMPLETED",
+		createdAt,
+		createdAt,
+		createdAt,
+	).Error)
+	require.NoError(t, database.Exec(
+		"INSERT INTO production_tasks (id, plan_id, target_qty, actual_qty, status, completed_at) VALUES (?, ?, ?, ?, ?, ?)",
+		"00000000-0000-0000-0000-000000000032",
+		planID,
+		12,
+		9,
+		"DONE",
+		createdAt,
+	).Error)
+
+	export, err := NewBusinessAnalysisService(database).ExportProductionCapacityCSV(
+		context.Background(),
+		BusinessAnalysisProductionCapacityQuery{From: from, To: to},
+	)
+	require.NoError(t, err)
+	require.Equal(t, "text/csv; charset=utf-8", export.ContentType)
+	require.Equal(
+		t,
+		"business-analysis-production-capacity_2026-07-01_2026-08-01.csv",
+		export.FileName,
+	)
+	require.True(t, strings.HasPrefix(string(export.Content), "\uFEFF"))
+
+	csvText := strings.TrimPrefix(string(export.Content), "\uFEFF")
+	require.Contains(t, csvText, "月产能分析")
+	require.Contains(t, csvText, "型号 C")
+	require.Contains(t, csvText, "计划达成率,75.00%")
+
+	reader := csv.NewReader(strings.NewReader(csvText))
+	reader.FieldsPerRecord = -1
+	records, err := reader.ReadAll()
+	require.NoError(t, err)
+	require.NotEmpty(t, records)
 }
 
 func ptrTime(value time.Time) *time.Time {
