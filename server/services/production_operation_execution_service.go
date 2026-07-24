@@ -37,40 +37,38 @@ type ProductionOperationExecutionListQuery struct {
 }
 
 type RecordProductionOperationExecutionRequest struct {
-	ProductBarcode     string `json:"productBarcode"`
-	ExecutionLotID     string `json:"executionLotId"`
-	RouteID            string `json:"routeId"`
-	RouteStepID        string `json:"routeStepId"`
-	ProcessStepID      string `json:"processStepId"`
-	ExecutionMode      string `json:"executionMode"`
-	PartnerID          string `json:"partnerId"`
-	Action             string `json:"action"`
-	Result             string `json:"result"`
-	OperatorPositionID string `json:"operatorPositionId"`
-	Notes              string `json:"notes"`
-	Operator           string `json:"-"`
+	ProductBarcode string `json:"productBarcode"`
+	ExecutionLotID string `json:"executionLotId"`
+	RouteID        string `json:"routeId"`
+	RouteStepID    string `json:"routeStepId"`
+	ProcessStepID  string `json:"processStepId"`
+	ExecutionMode  string `json:"executionMode"`
+	PartnerID      string `json:"partnerId"`
+	Action         string `json:"action"`
+	Result         string `json:"result"`
+	Notes          string `json:"notes"`
+	Operator       string `json:"-"`
 }
 
 type ProductionOperationExecutionResponse struct {
-	ID                 string `json:"id"`
-	ProductBarcode     string `json:"productBarcode"`
-	StateID            string `json:"stateId"`
-	ExecutionLotID     string `json:"executionLotId"`
-	RouteID            string `json:"routeId"`
-	RouteStepID        string `json:"routeStepId"`
-	ProcessStepID      string `json:"processStepId"`
-	ExecutionMode      string `json:"executionMode"`
-	PartnerID          string `json:"partnerId"`
-	Action             string `json:"action"`
-	Status             string `json:"status"`
-	Result             string `json:"result"`
-	Operator           string `json:"operator"`
-	OperatorPositionID string `json:"operatorPositionId"`
-	StartedAt          string `json:"startedAt"`
-	CompletedAt        string `json:"completedAt"`
-	Notes              string `json:"notes"`
-	CreatedAt          string `json:"createdAt"`
-	UpdatedAt          string `json:"updatedAt"`
+	ID             string `json:"id"`
+	ProductBarcode string `json:"productBarcode"`
+	StateID        string `json:"stateId"`
+	ExecutionLotID string `json:"executionLotId"`
+	RouteID        string `json:"routeId"`
+	RouteStepID    string `json:"routeStepId"`
+	ProcessStepID  string `json:"processStepId"`
+	ExecutionMode  string `json:"executionMode"`
+	PartnerID      string `json:"partnerId"`
+	Action         string `json:"action"`
+	Status         string `json:"status"`
+	Result         string `json:"result"`
+	Operator       string `json:"operator"`
+	StartedAt      string `json:"startedAt"`
+	CompletedAt    string `json:"completedAt"`
+	Notes          string `json:"notes"`
+	CreatedAt      string `json:"createdAt"`
+	UpdatedAt      string `json:"updatedAt"`
 }
 
 type ProductionOperationExecutionListResponse struct {
@@ -148,13 +146,12 @@ func (s *ProductionOperationExecutionService) RecordProductionOperationExecution
 		previousProcessStepID := strings.TrimSpace(state.CurrentProcessStepID)
 		stateStatus := mapProductionOperationActionToBarcodeStateStatus(normalized.Action)
 		stateReq := SaveProductBarcodeStateRequest{
-			ProductBarcode:     normalized.ProductBarcode,
-			RouteID:            normalized.RouteID,
-			RouteStepID:        normalized.RouteStepID,
-			ProcessStepID:      normalized.ProcessStepID,
-			Status:             stateStatus,
-			OperatorPositionID: normalized.OperatorPositionID,
-			Operator:           normalized.Operator,
+			ProductBarcode: normalized.ProductBarcode,
+			RouteID:        normalized.RouteID,
+			RouteStepID:    normalized.RouteStepID,
+			ProcessStepID:  normalized.ProcessStepID,
+			Status:         stateStatus,
+			Operator:       normalized.Operator,
 		}
 		applyProductBarcodeStateRequest(&state, stateReq, now)
 		if !exists {
@@ -167,41 +164,39 @@ func (s *ProductionOperationExecutionService) RecordProductionOperationExecution
 		}
 
 		operation := models.ProductionOperationExecution{
-			BaseModel:          models.BaseModel{ID: uuid.NewString()},
-			ProductBarcode:     normalized.ProductBarcode,
-			StateID:            state.ID,
-			ExecutionLotID:     normalized.ExecutionLotID,
-			RouteID:            normalized.RouteID,
-			RouteStepID:        normalized.RouteStepID,
-			ProcessStepID:      normalized.ProcessStepID,
-			ExecutionMode:      normalized.ExecutionMode,
-			PartnerID:          normalized.PartnerID,
-			Action:             normalized.Action,
-			Status:             stateStatus,
-			Result:             normalized.Result,
-			Operator:           resolveProductionOperationOperator(normalized.Operator),
-			OperatorPositionID: normalized.OperatorPositionID,
-			StartedAt:          resolveProductionOperationStartedAt(normalized.Action, now),
-			CompletedAt:        resolveProductionOperationCompletedAt(normalized.Action, now),
-			Notes:              normalized.Notes,
+			BaseModel:      models.BaseModel{ID: uuid.NewString()},
+			ProductBarcode: normalized.ProductBarcode,
+			StateID:        state.ID,
+			ExecutionLotID: normalized.ExecutionLotID,
+			RouteID:        normalized.RouteID,
+			RouteStepID:    normalized.RouteStepID,
+			ProcessStepID:  normalized.ProcessStepID,
+			ExecutionMode:  normalized.ExecutionMode,
+			PartnerID:      normalized.PartnerID,
+			Action:         normalized.Action,
+			Status:         stateStatus,
+			Result:         normalized.Result,
+			Operator:       resolveProductionOperationOperator(normalized.Operator),
+			StartedAt:      resolveProductionOperationStartedAt(normalized.Action, now),
+			CompletedAt:    resolveProductionOperationCompletedAt(normalized.Action, now),
+			Notes:          normalized.Notes,
 		}
 		if err := tx.Create(&operation).Error; err != nil {
 			return fmt.Errorf("failed to create production operation execution: %w", err)
 		}
 
 		event := models.ProductBarcodeStateEvent{
-			BaseModel:          models.BaseModel{ID: uuid.NewString()},
-			StateID:            state.ID,
-			ProductBarcode:     state.ProductBarcode,
-			EventType:          mapProductionOperationActionToBarcodeStateEvent(normalized.Action),
-			FromProcessStepID:  previousProcessStepID,
-			ToProcessStepID:    state.CurrentProcessStepID,
-			RouteID:            state.RouteID,
-			RouteStepID:        state.RouteStepID,
-			Operator:           operation.Operator,
-			OperatorPositionID: normalized.OperatorPositionID,
-			PayloadSnapshot:    buildProductionOperationStateEventSnapshot(normalized, operation.ID),
-			OccurredAt:         &now,
+			BaseModel:         models.BaseModel{ID: uuid.NewString()},
+			StateID:           state.ID,
+			ProductBarcode:    state.ProductBarcode,
+			EventType:         mapProductionOperationActionToBarcodeStateEvent(normalized.Action),
+			FromProcessStepID: previousProcessStepID,
+			ToProcessStepID:   state.CurrentProcessStepID,
+			RouteID:           state.RouteID,
+			RouteStepID:       state.RouteStepID,
+			Operator:          operation.Operator,
+			PayloadSnapshot:   buildProductionOperationStateEventSnapshot(normalized, operation.ID),
+			OccurredAt:        &now,
 		}
 		if err := tx.Create(&event).Error; err != nil {
 			return fmt.Errorf("failed to create product barcode state event: %w", err)
@@ -255,18 +250,17 @@ func normalizeRecordProductionOperationExecutionRequest(req RecordProductionOper
 	}
 
 	return RecordProductionOperationExecutionRequest{
-		ProductBarcode:     normalizeProductBarcodeValue(req.ProductBarcode),
-		ExecutionLotID:     strings.TrimSpace(req.ExecutionLotID),
-		RouteID:            strings.TrimSpace(req.RouteID),
-		RouteStepID:        strings.TrimSpace(req.RouteStepID),
-		ProcessStepID:      strings.TrimSpace(req.ProcessStepID),
-		ExecutionMode:      executionMode,
-		PartnerID:          strings.TrimSpace(req.PartnerID),
-		Action:             action,
-		Result:             result,
-		OperatorPositionID: strings.TrimSpace(req.OperatorPositionID),
-		Notes:              strings.TrimSpace(req.Notes),
-		Operator:           strings.TrimSpace(req.Operator),
+		ProductBarcode: normalizeProductBarcodeValue(req.ProductBarcode),
+		ExecutionLotID: strings.TrimSpace(req.ExecutionLotID),
+		RouteID:        strings.TrimSpace(req.RouteID),
+		RouteStepID:    strings.TrimSpace(req.RouteStepID),
+		ProcessStepID:  strings.TrimSpace(req.ProcessStepID),
+		ExecutionMode:  executionMode,
+		PartnerID:      strings.TrimSpace(req.PartnerID),
+		Action:         action,
+		Result:         result,
+		Notes:          strings.TrimSpace(req.Notes),
+		Operator:       strings.TrimSpace(req.Operator),
 	}
 }
 
@@ -300,9 +294,6 @@ func validateRecordProductionOperationExecutionRequest(tx *gorm.DB, req RecordPr
 		if err := validateProductionOperationRouteStep(tx, req); err != nil {
 			return err
 		}
-	}
-	if err := validateProductionOperationPositionScope(tx, req.ProcessStepID, req.OperatorPositionID); err != nil {
-		return err
 	}
 	return nil
 }
@@ -353,51 +344,6 @@ func validateProductionOperationRouteStep(tx *gorm.DB, req RecordProductionOpera
 	}
 	if count == 0 {
 		return fmt.Errorf("%w: routeStepId does not match the selected process", ErrInvalidProductionOperationExecution)
-	}
-	return nil
-}
-
-func validateProductionOperationPositionScope(tx *gorm.DB, processStepID string, operatorPositionID string) error {
-	var allowedCount int64
-	if err := tx.Table("process_step_allowed_positions").
-		Where("process_step_id = ?", processStepID).
-		Count(&allowedCount).Error; err != nil {
-		return fmt.Errorf("%w: failed to query process allowed positions: %v", ErrInvalidProductionOperationExecution, err)
-	}
-	if allowedCount == 0 {
-		if operatorPositionID == "" {
-			return nil
-		}
-		return ensureActiveProductionOperationPosition(tx, operatorPositionID)
-	}
-	if operatorPositionID == "" {
-		return fmt.Errorf("%w: operatorPositionId is required for this process", ErrInvalidProductionOperationExecution)
-	}
-	if err := ensureActiveProductionOperationPosition(tx, operatorPositionID); err != nil {
-		return err
-	}
-
-	var matchCount int64
-	if err := tx.Table("process_step_allowed_positions").
-		Where("process_step_id = ? AND position_id = ?", processStepID, operatorPositionID).
-		Count(&matchCount).Error; err != nil {
-		return fmt.Errorf("%w: failed to validate operatorPositionId: %v", ErrInvalidProductionOperationExecution, err)
-	}
-	if matchCount == 0 {
-		return fmt.Errorf("%w: operatorPositionId is not allowed for this process", ErrInvalidProductionOperationExecution)
-	}
-	return nil
-}
-
-func ensureActiveProductionOperationPosition(tx *gorm.DB, positionID string) error {
-	var count int64
-	if err := tx.Model(&models.Position{}).
-		Where("id = ? AND LOWER(status) = ?", strings.TrimSpace(positionID), "active").
-		Count(&count).Error; err != nil {
-		return fmt.Errorf("%w: failed to validate operatorPositionId: %v", ErrInvalidProductionOperationExecution, err)
-	}
-	if count == 0 {
-		return fmt.Errorf("%w: operatorPositionId does not exist or is inactive", ErrInvalidProductionOperationExecution)
 	}
 	return nil
 }
@@ -461,7 +407,6 @@ func buildProductionOperationStateEventSnapshot(req RecordProductionOperationExe
 		"partnerId":            req.PartnerID,
 		"action":               req.Action,
 		"result":               req.Result,
-		"operatorPositionId":   req.OperatorPositionID,
 	})
 	if err != nil {
 		return "{}"
@@ -479,24 +424,23 @@ func mapProductionOperationExecutionsToResponse(items []models.ProductionOperati
 
 func mapProductionOperationExecutionToResponse(item models.ProductionOperationExecution) ProductionOperationExecutionResponse {
 	return ProductionOperationExecutionResponse{
-		ID:                 strings.TrimSpace(item.ID),
-		ProductBarcode:     strings.TrimSpace(item.ProductBarcode),
-		StateID:            strings.TrimSpace(item.StateID),
-		ExecutionLotID:     strings.TrimSpace(item.ExecutionLotID),
-		RouteID:            strings.TrimSpace(item.RouteID),
-		RouteStepID:        strings.TrimSpace(item.RouteStepID),
-		ProcessStepID:      strings.TrimSpace(item.ProcessStepID),
-		ExecutionMode:      strings.TrimSpace(item.ExecutionMode),
-		PartnerID:          strings.TrimSpace(item.PartnerID),
-		Action:             strings.TrimSpace(item.Action),
-		Status:             strings.TrimSpace(item.Status),
-		Result:             strings.TrimSpace(item.Result),
-		Operator:           strings.TrimSpace(item.Operator),
-		OperatorPositionID: strings.TrimSpace(item.OperatorPositionID),
-		StartedAt:          formatProductBarcodeStateTime(item.StartedAt),
-		CompletedAt:        formatProductBarcodeStateTime(item.CompletedAt),
-		Notes:              strings.TrimSpace(item.Notes),
-		CreatedAt:          formatProductionExecutionLotTime(item.CreatedAt),
-		UpdatedAt:          formatProductionExecutionLotTime(item.UpdatedAt),
+		ID:             strings.TrimSpace(item.ID),
+		ProductBarcode: strings.TrimSpace(item.ProductBarcode),
+		StateID:        strings.TrimSpace(item.StateID),
+		ExecutionLotID: strings.TrimSpace(item.ExecutionLotID),
+		RouteID:        strings.TrimSpace(item.RouteID),
+		RouteStepID:    strings.TrimSpace(item.RouteStepID),
+		ProcessStepID:  strings.TrimSpace(item.ProcessStepID),
+		ExecutionMode:  strings.TrimSpace(item.ExecutionMode),
+		PartnerID:      strings.TrimSpace(item.PartnerID),
+		Action:         strings.TrimSpace(item.Action),
+		Status:         strings.TrimSpace(item.Status),
+		Result:         strings.TrimSpace(item.Result),
+		Operator:       strings.TrimSpace(item.Operator),
+		StartedAt:      formatProductBarcodeStateTime(item.StartedAt),
+		CompletedAt:    formatProductBarcodeStateTime(item.CompletedAt),
+		Notes:          strings.TrimSpace(item.Notes),
+		CreatedAt:      formatProductionExecutionLotTime(item.CreatedAt),
+		UpdatedAt:      formatProductionExecutionLotTime(item.UpdatedAt),
 	}
 }

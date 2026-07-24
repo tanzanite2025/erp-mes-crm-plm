@@ -84,24 +84,6 @@ func createProductBarcodeStateTestSchema(t *testing.T, database *gorm.DB) {
 		)
 	`).Error)
 	require.NoError(t, database.Exec(`
-		CREATE TABLE positions (
-			id TEXT PRIMARY KEY,
-			created_at DATETIME,
-			updated_at DATETIME,
-			deleted_at DATETIME,
-			name TEXT,
-			code TEXT,
-			org_unit_id TEXT,
-			production_unit_id TEXT,
-			category TEXT,
-			level INTEGER,
-			is_managerial BOOLEAN,
-			status TEXT,
-			sort_order INTEGER,
-			metadata TEXT
-		)
-	`).Error)
-	require.NoError(t, database.Exec(`
 		CREATE TABLE product_barcode_states (
 			id TEXT PRIMARY KEY,
 			created_at DATETIME,
@@ -133,7 +115,6 @@ func createProductBarcodeStateTestSchema(t *testing.T, database *gorm.DB) {
 			route_id TEXT,
 			route_step_id TEXT,
 			operator TEXT,
-			operator_position_id TEXT,
 			payload_snapshot TEXT,
 			occurred_at DATETIME
 		)

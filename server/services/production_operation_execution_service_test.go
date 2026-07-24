@@ -51,31 +51,6 @@ func createProductionOperationExecutionTestSchema(t *testing.T, database *gorm.D
 		)
 	`).Error)
 	require.NoError(t, database.Exec(`
-		CREATE TABLE positions (
-			id TEXT PRIMARY KEY,
-			created_at DATETIME,
-			updated_at DATETIME,
-			deleted_at DATETIME,
-			name TEXT,
-			code TEXT,
-			org_unit_id TEXT,
-			production_unit_id TEXT,
-			category TEXT,
-			level INTEGER,
-			is_managerial BOOLEAN,
-			status TEXT,
-			sort_order INTEGER,
-			metadata TEXT
-		)
-	`).Error)
-	require.NoError(t, database.Exec(`
-		CREATE TABLE process_step_allowed_positions (
-			process_step_id TEXT NOT NULL,
-			position_id TEXT NOT NULL,
-			PRIMARY KEY (process_step_id, position_id)
-		)
-	`).Error)
-	require.NoError(t, database.Exec(`
 		CREATE TABLE production_routes (
 			id TEXT PRIMARY KEY,
 			created_at DATETIME,
@@ -158,7 +133,6 @@ func createProductionOperationExecutionTestSchema(t *testing.T, database *gorm.D
 			route_id TEXT,
 			route_step_id TEXT,
 			operator TEXT,
-			operator_position_id TEXT,
 			payload_snapshot TEXT,
 			occurred_at DATETIME
 		)
@@ -181,7 +155,6 @@ func createProductionOperationExecutionTestSchema(t *testing.T, database *gorm.D
 			status TEXT,
 			result TEXT,
 			operator TEXT,
-			operator_position_id TEXT,
 			started_at DATETIME,
 			completed_at DATETIME,
 			notes TEXT
@@ -189,7 +162,7 @@ func createProductionOperationExecutionTestSchema(t *testing.T, database *gorm.D
 	`).Error)
 }
 
-func seedProductionOperationProcess(t *testing.T, database *gorm.DB, processID string, allowedPositionIDs ...string) {
+func seedProductionOperationProcess(t *testing.T, database *gorm.DB, processID string) {
 	t.Helper()
 
 	require.NoError(t, database.Create(&models.ProcessStep{
@@ -198,36 +171,17 @@ func seedProductionOperationProcess(t *testing.T, database *gorm.DB, processID s
 		Name:      processID,
 		IsActive:  true,
 	}).Error)
-	for _, positionID := range allowedPositionIDs {
-		require.NoError(t, database.Exec(
-			"INSERT INTO process_step_allowed_positions (process_step_id, position_id) VALUES (?, ?)",
-			processID,
-			positionID,
-		).Error)
-	}
-}
-
-func seedProductionOperationPosition(t *testing.T, database *gorm.DB, positionID string, status string) {
-	t.Helper()
-
-	require.NoError(t, database.Create(&models.Position{
-		BaseModel: models.BaseModel{ID: positionID},
-		Name:      positionID,
-		Status:    status,
-	}).Error)
 }
 
 func TestRecordProductionOperationExecutionCreatesOperationAndBarcodeState(t *testing.T) {
 	service, database := newProductionOperationExecutionTestService(t)
-	seedProductionOperationPosition(t, database, "position-a", "active")
-	seedProductionOperationProcess(t, database, "process-a", "position-a")
+	seedProductionOperationProcess(t, database, "process-a")
 
 	operation, err := service.RecordProductionOperationExecution(RecordProductionOperationExecutionRequest{
-		ProductBarcode:     " abc-001 ",
-		ProcessStepID:      "process-a",
-		Action:             "start",
-		OperatorPositionID: "position-a",
-		Operator:           "tester",
+		ProductBarcode: " abc-001 ",
+		ProcessStepID:  "process-a",
+		Action:         "start",
+		Operator:       "tester",
 	})
 
 	require.NoError(t, err)
@@ -244,23 +198,7 @@ func TestRecordProductionOperationExecutionCreatesOperationAndBarcodeState(t *te
 	require.Equal(t, ProductBarcodeStateEventStart, events[0].EventType)
 }
 
-func TestRecordProductionOperationExecutionRejectsDisallowedPosition(t *testing.T) {
-	service, database := newProductionOperationExecutionTestService(t)
-	seedProductionOperationPosition(t, database, "position-a", "active")
-	seedProductionOperationPosition(t, database, "position-b", "active")
-	seedProductionOperationProcess(t, database, "process-a", "position-a")
-
-	_, err := service.RecordProductionOperationExecution(RecordProductionOperationExecutionRequest{
-		ProductBarcode:     "ABC-002",
-		ProcessStepID:      "process-a",
-		Action:             ProductionOperationActionStart,
-		OperatorPositionID: "position-b",
-	})
-
-	require.ErrorIs(t, err, ErrInvalidProductionOperationExecution)
-}
-
-func TestRecordProductionOperationExecutionAllowsUnscopedProcessWithoutPosition(t *testing.T) {
+func TestRecordProductionOperationExecutionDoesNotRequirePosition(t *testing.T) {
 	service, database := newProductionOperationExecutionTestService(t)
 	seedProductionOperationProcess(t, database, "process-a")
 
@@ -273,18 +211,4 @@ func TestRecordProductionOperationExecutionAllowsUnscopedProcessWithoutPosition(
 	require.NoError(t, err)
 	require.Equal(t, ProductBarcodeStateStatusCompleted, operation.Status)
 	require.NotEmpty(t, operation.CompletedAt)
-}
-
-func TestRecordProductionOperationExecutionRequiresPositionForScopedProcess(t *testing.T) {
-	service, database := newProductionOperationExecutionTestService(t)
-	seedProductionOperationPosition(t, database, "position-a", "active")
-	seedProductionOperationProcess(t, database, "process-a", "position-a")
-
-	_, err := service.RecordProductionOperationExecution(RecordProductionOperationExecutionRequest{
-		ProductBarcode: "ABC-004",
-		ProcessStepID:  "process-a",
-		Action:         ProductionOperationActionStart,
-	})
-
-	require.ErrorIs(t, err, ErrInvalidProductionOperationExecution)
 }

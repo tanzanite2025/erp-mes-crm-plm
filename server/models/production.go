@@ -8,23 +8,11 @@ import (
 // ProcessStep defines a standard production process.
 type ProcessStep struct {
 	BaseModel
-	Code             string     `gorm:"size:50;uniqueIndex;not null" json:"code"`
-	Name             string     `gorm:"size:255;not null" json:"name"`
-	Description      string     `gorm:"type:text" json:"description"`
-	SortOrder        int        `gorm:"default:0" json:"sortOrder"`
-	IsActive         bool       `gorm:"default:true" json:"isActive"`
-	AllowedPositions []Position `gorm:"many2many:process_step_allowed_positions;joinForeignKey:ProcessStepID;joinReferences:PositionID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"allowedPositions"`
-}
-
-// ProcessStepAllowedPosition binds a process step to positions that may execute it.
-// The execution chain reads this table by stable IDs; display names remain editable in org-personnel.
-type ProcessStepAllowedPosition struct {
-	ProcessStepID string `gorm:"type:uuid;primaryKey;column:process_step_id" json:"processStepId"`
-	PositionID    string `gorm:"type:uuid;primaryKey;column:position_id" json:"positionId"`
-}
-
-func (ProcessStepAllowedPosition) TableName() string {
-	return "process_step_allowed_positions"
+	Code        string `gorm:"size:50;uniqueIndex;not null" json:"code"`
+	Name        string `gorm:"size:255;not null" json:"name"`
+	Description string `gorm:"type:text" json:"description"`
+	SortOrder   int    `gorm:"default:0" json:"sortOrder"`
+	IsActive    bool   `gorm:"default:true" json:"isActive"`
 }
 
 // ProductionRoute defines the versioned process route for a product family.

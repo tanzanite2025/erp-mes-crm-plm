@@ -1,5 +1,4 @@
 import type {
-  ProcessStepAllowedPositionApiDTO,
   ProductionLineApiDTO,
   ProductionLineSegmentApiDTO,
   ProductionLinesResponseApiDTO,
@@ -13,10 +12,7 @@ import type {
   SaveProductionRouteApiDTO,
 } from '../contracts/production-resource-api-dto'
 import type { ProductionLine, ProductionSegment } from '../data/production-line'
-import type {
-  ProductionProcessAllowedPosition,
-  ProductionProcessStep,
-} from '../data/production-process'
+import type { ProductionProcessStep } from '../data/production-process'
 import type {
   ProductionRoute,
   ProductionRouteExecutionMode,
@@ -29,48 +25,9 @@ import {
   normalizeProductionProcessStepCode,
 } from '../utils/production-code-normalization'
 
-function normalizeAllowedPositionIds(
-  values: Array<string | null | undefined>
-): string[] {
-  const seen = new Set<string>()
-  const ids: string[] = []
-
-  values.forEach((value) => {
-    const id = value?.trim()
-    if (!id || seen.has(id)) {
-      return
-    }
-    seen.add(id)
-    ids.push(id)
-  })
-
-  return ids
-}
-
-function toProcessAllowedPositionContract(
-  dto: ProcessStepAllowedPositionApiDTO
-): ProductionProcessAllowedPosition {
-  return {
-    id: dto.id,
-    code: dto.code || undefined,
-    name: dto.name,
-    orgUnitId: dto.orgUnitId || undefined,
-    orgUnitName: dto.orgUnitName || undefined,
-    status: dto.status || 'active',
-  }
-}
-
 function toLineProcessContract(
   dto: ProductionProcessStepApiDTO
 ): ProductionProcessStep {
-  const allowedPositions = (dto.allowedPositions || []).map(
-    toProcessAllowedPositionContract
-  )
-  const allowedPositionIds = normalizeAllowedPositionIds([
-    ...(dto.allowedPositionIds || []),
-    ...allowedPositions.map((position) => position.id),
-  ])
-
   return {
     id: dto.id,
     code: normalizeProductionProcessStepCode(dto.code),
@@ -78,8 +35,6 @@ function toLineProcessContract(
     description: dto.description || '',
     sortOrder: dto.sortOrder || 0,
     isActive: dto.isActive ?? true,
-    allowedPositionIds,
-    allowedPositions,
     createdAt: dto.createdAt || '',
     updatedAt: dto.updatedAt || '',
   }
@@ -206,11 +161,6 @@ export function toProductionProcessContracts(
 function toProcessApiDTO(
   process: ProductionProcessStep
 ): ProductionProcessStepApiDTO {
-  const allowedPositionIds = normalizeAllowedPositionIds([
-    ...(process.allowedPositionIds || []),
-    ...(process.allowedPositions || []).map((position) => position.id),
-  ])
-
   return {
     id: process.id,
     code: normalizeProductionProcessStepCode(process.code),
@@ -218,7 +168,6 @@ function toProcessApiDTO(
     description: process.description || '',
     sortOrder: process.sortOrder || 0,
     isActive: process.isActive ?? true,
-    allowedPositionIds,
     createdAt: process.createdAt || '',
     updatedAt: process.updatedAt || '',
   }
@@ -259,11 +208,6 @@ export function toSaveProductionLineApiDTO(
 export function toSaveProductionProcessStepApiDTO(
   step: ProductionProcessStep
 ): SaveProductionProcessStepApiDTO {
-  const allowedPositionIds = normalizeAllowedPositionIds([
-    ...(step.allowedPositionIds || []),
-    ...(step.allowedPositions || []).map((position) => position.id),
-  ])
-
   return {
     id: step.id,
     code: normalizeProductionProcessStepCode(step.code),
@@ -271,7 +215,6 @@ export function toSaveProductionProcessStepApiDTO(
     description: step.description || '',
     sortOrder: step.sortOrder || 0,
     isActive: step.isActive ?? true,
-    allowedPositionIds,
     createdAt: step.createdAt || '',
     updatedAt: step.updatedAt || '',
   }

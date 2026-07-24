@@ -61,9 +61,6 @@ func preloadProductionLineHierarchy(database *gorm.DB) *gorm.DB {
 				"process_steps.sort_order",
 				"process_steps.is_active",
 			).Order("sort_order asc")
-		}).
-		Preload("Segments.Processes.AllowedPositions", func(tx *gorm.DB) *gorm.DB {
-			return tx.Order("sort_order asc, name asc")
 		})
 }
 
@@ -275,26 +272,13 @@ func (GormProductionRepository) DeleteProductionLine(database *gorm.DB, id strin
 func (GormProductionRepository) ListProcessSteps(database *gorm.DB) ([]models.ProcessStep, error) {
 	var steps []models.ProcessStep
 	err := database.
-		Preload("AllowedPositions", func(tx *gorm.DB) *gorm.DB {
-			return tx.Order("sort_order asc, name asc")
-		}).
 		Order("sort_order asc").
 		Find(&steps).Error
 	return steps, err
 }
 
 func (GormProductionRepository) SaveProcessStep(database *gorm.DB, step *models.ProcessStep) error {
-	allowedPositions := step.AllowedPositions
-	stepToSave := *step
-	stepToSave.AllowedPositions = nil
-	if err := database.Save(&stepToSave).Error; err != nil {
-		return err
-	}
-
-	step.ID = stepToSave.ID
-	step.AllowedPositions = allowedPositions
-	processStep := models.ProcessStep{BaseModel: models.BaseModel{ID: step.ID}}
-	return database.Model(&processStep).Association("AllowedPositions").Replace(allowedPositions)
+	return database.Save(step).Error
 }
 
 func (GormProductionRepository) DeleteProcessStep(database *gorm.DB, id string) error {

@@ -1,13 +1,11 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import {
   ListTree,
   Pencil,
   Plus,
   Trash2,
-  UsersRound,
   Workflow,
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -25,7 +23,6 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Checkbox } from '@/components/ui/checkbox'
 import {
   Dialog,
   DialogContent,
@@ -38,10 +35,6 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  PositionService,
-  type PositionOptionRecord,
-} from '@/features/org-personnel/services/position-service'
 import type { ProductionProcessStep as ProcessStep } from '../../../data/production-process'
 import { useProductionTopologyLabels } from '../../../topology/production-topology-labels'
 import {
@@ -59,41 +52,7 @@ interface ProcessFormState {
   description: string
   sortOrder: number
   isActive: boolean
-  allowedPositionIds: string[]
   createdAt: string
-}
-
-function normalizeAllowedPositionIds(
-  values: Array<string | null | undefined>
-): string[] {
-  const seen = new Set<string>()
-  const ids: string[] = []
-
-  values.forEach((value) => {
-    const id = value?.trim()
-    if (!id || seen.has(id)) {
-      return
-    }
-    seen.add(id)
-    ids.push(id)
-  })
-
-  return ids
-}
-
-function getProcessAllowedPositionIds(process: ProcessStep): string[] {
-  return normalizeAllowedPositionIds([
-    ...(process.allowedPositionIds || []),
-    ...(process.allowedPositions || []).map((position) => position.id),
-  ])
-}
-
-function isActivePosition(position: PositionOptionRecord): boolean {
-  return position.status.trim().toLowerCase() === 'active'
-}
-
-function formatPositionSummary(position: PositionOptionRecord): string {
-  return [position.code, position.orgUnitName].filter(Boolean).join(' · ')
 }
 
 function createEmptyProcessState(): ProcessFormState {
@@ -104,7 +63,6 @@ function createEmptyProcessState(): ProcessFormState {
     description: '',
     sortOrder: 0,
     isActive: true,
-    allowedPositionIds: [],
     createdAt: '',
   }
 }
@@ -123,7 +81,6 @@ function toProcessFormState(process?: ProcessStep): ProcessFormState {
     description: normalized.description || '',
     sortOrder: normalized.sortOrder || 0,
     isActive: normalized.isActive ?? true,
-    allowedPositionIds: getProcessAllowedPositionIds(normalized),
     createdAt: normalized.createdAt || '',
   }
 }
@@ -141,16 +98,6 @@ export function ProcessLibraryPanel() {
   const { processes, isLoading, error, saveProcess, deleteProcess } =
     useProcessLibraryProcesses()
   const availableProcesses = useMemo(() => processes, [processes])
-  const positionsQuery = useQuery({
-    queryKey: ['production-process-library', 'positions'],
-    queryFn: PositionService.getPositions,
-    enabled: isDialogOpen,
-    staleTime: 5 * 60 * 1000,
-  })
-  const availablePositions = useMemo(
-    () => (positionsQuery.data || []).filter(isActivePosition),
-    [positionsQuery.data]
-  )
 
   useEffect(() => {
     if (!error) {
@@ -160,18 +107,6 @@ export function ProcessLibraryPanel() {
     toast.error(`全局${level3Name}库加载失败`)
     logger.error('Failed to load production processes', error)
   }, [error, level3Name])
-
-  useEffect(() => {
-    if (!positionsQuery.error) {
-      return
-    }
-
-    toast.error('职位列表加载失败，暂时无法配置允许职位')
-    logger.error(
-      'Failed to load positions for production process',
-      positionsQuery.error
-    )
-  }, [positionsQuery.error])
 
   const filteredProcesses = useMemo(() => {
     const keyword = searchTerm.trim().toLowerCase()
@@ -197,15 +132,6 @@ export function ProcessLibraryPanel() {
     setIsDialogOpen(true)
   }
 
-  const toggleAllowedPosition = (positionId: string) => {
-    setFormState((prev) => ({
-      ...prev,
-      allowedPositionIds: prev.allowedPositionIds.includes(positionId)
-        ? prev.allowedPositionIds.filter((id) => id !== positionId)
-        : [...prev.allowedPositionIds, positionId],
-    }))
-  }
-
   const handleSave = async () => {
     if (
       !normalizeProductionProcessStepCode(formState.code) ||
@@ -228,7 +154,6 @@ export function ProcessLibraryPanel() {
             ? formState.sortOrder
             : 0,
           isActive: formState.isActive,
-          allowedPositionIds: formState.allowedPositionIds,
           createdAt: formState.createdAt,
         })
       )
@@ -361,38 +286,6 @@ export function ProcessLibraryPanel() {
                   <p className='text-sm text-muted-foreground/70'>
                     {process.description || '暂无说明'}
                   </p>
-                  <div className='flex flex-wrap items-center gap-1.5 pt-1'>
-                    <span className='inline-flex items-center gap-1 text-[10px] font-black tracking-widest text-muted-foreground/45 uppercase'>
-                      <UsersRound className='size-3' />
-                      允许职位
-                    </span>
-                    {(process.allowedPositions || []).length > 0 ? (
-                      process.allowedPositions?.map((position) => (
-                        <Badge
-                          key={position.id}
-                          variant='outline'
-                          className='rounded-full text-[10px]'
-                        >
-                          {position.name}
-                        </Badge>
-                      ))
-                    ) : getProcessAllowedPositionIds(process).length > 0 ? (
-                      <Badge
-                        variant='outline'
-                        className='rounded-full text-[10px] text-amber-600'
-                      >
-                        已配置 {getProcessAllowedPositionIds(process).length}{' '}
-                        个职位
-                      </Badge>
-                    ) : (
-                      <Badge
-                        variant='outline'
-                        className='rounded-full text-[10px] text-muted-foreground'
-                      >
-                        不限职位
-                      </Badge>
-                    )}
-                  </div>
                 </div>
 
                 <div className='flex items-center gap-2 self-end md:self-start'>
@@ -505,72 +398,6 @@ export function ProcessLibraryPanel() {
                   placeholder={`描述该${level3Name}的适用场景与约束`}
                   className='min-h-28 rounded-2xl'
                 />
-              </div>
-
-              <div className='space-y-3 rounded-[24px] border border-dashed border-muted/50 bg-muted/5 p-4 md:col-span-2'>
-                <div className='flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between'>
-                  <div>
-                    <p className='flex items-center gap-2 text-sm font-black tracking-tight text-slate-800'>
-                      <UsersRound className='size-4 text-primary' />
-                      允许执行职位
-                    </p>
-                    <p className='text-[10px] font-black tracking-widest text-muted-foreground/45'>
-                      不选择表示该{level3Name}
-                      不限职位；扫码执行时再按账号当前职位校验
-                    </p>
-                  </div>
-                  <Badge
-                    variant='outline'
-                    className='w-fit rounded-full font-mono text-[10px]'
-                  >
-                    {formState.allowedPositionIds.length} SELECTED
-                  </Badge>
-                </div>
-
-                {positionsQuery.isLoading ? (
-                  <div className='grid gap-2 sm:grid-cols-2'>
-                    {[1, 2, 3, 4].map((item) => (
-                      <Skeleton key={item} className='h-11 rounded-2xl' />
-                    ))}
-                  </div>
-                ) : availablePositions.length > 0 ? (
-                  <div className='grid max-h-56 gap-2 overflow-y-auto pr-1 sm:grid-cols-2'>
-                    {availablePositions.map((position) => {
-                      const summary = formatPositionSummary(position)
-                      return (
-                        <label
-                          key={position.id}
-                          htmlFor={`process-position-${position.id}`}
-                          className='flex cursor-pointer items-center gap-3 rounded-2xl border border-dashed border-muted/50 bg-background/80 px-3 py-2.5 transition-colors hover:bg-muted/30'
-                        >
-                          <Checkbox
-                            id={`process-position-${position.id}`}
-                            checked={formState.allowedPositionIds.includes(
-                              position.id
-                            )}
-                            onCheckedChange={() =>
-                              toggleAllowedPosition(position.id)
-                            }
-                          />
-                          <span className='min-w-0'>
-                            <span className='block truncate text-sm font-black tracking-tight text-slate-800'>
-                              {position.name}
-                            </span>
-                            {summary && (
-                              <span className='block truncate text-[10px] font-black tracking-widest text-muted-foreground/45'>
-                                {summary}
-                              </span>
-                            )}
-                          </span>
-                        </label>
-                      )
-                    })}
-                  </div>
-                ) : (
-                  <div className='rounded-2xl border border-dashed border-muted/50 bg-background/70 p-4 text-sm font-bold text-muted-foreground'>
-                    暂无可用职位，请先在组织人事域维护职位。
-                  </div>
-                )}
               </div>
 
               <div className='flex items-center justify-between rounded-[24px] border border-dashed border-muted/50 bg-muted/5 px-4 py-3 md:col-span-2'>

@@ -1152,8 +1152,11 @@ func cleanupDeletedProductionTopologySchema() {
 	statements := []string{
 		`DROP TABLE IF EXISTS job_category_process_mappings CASCADE`,
 		`DROP TABLE IF EXISTS job_categories CASCADE`,
+		`DROP TABLE IF EXISTS process_step_allowed_positions CASCADE`,
 		`ALTER TABLE IF EXISTS production_route_steps DROP COLUMN IF EXISTS job_category_id`,
 		`ALTER TABLE IF EXISTS line_segments DROP COLUMN IF EXISTS hierarchy_option_id`,
+		`ALTER TABLE IF EXISTS product_barcode_state_events DROP COLUMN IF EXISTS operator_position_id`,
+		`ALTER TABLE IF EXISTS production_operation_executions DROP COLUMN IF EXISTS operator_position_id`,
 	}
 	for _, statement := range statements {
 		if err := DB.Exec(statement).Error; err != nil {
@@ -1180,10 +1183,6 @@ func InitDB(dsn string) {
 	fmt.Println("Migrating database schemas...")
 	prepareProductionTopologySchema()
 	failOnDuplicatePackagingRules()
-
-	if err := DB.SetupJoinTable(&models.ProcessStep{}, "AllowedPositions", &models.ProcessStepAllowedPosition{}); err != nil {
-		log.Fatal("Failed to setup process step allowed positions join table:", err)
-	}
 
 	err = DB.AutoMigrate(
 		&models.User{},
@@ -1226,7 +1225,6 @@ func InitDB(dsn string) {
 		&models.NumberingRule{},
 		&models.Position{},
 		&models.ProcessStep{},
-		&models.ProcessStepAllowedPosition{},
 		&models.ProductionLine{},
 		&models.LineSegment{},
 		&models.ProductionRoute{},

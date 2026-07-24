@@ -375,18 +375,11 @@ func (s *ProductionService) SaveProcessStep(req SaveProcessStepRequest) (Process
 
 	step := mapProcessStepDTOToModel(normalizedStep)
 	err := s.txManager.WithinTransaction(func(tx *gorm.DB) error {
-		if err := validateProcessStepPositionReferences(tx, normalizedStep.AllowedPositionIDs); err != nil {
-			return err
-		}
 		if err := s.repository.SaveProcessStep(tx, &step); err != nil {
 			return err
 		}
 
-		return tx.
-			Preload("AllowedPositions", func(preload *gorm.DB) *gorm.DB {
-				return preload.Order("sort_order asc, name asc")
-			}).
-			First(&step, "id = ?", step.ID).Error
+		return tx.First(&step, "id = ?", step.ID).Error
 	})
 	return mapProcessStepToDTO(step), err
 }
@@ -420,8 +413,6 @@ func normalizeProcessStepDTO(step ProcessStepDTO) ProcessStepDTO {
 	step.Code = strings.TrimSpace(step.Code)
 	step.Name = strings.TrimSpace(step.Name)
 	step.Description = strings.TrimSpace(step.Description)
-	step.AllowedPositionIDs = normalizeProcessStepAllowedPositionIDs(step)
-	step.AllowedPositions = nil
 	return step
 }
 
@@ -431,26 +422,6 @@ func validateProcessStepDTO(step ProcessStepDTO) error {
 	}
 	if step.Name == "" {
 		return fmt.Errorf("%w: name is required", ErrInvalidProcessStep)
-	}
-	if len(step.AllowedPositionIDs) > 80 {
-		return fmt.Errorf("%w: allowedPositionIds cannot exceed 80", ErrInvalidProcessStep)
-	}
-	return nil
-}
-
-func validateProcessStepPositionReferences(tx *gorm.DB, positionIDs []string) error {
-	if len(positionIDs) == 0 {
-		return nil
-	}
-
-	var count int64
-	if err := tx.Model(&models.Position{}).
-		Where("id IN ?", positionIDs).
-		Count(&count).Error; err != nil {
-		return fmt.Errorf("%w: failed to validate allowed positions: %v", ErrInvalidProcessStep, err)
-	}
-	if count != int64(len(positionIDs)) {
-		return fmt.Errorf("%w: one or more allowed positions do not exist", ErrInvalidProcessStep)
 	}
 	return nil
 }
