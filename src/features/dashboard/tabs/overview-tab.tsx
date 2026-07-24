@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Link } from '@tanstack/react-router'
 import {
   Settings,
   Check,
@@ -245,9 +246,12 @@ export function DashboardOverviewTab() {
 
             <div className='z-10 mt-4 flex items-center justify-between border-t border-dashed border-muted/30 pt-3 text-[9px] font-black text-muted-foreground/50'>
               <span>车间质检直通率</span>
-              <span className='cursor-pointer text-emerald-500 hover:underline'>
-                质检监控看板 &rarr;
-              </span>
+              <Link
+                to='/business-analysis/scrap'
+                className='text-emerald-500 hover:underline'
+              >
+                打开报废分析 &rarr;
+              </Link>
             </div>
           </Card>
         </div>

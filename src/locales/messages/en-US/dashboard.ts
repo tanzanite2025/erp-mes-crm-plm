@@ -41,16 +41,19 @@ export const dashboard = {
         title: 'Real-time WIP',
         unit: 'UNIT',
         description: 'Total WIP (Layup / Pressing / Finishing)',
+        openAnalysis: 'Open monthly capacity analysis',
       },
       scrap: {
         title: 'Daily Scrap Flow',
         unit: 'NODES',
         delta: 'Risk Delta: +{{value}} vs Prev',
+        openAnalysis: 'Open scrap analysis',
       },
       gap: {
         title: 'Delivery Gap Warning',
         unit: 'ORDERS',
         description: 'Desc: {{value}}',
+        openAnalysis: 'Open customer and sales analysis',
       },
       activation: {
         title: 'SN Activation Total',

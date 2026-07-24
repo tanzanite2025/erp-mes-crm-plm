@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from '@tanstack/react-router'
 import {
   PackageSearch,
   Activity,
@@ -381,9 +382,12 @@ export function OrdersProgress() {
               </div>
               <div className='z-10 mt-4 flex items-center justify-between border-t border-dashed border-muted/30 pt-3 text-[9px] font-black text-muted-foreground/50'>
                 <span>已诊断瓶颈批次: {bottleneckData.length} 批</span>
-                <span className='cursor-pointer text-rose-500 hover:underline'>
-                  瓶颈自愈调停 &rarr;
-                </span>
+                <Link
+                  to='/business-analysis/production-load'
+                  className='text-rose-500 hover:underline'
+                >
+                  打开产能负荷 &rarr;
+                </Link>
               </div>
             </Card>
           </div>

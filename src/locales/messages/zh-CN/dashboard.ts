@@ -37,16 +37,19 @@ export const dashboard = {
         title: '实时在制品',
         unit: '件',
         description: '铺层/热压/精修总计',
+        openAnalysis: '查看月产能分析',
       },
       scrap: {
         title: '今日报废统计',
         unit: '个',
         delta: '较昨日同期: +{{value}}',
+        openAnalysis: '查看报废分析',
       },
       gap: {
         title: '交付缺口预警',
         unit: '单',
         description: '描述: {{value}}',
+        openAnalysis: '查看客户与销售分析',
       },
       activation: {
         title: '条码激活总量',
