@@ -55,6 +55,7 @@ export const AUTHENTICATED_ROUTE_PATHS = [
   '/engineering-reference/nipples',
   '/equipment-maintenance/records',
   '/product-structure/bom-records',
+  '/production-outsourcing/orders',
   '/production-quality/inspection',
   '/shipping-management/logistics',
   '/aps-scheduling/engine-config',

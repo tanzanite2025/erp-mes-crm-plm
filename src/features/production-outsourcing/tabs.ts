@@ -9,6 +9,11 @@ type TranslateFn = (
 export function getProductionOutsourcingTabs(t: TranslateFn): TabItem[] {
   return [
     {
+      key: 'orders',
+      label: t('productionOutsourcing.layout.tabs.orders'),
+      href: '/production-outsourcing/orders',
+    },
+    {
       key: 'partners',
       label: t('productionOutsourcing.layout.tabs.partners'),
       href: '/production-outsourcing/partners',

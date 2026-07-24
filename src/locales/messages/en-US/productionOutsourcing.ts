@@ -1,7 +1,103 @@
 export const productionOutsourcing = {
   layout: {
     tabs: {
+      orders: 'Outsource Tasks',
       partners: 'Outsource Partners',
+    },
+  },
+  orders: {
+    title: 'Outsource Task Management',
+    description:
+      'Record production outsourcing tasks. Sales orders and production plans are sources only; the outsource task owns partner, quantity, process anchors, and execution status.',
+    searchPlaceholder: 'Search task no, source no, customer, or partner',
+    loadingFailed: 'Failed to load outsource tasks',
+    empty: 'No outsource tasks yet',
+    noLines: 'No lines',
+    partnerUnknown: 'Partner not recorded',
+    noManagePermission: 'The current account cannot manage outsource tasks',
+    draftOnlyAction: 'This first version only allows actions on draft tasks',
+    deleteConfirm: 'Delete outsource task "{{orderNo}}"?',
+    moreLines: '{{count}} more lines',
+    actions: {
+      add: 'New outsource task',
+      addLine: 'Add line',
+      release: 'Release',
+    },
+    filters: {
+      allStatus: 'All statuses',
+      allSource: 'All sources',
+    },
+    stats: {
+      total: 'Tasks',
+      released: 'Released',
+      active: 'Active',
+      returned: 'Returned',
+      closed: 'Closed',
+    },
+    sourceTypes: {
+      SALES_ORDER: 'Sales order',
+      PRODUCTION_PLAN: 'Production plan',
+      MANUAL: 'Manual source',
+    },
+    statuses: {
+      DRAFT: 'Draft',
+      RELEASED: 'Released',
+      SENT: 'Sent',
+      IN_PROCESS: 'In process',
+      RETURNED: 'Returned',
+      CLOSED: 'Closed',
+      CANCELED: 'Canceled',
+    },
+    fields: {
+      orderNo: 'Task no',
+      sourceType: 'Source type',
+      source: 'Source document',
+      sourceLine: 'Sales order line',
+      status: 'Status',
+      partner: 'Outsource partner',
+      plannedSendDate: 'Planned send',
+      plannedReturnDate: 'Planned return',
+      totalQuantity: 'Quantity',
+      lineNo: 'Line {{no}}',
+      productName: 'Product name',
+      productCode: 'Product code',
+      specification: 'Specification',
+      quantity: 'Quantity',
+      uom: 'UOM',
+      segmentName: 'Segment/L2',
+      processName: 'Process/L3',
+      lineNotes: 'Line notes',
+      notes: 'Task notes',
+    },
+    placeholders: {
+      orderNo: 'Leave blank to auto-generate',
+      source: 'Select source document',
+      sourceLine: 'Select the order line to outsource',
+      manualSource: 'Optional source note or internal no',
+      partner: 'Select outsource partner',
+      segmentName: 'Optional, later linked to topology',
+      processName: 'Optional, later linked to process status',
+    },
+    dialog: {
+      createTitle: 'New outsource task',
+      editTitle: 'Edit outsource task',
+      description:
+        'The first version establishes the outsource task link. Send, return, inspection, and barcode status will be wired into execution pages later.',
+      linesTitle: 'Outsource lines',
+      linesDescription:
+        'Each line represents the outsourced quantity for one product/process. Future barcode transfer and inspection will reference these lines.',
+      statusLocked:
+        'Status is advanced by release, send, return, and inspection actions, not by direct form editing.',
+    },
+    validation: {
+      partnerRequired: 'Select an outsource partner',
+      sourceRequired: 'Select a sales order or production plan source',
+      lineRequired: 'Lines require product information and quantity greater than 0',
+    },
+    toasts: {
+      saved: 'Outsource task saved',
+      released: 'Outsource task released',
+      deleted: 'Outsource task deleted',
     },
   },
   partners: {

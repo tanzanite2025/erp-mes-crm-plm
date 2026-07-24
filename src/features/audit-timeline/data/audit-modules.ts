@@ -9,6 +9,7 @@ export const AUDIT_MODULES = {
   engineeringSpec: 'engineering-spec',
   employee: 'employee',
   outsourcePartner: 'outsource-partner',
+  outsourceOrder: 'outsource-order',
   material: 'material',
   inventory: 'inventory',
   shipment: 'shipment',

@@ -27,6 +27,7 @@ const (
 	AuditEntityProductionRoute     AuditEntityKey = "production-route"
 	AuditEntityProductionOperation AuditEntityKey = "production-operation"
 	AuditEntityOutsourcePartner    AuditEntityKey = "outsource-partner"
+	AuditEntityOutsourceOrder      AuditEntityKey = "outsource-order"
 )
 
 // AuditActor captures the operator context for an audit event.

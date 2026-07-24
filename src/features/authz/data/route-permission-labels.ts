@@ -117,6 +117,8 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/production-architecture/routes':
     'productionArchitecture.layout.tabs.routes',
   '/production-outsourcing': 'sidebar.items.productionOutsourcing',
+  '/production-outsourcing/orders':
+    'productionOutsourcing.layout.tabs.orders',
   '/production-outsourcing/partners':
     'productionOutsourcing.layout.tabs.partners',
   '/equipment-tooling': 'sidebar.items.toolingAssets',

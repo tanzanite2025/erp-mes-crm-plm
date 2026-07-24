@@ -1230,6 +1230,8 @@ func InitDB(dsn string) {
 		&models.ProductionRoute{},
 		&models.ProductionRouteStep{},
 		&models.OutsourcePartner{},
+		&models.OutsourceOrder{},
+		&models.OutsourceOrderLine{},
 		&models.ProductBarcodeState{},
 		&models.ProductBarcodeStateEvent{},
 		&models.ProductBarcodeTransferEvent{},

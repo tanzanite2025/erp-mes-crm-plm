@@ -93,6 +93,10 @@ var auditModuleAliasMap = map[string][]string{
 		AuditModuleOutsourcePartner,
 		"OutsourcePartner",
 	},
+	AuditModuleOutsourceOrder: {
+		AuditModuleOutsourceOrder,
+		"OutsourceOrder",
+	},
 	AuditModuleCurrency: {
 		AuditModuleCurrency,
 		"Currency",

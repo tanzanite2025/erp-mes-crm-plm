@@ -767,6 +767,19 @@ const productionActions: LegacyActionPermissionEntry[] = [
     ],
   },
   {
+    id: 'action_outsource_order_manage',
+    label: '生产：管理委外任务',
+    desc: '允许创建、更新、删除和下发生产委外任务。',
+    category: 'action',
+    parentId: 'menu_prod_config',
+    routeBindings: [
+      'POST /production/outsourcing/orders',
+      'PATCH /production/outsourcing/orders/:id',
+      'DELETE /production/outsourcing/orders/:id',
+      'POST /production/outsourcing/orders/:id/release',
+    ],
+  },
+  {
     id: 'action_barcode_binding_manage',
     label: '生产：管理产品条码绑定',
     desc: '允许创建产品条码绑定记录。',
