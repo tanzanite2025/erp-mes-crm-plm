@@ -175,36 +175,46 @@ export const quality = {
         titleEdit: 'Edit Controlled Protocol',
         titleView: 'View Controlled Protocol',
         description:
-          'Bind the protocol to a product and level-3 production architecture items first, then fill the target weight for each selected item.',
+          'Define inspection items, target weight, qualified bounds, and scrap thresholds for the product as the single source of quality rules.',
         fields: {
           product: 'Product',
-          level3: 'Level-3 Item',
-          selectedWeights: 'Selected Items & Weights',
-          weight: 'Weight',
+          qualityCriteria: 'Quality Criteria',
+          selectedWeights: 'Inspection Items & Rules',
+          itemName: 'Inspection Item',
+          targetWeight: 'Target Weight',
+          unit: 'Unit',
+          qualifiedMin: 'Qualified Min',
+          qualifiedMax: 'Qualified Max',
+          scrapBelow: 'Scrap Below',
+          scrapAbove: 'Scrap Above',
         },
         placeholders: {
           product: 'Select product',
-          level3: 'Select a level-3 item',
-          weight: 'Enter weight',
+          itemName: 'e.g. Finished weight',
+          targetWeight: 'Target',
+          unit: 'g',
+          qualifiedMin: 'Minimum qualified value',
+          qualifiedMax: 'Maximum qualified value',
+          scrapBelow: 'Scrap below this value',
+          scrapAbove: 'Scrap above this value',
         },
         actions: {
-          addSelection: 'Add Item',
+          addSelection: 'Add Inspection Item',
           removeSelection: 'Remove',
           cancel: 'Cancel',
           submit: 'Confirm',
           close: 'Close',
         },
         empty: {
-          stages:
-            'No level-3 production architecture data is available yet. Please complete the production architecture setup first.',
-          selections:
-            'No level-3 items have been added yet. Please select one from the dropdown above first.',
+          criteria:
+            'No inspection items have been added yet. Add a weight, size, or other rule first.',
         },
         validation: {
           productRequired: 'Please select a product first.',
-          selectionRequired: 'Please add at least one level-3 item.',
+          selectionRequired: 'Please add at least one inspection item.',
+          itemNameRequired: 'Please enter a name for every inspection item.',
           weightRequired:
-            'Please fill in the weight for every selected level-3 item.',
+            'Please fill in the target weight for every inspection item.',
         },
         toastDraftReady:
           'Controlled protocol draft captured with {{count}} items.',

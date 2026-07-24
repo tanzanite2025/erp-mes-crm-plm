@@ -101,7 +101,7 @@ export function StandardsIndexPage({
   const handleControlledProtocolSubmit = (draft: ControlledProtocolDraft) => {
     toast.success(
       t('quality.standards.dialog.controlledProtocol.toastDraftReady', {
-        count: draft.selections.length,
+        count: draft.criteria.length,
       })
     )
     setIsControlledProtocolDialogOpen(false)
