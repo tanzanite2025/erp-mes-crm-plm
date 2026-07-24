@@ -1,6 +1,5 @@
 import {
   Children,
-  type PointerEvent,
   useEffect,
   useMemo,
   useRef,
@@ -8,13 +7,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from 'react'
-import {
-  motion,
-  useMotionValue,
-  useSpring,
-  useTransform,
-  type MotionValue,
-} from 'framer-motion'
+import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
 interface GlobalBottomDockProps {
@@ -43,12 +36,10 @@ const DEFAULT_DOCK_SIZE: DockSize = {
 }
 
 const DOCK_ITEM_BASE_SIZE = 44
-const DOCK_ITEM_MAX_SIZE = 66
-const DOCK_ITEM_PROXIMITY_RADIUS = 144
-const DOCK_ITEM_SPRING = {
+const DOCK_ITEM_HOVER_SPRING = {
   mass: 0.1,
-  stiffness: 170,
-  damping: 13,
+  stiffness: 260,
+  damping: 20,
 }
 
 const formatDockUnit = (value: number) => Number(value.toFixed(2))
@@ -99,53 +90,37 @@ type DockMaskStyle = DockSurfaceStyle & {
 
 interface FloatingDockItemProps {
   children: ReactNode
-  pointerX: MotionValue<number>
 }
 
-function FloatingDockItem({ children, pointerX }: FloatingDockItemProps) {
-  const itemRef = useRef<HTMLDivElement>(null)
-  const targetSize = useTransform(pointerX, (currentPointerX) => {
-    const item = itemRef.current
-    if (!item || currentPointerX < 0) {
-      return DOCK_ITEM_BASE_SIZE
-    }
-
-    const bounds = item.getBoundingClientRect()
-    const itemCenter = bounds.left + bounds.width / 2
-    const distance = Math.abs(currentPointerX - itemCenter)
-    const proximity = Math.max(0, 1 - distance / DOCK_ITEM_PROXIMITY_RADIUS)
-
-    return (
-      DOCK_ITEM_BASE_SIZE +
-      (DOCK_ITEM_MAX_SIZE - DOCK_ITEM_BASE_SIZE) * proximity
-    )
-  })
-  const size = useSpring(targetSize, DOCK_ITEM_SPRING)
-  const buttonScale = useTransform(
-    size,
-    [DOCK_ITEM_BASE_SIZE, DOCK_ITEM_MAX_SIZE],
-    [1, 1.18]
-  )
-  const glowOpacity = useTransform(
-    size,
-    [DOCK_ITEM_BASE_SIZE, DOCK_ITEM_MAX_SIZE],
-    [0, 0.9]
-  )
-
+function FloatingDockItem({ children }: FloatingDockItemProps) {
   return (
     <motion.div
-      ref={itemRef}
-      style={{ width: size, height: size }}
+      initial='idle'
+      animate='idle'
+      whileHover='hover'
+      style={{
+        width: DOCK_ITEM_BASE_SIZE,
+        height: DOCK_ITEM_BASE_SIZE,
+      }}
       className='relative flex shrink-0 items-center justify-center'
     >
       <motion.div
         aria-hidden='true'
-        style={{ opacity: glowOpacity }}
+        initial={false}
+        variants={{
+          idle: { opacity: 0, scale: 0.85 },
+          hover: { opacity: 0.9, scale: 1.24 },
+        }}
+        transition={DOCK_ITEM_HOVER_SPRING}
         className='pointer-events-none absolute inset-0 -z-10 hidden rounded-full bg-primary/20 blur-xl sm:block'
       />
       <motion.div
-        style={{ scale: buttonScale }}
-        className='relative z-10 flex items-center justify-center'
+        variants={{
+          idle: { y: 0, scale: 1 },
+          hover: { y: -10, scale: 1.18 },
+        }}
+        transition={DOCK_ITEM_HOVER_SPRING}
+        className='relative z-10 flex items-center justify-center will-change-transform'
       >
         {children}
       </motion.div>
@@ -156,7 +131,6 @@ function FloatingDockItem({ children, pointerX }: FloatingDockItemProps) {
 export function GlobalBottomDock({ children }: GlobalBottomDockProps) {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const dockItems = Children.toArray(children)
-  const pointerX = useMotionValue(-1)
   const dockSurfaceVars: DockSurfaceStyle = {
     '--dock-surface': 'hsl(var(--muted) / 0.8)',
     '--dock-surface-dark': 'hsl(var(--background) / 0.95)',
@@ -220,21 +194,6 @@ export function GlobalBottomDock({ children }: GlobalBottomDockProps) {
     ...dockSurfaceVars,
     '--dock-content-padding-x': `${mobileDockGeometry.safePaddingX}px`,
   }
-  const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
-    if (
-      event.pointerType !== 'mouse' ||
-      typeof window === 'undefined' ||
-      window.innerWidth < 640
-    ) {
-      return
-    }
-
-    pointerX.set(event.clientX)
-  }
-  const handlePointerLeave = () => {
-    pointerX.set(-1)
-  }
-
   return (
     <div className='pointer-events-none fixed inset-x-0 bottom-0 z-9 flex items-end justify-center px-2 sm:bottom-3 sm:items-center sm:px-4'>
       <div ref={wrapperRef} className='relative isolate overflow-visible'>
@@ -264,17 +223,13 @@ export function GlobalBottomDock({ children }: GlobalBottomDockProps) {
         </svg>
         <div
           style={dockContentStyle}
-          onPointerMove={handlePointerMove}
-          onPointerLeave={handlePointerLeave}
           className={cn(
             'pointer-events-auto relative z-10 flex min-w-0 items-center justify-center gap-3 px-(--dock-content-padding-x) pt-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] transition-[border-color,box-shadow] duration-500 ease-out motion-reduce:transition-none sm:rounded-full sm:border sm:border-border/70 sm:bg-(--dock-surface) sm:px-3 sm:py-2 sm:pb-2 sm:shadow-lg sm:shadow-black/10 sm:backdrop-blur-xl sm:hover:border-primary/25 sm:hover:shadow-2xl sm:hover:shadow-primary/10 dark:sm:bg-(--dock-surface-dark)',
             'supports-backdrop-filter:sm:bg-(--dock-surface-supported) dark:supports-backdrop-filter:sm:bg-(--dock-surface-dark-supported)'
           )}
         >
           {dockItems.map((child, index) => (
-            <FloatingDockItem key={index} pointerX={pointerX}>
-              {child}
-            </FloatingDockItem>
+            <FloatingDockItem key={index}>{child}</FloatingDockItem>
           ))}
         </div>
       </div>
