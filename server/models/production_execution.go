@@ -45,3 +45,23 @@ type ProductBarcodeStateEvent struct {
 func (ProductBarcodeStateEvent) TableName() string {
 	return "product_barcode_state_events"
 }
+
+// ProductionExecutionLot optionally groups one product barcode into a plan/task/batch context.
+// Barcode process state does not depend on this table; it is for batching, analytics, and trace lookup.
+type ProductionExecutionLot struct {
+	BaseModel
+	ProductBarcode string  `gorm:"size:120;uniqueIndex;not null" json:"productBarcode"`
+	ProductID      string  `gorm:"size:36;index" json:"productId"`
+	ProductName    string  `gorm:"size:255" json:"productName"`
+	PlanID         string  `gorm:"type:uuid;index" json:"planId"`
+	TaskID         string  `gorm:"type:uuid;index" json:"taskId"`
+	BatchNo        string  `gorm:"size:80;index" json:"batchNo"`
+	Quantity       float64 `gorm:"not null;default:1" json:"quantity"`
+	Status         string  `gorm:"size:30;index;not null;default:'ACTIVE'" json:"status"`
+	Notes          string  `gorm:"type:text" json:"notes"`
+	Operator       string  `gorm:"size:120" json:"operator"`
+}
+
+func (ProductionExecutionLot) TableName() string {
+	return "production_execution_lots"
+}

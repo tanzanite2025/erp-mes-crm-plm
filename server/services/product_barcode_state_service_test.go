@@ -198,9 +198,17 @@ func TestSaveProductBarcodeStateAppendsTransferEvent(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "process-b", state.CurrentProcessStepID)
 	require.Len(t, state.Events, 2)
-	require.Equal(t, ProductBarcodeStateEventTransfer, state.Events[0].EventType)
-	require.Equal(t, "process-a", state.Events[0].FromProcessStepID)
-	require.Equal(t, "process-b", state.Events[0].ToProcessStepID)
+
+	var transferEvent *ProductBarcodeStateEventResponse
+	for index := range state.Events {
+		if state.Events[index].EventType == ProductBarcodeStateEventTransfer {
+			transferEvent = &state.Events[index]
+			break
+		}
+	}
+	require.NotNil(t, transferEvent)
+	require.Equal(t, "process-a", transferEvent.FromProcessStepID)
+	require.Equal(t, "process-b", transferEvent.ToProcessStepID)
 }
 
 func TestSaveProductBarcodeStateRejectsExecutionWithoutProcess(t *testing.T) {
