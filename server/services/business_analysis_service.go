@@ -375,14 +375,26 @@ func (s *BusinessAnalysisService) QueryProductionCapacity(
 		qualityData.QualifiedQuantityFactCount > 0 &&
 			qualityData.MissingQualifiedQuantityRecords == 0
 	response.DataQuality.QualityProductionLinkageAvailable = qualityData.UnlinkedQualityRecords == 0
-	if response.DataQuality.QualityQuantityAvailable &&
-		response.DataQuality.QualityProductionLinkageAvailable {
-		scrapQuantity := qualityData.ScrapQuantity
-		response.Summary.ScrapQuantity = &scrapQuantity
-	}
+	quantityRatesAvailable := businessAnalysisQuantityRatesAvailable(
+		response,
+		qualityData,
+	)
+	response.DataQuality.IsComplete = quantityRatesAvailable
 	if response.DataQuality.QualifiedQuantityAvailable {
 		qualifiedQuantity := qualityData.QualifiedQuantity
 		response.Summary.QualifiedQuantity = &qualifiedQuantity
+	}
+	if quantityRatesAvailable {
+		scrapQuantity := qualityData.SettlementRejectedQuantity
+		response.Summary.ScrapQuantity = &scrapQuantity
+		yieldRate := qualityData.QualifiedQuantity / qualityData.InputQuantity
+		scrapRate := qualityData.SettlementRejectedQuantity / qualityData.InputQuantity
+		response.Summary.YieldRate = &yieldRate
+		response.Summary.ScrapRate = &scrapRate
+	} else if response.DataQuality.QualityQuantityAvailable &&
+		response.DataQuality.QualityProductionLinkageAvailable {
+		scrapQuantity := qualityData.ScrapQuantity
+		response.Summary.ScrapQuantity = &scrapQuantity
 	}
 	response.DataQuality.Notes = businessAnalysisQualityNotes(qualityData)
 
@@ -625,7 +637,10 @@ type businessAnalysisQualityDataQuality struct {
 	MissingQualifiedQuantityRecords   int64
 	MissingOccurrenceTimestampRecords int64
 	ScrapQuantity                     float64
+	InputQuantity                     float64
 	QualifiedQuantity                 float64
+	SettlementRejectedQuantity        float64
+	QuantityUnitCount                 int
 }
 
 func (s *BusinessAnalysisService) loadQualityDataQuality(
@@ -780,6 +795,7 @@ func (s *BusinessAnalysisService) loadQualityDataQuality(
 
 	var result businessAnalysisQualityDataQuality
 	settledBatchIdentities := make(map[string]struct{}, len(settlements))
+	quantityUnits := make(map[string]struct{})
 	for _, abnormality := range abnormalities {
 		planID, orderID, productID, batchNo := qualityAbnormalityLinkage(abnormality)
 		plan := plansByID[planID]
@@ -831,10 +847,13 @@ func (s *BusinessAnalysisService) loadQualityDataQuality(
 		if abnormality.OccurredAt == nil {
 			result.MissingOccurrenceTimestampRecords++
 		}
-		if abnormality.ScrapQuantity == nil || *abnormality.ScrapQuantity <= 0 {
+		if abnormality.ScrapQuantity == nil ||
+			*abnormality.ScrapQuantity <= 0 ||
+			strings.TrimSpace(abnormality.ScrapUnit) == "" {
 			result.MissingQuantityRecords++
 		} else {
 			result.ScrapQuantity += *abnormality.ScrapQuantity
+			quantityUnits[strings.ToLower(strings.TrimSpace(abnormality.ScrapUnit))] = struct{}{}
 		}
 		if qualityAbnormalityMissingProductionLinkage(planID, orderID, productID, batchNo) {
 			result.UnlinkedQualityRecords++
@@ -905,7 +924,10 @@ func (s *BusinessAnalysisService) loadQualityDataQuality(
 		if !qualityBatchQuantitySettlementHasValidQuantities(settlement) {
 			result.MissingQualifiedQuantityRecords++
 		} else {
+			result.InputQuantity += settlement.InputQuantity
 			result.QualifiedQuantity += settlement.QualifiedQuantity
+			result.SettlementRejectedQuantity += settlement.RejectedQuantity
+			quantityUnits[strings.ToLower(strings.TrimSpace(settlement.QuantityUnit))] = struct{}{}
 		}
 		if planID == "" || productID == "" || batchNo == "" {
 			result.UnlinkedQualityRecords++
@@ -981,6 +1003,7 @@ func (s *BusinessAnalysisService) loadQualityDataQuality(
 		}
 	}
 
+	result.QuantityUnitCount = len(quantityUnits)
 	return result, nil
 }
 
@@ -1050,7 +1073,7 @@ func qualityBatchQuantitySettlementHasValidQuantities(
 }
 
 func businessAnalysisQualityNotes(data businessAnalysisQualityDataQuality) []string {
-	notes := make([]string, 0, 4)
+	notes := make([]string, 0, 5)
 	if data.MissingQuantityRecords > 0 {
 		notes = append(notes, "QUALITY_SCRAP_QUANTITY_MISSING")
 	}
@@ -1067,7 +1090,24 @@ func businessAnalysisQualityNotes(data businessAnalysisQualityDataQuality) []str
 		// exposes qualifiedQuantity.
 		notes = append(notes, "QUALITY_QUALIFIED_QUANTITY_MISSING")
 	}
+	if data.QuantityUnitCount > 1 {
+		notes = append(notes, "QUALITY_QUANTITY_UNIT_MISMATCH")
+	}
 	return notes
+}
+
+func businessAnalysisQuantityRatesAvailable(
+	response BusinessAnalysisProductionCapacityResponse,
+	qualityData businessAnalysisQualityDataQuality,
+) bool {
+	return response.Summary.CompletedQuantity > 0 &&
+		response.DataQuality.QualityQuantityAvailable &&
+		response.DataQuality.QualifiedQuantityAvailable &&
+		response.DataQuality.QualityProductionLinkageAvailable &&
+		response.DataQuality.MissingOccurrenceTimestampRecords == 0 &&
+		response.DataQuality.MissingCompletionTimestampRecords == 0 &&
+		qualityData.InputQuantity > 0 &&
+		qualityData.QuantityUnitCount <= 1
 }
 
 func productionPlanAnalysisDate(plan models.ProductionPlan) time.Time {

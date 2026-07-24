@@ -22,6 +22,8 @@ export const businessAnalysis = {
     qualifiedQuantity: '合格量',
     scrapQuantity: '报废量',
     achievementRate: '计划达成率',
+    yieldRate: '良率',
+    scrapRate: '报废率',
     filtersTitle: '预留筛选条件',
     filters: '月份 / 客户 / 产品型号 / 生产线 / 计划状态',
     from: '开始日期',
@@ -49,6 +51,8 @@ export const businessAnalysis = {
     qualityLinkageMissing: '品质记录尚未具备稳定的生产计划、订单或客户关联。',
     qualityOccurrenceTimestampMissing: '品质报废记录缺少明确的发生时间。',
     qualifiedQuantityMissing: '当前品质链路尚未提供可审计的合格数量。',
+    qualityQuantityUnitMismatch:
+      '质量数量存在多个单位，暂不能在未换算前计算良率或报废率。',
     qualityNoteFallback: '存在尚未映射的数据完整性说明。',
     byProductTitle: '按产品型号',
     byCustomerTitle: '按客户',

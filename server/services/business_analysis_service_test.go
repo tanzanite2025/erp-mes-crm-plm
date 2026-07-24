@@ -337,6 +337,102 @@ func TestBusinessAnalysisProductionCapacityUsesConfirmedQualifiedQuantityFact(t 
 	require.Nil(t, response.Summary.YieldRate)
 }
 
+func TestBusinessAnalysisProductionCapacityCalculatesQualityRatesWhenContractComplete(t *testing.T) {
+	database, err := gorm.Open(sqlite.Open("file:business_analysis_quality_rates?mode=memory&cache=shared"), &gorm.Config{})
+	require.NoError(t, err)
+	createBusinessAnalysisTestSchema(t, database)
+
+	loc := time.UTC
+	from := time.Date(2026, time.July, 1, 0, 0, 0, 0, loc)
+	to := time.Date(2026, time.August, 1, 0, 0, 0, 0, loc)
+	occurredAt := time.Date(2026, time.July, 9, 10, 0, 0, 0, loc)
+	planID := "00000000-0000-0000-0000-000000000071"
+	taskID := "00000000-0000-0000-0000-000000000072"
+	inspectionTaskID := "00000000-0000-0000-0000-000000000073"
+
+	require.NoError(t, database.Exec(
+		"INSERT INTO production_plans (id, product_id, product_name, quantity, status, start_date, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+		planID,
+		"product-071",
+		"型号 G",
+		12,
+		"COMPLETED",
+		occurredAt,
+		occurredAt,
+		occurredAt,
+	).Error)
+	require.NoError(t, database.Exec(
+		"INSERT INTO production_tasks (id, plan_id, batch_no, target_qty, actual_qty, status, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+		taskID,
+		planID,
+		"B-071",
+		12,
+		12,
+		"DONE",
+		occurredAt,
+	).Error)
+	require.NoError(t, database.Exec(
+		"INSERT INTO inspection_tasks (id, production_plan_id, batch_no, product_id, result, completed_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+		inspectionTaskID,
+		planID,
+		"B-071",
+		"product-071",
+		"FAIL",
+		occurredAt,
+		occurredAt,
+		occurredAt,
+	).Error)
+	require.NoError(t, database.Exec(
+		"INSERT INTO quality_abnormalities (id, disposal_method, scrap_quantity, scrap_unit, production_plan_id, product_id, batch_no, occurred_at, status, description, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		"00000000-0000-0000-0000-000000000074",
+		"SCRAP",
+		1,
+		"pcs",
+		planID,
+		"product-071",
+		"B-071",
+		occurredAt,
+		"CLOSED",
+		"已确认报废",
+		occurredAt,
+		occurredAt,
+	).Error)
+	require.NoError(t, database.Exec(
+		"INSERT INTO quality_batch_quantity_settlements (id, production_plan_id, product_id, batch_no, inspection_task_id, input_quantity, qualified_quantity, rejected_quantity, rework_quantity, quantity_unit, occurred_at, confirmed_at, confirmed_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		"00000000-0000-0000-0000-000000000075",
+		planID,
+		"product-071",
+		"B-071",
+		inspectionTaskID,
+		12,
+		10,
+		1,
+		1,
+		"pcs",
+		occurredAt,
+		occurredAt,
+		"quality-user",
+		occurredAt,
+		occurredAt,
+	).Error)
+
+	response, err := NewBusinessAnalysisService(database).QueryProductionCapacity(
+		context.Background(),
+		BusinessAnalysisProductionCapacityQuery{From: from, To: to},
+	)
+	require.NoError(t, err)
+	require.NotNil(t, response.Summary.QualifiedQuantity)
+	require.NotNil(t, response.Summary.ScrapQuantity)
+	require.NotNil(t, response.Summary.YieldRate)
+	require.NotNil(t, response.Summary.ScrapRate)
+	require.InDelta(t, 10, *response.Summary.QualifiedQuantity, 0.0001)
+	require.InDelta(t, 1, *response.Summary.ScrapQuantity, 0.0001)
+	require.InDelta(t, 10.0/12.0, *response.Summary.YieldRate, 0.0001)
+	require.InDelta(t, 1.0/12.0, *response.Summary.ScrapRate, 0.0001)
+	require.True(t, response.DataQuality.IsComplete)
+	require.Empty(t, response.DataQuality.Notes)
+}
+
 func TestBusinessAnalysisQualityLinkageRequiresAnchorProductAndBatch(t *testing.T) {
 	require.True(t, qualityAbnormalityMissingProductionLinkage("", "", "product-1", "batch-1"))
 	require.True(t, qualityAbnormalityMissingProductionLinkage("plan-1", "", "", "batch-1"))

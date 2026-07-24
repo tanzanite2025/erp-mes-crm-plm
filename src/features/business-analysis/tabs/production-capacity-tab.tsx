@@ -84,6 +84,8 @@ const DATA_QUALITY_NOTE_LABEL_KEYS: Record<string, TranslationKey> = {
     'businessAnalysis.productionCapacity.qualityOccurrenceTimestampMissing',
   QUALITY_QUALIFIED_QUANTITY_MISSING:
     'businessAnalysis.productionCapacity.qualifiedQuantityMissing',
+  QUALITY_QUANTITY_UNIT_MISMATCH:
+    'businessAnalysis.productionCapacity.qualityQuantityUnitMismatch',
 }
 
 function getCurrentMonthRange(): Pick<CapacityFilters, 'from' | 'to'> {
@@ -245,6 +247,16 @@ export function ProductionCapacityAnalysisTab() {
           : formatQuantity(summary.scrapQuantity, numberLocale)
         : '…',
     },
+    {
+      key: 'yieldRate',
+      label: t('businessAnalysis.productionCapacity.yieldRate'),
+      value: summary ? formatRate(summary.yieldRate, numberLocale) : '…',
+    },
+    {
+      key: 'scrapRate',
+      label: t('businessAnalysis.productionCapacity.scrapRate'),
+      value: summary ? formatRate(summary.scrapRate, numberLocale) : '…',
+    },
   ]
 
   return (
@@ -396,7 +408,7 @@ export function ProductionCapacityAnalysisTab() {
         </Card>
       )}
 
-      <div className='grid gap-3 sm:grid-cols-2 xl:grid-cols-5'>
+      <div className='grid gap-3 sm:grid-cols-2 xl:grid-cols-7'>
         {metricCards.map((metric) => (
           <Card
             key={metric.key}

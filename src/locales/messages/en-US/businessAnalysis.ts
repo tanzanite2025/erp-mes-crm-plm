@@ -23,6 +23,8 @@ export const businessAnalysis = {
     qualifiedQuantity: 'Qualified quantity',
     scrapQuantity: 'Scrap quantity',
     achievementRate: 'Achievement rate',
+    yieldRate: 'Yield rate',
+    scrapRate: 'Scrap rate',
     filtersTitle: 'Reserved filters',
     filters: 'Month / customer / product model / production line / plan status',
     from: 'Start date',
@@ -54,6 +56,8 @@ export const businessAnalysis = {
       'Quality scrap records do not have an explicit occurrence timestamp.',
     qualifiedQuantityMissing:
       'The quality chain does not yet provide an auditable qualified quantity.',
+    qualityQuantityUnitMismatch:
+      'Quality quantities use multiple units, so yield and scrap rates are unavailable until conversion is defined.',
     qualityNoteFallback: 'An unmapped data-quality condition was reported.',
     byProductTitle: 'By product model',
     byCustomerTitle: 'By customer',
