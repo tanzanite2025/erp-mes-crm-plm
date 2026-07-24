@@ -64,7 +64,7 @@ export const basicSettings = {
       printTemplateMgmt: '打印模板',
       templateVarMgmt: '模板变量',
       factoryMgmt: '工厂管理',
-      lineMgmt: '产线管理',
+      lineMgmt: '产线脑图',
       sectionMgmt: '区段管理',
       groupMgmt: '组别管理',
       routingMgmt: '途程管理',

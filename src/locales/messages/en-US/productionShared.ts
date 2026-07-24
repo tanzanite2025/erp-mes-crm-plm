@@ -7,7 +7,7 @@ export const productionShared = {
     loadFailed:
       'Failed to load structure data. Please check the network connection.',
     emptyTitle: 'No matching structures',
-    emptyDescription: 'Create hierarchy structures in “Line Management” first.',
+    emptyDescription: 'Create hierarchy structures in “Line Mindmap” first.',
     treeEmptyDynamic: 'No {{level1Name}} / {{level2Name}} structure data',
     assignAction: 'Assign Action',
     assignActionSuccess:

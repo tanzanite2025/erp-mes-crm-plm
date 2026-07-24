@@ -76,6 +76,14 @@ const moduleGroups: CommandItemConfig[] = [
     pinyin: 'yhqx',
   },
   {
+    id: 'tab-production-architecture-mindmap',
+    href: '/production-architecture/mindmap',
+    titleKey: 'productionArchitecture.layout.tabs.mindmap',
+    parentKey: 'commandMenu.parents.productionCoordination',
+    keywords: ['mindmap', 'L1', 'L2', 'L3', '产线脑图', '脑图', '生产结构'],
+    pinyin: 'ctxnt',
+  },
+  {
     id: 'tab-production-architecture-topology',
     href: '/production-architecture/topology',
     titleKey: 'commandMenu.items.topology',

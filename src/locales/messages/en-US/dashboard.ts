@@ -27,7 +27,7 @@ export const dashboard = {
         'Choose which {{levelName}} entries should appear in the overview chart.',
       emptyTitle: 'No {{levelName}} defined',
       emptyDescription:
-        'Please go to "Production Config -> Line Management" and add {{levelName}} first.',
+        'Please go to "Production Architecture -> Line Mindmap" and add {{levelName}} first.',
       cancel: 'Cancel',
       save: 'Save Configuration',
     },

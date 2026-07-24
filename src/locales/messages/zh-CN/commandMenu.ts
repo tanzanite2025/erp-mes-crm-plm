@@ -88,7 +88,7 @@ export const commandMenu = {
     accounts: '账户列表',
     rights: '用户权限',
     permissions: '权限审计',
-    productionLines: '产线管理',
+    productionLines: '产线脑图',
     topology: '拓扑模板',
     productionRoutes: '生产路线',
     leaveManagement: '请假管理',

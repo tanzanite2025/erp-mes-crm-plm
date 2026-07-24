@@ -24,7 +24,7 @@ export const dashboard = {
       title: '配置显示{{levelName}}',
       description: '选择要在全厂概览中展示产量的{{levelName}}节点。',
       emptyTitle: '暂无{{levelName}}定义',
-      emptyDescription: '请先前往“生产配置 -> 产线管理”添加{{levelName}}。',
+      emptyDescription: '请先前往“生产架构 -> 产线脑图”添加{{levelName}}。',
       cancel: '取消',
       save: '保存配置',
     },

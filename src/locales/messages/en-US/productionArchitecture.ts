@@ -11,24 +11,22 @@ export const productionArchitecture = {
     header: {
       title: 'Line Mindmap',
       subtitle:
-        'Validate a constrained mindmap editor with {{level1Name}} / {{level2Name}} / {{level3Name}} as the hierarchy backbone',
+        'Use {{level1Name}} / {{level2Name}} / {{level3Name}} as fixed hierarchy keys while business node names remain user-defined',
     },
     actions: {
-      currentLine: 'Current Line',
-      linePlaceholder: 'Select a line to view',
-      addLine: 'Add Line',
-      lineActions: 'Current Line Actions',
-      editLine: 'Edit Line Profile',
-      enableLine: 'Enable Current Line',
-      disableLine: 'Disable Current Line',
-      deleteLine: 'Delete Current Line',
+      currentLine: 'Current L1',
+      linePlaceholder: 'Select L1 to view',
+      addLine: 'Add L1',
+      lineActions: 'Current L1 Actions',
+      editLine: 'Edit L1 Profile',
+      enableLine: 'Enable Current L1',
+      disableLine: 'Disable Current L1',
+      deleteLine: 'Delete Current L1',
       editNode: 'Edit Current Node',
-      noManagePermission:
-        'The current account cannot create or delete production lines',
+      noManagePermission: 'The current account cannot manage L1 nodes',
       noUpdatePermission:
-        'The current account cannot modify production line structure',
-      noStatusPermission:
-        'The current account cannot change production line status',
+        'The current account cannot modify L1/L2/L3 structure',
+      noStatusPermission: 'The current account cannot change L1 status',
     },
   },
   routes: {

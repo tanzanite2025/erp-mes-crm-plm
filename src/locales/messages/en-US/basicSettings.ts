@@ -68,7 +68,7 @@ export const basicSettings = {
       printTemplateMgmt: 'Print Templates',
       templateVarMgmt: 'Template Variables',
       factoryMgmt: 'Factory Management',
-      lineMgmt: 'Line Management',
+      lineMgmt: 'Line Mindmap',
       sectionMgmt: 'Section Management',
       groupMgmt: 'Group Management',
       routingMgmt: 'Routing Management',

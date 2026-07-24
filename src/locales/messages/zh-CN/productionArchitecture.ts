@@ -11,7 +11,7 @@ export const productionArchitecture = {
     header: {
       title: '产线脑图',
       subtitle:
-        '以 {{level1Name}} / {{level2Name}} / {{level3Name}} 为层级骨架，验证新的受限脑图编辑方式',
+        '以 {{level1Name}} / {{level2Name}} / {{level3Name}} 为固定层级键，节点名称按业务实际自定义',
     },
     actions: {
       currentLine: '当前 L1',
@@ -58,8 +58,7 @@ export const productionArchitecture = {
     },
     steps: {
       title: '路线步骤',
-      description:
-        '步骤引用产线脑图中的 L2 和 L3，不在此处重复维护 L3 档案。',
+      description: '步骤引用产线脑图中的 L2 和 L3，不在此处重复维护 L3 档案。',
       add: '新增步骤',
       empty: '还没有路线步骤，可以先新增第一道 L3。',
       noSegments: '产线脑图中还没有可用的 L2 + L3，请先完成结构配置。',
