@@ -246,6 +246,7 @@ func GetAuditEngineModuleOrder() []string {
 		AuditEngineModuleOrganization,
 		AuditEngineModuleSystem,
 		AuditEngineModuleWorkflow,
+		AuditEngineModuleBusinessAnalysis,
 	}
 	return append([]string{}, order...)
 }

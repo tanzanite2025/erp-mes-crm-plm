@@ -66,6 +66,8 @@ var auditEntityRegistry = []AuditEntityRegistration{
 	{EntityKey: AuditModuleEnterpriseConfig, EngineModule: AuditEngineModuleSystem, Integrated: true, DisplayName: "EnterpriseConfig"},
 
 	{EntityKey: AuditModuleApprovalRequest, EngineModule: AuditEngineModuleWorkflow, Integrated: true, DisplayName: "ApprovalRequest"},
+
+	{EntityKey: AuditModuleBusinessAnalysisQuery, EngineModule: AuditEngineModuleBusinessAnalysis, Integrated: true, AllowModuleTimeline: true, DisplayName: "BusinessAnalysisQuery"},
 }
 
 func GetAuditEntityRegistry() []AuditEntityRegistration {

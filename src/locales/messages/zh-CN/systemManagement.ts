@@ -178,6 +178,7 @@ export const systemManagement = {
       equipment: '设备与模具资产',
       engineering: '工程研发数据库',
       cuttingEngine: '裁纱引擎',
+      businessAnalysis: '经营分析',
       warehouse: '智能仓储系统',
       production: '生产执行',
       quality: '质量管理',

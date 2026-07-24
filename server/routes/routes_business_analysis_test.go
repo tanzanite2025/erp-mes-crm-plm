@@ -90,6 +90,16 @@ func createBusinessAnalysisRouteTestSchema(t *testing.T, database *gorm.DB) {
 	t.Helper()
 
 	statements := []string{
+		`CREATE TABLE audit_logs (
+			id TEXT PRIMARY KEY,
+			module TEXT,
+			target_id TEXT,
+			action TEXT,
+			diff TEXT,
+			operator TEXT,
+			ip TEXT,
+			created_at DATETIME
+		)`,
 		`CREATE TABLE customers (
 			id TEXT PRIMARY KEY,
 			name TEXT,

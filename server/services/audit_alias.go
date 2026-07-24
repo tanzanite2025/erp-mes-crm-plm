@@ -167,6 +167,10 @@ var auditModuleAliasMap = map[string][]string{
 		AuditModuleApprovalRequest,
 		"ApprovalRequest",
 	},
+	AuditModuleBusinessAnalysisQuery: {
+		AuditModuleBusinessAnalysisQuery,
+		"BusinessAnalysisQuery",
+	},
 }
 
 func NormalizeAuditModule(module string) string {

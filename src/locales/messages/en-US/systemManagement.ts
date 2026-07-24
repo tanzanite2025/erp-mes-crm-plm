@@ -182,6 +182,7 @@ export const systemManagement = {
       equipment: 'Equipment & Tooling',
       engineering: 'Engineering DB',
       cuttingEngine: 'Cutting Engine',
+      businessAnalysis: 'Business Analysis',
       warehouse: 'Warehouse & Inventory',
       production: 'Production Execution',
       quality: 'Quality Management',

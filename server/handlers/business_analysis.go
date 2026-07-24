@@ -37,6 +37,14 @@ func GetBusinessAnalysisProductionCapacityHandler(c *gin.Context) {
 		return
 	}
 
+	if err := services.RecordBusinessAnalysisProductionCapacityQueryAudit(
+		auditContextFromGin(c),
+		query,
+	); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 记录经营分析查询审计失败"})
+		return
+	}
+
 	c.JSON(http.StatusOK, response)
 }
 
