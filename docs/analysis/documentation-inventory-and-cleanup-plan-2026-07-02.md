@@ -21,6 +21,17 @@
 | Feature-local docs | `src/features/**/README.md`, feature-local `docs/**`, `src/locales/**/README.md` | Keep near feature | Keep only when the doc is directly scoped to nearby code. |
 | Deployment config | `deployment/monitoring/**`, `deployment/nginx/**`, `server/deployment/loki/**`, `server/docker-compose.yml` | Not prose docs | Treat as runnable config; keep paths that are referenced by deployment entry points. |
 
+## 2026-07-24 Follow-up
+
+| Document | Verdict after follow-up | Result |
+| --- | --- | --- |
+| `docs/architecture/生产架构与委外边界设计.md` | Refreshed | Completed production-architecture migration items are now historical recap, and the deployment checklist no longer shows finished work as pending. |
+| `docs/architecture/生产委外执行链路设计.md` | Keep | This still contains genuine open work for execution, outsourcing, and audit integration. |
+| `docs/ops/hostinger-vps-docker-runbook.md` | Refreshed | The stale SSH-key warning and old SSH deploy-script guidance were replaced with the current Docker Manager path. |
+| `docs/ops/single-vps-deployment-roadmap.md` | Refreshed | Phase A is now recorded as done; remaining risks are backup/recovery, capacity governance, and second-project onboarding. |
+| `docs/frontend/bom-performance/**` | Keep | The `[ ]` items here are troubleshooting/checklist content, not project backlog items. |
+| `server/security/**` | Deferred | CVE scripts and their local README are operational artifacts; path modernization should be handled in a separate security-specific review, not mixed into this prose-doc cleanup. |
+
 ## Stale Or Risky References
 
 | Finding | Evidence | Recommended cleanup |

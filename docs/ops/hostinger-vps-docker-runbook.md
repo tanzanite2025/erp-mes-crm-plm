@@ -254,14 +254,15 @@ Cloudflare 安全规则：
 
 镜像回滚不能替代数据库迁移回滚。包含不可逆迁移的版本必须先有备份和独立回滚方案。
 
-SSH 兼容发布路径：
+Hostinger Docker Manager 发布路径：
 
 ```bash
-cd /var/www/erp
-./deploy.sh
+cd /docker/erp
+docker compose --env-file /docker/erp/.env -f /docker/erp/docker-compose.yml pull
+docker compose --env-file /docker/erp/.env -f /docker/erp/docker-compose.yml up -d
 ```
 
-该脚本只拉取镜像并运行 `compose.prod.yml`，不会在 VPS 构建源码、安装 pnpm 或管理宿主机 Nginx。
+当前线上 ERP 由 Hostinger Docker Manager 管理，不再使用旧 SSH 发布脚本或 VPS 本地源码构建路径。
 
 ## 11. 备份与恢复
 
@@ -318,8 +319,7 @@ Cloudflare MCP 可读写，但 DNS 写入必须满足：
 - [x] Hostinger 防火墙仅开放 `22/80/443` 并已同步。
 - [x] VPS Docker Manager 使用独立的 `tanzanite-edge` 和 `erp` Compose Projects。
 - [x] `host-kernel-tuning` 已将宿主机 `vm.overcommit_memory` 固定为 `1`，满足 Redis 生产内存基线。
-- [x] Hostinger 账号已注册本机公钥 `P16V-workstation`。
-- [ ] Hostinger API 绑定公钥后 SSH 仍未接受该 key；需在 hPanel 控制台确认 authorized key 后再使用 SSH 路径。
+- [x] Hostinger 账号公钥授权已完成，SSH 登录路径已验证可用。
 - [x] `tanzanite-edge` Project 已部署，容器 Healthy，公网 `/__edge/health` 返回 `ok`。
 - [x] GHCR 四个 ERP Package 已构建并确认可匿名拉取，生产使用不可变 `sha-*` 标签。
 - [x] ERP Project 已创建，`db`、`redis`、`search-engine`、`app` 和 `web` 全部 Healthy。

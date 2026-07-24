@@ -24,14 +24,14 @@ ERP 的首个生产实现是：
 - 前端镜像：`deployment/docker/web.Dockerfile`
 - 镜像发布：`.github/workflows/publish-images.yml`
 
-## 2. 当前风险
+## 2. 当前状态与剩余风险
 
-### P0：首次上线链路尚未闭环
+### Phase A：已完成
 
-1. SSH 公钥已注册到 Hostinger 账号，但 VPS 尚未接受该 key。
-2. GHCR Package 尚未完成首次构建和公开拉取验证。
-3. 网关和 ERP Project 尚未在 Hostinger 上完成健康检查。
-4. Cloudflare 仍指向旧服务器，这是正确的回滚保护状态。
+1. SSH 公钥登录和首次接入已验证。
+2. GHCR Package 已完成首次构建和公开拉取验证。
+3. 网关和 ERP Project 已在 Hostinger 上完成健康检查。
+4. Cloudflare 已切换到 `2.25.85.201` 并恢复 Proxied。
 
 ### P1：数据恢复能力尚未验证
 
