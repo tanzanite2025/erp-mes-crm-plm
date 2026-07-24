@@ -16,6 +16,7 @@ var (
 	ErrProductionLineVersionConflict  = errors.New("production line version conflict")
 	ErrProductionRouteVersionConflict = errors.New("production route version conflict")
 	ErrInvalidProductionRoute         = errors.New("invalid production route")
+	ErrInvalidProcessStep             = errors.New("invalid process step")
 	ErrProductionTopologyUnauthorized = errors.New("production topology unauthorized")
 )
 
@@ -367,9 +368,25 @@ func (s *ProductionService) ListProcessSteps() ([]ProcessStepDTO, error) {
 }
 
 func (s *ProductionService) SaveProcessStep(req SaveProcessStepRequest) (ProcessStepDTO, error) {
-	step := mapProcessStepDTOToModel(req.Step)
+	normalizedStep := normalizeProcessStepDTO(req.Step)
+	if err := validateProcessStepDTO(normalizedStep); err != nil {
+		return ProcessStepDTO{}, err
+	}
+
+	step := mapProcessStepDTOToModel(normalizedStep)
 	err := s.txManager.WithinTransaction(func(tx *gorm.DB) error {
-		return s.repository.SaveProcessStep(tx, &step)
+		if err := validateProcessStepPositionReferences(tx, normalizedStep.AllowedPositionIDs); err != nil {
+			return err
+		}
+		if err := s.repository.SaveProcessStep(tx, &step); err != nil {
+			return err
+		}
+
+		return tx.
+			Preload("AllowedPositions", func(preload *gorm.DB) *gorm.DB {
+				return preload.Order("sort_order asc, name asc")
+			}).
+			First(&step, "id = ?", step.ID).Error
 	})
 	return mapProcessStepToDTO(step), err
 }
@@ -396,6 +413,46 @@ func collectProductionAssociationIDs(segments []models.LineSegment) ([]string, [
 	}
 
 	return segmentIDs, processIDs
+}
+
+func normalizeProcessStepDTO(step ProcessStepDTO) ProcessStepDTO {
+	step.ID = strings.TrimSpace(step.ID)
+	step.Code = strings.TrimSpace(step.Code)
+	step.Name = strings.TrimSpace(step.Name)
+	step.Description = strings.TrimSpace(step.Description)
+	step.AllowedPositionIDs = normalizeProcessStepAllowedPositionIDs(step)
+	step.AllowedPositions = nil
+	return step
+}
+
+func validateProcessStepDTO(step ProcessStepDTO) error {
+	if step.Code == "" {
+		return fmt.Errorf("%w: code is required", ErrInvalidProcessStep)
+	}
+	if step.Name == "" {
+		return fmt.Errorf("%w: name is required", ErrInvalidProcessStep)
+	}
+	if len(step.AllowedPositionIDs) > 80 {
+		return fmt.Errorf("%w: allowedPositionIds cannot exceed 80", ErrInvalidProcessStep)
+	}
+	return nil
+}
+
+func validateProcessStepPositionReferences(tx *gorm.DB, positionIDs []string) error {
+	if len(positionIDs) == 0 {
+		return nil
+	}
+
+	var count int64
+	if err := tx.Model(&models.Position{}).
+		Where("id IN ?", positionIDs).
+		Count(&count).Error; err != nil {
+		return fmt.Errorf("%w: failed to validate allowed positions: %v", ErrInvalidProcessStep, err)
+	}
+	if count != int64(len(positionIDs)) {
+		return fmt.Errorf("%w: one or more allowed positions do not exist", ErrInvalidProcessStep)
+	}
+	return nil
 }
 
 func normalizeProductionRouteDTO(route ProductionRouteDTO) ProductionRouteDTO {

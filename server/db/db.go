@@ -1181,6 +1181,10 @@ func InitDB(dsn string) {
 	prepareProductionTopologySchema()
 	failOnDuplicatePackagingRules()
 
+	if err := DB.SetupJoinTable(&models.ProcessStep{}, "AllowedPositions", &models.ProcessStepAllowedPosition{}); err != nil {
+		log.Fatal("Failed to setup process step allowed positions join table:", err)
+	}
+
 	err = DB.AutoMigrate(
 		&models.User{},
 		&models.Role{},
@@ -1220,7 +1224,9 @@ func InitDB(dsn string) {
 		&models.BOMVersionSnapshot{},
 		&models.BOMSection{},
 		&models.NumberingRule{},
+		&models.Position{},
 		&models.ProcessStep{},
+		&models.ProcessStepAllowedPosition{},
 		&models.ProductionLine{},
 		&models.LineSegment{},
 		&models.ProductionRoute{},
@@ -1281,7 +1287,6 @@ func InitDB(dsn string) {
 		&models.OrgUnit{},
 		&models.ProductionUnit{},
 		&models.OrgProductionMapping{},
-		&models.Position{},
 		&models.EmployeeAssignment{},
 		&models.ProductionPlan{},
 		&models.ProductionTask{},

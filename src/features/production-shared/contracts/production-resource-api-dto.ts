@@ -1,3 +1,12 @@
+export interface ProcessStepAllowedPositionApiDTO {
+  id: string
+  code?: string
+  name: string
+  orgUnitId?: string
+  orgUnitName?: string
+  status: string
+}
+
 export interface ProductionProcessStepApiDTO {
   id: string
   code?: string
@@ -5,6 +14,8 @@ export interface ProductionProcessStepApiDTO {
   description?: string
   sortOrder?: number
   isActive?: boolean
+  allowedPositionIds?: string[]
+  allowedPositions?: ProcessStepAllowedPositionApiDTO[]
   createdAt?: string
   updatedAt?: string
 }

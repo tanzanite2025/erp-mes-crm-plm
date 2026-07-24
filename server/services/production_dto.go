@@ -2,6 +2,7 @@ package services
 
 import (
 	"encoding/json"
+	"strings"
 	"time"
 	"xdfc-server/models"
 )
@@ -12,14 +13,25 @@ type SaveProductionLineHandlerRequest struct {
 }
 
 type ProcessStepDTO struct {
-	ID          string    `json:"id"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
-	Code        string    `json:"code"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	SortOrder   int       `json:"sortOrder"`
-	IsActive    bool      `json:"isActive"`
+	ID                 string                          `json:"id"`
+	CreatedAt          time.Time                       `json:"createdAt"`
+	UpdatedAt          time.Time                       `json:"updatedAt"`
+	Code               string                          `json:"code"`
+	Name               string                          `json:"name"`
+	Description        string                          `json:"description"`
+	SortOrder          int                             `json:"sortOrder"`
+	IsActive           bool                            `json:"isActive"`
+	AllowedPositionIDs []string                        `json:"allowedPositionIds"`
+	AllowedPositions   []ProcessStepAllowedPositionDTO `json:"allowedPositions"`
+}
+
+type ProcessStepAllowedPositionDTO struct {
+	ID          string `json:"id"`
+	Code        string `json:"code"`
+	Name        string `json:"name"`
+	OrgUnitID   string `json:"orgUnitId"`
+	OrgUnitName string `json:"orgUnitName"`
+	Status      string `json:"status"`
 }
 
 type LineSegmentDTO struct {
@@ -92,31 +104,102 @@ type ProductionRoutesResponse struct {
 }
 
 func mapProcessStepToDTO(step models.ProcessStep) ProcessStepDTO {
+	allowedPositions := mapProcessStepPositionsToDTO(step.AllowedPositions)
 	return ProcessStepDTO{
-		ID:          step.ID,
-		CreatedAt:   step.CreatedAt,
-		UpdatedAt:   step.UpdatedAt,
-		Code:        step.Code,
-		Name:        step.Name,
-		Description: step.Description,
-		SortOrder:   step.SortOrder,
-		IsActive:    step.IsActive,
+		ID:                 step.ID,
+		CreatedAt:          step.CreatedAt,
+		UpdatedAt:          step.UpdatedAt,
+		Code:               step.Code,
+		Name:               step.Name,
+		Description:        step.Description,
+		SortOrder:          step.SortOrder,
+		IsActive:           step.IsActive,
+		AllowedPositionIDs: collectProcessStepPositionIDs(allowedPositions),
+		AllowedPositions:   allowedPositions,
 	}
 }
 
+func mapProcessStepPositionToDTO(position models.Position) ProcessStepAllowedPositionDTO {
+	orgUnitID := ""
+	if position.OrgUnitID != nil {
+		orgUnitID = *position.OrgUnitID
+	}
+
+	return ProcessStepAllowedPositionDTO{
+		ID:          position.ID,
+		Code:        position.Code,
+		Name:        position.Name,
+		OrgUnitID:   orgUnitID,
+		OrgUnitName: position.OrgUnitName,
+		Status:      position.Status,
+	}
+}
+
+func mapProcessStepPositionsToDTO(positions []models.Position) []ProcessStepAllowedPositionDTO {
+	result := make([]ProcessStepAllowedPositionDTO, 0, len(positions))
+	for _, position := range positions {
+		result = append(result, mapProcessStepPositionToDTO(position))
+	}
+	return result
+}
+
+func collectProcessStepPositionIDs(positions []ProcessStepAllowedPositionDTO) []string {
+	ids := make([]string, 0, len(positions))
+	for _, position := range positions {
+		if position.ID != "" {
+			ids = append(ids, position.ID)
+		}
+	}
+	return ids
+}
+
 func mapProcessStepDTOToModel(step ProcessStepDTO) models.ProcessStep {
+	allowedPositionIDs := normalizeProcessStepAllowedPositionIDs(step)
+	allowedPositions := make([]models.Position, 0, len(allowedPositionIDs))
+	for _, positionID := range allowedPositionIDs {
+		allowedPositions = append(allowedPositions, models.Position{
+			BaseModel: models.BaseModel{ID: positionID},
+		})
+	}
+
 	return models.ProcessStep{
 		BaseModel: models.BaseModel{
 			ID:        step.ID,
 			CreatedAt: step.CreatedAt,
 			UpdatedAt: step.UpdatedAt,
 		},
-		Code:        step.Code,
-		Name:        step.Name,
-		Description: step.Description,
-		SortOrder:   step.SortOrder,
-		IsActive:    step.IsActive,
+		Code:             step.Code,
+		Name:             step.Name,
+		Description:      step.Description,
+		SortOrder:        step.SortOrder,
+		IsActive:         step.IsActive,
+		AllowedPositions: allowedPositions,
 	}
+}
+
+func normalizeProcessStepAllowedPositionIDs(step ProcessStepDTO) []string {
+	seen := make(map[string]struct{})
+	ids := make([]string, 0, len(step.AllowedPositionIDs)+len(step.AllowedPositions))
+	appendUnique := func(value string) {
+		id := strings.TrimSpace(value)
+		if id == "" {
+			return
+		}
+		if _, exists := seen[id]; exists {
+			return
+		}
+		seen[id] = struct{}{}
+		ids = append(ids, id)
+	}
+
+	for _, id := range step.AllowedPositionIDs {
+		appendUnique(id)
+	}
+	for _, position := range step.AllowedPositions {
+		appendUnique(position.ID)
+	}
+
+	return ids
 }
 
 func mapProductionRouteStepToDTO(step models.ProductionRouteStep) ProductionRouteStepDTO {
