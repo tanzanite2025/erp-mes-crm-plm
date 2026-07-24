@@ -105,6 +105,58 @@ func TestBusinessAnalysisProductionCapacityKeepsQualityMetricsExplicitlyUnavaila
 	require.Equal(t, "型号 A", response.Breakdowns.ByProduct[0].ProductName)
 }
 
+func TestBusinessAnalysisDoesNotInferQualifiedQuantityFromPassedSample(t *testing.T) {
+	database, err := gorm.Open(sqlite.Open("file:business_analysis_qualified_quantity_boundary?mode=memory&cache=shared"), &gorm.Config{})
+	require.NoError(t, err)
+	createBusinessAnalysisTestSchema(t, database)
+
+	loc := time.UTC
+	from := time.Date(2026, time.July, 1, 0, 0, 0, 0, loc)
+	to := time.Date(2026, time.August, 1, 0, 0, 0, 0, loc)
+	planID := "00000000-0000-0000-0000-000000000041"
+	createdAt := time.Date(2026, time.July, 8, 8, 0, 0, 0, loc)
+
+	require.NoError(t, database.Exec(
+		"INSERT INTO production_plans (id, product_id, product_name, quantity, status, start_date, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+		planID,
+		"product-041",
+		"型号 D",
+		10,
+		"COMPLETED",
+		createdAt,
+		createdAt,
+		createdAt,
+	).Error)
+	require.NoError(t, database.Exec(
+		"INSERT INTO production_tasks (id, plan_id, target_qty, actual_qty, status, completed_at) VALUES (?, ?, ?, ?, ?, ?)",
+		"00000000-0000-0000-0000-000000000042",
+		planID,
+		10,
+		10,
+		"DONE",
+		createdAt,
+	).Error)
+	require.NoError(t, database.Exec(
+		"INSERT INTO inspection_tasks (id, production_plan_id, product_id, batch_no, sample_qty, result) VALUES (?, ?, ?, ?, ?, ?)",
+		"00000000-0000-0000-0000-000000000043",
+		planID,
+		"product-041",
+		"B-041",
+		2,
+		"PASS",
+	).Error)
+
+	response, err := NewBusinessAnalysisService(database).QueryProductionCapacity(
+		context.Background(),
+		BusinessAnalysisProductionCapacityQuery{From: from, To: to},
+	)
+	require.NoError(t, err)
+	require.Equal(t, float64(10), response.Summary.CompletedQuantity)
+	require.Nil(t, response.Summary.QualifiedQuantity)
+	require.Nil(t, response.Summary.YieldRate)
+	require.Contains(t, response.DataQuality.Notes, "QUALITY_QUALIFIED_QUANTITY_MISSING")
+}
+
 func TestBusinessAnalysisProductionCapacityCountsMissingCompletionTimestamp(t *testing.T) {
 	database, err := gorm.Open(sqlite.Open("file:business_analysis_missing_timestamp?mode=memory&cache=shared"), &gorm.Config{})
 	require.NoError(t, err)
@@ -334,6 +386,12 @@ func createBusinessAnalysisTestSchema(t *testing.T, database *gorm.DB) {
 			order_id TEXT,
 			batch_no TEXT,
 			product_id TEXT,
+			product_name TEXT,
+			sample_qty REAL,
+			result TEXT,
+			input_data TEXT,
+			remarks TEXT,
+			completed_at DATETIME,
 			deleted_at DATETIME
 		)`,
 		`CREATE TABLE quality_abnormalities (
