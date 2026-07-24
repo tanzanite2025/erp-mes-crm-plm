@@ -100,6 +100,14 @@ const moduleGroups: CommandItemConfig[] = [
     pinyin: 'sclx',
   },
   {
+    id: 'tab-production-outsourcing-partners',
+    href: '/production-outsourcing/partners',
+    titleKey: 'productionOutsourcing.layout.tabs.partners',
+    parentKey: 'commandMenu.parents.productionCoordination',
+    keywords: ['outsourcing', 'outsource partner', '委外', '外协', '委外单位'],
+    pinyin: 'wwdw',
+  },
+  {
     id: 'tab-attendance-leave-management',
     href: '/attendance-management/leave',
     titleKey: 'commandMenu.items.leaveManagement',

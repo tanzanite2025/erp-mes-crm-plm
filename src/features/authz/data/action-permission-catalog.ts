@@ -746,7 +746,25 @@ const productionActions: LegacyActionPermissionEntry[] = [
     desc: '允许创建裁纱领料下发执行记录。',
     category: 'action',
     parentId: 'menu_prod_config',
-    routeBindings: ['POST /production/cutting-issuances'],
+    routeBindings: [
+      'POST /production/cutting-issuances',
+      'POST /production/product-barcode-states',
+      'POST /production/execution-lots',
+      'POST /production/operation-executions',
+      'POST /production/scan-commands/execute',
+    ],
+  },
+  {
+    id: 'action_outsource_partner_manage',
+    label: '生产：管理委外单位',
+    desc: '允许创建、更新和删除生产委外单位档案。',
+    category: 'action',
+    parentId: 'menu_prod_config',
+    routeBindings: [
+      'POST /production/outsourcing/partners',
+      'PATCH /production/outsourcing/partners/:id',
+      'DELETE /production/outsourcing/partners/:id',
+    ],
   },
   {
     id: 'action_barcode_binding_manage',

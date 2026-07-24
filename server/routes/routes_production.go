@@ -13,6 +13,7 @@ func registerProductionRoutes(authorized *gin.RouterGroup) {
 	adminOnly := middleware.RequireAnyPermission(authz.PermissionManage)
 	productionLineUpdate := middleware.RequireAnyPermission(authz.ActionProductionLineUpdate)
 	productionRouteManage := middleware.RequireAnyPermission(authz.ActionProductionRouteManage)
+	outsourcePartnerManage := middleware.RequireAnyPermission(authz.ActionOutsourcePartnerManage)
 
 	productionPlanManage := middleware.RequireAnyPermission(authz.ActionProductionPlanManage)
 	productionIssuanceExecute := middleware.RequireAnyPermission(authz.ActionProductionIssuanceExecute)
@@ -48,6 +49,10 @@ func registerProductionRoutes(authorized *gin.RouterGroup) {
 		productionGroup.GET("/operation-executions", handlers.GetProductionOperationExecutionsHandler)
 		productionGroup.POST("/operation-executions", productionIssuanceExecute, handlers.RecordProductionOperationExecutionHandler)
 		productionGroup.POST("/scan-commands/execute", productionIssuanceExecute, handlers.ExecuteProductionScanCommandHandler)
+		productionGroup.GET("/outsourcing/partners", handlers.GetOutsourcePartnersHandler)
+		productionGroup.POST("/outsourcing/partners", outsourcePartnerManage, handlers.CreateOutsourcePartnerHandler)
+		productionGroup.PATCH("/outsourcing/partners/:id", outsourcePartnerManage, handlers.UpdateOutsourcePartnerHandler)
+		productionGroup.DELETE("/outsourcing/partners/:id", outsourcePartnerManage, handlers.DeleteOutsourcePartnerHandler)
 		productionGroup.GET("/stats", handlers.GetProductionStatsHandler)
 		productionGroup.GET("/order-progress", handlers.GetOrderProgressHandler)
 	}

@@ -24,6 +24,7 @@ import { orgPersonnel } from './orgPersonnel'
 import { piecework } from './piecework'
 import { printMgmt } from './printMgmt'
 import { productionArchitecture } from './productionArchitecture'
+import { productionOutsourcing } from './productionOutsourcing'
 import { productionQuality } from './productionQuality'
 import { productionShared } from './productionShared'
 import { purchase } from './purchase'
@@ -89,6 +90,7 @@ export const zhCNMessages = {
   codeCenter,
   productionQuality,
   productionArchitecture,
+  productionOutsourcing,
   cuttingOperations,
   recentVisits,
   messageCenter,

@@ -1229,6 +1229,7 @@ func InitDB(dsn string) {
 		&models.LineSegment{},
 		&models.ProductionRoute{},
 		&models.ProductionRouteStep{},
+		&models.OutsourcePartner{},
 		&models.ProductBarcodeState{},
 		&models.ProductBarcodeStateEvent{},
 		&models.ProductBarcodeTransferEvent{},

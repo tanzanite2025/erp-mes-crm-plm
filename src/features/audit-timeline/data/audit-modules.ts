@@ -8,6 +8,7 @@ export const AUDIT_MODULES = {
   drilling: 'drilling',
   engineeringSpec: 'engineering-spec',
   employee: 'employee',
+  outsourcePartner: 'outsource-partner',
   material: 'material',
   inventory: 'inventory',
   shipment: 'shipment',

@@ -52,6 +52,7 @@ var auditEntityRegistry = []AuditEntityRegistration{
 	{EntityKey: AuditModuleProductionLine, EngineModule: AuditEngineModuleProduction, Integrated: true, DisplayName: "ProductionLine"},
 	{EntityKey: AuditModuleProductionRoute, EngineModule: AuditEngineModuleProduction, Integrated: true, DisplayName: "ProductionRoute"},
 	{EntityKey: AuditModuleProductionOperation, EngineModule: AuditEngineModuleProduction, Integrated: true, AllowModuleTimeline: true, DisplayName: "ProductionOperation"},
+	{EntityKey: AuditModuleOutsourcePartner, EngineModule: AuditEngineModuleProduction, Integrated: true, AllowModuleTimeline: true, DisplayName: "OutsourcePartner"},
 	{EntityKey: AuditModulePieceworkRate, EngineModule: AuditEngineModuleProduction, Integrated: true, DisplayName: "PieceworkRate"},
 	{EntityKey: AuditModuleTeam, EngineModule: AuditEngineModuleProduction, Integrated: true, DisplayName: "Team"},
 
