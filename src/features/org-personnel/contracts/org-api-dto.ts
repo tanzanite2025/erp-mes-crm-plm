@@ -17,3 +17,11 @@ export interface OrgNodeApiDTO {
   updatedAt?: string
   version?: number
 }
+
+export type OrgNodeSaveApiDTO = Omit<
+  OrgNodeApiDTO,
+  'id' | 'children' | 'createdAt' | 'updatedAt' | 'version'
+> & {
+  id?: string
+  children?: OrgNodeSaveApiDTO[]
+}

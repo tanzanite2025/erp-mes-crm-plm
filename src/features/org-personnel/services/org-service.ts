@@ -3,7 +3,7 @@ import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { buildVersionedPatchMetadata } from '@/lib/version-guard'
 import {
-  toOrgNodeApiDTO,
+  toOrgNodeSaveApiDTO,
   toOrgNodeContract,
   toOrgNodeContracts,
 } from '../adapters/org-api-adapter'
@@ -31,7 +31,7 @@ export class OrgService {
   static async saveOrgNode(node: OrgNode): Promise<OrgNode> {
     const data = await apiFetch<OrgNodeApiDTO>('/org', {
       method: 'POST',
-      body: JSON.stringify(toOrgNodeApiDTO(node)),
+      body: JSON.stringify(toOrgNodeSaveApiDTO(node)),
     })
 
     if (!data) {

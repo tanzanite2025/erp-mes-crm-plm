@@ -14,14 +14,18 @@ import (
 )
 
 var (
-	ErrOrganizationNameConflict     = errors.New("organization name conflict")
-	ErrOrganizationHasChildren      = errors.New("organization has child departments")
-	ErrOrganizationHasEmployees     = errors.New("organization has employees")
-	ErrOrganizationParentNotFound   = errors.New("organization parent not found")
-	ErrOrganizationHierarchyInvalid = errors.New("organization hierarchy invalid")
-	ErrOrganizationDepthExceeded    = errors.New("organization depth exceeded")
-	ErrInvalidEmployeeStatus        = errors.New("invalid employee status")
-	ErrEmptyEmployeeIDs             = errors.New("employee ids cannot be empty")
+	ErrOrganizationNameConflict              = errors.New("organization name conflict")
+	ErrOrganizationNameRequired              = errors.New("organization name required")
+	ErrOrganizationIDInvalid                 = errors.New("organization id invalid")
+	ErrOrganizationParentIDInvalid           = errors.New("organization parent id invalid")
+	ErrOrganizationHasChildren               = errors.New("organization has child departments")
+	ErrOrganizationHasEmployees              = errors.New("organization has employees")
+	ErrOrganizationParentNotFound            = errors.New("organization parent not found")
+	ErrOrganizationHierarchyInvalid          = errors.New("organization hierarchy invalid")
+	ErrOrganizationDepthExceeded             = errors.New("organization depth exceeded")
+	ErrOrganizationLinkedArchitectureInvalid = errors.New("organization linked architecture invalid")
+	ErrInvalidEmployeeStatus                 = errors.New("invalid employee status")
+	ErrEmptyEmployeeIDs                      = errors.New("employee ids cannot be empty")
 )
 
 type OrganizationService struct {
@@ -137,6 +141,9 @@ func (s *OrganizationService) ListOrganizationTree() ([]OrganizationTreeNodeResp
 
 func (s *OrganizationService) SaveOrganization(ctx context.Context, input OrganizationSaveRequest) (OrganizationSaveResponse, error) {
 	model := MapOrganizationSaveRequestToModel(input)
+	if err := normalizeOrganizationModelBeforeSave(&model); err != nil {
+		return OrganizationSaveResponse{}, err
+	}
 	if err := s.validateOrganizationHierarchy(&model); err != nil {
 		return OrganizationSaveResponse{}, err
 	}

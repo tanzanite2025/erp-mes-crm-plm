@@ -33,6 +33,18 @@ func SaveOrgHandler(c *gin.Context) {
 			c.JSON(http.StatusConflict, gin.H{"error": "Organization name already exists under the same parent"})
 			return
 		}
+		if err == services.ErrOrganizationNameRequired {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Organization name is required"})
+			return
+		}
+		if err == services.ErrOrganizationIDInvalid {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Organization id is invalid"})
+			return
+		}
+		if err == services.ErrOrganizationParentIDInvalid {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Organization parent id is invalid"})
+			return
+		}
 		if err == services.ErrOrganizationParentNotFound {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Organization parent does not exist"})
 			return
@@ -43,6 +55,10 @@ func SaveOrgHandler(c *gin.Context) {
 		}
 		if err == services.ErrOrganizationDepthExceeded {
 			c.JSON(http.StatusConflict, gin.H{"error": "Organization depth exceeds the supported three levels"})
+			return
+		}
+		if err == services.ErrOrganizationLinkedArchitectureInvalid {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Organization linked architecture is invalid"})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save organization"})

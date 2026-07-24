@@ -1,6 +1,7 @@
 import type {
   OrgLinkedArchitectureApiDTO,
   OrgNodeApiDTO,
+  OrgNodeSaveApiDTO,
 } from '../contracts/org-api-dto'
 import type { OrgNode } from '../data/org-schema'
 
@@ -34,9 +35,8 @@ export function toOrgNodeContract(dto: OrgNodeApiDTO): OrgNode {
   }
 }
 
-export function toOrgNodeApiDTO(contract: OrgNode): OrgNodeApiDTO {
-  return {
-    id: contract.id || '',
+export function toOrgNodeSaveApiDTO(contract: OrgNode): OrgNodeSaveApiDTO {
+  const dto: OrgNodeSaveApiDTO = {
     name: contract.name,
     parentId: contract.parentId ?? null,
     manager: contract.manager?.trim() || undefined,
@@ -49,9 +49,18 @@ export function toOrgNodeApiDTO(contract: OrgNode): OrgNodeApiDTO {
         name: item.name,
       })
     ),
-    children: contract.children?.map(toOrgNodeApiDTO),
-    version: contract.version,
   }
+
+  const normalizedID = contract.id?.trim()
+  if (normalizedID) {
+    dto.id = normalizedID
+  }
+
+  if (contract.children && contract.children.length > 0) {
+    dto.children = contract.children.map(toOrgNodeSaveApiDTO)
+  }
+
+  return dto
 }
 
 export function toOrgNodeContracts(dtos: OrgNodeApiDTO[]): OrgNode[] {
