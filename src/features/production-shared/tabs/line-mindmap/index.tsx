@@ -23,10 +23,8 @@ import { useLineMindmapViewModel } from './hooks/use-line-mindmap-view-model'
 export function LineMindmap() {
   const { t } = useLanguage()
   const { allowsAction, allowsPermission, isChecking } = usePermissionActions()
-  const [createSegmentDialogOpen, setCreateSegmentDialogOpen] =
-    useState(false)
-  const [createProcessDialogOpen, setCreateProcessDialogOpen] =
-    useState(false)
+  const [createSegmentDialogOpen, setCreateSegmentDialogOpen] = useState(false)
+  const [createProcessDialogOpen, setCreateProcessDialogOpen] = useState(false)
   const [nodeEditDialogOpen, setNodeEditDialogOpen] = useState(false)
   const [lineProfileDialogOpen, setLineProfileDialogOpen] = useState(false)
   const [editingLine, setEditingLine] = useState<ProductionLine | null>(null)
@@ -163,13 +161,11 @@ export function LineMindmap() {
       version: activeLine.version,
     })
   }
-  const {
-    defaultProcessParentId,
-    segmentParentNodeOptions,
-  } = useLineMindmapParentOptions({
-    nodes,
-    selectedNode,
-  })
+  const { defaultProcessParentId, segmentParentNodeOptions } =
+    useLineMindmapParentOptions({
+      nodes,
+      selectedNode,
+    })
 
   if (isForbiddenError(error)) {
     return <ForbiddenState />

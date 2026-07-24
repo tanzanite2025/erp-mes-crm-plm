@@ -4,8 +4,8 @@ import { productionProcessesService } from '../services/production-processes-ser
 import { productionRoutesService } from '../services/production-routes-service'
 import type { ProductionLine } from './production-line'
 import type { ProductionProcessStep } from './production-process'
-import type { ProductionRoute } from './production-route'
 import { productionResourceQueryKeys } from './production-resource-query-keys'
+import type { ProductionRoute } from './production-route'
 
 export const productionResourceQueryOptions = {
   lines: (): UseQueryOptions<ProductionLine[], Error> => ({

@@ -1,5 +1,5 @@
-import { CreditCard, DollarSign, Users } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
+import { CreditCard, DollarSign, Users } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useTraceStats } from '../hooks/use-trace-stats'

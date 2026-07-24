@@ -46,9 +46,7 @@ export function LineMindmapToolbar({
   onSelectLine,
 }: LineMindmapToolbarProps) {
   const { t } = useLanguage()
-  const lineActionLabel = activeLineIsActive
-    ? '停用当前 L1'
-    : '启用当前 L1'
+  const lineActionLabel = activeLineIsActive ? '停用当前 L1' : '启用当前 L1'
 
   return (
     <Card className='sticky top-0 z-30 rounded-[20px] border border-dashed border-muted/35 bg-background shadow-sm'>

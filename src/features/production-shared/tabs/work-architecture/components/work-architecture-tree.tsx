@@ -1,8 +1,8 @@
 'use client'
 
 import { useLanguage } from '@/context/language-provider'
-import type { Segment } from '../../../topology/types'
 import { useProductionTopologyLabels } from '../../../topology/production-topology-labels'
+import type { Segment } from '../../../topology/types'
 import { SegmentNode } from './segment-node.tsx'
 
 interface WorkArchitectureTreeProps {

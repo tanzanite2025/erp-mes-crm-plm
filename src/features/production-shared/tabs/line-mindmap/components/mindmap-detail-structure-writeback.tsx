@@ -25,7 +25,8 @@ export function MindmapDetailStructureWriteback({
       </p>
       <div className='space-y-3 rounded-[20px] border border-dashed border-muted/40 bg-muted/5 p-4'>
         <div className='rounded-[20px] border border-dashed border-muted/35 bg-background/70 px-4 py-3 text-[10px] leading-relaxed font-bold text-muted-foreground/70'>
-          当前节点按 LEVEL {selectedNode.level} 识别，名称只作为显示值保存到该产线结构中。
+          当前节点按 LEVEL {selectedNode.level}{' '}
+          识别，名称只作为显示值保存到该产线结构中。
         </div>
         <Input
           value={renameValue}

@@ -1,7 +1,4 @@
-import type {
-  ProductionLine,
-  ProductionSegment,
-} from '../data/production-line'
+import type { ProductionLine, ProductionSegment } from '../data/production-line'
 import type { ProductionProcessStep } from '../data/production-process'
 
 function normalizeProcesses(
