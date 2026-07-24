@@ -24,7 +24,7 @@ export function IndustrialHeader({
   return (
     <div
       className={cn(
-        'relative flex flex-col gap-1.5 overflow-hidden rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-4 md:p-5',
+        'relative flex flex-col gap-2 overflow-hidden rounded-2xl border bg-card p-4 shadow-sm md:p-5',
         className
       )}
     >
@@ -36,14 +36,12 @@ export function IndustrialHeader({
         className={cn('flex items-center gap-2 text-primary', innerClassName)}
       >
         <Icon className='size-5' />
-        <h3 className='text-base font-black tracking-tighter uppercase italic'>
-          {title}
-        </h3>
+        <h3 className='text-lg font-semibold tracking-tight'>{title}</h3>
       </div>
 
       <div className='flex flex-col justify-between gap-2 md:flex-row md:items-center'>
         {description && (
-          <p className='max-w-2xl text-[9px] font-black tracking-widest text-muted-foreground uppercase opacity-60'>
+          <p className='max-w-3xl text-sm leading-6 text-muted-foreground'>
             {description}
           </p>
         )}
