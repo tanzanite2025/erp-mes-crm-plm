@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Factory } from 'lucide-react'
 import { buildFlattenDelta } from '@/lib/delta/flatten-delta'
-import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -25,6 +24,7 @@ interface ProductionLineProfileDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   editingLine: ProductionLine | null
+  entityLabel?: string
   lines: ProductionLine[]
   onSubmit: (payload: ProductionLineMutationPayload) => void | Promise<void>
 }
@@ -58,10 +58,10 @@ export function ProductionLineProfileDialog({
   open,
   onOpenChange,
   editingLine,
+  entityLabel = 'L1',
   lines,
   onSubmit,
 }: ProductionLineProfileDialogProps) {
-  const { t } = useLanguage()
   const [form, setForm] = useState<ProductionLineProfileForm>(() =>
     createForm(editingLine)
   )
@@ -185,12 +185,10 @@ export function ProductionLineProfileDialog({
               </div>
               <div className='space-y-1'>
                 <DialogTitle className='text-sm font-black tracking-tighter uppercase italic'>
-                  {isEditing
-                    ? t('orgPersonnel.lineMgmt.dialog.editTitle')
-                    : t('orgPersonnel.lineMgmt.dialog.createTitle')}
+                  {isEditing ? `编辑 ${entityLabel}` : `新增 ${entityLabel}`}
                 </DialogTitle>
                 <DialogDescription className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
-                  {t('orgPersonnel.lineMgmt.dialog.description')}
+                  {entityLabel} 是当前脑图的顶层节点，名称按业务实际直接填写。
                 </DialogDescription>
               </div>
             </div>
@@ -202,13 +200,13 @@ export function ProductionLineProfileDialog({
                 htmlFor='production-line-profile-name'
                 className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'
               >
-                {t('orgPersonnel.lineMgmt.dialog.nameLabel')}
+                {entityLabel} 名称
               </Label>
               <Input
                 id='production-line-profile-name'
                 value={form.name}
                 onChange={(event) => handleNameChange(event.target.value)}
-                placeholder={t('orgPersonnel.lineMgmt.dialog.namePlaceholder')}
+                placeholder={`请输入 ${entityLabel} 名称`}
                 className='h-11 rounded-2xl border-none bg-muted/50 font-medium shadow-none focus-visible:ring-1 focus-visible:ring-primary/20'
               />
             </div>
@@ -217,7 +215,7 @@ export function ProductionLineProfileDialog({
                 htmlFor='production-line-profile-code'
                 className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'
               >
-                {t('orgPersonnel.lineMgmt.dialog.codeLabel')}
+                {entityLabel} 编码
               </Label>
               <Input
                 id='production-line-profile-code'
@@ -229,11 +227,11 @@ export function ProductionLineProfileDialog({
                     code: event.target.value,
                   }))
                 }
-                placeholder={t('orgPersonnel.lineMgmt.dialog.codePlaceholder')}
+                placeholder={`自动生成或填写 ${entityLabel} 编码`}
                 className='h-11 rounded-2xl border-none bg-muted/50 font-mono font-black tracking-tight shadow-none focus-visible:ring-1 focus-visible:ring-primary/20'
               />
               <p className='ml-1 text-[9px] font-black tracking-widest text-muted-foreground/40 uppercase italic'>
-                {t('orgPersonnel.lineMgmt.dialog.codeHint')}
+                新增时会根据名称生成编码，编辑时可手动修正。
               </p>
             </div>
             <div className='space-y-2 md:col-span-2'>
@@ -241,7 +239,7 @@ export function ProductionLineProfileDialog({
                 htmlFor='production-line-profile-description'
                 className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'
               >
-                {t('orgPersonnel.lineMgmt.dialog.descLabel')}
+                {entityLabel} 说明
               </Label>
               <Textarea
                 id='production-line-profile-description'
@@ -252,7 +250,7 @@ export function ProductionLineProfileDialog({
                     description: event.target.value,
                   }))
                 }
-                placeholder={t('orgPersonnel.lineMgmt.dialog.descPlaceholder')}
+                placeholder={`补充 ${entityLabel} 说明`}
                 className='min-h-24 resize-none rounded-2xl border-none bg-muted/50 font-medium shadow-none focus-visible:ring-1 focus-visible:ring-primary/20'
               />
             </div>
@@ -266,7 +264,7 @@ export function ProductionLineProfileDialog({
               disabled={isSubmitting}
               className='h-11 rounded-full border-muted px-8 text-[10px] font-black tracking-widest uppercase'
             >
-              {t('orgPersonnel.lineMgmt.dialog.cancel')}
+              取消
             </Button>
             <Button
               type='button'
@@ -274,9 +272,7 @@ export function ProductionLineProfileDialog({
               disabled={!form.name.trim() || isSubmitting}
               className='h-11 rounded-full px-8 text-[10px] font-black tracking-widest uppercase shadow-xl shadow-blue-500/20'
             >
-              {isEditing
-                ? t('orgPersonnel.lineMgmt.dialog.save')
-                : t('orgPersonnel.lineMgmt.dialog.confirm')}
+              {isEditing ? '保存' : '确认新增'}
             </Button>
           </DialogFooter>
         </div>

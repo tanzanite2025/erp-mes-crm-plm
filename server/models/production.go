@@ -29,15 +29,15 @@ type ProductionRoute struct {
 	Steps             []ProductionRouteStep `gorm:"foreignKey:RouteID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"steps"`
 }
 
-// ProductionRouteStep binds a route sequence to the production topology capability map.
+// ProductionRouteStep binds a route sequence to a production segment and process.
 type ProductionRouteStep struct {
 	BaseModel
 	RouteID          string       `gorm:"type:uuid;index;not null" json:"routeId"`
 	Sequence         int          `gorm:"not null;default:0" json:"sequence"`
+	SegmentID        string       `gorm:"type:uuid;index;not null" json:"segmentId"`
+	Segment          *LineSegment `gorm:"foreignKey:SegmentID" json:"segment,omitempty"`
 	ProcessStepID    string       `gorm:"type:uuid;index" json:"processStepId"`
 	ProcessStep      *ProcessStep `gorm:"foreignKey:ProcessStepID" json:"processStep,omitempty"`
-	JobCategoryID    string       `gorm:"type:uuid;index" json:"jobCategoryId"`
-	JobCategory      *JobCategory `gorm:"foreignKey:JobCategoryID" json:"jobCategory,omitempty"`
 	ExecutionMode    string       `gorm:"size:30;not null;default:'IN_HOUSE'" json:"executionMode"`
 	QualityGate      string       `gorm:"size:30;not null;default:'NONE'" json:"qualityGate"`
 	EstimatedMinutes int          `gorm:"not null;default:0" json:"estimatedMinutes"`
@@ -59,25 +59,12 @@ type ProductionLine struct {
 // LineSegment defines a segment within a production line.
 type LineSegment struct {
 	BaseModel
-	LineID            string          `gorm:"type:uuid;index;not null" json:"lineId"`
-	Name              string          `gorm:"size:255;not null" json:"name"`
-	HierarchyOptionID string          `gorm:"size:64;index" json:"hierarchyOptionId"`
-	Description       string          `gorm:"type:text" json:"description"`
-	SortOrder         int             `gorm:"default:0" json:"sortOrder"`
-	Attributes        json.RawMessage `gorm:"type:jsonb" json:"attributes"`
-	JobCategories     []JobCategory   `gorm:"foreignKey:SegmentID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"jobCategories"`
-}
-
-// JobCategory is now the terminal capability node in the production topology.
-type JobCategory struct {
-	BaseModel
-	SegmentID         string          `gorm:"type:uuid;index;not null" json:"segmentId"`
-	Name              string          `gorm:"size:255;not null" json:"name"`
-	HierarchyOptionID string          `gorm:"size:64;index" json:"hierarchyOptionId"`
-	Description       string          `gorm:"type:text" json:"description"`
-	SortOrder         int             `gorm:"default:0" json:"sortOrder"`
-	Attributes        json.RawMessage `gorm:"type:jsonb" json:"attributes"`
-	Processes         []ProcessStep   `gorm:"many2many:job_category_process_mappings;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"processes"`
+	LineID      string          `gorm:"type:uuid;index;not null" json:"lineId"`
+	Name        string          `gorm:"size:255;not null" json:"name"`
+	Description string          `gorm:"type:text" json:"description"`
+	SortOrder   int             `gorm:"default:0" json:"sortOrder"`
+	Attributes  json.RawMessage `gorm:"type:jsonb" json:"attributes"`
+	Processes   []ProcessStep   `gorm:"many2many:line_segment_process_mappings;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"processes"`
 }
 
 // Organization supports a tree-based org hierarchy.

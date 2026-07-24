@@ -16,8 +16,7 @@ type ProductionRepository interface {
 	SaveProductionRoute(database *gorm.DB, route *models.ProductionRoute) error
 	DeleteProductionRoute(database *gorm.DB, id string) error
 	DeleteProductionRouteStepsNotIn(database *gorm.DB, routeID string, stepIDs []string) error
-	DeleteJobCategoryProcessMappingsNotIn(database *gorm.DB, lineID string, processIDs []string) error
-	DeleteJobCategoriesNotIn(database *gorm.DB, lineID string, categoryIDs []string) error
+	DeleteLineSegmentProcessMappingsNotIn(database *gorm.DB, lineID string, processIDs []string) error
 	DeleteLineSegmentsNotIn(database *gorm.DB, lineID string, segmentIDs []string) error
 	BumpProductionLineVersion(database *gorm.DB, id string, version int64) (bool, error)
 	SaveProductionLine(database *gorm.DB, line *models.ProductionLine) error
@@ -25,8 +24,6 @@ type ProductionRepository interface {
 	ListProcessSteps(database *gorm.DB) ([]models.ProcessStep, error)
 	SaveProcessStep(database *gorm.DB, step *models.ProcessStep) error
 	DeleteProcessStep(database *gorm.DB, id string) error
-	AppendProcessToJobCategory(database *gorm.DB, jobCategoryID string, processID string) error
-	RemoveProcessFromJobCategory(database *gorm.DB, jobCategoryID string, processID string) error
 }
 
 type GormProductionRepository struct{}
@@ -52,10 +49,7 @@ func preloadProductionLineHierarchy(database *gorm.DB) *gorm.DB {
 		Preload("Segments", func(tx *gorm.DB) *gorm.DB {
 			return tx.Order("sort_order asc")
 		}).
-		Preload("Segments.JobCategories", func(tx *gorm.DB) *gorm.DB {
-			return tx.Order("sort_order asc")
-		}).
-		Preload("Segments.JobCategories.Processes", func(tx *gorm.DB) *gorm.DB {
+		Preload("Segments.Processes", func(tx *gorm.DB) *gorm.DB {
 			return tx.Distinct(
 				"process_steps.id",
 				"process_steps.created_at",
@@ -88,7 +82,7 @@ func preloadProductionRouteSteps(database *gorm.DB) *gorm.DB {
 			return tx.Order("sequence asc")
 		}).
 		Preload("Steps.ProcessStep").
-		Preload("Steps.JobCategory")
+		Preload("Steps.Segment")
 }
 
 func (GormProductionRepository) BumpProductionRouteVersion(database *gorm.DB, id string, version int64) (bool, error) {
@@ -171,26 +165,15 @@ func (GormProductionRepository) DeleteProductionRouteStepsNotIn(database *gorm.D
 	return query.Delete(&models.ProductionRouteStep{}).Error
 }
 
-func (GormProductionRepository) DeleteJobCategoryProcessMappingsNotIn(database *gorm.DB, lineID string, processIDs []string) error {
-	query := database.Table("job_category_process_mappings").Where(
-		"job_category_id IN (SELECT job_categories.id FROM job_categories JOIN line_segments ON line_segments.id = job_categories.segment_id WHERE line_segments.line_id = ?)",
+func (GormProductionRepository) DeleteLineSegmentProcessMappingsNotIn(database *gorm.DB, lineID string, processIDs []string) error {
+	query := database.Table("line_segment_process_mappings").Where(
+		"line_segment_id IN (SELECT id FROM line_segments WHERE line_id = ?)",
 		lineID,
 	)
 	if len(processIDs) > 0 {
 		query = query.Not("process_step_id IN ?", processIDs)
 	}
 	return query.Delete(nil).Error
-}
-
-func (GormProductionRepository) DeleteJobCategoriesNotIn(database *gorm.DB, lineID string, categoryIDs []string) error {
-	query := database.Where(
-		"segment_id IN (SELECT id FROM line_segments WHERE line_id = ?)",
-		lineID,
-	)
-	if len(categoryIDs) > 0 {
-		query = query.Not("id IN ?", categoryIDs)
-	}
-	return query.Delete(&models.JobCategory{}).Error
 }
 
 func (GormProductionRepository) DeleteLineSegmentsNotIn(database *gorm.DB, lineID string, segmentIDs []string) error {
@@ -268,27 +251,15 @@ func saveLineSegmentHierarchy(tx *gorm.DB, segment *models.LineSegment, lineID s
 	segment.LineID = lineID
 
 	segmentToSave := *segment
-	segmentToSave.JobCategories = nil
+	segmentToSave.Processes = nil
 	if err := tx.Save(&segmentToSave).Error; err != nil {
 		return err
 	}
 
 	segment.ID = segmentToSave.ID
-	for categoryIndex := range segment.JobCategories {
-		category := &segment.JobCategories[categoryIndex]
-		category.SegmentID = segment.ID
-
-		categoryToSave := *category
-		categoryToSave.Processes = nil
-		if err := tx.Save(&categoryToSave).Error; err != nil {
-			return err
-		}
-
-		category.ID = categoryToSave.ID
-		categoryModel := models.JobCategory{BaseModel: models.BaseModel{ID: category.ID}}
-		if err := tx.Model(&categoryModel).Association("Processes").Replace(category.Processes); err != nil {
-			return err
-		}
+	segmentModel := models.LineSegment{BaseModel: models.BaseModel{ID: segment.ID}}
+	if err := tx.Model(&segmentModel).Association("Processes").Replace(segment.Processes); err != nil {
+		return err
 	}
 
 	return nil
@@ -310,16 +281,4 @@ func (GormProductionRepository) SaveProcessStep(database *gorm.DB, step *models.
 
 func (GormProductionRepository) DeleteProcessStep(database *gorm.DB, id string) error {
 	return database.Delete(&models.ProcessStep{}, "id = ?", id).Error
-}
-
-func (GormProductionRepository) AppendProcessToJobCategory(database *gorm.DB, jobCategoryID string, processID string) error {
-	jobCategory := models.JobCategory{BaseModel: models.BaseModel{ID: jobCategoryID}}
-	process := models.ProcessStep{BaseModel: models.BaseModel{ID: processID}}
-	return database.Model(&jobCategory).Association("Processes").Append(&process)
-}
-
-func (GormProductionRepository) RemoveProcessFromJobCategory(database *gorm.DB, jobCategoryID string, processID string) error {
-	jobCategory := models.JobCategory{BaseModel: models.BaseModel{ID: jobCategoryID}}
-	process := models.ProcessStep{BaseModel: models.BaseModel{ID: processID}}
-	return database.Model(&jobCategory).Association("Processes").Delete(&process)
 }

@@ -47,13 +47,6 @@ type SaveProcessStepRequest struct {
 	IP       string
 }
 
-type JobCategoryProcessMappingRequest struct {
-	JobCategoryID string
-	ProcessID     string
-	Operator      string
-	IP            string
-}
-
 type ProductionService struct {
 	txManager        transactionManager
 	repository       repositories.ProductionRepository
@@ -118,14 +111,6 @@ func SaveProcessStep(req SaveProcessStepRequest) (ProcessStepDTO, error) {
 
 func DeleteProcessStep(id string, operator string, ip string) error {
 	return defaultProductionService.DeleteProcessStep(id, operator, ip)
-}
-
-func AssignProcessToJobCategory(req JobCategoryProcessMappingRequest) error {
-	return defaultProductionService.AssignProcessToJobCategory(req)
-}
-
-func RemoveProcessFromJobCategory(req JobCategoryProcessMappingRequest) error {
-	return defaultProductionService.RemoveProcessFromJobCategory(req)
 }
 
 func (s *ProductionService) ListProductionLines() ([]ProductionLineDTO, error) {
@@ -252,12 +237,9 @@ func (s *ProductionService) SaveProductionLine(req SaveProductionLineRequest) (P
 			return ErrProductionTopologyUnauthorized
 		}
 
-		segmentIDs, categoryIDs, categoryProcessIDs := collectProductionAssociationIDs(line.Segments)
+		segmentIDs, processIDs := collectProductionAssociationIDs(line.Segments)
 		if line.ID != "" {
-			if err := s.repository.DeleteJobCategoryProcessMappingsNotIn(tx, line.ID, categoryProcessIDs); err != nil {
-				return err
-			}
-			if err := s.repository.DeleteJobCategoriesNotIn(tx, line.ID, categoryIDs); err != nil {
+			if err := s.repository.DeleteLineSegmentProcessMappingsNotIn(tx, line.ID, processIDs); err != nil {
 				return err
 			}
 			if err := s.repository.DeleteLineSegmentsNotIn(tx, line.ID, segmentIDs); err != nil {
@@ -398,40 +380,22 @@ func (s *ProductionService) DeleteProcessStep(id string, operator string, ip str
 	})
 }
 
-func (s *ProductionService) AssignProcessToJobCategory(req JobCategoryProcessMappingRequest) error {
-	return s.txManager.WithinTransaction(func(tx *gorm.DB) error {
-		return s.repository.AppendProcessToJobCategory(tx, req.JobCategoryID, req.ProcessID)
-	})
-}
-
-func (s *ProductionService) RemoveProcessFromJobCategory(req JobCategoryProcessMappingRequest) error {
-	return s.txManager.WithinTransaction(func(tx *gorm.DB) error {
-		return s.repository.RemoveProcessFromJobCategory(tx, req.JobCategoryID, req.ProcessID)
-	})
-}
-
-func collectProductionAssociationIDs(segments []models.LineSegment) ([]string, []string, []string) {
+func collectProductionAssociationIDs(segments []models.LineSegment) ([]string, []string) {
 	var segmentIDs []string
-	var categoryIDs []string
-	var categoryProcessIDs []string
+	var processIDs []string
 
 	for _, segment := range segments {
 		if segment.ID != "" && !strings.HasPrefix(segment.ID, "temp-") {
 			segmentIDs = append(segmentIDs, segment.ID)
 		}
-		for _, category := range segment.JobCategories {
-			if category.ID != "" && !strings.HasPrefix(category.ID, "temp-") {
-				categoryIDs = append(categoryIDs, category.ID)
-			}
-			for _, process := range category.Processes {
-				if process.ID != "" && !strings.HasPrefix(process.ID, "temp-") {
-					categoryProcessIDs = append(categoryProcessIDs, process.ID)
-				}
+		for _, process := range segment.Processes {
+			if process.ID != "" && !strings.HasPrefix(process.ID, "temp-") {
+				processIDs = append(processIDs, process.ID)
 			}
 		}
 	}
 
-	return segmentIDs, categoryIDs, categoryProcessIDs
+	return segmentIDs, processIDs
 }
 
 func normalizeProductionRouteDTO(route ProductionRouteDTO) ProductionRouteDTO {
@@ -449,7 +413,7 @@ func normalizeProductionRouteDTO(route ProductionRouteDTO) ProductionRouteDTO {
 	for index := range route.Steps {
 		route.Steps[index].RouteID = route.ID
 		route.Steps[index].ProcessStepID = strings.TrimSpace(route.Steps[index].ProcessStepID)
-		route.Steps[index].JobCategoryID = strings.TrimSpace(route.Steps[index].JobCategoryID)
+		route.Steps[index].SegmentID = strings.TrimSpace(route.Steps[index].SegmentID)
 		route.Steps[index].ExecutionMode = strings.ToUpper(strings.TrimSpace(route.Steps[index].ExecutionMode))
 		if route.Steps[index].ExecutionMode == "" {
 			route.Steps[index].ExecutionMode = "IN_HOUSE"
@@ -485,8 +449,8 @@ func validateProductionRouteDTO(route ProductionRouteDTO) error {
 		if step.ProcessStepID == "" {
 			return fmt.Errorf("%w: steps[%d].processStepId is required", ErrInvalidProductionRoute, index)
 		}
-		if step.JobCategoryID == "" {
-			return fmt.Errorf("%w: steps[%d].jobCategoryId is required", ErrInvalidProductionRoute, index)
+		if step.SegmentID == "" {
+			return fmt.Errorf("%w: steps[%d].segmentId is required", ErrInvalidProductionRoute, index)
 		}
 		if step.ExecutionMode != "IN_HOUSE" && step.ExecutionMode != "OUTSOURCE_ALLOWED" && step.ExecutionMode != "OUTSOURCE_REQUIRED" {
 			return fmt.Errorf("%w: unsupported steps[%d].executionMode %s", ErrInvalidProductionRoute, index, step.ExecutionMode)
@@ -514,24 +478,24 @@ func validateProductionRouteReferences(tx *gorm.DB, steps []models.ProductionRou
 			return fmt.Errorf("%w: steps[%d].processStepId does not exist", ErrInvalidProductionRoute, index)
 		}
 
-		var categoryCount int64
-		if err := tx.Model(&models.JobCategory{}).
-			Where("id = ?", step.JobCategoryID).
-			Count(&categoryCount).Error; err != nil {
-			return fmt.Errorf("%w: failed to validate steps[%d].jobCategoryId: %v", ErrInvalidProductionRoute, index, err)
+		var segmentCount int64
+		if err := tx.Model(&models.LineSegment{}).
+			Where("id = ?", step.SegmentID).
+			Count(&segmentCount).Error; err != nil {
+			return fmt.Errorf("%w: failed to validate steps[%d].segmentId: %v", ErrInvalidProductionRoute, index, err)
 		}
-		if categoryCount == 0 {
-			return fmt.Errorf("%w: steps[%d].jobCategoryId does not exist", ErrInvalidProductionRoute, index)
+		if segmentCount == 0 {
+			return fmt.Errorf("%w: steps[%d].segmentId does not exist", ErrInvalidProductionRoute, index)
 		}
 
 		var mappingCount int64
-		if err := tx.Table("job_category_process_mappings").
-			Where("job_category_id = ? AND process_step_id = ?", step.JobCategoryID, step.ProcessStepID).
+		if err := tx.Table("line_segment_process_mappings").
+			Where("line_segment_id = ? AND process_step_id = ?", step.SegmentID, step.ProcessStepID).
 			Count(&mappingCount).Error; err != nil {
-			return fmt.Errorf("%w: failed to validate steps[%d] capability mapping: %v", ErrInvalidProductionRoute, index, err)
+			return fmt.Errorf("%w: failed to validate steps[%d] segment-process mapping: %v", ErrInvalidProductionRoute, index, err)
 		}
 		if mappingCount == 0 {
-			return fmt.Errorf("%w: steps[%d] process is not mapped to the selected job category", ErrInvalidProductionRoute, index)
+			return fmt.Errorf("%w: steps[%d] process is not mapped to the selected segment", ErrInvalidProductionRoute, index)
 		}
 	}
 

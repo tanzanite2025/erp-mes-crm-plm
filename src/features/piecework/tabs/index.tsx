@@ -20,7 +20,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
-import { useHierarchyLevelLabels } from '@/features/production-shared/tabs/hierarchy-config/hooks/use-hierarchy-level-labels'
+import { useProductionTopologyLabels } from '@/features/production-shared/topology/production-topology-labels'
 import { RateActionDialog } from '../components/rate-action-dialog'
 import type { PieceworkRate } from '../data/schema'
 import {
@@ -35,7 +35,7 @@ export function PieceworkQuery() {
 
 export function PieceworkRules() {
   const { t } = useLanguage()
-  const { level3Name } = useHierarchyLevelLabels()
+  const { level3Name } = useProductionTopologyLabels()
   const { data: rates = [], isLoading } = useGetPieceworkRates()
   const { saveRateMutation, patchRateMutation, deleteRateMutation } =
     usePieceworkRateMutations()

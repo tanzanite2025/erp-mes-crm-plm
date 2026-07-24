@@ -5,7 +5,7 @@ import {
   type ComponentType,
   type ReactNode,
 } from 'react'
-import { GitBranchPlus, Layers3, Route } from 'lucide-react'
+import { GitBranchPlus, Route } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -24,7 +24,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import type { HierarchyLevelOptionItem } from '../../hierarchy-config/data/hierarchy-config'
 import type { LineMindmapProcessDraft, MindmapParentNodeOption } from '../types'
 
 type DialogSubmitValue<T = void> = T | Promise<T>
@@ -34,24 +33,9 @@ interface BaseDialogProps {
   onOpenChange: (open: boolean) => void
 }
 
-interface MindmapCreateRootDialogProps extends BaseDialogProps {
+interface MindmapCreateSegmentDialogProps extends BaseDialogProps {
   levelName: string
-  options: HierarchyLevelOptionItem[]
-  onSubmit: (option: HierarchyLevelOptionItem) => DialogSubmitValue
-  onOpenHierarchyConfig: () => void
-}
-
-interface MindmapCreateChildDialogProps extends BaseDialogProps {
-  parentLevelName: string
-  levelName: string
-  parentNodes: MindmapParentNodeOption[]
-  options: HierarchyLevelOptionItem[]
-  defaultParentId?: string
-  onSubmit: (
-    parentId: string,
-    option: HierarchyLevelOptionItem
-  ) => DialogSubmitValue
-  onOpenHierarchyConfig: () => void
+  onSubmit: (name: string) => DialogSubmitValue
 }
 
 interface MindmapCreateProcessDialogProps extends BaseDialogProps {
@@ -61,7 +45,7 @@ interface MindmapCreateProcessDialogProps extends BaseDialogProps {
   defaultParentId?: string
   onSubmit: (
     draft: LineMindmapProcessDraft,
-    parentJobCategoryId: string
+    parentSegmentId: string
   ) => DialogSubmitValue<unknown>
 }
 
@@ -107,42 +91,31 @@ function MindmapDialogShell({
   )
 }
 
-export function MindmapCreateRootDialog({
+export function MindmapCreateSegmentDialog({
   open,
   onOpenChange,
   levelName,
-  options,
   onSubmit,
-  onOpenHierarchyConfig,
-}: MindmapCreateRootDialogProps) {
-  const [selectedOptionId, setSelectedOptionId] = useState('')
+}: MindmapCreateSegmentDialogProps) {
+  const [name, setName] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const resolvedOptionId = useMemo(
-    () =>
-      options.some((option) => option.id === selectedOptionId)
-        ? selectedOptionId
-        : (options[0]?.id ?? ''),
-    [options, selectedOptionId]
-  )
-  const selectedOption = useMemo(
-    () => options.find((option) => option.id === resolvedOptionId) ?? null,
-    [options, resolvedOptionId]
-  )
 
   useEffect(() => {
     if (!open) {
+      setName('')
       setIsSubmitting(false)
     }
   }, [open])
 
   const handleSubmit = async () => {
-    if (!selectedOption) {
+    const trimmedName = name.trim()
+    if (!trimmedName) {
       return
     }
 
     setIsSubmitting(true)
     try {
-      await onSubmit(selectedOption)
+      await onSubmit(trimmedName)
       onOpenChange(false)
     } finally {
       setIsSubmitting(false)
@@ -155,193 +128,28 @@ export function MindmapCreateRootDialog({
       onOpenChange={onOpenChange}
       icon={GitBranchPlus}
       title={`新建${levelName}`}
-      description='快速放置一级节点，不再切换右侧大面板'
+      description='直接输入当前产线下的二级节点名称'
     >
-      <div className='space-y-4'>
-        {options.length > 0 ? (
-          <Select
-            value={resolvedOptionId || undefined}
-            onValueChange={setSelectedOptionId}
-          >
-            <SelectTrigger className='h-12 rounded-2xl border-none bg-muted/50 px-4 text-[11px] font-black shadow-none'>
-              <SelectValue placeholder={`选择${levelName}候选项`} />
-            </SelectTrigger>
-            <SelectContent>
-              {options.map((option) => (
-                <SelectItem
-                  key={option.id}
-                  value={option.id}
-                  className='text-[11px] font-black'
-                >
-                  {option.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        ) : (
-          <div className='rounded-[24px] border border-dashed border-amber-300/70 bg-amber-500/10 px-4 py-4 text-[10px] font-black tracking-widest text-amber-700 uppercase'>
-            当前还没有可用的{levelName}候选项，请先去维护层级配置。
-          </div>
-        )}
-      </div>
+      <Input
+        value={name}
+        onChange={(event) => setName(event.target.value)}
+        placeholder={`输入${levelName}名称`}
+        className='h-12 rounded-2xl border-none bg-muted/50 px-4 text-[11px] font-black shadow-none'
+      />
       <DialogFooter className='gap-3 sm:grid sm:grid-cols-2 sm:justify-stretch'>
         <Button
           type='button'
           variant='outline'
           className='h-11 rounded-full border-dashed px-5 text-[10px] font-black tracking-widest uppercase'
-          onClick={onOpenHierarchyConfig}
+          onClick={() => onOpenChange(false)}
         >
-          <Layers3 className='size-4' /> 维护层级配置
+          取消
         </Button>
         <Button
           type='button'
           className='h-11 rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
           onClick={() => void handleSubmit()}
-          disabled={!selectedOption || isSubmitting}
-        >
-          确认新建{levelName}
-        </Button>
-      </DialogFooter>
-    </MindmapDialogShell>
-  )
-}
-
-export function MindmapCreateChildDialog({
-  open,
-  onOpenChange,
-  parentLevelName,
-  levelName,
-  parentNodes,
-  options,
-  defaultParentId,
-  onSubmit,
-  onOpenHierarchyConfig,
-}: MindmapCreateChildDialogProps) {
-  const [selectedParentId, setSelectedParentId] = useState(
-    defaultParentId ?? ''
-  )
-  const [selectedOptionId, setSelectedOptionId] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const resolvedParentId = useMemo(
-    () =>
-      parentNodes.some((node) => node.id === selectedParentId)
-        ? selectedParentId
-        : defaultParentId &&
-            parentNodes.some((node) => node.id === defaultParentId)
-          ? defaultParentId
-          : (parentNodes[0]?.id ?? ''),
-    [defaultParentId, parentNodes, selectedParentId]
-  )
-  const resolvedOptionId = useMemo(
-    () =>
-      options.some((option) => option.id === selectedOptionId)
-        ? selectedOptionId
-        : (options[0]?.id ?? ''),
-    [options, selectedOptionId]
-  )
-  const selectedOption = useMemo(
-    () => options.find((option) => option.id === resolvedOptionId) ?? null,
-    [options, resolvedOptionId]
-  )
-
-  useEffect(() => {
-    if (open) {
-      setSelectedParentId(defaultParentId ?? '')
-      return
-    }
-
-    setIsSubmitting(false)
-  }, [defaultParentId, open])
-
-  const handleSubmit = async () => {
-    if (!resolvedParentId || !selectedOption) {
-      return
-    }
-
-    setIsSubmitting(true)
-    try {
-      await onSubmit(resolvedParentId, selectedOption)
-      onOpenChange(false)
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  return (
-    <MindmapDialogShell
-      open={open}
-      onOpenChange={onOpenChange}
-      icon={Route}
-      title={`新建${levelName}`}
-      description='先选一级父节点，再快速放置二级节点'
-    >
-      <div className='space-y-4'>
-        {parentNodes.length > 0 ? (
-          <Select
-            value={resolvedParentId || undefined}
-            onValueChange={setSelectedParentId}
-          >
-            <SelectTrigger className='h-12 rounded-2xl border-none bg-muted/50 px-4 text-[11px] font-black shadow-none'>
-              <SelectValue placeholder={`选择${parentLevelName}父节点`} />
-            </SelectTrigger>
-            <SelectContent>
-              {parentNodes.map((node) => (
-                <SelectItem
-                  key={node.id}
-                  value={node.id}
-                  className='text-[11px] font-black'
-                >
-                  {node.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        ) : (
-          <div className='rounded-[24px] border border-dashed border-amber-300/70 bg-amber-500/10 px-4 py-4 text-[10px] font-black tracking-widest text-amber-700 uppercase'>
-            当前还没有可用的{parentLevelName}节点，请先创建{parentLevelName}。
-          </div>
-        )}
-
-        {options.length > 0 ? (
-          <Select
-            value={resolvedOptionId || undefined}
-            onValueChange={setSelectedOptionId}
-          >
-            <SelectTrigger className='h-12 rounded-2xl border-none bg-muted/50 px-4 text-[11px] font-black shadow-none'>
-              <SelectValue placeholder={`选择${levelName}候选项`} />
-            </SelectTrigger>
-            <SelectContent>
-              {options.map((option) => (
-                <SelectItem
-                  key={option.id}
-                  value={option.id}
-                  className='text-[11px] font-black'
-                >
-                  {option.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        ) : (
-          <div className='rounded-[24px] border border-dashed border-amber-300/70 bg-amber-500/10 px-4 py-4 text-[10px] font-black tracking-widest text-amber-700 uppercase'>
-            当前还没有可用的{levelName}候选项，请先去维护层级配置。
-          </div>
-        )}
-      </div>
-      <DialogFooter className='gap-3 sm:grid sm:grid-cols-2 sm:justify-stretch'>
-        <Button
-          type='button'
-          variant='outline'
-          className='h-11 rounded-full border-dashed px-5 text-[10px] font-black tracking-widest uppercase'
-          onClick={onOpenHierarchyConfig}
-        >
-          <Layers3 className='size-4' /> 维护层级配置
-        </Button>
-        <Button
-          type='button'
-          className='h-11 rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
-          onClick={() => void handleSubmit()}
-          disabled={!resolvedParentId || !selectedOption || isSubmitting}
+          disabled={!name.trim() || isSubmitting}
         >
           确认新建{levelName}
         </Button>
@@ -424,7 +232,7 @@ export function MindmapCreateProcessDialog({
       onOpenChange={onOpenChange}
       icon={Route}
       title={`新建${levelName}`}
-      description='创建第三级本体并挂接到指定二级节点'
+      description='创建第三级工序本体并挂接到指定二级节点'
     >
       <div className='space-y-4'>
         {parentNodes.length > 0 ? (

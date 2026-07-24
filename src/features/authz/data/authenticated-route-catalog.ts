@@ -13,7 +13,6 @@ export const AUTHENTICATED_ROUTE_PATHS = [
   '/labs/experimental/reports',
   '/labs/experimental/tests',
   '/quality/standards/new',
-  '/production-architecture/hierarchy-config',
   '/business-analysis/production-efficiency',
   '/raw-materials-engine/cutting-simulation',
   '/logistics-config/vehicle-specs-library',

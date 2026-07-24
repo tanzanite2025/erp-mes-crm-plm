@@ -184,10 +184,7 @@ func resolveWheelTraceRouteAnchor() (*wheelTraceRouteAnchor, error) {
 		Preload("Segments", func(tx *gorm.DB) *gorm.DB {
 			return tx.Order("sort_order asc")
 		}).
-		Preload("Segments.JobCategories", func(tx *gorm.DB) *gorm.DB {
-			return tx.Order("sort_order asc")
-		}).
-		Preload("Segments.JobCategories.Processes", func(tx *gorm.DB) *gorm.DB {
+		Preload("Segments.Processes", func(tx *gorm.DB) *gorm.DB {
 			return tx.Order("sort_order asc")
 		}).
 		Find(&lines).Error
@@ -198,33 +195,30 @@ func resolveWheelTraceRouteAnchor() (*wheelTraceRouteAnchor, error) {
 	var anchor *wheelTraceRouteAnchor
 	for _, line := range lines {
 		for _, segment := range line.Segments {
-			for _, category := range segment.JobCategories {
-				if len(category.Processes) == 0 {
-					continue
-				}
+			if len(segment.Processes) == 0 {
+				continue
+			}
 
-				process := category.Processes[0]
-				anchor = &wheelTraceRouteAnchor{
-					LineID:      line.ID,
-					LineCode:    line.Code,
-					LineName:    line.Name,
-					SegmentID:   segment.ID,
-					SegmentName: segment.Name,
-					ProcessID:   process.ID,
-					ProcessCode: process.Code,
-					ProcessName: process.Name,
-				}
+			process := segment.Processes[0]
+			anchor = &wheelTraceRouteAnchor{
+				LineID:      line.ID,
+				LineCode:    line.Code,
+				LineName:    line.Name,
+				SegmentID:   segment.ID,
+				SegmentName: segment.Name,
+				ProcessID:   process.ID,
+				ProcessCode: process.Code,
+				ProcessName: process.Name,
+			}
 
-				team, teamErr := resolveWheelTraceTeam(anchor.SegmentName, anchor.ProcessName)
-				if teamErr != nil {
-					return nil, teamErr
-				}
-				if team != nil {
-					anchor.TeamID = team.ID
-					anchor.TeamName = team.Name
-					anchor.OperatorName = team.Operator
-				}
-				break
+			team, teamErr := resolveWheelTraceTeam(anchor.SegmentName, anchor.ProcessName)
+			if teamErr != nil {
+				return nil, teamErr
+			}
+			if team != nil {
+				anchor.TeamID = team.ID
+				anchor.TeamName = team.Name
+				anchor.OperatorName = team.Operator
 			}
 			if anchor != nil {
 				break

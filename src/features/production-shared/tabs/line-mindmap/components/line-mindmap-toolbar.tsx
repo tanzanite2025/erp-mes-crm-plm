@@ -5,7 +5,6 @@ import {
   Pencil,
   Plus,
   Power,
-  Route,
   Trash2,
   Workflow,
 } from 'lucide-react'
@@ -33,9 +32,6 @@ export function LineMindmapToolbar({
   canManageLine,
   canUpdateLine,
   isCheckingPermissions,
-  level1Name,
-  level2Name,
-  level3Name,
   lineOptions,
   resolvedLineId,
   selectedNode,
@@ -43,7 +39,6 @@ export function LineMindmapToolbar({
   onCreateLevel1,
   onCreateLevel2,
   onCreateLevel3,
-  onCreateLine,
   onDeleteLine,
   onEditLine,
   onToggleLine,
@@ -52,8 +47,8 @@ export function LineMindmapToolbar({
 }: LineMindmapToolbarProps) {
   const { t } = useLanguage()
   const lineActionLabel = activeLineIsActive
-    ? t('productionArchitecture.mindmap.actions.disableLine')
-    : t('productionArchitecture.mindmap.actions.enableLine')
+    ? '停用当前 L1'
+    : '启用当前 L1'
 
   return (
     <Card className='sticky top-0 z-30 rounded-[20px] border border-dashed border-muted/35 bg-background shadow-sm'>
@@ -63,18 +58,14 @@ export function LineMindmapToolbar({
             {title}
           </span>
           <span className='text-[8px] font-black tracking-widest text-muted-foreground/55 uppercase'>
-            {t('productionArchitecture.mindmap.actions.currentLine')}
+            当前 L1
           </span>
           <Select
             value={resolvedLineId || undefined}
             onValueChange={onSelectLine}
           >
             <SelectTrigger className='h-8 w-[200px] shrink-0 rounded-2xl border-none bg-background/80 px-3 text-[9px] font-black shadow-none sm:w-[220px]'>
-              <SelectValue
-                placeholder={t(
-                  'productionArchitecture.mindmap.actions.linePlaceholder'
-                )}
-              />
+              <SelectValue placeholder='选择要查看的 L1' />
             </SelectTrigger>
             <SelectContent>
               {lineOptions.map((lineOption) => (
@@ -93,16 +84,15 @@ export function LineMindmapToolbar({
             type='button'
             variant='outline'
             className='h-8 shrink-0 rounded-full border-dashed px-3 text-[8px] font-black tracking-widest uppercase'
-            onClick={onCreateLine}
+            onClick={onCreateLevel1}
             disabled={isCheckingPermissions || !canManageLine}
             title={
               canManageLine
-                ? t('productionArchitecture.mindmap.actions.addLine')
+                ? '新增 L1'
                 : t('productionArchitecture.mindmap.actions.noManagePermission')
             }
           >
-            <Plus className='size-3.5' />{' '}
-            {t('productionArchitecture.mindmap.actions.addLine')}
+            <Plus className='size-3.5' /> 新增 L1
           </Button>
 
           <DropdownMenu>
@@ -113,7 +103,7 @@ export function LineMindmapToolbar({
                 size='icon'
                 className='size-8 shrink-0 rounded-full border-dashed'
                 disabled={isCheckingPermissions || !activeLine}
-                title={t('productionArchitecture.mindmap.actions.lineActions')}
+                title='当前 L1 操作'
               >
                 <MoreVertical className='size-3.5' />
               </Button>
@@ -128,14 +118,14 @@ export function LineMindmapToolbar({
                 className='cursor-pointer gap-2 rounded-xl px-4 py-3 text-[10px] font-black tracking-widest uppercase'
                 title={
                   canUpdateLine
-                    ? t('productionArchitecture.mindmap.actions.editLine')
+                    ? '编辑 L1'
                     : t(
                         'productionArchitecture.mindmap.actions.noUpdatePermission'
                       )
                 }
               >
                 <Pencil className='size-3.5 text-cyan-600' />
-                {t('productionArchitecture.mindmap.actions.editLine')}
+                编辑 L1
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={onToggleLine}
@@ -158,14 +148,14 @@ export function LineMindmapToolbar({
                 className='cursor-pointer gap-2 rounded-xl px-4 py-3 text-[10px] font-black tracking-widest text-rose-600 uppercase focus:text-rose-600'
                 title={
                   canManageLine
-                    ? t('productionArchitecture.mindmap.actions.deleteLine')
+                    ? '删除当前 L1'
                     : t(
                         'productionArchitecture.mindmap.actions.noManagePermission'
                       )
                 }
               >
                 <Trash2 className='size-3.5' />
-                {t('productionArchitecture.mindmap.actions.deleteLine')}
+                删除当前 L1
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -173,29 +163,15 @@ export function LineMindmapToolbar({
           <Button
             type='button'
             className='h-8 shrink-0 rounded-full px-3 text-[8px] font-black tracking-widest uppercase'
-            onClick={onCreateLevel1}
-            disabled={isCheckingPermissions || !activeLine || !canUpdateLine}
-            title={
-              canUpdateLine
-                ? `新建${level1Name}`
-                : t('productionArchitecture.mindmap.actions.noUpdatePermission')
-            }
-          >
-            <GitBranchPlus className='size-3.5' /> 新建{level1Name}
-          </Button>
-          <Button
-            type='button'
-            variant='outline'
-            className='h-8 shrink-0 rounded-full border-dashed px-3 text-[8px] font-black tracking-widest uppercase'
             onClick={onCreateLevel2}
             disabled={isCheckingPermissions || !activeLine || !canUpdateLine}
             title={
               canUpdateLine
-                ? `新建${level2Name}`
+                ? '新增 L2'
                 : t('productionArchitecture.mindmap.actions.noUpdatePermission')
             }
           >
-            <Route className='size-3.5' /> 新建{level2Name}
+            <GitBranchPlus className='size-3.5' /> 新增 L2
           </Button>
           <Button
             type='button'
@@ -205,11 +181,11 @@ export function LineMindmapToolbar({
             disabled={isCheckingPermissions || !activeLine || !canUpdateLine}
             title={
               canUpdateLine
-                ? `新建${level3Name}`
+                ? '新增 L3'
                 : t('productionArchitecture.mindmap.actions.noUpdatePermission')
             }
           >
-            <Workflow className='size-3.5' /> 新建{level3Name}
+            <Workflow className='size-3.5' /> 新增 L3
           </Button>
           <Button
             type='button'

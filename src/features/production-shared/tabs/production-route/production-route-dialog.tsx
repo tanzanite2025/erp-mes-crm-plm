@@ -30,7 +30,7 @@ import type {
   ProductionRouteStep,
 } from '../../data/production-route'
 
-export interface ProductionRouteCapabilityOption {
+export interface ProductionRouteSegmentOption {
   id: string
   label: string
   processes: ProductionProcessStep[]
@@ -40,7 +40,7 @@ interface ProductionRouteDialogProps {
   open: boolean
   route: ProductionRoute | null
   routes: ProductionRoute[]
-  capabilities: ProductionRouteCapabilityOption[]
+  segments: ProductionRouteSegmentOption[]
   onOpenChange: (open: boolean) => void
   onSave: (route: ProductionRoute) => Promise<void>
 }
@@ -92,10 +92,10 @@ function createDraftRoute(routes: ProductionRoute[]): ProductionRoute {
 
 function createRouteStep(
   sequence: number,
-  capability?: ProductionRouteCapabilityOption
+  segment?: ProductionRouteSegmentOption
 ): ProductionRouteStep {
   const now = new Date().toISOString()
-  const process = capability?.processes[0]
+  const process = segment?.processes[0]
   return {
     id: crypto.randomUUID(),
     routeId: '',
@@ -103,8 +103,8 @@ function createRouteStep(
     processStepId: process?.id ?? '',
     processCode: process?.code ?? '',
     processName: process?.name ?? '',
-    jobCategoryId: capability?.id ?? '',
-    jobCategoryName: capability?.label ?? '',
+    segmentId: segment?.id ?? '',
+    segmentName: segment?.label ?? '',
     executionMode: 'IN_HOUSE',
     qualityGate: 'NONE',
     estimatedMinutes: 0,
@@ -123,7 +123,7 @@ export function ProductionRouteDialog({
   open,
   route,
   routes,
-  capabilities,
+  segments,
   onOpenChange,
   onSave,
 }: ProductionRouteDialogProps) {
@@ -145,9 +145,9 @@ export function ProductionRouteDialog({
     setIsSubmitting(false)
   }, [open, route, routes])
 
-  const capabilityById = useMemo(
-    () => new Map(capabilities.map((item) => [item.id, item])),
-    [capabilities]
+  const segmentById = useMemo(
+    () => new Map(segments.map((item) => [item.id, item])),
+    [segments]
   )
 
   const updateRoute = <TKey extends keyof ProductionRoute>(
@@ -170,17 +170,17 @@ export function ProductionRouteDialog({
     }))
   }
 
-  const handleCapabilityChange = (stepId: string, capabilityId: string) => {
-    const capability = capabilityById.get(capabilityId)
-    const process = capability?.processes[0]
+  const handleSegmentChange = (stepId: string, segmentId: string) => {
+    const segment = segmentById.get(segmentId)
+    const process = segment?.processes[0]
     setDraft((current) => ({
       ...current,
       steps: current.steps.map((step) =>
         step.id === stepId
           ? {
               ...step,
-              jobCategoryId: capability?.id ?? '',
-              jobCategoryName: capability?.label ?? '',
+              segmentId: segment?.id ?? '',
+              segmentName: segment?.label ?? '',
               processStepId: process?.id ?? '',
               processCode: process?.code ?? '',
               processName: process?.name ?? '',
@@ -197,8 +197,8 @@ export function ProductionRouteDialog({
         if (step.id !== stepId) {
           return step
         }
-        const process = capabilityById
-          .get(step.jobCategoryId)
+        const process = segmentById
+          .get(step.segmentId)
           ?.processes.find((item) => item.id === processId)
         return {
           ...step,
@@ -225,7 +225,7 @@ export function ProductionRouteDialog({
       ...current,
       steps: [
         ...current.steps,
-        createRouteStep(current.steps.length + 1, capabilities[0]),
+        createRouteStep(current.steps.length + 1, segments[0]),
       ],
     }))
   }
@@ -258,7 +258,7 @@ export function ProductionRouteDialog({
       return
     }
     const steps = rebuildStepSequence(draft.steps).filter(
-      (step) => step.processStepId && step.jobCategoryId
+      (step) => step.processStepId && step.segmentId
     )
     if (steps.length !== draft.steps.length) {
       return
@@ -388,7 +388,7 @@ export function ProductionRouteDialog({
                 type='button'
                 size='sm'
                 onClick={addStep}
-                disabled={capabilities.length === 0}
+                disabled={segments.length === 0}
                 className='rounded-full'
               >
                 <Plus className='mr-2 size-4' />
@@ -396,9 +396,9 @@ export function ProductionRouteDialog({
               </Button>
             </div>
 
-            {capabilities.length === 0 ? (
+            {segments.length === 0 ? (
               <div className='rounded-2xl bg-background/70 p-5 text-center text-xs font-bold text-muted-foreground'>
-                {t('productionArchitecture.routes.steps.noCapabilities')}
+                {t('productionArchitecture.routes.steps.noSegments')}
               </div>
             ) : draft.steps.length === 0 ? (
               <div className='rounded-2xl bg-background/70 p-5 text-center text-xs font-bold text-muted-foreground'>
@@ -407,8 +407,8 @@ export function ProductionRouteDialog({
             ) : (
               <div className='space-y-2'>
                 {draft.steps.map((step, index) => {
-                  const capability = capabilityById.get(step.jobCategoryId)
-                  const processes = capability?.processes ?? []
+                  const selectedSegment = segmentById.get(step.segmentId)
+                  const processes = selectedSegment?.processes ?? []
                   return (
                     <div
                       key={step.id}
@@ -419,20 +419,20 @@ export function ProductionRouteDialog({
                         {index + 1}
                       </div>
                       <Select
-                        value={step.jobCategoryId}
+                        value={step.segmentId}
                         onValueChange={(value) =>
-                          handleCapabilityChange(step.id, value)
+                          handleSegmentChange(step.id, value)
                         }
                       >
                         <SelectTrigger className='w-full'>
                           <SelectValue
                             placeholder={t(
-                              'productionArchitecture.routes.steps.capability'
+                              'productionArchitecture.routes.steps.segment'
                             )}
                           />
                         </SelectTrigger>
                         <SelectContent>
-                          {capabilities.map((item) => (
+                          {segments.map((item) => (
                             <SelectItem key={item.id} value={item.id}>
                               {item.label}
                             </SelectItem>

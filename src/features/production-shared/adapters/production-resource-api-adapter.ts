@@ -1,5 +1,4 @@
 import type {
-  ProductionJobCategoryApiDTO,
   ProductionLineApiDTO,
   ProductionLineSegmentApiDTO,
   ProductionLinesResponseApiDTO,
@@ -12,11 +11,7 @@ import type {
   SaveProductionProcessStepApiDTO,
   SaveProductionRouteApiDTO,
 } from '../contracts/production-resource-api-dto'
-import type {
-  ProductionLine,
-  ProductionJobCategory,
-  ProductionSegment,
-} from '../data/production-line'
+import type { ProductionLine, ProductionSegment } from '../data/production-line'
 import type { ProductionProcessStep } from '../data/production-process'
 import type {
   ProductionRoute,
@@ -51,34 +46,16 @@ export function toProductionProcessContract(
   return toLineProcessContract(dto)
 }
 
-function toJobCategoryContract(
-  dto: ProductionJobCategoryApiDTO
-): ProductionJobCategory {
-  return {
-    id: dto.id,
-    segmentId: dto.segmentId || '',
-    name: dto.name,
-    hierarchyOptionId: dto.hierarchyOptionId || undefined,
-    description: dto.description || '',
-    sortOrder: dto.sortOrder || 0,
-    attributes: dto.attributes || undefined,
-    processes: (dto.processes || []).map(toLineProcessContract),
-    createdAt: dto.createdAt || '',
-    updatedAt: dto.updatedAt || '',
-  }
-}
-
 function toSegmentContract(
   dto: ProductionLineSegmentApiDTO
 ): ProductionSegment {
   return {
     id: dto.id,
     name: dto.name,
-    hierarchyOptionId: dto.hierarchyOptionId || undefined,
     description: dto.description || '',
     sortOrder: dto.sortOrder || 0,
     attributes: dto.attributes || undefined,
-    jobCategories: (dto.jobCategories || []).map(toJobCategoryContract),
+    processes: (dto.processes || []).map(toLineProcessContract),
     updatedAt: dto.updatedAt || '',
   }
 }
@@ -138,8 +115,8 @@ function toProductionRouteStepContract(
     processStepId: dto.processStepId || '',
     processCode: dto.processCode || '',
     processName: dto.processName || '',
-    jobCategoryId: dto.jobCategoryId || '',
-    jobCategoryName: dto.jobCategoryName || '',
+    segmentId: dto.segmentId || '',
+    segmentName: dto.segmentName || '',
     executionMode: normalizeRouteExecutionMode(dto.executionMode),
     qualityGate: normalizeRouteQualityGate(dto.qualityGate),
     estimatedMinutes: Number(dto.estimatedMinutes) || 0,
@@ -196,34 +173,16 @@ function toProcessApiDTO(
   }
 }
 
-function toJobCategoryApiDTO(
-  category: ProductionJobCategory
-): ProductionJobCategoryApiDTO {
-  return {
-    id: category.id,
-    segmentId: category.segmentId || '',
-    name: category.name,
-    hierarchyOptionId: category.hierarchyOptionId || '',
-    description: category.description || '',
-    sortOrder: category.sortOrder || 0,
-    attributes: category.attributes || null,
-    processes: (category.processes || []).map(toProcessApiDTO),
-    createdAt: category.createdAt || '',
-    updatedAt: category.updatedAt || '',
-  }
-}
-
 function toSegmentApiDTO(
   segment: ProductionSegment
 ): ProductionLineSegmentApiDTO {
   return {
     id: segment.id,
     name: segment.name,
-    hierarchyOptionId: segment.hierarchyOptionId || '',
     description: segment.description || '',
     sortOrder: segment.sortOrder || 0,
     attributes: segment.attributes || null,
-    jobCategories: (segment.jobCategories || []).map(toJobCategoryApiDTO),
+    processes: (segment.processes || []).map(toProcessApiDTO),
     updatedAt: segment.updatedAt || '',
   }
 }
@@ -271,8 +230,8 @@ function toProductionRouteStepApiDTO(
     processStepId: step.processStepId || '',
     processCode: step.processCode || '',
     processName: step.processName || '',
-    jobCategoryId: step.jobCategoryId || '',
-    jobCategoryName: step.jobCategoryName || '',
+    segmentId: step.segmentId || '',
+    segmentName: step.segmentName || '',
     executionMode: step.executionMode || 'IN_HOUSE',
     qualityGate: step.qualityGate || 'NONE',
     estimatedMinutes: step.estimatedMinutes || 0,

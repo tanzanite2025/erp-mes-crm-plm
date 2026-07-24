@@ -18,8 +18,8 @@ func TestValidateProductionRouteDTORequiresTransferForOutsource(t *testing.T) {
 		Name:   "Standard Route",
 		Status: "DRAFT",
 		Steps: []ProductionRouteStepDTO{{
+			SegmentID:     "segment-1",
 			ProcessStepID: "process-1",
-			JobCategoryID: "category-1",
 			ExecutionMode: "OUTSOURCE_REQUIRED",
 			QualityGate:   "NONE",
 		}},
@@ -47,8 +47,8 @@ func TestNormalizeProductionRouteDTODefaultsStatusAndSequence(t *testing.T) {
 		Code: " route-001 ",
 		Name: " Standard Route ",
 		Steps: []ProductionRouteStepDTO{{
+			SegmentID:     " segment-1 ",
 			ProcessStepID: " process-1 ",
-			JobCategoryID: " category-1 ",
 			ExecutionMode: "in_house",
 			QualityGate:   "",
 		}},

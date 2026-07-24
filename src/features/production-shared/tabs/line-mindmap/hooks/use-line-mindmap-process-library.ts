@@ -4,7 +4,6 @@ import type { ProductionProcessStep } from '../../../data/production-process'
 import { productionResourceQueryKeys } from '../../../data/production-resource-query-keys'
 import { productionProcessesService } from '../../../services/production-processes-service'
 import { productionResourceSync } from '../../../services/production-resource-sync'
-import { useHierarchyLevelLabels } from '../../hierarchy-config/hooks/use-hierarchy-level-labels'
 
 function isStructuredValue(value: unknown): boolean {
   return value !== null && typeof value === 'object'
@@ -31,7 +30,7 @@ function sortProcesses(
 
 export function useLineMindmapProcessLibrary() {
   const queryClient = useQueryClient()
-  const { level3Name } = useHierarchyLevelLabels()
+  const level3Name = 'L3'
 
   const setConfirmedProcesses = (
     updater: (current: ProductionProcessStep[]) => ProductionProcessStep[]

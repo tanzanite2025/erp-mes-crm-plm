@@ -2,7 +2,7 @@
 
 import { useLanguage } from '@/context/language-provider'
 import type { Segment } from '../../../topology/types'
-import { useHierarchyLevelLabels } from '../../hierarchy-config/hooks/use-hierarchy-level-labels'
+import { useProductionTopologyLabels } from '../../../topology/production-topology-labels'
 import { SegmentNode } from './segment-node.tsx'
 
 interface WorkArchitectureTreeProps {
@@ -11,13 +11,12 @@ interface WorkArchitectureTreeProps {
 
 export function WorkArchitectureTree({ segments }: WorkArchitectureTreeProps) {
   const { t } = useLanguage()
-  const { level1Name, level2Name, level3Name } = useHierarchyLevelLabels()
+  const { level2Name, level3Name } = useProductionTopologyLabels()
 
   if (!segments || segments.length === 0) {
     return (
       <div className='p-8 text-center text-sm text-muted-foreground'>
         {t('productionShared.workArchitecture.treeEmptyDynamic', {
-          level1Name,
           level2Name,
         })}
       </div>
@@ -30,7 +29,6 @@ export function WorkArchitectureTree({ segments }: WorkArchitectureTreeProps) {
         <SegmentNode
           key={segment.id}
           segment={segment}
-          level1Name={level1Name}
           level2Name={level2Name}
           level3Name={level3Name}
         />

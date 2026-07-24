@@ -22,22 +22,20 @@ import {
 import { productionRoutesService } from '../../services/production-routes-service'
 import {
   ProductionRouteDialog,
-  type ProductionRouteCapabilityOption,
+  type ProductionRouteSegmentOption,
 } from './production-route-dialog'
 
 const logger = createLogger('ProductionRoute')
 
-function buildCapabilityOptions(lines: ProductionLine[]) {
-  const options: ProductionRouteCapabilityOption[] = []
+function buildSegmentOptions(lines: ProductionLine[]) {
+  const options: ProductionRouteSegmentOption[] = []
   for (const line of lines) {
     for (const segment of line.segments) {
-      for (const category of segment.jobCategories) {
-        options.push({
-          id: category.id,
-          label: `${line.name} / ${segment.name} / ${category.name}`,
-          processes: category.processes.filter((process) => process.isActive),
-        })
-      }
+      options.push({
+        id: segment.id,
+        label: `${line.name} / ${segment.name}`,
+        processes: segment.processes.filter((process) => process.isActive),
+      })
     }
   }
   return options
@@ -64,8 +62,8 @@ export function ProductionRouteMgmt() {
   const linesQuery = useProductionLinesQuery()
   const canManage = allowsAction('action_production_route_manage')
   const routes = routesQuery.data ?? []
-  const capabilities = useMemo(
-    () => buildCapabilityOptions(linesQuery.data ?? []),
+  const segmentOptions = useMemo(
+    () => buildSegmentOptions(linesQuery.data ?? []),
     [linesQuery.data]
   )
 
@@ -245,7 +243,7 @@ export function ProductionRouteMgmt() {
                           step.processStepId}
                       </span>
                       <span className='shrink-0 text-[10px] font-bold text-muted-foreground'>
-                        {step.jobCategoryName}
+                        {step.segmentName}
                       </span>
                     </div>
                   ))}
@@ -295,7 +293,7 @@ export function ProductionRouteMgmt() {
         open={dialogOpen}
         route={editingRoute}
         routes={routes}
-        capabilities={capabilities}
+        segments={segmentOptions}
         onOpenChange={setDialogOpen}
         onSave={handleSave}
       />

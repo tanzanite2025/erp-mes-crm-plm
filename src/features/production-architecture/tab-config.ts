@@ -14,11 +14,6 @@ export function getProductionArchitectureTabs(t: TranslateFn): TabItem[] {
       href: '/production-architecture/mindmap',
     },
     {
-      key: 'hierarchyConfig',
-      label: t('productionArchitecture.layout.tabs.hierarchyConfig'),
-      href: '/production-architecture/hierarchy-config',
-    },
-    {
       key: 'topology',
       label: t('productionArchitecture.layout.tabs.topology'),
       href: '/production-architecture/topology',

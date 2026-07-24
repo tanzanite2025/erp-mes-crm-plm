@@ -13,20 +13,6 @@ export interface ProductionLineSegmentApiDTO {
   id: string
   lineId?: string
   name: string
-  hierarchyOptionId?: string
-  description?: string
-  sortOrder?: number
-  attributes?: Record<string, unknown> | null
-  jobCategories: ProductionJobCategoryApiDTO[]
-  createdAt?: string
-  updatedAt?: string
-}
-
-export interface ProductionJobCategoryApiDTO {
-  id: string
-  segmentId?: string
-  name: string
-  hierarchyOptionId?: string
   description?: string
   sortOrder?: number
   attributes?: Record<string, unknown> | null
@@ -57,11 +43,11 @@ export interface ProductionRouteStepApiDTO {
   updatedAt?: string
   routeId?: string
   sequence: number
+  segmentId: string
+  segmentName?: string
   processStepId: string
   processCode?: string
   processName?: string
-  jobCategoryId: string
-  jobCategoryName?: string
   executionMode: string
   qualityGate: string
   estimatedMinutes: number

@@ -22,8 +22,8 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { useProductionTopologyLabels } from '../../../topology/production-topology-labels'
 import type { TopologyTemplate } from '../../../topology/types'
-import { useHierarchyLevelLabels } from '../../hierarchy-config/hooks/use-hierarchy-level-labels'
 
 interface TemplateDialogProps {
   open: boolean
@@ -39,7 +39,7 @@ export function TemplateDialog({
   onSave,
 }: TemplateDialogProps) {
   const { t } = useLanguage()
-  const { level1Name, level2Name } = useHierarchyLevelLabels()
+  const { level1Name, level2Name } = useProductionTopologyLabels()
 
   const formSchema = z.object({
     name: z

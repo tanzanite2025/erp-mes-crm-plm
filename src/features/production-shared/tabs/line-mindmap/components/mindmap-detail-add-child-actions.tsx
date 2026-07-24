@@ -45,7 +45,7 @@ export function MindmapDetailAddChildActions({
   )
 
   const nextLevel = getNextMindmapLevel(selectedNode.level)
-  const canAssignProcess = selectedNode.sourceType === 'jobCategory'
+  const canAssignProcess = selectedNode.sourceType === 'segment'
 
   return (
     <div className='space-y-2'>

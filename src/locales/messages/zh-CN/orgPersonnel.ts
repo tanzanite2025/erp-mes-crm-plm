@@ -319,7 +319,7 @@ export const orgPersonnel = {
     jobDialog: {
       editTitle: '编辑工种',
       createTitle: '新增工种',
-      desc: '定义工种名称、工艺编码以及所属工位。',
+      desc: '定义工种名称、工艺编码以及关联的生产结构节点。',
       nameLabel: '工种名称',
       namePlaceholder: '例如：氩弧焊工',
       codeLabel: '工种编码',

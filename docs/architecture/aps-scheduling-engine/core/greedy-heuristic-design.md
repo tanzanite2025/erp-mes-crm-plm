@@ -149,7 +149,8 @@ type OrderTask struct {
 type ResourceCandidate struct {
     ResourceID   string
     LineID       string
-    StationID    string
+    SegmentID    string
+    ProcessID    string
     DeviceID     string
     UserID       string
     ShiftID      string

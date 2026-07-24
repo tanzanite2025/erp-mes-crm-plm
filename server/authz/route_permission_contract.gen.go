@@ -129,7 +129,6 @@ var KnownRoutePermissionIDs = map[string]struct{}{
 	"tab_product_structure_bom": {},
 	"tab_product_structure_bom_records": {},
 	"tab_product_structure_section_config": {},
-	"tab_production_architecture_hierarchy_config": {},
 	"tab_production_architecture_mindmap": {},
 	"tab_production_architecture_routes": {},
 	"tab_production_architecture_topology": {},

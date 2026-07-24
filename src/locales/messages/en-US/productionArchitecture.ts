@@ -3,7 +3,6 @@ export const productionArchitecture = {
     title: 'Production Architecture',
     tabs: {
       mindmap: 'Line Mindmap',
-      hierarchyConfig: 'Hierarchy Config',
       topology: 'Topology Templates',
       routes: 'Production Routes',
     },
@@ -35,7 +34,7 @@ export const productionArchitecture = {
   routes: {
     title: 'Production Routes',
     description:
-      'Maintain product process order and execution mode. Routes reference capabilities configured in the line mindmap without editing line topology.',
+      'Maintain product L3 order and execution mode. Routes reference configured L2 + L3 nodes from the line mindmap without editing line topology.',
     searchPlaceholder: 'Search route code, name, or product...',
     add: 'New Production Route',
     empty: 'No production routes',
@@ -64,14 +63,14 @@ export const productionArchitecture = {
     steps: {
       title: 'Route Steps',
       description:
-        'Steps reference job capabilities and processes from the line mindmap; process archives are not duplicated here.',
+        'Steps reference L2 and L3 nodes from the line mindmap; L3 archives are not duplicated here.',
       add: 'Add Step',
-      empty: 'No route steps yet. Add the first process step.',
-      noCapabilities:
-        'No job capabilities are available in the line mindmap. Configure lines and processes first.',
-      capability: 'Select capability',
-      process: 'Select process',
-      noProcess: 'No process on this capability',
+      empty: 'No route steps yet. Add the first L3 step.',
+      noSegments:
+        'No usable L2 + L3 nodes are available in the line mindmap. Configure the structure first.',
+      segment: 'Select L2',
+      process: 'Select L3',
+      noProcess: 'No L3 on this L2',
       minutes: 'Minutes',
       transfer: 'Transfer after completion',
     },

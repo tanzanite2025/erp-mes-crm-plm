@@ -112,8 +112,6 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/production-architecture': 'sidebar.items.productionArchitecture',
   '/production-architecture/mindmap':
     'productionArchitecture.layout.tabs.mindmap',
-  '/production-architecture/hierarchy-config':
-    'productionArchitecture.layout.tabs.hierarchyConfig',
   '/production-architecture/topology':
     'productionArchitecture.layout.tabs.topology',
   '/production-architecture/routes':

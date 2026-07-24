@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Activity, Layers, MessageSquarePlus } from 'lucide-react'
+import { Activity, Layers, MessageSquarePlus, Route } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
@@ -14,25 +14,22 @@ import {
 import type { StandardCommand } from '@/features/system-mgmt/workflow-core/data/schema'
 import { useCommands } from '@/features/system-mgmt/workflow-core/hooks/use-commands'
 import type { Segment } from '../../../topology/types'
-import { JobCategoryNode } from './job-category-node'
 
 interface SegmentNodeProps {
   segment: Segment
-  level1Name: string
   level2Name: string
   level3Name: string
 }
 
 export function SegmentNode({
   segment,
-  level1Name,
   level2Name,
   level3Name,
 }: SegmentNodeProps) {
   const { t } = useLanguage()
   const { commands } = useCommands()
   const [assignedCmds, setAssignedCmds] = useState<string[]>([])
-  const jobCategories = segment.jobCategories || []
+  const processes = segment.processes || []
 
   return (
     <div className='group/segment'>
@@ -42,7 +39,7 @@ export function SegmentNode({
           className='h-5 gap-1 border-blue-600 bg-blue-600 px-1.5 py-0 text-white shadow-sm'
         >
           <Layers className='size-3' />
-          <span className='text-[10px]'>{level1Name}</span>
+          <span className='text-[10px]'>{level2Name}</span>
         </Badge>
         <span className='text-sm font-bold text-slate-700'>{segment.name}</span>
 
@@ -85,7 +82,7 @@ export function SegmentNode({
                             'productionShared.workArchitecture.assignActionSuccess',
                             {
                               command: command.title,
-                              levelName: level1Name,
+                              levelName: level2Name,
                               name: segment.name,
                             }
                           )
@@ -118,26 +115,47 @@ export function SegmentNode({
           </div>
         )}
 
-        {jobCategories.length === 0 && (
+        {processes.length === 0 && (
           <span className='ml-1 text-[10px] text-muted-foreground/30 italic'>
             (
             {t('productionShared.workArchitecture.unconfiguredLevel', {
-              levelName: level2Name,
+              levelName: level3Name,
             })}
             )
           </span>
         )}
       </div>
 
-      {jobCategories.length > 0 && (
+      {processes.length > 0 && (
         <div className='space-y-4 px-5 pt-2 pb-4'>
-          {jobCategories.map((jobCategory) => (
-            <JobCategoryNode
-              key={jobCategory.id}
-              jobCategory={jobCategory}
-              level2Name={level2Name}
-              level3Name={level3Name}
-            />
+          {processes.map((process) => (
+            <div
+              key={process.id}
+              className='rounded-[18px] border border-slate-100 bg-white/80 px-4 py-3 shadow-sm'
+            >
+              <div className='flex items-center gap-2'>
+                <Badge
+                  variant='outline'
+                  className='h-5 gap-1 border-orange-500/30 bg-orange-500/10 px-1.5 py-0 text-orange-600'
+                >
+                  <Route className='size-3' />
+                  <span className='text-[10px]'>{level3Name}</span>
+                </Badge>
+                <span className='text-sm font-bold text-slate-700'>
+                  {process.name}
+                </span>
+                {process.code && (
+                  <span className='font-mono text-[10px] font-black text-muted-foreground/50'>
+                    {process.code}
+                  </span>
+                )}
+              </div>
+              {process.description && (
+                <p className='mt-1 pl-1 text-[11px] font-medium text-muted-foreground/70'>
+                  {process.description}
+                </p>
+              )}
+            </div>
           ))}
         </div>
       )}

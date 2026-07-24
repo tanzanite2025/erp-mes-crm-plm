@@ -53,7 +53,7 @@ export function MindmapDetailEmbeddedActions({
         onChange={(event) =>
           onPatchNode(selectedNode.id, { dialogKey: event.target.value })
         }
-        placeholder='dialogKey，例如 capability_assign_dialog'
+        placeholder='dialogKey，例如 process_assign_dialog'
         className='h-11 rounded-2xl border-none bg-background/80'
         disabled={selectedNode.actionType !== 'open_dialog'}
       />

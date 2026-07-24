@@ -30,7 +30,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
-import { useHierarchyLevelLabels } from '@/features/production-shared/tabs/hierarchy-config/hooks/use-hierarchy-level-labels'
+import { useProductionTopologyLabels } from '@/features/production-shared/topology/production-topology-labels'
 import { OrgActionDialog } from '../components/org-action-dialog'
 import { OrgTree } from '../components/org-tree'
 import { ProductionSelector } from '../components/production-selector'
@@ -81,7 +81,7 @@ export function OrgMgmt() {
     return '三级生产单元'
   }
 
-  const { level1Name } = useHierarchyLevelLabels()
+  const { level1Name } = useProductionTopologyLabels()
 
   if (isForbiddenError(error)) {
     return <ForbiddenState />

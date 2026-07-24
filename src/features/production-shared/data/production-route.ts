@@ -26,11 +26,11 @@ export interface ProductionRouteStep {
   id: string
   routeId?: string
   sequence: number
+  segmentId: string
+  segmentName?: string
   processStepId: string
   processCode?: string
   processName?: string
-  jobCategoryId: string
-  jobCategoryName?: string
   executionMode: ProductionRouteExecutionMode
   qualityGate: ProductionRouteQualityGate
   estimatedMinutes: number

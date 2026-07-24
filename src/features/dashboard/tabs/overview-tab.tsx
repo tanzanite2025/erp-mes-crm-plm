@@ -31,7 +31,7 @@ import { useTraceStats } from '@/features/dashboard/hooks/use-trace-stats'
 import { useVisibleDashboardSegments } from '@/features/dashboard/hooks/use-visible-dashboard-segments'
 import { type ProductionSegment as Segment } from '@/features/production-shared/data/production-line'
 import { useProductionLinesQuery } from '@/features/production-shared/hooks/use-production-resources'
-import { useHierarchyLevelLabels } from '@/features/production-shared/tabs/hierarchy-config/hooks/use-hierarchy-level-labels'
+import { useProductionTopologyLabels } from '@/features/production-shared/topology/production-topology-labels'
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error && error.message) {
@@ -43,7 +43,7 @@ function getErrorMessage(error: unknown): string {
 
 export function DashboardOverviewTab() {
   const { t } = useLanguage()
-  const { level1Name } = useHierarchyLevelLabels()
+  const { level1Name } = useProductionTopologyLabels()
   const [isConfigOpen, setIsConfigOpen] = useState(false)
   const [draftVisibleSegmentIds, setDraftVisibleSegmentIds] = useState<
     string[] | null

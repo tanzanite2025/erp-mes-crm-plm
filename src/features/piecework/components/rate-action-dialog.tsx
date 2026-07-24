@@ -13,7 +13,7 @@ import { ActionDialogShell } from '@/components/action-dialog-shell'
 import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
 import { SelectDropdown } from '@/components/select-dropdown'
 import { useProductDisplayOptions } from '@/features/engineering/hooks/use-product-display-options'
-import { useHierarchyLevelLabels } from '@/features/production-shared/tabs/hierarchy-config/hooks/use-hierarchy-level-labels'
+import { useProductionTopologyLabels } from '@/features/production-shared/topology/production-topology-labels'
 import type { PieceworkRate } from '../data/schema'
 
 interface RateActionDialogProps {
@@ -47,7 +47,7 @@ export function RateActionDialog({
   isLoading,
 }: RateActionDialogProps) {
   const { t } = useLanguage()
-  const { level3Name } = useHierarchyLevelLabels()
+  const { level3Name } = useProductionTopologyLabels()
   const { productOptions } = useProductDisplayOptions({ enabled: open })
 
   const shellClasses = buildActionDialogShellClasses({

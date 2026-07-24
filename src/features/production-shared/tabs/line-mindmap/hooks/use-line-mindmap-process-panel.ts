@@ -1,17 +1,30 @@
 import { useMemo } from 'react'
+import type { ProductionLine } from '../../../data/production-line'
 import type { ProductionProcessStep } from '../../../data/production-process'
 import { useProductionProcessesQuery } from '../../../hooks/use-production-resources'
+import {
+  addProcessToLineSegment,
+  removeProcessFromLineSegment,
+} from '../../../topology/line-topology-helpers'
 import type { LineMindmapNode } from '../data/line-mindmap-domain'
 import type { LineMindmapProcessDraft } from '../types'
-import { useLineMindmapProcessCapabilities } from './use-line-mindmap-process-capabilities'
 import { useLineMindmapProcessLibrary } from './use-line-mindmap-process-library'
 
-export function useLineMindmapProcessPanel(
+interface UseLineMindmapProcessPanelOptions {
+  activeLine: ProductionLine | null
   selectedNode: LineMindmapNode | null
-) {
+  submitTopologyMutation: (
+    updatedLine: ProductionLine,
+    nextSelectedNodeId: string | null
+  ) => Promise<void>
+}
+
+export function useLineMindmapProcessPanel({
+  activeLine,
+  selectedNode,
+  submitTopologyMutation,
+}: UseLineMindmapProcessPanelOptions) {
   const { data: processLibrary = [] } = useProductionProcessesQuery()
-  const { assignProcessCapability, removeProcessCapability } =
-    useLineMindmapProcessCapabilities()
   const { deleteProcess, saveProcess } = useLineMindmapProcessLibrary()
 
   const saveProcessFromDraft = async (draft: LineMindmapProcessDraft) => {
@@ -24,7 +37,7 @@ export function useLineMindmapProcessPanel(
   }
 
   const processOptions = useMemo(() => {
-    if (selectedNode?.sourceType !== 'jobCategory') {
+    if (selectedNode?.sourceType !== 'segment') {
       return []
     }
 
@@ -43,15 +56,30 @@ export function useLineMindmapProcessPanel(
   }, [processLibrary, selectedNode])
 
   const handleAssignProcess = async (processId: string) => {
-    if (selectedNode?.sourceType !== 'jobCategory' || !selectedNode.sourceId) {
+    if (
+      !activeLine ||
+      selectedNode?.sourceType !== 'segment' ||
+      !selectedNode.sourceId
+    ) {
       return
     }
 
-    await assignProcessCapability(selectedNode.sourceId, processId)
+    const process = processLibrary.find((item) => item.id === processId)
+    if (!process) {
+      return
+    }
+
+    const updatedLine = addProcessToLineSegment(
+      activeLine,
+      selectedNode.sourceId,
+      process
+    )
+    await submitTopologyMutation(updatedLine, selectedNode.id)
   }
 
   const handleRemoveProcess = async () => {
     if (
+      !activeLine ||
       selectedNode?.sourceType !== 'process' ||
       !selectedNode.sourceId ||
       !selectedNode.parentId
@@ -59,16 +87,26 @@ export function useLineMindmapProcessPanel(
       return
     }
 
-    const jobCategoryId = selectedNode.parentId.replace('job-category-', '')
-    await removeProcessCapability(jobCategoryId, selectedNode.sourceId)
+    const segmentId = selectedNode.parentId.replace('segment-', '')
+    const updatedLine = removeProcessFromLineSegment(
+      activeLine,
+      segmentId,
+      selectedNode.sourceId
+    )
+    await submitTopologyMutation(updatedLine, `segment-${segmentId}`)
   }
 
-  const handleCreateProcessForJobCategory = async (
+  const handleCreateProcessForSegment = async (
     draft: LineMindmapProcessDraft,
-    jobCategoryId: string
+    segmentId: string
   ) => {
+    if (!activeLine) {
+      return null
+    }
+
     const saved = await saveProcessFromDraft(draft)
-    await assignProcessCapability(jobCategoryId, saved.id)
+    const updatedLine = addProcessToLineSegment(activeLine, segmentId, saved)
+    await submitTopologyMutation(updatedLine, `process-${saved.id}`)
     return saved
   }
 
@@ -87,7 +125,7 @@ export function useLineMindmapProcessPanel(
 
   return {
     handleAssignProcess,
-    handleCreateProcessForJobCategory,
+    handleCreateProcessForSegment,
     handleDeleteProcessEntity,
     handleRemoveProcess,
     handleSaveProcessEntity,

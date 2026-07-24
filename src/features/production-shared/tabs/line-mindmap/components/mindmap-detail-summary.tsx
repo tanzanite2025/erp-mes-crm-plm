@@ -22,7 +22,6 @@ export function MindmapDetailSummary({
           <span>
             LEVEL {selectedNode.level} / {levelNames[selectedNode.level]}
           </span>
-          <span>OPTION {selectedNode.hierarchyOptionId ?? '未绑定'}</span>
           <span>
             SOURCE {selectedNode.sourceType ?? 'unknown'} /{' '}
             {selectedNode.sourceId ?? 'n/a'}

@@ -1,6 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { ProductionProcessStep } from '../../../data/production-process'
-import type { HierarchyLevelOptionItem } from '../../hierarchy-config/data/hierarchy-config'
 import type { LineMindmapNode, MindmapLevel } from '../data/line-mindmap-domain'
 import type { LineMindmapProcessOption } from '../types'
 import { MindmapDetailEmbeddedActions } from './mindmap-detail-embedded-actions'
@@ -18,12 +17,10 @@ export interface MindmapDetailPanelProps {
   readonlyMode?: boolean
   processOptions?: LineMindmapProcessOption[]
   onDeleteSelected?: () => void | Promise<void>
-  rebindOptions?: HierarchyLevelOptionItem[]
   onAssignProcess?: (processId: string) => void | Promise<void>
   onDeleteProcessEntity?: (
     process: ProductionProcessStep
   ) => void | Promise<void>
-  onRebindSelected?: (option: HierarchyLevelOptionItem) => void | Promise<void>
   onRemoveProcess?: () => void | Promise<void>
   onSaveProcessEntity?: (process: ProductionProcessStep) => void | Promise<void>
   onRenameSelected?: (name: string) => void | Promise<void>
@@ -36,17 +33,13 @@ export function MindmapDetailPanel({
   readonlyMode = false,
   processOptions = [],
   onDeleteSelected,
-  rebindOptions = [],
   onAssignProcess,
   onDeleteProcessEntity,
-  onRebindSelected,
   onRemoveProcess,
   onSaveProcessEntity,
   onRenameSelected,
 }: MindmapDetailPanelProps) {
-  const canEditStructure =
-    selectedNode?.sourceType === 'segment' ||
-    selectedNode?.sourceType === 'jobCategory'
+  const canEditStructure = selectedNode?.sourceType === 'segment'
   const canRemoveProcess = selectedNode?.sourceType === 'process'
 
   return (
@@ -76,14 +69,12 @@ export function MindmapDetailPanel({
             ) : (
               <>
                 <MindmapDetailStructureActions
-                  key={`structure-${selectedNode.id}-${selectedNode.nameSnapshot}-${selectedNode.hierarchyOptionId ?? 'none'}`}
+                  key={`structure-${selectedNode.id}-${selectedNode.nameSnapshot}`}
                   selectedNode={selectedNode}
                   levelNames={levelNames}
                   processOptions={processOptions}
-                  rebindOptions={rebindOptions}
                   onAssignProcess={onAssignProcess}
                   onDeleteSelected={onDeleteSelected}
-                  onRebindSelected={onRebindSelected}
                   onRenameSelected={onRenameSelected}
                 />
 
@@ -129,7 +120,7 @@ export function MindmapDetailPanel({
 
             {readonlyMode ? null : (
               <div className='rounded-[20px] border border-dashed border-muted/40 bg-muted/5 px-4 py-4 text-[10px] font-black tracking-widest text-muted-foreground/55 uppercase'>
-                顶部三按钮负责快速新增，编辑弹窗继续承接节点详情、重命名、重绑、删除与第三级复杂编辑。
+                顶部按钮负责快速新增，编辑弹窗继续承接节点详情、重命名、删除与第三级编辑。
               </div>
             )}
           </div>

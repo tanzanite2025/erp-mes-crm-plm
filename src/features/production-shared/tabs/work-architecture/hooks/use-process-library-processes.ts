@@ -6,7 +6,7 @@ import { productionResourceQueryKeys } from '../../../data/production-resource-q
 import { useProductionProcessesQuery } from '../../../hooks/use-production-resources'
 import { productionProcessesService } from '../../../services/production-processes-service'
 import { productionResourceSync } from '../../../services/production-resource-sync'
-import { useHierarchyLevelLabels } from '../../hierarchy-config/hooks/use-hierarchy-level-labels'
+import { useProductionTopologyLabels } from '../../../topology/production-topology-labels'
 
 const logger = createLogger('ProcessLibraryProcesses')
 
@@ -35,7 +35,7 @@ function sortProcesses(
 
 export function useProcessLibraryProcesses() {
   const queryClient = useQueryClient()
-  const { level3Name } = useHierarchyLevelLabels()
+  const { level3Name } = useProductionTopologyLabels()
   const { data: processes, isLoading, error } = useProductionProcessesQuery()
 
   const setConfirmedProcesses = (

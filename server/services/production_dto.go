@@ -22,30 +22,16 @@ type ProcessStepDTO struct {
 	IsActive    bool      `json:"isActive"`
 }
 
-type JobCategoryDTO struct {
-	ID                string           `json:"id"`
-	CreatedAt         time.Time        `json:"createdAt"`
-	UpdatedAt         time.Time        `json:"updatedAt"`
-	SegmentID         string           `json:"segmentId"`
-	Name              string           `json:"name"`
-	HierarchyOptionID string           `json:"hierarchyOptionId"`
-	Description       string           `json:"description"`
-	SortOrder         int              `json:"sortOrder"`
-	Attributes        json.RawMessage  `json:"attributes"`
-	Processes         []ProcessStepDTO `json:"processes"`
-}
-
 type LineSegmentDTO struct {
-	ID                string           `json:"id"`
-	CreatedAt         time.Time        `json:"createdAt"`
-	UpdatedAt         time.Time        `json:"updatedAt"`
-	LineID            string           `json:"lineId"`
-	Name              string           `json:"name"`
-	HierarchyOptionID string           `json:"hierarchyOptionId"`
-	Description       string           `json:"description"`
-	SortOrder         int              `json:"sortOrder"`
-	Attributes        json.RawMessage  `json:"attributes"`
-	JobCategories     []JobCategoryDTO `json:"jobCategories"`
+	ID          string           `json:"id"`
+	CreatedAt   time.Time        `json:"createdAt"`
+	UpdatedAt   time.Time        `json:"updatedAt"`
+	LineID      string           `json:"lineId"`
+	Name        string           `json:"name"`
+	Description string           `json:"description"`
+	SortOrder   int              `json:"sortOrder"`
+	Attributes  json.RawMessage  `json:"attributes"`
+	Processes   []ProcessStepDTO `json:"processes"`
 }
 
 type ProductionLineDTO struct {
@@ -74,11 +60,11 @@ type ProductionRouteStepDTO struct {
 	UpdatedAt        time.Time `json:"updatedAt"`
 	RouteID          string    `json:"routeId"`
 	Sequence         int       `json:"sequence"`
+	SegmentID        string    `json:"segmentId"`
+	SegmentName      string    `json:"segmentName"`
 	ProcessStepID    string    `json:"processStepId"`
 	ProcessCode      string    `json:"processCode"`
 	ProcessName      string    `json:"processName"`
-	JobCategoryID    string    `json:"jobCategoryId"`
-	JobCategoryName  string    `json:"jobCategoryName"`
 	ExecutionMode    string    `json:"executionMode"`
 	QualityGate      string    `json:"qualityGate"`
 	EstimatedMinutes int       `json:"estimatedMinutes"`
@@ -140,9 +126,9 @@ func mapProductionRouteStepToDTO(step models.ProductionRouteStep) ProductionRout
 		processCode = step.ProcessStep.Code
 		processName = step.ProcessStep.Name
 	}
-	jobCategoryName := ""
-	if step.JobCategory != nil {
-		jobCategoryName = step.JobCategory.Name
+	segmentName := ""
+	if step.Segment != nil {
+		segmentName = step.Segment.Name
 	}
 
 	return ProductionRouteStepDTO{
@@ -151,11 +137,11 @@ func mapProductionRouteStepToDTO(step models.ProductionRouteStep) ProductionRout
 		UpdatedAt:        step.UpdatedAt,
 		RouteID:          step.RouteID,
 		Sequence:         step.Sequence,
+		SegmentID:        step.SegmentID,
+		SegmentName:      segmentName,
 		ProcessStepID:    step.ProcessStepID,
 		ProcessCode:      processCode,
 		ProcessName:      processName,
-		JobCategoryID:    step.JobCategoryID,
-		JobCategoryName:  jobCategoryName,
 		ExecutionMode:    step.ExecutionMode,
 		QualityGate:      step.QualityGate,
 		EstimatedMinutes: step.EstimatedMinutes,
@@ -173,8 +159,8 @@ func mapProductionRouteStepDTOToModel(step ProductionRouteStepDTO) models.Produc
 		},
 		RouteID:          step.RouteID,
 		Sequence:         step.Sequence,
+		SegmentID:        step.SegmentID,
 		ProcessStepID:    step.ProcessStepID,
-		JobCategoryID:    step.JobCategoryID,
 		ExecutionMode:    step.ExecutionMode,
 		QualityGate:      step.QualityGate,
 		EstimatedMinutes: step.EstimatedMinutes,
@@ -237,87 +223,49 @@ func mapProductionRoutesToDTO(routes []models.ProductionRoute) []ProductionRoute
 	return result
 }
 
-func mapJobCategoryToDTO(category models.JobCategory) JobCategoryDTO {
-	processes := make([]ProcessStepDTO, 0, len(category.Processes))
-	for _, process := range category.Processes {
+func mapProcessesToDTO(processModels []models.ProcessStep) []ProcessStepDTO {
+	processes := make([]ProcessStepDTO, 0, len(processModels))
+	for _, process := range processModels {
 		processes = append(processes, mapProcessStepToDTO(process))
 	}
-
-	return JobCategoryDTO{
-		ID:                category.ID,
-		CreatedAt:         category.CreatedAt,
-		UpdatedAt:         category.UpdatedAt,
-		SegmentID:         category.SegmentID,
-		Name:              category.Name,
-		HierarchyOptionID: category.HierarchyOptionID,
-		Description:       category.Description,
-		SortOrder:         category.SortOrder,
-		Attributes:        cloneRawMessage(category.Attributes),
-		Processes:         processes,
-	}
+	return processes
 }
 
-func mapJobCategoryDTOToModel(category JobCategoryDTO) models.JobCategory {
-	processes := make([]models.ProcessStep, 0, len(category.Processes))
-	for _, process := range category.Processes {
+func mapProcessesDTOToModel(processDTOs []ProcessStepDTO) []models.ProcessStep {
+	processes := make([]models.ProcessStep, 0, len(processDTOs))
+	for _, process := range processDTOs {
 		processes = append(processes, mapProcessStepDTOToModel(process))
 	}
-
-	return models.JobCategory{
-		BaseModel: models.BaseModel{
-			ID:        category.ID,
-			CreatedAt: category.CreatedAt,
-			UpdatedAt: category.UpdatedAt,
-		},
-		SegmentID:         category.SegmentID,
-		Name:              category.Name,
-		HierarchyOptionID: category.HierarchyOptionID,
-		Description:       category.Description,
-		SortOrder:         category.SortOrder,
-		Attributes:        cloneRawMessage(category.Attributes),
-		Processes:         processes,
-	}
+	return processes
 }
 
 func mapLineSegmentToDTO(segment models.LineSegment) LineSegmentDTO {
-	jobCategories := make([]JobCategoryDTO, 0, len(segment.JobCategories))
-	for _, category := range segment.JobCategories {
-		jobCategories = append(jobCategories, mapJobCategoryToDTO(category))
-	}
-
 	return LineSegmentDTO{
-		ID:                segment.ID,
-		CreatedAt:         segment.CreatedAt,
-		UpdatedAt:         segment.UpdatedAt,
-		LineID:            segment.LineID,
-		Name:              segment.Name,
-		HierarchyOptionID: segment.HierarchyOptionID,
-		Description:       segment.Description,
-		SortOrder:         segment.SortOrder,
-		Attributes:        cloneRawMessage(segment.Attributes),
-		JobCategories:     jobCategories,
+		ID:          segment.ID,
+		CreatedAt:   segment.CreatedAt,
+		UpdatedAt:   segment.UpdatedAt,
+		LineID:      segment.LineID,
+		Name:        segment.Name,
+		Description: segment.Description,
+		SortOrder:   segment.SortOrder,
+		Attributes:  cloneRawMessage(segment.Attributes),
+		Processes:   mapProcessesToDTO(segment.Processes),
 	}
 }
 
 func mapLineSegmentDTOToModel(segment LineSegmentDTO) models.LineSegment {
-	jobCategories := make([]models.JobCategory, 0, len(segment.JobCategories))
-	for _, category := range segment.JobCategories {
-		jobCategories = append(jobCategories, mapJobCategoryDTOToModel(category))
-	}
-
 	return models.LineSegment{
 		BaseModel: models.BaseModel{
 			ID:        segment.ID,
 			CreatedAt: segment.CreatedAt,
 			UpdatedAt: segment.UpdatedAt,
 		},
-		LineID:            segment.LineID,
-		Name:              segment.Name,
-		HierarchyOptionID: segment.HierarchyOptionID,
-		Description:       segment.Description,
-		SortOrder:         segment.SortOrder,
-		Attributes:        cloneRawMessage(segment.Attributes),
-		JobCategories:     jobCategories,
+		LineID:      segment.LineID,
+		Name:        segment.Name,
+		Description: segment.Description,
+		SortOrder:   segment.SortOrder,
+		Attributes:  cloneRawMessage(segment.Attributes),
+		Processes:   mapProcessesDTOToModel(segment.Processes),
 	}
 }
 

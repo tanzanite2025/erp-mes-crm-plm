@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/card'
 import { TrackingNumberInput } from '@/components/tracking-number-input'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
-import { useHierarchyLevelLabels } from '@/features/production-shared/tabs/hierarchy-config/hooks/use-hierarchy-level-labels'
+import { useProductionTopologyLabels } from '@/features/production-shared/topology/production-topology-labels'
 import { createWheelTraceApiGateway } from '../adapters/wheel-trace/api-wheel-trace-gateway'
 import { usePageInstall } from '../hooks'
 import type { WheelTracePayload } from '../models/wheel-trace'
@@ -31,7 +31,7 @@ export function WheelTraceShellPage({
   autoOpenScanner = false,
   scannerSignal = 0,
 }: WheelTraceShellPageProps) {
-  const { level1Name, level3Name } = useHierarchyLevelLabels()
+  const { level1Name, level3Name } = useProductionTopologyLabels()
   const [rawCode, setRawCode] = useState(() =>
     autoOpenScanner ? '' : DEFAULT_SAMPLE_CODE
   )

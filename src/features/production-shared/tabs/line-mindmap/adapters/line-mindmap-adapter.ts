@@ -1,8 +1,4 @@
-import type {
-  ProductionJobCategory,
-  ProductionLine,
-  ProductionSegment,
-} from '../../../data/production-line'
+import type { ProductionLine, ProductionSegment } from '../../../data/production-line'
 import type { ProductionProcessStep } from '../../../data/production-process'
 import type { LineMindmapNode } from '../data/line-mindmap-domain'
 
@@ -40,42 +36,13 @@ function createProcessNode(
   }
 }
 
-function createJobCategoryNode(
-  jobCategory: ProductionJobCategory,
-  parentId: string,
-  line: ProductionLine
-): LineMindmapNode {
-  return {
-    id: `job-category-${jobCategory.id}`,
-    parentId,
-    level: 2,
-    hierarchyOptionId: jobCategory.hierarchyOptionId,
-    nameSnapshot: jobCategory.name,
-    sourceId: jobCategory.id,
-    sourceType: 'jobCategory',
-    actionType: 'none',
-    dialogKey: '',
-    note: '',
-    readonlyMeta: {
-      description: jobCategory.description,
-      lineId: line.id,
-      lineName: line.name,
-      sortOrder: jobCategory.sortOrder,
-    },
-    children: (jobCategory.processes ?? []).map((process) =>
-      createProcessNode(process, `job-category-${jobCategory.id}`, line)
-    ),
-  }
-}
-
 function createSegmentNode(
   segment: ProductionSegment,
   line: ProductionLine
 ): LineMindmapNode {
   return {
     id: `segment-${segment.id}`,
-    level: 1,
-    hierarchyOptionId: segment.hierarchyOptionId,
+    level: 2,
     nameSnapshot: segment.name,
     sourceId: segment.id,
     sourceType: 'segment',
@@ -88,8 +55,8 @@ function createSegmentNode(
       lineName: line.name,
       sortOrder: segment.sortOrder,
     },
-    children: (segment.jobCategories ?? []).map((jobCategory) =>
-      createJobCategoryNode(jobCategory, `segment-${segment.id}`, line)
+    children: (segment.processes ?? []).map((process) =>
+      createProcessNode(process, `segment-${segment.id}`, line)
     ),
   }
 }

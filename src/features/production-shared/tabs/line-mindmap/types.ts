@@ -24,9 +24,6 @@ export interface LineMindmapToolbarProps {
   canManageLine: boolean
   canUpdateLine: boolean
   isCheckingPermissions: boolean
-  level1Name: string
-  level2Name: string
-  level3Name: string
   lineOptions: LineMindmapLineOption[]
   resolvedLineId: string
   selectedNode: boolean
@@ -34,7 +31,6 @@ export interface LineMindmapToolbarProps {
   onCreateLevel1: () => void
   onCreateLevel2: () => void
   onCreateLevel3: () => void
-  onCreateLine: () => void
   onDeleteLine: () => void
   onEditLine: () => void
   onToggleLine: () => void

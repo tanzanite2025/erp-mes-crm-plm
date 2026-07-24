@@ -1,6 +1,6 @@
 import { useLanguage } from '@/context/language-provider'
 import { Card, CardContent } from '@/components/ui/card'
-import { useHierarchyLevelLabels } from '@/features/production-shared/tabs/hierarchy-config/hooks/use-hierarchy-level-labels'
+import { useProductionTopologyLabels } from '@/features/production-shared/topology/production-topology-labels'
 import type { ApsSchedulingSource } from '../adapters/aps-scheduling.adapter'
 import { ApsTimelineLane } from './aps-timeline-lane'
 
@@ -10,7 +10,7 @@ type ApsTimelineBoardProps = {
 
 export function ApsTimelineBoard({ source }: ApsTimelineBoardProps) {
   const { t } = useLanguage()
-  const { level2Name, level3Name } = useHierarchyLevelLabels()
+  const { level3Name } = useProductionTopologyLabels()
 
   return (
     <Card className='rounded-[24px] border border-dashed border-muted/50 bg-background shadow-none'>
@@ -91,47 +91,30 @@ export function ApsTimelineBoard({ source }: ApsTimelineBoardProps) {
                           ) : null}
                         </div>
                         <span className='rounded-full border border-cyan-500/15 bg-white px-2 py-1 text-[9px] font-black tracking-[0.2em] text-cyan-700/70 uppercase'>
-                          {t('apsScheduling.board.segmentCategoryCount', {
-                            count: segment.jobCategories.length,
-                            levelName: level2Name,
+                          {t('apsScheduling.board.processCount', {
+                            count: segment.processes.length,
+                            levelName: level3Name,
                           })}
                         </span>
                       </div>
 
                       <div className='mt-2 flex flex-col gap-2'>
-                        {segment.jobCategories.map((jobCategory) => (
+                        {segment.processes.map((process) => (
                           <div
-                            key={jobCategory.id}
+                            key={process.id}
                             className='rounded-[14px] border border-dashed border-muted/40 bg-background/80 p-2.5'
                           >
                             <div className='flex items-center justify-between gap-2'>
                               <div>
                                 <p className='text-[10px] font-black tracking-[0.22em] text-foreground uppercase'>
-                                  {jobCategory.name}
+                                  {process.name}
                                 </p>
-                                {jobCategory.description ? (
+                                {process.description ? (
                                   <p className='mt-0.5 text-[10px] text-muted-foreground/70'>
-                                    {jobCategory.description}
+                                    {process.description}
                                   </p>
                                 ) : null}
                               </div>
-                              <span className='rounded-full border border-muted/30 px-2 py-1 text-[9px] font-black tracking-[0.2em] text-muted-foreground/60 uppercase'>
-                                {t('apsScheduling.board.processCount', {
-                                  count: jobCategory.processes.length,
-                                  levelName: level3Name,
-                                })}
-                              </span>
-                            </div>
-
-                            <div className='mt-2 flex flex-wrap gap-2'>
-                              {jobCategory.processes.map((process) => (
-                                <div
-                                  key={process.id}
-                                  className='rounded-full border border-dashed border-muted/30 bg-muted/20 px-3 py-1 text-[10px] font-black tracking-[0.18em] text-muted-foreground/80 uppercase'
-                                >
-                                  {process.name}
-                                </div>
-                              ))}
                             </div>
                           </div>
                         ))}

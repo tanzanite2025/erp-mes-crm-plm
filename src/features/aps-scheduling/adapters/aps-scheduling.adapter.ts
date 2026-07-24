@@ -1,5 +1,4 @@
 import type {
-  ProductionJobCategory,
   ProductionLine,
   ProductionProcessStep,
   ProductionSegment,
@@ -14,18 +13,11 @@ export type ApsProcessTreeProcess = {
   description?: string
 }
 
-export type ApsProcessTreeJobCategory = {
-  id: string
-  name: string
-  description?: string
-  processes: ApsProcessTreeProcess[]
-}
-
 export type ApsProcessTreeSegment = {
   id: string
   name: string
   description?: string
-  jobCategories: ApsProcessTreeJobCategory[]
+  processes: ApsProcessTreeProcess[]
 }
 
 export type ApsProcessTreeLine = {
@@ -55,23 +47,12 @@ function buildProcessNode(
   }
 }
 
-function buildJobCategoryNode(
-  jobCategory: ProductionJobCategory
-): ApsProcessTreeJobCategory {
-  return {
-    id: jobCategory.id,
-    name: jobCategory.name,
-    description: jobCategory.description,
-    processes: (jobCategory.processes ?? []).map(buildProcessNode),
-  }
-}
-
 function buildSegmentNode(segment: ProductionSegment): ApsProcessTreeSegment {
   return {
     id: segment.id,
     name: segment.name,
     description: segment.description,
-    jobCategories: (segment.jobCategories ?? []).map(buildJobCategoryNode),
+    processes: (segment.processes ?? []).map(buildProcessNode),
   }
 }
 

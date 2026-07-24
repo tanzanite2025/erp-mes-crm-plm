@@ -14,7 +14,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useProductionLinesQuery } from '@/features/production-shared/hooks/use-production-resources'
-import { useHierarchyLevelLabels } from '@/features/production-shared/tabs/hierarchy-config/hooks/use-hierarchy-level-labels'
+import { useProductionTopologyLabels } from '@/features/production-shared/topology/production-topology-labels'
 
 interface ProductionSelectorProps {
   open: boolean
@@ -32,7 +32,7 @@ export function ProductionSelector({
   onSave,
 }: ProductionSelectorProps) {
   const { t } = useLanguage()
-  const { level1Name } = useHierarchyLevelLabels()
+  const { level1Name } = useProductionTopologyLabels()
   const [searchTerm, setSearchTerm] = useState('')
   const [localSelected, setLocalSelected] = useState<string[]>(
     selectedItems.map((i) => i.id)

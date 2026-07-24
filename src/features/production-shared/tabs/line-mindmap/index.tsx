@@ -9,8 +9,6 @@ import { ProductionLineProfileDialog } from '../../components/production-line-pr
 import type { ProductionLineMutationPayload } from '../../contracts/production-line-mutation'
 import type { ProductionLine } from '../../data/production-line'
 import { useProductionLines } from '../../hooks/use-production-lines'
-import { useHierarchyLevelLabels } from '../hierarchy-config/hooks/use-hierarchy-level-labels'
-import { useHierarchyLevelOptions } from '../hierarchy-config/hooks/use-hierarchy-level-options'
 import { LineMindmapDialogs } from './components/line-mindmap-dialogs'
 import { LineMindmapToolbar } from './components/line-mindmap-toolbar'
 import { MindmapCanvas } from './components/mindmap-canvas'
@@ -25,16 +23,13 @@ import { useLineMindmapViewModel } from './hooks/use-line-mindmap-view-model'
 export function LineMindmap() {
   const { t } = useLanguage()
   const { allowsAction, allowsPermission, isChecking } = usePermissionActions()
-  const [createLevel1DialogOpen, setCreateLevel1DialogOpen] = useState(false)
-  const [createLevel2DialogOpen, setCreateLevel2DialogOpen] = useState(false)
-  const [createLevel3DialogOpen, setCreateLevel3DialogOpen] = useState(false)
+  const [createSegmentDialogOpen, setCreateSegmentDialogOpen] =
+    useState(false)
+  const [createProcessDialogOpen, setCreateProcessDialogOpen] =
+    useState(false)
   const [nodeEditDialogOpen, setNodeEditDialogOpen] = useState(false)
   const [lineProfileDialogOpen, setLineProfileDialogOpen] = useState(false)
   const [editingLine, setEditingLine] = useState<ProductionLine | null>(null)
-  const [hierarchyConfigDialogOpen, setHierarchyConfigDialogOpen] =
-    useState(false)
-  const { level1Name, level2Name, level3Name } = useHierarchyLevelLabels()
-  const { level1Options, level2Options } = useHierarchyLevelOptions()
   const {
     createLineStrict,
     deleteLine,
@@ -47,11 +42,11 @@ export function LineMindmap() {
 
   const levelNames = useMemo<Record<MindmapLevel, string>>(
     () => ({
-      1: level1Name,
-      2: level2Name,
-      3: level3Name,
+      1: 'L1',
+      2: 'L2',
+      3: 'L3',
     }),
-    [level1Name, level2Name, level3Name]
+    []
   )
   const {
     activeLine,
@@ -77,34 +72,29 @@ export function LineMindmap() {
     updateLineStrict,
   })
   const {
-    handleAddChild,
-    handleAddRoot,
+    handleAddSegment,
     handleDeleteSelected,
-    handleRebindSelected,
     handleRenameSelected,
+    submitTopologyMutation,
   } = useLineMindmapActions({
     activeLine,
-    nodes,
     requestTopologyAuth,
     selectedNode,
     settleSelection,
     updateLineStrict,
   })
-  const rebindOptions =
-    selectedNode?.sourceType === 'segment'
-      ? level1Options
-      : selectedNode?.sourceType === 'jobCategory'
-        ? level2Options
-        : []
   const {
     handleAssignProcess,
-    handleCreateProcessForJobCategory,
+    handleCreateProcessForSegment,
     handleDeleteProcessEntity,
     handleRemoveProcess,
     handleSaveProcessEntity,
     processOptions,
-  } = useLineMindmapProcessPanel(selectedNode)
-  const handleOpenHierarchyConfig = () => setHierarchyConfigDialogOpen(true)
+  } = useLineMindmapProcessPanel({
+    activeLine,
+    selectedNode,
+    submitTopologyMutation,
+  })
   const canManageLine = allowsPermission('perm_manage')
   const canUpdateLine = allowsAction('action_production_line_update')
 
@@ -149,9 +139,7 @@ export function LineMindmap() {
       return
     }
 
-    const confirmed = window.confirm(
-      t('orgPersonnel.lineMgmt.list.deleteConfirm')
-    )
+    const confirmed = window.confirm('确认删除当前 L1？')
     if (!confirmed) {
       return
     }
@@ -176,10 +164,8 @@ export function LineMindmap() {
     })
   }
   const {
-    defaultLevel2ParentId,
-    defaultLevel3ParentId,
-    jobCategoryParentNodeOptions,
-    rootParentNodeOptions,
+    defaultProcessParentId,
+    segmentParentNodeOptions,
   } = useLineMindmapParentOptions({
     nodes,
     selectedNode,
@@ -206,18 +192,14 @@ export function LineMindmap() {
         canManageLine={canManageLine}
         canUpdateLine={canUpdateLine}
         isCheckingPermissions={isChecking}
-        level1Name={level1Name}
-        level2Name={level2Name}
-        level3Name={level3Name}
         lineOptions={lineOptions}
         resolvedLineId={resolvedLineId}
         selectedNode={Boolean(selectedNode)}
         title={t('productionArchitecture.mindmap.header.title')}
-        onCreateLevel1={() => setCreateLevel1DialogOpen(true)}
-        onCreateLevel2={() => setCreateLevel2DialogOpen(true)}
-        onCreateLevel3={() => setCreateLevel3DialogOpen(true)}
+        onCreateLevel1={openCreateLineDialog}
+        onCreateLevel2={() => setCreateSegmentDialogOpen(true)}
+        onCreateLevel3={() => setCreateProcessDialogOpen(true)}
         onEditNode={() => setNodeEditDialogOpen(true)}
-        onCreateLine={openCreateLineDialog}
         onDeleteLine={() => void handleDeleteLine()}
         onEditLine={openEditLineDialog}
         onToggleLine={handleToggleLine}
@@ -230,48 +212,34 @@ export function LineMindmap() {
           selectedNodeId={resolvedSelectedNodeId}
           levelNames={levelNames}
           onSelect={handleSelectNode}
-          onOpenHierarchyConfig={handleOpenHierarchyConfig}
         />
       </div>
 
       <LineMindmapDialogs
         authDialogOpen={authDialogOpen}
-        createLevel1DialogOpen={createLevel1DialogOpen}
-        createLevel2DialogOpen={createLevel2DialogOpen}
-        createLevel3DialogOpen={createLevel3DialogOpen}
-        defaultLevel2ParentId={defaultLevel2ParentId}
-        defaultLevel3ParentId={defaultLevel3ParentId}
+        createProcessDialogOpen={createProcessDialogOpen}
+        createSegmentDialogOpen={createSegmentDialogOpen}
+        defaultProcessParentId={defaultProcessParentId}
         handleAuthConfirm={handleAuthConfirm}
         handleAuthOpenChange={handleAuthOpenChange}
-        hierarchyConfigDialogOpen={hierarchyConfigDialogOpen}
-        jobCategoryParentNodeOptions={jobCategoryParentNodeOptions}
-        level1Name={level1Name}
-        level1Options={activeLine ? level1Options : []}
-        level2Name={level2Name}
-        level2Options={activeLine ? level2Options : []}
-        level3Name={level3Name}
+        segmentParentNodeOptions={segmentParentNodeOptions}
+        level2Name='L2'
+        level3Name='L3'
         levelNames={levelNames}
         nodeEditDialogOpen={nodeEditDialogOpen}
         onAssignProcess={handleAssignProcess}
-        onChildSubmit={handleAddChild}
-        onCreateLevel1DialogOpenChange={setCreateLevel1DialogOpen}
-        onCreateLevel2DialogOpenChange={setCreateLevel2DialogOpen}
-        onCreateLevel3DialogOpenChange={setCreateLevel3DialogOpen}
+        onCreateProcessDialogOpenChange={setCreateProcessDialogOpen}
+        onCreateSegmentDialogOpenChange={setCreateSegmentDialogOpen}
         onDeleteProcessEntity={handleDeleteProcessEntity}
         onDeleteSelected={handleDeleteSelected}
         onEditDialogOpenChange={setNodeEditDialogOpen}
-        onHierarchyConfigDialogOpenChange={setHierarchyConfigDialogOpen}
-        onOpenHierarchyConfig={handleOpenHierarchyConfig}
         onPatchNode={patchNodeDraft}
-        onProcessSubmit={handleCreateProcessForJobCategory}
-        onRebindSelected={handleRebindSelected}
+        onProcessSubmit={handleCreateProcessForSegment}
         onRemoveProcess={handleRemoveProcess}
         onRenameSelected={handleRenameSelected}
-        onRootSubmit={handleAddRoot}
+        onSegmentSubmit={handleAddSegment}
         onSaveProcessEntity={handleSaveProcessEntity}
         processOptions={processOptions}
-        rebindOptions={rebindOptions}
-        rootParentNodeOptions={rootParentNodeOptions}
         selectedNode={selectedNode}
       />
 
@@ -285,6 +253,7 @@ export function LineMindmap() {
         }}
         editingLine={editingLine}
         lines={lines}
+        entityLabel='L1'
         onSubmit={handleLineProfileSubmit}
       />
     </div>

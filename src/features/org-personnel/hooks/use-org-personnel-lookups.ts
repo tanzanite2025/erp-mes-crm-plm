@@ -35,7 +35,7 @@ function buildNameMap(
     segments?: Array<{
       id: string
       name: string
-      jobCategories?: Array<{ processes?: Array<{ id: string; name: string }> }>
+      processes?: Array<{ id: string; name: string }>
     }>
   }>,
   processData: Array<{ id: string; name: string }>
@@ -57,10 +57,8 @@ function buildNameMap(
     nextMap[line.id] = line.name
     line.segments?.forEach((segment) => {
       nextMap[segment.id] = segment.name
-      segment.jobCategories?.forEach((category) => {
-        category.processes?.forEach((process) => {
-          nextMap[process.id] = process.name
-        })
+      segment.processes?.forEach((process) => {
+        nextMap[process.id] = process.name
       })
     })
   })

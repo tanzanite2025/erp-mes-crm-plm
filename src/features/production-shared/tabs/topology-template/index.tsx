@@ -4,14 +4,14 @@ import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import type { TopologyTemplate } from '../../topology/types'
+import { useProductionTopologyLabels } from '../../topology/production-topology-labels'
 import { useTopologyTemplates } from '../../topology/use-topology-templates'
-import { useHierarchyLevelLabels } from '../hierarchy-config/hooks/use-hierarchy-level-labels'
 import { TemplateCard } from './components/template-card'
 import { TemplateDialog } from './components/template-dialog'
 
 export function TopologyTemplateMgmt() {
   const { t } = useLanguage()
-  const { level1Name, level2Name } = useHierarchyLevelLabels()
+  const { level1Name, level2Name } = useProductionTopologyLabels()
   const { templates, addTemplate, removeTemplate, updateTemplate } =
     useTopologyTemplates()
   const [searchQuery, setSearchQuery] = useState('')

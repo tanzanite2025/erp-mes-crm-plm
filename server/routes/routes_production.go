@@ -31,8 +31,6 @@ func registerProductionRoutes(authorized *gin.RouterGroup) {
 		productionGroup.GET("/processes", handlers.GetProcessStepsHandler)
 		productionGroup.POST("/processes", adminOnly, handlers.SaveProcessStepHandler)
 		productionGroup.DELETE("/processes/:id", adminOnly, handlers.DeleteProcessStepHandler)
-		productionGroup.POST("/mappings/assign", adminOnly, handlers.AssignProcessToJobCategoryHandler)
-		productionGroup.POST("/mappings/remove", adminOnly, handlers.RemoveProcessFromJobCategoryHandler)
 		productionGroup.GET("/plans", handlers.GetProductionPlansHandler)
 		productionGroup.POST("/plans", productionPlanManage, handlers.SaveProductionPlanHandler)
 		productionGroup.GET("/cutting-issuances/trace-report", handlers.GetCuttingIssuanceTraceReportHandler)

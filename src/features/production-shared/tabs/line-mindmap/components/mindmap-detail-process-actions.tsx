@@ -1,7 +1,7 @@
 import type { ProductionProcessStep } from '../../../data/production-process'
 import type { LineMindmapNode, MindmapLevel } from '../data/line-mindmap-domain'
-import { MindmapDetailProcessCapabilityActions } from './mindmap-detail-process-capability-actions'
 import { MindmapDetailProcessEntityEditor } from './mindmap-detail-process-entity-editor'
+import { MindmapDetailProcessRemoveAction } from './mindmap-detail-process-remove-action'
 
 interface MindmapDetailProcessActionsProps {
   selectedNode: LineMindmapNode
@@ -34,7 +34,7 @@ export function MindmapDetailProcessActions({
         结构写回
       </p>
       <div className='space-y-4 rounded-[20px] border border-dashed border-muted/40 bg-muted/5 p-4'>
-        <MindmapDetailProcessCapabilityActions
+        <MindmapDetailProcessRemoveAction
           levelNames={levelNames}
           onRemoveProcess={onRemoveProcess}
         />

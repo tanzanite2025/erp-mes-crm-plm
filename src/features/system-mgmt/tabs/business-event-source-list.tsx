@@ -3,7 +3,7 @@ import { Loader2 } from 'lucide-react'
 import { isForbiddenError } from '@/lib/error-status'
 import { createLogger } from '@/lib/logger'
 import { ForbiddenState } from '@/components/forbidden-state'
-import { useHierarchyLevelLabels } from '@/features/production-shared/tabs/hierarchy-config/hooks/use-hierarchy-level-labels'
+import { useProductionTopologyLabels } from '@/features/production-shared/topology/production-topology-labels'
 import { RoutingQueryErrorState } from '../workflow-core/components/routing-query-error-state'
 import {
   countConnectedBusinessEventSources,
@@ -81,7 +81,7 @@ export function BusinessEventSourceList({
     partial: Partial<BusinessEventSourceListSearchState>
   ) => void
 } = {}) {
-  const { level3Name } = useHierarchyLevelLabels()
+  const { level3Name } = useProductionTopologyLabels()
   const {
     sources,
     isLoaded,

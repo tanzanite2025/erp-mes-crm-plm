@@ -30,11 +30,11 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import type { ProductionProcessStep as ProcessStep } from '../../../data/production-process'
+import { useProductionTopologyLabels } from '../../../topology/production-topology-labels'
 import {
   normalizeProductionProcessStepCode,
   normalizeProductionProcessStepEntity,
 } from '../../../utils/production-code-normalization'
-import { useHierarchyLevelLabels } from '../../hierarchy-config/hooks/use-hierarchy-level-labels'
 import { useProcessLibraryProcesses } from '../hooks/use-process-library-processes'
 
 const logger = createLogger('ProcessLibraryPanel')
@@ -80,7 +80,7 @@ function toProcessFormState(process?: ProcessStep): ProcessFormState {
 }
 
 export function ProcessLibraryPanel() {
-  const { level3Name } = useHierarchyLevelLabels()
+  const { level3Name } = useProductionTopologyLabels()
   const [searchTerm, setSearchTerm] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [formState, setFormState] = useState<ProcessFormState>(

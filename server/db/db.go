@@ -1124,6 +1124,45 @@ func logLocalDbAuthHint(dsn string, err error) {
 	log.Printf("[DEV_HINT]   powershell -ExecutionPolicy Bypass -File .\\server\\dev-up.ps1 -ResetDb")
 }
 
+// prepareProductionTopologySchema removes route rows that still depend on the
+// deleted four-level topology before GORM creates the current route-step shape.
+func prepareProductionTopologySchema() {
+	if DB == nil {
+		return
+	}
+
+	statements := []string{
+		`DROP TABLE IF EXISTS production_route_steps CASCADE`,
+	}
+	for _, statement := range statements {
+		if err := DB.Exec(statement).Error; err != nil {
+			log.Printf("Failed to prepare production topology schema: %v", err)
+			log.Fatal(err)
+		}
+	}
+}
+
+// cleanupDeletedProductionTopologySchema removes tables and columns that are
+// no longer part of the fixed L1/L2/L3 production topology.
+func cleanupDeletedProductionTopologySchema() {
+	if DB == nil {
+		return
+	}
+
+	statements := []string{
+		`DROP TABLE IF EXISTS job_category_process_mappings CASCADE`,
+		`DROP TABLE IF EXISTS job_categories CASCADE`,
+		`ALTER TABLE IF EXISTS production_route_steps DROP COLUMN IF EXISTS job_category_id`,
+		`ALTER TABLE IF EXISTS line_segments DROP COLUMN IF EXISTS hierarchy_option_id`,
+	}
+	for _, statement := range statements {
+		if err := DB.Exec(statement).Error; err != nil {
+			log.Printf("Failed to clean legacy production topology schema: %v", err)
+			log.Fatal(err)
+		}
+	}
+}
+
 // InitDB initializes the database connection and schema.
 func InitDB(dsn string) {
 	var err error
@@ -1139,6 +1178,7 @@ func InitDB(dsn string) {
 	audit.StartArchiver(DB)
 	// Migrating database schemas.
 	fmt.Println("Migrating database schemas...")
+	prepareProductionTopologySchema()
 	failOnDuplicatePackagingRules()
 
 	err = DB.AutoMigrate(
@@ -1183,7 +1223,6 @@ func InitDB(dsn string) {
 		&models.ProcessStep{},
 		&models.ProductionLine{},
 		&models.LineSegment{},
-		&models.JobCategory{},
 		&models.ProductionRoute{},
 		&models.ProductionRouteStep{},
 		&models.EngineeringSpec{},
@@ -1293,6 +1332,7 @@ func InitDB(dsn string) {
 	if err != nil {
 		log.Fatal("Failed to migrate database:", err)
 	}
+	cleanupDeletedProductionTopologySchema()
 	dropLegacyRoleArtifacts()
 	dropLegacyWorkflowArtifacts()
 	dropLegacyProductWeightColumn()

@@ -13,7 +13,6 @@ interface MindmapCanvasProps {
   selectedNodeId: string | null
   levelNames: Record<MindmapLevel, string>
   onSelect: (nodeId: string) => void
-  onOpenHierarchyConfig?: () => void
 }
 
 export function MindmapCanvas({
@@ -21,7 +20,6 @@ export function MindmapCanvas({
   selectedNodeId,
   levelNames,
   onSelect,
-  onOpenHierarchyConfig,
 }: MindmapCanvasProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [scrollTop, setScrollTop] = useState(0)
@@ -96,10 +94,7 @@ export function MindmapCanvas({
             </div>
           </div>
         ) : (
-          <MindmapCanvasEmptyState
-            levelNames={levelNames}
-            onOpenHierarchyConfig={onOpenHierarchyConfig}
-          />
+          <MindmapCanvasEmptyState levelNames={levelNames} />
         )}
       </CardContent>
     </Card>

@@ -31,7 +31,7 @@ import { ProductAttributeOptionService } from '@/features/engineering/services/p
 import { productTemplateService } from '@/features/engineering/services/product-template-service'
 import { ProductTypeService } from '@/features/engineering/services/product-type-service'
 import { useProductionLinesQuery } from '@/features/production-shared/hooks/use-production-resources'
-import { useHierarchyLevelLabels } from '@/features/production-shared/tabs/hierarchy-config/hooks/use-hierarchy-level-labels'
+import { useProductionTopologyLabels } from '@/features/production-shared/topology/production-topology-labels'
 
 export interface ControlledProtocolDraftSelection {
   stageId: string
@@ -99,7 +99,7 @@ export function ControlledProtocolDialog({
   isSubmitting = false,
 }: ControlledProtocolDialogProps) {
   const { t, locale } = useLanguage()
-  const { level1Name, level2Name, level3Name } = useHierarchyLevelLabels()
+  const { level1Name, level2Name, level3Name } = useProductionTopologyLabels()
   const readonly = mode === 'view'
   const { data: products = [], isLoading: isProductsLoading } = useGetProducts()
   const productTemplatesQuery = useQuery({
@@ -204,10 +204,10 @@ export function ControlledProtocolDialog({
   const level3Options = useMemo<Level3StageOption[]>(() => {
     return lines.flatMap((line) =>
       (line.segments ?? []).flatMap((segment) =>
-        (segment.jobCategories ?? []).map((jobCategory) => ({
-          id: jobCategory.id,
-          name: jobCategory.name,
-          pathLabel: `${line.name} / ${segment.name} / ${jobCategory.name}`,
+        (segment.processes ?? []).map((process) => ({
+          id: process.id,
+          name: process.name,
+          pathLabel: `${line.name} / ${segment.name} / ${process.name}`,
         }))
       )
     )
