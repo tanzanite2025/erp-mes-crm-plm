@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from 'react'
 import { useNavigate, type NavigateOptions } from '@tanstack/react-router'
-import { toast } from 'sonner'
 import { isForbiddenError } from '@/lib/error-status'
 import { useLanguage } from '@/context/language-provider'
 import { useIsMobile } from '@/hooks/use-mobile'
@@ -18,8 +17,11 @@ import { QualityStandardsMobileView } from '../components/quality-standards-mobi
 import { QualityStandardsPagination } from '../components/quality-standards-pagination'
 import { QualityStandardsStatusOverview } from '../components/quality-standards-status-overview'
 import type { Standard } from '../data/schema'
+import { useQualityMutations } from '../hooks/use-quality'
 import { useQualityStandardsMgmt } from '../hooks/use-quality-standards-mgmt'
 import { buildQualityStandardListPresenter } from '../presenters/quality-standard-list-presenter'
+import { buildControlledProtocolStandard } from '../services/controlled-protocol-standard-factory'
+import { dispatchQualityStandardRoutingEvent } from '../services/quality-routing-service'
 import type { QualityStandardsListSearchState } from '../types/quality-standards-list'
 
 type SearchStateUpdater = (
@@ -50,6 +52,7 @@ export function StandardsIndexPage({
   const navigate = useNavigate()
   const { t, locale } = useLanguage()
   const isMobile = useIsMobile()
+  const { saveStandardMutation } = useQualityMutations()
   const [isControlledProtocolDialogOpen, setIsControlledProtocolDialogOpen] =
     useState(false)
   const normalizedSearch = normalizeSearchState(search)
@@ -98,13 +101,31 @@ export function StandardsIndexPage({
     setIsControlledProtocolDialogOpen(true)
   }
 
-  const handleControlledProtocolSubmit = (draft: ControlledProtocolDraft) => {
-    toast.success(
-      t('quality.standards.dialog.controlledProtocol.toastDraftReady', {
-        count: draft.criteria.length,
+  const handleControlledProtocolSubmit = async (
+    draft: ControlledProtocolDraft
+  ) => {
+    try {
+      const saved = await saveStandardMutation.mutateAsync({
+        data: buildControlledProtocolStandard(draft),
+        successMessage: t(
+          'quality.standards.dialog.controlledProtocol.toastCreated',
+          { count: draft.criteria.length }
+        ),
       })
-    )
-    setIsControlledProtocolDialogOpen(false)
+
+      await dispatchQualityStandardRoutingEvent({
+        standard: saved,
+        semanticAction: 'CREATED',
+      })
+
+      setIsControlledProtocolDialogOpen(false)
+      navigate({
+        to: '/quality/standards/$standardId/preview',
+        params: { standardId: saved.id },
+      })
+    } catch {
+      return
+    }
   }
 
   const handleEdit = (standard: Standard) => {
@@ -141,6 +162,7 @@ export function StandardsIndexPage({
           open={isControlledProtocolDialogOpen}
           onOpenChange={setIsControlledProtocolDialogOpen}
           onSubmit={handleControlledProtocolSubmit}
+          isSubmitting={saveStandardMutation.isPending}
         />
       ) : null}
 

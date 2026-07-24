@@ -199,8 +199,8 @@ export const quality = {
           scrapAbove: 'Scrap above this value',
         },
         actions: {
-          addSelection: 'Add Inspection Item',
-          removeSelection: 'Remove',
+          addCriterion: 'Add Inspection Item',
+          removeCriterion: 'Remove',
           cancel: 'Cancel',
           submit: 'Confirm',
           close: 'Close',
@@ -211,13 +211,19 @@ export const quality = {
         },
         validation: {
           productRequired: 'Please select a product first.',
-          selectionRequired: 'Please add at least one inspection item.',
+          criterionRequired: 'Please add at least one inspection item.',
           itemNameRequired: 'Please enter a name for every inspection item.',
           weightRequired:
             'Please fill in the target weight for every inspection item.',
+          thresholdNumberInvalid:
+            'Bounds and scrap thresholds must be valid numbers.',
+          qualifiedRangeInvalid:
+            'Qualified minimum cannot be greater than qualified maximum.',
+          scrapRangeInvalid:
+            'Scrap-below threshold cannot be greater than scrap-above threshold.',
         },
-        toastDraftReady:
-          'Controlled protocol draft captured with {{count}} items.',
+        toastCreated:
+          'Controlled protocol created as a quality standard with {{count}} items.',
       },
       detail: {
         title: 'Standard Details',

@@ -10,6 +10,8 @@ type InspectionStandardRequest struct {
 	ID          string          `json:"id"`
 	Code        string          `json:"code"`
 	Name        string          `json:"name"`
+	ProductID   string          `json:"productId"`
+	ProductName string          `json:"productName"`
 	Type        string          `json:"type"`
 	Version     float64         `json:"version"`
 	Status      string          `json:"status"`
@@ -41,6 +43,8 @@ type InspectionStandardResponse struct {
 	UpdatedAt              time.Time                       `json:"updatedAt"`
 	Code                   string                          `json:"code"`
 	Name                   string                          `json:"name"`
+	ProductID              string                          `json:"productId,omitempty"`
+	ProductName            string                          `json:"productName,omitempty"`
 	Type                   string                          `json:"type"`
 	Version                float64                         `json:"version"`
 	Status                 string                          `json:"status"`
@@ -182,6 +186,8 @@ func mapInspectionStandardRequestToModel(input InspectionStandardRequest) models
 		BaseModel:   models.BaseModel{ID: input.ID},
 		Code:        input.Code,
 		Name:        input.Name,
+		ProductID:   input.ProductID,
+		ProductName: input.ProductName,
 		Type:        input.Type,
 		Version:     input.Version,
 		Status:      input.Status,
@@ -220,6 +226,8 @@ func mapInspectionStandardToResponse(model models.InspectionStandard, approvalSu
 		UpdatedAt:              model.UpdatedAt,
 		Code:                   model.Code,
 		Name:                   model.Name,
+		ProductID:              model.ProductID,
+		ProductName:            model.ProductName,
 		Type:                   model.Type,
 		Version:                model.Version,
 		Status:                 model.Status,

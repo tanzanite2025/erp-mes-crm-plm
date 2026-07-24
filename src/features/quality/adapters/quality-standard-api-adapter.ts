@@ -27,6 +27,8 @@ export interface QualityStandardApiDTO {
   updatedAt?: string
   code: string
   name: string
+  productId?: string
+  productName?: string
   type?: string
   version?: number
   status?: string
@@ -124,6 +126,8 @@ export function createDefaultStandard(): Standard {
     code: '',
     version: 1,
     name: '',
+    productId: undefined,
+    productName: undefined,
     type: 'IQC',
     status: 'DRAFT',
     auditor: '',
@@ -150,6 +154,8 @@ export function toQualityStandardContract(
     code: dto.code || '',
     version: Number.isFinite(dto.version) ? Number(dto.version) : 1,
     name: dto.name || '',
+    productId: dto.productId || undefined,
+    productName: dto.productName || undefined,
     type: normalizeStandardType(dto.type),
     status: normalizeStandardStatus(dto.status),
     auditor: dto.auditor || undefined,
@@ -178,6 +184,8 @@ export function toQualityStandardApiDTO(
     id: standard.id,
     code: standard.code?.trim() || '',
     name: standard.name?.trim() || '',
+    productId: standard.productId?.trim() || '',
+    productName: standard.productName?.trim() || '',
     type: standard.type ? normalizeStandardType(standard.type) : 'IQC',
     version: standard.version ?? 1,
     status: standard.status

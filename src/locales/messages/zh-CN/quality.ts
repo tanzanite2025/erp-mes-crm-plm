@@ -188,8 +188,8 @@ export const quality = {
           scrapAbove: '高于该值报废',
         },
         actions: {
-          addSelection: '新增检验项',
-          removeSelection: '移除',
+          addCriterion: '新增检验项',
+          removeCriterion: '移除',
           cancel: '取消',
           submit: '确认',
           close: '关闭',
@@ -199,11 +199,14 @@ export const quality = {
         },
         validation: {
           productRequired: '请先选择产品。',
-          selectionRequired: '请至少添加一个检验项目。',
+          criterionRequired: '请至少添加一个检验项目。',
           itemNameRequired: '请为每个检验项目填写名称。',
           weightRequired: '请为每个检验项目填写目标重量。',
+          thresholdNumberInvalid: '上下限与报废阈值必须填写有效数字。',
+          qualifiedRangeInvalid: '合格下限不能大于合格上限。',
+          scrapRangeInvalid: '低于报废阈值不能大于高于报废阈值。',
         },
-        toastDraftReady: '受控协议弹窗草稿已记录，共 {{count}} 项。',
+        toastCreated: '受控品质协议已生成品质标准，共 {{count}} 项。',
       },
       detail: {
         title: '标准详情',

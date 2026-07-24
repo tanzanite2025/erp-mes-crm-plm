@@ -73,6 +73,8 @@ export const standardSchema = z.object({
   code: z.string().min(1, '请输入标准编码'),
   version: z.number().default(1),
   name: z.string().min(1, '请输入标准名称'),
+  productId: z.string().optional(),
+  productName: z.string().optional(),
   type: standardTypeSchema.default('IQC'),
   status: standardStatusSchema.default('DRAFT'),
   auditor: z.string().optional(),

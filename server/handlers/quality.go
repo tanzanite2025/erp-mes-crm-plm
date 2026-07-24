@@ -166,7 +166,7 @@ func PatchInspectionStandardHandler(c *gin.Context) {
 		return
 	}
 
-	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "code", "name", "type", "status", "items", "auditor", "auditTime", "remarks"); err != nil {
+	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "code", "name", "productId", "productName", "type", "status", "items", "auditor", "auditTime", "remarks"); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 无效的标准差量字段: " + err.Error()})
 		return
 	}
@@ -202,6 +202,22 @@ func PatchInspectionStandardHandler(c *gin.Context) {
 					return errors.New("invalid quality standard name payload")
 				}
 				next.Name = strings.TrimSpace(value)
+			case "productId":
+				var value string
+				if err := json.Unmarshal(valueRaw, &value); err != nil {
+					return errors.New("invalid quality standard productId payload")
+				}
+				productID, err := normalizeOptionalUUIDString(value)
+				if err != nil {
+					return errors.New("invalid quality standard productId payload")
+				}
+				next.ProductID = productID
+			case "productName":
+				var value string
+				if err := json.Unmarshal(valueRaw, &value); err != nil {
+					return errors.New("invalid quality standard productName payload")
+				}
+				next.ProductName = strings.TrimSpace(value)
 			case "type":
 				var value string
 				if err := json.Unmarshal(valueRaw, &value); err != nil {
@@ -270,6 +286,16 @@ func SaveInspectionStandardHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 无效的标准数据: " + err.Error()})
 		return
 	}
+
+	input.Code = strings.TrimSpace(input.Code)
+	input.Name = strings.TrimSpace(input.Name)
+	input.ProductName = strings.TrimSpace(input.ProductName)
+	productID, err := normalizeOptionalUUIDString(input.ProductID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] productId 格式错误"})
+		return
+	}
+	input.ProductID = productID
 
 	standard := mapInspectionStandardRequestToModel(input)
 	if err := services.SaveInspectionStandard(auditContextFromGin(c), &standard); err != nil {

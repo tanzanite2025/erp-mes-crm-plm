@@ -12,6 +12,8 @@ type InspectionStandard struct {
 	BaseModel
 	Code        string          `gorm:"size:50;uniqueIndex;not null" json:"code"`
 	Name        string          `gorm:"size:255;not null" json:"name"`
+	ProductID   string          `gorm:"size:36;index" json:"productId"`
+	ProductName string          `gorm:"size:255" json:"productName"`
 	Type        string          `gorm:"size:50" json:"type"` // IQC, IPQC, FQC, OQC
 	Version     float64         `gorm:"default:1.0" json:"version"`
 	Status      string          `gorm:"size:20;default:'DRAFT'" json:"status"` // DRAFT, PUBLISHED, ARCHIVED

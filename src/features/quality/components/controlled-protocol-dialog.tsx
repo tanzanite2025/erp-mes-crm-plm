@@ -30,22 +30,12 @@ import { ProductAttributeCategoryService } from '@/features/engineering/services
 import { ProductAttributeOptionService } from '@/features/engineering/services/product-attribute-option-service'
 import { productTemplateService } from '@/features/engineering/services/product-template-service'
 import { ProductTypeService } from '@/features/engineering/services/product-type-service'
+import type { ControlledProtocolDraft } from '../types/controlled-protocol'
 
-export interface ControlledProtocolCriterion {
-  id: string
-  itemName: string
-  targetWeight: number
-  unit: string
-  qualifiedMin?: number
-  qualifiedMax?: number
-  scrapBelow?: number
-  scrapAbove?: number
-}
-
-export interface ControlledProtocolDraft {
-  productId: string
-  criteria: ControlledProtocolCriterion[]
-}
+export type {
+  ControlledProtocolCriterion,
+  ControlledProtocolDraft,
+} from '../types/controlled-protocol'
 
 interface ControlledProtocolCriterionFormValue {
   id: string
@@ -74,6 +64,7 @@ interface ControlledProtocolDialogProps {
 
 const EMPTY_DRAFT: ControlledProtocolDraft = {
   productId: '',
+  productName: '',
   criteria: [],
 }
 
@@ -96,13 +87,18 @@ function parseOptionalNumber(value: string) {
   return Number.isNaN(parsed) ? undefined : parsed
 }
 
+function hasInvalidOptionalNumber(value: string) {
+  const trimmed = value.trim()
+  return trimmed !== '' && Number.isNaN(Number(trimmed))
+}
+
 function toFormState(
   value?: ControlledProtocolDraft | null
 ): ControlledProtocolDialogFormState {
   return {
     productId: value?.productId ?? '',
     criteria:
-      value?.criteria.map((item) => ({
+      (value?.criteria ?? []).map((item) => ({
         ...item,
         targetWeight: numberToFormValue(item.targetWeight),
         unit: item.unit || 'g',
@@ -156,9 +152,9 @@ export function ControlledProtocolDialog({
     [initialValue]
   )
   const [productId, setProductId] = useState(initialFormState.productId)
-  const [criteria, setCriteria] = useState<ControlledProtocolCriterionFormValue[]>(
-    initialFormState.criteria
-  )
+  const [criteria, setCriteria] = useState<
+    ControlledProtocolCriterionFormValue[]
+  >(initialFormState.criteria)
   const hasProductDisplayMetadata = Boolean(
     productTemplatesQuery.data &&
     productTypesQuery.data &&
@@ -219,9 +215,10 @@ export function ControlledProtocolDialog({
     [productDisplayEntries]
   )
 
-  const selectedProductLabel = productLabelMap.get(productId) ?? '-'
+  const selectedProductLabel =
+    productLabelMap.get(productId) || productId || '-'
 
-  const handleAddSelection = () => {
+  const handleAddCriterion = () => {
     setCriteria((prev) => [
       ...prev,
       {
@@ -237,7 +234,7 @@ export function ControlledProtocolDialog({
     ])
   }
 
-  const handleRemoveSelection = (id: string) => {
+  const handleRemoveCriterion = (id: string) => {
     setCriteria((prev) => prev.filter((item) => item.id !== id))
   }
 
@@ -269,7 +266,7 @@ export function ControlledProtocolDialog({
     if (criteria.length === 0) {
       toast.error(
         t(
-          'quality.standards.dialog.controlledProtocol.validation.selectionRequired'
+          'quality.standards.dialog.controlledProtocol.validation.criterionRequired'
         )
       )
       return
@@ -289,7 +286,8 @@ export function ControlledProtocolDialog({
 
     const hasInvalidWeight = criteria.some(
       (item) =>
-        item.targetWeight.trim() === '' || Number.isNaN(Number(item.targetWeight))
+        item.targetWeight.trim() === '' ||
+        Number.isNaN(Number(item.targetWeight))
     )
 
     if (hasInvalidWeight) {
@@ -301,8 +299,57 @@ export function ControlledProtocolDialog({
       return
     }
 
+    const hasInvalidThreshold = criteria.some((item) =>
+      [
+        item.qualifiedMin,
+        item.qualifiedMax,
+        item.scrapBelow,
+        item.scrapAbove,
+      ].some(hasInvalidOptionalNumber)
+    )
+
+    if (hasInvalidThreshold) {
+      toast.error(
+        t(
+          'quality.standards.dialog.controlledProtocol.validation.thresholdNumberInvalid'
+        )
+      )
+      return
+    }
+
+    const hasInvalidQualifiedRange = criteria.some((item) => {
+      const min = parseOptionalNumber(item.qualifiedMin)
+      const max = parseOptionalNumber(item.qualifiedMax)
+      return min !== undefined && max !== undefined && min > max
+    })
+
+    if (hasInvalidQualifiedRange) {
+      toast.error(
+        t(
+          'quality.standards.dialog.controlledProtocol.validation.qualifiedRangeInvalid'
+        )
+      )
+      return
+    }
+
+    const hasInvalidScrapRange = criteria.some((item) => {
+      const below = parseOptionalNumber(item.scrapBelow)
+      const above = parseOptionalNumber(item.scrapAbove)
+      return below !== undefined && above !== undefined && below > above
+    })
+
+    if (hasInvalidScrapRange) {
+      toast.error(
+        t(
+          'quality.standards.dialog.controlledProtocol.validation.scrapRangeInvalid'
+        )
+      )
+      return
+    }
+
     onSubmit?.({
       productId,
+      productName: selectedProductLabel,
       criteria: criteria.map((item) => ({
         id: item.id,
         itemName: item.itemName.trim(),
@@ -395,13 +442,13 @@ export function ControlledProtocolDialog({
 
                 <Button
                   type='button'
-                  onClick={handleAddSelection}
-                  disabled={readonly}
+                  onClick={handleAddCriterion}
+                  disabled={readonly || isSubmitting}
                   className='h-10 rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
                 >
                   <Plus className='mr-2 size-4' />
                   {t(
-                    'quality.standards.dialog.controlledProtocol.actions.addSelection'
+                    'quality.standards.dialog.controlledProtocol.actions.addCriterion'
                   )}
                 </Button>
               </div>
@@ -539,13 +586,13 @@ export function ControlledProtocolDialog({
                         <Button
                           type='button'
                           variant='ghost'
-                          onClick={() => handleRemoveSelection(item.id)}
-                          disabled={readonly}
+                          onClick={() => handleRemoveCriterion(item.id)}
+                          disabled={readonly || isSubmitting}
                           className='h-10 rounded-full px-4 text-[10px] font-black tracking-widest text-rose-600 uppercase hover:text-rose-700'
                         >
                           <Trash2 className='mr-2 size-4' />
                           {t(
-                            'quality.standards.dialog.controlledProtocol.actions.removeSelection'
+                            'quality.standards.dialog.controlledProtocol.actions.removeCriterion'
                           )}
                         </Button>
                       </div>
