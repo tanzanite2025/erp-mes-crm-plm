@@ -41,6 +41,8 @@ func registerProductionRoutes(authorized *gin.RouterGroup) {
 		productionGroup.GET("/product-barcode-bindings", handlers.GetProductBarcodeBindingsHandler)
 		productionGroup.GET("/product-barcode-bindings/count", handlers.CountProductBarcodeBindingsHandler)
 		productionGroup.POST("/product-barcode-bindings", barcodeBindingManage, handlers.CreateProductBarcodeBindingHandler)
+		productionGroup.GET("/product-barcode-states/:productBarcode", handlers.GetProductBarcodeStateHandler)
+		productionGroup.POST("/product-barcode-states", productionIssuanceExecute, handlers.SaveProductBarcodeStateHandler)
 		productionGroup.GET("/stats", handlers.GetProductionStatsHandler)
 		productionGroup.GET("/order-progress", handlers.GetOrderProgressHandler)
 	}
