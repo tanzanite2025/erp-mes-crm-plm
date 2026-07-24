@@ -270,6 +270,73 @@ func TestBusinessAnalysisProductionCapacityIncludesValidatedScrapQuantity(t *tes
 	require.Contains(t, response.DataQuality.Notes, "QUALITY_QUALIFIED_QUANTITY_MISSING")
 }
 
+func TestBusinessAnalysisProductionCapacityUsesConfirmedQualifiedQuantityFact(t *testing.T) {
+	database, err := gorm.Open(sqlite.Open("file:business_analysis_qualified_fact?mode=memory&cache=shared"), &gorm.Config{})
+	require.NoError(t, err)
+	createBusinessAnalysisTestSchema(t, database)
+
+	loc := time.UTC
+	from := time.Date(2026, time.July, 1, 0, 0, 0, 0, loc)
+	to := time.Date(2026, time.August, 1, 0, 0, 0, 0, loc)
+	occurredAt := time.Date(2026, time.July, 8, 10, 0, 0, 0, loc)
+	planID := "00000000-0000-0000-0000-000000000061"
+	taskID := "00000000-0000-0000-0000-000000000062"
+
+	require.NoError(t, database.Exec(
+		"INSERT INTO production_plans (id, product_id, product_name, quantity, status, start_date, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+		planID,
+		"product-061",
+		"型号 F",
+		12,
+		"COMPLETED",
+		occurredAt,
+		occurredAt,
+		occurredAt,
+	).Error)
+	require.NoError(t, database.Exec(
+		"INSERT INTO inspection_tasks (id, production_plan_id, batch_no, product_id, result, completed_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+		taskID,
+		planID,
+		"B-061",
+		"product-061",
+		"PASS",
+		occurredAt,
+		occurredAt,
+		occurredAt,
+	).Error)
+	require.NoError(t, database.Exec(
+		"INSERT INTO quality_batch_quantity_settlements (id, production_plan_id, product_id, batch_no, inspection_task_id, input_quantity, qualified_quantity, rejected_quantity, rework_quantity, quantity_unit, occurred_at, confirmed_at, confirmed_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		"00000000-0000-0000-0000-000000000063",
+		planID,
+		"product-061",
+		"B-061",
+		taskID,
+		12,
+		10,
+		1,
+		1,
+		"pcs",
+		occurredAt,
+		occurredAt,
+		"quality-user",
+		occurredAt,
+		occurredAt,
+	).Error)
+
+	response, err := NewBusinessAnalysisService(database).QueryProductionCapacity(
+		context.Background(),
+		BusinessAnalysisProductionCapacityQuery{From: from, To: to},
+	)
+	require.NoError(t, err)
+	require.NotNil(t, response.Summary.QualifiedQuantity)
+	require.Equal(t, float64(10), *response.Summary.QualifiedQuantity)
+	require.Equal(t, int64(1), response.DataQuality.QualifiedQuantityFactCount)
+	require.Equal(t, int64(0), response.DataQuality.MissingQualifiedQuantityRecords)
+	require.True(t, response.DataQuality.QualifiedQuantityAvailable)
+	require.NotContains(t, response.DataQuality.Notes, "QUALITY_QUALIFIED_QUANTITY_MISSING")
+	require.Nil(t, response.Summary.YieldRate)
+}
+
 func TestBusinessAnalysisQualityLinkageRequiresAnchorProductAndBatch(t *testing.T) {
 	require.True(t, qualityAbnormalityMissingProductionLinkage("", "", "product-1", "batch-1"))
 	require.True(t, qualityAbnormalityMissingProductionLinkage("plan-1", "", "", "batch-1"))
@@ -462,6 +529,27 @@ func createBusinessAnalysisTestSchema(t *testing.T, database *gorm.DB) {
 			input_data TEXT,
 			remarks TEXT,
 			completed_at DATETIME,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME
+		)`,
+		`CREATE TABLE quality_batch_quantity_settlements (
+			id TEXT PRIMARY KEY,
+			production_plan_id TEXT NOT NULL,
+			order_id TEXT,
+			product_id TEXT NOT NULL,
+			batch_no TEXT NOT NULL,
+			inspection_task_id TEXT NOT NULL,
+			input_quantity REAL NOT NULL,
+			qualified_quantity REAL NOT NULL,
+			rejected_quantity REAL NOT NULL,
+			rework_quantity REAL NOT NULL,
+			quantity_unit TEXT NOT NULL,
+			occurred_at DATETIME NOT NULL,
+			confirmed_at DATETIME NOT NULL,
+			confirmed_by TEXT NOT NULL,
+			created_at DATETIME,
+			updated_at DATETIME,
 			deleted_at DATETIME
 		)`,
 		`CREATE TABLE quality_abnormalities (

@@ -321,9 +321,27 @@ export const quality = {
       unassigned: 'Unassigned',
       quickPass: 'Mark Pass',
       quickPassRemark: 'Quick pass decision',
+      confirmPassAndQuantity: 'Confirm Pass & Record Quantity',
+      recordQuantity: 'Record Quality Quantity',
+      missingLinkage: 'Production plan or product link is missing',
+      quantityDialogTitle: 'Confirm Inspection and Settle Batch Quantity',
+      quantityDialogDescription:
+        'Qualified, scrap, and rework quantities for batch {{batchNo}} become the single quality quantity fact used by business analysis.',
+      sampleQuantityNote:
+        'This task samples {{sampleQty}}. Sample quantity is for inspection only; it is not the batch input or qualified quantity.',
+      inputQuantity: 'Input Quantity',
+      qualifiedQuantity: 'Qualified Quantity',
+      rejectedQuantity: 'Scrap Quantity',
+      reworkQuantity: 'Rework Quantity',
+      quantityUnit: 'Quantity Unit',
+      cancel: 'Cancel',
+      confirmQuantity: 'Confirm Quantity Settlement',
+      quantityValidation:
+        'Input quantity must be greater than 0 and equal qualified + scrap + rework quantity.',
     },
     toast: {
       submitted: 'Inspection record submitted',
+      quantityConfirmed: 'Quality batch quantity settlement confirmed',
     },
   },
   specialBuy: {

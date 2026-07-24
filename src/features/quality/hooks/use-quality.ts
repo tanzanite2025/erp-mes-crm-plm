@@ -7,6 +7,7 @@ import { useLanguage } from '@/context/language-provider'
 import type { Standard } from '../data/schema'
 import {
   QualityCoreService,
+  type QualityBatchQuantitySettlement,
   type QualityStandardsResponse,
   type QualityTasksResponse,
   type QualityAbnormality,
@@ -14,6 +15,7 @@ import {
 } from '../services/quality-core-service'
 import {
   QualityMaintenanceService,
+  type ConfirmQualityBatchQuantitySettlementPayload,
   type ExecuteInspectionPayload,
   type RecordQualityAbnormalityDisposalPayload,
 } from '../services/quality-maintenance-service'
@@ -24,6 +26,8 @@ export type {
   QualityStandardsResponse,
   QualityTasksResponse,
   QualityAbnormality,
+  QualityBatchQuantitySettlement,
+  ConfirmQualityBatchQuantitySettlementPayload,
   ExecuteInspectionPayload,
   RecordQualityAbnormalityDisposalPayload,
   QualityTask,
@@ -66,6 +70,14 @@ export function useGetInspectionStats() {
   return useQuery({
     queryKey: ['quality_inspection_stats'],
     queryFn: () => QualityCoreService.getInspectionStats(),
+  })
+}
+
+export function useGetQualityQuantitySettlement(taskId: string) {
+  return useQuery({
+    queryKey: ['quality_quantity_settlement', taskId],
+    queryFn: () => QualityCoreService.getQuantitySettlementByTask(taskId),
+    enabled: Boolean(taskId),
   })
 }
 
@@ -144,9 +156,31 @@ export function useQualityMutations() {
     }),
   })
 
+  const confirmQuantitySettlementMutation = useMutation({
+    mutationFn: (data: ConfirmQualityBatchQuantitySettlementPayload) =>
+      QualityMaintenanceService.confirmQuantitySettlement(data),
+    ...buildMutationOptions<
+      unknown,
+      Error,
+      ConfirmQualityBatchQuantitySettlementPayload
+    >({
+      queryClient,
+      invalidateQueryKeys: [
+        ['quality_tasks'],
+        ['quality_quantity_settlement'],
+        ['business-analysis'],
+      ],
+      onError: handleServerError,
+      onSuccess: () => {
+        toast.success(t('quality.inspection.toast.quantityConfirmed'))
+      },
+    }),
+  })
+
   return {
     saveStandardMutation,
     executeInspectionMutation,
     recordAbnormalityDisposalMutation,
+    confirmQuantitySettlementMutation,
   }
 }

@@ -44,7 +44,7 @@ export const businessAnalysis = {
     unlinked: 'Unlinked customer',
     dataQualityTitle: 'Data quality',
     dataQualitySummary:
-      'There are {scrapRecords} quality scrap records in this range, {missingQuantity} without scrap quantity, and {unlinkedQuality} without complete production linkage; only contract-complete quantities enter the formal summary.',
+      'There are {scrapRecords} quality scrap records in this range, {missingQuantity} without scrap quantity, {qualifiedFacts} confirmed quality quantity facts, {missingQualifiedQuantity} without a valid qualified quantity, and {unlinkedQuality} without complete production linkage. Only contract-complete quantities enter the formal summary.',
     dataQualityLoading: 'Loading data quality information…',
     qualityQuantityMissing:
       'Quality abnormalities do not store scrap quantity or unit.',

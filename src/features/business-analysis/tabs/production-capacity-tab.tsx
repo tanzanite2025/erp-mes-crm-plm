@@ -15,6 +15,7 @@ import {
 import { handleServerError } from '@/lib/handle-server-error'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -25,7 +26,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import {
   Select,
   SelectContent,
@@ -166,7 +166,9 @@ export function ProductionCapacityAnalysisTab() {
     status: filters.status === 'ALL' ? undefined : filters.status,
   }
 
-  const canExport = Boolean(filters.from && filters.to && filters.from < filters.to)
+  const canExport = Boolean(
+    filters.from && filters.to && filters.from < filters.to
+  )
 
   const drilldownQuery = useQuery({
     queryKey: [
@@ -224,6 +226,15 @@ export function ProductionCapacityAnalysisTab() {
       key: 'achievementRate',
       label: t('businessAnalysis.productionCapacity.achievementRate'),
       value: summary ? formatRate(summary.achievementRate, numberLocale) : '…',
+    },
+    {
+      key: 'qualifiedQuantity',
+      label: t('businessAnalysis.productionCapacity.qualifiedQuantity'),
+      value: summary
+        ? summary.qualifiedQuantity === null
+          ? t('businessAnalysis.productionCapacity.unavailable')
+          : formatQuantity(summary.qualifiedQuantity, numberLocale)
+        : '…',
     },
     {
       key: 'scrapQuantity',
@@ -385,7 +396,7 @@ export function ProductionCapacityAnalysisTab() {
         </Card>
       )}
 
-      <div className='grid gap-3 sm:grid-cols-2 xl:grid-cols-4'>
+      <div className='grid gap-3 sm:grid-cols-2 xl:grid-cols-5'>
         {metricCards.map((metric) => (
           <Card
             key={metric.key}
@@ -427,6 +438,9 @@ export function ProductionCapacityAnalysisTab() {
               ? t('businessAnalysis.productionCapacity.dataQualitySummary', {
                   scrapRecords: dataQuality.qualityScrapRecordCount,
                   missingQuantity: dataQuality.missingQuantityRecords,
+                  qualifiedFacts: dataQuality.qualifiedQuantityFactCount,
+                  missingQualifiedQuantity:
+                    dataQuality.missingQualifiedQuantityRecords,
                   unlinkedQuality: dataQuality.unlinkedQualityRecords,
                 })
               : t('businessAnalysis.productionCapacity.dataQualityLoading')}
@@ -451,9 +465,7 @@ export function ProductionCapacityAnalysisTab() {
           title={t('businessAnalysis.productionCapacity.byProductTitle')}
           emptyLabel={t('businessAnalysis.productionCapacity.noRows')}
           firstColumn={t('businessAnalysis.productionCapacity.product')}
-          drilldownLabel={t(
-            'businessAnalysis.productionCapacity.viewDetails'
-          )}
+          drilldownLabel={t('businessAnalysis.productionCapacity.viewDetails')}
           rows={response?.breakdowns.byProduct.map((row) => ({
             key: row.productId || row.productName || '__unlinked__',
             label: row.productName || row.productId || '—',
@@ -481,9 +493,7 @@ export function ProductionCapacityAnalysisTab() {
           title={t('businessAnalysis.productionCapacity.byCustomerTitle')}
           emptyLabel={t('businessAnalysis.productionCapacity.noRows')}
           firstColumn={t('businessAnalysis.productionCapacity.customer')}
-          drilldownLabel={t(
-            'businessAnalysis.productionCapacity.viewDetails'
-          )}
+          drilldownLabel={t('businessAnalysis.productionCapacity.viewDetails')}
           rows={response?.breakdowns.byCustomer.map((row) => ({
             key: row.customerId || '__unlinked__',
             label:
@@ -649,13 +659,19 @@ export function ProductionCapacityAnalysisTab() {
                           </strong>
                         </span>
                         <span>
-                          {t('businessAnalysis.productionCapacity.plannedQuantity')}:{' '}
+                          {t(
+                            'businessAnalysis.productionCapacity.plannedQuantity'
+                          )}
+                          :{' '}
                           <strong className='font-mono text-foreground'>
                             {formatQuantity(plan.plannedQuantity, numberLocale)}
                           </strong>
                         </span>
                         <span>
-                          {t('businessAnalysis.productionCapacity.completedQuantity')}:{' '}
+                          {t(
+                            'businessAnalysis.productionCapacity.completedQuantity'
+                          )}
+                          :{' '}
                           <strong className='font-mono text-foreground'>
                             {formatQuantity(
                               plan.completedQuantity,
@@ -670,14 +686,10 @@ export function ProductionCapacityAnalysisTab() {
                         <TableHeader>
                           <TableRow>
                             <TableHead>
-                              {t(
-                                'businessAnalysis.productionCapacity.batch'
-                              )}
+                              {t('businessAnalysis.productionCapacity.batch')}
                             </TableHead>
                             <TableHead>
-                              {t(
-                                'businessAnalysis.productionCapacity.process'
-                              )}
+                              {t('businessAnalysis.productionCapacity.process')}
                             </TableHead>
                             <TableHead>
                               {t(
@@ -728,9 +740,9 @@ export function ProductionCapacityAnalysisTab() {
                                 </TableCell>
                                 <TableCell className='font-mono text-xs text-muted-foreground'>
                                   {task.completedAt
-                                    ? new Date(
-                                        task.completedAt
-                                      ).toLocaleString(locale)
+                                    ? new Date(task.completedAt).toLocaleString(
+                                        locale
+                                      )
                                     : '—'}
                                 </TableCell>
                               </TableRow>

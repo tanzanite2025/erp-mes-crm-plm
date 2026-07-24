@@ -1299,6 +1299,7 @@ func InitDB(dsn string) {
 		// 婵犵妲呴崑鎾跺緤娴犲鐤い鏍ㄧ矌閻棗顭块懜闈涘闁?闂傚倷娴囧畷鍨叏閻㈢绀夐柟杈剧畱缁€澶愭煙鏉堝墽鐣遍梻鍌ゅ灦閺屟嗙疀閹剧纭€婵炴垶鎸哥粔褰掑蓟閵娿儮妲堟俊顖欒娴犻箖姊?(Quality Management)
 		&models.InspectionStandard{},
 		&models.InspectionTask{},
+		&models.QualityBatchQuantitySettlement{},
 		&models.QualityAbnormality{},
 
 		// 婵犵妲呴崑鎾跺緤娴犲鐤い鏍ㄧ矆閻?闂傚倷娴囧畷鍨叏瀹曞洦濯奸柡灞诲劚閻掑灚銇勯幒鍡椾壕閻庢鍠栭悥濂搞€侀弴銏″仼閻忕偟顭堟禍楣冩偡濞嗗繐顏柛瀣█閺屾稒鎯旈埥鍡楁缂?(Piecework Management)

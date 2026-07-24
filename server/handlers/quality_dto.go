@@ -176,6 +176,40 @@ type QualityAbnormalityDisposalRequest struct {
 	OccurredAt       *time.Time `json:"occurredAt"`
 }
 
+type QualityBatchQuantitySettlementRequest struct {
+	ProductionPlanID  string    `json:"productionPlanId"`
+	OrderID           string    `json:"orderId"`
+	ProductID         string    `json:"productId"`
+	BatchNo           string    `json:"batchNo"`
+	InspectionTaskID  string    `json:"inspectionTaskId"`
+	InputQuantity     float64   `json:"inputQuantity"`
+	QualifiedQuantity float64   `json:"qualifiedQuantity"`
+	RejectedQuantity  float64   `json:"rejectedQuantity"`
+	ReworkQuantity    float64   `json:"reworkQuantity"`
+	QuantityUnit      string    `json:"quantityUnit"`
+	OccurredAt        time.Time `json:"occurredAt"`
+}
+
+type QualityBatchQuantitySettlementResponse struct {
+	ID                string                  `json:"id"`
+	CreatedAt         time.Time               `json:"createdAt"`
+	UpdatedAt         time.Time               `json:"updatedAt"`
+	ProductionPlanID  string                  `json:"productionPlanId"`
+	OrderID           string                  `json:"orderId,omitempty"`
+	ProductID         string                  `json:"productId"`
+	BatchNo           string                  `json:"batchNo"`
+	InspectionTaskID  string                  `json:"inspectionTaskId"`
+	InputQuantity     float64                 `json:"inputQuantity"`
+	QualifiedQuantity float64                 `json:"qualifiedQuantity"`
+	RejectedQuantity  float64                 `json:"rejectedQuantity"`
+	ReworkQuantity    float64                 `json:"reworkQuantity"`
+	QuantityUnit      string                  `json:"quantityUnit"`
+	OccurredAt        time.Time               `json:"occurredAt"`
+	ConfirmedAt       time.Time               `json:"confirmedAt"`
+	ConfirmedBy       string                  `json:"confirmedBy"`
+	InspectionTask    *InspectionTaskResponse `json:"inspectionTask,omitempty"`
+}
+
 func mapInspectionStandardRequestToModel(input InspectionStandardRequest) models.InspectionStandard {
 	remarks := input.Remarks
 	if remarks == "" {
@@ -335,4 +369,33 @@ func mapQualityAbnormalitiesToResponse(items []models.QualityAbnormality) []Qual
 		result = append(result, mapQualityAbnormalityToResponse(item))
 	}
 	return result
+}
+
+func mapQualityBatchQuantitySettlementToResponse(
+	model models.QualityBatchQuantitySettlement,
+) QualityBatchQuantitySettlementResponse {
+	var inspectionTask *InspectionTaskResponse
+	if model.InspectionTask != nil {
+		mapped := mapInspectionTaskToResponse(*model.InspectionTask)
+		inspectionTask = &mapped
+	}
+	return QualityBatchQuantitySettlementResponse{
+		ID:                model.ID,
+		CreatedAt:         model.CreatedAt,
+		UpdatedAt:         model.UpdatedAt,
+		ProductionPlanID:  model.ProductionPlanID,
+		OrderID:           model.OrderID,
+		ProductID:         model.ProductID,
+		BatchNo:           model.BatchNo,
+		InspectionTaskID:  model.InspectionTaskID,
+		InputQuantity:     model.InputQuantity,
+		QualifiedQuantity: model.QualifiedQuantity,
+		RejectedQuantity:  model.RejectedQuantity,
+		ReworkQuantity:    model.ReworkQuantity,
+		QuantityUnit:      model.QuantityUnit,
+		OccurredAt:        model.OccurredAt,
+		ConfirmedAt:       model.ConfirmedAt,
+		ConfirmedBy:       model.ConfirmedBy,
+		InspectionTask:    inspectionTask,
+	}
 }

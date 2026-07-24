@@ -301,9 +301,27 @@ export const quality = {
       unassigned: '未指派',
       quickPass: '判定合格',
       quickPassRemark: '快速判定合格',
+      confirmPassAndQuantity: '确认合格并录入数量',
+      recordQuantity: '录入质量数量',
+      missingLinkage: '缺少生产计划或产品关联',
+      quantityDialogTitle: '确认检验结果并结算批次数量',
+      quantityDialogDescription:
+        '批次 {{batchNo}} 的合格量、报废量和返工量将作为经营分析的唯一质量数量事实。',
+      sampleQuantityNote:
+        '本任务抽检量为 {{sampleQty}}；抽检量仅用于检验判定，不代表本批次投入量或合格量。',
+      inputQuantity: '投入数量',
+      qualifiedQuantity: '合格数量',
+      rejectedQuantity: '报废数量',
+      reworkQuantity: '返工数量',
+      quantityUnit: '数量单位',
+      cancel: '取消',
+      confirmQuantity: '确认数量结算',
+      quantityValidation:
+        '投入量必须大于 0，且投入量必须等于合格量、报废量与返工量之和。',
     },
     toast: {
       submitted: '检验记录已提交',
+      quantityConfirmed: '质量批次数量结算已确认',
     },
   },
   specialBuy: {

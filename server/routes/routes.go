@@ -375,6 +375,8 @@ func SetupRoutes(r *gin.Engine) {
 			quality.POST("/standards", adminOnly, handlers.SaveInspectionStandardHandler)
 			quality.GET("/tasks", handlers.GetInspectionTasksHandler)
 			quality.POST("/tasks", handlers.SaveInspectionTaskHandler)
+			quality.GET("/quantity-settlements/task/:taskId", handlers.GetQualityBatchQuantitySettlementByTaskHandler)
+			quality.POST("/quantity-settlements", handlers.ConfirmQualityBatchQuantitySettlementHandler)
 			quality.GET("/stats", handlers.GetInspectionStatsHandler)
 			quality.GET("/abnormalities", handlers.GetAbnormalitiesHandler)
 			quality.POST("/abnormalities/:id/disposal", handlers.RecordQualityAbnormalityDisposalHandler)

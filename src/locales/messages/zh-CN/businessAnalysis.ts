@@ -43,7 +43,7 @@ export const businessAnalysis = {
     unlinked: '未关联客户',
     dataQualityTitle: '数据完整性',
     dataQualitySummary:
-      '当前范围内品质报废记录 {scrapRecords} 条，缺少报废数量 {missingQuantity} 条，未完成生产关联 {unlinkedQuality} 条；已满足契约的报废数量才会进入正式汇总。',
+      '当前范围内品质报废记录 {scrapRecords} 条，缺少报废数量 {missingQuantity} 条；已确认质量数量事实 {qualifiedFacts} 条，缺少合格数量 {missingQualifiedQuantity} 条，未完成生产关联 {unlinkedQuality} 条。只有满足契约的数量才会进入正式汇总。',
     dataQualityLoading: '正在读取数据完整性信息…',
     qualityQuantityMissing: '品质异常尚未记录报废数量和单位。',
     qualityLinkageMissing: '品质记录尚未具备稳定的生产计划、订单或客户关联。',

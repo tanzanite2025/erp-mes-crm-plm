@@ -1,4 +1,5 @@
 import { apiFetch } from '@/lib/api-client'
+import { isApiClientError } from '@/lib/api-error'
 import {
   ensureArrayField,
   ensureArrayResponse,
@@ -30,11 +31,31 @@ export interface QualityTask {
   id: string
   productionPlanId?: string
   orderId?: string
+  productId?: string
   batchNo: string
   productName?: string
+  sampleQty?: number
   result: 'PENDING' | 'PASS' | 'FAIL'
   inspector?: string
   remarks?: string
+  completedAt?: string | null
+}
+
+export type QualityBatchQuantitySettlement = Record<string, unknown> & {
+  id: string
+  productionPlanId: string
+  orderId?: string
+  productId: string
+  batchNo: string
+  inspectionTaskId: string
+  inputQuantity: number
+  qualifiedQuantity: number
+  rejectedQuantity: number
+  reworkQuantity: number
+  quantityUnit: string
+  occurredAt: string
+  confirmedAt: string
+  confirmedBy: string
 }
 
 export type QualityTasksResponse = {
@@ -175,6 +196,25 @@ export const QualityCoreService = {
       res,
       'QualityCoreService.getTasks'
     )
+  },
+
+  getQuantitySettlementByTask: async (
+    taskId: string
+  ): Promise<QualityBatchQuantitySettlement | null> => {
+    try {
+      const res = await apiFetch<QualityBatchQuantitySettlement>(
+        `/quality/quantity-settlements/task/${taskId}`
+      )
+      return ensureObjectResponse<QualityBatchQuantitySettlement>(
+        res,
+        'QualityCoreService.getQuantitySettlementByTask'
+      )
+    } catch (error) {
+      if (isApiClientError(error) && error.status === 404) {
+        return null
+      }
+      throw error
+    }
   },
 
   /**

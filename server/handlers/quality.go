@@ -402,6 +402,54 @@ func SaveInspectionTaskHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, mapInspectionTaskToResponse(task))
 }
 
+func ConfirmQualityBatchQuantitySettlementHandler(c *gin.Context) {
+	var input QualityBatchQuantitySettlementRequest
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 无效的质量批次数量结算数据: " + err.Error()})
+		return
+	}
+
+	confirmed, err := services.ConfirmQualityBatchQuantitySettlement(
+		auditContextFromGin(c),
+		&models.QualityBatchQuantitySettlement{
+			ProductionPlanID:  input.ProductionPlanID,
+			OrderID:           input.OrderID,
+			ProductID:         input.ProductID,
+			BatchNo:           input.BatchNo,
+			InspectionTaskID:  input.InspectionTaskID,
+			InputQuantity:     input.InputQuantity,
+			QualifiedQuantity: input.QualifiedQuantity,
+			RejectedQuantity:  input.RejectedQuantity,
+			ReworkQuantity:    input.ReworkQuantity,
+			QuantityUnit:      input.QuantityUnit,
+			OccurredAt:        input.OccurredAt,
+		},
+	)
+	if err != nil {
+		respondDomainError(c, err, "[SERVER] 保存质量批次数量结算失败: ")
+		return
+	}
+
+	c.JSON(http.StatusOK, mapQualityBatchQuantitySettlementToResponse(confirmed))
+}
+
+func GetQualityBatchQuantitySettlementByTaskHandler(c *gin.Context) {
+	settlement, err := services.GetQualityBatchQuantitySettlementByTask(
+		c.Request.Context(),
+		c.Param("taskId"),
+	)
+	if err != nil {
+		if errors.Is(err, services.ErrQualityQuantitySettlementNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "[NOT_FOUND] 该检验任务尚未确认质量数量"})
+			return
+		}
+		respondDomainError(c, err, "[SERVER] 获取质量批次数量结算失败: ")
+		return
+	}
+
+	c.JSON(http.StatusOK, mapQualityBatchQuantitySettlementToResponse(settlement))
+}
+
 // --- 质量异常管理 (Quality Abnormalities) ---
 
 // GetAbnormalitiesHandler 获取异常报告

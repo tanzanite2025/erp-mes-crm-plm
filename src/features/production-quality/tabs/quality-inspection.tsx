@@ -11,11 +11,19 @@ import {
   ArrowRight,
 } from 'lucide-react'
 import { isForbiddenError } from '@/lib/error-status'
+import { handleServerError } from '@/lib/handle-server-error'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
@@ -30,6 +38,14 @@ import { formatQualityActorName } from '@/features/quality/utils/quality-utils'
 export function QualityInspection() {
   const { t } = useLanguage()
   const [searchTerm, setSearchTerm] = useState('')
+  const [selectedTask, setSelectedTask] = useState<QualityTask | null>(null)
+  const [quantityForm, setQuantityForm] = useState({
+    inputQuantity: '',
+    qualifiedQuantity: '',
+    rejectedQuantity: '0',
+    reworkQuantity: '0',
+    quantityUnit: '',
+  })
   const {
     data,
     error,
@@ -37,7 +53,8 @@ export function QualityInspection() {
   } = useGetQualityTasks(1, 100, searchTerm)
   const tasks = data?.items || []
   const { data: stats, isLoading: isStatsLoading } = useGetInspectionStats()
-  const { executeInspectionMutation } = useQualityMutations()
+  const { executeInspectionMutation, confirmQuantitySettlementMutation } =
+    useQualityMutations()
 
   const isLoading = isTasksLoading || isStatsLoading
 
@@ -45,12 +62,73 @@ export function QualityInspection() {
     return <ForbiddenState />
   }
 
-  const handleQuickPass = (taskId: string) => {
-    executeInspectionMutation.mutate({
-      id: taskId,
-      result: 'PASS',
-      remarks: t('quality.inspection.page.quickPassRemark'),
+  const openQuantitySettlement = (task: QualityTask) => {
+    setSelectedTask(task)
+    setQuantityForm({
+      inputQuantity: '',
+      qualifiedQuantity: '',
+      rejectedQuantity: '0',
+      reworkQuantity: '0',
+      quantityUnit: '',
     })
+  }
+
+  const submitQuantitySettlement = async () => {
+    if (!selectedTask) return
+
+    const inputQuantity = Number(quantityForm.inputQuantity)
+    const qualifiedQuantity = Number(quantityForm.qualifiedQuantity)
+    const rejectedQuantity = Number(quantityForm.rejectedQuantity)
+    const reworkQuantity = Number(quantityForm.reworkQuantity)
+    const quantityUnit = quantityForm.quantityUnit.trim()
+    const quantitiesAreValid = [
+      inputQuantity,
+      qualifiedQuantity,
+      rejectedQuantity,
+      reworkQuantity,
+    ].every((value) => Number.isFinite(value) && value >= 0)
+
+    if (
+      !quantitiesAreValid ||
+      inputQuantity <= 0 ||
+      Math.abs(
+        inputQuantity - (qualifiedQuantity + rejectedQuantity + reworkQuantity)
+      ) > 0.000001 ||
+      !quantityUnit
+    ) {
+      handleServerError(
+        new Error(t('quality.inspection.page.quantityValidation'))
+      )
+      return
+    }
+
+    const payload = {
+      productionPlanId: selectedTask.productionPlanId || '',
+      orderId: selectedTask.orderId,
+      productId: selectedTask.productId || '',
+      batchNo: selectedTask.batchNo,
+      inspectionTaskId: selectedTask.id,
+      inputQuantity,
+      qualifiedQuantity,
+      rejectedQuantity,
+      reworkQuantity,
+      quantityUnit,
+      occurredAt: new Date().toISOString(),
+    }
+
+    try {
+      if (selectedTask.result === 'PENDING') {
+        await executeInspectionMutation.mutateAsync({
+          id: selectedTask.id,
+          result: 'PASS',
+          remarks: t('quality.inspection.page.quickPassRemark'),
+        })
+      }
+      await confirmQuantitySettlementMutation.mutateAsync(payload)
+      setSelectedTask(null)
+    } catch (error) {
+      handleServerError(error)
+    }
   }
 
   if (isLoading && tasks.length === 0) {
@@ -207,19 +285,32 @@ export function QualityInspection() {
                         </span>
                       </div>
                     </div>
-                    {task.result === 'PENDING' && (
-                      <Button
-                        size='sm'
-                        className='xs:w-auto h-9 w-full gap-2 truncate rounded-xl bg-primary text-[9px] font-black tracking-widest uppercase shadow-lg shadow-primary/20 transition-all hover:scale-105'
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleQuickPass(task.id)
-                        }}
-                      >
-                        {t('quality.inspection.page.quickPass')}{' '}
-                        <ArrowRight className='size-3 shrink-0' />
-                      </Button>
-                    )}
+                    <Button
+                      size='sm'
+                      disabled={
+                        !task.productionPlanId ||
+                        !task.productId ||
+                        confirmQuantitySettlementMutation.isPending ||
+                        executeInspectionMutation.isPending
+                      }
+                      className='xs:w-auto h-9 w-full gap-2 truncate rounded-xl bg-primary text-[9px] font-black tracking-widest uppercase shadow-lg shadow-primary/20 transition-all hover:scale-105'
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        openQuantitySettlement(task)
+                      }}
+                    >
+                      {task.result === 'PENDING'
+                        ? t('quality.inspection.page.confirmPassAndQuantity')
+                        : t('quality.inspection.page.recordQuantity')}
+                      <ArrowRight className='size-3 shrink-0' />
+                    </Button>
+                    {/* The backend requires stable production and product links
+                        before a quantity fact can be confirmed. */}
+                    {!task.productionPlanId || !task.productId ? (
+                      <span className='text-[9px] font-bold text-amber-600'>
+                        {t('quality.inspection.page.missingLinkage')}
+                      </span>
+                    ) : null}
                   </div>
                 </CardContent>
               </Card>
@@ -227,6 +318,147 @@ export function QualityInspection() {
           })}
         </div>
       )}
+
+      <Dialog
+        open={Boolean(selectedTask)}
+        onOpenChange={(open) => {
+          if (!open && !confirmQuantitySettlementMutation.isPending) {
+            setSelectedTask(null)
+          }
+        }}
+      >
+        <DialogContent
+          size='lg'
+          className='rounded-[28px] border-none p-0 shadow-2xl'
+        >
+          <div className='p-6 sm:p-8'>
+            <DialogHeader className='gap-3'>
+              <DialogTitle className='text-xl font-black tracking-tight'>
+                {selectedTask?.result === 'PENDING'
+                  ? t('quality.inspection.page.quantityDialogTitle')
+                  : t('quality.inspection.page.recordQuantity')}
+              </DialogTitle>
+              <DialogDescription className='text-sm leading-6'>
+                {t('quality.inspection.page.quantityDialogDescription', {
+                  batchNo: selectedTask?.batchNo || '—',
+                })}
+              </DialogDescription>
+            </DialogHeader>
+
+            <form
+              className='mt-6 space-y-6'
+              onSubmit={(event) => {
+                event.preventDefault()
+                void submitQuantitySettlement()
+              }}
+            >
+              <div className='rounded-2xl border border-dashed border-primary/20 bg-primary/[0.04] p-4 text-xs leading-5 text-muted-foreground'>
+                {t('quality.inspection.page.sampleQuantityNote', {
+                  sampleQty: selectedTask?.sampleQty ?? 0,
+                })}
+              </div>
+
+              <div className='grid gap-4 sm:grid-cols-2'>
+                {[
+                  {
+                    key: 'inputQuantity',
+                    label: t('quality.inspection.page.inputQuantity'),
+                    required: true,
+                  },
+                  {
+                    key: 'qualifiedQuantity',
+                    label: t('quality.inspection.page.qualifiedQuantity'),
+                    required: true,
+                  },
+                  {
+                    key: 'rejectedQuantity',
+                    label: t('quality.inspection.page.rejectedQuantity'),
+                    required: false,
+                  },
+                  {
+                    key: 'reworkQuantity',
+                    label: t('quality.inspection.page.reworkQuantity'),
+                    required: false,
+                  },
+                ].map(({ key, label, required }) => (
+                  <label key={key} className='space-y-2'>
+                    <span className='text-xs font-black tracking-wide text-foreground/80'>
+                      {label}
+                      {required ? ' *' : ''}
+                    </span>
+                    <Input
+                      type='number'
+                      min='0'
+                      step='0.01'
+                      required={required}
+                      value={quantityForm[key as keyof typeof quantityForm]}
+                      onChange={(event) =>
+                        setQuantityForm((current) => ({
+                          ...current,
+                          [key]: event.target.value,
+                        }))
+                      }
+                      className='h-11 rounded-xl bg-muted/30'
+                    />
+                  </label>
+                ))}
+
+                <label className='space-y-2 sm:col-span-2'>
+                  <span className='text-xs font-black tracking-wide text-foreground/80'>
+                    {t('quality.inspection.page.quantityUnit')} *
+                  </span>
+                  <Input
+                    required
+                    value={quantityForm.quantityUnit}
+                    onChange={(event) =>
+                      setQuantityForm((current) => ({
+                        ...current,
+                        quantityUnit: event.target.value,
+                      }))
+                    }
+                    placeholder='pcs'
+                    className='h-11 rounded-xl bg-muted/30'
+                  />
+                </label>
+              </div>
+
+              <div className='flex flex-col gap-3 rounded-2xl bg-muted/30 px-4 py-3 text-xs sm:flex-row sm:items-center sm:justify-between'>
+                <span className='font-bold text-muted-foreground'>
+                  {t('quality.inspection.page.quantityValidation')}
+                </span>
+                <span className='font-black tabular-nums'>
+                  {Number(quantityForm.qualifiedQuantity || 0) +
+                    Number(quantityForm.rejectedQuantity || 0) +
+                    Number(quantityForm.reworkQuantity || 0)}{' '}
+                  / {Number(quantityForm.inputQuantity || 0)}
+                </span>
+              </div>
+
+              <div className='flex flex-col-reverse gap-3 sm:flex-row sm:justify-end'>
+                <Button
+                  type='button'
+                  variant='outline'
+                  className='rounded-xl'
+                  disabled={confirmQuantitySettlementMutation.isPending}
+                  onClick={() => setSelectedTask(null)}
+                >
+                  {t('quality.inspection.page.cancel')}
+                </Button>
+                <Button
+                  type='submit'
+                  className='rounded-xl'
+                  disabled={
+                    confirmQuantitySettlementMutation.isPending ||
+                    executeInspectionMutation.isPending
+                  }
+                >
+                  {t('quality.inspection.page.confirmQuantity')}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

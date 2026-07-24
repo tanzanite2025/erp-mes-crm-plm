@@ -1,6 +1,6 @@
+import { useAuthStore } from '@/stores/auth-store'
 import { apiFetch } from '@/lib/api-client'
 import { createApiClientError } from '@/lib/api-error'
-import { useAuthStore } from '@/stores/auth-store'
 
 export type BusinessAnalysisProductionCapacityQuery = {
   from: string
@@ -51,12 +51,15 @@ export type BusinessAnalysisProductionCapacityResponse = {
   }
   dataQuality: {
     qualityScrapRecordCount: number
+    qualifiedQuantityFactCount: number
     unlinkedQualityRecords: number
     missingQuantityRecords: number
+    missingQualifiedQuantityRecords: number
     missingOccurrenceTimestampRecords: number
     missingCompletionTimestampRecords: number
     unlinkedProductionOrderRecords: number
     qualityQuantityAvailable: boolean
+    qualifiedQuantityAvailable: boolean
     qualityProductionLinkageAvailable: boolean
     isComplete: boolean
     notes: string[]

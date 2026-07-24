@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"math"
 	"sort"
 	"strings"
 	"time"
@@ -79,12 +80,15 @@ type BusinessAnalysisBreakdowns struct {
 
 type BusinessAnalysisDataQuality struct {
 	QualityScrapRecordCount           int64    `json:"qualityScrapRecordCount"`
+	QualifiedQuantityFactCount        int64    `json:"qualifiedQuantityFactCount"`
 	UnlinkedQualityRecords            int64    `json:"unlinkedQualityRecords"`
 	MissingQuantityRecords            int64    `json:"missingQuantityRecords"`
+	MissingQualifiedQuantityRecords   int64    `json:"missingQualifiedQuantityRecords"`
 	MissingOccurrenceTimestampRecords int64    `json:"missingOccurrenceTimestampRecords"`
 	MissingCompletionTimestampRecords int64    `json:"missingCompletionTimestampRecords"`
 	UnlinkedProductionOrderRecords    int64    `json:"unlinkedProductionOrderRecords"`
 	QualityQuantityAvailable          bool     `json:"qualityQuantityAvailable"`
+	QualifiedQuantityAvailable        bool     `json:"qualifiedQuantityAvailable"`
 	QualityProductionLinkageAvailable bool     `json:"qualityProductionLinkageAvailable"`
 	IsComplete                        bool     `json:"isComplete"`
 	Notes                             []string `json:"notes"`
@@ -361,15 +365,24 @@ func (s *BusinessAnalysisService) QueryProductionCapacity(
 		return BusinessAnalysisProductionCapacityResponse{}, err
 	}
 	response.DataQuality.QualityScrapRecordCount = qualityData.QualityScrapRecordCount
+	response.DataQuality.QualifiedQuantityFactCount = qualityData.QualifiedQuantityFactCount
 	response.DataQuality.UnlinkedQualityRecords = qualityData.UnlinkedQualityRecords
 	response.DataQuality.MissingQuantityRecords = qualityData.MissingQuantityRecords
+	response.DataQuality.MissingQualifiedQuantityRecords = qualityData.MissingQualifiedQuantityRecords
 	response.DataQuality.MissingOccurrenceTimestampRecords = qualityData.MissingOccurrenceTimestampRecords
 	response.DataQuality.QualityQuantityAvailable = qualityData.MissingQuantityRecords == 0
+	response.DataQuality.QualifiedQuantityAvailable =
+		qualityData.QualifiedQuantityFactCount > 0 &&
+			qualityData.MissingQualifiedQuantityRecords == 0
 	response.DataQuality.QualityProductionLinkageAvailable = qualityData.UnlinkedQualityRecords == 0
 	if response.DataQuality.QualityQuantityAvailable &&
 		response.DataQuality.QualityProductionLinkageAvailable {
 		scrapQuantity := qualityData.ScrapQuantity
 		response.Summary.ScrapQuantity = &scrapQuantity
+	}
+	if response.DataQuality.QualifiedQuantityAvailable {
+		qualifiedQuantity := qualityData.QualifiedQuantity
+		response.Summary.QualifiedQuantity = &qualifiedQuantity
 	}
 	response.DataQuality.Notes = businessAnalysisQualityNotes(qualityData)
 
@@ -606,10 +619,13 @@ func matchesBusinessAnalysisDrilldown(
 
 type businessAnalysisQualityDataQuality struct {
 	QualityScrapRecordCount           int64
+	QualifiedQuantityFactCount        int64
 	UnlinkedQualityRecords            int64
 	MissingQuantityRecords            int64
+	MissingQualifiedQuantityRecords   int64
 	MissingOccurrenceTimestampRecords int64
 	ScrapQuantity                     float64
+	QualifiedQuantity                 float64
 }
 
 func (s *BusinessAnalysisService) loadQualityDataQuality(
@@ -636,6 +652,36 @@ func (s *BusinessAnalysisService) loadQualityDataQuality(
 		return businessAnalysisQualityDataQuality{}, err
 	}
 
+	var settlements []models.QualityBatchQuantitySettlement
+	if err := s.database.WithContext(ctx).
+		Model(&models.QualityBatchQuantitySettlement{}).
+		Preload("ProductionPlan.SalesOrder").
+		Where("quality_batch_quantity_settlements.deleted_at IS NULL").
+		Where(
+			"quality_batch_quantity_settlements.occurred_at >= ? AND quality_batch_quantity_settlements.occurred_at < ?",
+			query.From,
+			query.To,
+		).
+		Order("quality_batch_quantity_settlements.created_at ASC").
+		Find(&settlements).Error; err != nil {
+		return businessAnalysisQualityDataQuality{}, err
+	}
+
+	var inspectionTasks []models.InspectionTask
+	if err := s.database.WithContext(ctx).
+		Model(&models.InspectionTask{}).
+		Where("inspection_tasks.deleted_at IS NULL").
+		Where("UPPER(TRIM(inspection_tasks.result)) IN ?", []string{"PASS", "FAIL"}).
+		Where(
+			"inspection_tasks.completed_at >= ? AND inspection_tasks.completed_at < ?",
+			query.From,
+			query.To,
+		).
+		Order("inspection_tasks.completed_at ASC").
+		Find(&inspectionTasks).Error; err != nil {
+		return businessAnalysisQualityDataQuality{}, err
+	}
+
 	planIDs := make([]string, 0)
 	orderIDs := make([]string, 0)
 	seenPlanIDs := make(map[string]struct{})
@@ -651,6 +697,46 @@ func (s *BusinessAnalysisService) loadQualityDataQuality(
 				orderID = strings.TrimSpace(abnormality.InspectionTask.OrderID)
 			}
 		}
+		if planID != "" {
+			if _, exists := seenPlanIDs[planID]; !exists {
+				seenPlanIDs[planID] = struct{}{}
+				planIDs = append(planIDs, planID)
+			}
+		}
+		if orderID != "" {
+			if _, exists := seenOrderIDs[orderID]; !exists {
+				seenOrderIDs[orderID] = struct{}{}
+				orderIDs = append(orderIDs, orderID)
+			}
+		}
+	}
+	for _, settlement := range settlements {
+		planID := strings.TrimSpace(settlement.ProductionPlanID)
+		orderID := strings.TrimSpace(settlement.OrderID)
+		if settlement.ProductionPlan != nil {
+			if planID == "" {
+				planID = strings.TrimSpace(settlement.ProductionPlan.ID)
+			}
+			if orderID == "" {
+				orderID = strings.TrimSpace(settlement.ProductionPlan.OrderID)
+			}
+		}
+		if planID != "" {
+			if _, exists := seenPlanIDs[planID]; !exists {
+				seenPlanIDs[planID] = struct{}{}
+				planIDs = append(planIDs, planID)
+			}
+		}
+		if orderID != "" {
+			if _, exists := seenOrderIDs[orderID]; !exists {
+				seenOrderIDs[orderID] = struct{}{}
+				orderIDs = append(orderIDs, orderID)
+			}
+		}
+	}
+	for _, task := range inspectionTasks {
+		planID := strings.TrimSpace(task.ProductionPlanID)
+		orderID := strings.TrimSpace(task.OrderID)
 		if planID != "" {
 			if _, exists := seenPlanIDs[planID]; !exists {
 				seenPlanIDs[planID] = struct{}{}
@@ -693,6 +779,7 @@ func (s *BusinessAnalysisService) loadQualityDataQuality(
 	}
 
 	var result businessAnalysisQualityDataQuality
+	settledBatchIdentities := make(map[string]struct{}, len(settlements))
 	for _, abnormality := range abnormalities {
 		planID, orderID, productID, batchNo := qualityAbnormalityLinkage(abnormality)
 		plan := plansByID[planID]
@@ -754,7 +841,156 @@ func (s *BusinessAnalysisService) loadQualityDataQuality(
 		}
 	}
 
+	for _, settlement := range settlements {
+		planID := strings.TrimSpace(settlement.ProductionPlanID)
+		orderID := strings.TrimSpace(settlement.OrderID)
+		productID := strings.TrimSpace(settlement.ProductID)
+		batchNo := strings.TrimSpace(settlement.BatchNo)
+		plan := settlement.ProductionPlan
+		if plan == nil {
+			if planValue, exists := plansByID[planID]; exists {
+				planCopy := planValue
+				plan = &planCopy
+			}
+		}
+		if plan != nil {
+			if planID == "" {
+				planID = strings.TrimSpace(plan.ID)
+			}
+			if orderID == "" {
+				orderID = strings.TrimSpace(plan.OrderID)
+			}
+			if productID == "" {
+				productID = strings.TrimSpace(plan.ProductID)
+			}
+		}
+
+		if query.Status != "" && query.Status != "ALL" &&
+			(plan == nil ||
+				!strings.EqualFold(strings.TrimSpace(plan.Status), strings.TrimSpace(query.Status))) {
+			continue
+		}
+		if !query.IncludeCanceled && plan != nil &&
+			strings.EqualFold(strings.TrimSpace(plan.Status), "CANCELED") {
+			continue
+		}
+		if productIDFilter := strings.TrimSpace(query.ProductID); productIDFilter != "" {
+			if productID == "" || productID != productIDFilter {
+				if productID == "" {
+					result.UnlinkedQualityRecords++
+				}
+				continue
+			}
+		}
+
+		customerID := ""
+		if orderID != "" {
+			if order, exists := ordersByID[orderID]; exists {
+				customerID = strings.TrimSpace(order.CustomerID)
+			}
+		}
+		if plan != nil && plan.SalesOrder != nil && customerID == "" {
+			customerID = strings.TrimSpace(plan.SalesOrder.CustomerID)
+		}
+		if customerIDFilter := strings.TrimSpace(query.CustomerID); customerIDFilter != "" {
+			if customerID == "" || customerID != customerIDFilter {
+				if customerID == "" {
+					result.UnlinkedQualityRecords++
+				}
+				continue
+			}
+		}
+
+		result.QualifiedQuantityFactCount++
+		if !qualityBatchQuantitySettlementHasValidQuantities(settlement) {
+			result.MissingQualifiedQuantityRecords++
+		} else {
+			result.QualifiedQuantity += settlement.QualifiedQuantity
+		}
+		if planID == "" || productID == "" || batchNo == "" {
+			result.UnlinkedQualityRecords++
+		}
+		if identity := qualityBatchIdentity(planID, batchNo); identity != "" {
+			settledBatchIdentities[identity] = struct{}{}
+		}
+	}
+
+	expectedBatchIdentities := make(map[string]struct{}, len(inspectionTasks))
+	for _, task := range inspectionTasks {
+		planID := strings.TrimSpace(task.ProductionPlanID)
+		orderID := strings.TrimSpace(task.OrderID)
+		productID := strings.TrimSpace(task.ProductID)
+		batchNo := strings.TrimSpace(task.BatchNo)
+		plan := plansByID[planID]
+		if planID != "" {
+			if orderID == "" {
+				orderID = strings.TrimSpace(plan.OrderID)
+			}
+			if productID == "" {
+				productID = strings.TrimSpace(plan.ProductID)
+			}
+		}
+
+		if query.Status != "" && query.Status != "ALL" &&
+			(strings.TrimSpace(planID) == "" ||
+				!strings.EqualFold(strings.TrimSpace(plan.Status), strings.TrimSpace(query.Status))) {
+			continue
+		}
+		if !query.IncludeCanceled && strings.EqualFold(strings.TrimSpace(plan.Status), "CANCELED") {
+			continue
+		}
+		if productIDFilter := strings.TrimSpace(query.ProductID); productIDFilter != "" {
+			if productID == "" || productID != productIDFilter {
+				if productID == "" {
+					result.UnlinkedQualityRecords++
+				}
+				continue
+			}
+		}
+
+		customerID := ""
+		if orderID != "" {
+			if order, exists := ordersByID[orderID]; exists {
+				customerID = strings.TrimSpace(order.CustomerID)
+			}
+		}
+		if plan.SalesOrder != nil && customerID == "" {
+			customerID = strings.TrimSpace(plan.SalesOrder.CustomerID)
+		}
+		if customerIDFilter := strings.TrimSpace(query.CustomerID); customerIDFilter != "" {
+			if customerID == "" || customerID != customerIDFilter {
+				if customerID == "" {
+					result.UnlinkedQualityRecords++
+				}
+				continue
+			}
+		}
+
+		identity := qualityBatchIdentity(planID, batchNo)
+		if identity == "" || productID == "" {
+			result.UnlinkedQualityRecords++
+			result.MissingQualifiedQuantityRecords++
+			continue
+		}
+		if _, exists := expectedBatchIdentities[identity]; exists {
+			continue
+		}
+		expectedBatchIdentities[identity] = struct{}{}
+		if _, exists := settledBatchIdentities[identity]; !exists {
+			result.MissingQualifiedQuantityRecords++
+		}
+	}
+
 	return result, nil
+}
+
+func qualityBatchIdentity(planID, batchNo string) string {
+	planID = strings.TrimSpace(planID)
+	batchNo = strings.TrimSpace(batchNo)
+	if planID == "" || batchNo == "" {
+		return ""
+	}
+	return planID + "\x00" + batchNo
 }
 
 func qualityAbnormalityMissingProductionLinkage(planID, orderID, productID, batchNo string) bool {
@@ -785,6 +1021,34 @@ func qualityAbnormalityLinkage(abnormality models.QualityAbnormality) (string, s
 	return planID, orderID, productID, batchNo
 }
 
+func qualityBatchQuantitySettlementHasValidQuantities(
+	settlement models.QualityBatchQuantitySettlement,
+) bool {
+	if strings.TrimSpace(settlement.QuantityUnit) == "" ||
+		settlement.InputQuantity <= 0 ||
+		settlement.QualifiedQuantity < 0 ||
+		settlement.RejectedQuantity < 0 ||
+		settlement.ReworkQuantity < 0 {
+		return false
+	}
+	for _, quantity := range []float64{
+		settlement.InputQuantity,
+		settlement.QualifiedQuantity,
+		settlement.RejectedQuantity,
+		settlement.ReworkQuantity,
+	} {
+		if math.IsNaN(quantity) || math.IsInf(quantity, 0) {
+			return false
+		}
+	}
+	return math.Abs(
+		settlement.InputQuantity-
+			(settlement.QualifiedQuantity+
+				settlement.RejectedQuantity+
+				settlement.ReworkQuantity),
+	) <= qualityQuantitySettlementTolerance
+}
+
 func businessAnalysisQualityNotes(data businessAnalysisQualityDataQuality) []string {
 	notes := make([]string, 0, 4)
 	if data.MissingQuantityRecords > 0 {
@@ -796,9 +1060,13 @@ func businessAnalysisQualityNotes(data businessAnalysisQualityDataQuality) []str
 	if data.MissingOccurrenceTimestampRecords > 0 {
 		notes = append(notes, "QUALITY_OCCURRENCE_TIMESTAMP_MISSING")
 	}
-	// A scrap fact alone cannot prove the qualified quantity. That remains a
-	// separate quality contract and must not be inferred from production output.
-	notes = append(notes, "QUALITY_QUALIFIED_QUANTITY_MISSING")
+	if data.QualifiedQuantityFactCount == 0 ||
+		data.MissingQualifiedQuantityRecords > 0 {
+		// A scrap fact alone cannot prove the qualified quantity. The
+		// quality-owned batch settlement fact must exist before analysis
+		// exposes qualifiedQuantity.
+		notes = append(notes, "QUALITY_QUALIFIED_QUANTITY_MISSING")
+	}
 	return notes
 }
 

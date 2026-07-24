@@ -158,6 +158,27 @@ func createBusinessAnalysisRouteTestSchema(t *testing.T, database *gorm.DB) {
 			order_id TEXT,
 			batch_no TEXT,
 			product_id TEXT,
+			result TEXT,
+			completed_at DATETIME,
+			deleted_at DATETIME
+		)`,
+		`CREATE TABLE quality_batch_quantity_settlements (
+			id TEXT PRIMARY KEY,
+			production_plan_id TEXT NOT NULL,
+			order_id TEXT,
+			product_id TEXT NOT NULL,
+			batch_no TEXT NOT NULL,
+			inspection_task_id TEXT NOT NULL,
+			input_quantity REAL NOT NULL,
+			qualified_quantity REAL NOT NULL,
+			rejected_quantity REAL NOT NULL,
+			rework_quantity REAL NOT NULL,
+			quantity_unit TEXT NOT NULL,
+			occurred_at DATETIME NOT NULL,
+			confirmed_at DATETIME NOT NULL,
+			confirmed_by TEXT NOT NULL,
+			created_at DATETIME,
+			updated_at DATETIME,
 			deleted_at DATETIME
 		)`,
 		`CREATE TABLE quality_abnormalities (

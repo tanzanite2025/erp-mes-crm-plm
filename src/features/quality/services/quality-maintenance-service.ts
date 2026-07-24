@@ -25,6 +25,20 @@ export interface RecordQualityAbnormalityDisposalPayload {
   occurredAt?: string
 }
 
+export interface ConfirmQualityBatchQuantitySettlementPayload {
+  productionPlanId: string
+  orderId?: string
+  productId: string
+  batchNo: string
+  inspectionTaskId: string
+  inputQuantity: number
+  qualifiedQuantity: number
+  rejectedQuantity: number
+  reworkQuantity: number
+  quantityUnit: string
+  occurredAt?: string
+}
+
 /**
  * QualityMaintenanceService - 专门负责质量模块的维护与写入逻辑 (SDRTS 协议封装)情况情况总量。
  */
@@ -88,6 +102,15 @@ export const QualityMaintenanceService = {
     data: RecordQualityAbnormalityDisposalPayload
   ) => {
     return apiFetch(`/quality/abnormalities/${id}/disposal`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  },
+
+  confirmQuantitySettlement: async (
+    data: ConfirmQualityBatchQuantitySettlementPayload
+  ) => {
+    return apiFetch('/quality/quantity-settlements', {
       method: 'POST',
       body: JSON.stringify(data),
     })
