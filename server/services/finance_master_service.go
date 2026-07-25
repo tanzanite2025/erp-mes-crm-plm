@@ -707,6 +707,7 @@ func defaultFinanceTaxRates() []models.TaxRate {
 func defaultPaymentTerms() []models.PaymentTerm {
 	return []models.PaymentTerm{
 		{Code: "COD", Name: "货到付款", Description: "物资送达后支付全款", IsDefault: true, SortOrder: 10, IsSystem: true, Status: "Active", Version: 1},
+		{Code: "DIY", Name: "自定义", Description: "业务特殊结算周期，适用于无法归类到系统内置账期的场景", SortOrder: 5, IsSystem: true, Status: "Active", Version: 1},
 		{Code: "NET30", Name: "月结 30 天", Description: "对账单确认后 30 天内支付", SortOrder: 40, IsSystem: true, Status: "Active", Version: 1},
 		{Code: "NET60", Name: "月结 60 天", Description: "对账单确认后 60 天内支付", SortOrder: 50, IsSystem: true, Status: "Active", Version: 1},
 	}
@@ -762,9 +763,18 @@ func ensureDefaultPaymentTermsTx(tx *gorm.DB) error {
 			}
 		case err != nil:
 			return err
-		case !existing.IsSystem:
-			if err := tx.Model(&existing).Update("is_system", true).Error; err != nil {
-				return err
+		default:
+			updates := map[string]interface{}{}
+			if !existing.IsSystem {
+				updates["is_system"] = true
+			}
+			if term.Code == "DIY" && existing.SortOrder != term.SortOrder {
+				updates["sort_order"] = term.SortOrder
+			}
+			if len(updates) > 0 {
+				if err := tx.Model(&existing).Updates(updates).Error; err != nil {
+					return err
+				}
 			}
 		}
 	}

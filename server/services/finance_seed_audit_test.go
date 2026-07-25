@@ -75,8 +75,8 @@ func TestSeedFinanceDataWritesAuditInOneTransactionAndIsIdempotent(t *testing.T)
 	if err := testDB.Find(&logs).Error; err != nil {
 		t.Fatalf("load finance seed audit logs: %v", err)
 	}
-	if len(logs) != 16 {
-		t.Fatalf("expected 16 audit logs for seeded records, got %d", len(logs))
+	if len(logs) != 17 {
+		t.Fatalf("expected 17 audit logs for seeded records, got %d", len(logs))
 	}
 	for _, log := range logs {
 		if log.Operator != "finance-tester" || log.Action != "CREATE" {
@@ -140,7 +140,7 @@ func TestFinanceListSelfHealingWritesSystemAudit(t *testing.T) {
 	expectedByModule := map[string]int64{
 		AuditModuleCurrency:      1,
 		AuditModulePaymentMethod: 5,
-		AuditModulePaymentTerm:   3,
+		AuditModulePaymentTerm:   4,
 		AuditModuleTaxRate:       4,
 	}
 	for module, expected := range expectedByModule {
@@ -222,6 +222,51 @@ func TestListPaymentMethodsEnsuresVisibleCustomMethod(t *testing.T) {
 	}
 	if !custom.IsSystem {
 		t.Fatal("expected CUSTOM payment method to be system preset")
+	}
+}
+
+func TestListPaymentTermsEnsuresVisibleCustomTerm(t *testing.T) {
+	testDB := openFinanceSeedTestDB(t, true)
+	previousDB := appdb.DB
+	appdb.DB = testDB
+	t.Cleanup(func() { appdb.DB = previousDB })
+
+	seededCustom := models.PaymentTerm{
+		Code:        "DIY",
+		Name:        "自定义",
+		Description: "旧排序自定义结算方式",
+		SortOrder:   90,
+		IsSystem:    false,
+		Status:      "Active",
+		Version:     1,
+	}
+	if err := testDB.Create(&seededCustom).Error; err != nil {
+		t.Fatalf("seed custom payment term: %v", err)
+	}
+
+	terms, err := ListPaymentTerms()
+	if err != nil {
+		t.Fatalf("list payment terms: %v", err)
+	}
+
+	var custom *models.PaymentTerm
+	for index := range terms {
+		if terms[index].Code == "DIY" {
+			custom = &terms[index]
+			break
+		}
+	}
+	if custom == nil {
+		t.Fatal("expected DIY payment term to be present")
+	}
+	if custom.Name != "自定义" {
+		t.Fatalf("expected DIY name to be 自定义, got %q", custom.Name)
+	}
+	if custom.SortOrder != 5 {
+		t.Fatalf("expected DIY sort order to be 5, got %d", custom.SortOrder)
+	}
+	if !custom.IsSystem {
+		t.Fatal("expected DIY payment term to be system preset")
 	}
 }
 
