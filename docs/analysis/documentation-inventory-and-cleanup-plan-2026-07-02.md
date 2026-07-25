@@ -45,8 +45,9 @@
 | `docs/analysis/dictionary-migration-audit-2026-04-09.md` | Closed as historical | Replaced old P0/P1 findings with a closeout note; current ownership is `master-data-ownership-table.md`. |
 | `docs/analysis/mold_asset_management_analysis.md` | Closed as historical | Replaced outdated IndexedDB-based risk report with a note requiring a fresh audit against current backend-backed mold files. |
 | `docs/architecture/permission-sync-migration-plan.md` | Closed as historical | Replaced old `users.role` migration phases and removed the职位字段映射角色 direction from current guidance. |
-| `docs/architecture/组织-人员-账号-权限链路梳理.md` | Corrected | Removed the early position-to-role candidate design as a current permission source;职位/岗位 is now documented as HR metadata only. |
-| `docs/architecture/组织-人员-账号-权限统一实施方案.md` | Corrected | Removed position-based default authorization from the target architecture; default authorization is now scoped to organization default roles plus explicit grants. |
+| `docs/architecture/组织-人员-账号-权限链路梳理.md` | Removed | Replaced by `docs/architecture/组织-人员-账号-权限文件职责与拆分计划.md` because the old file no longer matched the current code permission chain. |
+| `docs/architecture/组织-人员-账号-权限统一实施方案.md` | Removed | Replaced by `docs/architecture/组织-人员-账号-权限文件职责与拆分计划.md` to avoid keeping a stale target model beside the current analysis. |
+| `docs/architecture/组织-人员-账号-权限文件职责与拆分计划.md` | Added | Documents the real current file responsibilities, data flow, unstable boundaries, and split-first implementation order. |
 
 ## Stale Or Risky References
 
