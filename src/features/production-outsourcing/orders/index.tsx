@@ -21,11 +21,12 @@ import { ForbiddenState } from '@/components/forbidden-state'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
-import type {
-  OutsourceOrder,
-  OutsourceOrderFormValues,
-  OutsourceOrderSourceType,
-  OutsourceOrderStatus,
+import {
+  outsourceOrderSourceTypes,
+  type OutsourceOrder,
+  type OutsourceOrderFormValues,
+  type OutsourceOrderSourceType,
+  type OutsourceOrderStatus,
 } from '../data/outsource-order'
 import {
   useOutsourceOrderMutations,
@@ -249,9 +250,9 @@ export function OutsourceOrderManagement() {
             <option value='ALL'>
               {t('productionOutsourcing.orders.filters.allSource')}
             </option>
-            {['SALES_ORDER', 'PRODUCTION_PLAN', 'MANUAL'].map((item) => (
+            {outsourceOrderSourceTypes.map((item) => (
               <option key={item} value={item}>
-                {t(sourceLabelKey(item as OutsourceOrderSourceType))}
+                {t(sourceLabelKey(item))}
               </option>
             ))}
           </select>

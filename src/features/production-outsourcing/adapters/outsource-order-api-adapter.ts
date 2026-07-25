@@ -13,7 +13,7 @@ import {
 } from '../data/outsource-order'
 
 function normalizeSourceType(sourceType: unknown): OutsourceOrderSourceType {
-  if (sourceType === 'PRODUCTION_PLAN' || sourceType === 'MANUAL') {
+  if (sourceType === 'PRODUCTION_PLAN') {
     return sourceType
   }
   return 'SALES_ORDER'

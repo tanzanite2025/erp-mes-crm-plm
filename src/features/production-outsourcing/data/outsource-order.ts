@@ -3,7 +3,6 @@ import { z } from 'zod'
 export const outsourceOrderSourceTypes = [
   'SALES_ORDER',
   'PRODUCTION_PLAN',
-  'MANUAL',
 ] as const
 
 export const outsourceOrderStatuses = [
@@ -112,7 +111,6 @@ export interface OutsourceOrderListStats {
   returned: number
   closed: number
   canceled: number
-  manual: number
   salesOrder: number
   production: number
 }

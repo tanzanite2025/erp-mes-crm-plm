@@ -8,7 +8,7 @@ export const productionOutsourcing = {
   orders: {
     title: '委外任务管理',
     description:
-      '记录生产委外任务；销售订单和生产计划只作为来源，委外任务自己承载委外单位、数量、工序锚点和执行状态。',
+      '记录生产委外任务；销售订单和生产计划只作为来源，委外任务自己承载委外单位、来源产品快照、数量和执行状态。',
     searchPlaceholder: '搜索委外单号、来源单号、客户或委外单位',
     loadingFailed: '委外任务加载失败',
     empty: '暂无委外任务',
@@ -37,7 +37,6 @@ export const productionOutsourcing = {
     sourceTypes: {
       SALES_ORDER: '销售订单',
       PRODUCTION_PLAN: '生产计划',
-      MANUAL: '手工来源',
     },
     statuses: {
       DRAFT: '草稿',
@@ -65,8 +64,8 @@ export const productionOutsourcing = {
       quantity: '数量',
       uom: '单位',
       segmentName: '工段/L2',
-      processName: '绑定L3',
-      processCode: 'L3编码',
+      processName: '当前工序',
+      processCode: '工序编码',
       lineNotes: '明细备注',
       notes: '任务备注',
     },
@@ -74,11 +73,8 @@ export const productionOutsourcing = {
       orderNo: '留空自动生成',
       source: '请选择来源单据',
       sourceLine: '请选择要委外的订单明细',
-      manualSource: '可填写来源说明或内部单号',
       partner: '请选择委外单位',
       segmentName: '可选，后续接产线脑图',
-      processStep: '请选择已有L3',
-      processName: '请选择已有L3',
     },
     dialog: {
       createTitle: '新增委外任务',
@@ -94,8 +90,10 @@ export const productionOutsourcing = {
     validation: {
       partnerRequired: '请选择委外单位',
       sourceRequired: '请选择销售订单或生产计划来源',
+      sourceLineRequired: '销售订单来源必须为每条委外明细选择订单明细',
+      sourceLineDuplicate: '同一张销售订单明细不能重复添加',
+      productionPlanSingleLine: '生产计划来源当前只能生成一条委外明细',
       lineRequired: '委外明细必须填写产品和大于 0 的数量',
-      processRequired: '每条委外明细必须选择已有L3',
     },
     toasts: {
       saved: '委外任务已保存',

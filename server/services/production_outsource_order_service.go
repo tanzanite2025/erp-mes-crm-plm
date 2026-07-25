@@ -16,7 +16,6 @@ import (
 const (
 	OutsourceOrderSourceSalesOrder     = "SALES_ORDER"
 	OutsourceOrderSourceProductionPlan = "PRODUCTION_PLAN"
-	OutsourceOrderSourceManual         = "MANUAL"
 )
 
 const (
@@ -430,8 +429,8 @@ func normalizeOutsourceOrderLineDTO(line OutsourceOrderLineDTO, index int, order
 func normalizeOutsourceOrderSourceType(sourceType string) string {
 	normalized := strings.ToUpper(strings.TrimSpace(sourceType))
 	switch normalized {
-	case "", "MANUAL", "HAND":
-		return OutsourceOrderSourceManual
+	case "":
+		return ""
 	case "SALES", "SALES_ORDER", "SALE_ORDER":
 		return OutsourceOrderSourceSalesOrder
 	case "PRODUCTION", "PRODUCTION_PLAN", "PLAN":
@@ -493,7 +492,7 @@ func validateOutsourceOrderDTO(order OutsourceOrderDTO) error {
 	if !isOutsourceOrderSourceType(order.SourceType) {
 		return fmt.Errorf("%w: unsupported source type %s", ErrInvalidOutsourceOrder, order.SourceType)
 	}
-	if order.SourceType != OutsourceOrderSourceManual && order.SourceID == "" {
+	if order.SourceID == "" {
 		return fmt.Errorf("%w: sourceId is required for %s", ErrInvalidOutsourceOrder, order.SourceType)
 	}
 	if order.PartnerID == "" {
@@ -505,18 +504,18 @@ func validateOutsourceOrderDTO(order OutsourceOrderDTO) error {
 	if len(order.Lines) == 0 {
 		return fmt.Errorf("%w: at least one line is required", ErrInvalidOutsourceOrder)
 	}
+	if order.SourceType == OutsourceOrderSourceProductionPlan && len(order.Lines) != 1 {
+		return fmt.Errorf("%w: production plan source requires exactly one line", ErrInvalidOutsourceOrder)
+	}
 	for index, line := range order.Lines {
+		if order.SourceType == OutsourceOrderSourceSalesOrder && line.SourceLineID == "" {
+			return fmt.Errorf("%w: lines[%d].sourceLineId is required for sales order source", ErrInvalidOutsourceOrder, index)
+		}
 		if line.Quantity <= 0 {
 			return fmt.Errorf("%w: lines[%d].quantity must be greater than 0", ErrInvalidOutsourceOrder, index)
 		}
-		if line.ProductID == "" && line.ProductCode == "" && line.ProductName == "" {
-			return fmt.Errorf("%w: lines[%d] product is required", ErrInvalidOutsourceOrder, index)
-		}
 		if line.UOM == "" {
 			return fmt.Errorf("%w: lines[%d].uom is required", ErrInvalidOutsourceOrder, index)
-		}
-		if line.ProcessStepID == "" {
-			return fmt.Errorf("%w: lines[%d].processStepId is required", ErrInvalidOutsourceOrder, index)
 		}
 		if !isOutsourceOrderStatus(line.Status) {
 			return fmt.Errorf("%w: lines[%d] unsupported status %s", ErrInvalidOutsourceOrder, index, line.Status)
@@ -539,7 +538,7 @@ func validateDraftOnlyOutsourceOrderDTO(order OutsourceOrderDTO) error {
 
 func isOutsourceOrderSourceType(value string) bool {
 	switch value {
-	case OutsourceOrderSourceSalesOrder, OutsourceOrderSourceProductionPlan, OutsourceOrderSourceManual:
+	case OutsourceOrderSourceSalesOrder, OutsourceOrderSourceProductionPlan:
 		return true
 	default:
 		return false
@@ -617,8 +616,6 @@ func fillOutsourceOrderSnapshots(tx *gorm.DB, order *models.OutsourceOrder) erro
 
 func fillOutsourceOrderSourceSnapshot(tx *gorm.DB, order *models.OutsourceOrder) error {
 	switch order.SourceType {
-	case OutsourceOrderSourceManual:
-		return nil
 	case OutsourceOrderSourceSalesOrder:
 		return fillOutsourceOrderSalesOrderSnapshot(tx, order)
 	case OutsourceOrderSourceProductionPlan:
@@ -631,6 +628,14 @@ func fillOutsourceOrderSourceSnapshot(tx *gorm.DB, order *models.OutsourceOrder)
 func fillOutsourceOrderProcessSnapshots(tx *gorm.DB, order *models.OutsourceOrder) error {
 	for index := range order.Lines {
 		line := &order.Lines[index]
+		if strings.TrimSpace(line.ProcessStepID) == "" {
+			line.ProcessStepID = ""
+			line.ProcessCode = ""
+			line.ProcessName = ""
+			line.SegmentID = ""
+			line.SegmentName = ""
+			continue
+		}
 		var process models.ProcessStep
 		if err := tx.First(&process, "id = ?", line.ProcessStepID).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -706,17 +711,19 @@ func fillOutsourceOrderProductionPlanSnapshot(tx *gorm.DB, order *models.Outsour
 		return err
 	}
 	order.SourceNo = plan.OrderNo
-	if len(order.Lines) == 1 {
-		line := &order.Lines[0]
-		if line.ProductID == "" {
-			line.ProductID = plan.ProductID
-		}
-		if line.ProductName == "" {
-			line.ProductName = plan.ProductName
-		}
-		if line.Quantity <= 0 {
-			line.Quantity = plan.Quantity
-		}
+	if len(order.Lines) != 1 {
+		return fmt.Errorf("%w: production plan source requires exactly one line", ErrInvalidOutsourceOrder)
+	}
+
+	line := &order.Lines[0]
+	line.SourceLineID = ""
+	line.ProductID = plan.ProductID
+	line.ProductCode = ""
+	line.ProductName = plan.ProductName
+	line.Specification = ""
+	line.UOM = "PCS"
+	if line.Quantity <= 0 {
+		line.Quantity = plan.Quantity
 	}
 	return nil
 }
@@ -729,11 +736,16 @@ func fillOutsourceOrderLinesFromSalesOrder(order *models.OutsourceOrder, salesLi
 	for _, line := range salesLines {
 		lineByID[strconv.FormatUint(uint64(line.ID), 10)] = line
 	}
+	seenSourceLineIDs := make(map[string]struct{}, len(order.Lines))
 	for index := range order.Lines {
 		sourceLineID := strings.TrimSpace(order.Lines[index].SourceLineID)
 		if sourceLineID == "" {
-			continue
+			return fmt.Errorf("%w: lines[%d].sourceLineId is required for sales order source", ErrInvalidOutsourceOrder, index)
 		}
+		if _, exists := seenSourceLineIDs[sourceLineID]; exists {
+			return fmt.Errorf("%w: lines[%d].sourceLineId is duplicated", ErrInvalidOutsourceOrder, index)
+		}
+		seenSourceLineIDs[sourceLineID] = struct{}{}
 		sourceLine, ok := lineByID[sourceLineID]
 		if !ok {
 			return fmt.Errorf("%w: sourceLineId %s does not belong to sales order", ErrInvalidOutsourceOrder, sourceLineID)
@@ -744,33 +756,23 @@ func fillOutsourceOrderLinesFromSalesOrder(order *models.OutsourceOrder, salesLi
 }
 
 func fillOutsourceOrderLineFromSalesLine(target *models.OutsourceOrderLine, source models.SalesOrderLine) {
-	if target.ProductID == "" {
-		target.ProductID = strings.TrimSpace(source.ProductID)
-	}
-	if target.ProductCode == "" {
-		target.ProductCode = firstNonEmptyOutsourceOrder(
-			source.ProductDisplayCodeSnapshot,
-			source.ProductCode,
-			source.ModelCodeSnapshot,
-		)
-	}
-	if target.ProductName == "" {
-		target.ProductName = firstNonEmptyOutsourceOrder(
-			source.ProductDisplayFullLabelSnapshot,
-			source.ProductDisplayTitleSnapshot,
-			source.ProductModel,
-			source.ProductCode,
-		)
-	}
-	if target.Specification == "" {
-		target.Specification = strings.TrimSpace(source.Specification)
-	}
+	target.ProductID = strings.TrimSpace(source.ProductID)
+	target.ProductCode = firstNonEmptyOutsourceOrder(
+		source.ProductDisplayCodeSnapshot,
+		source.ProductCode,
+		source.ModelCodeSnapshot,
+	)
+	target.ProductName = firstNonEmptyOutsourceOrder(
+		source.ProductDisplayFullLabelSnapshot,
+		source.ProductDisplayTitleSnapshot,
+		source.ProductModel,
+		source.ProductCode,
+	)
+	target.Specification = strings.TrimSpace(source.Specification)
 	if target.Quantity <= 0 {
 		target.Quantity = source.Qty
 	}
-	if strings.TrimSpace(target.UOM) == "" {
-		target.UOM = normalizeOutsourceOrderUOM(source.UOM)
-	}
+	target.UOM = normalizeOutsourceOrderUOM(source.UOM)
 }
 
 func prepareOutsourceOrderLines(order *models.OutsourceOrder) {

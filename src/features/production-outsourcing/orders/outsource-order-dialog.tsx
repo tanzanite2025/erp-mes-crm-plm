@@ -16,10 +16,10 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { useProductionProcessesQuery } from '@/features/production-shared/hooks/use-production-resources'
 import { toOutsourceOrderFormValues } from '../adapters/outsource-order-api-adapter'
 import {
   createEmptyOutsourceOrderLine,
+  outsourceOrderSourceTypes,
   type OutsourceOrder,
   type OutsourceOrderFormValues,
   type OutsourceOrderLineFormValues,
@@ -70,8 +70,15 @@ function normalizeLine(line: OutsourceOrderLineFormValues) {
 function buildLineFromSalesLine(
   line: OutsourceSalesOrderLineSourceOption
 ): OutsourceOrderLineFormValues {
+  return patchLineFromSalesLine(createEmptyOutsourceOrderLine(), line)
+}
+
+function patchLineFromSalesLine(
+  current: OutsourceOrderLineFormValues,
+  line: OutsourceSalesOrderLineSourceOption
+): OutsourceOrderLineFormValues {
   return {
-    ...createEmptyOutsourceOrderLine(),
+    ...current,
     sourceLineId: line.id,
     productId: line.productId,
     productCode: line.productCode,
@@ -82,21 +89,20 @@ function buildLineFromSalesLine(
   }
 }
 
-function buildLineFromProductionPlan(
+function patchLineFromProductionPlan(
+  current: OutsourceOrderLineFormValues,
   plan: OutsourceProductionPlanSourceOption
 ): OutsourceOrderLineFormValues {
   return {
-    ...createEmptyOutsourceOrderLine(),
+    ...current,
+    sourceLineId: '',
     productId: plan.productId,
+    productCode: '',
     productName: plan.productName,
+    specification: '',
     quantity: plan.quantity,
     uom: 'PCS',
   }
-}
-
-function formatProcessOption(code: string | undefined, name: string) {
-  const normalizedCode = code?.trim()
-  return normalizedCode ? `${normalizedCode} · ${name}` : name
 }
 
 export function OutsourceOrderDialog({
@@ -122,7 +128,6 @@ export function OutsourceOrderDialog({
     queryFn: getOutsourceProductionPlanSourceOptions,
     enabled: open && values.sourceType === 'PRODUCTION_PLAN',
   })
-  const processStepsQuery = useProductionProcessesQuery({ enabled: open })
 
   const sortedPartners = useMemo(
     () =>
@@ -134,22 +139,19 @@ export function OutsourceOrderDialog({
   const selectedSalesOrder = salesOrdersQuery.data?.find(
     (item) => item.id === values.sourceId
   )
-  const activeProcessSteps = useMemo(
+  const selectedSalesLineIds = useMemo(
     () =>
-      [...(processStepsQuery.data ?? [])]
-        .filter((step) => step.isActive !== false)
-        .sort((a, b) => {
-          const sortDelta = (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
-          if (sortDelta !== 0) {
-            return sortDelta
-          }
-          return `${a.code ?? ''}${a.name}`.localeCompare(
-            `${b.code ?? ''}${b.name}`
-          )
-        }),
-    [processStepsQuery.data]
+      new Set(
+        values.lines
+          .map((line) => line.sourceLineId.trim())
+          .filter((sourceLineId) => sourceLineId.length > 0)
+      ),
+    [values.lines]
   )
-
+  const canAddLine =
+    values.sourceType === 'SALES_ORDER' &&
+    Boolean(selectedSalesOrder) &&
+    values.lines.length < (selectedSalesOrder?.lines.length ?? 0)
   useEffect(() => {
     if (open) {
       setValues(toOutsourceOrderFormValues(order))
@@ -179,6 +181,9 @@ export function OutsourceOrderDialog({
   }
 
   const addLine = () => {
+    if (!canAddLine) {
+      return
+    }
     setValues((current) => ({
       ...current,
       lines: [...current.lines, createEmptyOutsourceOrderLine()],
@@ -226,17 +231,19 @@ export function OutsourceOrderDialog({
     }))
   }
 
-  const selectSalesOrderLine = (sourceLineId: string) => {
+  const selectSalesOrderLine = (lineIndex: number, sourceLineId: string) => {
     const selectedLine = selectedSalesOrder?.lines.find(
       (item) => item.id === sourceLineId
     )
     if (!selectedLine) {
-      updateLine(0, { sourceLineId })
+      updateLine(lineIndex, { sourceLineId })
       return
     }
     setValues((current) => ({
       ...current,
-      lines: [buildLineFromSalesLine(selectedLine), ...current.lines.slice(1)],
+      lines: current.lines.map((line, index) =>
+        index === lineIndex ? patchLineFromSalesLine(line, selectedLine) : line
+      ),
     }))
   }
 
@@ -254,31 +261,13 @@ export function OutsourceOrderDialog({
       sourceNo: selected.orderNo,
       customerId: '',
       customerName: '',
-      lines: [buildLineFromProductionPlan(selected), ...current.lines.slice(1)],
+      lines: [
+        patchLineFromProductionPlan(
+          current.lines[0] ?? createEmptyOutsourceOrderLine(),
+          selected
+        ),
+      ],
     }))
-  }
-
-  const selectProcessStep = (lineIndex: number, processStepId: string) => {
-    const selected = activeProcessSteps.find(
-      (item) => item.id === processStepId
-    )
-    if (!selected) {
-      updateLine(lineIndex, {
-        processStepId,
-        processCode: '',
-        processName: '',
-        segmentId: '',
-        segmentName: '',
-      })
-      return
-    }
-    updateLine(lineIndex, {
-      processStepId: selected.id,
-      processCode: selected.code ?? '',
-      processName: selected.name,
-      segmentId: '',
-      segmentName: '',
-    })
   }
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -301,8 +290,36 @@ export function OutsourceOrderDialog({
       toast.error(t('productionOutsourcing.orders.validation.partnerRequired'))
       return
     }
-    if (normalized.sourceType !== 'MANUAL' && !normalized.sourceId) {
+    if (!normalized.sourceId) {
       toast.error(t('productionOutsourcing.orders.validation.sourceRequired'))
+      return
+    }
+    if (
+      normalized.sourceType === 'SALES_ORDER' &&
+      normalized.lines.some((line) => !line.sourceLineId)
+    ) {
+      toast.error(
+        t('productionOutsourcing.orders.validation.sourceLineRequired')
+      )
+      return
+    }
+    if (
+      normalized.sourceType === 'SALES_ORDER' &&
+      new Set(normalized.lines.map((line) => line.sourceLineId)).size !==
+        normalized.lines.length
+    ) {
+      toast.error(
+        t('productionOutsourcing.orders.validation.sourceLineDuplicate')
+      )
+      return
+    }
+    if (
+      normalized.sourceType === 'PRODUCTION_PLAN' &&
+      normalized.lines.length !== 1
+    ) {
+      toast.error(
+        t('productionOutsourcing.orders.validation.productionPlanSingleLine')
+      )
       return
     }
     if (
@@ -315,11 +332,6 @@ export function OutsourceOrderDialog({
       toast.error(t('productionOutsourcing.orders.validation.lineRequired'))
       return
     }
-    if (normalized.lines.some((line) => !line.processStepId)) {
-      toast.error(t('productionOutsourcing.orders.validation.processRequired'))
-      return
-    }
-
     onSubmit(normalized)
   }
 
@@ -359,17 +371,13 @@ export function OutsourceOrderDialog({
                 }
                 className={selectClass}
               >
-                <option value='SALES_ORDER'>
-                  {t('productionOutsourcing.orders.sourceTypes.SALES_ORDER')}
-                </option>
-                <option value='PRODUCTION_PLAN'>
-                  {t(
-                    'productionOutsourcing.orders.sourceTypes.PRODUCTION_PLAN'
-                  )}
-                </option>
-                <option value='MANUAL'>
-                  {t('productionOutsourcing.orders.sourceTypes.MANUAL')}
-                </option>
+                {outsourceOrderSourceTypes.map((sourceType) => (
+                  <option key={sourceType} value={sourceType}>
+                    {t(
+                      `productionOutsourcing.orders.sourceTypes.${sourceType}` as TranslationKey
+                    )}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -394,7 +402,7 @@ export function OutsourceOrderDialog({
                     </option>
                   ))}
                 </select>
-              ) : values.sourceType === 'PRODUCTION_PLAN' ? (
+              ) : (
                 <select
                   value={values.sourceId}
                   onChange={(event) => selectProductionPlan(event.target.value)}
@@ -411,17 +419,6 @@ export function OutsourceOrderDialog({
                     </option>
                   ))}
                 </select>
-              ) : (
-                <Input
-                  value={values.sourceNo}
-                  onChange={(event) =>
-                    updateValue('sourceNo', event.target.value)
-                  }
-                  placeholder={t(
-                    'productionOutsourcing.orders.placeholders.manualSource'
-                  )}
-                  className={inputClass}
-                />
               )}
             </div>
 
@@ -453,33 +450,6 @@ export function OutsourceOrderDialog({
               </select>
             </div>
           </div>
-
-          {values.sourceType === 'SALES_ORDER' &&
-          selectedSalesOrder &&
-          selectedSalesOrder.lines.length > 1 ? (
-            <div className='grid gap-4 md:grid-cols-4'>
-              <div className='space-y-2 md:col-span-2'>
-                <Label className={fieldLabelClass}>
-                  {t('productionOutsourcing.orders.fields.sourceLine')}
-                </Label>
-                <select
-                  value={values.lines[0]?.sourceLineId ?? ''}
-                  onChange={(event) => selectSalesOrderLine(event.target.value)}
-                  className={selectClass}
-                >
-                  <option value=''>
-                    {t('productionOutsourcing.orders.placeholders.sourceLine')}
-                  </option>
-                  {selectedSalesOrder.lines.map((line) => (
-                    <option key={line.id || line.lineNo} value={line.id}>
-                      #{line.lineNo} · {line.productName || line.productCode} ·{' '}
-                      {line.quantity} {line.uom}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          ) : null}
 
           <div className='grid gap-4 md:grid-cols-4'>
             <div className='space-y-2'>
@@ -560,6 +530,7 @@ export function OutsourceOrderDialog({
                 type='button'
                 variant='outline'
                 size='sm'
+                disabled={!canAddLine}
                 className='rounded-xl'
                 onClick={addLine}
               >
@@ -592,46 +563,81 @@ export function OutsourceOrderDialog({
                       {t('common.actions.delete')}
                     </Button>
                   </div>
-                  <div className='grid gap-3 md:grid-cols-6'>
-                    <div className='space-y-2 md:col-span-2'>
+                  <div className='grid gap-3 md:grid-cols-8'>
+                    {values.sourceType === 'SALES_ORDER' ? (
+                      <div className='space-y-2 md:col-span-3'>
+                        <Label className={fieldLabelClass}>
+                          {t('productionOutsourcing.orders.fields.sourceLine')}
+                        </Label>
+                        <select
+                          value={line.sourceLineId}
+                          disabled={!selectedSalesOrder}
+                          onChange={(event) =>
+                            selectSalesOrderLine(index, event.target.value)
+                          }
+                          className={selectClass}
+                        >
+                          <option value=''>
+                            {selectedSalesOrder
+                              ? t(
+                                  'productionOutsourcing.orders.placeholders.sourceLine'
+                                )
+                              : t(
+                                  'productionOutsourcing.orders.placeholders.source'
+                                )}
+                          </option>
+                          {(selectedSalesOrder?.lines ?? []).map(
+                            (sourceLine) => (
+                              <option
+                                key={sourceLine.id || sourceLine.lineNo}
+                                value={sourceLine.id}
+                                disabled={
+                                  selectedSalesLineIds.has(sourceLine.id) &&
+                                  sourceLine.id !== line.sourceLineId
+                                }
+                              >
+                                #{sourceLine.lineNo} ·{' '}
+                                {sourceLine.productName ||
+                                  sourceLine.productCode}{' '}
+                                · {sourceLine.quantity} {sourceLine.uom}
+                              </option>
+                            )
+                          )}
+                        </select>
+                      </div>
+                    ) : null}
+
+                    <div className='space-y-2 md:col-span-3'>
                       <Label className={fieldLabelClass}>
                         {t('productionOutsourcing.orders.fields.productName')}
                       </Label>
                       <Input
                         value={line.productName}
-                        onChange={(event) =>
-                          updateLine(index, { productName: event.target.value })
-                        }
-                        className={inputClass}
+                        readOnly
+                        className={`${inputClass} bg-muted/30`}
                       />
                     </div>
-                    <div className='space-y-2'>
+                    <div className='space-y-2 md:col-span-2'>
                       <Label className={fieldLabelClass}>
                         {t('productionOutsourcing.orders.fields.productCode')}
                       </Label>
                       <Input
                         value={line.productCode}
-                        onChange={(event) =>
-                          updateLine(index, { productCode: event.target.value })
-                        }
-                        className={inputClass}
+                        readOnly
+                        className={`${inputClass} bg-muted/30`}
                       />
                     </div>
-                    <div className='space-y-2 md:col-span-2'>
+                    <div className='space-y-2 md:col-span-3'>
                       <Label className={fieldLabelClass}>
                         {t('productionOutsourcing.orders.fields.specification')}
                       </Label>
                       <Input
                         value={line.specification}
-                        onChange={(event) =>
-                          updateLine(index, {
-                            specification: event.target.value,
-                          })
-                        }
-                        className={inputClass}
+                        readOnly
+                        className={`${inputClass} bg-muted/30`}
                       />
                     </div>
-                    <div className='grid grid-cols-2 gap-2'>
+                    <div className='grid grid-cols-2 gap-2 md:col-span-2'>
                       <div className='space-y-2'>
                         <Label className={fieldLabelClass}>
                           {t('productionOutsourcing.orders.fields.quantity')}
@@ -654,64 +660,24 @@ export function OutsourceOrderDialog({
                         </Label>
                         <Input
                           value={line.uom}
-                          onChange={(event) =>
-                            updateLine(index, { uom: event.target.value })
-                          }
-                          className={`${inputClass} uppercase`}
+                          readOnly
+                          className={`${inputClass} bg-muted/30 uppercase`}
                         />
                       </div>
                     </div>
                   </div>
 
-                  <div className='mt-3 grid gap-3 md:grid-cols-4'>
-                    <div className='space-y-2 md:col-span-2'>
-                      <Label className={fieldLabelClass}>
-                        {t('productionOutsourcing.orders.fields.processName')}
-                      </Label>
-                      <select
-                        value={line.processStepId}
-                        onChange={(event) =>
-                          selectProcessStep(index, event.target.value)
-                        }
-                        className={selectClass}
-                      >
-                        <option value=''>
-                          {processStepsQuery.isLoading
-                            ? t('common.actions.loading')
-                            : t(
-                                'productionOutsourcing.orders.placeholders.processStep'
-                              )}
-                        </option>
-                        {activeProcessSteps.map((step) => (
-                          <option key={step.id} value={step.id}>
-                            {formatProcessOption(step.code, step.name)}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className='space-y-2'>
-                      <Label className={fieldLabelClass}>
-                        {t('productionOutsourcing.orders.fields.processCode')}
-                      </Label>
-                      <Input
-                        value={line.processCode}
-                        readOnly
-                        placeholder='-'
-                        className={inputClass}
-                      />
-                    </div>
-                    <div className='space-y-2'>
-                      <Label className={fieldLabelClass}>
-                        {t('productionOutsourcing.orders.fields.lineNotes')}
-                      </Label>
-                      <Input
-                        value={line.notes}
-                        onChange={(event) =>
-                          updateLine(index, { notes: event.target.value })
-                        }
-                        className={inputClass}
-                      />
-                    </div>
+                  <div className='mt-3 space-y-2'>
+                    <Label className={fieldLabelClass}>
+                      {t('productionOutsourcing.orders.fields.lineNotes')}
+                    </Label>
+                    <Input
+                      value={line.notes}
+                      onChange={(event) =>
+                        updateLine(index, { notes: event.target.value })
+                      }
+                      className={inputClass}
+                    />
                   </div>
                 </div>
               ))}

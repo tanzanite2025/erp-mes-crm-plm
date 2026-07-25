@@ -66,7 +66,6 @@ type OutsourceOrderListStats struct {
 	Returned   int `json:"returned"`
 	Closed     int `json:"closed"`
 	Canceled   int `json:"canceled"`
-	Manual     int `json:"manual"`
 	SalesOrder int `json:"salesOrder"`
 	Production int `json:"production"`
 }
@@ -244,8 +243,6 @@ func buildOutsourceOrderListStats(items []OutsourceOrderDTO) OutsourceOrderListS
 		}
 
 		switch item.SourceType {
-		case OutsourceOrderSourceManual:
-			stats.Manual++
 		case OutsourceOrderSourceSalesOrder:
 			stats.SalesOrder++
 		case OutsourceOrderSourceProductionPlan:

@@ -8,7 +8,7 @@ export const productionOutsourcing = {
   orders: {
     title: 'Outsource Task Management',
     description:
-      'Record production outsourcing tasks. Sales orders and production plans are sources only; the outsource task owns partner, quantity, process anchors, and execution status.',
+      'Record production outsourcing tasks. Sales orders and production plans are sources only; the outsource task owns partner, source product snapshots, quantity, and execution status.',
     searchPlaceholder: 'Search task no, source no, customer, or partner',
     loadingFailed: 'Failed to load outsource tasks',
     empty: 'No outsource tasks yet',
@@ -37,7 +37,6 @@ export const productionOutsourcing = {
     sourceTypes: {
       SALES_ORDER: 'Sales order',
       PRODUCTION_PLAN: 'Production plan',
-      MANUAL: 'Manual source',
     },
     statuses: {
       DRAFT: 'Draft',
@@ -65,8 +64,8 @@ export const productionOutsourcing = {
       quantity: 'Quantity',
       uom: 'UOM',
       segmentName: 'Segment/L2',
-      processName: 'Bound L3',
-      processCode: 'L3 code',
+      processName: 'Current process',
+      processCode: 'Process code',
       lineNotes: 'Line notes',
       notes: 'Task notes',
     },
@@ -74,11 +73,8 @@ export const productionOutsourcing = {
       orderNo: 'Leave blank to auto-generate',
       source: 'Select source document',
       sourceLine: 'Select the order line to outsource',
-      manualSource: 'Optional source note or internal no',
       partner: 'Select outsource partner',
       segmentName: 'Optional, later linked to topology',
-      processStep: 'Select existing L3',
-      processName: 'Select existing L3',
     },
     dialog: {
       createTitle: 'New outsource task',
@@ -94,9 +90,13 @@ export const productionOutsourcing = {
     validation: {
       partnerRequired: 'Select an outsource partner',
       sourceRequired: 'Select a sales order or production plan source',
+      sourceLineRequired:
+        'Each sales-order sourced outsource line must select an order line',
+      sourceLineDuplicate: 'The same sales order line cannot be added twice',
+      productionPlanSingleLine:
+        'Production-plan sourced outsource tasks currently support one line',
       lineRequired:
         'Lines require product information and quantity greater than 0',
-      processRequired: 'Each outsource line must select an existing L3',
     },
     toasts: {
       saved: 'Outsource task saved',

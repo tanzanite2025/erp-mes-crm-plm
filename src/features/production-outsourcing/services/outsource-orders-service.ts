@@ -73,7 +73,6 @@ export async function getOutsourceOrders(
       returned: ensureNumberField(metadata, 'returned', context),
       closed: ensureNumberField(metadata, 'closed', context),
       canceled: ensureNumberField(metadata, 'canceled', context),
-      manual: ensureNumberField(metadata, 'manual', context),
       salesOrder: ensureNumberField(metadata, 'salesOrder', context),
       production: ensureNumberField(metadata, 'production', context),
     },

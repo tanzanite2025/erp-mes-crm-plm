@@ -54,7 +54,6 @@ export interface OutsourceOrderListApiResponseDTO {
     returned?: number
     closed?: number
     canceled?: number
-    manual?: number
     salesOrder?: number
     production?: number
   }
