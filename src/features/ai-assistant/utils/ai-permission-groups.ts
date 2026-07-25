@@ -97,7 +97,7 @@ export function filterAiPermissionGroups(
 
 export function isAiRoutePermissionAllowed(
   pathname: string,
-  allowedPermissionIds: ReadonlyArray<string>
+  allowedPermissionIds: ReadonlyArray<string> | null | undefined
 ): boolean {
   const routePermissionId = findRoutePermissionEntry(pathname)?.permissionId
   if (
@@ -107,8 +107,9 @@ export function isAiRoutePermissionAllowed(
     return false
   }
 
+  const safeAllowedPermissionIds = allowedPermissionIds ?? []
   const normalizedRoutePermissionId = routePermissionId.toLowerCase()
-  return allowedPermissionIds.some(
+  return safeAllowedPermissionIds.some(
     (permissionId) =>
       permissionId.trim().toLowerCase() === normalizedRoutePermissionId
   )

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"encoding/json"
 	"errors"
 	"strings"
 	"testing"
@@ -69,6 +70,25 @@ func TestSaveAIPolicyStoresAPIKeyAsEncryptedBackendSecret(t *testing.T) {
 	}
 	if !BuildAIRuntimePolicy(loaded).API.Configured {
 		t.Fatal("expected runtime policy to report configured gateway")
+	}
+}
+
+func TestBuildAIRuntimePolicySerializesEmptyAllowedPermissionsAsArray(t *testing.T) {
+	runtimePolicy := BuildAIRuntimePolicy(AIPolicy{
+		Enabled:            true,
+		AllowedPermissions: nil,
+		API:                defaultAIGatewayConfig("gemini"),
+	})
+
+	payload, err := json.Marshal(runtimePolicy)
+	if err != nil {
+		t.Fatalf("marshal runtime policy: %v", err)
+	}
+	if strings.Contains(string(payload), `"allowedPermissions":null`) {
+		t.Fatalf("expected empty allowedPermissions array, got %s", string(payload))
+	}
+	if !strings.Contains(string(payload), `"allowedPermissions":[]`) {
+		t.Fatalf("expected allowedPermissions field to be an empty array, got %s", string(payload))
 	}
 }
 

@@ -290,13 +290,20 @@ func LoadAIPolicy(database *gorm.DB) (AIPolicy, error) {
 func BuildAIRuntimePolicy(policy AIPolicy) AIRuntimePolicy {
 	return AIRuntimePolicy{
 		Enabled:            policy.Enabled,
-		AllowedPermissions: append([]string(nil), policy.AllowedPermissions...),
+		AllowedPermissions: cloneAIPolicyAllowedPermissions(policy.AllowedPermissions),
 		API: AIRuntimeGatewayConfig{
 			Provider:   policy.API.Provider,
 			Model:      policy.API.Model,
 			Configured: strings.TrimSpace(policy.API.APIKey) != "",
 		},
 	}
+}
+
+func cloneAIPolicyAllowedPermissions(values []string) []string {
+	if len(values) == 0 {
+		return []string{}
+	}
+	return append([]string{}, values...)
 }
 
 func validateAIPolicyForSave(policy AIPolicy) error {

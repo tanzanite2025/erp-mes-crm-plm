@@ -106,6 +106,15 @@ describe('AI permission groups', () => {
     ).toBe(false)
   })
 
+  it('treats missing AI route permission selections as an empty list', () => {
+    expect(
+      isAiRoutePermissionAllowed('/system-management/ai-capability', null)
+    ).toBe(false)
+    expect(
+      isAiRoutePermissionAllowed('/system-management/ai-capability', undefined)
+    ).toBe(false)
+  })
+
   it('selects or clears a group without dropping unrelated route IDs', () => {
     const selected = togglePermissionSelection(
       ['tab_other_page', 'PAGE_SALES'],

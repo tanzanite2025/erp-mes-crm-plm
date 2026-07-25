@@ -24,13 +24,48 @@ export interface AiRuntimePolicy {
   }
 }
 
+interface AiPolicyConfigApiDTO extends Omit<AiPolicyConfig, 'allowedPermissions'> {
+  allowedPermissions?: string[] | null
+}
+
+interface AiRuntimePolicyApiDTO
+  extends Omit<AiRuntimePolicy, 'allowedPermissions'> {
+  allowedPermissions?: string[] | null
+}
+
+function normalizeAiAllowedPermissions(
+  value: string[] | null | undefined
+): string[] {
+  return Array.isArray(value) ? value : []
+}
+
+function normalizeAiPolicyConfig(dto: AiPolicyConfigApiDTO): AiPolicyConfig {
+  return {
+    ...dto,
+    allowedPermissions: normalizeAiAllowedPermissions(dto.allowedPermissions),
+  }
+}
+
+function normalizeAiRuntimePolicy(
+  dto: AiRuntimePolicyApiDTO
+): AiRuntimePolicy {
+  return {
+    ...dto,
+    allowedPermissions: normalizeAiAllowedPermissions(dto.allowedPermissions),
+  }
+}
+
 export const aiPolicyService = {
   async getRuntimePolicy(): Promise<AiRuntimePolicy> {
-    return apiFetch<AiRuntimePolicy>('/ai/policy')
+    const response = await apiFetch<AiRuntimePolicyApiDTO>('/ai/policy')
+    return normalizeAiRuntimePolicy(response)
   },
 
   async getPolicy(): Promise<AiPolicyConfig | null> {
-    return apiFetch<AiPolicyConfig>('/ai/policy/admin')
+    const response = await apiFetch<AiPolicyConfigApiDTO | null>(
+      '/ai/policy/admin'
+    )
+    return response ? normalizeAiPolicyConfig(response) : null
   },
 
   async savePolicy(policy: AiPolicyConfig): Promise<void> {
