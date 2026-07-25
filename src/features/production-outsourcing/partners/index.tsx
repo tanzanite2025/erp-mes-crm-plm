@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { ForbiddenState } from '@/components/forbidden-state'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import { useGetSuppliers } from '@/features/purchase/suppliers'
@@ -106,17 +107,11 @@ export function OutsourcePartnerManagement() {
 
   return (
     <div className='flex animate-in flex-col gap-5 pb-10 duration-700 fade-in'>
-      <div className='rounded-[30px] border border-dashed border-primary/20 bg-primary/5 p-5'>
-        <div className='flex items-center gap-2 text-primary'>
-          <Building2 className='size-4' />
-          <h3 className='text-lg font-black tracking-tighter uppercase italic'>
-            {t('productionOutsourcing.partners.title')}
-          </h3>
-        </div>
-        <p className='mt-1 max-w-4xl text-[10px] font-bold tracking-wide text-muted-foreground'>
-          {t('productionOutsourcing.partners.description')}
-        </p>
-      </div>
+      <IndustrialHeader
+        icon={Building2}
+        title={t('productionOutsourcing.partners.title')}
+        description={t('productionOutsourcing.partners.description')}
+      />
 
       <div className='grid gap-3 md:grid-cols-4'>
         <OutsourceStatCard
