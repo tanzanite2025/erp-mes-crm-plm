@@ -24,12 +24,17 @@ export interface AiRuntimePolicy {
   }
 }
 
-interface AiPolicyConfigApiDTO extends Omit<AiPolicyConfig, 'allowedPermissions'> {
+interface AiPolicyConfigApiDTO extends Omit<
+  AiPolicyConfig,
+  'allowedPermissions'
+> {
   allowedPermissions?: string[] | null
 }
 
-interface AiRuntimePolicyApiDTO
-  extends Omit<AiRuntimePolicy, 'allowedPermissions'> {
+interface AiRuntimePolicyApiDTO extends Omit<
+  AiRuntimePolicy,
+  'allowedPermissions'
+> {
   allowedPermissions?: string[] | null
 }
 
@@ -46,9 +51,7 @@ function normalizeAiPolicyConfig(dto: AiPolicyConfigApiDTO): AiPolicyConfig {
   }
 }
 
-function normalizeAiRuntimePolicy(
-  dto: AiRuntimePolicyApiDTO
-): AiRuntimePolicy {
+function normalizeAiRuntimePolicy(dto: AiRuntimePolicyApiDTO): AiRuntimePolicy {
   return {
     ...dto,
     allowedPermissions: normalizeAiAllowedPermissions(dto.allowedPermissions),

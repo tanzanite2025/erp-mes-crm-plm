@@ -120,10 +120,9 @@ function normalizeLinearBarcodeStatusContract(
 
 export const linearBarcodeStatusContractService = {
   async getContract(): Promise<LinearBarcodeStatusContract> {
-    const response =
-      await apiFetch<LinearBarcodeStatusContractApiDTO>(
-        '/code-center/linear-barcode/status-contract'
-      )
+    const response = await apiFetch<LinearBarcodeStatusContractApiDTO>(
+      '/code-center/linear-barcode/status-contract'
+    )
 
     return normalizeLinearBarcodeStatusContract(response)
   },

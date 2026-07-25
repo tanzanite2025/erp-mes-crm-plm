@@ -77,17 +77,13 @@ export function LinearBarcodeStatusDefinitionCard({
           <div className='font-black text-muted-foreground/60'>
             {t('codeCenter.linearBarcode.status.fields.phase')}
           </div>
-          <div className='mt-1 font-bold text-foreground'>
-            {t(phaseKey)}
-          </div>
+          <div className='mt-1 font-bold text-foreground'>{t(phaseKey)}</div>
         </div>
         <div className='rounded-2xl bg-muted/20 px-3 py-2'>
           <div className='font-black text-muted-foreground/60'>
             {t('codeCenter.linearBarcode.status.fields.trigger')}
           </div>
-          <div className='mt-1 font-bold text-foreground'>
-            {t(triggerKey)}
-          </div>
+          <div className='mt-1 font-bold text-foreground'>{t(triggerKey)}</div>
         </div>
         <div className='rounded-2xl bg-muted/20 px-3 py-2 sm:col-span-2'>
           <div className='font-black text-muted-foreground/60'>

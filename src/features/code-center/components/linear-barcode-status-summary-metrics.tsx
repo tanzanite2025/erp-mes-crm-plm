@@ -31,9 +31,8 @@ export function LinearBarcodeStatusSummaryMetrics({
 }) {
   const { t } = useLanguage()
   const definitions = mergeLinearBarcodeStatusDefinitions(contract)
-  const terminalStatusCount = countTerminalLinearBarcodeStatusDefinitions(
-    definitions
-  )
+  const terminalStatusCount =
+    countTerminalLinearBarcodeStatusDefinitions(definitions)
 
   return (
     <div className='grid gap-3 md:grid-cols-3'>

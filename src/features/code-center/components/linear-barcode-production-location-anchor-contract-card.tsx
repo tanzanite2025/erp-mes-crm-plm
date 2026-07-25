@@ -21,10 +21,7 @@ function LinearBarcodeProductionLocationAnchorItem({
   anchor: LinearBarcodeProductionLocationAnchor
 }) {
   const { t } = useLanguage()
-  const labelKey = getLinearBarcodeLocationAnchorTranslationKey(
-    anchor,
-    'label'
-  )
+  const labelKey = getLinearBarcodeLocationAnchorTranslationKey(anchor, 'label')
   const descriptionKey = getLinearBarcodeLocationAnchorTranslationKey(
     anchor,
     'description'
