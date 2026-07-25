@@ -94,6 +94,7 @@ func SetupRoutes(r *gin.Engine) {
 		registerApsSchedulingRoutes(authorized)
 
 		adminOnly := middleware.RequireAnyPermission(authz.PermissionManage)
+		codeCenterAccess := middleware.RequireAnyPermission(authz.MenuCodeCenter)
 		engineeringAccess := middleware.RequireAnyPermission(authz.MenuEngineering)
 		qualityAccess := middleware.RequireAnyPermission(authz.MenuQuality)
 		pieceworkAccess := middleware.RequireAnyPermission(authz.MenuPiecework)
@@ -364,6 +365,12 @@ func SetupRoutes(r *gin.Engine) {
 		{
 			linearBarcodeProtocolGroup.GET("", handlers.GetLinearBarcodeProtocolConfigHandler)
 			linearBarcodeProtocolGroup.POST("", adminOnly, handlers.UpdateLinearBarcodeProtocolConfigHandler)
+		}
+
+		codeCenterGroup := authorized.Group("/code-center")
+		codeCenterGroup.Use(codeCenterAccess)
+		{
+			codeCenterGroup.GET("/linear-barcode/status-contract", handlers.GetProductBarcodeStateContractHandler)
 		}
 
 		quality := authorized.Group("/quality")

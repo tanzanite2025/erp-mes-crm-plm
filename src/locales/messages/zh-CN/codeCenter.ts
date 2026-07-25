@@ -215,6 +215,15 @@ export const codeCenter = {
           definitionOnly: '状态定义',
         },
       },
+      actions: {
+        retryContract: '重新加载契约',
+      },
+      states: {
+        loadingContract: '正在读取后端一维码状态契约',
+        contractLoadFailed: '一维码状态契约加载失败',
+        contractLoadFailedDescription:
+          '状态定义不再使用前端兜底数组；如果这里加载失败，需要先修复后端契约接口，避免页面展示与真实状态机不一致。',
+      },
       metrics: {
         total: '状态总数',
         inventory: '打印库存状态',
@@ -236,6 +245,46 @@ export const codeCenter = {
           description:
             '描述绑定产品后，一维码在生产执行、转移、挂起和返工链路中的状态。',
         },
+      },
+      location: {
+        title: '生产状态二级定位',
+        description:
+          '生产执行状态是一级状态；具体处于哪个 L3，要通过路线步骤和当前工序作为二级定位。界面可以显示为选择 L3，但底层必须保存 routeStepId，避免同一个 L3 在不同路线或重复步骤中定位不准。',
+        required: '必填锚点',
+        optional: '辅助锚点',
+        writePolicyTitle: '写入边界',
+      },
+      locationAnchors: {
+        ROUTE: {
+          label: '产品路线',
+          description:
+            '说明条码属于哪条生产路线；没有路线时仍可保留状态，但无法按路线顺序自动推进。',
+        },
+        ROUTE_STEP: {
+          label: '路线中的 L3 节点',
+          description:
+            '精准定位当前环节的主锚点。它代表某条路线里的具体步骤，而不是一个可复用的裸工序定义。',
+        },
+        L3_PROCESS: {
+          label: '当前 L3 工序',
+          description:
+            '从路线步骤带出的工序定义，用于展示当前产品处于哪个工序；写入时应由 routeStepId 校验并带出。',
+        },
+        CUSTODY_TRANSFER: {
+          label: '持有/转移事实',
+          description:
+            '记录从本厂、待发区、委外单位到回收待检等持有方变化；它不替代生产执行状态。',
+        },
+      },
+      writePolicies: {
+        STATUS_DEFINITIONS_READ_ONLY:
+          '状态定义是不可编辑契约，页面只能展示，不在这里手工改状态含义。',
+        PRODUCTION_STATUS_WITH_LOCATION:
+          '生产执行状态是一级状态；routeStepId 和 currentProcessStepId 是该状态下的二级位置。',
+        ROUTE_STEP_IS_PRECISE_L3_ANCHOR:
+          '界面可以叫“选择 L3”，但落库必须保存路线步骤 routeStepId，防止同名/复用 L3 定位错。',
+        WRITE_THROUGH_SCAN_OR_EXECUTION_COMMAND:
+          '条码状态变化应通过扫码、执行、转移或带审计的纠错命令写入，不通过字典页直接编辑。',
       },
       flow: {
         title: '生命周期说明',

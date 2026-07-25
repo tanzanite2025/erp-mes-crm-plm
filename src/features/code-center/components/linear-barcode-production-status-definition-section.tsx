@@ -1,9 +1,13 @@
 import { Layers3 } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { LinearBarcodeStatusDefinitionSection } from '@/features/code-center/components/linear-barcode-status-definition-section'
-import { LINEAR_BARCODE_PRODUCTION_STATE_DEFINITIONS } from '@/features/code-center/data/linear-barcode-status-definitions'
+import { type LinearBarcodeStatusDefinition } from '@/features/code-center/data/linear-barcode-status-definitions'
 
-export function LinearBarcodeProductionStatusDefinitionSection() {
+export function LinearBarcodeProductionStatusDefinitionSection({
+  definitions,
+}: {
+  definitions: readonly LinearBarcodeStatusDefinition[]
+}) {
   const { t } = useLanguage()
 
   return (
@@ -13,7 +17,7 @@ export function LinearBarcodeProductionStatusDefinitionSection() {
       description={t(
         'codeCenter.linearBarcode.status.categories.production.description'
       )}
-      definitions={LINEAR_BARCODE_PRODUCTION_STATE_DEFINITIONS}
+      definitions={definitions}
     />
   )
 }

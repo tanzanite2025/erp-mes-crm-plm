@@ -1,8 +1,8 @@
 import { useLanguage } from '@/context/language-provider'
 import {
   countTerminalLinearBarcodeStatusDefinitions,
-  LINEAR_BARCODE_INVENTORY_STATUS_DEFINITIONS,
-  LINEAR_BARCODE_STATUS_DEFINITIONS,
+  mergeLinearBarcodeStatusDefinitions,
+  type LinearBarcodeStatusContract,
 } from '@/features/code-center/data/linear-barcode-status-definitions'
 
 function LinearBarcodeStatusDefinitionMetric({
@@ -24,21 +24,26 @@ function LinearBarcodeStatusDefinitionMetric({
   )
 }
 
-export function LinearBarcodeStatusSummaryMetrics() {
+export function LinearBarcodeStatusSummaryMetrics({
+  contract,
+}: {
+  contract: LinearBarcodeStatusContract
+}) {
   const { t } = useLanguage()
+  const definitions = mergeLinearBarcodeStatusDefinitions(contract)
   const terminalStatusCount = countTerminalLinearBarcodeStatusDefinitions(
-    LINEAR_BARCODE_STATUS_DEFINITIONS
+    definitions
   )
 
   return (
     <div className='grid gap-3 md:grid-cols-3'>
       <LinearBarcodeStatusDefinitionMetric
         label={t('codeCenter.linearBarcode.status.metrics.total')}
-        value={LINEAR_BARCODE_STATUS_DEFINITIONS.length}
+        value={definitions.length}
       />
       <LinearBarcodeStatusDefinitionMetric
         label={t('codeCenter.linearBarcode.status.metrics.inventory')}
-        value={LINEAR_BARCODE_INVENTORY_STATUS_DEFINITIONS.length}
+        value={contract.inventoryStatuses.length}
       />
       <LinearBarcodeStatusDefinitionMetric
         label={t('codeCenter.linearBarcode.status.metrics.terminal')}

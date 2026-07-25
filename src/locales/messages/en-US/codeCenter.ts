@@ -231,6 +231,15 @@ export const codeCenter = {
           definitionOnly: 'Definitions',
         },
       },
+      actions: {
+        retryContract: 'Reload Contract',
+      },
+      states: {
+        loadingContract: 'Loading backend linear barcode status contract',
+        contractLoadFailed: 'Failed to load linear barcode status contract',
+        contractLoadFailedDescription:
+          'This page no longer falls back to a frontend status array. If the contract cannot load, fix the backend contract endpoint first so the UI cannot drift from the real state machine.',
+      },
       metrics: {
         total: 'Total Statuses',
         inventory: 'Print Inventory Statuses',
@@ -252,6 +261,46 @@ export const codeCenter = {
           description:
             'Describes bound product barcodes through production execution, transfer, hold, and rework flows.',
         },
+      },
+      location: {
+        title: 'Production Status Second-level Location',
+        description:
+          'Production execution status is the first-level state. The concrete L3 position is represented by route step and current process as a second-level location. The UI may call it L3 selection, but writes must persist routeStepId to avoid ambiguity when the same L3 appears in multiple routes or repeated steps.',
+        required: 'Required Anchor',
+        optional: 'Auxiliary Anchor',
+        writePolicyTitle: 'Write Boundary',
+      },
+      locationAnchors: {
+        ROUTE: {
+          label: 'Product Route',
+          description:
+            'Identifies which production route the barcode belongs to. A status can exist without it, but route sequencing cannot advance automatically.',
+        },
+        ROUTE_STEP: {
+          label: 'L3 Node in Route',
+          description:
+            'The primary anchor for the current production position. It means a concrete step inside a route, not a reusable bare process definition.',
+        },
+        L3_PROCESS: {
+          label: 'Current L3 Process',
+          description:
+            'The process definition derived from the route step and used to display the current process. Writes should validate and derive it from routeStepId.',
+        },
+        CUSTODY_TRANSFER: {
+          label: 'Custody / Transfer Fact',
+          description:
+            'Records holder changes between factory, staging, outsourcing partner, return inspection, and similar locations. It does not replace production execution status.',
+        },
+      },
+      writePolicies: {
+        STATUS_DEFINITIONS_READ_ONLY:
+          'Status definitions are read-only contract values. This page displays meanings and must not edit them.',
+        PRODUCTION_STATUS_WITH_LOCATION:
+          'Production execution status is the first-level state; routeStepId and currentProcessStepId are the second-level location under it.',
+        ROUTE_STEP_IS_PRECISE_L3_ANCHOR:
+          'The UI may call this “select L3”, but persisted writes must store routeStepId to prevent reused L3 definitions from resolving to the wrong position.',
+        WRITE_THROUGH_SCAN_OR_EXECUTION_COMMAND:
+          'Barcode state changes should be written by scan, execution, transfer, or audited correction commands, not by direct dictionary edits.',
       },
       flow: {
         title: 'Lifecycle Notes',

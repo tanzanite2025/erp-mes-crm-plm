@@ -1,6 +1,7 @@
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import {
+  getLinearBarcodeStatusDefinitionTranslationKey,
   type LinearBarcodeStatusDefinition,
   type LinearBarcodeStatusDefinitionTone,
 } from '@/features/code-center/data/linear-barcode-status-definitions'
@@ -30,6 +31,22 @@ export function LinearBarcodeStatusDefinitionCard({
   definition: LinearBarcodeStatusDefinition
 }) {
   const { t } = useLanguage()
+  const labelKey = getLinearBarcodeStatusDefinitionTranslationKey(
+    definition,
+    'label'
+  )
+  const descriptionKey = getLinearBarcodeStatusDefinitionTranslationKey(
+    definition,
+    'description'
+  )
+  const phaseKey = getLinearBarcodeStatusDefinitionTranslationKey(
+    definition,
+    'phase'
+  )
+  const triggerKey = getLinearBarcodeStatusDefinitionTranslationKey(
+    definition,
+    'trigger'
+  )
 
   return (
     <div className='rounded-3xl border border-dashed border-muted/50 bg-background/70 p-4'>
@@ -43,7 +60,7 @@ export function LinearBarcodeStatusDefinitionCard({
             {definition.code}
           </Badge>
           <div className='mt-3 text-sm font-black text-foreground'>
-            {t(definition.labelKey)}
+            {t(labelKey)}
           </div>
         </div>
         <Badge className='border-none bg-primary/10 text-primary'>
@@ -53,7 +70,7 @@ export function LinearBarcodeStatusDefinitionCard({
         </Badge>
       </div>
       <p className='mt-3 text-[11px] leading-5 text-muted-foreground'>
-        {t(definition.descriptionKey)}
+        {t(descriptionKey)}
       </p>
       <div className='mt-4 grid gap-2 text-[11px] sm:grid-cols-2'>
         <div className='rounded-2xl bg-muted/20 px-3 py-2'>
@@ -61,7 +78,7 @@ export function LinearBarcodeStatusDefinitionCard({
             {t('codeCenter.linearBarcode.status.fields.phase')}
           </div>
           <div className='mt-1 font-bold text-foreground'>
-            {t(definition.phaseKey)}
+            {t(phaseKey)}
           </div>
         </div>
         <div className='rounded-2xl bg-muted/20 px-3 py-2'>
@@ -69,7 +86,7 @@ export function LinearBarcodeStatusDefinitionCard({
             {t('codeCenter.linearBarcode.status.fields.trigger')}
           </div>
           <div className='mt-1 font-bold text-foreground'>
-            {t(definition.triggerKey)}
+            {t(triggerKey)}
           </div>
         </div>
         <div className='rounded-2xl bg-muted/20 px-3 py-2 sm:col-span-2'>

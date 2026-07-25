@@ -26,6 +26,10 @@ func GetProductBarcodeStateHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+func GetProductBarcodeStateContractHandler(c *gin.Context) {
+	c.JSON(http.StatusOK, services.GetProductBarcodeStateContract())
+}
+
 func SaveProductBarcodeStateHandler(c *gin.Context) {
 	var req services.SaveProductBarcodeStateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
