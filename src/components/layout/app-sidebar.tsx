@@ -12,10 +12,7 @@ import {
   DEFAULT_ENTERPRISE_LOGO_URL,
   EnterpriseService,
 } from '@/features/basic-settings/services/enterprise-service'
-import {
-  NavGroup,
-  type SidebarNavGroupExpansionRequest,
-} from './nav-group'
+import { NavGroup, type SidebarNavGroupExpansionRequest } from './nav-group'
 import { resolveActiveSidebarPath } from './sidebar-active-path'
 import { SidebarBrand } from './sidebar-brand'
 import { SidebarCategoryScrubber } from './sidebar-category-scrubber'

@@ -129,10 +129,7 @@ export function createSidebarCategoryPreviews(
 }
 
 function countDomainAndTabLinks(links: SidebarCategoryDomainLink[]): number {
-  return links.reduce(
-    (total, link) => total + Math.max(link.tabs.length, 1),
-    0
-  )
+  return links.reduce((total, link) => total + Math.max(link.tabs.length, 1), 0)
 }
 
 export function calculateFloatingPosition({

@@ -12,8 +12,8 @@ import { Link } from '@tanstack/react-router'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { createPortal } from 'react-dom'
 import { useAuthStore } from '@/stores/auth-store'
-import { useLanguage } from '@/context/language-provider'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/context/language-provider'
 import { useSidebar } from '@/components/ui/sidebar'
 import { getProjectedTabsFromPermissionSnapshot } from '@/features/authz/guards/route-access'
 import {
@@ -428,10 +428,7 @@ export function SidebarCategoryScrubber({
 
     const frameId = window.requestAnimationFrame(updateFloatingPosition)
 
-    if (
-      typeof ResizeObserver === 'undefined' ||
-      floatingRef.current === null
-    ) {
+    if (typeof ResizeObserver === 'undefined' || floatingRef.current === null) {
       return () => {
         window.cancelAnimationFrame(frameId)
       }

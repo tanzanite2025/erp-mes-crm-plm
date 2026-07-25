@@ -80,10 +80,7 @@ function renderNavGroup({
   return render(
     <SidebarProvider>
       {includeMobileProbe ? <MobileStateProbe /> : null}
-      <NavGroup
-        {...productionGroup}
-        expansionRequest={expansionRequest}
-      />
+      <NavGroup {...productionGroup} expansionRequest={expansionRequest} />
     </SidebarProvider>
   )
 }
@@ -135,9 +132,9 @@ describe('NavGroup', () => {
     const view = renderNavGroup()
 
     expect(
-      screen.getByRole('button', { name: 'Production' }).getAttribute(
-        'aria-expanded'
-      )
+      screen
+        .getByRole('button', { name: 'Production' })
+        .getAttribute('aria-expanded')
     ).toBe('false')
     expect(screen.queryByRole('link', { name: 'APS' })).toBeNull()
 
@@ -151,9 +148,9 @@ describe('NavGroup', () => {
     )
 
     expect(
-      screen.getByRole('button', { name: 'Production' }).getAttribute(
-        'aria-expanded'
-      )
+      screen
+        .getByRole('button', { name: 'Production' })
+        .getAttribute('aria-expanded')
     ).toBe('true')
     expect(screen.getByRole('link', { name: 'APS' })).not.toBeNull()
   })

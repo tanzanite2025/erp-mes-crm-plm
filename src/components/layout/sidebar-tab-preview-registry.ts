@@ -1,5 +1,5 @@
-import type { TabItem } from '@/components/module-tabs'
 import type { TranslationKey } from '@/locales'
+import type { TabItem } from '@/components/module-tabs'
 import { getApprovalTabs } from '@/features/approval/tabs'
 import { getApsSchedulingTabs } from '@/features/aps-scheduling/tab-config'
 import { getBasicSettingsTabs } from '@/features/basic-settings/tabs'
@@ -112,7 +112,8 @@ const sidebarTabPreviewResolvers: Record<string, SidebarTabPreviewResolver> = {
   'cutting-engine': getCuttingEngineTabs,
   'production-analysis-center': resolveBusinessAnalysisTabs('production'),
   'quality-analysis-center': resolveBusinessAnalysisTabs('quality'),
-  'customer-sales-analysis-center': resolveBusinessAnalysisTabs('customerSales'),
+  'customer-sales-analysis-center':
+    resolveBusinessAnalysisTabs('customerSales'),
   'engineering-database': () => engineeringDbTabs,
   'engineering-reference': getEngineeringReferenceTabs,
   'quality-audit': getQualityTabs,
