@@ -38,12 +38,13 @@ type SidebarCategoryScrubberProps = {
 }
 
 const CLOSE_DELAY_MS = 140
-const FLOATING_CARD_WIDTH_PX = 496
+const FLOATING_CARD_WIDTH_PX = 560
 const FLOATING_CARD_MAX_HEIGHT_PX = 768
 const FLOATING_CARD_MIN_WIDTH_PX = 360
 const FLOATING_CARD_VIEWPORT_GAP_PX = 48
 const FLOATING_CARD_VIEWPORT_HEIGHT_RATIO = 0.8
 const FLOATING_CARD_EDGE_PADDING_PX = 12
+const FLOATING_CARD_ESTIMATED_INITIAL_HEIGHT_PX = 360
 const SCRUBBER_ITEM_SELECTOR = '[data-sidebar-scrubber-item]'
 const SCRUBBER_ITEM_SPRING = {
   mass: 0.12,
@@ -51,7 +52,7 @@ const SCRUBBER_ITEM_SPRING = {
   damping: 24,
 }
 
-function resolveFixedFloatingCardSize() {
+function resolveFloatingCardViewportBounds() {
   const viewportSafeWidth = Math.max(
     FLOATING_CARD_MIN_WIDTH_PX,
     window.innerWidth - FLOATING_CARD_VIEWPORT_GAP_PX
@@ -63,8 +64,22 @@ function resolveFixedFloatingCardSize() {
 
   return {
     width: Math.min(FLOATING_CARD_WIDTH_PX, viewportSafeWidth),
-    height: Math.min(FLOATING_CARD_MAX_HEIGHT_PX, viewportSafeHeight),
+    maxHeight: Math.min(FLOATING_CARD_MAX_HEIGHT_PX, viewportSafeHeight),
   }
+}
+
+function resolveFloatingCardMeasuredHeightForCentering({
+  measuredHeight,
+  maxHeight,
+}: {
+  measuredHeight?: number
+  maxHeight: number
+}) {
+  if (typeof measuredHeight === 'number' && measuredHeight > 0) {
+    return Math.min(measuredHeight, maxHeight)
+  }
+
+  return Math.min(FLOATING_CARD_ESTIMATED_INITIAL_HEIGHT_PX, maxHeight)
 }
 
 function resolveAdjacentFloatingCardLeft({
@@ -333,21 +348,32 @@ export function SidebarCategoryScrubber({
   )
 
   const updateFloatingPosition = useCallback(() => {
-    const floatingSize = resolveFixedFloatingCardSize()
+    const floatingBounds = resolveFloatingCardViewportBounds()
+    const floatingHeight = resolveFloatingCardMeasuredHeightForCentering({
+      measuredHeight: floatingRef.current?.offsetHeight,
+      maxHeight: floatingBounds.maxHeight,
+    })
     const scrubberColumnRight =
       scrubberColumnRef.current?.getBoundingClientRect().right ?? 0
 
-    setFloatingPosition({
+    const nextPosition = {
       top: resolveCenteredFloatingCardTop({
-        floatingHeight: floatingSize.height,
+        floatingHeight,
         viewportHeight: window.innerHeight,
       }),
       left: resolveAdjacentFloatingCardLeft({
-        floatingWidth: floatingSize.width,
+        floatingWidth: floatingBounds.width,
         viewportWidth: window.innerWidth,
         scrubberColumnRight,
       }),
-    })
+    }
+
+    setFloatingPosition((currentPosition) =>
+      currentPosition.top === nextPosition.top &&
+      currentPosition.left === nextPosition.left
+        ? currentPosition
+        : nextPosition
+    )
   }, [])
 
   useLayoutEffect(() => {
@@ -357,8 +383,23 @@ export function SidebarCategoryScrubber({
 
     const frameId = window.requestAnimationFrame(updateFloatingPosition)
 
+    if (
+      typeof ResizeObserver === 'undefined' ||
+      floatingRef.current === null
+    ) {
+      return () => {
+        window.cancelAnimationFrame(frameId)
+      }
+    }
+
+    const resizeObserver = new ResizeObserver(() => {
+      updateFloatingPosition()
+    })
+    resizeObserver.observe(floatingRef.current)
+
     return () => {
       window.cancelAnimationFrame(frameId)
+      resizeObserver.disconnect()
     }
   }, [hoveredCategoryId, updateFloatingPosition])
 
@@ -494,7 +535,7 @@ function SidebarCategoryFloatingCard({
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.98 }}
           transition={{ duration: 0.16, ease: 'easeOut' }}
-          className='fixed z-50 flex h-[min(80vh,48rem)] w-[min(31rem,calc(100vw-3rem))] flex-col overflow-hidden rounded-2xl border border-border/70 bg-popover text-popover-foreground shadow-2xl shadow-black/15 backdrop-blur-xl'
+          className='fixed z-50 flex max-h-[min(80vh,48rem)] w-[min(35rem,calc(100vw-3rem))] flex-col overflow-hidden rounded-2xl border border-border/70 bg-popover text-popover-foreground shadow-2xl shadow-black/15 backdrop-blur-xl'
           style={{
             top: position.top,
             left: position.left,
@@ -522,8 +563,8 @@ function SidebarCategoryFloatingCard({
               </span>
             </div>
           </div>
-          <div className='no-scrollbar min-h-0 flex-1 overflow-y-auto px-3 py-3'>
-            <div className='flex min-h-full flex-col justify-center space-y-2.5'>
+          <div className='no-scrollbar min-h-0 overflow-y-auto px-3 py-3'>
+            <div className='space-y-2.5'>
               {category.directLinks.length > 0 ? (
                 <SidebarCategoryDomainList
                   links={category.directLinks}
@@ -563,7 +604,7 @@ function SidebarCategoryDomainList({
   onNavigate: () => void
 }) {
   return (
-    <div className='grid gap-2'>
+    <div className='grid grid-cols-[repeat(auto-fit,minmax(14rem,1fr))] gap-2'>
       {links.map((link) => {
         const Icon = link.icon
         const hasTabs = link.tabs.length > 0
