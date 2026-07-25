@@ -2,6 +2,7 @@ import { useEffect, useRef, type RefObject } from 'react'
 
 const ACTIVE_PATH_SELECTOR = '[data-sidebar-active-path="true"]'
 const ACTIVE_FOCUS_SELECTOR = '[data-sidebar-active-focus="true"]'
+const SIDEBAR_NAV_GROUP_SELECTOR = '[data-sidebar-nav-group]'
 
 type SidebarCenterMetrics = {
   viewportTop: number
@@ -35,6 +36,82 @@ export function calculateSidebarCenterScrollTop({
   return Math.min(maxScrollTop, Math.max(0, desiredScrollTop))
 }
 
+export function centerSidebarElement(
+  viewport: HTMLDivElement,
+  element: HTMLElement,
+  behavior: ScrollBehavior
+): boolean {
+  const viewportRect = viewport.getBoundingClientRect()
+  const elementRect = element.getBoundingClientRect()
+  const top = calculateSidebarCenterScrollTop({
+    viewportTop: viewportRect.top,
+    viewportHeight: viewport.clientHeight,
+    currentScrollTop: viewport.scrollTop,
+    scrollHeight: viewport.scrollHeight,
+    activeTop: elementRect.top,
+    activeBottom: elementRect.bottom,
+  })
+
+  viewport.scrollTo({ top, behavior })
+  return true
+}
+
+export function getSidebarNavGroupElement(
+  viewport: HTMLDivElement,
+  groupId: string
+): HTMLElement | null {
+  const groupElements = viewport.querySelectorAll<HTMLElement>(
+    SIDEBAR_NAV_GROUP_SELECTOR
+  )
+
+  return (
+    Array.from(groupElements).find(
+      (element) => element.dataset.sidebarNavGroup === groupId
+    ) ?? null
+  )
+}
+
+export function centerSidebarNavGroup(
+  viewport: HTMLDivElement,
+  groupId: string,
+  behavior: ScrollBehavior
+): boolean {
+  const groupElement = getSidebarNavGroupElement(viewport, groupId)
+
+  return groupElement
+    ? centerSidebarElement(viewport, groupElement, behavior)
+    : false
+}
+
+export function resolveCenteredSidebarNavGroupId(
+  viewport: HTMLDivElement,
+  groupIds: string[]
+): string | null {
+  const viewportRect = viewport.getBoundingClientRect()
+  const viewportCenter = viewportRect.top + viewport.clientHeight / 2
+  let nearestGroupId: string | null = null
+  let nearestDistance = Number.POSITIVE_INFINITY
+
+  groupIds.forEach((groupId) => {
+    const groupElement = getSidebarNavGroupElement(viewport, groupId)
+
+    if (!groupElement) {
+      return
+    }
+
+    const groupRect = groupElement.getBoundingClientRect()
+    const groupCenter = groupRect.top + groupRect.height / 2
+    const distance = Math.abs(groupCenter - viewportCenter)
+
+    if (distance < nearestDistance) {
+      nearestDistance = distance
+      nearestGroupId = groupId
+    }
+  })
+
+  return nearestGroupId
+}
+
 export function centerActiveSidebarPath(
   viewport: HTMLDivElement,
   behavior: ScrollBehavior
@@ -51,19 +128,7 @@ export function centerActiveSidebarPath(
     return false
   }
 
-  const viewportRect = viewport.getBoundingClientRect()
-  const focusRect = focusElement.getBoundingClientRect()
-  const top = calculateSidebarCenterScrollTop({
-    viewportTop: viewportRect.top,
-    viewportHeight: viewport.clientHeight,
-    currentScrollTop: viewport.scrollTop,
-    scrollHeight: viewport.scrollHeight,
-    activeTop: focusRect.top,
-    activeBottom: focusRect.bottom,
-  })
-
-  viewport.scrollTo({ top, behavior })
-  return true
+  return centerSidebarElement(viewport, focusElement, behavior)
 }
 
 export function useSidebarActiveCenter({

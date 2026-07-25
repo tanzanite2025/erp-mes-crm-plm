@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from '@tanstack/react-router'
-import { useAuthStore } from '@/stores/auth-store'
-import { useLanguage } from '@/context/language-provider'
 import { useLayout } from '@/context/layout-provider'
 import {
   Sidebar,
@@ -10,39 +8,28 @@ import {
   SidebarRail,
   useSidebar,
 } from '@/components/ui/sidebar'
-import { getAccessibleNavGroups } from '@/features/authz/guards/navigation-access'
 import {
   DEFAULT_ENTERPRISE_LOGO_URL,
   EnterpriseService,
 } from '@/features/basic-settings/services/enterprise-service'
-import { getSidebarData } from './data/sidebar-data'
 import { NavGroup } from './nav-group'
 import { resolveActiveSidebarPath } from './sidebar-active-path'
 import { SidebarBrand } from './sidebar-brand'
+import { SidebarCategoryScrubber } from './sidebar-category-scrubber'
+import { useSidebarNavigationModel } from './sidebar-navigation-model'
 import { useSidebarActiveCenter } from './use-sidebar-active-center'
-import { useSidebarNavGroupsWithBadges } from './use-sidebar-nav-badges'
 
 export function AppSidebar() {
   const { collapsible, variant } = useLayout()
-  const { t } = useLanguage()
   const pathname = useLocation({ select: (location) => location.pathname })
   const { isMobile, openMobile, state } = useSidebar()
-  const user = useAuthStore((state) => state.user)
-  const isIdentitySynced = useAuthStore((state) => state.isIdentitySynced)
-  const localizedSidebarData = useMemo(() => getSidebarData(t), [t])
+  const { sidebarData: localizedSidebarData, renderedNavGroups } =
+    useSidebarNavigationModel()
   const [brand, setBrand] = useState({
     name: localizedSidebarData.teams[0].name,
     plan: localizedSidebarData.teams[0].plan,
     logoUrl: DEFAULT_ENTERPRISE_LOGO_URL,
   })
-  const visibleNavGroups = useMemo(
-    () =>
-      getAccessibleNavGroups(user, localizedSidebarData.navGroups, {
-        isIdentitySynced,
-      }),
-    [localizedSidebarData.navGroups, user, isIdentitySynced]
-  )
-  const navGroupsWithBadges = useSidebarNavGroupsWithBadges(visibleNavGroups)
   const navViewportRef = useRef<HTMLDivElement>(null)
 
   /**
@@ -88,12 +75,6 @@ export function AppSidebar() {
     logoUrl: brand.logoUrl,
   }
 
-  const renderedNavGroups = useMemo(
-    () =>
-      navGroupsWithBadges.filter((group) => group.id !== 'resource-management'),
-    [navGroupsWithBadges]
-  )
-
   const activeSidebarPath = useMemo(
     () => resolveActiveSidebarPath(renderedNavGroups, pathname),
     [pathname, renderedNavGroups]
@@ -110,24 +91,31 @@ export function AppSidebar() {
   })
 
   return (
-    <Sidebar collapsible={collapsible} variant={variant}>
-      <SidebarHeader>
-        <SidebarBrand team={activeTeam} />
-      </SidebarHeader>
-      <SidebarContent className='no-scrollbar overflow-hidden'>
-        <div
-          ref={navViewportRef}
-          data-sidebar-nav-viewport
-          className='no-scrollbar min-h-0 flex-1 overflow-x-hidden overflow-y-auto [overflow-anchor:none]'
-        >
-          <div className='flex min-h-full w-full flex-col justify-center py-1'>
-            {renderedNavGroups.map((props) => (
-              <NavGroup key={props.id} {...props} />
-            ))}
+    <>
+      <Sidebar collapsible={collapsible} variant={variant}>
+        <SidebarHeader>
+          <SidebarBrand team={activeTeam} />
+        </SidebarHeader>
+        <SidebarContent className='no-scrollbar overflow-hidden'>
+          <div
+            ref={navViewportRef}
+            data-sidebar-nav-viewport
+            className='no-scrollbar min-h-0 flex-1 overflow-x-hidden overflow-y-auto [overflow-anchor:none]'
+          >
+            <div className='flex min-h-full w-full flex-col justify-center py-1'>
+              {renderedNavGroups.map((props) => (
+                <NavGroup key={props.id} {...props} />
+              ))}
+            </div>
           </div>
-        </div>
-      </SidebarContent>
-      {collapsible === 'icon' ? <SidebarRail /> : null}
-    </Sidebar>
+        </SidebarContent>
+        {collapsible === 'icon' ? <SidebarRail /> : null}
+      </Sidebar>
+      <SidebarCategoryScrubber
+        navGroups={renderedNavGroups}
+        activeGroupId={activeSidebarPath?.groupId}
+        navViewportRef={navViewportRef}
+      />
+    </>
   )
 }
