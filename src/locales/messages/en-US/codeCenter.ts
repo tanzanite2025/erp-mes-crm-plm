@@ -4,6 +4,7 @@ export const codeCenter = {
     tabs: {
       protocol: 'Protocol Rules',
       print: 'Print',
+      status: 'Barcode Status',
       numbering: 'Business Numbering',
     },
     print: {
@@ -217,6 +218,131 @@ export const codeCenter = {
             BOUND: 'Bound',
             EXPIRED: 'Expired',
             SCRAPPED: 'Scrapped',
+          },
+        },
+      },
+    },
+    status: {
+      page: {
+        title: 'Linear Barcode Status Definitions',
+        description:
+          'Defines status meanings, sources, and boundaries across print inventory and production execution',
+        badges: {
+          definitionOnly: 'Definitions',
+        },
+      },
+      metrics: {
+        total: 'Total Statuses',
+        inventory: 'Print Inventory Statuses',
+        terminal: 'Terminal Statuses',
+      },
+      boundary: {
+        title: 'Responsibility Boundary',
+        description:
+          'This page is a status definition dictionary; it does not query the current state of a specific barcode. Print inventory statuses only describe whether an issued code is usable. Production execution statuses only describe the execution state of a bound product barcode. They do not replace L1/L2/L3 production definitions and do not require prepreg-roll binding before normal production can continue.',
+      },
+      categories: {
+        inventory: {
+          title: 'Print Inventory Statuses',
+          description:
+            'Describes issued barcode codes from print generation through binding, expiry, or scrapping.',
+        },
+        production: {
+          title: 'Production Execution Statuses',
+          description:
+            'Describes bound product barcodes through production execution, transfer, hold, and rework flows.',
+        },
+      },
+      flow: {
+        title: 'Lifecycle Notes',
+        description:
+          'Status boundaries are defined here first. Later scan, outsourcing, transfer, and traceability features should reference these meanings instead of inventing separate ones.',
+        printStageTitle: '1. Print Numbering',
+        printStageDescription:
+          'The print tab creates linear barcode inventory in linear_barcode_inventory_items.',
+        bindingStageTitle: '2. Product Binding',
+        bindingStageDescription:
+          'Product binding links a code to a product and moves inventory from available to bound.',
+        executionStageTitle: '3. Production Execution',
+        executionStageDescription:
+          'Scan, transfer, outsourcing, and process execution write product_barcode_states / events.',
+      },
+      fields: {
+        phase: 'Phase',
+        trigger: 'Trigger',
+        sourceTable: 'Source Table',
+        terminalYes: 'Terminal',
+        terminalNo: 'Non-terminal',
+      },
+      definitions: {
+        inventory: {
+          AVAILABLE: {
+            label: 'Available',
+            description:
+              'The code has been generated and reserved in print inventory, but is not yet bound to a product.',
+            phase: 'After printing, before binding',
+            trigger: 'Written automatically after successful batch print',
+          },
+          BOUND: {
+            label: 'Bound',
+            description:
+              'The code has been bound to a product and cannot be reused as a blank code.',
+            phase: 'After product binding',
+            trigger: 'Written after product binding succeeds',
+          },
+          EXPIRED: {
+            label: 'Expired',
+            description:
+              'The preprinted code is past its validity window and should not be bound to a new product.',
+            phase: 'Inventory expiry',
+            trigger: 'Written when expiry is refreshed before query or binding',
+          },
+          SCRAPPED: {
+            label: 'Scrapped',
+            description:
+              'The code is no longer usable after preview close, batch scrap, or safety rollback.',
+            phase: 'Inventory scrapping',
+            trigger: 'Written by batch scrap or safety rollback',
+          },
+        },
+        production: {
+          NOT_STARTED: {
+            label: 'Not Started',
+            description:
+              'The product barcode has a production state record, but has not entered a concrete process execution yet.',
+            phase: 'Production pending',
+            trigger: 'Initialized state or pre-production state after binding',
+          },
+          IN_PROGRESS: {
+            label: 'In Progress',
+            description:
+              'The product barcode has entered a process or execution action and is flowing through production.',
+            phase: 'Process execution',
+            trigger:
+              'Written by scan start, process execution, or transfer to a new process',
+          },
+          COMPLETED: {
+            label: 'Completed',
+            description:
+              'The current production execution for the product barcode is complete and can move to acceptance, shipment, or archive checks.',
+            phase: 'Execution complete',
+            trigger: 'Written by process completion or production completion',
+          },
+          HOLD: {
+            label: 'On Hold',
+            description:
+              'The product barcode is temporarily stopped and requires manual confirmation, exception handling, or a later action.',
+            phase: 'Exception waiting',
+            trigger:
+              'Written by exception hold, pause, or waiting-for-handling action',
+          },
+          REWORK: {
+            label: 'Rework',
+            description:
+              'The product barcode has entered rework and must later return to an explicit state through scan or execution actions.',
+            phase: 'Rework handling',
+            trigger:
+              'Written by quality exception, rework instruction, or rework transfer',
           },
         },
       },

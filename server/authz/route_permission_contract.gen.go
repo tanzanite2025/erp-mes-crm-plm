@@ -65,6 +65,7 @@ var KnownRoutePermissionIDs = map[string]struct{}{
 	"tab_code_center_linear_barcode": {},
 	"tab_code_center_linear_barcode_print": {},
 	"tab_code_center_linear_barcode_protocol": {},
+	"tab_code_center_linear_barcode_status": {},
 	"tab_code_center_shared_code_source": {},
 	"tab_code_center_shared_code_source_hole_codes": {},
 	"tab_code_center_shared_code_source_numbering_engine": {},

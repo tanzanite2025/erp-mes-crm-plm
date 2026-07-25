@@ -276,6 +276,23 @@ const moduleGroups: CommandItemConfig[] = [
     pinyin: 'ydcj',
   },
   {
+    id: 'tab-code-center-linear-barcode-status',
+    href: '/code-center/linear-barcode/status',
+    titleKey: 'codeCenter.linearBarcode.tabs.status',
+    parentKey: 'commandMenu.parents.codeCenter',
+    keywords: [
+      'linear barcode',
+      'barcode state',
+      'product barcode state',
+      '一维码',
+      '一维码状态',
+      '产品状态',
+      '扫码状态',
+      '生产状态',
+    ],
+    pinyin: 'ywmzt',
+  },
+  {
     id: 'tab-code-center-shared-numbering-engine',
     href: '/code-center/shared-code-source/numbering-engine',
     titleKey: 'commandMenu.items.sharedNumberingEngine',

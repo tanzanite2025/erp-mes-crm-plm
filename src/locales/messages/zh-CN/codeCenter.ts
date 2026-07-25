@@ -4,6 +4,7 @@ export const codeCenter = {
     tabs: {
       protocol: '协议规则',
       print: '打印',
+      status: '一维码状态',
       numbering: '业务编号',
     },
     print: {
@@ -202,6 +203,125 @@ export const codeCenter = {
             BOUND: '已绑定',
             EXPIRED: '已失效',
             SCRAPPED: '已报废',
+          },
+        },
+      },
+    },
+    status: {
+      page: {
+        title: '一维码状态定义',
+        description: '定义一维码在打印库存与生产执行中的状态含义、来源和边界',
+        badges: {
+          definitionOnly: '状态定义',
+        },
+      },
+      metrics: {
+        total: '状态总数',
+        inventory: '打印库存状态',
+        terminal: '终态数量',
+      },
+      boundary: {
+        title: '职责边界',
+        description:
+          '这里是状态定义字典，不查询某个一维码当前处于什么状态。打印库存状态只描述号码是否可用；生产执行状态只描述已绑定产品的一维码在生产链路中的执行状态；它不替代产线 L1/L2/L3 定义，也不要求先绑定卷材才能继续普通生产。',
+      },
+      categories: {
+        inventory: {
+          title: '打印库存状态',
+          description:
+            '描述一维码号码从打印生成到绑定、失效或作废的库存侧状态。',
+        },
+        production: {
+          title: '生产执行状态',
+          description:
+            '描述绑定产品后，一维码在生产执行、转移、挂起和返工链路中的状态。',
+        },
+      },
+      flow: {
+        title: '生命周期说明',
+        description:
+          '先把状态边界定义清楚，后续扫码、委外、转移和追溯只引用这些状态，不各自发明一套含义。',
+        printStageTitle: '1. 打印发号',
+        printStageDescription:
+          '打印 TAB 生成一维码库存，状态落在 linear_barcode_inventory_items。',
+        bindingStageTitle: '2. 产品绑定',
+        bindingStageDescription:
+          '产品绑定把号码与产品建立关系，库存状态从可用进入已绑定。',
+        executionStageTitle: '3. 生产执行',
+        executionStageDescription:
+          '扫码、转移、委外和工序执行写入 product_barcode_states / events。',
+      },
+      fields: {
+        phase: '阶段',
+        trigger: '触发方式',
+        sourceTable: '数据表',
+        terminalYes: '终态',
+        terminalNo: '非终态',
+      },
+      definitions: {
+        inventory: {
+          AVAILABLE: {
+            label: '可用',
+            description:
+              '号码已经生成并保留在打印库存中，但还没有绑定到具体产品。',
+            phase: '打印后待绑定',
+            trigger: '批量打印成功后自动写入',
+          },
+          BOUND: {
+            label: '已绑定',
+            description: '号码已经绑定到产品，不能再次作为空白号码重复绑定。',
+            phase: '产品绑定后',
+            trigger: '产品绑定动作成功后写入',
+          },
+          EXPIRED: {
+            label: '已失效',
+            description: '预打号码超过有效期，不应再被绑定到新产品。',
+            phase: '库存失效',
+            trigger: '查询或绑定前刷新有效期时写入',
+          },
+          SCRAPPED: {
+            label: '已报废',
+            description:
+              '打印预览关闭、批次作废或其他安全回滚后，该号码不可继续使用。',
+            phase: '库存作废',
+            trigger: '报废批次或安全回滚时写入',
+          },
+        },
+        production: {
+          NOT_STARTED: {
+            label: '未开始',
+            description:
+              '产品一维码已有生产状态记录，但还没有进入具体工序执行。',
+            phase: '生产待启动',
+            trigger: '初始化状态或绑定后进入生产前置状态',
+          },
+          IN_PROGRESS: {
+            label: '执行中',
+            description:
+              '产品一维码已经进入某个工序或执行动作，表示当前正在生产流转中。',
+            phase: '工序执行',
+            trigger: '扫码开始、工序执行或转移到新工序时写入',
+          },
+          COMPLETED: {
+            label: '已完成',
+            description:
+              '产品一维码对应的当前生产执行已经完成，可以进入后续验收、出货或归档判断。',
+            phase: '执行完成',
+            trigger: '工序完成或生产完成动作写入',
+          },
+          HOLD: {
+            label: '已挂起',
+            description:
+              '产品一维码暂时停在当前状态，需要人工确认、异常处理或等待后续动作。',
+            phase: '异常等待',
+            trigger: '异常挂起、暂停或等待处理时写入',
+          },
+          REWORK: {
+            label: '返工中',
+            description:
+              '产品一维码进入返工链路，后续仍需要通过扫码或执行动作回到明确状态。',
+            phase: '返工处理',
+            trigger: '品质异常、返工指令或返工转移时写入',
           },
         },
       },
