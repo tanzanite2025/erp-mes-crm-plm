@@ -120,7 +120,6 @@ func dropLegacyRoleArtifacts() {
 	for _, tableName := range []string{
 		"employee_roles",
 		"user_roles",
-		"position_roles",
 		"org_default_roles",
 	} {
 		if DB.Migrator().HasTable(tableName) {
