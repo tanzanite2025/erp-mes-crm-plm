@@ -52,6 +52,7 @@ export function NavGroup({ id, title, children }: NavGroupProps) {
           type='button'
           aria-controls={menuId}
           aria-expanded={isExpanded}
+          data-sidebar-nav-group-anchor={id}
           data-sidebar-active-path={shouldExpandForPath}
           className={cn(
             'mx-auto flex w-[calc(100%-0.25rem)] origin-center transform-gpu items-center justify-between rounded-full border border-sidebar-border/45 bg-sidebar-accent/18 px-2.5 py-1.5 text-left shadow-[0_1px_2px_hsl(var(--sidebar-border)/0.18)] transition-all duration-200 motion-reduce:transform-none motion-reduce:transition-none',

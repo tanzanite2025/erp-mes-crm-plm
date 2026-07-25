@@ -2,6 +2,7 @@ import { useEffect, useRef, type RefObject } from 'react'
 
 const ACTIVE_PATH_SELECTOR = '[data-sidebar-active-path="true"]'
 const ACTIVE_FOCUS_SELECTOR = '[data-sidebar-active-focus="true"]'
+const SIDEBAR_NAV_GROUP_ANCHOR_SELECTOR = '[data-sidebar-nav-group-anchor]'
 const SIDEBAR_NAV_GROUP_SELECTOR = '[data-sidebar-nav-group]'
 
 type SidebarCenterMetrics = {
@@ -71,12 +72,27 @@ export function getSidebarNavGroupElement(
   )
 }
 
+export function getSidebarNavGroupCenterElement(
+  viewport: HTMLDivElement,
+  groupId: string
+): HTMLElement | null {
+  const anchorElements = viewport.querySelectorAll<HTMLElement>(
+    SIDEBAR_NAV_GROUP_ANCHOR_SELECTOR
+  )
+  const anchorElement =
+    Array.from(anchorElements).find(
+      (element) => element.dataset.sidebarNavGroupAnchor === groupId
+    ) ?? null
+
+  return anchorElement ?? getSidebarNavGroupElement(viewport, groupId)
+}
+
 export function centerSidebarNavGroup(
   viewport: HTMLDivElement,
   groupId: string,
   behavior: ScrollBehavior
 ): boolean {
-  const groupElement = getSidebarNavGroupElement(viewport, groupId)
+  const groupElement = getSidebarNavGroupCenterElement(viewport, groupId)
 
   return groupElement
     ? centerSidebarElement(viewport, groupElement, behavior)
@@ -93,7 +109,7 @@ export function resolveCenteredSidebarNavGroupId(
   let nearestDistance = Number.POSITIVE_INFINITY
 
   groupIds.forEach((groupId) => {
-    const groupElement = getSidebarNavGroupElement(viewport, groupId)
+    const groupElement = getSidebarNavGroupCenterElement(viewport, groupId)
 
     if (!groupElement) {
       return

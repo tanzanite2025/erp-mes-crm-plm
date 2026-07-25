@@ -120,10 +120,11 @@ export function SidebarCategoryScrubber({
   activeGroupId,
   navViewportRef,
 }: SidebarCategoryScrubberProps) {
-  const { isMobile, setOpen } = useSidebar()
+  const { isMobile, setOpen, state } = useSidebar()
   const shouldReduceMotion = useReducedMotion()
   const floatingRef = useRef<HTMLDivElement>(null)
   const closeTimerRef = useRef<number | null>(null)
+  const centerRetryTimerRef = useRef<number | null>(null)
   const [hoveredCategoryId, setHoveredCategoryId] = useState<string | null>(
     null
   )
@@ -160,6 +161,13 @@ export function SidebarCategoryScrubber({
     }
   }, [])
 
+  const clearCenterRetryTimer = useCallback(() => {
+    if (centerRetryTimerRef.current !== null) {
+      window.clearTimeout(centerRetryTimerRef.current)
+      centerRetryTimerRef.current = null
+    }
+  }, [])
+
   const openCategory = useCallback(
     (categoryId: string, anchor: HTMLElement) => {
       clearCloseTimer()
@@ -185,21 +193,32 @@ export function SidebarCategoryScrubber({
 
   const centerCategoryInSidebar = useCallback(
     (categoryId: string) => {
+      clearCenterRetryTimer()
       setOpen(true)
 
       const behavior: ScrollBehavior = shouldReduceMotion ? 'auto' : 'smooth'
+      const centerCategory = () => {
+        const viewport = navViewportRef.current
+
+        if (viewport) {
+          centerSidebarNavGroup(viewport, categoryId, behavior)
+        }
+      }
 
       window.requestAnimationFrame(() => {
         window.requestAnimationFrame(() => {
-          const viewport = navViewportRef.current
-
-          if (viewport) {
-            centerSidebarNavGroup(viewport, categoryId, behavior)
-          }
+          centerCategory()
         })
       })
+
+      if (state !== 'expanded') {
+        centerRetryTimerRef.current = window.setTimeout(() => {
+          centerRetryTimerRef.current = null
+          centerCategory()
+        }, 220)
+      }
     },
-    [navViewportRef, setOpen, shouldReduceMotion]
+    [clearCenterRetryTimer, navViewportRef, setOpen, shouldReduceMotion, state]
   )
 
   useLayoutEffect(() => {
@@ -253,8 +272,9 @@ export function SidebarCategoryScrubber({
   useEffect(
     () => () => {
       clearCloseTimer()
+      clearCenterRetryTimer()
     },
-    [clearCloseTimer]
+    [clearCenterRetryTimer, clearCloseTimer]
   )
 
   if (isMobile || categoryPreviews.length === 0) {

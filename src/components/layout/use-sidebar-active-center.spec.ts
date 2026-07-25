@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   calculateSidebarCenterScrollTop,
   centerActiveSidebarPath,
+  centerSidebarNavGroup,
 } from './use-sidebar-active-center'
 
 describe('calculateSidebarCenterScrollTop', () => {
@@ -89,6 +90,68 @@ describe('centerActiveSidebarPath', () => {
     viewport.scrollTo = vi.fn()
 
     expect(centerActiveSidebarPath(viewport, 'auto')).toBe(true)
+    expect(viewport.scrollTo).toHaveBeenCalledWith({
+      top: 130,
+      behavior: 'auto',
+    })
+  })
+})
+
+describe('centerSidebarNavGroup', () => {
+  it('centers the top-level group anchor instead of the expanded group container', () => {
+    const viewport = document.createElement('div')
+    const group = document.createElement('div')
+    const groupAnchor = document.createElement('button')
+
+    group.dataset.sidebarNavGroup = 'production-management'
+    groupAnchor.dataset.sidebarNavGroupAnchor = 'production-management'
+    group.append(groupAnchor)
+    viewport.append(group)
+
+    Object.defineProperties(viewport, {
+      clientHeight: { configurable: true, value: 400 },
+      scrollHeight: { configurable: true, value: 1_000 },
+      scrollTop: { configurable: true, value: 50, writable: true },
+    })
+    viewport.getBoundingClientRect = vi.fn(() => ({ top: 100 }) as DOMRect)
+    group.getBoundingClientRect = vi.fn(
+      () => ({ top: 200, bottom: 900 }) as DOMRect
+    )
+    groupAnchor.getBoundingClientRect = vi.fn(
+      () => ({ top: 300, bottom: 340 }) as DOMRect
+    )
+    viewport.scrollTo = vi.fn()
+
+    expect(
+      centerSidebarNavGroup(viewport, 'production-management', 'auto')
+    ).toBe(true)
+    expect(viewport.scrollTo).toHaveBeenCalledWith({
+      top: 70,
+      behavior: 'auto',
+    })
+  })
+
+  it('falls back to the group container when the title anchor is not rendered', () => {
+    const viewport = document.createElement('div')
+    const group = document.createElement('div')
+
+    group.dataset.sidebarNavGroup = 'quality-management'
+    viewport.append(group)
+
+    Object.defineProperties(viewport, {
+      clientHeight: { configurable: true, value: 400 },
+      scrollHeight: { configurable: true, value: 1_000 },
+      scrollTop: { configurable: true, value: 50, writable: true },
+    })
+    viewport.getBoundingClientRect = vi.fn(() => ({ top: 100 }) as DOMRect)
+    group.getBoundingClientRect = vi.fn(
+      () => ({ top: 360, bottom: 400 }) as DOMRect
+    )
+    viewport.scrollTo = vi.fn()
+
+    expect(centerSidebarNavGroup(viewport, 'quality-management', 'auto')).toBe(
+      true
+    )
     expect(viewport.scrollTo).toHaveBeenCalledWith({
       top: 130,
       behavior: 'auto',
