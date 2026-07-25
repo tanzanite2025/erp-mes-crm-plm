@@ -1,61 +1,30 @@
-# Permission Sync Migration Plan
+# Permission Sync Migration Plan Closeout
 
-This project is migrating from manual `users.role` authorization to employee-bound effective permissions.
+> 状态：历史迁移计划已关闭。
+> 更新时间：2026-07-25
+> 当前权威文档：`docs/architecture/组织-人员-账号-权限链路梳理.md`、`docs/architecture/组织-人员-账号-权限统一实施方案.md`
 
-## Phase 1: Compatibility
+## 关闭原因
 
-- Keep `users.role` as a legacy snapshot for existing flows.
-- Treat `employees.dept_id` as the source for ordinary employee authorization.
-- Resolve effective permissions on the backend from:
-  - `superadmin` / `admin` privileged roles
-  - employee department role: `org_<deptId>` or legacy `org_<deptId>|...`
-  - legacy `users.role` as the final fallback
-- Return `effectiveRoles` and `permissions` from login and `/profile`.
-- Persist the derived department role snapshot back into `users.role` on:
-  - user create
-  - user update
-  - bulk user sync
-  - employee save
-  - bulk employee sync
-- Frontend login state should prefer `effectiveRoles` over legacy `role`.
-- User creation/editing should lock employee-bound accounts to their department role snapshot.
+这份文档记录的是早期从 `users.role` 迁移到后端有效权限解析的阶段性方案。当前代码已经出现新的 `IdentityAccessService`、`/auth/snapshot` 接入和账号访问画像查询能力，原文里的阶段划分已经不是当前执行清单。
 
-Implemented in this phase:
+同时，原文中关于“职位字段映射角色”的候选方向不再作为当前权限架构原则。职位/岗位可以作为组织人事资料展示或任职属性，但当前不得作为生产扫码、工序执行、页面按钮或普通账号权限的默认推导来源。
 
-- Backend effective access resolver in `server/middleware/effective_access.go`
-- Backend auth/profile wiring in `server/middleware/auth.go` and `server/handlers/auth.go`
-- User snapshot alignment in `server/handlers/users.go`
-- Employee-driven snapshot sync in `server/handlers/org_personnel.go`
-- Frontend login role normalization in `src/features/auth/sign-in/components/user-auth-form.tsx`
-- Employee-bound role selection in `src/features/users/components/users-action-dialog.tsx`
+## 当前保留原则
 
-## Phase 2: Cutover
+1. 后端是权限裁决唯一真相源。
+2. 前端只消费 `/auth/snapshot`、登录返回和访问画像接口，不自行按部门、职位或文字名称推导权限。
+3. 账号只负责登录和绑定人员身份。
+4. 人员归属用于组织关系，不直接代表某个页面或动作权限。
+5. 页面权限、命令权限、动作权限必须显式分配到账号/角色/权限集合，不从生产工序、职位名称或产线节点反推。
+6. `users.role` 只能逐步降级为主角色快照或管理员/服务账号字段，不再作为普通员工权限真相源。
 
-- Stop using `users.role` as the primary permission source for ordinary employee accounts.
-- Resolve permissions from:
-  - privileged account override
-  - `employee_id -> dept_id -> org role`
-  - later: `position_id -> pos role`
-- Update frontend permission checks to consume only backend `effectivePermissions`.
-- Limit manual role editing to:
-  - `superadmin`
-  - service accounts
-  - explicitly unbound accounts
-- Add admin diagnostics for:
-  - user bound to missing employee
-  - employee with empty department
-  - department without matching org role
-  - employee-bound user with empty effective permissions
+## 后续任务入口
 
-## Phase 3: Cleanup
+后续继续推进时，不再从本文件开工，应从以下事项开始：
 
-- Remove ordinary use of `users.role` from frontend authorization logic.
-- Remove legacy role recommendation from user management.
-- Replace string-parsed role IDs with structured role metadata:
-  - `role_type`
-  - `binding_id`
-- Make `users.role` optional or reserved for privileged/service accounts only.
-- Add a one-time data repair job to:
-  - backfill employee-bound role snapshots
-  - report unmapped departments
-  - report orphaned users
+- 重新核对 `IdentityAccessService` 当前真实读取链；
+- 明确 `organizations/employees.dept_id` 与 `org_units/employee_assignments` 的唯一主链；
+- 实现写后权限快照同步；
+- 清理前端用户管理中仍误导用户的 `users.role` 展示；
+- 补齐权限来源诊断与测试。

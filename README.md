@@ -206,23 +206,11 @@ Production uses two independent Docker Compose projects:
 - `deployment/gateway/compose.yml`: the shared Caddy gateway and the `tanzanite-edge` network; this is the only stack that publishes `80/443`.
 - `compose.prod.yml`: the ERP application, data services, and the single `erp-web` edge endpoint; it publishes no host ports.
 
-GitHub Actions publishes immutable `sha-*` images to GHCR. Hostinger Docker Manager is the source of truth for production Compose content and environment variables. Do not paste `server/docker-compose.yml` into Hostinger because that file is for local development.
+GitHub Actions publishes immutable `sha-*` images to GHCR. Hostinger Docker Manager is the source of truth for production Compose content, release tags, and environment variables. Do not paste `server/docker-compose.yml` into Hostinger because that file is for local development.
 
-The SSH compatibility path pulls the same production images and never builds source code or installs a host Nginx:
+Daily releases should update `IMAGE_TAG` to a tested `sha-*` tag and reconcile the ERP project from Hostinger Docker Manager. The current production release path does not build source code on the VPS, does not use host Nginx, and does not rely on a server-side source checkout.
 
-```bash
-cd /var/www/erp
-git fetch --all
-git reset --hard origin/master
-chmod +x deploy.sh
-./deploy.sh
-```
-
-Daily releases should update `IMAGE_TAG` to a tested `sha-*` tag and reconcile the ERP project from Hostinger Docker Manager. The SSH fallback is:
-
-```bash
-cd /var/www/erp && ./deploy.sh
-```
+If SSH is needed for diagnostics, follow the Docker Manager / GHCR path in `docs/ops/hostinger-vps-docker-runbook.md`; do not use old server-side release snippets as a release procedure.
 
 ## License
 

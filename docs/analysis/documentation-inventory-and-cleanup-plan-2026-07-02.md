@@ -4,7 +4,7 @@
 
 - Scanned Markdown documents under the repo, excluding generated/runtime folders such as `node_modules`, `dist`, `.git`, `server/postgres_data`, coverage output, and test reports.
 - Scanned docs-like YAML/config files only for classification boundaries; they are not treated as prose documentation.
-- No files were deleted or moved in this audit.
+- The original 2026-07-02 inventory did not delete or move files; later follow-up deletions are recorded explicitly in the dated sections below.
 
 ## Current Map
 
@@ -17,7 +17,7 @@
 | Frontend docs | `docs/frontend/**` | Keep | Frontend display and implementation guidelines. |
 | Ops docs | `docs/ops/**` | Keep | Deployment, monitoring, rollout, and recovery procedures. |
 | Security test artifacts | `docs/security/postman/**` | Keep | Security Postman collections are indexed by a local README. |
-| Server-local docs | `server/contract-samples/README.md`, `server/migrations/README.md`, `server/security/**`, `server/docs/swagger.yaml` | Keep near code | These are tightly coupled to backend contracts, migrations, security scripts, or API schema. |
+| Server-local docs | `server/contract-samples/README.md`, `server/migrations/README.md`, `server/security/**`, `server/docs/swagger.yaml` | Keep near code | These are tightly coupled to backend contracts, migrations, security records, or API schema. |
 | Feature-local docs | `src/features/**/README.md`, feature-local `docs/**`, `src/locales/**/README.md` | Keep near feature | Keep only when the doc is directly scoped to nearby code. |
 | Deployment config | `deployment/monitoring/**`, `deployment/nginx/**`, `server/deployment/loki/**`, `server/docker-compose.yml` | Not prose docs | Treat as runnable config; keep paths that are referenced by deployment entry points. |
 
@@ -30,7 +30,23 @@
 | `docs/ops/hostinger-vps-docker-runbook.md` | Refreshed | The stale SSH-key warning and old SSH deploy-script guidance were replaced with the current Docker Manager path. |
 | `docs/ops/single-vps-deployment-roadmap.md` | Refreshed | Phase A is now recorded as done; remaining risks are backup/recovery, capacity governance, and second-project onboarding. |
 | `docs/frontend/bom-performance/**` | Keep | The `[ ]` items here are troubleshooting/checklist content, not project backlog items. |
-| `server/security/**` | Deferred | CVE scripts and their local README are operational artifacts; path modernization should be handled in a separate security-specific review, not mixed into this prose-doc cleanup. |
+| `server/security/**` | Superseded by 2026-07-25 cleanup | This follow-up originally deferred CVE scripts, but the next cleanup removed stale executable scripts because they still encoded the old server-side release path. |
+
+## 2026-07-25 Follow-up
+
+| Document | Verdict after follow-up | Result |
+| --- | --- | --- |
+| `README.md` | Refreshed | Removed the old SSH-based server release snippets. The README now points production releases back to Hostinger Docker Manager + GHCR `sha-*` images. |
+| `server/security/README.md` | Refreshed | Downgraded to historical security guidance and removed stale server-side source checkout release instructions. |
+| `server/security/CVE-2026-31431-QUICK-GUIDE.md` | Refreshed | Replaced the old executable host commands with a historical note and current safety boundaries. |
+| `server/security/*.sh` | Removed | Deleted stale CVE shell scripts because they still referenced old source checkout paths, host-level deployment commands, and non-current ERP recovery instructions. |
+| `docs/architecture/workflow/sales-phase1-tdo-alignment-plan.md` | Closed as historical | Rewritten as current sales TDO status; `ORDER_LINE_CLAIM` transaction is now recorded as landed. |
+| `docs/architecture/workflow/sales-phase1-tdo-execution-checklist.md` | Closed as historical | Rewritten as a closed checklist with new follow-up items for service splitting and transaction tests. |
+| `docs/analysis/dictionary-migration-audit-2026-04-09.md` | Closed as historical | Replaced old P0/P1 findings with a closeout note; current ownership is `master-data-ownership-table.md`. |
+| `docs/analysis/mold_asset_management_analysis.md` | Closed as historical | Replaced outdated IndexedDB-based risk report with a note requiring a fresh audit against current backend-backed mold files. |
+| `docs/architecture/permission-sync-migration-plan.md` | Closed as historical | Replaced old `users.role` migration phases and removed the职位字段映射角色 direction from current guidance. |
+| `docs/architecture/组织-人员-账号-权限链路梳理.md` | Corrected | Removed the early position-to-role candidate design as a current permission source;职位/岗位 is now documented as HR metadata only. |
+| `docs/architecture/组织-人员-账号-权限统一实施方案.md` | Corrected | Removed position-based default authorization from the target architecture; default authorization is now scoped to organization default roles plus explicit grants. |
 
 ## Stale Or Risky References
 
@@ -42,7 +58,7 @@
 | Root-level docs are noisy | Resolved on 2026-07-02: seven Markdown files were moved into category folders | Keep future docs under the nearest category instead of directly under `docs/`. |
 | APS docs overlap | Resolved on 2026-07-02: parent docs are canonical; `core/` keeps only implementation deep dives | Do not recreate same-name short stubs under `core/`. |
 | Loki config duplicated | Resolved on 2026-07-02: `server/docker-compose.yml` mounts `server/deployment/loki/**`; unused root `deployment/loki/**` copy was removed | Keep `server/deployment/loki/**` as the compose-local source of truth. |
-| Security CVE docs are date-sensitive | `server/security/**` documents CVE-2026-31431 procedures | Do not delete as stale without security review; keep server-local because scripts live there, optionally link from `docs/ops`. |
+| Security CVE docs are date-sensitive | `server/security/**` records CVE-2026-31431 history | Resolved on 2026-07-25: executable scripts were removed, and the remaining Markdown files now state that any future CVE work needs a fresh current-environment runbook. |
 
 ## Completed Moves
 
