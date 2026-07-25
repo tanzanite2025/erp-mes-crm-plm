@@ -20,6 +20,7 @@ import {
   Box,
   Calendar,
   CheckSquare,
+  Container,
   Cpu,
   Database,
   FileText,
@@ -454,6 +455,15 @@ const navGroupConfigs: SidebarGroupConfig[] = [
             url: '/logistics-config',
             icon: Truck,
             permissionId: permissionIdForPath('/logistics-config'),
+          },
+          {
+            id: 'container-management',
+            titleKey: 'sidebar.items.containerManagement',
+            url: '/logistics-container-management',
+            icon: Container,
+            permissionId: permissionIdForPath(
+              '/logistics-container-management'
+            ),
           },
           {
             id: 'logistics-settings',

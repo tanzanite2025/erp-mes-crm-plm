@@ -96,6 +96,7 @@ export const sidebar = {
     attendanceManagement: 'Attendance Management',
     logisticsConfig: 'Logistics',
     vehicleMatching: 'Vehicle Matching',
+    containerManagement: 'Container Management',
     logisticsSettings: 'Logistics Settings',
     terminalConfig: 'Terminal Config',
     sidebarCommandConfig: 'Quick Action Config',

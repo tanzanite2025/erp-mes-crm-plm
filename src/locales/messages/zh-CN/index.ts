@@ -17,6 +17,7 @@ import { fileUploader } from './fileUploader'
 import { finance } from './finance'
 import { labExperimental } from './labExperimental'
 import { logisticsConfig } from './logisticsConfig'
+import { logisticsContainerManagement } from './logisticsContainerManagement'
 import { materialArchive } from './materialArchive'
 import { messageCenter } from './messageCenter'
 import { mrp } from './mrp'
@@ -81,6 +82,7 @@ export const zhCNMessages = {
   quickActions,
   sidebarCommandConfig,
   logisticsConfig,
+  logisticsContainerManagement,
   terminalConfig,
   users,
   piecework,

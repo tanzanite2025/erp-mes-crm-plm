@@ -10,7 +10,7 @@ export function VehicleSpecCardMetrics({ spec }: Props) {
 
   return (
     <div className='grid grid-cols-1 gap-3 md:grid-cols-2'>
-      <div className='rounded-[22px] border border-dashed border-border/60 bg-muted/10 px-4 py-3'>
+      <div className='rounded-[22px] border border-border/70 bg-background/80 px-4 py-3 shadow-[0_1px_0_rgba(15,23,42,0.04)] dark:bg-muted/10'>
         <div className='text-[10px] font-semibold tracking-[0.18em] text-muted-foreground/60 uppercase'>
           {t('logisticsConfig.vehicleSpecsLibrary.physicalSize')}
         </div>
@@ -19,7 +19,7 @@ export function VehicleSpecCardMetrics({ spec }: Props) {
         </div>
       </div>
 
-      <div className='rounded-[22px] border border-dashed border-primary/25 bg-primary/5 px-4 py-3'>
+      <div className='rounded-[22px] border border-primary/30 bg-primary/5 px-4 py-3 shadow-[0_1px_0_rgba(15,23,42,0.04)]'>
         <div className='text-[10px] font-semibold tracking-[0.18em] text-primary/70 uppercase'>
           {t('logisticsConfig.vehicleSpecsLibrary.usableSize')}
         </div>

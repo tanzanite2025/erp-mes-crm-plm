@@ -96,6 +96,7 @@ export const sidebar = {
     attendanceManagement: '出勤管理',
     logisticsConfig: '物流',
     vehicleMatching: '车型匹配',
+    containerManagement: '货柜管理',
     logisticsSettings: '物流配置',
     terminalConfig: '终端配置',
     sidebarCommandConfig: '快捷操作配置',

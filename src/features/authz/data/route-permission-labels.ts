@@ -148,6 +148,9 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/logistics-config/vehicle-loading': 'logisticsConfig.tabs.vehicleLoading',
   '/logistics-config/vehicle-specs-library':
     'logisticsConfig.tabs.vehicleSpecsLibrary',
+  '/logistics-container-management': 'sidebar.items.containerManagement',
+  '/logistics-container-management/specs':
+    'logisticsContainerManagement.tabs.specs',
   '/logistics-settings': 'sidebar.items.logisticsSettings',
   '/logistics-settings/platforms': 'logisticsConfig.tabs.platforms',
   '/finance-management': 'sidebar.items.financeCenter',

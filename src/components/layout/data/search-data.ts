@@ -236,6 +236,14 @@ const moduleGroups: CommandItemConfig[] = [
     pinyin: 'wlgl',
   },
   {
+    id: 'tab-logistics-container-specs',
+    href: '/logistics-container-management/specs',
+    titleKey: 'logisticsContainerManagement.tabs.specs',
+    parentKey: 'sidebar.groups.logisticsCenter',
+    keywords: ['container', 'shipping container', '货柜', '集装箱', '柜型'],
+    pinyin: 'hggg',
+  },
+  {
     id: 'tab-business-analysis-capacity',
     href: '/business-analysis/production-capacity',
     titleKey: 'businessAnalysis.tabs.productionCapacity',

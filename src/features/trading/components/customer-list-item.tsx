@@ -39,6 +39,12 @@ type CustomerListItemProps = {
   salesReturnSummary?: CustomerSalesReturnSummary
 }
 
+const CUSTOMER_CARD_SHELL_CLASS =
+  'min-w-0 space-y-2.5 rounded-[28px] border border-border/80 bg-background p-3 shadow-[0_12px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/[0.02] dark:bg-card dark:shadow-[0_16px_36px_rgba(0,0,0,0.22)] dark:ring-white/[0.03] sm:space-y-3 sm:p-4'
+
+const CUSTOMER_INFO_PANEL_CLASS =
+  'min-w-0 rounded-xl border border-border/70 bg-background px-2.5 py-2 shadow-[0_8px_20px_rgba(15,23,42,0.04)] ring-1 ring-black/[0.015] dark:bg-muted/10 dark:shadow-[0_10px_24px_rgba(0,0,0,0.16)] dark:ring-white/[0.025] sm:px-3 sm:py-2.5'
+
 export function CustomerListItem({
   customer,
   quoteSummary,
@@ -131,7 +137,7 @@ export function CustomerListItem({
   }
 
   return (
-    <article className='min-w-0 space-y-2.5 sm:space-y-3'>
+    <article className={CUSTOMER_CARD_SHELL_CLASS}>
       <div className='flex min-w-0 items-center justify-between gap-2'>
         <div className='flex min-w-0 items-center gap-2.5'>
           <div className='flex size-9 items-center justify-center rounded-xl bg-primary/10 text-base font-black text-primary shadow-inner'>
@@ -204,7 +210,7 @@ export function CustomerListItem({
         />
 
         <div className='grid min-w-0 grid-cols-1 gap-1.5 sm:grid-cols-2 sm:gap-2'>
-          <div className='min-w-0 rounded-xl border border-dashed border-muted/40 bg-muted/10 px-2.5 py-2 sm:px-3 sm:py-2.5'>
+          <div className={CUSTOMER_INFO_PANEL_CLASS}>
             <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40 sm:text-[9px]'>
               <User className='size-3' />
               {t('trading.customers.contactPerson')}
@@ -214,7 +220,7 @@ export function CustomerListItem({
             </p>
           </div>
 
-          <div className='min-w-0 rounded-xl border border-dashed border-muted/40 bg-muted/10 px-2.5 py-2 sm:px-3 sm:py-2.5'>
+          <div className={CUSTOMER_INFO_PANEL_CLASS}>
             <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40 sm:text-[9px]'>
               <Phone className='size-3' />
               {t('trading.customers.contactPhone')}
@@ -224,7 +230,7 @@ export function CustomerListItem({
             </p>
           </div>
 
-          <div className='min-w-0 rounded-xl border border-dashed border-muted/40 bg-muted/10 px-2.5 py-2 sm:col-span-2 sm:px-3 sm:py-2.5'>
+          <div className={`${CUSTOMER_INFO_PANEL_CLASS} sm:col-span-2`}>
             <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40'>
               <MapPin className='size-3' />
               {t('trading.customers.address')}
@@ -234,7 +240,7 @@ export function CustomerListItem({
             </p>
           </div>
 
-          <div className='min-w-0 rounded-xl border border-dashed border-muted/40 bg-muted/10 px-2.5 py-2 sm:col-span-2 sm:px-3 sm:py-2.5'>
+          <div className={`${CUSTOMER_INFO_PANEL_CLASS} sm:col-span-2`}>
             <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40'>
               <MessageCircle className='size-3' />
               {t('trading.customers.communication')} /{' '}
@@ -258,7 +264,7 @@ export function CustomerListItem({
             </div>
           </div>
 
-          <div className='min-w-0 rounded-xl border border-dashed border-muted/40 bg-muted/10 px-2.5 py-2 sm:col-span-2 sm:px-3 sm:py-2.5'>
+          <div className={`${CUSTOMER_INFO_PANEL_CLASS} sm:col-span-2`}>
             <div className='grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_136px] sm:items-center'>
               <div className='flex min-w-0 flex-col gap-0.5'>
                 <span className='text-[8px] font-black tracking-[0.2em] text-muted-foreground/40 uppercase italic'>
