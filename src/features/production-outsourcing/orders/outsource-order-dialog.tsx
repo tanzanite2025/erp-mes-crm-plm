@@ -16,6 +16,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { useProductionProcessesQuery } from '@/features/production-shared/hooks/use-production-resources'
 import type { OutsourcePartner } from '../data/outsource-partner'
 import {
   createEmptyOutsourceOrderLine,
@@ -93,6 +94,11 @@ function buildLineFromProductionPlan(
   }
 }
 
+function formatProcessOption(code: string | undefined, name: string) {
+  const normalizedCode = code?.trim()
+  return normalizedCode ? `${normalizedCode} · ${name}` : name
+}
+
 export function OutsourceOrderDialog({
   open,
   order,
@@ -116,6 +122,7 @@ export function OutsourceOrderDialog({
     queryFn: getOutsourceProductionPlanSourceOptions,
     enabled: open && values.sourceType === 'PRODUCTION_PLAN',
   })
+  const processStepsQuery = useProductionProcessesQuery({ enabled: open })
 
   const sortedPartners = useMemo(
     () =>
@@ -126,6 +133,21 @@ export function OutsourceOrderDialog({
   )
   const selectedSalesOrder = salesOrdersQuery.data?.find(
     (item) => item.id === values.sourceId
+  )
+  const activeProcessSteps = useMemo(
+    () =>
+      [...(processStepsQuery.data ?? [])]
+        .filter((step) => step.isActive !== false)
+        .sort((a, b) => {
+          const sortDelta = (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
+          if (sortDelta !== 0) {
+            return sortDelta
+          }
+          return `${a.code ?? ''}${a.name}`.localeCompare(
+            `${b.code ?? ''}${b.name}`
+          )
+        }),
+    [processStepsQuery.data]
   )
 
   useEffect(() => {
@@ -239,6 +261,27 @@ export function OutsourceOrderDialog({
     }))
   }
 
+  const selectProcessStep = (lineIndex: number, processStepId: string) => {
+    const selected = activeProcessSteps.find((item) => item.id === processStepId)
+    if (!selected) {
+      updateLine(lineIndex, {
+        processStepId,
+        processCode: '',
+        processName: '',
+        segmentId: '',
+        segmentName: '',
+      })
+      return
+    }
+    updateLine(lineIndex, {
+      processStepId: selected.id,
+      processCode: selected.code ?? '',
+      processName: selected.name,
+      segmentId: '',
+      segmentName: '',
+    })
+  }
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const normalized: OutsourceOrderFormValues = {
@@ -271,6 +314,10 @@ export function OutsourceOrderDialog({
       )
     ) {
       toast.error(t('productionOutsourcing.orders.validation.lineRequired'))
+      return
+    }
+    if (normalized.lines.some((line) => !line.processStepId)) {
+      toast.error(t('productionOutsourcing.orders.validation.processRequired'))
       return
     }
 
@@ -614,37 +661,43 @@ export function OutsourceOrderDialog({
                   </div>
 
                   <div className='mt-3 grid gap-3 md:grid-cols-4'>
-                    <div className='space-y-2'>
-                      <Label className={fieldLabelClass}>
-                        {t('productionOutsourcing.orders.fields.segmentName')}
-                      </Label>
-                      <Input
-                        value={line.segmentName}
-                        onChange={(event) =>
-                          updateLine(index, { segmentName: event.target.value })
-                        }
-                        placeholder={t(
-                          'productionOutsourcing.orders.placeholders.segmentName'
-                        )}
-                        className={inputClass}
-                      />
-                    </div>
-                    <div className='space-y-2'>
+                    <div className='space-y-2 md:col-span-2'>
                       <Label className={fieldLabelClass}>
                         {t('productionOutsourcing.orders.fields.processName')}
                       </Label>
-                      <Input
-                        value={line.processName}
+                      <select
+                        value={line.processStepId}
                         onChange={(event) =>
-                          updateLine(index, { processName: event.target.value })
+                          selectProcessStep(index, event.target.value)
                         }
-                        placeholder={t(
-                          'productionOutsourcing.orders.placeholders.processName'
-                        )}
+                        className={selectClass}
+                      >
+                        <option value=''>
+                          {processStepsQuery.isLoading
+                            ? t('common.actions.loading')
+                            : t(
+                                'productionOutsourcing.orders.placeholders.processStep'
+                              )}
+                        </option>
+                        {activeProcessSteps.map((step) => (
+                          <option key={step.id} value={step.id}>
+                            {formatProcessOption(step.code, step.name)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className='space-y-2'>
+                      <Label className={fieldLabelClass}>
+                        {t('productionOutsourcing.orders.fields.processCode')}
+                      </Label>
+                      <Input
+                        value={line.processCode}
+                        readOnly
+                        placeholder='-'
                         className={inputClass}
                       />
                     </div>
-                    <div className='space-y-2 md:col-span-2'>
+                    <div className='space-y-2'>
                       <Label className={fieldLabelClass}>
                         {t('productionOutsourcing.orders.fields.lineNotes')}
                       </Label>

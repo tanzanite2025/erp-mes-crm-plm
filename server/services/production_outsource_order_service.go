@@ -515,6 +515,9 @@ func validateOutsourceOrderDTO(order OutsourceOrderDTO) error {
 		if line.UOM == "" {
 			return fmt.Errorf("%w: lines[%d].uom is required", ErrInvalidOutsourceOrder, index)
 		}
+		if line.ProcessStepID == "" {
+			return fmt.Errorf("%w: lines[%d].processStepId is required", ErrInvalidOutsourceOrder, index)
+		}
 		if !isOutsourceOrderStatus(line.Status) {
 			return fmt.Errorf("%w: lines[%d] unsupported status %s", ErrInvalidOutsourceOrder, index, line.Status)
 		}
@@ -606,6 +609,13 @@ func fillOutsourceOrderSnapshots(tx *gorm.DB, order *models.OutsourceOrder) erro
 	if err := fillOutsourceOrderPartnerSnapshot(tx, order); err != nil {
 		return err
 	}
+	if err := fillOutsourceOrderSourceSnapshot(tx, order); err != nil {
+		return err
+	}
+	return fillOutsourceOrderProcessSnapshots(tx, order)
+}
+
+func fillOutsourceOrderSourceSnapshot(tx *gorm.DB, order *models.OutsourceOrder) error {
 	switch order.SourceType {
 	case OutsourceOrderSourceManual:
 		return nil
@@ -616,6 +626,46 @@ func fillOutsourceOrderSnapshots(tx *gorm.DB, order *models.OutsourceOrder) erro
 	default:
 		return fmt.Errorf("%w: unsupported source type %s", ErrInvalidOutsourceOrder, order.SourceType)
 	}
+}
+
+func fillOutsourceOrderProcessSnapshots(tx *gorm.DB, order *models.OutsourceOrder) error {
+	for index := range order.Lines {
+		line := &order.Lines[index]
+		var process models.ProcessStep
+		if err := tx.First(&process, "id = ?", line.ProcessStepID).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return fmt.Errorf("%w: lines[%d].processStepId does not exist", ErrInvalidOutsourceOrder, index)
+			}
+			return err
+		}
+		if !process.IsActive {
+			return fmt.Errorf("%w: lines[%d].processStepId is inactive", ErrInvalidOutsourceOrder, index)
+		}
+		line.ProcessCode = process.Code
+		line.ProcessName = process.Name
+
+		if strings.TrimSpace(line.SegmentID) == "" {
+			continue
+		}
+		var segment models.LineSegment
+		if err := tx.First(&segment, "id = ?", line.SegmentID).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return fmt.Errorf("%w: lines[%d].segmentId does not exist", ErrInvalidOutsourceOrder, index)
+			}
+			return err
+		}
+		var mappingCount int64
+		if err := tx.Table("line_segment_process_mappings").
+			Where("line_segment_id = ? AND process_step_id = ?", line.SegmentID, line.ProcessStepID).
+			Count(&mappingCount).Error; err != nil {
+			return err
+		}
+		if mappingCount == 0 {
+			return fmt.Errorf("%w: lines[%d] process is not mapped to the selected segment", ErrInvalidOutsourceOrder, index)
+		}
+		line.SegmentName = segment.Name
+	}
+	return nil
 }
 
 func fillOutsourceOrderPartnerSnapshot(tx *gorm.DB, order *models.OutsourceOrder) error {

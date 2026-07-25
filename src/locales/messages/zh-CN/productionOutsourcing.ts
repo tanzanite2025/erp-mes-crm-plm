@@ -65,7 +65,8 @@ export const productionOutsourcing = {
       quantity: '数量',
       uom: '单位',
       segmentName: '工段/L2',
-      processName: '工序/L3',
+      processName: '绑定L3',
+      processCode: 'L3编码',
       lineNotes: '明细备注',
       notes: '任务备注',
     },
@@ -76,7 +77,8 @@ export const productionOutsourcing = {
       manualSource: '可填写来源说明或内部单号',
       partner: '请选择委外单位',
       segmentName: '可选，后续接产线脑图',
-      processName: '可选，后续接工序状态',
+      processStep: '请选择已有L3',
+      processName: '请选择已有L3',
     },
     dialog: {
       createTitle: '新增委外任务',
@@ -92,6 +94,7 @@ export const productionOutsourcing = {
       partnerRequired: '请选择委外单位',
       sourceRequired: '请选择销售订单或生产计划来源',
       lineRequired: '委外明细必须填写产品和大于 0 的数量',
+      processRequired: '每条委外明细必须选择已有L3',
     },
     toasts: {
       saved: '委外任务已保存',

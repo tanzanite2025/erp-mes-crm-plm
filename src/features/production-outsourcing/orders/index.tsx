@@ -385,14 +385,24 @@ export function OutsourceOrderManagement() {
                   ).map((line) => (
                     <div
                       key={line.id}
-                      className='flex items-center justify-between gap-3 text-sm'
+                      className='grid gap-1 text-sm'
                     >
-                      <span className='min-w-0 truncate font-medium'>
-                        {line.productName || line.productCode || '-'}
-                      </span>
-                      <span className='shrink-0 text-xs text-muted-foreground'>
-                        {line.quantity} {line.uom}
-                      </span>
+                      <div className='flex items-center justify-between gap-3'>
+                        <span className='min-w-0 truncate font-medium'>
+                          {line.productName || line.productCode || '-'}
+                        </span>
+                        <span className='shrink-0 text-xs text-muted-foreground'>
+                          {line.quantity} {line.uom}
+                        </span>
+                      </div>
+                      {line.processName ? (
+                        <span className='truncate text-xs text-muted-foreground'>
+                          {t('productionOutsourcing.orders.fields.processName')}：
+                          {line.processCode
+                            ? `${line.processCode} · ${line.processName}`
+                            : line.processName}
+                        </span>
+                      ) : null}
                     </div>
                   ))}
                   {order.lines.length > 2 ? (

@@ -65,7 +65,8 @@ export const productionOutsourcing = {
       quantity: 'Quantity',
       uom: 'UOM',
       segmentName: 'Segment/L2',
-      processName: 'Process/L3',
+      processName: 'Bound L3',
+      processCode: 'L3 code',
       lineNotes: 'Line notes',
       notes: 'Task notes',
     },
@@ -76,7 +77,8 @@ export const productionOutsourcing = {
       manualSource: 'Optional source note or internal no',
       partner: 'Select outsource partner',
       segmentName: 'Optional, later linked to topology',
-      processName: 'Optional, later linked to process status',
+      processStep: 'Select existing L3',
+      processName: 'Select existing L3',
     },
     dialog: {
       createTitle: 'New outsource task',
@@ -93,6 +95,7 @@ export const productionOutsourcing = {
       partnerRequired: 'Select an outsource partner',
       sourceRequired: 'Select a sales order or production plan source',
       lineRequired: 'Lines require product information and quantity greater than 0',
+      processRequired: 'Each outsource line must select an existing L3',
     },
     toasts: {
       saved: 'Outsource task saved',
