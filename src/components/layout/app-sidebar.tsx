@@ -108,10 +108,10 @@ export function AppSidebar() {
   return (
     <>
       <Sidebar collapsible={collapsible} variant={variant}>
-        <SidebarHeader>
+        <SidebarHeader className='md:pointer-events-none md:absolute md:inset-x-0 md:top-0 md:z-20'>
           <SidebarBrand team={activeTeam} />
         </SidebarHeader>
-        <SidebarContent className='no-scrollbar overflow-hidden'>
+        <SidebarContent className='no-scrollbar overflow-hidden md:h-svh'>
           <div
             ref={navViewportRef}
             data-sidebar-nav-viewport
