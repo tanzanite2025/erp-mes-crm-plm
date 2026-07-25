@@ -9,11 +9,7 @@ export function BusinessAnalysisModule() {
   const domain = getBusinessAnalysisDomain(pathname)
 
   return (
-    <ModuleTabbedLayout
-      tabs={getBusinessAnalysisTabs(t, domain)}
-      headerTitle={t('businessAnalysis.moduleTitle')}
-      headerDescription={t('businessAnalysis.moduleDescription')}
-    >
+    <ModuleTabbedLayout tabs={getBusinessAnalysisTabs(t, domain)}>
       <Outlet />
     </ModuleTabbedLayout>
   )

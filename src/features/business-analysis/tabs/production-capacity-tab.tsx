@@ -418,7 +418,7 @@ export function ProductionCapacityAnalysisTab() {
               <span className='text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
                 {metric.label}
               </span>
-              <span className='font-mono text-xl font-black text-foreground'>
+              <span className='text-xl font-black tracking-tight whitespace-nowrap text-foreground tabular-nums'>
                 {metric.value}
               </span>
             </CardContent>
@@ -573,13 +573,13 @@ export function ProductionCapacityAnalysisTab() {
               {response?.breakdowns.byDay.length ? (
                 response.breakdowns.byDay.map((row) => (
                   <TableRow key={row.date}>
-                    <TableCell className='font-mono text-xs'>
+                    <TableCell className='text-xs font-semibold tabular-nums'>
                       {row.date}
                     </TableCell>
-                    <TableCell className='text-end font-mono text-xs'>
+                    <TableCell className='text-end text-xs font-semibold tabular-nums'>
                       {formatQuantity(row.plannedQuantity, numberLocale)}
                     </TableCell>
-                    <TableCell className='text-end font-mono text-xs'>
+                    <TableCell className='text-end text-xs font-semibold tabular-nums'>
                       {formatQuantity(row.completedQuantity, numberLocale)}
                     </TableCell>
                   </TableRow>
@@ -660,7 +660,7 @@ export function ProductionCapacityAnalysisTab() {
                       <div className='grid gap-2 text-xs text-muted-foreground sm:grid-cols-4'>
                         <span>
                           {t('businessAnalysis.productionCapacity.planDate')}:{' '}
-                          <strong className='font-mono text-foreground'>
+                          <strong className='text-foreground tabular-nums'>
                             {plan.planDate}
                           </strong>
                         </span>
@@ -675,7 +675,7 @@ export function ProductionCapacityAnalysisTab() {
                             'businessAnalysis.productionCapacity.plannedQuantity'
                           )}
                           :{' '}
-                          <strong className='font-mono text-foreground'>
+                          <strong className='text-foreground tabular-nums'>
                             {formatQuantity(plan.plannedQuantity, numberLocale)}
                           </strong>
                         </span>
@@ -684,7 +684,7 @@ export function ProductionCapacityAnalysisTab() {
                             'businessAnalysis.productionCapacity.completedQuantity'
                           )}
                           :{' '}
-                          <strong className='font-mono text-foreground'>
+                          <strong className='text-foreground tabular-nums'>
                             {formatQuantity(
                               plan.completedQuantity,
                               numberLocale
@@ -729,7 +729,7 @@ export function ProductionCapacityAnalysisTab() {
                           {plan.tasks.length ? (
                             plan.tasks.map((task) => (
                               <TableRow key={task.taskId}>
-                                <TableCell className='font-mono text-xs'>
+                                <TableCell className='text-xs font-semibold tabular-nums'>
                                   {task.batchNo || '—'}
                                 </TableCell>
                                 <TableCell className='text-xs'>
@@ -738,19 +738,19 @@ export function ProductionCapacityAnalysisTab() {
                                 <TableCell className='text-xs'>
                                   {task.status || '—'}
                                 </TableCell>
-                                <TableCell className='text-end font-mono text-xs'>
+                                <TableCell className='text-end text-xs font-semibold tabular-nums'>
                                   {formatQuantity(
                                     task.targetQuantity,
                                     numberLocale
                                   )}
                                 </TableCell>
-                                <TableCell className='text-end font-mono text-xs'>
+                                <TableCell className='text-end text-xs font-semibold tabular-nums'>
                                   {formatQuantity(
                                     task.actualQuantity,
                                     numberLocale
                                   )}
                                 </TableCell>
-                                <TableCell className='font-mono text-xs text-muted-foreground'>
+                                <TableCell className='text-xs text-muted-foreground tabular-nums'>
                                   {task.completedAt
                                     ? new Date(task.completedAt).toLocaleString(
                                         locale
@@ -863,10 +863,10 @@ function BreakdownTable({
                       ) : null}
                     </div>
                   </TableCell>
-                  <TableCell className='text-end font-mono text-xs'>
+                  <TableCell className='text-end text-xs font-semibold tabular-nums'>
                     {formatQuantity(row.planned, locale)}
                   </TableCell>
-                  <TableCell className='text-end font-mono text-xs'>
+                  <TableCell className='text-end text-xs font-semibold tabular-nums'>
                     {formatQuantity(row.completed, locale)}
                   </TableCell>
                 </TableRow>

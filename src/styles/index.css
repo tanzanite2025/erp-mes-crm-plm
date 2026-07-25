@@ -16,6 +16,7 @@
   }
   body {
     @apply min-h-svh w-full bg-background text-foreground has-[div[data-variant='inset']]:bg-sidebar;
+    font-family: var(--font-maple-ui);
     scrollbar-gutter: stable both-edges;
   }
 

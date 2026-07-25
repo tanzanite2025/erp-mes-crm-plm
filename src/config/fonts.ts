@@ -1,19 +1,7 @@
 /**
- * List of available font names.
- * This array is used to generate dynamic font classes (e.g., `font-inter`, `font-manrope`).
+ * 全局 UI 字体入口。
  *
- * 📝 How to Add a New Font (Tailwind v4+):
- * 1. Add the font name here.
- * 2. Update the `<link>` tag in 'index.html' to include the new font from Google Fonts (or any other source).
- * 3. Add the new font family to 'index.css' using the `@theme inline` and `font-family` CSS variable.
- *
- * Example:
- * fonts.ts           → Add 'roboto' to this array.
- * index.html         → Add Google Fonts link for Roboto.
- * index.css          → Add the new font in the CSS, e.g.:
- *   @theme inline {
- *      // ... other font families
- *      --font-roboto: 'Roboto', var(--font-sans);
- *   }
+ * 项目字体只保留一个可选项，避免不同页面各自切字体造成字号、字重和中英文字形割裂。
+ * 真实字体文件与 Tailwind `font-*` 类的映射在 `src/styles/theme.css` 里维护。
  */
-export const fonts = ['inter', 'manrope', 'system'] as const
+export const fonts = ['maple-ui'] as const

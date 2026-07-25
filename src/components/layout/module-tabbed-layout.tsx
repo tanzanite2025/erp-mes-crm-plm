@@ -4,7 +4,6 @@ import { useAuthStore } from '@/stores/auth-store'
 import { cn } from '@/lib/utils'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
-import { ModuleHeaderSummary } from '@/components/layout/module-header-summary'
 import { ModuleTabs, type TabItem } from '@/components/module-tabs'
 import { getProjectedTabsFromPermissionSnapshot } from '@/features/authz/guards/route-access'
 
@@ -13,8 +12,6 @@ interface ModuleTabbedLayoutProps {
   children: React.ReactNode
   actions?: React.ReactNode
   title?: string
-  headerTitle?: string
-  headerDescription?: string
   contentClassName?: string
 }
 
@@ -28,8 +25,6 @@ export function ModuleTabbedLayout({
   tabs,
   children,
   actions,
-  headerTitle,
-  headerDescription,
   contentClassName,
 }: ModuleTabbedLayoutProps) {
   const { pathname } = useLocation()
@@ -75,14 +70,6 @@ export function ModuleTabbedLayout({
             contentClassName
           )}
         >
-          {headerTitle ? (
-            <div className='px-1 pt-3 pb-2'>
-              <ModuleHeaderSummary
-                title={headerTitle}
-                description={headerDescription}
-              />
-            </div>
-          ) : null}
           {children}
         </div>
       </Main>

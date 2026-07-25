@@ -1,6 +1,4 @@
 export const businessAnalysis = {
-  moduleTitle: '经营分析',
-  moduleDescription: '按业务域承载生产、品质、销售与客户的只读分析能力。',
   tabs: {
     productionCapacity: '月产能分析',
     productionLoad: '产能负荷',

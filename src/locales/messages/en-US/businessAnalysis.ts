@@ -1,7 +1,4 @@
 export const businessAnalysis = {
-  moduleTitle: 'Business Analysis',
-  moduleDescription:
-    'Domain-scoped read-only analysis for production, quality, sales, and customer data.',
   tabs: {
     productionCapacity: 'Monthly Capacity',
     productionLoad: 'Capacity Load',
