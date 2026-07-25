@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { ForbiddenState } from '@/components/forbidden-state'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import type {
@@ -142,21 +143,11 @@ export function OutsourceOrderManagement() {
 
   return (
     <div className='flex animate-in flex-col gap-4 pb-8 duration-500 fade-in'>
-      <div className='rounded-2xl border bg-card p-4 shadow-sm'>
-        <div className='flex items-start gap-3'>
-          <div className='flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary'>
-            <ClipboardList className='size-5' />
-          </div>
-          <div className='min-w-0'>
-            <h3 className='text-lg font-semibold tracking-tight'>
-              {t('productionOutsourcing.orders.title')}
-            </h3>
-            <p className='mt-1 max-w-4xl text-sm leading-6 text-muted-foreground'>
-              {t('productionOutsourcing.orders.description')}
-            </p>
-          </div>
-        </div>
-      </div>
+      <IndustrialHeader
+        icon={ClipboardList}
+        title={t('productionOutsourcing.orders.title')}
+        description={t('productionOutsourcing.orders.description')}
+      />
 
       <div className='grid gap-3 md:grid-cols-5'>
         <Card className='rounded-2xl shadow-sm'>
