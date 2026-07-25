@@ -5,6 +5,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type PointerEvent as ReactPointerEvent,
   type RefObject,
 } from 'react'
 import { Link } from '@tanstack/react-router'
@@ -15,8 +16,10 @@ import { useSidebar } from '@/components/ui/sidebar'
 import {
   calculateFloatingPosition,
   createSidebarCategoryPreviews,
+  resolveSidebarScrubberPointerTarget,
   type SidebarCategoryLink,
   type SidebarCategoryPreview,
+  type SidebarScrubberPointerTargetRect,
 } from './sidebar-category-scrubber-utils'
 import type { NavGroup } from './types'
 import {
@@ -46,6 +49,37 @@ function getScrubberItemElement(categoryId: string): HTMLElement | null {
   return (
     Array.from(elements).find(
       (element) => element.dataset.sidebarScrubberItem === categoryId
+    ) ?? null
+  )
+}
+
+function getScrubberPointerTargetElement(
+  scrubberNav: HTMLElement,
+  pointerY: number
+): HTMLElement | null {
+  const elements = Array.from(
+    scrubberNav.querySelectorAll<HTMLElement>(SCRUBBER_ITEM_SELECTOR)
+  )
+  const targetId = resolveSidebarScrubberPointerTarget({
+    pointerY,
+    targets: elements.map<SidebarScrubberPointerTargetRect>((element) => {
+      const rect = element.getBoundingClientRect()
+
+      return {
+        id: element.dataset.sidebarScrubberItem ?? '',
+        top: rect.top,
+        bottom: rect.bottom,
+      }
+    }),
+  })
+
+  if (!targetId) {
+    return null
+  }
+
+  return (
+    elements.find(
+      (element) => element.dataset.sidebarScrubberItem === targetId
     ) ?? null
   )
 }
@@ -177,6 +211,28 @@ export function SidebarCategoryScrubber({
     [clearCloseTimer]
   )
 
+  const openCategoryFromPointer = useCallback(
+    (event: ReactPointerEvent<HTMLElement>) => {
+      const anchor = getScrubberPointerTargetElement(
+        event.currentTarget,
+        event.clientY
+      )
+      const categoryId = anchor?.dataset.sidebarScrubberItem
+
+      if (!anchor || !categoryId) {
+        return
+      }
+
+      if (categoryId === hoveredCategoryId) {
+        clearCloseTimer()
+        return
+      }
+
+      openCategory(categoryId, anchor)
+    },
+    [clearCloseTimer, hoveredCategoryId, openCategory]
+  )
+
   const scheduleClose = useCallback(() => {
     clearCloseTimer()
     closeTimerRef.current = window.setTimeout(() => {
@@ -292,6 +348,8 @@ export function SidebarCategoryScrubber({
           className='pointer-events-auto flex flex-col items-center gap-2 rounded-full px-1 py-2.5'
           onMouseEnter={clearCloseTimer}
           onMouseLeave={scheduleClose}
+          onPointerEnter={openCategoryFromPointer}
+          onPointerMove={openCategoryFromPointer}
         >
           {categoryPreviews.map((category) => {
             const isHovered = hoveredCategoryId === category.id
@@ -313,7 +371,6 @@ export function SidebarCategoryScrubber({
                 onMouseEnter={(event) =>
                   openCategory(category.id, event.currentTarget)
                 }
-                onMouseLeave={scheduleClose}
               >
                 <motion.span
                   aria-hidden='true'

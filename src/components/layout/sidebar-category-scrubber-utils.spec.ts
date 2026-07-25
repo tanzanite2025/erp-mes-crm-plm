@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   calculateFloatingPosition,
   createSidebarCategoryPreviews,
+  resolveSidebarScrubberPointerTarget,
 } from './sidebar-category-scrubber-utils'
 import type { NavGroup } from './types'
 
@@ -129,5 +130,37 @@ describe('sidebar category scrubber utils', () => {
       top: 488,
       left: 428,
     })
+  })
+
+  it('assigns the gap between two scrubber bars to the nearest category', () => {
+    const targets = [
+      { id: 'trading', top: 0, bottom: 10 },
+      { id: 'production', top: 20, bottom: 30 },
+      { id: 'quality', top: 40, bottom: 50 },
+    ]
+
+    expect(resolveSidebarScrubberPointerTarget({ pointerY: 12, targets })).toBe(
+      'trading'
+    )
+    expect(resolveSidebarScrubberPointerTarget({ pointerY: 18, targets })).toBe(
+      'production'
+    )
+    expect(resolveSidebarScrubberPointerTarget({ pointerY: 35, targets })).toBe(
+      'quality'
+    )
+  })
+
+  it('keeps a continuous pointer target at the beginning and end of the scrubber rail', () => {
+    const targets = [
+      { id: 'trading', top: 100, bottom: 124 },
+      { id: 'production', top: 140, bottom: 164 },
+    ]
+
+    expect(resolveSidebarScrubberPointerTarget({ pointerY: 90, targets })).toBe(
+      'trading'
+    )
+    expect(
+      resolveSidebarScrubberPointerTarget({ pointerY: 180, targets })
+    ).toBe('production')
   })
 })
