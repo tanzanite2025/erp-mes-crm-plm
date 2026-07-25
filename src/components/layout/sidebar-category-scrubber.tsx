@@ -40,10 +40,11 @@ type SidebarCategoryScrubberProps = {
 
 const CLOSE_DELAY_MS = 140
 const FLOATING_CARD_WIDTH_PX = 496
-const FLOATING_CARD_MAX_HEIGHT_PX = 704
+const FLOATING_CARD_MAX_HEIGHT_PX = 768
 const FLOATING_CARD_MIN_WIDTH_PX = 360
 const FLOATING_CARD_VIEWPORT_GAP_PX = 48
-const FLOATING_CARD_VIEWPORT_HEIGHT_RATIO = 0.82
+const FLOATING_CARD_VIEWPORT_HEIGHT_RATIO = 0.8
+const FLOATING_CARD_EDGE_PADDING_PX = 12
 const SCRUBBER_ITEM_SELECTOR = '[data-sidebar-scrubber-item]'
 const SCRUBBER_ITEM_SPRING = {
   mass: 0.12,
@@ -77,6 +78,27 @@ function resolveFixedFloatingCardSize() {
     width: Math.min(FLOATING_CARD_WIDTH_PX, viewportSafeWidth),
     height: Math.min(FLOATING_CARD_MAX_HEIGHT_PX, viewportSafeHeight),
   }
+}
+
+function resolveAdjacentFloatingCardLeft({
+  floatingWidth,
+  viewportWidth,
+  scrubberColumnRight = 0,
+}: {
+  floatingWidth: number
+  viewportWidth: number
+  scrubberColumnRight?: number
+}) {
+  const leftBoundary = Math.max(
+    FLOATING_CARD_EDGE_PADDING_PX,
+    scrubberColumnRight + FLOATING_CARD_EDGE_PADDING_PX
+  )
+  const rightBoundary = Math.max(
+    leftBoundary + floatingWidth,
+    viewportWidth - FLOATING_CARD_EDGE_PADDING_PX
+  )
+
+  return Math.min(rightBoundary - floatingWidth, leftBoundary)
 }
 
 function getScrubberPointerTargetElement(
@@ -340,16 +362,24 @@ export function SidebarCategoryScrubber({
 
     const frameId = window.requestAnimationFrame(() => {
       const floatingSize = resolveFixedFloatingCardSize()
+      const scrubberColumnRight =
+        scrubberColumnRef.current?.getBoundingClientRect().right ?? 0
+      const calculatedPosition = calculateFloatingPosition({
+        anchorRect,
+        floatingWidth: floatingSize.width,
+        floatingHeight: floatingSize.height,
+        viewportWidth: window.innerWidth,
+        viewportHeight: window.innerHeight,
+      })
 
-      setFloatingPosition(
-        calculateFloatingPosition({
-          anchorRect,
+      setFloatingPosition({
+        top: calculatedPosition.top,
+        left: resolveAdjacentFloatingCardLeft({
           floatingWidth: floatingSize.width,
-          floatingHeight: floatingSize.height,
           viewportWidth: window.innerWidth,
-          viewportHeight: window.innerHeight,
-        })
-      )
+          scrubberColumnRight,
+        }),
+      })
     })
 
     return () => {
@@ -496,14 +526,14 @@ function SidebarCategoryFloatingCard({
       {category ? (
         <motion.div
           ref={floatingRef}
-          key={category.id}
+          key='sidebar-category-floating-card'
           role='dialog'
           aria-label={`${category.title}快捷导航`}
-          initial={{ opacity: 0, x: -6, scale: 0.98 }}
-          animate={{ opacity: 1, x: 0, scale: 1 }}
-          exit={{ opacity: 0, x: -4, scale: 0.98 }}
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.98 }}
           transition={{ duration: 0.16, ease: 'easeOut' }}
-          className='fixed z-50 flex max-h-[min(82vh,44rem)] w-[min(31rem,calc(100vw-3rem))] flex-col overflow-hidden rounded-2xl border border-border/70 bg-popover text-popover-foreground shadow-2xl shadow-black/15 backdrop-blur-xl'
+          className='fixed z-50 flex h-[min(80vh,48rem)] w-[min(31rem,calc(100vw-3rem))] flex-col overflow-hidden rounded-2xl border border-border/70 bg-popover text-popover-foreground shadow-2xl shadow-black/15 backdrop-blur-xl'
           style={{
             top: position.top,
             left: position.left,
@@ -531,29 +561,31 @@ function SidebarCategoryFloatingCard({
               </span>
             </div>
           </div>
-          <div className='no-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-3'>
-            {category.directLinks.length > 0 ? (
-              <SidebarCategoryDomainList
-                links={category.directLinks}
-                onNavigate={onNavigate}
-              />
-            ) : null}
-            {category.sections.map((section) => (
-              <section key={section.id} className='space-y-1.5'>
-                <div className='px-1 text-[10px] leading-none font-black tracking-widest text-muted-foreground uppercase'>
-                  {section.title}
-                </div>
+          <div className='no-scrollbar min-h-0 flex-1 overflow-y-auto px-3 py-3'>
+            <div className='flex min-h-full flex-col justify-center space-y-2.5'>
+              {category.directLinks.length > 0 ? (
                 <SidebarCategoryDomainList
-                  links={section.links}
+                  links={category.directLinks}
                   onNavigate={onNavigate}
                 />
-              </section>
-            ))}
-            {category.linkCount === 0 ? (
-              <p className='rounded-xl border border-dashed border-border/70 px-3 py-4 text-center text-[11px] font-semibold text-muted-foreground'>
-                当前分类暂无可直接进入的业务域
-              </p>
-            ) : null}
+              ) : null}
+              {category.sections.map((section) => (
+                <section key={section.id} className='space-y-1.5'>
+                  <div className='px-1 text-[10px] leading-none font-black tracking-widest text-muted-foreground uppercase'>
+                    {section.title}
+                  </div>
+                  <SidebarCategoryDomainList
+                    links={section.links}
+                    onNavigate={onNavigate}
+                  />
+                </section>
+              ))}
+              {category.linkCount === 0 ? (
+                <p className='rounded-xl border border-dashed border-border/70 px-3 py-4 text-center text-[11px] font-semibold text-muted-foreground'>
+                  当前分类暂无可直接进入的业务域
+                </p>
+              ) : null}
+            </div>
           </div>
         </motion.div>
       ) : null}
