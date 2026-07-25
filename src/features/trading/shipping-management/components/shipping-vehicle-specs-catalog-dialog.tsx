@@ -58,7 +58,10 @@ export function ShippingVehicleSpecsCatalogDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className='flex h-[82vh] w-[96vw] max-w-[1280px] flex-col gap-0 overflow-hidden rounded-[28px] border-dashed border-border/60 bg-background p-0 shadow-2xl'>
+        <DialogContent
+          size='full'
+          className='flex h-[88vh] w-[calc(100vw-2rem)] !max-w-[1680px] flex-col gap-0 overflow-hidden rounded-[28px] border-dashed border-border/60 bg-background p-0 shadow-2xl sm:w-[calc(100vw-3rem)] 2xl:w-[94vw]'
+        >
           <DialogHeader className='border-b border-dashed border-border/60 px-5 py-4 text-left'>
             <div className='flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between'>
               <div className='min-w-0'>
@@ -141,7 +144,7 @@ export function ShippingVehicleSpecsCatalogDialog({
                 {filteredVehicleSpecs.length === 0 ? (
                   <VehicleSpecsEmptyState search={search} />
                 ) : (
-                  <div className='grid grid-cols-1 gap-4 pb-2 xl:grid-cols-2'>
+                  <div className='grid grid-cols-1 gap-4 pb-2 2xl:grid-cols-2'>
                     {filteredVehicleSpecs.map((spec) => (
                       <VehicleSpecSummaryCard
                         key={spec.id}
