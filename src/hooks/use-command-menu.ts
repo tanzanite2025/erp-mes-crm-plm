@@ -7,7 +7,7 @@ import { apiFetch } from '@/lib/api-client'
 import { createLogger } from '@/lib/logger'
 import { useLanguage } from '@/context/language-provider'
 import { useSearch } from '@/context/search-provider'
-import { useTheme } from '@/context/theme-provider'
+import { type Theme, useTheme } from '@/context/theme-provider'
 import {
   getQuickActionDefinition,
   isHostedQuickActionId,
@@ -292,7 +292,7 @@ export function useCommandMenu() {
     }
   }, [knowledgeCreateDraft, refreshKnowledgeEntries, searchValue])
 
-  const handleThemeChange = (theme: 'light' | 'dark' | 'system') => {
+  const handleThemeChange = (theme: Theme) => {
     runCommand(() => setTheme(theme))
   }
 

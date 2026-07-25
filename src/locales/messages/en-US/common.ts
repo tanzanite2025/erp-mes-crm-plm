@@ -10,7 +10,6 @@ export const common = {
     switcher: 'Toggle theme',
     light: 'Light',
     dark: 'Dark',
-    system: 'System',
   },
   empty: {
     noData: 'No data',

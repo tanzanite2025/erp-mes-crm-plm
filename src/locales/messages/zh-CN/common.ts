@@ -10,7 +10,6 @@ export const common = {
     switcher: '切换主题',
     light: '浅色',
     dark: '深色',
-    system: '跟随系统',
   },
   empty: {
     noData: '暂无数据',

@@ -9,12 +9,11 @@ import { IconSidebarInset } from '@/assets/custom/icon-sidebar-inset'
 import { IconSidebarSidebar } from '@/assets/custom/icon-sidebar-sidebar'
 import { IconThemeDark } from '@/assets/custom/icon-theme-dark'
 import { IconThemeLight } from '@/assets/custom/icon-theme-light'
-import { IconThemeSystem } from '@/assets/custom/icon-theme-system'
 import { cn } from '@/lib/utils'
 import { useDirection } from '@/context/direction-provider'
 import { useLanguage } from '@/context/language-provider'
 import { type Collapsible, useLayout } from '@/context/layout-provider'
-import { useTheme } from '@/context/theme-provider'
+import { type Theme, useTheme } from '@/context/theme-provider'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
@@ -173,6 +172,18 @@ function RadioGroupItem({
 function ThemeConfig() {
   const { t } = useLanguage()
   const { defaultTheme, theme, setTheme } = useTheme()
+  const themeOptions: {
+    value: Theme
+    label: string
+    icon: (props: SVGProps<SVGSVGElement>) => React.ReactElement
+  }[] = [
+    {
+      value: 'light',
+      label: t('common.theme.light'),
+      icon: IconThemeLight,
+    },
+    { value: 'dark', label: t('common.theme.dark'), icon: IconThemeDark },
+  ]
 
   return (
     <div>
@@ -183,24 +194,12 @@ function ThemeConfig() {
       />
       <Radio
         value={theme}
-        onValueChange={setTheme}
-        className='grid w-full max-w-md grid-cols-3 gap-4'
+        onValueChange={(value) => setTheme(value as Theme)}
+        className='grid w-full max-w-md grid-cols-2 gap-4'
         aria-label={t('configDrawer.sections.theme')}
         aria-describedby='theme-description'
       >
-        {[
-          {
-            value: 'system',
-            label: t('common.theme.system'),
-            icon: IconThemeSystem,
-          },
-          {
-            value: 'light',
-            label: t('common.theme.light'),
-            icon: IconThemeLight,
-          },
-          { value: 'dark', label: t('common.theme.dark'), icon: IconThemeDark },
-        ].map((item) => (
+        {themeOptions.map((item) => (
           <RadioGroupItem key={item.value} item={item} isTheme />
         ))}
       </Radio>
