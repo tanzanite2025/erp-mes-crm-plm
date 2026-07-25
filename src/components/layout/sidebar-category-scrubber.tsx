@@ -11,16 +11,21 @@ import {
 import { Link } from '@tanstack/react-router'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { createPortal } from 'react-dom'
+import { useAuthStore } from '@/stores/auth-store'
+import { useLanguage } from '@/context/language-provider'
 import { cn } from '@/lib/utils'
 import { useSidebar } from '@/components/ui/sidebar'
+import { getProjectedTabsFromPermissionSnapshot } from '@/features/authz/guards/route-access'
 import {
   calculateFloatingPosition,
   createSidebarCategoryPreviews,
   resolveSidebarScrubberPointerTarget,
-  type SidebarCategoryLink,
+  type SidebarCategoryDomainLink,
+  type SidebarCategoryTabLink,
   type SidebarCategoryPreview,
   type SidebarScrubberPointerTargetRect,
 } from './sidebar-category-scrubber-utils'
+import { resolveSidebarNodeTabPreviews } from './sidebar-tab-preview-registry'
 import type { NavGroup } from './types'
 import {
   centerSidebarNavGroup,
@@ -155,6 +160,9 @@ export function SidebarCategoryScrubber({
   navViewportRef,
 }: SidebarCategoryScrubberProps) {
   const { isMobile, setOpen, state } = useSidebar()
+  const { t } = useLanguage()
+  const user = useAuthStore((store) => store.user)
+  const isIdentitySynced = useAuthStore((store) => store.isIdentitySynced)
   const shouldReduceMotion = useReducedMotion()
   const floatingRef = useRef<HTMLDivElement>(null)
   const closeTimerRef = useRef<number | null>(null)
@@ -169,8 +177,15 @@ export function SidebarCategoryScrubber({
   })
 
   const categoryPreviews = useMemo(
-    () => createSidebarCategoryPreviews(navGroups),
-    [navGroups]
+    () =>
+      createSidebarCategoryPreviews(navGroups, (node) => {
+        const tabs = resolveSidebarNodeTabPreviews(node, t)
+
+        return isIdentitySynced
+          ? getProjectedTabsFromPermissionSnapshot(user, tabs)
+          : tabs
+      }),
+    [isIdentitySynced, navGroups, t, user]
   )
   const categoryIds = useMemo(
     () => categoryPreviews.map((category) => category.id),
@@ -468,7 +483,7 @@ function SidebarCategoryFloatingCard({
                   {category.title}
                 </p>
                 <p className='mt-1 text-[10px] leading-none font-semibold tracking-wide text-muted-foreground'>
-                  {category.linkCount} 个业务域入口
+                  {category.linkCount} 个可直达入口
                 </p>
               </div>
               <span className='shrink-0 rounded-full bg-orange-500/10 px-2 py-1 text-[10px] leading-none font-black text-orange-600 dark:text-orange-300'>
@@ -478,7 +493,7 @@ function SidebarCategoryFloatingCard({
           </div>
           <div className='no-scrollbar max-h-[min(70vh,34rem)] space-y-3 overflow-y-auto px-3 py-3'>
             {category.directLinks.length > 0 ? (
-              <SidebarCategoryLinkGrid
+              <SidebarCategoryDomainList
                 links={category.directLinks}
                 onNavigate={onNavigate}
               />
@@ -488,7 +503,7 @@ function SidebarCategoryFloatingCard({
                 <div className='px-1 text-[10px] leading-none font-black tracking-widest text-muted-foreground uppercase'>
                   {section.title}
                 </div>
-                <SidebarCategoryLinkGrid
+                <SidebarCategoryDomainList
                   links={section.links}
                   onNavigate={onNavigate}
                 />
@@ -507,37 +522,75 @@ function SidebarCategoryFloatingCard({
   )
 }
 
-function SidebarCategoryLinkGrid({
+function SidebarCategoryDomainList({
   links,
   onNavigate,
 }: {
-  links: SidebarCategoryLink[]
+  links: SidebarCategoryDomainLink[]
   onNavigate: () => void
 }) {
   return (
-    <div className='grid gap-1'>
+    <div className='grid gap-2'>
       {links.map((link) => {
         const Icon = link.icon
+        const hasTabs = link.tabs.length > 0
 
         return (
-          <Link
+          <div
             key={link.id}
-            to={link.url}
-            className='group/category-link flex min-h-8 min-w-0 items-center gap-2 rounded-xl border border-transparent px-2.5 py-1.5 text-[12px] leading-tight font-black tracking-tight text-popover-foreground/78 italic transition-colors hover:border-orange-500/20 hover:bg-orange-500/10 hover:text-popover-foreground focus-visible:ring-2 focus-visible:ring-primary/55 focus-visible:outline-none'
-            onClick={onNavigate}
+            className='rounded-2xl border border-border/60 bg-background/45 p-1.5'
           >
-            {Icon ? (
-              <Icon className='size-3.5 shrink-0 opacity-70 transition-opacity group-hover/category-link:opacity-100' />
+            <Link
+              to={link.url}
+              className='group/category-domain flex min-h-8 min-w-0 items-center gap-2 rounded-xl px-2 py-1.5 text-[12px] leading-tight font-black tracking-tight text-popover-foreground/82 italic transition-colors hover:bg-orange-500/10 hover:text-popover-foreground focus-visible:ring-2 focus-visible:ring-primary/55 focus-visible:outline-none'
+              onClick={onNavigate}
+            >
+              {Icon ? (
+                <Icon className='size-3.5 shrink-0 opacity-70 transition-opacity group-hover/category-domain:opacity-100' />
+              ) : null}
+              <span className='min-w-0 flex-1 truncate'>{link.title}</span>
+              {hasTabs ? (
+                <span className='shrink-0 rounded-full bg-orange-500/10 px-1.5 py-0.5 text-[9px] leading-none font-black text-orange-600 dark:text-orange-300'>
+                  {link.tabs.length} TAB
+                </span>
+              ) : link.badge ? (
+                <span className='shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] leading-none font-black text-muted-foreground'>
+                  {link.badge}
+                </span>
+              ) : null}
+            </Link>
+            {hasTabs ? (
+              <div className='mt-1 grid grid-cols-2 gap-1'>
+                {link.tabs.map((tab) => (
+                  <SidebarCategoryTabChip
+                    key={tab.id}
+                    tab={tab}
+                    onNavigate={onNavigate}
+                  />
+                ))}
+              </div>
             ) : null}
-            <span className='min-w-0 flex-1 truncate'>{link.title}</span>
-            {link.badge ? (
-              <span className='shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] leading-none font-black text-muted-foreground'>
-                {link.badge}
-              </span>
-            ) : null}
-          </Link>
+          </div>
         )
       })}
     </div>
+  )
+}
+
+function SidebarCategoryTabChip({
+  tab,
+  onNavigate,
+}: {
+  tab: SidebarCategoryTabLink
+  onNavigate: () => void
+}) {
+  return (
+    <Link
+      to={tab.url}
+      className='min-w-0 truncate rounded-xl border border-transparent bg-muted/40 px-2 py-1.5 text-[11px] leading-tight font-black tracking-tight text-muted-foreground transition-colors hover:border-orange-500/25 hover:bg-orange-500/10 hover:text-popover-foreground focus-visible:ring-2 focus-visible:ring-primary/55 focus-visible:outline-none'
+      onClick={onNavigate}
+    >
+      {tab.title}
+    </Link>
   )
 }

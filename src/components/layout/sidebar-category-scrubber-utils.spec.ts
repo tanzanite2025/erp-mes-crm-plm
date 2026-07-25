@@ -60,6 +60,7 @@ describe('sidebar category scrubber utils', () => {
                 url: '/mrp',
                 icon: undefined,
                 badge: undefined,
+                tabs: [],
               },
             ],
           },
@@ -73,6 +74,7 @@ describe('sidebar category scrubber utils', () => {
                 url: '/business-analysis/production-capacity',
                 icon: undefined,
                 badge: undefined,
+                tabs: [],
               },
             ],
           },
@@ -103,12 +105,71 @@ describe('sidebar category scrubber utils', () => {
         id: 'dashboard',
         title: '仪表盘',
         url: '/dashboard',
+        tabs: [],
         icon: undefined,
         badge: undefined,
       },
     ])
     expect(preview.sections).toEqual([])
     expect(preview.linkCount).toBe(1)
+  })
+
+  it('keeps domain links and tab links as separate levels', () => {
+    const navGroups: NavGroup[] = [
+      {
+        id: 'finance',
+        title: '财务',
+        children: [
+          {
+            id: 'finance-config',
+            title: '财务配置',
+            children: [
+              {
+                id: 'finance-center',
+                title: '财务配置',
+                url: '/finance-management',
+              },
+            ],
+          },
+        ],
+      },
+    ]
+
+    const [preview] = createSidebarCategoryPreviews(navGroups, (node) =>
+      node.id === 'finance-center'
+        ? [
+            {
+              key: 'payment-methods',
+              label: '支付方式',
+              href: '/finance-management/payment-methods',
+            },
+            {
+              key: 'payment-terms',
+              label: '结算方式',
+              href: '/finance-management/payment-terms',
+            },
+          ]
+        : []
+    )
+
+    expect(preview.linkCount).toBe(2)
+    expect(preview.sections[0].links[0]).toMatchObject({
+      id: 'finance-center',
+      title: '财务配置',
+      url: '/finance-management',
+      tabs: [
+        {
+          id: 'payment-methods',
+          title: '支付方式',
+          url: '/finance-management/payment-methods',
+        },
+        {
+          id: 'payment-terms',
+          title: '结算方式',
+          url: '/finance-management/payment-terms',
+        },
+      ],
+    })
   })
 
   it('clamps floating card position inside the viewport', () => {

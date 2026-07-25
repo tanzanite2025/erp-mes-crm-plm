@@ -201,7 +201,9 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
     syncGateState.status,
   ])
 
-  const defaultOpen = getCookie('sidebar_state') !== 'false'
+  const sidebarStateCookie = getCookie('sidebar_state')
+  const defaultOpen =
+    sidebarStateCookie === undefined ? false : sidebarStateCookie === 'true'
   const sidebarProviderStyle = {
     '--sidebar-gutter-width': isPDAShellRoute
       ? '0px'

@@ -21,6 +21,7 @@ import { ForbiddenState } from '@/components/forbidden-state'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
+import { OutsourceStatCard } from '../components/outsource-stat-card'
 import {
   outsourceOrderSourceTypes,
   type OutsourceOrder,
@@ -151,56 +152,38 @@ export function OutsourceOrderManagement() {
       />
 
       <div className='grid gap-3 md:grid-cols-5'>
-        <Card className='rounded-2xl shadow-sm'>
-          <CardContent className='flex min-h-16 items-center justify-between gap-3 p-4'>
-            <span className='text-sm font-medium text-muted-foreground'>
-              {t('productionOutsourcing.orders.stats.total')}
-            </span>
-            <span className='text-2xl font-semibold tracking-tight tabular-nums'>
-              {stats?.total ?? '—'}
-            </span>
-          </CardContent>
-        </Card>
-        <Card className='rounded-2xl shadow-sm'>
-          <CardContent className='flex min-h-16 items-center justify-between gap-3 p-4'>
-            <span className='text-sm font-medium text-muted-foreground'>
-              {t('productionOutsourcing.orders.stats.released')}
-            </span>
-            <span className='text-2xl font-semibold tracking-tight text-amber-600 tabular-nums'>
-              {stats?.released ?? '—'}
-            </span>
-          </CardContent>
-        </Card>
-        <Card className='rounded-2xl shadow-sm'>
-          <CardContent className='flex min-h-16 items-center justify-between gap-3 p-4'>
-            <span className='text-sm font-medium text-muted-foreground'>
-              {t('productionOutsourcing.orders.stats.active')}
-            </span>
-            <span className='text-2xl font-semibold tracking-tight text-blue-600 tabular-nums'>
-              {stats?.active ?? '—'}
-            </span>
-          </CardContent>
-        </Card>
-        <Card className='rounded-2xl shadow-sm'>
-          <CardContent className='flex min-h-16 items-center justify-between gap-3 p-4'>
-            <span className='text-sm font-medium text-muted-foreground'>
-              {t('productionOutsourcing.orders.stats.returned')}
-            </span>
-            <span className='text-2xl font-semibold tracking-tight text-violet-600 tabular-nums'>
-              {stats?.returned ?? '—'}
-            </span>
-          </CardContent>
-        </Card>
-        <Card className='rounded-2xl shadow-sm'>
-          <CardContent className='flex min-h-16 items-center justify-between gap-3 p-4'>
-            <span className='text-sm font-medium text-muted-foreground'>
-              {t('productionOutsourcing.orders.stats.closed')}
-            </span>
-            <span className='text-2xl font-semibold tracking-tight text-emerald-600 tabular-nums'>
-              {stats?.closed ?? '—'}
-            </span>
-          </CardContent>
-        </Card>
+        <OutsourceStatCard
+          label={t('productionOutsourcing.orders.stats.total')}
+          value={stats?.total ?? '—'}
+        />
+        <OutsourceStatCard
+          label={t('productionOutsourcing.orders.stats.released')}
+          value={stats?.released ?? '—'}
+          className='bg-amber-500/5'
+          labelClassName='text-amber-600'
+          valueClassName='text-amber-600'
+        />
+        <OutsourceStatCard
+          label={t('productionOutsourcing.orders.stats.active')}
+          value={stats?.active ?? '—'}
+          className='bg-blue-500/5'
+          labelClassName='text-blue-600'
+          valueClassName='text-blue-600'
+        />
+        <OutsourceStatCard
+          label={t('productionOutsourcing.orders.stats.returned')}
+          value={stats?.returned ?? '—'}
+          className='bg-violet-500/5'
+          labelClassName='text-violet-600'
+          valueClassName='text-violet-600'
+        />
+        <OutsourceStatCard
+          label={t('productionOutsourcing.orders.stats.closed')}
+          value={stats?.closed ?? '—'}
+          className='bg-emerald-500/5'
+          labelClassName='text-emerald-600'
+          valueClassName='text-emerald-600'
+        />
       </div>
 
       <div className='flex flex-col gap-3 rounded-2xl border bg-card p-3 shadow-sm lg:flex-row lg:items-center lg:justify-between'>

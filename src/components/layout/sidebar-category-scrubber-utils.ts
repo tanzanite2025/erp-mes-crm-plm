@@ -1,7 +1,8 @@
 import type { ElementType } from 'react'
+import type { TabItem } from '@/components/module-tabs'
 import type { NavGroup, NavNode } from './types'
 
-export type SidebarCategoryLink = {
+export type SidebarCategoryTabLink = {
   id: string
   title: string
   url: string
@@ -9,17 +10,21 @@ export type SidebarCategoryLink = {
   badge?: string
 }
 
+export type SidebarCategoryDomainLink = SidebarCategoryTabLink & {
+  tabs: SidebarCategoryTabLink[]
+}
+
 export type SidebarCategorySection = {
   id: string
   title: string
-  links: SidebarCategoryLink[]
+  links: SidebarCategoryDomainLink[]
 }
 
 export type SidebarCategoryPreview = {
   id: string
   title: string
   sections: SidebarCategorySection[]
-  directLinks: SidebarCategoryLink[]
+  directLinks: SidebarCategoryDomainLink[]
   linkCount: number
 }
 
@@ -41,36 +46,54 @@ function isVisibleNavLink(node: NavNode): node is NavNode & { url: string } {
   return typeof node.url === 'string' && node.url.length > 0
 }
 
-function collectLinks(nodes: NavNode[]): SidebarCategoryLink[] {
+function toTabLinks(tabs: TabItem[]): SidebarCategoryTabLink[] {
+  return tabs.map((tab) => ({
+    id: tab.key,
+    title: tab.label,
+    url: tab.href,
+  }))
+}
+
+function createDomainLink(
+  node: NavNode & { url: string },
+  tabs: TabItem[]
+): SidebarCategoryDomainLink {
+  return {
+    id: node.id,
+    title: node.title,
+    url: node.url,
+    icon: node.icon,
+    badge: node.badge,
+    tabs: toTabLinks(tabs),
+  }
+}
+
+function collectLinks(
+  nodes: NavNode[],
+  resolveTabs: (node: NavNode) => TabItem[]
+): SidebarCategoryDomainLink[] {
   return nodes.flatMap((node) => {
     const currentLink = isVisibleNavLink(node)
-      ? [
-          {
-            id: node.id,
-            title: node.title,
-            url: node.url,
-            icon: node.icon,
-            badge: node.badge,
-          },
-        ]
+      ? [createDomainLink(node, resolveTabs(node))]
       : []
 
     return node.children?.length
-      ? [...currentLink, ...collectLinks(node.children)]
+      ? [...currentLink, ...collectLinks(node.children, resolveTabs)]
       : currentLink
   })
 }
 
 export function createSidebarCategoryPreviews(
-  navGroups: NavGroup[]
+  navGroups: NavGroup[],
+  resolveTabs: (node: NavNode) => TabItem[] = () => []
 ): SidebarCategoryPreview[] {
   return navGroups.map((group) => {
     const sections: SidebarCategorySection[] = []
-    const directLinks: SidebarCategoryLink[] = []
+    const directLinks: SidebarCategoryDomainLink[] = []
 
     group.children.forEach((node) => {
       if (node.children?.length) {
-        const links = collectLinks(node.children)
+        const links = collectLinks(node.children, resolveTabs)
 
         if (links.length > 0) {
           sections.push({
@@ -84,19 +107,16 @@ export function createSidebarCategoryPreviews(
       }
 
       if (isVisibleNavLink(node)) {
-        directLinks.push({
-          id: node.id,
-          title: node.title,
-          url: node.url,
-          icon: node.icon,
-          badge: node.badge,
-        })
+        directLinks.push(createDomainLink(node, resolveTabs(node)))
       }
     })
 
     const linkCount =
-      directLinks.length +
-      sections.reduce((total, section) => total + section.links.length, 0)
+      countDomainAndTabLinks(directLinks) +
+      sections.reduce(
+        (total, section) => total + countDomainAndTabLinks(section.links),
+        0
+      )
 
     return {
       id: group.id,
@@ -106,6 +126,13 @@ export function createSidebarCategoryPreviews(
       linkCount,
     }
   })
+}
+
+function countDomainAndTabLinks(links: SidebarCategoryDomainLink[]): number {
+  return links.reduce(
+    (total, link) => total + Math.max(link.tabs.length, 1),
+    0
+  )
 }
 
 export function calculateFloatingPosition({

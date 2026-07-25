@@ -157,7 +157,7 @@ export const productionOutsourcing = {
       createTitle: '新增委外单位',
       editTitle: '编辑委外单位',
       description:
-        '这里只维护委外单位档案，不维护工序范围和委外任务，避免主数据和执行链路混杂。',
+        '这里只维护委外单位档案；委外任务和一维码当前工序分别由各自的执行链路负责，避免主数据和执行链路混杂。',
     },
     validation: {
       required: '委外编码和委外单位名称不能为空',

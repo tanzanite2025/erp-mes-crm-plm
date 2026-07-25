@@ -5,8 +5,9 @@ import "time"
 // OutsourcePartner is production-domain master data for external processors.
 //
 // A partner may reference a purchasing Supplier for shared contact identity, but
-// production-specific facts stay here. Process scope and execution state are
-// separate follow-up models so this master record remains stable.
+// production-specific partner facts stay here. Barcode execution state and
+// route progress belong to the production execution chain, not this master
+// record.
 type OutsourcePartner struct {
 	BaseModel
 	Code                 string `gorm:"size:50;uniqueIndex;not null" json:"code"`

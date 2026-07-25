@@ -21,6 +21,7 @@ import { ForbiddenState } from '@/components/forbidden-state'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import { useGetSuppliers } from '@/features/purchase/suppliers'
+import { OutsourceStatCard } from '../components/outsource-stat-card'
 import type {
   OutsourcePartner,
   OutsourcePartnerFormValues,
@@ -118,46 +119,30 @@ export function OutsourcePartnerManagement() {
       </div>
 
       <div className='grid gap-3 md:grid-cols-4'>
-        <Card className='rounded-[22px] border-dashed bg-muted/5 shadow-none'>
-          <CardContent className='flex items-center justify-between p-4'>
-            <span className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
-              {t('productionOutsourcing.partners.stats.total')}
-            </span>
-            <span className='text-2xl font-black tabular-nums'>
-              {stats?.total ?? '—'}
-            </span>
-          </CardContent>
-        </Card>
-        <Card className='rounded-[22px] border-dashed bg-emerald-500/5 shadow-none'>
-          <CardContent className='flex items-center justify-between p-4'>
-            <span className='text-[10px] font-black tracking-widest text-emerald-600 uppercase'>
-              {t('productionOutsourcing.partners.stats.active')}
-            </span>
-            <span className='text-2xl font-black text-emerald-600 tabular-nums'>
-              {stats?.active ?? '—'}
-            </span>
-          </CardContent>
-        </Card>
-        <Card className='rounded-[22px] border-dashed bg-amber-500/5 shadow-none'>
-          <CardContent className='flex items-center justify-between p-4'>
-            <span className='text-[10px] font-black tracking-widest text-amber-600 uppercase'>
-              {t('productionOutsourcing.partners.stats.onReview')}
-            </span>
-            <span className='text-2xl font-black text-amber-600 tabular-nums'>
-              {stats?.onReview ?? '—'}
-            </span>
-          </CardContent>
-        </Card>
-        <Card className='rounded-[22px] border-dashed bg-slate-500/5 shadow-none'>
-          <CardContent className='flex items-center justify-between p-4'>
-            <span className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
-              {t('productionOutsourcing.partners.stats.inactive')}
-            </span>
-            <span className='text-2xl font-black text-muted-foreground tabular-nums'>
-              {stats?.inactive ?? '—'}
-            </span>
-          </CardContent>
-        </Card>
+        <OutsourceStatCard
+          label={t('productionOutsourcing.partners.stats.total')}
+          value={stats?.total ?? '—'}
+        />
+        <OutsourceStatCard
+          label={t('productionOutsourcing.partners.stats.active')}
+          value={stats?.active ?? '—'}
+          className='bg-emerald-500/5'
+          labelClassName='text-emerald-600'
+          valueClassName='text-emerald-600'
+        />
+        <OutsourceStatCard
+          label={t('productionOutsourcing.partners.stats.onReview')}
+          value={stats?.onReview ?? '—'}
+          className='bg-amber-500/5'
+          labelClassName='text-amber-600'
+          valueClassName='text-amber-600'
+        />
+        <OutsourceStatCard
+          label={t('productionOutsourcing.partners.stats.inactive')}
+          value={stats?.inactive ?? '—'}
+          className='bg-slate-500/5'
+          valueClassName='text-muted-foreground'
+        />
       </div>
 
       <div className='flex flex-col gap-3 rounded-[24px] border border-dashed border-muted/60 bg-muted/5 p-3 md:flex-row md:items-center md:justify-between'>

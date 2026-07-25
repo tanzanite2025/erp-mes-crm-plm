@@ -107,7 +107,7 @@ export const productionOutsourcing = {
   partners: {
     title: 'Outsource Partner Management',
     description:
-      'Maintain production-domain outsource partner master data. Suppliers are optional references only; process scope, tasks, send, return, and inspection will stay in this outsourcing domain as separate tabs.',
+      'Maintain production-domain outsource partner master data. Suppliers are optional references only; tasks, barcode-state execution, send, return, and inspection stay in their own execution flows.',
     searchPlaceholder: 'Search code, name, contact, or supplier',
     loadingFailed: 'Failed to load outsource partners',
     empty: 'No outsource partner records yet',
@@ -160,7 +160,7 @@ export const productionOutsourcing = {
       createTitle: 'New outsource partner',
       editTitle: 'Edit outsource partner',
       description:
-        'This dialog maintains partner master data only. Process scope and outsource execution stay in separate links.',
+        'This dialog maintains partner master data only. Outsource execution and barcode-state progress stay in their own execution links.',
     },
     validation: {
       required: 'Partner code and name are required',
