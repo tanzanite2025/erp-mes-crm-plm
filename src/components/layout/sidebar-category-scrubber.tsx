@@ -17,7 +17,6 @@ import { cn } from '@/lib/utils'
 import { useSidebar } from '@/components/ui/sidebar'
 import { getProjectedTabsFromPermissionSnapshot } from '@/features/authz/guards/route-access'
 import {
-  calculateFloatingPosition,
   createSidebarCategoryPreviews,
   resolveSidebarScrubberPointerTarget,
   type SidebarCategoryDomainLink,
@@ -50,18 +49,6 @@ const SCRUBBER_ITEM_SPRING = {
   mass: 0.12,
   stiffness: 320,
   damping: 24,
-}
-
-function getScrubberItemElement(categoryId: string): HTMLElement | null {
-  const elements = document.querySelectorAll<HTMLElement>(
-    SCRUBBER_ITEM_SELECTOR
-  )
-
-  return (
-    Array.from(elements).find(
-      (element) => element.dataset.sidebarScrubberItem === categoryId
-    ) ?? null
-  )
 }
 
 function resolveFixedFloatingCardSize() {
@@ -99,6 +86,19 @@ function resolveAdjacentFloatingCardLeft({
   )
 
   return Math.min(rightBoundary - floatingWidth, leftBoundary)
+}
+
+function resolveCenteredFloatingCardTop({
+  floatingHeight,
+  viewportHeight,
+}: {
+  floatingHeight: number
+  viewportHeight: number
+}) {
+  return Math.max(
+    FLOATING_CARD_EDGE_PADDING_PX,
+    Math.floor((viewportHeight - floatingHeight) / 2)
+  )
 }
 
 function getScrubberPointerTargetElement(
@@ -214,7 +214,6 @@ export function SidebarCategoryScrubber({
   const [hoveredCategoryId, setHoveredCategoryId] = useState<string | null>(
     null
   )
-  const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null)
   const [floatingPosition, setFloatingPosition] = useState({
     top: 0,
     left: 0,
@@ -261,32 +260,12 @@ export function SidebarCategoryScrubber({
     }
   }, [])
 
-  const resolveFloatingAnchorRect = useCallback((anchor: HTMLElement) => {
-    const anchorRect = anchor.getBoundingClientRect()
-    const scrubberColumnRect =
-      scrubberColumnRef.current?.getBoundingClientRect()
-
-    if (!scrubberColumnRect) {
-      return anchorRect
-    }
-
-    // Keep the floating card anchored to the fixed scrubber column rather
-    // than the animated width of the individual bar.
-    return new DOMRect(
-      anchorRect.left,
-      anchorRect.top,
-      Math.max(0, scrubberColumnRect.right - anchorRect.left),
-      anchorRect.height
-    )
-  }, [])
-
   const openCategory = useCallback(
-    (categoryId: string, anchor: HTMLElement) => {
+    (categoryId: string) => {
       clearCloseTimer()
       setHoveredCategoryId(categoryId)
-      setAnchorRect(resolveFloatingAnchorRect(anchor))
     },
-    [clearCloseTimer, resolveFloatingAnchorRect]
+    [clearCloseTimer]
   )
 
   const openCategoryFromPointer = useCallback(
@@ -306,7 +285,7 @@ export function SidebarCategoryScrubber({
         return
       }
 
-      openCategory(categoryId, anchor)
+      openCategory(categoryId)
     },
     [clearCloseTimer, hoveredCategoryId, openCategory]
   )
@@ -315,14 +294,12 @@ export function SidebarCategoryScrubber({
     clearCloseTimer()
     closeTimerRef.current = window.setTimeout(() => {
       setHoveredCategoryId(null)
-      setAnchorRect(null)
     }, CLOSE_DELAY_MS)
   }, [clearCloseTimer])
 
   const closeCategory = useCallback(() => {
     clearCloseTimer()
     setHoveredCategoryId(null)
-    setAnchorRect(null)
   }, [clearCloseTimer])
 
   const centerCategoryInSidebar = useCallback(
@@ -355,59 +332,47 @@ export function SidebarCategoryScrubber({
     [clearCenterRetryTimer, navViewportRef, setOpen, shouldReduceMotion, state]
   )
 
+  const updateFloatingPosition = useCallback(() => {
+    const floatingSize = resolveFixedFloatingCardSize()
+    const scrubberColumnRight =
+      scrubberColumnRef.current?.getBoundingClientRect().right ?? 0
+
+    setFloatingPosition({
+      top: resolveCenteredFloatingCardTop({
+        floatingHeight: floatingSize.height,
+        viewportHeight: window.innerHeight,
+      }),
+      left: resolveAdjacentFloatingCardLeft({
+        floatingWidth: floatingSize.width,
+        viewportWidth: window.innerWidth,
+        scrubberColumnRight,
+      }),
+    })
+  }, [])
+
   useLayoutEffect(() => {
-    if (!anchorRect || !hoveredCategoryId) {
+    if (!hoveredCategoryId) {
       return
     }
 
-    const frameId = window.requestAnimationFrame(() => {
-      const floatingSize = resolveFixedFloatingCardSize()
-      const scrubberColumnRight =
-        scrubberColumnRef.current?.getBoundingClientRect().right ?? 0
-      const calculatedPosition = calculateFloatingPosition({
-        anchorRect,
-        floatingWidth: floatingSize.width,
-        floatingHeight: floatingSize.height,
-        viewportWidth: window.innerWidth,
-        viewportHeight: window.innerHeight,
-      })
-
-      setFloatingPosition({
-        top: calculatedPosition.top,
-        left: resolveAdjacentFloatingCardLeft({
-          floatingWidth: floatingSize.width,
-          viewportWidth: window.innerWidth,
-          scrubberColumnRight,
-        }),
-      })
-    })
+    const frameId = window.requestAnimationFrame(updateFloatingPosition)
 
     return () => {
       window.cancelAnimationFrame(frameId)
     }
-  }, [anchorRect, hoveredCategoryId])
+  }, [hoveredCategoryId, updateFloatingPosition])
 
   useEffect(() => {
     if (!hoveredCategoryId) {
       return
     }
 
-    const refreshAnchorRect = () => {
-      const anchor = getScrubberItemElement(hoveredCategoryId)
-
-      if (anchor) {
-        setAnchorRect(resolveFloatingAnchorRect(anchor))
-      }
-    }
-
-    window.addEventListener('resize', refreshAnchorRect)
-    window.addEventListener('scroll', refreshAnchorRect, true)
+    window.addEventListener('resize', updateFloatingPosition)
 
     return () => {
-      window.removeEventListener('resize', refreshAnchorRect)
-      window.removeEventListener('scroll', refreshAnchorRect, true)
+      window.removeEventListener('resize', updateFloatingPosition)
     }
-  }, [hoveredCategoryId, resolveFloatingAnchorRect])
+  }, [hoveredCategoryId, updateFloatingPosition])
 
   useEffect(
     () => () => {
@@ -450,12 +415,8 @@ export function SidebarCategoryScrubber({
                 aria-current={isCurrentRoute ? 'location' : undefined}
                 className='group/category-scrubber flex h-6 w-14 items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary/55 focus-visible:ring-offset-2 focus-visible:ring-offset-background'
                 onClick={() => centerCategoryInSidebar(category.id)}
-                onFocus={(event) =>
-                  openCategory(category.id, event.currentTarget)
-                }
-                onMouseEnter={(event) =>
-                  openCategory(category.id, event.currentTarget)
-                }
+                onFocus={() => openCategory(category.id)}
+                onMouseEnter={() => openCategory(category.id)}
               >
                 <motion.span
                   aria-hidden='true'
