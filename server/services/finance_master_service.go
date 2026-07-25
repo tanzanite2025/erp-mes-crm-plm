@@ -161,7 +161,7 @@ func ListPaymentTerms() ([]models.PaymentTerm, error) {
 	}
 
 	var terms []models.PaymentTerm
-	if err := db.DB.Order("sort_order asc, code asc").Find(&terms).Error; err != nil {
+	if err := db.DB.Order("is_default desc, sort_order asc, code asc").Find(&terms).Error; err != nil {
 		return nil, err
 	}
 	return terms, nil
@@ -173,7 +173,7 @@ func ListPaymentMethods() ([]models.PaymentMethod, error) {
 	}
 
 	var methods []models.PaymentMethod
-	if err := db.DB.Order("sort_order asc, code asc").Find(&methods).Error; err != nil {
+	if err := db.DB.Order("is_default desc, sort_order asc, code asc").Find(&methods).Error; err != nil {
 		return nil, err
 	}
 	return methods, nil
@@ -718,6 +718,7 @@ func defaultPaymentMethods() []models.PaymentMethod {
 		{Code: "BANK_TRANSFER", Name: "对公转账", Description: "银行对公账户转账结算", SortOrder: 20, IsSystem: true, Status: "Active", Version: 1},
 		{Code: "WIRE_TRANSFER", Name: "电汇", Description: "通过银行电汇方式收付款", SortOrder: 30, IsSystem: true, Status: "Active", Version: 1},
 		{Code: "ACCEPTANCE_BILL", Name: "承兑", Description: "银行承兑汇票或商业承兑汇票结算", SortOrder: 40, IsSystem: true, Status: "Active", Version: 1},
+		{Code: "CUSTOM", Name: "自定义", Description: "业务特殊支付方式，适用于无法归类到系统内置渠道的结算场景", SortOrder: 5, IsSystem: true, Status: "Active", Version: 1},
 	}
 }
 
@@ -734,6 +735,14 @@ func ensureDefaultFinanceDictionariesTx(tx *gorm.DB) error {
 		return err
 	}
 	return ensureDefaultPaymentTermsTx(tx)
+}
+
+func removeDisallowedSystemPaymentTermsTx(tx *gorm.DB) error {
+	return tx.Where("is_system = ? AND code IN ?", true, disallowedSystemPaymentTermCodes()).Delete(&models.PaymentTerm{}).Error
+}
+
+func disallowedSystemPaymentTermCodes() []string {
+	return []string{"PREPAY100", "PREPAY30_BAL70"}
 }
 
 func ensureDefaultPaymentTermsTx(tx *gorm.DB) error {
@@ -762,14 +771,6 @@ func ensureDefaultPaymentTermsTx(tx *gorm.DB) error {
 	return nil
 }
 
-func removeDisallowedSystemPaymentTermsTx(tx *gorm.DB) error {
-	return tx.Where("is_system = ? AND code IN ?", true, disallowedSystemPaymentTermCodes()).Delete(&models.PaymentTerm{}).Error
-}
-
-func disallowedSystemPaymentTermCodes() []string {
-	return []string{"PREPAY100", "PREPAY30_BAL70"}
-}
-
 func ensureDefaultPaymentMethodsTx(tx *gorm.DB) error {
 	for _, method := range defaultPaymentMethods() {
 		var existing models.PaymentMethod
@@ -783,9 +784,18 @@ func ensureDefaultPaymentMethodsTx(tx *gorm.DB) error {
 			}
 		case err != nil:
 			return err
-		case !existing.IsSystem:
-			if err := tx.Model(&existing).Update("is_system", true).Error; err != nil {
-				return err
+		default:
+			updates := map[string]interface{}{}
+			if !existing.IsSystem {
+				updates["is_system"] = true
+			}
+			if method.Code == "CUSTOM" && existing.SortOrder != method.SortOrder {
+				updates["sort_order"] = method.SortOrder
+			}
+			if len(updates) > 0 {
+				if err := tx.Model(&existing).Updates(updates).Error; err != nil {
+					return err
+				}
 			}
 		}
 	}

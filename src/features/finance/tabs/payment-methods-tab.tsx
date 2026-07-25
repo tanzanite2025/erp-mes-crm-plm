@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { CreditCard, Edit2, Plus, RefreshCcw } from 'lucide-react'
 import { toast } from 'sonner'
 import { isForbiddenError } from '@/lib/error-status'
+import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import {
@@ -18,6 +19,23 @@ import { PaymentMethodActionDialog } from '../components/payment-method-action-d
 import { type PaymentMethod } from '../data/schema'
 import { financeQueryKeys } from '../query-keys'
 import { PaymentMethodCoreService } from '../services/payment-method-core-service'
+
+function comparePaymentMethodsByDefaultThenSortOrder(
+  left: PaymentMethod,
+  right: PaymentMethod
+) {
+  if (left.isDefault !== right.isDefault) {
+    return left.isDefault ? -1 : 1
+  }
+
+  const leftSortOrder = left.sortOrder ?? 0
+  const rightSortOrder = right.sortOrder ?? 0
+  if (leftSortOrder !== rightSortOrder) {
+    return leftSortOrder - rightSortOrder
+  }
+
+  return left.code.localeCompare(right.code)
+}
 
 export function PaymentMethodsTab() {
   const { t } = useLanguage()
@@ -44,7 +62,9 @@ export function PaymentMethodsTab() {
     return <ForbiddenState />
   }
 
-  const methods = methodsQuery.data ?? []
+  const methods = [...(methodsQuery.data ?? [])].sort(
+    comparePaymentMethodsByDefaultThenSortOrder
+  )
   const isLoading = methodsQuery.isLoading || methodsQuery.isFetching
   const openCreateDialog = () => {
     setEditingMethod(null)
@@ -87,7 +107,12 @@ export function PaymentMethodsTab() {
         {methods.map((method) => (
           <Card
             key={method.id}
-            className='group h-fit self-start rounded-[20px] border-dashed border-primary/20 bg-muted/5 transition-all hover:bg-muted/10 sm:rounded-[24px]'
+            className={cn(
+              'group h-fit self-start rounded-[20px] border-dashed border-primary/20 bg-muted/5 transition-all hover:bg-muted/10 sm:rounded-[24px]',
+              method.isDefault
+                ? 'border-primary/70 bg-primary/[0.04] shadow-[0_16px_40px_rgba(37,99,235,0.12)] ring-2 ring-primary/25 dark:bg-primary/10 dark:shadow-[0_18px_44px_rgba(37,99,235,0.18)]'
+                : ''
+            )}
           >
             <CardHeader className='p-3 pb-1.5 sm:p-4 sm:pb-2'>
               <div className='flex items-center justify-between'>
@@ -153,35 +178,6 @@ export function PaymentMethodsTab() {
             </CardContent>
           </Card>
         ))}
-        <Card
-          role='button'
-          tabIndex={0}
-          onClick={openCreateDialog}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-              event.preventDefault()
-              openCreateDialog()
-            }
-          }}
-          className='group h-fit cursor-pointer gap-3 self-start rounded-[20px] border-dashed border-primary/35 bg-primary/[0.03] p-4 text-left transition-all hover:border-primary/60 hover:bg-primary/[0.07] focus-visible:ring-2 focus-visible:ring-primary/40 sm:rounded-[24px] sm:p-5'
-        >
-          <div className='flex items-center gap-3'>
-            <div className='flex size-9 shrink-0 items-center justify-center rounded-xl border border-dashed border-primary/35 bg-primary/10 transition-transform group-hover:scale-105 sm:rounded-2xl'>
-              <Plus className='size-4 text-primary' />
-            </div>
-            <div className='min-w-0'>
-              <CardTitle className='text-sm font-black tracking-tighter uppercase italic'>
-                {t('finance.paymentMethods.card.customTitle')}
-              </CardTitle>
-              <CardDescription className='mt-1 text-[10px] leading-relaxed font-medium text-muted-foreground/80'>
-                {t('finance.paymentMethods.card.customDescription')}
-              </CardDescription>
-            </div>
-          </div>
-          <span className='pl-12 text-[8px] font-black tracking-widest text-primary uppercase sm:pl-12'>
-            {t('finance.paymentMethods.card.customAction')}
-          </span>
-        </Card>
       </div>
 
       <Card className='rounded-[32px] border-dashed border-blue-500/20 bg-blue-500/5 p-6'>

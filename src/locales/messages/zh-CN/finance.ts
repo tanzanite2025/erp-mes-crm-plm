@@ -279,9 +279,6 @@ export const finance = {
       optionalBadge: '可选方式',
       systemBadge: '系统内置',
       sortOrder: '排序: {{sortOrder}}',
-      customTitle: '自定义支付方式',
-      customDescription: '按业务需要新增支付渠道，不改变系统内置项。',
-      customAction: '新增自定义方式',
     },
     status: {
       active: '启用',

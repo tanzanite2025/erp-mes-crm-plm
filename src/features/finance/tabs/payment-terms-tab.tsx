@@ -4,6 +4,7 @@ import { Plus, RefreshCcw, CreditCard, Edit2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { isForbiddenError } from '@/lib/error-status'
 import { createLogger } from '@/lib/logger'
+import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import {
@@ -21,6 +22,23 @@ import { financeQueryKeys } from '../query-keys'
 import { PaymentTermCoreService } from '../services/payment-term-core-service'
 
 const logger = createLogger('PaymentTermsTab')
+
+function comparePaymentTermsByDefaultThenSortOrder(
+  left: PaymentTerm,
+  right: PaymentTerm
+) {
+  if (left.isDefault !== right.isDefault) {
+    return left.isDefault ? -1 : 1
+  }
+
+  const leftSortOrder = left.sortOrder ?? 0
+  const rightSortOrder = right.sortOrder ?? 0
+  if (leftSortOrder !== rightSortOrder) {
+    return leftSortOrder - rightSortOrder
+  }
+
+  return left.code.localeCompare(right.code)
+}
 
 export function PaymentTermsTab() {
   const { t } = useLanguage()
@@ -63,7 +81,9 @@ export function PaymentTermsTab() {
     `finance.paymentTerms.card.labels.${code}` as Parameters<typeof t>[0]
   const getCardDescriptionKey = (code: string): Parameters<typeof t>[0] =>
     `finance.paymentTerms.card.descriptions.${code}` as Parameters<typeof t>[0]
-  const terms = termsQuery.data ?? []
+  const terms = [...(termsQuery.data ?? [])].sort(
+    comparePaymentTermsByDefaultThenSortOrder
+  )
   const isLoading = termsQuery.isLoading || termsQuery.isFetching
 
   return (
@@ -102,7 +122,12 @@ export function PaymentTermsTab() {
         {terms.map((term) => (
           <Card
             key={term.id}
-            className='group rounded-[24px] border-dashed border-primary/20 bg-muted/5 transition-all hover:bg-muted/10'
+            className={cn(
+              'group rounded-[24px] border-dashed border-primary/20 bg-muted/5 transition-all hover:bg-muted/10',
+              term.isDefault
+                ? 'border-primary/70 bg-primary/[0.04] shadow-[0_16px_40px_rgba(37,99,235,0.12)] ring-2 ring-primary/25 dark:bg-primary/10 dark:shadow-[0_18px_44px_rgba(37,99,235,0.18)]'
+                : ''
+            )}
           >
             <CardHeader className='px-4 pt-3 pb-1'>
               <div className='flex items-center justify-between'>

@@ -295,10 +295,6 @@ export const finance = {
       optionalBadge: 'OPTIONAL_METHOD',
       systemBadge: 'SYSTEM_PRESET',
       sortOrder: 'SORT: {{sortOrder}}',
-      customTitle: 'Custom Payment Method',
-      customDescription:
-        'Add a business-specific channel without changing system presets.',
-      customAction: 'Add Custom Method',
     },
     status: {
       active: 'Active',

@@ -75,8 +75,8 @@ func TestSeedFinanceDataWritesAuditInOneTransactionAndIsIdempotent(t *testing.T)
 	if err := testDB.Find(&logs).Error; err != nil {
 		t.Fatalf("load finance seed audit logs: %v", err)
 	}
-	if len(logs) != 15 {
-		t.Fatalf("expected 15 audit logs for seeded records, got %d", len(logs))
+	if len(logs) != 16 {
+		t.Fatalf("expected 16 audit logs for seeded records, got %d", len(logs))
 	}
 	for _, log := range logs {
 		if log.Operator != "finance-tester" || log.Action != "CREATE" {
@@ -139,7 +139,7 @@ func TestFinanceListSelfHealingWritesSystemAudit(t *testing.T) {
 
 	expectedByModule := map[string]int64{
 		AuditModuleCurrency:      1,
-		AuditModulePaymentMethod: 4,
+		AuditModulePaymentMethod: 5,
 		AuditModulePaymentTerm:   3,
 		AuditModuleTaxRate:       4,
 	}
@@ -177,6 +177,51 @@ func TestFinanceListSelfHealingWritesSystemAudit(t *testing.T) {
 	}
 	if afterRepeat != beforeRepeat {
 		t.Fatalf("repeat self-heal reads must not add audit noise: before=%d after=%d", beforeRepeat, afterRepeat)
+	}
+}
+
+func TestListPaymentMethodsEnsuresVisibleCustomMethod(t *testing.T) {
+	testDB := openFinanceSeedTestDB(t, true)
+	previousDB := appdb.DB
+	appdb.DB = testDB
+	t.Cleanup(func() { appdb.DB = previousDB })
+
+	seededCustom := models.PaymentMethod{
+		Code:        "CUSTOM",
+		Name:        "自定义",
+		Description: "旧排序自定义支付方式",
+		SortOrder:   90,
+		IsSystem:    true,
+		Status:      "Active",
+		Version:     1,
+	}
+	if err := testDB.Create(&seededCustom).Error; err != nil {
+		t.Fatalf("seed custom payment method: %v", err)
+	}
+
+	methods, err := ListPaymentMethods()
+	if err != nil {
+		t.Fatalf("list payment methods: %v", err)
+	}
+
+	var custom *models.PaymentMethod
+	for index := range methods {
+		if methods[index].Code == "CUSTOM" {
+			custom = &methods[index]
+			break
+		}
+	}
+	if custom == nil {
+		t.Fatal("expected CUSTOM payment method to be present")
+	}
+	if custom.Name != "自定义" {
+		t.Fatalf("expected CUSTOM name to be 自定义, got %q", custom.Name)
+	}
+	if custom.SortOrder != 5 {
+		t.Fatalf("expected CUSTOM sort order to be 5, got %d", custom.SortOrder)
+	}
+	if !custom.IsSystem {
+		t.Fatal("expected CUSTOM payment method to be system preset")
 	}
 }
 
