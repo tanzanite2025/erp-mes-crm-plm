@@ -168,7 +168,7 @@ export const engineering = {
       'Failed to advance preview serial. Check the current value.',
     templateName: 'Product Label - {{name}}',
     printBatchSuccess: 'Print batch recorded. Current SN: {{sn}}',
-    printBatchFailed: 'Atomic print failed. Please try again.',
+    printBatchFailed: 'Label print failed. Please try again.',
     saveConfigSuccess: 'Barcode config synced to product archive',
     printSingleLabel: 'Print Single Label',
     regenerateSequence: 'Regenerate (Skip Number)',
@@ -177,7 +177,7 @@ export const engineering = {
     overview: {
       title: 'Engineering File Aggregation Center',
       description:
-        'Centralized manufacturing repository for SOPs, drawings, and atomic data assets.',
+        'Centralized manufacturing repository for SOPs, drawings, and reusable engineering files.',
       searchPlaceholder: 'Search keywords, SKU, product... SCAN_ARCHIVE',
     },
     categories: {
@@ -553,7 +553,7 @@ export const engineering = {
   },
   spokeLength: {
     overview: {
-      title: 'Spoke Length Atomic Center',
+      title: 'Spoke Length Process Archive',
       description:
         'Physical Parameter Archive: Controlled spoke dimensions and process evidence linked to Hub & Nipple master data.',
     },
@@ -679,7 +679,7 @@ export const engineering = {
       createTitle: 'Add New Labeling Draft',
       editTitle: 'Edit Labeling Graphics',
       description:
-        'Visual Standard System: Define labeling category, coordinates, and visual atomic parameters.',
+        'Visual Standard System: Define labeling category, coordinates, and visual specification parameters.',
     },
     form: {
       name: 'Draft Subject Name',
@@ -729,7 +729,7 @@ export const engineering = {
       createTitle: 'PUBLISH_NEW_SPEC',
       editTitle: 'EDIT_TECHNICAL_SPEC',
       description:
-        'Controlled manufacturing atomic document, supporting SOP and standards linking.',
+        'Controlled manufacturing document, supporting SOP and standards linking.',
     },
     form: {
       name: 'Specification Name',
@@ -737,7 +737,7 @@ export const engineering = {
       revision: 'Revision No.',
       attachment: 'Linked Attachment (PDF/EXCEL/DOC)',
       description: 'Abstract / Storage Note',
-      submit: 'CONFIRM_PUBLISH_ATOMIC',
+      submit: 'Publish Specification',
     },
     placeholders: {
       name: 'e.g., Rim reinforcement layer layup process',

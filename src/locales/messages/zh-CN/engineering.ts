@@ -159,7 +159,7 @@ export const engineering = {
     syncSequenceFailed: '预览流水号递增失败，请检查当前值',
     templateName: '产品标签 - {{name}}',
     printBatchSuccess: '已记录打印批次，当前 SN: {{sn}}',
-    printBatchFailed: '原子化打印失败，请重试',
+    printBatchFailed: '标签打印失败，请重试',
     saveConfigSuccess: '条码配置已成功同步至产品档案',
     printSingleLabel: '打印单枚标签',
     regenerateSequence: '重新生成（跳号）',
@@ -167,7 +167,7 @@ export const engineering = {
   db: {
     overview: {
       title: '工程档案全量汇总中心',
-      description: '数字化工艺档案中心：聚合规范与图档，提供全链路原子检索入口',
+      description: '数字化工艺档案中心：聚合规范与图档，提供全链路检索入口',
       searchPlaceholder: '搜索关键词、产品型号... SCAN_ARCHIVE',
     },
     categories: {
@@ -428,9 +428,9 @@ export const engineering = {
   },
   drilling: {
     overview: {
-      title: '车圈打孔图纸原子中心',
+      title: '车圈打孔图纸管理',
       description:
-        '工艺落地方案：受控打孔参数及关联 CAD/PDF 电子蓝图原子化管理',
+        '管理受控打孔参数及关联 CAD/PDF 工程图纸，支撑打孔方案归档与追溯',
     },
     table: {
       name: '方案名称',
@@ -462,7 +462,7 @@ export const engineering = {
       product: '关联具体的物料型号...',
       lacing: '选择编织方式',
       holes: '选择孔数',
-      attachment: '点击或拖拽方案图纸至此原子中心',
+      attachment: '点击或拖拽方案图纸至此处',
       search: '搜索方案、SKU、编织方式...',
       mobileLoading: '正在解析蓝图库...',
       noData: '暂无打孔方案',
@@ -527,7 +527,7 @@ export const engineering = {
   },
   spokeLength: {
     overview: {
-      title: '辐条长度工艺原子库',
+      title: '辐条长度工艺档案',
       description:
         '长度计算存证：受控辐条物理参数及其对应的工艺实物留档，已完成与花鼓/条帽库的联动关联',
     },
@@ -623,9 +623,8 @@ export const engineering = {
   },
   labeling: {
     overview: {
-      title: '贴标工艺图档原子中心',
-      description:
-        '收官方案：管理水标、漆标、镭雕 CAD/PDF 原始图档及其对应的物料原子',
+      title: '贴标工艺图档管理',
+      description: '管理水标、漆标、镭雕 CAD/PDF 原始图档及其关联物料',
     },
     table: {
       name: '图档名称',
@@ -648,7 +647,7 @@ export const engineering = {
     dialog: {
       createTitle: '新增贴标工艺图纸',
       editTitle: '编辑贴标图纸方案',
-      description: '视觉规范系统：定义贴标分类、位置及视觉原子参数',
+      description: '定义贴标分类、位置及视觉规范参数',
     },
     form: {
       name: '图纸主题名称',
@@ -663,9 +662,9 @@ export const engineering = {
       product: '选择或搜索物料型号...',
       category: '选择图档分类',
       revision: 'V1.0',
-      attachment: '点击或拖拽方案图纸至此原子中心',
+      attachment: '点击或拖拽方案图纸至此处',
       search: '搜索图档、SKU、分类...',
-      mobileLoading: '正在同步视觉原子...',
+      mobileLoading: '正在同步图档...',
       noData: '暂无贴标图纸',
     },
     toasts: {
@@ -679,7 +678,7 @@ export const engineering = {
   },
   specs: {
     overview: {
-      title: '工艺技术规范原子库',
+      title: '工艺技术规范库',
       description:
         '受控中心：管理 SOP、成品检验及技术参数，支持全生命周期版本追溯',
     },
@@ -696,7 +695,7 @@ export const engineering = {
     dialog: {
       createTitle: '发布技术规范',
       editTitle: '编辑技术规范',
-      description: '受控工艺文档原子，支持 SOP 及标准关联',
+      description: '受控工艺文档，支持 SOP 及标准关联',
     },
     form: {
       name: '规范主题名称',
@@ -704,7 +703,7 @@ export const engineering = {
       revision: '修订版次',
       attachment: '附件关联 (支持 PDF/EXCEL/DOC)',
       description: '档案摘要说明',
-      submit: '确认发布档原子',
+      submit: '确认发布规范',
     },
     placeholders: {
       name: '例如：车圈补强层铺设工艺',

@@ -88,9 +88,6 @@ const DATA_QUALITY_NOTE_LABEL_KEYS: Record<string, TranslationKey> = {
     'businessAnalysis.productionCapacity.qualityQuantityUnitMismatch',
 }
 
-const filterLabelClass = 'text-xs font-medium text-muted-foreground'
-const sectionTitleClass = 'flex items-center gap-2 text-sm font-semibold'
-
 function getCurrentMonthRange(): Pick<CapacityFilters, 'from' | 'to'> {
   const now = new Date()
   const from = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -276,7 +273,7 @@ export function ProductionCapacityAnalysisTab() {
             size='sm'
             disabled={!canExport || isExporting}
             onClick={() => void handleExportCurrentAggregation()}
-            className='h-9 rounded-xl px-4 text-sm font-medium'
+            className='h-9 rounded-full border-dashed px-4 text-[10px] font-black tracking-widest uppercase'
           >
             {isExporting ? (
               <Loader2 className='mr-2 size-3.5 animate-spin' />
@@ -290,16 +287,16 @@ export function ProductionCapacityAnalysisTab() {
         }
       />
 
-      <Card className='rounded-2xl shadow-sm'>
+      <Card className='rounded-[24px] border bg-background shadow-none'>
         <CardHeader className='p-4 pb-2'>
-          <CardTitle className={`${sectionTitleClass} text-foreground`}>
+          <CardTitle className='flex items-center gap-2 text-xs font-black tracking-widest text-muted-foreground uppercase'>
             <Filter className='size-3.5 text-primary' />
             {t('businessAnalysis.productionCapacity.filtersTitle')}
           </CardTitle>
         </CardHeader>
         <CardContent className='grid gap-3 px-4 pb-4 sm:grid-cols-2 xl:grid-cols-6'>
           <label className='space-y-1'>
-            <span className={filterLabelClass}>
+            <span className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
               {t('businessAnalysis.productionCapacity.from')}
             </span>
             <Input
@@ -309,7 +306,7 @@ export function ProductionCapacityAnalysisTab() {
             />
           </label>
           <label className='space-y-1'>
-            <span className={filterLabelClass}>
+            <span className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
               {t('businessAnalysis.productionCapacity.toExclusive')}
             </span>
             <Input
@@ -319,7 +316,7 @@ export function ProductionCapacityAnalysisTab() {
             />
           </label>
           <label className='space-y-1'>
-            <span className={filterLabelClass}>
+            <span className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
               {t('businessAnalysis.productionCapacity.customer')}
             </span>
             <Select
@@ -344,7 +341,7 @@ export function ProductionCapacityAnalysisTab() {
             </Select>
           </label>
           <label className='space-y-1'>
-            <span className={filterLabelClass}>
+            <span className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
               {t('businessAnalysis.productionCapacity.product')}
             </span>
             <Select
@@ -369,7 +366,7 @@ export function ProductionCapacityAnalysisTab() {
             </Select>
           </label>
           <label className='space-y-1'>
-            <span className={filterLabelClass}>
+            <span className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
               {t('businessAnalysis.productionCapacity.statusFilter')}
             </span>
             <Select
@@ -413,12 +410,15 @@ export function ProductionCapacityAnalysisTab() {
 
       <div className='grid gap-3 sm:grid-cols-2 xl:grid-cols-7'>
         {metricCards.map((metric) => (
-          <Card key={metric.key} className='rounded-2xl shadow-sm'>
+          <Card
+            key={metric.key}
+            className='rounded-[20px] border bg-muted/5 shadow-none'
+          >
             <CardContent className='flex min-h-20 items-center justify-between gap-3 p-4'>
-              <span className='text-sm font-medium text-muted-foreground'>
+              <span className='text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
                 {metric.label}
               </span>
-              <span className='font-mono text-xl font-semibold text-foreground'>
+              <span className='font-mono text-xl font-black text-foreground'>
                 {metric.value}
               </span>
             </CardContent>
@@ -428,7 +428,7 @@ export function ProductionCapacityAnalysisTab() {
 
       <Card
         className={cn(
-          'rounded-2xl shadow-sm',
+          'rounded-[24px] shadow-none',
           dataQuality?.isComplete
             ? 'border-emerald-500/30 bg-emerald-500/5'
             : 'border-amber-500/30 bg-amber-500/5'
@@ -441,7 +441,7 @@ export function ProductionCapacityAnalysisTab() {
             ) : (
               <AlertTriangle className='size-4 text-amber-600' />
             )}
-            <p className='text-sm font-semibold'>
+            <p className='text-xs font-black tracking-wide'>
               {t('businessAnalysis.productionCapacity.dataQualityTitle')}
             </p>
           </div>
@@ -534,16 +534,16 @@ export function ProductionCapacityAnalysisTab() {
         />
       </div>
 
-      <Card className='rounded-2xl shadow-sm'>
+      <Card className='rounded-[24px] border bg-background shadow-none'>
         <CardHeader className='flex flex-row items-center justify-between p-4 pb-2'>
-          <CardTitle className={`${sectionTitleClass} text-foreground`}>
+          <CardTitle className='flex items-center gap-2 text-xs font-black tracking-widest text-muted-foreground uppercase'>
             <CalendarRange className='size-3.5 text-primary' />
             {t('businessAnalysis.productionCapacity.byDayTitle')}
           </CardTitle>
           <button
             type='button'
             onClick={() => void capacityQuery.refetch()}
-            className='inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground'
+            className='inline-flex items-center gap-1 text-[10px] font-black tracking-widest text-muted-foreground uppercase hover:text-foreground'
           >
             <RefreshCw
               className={cn(
@@ -609,14 +609,14 @@ export function ProductionCapacityAnalysisTab() {
       >
         <DialogContent
           size='6xl'
-          className='max-h-[85vh] overflow-hidden rounded-2xl p-0'
+          className='max-h-[85vh] overflow-hidden rounded-[24px] p-0'
         >
           <DialogHeader className='border-b px-6 py-5 pe-14'>
-            <DialogTitle className='flex items-center gap-2 text-base font-semibold'>
+            <DialogTitle className='flex items-center gap-2 text-base font-black'>
               <Factory className='size-4 text-primary' />
               {t('businessAnalysis.productionCapacity.drilldownTitle')}
             </DialogTitle>
-            <DialogDescription className='text-sm'>
+            <DialogDescription className='text-xs'>
               {drilldownSelection?.label ||
                 t('businessAnalysis.productionCapacity.drilldownValueFallback')}
             </DialogDescription>
@@ -633,19 +633,19 @@ export function ProductionCapacityAnalysisTab() {
             ) : drilldownQuery.data?.items.length ? (
               <div className='space-y-4'>
                 {drilldownQuery.data.items.map((plan) => (
-                  <Card key={plan.planId} className='rounded-2xl shadow-sm'>
+                  <Card
+                    key={plan.planId}
+                    className='rounded-2xl border bg-background shadow-none'
+                  >
                     <CardHeader className='space-y-3 p-4 pb-2'>
                       <div className='flex flex-wrap items-center justify-between gap-2'>
-                        <CardTitle className='text-sm font-semibold'>
+                        <CardTitle className='text-sm font-black'>
                           {plan.orderNo ||
                             t(
                               'businessAnalysis.productionCapacity.planFallback'
                             )}
                         </CardTitle>
-                        <Badge
-                          variant='outline'
-                          className='text-xs font-medium'
-                        >
+                        <Badge variant='outline' className='text-[10px]'>
                           {STATUS_LABEL_KEYS[
                             plan.status as keyof typeof STATUS_LABEL_KEYS
                           ]
@@ -827,9 +827,9 @@ function BreakdownTable({
   completedLabel: string
 }) {
   return (
-    <Card className='rounded-2xl shadow-sm'>
+    <Card className='rounded-[24px] border bg-background shadow-none'>
       <CardHeader className='p-4 pb-2'>
-        <CardTitle className='text-sm font-semibold text-foreground'>
+        <CardTitle className='text-xs font-black tracking-widest text-muted-foreground uppercase'>
           {title}
         </CardTitle>
       </CardHeader>
@@ -854,7 +854,7 @@ function BreakdownTable({
                           type='button'
                           variant='link'
                           size='sm'
-                          className='h-7 shrink-0 px-0 text-xs font-medium'
+                          className='h-7 shrink-0 px-0 text-[10px] font-black'
                           onClick={() => onDrilldown(row)}
                         >
                           {drilldownLabel}
