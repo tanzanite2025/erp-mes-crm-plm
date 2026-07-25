@@ -1,4 +1,4 @@
-package dependencies
+package access
 
 import (
 	"strings"

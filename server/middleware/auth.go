@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 	"xdfc-server/db"
-	"xdfc-server/dependencies"
 	"xdfc-server/models"
+	access "xdfc-server/services/access"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -107,7 +107,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		accessSnapshot, err := dependencies.NewIdentityAccessServiceWithDB(db.DB).ResolveSnapshotForUser(user)
+		accessSnapshot, err := access.NewIdentityAccessServiceWithDB(db.DB).ResolveSnapshotForUser(user)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Failed to resolve account access"})
 			c.Abort()

@@ -15,9 +15,9 @@ import (
 	"time"
 	"xdfc-server/authz"
 	"xdfc-server/db"
-	"xdfc-server/dependencies"
 	"xdfc-server/middleware"
 	"xdfc-server/services"
+	access "xdfc-server/services/access"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -205,7 +205,7 @@ func WSHandler(c *gin.Context) {
 		return
 	}
 
-	accessSnapshot, err := dependencies.NewIdentityAccessServiceWithDB(db.DB).ResolveSnapshotByUserID(userID)
+	accessSnapshot, err := access.NewIdentityAccessServiceWithDB(db.DB).ResolveSnapshotByUserID(userID)
 	if err != nil {
 		log.Printf("[WS_AUTH_FAIL] Failed to resolve websocket access, userId=%s err=%v", userID, err)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Failed to resolve account access"})

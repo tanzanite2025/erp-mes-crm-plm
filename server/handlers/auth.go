@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 	"xdfc-server/db"
-	"xdfc-server/dependencies"
 	"xdfc-server/middleware"
 	"xdfc-server/models"
+	access "xdfc-server/services/access"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -105,7 +105,7 @@ func LoginHandler(c *gin.Context) {
 		return
 	}
 
-	accessSnapshot, err := dependencies.NewIdentityAccessServiceWithDB(db.DB).ResolveSnapshotForUser(user)
+	accessSnapshot, err := access.NewIdentityAccessServiceWithDB(db.DB).ResolveSnapshotForUser(user)
 	if err != nil {
 		log.Error().
 			Str("request_id", c.GetString("requestId")).
@@ -209,7 +209,7 @@ func GetAuthSnapshotHandler(c *gin.Context) {
 
 	diagnostics := []string{}
 	if hasAccessSnapshot {
-		if snapshot, ok := accessSnapshotRaw.(dependencies.IdentityAccessSnapshot); ok {
+		if snapshot, ok := accessSnapshotRaw.(access.IdentityAccessSnapshot); ok {
 			if len(snapshot.Permissions) > 0 {
 				permissionList = append([]string(nil), snapshot.Permissions...)
 			}

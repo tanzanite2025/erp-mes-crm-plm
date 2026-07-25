@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 	"xdfc-server/db"
-	"xdfc-server/dependencies"
+	access "xdfc-server/services/access"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -18,7 +18,7 @@ func GetUserAccessSnapshotHandler(c *gin.Context) {
 		return
 	}
 
-	snapshot, err := dependencies.NewIdentityAccessServiceWithDB(db.DB).ResolveSnapshotByUserID(userID)
+	snapshot, err := access.NewIdentityAccessServiceWithDB(db.DB).ResolveSnapshotByUserID(userID)
 	if err != nil {
 		switch {
 		case errors.Is(err, gorm.ErrRecordNotFound):
