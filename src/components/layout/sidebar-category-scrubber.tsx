@@ -120,7 +120,7 @@ export function SidebarCategoryScrubber({
   activeGroupId,
   navViewportRef,
 }: SidebarCategoryScrubberProps) {
-  const { isMobile, setOpen, state } = useSidebar()
+  const { isMobile, setOpen } = useSidebar()
   const shouldReduceMotion = useReducedMotion()
   const floatingRef = useRef<HTMLDivElement>(null)
   const closeTimerRef = useRef<number | null>(null)
@@ -257,72 +257,74 @@ export function SidebarCategoryScrubber({
     [clearCloseTimer]
   )
 
-  if (isMobile || categoryPreviews.length <= 1) {
+  if (isMobile || categoryPreviews.length === 0) {
     return null
   }
 
-  const railLeft =
-    state === 'expanded' ? 'calc(var(--sidebar-width) + 0.35rem)' : '0.45rem'
-
   return (
     <>
-      <nav
-        aria-label='侧边栏顶级分类快速索引'
-        className='pointer-events-auto fixed top-1/2 z-30 hidden -translate-y-1/2 flex-col items-center gap-1.5 rounded-full px-1.5 py-2 transition-[left] duration-200 ease-out motion-reduce:transition-none md:flex'
-        style={{ left: railLeft }}
-        onMouseEnter={clearCloseTimer}
-        onMouseLeave={scheduleClose}
+      <aside
+        data-sidebar-scrubber-column
+        className='sticky top-0 z-30 hidden h-svh w-(--sidebar-gutter-width) shrink-0 items-center justify-center md:flex'
       >
-        {categoryPreviews.map((category) => {
-          const isHovered = hoveredCategoryId === category.id
-          const isCurrentRoute = activeGroupId === category.id
-          const isCentered = centeredGroupId === category.id
+        <nav
+          aria-label='侧边栏顶级分类快速索引'
+          className='pointer-events-auto flex flex-col items-center gap-2 rounded-full px-1 py-2.5'
+          onMouseEnter={clearCloseTimer}
+          onMouseLeave={scheduleClose}
+        >
+          {categoryPreviews.map((category) => {
+            const isHovered = hoveredCategoryId === category.id
+            const isCurrentRoute = activeGroupId === category.id
+            const isCentered = centeredGroupId === category.id
 
-          return (
-            <button
-              key={category.id}
-              type='button'
-              data-sidebar-scrubber-item={category.id}
-              aria-label={`定位到${category.title}`}
-              aria-current={isCurrentRoute ? 'location' : undefined}
-              className='group/category-scrubber flex h-3 w-8 items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary/55 focus-visible:ring-offset-2 focus-visible:ring-offset-background'
-              onClick={() => centerCategoryInSidebar(category.id)}
-              onFocus={(event) =>
-                openCategory(category.id, event.currentTarget)
-              }
-              onMouseEnter={(event) =>
-                openCategory(category.id, event.currentTarget)
-              }
-              onMouseLeave={scheduleClose}
-            >
-              <motion.span
-                aria-hidden='true'
-                initial={false}
-                animate={{
-                  width: isHovered
-                    ? 30
-                    : isCentered
-                      ? 22
-                      : isCurrentRoute
-                        ? 18
-                        : 13,
-                  opacity: isHovered || isCentered || isCurrentRoute ? 1 : 0.42,
-                }}
-                transition={
-                  shouldReduceMotion ? { duration: 0 } : SCRUBBER_ITEM_SPRING
+            return (
+              <button
+                key={category.id}
+                type='button'
+                data-sidebar-scrubber-item={category.id}
+                aria-label={`定位到${category.title}`}
+                aria-current={isCurrentRoute ? 'location' : undefined}
+                className='group/category-scrubber flex h-6 w-14 items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary/55 focus-visible:ring-offset-2 focus-visible:ring-offset-background'
+                onClick={() => centerCategoryInSidebar(category.id)}
+                onFocus={(event) =>
+                  openCategory(category.id, event.currentTarget)
                 }
-                className={cn(
-                  'h-0.5 rounded-full bg-muted-foreground/70 shadow-none transition-colors',
-                  isCurrentRoute && 'bg-primary/80',
-                  isCentered &&
-                    'bg-orange-500 shadow-[0_0_10px_hsl(var(--primary)/0.18)]',
-                  isHovered && 'bg-orange-500'
-                )}
-              />
-            </button>
-          )
-        })}
-      </nav>
+                onMouseEnter={(event) =>
+                  openCategory(category.id, event.currentTarget)
+                }
+                onMouseLeave={scheduleClose}
+              >
+                <motion.span
+                  aria-hidden='true'
+                  initial={false}
+                  animate={{
+                    width: isHovered
+                      ? 42
+                      : isCentered
+                        ? 32
+                        : isCurrentRoute
+                          ? 26
+                          : 20,
+                    opacity:
+                      isHovered || isCentered || isCurrentRoute ? 1 : 0.46,
+                  }}
+                  transition={
+                    shouldReduceMotion ? { duration: 0 } : SCRUBBER_ITEM_SPRING
+                  }
+                  className={cn(
+                    'h-[3px] rounded-full bg-muted-foreground/70 shadow-none transition-colors',
+                    isCurrentRoute && 'bg-primary/80',
+                    isCentered &&
+                      'bg-orange-500 shadow-[0_0_10px_hsl(var(--primary)/0.18)]',
+                    isHovered && 'bg-orange-500'
+                  )}
+                />
+              </button>
+            )
+          })}
+        </nav>
+      </aside>
       <SidebarCategoryFloatingCard
         category={hoveredCategory}
         floatingRef={floatingRef}
