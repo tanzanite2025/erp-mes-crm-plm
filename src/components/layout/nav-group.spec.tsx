@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { SidebarProvider, useSidebar } from '@/components/ui/sidebar'
-import { NavGroup } from './nav-group'
+import { NavGroup, type SidebarNavGroupExpansionRequest } from './nav-group'
 import type { NavGroup as NavGroupData } from './types'
 
 const routerState = vi.hoisted(() => ({
@@ -70,11 +70,20 @@ function MobileStateProbe() {
   )
 }
 
-function renderNavGroup({ includeMobileProbe = false } = {}) {
+function renderNavGroup({
+  includeMobileProbe = false,
+  expansionRequest = null,
+}: {
+  includeMobileProbe?: boolean
+  expansionRequest?: SidebarNavGroupExpansionRequest | null
+} = {}) {
   return render(
     <SidebarProvider>
       {includeMobileProbe ? <MobileStateProbe /> : null}
-      <NavGroup {...productionGroup} />
+      <NavGroup
+        {...productionGroup}
+        expansionRequest={expansionRequest}
+      />
     </SidebarProvider>
   )
 }
@@ -119,5 +128,33 @@ describe('NavGroup', () => {
 
     fireEvent.click(screen.getByRole('link', { name: 'APS' }))
     expect(screen.getByTestId('mobile-state').textContent).toBe('false')
+  })
+
+  it('expands the group when the sidebar scrubber requests this group', () => {
+    routerState.pathname = '/quality'
+    const view = renderNavGroup()
+
+    expect(
+      screen.getByRole('button', { name: 'Production' }).getAttribute(
+        'aria-expanded'
+      )
+    ).toBe('false')
+    expect(screen.queryByRole('link', { name: 'APS' })).toBeNull()
+
+    view.rerender(
+      <SidebarProvider>
+        <NavGroup
+          {...productionGroup}
+          expansionRequest={{ groupId: 'production', requestId: 1 }}
+        />
+      </SidebarProvider>
+    )
+
+    expect(
+      screen.getByRole('button', { name: 'Production' }).getAttribute(
+        'aria-expanded'
+      )
+    ).toBe('true')
+    expect(screen.getByRole('link', { name: 'APS' })).not.toBeNull()
   })
 })

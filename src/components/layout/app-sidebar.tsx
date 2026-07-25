@@ -12,7 +12,10 @@ import {
   DEFAULT_ENTERPRISE_LOGO_URL,
   EnterpriseService,
 } from '@/features/basic-settings/services/enterprise-service'
-import { NavGroup } from './nav-group'
+import {
+  NavGroup,
+  type SidebarNavGroupExpansionRequest,
+} from './nav-group'
 import { resolveActiveSidebarPath } from './sidebar-active-path'
 import { SidebarBrand } from './sidebar-brand'
 import { SidebarCategoryScrubber } from './sidebar-category-scrubber'
@@ -30,6 +33,8 @@ export function AppSidebar() {
     plan: localizedSidebarData.teams[0].plan,
     logoUrl: DEFAULT_ENTERPRISE_LOGO_URL,
   })
+  const [scrubberExpansionRequest, setScrubberExpansionRequest] =
+    useState<SidebarNavGroupExpansionRequest | null>(null)
   const navViewportRef = useRef<HTMLDivElement>(null)
 
   /**
@@ -84,6 +89,16 @@ export function AppSidebar() {
     ? openMobile
     : collapsible === 'none' || state === 'expanded'
 
+  const requestSidebarGroupExpansionFromScrubber = useCallback(
+    (groupId: string) => {
+      setScrubberExpansionRequest((currentRequest) => ({
+        groupId,
+        requestId: (currentRequest?.requestId ?? 0) + 1,
+      }))
+    },
+    []
+  )
+
   useSidebarActiveCenter({
     viewportRef: navViewportRef,
     activePathKey: activeSidebarPath?.key,
@@ -104,7 +119,11 @@ export function AppSidebar() {
           >
             <div className='flex min-h-full w-full flex-col justify-center py-1'>
               {renderedNavGroups.map((props) => (
-                <NavGroup key={props.id} {...props} />
+                <NavGroup
+                  key={props.id}
+                  {...props}
+                  expansionRequest={scrubberExpansionRequest}
+                />
               ))}
             </div>
           </div>
@@ -115,6 +134,7 @@ export function AppSidebar() {
         navGroups={renderedNavGroups}
         activeGroupId={activeSidebarPath?.groupId}
         navViewportRef={navViewportRef}
+        onCategoryActivate={requestSidebarGroupExpansionFromScrubber}
       />
     </>
   )

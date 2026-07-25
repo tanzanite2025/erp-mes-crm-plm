@@ -35,6 +35,7 @@ type SidebarCategoryScrubberProps = {
   navGroups: NavGroup[]
   activeGroupId?: string
   navViewportRef: RefObject<HTMLDivElement | null>
+  onCategoryActivate?: (categoryId: string) => void
 }
 
 const CLOSE_DELAY_MS = 140
@@ -216,6 +217,7 @@ export function SidebarCategoryScrubber({
   navGroups,
   activeGroupId,
   navViewportRef,
+  onCategoryActivate,
 }: SidebarCategoryScrubberProps) {
   const { isMobile, setOpen, state } = useSidebar()
   const { t } = useLanguage()
@@ -226,6 +228,10 @@ export function SidebarCategoryScrubber({
   const scrubberColumnRef = useRef<HTMLElement>(null)
   const closeTimerRef = useRef<number | null>(null)
   const centerRetryTimerRef = useRef<number | null>(null)
+  const lastPointerActivationRef = useRef<{
+    categoryId: string
+    activatedAt: number
+  } | null>(null)
   const [hoveredCategoryId, setHoveredCategoryId] = useState<string | null>(
     null
   )
@@ -320,6 +326,7 @@ export function SidebarCategoryScrubber({
   const centerCategoryInSidebar = useCallback(
     (categoryId: string) => {
       clearCenterRetryTimer()
+      onCategoryActivate?.(categoryId)
       setOpen(true)
 
       const behavior: ScrollBehavior = shouldReduceMotion ? 'auto' : 'smooth'
@@ -344,7 +351,45 @@ export function SidebarCategoryScrubber({
         }, 220)
       }
     },
-    [clearCenterRetryTimer, navViewportRef, setOpen, shouldReduceMotion, state]
+    [
+      clearCenterRetryTimer,
+      navViewportRef,
+      onCategoryActivate,
+      setOpen,
+      shouldReduceMotion,
+      state,
+    ]
+  )
+
+  const activateCategoryFromPointer = useCallback(
+    (event: ReactPointerEvent<HTMLButtonElement>, categoryId: string) => {
+      if (event.button !== 0) {
+        return
+      }
+
+      lastPointerActivationRef.current = {
+        categoryId,
+        activatedAt: window.performance.now(),
+      }
+      centerCategoryInSidebar(categoryId)
+    },
+    [centerCategoryInSidebar]
+  )
+
+  const activateCategoryFromClick = useCallback(
+    (categoryId: string) => {
+      const lastPointerActivation = lastPointerActivationRef.current
+      const activationAlreadyHandledByPointer =
+        lastPointerActivation?.categoryId === categoryId &&
+        window.performance.now() - lastPointerActivation.activatedAt < 500
+
+      if (activationAlreadyHandledByPointer) {
+        return
+      }
+
+      centerCategoryInSidebar(categoryId)
+    },
+    [centerCategoryInSidebar]
   )
 
   const updateFloatingPosition = useCallback(() => {
@@ -455,7 +500,10 @@ export function SidebarCategoryScrubber({
                 aria-label={`定位到${category.title}`}
                 aria-current={isCurrentRoute ? 'location' : undefined}
                 className='group/category-scrubber flex h-6 w-14 items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary/55 focus-visible:ring-offset-2 focus-visible:ring-offset-background'
-                onClick={() => centerCategoryInSidebar(category.id)}
+                onPointerDown={(event) =>
+                  activateCategoryFromPointer(event, category.id)
+                }
+                onClick={() => activateCategoryFromClick(category.id)}
                 onFocus={() => openCategory(category.id)}
                 onMouseEnter={() => openCategory(category.id)}
               >
