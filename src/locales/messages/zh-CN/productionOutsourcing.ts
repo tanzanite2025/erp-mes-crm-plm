@@ -88,7 +88,8 @@ export const productionOutsourcing = {
       linesTitle: '委外明细',
       linesDescription:
         '一条明细代表一个产品/工序的委外数量，后续扫码转移和检验会引用这里的明细。',
-      statusLocked: '状态由下发、发出、回厂、检验等动作推进，不能在表单里直接改',
+      statusLocked:
+        '状态由下发、发出、回厂、检验等动作推进，不能在表单里直接改',
     },
     validation: {
       partnerRequired: '请选择委外单位',

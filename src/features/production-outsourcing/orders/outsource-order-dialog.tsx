@@ -1,8 +1,8 @@
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import type { TranslationKey } from '@/locales'
 import { ClipboardList, Loader2, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
-import type { TranslationKey } from '@/locales'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import {
@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useProductionProcessesQuery } from '@/features/production-shared/hooks/use-production-resources'
-import type { OutsourcePartner } from '../data/outsource-partner'
+import { toOutsourceOrderFormValues } from '../adapters/outsource-order-api-adapter'
 import {
   createEmptyOutsourceOrderLine,
   type OutsourceOrder,
@@ -25,7 +25,7 @@ import {
   type OutsourceOrderLineFormValues,
   type OutsourceOrderSourceType,
 } from '../data/outsource-order'
-import { toOutsourceOrderFormValues } from '../adapters/outsource-order-api-adapter'
+import type { OutsourcePartner } from '../data/outsource-partner'
 import {
   getOutsourceProductionPlanSourceOptions,
   getOutsourceSalesOrderSourceOptions,
@@ -236,10 +236,7 @@ export function OutsourceOrderDialog({
     }
     setValues((current) => ({
       ...current,
-      lines: [
-        buildLineFromSalesLine(selectedLine),
-        ...current.lines.slice(1),
-      ],
+      lines: [buildLineFromSalesLine(selectedLine), ...current.lines.slice(1)],
     }))
   }
 
@@ -262,7 +259,9 @@ export function OutsourceOrderDialog({
   }
 
   const selectProcessStep = (lineIndex: number, processStepId: string) => {
-    const selected = activeProcessSteps.find((item) => item.id === processStepId)
+    const selected = activeProcessSteps.find(
+      (item) => item.id === processStepId
+    )
     if (!selected) {
       updateLine(lineIndex, {
         processStepId,
@@ -354,7 +353,9 @@ export function OutsourceOrderDialog({
               <select
                 value={values.sourceType}
                 onChange={(event) =>
-                  changeSourceType(event.target.value as OutsourceOrderSourceType)
+                  changeSourceType(
+                    event.target.value as OutsourceOrderSourceType
+                  )
                 }
                 className={selectClass}
               >
@@ -413,7 +414,9 @@ export function OutsourceOrderDialog({
               ) : (
                 <Input
                   value={values.sourceNo}
-                  onChange={(event) => updateValue('sourceNo', event.target.value)}
+                  onChange={(event) =>
+                    updateValue('sourceNo', event.target.value)
+                  }
                   placeholder={t(
                     'productionOutsourcing.orders.placeholders.manualSource'
                   )}
@@ -465,9 +468,7 @@ export function OutsourceOrderDialog({
                   className={selectClass}
                 >
                   <option value=''>
-                    {t(
-                      'productionOutsourcing.orders.placeholders.sourceLine'
-                    )}
+                    {t('productionOutsourcing.orders.placeholders.sourceLine')}
                   </option>
                   {selectedSalesOrder.lines.map((line) => (
                     <option key={line.id || line.lineNo} value={line.id}>
@@ -500,7 +501,9 @@ export function OutsourceOrderDialog({
               </Label>
               <select
                 value={values.partnerId}
-                onChange={(event) => updateValue('partnerId', event.target.value)}
+                onChange={(event) =>
+                  updateValue('partnerId', event.target.value)
+                }
                 className={selectClass}
               >
                 <option value=''>

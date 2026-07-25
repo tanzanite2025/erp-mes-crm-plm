@@ -41,12 +41,10 @@ export function ThemeProvider({
   storageKey = THEME_COOKIE_NAME,
   ...props
 }: ThemeProviderProps) {
-  const [theme, _setTheme] = useState<Theme>(
-    () => {
-      const storedTheme = getCookie(storageKey)
-      return isTheme(storedTheme) ? storedTheme : defaultTheme
-    }
-  )
+  const [theme, _setTheme] = useState<Theme>(() => {
+    const storedTheme = getCookie(storageKey)
+    return isTheme(storedTheme) ? storedTheme : defaultTheme
+  })
 
   const resolvedTheme = theme
 

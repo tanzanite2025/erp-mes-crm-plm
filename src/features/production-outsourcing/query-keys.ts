@@ -1,8 +1,8 @@
-import type { OutsourcePartnerStatus } from './data/outsource-partner'
 import type {
   OutsourceOrderSourceType,
   OutsourceOrderStatus,
 } from './data/outsource-order'
+import type { OutsourcePartnerStatus } from './data/outsource-partner'
 
 export interface OutsourcePartnerFilters {
   search?: string

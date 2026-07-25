@@ -94,7 +94,8 @@ export const productionOutsourcing = {
     validation: {
       partnerRequired: 'Select an outsource partner',
       sourceRequired: 'Select a sales order or production plan source',
-      lineRequired: 'Lines require product information and quantity greater than 0',
+      lineRequired:
+        'Lines require product information and quantity greater than 0',
       processRequired: 'Each outsource line must select an existing L3',
     },
     toasts: {

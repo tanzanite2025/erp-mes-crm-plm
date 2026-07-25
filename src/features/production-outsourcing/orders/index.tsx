@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { TranslationKey } from '@/locales'
 import {
   ClipboardList,
   Loader2,
@@ -9,7 +10,6 @@ import {
   Trash2,
 } from 'lucide-react'
 import { isForbiddenError } from '@/lib/error-status'
-import type { TranslationKey } from '@/locales'
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -75,9 +75,9 @@ export function OutsourceOrderManagement() {
   const { allowsAction, isChecking } = usePermissionActions()
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<OutsourceOrderStatus | 'ALL'>('ALL')
-  const [sourceType, setSourceType] = useState<OutsourceOrderSourceType | 'ALL'>(
-    'ALL'
-  )
+  const [sourceType, setSourceType] = useState<
+    OutsourceOrderSourceType | 'ALL'
+  >('ALL')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingOrder, setEditingOrder] = useState<OutsourceOrder | null>(null)
   const canManage = allowsAction('action_outsource_order_manage')
@@ -370,7 +370,9 @@ export function OutsourceOrderManagement() {
                   </div>
                   <div className='rounded-xl bg-muted/30 p-3'>
                     <p className='text-xs font-medium text-muted-foreground'>
-                      {t('productionOutsourcing.orders.fields.plannedReturnDate')}
+                      {t(
+                        'productionOutsourcing.orders.fields.plannedReturnDate'
+                      )}
                     </p>
                     <p className='mt-1 text-sm font-semibold'>
                       {order.plannedReturnDate || '-'}
@@ -379,32 +381,31 @@ export function OutsourceOrderManagement() {
                 </div>
 
                 <div className='space-y-2 rounded-xl bg-muted/30 p-3'>
-                  {(order.lines.length > 0
-                    ? order.lines.slice(0, 2)
-                    : []
-                  ).map((line) => (
-                    <div
-                      key={line.id}
-                      className='grid gap-1 text-sm'
-                    >
-                      <div className='flex items-center justify-between gap-3'>
-                        <span className='min-w-0 truncate font-medium'>
-                          {line.productName || line.productCode || '-'}
-                        </span>
-                        <span className='shrink-0 text-xs text-muted-foreground'>
-                          {line.quantity} {line.uom}
-                        </span>
+                  {(order.lines.length > 0 ? order.lines.slice(0, 2) : []).map(
+                    (line) => (
+                      <div key={line.id} className='grid gap-1 text-sm'>
+                        <div className='flex items-center justify-between gap-3'>
+                          <span className='min-w-0 truncate font-medium'>
+                            {line.productName || line.productCode || '-'}
+                          </span>
+                          <span className='shrink-0 text-xs text-muted-foreground'>
+                            {line.quantity} {line.uom}
+                          </span>
+                        </div>
+                        {line.processName ? (
+                          <span className='truncate text-xs text-muted-foreground'>
+                            {t(
+                              'productionOutsourcing.orders.fields.processName'
+                            )}
+                            ：
+                            {line.processCode
+                              ? `${line.processCode} · ${line.processName}`
+                              : line.processName}
+                          </span>
+                        ) : null}
                       </div>
-                      {line.processName ? (
-                        <span className='truncate text-xs text-muted-foreground'>
-                          {t('productionOutsourcing.orders.fields.processName')}：
-                          {line.processCode
-                            ? `${line.processCode} · ${line.processName}`
-                            : line.processName}
-                        </span>
-                      ) : null}
-                    </div>
-                  ))}
+                    )
+                  )}
                   {order.lines.length > 2 ? (
                     <p className='text-xs text-muted-foreground'>
                       {t('productionOutsourcing.orders.moreLines', {
