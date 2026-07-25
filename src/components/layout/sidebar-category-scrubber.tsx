@@ -39,6 +39,11 @@ type SidebarCategoryScrubberProps = {
 }
 
 const CLOSE_DELAY_MS = 140
+const FLOATING_CARD_WIDTH_PX = 496
+const FLOATING_CARD_MAX_HEIGHT_PX = 704
+const FLOATING_CARD_MIN_WIDTH_PX = 360
+const FLOATING_CARD_VIEWPORT_GAP_PX = 48
+const FLOATING_CARD_VIEWPORT_HEIGHT_RATIO = 0.82
 const SCRUBBER_ITEM_SELECTOR = '[data-sidebar-scrubber-item]'
 const SCRUBBER_ITEM_SPRING = {
   mass: 0.12,
@@ -56,6 +61,22 @@ function getScrubberItemElement(categoryId: string): HTMLElement | null {
       (element) => element.dataset.sidebarScrubberItem === categoryId
     ) ?? null
   )
+}
+
+function resolveFixedFloatingCardSize() {
+  const viewportSafeWidth = Math.max(
+    FLOATING_CARD_MIN_WIDTH_PX,
+    window.innerWidth - FLOATING_CARD_VIEWPORT_GAP_PX
+  )
+  const viewportSafeHeight = Math.max(
+    320,
+    Math.floor(window.innerHeight * FLOATING_CARD_VIEWPORT_HEIGHT_RATIO)
+  )
+
+  return {
+    width: Math.min(FLOATING_CARD_WIDTH_PX, viewportSafeWidth),
+    height: Math.min(FLOATING_CARD_MAX_HEIGHT_PX, viewportSafeHeight),
+  }
 }
 
 function getScrubberPointerTargetElement(
@@ -165,6 +186,7 @@ export function SidebarCategoryScrubber({
   const isIdentitySynced = useAuthStore((store) => store.isIdentitySynced)
   const shouldReduceMotion = useReducedMotion()
   const floatingRef = useRef<HTMLDivElement>(null)
+  const scrubberColumnRef = useRef<HTMLElement>(null)
   const closeTimerRef = useRef<number | null>(null)
   const centerRetryTimerRef = useRef<number | null>(null)
   const [hoveredCategoryId, setHoveredCategoryId] = useState<string | null>(
@@ -217,13 +239,32 @@ export function SidebarCategoryScrubber({
     }
   }, [])
 
+  const resolveFloatingAnchorRect = useCallback((anchor: HTMLElement) => {
+    const anchorRect = anchor.getBoundingClientRect()
+    const scrubberColumnRect =
+      scrubberColumnRef.current?.getBoundingClientRect()
+
+    if (!scrubberColumnRect) {
+      return anchorRect
+    }
+
+    // Keep the floating card anchored to the fixed scrubber column rather
+    // than the animated width of the individual bar.
+    return new DOMRect(
+      anchorRect.left,
+      anchorRect.top,
+      Math.max(0, scrubberColumnRect.right - anchorRect.left),
+      anchorRect.height
+    )
+  }, [])
+
   const openCategory = useCallback(
     (categoryId: string, anchor: HTMLElement) => {
       clearCloseTimer()
       setHoveredCategoryId(categoryId)
-      setAnchorRect(anchor.getBoundingClientRect())
+      setAnchorRect(resolveFloatingAnchorRect(anchor))
     },
-    [clearCloseTimer]
+    [clearCloseTimer, resolveFloatingAnchorRect]
   )
 
   const openCategoryFromPointer = useCallback(
@@ -293,20 +334,18 @@ export function SidebarCategoryScrubber({
   )
 
   useLayoutEffect(() => {
-    if (!anchorRect || !hoveredCategory) {
+    if (!anchorRect || !hoveredCategoryId) {
       return
     }
 
     const frameId = window.requestAnimationFrame(() => {
-      const floatingElement = floatingRef.current
-      const floatingWidth = floatingElement?.offsetWidth || 360
-      const floatingHeight = floatingElement?.offsetHeight || 360
+      const floatingSize = resolveFixedFloatingCardSize()
 
       setFloatingPosition(
         calculateFloatingPosition({
           anchorRect,
-          floatingWidth,
-          floatingHeight,
+          floatingWidth: floatingSize.width,
+          floatingHeight: floatingSize.height,
           viewportWidth: window.innerWidth,
           viewportHeight: window.innerHeight,
         })
@@ -316,7 +355,7 @@ export function SidebarCategoryScrubber({
     return () => {
       window.cancelAnimationFrame(frameId)
     }
-  }, [anchorRect, hoveredCategory])
+  }, [anchorRect, hoveredCategoryId])
 
   useEffect(() => {
     if (!hoveredCategoryId) {
@@ -327,7 +366,7 @@ export function SidebarCategoryScrubber({
       const anchor = getScrubberItemElement(hoveredCategoryId)
 
       if (anchor) {
-        setAnchorRect(anchor.getBoundingClientRect())
+        setAnchorRect(resolveFloatingAnchorRect(anchor))
       }
     }
 
@@ -338,7 +377,7 @@ export function SidebarCategoryScrubber({
       window.removeEventListener('resize', refreshAnchorRect)
       window.removeEventListener('scroll', refreshAnchorRect, true)
     }
-  }, [hoveredCategoryId])
+  }, [hoveredCategoryId, resolveFloatingAnchorRect])
 
   useEffect(
     () => () => {
@@ -355,6 +394,7 @@ export function SidebarCategoryScrubber({
   return (
     <>
       <aside
+        ref={scrubberColumnRef}
         data-sidebar-scrubber-column
         className='sticky top-0 z-30 hidden h-svh w-(--sidebar-gutter-width) shrink-0 items-center justify-center md:flex'
       >
@@ -463,7 +503,7 @@ function SidebarCategoryFloatingCard({
           animate={{ opacity: 1, x: 0, scale: 1 }}
           exit={{ opacity: 0, x: -4, scale: 0.98 }}
           transition={{ duration: 0.16, ease: 'easeOut' }}
-          className='fixed z-50 w-[min(22rem,calc(100vw-3rem))] overflow-hidden rounded-2xl border border-border/70 bg-popover text-popover-foreground shadow-2xl shadow-black/15 backdrop-blur-xl'
+          className='fixed z-50 flex max-h-[min(82vh,44rem)] w-[min(31rem,calc(100vw-3rem))] flex-col overflow-hidden rounded-2xl border border-border/70 bg-popover text-popover-foreground shadow-2xl shadow-black/15 backdrop-blur-xl'
           style={{
             top: position.top,
             left: position.left,
@@ -491,7 +531,7 @@ function SidebarCategoryFloatingCard({
               </span>
             </div>
           </div>
-          <div className='no-scrollbar max-h-[min(70vh,34rem)] space-y-3 overflow-y-auto px-3 py-3'>
+          <div className='no-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-3'>
             {category.directLinks.length > 0 ? (
               <SidebarCategoryDomainList
                 links={category.directLinks}
@@ -560,7 +600,7 @@ function SidebarCategoryDomainList({
               ) : null}
             </Link>
             {hasTabs ? (
-              <div className='mt-1 grid grid-cols-2 gap-1'>
+              <div className='mt-1 grid grid-cols-[repeat(auto-fit,minmax(7.5rem,1fr))] gap-1'>
                 {link.tabs.map((tab) => (
                   <SidebarCategoryTabChip
                     key={tab.id}
