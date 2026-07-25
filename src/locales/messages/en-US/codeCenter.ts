@@ -245,11 +245,6 @@ export const codeCenter = {
         inventory: 'Print Inventory Statuses',
         terminal: 'Terminal Statuses',
       },
-      boundary: {
-        title: 'Responsibility Boundary',
-        description:
-          'This page is a status definition dictionary; it does not query the current state of a specific barcode. Print inventory statuses only describe whether an issued code is usable. Production execution statuses only describe the execution state of a bound product barcode. They do not replace L1/L2/L3 production definitions and do not require prepreg-roll binding before normal production can continue.',
-      },
       categories: {
         inventory: {
           title: 'Print Inventory Statuses',

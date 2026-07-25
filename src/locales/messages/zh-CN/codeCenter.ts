@@ -229,11 +229,6 @@ export const codeCenter = {
         inventory: '打印库存状态',
         terminal: '终态数量',
       },
-      boundary: {
-        title: '职责边界',
-        description:
-          '这里是状态定义字典，不查询某个一维码当前处于什么状态。打印库存状态只描述号码是否可用；生产执行状态只描述已绑定产品的一维码在生产链路中的执行状态；它不替代产线 L1/L2/L3 定义，也不要求先绑定卷材才能继续普通生产。',
-      },
       categories: {
         inventory: {
           title: '打印库存状态',

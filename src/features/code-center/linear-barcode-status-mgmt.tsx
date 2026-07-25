@@ -8,7 +8,6 @@ import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { LinearBarcodeInventoryStatusDefinitionSection } from '@/features/code-center/components/linear-barcode-inventory-status-definition-section'
 import { LinearBarcodeProductionLocationAnchorContractCard } from '@/features/code-center/components/linear-barcode-production-location-anchor-contract-card'
 import { LinearBarcodeProductionStatusDefinitionSection } from '@/features/code-center/components/linear-barcode-production-status-definition-section'
-import { LinearBarcodeStatusBoundaryCard } from '@/features/code-center/components/linear-barcode-status-boundary-card'
 import { LinearBarcodeStatusLifecycleFlowCard } from '@/features/code-center/components/linear-barcode-status-lifecycle-flow-card'
 import { LinearBarcodeStatusSummaryMetrics } from '@/features/code-center/components/linear-barcode-status-summary-metrics'
 import {
@@ -102,8 +101,8 @@ export function LinearBarcodeStatusMgmt() {
         />
       ) : (
         <>
+          {/* 职责边界：本页只展示后端一维码状态契约，不查询或编辑某个一维码的当前状态；打印库存状态、生产执行状态、生产位置定位分别走各自真实链路。 */}
           <LinearBarcodeStatusSummaryMetrics contract={contract} />
-          <LinearBarcodeStatusBoundaryCard />
 
           <div className='grid gap-5 xl:grid-cols-2'>
             <LinearBarcodeInventoryStatusDefinitionSection
