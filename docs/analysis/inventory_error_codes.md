@@ -4,6 +4,8 @@
 
 This document covers `INVENTORY_*` error codes returned by inventory-related APIs under `/api/v1/inventory/*`.
 
+It only applies to the inventory domain's real inbound / outbound / transfer / void flows. It does not cover `shipping-management/vehicle-match` or `logistics-config/vehicle-loading`, which are simulation-oriented and should not be interpreted as final shipping confirmation.
+
 Standard error response:
 
 ```json
@@ -20,8 +22,8 @@ Standard error response:
 | `INVENTORY_QUERY_FAILED` | 500 | `GET /api/v1/inventory` | Database/query failure when loading paginated inventory list. | `库存列表加载失败，请稍后重试。` Show retry button; keep current filters/page state. |
 | `INVENTORY_INBOUND_VALIDATION_FAILED` | 400 | `POST /api/v1/inventory/inbound` | Request body schema/field validation failed. | `入库参数有误，请检查后重试。` Highlight invalid form fields. |
 | `INVENTORY_INBOUND_FAILED` | 500 | `POST /api/v1/inventory/inbound` | Inbound transaction failed (e.g., material not found, inventory row lock/update failure). | `入库失败，请重试。` If message includes material not found, suggest refreshing material selection. |
-| `INVENTORY_SHIPMENT_VALIDATION_FAILED` | 400 | `POST /api/v1/inventory/shipment` | Shipment draft payload validation failed. | `出库单参数有误，请检查后重试。` Keep dialog open and focus first invalid field. |
-| `INVENTORY_SHIPMENT_CREATE_FAILED` | 500 | `POST /api/v1/inventory/shipment` | Failed to persist shipment draft. | `出库草稿保存失败，请稍后重试。` Offer retry; avoid clearing user input. |
+| `INVENTORY_SHIPMENT_VALIDATION_FAILED` | 400 | `POST /api/v1/inventory/shipment` | Inventory shipment draft payload validation failed. | `出库单参数有误，请检查后重试。` Keep dialog open and focus first invalid field. |
+| `INVENTORY_SHIPMENT_CREATE_FAILED` | 500 | `POST /api/v1/inventory/shipment` | Failed to persist inventory shipment draft. | `出库草稿保存失败，请稍后重试。` Offer retry; avoid clearing user input. |
 | `INVENTORY_SHIPMENT_NOT_FOUND` | 404 | `POST /api/v1/inventory/shipment/:id/commit` | Shipment record does not exist for given `:id`. | `出库单不存在或已被删除，请刷新列表。` Auto-refresh table. |
 | `INVENTORY_SHIPMENT_NOT_DRAFT` | 400 | `POST /api/v1/inventory/shipment/:id/commit` | Shipment status is not `DRAFT`, so commit is not allowed. | `仅草稿状态可提交，请刷新后确认状态。` Disable commit button for non-draft rows. |
 | `INVENTORY_COMMIT_FAILED` | 500 | `POST /api/v1/inventory/shipment/:id/commit` | Commit transaction failed (inventory row missing, stock shortage, DB failure). | `提交出库失败，请重试。` If message contains stock shortage, show `库存不足` with current quantity. |

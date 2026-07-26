@@ -1,0 +1,7 @@
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+CRON_TZ=UTC
+
+15 2 * * * root /usr/local/sbin/erp-backup.sh backup >> /var/log/erp-backup.log 2>&1
+45 2 * * * root test -f /etc/erp-backup-r2.env && /usr/local/sbin/erp-r2-sync.sh sync >> /var/log/erp-r2-sync.log 2>&1
+30 3 * * 0 root test -f /etc/erp-backup-r2.env && /usr/local/sbin/erp-r2-sync.sh check >> /var/log/erp-r2-sync.log 2>&1

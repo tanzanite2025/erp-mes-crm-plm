@@ -4,6 +4,8 @@
 
 > 安全边界：仓库不保存 SSH 私钥、数据库密码、JWT 密钥、Cloudflare Token、证书私钥或生产 `.env`。Hostinger Docker Manager 中的环境变量也不得复制到日志、Issue 或聊天记录。
 
+公网开放或入口配置变更前，先执行 `docs/ops/public-internet-security-hardening.md` 的阻断项和验证命令。
+
 ## 1. 当前资产
 
 | 项目 | 当前值 |
@@ -148,6 +150,15 @@ PermitRootLogin prohibit-password
 - `ghcr.io/tanzanite2025/erp-search`
 - `ghcr.io/tanzanite2025/erp-watchdog`
 
+`erp-api` 镜像必须从仓库根目录作为 Docker build context 构建。该镜像运行时内置两个二进制：
+
+```text
+/app/xdfc-server
+/app/xdfc-vehicle-geometry-parser
+```
+
+`xdfc-vehicle-geometry-parser` 来自仓库根目录的 `vehicle-loading-engine/` Rust workspace，用于车型模板 GLB 解析。不能把 `erp-api` 的 build context 改回 `server/`，否则 API 镜像无法复制 Rust parser，线上车型模板解析入口会报 parser unavailable。
+
 每次发布生成：
 
 - `master`：便于确认最新构建，不作为稳定回滚锚点。
@@ -208,9 +219,20 @@ Environment: 上述生产环境变量
 - `watchdog` 默认不启动；只有完成专项验收后才启用 profile。
 - ERP Project 没有任何宿主机端口映射。
 - `web` 同时加入 ERP 私有网络和 `tanzanite-edge`。
+- `app` 容器环境变量包含 `VEHICLE_GEOMETRY_PARSER_BIN=/app/xdfc-vehicle-geometry-parser`。
+- `/api/v1/system/status` 的 `components.vehicleGeometryParser.status` 返回 `connected`。
 - 日志中没有 `CHANGE_ME`、认证失败循环或数据库迁移失败。
 
 不要使用 Hostinger 的“删除 Project”来更新 ERP。删除接口可能同时清理网络、卷和镜像，数据 Stack 必须通过编辑 Compose、更新镜像标签或 Project Update 完成发布。
+
+如果车型模板 GLB 解析返回 parser unavailable，先按以下顺序排查：
+
+```bash
+docker compose --env-file server/.env -f compose.prod.yml exec app sh -lc 'echo "$VEHICLE_GEOMETRY_PARSER_BIN"'
+docker compose --env-file server/.env -f compose.prod.yml exec app sh -lc 'test -x /app/xdfc-vehicle-geometry-parser && /app/xdfc-vehicle-geometry-parser --help'
+```
+
+若文件不存在，说明当前 `erp-api` 镜像不是仓库根上下文构建出来的，必须重新发布包含 `vehicle-loading-engine/**` 的 `sha-*` 镜像，不能在 VPS 内临时编译或手动复制二进制。
 
 ## 9. TLS 与 Cloudflare 切流
 
@@ -282,7 +304,76 @@ docker compose --env-file server/.env -f compose.prod.yml exec -T db \
   "/opt/backups/erp/postgres-$(date +%Y%m%d-%H%M%S).dump"
 ```
 
+当前生产 VPS 已安装仓库脚本：
+
+```bash
+/usr/local/sbin/erp-backup.sh backup
+/usr/local/sbin/erp-backup.sh restore-drill latest
+```
+
+对应仓库文件：
+
+- `deployment/scripts/erp-backup.sh`
+- `deployment/scripts/erp-backup.cron`
+
+Cron 已安装为 `/etc/cron.d/erp-backup`，按 UTC 每天 `02:15` 生成：
+
+- `/opt/backups/erp/postgres/postgres-<timestamp>.dump`
+- `/opt/backups/erp/uploads/uploads-<timestamp>.tgz`
+- `/opt/backups/erp/storage/storage-<timestamp>.tgz`
+- 每个归档的 `.sha256` 校验文件
+
+2026-07-26 已执行恢复演练：`postgres-20260726T221048Z.dump` 恢复到临时 PostgreSQL 容器成功，恢复后 public schema 表数量为 `140`，演练记录位于 `/opt/backups/erp/restore-drills/20260726T221048Z/manifest.txt`。
+
 备份目录必须位于 Project 数据卷之外，并同步到另一存储位置。只存在同一 VPS 磁盘上的备份不构成完整灾备。
+
+### 11.1 Cloudflare R2 异地副本
+
+异地副本使用 `restic` 写入 Cloudflare R2 的 S3 API。`restic` 在 VPS 本地完成加密后再上传，R2 中不得保存明文 dump 或上传文件归档。
+
+目标配置：
+
+```text
+Cloudflare account: cf3d89270ea56d051da3fa5f25332d9b
+R2 bucket: tanzanite-erp-backups-prod
+Restic repository: s3:https://cf3d89270ea56d051da3fa5f25332d9b.r2.cloudflarestorage.com/tanzanite-erp-backups-prod
+```
+
+VPS 已安装：
+
+```bash
+apt-get install -y restic
+install -m 700 deployment/scripts/erp-r2-sync.sh /usr/local/sbin/erp-r2-sync.sh
+install -m 600 deployment/scripts/erp-r2.env.example /etc/erp-backup-r2.env.example
+```
+
+启用时从 `/etc/erp-backup-r2.env.example` 创建 root-only 真实配置：
+
+```bash
+cp /etc/erp-backup-r2.env.example /etc/erp-backup-r2.env
+chmod 600 /etc/erp-backup-r2.env
+vi /etc/erp-backup-r2.env
+/usr/local/sbin/erp-r2-sync.sh init
+/usr/local/sbin/erp-r2-sync.sh sync
+/usr/local/sbin/erp-r2-sync.sh check
+/usr/local/sbin/erp-r2-sync.sh restore-drill latest
+```
+
+R2 S3 access key 要求：
+
+- 只授予目标 bucket 的 Object Read/Write 权限。
+- 不绑定公开域名，不启用公开 `r2.dev` 访问。
+- 不放入 Docker Project Environment、Compose、Git、Issue、日志或聊天记录。
+- `RESTIC_PASSWORD` 独立强随机生成，并和 R2 key 分开保存到密码库。
+
+Cron 已预置 R2 条目：
+
+```cron
+45 2 * * * root test -f /etc/erp-backup-r2.env && /usr/local/sbin/erp-r2-sync.sh sync >> /var/log/erp-r2-sync.log 2>&1
+30 3 * * 0 root test -f /etc/erp-backup-r2.env && /usr/local/sbin/erp-r2-sync.sh check >> /var/log/erp-r2-sync.log 2>&1
+```
+
+`/etc/erp-backup-r2.env` 不存在时，R2 同步会跳过，不影响本机每日备份。
 
 ## 12. 多项目接入流程
 
@@ -328,4 +419,6 @@ Cloudflare MCP 可读写，但 DNS 写入必须满足：
 - [x] Cloudflare Zone 与 ERP 主机规则均为 `Full (strict)`，WebSockets 和 Always Use HTTPS 已启用。
 - [x] ERP API 客户端例外、动态路径 Cache Bypass 和未认证 WebSocket Upgrade 链路已验收。
 - [x] Cloudflare Minimum TLS 已提升到 `1.2`，TLS 1.0 被拒绝且 TLS 1.2 API 验证返回 `200`。
-- [ ] PostgreSQL 与上传文件备份已建立并完成恢复演练。
+- [x] PostgreSQL、`erp-uploads` 和 `erp-storage` 本机每日备份已建立，并完成隔离恢复演练。
+- [x] VPS 已安装 R2/restic 同步脚本、cron 条目和 root-only env 示例。
+- [ ] Cloudflare R2 bucket、S3 access key、restic 仓库初始化和 R2 恢复演练待完成。

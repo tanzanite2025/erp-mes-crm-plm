@@ -211,6 +211,8 @@ workflow task 审批通过
 
 ### 1. 前端数据流
 
+> 注：以下链路只描述 `inventory` 域内部的真实入库 / 出库 / 调拨事务。`/shipping-management/vehicle-match` 与 `/logistics-config/vehicle-loading` 属于装车与车型匹配模拟链路，不在本节中做最终发货确认，也不应与 `commitShipment` 混为一谈。
+
 ```text
 inventory 页面
   -> inventoryService.getInventoryList()
@@ -226,13 +228,13 @@ inventory 页面
         -> MapRecordInboundRequestToModel(req)
         -> services.RecordInbound(&inbound)
 
-出库草稿
+库存出库草稿
   -> inventoryService.recordShipment(data)
     -> POST /inventory/shipment
       -> RecordShipmentHandler
         -> services.CreateShipmentDraft(&shipment)
 
-出库提交
+库存出库提交
   -> inventoryService.commitShipment(id)
     -> POST /inventory/shipment/:id/commit
       -> CommitShipmentHandler
@@ -250,7 +252,7 @@ inventory 页面
       -> ReconcileInventoryHandler
         -> services.ReconcileNegativeInventory()
 
-作废出库
+库存出库作废
   -> inventoryService.deleteShipmentRecord(id, approvalId)
     -> POST /inventory/shipment/:id/void
       -> VoidShipmentHandler

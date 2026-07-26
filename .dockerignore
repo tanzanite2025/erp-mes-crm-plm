@@ -23,6 +23,7 @@ server/postgres_data
 server/redis_data
 server/uploads
 server/backups
+server/storage
 server/logs
 server/tmp
 **/target

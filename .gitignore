@@ -71,8 +71,10 @@ server/tmp/
 # 忽略生产生成的业务数据与备份 (由 Docker 挂载)
 server/uploads/
 server/backups/
+server/storage/
 /server/uploads/
 /server/backups/
+/server/storage/
 
 # 🛑 Watchdog (Rust) 编译与配置隔离
 server/watchdog/target/
