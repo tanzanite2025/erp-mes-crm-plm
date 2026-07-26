@@ -53,7 +53,7 @@ export const common = {
   audit: {
     trigger: 'Change Log',
     permissionTrigger: 'Permission Audit',
-    roleTrigger: 'Role Audit',
+    permissionPresetTrigger: 'Access Preset Audit',
     title: 'Audit Timeline',
     objectDescription: 'Full-field audit history for {{target}}',
     moduleDescription: 'Module-level audit history for {{target}}',

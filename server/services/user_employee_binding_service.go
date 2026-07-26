@@ -146,6 +146,7 @@ func changeUserEmployeeBinding(ctx context.Context, userID string, employeeRef *
 	if err != nil {
 		return models.User{}, err
 	}
+	NotifyAccountAccessSnapshotInvalidatedForUser(updated, AccountAccessInvalidationReasonEmployeeBindingChanged)
 	return updated, nil
 }
 

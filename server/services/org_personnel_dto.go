@@ -57,8 +57,6 @@ type EmployeeSaveRequest struct {
 	Status         string     `json:"status"`
 	JoinedDate     *time.Time `json:"joinedDate"`
 	DeptID         string     `json:"deptId"`
-	LineID         string     `json:"lineId"`
-	ProcessID      string     `json:"processId"`
 	PositionID     string     `json:"positionId"`
 }
 
@@ -94,12 +92,8 @@ type EmployeeListItemResponse struct {
 	JoinedDate     *time.Time `json:"joinedDate"`
 	WorkYears      string     `json:"workYears"`
 	DeptID         string     `json:"deptId"`
-	LineID         string     `json:"lineId"`
-	ProcessID      string     `json:"processId"`
 	PositionID     string     `json:"positionId"`
 	DeptName       string     `json:"deptName"`
-	LineName       string     `json:"lineName"`
-	ProcessName    string     `json:"processName"`
 	PositionName   string     `json:"positionName"`
 	CreatedAt      time.Time  `json:"createdAt"`
 	UpdatedAt      time.Time  `json:"updatedAt"`
@@ -130,12 +124,8 @@ type EmployeeSaveResponse struct {
 	JoinedDate     *time.Time `json:"joinedDate"`
 	WorkYears      string     `json:"workYears"`
 	DeptID         string     `json:"deptId"`
-	LineID         string     `json:"lineId"`
-	ProcessID      string     `json:"processId"`
 	PositionID     string     `json:"positionId"`
 	DeptName       string     `json:"deptName"`
-	LineName       string     `json:"lineName"`
-	ProcessName    string     `json:"processName"`
 	PositionName   string     `json:"positionName"`
 	CreatedAt      time.Time  `json:"createdAt"`
 	UpdatedAt      time.Time  `json:"updatedAt"`
@@ -171,8 +161,6 @@ type BulkSyncEmployeeRequest struct {
 	Status         string     `json:"status"`
 	JoinedDate     *time.Time `json:"joinedDate"`
 	DeptID         string     `json:"deptId"`
-	LineID         string     `json:"lineId"`
-	ProcessID      string     `json:"processId"`
 }
 
 func MapOrganizationSaveRequestToModel(input OrganizationSaveRequest) models.Organization {
@@ -284,8 +272,6 @@ func MapEmployeeSaveRequestToModel(input EmployeeSaveRequest) models.Employee {
 		Status:         input.Status,
 		JoinedDate:     input.JoinedDate,
 		DeptID:         input.DeptID,
-		LineID:         input.LineID,
-		ProcessID:      input.ProcessID,
 		PositionID:     input.PositionID,
 	}
 }
@@ -349,12 +335,8 @@ func MapEmployeeToListItemResponse(model models.Employee) EmployeeListItemRespon
 		JoinedDate:     model.JoinedDate,
 		WorkYears:      workYears,
 		DeptID:         model.DeptID,
-		LineID:         model.LineID,
-		ProcessID:      model.ProcessID,
 		PositionID:     model.PositionID,
 		DeptName:       model.DeptName,
-		LineName:       model.LineName,
-		ProcessName:    model.ProcessName,
 		PositionName:   model.PositionName,
 		CreatedAt:      model.CreatedAt,
 		UpdatedAt:      model.UpdatedAt,
@@ -401,12 +383,8 @@ func MapEmployeeToSaveResponse(model models.Employee) EmployeeSaveResponse {
 		JoinedDate:     model.JoinedDate,
 		WorkYears:      workYears,
 		DeptID:         model.DeptID,
-		LineID:         model.LineID,
-		ProcessID:      model.ProcessID,
 		PositionID:     model.PositionID,
 		DeptName:       model.DeptName,
-		LineName:       model.LineName,
-		ProcessName:    model.ProcessName,
 		PositionName:   model.PositionName,
 		CreatedAt:      model.CreatedAt,
 		UpdatedAt:      model.UpdatedAt,
@@ -454,7 +432,5 @@ func MapBulkSyncEmployeeRequestToModel(input BulkSyncEmployeeRequest) models.Emp
 		Status:         input.Status,
 		JoinedDate:     input.JoinedDate,
 		DeptID:         input.DeptID,
-		LineID:         input.LineID,
-		ProcessID:      input.ProcessID,
 	}
 }

@@ -11,6 +11,7 @@ import type {
   NotificationPriority,
   NotificationType,
 } from '@/features/system-mgmt/notifications/types'
+import { refreshCurrentAccountAccessSnapshotAfterRealtimeInvalidation } from '@/features/authz/services/account-access-refresh-service'
 
 const logger = createLogger('useNotifications')
 const WS_RECONNECT_DELAY_MS = 5000
@@ -156,6 +157,15 @@ function isBusinessRealtimeNotification(data: RealtimeNotificationEnvelope) {
   return data.module === 'Workflow' || data.module === 'Approval'
 }
 
+function isAccountAccessSnapshotInvalidation(
+  data: RealtimeNotificationEnvelope
+) {
+  return (
+    data.module === 'AccessControl' &&
+    data.action === 'IDENTITY_SNAPSHOT_INVALIDATED'
+  )
+}
+
 export const useNotifications = () => {
   const user = useAuthStore((state) => state.user)
   const accessToken = useAuthStore((state) => state.accessToken)
@@ -220,6 +230,14 @@ export const useNotifications = () => {
             queryClient.invalidateQueries({
               queryKey: ['system-health-integrity'],
             })
+            return
+          }
+
+          if (isAccountAccessSnapshotInvalidation(data)) {
+            const payload = isRecord(data.payload) ? data.payload : {}
+            void refreshCurrentAccountAccessSnapshotAfterRealtimeInvalidation(
+              readString(payload, 'accountId')
+            )
             return
           }
 

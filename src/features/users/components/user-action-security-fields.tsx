@@ -17,72 +17,79 @@ import {
 import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { PasswordInput } from '@/components/password-input'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
-import { type Role } from '@/features/system-mgmt/data/role-schema'
+import { type PermissionPreset } from '@/features/system-mgmt/data/permission-preset-schema'
 import { type UserForm } from './users-action-dialog.shared'
 
-const UNASSIGNED_ROLE_VALUE = '__unassigned_role__'
+const UNASSIGNED_PERMISSION_PRESET_VALUE = '__unassigned_permission_preset__'
 
 type UserActionSecurityFieldsProps = {
   form: UseFormReturn<UserForm>
-  roles: Role[]
+  permissionPresets: PermissionPreset[]
   isEdit: boolean
   isPasswordTouched: boolean
-  canManageRoles: boolean
+  canManagePermissionPresets: boolean
   requiresAdminChallenge: boolean
 }
 
 export function UserActionSecurityFields({
   form,
-  roles,
+  permissionPresets,
   isEdit,
   isPasswordTouched,
-  canManageRoles,
+  canManagePermissionPresets,
   requiresAdminChallenge,
 }: UserActionSecurityFieldsProps) {
   const { t } = useLanguage()
 
   return (
     <>
-      {canManageRoles ? (
+      {canManagePermissionPresets ? (
         <FormField
           control={form.control}
-          name='role'
+          name='permissionPresetId'
           render={({ field }) => {
-            const selectedRole = roles.find(
-              (role) => role.id === (field.value || '')
+            const selectedPermissionPreset = permissionPresets.find(
+              (permissionPreset) => permissionPreset.id === (field.value || '')
             )
             return (
               <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-6 gap-y-1'>
                 <div className='col-span-2 flex flex-col items-end gap-0.5'>
                   <FormLabel className='text-[11px] leading-none font-black tracking-tight text-muted-foreground/60'>
-                    {t('users.dialogs.labels.role')}
+                    {t('users.dialogs.labels.permissionPreset')}
                   </FormLabel>
                   <span className='font-mono text-[8px] leading-none font-black tracking-widest uppercase opacity-20'>
-                    ROLE_BINDING
+                    ACCESS_PRESET
                   </span>
                 </div>
                 <div className='col-span-4 flex items-center gap-2'>
                   <FormControl>
                     <Select
-                      value={field.value || UNASSIGNED_ROLE_VALUE}
+                      value={field.value || UNASSIGNED_PERMISSION_PRESET_VALUE}
                       onValueChange={(value) =>
                         field.onChange(
-                          value === UNASSIGNED_ROLE_VALUE ? '' : value
+                          value === UNASSIGNED_PERMISSION_PRESET_VALUE ? '' : value
                         )
                       }
                     >
                       <SelectTrigger className='h-11 w-full rounded-2xl border-none bg-muted/50 px-4 text-xs font-bold shadow-inner'>
                         <SelectValue
-                          placeholder={t('users.dialogs.placeholders.role')}
+                          placeholder={t(
+                            'users.dialogs.placeholders.permissionPreset'
+                          )}
                         />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value={UNASSIGNED_ROLE_VALUE}>
-                          {t('users.dialogs.placeholders.roleEmpty')}
+                        <SelectItem value={UNASSIGNED_PERMISSION_PRESET_VALUE}>
+                          {t(
+                            'users.dialogs.placeholders.permissionPresetEmpty'
+                          )}
                         </SelectItem>
-                        {roles.map((role) => (
-                          <SelectItem key={role.id} value={role.id}>
-                            {role.label || role.id}
+                        {permissionPresets.map((permissionPreset) => (
+                          <SelectItem
+                            key={permissionPreset.id}
+                            value={permissionPreset.id}
+                          >
+                            {permissionPreset.label || permissionPreset.id}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -90,12 +97,14 @@ export function UserActionSecurityFields({
                   </FormControl>
                   {field.value ? (
                     <AuditTimelineTriggerButton
-                      module={AUDIT_MODULES.role}
+                      module={AUDIT_MODULES.permissionPreset}
                       targetId={field.value}
                       targetName={
-                        selectedRole?.label || selectedRole?.id || field.value
+                        selectedPermissionPreset?.label ||
+                        selectedPermissionPreset?.id ||
+                        field.value
                       }
-                      label={t('common.audit.roleTrigger')}
+                      label={t('common.audit.permissionPresetTrigger')}
                       className='shrink-0'
                     />
                   ) : null}

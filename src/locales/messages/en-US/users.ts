@@ -20,7 +20,7 @@ export const users = {
   columns: {
     username: 'Username',
     name: 'Name',
-    role: 'Role',
+    permissionPreset: 'Access Preset',
     phone: 'Phone Number',
     status: 'Status',
     actions: 'Actions',
@@ -42,9 +42,9 @@ export const users = {
     summary: {
       title: 'Permission Overview',
       explicitPermissionCount: 'Current Explicit Permission Count',
-      inheritedPermissionCount: 'Inherited',
+      presetPermissionCount: 'Preset Permissions',
       effectivePermissionCount: 'Effective',
-      role: 'Role',
+      permissionPreset: 'Access Preset',
       status: 'Status',
       diagnostics: 'Diagnostics',
       unsavedChanges: 'Unsaved Changes',
@@ -58,7 +58,7 @@ export const users = {
       page: 'Page',
       tab: 'Tab',
       action: 'Action',
-      inherited: 'Inherited from role',
+      inherited: 'Preset permission',
     },
     selected: {
       title: 'Selected Permissions',
@@ -130,7 +130,7 @@ export const users = {
       firstName: 'First Name',
       lastName: 'Last Name',
       username: 'Identifier',
-      role: 'Role Binding',
+      permissionPreset: 'Access Preset',
       phone: 'Phone',
       password: 'Security',
       confirm: 'Confirm',
@@ -143,8 +143,8 @@ export const users = {
       firstName: 'e.g. John',
       lastName: 'e.g. Doe',
       username: 'e.g. john_doe',
-      role: 'Select a single role template',
-      roleEmpty: 'No role binding, explicit permissions only',
+      permissionPreset: 'Select an account access preset',
+      permissionPresetEmpty: 'No access preset, explicit permissions only',
       phone: '+86 13800138000',
       passwordEdit: 'Leave blank to keep current',
       passwordCreate: 'At least 8 chars, incl. letters/digits',
@@ -194,7 +194,7 @@ export const users = {
     passwordMismatch: 'Passwords do not match.',
     accessCodeError: 'Access code incorrect. Please contact system developer.',
     adminChallengeRequired:
-      'Current operator password is required to assign the admin role.',
+      'Current operator password is required to assign the admin access preset.',
     permissionDenied:
       'Insufficient permissions. Only users with full-system management permissions can perform this.',
   },

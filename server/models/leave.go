@@ -23,7 +23,7 @@ type LeaveRequest struct {
 type EmployeeStats struct {
 	EmployeeID     string  `json:"employeeId"`
 	Name           string  `json:"name"`
-	DeptName       string  `json:"deptName"`
+	OrgUnitName    string  `json:"orgUnitName"`
 	AttendanceRate float64 `json:"attendanceRate"`
 	LeaveDays      float64 `json:"leaveDays"`
 	TenureYears    int     `json:"tenureYears"`

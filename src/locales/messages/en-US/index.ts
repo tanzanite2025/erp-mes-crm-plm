@@ -18,6 +18,7 @@ import { finance } from './finance'
 import { labExperimental } from './labExperimental'
 import { logisticsConfig } from './logisticsConfig'
 import { logisticsContainerManagement } from './logisticsContainerManagement'
+import { logisticsPackagingManagement } from './logisticsPackagingManagement'
 import { materialArchive } from './materialArchive'
 import { messageCenter } from './messageCenter'
 import { mrp } from './mrp'
@@ -83,6 +84,7 @@ export const enUSMessages = {
   sidebarCommandConfig,
   logisticsConfig,
   logisticsContainerManagement,
+  logisticsPackagingManagement,
   terminalConfig,
   users,
   piecework,

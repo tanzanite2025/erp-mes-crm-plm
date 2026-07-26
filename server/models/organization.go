@@ -2,7 +2,8 @@ package models
 
 import "encoding/json"
 
-// Organization supports the current tree-based organization hierarchy.
+// Organization is the organization tree API projection backed by org_units.
+// It is kept as a response/write contract shape, not as the database authority.
 type Organization struct {
 	BaseModel
 	Name               string          `gorm:"size:100;not null" json:"name"`

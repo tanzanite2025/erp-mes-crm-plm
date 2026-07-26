@@ -1,4 +1,4 @@
-import { type PackagingProfile } from '@/features/logistics-config/packaging-rules-service'
+import { type PackagingProfile } from '@/features/logistics-packaging-management/packaging-rules-service'
 import {
   type SalesOrderLine,
   type SalesOrderLinePackagingSelection,

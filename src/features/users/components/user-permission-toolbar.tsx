@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
 type UserPermissionToolbarProps = {
-  role?: string
-  inheritedPermissionCount: number
+  permissionPresetId?: string
+  presetPermissionCount: number
   effectivePermissionCount: number
   search: string
   allPermissionsSelected: boolean
@@ -18,8 +18,8 @@ type UserPermissionToolbarProps = {
 }
 
 export function UserPermissionToolbar({
-  role,
-  inheritedPermissionCount,
+  permissionPresetId,
+  presetPermissionCount,
   effectivePermissionCount,
   search,
   allPermissionsSelected,
@@ -36,12 +36,12 @@ export function UserPermissionToolbar({
     <div className='shrink-0 space-y-2 rounded-2xl border border-dashed border-muted/40 bg-muted/10 p-2.5 sm:p-3'>
       <div className='flex flex-wrap items-center gap-x-4 gap-y-1 text-[9px] font-black tracking-widest text-muted-foreground uppercase'>
         <span>
-          {t('users.permissionAssignments.summary.role')}:{' '}
-          {role || t('users.permissionAssignments.summary.none')}
+          {t('users.permissionAssignments.summary.permissionPreset')}:{' '}
+          {permissionPresetId || t('users.permissionAssignments.summary.none')}
         </span>
         <span>
-          {t('users.permissionAssignments.summary.inheritedPermissionCount')}:{' '}
-          {inheritedPermissionCount}
+          {t('users.permissionAssignments.summary.presetPermissionCount')}:{' '}
+          {presetPermissionCount}
         </span>
         <span>
           {t('users.permissionAssignments.summary.effectivePermissionCount')}:{' '}

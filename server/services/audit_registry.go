@@ -65,7 +65,7 @@ var auditEntityRegistry = []AuditEntityRegistration{
 
 	{EntityKey: AuditModuleUser, EngineModule: AuditEngineModuleSystem, Integrated: true, DisplayName: "User"},
 	{EntityKey: AuditModuleUserPermission, EngineModule: AuditEngineModuleSystem, Integrated: true, AllowModuleTimeline: true, DisplayName: "UserPermission"},
-	{EntityKey: AuditModuleRole, EngineModule: AuditEngineModuleSystem, Integrated: true, DisplayName: "Role"},
+	{EntityKey: AuditModulePermissionPreset, EngineModule: AuditEngineModuleSystem, Integrated: true, DisplayName: "PermissionPreset"},
 	{EntityKey: AuditModuleEnterpriseConfig, EngineModule: AuditEngineModuleSystem, Integrated: true, DisplayName: "EnterpriseConfig"},
 
 	{EntityKey: AuditModuleApprovalRequest, EngineModule: AuditEngineModuleWorkflow, Integrated: true, DisplayName: "ApprovalRequest"},

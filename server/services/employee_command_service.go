@@ -2,32 +2,73 @@ package services
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 	"xdfc-server/audit"
 	"xdfc-server/models"
+	"xdfc-server/repositories"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
-func (s *OrganizationService) ListEmployees() ([]EmployeeListItemResponse, error) {
-	employees, err := s.repository.ListEmployees(s.txManager.DB())
-	if err != nil {
-		return nil, err
-	}
-	return MapEmployeesToListItemResponse(employees), nil
+var (
+	ErrInvalidEmployeeStatus = errors.New("invalid employee status")
+	ErrEmptyEmployeeIDs      = errors.New("employee ids cannot be empty")
+)
+
+type BulkUpdateEmployeeStatusResult struct {
+	Updated    int64
+	OperatedAt time.Time
 }
 
-func (s *OrganizationService) GetEmployeeDetail(id string) (EmployeeDetailResponse, error) {
-	employee, err := loadEmployeeAggregate(s.txManager.DB(), id)
-	if err != nil {
-		return EmployeeDetailResponse{}, err
-	}
-	return MapEmployeeToDetailResponse(employee), nil
+type employeeCommandRepository interface {
+	repositories.EmployeeRepository
+	repositories.EmployeeAccountBindingRepository
 }
 
-func (s *OrganizationService) BulkUpdateEmployeeStatus(ctx context.Context, ids []string, status string) (BulkUpdateEmployeeStatusResult, error) {
+type EmployeeCommandService struct {
+	txManager  transactionManager
+	repository employeeCommandRepository
+}
+
+func NewEmployeeCommandService(
+	txManager transactionManager,
+	repository employeeCommandRepository,
+) *EmployeeCommandService {
+	return &EmployeeCommandService{
+		txManager:  txManager,
+		repository: repository,
+	}
+}
+
+var defaultEmployeeCommandService = NewEmployeeCommandService(
+	defaultOrgPersonnelRuntime.txManager,
+	repositories.NewOrgPersonnelRepository(),
+)
+
+func BulkUpdateEmployeeStatus(ctx context.Context, ids []string, status string) (BulkUpdateEmployeeStatusResult, error) {
+	return defaultEmployeeCommandService.BulkUpdateEmployeeStatus(ctx, ids, status)
+}
+
+func SaveEmployee(ctx context.Context, input EmployeeSaveRequest) (EmployeeSaveResponse, error) {
+	return defaultEmployeeCommandService.SaveEmployee(ctx, input)
+}
+
+func PatchEmployee(ctx context.Context, input PatchEmployeeRequest) (EmployeeListItemResponse, error) {
+	return defaultEmployeeCommandService.PatchEmployee(ctx, input)
+}
+
+func DeleteEmployees(ctx context.Context, ids []string) error {
+	return defaultEmployeeCommandService.DeleteEmployees(ctx, ids)
+}
+
+func BulkSyncEmployees(input []BulkSyncEmployeeRequest) (int, error) {
+	return defaultEmployeeCommandService.BulkSyncEmployees(input)
+}
+
+func (s *EmployeeCommandService) BulkUpdateEmployeeStatus(ctx context.Context, ids []string, status string) (BulkUpdateEmployeeStatusResult, error) {
 	normalizedIDs := normalizeStringIDs(ids)
 	if len(normalizedIDs) == 0 {
 		return BulkUpdateEmployeeStatusResult{}, ErrEmptyEmployeeIDs
@@ -60,8 +101,10 @@ func (s *OrganizationService) BulkUpdateEmployeeStatus(ctx context.Context, ids 
 	return BulkUpdateEmployeeStatusResult{Updated: updated, OperatedAt: operatedAt}, nil
 }
 
-func (s *OrganizationService) SaveEmployee(ctx context.Context, input EmployeeSaveRequest) (EmployeeSaveResponse, error) {
+func (s *EmployeeCommandService) SaveEmployee(ctx context.Context, input EmployeeSaveRequest) (EmployeeSaveResponse, error) {
 	model := MapEmployeeSaveRequestToModel(input)
+	requestedOrgUnitID := nullableStringPointer(model.DeptID)
+	model.DeptID = ""
 	var refreshed models.Employee
 	if err := s.txManager.WithinTransaction(func(tx *gorm.DB) error {
 		actor, _ := audit.ActorFromContext(ctx)
@@ -76,7 +119,7 @@ func (s *OrganizationService) SaveEmployee(ctx context.Context, input EmployeeSa
 		if err := s.repository.SaveEmployee(tx, &model); err != nil {
 			return err
 		}
-		if _, err := syncPrimaryAssignmentProjectionFromEmployee(tx, model, "legacy_employee_save", ""); err != nil {
+		if _, err := applyPrimaryAssignmentOrgUnit(tx, model, requestedOrgUnitID, "employee_save", ""); err != nil {
 			return err
 		}
 		if err := recordLegacyAuditEntryWithContext(ctx, tx, "Employee", model.ID, "save", nil); err != nil {
@@ -92,7 +135,7 @@ func (s *OrganizationService) SaveEmployee(ctx context.Context, input EmployeeSa
 	return MapEmployeeToSaveResponse(refreshed), nil
 }
 
-func (s *OrganizationService) DeleteEmployees(ctx context.Context, ids []string) error {
+func (s *EmployeeCommandService) DeleteEmployees(ctx context.Context, ids []string) error {
 	normalizedIDs := normalizeStringIDs(ids)
 	if len(normalizedIDs) == 0 {
 		return ErrEmptyEmployeeIDs
@@ -117,10 +160,12 @@ func (s *OrganizationService) DeleteEmployees(ctx context.Context, ids []string)
 	})
 }
 
-func (s *OrganizationService) BulkSyncEmployees(input []BulkSyncEmployeeRequest) (int, error) {
+func (s *EmployeeCommandService) BulkSyncEmployees(input []BulkSyncEmployeeRequest) (int, error) {
 	err := s.txManager.WithinTransaction(func(tx *gorm.DB) error {
 		for _, item := range input {
 			employee := MapBulkSyncEmployeeRequestToModel(item)
+			requestedOrgUnitID := nullableStringPointer(employee.DeptID)
+			employee.DeptID = ""
 			existing, found, err := s.repository.FindEmployeeByIDOrStaffID(tx, employee.ID, employee.StaffID)
 			if err != nil {
 				return err
@@ -137,7 +182,7 @@ func (s *OrganizationService) BulkSyncEmployees(input []BulkSyncEmployeeRequest)
 			if err := s.repository.SaveEmployee(tx, &employee); err != nil {
 				return err
 			}
-			if _, err := syncPrimaryAssignmentProjectionFromEmployee(tx, employee, "legacy_employee_bulk_sync", ""); err != nil {
+			if _, err := applyPrimaryAssignmentOrgUnit(tx, employee, requestedOrgUnitID, "employee_bulk_sync", ""); err != nil {
 				return err
 			}
 			action := audit.AuditActionCreate

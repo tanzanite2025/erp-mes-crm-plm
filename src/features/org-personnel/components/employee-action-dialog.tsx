@@ -43,8 +43,6 @@ const UNASSIGNED_POSITION_VALUE = '__UNASSIGNED_POSITION__'
 
 type EmployeeForm = Record<PersonnelFormFieldKey, string> & {
   id?: string
-  lineId: string
-  processId: string
   positionId: string
   version?: number
 }
@@ -69,8 +67,6 @@ function buildDefaultValues(): EmployeeForm {
   return {
     ...fieldDefaults,
     id: '',
-    lineId: 'none',
-    processId: '',
     positionId: '',
   }
 }
@@ -87,8 +83,6 @@ function buildFormValues(employee?: Employee): EmployeeForm {
       : String(employee[field.key] ?? defaults[field.key] ?? '')
   })
 
-  values.lineId = employee.lineId || defaults.lineId
-  values.processId = employee.processId || defaults.processId
   values.positionId = employee.positionId || defaults.positionId
 
   return values
@@ -96,10 +90,10 @@ function buildFormValues(employee?: Employee): EmployeeForm {
 
 function resolveFieldOptions(
   field: PersonnelFormFieldConfig,
-  dynamicDepts: PersonnelSelectOption[]
+  dynamicOrgUnits: PersonnelSelectOption[]
 ): PersonnelSelectOption[] {
-  if (field.optionSource === 'department') {
-    return dynamicDepts
+  if (field.optionSource === 'orgUnit') {
+    return dynamicOrgUnits
   }
   return field.options ?? []
 }
@@ -111,7 +105,7 @@ function getEmployeeDialogFieldGridClassName(
     return 'md:col-span-2 xl:col-span-4'
   }
 
-  if (field.key === 'deptId') {
+  if (field.key === 'orgUnitId') {
     return 'md:col-span-2 xl:col-span-2'
   }
 
@@ -135,11 +129,11 @@ export function EmployeeActionDialog({
     t(`orgPersonnel.excel.columns.${key}` as TranslationKey)
   const getOptionLabel = (label: string) =>
     label.includes('.') ? t(label as TranslationKey) : label
-  const deptFieldLabel = getColumnLabel('deptId')
-  const deptFieldHint =
+  const orgUnitFieldLabel = getColumnLabel('orgUnitId')
+  const orgUnitFieldHint =
     locale === 'zh-CN'
-      ? '这里的“部门”必须映射到组织管理中的二级部门，不能直接选择三级生产单元。'
-      : 'This department field must map to a level-2 department from Organization Management, not a level-3 production unit.'
+      ? '这里保存的是人员当前组织归属，来自组织机构主树；不会参与账号权限推导。'
+      : 'This stores the employee organization assignment from the organization tree; it does not grant account permissions.'
   const positionFieldLabel = locale === 'zh-CN' ? '岗位' : 'Position'
   const positionFieldHint =
     locale === 'zh-CN'
@@ -151,7 +145,7 @@ export function EmployeeActionDialog({
     [currentRow]
   )
   const { data: deltaProxy, tracker } = useDeltaTracker(initialFormValues, open)
-  const { departmentOptions, positions } = useOrgPersonnelLookups({
+  const { orgUnitOptions, positions } = useOrgPersonnelLookups({
     enabled: open,
     includePositions: true,
   })
@@ -166,10 +160,10 @@ export function EmployeeActionDialog({
       .string()
       .trim()
       .min(1, t('orgPersonnel.org.employeeDialog.errors.name')),
-    deptId: z
+    orgUnitId: z
       .string()
       .trim()
-      .min(1, t('orgPersonnel.org.employeeDialog.errors.deptId')),
+      .min(1, t('orgPersonnel.org.employeeDialog.errors.orgUnitId')),
     phone: z.string(),
     emergencyPhone: z.string(),
     gender: z.string(),
@@ -185,8 +179,6 @@ export function EmployeeActionDialog({
     bankCard: z.string(),
     bankName: z.string(),
     education: z.string(),
-    lineId: z.string(),
-    processId: z.string(),
     positionId: z.string(),
   })
 
@@ -233,8 +225,6 @@ export function EmployeeActionDialog({
 
     const nextEmployee: Partial<Employee> = {
       id: values.id || '',
-      lineId: values.lineId,
-      processId: values.processId,
       positionId:
         values.positionId === UNASSIGNED_POSITION_VALUE
           ? undefined
@@ -326,8 +316,8 @@ export function EmployeeActionDialog({
                       className={`space-y-1 ${getEmployeeDialogFieldGridClassName(fieldConfig)}`}
                     >
                       <FormLabel className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
-                        {fieldConfig.key === 'deptId'
-                          ? deptFieldLabel
+                        {fieldConfig.key === 'orgUnitId'
+                          ? orgUnitFieldLabel
                           : getColumnLabel(fieldConfig.key)}
                       </FormLabel>
                       {fieldConfig.input === 'select' ? (
@@ -337,13 +327,13 @@ export function EmployeeActionDialog({
                             value={field.value}
                             onValueChange={field.onChange}
                             placeholder={
-                              fieldConfig.key === 'deptId'
-                                ? deptFieldLabel
+                              fieldConfig.key === 'orgUnitId'
+                                ? orgUnitFieldLabel
                                 : getColumnLabel(fieldConfig.key)
                             }
                             items={resolveFieldOptions(
                               fieldConfig,
-                              departmentOptions
+                              orgUnitOptions
                             ).map((opt) => ({
                               ...opt,
                               label: getOptionLabel(opt.label),
@@ -356,8 +346,8 @@ export function EmployeeActionDialog({
                           <Input
                             type={fieldConfig.input}
                             placeholder={
-                              fieldConfig.key === 'deptId'
-                                ? deptFieldLabel
+                              fieldConfig.key === 'orgUnitId'
+                                ? orgUnitFieldLabel
                                 : getColumnLabel(fieldConfig.key)
                             }
                             className='h-10 rounded-2xl border-none bg-muted/50 px-4 text-xs font-bold shadow-inner transition-all focus-visible:ring-primary/20'
@@ -365,9 +355,9 @@ export function EmployeeActionDialog({
                           />
                         </FormControl>
                       )}
-                      {fieldConfig.key === 'deptId' && (
+                      {fieldConfig.key === 'orgUnitId' && (
                         <p className='text-[10px] leading-relaxed text-muted-foreground'>
-                          {deptFieldHint}
+                          {orgUnitFieldHint}
                         </p>
                       )}
                       <FormMessage />

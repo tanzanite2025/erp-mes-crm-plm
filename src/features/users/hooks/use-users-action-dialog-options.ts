@@ -3,10 +3,6 @@ import { type OrgNode } from '@/features/org-personnel/data/org-schema'
 import { type Employee } from '@/features/org-personnel/data/schema'
 import { EmployeeCoreService } from '@/features/org-personnel/services/employee-core-service'
 import { OrgService } from '@/features/org-personnel/services/org-service'
-import type { ProductionLine } from '@/features/production-shared/data/production-line'
-import type { ProductionProcessStep } from '@/features/production-shared/data/production-process'
-import { productionLinesService } from '@/features/production-shared/services/production-lines-service'
-import { productionProcessesService } from '@/features/production-shared/services/production-processes-service'
 import {
   type EmployeeOption,
   type TranslateFn,
@@ -39,9 +35,7 @@ export function useUsersActionDialogOptions({
     Promise.all([
       EmployeeCoreService.getEmployees(),
       OrgService.getOrgTree(),
-      productionLinesService.getLines(),
-      productionProcessesService.getSteps(),
-    ]).then(([data, orgData, lineData, prcData]) => {
+    ]).then(([data, orgData]) => {
       if (isCancelled || !data) return
 
       const nameMap: Record<string, string> = {}
@@ -53,19 +47,6 @@ export function useUsersActionDialogOptions({
       }
 
       flattenOrg(orgData)
-
-      lineData.forEach((line: ProductionLine) => {
-        nameMap[line.id] = line.name
-        line.segments.forEach((seg) => {
-          seg.processes.forEach((process) => {
-            nameMap[process.id] = process.name
-          })
-        })
-      })
-
-      prcData.forEach((p: ProductionProcessStep) => {
-        nameMap[p.id] = p.name
-      })
 
       const currentEmployeeRef = (currentRow?.employeeId || '').trim()
       const existingEmployeeIds = new Set(
@@ -127,11 +108,13 @@ function buildEmployeeDisplayLabel(
   nameMap: Record<string, string>,
   t: TranslateFn
 ) {
-  const deptName = employee.deptId ? nameMap[employee.deptId] : ''
+  const orgUnitName =
+    employee.orgUnitName ||
+    (employee.orgUnitId ? nameMap[employee.orgUnitId] : '')
 
   let displayLabel = employee.name
   const detailParts: string[] = []
-  if (deptName) detailParts.push(deptName)
+  if (orgUnitName) detailParts.push(orgUnitName)
 
   if (detailParts.length > 0) {
     displayLabel += ` (${detailParts.join(' - ')})`

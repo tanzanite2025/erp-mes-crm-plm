@@ -1,5 +1,5 @@
-import { PackagingProfileFormDialog } from '@/features/logistics-config/components/packaging-profile-form-dialog'
-import type { usePackagingProfileFormController } from '@/features/logistics-config/hooks/use-packaging-profile-form-controller'
+import { PackagingProfileFormDialog } from '@/features/logistics-packaging-management/components/packaging-profile-form-dialog'
+import type { usePackagingProfileFormController } from '@/features/logistics-packaging-management/hooks/use-packaging-profile-form-controller'
 
 interface SalesOrderPackagingProfileDialogBridgeProps {
   formController: ReturnType<typeof usePackagingProfileFormController>

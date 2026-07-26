@@ -9,11 +9,14 @@ import (
 )
 
 type IdentityAccessSnapshot struct {
-	UserID      string   `json:"userId"`
-	Username    string   `json:"username"`
-	EmployeeID  string   `json:"employeeId,omitempty"`
-	Permissions []string `json:"permissions"`
-	Diagnostics []string `json:"diagnostics,omitempty"`
+	UserID              string   `json:"userId"`
+	Username            string   `json:"username"`
+	EmployeeID          string   `json:"employeeId,omitempty"`
+	PermissionPresetID  string   `json:"permissionPresetId,omitempty"`
+	PresetPermissionIDs []string `json:"presetPermissionIds"`
+	DirectPermissionIDs []string `json:"directPermissionIds"`
+	Permissions         []string `json:"permissions"`
+	Diagnostics         []string `json:"diagnostics,omitempty"`
 }
 
 type IdentityAccessService struct {
@@ -46,7 +49,7 @@ func (s *IdentityAccessService) ResolveSnapshotByUserID(userID string) (Identity
 	}
 
 	var user models.User
-	if err := tx.Select("id", "username", "employee_id", "role").
+	if err := tx.Select("id", "username", "employee_id", "permission_preset_id").
 		First(&user, "id = ?", strings.TrimSpace(userID)).Error; err != nil {
 		return IdentityAccessSnapshot{}, err
 	}
@@ -61,16 +64,19 @@ func (s *IdentityAccessService) ResolveSnapshotForUser(user models.User) (Identi
 	}
 
 	snapshot := IdentityAccessSnapshot{
-		UserID:      strings.TrimSpace(user.ID),
-		Username:    strings.TrimSpace(user.Username),
-		EmployeeID:  strings.TrimSpace(profile.EmployeeID),
-		Permissions: append([]string(nil), profile.Permissions...),
+		UserID:              strings.TrimSpace(user.ID),
+		Username:            strings.TrimSpace(user.Username),
+		EmployeeID:          strings.TrimSpace(profile.EmployeeID),
+		PermissionPresetID:  strings.TrimSpace(profile.PermissionPresetID),
+		PresetPermissionIDs: append([]string(nil), profile.PresetPermissionIDs...),
+		DirectPermissionIDs: append([]string(nil), profile.DirectPermissionIDs...),
+		Permissions:         append([]string(nil), profile.Permissions...),
 	}
-	snapshot.Diagnostics = []string{"role_plus_user_permissions_authoritative"}
-	if strings.TrimSpace(user.Role) == "" {
-		snapshot.Diagnostics = append(snapshot.Diagnostics, "role_unassigned")
-	} else if profile.RoleMissing {
-		snapshot.Diagnostics = append(snapshot.Diagnostics, "role_not_found")
+	snapshot.Diagnostics = []string{"permission_preset_plus_account_permissions_authoritative"}
+	if strings.TrimSpace(user.PermissionPresetID) == "" {
+		snapshot.Diagnostics = append(snapshot.Diagnostics, "permission_preset_unassigned")
+	} else if profile.PermissionPresetMissing {
+		snapshot.Diagnostics = append(snapshot.Diagnostics, "permission_preset_not_found")
 	}
 	if len(snapshot.Permissions) == 0 {
 		snapshot.Diagnostics = append(snapshot.Diagnostics, "effective_permissions_empty")

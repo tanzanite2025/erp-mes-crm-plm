@@ -81,7 +81,7 @@ const systemActions: LegacyActionPermissionEntry[] = [
     routeBindings: [
       'GET /users (personnel/accounts、personnel/rights、user_view 或 perm_manage)',
       'GET /users/options (menu_system、user_view 或 perm_manage)',
-      'GET /roles (personnel/accounts、personnel/rights、user_view 或 perm_manage)',
+      'GET /permission-presets (personnel/accounts、personnel/rights、user_view 或 perm_manage)',
     ],
   },
   {
@@ -187,8 +187,8 @@ const systemActions: LegacyActionPermissionEntry[] = [
       'POST /enterprise/config/logo',
       'PATCH /quality/standards/:id',
       'PATCH /basic/units/:id',
-      'POST /roles',
-      'DELETE /roles/:id',
+      'POST /permission-presets',
+      'DELETE /permission-presets/:id',
       'POST /assets/upload',
       'POST /finance/currencies/sync-config',
       'POST /finance/payment-methods',

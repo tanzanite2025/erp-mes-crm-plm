@@ -14,16 +14,16 @@ import (
 )
 
 type CreateUserRequest struct {
-	Username       string `json:"username" binding:"required"`
-	Password       string `json:"password" binding:"required"`
-	Email          string `json:"email"`
-	PhoneNumber    string `json:"phoneNumber"`
-	FirstName      string `json:"firstName"`
-	LastName       string `json:"lastName"`
-	Status         string `json:"status"`
-	Role           string `json:"role"`
-	EmployeeID     string `json:"employeeId"`
-	AdminChallenge string `json:"adminChallenge"`
+	Username           string `json:"username" binding:"required"`
+	Password           string `json:"password" binding:"required"`
+	Email              string `json:"email"`
+	PhoneNumber        string `json:"phoneNumber"`
+	FirstName          string `json:"firstName"`
+	LastName           string `json:"lastName"`
+	Status             string `json:"status"`
+	PermissionPresetID string `json:"permissionPresetId"`
+	EmployeeID         string `json:"employeeId"`
+	AdminChallenge     string `json:"adminChallenge"`
 }
 
 func CreateUserHandler(c *gin.Context) {
@@ -45,12 +45,12 @@ func CreateUserHandler(c *gin.Context) {
 		return
 	}
 	isSeedAdmin := strings.EqualFold(req.Username, "admin")
-	normalizedRole := strings.ToLower(strings.TrimSpace(req.Role))
+	normalizedPermissionPresetID := strings.ToLower(strings.TrimSpace(req.PermissionPresetID))
 	if isSeedAdmin {
-		normalizedRole = "admin"
+		normalizedPermissionPresetID = "admin"
 		req.Status = "active"
 	}
-	if isSeedAdmin || normalizedRole == "admin" {
+	if isSeedAdmin || normalizedPermissionPresetID == "admin" {
 		if !hasContextPermission(c, authz.PermissionManage) {
 			c.JSON(http.StatusForbidden, gin.H{"error": "[SECURITY] Only permission administrators can create admin accounts"})
 			return
@@ -60,8 +60,8 @@ func CreateUserHandler(c *gin.Context) {
 			return
 		}
 	}
-	if normalizedRole != "" && !hasContextPermission(c, authz.PermissionManage) {
-		c.JSON(http.StatusForbidden, gin.H{"error": "[SECURITY] Only admin can assign account roles during user creation"})
+	if normalizedPermissionPresetID != "" && !hasContextPermission(c, authz.PermissionManage) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "[SECURITY] Only admin can assign account permission presets during user creation"})
 		return
 	}
 
@@ -72,16 +72,16 @@ func CreateUserHandler(c *gin.Context) {
 	}
 
 	user := models.User{
-		Username:    req.Username,
-		Password:    hashedPassword,
-		Email:       req.Email,
-		PhoneNumber: req.PhoneNumber,
-		FirstName:   req.FirstName,
-		LastName:    req.LastName,
-		Status:      req.Status,
-		IsProtected: isSeedAdmin,
-		Role:        normalizedRole,
-		EmployeeID:  req.EmployeeID,
+		Username:           req.Username,
+		Password:           hashedPassword,
+		Email:              req.Email,
+		PhoneNumber:        req.PhoneNumber,
+		FirstName:          req.FirstName,
+		LastName:           req.LastName,
+		Status:             req.Status,
+		IsProtected:        isSeedAdmin,
+		PermissionPresetID: normalizedPermissionPresetID,
+		EmployeeID:         req.EmployeeID,
 	}
 	if strings.TrimSpace(user.ID) == "" {
 		user.ID = uuid.NewString()
@@ -98,7 +98,7 @@ func CreateUserHandler(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] employee does not exist"})
 		case errors.Is(err, services.ErrUserEmployeeAlreadyBound):
 			c.JSON(http.StatusConflict, gin.H{"error": "[CONFLICT] employee is already bound to another account"})
-		case errors.Is(err, services.ErrUserRoleNotFound), errors.Is(err, services.ErrUserRoleInvalidPayload):
+		case errors.Is(err, services.ErrAccountPermissionPresetNotFound), errors.Is(err, services.ErrAccountPermissionPresetInvalidPayload):
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		default:
 			log.Error().

@@ -21,7 +21,7 @@ const (
 	AuditModuleBOM                   = "bom"
 	AuditModuleUser                  = "user"
 	AuditModuleUserPermission        = "user-permission"
-	AuditModuleRole                  = "role"
+	AuditModulePermissionPreset      = "permission-preset"
 	AuditModuleProductionLine        = "production-line"
 	AuditModuleProductionRoute       = "production-route"
 	AuditModuleProductionOperation   = "production-operation"

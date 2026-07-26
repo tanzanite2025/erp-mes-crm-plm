@@ -45,6 +45,7 @@ func BulkDeleteUsers(ctx context.Context, actorUserID string, userIDs []string) 
 	actorUserID = strings.TrimSpace(actorUserID)
 
 	deletedCount := 0
+	deletedUsers := make([]models.User, 0, len(normalizedUserIDs))
 	err = db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var users []models.User
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
@@ -71,19 +72,23 @@ func BulkDeleteUsers(ctx context.Context, actorUserID string, userIDs []string) 
 				return err
 			}
 			if err := writeUserAuditEntryWithContext(ctx, tx, user.ID, "DELETE", before, nil, map[string]any{
-				"deleted":  true,
-				"username": strings.TrimSpace(user.Username),
-				"status":   strings.TrimSpace(user.Status),
-				"role":     strings.TrimSpace(user.Role),
+				"deleted":            true,
+				"username":           strings.TrimSpace(user.Username),
+				"status":             strings.TrimSpace(user.Status),
+				"permissionPresetId": strings.TrimSpace(user.PermissionPresetID),
 			}, "bulk_delete"); err != nil {
 				return err
 			}
 			deletedCount++
+			deletedUsers = append(deletedUsers, user)
 		}
 		return nil
 	})
 	if err != nil {
 		return 0, err
+	}
+	for _, user := range deletedUsers {
+		NotifyAccountAccessSnapshotInvalidatedForUser(user, AccountAccessInvalidationReasonAccountBulkDeleted)
 	}
 	return deletedCount, nil
 }

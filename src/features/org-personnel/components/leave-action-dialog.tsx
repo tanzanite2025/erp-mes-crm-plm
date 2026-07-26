@@ -90,12 +90,12 @@ export function LeaveActionDialog({
         label: employee.name,
         value: employee.id,
         secondaryLabel:
-          employee.deptName || employee.positionName || employee.status,
+          employee.orgUnitName || employee.positionName || employee.status,
         tertiaryLabel: employee.staffId || employee.id,
         keywords: [
           employee.name,
           employee.staffId,
-          employee.deptName,
+          employee.orgUnitName,
           employee.positionName,
           employee.phone,
         ]

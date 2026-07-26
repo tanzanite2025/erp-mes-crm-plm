@@ -208,22 +208,31 @@ func GetAuthSnapshotHandler(c *gin.Context) {
 	}
 
 	diagnostics := []string{}
+	permissionPresetID := ""
+	presetPermissionIDs := []string{}
+	directPermissionIDs := []string{}
 	if hasAccessSnapshot {
 		if snapshot, ok := accessSnapshotRaw.(access.IdentityAccessSnapshot); ok {
 			if len(snapshot.Permissions) > 0 {
 				permissionList = append([]string(nil), snapshot.Permissions...)
 			}
+			permissionPresetID = snapshot.PermissionPresetID
+			presetPermissionIDs = append([]string(nil), snapshot.PresetPermissionIDs...)
+			directPermissionIDs = append([]string(nil), snapshot.DirectPermissionIDs...)
 			diagnostics = append(diagnostics, snapshot.Diagnostics...)
 		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"id":          userID,
-		"username":    username,
-		"email":       strings.TrimSpace(profileUser.Email),
-		"employeeId":  strings.TrimSpace(profileUser.EmployeeID),
-		"status":      status,
-		"permissions": permissionList,
-		"diagnostics": diagnostics,
+		"id":                  userID,
+		"username":            username,
+		"email":               strings.TrimSpace(profileUser.Email),
+		"employeeId":          strings.TrimSpace(profileUser.EmployeeID),
+		"status":              status,
+		"permissionPresetId":  permissionPresetID,
+		"presetPermissionIds": presetPermissionIDs,
+		"directPermissionIds": directPermissionIDs,
+		"permissions":         permissionList,
+		"diagnostics":         diagnostics,
 	})
 }

@@ -36,16 +36,16 @@ func mapUserUniqueViolation(err error) error {
 
 func userAuditSnapshot(user models.User) map[string]any {
 	return map[string]any{
-		"id":          strings.TrimSpace(user.ID),
-		"username":    strings.TrimSpace(user.Username),
-		"email":       strings.TrimSpace(user.Email),
-		"phoneNumber": strings.TrimSpace(user.PhoneNumber),
-		"firstName":   strings.TrimSpace(user.FirstName),
-		"lastName":    strings.TrimSpace(user.LastName),
-		"status":      strings.TrimSpace(user.Status),
-		"isProtected": user.IsSystemProtected(),
-		"role":        strings.TrimSpace(user.Role),
-		"employeeId":  strings.TrimSpace(user.EmployeeID),
+		"id":                 strings.TrimSpace(user.ID),
+		"username":           strings.TrimSpace(user.Username),
+		"email":              strings.TrimSpace(user.Email),
+		"phoneNumber":        strings.TrimSpace(user.PhoneNumber),
+		"firstName":          strings.TrimSpace(user.FirstName),
+		"lastName":           strings.TrimSpace(user.LastName),
+		"status":             strings.TrimSpace(user.Status),
+		"isProtected":        user.IsSystemProtected(),
+		"permissionPresetId": strings.TrimSpace(user.PermissionPresetID),
+		"employeeId":         strings.TrimSpace(user.EmployeeID),
 	}
 }
 
@@ -63,6 +63,16 @@ func sanitizeUserAuditUpdates(updates map[string]interface{}) map[string]any {
 		}
 	}
 	return payload
+}
+
+func userUpdatesAffectIdentityAccessSnapshot(updates map[string]interface{}) bool {
+	for key := range updates {
+		switch strings.TrimSpace(key) {
+		case "username", "email", "status", "permission_preset_id", "employee_id":
+			return true
+		}
+	}
+	return false
 }
 
 func userAuditDiff(before map[string]any, after map[string]any, updates map[string]any, operation string) json.RawMessage {
@@ -98,7 +108,7 @@ func CreateUser(ctx context.Context, user models.User) (models.User, error) {
 			return existingResult.Error
 		}
 
-		if err := normalizeCreatedUserRole(tx, &created); err != nil {
+		if err := normalizeCreatedAccountPermissionPreset(tx, &created); err != nil {
 			return err
 		}
 		if err := normalizeCreatedUserEmployeeBinding(tx, &created); err != nil {
@@ -108,15 +118,15 @@ func CreateUser(ctx context.Context, user models.User) (models.User, error) {
 			return mapUserUniqueViolation(err)
 		}
 		updates := sanitizeUserAuditUpdates(map[string]interface{}{
-			"username":     strings.TrimSpace(created.Username),
-			"email":        strings.TrimSpace(created.Email),
-			"phone_number": strings.TrimSpace(created.PhoneNumber),
-			"first_name":   strings.TrimSpace(created.FirstName),
-			"last_name":    strings.TrimSpace(created.LastName),
-			"status":       strings.TrimSpace(created.Status),
-			"role":         strings.TrimSpace(created.Role),
-			"employee_id":  strings.TrimSpace(created.EmployeeID),
-			"password":     true,
+			"username":             strings.TrimSpace(created.Username),
+			"email":                strings.TrimSpace(created.Email),
+			"phone_number":         strings.TrimSpace(created.PhoneNumber),
+			"first_name":           strings.TrimSpace(created.FirstName),
+			"last_name":            strings.TrimSpace(created.LastName),
+			"status":               strings.TrimSpace(created.Status),
+			"permission_preset_id": strings.TrimSpace(created.PermissionPresetID),
+			"employee_id":          strings.TrimSpace(created.EmployeeID),
+			"password":             true,
 		})
 		return writeUserAuditEntryWithContext(ctx, tx, created.ID, "CREATE", nil, userAuditSnapshot(created), updates, "create")
 	}); err != nil {
@@ -127,6 +137,7 @@ func CreateUser(ctx context.Context, user models.User) (models.User, error) {
 
 func updateUserWithAudit(ctx context.Context, userID string, updates map[string]interface{}, action string, operation string) (models.User, error) {
 	var updated models.User
+	shouldNotifyAccessSnapshotInvalidated := userUpdatesAffectIdentityAccessSnapshot(updates)
 	err := db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var current models.User
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&current, "id = ?", strings.TrimSpace(userID)).Error; err != nil {
@@ -135,7 +146,7 @@ func updateUserWithAudit(ctx context.Context, userID string, updates map[string]
 		if current.IsSystemProtected() {
 			return ErrProtectedUserMutation
 		}
-		if err := normalizeUserRoleUpdate(tx, updates); err != nil {
+		if err := normalizeAccountPermissionPresetUpdate(tx, updates); err != nil {
 			return err
 		}
 		if err := normalizeEmployeeBindingUpdate(tx, current.ID, updates); err != nil {
@@ -153,6 +164,9 @@ func updateUserWithAudit(ctx context.Context, userID string, updates map[string]
 	if err != nil {
 		return models.User{}, err
 	}
+	if shouldNotifyAccessSnapshotInvalidated {
+		NotifyAccountAccessSnapshotInvalidatedForUser(updated, AccountAccessInvalidationReasonAccountMutated)
+	}
 	return updated, nil
 }
 
@@ -165,12 +179,13 @@ func ReplaceUser(ctx context.Context, userID string, updates map[string]interfac
 }
 
 func DeleteUser(ctx context.Context, userID string) error {
-	return db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	normalizedUserID := strings.TrimSpace(userID)
+	err := db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var current models.User
-		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&current, "id = ?", strings.TrimSpace(userID)).Error
+		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&current, "id = ?", normalizedUserID).Error
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return tx.Delete(&models.User{}, "id = ?", strings.TrimSpace(userID)).Error
+				return tx.Delete(&models.User{}, "id = ?", normalizedUserID).Error
 			}
 			return err
 		}
@@ -182,12 +197,17 @@ func DeleteUser(ctx context.Context, userID string) error {
 			return err
 		}
 		return writeUserAuditEntryWithContext(ctx, tx, current.ID, "DELETE", before, nil, map[string]any{
-			"deleted":  true,
-			"username": strings.TrimSpace(current.Username),
-			"status":   strings.TrimSpace(current.Status),
-			"role":     strings.TrimSpace(current.Role),
+			"deleted":            true,
+			"username":           strings.TrimSpace(current.Username),
+			"status":             strings.TrimSpace(current.Status),
+			"permissionPresetId": strings.TrimSpace(current.PermissionPresetID),
 		}, "delete")
 	})
+	if err != nil {
+		return err
+	}
+	NotifyAccountAccessSnapshotInvalidatedForUserID(normalizedUserID, AccountAccessInvalidationReasonAccountDeleted)
+	return nil
 }
 
 func normalizeUserPermissionIDsForAudit(permissionIDs []string) []string {

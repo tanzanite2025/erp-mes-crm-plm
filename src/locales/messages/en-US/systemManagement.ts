@@ -109,7 +109,7 @@ export const systemManagement = {
       title: 'Core Module Access Coverage Matrix',
       description: 'Metrics of functional redundancy per core business module',
       moduleSuffix: 'Module',
-      rolesAccess: 'USERS_GRANTED',
+      usersGranted: 'USERS_GRANTED',
     },
     note: '* Audit data reads explicit user grants only, keeping the view aligned with the effective runtime snapshot.',
     modules: {

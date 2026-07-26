@@ -457,6 +457,15 @@ const navGroupConfigs: SidebarGroupConfig[] = [
             permissionId: permissionIdForPath('/logistics-config'),
           },
           {
+            id: 'logistics-packaging-management',
+            titleKey: 'sidebar.items.packagingManagement',
+            url: '/logistics-packaging-management',
+            icon: Package,
+            permissionId: permissionIdForPath(
+              '/logistics-packaging-management'
+            ),
+          },
+          {
             id: 'container-management',
             titleKey: 'sidebar.items.containerManagement',
             url: '/logistics-container-management',

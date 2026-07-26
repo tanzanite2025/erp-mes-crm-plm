@@ -95,7 +95,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		if err := db.DB.Select("id", "username", "status", "employee_id", "role").Where("id = ?", userID).First(&user).Error; err != nil {
+		if err := db.DB.Select("id", "username", "status", "employee_id", "permission_preset_id").Where("id = ?", userID).First(&user).Error; err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Account not found or inactive"})
 			c.Abort()
 			return

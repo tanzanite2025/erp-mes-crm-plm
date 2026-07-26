@@ -118,7 +118,7 @@ export const EmployeeMaintenanceService = {
   ): Promise<Employee> => {
     const payload: DeltaPayload = {
       op: 'PATCH',
-      delta,
+      delta: mapEmployeeDomainDeltaToApiDelta(delta),
       metadata: buildVersionedPatchMetadata(
         id,
         version,
@@ -223,6 +223,23 @@ export const EmployeeMaintenanceService = {
 
     return toEmployeeContract(payload.employee)
   },
+}
+
+function mapEmployeeDomainDeltaToApiDelta(delta: DeltaSet): DeltaSet {
+  const mappedDelta: DeltaSet = {}
+
+  Object.entries(delta).forEach(([key, value]) => {
+    if (key === 'orgUnitId') {
+      mappedDelta.deptId = value
+      return
+    }
+    if (key === 'orgUnitName') {
+      return
+    }
+    mappedDelta[key] = value
+  })
+
+  return mappedDelta
 }
 
 /**

@@ -11,9 +11,12 @@ import (
 )
 
 type EffectiveAccessProfile struct {
-	Permissions []string
-	EmployeeID  string
-	RoleMissing bool
+	PermissionPresetID      string
+	PresetPermissionIDs     []string
+	DirectPermissionIDs     []string
+	Permissions             []string
+	EmployeeID              string
+	PermissionPresetMissing bool
 }
 
 type EffectiveAccessService struct {
@@ -48,8 +51,11 @@ func (s *EffectiveAccessService) database() *gorm.DB {
 func (s *EffectiveAccessService) ResolveEffectiveAccessProfileForUser(user models.User) (EffectiveAccessProfile, error) {
 	tx := s.database()
 	profile := EffectiveAccessProfile{
-		EmployeeID:  strings.TrimSpace(user.EmployeeID),
-		Permissions: []string{},
+		PermissionPresetID:  strings.ToLower(strings.TrimSpace(user.PermissionPresetID)),
+		PresetPermissionIDs: []string{},
+		DirectPermissionIDs: []string{},
+		Permissions:         []string{},
+		EmployeeID:          strings.TrimSpace(user.EmployeeID),
 	}
 
 	userID := strings.TrimSpace(user.ID)
@@ -60,25 +66,26 @@ func (s *EffectiveAccessService) ResolveEffectiveAccessProfileForUser(user model
 		return profile, gorm.ErrInvalidValue
 	}
 
-	permissionIDs := make([]string, 0, 32)
+	presetPermissionIDs := make([]string, 0, 32)
 
-	normalizedRoleID := strings.TrimSpace(user.Role)
-	if normalizedRoleID != "" {
-		var role models.Role
-		err := tx.Select("permissions").Where("LOWER(role_id) = ?", strings.ToLower(normalizedRoleID)).First(&role).Error
+	normalizedPermissionPresetID := profile.PermissionPresetID
+	if normalizedPermissionPresetID != "" {
+		var permissionPreset models.PermissionPreset
+		err := tx.Select("permissions").Where("LOWER(permission_preset_id) = ?", strings.ToLower(normalizedPermissionPresetID)).First(&permissionPreset).Error
 		if err == nil {
-			for _, permissionID := range authz.ParsePermissionIDs(role.Permissions) {
+			for _, permissionID := range authz.ParsePermissionIDs(permissionPreset.Permissions) {
 				if authz.IsSupportedPermissionID(permissionID) {
-					permissionIDs = append(permissionIDs, permissionID)
+					presetPermissionIDs = append(presetPermissionIDs, permissionID)
 				}
 			}
 		} else if errors.Is(err, gorm.ErrRecordNotFound) {
-			profile.RoleMissing = true
+			profile.PermissionPresetMissing = true
 		} else {
 			return profile, err
 		}
 	}
 
+	directPermissionIDs := make([]string, 0, 32)
 	var rows []models.UserPermission
 	if err := tx.Select("permission_id").
 		Where("user_id = ?", userID).
@@ -90,9 +97,14 @@ func (s *EffectiveAccessService) ResolveEffectiveAccessProfileForUser(user model
 
 	for _, row := range rows {
 		if authz.IsSupportedPermissionID(row.PermissionID) {
-			permissionIDs = append(permissionIDs, row.PermissionID)
+			directPermissionIDs = append(directPermissionIDs, row.PermissionID)
 		}
 	}
-	profile.Permissions = authz.DeduplicatePermissionIDs(permissionIDs)
+	profile.PresetPermissionIDs = authz.DeduplicatePermissionIDs(presetPermissionIDs)
+	profile.DirectPermissionIDs = authz.DeduplicatePermissionIDs(directPermissionIDs)
+	profile.Permissions = authz.DeduplicatePermissionIDs(append(
+		append([]string(nil), profile.PresetPermissionIDs...),
+		profile.DirectPermissionIDs...,
+	))
 	return profile, nil
 }

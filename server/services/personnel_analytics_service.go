@@ -14,18 +14,18 @@ import (
  */
 type PersonnelAnalyticsService struct {
 	txManager transactionManager
-	orgRepo   repositories.OrganizationRepository
+	empRepo   repositories.EmployeeRepository
 	leaveRepo repositories.LeaveRepository
 }
 
 func NewPersonnelAnalyticsService(
 	txManager transactionManager,
-	orgRepo repositories.OrganizationRepository,
+	empRepo repositories.EmployeeRepository,
 	leaveRepo repositories.LeaveRepository,
 ) *PersonnelAnalyticsService {
 	return &PersonnelAnalyticsService{
 		txManager: txManager,
-		orgRepo:   orgRepo,
+		empRepo:   empRepo,
 		leaveRepo: leaveRepo,
 	}
 }
@@ -33,7 +33,7 @@ func NewPersonnelAnalyticsService(
 var defaultAnalyticsRuntime = defaultServiceRuntime()
 var DefaultPersonnelAnalyticsService = NewPersonnelAnalyticsService(
 	defaultAnalyticsRuntime.txManager,
-	repositories.NewOrganizationRepository(),
+	repositories.NewEmployeeRepository(),
 	repositories.NewLeaveRepository(),
 )
 
@@ -42,7 +42,7 @@ func (s *PersonnelAnalyticsService) GetExcellentRanking() ([]models.EmployeeStat
 	db := s.txManager.DB()
 
 	// 1. 获取荣誉榜所需的轻量员工资料，并在数据库侧聚合已批准请假天数。
-	employees, err := s.orgRepo.ListExcellentEmployeeInputs(db)
+	employees, err := s.empRepo.ListExcellentEmployeeInputs(db)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func (s *PersonnelAnalyticsService) GetExcellentRanking() ([]models.EmployeeStat
 		rankings = append(rankings, models.EmployeeStats{
 			EmployeeID:     emp.ID,
 			Name:           emp.Name,
-			DeptName:       emp.DeptName,
+			OrgUnitName:    emp.DeptName,
 			AttendanceRate: math.Round(attendanceRate*100) / 100,
 			LeaveDays:      leaveDays,
 			TenureYears:    tenureYears,

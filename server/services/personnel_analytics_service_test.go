@@ -43,13 +43,13 @@ func openPersonnelAnalyticsTestDB(t *testing.T) *gorm.DB {
 	})
 
 	if err := testDB.Exec(`
-		CREATE TABLE organizations (
+		CREATE TABLE org_units (
 			id text PRIMARY KEY,
 			name text NOT NULL,
 			deleted_at datetime
 		);
 	`).Error; err != nil {
-		t.Fatalf("create organizations schema: %v", err)
+		t.Fatalf("create org_units schema: %v", err)
 	}
 	if err := testDB.Exec(`
 		CREATE TABLE employees (
@@ -61,6 +61,17 @@ func openPersonnelAnalyticsTestDB(t *testing.T) *gorm.DB {
 		);
 	`).Error; err != nil {
 		t.Fatalf("create employees schema: %v", err)
+	}
+	if err := testDB.Exec(`
+		CREATE TABLE employee_assignments (
+			id text PRIMARY KEY,
+			employee_id text NOT NULL,
+			org_unit_id text,
+			is_primary boolean,
+			deleted_at datetime
+		);
+	`).Error; err != nil {
+		t.Fatalf("create employee_assignments schema: %v", err)
 	}
 	if err := testDB.Exec(`
 		CREATE TABLE leave_requests (
@@ -86,6 +97,15 @@ func insertPersonnelAnalyticsEmployee(t *testing.T, db *gorm.DB, id string, name
 		joinedDate,
 	).Error; err != nil {
 		t.Fatalf("insert employee %s: %v", id, err)
+	}
+	if err := db.Exec(
+		"INSERT INTO employee_assignments (id, employee_id, org_unit_id, is_primary) VALUES (?, ?, ?, ?)",
+		"assignment-"+id,
+		id,
+		deptID,
+		true,
+	).Error; err != nil {
+		t.Fatalf("insert employee assignment %s: %v", id, err)
 	}
 }
 
@@ -116,7 +136,7 @@ func findEmployeeRankingRow(t *testing.T, rankings []employeeRankingProjection, 
 type employeeRankingProjection struct {
 	EmployeeID     string
 	Name           string
-	DeptName       string
+	OrgUnitName    string
 	AttendanceRate float64
 	LeaveDays      float64
 	TenureYears    int
@@ -125,8 +145,8 @@ type employeeRankingProjection struct {
 
 func TestExcellentRankingUsesApprovedLeaveAggregationAndDeterministicSorting(t *testing.T) {
 	testDB := openPersonnelAnalyticsTestDB(t)
-	if err := testDB.Exec("INSERT INTO organizations (id, name) VALUES (?, ?), (?, ?)", "dept-production", "生产部", "dept-quality", "质检部").Error; err != nil {
-		t.Fatalf("insert organizations: %v", err)
+	if err := testDB.Exec("INSERT INTO org_units (id, name) VALUES (?, ?), (?, ?)", "dept-production", "生产部", "dept-quality", "质检部").Error; err != nil {
+		t.Fatalf("insert org units: %v", err)
 	}
 
 	tenYearsAgo := time.Now().AddDate(-12, 0, 0)
@@ -142,7 +162,7 @@ func TestExcellentRankingUsesApprovedLeaveAggregationAndDeterministicSorting(t *
 
 	service := NewPersonnelAnalyticsService(
 		personnelAnalyticsTestTxManager{db: testDB},
-		repositories.NewOrganizationRepository(),
+		repositories.NewEmployeeRepository(),
 		repositories.NewLeaveRepository(),
 	)
 
@@ -159,7 +179,7 @@ func TestExcellentRankingUsesApprovedLeaveAggregationAndDeterministicSorting(t *
 		projections = append(projections, employeeRankingProjection{
 			EmployeeID:     row.EmployeeID,
 			Name:           row.Name,
-			DeptName:       row.DeptName,
+			OrgUnitName:    row.OrgUnitName,
 			AttendanceRate: row.AttendanceRate,
 			LeaveDays:      row.LeaveDays,
 			TenureYears:    row.TenureYears,
@@ -172,8 +192,8 @@ func TestExcellentRankingUsesApprovedLeaveAggregationAndDeterministicSorting(t *
 	}
 
 	alice := findEmployeeRankingRow(t, projections, "emp-alice")
-	if alice.DeptName != "生产部" {
-		t.Fatalf("expected Alice department from lightweight employee query, got %q", alice.DeptName)
+	if alice.OrgUnitName != "生产部" {
+		t.Fatalf("expected Alice organization unit from lightweight employee query, got %q", alice.OrgUnitName)
 	}
 	if alice.LeaveDays != 2 {
 		t.Fatalf("expected only approved leave days for Alice, got %.1f", alice.LeaveDays)

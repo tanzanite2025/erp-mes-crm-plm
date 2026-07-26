@@ -127,10 +127,12 @@ export function PackagingProfileFormDialog({
         <div className='relative flex-1 space-y-4 overflow-y-auto px-5 py-5 lg:px-6 lg:py-5'>
           <DialogHeader className='mt-1 space-y-1'>
             <DialogTitle className='text-xl font-black tracking-tighter text-primary uppercase italic'>
-              {t('logisticsConfig.packagingRules.dialog.title')}
+              {t('logisticsPackagingManagement.packagingRules.dialog.title')}
             </DialogTitle>
             <DialogDescription className='text-[10px] leading-none font-black tracking-[0.2em] uppercase opacity-40'>
-              {t('logisticsConfig.packagingRules.dialog.description')}
+              {t(
+                'logisticsPackagingManagement.packagingRules.dialog.description'
+              )}
             </DialogDescription>
           </DialogHeader>
 
@@ -156,7 +158,9 @@ export function PackagingProfileFormDialog({
               <div className='grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4'>
                 <div className={packagingFieldStackClass}>
                   <Label className={packagingLabelClass}>
-                    {t('logisticsConfig.packagingRules.fields.packagingName')}
+                    {t(
+                      'logisticsPackagingManagement.packagingRules.fields.packagingName'
+                    )}
                   </Label>
                   <Combobox
                     options={packagingMaterialOptions}
@@ -173,7 +177,9 @@ export function PackagingProfileFormDialog({
                 </div>
                 <div className={packagingFieldStackClass}>
                   <Label className={packagingLabelClass}>
-                    {t('logisticsConfig.packagingRules.fields.product')}
+                    {t(
+                      'logisticsPackagingManagement.packagingRules.fields.product'
+                    )}
                   </Label>
                   <Select
                     value={selectedTarget?.entityId ?? ''}
@@ -182,7 +188,7 @@ export function PackagingProfileFormDialog({
                     <SelectTrigger className={packagingSelectClass}>
                       <SelectValue
                         placeholder={t(
-                          'logisticsConfig.packagingRules.placeholders.product'
+                          'logisticsPackagingManagement.packagingRules.placeholders.product'
                         )}
                       />
                     </SelectTrigger>
@@ -201,7 +207,9 @@ export function PackagingProfileFormDialog({
                 </div>
                 <div className={packagingFieldStackClass}>
                   <Label className={packagingLabelClass}>
-                    {t('logisticsConfig.packagingRules.fields.status')}
+                    {t(
+                      'logisticsPackagingManagement.packagingRules.fields.status'
+                    )}
                   </Label>
                   <Select
                     value={draft.isActive ? 'active' : 'inactive'}
@@ -217,10 +225,14 @@ export function PackagingProfileFormDialog({
                     </SelectTrigger>
                     <SelectContent className={packagingSelectContentClass}>
                       <SelectItem value='active' className='m-1 rounded-lg'>
-                        {t('logisticsConfig.packagingRules.statusActive')}
+                        {t(
+                          'logisticsPackagingManagement.packagingRules.statusActive'
+                        )}
                       </SelectItem>
                       <SelectItem value='inactive' className='m-1 rounded-lg'>
-                        {t('logisticsConfig.packagingRules.statusInactive')}
+                        {t(
+                          'logisticsPackagingManagement.packagingRules.statusInactive'
+                        )}
                       </SelectItem>
                     </SelectContent>
                   </Select>
@@ -228,7 +240,9 @@ export function PackagingProfileFormDialog({
 
                 <div className={packagingFieldStackClass}>
                   <Label className={packagingLabelClass}>
-                    {t('logisticsConfig.packagingRules.fields.dimensionUnit')}
+                    {t(
+                      'logisticsPackagingManagement.packagingRules.fields.dimensionUnit'
+                    )}
                   </Label>
                   <Select
                     value={resolvedDimensionUnitCode}
@@ -237,7 +251,7 @@ export function PackagingProfileFormDialog({
                     <SelectTrigger className={packagingSelectClass}>
                       <SelectValue
                         placeholder={t(
-                          'logisticsConfig.packagingRules.placeholders.dimensionUnit'
+                          'logisticsPackagingManagement.packagingRules.placeholders.dimensionUnit'
                         )}
                       />
                     </SelectTrigger>
@@ -262,7 +276,9 @@ export function PackagingProfileFormDialog({
                 </div>
                 <div className={packagingFieldStackClass}>
                   <Label className={packagingLabelClass}>
-                    {t('logisticsConfig.packagingRules.fields.weightUnit')}
+                    {t(
+                      'logisticsPackagingManagement.packagingRules.fields.weightUnit'
+                    )}
                   </Label>
                   <Select
                     value={resolvedWeightUnitCode}
@@ -271,7 +287,7 @@ export function PackagingProfileFormDialog({
                     <SelectTrigger className={packagingSelectClass}>
                       <SelectValue
                         placeholder={t(
-                          'logisticsConfig.packagingRules.placeholders.weightUnit'
+                          'logisticsPackagingManagement.packagingRules.placeholders.weightUnit'
                         )}
                       />
                     </SelectTrigger>
@@ -296,7 +312,9 @@ export function PackagingProfileFormDialog({
                 </div>
                 <div className={packagingFieldStackClass}>
                   <Label className={packagingLabelClass}>
-                    {t('logisticsConfig.packagingRules.fields.quantityUnit')}
+                    {t(
+                      'logisticsPackagingManagement.packagingRules.fields.quantityUnit'
+                    )}
                   </Label>
                   <Select
                     value={resolvedCapacityUnitCode}
@@ -305,7 +323,7 @@ export function PackagingProfileFormDialog({
                     <SelectTrigger className={packagingSelectClass}>
                       <SelectValue
                         placeholder={t(
-                          'logisticsConfig.packagingRules.placeholders.capacityUnit'
+                          'logisticsPackagingManagement.packagingRules.placeholders.capacityUnit'
                         )}
                       />
                     </SelectTrigger>
@@ -330,7 +348,9 @@ export function PackagingProfileFormDialog({
                 </div>
                 <div className={packagingFieldStackClass}>
                   <Label className={packagingLabelClass}>
-                    {t('logisticsConfig.packagingRules.fields.productWeight')}
+                    {t(
+                      'logisticsPackagingManagement.packagingRules.fields.productWeight'
+                    )}
                   </Label>
                   <Input
                     className={cn(packagingFieldClass, 'font-mono')}
@@ -362,7 +382,9 @@ export function PackagingProfileFormDialog({
               <div className='grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4'>
                 <div className={packagingFieldStackClass}>
                   <Label className={packagingLabelClass}>
-                    {t('logisticsConfig.packagingRules.fields.length')}
+                    {t(
+                      'logisticsPackagingManagement.packagingRules.fields.length'
+                    )}
                   </Label>
                   <Input
                     type='number'
@@ -378,7 +400,9 @@ export function PackagingProfileFormDialog({
                 </div>
                 <div className={packagingFieldStackClass}>
                   <Label className={packagingLabelClass}>
-                    {t('logisticsConfig.packagingRules.fields.width')}
+                    {t(
+                      'logisticsPackagingManagement.packagingRules.fields.width'
+                    )}
                   </Label>
                   <Input
                     type='number'
@@ -394,7 +418,9 @@ export function PackagingProfileFormDialog({
                 </div>
                 <div className={packagingFieldStackClass}>
                   <Label className={packagingLabelClass}>
-                    {t('logisticsConfig.packagingRules.fields.height')}
+                    {t(
+                      'logisticsPackagingManagement.packagingRules.fields.height'
+                    )}
                   </Label>
                   <Input
                     type='number'
@@ -410,7 +436,9 @@ export function PackagingProfileFormDialog({
                 </div>
                 <div className={packagingFieldStackClass}>
                   <Label className={packagingLabelClass}>
-                    {t('logisticsConfig.packagingRules.fields.quantity')}
+                    {t(
+                      'logisticsPackagingManagement.packagingRules.fields.quantity'
+                    )}
                   </Label>
                   <Input
                     type='number'
@@ -434,7 +462,9 @@ export function PackagingProfileFormDialog({
           <div className='grid grid-cols-1 gap-2.5 rounded-[24px] border border-dashed bg-primary/5 p-3.5 md:grid-cols-3'>
             <div>
               <div className='text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
-                {t('logisticsConfig.packagingRules.summary.volume')}
+                {t(
+                  'logisticsPackagingManagement.packagingRules.summary.volume'
+                )}
               </div>
               <div className='mt-1 text-xl font-black tracking-tighter text-primary italic'>
                 {computedVolume}{' '}
@@ -445,7 +475,9 @@ export function PackagingProfileFormDialog({
             </div>
             <div>
               <div className='text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
-                {t('logisticsConfig.packagingRules.summary.productWeightTotal')}
+                {t(
+                  'logisticsPackagingManagement.packagingRules.summary.productWeightTotal'
+                )}
               </div>
               <div className='mt-1 text-xl font-black tracking-tighter text-primary italic'>
                 {productWeight * draft.capacity}{' '}
@@ -456,7 +488,9 @@ export function PackagingProfileFormDialog({
             </div>
             <div>
               <div className='text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
-                {t('logisticsConfig.packagingRules.summary.grossWeight')}
+                {t(
+                  'logisticsPackagingManagement.packagingRules.summary.grossWeight'
+                )}
               </div>
               <div className='mt-1 text-xl font-black tracking-tighter text-primary italic'>
                 {computedGrossWeight}{' '}
@@ -469,7 +503,7 @@ export function PackagingProfileFormDialog({
 
           <div className={packagingFieldStackClass}>
             <Label className={packagingLabelClass}>
-              {t('logisticsConfig.packagingRules.fields.notes')}
+              {t('logisticsPackagingManagement.packagingRules.fields.notes')}
             </Label>
             <Textarea
               className='min-h-[72px] resize-none rounded-2xl border border-border/50 bg-muted/40 px-4 py-2.5 text-[11px] font-medium tracking-tight shadow-sm shadow-black/5 transition-all duration-200 focus-visible:border-primary/30 focus-visible:ring-2 focus-visible:ring-primary/15'
@@ -490,14 +524,14 @@ export function PackagingProfileFormDialog({
               className='h-11 px-8 text-[10px] font-black tracking-widest uppercase'
               onClick={() => onOpenChange(false)}
             >
-              {t('logisticsConfig.packagingRules.cancel')}
+              {t('logisticsPackagingManagement.packagingRules.cancel')}
             </Button>
             <Button
               className='h-11 rounded-full px-8 text-[10px] font-black tracking-widest uppercase shadow-lg shadow-primary/20 transition-all active:scale-95'
               onClick={onSave}
               disabled={savePending}
             >
-              {t('logisticsConfig.packagingRules.save')}
+              {t('logisticsPackagingManagement.packagingRules.save')}
             </Button>
           </DialogFooter>
         </div>

@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import { failLoudly } from '@/lib/safe-catch'
 import { useLanguage } from '@/context/language-provider'
-import type { PackagingProfile } from '@/features/logistics-config/packaging-rules-service'
+import type { PackagingProfile } from '@/features/logistics-packaging-management/packaging-rules-service'
 import type { SalesOrder } from '../../data/schema'
 import type { SalesOrderPackagingCardViewModel } from '../../utils/sales-order-packaging-card-view-model'
 import {

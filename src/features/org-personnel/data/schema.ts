@@ -28,13 +28,9 @@ export const employeeSchema = entityIdentitySchema
     status: z.enum(['active', 'resigned', 'on-leave']),
     joinedDate: z.string().optional(),
     workYears: z.string().optional(),
-    deptId: z.string().optional(),
-    lineId: z.string().optional(),
-    processId: z.string().optional(),
+    orgUnitId: z.string().optional(),
     positionId: z.string().optional(),
-    deptName: z.string().optional(),
-    lineName: z.string().optional(),
-    processName: z.string().optional(),
+    orgUnitName: z.string().optional(),
     positionName: z.string().optional(),
   })
 

@@ -86,8 +86,8 @@ export function UsersPermissionsDialog({
           <div className='grid h-full grid-cols-1 gap-3'>
             <div className='space-y-3 xl:flex xl:min-h-0 xl:flex-col'>
               <UserPermissionToolbar
-                role={editor.role}
-                inheritedPermissionCount={editor.inheritedPermissionIDSet.size}
+                permissionPresetId={editor.permissionPresetId}
+                presetPermissionCount={editor.presetPermissionIDSet.size}
                 effectivePermissionCount={editor.effectivePermissionIDSet.size}
                 search={editor.search}
                 allPermissionsSelected={editor.allPermissionsSelected}
@@ -104,7 +104,7 @@ export function UsersPermissionsDialog({
                 isLoading={editor.isLoading}
                 expandedModuleIDs={editor.expandedModuleIDs}
                 effectivePermissionIDSet={editor.effectivePermissionIDSet}
-                inheritedPermissionIDSet={editor.inheritedPermissionIDSet}
+                presetPermissionIDSet={editor.presetPermissionIDSet}
                 onToggleModule={editor.toggleModuleExpanded}
                 onTogglePermissionIDs={editor.togglePermissionIDs}
               />

@@ -620,6 +620,178 @@ func dropLegacyProductWeightColumn() {
 	}
 }
 
+// migrateOrganizationsAndEmployeeDeptIDsToOrgUnits performs the one-time cut from
+// the old organizations/employees.dept_id chain into the org_units +
+// employee_assignments chain.
+//
+// 运行期新代码只读写 org_units 与 employee_assignments。这里不是双读兼容，
+// 而是正式切主表前的幂等数据搬迁。
+func migrateOrganizationsAndEmployeeDeptIDsToOrgUnits() {
+	if DB == nil || DB.Dialector.Name() != "postgres" {
+		return
+	}
+
+	hasOrganizations := DB.Migrator().HasTable("organizations")
+	hasOrgUnits := DB.Migrator().HasTable("org_units")
+	hasEmployees := DB.Migrator().HasTable("employees")
+	hasEmployeeAssignments := DB.Migrator().HasTable("employee_assignments")
+
+	if hasOrganizations && hasOrgUnits {
+		if err := DB.Exec(`
+			INSERT INTO org_units (
+				id,
+				created_at,
+				updated_at,
+				deleted_at,
+				name,
+				parent_id,
+				unit_type,
+				status,
+				sort_order,
+				metadata
+			)
+			SELECT
+				o.id,
+				o.created_at,
+				o.updated_at,
+				o.deleted_at,
+				o.name,
+				CASE
+					WHEN COALESCE(o.parent_id::text, '') ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+					THEN o.parent_id::uuid
+					ELSE NULL
+				END,
+				COALESCE(NULLIF(o.type, ''), 'department') AS unit_type,
+				'active' AS status,
+				0 AS sort_order,
+				jsonb_strip_nulls(jsonb_build_object(
+					'manager', NULLIF(o.manager, ''),
+					'description', NULLIF(o.description, ''),
+					'linkedArchitecture', o.linked_architecture
+				)) AS metadata
+			FROM organizations o
+			ON CONFLICT (id) DO UPDATE SET
+				name = EXCLUDED.name,
+				parent_id = EXCLUDED.parent_id,
+				unit_type = EXCLUDED.unit_type,
+				metadata = EXCLUDED.metadata,
+				updated_at = EXCLUDED.updated_at
+		`).Error; err != nil {
+			log.Fatal("Failed to migrate organizations into org_units:", err)
+		}
+	}
+
+	if hasEmployees && hasOrgUnits && hasEmployeeAssignments {
+		if err := DB.Exec(`
+			INSERT INTO employee_assignments (
+				id,
+				created_at,
+				updated_at,
+				employee_id,
+				org_unit_id,
+				assignment_type,
+				is_primary,
+				start_date,
+				status,
+				source,
+				remarks
+			)
+			SELECT
+				gen_random_uuid(),
+				NOW(),
+				NOW(),
+				e.id,
+				e.dept_id::uuid,
+				'regular',
+				TRUE,
+				COALESCE(e.joined_date::date, CURRENT_DATE),
+				CASE
+					WHEN e.status = 'active' THEN 'active'
+					WHEN e.status IN ('on-leave', 'on_leave') THEN 'on_leave'
+					ELSE 'inactive'
+				END,
+				'employee_dept_id_cutover',
+				''
+			FROM employees e
+			WHERE e.deleted_at IS NULL
+			  AND COALESCE(e.dept_id, '') <> ''
+			  AND e.dept_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+			  AND EXISTS (
+				  SELECT 1
+				  FROM org_units ou
+				  WHERE ou.id = e.dept_id::uuid
+				    AND ou.deleted_at IS NULL
+			  )
+			  AND NOT EXISTS (
+				  SELECT 1
+				  FROM employee_assignments ea
+				  WHERE ea.employee_id = e.id
+				    AND ea.deleted_at IS NULL
+				    AND ea.is_primary = TRUE
+			  )
+		`).Error; err != nil {
+			log.Fatal("Failed to migrate employees.dept_id into employee_assignments:", err)
+		}
+
+		if err := DB.Exec(`
+			UPDATE employee_assignments ea
+			SET org_unit_id = e.dept_id::uuid,
+				updated_at = NOW(),
+				source = 'employee_dept_id_cutover'
+			FROM employees e
+			WHERE ea.employee_id = e.id
+			  AND ea.deleted_at IS NULL
+			  AND ea.is_primary = TRUE
+			  AND ea.org_unit_id IS NULL
+			  AND e.deleted_at IS NULL
+			  AND COALESCE(e.dept_id, '') <> ''
+			  AND e.dept_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+			  AND EXISTS (
+				  SELECT 1
+				  FROM org_units ou
+				  WHERE ou.id = e.dept_id::uuid
+				    AND ou.deleted_at IS NULL
+			  )
+		`).Error; err != nil {
+			log.Fatal("Failed to backfill primary employee assignment org units:", err)
+		}
+	}
+}
+
+// dropLegacyOrganizationsTable removes the old organization table after data
+// has been moved to org_units. New code must not recreate or query it.
+func dropLegacyOrganizationsTable() {
+	if DB == nil || DB.Dialector.Name() != "postgres" {
+		return
+	}
+
+	if err := DB.Exec(`DROP TABLE IF EXISTS organizations CASCADE`).Error; err != nil {
+		log.Fatal("Failed to drop legacy organizations table:", err)
+	}
+}
+
+// dropLegacyEmployeeProductionAnchorColumns removes production topology anchors
+// from the personnel master table. An employee record answers who the person is
+// and which org unit they belong to; current production stage belongs to barcode
+// state / production execution, not employees.
+func dropLegacyEmployeeProductionAnchorColumns() {
+	if DB == nil || DB.Dialector.Name() != "postgres" {
+		return
+	}
+
+	if !DB.Migrator().HasTable("employees") {
+		return
+	}
+
+	if err := DB.Exec(`
+		ALTER TABLE employees
+		DROP COLUMN IF EXISTS line_id,
+		DROP COLUMN IF EXISTS process_id
+	`).Error; err != nil {
+		log.Fatal("Failed to drop legacy employee production anchor columns:", err)
+	}
+}
+
 // migrateProductOwnershipToBOMs 把归属语义从 Product 迁移到 BOM（方案 B + 1:1 第二阶段）。
 //
 // 业务背景：同一产品可能服务不同对象（内部 / 客户A / 客户B），归属是 BOM 维度的事实，
@@ -955,13 +1127,19 @@ func ensurePersonnelExcellenceIndexes() {
 		}
 	}
 
-	if DB.Migrator().HasTable(&models.Employee{}) {
+	if DB.Migrator().HasTable(&models.EmployeeAssignment{}) {
 		if err := DB.Exec(`
-			CREATE INDEX IF NOT EXISTS idx_employees_active_dept_id
-			ON employees (dept_id)
-			WHERE deleted_at IS NULL;
+			CREATE INDEX IF NOT EXISTS idx_employee_assignments_primary_org_unit
+			ON employee_assignments (org_unit_id, employee_id)
+			WHERE deleted_at IS NULL AND is_primary = TRUE;
 		`).Error; err != nil {
-			log.Fatal("Failed to create personnel excellence employee index:", err)
+			log.Fatal("Failed to create personnel excellence assignment org unit index:", err)
+		}
+	}
+
+	if DB.Dialector.Name() == "postgres" {
+		if err := DB.Exec(`DROP INDEX IF EXISTS idx_employees_active_dept_id`).Error; err != nil {
+			log.Fatal("Failed to drop legacy personnel excellence employee dept index:", err)
 		}
 	}
 }
@@ -1183,10 +1361,11 @@ func InitDB(dsn string) {
 	fmt.Println("Migrating database schemas...")
 	prepareProductionTopologySchema()
 	failOnDuplicatePackagingRules()
+	migrateAccountPermissionPresetSchemaNames()
 
 	err = DB.AutoMigrate(
 		&models.User{},
-		&models.Role{},
+		&models.PermissionPreset{},
 		&models.UserPermission{},
 		&models.SidebarCommandCategory{},
 		&models.SidebarCommandDefinition{},
@@ -1261,7 +1440,6 @@ func InitDB(dsn string) {
 		&models.PackagingRule{},
 		&models.PackagingProfile{},
 		&models.PackagingProfileTarget{},
-		&models.Organization{},
 		&models.Employee{},
 		&models.WarehouseCategory{},
 		&models.InventoryThresholdRule{},
@@ -1345,9 +1523,12 @@ func InitDB(dsn string) {
 		log.Fatal("Failed to migrate database:", err)
 	}
 	cleanupDeletedProductionTopologySchema()
-	dropLegacyRoleArtifacts()
+	dropLegacyPermissionPresetArtifacts()
 	dropLegacyWorkflowArtifacts()
 	dropLegacyProductWeightColumn()
+	migrateOrganizationsAndEmployeeDeptIDsToOrgUnits()
+	dropLegacyOrganizationsTable()
+	dropLegacyEmployeeProductionAnchorColumns()
 	migrateProductOwnershipToBOMs()
 	migrateProductVersionLevelToBOMs()
 	normalizeBOMOwnershipAndVersionFields()
@@ -1406,17 +1587,17 @@ func InitDB(dsn string) {
 			log.Fatal("[CRITICAL_SECURITY] Failed to hash initial admin password: ", err)
 		}
 		admin := models.User{
-			Username:    "admin",
-			Password:    string(hashedPassword),
-			Status:      "active",
-			IsProtected: true,
-			Role:        "admin",
+			Username:           "admin",
+			Password:           string(hashedPassword),
+			Status:             "active",
+			IsProtected:        true,
+			PermissionPresetID: "admin",
 		}
 		DB.Create(&admin)
 		fmt.Println("Initial admin 'admin' created.")
 	}
 
-	ensureDefaultAdminRole()
+	ensureDefaultAdminPermissionPreset()
 	ensureSeedAdminUserInvariants()
 	ensureSeedAdminUserPermissions()
 	ensureDefaultProductAttributeCategories()

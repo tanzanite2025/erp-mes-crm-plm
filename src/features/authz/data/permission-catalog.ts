@@ -207,6 +207,7 @@ export const ROUTE_TO_MENU_MAPPING: Record<
   '/code-center': 'codeCenter',
   '/terminal-config': 'settings',
   '/logistics-config': 'settings',
+  '/logistics-packaging-management': 'settings',
   '/logistics-container-management': 'settings',
   '/logistics-settings': 'settings',
   '/finance-management': 'settings',

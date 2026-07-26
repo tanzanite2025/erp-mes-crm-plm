@@ -5,7 +5,7 @@ export type PersonnelArchiveColumnKey =
   | 'serialNo'
   | 'staffId'
   | 'name'
-  | 'deptId'
+  | 'orgUnitId'
   | 'position'
   | 'phone'
   | 'emergencyPhone'
@@ -53,8 +53,8 @@ export const PERSONNEL_ARCHIVE_COLUMNS: PersonnelArchiveColumn[] = [
     importable: true,
   },
   {
-    key: 'deptId',
-    header: 'orgPersonnel.excel.columns.deptId',
+    key: 'orgUnitId',
+    header: 'orgPersonnel.excel.columns.orgUnitId',
     width: 18,
     required: true,
     importable: true,
@@ -169,7 +169,7 @@ export const PERSONNEL_IMPORT_COLUMNS = PERSONNEL_TEMPLATE_COLUMNS.filter(
 export const PERSONNEL_FORM_FIELD_KEYS = [
   'staffId',
   'name',
-  'deptId',
+  'orgUnitId',
   'phone',
   'emergencyPhone',
   'gender',
@@ -194,7 +194,7 @@ export type PersonnelFormFieldConfig = {
   defaultValue?: string
   required?: boolean
   options?: PersonnelSelectOption[]
-  optionSource?: 'department'
+  optionSource?: 'orgUnit'
   formValueFromEmployee?: (employee: Employee) => string
   submitValueFromForm?: (value: string) => unknown
 }
@@ -248,11 +248,11 @@ export const PERSONNEL_FORM_FIELDS: PersonnelFormFieldConfig[] = [
     required: true,
   },
   {
-    key: 'deptId',
+    key: 'orgUnitId',
     input: 'select',
-    placeholder: '请选择部门',
+    placeholder: '请选择组织归属',
     required: true,
-    optionSource: 'department',
+    optionSource: 'orgUnit',
   },
   {
     key: 'phone',
@@ -386,10 +386,10 @@ export function getPersonnelArchiveValue(
   switch (columnKey) {
     case 'serialNo':
       return rowIndex + 1
-    case 'deptId':
-      return employee.deptId && nameMap[employee.deptId]
-        ? nameMap[employee.deptId]
-        : employee.deptId || ''
+    case 'orgUnitId': {
+      const orgUnitId = employee.orgUnitId || ''
+      return employee.orgUnitName || nameMap[orgUnitId] || orgUnitId
+    }
     case 'position':
       return employee.positionName || employee.positionId || ''
     case 'joinedDate':

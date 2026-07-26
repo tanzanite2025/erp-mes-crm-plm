@@ -10,7 +10,11 @@ type ProfilePayload = {
   username?: string
   email?: string
   employeeId?: string
+  permissionPresetId?: string
+  presetPermissionIds?: string[]
+  directPermissionIds?: string[]
   permissions?: string[]
+  diagnostics?: string[]
 }
 
 function normalizePermissionId(value: string): string {
@@ -34,7 +38,7 @@ function areStringArraysEqualAsSet(left: string[], right: string[]): boolean {
 
 /**
  * 权限层“零缓存”改造：移除本地 Storage 读写。
- * 所有有效权限仅在内存 Store 中维护，并通过 /profile 接口实时对齐。
+ * 所有有效权限仅在内存 Store 中维护，并通过 /auth/snapshot 接口实时对齐。
  */
 
 export async function processAndNotifyPermissions(
@@ -112,7 +116,7 @@ export async function syncIdentitySnapshotFromProfile(): Promise<string[]> {
 }
 
 export async function resolveOrSyncPermissionIds(
-  _roleIds: string[]
+  _permissionPresetIds: string[]
 ): Promise<string[]> {
   const state = useAuthStore.getState()
   const hasAccessToken = !!state.accessToken
@@ -143,7 +147,7 @@ export async function resolveOrSyncPermissionIds(
 }
 
 export async function resolveStoredPermissionSet(
-  roleIds: string[]
+  permissionPresetIds: string[]
 ): Promise<Set<string>> {
-  return new Set(await resolveOrSyncPermissionIds(roleIds))
+  return new Set(await resolveOrSyncPermissionIds(permissionPresetIds))
 }

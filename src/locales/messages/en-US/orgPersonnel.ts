@@ -101,7 +101,7 @@ export const orgPersonnel = {
     detailTitle: 'Employee Score Detail Preview',
     table: {
       name: 'Name',
-      department: 'Department',
+      department: 'Org Unit',
       attendance: 'Attendance',
       tenure: 'Tenure',
       score: 'Score',
@@ -127,7 +127,7 @@ export const orgPersonnel = {
     duplicateStaffId:
       'Row {{line}}: staff ID [{{staffId}}] is duplicated in the file',
     unmatchedDept:
-      'Row {{line}}: department [{{deptName}}] could not be matched in the system',
+      'Row {{line}}: organization assignment [{{deptName}}] could not be matched in the system',
     statuses: {
       active: 'Active',
       resigned: 'Resigned',
@@ -151,6 +151,7 @@ export const orgPersonnel = {
       staffId: 'Staff ID',
       name: 'Name',
       deptId: 'Department',
+      orgUnitId: 'Organization Assignment',
       position: 'Position',
       phone: 'Phone',
       emergencyPhone: 'Emergency Contact Phone',
@@ -368,6 +369,7 @@ export const orgPersonnel = {
         staffId: 'Staff ID is required.',
         name: 'Name is required.',
         deptId: 'Please select a department.',
+        orgUnitId: 'Please select an organization assignment.',
         status: 'Please select an employment status.',
         actionInProgress: 'Processing batch action...',
       },

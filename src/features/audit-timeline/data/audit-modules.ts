@@ -18,7 +18,7 @@ export const AUDIT_MODULES = {
   bom: 'bom',
   user: 'user',
   userPermission: 'user-permission',
-  role: 'role',
+  permissionPreset: 'permission-preset',
 } as const
 
 export type AuditModuleValue =

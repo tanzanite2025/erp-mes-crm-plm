@@ -95,7 +95,7 @@ export const orgPersonnel = {
     detailTitle: '全员评分细节预览',
     table: {
       name: '姓名',
-      department: '部门',
+      department: '组织归属',
       attendance: '出勤情况',
       tenure: '工龄',
       score: '综合评分',
@@ -118,7 +118,7 @@ export const orgPersonnel = {
     validationFailed: '数据校验失败\n{{details}}',
     moreErrors: '\n...等共 {{count}} 处错误',
     duplicateStaffId: '第 {{line}} 行工号 [{{staffId}}] 在文件中重复出现',
-    unmatchedDept: '第 {{line}} 行部门名称 [{{deptName}}] 在系统中未找到匹配',
+    unmatchedDept: '第 {{line}} 行组织归属 [{{deptName}}] 在系统中未找到匹配',
     statuses: {
       active: '在职',
       resigned: '离职',
@@ -142,6 +142,7 @@ export const orgPersonnel = {
       staffId: '工号',
       name: '姓名',
       deptId: '部门',
+      orgUnitId: '组织归属',
       position: '岗位',
       phone: '电话',
       emergencyPhone: '紧急联系人电话',
@@ -348,6 +349,7 @@ export const orgPersonnel = {
         staffId: '请输入工号。',
         name: '请输入姓名。',
         deptId: '请选择部门。',
+        orgUnitId: '请选择组织归属。',
         status: '请选择在职情况。',
         actionInProgress: '正在批量处理...',
       },

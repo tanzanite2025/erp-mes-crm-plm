@@ -32,9 +32,9 @@ type UserPermissionsView struct {
 	Username               string
 	Status                 string
 	EmployeeID             string
-	Role                   string
+	PermissionPresetID     string
 	Permissions            []UserPermissionItem
-	InheritedPermissionIDs []string
+	PresetPermissionIDs    []string
 	EffectivePermissionIDs []string
 }
 
@@ -90,7 +90,7 @@ func GetUserPermissions(userID string) (UserPermissionsView, error) {
 	}
 
 	var user models.User
-	if err := db.DB.Select("id", "username", "status", "employee_id", "role").First(&user, "id = ?", normalizedUserID).Error; err != nil {
+	if err := db.DB.Select("id", "username", "status", "employee_id", "permission_preset_id").First(&user, "id = ?", normalizedUserID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return UserPermissionsView{}, ErrUserPermissionsUserNotFound
 		}
@@ -123,24 +123,24 @@ func GetUserPermissions(userID string) (UserPermissionsView, error) {
 		}
 	}
 
-	inheritedPermissionIDs := make([]string, 0)
-	normalizedRoleID := strings.ToLower(strings.TrimSpace(user.Role))
-	if normalizedRoleID != "" {
-		var role models.Role
-		err := db.DB.Select("permissions").Where("LOWER(role_id) = ?", normalizedRoleID).First(&role).Error
+	presetPermissionIDs := make([]string, 0)
+	normalizedPermissionPresetID := strings.ToLower(strings.TrimSpace(user.PermissionPresetID))
+	if normalizedPermissionPresetID != "" {
+		var permissionPreset models.PermissionPreset
+		err := db.DB.Select("permissions").Where("LOWER(permission_preset_id) = ?", normalizedPermissionPresetID).First(&permissionPreset).Error
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			return UserPermissionsView{}, err
 		}
 		if err == nil {
-			for _, permissionID := range authz.ParsePermissionIDs(role.Permissions) {
+			for _, permissionID := range authz.ParsePermissionIDs(permissionPreset.Permissions) {
 				if authz.IsSupportedPermissionID(permissionID) {
-					inheritedPermissionIDs = append(inheritedPermissionIDs, permissionID)
+					presetPermissionIDs = append(presetPermissionIDs, permissionID)
 				}
 			}
 		}
 	}
 	effectivePermissionIDs := authz.DeduplicatePermissionIDs(append(
-		append([]string(nil), inheritedPermissionIDs...),
+		append([]string(nil), presetPermissionIDs...),
 		directPermissionIDs...,
 	))
 
@@ -149,9 +149,9 @@ func GetUserPermissions(userID string) (UserPermissionsView, error) {
 		Username:               user.Username,
 		Status:                 user.Status,
 		EmployeeID:             strings.TrimSpace(user.EmployeeID),
-		Role:                   normalizedRoleID,
+		PermissionPresetID:     normalizedPermissionPresetID,
 		Permissions:            permissions,
-		InheritedPermissionIDs: inheritedPermissionIDs,
+		PresetPermissionIDs:    presetPermissionIDs,
 		EffectivePermissionIDs: effectivePermissionIDs,
 	}, nil
 }
@@ -259,6 +259,9 @@ func ReplaceUserPermissions(ctx context.Context, userID string, input ReplaceUse
 	})
 	if err != nil {
 		return ReplaceUserPermissionsResult{}, err
+	}
+	if result.Added > 0 || result.Removed > 0 {
+		NotifyAccountAccessSnapshotInvalidatedForUserID(result.UserID, AccountAccessInvalidationReasonDirectPermissionsReplaced)
 	}
 
 	return result, nil

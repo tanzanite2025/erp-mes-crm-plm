@@ -23,7 +23,7 @@ type LocalizedPersonnelArchiveColumn = Omit<
 }
 
 type MapExcelOptions = {
-  skipDeptResolution?: boolean
+  skipOrgUnitResolution?: boolean
 }
 
 const PERSONNEL_COLUMN_TRANSLATION_KEYS: Record<
@@ -33,7 +33,7 @@ const PERSONNEL_COLUMN_TRANSLATION_KEYS: Record<
   serialNo: 'orgPersonnel.excel.columns.serialNo',
   staffId: 'orgPersonnel.excel.columns.staffId',
   name: 'orgPersonnel.excel.columns.name',
-  deptId: 'orgPersonnel.excel.columns.deptId',
+  orgUnitId: 'orgPersonnel.excel.columns.orgUnitId',
   position: 'orgPersonnel.excel.columns.position',
   phone: 'orgPersonnel.excel.columns.phone',
   emergencyPhone: 'orgPersonnel.excel.columns.emergencyPhone',
@@ -322,23 +322,23 @@ export function validatePersonnelWorkbookStructure(
   }
 }
 
-export function generateDeptMap(nodes: OrgNode[]): Record<string, string> {
-  const deptMap: Record<string, string> = {}
+export function generateOrgUnitMap(nodes: OrgNode[]): Record<string, string> {
+  const orgUnitMap: Record<string, string> = {}
 
   const flatten = (items: OrgNode[]) => {
     items.forEach((node) => {
-      if (node.name) deptMap[node.name.trim()] = node.id || ''
+      if (node.name) orgUnitMap[node.name.trim()] = node.id || ''
       if (node.children) flatten(node.children)
     })
   }
 
   flatten(nodes)
-  return deptMap
+  return orgUnitMap
 }
 
 export function mapExcelToEmployees(
   rawData: Record<string, unknown>[],
-  deptMap: Record<string, string>,
+  orgUnitMap: Record<string, string>,
   options: MapExcelOptions = {}
 ): Employee[] {
   if (rawData.length === 0) return []
@@ -404,28 +404,28 @@ export function mapExcelToEmployees(
         case 'status':
           employee.status = normalizeStatus(rawValue)
           break
-        case 'deptId': {
-          const deptName = String(rawValue || '').trim()
-          if (!deptName) {
-            employee.deptId = ''
+        case 'orgUnitId': {
+          const orgUnitName = String(rawValue || '').trim()
+          if (!orgUnitName) {
+            employee.orgUnitId = ''
             break
           }
 
-          const matchedId = deptMap[deptName]
+          const matchedId = orgUnitMap[orgUnitName]
           if (!matchedId) {
-            if (options.skipDeptResolution) {
-              employee.deptId = deptName
+            if (options.skipOrgUnitResolution) {
+              employee.orgUnitId = orgUnitName
             } else {
-              employee.deptId = `__UNMATCHED_DEPT:${deptName}`
+              employee.orgUnitId = `__UNMATCHED_ORG_UNIT:${orgUnitName}`
               errors.push(
                 translate('zh-CN', 'orgPersonnel.excel.unmatchedDept', {
                   line: lineNumber,
-                  deptName,
+                  deptName: orgUnitName,
                 })
               )
             }
           } else {
-            employee.deptId = matchedId
+            employee.orgUnitId = matchedId
           }
           break
         }
@@ -454,7 +454,7 @@ export function mapExcelToEmployees(
     (employee) =>
       employee.staffId &&
       employee.name &&
-      !String(employee.deptId).startsWith('__UNMATCHED_DEPT')
+      !String(employee.orgUnitId).startsWith('__UNMATCHED_ORG_UNIT')
   )
 }
 
@@ -548,7 +548,7 @@ export async function downloadPersonnelTemplate(locale: AppLocale = 'zh-CN') {
     serialNo: 1,
     staffId: 'XDFC-0001',
     name: translate(locale, 'orgPersonnel.excel.sample.name'),
-    deptId: translate(locale, 'orgPersonnel.excel.sample.dept'),
+    orgUnitId: translate(locale, 'orgPersonnel.excel.sample.dept'),
     position: translate(locale, 'orgPersonnel.excel.sample.position'),
     phone: '13800000000',
     emergencyPhone: '13900000000',

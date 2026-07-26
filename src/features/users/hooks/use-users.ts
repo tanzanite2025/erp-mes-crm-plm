@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type DeltaSet } from '@/lib/delta/types'
 import { buildMutationOptions } from '@/lib/react-query-mutation'
+import { refreshCurrentAccountAccessSnapshotIfMutatedAccountMatches } from '@/features/authz/services/account-access-refresh-service'
 import {
   type User,
   type UserAccessSnapshot,
@@ -103,7 +104,11 @@ export const useUserMutations = () => {
       { id: string; delta: DeltaSet; version: number; user?: User }
     >({
       queryClient,
-      invalidateQueryKeys: [USERS_QUERY_KEY],
+      invalidateQueryKeys: [USERS_QUERY_KEY, USER_ACCESS_SNAPSHOT_QUERY_KEY],
+      onSuccess: (_data, variables) =>
+        refreshCurrentAccountAccessSnapshotIfMutatedAccountMatches(
+          variables.id
+        ),
     }),
   })
 
@@ -128,7 +133,11 @@ export const useUserMutations = () => {
       { id: string; data: UserReplacePayload; user?: User }
     >({
       queryClient,
-      invalidateQueryKeys: [USERS_QUERY_KEY],
+      invalidateQueryKeys: [USERS_QUERY_KEY, USER_ACCESS_SNAPSHOT_QUERY_KEY],
+      onSuccess: (_data, variables) =>
+        refreshCurrentAccountAccessSnapshotIfMutatedAccountMatches(
+          variables.id
+        ),
     }),
   })
 
@@ -164,6 +173,10 @@ export const useUserMutations = () => {
     ...buildMutationOptions<User, unknown, { id: string; employeeId: string }>({
       queryClient,
       invalidateQueryKeys: [USERS_QUERY_KEY, USER_ACCESS_SNAPSHOT_QUERY_KEY],
+      onSuccess: (_data, variables) =>
+        refreshCurrentAccountAccessSnapshotIfMutatedAccountMatches(
+          variables.id
+        ),
     }),
   })
 
@@ -172,6 +185,10 @@ export const useUserMutations = () => {
     ...buildMutationOptions<User, unknown, { id: string }>({
       queryClient,
       invalidateQueryKeys: [USERS_QUERY_KEY, USER_ACCESS_SNAPSHOT_QUERY_KEY],
+      onSuccess: (_data, variables) =>
+        refreshCurrentAccountAccessSnapshotIfMutatedAccountMatches(
+          variables.id
+        ),
     }),
   })
 
@@ -194,6 +211,10 @@ export const useUserMutations = () => {
         USER_PERMISSIONS_QUERY_KEY,
         USER_ACCESS_SNAPSHOT_QUERY_KEY,
       ],
+      onSuccess: (_data, variables) =>
+        refreshCurrentAccountAccessSnapshotIfMutatedAccountMatches(
+          variables.id
+        ),
     }),
   })
 

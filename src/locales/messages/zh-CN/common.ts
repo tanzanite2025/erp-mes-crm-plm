@@ -53,7 +53,7 @@ export const common = {
   audit: {
     trigger: '变更记录',
     permissionTrigger: '权限审计',
-    roleTrigger: '角色审计',
+    permissionPresetTrigger: '权限预设审计',
     title: '审计时间线',
     objectDescription: '{{target}} 全字段审计历史',
     moduleDescription: '{{target}} 模块级审计历史',

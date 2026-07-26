@@ -21,9 +21,20 @@ const userApiMocks = vi.hoisted(() => ({
   unbindUserEmployee: vi.fn(),
 }))
 
+const accessRefreshMocks = vi.hoisted(() => ({
+  refreshCurrentAccountAccessSnapshotIfMutatedAccountMatches: vi.fn(),
+}))
+
 vi.mock('../services/user-api', () => userApiMocks)
+vi.mock('@/features/authz/services/account-access-refresh-service', () => ({
+  refreshCurrentAccountAccessSnapshotIfMutatedAccountMatches:
+    accessRefreshMocks.refreshCurrentAccountAccessSnapshotIfMutatedAccountMatches,
+}))
 vi.mock('@/lib/react-query-mutation', () => ({
-  buildMutationOptions: () => ({}),
+  buildMutationOptions: ({ onSuccess, onError }: any) => ({
+    onError,
+    onSuccess,
+  }),
 }))
 
 function createQueryWrapper() {
@@ -42,6 +53,10 @@ function createQueryWrapper() {
 describe('user query and mutation guards', () => {
   beforeEach(() => {
     Object.values(userApiMocks).forEach((mock) => mock.mockReset())
+    accessRefreshMocks.refreshCurrentAccountAccessSnapshotIfMutatedAccountMatches.mockReset()
+    accessRefreshMocks.refreshCurrentAccountAccessSnapshotIfMutatedAccountMatches.mockResolvedValue(
+      false
+    )
   })
 
   it('normalizes a user id before loading sensitive permissions', async () => {
@@ -50,7 +65,7 @@ describe('user query and mutation guards', () => {
       username: 'buyer',
       status: 'active',
       permissions: [],
-      inheritedPermissions: [],
+      presetPermissions: [],
       effectivePermissions: [],
       total: 0,
     })
@@ -113,5 +128,44 @@ describe('user query and mutation guards', () => {
     expect(userApiMocks.patchUser).not.toHaveBeenCalled()
     expect(userApiMocks.replaceUser).not.toHaveBeenCalled()
     expect(userApiMocks.deleteUser).not.toHaveBeenCalled()
+  })
+
+  it('refreshes the current identity snapshot after account access mutations succeed', async () => {
+    const targetUser = createTestUser({
+      id: 'user-1',
+      permissionPresetId: 'buyer',
+      version: 5,
+    })
+    userApiMocks.patchUser.mockResolvedValue(targetUser)
+    userApiMocks.replaceUserPermissions.mockResolvedValue({
+      userId: targetUser.id,
+      permissions: ['user_view'],
+      changeSummary: { added: 1, removed: 0, unchanged: 0 },
+    })
+
+    const { result } = renderHook(() => useUserMutations(), {
+      wrapper: createQueryWrapper(),
+    })
+
+    await result.current.updateMutation.mutateAsync({
+      id: targetUser.id,
+      delta: { permissionPresetId: { o: 'buyer', n: 'manager' } },
+      version: targetUser.version,
+      user: targetUser,
+    })
+    await result.current.replaceUserPermissionsMutation.mutateAsync({
+      id: targetUser.id,
+      payload: {
+        permissions: ['user_view'],
+        reason: 'test',
+      },
+    })
+
+    expect(
+      accessRefreshMocks.refreshCurrentAccountAccessSnapshotIfMutatedAccountMatches
+    ).toHaveBeenNthCalledWith(1, targetUser.id)
+    expect(
+      accessRefreshMocks.refreshCurrentAccountAccessSnapshotIfMutatedAccountMatches
+    ).toHaveBeenNthCalledWith(2, targetUser.id)
   })
 })

@@ -18,12 +18,8 @@ export interface EmployeeApiDTO {
   joinedDate?: string | null
   workYears?: string
   deptId?: string
-  lineId?: string
-  processId?: string
   positionId?: string
   deptName?: string
-  lineName?: string
-  processName?: string
   positionName?: string
   createdAt?: string
   updatedAt?: string

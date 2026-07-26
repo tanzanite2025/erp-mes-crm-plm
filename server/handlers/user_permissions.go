@@ -23,9 +23,9 @@ type getUserPermissionsResponse struct {
 	Username             string                       `json:"username"`
 	Status               string                       `json:"status"`
 	EmployeeID           string                       `json:"employeeId,omitempty"`
-	Role                 string                       `json:"role,omitempty"`
+	PermissionPresetID   string                       `json:"permissionPresetId,omitempty"`
 	Permissions          []userPermissionItemResponse `json:"permissions"`
-	InheritedPermissions []string                     `json:"inheritedPermissions"`
+	PresetPermissions    []string                     `json:"presetPermissions"`
 	EffectivePermissions []string                     `json:"effectivePermissions"`
 	Total                int                          `json:"total"`
 }
@@ -65,9 +65,9 @@ func buildUserPermissionsResponse(view services.UserPermissionsView) getUserPerm
 		Username:             view.Username,
 		Status:               view.Status,
 		EmployeeID:           view.EmployeeID,
-		Role:                 view.Role,
+		PermissionPresetID:   view.PermissionPresetID,
 		Permissions:          permissions,
-		InheritedPermissions: append([]string(nil), view.InheritedPermissionIDs...),
+		PresetPermissions:    append([]string(nil), view.PresetPermissionIDs...),
 		EffectivePermissions: append([]string(nil), view.EffectivePermissionIDs...),
 		Total:                len(permissions),
 	}

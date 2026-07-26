@@ -3,7 +3,7 @@ import { apiFetch } from '@/lib/api-client'
 export interface EmployeeStats {
   employeeId: string
   name: string
-  deptName?: string
+  orgUnitName?: string
   attendanceRate: number
   leaveDays: number
   tenureYears: number

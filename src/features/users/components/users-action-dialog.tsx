@@ -19,7 +19,7 @@ import { Form } from '@/components/ui/form'
 import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
-import { useRolesQuery } from '@/features/system-mgmt/hooks/use-roles'
+import { usePermissionPresetsQuery } from '@/features/system-mgmt/hooks/use-permission-presets'
 import { type User } from '../data/schema'
 import { useUserMutations, useUserOptionsQuery } from '../hooks/use-users'
 import { useUsersActionDialogOptions } from '../hooks/use-users-action-dialog-options'
@@ -50,8 +50,8 @@ function buildEmptyUserForm(isEdit: boolean): UserForm {
     confirmPassword: '',
     isEdit,
     employeeId: '',
-    role: '',
-    initialRole: '',
+    permissionPresetId: '',
+    initialPermissionPresetId: '',
     adminChallenge: '',
   }
 }
@@ -62,8 +62,8 @@ function buildExistingUserForm(user: User): UserForm {
     password: '',
     confirmPassword: '',
     isEdit: true,
-    role: user.role || '',
-    initialRole: user.role || '',
+    permissionPresetId: user.permissionPresetId || '',
+    initialPermissionPresetId: user.permissionPresetId || '',
     adminChallenge: '',
   }
 }
@@ -81,7 +81,8 @@ export function UsersActionDialog({
     {},
     canManageAccountBindings
   )
-  const { data: roles = [] } = useRolesQuery(canManageAccountBindings)
+  const { data: permissionPresets = [] } =
+    usePermissionPresetsQuery(canManageAccountBindings)
   const form = useForm<UserForm>({
     resolver: zodResolver(getFormSchema(t)),
     defaultValues: currentRow
@@ -144,14 +145,19 @@ export function UsersActionDialog({
     }
   }
 
-  const selectedRole =
-    useWatch({ control: form.control, name: 'role' })?.trim().toLowerCase() ||
-    ''
-  const initialRole = useWatch({ control: form.control, name: 'initialRole' })
+  const selectedPermissionPresetId =
+    useWatch({ control: form.control, name: 'permissionPresetId' })
+      ?.trim()
+      .toLowerCase() || ''
+  const initialPermissionPresetId = useWatch({
+    control: form.control,
+    name: 'initialPermissionPresetId',
+  })
     .trim()
     .toLowerCase()
   const requiresAdminChallenge =
-    selectedRole === 'admin' && initialRole !== 'admin'
+    selectedPermissionPresetId === 'admin' &&
+    initialPermissionPresetId !== 'admin'
 
   return (
     <Dialog open={open} onOpenChange={handleDialogOpenChange}>
@@ -205,10 +211,10 @@ export function UsersActionDialog({
               />
               <UserActionSecurityFields
                 form={form}
-                roles={roles}
+                permissionPresets={permissionPresets}
                 isEdit={isEdit}
                 isPasswordTouched={!!form.formState.dirtyFields.password}
-                canManageRoles={canManageAccountBindings}
+                canManagePermissionPresets={canManageAccountBindings}
                 requiresAdminChallenge={requiresAdminChallenge}
               />
             </form>

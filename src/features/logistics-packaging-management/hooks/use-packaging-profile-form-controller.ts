@@ -23,7 +23,7 @@ import {
 } from '../packaging-rules-service'
 
 const PACKAGING_PROFILE_QUERY_KEY = [
-  'logistics-config',
+  'logistics-packaging-management',
   'packaging-profiles',
 ] as const
 const EMPTY_PACKAGING_MATERIAL_OPTIONS: MaterialOption[] = []
@@ -327,7 +327,9 @@ export function usePackagingProfileFormController({
       !draft.dimensionUnitCode ||
       !draft.weightUnitCode
     ) {
-      toast.error(t('logisticsConfig.packagingRules.toasts.incomplete'))
+      toast.error(
+        t('logisticsPackagingManagement.packagingRules.toasts.incomplete')
+      )
       return
     }
 
@@ -354,12 +356,16 @@ export function usePackagingProfileFormController({
         ],
       }
       await saveMutation.mutateAsync(payload)
-      toast.success(t('logisticsConfig.packagingRules.toasts.saveSuccess'))
+      toast.success(
+        t('logisticsPackagingManagement.packagingRules.toasts.saveSuccess')
+      )
       setOpen(false)
       setDraft(createEmptyPackagingProfileDraft())
     } catch (error) {
       failLoudly(error, 'usePackagingProfileFormController.save')
-      toast.error(t('logisticsConfig.packagingRules.toasts.saveFailed'))
+      toast.error(
+        t('logisticsPackagingManagement.packagingRules.toasts.saveFailed')
+      )
     }
   }
 

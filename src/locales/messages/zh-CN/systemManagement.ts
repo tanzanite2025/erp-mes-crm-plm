@@ -108,7 +108,7 @@ export const systemManagement = {
       title: '核心模块访问覆盖矩阵',
       description: '按核心业务模块衡量功能覆盖情况',
       moduleSuffix: '模块',
-      rolesAccess: 'USERS_GRANTED',
+      usersGranted: 'USERS_GRANTED',
     },
     note: '* 审计数据只读取用户显式授权，确保权限视图与运行时快照保持一致。',
     modules: {

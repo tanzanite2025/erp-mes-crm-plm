@@ -25,7 +25,7 @@ import {
 } from './packaging-rules-service'
 
 const PACKAGING_PROFILE_QUERY_KEY = [
-  'logistics-config',
+  'logistics-packaging-management',
   'packaging-profiles',
 ] as const
 
@@ -64,14 +64,22 @@ export function LogisticsPackagingRulesTab() {
   const profiles = profilesQuery.data ?? []
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm(t('logisticsConfig.packagingRules.deleteConfirm')))
+    if (
+      !window.confirm(
+        t('logisticsPackagingManagement.packagingRules.deleteConfirm')
+      )
+    )
       return
     try {
       await deleteMutation.mutateAsync(id)
-      toast.success(t('logisticsConfig.packagingRules.toasts.deleteSuccess'))
+      toast.success(
+        t('logisticsPackagingManagement.packagingRules.toasts.deleteSuccess')
+      )
     } catch (error) {
       failLoudly(error, 'LogisticsPackagingRulesTab.delete')
-      toast.error(t('logisticsConfig.packagingRules.toasts.deleteFailed'))
+      toast.error(
+        t('logisticsPackagingManagement.packagingRules.toasts.deleteFailed')
+      )
     }
   }
 
@@ -79,8 +87,10 @@ export function LogisticsPackagingRulesTab() {
     <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
       <IndustrialHeader
         icon={Package2}
-        title={t('logisticsConfig.packagingRules.title')}
-        description={t('logisticsConfig.packagingRules.description')}
+        title={t('logisticsPackagingManagement.packagingRules.title')}
+        description={t(
+          'logisticsPackagingManagement.packagingRules.description'
+        )}
       />
 
       <div className='flex justify-end'>
@@ -89,7 +99,7 @@ export function LogisticsPackagingRulesTab() {
           onClick={() => formController.handleCreate()}
         >
           <Plus className='mr-2 size-4' />
-          {t('logisticsConfig.packagingRules.addRule')}
+          {t('logisticsPackagingManagement.packagingRules.addRule')}
         </Button>
       </div>
 
@@ -98,28 +108,30 @@ export function LogisticsPackagingRulesTab() {
           <TableHeader>
             <TableRow className='border-dashed hover:bg-transparent'>
               <TableHead className='text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
-                {t('logisticsConfig.packagingRules.table.name')}
+                {t('logisticsPackagingManagement.packagingRules.table.name')}
               </TableHead>
               <TableHead className='text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
-                {t('logisticsConfig.packagingRules.table.product')}
+                {t('logisticsPackagingManagement.packagingRules.table.product')}
               </TableHead>
               <TableHead className='text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
-                {t('logisticsConfig.packagingRules.table.quantity')}
+                {t(
+                  'logisticsPackagingManagement.packagingRules.table.quantity'
+                )}
               </TableHead>
               <TableHead className='text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
-                {t('logisticsConfig.packagingRules.table.size')}
+                {t('logisticsPackagingManagement.packagingRules.table.size')}
               </TableHead>
               <TableHead className='text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
-                {t('logisticsConfig.packagingRules.table.volume')}
+                {t('logisticsPackagingManagement.packagingRules.table.volume')}
               </TableHead>
               <TableHead className='text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
-                {t('logisticsConfig.packagingRules.table.weight')}
+                {t('logisticsPackagingManagement.packagingRules.table.weight')}
               </TableHead>
               <TableHead className='text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
-                {t('logisticsConfig.packagingRules.table.status')}
+                {t('logisticsPackagingManagement.packagingRules.table.status')}
               </TableHead>
               <TableHead className='text-right text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
-                {t('logisticsConfig.packagingRules.table.actions')}
+                {t('logisticsPackagingManagement.packagingRules.table.actions')}
               </TableHead>
             </TableRow>
           </TableHeader>
@@ -131,8 +143,12 @@ export function LogisticsPackagingRulesTab() {
                   className='h-28 text-center text-muted-foreground'
                 >
                   {isLoading
-                    ? t('logisticsConfig.packagingRules.emptyLoading')
-                    : t('logisticsConfig.packagingRules.emptyState')}
+                    ? t(
+                        'logisticsPackagingManagement.packagingRules.emptyLoading'
+                      )
+                    : t(
+                        'logisticsPackagingManagement.packagingRules.emptyState'
+                      )}
                 </TableCell>
               </TableRow>
             ) : (
@@ -167,7 +183,7 @@ export function LogisticsPackagingRulesTab() {
                       <div className='flex items-center gap-1.5'>
                         <span className='text-[8px] leading-none font-black tracking-widest uppercase opacity-40'>
                           {t(
-                            'logisticsConfig.packagingRules.packagingWeightLabel'
+                            'logisticsPackagingManagement.packagingRules.packagingWeightLabel'
                           )}
                         </span>
                         <span className='font-mono text-[10px] leading-none font-bold'>
@@ -176,7 +192,9 @@ export function LogisticsPackagingRulesTab() {
                       </div>
                       <div className='flex items-center gap-1.5'>
                         <span className='text-[8px] leading-none font-black tracking-widest uppercase opacity-40'>
-                          {t('logisticsConfig.packagingRules.grossWeightLabel')}
+                          {t(
+                            'logisticsPackagingManagement.packagingRules.grossWeightLabel'
+                          )}
                         </span>
                         <span className='font-mono text-[10px] leading-none font-bold text-primary'>
                           {profile.grossWeight} {profile.weightUnitCode}
@@ -195,8 +213,12 @@ export function LogisticsPackagingRulesTab() {
                       )}
                     >
                       {profile.isActive
-                        ? t('logisticsConfig.packagingRules.statusActive')
-                        : t('logisticsConfig.packagingRules.statusInactive')}
+                        ? t(
+                            'logisticsPackagingManagement.packagingRules.statusActive'
+                          )
+                        : t(
+                            'logisticsPackagingManagement.packagingRules.statusInactive'
+                          )}
                     </Badge>
                   </TableCell>
                   <TableCell className='text-right'>
@@ -207,7 +229,7 @@ export function LogisticsPackagingRulesTab() {
                         className='h-7 text-[10px] font-black tracking-widest uppercase transition-colors hover:bg-primary/10 hover:text-primary'
                         onClick={() => formController.handleEdit(profile)}
                       >
-                        {t('logisticsConfig.packagingRules.edit')}
+                        {t('logisticsPackagingManagement.packagingRules.edit')}
                       </Button>
                       <Button
                         variant='ghost'

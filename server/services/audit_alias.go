@@ -73,9 +73,9 @@ var auditModuleAliasMap = map[string][]string{
 		AuditModuleUserPermission,
 		"UserPermission",
 	},
-	AuditModuleRole: {
-		AuditModuleRole,
-		"Role",
+	AuditModulePermissionPreset: {
+		AuditModulePermissionPreset,
+		"PermissionPreset",
 	},
 	AuditModuleProductionLine: {
 		AuditModuleProductionLine,

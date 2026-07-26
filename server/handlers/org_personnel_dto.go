@@ -45,8 +45,6 @@ type EmployeeSaveHandlerRequest struct {
 	Status         string     `json:"status"`
 	JoinedDate     *time.Time `json:"joinedDate"`
 	DeptID         string     `json:"deptId"`
-	LineID         string     `json:"lineId"`
-	ProcessID      string     `json:"processId"`
 }
 
 type BulkSyncEmployeeHandlerRequest struct {
@@ -66,8 +64,6 @@ type BulkSyncEmployeeHandlerRequest struct {
 	Status         string     `json:"status"`
 	JoinedDate     *time.Time `json:"joinedDate"`
 	DeptID         string     `json:"deptId"`
-	LineID         string     `json:"lineId"`
-	ProcessID      string     `json:"processId"`
 }
 
 func mapOrganizationSaveHandlerRequestToService(input OrganizationSaveHandlerRequest) services.OrganizationSaveRequest {
@@ -133,12 +129,8 @@ func mapEmployeeSaveServiceResponseToResponse(input services.EmployeeSaveRespons
 		"status":         input.Status,
 		"joinedDate":     input.JoinedDate,
 		"deptId":         input.DeptID,
-		"lineId":         input.LineID,
-		"processId":      input.ProcessID,
 		"positionId":     input.PositionID,
 		"deptName":       input.DeptName,
-		"lineName":       input.LineName,
-		"processName":    input.ProcessName,
 		"positionName":   input.PositionName,
 		"createdAt":      input.CreatedAt,
 		"updatedAt":      input.UpdatedAt,
@@ -164,8 +156,6 @@ func mapEmployeeSaveHandlerRequestToService(input EmployeeSaveHandlerRequest) se
 		Status:         input.Status,
 		JoinedDate:     input.JoinedDate,
 		DeptID:         input.DeptID,
-		LineID:         input.LineID,
-		ProcessID:      input.ProcessID,
 	}
 }
 
@@ -189,8 +179,6 @@ func mapBulkSyncEmployeeHandlerRequestsToService(input []BulkSyncEmployeeHandler
 			Status:         item.Status,
 			JoinedDate:     item.JoinedDate,
 			DeptID:         item.DeptID,
-			LineID:         item.LineID,
-			ProcessID:      item.ProcessID,
 		})
 	}
 	return result

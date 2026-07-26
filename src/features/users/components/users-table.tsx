@@ -258,7 +258,8 @@ export function UsersTable({
               const canSelect = row.getCanSelect()
               const fullName =
                 `${user.firstName || ''} ${user.lastName || ''}`.trim() || '-'
-              const role = String(user.role || '').trim() || 'UNASSIGNED'
+              const permissionPresetId =
+                String(user.permissionPresetId || '').trim() || 'UNASSIGNED'
               const phoneNumber = String(user.phoneNumber || '').trim() || '-'
               const statusLabel = t(
                 permissionUserStatusTranslationKeys[user.status]
@@ -346,10 +347,10 @@ export function UsersTable({
 
                       <div className='flex min-w-0 items-center gap-1'>
                         <p className='shrink-0 text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'>
-                          {t('users.columns.role')}
+                          {t('users.columns.permissionPreset')}
                         </p>
                         <p className='truncate text-[10px] font-black tracking-widest text-foreground/75 uppercase'>
-                          {role}
+                          {permissionPresetId}
                         </p>
                       </div>
 

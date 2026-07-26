@@ -14,28 +14,28 @@ import (
 )
 
 type UpdateUserRequest struct {
-	Username       *string `json:"username"`
-	Password       *string `json:"password"`
-	Email          *string `json:"email"`
-	PhoneNumber    *string `json:"phoneNumber"`
-	FirstName      *string `json:"firstName"`
-	LastName       *string `json:"lastName"`
-	Status         *string `json:"status"`
-	Role           *string `json:"role"`
-	EmployeeID     *string `json:"employeeId"`
-	AdminChallenge string  `json:"adminChallenge"`
+	Username           *string `json:"username"`
+	Password           *string `json:"password"`
+	Email              *string `json:"email"`
+	PhoneNumber        *string `json:"phoneNumber"`
+	FirstName          *string `json:"firstName"`
+	LastName           *string `json:"lastName"`
+	Status             *string `json:"status"`
+	PermissionPresetID *string `json:"permissionPresetId"`
+	EmployeeID         *string `json:"employeeId"`
+	AdminChallenge     string  `json:"adminChallenge"`
 }
 
 type ReplaceUserRequest struct {
-	Username       string `json:"username" binding:"required"`
-	Password       string `json:"password"`
-	PhoneNumber    string `json:"phoneNumber"`
-	FirstName      string `json:"firstName"`
-	LastName       string `json:"lastName"`
-	Status         string `json:"status" binding:"required"`
-	Role           string `json:"role"`
-	EmployeeID     string `json:"employeeId"`
-	AdminChallenge string `json:"adminChallenge"`
+	Username           string `json:"username" binding:"required"`
+	Password           string `json:"password"`
+	PhoneNumber        string `json:"phoneNumber"`
+	FirstName          string `json:"firstName"`
+	LastName           string `json:"lastName"`
+	Status             string `json:"status" binding:"required"`
+	PermissionPresetID string `json:"permissionPresetId"`
+	EmployeeID         string `json:"employeeId"`
+	AdminChallenge     string `json:"adminChallenge"`
 }
 
 func PatchUserHandler(c *gin.Context) {
@@ -92,19 +92,19 @@ func PatchUserHandler(c *gin.Context) {
 		}
 		updates["employee_id"] = strings.TrimSpace(*input.EmployeeID)
 	}
-	if input.Role != nil {
+	if input.PermissionPresetID != nil {
 		if !hasContextPermission(c, authz.PermissionManage) {
-			c.JSON(http.StatusForbidden, gin.H{"error": "[SECURITY] Only admin can manage account roles"})
+			c.JSON(http.StatusForbidden, gin.H{"error": "[SECURITY] Only admin can manage account permission presets"})
 			return
 		}
-		normalizedRole := strings.ToLower(strings.TrimSpace(*input.Role))
-		if isAdminRolePromotion(user.Role, normalizedRole) {
+		normalizedPermissionPresetID := strings.ToLower(strings.TrimSpace(*input.PermissionPresetID))
+		if isAdminPermissionPresetAssignment(user.PermissionPresetID, normalizedPermissionPresetID) {
 			if err := verifyCurrentUserAdminChallenge(c, input.AdminChallenge); err != nil {
 				writeAdminChallengeError(c, err)
 				return
 			}
 		}
-		updates["role"] = normalizedRole
+		updates["permission_preset_id"] = normalizedPermissionPresetID
 	}
 	if input.Status != nil {
 		normalizedStatus := strings.ToLower(strings.TrimSpace(*input.Status))
@@ -174,16 +174,16 @@ func ReplaceUserHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] invalid status"})
 		return
 	}
-	normalizedRole := strings.ToLower(strings.TrimSpace(input.Role))
+	normalizedPermissionPresetID := strings.ToLower(strings.TrimSpace(input.PermissionPresetID))
 	if strings.TrimSpace(input.EmployeeID) != strings.TrimSpace(user.EmployeeID) && !hasContextPermission(c, authz.PermissionManage) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "[SECURITY] Only permission administrators can change employee bindings"})
 		return
 	}
-	if normalizedRole != strings.ToLower(strings.TrimSpace(user.Role)) && !hasContextPermission(c, authz.PermissionManage) {
-		c.JSON(http.StatusForbidden, gin.H{"error": "[SECURITY] Only admin can manage account roles"})
+	if normalizedPermissionPresetID != strings.ToLower(strings.TrimSpace(user.PermissionPresetID)) && !hasContextPermission(c, authz.PermissionManage) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "[SECURITY] Only admin can manage account permission presets"})
 		return
 	}
-	if isAdminRolePromotion(user.Role, normalizedRole) {
+	if isAdminPermissionPresetAssignment(user.PermissionPresetID, normalizedPermissionPresetID) {
 		if err := verifyCurrentUserAdminChallenge(c, input.AdminChallenge); err != nil {
 			writeAdminChallengeError(c, err)
 			return
@@ -191,13 +191,13 @@ func ReplaceUserHandler(c *gin.Context) {
 	}
 
 	updates := map[string]interface{}{
-		"username":     normalizedUsername,
-		"phone_number": strings.TrimSpace(input.PhoneNumber),
-		"first_name":   strings.TrimSpace(input.FirstName),
-		"last_name":    strings.TrimSpace(input.LastName),
-		"status":       normalizedStatus,
-		"role":         normalizedRole,
-		"employee_id":  strings.TrimSpace(input.EmployeeID),
+		"username":             normalizedUsername,
+		"phone_number":         strings.TrimSpace(input.PhoneNumber),
+		"first_name":           strings.TrimSpace(input.FirstName),
+		"last_name":            strings.TrimSpace(input.LastName),
+		"status":               normalizedStatus,
+		"permission_preset_id": strings.TrimSpace(normalizedPermissionPresetID),
+		"employee_id":          strings.TrimSpace(input.EmployeeID),
 	}
 	if normalizedPassword := strings.TrimSpace(input.Password); normalizedPassword != "" {
 		hashedPassword, err := hashUserPassword(normalizedPassword)
@@ -226,7 +226,7 @@ func writeUserMutationError(c *gin.Context, err error, fallback string) {
 		c.JSON(http.StatusConflict, gin.H{"error": "[CONFLICT] employee is already bound to another account"})
 	case errors.Is(err, services.ErrUserUsernameConflict):
 		c.JSON(http.StatusConflict, gin.H{"error": "[CONFLICT] username is already in use"})
-	case errors.Is(err, services.ErrUserRoleNotFound), errors.Is(err, services.ErrUserRoleInvalidPayload):
+	case errors.Is(err, services.ErrAccountPermissionPresetNotFound), errors.Is(err, services.ErrAccountPermissionPresetInvalidPayload):
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	default:
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fallback})

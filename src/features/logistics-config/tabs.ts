@@ -9,11 +9,6 @@ type TranslateFn = (
 export function getLogisticsConfigTabs(t: TranslateFn): TabItem[] {
   return [
     {
-      key: 'packaging-rules',
-      label: t('logisticsConfig.tabs.packagingRules'),
-      href: '/logistics-config/packaging-rules',
-    },
-    {
       key: 'vehicle-loading',
       label: t('logisticsConfig.tabs.vehicleLoading'),
       href: '/logistics-config/vehicle-loading',

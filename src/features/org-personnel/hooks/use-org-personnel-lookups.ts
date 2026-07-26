@@ -1,9 +1,5 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import {
-  useProductionLinesQuery,
-  useProductionProcessesQuery,
-} from '@/features/production-shared/hooks/use-production-resources'
 import { type PersonnelSelectOption } from '../config/personnel-archive-columns'
 import { type OrgNode } from '../data/org-schema'
 import { personnelQueryKeys } from '../query-keys'
@@ -13,33 +9,23 @@ import { PositionService } from '../services/position-service'
 type UseOrgPersonnelLookupsOptions = {
   enabled?: boolean
   includePositions?: boolean
-  includeProductionResources?: boolean
 }
 
-function flattenDepartmentOptions(nodes: OrgNode[]): PersonnelSelectOption[] {
+function flattenOrgUnitOptions(
+  nodes: OrgNode[],
+  parentPath = ''
+): PersonnelSelectOption[] {
   return nodes.flatMap((node) => {
-    const current =
-      node.type === 'department' && node.id
-        ? [{ label: node.name, value: node.id }]
-        : []
+    const currentPath = parentPath ? `${parentPath} / ${node.name}` : node.name
+    const current = node.id ? [{ label: currentPath, value: node.id }] : []
 
-    return current.concat(flattenDepartmentOptions(node.children ?? []))
+    return current.concat(
+      flattenOrgUnitOptions(node.children ?? [], currentPath)
+    )
   })
 }
 
-function buildNameMap(
-  orgData: OrgNode[],
-  lineData: Array<{
-    id: string
-    name: string
-    segments?: Array<{
-      id: string
-      name: string
-      processes?: Array<{ id: string; name: string }>
-    }>
-  }>,
-  processData: Array<{ id: string; name: string }>
-) {
+function buildOrgUnitNameMap(orgData: OrgNode[]) {
   const nextMap: Record<string, string> = {}
 
   const flattenOrg = (nodes: OrgNode[]) => {
@@ -53,20 +39,6 @@ function buildNameMap(
 
   flattenOrg(orgData)
 
-  lineData.forEach((line) => {
-    nextMap[line.id] = line.name
-    line.segments?.forEach((segment) => {
-      nextMap[segment.id] = segment.name
-      segment.processes?.forEach((process) => {
-        nextMap[process.id] = process.name
-      })
-    })
-  })
-
-  processData.forEach((process) => {
-    nextMap[process.id] = process.name
-  })
-
   return nextMap
 }
 
@@ -76,7 +48,6 @@ export function useOrgPersonnelLookups(
   const {
     enabled = true,
     includePositions = false,
-    includeProductionResources = false,
   } = options
 
   const orgTreeQuery = useQuery({
@@ -91,43 +62,25 @@ export function useOrgPersonnelLookups(
     enabled: enabled && includePositions,
   })
 
-  const linesQuery = useProductionLinesQuery({
-    enabled: enabled && includeProductionResources,
-  })
-
-  const processesQuery = useProductionProcessesQuery({
-    enabled: enabled && includeProductionResources,
-  })
-
   const orgTree = useMemo(() => orgTreeQuery.data ?? [], [orgTreeQuery.data])
   const positions = useMemo(
     () => positionsQuery.data ?? [],
     [positionsQuery.data]
   )
-  const departmentOptions = useMemo(
-    () => flattenDepartmentOptions(orgTree),
+  const orgUnitOptions = useMemo(
+    () => flattenOrgUnitOptions(orgTree),
     [orgTree]
   )
-  const nameMap = useMemo(
-    () =>
-      buildNameMap(orgTree, linesQuery.data ?? [], processesQuery.data ?? []),
-    [orgTree, linesQuery.data, processesQuery.data]
-  )
+  const nameMap = useMemo(() => buildOrgUnitNameMap(orgTree), [orgTree])
 
   return {
     orgTree,
     positions,
-    departmentOptions,
+    orgUnitOptions,
     nameMap,
     isLoading:
       orgTreeQuery.isLoading ||
-      positionsQuery.isLoading ||
-      linesQuery.isLoading ||
-      processesQuery.isLoading,
-    error:
-      orgTreeQuery.error ??
-      positionsQuery.error ??
-      linesQuery.error ??
-      processesQuery.error,
+      positionsQuery.isLoading,
+    error: orgTreeQuery.error ?? positionsQuery.error,
   }
 }

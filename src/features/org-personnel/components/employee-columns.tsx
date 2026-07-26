@@ -143,30 +143,30 @@ export const getEmployeeColumns = (t: TranslateFn): ColumnDef<Employee>[] => [
     meta: { viewLabel: t('orgPersonnel.excel.columns.position') },
   },
   {
-    accessorKey: 'deptId',
+    accessorKey: 'orgUnitId',
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
-        title={t('orgPersonnel.excel.columns.deptId')}
+        title={t('orgPersonnel.excel.columns.orgUnitId')}
       />
     ),
     cell: ({ row, table }) => {
       const employee = row.original
-      const deptId = row.getValue('deptId') as string
+      const orgUnitId = row.getValue('orgUnitId') as string
       const meta = table.options.meta as
         | { nameMap?: Record<string, string> }
         | undefined
       const name =
-        employee.deptName ||
-        meta?.nameMap?.[deptId] ||
-        (deptId?.length > 8 ? `${deptId.substring(0, 8)}...` : deptId)
+        employee.orgUnitName ||
+        meta?.nameMap?.[orgUnitId] ||
+        (orgUnitId?.length > 8 ? `${orgUnitId.substring(0, 8)}...` : orgUnitId)
       return (
         <div className='max-w-[120px] truncate font-bold text-slate-600'>
           {name || '-'}
         </div>
       )
     },
-    meta: { viewLabel: t('orgPersonnel.excel.columns.deptId') },
+    meta: { viewLabel: t('orgPersonnel.excel.columns.orgUnitId') },
   },
   {
     accessorKey: 'phone',

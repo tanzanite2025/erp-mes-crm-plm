@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { usePackagingProfileFormController } from '@/features/logistics-config/hooks/use-packaging-profile-form-controller'
-import type { PackagingProfile } from '@/features/logistics-config/packaging-rules-service'
+import { usePackagingProfileFormController } from '@/features/logistics-packaging-management/hooks/use-packaging-profile-form-controller'
+import type { PackagingProfile } from '@/features/logistics-packaging-management/packaging-rules-service'
 import type { SalesOrder } from '../data/schema'
 import { buildSalesOrderPackagingCardViewModel } from '../utils/sales-order-packaging-card-view-model'
 import { useSalesOrderPackagingCardCommands } from './use-sales-order-packaging-card-commands'

@@ -72,9 +72,9 @@ describe('effective permission service', () => {
     }
     serviceMocks.authState.isIdentitySynced = true
 
-    await expect(resolveOrSyncPermissionIds(['ignored-role'])).resolves.toEqual(
-      ['user_view', 'menu_org']
-    )
+    await expect(
+      resolveOrSyncPermissionIds(['ignored-preset'])
+    ).resolves.toEqual(['user_view', 'menu_org'])
     expect(serviceMocks.apiFetch).not.toHaveBeenCalled()
   })
 

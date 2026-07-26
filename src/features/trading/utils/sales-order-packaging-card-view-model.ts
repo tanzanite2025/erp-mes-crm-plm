@@ -1,8 +1,8 @@
 import {
   calculatePackagingPlan,
   type PackagingCalculationResult,
-} from '@/features/logistics-config/packaging-calculator'
-import type { PackagingProfile } from '@/features/logistics-config/packaging-rules-service'
+} from '@/features/logistics-packaging-management/packaging-calculator'
+import type { PackagingProfile } from '@/features/logistics-packaging-management/packaging-rules-service'
 import {
   getActiveBOMWeight,
   type ActiveBOMWeightInfo,

@@ -18,7 +18,7 @@ type UserPermissionTreeProps = {
   isLoading: boolean
   expandedModuleIDs: string[]
   effectivePermissionIDSet: ReadonlySet<string>
-  inheritedPermissionIDSet: ReadonlySet<string>
+  presetPermissionIDSet: ReadonlySet<string>
   onToggleModule: (moduleID: string) => void
   onTogglePermissionIDs: (permissionIDs: string[]) => void
 }
@@ -28,7 +28,7 @@ type PermissionLeafRowProps = {
   kind: 'tab' | 'action'
   emphasized?: boolean
   effectivePermissionIDSet: ReadonlySet<string>
-  inheritedPermissionIDSet: ReadonlySet<string>
+  presetPermissionIDSet: ReadonlySet<string>
   onTogglePermissionIDs: (permissionIDs: string[]) => void
 }
 
@@ -37,12 +37,12 @@ function PermissionLeafRow({
   kind,
   emphasized = false,
   effectivePermissionIDSet,
-  inheritedPermissionIDSet,
+  presetPermissionIDSet,
   onTogglePermissionIDs,
 }: PermissionLeafRowProps) {
   const { t } = useLanguage()
   const permissionID = permission.id.toLowerCase()
-  const inherited = inheritedPermissionIDSet.has(permissionID)
+  const assignedByPreset = presetPermissionIDSet.has(permissionID)
 
   return (
     <div
@@ -62,7 +62,7 @@ function PermissionLeafRow({
         >
           {t(`users.permissionAssignments.tree.${kind}`)} /{' '}
           {formatPermissionLabel(permission.label)}
-          {inherited
+          {assignedByPreset
             ? ` / ${t('users.permissionAssignments.tree.inherited')}`
             : ''}
         </div>
@@ -72,7 +72,7 @@ function PermissionLeafRow({
       </div>
       <Checkbox
         checked={effectivePermissionIDSet.has(permissionID)}
-        disabled={inherited}
+        disabled={assignedByPreset}
         onCheckedChange={() => onTogglePermissionIDs([permission.id])}
       />
     </div>
@@ -82,14 +82,14 @@ function PermissionLeafRow({
 type PermissionPageProps = {
   pageNode: PermissionPageNode
   effectivePermissionIDSet: ReadonlySet<string>
-  inheritedPermissionIDSet: ReadonlySet<string>
+  presetPermissionIDSet: ReadonlySet<string>
   onTogglePermissionIDs: (permissionIDs: string[]) => void
 }
 
 function PermissionPage({
   pageNode,
   effectivePermissionIDSet,
-  inheritedPermissionIDSet,
+  presetPermissionIDSet,
   onTogglePermissionIDs,
 }: PermissionPageProps) {
   const { t } = useLanguage()
@@ -98,7 +98,7 @@ function PermissionPage({
     effectivePermissionIDSet.has(permissionID.toLowerCase())
   )
   const pageAssignablePermissionIDs = pagePermissionIDs.filter(
-    (permissionID) => !inheritedPermissionIDSet.has(permissionID.toLowerCase())
+    (permissionID) => !presetPermissionIDSet.has(permissionID.toLowerCase())
   )
 
   return (
@@ -127,7 +127,7 @@ function PermissionPage({
           permission={tab}
           kind='tab'
           effectivePermissionIDSet={effectivePermissionIDSet}
-          inheritedPermissionIDSet={inheritedPermissionIDSet}
+          presetPermissionIDSet={presetPermissionIDSet}
           onTogglePermissionIDs={onTogglePermissionIDs}
         />
       ))}
@@ -139,7 +139,7 @@ type PermissionModuleProps = {
   node: PermissionTreeNode
   expanded: boolean
   effectivePermissionIDSet: ReadonlySet<string>
-  inheritedPermissionIDSet: ReadonlySet<string>
+  presetPermissionIDSet: ReadonlySet<string>
   onToggleModule: (moduleID: string) => void
   onTogglePermissionIDs: (permissionIDs: string[]) => void
 }
@@ -148,7 +148,7 @@ function PermissionModule({
   node,
   expanded,
   effectivePermissionIDSet,
-  inheritedPermissionIDSet,
+  presetPermissionIDSet,
   onToggleModule,
   onTogglePermissionIDs,
 }: PermissionModuleProps) {
@@ -158,7 +158,7 @@ function PermissionModule({
     effectivePermissionIDSet.has(permissionID.toLowerCase())
   )
   const moduleAssignablePermissionIDs = modulePermissionIDs.filter(
-    (permissionID) => !inheritedPermissionIDSet.has(permissionID.toLowerCase())
+    (permissionID) => !presetPermissionIDSet.has(permissionID.toLowerCase())
   )
 
   return (
@@ -201,7 +201,7 @@ function PermissionModule({
               key={pageNode.page.id}
               pageNode={pageNode}
               effectivePermissionIDSet={effectivePermissionIDSet}
-              inheritedPermissionIDSet={inheritedPermissionIDSet}
+              presetPermissionIDSet={presetPermissionIDSet}
               onTogglePermissionIDs={onTogglePermissionIDs}
             />
           ))}
@@ -212,7 +212,7 @@ function PermissionModule({
               kind='tab'
               emphasized
               effectivePermissionIDSet={effectivePermissionIDSet}
-              inheritedPermissionIDSet={inheritedPermissionIDSet}
+              presetPermissionIDSet={presetPermissionIDSet}
               onTogglePermissionIDs={onTogglePermissionIDs}
             />
           ))}
@@ -223,7 +223,7 @@ function PermissionModule({
               kind='action'
               emphasized
               effectivePermissionIDSet={effectivePermissionIDSet}
-              inheritedPermissionIDSet={inheritedPermissionIDSet}
+              presetPermissionIDSet={presetPermissionIDSet}
               onTogglePermissionIDs={onTogglePermissionIDs}
             />
           ))}
@@ -239,7 +239,7 @@ export function UserPermissionTree({
   isLoading,
   expandedModuleIDs,
   effectivePermissionIDSet,
-  inheritedPermissionIDSet,
+  presetPermissionIDSet,
   onToggleModule,
   onTogglePermissionIDs,
 }: UserPermissionTreeProps) {
@@ -268,7 +268,7 @@ export function UserPermissionTree({
                   node={node}
                   expanded={expandedModuleIDs.includes(node.module.id)}
                   effectivePermissionIDSet={effectivePermissionIDSet}
-                  inheritedPermissionIDSet={inheritedPermissionIDSet}
+                  presetPermissionIDSet={presetPermissionIDSet}
                   onToggleModule={onToggleModule}
                   onTogglePermissionIDs={onTogglePermissionIDs}
                 />

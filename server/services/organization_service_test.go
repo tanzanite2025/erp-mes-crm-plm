@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"testing"
+	"xdfc-server/models"
 	"xdfc-server/repositories"
 
 	"github.com/glebarez/sqlite"
@@ -35,7 +36,7 @@ func newOrganizationSaveTestService(t *testing.T) (*OrganizationService, *gorm.D
 
 	return NewOrganizationService(
 		organizationSaveTestTxManager{db: database},
-		repositories.NewOrganizationRepository(),
+		repositories.NewOrganizationTreeRepository(),
 	), database
 }
 
@@ -43,17 +44,20 @@ func createOrganizationSaveTestSchema(t *testing.T, database *gorm.DB) {
 	t.Helper()
 
 	require.NoError(t, database.Exec(`
-		CREATE TABLE organizations (
+		CREATE TABLE org_units (
 			id TEXT PRIMARY KEY,
 			created_at DATETIME,
 			updated_at DATETIME,
 			deleted_at DATETIME,
 			name TEXT NOT NULL,
 			parent_id TEXT,
-			manager TEXT,
-			description TEXT,
-			type TEXT,
-			linked_architecture TEXT
+			code TEXT,
+			unit_type TEXT,
+			manager_employee_id TEXT,
+			status TEXT,
+			sort_order INTEGER,
+			metadata TEXT,
+			legacy_payload TEXT
 		)
 	`).Error)
 	require.NoError(t, database.Exec(`
@@ -136,6 +140,130 @@ func TestSaveOrganizationRejectsInvalidIDsBeforeDatabaseSave(t *testing.T) {
 		ParentID: &invalidParentID,
 	})
 	require.ErrorIs(t, err, ErrOrganizationParentIDInvalid)
+}
+
+func TestSaveEmployeeWritesOrgUnitToPrimaryAssignmentNotEmployeeDeptID(t *testing.T) {
+	database, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
+	require.NoError(t, err)
+	createEmployeeOrgUnitAssignmentTestSchema(t, database)
+
+	service := NewEmployeeCommandService(
+		organizationSaveTestTxManager{db: database},
+		repositories.NewOrgPersonnelRepository(),
+	)
+
+	orgUnitID := uuid.NewString()
+	require.NoError(t, database.Create(&models.OrgUnit{
+		BaseModel: models.BaseModel{ID: orgUnitID},
+		Name:      "生产部",
+		UnitType:  "department",
+		Status:    "active",
+		Metadata:  "{}",
+	}).Error)
+
+	response, err := service.SaveEmployee(context.Background(), EmployeeSaveRequest{
+		ID:      uuid.NewString(),
+		StaffID: "EMP-001",
+		Name:    "张三",
+		Status:  "active",
+		DeptID:  orgUnitID,
+	})
+	require.NoError(t, err)
+	require.Equal(t, orgUnitID, response.DeptID)
+	require.Equal(t, "生产部", response.DeptName)
+
+	var storedEmployeeDeptID string
+	require.NoError(t, database.Table("employees").
+		Select("COALESCE(dept_id, '')").
+		Where("id = ?", response.ID).
+		Scan(&storedEmployeeDeptID).Error)
+	require.Equal(t, "", storedEmployeeDeptID)
+
+	var assignmentOrgUnitID string
+	require.NoError(t, database.Table("employee_assignments").
+		Select("org_unit_id").
+		Where("employee_id = ? AND is_primary = ?", response.ID, true).
+		Scan(&assignmentOrgUnitID).Error)
+	require.Equal(t, orgUnitID, assignmentOrgUnitID)
+}
+
+func createEmployeeOrgUnitAssignmentTestSchema(t *testing.T, database *gorm.DB) {
+	t.Helper()
+
+	require.NoError(t, database.Exec(`
+		CREATE TABLE org_units (
+			id TEXT PRIMARY KEY,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			name TEXT NOT NULL,
+			code TEXT,
+			parent_id TEXT,
+			unit_type TEXT,
+			manager_employee_id TEXT,
+			status TEXT,
+			sort_order INTEGER,
+			metadata TEXT,
+			legacy_payload TEXT
+		)
+	`).Error)
+	require.NoError(t, database.Exec(`
+		CREATE TABLE employees (
+			id TEXT PRIMARY KEY,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			staff_id TEXT,
+			name TEXT NOT NULL,
+			gender TEXT,
+			birthday DATETIME,
+			id_card TEXT,
+			phone TEXT,
+			emergency_phone TEXT,
+			address TEXT,
+			bank_card TEXT,
+			bank_name TEXT,
+			education TEXT,
+			age INTEGER,
+			status TEXT,
+			joined_date DATETIME,
+			dept_id TEXT,
+			operator TEXT
+		)
+	`).Error)
+	require.NoError(t, database.Exec(`
+		CREATE TABLE employee_assignments (
+			id TEXT PRIMARY KEY,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			employee_id TEXT NOT NULL,
+			org_unit_id TEXT,
+			position_id TEXT,
+			production_unit_id TEXT,
+			assignment_type TEXT,
+			is_primary BOOLEAN,
+			start_date DATETIME,
+			end_date DATETIME,
+			status TEXT,
+			source TEXT,
+			remarks TEXT
+		)
+	`).Error)
+	require.NoError(t, database.Exec(`
+		CREATE TABLE audit_logs (
+			id TEXT PRIMARY KEY,
+			module TEXT,
+			target_id TEXT,
+			action TEXT,
+			diff TEXT,
+			operator TEXT,
+			ip TEXT,
+			created_at DATETIME
+		)
+	`).Error)
 }
 
 func requireValidUUID(t *testing.T, value string) {

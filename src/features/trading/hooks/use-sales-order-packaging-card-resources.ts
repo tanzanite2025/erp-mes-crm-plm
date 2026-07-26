@@ -4,7 +4,7 @@ import { ProductCoreService } from '@/features/engineering/services/product-core
 import {
   packagingRulesService,
   type PackagingProfile,
-} from '@/features/logistics-config/packaging-rules-service'
+} from '@/features/logistics-packaging-management/packaging-rules-service'
 import {
   type ActiveBOMWeightInfo,
   type ActiveBOMWeightProbe,

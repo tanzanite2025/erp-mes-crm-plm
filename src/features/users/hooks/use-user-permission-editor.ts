@@ -80,27 +80,27 @@ export function useUserPermissionEditor({
     () => new Set(draftPermissionIDs.map((item) => item.trim().toLowerCase())),
     [draftPermissionIDs]
   )
-  const inheritedPermissionIDSet = useMemo(
+  const presetPermissionIDSet = useMemo(
     () =>
       new Set(
         migratePermissions(
           '',
           PERMISSION_VERSION,
-          permissionsData?.inheritedPermissions || []
+          permissionsData?.presetPermissions || []
         )
       ),
     [permissionsData]
   )
   const effectivePermissionIDSet = useMemo(
-    () => new Set([...inheritedPermissionIDSet, ...directPermissionIDSet]),
-    [directPermissionIDSet, inheritedPermissionIDSet]
+    () => new Set([...presetPermissionIDSet, ...directPermissionIDSet]),
+    [directPermissionIDSet, presetPermissionIDSet]
   )
   const directlyAssignablePermissionIDs = useMemo(
     () =>
       allPermissionIDs.filter(
-        (permissionID) => !inheritedPermissionIDSet.has(permissionID)
+        (permissionID) => !presetPermissionIDSet.has(permissionID)
       ),
-    [allPermissionIDs, inheritedPermissionIDSet]
+    [allPermissionIDs, presetPermissionIDSet]
   )
 
   const visibleTree = useMemo(
@@ -136,7 +136,7 @@ export function useUserPermissionEditor({
       .map((permissionID) => permissionID.trim().toLowerCase())
       .filter(
         (permissionID) =>
-          Boolean(permissionID) && !inheritedPermissionIDSet.has(permissionID)
+          Boolean(permissionID) && !presetPermissionIDSet.has(permissionID)
       )
     if (normalizedIDs.length === 0) return
 
@@ -164,7 +164,7 @@ export function useUserPermissionEditor({
             const normalized = permissionID.trim().toLowerCase()
             return (
               supportedPermissionIDSet.has(normalized) &&
-              !inheritedPermissionIDSet.has(normalized)
+              !presetPermissionIDSet.has(normalized)
             )
           }),
           reason: 'users_permissions_dialog_save',
@@ -196,12 +196,12 @@ export function useUserPermissionEditor({
       setExpandedModuleIDs(permissionTree.map((node) => node.module.id)),
     expandedModuleIDs,
     hasUnsavedChanges,
-    inheritedPermissionIDSet,
+    presetPermissionIDSet,
     isLoading,
     permissionsData,
     resetDraft: () => setLocalDraftPermissionIDs(null),
     resetEditor,
-    role: permissionsData?.role,
+    permissionPresetId: permissionsData?.permissionPresetId,
     save,
     search,
     selectAll: () =>

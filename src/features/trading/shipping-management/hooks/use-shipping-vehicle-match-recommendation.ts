@@ -5,10 +5,6 @@ import { type ReadResource, resolveQueryFailure } from '@/lib/read-resource'
 import { failLoudly } from '@/lib/safe-catch'
 import { useUnitsQuery } from '@/features/basic-settings/hooks/use-units-query'
 import {
-  packagingRulesService,
-  type PackagingProfile,
-} from '@/features/logistics-config/packaging-rules-service'
-import {
   getVehicleLoadingSourceConfig,
   type VehicleLoadingSourceType,
 } from '@/features/logistics-config/vehicle-loading/data/vehicle-loading-sources'
@@ -21,6 +17,10 @@ import {
   buildManualVehicleLoadingPackageInput,
   buildVehicleLoadingPackageInputFromProfile,
 } from '@/features/logistics-config/vehicle-loading/services/vehicle-loading-package-input'
+import {
+  packagingRulesService,
+  type PackagingProfile,
+} from '@/features/logistics-packaging-management/packaging-rules-service'
 import type { ShippingVehicleMatchItem } from '../types'
 
 const SHIPPING_MATCH_PACKAGING_PROFILE_QUERY_KEY = [

@@ -27,7 +27,7 @@ type TranslateFn = (
     | 'users.actions.managePermissions'
     | 'users.columns.username'
     | 'users.columns.name'
-    | 'users.columns.role'
+    | 'users.columns.permissionPreset'
     | 'users.columns.phone'
     | 'users.columns.status'
     | 'users.status.active'
@@ -147,21 +147,23 @@ export function getUsersColumns(
       meta: { className: 'w-36' },
     },
     {
-      accessorKey: 'role',
+      accessorKey: 'permissionPresetId',
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
-          title={t('users.columns.role')}
+          title={t('users.columns.permissionPreset')}
         />
       ),
       cell: ({ row }) => {
-        const role = String(row.getValue('role') || '').trim()
+        const permissionPresetId = String(
+          row.getValue('permissionPresetId') || ''
+        ).trim()
         return (
           <Badge
             variant='outline'
             className='rounded-full border-dashed font-mono text-[8px] uppercase'
           >
-            {role || 'UNASSIGNED'}
+            {permissionPresetId || 'UNASSIGNED'}
           </Badge>
         )
       },

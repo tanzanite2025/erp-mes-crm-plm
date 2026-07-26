@@ -134,7 +134,7 @@ func (s *OrganizationService) DeleteOrganization(ctx context.Context, id string)
 		if childCount > 0 {
 			return ErrOrganizationHasChildren
 		}
-		employeeCount, err := s.repository.CountEmployeesByDeptID(tx, id)
+		employeeCount, err := s.repository.CountEmployeesByOrgUnitID(tx, id)
 		if err != nil {
 			return err
 		}

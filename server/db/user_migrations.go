@@ -112,7 +112,203 @@ func ensureUserEmployeeBindingUniqueIndex() {
 	}
 }
 
-func dropLegacyRoleArtifacts() {
+func migrateAccountPermissionPresetSchemaNames() {
+	if DB == nil || DB.Dialector.Name() != "postgres" {
+		return
+	}
+
+	statements := []string{
+		`
+		DO $$
+		BEGIN
+			IF to_regclass('public.roles') IS NOT NULL
+			   AND to_regclass('public.permission_presets') IS NULL THEN
+				ALTER TABLE roles RENAME TO permission_presets;
+			END IF;
+		END
+		$$;
+		`,
+		`
+		DO $$
+		BEGIN
+			IF to_regclass('public.permission_presets') IS NOT NULL THEN
+				IF EXISTS (
+					SELECT 1
+					FROM information_schema.columns
+					WHERE table_schema = 'public'
+					  AND table_name = 'permission_presets'
+					  AND column_name = 'role_id'
+				) AND NOT EXISTS (
+					SELECT 1
+					FROM information_schema.columns
+					WHERE table_schema = 'public'
+					  AND table_name = 'permission_presets'
+					  AND column_name = 'permission_preset_id'
+				) THEN
+					ALTER TABLE permission_presets RENAME COLUMN role_id TO permission_preset_id;
+				ELSIF EXISTS (
+					SELECT 1
+					FROM information_schema.columns
+					WHERE table_schema = 'public'
+					  AND table_name = 'permission_presets'
+					  AND column_name = 'role_id'
+				) AND EXISTS (
+					SELECT 1
+					FROM information_schema.columns
+					WHERE table_schema = 'public'
+					  AND table_name = 'permission_presets'
+					  AND column_name = 'permission_preset_id'
+				) THEN
+					UPDATE permission_presets
+					SET permission_preset_id = role_id
+					WHERE NULLIF(BTRIM(permission_preset_id), '') IS NULL
+					  AND NULLIF(BTRIM(role_id), '') IS NOT NULL;
+					ALTER TABLE permission_presets DROP COLUMN role_id;
+				END IF;
+			END IF;
+		END
+		$$;
+		`,
+		`
+		DO $$
+		BEGIN
+			IF to_regclass('public.roles') IS NOT NULL
+			   AND to_regclass('public.permission_presets') IS NOT NULL THEN
+				IF EXISTS (
+					SELECT 1
+					FROM information_schema.columns
+					WHERE table_schema = 'public'
+					  AND table_name = 'roles'
+					  AND column_name = 'role_id'
+				)
+				AND EXISTS (
+					SELECT 1
+					FROM information_schema.columns
+					WHERE table_schema = 'public'
+					  AND table_name = 'permission_presets'
+					  AND column_name = 'permission_preset_id'
+				) THEN
+					INSERT INTO permission_presets (
+						id,
+						created_at,
+						updated_at,
+						deleted_at,
+						permission_preset_id,
+						label,
+						color,
+						permissions
+					)
+					SELECT
+						r.id,
+						r.created_at,
+						r.updated_at,
+						r.deleted_at,
+						LOWER(BTRIM(r.role_id)),
+						r.label,
+						r.color,
+						r.permissions
+					FROM roles r
+					WHERE NULLIF(BTRIM(r.role_id), '') IS NOT NULL
+					ON CONFLICT DO NOTHING;
+				END IF;
+
+				DROP TABLE roles CASCADE;
+			END IF;
+		END
+		$$;
+		`,
+		`
+		DO $$
+		BEGIN
+			IF to_regclass('public.users') IS NOT NULL THEN
+				IF EXISTS (
+					SELECT 1
+					FROM information_schema.columns
+					WHERE table_schema = 'public'
+					  AND table_name = 'users'
+					  AND column_name = 'role'
+				) AND NOT EXISTS (
+					SELECT 1
+					FROM information_schema.columns
+					WHERE table_schema = 'public'
+					  AND table_name = 'users'
+					  AND column_name = 'permission_preset_id'
+				) THEN
+					ALTER TABLE users RENAME COLUMN role TO permission_preset_id;
+				ELSIF EXISTS (
+					SELECT 1
+					FROM information_schema.columns
+					WHERE table_schema = 'public'
+					  AND table_name = 'users'
+					  AND column_name = 'role'
+				) AND EXISTS (
+					SELECT 1
+					FROM information_schema.columns
+					WHERE table_schema = 'public'
+					  AND table_name = 'users'
+					  AND column_name = 'permission_preset_id'
+				) THEN
+					UPDATE users
+					SET permission_preset_id = role
+					WHERE NULLIF(BTRIM(permission_preset_id), '') IS NULL
+					  AND NULLIF(BTRIM(role), '') IS NOT NULL;
+					ALTER TABLE users DROP COLUMN role;
+				END IF;
+			END IF;
+		END
+		$$;
+		`,
+		`
+		DO $$
+		BEGIN
+			IF to_regclass('public.permission_presets') IS NOT NULL
+			   AND EXISTS (
+					SELECT 1
+					FROM information_schema.columns
+					WHERE table_schema = 'public'
+					  AND table_name = 'permission_presets'
+					  AND column_name = 'permission_preset_id'
+			   ) THEN
+				UPDATE permission_presets
+				SET permission_preset_id = LOWER(BTRIM(permission_preset_id))
+				WHERE NULLIF(BTRIM(permission_preset_id), '') IS NOT NULL
+				  AND permission_preset_id <> LOWER(BTRIM(permission_preset_id));
+			END IF;
+		END
+		$$;
+		`,
+		`
+		DO $$
+		BEGIN
+			IF to_regclass('public.users') IS NOT NULL
+			   AND EXISTS (
+					SELECT 1
+					FROM information_schema.columns
+					WHERE table_schema = 'public'
+					  AND table_name = 'users'
+					  AND column_name = 'permission_preset_id'
+			   ) THEN
+				UPDATE users
+				SET permission_preset_id = LOWER(BTRIM(permission_preset_id))
+				WHERE NULLIF(BTRIM(permission_preset_id), '') IS NOT NULL
+				  AND permission_preset_id <> LOWER(BTRIM(permission_preset_id));
+			END IF;
+		END
+		$$;
+		`,
+		`DROP INDEX IF EXISTS idx_roles_role_id`,
+		`DROP INDEX IF EXISTS idx_roles_deleted_at`,
+		`DROP INDEX IF EXISTS idx_users_role`,
+	}
+
+	for _, statement := range statements {
+		if err := DB.Exec(statement).Error; err != nil {
+			log.Fatal("Failed to migrate account permission preset schema names:", err)
+		}
+	}
+}
+
+func dropLegacyPermissionPresetArtifacts() {
 	if DB == nil {
 		return
 	}
@@ -124,7 +320,7 @@ func dropLegacyRoleArtifacts() {
 	} {
 		if DB.Migrator().HasTable(tableName) {
 			if err := DB.Migrator().DropTable(tableName); err != nil {
-				log.Fatal("Failed to drop legacy role table ", tableName, ": ", err)
+				log.Fatal("Failed to drop legacy permission preset table ", tableName, ": ", err)
 			}
 		}
 	}
@@ -177,50 +373,50 @@ func ensureSeedAdminUserPermissions() {
 	}
 }
 
-func ensureDefaultAdminRole() {
-	if DB == nil || !DB.Migrator().HasTable(&models.Role{}) {
+func ensureDefaultAdminPermissionPreset() {
+	if DB == nil || !DB.Migrator().HasTable(&models.PermissionPreset{}) {
 		return
 	}
 
 	permissionJSON, err := json.Marshal(authz.AdminFallbackPermissions)
 	if err != nil {
-		log.Fatal("[CRITICAL_SECURITY] Failed to serialize default admin role permissions: ", err)
+		log.Fatal("[CRITICAL_SECURITY] Failed to serialize default admin permission preset permissions: ", err)
 	}
 
-	defaultRole := models.Role{
-		RoleID:      "admin",
-		Label:       "Admin",
-		Color:       "bg-red-500/10 text-red-600 border-red-200",
-		Permissions: string(permissionJSON),
+	defaultPermissionPreset := models.PermissionPreset{
+		PermissionPresetID: "admin",
+		Label:              "Admin",
+		Color:              "bg-red-500/10 text-red-600 border-red-200",
+		Permissions:        string(permissionJSON),
 	}
 
-	var existing models.Role
-	err = DB.Where("LOWER(role_id) = ?", "admin").First(&existing).Error
+	var existing models.PermissionPreset
+	err = DB.Where("LOWER(permission_preset_id) = ?", "admin").First(&existing).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		if createErr := DB.Create(&defaultRole).Error; createErr != nil {
-			log.Fatal("Failed to create default admin role:", createErr)
+		if createErr := DB.Create(&defaultPermissionPreset).Error; createErr != nil {
+			log.Fatal("Failed to create default admin permission preset:", createErr)
 		}
 		return
 	}
 	if err != nil {
-		log.Fatal("Failed to query default admin role:", err)
+		log.Fatal("Failed to query default admin permission preset:", err)
 	}
 
 	updates := map[string]any{}
-	if existing.Label != defaultRole.Label {
-		updates["label"] = defaultRole.Label
+	if existing.Label != defaultPermissionPreset.Label {
+		updates["label"] = defaultPermissionPreset.Label
 	}
-	if existing.Color != defaultRole.Color {
-		updates["color"] = defaultRole.Color
+	if existing.Color != defaultPermissionPreset.Color {
+		updates["color"] = defaultPermissionPreset.Color
 	}
-	if strings.TrimSpace(existing.Permissions) != defaultRole.Permissions {
-		updates["permissions"] = defaultRole.Permissions
+	if strings.TrimSpace(existing.Permissions) != defaultPermissionPreset.Permissions {
+		updates["permissions"] = defaultPermissionPreset.Permissions
 	}
 	if len(updates) == 0 {
 		return
 	}
 	if updateErr := DB.Model(&existing).Updates(updates).Error; updateErr != nil {
-		log.Fatal("Failed to align default admin role:", updateErr)
+		log.Fatal("Failed to align default admin permission preset:", updateErr)
 	}
 }
 
@@ -232,9 +428,9 @@ func ensureSeedAdminUserInvariants() {
 	if err := DB.Model(&models.User{}).
 		Where("LOWER(username) = ?", "admin").
 		Updates(map[string]any{
-			"is_protected": true,
-			"role":         "admin",
-			"status":       "active",
+			"is_protected":         true,
+			"permission_preset_id": "admin",
+			"status":               "active",
 		}).Error; err != nil {
 		log.Fatal("Failed to enforce seed admin user invariants:", err)
 	}

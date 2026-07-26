@@ -26,13 +26,16 @@ describe('user api contracts', () => {
         username: 'buyer',
         employeeId: 'employee-1',
         isProtected: false,
-        role: 'buyer',
+        permissionPresetId: 'buyer',
         status: 'active',
       },
     ])
 
     await expect(
-      fetchUserOptions({ status: 'active', role: ['buyer', 'approver'] })
+      fetchUserOptions({
+        status: 'active',
+        permissionPresetId: ['buyer', 'approver'],
+      })
     ).resolves.toEqual([
       {
         id: 'user-1',
@@ -41,12 +44,12 @@ describe('user api contracts', () => {
         firstName: undefined,
         lastName: undefined,
         isProtected: false,
-        role: 'buyer',
+        permissionPresetId: 'buyer',
         status: 'active',
       },
     ])
     expect(apiFetchMock).toHaveBeenCalledWith(
-      '/users/options?status=active&role=buyer&role=approver'
+      '/users/options?status=active&permissionPresetId=buyer&permissionPresetId=approver'
     )
   })
 
@@ -55,14 +58,14 @@ describe('user api contracts', () => {
       id: 'admin-2',
       username: 'admin-2',
       status: 'active',
-      role: 'admin',
+      permissionPresetId: 'admin',
       isProtected: false,
     })
 
     await createUser({
       username: 'admin-2',
       password: 'new-account-password',
-      role: 'admin',
+      permissionPresetId: 'admin',
       status: 'active',
       adminChallenge: 'operator-password',
     })
@@ -72,7 +75,7 @@ describe('user api contracts', () => {
       body: JSON.stringify({
         username: 'admin-2',
         password: 'new-account-password',
-        role: 'admin',
+        permissionPresetId: 'admin',
         status: 'active',
         adminChallenge: 'operator-password',
         metadata: {
@@ -83,12 +86,12 @@ describe('user api contracts', () => {
     })
   })
 
-  it('sends the final admin challenge with an admin role promotion', async () => {
+  it('sends the final admin challenge with an admin permission preset assignment', async () => {
     apiFetchMock.mockResolvedValue({
       id: 'user-1',
       username: 'buyer',
       status: 'active',
-      role: 'admin',
+      permissionPresetId: 'admin',
     })
 
     await replaceUser('user-1', {
@@ -97,7 +100,7 @@ describe('user api contracts', () => {
       firstName: 'Test',
       lastName: 'User',
       status: 'active',
-      role: 'admin',
+      permissionPresetId: 'admin',
       adminChallenge: 'operator-password',
     })
 
@@ -109,18 +112,18 @@ describe('user api contracts', () => {
         firstName: 'Test',
         lastName: 'User',
         status: 'active',
-        role: 'admin',
+        permissionPresetId: 'admin',
         adminChallenge: 'operator-password',
       }),
     })
   })
 
-  it('keeps direct, inherited, and effective permissions separate', async () => {
+  it('keeps direct, preset, and effective permissions separate', async () => {
     apiFetchMock.mockResolvedValue({
       userId: 'user-1',
       username: 'buyer',
       status: 'active',
-      role: 'buyer',
+      permissionPresetId: 'buyer',
       permissions: [
         {
           permissionId: 'page_purchase_orders',
@@ -128,7 +131,7 @@ describe('user api contracts', () => {
           updatedAt: '2026-07-18T00:00:00.000Z',
         },
       ],
-      inheritedPermissions: ['menu_purchase'],
+      presetPermissions: ['menu_purchase'],
       effectivePermissions: ['menu_purchase', 'page_purchase_orders'],
       total: 1,
     })
@@ -142,7 +145,7 @@ describe('user api contracts', () => {
         updatedAt: new Date('2026-07-18T00:00:00.000Z'),
       }),
     ])
-    expect(result.inheritedPermissions).toEqual(['menu_purchase'])
+    expect(result.presetPermissions).toEqual(['menu_purchase'])
     expect(result.effectivePermissions).toEqual([
       'menu_purchase',
       'page_purchase_orders',

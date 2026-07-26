@@ -111,7 +111,7 @@ func PatchEmployeeHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee patch payload: " + err.Error()})
 		return
 	}
-	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "staffId", "name", "gender", "birthday", "phone", "emergencyPhone", "address", "bankName", "education", "age", "status", "joinedDate", "deptId", "positionId", "lineId", "processId"); err != nil {
+	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "staffId", "name", "gender", "birthday", "phone", "emergencyPhone", "address", "bankName", "education", "age", "status", "joinedDate", "deptId", "positionId"); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee delta: " + err.Error() + " (Sensitive fields like idCard/bankCard must be updated through specialized channels)"})
 		return
 	}
@@ -240,20 +240,6 @@ func PatchEmployeeHandler(c *gin.Context) {
 			}
 			patch.PositionID = value
 			patch.PositionIDSet = true
-		case "lineId":
-			var value string
-			if err := json.Unmarshal(valueRaw, &value); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee lineId payload"})
-				return
-			}
-			patch.LineID = &value
-		case "processId":
-			var value string
-			if err := json.Unmarshal(valueRaw, &value); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee processId payload"})
-				return
-			}
-			patch.ProcessID = &value
 		}
 	}
 

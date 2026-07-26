@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func (GormOrganizationRepository) ListPositions(database *gorm.DB) ([]models.Position, error) {
+func (GormOrgPersonnelRepository) ListPositions(database *gorm.DB) ([]models.Position, error) {
 	if database == nil || !database.Migrator().HasTable("positions") {
 		return []models.Position{}, nil
 	}
@@ -14,9 +14,9 @@ func (GormOrganizationRepository) ListPositions(database *gorm.DB) ([]models.Pos
 	var positions []models.Position
 	selectClause := "positions.*"
 	query := database.Table("positions")
-	if database.Migrator().HasTable("organizations") {
-		selectClause += ", organizations.name as org_unit_name"
-		query = query.Joins(positionOrganizationJoinClause())
+	if database.Migrator().HasTable("org_units") {
+		selectClause += ", org_units.name as org_unit_name"
+		query = query.Joins(positionOrgUnitJoinClause())
 	} else {
 		selectClause += ", '' as org_unit_name"
 	}
@@ -31,6 +31,6 @@ func (GormOrganizationRepository) ListPositions(database *gorm.DB) ([]models.Pos
 	return positions, err
 }
 
-func positionOrganizationJoinClause() string {
-	return "LEFT JOIN organizations ON positions.org_unit_id = organizations.id"
+func positionOrgUnitJoinClause() string {
+	return "LEFT JOIN org_units ON positions.org_unit_id = org_units.id AND org_units.deleted_at IS NULL"
 }

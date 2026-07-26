@@ -53,9 +53,9 @@ func canManageTargetUser(c *gin.Context, targetUserID string) bool {
 	return currentUserID != "" && currentUserID == strings.TrimSpace(targetUserID)
 }
 
-func isAdminRolePromotion(currentRole string, requestedRole string) bool {
-	return !strings.EqualFold(strings.TrimSpace(currentRole), "admin") &&
-		strings.EqualFold(strings.TrimSpace(requestedRole), "admin")
+func isAdminPermissionPresetAssignment(currentPermissionPresetID string, requestedPermissionPresetID string) bool {
+	return !strings.EqualFold(strings.TrimSpace(currentPermissionPresetID), "admin") &&
+		strings.EqualFold(strings.TrimSpace(requestedPermissionPresetID), "admin")
 }
 
 func isReservedAdminUsernameChange(currentUsername string, requestedUsername string) bool {

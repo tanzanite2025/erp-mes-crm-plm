@@ -20,12 +20,8 @@ type Employee struct {
 	Status         string     `gorm:"size:20;default:'active'" json:"status"`
 	JoinedDate     *time.Time `json:"joinedDate"`
 	DeptID         string     `gorm:"size:36" json:"deptId"`
-	LineID         string     `gorm:"size:36" json:"lineId"`
-	ProcessID      string     `gorm:"size:36" json:"processId"`
 	PositionID     string     `gorm:"->" json:"positionId"`
 	DeptName       string     `gorm:"->" json:"deptName"`
-	LineName       string     `gorm:"->" json:"lineName"`
-	ProcessName    string     `gorm:"->" json:"processName"`
 	PositionName   string     `gorm:"->" json:"positionName"`
 	Operator       string     `gorm:"size:100" json:"operator"` // 操作人
 }

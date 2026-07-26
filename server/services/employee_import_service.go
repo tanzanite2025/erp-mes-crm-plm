@@ -6,7 +6,7 @@
 //
 // 关键不变量:
 //   - 预览快照存内存(storeEmployeeImportPreview/getEmployeeImportPreview),有过期自动清理
-//   - 部门/岗位字段做模糊匹配(normalizeEmployeeImportLookup),允许 Excel 里写部门名而非 ID
+//   - 组织归属/岗位字段做模糊匹配(normalizeEmployeeImportLookup),允许 Excel 里写组织节点名而非 ID
 //   - 字段级 mergeImportedEmployee 保留现有员工的非模板字段(如二次开发字段)
 //   - status/gender/education 等枚举有 normalize* 容错(中英文/全角/简体繁体)
 //   - 解析失败时不阻塞整体导入,逐行收集错误返回前端
@@ -23,6 +23,7 @@ import (
 	"time"
 	"xdfc-server/audit"
 	"xdfc-server/models"
+	"xdfc-server/repositories"
 
 	"github.com/google/uuid"
 	"github.com/xuri/excelize/v2"
@@ -148,7 +149,7 @@ var employeeImportHeaderCandidates = []struct {
 	{key: "serialNo", headers: []string{"序号", "No."}},
 	{key: "staffId", required: true, headers: []string{"工号", "Staff ID"}},
 	{key: "name", required: true, headers: []string{"姓名", "Name"}},
-	{key: "deptId", required: true, headers: []string{"部门", "Department"}},
+	{key: "deptId", required: true, headers: []string{"组织归属", "部门", "Organization Assignment", "Department"}},
 	{key: "position", headers: []string{"岗位", "Position"}},
 	{key: "phone", headers: []string{"电话", "Phone"}},
 	{key: "emergencyPhone", headers: []string{"紧急联系人电话", "Emergency Contact Phone"}},
@@ -165,15 +166,41 @@ var employeeImportHeaderCandidates = []struct {
 	{key: "education", headers: []string{"学历", "Education"}},
 }
 
+type employeeImportRepository interface {
+	repositories.OrganizationTreeRepository
+	repositories.EmployeeRepository
+	repositories.PositionRepository
+}
+
+type EmployeeImportService struct {
+	txManager  transactionManager
+	repository employeeImportRepository
+}
+
+func NewEmployeeImportService(
+	txManager transactionManager,
+	repository employeeImportRepository,
+) *EmployeeImportService {
+	return &EmployeeImportService{
+		txManager:  txManager,
+		repository: repository,
+	}
+}
+
+var defaultEmployeeImportService = NewEmployeeImportService(
+	defaultOrgPersonnelRuntime.txManager,
+	repositories.NewOrgPersonnelRepository(),
+)
+
 func PreviewEmployeeImport(fileName string, reader io.Reader) (EmployeeImportPreviewResponse, error) {
-	return defaultOrganizationService.PreviewEmployeeImport(fileName, reader)
+	return defaultEmployeeImportService.PreviewEmployeeImport(fileName, reader)
 }
 
 func CommitEmployeeImport(input CommitEmployeeImportRequest) (CommitEmployeeImportResponse, error) {
-	return defaultOrganizationService.CommitEmployeeImport(input)
+	return defaultEmployeeImportService.CommitEmployeeImport(input)
 }
 
-func (s *OrganizationService) PreviewEmployeeImport(fileName string, reader io.Reader) (EmployeeImportPreviewResponse, error) {
+func (s *EmployeeImportService) PreviewEmployeeImport(fileName string, reader io.Reader) (EmployeeImportPreviewResponse, error) {
 	workbook, err := excelize.OpenReader(reader)
 	if err != nil {
 		if strings.EqualFold(filepath.Ext(fileName), ".xls") {
@@ -250,7 +277,7 @@ func (s *OrganizationService) PreviewEmployeeImport(fileName string, reader io.R
 	}, nil
 }
 
-func (s *OrganizationService) CommitEmployeeImport(input CommitEmployeeImportRequest) (CommitEmployeeImportResponse, error) {
+func (s *EmployeeImportService) CommitEmployeeImport(input CommitEmployeeImportRequest) (CommitEmployeeImportResponse, error) {
 	mode := input.Mode
 	if mode != EmployeeImportModeAddOnly && mode != EmployeeImportModeSync {
 		mode = EmployeeImportModeAddOnly
@@ -286,9 +313,13 @@ func (s *OrganizationService) CommitEmployeeImport(input CommitEmployeeImportReq
 			}
 
 			employeeToSave := row.employee
+			requestedOrgUnitID := nullableStringPointer(employeeToSave.DeptID)
+			employeeToSave.DeptID = ""
 			action := "Create"
 			if found {
 				employeeToSave = mergeImportedEmployee(existing, row.employee)
+				requestedOrgUnitID = nullableStringPointer(row.employee.DeptID)
+				employeeToSave.DeptID = ""
 				action = "Update"
 				result.Updated++
 			} else {
@@ -301,7 +332,7 @@ func (s *OrganizationService) CommitEmployeeImport(input CommitEmployeeImportReq
 			if err := s.repository.SaveEmployee(tx, &employeeToSave); err != nil {
 				return err
 			}
-			if _, err := syncPrimaryAssignmentProjectionFromEmployee(tx, employeeToSave, "employee_import_commit", ""); err != nil {
+			if _, err := applyPrimaryAssignmentOrgUnit(tx, employeeToSave, requestedOrgUnitID, "employee_import_commit", ""); err != nil {
 				return err
 			}
 			if row.positionSpecified {
@@ -628,7 +659,7 @@ func parseEmployeeImportRows(
 	return resolvedRows, nil
 }
 
-func (s *OrganizationService) buildEmployeeImportDeptMap() (map[string]string, map[string]struct{}, error) {
+func (s *EmployeeImportService) buildEmployeeImportDeptMap() (map[string]string, map[string]struct{}, error) {
 	nodes, err := s.repository.ListOrganizations(s.txManager.DB())
 	if err != nil {
 		return nil, nil, err
@@ -658,7 +689,7 @@ func (s *OrganizationService) buildEmployeeImportDeptMap() (map[string]string, m
 	return deptMap, ambiguous, nil
 }
 
-func (s *OrganizationService) buildEmployeeImportPositionMap() (map[string]string, map[string]struct{}, error) {
+func (s *EmployeeImportService) buildEmployeeImportPositionMap() (map[string]string, map[string]struct{}, error) {
 	positions, err := s.repository.ListPositions(s.txManager.DB())
 	if err != nil {
 		return nil, nil, err

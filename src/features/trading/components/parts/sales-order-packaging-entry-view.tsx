@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { PackagingProfile } from '@/features/logistics-config/packaging-rules-service'
+import type { PackagingProfile } from '@/features/logistics-packaging-management/packaging-rules-service'
 import type {
   SalesOrderPackagingEntryTarget,
   SalesOrderPackagingPreviewSummary,
@@ -375,7 +375,9 @@ export function SalesOrderPackagingEntryView({
                           }}
                         >
                           <Plus className='size-3.5' />
-                          {t('logisticsConfig.packagingRules.addRule')}
+                          {t(
+                            'logisticsPackagingManagement.packagingRules.addRule'
+                          )}
                         </Button>
                       ) : null}
 

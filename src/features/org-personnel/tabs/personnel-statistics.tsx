@@ -67,7 +67,7 @@ export default function PersonnelStatistics() {
                     {player.name}
                   </h3>
                   <p className='font-mono text-[8px] text-muted-foreground'>
-                    {player.deptName}
+                    {player.orgUnitName}
                   </p>
                 </div>
               </div>
@@ -146,7 +146,7 @@ export default function PersonnelStatistics() {
                 >
                   <td className='py-4 text-xs font-bold italic'>{row.name}</td>
                   <td className='py-4 text-[9px] tracking-widest uppercase'>
-                    {row.deptName}
+                    {row.orgUnitName}
                   </td>
                   <td className='py-4'>
                     <div className='flex items-center gap-2'>

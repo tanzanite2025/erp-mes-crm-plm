@@ -60,19 +60,33 @@ type EmployeeAssignmentCommandResponse struct {
 	Assignment EmployeeAssignmentSnapshotResponse `json:"assignment"`
 }
 
+type EmployeeAssignmentCommandService struct {
+	txManager transactionManager
+}
+
+func NewEmployeeAssignmentCommandService(txManager transactionManager) *EmployeeAssignmentCommandService {
+	return &EmployeeAssignmentCommandService{
+		txManager: txManager,
+	}
+}
+
+var defaultEmployeeAssignmentCommandService = NewEmployeeAssignmentCommandService(
+	defaultOrgPersonnelRuntime.txManager,
+)
+
 func ChangeEmployeeOrgUnit(input ChangeEmployeeOrgUnitRequest) (EmployeeAssignmentCommandResponse, error) {
-	return defaultOrganizationService.ChangeEmployeeOrgUnit(input)
+	return defaultEmployeeAssignmentCommandService.ChangeEmployeeOrgUnit(input)
 }
 
 func ChangeEmployeePosition(input ChangeEmployeePositionRequest) (EmployeeAssignmentCommandResponse, error) {
-	return defaultOrganizationService.ChangeEmployeePosition(input)
+	return defaultEmployeeAssignmentCommandService.ChangeEmployeePosition(input)
 }
 
 func ClearEmployeePosition(input ClearEmployeePositionRequest) (EmployeeAssignmentCommandResponse, error) {
-	return defaultOrganizationService.ClearEmployeePosition(input)
+	return defaultEmployeeAssignmentCommandService.ClearEmployeePosition(input)
 }
 
-func (s *OrganizationService) ChangeEmployeeOrgUnit(input ChangeEmployeeOrgUnitRequest) (EmployeeAssignmentCommandResponse, error) {
+func (s *EmployeeAssignmentCommandService) ChangeEmployeeOrgUnit(input ChangeEmployeeOrgUnitRequest) (EmployeeAssignmentCommandResponse, error) {
 	employeeID := strings.TrimSpace(input.EmployeeID)
 	orgUnitID := strings.TrimSpace(input.OrgUnitID)
 	if employeeID == "" {
@@ -101,17 +115,8 @@ func (s *OrganizationService) ChangeEmployeeOrgUnit(input ChangeEmployeeOrgUnitR
 			return ErrEmployeePatchVersionConflict
 		}
 
-		if err := ensureOrgUnitExistsWhenAvailable(tx, orgUnitID); err != nil {
-			return err
-		}
-
-		current.DeptID = orgUnitID
-		if err := s.repository.SaveEmployee(tx, &current); err != nil {
-			return err
-		}
-
 		var err error
-		assignment, err = syncPrimaryAssignmentProjectionFromEmployee(tx, current, "employee_change_org_unit", strings.TrimSpace(input.Remarks))
+		assignment, err = applyPrimaryAssignmentOrgUnit(tx, current, stringPointer(orgUnitID), "employee_change_org_unit", strings.TrimSpace(input.Remarks))
 		if err != nil {
 			return err
 		}
@@ -138,7 +143,7 @@ func (s *OrganizationService) ChangeEmployeeOrgUnit(input ChangeEmployeeOrgUnitR
 	}, nil
 }
 
-func (s *OrganizationService) ChangeEmployeePosition(input ChangeEmployeePositionRequest) (EmployeeAssignmentCommandResponse, error) {
+func (s *EmployeeAssignmentCommandService) ChangeEmployeePosition(input ChangeEmployeePositionRequest) (EmployeeAssignmentCommandResponse, error) {
 	employeeID := strings.TrimSpace(input.EmployeeID)
 	positionID := strings.TrimSpace(input.PositionID)
 	if employeeID == "" {
@@ -198,7 +203,7 @@ func (s *OrganizationService) ChangeEmployeePosition(input ChangeEmployeePositio
 	}, nil
 }
 
-func (s *OrganizationService) ClearEmployeePosition(input ClearEmployeePositionRequest) (EmployeeAssignmentCommandResponse, error) {
+func (s *EmployeeAssignmentCommandService) ClearEmployeePosition(input ClearEmployeePositionRequest) (EmployeeAssignmentCommandResponse, error) {
 	employeeID := strings.TrimSpace(input.EmployeeID)
 	if employeeID == "" {
 		return EmployeeAssignmentCommandResponse{}, gorm.ErrRecordNotFound
@@ -254,32 +259,6 @@ func (s *OrganizationService) ClearEmployeePosition(input ClearEmployeePositionR
 	}, nil
 }
 
-func syncPrimaryAssignmentProjectionFromEmployee(tx *gorm.DB, employee models.Employee, source string, remarks string) (models.EmployeeAssignment, error) {
-	if tx == nil || !serviceHasTable(tx, "employee_assignments") || strings.TrimSpace(employee.ID) == "" {
-		return models.EmployeeAssignment{}, nil
-	}
-
-	assignment, err := loadOrCreatePrimaryAssignment(tx, employee)
-	if err != nil {
-		return models.EmployeeAssignment{}, err
-	}
-
-	assignment.OrgUnitID = nullableStringPointer(employee.DeptID)
-	assignment.Status = normalizeAssignmentStatus(employee.Status)
-	if strings.TrimSpace(source) != "" {
-		assignment.Source = strings.TrimSpace(source)
-	}
-	if strings.TrimSpace(remarks) != "" {
-		assignment.Remarks = strings.TrimSpace(remarks)
-	}
-
-	if err := saveEmployeeAssignment(tx, &assignment); err != nil {
-		return models.EmployeeAssignment{}, err
-	}
-
-	return assignment, nil
-}
-
 func applyPrimaryAssignmentPosition(
 	tx *gorm.DB,
 	employee models.Employee,
@@ -325,23 +304,67 @@ func applyPrimaryAssignmentPosition(
 	return assignment, nil
 }
 
+func applyPrimaryAssignmentOrgUnit(
+	tx *gorm.DB,
+	employee models.Employee,
+	orgUnitID *string,
+	source string,
+	remarks string,
+) (models.EmployeeAssignment, error) {
+	if tx == nil {
+		return models.EmployeeAssignment{}, gorm.ErrInvalidDB
+	}
+	if strings.TrimSpace(employee.ID) == "" || !serviceHasTable(tx, "employee_assignments") {
+		return models.EmployeeAssignment{}, nil
+	}
+
+	normalizedOrgUnitID := cloneStringPointer(orgUnitID)
+	if normalizedOrgUnitID != nil {
+		if err := ensureOrgUnitExistsInPrimaryOrganizationModel(tx, *normalizedOrgUnitID); err != nil {
+			return models.EmployeeAssignment{}, err
+		}
+	}
+
+	assignment, err := loadOrCreatePrimaryAssignment(tx, employee)
+	if err != nil {
+		return models.EmployeeAssignment{}, err
+	}
+
+	assignment.OrgUnitID = normalizedOrgUnitID
+	assignment.Status = normalizeAssignmentStatus(employee.Status)
+	if strings.TrimSpace(source) != "" {
+		assignment.Source = strings.TrimSpace(source)
+	}
+	if strings.TrimSpace(remarks) != "" {
+		assignment.Remarks = strings.TrimSpace(remarks)
+	}
+
+	if err := saveEmployeeAssignment(tx, &assignment); err != nil {
+		return models.EmployeeAssignment{}, err
+	}
+	if err := touchEmployeeUpdatedAt(tx, employee.ID); err != nil {
+		return models.EmployeeAssignment{}, err
+	}
+
+	return assignment, nil
+}
+
 func loadEmployeeAggregate(tx *gorm.DB, employeeID string) (models.Employee, error) {
 	var employee models.Employee
 	if tx == nil {
 		return employee, gorm.ErrInvalidDB
 	}
 
-	selectClause := "employees.*, organizations.name as dept_name, production_lines.name as line_name, process_steps.name as process_name"
+	selectClause := "employees.*, employee_assignments.org_unit_id as dept_id, org_units.name as dept_name"
 	query := tx.Table("employees").
 		Select(selectClause).
-		Joins("LEFT JOIN organizations ON employees.dept_id = CAST(organizations.id AS TEXT)").
-		Joins("LEFT JOIN production_lines ON employees.line_id = CAST(production_lines.id AS TEXT)").
-		Joins("LEFT JOIN process_steps ON employees.process_id = CAST(process_steps.id AS TEXT)")
+		Joins("LEFT JOIN employee_assignments ON employee_assignments.employee_id = employees.id AND employee_assignments.deleted_at IS NULL AND employee_assignments.is_primary = ?", true).
+		Joins("LEFT JOIN org_units ON employee_assignments.org_unit_id = org_units.id AND org_units.deleted_at IS NULL")
 
 	if serviceHasTable(tx, "employee_assignments") {
 		query = query.
-			Select(selectClause+", employee_assignments.position_id as position_id").
-			Joins("LEFT JOIN employee_assignments ON employee_assignments.employee_id = employees.id AND employee_assignments.deleted_at IS NULL AND employee_assignments.is_primary = ?", true)
+			Select(selectClause + ", employee_assignments.position_id as position_id").
+			Where("employees.deleted_at IS NULL")
 		if serviceHasTable(tx, "positions") {
 			query = query.
 				Select(selectClause + ", employee_assignments.position_id as position_id, positions.name as position_name").
@@ -398,12 +421,11 @@ func loadOrCreatePrimaryAssignment(tx *gorm.DB, employee models.Employee) (model
 	return models.EmployeeAssignment{
 		BaseModel:      models.BaseModel{},
 		EmployeeID:     employee.ID,
-		OrgUnitID:      nullableStringPointer(employee.DeptID),
 		AssignmentType: "regular",
 		IsPrimary:      true,
 		StartDate:      now,
 		Status:         normalizeAssignmentStatus(employee.Status),
-		Source:         "legacy_employee_sync",
+		Source:         "employee_assignment_create",
 	}, nil
 }
 
@@ -445,9 +467,12 @@ func touchEmployeeUpdatedAt(tx *gorm.DB, employeeID string) error {
 		Update("updated_at", time.Now()).Error
 }
 
-func ensureOrgUnitExistsWhenAvailable(tx *gorm.DB, orgUnitID string) error {
-	if tx == nil || !serviceHasTable(tx, "org_units") {
-		return nil
+func ensureOrgUnitExistsInPrimaryOrganizationModel(tx *gorm.DB, orgUnitID string) error {
+	if tx == nil {
+		return gorm.ErrInvalidDB
+	}
+	if !serviceHasTable(tx, "org_units") {
+		return ErrEmployeeOrgUnitNotFound
 	}
 	var count int64
 	if err := tx.Model(&models.OrgUnit{}).Where("id = ?", strings.TrimSpace(orgUnitID)).Count(&count).Error; err != nil {

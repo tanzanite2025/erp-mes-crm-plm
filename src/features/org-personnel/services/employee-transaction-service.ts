@@ -1,4 +1,5 @@
 import { apiFetch } from '@/lib/api-client'
+import { toEmployeeApiDTO } from '../adapters/employee-api-adapter'
 import { type Employee, type EmployeeStatus } from '../data/schema'
 
 export type EmployeeImportMode = 'add-only' | 'sync'
@@ -43,7 +44,7 @@ export const EmployeeTransactionService = {
   syncEmployees: async (employees: Employee[]): Promise<unknown> => {
     return await apiFetch('/employees/sync', {
       method: 'POST',
-      body: JSON.stringify(employees),
+      body: JSON.stringify(employees.map(toEmployeeApiDTO)),
     })
   },
 

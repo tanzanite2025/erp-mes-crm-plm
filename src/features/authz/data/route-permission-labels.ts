@@ -143,11 +143,13 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/attendance-management': 'sidebar.items.attendanceManagement',
   '/attendance-management/leave': 'orgPersonnel.tabs.leave',
   '/attendance-management/hall-of-fame': 'orgPersonnel.tabs.stats',
-  '/logistics-config': 'sidebar.items.logisticsConfig',
-  '/logistics-config/packaging-rules': 'logisticsConfig.tabs.packagingRules',
+  '/logistics-config': 'sidebar.items.vehicleMatching',
   '/logistics-config/vehicle-loading': 'logisticsConfig.tabs.vehicleLoading',
   '/logistics-config/vehicle-specs-library':
     'logisticsConfig.tabs.vehicleSpecsLibrary',
+  '/logistics-packaging-management': 'sidebar.items.packagingManagement',
+  '/logistics-packaging-management/packaging-rules':
+    'logisticsPackagingManagement.tabs.packagingRules',
   '/logistics-container-management': 'sidebar.items.containerManagement',
   '/logistics-container-management/specs':
     'logisticsContainerManagement.tabs.specs',

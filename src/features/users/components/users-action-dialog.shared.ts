@@ -24,8 +24,8 @@ export const getFormSchema = (t: TranslateFn) =>
       confirmPassword: z.string().transform((pwd) => pwd.trim()),
       isEdit: z.boolean(),
       employeeId: z.string().optional(),
-      role: z.string().optional(),
-      initialRole: z.string(),
+      permissionPresetId: z.string().optional(),
+      initialPermissionPresetId: z.string(),
       adminChallenge: z.string().transform((value) => value.trim()),
     })
     .refine(
@@ -39,10 +39,10 @@ export const getFormSchema = (t: TranslateFn) =>
       }
     )
     .refine(
-      ({ role, initialRole, adminChallenge }) => {
+      ({ permissionPresetId, initialPermissionPresetId, adminChallenge }) => {
         const promotesToAdmin =
-          initialRole.trim().toLowerCase() !== 'admin' &&
-          role?.trim().toLowerCase() === 'admin'
+          initialPermissionPresetId.trim().toLowerCase() !== 'admin' &&
+          permissionPresetId?.trim().toLowerCase() === 'admin'
         return !promotesToAdmin || adminChallenge.length > 0
       },
       {

@@ -78,6 +78,7 @@ func BulkSyncUsers(ctx context.Context, inputs []BulkSyncUserInput) (BulkSyncUse
 	}
 
 	result := BulkSyncUsersResult{}
+	updatedUsers := make([]models.User, 0, len(normalizedInputs))
 	err := db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		for _, input := range normalizedInputs {
 			var current models.User
@@ -127,11 +128,17 @@ func BulkSyncUsers(ctx context.Context, inputs []BulkSyncUserInput) (BulkSyncUse
 				return err
 			}
 			result.Updated++
+			if userUpdatesAffectIdentityAccessSnapshot(updates) {
+				updatedUsers = append(updatedUsers, updated)
+			}
 		}
 		return nil
 	})
 	if err != nil {
 		return BulkSyncUsersResult{}, err
+	}
+	for _, user := range updatedUsers {
+		NotifyAccountAccessSnapshotInvalidatedForUser(user, AccountAccessInvalidationReasonAccountBulkSynced)
 	}
 	return result, nil
 }

@@ -659,25 +659,13 @@ function SidebarCategoryDomainList({
             key={link.id}
             className='rounded-2xl border border-border/60 bg-background/45 p-1.5'
           >
-            <Link
-              to={link.url}
-              className='group/category-domain flex min-h-8 min-w-0 items-center gap-2 rounded-xl px-2 py-1.5 text-[12px] leading-tight font-black tracking-tight text-popover-foreground/82 italic transition-colors hover:bg-orange-500/10 hover:text-popover-foreground focus-visible:ring-2 focus-visible:ring-primary/55 focus-visible:outline-none'
-              onClick={onNavigate}
-            >
-              {Icon ? (
-                <Icon className='size-3.5 shrink-0 opacity-70 transition-opacity group-hover/category-domain:opacity-100' />
-              ) : null}
+            <div className='flex min-h-8 min-w-0 items-center gap-2 rounded-xl px-2 py-1.5 text-[12px] leading-tight font-black tracking-tight text-popover-foreground/82 italic'>
+              {Icon ? <Icon className='size-3.5 shrink-0 opacity-70' /> : null}
               <span className='min-w-0 flex-1 truncate'>{link.title}</span>
-              {hasTabs ? (
-                <span className='shrink-0 rounded-full bg-orange-500/10 px-1.5 py-0.5 text-[9px] leading-none font-black text-orange-600 dark:text-orange-300'>
-                  {link.tabs.length} TAB
-                </span>
-              ) : link.badge ? (
-                <span className='shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] leading-none font-black text-muted-foreground'>
-                  {link.badge}
-                </span>
-              ) : null}
-            </Link>
+              <span className='shrink-0 rounded-full bg-orange-500/10 px-1.5 py-0.5 text-[9px] leading-none font-black text-orange-600 dark:text-orange-300'>
+                {link.tabs.length} TAB
+              </span>
+            </div>
             {hasTabs ? (
               <div className='mt-1 grid grid-cols-[repeat(auto-fit,minmax(7.5rem,1fr))] gap-1'>
                 {link.tabs.map((tab) => (

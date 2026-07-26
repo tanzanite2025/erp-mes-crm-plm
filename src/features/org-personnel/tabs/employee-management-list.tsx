@@ -99,9 +99,7 @@ export function EmployeeManagementList() {
     nameMap,
     error: lookupError,
     isLoading: isLookupsLoading,
-  } = useOrgPersonnelLookups({
-    includeProductionResources: true,
-  })
+  } = useOrgPersonnelLookups()
 
   const data = useMemo(() => {
     if (employeesQuery.isLoading) return []

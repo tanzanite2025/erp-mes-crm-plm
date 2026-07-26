@@ -18,8 +18,8 @@ function createFormValues(overrides: Partial<UserForm> = {}): UserForm {
     confirmPassword: '',
     isEdit: true,
     employeeId: 'employee-1',
-    role: 'buyer',
-    initialRole: 'buyer',
+    permissionPresetId: 'buyer',
+    initialPermissionPresetId: 'buyer',
     adminChallenge: '',
     ...overrides,
   }
@@ -28,7 +28,7 @@ function createFormValues(overrides: Partial<UserForm> = {}): UserForm {
 describe('user action dialog submission', () => {
   it('requires the current operator password for an admin promotion', () => {
     const result = getFormSchema(translate).safeParse(
-      createFormValues({ role: 'admin', adminChallenge: '' })
+      createFormValues({ permissionPresetId: 'admin', adminChallenge: '' })
     )
 
     expect(result.success).toBe(false)
@@ -42,11 +42,11 @@ describe('user action dialog submission', () => {
   })
 
   it('includes the challenge only when promoting an existing account', () => {
-    const currentRow = createTestUser({ role: 'buyer' })
+    const currentRow = createTestUser({ permissionPresetId: 'buyer' })
     const promoted = buildUserReplacePayload({
       currentRow,
       values: createFormValues({
-        role: 'admin',
+        permissionPresetId: 'admin',
         adminChallenge: 'operator-password',
       }),
     })
@@ -63,8 +63,8 @@ describe('user action dialog submission', () => {
     const payload = buildUserCreatePayload({
       values: createFormValues({
         isEdit: false,
-        role: 'admin',
-        initialRole: '',
+        permissionPresetId: 'admin',
+        initialPermissionPresetId: '',
         password: 'new-password1',
         confirmPassword: 'new-password1',
         adminChallenge: 'operator-password',

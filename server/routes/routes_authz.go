@@ -9,12 +9,12 @@ import (
 )
 
 func registerAuthzRoutes(authorized *gin.RouterGroup) {
-	roleManage := middleware.RequireAnyPermission(authz.PermissionManage)
+	permissionPresetManage := middleware.RequireAnyPermission(authz.PermissionManage)
 
-	roleGroup := authorized.Group("/roles")
+	permissionPresetGroup := authorized.Group("/permission-presets")
 	{
-		roleGroup.GET("", middleware.RequireAnyPermission(authz.TabPersonnelAccounts, authz.TabPersonnelRights, authz.PermissionUserView, authz.PermissionManage), handlers.GetRolesHandler)
-		roleGroup.POST("", roleManage, handlers.UpsertRoleHandler)
-		roleGroup.DELETE("/:id", roleManage, handlers.DeleteRoleHandler)
+		permissionPresetGroup.GET("", middleware.RequireAnyPermission(authz.TabPersonnelAccounts, authz.TabPersonnelRights, authz.PermissionUserView, authz.PermissionManage), handlers.GetPermissionPresetsHandler)
+		permissionPresetGroup.POST("", permissionPresetManage, handlers.UpsertPermissionPresetHandler)
+		permissionPresetGroup.DELETE("/:id", permissionPresetManage, handlers.DeletePermissionPresetHandler)
 	}
 }
