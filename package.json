@@ -1,6 +1,6 @@
 {
   "name": "digital-management-erp",
-  "private": false,
+  "private": true,
   "version": "2.2.1",
   "type": "module",
   "packageManager": "pnpm@10.33.0",
@@ -17,6 +17,7 @@
     "dev:stack:reset-db": "powershell -ExecutionPolicy Bypass -File ./server/dev-up.ps1 -ResetDb",
     "dev:stack:full": "powershell -ExecutionPolicy Bypass -File ./server/dev-up.ps1 -FullStack",
     "dev:stack:full:reset-db": "powershell -ExecutionPolicy Bypass -File ./server/dev-up.ps1 -ResetDb -FullStack",
+    "build:vehicle-loading-wasm": "node scripts/build-vehicle-loading-wasm.mjs",
     "build": "node scripts/generate-route-tree.mjs && node scripts/generate-authenticated-route-catalog.mjs && node scripts/generate-route-permission-contract.mjs && node scripts/generate-permission-contract.mjs && node --max-old-space-size=4096 ./node_modules/typescript/bin/tsc -b && node --max-old-space-size=4096 ./node_modules/vite/bin/vite.js build",
     "test": "vitest run",
     "test:contracts": "pnpm run verify:account-authz && vitest run --passWithNoTests src/features/ai-assistant/utils/ai-permission-groups.spec.ts src/features/ai-assistant/utils/ai-policy-config.spec.ts src/features/authz/services/effective-permission-service.spec.ts src/features/users/services/user-api.spec.ts src/features/users/hooks/use-users.spec.ts src/features/users/components/users-action-dialog.submit.spec.ts",
@@ -66,9 +67,9 @@
     "@radix-ui/react-switch": "^1.2.6",
     "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-tooltip": "^1.2.8",
-    "@tailwindcss/vite": "^4.1.18",
+    "@tailwindcss/vite": "^4.3.3",
     "@tanstack/react-query": "^5.90.12",
-    "@tanstack/react-router": "^1.141.2",
+    "@tanstack/react-router": "^1.170.18",
     "@tanstack/react-table": "^8.21.3",
     "@tanstack/react-virtual": "^3.11.2",
     "bwip-js": "^4.8.0",
@@ -95,7 +96,6 @@
     "tailwind-merge": "^3.4.0",
     "tailwindcss": "^4.1.18",
     "tw-animate-css": "^1.4.0",
-    "xlsx": "^0.18.5",
     "zod": "^4.2.0",
     "zustand": "^5.0.9"
   },
@@ -103,8 +103,8 @@
     "@eslint/js": "^9.39.2",
     "@playwright/test": "^1.59.1",
     "@tanstack/eslint-plugin-query": "^5.91.2",
-    "@tanstack/router-generator": "1.141.2",
-    "@tanstack/router-plugin": "^1.141.2",
+    "@tanstack/router-generator": "1.167.21",
+    "@tanstack/router-plugin": "^1.168.23",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@trivago/prettier-plugin-sort-imports": "^6.0.0",
@@ -123,7 +123,16 @@
     "prettier-plugin-tailwindcss": "^0.7.2",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.49.0",
-    "vite": "^7.3.0",
+    "vite": "^7.3.6",
     "vitest": "^4.1.2"
+  },
+  "pnpm": {
+    "overrides": {
+      "brace-expansion": "5.0.8",
+      "minimatch@3": "3.1.4",
+      "picomatch": "4.0.4",
+      "tmp": "0.2.7",
+      "uuid": "11.1.1"
+    }
   }
 }

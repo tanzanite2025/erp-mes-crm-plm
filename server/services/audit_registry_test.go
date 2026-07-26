@@ -12,3 +12,21 @@ func TestQualityStandardAllowsModuleLevelTimeline(t *testing.T) {
 		t.Fatalf("%q should allow module-level timeline queries for the quality standards page header", canonicalModule)
 	}
 }
+
+func TestVehicleModelTemplateAuditRegistration(t *testing.T) {
+	canonicalModule := NormalizeAuditModule("LogisticsVehicleModelTemplate")
+	if canonicalModule != AuditModuleVehicleModelTemplate {
+		t.Fatalf("LogisticsVehicleModelTemplate should normalize to %q, got %q", AuditModuleVehicleModelTemplate, canonicalModule)
+	}
+
+	registration, ok := GetAuditEntityRegistration(canonicalModule)
+	if !ok {
+		t.Fatalf("%q should be registered in audit entity registry", canonicalModule)
+	}
+	if !registration.Integrated {
+		t.Fatalf("%q should be marked as integrated", canonicalModule)
+	}
+	if registration.EngineModule != AuditEngineModuleTrading {
+		t.Fatalf("%q should belong to %q engine module, got %q", canonicalModule, AuditEngineModuleTrading, registration.EngineModule)
+	}
+}

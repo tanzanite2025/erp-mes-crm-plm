@@ -29,6 +29,8 @@ export interface PackagingProfile {
   weightUnitCode: string
   capacity: number
   capacityUnitCode: string
+  canRotate: boolean
+  canInvert: boolean
   assemblySource?: string
   isActive: boolean
   notes?: string

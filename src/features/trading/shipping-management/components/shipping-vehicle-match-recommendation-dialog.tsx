@@ -43,9 +43,8 @@ function ShippingVehicleMatchRecommendationResolvedContent({
 }) {
   const { sourceLabel, packageInputNotice, readResource, retryRead } =
     useShippingVehicleMatchRecommendation(item, summary)
-  const fallbackSourceLabel = item.packageProfileId.trim()
-    ? getVehicleLoadingSourceConfig('packing-rule').label
-    : getVehicleLoadingSourceConfig('manual').label
+  const fallbackSourceLabel =
+    getVehicleLoadingSourceConfig('packing-rule').label
   const metricSourceLabel =
     readResource.status === 'ready'
       ? readResource.data.sourceLabel

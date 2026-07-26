@@ -16,6 +16,8 @@ type SalesOrderLinePackagingSelectionPayload struct {
 	WeightUnitCode    string  `json:"weightUnitCode"`
 	Capacity          float64 `json:"capacity"`
 	CapacityUnitCode  string  `json:"capacityUnitCode"`
+	CanRotate         bool    `json:"canRotate"`
+	CanInvert         bool    `json:"canInvert"`
 	Source            string  `json:"source"`
 }
 

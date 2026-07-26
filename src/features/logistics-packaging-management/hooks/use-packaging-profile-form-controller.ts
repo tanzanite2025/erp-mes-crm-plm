@@ -21,11 +21,8 @@ import {
   type PackagingProfile,
   type SavePackagingProfileInput,
 } from '../packaging-rules-service'
+import { packagingManagementQueryKeys } from '../query-keys'
 
-const PACKAGING_PROFILE_QUERY_KEY = [
-  'logistics-packaging-management',
-  'packaging-profiles',
-] as const
 const EMPTY_PACKAGING_MATERIAL_OPTIONS: MaterialOption[] = []
 const PACKAGING_UNIT_CODE_FALLBACKS = {
   LENGTH: ['mm', 'cm', 'm', 'meter', 'metre', 'km', 'in', 'inch', 'ft', 'foot'],
@@ -191,7 +188,7 @@ export function usePackagingProfileFormController({
       packagingRulesService.saveProfile(payload),
     onSuccess: (saved) => {
       queryClient.setQueryData<PackagingProfile[]>(
-        PACKAGING_PROFILE_QUERY_KEY,
+        packagingManagementQueryKeys.profiles(),
         (current) => {
           if (!current) return [saved]
           return current.some((item) => item.id === saved.id)

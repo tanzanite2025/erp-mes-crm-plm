@@ -10,28 +10,18 @@ import (
 )
 
 var (
-	ErrVehicleLoadingVehicleSpecsRequired = errors.New("vehicle specs are required")
-	ErrVehicleLoadingSummaryInvalid       = errors.New("vehicle loading summary is invalid")
+	ErrVehicleLoadingVehicleSpecsRequired   = errors.New("vehicle specs are required")
+	ErrVehicleLoadingSummaryInvalid         = errors.New("vehicle loading summary is invalid")
+	ErrVehicleLoadingPackageInputRequired   = errors.New("packaging profile input is required")
+	ErrVehicleLoadingPackageProfileNotFound = errors.New("packaging profile not found")
+	ErrVehicleLoadingPackageProfileInvalid  = errors.New("packaging profile dimensions or weight are invalid")
+	ErrVehicleLoadingVehicleSpecNotFound    = errors.New("vehicle spec not found")
 )
 
-type VehicleLoadingSummaryPayload struct {
-	Boxes         int     `json:"boxes"`
-	TotalVolumeM3 float64 `json:"totalVolumeM3"`
-	TotalWeightKg float64 `json:"totalWeightKg"`
-}
-
 type VehicleLoadingRecommendationsRequest struct {
-	Summary      VehicleLoadingSummaryPayload       `json:"summary"`
-	VehicleSpecs []VehicleSpecResponse              `json:"vehicleSpecs"`
-	PackageInput *VehicleLoadingPackageInputPayload `json:"packageInput,omitempty"`
-}
-
-type VehicleLoadingPackageInputPayload struct {
-	PackageID    string                          `json:"packageId"`
-	ProfileID    string                          `json:"profileId,omitempty"`
-	Name         string                          `json:"name"`
-	UnitWeightKg float64                         `json:"unitWeightKg"`
-	Dimension    VehiclePackageDimensionResponse `json:"dimension"`
+	Boxes              int      `json:"boxes"`
+	PackagingProfileID string   `json:"packagingProfileId"`
+	VehicleSpecIDs     []string `json:"vehicleSpecIds"`
 }
 
 type VehiclePackageDimensionResponse struct {
@@ -43,18 +33,27 @@ type VehiclePackageDimensionResponse struct {
 }
 
 type VehicleLoadingRecommendationItem struct {
-	Vehicle                  VehicleSpecResponse             `json:"vehicle"`
-	PackageDimension         VehiclePackageDimensionResponse `json:"packageDimension"`
-	VehiclesNeeded           int                             `json:"vehiclesNeeded"`
-	LoadRateVolume           float64                         `json:"loadRateVolume"`
-	LoadRateWeight           float64                         `json:"loadRateWeight"`
-	Reason                   string                          `json:"reason"`
-	Warning                  string                          `json:"warning,omitempty"`
-	SelectedOrientationLabel string                          `json:"selectedOrientationLabel,omitempty"`
-	SelectedOrientationAxis  string                          `json:"selectedOrientationAxis,omitempty"`
-	BoxesPerLayer            int                             `json:"boxesPerLayer,omitempty"`
-	LayerCount               int                             `json:"layerCount,omitempty"`
-	MaxBoxesPerVehicle       int                             `json:"maxBoxesPerVehicle,omitempty"`
+	Vehicle             VehicleSpecResponse             `json:"vehicle"`
+	PackageDimension    VehiclePackageDimensionResponse `json:"packageDimension"`
+	VehiclesNeeded      int                             `json:"vehiclesNeeded"`
+	LoadRateVolume      float64                         `json:"loadRateVolume"`
+	LoadRateWeight      float64                         `json:"loadRateWeight"`
+	Reason              string                          `json:"reason"`
+	Warning             string                          `json:"warning,omitempty"`
+	SelectedOrientation VehicleLoadingOrientation       `json:"selectedOrientation"`
+	BoxesPerLayer       int                             `json:"boxesPerLayer,omitempty"`
+	LayerCount          int                             `json:"layerCount,omitempty"`
+	MaxBoxesPerVehicle  int                             `json:"maxBoxesPerVehicle,omitempty"`
+}
+
+type VehicleLoadingOrientation struct {
+	Label      string `json:"label"`
+	LengthAxis string `json:"lengthAxis"`
+	WidthAxis  string `json:"widthAxis"`
+	HeightAxis string `json:"heightAxis"`
+	LengthMm   int    `json:"lengthMm"`
+	WidthMm    int    `json:"widthMm"`
+	HeightMm   int    `json:"heightMm"`
 }
 
 type VehicleLoadingRecommendationsResponse struct {
@@ -72,10 +71,13 @@ type vehicleLoadingPackageProfile struct {
 }
 
 type vehicleOrientation struct {
-	LengthMm int
-	WidthMm  int
-	HeightMm int
-	Label    string
+	LengthMm   int
+	WidthMm    int
+	HeightMm   int
+	Label      string
+	LengthAxis string
+	WidthAxis  string
+	HeightAxis string
 }
 
 type vehicleLoadingPlan struct {
@@ -90,47 +92,7 @@ type vehicleLoadingPlan struct {
 	RiskNotes           []string
 }
 
-const vehicleLoadingRecommendationEngineVersion = "load-planning-0.2.0"
-
-var defaultVehiclePackageDimension = VehiclePackageDimensionResponse{
-	LengthMm:  420,
-	WidthMm:   420,
-	HeightMm:  400,
-	CanRotate: true,
-	CanInvert: false,
-}
-
-func buildVehicleLoadingPackageProfile(request VehicleLoadingRecommendationsRequest) vehicleLoadingPackageProfile {
-	if request.PackageInput != nil {
-		packageID := strings.TrimSpace(request.PackageInput.PackageID)
-		if packageID == "" {
-			packageID = "explicit-package-input"
-		}
-		name := strings.TrimSpace(request.PackageInput.Name)
-		if name == "" {
-			name = "显式箱型输入"
-		}
-		return vehicleLoadingPackageProfile{
-			PackageID:    packageID,
-			Name:         name,
-			Quantity:     request.Summary.Boxes,
-			Dimension:    request.PackageInput.Dimension,
-			UnitWeightKg: request.PackageInput.UnitWeightKg,
-		}
-	}
-
-	unitWeightKg := request.Summary.TotalWeightKg
-	if request.Summary.Boxes > 0 {
-		unitWeightKg = request.Summary.TotalWeightKg / float64(request.Summary.Boxes)
-	}
-	return vehicleLoadingPackageProfile{
-		PackageID:    "shipment-summary",
-		Name:         "装箱汇总输入",
-		Quantity:     request.Summary.Boxes,
-		Dimension:    defaultVehiclePackageDimension,
-		UnitWeightKg: unitWeightKg,
-	}
-}
+const vehicleLoadingRecommendationEngineVersion = "load-planning-0.3.0"
 
 func buildVehicleLoadingWarnings(profile vehicleLoadingPackageProfile) []string {
 	warnings := make([]string, 0)
@@ -162,21 +124,24 @@ func dedupeVehicleOrientations(items []vehicleOrientation) []vehicleOrientation 
 
 func getVehiclePackageOrientations(dimension VehiclePackageDimensionResponse) []vehicleOrientation {
 	if !dimension.CanRotate {
-		return []vehicleOrientation{{LengthMm: dimension.LengthMm, WidthMm: dimension.WidthMm, HeightMm: dimension.HeightMm, Label: "标准朝向"}}
+		return []vehicleOrientation{{
+			LengthMm: dimension.LengthMm, WidthMm: dimension.WidthMm, HeightMm: dimension.HeightMm,
+			Label: "L-W-H", LengthAxis: "length", WidthAxis: "width", HeightAxis: "height",
+		}}
 	}
 	if !dimension.CanInvert {
 		return dedupeVehicleOrientations([]vehicleOrientation{
-			{LengthMm: dimension.LengthMm, WidthMm: dimension.WidthMm, HeightMm: dimension.HeightMm, Label: "L-W-H"},
-			{LengthMm: dimension.WidthMm, WidthMm: dimension.LengthMm, HeightMm: dimension.HeightMm, Label: "W-L-H"},
+			{LengthMm: dimension.LengthMm, WidthMm: dimension.WidthMm, HeightMm: dimension.HeightMm, Label: "L-W-H", LengthAxis: "length", WidthAxis: "width", HeightAxis: "height"},
+			{LengthMm: dimension.WidthMm, WidthMm: dimension.LengthMm, HeightMm: dimension.HeightMm, Label: "W-L-H", LengthAxis: "width", WidthAxis: "length", HeightAxis: "height"},
 		})
 	}
 	return dedupeVehicleOrientations([]vehicleOrientation{
-		{LengthMm: dimension.LengthMm, WidthMm: dimension.WidthMm, HeightMm: dimension.HeightMm, Label: "L-W-H"},
-		{LengthMm: dimension.LengthMm, WidthMm: dimension.HeightMm, HeightMm: dimension.WidthMm, Label: "L-H-W"},
-		{LengthMm: dimension.WidthMm, WidthMm: dimension.LengthMm, HeightMm: dimension.HeightMm, Label: "W-L-H"},
-		{LengthMm: dimension.WidthMm, WidthMm: dimension.HeightMm, HeightMm: dimension.LengthMm, Label: "W-H-L"},
-		{LengthMm: dimension.HeightMm, WidthMm: dimension.LengthMm, HeightMm: dimension.WidthMm, Label: "H-L-W"},
-		{LengthMm: dimension.HeightMm, WidthMm: dimension.WidthMm, HeightMm: dimension.LengthMm, Label: "H-W-L"},
+		{LengthMm: dimension.LengthMm, WidthMm: dimension.WidthMm, HeightMm: dimension.HeightMm, Label: "L-W-H", LengthAxis: "length", WidthAxis: "width", HeightAxis: "height"},
+		{LengthMm: dimension.LengthMm, WidthMm: dimension.HeightMm, HeightMm: dimension.WidthMm, Label: "L-H-W", LengthAxis: "length", WidthAxis: "height", HeightAxis: "width"},
+		{LengthMm: dimension.WidthMm, WidthMm: dimension.LengthMm, HeightMm: dimension.HeightMm, Label: "W-L-H", LengthAxis: "width", WidthAxis: "length", HeightAxis: "height"},
+		{LengthMm: dimension.WidthMm, WidthMm: dimension.HeightMm, HeightMm: dimension.LengthMm, Label: "W-H-L", LengthAxis: "width", WidthAxis: "height", HeightAxis: "length"},
+		{LengthMm: dimension.HeightMm, WidthMm: dimension.LengthMm, HeightMm: dimension.WidthMm, Label: "H-L-W", LengthAxis: "height", WidthAxis: "length", HeightAxis: "width"},
+		{LengthMm: dimension.HeightMm, WidthMm: dimension.WidthMm, HeightMm: dimension.LengthMm, Label: "H-W-L", LengthAxis: "height", WidthAxis: "width", HeightAxis: "length"},
 	})
 }
 
@@ -312,42 +277,35 @@ func compareVehicleLoadingPlans(left, right vehicleLoadingPlan) bool {
 	return false
 }
 
-func resolveVehicleOrientationAxis(label string) string {
-	trimmed := strings.TrimSpace(label)
-	if strings.HasPrefix(trimmed, "L-") {
-		return "length"
-	}
-	if strings.HasPrefix(trimmed, "W-") {
-		return "width"
-	}
-	if strings.HasPrefix(trimmed, "H-") {
-		return "height"
-	}
-	return ""
-}
-
 func BuildVehicleLoadingRecommendations(request VehicleLoadingRecommendationsRequest) (VehicleLoadingRecommendationsResponse, error) {
-	if request.Summary.Boxes < 0 || request.Summary.TotalVolumeM3 < 0 || request.Summary.TotalWeightKg < 0 {
+	if request.Boxes <= 0 {
 		return VehicleLoadingRecommendationsResponse{}, ErrVehicleLoadingSummaryInvalid
 	}
-	if len(request.VehicleSpecs) == 0 {
-		return VehicleLoadingRecommendationsResponse{}, ErrVehicleLoadingVehicleSpecsRequired
-	}
 
-	profile := buildVehicleLoadingPackageProfile(request)
-	warnings := buildVehicleLoadingWarnings(profile)
 	response := VehicleLoadingRecommendationsResponse{
 		Recommendations: []VehicleLoadingRecommendationItem{},
 		GeneratedAt:     time.Now().UTC().Format(time.RFC3339),
 		EngineVersion:   vehicleLoadingRecommendationEngineVersion,
 	}
+	vehicleSpecs, err := resolveVehicleLoadingSpecs(request.VehicleSpecIDs)
+	if err != nil {
+		return response, err
+	}
+	profile, err := resolveVehicleLoadingPackageProfile(
+		request.PackagingProfileID,
+		request.Boxes,
+	)
+	if err != nil {
+		return response, err
+	}
+	warnings := buildVehicleLoadingWarnings(profile)
 	if len(warnings) > 0 {
 		return response, nil
 	}
 
 	orientations := getVehiclePackageOrientations(profile.Dimension)
-	plans := make([]vehicleLoadingPlan, 0, len(request.VehicleSpecs))
-	for _, vehicle := range request.VehicleSpecs {
+	plans := make([]vehicleLoadingPlan, 0, len(vehicleSpecs))
+	for _, vehicle := range vehicleSpecs {
 		var bestPlan *vehicleLoadingPlan
 		for _, orientation := range orientations {
 			if !vehicleConstraintsPassed(vehicle, orientation, profile.UnitWeightKg) {
@@ -376,25 +334,30 @@ func BuildVehicleLoadingRecommendations(request VehicleLoadingRecommendationsReq
 	for _, plan := range plans {
 		vehiclesNeeded := 0
 		if plan.MaxBoxesPerVehicle > 0 {
-			vehiclesNeeded = int(math.Ceil(float64(request.Summary.Boxes) / float64(plan.MaxBoxesPerVehicle)))
+			vehiclesNeeded = int(math.Ceil(float64(request.Boxes) / float64(plan.MaxBoxesPerVehicle)))
 		}
 		item := VehicleLoadingRecommendationItem{
-			Vehicle:                  plan.Vehicle,
-			PackageDimension:         profile.Dimension,
-			VehiclesNeeded:           vehiclesNeeded,
-			LoadRateVolume:           plan.VolumeUtilization,
-			LoadRateWeight:           plan.WeightUtilization,
-			Reason:                   strings.Join(plan.LoadingReason, "；"),
-			SelectedOrientationLabel: plan.SelectedOrientation.Label,
-			BoxesPerLayer:            plan.BoxesPerLayer,
-			LayerCount:               plan.LayerCount,
-			MaxBoxesPerVehicle:       plan.MaxBoxesPerVehicle,
+			Vehicle:          plan.Vehicle,
+			PackageDimension: profile.Dimension,
+			VehiclesNeeded:   vehiclesNeeded,
+			LoadRateVolume:   plan.VolumeUtilization,
+			LoadRateWeight:   plan.WeightUtilization,
+			Reason:           strings.Join(plan.LoadingReason, "；"),
+			SelectedOrientation: VehicleLoadingOrientation{
+				Label:      plan.SelectedOrientation.Label,
+				LengthAxis: plan.SelectedOrientation.LengthAxis,
+				WidthAxis:  plan.SelectedOrientation.WidthAxis,
+				HeightAxis: plan.SelectedOrientation.HeightAxis,
+				LengthMm:   plan.SelectedOrientation.LengthMm,
+				WidthMm:    plan.SelectedOrientation.WidthMm,
+				HeightMm:   plan.SelectedOrientation.HeightMm,
+			},
+			BoxesPerLayer:      plan.BoxesPerLayer,
+			LayerCount:         plan.LayerCount,
+			MaxBoxesPerVehicle: plan.MaxBoxesPerVehicle,
 		}
 		if len(plan.RiskNotes) > 0 {
 			item.Warning = plan.RiskNotes[0]
-		}
-		if axis := resolveVehicleOrientationAxis(plan.SelectedOrientation.Label); axis != "" {
-			item.SelectedOrientationAxis = axis
 		}
 		recommendations = append(recommendations, item)
 	}

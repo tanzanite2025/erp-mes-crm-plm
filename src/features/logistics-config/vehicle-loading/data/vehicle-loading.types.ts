@@ -14,21 +14,24 @@ export type PackageDimension = {
   canInvert: boolean
 }
 
+export type VehicleLoadingOrientationAxis = 'length' | 'width' | 'height'
+
+export type VehicleLoadingOrientation = {
+  label: string
+  lengthAxis: VehicleLoadingOrientationAxis
+  widthAxis: VehicleLoadingOrientationAxis
+  heightAxis: VehicleLoadingOrientationAxis
+  lengthMm: number
+  widthMm: number
+  heightMm: number
+}
+
 export type VehicleLoadingPackageInput = {
   packageId: string
   profileId?: string
   name: string
   unitWeightKg: number
   dimension: PackageDimension
-}
-
-export type VehicleLoadingPackageDraft = {
-  name: string
-  lengthMm: string
-  widthMm: string
-  heightMm: string
-  canRotate: boolean
-  canInvert: boolean
 }
 
 export type VehicleRecommendation = {
@@ -39,8 +42,7 @@ export type VehicleRecommendation = {
   loadRateWeight: number
   reason: string
   warning?: string
-  selectedOrientationLabel?: string
-  selectedOrientationAxis?: 'length' | 'width' | 'height'
+  selectedOrientation: VehicleLoadingOrientation
   boxesPerLayer?: number
   layerCount?: number
   maxBoxesPerVehicle?: number

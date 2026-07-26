@@ -1,0 +1,16 @@
+[package]
+name = "xdfc-vehicle-loading-engine-wasm"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+path = "src/lib.rs"
+
+[dependencies]
+serde_json = "1.0"
+wasm-bindgen = "0.2"
+xdfc-vehicle-loading-engine-core = { path = "../core" }
+
+[lints]
+workspace = true

@@ -39,6 +39,8 @@ func mapPackagingProfileResponse(profile models.PackagingProfile) gin.H {
 		"weightUnitCode":    profile.WeightUnitCode,
 		"capacity":          profile.Capacity,
 		"capacityUnitCode":  profile.CapacityUnitCode,
+		"canRotate":         profile.CanRotate,
+		"canInvert":         profile.CanInvert,
 		"assemblySource":    profile.AssemblySource,
 		"isActive":          profile.IsActive,
 		"notes":             profile.Notes,

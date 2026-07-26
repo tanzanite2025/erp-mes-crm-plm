@@ -21,7 +21,7 @@ export function VehicleLoadingHeader({ onViewDiagram }: Props) {
           className='h-11 rounded-full bg-primary px-5 text-[10px] font-black tracking-widest text-primary-foreground uppercase shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/25'
           onClick={onViewDiagram}
         >
-          查看装载示意
+          预览装箱
         </Button>
       }
     />

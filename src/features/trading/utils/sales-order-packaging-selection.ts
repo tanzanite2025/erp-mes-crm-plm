@@ -58,6 +58,8 @@ export function buildSalesOrderLinePackagingSelection(
     weightUnitCode: profile.weightUnitCode,
     capacity: profile.capacity,
     capacityUnitCode: profile.capacityUnitCode,
+    canRotate: profile.canRotate,
+    canInvert: profile.canInvert,
     source,
   }
 }
@@ -141,6 +143,8 @@ export function createPackagingProfileFromSelection(
     weightUnitCode: selection.weightUnitCode,
     capacity: selection.capacity,
     capacityUnitCode: selection.capacityUnitCode,
+    canRotate: selection.canRotate,
+    canInvert: selection.canInvert,
     assemblySource: '',
     isActive: true,
     notes: '',

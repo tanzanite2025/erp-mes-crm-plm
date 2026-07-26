@@ -9,7 +9,91 @@ on:
     branches:
       - master
 
+env:
+  GITLEAKS_VERSION: v8.28.0
+  TRIVY_IMAGE: aquasec/trivy:0.72.0
+  GRYPE_IMAGE: anchore/grype:v0.116.0
+
 jobs:
+  secrets-history-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.5'
+
+      - name: Install gitleaks
+        run: |
+          go install github.com/zricethezav/gitleaks/v8@${GITLEAKS_VERSION}
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Run gitleaks history scan
+        run: gitleaks git . --redact --verbose --no-banner
+
+  container-image-scans:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: erp-web
+            context: .
+            dockerfile: deployment/docker/web.Dockerfile
+          - image: erp-api
+            context: .
+            dockerfile: ./server/Dockerfile
+          - image: erp-search
+            context: ./server/search-engine
+            dockerfile: ./server/search-engine/Dockerfile
+          - image: erp-watchdog
+            context: ./server/watchdog
+            dockerfile: ./server/watchdog/Dockerfile
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build local image
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          load: true
+          tags: local/${{ matrix.image }}:security-scan
+          cache-from: type=gha,scope=security-${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=security-${{ matrix.image }}
+
+      - name: Run Trivy image scan
+        run: |
+          mkdir -p .cache/trivy
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$PWD/.cache/trivy:/root/.cache/" \
+            "${TRIVY_IMAGE}" image \
+            --severity HIGH,CRITICAL \
+            --exit-code 1 \
+            --ignore-unfixed \
+            --no-progress \
+            local/${{ matrix.image }}:security-scan
+
+      - name: Run Grype image scan
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            "${GRYPE_IMAGE}" \
+            local/${{ matrix.image }}:security-scan \
+            --only-fixed \
+            --fail-on high
+
   install-lint-build:
     runs-on: ubuntu-latest
 
@@ -29,6 +113,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Audit production frontend dependencies
+        run: pnpm audit --prod --audit-level high
 
       - name: Verify pnpm lockfile sync
         run: node scripts/check-pnpm-lock-sync.mjs
@@ -75,10 +162,34 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.25.x'
+          go-version: '1.26.5'
           cache-dependency-path: server/go.sum
 
       - name: Run Backend Tests
         run: |
           cd server
           go test ./... -count=1
+
+      - name: Run Go vulnerability scan
+        run: |
+          cd server
+          go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+
+  vehicle-loading-engine-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust stable
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+
+      - name: Run vehicle loading engine tests
+        run: cargo test --manifest-path vehicle-loading-engine/Cargo.toml --all-targets
+
+      - name: Check vehicle loading WASM target
+        run: |
+          rustup target add wasm32-unknown-unknown
+          cargo check --manifest-path vehicle-loading-engine/Cargo.toml --target wasm32-unknown-unknown

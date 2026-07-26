@@ -79,6 +79,8 @@ export interface SalesOrderLinePackagingSelection {
   weightUnitCode: string
   capacity: number
   capacityUnitCode: string
+  canRotate: boolean
+  canInvert: boolean
   source: SalesOrderLinePackagingSelectionSource
 }
 

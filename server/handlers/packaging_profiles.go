@@ -36,6 +36,8 @@ type packagingProfilePayload struct {
 	WeightUnitCode    string                          `json:"weightUnitCode"`
 	Capacity          float64                         `json:"capacity"`
 	CapacityUnitCode  string                          `json:"capacityUnitCode"`
+	CanRotate         bool                            `json:"canRotate"`
+	CanInvert         bool                            `json:"canInvert"`
 	AssemblySource    string                          `json:"assemblySource"`
 	IsActive          bool                            `json:"isActive"`
 	Notes             string                          `json:"notes"`
@@ -101,14 +103,14 @@ func mapPackagingProfileModel(payload packagingProfilePayload) models.PackagingP
 	targets := make([]models.PackagingProfileTarget, 0, len(payload.Targets))
 	for _, target := range payload.Targets {
 		targets = append(targets, models.PackagingProfileTarget{
-			BaseModel:          models.BaseModel{ID: target.ID},
-			EntityType:         strings.TrimSpace(target.EntityType),
-			EntityID:           strings.TrimSpace(target.EntityID),
-			EntityCode:         strings.TrimSpace(target.EntityCode),
-			EntityName:         strings.TrimSpace(target.EntityName),
-			Spec:               strings.TrimSpace(target.Spec),
-			IsDefault:          target.IsDefault,
-			SortOrder:          target.SortOrder,
+			BaseModel:  models.BaseModel{ID: target.ID},
+			EntityType: strings.TrimSpace(target.EntityType),
+			EntityID:   strings.TrimSpace(target.EntityID),
+			EntityCode: strings.TrimSpace(target.EntityCode),
+			EntityName: strings.TrimSpace(target.EntityName),
+			Spec:       strings.TrimSpace(target.Spec),
+			IsDefault:  target.IsDefault,
+			SortOrder:  target.SortOrder,
 		})
 	}
 	return models.PackagingProfile{
@@ -125,6 +127,8 @@ func mapPackagingProfileModel(payload packagingProfilePayload) models.PackagingP
 		WeightUnitCode:    strings.TrimSpace(payload.WeightUnitCode),
 		Capacity:          payload.Capacity,
 		CapacityUnitCode:  strings.TrimSpace(payload.CapacityUnitCode),
+		CanRotate:         payload.CanRotate,
+		CanInvert:         payload.CanInvert,
 		AssemblySource:    strings.TrimSpace(payload.AssemblySource),
 		IsActive:          payload.IsActive,
 		Notes:             strings.TrimSpace(payload.Notes),
@@ -182,6 +186,8 @@ func SavePackagingProfileHandler(c *gin.Context) {
 			existing.WeightUnitCode = model.WeightUnitCode
 			existing.Capacity = model.Capacity
 			existing.CapacityUnitCode = model.CapacityUnitCode
+			existing.CanRotate = model.CanRotate
+			existing.CanInvert = model.CanInvert
 			existing.AssemblySource = model.AssemblySource
 			existing.IsActive = model.IsActive
 			existing.Notes = model.Notes

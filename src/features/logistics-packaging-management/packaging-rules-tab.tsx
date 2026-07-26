@@ -23,11 +23,7 @@ import {
   packagingRulesService,
   type PackagingProfile,
 } from './packaging-rules-service'
-
-const PACKAGING_PROFILE_QUERY_KEY = [
-  'logistics-packaging-management',
-  'packaging-profiles',
-] as const
+import { packagingManagementQueryKeys } from './query-keys'
 
 export function LogisticsPackagingRulesTab() {
   const { t } = useLanguage()
@@ -35,7 +31,7 @@ export function LogisticsPackagingRulesTab() {
   const formController = usePackagingProfileFormController()
 
   const profilesQuery = useQuery({
-    queryKey: PACKAGING_PROFILE_QUERY_KEY,
+    queryKey: packagingManagementQueryKeys.profiles(),
     queryFn: () => packagingRulesService.getProfiles(),
   })
 
@@ -43,7 +39,7 @@ export function LogisticsPackagingRulesTab() {
     mutationFn: (id: string) => packagingRulesService.deleteProfile(id),
     onSuccess: (_result, deletedId) => {
       queryClient.setQueryData<PackagingProfile[]>(
-        PACKAGING_PROFILE_QUERY_KEY,
+        packagingManagementQueryKeys.profiles(),
         (current) => current?.filter((item) => item.id !== deletedId)
       )
     },
@@ -167,10 +163,28 @@ export function LogisticsPackagingRulesTab() {
                     {profile.capacity} {profile.capacityUnitCode}
                   </TableCell>
                   <TableCell className='font-mono text-[10px]'>
-                    {profile.length} × {profile.width} × {profile.height}{' '}
-                    <span className='opacity-50'>
-                      {profile.dimensionUnitCode}
-                    </span>
+                    <div className='flex flex-col gap-1'>
+                      <span>
+                        {profile.length} × {profile.width} × {profile.height}{' '}
+                        <span className='opacity-50'>
+                          {profile.dimensionUnitCode}
+                        </span>
+                      </span>
+                      <span className='flex flex-wrap gap-1'>
+                        <Badge
+                          variant='outline'
+                          className='h-5 rounded-full border-primary/15 bg-primary/5 px-2 text-[8px] font-black text-primary'
+                        >
+                          旋转 {profile.canRotate ? '是' : '否'}
+                        </Badge>
+                        <Badge
+                          variant='outline'
+                          className='h-5 rounded-full border-primary/15 bg-primary/5 px-2 text-[8px] font-black text-primary'
+                        >
+                          横放 {profile.canInvert ? '是' : '否'}
+                        </Badge>
+                      </span>
+                    </div>
                   </TableCell>
                   <TableCell className='text-[10px] font-bold tracking-tighter'>
                     {profile.length * profile.width * profile.height}{' '}

@@ -44,10 +44,11 @@ type systemComponentStatus struct {
 }
 
 type systemComponents struct {
-	Postgres systemComponentStatus `json:"postgres"`
-	Redis    systemComponentStatus `json:"redis"`
-	Watchdog systemComponentStatus `json:"watchdog"`
-	Loki     systemComponentStatus `json:"loki"`
+	Postgres              systemComponentStatus `json:"postgres"`
+	Redis                 systemComponentStatus `json:"redis"`
+	Watchdog              systemComponentStatus `json:"watchdog"`
+	Loki                  systemComponentStatus `json:"loki"`
+	VehicleGeometryParser systemComponentStatus `json:"vehicleGeometryParser"`
 }
 
 type systemStatusResponse struct {
@@ -224,6 +225,14 @@ func probeLokiComponentStatus(ctx context.Context) systemComponentStatus {
 	return systemComponentStatus{Status: "disconnected", Detail: lastDetail}
 }
 
+func buildVehicleGeometryParserComponentStatus() systemComponentStatus {
+	status := services.InspectVehicleModelTemplateGeometryParserRuntimeStatus()
+	if status.Available {
+		return systemComponentStatus{Status: "connected", Detail: status.Detail}
+	}
+	return systemComponentStatus{Status: "disconnected", Detail: status.Detail}
+}
+
 func readUint64File(path string) (uint64, bool) {
 	raw, err := os.ReadFile(path)
 	if err != nil {
@@ -319,6 +328,7 @@ func SystemStatusHandler(c *gin.Context) {
 	response.Components.Redis = toComponentStatus(redisStatus.Status)
 	response.Components.Watchdog = buildWatchdogComponentStatus(integrity)
 	response.Components.Loki = probeLokiComponentStatus(ctx)
+	response.Components.VehicleGeometryParser = buildVehicleGeometryParserComponentStatus()
 	response.Time = time.Now().Format(time.RFC3339)
 
 	c.JSON(http.StatusOK, response)

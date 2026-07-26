@@ -11,6 +11,7 @@ on:
       - "scripts/**"
       - "server/**"
       - "cutting-engine/**"
+      - "vehicle-loading-engine/**"
       - "deployment/docker/**"
       - "deployment/nginx/erp-web.conf"
       - "index.html"
@@ -40,7 +41,7 @@ jobs:
             context: .
             dockerfile: deployment/docker/web.Dockerfile
           - image: erp-api
-            context: ./server
+            context: .
             dockerfile: ./server/Dockerfile
           - image: erp-search
             context: ./server/search-engine

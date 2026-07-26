@@ -44,6 +44,8 @@ const salesOrderLinePackagingSelectionSchema = z
     weightUnitCode: z.string(),
     capacity: z.number(),
     capacityUnitCode: z.string(),
+    canRotate: z.boolean().default(true),
+    canInvert: z.boolean().default(false),
     source: z.enum(['auto', 'manual']),
   })
   .strict()

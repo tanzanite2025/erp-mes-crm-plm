@@ -1,6 +1,9 @@
 import { apiFetch } from '@/lib/api-client'
 
 export const ASSET_TRANSACTION_INTENT_UPLOAD = 'ASSET_UPLOAD'
+export const ASSET_TRANSACTION_INTENT_VEHICLE_MODEL_TEMPLATE_UPLOAD =
+  'VEHICLE_MODEL_TEMPLATE_UPLOAD'
+export const VEHICLE_MODEL_TEMPLATE_UPLOAD_MAX_FILE_SIZE_MB = 8
 
 export interface UploadResponse {
   status: string
@@ -37,7 +40,11 @@ function buildAssetUploadFormData(
 export async function executeAssetTransaction(
   request: AssetTransactionRequest<AssetUploadPayload>
 ): Promise<UploadResponse> {
-  const res = await apiFetch<UploadResponse>('/assets/upload', {
+  const endpoint =
+    request.intent === ASSET_TRANSACTION_INTENT_VEHICLE_MODEL_TEMPLATE_UPLOAD
+      ? '/assets/vehicle-model-templates/upload'
+      : '/assets/upload'
+  const res = await apiFetch<UploadResponse>(endpoint, {
     method: 'POST',
     body: buildAssetUploadFormData(request),
   })
@@ -59,9 +66,12 @@ export const AssetService = {
   /**
    * Upload a single native File object to the server.
    */
-  async uploadFile(file: File): Promise<UploadResponse> {
+  async uploadFile(
+    file: File,
+    intent: string = ASSET_TRANSACTION_INTENT_UPLOAD
+  ): Promise<UploadResponse> {
     return executeAssetTransaction({
-      intent: ASSET_TRANSACTION_INTENT_UPLOAD,
+      intent,
       payload: { file },
     })
   },

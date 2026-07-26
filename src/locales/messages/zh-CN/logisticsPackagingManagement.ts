@@ -44,6 +44,8 @@ export const logisticsPackagingManagement = {
       length: '长',
       width: '宽',
       height: '高',
+      canRotate: '允许平面旋转',
+      canInvert: '允许横放 / 侧放',
       capacity: '单包装容量',
       quantity: '单箱装数',
       netWeight: '净重',
@@ -55,6 +57,10 @@ export const logisticsPackagingManagement = {
       defaultRule: '默认规则',
       spec: '规格说明',
       notes: '备注',
+    },
+    hints: {
+      canRotate: '允许长宽互换参与装载计算，高度方向不变。',
+      canInvert: '允许箱体侧放或横放，装载计算会枚举全部方向。',
     },
     table: {
       code: '编码',

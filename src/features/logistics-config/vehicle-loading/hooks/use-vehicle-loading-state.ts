@@ -1,34 +1,25 @@
 import { useState } from 'react'
 import type { VehicleCategory } from '../../vehicle-specs/data/vehicle-specs.types'
-import type { ShipmentSummary } from '../data/vehicle-loading.types'
-import { createDefaultVehicleLoadingPackageDraft } from '../services/vehicle-loading-package-input'
 
 export function useVehicleLoadingState() {
-  const initialSummary: ShipmentSummary = {
-    boxes: 120,
-    totalVolumeM3: 8.4,
-    totalWeightKg: 900,
-  }
-
-  const [summary, setSummary] = useState<ShipmentSummary>(initialSummary)
+  const [boxes, setBoxes] = useState<number>(0)
 
   const [category, setCategory] = useState<VehicleCategory | 'all'>('all')
   const [minVolumeM3, setMinVolumeM3] = useState<string>('')
   const [minPayloadKg, setMinPayloadKg] = useState<string>('')
-  const [packageDraft, setPackageDraft] = useState(() =>
-    createDefaultVehicleLoadingPackageDraft()
-  )
+  const [selectedPackagingProfileId, setSelectedPackagingProfileId] =
+    useState<string>('')
 
   return {
-    summary,
-    setSummary,
+    boxes,
+    setBoxes,
     category,
     setCategory,
     minVolumeM3,
     setMinVolumeM3,
     minPayloadKg,
     setMinPayloadKg,
-    packageDraft,
-    setPackageDraft,
+    selectedPackagingProfileId,
+    setSelectedPackagingProfileId,
   }
 }

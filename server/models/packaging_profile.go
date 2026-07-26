@@ -2,21 +2,23 @@ package models
 
 type PackagingProfile struct {
 	BaseModel
-	Code              string                 `gorm:"size:100;uniqueIndex;not null" json:"code"`
-	Name              string                 `gorm:"size:255;not null" json:"name"`
-	PackagingType     string                 `gorm:"size:50;not null" json:"packagingType"`
-	Length            float64                `gorm:"default:0" json:"length"`
-	Width             float64                `gorm:"default:0" json:"width"`
-	Height            float64                `gorm:"default:0" json:"height"`
-	DimensionUnitCode string                 `gorm:"size:50" json:"dimensionUnitCode"`
-	NetWeight         float64                `gorm:"default:0" json:"netWeight"`
-	GrossWeight       float64                `gorm:"default:0" json:"grossWeight"`
-	WeightUnitCode    string                 `gorm:"size:50" json:"weightUnitCode"`
-	Capacity          float64                `gorm:"default:0" json:"capacity"`
-	CapacityUnitCode  string                 `gorm:"size:50" json:"capacityUnitCode"`
-	AssemblySource    string                 `gorm:"size:100" json:"assemblySource"`
-	IsActive          bool                   `gorm:"default:true" json:"isActive"`
-	Notes             string                 `gorm:"type:text" json:"notes"`
+	Code              string                   `gorm:"size:100;uniqueIndex;not null" json:"code"`
+	Name              string                   `gorm:"size:255;not null" json:"name"`
+	PackagingType     string                   `gorm:"size:50;not null" json:"packagingType"`
+	Length            float64                  `gorm:"default:0" json:"length"`
+	Width             float64                  `gorm:"default:0" json:"width"`
+	Height            float64                  `gorm:"default:0" json:"height"`
+	DimensionUnitCode string                   `gorm:"size:50" json:"dimensionUnitCode"`
+	NetWeight         float64                  `gorm:"default:0" json:"netWeight"`
+	GrossWeight       float64                  `gorm:"default:0" json:"grossWeight"`
+	WeightUnitCode    string                   `gorm:"size:50" json:"weightUnitCode"`
+	Capacity          float64                  `gorm:"default:0" json:"capacity"`
+	CapacityUnitCode  string                   `gorm:"size:50" json:"capacityUnitCode"`
+	CanRotate         bool                     `gorm:"default:true" json:"canRotate"`
+	CanInvert         bool                     `gorm:"default:false" json:"canInvert"`
+	AssemblySource    string                   `gorm:"size:100" json:"assemblySource"`
+	IsActive          bool                     `gorm:"default:true" json:"isActive"`
+	Notes             string                   `gorm:"type:text" json:"notes"`
 	Targets           []PackagingProfileTarget `gorm:"foreignKey:PackagingProfileID;constraint:OnDelete:CASCADE" json:"targets,omitempty"`
 }
 

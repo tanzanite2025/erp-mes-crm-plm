@@ -1,4 +1,5 @@
 import { useLanguage } from '@/context/language-provider'
+import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -20,6 +21,9 @@ type Props = {
   category: VehicleCategory | 'all'
   minVolumeM3: string
   minPayloadKg: string
+  activeFilters: Array<{ label: string; value: string }>
+  vehicleSpecsCount: number
+  isLoadingSpecs: boolean
   onCategoryChange: (value: VehicleCategory | 'all') => void
   onMinVolumeM3Change: (value: string) => void
   onMinPayloadKgChange: (value: string) => void
@@ -29,6 +33,9 @@ export function VehicleFilterPanel({
   category,
   minVolumeM3,
   minPayloadKg,
+  activeFilters,
+  vehicleSpecsCount,
+  isLoadingSpecs,
   onCategoryChange,
   onMinVolumeM3Change,
   onMinPayloadKgChange,
@@ -41,6 +48,27 @@ export function VehicleFilterPanel({
       description={t('logisticsConfig.vehicleLoading.vehicleSpecs.note')}
     >
       <div className='space-y-4'>
+        <div className='rounded-2xl border border-dashed border-primary/15 bg-primary/5 px-4 py-3'>
+          <div className='flex flex-wrap items-center gap-2'>
+            <span className='text-[10px] font-black tracking-widest text-primary/70 uppercase'>
+              当前筛选
+            </span>
+            {activeFilters.map((filter) => (
+              <Badge
+                key={`${filter.label}-${filter.value}`}
+                className='border-none bg-primary/10 text-primary'
+              >
+                {filter.label}：{filter.value}
+              </Badge>
+            ))}
+          </div>
+          <div className='mt-2 text-[11px] font-black tracking-tight text-primary/80'>
+            {isLoadingSpecs
+              ? '车型规格加载中...'
+              : `当前命中 ${vehicleSpecsCount} 个车型`}
+          </div>
+        </div>
+
         <div className='grid grid-cols-1 gap-3 md:grid-cols-3'>
           <div className='space-y-2'>
             <Label className={labelClass}>

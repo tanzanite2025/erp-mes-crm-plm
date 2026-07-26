@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query'
 import { createLogger } from '@/lib/logger'
 import { type ReadResource, resolveQueryFailure } from '@/lib/read-resource'
 import { failLoudly } from '@/lib/safe-catch'
-import { useUnitsQuery } from '@/features/basic-settings/hooks/use-units-query'
 import {
   getVehicleLoadingSourceConfig,
   type VehicleLoadingSourceType,
@@ -13,20 +12,14 @@ import type {
   VehicleLoadingPackageInput,
 } from '@/features/logistics-config/vehicle-loading/data/vehicle-loading.types'
 import { useVehicleLoadingData } from '@/features/logistics-config/vehicle-loading/hooks/use-vehicle-loading-data'
-import {
-  buildManualVehicleLoadingPackageInput,
-  buildVehicleLoadingPackageInputFromProfile,
-} from '@/features/logistics-config/vehicle-loading/services/vehicle-loading-package-input'
+import { buildVehicleLoadingPackageInputFromProfile } from '@/features/logistics-config/vehicle-loading/services/vehicle-loading-package-input'
 import {
   packagingRulesService,
   type PackagingProfile,
 } from '@/features/logistics-packaging-management/packaging-rules-service'
+import { packagingManagementQueryKeys } from '@/features/logistics-packaging-management/query-keys'
 import type { ShippingVehicleMatchItem } from '../types'
 
-const SHIPPING_MATCH_PACKAGING_PROFILE_QUERY_KEY = [
-  'logistics-config',
-  'packaging-profiles',
-] as const
 const logger = createLogger('useShippingVehicleMatchRecommendation')
 
 type ShippingVehicleMatchPackageInputResource =
@@ -62,25 +55,6 @@ export type ShippingVehicleMatchRecommendationReadResource = ReadResource<{
   recommendations: ReturnType<typeof useVehicleLoadingData>['recommendations']
 }>
 
-function buildManualPackageInputState(summary: ShipmentSummary) {
-  try {
-    return {
-      packageInput: buildManualVehicleLoadingPackageInput(
-        summary,
-        getVehicleLoadingSourceConfig('manual').label
-      ),
-      error: null,
-      ready: true,
-    }
-  } catch (error) {
-    return {
-      packageInput: null,
-      error: error instanceof Error ? error : new Error('无法构造装箱汇总输入'),
-      ready: false,
-    }
-  }
-}
-
 function buildPackingRulePackageInputState(profile: PackagingProfile | null) {
   if (!profile) {
     return {
@@ -113,13 +87,8 @@ export function useShippingVehicleMatchRecommendation(
   summary: ShipmentSummary
 ) {
   const hasPreferredPackagingProfile = item.packageProfileId.trim() !== ''
-  const { readResource: unitsReadResource, refetch: refetchUnits } =
-    useUnitsQuery({
-      enabled: hasPreferredPackagingProfile,
-      staleTime: 5 * 60 * 1000,
-    })
   const profilesQuery = useQuery({
-    queryKey: SHIPPING_MATCH_PACKAGING_PROFILE_QUERY_KEY,
+    queryKey: packagingManagementQueryKeys.profiles(),
     queryFn: () => packagingRulesService.getProfiles(),
     enabled: hasPreferredPackagingProfile,
     retry: false,
@@ -180,10 +149,6 @@ export function useShippingVehicleMatchRecommendation(
     [activeProfiles, item.packageProfileId]
   )
 
-  const manualPackageState = useMemo(
-    () => buildManualPackageInputState(summary),
-    [summary]
-  )
   const packingRulePackageState = useMemo(
     () => buildPackingRulePackageInputState(selectedPackagingProfile),
     [selectedPackagingProfile]
@@ -192,37 +157,17 @@ export function useShippingVehicleMatchRecommendation(
   const packageInputResource =
     useMemo<ShippingVehicleMatchPackageInputResource>(() => {
       if (!hasPreferredPackagingProfile) {
-        if (manualPackageState.ready && manualPackageState.packageInput) {
-          return {
-            status: 'ready',
-            source: 'manual',
-            sourceLabel: getVehicleLoadingSourceConfig('manual').label,
-            packageInput: manualPackageState.packageInput,
-            packageInputNotice: null,
-            selectedPackagingProfile: null,
-          }
-        }
-
-        return {
-          status: 'error',
-          source: 'manual',
-          sourceLabel: getVehicleLoadingSourceConfig('manual').label,
-          packageInputNotice: null,
-          selectedPackagingProfile: null,
-          error: manualPackageState.error ?? new Error('无法构造装箱汇总输入'),
-          scope: 'useShippingVehicleMatchRecommendation.manualPackageInput',
-        }
-      }
-
-      if (unitsReadResource.status === 'error') {
         return {
           status: 'error',
           source: 'packing-rule',
           sourceLabel: getVehicleLoadingSourceConfig('packing-rule').label,
           packageInputNotice: null,
           selectedPackagingProfile: null,
-          error: unitsReadResource.error,
-          scope: unitsReadResource.scope,
+          error: new Error(
+            '当前发货记录未关联包装规则，无法进行车型推荐。请先在包装管理维护规则并关联到订单/货物。'
+          ),
+          scope:
+            'useShippingVehicleMatchRecommendation.missingPackagingProfile',
         }
       }
 
@@ -238,10 +183,7 @@ export function useShippingVehicleMatchRecommendation(
         }
       }
 
-      if (
-        unitsReadResource.status === 'loading' ||
-        profilesReadResource.status === 'loading'
-      ) {
+      if (profilesReadResource.status === 'loading') {
         return {
           status: 'loading',
           source: 'packing-rule',
@@ -302,15 +244,11 @@ export function useShippingVehicleMatchRecommendation(
       }
     }, [
       hasPreferredPackagingProfile,
-      manualPackageState.error,
-      manualPackageState.packageInput,
-      manualPackageState.ready,
       packingRulePackageState.error,
       packingRulePackageState.packageInput,
       packingRulePackageState.ready,
       profilesReadResource,
       selectedPackagingProfile,
-      unitsReadResource,
     ])
 
   const recommendationData = useVehicleLoadingData(
@@ -391,15 +329,10 @@ export function useShippingVehicleMatchRecommendation(
 
   const retryRead = useCallback(async () => {
     if (hasPreferredPackagingProfile) {
-      await Promise.all([refetchProfiles(), refetchUnits()])
+      await refetchProfiles()
     }
     reloadRecommendationData()
-  }, [
-    hasPreferredPackagingProfile,
-    refetchProfiles,
-    refetchUnits,
-    reloadRecommendationData,
-  ])
+  }, [hasPreferredPackagingProfile, refetchProfiles, reloadRecommendationData])
 
   return {
     source: packageInputResource.source,

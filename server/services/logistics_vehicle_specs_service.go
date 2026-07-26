@@ -166,6 +166,14 @@ func getVehicleSpecsCatalogBase() []VehicleSpecResponse {
 	}
 }
 
+// getVehicleSpecsCatalogForCalculation returns only the geometry and loading
+// constraints needed by the packing engine. It intentionally does not enrich
+// the records with photos or other presentation data, so a photo-table failure
+// cannot break a calculation request.
+func getVehicleSpecsCatalogForCalculation() []VehicleSpecResponse {
+	return getVehicleSpecsCatalogBase()
+}
+
 func GetVehicleSpecsCatalog() ([]VehicleSpecResponse, error) {
 	base := getVehicleSpecsCatalogBase()
 	result := make([]VehicleSpecResponse, 0, len(base))

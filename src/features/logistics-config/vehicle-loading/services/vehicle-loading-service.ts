@@ -1,50 +1,39 @@
-import { apiFetch } from '@/lib/api'
+import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
 import type { VehicleSpec } from '../../vehicle-specs/data/vehicle-specs.types'
-import {
-  vehicleSpecSchema,
-  type VehicleSpecDTO,
-} from '../../vehicle-specs/services/vehicle-specs.schema'
 import type {
   ShipmentSummary,
   VehicleLoadingPackageInput,
 } from '../data/vehicle-loading.types'
 import {
-  shipmentSummarySchema,
   vehicleRecommendationRequestSchema,
   vehicleRecommendationResponseSchema,
-  type ShipmentSummaryDTO,
   type VehicleRecommendationRequestDTO,
   type VehicleRecommendationResponseDTO,
 } from './vehicle-loading.schema'
 
 const VEHICLE_RECOMMENDATIONS_ENDPOINT =
-  '/api/v1/logistics/vehicle-loading/recommendations'
-
-function parseVehicleSpecs(vehicleSpecs: VehicleSpec[]): VehicleSpecDTO[] {
-  return vehicleSpecs.map((spec) => vehicleSpecSchema.parse(spec))
-}
-
-function resolveVehicleSpecs(vehicleSpecs?: VehicleSpec[]): VehicleSpecDTO[] {
-  if (!vehicleSpecs || vehicleSpecs.length === 0) {
-    throw new Error('Vehicle specs are required for recommendations')
-  }
-  return parseVehicleSpecs(vehicleSpecs)
-}
-
-function resolveSummary(summary: ShipmentSummary): ShipmentSummaryDTO {
-  return shipmentSummarySchema.parse(summary)
-}
+  '/logistics/vehicle-loading/recommendations'
 
 function buildRecommendationRequest(
   summary: ShipmentSummary,
   vehicleSpecs?: VehicleSpec[],
   packageInput?: VehicleLoadingPackageInput
 ): VehicleRecommendationRequestDTO {
+  const packagingProfileId = packageInput?.profileId?.trim()
+  if (!packagingProfileId) {
+    throw new Error(
+      '当前包装规则缺少主数据 ID，无法提交服务端配车计算。'
+    )
+  }
+  if (!vehicleSpecs || vehicleSpecs.length === 0) {
+    throw new Error('车型规格不能为空。')
+  }
+
   return vehicleRecommendationRequestSchema.parse({
-    summary: resolveSummary(summary),
-    vehicleSpecs: resolveVehicleSpecs(vehicleSpecs),
-    packageInput,
+    boxes: summary.boxes,
+    packagingProfileId,
+    vehicleSpecIds: vehicleSpecs.map((spec) => spec.id),
   })
 }
 

@@ -13,31 +13,44 @@ const logger = createLogger('FileUploader')
 
 interface FileUploaderProps {
   value?: string
-  onChange: (url: string, extension?: string) => void
+  onChange: (url: string, extension?: string, fileName?: string) => void
+  disabled?: boolean
+  uploadFile?: (
+    file: File
+  ) => Promise<{
+    url: string
+    extension?: string
+    fileName?: string
+  }>
   placeholder?: string
   className?: string
   accept?: string
+  maxFileSizeMb?: number
 }
-
-const MAX_FILE_SIZE = 50 * 1024 * 1024
 
 export function FileUploader({
   value,
   onChange,
+  disabled = false,
+  uploadFile,
   placeholder,
   className,
   accept = '.pdf,.dwg,.dxf,.stp,.step,.xlsx,.docx',
+  maxFileSizeMb = 50,
 }: FileUploaderProps) {
   const { t } = useLanguage()
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const maxFileSizeBytes = maxFileSizeMb * 1024 * 1024
 
   const handleFile = async (file: File) => {
-    if (file.size > MAX_FILE_SIZE) {
+    if (disabled) return
+
+    if (file.size > maxFileSizeBytes) {
       toast.error(
         t('fileUploader.toasts.maxSizeExceeded', {
           size: (file.size / 1024 / 1024).toFixed(1),
-          max: 50,
+          max: maxFileSizeMb,
         })
       )
       return
@@ -45,11 +58,21 @@ export function FileUploader({
 
     const fileName = file.name
     const extension = fileName.split('.').pop()?.toLowerCase() || ''
-    const storageKey = `file-${Date.now()}-${fileName}`
 
     try {
+      if (uploadFile) {
+        const uploaded = await uploadFile(file)
+        onChange(
+          uploaded.url,
+          uploaded.extension ?? extension,
+          uploaded.fileName ?? fileName
+        )
+        return
+      }
+
+      const storageKey = `file-${Date.now()}-${fileName}`
       await StorageService.setItem(storageKey, file)
-      onChange(storageKey, extension)
+      onChange(storageKey, extension, fileName)
     } catch (error) {
       logger.error('Failed to save file to storage', error)
       toast.error(t('fileUploader.toasts.saveFailed'))
@@ -57,24 +80,29 @@ export function FileUploader({
   }
 
   const onContainerClick = () => {
+    if (disabled) return
     fileInputRef.current?.click()
   }
 
   const onFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (disabled) return
     const file = e.target.files?.[0]
     if (file) handleFile(file)
   }
 
   const onDragOver = (e: React.DragEvent) => {
+    if (disabled) return
     e.preventDefault()
     setIsDragging(true)
   }
 
   const onDragLeave = () => {
+    if (disabled) return
     setIsDragging(false)
   }
 
   const onDrop = (e: React.DragEvent) => {
+    if (disabled) return
     e.preventDefault()
     setIsDragging(false)
     const file = e.dataTransfer.files?.[0]
@@ -83,6 +111,7 @@ export function FileUploader({
 
   const clearFile = (e: React.MouseEvent) => {
     e.stopPropagation()
+    if (disabled) return
     onChange('', '')
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
@@ -95,6 +124,7 @@ export function FileUploader({
         'group relative cursor-pointer transition-all duration-300',
         'min-h-[120px] rounded-2xl border-2 border-dashed p-6',
         'flex flex-col items-center justify-center gap-2',
+        disabled ? 'cursor-not-allowed opacity-60' : '',
         isDragging
           ? 'scale-[1.01] border-primary bg-primary/5'
           : 'border-muted-foreground/20 hover:border-primary/50 hover:bg-muted/30',
@@ -112,6 +142,7 @@ export function FileUploader({
         ref={fileInputRef}
         onChange={onFileSelect}
         accept={accept}
+        disabled={disabled}
       />
 
       {!value ? (
@@ -124,7 +155,7 @@ export function FileUploader({
               {displayPlaceholder}
             </p>
             <p className='mt-1 text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
-              {t('fileUploader.maxSize', { max: 50 })}
+              {t('fileUploader.maxSize', { max: maxFileSizeMb })}
             </p>
           </div>
           <CloudUpload className='absolute right-3 bottom-3 size-5 text-muted-foreground/20 transition-colors group-hover:text-primary/40' />
@@ -147,6 +178,7 @@ export function FileUploader({
             size='icon'
             className='size-8 rounded-full hover:bg-destructive/10 hover:text-destructive'
             onClick={clearFile}
+            disabled={disabled}
           >
             <X className='size-4' />
           </Button>

@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import type { Unit } from '@/features/basic-settings/services/unit-service'
 import type { Product } from '@/features/engineering/data/schema'
@@ -454,6 +455,61 @@ export function PackagingProfileFormDialog({
                       }))
                     }
                   />
+                </div>
+              </div>
+
+              <div className='mt-3 grid grid-cols-1 gap-3 md:grid-cols-2'>
+                <div className='rounded-2xl border border-dashed border-border/60 bg-background/60 px-4 py-3'>
+                  <div className='flex items-center justify-between gap-3'>
+                    <div>
+                      <Label className={packagingLabelClass}>
+                        {t(
+                          'logisticsPackagingManagement.packagingRules.fields.canRotate'
+                        )}
+                      </Label>
+                      <div className='mt-2 text-[10px] leading-relaxed text-muted-foreground'>
+                        {t(
+                          'logisticsPackagingManagement.packagingRules.hints.canRotate'
+                        )}
+                      </div>
+                    </div>
+                    <Switch
+                      checked={draft.canRotate}
+                      onCheckedChange={(checked) =>
+                        onDraftChange((current) => ({
+                          ...current,
+                          canRotate: checked,
+                          canInvert: checked ? current.canInvert : false,
+                        }))
+                      }
+                    />
+                  </div>
+                </div>
+                <div className='rounded-2xl border border-dashed border-border/60 bg-background/60 px-4 py-3'>
+                  <div className='flex items-center justify-between gap-3'>
+                    <div>
+                      <Label className={packagingLabelClass}>
+                        {t(
+                          'logisticsPackagingManagement.packagingRules.fields.canInvert'
+                        )}
+                      </Label>
+                      <div className='mt-2 text-[10px] leading-relaxed text-muted-foreground'>
+                        {t(
+                          'logisticsPackagingManagement.packagingRules.hints.canInvert'
+                        )}
+                      </div>
+                    </div>
+                    <Switch
+                      checked={draft.canInvert}
+                      disabled={!draft.canRotate}
+                      onCheckedChange={(checked) =>
+                        onDraftChange((current) => ({
+                          ...current,
+                          canInvert: checked,
+                        }))
+                      }
+                    />
+                  </div>
                 </div>
               </div>
             </section>

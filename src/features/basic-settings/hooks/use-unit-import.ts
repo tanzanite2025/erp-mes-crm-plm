@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
+import type { CellValue, Worksheet } from 'exceljs'
 import { translate, type AppLocale, type TranslationKey } from '@/locales'
 import { toast } from 'sonner'
-import { loadXLSX } from '@/lib/lazy-vendors'
+import { loadExcelJS } from '@/lib/lazy-vendors'
 import { createLogger } from '@/lib/logger'
 import { useLanguage } from '@/context/language-provider'
 import { BASIC_SETTINGS_UNITS_QUERY_KEY } from '../query-keys'
@@ -49,6 +50,61 @@ function readRowValue(row: Record<string, unknown>, keys: string[]) {
   return ''
 }
 
+function stringifyExcelCellValue(value: CellValue): string {
+  if (value === null || value === undefined) {
+    return ''
+  }
+
+  if (value instanceof Date) {
+    return value.toISOString().slice(0, 10)
+  }
+
+  if (typeof value === 'object') {
+    if ('text' in value && value.text !== undefined) {
+      return String(value.text)
+    }
+    if ('result' in value) {
+      return stringifyExcelCellValue(value.result as CellValue)
+    }
+    if ('richText' in value && Array.isArray(value.richText)) {
+      return value.richText.map((part) => part.text).join('')
+    }
+  }
+
+  return String(value)
+}
+
+function worksheetToRows(sheet: Worksheet): Array<Record<string, unknown>> {
+  const headers = new Map<number, string>()
+  sheet.getRow(1).eachCell({ includeEmpty: false }, (cell, colNumber) => {
+    const header = stringifyExcelCellValue(cell.value).trim()
+    if (header) {
+      headers.set(colNumber, header)
+    }
+  })
+
+  const rows: Array<Record<string, unknown>> = []
+  sheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+    if (rowNumber === 1) {
+      return
+    }
+
+    const item: Record<string, unknown> = {}
+    let hasValue = false
+    headers.forEach((header, colNumber) => {
+      const value = stringifyExcelCellValue(row.getCell(colNumber).value).trim()
+      item[header] = value
+      hasValue ||= value !== ''
+    })
+
+    if (hasValue) {
+      rows.push(item)
+    }
+  })
+
+  return rows
+}
+
 /**
  * 助手函数：将 Excel 中的分类文本标准化为 UnitCategory 枚举
  */
@@ -84,12 +140,11 @@ export function useUnitImport(onSuccess: () => void) {
 
     try {
       const buffer = await file.arrayBuffer()
-      const XLSX = await loadXLSX()
-      const workbook = XLSX.read(new Uint8Array(buffer), { type: 'array' })
-      const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
-      const rows = XLSX.utils.sheet_to_json(firstSheet) as Array<
-        Record<string, unknown>
-      >
+      const { default: ExcelJS } = await loadExcelJS()
+      const workbook = new ExcelJS.Workbook()
+      await workbook.xlsx.load(buffer)
+      const firstSheet = workbook.worksheets[0]
+      const rows = firstSheet ? worksheetToRows(firstSheet) : []
 
       const unitsToSync: Array<Omit<Unit, 'id' | 'isSystem'>> = []
       const validationErrors: string[] = []

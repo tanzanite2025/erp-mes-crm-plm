@@ -1,18 +1,99 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+	"xdfc-server/authz"
+	"xdfc-server/middleware"
+	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
-const maxAssetUploadBytes int64 = 50 << 20
+const (
+	maxAssetUploadBytes                     int64 = 50 << 20
+	maxVehicleModelTemplateAssetUploadBytes int64 = 8 << 20
+	assetUploadMultipartOverheadBytes       int64 = 64 << 10
+)
+
+const vehicleModelTemplateUploadIntent = "VEHICLE_MODEL_TEMPLATE_UPLOAD"
+
+type assetUploadMetadata struct {
+	Intent string `json:"intent"`
+}
+
+type assetUploadPolicy struct {
+	MaxBytes               int64
+	MaxSizeLabel           string
+	AllowedExtensions      map[string]bool
+	RejectVehicleModelHint bool
+	FileNamePrefix         string
+}
+
+func parseAssetUploadMetadata(c *gin.Context) assetUploadMetadata {
+	rawMetadata := strings.TrimSpace(c.PostForm("metadata"))
+	if rawMetadata == "" {
+		return assetUploadMetadata{}
+	}
+
+	var metadata assetUploadMetadata
+	if err := json.Unmarshal([]byte(rawMetadata), &metadata); err != nil {
+		return assetUploadMetadata{}
+	}
+	return metadata
+}
+
+func enforceAssetUploadIntentPermission(c *gin.Context, metadata assetUploadMetadata) bool {
+	if strings.EqualFold(strings.TrimSpace(metadata.Intent), vehicleModelTemplateUploadIntent) &&
+		!middleware.HasAnyPermission(c, authz.PermissionManage) {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": "[AUTH] 管理车型模型模板需要管理权限",
+		})
+		c.Abort()
+		return false
+	}
+
+	return true
+}
+
+func generalAssetUploadAllowedExtensions() map[string]bool {
+	return map[string]bool{
+		".pdf":  true,
+		".jpg":  true,
+		".jpeg": true,
+		".png":  true,
+		".gif":  true,
+		".dwg":  true,
+		".dxf":  true,
+		".stp":  true,
+		".step": true,
+		".xt":   true,
+		".obj":  true,
+		".glb":  true,
+		".gltf": true,
+		".stl":  true,
+		".fbx":  true,
+		".zip":  true,
+		".rar":  true,
+		".7z":   true,
+		".doc":  true,
+		".docx": true,
+		".xls":  true,
+		".xlsx": true,
+	}
+}
+
+func vehicleModelTemplateAssetUploadAllowedExtensions() map[string]bool {
+	return map[string]bool{
+		".glb": true,
+	}
+}
 
 func isDetectedAssetContentAllowed(ext string, detected string) bool {
 	contentType := strings.ToLower(strings.TrimSpace(strings.Split(detected, ";")[0]))
@@ -47,50 +128,63 @@ func isDetectedAssetContentAllowed(ext string, detected string) bool {
 	case ".dxf":
 		return contentType == "text/plain" ||
 			contentType == "application/octet-stream"
+	case ".obj", ".stl":
+		return contentType == "text/plain" ||
+			contentType == "application/octet-stream"
+	case ".glb", ".fbx":
+		return contentType == "application/octet-stream" ||
+			contentType == "model/gltf-binary"
+	case ".gltf":
+		return contentType == "application/json" ||
+			contentType == "text/plain" ||
+			contentType == "application/octet-stream"
 	default:
 		return false
 	}
 }
 
-// UploadAssetHandler 处理文件上传并保存到本地磁盘
-func UploadAssetHandler(c *gin.Context) {
-	// 1. 获取上传的文件
+func writeAssetUploadTooLarge(c *gin.Context, maxSizeLabel string) {
+	c.JSON(http.StatusRequestEntityTooLarge, gin.H{
+		"error": "[SECURITY] 文件大小不合法或超过 " + maxSizeLabel + " 限制",
+	})
+}
+
+func uploadAssetWithPolicy(c *gin.Context, policy assetUploadPolicy) {
+	c.Request.Body = http.MaxBytesReader(
+		c.Writer,
+		c.Request.Body,
+		policy.MaxBytes+assetUploadMultipartOverheadBytes,
+	)
+
+	metadata := parseAssetUploadMetadata(c)
+	if policy.RejectVehicleModelHint &&
+		strings.EqualFold(strings.TrimSpace(metadata.Intent), vehicleModelTemplateUploadIntent) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[VALIDATION] 车型模型模板源文件必须使用专用上传接口",
+		})
+		return
+	}
+	if !enforceAssetUploadIntentPermission(c, metadata) {
+		return
+	}
+
 	file, err := c.FormFile("file")
 	if err != nil {
+		if strings.Contains(strings.ToLower(err.Error()), "request body too large") {
+			writeAssetUploadTooLarge(c, policy.MaxSizeLabel)
+			return
+		}
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[UPLOAD] 未接收到有效文件流 (file field is missing)"})
 		return
 	}
 
-	// 2. 验证与生成新文件名 (UUID 防止冲突)
 	ext := strings.ToLower(filepath.Ext(file.Filename))
-
-	// 安全加固：后缀白名单校验 (防止上传 .html / .sh / .exe 等恶意文件)
-	allowedExts := map[string]bool{
-		".pdf":  true,
-		".jpg":  true,
-		".jpeg": true,
-		".png":  true,
-		".gif":  true,
-		".dwg":  true,
-		".dxf":  true,
-		".stp":  true,
-		".step": true,
-		".xt":   true,
-		".zip":  true,
-		".rar":  true,
-		".7z":   true,
-		".doc":  true,
-		".docx": true,
-		".xls":  true,
-		".xlsx": true,
-	}
-
-	if !allowedExts[ext] {
+	if !policy.AllowedExtensions[ext] {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("[SECURITY] 不允许上传此类型的文件: %s", ext)})
 		return
 	}
-	if file.Size <= 0 || file.Size > maxAssetUploadBytes {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "[SECURITY] 文件大小不合法或超过 50MB 限制"})
+	if file.Size <= 0 || file.Size > policy.MaxBytes {
+		writeAssetUploadTooLarge(c, policy.MaxSizeLabel)
 		return
 	}
 	openedFile, err := file.Open()
@@ -111,7 +205,7 @@ func UploadAssetHandler(c *gin.Context) {
 		return
 	}
 
-	newFileName := fmt.Sprintf("%s%s", uuid.New().String(), ext)
+	newFileName := fmt.Sprintf("%s%s%s", policy.FileNamePrefix, uuid.New().String(), ext)
 
 	// 3. 确保本地 uploads 目录存在 (双重保障)
 	uploadDir := "uploads"
@@ -138,6 +232,29 @@ func UploadAssetHandler(c *gin.Context) {
 		"url":      fileURL,
 		"fileName": file.Filename,
 		"size":     file.Size,
+	})
+}
+
+// UploadAssetHandler 处理通用文件上传并保存到本地磁盘。
+func UploadAssetHandler(c *gin.Context) {
+	uploadAssetWithPolicy(c, assetUploadPolicy{
+		MaxBytes:               maxAssetUploadBytes,
+		MaxSizeLabel:           "50MB",
+		AllowedExtensions:      generalAssetUploadAllowedExtensions(),
+		RejectVehicleModelHint: true,
+	})
+}
+
+// UploadVehicleModelTemplateAssetHandler handles controlled 3D source uploads
+// for vehicle model templates. This route has its own small hard body limit
+// before multipart parsing, so template uploads cannot consume the generic
+// 50MB asset ingress budget.
+func UploadVehicleModelTemplateAssetHandler(c *gin.Context) {
+	uploadAssetWithPolicy(c, assetUploadPolicy{
+		MaxBytes:          maxVehicleModelTemplateAssetUploadBytes,
+		MaxSizeLabel:      "8MB",
+		AllowedExtensions: vehicleModelTemplateAssetUploadAllowedExtensions(),
+		FileNamePrefix:    services.VehicleModelTemplateSourceAssetFilePrefix,
 	})
 }
 

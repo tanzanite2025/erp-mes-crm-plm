@@ -80,6 +80,9 @@ server/watchdog/.env
 server/watchdog/uploads/
 server/watchdog/backups/
 
+# Vehicle loading Rust/WASM engine build artifacts
+vehicle-loading-engine/target/
+
 # 忽略环境配置备忘（只保留 .env.example）
 .env
 .env.local

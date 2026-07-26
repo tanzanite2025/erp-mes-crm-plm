@@ -1,0 +1,15 @@
+{
+  "name": "xdfc-vehicle-loading-engine-wasm",
+  "type": "module",
+  "version": "0.1.0",
+  "files": [
+    "vehicle_loading_engine_wasm_bg.wasm",
+    "vehicle_loading_engine_wasm.js",
+    "vehicle_loading_engine_wasm.d.ts"
+  ],
+  "main": "vehicle_loading_engine_wasm.js",
+  "types": "vehicle_loading_engine_wasm.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { VehicleSpec } from '../../vehicle-specs/data/vehicle-specs.types'
 import type {
   ShipmentSummary,
@@ -10,15 +10,23 @@ import { useVehicleLoadingSpecs } from './use-vehicle-loading-specs'
 export function useVehicleLoadingData(
   summary: ShipmentSummary,
   packageInput: VehicleLoadingPackageInput | null,
-  enabled: boolean
+  enabled: boolean,
+  filterVehicleSpecsForRecommendation?: (spec: VehicleSpec) => boolean
 ) {
   const [reloadToken, setReloadToken] = useState(0)
   const { vehicleSpecs, isLoadingSpecs, specsError } =
     useVehicleLoadingSpecs(reloadToken)
+  const recommendationVehicleSpecs = useMemo(
+    () =>
+      filterVehicleSpecsForRecommendation
+        ? vehicleSpecs.filter(filterVehicleSpecsForRecommendation)
+        : vehicleSpecs,
+    [filterVehicleSpecsForRecommendation, vehicleSpecs]
+  )
   const { recommendations, isLoadingRecommendations, recommendationsError } =
     useVehicleLoadingRecommendations(
       summary,
-      vehicleSpecs,
+      recommendationVehicleSpecs,
       packageInput,
       enabled,
       reloadToken

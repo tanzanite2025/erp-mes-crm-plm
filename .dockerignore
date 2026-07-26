@@ -4,13 +4,17 @@
 .codex
 .tanstack
 .tanzanite
+.codex-dev-bin
+.codex-dev-logs
 .vs
 .vscode
+.playwright-cli
 node_modules
 dist
 coverage
 playwright-report
 test-results
+output
 *.log
 .env
 .env.*
@@ -21,6 +25,8 @@ server/uploads
 server/backups
 server/logs
 server/tmp
-server/**/target
+**/target
 server/**/*.exe
 server/**/*.test
+cutting-engine/**/*.exe
+vehicle-loading-engine/**/*.exe

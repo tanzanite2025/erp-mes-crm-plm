@@ -68,15 +68,65 @@ export const logisticsConfig = {
       mediumTruck96: 'Well suited to medium- and long-haul trunk routes.',
     },
   },
+  vehicleModelTemplates: {
+    title: 'Model Template Registry',
+    description:
+      'Uses the seed vehicle from the vehicle specs library as the primary key, accepts 3D source files, and keeps a draft template until the parser normalizes it.',
+    seedVehicle: 'Seed Vehicle',
+    templateName: 'Template Name',
+    sourceAsset: 'Source File',
+    sourcePlaceholder: 'Upload GLB (glTF 2.0 Binary)',
+    sourceHint:
+      'The source file and seed binding are stored first, and do not enter loading calculations directly.',
+    permissionChecking:
+      'Permissions are syncing. Template upload and save are temporarily unavailable.',
+    permissionRequired:
+      'The Manage Permissions permission is required to upload or save vehicle model templates. The controls remain visible but disabled without it.',
+    uploading: 'Uploading model source file...',
+    uploadFailed: 'Model source upload failed: {{message}}',
+    saveFailedInline: 'Template save failed: {{message}}',
+    currentDraft: 'Current Draft',
+    normalizedFootprint: 'Normalized Footprint',
+    status: 'Status',
+    statusSeedOnly: 'Seed Only',
+    statusUploaded: 'Uploaded',
+    statusNormalized: 'Normalized',
+    sourceEmpty: 'No source file uploaded yet',
+    loading: 'Loading template registry...',
+    registryLoadFailed: 'Failed to load template registry: {{message}}',
+    savedTemplateCount: 'Saved templates for this seed vehicle: {{count}}',
+    save: 'Save Template Draft',
+    update: 'Update Template',
+    saving: 'Saving...',
+    registryTitle: 'Saved Templates',
+    registryEmpty: 'No saved templates for this seed vehicle yet.',
+    latest: 'Latest',
+    editing: 'Editing',
+    edit: 'Edit',
+    version: 'Version',
+    versionCount: '{{count}} snapshots',
+    versionLoading: 'Loading version snapshots...',
+    versionLoadFailed: 'Failed to load version snapshots: {{message}}',
+    versionEmpty: 'No version snapshots yet.',
+    currentVersion: 'Current',
+    restoreVersion: 'Restore',
+    toasts: {
+      saveSuccess: 'Vehicle model template saved',
+      saveFailed: 'Failed to save vehicle model template: {{message}}',
+      restoreSuccess: 'Vehicle model template version restored',
+      restoreFailed:
+        'Failed to restore vehicle model template version: {{message}}',
+    },
+  },
   vehicleLoading: {
     title: 'Vehicle Loading & Recommendation',
     description:
       'Shows shipment summary (boxes/volume/weight) and recommends vehicles based on a vehicle spec library.',
     mockBadge: 'Backend Recommendation',
     source: {
-      title: 'Package Input',
-      description: 'Maintain package parameters used by vehicle loading',
-      manual: 'Shipment Summary Input',
+      title: 'Packaging Rule Selection',
+      description:
+        'Select package dimensions, weight, and capacity from Packaging Management',
       packingRule: 'Packaging Rule Package',
     },
     summary: {
@@ -86,7 +136,7 @@ export const logisticsConfig = {
       volume: 'Total Volume (m³)',
       weight: 'Total Gross Weight (kg)',
       disclaimer:
-        'Shipment summary describes the batch quantity only. Package size, unit weight, and orientation constraints are maintained in the package input card.',
+        'Shipment summary describes the batch quantity only. Package size, packaging weight, and capacity are read from Packaging Management.',
     },
     filters: {
       category: 'Category',
@@ -100,8 +150,8 @@ export const logisticsConfig = {
       minPayload: 'Min Payload (kg)',
     },
     vehicleSpecs: {
-      title: 'Vehicle Specs',
-      note: 'Vehicle specs provide physical size, usable loading space, safety allowance, and loading constraints for backend recommendations.',
+      title: 'Vehicle Filter Conditions',
+      note: 'This card only contains vehicle filters. They directly affect backend recommendation trials; vehicle master data remains maintained independently in the Vehicle Specs Library tab.',
       table: {
         name: 'Vehicle',
         category: 'Category',

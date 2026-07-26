@@ -1,3 +1,6 @@
+import { useMemo, useRef, useState, type ChangeEvent } from 'react'
+import { Download, Upload } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -5,105 +8,153 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { OrientationLegend } from './orientation-legend'
-import { VehicleLoadingDiagram } from './vehicle-loading-diagram'
+import type {
+  VehicleLoadingPreviewScene,
+  VehicleLoadingReferenceComparisonInput,
+} from '../data/vehicle-loading-preview-scene.types'
+import {
+  parseVehicleLoadingLayoutSnapshotJson,
+  serializeVehicleLoadingLayoutSnapshot,
+} from '../services/vehicle-loading-layout-snapshot-json'
+import { buildVehicleLoadingReferenceComparisonFromLayoutSnapshot } from '../services/vehicle-loading-reference-comparison'
+import { VehicleLoadingPreviewWorkspace } from './vehicle-loading-preview-workspace'
 
 type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  vehicleName: string
-  vehicleSize: {
-    lengthMm: number
-    widthMm: number
-    heightMm: number
-  }
-  packageSize: {
-    lengthMm: number
-    widthMm: number
-    heightMm: number
-  }
-  orientationLabel: string
-  orientationAxis?: 'length' | 'width' | 'height'
-  boxesPerLayer: number
-  layerCount: number
-  maxBoxes: number
-  explanation: string[]
+  scene: VehicleLoadingPreviewScene
+  onRetryCalculation?: () => void
+}
+
+type ImportedReferenceState = {
+  snapshotId?: string
+  references: VehicleLoadingReferenceComparisonInput[]
+}
+
+function buildSnapshotFileName(scene: VehicleLoadingPreviewScene) {
+  const snapshotId = scene.layoutSnapshot?.id ?? 'vehicle-loading-layout'
+  return `${snapshotId.replace(/[^a-z0-9._-]+/gi, '_')}.json`
 }
 
 export function VehicleLoadingPlanDialog({
   open,
   onOpenChange,
-  vehicleName,
-  vehicleSize,
-  packageSize,
-  orientationLabel,
-  orientationAxis,
-  boxesPerLayer,
-  layerCount,
-  maxBoxes,
-  explanation,
+  scene,
+  onRetryCalculation,
 }: Props) {
+  const importInputRef = useRef<HTMLInputElement | null>(null)
+  const [importedReferenceState, setImportedReferenceState] =
+    useState<ImportedReferenceState>({ references: [] })
+  const activeSnapshotId = scene.layoutSnapshot?.id
+  const canRetryCalculation = scene.status === 'failed' && onRetryCalculation
+  const canExportSnapshot = Boolean(scene.layoutSnapshot)
+  const sceneWithReferenceComparisons =
+    useMemo<VehicleLoadingPreviewScene>(() => {
+      const importedReferenceComparisons =
+        importedReferenceState.snapshotId === activeSnapshotId
+          ? importedReferenceState.references
+          : []
+
+      return {
+        ...scene,
+        referenceComparisons: [
+          ...(scene.referenceComparisons ?? []),
+          ...importedReferenceComparisons,
+        ],
+      }
+    }, [activeSnapshotId, importedReferenceState, scene])
+
+  const handleExportSnapshot = () => {
+    if (!scene.layoutSnapshot) return
+
+    const blob = new Blob(
+      [serializeVehicleLoadingLayoutSnapshot(scene.layoutSnapshot)],
+      { type: 'application/json;charset=utf-8' }
+    )
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = buildSnapshotFileName(scene)
+    anchor.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleImportSnapshot = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+
+    try {
+      const snapshot = parseVehicleLoadingLayoutSnapshotJson(await file.text())
+      const reference =
+        buildVehicleLoadingReferenceComparisonFromLayoutSnapshot(snapshot)
+      setImportedReferenceState((current) => ({
+        snapshotId: activeSnapshotId,
+        references:
+          current.snapshotId === activeSnapshotId
+            ? [...current.references, reference]
+            : [reference],
+      }))
+      toast.success(`已导入参考方案：${reference.label}`)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      toast.error(message)
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='flex max-h-[calc(100vh-1rem)] w-[calc(100vw-1rem)] max-w-[1200px] flex-col gap-0 rounded-[28px] border-dashed bg-background/95 p-0 shadow-xl sm:max-w-[1200px]'>
+      <DialogContent className='flex h-[90vh] max-h-[90vh] w-[90vw] max-w-[90vw] flex-col gap-0 rounded-[28px] border-dashed bg-background/95 p-0 shadow-xl sm:max-w-[90vw]'>
         <DialogHeader className='shrink-0 border-b border-dashed border-border/60 px-3 py-2 sm:px-4 sm:py-3'>
           <DialogTitle className='text-sm font-black tracking-tight'>
-            装载示意
+            装箱预览
           </DialogTitle>
         </DialogHeader>
 
         <div className='min-h-0 flex-1 overflow-hidden px-2 py-2 sm:px-3 sm:py-3'>
-          <div className='grid gap-3 lg:grid-cols-[1.7fr_1fr] lg:items-start'>
-            <div className='flex min-h-0 flex-col'>
-              <VehicleLoadingDiagram
-                vehicleName={vehicleName}
-                vehicleSize={vehicleSize}
-                packageSize={packageSize}
-                orientationLabel={orientationLabel}
-                orientationAxis={orientationAxis}
-                boxesPerLayer={boxesPerLayer}
-                layerCount={layerCount}
-                maxBoxes={maxBoxes}
-              />
-            </div>
-
-            <div className='space-y-3 rounded-[22px] border border-dashed border-border/60 bg-muted/3 p-3 sm:p-4'>
-              <div>
-                <div className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
-                  说明
-                </div>
-                <div className='mt-2 text-sm font-black'>{vehicleName}</div>
-                <div className='mt-1 text-[11px] leading-relaxed text-muted-foreground'>
-                  当前方案按{' '}
-                  <span className='font-black text-foreground'>
-                    {orientationLabel}
-                  </span>{' '}
-                  朝向摆放。
-                </div>
-              </div>
-
-              <OrientationLegend className='grid gap-2' />
-
-              <div className='space-y-2'>
-                {explanation.map((item) => (
-                  <div
-                    key={item}
-                    className='rounded-2xl border border-dashed border-primary/20 bg-primary/5 px-3 py-2 text-[11px] leading-relaxed text-primary/80'
-                  >
-                    {item}
-                  </div>
-                ))}
-              </div>
-
-              <div className='rounded-2xl border border-dashed border-border/60 bg-background/80 px-2 py-2 text-[11px] leading-relaxed text-muted-foreground'>
-                图中仅展示示意关系，具体摆放时仍需结合现场装车顺序与实际货物形状确认。
-              </div>
-            </div>
-          </div>
+          <VehicleLoadingPreviewWorkspace
+            scene={sceneWithReferenceComparisons}
+          />
         </div>
 
         <div className='shrink-0 border-t border-dashed border-border/60 px-3 py-2 sm:px-4 sm:py-3'>
           <div className='flex justify-end gap-2'>
+            <input
+              ref={importInputRef}
+              type='file'
+              accept='.json,application/json'
+              className='hidden'
+              onChange={(event) => {
+                void handleImportSnapshot(event)
+              }}
+            />
+            <Button
+              type='button'
+              variant='outline'
+              onClick={() => importInputRef.current?.click()}
+            >
+              <Upload className='size-4' />
+              导入参考
+            </Button>
+            {canExportSnapshot ? (
+              <Button
+                type='button'
+                variant='outline'
+                onClick={handleExportSnapshot}
+              >
+                <Download className='size-4' />
+                导出快照
+              </Button>
+            ) : null}
+            {canRetryCalculation ? (
+              <Button
+                type='button'
+                variant='outline'
+                onClick={onRetryCalculation}
+              >
+                重新计算
+              </Button>
+            ) : null}
             <Button
               type='button'
               variant='outline'

@@ -160,7 +160,7 @@ export function UnitMgmt() {
             ref={importInputRef}
             type='file'
             className='hidden'
-            accept='.xlsx, .xls'
+            accept='.xlsx'
             onChange={handleExcelImport}
             disabled={isImporting}
           />

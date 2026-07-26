@@ -2,25 +2,11 @@ import { z } from 'zod'
 import { vehicleSpecSchema } from '../../vehicle-specs/services/vehicle-specs.schema'
 
 const packageDimensionSchema = z.object({
-  lengthMm: z.number().nonnegative(),
-  widthMm: z.number().nonnegative(),
-  heightMm: z.number().nonnegative(),
+  lengthMm: z.number().positive(),
+  widthMm: z.number().positive(),
+  heightMm: z.number().positive(),
   canRotate: z.boolean(),
   canInvert: z.boolean(),
-})
-
-const vehicleLoadingPackageInputSchema = z.object({
-  packageId: z.string().min(1),
-  profileId: z.string().min(1).optional(),
-  name: z.string().min(1),
-  unitWeightKg: z.number().positive(),
-  dimension: packageDimensionSchema,
-})
-
-export const shipmentSummarySchema = z.object({
-  boxes: z.number().int().nonnegative(),
-  totalVolumeM3: z.number().nonnegative(),
-  totalWeightKg: z.number().nonnegative(),
 })
 
 export const vehicleRecommendationSchema = z.object({
@@ -31,17 +17,24 @@ export const vehicleRecommendationSchema = z.object({
   loadRateWeight: z.number().min(0).max(1),
   reason: z.string().min(1),
   warning: z.string().optional(),
-  selectedOrientationLabel: z.string().optional(),
-  selectedOrientationAxis: z.enum(['length', 'width', 'height']).optional(),
+  selectedOrientation: z.object({
+    label: z.string().min(1),
+    lengthAxis: z.enum(['length', 'width', 'height']),
+    widthAxis: z.enum(['length', 'width', 'height']),
+    heightAxis: z.enum(['length', 'width', 'height']),
+    lengthMm: z.number().positive(),
+    widthMm: z.number().positive(),
+    heightMm: z.number().positive(),
+  }),
   boxesPerLayer: z.number().int().nonnegative().optional(),
   layerCount: z.number().int().nonnegative().optional(),
   maxBoxesPerVehicle: z.number().int().nonnegative().optional(),
 })
 
 export const vehicleRecommendationRequestSchema = z.object({
-  summary: shipmentSummarySchema,
-  vehicleSpecs: z.array(vehicleSpecSchema).min(1),
-  packageInput: vehicleLoadingPackageInputSchema.optional(),
+  boxes: z.number().int().positive(),
+  packagingProfileId: z.string().min(1),
+  vehicleSpecIds: z.array(z.string().min(1)).min(1),
 })
 
 export const vehicleRecommendationResponseSchema = z.object({
@@ -50,7 +43,6 @@ export const vehicleRecommendationResponseSchema = z.object({
   engineVersion: z.string().min(1),
 })
 
-export type ShipmentSummaryDTO = z.infer<typeof shipmentSummarySchema>
 export type VehicleRecommendationDTO = z.infer<
   typeof vehicleRecommendationSchema
 >

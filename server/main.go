@@ -241,6 +241,22 @@ func runCronWithDistributedLock(jobName, lockKey string, lockTTL time.Duration, 
 	log.Printf("[CRON][%s][ERROR] failed to execute singleton task: %v", jobName, err)
 }
 
+func cleanupVehicleModelTemplateSourceAssets() error {
+	result, err := services.CleanupUnboundVehicleModelTemplateSourceAssets("uploads", 24*time.Hour)
+	if err != nil {
+		return err
+	}
+	if result.Scanned > 0 || result.Deleted > 0 {
+		log.Printf(
+			"[CLEANUP][vehicle-model-template-assets] scanned=%d kept=%d deleted=%d",
+			result.Scanned,
+			result.Kept,
+			result.Deleted,
+		)
+	}
+	return nil
+}
+
 func main() {
 	loadBackendEnv()
 
@@ -261,6 +277,9 @@ func main() {
 
 	if err := os.MkdirAll("uploads", 0755); err != nil {
 		log.Printf("[WARN] 无法初始化 uploads 目录: %v", err)
+	}
+	if err := cleanupVehicleModelTemplateSourceAssets(); err != nil {
+		log.Printf("[WARN] 车型模型模板临时源文件清理失败: %v", err)
 	}
 
 	ginMode := os.Getenv("GIN_MODE")
@@ -286,7 +305,7 @@ func main() {
 	}
 	log.Printf("[READY] Trusted proxies configured: %s", strings.Join(trustedProxies, ", "))
 
-	r.MaxMultipartMemory = 100 << 20
+	r.MaxMultipartMemory = 16 << 20
 	r.Use(gzip.Gzip(gzip.DefaultCompression))
 
 	r.Use(func(c *gin.Context) {
@@ -367,8 +386,20 @@ func main() {
 		log.Printf("[WARN] 无法启动自动备份定时任务: %v", err)
 	}
 
+	_, err = c.AddFunc("30 3 * * *", func() {
+		runCronWithDistributedLock(
+			"vehicle-model-template-source-cleanup-daily",
+			"vehicle-model-template-source-cleanup",
+			30*time.Minute,
+			cleanupVehicleModelTemplateSourceAssets,
+		)
+	})
+	if err != nil {
+		log.Printf("[WARN] 无法启动车型模型模板源文件清理任务: %v", err)
+	}
+
 	c.Start()
-	log.Println("[READY] 定时任务集群已就绪: 汇率 (11:00) | 备份 (02:00)")
+	log.Println("[READY] 定时任务集群已就绪: 汇率 (11:00) | 备份 (02:00) | 车型模型源文件清理 (03:30)")
 
 	routes.SetupRoutes(r)
 

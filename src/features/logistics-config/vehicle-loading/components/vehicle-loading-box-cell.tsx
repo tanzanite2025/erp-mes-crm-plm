@@ -14,24 +14,27 @@ function Arrow({ direction }: { direction: 'horizontal' | 'vertical' }) {
 export function VehicleLoadingBoxCell({
   index,
   total,
-  orientationLabel,
-  orientationAxis,
+  orientation,
+  className = '',
+  style,
+  fitToContainer = false,
 }: BoxCellProps) {
-  const isVertical = orientationAxis === 'height'
-  const isLength = orientationAxis === 'length'
-  const isWidth = orientationAxis === 'width'
+  const isVertical = orientation.heightAxis === 'height'
+  const isLength = orientation.lengthAxis === 'length'
+  const isWidth = orientation.widthAxis === 'width'
   const toneClass = isVertical
-    ? 'bg-emerald-100 border-emerald-400 text-emerald-700'
+    ? 'border-emerald-400 bg-emerald-100 text-emerald-700 dark:border-emerald-500/60 dark:bg-emerald-500/15 dark:text-emerald-200'
     : isLength
-      ? 'bg-sky-100 border-sky-400 text-sky-700'
+      ? 'border-sky-400 bg-sky-100 text-sky-700 dark:border-sky-500/60 dark:bg-sky-500/15 dark:text-sky-200'
       : isWidth
-        ? 'bg-amber-100 border-amber-400 text-amber-700'
-        : 'bg-primary/15 border-primary/40 text-primary'
+        ? 'border-amber-400 bg-amber-100 text-amber-700 dark:border-amber-500/60 dark:bg-amber-500/15 dark:text-amber-200'
+        : 'border-primary/40 bg-primary/15 text-primary'
   const arrowDirection = isVertical ? 'vertical' : 'horizontal'
 
   return (
     <div
-      className={`relative flex min-h-14 min-w-14 flex-1 items-center justify-center rounded-md border ${toneClass} text-[10px] font-black shadow-sm`}
+      className={`relative flex items-center justify-center rounded-md border ${toneClass} text-[10px] font-black shadow-sm ${fitToContainer ? 'h-full min-h-0 w-full min-w-0' : 'min-h-14 min-w-14 flex-1'} ${className}`.trim()}
+      style={style}
     >
       <div className='absolute top-1 left-1 text-[8px] font-black opacity-60'>
         {index + 1}
@@ -41,7 +44,7 @@ export function VehicleLoadingBoxCell({
         <div className='flex-1 text-center leading-tight'>
           <div>箱</div>
           <div className='text-[8px] font-medium opacity-70'>
-            {orientationLabel}
+            {orientation.label}
           </div>
         </div>
         <Arrow direction={arrowDirection} />

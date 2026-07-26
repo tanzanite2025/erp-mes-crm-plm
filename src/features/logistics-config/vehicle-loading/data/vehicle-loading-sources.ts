@@ -1,4 +1,4 @@
-export type VehicleLoadingSourceType = 'manual' | 'packing-rule'
+export type VehicleLoadingSourceType = 'packing-rule'
 
 export type VehicleLoadingSourceOption = {
   id: VehicleLoadingSourceType
@@ -6,24 +6,14 @@ export type VehicleLoadingSourceOption = {
   description: string
 }
 
-export const VEHICLE_LOADING_SOURCE_OPTIONS: VehicleLoadingSourceOption[] = [
-  {
-    id: 'manual',
-    label: '装箱汇总输入',
-    description: '使用当前出货汇总估算单箱重量与箱型参数',
-  },
-  {
-    id: 'packing-rule',
-    label: '包装规则箱型',
-    description: '使用已维护的包装规则箱型参数参与推荐',
-  },
-]
+export const VEHICLE_LOADING_PACKING_RULE_SOURCE: VehicleLoadingSourceOption = {
+  id: 'packing-rule',
+  label: '包装规则箱型',
+  description: '使用包装管理中已维护的箱型尺寸、重量和容量参与计算',
+}
 
 export function getVehicleLoadingSourceConfig(
-  source: VehicleLoadingSourceType
+  _source: VehicleLoadingSourceType = 'packing-rule'
 ): VehicleLoadingSourceOption {
-  return (
-    VEHICLE_LOADING_SOURCE_OPTIONS.find((item) => item.id === source) ??
-    VEHICLE_LOADING_SOURCE_OPTIONS[0]
-  )
+  return VEHICLE_LOADING_PACKING_RULE_SOURCE
 }

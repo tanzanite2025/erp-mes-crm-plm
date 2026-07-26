@@ -1,0 +1,15 @@
+[package]
+name = "xdfc-vehicle-geometry-parser"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "xdfc-vehicle-geometry-parser"
+path = "src/main.rs"
+
+[dependencies]
+serde_json = "1.0"
+xdfc-vehicle-loading-engine-core = { path = "../core" }
+
+[lints]
+workspace = true

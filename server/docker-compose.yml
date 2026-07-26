@@ -79,7 +79,8 @@ services:
 
   app:
     build:
-      context: .
+      context: ..
+      dockerfile: server/Dockerfile
       args:
         XDFC_APP_UID: ${XDFC_APP_UID:-10001}
         XDFC_APP_GID: ${XDFC_APP_GID:-10001}
@@ -99,6 +100,7 @@ services:
       - TOPOLOGY_AUTH_PASSWORD=${TOPOLOGY_AUTH_PASSWORD:?TOPOLOGY_AUTH_PASSWORD is required}
       - EXCHANGERATE_API_KEY=${EXCHANGERATE_API_KEY}
       - SEARCH_ENGINE_URL=http://search-engine:8081
+      - VEHICLE_GEOMETRY_PARSER_BIN=/app/xdfc-vehicle-geometry-parser
       - REDIS_HOST=${REDIS_HOST:-redis}
       - REDIS_PORT=${REDIS_PORT:-6379}
       - REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD is required}

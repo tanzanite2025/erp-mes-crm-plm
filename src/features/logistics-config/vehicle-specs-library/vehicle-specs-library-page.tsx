@@ -3,6 +3,7 @@ import { VehiclePhotoDialog } from '../vehicle-specs/components/vehicle-photo-di
 import { filterVehicleSpecsByKeyword } from '../vehicle-specs/data/vehicle-specs-search'
 import { useVehiclePhotoDialogState } from '../vehicle-specs/hooks/use-vehicle-photo-dialog-state'
 import { useVehicleSpecsQuery } from '../vehicle-specs/hooks/use-vehicle-specs-query'
+import { VehicleModelTemplateImportCard } from '../vehicle-model-templates/components/vehicle-model-template-import-card'
 import { VehicleSpecsLibraryContent } from './components/vehicle-specs-library-content'
 import { VehicleSpecsLibraryHeader } from './components/vehicle-specs-library-header'
 import {
@@ -30,6 +31,11 @@ export function VehicleSpecsLibraryPage() {
     <>
       <div className='flex animate-in flex-col gap-5 duration-700 fade-in'>
         <VehicleSpecsLibraryHeader />
+
+        <VehicleModelTemplateImportCard
+          vehicleSpecs={vehicleSpecs}
+          isLoading={isLoadingSpecs}
+        />
 
         <div className='space-y-3 rounded-[28px] border border-dashed border-border/70 bg-muted/10 p-3 md:p-4'>
           <VehicleSpecsLibraryToolbar

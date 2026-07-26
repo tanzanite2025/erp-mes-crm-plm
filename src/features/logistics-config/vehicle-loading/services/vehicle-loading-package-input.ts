@@ -1,18 +1,5 @@
 import type { PackagingProfile } from '@/features/logistics-packaging-management/packaging-rules-service'
-import type {
-  PackageDimension,
-  ShipmentSummary,
-  VehicleLoadingPackageDraft,
-  VehicleLoadingPackageInput,
-} from '../data/vehicle-loading.types'
-
-export const DEFAULT_VEHICLE_LOADING_PACKAGE_DIMENSION: PackageDimension = {
-  lengthMm: 420,
-  widthMm: 420,
-  heightMm: 400,
-  canRotate: true,
-  canInvert: false,
-}
+import type { VehicleLoadingPackageInput } from '../data/vehicle-loading.types'
 
 function normalizeUnitCode(code: string): string {
   return code.trim().toLowerCase()
@@ -61,38 +48,6 @@ function validatePositiveNumber(value: number, label: string): number {
   return value
 }
 
-function resolveUnitWeightFromSummary(
-  summary: ShipmentSummary,
-  label: string
-): number {
-  return summary.boxes > 0
-    ? validatePositiveNumber(summary.totalWeightKg / summary.boxes, label)
-    : validatePositiveNumber(summary.totalWeightKg, label)
-}
-
-export function buildManualVehicleLoadingPackageInput(
-  summary: ShipmentSummary,
-  sourceLabel = '装箱汇总输入'
-): VehicleLoadingPackageInput {
-  return {
-    packageId: 'manual-shipment',
-    name: sourceLabel,
-    unitWeightKg: resolveUnitWeightFromSummary(summary, '单箱重量'),
-    dimension: DEFAULT_VEHICLE_LOADING_PACKAGE_DIMENSION,
-  }
-}
-
-export function createDefaultVehicleLoadingPackageDraft(): VehicleLoadingPackageDraft {
-  return {
-    name: '装箱汇总箱型',
-    lengthMm: String(DEFAULT_VEHICLE_LOADING_PACKAGE_DIMENSION.lengthMm),
-    widthMm: String(DEFAULT_VEHICLE_LOADING_PACKAGE_DIMENSION.widthMm),
-    heightMm: String(DEFAULT_VEHICLE_LOADING_PACKAGE_DIMENSION.heightMm),
-    canRotate: DEFAULT_VEHICLE_LOADING_PACKAGE_DIMENSION.canRotate,
-    canInvert: DEFAULT_VEHICLE_LOADING_PACKAGE_DIMENSION.canInvert,
-  }
-}
-
 export function buildVehicleLoadingPackageInputFromProfile(
   profile: PackagingProfile,
   sourceLabel = '包装规则箱型'
@@ -121,27 +76,8 @@ export function buildVehicleLoadingPackageInputFromProfile(
         toMillimeters(profile.height, profile.dimensionUnitCode),
         '包装规则高度'
       ),
-      canRotate: true,
-      canInvert: false,
-    },
-  }
-}
-
-export function buildVehicleLoadingPackageInputFromDraft(
-  draft: VehicleLoadingPackageDraft,
-  summary: ShipmentSummary,
-  sourceLabel = '装箱汇总输入'
-): VehicleLoadingPackageInput {
-  return {
-    packageId: 'shipment-package-input',
-    name: draft.name.trim() || sourceLabel,
-    unitWeightKg: resolveUnitWeightFromSummary(summary, '单箱重量'),
-    dimension: {
-      lengthMm: validatePositiveNumber(Number(draft.lengthMm), '箱型长度'),
-      widthMm: validatePositiveNumber(Number(draft.widthMm), '箱型宽度'),
-      heightMm: validatePositiveNumber(Number(draft.heightMm), '箱型高度'),
-      canRotate: draft.canRotate,
-      canInvert: draft.canInvert,
+      canRotate: profile.canRotate,
+      canInvert: profile.canInvert,
     },
   }
 }

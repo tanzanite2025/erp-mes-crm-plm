@@ -44,6 +44,8 @@ export const logisticsPackagingManagement = {
       length: 'Length',
       width: 'Width',
       height: 'Height',
+      canRotate: 'Allow Flat Rotation',
+      canInvert: 'Allow Side Loading',
       capacity: 'Capacity',
       quantity: 'Qty Per Box',
       netWeight: 'Net Weight',
@@ -55,6 +57,12 @@ export const logisticsPackagingManagement = {
       defaultRule: 'Default Rule',
       spec: 'Spec',
       notes: 'Notes',
+    },
+    hints: {
+      canRotate:
+        'Allow length and width to swap during loading calculation while height stays upright.',
+      canInvert:
+        'Allow the box to be laid on its side; loading calculation will evaluate all orientations.',
     },
     table: {
       code: 'Code',

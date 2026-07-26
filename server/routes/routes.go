@@ -125,6 +125,7 @@ func SetupRoutes(r *gin.Engine) {
 		authorized.GET("/dashboard/stats", middleware.RequireAnyPermission(authz.MenuDashboard), handlers.GetDashboardStatsHandler)
 		authorized.GET("/audit/timeline", handlers.GetDataTimelineHandler)
 		authorized.GET("/audit/engine/stats", middleware.RequireAnyPermission(authz.MenuSystem), handlers.GetAuditEngineStatsHandler)
+		authorized.POST("/assets/vehicle-model-templates/upload", middleware.RequireAnyPermission(authz.PermissionManage), handlers.UploadVehicleModelTemplateAssetHandler)
 		authorized.POST("/assets/upload", assetUploadAccess, handlers.UploadAssetHandler)
 		authorized.GET("/ai/policy", handlers.GetAIRuntimePolicyHandler)
 		authorized.GET("/ai/policy/admin", middleware.RequireAnyPermission(authz.PermissionManage), handlers.GetAIAdminPolicyHandler)
@@ -245,6 +246,12 @@ func SetupRoutes(r *gin.Engine) {
 		{
 			logisticsConfigGroup.GET("/vehicle-specs", handlers.GetVehicleSpecsCatalogHandler)
 			logisticsConfigGroup.POST("/vehicle-specs/:id/photos", handlers.SaveVehicleSpecPhotoHandler)
+			logisticsConfigGroup.GET("/vehicle-model-templates", handlers.GetVehicleModelTemplatesHandler)
+			logisticsConfigGroup.POST("/vehicle-model-templates", adminOnly, handlers.SaveVehicleModelTemplateHandler)
+			logisticsConfigGroup.PATCH("/vehicle-model-templates/:id", adminOnly, handlers.UpdateVehicleModelTemplateHandler)
+			logisticsConfigGroup.POST("/vehicle-model-templates/:id/parse", adminOnly, handlers.ParseVehicleModelTemplateGeometryHandler)
+			logisticsConfigGroup.GET("/vehicle-model-templates/:id/versions", handlers.GetVehicleModelTemplateVersionsHandler)
+			logisticsConfigGroup.POST("/vehicle-model-templates/:id/versions/:version/restore", adminOnly, handlers.RestoreVehicleModelTemplateVersionHandler)
 		}
 
 		vehicleLoadingGroup := authorized.Group("/logistics/vehicle-loading")

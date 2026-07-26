@@ -17,6 +17,7 @@ const (
 	AuditModuleShipment              = "shipment"
 	AuditModuleLogistics             = "logistics"
 	AuditModulePackagingAssembly     = "packaging-assembly"
+	AuditModuleVehicleModelTemplate  = "vehicle-model-template"
 	AuditModuleChangeOrder           = "change-order"
 	AuditModuleBOM                   = "bom"
 	AuditModuleUser                  = "user"

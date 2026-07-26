@@ -18,16 +18,17 @@ const (
 type AuditEntityKey string
 
 const (
-	AuditEntitySalesOrder          AuditEntityKey = "sales-order"
-	AuditEntityPurchaseOrder       AuditEntityKey = "purchase-order"
-	AuditEntityCustomer            AuditEntityKey = "customer"
-	AuditEntitySupplier            AuditEntityKey = "supplier"
-	AuditEntityEmployee            AuditEntityKey = "employee"
-	AuditEntityProductionLine      AuditEntityKey = "production-line"
-	AuditEntityProductionRoute     AuditEntityKey = "production-route"
-	AuditEntityProductionOperation AuditEntityKey = "production-operation"
-	AuditEntityOutsourcePartner    AuditEntityKey = "outsource-partner"
-	AuditEntityOutsourceOrder      AuditEntityKey = "outsource-order"
+	AuditEntitySalesOrder           AuditEntityKey = "sales-order"
+	AuditEntityPurchaseOrder        AuditEntityKey = "purchase-order"
+	AuditEntityCustomer             AuditEntityKey = "customer"
+	AuditEntitySupplier             AuditEntityKey = "supplier"
+	AuditEntityEmployee             AuditEntityKey = "employee"
+	AuditEntityProductionLine       AuditEntityKey = "production-line"
+	AuditEntityProductionRoute      AuditEntityKey = "production-route"
+	AuditEntityProductionOperation  AuditEntityKey = "production-operation"
+	AuditEntityOutsourcePartner     AuditEntityKey = "outsource-partner"
+	AuditEntityOutsourceOrder       AuditEntityKey = "outsource-order"
+	AuditEntityVehicleModelTemplate AuditEntityKey = "vehicle-model-template"
 )
 
 // AuditActor captures the operator context for an audit event.
