@@ -9,6 +9,7 @@ import { VehicleLoadingPlanDialog } from './components/vehicle-loading-plan-dial
 import { VehicleLoadingSummaryPanel } from './components/vehicle-loading-summary-panel'
 import { VehicleRecommendationPanel } from './components/vehicle-recommendation-panel'
 import type { VehicleLoadingPreviewScene } from './data/vehicle-loading-preview-scene.types'
+import type { VehicleLoadingPlanRequest } from './data/vehicle-loading-wasm-plan.types'
 import type { VehicleRecommendation } from './data/vehicle-loading.types'
 import { useVehicleLoadingPage } from './hooks/use-vehicle-loading-page'
 import { projectVehicleModelTemplateGeometryToLoadingSpace } from './services/vehicle-loading-geometry-projection'
@@ -17,7 +18,10 @@ import {
   buildEmptyVehicleLoadingPreviewScene,
   buildFailedVehicleLoadingPreviewScene,
 } from './services/vehicle-loading-preview-scene'
-import { calculateVehicleLoadingPlanWithWasm } from './services/vehicle-loading-wasm-engine'
+import {
+  calculateVehicleLoadingPlanWithWasm,
+  diagnoseVehicleLoadingPlanWithWasm,
+} from './services/vehicle-loading-wasm-engine'
 import { buildVehicleLoadingPreviewSceneFromWasmPlan } from './services/vehicle-loading-wasm-plan-preview-scene'
 import { buildVehicleLoadingPlanRequestFromMasterData } from './services/vehicle-loading-wasm-plan-request'
 
@@ -76,6 +80,7 @@ export function LogisticsVehicleLoadingTab() {
       setDiagramOpen(true)
 
       void (async () => {
+        let request: VehicleLoadingPlanRequest | null = null
         try {
           if (!packageInput) {
             throw new Error('包装规则主数据缺失，无法生成 WASM 装箱请求。')
@@ -85,7 +90,7 @@ export function LogisticsVehicleLoadingTab() {
             await projectVehicleModelTemplateGeometryToLoadingSpace(
               modelTemplate
             )
-          const request = buildVehicleLoadingPlanRequestFromMasterData({
+          request = buildVehicleLoadingPlanRequestFromMasterData({
             boxes: summary.boxes,
             vehicleSpec: recommendation.vehicle,
             packageInput,
@@ -110,11 +115,20 @@ export function LogisticsVehicleLoadingTab() {
           setPreviewScene(scene)
         } catch (error) {
           if (previewRequestIdRef.current !== previewRequestId) return
+          let diagnostics
+          if (request) {
+            try {
+              diagnostics = await diagnoseVehicleLoadingPlanWithWasm(request)
+            } catch {
+              diagnostics = undefined
+            }
+          }
           setPreviewScene(
             buildFailedVehicleLoadingPreviewScene({
               vehicleName,
               errorMessage:
                 error instanceof Error ? error.message : String(error),
+              diagnostics,
             })
           )
         }

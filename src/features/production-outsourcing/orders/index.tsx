@@ -9,6 +9,7 @@ import {
   Search,
   Trash2,
 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { isForbiddenError } from '@/lib/error-status'
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
@@ -19,6 +20,10 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
+import {
+  industrialPanelClassName,
+  industrialPanelGradientClassName,
+} from '@/components/uds/industrial-panel'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import { OutsourceStatCard } from '../components/outsource-stat-card'
@@ -186,7 +191,7 @@ export function OutsourceOrderManagement() {
         />
       </div>
 
-      <div className='flex flex-col gap-3 rounded-2xl border bg-card p-3 shadow-sm lg:flex-row lg:items-center lg:justify-between'>
+      <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between'>
         <div className='flex flex-1 flex-col gap-3 md:flex-row md:items-center'>
           <div className='relative w-full md:max-w-sm'>
             <Search className='absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/50' />
@@ -194,7 +199,7 @@ export function OutsourceOrderManagement() {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder={t('productionOutsourcing.orders.searchPlaceholder')}
-              className='h-10 rounded-xl bg-background pl-10 text-sm'
+              className='pl-10'
             />
           </div>
           <select
@@ -202,7 +207,7 @@ export function OutsourceOrderManagement() {
             onChange={(event) =>
               setStatus(event.target.value as OutsourceOrderStatus | 'ALL')
             }
-            className='h-10 w-full rounded-xl border border-input bg-background px-3 text-sm font-medium shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 md:w-44 dark:bg-input/30'
+            className='h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-xs shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 md:w-44 md:text-sm dark:bg-input/30'
           >
             <option value='ALL'>
               {t('productionOutsourcing.orders.filters.allStatus')}
@@ -228,7 +233,7 @@ export function OutsourceOrderManagement() {
                 event.target.value as OutsourceOrderSourceType | 'ALL'
               )
             }
-            className='h-10 w-full rounded-xl border border-input bg-background px-3 text-sm font-medium shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 md:w-44 dark:bg-input/30'
+            className='h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-xs shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 md:w-44 md:text-sm dark:bg-input/30'
           >
             <option value='ALL'>
               {t('productionOutsourcing.orders.filters.allSource')}
@@ -248,9 +253,9 @@ export function OutsourceOrderManagement() {
               ? undefined
               : t('productionOutsourcing.orders.noManagePermission')
           }
-          className='h-10 rounded-xl px-5'
+          className='h-9 w-full rounded-full px-4 text-xs font-medium md:w-auto'
         >
-          <Plus className='mr-2 size-4' />
+          <Plus className='size-4' />
           {t('productionOutsourcing.orders.actions.add')}
         </Button>
       </div>
@@ -258,19 +263,28 @@ export function OutsourceOrderManagement() {
       {ordersQuery.isLoading ? (
         <div className='grid gap-4 lg:grid-cols-2 xl:grid-cols-3'>
           {[1, 2, 3].map((item) => (
-            <Skeleton key={item} className='h-52 rounded-2xl' />
+            <Skeleton
+              key={item}
+              className={cn(industrialPanelClassName, 'h-52')}
+            />
           ))}
         </div>
       ) : ordersQuery.isError ? (
-        <Card className='rounded-2xl border-rose-300/60 bg-rose-50/70 shadow-sm dark:bg-rose-950/20'>
-          <CardContent className='flex flex-col items-center gap-3 py-12 text-center'>
+        <Card
+          className={cn(
+            industrialPanelClassName,
+            'border-rose-300/60 bg-rose-50/70 dark:bg-rose-950/20'
+          )}
+        >
+          <div className={industrialPanelGradientClassName} />
+          <CardContent className='relative z-10 flex flex-col items-center gap-3 py-12 text-center'>
             <ClipboardList className='size-10 text-rose-400/50' />
             <p className='text-sm font-medium text-rose-600'>
               {t('productionOutsourcing.orders.loadingFailed')}
             </p>
             <Button
               variant='outline'
-              className='rounded-xl'
+              className='h-9 rounded-full px-4 text-xs font-medium'
               onClick={() => void ordersQuery.refetch()}
             >
               {t('common.actions.retry')}
@@ -278,8 +292,9 @@ export function OutsourceOrderManagement() {
           </CardContent>
         </Card>
       ) : orders.length === 0 ? (
-        <Card className='rounded-2xl shadow-sm'>
-          <CardContent className='flex flex-col items-center gap-3 py-14 text-center'>
+        <Card className={industrialPanelClassName}>
+          <div className={industrialPanelGradientClassName} />
+          <CardContent className='relative z-10 flex flex-col items-center gap-3 py-14 text-center'>
             <ClipboardList className='size-10 text-muted-foreground/30' />
             <p className='text-sm text-muted-foreground'>
               {t('productionOutsourcing.orders.empty')}
@@ -288,7 +303,7 @@ export function OutsourceOrderManagement() {
               onClick={openCreate}
               disabled={!canManage || isChecking}
               variant='outline'
-              className='rounded-xl'
+              className='h-9 rounded-full px-4 text-xs font-medium'
             >
               {t('productionOutsourcing.orders.actions.add')}
             </Button>
@@ -299,9 +314,13 @@ export function OutsourceOrderManagement() {
           {orders.map((order) => (
             <Card
               key={order.id}
-              className='overflow-hidden rounded-2xl shadow-sm transition-colors hover:bg-muted/20'
+              className={cn(
+                industrialPanelClassName,
+                'transition-colors hover:bg-muted/10'
+              )}
             >
-              <CardHeader className='space-y-3 border-b bg-muted/20 p-4'>
+              <div className={industrialPanelGradientClassName} />
+              <CardHeader className='relative z-10 space-y-3 border-b border-dashed border-muted/20 bg-background/20 p-4'>
                 <div className='flex items-start justify-between gap-3'>
                   <div className='min-w-0'>
                     <CardTitle className='truncate text-base font-semibold tracking-tight'>
@@ -333,7 +352,7 @@ export function OutsourceOrderManagement() {
                   ) : null}
                 </div>
               </CardHeader>
-              <CardContent className='space-y-4 p-4'>
+              <CardContent className='relative z-10 space-y-4 p-4'>
                 <div className='grid grid-cols-2 gap-3 text-xs'>
                   <div className='rounded-xl bg-muted/30 p-3'>
                     <p className='text-xs font-medium text-muted-foreground'>
@@ -355,7 +374,7 @@ export function OutsourceOrderManagement() {
                   </div>
                 </div>
 
-                <div className='space-y-2 rounded-xl bg-muted/30 p-3'>
+                <div className='space-y-2 rounded-md bg-muted/30 p-3'>
                   {(order.lines.length > 0 ? order.lines.slice(0, 2) : []).map(
                     (line) => (
                       <div key={line.id} className='grid gap-1 text-sm'>
@@ -401,7 +420,7 @@ export function OutsourceOrderManagement() {
                     targetId={order.id}
                     targetName={order.orderNo}
                     label={t('common.audit.trigger')}
-                    className='h-9 rounded-xl text-xs'
+                    className='rounded-full border-solid text-xs font-medium tracking-normal normal-case'
                   />
                   <Button
                     variant='outline'
@@ -417,7 +436,7 @@ export function OutsourceOrderManagement() {
                           : undefined
                     }
                     onClick={() => openEdit(order)}
-                    className='rounded-xl'
+                    className='rounded-full'
                   >
                     <Pencil className='mr-2 size-3.5' />
                     {t('common.actions.edit')}
@@ -439,7 +458,7 @@ export function OutsourceOrderManagement() {
                           : undefined
                     }
                     onClick={() => handleRelease(order)}
-                    className='rounded-xl'
+                    className='rounded-full'
                   >
                     {releaseMutation.isPending ? (
                       <Loader2 className='mr-2 size-3.5 animate-spin' />
@@ -465,7 +484,7 @@ export function OutsourceOrderManagement() {
                           : undefined
                     }
                     onClick={() => handleDelete(order)}
-                    className='rounded-xl text-destructive hover:bg-destructive/10 hover:text-destructive'
+                    className='rounded-full text-destructive hover:bg-destructive/10 hover:text-destructive'
                   >
                     {deleteMutation.isPending ? (
                       <Loader2 className='mr-2 size-3.5 animate-spin' />

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { ArrowLeftRight, Loader2, Search } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { Input } from '@/components/ui/input'
@@ -12,21 +13,42 @@ import {
 import { CompactPaginationControls } from '@/components/pagination/compact-pagination-controls'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { TradingQueryErrorState } from '@/features/trading/components/trading-query-error-state'
-import { SalesExchangeCreateDialog } from '../components/sales-exchange-create-dialog'
-import { SalesExchangeDraftRecordMaster } from '../components/sales-exchange-draft-record-master'
-import { SalesExchangeRecordSpotlight } from '../components/sales-exchange-record-spotlight'
+import {
+  getSalesStatusLabel,
+  salesStatusMeta,
+} from '@/features/trading/data/sales-status'
+import {
+  SalesExchangeCreateDialog,
+  type SalesExchangeCreateInitialValues,
+} from '../components/sales-exchange-create-dialog'
 import { SalesExchangeSourceOrderMaster } from '../components/sales-exchange-source-order-master'
 import { useSalesExchangeWorkspaceState } from '../hooks/use-sales-exchange-workspace-state'
 
 const salesExchangeSourceOrderStatusOptions = [
-  { value: 'all', label: '全部可换订单' },
-  { value: 'InProgress', label: '生产中' },
-  { value: 'Done', label: '已完成' },
+  'all',
+  ...salesStatusMeta
+    .filter((status) => status.value !== 'Canceled')
+    .map((status) => status.value),
 ]
 
 export function SalesExchangesPage() {
   const { t } = useLanguage()
   const salesExchangeWorkspaceState = useSalesExchangeWorkspaceState()
+  const [createInitialValues, setCreateInitialValues] = useState<
+    SalesExchangeCreateInitialValues | undefined
+  >(undefined)
+
+  const handleOpenCreateSalesExchangeDialog = (
+    sourceSalesOrder: NonNullable<
+      typeof salesExchangeWorkspaceState.selectedSourceSalesOrder
+    >,
+    initialValues?: SalesExchangeCreateInitialValues
+  ) => {
+    setCreateInitialValues(initialValues)
+    salesExchangeWorkspaceState.handleOpenCreateSalesExchangeDialog(
+      sourceSalesOrder
+    )
+  }
 
   return (
     <div className='flex min-h-0 flex-1 animate-in flex-col gap-8 duration-700 fade-in'>
@@ -64,8 +86,10 @@ export function SalesExchangesPage() {
               </SelectTrigger>
               <SelectContent>
                 {salesExchangeSourceOrderStatusOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
+                  <SelectItem key={option} value={option}>
+                    {option === 'all'
+                      ? t('trading.salesReturns.entryShell.allStatuses')
+                      : getSalesStatusLabel(option, t)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -91,17 +115,26 @@ export function SalesExchangesPage() {
                   sourceOrderCandidates={
                     salesExchangeWorkspaceState.sourceSalesOrderCandidates
                   }
-                  selectedSourceSalesOrderId={
-                    salesExchangeWorkspaceState.selectedSourceSalesOrderId
+                  salesExchangeDraftRecords={
+                    salesExchangeWorkspaceState.createdSalesExchangeDraftRecords
                   }
-                  onSelectSourceSalesOrder={
-                    salesExchangeWorkspaceState.handleSelectSourceSalesOrder
-                  }
-                  onOpenCreateSalesExchangeDialog={(sourceOrderCandidate) =>
-                    salesExchangeWorkspaceState.handleOpenCreateSalesExchangeDialog(
-                      sourceOrderCandidate.order
+                  onOpenCreateSalesExchangeDialog={(
+                    sourceOrderCandidate,
+                    lineId
+                  ) => {
+                    const sourceLine =
+                      sourceOrderCandidate.order.lines.find(
+                        (line) => line.id === lineId
+                      )
+                    handleOpenCreateSalesExchangeDialog(
+                      sourceOrderCandidate.order,
+                      {
+                        initialLineId: lineId,
+                        defaultReplacementProductCode:
+                          sourceLine?.productCode ?? '',
+                      }
                     )
-                  }
+                  }}
                 />
               </div>
             </ScrollArea>
@@ -117,41 +150,6 @@ export function SalesExchangesPage() {
           ) : null}
         </section>
 
-        <section className='rounded-[28px] border border-dashed border-muted/50 bg-muted/5 shadow-none'>
-          <div className='px-5 pt-5 pb-2'>
-            <div className='text-sm font-black tracking-tight text-foreground'>
-              销售换货草稿
-            </div>
-            <p className='mt-1 text-xs leading-6 font-bold text-muted-foreground'>
-              这里先独立承接换货草稿、标签码和补发要求，不复用退货金额和仓库写入逻辑。
-            </p>
-          </div>
-          <div className='grid min-h-0 gap-6 px-5 pb-5 xl:grid-cols-[minmax(0,1fr)_420px]'>
-            <ScrollArea className='min-h-0 rounded-[28px] border border-dashed border-muted/50 bg-background/40'>
-              <div className='space-y-4 p-4'>
-                <SalesExchangeDraftRecordMaster
-                  salesExchangeDraftRecords={
-                    salesExchangeWorkspaceState.createdSalesExchangeDraftRecords
-                  }
-                  selectedSalesExchangeDraftRecordId={
-                    salesExchangeWorkspaceState.selectedSalesExchangeDraftRecordId
-                  }
-                  onSelectSalesExchangeDraftRecord={
-                    salesExchangeWorkspaceState.handleSelectSalesExchangeDraftRecord
-                  }
-                  onRemoveSalesExchangeDraftRecord={
-                    salesExchangeWorkspaceState.handleRemoveSalesExchangeDraftRecord
-                  }
-                />
-              </div>
-            </ScrollArea>
-            <SalesExchangeRecordSpotlight
-              salesExchangeDraftRecord={
-                salesExchangeWorkspaceState.selectedSalesExchangeDraftRecord
-              }
-            />
-          </div>
-        </section>
       </div>
 
       <SalesExchangeCreateDialog
@@ -162,11 +160,13 @@ export function SalesExchangesPage() {
         sourceSalesOrder={
           salesExchangeWorkspaceState.sourceSalesOrderForCreateDialog
         }
+        initialValues={createInitialValues}
         open={Boolean(
           salesExchangeWorkspaceState.sourceSalesOrderForCreateDialog
         )}
         onOpenChange={(open) => {
           if (!open) {
+            setCreateInitialValues(undefined)
             salesExchangeWorkspaceState.handleCloseCreateSalesExchangeDialog()
           }
         }}

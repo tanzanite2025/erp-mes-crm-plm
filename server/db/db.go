@@ -230,6 +230,26 @@ func ensureProductAttributeCategoryKeyUniqueIndex() {
 	}
 }
 
+func ensureVehicleModelTemplateParseTaskActiveUniqueIndex() {
+	if DB == nil || !DB.Migrator().HasTable(&models.LogisticsVehicleModelTemplateParseTask{}) {
+		return
+	}
+
+	if err := DB.Exec(`
+		CREATE UNIQUE INDEX IF NOT EXISTS uniq_vehicle_model_template_parse_task_active
+		ON logistics_vehicle_model_template_parse_tasks (
+			template_id,
+			template_version,
+			source_asset_url,
+			source_asset_name,
+			source_format
+		)
+		WHERE status IN ('queued', 'running')
+	`).Error; err != nil {
+		log.Fatal("Failed to enforce active vehicle model template parse task uniqueness:", err)
+	}
+}
+
 func failOnDuplicatePackagingRules() {
 	if DB == nil || !DB.Migrator().HasTable(&models.PackagingRule{}) {
 		return
@@ -1457,6 +1477,7 @@ func InitDB(dsn string) {
 		&models.LogisticsVehiclePhoto{},
 		&models.LogisticsVehicleModelTemplate{},
 		&models.LogisticsVehicleModelTemplateVersion{},
+		&models.LogisticsVehicleModelTemplateParseTask{},
 		&models.InventoryAdjustment{},
 		&models.InventoryAdjustmentItem{},
 		&models.StocktakeTask{},
@@ -1557,6 +1578,7 @@ func InitDB(dsn string) {
 	cleanupDuplicateProductAttributeOptions()
 	ensureProductAttributeOptionValueUniqueIndex()
 	ensureBusinessEventSourceCodeUniqueIndex()
+	ensureVehicleModelTemplateParseTaskActiveUniqueIndex()
 	fmt.Println("Database migration completed.")
 	sqlDB, err := DB.DB()
 	if err == nil {

@@ -1,0 +1,65 @@
+{
+  "id": "wheel-well-obstacle",
+  "description": "轮包障碍区：obstacle 顶面可以作为水平支撑平面",
+  "request": {
+    "schemaVersion": "vehicle-loading-request.v1",
+    "vehicle": {
+      "id": "wheel-well-obstacle",
+      "name": "带轮包厢车",
+      "usableSpace": {
+        "lengthMm": 2000,
+        "widthMm": 1000,
+        "heightMm": 1000
+      },
+      "blockedSpaces": [
+        {
+          "id": "left-wheel-well",
+          "kind": "obstacle",
+          "originMm": { "xMm": 0, "yMm": 0, "zMm": 0 },
+          "dimension": {
+            "lengthMm": 1000,
+            "widthMm": 500,
+            "heightMm": 500
+          }
+        }
+      ],
+      "payloadKg": 1000
+    },
+    "package": {
+      "id": "box-500",
+      "name": "500 箱",
+      "quantity": 8,
+      "unitWeightKg": 10,
+      "dimension": {
+        "lengthMm": 1000,
+        "widthMm": 500,
+        "heightMm": 500
+      },
+      "canRotate": true,
+      "canInvert": false
+    }
+  },
+  "expected": {
+    "maxBoxesPerVehicle": 7,
+    "boxesPlacedInPreviewVehicle": 7,
+    "remainingBoxesAfterPreviewVehicle": 1,
+    "vehiclesNeeded": 2,
+    "selectedOrientationLabel": "L-W-H",
+    "blockedPositions": 1,
+    "placementPositions": [
+      [1000, 0, 0],
+      [0, 500, 0],
+      [1000, 500, 0],
+      [0, 0, 500],
+      [1000, 0, 500],
+      [0, 500, 500],
+      [1000, 500, 500]
+    ],
+    "warningCodes": [
+      "MULTIPLE_VEHICLES_REQUIRED",
+      "HIGH_VOLUME_UTILIZATION",
+      "PREVIEW_SHOWS_FIRST_VEHICLE_ONLY",
+      "BLOCKED_SPACE_REDUCED_CAPACITY"
+    ]
+  }
+}

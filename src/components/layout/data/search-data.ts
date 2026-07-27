@@ -237,11 +237,19 @@ const moduleGroups: CommandItemConfig[] = [
   },
   {
     id: 'tab-logistics-container-specs',
-    href: '/logistics-container-management/specs',
+    href: '/logistics-loading-specs/container-specs',
     titleKey: 'logisticsContainerManagement.tabs.specs',
-    parentKey: 'sidebar.groups.logisticsCenter',
+    parentKey: 'sidebar.items.loadingSpecs',
     keywords: ['container', 'shipping container', '货柜', '集装箱', '柜型'],
     pinyin: 'hggg',
+  },
+  {
+    id: 'tab-logistics-vehicle-specs-library',
+    href: '/logistics-loading-specs/vehicle-specs-library',
+    titleKey: 'logisticsConfig.tabs.vehicleSpecsLibrary',
+    parentKey: 'sidebar.items.loadingSpecs',
+    keywords: ['vehicle', 'vehicle specs', '车型', '车型规格', '车辆规格'],
+    pinyin: 'cxggk',
   },
   {
     id: 'tab-business-analysis-capacity',

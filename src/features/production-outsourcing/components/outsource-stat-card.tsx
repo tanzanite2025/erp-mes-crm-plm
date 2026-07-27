@@ -1,6 +1,10 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { Card, CardContent } from '@/components/ui/card'
+import {
+  industrialPanelClassName,
+  industrialPanelGradientClassName,
+} from '@/components/uds/industrial-panel'
 
 interface OutsourceStatCardProps {
   label: ReactNode
@@ -18,23 +22,19 @@ export function OutsourceStatCard({
   valueClassName,
 }: OutsourceStatCardProps) {
   return (
-    <Card
-      className={cn(
-        'rounded-[22px] border-dashed bg-muted/5 shadow-none',
-        className
-      )}
-    >
-      <CardContent className='flex items-center justify-between p-4'>
+    <Card className={cn(industrialPanelClassName, className)}>
+      <div className={industrialPanelGradientClassName} />
+      <CardContent className='relative z-10 flex items-center justify-between p-4'>
         <span
           className={cn(
-            'text-[10px] font-black tracking-widest text-muted-foreground uppercase',
+            'text-xs font-medium text-muted-foreground',
             labelClassName
           )}
         >
           {label}
         </span>
         <span
-          className={cn('text-2xl font-black tabular-nums', valueClassName)}
+          className={cn('text-2xl font-semibold tabular-nums', valueClassName)}
         >
           {value}
         </span>

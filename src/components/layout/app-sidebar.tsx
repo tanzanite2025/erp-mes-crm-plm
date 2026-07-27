@@ -85,6 +85,8 @@ export function AppSidebar() {
   const sidebarIsVisible = isMobile
     ? openMobile
     : collapsible === 'none' || state === 'expanded'
+  const scrubberIsEnabled =
+    !isMobile && collapsible !== 'none' && state === 'collapsed'
 
   const requestSidebarGroupExpansionFromScrubber = useCallback(
     (groupId: string) => {
@@ -95,6 +97,12 @@ export function AppSidebar() {
     },
     []
   )
+
+  useEffect(() => {
+    if (!scrubberIsEnabled) {
+      setScrubberExpansionRequest(null)
+    }
+  }, [scrubberIsEnabled])
 
   useSidebarActiveCenter({
     viewportRef: navViewportRef,
@@ -127,12 +135,14 @@ export function AppSidebar() {
         </SidebarContent>
         {collapsible === 'icon' ? <SidebarRail /> : null}
       </Sidebar>
-      <SidebarCategoryScrubber
-        navGroups={renderedNavGroups}
-        activeGroupId={activeSidebarPath?.groupId}
-        navViewportRef={navViewportRef}
-        onCategoryActivate={requestSidebarGroupExpansionFromScrubber}
-      />
+      {scrubberIsEnabled ? (
+        <SidebarCategoryScrubber
+          navGroups={renderedNavGroups}
+          activeGroupId={activeSidebarPath?.groupId}
+          navViewportRef={navViewportRef}
+          onCategoryActivate={requestSidebarGroupExpansionFromScrubber}
+        />
+      ) : null}
     </>
   )
 }

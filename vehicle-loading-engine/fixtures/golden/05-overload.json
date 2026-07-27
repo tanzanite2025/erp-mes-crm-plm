@@ -1,0 +1,45 @@
+{
+  "id": "overload",
+  "description": "超载：容量受载重上限约束并产生高载重告警",
+  "request": {
+    "schemaVersion": "vehicle-loading-request.v1",
+    "vehicle": {
+      "id": "overload",
+      "name": "载重受限厢车",
+      "usableSpace": {
+        "lengthMm": 1000,
+        "widthMm": 1000,
+        "heightMm": 100
+      },
+      "payloadKg": 1000
+    },
+    "package": {
+      "id": "heavy-box",
+      "name": "重箱",
+      "quantity": 2,
+      "unitWeightKg": 900,
+      "dimension": {
+        "lengthMm": 1000,
+        "widthMm": 1000,
+        "heightMm": 100
+      },
+      "canRotate": false,
+      "canInvert": false
+    }
+  },
+  "expected": {
+    "maxBoxesPerVehicle": 1,
+    "boxesPlacedInPreviewVehicle": 1,
+    "remainingBoxesAfterPreviewVehicle": 1,
+    "vehiclesNeeded": 2,
+    "selectedOrientationLabel": "L-W-H",
+    "blockedPositions": 0,
+    "placementPositions": [[0, 0, 0]],
+    "warningCodes": [
+      "MULTIPLE_VEHICLES_REQUIRED",
+      "HIGH_WEIGHT_UTILIZATION",
+      "HIGH_VOLUME_UTILIZATION",
+      "PREVIEW_SHOWS_FIRST_VEHICLE_ONLY"
+    ]
+  }
+}

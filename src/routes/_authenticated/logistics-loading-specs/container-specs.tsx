@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute(
-  '/_authenticated/logistics-config/vehicle-specs-library'
+  '/_authenticated/logistics-loading-specs/container-specs'
 )({})

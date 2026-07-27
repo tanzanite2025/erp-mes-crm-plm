@@ -50,7 +50,7 @@ WASM / 页面交互
 
 ## 3. 当前必须坚持的几何边界
 
-当前引擎使用整数毫米和 AABB 作为第一阶段精确边界。
+当前引擎使用整数毫米、轴对齐箱体 AABB 和受控障碍区 AABB / OBB 作为第一阶段精确边界。
 
 必须坚持：
 
@@ -59,8 +59,8 @@ WASM / 页面交互
 - 旋转只允许 0 / 90 / 180 / 270 这类直角旋转；
 - 180 度和 270 度在 AABB 容量上可以归一，但必须在结果中说明等价角度；
 - 不允许 20 度、斜靠、斜插、曲面贴合等非平面姿态；
-- AABB 贴边不算碰撞；
-- AABB 重叠 1mm 就算碰撞。
+- AABB / OBB 贴边不算碰撞；
+- AABB / OBB 重叠 1mm 就算碰撞。
 
 当前支撑规则采用“水平支撑平面”抽象：
 
@@ -68,6 +68,7 @@ WASM / 页面交互
 - 已摆放箱体的顶面可以形成水平支撑平面；
 - supportable 障碍物顶面可以形成水平支撑平面，例如 `wheelWell` / `obstacle`；
 - `keepOut` 不提供支撑平面；
+- 相邻 supportable 障碍物顶面可以联合覆盖箱体底面；
 - 某高度存在支撑平面时，箱体底下可以悬空，但箱体本身仍然必须保持水平。
 
 这不是有限元受力分析，也不是曲面接触求解。它是业务上可解释的“水平平面装载”规则。
@@ -216,14 +217,81 @@ CAD reference layout
 - 90 度旋转归一；
 - 180 / 270 等价角度说明；
 - 水平支撑平面；
+- 半开区间 AABB 碰撞：面、边、角接触不碰撞，1mm 重叠即碰撞；
+- 几何结果二次验收：边界、障碍碰撞、箱体互撞、支撑面和索引连续性；
+- 整数区间溢出时按碰撞处理，避免溢出导致漏检；
+- `keepOut` / `keep-out` / `keep_out` 统一按禁放区处理，不提供支撑；
+- 可选 `collisionClearanceMm` 水平安全间隙；安全间隙只作用于 x/y 碰撞，不破坏 z 方向堆叠接触；
+- 可选 `boundaryClearanceMm` 车厢水平边界安全间隙；默认允许贴墙，启用后要求箱体远离前后左右边界；
+- 相邻 obstacle / wheelWell 顶面可以组成复合水平支撑面，keepOut 仍不能提供支撑；
+- blockedSpace 可选携带 OBB，候选验算使用 SAT 做旋转障碍碰撞；没有 OBB 时继续使用 AABB；
 - WASM 浏览器计算。
+
+验收资产：
+
+- `vehicle-loading-engine/fixtures/real-semantic-van.glb`：包含 `usable-space`、AABB `obstacle`、AABB `keep-out` 和旋转 OBB `keep-out` 语义；
+- `vehicle-loading-engine/fixtures/golden/*.json`：覆盖规则车厢、轮包障碍区、禁放区、堆叠支撑、超载、放不下和多车需求；
+- `vehicle-loading-wasm-geometry-acceptance.spec.ts`：执行真实 GLB 的 parser -> projection -> WASM packing 链路，并回归 golden 摆放坐标与告警码。
+
+运行方式：
+
+```bash
+pnpm run generate:vehicle-loading-acceptance-fixtures
+pnpm exec vitest run src/features/logistics-config/vehicle-loading/services/vehicle-loading-wasm-geometry-acceptance.spec.ts
+```
+
+当前执行策略：车型几何解析已完成任务表、Worker 调度、有限重试和版本幂等；搜索评分、有限局部搜索、AABB 几何可信度加固、水平安全间隙、车厢边界安全间隙、复合支撑面、碰撞 witness、no-fit 结构化诊断、request-level OBB blockedSpace 碰撞和 GLB `collision=obb` 投影已落地，并继续使用现有语义 GLB、golden fixture 与白盒回归做技术验证。完整回溯、多箱型组合搜索、三角网格级碰撞、无语义网格自动识别和人工方案逼近仍等待业务现场或 CAD 确认方案后再推进。
 
 ### 阶段 2：更强搜索
 
-下一步可以升级：
+第一轮已落地：
 
-- 多扫描顺序；
-- 局部搜索；
+- 多扫描顺序继续保留；
+- 同容量候选增加布局评分；
+- 评分考虑占用包络、重心高度、车厢边界贴合和障碍区边缘贴合；
+- 候选摘要输出评分指标，便于页面解释和回归比较。
+
+第二轮有限局部搜索已落地：
+
+- 对每个扫描策略尝试替换最多 2 个冲突箱体；
+- 以候选锚点作为种子重新贪心补位；
+- 仅在候选锚点数量不超过 512 时启用，保持 WASM 计算复杂度可控；
+- 以箱数优先、布局评分次优的规则保留更优方案；
+- 已加入“1 箱局部替换为 2 箱”的单元回归，防止局部搜索退化。
+
+第三轮几何可信度诊断已落地：
+
+- 每个朝向和扫描策略记录候选锚点的接受数；
+- 区分车厢边界、blockedSpace、箱体互撞和水平支撑失败；
+- 对首个障碍或箱体碰撞保留可复现的 witness，包括锚点、碰撞对象和安全间隙；
+- WASM plan 与前端预览显示该诊断，便于验收“为什么这个候选被过滤”；
+- 诊断解释当前 AABB 和 OBB blockedSpace 结果，不等同于三角网格碰撞。
+
+当前还提供 `diagnose_vehicle_loading_plan_json` / `diagnose_loading_plan_json`：
+
+- 正常可装时返回各朝向的可行性摘要；
+- 放不下时区分尺寸超限、载重不足和没有通过碰撞/支撑验收的候选锚点；
+- 诊断接口不改变原有计算接口的失败语义，适合作为失败态的二次解释调用。
+
+第四轮 OBB blockedSpace 已落地：
+
+- `blockedSpaces[].obb` 可携带中心点、半长轴和 3 个正交单位轴；
+- 箱体仍是轴对齐长方体，障碍区可为旋转长方体；
+- 碰撞验算使用 SAT，能减少 AABB 包围盒误杀；
+- OBB 障碍碰撞 witness 使用 `blockedSpaceObb` 标识；
+- OBB 障碍暂不提供水平支撑面，避免把旋转面误认为可支撑平面。
+
+第五轮 GLB OBB 投影已落地：
+
+- GLB 节点可在 `extras.xdfc.collision` 声明 `obb`；
+- parser 从 mesh 本地 AABB 和节点世界矩阵推导 OBB 中心、半长轴和 3 个单位轴；
+- parser 拒绝剪切、非正交、零长度轴和零厚度 OBB，避免把不可表达的几何伪装成正交盒；
+- projection 会把 OBB 中心从 GLB 世界坐标转成 usable-space 相对坐标，再写入 `blockedSpaces[].obb`；
+- 合成语义 GLB 和前端验收测试已经覆盖 parser -> projection -> WASM packing 链路；
+- 当前仍不做无语义任意网格自动拟合 OBB，也不做三角网格级碰撞。
+
+后续可以继续升级：
+
 - 回溯上限；
 - 分层评分；
 - 优先贴边、优先贴障碍、优先重心稳定；

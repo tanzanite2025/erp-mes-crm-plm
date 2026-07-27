@@ -112,6 +112,66 @@ func ParseVehicleModelTemplateGeometryHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+func CreateVehicleModelTemplateGeometryParseTaskHandler(c *gin.Context) {
+	id := strings.TrimSpace(c.Param("id"))
+	if id == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[VALIDATION] 车型模型模板 ID 不能为空",
+		})
+		return
+	}
+
+	response, err := services.EnqueueVehicleModelTemplateGeometryParseTask(
+		id,
+		services.ParseVehicleModelTemplateGeometryRequest{
+			ActorID:  middleware.GetSafeUserID(c),
+			Operator: middleware.GetSafeUsername(c),
+			IP:       c.ClientIP(),
+		},
+	)
+	if err != nil {
+		writeVehicleModelTemplateServiceError(c, err)
+		return
+	}
+	c.JSON(http.StatusAccepted, response)
+}
+
+func GetVehicleModelTemplateGeometryParseTaskHandler(c *gin.Context) {
+	id := strings.TrimSpace(c.Param("id"))
+	taskID := strings.TrimSpace(c.Param("taskId"))
+	if id == "" || taskID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[VALIDATION] 车型模型模板 ID 和解析任务 ID 不能为空",
+		})
+		return
+	}
+
+	response, err := services.GetVehicleModelTemplateGeometryParseTask(id, taskID)
+	if err != nil {
+		writeVehicleModelTemplateServiceError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, response)
+}
+
+func RetryVehicleModelTemplateGeometryParseTaskHandler(c *gin.Context) {
+	id := strings.TrimSpace(c.Param("id"))
+	taskID := strings.TrimSpace(c.Param("taskId"))
+	if id == "" || taskID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[VALIDATION] 车型模型模板 ID 和解析任务 ID 不能为空",
+		})
+		return
+	}
+
+	response, err := services.RetryVehicleModelTemplateGeometryParseTask(id, taskID)
+	if err != nil {
+		writeVehicleModelTemplateServiceError(c, err)
+		return
+	}
+	c.JSON(http.StatusAccepted, response)
+}
+
 func RestoreVehicleModelTemplateVersionHandler(c *gin.Context) {
 	id := strings.TrimSpace(c.Param("id"))
 	if id == "" {
@@ -149,7 +209,8 @@ func writeVehicleModelTemplateServiceError(c *gin.Context, err error) {
 	switch {
 	case errors.Is(err, services.ErrVehicleModelTemplateSeedVehicleNotFound),
 		errors.Is(err, services.ErrVehicleModelTemplateNotFound),
-		errors.Is(err, services.ErrVehicleModelTemplateSourceAssetFileNotFound):
+		errors.Is(err, services.ErrVehicleModelTemplateSourceAssetFileNotFound),
+		errors.Is(err, services.ErrVehicleModelTemplateParseTaskNotFound):
 		c.JSON(http.StatusNotFound, gin.H{"error": "[NOT_FOUND] " + err.Error()})
 	case errors.Is(err, services.ErrVehicleModelTemplateNameRequired),
 		errors.Is(err, services.ErrVehicleModelTemplateSourceURLRequired),
@@ -167,7 +228,8 @@ func writeVehicleModelTemplateServiceError(c *gin.Context, err error) {
 	case errors.Is(err, services.ErrVehicleModelTemplateVersionNotFound):
 		c.JSON(http.StatusNotFound, gin.H{"error": "[NOT_FOUND] " + err.Error()})
 	case errors.Is(err, services.ErrVehicleModelTemplateDuplicate),
-		errors.Is(err, services.ErrVehicleModelTemplateChangedDuringParse):
+		errors.Is(err, services.ErrVehicleModelTemplateChangedDuringParse),
+		errors.Is(err, services.ErrVehicleModelTemplateParseTaskNotRetryable):
 		c.JSON(http.StatusConflict, gin.H{"error": "[CONFLICT] " + err.Error()})
 	case errors.Is(err, services.ErrVehicleModelTemplateParserUnavailable):
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] " + err.Error()})

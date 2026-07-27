@@ -17,6 +17,7 @@
     "dev:stack:reset-db": "powershell -ExecutionPolicy Bypass -File ./server/dev-up.ps1 -ResetDb",
     "dev:stack:full": "powershell -ExecutionPolicy Bypass -File ./server/dev-up.ps1 -FullStack",
     "dev:stack:full:reset-db": "powershell -ExecutionPolicy Bypass -File ./server/dev-up.ps1 -ResetDb -FullStack",
+    "generate:vehicle-loading-acceptance-fixtures": "node scripts/generate-vehicle-loading-acceptance-glb.mjs",
     "build:vehicle-loading-wasm": "node scripts/build-vehicle-loading-wasm.mjs",
     "build": "node scripts/generate-route-tree.mjs && node scripts/generate-authenticated-route-catalog.mjs && node scripts/generate-route-permission-contract.mjs && node scripts/generate-permission-contract.mjs && node --max-old-space-size=4096 ./node_modules/typescript/bin/tsc -b && node --max-old-space-size=4096 ./node_modules/vite/bin/vite.js build",
     "test": "vitest run",

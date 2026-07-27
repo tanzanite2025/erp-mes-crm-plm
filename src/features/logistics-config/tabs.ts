@@ -13,10 +13,5 @@ export function getLogisticsConfigTabs(t: TranslateFn): TabItem[] {
       label: t('logisticsConfig.tabs.vehicleLoading'),
       href: '/logistics-config/vehicle-loading',
     },
-    {
-      key: 'vehicle-specs-library',
-      label: t('logisticsConfig.tabs.vehicleSpecsLibrary'),
-      href: '/logistics-config/vehicle-specs-library',
-    },
   ]
 }

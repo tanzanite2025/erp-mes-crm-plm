@@ -250,6 +250,9 @@ func SetupRoutes(r *gin.Engine) {
 			logisticsConfigGroup.POST("/vehicle-model-templates", adminOnly, handlers.SaveVehicleModelTemplateHandler)
 			logisticsConfigGroup.PATCH("/vehicle-model-templates/:id", adminOnly, handlers.UpdateVehicleModelTemplateHandler)
 			logisticsConfigGroup.POST("/vehicle-model-templates/:id/parse", adminOnly, handlers.ParseVehicleModelTemplateGeometryHandler)
+			logisticsConfigGroup.POST("/vehicle-model-templates/:id/parse/tasks", adminOnly, handlers.CreateVehicleModelTemplateGeometryParseTaskHandler)
+			logisticsConfigGroup.GET("/vehicle-model-templates/:id/parse/tasks/:taskId", handlers.GetVehicleModelTemplateGeometryParseTaskHandler)
+			logisticsConfigGroup.POST("/vehicle-model-templates/:id/parse/tasks/:taskId/retry", adminOnly, handlers.RetryVehicleModelTemplateGeometryParseTaskHandler)
 			logisticsConfigGroup.GET("/vehicle-model-templates/:id/versions", handlers.GetVehicleModelTemplateVersionsHandler)
 			logisticsConfigGroup.POST("/vehicle-model-templates/:id/versions/:version/restore", adminOnly, handlers.RestoreVehicleModelTemplateVersionHandler)
 		}

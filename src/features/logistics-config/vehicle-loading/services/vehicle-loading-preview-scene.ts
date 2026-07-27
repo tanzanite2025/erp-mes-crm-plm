@@ -4,6 +4,7 @@ import type {
   VehicleLoadingPreviewLayer,
   VehicleLoadingPreviewScene,
 } from '../data/vehicle-loading-preview-scene.types'
+import type { LoadingPlanDiagnostics } from '../data/vehicle-loading-wasm-plan.types'
 import type {
   VehicleLoadingOrientation,
   VehicleRecommendation,
@@ -75,14 +76,17 @@ export function buildCalculatingVehicleLoadingPreviewScene(
 export function buildFailedVehicleLoadingPreviewScene({
   vehicleName = '装箱预览',
   errorMessage,
+  diagnostics,
 }: {
   vehicleName?: string
   errorMessage: string
+  diagnostics?: LoadingPlanDiagnostics
 }): VehicleLoadingPreviewScene {
   return {
     ...buildEmptyVehicleLoadingPreviewScene(),
     status: 'failed',
     errorMessage,
+    diagnostics,
     vehicle: {
       ...buildEmptyVehicleLoadingPreviewScene().vehicle,
       name: vehicleName,

@@ -394,7 +394,7 @@ export function VehicleContactsPage() {
           onCreate={openCreate}
           onGoToVehicleCatalog={() =>
             window.open(
-              '/logistics-config/vehicle-specs-library',
+              '/logistics-loading-specs/vehicle-specs-library',
               '_blank',
               'noopener,noreferrer'
             )

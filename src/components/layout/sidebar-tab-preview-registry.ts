@@ -22,7 +22,7 @@ import { getFinanceSettlementsTabs } from '@/features/finance/settlements-tabs'
 import { getFinanceTabs } from '@/features/finance/tabs'
 import { getLabExperimentalTabs } from '@/features/labs/experimental/tabs'
 import { getLogisticsConfigTabs } from '@/features/logistics-config/tabs'
-import { getLogisticsContainerManagementTabs } from '@/features/logistics-container-management/tabs'
+import { getLogisticsLoadingSpecsTabs } from '@/features/logistics-loading-specs/tabs'
 import { getLogisticsPackagingManagementTabs } from '@/features/logistics-packaging-management/tabs'
 import { getLogisticsSettingsTabs } from '@/features/logistics-settings/tabs'
 import { getMaterialStaticTabs } from '@/features/material-archive/tab-config'
@@ -127,8 +127,8 @@ const sidebarTabPreviewResolvers: Record<string, SidebarTabPreviewResolver> = {
   'material-archive': getMaterialStaticTabs,
   'warehouse-config': getWarehouseConfigTabs,
   'logistics-config': getLogisticsConfigTabs,
+  'logistics-loading-specs': getLogisticsLoadingSpecsTabs,
   'logistics-packaging-management': getLogisticsPackagingManagementTabs,
-  'container-management': getLogisticsContainerManagementTabs,
   'logistics-settings': getLogisticsSettingsTabs,
   'tooling-assets': getEquipmentToolingTabs,
   'furnace-assets': getToolingFurnacesTabs,

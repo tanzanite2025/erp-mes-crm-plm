@@ -1,5 +1,8 @@
 import type { VehicleLoadingReferenceComparisonInput } from '../data/vehicle-loading-preview-scene.types'
-import type { LoadingCandidateSummary } from '../data/vehicle-loading-wasm-plan.types'
+import type {
+  LoadingCandidateSummary,
+  LoadingPlacementRejectionSummary,
+} from '../data/vehicle-loading-wasm-plan.types'
 
 export type VehicleLoadingCandidateComparisonKind =
   | 'algorithm-selected'
@@ -17,6 +20,7 @@ export type VehicleLoadingCandidateComparisonRow = {
   volumeRate: number
   weightRate: number
   blockedPositions?: number
+  rejectionSummary?: LoadingPlacementRejectionSummary
 }
 
 type BuildVehicleLoadingCandidateComparisonRowsOptions = {
@@ -34,24 +38,28 @@ export function buildVehicleLoadingCandidateComparisonRows({
   selectedScanStrategy,
   selectedMaxBoxesPerUnit,
 }: BuildVehicleLoadingCandidateComparisonRowsOptions): VehicleLoadingCandidateComparisonRow[] {
-  const algorithmRows = candidateSummaries.map<VehicleLoadingCandidateComparisonRow>((candidate) => {
-    const isSelected =
-      candidate.orientationLabel === selectedOrientationLabel &&
-      candidate.scanStrategy === selectedScanStrategy
+  const algorithmRows =
+    candidateSummaries.map<VehicleLoadingCandidateComparisonRow>(
+      (candidate) => {
+        const isSelected =
+          candidate.orientationLabel === selectedOrientationLabel &&
+          candidate.scanStrategy === selectedScanStrategy
 
-    return {
-      id: `algorithm:${candidate.orientationLabel}:${candidate.scanStrategy}`,
-      kind: isSelected ? 'algorithm-selected' : 'algorithm-candidate',
-      label: candidate.orientationLabel,
-      yawDegrees: candidate.yawDegrees,
-      scanStrategy: candidate.scanStrategy,
-      maxBoxesPerUnit: candidate.maxBoxesPerUnit,
-      boxDelta: candidate.maxBoxesPerUnit - selectedMaxBoxesPerUnit,
-      volumeRate: candidate.volumeRate,
-      weightRate: candidate.weightRate,
-      blockedPositions: candidate.blockedPositions,
-    }
-  })
+        return {
+          id: `algorithm:${candidate.orientationLabel}:${candidate.scanStrategy}`,
+          kind: isSelected ? 'algorithm-selected' : 'algorithm-candidate',
+          label: candidate.orientationLabel,
+          yawDegrees: candidate.yawDegrees,
+          scanStrategy: candidate.scanStrategy,
+          maxBoxesPerUnit: candidate.maxBoxesPerUnit,
+          boxDelta: candidate.maxBoxesPerUnit - selectedMaxBoxesPerUnit,
+          volumeRate: candidate.volumeRate,
+          weightRate: candidate.weightRate,
+          blockedPositions: candidate.blockedPositions,
+          rejectionSummary: candidate.rejectionSummary,
+        }
+      }
+    )
 
   const referenceRows = referenceSummaries.map((reference) => ({
     ...reference,

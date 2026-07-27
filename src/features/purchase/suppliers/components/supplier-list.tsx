@@ -49,6 +49,9 @@ import { useGetSupplierList, useSupplierMutations } from '../hooks/use-supplier'
 import { supplierQueryKeys } from '../query-keys'
 import { SupplierActionDialog } from './supplier-action-dialog'
 
+const SUPPLIER_INFO_PANEL_CLASS =
+  'min-w-0 rounded-xl border border-border/70 bg-background px-2.5 py-2 shadow-[0_8px_20px_rgba(15,23,42,0.04)] ring-1 ring-black/[0.015] dark:bg-muted/10 dark:shadow-[0_10px_24px_rgba(0,0,0,0.16)] dark:ring-white/[0.025] sm:px-3 sm:py-2.5'
+
 export function SupplierList() {
   const { locale, t } = useLanguage()
   const queryClient = useQueryClient()
@@ -437,114 +440,116 @@ export function SupplierList() {
                   </DropdownMenu>
                 </div>
               </CardHeader>
-              <CardContent className='relative space-y-2.5 p-2.5 pt-2.5 md:space-y-3 md:p-3 md:pt-3'>
-                <div className='flex flex-col gap-2 sm:grid sm:grid-cols-2 md:gap-2.5'>
-                  <div className='space-y-0.5'>
+              <CardContent className='relative p-2.5 pt-2.5 md:p-3 md:pt-3'>
+                <div className='grid min-w-0 grid-cols-1 gap-1.5 sm:grid-cols-2 sm:gap-2'>
+                  <div className={SUPPLIER_INFO_PANEL_CLASS}>
                     <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40 md:text-[9px]'>
                       <User className='size-3' />
                       {t('purchase.suppliers.liaison')}
                     </div>
-                    <p className='text-[12px] font-black text-foreground md:text-[13px]'>
+                    <p className='mt-1 text-[11px] font-black text-foreground sm:text-[12px]'>
                       {supplier.contactPerson}
                     </p>
                   </div>
-                  <div className='space-y-0.5 sm:text-right'>
-                    <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40 sm:justify-end md:text-[9px]'>
+                  <div className={SUPPLIER_INFO_PANEL_CLASS}>
+                    <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40 md:text-[9px]'>
                       <Phone className='size-3' />
                       {t('purchase.suppliers.hotline')}
                     </div>
-                    <p className='text-[12px] font-black text-foreground md:text-[13px]'>
+                    <p className='mt-1 text-[11px] font-black text-foreground sm:text-[12px]'>
                       {supplier.contactPhone}
                     </p>
                   </div>
-                </div>
 
-                <div className='space-y-1'>
-                  <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40 md:text-[9px]'>
-                    <Box className='size-3' />
-                    {t('purchase.suppliers.offerings')}
-                  </div>
-                  <div className='flex flex-wrap gap-2'>
-                    {supplier.mainProducts.map((product) => (
-                      <Badge
-                        key={product}
-                        variant='secondary'
-                        className='rounded-full border-none bg-primary/5 px-2 py-0.5 text-[7px] font-black tracking-tighter text-primary uppercase shadow-sm md:px-3 md:text-[8px]'
-                      >
-                        {product}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                <div className='space-y-0.5 border-t border-dashed border-muted/50 pt-2'>
-                  <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40 md:text-[9px]'>
-                    <MapPin className='size-3' />
-                    {t('purchase.suppliers.address')}
-                  </div>
-                  <p className='truncate text-[10px] leading-relaxed font-bold text-muted-foreground md:text-[11px]'>
-                    {supplier.address}
-                  </p>
-                </div>
-
-                <div className='space-y-0.5 border-t border-dashed border-muted/50 pt-2'>
-                  <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40 md:text-[9px]'>
-                    <MessageCircle className='size-3' />
-                    {t('purchase.suppliers.communication')} /{' '}
-                    {t('purchase.suppliers.wechat')}
-                  </div>
-                  <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
-                    <p className='text-[10px] font-bold break-all text-muted-foreground md:text-[11px]'>
-                      {supplier.wechat || t('purchase.suppliers.unfilled')}
-                    </p>
-                    <Button
-                      type='button'
-                      variant='outline'
-                      size='sm'
-                      disabled={!canOpenWeChat(supplier.wechat)}
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        handleOpenWeChat(supplier)
-                      }}
-                      className='h-8 w-full rounded-full text-[9px] font-black tracking-widest uppercase sm:w-auto'
-                    >
-                      {t('purchase.suppliers.openWechat')}
-                      <ExternalLink className='ms-2 size-3' />
-                    </Button>
-                  </div>
-                </div>
-
-                <div className='flex flex-col justify-between gap-2 border-t border-dashed border-muted/50 pt-2 sm:flex-row sm:items-center'>
-                  <div className='flex items-center justify-between gap-1.5 sm:flex-col sm:items-start sm:justify-start'>
-                    <span className='text-[8px] font-black tracking-[0.2em] text-muted-foreground/40 uppercase italic'>
-                      {t('purchase.suppliers.rating')}
-                    </span>
-                    <div className='flex flex-col items-start'>
-                      <div className='flex items-center gap-1.5 text-base font-black tracking-tighter text-amber-500 italic tabular-nums md:text-lg'>
-                        <Star className='size-3.5 animate-pulse fill-amber-500 text-amber-500 md:size-4' />
-                        {supplier.rating.toFixed(1)}
-                      </div>
-                      <span className='mt-0.5 text-[7px] leading-none font-black tracking-widest text-amber-600/60 uppercase'>
-                        {getRatingLabel(supplier.rating)}
-                      </span>
+                  <div className={`${SUPPLIER_INFO_PANEL_CLASS} sm:col-span-2`}>
+                    <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40 md:text-[9px]'>
+                      <Box className='size-3' />
+                      {t('purchase.suppliers.offerings')}
+                    </div>
+                    <div className='mt-1.5 flex flex-wrap gap-2'>
+                      {supplier.mainProducts.map((product) => (
+                        <Badge
+                          key={product}
+                          variant='secondary'
+                          className='rounded-full border-none bg-primary/5 px-2 py-0.5 text-[7px] font-black tracking-tighter text-primary uppercase shadow-sm md:px-3 md:text-[8px]'
+                        >
+                          {product}
+                        </Badge>
+                      ))}
                     </div>
                   </div>
-                  <div className='flex w-full flex-col gap-1.5 sm:w-auto sm:flex-row sm:items-center'>
-                    <AuditTimelineTriggerButton
-                      module={AUDIT_MODULES.supplier}
-                      targetId={supplier.id}
-                      targetName={supplier.name || supplier.code}
-                      label={t('common.audit.trigger')}
-                      className='h-9 w-full rounded-full px-5 text-[8px] sm:w-auto md:text-[9px]'
-                    />
-                    <Button
-                      variant='secondary'
-                      size='sm'
-                      className='h-9 w-full rounded-full bg-muted/20 px-5 text-[8px] font-black tracking-widest text-muted-foreground uppercase transition-colors hover:bg-muted/30 sm:w-auto md:text-[9px]'
-                    >
-                      {t('purchase.suppliers.dossier')}
-                      <ExternalLink className='ms-2 size-3 opacity-50' />
-                    </Button>
+
+                  <div className={`${SUPPLIER_INFO_PANEL_CLASS} sm:col-span-2`}>
+                    <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40 md:text-[9px]'>
+                      <MapPin className='size-3' />
+                      {t('purchase.suppliers.address')}
+                    </div>
+                    <p className='mt-1 truncate text-[10px] leading-relaxed font-bold text-muted-foreground md:text-[11px]'>
+                      {supplier.address}
+                    </p>
+                  </div>
+
+                  <div className={`${SUPPLIER_INFO_PANEL_CLASS} sm:col-span-2`}>
+                    <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40 md:text-[9px]'>
+                      <MessageCircle className='size-3' />
+                      {t('purchase.suppliers.communication')} /{' '}
+                      {t('purchase.suppliers.wechat')}
+                    </div>
+                    <div className='mt-1 grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_136px] sm:items-center'>
+                      <p className='text-[10px] font-bold break-all text-muted-foreground md:text-[11px]'>
+                        {supplier.wechat || t('purchase.suppliers.unfilled')}
+                      </p>
+                      <Button
+                        type='button'
+                        variant='outline'
+                        size='sm'
+                        disabled={!canOpenWeChat(supplier.wechat)}
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          handleOpenWeChat(supplier)
+                        }}
+                        className='h-9 w-full rounded-full px-4 text-[9px] font-black tracking-widest uppercase sm:justify-self-end'
+                      >
+                        {t('purchase.suppliers.openWechat')}
+                        <ExternalLink className='ms-2 size-3' />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className={`${SUPPLIER_INFO_PANEL_CLASS} sm:col-span-2`}>
+                    <div className='grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center'>
+                      <div className='flex min-w-0 items-center justify-between gap-1.5 sm:flex-col sm:items-start sm:justify-start'>
+                        <span className='text-[8px] font-black tracking-[0.2em] text-muted-foreground/40 uppercase italic'>
+                          {t('purchase.suppliers.rating')}
+                        </span>
+                        <div className='flex flex-col items-start'>
+                          <div className='flex items-center gap-1.5 text-base font-black tracking-tighter text-amber-500 italic tabular-nums md:text-lg'>
+                            <Star className='size-3.5 animate-pulse fill-amber-500 text-amber-500 md:size-4' />
+                            {supplier.rating.toFixed(1)}
+                          </div>
+                          <span className='mt-0.5 text-[7px] leading-none font-black tracking-widest text-amber-600/60 uppercase'>
+                            {getRatingLabel(supplier.rating)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className='flex w-full flex-col gap-1.5 sm:w-auto sm:flex-row sm:items-center'>
+                        <AuditTimelineTriggerButton
+                          module={AUDIT_MODULES.supplier}
+                          targetId={supplier.id}
+                          targetName={supplier.name || supplier.code}
+                          label={t('common.audit.trigger')}
+                          className='h-9 w-full rounded-full px-5 text-[8px] sm:w-auto md:text-[9px]'
+                        />
+                        <Button
+                          variant='secondary'
+                          size='sm'
+                          className='h-9 w-full rounded-full bg-muted/20 px-5 text-[8px] font-black tracking-widest text-muted-foreground uppercase transition-colors hover:bg-muted/30 sm:w-auto md:text-[9px]'
+                        >
+                          {t('purchase.suppliers.dossier')}
+                          <ExternalLink className='ms-2 size-3 opacity-50' />
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </CardContent>

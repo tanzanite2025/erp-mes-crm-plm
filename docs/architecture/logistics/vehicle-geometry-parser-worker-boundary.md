@@ -11,8 +11,10 @@
 ```text
 车型模板上传
   -> Go 保存受控 GLB 文件
-  -> Go 接收显式解析请求
-  -> Rust parser CLI / 后续 worker 读取受控文件
+  -> Go 接收显式同步或异步解析请求
+  -> 异步任务写入解析任务表
+  -> Go 进程内 parser worker 领取任务
+  -> Rust parser CLI 读取受控文件
   -> 输出 vehicle-geometry.v1 JSON
   -> Go 校验解析结果
   -> 写入模板版本快照
@@ -29,8 +31,9 @@ Go 是业务编排层，负责：
 - 登录、权限和审计；
 - 车型模板与种子车型绑定；
 - 受控上传文件路径；
-- 显式解析入口；
-- 调用 parser CLI / 后续 parser worker；
+- 同步解析入口和异步解析任务入口；
+- 解析任务状态、领取、重试和版本幂等；
+- 调用 parser CLI；
 - 校验 `vehicle-geometry.v1`；
 - 将解析结果写入版本快照；
 - 向前端返回任务状态和归一摘要。
@@ -49,7 +52,7 @@ Rust core 负责：
 - GLB 2.0 结构解析；
 - 节点层级与世界变换；
 - `extras.xdfc` 语义读取；
-- 顶点坐标和 AABB 归一化；
+- 顶点坐标、AABB 归一化和显式 OBB 推导；
 - 输出 `vehicle-geometry.v1`。
 
 Rust core 不负责：
@@ -60,9 +63,21 @@ Rust core 不负责：
 - 处理登录权限；
 - 决定是否允许发货。
 
-### 3.3 parser worker / CLI
+### 3.3 Go parser worker
 
-worker 或 CLI 只是运行边界：
+当前 Go parser worker 运行在 API 进程内，负责：
+
+- 从 `logistics_vehicle_model_template_parse_tasks` 领取 queued 任务；
+- 校验任务保存的模板版本、源文件地址、文件名和格式仍然有效；
+- 调用现有同步解析服务；
+- 按最大尝试次数和退避时间重试；
+- 将任务推进到 `succeeded` 或 `failed`。
+
+它不复制 GLB 解析逻辑，也不直接解释三角网格。
+
+### 3.4 Rust parser CLI
+
+parser CLI 只是 Rust 解析运行边界：
 
 - 接收受控文件路径或 stdin；
 - 调用同一个 Rust core；
@@ -70,19 +85,27 @@ worker 或 CLI 只是运行边界：
 - 不保存业务状态；
 - 不直接写数据库。
 
-当前仓库先提供 CLI，后续可以把同一 core 包装成独立 worker 服务，不改变解析协议。
+当前仓库采用“API 进程内任务 worker + Rust parser CLI”。后续如果解析耗时或任务量上升，可以把 Go 任务 worker 或 Rust parser CLI 拆成独立服务，不改变解析协议。
 
-## 4. 当前显式解析入口
+## 4. 当前解析入口
 
-当前实现不创建后台任务表，也不会在普通保存模板时自动解析。
+普通保存模板不会自动解析。系统同时保留同步解析入口和异步任务入口。
 
-管理员显式调用：
+同步入口：
 
 ```text
 POST /logistics-config/vehicle-model-templates/:id/parse
 ```
 
-该入口同步调用 `xdfc-vehicle-geometry-parser`，解析成功后才写入新的模板版本快照。
+异步入口：
+
+```text
+POST /logistics-config/vehicle-model-templates/:id/parse/tasks
+GET  /logistics-config/vehicle-model-templates/:id/parse/tasks/:taskId
+POST /logistics-config/vehicle-model-templates/:id/parse/tasks/:taskId/retry
+```
+
+异步创建接口返回 `202 Accepted` 和任务快照。API 进程内 worker 默认每 5 秒领取任务，解析成功后才写入新的模板版本快照。
 
 解析器二进制路径：
 
@@ -107,15 +130,14 @@ server/Dockerfile
 VEHICLE_GEOMETRY_PARSER_BIN=/app/xdfc-vehicle-geometry-parser
 ```
 
-当前选择“API 镜像内置 parser CLI”，不先拆独立 worker，原因是：
+当前选择“API 镜像内置 parser CLI + API 进程内任务 worker”，不先拆独立 worker 服务，原因是：
 
-- 解析入口是管理员显式触发，不是高频后台任务；
+- 当前解析入口仍由管理员显式触发，任务量不大；
 - 车型模板 GLB 单文件上限为 8MB，解析有服务端超时和输出上限；
-- 现在先保证线上 API 能真正执行解析，避免出现只有任务状态、没有执行进程的死链路；
-- Rust core 与 CLI 已独立在 `vehicle-loading-engine/`，后续如果解析耗时或任务量上升，可以在不改解析协议的前提下拆成 worker；
-- 如果现在提前拆 worker，会同时引入任务表、队列、状态轮询、失败重试 UI 和部署服务，复杂度大于当前收益。
+- 任务表、领取、有限重试和版本校验已经在 API 进程内形成闭环；
+- Rust core 与 CLI 已独立在 `vehicle-loading-engine/`，后续可以在不改解析协议的前提下拆服务。
 
-## 5. 后续异步 worker 状态
+## 5. 当前异步 worker 状态
 
 模板状态与任务状态分开：
 
@@ -134,7 +156,7 @@ VEHICLE_GEOMETRY_PARSER_BIN=/app/xdfc-vehicle-geometry-parser
 
 不能把失败的源文件标记成 `normalized`。
 
-如果后续文件更大、解析耗时更长，再引入任务状态：
+任务状态流转为：
 
 ```text
 queued
@@ -143,7 +165,7 @@ queued
   -> failed
 ```
 
-但在 worker 真正接入前，不建立空任务表，避免出现“有状态但没有执行链路”的死数据。
+失败任务默认有限重试；模板版本、源文件地址、文件名或格式发生变化时，旧任务直接失败，不再解析旧快照。
 
 ## 6. 结果落库规则
 
@@ -176,10 +198,10 @@ queued
 任务去重键由以下字段组成：
 
 ```text
-templateId + sourceAssetUrl + sourceAssetDigest
+templateId + templateVersion + sourceAssetUrl + sourceAssetName + sourceFormat
 ```
 
-重复提交同一文件时返回现有任务，不重复解析。
+当前实现使用源文件元数据作为快照键，尚未计算二进制 digest。重复提交同一模板版本的活动任务时返回现有任务，不重复解析。
 
 解析失败可以重试，但每次重试都必须保留错误摘要和尝试次数。
 
@@ -202,11 +224,15 @@ templateId + sourceAssetUrl + sourceAssetDigest
 - 解析结果服务端校验；
 - `vehicle-geometry.v1` 写入模板版本快照；
 - 解析成功后推进模板状态为 `normalized`；
+- `logistics_vehicle_model_template_parse_tasks` 解析任务表；
+- API 进程内 parser worker 的领取、有限重试和模板版本校验；
+- 异步创建、查询和 retry 入口；
+- Worker 幂等、成功、失败重试、版本变更和人工 retry 测试；
 - 本边界文档。
 
 未完成：
 
-- Go 解析任务表；
-- worker 调度；
 - 前端解析进度和失败重试；
-- 碰撞核心接入。
+- 大 GLB 的异步进度与失败重试；
+- 独立 parser worker 服务；
+- 3D 预览引擎接入。

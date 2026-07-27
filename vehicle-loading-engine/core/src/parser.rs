@@ -1,6 +1,6 @@
 use crate::geometry::{
-    AabbMm, CollisionKind, CoordinateSystem, GeometryPart, PartKind, VehicleGeometry,
-    VEHICLE_GEOMETRY_SCHEMA_VERSION,
+    AabbMm, CollisionKind, CoordinateSystem, GeometryObbMm, GeometryPart, PartKind,
+    VehicleGeometry, VEHICLE_GEOMETRY_SCHEMA_VERSION,
 };
 use gltf::mesh::Mode;
 use gltf::scene::Node;
@@ -11,6 +11,9 @@ const GLB_MAGIC: &[u8; 4] = b"glTF";
 const GLB_VERSION: u32 = 2;
 const METERS_TO_MILLIMETERS: f64 = 1_000.0;
 const MAX_NODE_DEPTH: usize = 64;
+const OBB_AFFINE_EPSILON: f32 = 1e-6;
+const OBB_AXIS_EPSILON: f64 = 1e-9;
+const OBB_ORTHOGONAL_EPSILON: f64 = 0.0001;
 
 #[derive(Debug, Clone, Copy)]
 pub struct ParserLimits {
@@ -70,6 +73,10 @@ pub enum ParseError {
     },
     InvalidCoordinate {
         node_index: usize,
+    },
+    InvalidObb {
+        node_index: usize,
+        reason: String,
     },
     EmptyPart {
         node_index: usize,
@@ -133,6 +140,9 @@ impl Display for ParseError {
             ),
             Self::InvalidCoordinate { node_index } => {
                 write!(formatter, "节点 {} 产生了非法坐标", node_index)
+            }
+            Self::InvalidObb { node_index, reason } => {
+                write!(formatter, "节点 {} 的 OBB 无效: {}", node_index, reason)
             }
             Self::EmptyPart { node_index } => write!(formatter, "节点 {} 没有有效几何", node_index),
             Self::MissingUsableSpace => write!(formatter, "GLB 至少需要一个 usable-space 节点"),
@@ -273,6 +283,8 @@ fn visit_node(
 
         let (kind, collision) = parse_semantic(&node)?;
         let mut bounds = AabbMm::empty();
+        let mut local_min_m = [f64::INFINITY, f64::INFINITY, f64::INFINITY];
+        let mut local_max_m = [f64::NEG_INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY];
         let mut node_vertex_count = 0usize;
 
         for primitive in mesh.primitives() {
@@ -309,6 +321,7 @@ fn visit_node(
                         maximum: limits.max_vertices,
                     });
                 }
+                include_local_point(&mut local_min_m, &mut local_max_m, position);
                 let transformed = transform_point(world_matrix, position);
                 if transformed.iter().any(|value| !value.is_finite()) {
                     return Err(ParseError::InvalidCoordinate {
@@ -339,6 +352,16 @@ fn visit_node(
             .filter(|name| !name.trim().is_empty())
             .map(str::to_owned)
             .unwrap_or_else(|| format!("node-{}", node.index()));
+        let obb = if collision == CollisionKind::Obb {
+            Some(derive_obb_from_local_bounds(
+                node.index(),
+                world_matrix,
+                local_min_m,
+                local_max_m,
+            )?)
+        } else {
+            None
+        };
         let position_mm = bounds.min_mm;
         output.bounds.include_aabb(&bounds);
         output.parts.push(GeometryPart {
@@ -346,6 +369,7 @@ fn visit_node(
             kind,
             collision,
             bounds,
+            obb,
             position_mm,
             node_index: node.index(),
             mesh_index: mesh.index(),
@@ -394,9 +418,121 @@ fn parse_semantic(node: &Node<'_>) -> Result<(PartKind, CollisionKind), ParseErr
     let collision =
         CollisionKind::parse(collision_value, kind).ok_or_else(|| ParseError::InvalidSemantic {
             node_index: node.index(),
-            reason: "collision 必须是 aabb 或 none".to_owned(),
+            reason: "collision 必须是 aabb、obb 或 none".to_owned(),
         })?;
     Ok((kind, collision))
+}
+
+fn include_local_point(local_min_m: &mut [f64; 3], local_max_m: &mut [f64; 3], point: [f32; 3]) {
+    for (index, value) in point.iter().enumerate() {
+        let value = *value as f64;
+        local_min_m[index] = local_min_m[index].min(value);
+        local_max_m[index] = local_max_m[index].max(value);
+    }
+}
+
+fn derive_obb_from_local_bounds(
+    node_index: usize,
+    world_matrix: [[f32; 4]; 4],
+    local_min_m: [f64; 3],
+    local_max_m: [f64; 3],
+) -> Result<GeometryObbMm, ParseError> {
+    if !matrix_is_affine(world_matrix) {
+        return Err(ParseError::InvalidObb {
+            node_index,
+            reason: "collision=obb 只支持仿射节点矩阵".to_owned(),
+        });
+    }
+
+    let mut local_center_m = [0.0; 3];
+    let mut local_half_extents_m = [0.0; 3];
+    for index in 0..3 {
+        if !local_min_m[index].is_finite()
+            || !local_max_m[index].is_finite()
+            || local_max_m[index] <= local_min_m[index]
+        {
+            return Err(ParseError::InvalidObb {
+                node_index,
+                reason: "本地网格包围盒必须在三个方向都有正尺寸".to_owned(),
+            });
+        }
+        local_center_m[index] = (local_min_m[index] + local_max_m[index]) / 2.0;
+        local_half_extents_m[index] = (local_max_m[index] - local_min_m[index]) / 2.0;
+    }
+
+    let mut axes = [[0.0; 3]; 3];
+    let mut half_extents_mm = [0.0; 3];
+    for axis_index in 0..3 {
+        let basis = matrix_basis_axis(world_matrix, axis_index);
+        let length = vector_length(basis);
+        if !length.is_finite() || length <= OBB_AXIS_EPSILON {
+            return Err(ParseError::InvalidObb {
+                node_index,
+                reason: "节点变换包含零长度轴".to_owned(),
+            });
+        }
+        axes[axis_index] = [basis[0] / length, basis[1] / length, basis[2] / length];
+        half_extents_mm[axis_index] =
+            local_half_extents_m[axis_index] * length * METERS_TO_MILLIMETERS;
+        if !half_extents_mm[axis_index].is_finite() || half_extents_mm[axis_index] <= 0.0 {
+            return Err(ParseError::InvalidObb {
+                node_index,
+                reason: "半长轴必须是大于 0 的有限毫米值".to_owned(),
+            });
+        }
+    }
+
+    for left_index in 0..3 {
+        for right_index in (left_index + 1)..3 {
+            if vector_dot(axes[left_index], axes[right_index]).abs() > OBB_ORTHOGONAL_EPSILON {
+                return Err(ParseError::InvalidObb {
+                    node_index,
+                    reason: "collision=obb 不支持剪切或非正交节点变换".to_owned(),
+                });
+            }
+        }
+    }
+
+    let center_m = transform_point_f64(world_matrix, local_center_m);
+    if center_m.iter().any(|value| !value.is_finite()) {
+        return Err(ParseError::InvalidObb {
+            node_index,
+            reason: "中心点必须是有限毫米值".to_owned(),
+        });
+    }
+
+    Ok(GeometryObbMm {
+        center_mm: [
+            center_m[0] * METERS_TO_MILLIMETERS,
+            center_m[1] * METERS_TO_MILLIMETERS,
+            center_m[2] * METERS_TO_MILLIMETERS,
+        ],
+        half_extents_mm,
+        axes,
+    })
+}
+
+fn matrix_is_affine(matrix: [[f32; 4]; 4]) -> bool {
+    matrix[0][3].abs() <= OBB_AFFINE_EPSILON
+        && matrix[1][3].abs() <= OBB_AFFINE_EPSILON
+        && matrix[2][3].abs() <= OBB_AFFINE_EPSILON
+        && (matrix[3][3] - 1.0).abs() <= OBB_AFFINE_EPSILON
+}
+
+fn matrix_basis_axis(matrix: [[f32; 4]; 4], axis_index: usize) -> [f64; 3] {
+    [
+        matrix[axis_index][0] as f64,
+        matrix[axis_index][1] as f64,
+        matrix[axis_index][2] as f64,
+    ]
+}
+
+fn vector_dot(left: [f64; 3], right: [f64; 3]) -> f64 {
+    left[0] * right[0] + left[1] * right[1] + left[2] * right[2]
+}
+
+fn vector_length(vector: [f64; 3]) -> f64 {
+    vector_dot(vector, vector).sqrt()
 }
 
 fn identity_matrix() -> [[f32; 4]; 4] {
@@ -436,11 +572,31 @@ fn transform_point(matrix: [[f32; 4]; 4], point: [f32; 3]) -> [f32; 3] {
     }
 }
 
+fn transform_point_f64(matrix: [[f32; 4]; 4], point: [f64; 3]) -> [f64; 3] {
+    let x = matrix[0][0] as f64 * point[0]
+        + matrix[1][0] as f64 * point[1]
+        + matrix[2][0] as f64 * point[2]
+        + matrix[3][0] as f64;
+    let y = matrix[0][1] as f64 * point[0]
+        + matrix[1][1] as f64 * point[1]
+        + matrix[2][1] as f64 * point[2]
+        + matrix[3][1] as f64;
+    let z = matrix[0][2] as f64 * point[0]
+        + matrix[1][2] as f64 * point[1]
+        + matrix[2][2] as f64 * point[2]
+        + matrix[3][2] as f64;
+    [x, y, z]
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     fn minimal_glb(extras: Option<&str>) -> Vec<u8> {
+        minimal_glb_with_node_fields(extras, "")
+    }
+
+    fn minimal_glb_with_node_fields(extras: Option<&str>, node_fields: &str) -> Vec<u8> {
         let positions: [[f32; 3]; 8] = [
             [0.0, 0.0, 0.0],
             [1.0, 0.0, 0.0],
@@ -463,8 +619,13 @@ mod tests {
         } else {
             format!(r#", "extras":{}"#, extras)
         };
+        let node_fields = if node_fields.is_empty() {
+            String::new()
+        } else {
+            format!(", {}", node_fields)
+        };
         let json = format!(
-            r#"{{"asset":{{"version":"2.0"}},"scene":0,"scenes":[{{"nodes":[0]}}],"nodes":[{{"name":"cargo-floor","mesh":0{extras_field}}}],"meshes":[{{"primitives":[{{"attributes":{{"POSITION":0}}}}]}}],"buffers":[{{"byteLength":{}}}],"bufferViews":[{{"buffer":0,"byteOffset":0,"byteLength":96}}],"accessors":[{{"bufferView":0,"componentType":5126,"count":8,"type":"VEC3","min":[0,0,0],"max":[1,2,3]}}]}}"#,
+            r#"{{"asset":{{"version":"2.0"}},"scene":0,"scenes":[{{"nodes":[0]}}],"nodes":[{{"name":"cargo-floor","mesh":0{extras_field}{node_fields}}}],"meshes":[{{"primitives":[{{"attributes":{{"POSITION":0}}}}]}}],"buffers":[{{"byteLength":{}}}],"bufferViews":[{{"buffer":0,"byteOffset":0,"byteLength":96}}],"accessors":[{{"bufferView":0,"componentType":5126,"count":8,"type":"VEC3","min":[0,0,0],"max":[1,2,3]}}]}}"#,
             bin.len()
         );
         let mut json_bytes = json.into_bytes();
@@ -516,6 +677,48 @@ mod tests {
         assert!(json["parts"][0].get("positionMm").is_some());
         assert!(json.get("schema_version").is_none());
         assert!(json["bounds"].get("length_mm").is_none());
+        assert!(json["parts"][0].get("obb").is_none());
+    }
+
+    #[test]
+    fn parses_obb_semantic_from_node_transform() {
+        let bytes = minimal_glb_with_node_fields(
+            Some(r#"{"xdfc":{"kind":"usable-space","collision":"obb"}}"#),
+            r#""matrix":[0,1,0,0,-1,0,0,0,0,0,1,0,2,0,0,1]"#,
+        );
+        let geometry = parse_glb(&bytes, &ParserLimits::default()).expect("GLB should parse");
+        let part = &geometry.parts[0];
+
+        assert_eq!(part.collision, CollisionKind::Obb);
+        assert!((part.bounds.length_mm - 2_000.0).abs() < 0.0001);
+        let obb = part.obb.as_ref().expect("OBB metadata should be present");
+        assert!((obb.center_mm[0] - 1_000.0).abs() < 0.0001);
+        assert!((obb.center_mm[1] - 500.0).abs() < 0.0001);
+        assert!((obb.center_mm[2] - 1_500.0).abs() < 0.0001);
+        assert_eq!(obb.half_extents_mm, [500.0, 1_000.0, 1_500.0]);
+        assert_eq!(
+            obb.axes,
+            [[0.0, 1.0, 0.0], [-1.0, 0.0, 0.0], [0.0, 0.0, 1.0]]
+        );
+
+        let json = serde_json::to_value(&geometry).expect("geometry should serialize");
+        assert!(json["parts"][0].get("obb").is_some());
+        assert!(json["parts"][0]["obb"].get("halfExtentsMm").is_some());
+    }
+
+    #[test]
+    fn rejects_sheared_obb_node_transform() {
+        let bytes = minimal_glb_with_node_fields(
+            Some(r#"{"xdfc":{"kind":"usable-space","collision":"obb"}}"#),
+            r#""matrix":[1,0,0,0,1,1,0,0,0,0,1,0,0,0,0,1]"#,
+        );
+        let error =
+            parse_glb(&bytes, &ParserLimits::default()).expect_err("shear should be rejected");
+
+        assert!(matches!(
+            error,
+            ParseError::InvalidObb { node_index: 0, .. }
+        ));
     }
 
     #[test]

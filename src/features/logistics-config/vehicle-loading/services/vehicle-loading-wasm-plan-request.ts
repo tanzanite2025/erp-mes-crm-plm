@@ -15,6 +15,8 @@ type BuildVehicleLoadingPlanRequestFromMasterDataOptions = {
   blockedSpaces?: VehicleLoadingPlanBlockedSpaceInput[]
   maxPlacementOutput?: number
   maxGridCellScan?: number
+  collisionClearanceMm?: number
+  boundaryClearanceMm?: number
 }
 
 function requirePositiveFiniteNumber(value: number, fieldName: string) {
@@ -33,11 +35,21 @@ function requirePositiveInteger(value: number, fieldName: string) {
 function buildVehicleLoadingPlanRequestLimits({
   maxPlacementOutput,
   maxGridCellScan,
+  collisionClearanceMm,
+  boundaryClearanceMm,
 }: Pick<
   BuildVehicleLoadingPlanRequestFromMasterDataOptions,
-  'maxPlacementOutput' | 'maxGridCellScan'
+  | 'maxPlacementOutput'
+  | 'maxGridCellScan'
+  | 'collisionClearanceMm'
+  | 'boundaryClearanceMm'
 >): VehicleLoadingPlanRequest['limits'] {
-  if (maxPlacementOutput === undefined && maxGridCellScan === undefined) {
+  if (
+    maxPlacementOutput === undefined &&
+    maxGridCellScan === undefined &&
+    collisionClearanceMm === undefined &&
+    boundaryClearanceMm === undefined
+  ) {
     return undefined
   }
   if (maxPlacementOutput !== undefined) {
@@ -46,9 +58,23 @@ function buildVehicleLoadingPlanRequestLimits({
   if (maxGridCellScan !== undefined) {
     requirePositiveInteger(maxGridCellScan, '障碍格位扫描上限')
   }
+  if (collisionClearanceMm !== undefined) {
+    requireNonNegativeInteger(collisionClearanceMm, '碰撞安全间隙')
+  }
+  if (boundaryClearanceMm !== undefined) {
+    requireNonNegativeInteger(boundaryClearanceMm, '车厢边界安全间隙')
+  }
   return {
     maxPlacementOutput,
     maxGridCellScan,
+    collisionClearanceMm,
+    boundaryClearanceMm,
+  }
+}
+
+function requireNonNegativeInteger(value: number, fieldName: string) {
+  if (!Number.isFinite(value) || value < 0 || !Number.isInteger(value)) {
+    throw new Error(`${fieldName} 必须是大于等于 0 的整数。`)
   }
 }
 
@@ -60,6 +86,8 @@ export function buildVehicleLoadingPlanRequestFromMasterData({
   blockedSpaces,
   maxPlacementOutput,
   maxGridCellScan,
+  collisionClearanceMm,
+  boundaryClearanceMm,
 }: BuildVehicleLoadingPlanRequestFromMasterDataOptions): VehicleLoadingPlanRequest {
   requirePositiveInteger(boxes, '箱数')
   requirePositiveFiniteNumber(vehicleSpec.payloadKg, '车型载重')
@@ -90,6 +118,8 @@ export function buildVehicleLoadingPlanRequestFromMasterData({
     limits: buildVehicleLoadingPlanRequestLimits({
       maxPlacementOutput,
       maxGridCellScan,
+      collisionClearanceMm,
+      boundaryClearanceMm,
     }),
   }
 }

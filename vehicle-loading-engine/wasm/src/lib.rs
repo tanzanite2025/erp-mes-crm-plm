@@ -4,8 +4,9 @@
 //! 再将稳定的 JSON 协议返回给前端。
 
 use xdfc_vehicle_loading_engine_core::{
-    parse_glb, plan_loading_space, plan_vehicle_loading, project_vehicle_geometry_to_loading_space,
-    LoadingSpacePlanRequest, ParserLimits, VehicleGeometry, VehicleLoadingPlanRequest,
+    diagnose_loading_space_plan, diagnose_vehicle_loading_plan, parse_glb, plan_loading_space,
+    plan_vehicle_loading, project_vehicle_geometry_to_loading_space, LoadingSpacePlanRequest,
+    ParserLimits, VehicleGeometry, VehicleLoadingPlanRequest,
 };
 
 #[cfg(target_arch = "wasm32")]
@@ -34,6 +35,22 @@ pub fn calculate_loading_plan(input: &str) -> Result<String, String> {
 }
 
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
+pub fn diagnose_vehicle_loading_plan_json(input: &str) -> Result<String, String> {
+    let request: VehicleLoadingPlanRequest =
+        serde_json::from_str(input).map_err(|error| format!("装箱请求 JSON 无效: {}", error))?;
+    let diagnostics = diagnose_vehicle_loading_plan(&request).map_err(|error| error.to_string())?;
+    serde_json::to_string(&diagnostics).map_err(|error| error.to_string())
+}
+
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
+pub fn diagnose_loading_plan_json(input: &str) -> Result<String, String> {
+    let request: LoadingSpacePlanRequest = serde_json::from_str(input)
+        .map_err(|error| format!("装载空间装箱请求 JSON 无效: {}", error))?;
+    let diagnostics = diagnose_loading_space_plan(&request).map_err(|error| error.to_string())?;
+    serde_json::to_string(&diagnostics).map_err(|error| error.to_string())
+}
+
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
 pub fn project_vehicle_geometry_to_loading_space_json(input: &str) -> Result<String, String> {
     let geometry: VehicleGeometry =
         serde_json::from_str(input).map_err(|error| format!("车型几何 JSON 无效: {}", error))?;
@@ -45,8 +62,8 @@ pub fn project_vehicle_geometry_to_loading_space_json(input: &str) -> Result<Str
 #[cfg(test)]
 mod tests {
     use super::{
-        calculate_loading_plan, calculate_vehicle_loading_plan, parse_vehicle_geometry_glb,
-        project_vehicle_geometry_to_loading_space_json,
+        calculate_loading_plan, calculate_vehicle_loading_plan, diagnose_vehicle_loading_plan_json,
+        parse_vehicle_geometry_glb, project_vehicle_geometry_to_loading_space_json,
     };
 
     #[test]
@@ -116,6 +133,182 @@ mod tests {
     }
 
     #[test]
+    fn applies_horizontal_clearance_at_wasm_boundary() {
+        let output = calculate_vehicle_loading_plan(
+            r#"{
+                "schemaVersion":"vehicle-loading-request.v1",
+                "vehicle":{
+                    "id":"van-clearance",
+                    "usableSpace":{"lengthMm":300,"widthMm":100,"heightMm":100},
+                    "payloadKg":1000,
+                    "blockedSpaces":[]
+                },
+                "package":{
+                    "id":"box-clearance",
+                    "quantity":3,
+                    "unitWeightKg":10,
+                    "dimension":{"lengthMm":100,"widthMm":100,"heightMm":100},
+                    "canRotate":false,
+                    "canInvert":false
+                },
+                "limits":{
+                    "collisionClearanceMm":1
+                }
+            }"#,
+        )
+        .expect("wasm boundary should apply horizontal clearance");
+
+        let value: serde_json::Value =
+            serde_json::from_str(&output).expect("plan output should be json");
+        assert_eq!(value["engineVersion"], "vehicle-loading-core-0.9.0");
+        assert_eq!(value["maxBoxesPerVehicle"], 2);
+        assert_eq!(value["placements"].as_array().unwrap().len(), 2);
+        assert_eq!(value["placements"][1]["positionMm"]["xMm"], 101);
+        let selected_summary = value["search"]["candidateSummaries"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|candidate| {
+                candidate["orientationLabel"] == value["selectedOrientation"]["label"]
+                    && candidate["scanStrategy"] == value["search"]["selectedScanStrategy"]
+            })
+            .expect("selected candidate summary should be present");
+        assert!(
+            selected_summary["rejectionSummary"]["collisionRejectionCount"]
+                .as_u64()
+                .unwrap()
+                > 0
+        );
+        assert_eq!(
+            selected_summary["rejectionSummary"]["firstCollisionWitness"]["kind"],
+            "placement"
+        );
+    }
+
+    #[test]
+    fn applies_boundary_clearance_at_wasm_boundary() {
+        let output = calculate_vehicle_loading_plan(
+            r#"{
+                "schemaVersion":"vehicle-loading-request.v1",
+                "vehicle":{
+                    "id":"van-boundary-clearance",
+                    "usableSpace":{"lengthMm":300,"widthMm":102,"heightMm":100},
+                    "payloadKg":1000,
+                    "blockedSpaces":[]
+                },
+                "package":{
+                    "id":"box-boundary-clearance",
+                    "quantity":3,
+                    "unitWeightKg":10,
+                    "dimension":{"lengthMm":100,"widthMm":100,"heightMm":100},
+                    "canRotate":false,
+                    "canInvert":false
+                },
+                "limits":{
+                    "boundaryClearanceMm":1
+                }
+            }"#,
+        )
+        .expect("wasm boundary should apply usable-space boundary clearance");
+
+        let value: serde_json::Value =
+            serde_json::from_str(&output).expect("plan output should be json");
+        assert_eq!(value["engineVersion"], "vehicle-loading-core-0.9.0");
+        assert_eq!(value["maxBoxesPerVehicle"], 2);
+        assert!(value["placements"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|placement| placement["positionMm"]["xMm"].as_u64().unwrap() >= 1));
+    }
+
+    #[test]
+    fn diagnoses_no_fit_request_at_wasm_boundary() {
+        let output = diagnose_vehicle_loading_plan_json(
+            r#"{
+                "schemaVersion":"vehicle-loading-request.v1",
+                "vehicle":{
+                    "id":"small-van",
+                    "usableSpace":{"lengthMm":2000,"widthMm":1000,"heightMm":1000},
+                    "payloadKg":1000
+                },
+                "package":{
+                    "id":"oversized-box",
+                    "quantity":1,
+                    "unitWeightKg":10,
+                    "dimension":{"lengthMm":2100,"widthMm":500,"heightMm":500},
+                    "canRotate":false,
+                    "canInvert":false
+                }
+            }"#,
+        )
+        .expect("diagnostics should be returned for a valid no-fit request");
+
+        let value: serde_json::Value =
+            serde_json::from_str(&output).expect("diagnostics output should be json");
+        assert_eq!(value["schemaVersion"], "loading-plan-diagnostics.v1");
+        assert_eq!(value["failureCode"], "PACKAGE_CANNOT_FIT");
+        assert_eq!(
+            value["orientations"][0]["reasonCode"],
+            "PACKAGE_HORIZONTAL_DIMENSION_EXCEEDS_LOADING_SPACE"
+        );
+        assert_eq!(value["orientations"][0]["candidateAnchorCount"], 0);
+    }
+
+    #[test]
+    fn applies_obb_blocked_space_at_wasm_boundary() {
+        let output = calculate_vehicle_loading_plan(
+            r#"{
+                "schemaVersion":"vehicle-loading-request.v1",
+                "vehicle":{
+                    "id":"van-obb",
+                    "usableSpace":{"lengthMm":250,"widthMm":250,"heightMm":100},
+                    "payloadKg":1000,
+                    "blockedSpaces":[
+                        {
+                            "id":"rotated-narrow-obstacle",
+                            "kind":"keepOut",
+                            "originMm":{"xMm":100,"yMm":0,"zMm":0},
+                            "dimension":{"lengthMm":142,"widthMm":142,"heightMm":100},
+                            "obb":{
+                                "centerMm":[171,71,50],
+                                "halfExtentsMm":[10,90,50],
+                                "axes":[
+                                    [0.7071067811865476,0.7071067811865476,0],
+                                    [-0.7071067811865476,0.7071067811865476,0],
+                                    [0,0,1]
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "package":{
+                    "id":"box-obb",
+                    "quantity":1,
+                    "unitWeightKg":10,
+                    "dimension":{"lengthMm":100,"widthMm":100,"heightMm":100},
+                    "canRotate":false,
+                    "canInvert":false
+                }
+            }"#,
+        )
+        .expect("OBB should be accepted at the wasm boundary");
+
+        let value: serde_json::Value =
+            serde_json::from_str(&output).expect("plan output should be json");
+        assert_eq!(value["engineVersion"], "vehicle-loading-core-0.9.0");
+        assert!(value["placements"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|placement| {
+                placement["positionMm"]["xMm"] == 0
+                    && placement["positionMm"]["yMm"] == 0
+                    && placement["positionMm"]["zMm"] == 0
+            }));
+    }
+
+    #[test]
     fn projects_geometry_to_loading_space_at_wasm_boundary() {
         let output = project_vehicle_geometry_to_loading_space_json(
             r#"{
@@ -144,6 +337,25 @@ mod tests {
                         "nodeIndex":1,
                         "meshIndex":1,
                         "vertexCount":8
+                    },
+                    {
+                        "id":"rotated-keep-out",
+                        "kind":"keep-out",
+                        "collision":"obb",
+                        "bounds":{"minMm":[250,100,0],"maxMm":[550,400,200],"lengthMm":300,"widthMm":300,"heightMm":200},
+                        "obb":{
+                            "centerMm":[400,250,100],
+                            "halfExtentsMm":[120,40,100],
+                            "axes":[
+                                [0.7071067811865476,0.7071067811865476,0],
+                                [-0.7071067811865476,0.7071067811865476,0],
+                                [0,0,1]
+                            ]
+                        },
+                        "positionMm":[0,0,0],
+                        "nodeIndex":2,
+                        "meshIndex":2,
+                        "vertexCount":8
                     }
                 ],
                 "warnings":[]
@@ -158,6 +370,19 @@ mod tests {
             "vehicle-loading-geometry-projection.v1"
         );
         assert_eq!(value["usableSpace"]["lengthMm"], 1000);
-        assert_eq!(value["blockedSpaces"].as_array().unwrap().len(), 1);
+        assert_eq!(value["blockedSpaces"].as_array().unwrap().len(), 2);
+        assert_eq!(value["blockedSpaces"][0].get("obb"), None);
+        assert_eq!(
+            value["blockedSpaces"][1]["obb"]["centerMm"][0]
+                .as_f64()
+                .unwrap(),
+            400.0
+        );
+        assert_eq!(
+            value["blockedSpaces"][1]["obb"]["halfExtentsMm"][1]
+                .as_f64()
+                .unwrap(),
+            40.0
+        );
     }
 }

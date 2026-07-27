@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useMemo, useState } from 'react'
+import { type FormEvent, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import type { TranslationKey } from '@/locales'
 import { ClipboardList, Loader2, Plus, Trash2 } from 'lucide-react'
@@ -57,7 +57,7 @@ function normalizeLine(line: OutsourceOrderLineFormValues) {
     productName: line.productName.trim(),
     specification: line.specification.trim(),
     quantity: Number.isFinite(line.quantity) ? Math.max(0, line.quantity) : 0,
-    uom: (line.uom.trim() || 'PCS').toUpperCase(),
+    uom: line.uom.trim().toUpperCase(),
     segmentId: line.segmentId.trim(),
     segmentName: line.segmentName.trim(),
     processStepId: line.processStepId.trim(),
@@ -85,7 +85,7 @@ function patchLineFromSalesLine(
     productName: line.productName,
     specification: line.specification,
     quantity: line.quantity,
-    uom: line.uom || 'PCS',
+    uom: line.uom,
   }
 }
 
@@ -101,7 +101,7 @@ function patchLineFromProductionPlan(
     productName: plan.productName,
     specification: '',
     quantity: plan.quantity,
-    uom: 'PCS',
+    uom: plan.uom,
   }
 }
 
@@ -113,6 +113,31 @@ export function OutsourceOrderDialog({
   onOpenChange,
   onSubmit,
 }: OutsourceOrderDialogProps) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {open ? (
+        <OutsourceOrderDialogContent
+          key={order?.id ?? 'create'}
+          order={order}
+          partners={partners}
+          isSaving={isSaving}
+          onOpenChange={onOpenChange}
+          onSubmit={onSubmit}
+        />
+      ) : null}
+    </Dialog>
+  )
+
+}
+
+
+function OutsourceOrderDialogContent({
+  order,
+  partners,
+  isSaving = false,
+  onOpenChange,
+  onSubmit,
+}: Omit<OutsourceOrderDialogProps, 'open'>) {
   const { t } = useLanguage()
   const [values, setValues] = useState<OutsourceOrderFormValues>(
     toOutsourceOrderFormValues(order)
@@ -121,12 +146,12 @@ export function OutsourceOrderDialog({
   const salesOrdersQuery = useQuery({
     queryKey: ['production-outsourcing', 'source-options', 'sales-orders'],
     queryFn: getOutsourceSalesOrderSourceOptions,
-    enabled: open && values.sourceType === 'SALES_ORDER',
+    enabled: values.sourceType === 'SALES_ORDER',
   })
   const productionPlansQuery = useQuery({
     queryKey: ['production-outsourcing', 'source-options', 'production-plans'],
     queryFn: getOutsourceProductionPlanSourceOptions,
-    enabled: open && values.sourceType === 'PRODUCTION_PLAN',
+    enabled: values.sourceType === 'PRODUCTION_PLAN',
   })
 
   const sortedPartners = useMemo(
@@ -152,11 +177,6 @@ export function OutsourceOrderDialog({
     values.sourceType === 'SALES_ORDER' &&
     Boolean(selectedSalesOrder) &&
     values.lines.length < (selectedSalesOrder?.lines.length ?? 0)
-  useEffect(() => {
-    if (open) {
-      setValues(toOutsourceOrderFormValues(order))
-    }
-  }, [open, order])
 
   const updateValue = <K extends keyof OutsourceOrderFormValues>(
     key: K,
@@ -326,6 +346,7 @@ export function OutsourceOrderDialog({
       normalized.lines.some(
         (line) =>
           line.quantity <= 0 ||
+          !line.uom ||
           (!line.productId && !line.productCode && !line.productName)
       )
     ) {
@@ -336,8 +357,10 @@ export function OutsourceOrderDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size='6xl' className='rounded-2xl p-0'>
+    <DialogContent
+        size='6xl'
+        className='max-h-[calc(100dvh-0.75rem)] rounded-2xl p-0 sm:max-w-[88rem]'
+      >
         <DialogHeader className='border-b bg-muted/20 px-5 py-4 pr-10 sm:px-6'>
           <div className='flex items-center gap-3'>
             <div className='flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary'>
@@ -357,8 +380,8 @@ export function OutsourceOrderDialog({
         </DialogHeader>
 
         <form className='space-y-4 px-5 py-4 sm:px-6' onSubmit={handleSubmit}>
-          <div className='grid gap-4 md:grid-cols-4'>
-            <div className='space-y-2'>
+          <div className='grid gap-4 md:grid-cols-12'>
+            <div className='space-y-2 md:col-span-4'>
               <Label className={fieldLabelClass}>
                 {t('productionOutsourcing.orders.fields.sourceType')}
               </Label>
@@ -381,7 +404,7 @@ export function OutsourceOrderDialog({
               </select>
             </div>
 
-            <div className='space-y-2 md:col-span-2'>
+            <div className='space-y-2 md:col-span-4'>
               <Label className={fieldLabelClass}>
                 {t('productionOutsourcing.orders.fields.source')}
               </Label>
@@ -415,14 +438,15 @@ export function OutsourceOrderDialog({
                   </option>
                   {(productionPlansQuery.data ?? []).map((item) => (
                     <option key={item.id} value={item.id}>
-                      {item.orderNo} · {item.productName} · {item.quantity}
+                      {item.orderNo} · {item.productName} · {item.quantity}{' '}
+                      {item.uom}
                     </option>
                   ))}
                 </select>
               )}
             </div>
 
-            <div className='space-y-2'>
+            <div className='space-y-2 md:col-span-4'>
               <Label className={fieldLabelClass}>
                 {t('productionOutsourcing.orders.fields.status')}
               </Label>
@@ -451,8 +475,8 @@ export function OutsourceOrderDialog({
             </div>
           </div>
 
-          <div className='grid gap-4 md:grid-cols-4'>
-            <div className='space-y-2'>
+          <div className='grid gap-4 md:grid-cols-12'>
+            <div className='space-y-2 md:col-span-4'>
               <Label className={fieldLabelClass}>
                 {t('productionOutsourcing.orders.fields.orderNo')}
               </Label>
@@ -465,7 +489,7 @@ export function OutsourceOrderDialog({
                 className={`${inputClass} font-mono uppercase`}
               />
             </div>
-            <div className='space-y-2 md:col-span-2'>
+            <div className='space-y-2 md:col-span-4'>
               <Label className={fieldLabelClass}>
                 {t('productionOutsourcing.orders.fields.partner')}
               </Label>
@@ -486,8 +510,7 @@ export function OutsourceOrderDialog({
                 ))}
               </select>
             </div>
-            <div className='grid grid-cols-2 gap-3'>
-              <div className='space-y-2'>
+            <div className='space-y-2 md:col-span-2'>
                 <Label className={fieldLabelClass}>
                   {t('productionOutsourcing.orders.fields.plannedSendDate')}
                 </Label>
@@ -499,8 +522,8 @@ export function OutsourceOrderDialog({
                   }
                   className={inputClass}
                 />
-              </div>
-              <div className='space-y-2'>
+            </div>
+            <div className='space-y-2 md:col-span-2'>
                 <Label className={fieldLabelClass}>
                   {t('productionOutsourcing.orders.fields.plannedReturnDate')}
                 </Label>
@@ -512,7 +535,6 @@ export function OutsourceOrderDialog({
                   }
                   className={inputClass}
                 />
-              </div>
             </div>
           </div>
 
@@ -531,7 +553,7 @@ export function OutsourceOrderDialog({
                 variant='outline'
                 size='sm'
                 disabled={!canAddLine}
-                className='rounded-xl'
+                className='rounded-full'
                 onClick={addLine}
               >
                 <Plus className='mr-2 size-3.5' />
@@ -557,13 +579,13 @@ export function OutsourceOrderDialog({
                       size='sm'
                       disabled={values.lines.length <= 1}
                       onClick={() => removeLine(index)}
-                      className='h-8 rounded-xl text-destructive hover:bg-destructive/10 hover:text-destructive'
+                      className='h-8 rounded-full text-destructive hover:bg-destructive/10 hover:text-destructive'
                     >
                       <Trash2 className='mr-2 size-3.5' />
                       {t('common.actions.delete')}
                     </Button>
                   </div>
-                  <div className='grid gap-3 md:grid-cols-8'>
+                  <div className='grid gap-3 md:grid-cols-10'>
                     {values.sourceType === 'SALES_ORDER' ? (
                       <div className='space-y-2 md:col-span-3'>
                         <Label className={fieldLabelClass}>
@@ -618,16 +640,6 @@ export function OutsourceOrderDialog({
                       />
                     </div>
                     <div className='space-y-2 md:col-span-2'>
-                      <Label className={fieldLabelClass}>
-                        {t('productionOutsourcing.orders.fields.productCode')}
-                      </Label>
-                      <Input
-                        value={line.productCode}
-                        readOnly
-                        className={`${inputClass} bg-muted/30`}
-                      />
-                    </div>
-                    <div className='space-y-2 md:col-span-3'>
                       <Label className={fieldLabelClass}>
                         {t('productionOutsourcing.orders.fields.specification')}
                       </Label>
@@ -699,12 +711,12 @@ export function OutsourceOrderDialog({
             <Button
               type='button'
               variant='outline'
-              className='rounded-xl'
+              className='rounded-full'
               onClick={() => onOpenChange(false)}
             >
               {t('common.actions.cancel')}
             </Button>
-            <Button type='submit' disabled={isSaving} className='rounded-xl'>
+            <Button type='submit' disabled={isSaving} className='rounded-full'>
               {isSaving ? (
                 <Loader2 className='mr-2 size-4 animate-spin' />
               ) : null}
@@ -712,7 +724,6 @@ export function OutsourceOrderDialog({
             </Button>
           </DialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+    </DialogContent>
   )
 }

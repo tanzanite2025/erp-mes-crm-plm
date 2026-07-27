@@ -5,15 +5,20 @@ import {
 } from '../data/vehicle-loading-wasm-geometry.types'
 import {
   LOADING_SPACE_PLAN_SCHEMA_VERSION,
+  LOADING_PLAN_DIAGNOSTICS_SCHEMA_VERSION,
   VEHICLE_LOADING_PLAN_SCHEMA_VERSION,
+  type LoadingPlanDiagnostics,
   type LoadingSpacePlan,
   type LoadingSpacePlanRequest,
   type VehicleLoadingPlan,
   type VehicleLoadingPlanRequest,
+  type VehicleLoadingPlanDiagnostics,
 } from '../data/vehicle-loading-wasm-plan.types'
 import initVehicleLoadingWasm, {
   calculate_loading_plan,
   calculate_vehicle_loading_plan,
+  diagnose_loading_plan_json,
+  diagnose_vehicle_loading_plan_json,
   project_vehicle_geometry_to_loading_space_json,
 } from '../wasm/pkg/vehicle_loading_engine_wasm.js'
 
@@ -77,6 +82,21 @@ function parseLoadingSpaceWasmPlanOutput(output: string): LoadingSpacePlan {
   return value as LoadingSpacePlan
 }
 
+function parseLoadingPlanDiagnosticsOutput(
+  output: string
+): LoadingPlanDiagnostics {
+  const value: unknown = JSON.parse(output)
+  if (!isObjectRecord(value)) {
+    throw new Error('WASM 装箱诊断结果必须是对象。')
+  }
+  if (value.schemaVersion !== LOADING_PLAN_DIAGNOSTICS_SCHEMA_VERSION) {
+    throw new Error(
+      `WASM 装箱诊断协议错误：${String(value.schemaVersion ?? '缺失')}`
+    )
+  }
+  return value as LoadingPlanDiagnostics
+}
+
 function parseVehicleLoadingGeometryProjectionOutput(
   output: string
 ): VehicleLoadingGeometryProjection {
@@ -134,6 +154,36 @@ export async function calculateLoadingSpacePlanWithWasm(
 
     const output = calculate_loading_plan(JSON.stringify(request))
     return parseLoadingSpaceWasmPlanOutput(output)
+  } catch (error) {
+    throw new LoadingSpaceWasmCalculationError(
+      getVehicleLoadingWasmFailureReason(error)
+    )
+  }
+}
+
+export async function diagnoseVehicleLoadingPlanWithWasm(
+  request: VehicleLoadingPlanRequest
+): Promise<VehicleLoadingPlanDiagnostics> {
+  try {
+    await ensureVehicleLoadingWasmInitialized()
+
+    const output = diagnose_vehicle_loading_plan_json(JSON.stringify(request))
+    return parseLoadingPlanDiagnosticsOutput(output)
+  } catch (error) {
+    throw new VehicleLoadingWasmCalculationError(
+      getVehicleLoadingWasmFailureReason(error)
+    )
+  }
+}
+
+export async function diagnoseLoadingSpacePlanWithWasm(
+  request: LoadingSpacePlanRequest
+): Promise<LoadingPlanDiagnostics> {
+  try {
+    await ensureVehicleLoadingWasmInitialized()
+
+    const output = diagnose_loading_plan_json(JSON.stringify(request))
+    return parseLoadingPlanDiagnosticsOutput(output)
   } catch (error) {
     throw new LoadingSpaceWasmCalculationError(
       getVehicleLoadingWasmFailureReason(error)

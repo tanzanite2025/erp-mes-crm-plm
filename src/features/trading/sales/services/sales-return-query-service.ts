@@ -12,21 +12,20 @@ export type GetSalesReturnSourceOrdersOptions = {
   keyword?: string
 }
 
-const SALES_RETURN_SOURCE_ORDER_STATUSES = ['InProgress', 'Done'] as const
-const salesReturnSourceOrderStatusSet = new Set<string>(
-  SALES_RETURN_SOURCE_ORDER_STATUSES
-)
+const NON_CANCELED_SALES_ORDER_STATUSES = [
+  'Draft',
+  'Pending',
+  'Scheduling',
+  'InProgress',
+  'Done',
+]
 
 function resolveSalesReturnSourceStatuses(status?: string): string[] {
-  if (
-    status &&
-    status !== 'all' &&
-    salesReturnSourceOrderStatusSet.has(status)
-  ) {
+  if (status && status !== 'all' && status !== 'Canceled') {
     return [status]
   }
 
-  return [...SALES_RETURN_SOURCE_ORDER_STATUSES]
+  return NON_CANCELED_SALES_ORDER_STATUSES
 }
 
 export async function getSalesReturnSourceOrders(

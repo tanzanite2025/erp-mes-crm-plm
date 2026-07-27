@@ -21,6 +21,7 @@ import type { SalesReturnRecord } from '@/features/trading/sales/services/sales-
 const SOURCE_ORDERS_PAGE_SIZE = 50
 const SALES_RETURNS_PAGE_SIZE = 20
 const SALES_RETURNS_ALL_STATUS = 'all'
+const CANCELED_SALES_ORDER_STATUS = 'Canceled'
 const logger = createLogger('useSalesReturnQueryShell')
 
 export type SalesReturnSourceOrdersResource = CompositeReadResource<{
@@ -61,7 +62,10 @@ export function useSalesReturnQueryShell() {
   const selectedSourceOrderId = search.sourceOrderId || undefined
   const selectedReturnId = search.returnId || undefined
   const sourceSearchTerm = search.search || ''
-  const sourceStatusFilter = search.status || SALES_RETURNS_ALL_STATUS
+  const sourceStatusFilter =
+    search.status === CANCELED_SALES_ORDER_STATUS
+      ? SALES_RETURNS_ALL_STATUS
+      : search.status || SALES_RETURNS_ALL_STATUS
 
   const [sourcePage, setSourcePage] = useState(1)
   const [returnPage, setReturnPage] = useState(1)
@@ -119,11 +123,17 @@ export function useSalesReturnQueryShell() {
       }
     }
 
-    const total = sourceOrdersData.total ?? 0
+    const visibleSourceOrders = sourceOrdersData.items.filter(
+      (order) => order.status !== CANCELED_SALES_ORDER_STATUS
+    )
+    const total =
+      visibleSourceOrders.length === sourceOrdersData.items.length
+        ? (sourceOrdersData.total ?? 0)
+        : visibleSourceOrders.length
 
     return {
       status: 'ready',
-      items: sourceOrdersData.items,
+      items: visibleSourceOrders,
       total,
       totalPages: Math.max(1, Math.ceil(total / SOURCE_ORDERS_PAGE_SIZE)),
     }
@@ -211,6 +221,10 @@ export function useSalesReturnQueryShell() {
       sourceOrdersResource.status === 'ready' ? sourceOrdersResource.items : []
 
     if (sourceOrderDetailQuery.data) {
+      if (sourceOrderDetailQuery.data.status === CANCELED_SALES_ORDER_STATUS) {
+        return undefined
+      }
+
       return sourceOrderDetailQuery.data
     }
 

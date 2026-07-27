@@ -1,0 +1,31 @@
+{
+  "id": "cannot-fit",
+  "description": "放不下：所有允许朝向都超过装载空间",
+  "request": {
+    "schemaVersion": "vehicle-loading-request.v1",
+    "vehicle": {
+      "id": "cannot-fit",
+      "name": "小厢车",
+      "usableSpace": {
+        "lengthMm": 2000,
+        "widthMm": 1000,
+        "heightMm": 1000
+      },
+      "payloadKg": 1000
+    },
+    "package": {
+      "id": "oversized-box",
+      "name": "超尺寸箱",
+      "quantity": 1,
+      "unitWeightKg": 10,
+      "dimension": {
+        "lengthMm": 2100,
+        "widthMm": 500,
+        "heightMm": 500
+      },
+      "canRotate": false,
+      "canInvert": false
+    }
+  },
+  "expectedError": "当前箱体在所有允许朝向下都无法放入装载空间"
+}

@@ -1,0 +1,44 @@
+{
+  "id": "stacking-support",
+  "description": "堆叠支撑：每层箱体都必须有水平支撑",
+  "request": {
+    "schemaVersion": "vehicle-loading-request.v1",
+    "vehicle": {
+      "id": "stacking-support",
+      "name": "堆叠测试厢车",
+      "usableSpace": {
+        "lengthMm": 1000,
+        "widthMm": 1000,
+        "heightMm": 300
+      },
+      "payloadKg": 1000
+    },
+    "package": {
+      "id": "stack-box",
+      "name": "堆叠箱",
+      "quantity": 3,
+      "unitWeightKg": 10,
+      "dimension": {
+        "lengthMm": 1000,
+        "widthMm": 1000,
+        "heightMm": 100
+      },
+      "canRotate": false,
+      "canInvert": false
+    }
+  },
+  "expected": {
+    "maxBoxesPerVehicle": 3,
+    "boxesPlacedInPreviewVehicle": 3,
+    "remainingBoxesAfterPreviewVehicle": 0,
+    "vehiclesNeeded": 1,
+    "selectedOrientationLabel": "L-W-H",
+    "blockedPositions": 0,
+    "placementPositions": [
+      [0, 0, 0],
+      [0, 0, 100],
+      [0, 0, 200]
+    ],
+    "warningCodes": ["HIGH_VOLUME_UTILIZATION"]
+  }
+}

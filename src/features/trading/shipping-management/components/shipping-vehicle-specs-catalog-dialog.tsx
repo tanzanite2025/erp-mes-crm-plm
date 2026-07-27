@@ -23,7 +23,8 @@ import { filterVehicleSpecsByKeyword } from '@/features/logistics-config/vehicle
 import { useVehiclePhotoDialogState } from '@/features/logistics-config/vehicle-specs/hooks/use-vehicle-photo-dialog-state'
 import { useVehicleSpecsQuery } from '@/features/logistics-config/vehicle-specs/hooks/use-vehicle-specs-query'
 
-const VEHICLE_SPECS_LIBRARY_PATH = '/logistics-config/vehicle-specs-library'
+const VEHICLE_SPECS_LIBRARY_PATH =
+  '/logistics-loading-specs/vehicle-specs-library'
 
 type Props = {
   open: boolean

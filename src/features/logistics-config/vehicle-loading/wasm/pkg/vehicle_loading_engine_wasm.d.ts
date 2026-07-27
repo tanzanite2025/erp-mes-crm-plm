@@ -5,6 +5,10 @@ export function calculate_loading_plan(input: string): string;
 
 export function calculate_vehicle_loading_plan(input: string): string;
 
+export function diagnose_loading_plan_json(input: string): string;
+
+export function diagnose_vehicle_loading_plan_json(input: string): string;
+
 export function parse_vehicle_geometry_glb(input: Uint8Array): string;
 
 export function project_vehicle_geometry_to_loading_space_json(input: string): string;
@@ -15,6 +19,8 @@ export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly calculate_loading_plan: (a: number, b: number) => [number, number, number, number];
     readonly calculate_vehicle_loading_plan: (a: number, b: number) => [number, number, number, number];
+    readonly diagnose_loading_plan_json: (a: number, b: number) => [number, number, number, number];
+    readonly diagnose_vehicle_loading_plan_json: (a: number, b: number) => [number, number, number, number];
     readonly parse_vehicle_geometry_glb: (a: number, b: number) => [number, number, number, number];
     readonly project_vehicle_geometry_to_loading_space_json: (a: number, b: number) => [number, number, number, number];
     readonly __wbindgen_externrefs: WebAssembly.Table;

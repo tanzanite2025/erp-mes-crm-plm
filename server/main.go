@@ -269,6 +269,7 @@ func main() {
 	}
 
 	db.InitDB(dsn)
+	services.StartVehicleModelTemplateGeometryParserWorker(context.Background())
 	db.InitRedis()
 	services.StartInitialSearchRebuild()
 

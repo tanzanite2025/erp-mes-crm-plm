@@ -23,29 +23,13 @@ export function SalesReturnsTab() {
           sourcePage={queryShell.sourcePage}
           sourceTotalPages={queryShell.sourceTotalPages}
           sourceOrdersResource={queryShell.sourceOrdersResource}
-          selectedSourceOrderId={queryShell.selectedSourceOrderId}
-          selectedSourceOrder={queryShell.selectedSourceOrder}
-          isSourceDetailLoading={queryShell.isSourceDetailLoading}
+          returnsResource={queryShell.returnsResource}
           onRetrySourceOrders={() => {
             void queryShell.refetchSourceOrders()
           }}
           onSearchTermChange={queryShell.handleSourceSearchTermChange}
           onStatusFilterChange={queryShell.handleSourceStatusFilterChange}
-          onSelectSourceOrder={queryShell.handleSelectSourceOrder}
-          onClearSelectedSourceOrder={queryShell.handleClearSelectedSourceOrder}
           onSourcePageChange={queryShell.handleSourcePageChange}
-          returnPage={queryShell.returnPage}
-          returnTotalPages={queryShell.returnTotalPages}
-          returnsResource={queryShell.returnsResource}
-          selectedReturnId={queryShell.selectedReturnId}
-          selectedReturnRecord={queryShell.selectedReturnRecord}
-          isReturnDetailLoading={queryShell.isReturnDetailLoading}
-          onRetryReturns={() => {
-            void queryShell.refetchReturns()
-          }}
-          onSelectReturn={queryShell.handleSelectReturn}
-          onClearSelectedReturn={queryShell.handleClearSelectedReturn}
-          onReturnPageChange={queryShell.handleReturnPageChange}
         />
       </div>
     </div>

@@ -30,13 +30,24 @@ export type VehicleGeometryPartKind =
   | 'door'
   | 'reference'
 
-export type VehicleGeometryCollisionKind = 'aabb' | 'none'
+export type VehicleGeometryCollisionKind = 'aabb' | 'obb' | 'none'
+
+export type VehicleGeometryObbMm = {
+  centerMm: [number, number, number]
+  halfExtentsMm: [number, number, number]
+  axes: [
+    [number, number, number],
+    [number, number, number],
+    [number, number, number],
+  ]
+}
 
 export type VehicleGeometryPart = {
   id: string
   kind: VehicleGeometryPartKind
   collision: VehicleGeometryCollisionKind
   bounds: VehicleGeometryAabbMm
+  obb?: VehicleGeometryObbMm
   positionMm: [number, number, number]
   nodeIndex: number
   meshIndex: number

@@ -18,6 +18,14 @@ import {
 
 const salesExchangeSourceOrderPageSize = 50
 const salesExchangeRecordPageSize = 50
+const canceledSalesOrderStatus = 'Canceled'
+const salesExchangeSourceOrderStatuses = [
+  'Draft',
+  'Pending',
+  'Scheduling',
+  'InProgress',
+  'Done',
+]
 
 type CreateSalesExchangeDraftRecordInput = {
   sourceSalesOrder: SalesOrder
@@ -52,7 +60,8 @@ export function useSalesExchangeWorkspaceState() {
   const routeCustomerId = search.customerId || undefined
   const routeCustomerName = search.customerName || undefined
   const sourceSearchTerm = search.search ?? ''
-  const sourceStatusFilter = search.status ?? 'all'
+  const sourceStatusFilter =
+    search.status === canceledSalesOrderStatus ? 'all' : (search.status ?? 'all')
   const [sourcePage, setSourcePage] = useState(1)
   const selectedSourceSalesOrderId = search.sourceOrderId || undefined
   const [sourceSalesOrderForCreateDialog, setSourceSalesOrderForCreateDialog] =
@@ -80,7 +89,9 @@ export function useSalesExchangeWorkspaceState() {
   }
 
   const sourceSalesOrderStatuses =
-    sourceStatusFilter === 'all' ? ['InProgress', 'Done'] : [sourceStatusFilter]
+    sourceStatusFilter === 'all'
+      ? salesExchangeSourceOrderStatuses
+      : [sourceStatusFilter]
 
   const sourceSalesOrdersQuery = useGetSalesOrders(
     sourcePage,
@@ -110,11 +121,14 @@ export function useSalesExchangeWorkspaceState() {
   )
 
   const sourceSalesOrderCandidates = useMemo(() => {
-    const sourceOrders = [...(sourceSalesOrdersQuery.data?.items ?? [])]
+    const sourceOrders = (sourceSalesOrdersQuery.data?.items ?? []).filter(
+      (order) => order.status !== canceledSalesOrderStatus
+    )
     const selectedSourceSalesOrder = selectedSourceSalesOrderQuery.data
 
     if (
       selectedSourceSalesOrder &&
+      selectedSourceSalesOrder.status !== canceledSalesOrderStatus &&
       !sourceOrders.some((order) => order.id === selectedSourceSalesOrder.id)
     ) {
       sourceOrders.unshift(selectedSourceSalesOrder)
@@ -125,10 +139,12 @@ export function useSalesExchangeWorkspaceState() {
 
   const selectedSourceSalesOrder = useMemo(
     () =>
-      selectedSourceSalesOrderQuery.data ??
-      sourceSalesOrderCandidates.find(
-        (candidate) => candidate.order.id === selectedSourceSalesOrderId
-      )?.order,
+      selectedSourceSalesOrderQuery.data?.status === canceledSalesOrderStatus
+        ? undefined
+        : (selectedSourceSalesOrderQuery.data ??
+          sourceSalesOrderCandidates.find(
+            (candidate) => candidate.order.id === selectedSourceSalesOrderId
+          )?.order),
     [
       selectedSourceSalesOrderId,
       selectedSourceSalesOrderQuery.data,

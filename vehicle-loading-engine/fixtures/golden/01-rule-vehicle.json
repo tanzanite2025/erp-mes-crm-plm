@@ -1,0 +1,45 @@
+{
+  "id": "rule-vehicle",
+  "description": "规则车厢：没有障碍区时按规则网格装载",
+  "request": {
+    "schemaVersion": "vehicle-loading-request.v1",
+    "vehicle": {
+      "id": "rule-vehicle",
+      "name": "规则厢车",
+      "usableSpace": {
+        "lengthMm": 2000,
+        "widthMm": 1000,
+        "heightMm": 1000
+      },
+      "payloadKg": 1000
+    },
+    "package": {
+      "id": "box-500",
+      "name": "500 箱",
+      "quantity": 4,
+      "unitWeightKg": 10,
+      "dimension": {
+        "lengthMm": 1000,
+        "widthMm": 500,
+        "heightMm": 500
+      },
+      "canRotate": true,
+      "canInvert": false
+    }
+  },
+  "expected": {
+    "maxBoxesPerVehicle": 8,
+    "boxesPlacedInPreviewVehicle": 4,
+    "remainingBoxesAfterPreviewVehicle": 0,
+    "vehiclesNeeded": 1,
+    "selectedOrientationLabel": "L-W-H",
+    "blockedPositions": 0,
+    "placementPositions": [
+      [0, 0, 0],
+      [1000, 0, 0],
+      [0, 500, 0],
+      [1000, 500, 0]
+    ],
+    "warningCodes": ["HIGH_VOLUME_UTILIZATION"]
+  }
+}

@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   Trash2,
 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { isForbiddenError } from '@/lib/error-status'
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
@@ -19,6 +20,10 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
+import {
+  industrialPanelClassName,
+  industrialPanelGradientClassName,
+} from '@/components/uds/industrial-panel'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import { useGetSuppliers } from '@/features/purchase/suppliers'
@@ -106,7 +111,7 @@ export function OutsourcePartnerManagement() {
   }
 
   return (
-    <div className='flex animate-in flex-col gap-5 pb-10 duration-700 fade-in'>
+    <div className='flex animate-in flex-col gap-4 pb-8 duration-500 fade-in'>
       <IndustrialHeader
         icon={Building2}
         title={t('productionOutsourcing.partners.title')}
@@ -140,7 +145,7 @@ export function OutsourcePartnerManagement() {
         />
       </div>
 
-      <div className='flex flex-col gap-3 rounded-[24px] border border-dashed border-muted/60 bg-muted/5 p-3 md:flex-row md:items-center md:justify-between'>
+      <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between'>
         <div className='flex flex-1 flex-col gap-3 md:flex-row md:items-center'>
           <div className='relative w-full md:max-w-sm'>
             <Search className='absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/50' />
@@ -150,7 +155,7 @@ export function OutsourcePartnerManagement() {
               placeholder={t(
                 'productionOutsourcing.partners.searchPlaceholder'
               )}
-              className='h-11 rounded-2xl border-none bg-background pl-10'
+              className='pl-10'
             />
           </div>
           <select
@@ -158,7 +163,7 @@ export function OutsourcePartnerManagement() {
             onChange={(event) =>
               setStatus(event.target.value as OutsourcePartnerStatus | 'ALL')
             }
-            className='h-11 w-full rounded-2xl border border-input bg-background px-3 text-xs font-bold shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 md:w-44 dark:bg-input/30'
+            className='h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-xs shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 md:w-44 md:text-sm dark:bg-input/30'
           >
             <option value='ALL'>
               {t('productionOutsourcing.partners.filters.all')}
@@ -182,9 +187,9 @@ export function OutsourcePartnerManagement() {
               ? undefined
               : t('productionOutsourcing.partners.noManagePermission')
           }
-          className='h-11 rounded-full px-6'
+          className='h-9 w-full rounded-full px-4 text-xs font-medium md:w-auto'
         >
-          <Plus className='mr-2 size-4' />
+          <Plus className='size-4' />
           {t('productionOutsourcing.partners.actions.add')}
         </Button>
       </div>
@@ -192,19 +197,28 @@ export function OutsourcePartnerManagement() {
       {partnersQuery.isLoading ? (
         <div className='grid gap-4 lg:grid-cols-2 xl:grid-cols-3'>
           {[1, 2, 3].map((item) => (
-            <Skeleton key={item} className='h-56 rounded-[24px]' />
+            <Skeleton
+              key={item}
+              className={cn(industrialPanelClassName, 'h-56')}
+            />
           ))}
         </div>
       ) : partnersQuery.isError ? (
-        <Card className='rounded-[24px] border-dashed border-rose-300/60 bg-rose-50/70 shadow-none dark:bg-rose-950/20'>
-          <CardContent className='flex flex-col items-center gap-3 py-16 text-center'>
-            <Building2 className='size-12 text-rose-400/50' />
-            <p className='text-xs font-black text-rose-600'>
+        <Card
+          className={cn(
+            industrialPanelClassName,
+            'border-rose-300/60 bg-rose-50/70 dark:bg-rose-950/20'
+          )}
+        >
+          <div className={industrialPanelGradientClassName} />
+          <CardContent className='relative z-10 flex flex-col items-center gap-3 py-12 text-center'>
+            <Building2 className='size-10 text-rose-400/50' />
+            <p className='text-sm font-medium text-rose-600'>
               {t('productionOutsourcing.partners.loadingFailed')}
             </p>
             <Button
               variant='outline'
-              className='rounded-full'
+              className='h-9 rounded-full px-4 text-xs font-medium'
               onClick={() => void partnersQuery.refetch()}
             >
               {t('common.actions.retry')}
@@ -212,17 +226,18 @@ export function OutsourcePartnerManagement() {
           </CardContent>
         </Card>
       ) : partners.length === 0 ? (
-        <Card className='rounded-[24px] border-dashed bg-muted/5 shadow-none'>
-          <CardContent className='flex flex-col items-center gap-3 py-20 text-center'>
-            <Building2 className='size-12 text-muted-foreground/20' />
-            <p className='text-sm font-black text-muted-foreground'>
+        <Card className={industrialPanelClassName}>
+          <div className={industrialPanelGradientClassName} />
+          <CardContent className='relative z-10 flex flex-col items-center gap-3 py-14 text-center'>
+            <Building2 className='size-10 text-muted-foreground/30' />
+            <p className='text-sm text-muted-foreground'>
               {t('productionOutsourcing.partners.empty')}
             </p>
             <Button
               onClick={openCreate}
               disabled={!canManage || isChecking}
               variant='outline'
-              className='rounded-full'
+              className='h-9 rounded-full px-4 text-xs font-medium'
             >
               {t('productionOutsourcing.partners.actions.add')}
             </Button>
@@ -233,15 +248,19 @@ export function OutsourcePartnerManagement() {
           {partners.map((partner) => (
             <Card
               key={partner.id}
-              className='overflow-hidden rounded-[24px] border-dashed bg-muted/5 shadow-none transition-colors hover:bg-muted/10'
+              className={cn(
+                industrialPanelClassName,
+                'transition-colors hover:bg-muted/10'
+              )}
             >
-              <CardHeader className='space-y-3 pb-3'>
+              <div className={industrialPanelGradientClassName} />
+              <CardHeader className='relative z-10 space-y-3 border-b border-dashed border-muted/20 bg-background/20 p-4'>
                 <div className='flex items-start justify-between gap-3'>
                   <div className='min-w-0'>
-                    <CardTitle className='truncate text-base font-black tracking-tight'>
+                    <CardTitle className='truncate text-base font-semibold tracking-tight'>
                       {partner.name}
                     </CardTitle>
-                    <p className='mt-1 font-mono text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
+                    <p className='mt-1 font-mono text-xs font-medium text-muted-foreground'>
                       {partner.code} · v{partner.version}
                     </p>
                   </div>
@@ -255,20 +274,20 @@ export function OutsourcePartnerManagement() {
                   </Badge>
                 </div>
                 {partner.supplierNameSnapshot ? (
-                  <p className='truncate rounded-2xl bg-background px-3 py-2 text-[11px] font-bold text-muted-foreground'>
+                  <p className='truncate rounded-md bg-muted/30 px-3 py-2 text-xs text-muted-foreground'>
                     {t('productionOutsourcing.partners.fields.supplier')}：
                     {partner.supplierNameSnapshot}
                   </p>
                 ) : null}
               </CardHeader>
-              <CardContent className='space-y-4'>
+              <CardContent className='relative z-10 space-y-4 p-4'>
                 <div className='grid grid-cols-2 gap-3 text-xs'>
-                  <div className='rounded-2xl bg-background p-3'>
-                    <div className='flex items-center gap-1 text-[9px] font-black tracking-widest text-muted-foreground uppercase'>
+                  <div className='rounded-md bg-muted/30 p-3'>
+                    <div className='flex items-center gap-1 text-xs font-medium text-muted-foreground'>
                       <ShieldCheck className='size-3' />
                       {t('productionOutsourcing.partners.fields.qualityGrade')}
                     </div>
-                    <p className='mt-1 font-black'>
+                    <p className='mt-1 font-semibold'>
                       {partner.qualityGrade
                         ? t(
                             `productionOutsourcing.partners.qualityGrades.${partner.qualityGrade}`
@@ -278,12 +297,12 @@ export function OutsourcePartnerManagement() {
                           )}
                     </p>
                   </div>
-                  <div className='rounded-2xl bg-background p-3'>
-                    <div className='flex items-center gap-1 text-[9px] font-black tracking-widest text-muted-foreground uppercase'>
+                  <div className='rounded-md bg-muted/30 p-3'>
+                    <div className='flex items-center gap-1 text-xs font-medium text-muted-foreground'>
                       <Clock3 className='size-3' />
                       {t('productionOutsourcing.partners.fields.leadTimeDays')}
                     </div>
-                    <p className='mt-1 font-black'>
+                    <p className='mt-1 font-semibold'>
                       {t('productionOutsourcing.partners.leadTimeValue', {
                         count: partner.leadTimeDays,
                       })}
@@ -291,8 +310,8 @@ export function OutsourcePartnerManagement() {
                   </div>
                 </div>
 
-                <div className='space-y-1 rounded-2xl bg-background p-3 text-xs'>
-                  <p className='font-black text-foreground'>
+                <div className='space-y-1 rounded-md bg-muted/30 p-3 text-xs'>
+                  <p className='font-semibold text-foreground'>
                     {partner.contactPerson || '-'}
                     {partner.contactPhone ? ` · ${partner.contactPhone}` : ''}
                   </p>
@@ -302,13 +321,13 @@ export function OutsourcePartnerManagement() {
                   </p>
                 </div>
 
-                <div className='flex flex-wrap justify-end gap-2 border-t border-dashed pt-3'>
+                <div className='flex flex-wrap justify-end gap-2 border-t pt-3'>
                   <AuditTimelineTriggerButton
                     module={AUDIT_MODULES.outsourcePartner}
                     targetId={partner.id}
                     targetName={partner.name || partner.code}
                     label={t('common.audit.trigger')}
-                    className='h-9 rounded-full text-[9px]'
+                    className='rounded-full border-solid text-xs font-medium tracking-normal normal-case'
                   />
                   <Button
                     variant='outline'

@@ -53,6 +53,7 @@ type SalesExchangeCreateDialogProps = {
   sourceSalesOrder?: SalesOrder
   open: boolean
   onOpenChange: (open: boolean) => void
+  initialValues?: SalesExchangeCreateInitialValues
   onCreateSalesExchangeDraftRecord: (input: {
     sourceSalesOrder: SalesOrder
     lineDrafts: SalesExchangeLineDraft[]
@@ -64,6 +65,17 @@ type SalesExchangeCreateDialogProps = {
     exchangeReason: string
     exchangeRemarks: string
   }) => Promise<void> | void
+}
+
+export type SalesExchangeCreateInitialValues = {
+  initialLineId?: number
+  exchangeDate?: string
+  expectedReplacementDate?: string
+  receivedOldItemTrackingNo?: string
+  replacementTrackingNo?: string
+  defaultReplacementProductCode?: string
+  exchangeReason?: string
+  exchangeRemarks?: string
 }
 
 function createTodayDateInputValue() {
@@ -107,24 +119,83 @@ function appendSalesExchangeUnmatchedLabelCodesWithoutDuplicates(
   return Array.from(unmatchedLabelCodesByNormalizedValue.values())
 }
 
+function createInitialSalesExchangeLineDrafts(params: {
+  sourceSalesOrder?: SalesOrder
+  initialLineId?: number
+  defaultReplacementProductCode: string
+}) {
+  const { sourceSalesOrder, initialLineId, defaultReplacementProductCode } =
+    params
+  if (!sourceSalesOrder || typeof initialLineId !== 'number') {
+    return []
+  }
+
+  const initialLine = (sourceSalesOrder.lines ?? []).find(
+    (salesOrderLine) =>
+      salesOrderLine.id === initialLineId && salesOrderLine.deliveredQty > 0
+  )
+  if (!initialLine) {
+    return []
+  }
+
+  const lineDraft = buildSalesExchangeLineDraftFromSalesOrderLine(initialLine)
+
+  return [
+    {
+      ...lineDraft,
+      replacementProductCode:
+        defaultReplacementProductCode || lineDraft.replacementProductCode,
+    },
+  ]
+}
+
 export function SalesExchangeCreateDialog({
   sourceSalesOrder,
   open,
   onOpenChange,
+  initialValues,
   onCreateSalesExchangeDraftRecord,
 }: SalesExchangeCreateDialogProps) {
-  const [exchangeDate, setExchangeDate] = useState(createTodayDateInputValue())
-  const [expectedReplacementDate, setExpectedReplacementDate] = useState('')
-  const [receivedOldItemTrackingNo, setReceivedOldItemTrackingNo] = useState('')
-  const [replacementTrackingNo, setReplacementTrackingNo] = useState('')
-  const [exchangeReason, setExchangeReason] = useState('')
-  const [exchangeRemarks, setExchangeRemarks] = useState('')
+  const [exchangeDate, setExchangeDate] = useState(
+    initialValues?.exchangeDate ?? createTodayDateInputValue()
+  )
+  const [expectedReplacementDate, setExpectedReplacementDate] = useState(
+    initialValues?.expectedReplacementDate ?? ''
+  )
+  const [receivedOldItemTrackingNo, setReceivedOldItemTrackingNo] = useState(
+    initialValues?.receivedOldItemTrackingNo ?? ''
+  )
+  const [replacementTrackingNo, setReplacementTrackingNo] = useState(
+    initialValues?.replacementTrackingNo ?? ''
+  )
+  const defaultReplacementProductCode =
+    initialValues?.defaultReplacementProductCode?.trim() ?? ''
+  const [exchangeReason, setExchangeReason] = useState(
+    initialValues?.exchangeReason ?? ''
+  )
+  const [exchangeRemarks, setExchangeRemarks] = useState(
+    initialValues?.exchangeRemarks ?? ''
+  )
   const [scannerInputValue, setScannerInputValue] = useState('')
+  const initialLineDrafts = useMemo(
+    () =>
+      createInitialSalesExchangeLineDrafts({
+        sourceSalesOrder,
+        initialLineId: initialValues?.initialLineId,
+        defaultReplacementProductCode,
+      }),
+    [
+      defaultReplacementProductCode,
+      initialValues?.initialLineId,
+      sourceSalesOrder,
+    ]
+  )
   const [
     activeSalesOrderLineIdForLabelInput,
     setActiveSalesOrderLineIdForLabelInput,
-  ] = useState<number | null>(null)
-  const [lineDrafts, setLineDrafts] = useState<SalesExchangeLineDraft[]>([])
+  ] = useState<number | null>(initialValues?.initialLineId ?? null)
+  const [lineDrafts, setLineDrafts] =
+    useState<SalesExchangeLineDraft[]>(initialLineDrafts)
   const [unmatchedLabelCodes, setUnmatchedLabelCodes] = useState<
     SalesExchangeUnmatchedLabelCode[]
   >([])
@@ -169,9 +240,18 @@ export function SalesExchangeCreateDialog({
         return currentLineDrafts
       }
 
+      const nextLineDraft = buildSalesExchangeLineDraftFromSalesOrderLine(
+        salesOrderLine
+      )
+
       return [
         ...currentLineDrafts,
-        buildSalesExchangeLineDraftFromSalesOrderLine(salesOrderLine),
+        {
+          ...nextLineDraft,
+          replacementProductCode:
+            defaultReplacementProductCode ||
+            nextLineDraft.replacementProductCode,
+        },
       ].sort((left, right) => left.lineNo - right.lineNo)
     })
     setActiveSalesOrderLineIdForLabelInput(salesOrderLine.id)
@@ -216,6 +296,19 @@ export function SalesExchangeCreateDialog({
       currentLineDrafts.map((lineDraft) =>
         lineDraft.salesOrderLineId === salesOrderLineId
           ? { ...lineDraft, replacementMode }
+          : lineDraft
+      )
+    )
+  }
+
+  const handleChangeSalesExchangeLineReplacementProductCode = (
+    salesOrderLineId: number,
+    replacementProductCode: string
+  ) => {
+    setLineDrafts((currentLineDrafts) =>
+      currentLineDrafts.map((lineDraft) =>
+        lineDraft.salesOrderLineId === salesOrderLineId
+          ? { ...lineDraft, replacementProductCode }
           : lineDraft
       )
     )
@@ -280,7 +373,13 @@ export function SalesExchangeCreateDialog({
         ...currentLineDrafts.filter(
           (lineDraft) => lineDraft.salesOrderLineId !== activeSalesOrderLine.id
         ),
-        nextLineDraft,
+        defaultReplacementProductCode &&
+        nextLineDraft.replacementProductCode === nextLineDraft.productCode
+          ? {
+              ...nextLineDraft,
+              replacementProductCode: defaultReplacementProductCode,
+            }
+          : nextLineDraft,
       ].sort((left, right) => left.lineNo - right.lineNo)
     })
     setScannerInputValue('')
@@ -314,7 +413,17 @@ export function SalesExchangeCreateDialog({
       incomingRecognizedLabelCodes,
     })
 
-    setLineDrafts(result.lineDrafts)
+    setLineDrafts(
+      result.lineDrafts.map((lineDraft) =>
+        defaultReplacementProductCode &&
+        lineDraft.replacementProductCode === lineDraft.productCode
+          ? {
+              ...lineDraft,
+              replacementProductCode: defaultReplacementProductCode,
+            }
+          : lineDraft
+      )
+    )
     setUnmatchedLabelCodes((currentUnmatchedLabelCodes) =>
       appendSalesExchangeUnmatchedLabelCodesWithoutDuplicates(
         currentUnmatchedLabelCodes,
@@ -615,7 +724,7 @@ export function SalesExchangeCreateDialog({
                               移除
                             </Button>
                           </div>
-                          <div className='mt-3 grid gap-3 md:grid-cols-[160px_220px_minmax(0,1fr)]'>
+                          <div className='mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-[140px_180px_180px_minmax(0,1fr)]'>
                             <div className='space-y-1.5'>
                               <label className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
                                 换货数量
@@ -663,6 +772,22 @@ export function SalesExchangeCreateDialog({
                                   </SelectItem>
                                 </SelectContent>
                               </Select>
+                            </div>
+                            <div className='space-y-1.5'>
+                              <label className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
+                                补发产品码
+                              </label>
+                              <Input
+                                value={lineDraft.replacementProductCode}
+                                onChange={(event) =>
+                                  handleChangeSalesExchangeLineReplacementProductCode(
+                                    lineDraft.salesOrderLineId,
+                                    event.target.value
+                                  )
+                                }
+                                placeholder='请输入本次换货补发产品码'
+                                className='h-9 rounded-xl'
+                              />
                             </div>
                             <div className='space-y-1.5'>
                               <label className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
@@ -747,7 +872,7 @@ export function SalesExchangeCreateDialog({
                 </div>
                 <div className='space-y-1.5'>
                   <label className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
-                    补发物流单号
+                    换货补发运单号
                   </label>
                   <Input
                     value={replacementTrackingNo}

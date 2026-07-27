@@ -96,6 +96,7 @@ export const sidebar = {
     attendanceManagement: '出勤管理',
     logisticsConfig: '物流',
     vehicleMatching: '车型匹配',
+    loadingSpecs: '装载规格',
     packagingManagement: '包装管理',
     containerManagement: '货柜管理',
     logisticsSettings: '物流配置',

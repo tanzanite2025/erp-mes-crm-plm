@@ -14,9 +14,9 @@ type Props = {
 
 export function VehicleSpecMaintenanceCard({ spec, onOpenPhotos }: Props) {
   return (
-    <Card className='overflow-hidden rounded-[28px] border border-dashed border-border/50 bg-card/95 p-0 shadow-[0_1px_0_rgba(15,23,42,0.03)]'>
+    <Card className='overflow-hidden rounded-[28px] border border-border/80 bg-background p-0 shadow-[0_12px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/[0.02] dark:bg-card dark:shadow-[0_16px_36px_rgba(0,0,0,0.22)] dark:ring-white/[0.03]'>
       <div className='flex flex-col gap-0'>
-        <div className='flex flex-col gap-3 border-b border-dashed border-border/60 px-4 py-3 xl:flex-row xl:items-start xl:justify-between'>
+        <div className='flex flex-col gap-3 border-b border-border/70 bg-muted/10 px-4 py-3 xl:flex-row xl:items-start xl:justify-between'>
           <div className='min-w-0 flex-1'>
             <VehicleSpecCardHeader spec={spec} />
           </div>

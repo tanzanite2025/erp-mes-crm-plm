@@ -26,6 +26,8 @@ const (
 	vehicleModelTemplateGeometryParserDefaultTimeout    = 20 * time.Second
 	vehicleModelTemplateGeometryParserMaximumOutput     = int64(4 << 20)
 	vehicleModelTemplateGeometryMaximumPartCount        = 256
+	vehicleModelTemplateGeometryObbAxisTolerance        = 0.0001
+	vehicleModelTemplateGeometryObbEnvelopeToleranceMm  = 0.0001
 )
 
 var (
@@ -90,11 +92,18 @@ type VehicleModelTemplateParsedAxisAlignedBounds struct {
 	HeightMm float64    `json:"heightMm"`
 }
 
+type VehicleModelTemplateParsedObb struct {
+	CenterMm      [3]float64    `json:"centerMm"`
+	HalfExtentsMm [3]float64    `json:"halfExtentsMm"`
+	Axes          [3][3]float64 `json:"axes"`
+}
+
 type VehicleModelTemplateParsedGeometryPart struct {
 	ID          string                                      `json:"id"`
 	Kind        string                                      `json:"kind"`
 	Collision   string                                      `json:"collision"`
 	Bounds      VehicleModelTemplateParsedAxisAlignedBounds `json:"bounds"`
+	Obb         *VehicleModelTemplateParsedObb              `json:"obb,omitempty"`
 	PositionMm  [3]float64                                  `json:"positionMm"`
 	NodeIndex   int                                         `json:"nodeIndex"`
 	MeshIndex   int                                         `json:"meshIndex"`
@@ -529,6 +538,10 @@ func validateVehicleModelTemplateParsedGeometryPart(
 	}
 	switch part.Collision {
 	case "aabb", "none":
+		if part.Obb != nil {
+			return fmt.Errorf("%w: obb is only allowed when collision is obb", ErrVehicleModelTemplateParsedGeometryInvalid)
+		}
+	case "obb":
 	default:
 		return fmt.Errorf(
 			"%w: unsupported part collision %s",
@@ -549,10 +562,77 @@ func validateVehicleModelTemplateParsedGeometryPart(
 	); err != nil {
 		return err
 	}
+	if part.Collision == "obb" {
+		if err := validateVehicleModelTemplateParsedObb(part.Obb, part.Bounds); err != nil {
+			return err
+		}
+	}
 	if !vehicleModelTemplateAllCoordinatesAreFinite(part.PositionMm) {
 		return fmt.Errorf("%w: part positionMm must be finite", ErrVehicleModelTemplateParsedGeometryInvalid)
 	}
 	return nil
+}
+
+func validateVehicleModelTemplateParsedObb(
+	obb *VehicleModelTemplateParsedObb,
+	bounds VehicleModelTemplateParsedAxisAlignedBounds,
+) error {
+	if obb == nil {
+		return fmt.Errorf("%w: obb is required when collision is obb", ErrVehicleModelTemplateParsedGeometryInvalid)
+	}
+	if !vehicleModelTemplateAllCoordinatesAreFinite(obb.CenterMm) {
+		return fmt.Errorf("%w: obb centerMm must be finite", ErrVehicleModelTemplateParsedGeometryInvalid)
+	}
+	for _, halfExtent := range obb.HalfExtentsMm {
+		if !vehicleModelTemplateGeometryNumberIsFinite(halfExtent) || halfExtent <= 0 {
+			return fmt.Errorf("%w: obb halfExtentsMm must be positive and finite", ErrVehicleModelTemplateParsedGeometryInvalid)
+		}
+	}
+	for _, axis := range obb.Axes {
+		if !vehicleModelTemplateAllCoordinatesAreFinite(axis) {
+			return fmt.Errorf("%w: obb axes must be finite", ErrVehicleModelTemplateParsedGeometryInvalid)
+		}
+		length := math.Sqrt(vehicleModelTemplateGeometryVectorDot(axis, axis))
+		if !vehicleModelTemplateGeometryNumberIsFinite(length) ||
+			math.Abs(length-1) > vehicleModelTemplateGeometryObbAxisTolerance {
+			return fmt.Errorf("%w: obb axes must be unit vectors", ErrVehicleModelTemplateParsedGeometryInvalid)
+		}
+	}
+	for leftIndex := 0; leftIndex < len(obb.Axes); leftIndex++ {
+		for rightIndex := leftIndex + 1; rightIndex < len(obb.Axes); rightIndex++ {
+			if math.Abs(vehicleModelTemplateGeometryVectorDot(obb.Axes[leftIndex], obb.Axes[rightIndex])) >
+				vehicleModelTemplateGeometryObbAxisTolerance {
+				return fmt.Errorf("%w: obb axes must be orthogonal", ErrVehicleModelTemplateParsedGeometryInvalid)
+			}
+		}
+	}
+	obbMinMm, obbMaxMm := vehicleModelTemplateParsedObbBroadAABB(obb)
+	for index := range obbMinMm {
+		if obbMinMm[index]+vehicleModelTemplateGeometryObbEnvelopeToleranceMm < bounds.MinMm[index] ||
+			obbMaxMm[index]-vehicleModelTemplateGeometryObbEnvelopeToleranceMm > bounds.MaxMm[index] {
+			return fmt.Errorf("%w: obb broad AABB must be inside part bounds", ErrVehicleModelTemplateParsedGeometryInvalid)
+		}
+	}
+	return nil
+}
+
+func vehicleModelTemplateParsedObbBroadAABB(obb *VehicleModelTemplateParsedObb) ([3]float64, [3]float64) {
+	var radiusMm [3]float64
+	for axisIndex := range obb.HalfExtentsMm {
+		for worldAxisIndex := range radiusMm {
+			radiusMm[worldAxisIndex] += obb.HalfExtentsMm[axisIndex] *
+				math.Abs(obb.Axes[axisIndex][worldAxisIndex])
+		}
+	}
+	return [3]float64{
+			obb.CenterMm[0] - radiusMm[0],
+			obb.CenterMm[1] - radiusMm[1],
+			obb.CenterMm[2] - radiusMm[2],
+		}, [3]float64{
+			obb.CenterMm[0] + radiusMm[0],
+			obb.CenterMm[1] + radiusMm[1],
+			obb.CenterMm[2] + radiusMm[2],
+		}
 }
 
 func validateVehicleModelTemplateParsedAxisAlignedBounds(
@@ -626,4 +706,8 @@ func vehicleModelTemplateAllCoordinatesAreFinite(values [3]float64) bool {
 		}
 	}
 	return true
+}
+
+func vehicleModelTemplateGeometryVectorDot(left [3]float64, right [3]float64) float64 {
+	return left[0]*right[0] + left[1]*right[1] + left[2]*right[2]
 }

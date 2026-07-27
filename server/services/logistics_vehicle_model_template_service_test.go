@@ -333,6 +333,36 @@ func createVehicleModelTemplateTestSchema(t *testing.T, testDB *gorm.DB) {
 		)`,
 		`CREATE UNIQUE INDEX uniq_vehicle_model_template_version_number
 			ON logistics_vehicle_model_template_versions(template_id, version)`,
+		`CREATE TABLE logistics_vehicle_model_template_parse_tasks (
+			id TEXT PRIMARY KEY,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			template_id TEXT NOT NULL,
+			source_asset_url TEXT NOT NULL,
+			source_asset_name TEXT NOT NULL,
+			source_format TEXT NOT NULL,
+			template_version INTEGER NOT NULL,
+			status TEXT NOT NULL,
+			attempt_count INTEGER NOT NULL DEFAULT 0,
+			max_attempts INTEGER NOT NULL DEFAULT 3,
+			next_attempt_at DATETIME NOT NULL,
+			started_at DATETIME,
+			finished_at DATETIME,
+			last_error TEXT NOT NULL DEFAULT '',
+			actor_id TEXT NOT NULL DEFAULT '',
+			operator TEXT NOT NULL DEFAULT '',
+			ip TEXT NOT NULL DEFAULT ''
+		)`,
+		`CREATE UNIQUE INDEX uniq_vehicle_model_template_parse_task_active
+			ON logistics_vehicle_model_template_parse_tasks(
+				template_id,
+				template_version,
+				source_asset_url,
+				source_asset_name,
+				source_format
+			)
+			WHERE status IN ('queued', 'running')`,
 		`CREATE TABLE audit_logs (
 			id TEXT PRIMARY KEY,
 			module TEXT,
@@ -527,6 +557,24 @@ func TestParseVehicleModelTemplateGeometryNormalizesTemplateAndStoresGeometrySna
 				"nodeIndex":0,
 				"meshIndex":0,
 				"vertexCount":8
+			},{
+				"id":"rotated-keep-out",
+				"kind":"keep-out",
+				"collision":"obb",
+				"bounds":{"minMm":[1046,246,0],"maxMm":[1754,954,400],"lengthMm":708,"widthMm":708,"heightMm":400},
+				"obb":{
+					"centerMm":[1400,600,200],
+					"halfExtentsMm":[100,400,200],
+					"axes":[
+						[0.7071067811865476,0.7071067811865476,0],
+						[-0.7071067811865476,0.7071067811865476,0],
+						[0,0,1]
+					]
+				},
+				"positionMm":[1046,246,0],
+				"nodeIndex":1,
+				"meshIndex":1,
+				"vertexCount":8
 			}],
 			"warnings":[]
 		}`),
@@ -595,6 +643,14 @@ func TestParseVehicleModelTemplateGeometryNormalizesTemplateAndStoresGeometrySna
 		snapshotGeometry.Parts[0].Kind != "usable-space" {
 		t.Fatalf("unexpected geometry snapshot: %#v", snapshotGeometry)
 	}
+	if len(snapshotGeometry.Parts) != 2 ||
+		snapshotGeometry.Parts[1].Collision != "obb" ||
+		snapshotGeometry.Parts[1].Obb == nil {
+		t.Fatalf("expected geometry snapshot to preserve OBB part, got %#v", snapshotGeometry.Parts)
+	}
+	if snapshotGeometry.Parts[1].Obb.HalfExtentsMm != [3]float64{100, 400, 200} {
+		t.Fatalf("unexpected OBB half extents: %#v", snapshotGeometry.Parts[1].Obb.HalfExtentsMm)
+	}
 
 	restored, err := RestoreVehicleModelTemplateVersion(
 		created.ID,
@@ -650,6 +706,81 @@ func TestValidateVehicleModelTemplateParsedGeometryRejectsMissingUsableSpace(t *
 			"positionMm":[0,0,0],
 			"nodeIndex":0,
 			"meshIndex":0,
+			"vertexCount":8
+		}],
+		"warnings":[]
+	}`))
+	if !errors.Is(err, ErrVehicleModelTemplateParsedGeometryInvalid) {
+		t.Fatalf("expected parsed geometry invalid error, got %v", err)
+	}
+}
+
+func TestValidateVehicleModelTemplateParsedGeometryRequiresObbForObbCollision(t *testing.T) {
+	_, _, _, err := validateVehicleModelTemplateParsedGeometry(json.RawMessage(`{
+		"schemaVersion":"vehicle-geometry.v1",
+		"sourceFormat":"glb",
+		"unit":"mm",
+		"coordinateSystem":{"lengthAxis":"x","widthAxis":"y","heightAxis":"z"},
+		"bounds":{"minMm":[0,0,0],"maxMm":[100,100,100],"lengthMm":100,"widthMm":100,"heightMm":100},
+		"parts":[{
+			"id":"cargo-space",
+			"kind":"usable-space",
+			"collision":"aabb",
+			"bounds":{"minMm":[0,0,0],"maxMm":[100,100,100],"lengthMm":100,"widthMm":100,"heightMm":100},
+			"positionMm":[0,0,0],
+			"nodeIndex":0,
+			"meshIndex":0,
+			"vertexCount":8
+		},{
+			"id":"rotated-keep-out",
+			"kind":"keep-out",
+			"collision":"obb",
+			"bounds":{"minMm":[20,20,0],"maxMm":[80,80,100],"lengthMm":60,"widthMm":60,"heightMm":100},
+			"positionMm":[20,20,0],
+			"nodeIndex":1,
+			"meshIndex":1,
+			"vertexCount":8
+		}],
+		"warnings":[]
+	}`))
+	if !errors.Is(err, ErrVehicleModelTemplateParsedGeometryInvalid) {
+		t.Fatalf("expected parsed geometry invalid error, got %v", err)
+	}
+}
+
+func TestValidateVehicleModelTemplateParsedGeometryRejectsObbOutsidePartBounds(t *testing.T) {
+	_, _, _, err := validateVehicleModelTemplateParsedGeometry(json.RawMessage(`{
+		"schemaVersion":"vehicle-geometry.v1",
+		"sourceFormat":"glb",
+		"unit":"mm",
+		"coordinateSystem":{"lengthAxis":"x","widthAxis":"y","heightAxis":"z"},
+		"bounds":{"minMm":[0,0,0],"maxMm":[100,100,100],"lengthMm":100,"widthMm":100,"heightMm":100},
+		"parts":[{
+			"id":"cargo-space",
+			"kind":"usable-space",
+			"collision":"aabb",
+			"bounds":{"minMm":[0,0,0],"maxMm":[100,100,100],"lengthMm":100,"widthMm":100,"heightMm":100},
+			"positionMm":[0,0,0],
+			"nodeIndex":0,
+			"meshIndex":0,
+			"vertexCount":8
+		},{
+			"id":"rotated-keep-out",
+			"kind":"keep-out",
+			"collision":"obb",
+			"bounds":{"minMm":[20,20,0],"maxMm":[80,80,100],"lengthMm":60,"widthMm":60,"heightMm":100},
+			"obb":{
+				"centerMm":[50,50,50],
+				"halfExtentsMm":[25,45,50],
+				"axes":[
+					[0.7071067811865476,0.7071067811865476,0],
+					[-0.7071067811865476,0.7071067811865476,0],
+					[0,0,1]
+				]
+			},
+			"positionMm":[20,20,0],
+			"nodeIndex":1,
+			"meshIndex":1,
 			"vertexCount":8
 		}],
 		"warnings":[]

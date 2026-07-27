@@ -59,8 +59,18 @@ interface SalesReturnCreateSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   mode?: 'create' | 'edit'
+  initialValues?: SalesReturnCreateInitialValues
   onCreated?: (returnId: string) => void
   onUpdated?: (returnId: string) => void
+}
+
+export type SalesReturnCreateInitialValues = {
+  initialLineId?: number
+  returnDate?: string
+  trackingNo?: string
+  carrier?: string
+  shippedAt?: string
+  logisticsNote?: string
 }
 
 type LineDraft = {
@@ -181,6 +191,7 @@ export function SalesReturnCreateSheet({
   open,
   onOpenChange,
   mode = 'create',
+  initialValues,
   onCreated,
   onUpdated,
 }: SalesReturnCreateSheetProps) {
@@ -234,6 +245,7 @@ export function SalesReturnCreateSheet({
             mode={mode}
             order={resolvedOrder}
             record={record}
+            initialValues={initialValues}
             onOpenChange={onOpenChange}
             onCreated={onCreated}
             onUpdated={onUpdated}
@@ -248,6 +260,7 @@ type SalesReturnCreateSheetBodyProps = {
   mode: 'create' | 'edit'
   order: SalesOrder
   record?: SalesReturnRecord
+  initialValues?: SalesReturnCreateInitialValues
   onOpenChange: (open: boolean) => void
   onCreated?: (returnId: string) => void
   onUpdated?: (returnId: string) => void
@@ -257,6 +270,7 @@ function SalesReturnCreateSheetBody({
   mode,
   order,
   record,
+  initialValues,
   onOpenChange,
   onCreated,
   onUpdated,
@@ -267,12 +281,21 @@ function SalesReturnCreateSheetBody({
     usePurchaseReturnDictionaryOptions('issue_category')
   const isEditMode = mode === 'edit' && Boolean(record)
   const [returnDate, setReturnDate] = useState(
-    isEditMode && record ? record.returnDate.slice(0, 10) : todayValue()
+    isEditMode && record
+      ? record.returnDate.slice(0, 10)
+      : (initialValues?.returnDate ?? todayValue())
   )
-  const [trackingNo, setTrackingNo] = useState(record?.trackingNo ?? '')
-  const [carrier, setCarrier] = useState(record?.carrier ?? '')
+  const [trackingNo, setTrackingNo] = useState(
+    record?.trackingNo ?? initialValues?.trackingNo ?? ''
+  )
+  const [carrier, setCarrier] = useState(
+    record?.carrier ?? initialValues?.carrier ?? ''
+  )
   const [shippedAt, setShippedAt] = useState(
-    record?.shippedAt ? record.shippedAt.slice(0, 16) : ''
+    record?.shippedAt ? record.shippedAt.slice(0, 16) : (initialValues?.shippedAt ?? '')
+  )
+  const [logisticsNote, setLogisticsNote] = useState(
+    record?.logisticsNote ?? initialValues?.logisticsNote ?? ''
   )
   const [issueCategory, setIssueCategory] = useState(
     record?.issueCategory ?? ''
@@ -283,11 +306,18 @@ function SalesReturnCreateSheetBody({
     record?.evidences ?? []
   )
   const [selectedLineIds, setSelectedLineIds] = useState<number[]>(
-    record?.lines.map((line) => line.salesOrderLineId) ?? []
+    record?.lines.map((line) => line.salesOrderLineId) ??
+      (typeof initialValues?.initialLineId === 'number'
+        ? [initialValues.initialLineId]
+        : [])
   )
   const [activeLineId, setActiveLineId] = useState<number | null>(null)
   const [lineDrafts, setLineDrafts] = useState<Record<number, LineDraft>>(
-    record ? createLineDraftMap(record.lines) : {}
+    record
+      ? createLineDraftMap(record.lines)
+      : typeof initialValues?.initialLineId === 'number'
+        ? { [initialValues.initialLineId]: createEmptyLineDraft() }
+        : {}
   )
 
   const lines = useMemo(
@@ -447,6 +477,7 @@ function SalesReturnCreateSheetBody({
           trackingNo: trackingNo.trim() || undefined,
           carrier: carrier.trim() || undefined,
           shippedAt: toIsoDateTimeValue(shippedAt),
+          logisticsNote: logisticsNote.trim() || undefined,
           issueCategory: issueCategory.trim() || undefined,
           reason: reason.trim() || undefined,
           remarks: remarks.trim() || undefined,
@@ -797,6 +828,20 @@ function SalesReturnCreateSheetBody({
                   value={shippedAt}
                   onChange={(event) => setShippedAt(event.target.value)}
                   className='h-9 rounded-xl'
+                />
+              </div>
+              <div className='space-y-1.5 md:col-span-2 lg:col-span-3'>
+                <label className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
+                  {t('trading.salesReturns.createSheet.logisticsNote')}
+                </label>
+                <Textarea
+                  value={logisticsNote}
+                  onChange={(event) => setLogisticsNote(event.target.value)}
+                  placeholder={t(
+                    'trading.salesReturns.createSheet.logisticsNotePlaceholder'
+                  )}
+                  rows={1}
+                  className='min-h-[36px] rounded-xl'
                 />
               </div>
             </div>

@@ -1,0 +1,47 @@
+{
+  "id": "multiple-vehicles",
+  "description": "多车需求：单车容量不足时保留剩余箱数和多车告警",
+  "request": {
+    "schemaVersion": "vehicle-loading-request.v1",
+    "vehicle": {
+      "id": "multiple-vehicles",
+      "name": "多车需求厢车",
+      "usableSpace": {
+        "lengthMm": 1000,
+        "widthMm": 1000,
+        "heightMm": 1000
+      },
+      "payloadKg": 1000
+    },
+    "package": {
+      "id": "two-layer-box",
+      "name": "双层箱",
+      "quantity": 5,
+      "unitWeightKg": 10,
+      "dimension": {
+        "lengthMm": 1000,
+        "widthMm": 1000,
+        "heightMm": 500
+      },
+      "canRotate": false,
+      "canInvert": false
+    }
+  },
+  "expected": {
+    "maxBoxesPerVehicle": 2,
+    "boxesPlacedInPreviewVehicle": 2,
+    "remainingBoxesAfterPreviewVehicle": 3,
+    "vehiclesNeeded": 3,
+    "selectedOrientationLabel": "L-W-H",
+    "blockedPositions": 0,
+    "placementPositions": [
+      [0, 0, 0],
+      [0, 0, 500]
+    ],
+    "warningCodes": [
+      "MULTIPLE_VEHICLES_REQUIRED",
+      "HIGH_VOLUME_UTILIZATION",
+      "PREVIEW_SHOWS_FIRST_VEHICLE_ONLY"
+    ]
+  }
+}

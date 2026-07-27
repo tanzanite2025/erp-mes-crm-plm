@@ -1,0 +1,59 @@
+{
+  "id": "keep-out",
+  "description": "禁放区：keep-out 不参与顶面支撑",
+  "request": {
+    "schemaVersion": "vehicle-loading-request.v1",
+    "vehicle": {
+      "id": "keep-out",
+      "name": "带禁放区厢车",
+      "usableSpace": {
+        "lengthMm": 2000,
+        "widthMm": 1000,
+        "heightMm": 1000
+      },
+      "blockedSpaces": [
+        {
+          "id": "door-keep-out",
+          "kind": "keepOut",
+          "originMm": { "xMm": 0, "yMm": 0, "zMm": 0 },
+          "dimension": {
+            "lengthMm": 1000,
+            "widthMm": 500,
+            "heightMm": 500
+          }
+        }
+      ],
+      "payloadKg": 1000
+    },
+    "package": {
+      "id": "box-500",
+      "name": "500 箱",
+      "quantity": 6,
+      "unitWeightKg": 10,
+      "dimension": {
+        "lengthMm": 1000,
+        "widthMm": 500,
+        "heightMm": 500
+      },
+      "canRotate": true,
+      "canInvert": false
+    }
+  },
+  "expected": {
+    "maxBoxesPerVehicle": 6,
+    "boxesPlacedInPreviewVehicle": 6,
+    "remainingBoxesAfterPreviewVehicle": 0,
+    "vehiclesNeeded": 1,
+    "selectedOrientationLabel": "L-W-H",
+    "blockedPositions": 2,
+    "placementPositions": [
+      [1000, 0, 0],
+      [0, 500, 0],
+      [1000, 500, 0],
+      [1000, 0, 500],
+      [0, 500, 500],
+      [1000, 500, 500]
+    ],
+    "warningCodes": ["BLOCKED_SPACE_REDUCED_CAPACITY"]
+  }
+}

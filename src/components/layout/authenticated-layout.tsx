@@ -285,7 +285,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
         <SidebarInset
           className={cn(
             '@container/content',
-            'min-h-0 w-full bg-background',
+            'min-h-0 min-w-0 flex-1 bg-background',
             isPDAShellRoute
               ? 'pt-0'
               : 'pt-14 pb-[calc(env(safe-area-inset-bottom)+4rem)] md:pt-16 md:pb-16',

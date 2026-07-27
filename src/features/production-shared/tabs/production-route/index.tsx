@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ForbiddenState } from '@/components/forbidden-state'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import type { ProductionLine } from '../../data/production-line'
 import { productionResourceQueryKeys } from '../../data/production-resource-query-keys'
@@ -130,27 +131,21 @@ export function ProductionRouteMgmt() {
   }
 
   return (
-    <div className='flex animate-in flex-col gap-6 pb-10 duration-700 fade-in'>
-      <div className='flex flex-col gap-1 rounded-[30px] border border-dashed border-primary/20 bg-primary/5 p-6'>
-        <div className='flex items-center gap-2 text-primary'>
-          <GitBranch className='size-4' />
-          <h3 className='text-lg font-black tracking-tighter uppercase italic'>
-            {t('productionArchitecture.routes.title')}
-          </h3>
-        </div>
-        <p className='max-w-3xl text-[10px] font-bold tracking-wide text-muted-foreground'>
-          {t('productionArchitecture.routes.description')}
-        </p>
-      </div>
+    <div className='flex animate-in flex-col gap-8 pb-10 duration-700 fade-in'>
+      <IndustrialHeader
+        icon={GitBranch}
+        title={t('productionArchitecture.routes.title')}
+        description={t('productionArchitecture.routes.description')}
+      />
 
       <div className='flex flex-wrap items-center justify-between gap-3'>
         <div className='relative max-w-sm min-w-[240px] flex-1'>
-          <Search className='absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/50' />
+          <Search className='absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground' />
           <Input
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
             placeholder={t('productionArchitecture.routes.searchPlaceholder')}
-            className='h-11 rounded-2xl border-none bg-muted/50 pl-10'
+            className='h-12 rounded-full border-primary/15 bg-background pl-11 font-semibold'
           />
         </div>
         <Button
@@ -161,7 +156,7 @@ export function ProductionRouteMgmt() {
               ? undefined
               : t('productionArchitecture.routes.noManagePermission')
           }
-          className='rounded-full'
+          className='h-11 rounded-full px-5 text-xs font-bold'
         >
           <Plus className='mr-2 size-4' />
           {t('productionArchitecture.routes.add')}
@@ -171,11 +166,11 @@ export function ProductionRouteMgmt() {
       {routesQuery.isLoading ? (
         <div className='grid gap-4 lg:grid-cols-2'>
           {[1, 2, 3, 4].map((item) => (
-            <Skeleton key={item} className='h-52 rounded-[24px]' />
+            <Skeleton key={item} className='h-52 rounded-2xl' />
           ))}
         </div>
       ) : filteredRoutes.length === 0 ? (
-        <Card className='rounded-[24px] border-dashed bg-muted/5 shadow-none'>
+        <Card className='rounded-2xl border-dashed bg-muted/5 shadow-none'>
           <CardContent className='flex flex-col items-center gap-3 py-20 text-center'>
             <GitBranch className='size-12 text-muted-foreground/20' />
             <p className='text-sm font-black text-muted-foreground'>
@@ -194,7 +189,7 @@ export function ProductionRouteMgmt() {
       ) : (
         <div className='grid gap-4 lg:grid-cols-2'>
           {filteredRoutes.map((route) => (
-            <Card key={route.id} className='rounded-[24px] shadow-none'>
+            <Card key={route.id} className='rounded-2xl shadow-none'>
               <CardHeader className='gap-3 pb-3'>
                 <div className='flex items-start justify-between gap-3'>
                   <div>

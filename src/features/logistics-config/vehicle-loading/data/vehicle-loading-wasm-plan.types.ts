@@ -8,6 +8,9 @@ export const LOADING_SPACE_PLAN_REQUEST_SCHEMA_VERSION =
 
 export const LOADING_SPACE_PLAN_SCHEMA_VERSION = 'loading-space-plan.v1'
 
+export const LOADING_PLAN_DIAGNOSTICS_SCHEMA_VERSION =
+  'loading-plan-diagnostics.v1'
+
 export type VehicleLoadingPlanDimensionsMm = {
   lengthMm: number
   widthMm: number
@@ -25,6 +28,17 @@ export type VehicleLoadingPlanBlockedSpaceInput = {
   kind: string
   originMm: VehicleLoadingPlanPositionMm
   dimension: VehicleLoadingPlanDimensionsMm
+  obb?: LoadingSpaceObbInput
+}
+
+export type LoadingSpaceObbInput = {
+  centerMm: [number, number, number]
+  halfExtentsMm: [number, number, number]
+  axes: [
+    [number, number, number],
+    [number, number, number],
+    [number, number, number],
+  ]
 }
 
 export type VehicleLoadingPlanRequest = {
@@ -48,6 +62,8 @@ export type VehicleLoadingPlanRequest = {
   limits?: {
     maxPlacementOutput?: number
     maxGridCellScan?: number
+    collisionClearanceMm?: number
+    boundaryClearanceMm?: number
   }
 }
 
@@ -96,6 +112,54 @@ export type LoadingSearchSummary = {
   candidateSummaries: readonly LoadingCandidateSummary[]
 }
 
+export type LoadingCollisionWitness = {
+  kind: 'blockedSpace' | 'blockedSpaceObb' | 'placement' | string
+  anchorMm: VehicleLoadingPlanPositionMm
+  dimension: VehicleLoadingPlanDimensionsMm
+  otherId?: string
+  otherOriginMm?: VehicleLoadingPlanPositionMm
+  otherDimension?: VehicleLoadingPlanDimensionsMm
+  clearanceMm: number
+}
+
+export type LoadingPlacementRejectionSummary = {
+  evaluatedAnchorCount: number
+  acceptedAnchorCount: number
+  boundaryRejectionCount: number
+  blockedSpaceRejectionCount: number
+  collisionRejectionCount: number
+  supportRejectionCount: number
+  firstCollisionWitness?: LoadingCollisionWitness
+}
+
+export type LoadingOrientationDiagnostic = {
+  orientationLabel: string
+  yawDegrees: number
+  dimension: VehicleLoadingPlanDimensionsMm
+  status: 'feasible' | 'rejected' | string
+  reasonCode: string
+  reasonMessage: string
+  candidateAnchorCount: number
+  maxBoxesByGeometry: number
+  maxBoxesByWeight: number
+  selectedScanStrategy?: string
+  rejectionSummary: LoadingPlacementRejectionSummary
+}
+
+export type LoadingPlanDiagnostics = {
+  schemaVersion: typeof LOADING_PLAN_DIAGNOSTICS_SCHEMA_VERSION
+  engineVersion: string
+  loadingSpaceId: string
+  packageId: string
+  failureCode: string
+  failureMessage: string
+  evaluatedOrientationCount: number
+  evaluatedScanStrategyCount: number
+  orientations: readonly LoadingOrientationDiagnostic[]
+}
+
+export type VehicleLoadingPlanDiagnostics = LoadingPlanDiagnostics
+
 export type LoadingCandidateSummary = {
   orientationLabel: string
   yawDegrees: number
@@ -104,6 +168,12 @@ export type LoadingCandidateSummary = {
   volumeRate: number
   weightRate: number
   blockedPositions: number
+  layoutScore?: number
+  occupiedSpanRate?: number
+  centerOfGravityHeightRate?: number
+  boundaryContactCount?: number
+  blockedEdgeContactCount?: number
+  rejectionSummary?: LoadingPlacementRejectionSummary
 }
 
 export type VehicleLoadingPlan = {

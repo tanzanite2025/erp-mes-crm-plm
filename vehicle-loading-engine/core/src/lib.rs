@@ -12,24 +12,28 @@ mod packing;
 mod parser;
 
 pub use geometry::{
-    AabbMm, CollisionKind, CoordinateSystem, GeometryPart, GeometryWarning, PartKind,
-    VehicleGeometry, VEHICLE_GEOMETRY_SCHEMA_VERSION,
+    AabbMm, CollisionKind, CoordinateSystem, GeometryObbMm, GeometryPart, GeometryWarning,
+    PartKind, VehicleGeometry, VEHICLE_GEOMETRY_SCHEMA_VERSION,
 };
 pub use geometry_projection::{
     project_vehicle_geometry_to_loading_space, VehicleLoadingGeometryProjection,
     VehicleLoadingGeometryProjectionError, VEHICLE_LOADING_GEOMETRY_PROJECTION_SCHEMA_VERSION,
 };
 pub use packing::{
-    plan_loading_space, plan_vehicle_loading, DimensionsMm, LoadingCandidateSummary, LoadingGrid,
-    LoadingOrientation, LoadingPackageInput, LoadingPlacement, LoadingSearchLimits,
-    LoadingSearchSummary, LoadingSpaceBlockedSpaceInput, LoadingSpaceInput, LoadingSpacePlan,
-    LoadingSpacePlanRequest, LoadingUtilization, LoadingWarning, PositionMm,
-    VehicleLoadingBlockedSpaceInput, VehicleLoadingError, VehicleLoadingGrid,
-    VehicleLoadingOrientation, VehicleLoadingPackageInput, VehicleLoadingPlacement,
-    VehicleLoadingPlan, VehicleLoadingPlanRequest, VehicleLoadingSearchLimits,
+    diagnose_loading_space_plan, diagnose_vehicle_loading_plan, plan_loading_space,
+    plan_vehicle_loading, DimensionsMm, LoadingCandidateSummary, LoadingCollisionWitness,
+    LoadingGrid, LoadingOrientation, LoadingOrientationDiagnostic, LoadingPackageInput,
+    LoadingPlacement, LoadingPlacementRejectionSummary, LoadingPlanDiagnostics,
+    LoadingSearchLimits, LoadingSearchSummary, LoadingSpaceBlockedSpaceInput, LoadingSpaceInput,
+    LoadingSpaceObbInput, LoadingSpacePlan, LoadingSpacePlanRequest, LoadingUtilization,
+    LoadingWarning, PositionMm, VehicleLoadingBlockedSpaceInput, VehicleLoadingError,
+    VehicleLoadingGrid, VehicleLoadingOrientation, VehicleLoadingOrientationDiagnostic,
+    VehicleLoadingPackageInput, VehicleLoadingPlacement, VehicleLoadingPlan,
+    VehicleLoadingPlanDiagnostics, VehicleLoadingPlanRequest, VehicleLoadingSearchLimits,
     VehicleLoadingUtilization, VehicleLoadingVehicleInput, VehicleLoadingWarning,
-    LOADING_SPACE_ENGINE_VERSION, LOADING_SPACE_PLAN_REQUEST_SCHEMA_VERSION,
-    LOADING_SPACE_PLAN_SCHEMA_VERSION, VEHICLE_LOADING_ENGINE_VERSION,
-    VEHICLE_LOADING_PLAN_SCHEMA_VERSION, VEHICLE_LOADING_REQUEST_SCHEMA_VERSION,
+    LOADING_PLAN_DIAGNOSTICS_SCHEMA_VERSION, LOADING_SPACE_ENGINE_VERSION,
+    LOADING_SPACE_PLAN_REQUEST_SCHEMA_VERSION, LOADING_SPACE_PLAN_SCHEMA_VERSION,
+    VEHICLE_LOADING_ENGINE_VERSION, VEHICLE_LOADING_PLAN_SCHEMA_VERSION,
+    VEHICLE_LOADING_REQUEST_SCHEMA_VERSION,
 };
 pub use parser::{parse_glb, ParseError, ParserLimits};

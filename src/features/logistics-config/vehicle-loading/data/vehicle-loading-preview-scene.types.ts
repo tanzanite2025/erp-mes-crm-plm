@@ -6,7 +6,10 @@ import type {
   VehicleLoadingPreviewVehicleAllowance,
   VehicleLoadingPreviewVehicleLoadingConstraint,
 } from './vehicle-loading-preview-geometry.types'
-import type { LoadingSearchSummary } from './vehicle-loading-wasm-plan.types'
+import type {
+  LoadingPlanDiagnostics,
+  LoadingSearchSummary,
+} from './vehicle-loading-wasm-plan.types'
 import type { VehicleLoadingOrientation } from './vehicle-loading.types'
 
 export type {
@@ -61,6 +64,7 @@ export type VehicleLoadingPreviewScene = {
   status: 'empty' | 'calculating' | 'failed' | 'ready'
   renderer: 'layer-2d' | 'space-3d'
   errorMessage?: string
+  diagnostics?: LoadingPlanDiagnostics
   vehicle: {
     name: string
     size: VehicleLoadingPreviewSize

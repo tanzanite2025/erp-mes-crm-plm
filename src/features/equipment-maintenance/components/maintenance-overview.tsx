@@ -17,6 +17,10 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
+import {
+  industrialPanelClassName,
+  industrialPanelGradientClassName,
+} from '@/components/uds/industrial-panel'
 import { useMaintenanceRecordsGlobal } from '../hooks/use-maintenance-records-global'
 
 export function MaintenanceOverview() {
@@ -188,12 +192,13 @@ export function MaintenanceOverview() {
               <Card
                 key={card.key}
                 className={cn(
-                  'group relative flex cursor-pointer items-center justify-between overflow-hidden rounded-[20px] border-dashed bg-muted/5 p-3 transition-all hover:bg-muted/10',
+                  industrialPanelClassName,
+                  'group flex cursor-pointer items-center justify-between p-3 transition-all hover:bg-muted/10',
                   card.borderColor
                 )}
                 onClick={() => navigate({ to: card.link })}
               >
-                <div className='pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent' />
+                <div className={industrialPanelGradientClassName} />
                 <div className='min-w-0 space-y-1'>
                   <p className='text-[9px] leading-none font-black tracking-widest text-muted-foreground/60 uppercase'>
                     {card.label}
@@ -216,8 +221,13 @@ export function MaintenanceOverview() {
         </div>
 
         {/* Right: Health Dial Chart (col-span-4) - Compact */}
-        <Card className='relative flex items-center justify-between overflow-hidden rounded-[20px] border-dashed bg-muted/5 p-3 lg:col-span-4'>
-          <div className='pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent' />
+        <Card
+          className={cn(
+            industrialPanelClassName,
+            'flex items-center justify-between p-3 lg:col-span-4'
+          )}
+        >
+          <div className={industrialPanelGradientClassName} />
           <div className='z-10 space-y-0.5'>
             <CardTitle className='flex items-center gap-1 text-[10px] font-black tracking-wider text-emerald-500 uppercase italic'>
               <Heart className='size-3' />
@@ -264,8 +274,14 @@ export function MaintenanceOverview() {
       {/* Bottom Section: Dual Column lists (Grid 2-column) */}
       <div className='grid grid-cols-1 gap-3.5 lg:grid-cols-12'>
         {/* Left Column: High Priority (col-span-6) */}
-        <Card className='flex flex-col justify-between rounded-[24px] border-dashed bg-muted/5 p-4 lg:col-span-6'>
-          <div>
+        <Card
+          className={cn(
+            industrialPanelClassName,
+            'flex flex-col justify-between p-4 lg:col-span-6'
+          )}
+        >
+          <div className={industrialPanelGradientClassName} />
+          <div className='relative z-10'>
             <CardHeader className='flex flex-row items-center justify-between p-0 pb-3'>
               <CardTitle className='flex items-center gap-1.5 text-sm font-black tracking-tight uppercase italic'>
                 <AlertCircle className='size-4.5 text-rose-500' />
@@ -326,14 +342,20 @@ export function MaintenanceOverview() {
               )}
             </CardContent>
           </div>
-          <div className='mt-3 border-t border-dashed border-muted/20 pt-2.5 text-center font-mono text-[8px] text-muted-foreground/30'>
+          <div className='relative z-10 mt-3 border-t border-dashed border-muted/20 pt-2.5 text-center font-mono text-[8px] text-muted-foreground/30'>
             ALERT INTENTS ACTIVE
           </div>
         </Card>
 
         {/* Right Column: Recent Activities (col-span-6) */}
-        <Card className='flex flex-col justify-between rounded-[24px] border-dashed bg-muted/5 p-4 lg:col-span-6'>
-          <div>
+        <Card
+          className={cn(
+            industrialPanelClassName,
+            'flex flex-col justify-between p-4 lg:col-span-6'
+          )}
+        >
+          <div className={industrialPanelGradientClassName} />
+          <div className='relative z-10'>
             <CardHeader className='flex flex-row items-center justify-between p-0 pb-3'>
               <CardTitle className='flex items-center gap-1.5 text-sm font-black tracking-tight uppercase italic'>
                 <Clock className='size-4.5 text-blue-500' />
@@ -395,7 +417,7 @@ export function MaintenanceOverview() {
               )}
             </CardContent>
           </div>
-          <div className='mt-3 border-t border-dashed border-muted/20 pt-2.5 text-center font-mono text-[8px] text-muted-foreground/30'>
+          <div className='relative z-10 mt-3 border-t border-dashed border-muted/20 pt-2.5 text-center font-mono text-[8px] text-muted-foreground/30'>
             TELEMETRY BUS LINKED
           </div>
         </Card>

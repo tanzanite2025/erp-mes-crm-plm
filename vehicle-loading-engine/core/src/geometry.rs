@@ -96,10 +96,20 @@ pub struct GeometryPart {
     pub kind: PartKind,
     pub collision: CollisionKind,
     pub bounds: AabbMm,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub obb: Option<GeometryObbMm>,
     pub position_mm: [f64; 3],
     pub node_index: usize,
     pub mesh_index: usize,
     pub vertex_count: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct GeometryObbMm {
+    pub center_mm: [f64; 3],
+    pub half_extents_mm: [f64; 3],
+    pub axes: [[f64; 3]; 3],
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
@@ -129,6 +139,7 @@ impl PartKind {
 #[serde(rename_all = "kebab-case")]
 pub enum CollisionKind {
     Aabb,
+    Obb,
     None,
 }
 
@@ -140,6 +151,7 @@ impl CollisionKind {
             "aabb"
         }) {
             "aabb" => Some(Self::Aabb),
+            "obb" => Some(Self::Obb),
             "none" => Some(Self::None),
             _ => None,
         }

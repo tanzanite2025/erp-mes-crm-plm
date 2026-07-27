@@ -39,6 +39,18 @@ function formatComparisonKindLabel(kind: string) {
   }
 }
 
+function formatCollisionWitnessLabel(witness: {
+  kind: string
+  anchorMm: { xMm: number; yMm: number; zMm: number }
+  otherId?: string
+}) {
+  const target =
+    witness.kind === 'blockedSpace' || witness.kind === 'blockedSpaceObb'
+      ? `障碍区 ${witness.otherId ?? '未知'}`
+      : `箱体 ${witness.otherId ?? '未知'}`
+  return `${target} · 锚点 (${witness.anchorMm.xMm}, ${witness.anchorMm.yMm}, ${witness.anchorMm.zMm}) mm`
+}
+
 export function VehicleLoadingPreviewDetailsPanel({
   scene,
   activeLayer,
@@ -102,6 +114,35 @@ export function VehicleLoadingPreviewDetailsPanel({
         <div className='rounded-2xl border border-dashed border-destructive/30 bg-destructive/5 px-3 py-2 text-[11px] leading-relaxed text-destructive/80'>
           {scene.errorMessage ?? '未知错误'}
         </div>
+        {scene.diagnostics ? (
+          <div className='rounded-2xl border border-dashed border-border/60 bg-background/80 px-3 py-2'>
+            <div className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+              朝向诊断
+            </div>
+            <div className='mt-2 space-y-1.5'>
+              {scene.diagnostics.orientations.map((orientation) => (
+                <div
+                  key={`${orientation.orientationLabel}:${orientation.yawDegrees}`}
+                  className='rounded-xl border border-dashed border-border/60 px-2 py-1.5 text-[10px] leading-relaxed text-muted-foreground'
+                >
+                  <div className='flex items-center justify-between gap-2'>
+                    <span className='font-black text-foreground'>
+                      {orientation.orientationLabel} · yaw{' '}
+                      {orientation.yawDegrees}°
+                    </span>
+                    <span>{orientation.reasonCode}</span>
+                  </div>
+                  <div className='mt-0.5'>{orientation.reasonMessage}</div>
+                  <div className='mt-0.5'>
+                    几何容量 {orientation.maxBoxesByGeometry} · 载重容量{' '}
+                    {orientation.maxBoxesByWeight} · 候选锚点{' '}
+                    {orientation.candidateAnchorCount}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </div>
     )
   }
@@ -235,6 +276,31 @@ export function VehicleLoadingPreviewDetailsPanel({
                   {candidate.scanStrategy ? (
                     <div className='mt-1 truncate text-[10px] text-muted-foreground/70'>
                       {candidate.scanStrategy}
+                    </div>
+                  ) : null}
+                  {isSelected && candidate.rejectionSummary ? (
+                    <div className='mt-1 space-y-0.5 text-[10px] leading-relaxed text-muted-foreground/75'>
+                      <div>
+                        锚点验算{' '}
+                        {candidate.rejectionSummary.evaluatedAnchorCount}{' '}
+                        个，接受{' '}
+                        {candidate.rejectionSummary.acceptedAnchorCount}{' '}
+                        个；边界{' '}
+                        {candidate.rejectionSummary.boundaryRejectionCount}，
+                        障碍{' '}
+                        {candidate.rejectionSummary.blockedSpaceRejectionCount}
+                        ， 互撞{' '}
+                        {candidate.rejectionSummary.collisionRejectionCount}，
+                        支撑 {candidate.rejectionSummary.supportRejectionCount}
+                      </div>
+                      {candidate.rejectionSummary.firstCollisionWitness ? (
+                        <div className='truncate text-muted-foreground/60'>
+                          首个碰撞：
+                          {formatCollisionWitnessLabel(
+                            candidate.rejectionSummary.firstCollisionWitness
+                          )}
+                        </div>
+                      ) : null}
                     </div>
                   ) : null}
                 </div>

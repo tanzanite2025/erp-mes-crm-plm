@@ -14,20 +14,27 @@ import {
 import { ForbiddenState } from '@/components/forbidden-state'
 import { CompactPaginationControls } from '@/components/pagination/compact-pagination-controls'
 import { TradingQueryErrorState } from '@/features/trading/components/trading-query-error-state'
+import {
+  getSalesStatusLabel,
+  salesStatusMeta,
+} from '@/features/trading/data/sales-status'
 import type { SalesOrder } from '@/features/trading/data/schema'
-import { useSalesReturnMutations } from '@/features/trading/sales/hooks/use-sales-returns'
-import type { SalesReturnRecord } from '@/features/trading/sales/services/sales-return-service'
 import type {
   SalesReturnRecordsResource,
   SalesReturnSourceOrdersResource,
 } from '../hooks/use-sales-return-query-shell'
-import { SalesReturnCreateSheet } from './sales-return-create-sheet'
-import { SalesReturnRecordMaster } from './sales-return-record-master'
-import { SalesReturnRecordSpotlight } from './sales-return-record-spotlight'
+import {
+  SalesReturnCreateSheet,
+  type SalesReturnCreateInitialValues,
+} from './sales-return-create-sheet'
 import { SalesReturnSourceOrderMaster } from './sales-return-source-order-master'
-import { SalesReturnSourceOrderSpotlight } from './sales-return-source-order-spotlight'
 
-const sourceOrderStatusOptions = ['all', 'InProgress', 'Done']
+const sourceOrderStatusOptions = [
+  'all',
+  ...salesStatusMeta
+    .filter((status) => status.value !== 'Canceled')
+    .map((status) => status.value),
+]
 
 function canCreateReturn(order: SalesOrder) {
   if (!order.availableActions || order.availableActions.length === 0) {
@@ -45,25 +52,11 @@ type SalesReturnsEntryShellProps = {
   sourcePage: number
   sourceTotalPages: number
   sourceOrdersResource: SalesReturnSourceOrdersResource
-  selectedSourceOrderId?: string
-  selectedSourceOrder?: SalesOrder
-  isSourceDetailLoading: boolean
+  returnsResource: SalesReturnRecordsResource
   onRetrySourceOrders: () => void
   onSearchTermChange: (value: string) => void
   onStatusFilterChange: (value: string) => void
-  onSelectSourceOrder: (id: string) => void
-  onClearSelectedSourceOrder: () => void
   onSourcePageChange: (page: number) => void
-  returnPage: number
-  returnTotalPages: number
-  returnsResource: SalesReturnRecordsResource
-  selectedReturnId?: string
-  selectedReturnRecord?: SalesReturnRecord
-  isReturnDetailLoading: boolean
-  onRetryReturns: () => void
-  onSelectReturn: (id: string) => void
-  onClearSelectedReturn: () => void
-  onReturnPageChange: (page: number) => void
 }
 
 export function SalesReturnsEntryShell({
@@ -72,59 +65,28 @@ export function SalesReturnsEntryShell({
   sourcePage,
   sourceTotalPages,
   sourceOrdersResource,
-  selectedSourceOrderId,
-  selectedSourceOrder,
-  isSourceDetailLoading,
+  returnsResource,
   onRetrySourceOrders,
   onSearchTermChange,
   onStatusFilterChange,
-  onSelectSourceOrder,
-  onClearSelectedSourceOrder,
   onSourcePageChange,
-  returnPage,
-  returnTotalPages,
-  returnsResource,
-  selectedReturnId,
-  selectedReturnRecord,
-  isReturnDetailLoading,
-  onRetryReturns,
-  onSelectReturn,
-  onClearSelectedReturn,
-  onReturnPageChange,
 }: SalesReturnsEntryShellProps) {
   const { t } = useLanguage()
-  const { deleteMutation } = useSalesReturnMutations()
   const [createOrder, setCreateOrder] = useState<SalesOrder | undefined>(
     undefined
   )
-  const shouldShowSourceSpotlight =
-    isSourceDetailLoading || Boolean(selectedSourceOrder)
+  const [createInitialValues, setCreateInitialValues] = useState<
+    SalesReturnCreateInitialValues | undefined
+  >(undefined)
+  const returnRecords =
+    returnsResource.status === 'ready' ? returnsResource.items : []
 
-  const handleStartReturn = (order: SalesOrder) => {
+  const handleStartReturnLine = (order: SalesOrder, lineId: number) => {
     if (!canCreateReturn(order)) {
       return
     }
+    setCreateInitialValues({ initialLineId: lineId })
     setCreateOrder(order)
-  }
-
-  const handleDeleteReturn = async (record: SalesReturnRecord) => {
-    const wasSelected = selectedReturnId === record.id
-
-    if (wasSelected) {
-      onClearSelectedReturn()
-    }
-
-    try {
-      await deleteMutation.mutateAsync({
-        salesReturnId: record.id,
-        salesOrderId: record.salesOrderId,
-      })
-    } catch (error) {
-      if (wasSelected) {
-        onSelectReturn(record.id)
-      }
-      throw error
-    }
   }
 
   return (
@@ -158,7 +120,7 @@ export function SalesReturnsEntryShell({
                     <SelectItem key={status} value={status}>
                       {status === 'all'
                         ? t('trading.salesReturns.entryShell.allStatuses')
-                        : status}
+                        : getSalesStatusLabel(status, t)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -181,32 +143,15 @@ export function SalesReturnsEntryShell({
               <Loader2 className='size-8 animate-spin text-primary/40' />
             </div>
           ) : (
-            <div
-              className={
-                shouldShowSourceSpotlight
-                  ? 'grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]'
-                  : 'grid gap-6'
-              }
-            >
-              <ScrollArea className='min-h-0 rounded-[28px] border border-dashed border-muted/50 bg-background/40'>
-                <div className='space-y-4 p-4'>
-                  <SalesReturnSourceOrderMaster
-                    orders={sourceOrdersResource.items}
-                    selectedId={selectedSourceOrderId}
-                    onSelect={onSelectSourceOrder}
-                    onStartReturn={handleStartReturn}
-                  />
-                </div>
-              </ScrollArea>
-              {shouldShowSourceSpotlight ? (
-                <SalesReturnSourceOrderSpotlight
-                  order={selectedSourceOrder}
-                  isLoading={isSourceDetailLoading}
-                  onClearSelection={onClearSelectedSourceOrder}
-                  onStartReturn={handleStartReturn}
+            <ScrollArea className='min-h-0 rounded-[28px] border border-dashed border-muted/50 bg-background/40'>
+              <div className='space-y-4 p-4'>
+                <SalesReturnSourceOrderMaster
+                  orders={sourceOrdersResource.items}
+                  returnRecords={returnRecords}
+                  onStartReturnLine={handleStartReturnLine}
                 />
-              ) : null}
-            </div>
+              </div>
+            </ScrollArea>
           )}
 
           {sourceTotalPages > 1 ? (
@@ -218,77 +163,18 @@ export function SalesReturnsEntryShell({
             />
           ) : null}
         </div>
-
-        <div className='rounded-[28px] border border-dashed border-muted/50 bg-muted/5 shadow-none'>
-          <div className='px-5 pt-5 pb-2'>
-            <div className='text-sm font-black tracking-tight text-foreground'>
-              {t('trading.salesReturns.entryShell.returnsSectionTitle')}
-            </div>
-            <p className='mt-1 text-xs leading-6 font-bold text-muted-foreground'>
-              {t('trading.salesReturns.entryShell.returnsSectionDescription')}
-            </p>
-          </div>
-          <div className='px-5 pb-5'>
-            {returnsResource.status === 'error' ? (
-              isForbiddenError(returnsResource.error) ? (
-                <ForbiddenState />
-              ) : (
-                <TradingQueryErrorState
-                  title={t('trading.salesReturns.queryShell.loadFailed')}
-                  error={returnsResource.error}
-                  onRetry={onRetryReturns}
-                />
-              )
-            ) : returnsResource.status === 'loading' ? (
-              <div className='flex h-40 items-center justify-center'>
-                <Loader2 className='size-8 animate-spin text-primary/40' />
-              </div>
-            ) : (
-              <div className='grid min-h-0 flex-1 gap-6 xl:grid-cols-[minmax(0,1fr)_380px]'>
-                <ScrollArea className='min-h-0 rounded-[28px] border border-dashed border-muted/50 bg-background/40'>
-                  <div className='space-y-4 p-4'>
-                    <SalesReturnRecordMaster
-                      records={returnsResource.items}
-                      selectedId={selectedReturnId}
-                      onSelect={onSelectReturn}
-                      onDelete={handleDeleteReturn}
-                      deletingId={
-                        deleteMutation.isPending
-                          ? deleteMutation.variables?.salesReturnId
-                          : undefined
-                      }
-                    />
-                  </div>
-                </ScrollArea>
-                <SalesReturnRecordSpotlight
-                  record={selectedReturnRecord}
-                  isLoading={isReturnDetailLoading}
-                  onClearSelection={onClearSelectedReturn}
-                />
-              </div>
-            )}
-
-            {returnTotalPages > 1 ? (
-              <CompactPaginationControls
-                className='mt-6'
-                page={returnPage}
-                totalPages={returnTotalPages}
-                onPageChange={onReturnPageChange}
-              />
-            ) : null}
-          </div>
-        </div>
       </div>
 
       <SalesReturnCreateSheet
         order={createOrder}
         open={Boolean(createOrder)}
+        initialValues={createInitialValues}
         onOpenChange={(open) => {
           if (!open) {
             setCreateOrder(undefined)
+            setCreateInitialValues(undefined)
           }
         }}
-        onCreated={onSelectReturn}
       />
     </>
   )

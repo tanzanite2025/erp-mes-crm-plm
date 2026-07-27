@@ -128,7 +128,7 @@ export function createEmptyOutsourceOrderLine(): OutsourceOrderLineFormValues {
     productName: '',
     specification: '',
     quantity: 0,
-    uom: 'PCS',
+    uom: '',
     segmentId: '',
     segmentName: '',
     processStepId: '',

@@ -55,9 +55,11 @@
 - 支持读取单个模板的版本历史；
 - 支持把历史版本显式恢复为新的当前版本；
 - 支持管理员显式调用 `POST /logistics-config/vehicle-model-templates/:id/parse` 解析已上传 GLB；
+- 支持通过 `POST /logistics-config/vehicle-model-templates/:id/parse/tasks` 创建异步解析任务，查询任务状态并对失败任务执行 retry；
 - 解析入口通过 `VEHICLE_GEOMETRY_PARSER_BIN` 或本地默认构建路径调用 `xdfc-vehicle-geometry-parser`；
 - 解析成功后，模板状态由 `uploaded` 推进到 `normalized`，并把 `vehicle-geometry.v1` 写入新版本快照的 `geometry` 字段；
-- 解析过程不在普通保存流程中自动运行，也不创建未执行的后台任务表；
+- 普通保存流程不会自动解析；异步解析任务由 API 进程内 worker 领取、执行并有限重试；
+- 同一模板版本的活动解析任务幂等，任务领取前会校验模板版本和源文件快照；
 - 对模板名称、种子车型、内部源文件地址、格式、状态、归一尺寸做服务端校验；
 - 模板实体已接入审计引擎注册表，创建、更新和恢复会写入 `vehicle-model-template` 审计事件；
 - 前端使用现有 `perm_manage` 管理权限：无权限时上传和保存控件仍显示但置灰；
@@ -66,11 +68,11 @@
 - 装箱预览会按推荐车型读取注册表中最新的模板摘要，选择逻辑集中在 `selectLatestVehicleModelTemplateForSeedVehicle`；
 - 没有已注册模板时，装箱预览回退到车型规格库的种子定义；
 - 模板注册表读取失败时，装箱页会明确提示，并临时回退到种子车型，不影响推荐计算；
-- 预览当前仍只使用车型规格库尺寸完成 2D 示意，`geometry` 已落入版本快照但还未参与真实装箱计算。
+- 配车预览会读取模板版本快照中的 `geometry`，通过 WASM 投影为 `usableSpace + blockedSpaces` 后参与 AABB / OBB 装箱计算；
+- 没有可解析的注册模板时，预览继续回退到车型规格库的种子尺寸。
 
 未完成：
 
-- 碰撞体 / 障碍区参与装箱计算；
 - 3D 预览引擎接入。
 
 已完成独立解析核心：
@@ -79,8 +81,10 @@
 - 解析节点语义、世界变换和顶点包围盒；
 - 输出毫米制 `vehicle-geometry.v1`；
 - native Rust 测试覆盖有效 GLB、缺少语义和非 GLB 输入。
-- `vehicle-loading-engine/wasm` 已提供同一核心的 JSON 边界适配，但尚未接入前端实时预览。
+- `vehicle-loading-engine/wasm` 已提供同一核心的 JSON 边界适配，并已接入前端配车预览。
 - `vehicle-loading-engine/cli` 已作为 Go 显式解析入口的执行边界。
+- `logistics_vehicle_model_template_parse_tasks` 已提供异步解析任务状态、尝试次数和失败信息。
+- `vehicle-loading-engine/fixtures` 已提供真实语义 GLB 和 golden 装车回归集。
 
 说明：
 

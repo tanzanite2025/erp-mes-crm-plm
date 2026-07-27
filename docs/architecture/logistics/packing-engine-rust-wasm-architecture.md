@@ -186,6 +186,8 @@ Rust/WASM
 - 校验节点 `extras.xdfc` 语义；
 - 读取节点世界变换和 POSITION；
 - 归一化为毫米制 AABB；
+- 对声明 `collision=obb` 的语义节点，从 mesh 本地 AABB 和节点世界矩阵推导 OBB；
+- 拒绝剪切、非正交、零长度轴和零厚度 OBB；
 - 输出 `vehicle-geometry.v1`；
 - 对缺少可用空间、外部资源、非法坐标和超限数据直接拒绝。
 
@@ -227,7 +229,7 @@ vehicle-loading-wasm-plan-preview-scene.ts
 - 输入协议为 `vehicle-loading-request.v1`；
 - 输出协议为 `vehicle-loading-plan.v1`；
 - 支持单车型、单箱型、单可用长方体空间；
-- 支持车辆可用空间内的 AABB 障碍区 / 禁放区输入；
+- 支持车辆可用空间内的 AABB / OBB 障碍区 / 禁放区输入；
 - 已从原点规则网格升级为“候选锚点 + AABB 碰撞过滤”；
 - 候选锚点包含规则网格点、车厢边界和障碍物边缘；
 - 能在非对齐障碍后方寻找可摆放位置；
@@ -237,14 +239,24 @@ vehicle-loading-wasm-plan-preview-scene.ts
 - 同时输出 `maxBoxesPerVehicle`、`vehiclesNeeded`、空间利用率、重量利用率和警告；
 - 有受控 `maxPlacementOutput`，避免浏览器一次生成过大的 placements。
 - 有受控 `maxGridCellScan`，避免候选锚点扫描被极小箱体或恶意输入放大。
+- 支持可选 `collisionClearanceMm` 水平安全间隙；该间隙作用于 x/y 方向，保留 z 方向堆叠接触；
+- 支持可选 `boundaryClearanceMm` 车厢水平边界安全间隙；默认值为 0，不改变既有贴墙装载；
+- 支持多个相邻 obstacle / wheelWell 顶面联合形成完整水平支撑面；
+- 每个朝向和扫描策略输出候选锚点拒绝统计；
+- 对首个 blockedSpace 或箱体互撞输出碰撞 witness，支持前端定位失败原因；
+- 提供 `loading-plan-diagnostics.v1` 诊断接口，解释尺寸超限、载重不足和无可行支撑/碰撞候选；
+- blockedSpace 可选携带 OBB；有 OBB 时用 SAT 做旋转障碍碰撞，没有 OBB 时继续使用 AABB；
+- GLB 投影可把 `collision=obb` 语义节点转成 `blockedSpaces[].obb`；
+- 输出前执行几何二次验收，拒绝越界、障碍碰撞、箱体互撞、支撑不足或索引不连续的方案。
 
 当前 Rust 装箱核心暂不负责：
 
 - 读取销售订单；
 - 读取包装规则数据库；
 - 多箱型混装；
-- 从 GLB 模板几何自动生成装车障碍区；
-- 非 AABB 的真实网格碰撞；
+- 三角网格级真实碰撞；
+- 从无语义任意 GLB 网格自动识别业务障碍；
+- 从无语义任意网格自动拟合 OBB；
 - 非规则网格搜索；
 - 多车辆完整 placements 展开；
 - WebGL 渲染。
@@ -272,22 +284,24 @@ vehicle-loading-wasm-plan-preview-scene.ts
 
 当前准确性边界：
 
-- 对“规则长方体车厢 + 规则箱体 + AABB 障碍区 + 候选锚点摆放”的计算是确定性的；
-- 对有轮包、门洞、凸起等障碍的情况，只在这些障碍已经被转换成 AABB blockedSpaces 后才会参与避让；
-- 当前不会从 GLB 真实几何自动提取轮包 / 门洞 / 凸起；
+- 对“规则长方体车厢 + 规则箱体 + AABB / OBB 障碍区 + 候选锚点摆放”的计算是确定性的；
+- 对有轮包、门洞、凸起等障碍的情况，只在这些障碍已经被语义解析并转换成 blockedSpaces 后才会参与避让；
+- 当前不会从无语义 GLB 真实几何自动识别轮包 / 门洞 / 凸起；
 - 当前不是三角网格级碰撞检测；
+- 当前的 `collisionClearanceMm` 不是三轴扩张，也不替代网格级安全距离；
+- 当前的 `boundaryClearanceMm` 只约束 x/y 车厢边界，不约束地板和顶部；
 - 当前不是多箱型混装搜索；
 - 当前不是最优全局 3D bin packing，仍是确定性候选锚点贪心装箱。
 
 因此当前引擎评价：
 
 - 稳定性：第一阶段增强版可用；
-- 准确性：对 AABB 障碍区场景比规则网格更准确，对真实复杂车厢仍需要几何转换和更强碰撞；
+- 准确性：对 AABB / OBB 障碍区场景比规则网格更准确，对真实复杂车厢仍需要语义建模和更强碰撞；
 - 强度：足够承接页面真实 placements 和非对齐障碍避让，但还不够作为最终智能装箱引擎。
 
 后续要升级成强引擎，必须继续做：
 
-- GLB `vehicle-geometry.v1` 到 blockedSpaces 的受控转换；
+- 更复杂语义和三角网格到 blockedSpaces 的受控转换；
 - 更细的装载空间分区；
 - 非规则格位搜索；
 - 多箱型混装；
