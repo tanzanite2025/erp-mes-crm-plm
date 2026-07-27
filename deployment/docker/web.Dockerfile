@@ -13,7 +13,8 @@ RUN pnpm build
 
 FROM nginx:1.28-alpine
 
-RUN rm -f /etc/nginx/conf.d/default.conf \
+RUN apk upgrade --no-cache \
+    && rm -f /etc/nginx/conf.d/default.conf \
     && chown -R nginx:nginx /var/cache/nginx
 
 COPY deployment/nginx/erp-web.conf /etc/nginx/nginx.conf

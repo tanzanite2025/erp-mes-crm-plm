@@ -93,7 +93,7 @@ const routeContracts = [
   },
   {
     file: 'server/routes/routes_authz.go',
-    signature: 'roleGroup.GET("",',
+    signature: 'permissionPresetGroup.GET("",',
     permissions: [
       'TabPersonnelAccounts',
       'TabPersonnelRights',
@@ -158,23 +158,26 @@ routeContracts.forEach((contract) => {
   assertSamePermissions(contract, extractPermissionSymbols(line))
 })
 
-const roleRouteSource = readSource('server/routes/routes_authz.go')
-const roleManageLine = findUniqueLine(
+const permissionPresetRouteSource = readSource('server/routes/routes_authz.go')
+const permissionPresetManageLine = findUniqueLine(
   'server/routes/routes_authz.go',
-  'roleManage := middleware.RequireAnyPermission(',
+  'permissionPresetManage := middleware.RequireAnyPermission(',
 )
 assertSamePermissions(
-  { signature: 'roleManage', permissions: ['PermissionManage'] },
-  extractPermissionSymbols(roleManageLine),
+  {
+    signature: 'permissionPresetManage',
+    permissions: ['PermissionManage'],
+  },
+  extractPermissionSymbols(permissionPresetManageLine),
 )
 
 for (const signature of [
-  'roleGroup.POST("", roleManage,',
-  'roleGroup.DELETE("/:id", roleManage,',
+  'permissionPresetGroup.POST("", permissionPresetManage,',
+  'permissionPresetGroup.DELETE("/:id", permissionPresetManage,',
 ]) {
-  if (!roleRouteSource.includes(signature)) {
+  if (!permissionPresetRouteSource.includes(signature)) {
     throw new Error(
-      `[account-authz] Sensitive role route must use roleManage: ${signature}`,
+      `[account-authz] Sensitive permission preset route must use permissionPresetManage: ${signature}`,
     )
   }
 }
