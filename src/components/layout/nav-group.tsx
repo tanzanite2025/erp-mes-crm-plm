@@ -97,7 +97,7 @@ export function NavGroup({
             })
           }
         >
-          <SidebarGroupLabel className='mb-0 min-h-0 flex-1 px-0 py-0 text-[13px] leading-tight font-black tracking-tight whitespace-normal text-sidebar-foreground/78 italic'>
+          <SidebarGroupLabel className='mb-0 min-h-0 flex-1 px-0 py-0 text-[13px] leading-tight font-black tracking-tight whitespace-normal text-sidebar-foreground/78'>
             {title}
           </SidebarGroupLabel>
           <ChevronRight
@@ -175,7 +175,7 @@ function SidebarMenuLink({
           onClick={() => setOpenMobile(false)}
         >
           {item.icon ? <item.icon /> : null}
-          <span className='px-0.5 py-0 text-[12px] leading-normal font-black italic'>
+          <span className='px-0.5 py-0 text-[12px] leading-normal font-black'>
             {item.title}
           </span>
           {item.badge ? (

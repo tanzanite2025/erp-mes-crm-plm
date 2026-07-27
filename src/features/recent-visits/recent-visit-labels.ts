@@ -10,14 +10,15 @@ const RECENT_VISIT_EXACT_LABEL_KEYS: Record<string, TranslationKey> = {
   '/dashboard/calendar': 'dashboard.page.tabs.calendar',
   '/dashboard/reports': 'dashboard.page.tabs.reports',
   '/dashboard/notifications': 'dashboard.page.tabs.notifications',
-  '/materials': 'sidebar.items.materialArchive',
+  '/engineering-db': 'engineering.db.overview.title',
   '/materials/all': 'materialArchive.layout.tabs.all',
   '/materials/assembly': 'materialArchive.layout.tabs.assembly',
   '/quality/standards/new': 'quality.standards.workspace.editorCreateTitle',
+  '/system-management': 'systemManagement.layout.tabs.status',
+  '/warehouse': 'warehouse.tabs.stock',
   '/equipment-maintenance/plans': 'equipmentMaintenance.tabs.plans',
   '/equipment-maintenance/analytics': 'equipmentMaintenance.tabs.analytics',
   '/personnel/architecture': 'productionShared.workArchitecture.title',
-  '/raw-materials-engine': 'sidebar.items.cuttingEngine',
   '/wheel-trace': 'scanPlatform.modules.wheelTrace.name',
 }
 

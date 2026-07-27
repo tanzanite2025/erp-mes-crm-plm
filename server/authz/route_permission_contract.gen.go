@@ -164,6 +164,7 @@ var KnownRoutePermissionIDs = map[string]struct{}{
 	"tab_sidebar_command_assignment":                      {},
 	"tab_sidebar_command_library":                         {},
 	"tab_system_management_ai_capability":                 {},
+	"tab_system_management_api_management":                {},
 	"tab_system_management_audit_engine":                  {},
 	"tab_terminal_config_mobile_capture":                  {},
 	"tab_terminal_config_pda":                             {},

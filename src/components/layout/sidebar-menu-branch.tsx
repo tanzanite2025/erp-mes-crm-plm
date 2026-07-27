@@ -50,7 +50,7 @@ export function SidebarMenuBranch({ item, pathname }: SidebarMenuBranchProps) {
     <>
       <div className='flex min-w-0 items-center gap-2.5'>
         {item.icon ? <item.icon className='size-3.5 opacity-70' /> : null}
-        <span className='px-0.5 py-0 text-[12px] leading-normal font-black tracking-tight italic'>
+        <span className='px-0.5 py-0 text-[12px] leading-normal font-black tracking-tight'>
           {item.title}
         </span>
       </div>
@@ -119,11 +119,11 @@ export function SidebarMenuBranch({ item, pathname }: SidebarMenuBranchProps) {
                     onClick={() => setOpenMobile(false)}
                   >
                     {subItem.icon ? <subItem.icon /> : null}
-                    <span className='min-w-0 flex-1 truncate text-[12px] font-black tracking-tight italic'>
+                    <span className='min-w-0 flex-1 truncate text-[12px] font-black tracking-tight'>
                       {subItem.title}
                     </span>
                     {subItem.badge ? (
-                      <span className='ms-auto shrink-0 text-[10px] font-black italic opacity-60'>
+                      <span className='ms-auto shrink-0 text-[10px] font-black opacity-60'>
                         {subItem.badge}
                       </span>
                     ) : null}

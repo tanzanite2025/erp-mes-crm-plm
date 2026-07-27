@@ -2,6 +2,48 @@ export const systemManagement = {
   layout: {
     tabs: {
       auditEngine: '审计引擎',
+      apiManagement: 'API 管理',
+    },
+  },
+  apiManagement: {
+    page: {
+      title: 'API 管理',
+      subtitle:
+        '统一维护外部服务 API、密钥、地址与调用模板，业务页面只执行业务动作',
+    },
+    exchangeRateApi: {
+      title: '汇率服务 API',
+      description:
+        '用于财务汇率同步的第三方接口配置，财务页不暴露密钥、地址和路径模板',
+      enabled: '启用同步',
+      providerLabel: '供应商标识',
+      providerPlaceholder: '如 exchangerate-api',
+      apiBaseUrlLabel: 'API 根地址',
+      apiBaseUrlPlaceholder: '如 https://v6.exchangerate-api.com/v6',
+      apiKeyLabel: 'API Key',
+      apiKeyPlaceholder: '填入当前汇率服务可用的 API Key',
+      latestPathTemplateLabel: '最新汇价路径模板',
+      latestPathTemplatePlaceholder: '如 /{apiKey}/latest/{baseCode}',
+      hintTitle: '模板占位符',
+      hintContent:
+        '路径模板支持 {apiKey} 与 {baseCode} 占位符。保存后，财务页上的“同步汇率”按钮会直接使用这里的配置。',
+      fallbackLabel: '启用回退',
+      addFallbackProvider: '添加备用 API',
+      providerTagPrimary: '主 API',
+      providerTagFallback: '备用 API {{index}}',
+      providerTagDisabled: '未启用 API',
+      providerEnabledLabel: '单条启用',
+      providerPriority: '优先级 #{{priority}}',
+      removeProvider: '删除',
+      fallbackHint:
+        '已启用的 API 会按 priority 顺序执行；当开启 fallback 时，仅在可回退失败上自动切换到下一条已启用 API。',
+      save: '保存 API 配置',
+      saving: '保存中...',
+      toast: {
+        loadFailed: '加载汇率服务 API 配置失败',
+        saveSuccess: '汇率服务 API 配置已保存',
+        saveFailed: '保存汇率服务 API 配置失败',
+      },
     },
   },
   statusPage: {

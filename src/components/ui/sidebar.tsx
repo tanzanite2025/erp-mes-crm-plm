@@ -413,7 +413,7 @@ function SidebarGroupLabel({
       data-slot='sidebar-group-label'
       data-sidebar='group-label'
       className={cn(
-        'flex h-6 shrink-0 items-center rounded-md px-2 text-[11px] font-medium tracking-wider text-sidebar-foreground/50 uppercase ring-sidebar-ring outline-hidden transition-[margin,opacity] duration-200 ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
+        'flex h-6 shrink-0 items-center rounded-md px-2 text-[11px] font-black tracking-wider text-sidebar-foreground/50 uppercase ring-sidebar-ring outline-hidden transition-[margin,opacity] duration-200 ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
         'group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0',
         className
       )}
@@ -482,7 +482,7 @@ function SidebarMenuItem({ className, ...props }: React.ComponentProps<'li'>) {
 }
 
 const sidebarMenuButtonVariants = cva(
-  'peer/menu-button relative flex w-full items-center gap-2 overflow-hidden rounded-md px-2 py-1.5 text-start text-sm outline-hidden ring-sidebar-ring transition-[width,height,padding,background-color] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pe-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-orange-500/10 data-[active=true]:font-black data-[active=true]:text-orange-600 dark:data-[active=true]:text-orange-400 data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-1 before:bg-orange-500 before:opacity-0 data-[active=true]:before:opacity-100 before:transition-opacity before:rounded-r-full',
+  'peer/menu-button relative flex w-full items-center gap-2 overflow-hidden rounded-md px-2 py-1.5 text-start text-sm font-black outline-hidden ring-sidebar-ring transition-[width,height,padding,background-color] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pe-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-orange-500/10 data-[active=true]:text-orange-600 dark:data-[active=true]:text-orange-400 data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-1 before:bg-orange-500 before:opacity-0 data-[active=true]:before:opacity-100 before:transition-opacity before:rounded-r-full',
   {
     variants: {
       variant: {
@@ -594,7 +594,7 @@ function SidebarMenuBadge({
       data-slot='sidebar-menu-badge'
       data-sidebar='menu-badge'
       className={cn(
-        'pointer-events-none absolute end-1 flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-xs font-medium text-sidebar-foreground tabular-nums select-none',
+        'pointer-events-none absolute end-1 flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-xs font-black text-sidebar-foreground tabular-nums select-none',
         'peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[active=true]/menu-button:text-sidebar-accent-foreground',
         'peer-data-[size=sm]/menu-button:top-1',
         'peer-data-[size=default]/menu-button:top-1.5',
@@ -699,8 +699,7 @@ function SidebarMenuSubButton({
       data-size={size}
       data-active={isActive}
       className={cn(
-        'relative flex h-7 w-full min-w-0 items-center gap-2 overflow-hidden rounded-xl border border-transparent px-2.5 text-sidebar-foreground/72 ring-sidebar-ring outline-hidden transition-all before:absolute before:top-1 before:bottom-1 before:left-0 before:w-0.5 before:rounded-full before:bg-orange-500 before:opacity-0 before:transition-opacity hover:bg-sidebar-accent/28 hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent/35 active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:before:opacity-100 [&>svg]:size-3.5 [&>svg]:shrink-0 [&>svg]:text-inherit',
-        'data-[active=true]:bg-sidebar-accent/60 data-[active=true]:text-sidebar-accent-foreground',
+        'relative flex h-7 w-full min-w-0 items-center gap-2 overflow-hidden rounded-xl border border-transparent px-2.5 text-sidebar-foreground/72 ring-sidebar-ring outline-hidden transition-all before:absolute before:top-1 before:bottom-1 before:left-0 before:w-0.5 before:rounded-full before:bg-orange-500 before:opacity-0 before:transition-opacity hover:bg-sidebar-accent/28 hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent/35 active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:border-zinc-950 data-[active=true]:bg-zinc-950 data-[active=true]:text-white data-[active=true]:shadow-sm data-[active=true]:before:opacity-100 [&>svg]:size-3.5 [&>svg]:shrink-0 [&>svg]:text-inherit',
         size === 'sm' && 'text-[11px] font-black tracking-tight',
         size === 'md' && 'text-[12px] font-black tracking-tight',
         'group-data-[collapsible=icon]:hidden',

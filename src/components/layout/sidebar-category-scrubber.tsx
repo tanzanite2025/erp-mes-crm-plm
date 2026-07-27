@@ -596,7 +596,7 @@ function SidebarCategoryFloatingCard({
           <div className='border-b border-border/60 px-3.5 py-3'>
             <div className='flex items-center justify-between gap-3'>
               <div className='min-w-0'>
-                <p className='truncate text-[13px] leading-tight font-black tracking-tight text-foreground italic'>
+                <p className='truncate text-[13px] leading-tight font-black tracking-tight text-foreground'>
                   {category.title}
                 </p>
                 <p className='mt-1 text-[10px] leading-none font-semibold tracking-wide text-muted-foreground'>
@@ -659,7 +659,7 @@ function SidebarCategoryDomainList({
             key={link.id}
             className='rounded-2xl border border-border/60 bg-background/45 p-1.5'
           >
-            <div className='flex min-h-8 min-w-0 items-center gap-2 rounded-xl px-2 py-1.5 text-[12px] leading-tight font-black tracking-tight text-popover-foreground/82 italic'>
+            <div className='flex min-h-8 min-w-0 items-center gap-2 rounded-xl px-2 py-1.5 text-[12px] leading-tight font-black tracking-tight text-popover-foreground/82'>
               {Icon ? <Icon className='size-3.5 shrink-0 opacity-70' /> : null}
               <span className='min-w-0 flex-1 truncate'>{link.title}</span>
               <span className='shrink-0 rounded-full bg-orange-500/10 px-1.5 py-0.5 text-[9px] leading-none font-black text-orange-600 dark:text-orange-300'>

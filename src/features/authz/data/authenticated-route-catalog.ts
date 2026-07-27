@@ -39,6 +39,7 @@ export const AUTHENTICATED_ROUTE_PATHS = [
   '/product-structure/section-config',
   '/production-architecture/topology',
   '/production-quality/abnormalities',
+  '/system-management/api-management',
   '/equipment-maintenance/analytics',
   '/production-architecture/mindmap',
   '/production-outsourcing/partners',

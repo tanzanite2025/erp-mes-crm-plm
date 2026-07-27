@@ -24,6 +24,11 @@ export function SystemMgmt() {
               label:
                 t('systemManagement.layout.tabs.auditEngine') || 'Audit Engine',
             }
+          case 'api-management':
+            return {
+              ...tab,
+              label: t('systemManagement.layout.tabs.apiManagement'),
+            }
           default:
             return tab
         }

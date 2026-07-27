@@ -94,6 +94,11 @@ function getSystemManagementTabs(t: TranslateFn): TabItem[] {
       label: t('systemManagement.layout.tabs.auditEngine'),
       href: '/system-management/audit-engine',
     },
+    {
+      key: 'api-management',
+      label: t('systemManagement.layout.tabs.apiManagement'),
+      href: '/system-management/api-management',
+    },
   ]
 }
 

@@ -373,7 +373,7 @@ export function ControlledProtocolDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        size='4xl'
+        size='6xl'
         showCloseButton={false}
         className='h-[820px] max-h-[calc(100dvh-2rem)] grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden rounded-[32px] border-none bg-background p-0 shadow-2xl'
       >

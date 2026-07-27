@@ -2,6 +2,49 @@ export const systemManagement = {
   layout: {
     tabs: {
       auditEngine: 'Audit Engine',
+      apiManagement: 'API Management',
+    },
+  },
+  apiManagement: {
+    page: {
+      title: 'API Management',
+      subtitle:
+        'Centrally maintain external service APIs, keys, endpoints, and call templates while business pages only run business actions.',
+    },
+    exchangeRateApi: {
+      title: 'Exchange Rate Service API',
+      description:
+        'Third-party API settings used by finance exchange-rate sync. Finance pages do not expose keys, endpoints, or path templates.',
+      enabled: 'Sync Enabled',
+      providerLabel: 'Provider Key',
+      providerPlaceholder: 'e.g. exchangerate-api',
+      apiBaseUrlLabel: 'API Base URL',
+      apiBaseUrlPlaceholder: 'e.g. https://v6.exchangerate-api.com/v6',
+      apiKeyLabel: 'API Key',
+      apiKeyPlaceholder:
+        'Enter the active API key for the current exchange service',
+      latestPathTemplateLabel: 'Latest Rate Path Template',
+      latestPathTemplatePlaceholder: 'e.g. /{apiKey}/latest/{baseCode}',
+      hintTitle: 'Template Placeholders',
+      hintContent:
+        'The path template supports {apiKey} and {baseCode}. After saving, the Sync Rates action in finance will use this configuration.',
+      fallbackLabel: 'Fallback Enabled',
+      addFallbackProvider: 'Add Fallback API',
+      providerTagPrimary: 'Primary API',
+      providerTagFallback: 'Fallback API {{index}}',
+      providerTagDisabled: 'Disabled API',
+      providerEnabledLabel: 'Provider Enabled',
+      providerPriority: 'Priority #{{priority}}',
+      removeProvider: 'Remove',
+      fallbackHint:
+        'Enabled APIs execute in priority order. When fallback is enabled, the system switches to the next enabled API only for fallback-eligible failures.',
+      save: 'Save API Config',
+      saving: 'Saving...',
+      toast: {
+        loadFailed: 'Failed to load exchange rate service API config',
+        saveSuccess: 'Exchange rate service API config saved',
+        saveFailed: 'Failed to save exchange rate service API config',
+      },
     },
   },
   statusPage: {

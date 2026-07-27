@@ -10,9 +10,14 @@ import { shouldTrackRecentVisit } from './recent-visits-store'
 const RECENT_VISIT_REDIRECT_AND_INTERNAL_PATHS = [
   '/personal-workbench',
   '/personal-workbench/capture',
+  '/basic-settings',
   '/quotes/wholesale',
   '/quotes/retail',
   '/trading/quotes',
+  '/dashboard',
+  '/equipment-maintenance',
+  '/finance-management',
+  '/raw-materials',
   '/basic-settings/permission-tree-smoke',
 ]
 
@@ -31,6 +36,18 @@ describe('recent visit route labels', () => {
     expect(
       RECENT_VISIT_REDIRECT_AND_INTERNAL_PATHS.filter(shouldTrackRecentVisit)
     ).toEqual([])
+  })
+
+  it('labels real root tabs with tab labels instead of sidebar domain labels', () => {
+    expect(resolveRecentVisitLabelKey('/system-management')).toBe(
+      'systemManagement.layout.tabs.status'
+    )
+    expect(resolveRecentVisitLabelKey('/warehouse')).toBe(
+      'warehouse.tabs.stock'
+    )
+    expect(resolveRecentVisitLabelKey('/engineering-db')).toBe(
+      'engineering.db.overview.title'
+    )
   })
 
   it('resolves dynamic pages from their route shape instead of falling back to English slugs', () => {

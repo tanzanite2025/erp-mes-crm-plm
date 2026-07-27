@@ -13,10 +13,8 @@ import {
 import { IndustrialActionBar } from '@/components/uds/industrial-action-bar'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { CurrencyActionDialog } from '../components/currency-action-dialog'
-import { ExchangeRateSyncConfigCard } from '../components/exchange-rate-sync-config-card'
 import { type Currency } from '../data/schema'
 import { useCurrencies } from '../hooks/use-currencies'
-import { useExchangeRateSyncConfig } from '../hooks/use-exchange-rate-sync-config'
 
 export function CurrencyTab() {
   const { t } = useLanguage()
@@ -32,17 +30,6 @@ export function CurrencyTab() {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingCurrency, setEditingCurrency] = useState<Currency | null>(null)
-  const {
-    config: syncConfig,
-    isLoading: isConfigLoading,
-    isSaving: isConfigSaving,
-    updateProvider,
-    addProvider,
-    removeProvider,
-    toggleProviderEnabled,
-    toggleConfigFlag,
-    saveConfig,
-  } = useExchangeRateSyncConfig()
 
   const openEdit = (currency: Currency) => {
     setEditingCurrency(currency)
@@ -236,18 +223,6 @@ export function CurrencyTab() {
           </div>
         </Card>
       </div>
-
-      <ExchangeRateSyncConfigCard
-        config={syncConfig}
-        isLoading={isConfigLoading}
-        isSaving={isConfigSaving}
-        onToggleConfigFlag={toggleConfigFlag}
-        onProviderFieldChange={updateProvider}
-        onProviderEnabledChange={toggleProviderEnabled}
-        onAddProvider={addProvider}
-        onRemoveProvider={removeProvider}
-        onSave={saveConfig}
-      />
 
       <CurrencyActionDialog
         open={isDialogOpen}

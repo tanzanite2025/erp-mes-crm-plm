@@ -25,6 +25,49 @@ const RECENT_VISIT_INTERNAL_UTILITY_EXACT_PATHS = [
   '/basic-settings/permission-tree-smoke',
 ] as const
 
+const RECENT_VISIT_MODULE_SHELL_EXACT_PATHS = [
+  '/approval',
+  '/aps-scheduling',
+  '/attendance-management',
+  '/basic-settings',
+  '/business-analysis',
+  '/code-center',
+  '/code-center/linear-barcode',
+  '/code-center/shared-code-source',
+  '/cutting-operations',
+  '/dashboard',
+  '/engineering',
+  '/engineering-db/engineering-master',
+  '/engineering-reference',
+  '/equipment-maintenance',
+  '/equipment-tooling',
+  '/finance-management',
+  '/labs/experimental',
+  '/logistics-config',
+  '/logistics-loading-specs',
+  '/logistics-packaging-management',
+  '/logistics-settings',
+  '/materials',
+  '/message-center',
+  '/mrp',
+  '/personnel',
+  '/piecework',
+  '/product-structure',
+  '/production-architecture',
+  '/production-outsourcing',
+  '/production-quality',
+  '/purchase',
+  '/quality',
+  '/quotes',
+  '/raw-materials',
+  '/raw-materials-engine',
+  '/shipping-management',
+  '/terminal-config',
+  '/tooling-furnaces',
+  '/trading',
+  '/warehouse-config',
+] as const
+
 const RECENT_VISIT_REDIRECT_ONLY_EXACT_PATHS = [
   '/quotes/wholesale',
   '/quotes/retail',
@@ -34,6 +77,7 @@ const RECENT_VISIT_REDIRECT_ONLY_EXACT_PATHS = [
 const RECENT_VISIT_IGNORED_EXACT_PATHS = new Set<string>([
   ...RECENT_VISIT_SYSTEM_SHELL_EXACT_PATHS,
   ...RECENT_VISIT_INTERNAL_UTILITY_EXACT_PATHS,
+  ...RECENT_VISIT_MODULE_SHELL_EXACT_PATHS,
   ...RECENT_VISIT_REDIRECT_ONLY_EXACT_PATHS,
 ])
 

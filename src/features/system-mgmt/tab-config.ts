@@ -12,4 +12,9 @@ export const systemManagementTabs: TabItem[] = [
     label: 'Audit Engine',
     href: '/system-management/audit-engine',
   },
+  {
+    key: 'api-management',
+    label: 'API Management',
+    href: '/system-management/api-management',
+  },
 ]

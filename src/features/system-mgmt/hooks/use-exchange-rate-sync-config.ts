@@ -5,7 +5,7 @@ import {
   CurrencyMaintenanceService,
   type ExchangeRateSyncConfig,
   type ExchangeRateSyncProviderConfig,
-} from '../services/currency-maintenance-service'
+} from '@/features/finance/services/currency-maintenance-service'
 
 function createProviderId(): string {
   return `provider-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
@@ -62,7 +62,9 @@ export function useExchangeRateSyncConfig() {
         }
       } catch (_error) {
         if (isActive) {
-          toast.error(t('finance.currencyRates.syncConfig.toast.loadFailed'))
+          toast.error(
+            t('systemManagement.apiManagement.exchangeRateApi.toast.loadFailed')
+          )
         }
       } finally {
         if (isActive) {
@@ -151,9 +153,13 @@ export function useExchangeRateSyncConfig() {
     try {
       const saved = await CurrencyMaintenanceService.saveSyncConfig(config)
       setConfig(saved)
-      toast.success(t('finance.currencyRates.syncConfig.toast.saveSuccess'))
+      toast.success(
+        t('systemManagement.apiManagement.exchangeRateApi.toast.saveSuccess')
+      )
     } catch (_error) {
-      toast.error(t('finance.currencyRates.syncConfig.toast.saveFailed'))
+      toast.error(
+        t('systemManagement.apiManagement.exchangeRateApi.toast.saveFailed')
+      )
     } finally {
       setIsSaving(false)
     }

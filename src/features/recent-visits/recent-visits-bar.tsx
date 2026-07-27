@@ -39,6 +39,12 @@ function formatVisitTime(value: string, locale: string): string {
   })
 }
 
+function isActiveRecentVisitPath(pathname: string, visitPath: string): boolean {
+  if (pathname === visitPath) return true
+  const segmentCount = visitPath.split('/').filter(Boolean).length
+  return segmentCount > 1 && pathname.startsWith(`${visitPath}/`)
+}
+
 export function RecentVisitsBar() {
   const { t, locale } = useLanguage()
   const navigate = useNavigate()
@@ -123,8 +129,7 @@ export function RecentVisitsBar() {
       label: labelKey
         ? t(labelKey)
         : t('recentVisits.unknownRoute', { path: visit.path }),
-      isActive:
-        pathname === visit.path || pathname.startsWith(`${visit.path}/`),
+      isActive: isActiveRecentVisitPath(pathname, visit.path),
     }
   })
 

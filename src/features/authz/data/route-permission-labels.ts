@@ -181,6 +181,8 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/system-management': 'sidebar.items.systemManagement',
   '/system-management/ai-capability': 'aiAssistant.accessControl.title',
   '/system-management/audit-engine': 'systemManagement.layout.tabs.auditEngine',
+  '/system-management/api-management':
+    'systemManagement.layout.tabs.apiManagement',
   '/approval': 'sidebar.items.approvalCenter',
   '/approval/requests': 'approval.tabs.requests',
   '/approval/history': 'approval.tabs.history',
