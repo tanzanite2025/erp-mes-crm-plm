@@ -129,9 +129,7 @@ export function SalesExchangeSourceOrderMaster({
   if (sourceOrderCandidates.length === 0) {
     return (
       <div className='rounded-[24px] border border-dashed border-muted/50 bg-background/70 px-5 py-10 text-center'>
-        <p className='text-sm font-black text-foreground'>
-          暂无匹配的销售订单
-        </p>
+        <p className='text-sm font-black text-foreground'>暂无匹配的销售订单</p>
         <p className='mt-2 text-xs leading-6 font-bold text-muted-foreground'>
           可按客户、订单号或订单名称搜索；换货只在当前页面展示行级旧货和补发信息。
         </p>

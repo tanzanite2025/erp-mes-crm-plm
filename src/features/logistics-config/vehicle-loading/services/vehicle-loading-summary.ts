@@ -1,4 +1,7 @@
-import type { ShipmentSummary, VehicleLoadingPackageInput } from '../data/vehicle-loading.types'
+import type {
+  ShipmentSummary,
+  VehicleLoadingPackageInput,
+} from '../data/vehicle-loading.types'
 
 function normalizeBoxes(boxes: number): number {
   if (!Number.isFinite(boxes) || boxes <= 0) {

@@ -36,7 +36,7 @@ export function VehicleLoadingPreviewControls({
             boxesInLayer: 0,
             usesRepeatedArrangement: true,
           },
-  ]
+        ]
 
   return (
     <div className='mb-2 space-y-1.5 rounded-[18px] border border-dashed border-border/60 bg-background/85 px-2.5 py-2'>

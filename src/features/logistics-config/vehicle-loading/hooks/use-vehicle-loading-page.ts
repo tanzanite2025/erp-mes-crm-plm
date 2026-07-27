@@ -6,14 +6,14 @@ import {
   type PackagingProfile,
 } from '@/features/logistics-packaging-management/packaging-rules-service'
 import { packagingManagementQueryKeys } from '@/features/logistics-packaging-management/query-keys'
-import { categoryLabelKey } from '../../vehicle-specs/data/vehicle-specs.utils'
+import { useVehicleModelTemplateRegistry } from '../../vehicle-model-templates/hooks/use-vehicle-model-template-registry'
 import type { VehicleSpec } from '../../vehicle-specs/data/vehicle-specs.types'
+import { categoryLabelKey } from '../../vehicle-specs/data/vehicle-specs.utils'
 import type { VehicleLoadingPackageInput } from '../data/vehicle-loading.types'
 import { buildVehicleLoadingPackageInputFromProfile } from '../services/vehicle-loading-package-input'
 import { buildVehicleLoadingSummaryFromPackageInput } from '../services/vehicle-loading-summary'
 import { useVehicleLoadingData } from './use-vehicle-loading-data'
 import { useVehicleLoadingState } from './use-vehicle-loading-state'
-import { useVehicleModelTemplateRegistry } from '../../vehicle-model-templates/hooks/use-vehicle-model-template-registry'
 
 function isShipmentSummaryReady(summary: {
   boxes: number
@@ -40,10 +40,7 @@ export function useVehicleLoadingPage() {
   const modelTemplatesQuery = useVehicleModelTemplateRegistry(undefined, {
     enabled: true,
   })
-  const {
-    selectedPackagingProfileId,
-    setSelectedPackagingProfileId,
-  } = state
+  const { selectedPackagingProfileId, setSelectedPackagingProfileId } = state
   const activePackagingProfiles = useMemo(
     () =>
       (packagingProfilesQuery.data ?? []).filter((profile) => profile.isActive),

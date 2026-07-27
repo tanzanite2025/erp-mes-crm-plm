@@ -67,7 +67,9 @@ export function UserActionSecurityFields({
                       value={field.value || UNASSIGNED_PERMISSION_PRESET_VALUE}
                       onValueChange={(value) =>
                         field.onChange(
-                          value === UNASSIGNED_PERMISSION_PRESET_VALUE ? '' : value
+                          value === UNASSIGNED_PERMISSION_PRESET_VALUE
+                            ? ''
+                            : value
                         )
                       }
                     >

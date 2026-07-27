@@ -4,14 +4,9 @@ export type VehicleModelTemplateFootprint = {
   heightMm: number
 }
 
-export type VehicleModelTemplateSourceFormat =
-  | 'seed-spec'
-  | 'glb'
+export type VehicleModelTemplateSourceFormat = 'seed-spec' | 'glb'
 
-export type VehicleModelTemplateStatus =
-  | 'seed-only'
-  | 'uploaded'
-  | 'normalized'
+export type VehicleModelTemplateStatus = 'seed-only' | 'uploaded' | 'normalized'
 
 export type VehicleModelTemplate = {
   id: string

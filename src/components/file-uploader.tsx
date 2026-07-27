@@ -15,9 +15,7 @@ interface FileUploaderProps {
   value?: string
   onChange: (url: string, extension?: string, fileName?: string) => void
   disabled?: boolean
-  uploadFile?: (
-    file: File
-  ) => Promise<{
+  uploadFile?: (file: File) => Promise<{
     url: string
     extension?: string
     fileName?: string

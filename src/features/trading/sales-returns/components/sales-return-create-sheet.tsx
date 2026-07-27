@@ -292,7 +292,9 @@ function SalesReturnCreateSheetBody({
     record?.carrier ?? initialValues?.carrier ?? ''
   )
   const [shippedAt, setShippedAt] = useState(
-    record?.shippedAt ? record.shippedAt.slice(0, 16) : (initialValues?.shippedAt ?? '')
+    record?.shippedAt
+      ? record.shippedAt.slice(0, 16)
+      : (initialValues?.shippedAt ?? '')
   )
   const [logisticsNote, setLogisticsNote] = useState(
     record?.logisticsNote ?? initialValues?.logisticsNote ?? ''

@@ -122,10 +122,9 @@ export function SalesExchangesPage() {
                     sourceOrderCandidate,
                     lineId
                   ) => {
-                    const sourceLine =
-                      sourceOrderCandidate.order.lines.find(
-                        (line) => line.id === lineId
-                      )
+                    const sourceLine = sourceOrderCandidate.order.lines.find(
+                      (line) => line.id === lineId
+                    )
                     handleOpenCreateSalesExchangeDialog(
                       sourceOrderCandidate.order,
                       {
@@ -149,7 +148,6 @@ export function SalesExchangesPage() {
             />
           ) : null}
         </section>
-
       </div>
 
       <SalesExchangeCreateDialog

@@ -81,8 +81,9 @@ export function UsersActionDialog({
     {},
     canManageAccountBindings
   )
-  const { data: permissionPresets = [] } =
-    usePermissionPresetsQuery(canManageAccountBindings)
+  const { data: permissionPresets = [] } = usePermissionPresetsQuery(
+    canManageAccountBindings
+  )
   const form = useForm<UserForm>({
     resolver: zodResolver(getFormSchema(t)),
     defaultValues: currentRow

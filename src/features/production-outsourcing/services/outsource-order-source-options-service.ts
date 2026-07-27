@@ -69,32 +69,34 @@ export async function getOutsourceSalesOrderSourceOptions(): Promise<
   OutsourceSalesOrderSourceOption[]
 > {
   const page = await getSalesOrders({ pageSize: 100, withLines: true })
-  return page.items.filter((order) => !isVoidedSourceStatus(order.status)).map((order) => ({
-    id: order.id,
-    orderNo: order.orderNo,
-    customerId: order.customerId ?? '',
-    customerName: order.customerName,
-    quantity: order.quantity,
-    lines: order.lines.map((line) => ({
-      id: String(line.id ?? ''),
-      lineNo: line.lineNo,
-      productId: line.productId ?? '',
-      productCode: firstNonEmpty(
-        line.productDisplayCodeSnapshot,
-        line.productCode,
-        line.modelCodeSnapshot
-      ),
-      productName: firstNonEmpty(
-        line.productDisplayFullLabelSnapshot,
-        line.productDisplayTitleSnapshot,
-        line.productModel,
-        line.productCode
-      ),
-      specification: line.specification,
-      quantity: line.qty,
-      uom: line.uom ?? '',
-    })),
-  }))
+  return page.items
+    .filter((order) => !isVoidedSourceStatus(order.status))
+    .map((order) => ({
+      id: order.id,
+      orderNo: order.orderNo,
+      customerId: order.customerId ?? '',
+      customerName: order.customerName,
+      quantity: order.quantity,
+      lines: order.lines.map((line) => ({
+        id: String(line.id ?? ''),
+        lineNo: line.lineNo,
+        productId: line.productId ?? '',
+        productCode: firstNonEmpty(
+          line.productDisplayCodeSnapshot,
+          line.productCode,
+          line.modelCodeSnapshot
+        ),
+        productName: firstNonEmpty(
+          line.productDisplayFullLabelSnapshot,
+          line.productDisplayTitleSnapshot,
+          line.productModel,
+          line.productCode
+        ),
+        specification: line.specification,
+        quantity: line.qty,
+        uom: line.uom ?? '',
+      })),
+    }))
 }
 
 export async function getOutsourceProductionPlanSourceOptions(): Promise<
@@ -113,20 +115,20 @@ export async function getOutsourceProductionPlanSourceOptions(): Promise<
   )
     .filter((plan) => !isVoidedSourceStatus(plan.status))
     .map((plan) => ({
-    id: String(plan.id ?? ''),
-    orderNo: String(plan.orderNo ?? ''),
-    productId: String(plan.productId ?? ''),
-    productName: String(plan.productName ?? ''),
-    quantity: Number(plan.quantity ?? 0),
-    uom: firstNonEmpty(
-      plan.uom,
-      plan.unitCode,
-      plan.unitName,
-      plan.quantityUnit,
-      plan.quantityUnitCode,
-      plan.productUom,
-      plan.productUnitCode
-    ),
-    status: String(plan.status ?? ''),
-  }))
+      id: String(plan.id ?? ''),
+      orderNo: String(plan.orderNo ?? ''),
+      productId: String(plan.productId ?? ''),
+      productName: String(plan.productName ?? ''),
+      quantity: Number(plan.quantity ?? 0),
+      uom: firstNonEmpty(
+        plan.uom,
+        plan.unitCode,
+        plan.unitName,
+        plan.quantityUnit,
+        plan.quantityUnitCode,
+        plan.productUom,
+        plan.productUnitCode
+      ),
+      status: String(plan.status ?? ''),
+    }))
 }

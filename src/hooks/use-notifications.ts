@@ -5,13 +5,13 @@ import { useAuthStore, type AuthUser } from '@/stores/auth-store'
 import { useNotificationStore as useLegacyNotificationStore } from '@/stores/notification-store'
 import { apiFetch } from '@/lib/api-client'
 import { createLogger } from '@/lib/logger'
+import { refreshCurrentAccountAccessSnapshotAfterRealtimeInvalidation } from '@/features/authz/services/account-access-refresh-service'
 import { useScanActivityStore } from '@/features/dashboard/stores/scan-activity-store'
 import { useNotificationStore as useSystemNotificationStore } from '@/features/system-mgmt/notifications/notification-store'
 import type {
   NotificationPriority,
   NotificationType,
 } from '@/features/system-mgmt/notifications/types'
-import { refreshCurrentAccountAccessSnapshotAfterRealtimeInvalidation } from '@/features/authz/services/account-access-refresh-service'
 
 const logger = createLogger('useNotifications')
 const WS_RECONNECT_DELAY_MS = 5000

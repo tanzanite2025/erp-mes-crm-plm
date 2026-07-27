@@ -22,9 +22,7 @@ function buildRecommendationRequest(
 ): VehicleRecommendationRequestDTO {
   const packagingProfileId = packageInput?.profileId?.trim()
   if (!packagingProfileId) {
-    throw new Error(
-      '当前包装规则缺少主数据 ID，无法提交服务端配车计算。'
-    )
+    throw new Error('当前包装规则缺少主数据 ID，无法提交服务端配车计算。')
   }
   if (!vehicleSpecs || vehicleSpecs.length === 0) {
     throw new Error('车型规格不能为空。')

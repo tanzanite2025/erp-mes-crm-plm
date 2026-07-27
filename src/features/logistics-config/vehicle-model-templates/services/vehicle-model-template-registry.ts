@@ -1,8 +1,8 @@
-import type { VehicleSpec } from '../../vehicle-specs/data/vehicle-specs.types'
 import type {
   VehicleModelTemplate,
   VehicleModelTemplateSourceFormat,
 } from '../../shared/vehicle-model-template.types'
+import type { VehicleSpec } from '../../vehicle-specs/data/vehicle-specs.types'
 import type {
   VehicleModelTemplateDraft,
   VehicleModelTemplateDraftInput,

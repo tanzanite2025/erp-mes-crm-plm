@@ -183,8 +183,7 @@
     passwordDigit: '密码必须包含至少一个数字。',
     passwordMismatch: '两次输入的密码不一致。',
     accessCodeError: '操作码错误，请联系系统开发者。',
-    adminChallengeRequired:
-      '分配 admin 权限预设必须输入当前操作员账号密码。',
+    adminChallengeRequired: '分配 admin 权限预设必须输入当前操作员账号密码。',
     permissionDenied: '权限不足，只有具备全系统管理权限的用户可以执行该操作。',
   },
   toast: {

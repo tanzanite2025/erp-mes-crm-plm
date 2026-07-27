@@ -45,10 +45,7 @@ function buildOrgUnitNameMap(orgData: OrgNode[]) {
 export function useOrgPersonnelLookups(
   options: UseOrgPersonnelLookupsOptions = {}
 ) {
-  const {
-    enabled = true,
-    includePositions = false,
-  } = options
+  const { enabled = true, includePositions = false } = options
 
   const orgTreeQuery = useQuery({
     queryKey: personnelQueryKeys.orgTree(),
@@ -78,9 +75,7 @@ export function useOrgPersonnelLookups(
     positions,
     orgUnitOptions,
     nameMap,
-    isLoading:
-      orgTreeQuery.isLoading ||
-      positionsQuery.isLoading,
+    isLoading: orgTreeQuery.isLoading || positionsQuery.isLoading,
     error: orgTreeQuery.error ?? positionsQuery.error,
   }
 }

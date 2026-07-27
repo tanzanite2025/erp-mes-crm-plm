@@ -1,4 +1,10 @@
-import { CalendarDays, FileStack, Package2, RotateCcw, User } from 'lucide-react'
+import {
+  CalendarDays,
+  FileStack,
+  Package2,
+  RotateCcw,
+  User,
+} from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -130,10 +136,7 @@ export function SalesReturnSourceOrderMaster({
         const orderLines = order.lines ?? []
 
         return (
-          <Card
-            key={order.id}
-            className={SALES_RETURN_SOURCE_ORDER_CARD_CLASS}
-          >
+          <Card key={order.id} className={SALES_RETURN_SOURCE_ORDER_CARD_CLASS}>
             <div className='flex flex-col gap-3 px-4 py-3 xl:flex-row xl:items-center xl:justify-between'>
               <div className='min-w-0 flex-1'>
                 <div className='flex flex-wrap items-center gap-2'>

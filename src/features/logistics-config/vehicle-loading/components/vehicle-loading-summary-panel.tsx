@@ -2,6 +2,8 @@ import type { Dispatch, SetStateAction } from 'react'
 import { ExternalLink } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -9,8 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import type { PackagingProfile } from '@/features/logistics-packaging-management/packaging-rules-service'
 import type {
   ShipmentSummary,
@@ -54,13 +54,19 @@ export function VehicleLoadingSummaryPanel({
 }: Props) {
   const hasSelectableProfiles = packagingProfiles.length > 0
   const guidanceMessages: string[] = []
-  if (!packagingProfilesLoading && !packagingProfilesError && !hasSelectableProfiles) {
+  if (
+    !packagingProfilesLoading &&
+    !packagingProfilesError &&
+    !hasSelectableProfiles
+  ) {
     guidanceMessages.push(
       '暂无可选包装规则，请先到包装管理维护并启用包装规则；当前页面不会使用默认箱型或手动尺寸生成结果。'
     )
   }
   if (summary.boxes === 0) {
-    guidanceMessages.push('请选择包装规则后输入箱数，系统会自动换算总体积和总重量。')
+    guidanceMessages.push(
+      '请选择包装规则后输入箱数，系统会自动换算总体积和总重量。'
+    )
   }
 
   return (
@@ -121,7 +127,9 @@ export function VehicleLoadingSummaryPanel({
           <div className='rounded-2xl border border-dashed border-amber-500/40 bg-amber-500/5 px-4 py-3 text-xs leading-relaxed text-amber-700 dark:text-amber-300'>
             {guidanceMessages.map((item, index) => (
               <div key={item}>
-                {index > 0 ? <div className='my-2 h-px bg-amber-500/20' /> : null}
+                {index > 0 ? (
+                  <div className='my-2 h-px bg-amber-500/20' />
+                ) : null}
                 {item}
               </div>
             ))}
@@ -135,7 +143,8 @@ export function VehicleLoadingSummaryPanel({
             </div>
             <div className='mt-2 flex flex-wrap gap-2'>
               <Badge className='border-none bg-primary/10 text-primary'>
-                关联对象 {renderPackagingProfileTarget(selectedPackagingProfile)}
+                关联对象{' '}
+                {renderPackagingProfileTarget(selectedPackagingProfile)}
               </Badge>
               <Badge className='border-none bg-primary/10 text-primary'>
                 容量 {selectedPackagingProfile.capacity}{' '}

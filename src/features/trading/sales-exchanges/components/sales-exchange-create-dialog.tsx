@@ -240,9 +240,8 @@ export function SalesExchangeCreateDialog({
         return currentLineDrafts
       }
 
-      const nextLineDraft = buildSalesExchangeLineDraftFromSalesOrderLine(
-        salesOrderLine
-      )
+      const nextLineDraft =
+        buildSalesExchangeLineDraftFromSalesOrderLine(salesOrderLine)
 
       return [
         ...currentLineDrafts,

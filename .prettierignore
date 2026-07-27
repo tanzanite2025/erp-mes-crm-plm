@@ -22,3 +22,4 @@
 
 # Ignore generated wasm-pack output
 /src/features/raw-materials/batch-engine/wasm/pkg
+/src/features/logistics-config/vehicle-loading/wasm/pkg

@@ -61,7 +61,9 @@ export function useSalesExchangeWorkspaceState() {
   const routeCustomerName = search.customerName || undefined
   const sourceSearchTerm = search.search ?? ''
   const sourceStatusFilter =
-    search.status === canceledSalesOrderStatus ? 'all' : (search.status ?? 'all')
+    search.status === canceledSalesOrderStatus
+      ? 'all'
+      : (search.status ?? 'all')
   const [sourcePage, setSourcePage] = useState(1)
   const selectedSourceSalesOrderId = search.sourceOrderId || undefined
   const [sourceSalesOrderForCreateDialog, setSourceSalesOrderForCreateDialog] =
