@@ -16,8 +16,12 @@ FROM alpine:3.23
 RUN apk upgrade --no-cache \
     && apk add --no-cache 'nginx>=1.28.3-r6' \
     && rm -f /etc/nginx/http.d/default.conf \
-    && mkdir -p /usr/share/nginx/html /var/cache/nginx /var/lib/nginx /var/log/nginx \
-    && chown -R nginx:nginx /var/cache/nginx /var/lib/nginx /var/log/nginx
+    && mkdir -p /usr/share/nginx/html /var/cache/nginx /var/lib/nginx/logs /var/log/nginx \
+    && chown -R nginx:nginx /var/cache/nginx /var/lib/nginx /var/log/nginx \
+    && ln -sf /dev/stderr /var/lib/nginx/logs/error.log \
+    && ln -sf /dev/stdout /var/lib/nginx/logs/access.log \
+    && ln -sf /dev/stderr /var/log/nginx/error.log \
+    && ln -sf /dev/stdout /var/log/nginx/access.log
 
 COPY deployment/nginx/erp-web.conf /etc/nginx/nginx.conf
 COPY --from=builder /app/dist /usr/share/nginx/html
@@ -29,4 +33,4 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD wget -q --spider http://127.0.0.1:8080/healthz || exit 1
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["nginx", "-e", "/dev/stderr", "-g", "daemon off;"]

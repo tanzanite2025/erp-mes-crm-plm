@@ -94,6 +94,11 @@ jobs:
 
           for attempt in {1..20}; do
             if docker exec "${container_name}" wget -q --spider http://127.0.0.1:8080/healthz; then
+              logs="$(docker logs "${container_name}" 2>&1 || true)"
+              if printf '%s\n' "${logs}" | grep -q 'could not open error log file'; then
+                printf '%s\n' "${logs}"
+                exit 1
+              fi
               exit 0
             fi
             if ! docker inspect -f '{{.State.Running}}' "${container_name}" | grep -q true; then
