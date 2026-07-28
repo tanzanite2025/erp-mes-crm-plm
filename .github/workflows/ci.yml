@@ -73,6 +73,38 @@ jobs:
           cache-from: type=gha,scope=security-${{ matrix.image }}
           cache-to: type=gha,mode=max,scope=security-${{ matrix.image }}
 
+      - name: Smoke test web image with production filesystem policy
+        if: matrix.image == 'erp-web'
+        run: |
+          set -euo pipefail
+          container_name="erp-web-smoke"
+          docker rm -f "${container_name}" >/dev/null 2>&1 || true
+          cleanup() { docker rm -f "${container_name}" >/dev/null 2>&1 || true; }
+          trap cleanup EXIT
+          docker run -d \
+            --name "${container_name}" \
+            --read-only \
+            --tmpfs /tmp \
+            --cap-drop ALL \
+            --security-opt no-new-privileges:true \
+            --pids-limit 128 \
+            --memory 256m \
+            --cpus 0.50 \
+            local/${{ matrix.image }}:security-scan
+
+          for attempt in {1..20}; do
+            if docker exec "${container_name}" wget -q --spider http://127.0.0.1:8080/healthz; then
+              exit 0
+            fi
+            if ! docker inspect -f '{{.State.Running}}' "${container_name}" | grep -q true; then
+              docker logs "${container_name}"
+              exit 1
+            fi
+            sleep 1
+          done
+          docker logs "${container_name}"
+          exit 1
+
       - name: Run Trivy image scan
         run: |
           mkdir -p .cache/trivy
