@@ -814,10 +814,7 @@ function SalesReturnCreateSheetBody({
                             <Textarea
                               value={draft.barcodes.join('\n')}
                               onChange={(event) =>
-                                updateLineBarcodes(
-                                  lineId,
-                                  event.target.value
-                                )
+                                updateLineBarcodes(lineId, event.target.value)
                               }
                               placeholder='可粘贴多个条码，用空格、换行或逗号分隔'
                               rows={2}

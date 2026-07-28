@@ -524,7 +524,7 @@ export function SalesExchangeSourceOrderMaster({
                                       latestExchangeRecord.shipmentRecords.filter(
                                         (shipmentRecord) =>
                                           shipmentRecord.sourceLineId ===
-                                          latestExchangeLine?.id &&
+                                            latestExchangeLine?.id &&
                                           shipmentRecord.status !== 'VOID'
                                       )
                                     const oldLabelCount =

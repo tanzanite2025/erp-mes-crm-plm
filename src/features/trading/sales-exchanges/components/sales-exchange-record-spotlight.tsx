@@ -53,10 +53,8 @@ export function SalesExchangeRecordSpotlight({
   isLoading,
   onClearSelection,
 }: SalesExchangeRecordSpotlightProps) {
-  const {
-    patchOldItemLogisticsMutation,
-    voidReplacementShipmentMutation,
-  } = useSalesExchangeMutations()
+  const { patchOldItemLogisticsMutation, voidReplacementShipmentMutation } =
+    useSalesExchangeMutations()
   const [oldItemTrackingNo, setOldItemTrackingNo] = useState(
     salesExchangeDraftRecord?.receivedOldItemTrackingNo ?? ''
   )
@@ -85,9 +83,7 @@ export function SalesExchangeRecordSpotlight({
     return (
       <Card className='rounded-2xl border border-dashed border-border/70 bg-background/60 shadow-none'>
         <CardContent className='px-5 py-8 text-center'>
-          <p className='text-sm font-black text-foreground'>
-            尚未选择换货记录
-          </p>
+          <p className='text-sm font-black text-foreground'>尚未选择换货记录</p>
           <p className='mt-2 text-xs leading-6 font-bold text-muted-foreground'>
             选择订单行的换货记录后，这里会集中展示条码、入库和补发流水。
           </p>
@@ -249,8 +245,7 @@ export function SalesExchangeRecordSpotlight({
                   </span>
                 ) : (
                   lineDraft.recognizedLabelCodes.map((labelCode) => {
-                    const isReplacement =
-                      labelCode.side === 'REPLACEMENT_ITEM'
+                    const isReplacement = labelCode.side === 'REPLACEMENT_ITEM'
                     return (
                       <span
                         key={`${labelCode.normalizedLabelCode}-${labelCode.side ?? 'OLD_ITEM'}`}
@@ -326,9 +321,8 @@ export function SalesExchangeRecordSpotlight({
                     {record.materialCode || '--'}
                   </p>
                   <p className='mt-1 text-muted-foreground'>
-                    {record.batchNo || '--'} /{' '}
-                    {record.trackingNo || '无运单号'} /{' '}
-                    {record.shipmentDate.slice(0, 10)} / {record.status}
+                    {record.batchNo || '--'} / {record.trackingNo || '无运单号'}{' '}
+                    / {record.shipmentDate.slice(0, 10)} / {record.status}
                   </p>
                 </div>
                 {record.status === 'COMMITTED' ? (

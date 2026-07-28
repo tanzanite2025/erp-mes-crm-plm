@@ -162,9 +162,7 @@ export function SalesExchangesPage() {
             salesExchangeDraftRecord={
               salesExchangeWorkspaceState.selectedSalesExchangeDraftRecord
             }
-            isLoading={
-              salesExchangeWorkspaceState.isSalesExchangeDetailLoading
-            }
+            isLoading={salesExchangeWorkspaceState.isSalesExchangeDetailLoading}
             onClearSelection={
               salesExchangeWorkspaceState.handleClearSelectedSalesExchange
             }

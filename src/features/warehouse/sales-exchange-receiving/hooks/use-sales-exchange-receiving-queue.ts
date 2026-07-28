@@ -125,10 +125,7 @@ export function useSalesExchangeReceivingQueue() {
           item.lines.reduce(
             (lineSum, line) =>
               lineSum +
-              Math.max(
-                0,
-                line.exchangeQuantity - line.oldItemReceivedQuantity
-              ),
+              Math.max(0, line.exchangeQuantity - line.oldItemReceivedQuantity),
             0
           ),
         0

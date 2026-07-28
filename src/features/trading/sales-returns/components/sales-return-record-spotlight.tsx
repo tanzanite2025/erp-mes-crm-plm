@@ -194,8 +194,9 @@ export function SalesReturnRecordSpotlight({
                           line.productCode}
                       </p>
                       <p className='mt-1 text-[10px] font-bold text-muted-foreground'>
-                        申请 {line.quantity.toLocaleString()} {line.uom} / 已入库{' '}
-                        {line.receivedQuantity.toLocaleString()} {line.uom}
+                        申请 {line.quantity.toLocaleString()} {line.uom} /
+                        已入库 {line.receivedQuantity.toLocaleString()}{' '}
+                        {line.uom}
                       </p>
                     </div>
                     <span className='shrink-0 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 text-[10px] font-black text-emerald-700'>
