@@ -167,8 +167,7 @@ $requiredKeys = @(
     "TOPOLOGY_AUTH_PASSWORD",
     "ALERT_WEBHOOK_TOKEN",
     "ALLOWED_ORIGIN",
-    "GIN_MODE",
-    "EXCHANGERATE_API_KEY"
+    "GIN_MODE"
 )
 
 foreach ($key in $requiredKeys) {
