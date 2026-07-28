@@ -62,6 +62,26 @@ func prepareExchangeRateSyncTest(t *testing.T, withAuditLog bool) (*httptest.Ser
 	return server, foreign
 }
 
+func TestLoadLegacyExchangeRateSyncConfigDefaultsDisabledWithoutAPIKey(t *testing.T) {
+	t.Setenv("EXCHANGERATE_API_KEY", "")
+
+	testDB := openFinanceTransactionTestDB(t, false)
+	if err := testDB.AutoMigrate(&models.SystemConfig{}); err != nil {
+		t.Fatalf("migrate exchange rate config: %v", err)
+	}
+
+	config, err := loadLegacyExchangeRateSyncConfig(testDB)
+	if err != nil {
+		t.Fatalf("load legacy exchange rate config: %v", err)
+	}
+	if config.Enabled {
+		t.Fatal("expected exchange rate sync to default to disabled without an API key")
+	}
+	if len(config.Providers) != 1 || config.Providers[0].APIKey != "" {
+		t.Fatalf("expected one provider without an API key, got %+v", config.Providers)
+	}
+}
+
 func TestSyncExchangeRatesWithContextPreservesActorAndAuditsEachRate(t *testing.T) {
 	_, foreign := prepareExchangeRateSyncTest(t, true)
 	ctx := audit.NewContextWithActor(context.Background(), audit.AuditActor{

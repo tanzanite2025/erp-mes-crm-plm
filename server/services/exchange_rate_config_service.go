@@ -66,7 +66,8 @@ func defaultExchangeRateSyncConfig() ExchangeRateSyncConfig {
 
 func getSystemConfigValue(database *gorm.DB, key string, defaultValue string) string {
 	var config models.SystemConfig
-	if err := database.Where("key = ?", key).First(&config).Error; err != nil {
+	result := database.Where("key = ?", key).Limit(1).Find(&config)
+	if result.Error != nil || result.RowsAffected == 0 {
 		return defaultValue
 	}
 	return config.Value
@@ -161,7 +162,11 @@ func loadLegacyExchangeRateSyncConfig(database *gorm.DB) (ExchangeRateSyncConfig
 	apiBaseURL := getSystemConfigValue(database, exchangeRateAPIBaseURLConfigKey, exchangeRateAPIBaseURL)
 	apiKey := getSystemConfigValue(database, exchangeRateAPIKeyConfigKey, strings.TrimSpace(os.Getenv("EXCHANGERATE_API_KEY")))
 	latestPathTemplate := getSystemConfigValue(database, exchangeRateLatestPathTemplateConfigKey, defaultExchangeRateLatestPathTemplate)
-	enabledRaw := getSystemConfigValue(database, exchangeRateSyncEnabledConfigKey, "true")
+	defaultEnabled := "false"
+	if strings.TrimSpace(apiKey) != "" {
+		defaultEnabled = "true"
+	}
+	enabledRaw := getSystemConfigValue(database, exchangeRateSyncEnabledConfigKey, defaultEnabled)
 
 	enabled, err := strconv.ParseBool(strings.TrimSpace(enabledRaw))
 	if err != nil {
