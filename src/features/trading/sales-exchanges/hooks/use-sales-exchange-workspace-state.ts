@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import type { SalesOrder } from '@/features/trading/data/schema'
+import { useSalesOrderAfterSalesCardResources } from '@/features/trading/hooks/use-sales-order-after-sales-card-resources'
 import {
   useGetSalesOrderDetail,
   useGetSalesOrders,
@@ -12,6 +13,7 @@ import type {
   SalesExchangeUnmatchedLabelCode,
 } from '../types/sales-exchange-types'
 import {
+  useGetSalesExchangeDetail,
   useGetSalesExchanges,
   useSalesExchangeMutations,
 } from './use-sales-exchanges'
@@ -70,6 +72,9 @@ export function useSalesExchangeWorkspaceState() {
     useState<SalesOrder | undefined>(undefined)
   const selectedSalesExchangeDraftRecordId = search.exchangeId || undefined
   const salesExchangeMutations = useSalesExchangeMutations()
+  const selectedSalesExchangeDetailQuery = useGetSalesExchangeDetail(
+    selectedSalesExchangeDraftRecordId || ''
+  )
 
   const navigateSalesExchangeSearch = (params: {
     search?: string
@@ -138,6 +143,9 @@ export function useSalesExchangeWorkspaceState() {
 
     return sourceOrders.map(createSalesExchangeSourceOrderCandidate)
   }, [selectedSourceSalesOrderQuery.data, sourceSalesOrdersQuery.data?.items])
+  const afterSalesSummaryResources = useSalesOrderAfterSalesCardResources(
+    sourceSalesOrderCandidates.map((candidate) => candidate.order)
+  )
 
   const selectedSourceSalesOrder = useMemo(
     () =>
@@ -156,10 +164,15 @@ export function useSalesExchangeWorkspaceState() {
 
   const selectedSalesExchangeDraftRecord = useMemo(
     () =>
+      selectedSalesExchangeDetailQuery.data ??
       createdSalesExchangeDraftRecords.find(
         (record) => record.id === selectedSalesExchangeDraftRecordId
       ),
-    [createdSalesExchangeDraftRecords, selectedSalesExchangeDraftRecordId]
+    [
+      createdSalesExchangeDraftRecords,
+      selectedSalesExchangeDetailQuery.data,
+      selectedSalesExchangeDraftRecordId,
+    ]
   )
 
   const sourceTotalPages = Math.max(
@@ -266,6 +279,7 @@ export function useSalesExchangeWorkspaceState() {
     sourceSalesOrdersQuery,
     salesExchangeRecordsQuery,
     sourceSalesOrderCandidates,
+    afterSalesSummaryResources,
     selectedSourceSalesOrderId,
     selectedSourceSalesOrder,
     sourceSalesOrderForCreateDialog,
@@ -280,7 +294,12 @@ export function useSalesExchangeWorkspaceState() {
     handleCloseCreateSalesExchangeDialog,
     handleCreateSalesExchangeDraftRecord,
     handleSelectSalesExchangeDraftRecord,
+    handleClearSelectedSalesExchange: () =>
+      handleSelectSalesExchangeDraftRecord(undefined),
     handleRemoveSalesExchangeDraftRecord,
+    isSalesExchangeDetailLoading:
+      Boolean(selectedSalesExchangeDraftRecordId) &&
+      selectedSalesExchangeDetailQuery.isPending,
     isCreatingSalesExchangeDraftRecord:
       salesExchangeMutations.createMutation.isPending,
     isDeletingSalesExchangeDraftRecord:

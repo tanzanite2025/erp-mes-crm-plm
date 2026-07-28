@@ -19,14 +19,17 @@ import {
   salesStatusMeta,
 } from '@/features/trading/data/sales-status'
 import type { SalesOrder } from '@/features/trading/data/schema'
+import type { SalesOrderAfterSalesCardResources } from '@/features/trading/hooks/use-sales-order-after-sales-card-resources'
 import type {
   SalesReturnRecordsResource,
   SalesReturnSourceOrdersResource,
 } from '../hooks/use-sales-return-query-shell'
+import type { SalesReturnRecord } from '@/features/trading/sales/services/sales-return-service'
 import {
   SalesReturnCreateSheet,
   type SalesReturnCreateInitialValues,
 } from './sales-return-create-sheet'
+import { SalesReturnRecordSpotlight } from './sales-return-record-spotlight'
 import { SalesReturnSourceOrderMaster } from './sales-return-source-order-master'
 
 const sourceOrderStatusOptions = [
@@ -52,11 +55,17 @@ type SalesReturnsEntryShellProps = {
   sourcePage: number
   sourceTotalPages: number
   sourceOrdersResource: SalesReturnSourceOrdersResource
+  afterSalesSummaryResources: SalesOrderAfterSalesCardResources
   returnsResource: SalesReturnRecordsResource
   onRetrySourceOrders: () => void
   onSearchTermChange: (value: string) => void
   onStatusFilterChange: (value: string) => void
   onSourcePageChange: (page: number) => void
+  selectedReturnId?: string
+  selectedReturnRecord?: SalesReturnRecord
+  isReturnDetailLoading: boolean
+  onSelectReturn: (returnId: string) => void
+  onClearSelectedReturn: () => void
 }
 
 export function SalesReturnsEntryShell({
@@ -65,11 +74,17 @@ export function SalesReturnsEntryShell({
   sourcePage,
   sourceTotalPages,
   sourceOrdersResource,
+  afterSalesSummaryResources,
   returnsResource,
   onRetrySourceOrders,
   onSearchTermChange,
   onStatusFilterChange,
   onSourcePageChange,
+  selectedReturnId,
+  selectedReturnRecord,
+  isReturnDetailLoading,
+  onSelectReturn,
+  onClearSelectedReturn,
 }: SalesReturnsEntryShellProps) {
   const { t } = useLanguage()
   const [createOrder, setCreateOrder] = useState<SalesOrder | undefined>(
@@ -91,7 +106,7 @@ export function SalesReturnsEntryShell({
 
   return (
     <>
-      <div className='flex min-h-0 flex-1 animate-in flex-col gap-6 duration-700 fade-in'>
+      <div className='grid min-h-0 flex-1 gap-6 animate-in duration-700 fade-in xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.45fr)]'>
         <div className='space-y-5'>
           <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between'>
             <div className='relative max-w-xl flex-1'>
@@ -147,8 +162,10 @@ export function SalesReturnsEntryShell({
               <div className='space-y-4 p-4'>
                 <SalesReturnSourceOrderMaster
                   orders={sourceOrdersResource.items}
+                  summaryByOrderId={afterSalesSummaryResources.summaryByOrderId}
                   returnRecords={returnRecords}
                   onStartReturnLine={handleStartReturnLine}
+                  onSelectReturn={onSelectReturn}
                 />
               </div>
             </ScrollArea>
@@ -163,6 +180,14 @@ export function SalesReturnsEntryShell({
             />
           ) : null}
         </div>
+
+        {selectedReturnId ? (
+          <SalesReturnRecordSpotlight
+            record={selectedReturnRecord}
+            isLoading={isReturnDetailLoading}
+            onClearSelection={onClearSelectedReturn}
+          />
+        ) : null}
       </div>
 
       <SalesReturnCreateSheet

@@ -7,17 +7,19 @@ import (
 )
 
 const (
-	SalesReturnStatusCreated   = "Created"
-	SalesReturnStatusInTransit = "InTransit"
-	SalesReturnStatusReceived  = "Received"
-	SalesReturnStatusClosed    = "Closed"
-	SalesReturnStatusCanceled  = "Canceled"
-	SalesReturnStatusCompleted = "Completed"
+	SalesReturnStatusCreated           = "Created"
+	SalesReturnStatusInTransit         = "InTransit"
+	SalesReturnStatusPartiallyReceived = "PartiallyReceived"
+	SalesReturnStatusReceived          = "Received"
+	SalesReturnStatusClosed            = "Closed"
+	SalesReturnStatusCanceled          = "Canceled"
+	SalesReturnStatusCompleted         = "Completed"
 )
 
 var salesReturnStatuses = []string{
 	SalesReturnStatusCreated,
 	SalesReturnStatusInTransit,
+	SalesReturnStatusPartiallyReceived,
 	SalesReturnStatusReceived,
 	SalesReturnStatusClosed,
 	SalesReturnStatusCanceled,
@@ -97,6 +99,11 @@ func validateSalesReturnStatusTransition(currentStatus string, nextStatus string
 			SalesReturnStatusCanceled:  {},
 		},
 		SalesReturnStatusInTransit: {
+			SalesReturnStatusPartiallyReceived: {},
+			SalesReturnStatusReceived:          {},
+			SalesReturnStatusCanceled:          {},
+		},
+		SalesReturnStatusPartiallyReceived: {
 			SalesReturnStatusReceived: {},
 			SalesReturnStatusCanceled: {},
 		},

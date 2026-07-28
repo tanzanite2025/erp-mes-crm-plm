@@ -43,6 +43,44 @@ func GetSalesExchangeHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+func PatchSalesExchangeOldItemLogisticsHandler(c *gin.Context) {
+	salesExchangeID := strings.TrimSpace(c.Param("id"))
+	if salesExchangeID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "sales exchange id is required"})
+		return
+	}
+
+	var req services.PatchSalesExchangeOldItemLogisticsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	operator := strings.TrimSpace(req.Operator)
+	if operator == "" {
+		operator = middleware.GetSafeUsername(c)
+	}
+
+	response, err := services.PatchSalesExchangeOldItemLogistics(
+		services.MapPatchSalesExchangeOldItemLogisticsRequestToInput(
+			req,
+			salesExchangeID,
+			operator,
+		),
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": "sales exchange not found"})
+		default:
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
 func CreateSalesExchangeHandler(c *gin.Context) {
 	salesOrderID := strings.TrimSpace(c.Param("id"))
 	if salesOrderID == "" {
@@ -130,4 +168,81 @@ func ConfirmSalesExchangeOldItemInboundHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+func ConfirmSalesExchangeReplacementShipmentHandler(c *gin.Context) {
+	salesExchangeID := strings.TrimSpace(c.Param("id"))
+	if salesExchangeID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "sales exchange id is required"})
+		return
+	}
+
+	var req services.ConfirmSalesExchangeReplacementShipmentRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	operator := strings.TrimSpace(req.Operator)
+	if operator == "" {
+		operator = middleware.GetSafeUsername(c)
+	}
+
+	response, err := services.ConfirmSalesExchangeReplacementShipment(
+		services.MapConfirmSalesExchangeReplacementShipmentRequestToInput(req, salesExchangeID, operator),
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": "sales exchange not found"})
+		default:
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+func VoidSalesExchangeReplacementShipmentHandler(c *gin.Context) {
+	salesExchangeID := strings.TrimSpace(c.Param("id"))
+	shipmentID := strings.TrimSpace(c.Param("shipmentId"))
+	if salesExchangeID == "" || shipmentID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "sales exchange id and shipment id are required"})
+		return
+	}
+
+	var req services.VoidSalesExchangeReplacementShipmentRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	operator := strings.TrimSpace(req.Operator)
+	if operator == "" {
+		operator = middleware.GetSafeUsername(c)
+	}
+
+	result, err := services.VoidSalesExchangeReplacementShipment(
+		services.MapVoidSalesExchangeReplacementShipmentRequestToInput(
+			req,
+			salesExchangeID,
+			shipmentID,
+			operator,
+		),
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound),
+			errors.Is(err, services.ErrSalesExchangeReplacementShipmentNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": "sales exchange replacement shipment not found"})
+		case errors.Is(err, services.ErrSalesExchangeReplacementShipmentAlreadyVoided):
+			c.JSON(http.StatusConflict, gin.H{"error": "sales exchange replacement shipment is already voided"})
+		default:
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, services.MapVoidSalesExchangeReplacementShipmentResultToResponse(result))
 }

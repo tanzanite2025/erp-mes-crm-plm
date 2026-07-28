@@ -5,14 +5,20 @@ import { tradingQueryKeys } from '@/features/trading/query-keys'
 import { warehouseQueryKeys } from '@/features/warehouse/query-keys'
 import type {
   ConfirmSalesExchangeOldItemInboundPayload,
+  ConfirmSalesExchangeReplacementShipmentPayload,
   CreateSalesExchangePayload,
+  PatchSalesExchangeOldItemLogisticsPayload,
+  VoidSalesExchangeReplacementShipmentPayload,
 } from '../contracts/sales-exchange-api-dto'
 import {
   confirmSalesExchangeOldItemInbound,
+  confirmSalesExchangeReplacementShipment,
   createSalesExchange,
   deleteSalesExchange,
   getSalesExchangeById,
   getSalesExchanges,
+  patchSalesExchangeOldItemLogistics,
+  voidSalesExchangeReplacementShipment,
   type GetSalesExchangesOptions,
   type PaginatedSalesExchanges,
   type CreateSalesExchangeResponse,
@@ -62,6 +68,9 @@ export function useSalesExchangeMutations() {
     await queryClient.invalidateQueries({
       queryKey: tradingQueryKeys.salesExchangesRoot(),
     })
+    await queryClient.invalidateQueries({
+      queryKey: ['sales-orders', 'after-sales-summary'],
+    })
     if (salesExchangeId) {
       await queryClient.invalidateQueries({
         queryKey: tradingQueryKeys.salesExchangeDetail(salesExchangeId),
@@ -69,6 +78,9 @@ export function useSalesExchangeMutations() {
     }
     await queryClient.invalidateQueries({
       queryKey: warehouseQueryKeys.inboundHistory(),
+    })
+    await queryClient.invalidateQueries({
+      queryKey: warehouseQueryKeys.shipmentHistory(),
     })
     await queryClient.invalidateQueries({
       queryKey: warehouseQueryKeys.inventoryList(),
@@ -130,9 +142,64 @@ export function useSalesExchangeMutations() {
     onError: handleServerError,
   })
 
+  const patchOldItemLogisticsMutation = useMutation({
+    mutationFn: ({
+      salesExchangeId,
+      payload,
+    }: {
+      salesExchangeId: string
+      payload: PatchSalesExchangeOldItemLogisticsPayload
+    }) => patchSalesExchangeOldItemLogistics(salesExchangeId, payload),
+    onSuccess: async (data) => {
+      toast.success('旧货运单号已更新')
+      await invalidateSalesExchangeViews(data.id)
+    },
+    onError: handleServerError,
+  })
+
+  const confirmReplacementShipmentMutation = useMutation({
+    mutationFn: ({
+      salesExchangeId,
+      payload,
+    }: {
+      salesExchangeId: string
+      payload: ConfirmSalesExchangeReplacementShipmentPayload
+    }) => confirmSalesExchangeReplacementShipment(salesExchangeId, payload),
+    onSuccess: async (data) => {
+      toast.success('换货补发已确认')
+      await invalidateSalesExchangeViews(data.salesExchange.id)
+    },
+    onError: handleServerError,
+  })
+
+  const voidReplacementShipmentMutation = useMutation({
+    mutationFn: ({
+      salesExchangeId,
+      shipmentId,
+      payload,
+    }: {
+      salesExchangeId: string
+      shipmentId: string
+      payload: VoidSalesExchangeReplacementShipmentPayload
+    }) =>
+      voidSalesExchangeReplacementShipment(
+        salesExchangeId,
+        shipmentId,
+        payload
+      ),
+    onSuccess: async (data) => {
+      toast.success('换货补发已冲销，库存已回滚')
+      await invalidateSalesExchangeViews(data.id)
+    },
+    onError: handleServerError,
+  })
+
   return {
     createMutation,
     deleteMutation,
     confirmOldItemInboundMutation,
+    patchOldItemLogisticsMutation,
+    confirmReplacementShipmentMutation,
+    voidReplacementShipmentMutation,
   }
 }

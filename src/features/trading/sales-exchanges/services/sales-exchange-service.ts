@@ -6,20 +6,29 @@ import {
 } from '@/lib/api-response'
 import type { SalesOrder } from '@/features/trading/data/schema'
 import type {
+  ConfirmSalesExchangeReplacementShipmentPayload,
+  ConfirmSalesExchangeReplacementShipmentResponseApiDTO,
   ConfirmSalesExchangeOldItemInboundPayload,
   ConfirmSalesExchangeOldItemInboundResponseApiDTO,
   CreateSalesExchangePayload,
   CreateSalesExchangeResponseApiDTO,
+  PatchSalesExchangeOldItemLogisticsPayload,
+  SalesExchangeInboundRecordApiDTO,
   SalesExchangeApiDTO,
   SalesExchangeLineApiDTO,
   SalesExchangeListPageApiDTO,
   SalesExchangeRecognizedLabelApiDTO,
+  SalesExchangeShipmentRecordApiDTO,
   SalesExchangeUnmatchedLabelApiDTO,
+  VoidSalesExchangeReplacementShipmentPayload,
+  VoidSalesExchangeReplacementShipmentResponseApiDTO,
 } from '../contracts/sales-exchange-api-dto'
 import type {
   SalesExchangeDraftRecord,
+  SalesExchangeInboundRecord,
   SalesExchangeLineDraft,
   SalesExchangeRecognizedLabelCode,
+  SalesExchangeShipmentRecord,
   SalesExchangeUnmatchedLabelCode,
 } from '../types/sales-exchange-types'
 
@@ -48,6 +57,11 @@ export interface ConfirmSalesExchangeOldItemInboundResponse {
   createdInboundRecords: unknown[]
 }
 
+export interface ConfirmSalesExchangeReplacementShipmentResponse {
+  salesExchange: SalesExchangeDraftRecord
+  createdShipmentRecords: unknown[]
+}
+
 function encodeSalesExchangePathSegment(value: string) {
   return encodeURIComponent(value.trim())
 }
@@ -67,6 +81,7 @@ function toRecognizedLabelContract(
     normalizedLabelCode: dto.normalizedLabelCode,
     recognizedAt: dto.recognizedAt,
     recognitionSource: dto.recognitionSource,
+    side: dto.side,
   }
 }
 
@@ -79,10 +94,62 @@ function toUnmatchedLabelContract(
   }
 }
 
+function toSalesExchangeInboundRecordContract(
+  dto: SalesExchangeInboundRecordApiDTO
+): SalesExchangeInboundRecord {
+  return {
+    id: dto.id,
+    materialId: dto.materialId,
+    materialName: dto.materialName,
+    materialCode: dto.materialCode,
+    sourceType: dto.sourceType,
+    sourceId: dto.sourceId,
+    sourceLineId: dto.sourceLineId,
+    quantity: dto.quantity,
+    purchasePrice: dto.purchasePrice,
+    targetCategory: dto.targetCategory,
+    batchNo: dto.batchNo,
+    inboundDate: dto.inboundDate,
+    operator: dto.operator,
+    remarks: dto.remarks,
+    createdAt: dto.createdAt,
+    updatedAt: dto.updatedAt,
+  }
+}
+
+function toSalesExchangeShipmentRecordContract(
+  dto: SalesExchangeShipmentRecordApiDTO
+): SalesExchangeShipmentRecord {
+  return {
+    id: dto.id,
+    materialId: dto.materialId,
+    materialName: dto.materialName,
+    materialCode: dto.materialCode,
+    sourceType: dto.sourceType,
+    sourceId: dto.sourceId,
+    sourceLineId: dto.sourceLineId,
+    salesOrderId: dto.salesOrderId,
+    salesOrderLineId: dto.salesOrderLineId,
+    quantity: dto.quantity,
+    sourceCategory: dto.sourceCategory,
+    batchNo: dto.batchNo,
+    orderNo: dto.orderNo,
+    trackingNo: dto.trackingNo ?? '',
+    status: dto.status,
+    cogs: dto.cogs,
+    shipmentDate: dto.shipmentDate,
+    operator: dto.operator,
+    remarks: dto.remarks,
+    createdAt: dto.createdAt,
+    updatedAt: dto.updatedAt,
+  }
+}
+
 function toSalesExchangeLineContract(
   dto: SalesExchangeLineApiDTO
 ): SalesExchangeLineDraft {
   return {
+    id: dto.id,
     lineDraftId: dto.lineDraftId,
     salesOrderLineId: dto.salesOrderLineId,
     lineNo: dto.lineNo,
@@ -101,6 +168,9 @@ function toSalesExchangeLineContract(
     originalOrderQuantity: dto.originalOrderQuantity,
     deliveredQuantity: dto.deliveredQuantity,
     exchangeQuantity: dto.exchangeQuantity,
+    oldItemReceivedQuantity: dto.oldItemReceivedQuantity ?? 0,
+    replacementShippedQuantity: dto.replacementShippedQuantity ?? 0,
+    status: dto.status || 'Draft',
     replacementMode: dto.replacementMode,
     replacementProductCode: dto.replacementProductCode,
     replacementProductModel: dto.replacementProductModel,
@@ -135,6 +205,16 @@ function toSalesExchangeContract(
     exchangeRemarks: dto.exchangeRemarks,
     evidences: [],
     totalExchangeQuantity: dto.totalExchangeQuantity,
+    oldItemInboundConfirmedAt: dto.oldItemInboundConfirmedAt ?? undefined,
+    oldItemInboundConfirmedBy: dto.oldItemInboundConfirmedBy,
+    oldItemInboundTarget: dto.oldItemInboundTarget,
+    oldItemInboundBatchNo: dto.oldItemInboundBatchNo,
+    oldItemInboundRemarks: dto.oldItemInboundRemarks,
+    replacementShippedAt: dto.replacementShippedAt ?? undefined,
+    replacementShippedBy: dto.replacementShippedBy,
+    replacementSourceCategory: dto.replacementSourceCategory,
+    replacementBatchNo: dto.replacementBatchNo,
+    replacementShipmentRemarks: dto.replacementShipmentRemarks,
     createdAt: dto.createdAt,
     updatedAt: dto.updatedAt,
     lines: ensureArrayField<SalesExchangeLineApiDTO>(
@@ -147,6 +227,16 @@ function toSalesExchangeContract(
       'unmatchedLabelCodes',
       'SalesExchangeService.toSalesExchangeContract'
     ).map(toUnmatchedLabelContract),
+    inboundRecords: ensureArrayField<SalesExchangeInboundRecordApiDTO>(
+      dto,
+      'inboundRecords',
+      'SalesExchangeService.toSalesExchangeContract'
+    ).map(toSalesExchangeInboundRecordContract),
+    shipmentRecords: ensureArrayField<SalesExchangeShipmentRecordApiDTO>(
+      dto,
+      'shipmentRecords',
+      'SalesExchangeService.toSalesExchangeContract'
+    ).map(toSalesExchangeShipmentRecordContract),
   }
 }
 
@@ -296,4 +386,74 @@ export async function confirmSalesExchangeOldItemInbound(
       'SalesExchangeService.confirmSalesExchangeOldItemInbound'
     ),
   }
+}
+
+export async function patchSalesExchangeOldItemLogistics(
+  id: string,
+  payload: PatchSalesExchangeOldItemLogisticsPayload
+): Promise<SalesExchangeDraftRecord> {
+  const response = ensureObjectResponse<
+    SalesExchangeApiDTO & Record<string, unknown>
+  >(
+    await apiFetch<Record<string, unknown>>(
+      `/sales-exchanges/${encodeSalesExchangePathSegment(id)}/old-item-logistics`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      }
+    ),
+    'SalesExchangeService.patchSalesExchangeOldItemLogistics'
+  )
+  return toSalesExchangeContract(response)
+}
+
+export async function confirmSalesExchangeReplacementShipment(
+  id: string,
+  payload: ConfirmSalesExchangeReplacementShipmentPayload
+): Promise<ConfirmSalesExchangeReplacementShipmentResponse> {
+  const response = ensureObjectResponse<
+    ConfirmSalesExchangeReplacementShipmentResponseApiDTO &
+      Record<string, unknown>
+  >(
+    await apiFetch<ConfirmSalesExchangeReplacementShipmentResponseApiDTO>(
+      `/sales-exchanges/${encodeSalesExchangePathSegment(id)}/replacement-shipment`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }
+    ),
+    'SalesExchangeService.confirmSalesExchangeReplacementShipment'
+  )
+
+  return {
+    salesExchange: toSalesExchangeContract(response.salesExchange),
+    createdShipmentRecords: ensureArrayField<unknown>(
+      response,
+      'createdShipmentRecords',
+      'SalesExchangeService.confirmSalesExchangeReplacementShipment'
+    ),
+  }
+}
+
+export async function voidSalesExchangeReplacementShipment(
+  salesExchangeId: string,
+  shipmentId: string,
+  payload: VoidSalesExchangeReplacementShipmentPayload
+): Promise<SalesExchangeDraftRecord> {
+  const response = ensureObjectResponse<
+    VoidSalesExchangeReplacementShipmentResponseApiDTO & Record<string, unknown>
+  >(
+    await apiFetch<VoidSalesExchangeReplacementShipmentResponseApiDTO>(
+      `/sales-exchanges/${encodeSalesExchangePathSegment(
+        salesExchangeId
+      )}/replacement-shipment/${encodeSalesExchangePathSegment(shipmentId)}/void`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }
+    ),
+    'SalesExchangeService.voidSalesExchangeReplacementShipment'
+  )
+
+  return toSalesExchangeContract(response.salesExchange)
 }

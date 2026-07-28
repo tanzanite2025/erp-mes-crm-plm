@@ -21,10 +21,48 @@ export interface SalesOrderAfterSalesExchangeSummary {
   latestStatus: string
 }
 
+export interface SalesOrderAfterSalesReturnReference {
+  id: string
+  returnNo: string
+  status: string
+  requestedQuantity: number
+  receivedQuantity: number
+  trackingNo: string
+}
+
+export interface SalesOrderAfterSalesExchangeReference {
+  id: string
+  exchangeNo: string
+  status: string
+  requestedQuantity: number
+  oldItemReceivedQuantity: number
+  replacementShippedQuantity: number
+  replacementProductCode: string
+  oldItemTrackingNo: string
+  replacementTrackingNo: string
+}
+
+export interface SalesOrderAfterSalesLineSummary {
+  salesOrderLineId: number
+  lineNo: number
+  productCode: string
+  deliveredQuantity: number
+  returnRequestedQuantity: number
+  returnReceivedQuantity: number
+  exchangeRequestedQuantity: number
+  oldItemReceivedQuantity: number
+  replacementShippedQuantity: number
+  latestReturnStatus: string
+  latestExchangeStatus: string
+  relatedReturns: SalesOrderAfterSalesReturnReference[]
+  relatedExchanges: SalesOrderAfterSalesExchangeReference[]
+}
+
 export interface SalesOrderAfterSalesSummary {
   salesOrderId: string
   returns: SalesOrderAfterSalesReturnSummary
   exchanges: SalesOrderAfterSalesExchangeSummary
+  lines: SalesOrderAfterSalesLineSummary[]
 }
 
 interface SalesOrderAfterSalesSummaryResponse {

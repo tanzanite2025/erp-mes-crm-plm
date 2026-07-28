@@ -17,11 +17,47 @@ export interface SalesReturnLineApiDTO {
   description: string
   uom: string
   quantity: number
+  receivedQuantity: number
+  status: string
   price: number
   amount: number
   issueCategory?: string
   reason?: string
   evidences?: OrderEvidence[]
+  barcodes?: SalesReturnLineBarcodeApiDTO[]
+}
+
+export interface SalesReturnLineBarcodeApiDTO {
+  id: number
+  salesReturnId: string
+  salesReturnLineId: number
+  salesOrderLineId: number
+  rawCode: string
+  normalizedCode: string
+  productCodeSnapshot: string
+  bindSource: string
+  verificationStatus: string
+  boundAt: string
+  boundBy: string
+}
+
+export interface SalesReturnInboundRecordApiDTO {
+  id: string
+  materialId: string
+  materialName: string
+  materialCode: string
+  sourceType: string
+  sourceId: string
+  sourceLineId: number
+  quantity: number
+  purchasePrice: number
+  targetCategory: string
+  batchNo: string
+  inboundDate: string
+  operator: string
+  remarks: string
+  createdAt: string
+  updatedAt: string
 }
 
 export interface SalesReturnApiDTO {
@@ -51,10 +87,12 @@ export interface SalesReturnApiDTO {
   evidences?: OrderEvidence[]
   operator?: string
   totalQuantity: number
+  totalReceivedQuantity: number
   totalAmount: number
   createdAt: string
   updatedAt: string
   lines: SalesReturnLineApiDTO[]
+  inboundRecords?: SalesReturnInboundRecordApiDTO[]
 }
 
 export interface SalesReturnActualAmountRecordApiDTO {
@@ -89,6 +127,7 @@ export interface CreateSalesReturnLinePayload {
   issueCategory?: string
   reason?: string
   evidences?: OrderEvidence[]
+  barcodes?: string[]
 }
 
 export interface CreateSalesReturnPayload {
@@ -131,7 +170,34 @@ export interface PatchSalesReturnActualAmountEntryPayload {
   actualReturnAmountEvidences?: OrderEvidence[]
 }
 
+export interface SalesReturnLineBarcodePayload {
+  salesReturnLineId: number
+  rawCode: string
+  normalizedCode: string
+  bindSource?: string
+  verificationStatus?: string
+}
+
+export interface ConfirmSalesReturnInboundPayload {
+  clientRequestId: string
+  operator?: string
+  targetCategory: string
+  batchNo: string
+  inboundDate: string
+  remarks?: string
+  lines: Array<{
+    salesReturnLineId: number
+    quantity: number
+    barcodes?: SalesReturnLineBarcodePayload[]
+  }>
+}
+
 export interface CreateSalesReturnResponseApiDTO {
   salesReturn: SalesReturnApiDTO
   salesOrder: SalesOrderApiDTO
+}
+
+export interface ConfirmSalesReturnInboundResponseApiDTO {
+  salesReturn: SalesReturnApiDTO
+  createdInboundRecords: unknown[]
 }

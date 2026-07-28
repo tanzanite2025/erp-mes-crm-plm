@@ -60,6 +60,9 @@ type RecordInboundRequest struct {
 	MaterialID          string    `json:"materialId"`
 	MaterialName        string    `json:"materialName"`
 	MaterialCode        string    `json:"materialCode"`
+	SourceType          string    `json:"sourceType"`
+	SourceID            string    `json:"sourceId"`
+	SourceLineID        uint      `json:"sourceLineId"`
 	PurchaseOrderID     string    `json:"purchaseOrderId"`
 	PurchaseOrderLineID uint      `json:"purchaseOrderLineId"`
 	Quantity            float64   `json:"quantity"`
@@ -75,12 +78,16 @@ type RecordShipmentRequest struct {
 	MaterialID       string    `json:"materialId"`
 	MaterialName     string    `json:"materialName"`
 	MaterialCode     string    `json:"materialCode"`
+	SourceType       string    `json:"sourceType"`
+	SourceID         string    `json:"sourceId"`
+	SourceLineID     uint      `json:"sourceLineId"`
 	SalesOrderID     string    `json:"salesOrderId"`
 	SalesOrderLineID uint      `json:"salesOrderLineId"`
 	Quantity         float64   `json:"quantity"`
 	SourceCategory   string    `json:"sourceCategory"`
 	BatchNo          string    `json:"batchNo"`
 	OrderNo          string    `json:"orderNo"`
+	TrackingNo       string    `json:"trackingNo"`
 	Status           string    `json:"status"`
 	ShipmentDate     time.Time `json:"shipmentDate"`
 	Operator         string    `json:"operator"`
@@ -111,6 +118,9 @@ type InventoryInboundRecordResponse struct {
 	MaterialID          string    `json:"materialId"`
 	MaterialName        string    `json:"materialName"`
 	MaterialCode        string    `json:"materialCode"`
+	SourceType          string    `json:"sourceType"`
+	SourceID            string    `json:"sourceId"`
+	SourceLineID        uint      `json:"sourceLineId"`
 	PurchaseOrderID     string    `json:"purchaseOrderId"`
 	PurchaseOrderLineID uint      `json:"purchaseOrderLineId"`
 	Quantity            float64   `json:"quantity"`
@@ -129,12 +139,16 @@ type InventoryShipmentRecordResponse struct {
 	MaterialID       string    `json:"materialId"`
 	MaterialName     string    `json:"materialName"`
 	MaterialCode     string    `json:"materialCode"`
+	SourceType       string    `json:"sourceType"`
+	SourceID         string    `json:"sourceId"`
+	SourceLineID     uint      `json:"sourceLineId"`
 	SalesOrderID     string    `json:"salesOrderId"`
 	SalesOrderLineID uint      `json:"salesOrderLineId"`
 	Quantity         float64   `json:"quantity"`
 	SourceCategory   string    `json:"sourceCategory"`
 	BatchNo          string    `json:"batchNo"`
 	OrderNo          string    `json:"orderNo"`
+	TrackingNo       string    `json:"trackingNo"`
 	Status           string    `json:"status"`
 	COGS             float64   `json:"cogs"`
 	ShipmentDate     time.Time `json:"shipmentDate"`

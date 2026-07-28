@@ -207,7 +207,7 @@ func confirmPurchaseReceiptTx(tx *gorm.DB, input ConfirmPurchaseReceiptInput) (C
 			Operator:            input.Operator,
 			Remarks:             input.Remarks,
 		}
-		if _, err := recordInboundTx(tx, &inbound); err != nil {
+		if _, err := recordInboundTx(tx, &inbound, inboundRecordOptions{}); err != nil {
 			return ConfirmPurchaseReceiptResult{}, err
 		}
 		createdRecords = append(createdRecords, inbound)

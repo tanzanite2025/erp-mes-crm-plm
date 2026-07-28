@@ -253,6 +253,8 @@ func PatchShipmentHandler(c *gin.Context) {
 	updated, err := services.PatchShipmentDraftRecord(auditContextFromGin(c), id, patch, deltaKeys)
 	if err != nil {
 		switch {
+		case errors.Is(err, services.ErrAfterSalesExecutionDedicatedPath):
+			respondInventoryError(c, http.StatusBadRequest, "INVENTORY_AFTER_SALES_DEDICATED_PATH", "售后入库/补发必须通过销售退货或销售换货专用流程处理")
 		case errors.Is(err, services.ErrShipmentPatchVersionConflict):
 			respondVersionConflict(c)
 		case errors.Is(err, services.ErrShipmentNotDraft):
@@ -277,6 +279,10 @@ func RecordInboundHandler(c *gin.Context) {
 	inbound.Operator = middleware.GetSafeUsername(c)
 
 	if err := services.RecordInbound(auditContextFromGin(c), &inbound); err != nil {
+		if errors.Is(err, services.ErrAfterSalesExecutionDedicatedPath) {
+			respondInventoryError(c, http.StatusBadRequest, "INVENTORY_AFTER_SALES_DEDICATED_PATH", "售后入库必须通过销售退货或销售换货专用流程处理")
+			return
+		}
 		respondInventoryError(c, http.StatusInternalServerError, "INVENTORY_INBOUND_FAILED", "[SERVER] inbound operation failed: "+err.Error())
 		return
 	}
@@ -296,6 +302,10 @@ func RecordShipmentHandler(c *gin.Context) {
 	shipment.Operator = middleware.GetSafeUsername(c)
 
 	if err := services.CreateShipmentDraft(&shipment); err != nil {
+		if errors.Is(err, services.ErrAfterSalesExecutionDedicatedPath) {
+			respondInventoryError(c, http.StatusBadRequest, "INVENTORY_AFTER_SALES_DEDICATED_PATH", "售后补发必须通过销售换货专用流程处理")
+			return
+		}
 		respondInventoryError(c, http.StatusInternalServerError, "INVENTORY_SHIPMENT_CREATE_FAILED", "[SERVER] failed to save shipment draft: "+err.Error())
 		return
 	}
@@ -314,6 +324,10 @@ func CommitShipmentHandler(c *gin.Context) {
 	}
 	if errors.Is(err, services.ErrShipmentNotDraft) {
 		respondInventoryError(c, http.StatusBadRequest, "INVENTORY_SHIPMENT_NOT_DRAFT", "only DRAFT shipment can be committed")
+		return
+	}
+	if errors.Is(err, services.ErrAfterSalesExecutionDedicatedPath) {
+		respondInventoryError(c, http.StatusBadRequest, "INVENTORY_AFTER_SALES_DEDICATED_PATH", "售后补发必须通过销售换货专用流程处理")
 		return
 	}
 	if err != nil {
@@ -377,6 +391,10 @@ func VoidShipmentHandler(c *gin.Context) {
 		log.Printf("[LOCK_INFO] operation conflict: %v", err)
 		if errors.Is(err, services.ErrVoidInProgress) {
 			respondInventoryError(c, http.StatusConflict, "INVENTORY_VOID_IN_PROGRESS", "record is being processed, please do not repeat")
+			return
+		}
+		if errors.Is(err, services.ErrAfterSalesExecutionDedicatedPath) {
+			respondInventoryError(c, http.StatusBadRequest, "INVENTORY_AFTER_SALES_DEDICATED_PATH", "售后补发不能通过通用出库作废，请使用销售换货专用处理")
 			return
 		}
 		respondInventoryError(c, http.StatusInternalServerError, "INVENTORY_VOID_FAILED", "[SERVER] operation failed: "+err.Error())

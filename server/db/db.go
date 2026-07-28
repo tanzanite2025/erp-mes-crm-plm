@@ -577,6 +577,116 @@ func ensureSalesOrderIntegrityConstraints() {
 	}
 }
 
+func ensureAfterSalesExecutionIndexes() {
+	if DB == nil || DB.Dialector.Name() != "postgres" {
+		return
+	}
+	if !DB.Migrator().HasTable(&models.SalesReturnLineBarcode{}) ||
+		!DB.Migrator().HasTable(&models.SalesExchangeLabelCode{}) ||
+		!DB.Migrator().HasTable(&models.InboundRecord{}) ||
+		!DB.Migrator().HasTable(&models.ShipmentRecord{}) {
+		return
+	}
+
+	err := DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Exec("SELECT pg_advisory_xact_lock(2026072801)").Error; err != nil {
+			return err
+		}
+
+		if err := tx.Exec(`
+			UPDATE sales_return_line_barcodes
+			SET normalized_code = upper(btrim(
+				CASE
+					WHEN btrim(COALESCE(normalized_code, '')) <> '' THEN normalized_code
+					ELSE COALESCE(raw_code, '')
+				END
+			))
+			WHERE normalized_code IS DISTINCT FROM upper(btrim(
+				CASE
+					WHEN btrim(COALESCE(normalized_code, '')) <> '' THEN normalized_code
+					ELSE COALESCE(raw_code, '')
+				END
+			))
+		`).Error; err != nil {
+			return err
+		}
+		if err := tx.Exec(`
+			UPDATE sales_exchange_label_codes
+			SET normalized_label_code = upper(btrim(
+				CASE
+					WHEN btrim(COALESCE(normalized_label_code, '')) <> '' THEN normalized_label_code
+					ELSE COALESCE(raw_label_code, '')
+				END
+			))
+			WHERE normalized_label_code IS DISTINCT FROM upper(btrim(
+				CASE
+					WHEN btrim(COALESCE(normalized_label_code, '')) <> '' THEN normalized_label_code
+					ELSE COALESCE(raw_label_code, '')
+				END
+			))
+		`).Error; err != nil {
+			return err
+		}
+
+		var duplicateReturnCodes []struct {
+			SalesReturnID string `gorm:"column:sales_return_id"`
+			Code          string `gorm:"column:normalized_code"`
+			Count         int64  `gorm:"column:duplicate_count"`
+		}
+		if err := tx.Raw(`
+			SELECT sales_return_id, normalized_code, COUNT(*) AS duplicate_count
+			FROM sales_return_line_barcodes
+			WHERE btrim(COALESCE(normalized_code, '')) <> ''
+			GROUP BY sales_return_id, normalized_code
+			HAVING COUNT(*) > 1
+		`).Scan(&duplicateReturnCodes).Error; err != nil {
+			return err
+		}
+		if len(duplicateReturnCodes) > 0 {
+			return fmt.Errorf("duplicate sales return barcode data exists for sales return %s and code %s", duplicateReturnCodes[0].SalesReturnID, duplicateReturnCodes[0].Code)
+		}
+
+		var duplicateExchangeCodes []struct {
+			SalesExchangeID string `gorm:"column:sales_exchange_id"`
+			Code            string `gorm:"column:normalized_label_code"`
+			Count           int64  `gorm:"column:duplicate_count"`
+		}
+		if err := tx.Raw(`
+			SELECT sales_exchange_id, normalized_label_code, COUNT(*) AS duplicate_count
+			FROM sales_exchange_label_codes
+			WHERE btrim(COALESCE(normalized_label_code, '')) <> ''
+			GROUP BY sales_exchange_id, normalized_label_code
+			HAVING COUNT(*) > 1
+		`).Scan(&duplicateExchangeCodes).Error; err != nil {
+			return err
+		}
+		if len(duplicateExchangeCodes) > 0 {
+			return fmt.Errorf("duplicate sales exchange barcode data exists for sales exchange %s and code %s", duplicateExchangeCodes[0].SalesExchangeID, duplicateExchangeCodes[0].Code)
+		}
+
+		statements := []string{
+			`CREATE UNIQUE INDEX IF NOT EXISTS idx_sales_return_line_barcode_unique_v2
+				ON sales_return_line_barcodes (sales_return_id, normalized_code)
+				WHERE btrim(COALESCE(normalized_code, '')) <> ''`,
+			`CREATE UNIQUE INDEX IF NOT EXISTS idx_inbound_after_sales_execution_unique
+				ON inbound_records (source_type, source_id, source_line_id, execution_key)
+				WHERE btrim(COALESCE(execution_key, '')) <> ''`,
+			`CREATE UNIQUE INDEX IF NOT EXISTS idx_shipment_after_sales_execution_unique
+				ON shipment_records (source_type, source_id, source_line_id, execution_key)
+				WHERE btrim(COALESCE(execution_key, '')) <> ''`,
+		}
+		for _, statement := range statements {
+			if err := tx.Exec(statement).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		log.Fatal("Failed to ensure after-sales execution indexes:", err)
+	}
+}
+
 func backfillTradingSoftDeleteTimestamps() {
 	if DB == nil {
 		return
@@ -1399,6 +1509,7 @@ func InitDB(dsn string) {
 		&models.QuoteConversion{},
 		&models.SalesReturn{},
 		&models.SalesReturnLine{},
+		&models.SalesReturnLineBarcode{},
 		&models.SalesReturnActualAmountRecord{},
 		&models.SalesExchange{},
 		&models.SalesExchangeLine{},
@@ -1564,6 +1675,7 @@ func InitDB(dsn string) {
 	backfillLeaveRequestSubmittedByUsers()
 	ensureProductIntegrityConstraints()
 	ensureSalesOrderIntegrityConstraints()
+	ensureAfterSalesExecutionIndexes()
 	ensureUserPermissionUniqueIndex()
 	normalizeUserEmployeeBindings()
 	ensureUserEmployeeBindingUniqueIndex()

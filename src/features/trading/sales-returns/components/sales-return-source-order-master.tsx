@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import {
   CalendarDays,
   FileStack,
   Package2,
+  PackageCheck,
   RotateCcw,
   User,
 } from 'lucide-react'
@@ -13,12 +15,17 @@ import {
   getSalesStatusMeta,
 } from '@/features/trading/data/sales-status'
 import type { SalesOrder, SalesOrderLine } from '@/features/trading/data/schema'
+import { useGetSalesReturnDetail } from '@/features/trading/sales/hooks/use-sales-returns'
+import type { SalesOrderAfterSalesSummary } from '@/features/trading/sales/services/sales-order-after-sales-summary-service'
 import type { SalesReturnRecord } from '@/features/trading/sales/services/sales-return-service'
+import { SalesReturnInboundDialog } from './sales-return-inbound-dialog'
 
 type SalesReturnSourceOrderMasterProps = {
   orders: SalesOrder[]
+  summaryByOrderId: ReadonlyMap<string, SalesOrderAfterSalesSummary>
   returnRecords: SalesReturnRecord[]
   onStartReturnLine: (order: SalesOrder, lineId: number) => void
+  onSelectReturn?: (returnId: string) => void
 }
 
 const SALES_RETURN_SOURCE_ORDER_CARD_CLASS =
@@ -43,6 +50,8 @@ function getSalesReturnStatusLabel(
       return t('trading.salesReturns.statuses.Created')
     case 'InTransit':
       return t('trading.salesReturns.statuses.InTransit')
+    case 'PartiallyReceived':
+      return '部分入库'
     case 'Received':
       return t('trading.salesReturns.statuses.Received')
     case 'Completed':
@@ -87,33 +96,71 @@ function getLineReturnRecords(
   )
 }
 
-function getRequestedReturnQuantity(
-  returnRecords: SalesReturnRecord[],
-  lineId: number
+function getReturnReferencesFromRecords(
+  records: SalesReturnRecord[],
+  salesOrderLineId: number
 ) {
-  return returnRecords.reduce(
-    (sum, record) =>
-      sum +
-      record.lines
-        .filter((line) => line.salesOrderLineId === lineId)
-        .reduce((lineSum, line) => lineSum + line.quantity, 0),
-    0
-  )
+  return [...records]
+    .sort(
+      (left, right) =>
+        new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()
+    )
+    .map((record) => {
+      const line = record.lines.find(
+        (item) => item.salesOrderLineId === salesOrderLineId
+      )
+      return {
+        id: record.id,
+        returnNo: record.returnNo,
+        status: record.status,
+        requestedQuantity: line?.quantity ?? 0,
+        receivedQuantity: line?.receivedQuantity ?? 0,
+        trackingNo: record.trackingNo,
+      }
+    })
 }
 
-function getLatestReturnRecord(returnRecords: SalesReturnRecord[]) {
-  return [...returnRecords].sort(
-    (left, right) =>
-      new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()
-  )[0]
+function getLineAfterSalesSummary(
+  summaryByOrderId: ReadonlyMap<string, SalesOrderAfterSalesSummary>,
+  orderId: string,
+  lineId: number
+) {
+  return summaryByOrderId
+    .get(orderId)
+    ?.lines.find((line) => line.salesOrderLineId === lineId)
+}
+
+function getLatestInboundableReturnReference(
+  references: Array<{
+    id: string
+    status: string
+    requestedQuantity: number
+    receivedQuantity: number
+  }>
+) {
+  return references.find(
+    (reference) =>
+      !['Received', 'Closed', 'Completed', 'Canceled'].includes(
+        reference.status
+      ) && reference.requestedQuantity - reference.receivedQuantity > 1e-9
+  )
 }
 
 export function SalesReturnSourceOrderMaster({
   orders,
+  summaryByOrderId,
   returnRecords,
   onStartReturnLine,
+  onSelectReturn,
 }: SalesReturnSourceOrderMasterProps) {
   const { t } = useLanguage()
+  const [inboundTarget, setInboundTarget] = useState<{
+    returnId: string
+    lineId: number
+  } | null>(null)
+  const inboundRecordQuery = useGetSalesReturnDetail(
+    inboundTarget?.returnId ?? ''
+  )
 
   if (orders.length === 0) {
     return (
@@ -195,12 +242,13 @@ export function SalesReturnSourceOrderMaster({
             </div>
 
             <div className='border-t border-dashed border-border/60'>
-              <div className='hidden grid-cols-[56px_140px_minmax(0,1.2fr)_96px_110px_110px_130px_110px] gap-3 px-4 py-2 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase xl:grid'>
+              <div className='hidden grid-cols-[56px_140px_minmax(0,1.2fr)_96px_110px_110px_110px_130px_160px] gap-3 px-4 py-2 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase xl:grid'>
                 <span>行号</span>
                 <span>产品码</span>
                 <span>产品</span>
                 <span>已交付</span>
                 <span>已申请退货</span>
+                <span>已入库退货</span>
                 <span>可退数量</span>
                 <span>退货状态</span>
                 <span className='text-right'>操作</span>
@@ -218,22 +266,50 @@ export function SalesReturnSourceOrderMaster({
                     const relatedReturns = hasLineId
                       ? getLineReturnRecords(returnRecords, order.id, lineId)
                       : []
-                    const requestedQuantity = hasLineId
-                      ? getRequestedReturnQuantity(relatedReturns, lineId)
-                      : 0
+                    const lineSummary = hasLineId
+                      ? getLineAfterSalesSummary(
+                          summaryByOrderId,
+                          order.id,
+                          lineId
+                        )
+                      : undefined
+                    const returnReferences =
+                      lineSummary?.relatedReturns ??
+                      (hasLineId
+                        ? getReturnReferencesFromRecords(relatedReturns, lineId)
+                        : [])
+                    const requestedQuantity =
+                      lineSummary?.returnRequestedQuantity ??
+                      returnReferences.reduce(
+                        (sum, reference) => sum + reference.requestedQuantity,
+                        0
+                      )
+                    const receivedQuantity =
+                      lineSummary?.returnReceivedQuantity ??
+                      returnReferences.reduce(
+                        (sum, reference) => sum + reference.receivedQuantity,
+                        0
+                      )
                     const remainingQuantity = Math.max(
                       0,
                       line.remainingReturnableQuantity ?? 0
                     )
-                    const latestReturnRecord =
-                      getLatestReturnRecord(relatedReturns)
+                    const latestReturnReference = returnReferences[0]
+                    const latestReturnRecord = latestReturnReference
+                      ? relatedReturns.find(
+                          (record) => record.id === latestReturnReference.id
+                        )
+                      : undefined
+                    const inboundableReturnReference = hasLineId
+                      ? getLatestInboundableReturnReference(returnReferences)
+                      : undefined
                     const canStartLineReturn =
                       isReturnAllowed && hasLineId && remainingQuantity > 0
 
                     return (
                       <div
                         key={`${order.id}-${line.lineNo}-${line.id ?? 'line'}`}
-                        className='grid gap-3 px-4 py-3 xl:grid-cols-[56px_140px_minmax(0,1.2fr)_96px_110px_110px_130px_110px] xl:items-center'
+                        className='grid gap-3 px-4 py-3 xl:grid-cols-[56px_140px_minmax(0,1.2fr)_96px_110px_110px_110px_130px_160px] xl:items-center'
                       >
                         <div>
                           <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase xl:hidden'>
@@ -282,6 +358,14 @@ export function SalesReturnSourceOrderMaster({
                         </div>
                         <div>
                           <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase xl:hidden'>
+                            已入库退货
+                          </p>
+                          <p className='text-xs font-black text-foreground'>
+                            {receivedQuantity.toLocaleString()} {line.uom}
+                          </p>
+                        </div>
+                        <div>
+                          <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase xl:hidden'>
                             可退数量
                           </p>
                           <p className='text-xs font-black text-emerald-600'>
@@ -292,17 +376,75 @@ export function SalesReturnSourceOrderMaster({
                           <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase xl:hidden'>
                             退货状态
                           </p>
-                          {latestReturnRecord ? (
-                            <div className='flex flex-wrap gap-1.5'>
-                              <span className='inline-flex rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-black text-emerald-600'>
-                                {getSalesReturnStatusLabel(
-                                  latestReturnRecord.status,
-                                  t
-                                )}
-                              </span>
-                              <span className='inline-flex rounded-full border border-dashed border-muted/50 px-2.5 py-1 text-[10px] font-black text-muted-foreground'>
-                                {relatedReturns.length.toLocaleString()} 单
-                              </span>
+                          {latestReturnReference ? (
+                            <div className='space-y-1.5'>
+                              <div className='flex flex-wrap gap-1.5'>
+                                <span className='inline-flex rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-black text-emerald-600'>
+                                  {getSalesReturnStatusLabel(
+                                    latestReturnReference.status,
+                                    t
+                                  )}
+                                </span>
+                                <span className='inline-flex rounded-full border border-dashed border-muted/50 px-2.5 py-1 text-[10px] font-black text-muted-foreground'>
+                                  {returnReferences.length.toLocaleString()} 单
+                                </span>
+                              </div>
+                              {latestReturnRecord
+                                ? (() => {
+                                    const latestReturnLine =
+                                      latestReturnRecord.lines.find(
+                                        (returnLine) =>
+                                          returnLine.salesOrderLineId === lineId
+                                      )
+                                    const inboundRecords =
+                                      latestReturnRecord.inboundRecords.filter(
+                                        (inboundRecord) =>
+                                          inboundRecord.sourceLineId ===
+                                          latestReturnLine?.id
+                                      )
+                                    const barcodeCount =
+                                      latestReturnLine?.barcodes.length ?? 0
+                                    return (
+                                      <div className='space-y-0.5 text-[10px] font-bold text-muted-foreground'>
+                                        {barcodeCount > 0 ? (
+                                          <p>
+                                            条码 {barcodeCount.toLocaleString()}{' '}
+                                            个
+                                          </p>
+                                        ) : null}
+                                        {inboundRecords.length > 0 ? (
+                                          <p className='text-emerald-600'>
+                                            入库{' '}
+                                            {inboundRecords
+                                              .reduce(
+                                                (sum, inboundRecord) =>
+                                                  sum + inboundRecord.quantity,
+                                                0
+                                              )
+                                              .toLocaleString()}{' '}
+                                            /{' '}
+                                            {inboundRecords[
+                                              inboundRecords.length - 1
+                                            ]?.batchNo || '--'}
+                                          </p>
+                                        ) : null}
+                                      </div>
+                                    )
+                                  })()
+                                : null}
+                              {onSelectReturn ? (
+                                <Button
+                                  type='button'
+                                  variant='ghost'
+                                  size='sm'
+                                  className='h-7 rounded-full px-2.5 text-[10px] font-black text-primary'
+                                  onClick={() =>
+                                    onSelectReturn(latestReturnReference.id)
+                                  }
+                                >
+                                  查看记录
+                                </Button>
+                              ) : null}
                             </div>
                           ) : (
                             <span className='text-xs font-bold text-muted-foreground'>
@@ -310,7 +452,24 @@ export function SalesReturnSourceOrderMaster({
                             </span>
                           )}
                         </div>
-                        <div className='flex justify-start xl:justify-end'>
+                        <div className='flex flex-wrap justify-start gap-2 xl:justify-end'>
+                          {inboundableReturnReference ? (
+                            <Button
+                              type='button'
+                              variant='outline'
+                              size='sm'
+                              className='h-8 rounded-full px-3 text-[10px] font-black tracking-widest uppercase'
+                              onClick={() =>
+                                setInboundTarget({
+                                  returnId: inboundableReturnReference.id,
+                                  lineId,
+                                })
+                              }
+                            >
+                              <PackageCheck className='mr-1 size-3.5' />
+                              确认入库
+                            </Button>
+                          ) : null}
                           <Button
                             type='button'
                             size='sm'
@@ -334,6 +493,19 @@ export function SalesReturnSourceOrderMaster({
           </Card>
         )
       })}
+
+      <SalesReturnInboundDialog
+        key={`${inboundTarget?.returnId ?? 'sales-return-inbound'}-${inboundTarget?.lineId ?? 'closed'}-${inboundRecordQuery.data?.id ?? 'loading'}`}
+        open={Boolean(inboundTarget)}
+        record={inboundRecordQuery.data}
+        isLoading={Boolean(inboundTarget) && inboundRecordQuery.isPending}
+        salesOrderLineId={inboundTarget?.lineId}
+        onOpenChange={(open) => {
+          if (!open) {
+            setInboundTarget(null)
+          }
+        }}
+      />
     </div>
   )
 }

@@ -175,6 +175,7 @@ export function buildSalesExchangeRecognizedLabelCodesFromScannerInput(
       normalizedLabelCode,
       recognizedAt,
       recognitionSource: 'scannerInput',
+      side: 'OLD_ITEM',
     })
   )
 }
@@ -186,6 +187,7 @@ export function buildSalesExchangeLineDraftFromSalesOrderLine(
   const exchangeQuantity = Math.max(1, recognizedLabelCodes.length)
 
   return {
+    id: typeof salesOrderLine.id === 'number' ? salesOrderLine.id : undefined,
     lineDraftId: `sales-exchange-line-${salesOrderLine.id ?? salesOrderLine.lineNo}`,
     salesOrderLineId: Number(salesOrderLine.id),
     lineNo: salesOrderLine.lineNo,
@@ -206,6 +208,9 @@ export function buildSalesExchangeLineDraftFromSalesOrderLine(
     originalOrderQuantity: salesOrderLine.qty,
     deliveredQuantity: salesOrderLine.deliveredQty,
     exchangeQuantity,
+    oldItemReceivedQuantity: 0,
+    replacementShippedQuantity: 0,
+    status: 'Draft',
     replacementMode: 'sameSalesOrderLineItem',
     replacementProductCode: salesOrderLine.productCode,
     replacementProductModel: salesOrderLine.productModel,

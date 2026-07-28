@@ -152,6 +152,74 @@ func PatchSalesReturnActualAmountEntryHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+func BindSalesReturnLineBarcodesHandler(c *gin.Context) {
+	salesReturnID := strings.TrimSpace(c.Param("id"))
+	if salesReturnID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "销售退货ID不能为空"})
+		return
+	}
+
+	var req services.BindSalesReturnLineBarcodesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	operator := strings.TrimSpace(req.Operator)
+	if operator == "" {
+		operator = middleware.GetSafeUsername(c)
+	}
+
+	response, err := services.BindSalesReturnLineBarcodes(
+		services.MapBindSalesReturnLineBarcodesRequestToInput(req, salesReturnID, operator),
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": "销售退货单不存在"})
+		default:
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+func ConfirmSalesReturnInboundHandler(c *gin.Context) {
+	salesReturnID := strings.TrimSpace(c.Param("id"))
+	if salesReturnID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "销售退货ID不能为空"})
+		return
+	}
+
+	var req services.ConfirmSalesReturnInboundRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	operator := strings.TrimSpace(req.Operator)
+	if operator == "" {
+		operator = middleware.GetSafeUsername(c)
+	}
+
+	response, err := services.ConfirmSalesReturnInbound(
+		services.MapConfirmSalesReturnInboundRequestToInput(req, salesReturnID, operator),
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": "销售退货单不存在"})
+		default:
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
 func DeleteSalesReturnHandler(c *gin.Context) {
 	id := strings.TrimSpace(c.Param("id"))
 	if id == "" {

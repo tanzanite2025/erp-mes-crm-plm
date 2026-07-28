@@ -104,6 +104,7 @@ type SalesReturn struct {
 	IssueCategory                string            `gorm:"size:100" json:"issueCategory"`
 	Reason                       string            `gorm:"type:text" json:"reason"`
 	Remarks                      string            `gorm:"type:text" json:"remarks"`
+	TotalReceivedQuantity        float64           `gorm:"default:0" json:"totalReceivedQuantity"`
 	ActualReturnAmount           float64           `gorm:"default:0" json:"actualReturnAmount"`
 	ActualReturnAmountNote       string            `gorm:"type:text" json:"actualReturnAmountNote"`
 	ActualReturnAmountEvidences  json.RawMessage   `gorm:"type:jsonb;not null;default:'[]'" json:"actualReturnAmountEvidences"`
@@ -122,27 +123,48 @@ func (SalesReturn) TableName() string {
 
 // SalesReturnLine 销售退货明细
 type SalesReturnLine struct {
-	ID                                    uint            `gorm:"primaryKey" json:"id"`
-	SalesReturnID                         string          `gorm:"type:uuid;index" json:"-"`
-	SalesOrderLineID                      uint            `gorm:"index;not null" json:"salesOrderLineId"`
-	LineNo                                int             `json:"lineNo"`
-	ProductID                             string          `gorm:"type:uuid;index" json:"productId"`
-	ProductCode                           string          `gorm:"size:100" json:"productCode"`
-	ProductModel                          string          `gorm:"size:255" json:"productModel"`
-	Specification                         string          `gorm:"type:text" json:"specification"`
-	ProductDisplayTitleSnapshot           string          `gorm:"size:255" json:"productDisplayTitleSnapshot"`
-	ProductDisplaySubtitleSnapshot        string          `gorm:"size:255" json:"productDisplaySubtitleSnapshot"`
-	ProductDisplayCodeSnapshot            string          `gorm:"size:100" json:"productDisplayCodeSnapshot"`
-	ProductDisplayFullLabelSnapshot       string          `gorm:"type:text" json:"productDisplayFullLabelSnapshot"`
-	ProductDisplayStrategyVersionSnapshot string          `gorm:"size:50" json:"productDisplayStrategyVersionSnapshot"`
-	Description                           string          `gorm:"type:text" json:"description"`
-	UOM                                   string          `gorm:"size:20" json:"uom"`
-	Quantity                              float64         `gorm:"default:0" json:"quantity"`
-	Price                                 float64         `gorm:"default:0" json:"price"`
-	Amount                                float64         `gorm:"default:0" json:"amount"`
-	IssueCategory                         string          `gorm:"size:100" json:"issueCategory"`
-	Reason                                string          `gorm:"type:text" json:"reason"`
-	Evidences                             json.RawMessage `gorm:"type:jsonb;not null;default:'[]'" json:"evidences"`
+	ID                                    uint                     `gorm:"primaryKey" json:"id"`
+	SalesReturnID                         string                   `gorm:"type:uuid;index" json:"-"`
+	SalesOrderLineID                      uint                     `gorm:"index;not null" json:"salesOrderLineId"`
+	LineNo                                int                      `json:"lineNo"`
+	ProductID                             string                   `gorm:"type:uuid;index" json:"productId"`
+	ProductCode                           string                   `gorm:"size:100" json:"productCode"`
+	ProductModel                          string                   `gorm:"size:255" json:"productModel"`
+	Specification                         string                   `gorm:"type:text" json:"specification"`
+	ProductDisplayTitleSnapshot           string                   `gorm:"size:255" json:"productDisplayTitleSnapshot"`
+	ProductDisplaySubtitleSnapshot        string                   `gorm:"size:255" json:"productDisplaySubtitleSnapshot"`
+	ProductDisplayCodeSnapshot            string                   `gorm:"size:100" json:"productDisplayCodeSnapshot"`
+	ProductDisplayFullLabelSnapshot       string                   `gorm:"type:text" json:"productDisplayFullLabelSnapshot"`
+	ProductDisplayStrategyVersionSnapshot string                   `gorm:"size:50" json:"productDisplayStrategyVersionSnapshot"`
+	Description                           string                   `gorm:"type:text" json:"description"`
+	UOM                                   string                   `gorm:"size:20" json:"uom"`
+	Quantity                              float64                  `gorm:"default:0" json:"quantity"`
+	ReceivedQuantity                      float64                  `gorm:"default:0" json:"receivedQuantity"`
+	Status                                string                   `gorm:"size:50;default:'Requested';index" json:"status"`
+	Price                                 float64                  `gorm:"default:0" json:"price"`
+	Amount                                float64                  `gorm:"default:0" json:"amount"`
+	IssueCategory                         string                   `gorm:"size:100" json:"issueCategory"`
+	Reason                                string                   `gorm:"type:text" json:"reason"`
+	Evidences                             json.RawMessage          `gorm:"type:jsonb;not null;default:'[]'" json:"evidences"`
+	Barcodes                              []SalesReturnLineBarcode `gorm:"foreignKey:SalesReturnLineID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"barcodes"`
+}
+
+type SalesReturnLineBarcode struct {
+	ID                  uint      `gorm:"primaryKey" json:"id"`
+	SalesReturnID       string    `gorm:"type:uuid;index;not null" json:"salesReturnId"`
+	SalesReturnLineID   uint      `gorm:"index;not null" json:"salesReturnLineId"`
+	SalesOrderLineID    uint      `gorm:"index" json:"salesOrderLineId"`
+	RawCode             string    `gorm:"size:255" json:"rawCode"`
+	NormalizedCode      string    `gorm:"size:255;index" json:"normalizedCode"`
+	ProductCodeSnapshot string    `gorm:"size:100" json:"productCodeSnapshot"`
+	BindSource          string    `gorm:"size:80;default:'MANUAL_REVIEW'" json:"bindSource"`
+	VerificationStatus  string    `gorm:"size:80;default:'PENDING';index" json:"verificationStatus"`
+	BoundAt             time.Time `json:"boundAt"`
+	BoundBy             string    `gorm:"size:100" json:"boundBy"`
+}
+
+func (SalesReturnLineBarcode) TableName() string {
+	return "sales_return_line_barcodes"
 }
 
 // Customer 客户模型

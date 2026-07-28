@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import {
   ArrowLeftRight,
   Barcode,
   CalendarDays,
+  PackageCheck,
   Package2,
   Truck,
   User,
@@ -15,17 +17,28 @@ import {
 } from '@/features/trading/data/sales-status'
 import type { SalesOrderLine } from '@/features/trading/data/schema'
 import type {
+  SalesOrderAfterSalesExchangeReference,
+  SalesOrderAfterSalesSummary,
+} from '@/features/trading/sales/services/sales-order-after-sales-summary-service'
+import { useGetSalesExchangeDetail } from '../hooks/use-sales-exchanges'
+import type {
   SalesExchangeDraftRecord,
   SalesExchangeSourceOrderCandidate,
 } from '../types/sales-exchange-types'
+import {
+  SalesExchangeOldItemInboundDialog,
+  SalesExchangeReplacementShipmentDialog,
+} from './sales-exchange-execution-dialogs'
 
 type SalesExchangeSourceOrderMasterProps = {
   sourceOrderCandidates: SalesExchangeSourceOrderCandidate[]
+  summaryByOrderId: ReadonlyMap<string, SalesOrderAfterSalesSummary>
   salesExchangeDraftRecords: SalesExchangeDraftRecord[]
   onOpenCreateSalesExchangeDialog: (
     sourceOrderCandidate: SalesExchangeSourceOrderCandidate,
     lineId: number
   ) => void
+  onSelectSalesExchange?: (salesExchangeId: string) => void
 }
 
 const SALES_EXCHANGE_SOURCE_ORDER_CARD_CLASS =
@@ -35,12 +48,16 @@ function getSalesExchangeStatusLabel(status: string) {
   switch (status) {
     case 'Draft':
       return '已创建'
+    case 'OldItemPartiallyReceived':
+      return '部分旧货已收'
     case 'OldItemReceived':
       return '旧货已收'
     case 'ReplacementPrepared':
       return '待补发'
+    case 'ReplacementPartiallyShipped':
+      return '部分补发'
     case 'ReplacementShipped':
-      return '补发中'
+      return '补发已出'
     case 'Closed':
       return '已关闭'
     case 'Canceled':
@@ -82,30 +99,46 @@ function getLineExchangeRecords(
   )
 }
 
-function getLineExchangeQuantity(
-  salesExchangeDraftRecords: SalesExchangeDraftRecord[],
+function getExchangeReferencesFromRecords(
+  records: SalesExchangeDraftRecord[],
+  salesOrderLineId: number
+): SalesOrderAfterSalesExchangeReference[] {
+  return [...records]
+    .sort(
+      (left, right) =>
+        new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()
+    )
+    .map((record) => {
+      const line = record.lines.find(
+        (item) => item.salesOrderLineId === salesOrderLineId
+      )
+      return {
+        id: record.id,
+        exchangeNo: record.exchangeNo,
+        status: record.status,
+        requestedQuantity: line?.exchangeQuantity ?? 0,
+        oldItemReceivedQuantity: line?.oldItemReceivedQuantity ?? 0,
+        replacementShippedQuantity: line?.replacementShippedQuantity ?? 0,
+        replacementProductCode: line?.replacementProductCode ?? '',
+        oldItemTrackingNo: record.receivedOldItemTrackingNo,
+        replacementTrackingNo: record.replacementTrackingNo,
+      }
+    })
+}
+
+function getLineAfterSalesSummary(
+  summaryByOrderId: ReadonlyMap<string, SalesOrderAfterSalesSummary>,
+  orderId: string,
   lineId: number
 ) {
-  return salesExchangeDraftRecords.reduce(
-    (sum, record) =>
-      sum +
-      record.lines
-        .filter((line) => line.salesOrderLineId === lineId)
-        .reduce((lineSum, line) => lineSum + line.exchangeQuantity, 0),
-    0
-  )
+  return summaryByOrderId
+    .get(orderId)
+    ?.lines.find((line) => line.salesOrderLineId === lineId)
 }
 
-function getLatestExchangeRecord(records: SalesExchangeDraftRecord[]) {
-  return [...records].sort(
-    (left, right) =>
-      new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()
-  )[0]
-}
-
-function formatUniqueValues(values: string[]) {
+function formatUniqueValues(values: Array<string | undefined>) {
   const uniqueValues = Array.from(
-    new Set(values.map((value) => value.trim()).filter(Boolean))
+    new Set(values.map((value) => (value ?? '').trim()).filter(Boolean))
   )
 
   if (uniqueValues.length === 0) {
@@ -119,12 +152,54 @@ function formatUniqueValues(values: string[]) {
   return `${uniqueValues[0]} +${uniqueValues.length - 1}`
 }
 
+function canConfirmOldItemInbound(
+  reference: SalesOrderAfterSalesExchangeReference | undefined
+) {
+  if (!reference || ['Closed', 'Canceled'].includes(reference.status)) {
+    return false
+  }
+  return Boolean(
+    reference.requestedQuantity - reference.oldItemReceivedQuantity > 1e-9
+  )
+}
+
+function canConfirmReplacementShipment(
+  reference: SalesOrderAfterSalesExchangeReference | undefined
+) {
+  if (
+    !reference ||
+    ['Draft', 'Closed', 'Canceled'].includes(reference.status) ||
+    reference.requestedQuantity - reference.replacementShippedQuantity <= 1e-9
+  ) {
+    return false
+  }
+  return Boolean(
+    reference.oldItemReceivedQuantity + 1e-9 >= reference.requestedQuantity
+  )
+}
+
 export function SalesExchangeSourceOrderMaster({
   sourceOrderCandidates,
+  summaryByOrderId,
   salesExchangeDraftRecords,
   onOpenCreateSalesExchangeDialog,
+  onSelectSalesExchange,
 }: SalesExchangeSourceOrderMasterProps) {
   const { t } = useLanguage()
+  const [oldItemInboundTarget, setOldItemInboundTarget] = useState<{
+    exchangeId: string
+    lineId: number
+  } | null>(null)
+  const [replacementShipmentTarget, setReplacementShipmentTarget] = useState<{
+    exchangeId: string
+    lineId: number
+  } | null>(null)
+  const oldItemInboundDetailQuery = useGetSalesExchangeDetail(
+    oldItemInboundTarget?.exchangeId ?? ''
+  )
+  const replacementShipmentDetailQuery = useGetSalesExchangeDetail(
+    replacementShipmentTarget?.exchangeId ?? ''
+  )
 
   if (sourceOrderCandidates.length === 0) {
     return (
@@ -214,12 +289,14 @@ export function SalesExchangeSourceOrderMaster({
             </div>
 
             <div className='border-t border-dashed border-border/60'>
-              <div className='hidden min-w-[1180px] grid-cols-[56px_130px_minmax(0,1.1fr)_90px_90px_90px_130px_130px_130px_120px_110px] gap-3 px-4 py-2 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase xl:grid'>
+              <div className='hidden min-w-[1380px] grid-cols-[56px_120px_minmax(0,1fr)_80px_80px_90px_90px_90px_120px_120px_110px_180px] gap-3 px-4 py-2 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase xl:grid'>
                 <span>行号</span>
                 <span>原产品码</span>
                 <span>产品</span>
                 <span>已交付</span>
                 <span>已换货</span>
+                <span>旧货已收</span>
+                <span>补发已出</span>
                 <span>可换数量</span>
                 <span>补发产品码</span>
                 <span>旧货运单</span>
@@ -244,36 +321,64 @@ export function SalesExchangeSourceOrderMaster({
                           lineId
                         )
                       : []
-                    const exchangeQuantity = hasLineId
-                      ? getLineExchangeQuantity(relatedExchanges, lineId)
-                      : 0
+                    const lineSummary = hasLineId
+                      ? getLineAfterSalesSummary(
+                          summaryByOrderId,
+                          order.id,
+                          lineId
+                        )
+                      : undefined
+                    const exchangeReferences =
+                      lineSummary?.relatedExchanges ??
+                      (hasLineId
+                        ? getExchangeReferencesFromRecords(
+                            relatedExchanges,
+                            lineId
+                          )
+                        : [])
+                    const exchangeQuantity =
+                      lineSummary?.exchangeRequestedQuantity ??
+                      exchangeReferences.reduce(
+                        (sum, reference) => sum + reference.requestedQuantity,
+                        0
+                      )
+                    const oldItemReceivedQuantity =
+                      lineSummary?.oldItemReceivedQuantity ??
+                      exchangeReferences.reduce(
+                        (sum, reference) =>
+                          sum + reference.oldItemReceivedQuantity,
+                        0
+                      )
+                    const replacementShippedQuantity =
+                      lineSummary?.replacementShippedQuantity ??
+                      exchangeReferences.reduce(
+                        (sum, reference) =>
+                          sum + reference.replacementShippedQuantity,
+                        0
+                      )
                     const availableExchangeQuantity = Math.max(
                       0,
                       (line.deliveredQty || 0) - exchangeQuantity
                     )
-                    const latestExchangeRecord =
-                      getLatestExchangeRecord(relatedExchanges)
+                    const latestExchangeReference = exchangeReferences[0]
+                    const latestExchangeRecord = latestExchangeReference
+                      ? relatedExchanges.find(
+                          (record) => record.id === latestExchangeReference.id
+                        )
+                      : undefined
                     const replacementProductCode = formatUniqueValues(
-                      relatedExchanges.flatMap((record) =>
-                        record.lines
-                          .filter(
-                            (exchangeLine) =>
-                              exchangeLine.salesOrderLineId === lineId
-                          )
-                          .map(
-                            (exchangeLine) =>
-                              exchangeLine.replacementProductCode
-                          )
+                      exchangeReferences.map(
+                        (reference) => reference.replacementProductCode
                       )
                     )
                     const oldItemTrackingNo = formatUniqueValues(
-                      relatedExchanges.map(
-                        (record) => record.receivedOldItemTrackingNo
+                      exchangeReferences.map(
+                        (reference) => reference.oldItemTrackingNo
                       )
                     )
                     const replacementTrackingNo = formatUniqueValues(
-                      relatedExchanges.map(
-                        (record) => record.replacementTrackingNo
+                      exchangeReferences.map(
+                        (reference) => reference.replacementTrackingNo
                       )
                     )
                     const canStartLineExchange =
@@ -284,7 +389,7 @@ export function SalesExchangeSourceOrderMaster({
                     return (
                       <div
                         key={`${order.id}-${line.lineNo}-${line.id ?? 'line'}`}
-                        className='grid gap-3 px-4 py-3 xl:min-w-[1180px] xl:grid-cols-[56px_130px_minmax(0,1.1fr)_90px_90px_90px_130px_130px_130px_120px_110px] xl:items-center'
+                        className='grid gap-3 px-4 py-3 xl:min-w-[1380px] xl:grid-cols-[56px_120px_minmax(0,1fr)_80px_80px_90px_90px_90px_120px_120px_110px_180px] xl:items-center'
                       >
                         <div>
                           <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase xl:hidden'>
@@ -333,6 +438,24 @@ export function SalesExchangeSourceOrderMaster({
                         </div>
                         <div>
                           <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase xl:hidden'>
+                            旧货已收
+                          </p>
+                          <p className='text-xs font-black text-foreground'>
+                            {oldItemReceivedQuantity.toLocaleString()}{' '}
+                            {line.uom}
+                          </p>
+                        </div>
+                        <div>
+                          <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase xl:hidden'>
+                            补发已出
+                          </p>
+                          <p className='text-xs font-black text-foreground'>
+                            {replacementShippedQuantity.toLocaleString()}{' '}
+                            {line.uom}
+                          </p>
+                        </div>
+                        <div>
+                          <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase xl:hidden'>
                             可换数量
                           </p>
                           <p className='text-xs font-black text-emerald-600'>
@@ -370,16 +493,110 @@ export function SalesExchangeSourceOrderMaster({
                           <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase xl:hidden'>
                             换货状态
                           </p>
-                          {latestExchangeRecord ? (
-                            <div className='flex flex-wrap gap-1.5'>
-                              <span className='inline-flex rounded-full border border-sky-500/20 bg-sky-500/10 px-2.5 py-1 text-[10px] font-black text-sky-700'>
-                                {getSalesExchangeStatusLabel(
-                                  latestExchangeRecord.status
-                                )}
-                              </span>
-                              <span className='inline-flex rounded-full border border-dashed border-muted/50 px-2.5 py-1 text-[10px] font-black text-muted-foreground'>
-                                {relatedExchanges.length.toLocaleString()} 单
-                              </span>
+                          {latestExchangeReference ? (
+                            <div className='space-y-1.5'>
+                              <div className='flex flex-wrap gap-1.5'>
+                                <span className='inline-flex rounded-full border border-sky-500/20 bg-sky-500/10 px-2.5 py-1 text-[10px] font-black text-sky-700'>
+                                  {getSalesExchangeStatusLabel(
+                                    latestExchangeReference.status
+                                  )}
+                                </span>
+                                <span className='inline-flex rounded-full border border-dashed border-muted/50 px-2.5 py-1 text-[10px] font-black text-muted-foreground'>
+                                  {exchangeReferences.length.toLocaleString()}{' '}
+                                  单
+                                </span>
+                              </div>
+                              {latestExchangeRecord
+                                ? (() => {
+                                    const latestExchangeLine =
+                                      latestExchangeRecord.lines.find(
+                                        (exchangeLine) =>
+                                          exchangeLine.salesOrderLineId ===
+                                          lineId
+                                      )
+                                    const inboundRecords =
+                                      latestExchangeRecord.inboundRecords.filter(
+                                        (inboundRecord) =>
+                                          inboundRecord.sourceLineId ===
+                                          latestExchangeLine?.id
+                                      )
+                                    const shipmentRecords =
+                                      latestExchangeRecord.shipmentRecords.filter(
+                                        (shipmentRecord) =>
+                                          shipmentRecord.sourceLineId ===
+                                          latestExchangeLine?.id &&
+                                          shipmentRecord.status !== 'VOID'
+                                      )
+                                    const oldLabelCount =
+                                      latestExchangeLine?.recognizedLabelCodes.filter(
+                                        (labelCode) =>
+                                          labelCode.side !== 'REPLACEMENT_ITEM'
+                                      ).length ?? 0
+                                    const replacementLabelCount =
+                                      latestExchangeLine?.recognizedLabelCodes.filter(
+                                        (labelCode) =>
+                                          labelCode.side === 'REPLACEMENT_ITEM'
+                                      ).length ?? 0
+                                    return (
+                                      <div className='space-y-0.5 text-[10px] font-bold text-muted-foreground'>
+                                        {oldLabelCount + replacementLabelCount >
+                                        0 ? (
+                                          <p>
+                                            条码 旧货 {oldLabelCount} / 补发{' '}
+                                            {replacementLabelCount}
+                                          </p>
+                                        ) : null}
+                                        {inboundRecords.length > 0 ? (
+                                          <p className='text-emerald-600'>
+                                            旧货入库{' '}
+                                            {inboundRecords
+                                              .reduce(
+                                                (sum, inboundRecord) =>
+                                                  sum + inboundRecord.quantity,
+                                                0
+                                              )
+                                              .toLocaleString()}{' '}
+                                            /{' '}
+                                            {inboundRecords[
+                                              inboundRecords.length - 1
+                                            ]?.batchNo || '--'}
+                                          </p>
+                                        ) : null}
+                                        {shipmentRecords.length > 0 ? (
+                                          <p className='text-sky-700'>
+                                            补发出库{' '}
+                                            {shipmentRecords
+                                              .reduce(
+                                                (sum, shipmentRecord) =>
+                                                  sum + shipmentRecord.quantity,
+                                                0
+                                              )
+                                              .toLocaleString()}{' '}
+                                            /{' '}
+                                            {shipmentRecords[
+                                              shipmentRecords.length - 1
+                                            ]?.batchNo || '--'}
+                                          </p>
+                                        ) : null}
+                                      </div>
+                                    )
+                                  })()
+                                : null}
+                              {onSelectSalesExchange ? (
+                                <Button
+                                  type='button'
+                                  variant='ghost'
+                                  size='sm'
+                                  className='h-7 rounded-full px-2.5 text-[10px] font-black text-primary'
+                                  onClick={() =>
+                                    onSelectSalesExchange(
+                                      latestExchangeReference.id
+                                    )
+                                  }
+                                >
+                                  查看记录
+                                </Button>
+                              ) : null}
                             </div>
                           ) : (
                             <span className='text-xs font-bold text-muted-foreground'>
@@ -387,7 +604,45 @@ export function SalesExchangeSourceOrderMaster({
                             </span>
                           )}
                         </div>
-                        <div className='flex justify-start xl:justify-end'>
+                        <div className='flex flex-wrap justify-start gap-2 xl:justify-end'>
+                          {canConfirmOldItemInbound(latestExchangeReference) ? (
+                            <Button
+                              type='button'
+                              variant='outline'
+                              size='sm'
+                              className='h-8 shrink-0 rounded-full px-3 text-[10px] font-black tracking-widest uppercase'
+                              onClick={() => {
+                                if (!latestExchangeReference) return
+                                setOldItemInboundTarget({
+                                  exchangeId: latestExchangeReference.id,
+                                  lineId,
+                                })
+                              }}
+                            >
+                              <PackageCheck className='mr-1 size-3.5' />
+                              旧货入库
+                            </Button>
+                          ) : null}
+                          {canConfirmReplacementShipment(
+                            latestExchangeReference
+                          ) ? (
+                            <Button
+                              type='button'
+                              variant='outline'
+                              size='sm'
+                              className='h-8 shrink-0 rounded-full px-3 text-[10px] font-black tracking-widest uppercase'
+                              onClick={() => {
+                                if (!latestExchangeReference) return
+                                setReplacementShipmentTarget({
+                                  exchangeId: latestExchangeReference.id,
+                                  lineId,
+                                })
+                              }}
+                            >
+                              <Truck className='mr-1 size-3.5' />
+                              确认补发
+                            </Button>
+                          ) : null}
                           <Button
                             type='button'
                             size='sm'
@@ -414,6 +669,37 @@ export function SalesExchangeSourceOrderMaster({
           </Card>
         )
       })}
+
+      <SalesExchangeOldItemInboundDialog
+        key={`${oldItemInboundTarget?.exchangeId ?? 'sales-exchange-old-item-inbound'}-${oldItemInboundTarget?.lineId ?? 'closed'}-${oldItemInboundDetailQuery.data?.id ?? 'loading'}`}
+        open={Boolean(oldItemInboundTarget)}
+        record={oldItemInboundDetailQuery.data}
+        isLoading={
+          Boolean(oldItemInboundTarget) && oldItemInboundDetailQuery.isPending
+        }
+        salesOrderLineId={oldItemInboundTarget?.lineId}
+        onOpenChange={(open) => {
+          if (!open) {
+            setOldItemInboundTarget(null)
+          }
+        }}
+      />
+
+      <SalesExchangeReplacementShipmentDialog
+        key={`${replacementShipmentTarget?.exchangeId ?? 'sales-exchange-replacement'}-${replacementShipmentTarget?.lineId ?? 'closed'}-${replacementShipmentDetailQuery.data?.id ?? 'loading'}`}
+        open={Boolean(replacementShipmentTarget)}
+        record={replacementShipmentDetailQuery.data}
+        isLoading={
+          Boolean(replacementShipmentTarget) &&
+          replacementShipmentDetailQuery.isPending
+        }
+        salesOrderLineId={replacementShipmentTarget?.lineId}
+        onOpenChange={(open) => {
+          if (!open) {
+            setReplacementShipmentTarget(null)
+          }
+        }}
+      />
     </div>
   )
 }

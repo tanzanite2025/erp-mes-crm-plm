@@ -21,6 +21,7 @@ import {
   SalesExchangeCreateDialog,
   type SalesExchangeCreateInitialValues,
 } from '../components/sales-exchange-create-dialog'
+import { SalesExchangeRecordSpotlight } from '../components/sales-exchange-record-spotlight'
 import { SalesExchangeSourceOrderMaster } from '../components/sales-exchange-source-order-master'
 import { useSalesExchangeWorkspaceState } from '../hooks/use-sales-exchange-workspace-state'
 
@@ -58,7 +59,7 @@ export function SalesExchangesPage() {
         description={t('trading.salesExchanges.description')}
       />
 
-      <div className='flex min-h-0 flex-1 flex-col gap-6'>
+      <div className='grid min-h-0 flex-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.45fr)]'>
         <section className='space-y-4'>
           <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between'>
             <div className='relative max-w-xl flex-1'>
@@ -115,6 +116,10 @@ export function SalesExchangesPage() {
                   sourceOrderCandidates={
                     salesExchangeWorkspaceState.sourceSalesOrderCandidates
                   }
+                  summaryByOrderId={
+                    salesExchangeWorkspaceState.afterSalesSummaryResources
+                      .summaryByOrderId
+                  }
                   salesExchangeDraftRecords={
                     salesExchangeWorkspaceState.createdSalesExchangeDraftRecords
                   }
@@ -134,6 +139,9 @@ export function SalesExchangesPage() {
                       }
                     )
                   }}
+                  onSelectSalesExchange={
+                    salesExchangeWorkspaceState.handleSelectSalesExchangeDraftRecord
+                  }
                 />
               </div>
             </ScrollArea>
@@ -148,6 +156,20 @@ export function SalesExchangesPage() {
             />
           ) : null}
         </section>
+
+        {salesExchangeWorkspaceState.selectedSalesExchangeDraftRecordId ? (
+          <SalesExchangeRecordSpotlight
+            salesExchangeDraftRecord={
+              salesExchangeWorkspaceState.selectedSalesExchangeDraftRecord
+            }
+            isLoading={
+              salesExchangeWorkspaceState.isSalesExchangeDetailLoading
+            }
+            onClearSelection={
+              salesExchangeWorkspaceState.handleClearSelectedSalesExchange
+            }
+          />
+        ) : null}
       </div>
 
       <SalesExchangeCreateDialog

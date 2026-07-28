@@ -4,12 +4,19 @@ import type {
   SalesExchangeReplacementMode,
 } from '../types/sales-exchange-types'
 
+type SalesExchangeRecognitionSource =
+  | 'scannerInput'
+  | 'manualInput'
+  | 'warehouseScan'
+  | 'shipmentScan'
+
 export interface SalesExchangeRecognizedLabelApiDTO {
   id?: number
   rawLabelCode: string
   normalizedLabelCode: string
   recognizedAt: string
-  recognitionSource: 'scannerInput' | 'manualInput'
+  recognitionSource: SalesExchangeRecognitionSource
+  side?: 'OLD_ITEM' | 'REPLACEMENT_ITEM'
   unmatchedReason?: string
 }
 
@@ -36,12 +43,58 @@ export interface SalesExchangeLineApiDTO {
   originalOrderQuantity: number
   deliveredQuantity: number
   exchangeQuantity: number
+  oldItemReceivedQuantity: number
+  replacementShippedQuantity: number
+  status: SalesExchangeLifecycleStatus
   replacementMode: SalesExchangeReplacementMode
   replacementProductCode: string
   replacementProductModel: string
   issueCategory: string
   issueDescription: string
   recognizedLabelCodes: SalesExchangeRecognizedLabelApiDTO[]
+}
+
+export interface SalesExchangeInboundRecordApiDTO {
+  id: string
+  materialId: string
+  materialName: string
+  materialCode: string
+  sourceType: string
+  sourceId: string
+  sourceLineId: number
+  quantity: number
+  purchasePrice: number
+  targetCategory: string
+  batchNo: string
+  inboundDate: string
+  operator: string
+  remarks: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface SalesExchangeShipmentRecordApiDTO {
+  id: string
+  materialId: string
+  materialName: string
+  materialCode: string
+  sourceType: string
+  sourceId: string
+  sourceLineId: number
+  salesOrderId: string
+  salesOrderLineId: number
+  quantity: number
+  sourceCategory: string
+  batchNo: string
+  orderNo: string
+  trackingNo?: string
+  status: string
+  cogs: number
+  shipmentDate: string
+  operator: string
+  remarks: string
+  createdAt: string
+  updatedAt: string
 }
 
 export interface SalesExchangeApiDTO {
@@ -65,10 +118,17 @@ export interface SalesExchangeApiDTO {
   oldItemInboundTarget?: string
   oldItemInboundBatchNo?: string
   oldItemInboundRemarks?: string
+  replacementShippedAt?: string | null
+  replacementShippedBy?: string
+  replacementSourceCategory?: string
+  replacementBatchNo?: string
+  replacementShipmentRemarks?: string
   createdAt: string
   updatedAt: string
   lines: SalesExchangeLineApiDTO[]
   unmatchedLabelCodes: SalesExchangeUnmatchedLabelApiDTO[]
+  inboundRecords?: SalesExchangeInboundRecordApiDTO[]
+  shipmentRecords?: SalesExchangeShipmentRecordApiDTO[]
 }
 
 export interface SalesExchangeListPageApiDTO {
@@ -97,15 +157,17 @@ export interface CreateSalesExchangePayload {
       rawLabelCode: string
       normalizedLabelCode: string
       recognizedAt: string
-      recognitionSource: 'scannerInput' | 'manualInput'
+      recognitionSource: SalesExchangeRecognitionSource
+      side?: 'OLD_ITEM' | 'REPLACEMENT_ITEM'
     }>
   }>
   unmatchedLabelCodes: Array<{
     rawLabelCode: string
     normalizedLabelCode: string
     recognizedAt: string
-    recognitionSource: 'scannerInput' | 'manualInput'
+    recognitionSource: SalesExchangeRecognitionSource
     unmatchedReason: string
+    side?: 'OLD_ITEM' | 'REPLACEMENT_ITEM'
   }>
 }
 
@@ -115,13 +177,58 @@ export interface CreateSalesExchangeResponseApiDTO {
 }
 
 export interface ConfirmSalesExchangeOldItemInboundPayload {
+  clientRequestId: string
+  salesExchangeLineId: number
+  quantity: number
   targetCategory: string
   batchNo: string
   inboundDate: string
   remarks: string
+  barcodes?: SalesExchangeExecutionBarcodePayload[]
+}
+
+export interface SalesExchangeExecutionBarcodePayload {
+  rawLabelCode: string
+  normalizedLabelCode: string
+  recognizedAt: string
+  recognitionSource: SalesExchangeRecognitionSource
+  side: 'OLD_ITEM' | 'REPLACEMENT_ITEM'
 }
 
 export interface ConfirmSalesExchangeOldItemInboundResponseApiDTO {
   salesExchange: SalesExchangeApiDTO
   createdInboundRecords: unknown[]
+}
+
+export interface PatchSalesExchangeOldItemLogisticsPayload {
+  receivedOldItemTrackingNo?: string
+}
+
+export interface ConfirmSalesExchangeReplacementShipmentPayload {
+  clientRequestId: string
+  operator?: string
+  sourceCategory: string
+  batchNo: string
+  shipmentDate: string
+  replacementTrackingNo?: string
+  remarks?: string
+  lines: Array<{
+    salesExchangeLineId: number
+    quantity: number
+    barcodes?: SalesExchangeExecutionBarcodePayload[]
+  }>
+}
+
+export interface ConfirmSalesExchangeReplacementShipmentResponseApiDTO {
+  salesExchange: SalesExchangeApiDTO
+  createdShipmentRecords: unknown[]
+}
+
+export interface VoidSalesExchangeReplacementShipmentPayload {
+  reason: string
+}
+
+export interface VoidSalesExchangeReplacementShipmentResponseApiDTO {
+  salesExchange: SalesExchangeApiDTO
+  shipment: SalesExchangeShipmentRecordApiDTO
 }

@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
 import { resolveQueryFailure } from '@/lib/read-resource'
 import {
   useGetSalesExchanges,
@@ -46,10 +46,11 @@ export function useSalesExchangeReceivingQueue() {
   const queueQuery = useGetSalesExchanges({
     page: 1,
     pageSize: 12,
-    status: 'Draft',
+    status: 'Draft,OldItemPartiallyReceived',
   })
   const categoryOptionsQuery = useWarehouseCategoryOptions()
   const salesExchangeMutations = useSalesExchangeMutations()
+  const executionKeyByLineRef = useRef(new Map<string, string>())
 
   const readResource = useMemo<SalesExchangeReceivingQueueReadResource>(() => {
     const queueFailure = resolveQueryFailure({
@@ -119,7 +120,17 @@ export function useSalesExchangeReceivingQueue() {
       status: 'ready',
       items: queueItems,
       totalPendingQuantity: queueItems.reduce(
-        (sum, item) => sum + item.totalExchangeQuantity,
+        (sum, item) =>
+          sum +
+          item.lines.reduce(
+            (lineSum, line) =>
+              lineSum +
+              Math.max(
+                0,
+                line.exchangeQuantity - line.oldItemReceivedQuantity
+              ),
+            0
+          ),
         0
       ),
       totalRecognizedLabelCodeCount: queueItems.reduce(
@@ -139,18 +150,36 @@ export function useSalesExchangeReceivingQueue() {
   ])
 
   const confirmSalesExchangeOldItemInbound = async (
-    salesExchangeDraftRecord: SalesExchangeDraftRecord
+    salesExchangeDraftRecord: SalesExchangeDraftRecord,
+    salesExchangeLineId: number
   ) => {
     if (readResource.status !== 'ready') return
+    const line = salesExchangeDraftRecord.lines.find(
+      (item) => item.id === salesExchangeLineId
+    )
+    if (!line) return
+    const remainingQuantity = Math.max(
+      0,
+      line.exchangeQuantity - line.oldItemReceivedQuantity
+    )
+    if (remainingQuantity <= 0) return
+    const executionMapKey = `${salesExchangeDraftRecord.id}:${salesExchangeLineId}`
+    const clientRequestId =
+      executionKeyByLineRef.current.get(executionMapKey) ?? crypto.randomUUID()
+    executionKeyByLineRef.current.set(executionMapKey, clientRequestId)
     await salesExchangeMutations.confirmOldItemInboundMutation.mutateAsync({
       salesExchangeId: salesExchangeDraftRecord.id,
       payload: {
+        clientRequestId,
+        salesExchangeLineId,
+        quantity: remainingQuantity,
         targetCategory: readResource.defaultTargetCategoryCode,
         batchNo: salesExchangeDraftRecord.exchangeNo,
         inboundDate: createTodayDateInputValue(),
         remarks: `销售换货旧货入库：${salesExchangeDraftRecord.exchangeNo}`,
       },
     })
+    executionKeyByLineRef.current.delete(executionMapKey)
   }
 
   return {

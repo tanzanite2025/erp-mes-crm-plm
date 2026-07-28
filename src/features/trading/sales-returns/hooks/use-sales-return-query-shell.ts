@@ -8,6 +8,7 @@ import {
 } from '@/lib/read-resource'
 import { failLoudly } from '@/lib/safe-catch'
 import type { SalesOrder } from '@/features/trading/data/schema'
+import { useSalesOrderAfterSalesCardResources } from '@/features/trading/hooks/use-sales-order-after-sales-card-resources'
 import {
   useGetSalesReturnSourceOrderDetail,
   useGetSalesReturnSourceOrders,
@@ -142,6 +143,11 @@ export function useSalesReturnQueryShell() {
     sourceOrdersQuery.error,
     sourceOrdersQuery.isPending,
   ])
+  const sourceOrdersForAfterSalesSummary =
+    sourceOrdersResource.status === 'ready' ? sourceOrdersResource.items : []
+  const afterSalesSummaryResources = useSalesOrderAfterSalesCardResources(
+    sourceOrdersForAfterSalesSummary
+  )
 
   const returnsResource = useMemo<SalesReturnRecordsResource>(() => {
     const failure = resolveQueryFailure({
@@ -397,6 +403,7 @@ export function useSalesReturnQueryShell() {
     sourcePage,
     sourceTotalPages,
     sourceOrdersResource,
+    afterSalesSummaryResources,
     selectedSourceOrderId,
     selectedSourceOrder,
     refetchSourceOrders: sourceOrdersQuery.refetch,

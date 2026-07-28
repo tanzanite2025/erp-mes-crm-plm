@@ -11,11 +11,14 @@ import { toSalesOrderContract } from '../adapters/sales-order-api-adapter'
 import {
   type CreateSalesReturnPayload,
   type CreateSalesReturnResponseApiDTO,
+  type ConfirmSalesReturnInboundPayload,
+  type ConfirmSalesReturnInboundResponseApiDTO,
   type PatchSalesReturnActualAmountEntryPayload,
   type PatchSalesReturnPayload,
   type PatchSalesReturnLogisticsPayload,
   type SalesReturnActualAmountRecordApiDTO,
   type SalesReturnApiDTO,
+  type SalesReturnInboundRecordApiDTO,
   type SalesReturnLineApiDTO,
   type SalesReturnListPageApiDTO,
 } from '../contracts/sales-return-api-dto'
@@ -36,11 +39,47 @@ export interface SalesReturnLine {
   description: string
   uom: string
   quantity: number
+  receivedQuantity: number
+  status: string
   price: number
   amount: number
   issueCategory?: string
   reason?: string
   evidences?: OrderEvidence[]
+  barcodes: SalesReturnLineBarcode[]
+}
+
+export interface SalesReturnLineBarcode {
+  id: number
+  salesReturnId: string
+  salesReturnLineId: number
+  salesOrderLineId: number
+  rawCode: string
+  normalizedCode: string
+  productCodeSnapshot: string
+  bindSource: string
+  verificationStatus: string
+  boundAt: string
+  boundBy: string
+}
+
+export interface SalesReturnInboundRecord {
+  id: string
+  materialId: string
+  materialName: string
+  materialCode: string
+  sourceType: string
+  sourceId: string
+  sourceLineId: number
+  quantity: number
+  purchasePrice: number
+  targetCategory: string
+  batchNo: string
+  inboundDate: string
+  operator: string
+  remarks: string
+  createdAt: string
+  updatedAt: string
 }
 
 export interface SalesReturnRecord {
@@ -70,10 +109,12 @@ export interface SalesReturnRecord {
   evidences?: OrderEvidence[]
   operator?: string
   totalQuantity: number
+  totalReceivedQuantity: number
   totalAmount: number
   createdAt: string
   updatedAt: string
   lines: SalesReturnLine[]
+  inboundRecords: SalesReturnInboundRecord[]
 }
 
 export interface SalesReturnActualAmountRecord {
@@ -114,6 +155,29 @@ export interface CreateSalesReturnResponse {
   salesOrder: SalesOrder
 }
 
+export interface ConfirmSalesReturnInboundResponse {
+  salesReturn: SalesReturnRecord
+  createdInboundRecords: unknown[]
+}
+
+function toSalesReturnLineBarcodeContract(
+  dto: NonNullable<SalesReturnLineApiDTO['barcodes']>[number]
+): SalesReturnLineBarcode {
+  return {
+    id: dto.id,
+    salesReturnId: dto.salesReturnId,
+    salesReturnLineId: dto.salesReturnLineId,
+    salesOrderLineId: dto.salesOrderLineId,
+    rawCode: dto.rawCode,
+    normalizedCode: dto.normalizedCode,
+    productCodeSnapshot: dto.productCodeSnapshot,
+    bindSource: dto.bindSource,
+    verificationStatus: dto.verificationStatus,
+    boundAt: dto.boundAt,
+    boundBy: dto.boundBy,
+  }
+}
+
 function toSalesReturnLineContract(
   dto: SalesReturnLineApiDTO
 ): SalesReturnLine {
@@ -134,11 +198,37 @@ function toSalesReturnLineContract(
     description: dto.description,
     uom: dto.uom,
     quantity: dto.quantity,
+    receivedQuantity: dto.receivedQuantity ?? 0,
+    status: dto.status || 'Requested',
     price: dto.price,
     amount: dto.amount,
     issueCategory: dto.issueCategory,
     reason: dto.reason,
     evidences: dto.evidences ?? [],
+    barcodes: (dto.barcodes ?? []).map(toSalesReturnLineBarcodeContract),
+  }
+}
+
+function toSalesReturnInboundRecordContract(
+  dto: SalesReturnInboundRecordApiDTO
+): SalesReturnInboundRecord {
+  return {
+    id: dto.id,
+    materialId: dto.materialId,
+    materialName: dto.materialName,
+    materialCode: dto.materialCode,
+    sourceType: dto.sourceType,
+    sourceId: dto.sourceId,
+    sourceLineId: dto.sourceLineId,
+    quantity: dto.quantity,
+    purchasePrice: dto.purchasePrice,
+    targetCategory: dto.targetCategory,
+    batchNo: dto.batchNo,
+    inboundDate: dto.inboundDate,
+    operator: dto.operator,
+    remarks: dto.remarks,
+    createdAt: dto.createdAt,
+    updatedAt: dto.updatedAt,
   }
 }
 
@@ -192,6 +282,7 @@ function toSalesReturnContract(dto: SalesReturnApiDTO): SalesReturnRecord {
     evidences: dto.evidences ?? [],
     operator: dto.operator,
     totalQuantity: dto.totalQuantity,
+    totalReceivedQuantity: dto.totalReceivedQuantity ?? 0,
     totalAmount: dto.totalAmount,
     createdAt: dto.createdAt,
     updatedAt: dto.updatedAt,
@@ -200,6 +291,11 @@ function toSalesReturnContract(dto: SalesReturnApiDTO): SalesReturnRecord {
       'lines',
       'SalesReturnService.toSalesReturnContract'
     ).map(toSalesReturnLineContract),
+    inboundRecords: ensureArrayField<SalesReturnInboundRecordApiDTO>(
+      dto,
+      'inboundRecords',
+      'SalesReturnService.toSalesReturnContract'
+    ).map(toSalesReturnInboundRecordContract),
   }
 }
 
@@ -360,4 +456,28 @@ export async function patchSalesReturnLogistics(
     'SalesReturnService.patchSalesReturnLogistics'
   )
   return toSalesReturnContract(dto)
+}
+
+export async function confirmSalesReturnInbound(
+  id: string,
+  payload: ConfirmSalesReturnInboundPayload
+): Promise<ConfirmSalesReturnInboundResponse> {
+  const res = await apiFetch<Record<string, unknown>>(
+    `/sales-returns/${id}/inbound`,
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }
+  )
+  const dto = ensureObjectResponse<
+    ConfirmSalesReturnInboundResponseApiDTO & Record<string, unknown>
+  >(res, 'SalesReturnService.confirmSalesReturnInbound')
+  return {
+    salesReturn: toSalesReturnContract(dto.salesReturn),
+    createdInboundRecords: ensureArrayField<unknown>(
+      dto,
+      'createdInboundRecords',
+      'SalesReturnService.confirmSalesReturnInbound'
+    ),
+  }
 }

@@ -73,7 +73,7 @@ func ListSalesReturns(query SalesReturnListQuery) (SalesReturnListResponse, erro
 
 	var items []models.SalesReturn
 	if err := tx.
-		Preload("Lines").
+		Preload("Lines.Barcodes").
 		Order("return_date desc, created_at desc").
 		Limit(pageSize).
 		Offset((page - 1) * pageSize).
@@ -81,8 +81,19 @@ func ListSalesReturns(query SalesReturnListQuery) (SalesReturnListResponse, erro
 		return SalesReturnListResponse{}, err
 	}
 
+	inboundRecordsBySource, err := loadSalesReturnInboundRecordsBySource(items)
+	if err != nil {
+		return SalesReturnListResponse{}, err
+	}
+	responses := MapSalesReturnsToResponse(items)
+	for index := range responses {
+		responses[index].InboundRecords = mapInventoryInboundRecordsToResponse(
+			inboundRecordsBySource[items[index].ID],
+		)
+	}
+
 	return SalesReturnListResponse{
-		Items:    MapSalesReturnsToResponse(items),
+		Items:    responses,
 		Total:    total,
 		Page:     page,
 		PageSize: pageSize,
@@ -91,10 +102,18 @@ func ListSalesReturns(query SalesReturnListQuery) (SalesReturnListResponse, erro
 
 func GetSalesReturnByID(id string) (SalesReturnResponse, error) {
 	var record models.SalesReturn
-	if err := db.DB.Preload("Lines").First(&record, "id = ?", strings.TrimSpace(id)).Error; err != nil {
+	if err := db.DB.Preload("Lines.Barcodes").First(&record, "id = ?", strings.TrimSpace(id)).Error; err != nil {
 		return SalesReturnResponse{}, err
 	}
-	return MapSalesReturnToResponse(record), nil
+	inboundRecordsBySource, err := loadSalesReturnInboundRecordsBySource([]models.SalesReturn{record})
+	if err != nil {
+		return SalesReturnResponse{}, err
+	}
+	response := MapSalesReturnToResponse(record)
+	response.InboundRecords = mapInventoryInboundRecordsToResponse(
+		inboundRecordsBySource[record.ID],
+	)
+	return response, nil
 }
 
 func CreateSalesReturn(input CreateSalesReturnInput) (CreateSalesReturnResponse, error) {
@@ -176,13 +195,27 @@ func PatchSalesReturn(input PatchSalesReturnInput) (SalesReturnResponse, error) 
 	var response SalesReturnResponse
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
 		var record models.SalesReturn
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Preload("Lines").First(&record, "id = ?", salesReturnID).Error; err != nil {
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Preload("Lines.Barcodes").First(&record, "id = ?", salesReturnID).Error; err != nil {
 			return err
 		}
 
 		status := normalizeSalesReturnStatus(record.Status)
 		if status != SalesReturnStatusCreated && status != SalesReturnStatusInTransit {
 			return errors.New("当前退货单状态不允许修改退货主体")
+		}
+		var inboundCount int64
+		if err := tx.Model(&models.InboundRecord{}).
+			Where("source_type = ? AND source_id = ?", AfterSalesSourceSalesReturn, record.ID).
+			Count(&inboundCount).Error; err != nil {
+			return err
+		}
+		if inboundCount > 0 {
+			return errors.New("退货单已有入库事实，不允许重建退货明细")
+		}
+		for _, existingLine := range record.Lines {
+			if existingLine.ReceivedQuantity > salesReturnQuantityTolerance {
+				return errors.New("退货单已有入库数量，不允许重建退货明细")
+			}
 		}
 
 		order, err := loadSalesReturnOrderForUpdate(tx, record.SalesOrderID)
@@ -202,16 +235,95 @@ func PatchSalesReturn(input PatchSalesReturnInput) (SalesReturnResponse, error) 
 			return err
 		}
 
-		if err := tx.Exec("DELETE FROM sales_return_lines WHERE sales_return_id = ?", salesReturnID).Error; err != nil {
-			return err
+		existingLinesByOrderLineID := make(map[uint]models.SalesReturnLine, len(record.Lines))
+		for _, existingLine := range record.Lines {
+			existingLinesByOrderLineID[existingLine.SalesOrderLineID] = existingLine
 		}
+		desiredOrderLineIDs := make(map[uint]struct{}, len(lines))
 		for index := range lines {
-			lines[index].SalesReturnID = salesReturnID
-		}
-		if len(lines) > 0 {
-			if err := tx.Create(&lines).Error; err != nil {
+			line := &lines[index]
+			line.SalesReturnID = salesReturnID
+			desiredOrderLineIDs[line.SalesOrderLineID] = struct{}{}
+			existingLine, exists := existingLinesByOrderLineID[line.SalesOrderLineID]
+			if exists {
+				line.ID = existingLine.ID
+				line.ReceivedQuantity = existingLine.ReceivedQuantity
+				line.Status = existingLine.Status
+				if err := tx.Model(&models.SalesReturnLine{}).
+					Where("id = ? AND sales_return_id = ?", existingLine.ID, salesReturnID).
+					Updates(map[string]any{
+						"sales_order_line_id":                       line.SalesOrderLineID,
+						"line_no":                                   line.LineNo,
+						"product_id":                                line.ProductID,
+						"product_code":                              line.ProductCode,
+						"product_model":                             line.ProductModel,
+						"specification":                             line.Specification,
+						"product_display_title_snapshot":            line.ProductDisplayTitleSnapshot,
+						"product_display_subtitle_snapshot":         line.ProductDisplaySubtitleSnapshot,
+						"product_display_code_snapshot":             line.ProductDisplayCodeSnapshot,
+						"product_display_full_label_snapshot":       line.ProductDisplayFullLabelSnapshot,
+						"product_display_strategy_version_snapshot": line.ProductDisplayStrategyVersionSnapshot,
+						"description":                               line.Description,
+						"uom":                                       line.UOM,
+						"quantity":                                  line.Quantity,
+						"status":                                    line.Status,
+						"price":                                     line.Price,
+						"amount":                                    line.Amount,
+						"issue_category":                            line.IssueCategory,
+						"reason":                                    line.Reason,
+						"evidences":                                 line.Evidences,
+					}).Error; err != nil {
+					return err
+				}
+				continue
+			}
+			if err := tx.Create(line).Error; err != nil {
 				return err
 			}
+		}
+		removedLineIDs := make([]uint, 0)
+		for _, existingLine := range record.Lines {
+			if _, keep := desiredOrderLineIDs[existingLine.SalesOrderLineID]; !keep {
+				removedLineIDs = append(removedLineIDs, existingLine.ID)
+			}
+		}
+		if len(removedLineIDs) > 0 {
+			if err := tx.Where("sales_return_id = ? AND id IN ?", salesReturnID, removedLineIDs).
+				Delete(&models.SalesReturnLine{}).Error; err != nil {
+				return err
+			}
+		}
+		record.Lines = lines
+		existingBarcodeLineByCode := make(map[string]uint)
+		for _, existingLine := range record.Lines {
+			originalLine, existed := existingLinesByOrderLineID[existingLine.SalesOrderLineID]
+			if !existed {
+				continue
+			}
+			for _, barcode := range originalLine.Barcodes {
+				existingBarcodeLineByCode[canonicalAfterSalesCode(barcode.RawCode, barcode.NormalizedCode)] = originalLine.ID
+			}
+		}
+		barcodeInputs := salesReturnLineBarcodeInputsFromCreateLines(lines, input.Lines)
+		newBarcodeInputs := make([]SalesReturnLineBarcodeInput, 0, len(barcodeInputs))
+		for _, barcodeInput := range barcodeInputs {
+			code := canonicalAfterSalesCode(barcodeInput.RawCode, barcodeInput.NormalizedCode)
+			if existingLineID, exists := existingBarcodeLineByCode[code]; exists {
+				if existingLineID != barcodeInput.SalesReturnLineID {
+					return errors.New("duplicate sales return line barcode")
+				}
+				continue
+			}
+			newBarcodeInputs = append(newBarcodeInputs, barcodeInput)
+		}
+		if err := createSalesReturnLineBarcodesTx(
+			tx,
+			record,
+			newBarcodeInputs,
+			input.Operator,
+			time.Now(),
+		); err != nil {
+			return err
 		}
 
 		record.ReturnDate = input.ReturnDate
@@ -237,7 +349,7 @@ func PatchSalesReturn(input PatchSalesReturnInput) (SalesReturnResponse, error) 
 		}
 
 		var reloaded models.SalesReturn
-		if err := tx.Preload("Lines").First(&reloaded, "id = ?", record.ID).Error; err != nil {
+		if err := tx.Preload("Lines.Barcodes").First(&reloaded, "id = ?", record.ID).Error; err != nil {
 			return err
 		}
 		response = MapSalesReturnToResponse(reloaded)
@@ -340,7 +452,16 @@ func createSalesReturnTx(tx *gorm.DB, input CreateSalesReturnInput) (CreateSales
 	if err := tx.Create(&record).Error; err != nil {
 		return CreateSalesReturnResult{}, err
 	}
-	if err := tx.Preload("Lines").First(&record, "id = ?", record.ID).Error; err != nil {
+	if err := createSalesReturnLineBarcodesTx(
+		tx,
+		record,
+		salesReturnLineBarcodeInputsFromCreateLines(record.Lines, input.Lines),
+		input.Operator,
+		time.Now(),
+	); err != nil {
+		return CreateSalesReturnResult{}, err
+	}
+	if err := tx.Preload("Lines.Barcodes").First(&record, "id = ?", record.ID).Error; err != nil {
 		return CreateSalesReturnResult{}, err
 	}
 
@@ -420,6 +541,7 @@ func buildSalesReturnLines(order models.SalesOrder, consumedQuantityMap map[uint
 			Description:                           orderLine.Description,
 			UOM:                                   orderLine.UOM,
 			Quantity:                              item.Quantity,
+			Status:                                "Requested",
 			Price:                                 price,
 			Amount:                                amount,
 			IssueCategory:                         strings.TrimSpace(item.IssueCategory),
@@ -437,6 +559,38 @@ func buildSalesReturnLines(order models.SalesOrder, consumedQuantityMap map[uint
 	return lines, totalQty, totalAmount, nil
 }
 
+func salesReturnLineBarcodeInputsFromCreateLines(
+	lines []models.SalesReturnLine,
+	inputLines []CreateSalesReturnLineInput,
+) []SalesReturnLineBarcodeInput {
+	lineByOrderLineID := make(map[uint]models.SalesReturnLine, len(lines))
+	for _, line := range lines {
+		lineByOrderLineID[line.SalesOrderLineID] = line
+	}
+
+	inputs := make([]SalesReturnLineBarcodeInput, 0)
+	for _, inputLine := range inputLines {
+		line, ok := lineByOrderLineID[inputLine.SalesOrderLineID]
+		if !ok {
+			continue
+		}
+		for _, barcode := range inputLine.Barcodes {
+			code := strings.TrimSpace(barcode)
+			if code == "" {
+				continue
+			}
+			inputs = append(inputs, SalesReturnLineBarcodeInput{
+				SalesReturnLineID:  line.ID,
+				RawCode:            code,
+				NormalizedCode:     strings.ToUpper(code),
+				BindSource:         SalesReturnBarcodeBindSourceCreateForm,
+				VerificationStatus: SalesReturnBarcodeStatusPending,
+			})
+		}
+	}
+	return inputs
+}
+
 func generateSalesReturnNoTx(tx *gorm.DB, now time.Time) (string, error) {
 	dayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 	dayEnd := dayStart.Add(24 * time.Hour)
@@ -449,4 +603,43 @@ func generateSalesReturnNoTx(tx *gorm.DB, now time.Time) (string, error) {
 	}
 
 	return fmt.Sprintf("SR-%s-%03d", dayStart.Format("20060102"), count+1), nil
+}
+
+func loadSalesReturnInboundRecordsBySource(
+	items []models.SalesReturn,
+) (map[string][]models.InboundRecord, error) {
+	result := make(map[string][]models.InboundRecord, len(items))
+	ids := make([]string, 0, len(items))
+	for _, item := range items {
+		if strings.TrimSpace(item.ID) == "" {
+			continue
+		}
+		ids = append(ids, item.ID)
+		result[item.ID] = []models.InboundRecord{}
+	}
+	if len(ids) == 0 {
+		return result, nil
+	}
+
+	var records []models.InboundRecord
+	if err := db.DB.
+		Where("source_type = ? AND source_id IN ?", AfterSalesSourceSalesReturn, ids).
+		Order("inbound_date asc, created_at asc").
+		Find(&records).Error; err != nil {
+		return nil, err
+	}
+	for _, record := range records {
+		result[record.SourceID] = append(result[record.SourceID], record)
+	}
+	return result, nil
+}
+
+func mapInventoryInboundRecordsToResponse(
+	records []models.InboundRecord,
+) []InventoryInboundRecordResponse {
+	result := make([]InventoryInboundRecordResponse, 0, len(records))
+	for _, record := range records {
+		result = append(result, MapInboundRecordToResponse(record))
+	}
+	return result
 }

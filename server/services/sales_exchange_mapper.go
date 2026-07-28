@@ -39,6 +39,7 @@ type SalesExchangeRecognizedLabelInput struct {
 	NormalizedLabelCode string
 	RecognizedAtRaw     string
 	RecognitionSource   string
+	Side                string
 }
 
 type SalesExchangeUnmatchedLabelInput struct {
@@ -47,16 +48,54 @@ type SalesExchangeUnmatchedLabelInput struct {
 	RecognizedAtRaw     string
 	RecognitionSource   string
 	UnmatchedReason     string
+	Side                string
 }
 
 type ConfirmSalesExchangeOldItemInboundInput struct {
-	SalesExchangeID string
-	Operator        string
-	TargetCategory  string
-	BatchNo         string
-	InboundDate     time.Time
-	InboundDateRaw  string
-	Remarks         string
+	SalesExchangeID     string
+	SalesExchangeLineID uint
+	ExecutionKey        string
+	Quantity            float64
+	Operator            string
+	TargetCategory      string
+	BatchNo             string
+	InboundDate         time.Time
+	InboundDateRaw      string
+	Remarks             string
+	Barcodes            []SalesExchangeExecutionBarcodeInput
+}
+
+type PatchSalesExchangeOldItemLogisticsInput struct {
+	SalesExchangeID   string
+	Operator          string
+	OldItemTrackingNo string
+}
+
+type SalesExchangeExecutionBarcodeInput struct {
+	RawLabelCode        string
+	NormalizedLabelCode string
+	RecognizedAtRaw     string
+	RecognitionSource   string
+	Side                string
+}
+
+type ConfirmSalesExchangeReplacementShipmentInput struct {
+	SalesExchangeID       string
+	ExecutionKey          string
+	Operator              string
+	SourceCategory        string
+	BatchNo               string
+	ShipmentDate          time.Time
+	ShipmentDateRaw       string
+	ReplacementTrackingNo string
+	Remarks               string
+	Lines                 []ConfirmSalesExchangeReplacementShipmentLineInput
+}
+
+type ConfirmSalesExchangeReplacementShipmentLineInput struct {
+	SalesExchangeLineID uint
+	Quantity            float64
+	Barcodes            []SalesExchangeExecutionBarcodeInput
 }
 
 type CreateSalesExchangeResult struct {
@@ -69,6 +108,11 @@ type ConfirmSalesExchangeOldItemInboundResult struct {
 	CreatedInboundRecords []models.InboundRecord
 }
 
+type ConfirmSalesExchangeReplacementShipmentResult struct {
+	SalesExchange          models.SalesExchange
+	CreatedShipmentRecords []models.ShipmentRecord
+}
+
 func MapCreateSalesExchangeRequestToInput(request CreateSalesExchangeRequest, salesOrderID string, operator string) CreateSalesExchangeInput {
 	lines := make([]CreateSalesExchangeLineInput, 0, len(request.Lines))
 	for _, line := range request.Lines {
@@ -79,6 +123,7 @@ func MapCreateSalesExchangeRequestToInput(request CreateSalesExchangeRequest, sa
 				NormalizedLabelCode: label.NormalizedLabelCode,
 				RecognizedAtRaw:     label.RecognizedAt,
 				RecognitionSource:   label.RecognitionSource,
+				Side:                label.Side,
 			})
 		}
 		lines = append(lines, CreateSalesExchangeLineInput{
@@ -101,6 +146,7 @@ func MapCreateSalesExchangeRequestToInput(request CreateSalesExchangeRequest, sa
 			RecognizedAtRaw:     label.RecognizedAt,
 			RecognitionSource:   label.RecognitionSource,
 			UnmatchedReason:     label.UnmatchedReason,
+			Side:                label.Side,
 		})
 	}
 
@@ -119,13 +165,92 @@ func MapCreateSalesExchangeRequestToInput(request CreateSalesExchangeRequest, sa
 }
 
 func MapConfirmSalesExchangeOldItemInboundRequestToInput(request ConfirmSalesExchangeOldItemInboundRequest, salesExchangeID string, operator string) ConfirmSalesExchangeOldItemInboundInput {
+	barcodes := make([]SalesExchangeExecutionBarcodeInput, 0, len(request.Barcodes))
+	for _, barcode := range request.Barcodes {
+		barcodes = append(barcodes, mapSalesExchangeExecutionBarcodeRequestToInput(barcode))
+	}
 	return ConfirmSalesExchangeOldItemInboundInput{
+		SalesExchangeID:     salesExchangeID,
+		SalesExchangeLineID: request.SalesExchangeLineID,
+		ExecutionKey:        request.ClientRequestID,
+		Quantity:            request.Quantity,
+		Operator:            operator,
+		TargetCategory:      request.TargetCategory,
+		BatchNo:             request.BatchNo,
+		InboundDateRaw:      request.InboundDate,
+		Remarks:             request.Remarks,
+		Barcodes:            barcodes,
+	}
+}
+
+func MapPatchSalesExchangeOldItemLogisticsRequestToInput(request PatchSalesExchangeOldItemLogisticsRequest, salesExchangeID string, operator string) PatchSalesExchangeOldItemLogisticsInput {
+	return PatchSalesExchangeOldItemLogisticsInput{
+		SalesExchangeID:   salesExchangeID,
+		Operator:          operator,
+		OldItemTrackingNo: request.ReceivedOldItemTrackingNo,
+	}
+}
+
+func mapSalesExchangeExecutionBarcodeRequestToInput(request SalesExchangeExecutionBarcodeRequest) SalesExchangeExecutionBarcodeInput {
+	return SalesExchangeExecutionBarcodeInput{
+		RawLabelCode:        request.RawLabelCode,
+		NormalizedLabelCode: request.NormalizedLabelCode,
+		RecognizedAtRaw:     request.RecognizedAt,
+		RecognitionSource:   request.RecognitionSource,
+		Side:                request.Side,
+	}
+}
+
+func MapConfirmSalesExchangeReplacementShipmentRequestToInput(request ConfirmSalesExchangeReplacementShipmentRequest, salesExchangeID string, operator string) ConfirmSalesExchangeReplacementShipmentInput {
+	lines := make([]ConfirmSalesExchangeReplacementShipmentLineInput, 0, len(request.Lines))
+	for _, line := range request.Lines {
+		barcodes := make([]SalesExchangeExecutionBarcodeInput, 0, len(line.Barcodes))
+		for _, barcode := range line.Barcodes {
+			barcodes = append(barcodes, mapSalesExchangeExecutionBarcodeRequestToInput(barcode))
+		}
+		lines = append(lines, ConfirmSalesExchangeReplacementShipmentLineInput{
+			SalesExchangeLineID: line.SalesExchangeLineID,
+			Quantity:            line.Quantity,
+			Barcodes:            barcodes,
+		})
+	}
+	return ConfirmSalesExchangeReplacementShipmentInput{
+		SalesExchangeID:       salesExchangeID,
+		ExecutionKey:          request.ClientRequestID,
+		Operator:              operator,
+		SourceCategory:        request.SourceCategory,
+		BatchNo:               request.BatchNo,
+		ShipmentDateRaw:       request.ShipmentDate,
+		ReplacementTrackingNo: request.ReplacementTrackingNo,
+		Remarks:               request.Remarks,
+		Lines:                 lines,
+	}
+}
+
+func MapVoidSalesExchangeReplacementShipmentRequestToInput(
+	request VoidSalesExchangeReplacementShipmentRequest,
+	salesExchangeID string,
+	shipmentID string,
+	operator string,
+) VoidSalesExchangeReplacementShipmentInput {
+	resolvedOperator := strings.TrimSpace(request.Operator)
+	if resolvedOperator == "" {
+		resolvedOperator = operator
+	}
+	return VoidSalesExchangeReplacementShipmentInput{
 		SalesExchangeID: salesExchangeID,
-		Operator:        operator,
-		TargetCategory:  request.TargetCategory,
-		BatchNo:         request.BatchNo,
-		InboundDateRaw:  request.InboundDate,
-		Remarks:         request.Remarks,
+		ShipmentID:      shipmentID,
+		Operator:        resolvedOperator,
+		Reason:          request.Reason,
+	}
+}
+
+func MapVoidSalesExchangeReplacementShipmentResultToResponse(
+	result VoidSalesExchangeReplacementShipmentResult,
+) VoidSalesExchangeReplacementShipmentResponse {
+	return VoidSalesExchangeReplacementShipmentResponse{
+		SalesExchange: MapSalesExchangeToResponse(result.SalesExchange),
+		Shipment:      MapShipmentRecordToResponse(result.Shipment),
 	}
 }
 
@@ -136,6 +261,7 @@ func mapSalesExchangeLabelCodeToResponse(label models.SalesExchangeLabelCode) Sa
 		NormalizedLabelCode: label.NormalizedLabelCode,
 		RecognitionSource:   label.RecognitionSource,
 		RecognizedAt:        label.RecognizedAt,
+		Side:                label.Side,
 		UnmatchedReason:     label.UnmatchedReason,
 	}
 }
@@ -167,6 +293,9 @@ func mapSalesExchangeLineToResponse(line models.SalesExchangeLine) SalesExchange
 		OriginalOrderQuantity:                 math.Round(line.OriginalOrderQuantity*100) / 100,
 		DeliveredQuantity:                     math.Round(line.DeliveredQuantity*100) / 100,
 		ExchangeQuantity:                      math.Round(line.ExchangeQuantity*100) / 100,
+		OldItemReceivedQuantity:               math.Round(line.OldItemReceivedQuantity*100) / 100,
+		ReplacementShippedQuantity:            math.Round(line.ReplacementShippedQuantity*100) / 100,
+		Status:                                line.Status,
 		ReplacementMode:                       line.ReplacementMode,
 		ReplacementProductCode:                line.ReplacementProductCode,
 		ReplacementProductModel:               line.ReplacementProductModel,
@@ -189,30 +318,37 @@ func MapSalesExchangeToResponse(record models.SalesExchange) SalesExchangeRespon
 	}
 
 	return SalesExchangeResponse{
-		ID:                        record.ID,
-		ExchangeNo:                record.ExchangeNo,
-		SourceSalesOrderID:        record.SalesOrderID,
-		SourceSalesOrderNo:        record.SalesOrderNo,
-		CustomerID:                record.CustomerID,
-		CustomerName:              record.CustomerName,
-		Status:                    normalizeSalesExchangeStatus(record.Status),
-		ExchangeDate:              record.ExchangeDate,
-		ExpectedReplacementDate:   record.ExpectedReplacementDate,
-		ReceivedOldItemTrackingNo: record.ReceivedOldItemTrackingNo,
-		ReplacementTrackingNo:     record.ReplacementTrackingNo,
-		ExchangeReason:            record.ExchangeReason,
-		ExchangeRemarks:           record.ExchangeRemarks,
-		Operator:                  record.Operator,
-		TotalExchangeQuantity:     math.Round(record.TotalExchangeQuantity*100) / 100,
-		OldItemInboundConfirmedAt: record.OldItemInboundConfirmedAt,
-		OldItemInboundConfirmedBy: record.OldItemInboundConfirmedBy,
-		OldItemInboundTarget:      record.OldItemInboundTarget,
-		OldItemInboundBatchNo:     record.OldItemInboundBatchNo,
-		OldItemInboundRemarks:     record.OldItemInboundRemarks,
-		CreatedAt:                 record.CreatedAt,
-		UpdatedAt:                 record.UpdatedAt,
-		Lines:                     lines,
-		UnmatchedLabelCodes:       unmatched,
+		ID:                         record.ID,
+		ExchangeNo:                 record.ExchangeNo,
+		SourceSalesOrderID:         record.SalesOrderID,
+		SourceSalesOrderNo:         record.SalesOrderNo,
+		CustomerID:                 record.CustomerID,
+		CustomerName:               record.CustomerName,
+		Status:                     normalizeSalesExchangeStatus(record.Status),
+		ExchangeDate:               record.ExchangeDate,
+		ExpectedReplacementDate:    record.ExpectedReplacementDate,
+		ReceivedOldItemTrackingNo:  record.ReceivedOldItemTrackingNo,
+		ReplacementTrackingNo:      record.ReplacementTrackingNo,
+		ExchangeReason:             record.ExchangeReason,
+		ExchangeRemarks:            record.ExchangeRemarks,
+		Operator:                   record.Operator,
+		TotalExchangeQuantity:      math.Round(record.TotalExchangeQuantity*100) / 100,
+		OldItemInboundConfirmedAt:  record.OldItemInboundConfirmedAt,
+		OldItemInboundConfirmedBy:  record.OldItemInboundConfirmedBy,
+		OldItemInboundTarget:       record.OldItemInboundTarget,
+		OldItemInboundBatchNo:      record.OldItemInboundBatchNo,
+		OldItemInboundRemarks:      record.OldItemInboundRemarks,
+		ReplacementShippedAt:       record.ReplacementShippedAt,
+		ReplacementShippedBy:       record.ReplacementShippedBy,
+		ReplacementSourceCategory:  record.ReplacementSourceCategory,
+		ReplacementBatchNo:         record.ReplacementBatchNo,
+		ReplacementShipmentRemarks: record.ReplacementShipmentRemarks,
+		CreatedAt:                  record.CreatedAt,
+		UpdatedAt:                  record.UpdatedAt,
+		Lines:                      lines,
+		UnmatchedLabelCodes:        unmatched,
+		InboundRecords:             []InventoryInboundRecordResponse{},
+		ShipmentRecords:            []InventoryShipmentRecordResponse{},
 	}
 }
 
@@ -239,5 +375,16 @@ func MapConfirmSalesExchangeOldItemInboundResultToResponse(result ConfirmSalesEx
 	return ConfirmSalesExchangeOldItemInboundResponse{
 		SalesExchange:         MapSalesExchangeToResponse(result.SalesExchange),
 		CreatedInboundRecords: records,
+	}
+}
+
+func MapConfirmSalesExchangeReplacementShipmentResultToResponse(result ConfirmSalesExchangeReplacementShipmentResult) ConfirmSalesExchangeReplacementShipmentResponse {
+	records := make([]InventoryShipmentRecordResponse, 0, len(result.CreatedShipmentRecords))
+	for _, record := range result.CreatedShipmentRecords {
+		records = append(records, MapShipmentRecordToResponse(record))
+	}
+	return ConfirmSalesExchangeReplacementShipmentResponse{
+		SalesExchange:          MapSalesExchangeToResponse(result.SalesExchange),
+		CreatedShipmentRecords: records,
 	}
 }

@@ -3,12 +3,14 @@ package services
 import "strings"
 
 const (
-	SalesExchangeStatusDraft               = "Draft"
-	SalesExchangeStatusOldItemReceived     = "OldItemReceived"
-	SalesExchangeStatusReplacementPrepared = "ReplacementPrepared"
-	SalesExchangeStatusReplacementShipped  = "ReplacementShipped"
-	SalesExchangeStatusClosed              = "Closed"
-	SalesExchangeStatusCanceled            = "Canceled"
+	SalesExchangeStatusDraft                       = "Draft"
+	SalesExchangeStatusOldItemPartiallyReceived    = "OldItemPartiallyReceived"
+	SalesExchangeStatusOldItemReceived             = "OldItemReceived"
+	SalesExchangeStatusReplacementPrepared         = "ReplacementPrepared"
+	SalesExchangeStatusReplacementPartiallyShipped = "ReplacementPartiallyShipped"
+	SalesExchangeStatusReplacementShipped          = "ReplacementShipped"
+	SalesExchangeStatusClosed                      = "Closed"
+	SalesExchangeStatusCanceled                    = "Canceled"
 )
 
 func normalizeSalesExchangeStatus(raw string) string {
@@ -16,10 +18,14 @@ func normalizeSalesExchangeStatus(raw string) string {
 	switch {
 	case strings.EqualFold(trimmed, SalesExchangeStatusDraft):
 		return SalesExchangeStatusDraft
+	case strings.EqualFold(trimmed, SalesExchangeStatusOldItemPartiallyReceived):
+		return SalesExchangeStatusOldItemPartiallyReceived
 	case strings.EqualFold(trimmed, SalesExchangeStatusOldItemReceived):
 		return SalesExchangeStatusOldItemReceived
 	case strings.EqualFold(trimmed, SalesExchangeStatusReplacementPrepared):
 		return SalesExchangeStatusReplacementPrepared
+	case strings.EqualFold(trimmed, SalesExchangeStatusReplacementPartiallyShipped):
+		return SalesExchangeStatusReplacementPartiallyShipped
 	case strings.EqualFold(trimmed, SalesExchangeStatusReplacementShipped):
 		return SalesExchangeStatusReplacementShipped
 	case strings.EqualFold(trimmed, SalesExchangeStatusClosed):

@@ -487,7 +487,7 @@ export function SalesExchangeCreateDialog({
             <DialogHeader className='border-b border-dashed border-border/70 px-5 py-4 text-left'>
               <DialogTitle className='flex items-center gap-2 text-base font-black tracking-tight'>
                 <ArrowLeftRight className='size-4 text-primary' />
-                新建销售换货草稿
+                新建销售换货单
               </DialogTitle>
               <DialogDescription className='text-xs font-bold text-muted-foreground'>
                 来源订单 {sourceSalesOrder.orderNo}
@@ -910,10 +910,10 @@ export function SalesExchangeCreateDialog({
             <DialogFooter className='border-t border-dashed border-border/70 px-5 py-3 sm:flex-row sm:items-center sm:justify-between'>
               <div className='text-left'>
                 <p className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
-                  当前草稿不会写入应收
+                  当前换货单不会写入应收
                 </p>
                 <p className='mt-1 text-xs font-bold text-muted-foreground'>
-                  后续接后端时只落换货单、标签码和补发追踪。
+                  系统只落换货单、标签码、旧货入库和补发追踪。
                 </p>
               </div>
               <div className='flex items-center justify-end gap-2'>
@@ -930,7 +930,7 @@ export function SalesExchangeCreateDialog({
                   className='rounded-full'
                   onClick={() => void handleSubmitSalesExchangeDraftRecord()}
                 >
-                  创建换货草稿
+                  创建换货单
                 </Button>
               </div>
             </DialogFooter>

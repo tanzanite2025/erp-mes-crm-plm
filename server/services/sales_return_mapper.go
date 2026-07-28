@@ -2,6 +2,7 @@ package services
 
 import (
 	"math"
+	"strings"
 	"time"
 	"xdfc-server/models"
 )
@@ -54,6 +55,38 @@ type PatchSalesReturnActualAmountEntryInput struct {
 	ActualReturnAmountEvidences []OrderEvidencePayload
 }
 
+type SalesReturnLineBarcodeInput struct {
+	SalesReturnLineID  uint
+	RawCode            string
+	NormalizedCode     string
+	BindSource         string
+	VerificationStatus string
+}
+
+type BindSalesReturnLineBarcodesInput struct {
+	SalesReturnID string
+	Operator      string
+	Barcodes      []SalesReturnLineBarcodeInput
+}
+
+type ConfirmSalesReturnInboundLineInput struct {
+	SalesReturnLineID uint
+	Quantity          float64
+	Barcodes          []SalesReturnLineBarcodeInput
+}
+
+type ConfirmSalesReturnInboundInput struct {
+	SalesReturnID  string
+	ExecutionKey   string
+	Operator       string
+	TargetCategory string
+	BatchNo        string
+	InboundDate    time.Time
+	InboundDateRaw string
+	Remarks        string
+	Lines          []ConfirmSalesReturnInboundLineInput
+}
+
 type CreateSalesReturnLineInput struct {
 	SalesOrderLineID uint
 	Quantity         float64
@@ -61,11 +94,17 @@ type CreateSalesReturnLineInput struct {
 	IssueCategory    string
 	Reason           string
 	Evidences        []OrderEvidencePayload
+	Barcodes         []string
 }
 
 type CreateSalesReturnResult struct {
 	SalesReturn models.SalesReturn
 	SalesOrder  models.SalesOrder
+}
+
+type ConfirmSalesReturnInboundResult struct {
+	SalesReturn           models.SalesReturn
+	CreatedInboundRecords []models.InboundRecord
 }
 
 func MapCreateSalesReturnRequestToInput(request CreateSalesReturnRequest, salesOrderID string, operator string) CreateSalesReturnInput {
@@ -78,6 +117,7 @@ func MapCreateSalesReturnRequestToInput(request CreateSalesReturnRequest, salesO
 			IssueCategory:    line.IssueCategory,
 			Reason:           line.Reason,
 			Evidences:        line.Evidences,
+			Barcodes:         line.Barcodes,
 		})
 	}
 
@@ -117,6 +157,7 @@ func MapPatchSalesReturnRequestToInput(request PatchSalesReturnRequest, salesRet
 			IssueCategory:    line.IssueCategory,
 			Reason:           line.Reason,
 			Evidences:        line.Evidences,
+			Barcodes:         line.Barcodes,
 		})
 	}
 
@@ -144,7 +185,81 @@ func MapPatchSalesReturnLogisticsRequestToInput(request PatchSalesReturnLogistic
 	}
 }
 
+func MapBindSalesReturnLineBarcodesRequestToInput(request BindSalesReturnLineBarcodesRequest, salesReturnID string, operator string) BindSalesReturnLineBarcodesInput {
+	barcodes := make([]SalesReturnLineBarcodeInput, 0, len(request.Barcodes))
+	for _, barcode := range request.Barcodes {
+		barcodes = append(barcodes, SalesReturnLineBarcodeInput{
+			SalesReturnLineID:  barcode.SalesReturnLineID,
+			RawCode:            barcode.RawCode,
+			NormalizedCode:     barcode.NormalizedCode,
+			BindSource:         barcode.BindSource,
+			VerificationStatus: barcode.VerificationStatus,
+		})
+	}
+	return BindSalesReturnLineBarcodesInput{
+		SalesReturnID: salesReturnID,
+		Operator:      operator,
+		Barcodes:      barcodes,
+	}
+}
+
+func MapConfirmSalesReturnInboundRequestToInput(request ConfirmSalesReturnInboundRequest, salesReturnID string, operator string) ConfirmSalesReturnInboundInput {
+	lines := make([]ConfirmSalesReturnInboundLineInput, 0, len(request.Lines))
+	for _, line := range request.Lines {
+		barcodes := make([]SalesReturnLineBarcodeInput, 0, len(line.Barcodes))
+		for _, barcode := range line.Barcodes {
+			barcodes = append(barcodes, SalesReturnLineBarcodeInput{
+				SalesReturnLineID:  line.SalesReturnLineID,
+				RawCode:            barcode.RawCode,
+				NormalizedCode:     barcode.NormalizedCode,
+				BindSource:         barcode.BindSource,
+				VerificationStatus: barcode.VerificationStatus,
+			})
+		}
+		lines = append(lines, ConfirmSalesReturnInboundLineInput{
+			SalesReturnLineID: line.SalesReturnLineID,
+			Quantity:          line.Quantity,
+			Barcodes:          barcodes,
+		})
+	}
+	return ConfirmSalesReturnInboundInput{
+		SalesReturnID:  salesReturnID,
+		ExecutionKey:   request.ClientRequestID,
+		Operator:       operator,
+		TargetCategory: request.TargetCategory,
+		BatchNo:        request.BatchNo,
+		InboundDateRaw: request.InboundDate,
+		Remarks:        request.Remarks,
+		Lines:          lines,
+	}
+}
+
+func mapSalesReturnLineBarcodeToResponse(barcode models.SalesReturnLineBarcode) SalesReturnLineBarcodeResponse {
+	return SalesReturnLineBarcodeResponse{
+		ID:                  barcode.ID,
+		SalesReturnID:       barcode.SalesReturnID,
+		SalesReturnLineID:   barcode.SalesReturnLineID,
+		SalesOrderLineID:    barcode.SalesOrderLineID,
+		RawCode:             barcode.RawCode,
+		NormalizedCode:      barcode.NormalizedCode,
+		ProductCodeSnapshot: barcode.ProductCodeSnapshot,
+		BindSource:          barcode.BindSource,
+		VerificationStatus:  barcode.VerificationStatus,
+		BoundAt:             barcode.BoundAt,
+		BoundBy:             barcode.BoundBy,
+	}
+}
+
 func mapSalesReturnLineToResponse(line models.SalesReturnLine) SalesReturnLineResponse {
+	barcodes := make([]SalesReturnLineBarcodeResponse, 0, len(line.Barcodes))
+	for _, barcode := range line.Barcodes {
+		barcodes = append(barcodes, mapSalesReturnLineBarcodeToResponse(barcode))
+	}
+	status := line.Status
+	if strings.TrimSpace(status) == "" {
+		status = SalesReturnLineStatusRequested
+	}
+
 	return SalesReturnLineResponse{
 		ID:                                    line.ID,
 		SalesOrderLineID:                      line.SalesOrderLineID,
@@ -161,11 +276,14 @@ func mapSalesReturnLineToResponse(line models.SalesReturnLine) SalesReturnLineRe
 		Description:                           line.Description,
 		UOM:                                   line.UOM,
 		Quantity:                              math.Round(line.Quantity*100) / 100,
+		ReceivedQuantity:                      math.Round(line.ReceivedQuantity*100) / 100,
+		Status:                                status,
 		Price:                                 math.Round(line.Price*100) / 100,
 		Amount:                                math.Round(line.Amount*100) / 100,
 		IssueCategory:                         line.IssueCategory,
 		Reason:                                line.Reason,
 		Evidences:                             decodeOrderEvidences(line.Evidences),
+		Barcodes:                              barcodes,
 	}
 }
 
@@ -199,6 +317,7 @@ func MapSalesReturnToResponse(record models.SalesReturn) SalesReturnResponse {
 		IssueCategory:                record.IssueCategory,
 		Reason:                       record.Reason,
 		Remarks:                      record.Remarks,
+		TotalReceivedQuantity:        math.Round(record.TotalReceivedQuantity*100) / 100,
 		ActualReturnAmount:           math.Round(record.ActualReturnAmount*100) / 100,
 		ActualReturnAmountNote:       record.ActualReturnAmountNote,
 		ActualReturnAmountEvidences:  decodeOrderEvidences(record.ActualReturnAmountEvidences),
@@ -211,6 +330,7 @@ func MapSalesReturnToResponse(record models.SalesReturn) SalesReturnResponse {
 		CreatedAt:                    record.CreatedAt,
 		UpdatedAt:                    record.UpdatedAt,
 		Lines:                        lines,
+		InboundRecords:               []InventoryInboundRecordResponse{},
 	}
 }
 
@@ -226,5 +346,16 @@ func MapCreateSalesReturnResultToResponse(result CreateSalesReturnResult) Create
 	return CreateSalesReturnResponse{
 		SalesReturn: MapSalesReturnToResponse(result.SalesReturn),
 		SalesOrder:  MapSalesOrderToResponse(result.SalesOrder),
+	}
+}
+
+func MapConfirmSalesReturnInboundResultToResponse(result ConfirmSalesReturnInboundResult) ConfirmSalesReturnInboundResponse {
+	records := make([]InventoryInboundRecordResponse, 0, len(result.CreatedInboundRecords))
+	for _, record := range result.CreatedInboundRecords {
+		records = append(records, MapInboundRecordToResponse(record))
+	}
+	return ConfirmSalesReturnInboundResponse{
+		SalesReturn:           MapSalesReturnToResponse(result.SalesReturn),
+		CreatedInboundRecords: records,
 	}
 }

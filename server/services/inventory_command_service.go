@@ -18,8 +18,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math"
-	"strconv"
 	"strings"
 	"time"
 	"xdfc-server/audit"
@@ -144,6 +144,9 @@ func inboundAuditSnapshot(inbound models.InboundRecord) map[string]any {
 		"materialId":          strings.TrimSpace(inbound.MaterialID),
 		"materialName":        strings.TrimSpace(inbound.MaterialName),
 		"materialCode":        strings.TrimSpace(inbound.MaterialCode),
+		"sourceType":          strings.TrimSpace(inbound.SourceType),
+		"sourceId":            strings.TrimSpace(inbound.SourceID),
+		"sourceLineId":        inbound.SourceLineID,
 		"purchaseOrderId":     strings.TrimSpace(inbound.PurchaseOrderID),
 		"purchaseOrderLineId": inbound.PurchaseOrderLineID,
 		"quantity":            inbound.Quantity,
@@ -162,12 +165,16 @@ func shipmentAuditSnapshot(shipment models.ShipmentRecord) map[string]any {
 		"materialId":       strings.TrimSpace(shipment.MaterialID),
 		"materialName":     strings.TrimSpace(shipment.MaterialName),
 		"materialCode":     strings.TrimSpace(shipment.MaterialCode),
+		"sourceType":       strings.TrimSpace(shipment.SourceType),
+		"sourceId":         strings.TrimSpace(shipment.SourceID),
+		"sourceLineId":     shipment.SourceLineID,
 		"salesOrderId":     strings.TrimSpace(shipment.SalesOrderID),
 		"salesOrderLineId": shipment.SalesOrderLineID,
 		"quantity":         shipment.Quantity,
 		"sourceCategory":   strings.TrimSpace(shipment.SourceCategory),
 		"batchNo":          strings.TrimSpace(shipment.BatchNo),
 		"orderNo":          strings.TrimSpace(shipment.OrderNo),
+		"trackingNo":       strings.TrimSpace(shipment.TrackingNo),
 		"status":           strings.TrimSpace(shipment.Status),
 		"cogs":             shipment.COGS,
 		"shipmentDate":     shipment.ShipmentDate,
@@ -298,6 +305,9 @@ func PatchShipmentDraftRecord(ctx context.Context, id string, patch PatchShipmen
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&shipment, "id = ?", id).Error; err != nil {
 			return err
 		}
+		if isAfterSalesExecutionSourceType(shipment.SourceType) {
+			return ErrAfterSalesExecutionDedicatedPath
+		}
 		if shipment.Status != "DRAFT" {
 			return ErrShipmentNotDraft
 		}
@@ -355,6 +365,12 @@ func PatchShipmentDraftRecord(ctx context.Context, id string, patch PatchShipmen
 }
 
 func CreateShipmentDraft(shipment *models.ShipmentRecord) error {
+	if shipment == nil {
+		return errors.New("shipment is required")
+	}
+	if isAfterSalesExecutionSourceType(shipment.SourceType) {
+		return ErrAfterSalesExecutionDedicatedPath
+	}
 	if strings.TrimSpace(shipment.Status) == "" {
 		shipment.Status = "DRAFT"
 	}
@@ -366,7 +382,18 @@ type inboundInventoryAuditResult struct {
 	inventoryAfter  models.Inventory
 }
 
-func recordInboundTx(tx *gorm.DB, inbound *models.InboundRecord) (inboundInventoryAuditResult, error) {
+type inboundRecordOptions struct {
+	skipZeroValueVoucher bool
+	auditAction          string
+	auditOperator        string
+	auditIP              string
+}
+
+func recordInboundTx(
+	tx *gorm.DB,
+	inbound *models.InboundRecord,
+	options inboundRecordOptions,
+) (inboundInventoryAuditResult, error) {
 	if tx == nil || inbound == nil {
 		return inboundInventoryAuditResult{}, errors.New("transaction and inbound are required")
 	}
@@ -432,14 +459,44 @@ func recordInboundTx(tx *gorm.DB, inbound *models.InboundRecord) (inboundInvento
 		return inboundInventoryAuditResult{}, err
 	}
 
-	_, err = CreateInboundVoucherTx(tx, *inbound)
-	if err != nil {
-		return inboundInventoryAuditResult{}, err
+	if !options.skipZeroValueVoucher || inbound.Quantity*inbound.PurchasePrice > inventoryValueTolerance {
+		_, err = CreateInboundVoucherTx(tx, *inbound)
+		if err != nil {
+			return inboundInventoryAuditResult{}, err
+		}
+	}
+	if action := strings.TrimSpace(options.auditAction); action != "" {
+		var before map[string]any
+		if auditResult.inventoryBefore != nil {
+			before = map[string]any{
+				"inventory": inventoryAuditSnapshot(*auditResult.inventoryBefore),
+			}
+		}
+		payload := inboundAuditSnapshot(*inbound)
+		payload["inventoryId"] = strings.TrimSpace(auditResult.inventoryAfter.ID)
+		payload["inventory"] = inventoryAuditSnapshot(auditResult.inventoryAfter)
+		if err := writeInventoryAuditEntry(
+			tx,
+			inbound.ID,
+			action,
+			before,
+			payload,
+			strings.TrimSpace(options.auditOperator),
+			strings.TrimSpace(options.auditIP),
+		); err != nil {
+			return inboundInventoryAuditResult{}, err
+		}
 	}
 	return auditResult, nil
 }
 
 func RecordInbound(ctx context.Context, inbound *models.InboundRecord) error {
+	if inbound == nil {
+		return errors.New("inbound is required")
+	}
+	if isAfterSalesExecutionSourceType(inbound.SourceType) {
+		return ErrAfterSalesExecutionDedicatedPath
+	}
 	if inbound.Quantity <= 0 {
 		return errors.New("[CRITICAL_LOGIC_ERROR] invalid inbound quantity")
 	}
@@ -459,7 +516,7 @@ func RecordInbound(ctx context.Context, inbound *models.InboundRecord) error {
 	var auditResult inboundInventoryAuditResult
 	err := db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var txErr error
-		auditResult, txErr = recordInboundTx(tx, inbound)
+		auditResult, txErr = recordInboundTx(tx, inbound, inboundRecordOptions{})
 		if txErr != nil {
 			return txErr
 		}
@@ -556,6 +613,120 @@ func rollbackShipmentFromSalesOrderTx(tx *gorm.DB, shipment *models.ShipmentReco
 	return err
 }
 
+type shipmentCommitOptions struct {
+	updateSalesOrder     bool
+	auditAction          string
+	skipZeroValueVoucher bool
+}
+
+func commitShipmentRecordTx(
+	ctx context.Context,
+	tx *gorm.DB,
+	shipment *models.ShipmentRecord,
+	options shipmentCommitOptions,
+) error {
+	if tx == nil || shipment == nil {
+		return errors.New("transaction and shipment are required")
+	}
+	if shipment.Quantity <= 0 {
+		return errors.New("[CRITICAL_LOGIC_ERROR] invalid shipment quantity")
+	}
+	if strings.TrimSpace(shipment.MaterialID) == "" || strings.TrimSpace(shipment.SourceCategory) == "" {
+		return errors.New("[CRITICAL_DATA_INTEGRITY] shipment material and source category are required")
+	}
+	if strings.TrimSpace(shipment.ID) == "" {
+		shipment.ID = uuid.NewString()
+	}
+
+	var existingShipment models.ShipmentRecord
+	existingErr := tx.First(&existingShipment, "id = ?", shipment.ID).Error
+	if existingErr != nil && !errors.Is(existingErr, gorm.ErrRecordNotFound) {
+		return existingErr
+	}
+	hasExistingShipment := existingErr == nil
+	if hasExistingShipment && strings.ToUpper(strings.TrimSpace(existingShipment.Status)) != "DRAFT" {
+		return ErrShipmentNotDraft
+	}
+
+	var inv models.Inventory
+	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where("material_id = ? AND category_code = ? AND batch_no = ?", shipment.MaterialID, shipment.SourceCategory, shipment.BatchNo).
+		First(&inv).Error; err != nil {
+		return errors.New("inventory record not found for shipment commit")
+	}
+	if inv.Quantity+inventoryValueTolerance < shipment.Quantity {
+		return fmt.Errorf("[CRITICAL_STOCK_SHORTAGE] insufficient inventory (current: %g)", inv.Quantity)
+	}
+
+	beforeInventory := inv
+	cogs := shipment.Quantity * inv.AverageUnitCost
+	newTotalValue := inv.TotalValue - cogs
+	if newTotalValue < -inventoryValueTolerance {
+		return errors.New("[CRITICAL_LOGIC_ERROR] negative inventory value")
+	}
+	if math.Abs(newTotalValue) <= inventoryValueTolerance {
+		newTotalValue = 0
+	}
+
+	inv.Quantity -= shipment.Quantity
+	if math.Abs(inv.Quantity) <= inventoryValueTolerance {
+		inv.Quantity = 0
+	}
+	inv.TotalValue = newTotalValue
+	if inv.Quantity > 0 {
+		inv.AverageUnitCost = inv.TotalValue / inv.Quantity
+	} else {
+		inv.AverageUnitCost = 0
+	}
+	if err := updateInventoryRecord(tx, &inv); err != nil {
+		return err
+	}
+
+	shipment.COGS = cogs
+	shipment.Status = "COMMITTED"
+	if hasExistingShipment {
+		if err := tx.Model(&models.ShipmentRecord{}).Where("id = ?", shipment.ID).Updates(map[string]any{
+			"status": "COMMITTED",
+			"cogs":   shipment.COGS,
+		}).Error; err != nil {
+			return err
+		}
+	} else if err := tx.Create(shipment).Error; err != nil {
+		return err
+	}
+
+	if options.updateSalesOrder {
+		if err := applyShipmentToSalesOrderTx(tx, shipment); err != nil {
+			return err
+		}
+	}
+
+	if !options.skipZeroValueVoucher || shipment.COGS > inventoryValueTolerance {
+		if _, err := CreateShipmentVoucherTx(tx, *shipment); err != nil {
+			return err
+		}
+	}
+
+	before := map[string]any{
+		"inventory": inventoryAuditSnapshot(beforeInventory),
+	}
+	if hasExistingShipment {
+		before["shipment"] = shipmentAuditSnapshot(existingShipment)
+	}
+	payload := map[string]any{
+		"shipment":  shipmentAuditSnapshot(*shipment),
+		"inventory": inventoryAuditSnapshot(inv),
+	}
+	action := strings.TrimSpace(options.auditAction)
+	if action == "" {
+		action = "SHIPMENT_COMMIT"
+	}
+	if ctx != nil {
+		return writeShipmentAuditEntryWithContext(ctx, tx, shipment.ID, action, before, payload, strings.TrimSpace(shipment.Operator))
+	}
+	return writeShipmentAuditEntry(tx, shipment.ID, action, before, payload, strings.TrimSpace(shipment.Operator), "")
+}
+
 func CommitShipment(ctx context.Context, id string) (InventoryShipmentRecordResponse, error) {
 	var shipment models.ShipmentRecord
 	if err := db.DB.WithContext(ctx).First(&shipment, "id = ?", id).Error; err != nil {
@@ -565,6 +736,9 @@ func CommitShipment(ctx context.Context, id string) (InventoryShipmentRecordResp
 		return InventoryShipmentRecordResponse{}, err
 	}
 
+	if isAfterSalesExecutionSourceType(shipment.SourceType) {
+		return InventoryShipmentRecordResponse{}, ErrAfterSalesExecutionDedicatedPath
+	}
 	if shipment.Status != "DRAFT" {
 		return InventoryShipmentRecordResponse{}, ErrShipmentNotDraft
 	}
@@ -573,69 +747,10 @@ func CommitShipment(ctx context.Context, id string) (InventoryShipmentRecordResp
 	}
 
 	err := db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		var inv models.Inventory
-		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
-			Where("material_id = ? AND category_code = ? AND batch_no = ?", shipment.MaterialID, shipment.SourceCategory, shipment.BatchNo).
-			First(&inv).Error
-		if err != nil {
-			return errors.New("inventory record not found for shipment commit")
-		}
-
-		if inv.Quantity < shipment.Quantity {
-			return errors.New("[CRITICAL_STOCK_SHORTAGE] insufficient inventory (current: " + strconv.FormatFloat(inv.Quantity, 'f', -1, 64) + ")")
-		}
-		beforeInventory := inv
-		beforeShipment := shipment
-		cogs := shipment.Quantity * inv.AverageUnitCost
-		newTotalValue := inv.TotalValue - cogs
-		if newTotalValue < -inventoryValueTolerance {
-			return errors.New("[CRITICAL_LOGIC_ERROR] negative inventory value")
-		}
-		if math.Abs(newTotalValue) <= inventoryValueTolerance {
-			newTotalValue = 0
-		}
-
-		inv.Quantity -= shipment.Quantity
-		if math.Abs(inv.Quantity) <= inventoryValueTolerance {
-			inv.Quantity = 0
-		}
-		inv.TotalValue = newTotalValue
-		if inv.Quantity > 0 {
-			inv.AverageUnitCost = inv.TotalValue / inv.Quantity
-		} else {
-			inv.AverageUnitCost = 0
-		}
-		if err := updateInventoryRecord(tx, &inv); err != nil {
-			return err
-		}
-
-		shipment.COGS = cogs
-		shipment.Status = "COMMITTED"
-		if err := tx.Model(&shipment).Updates(map[string]interface{}{
-			"status": "COMMITTED",
-			"cogs":   shipment.COGS,
-		}).Error; err != nil {
-			return err
-		}
-
-		if err := applyShipmentToSalesOrderTx(tx, &shipment); err != nil {
-			return err
-		}
-
-		_, err = CreateShipmentVoucherTx(tx, shipment)
-		if err != nil {
-			return err
-		}
-
-		before := map[string]any{
-			"shipment":  shipmentAuditSnapshot(beforeShipment),
-			"inventory": inventoryAuditSnapshot(beforeInventory),
-		}
-		payload := map[string]any{
-			"shipment":  shipmentAuditSnapshot(shipment),
-			"inventory": inventoryAuditSnapshot(inv),
-		}
-		return writeShipmentAuditEntryWithContext(ctx, tx, shipment.ID, "SHIPMENT_COMMIT", before, payload, strings.TrimSpace(shipment.Operator))
+		return commitShipmentRecordTx(ctx, tx, &shipment, shipmentCommitOptions{
+			updateSalesOrder: true,
+			auditAction:      "SHIPMENT_COMMIT",
+		})
 	})
 	if err == nil {
 		var latestInv models.Inventory
@@ -866,6 +981,9 @@ func VoidShipment(ctx context.Context, id string) error {
 			return err
 		}
 
+		if isAfterSalesExecutionSourceType(shipment.SourceType) {
+			return ErrAfterSalesExecutionDedicatedPath
+		}
 		if shipment.Status == "VOID" {
 			return errors.New("shipment already voided")
 		}

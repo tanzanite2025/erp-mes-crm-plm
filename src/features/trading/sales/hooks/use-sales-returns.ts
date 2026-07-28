@@ -5,13 +5,16 @@ import { handleServerError } from '@/lib/handle-server-error'
 import { useLanguage } from '@/context/language-provider'
 import { tradingQueryKeys } from '@/features/trading/query-keys'
 import { receivableQueryKeys } from '@/features/trading/receivables/query-keys'
+import { warehouseQueryKeys } from '@/features/warehouse/query-keys'
 import type {
+  ConfirmSalesReturnInboundPayload,
   CreateSalesReturnPayload,
   PatchSalesReturnActualAmountEntryPayload,
   PatchSalesReturnPayload,
   PatchSalesReturnLogisticsPayload,
 } from '../contracts/sales-return-api-dto'
 import {
+  confirmSalesReturnInbound,
   createSalesReturn,
   deleteSalesReturn,
   getSalesReturnActualAmountRecords,
@@ -82,6 +85,9 @@ export function useSalesReturnMutations() {
   ) => {
     await queryClient.invalidateQueries({
       queryKey: tradingQueryKeys.salesReturnsRoot(),
+    })
+    await queryClient.invalidateQueries({
+      queryKey: ['sales-orders', 'after-sales-summary'],
     })
     await queryClient.invalidateQueries({
       queryKey: tradingQueryKeys.salesReturnDetail(salesReturnId),
@@ -190,6 +196,36 @@ export function useSalesReturnMutations() {
     onError: handleServerError,
   })
 
+  const confirmInboundMutation = useMutation({
+    mutationFn: ({
+      salesReturnId,
+      payload,
+    }: {
+      salesReturnId: string
+      payload: ConfirmSalesReturnInboundPayload
+    }) => confirmSalesReturnInbound(salesReturnId, payload),
+    onSuccess: async (data) => {
+      toast.success('退货入库已确认')
+      await invalidateSalesReturnViews(
+        data.salesReturn.id,
+        data.salesReturn.salesOrderId
+      )
+      await queryClient.invalidateQueries({
+        queryKey: warehouseQueryKeys.inboundHistory(),
+      })
+      await queryClient.invalidateQueries({
+        queryKey: warehouseQueryKeys.inventoryList(),
+      })
+      await queryClient.invalidateQueries({
+        queryKey: warehouseQueryKeys.inventoryValuation(),
+      })
+      await queryClient.invalidateQueries({
+        queryKey: warehouseQueryKeys.inventoryAlertSummary(),
+      })
+    },
+    onError: handleServerError,
+  })
+
   const deleteMutation = useMutation({
     mutationFn: ({
       salesReturnId,
@@ -231,5 +267,6 @@ export function useSalesReturnMutations() {
     patchBodyMutation,
     patchLogisticsMutation,
     patchActualAmountEntryMutation,
+    confirmInboundMutation,
   }
 }

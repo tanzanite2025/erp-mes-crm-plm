@@ -31,7 +31,12 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-const salesExchangeDateOnlyLayout = "2006-01-02"
+const (
+	salesExchangeDateOnlyLayout = "2006-01-02"
+
+	SalesExchangeLabelSideOldItem         = "OLD_ITEM"
+	SalesExchangeLabelSideReplacementItem = "REPLACEMENT_ITEM"
+)
 
 type SalesExchangeListQuery struct {
 	Page            int
@@ -55,6 +60,23 @@ func parseSalesExchangeFlexibleTime(raw string, field string) (*time.Time, error
 	return nil, fmt.Errorf("%s format is invalid", field)
 }
 
+func normalizeSalesExchangeStatusFilters(raw string) []string {
+	seen := make(map[string]struct{})
+	statuses := make([]string, 0)
+	for _, segment := range strings.Split(raw, ",") {
+		status := normalizeSalesExchangeStatus(segment)
+		if status == "" || strings.EqualFold(status, "all") {
+			continue
+		}
+		if _, exists := seen[status]; exists {
+			continue
+		}
+		seen[status] = struct{}{}
+		statuses = append(statuses, status)
+	}
+	return statuses
+}
+
 func ListSalesExchanges(query SalesExchangeListQuery) (SalesExchangeListResponse, error) {
 	page := query.Page
 	if page < 1 {
@@ -70,9 +92,9 @@ func ListSalesExchanges(query SalesExchangeListQuery) (SalesExchangeListResponse
 		tx = tx.Where("customer_id = ?", customerID)
 	}
 	if statusRaw := strings.TrimSpace(query.StatusFilterRaw); statusRaw != "" && !strings.EqualFold(statusRaw, "all") {
-		status := normalizeSalesExchangeStatus(statusRaw)
-		if status != "" {
-			tx = tx.Where("status = ?", status)
+		statuses := normalizeSalesExchangeStatusFilters(statusRaw)
+		if len(statuses) > 0 {
+			tx = tx.Where("status IN ?", statuses)
 		}
 	}
 	if keyword := strings.TrimSpace(query.Keyword); keyword != "" {
@@ -103,8 +125,19 @@ func ListSalesExchanges(query SalesExchangeListQuery) (SalesExchangeListResponse
 		return SalesExchangeListResponse{}, err
 	}
 
+	executionRecordsBySource, err := loadSalesExchangeExecutionRecordsBySource(items)
+	if err != nil {
+		return SalesExchangeListResponse{}, err
+	}
+	responses := MapSalesExchangesToResponse(items)
+	for index := range responses {
+		execution := executionRecordsBySource[items[index].ID]
+		responses[index].InboundRecords = mapInventoryInboundRecordsToResponse(execution.inbound)
+		responses[index].ShipmentRecords = mapShipmentRecordsToResponse(execution.shipments)
+	}
+
 	return SalesExchangeListResponse{
-		Items:    MapSalesExchangesToResponse(items),
+		Items:    responses,
 		Total:    total,
 		Page:     page,
 		PageSize: pageSize,
@@ -116,7 +149,15 @@ func GetSalesExchangeByID(id string) (SalesExchangeResponse, error) {
 	if err := db.DB.Preload("Lines.LabelCodes").Preload("LabelCodes").First(&record, "id = ?", strings.TrimSpace(id)).Error; err != nil {
 		return SalesExchangeResponse{}, err
 	}
-	return MapSalesExchangeToResponse(record), nil
+	executionRecordsBySource, err := loadSalesExchangeExecutionRecordsBySource([]models.SalesExchange{record})
+	if err != nil {
+		return SalesExchangeResponse{}, err
+	}
+	response := MapSalesExchangeToResponse(record)
+	execution := executionRecordsBySource[record.ID]
+	response.InboundRecords = mapInventoryInboundRecordsToResponse(execution.inbound)
+	response.ShipmentRecords = mapShipmentRecordsToResponse(execution.shipments)
+	return response, nil
 }
 
 func CreateSalesExchange(input CreateSalesExchangeInput) (CreateSalesExchangeResponse, error) {
@@ -158,15 +199,66 @@ func DeleteSalesExchange(id string) error {
 	})
 }
 
+func PatchSalesExchangeOldItemLogistics(input PatchSalesExchangeOldItemLogisticsInput) (SalesExchangeResponse, error) {
+	input.SalesExchangeID = strings.TrimSpace(input.SalesExchangeID)
+	if input.SalesExchangeID == "" {
+		return SalesExchangeResponse{}, errors.New("sales exchange id is required")
+	}
+	input.Operator = strings.TrimSpace(input.Operator)
+	if input.Operator == "" {
+		input.Operator = "unknown"
+	}
+	input.OldItemTrackingNo = strings.TrimSpace(input.OldItemTrackingNo)
+
+	var response SalesExchangeResponse
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		var record models.SalesExchange
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Preload("Lines.LabelCodes").
+			Preload("LabelCodes").
+			First(&record, "id = ?", input.SalesExchangeID).Error; err != nil {
+			return err
+		}
+		status := normalizeSalesExchangeStatus(record.Status)
+		if isTerminalSalesExchangeStatus(status) {
+			return errors.New("sales exchange status does not allow old item logistics update")
+		}
+		if err := tx.Model(&models.SalesExchange{}).
+			Where("id = ?", record.ID).
+			Updates(map[string]any{
+				"received_old_item_tracking_no": input.OldItemTrackingNo,
+				"operator":                      input.Operator,
+			}).Error; err != nil {
+			return err
+		}
+		var reloaded models.SalesExchange
+		if err := tx.Preload("Lines.LabelCodes").
+			Preload("LabelCodes").
+			First(&reloaded, "id = ?", record.ID).Error; err != nil {
+			return err
+		}
+		response = MapSalesExchangeToResponse(reloaded)
+		return nil
+	})
+	if err != nil {
+		return SalesExchangeResponse{}, err
+	}
+	return response, nil
+}
+
 func ConfirmSalesExchangeOldItemInbound(input ConfirmSalesExchangeOldItemInboundInput) (ConfirmSalesExchangeOldItemInboundResponse, error) {
 	normalized, err := normalizeConfirmSalesExchangeOldItemInboundInput(input)
+	if err != nil {
+		return ConfirmSalesExchangeOldItemInboundResponse{}, err
+	}
+	executionFingerprint, err := salesExchangeOldItemInboundExecutionFingerprint(normalized)
 	if err != nil {
 		return ConfirmSalesExchangeOldItemInboundResponse{}, err
 	}
 
 	var result ConfirmSalesExchangeOldItemInboundResult
 	err = db.DB.Transaction(func(tx *gorm.DB) error {
-		confirmed, err := confirmSalesExchangeOldItemInboundTx(tx, normalized)
+		confirmed, err := confirmSalesExchangeOldItemInboundTx(tx, normalized, executionFingerprint)
 		if err != nil {
 			return err
 		}
@@ -185,6 +277,39 @@ func ConfirmSalesExchangeOldItemInbound(input ConfirmSalesExchangeOldItemInbound
 	}
 
 	return MapConfirmSalesExchangeOldItemInboundResultToResponse(result), nil
+}
+
+func ConfirmSalesExchangeReplacementShipment(input ConfirmSalesExchangeReplacementShipmentInput) (ConfirmSalesExchangeReplacementShipmentResponse, error) {
+	normalized, err := normalizeConfirmSalesExchangeReplacementShipmentInput(input)
+	if err != nil {
+		return ConfirmSalesExchangeReplacementShipmentResponse{}, err
+	}
+	executionFingerprint, err := salesExchangeReplacementShipmentExecutionFingerprint(normalized)
+	if err != nil {
+		return ConfirmSalesExchangeReplacementShipmentResponse{}, err
+	}
+
+	var result ConfirmSalesExchangeReplacementShipmentResult
+	err = db.DB.Transaction(func(tx *gorm.DB) error {
+		confirmed, err := confirmSalesExchangeReplacementShipmentTx(tx, normalized, executionFingerprint)
+		if err != nil {
+			return err
+		}
+		result = confirmed
+		return nil
+	})
+	if err != nil {
+		return ConfirmSalesExchangeReplacementShipmentResponse{}, err
+	}
+
+	for _, shipmentRecord := range result.CreatedShipmentRecords {
+		var latestInventory models.Inventory
+		if db.DB.Where("material_id = ? AND category_code = ? AND batch_no = ?", shipmentRecord.MaterialID, shipmentRecord.SourceCategory, shipmentRecord.BatchNo).First(&latestInventory).Error == nil {
+			syncInventoryToSearch(latestInventory)
+		}
+	}
+
+	return MapConfirmSalesExchangeReplacementShipmentResultToResponse(result), nil
 }
 
 func normalizeCreateSalesExchangeInput(input CreateSalesExchangeInput) (CreateSalesExchangeInput, error) {
@@ -229,6 +354,17 @@ func normalizeConfirmSalesExchangeOldItemInboundInput(input ConfirmSalesExchange
 	if input.SalesExchangeID == "" {
 		return ConfirmSalesExchangeOldItemInboundInput{}, errors.New("sales exchange id is required")
 	}
+	executionKey, err := normalizeAfterSalesExecutionKey(input.ExecutionKey)
+	if err != nil {
+		return ConfirmSalesExchangeOldItemInboundInput{}, err
+	}
+	input.ExecutionKey = executionKey
+	if input.SalesExchangeLineID == 0 {
+		return ConfirmSalesExchangeOldItemInboundInput{}, errors.New("sales exchange line id is required")
+	}
+	if input.Quantity <= 0 {
+		return ConfirmSalesExchangeOldItemInboundInput{}, errors.New("sales exchange old item inbound quantity must be greater than zero")
+	}
 	input.TargetCategory = strings.TrimSpace(input.TargetCategory)
 	if input.TargetCategory == "" {
 		return ConfirmSalesExchangeOldItemInboundInput{}, errors.New("target category is required")
@@ -249,6 +385,78 @@ func normalizeConfirmSalesExchangeOldItemInboundInput(input ConfirmSalesExchange
 	}
 	input.BatchNo = strings.TrimSpace(input.BatchNo)
 	input.Remarks = strings.TrimSpace(input.Remarks)
+	for index := range input.Barcodes {
+		input.Barcodes[index] = normalizeSalesExchangeExecutionBarcodeInput(
+			input.Barcodes[index],
+			SalesExchangeLabelSideOldItem,
+			"warehouseScan",
+		)
+		if input.Barcodes[index].NormalizedLabelCode == "" {
+			return ConfirmSalesExchangeOldItemInboundInput{}, errors.New("sales exchange old item barcode is required")
+		}
+	}
+	return input, nil
+}
+
+func normalizeConfirmSalesExchangeReplacementShipmentInput(input ConfirmSalesExchangeReplacementShipmentInput) (ConfirmSalesExchangeReplacementShipmentInput, error) {
+	input.SalesExchangeID = strings.TrimSpace(input.SalesExchangeID)
+	if input.SalesExchangeID == "" {
+		return ConfirmSalesExchangeReplacementShipmentInput{}, errors.New("sales exchange id is required")
+	}
+	executionKey, err := normalizeAfterSalesExecutionKey(input.ExecutionKey)
+	if err != nil {
+		return ConfirmSalesExchangeReplacementShipmentInput{}, err
+	}
+	input.ExecutionKey = executionKey
+	input.SourceCategory = strings.TrimSpace(input.SourceCategory)
+	if input.SourceCategory == "" {
+		return ConfirmSalesExchangeReplacementShipmentInput{}, errors.New("source category is required")
+	}
+	shipmentDate, err := parseSalesExchangeFlexibleTime(input.ShipmentDateRaw, "shipmentDate")
+	if err != nil {
+		return ConfirmSalesExchangeReplacementShipmentInput{}, err
+	}
+	if shipmentDate != nil {
+		input.ShipmentDate = *shipmentDate
+	}
+	if input.ShipmentDate.IsZero() {
+		input.ShipmentDate = time.Now()
+	}
+	input.Operator = strings.TrimSpace(input.Operator)
+	if input.Operator == "" {
+		input.Operator = "unknown"
+	}
+	input.BatchNo = strings.TrimSpace(input.BatchNo)
+	input.ReplacementTrackingNo = strings.TrimSpace(input.ReplacementTrackingNo)
+	input.Remarks = strings.TrimSpace(input.Remarks)
+	if len(input.Lines) == 0 {
+		return ConfirmSalesExchangeReplacementShipmentInput{}, errors.New("sales exchange replacement shipment lines are required")
+	}
+	seenLineIDs := make(map[uint]struct{}, len(input.Lines))
+	for index := range input.Lines {
+		line := input.Lines[index]
+		if line.SalesExchangeLineID == 0 {
+			return ConfirmSalesExchangeReplacementShipmentInput{}, errors.New("sales exchange line id is required")
+		}
+		if _, exists := seenLineIDs[line.SalesExchangeLineID]; exists {
+			return ConfirmSalesExchangeReplacementShipmentInput{}, errors.New("duplicate sales exchange replacement shipment line")
+		}
+		seenLineIDs[line.SalesExchangeLineID] = struct{}{}
+		if line.Quantity <= 0 {
+			return ConfirmSalesExchangeReplacementShipmentInput{}, errors.New("sales exchange replacement shipment quantity must be greater than zero")
+		}
+		for barcodeIndex := range line.Barcodes {
+			line.Barcodes[barcodeIndex] = normalizeSalesExchangeExecutionBarcodeInput(
+				line.Barcodes[barcodeIndex],
+				SalesExchangeLabelSideReplacementItem,
+				"shipmentScan",
+			)
+			if line.Barcodes[barcodeIndex].NormalizedLabelCode == "" {
+				return ConfirmSalesExchangeReplacementShipmentInput{}, errors.New("sales exchange replacement barcode is required")
+			}
+		}
+		input.Lines[index] = line
+	}
 	return input, nil
 }
 
@@ -319,7 +527,7 @@ func createSalesExchangeTx(tx *gorm.DB, input CreateSalesExchangeInput) (CreateS
 	}, nil
 }
 
-func confirmSalesExchangeOldItemInboundTx(tx *gorm.DB, input ConfirmSalesExchangeOldItemInboundInput) (ConfirmSalesExchangeOldItemInboundResult, error) {
+func confirmSalesExchangeOldItemInboundTx(tx *gorm.DB, input ConfirmSalesExchangeOldItemInboundInput, executionFingerprint string) (ConfirmSalesExchangeOldItemInboundResult, error) {
 	var record models.SalesExchange
 	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 		Preload("Lines.LabelCodes").
@@ -327,53 +535,122 @@ func confirmSalesExchangeOldItemInboundTx(tx *gorm.DB, input ConfirmSalesExchang
 		First(&record, "id = ?", input.SalesExchangeID).Error; err != nil {
 		return ConfirmSalesExchangeOldItemInboundResult{}, err
 	}
-	if normalizeSalesExchangeStatus(record.Status) != SalesExchangeStatusDraft {
-		return ConfirmSalesExchangeOldItemInboundResult{}, errors.New("only draft sales exchanges can confirm old item inbound")
+	existingRecords, err := loadInboundRecordsByExecutionKeyTx(
+		tx,
+		AfterSalesSourceSalesExchangeOldItem,
+		record.ID,
+		input.ExecutionKey,
+	)
+	if err != nil {
+		return ConfirmSalesExchangeOldItemInboundResult{}, err
+	}
+	if err := validateExecutionReplayCount(len(existingRecords), 1); err != nil {
+		return ConfirmSalesExchangeOldItemInboundResult{}, err
+	}
+	if err := validateExecutionReplayFingerprint(existingRecords, executionFingerprint); err != nil {
+		return ConfirmSalesExchangeOldItemInboundResult{}, err
+	}
+	if len(existingRecords) > 0 {
+		return ConfirmSalesExchangeOldItemInboundResult{
+			SalesExchange:         record,
+			CreatedInboundRecords: existingRecords,
+		}, nil
+	}
+	status := normalizeSalesExchangeStatus(record.Status)
+	if status != SalesExchangeStatusDraft &&
+		status != SalesExchangeStatusOldItemPartiallyReceived {
+		return ConfirmSalesExchangeOldItemInboundResult{}, errors.New("sales exchange status does not allow old item inbound")
 	}
 	if len(record.Lines) == 0 {
 		return ConfirmSalesExchangeOldItemInboundResult{}, errors.New("sales exchange lines are required")
+	}
+	var line *models.SalesExchangeLine
+	for index := range record.Lines {
+		if record.Lines[index].ID == input.SalesExchangeLineID {
+			line = &record.Lines[index]
+			break
+		}
+	}
+	if line == nil {
+		return ConfirmSalesExchangeOldItemInboundResult{}, errors.New("sales exchange line not found")
+	}
+	remainingQuantity := line.ExchangeQuantity - line.OldItemReceivedQuantity
+	if input.Quantity-remainingQuantity > salesReturnQuantityTolerance {
+		return ConfirmSalesExchangeOldItemInboundResult{}, errors.New("sales exchange old item inbound quantity exceeds remaining quantity")
 	}
 
 	batchNo := input.BatchNo
 	if batchNo == "" {
 		batchNo = record.ExchangeNo
 	}
-	createdRecords := make([]models.InboundRecord, 0, len(record.Lines))
-	for _, line := range record.Lines {
-		if line.ExchangeQuantity <= 0 {
-			return ConfirmSalesExchangeOldItemInboundResult{}, errors.New("sales exchange line quantity must be greater than zero")
-		}
-		materialResolution, err := ResolveInventoryMaterialForProductSnapshotTx(tx, ProductInventoryMaterialResolutionSnapshot{
-			ProductID:    line.ProductID,
-			ProductCode:  line.ProductCode,
-			ProductModel: line.ProductModel,
-		})
-		if err != nil {
-			return ConfirmSalesExchangeOldItemInboundResult{}, err
-		}
-		material := materialResolution.Material
-		inbound := models.InboundRecord{
-			BaseModel:      models.BaseModel{ID: uuid.NewString()},
-			MaterialID:     material.ID,
-			MaterialName:   material.Name,
-			MaterialCode:   material.Code,
-			Quantity:       line.ExchangeQuantity,
-			PurchasePrice:  0,
-			TargetCategory: input.TargetCategory,
-			BatchNo:        batchNo,
-			InboundDate:    input.InboundDate,
-			Operator:       input.Operator,
-			Remarks:        input.Remarks,
-		}
-		if _, err := recordInboundTx(tx, &inbound); err != nil {
-			return ConfirmSalesExchangeOldItemInboundResult{}, err
-		}
-		createdRecords = append(createdRecords, inbound)
+	if err := bindSalesExchangeExecutionBarcodesTx(
+		tx,
+		record,
+		*line,
+		input.Barcodes,
+		SalesExchangeLabelSideOldItem,
+	); err != nil {
+		return ConfirmSalesExchangeOldItemInboundResult{}, err
+	}
+
+	materialResolution, err := ResolveInventoryMaterialForProductSnapshotTx(tx, ProductInventoryMaterialResolutionSnapshot{
+		ProductID:    line.ProductID,
+		ProductCode:  line.ProductCode,
+		ProductModel: line.ProductModel,
+	})
+	if err != nil {
+		return ConfirmSalesExchangeOldItemInboundResult{}, err
+	}
+	material := materialResolution.Material
+	inbound := models.InboundRecord{
+		BaseModel:            models.BaseModel{ID: uuid.NewString()},
+		MaterialID:           material.ID,
+		MaterialName:         material.Name,
+		MaterialCode:         material.Code,
+		SourceType:           AfterSalesSourceSalesExchangeOldItem,
+		SourceID:             record.ID,
+		SourceLineID:         line.ID,
+		ExecutionKey:         input.ExecutionKey,
+		ExecutionFingerprint: executionFingerprint,
+		Quantity:             input.Quantity,
+		PurchasePrice:        0,
+		TargetCategory:       input.TargetCategory,
+		BatchNo:              batchNo,
+		InboundDate:          input.InboundDate,
+		Operator:             input.Operator,
+		Remarks:              input.Remarks,
+	}
+	if _, err := recordInboundTx(tx, &inbound, inboundRecordOptions{
+		skipZeroValueVoucher: true,
+		auditAction:          AfterSalesAuditSalesExchangeOldItemInbound,
+		auditOperator:        input.Operator,
+	}); err != nil {
+		return ConfirmSalesExchangeOldItemInboundResult{}, err
+	}
+	createdRecords := []models.InboundRecord{inbound}
+
+	nextReceivedQuantity := math.Round((line.OldItemReceivedQuantity+input.Quantity)*100) / 100
+	nextLineStatus := deriveSalesExchangeLineExecutionStatus(
+		nextReceivedQuantity,
+		line.ReplacementShippedQuantity,
+		line.ExchangeQuantity,
+	)
+	if err := tx.Model(&models.SalesExchangeLine{}).
+		Where("id = ? AND sales_exchange_id = ?", line.ID, record.ID).
+		Updates(map[string]any{
+			"old_item_received_quantity": nextReceivedQuantity,
+			"status":                     nextLineStatus,
+		}).Error; err != nil {
+		return ConfirmSalesExchangeOldItemInboundResult{}, err
 	}
 
 	now := time.Now()
+	var reloaded models.SalesExchange
+	if err := tx.Preload("Lines.LabelCodes").Preload("LabelCodes").First(&reloaded, "id = ?", record.ID).Error; err != nil {
+		return ConfirmSalesExchangeOldItemInboundResult{}, err
+	}
 	if err := tx.Model(&models.SalesExchange{}).Where("id = ?", record.ID).Updates(map[string]any{
-		"status":                        SalesExchangeStatusOldItemReceived,
+		"status":                        deriveSalesExchangeExecutionStatus(reloaded),
 		"old_item_inbound_confirmed_at": now,
 		"old_item_inbound_confirmed_by": input.Operator,
 		"old_item_inbound_target":       input.TargetCategory,
@@ -390,6 +667,303 @@ func confirmSalesExchangeOldItemInboundTx(tx *gorm.DB, input ConfirmSalesExchang
 		SalesExchange:         record,
 		CreatedInboundRecords: createdRecords,
 	}, nil
+}
+
+func confirmSalesExchangeReplacementShipmentTx(tx *gorm.DB, input ConfirmSalesExchangeReplacementShipmentInput, executionFingerprint string) (ConfirmSalesExchangeReplacementShipmentResult, error) {
+	var record models.SalesExchange
+	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+		Preload("Lines.LabelCodes").
+		Preload("LabelCodes").
+		First(&record, "id = ?", input.SalesExchangeID).Error; err != nil {
+		return ConfirmSalesExchangeReplacementShipmentResult{}, err
+	}
+	existingRecords, err := loadShipmentRecordsByExecutionKeyTx(
+		tx,
+		AfterSalesSourceSalesExchangeReplacement,
+		record.ID,
+		input.ExecutionKey,
+	)
+	if err != nil {
+		return ConfirmSalesExchangeReplacementShipmentResult{}, err
+	}
+	if err := validateExecutionReplayCount(len(existingRecords), len(input.Lines)); err != nil {
+		return ConfirmSalesExchangeReplacementShipmentResult{}, err
+	}
+	if err := validateShipmentExecutionReplayFingerprint(existingRecords, executionFingerprint); err != nil {
+		return ConfirmSalesExchangeReplacementShipmentResult{}, err
+	}
+	if len(existingRecords) > 0 {
+		return ConfirmSalesExchangeReplacementShipmentResult{
+			SalesExchange:          record,
+			CreatedShipmentRecords: existingRecords,
+		}, nil
+	}
+	status := normalizeSalesExchangeStatus(record.Status)
+	if status == SalesExchangeStatusDraft {
+		return ConfirmSalesExchangeReplacementShipmentResult{}, errors.New("old item must be received before replacement shipment")
+	}
+	if isTerminalSalesExchangeStatus(status) {
+		return ConfirmSalesExchangeReplacementShipmentResult{}, errors.New("sales exchange status does not allow replacement shipment")
+	}
+	if len(record.Lines) == 0 {
+		return ConfirmSalesExchangeReplacementShipmentResult{}, errors.New("sales exchange lines are required")
+	}
+
+	lineByID := make(map[uint]models.SalesExchangeLine, len(record.Lines))
+	for _, line := range record.Lines {
+		lineByID[line.ID] = line
+	}
+
+	batchNo := input.BatchNo
+	if batchNo == "" {
+		batchNo = record.ExchangeNo
+	}
+
+	createdRecords := make([]models.ShipmentRecord, 0, len(input.Lines))
+	for _, lineInput := range input.Lines {
+		line, ok := lineByID[lineInput.SalesExchangeLineID]
+		if !ok {
+			return ConfirmSalesExchangeReplacementShipmentResult{}, errors.New("sales exchange line not found")
+		}
+		if line.OldItemReceivedQuantity+salesReturnQuantityTolerance < line.ExchangeQuantity {
+			return ConfirmSalesExchangeReplacementShipmentResult{}, errors.New("sales exchange old item has not been fully received")
+		}
+		remainingQuantity := line.ExchangeQuantity - line.ReplacementShippedQuantity
+		if lineInput.Quantity-remainingQuantity > salesReturnQuantityTolerance {
+			return ConfirmSalesExchangeReplacementShipmentResult{}, errors.New("sales exchange replacement shipment quantity exceeds remaining quantity")
+		}
+		if err := bindSalesExchangeExecutionBarcodesTx(
+			tx,
+			record,
+			line,
+			lineInput.Barcodes,
+			SalesExchangeLabelSideReplacementItem,
+		); err != nil {
+			return ConfirmSalesExchangeReplacementShipmentResult{}, err
+		}
+		materialResolution, err := resolveSalesExchangeReplacementMaterialTx(tx, line)
+		if err != nil {
+			return ConfirmSalesExchangeReplacementShipmentResult{}, err
+		}
+		material := materialResolution.Material
+		shipment := models.ShipmentRecord{
+			BaseModel:            models.BaseModel{ID: uuid.NewString()},
+			MaterialID:           material.ID,
+			MaterialName:         material.Name,
+			MaterialCode:         material.Code,
+			SourceType:           AfterSalesSourceSalesExchangeReplacement,
+			SourceID:             record.ID,
+			SourceLineID:         line.ID,
+			ExecutionKey:         input.ExecutionKey,
+			ExecutionFingerprint: executionFingerprint,
+			SalesOrderID:         record.SalesOrderID,
+			SalesOrderLineID:     line.SalesOrderLineID,
+			Quantity:             lineInput.Quantity,
+			SourceCategory:       input.SourceCategory,
+			BatchNo:              batchNo,
+			OrderNo:              record.ExchangeNo,
+			TrackingNo:           input.ReplacementTrackingNo,
+			Status:               "COMMITTED",
+			ShipmentDate:         input.ShipmentDate,
+			Operator:             input.Operator,
+			Remarks:              input.Remarks,
+		}
+		if err := commitShipmentRecordTx(nil, tx, &shipment, shipmentCommitOptions{
+			auditAction:          "SALES_EXCHANGE_REPLACEMENT_SHIPMENT",
+			skipZeroValueVoucher: true,
+		}); err != nil {
+			return ConfirmSalesExchangeReplacementShipmentResult{}, err
+		}
+		createdRecords = append(createdRecords, shipment)
+
+		nextShippedQuantity := math.Round((line.ReplacementShippedQuantity+lineInput.Quantity)*100) / 100
+		nextLineStatus := deriveSalesExchangeLineExecutionStatus(
+			line.OldItemReceivedQuantity,
+			nextShippedQuantity,
+			line.ExchangeQuantity,
+		)
+		if err := tx.Model(&models.SalesExchangeLine{}).
+			Where("id = ? AND sales_exchange_id = ?", line.ID, record.ID).
+			Updates(map[string]any{
+				"replacement_shipped_quantity": nextShippedQuantity,
+				"status":                       nextLineStatus,
+			}).Error; err != nil {
+			return ConfirmSalesExchangeReplacementShipmentResult{}, err
+		}
+	}
+
+	var reloaded models.SalesExchange
+	if err := tx.Preload("Lines.LabelCodes").Preload("LabelCodes").First(&reloaded, "id = ?", record.ID).Error; err != nil {
+		return ConfirmSalesExchangeReplacementShipmentResult{}, err
+	}
+	nextStatus := deriveSalesExchangeExecutionStatus(reloaded)
+	updateFields := map[string]any{
+		"status":                       nextStatus,
+		"replacement_shipped_at":       input.ShipmentDate,
+		"replacement_shipped_by":       input.Operator,
+		"replacement_source_category":  input.SourceCategory,
+		"replacement_batch_no":         batchNo,
+		"replacement_shipment_remarks": input.Remarks,
+	}
+	if input.ReplacementTrackingNo != "" {
+		updateFields["replacement_tracking_no"] = input.ReplacementTrackingNo
+	}
+	if err := tx.Model(&models.SalesExchange{}).Where("id = ?", record.ID).Updates(updateFields).Error; err != nil {
+		return ConfirmSalesExchangeReplacementShipmentResult{}, err
+	}
+	if err := tx.Preload("Lines.LabelCodes").Preload("LabelCodes").First(&reloaded, "id = ?", record.ID).Error; err != nil {
+		return ConfirmSalesExchangeReplacementShipmentResult{}, err
+	}
+
+	return ConfirmSalesExchangeReplacementShipmentResult{
+		SalesExchange:          reloaded,
+		CreatedShipmentRecords: createdRecords,
+	}, nil
+}
+
+func resolveSalesExchangeReplacementMaterialTx(tx *gorm.DB, line models.SalesExchangeLine) (ProductInventoryMaterialResolution, error) {
+	replacementProductCode := strings.TrimSpace(line.ReplacementProductCode)
+	if replacementProductCode == "" {
+		replacementProductCode = strings.TrimSpace(line.ProductCode)
+	}
+	replacementProductModel := strings.TrimSpace(line.ReplacementProductModel)
+	if replacementProductModel == "" {
+		replacementProductModel = strings.TrimSpace(line.ProductModel)
+	}
+	productID := ""
+	if strings.EqualFold(replacementProductCode, strings.TrimSpace(line.ProductCode)) &&
+		(strings.EqualFold(replacementProductModel, strings.TrimSpace(line.ProductModel)) || replacementProductModel == "") {
+		productID = strings.TrimSpace(line.ProductID)
+	}
+	return ResolveInventoryMaterialForProductSnapshotTx(tx, ProductInventoryMaterialResolutionSnapshot{
+		ProductID:    productID,
+		ProductCode:  replacementProductCode,
+		ProductModel: replacementProductModel,
+	})
+}
+
+func deriveSalesExchangeLineExecutionStatus(oldItemReceivedQuantity float64, replacementShippedQuantity float64, exchangeQuantity float64) string {
+	if replacementShippedQuantity+salesReturnQuantityTolerance >= exchangeQuantity {
+		return SalesExchangeStatusReplacementShipped
+	}
+	if replacementShippedQuantity > salesReturnQuantityTolerance {
+		return SalesExchangeStatusReplacementPartiallyShipped
+	}
+	if oldItemReceivedQuantity+salesReturnQuantityTolerance >= exchangeQuantity {
+		return SalesExchangeStatusOldItemReceived
+	}
+	if oldItemReceivedQuantity > salesReturnQuantityTolerance {
+		return SalesExchangeStatusOldItemPartiallyReceived
+	}
+	return SalesExchangeStatusDraft
+}
+
+func deriveSalesExchangeExecutionStatus(record models.SalesExchange) string {
+	if len(record.Lines) == 0 {
+		return normalizeSalesExchangeStatus(record.Status)
+	}
+	allOldItemsReceived := true
+	anyOldItemReceived := false
+	allReplacementShipped := true
+	anyReplacementShipped := false
+	for _, line := range record.Lines {
+		if line.OldItemReceivedQuantity > salesReturnQuantityTolerance {
+			anyOldItemReceived = true
+		}
+		if line.OldItemReceivedQuantity+salesReturnQuantityTolerance < line.ExchangeQuantity {
+			allOldItemsReceived = false
+		}
+		if line.ReplacementShippedQuantity > salesReturnQuantityTolerance {
+			anyReplacementShipped = true
+		}
+		if line.ReplacementShippedQuantity+salesReturnQuantityTolerance < line.ExchangeQuantity {
+			allReplacementShipped = false
+		}
+	}
+	if allOldItemsReceived && allReplacementShipped {
+		return SalesExchangeStatusReplacementShipped
+	}
+	if anyReplacementShipped {
+		return SalesExchangeStatusReplacementPartiallyShipped
+	}
+	if allOldItemsReceived {
+		return SalesExchangeStatusOldItemReceived
+	}
+	if anyOldItemReceived {
+		return SalesExchangeStatusOldItemPartiallyReceived
+	}
+	return normalizeSalesExchangeStatus(record.Status)
+}
+
+type salesExchangeExecutionRecords struct {
+	inbound   []models.InboundRecord
+	shipments []models.ShipmentRecord
+}
+
+func loadSalesExchangeExecutionRecordsBySource(
+	items []models.SalesExchange,
+) (map[string]salesExchangeExecutionRecords, error) {
+	result := make(map[string]salesExchangeExecutionRecords, len(items))
+	ids := make([]string, 0, len(items))
+	for _, item := range items {
+		if strings.TrimSpace(item.ID) == "" {
+			continue
+		}
+		ids = append(ids, item.ID)
+		result[item.ID] = salesExchangeExecutionRecords{
+			inbound:   []models.InboundRecord{},
+			shipments: []models.ShipmentRecord{},
+		}
+	}
+	if len(ids) == 0 {
+		return result, nil
+	}
+
+	var inboundRecords []models.InboundRecord
+	if err := db.DB.
+		Where(
+			"source_type = ? AND source_id IN ?",
+			AfterSalesSourceSalesExchangeOldItem,
+			ids,
+		).
+		Order("inbound_date asc, created_at asc").
+		Find(&inboundRecords).Error; err != nil {
+		return nil, err
+	}
+	for _, record := range inboundRecords {
+		execution := result[record.SourceID]
+		execution.inbound = append(execution.inbound, record)
+		result[record.SourceID] = execution
+	}
+
+	var shipmentRecords []models.ShipmentRecord
+	if err := db.DB.
+		Where(
+			"source_type = ? AND source_id IN ?",
+			AfterSalesSourceSalesExchangeReplacement,
+			ids,
+		).
+		Order("shipment_date asc, created_at asc").
+		Find(&shipmentRecords).Error; err != nil {
+		return nil, err
+	}
+	for _, record := range shipmentRecords {
+		execution := result[record.SourceID]
+		execution.shipments = append(execution.shipments, record)
+		result[record.SourceID] = execution
+	}
+
+	return result, nil
+}
+
+func mapShipmentRecordsToResponse(
+	records []models.ShipmentRecord,
+) []InventoryShipmentRecordResponse {
+	result := make([]InventoryShipmentRecordResponse, 0, len(records))
+	for _, record := range records {
+		result = append(result, MapShipmentRecordToResponse(record))
+	}
+	return result
 }
 
 func loadSalesExchangeOrderForUpdate(tx *gorm.DB, salesOrderID string) (models.SalesOrder, error) {
@@ -458,6 +1032,7 @@ func buildSalesExchangeLines(order models.SalesOrder, consumedQuantityMap map[ui
 			OriginalOrderQuantity:                 orderLine.Qty,
 			DeliveredQuantity:                     orderLine.DeliveredQty,
 			ExchangeQuantity:                      item.ExchangeQuantity,
+			Status:                                SalesExchangeStatusDraft,
 			ReplacementMode:                       replacementMode,
 			ReplacementProductCode:                item.ReplacementProductCode,
 			ReplacementProductModel:               item.ReplacementProductModel,
@@ -524,11 +1099,112 @@ func buildSalesExchangeMatchedLabelCode(salesExchangeID string, line models.Sale
 		SalesExchangeLineID: line.ID,
 		SalesOrderLineID:    line.SalesOrderLineID,
 		RawLabelCode:        strings.TrimSpace(input.RawLabelCode),
-		NormalizedLabelCode: strings.TrimSpace(input.NormalizedLabelCode),
+		NormalizedLabelCode: canonicalAfterSalesCode(input.RawLabelCode, input.NormalizedLabelCode),
 		RecognitionSource:   strings.TrimSpace(input.RecognitionSource),
 		RecognizedAt:        *recognizedAt,
+		Side:                normalizeSalesExchangeLabelSide(input.Side, SalesExchangeLabelSideOldItem),
 		Status:              "Matched",
 	}, nil
+}
+
+func normalizeSalesExchangeExecutionBarcodeInput(
+	input SalesExchangeExecutionBarcodeInput,
+	defaultSide string,
+	defaultRecognitionSource string,
+) SalesExchangeExecutionBarcodeInput {
+	input.RawLabelCode = strings.TrimSpace(input.RawLabelCode)
+	input.NormalizedLabelCode = canonicalAfterSalesCode(input.RawLabelCode, input.NormalizedLabelCode)
+	input.RecognitionSource = strings.TrimSpace(input.RecognitionSource)
+	if input.RecognitionSource == "" {
+		input.RecognitionSource = defaultRecognitionSource
+	}
+	input.Side = normalizeSalesExchangeLabelSide(input.Side, defaultSide)
+	input.RecognizedAtRaw = strings.TrimSpace(input.RecognizedAtRaw)
+	return input
+}
+
+func bindSalesExchangeExecutionBarcodesTx(
+	tx *gorm.DB,
+	record models.SalesExchange,
+	line models.SalesExchangeLine,
+	inputs []SalesExchangeExecutionBarcodeInput,
+	side string,
+) error {
+	seenNormalizedCodes := make(map[string]struct{}, len(inputs))
+	for _, input := range inputs {
+		normalizedCode := canonicalAfterSalesCode(input.RawLabelCode, input.NormalizedLabelCode)
+		if normalizedCode == "" {
+			return errors.New("sales exchange execution barcode is required")
+		}
+		if _, exists := seenNormalizedCodes[normalizedCode]; exists {
+			return errors.New("duplicate sales exchange label code")
+		}
+		seenNormalizedCodes[normalizedCode] = struct{}{}
+
+		var existing models.SalesExchangeLabelCode
+		err := tx.Where(
+			"sales_exchange_id = ? AND normalized_label_code = ?",
+			record.ID,
+			normalizedCode,
+		).First(&existing).Error
+		if err == nil {
+			if existing.SalesExchangeLineID == 0 &&
+				(strings.TrimSpace(existing.Side) == "" ||
+					strings.EqualFold(existing.Side, side)) {
+				recognizedAt, parseErr := parseSalesExchangeFlexibleTime(
+					input.RecognizedAtRaw,
+					"recognizedAt",
+				)
+				if parseErr != nil {
+					return parseErr
+				}
+				updates := map[string]any{
+					"sales_exchange_line_id": line.ID,
+					"sales_order_line_id":    line.SalesOrderLineID,
+					"side":                   side,
+					"status":                 "Matched",
+					"unmatched_reason":       "",
+					"recognition_source":     strings.TrimSpace(input.RecognitionSource),
+				}
+				if recognizedAt != nil {
+					updates["recognized_at"] = *recognizedAt
+				}
+				if err := tx.Model(&models.SalesExchangeLabelCode{}).
+					Where("id = ?", existing.ID).
+					Updates(updates).Error; err != nil {
+					return err
+				}
+				continue
+			}
+			if existing.SalesExchangeLineID != line.ID ||
+				!strings.EqualFold(existing.Side, side) {
+				return errors.New("duplicate sales exchange label code")
+			}
+			continue
+		}
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+
+		label, err := buildSalesExchangeMatchedLabelCode(
+			record.ID,
+			line,
+			SalesExchangeRecognizedLabelInput{
+				RawLabelCode:        input.RawLabelCode,
+				NormalizedLabelCode: normalizedCode,
+				RecognizedAtRaw:     input.RecognizedAtRaw,
+				RecognitionSource:   input.RecognitionSource,
+				Side:                side,
+			},
+		)
+		if err != nil {
+			return err
+		}
+		if err := tx.Create(&label).Error; err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func buildSalesExchangeUnmatchedLabelCode(salesExchangeID string, input SalesExchangeUnmatchedLabelInput) (models.SalesExchangeLabelCode, error) {
@@ -543,12 +1219,28 @@ func buildSalesExchangeUnmatchedLabelCode(salesExchangeID string, input SalesExc
 	return models.SalesExchangeLabelCode{
 		SalesExchangeID:     salesExchangeID,
 		RawLabelCode:        strings.TrimSpace(input.RawLabelCode),
-		NormalizedLabelCode: strings.TrimSpace(input.NormalizedLabelCode),
+		NormalizedLabelCode: canonicalAfterSalesCode(input.RawLabelCode, input.NormalizedLabelCode),
 		RecognitionSource:   strings.TrimSpace(input.RecognitionSource),
 		RecognizedAt:        *recognizedAt,
+		Side:                normalizeSalesExchangeLabelSide(input.Side, SalesExchangeLabelSideOldItem),
 		Status:              "Unmatched",
 		UnmatchedReason:     strings.TrimSpace(input.UnmatchedReason),
 	}, nil
+}
+
+func normalizeSalesExchangeLabelSide(raw string, defaultSide string) string {
+	trimmed := strings.TrimSpace(raw)
+	switch {
+	case strings.EqualFold(trimmed, SalesExchangeLabelSideOldItem):
+		return SalesExchangeLabelSideOldItem
+	case strings.EqualFold(trimmed, SalesExchangeLabelSideReplacementItem):
+		return SalesExchangeLabelSideReplacementItem
+	}
+	defaultSide = strings.TrimSpace(defaultSide)
+	if defaultSide == "" {
+		return SalesExchangeLabelSideOldItem
+	}
+	return defaultSide
 }
 
 func generateSalesExchangeNoTx(tx *gorm.DB, now time.Time) (string, error) {

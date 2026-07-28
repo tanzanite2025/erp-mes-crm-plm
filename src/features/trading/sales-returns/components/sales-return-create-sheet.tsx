@@ -14,7 +14,7 @@
  * 此组件只负责 UI 呈现 + 表单校验,所有业务计算放在 createAdjustedOrder/createFallbackOrder。
  */
 import { useMemo, useState } from 'react'
-import { Plus, X } from 'lucide-react'
+import { Barcode, Plus, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
@@ -75,6 +75,7 @@ export type SalesReturnCreateInitialValues = {
 
 type LineDraft = {
   quantity: number
+  barcodes: string[]
 }
 
 function todayValue() {
@@ -90,7 +91,7 @@ function toIsoDateTimeValue(value: string) {
 }
 
 function createEmptyLineDraft(): LineDraft {
-  return { quantity: 0 }
+  return { quantity: 0, barcodes: [] }
 }
 
 function createLineDraftMap(
@@ -99,6 +100,7 @@ function createLineDraftMap(
   return lines.reduce<Record<number, LineDraft>>((acc, line) => {
     acc[line.salesOrderLineId] = {
       quantity: line.quantity,
+      barcodes: line.barcodes.map((barcode) => barcode.normalizedCode),
     }
     return acc
   }, {})
@@ -404,6 +406,25 @@ function SalesReturnCreateSheetBody({
     }))
   }
 
+  const updateLineBarcodes = (lineId: number, rawValue: string) => {
+    const barcodes = Array.from(
+      new Set(
+        rawValue
+          .split(/[\s,;，；、]+/g)
+          .map((item) => item.trim())
+          .filter(Boolean)
+      )
+    )
+
+    setLineDrafts((prev) => ({
+      ...prev,
+      [lineId]: {
+        ...(prev[lineId] ?? createEmptyLineDraft()),
+        barcodes,
+      },
+    }))
+  }
+
   const addLine = (lineId: number) => {
     setSelectedLineIds((prev) =>
       prev.includes(lineId) ? prev : [...prev, lineId]
@@ -437,6 +458,7 @@ function SalesReturnCreateSheetBody({
         salesOrderLineId: Number(line.id),
         quantity: Number(draft.quantity),
         price: line.price || 0,
+        barcodes: draft.barcodes.length > 0 ? draft.barcodes : undefined,
       }))
 
     if (payloadLines.length === 0) {
@@ -783,6 +805,24 @@ function SalesReturnCreateSheetBody({
                                 disabled={line.remainingReturnableQuantity <= 0}
                               />
                             </div>
+                          </div>
+                          <div className='mt-3 space-y-1.5'>
+                            <label className='flex items-center gap-1.5 text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
+                              <Barcode className='size-3.5' />
+                              退回条码（可选）
+                            </label>
+                            <Textarea
+                              value={draft.barcodes.join('\n')}
+                              onChange={(event) =>
+                                updateLineBarcodes(
+                                  lineId,
+                                  event.target.value
+                                )
+                              }
+                              placeholder='可粘贴多个条码，用空格、换行或逗号分隔'
+                              rows={2}
+                              className='min-h-[60px] rounded-2xl bg-background/70 text-xs font-bold'
+                            />
                           </div>
                         </div>
                       )

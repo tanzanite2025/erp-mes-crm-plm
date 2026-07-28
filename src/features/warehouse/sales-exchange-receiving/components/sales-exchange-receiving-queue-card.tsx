@@ -45,11 +45,17 @@ function getSalesExchangeReceivingStatusLabel(status: string) {
   if (status === 'Draft') {
     return '待旧货入库'
   }
+  if (status === 'OldItemPartiallyReceived') {
+    return '部分旧货已收'
+  }
   if (status === 'OldItemReceived') {
     return '旧货已收'
   }
   if (status === 'ReplacementPrepared') {
     return '补发待出库'
+  }
+  if (status === 'ReplacementPartiallyShipped') {
+    return '部分补发'
   }
   if (status === 'ReplacementShipped') {
     return '补发已发出'
@@ -80,7 +86,8 @@ function SalesExchangeReceivingQueueItemCard({
   salesExchangeDraftRecord: SalesExchangeDraftRecord
   isConfirmingOldItemInbound: boolean
   onConfirmOldItemInbound: (
-    salesExchangeDraftRecord: SalesExchangeDraftRecord
+    salesExchangeDraftRecord: SalesExchangeDraftRecord,
+    salesExchangeLineId: number
   ) => Promise<void> | void
 }) {
   const visibleLineDrafts = salesExchangeDraftRecord.lines.slice(
@@ -192,6 +199,24 @@ function SalesExchangeReceivingQueueItemCard({
             <span className='shrink-0 font-mono text-[11px] font-black text-sky-700'>
               {lineDraft.exchangeQuantity} {lineDraft.uom}
             </span>
+            {typeof lineDraft.id === 'number' &&
+            lineDraft.exchangeQuantity - lineDraft.oldItemReceivedQuantity >
+              1e-9 ? (
+              <Button
+                type='button'
+                size='sm'
+                className='h-7 shrink-0 rounded-full px-2.5 text-[8px] font-black tracking-widest uppercase'
+                disabled={isConfirmingOldItemInbound}
+                onClick={() =>
+                  void onConfirmOldItemInbound(
+                    salesExchangeDraftRecord,
+                    lineDraft.id as number
+                  )
+                }
+              >
+                入库
+              </Button>
+            ) : null}
           </div>
         ))}
         {hiddenLineDraftCount > 0 ? (
@@ -203,23 +228,9 @@ function SalesExchangeReceivingQueueItemCard({
 
       <div className='mt-4 flex items-center justify-between gap-3 border-t border-dashed border-muted/50 pt-3'>
         <div className='min-w-0 truncate text-[9px] font-black tracking-widest text-muted-foreground/45 uppercase'>
-          旧货先入售后暂存，补发另走出库链路
+          旧货先入售后暂存，补发另走出库链路；请按明细行确认入库
         </div>
         <div className='flex shrink-0 items-center gap-2'>
-          <Button
-            type='button'
-            size='sm'
-            className='h-8 rounded-full px-3 text-[9px] font-black tracking-widest uppercase'
-            disabled={
-              isConfirmingOldItemInbound ||
-              salesExchangeDraftRecord.status !== 'Draft'
-            }
-            onClick={() =>
-              void onConfirmOldItemInbound(salesExchangeDraftRecord)
-            }
-          >
-            确认旧货入库
-          </Button>
           <Button
             asChild
             size='sm'
@@ -367,7 +378,7 @@ export function SalesExchangeReceivingQueueCard() {
               </div>
               {hiddenItemCount > 0 ? (
                 <div className='mt-3 rounded-2xl bg-background/70 px-4 py-3 text-center text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
-                  还有 {hiddenItemCount} 张销售换货草稿，请进入销售换货继续处理
+                  还有 {hiddenItemCount} 张销售换货记录，请进入销售换货继续处理
                 </div>
               ) : null}
             </>
@@ -378,7 +389,7 @@ export function SalesExchangeReceivingQueueCard() {
                 暂无销售换货待入库
               </p>
               <p className='mt-1 text-[11px] font-bold text-muted-foreground/50'>
-                销售换货草稿创建后，会在这里形成旧货待入库核对入口。
+                销售换货单创建后，会在这里形成旧货待入库核对入口。
               </p>
             </div>
           )}
