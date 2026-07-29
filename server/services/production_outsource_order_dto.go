@@ -24,6 +24,12 @@ type OutsourceOrderLineDTO struct {
 	ProcessCode      string    `json:"processCode"`
 	ProcessName      string    `json:"processName"`
 	Status           string    `json:"status"`
+	SentQuantity     float64   `json:"sentQuantity"`
+	ReturnedQuantity float64   `json:"returnedQuantity"`
+	AcceptedQuantity float64   `json:"acceptedQuantity"`
+	RejectedQuantity float64   `json:"rejectedQuantity"`
+	ReworkQuantity   float64   `json:"reworkQuantity"`
+	ScrapQuantity    float64   `json:"scrapQuantity"`
 	Notes            string    `json:"notes"`
 	Version          int64     `json:"version"`
 }
@@ -95,6 +101,12 @@ func mapOutsourceOrderLineToDTO(line models.OutsourceOrderLine) OutsourceOrderLi
 		ProcessCode:      line.ProcessCode,
 		ProcessName:      line.ProcessName,
 		Status:           line.Status,
+		SentQuantity:     line.SentQuantity,
+		ReturnedQuantity: line.ReturnedQuantity,
+		AcceptedQuantity: line.AcceptedQuantity,
+		RejectedQuantity: line.RejectedQuantity,
+		ReworkQuantity:   line.ReworkQuantity,
+		ScrapQuantity:    line.ScrapQuantity,
 		Notes:            line.Notes,
 		Version:          line.Version,
 	}
@@ -163,6 +175,12 @@ func mapOutsourceOrderLineDTOToModel(line OutsourceOrderLineDTO) models.Outsourc
 		ProcessCode:      line.ProcessCode,
 		ProcessName:      line.ProcessName,
 		Status:           line.Status,
+		SentQuantity:     line.SentQuantity,
+		ReturnedQuantity: line.ReturnedQuantity,
+		AcceptedQuantity: line.AcceptedQuantity,
+		RejectedQuantity: line.RejectedQuantity,
+		ReworkQuantity:   line.ReworkQuantity,
+		ScrapQuantity:    line.ScrapQuantity,
 		Notes:            line.Notes,
 		Version:          line.Version,
 	}

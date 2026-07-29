@@ -132,6 +132,9 @@ func (s *ProductionService) ListProductionRoutes() ([]ProductionRouteDTO, error)
 
 func (s *ProductionService) SaveProductionRoute(req SaveProductionRouteRequest) (ProductionRouteDTO, error) {
 	normalizedRoute := normalizeProductionRouteDTO(req.Route)
+	if err := normalizeProductionRouteQualityRoutingForRouteDTO(&normalizedRoute); err != nil {
+		return ProductionRouteDTO{}, err
+	}
 	if err := validateProductionRouteDTO(normalizedRoute); err != nil {
 		return ProductionRouteDTO{}, err
 	}
@@ -450,6 +453,7 @@ func normalizeProductionRouteDTO(route ProductionRouteDTO) ProductionRouteDTO {
 		if route.Steps[index].QualityGate == "" {
 			route.Steps[index].QualityGate = "NONE"
 		}
+		route.Steps[index].QualityRouting = cloneRawMessage(route.Steps[index].QualityRouting)
 		route.Steps[index].Description = strings.TrimSpace(route.Steps[index].Description)
 		if route.Steps[index].Sequence <= 0 {
 			route.Steps[index].Sequence = index + 1
@@ -489,6 +493,9 @@ func validateProductionRouteDTO(route ProductionRouteDTO) error {
 		if step.QualityGate != "NONE" && step.QualityGate != "OPTIONAL" && step.QualityGate != "REQUIRED" {
 			return fmt.Errorf("%w: unsupported steps[%d].qualityGate %s", ErrInvalidProductionRoute, index, step.QualityGate)
 		}
+	}
+	if err := validateProductionRouteQualityRoutingDTO(route); err != nil {
+		return err
 	}
 
 	return nil

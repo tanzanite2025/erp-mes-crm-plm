@@ -91,6 +91,7 @@ export const commandMenu = {
     productionLines: '产线脑图',
     topology: '拓扑模板',
     productionRoutes: '生产路线',
+    productionExecution: '生产执行',
     leaveManagement: '请假管理',
     stock: '库存清单',
     reports: '报表',

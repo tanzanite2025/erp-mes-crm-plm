@@ -17,6 +17,7 @@ import type {
   ProductionRoute,
   ProductionRouteExecutionMode,
   ProductionRouteQualityGate,
+  ProductionRouteQualityRouting,
   ProductionRouteStatus,
   ProductionRouteStep,
 } from '../data/production-route'
@@ -105,6 +106,38 @@ function normalizeRouteQualityGate(value?: string): ProductionRouteQualityGate {
   return 'NONE'
 }
 
+function normalizeRouteQualityRouting(
+  value: ProductionRouteStepApiDTO['qualityRouting']
+): ProductionRouteQualityRouting | undefined {
+  if (!value || typeof value !== 'object') {
+    return undefined
+  }
+
+  const routing: ProductionRouteQualityRouting = {}
+  for (const [disposition, target] of Object.entries(value)) {
+    if (!target || typeof target !== 'object') {
+      continue
+    }
+    const targetRouteStepId =
+      typeof target.targetRouteStepId === 'string'
+        ? target.targetRouteStepId.trim()
+        : ''
+    const targetProcessStepId =
+      typeof target.targetProcessStepId === 'string'
+        ? target.targetProcessStepId.trim()
+        : ''
+    if (!targetRouteStepId && !targetProcessStepId) {
+      continue
+    }
+    routing[disposition.toUpperCase()] = {
+      targetRouteStepId: targetRouteStepId || undefined,
+      targetProcessStepId: targetProcessStepId || undefined,
+    }
+  }
+
+  return Object.keys(routing).length > 0 ? routing : undefined
+}
+
 function toProductionRouteStepContract(
   dto: ProductionRouteStepApiDTO
 ): ProductionRouteStep {
@@ -119,6 +152,7 @@ function toProductionRouteStepContract(
     segmentName: dto.segmentName || '',
     executionMode: normalizeRouteExecutionMode(dto.executionMode),
     qualityGate: normalizeRouteQualityGate(dto.qualityGate),
+    qualityRouting: normalizeRouteQualityRouting(dto.qualityRouting),
     estimatedMinutes: Number(dto.estimatedMinutes) || 0,
     transferRequired: Boolean(dto.transferRequired),
     description: dto.description || '',
@@ -234,6 +268,7 @@ function toProductionRouteStepApiDTO(
     segmentName: step.segmentName || '',
     executionMode: step.executionMode || 'IN_HOUSE',
     qualityGate: step.qualityGate || 'NONE',
+    qualityRouting: step.qualityRouting || null,
     estimatedMinutes: step.estimatedMinutes || 0,
     transferRequired: step.transferRequired,
     description: step.description || '',

@@ -8,6 +8,7 @@ import {
   Plus,
   Search,
   Trash2,
+  XCircle,
 } from 'lucide-react'
 import { isForbiddenError } from '@/lib/error-status'
 import { cn } from '@/lib/utils'
@@ -91,8 +92,13 @@ export function OutsourceOrderManagement() {
   const canManage = allowsAction('action_outsource_order_manage')
   const ordersQuery = useOutsourceOrders({ search, status, sourceType })
   const partnersQuery = useOutsourcePartners()
-  const { createMutation, updateMutation, releaseMutation, deleteMutation } =
-    useOutsourceOrderMutations()
+  const {
+    createMutation,
+    updateMutation,
+    releaseMutation,
+    cancelMutation,
+    deleteMutation,
+  } = useOutsourceOrderMutations()
   const orders = ordersQuery.data?.items ?? []
   const stats = ordersQuery.data?.metadata
   const partners = partnersQuery.data?.items ?? []
@@ -142,6 +148,21 @@ export function OutsourceOrderManagement() {
       return
     }
     releaseMutation.mutate(order)
+  }
+
+  const handleCancel = (order: OutsourceOrder) => {
+    if (!canManage) {
+      return
+    }
+    if (
+      window.confirm(
+        t('productionOutsourcing.orders.cancelConfirm', {
+          orderNo: order.orderNo,
+        })
+      )
+    ) {
+      cancelMutation.mutate(order)
+    }
   }
 
   if (isForbiddenError(ordersQuery.error)) {
@@ -467,6 +488,29 @@ export function OutsourceOrderManagement() {
                     )}
                     {t('productionOutsourcing.orders.actions.release')}
                   </Button>
+                  {order.status === 'RELEASED' ? (
+                    <Button
+                      variant='ghost'
+                      size='sm'
+                      disabled={
+                        !canManage || isChecking || cancelMutation.isPending
+                      }
+                      title={
+                        canManage
+                          ? undefined
+                          : t('productionOutsourcing.orders.noManagePermission')
+                      }
+                      onClick={() => handleCancel(order)}
+                      className='rounded-full text-destructive hover:bg-destructive/10 hover:text-destructive'
+                    >
+                      {cancelMutation.isPending ? (
+                        <Loader2 className='mr-2 size-3.5 animate-spin' />
+                      ) : (
+                        <XCircle className='mr-2 size-3.5' />
+                      )}
+                      {t('productionOutsourcing.orders.actions.cancel')}
+                    </Button>
+                  ) : null}
                   <Button
                     variant='ghost'
                     size='sm'

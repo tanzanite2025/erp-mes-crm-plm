@@ -198,6 +198,7 @@ export const ROUTE_TO_MENU_MAPPING: Record<
   '/cutting-operations': 'piecework',
   '/aps-scheduling': 'apsScheduling',
   '/production-architecture': 'prodConfig',
+  '/production-execution': 'prodConfig',
   '/production-outsourcing': 'prodConfig',
   '/system-management': 'system',
   '/approval': 'approval',

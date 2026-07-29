@@ -91,6 +91,7 @@ export const commandMenu = {
     productionLines: 'Line Mindmap',
     topology: 'Topology Templates',
     productionRoutes: 'Production Routes',
+    productionExecution: 'Production Execution',
     leaveManagement: 'Leave Management',
     stock: 'Stock List',
     reports: 'Reports',

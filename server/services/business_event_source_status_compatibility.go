@@ -52,6 +52,18 @@ func listBusinessEventSourceCompatibilityStatuses(sourceCode string) []BusinessS
 			{Code: ProductBarcodeStateStatusHold, Label: "已挂起", Phase: "custom", IsTerminal: false, DefaultResolve: false},
 			{Code: ProductBarcodeStateStatusRework, Label: "返工中", Phase: "custom", IsTerminal: false, DefaultResolve: false},
 		}
+	case "PRODUCTION_OUTSOURCE":
+		return []BusinessStatusDTO{
+			{Code: OutsourceOrderStatusReleased, Label: "已下达", Phase: "active", IsTerminal: false, DefaultResolve: false},
+			{Code: OutsourceOrderStatusSent, Label: "已发出", Phase: "active", IsTerminal: false, DefaultResolve: false},
+			{Code: OutsourceOrderStatusReturned, Label: "已退回", Phase: "active", IsTerminal: false, DefaultResolve: false},
+			{Code: businessEventOutsourceStatusInspectionAccepted, Label: "检验合格入库", Phase: "done", IsTerminal: true, DefaultResolve: true},
+			{Code: businessEventOutsourceStatusInspectionConcession, Label: "检验让步接收", Phase: "done", IsTerminal: true, DefaultResolve: true},
+			{Code: businessEventOutsourceStatusInspectionRework, Label: "检验返工", Phase: "custom", IsTerminal: false, DefaultResolve: false},
+			{Code: businessEventOutsourceStatusInspectionScrap, Label: "检验报废", Phase: "done", IsTerminal: true, DefaultResolve: true},
+			{Code: OutsourceOrderStatusClosed, Label: "已关闭", Phase: "done", IsTerminal: true, DefaultResolve: true},
+			{Code: OutsourceOrderStatusCanceled, Label: "已取消", Phase: "cancelled", IsTerminal: true, DefaultResolve: true},
+		}
 	default:
 		return []BusinessStatusDTO{}
 	}

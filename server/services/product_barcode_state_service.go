@@ -135,10 +135,20 @@ func (s *ProductBarcodeStateService) SaveProductBarcodeState(req SaveProductBarc
 		applyProductBarcodeStateRequest(&state, normalizedReq, now)
 		if !exists {
 			state.BaseModel = models.BaseModel{ID: uuid.NewString()}
-			if err := tx.Create(&state).Error; err != nil {
+			if err := createProductionRecordWithOptionalUUIDs(tx, &state,
+				productionOptionalUUIDWrite{Column: "route_id", Value: state.RouteID},
+				productionOptionalUUIDWrite{Column: "route_step_id", Value: state.RouteStepID},
+				productionOptionalUUIDWrite{Column: "current_process_step_id", Value: state.CurrentProcessStepID},
+				productionOptionalUUIDWrite{Column: "last_event_id", Value: state.LastEventID},
+			); err != nil {
 				return fmt.Errorf("failed to create product barcode state: %w", err)
 			}
-		} else if err := tx.Save(&state).Error; err != nil {
+		} else if err := saveProductionRecordWithOptionalUUIDs(tx, &state,
+			productionOptionalUUIDWrite{Column: "route_id", Value: state.RouteID},
+			productionOptionalUUIDWrite{Column: "route_step_id", Value: state.RouteStepID},
+			productionOptionalUUIDWrite{Column: "current_process_step_id", Value: state.CurrentProcessStepID},
+			productionOptionalUUIDWrite{Column: "last_event_id", Value: state.LastEventID},
+		); err != nil {
 			return fmt.Errorf("failed to update product barcode state: %w", err)
 		}
 
@@ -155,7 +165,12 @@ func (s *ProductBarcodeStateService) SaveProductBarcodeState(req SaveProductBarc
 			PayloadSnapshot:   buildProductBarcodeStateEventSnapshot(normalizedReq),
 			OccurredAt:        &now,
 		}
-		if err := tx.Create(&event).Error; err != nil {
+		if err := createProductionRecordWithOptionalUUIDs(tx, &event,
+			productionOptionalUUIDWrite{Column: "from_process_step_id", Value: event.FromProcessStepID},
+			productionOptionalUUIDWrite{Column: "to_process_step_id", Value: event.ToProcessStepID},
+			productionOptionalUUIDWrite{Column: "route_id", Value: event.RouteID},
+			productionOptionalUUIDWrite{Column: "route_step_id", Value: event.RouteStepID},
+		); err != nil {
 			return fmt.Errorf("failed to create product barcode state event: %w", err)
 		}
 

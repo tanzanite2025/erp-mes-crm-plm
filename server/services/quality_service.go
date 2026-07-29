@@ -130,8 +130,20 @@ func (s *QualityService) SaveInspectionTask(ctx context.Context, task *models.In
 		task.Inspector = "system"
 	}
 
-	now := time.Now()
-	task.CompletedAt = &now
+	task.Result = strings.ToUpper(strings.TrimSpace(task.Result))
+	if task.Result == "" {
+		task.Result = "PENDING"
+	}
+	if task.Status == "" {
+		task.Status = QualityInspectionTaskStatusOpen
+	}
+	if task.Result != "PENDING" {
+		task.Status = QualityInspectionTaskStatusCompleted
+		now := time.Now()
+		task.CompletedAt = &now
+	} else {
+		task.CompletedAt = nil
+	}
 
 	return s.txManager.WithinTransaction(func(tx *gorm.DB) error {
 		if task.ID != "" {
@@ -139,7 +151,12 @@ func (s *QualityService) SaveInspectionTask(ctx context.Context, task *models.In
 			if err := tx.First(&existing, "id = ?", task.ID).Error; err != nil {
 				return err
 			}
-			// 权限检查已在 Handler 层处理，此处执行更新
+			if existing.SourceType == QualityInspectionTaskSourceProductionOutsource {
+				return domainValidationError("委外品质任务必须通过委外收发检验入口判定")
+			}
+			if task.Status == QualityInspectionTaskStatusOpen {
+				task.Status = existing.Status
+			}
 			if err := tx.Model(&models.InspectionTask{}).Where("id = ?", task.ID).Updates(task).Error; err != nil {
 				return err
 			}

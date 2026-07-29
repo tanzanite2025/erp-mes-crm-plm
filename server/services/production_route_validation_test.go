@@ -1,6 +1,9 @@
 package services
 
-import "testing"
+import (
+	"encoding/json"
+	"testing"
+)
 
 func TestValidateProductionRouteDTORequiresRouteIdentity(t *testing.T) {
 	route := ProductionRouteDTO{
@@ -65,5 +68,62 @@ func TestNormalizeProductionRouteDTODefaultsStatusAndSequence(t *testing.T) {
 	}
 	if route.Steps[0].ExecutionMode != "IN_HOUSE" {
 		t.Fatalf("expected normalized execution mode, got %q", route.Steps[0].ExecutionMode)
+	}
+}
+
+func TestNormalizeProductionRouteDTOCanonicalizesQualityRouting(t *testing.T) {
+	route := normalizeProductionRouteDTO(ProductionRouteDTO{
+		Code:   "route-001",
+		Name:   "Standard Route",
+		Status: "DRAFT",
+		Steps: []ProductionRouteStepDTO{
+			{
+				ID:             "step-a",
+				SegmentID:      "segment-1",
+				ProcessStepID:  "process-1",
+				ExecutionMode:  "IN_HOUSE",
+				QualityGate:    "REQUIRED",
+				QualityRouting: json.RawMessage(`{"rework":{"targetRouteStepId":"step-b"}}`),
+			},
+			{
+				ID:            "step-b",
+				SegmentID:     "segment-2",
+				ProcessStepID: "process-2",
+				ExecutionMode: "IN_HOUSE",
+				QualityGate:   "NONE",
+			},
+		},
+	})
+
+	if err := normalizeProductionRouteQualityRoutingForRouteDTO(&route); err != nil {
+		t.Fatalf("expected quality routing to normalize: %v", err)
+	}
+
+	var routing map[string]productionQualityRoutingTarget
+	if err := json.Unmarshal(route.Steps[0].QualityRouting, &routing); err != nil {
+		t.Fatalf("expected canonical quality routing JSON: %v", err)
+	}
+	if routing[ProductionQualityDispositionRework].TargetRouteStepID != "step-b" {
+		t.Fatalf("expected rework target step-b, got %#v", routing)
+	}
+}
+
+func TestValidateProductionRouteDTORejectsQualityRoutingOutsideRoute(t *testing.T) {
+	route := ProductionRouteDTO{
+		Code:   "route-001",
+		Name:   "Standard Route",
+		Status: "DRAFT",
+		Steps: []ProductionRouteStepDTO{{
+			ID:             "step-a",
+			SegmentID:      "segment-1",
+			ProcessStepID:  "process-1",
+			ExecutionMode:  "IN_HOUSE",
+			QualityGate:    "REQUIRED",
+			QualityRouting: json.RawMessage(`{"REWORK":{"targetRouteStepId":"missing-step"}}`),
+		}},
+	}
+
+	if err := validateProductionRouteDTO(route); err == nil {
+		t.Fatal("expected quality routing target outside route to be rejected")
 	}
 }

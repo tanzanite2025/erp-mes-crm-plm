@@ -212,6 +212,7 @@ export const terminalConfig = {
     },
     toast: {
       scanCollected: 'Scan captured',
+      submitFailed: 'Production scan execution failed',
       submitQueued: 'Scan submission failed and was moved into the retry queue',
       clearSceneQueue: 'Cleared the {{scene}} queue',
       clearAllQueue: 'Cleared all retry queues',

@@ -191,6 +191,13 @@ const navGroupConfigs: SidebarGroupConfig[] = [
             permissionId: permissionIdForPath('/production-architecture'),
           },
           {
+            id: 'production-execution',
+            titleKey: 'sidebar.items.productionExecution',
+            url: '/production-execution',
+            icon: ScanLine,
+            permissionId: permissionIdForPath('/production-execution'),
+          },
+          {
             id: 'production-outsourcing',
             titleKey: 'sidebar.items.productionOutsourcing',
             url: '/production-outsourcing',

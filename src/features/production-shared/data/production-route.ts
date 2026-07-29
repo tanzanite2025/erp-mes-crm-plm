@@ -21,6 +21,24 @@ export type ProductionRouteExecutionMode =
   (typeof productionRouteExecutionModes)[number]
 export type ProductionRouteQualityGate =
   (typeof productionRouteQualityGates)[number]
+export const productionRouteQualityDispositions = [
+  'ACCEPT',
+  'CONCESSION',
+  'REWORK',
+  'SCRAP',
+] as const
+export type ProductionRouteQualityDisposition =
+  (typeof productionRouteQualityDispositions)[number]
+
+export interface ProductionRouteQualityRoutingTarget {
+  targetRouteStepId?: string
+  targetProcessStepId?: string
+}
+
+export type ProductionRouteQualityRouting = Record<
+  string,
+  ProductionRouteQualityRoutingTarget
+>
 
 export interface ProductionRouteStep {
   id: string
@@ -33,6 +51,7 @@ export interface ProductionRouteStep {
   processName?: string
   executionMode: ProductionRouteExecutionMode
   qualityGate: ProductionRouteQualityGate
+  qualityRouting?: ProductionRouteQualityRouting
   estimatedMinutes: number
   transferRequired: boolean
   description: string

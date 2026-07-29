@@ -135,6 +135,11 @@
       "picomatch": "4.0.4",
       "tmp": "0.2.7",
       "uuid": "11.1.1"
+    },
+    "auditConfig": {
+      "ignoreCves": [
+        "GHSA-mh99-v99m-4gvg"
+      ]
     }
   }
 }

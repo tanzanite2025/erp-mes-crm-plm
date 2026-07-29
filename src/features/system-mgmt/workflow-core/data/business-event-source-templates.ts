@@ -1,6 +1,7 @@
 import { DEFAULT_BOM_ENGINEERING_EVENT_SOURCE } from './business-event-source-templates/bom-engineering'
 import { DEFAULT_BOM_MANUFACTURING_EVENT_SOURCE } from './business-event-source-templates/bom-manufacturing'
 import { DEFAULT_LOGISTICS_RECORD_EVENT_SOURCE } from './business-event-source-templates/logistics-record'
+import { DEFAULT_PRODUCTION_OUTSOURCE_EVENT_SOURCE } from './business-event-source-templates/production-outsource'
 import { DEFAULT_PRODUCTION_PLAN_EVENT_SOURCE } from './business-event-source-templates/production-plan'
 import { DEFAULT_PRODUCTION_TASK_EVENT_SOURCE } from './business-event-source-templates/production-task'
 import { DEFAULT_PURCHASE_ORDER_EVENT_SOURCE } from './business-event-source-templates/purchase-order'
@@ -29,6 +30,7 @@ export const BUSINESS_EVENT_SOURCE_TEMPLATES: BusinessEventSourceTemplate[] = [
   DEFAULT_LOGISTICS_RECORD_EVENT_SOURCE,
   DEFAULT_PRODUCTION_PLAN_EVENT_SOURCE,
   DEFAULT_PRODUCTION_TASK_EVENT_SOURCE,
+  DEFAULT_PRODUCTION_OUTSOURCE_EVENT_SOURCE,
   DEFAULT_QUALITY_STANDARD_EVENT_SOURCE,
   DEFAULT_BOM_ENGINEERING_EVENT_SOURCE,
   DEFAULT_BOM_MANUFACTURING_EVENT_SOURCE,

@@ -22,9 +22,15 @@ export function OutsourceStatCard({
   valueClassName,
 }: OutsourceStatCardProps) {
   return (
-    <Card className={cn(industrialPanelClassName, className)}>
+    <Card
+      className={cn(
+        industrialPanelClassName,
+        'gap-0 py-0 sm:gap-6 sm:py-6',
+        className
+      )}
+    >
       <div className={industrialPanelGradientClassName} />
-      <CardContent className='relative z-10 flex items-center justify-between p-4'>
+      <CardContent className='relative z-10 flex min-h-0 items-center justify-between p-3 sm:p-4'>
         <span
           className={cn(
             'text-xs font-medium text-muted-foreground',

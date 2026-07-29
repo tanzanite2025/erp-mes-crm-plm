@@ -87,6 +87,7 @@ export const sidebar = {
     piecework: 'Piecework Management',
     apsScheduling: 'APS Scheduling',
     productionArchitecture: 'Production Architecture',
+    productionExecution: 'Production Execution',
     productionOutsourcing: 'Outsourcing',
     toolingAssets: 'Tooling Asset Management',
     furnaceManagement: 'Furnace Management',

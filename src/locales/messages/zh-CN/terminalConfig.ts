@@ -206,6 +206,7 @@ export const terminalConfig = {
     },
     toast: {
       scanCollected: '扫码已采集',
+      submitFailed: '生产扫码执行失败',
       submitQueued: '扫码提交失败，已进入重传队列',
       clearSceneQueue: '已清空 {{scene}} 队列',
       clearAllQueue: '已清空全部重传队列',

@@ -123,6 +123,8 @@ const (
 	ActionProductionIssuanceExecute = "action_production_issuance_execute"
 	ActionOutsourcePartnerManage    = "action_outsource_partner_manage"
 	ActionOutsourceOrderManage      = "action_outsource_order_manage"
+	ActionOutsourceTransferExecute  = "action_outsource_transfer_execute"
+	ActionOutsourceInspectionSubmit = "action_outsource_inspection_submit"
 	ActionBarcodeBindingManage      = "action_barcode_binding_manage"
 )
 
@@ -216,6 +218,8 @@ var baseAdminFallbackPermissions = []string{
 	ActionProductionIssuanceExecute,
 	ActionOutsourcePartnerManage,
 	ActionOutsourceOrderManage,
+	ActionOutsourceTransferExecute,
+	ActionOutsourceInspectionSubmit,
 	ActionBarcodeBindingManage,
 	ActionCuttingSizeInventoryRecord,
 	ActionCuttingEngineConfigManage,

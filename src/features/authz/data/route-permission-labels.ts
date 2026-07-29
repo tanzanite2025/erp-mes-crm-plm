@@ -116,10 +116,13 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
     'productionArchitecture.layout.tabs.topology',
   '/production-architecture/routes':
     'productionArchitecture.layout.tabs.routes',
+  '/production-execution': 'productionExecution.page.title',
   '/production-outsourcing': 'sidebar.items.productionOutsourcing',
   '/production-outsourcing/orders': 'productionOutsourcing.layout.tabs.orders',
   '/production-outsourcing/partners':
     'productionOutsourcing.layout.tabs.partners',
+  '/production-outsourcing/transfers':
+    'productionOutsourcing.layout.tabs.transfers',
   '/equipment-tooling': 'sidebar.items.toolingAssets',
   '/equipment-tooling/overview': 'equipmentTooling.layout.tabs.overview',
   '/equipment-tooling/molds': 'equipmentTooling.layout.tabs.molds',

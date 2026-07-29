@@ -54,6 +54,25 @@ const BUSINESS_EVENT_SOURCE_STATUS_CATALOG: Record<
     { code: 'HOLD', label: '已挂起' },
     { code: 'DONE', label: '已完工', defaultResolve: true },
   ],
+  PRODUCTION_OUTSOURCE: [
+    { code: 'RELEASED', label: '已下达' },
+    { code: 'SENT', label: '已发出' },
+    { code: 'RETURNED', label: '已退回' },
+    {
+      code: 'INSPECTION_ACCEPTED',
+      label: '检验合格入库',
+      defaultResolve: true,
+    },
+    {
+      code: 'INSPECTION_CONCESSION',
+      label: '检验让步接收',
+      defaultResolve: true,
+    },
+    { code: 'INSPECTION_REWORK', label: '检验返工' },
+    { code: 'INSPECTION_SCRAP', label: '检验报废', defaultResolve: true },
+    { code: 'CLOSED', label: '已关闭', defaultResolve: true },
+    { code: 'CANCELED', label: '已取消', defaultResolve: true },
+  ],
   QUALITY_STANDARD: [
     { code: 'DRAFT', label: '草稿' },
     { code: 'PENDING_APPROVAL', label: '待审核' },

@@ -3,6 +3,7 @@ export const productionOutsourcing = {
     tabs: {
       orders: '委外任务',
       partners: '委外单位',
+      transfers: '收发检验',
     },
   },
   orders: {
@@ -17,11 +18,13 @@ export const productionOutsourcing = {
     noManagePermission: '当前账号没有委外任务管理权限',
     draftOnlyAction: '当前首期只允许操作草稿任务',
     deleteConfirm: '确认删除委外任务「{{orderNo}}」？',
+    cancelConfirm: '确认作废委外任务「{{orderNo}}」？',
     moreLines: '还有 {{count}} 条明细',
     actions: {
       add: '新增委外任务',
       addLine: '新增明细',
       release: '下发',
+      cancel: '作废',
     },
     filters: {
       allStatus: '全部状态',
@@ -98,7 +101,94 @@ export const productionOutsourcing = {
     toasts: {
       saved: '委外任务已保存',
       released: '委外任务已下发',
+      canceled: '委外任务已作废',
       deleted: '委外任务已删除',
+    },
+  },
+  execution: {
+    title: '委外收发检验',
+    description:
+      '按委外任务明细登记产品条码发出、回厂和回厂检验，执行结果会同步推进产品条码当前工序状态。',
+    searchPlaceholder: '搜索委外单号、来源单号、客户或委外单位',
+    empty: '暂无可执行的委外任务',
+    stats: {
+      releasedLines: '待发明细',
+      sent: '已发出',
+      returned: '已回厂',
+      pendingInspection: '待检验',
+    },
+    diagnostics: {
+      title: '运行诊断',
+      loading: '正在读取诊断结果',
+      statusOk: '数据链路正常',
+      statusIssues: '发现 {{count}} 个待处理项',
+      truncated: '结果已截断',
+      refresh: '刷新诊断',
+      generatedAt: '生成于 {{time}}',
+      moreIssues: '还有 {{count}} 项未显示',
+      metrics: {
+        activeLines: '活动明细',
+        pendingReturn: '待回厂',
+        pendingInspection: '待检验',
+        transfers: '转移事实',
+        inspections: '检验事实',
+        notifications: '通知失败',
+      },
+    },
+    fields: {
+      sent: '发出',
+      returned: '回厂',
+      disposed: '已处置',
+      productBarcode: '产品条码',
+      quantity: '数量',
+      sourceCategory: '来源库区',
+      targetCategory: '目标库区',
+      outsourceInProcess: '委外在制仓',
+      batchNo: '批次号',
+      result: '检验结果',
+      disposition: '处置方式',
+      notes: '备注',
+    },
+    actions: {
+      send: '发出',
+      return: '回厂',
+      inspect: '检验',
+    },
+    disabled: {
+      send: '无可发出数量或当前没有权限',
+      return: '无可回厂数量或当前没有权限',
+      inspect: '无待检验数量或当前没有权限',
+    },
+    dialog: {
+      sendTitle: '登记委外发出',
+      returnTitle: '登记委外回厂',
+      inspectTitle: '提交回厂检验',
+    },
+    placeholders: {
+      productBarcode: '扫描或输入产品条码',
+      sourceCategory: '请选择发出库区',
+      targetCategory: '请选择回厂库区',
+      batchNo: '可选，留空表示不分批',
+    },
+    validation: {
+      barcode: '请先扫描或输入产品条码',
+      categoryRequired: '委外发出或回厂必须明确来源库区和目标库区',
+    },
+    results: {
+      PASS: '合格',
+      CONDITIONAL: '让步接收',
+      FAIL: '不合格',
+    },
+    dispositions: {
+      ACCEPT: '接收',
+      CONCESSION: '特采/让步',
+      REWORK: '返工',
+      SCRAP: '报废',
+    },
+    toasts: {
+      sent: '委外发出已登记',
+      returned: '委外回厂已登记',
+      inspected: '委外检验已提交',
     },
   },
   partners: {

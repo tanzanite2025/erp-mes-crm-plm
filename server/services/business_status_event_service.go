@@ -17,6 +17,7 @@ const (
 	businessEventSourceProductionPlan      = "PRODUCTION_PLAN"
 	businessEventSourceProductionTask      = "PRODUCTION_TASK"
 	businessEventSourceProductionOperation = "PRODUCTION_OPERATION"
+	businessEventSourceProductionOutsource = "PRODUCTION_OUTSOURCE"
 	businessEventEntitySystem              = "SYSTEM"
 )
 

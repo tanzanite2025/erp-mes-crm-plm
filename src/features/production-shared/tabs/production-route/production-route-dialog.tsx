@@ -25,6 +25,7 @@ import type { ProductionProcessStep } from '../../data/production-process'
 import type {
   ProductionRoute,
   ProductionRouteExecutionMode,
+  ProductionRouteQualityDisposition,
   ProductionRouteQualityGate,
   ProductionRouteStatus,
   ProductionRouteStep,
@@ -60,6 +61,14 @@ const qualityGateOptions: ProductionRouteQualityGate[] = [
   'OPTIONAL',
   'REQUIRED',
 ]
+const qualityRoutingDispositionOptions = [
+  'REWORK',
+  'CONCESSION',
+] as const
+const qualityRoutingLabelKeys = {
+  REWORK: 'productionArchitecture.routes.steps.reworkTarget',
+  CONCESSION: 'productionArchitecture.routes.steps.concessionTarget',
+} as const
 
 function createRouteCode(routes: ProductionRoute[]) {
   const usedCodes = new Set(routes.map((item) => item.code))
@@ -107,6 +116,7 @@ function createRouteStep(
     segmentName: segment?.label ?? '',
     executionMode: 'IN_HOUSE',
     qualityGate: 'NONE',
+    qualityRouting: undefined,
     estimatedMinutes: 0,
     transferRequired: false,
     description: '',
@@ -220,6 +230,48 @@ export function ProductionRouteDialog({
     }
   }
 
+  const handleQualityGateChange = (
+    stepId: string,
+    qualityGate: ProductionRouteQualityGate
+  ) => {
+    updateStep(stepId, 'qualityGate', qualityGate)
+    if (qualityGate === 'NONE') {
+      updateStep(stepId, 'qualityRouting', undefined)
+    }
+  }
+
+  const updateQualityRouting = (
+    stepId: string,
+    disposition: ProductionRouteQualityDisposition,
+    targetRouteStepId: string
+  ) => {
+    setDraft((current) => ({
+      ...current,
+      steps: current.steps.map((step) => {
+        if (step.id !== stepId) {
+          return step
+        }
+        const routing = { ...(step.qualityRouting || {}) }
+        if (targetRouteStepId === 'NO_TARGET') {
+          delete routing[disposition]
+        } else {
+          const targetStep = current.steps.find(
+            (candidate) => candidate.id === targetRouteStepId
+          )
+          routing[disposition] = {
+            targetRouteStepId,
+            targetProcessStepId: targetStep?.processStepId || undefined,
+          }
+        }
+        return {
+          ...step,
+          qualityRouting:
+            Object.keys(routing).length > 0 ? routing : undefined,
+        }
+      }),
+    }))
+  }
+
   const addStep = () => {
     setDraft((current) => ({
       ...current,
@@ -235,7 +287,21 @@ export function ProductionRouteDialog({
       ...current,
       steps: rebuildStepSequence(
         current.steps.filter((step) => step.id !== stepId)
-      ),
+      ).map((step) => {
+        if (!step.qualityRouting) {
+          return step
+        }
+        const routing = Object.fromEntries(
+          Object.entries(step.qualityRouting).filter(
+            ([, target]) => target.targetRouteStepId !== stepId
+          )
+        )
+        return {
+          ...step,
+          qualityRouting:
+            Object.keys(routing).length > 0 ? routing : undefined,
+        }
+      }),
     }))
   }
 
@@ -494,9 +560,8 @@ export function ProductionRouteDialog({
                       <Select
                         value={step.qualityGate}
                         onValueChange={(value) =>
-                          updateStep(
+                          handleQualityGateChange(
                             step.id,
-                            'qualityGate',
                             value as ProductionRouteQualityGate
                           )
                         }
@@ -571,6 +636,68 @@ export function ProductionRouteDialog({
                         />
                         {t('productionArchitecture.routes.steps.transfer')}
                       </label>
+                      {step.qualityGate !== 'NONE' ? (
+                        <div className='grid gap-2 border-t border-muted/50 pt-2 md:grid-cols-2 lg:col-span-7'>
+                          {qualityRoutingDispositionOptions.map(
+                            (disposition) => {
+                              const configuredTarget =
+                                step.qualityRouting?.[disposition]
+                              const targetRouteStepId =
+                                configuredTarget?.targetRouteStepId ||
+                                draft.steps.find(
+                                  (candidate) =>
+                                    candidate.processStepId ===
+                                    configuredTarget?.targetProcessStepId
+                                )?.id ||
+                                'NO_TARGET'
+                              return (
+                                <label
+                                  key={disposition}
+                                  className='space-y-1'
+                                >
+                                  <span className='text-[10px] font-black text-muted-foreground uppercase'>
+                                    {t(
+                                      qualityRoutingLabelKeys[disposition]
+                                    )}
+                                  </span>
+                                  <Select
+                                    value={targetRouteStepId}
+                                    onValueChange={(value) =>
+                                      updateQualityRouting(
+                                        step.id,
+                                        disposition,
+                                        value
+                                      )
+                                    }
+                                  >
+                                    <SelectTrigger className='w-full'>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value='NO_TARGET'>
+                                        {t(
+                                          'productionArchitecture.routes.steps.noQualityTarget'
+                                        )}
+                                      </SelectItem>
+                                      {draft.steps.map((targetStep) => (
+                                        <SelectItem
+                                          key={targetStep.id}
+                                          value={targetStep.id}
+                                        >
+                                          {targetStep.sequence}.{' '}
+                                          {targetStep.processName ||
+                                            targetStep.processCode ||
+                                            targetStep.processStepId}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </label>
+                              )
+                            }
+                          )}
+                        </div>
+                      ) : null}
                     </div>
                   )
                 })}

@@ -357,7 +357,7 @@ function OutsourceOrderDialogContent({
   return (
     <DialogContent
       size='6xl'
-      className='max-h-[calc(100dvh-0.75rem)] rounded-2xl p-0 sm:max-w-[88rem]'
+      className='max-h-[calc(100dvh-0.75rem)] max-w-[calc(100%-0.5rem)] rounded-2xl p-0 sm:max-w-[88rem]'
     >
       <DialogHeader className='border-b bg-muted/20 px-5 py-4 pr-10 sm:px-6'>
         <div className='flex items-center gap-3'>

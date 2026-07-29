@@ -11,15 +11,22 @@ import {
   toOutsourceOrderContracts,
 } from '../adapters/outsource-order-api-adapter'
 import type {
+  OutsourceDiagnosticsApiResponseDTO,
   OutsourceOrderApiDTO,
+  OutsourceInspectionActionApiResponseDTO,
   OutsourceOrderListApiResponseDTO,
+  OutsourceTransferActionApiResponseDTO,
 } from '../contracts/outsource-order-api-dto'
 import {
+  outsourceDiagnosticsResponseSchema,
   outsourceOrderArraySchema,
   outsourceOrderSchema,
+  type OutsourceDiagnosticsResponse,
   type OutsourceOrder,
   type OutsourceOrderFormValues,
+  type OutsourceInspectionFormValues,
   type OutsourceOrderListResponse,
+  type OutsourceTransferFormValues,
 } from '../data/outsource-order'
 import type { OutsourceOrderFilters } from '../query-keys'
 
@@ -77,6 +84,17 @@ export async function getOutsourceOrders(
       production: ensureNumberField(metadata, 'production', context),
     },
   }
+}
+
+export async function getOutsourceDiagnostics(): Promise<OutsourceDiagnosticsResponse> {
+  const response = await apiFetch<OutsourceDiagnosticsApiResponseDTO>(
+    '/production/outsourcing/diagnostics'
+  )
+  return outsourceDiagnosticsResponseSchema.parse(
+    ensureObjectResponse<
+      OutsourceDiagnosticsApiResponseDTO & Record<string, unknown>
+    >(response, 'OutsourceOrdersService.getOutsourceDiagnostics')
+  )
 }
 
 export async function createOutsourceOrder(
@@ -139,8 +157,102 @@ export async function releaseOutsourceOrder(
   )
 }
 
+export async function cancelOutsourceOrder(
+  order: OutsourceOrder
+): Promise<OutsourceOrder> {
+  const response = await apiFetch<OutsourceOrderApiDTO>(
+    `/production/outsourcing/orders/${order.id}/cancel`,
+    {
+      method: 'POST',
+    }
+  )
+  return outsourceOrderSchema.parse(
+    toOutsourceOrderContract(
+      ensureObjectResponse<OutsourceOrderApiDTO & Record<string, unknown>>(
+        response,
+        'OutsourceOrdersService.cancelOutsourceOrder'
+      )
+    )
+  )
+}
+
 export async function deleteOutsourceOrder(id: string): Promise<void> {
   await apiFetch<void>(`/production/outsourcing/orders/${id}`, {
     method: 'DELETE',
   })
+}
+
+export async function sendOutsourceOrderLine(
+  lineId: string,
+  values: OutsourceTransferFormValues
+): Promise<OutsourceOrder> {
+  const response = await apiFetch<OutsourceTransferActionApiResponseDTO>(
+    `/production/outsourcing/order-lines/${lineId}/send`,
+    {
+      method: 'POST',
+      body: JSON.stringify(values),
+    }
+  )
+  const objectResponse = ensureObjectResponse<
+    OutsourceTransferActionApiResponseDTO & Record<string, unknown>
+  >(response, 'OutsourceOrdersService.sendOutsourceOrderLine')
+  return outsourceOrderSchema.parse(
+    toOutsourceOrderContract(
+      ensureObjectField<OutsourceOrderApiDTO & Record<string, unknown>>(
+        objectResponse,
+        'order',
+        'OutsourceOrdersService.sendOutsourceOrderLine'
+      )
+    )
+  )
+}
+
+export async function returnOutsourceOrderLine(
+  lineId: string,
+  values: OutsourceTransferFormValues
+): Promise<OutsourceOrder> {
+  const response = await apiFetch<OutsourceTransferActionApiResponseDTO>(
+    `/production/outsourcing/order-lines/${lineId}/return`,
+    {
+      method: 'POST',
+      body: JSON.stringify(values),
+    }
+  )
+  const objectResponse = ensureObjectResponse<
+    OutsourceTransferActionApiResponseDTO & Record<string, unknown>
+  >(response, 'OutsourceOrdersService.returnOutsourceOrderLine')
+  return outsourceOrderSchema.parse(
+    toOutsourceOrderContract(
+      ensureObjectField<OutsourceOrderApiDTO & Record<string, unknown>>(
+        objectResponse,
+        'order',
+        'OutsourceOrdersService.returnOutsourceOrderLine'
+      )
+    )
+  )
+}
+
+export async function inspectOutsourceOrderLine(
+  lineId: string,
+  values: OutsourceInspectionFormValues
+): Promise<OutsourceOrder> {
+  const response = await apiFetch<OutsourceInspectionActionApiResponseDTO>(
+    `/production/outsourcing/order-lines/${lineId}/inspect`,
+    {
+      method: 'POST',
+      body: JSON.stringify(values),
+    }
+  )
+  const objectResponse = ensureObjectResponse<
+    OutsourceInspectionActionApiResponseDTO & Record<string, unknown>
+  >(response, 'OutsourceOrdersService.inspectOutsourceOrderLine')
+  return outsourceOrderSchema.parse(
+    toOutsourceOrderContract(
+      ensureObjectField<OutsourceOrderApiDTO & Record<string, unknown>>(
+        objectResponse,
+        'order',
+        'OutsourceOrdersService.inspectOutsourceOrderLine'
+      )
+    )
+  )
 }

@@ -55,6 +55,12 @@ function toOutsourceOrderLineContract(
     processCode: String(dto.processCode ?? ''),
     processName: String(dto.processName ?? ''),
     status: normalizeStatus(dto.status),
+    sentQuantity: Number(dto.sentQuantity ?? 0),
+    returnedQuantity: Number(dto.returnedQuantity ?? 0),
+    acceptedQuantity: Number(dto.acceptedQuantity ?? 0),
+    rejectedQuantity: Number(dto.rejectedQuantity ?? 0),
+    reworkQuantity: Number(dto.reworkQuantity ?? 0),
+    scrapQuantity: Number(dto.scrapQuantity ?? 0),
     notes: String(dto.notes ?? ''),
     version: Number(dto.version ?? 1),
   }

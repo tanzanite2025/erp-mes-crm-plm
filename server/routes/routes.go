@@ -349,6 +349,7 @@ func SetupRoutes(r *gin.Engine) {
 
 			routingGroup.GET("/execution-logs", middleware.RequireAnyPermission(authz.MenuApproval), handlers.GetRuleExecutionLogsHandler)
 			routingGroup.POST("/execution-logs", handlers.SaveRuleExecutionLogHandler)
+			routingGroup.POST("/execution-logs/:id/retry-notification", adminOnly, handlers.RetryRuleExecutionNotificationLogHandler)
 		}
 
 		printGroup := authorized.Group("/print-batches")
@@ -392,6 +393,7 @@ func SetupRoutes(r *gin.Engine) {
 			quality.POST("/standards", adminOnly, handlers.SaveInspectionStandardHandler)
 			quality.GET("/tasks", handlers.GetInspectionTasksHandler)
 			quality.POST("/tasks", handlers.SaveInspectionTaskHandler)
+			quality.POST("/tasks/:id/claim", handlers.ClaimInspectionTaskHandler)
 			quality.GET("/quantity-settlements/task/:taskId", handlers.GetQualityBatchQuantitySettlementByTaskHandler)
 			quality.POST("/quantity-settlements", handlers.ConfirmQualityBatchQuantitySettlementHandler)
 			quality.GET("/stats", handlers.GetInspectionStatsHandler)

@@ -52,6 +52,7 @@ import {
   type PDAIngestRequest,
   type PDAIngestResponse,
 } from '../services/pda-ingest-service'
+import { pdaProductionScanService } from '../services/pda-production-scan-service'
 import {
   clearPDAShellRetryQueue,
   enqueuePDAShellRetry,
@@ -66,6 +67,13 @@ import {
 const logger = createLogger('PDAShellTab')
 
 type ShellStatusTone = 'idle' | 'success' | 'warning' | 'error'
+
+type PDAShellLastResult =
+  | { kind: 'ingest'; response: PDAIngestResponse }
+  | {
+      kind: 'production'
+      response: Awaited<ReturnType<typeof pdaProductionScanService.execute>>
+    }
 
 type WakeLockSentinelLike = {
   released?: boolean
@@ -148,7 +156,7 @@ export function PDAShellTab() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isRetrying, setIsRetrying] = useState(false)
   const [isLoadingConfig, setIsLoadingConfig] = useState(false)
-  const [lastResult, setLastResult] = useState<PDAIngestResponse | null>(null)
+  const [lastResult, setLastResult] = useState<PDAShellLastResult | null>(null)
   const [lastMessage, setLastMessage] = useState(
     t('terminalConfig.pdaShell.status.waiting')
   )
@@ -317,6 +325,9 @@ export function PDAShellTab() {
           if (normalizedScene && item.scene !== normalizedScene) {
             continue
           }
+          if (item.scene === 'production') {
+            continue
+          }
 
           try {
             await pdaIngestService.ingest(item.payload)
@@ -411,19 +422,42 @@ export function PDAShellTab() {
       setIsSubmitting(true)
 
       try {
-        const response = await pdaIngestService.ingest(payload)
-        setLastResult(response)
-        setLastMessage(response.parsed.summary)
+        const isProduction = normalizeSceneKey(payload.scene) === 'production'
+        let successDescription = ''
+        if (isProduction) {
+          const response = await pdaProductionScanService.execute(payload)
+          setLastResult({ kind: 'production', response })
+          setLastMessage(response.message)
+          successDescription = response.message
+        } else {
+          const response = await pdaIngestService.ingest(payload)
+          setLastResult({ kind: 'ingest', response })
+          setLastMessage(response.parsed.summary)
+          successDescription = response.parsed.shortTag
+        }
         setStatusTone('success')
         setRawCode('')
         lastAutoSubmittedRef.current = normalized
         vibrate(30)
         toast.success(t('terminalConfig.pdaShell.toast.scanCollected'), {
-          description: response.parsed.shortTag,
+          description: successDescription,
         })
         await refreshQueue()
       } catch (error) {
         const message = error instanceof Error ? error.message : 'ingest failed'
+        const isProduction = normalizeSceneKey(payload.scene) === 'production'
+        if (isProduction) {
+          setLastMessage(message)
+          setStatusTone('error')
+          setRawCode('')
+          lastAutoSubmittedRef.current = normalized
+          vibrate([80, 50, 80])
+          toast.error(t('terminalConfig.pdaShell.toast.submitFailed'), {
+            description: message,
+          })
+          return
+        }
+
         const queued = await enqueuePDAShellRetry(payload, message)
         setLastMessage(
           queued.duplicateCount > 1
@@ -654,8 +688,9 @@ export function PDAShellTab() {
                   <div className='text-base font-black'>{lastMessage}</div>
                   {lastResult ? (
                     <div className='text-xs font-medium opacity-75'>
-                      {lastResult.parsed.rawCode} /{' '}
-                      {lastResult.parsed.productionDate}
+                      {lastResult.kind === 'production'
+                        ? lastResult.response.state.productBarcode
+                        : `${lastResult.response.parsed.rawCode} / ${lastResult.response.parsed.productionDate}`}
                     </div>
                   ) : null}
                 </div>

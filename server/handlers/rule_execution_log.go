@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 	"xdfc-server/services"
@@ -58,4 +59,22 @@ func SaveRuleExecutionLogHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, services.MapRuleExecutionLogToResponse(saved))
+}
+
+func RetryRuleExecutionNotificationLogHandler(c *gin.Context) {
+	id := strings.TrimSpace(c.Param("id"))
+	retried, err := services.RetryRuleExecutionNotificationLog(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, services.ErrRuleExecutionLogNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": "[NOT_FOUND] 规则执行日志不存在"})
+		case errors.Is(err, services.ErrRuleExecutionLogNotRetryable):
+			c.JSON(http.StatusConflict, gin.H{"error": "[CONFLICT] 只有失败的通知执行日志可以重试"})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 重试通知失败: " + err.Error()})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, services.MapRuleExecutionLogToResponse(retried))
 }

@@ -137,6 +137,22 @@ func resolveSwaggerEnabled(ginMode string) bool {
 	return enabled
 }
 
+func resolveOutsourceNotificationAutoRetryEnabled(ginMode string) bool {
+	defaultEnabled := !strings.EqualFold(strings.TrimSpace(ginMode), gin.DebugMode)
+	configured := strings.TrimSpace(os.Getenv("OUTSOURCE_NOTIFY_AUTO_RETRY_ENABLED"))
+	if configured == "" {
+		return defaultEnabled
+	}
+
+	enabled, err := strconv.ParseBool(configured)
+	if err != nil {
+		log.Printf("[WARN] Invalid OUTSOURCE_NOTIFY_AUTO_RETRY_ENABLED value %q, falling back to default=%t", configured, defaultEnabled)
+		return defaultEnabled
+	}
+
+	return enabled
+}
+
 func isAddrInUseError(err error) bool {
 	if err == nil {
 		return false
@@ -399,8 +415,41 @@ func main() {
 		log.Printf("[WARN] 无法启动车型模型模板源文件清理任务: %v", err)
 	}
 
+	if resolveOutsourceNotificationAutoRetryEnabled(ginMode) {
+		_, err = c.AddFunc("*/10 * * * *", func() {
+			runCronWithDistributedLock(
+				"production-outsource-notification-auto-retry",
+				services.ProductionOutsourceNotificationAutoRetryLockKey,
+				services.ProductionOutsourceNotificationAutoRetryLockTTL,
+				func() error {
+					result, err := services.RetryProductionOutsourceFailedNotifications()
+					if err != nil {
+						return err
+					}
+					if result.Retried > 0 || result.Errors > 0 {
+						log.Printf(
+							"[CRON][production-outsource-notification-auto-retry] scanned=%d retried=%d success=%d failed=%d skipped=%d errors=%d",
+							result.Scanned,
+							result.Retried,
+							result.Succeeded,
+							result.Failed,
+							result.Skipped,
+							result.Errors,
+						)
+					}
+					return nil
+				},
+			)
+		})
+		if err != nil {
+			log.Printf("[WARN] 无法启动委外通知自动重试任务: %v", err)
+		}
+	} else {
+		log.Println("[READY] 委外通知自动重试任务未启用")
+	}
+
 	c.Start()
-	log.Println("[READY] 定时任务集群已就绪: 汇率 (11:00) | 备份 (02:00) | 车型模型源文件清理 (03:30)")
+	log.Println("[READY] 定时任务集群已就绪: 汇率 (11:00) | 备份 (02:00) | 车型模型源文件清理 (03:30) | 委外通知自动重试 (每 10 分钟，release 默认开启)")
 
 	routes.SetupRoutes(r)
 

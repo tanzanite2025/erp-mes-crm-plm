@@ -178,10 +178,20 @@ func recordProductionOperationExecutionTx(tx *gorm.DB, normalized RecordProducti
 	applyProductBarcodeStateRequest(&state, stateReq, now)
 	if !exists {
 		state.BaseModel = models.BaseModel{ID: uuid.NewString()}
-		if err := tx.Create(&state).Error; err != nil {
+		if err := createProductionRecordWithOptionalUUIDs(tx, &state,
+			productionOptionalUUIDWrite{Column: "route_id", Value: state.RouteID},
+			productionOptionalUUIDWrite{Column: "route_step_id", Value: state.RouteStepID},
+			productionOptionalUUIDWrite{Column: "current_process_step_id", Value: state.CurrentProcessStepID},
+			productionOptionalUUIDWrite{Column: "last_event_id", Value: state.LastEventID},
+		); err != nil {
 			return productionOperationExecutionRecordResult{}, fmt.Errorf("failed to create product barcode state: %w", err)
 		}
-	} else if err := tx.Save(&state).Error; err != nil {
+	} else if err := saveProductionRecordWithOptionalUUIDs(tx, &state,
+		productionOptionalUUIDWrite{Column: "route_id", Value: state.RouteID},
+		productionOptionalUUIDWrite{Column: "route_step_id", Value: state.RouteStepID},
+		productionOptionalUUIDWrite{Column: "current_process_step_id", Value: state.CurrentProcessStepID},
+		productionOptionalUUIDWrite{Column: "last_event_id", Value: state.LastEventID},
+	); err != nil {
 		return productionOperationExecutionRecordResult{}, fmt.Errorf("failed to update product barcode state: %w", err)
 	}
 
@@ -203,7 +213,13 @@ func recordProductionOperationExecutionTx(tx *gorm.DB, normalized RecordProducti
 		CompletedAt:    resolveProductionOperationCompletedAt(normalized.Action, now),
 		Notes:          normalized.Notes,
 	}
-	if err := tx.Create(&operation).Error; err != nil {
+	if err := createProductionRecordWithOptionalUUIDs(tx, &operation,
+		productionOptionalUUIDWrite{Column: "state_id", Value: operation.StateID},
+		productionOptionalUUIDWrite{Column: "execution_lot_id", Value: operation.ExecutionLotID},
+		productionOptionalUUIDWrite{Column: "route_id", Value: operation.RouteID},
+		productionOptionalUUIDWrite{Column: "route_step_id", Value: operation.RouteStepID},
+		productionOptionalUUIDWrite{Column: "partner_id", Value: operation.PartnerID},
+	); err != nil {
 		return productionOperationExecutionRecordResult{}, fmt.Errorf("failed to create production operation execution: %w", err)
 	}
 
@@ -220,7 +236,12 @@ func recordProductionOperationExecutionTx(tx *gorm.DB, normalized RecordProducti
 		PayloadSnapshot:   buildProductionOperationStateEventSnapshot(normalized, operation.ID),
 		OccurredAt:        &now,
 	}
-	if err := tx.Create(&event).Error; err != nil {
+	if err := createProductionRecordWithOptionalUUIDs(tx, &event,
+		productionOptionalUUIDWrite{Column: "from_process_step_id", Value: event.FromProcessStepID},
+		productionOptionalUUIDWrite{Column: "to_process_step_id", Value: event.ToProcessStepID},
+		productionOptionalUUIDWrite{Column: "route_id", Value: event.RouteID},
+		productionOptionalUUIDWrite{Column: "route_step_id", Value: event.RouteStepID},
+	); err != nil {
 		return productionOperationExecutionRecordResult{}, fmt.Errorf("failed to create product barcode state event: %w", err)
 	}
 

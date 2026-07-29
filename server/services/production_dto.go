@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"time"
 	"xdfc-server/models"
+
+	"gorm.io/datatypes"
 )
 
 type SaveProductionLineHandlerRequest struct {
@@ -55,21 +57,22 @@ type ProcessStepsResponse struct {
 }
 
 type ProductionRouteStepDTO struct {
-	ID               string    `json:"id"`
-	CreatedAt        time.Time `json:"createdAt"`
-	UpdatedAt        time.Time `json:"updatedAt"`
-	RouteID          string    `json:"routeId"`
-	Sequence         int       `json:"sequence"`
-	SegmentID        string    `json:"segmentId"`
-	SegmentName      string    `json:"segmentName"`
-	ProcessStepID    string    `json:"processStepId"`
-	ProcessCode      string    `json:"processCode"`
-	ProcessName      string    `json:"processName"`
-	ExecutionMode    string    `json:"executionMode"`
-	QualityGate      string    `json:"qualityGate"`
-	EstimatedMinutes int       `json:"estimatedMinutes"`
-	TransferRequired bool      `json:"transferRequired"`
-	Description      string    `json:"description"`
+	ID               string          `json:"id"`
+	CreatedAt        time.Time       `json:"createdAt"`
+	UpdatedAt        time.Time       `json:"updatedAt"`
+	RouteID          string          `json:"routeId"`
+	Sequence         int             `json:"sequence"`
+	SegmentID        string          `json:"segmentId"`
+	SegmentName      string          `json:"segmentName"`
+	ProcessStepID    string          `json:"processStepId"`
+	ProcessCode      string          `json:"processCode"`
+	ProcessName      string          `json:"processName"`
+	ExecutionMode    string          `json:"executionMode"`
+	QualityGate      string          `json:"qualityGate"`
+	QualityRouting   json.RawMessage `json:"qualityRouting"`
+	EstimatedMinutes int             `json:"estimatedMinutes"`
+	TransferRequired bool            `json:"transferRequired"`
+	Description      string          `json:"description"`
 }
 
 type ProductionRouteDTO struct {
@@ -144,6 +147,7 @@ func mapProductionRouteStepToDTO(step models.ProductionRouteStep) ProductionRout
 		ProcessName:      processName,
 		ExecutionMode:    step.ExecutionMode,
 		QualityGate:      step.QualityGate,
+		QualityRouting:   cloneRawMessage(json.RawMessage(step.QualityRouting)),
 		EstimatedMinutes: step.EstimatedMinutes,
 		TransferRequired: step.TransferRequired,
 		Description:      step.Description,
@@ -163,6 +167,7 @@ func mapProductionRouteStepDTOToModel(step ProductionRouteStepDTO) models.Produc
 		ProcessStepID:    step.ProcessStepID,
 		ExecutionMode:    step.ExecutionMode,
 		QualityGate:      step.QualityGate,
+		QualityRouting:   datatypes.JSON(cloneRawMessage(step.QualityRouting)),
 		EstimatedMinutes: step.EstimatedMinutes,
 		TransferRequired: step.TransferRequired,
 		Description:      step.Description,

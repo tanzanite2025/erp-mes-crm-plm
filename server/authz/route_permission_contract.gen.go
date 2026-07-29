@@ -139,6 +139,7 @@ var KnownRoutePermissionIDs = map[string]struct{}{
 	"tab_production_architecture_topology": {},
 	"tab_production_outsourcing_orders": {},
 	"tab_production_outsourcing_partners": {},
+	"tab_production_outsourcing_transfers": {},
 	"tab_production_quality_abnormalities": {},
 	"tab_production_quality_inspection": {},
 	"tab_production_quality_special_buy": {},

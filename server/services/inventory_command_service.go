@@ -249,6 +249,9 @@ func PatchInventoryRecord(ctx context.Context, id string, patch PatchInventoryRe
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&inventory, "id = ?", id).Error; err != nil {
 			return err
 		}
+		if isDedicatedInventoryCategory(inventory.CategoryCode) {
+			return ErrDedicatedInventoryExecutionPath
+		}
 
 		if patch.Version != optimisticVersionFromTimestamps(inventory.UpdatedAt, inventory.CreatedAt) {
 			return ErrInventoryPatchVersionConflict
@@ -305,8 +308,8 @@ func PatchShipmentDraftRecord(ctx context.Context, id string, patch PatchShipmen
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&shipment, "id = ?", id).Error; err != nil {
 			return err
 		}
-		if isAfterSalesExecutionSourceType(shipment.SourceType) {
-			return ErrAfterSalesExecutionDedicatedPath
+		if isDedicatedInventoryExecutionSourceType(shipment.SourceType) {
+			return ErrDedicatedInventoryExecutionPath
 		}
 		if shipment.Status != "DRAFT" {
 			return ErrShipmentNotDraft
@@ -368,8 +371,8 @@ func CreateShipmentDraft(shipment *models.ShipmentRecord) error {
 	if shipment == nil {
 		return errors.New("shipment is required")
 	}
-	if isAfterSalesExecutionSourceType(shipment.SourceType) {
-		return ErrAfterSalesExecutionDedicatedPath
+	if isDedicatedInventoryExecutionSourceType(shipment.SourceType) {
+		return ErrDedicatedInventoryExecutionPath
 	}
 	if strings.TrimSpace(shipment.Status) == "" {
 		shipment.Status = "DRAFT"
@@ -494,8 +497,8 @@ func RecordInbound(ctx context.Context, inbound *models.InboundRecord) error {
 	if inbound == nil {
 		return errors.New("inbound is required")
 	}
-	if isAfterSalesExecutionSourceType(inbound.SourceType) {
-		return ErrAfterSalesExecutionDedicatedPath
+	if isDedicatedInventoryExecutionSourceType(inbound.SourceType) {
+		return ErrDedicatedInventoryExecutionPath
 	}
 	if inbound.Quantity <= 0 {
 		return errors.New("[CRITICAL_LOGIC_ERROR] invalid inbound quantity")
@@ -736,8 +739,8 @@ func CommitShipment(ctx context.Context, id string) (InventoryShipmentRecordResp
 		return InventoryShipmentRecordResponse{}, err
 	}
 
-	if isAfterSalesExecutionSourceType(shipment.SourceType) {
-		return InventoryShipmentRecordResponse{}, ErrAfterSalesExecutionDedicatedPath
+	if isDedicatedInventoryExecutionSourceType(shipment.SourceType) {
+		return InventoryShipmentRecordResponse{}, ErrDedicatedInventoryExecutionPath
 	}
 	if shipment.Status != "DRAFT" {
 		return InventoryShipmentRecordResponse{}, ErrShipmentNotDraft
@@ -766,6 +769,9 @@ func CommitShipment(ctx context.Context, id string) (InventoryShipmentRecordResp
 }
 
 func transferInventoryTx(tx *gorm.DB, input TransferInventoryInput) (inventoryTransferAuditResult, error) {
+	if isDedicatedInventoryCategory(input.FromCategory) || isDedicatedInventoryCategory(input.ToCategory) {
+		return inventoryTransferAuditResult{}, ErrDedicatedInventoryExecutionPath
+	}
 	var from models.Inventory
 	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 		Where("material_id = ? AND category_code = ? AND batch_no = ?", input.MaterialID, input.FromCategory, input.BatchNo).
@@ -904,6 +910,9 @@ func ReconcileNegativeInventory(ctx context.Context) error {
 		}
 
 		for _, record := range records {
+			if isDedicatedInventoryCategory(record.CategoryCode) {
+				return ErrDedicatedInventoryExecutionPath
+			}
 			before := inventoryAuditSnapshot(record)
 			record.Quantity = 0
 			record.TotalValue = 0
@@ -926,6 +935,9 @@ func BulkSyncInventory(ctx context.Context, items []BulkSyncInventoryItemRequest
 	modelsItems := MapBulkSyncInventoryRequestsToModels(items)
 	return db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		for _, inv := range modelsItems {
+			if isDedicatedInventoryCategory(inv.CategoryCode) {
+				return ErrDedicatedInventoryExecutionPath
+			}
 			var existing models.Inventory
 			var lookupErr error
 			if strings.TrimSpace(inv.ID) != "" {
@@ -981,8 +993,8 @@ func VoidShipment(ctx context.Context, id string) error {
 			return err
 		}
 
-		if isAfterSalesExecutionSourceType(shipment.SourceType) {
-			return ErrAfterSalesExecutionDedicatedPath
+		if isDedicatedInventoryExecutionSourceType(shipment.SourceType) {
+			return ErrDedicatedInventoryExecutionPath
 		}
 		if shipment.Status == "VOID" {
 			return errors.New("shipment already voided")

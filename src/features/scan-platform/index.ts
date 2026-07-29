@@ -1,6 +1,7 @@
 export * from './adapters'
 export * from './components'
 export * from './contracts/logistics-inbound-host-contract'
+export * from './contracts/production-scan-command-api-dto'
 export * from './contracts/wheel-trace-api-dto'
 export * from './contracts/wheel-trace-gateway-contract'
 export * from './core/host-adapter-contract'

@@ -3,6 +3,7 @@ export const productionOutsourcing = {
     tabs: {
       orders: 'Outsource Tasks',
       partners: 'Outsource Partners',
+      transfers: 'Send/Return Inspection',
     },
   },
   orders: {
@@ -17,11 +18,13 @@ export const productionOutsourcing = {
     noManagePermission: 'The current account cannot manage outsource tasks',
     draftOnlyAction: 'This first version only allows actions on draft tasks',
     deleteConfirm: 'Delete outsource task "{{orderNo}}"?',
+    cancelConfirm: 'Cancel outsource task "{{orderNo}}"?',
     moreLines: '{{count}} more lines',
     actions: {
       add: 'New outsource task',
       addLine: 'Add line',
       release: 'Release',
+      cancel: 'Cancel',
     },
     filters: {
       allStatus: 'All statuses',
@@ -101,7 +104,95 @@ export const productionOutsourcing = {
     toasts: {
       saved: 'Outsource task saved',
       released: 'Outsource task released',
+      canceled: 'Outsource task canceled',
       deleted: 'Outsource task deleted',
+    },
+  },
+  execution: {
+    title: 'Outsource Send/Return Inspection',
+    description:
+      'Record product barcode send, return, and return inspection by outsource task line. Inspection results advance the barcode production operation state.',
+    searchPlaceholder: 'Search task no, source no, customer, or partner',
+    empty: 'No executable outsource tasks',
+    stats: {
+      releasedLines: 'Pending lines',
+      sent: 'Sent',
+      returned: 'Returned',
+      pendingInspection: 'Pending inspection',
+    },
+    diagnostics: {
+      title: 'Operations diagnostics',
+      loading: 'Reading diagnostics',
+      statusOk: 'Data chain is healthy',
+      statusIssues: '{{count}} item(s) need attention',
+      truncated: 'Results truncated',
+      refresh: 'Refresh diagnostics',
+      generatedAt: 'Generated at {{time}}',
+      moreIssues: '{{count}} more item(s) hidden',
+      metrics: {
+        activeLines: 'Active lines',
+        pendingReturn: 'Pending return',
+        pendingInspection: 'Pending inspection',
+        transfers: 'Transfer facts',
+        inspections: 'Inspection facts',
+        notifications: 'Notify failures',
+      },
+    },
+    fields: {
+      sent: 'Sent',
+      returned: 'Returned',
+      disposed: 'Disposed',
+      productBarcode: 'Product barcode',
+      quantity: 'Quantity',
+      sourceCategory: 'Source warehouse category',
+      targetCategory: 'Target warehouse category',
+      outsourceInProcess: 'Outsource in-process',
+      batchNo: 'Batch number',
+      result: 'Inspection result',
+      disposition: 'Disposition',
+      notes: 'Notes',
+    },
+    actions: {
+      send: 'Send',
+      return: 'Return',
+      inspect: 'Inspect',
+    },
+    disabled: {
+      send: 'No remaining send quantity or no permission',
+      return: 'No remaining return quantity or no permission',
+      inspect: 'No pending inspection quantity or no permission',
+    },
+    dialog: {
+      sendTitle: 'Record outsource send',
+      returnTitle: 'Record outsource return',
+      inspectTitle: 'Submit return inspection',
+    },
+    placeholders: {
+      productBarcode: 'Scan or enter product barcode',
+      sourceCategory: 'Select the source warehouse category',
+      targetCategory: 'Select the return warehouse category',
+      batchNo: 'Optional; blank means no batch split',
+    },
+    validation: {
+      barcode: 'Scan or enter the product barcode first',
+      categoryRequired:
+        'Outsource send or return requires explicit source and target warehouse categories',
+    },
+    results: {
+      PASS: 'Pass',
+      CONDITIONAL: 'Conditional acceptance',
+      FAIL: 'Fail',
+    },
+    dispositions: {
+      ACCEPT: 'Accept',
+      CONCESSION: 'Concession',
+      REWORK: 'Rework',
+      SCRAP: 'Scrap',
+    },
+    toasts: {
+      sent: 'Outsource send recorded',
+      returned: 'Outsource return recorded',
+      inspected: 'Outsource inspection submitted',
     },
   },
   partners: {

@@ -19,7 +19,6 @@ import (
 	"time"
 	"xdfc-server/models"
 
-	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/gorm"
 )
 
@@ -196,7 +195,7 @@ func wrapBOMUniqueViolation(err error, bom *models.BOM) error {
 	if err == nil {
 		return nil
 	}
-	if !isPostgresUniqueViolation(err) && !isSqliteUniqueViolation(err) {
+	if !isDatabaseUniqueViolation(err) {
 		return err
 	}
 	if bom == nil {
@@ -214,24 +213,6 @@ func wrapBOMUniqueViolation(err error, bom *models.BOM) error {
 		strings.TrimSpace(bom.OwnerCustomerID),
 		strings.TrimSpace(bom.VersionLevel),
 	)
-}
-
-func isPostgresUniqueViolation(err error) bool {
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) {
-		return pgErr.Code == "23505"
-	}
-	return false
-}
-
-// isSqliteUniqueViolation 兼容测试环境的 sqlite(测试不依赖 pg sqlstate)。
-// SQLite 报 "UNIQUE constraint failed" 字串。
-func isSqliteUniqueViolation(err error) bool {
-	if err == nil {
-		return false
-	}
-	msg := err.Error()
-	return strings.Contains(msg, "UNIQUE constraint failed") || strings.Contains(msg, "constraint failed: UNIQUE")
 }
 
 // generateBOMNo 生成形如 BOM-20260518-001-123 的 BOM 编号(日期前缀 + 当日序号 + 纳秒随机因子防竞态)。

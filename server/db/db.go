@@ -210,6 +210,37 @@ func ensureBusinessEventSourceCodeUniqueIndex() {
 	}
 }
 
+// ensureInspectionTaskOutsourceSourceUniqueIndex limits the one-task-per-barcode
+// rule to outsource tasks, leaving legacy quality tasks with blank source fields
+// unconstrained.
+func ensureInspectionTaskOutsourceSourceUniqueIndex() {
+	if DB == nil || DB.Dialector.Name() != "postgres" || !DB.Migrator().HasTable(&models.InspectionTask{}) {
+		return
+	}
+
+	if err := DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Exec("SELECT pg_advisory_xact_lock(2026072901)").Error; err != nil {
+			return err
+		}
+		if err := tx.Exec("DROP INDEX IF EXISTS idx_inspection_task_source_barcode").Error; err != nil {
+			return err
+		}
+		if err := tx.Exec(`
+			CREATE UNIQUE INDEX IF NOT EXISTS idx_inspection_task_outsource_source_barcode
+			ON inspection_tasks (source_line_id, product_barcode)
+			WHERE source_type = 'PRODUCTION_OUTSOURCE'
+			  AND btrim(COALESCE(source_line_id, '')) <> ''
+			  AND btrim(COALESCE(product_barcode, '')) <> ''
+			  AND deleted_at IS NULL
+		`).Error; err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		log.Fatal("Failed to enforce outsource inspection task uniqueness:", err)
+	}
+}
+
 func ensureProductAttributeCategoryKeyUniqueIndex() {
 	if DB == nil || !DB.Migrator().HasTable(&models.ProductAttributeCategory{}) {
 		return
@@ -1517,6 +1548,7 @@ func InitDB(dsn string) {
 		&models.Customer{},
 		&models.Supplier{},
 		&models.Inventory{},
+		&models.InventoryLedgerEntry{},
 		&models.InboundRecord{},
 		&models.ShipmentRecord{},
 		&models.CutSizeInventory{},
@@ -1542,6 +1574,8 @@ func InitDB(dsn string) {
 		&models.OutsourcePartner{},
 		&models.OutsourceOrder{},
 		&models.OutsourceOrderLine{},
+		&models.OutsourceTransfer{},
+		&models.OutsourceInspection{},
 		&models.ProductBarcodeState{},
 		&models.ProductBarcodeStateEvent{},
 		&models.ProductBarcodeTransferEvent{},
@@ -1690,6 +1724,7 @@ func InitDB(dsn string) {
 	cleanupDuplicateProductAttributeOptions()
 	ensureProductAttributeOptionValueUniqueIndex()
 	ensureBusinessEventSourceCodeUniqueIndex()
+	ensureInspectionTaskOutsourceSourceUniqueIndex()
 	ensureVehicleModelTemplateParseTaskActiveUniqueIndex()
 	fmt.Println("Database migration completed.")
 	sqlDB, err := DB.DB()

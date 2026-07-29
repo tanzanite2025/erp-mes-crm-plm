@@ -26,6 +26,7 @@ import { orgPersonnel } from './orgPersonnel'
 import { piecework } from './piecework'
 import { printMgmt } from './printMgmt'
 import { productionArchitecture } from './productionArchitecture'
+import { productionExecution } from './productionExecution'
 import { productionOutsourcing } from './productionOutsourcing'
 import { productionQuality } from './productionQuality'
 import { productionShared } from './productionShared'
@@ -94,6 +95,7 @@ export const enUSMessages = {
   codeCenter,
   productionQuality,
   productionArchitecture,
+  productionExecution,
   productionOutsourcing,
   cuttingOperations,
   recentVisits,

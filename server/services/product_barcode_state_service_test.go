@@ -78,6 +78,7 @@ func createProductBarcodeStateTestSchema(t *testing.T, database *gorm.DB) {
 			process_step_id TEXT,
 			execution_mode TEXT,
 			quality_gate TEXT,
+			quality_routing TEXT,
 			estimated_minutes INTEGER,
 			transfer_required BOOLEAN,
 			description TEXT

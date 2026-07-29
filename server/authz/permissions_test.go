@@ -22,3 +22,23 @@ func TestAdminFallbackPermissionsIncludeKnownFinanceTabs(t *testing.T) {
 		}
 	}
 }
+
+func TestAdminFallbackPermissionsIncludeProductionOutsourceActions(t *testing.T) {
+	required := []string{
+		ActionOutsourcePartnerManage,
+		ActionOutsourceOrderManage,
+		ActionOutsourceTransferExecute,
+		ActionOutsourceInspectionSubmit,
+	}
+	permissions := DeduplicatePermissionIDs(AdminFallbackPermissions)
+	permissionSet := make(map[string]struct{}, len(permissions))
+	for _, permissionID := range permissions {
+		permissionSet[permissionID] = struct{}{}
+	}
+
+	for _, permissionID := range required {
+		if _, ok := permissionSet[permissionID]; !ok {
+			t.Fatalf("admin fallback permissions must include %s", permissionID)
+		}
+	}
+}

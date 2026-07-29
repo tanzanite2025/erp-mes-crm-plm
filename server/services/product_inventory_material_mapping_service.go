@@ -21,9 +21,10 @@ const (
 )
 
 type ProductInventoryMaterialResolutionSnapshot struct {
-	ProductID    string
-	ProductCode  string
-	ProductModel string
+	ProductID                       string
+	ProductCode                     string
+	ProductModel                    string
+	DisallowProductIDMaterialLookup bool
 }
 
 type ProductInventoryMaterialResolution struct {
@@ -38,9 +39,10 @@ func ResolveInventoryMaterialForProductSnapshotTx(tx *gorm.DB, snapshot ProductI
 	}
 
 	normalized := ProductInventoryMaterialResolutionSnapshot{
-		ProductID:    strings.TrimSpace(snapshot.ProductID),
-		ProductCode:  strings.TrimSpace(snapshot.ProductCode),
-		ProductModel: strings.TrimSpace(snapshot.ProductModel),
+		ProductID:                       strings.TrimSpace(snapshot.ProductID),
+		ProductCode:                     strings.TrimSpace(snapshot.ProductCode),
+		ProductModel:                    strings.TrimSpace(snapshot.ProductModel),
+		DisallowProductIDMaterialLookup: snapshot.DisallowProductIDMaterialLookup,
 	}
 
 	productNameCandidate := ""
@@ -50,14 +52,16 @@ func ResolveInventoryMaterialForProductSnapshotTx(tx *gorm.DB, snapshot ProductI
 			return resolution, err
 		}
 
-		resolution, found, err = resolveInventoryMaterialByIDTx(
-			tx,
-			normalized.ProductID,
-			ProductInventoryMaterialResolutionProductID,
-			normalized.ProductID,
-		)
-		if err != nil || found {
-			return resolution, err
+		if !normalized.DisallowProductIDMaterialLookup {
+			resolution, found, err = resolveInventoryMaterialByIDTx(
+				tx,
+				normalized.ProductID,
+				ProductInventoryMaterialResolutionProductID,
+				normalized.ProductID,
+			)
+			if err != nil || found {
+				return resolution, err
+			}
 		}
 
 		product, found, err := loadProductForInventoryMaterialResolutionTx(tx, normalized.ProductID)

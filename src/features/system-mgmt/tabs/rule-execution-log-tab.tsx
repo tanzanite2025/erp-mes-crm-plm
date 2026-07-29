@@ -1,7 +1,14 @@
 import { useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
+import { useAuthStore } from '@/stores/auth-store'
 import { Card, CardContent } from '@/components/ui/card'
+import {
+  hasAnyId,
+  parseRequiredIds,
+} from '@/features/authz/core/permission-kernel'
+import { getAuthSessionPermissionIds } from '@/features/authz/utils/auth-session'
 import { RoutingQueryErrorState } from '../workflow-core/components/routing-query-error-state'
 import {
   type RuleExecutionStatus,
@@ -35,6 +42,8 @@ export function RuleExecutionLogTab({
   ) => void
 } = {}) {
   const { locale } = useLanguage()
+  const user = useAuthStore((state) => state.user)
+  const isIdentitySynced = useAuthStore((state) => state.isIdentitySynced)
   const [localPage, setLocalPage] = useState(1)
   const [localKeyword, setLocalKeyword] = useState('')
   const [localSourceCode, setLocalSourceCode] = useState('all')
@@ -57,6 +66,9 @@ export function RuleExecutionLogTab({
   const sourceCode = searchState?.sourceCode ?? localSourceCode
   const executionType = searchState?.executionType ?? localExecutionType
   const executionStatus = searchState?.executionStatus ?? localExecutionStatus
+  const canRetryNotificationLogs =
+    isIdentitySynced &&
+    hasAnyId(getAuthSessionPermissionIds(user), parseRequiredIds('perm_manage'))
 
   const setPage = (value: number | ((current: number) => number)) => {
     const nextValue = typeof value === 'function' ? value(page) : value
@@ -113,6 +125,25 @@ export function RuleExecutionLogTab({
   const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
     queryKey: ['routing-execution-logs', query],
     queryFn: () => RoutingService.getExecutionLogs(query),
+  })
+
+  const retryNotificationMutation = useMutation({
+    mutationFn: (id: string) => RoutingService.retryExecutionLogNotification(id),
+    onSuccess: (log) => {
+      void refetch()
+      if (log.executionStatus === 'success') {
+        toast.success('通知已重新投递')
+        return
+      }
+      if (log.executionStatus === 'skipped') {
+        toast.warning('通知重试已跳过：接收对象为空')
+        return
+      }
+      toast.error(log.errorMessage || '通知重试失败')
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : '通知重试失败')
+    },
   })
 
   const rawItems = useMemo(() => {
@@ -272,6 +303,12 @@ export function RuleExecutionLogTab({
               visibleCount={Math.min(effectiveVisibleCount, items.length)}
               hasMore={hasMoreItems}
               isFetching={isFetching}
+              canRetryNotificationLogs={canRetryNotificationLogs}
+              retryingLogId={
+                retryNotificationMutation.isPending
+                  ? retryNotificationMutation.variables
+                  : undefined
+              }
               onPreviousPage={() =>
                 setPage((current) => Math.max(1, current - 1))
               }
@@ -281,6 +318,9 @@ export function RuleExecutionLogTab({
                   key: listVisibilityKey,
                   visibleCount: effectiveVisibleCount + LOAD_MORE_STEP,
                 })
+              }
+              onRetryNotification={(id) =>
+                retryNotificationMutation.mutate(id)
               }
             />
           )}

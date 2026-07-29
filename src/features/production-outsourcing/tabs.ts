@@ -18,5 +18,10 @@ export function getProductionOutsourcingTabs(t: TranslateFn): TabItem[] {
       label: t('productionOutsourcing.layout.tabs.partners'),
       href: '/production-outsourcing/partners',
     },
+    {
+      key: 'transfers',
+      label: t('productionOutsourcing.layout.tabs.transfers'),
+      href: '/production-outsourcing/transfers',
+    },
   ]
 }

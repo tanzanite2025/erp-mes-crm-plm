@@ -94,4 +94,14 @@ var DefaultWarehouseCategories = []WarehouseCategory{
 		AllowShipment:  false,
 		AllowStocktake: true,
 	},
+	{
+		Name:           "委外在制仓",
+		Code:           "PRODUCTION_OUTSOURCE",
+		Description:    "系统内置委外在制承接仓，只能由生产委外专用库存适配器写入",
+		IsSystem:       true,
+		SortOrder:      93,
+		AllowInbound:   true,
+		AllowShipment:  true,
+		AllowStocktake: true,
+	},
 }

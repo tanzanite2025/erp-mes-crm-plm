@@ -402,6 +402,25 @@ func SaveInspectionTaskHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, mapInspectionTaskToResponse(task))
 }
 
+func ClaimInspectionTaskHandler(c *gin.Context) {
+	task, err := services.ClaimInspectionTask(
+		auditContextFromGin(c),
+		c.Param("id"),
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, services.ErrQualityInspectionTaskNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": "[NOT_FOUND] 检验任务不存在"})
+		case errors.Is(err, services.ErrQualityInspectionTaskClaimed):
+			c.JSON(http.StatusConflict, gin.H{"error": "[CONFLICT] 检验任务已被其他人员领取"})
+		default:
+			respondDomainError(c, err, "[SERVER] 领取检验任务失败: ")
+		}
+		return
+	}
+	c.JSON(http.StatusOK, mapInspectionTaskToResponse(task))
+}
+
 func ConfirmQualityBatchQuantitySettlementHandler(c *gin.Context) {
 	var input QualityBatchQuantitySettlementRequest
 	if err := c.ShouldBindJSON(&input); err != nil {

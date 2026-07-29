@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 const (
@@ -64,6 +65,13 @@ type ReleaseOutsourceOrderRequest struct {
 	IP       string
 }
 
+type CancelOutsourceOrderRequest struct {
+	ID       string
+	ActorID  string
+	Operator string
+	IP       string
+}
+
 func ListOutsourceOrders(query OutsourceOrderListQuery) (OutsourceOrderListResponse, error) {
 	return defaultProductionOutsourcingService.ListOutsourceOrders(query)
 }
@@ -82,6 +90,10 @@ func DeleteOutsourceOrder(req DeleteOutsourceOrderRequest) error {
 
 func ReleaseOutsourceOrder(req ReleaseOutsourceOrderRequest) (OutsourceOrderDTO, error) {
 	return defaultProductionOutsourcingService.ReleaseOutsourceOrder(req)
+}
+
+func CancelOutsourceOrder(req CancelOutsourceOrderRequest) (OutsourceOrderDTO, error) {
+	return defaultProductionOutsourcingService.CancelOutsourceOrder(req)
 }
 
 func (s *ProductionOutsourcingService) ListOutsourceOrders(query OutsourceOrderListQuery) (OutsourceOrderListResponse, error) {
@@ -201,9 +213,10 @@ func (s *ProductionOutsourcingService) UpdateOutsourceOrder(req UpdateOutsourceO
 	var saved models.OutsourceOrder
 	err = s.txManager.WithinTransaction(func(tx *gorm.DB) error {
 		var existing models.OutsourceOrder
-		if err := tx.Preload("Lines", func(db *gorm.DB) *gorm.DB {
-			return db.Order("line_no asc")
-		}).First(&existing, "id = ?", id).Error; err != nil {
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Preload("Lines", func(db *gorm.DB) *gorm.DB {
+				return db.Order("line_no asc")
+			}).First(&existing, "id = ?", id).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return ErrOutsourceOrderNotFound
 			}
@@ -317,9 +330,10 @@ func (s *ProductionOutsourcingService) ReleaseOutsourceOrder(req ReleaseOutsourc
 	var saved models.OutsourceOrder
 	err := s.txManager.WithinTransaction(func(tx *gorm.DB) error {
 		var existing models.OutsourceOrder
-		if err := tx.Preload("Lines", func(db *gorm.DB) *gorm.DB {
-			return db.Order("line_no asc")
-		}).First(&existing, "id = ?", id).Error; err != nil {
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Preload("Lines", func(db *gorm.DB) *gorm.DB {
+				return db.Order("line_no asc")
+			}).First(&existing, "id = ?", id).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return ErrOutsourceOrderNotFound
 			}
@@ -351,6 +365,67 @@ func (s *ProductionOutsourcingService) ReleaseOutsourceOrder(req ReleaseOutsourc
 		if err := tx.Preload("Lines", func(db *gorm.DB) *gorm.DB {
 			return db.Order("line_no asc")
 		}).First(&saved, "id = ?", existing.ID).Error; err != nil {
+			return err
+		}
+		if err := DispatchOutsourceOrderReleasedTx(tx, saved, previousStatus, req.ActorID, req.Operator); err != nil {
+			return err
+		}
+		return recordAuditEventTx(tx, audit.NewAuditEvent(
+			audit.AuditEntityOutsourceOrder,
+			saved.ID,
+			audit.AuditActionStatus,
+			outsourceOrderAuditActor(req.ActorID, req.Operator, req.IP),
+		).WithMetadata("orderNo", saved.OrderNo).
+			WithMetadata("from", previousStatus).
+			WithMetadata("to", saved.Status).
+			Normalize())
+	})
+	return mapOutsourceOrderToDTO(saved), err
+}
+
+func (s *ProductionOutsourcingService) CancelOutsourceOrder(req CancelOutsourceOrderRequest) (OutsourceOrderDTO, error) {
+	id := strings.TrimSpace(req.ID)
+	if id == "" {
+		return OutsourceOrderDTO{}, fmt.Errorf("%w: id is required", ErrInvalidOutsourceOrder)
+	}
+
+	var saved models.OutsourceOrder
+	err := s.txManager.WithinTransaction(func(tx *gorm.DB) error {
+		var existing models.OutsourceOrder
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Preload("Lines", func(db *gorm.DB) *gorm.DB {
+				return db.Order("line_no asc")
+			}).First(&existing, "id = ?", id).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrOutsourceOrderNotFound
+			}
+			return err
+		}
+		if err := validateOutsourceOrderCancelableTx(tx, existing); err != nil {
+			return err
+		}
+
+		previousStatus := existing.Status
+		existing.Status = OutsourceOrderStatusCanceled
+		existing.Operator = strings.TrimSpace(req.Operator)
+		existing.Version++
+		if err := tx.Omit("Lines", "Partner").Save(&existing).Error; err != nil {
+			return err
+		}
+		if err := tx.Model(&models.OutsourceOrderLine{}).
+			Where("outsource_order_id = ?", existing.ID).
+			Updates(map[string]interface{}{
+				"status":  OutsourceOrderStatusCanceled,
+				"version": gorm.Expr("version + ?", 1),
+			}).Error; err != nil {
+			return err
+		}
+		if err := tx.Preload("Lines", func(db *gorm.DB) *gorm.DB {
+			return db.Order("line_no asc")
+		}).First(&saved, "id = ?", existing.ID).Error; err != nil {
+			return err
+		}
+		if err := DispatchOutsourceOrderCanceledTx(tx, saved, previousStatus, req.ActorID, req.Operator); err != nil {
 			return err
 		}
 		return recordAuditEventTx(tx, audit.NewAuditEvent(
@@ -533,6 +608,48 @@ func validateDraftOnlyOutsourceOrderDTO(order OutsourceOrderDTO) error {
 			return fmt.Errorf("%w: lines[%d] must start as draft", ErrInvalidOutsourceOrder, index)
 		}
 	}
+	return nil
+}
+
+func validateOutsourceOrderCancelableTx(tx *gorm.DB, order models.OutsourceOrder) error {
+	if order.Status == OutsourceOrderStatusClosed || order.Status == OutsourceOrderStatusCanceled {
+		return fmt.Errorf("%w: closed or canceled outsource order cannot be canceled", ErrInvalidOutsourceOrder)
+	}
+	if order.Status != OutsourceOrderStatusDraft && order.Status != OutsourceOrderStatusReleased {
+		return fmt.Errorf("%w: only draft or released outsource orders without execution facts can be canceled", ErrInvalidOutsourceOrder)
+	}
+
+	for _, line := range order.Lines {
+		if line.SentQuantity > outsourceQuantityEpsilon ||
+			line.ReturnedQuantity > outsourceQuantityEpsilon ||
+			line.AcceptedQuantity > outsourceQuantityEpsilon ||
+			line.RejectedQuantity > outsourceQuantityEpsilon ||
+			line.ReworkQuantity > outsourceQuantityEpsilon ||
+			line.ScrapQuantity > outsourceQuantityEpsilon {
+			return fmt.Errorf("%w: outsource orders with execution quantities cannot be canceled", ErrInvalidOutsourceOrder)
+		}
+	}
+
+	var transferCount int64
+	if err := tx.Model(&models.OutsourceTransfer{}).
+		Where("outsource_order_id = ?", order.ID).
+		Count(&transferCount).Error; err != nil {
+		return err
+	}
+	if transferCount > 0 {
+		return fmt.Errorf("%w: outsource orders with transfer facts cannot be canceled", ErrInvalidOutsourceOrder)
+	}
+
+	var inspectionCount int64
+	if err := tx.Model(&models.OutsourceInspection{}).
+		Where("outsource_order_id = ?", order.ID).
+		Count(&inspectionCount).Error; err != nil {
+		return err
+	}
+	if inspectionCount > 0 {
+		return fmt.Errorf("%w: outsource orders with inspection facts cannot be canceled", ErrInvalidOutsourceOrder)
+	}
+
 	return nil
 }
 

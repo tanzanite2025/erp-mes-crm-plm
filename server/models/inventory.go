@@ -23,6 +23,40 @@ func (Inventory) TableName() string {
 	return "inventory"
 }
 
+// InventoryLedgerEntry is the immutable quantity movement fact for an inventory balance.
+//
+// One transfer writes two entries (source and target) with the same TransferID.
+// The balance row remains the read-optimized current state; this table is the
+// auditable history and is the only inventory fact written by dedicated
+// production-outsource movements.
+type InventoryLedgerEntry struct {
+	BaseModel
+	TransferID      string    `gorm:"type:uuid;index;not null" json:"transferId"`
+	TransferType    string    `gorm:"size:40;index;not null" json:"transferType"`
+	Direction       string    `gorm:"size:10;index;not null" json:"direction"`
+	MaterialID      string    `gorm:"type:uuid;index;not null" json:"materialId"`
+	MaterialName    string    `gorm:"size:255" json:"materialName"`
+	MaterialCode    string    `gorm:"size:100" json:"materialCode"`
+	MaterialSpec    string    `gorm:"type:text" json:"materialSpec"`
+	CategoryCode    string    `gorm:"size:50;index;not null" json:"categoryCode"`
+	BatchNo         string    `gorm:"size:100;index" json:"batchNo"`
+	QuantityDelta   float64   `gorm:"not null" json:"quantityDelta"`
+	QuantityAfter   float64   `gorm:"not null" json:"quantityAfter"`
+	UnitCost        float64   `gorm:"default:0" json:"unitCost"`
+	TotalValueDelta float64   `gorm:"default:0" json:"totalValueDelta"`
+	SourceType      string    `gorm:"size:50;index;not null" json:"sourceType"`
+	SourceID        string    `gorm:"size:100;index;not null" json:"sourceId"`
+	SourceLineID    string    `gorm:"size:100;index" json:"sourceLineId"`
+	SourceFactID    string    `gorm:"type:uuid;index" json:"sourceFactId"`
+	Operator        string    `gorm:"size:120" json:"operator"`
+	OccurredAt      time.Time `gorm:"index;not null" json:"occurredAt"`
+	Remarks         string    `gorm:"type:text" json:"remarks"`
+}
+
+func (InventoryLedgerEntry) TableName() string {
+	return "inventory_ledger_entries"
+}
+
 type Reservation struct {
 	BaseModel
 	MaterialID   string     `gorm:"type:uuid;index;not null" json:"materialId"`

@@ -238,4 +238,16 @@ export const RoutingService = {
     })
     return deserializeRuleExecutionLog(response)
   },
+
+  retryExecutionLogNotification: async (
+    id: string
+  ): Promise<RuleExecutionLog> => {
+    const response = await apiFetch<unknown>(
+      `/message-center/execution-logs/${id}/retry-notification`,
+      {
+        method: 'POST',
+      }
+    )
+    return deserializeRuleExecutionLog(response)
+  },
 }

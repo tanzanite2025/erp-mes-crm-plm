@@ -31,6 +31,11 @@ type InspectionTask struct {
 	BaseModel
 	StandardID       string              `gorm:"type:uuid;index" json:"standardId"`
 	Standard         *InspectionStandard `gorm:"foreignKey:StandardID" json:"standard,omitempty"`
+	Status           string              `gorm:"size:20;index;default:'OPEN'" json:"status"` // OPEN, CLAIMED, COMPLETED, CANCELLED
+	SourceType       string              `gorm:"size:40;index" json:"sourceType"`
+	SourceID         string              `gorm:"size:36;index" json:"sourceId"`
+	SourceLineID     string              `gorm:"size:36;index" json:"sourceLineId"`
+	ProductBarcode   string              `gorm:"size:120;index" json:"productBarcode"`
 	ProductionPlanID string              `gorm:"type:uuid;index" json:"productionPlanId"`
 	OrderID          string              `gorm:"type:uuid;index" json:"orderId"`
 	BatchNo          string              `gorm:"size:50;index;not null" json:"batchNo"`
@@ -39,6 +44,8 @@ type InspectionTask struct {
 	SampleQty        float64             `gorm:"default:0" json:"sampleQty"`
 	Result           string              `gorm:"size:20;default:'PENDING'" json:"result"` // PASS, FAIL, PENDING, CONDITIONAL
 	Inspector        string              `gorm:"size:100" json:"inspector"`
+	ClaimedBy        string              `gorm:"size:100;index" json:"claimedBy"`
+	ClaimedAt        *time.Time          `json:"claimedAt"`
 	InputData        json.RawMessage     `gorm:"type:jsonb" json:"inputData"` // 实际测得数据 (JSONB)
 	Remarks          string              `gorm:"type:text" json:"remarks"`
 	CompletedAt      *time.Time          `json:"completedAt"`

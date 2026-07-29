@@ -74,6 +74,16 @@ var defaultBusinessEventSourceSeeds = []defaultBusinessEventSourceSeed{
 		Description: "产品一维码扫码触发开始、完成、挂起、返工等工序执行状态事件。",
 		Config:      defaultProductionOperationEventSourceConfig(),
 	},
+	{
+		ID:          "66666666-6666-6666-6666-666666666666",
+		Code:        "PRODUCTION_OUTSOURCE",
+		Name:        "委外执行",
+		Module:      "Production",
+		Entity:      "SYSTEM",
+		Enabled:     true,
+		Description: "委外下达、发出、退回和检验处置等执行事实事件。",
+		Config:      defaultProductionOutsourceEventSourceConfig(),
+	},
 }
 
 func ensureBusinessEventSourceIdentityImmutable(

@@ -27,24 +27,26 @@ const (
 var ErrInvalidProductionScanCommand = errors.New("invalid production scan command")
 
 type ExecuteProductionScanCommandRequest struct {
-	ProductBarcode string `json:"productBarcode"`
-	ExecutionLotID string `json:"executionLotId"`
-	RouteID        string `json:"routeId"`
-	RouteStepID    string `json:"routeStepId"`
-	ProcessStepID  string `json:"processStepId"`
-	ExecutionMode  string `json:"executionMode"`
-	PartnerID      string `json:"partnerId"`
-	Action         string `json:"action"`
-	Result         string `json:"result"`
-	Notes          string `json:"notes"`
-	CommandSource  string `json:"commandSource"`
-	FromHolderType string `json:"fromHolderType"`
-	FromHolderID   string `json:"fromHolderId"`
-	ToHolderType   string `json:"toHolderType"`
-	ToHolderID     string `json:"toHolderId"`
-	ActorID        string `json:"-"`
-	Operator       string `json:"-"`
-	IP             string `json:"-"`
+	ProductBarcode      string `json:"productBarcode"`
+	ExecutionLotID      string `json:"executionLotId"`
+	RouteID             string `json:"routeId"`
+	RouteStepID         string `json:"routeStepId"`
+	ProcessStepID       string `json:"processStepId"`
+	TargetRouteStepID   string `json:"targetRouteStepId"`
+	TargetProcessStepID string `json:"targetProcessStepId"`
+	ExecutionMode       string `json:"executionMode"`
+	PartnerID           string `json:"partnerId"`
+	Action              string `json:"action"`
+	Result              string `json:"result"`
+	Notes               string `json:"notes"`
+	CommandSource       string `json:"commandSource"`
+	FromHolderType      string `json:"fromHolderType"`
+	FromHolderID        string `json:"fromHolderId"`
+	ToHolderType        string `json:"toHolderType"`
+	ToHolderID          string `json:"toHolderId"`
+	ActorID             string `json:"-"`
+	Operator            string `json:"-"`
+	IP                  string `json:"-"`
 }
 
 type ProductionScanCommandProgressResponse struct {
@@ -127,86 +129,9 @@ func (s *ProductionScanCommandService) ExecuteProductionScanCommand(req ExecuteP
 
 	var result productionScanCommandTxResult
 	err := s.txManager.WithinTransaction(func(tx *gorm.DB) error {
-		resolved, err := resolveProductionScanCommandContextTx(tx, normalized)
-		if err != nil {
-			return err
-		}
-		if err := validateRecordProductionOperationExecutionRequest(tx, resolved.Request); err != nil {
-			return err
-		}
-
-		recordResult, err := recordProductionOperationExecutionTx(tx, resolved.Request)
-		if err != nil {
-			return err
-		}
-
-		progress := initialProductionScanProgress(recordResult.Operation, resolved.RouteStep)
-		transferEvents := make([]models.ProductBarcodeTransferEvent, 0)
-		if normalized.Action == ProductionOperationActionComplete && recordResult.Operation.RouteID != "" && recordResult.Operation.RouteStepID != "" {
-			progressedState, routeProgress, routeTransferEvent, hasRouteTransfer, err := advanceProductionScanRouteTx(tx, normalized, recordResult)
-			if err != nil {
-				return err
-			}
-			recordResult.State = progressedState
-			progress = mergeProductionScanProgress(progress, routeProgress)
-			if hasRouteTransfer {
-				transferEvents = append(transferEvents, routeTransferEvent)
-			}
-		}
-
-		if shouldRecordProductionScanCustodyTransfer(normalized) {
-			custodyEvent, err := recordProductBarcodeTransferEventTx(tx, ProductBarcodeTransferEventWriteRequest{
-				ProductBarcode:    recordResult.Operation.ProductBarcode,
-				StateID:           recordResult.State.ID,
-				OperationID:       recordResult.Operation.ID,
-				TransferType:      ProductBarcodeTransferTypeCustodyTransfer,
-				RouteID:           recordResult.State.RouteID,
-				FromRouteStepID:   recordResult.Operation.RouteStepID,
-				ToRouteStepID:     recordResult.State.RouteStepID,
-				FromProcessStepID: recordResult.Operation.ProcessStepID,
-				ToProcessStepID:   recordResult.State.CurrentProcessStepID,
-				FromHolderType:    normalized.FromHolderType,
-				FromHolderID:      normalized.FromHolderID,
-				ToHolderType:      normalized.ToHolderType,
-				ToHolderID:        normalized.ToHolderID,
-				Operator:          recordResult.Operation.Operator,
-				CommandSource:     normalized.CommandSource,
-				Action:            normalized.Action,
-			})
-			if err != nil {
-				return err
-			}
-			transferEvents = append(transferEvents, custodyEvent)
-		}
-
-		if err := DispatchProductionOperationStatusChangedTx(
-			tx,
-			recordResult.Operation,
-			resolved.InitialState.Status,
-			recordResult.Operation.Status,
-			normalized.ActorID,
-			recordResult.Operation.Operator,
-		); err != nil {
-			return err
-		}
-		if err := recordProductionScanCommandAuditTx(tx, normalized, recordResult, progress, transferEvents); err != nil {
-			return err
-		}
-
-		loadedState, events, err := loadProductBarcodeStateWithEvents(tx, recordResult.State.ProductBarcode)
-		if err != nil {
-			return err
-		}
-
-		result = productionScanCommandTxResult{
-			CommandSource:  normalized.CommandSource,
-			RecordResult:   recordResult,
-			StateResponse:  mapProductBarcodeStateToResponse(loadedState, events),
-			Progress:       progress,
-			TransferEvents: transferEvents,
-			Message:        buildProductionScanCommandMessage(progress, recordResult.Operation),
-		}
-		return nil
+		var err error
+		result, err = executeProductionScanCommandTx(tx, normalized)
+		return err
 	})
 	if err != nil {
 		return ExecuteProductionScanCommandResponse{}, normalizeProductionScanCommandError(err)
@@ -222,6 +147,88 @@ func (s *ProductionScanCommandService) ExecuteProductionScanCommand(req ExecuteP
 	}, nil
 }
 
+func executeProductionScanCommandTx(tx *gorm.DB, normalized ExecuteProductionScanCommandRequest) (productionScanCommandTxResult, error) {
+	resolved, err := resolveProductionScanCommandContextTx(tx, normalized)
+	if err != nil {
+		return productionScanCommandTxResult{}, err
+	}
+	if err := validateRecordProductionOperationExecutionRequest(tx, resolved.Request); err != nil {
+		return productionScanCommandTxResult{}, err
+	}
+
+	recordResult, err := recordProductionOperationExecutionTx(tx, resolved.Request)
+	if err != nil {
+		return productionScanCommandTxResult{}, err
+	}
+
+	progress := initialProductionScanProgress(recordResult.Operation, resolved.RouteStep)
+	transferEvents := make([]models.ProductBarcodeTransferEvent, 0)
+	if shouldAdvanceProductionScanRoute(normalized) && recordResult.Operation.RouteID != "" && recordResult.Operation.RouteStepID != "" {
+		progressedState, routeProgress, routeTransferEvent, hasRouteTransfer, err := advanceProductionScanRouteTx(tx, normalized, recordResult)
+		if err != nil {
+			return productionScanCommandTxResult{}, err
+		}
+		recordResult.State = progressedState
+		progress = mergeProductionScanProgress(progress, routeProgress)
+		if hasRouteTransfer {
+			transferEvents = append(transferEvents, routeTransferEvent)
+		}
+	}
+
+	if shouldRecordProductionScanCustodyTransfer(normalized) {
+		custodyEvent, err := recordProductBarcodeTransferEventTx(tx, ProductBarcodeTransferEventWriteRequest{
+			ProductBarcode:    recordResult.Operation.ProductBarcode,
+			StateID:           recordResult.State.ID,
+			OperationID:       recordResult.Operation.ID,
+			TransferType:      ProductBarcodeTransferTypeCustodyTransfer,
+			RouteID:           recordResult.State.RouteID,
+			FromRouteStepID:   recordResult.Operation.RouteStepID,
+			ToRouteStepID:     recordResult.State.RouteStepID,
+			FromProcessStepID: recordResult.Operation.ProcessStepID,
+			ToProcessStepID:   recordResult.State.CurrentProcessStepID,
+			FromHolderType:    normalized.FromHolderType,
+			FromHolderID:      normalized.FromHolderID,
+			ToHolderType:      normalized.ToHolderType,
+			ToHolderID:        normalized.ToHolderID,
+			Operator:          recordResult.Operation.Operator,
+			CommandSource:     normalized.CommandSource,
+			Action:            normalized.Action,
+		})
+		if err != nil {
+			return productionScanCommandTxResult{}, err
+		}
+		transferEvents = append(transferEvents, custodyEvent)
+	}
+
+	if err := DispatchProductionOperationStatusChangedTx(
+		tx,
+		recordResult.Operation,
+		resolved.InitialState.Status,
+		recordResult.Operation.Status,
+		normalized.ActorID,
+		recordResult.Operation.Operator,
+	); err != nil {
+		return productionScanCommandTxResult{}, err
+	}
+	if err := recordProductionScanCommandAuditTx(tx, normalized, recordResult, progress, transferEvents); err != nil {
+		return productionScanCommandTxResult{}, err
+	}
+
+	loadedState, events, err := loadProductBarcodeStateWithEvents(tx, recordResult.State.ProductBarcode)
+	if err != nil {
+		return productionScanCommandTxResult{}, err
+	}
+
+	return productionScanCommandTxResult{
+		CommandSource:  normalized.CommandSource,
+		RecordResult:   recordResult,
+		StateResponse:  mapProductBarcodeStateToResponse(loadedState, events),
+		Progress:       progress,
+		TransferEvents: transferEvents,
+		Message:        buildProductionScanCommandMessage(progress, recordResult.Operation),
+	}, nil
+}
+
 func normalizeExecuteProductionScanCommandRequest(input ExecuteProductionScanCommandRequest) ExecuteProductionScanCommandRequest {
 	action := strings.ToUpper(strings.TrimSpace(input.Action))
 	if action == "" {
@@ -233,24 +240,26 @@ func normalizeExecuteProductionScanCommandRequest(input ExecuteProductionScanCom
 	}
 
 	return ExecuteProductionScanCommandRequest{
-		ProductBarcode: normalizeProductBarcodeValue(input.ProductBarcode),
-		ExecutionLotID: strings.TrimSpace(input.ExecutionLotID),
-		RouteID:        strings.TrimSpace(input.RouteID),
-		RouteStepID:    strings.TrimSpace(input.RouteStepID),
-		ProcessStepID:  strings.TrimSpace(input.ProcessStepID),
-		ExecutionMode:  strings.ToUpper(strings.TrimSpace(input.ExecutionMode)),
-		PartnerID:      strings.TrimSpace(input.PartnerID),
-		Action:         action,
-		Result:         strings.TrimSpace(input.Result),
-		Notes:          strings.TrimSpace(input.Notes),
-		CommandSource:  commandSource,
-		FromHolderType: strings.ToUpper(strings.TrimSpace(input.FromHolderType)),
-		FromHolderID:   strings.TrimSpace(input.FromHolderID),
-		ToHolderType:   strings.ToUpper(strings.TrimSpace(input.ToHolderType)),
-		ToHolderID:     strings.TrimSpace(input.ToHolderID),
-		ActorID:        strings.TrimSpace(input.ActorID),
-		Operator:       strings.TrimSpace(input.Operator),
-		IP:             strings.TrimSpace(input.IP),
+		ProductBarcode:      normalizeProductBarcodeValue(input.ProductBarcode),
+		ExecutionLotID:      strings.TrimSpace(input.ExecutionLotID),
+		RouteID:             strings.TrimSpace(input.RouteID),
+		RouteStepID:         strings.TrimSpace(input.RouteStepID),
+		ProcessStepID:       strings.TrimSpace(input.ProcessStepID),
+		TargetRouteStepID:   strings.TrimSpace(input.TargetRouteStepID),
+		TargetProcessStepID: strings.TrimSpace(input.TargetProcessStepID),
+		ExecutionMode:       strings.ToUpper(strings.TrimSpace(input.ExecutionMode)),
+		PartnerID:           strings.TrimSpace(input.PartnerID),
+		Action:              action,
+		Result:              strings.TrimSpace(input.Result),
+		Notes:               strings.TrimSpace(input.Notes),
+		CommandSource:       commandSource,
+		FromHolderType:      strings.ToUpper(strings.TrimSpace(input.FromHolderType)),
+		FromHolderID:        strings.TrimSpace(input.FromHolderID),
+		ToHolderType:        strings.ToUpper(strings.TrimSpace(input.ToHolderType)),
+		ToHolderID:          strings.TrimSpace(input.ToHolderID),
+		ActorID:             strings.TrimSpace(input.ActorID),
+		Operator:            strings.TrimSpace(input.Operator),
+		IP:                  strings.TrimSpace(input.IP),
 	}
 }
 
@@ -462,12 +471,24 @@ func mergeProductionScanProgress(base ProductionScanCommandProgressResponse, nex
 	return base
 }
 
+func shouldAdvanceProductionScanRoute(req ExecuteProductionScanCommandRequest) bool {
+	if req.Action == ProductionOperationActionComplete {
+		return true
+	}
+	return req.Action == ProductionOperationActionRework && hasProductionScanTargetRoute(req)
+}
+
+func hasProductionScanTargetRoute(req ExecuteProductionScanCommandRequest) bool {
+	return strings.TrimSpace(req.TargetRouteStepID) != "" ||
+		strings.TrimSpace(req.TargetProcessStepID) != ""
+}
+
 func advanceProductionScanRouteTx(
 	tx *gorm.DB,
 	req ExecuteProductionScanCommandRequest,
 	recordResult productionOperationExecutionRecordResult,
 ) (models.ProductBarcodeState, ProductionScanCommandProgressResponse, models.ProductBarcodeTransferEvent, bool, error) {
-	nextStep, found, err := findNextProductionRouteStepTx(tx, recordResult.Operation.RouteID, recordResult.Operation.RouteStepID)
+	nextStep, found, err := resolveProductionScanRouteTargetStepTx(tx, req, recordResult.Operation)
 	if err != nil {
 		return models.ProductBarcodeState{}, ProductionScanCommandProgressResponse{}, models.ProductBarcodeTransferEvent{}, false, err
 	}
@@ -479,7 +500,11 @@ func advanceProductionScanRouteTx(
 		}, models.ProductBarcodeTransferEvent{}, false, nil
 	}
 
-	progressedState, err := advanceProductBarcodeStateToNextRouteStepTx(tx, recordResult.State, recordResult.Operation, nextStep, req)
+	targetStatus := ProductBarcodeStateStatusNotStarted
+	if req.Action == ProductionOperationActionRework {
+		targetStatus = ProductBarcodeStateStatusRework
+	}
+	progressedState, err := advanceProductBarcodeStateToRouteStepTx(tx, recordResult.State, recordResult.Operation, nextStep, req, targetStatus)
 	if err != nil {
 		return models.ProductBarcodeState{}, ProductionScanCommandProgressResponse{}, models.ProductBarcodeTransferEvent{}, false, err
 	}
@@ -515,12 +540,27 @@ func advanceProductionScanRouteTx(
 	}, transferEvent, true, nil
 }
 
-func advanceProductBarcodeStateToNextRouteStepTx(
+func resolveProductionScanRouteTargetStepTx(
+	tx *gorm.DB,
+	req ExecuteProductionScanCommandRequest,
+	operation models.ProductionOperationExecution,
+) (models.ProductionRouteStep, bool, error) {
+	if hasProductionScanTargetRoute(req) {
+		return resolveProductionQualityRoutingTargetStepTx(tx, operation.RouteID, productionQualityRoutingTarget{
+			TargetRouteStepID:   req.TargetRouteStepID,
+			TargetProcessStepID: req.TargetProcessStepID,
+		})
+	}
+	return findNextProductionRouteStepTx(tx, operation.RouteID, operation.RouteStepID)
+}
+
+func advanceProductBarcodeStateToRouteStepTx(
 	tx *gorm.DB,
 	state models.ProductBarcodeState,
 	operation models.ProductionOperationExecution,
 	nextStep models.ProductionRouteStep,
 	req ExecuteProductionScanCommandRequest,
+	targetStatus string,
 ) (models.ProductBarcodeState, error) {
 	now := time.Now().UTC()
 	previousProcessStepID := strings.TrimSpace(state.CurrentProcessStepID)
@@ -531,13 +571,18 @@ func advanceProductBarcodeStateToNextRouteStepTx(
 		RouteID:        nextStep.RouteID,
 		RouteStepID:    nextStep.ID,
 		ProcessStepID:  nextStep.ProcessStepID,
-		Status:         ProductBarcodeStateStatusNotStarted,
+		Status:         targetStatus,
 		Operator:       operation.Operator,
 	}
 	applyProductBarcodeStateRequest(&state, stateReq, now)
 	state.StartedAt = nil
 	state.CompletedAt = nil
-	if err := tx.Save(&state).Error; err != nil {
+	if err := saveProductionRecordWithOptionalUUIDs(tx, &state,
+		productionOptionalUUIDWrite{Column: "route_id", Value: state.RouteID},
+		productionOptionalUUIDWrite{Column: "route_step_id", Value: state.RouteStepID},
+		productionOptionalUUIDWrite{Column: "current_process_step_id", Value: state.CurrentProcessStepID},
+		productionOptionalUUIDWrite{Column: "last_event_id", Value: state.LastEventID},
+	); err != nil {
 		return models.ProductBarcodeState{}, fmt.Errorf("failed to advance product barcode state: %w", err)
 	}
 
@@ -554,7 +599,12 @@ func advanceProductBarcodeStateToNextRouteStepTx(
 		PayloadSnapshot:   buildProductionScanRouteAdvanceSnapshot(operation, nextStep, req),
 		OccurredAt:        &now,
 	}
-	if err := tx.Create(&stateEvent).Error; err != nil {
+	if err := createProductionRecordWithOptionalUUIDs(tx, &stateEvent,
+		productionOptionalUUIDWrite{Column: "from_process_step_id", Value: stateEvent.FromProcessStepID},
+		productionOptionalUUIDWrite{Column: "to_process_step_id", Value: stateEvent.ToProcessStepID},
+		productionOptionalUUIDWrite{Column: "route_id", Value: stateEvent.RouteID},
+		productionOptionalUUIDWrite{Column: "route_step_id", Value: stateEvent.RouteStepID},
+	); err != nil {
 		return models.ProductBarcodeState{}, fmt.Errorf("failed to create route advance state event: %w", err)
 	}
 	if err := tx.Model(&models.ProductBarcodeState{}).
@@ -612,7 +662,17 @@ func recordProductBarcodeTransferEventTx(tx *gorm.DB, req ProductBarcodeTransfer
 	if event.TransferType == "" {
 		return models.ProductBarcodeTransferEvent{}, fmt.Errorf("%w: transferType is required", ErrInvalidProductionScanCommand)
 	}
-	if err := tx.Create(&event).Error; err != nil {
+	if err := createProductionRecordWithOptionalUUIDs(tx, &event,
+		productionOptionalUUIDWrite{Column: "state_id", Value: event.StateID},
+		productionOptionalUUIDWrite{Column: "operation_id", Value: event.OperationID},
+		productionOptionalUUIDWrite{Column: "route_id", Value: event.RouteID},
+		productionOptionalUUIDWrite{Column: "from_route_step_id", Value: event.FromRouteStepID},
+		productionOptionalUUIDWrite{Column: "to_route_step_id", Value: event.ToRouteStepID},
+		productionOptionalUUIDWrite{Column: "from_process_step_id", Value: event.FromProcessStepID},
+		productionOptionalUUIDWrite{Column: "to_process_step_id", Value: event.ToProcessStepID},
+		productionOptionalUUIDWrite{Column: "from_holder_id", Value: event.FromHolderID},
+		productionOptionalUUIDWrite{Column: "to_holder_id", Value: event.ToHolderID},
+	); err != nil {
 		return models.ProductBarcodeTransferEvent{}, fmt.Errorf("failed to create product barcode transfer event: %w", err)
 	}
 	return event, nil
@@ -633,6 +693,8 @@ func buildProductionScanRouteAdvanceSnapshot(operation models.ProductionOperatio
 		"toProcessStepId":      nextStep.ProcessStepID,
 		"commandSource":        req.CommandSource,
 		"action":               req.Action,
+		"targetRouteStepId":    req.TargetRouteStepID,
+		"targetProcessStepId":  req.TargetProcessStepID,
 	})
 	if err != nil {
 		return "{}"
@@ -684,6 +746,12 @@ func recordProductionScanCommandAuditTx(
 		"routeCompleted":        fmt.Sprintf("%t", progress.RouteCompleted),
 		"commandSource":         req.CommandSource,
 	}
+	if req.TargetRouteStepID != "" {
+		metadata["targetRouteStepId"] = req.TargetRouteStepID
+	}
+	if req.TargetProcessStepID != "" {
+		metadata["targetProcessStepId"] = req.TargetProcessStepID
+	}
 	if len(transferEvents) > 0 {
 		ids := make([]string, 0, len(transferEvents))
 		for _, event := range transferEvents {
@@ -714,6 +782,9 @@ func buildProductionScanCommandMessage(progress ProductionScanCommandProgressRes
 		return "当前路线已完成"
 	}
 	if progress.Advanced {
+		if operation.Action == ProductionOperationActionRework {
+			return "当前工序已标记返工并跳转到目标路线步骤"
+		}
 		return "已完成当前工序并推进到下一路线步骤"
 	}
 	switch operation.Action {

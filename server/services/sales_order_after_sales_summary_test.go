@@ -454,8 +454,14 @@ func TestAfterSalesExecutionSourceTypesUseDedicatedInventoryPaths(t *testing.T) 
 		if !isAfterSalesExecutionSourceType(sourceType) {
 			t.Fatalf("expected source type %q to be reserved", sourceType)
 		}
+		if !isDedicatedInventoryExecutionSourceType(sourceType) {
+			t.Fatalf("expected source type %q to use a dedicated inventory path", sourceType)
+		}
 	}
 	if isAfterSalesExecutionSourceType("PURCHASE_RECEIPT") {
+		t.Fatal("purchase receipt source type must remain available to generic inventory flow")
+	}
+	if isDedicatedInventoryExecutionSourceType("PURCHASE_RECEIPT") {
 		t.Fatal("purchase receipt source type must remain available to generic inventory flow")
 	}
 }

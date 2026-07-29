@@ -240,3 +240,65 @@ func TestExecuteProductionScanCommandPreservesBarcodeProductIdentity(t *testing.
 	require.Equal(t, "产品A", response.State.ProductName)
 	require.Equal(t, stepIDs[1], response.State.RouteStepID)
 }
+
+func TestExecuteProductionScanCommandReworkAdvancesToExplicitTargetRouteStep(t *testing.T) {
+	service, database := newProductionScanCommandTestService(t)
+	stepIDs := seedProductionScanRoute(t, database, "route-a", "process-a", "process-b")
+
+	_, err := service.ExecuteProductionScanCommand(ExecuteProductionScanCommandRequest{
+		ProductBarcode: "ABC-006",
+		RouteID:        "route-a",
+		Action:         ProductionOperationActionStart,
+		Operator:       "tester",
+	})
+	require.NoError(t, err)
+	_, err = service.ExecuteProductionScanCommand(ExecuteProductionScanCommandRequest{
+		ProductBarcode: "ABC-006",
+		Action:         ProductionOperationActionComplete,
+		Operator:       "tester",
+	})
+	require.NoError(t, err)
+
+	response, err := service.ExecuteProductionScanCommand(ExecuteProductionScanCommandRequest{
+		ProductBarcode:      "ABC-006",
+		Action:              ProductionOperationActionRework,
+		TargetRouteStepID:   stepIDs[0],
+		TargetProcessStepID: "process-a",
+		Operator:            "tester",
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, ProductionOperationActionRework, response.Operation.Action)
+	require.Equal(t, stepIDs[1], response.Operation.RouteStepID)
+	require.Equal(t, ProductBarcodeStateStatusRework, response.State.Status)
+	require.Equal(t, stepIDs[0], response.State.RouteStepID)
+	require.Equal(t, "process-a", response.State.CurrentProcessStepID)
+	require.True(t, response.Progress.Advanced)
+	require.Len(t, response.TransferEvents, 1)
+	require.Equal(t, ProductBarcodeTransferTypeRouteAdvance, response.TransferEvents[0].TransferType)
+	require.Equal(t, "process-b", response.TransferEvents[0].FromProcessStepID)
+	require.Equal(t, "process-a", response.TransferEvents[0].ToProcessStepID)
+}
+
+func TestExecuteProductionScanCommandRejectsTargetRouteStepOutsideRoute(t *testing.T) {
+	service, database := newProductionScanCommandTestService(t)
+	seedProductionScanRoute(t, database, "route-a", "process-a")
+	targetStepIDs := seedProductionScanRoute(t, database, "route-b", "process-b")
+
+	_, err := service.ExecuteProductionScanCommand(ExecuteProductionScanCommandRequest{
+		ProductBarcode: "ABC-007",
+		RouteID:        "route-a",
+		Action:         ProductionOperationActionStart,
+		Operator:       "tester",
+	})
+	require.NoError(t, err)
+
+	_, err = service.ExecuteProductionScanCommand(ExecuteProductionScanCommandRequest{
+		ProductBarcode:    "ABC-007",
+		Action:            ProductionOperationActionComplete,
+		TargetRouteStepID: targetStepIDs[0],
+		Operator:          "tester",
+	})
+
+	require.ErrorIs(t, err, ErrInvalidProductionScanCommand)
+}

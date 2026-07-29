@@ -96,6 +96,11 @@ type InspectionStandardsListResponse struct {
 type InspectionTaskRequest struct {
 	ID               string          `json:"id"`
 	StandardID       string          `json:"standardId"`
+	Status           string          `json:"status"`
+	SourceType       string          `json:"sourceType"`
+	SourceID         string          `json:"sourceId"`
+	SourceLineID     string          `json:"sourceLineId"`
+	ProductBarcode   string          `json:"productBarcode"`
 	ProductionPlanID string          `json:"productionPlanId"`
 	OrderID          string          `json:"orderId"`
 	BatchNo          string          `json:"batchNo"`
@@ -123,6 +128,13 @@ type InspectionTaskResponse struct {
 	SampleQty        float64                     `json:"sampleQty"`
 	Result           string                      `json:"result"`
 	Inspector        string                      `json:"inspector"`
+	Status           string                      `json:"status"`
+	SourceType       string                      `json:"sourceType,omitempty"`
+	SourceID         string                      `json:"sourceId,omitempty"`
+	SourceLineID     string                      `json:"sourceLineId,omitempty"`
+	ProductBarcode   string                      `json:"productBarcode,omitempty"`
+	ClaimedBy        string                      `json:"claimedBy,omitempty"`
+	ClaimedAt        *time.Time                  `json:"claimedAt,omitempty"`
 	InputData        json.RawMessage             `json:"inputData"`
 	Remarks          string                      `json:"remarks"`
 	CompletedAt      *time.Time                  `json:"completedAt"`
@@ -286,6 +298,11 @@ func mapInspectionTaskRequestToModel(input InspectionTaskRequest) models.Inspect
 	return models.InspectionTask{
 		BaseModel:        models.BaseModel{ID: input.ID},
 		StandardID:       input.StandardID,
+		Status:           input.Status,
+		SourceType:       input.SourceType,
+		SourceID:         input.SourceID,
+		SourceLineID:     input.SourceLineID,
+		ProductBarcode:   input.ProductBarcode,
 		ProductionPlanID: input.ProductionPlanID,
 		OrderID:          input.OrderID,
 		BatchNo:          input.BatchNo,
@@ -312,6 +329,11 @@ func mapInspectionTaskToResponse(model models.InspectionTask) InspectionTaskResp
 		UpdatedAt:        model.UpdatedAt,
 		StandardID:       model.StandardID,
 		Standard:         standard,
+		Status:           model.Status,
+		SourceType:       model.SourceType,
+		SourceID:         model.SourceID,
+		SourceLineID:     model.SourceLineID,
+		ProductBarcode:   model.ProductBarcode,
 		ProductionPlanID: model.ProductionPlanID,
 		OrderID:          model.OrderID,
 		BatchNo:          model.BatchNo,
@@ -320,6 +342,8 @@ func mapInspectionTaskToResponse(model models.InspectionTask) InspectionTaskResp
 		SampleQty:        model.SampleQty,
 		Result:           model.Result,
 		Inspector:        model.Inspector,
+		ClaimedBy:        model.ClaimedBy,
+		ClaimedAt:        model.ClaimedAt,
 		InputData:        model.InputData,
 		Remarks:          model.Remarks,
 		CompletedAt:      model.CompletedAt,

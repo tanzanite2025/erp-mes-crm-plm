@@ -41,3 +41,14 @@ export const outsourceOrderQueryKeys = {
       },
     ] as const,
 }
+
+export const outsourceDiagnosticsQueryKeys = {
+  all: ['production-outsourcing', 'diagnostics'] as const,
+  status: () => [...outsourceDiagnosticsQueryKeys.all, 'status'] as const,
+}
+
+export const outsourceInventoryCategoryQueryKeys = {
+  all: ['production-outsourcing', 'inventory-categories'] as const,
+  options: () =>
+    [...outsourceInventoryCategoryQueryKeys.all, 'options'] as const,
+}

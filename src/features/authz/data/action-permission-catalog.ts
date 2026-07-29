@@ -179,6 +179,10 @@ const systemActions: LegacyActionPermissionEntry[] = [
       'POST /logistics-config/vehicle-model-templates',
       'PATCH /logistics-config/vehicle-model-templates/:id',
       'POST /logistics-config/vehicle-model-templates/:id/versions/:version/restore',
+      'POST /assets/vehicle-model-templates/upload',
+      'POST /logistics-config/vehicle-model-templates/:id/parse',
+      'POST /logistics-config/vehicle-model-templates/:id/parse/tasks',
+      'POST /logistics-config/vehicle-model-templates/:id/parse/tasks/:taskId/retry',
       'POST /message-center/event-sources',
       'POST /message-center/event-sources/:id/status-rename-transaction',
       'PUT /message-center/event-sources/:id',
@@ -211,6 +215,7 @@ const warehouseActions: LegacyActionPermissionEntry[] = [
     routeBindings: [
       'POST /inventory/inbound',
       'POST /sales-exchanges/:id/old-item-inbound',
+      'POST /sales-returns/:id/inbound',
     ],
   },
   {
@@ -222,6 +227,8 @@ const warehouseActions: LegacyActionPermissionEntry[] = [
     routeBindings: [
       'POST /inventory/shipment',
       'POST /inventory/shipment/virtual-lock',
+      'POST /sales-exchanges/:id/replacement-shipment',
+      'POST /sales-exchanges/:id/replacement-shipment/:shipmentId/void',
     ],
   },
   {
@@ -333,10 +340,12 @@ const tradingActions: LegacyActionPermissionEntry[] = [
       'POST /sales-orders/:id/transactions',
       'POST /sales-orders/:id/returns',
       'POST /sales-orders/:id/exchanges',
+      'POST /sales-returns/:id/line-barcodes',
       'PATCH /sales-orders/:id',
       'PATCH /sales-returns/:id',
       'PATCH /sales-returns/:id/actual-amount',
       'PATCH /sales-returns/:id/logistics',
+      'PATCH /sales-exchanges/:id/old-item-logistics',
       'PATCH /quotes/:id',
       'POST /quotes/:id/convert',
     ],
@@ -772,7 +781,7 @@ const productionActions: LegacyActionPermissionEntry[] = [
   {
     id: 'action_outsource_order_manage',
     label: '生产：管理委外任务',
-    desc: '允许创建、更新、删除和下发生产委外任务。',
+    desc: '允许创建、更新、删除、下发和作废生产委外任务。',
     category: 'action',
     parentId: 'menu_prod_config',
     routeBindings: [
@@ -780,7 +789,27 @@ const productionActions: LegacyActionPermissionEntry[] = [
       'PATCH /production/outsourcing/orders/:id',
       'DELETE /production/outsourcing/orders/:id',
       'POST /production/outsourcing/orders/:id/release',
+      'POST /production/outsourcing/orders/:id/cancel',
     ],
+  },
+  {
+    id: 'action_outsource_transfer_execute',
+    label: '生产：执行委外收发',
+    desc: '允许登记委外明细的产品条码发出和回厂。',
+    category: 'action',
+    parentId: 'menu_prod_config',
+    routeBindings: [
+      'POST /production/outsourcing/order-lines/:lineId/send',
+      'POST /production/outsourcing/order-lines/:lineId/return',
+    ],
+  },
+  {
+    id: 'action_outsource_inspection_submit',
+    label: '生产：提交委外检验',
+    desc: '允许提交委外回厂后的检验结果，并推进产品条码工序状态。',
+    category: 'action',
+    parentId: 'menu_prod_config',
+    routeBindings: ['POST /production/outsourcing/order-lines/:lineId/inspect'],
   },
   {
     id: 'action_barcode_binding_manage',

@@ -5,16 +5,24 @@ import { useLanguage } from '@/context/language-provider'
 import type {
   OutsourceOrder,
   OutsourceOrderFormValues,
+  OutsourceInspectionFormValues,
+  OutsourceTransferFormValues,
 } from '../data/outsource-order'
 import {
+  outsourceDiagnosticsQueryKeys,
   outsourceOrderQueryKeys,
   type OutsourceOrderFilters,
 } from '../query-keys'
 import {
+  cancelOutsourceOrder,
   createOutsourceOrder,
   deleteOutsourceOrder,
+  getOutsourceDiagnostics,
   getOutsourceOrders,
+  inspectOutsourceOrderLine,
   releaseOutsourceOrder,
+  returnOutsourceOrderLine,
+  sendOutsourceOrderLine,
   updateOutsourceOrder,
 } from '../services/outsource-orders-service'
 
@@ -25,14 +33,27 @@ export function useOutsourceOrders(filters: OutsourceOrderFilters = {}) {
   })
 }
 
+export function useOutsourceDiagnostics() {
+  return useQuery({
+    queryKey: outsourceDiagnosticsQueryKeys.status(),
+    queryFn: getOutsourceDiagnostics,
+  })
+}
+
 export function useOutsourceOrderMutations() {
   const { t } = useLanguage()
   const queryClient = useQueryClient()
 
-  const invalidateOrders = () =>
-    queryClient.invalidateQueries({
-      queryKey: outsourceOrderQueryKeys.all,
-    })
+  const invalidateOrders = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: outsourceOrderQueryKeys.all,
+      }),
+      queryClient.invalidateQueries({
+        queryKey: outsourceDiagnosticsQueryKeys.all,
+      }),
+    ])
+  }
 
   const createMutation = useMutation({
     mutationFn: (values: OutsourceOrderFormValues) =>
@@ -68,6 +89,15 @@ export function useOutsourceOrderMutations() {
     onError: handleServerError,
   })
 
+  const cancelMutation = useMutation({
+    mutationFn: cancelOutsourceOrder,
+    onSuccess: () => {
+      toast.success(t('productionOutsourcing.orders.toasts.canceled'))
+      void invalidateOrders()
+    },
+    onError: handleServerError,
+  })
+
   const deleteMutation = useMutation({
     mutationFn: deleteOutsourceOrder,
     onSuccess: () => {
@@ -77,10 +107,59 @@ export function useOutsourceOrderMutations() {
     onError: handleServerError,
   })
 
+  const sendLineMutation = useMutation({
+    mutationFn: ({
+      lineId,
+      values,
+    }: {
+      lineId: string
+      values: OutsourceTransferFormValues
+    }) => sendOutsourceOrderLine(lineId, values),
+    onSuccess: () => {
+      toast.success(t('productionOutsourcing.execution.toasts.sent'))
+      void invalidateOrders()
+    },
+    onError: handleServerError,
+  })
+
+  const returnLineMutation = useMutation({
+    mutationFn: ({
+      lineId,
+      values,
+    }: {
+      lineId: string
+      values: OutsourceTransferFormValues
+    }) => returnOutsourceOrderLine(lineId, values),
+    onSuccess: () => {
+      toast.success(t('productionOutsourcing.execution.toasts.returned'))
+      void invalidateOrders()
+    },
+    onError: handleServerError,
+  })
+
+  const inspectLineMutation = useMutation({
+    mutationFn: ({
+      lineId,
+      values,
+    }: {
+      lineId: string
+      values: OutsourceInspectionFormValues
+    }) => inspectOutsourceOrderLine(lineId, values),
+    onSuccess: () => {
+      toast.success(t('productionOutsourcing.execution.toasts.inspected'))
+      void invalidateOrders()
+    },
+    onError: handleServerError,
+  })
+
   return {
     createMutation,
     updateMutation,
     releaseMutation,
+    cancelMutation,
     deleteMutation,
+    sendLineMutation,
+    returnLineMutation,
+    inspectLineMutation,
   }
 }

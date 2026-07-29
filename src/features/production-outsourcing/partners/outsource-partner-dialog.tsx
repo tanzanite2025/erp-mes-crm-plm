@@ -130,7 +130,10 @@ export function OutsourcePartnerDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size='6xl' className='rounded-[28px] p-5 sm:p-6'>
+      <DialogContent
+        size='6xl'
+        className='max-w-[calc(100%-0.5rem)] rounded-[28px] p-5 sm:max-w-6xl sm:p-6'
+      >
         <DialogHeader className='pr-8'>
           <div className='flex items-center gap-3'>
             <div className='flex size-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary'>

@@ -1,6 +1,10 @@
 package models
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"gorm.io/datatypes"
+)
 
 // ProcessStep defines a standard production process.
 type ProcessStep struct {
@@ -29,17 +33,18 @@ type ProductionRoute struct {
 // ProductionRouteStep binds a route sequence to a production segment and process.
 type ProductionRouteStep struct {
 	BaseModel
-	RouteID          string       `gorm:"type:uuid;index;not null" json:"routeId"`
-	Sequence         int          `gorm:"not null;default:0" json:"sequence"`
-	SegmentID        string       `gorm:"type:uuid;index;not null" json:"segmentId"`
-	Segment          *LineSegment `gorm:"foreignKey:SegmentID" json:"segment,omitempty"`
-	ProcessStepID    string       `gorm:"type:uuid;index" json:"processStepId"`
-	ProcessStep      *ProcessStep `gorm:"foreignKey:ProcessStepID" json:"processStep,omitempty"`
-	ExecutionMode    string       `gorm:"size:30;not null;default:'IN_HOUSE'" json:"executionMode"`
-	QualityGate      string       `gorm:"size:30;not null;default:'NONE'" json:"qualityGate"`
-	EstimatedMinutes int          `gorm:"not null;default:0" json:"estimatedMinutes"`
-	TransferRequired bool         `gorm:"not null;default:false" json:"transferRequired"`
-	Description      string       `gorm:"type:text" json:"description"`
+	RouteID          string         `gorm:"type:uuid;index;not null" json:"routeId"`
+	Sequence         int            `gorm:"not null;default:0" json:"sequence"`
+	SegmentID        string         `gorm:"type:uuid;index;not null" json:"segmentId"`
+	Segment          *LineSegment   `gorm:"foreignKey:SegmentID" json:"segment,omitempty"`
+	ProcessStepID    string         `gorm:"type:uuid;index" json:"processStepId"`
+	ProcessStep      *ProcessStep   `gorm:"foreignKey:ProcessStepID" json:"processStep,omitempty"`
+	ExecutionMode    string         `gorm:"size:30;not null;default:'IN_HOUSE'" json:"executionMode"`
+	QualityGate      string         `gorm:"size:30;not null;default:'NONE'" json:"qualityGate"`
+	QualityRouting   datatypes.JSON `gorm:"type:jsonb" json:"qualityRouting"`
+	EstimatedMinutes int            `gorm:"not null;default:0" json:"estimatedMinutes"`
+	TransferRequired bool           `gorm:"not null;default:false" json:"transferRequired"`
+	Description      string         `gorm:"type:text" json:"description"`
 }
 
 // ProductionLine defines a production line and its nested topology.

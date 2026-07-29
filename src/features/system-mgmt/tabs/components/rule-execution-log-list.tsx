@@ -1,4 +1,6 @@
+import { RefreshCcw } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { CompactPaginationControls } from '@/components/pagination/compact-pagination-controls'
 import { type RuleExecutionLog } from '../../workflow-core/data/rule-execution-log-schema'
 import {
@@ -22,9 +24,12 @@ interface RuleExecutionLogListProps {
   visibleCount: number
   hasMore: boolean
   isFetching: boolean
+  canRetryNotificationLogs: boolean
+  retryingLogId?: string
   onPreviousPage: () => void
   onNextPage: () => void
   onLoadMore: () => void
+  onRetryNotification?: (id: string) => void
 }
 
 export function RuleExecutionLogList({
@@ -36,9 +41,12 @@ export function RuleExecutionLogList({
   visibleCount,
   hasMore,
   isFetching,
+  canRetryNotificationLogs,
+  retryingLogId,
   onPreviousPage,
   onNextPage,
   onLoadMore,
+  onRetryNotification,
 }: RuleExecutionLogListProps) {
   return (
     <>
@@ -49,6 +57,9 @@ export function RuleExecutionLogList({
         const hasTargets = log.targets.length > 0
         const hasActionUrl = Boolean(log.actionUrl)
         const readableError = getReadableExecutionError(log.errorMessage)
+        const canRetryNotification =
+          log.executionType === 'notify' && log.executionStatus === 'failed'
+        const isRetrying = retryingLogId === log.id
 
         return (
           <div
@@ -103,7 +114,7 @@ export function RuleExecutionLogList({
                   </p>
                 </div>
               </div>
-              <div className='text-right text-xs text-muted-foreground'>
+              <div className='flex flex-col items-start gap-1 text-xs text-muted-foreground lg:items-end lg:text-right'>
                 <p>
                   {new Date(log.triggeredAt).toLocaleString(locale, {
                     hour12: false,
@@ -113,6 +124,28 @@ export function RuleExecutionLogList({
                   <p className='font-mono text-[8px] leading-tight'>
                     {log.eventKey}
                   </p>
+                ) : null}
+                {canRetryNotification && onRetryNotification ? (
+                  <Button
+                    type='button'
+                    size='sm'
+                    variant='outline'
+                    className='h-8 rounded-full border-dashed border-rose-200 px-3 text-[10px] font-black tracking-widest text-rose-700 uppercase hover:bg-rose-50 hover:text-rose-800'
+                    disabled={
+                      isFetching || isRetrying || !canRetryNotificationLogs
+                    }
+                    title={
+                      canRetryNotificationLogs
+                        ? '重新投递失败通知'
+                        : '需要管理权限才能重试通知'
+                    }
+                    onClick={() => onRetryNotification(log.id)}
+                  >
+                    <RefreshCcw
+                      className={`size-3.5 ${isRetrying ? 'animate-spin' : ''}`}
+                    />
+                    {isRetrying ? '重试中' : '重试通知'}
+                  </Button>
                 ) : null}
               </div>
             </div>

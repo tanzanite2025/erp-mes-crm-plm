@@ -71,6 +71,9 @@ export const productionArchitecture = {
       noProcess: 'No L3 on this L2',
       minutes: 'Minutes',
       transfer: 'Transfer after completion',
+      reworkTarget: 'Rework target step',
+      concessionTarget: 'Concession target step',
+      noQualityTarget: 'No target (use default route)',
     },
     dialog: {
       createTitle: 'New Production Route',

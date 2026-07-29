@@ -67,6 +67,9 @@ export const productionArchitecture = {
       noProcess: '该 L2 暂无 L3',
       minutes: '预计分钟',
       transfer: '完成后需要转移',
+      reworkTarget: '返工目标步骤',
+      concessionTarget: '让步接收目标步骤',
+      noQualityTarget: '不指定（按默认路线）',
     },
     dialog: {
       createTitle: '新增生产路线',
