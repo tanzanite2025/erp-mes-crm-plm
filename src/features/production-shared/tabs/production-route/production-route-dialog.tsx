@@ -61,10 +61,7 @@ const qualityGateOptions: ProductionRouteQualityGate[] = [
   'OPTIONAL',
   'REQUIRED',
 ]
-const qualityRoutingDispositionOptions = [
-  'REWORK',
-  'CONCESSION',
-] as const
+const qualityRoutingDispositionOptions = ['REWORK', 'CONCESSION'] as const
 const qualityRoutingLabelKeys = {
   REWORK: 'productionArchitecture.routes.steps.reworkTarget',
   CONCESSION: 'productionArchitecture.routes.steps.concessionTarget',
@@ -265,8 +262,7 @@ export function ProductionRouteDialog({
         }
         return {
           ...step,
-          qualityRouting:
-            Object.keys(routing).length > 0 ? routing : undefined,
+          qualityRouting: Object.keys(routing).length > 0 ? routing : undefined,
         }
       }),
     }))
@@ -298,8 +294,7 @@ export function ProductionRouteDialog({
         )
         return {
           ...step,
-          qualityRouting:
-            Object.keys(routing).length > 0 ? routing : undefined,
+          qualityRouting: Object.keys(routing).length > 0 ? routing : undefined,
         }
       }),
     }))
@@ -651,14 +646,9 @@ export function ProductionRouteDialog({
                                 )?.id ||
                                 'NO_TARGET'
                               return (
-                                <label
-                                  key={disposition}
-                                  className='space-y-1'
-                                >
+                                <label key={disposition} className='space-y-1'>
                                   <span className='text-[10px] font-black text-muted-foreground uppercase'>
-                                    {t(
-                                      qualityRoutingLabelKeys[disposition]
-                                    )}
+                                    {t(qualityRoutingLabelKeys[disposition])}
                                   </span>
                                   <Select
                                     value={targetRouteStepId}

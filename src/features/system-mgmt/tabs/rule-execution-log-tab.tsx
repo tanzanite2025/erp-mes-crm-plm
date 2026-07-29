@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { useLanguage } from '@/context/language-provider'
 import { useAuthStore } from '@/stores/auth-store'
+import { useLanguage } from '@/context/language-provider'
 import { Card, CardContent } from '@/components/ui/card'
 import {
   hasAnyId,
@@ -128,7 +128,8 @@ export function RuleExecutionLogTab({
   })
 
   const retryNotificationMutation = useMutation({
-    mutationFn: (id: string) => RoutingService.retryExecutionLogNotification(id),
+    mutationFn: (id: string) =>
+      RoutingService.retryExecutionLogNotification(id),
     onSuccess: (log) => {
       void refetch()
       if (log.executionStatus === 'success') {
@@ -319,9 +320,7 @@ export function RuleExecutionLogTab({
                   visibleCount: effectiveVisibleCount + LOAD_MORE_STEP,
                 })
               }
-              onRetryNotification={(id) =>
-                retryNotificationMutation.mutate(id)
-              }
+              onRetryNotification={(id) => retryNotificationMutation.mutate(id)}
             />
           )}
         </CardContent>

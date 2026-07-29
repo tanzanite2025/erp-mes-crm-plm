@@ -50,7 +50,10 @@ export interface ProductionRouteStepApiDTO {
   processName?: string
   executionMode: string
   qualityGate: string
-  qualityRouting?: Record<string, ProductionRouteQualityRoutingTargetApiDTO> | null
+  qualityRouting?: Record<
+    string,
+    ProductionRouteQualityRoutingTargetApiDTO
+  > | null
   estimatedMinutes: number
   transferRequired: boolean
   description?: string
