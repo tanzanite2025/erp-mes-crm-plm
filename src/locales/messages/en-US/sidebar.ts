@@ -14,6 +14,7 @@ export const sidebar = {
     productManagement: 'Product Management',
     productConfig: 'Product Configuration',
     businessAnalysis: 'Business Analysis',
+    analysisAggregation: 'Analysis Aggregation',
     productionAnalysis: 'Production Analysis',
     qualityAnalysis: 'Quality Analysis',
     customerSalesAnalysis: 'Customers & Sales',

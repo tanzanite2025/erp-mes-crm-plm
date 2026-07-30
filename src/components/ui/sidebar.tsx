@@ -313,8 +313,8 @@ function SidebarInset({ className, ...props }: React.ComponentProps<'div'>) {
       data-slot='sidebar-inset'
       className={cn(
         'relative flex min-w-0 flex-1 flex-col bg-background [--header-fixed-left:0px] [--header-fixed-right:0px] [--header-fixed-top:0px]',
-        'md:peer-data-[collapsible=icon]:[--header-fixed-left:calc(var(--sidebar-width-icon)_+_var(--sidebar-gutter-width))] md:peer-data-[collapsible=offcanvas]:[--header-fixed-left:var(--sidebar-gutter-width)] md:peer-data-[state=expanded]:[--header-fixed-left:var(--sidebar-width)]',
-        'md:peer-data-[variant=inset]:[--header-fixed-left:calc(var(--sidebar-gutter-width)_+_0.5rem)] md:peer-data-[variant=inset]:[--header-fixed-right:0.5rem] md:peer-data-[variant=inset]:[--header-fixed-top:0px] md:peer-data-[variant=inset]:peer-data-[collapsible=icon]:[--header-fixed-left:calc(var(--sidebar-width-icon)_+_var(--sidebar-gutter-width)_+_0.5rem)] md:peer-data-[variant=inset]:peer-data-[state=expanded]:[--header-fixed-left:calc(var(--sidebar-width)_+_0.5rem)]',
+        'md:peer-data-[collapsible=icon]:[--header-fixed-left:calc(var(--sidebar-width-icon)_+_var(--sidebar-gutter-width))] md:peer-data-[collapsible=offcanvas]:[--header-fixed-left:var(--sidebar-gutter-width)] md:peer-data-[state=expanded]:[--header-fixed-left:calc(var(--sidebar-width)_+_var(--sidebar-gutter-width))]',
+        'md:peer-data-[variant=inset]:[--header-fixed-left:calc(var(--sidebar-gutter-width)_+_0.5rem)] md:peer-data-[variant=inset]:[--header-fixed-right:0.5rem] md:peer-data-[variant=inset]:[--header-fixed-top:0px] md:peer-data-[variant=inset]:peer-data-[collapsible=icon]:[--header-fixed-left:calc(var(--sidebar-width-icon)_+_var(--sidebar-gutter-width)_+_0.5rem)] md:peer-data-[variant=inset]:peer-data-[state=expanded]:[--header-fixed-left:calc(var(--sidebar-width)_+_var(--sidebar-gutter-width)_+_0.5rem)]',
         'md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ms-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ms-2',
         className
       )}

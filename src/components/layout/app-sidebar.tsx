@@ -12,7 +12,7 @@ import {
   DEFAULT_ENTERPRISE_LOGO_URL,
   EnterpriseService,
 } from '@/features/basic-settings/services/enterprise-service'
-import { NavGroup, type SidebarNavGroupExpansionRequest } from './nav-group'
+import { NavGroup } from './nav-group'
 import { resolveActiveSidebarPath } from './sidebar-active-path'
 import { SidebarBrand } from './sidebar-brand'
 import { SidebarCategoryScrubber } from './sidebar-category-scrubber'
@@ -30,8 +30,9 @@ export function AppSidebar() {
     plan: localizedSidebarData.teams[0].plan,
     logoUrl: DEFAULT_ENTERPRISE_LOGO_URL,
   })
-  const [scrubberExpansionRequest, setScrubberExpansionRequest] =
-    useState<SidebarNavGroupExpansionRequest | null>(null)
+  const [pinnedSidebarCategoryId, setPinnedSidebarCategoryId] = useState<
+    string | null
+  >(null)
   const navViewportRef = useRef<HTMLDivElement>(null)
 
   /**
@@ -85,24 +86,27 @@ export function AppSidebar() {
   const sidebarIsVisible = isMobile
     ? openMobile
     : collapsible === 'none' || state === 'expanded'
-  const scrubberIsEnabled =
-    !isMobile && collapsible !== 'none' && state === 'collapsed'
+  const scrubberIsEnabled = !isMobile && sidebarIsVisible
 
-  const requestSidebarGroupExpansionFromScrubber = useCallback(
-    (groupId: string) => {
-      setScrubberExpansionRequest((currentRequest) => ({
-        groupId,
-        requestId: (currentRequest?.requestId ?? 0) + 1,
-      }))
-    },
-    []
-  )
+  const requestCategoryActivation = useCallback((categoryId: string) => {
+    setPinnedSidebarCategoryId((currentCategoryId) =>
+      currentCategoryId === categoryId ? null : categoryId
+    )
+  }, [])
 
   useEffect(() => {
-    if (!scrubberIsEnabled) {
-      setScrubberExpansionRequest(null)
+    if (sidebarIsVisible) {
+      return
     }
-  }, [scrubberIsEnabled])
+
+    const resetTimer = window.setTimeout(() => {
+      setPinnedSidebarCategoryId(null)
+    }, 0)
+
+    return () => {
+      window.clearTimeout(resetTimer)
+    }
+  }, [sidebarIsVisible])
 
   useSidebarActiveCenter({
     viewportRef: navViewportRef,
@@ -127,7 +131,8 @@ export function AppSidebar() {
                 <NavGroup
                   key={props.id}
                   {...props}
-                  expansionRequest={scrubberExpansionRequest}
+                  onDesktopCategoryActivate={requestCategoryActivation}
+                  selectedCategoryId={pinnedSidebarCategoryId}
                 />
               ))}
             </div>
@@ -138,9 +143,9 @@ export function AppSidebar() {
       {scrubberIsEnabled ? (
         <SidebarCategoryScrubber
           navGroups={renderedNavGroups}
-          activeGroupId={activeSidebarPath?.groupId}
           navViewportRef={navViewportRef}
-          onCategoryActivate={requestSidebarGroupExpansionFromScrubber}
+          pinnedCategoryId={pinnedSidebarCategoryId}
+          onPinnedCategoryChange={setPinnedSidebarCategoryId}
         />
       ) : null}
     </>

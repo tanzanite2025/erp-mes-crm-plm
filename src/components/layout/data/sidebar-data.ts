@@ -256,9 +256,9 @@ const navGroupConfigs: SidebarGroupConfig[] = [
     titleKey: 'sidebar.groups.businessAnalysis',
     children: [
       {
-        id: 'production-analysis-group',
-        titleKey: 'sidebar.groups.productionAnalysis',
-        icon: Gauge,
+        id: 'analysis-aggregation-group',
+        titleKey: 'sidebar.groups.analysisAggregation',
+        icon: BarChart3,
         children: [
           {
             id: 'production-analysis-center',
@@ -270,13 +270,6 @@ const navGroupConfigs: SidebarGroupConfig[] = [
               BUSINESS_ANALYSIS_DOMAIN_ROUTES.production
             ),
           },
-        ],
-      },
-      {
-        id: 'quality-analysis-group',
-        titleKey: 'sidebar.groups.qualityAnalysis',
-        icon: ShieldCheck,
-        children: [
           {
             id: 'quality-analysis-center',
             titleKey: 'sidebar.items.qualityAnalysisCenter',
@@ -287,13 +280,6 @@ const navGroupConfigs: SidebarGroupConfig[] = [
               BUSINESS_ANALYSIS_DOMAIN_ROUTES.quality
             ),
           },
-        ],
-      },
-      {
-        id: 'customer-sales-analysis-group',
-        titleKey: 'sidebar.groups.customerSalesAnalysis',
-        icon: Users,
-        children: [
           {
             id: 'customer-sales-analysis-center',
             titleKey: 'sidebar.items.customerSalesAnalysisCenter',
@@ -632,27 +618,6 @@ const navGroupConfigs: SidebarGroupConfig[] = [
     titleKey: 'sidebar.groups.systemManagement',
     children: [
       {
-        id: 'terminal-config-group',
-        titleKey: 'sidebar.groups.terminalConfig',
-        icon: ScanLine,
-        children: [
-          {
-            id: 'pda-shell',
-            titleKey: 'sidebar.items.pdaShell',
-            url: '/pda-shell',
-            icon: ScanLine,
-            permissionId: permissionIdForPath('/pda-shell'),
-          },
-          {
-            id: 'terminal-config',
-            titleKey: 'sidebar.items.terminalConfig',
-            url: '/terminal-config',
-            icon: ScanLine,
-            permissionId: permissionIdForPath('/terminal-config'),
-          },
-        ],
-      },
-      {
         id: 'quick-actions-group',
         titleKey: 'sidebar.groups.quickActions',
         icon: ListChecks,
@@ -686,6 +651,13 @@ const navGroupConfigs: SidebarGroupConfig[] = [
             url: '/basic-settings',
             icon: Sliders,
             permissionId: permissionIdForPath('/basic-settings'),
+          },
+          {
+            id: 'terminal-config',
+            titleKey: 'sidebar.items.terminalConfig',
+            url: '/terminal-config',
+            icon: ScanLine,
+            permissionId: permissionIdForPath('/terminal-config'),
           },
         ],
       },

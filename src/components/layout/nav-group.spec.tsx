@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { SidebarProvider, useSidebar } from '@/components/ui/sidebar'
-import { NavGroup, type SidebarNavGroupExpansionRequest } from './nav-group'
+import { NavGroup } from './nav-group'
 import type { NavGroup as NavGroupData } from './types'
 
 const routerState = vi.hoisted(() => ({
@@ -72,15 +72,18 @@ function MobileStateProbe() {
 
 function renderNavGroup({
   includeMobileProbe = false,
-  expansionRequest = null,
+  onDesktopCategoryActivate,
 }: {
   includeMobileProbe?: boolean
-  expansionRequest?: SidebarNavGroupExpansionRequest | null
+  onDesktopCategoryActivate?: (categoryId: string) => void
 } = {}) {
   return render(
     <SidebarProvider>
       {includeMobileProbe ? <MobileStateProbe /> : null}
-      <NavGroup {...productionGroup} expansionRequest={expansionRequest} />
+      <NavGroup
+        {...productionGroup}
+        onDesktopCategoryActivate={onDesktopCategoryActivate}
+      />
     </SidebarProvider>
   )
 }
@@ -93,7 +96,23 @@ describe('NavGroup', () => {
     routerState.pathname = '/aps'
   })
 
-  it('reopens the active hierarchy after the route changes', () => {
+  it('keeps desktop navigation compact and delegates child entries to the floating preview', () => {
+    const onDesktopCategoryActivate = vi.fn()
+    renderNavGroup({ onDesktopCategoryActivate })
+    const groupButton = screen.getByRole('button', { name: 'Production' })
+
+    expect(groupButton.getAttribute('aria-expanded')).toBeNull()
+    expect(groupButton.getAttribute('aria-haspopup')).toBe('dialog')
+    expect(screen.queryByRole('link', { name: 'APS' })).toBeNull()
+
+    fireEvent.click(groupButton)
+
+    expect(onDesktopCategoryActivate).toHaveBeenCalledWith('production')
+    expect(screen.queryByRole('link', { name: 'APS' })).toBeNull()
+  })
+
+  it('reopens the active hierarchy after the mobile route changes', () => {
+    routerState.isMobile = true
     const view = renderNavGroup()
     const groupButton = screen.getByRole('button', { name: 'Production' })
 
@@ -125,33 +144,5 @@ describe('NavGroup', () => {
 
     fireEvent.click(screen.getByRole('link', { name: 'APS' }))
     expect(screen.getByTestId('mobile-state').textContent).toBe('false')
-  })
-
-  it('expands the group when the sidebar scrubber requests this group', () => {
-    routerState.pathname = '/quality'
-    const view = renderNavGroup()
-
-    expect(
-      screen
-        .getByRole('button', { name: 'Production' })
-        .getAttribute('aria-expanded')
-    ).toBe('false')
-    expect(screen.queryByRole('link', { name: 'APS' })).toBeNull()
-
-    view.rerender(
-      <SidebarProvider>
-        <NavGroup
-          {...productionGroup}
-          expansionRequest={{ groupId: 'production', requestId: 1 }}
-        />
-      </SidebarProvider>
-    )
-
-    expect(
-      screen
-        .getByRole('button', { name: 'Production' })
-        .getAttribute('aria-expanded')
-    ).toBe('true')
-    expect(screen.getByRole('link', { name: 'APS' })).not.toBeNull()
   })
 })

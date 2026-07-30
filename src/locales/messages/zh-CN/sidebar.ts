@@ -14,6 +14,7 @@ export const sidebar = {
     productManagement: '产品管理',
     productConfig: '产品配置',
     businessAnalysis: '经营分析',
+    analysisAggregation: '分析聚合',
     productionAnalysis: '生产分析',
     qualityAnalysis: '品质分析',
     customerSalesAnalysis: '客户与销售',

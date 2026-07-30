@@ -26,7 +26,6 @@ import { useRecentVisitTracker } from '@/features/recent-visits'
 import { useSystemMonitor } from '@/features/system-mgmt/monitor/hooks/use-system-monitor'
 
 const logger = createLogger('AuthenticatedLayout')
-const DESKTOP_SIDEBAR_SCRUBBER_WIDTH = '3.75rem'
 
 const SystemAnomalyBanner = lazy(() =>
   import('@/features/system-mgmt/monitor/components/system-anomaly-banner').then(
@@ -204,11 +203,6 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const sidebarStateCookie = getCookie('sidebar_state')
   const defaultOpen =
     sidebarStateCookie === undefined ? false : sidebarStateCookie === 'true'
-  const sidebarProviderStyle = {
-    '--sidebar-gutter-width': isPDAShellRoute
-      ? '0px'
-      : DESKTOP_SIDEBAR_SCRUBBER_WIDTH,
-  } as React.CSSProperties
 
   if (syncGateState.status === 'error') {
     return (
@@ -270,11 +264,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
 
   return (
     <LayoutProvider>
-      <SidebarProvider
-        defaultOpen={defaultOpen}
-        data-layout='fixed'
-        style={sidebarProviderStyle}
-      >
+      <SidebarProvider defaultOpen={defaultOpen} data-layout='fixed'>
         {!isPDAShellRoute && (
           <Suspense fallback={null}>
             <SystemAnomalyBanner />

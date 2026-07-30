@@ -79,8 +79,8 @@ const navGroups: NavGroup[] = [
     title: 'Business Analysis',
     children: [
       {
-        id: 'production-analysis-group',
-        title: 'Production Analysis',
+        id: 'analysis-aggregation-group',
+        title: 'Analysis Aggregation',
         children: [
           {
             id: 'production-analysis-center',
@@ -92,12 +92,6 @@ const navGroups: NavGroup[] = [
               '/business-analysis/production-efficiency',
             ],
           },
-        ],
-      },
-      {
-        id: 'quality-analysis-group',
-        title: 'Quality Analysis',
-        children: [
           {
             id: 'quality-analysis-center',
             title: 'Quality Analysis Center',
@@ -105,6 +99,15 @@ const navGroups: NavGroup[] = [
             activeMatches: [
               '/business-analysis/scrap',
               '/business-analysis/defect-trend',
+            ],
+          },
+          {
+            id: 'customer-sales-analysis-center',
+            title: 'Customer & Sales Analysis Center',
+            url: '/business-analysis/orders',
+            activeMatches: [
+              '/business-analysis/orders',
+              '/business-analysis/customers',
             ],
           },
         ],
@@ -164,8 +167,8 @@ describe('resolveActiveSidebarPath', () => {
       resolveActiveSidebarPath(navGroups, '/business-analysis/scrap')
     ).toEqual({
       groupId: 'business-analysis',
-      nodeIds: ['quality-analysis-group', 'quality-analysis-center'],
-      key: 'business-analysis/quality-analysis-group/quality-analysis-center',
+      nodeIds: ['analysis-aggregation-group', 'quality-analysis-center'],
+      key: 'business-analysis/analysis-aggregation-group/quality-analysis-center',
     })
   })
 })
