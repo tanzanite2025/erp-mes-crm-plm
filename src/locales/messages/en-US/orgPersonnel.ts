@@ -320,6 +320,13 @@ export const orgPersonnel = {
       saveFailed: 'Failed to save organization',
       invalidPayload: 'Invalid organization payload',
       fetchTreeFailed: 'Failed to fetch organization tree',
+      parentNotFound:
+        'Organization parent does not exist. Refresh and select again.',
+      hierarchyInvalid:
+        'Organization hierarchy is invalid for the selected parent. Refresh and select again.',
+      depthExceeded: 'Organization depth exceeds the supported three levels.',
+      linkedArchitectureInvalid:
+        'Organization linked architecture is invalid. Select it again and save.',
     },
     nodeTypes: {
       root: 'ROOT / HQ',

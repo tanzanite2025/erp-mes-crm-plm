@@ -46,11 +46,8 @@ func (GormOrgPersonnelRepository) GetOrganizationByID(database *gorm.DB, id stri
 
 func (GormOrgPersonnelRepository) OrganizationNameExists(database *gorm.DB, name string, parentID *string, excludeID string) (bool, error) {
 	query := database.Model(&models.OrgUnit{}).Where("name = ?", strings.TrimSpace(name))
-	if parentID == nil || strings.TrimSpace(*parentID) == "" {
-		query = query.Where("(parent_id IS NULL OR parent_id = '')")
-	} else {
-		query = query.Where("parent_id = ?", strings.TrimSpace(*parentID))
-	}
+	parentScope, parentScopeArgs := organizationParentScope(parentID)
+	query = query.Where(parentScope, parentScopeArgs...)
 	if strings.TrimSpace(excludeID) != "" {
 		query = query.Where("id <> ?", strings.TrimSpace(excludeID))
 	}
@@ -60,6 +57,14 @@ func (GormOrgPersonnelRepository) OrganizationNameExists(database *gorm.DB, name
 		return false, err
 	}
 	return count > 0, nil
+}
+
+func organizationParentScope(parentID *string) (string, []any) {
+	if parentID == nil || strings.TrimSpace(*parentID) == "" {
+		return "parent_id IS NULL", nil
+	}
+
+	return "parent_id = ?", []any{strings.TrimSpace(*parentID)}
 }
 
 func (GormOrgPersonnelRepository) SaveOrganization(database *gorm.DB, organization *models.Organization) error {

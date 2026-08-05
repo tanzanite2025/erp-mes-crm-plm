@@ -43,6 +43,7 @@ type NavItem = NavNode
 type NavGroup = {
   id: string
   title: string
+  icon?: React.ElementType
   children: NavNode[]
 }
 

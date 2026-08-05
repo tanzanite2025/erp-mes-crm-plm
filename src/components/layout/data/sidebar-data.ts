@@ -62,6 +62,7 @@ type SidebarNodeConfig = {
 type SidebarGroupConfig = {
   id: string
   titleKey: TranslationKey
+  icon?: React.ElementType
   children: SidebarNodeConfig[]
 }
 
@@ -87,6 +88,7 @@ const navGroupConfigs: SidebarGroupConfig[] = [
   {
     id: 'resource-management',
     titleKey: 'sidebar.groups.resourceManagement',
+    icon: BarChart3,
     children: [
       {
         id: 'dashboard',
@@ -101,6 +103,7 @@ const navGroupConfigs: SidebarGroupConfig[] = [
   {
     id: 'purchase-and-sales',
     titleKey: 'sidebar.groups.purchaseAndSales',
+    icon: ShoppingBag,
     children: [
       {
         id: 'purchase-management-group',
@@ -149,6 +152,7 @@ const navGroupConfigs: SidebarGroupConfig[] = [
   {
     id: 'production-management',
     titleKey: 'sidebar.groups.productionManagement',
+    icon: CheckSquare,
     children: [
       {
         id: 'planning-center-group',
@@ -212,6 +216,7 @@ const navGroupConfigs: SidebarGroupConfig[] = [
   {
     id: 'raw-materials-center',
     titleKey: 'sidebar.groups.rawMaterialsCenter',
+    icon: Database,
     children: [
       {
         id: 'raw-materials-management-group',
@@ -254,6 +259,7 @@ const navGroupConfigs: SidebarGroupConfig[] = [
   {
     id: 'business-analysis-management',
     titleKey: 'sidebar.groups.businessAnalysis',
+    icon: BarChart3,
     children: [
       {
         id: 'analysis-aggregation-group',
@@ -297,6 +303,7 @@ const navGroupConfigs: SidebarGroupConfig[] = [
   {
     id: 'engineering-management',
     titleKey: 'sidebar.groups.engineeringManagement',
+    icon: Database,
     children: [
       {
         id: 'engineering-database-group',
@@ -324,6 +331,7 @@ const navGroupConfigs: SidebarGroupConfig[] = [
   {
     id: 'quality-management',
     titleKey: 'sidebar.groups.qualityManagement',
+    icon: ShieldCheck,
     children: [
       {
         id: 'quality-standards-group',
@@ -358,6 +366,7 @@ const navGroupConfigs: SidebarGroupConfig[] = [
   {
     id: 'product-management',
     titleKey: 'sidebar.groups.productManagement',
+    icon: Box,
     children: [
       {
         id: 'product-config-group',
@@ -408,6 +417,7 @@ const navGroupConfigs: SidebarGroupConfig[] = [
   {
     id: 'warehouse-logistics',
     titleKey: 'sidebar.groups.warehouseLogistics',
+    icon: Warehouse,
     children: [
       {
         id: 'warehouse-management-group',
@@ -479,6 +489,7 @@ const navGroupConfigs: SidebarGroupConfig[] = [
   {
     id: 'asset-management',
     titleKey: 'sidebar.groups.resourceManagement',
+    icon: Cpu,
     children: [
       {
         id: 'tooling-management',
@@ -554,6 +565,7 @@ const navGroupConfigs: SidebarGroupConfig[] = [
   {
     id: 'finance-management',
     titleKey: 'sidebar.groups.financeManagement',
+    icon: HandCoins,
     children: [
       {
         id: 'finance-config-group',
@@ -581,6 +593,7 @@ const navGroupConfigs: SidebarGroupConfig[] = [
   {
     id: 'message-and-approval',
     titleKey: 'sidebar.groups.messageAndApproval',
+    icon: FileText,
     children: [
       {
         id: 'approval-group',
@@ -616,6 +629,7 @@ const navGroupConfigs: SidebarGroupConfig[] = [
   {
     id: 'system-management-root',
     titleKey: 'sidebar.groups.systemManagement',
+    icon: Sliders,
     children: [
       {
         id: 'quick-actions-group',
@@ -684,6 +698,7 @@ function localizeNavGroup(t: TranslateFn, group: SidebarGroupConfig): NavGroup {
   return {
     id: group.id,
     title: t(group.titleKey),
+    icon: group.icon,
     children: group.children.map((item) => localizeNavNode(t, item)),
   }
 }

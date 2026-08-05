@@ -301,6 +301,10 @@ export const orgPersonnel = {
       saveFailed: '保存机构失败',
       invalidPayload: '无效的机构数据载荷',
       fetchTreeFailed: '获取组织架构树失败',
+      parentNotFound: '父级机构不存在，请刷新后重新选择',
+      hierarchyInvalid: '当前机构层级与父级不匹配，请刷新后重新选择',
+      depthExceeded: '机构层级最多支持三级，不能继续新增下级',
+      linkedArchitectureInvalid: '关联的生产结构数据无效，请重新选择后保存',
     },
     nodeTypes: {
       root: '总部',
