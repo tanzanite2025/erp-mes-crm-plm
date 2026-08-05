@@ -73,10 +73,30 @@ func (GormOrgPersonnelRepository) SaveOrganization(database *gorm.DB, organizati
 	}
 
 	unit := mapOrganizationProjectionToOrgUnit(*organization)
-	if err := database.Save(&unit).Error; err != nil {
+
+	var existing models.OrgUnit
+	err := database.Where("id = ?", strings.TrimSpace(unit.ID)).First(&existing).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		if err := database.Create(&unit).Error; err != nil {
+			return err
+		}
+		organization.CreatedAt = unit.CreatedAt
+		organization.UpdatedAt = unit.UpdatedAt
+		return nil
+	}
+	if err != nil {
 		return err
 	}
 
+	if unit.CreatedAt.IsZero() {
+		unit.CreatedAt = existing.CreatedAt
+	}
+	if strings.TrimSpace(existing.LegacyPayload) != "" {
+		unit.LegacyPayload = existing.LegacyPayload
+	}
+	if err := database.Save(&unit).Error; err != nil {
+		return err
+	}
 	organization.CreatedAt = unit.CreatedAt
 	organization.UpdatedAt = unit.UpdatedAt
 	return nil
@@ -119,13 +139,14 @@ func mapOrgUnitToOrganizationProjection(unit models.OrgUnit) models.Organization
 
 func mapOrganizationProjectionToOrgUnit(organization models.Organization) models.OrgUnit {
 	return models.OrgUnit{
-		BaseModel: organization.BaseModel,
-		Name:      strings.TrimSpace(organization.Name),
-		ParentID:  cloneRepositoryStringPointer(organization.ParentID),
-		UnitType:  normalizeOrganizationTypeForOrgUnit(organization.Type),
-		Status:    "active",
-		SortOrder: 0,
-		Metadata:  buildOrgUnitOrganizationMetadataJSON(organization),
+		BaseModel:     organization.BaseModel,
+		Name:          strings.TrimSpace(organization.Name),
+		ParentID:      cloneRepositoryStringPointer(organization.ParentID),
+		UnitType:      normalizeOrganizationTypeForOrgUnit(organization.Type),
+		Status:        "active",
+		SortOrder:     0,
+		Metadata:      buildOrgUnitOrganizationMetadataJSON(organization),
+		LegacyPayload: "{}",
 	}
 }
 
