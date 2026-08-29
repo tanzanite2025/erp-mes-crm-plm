@@ -93,6 +93,7 @@ export const commandMenu = {
     productionRoutes: '生产路线',
     productionExecution: '生产执行',
     leaveManagement: '请假管理',
+    attendanceDevices: '考勤设备',
     stock: '库存清单',
     reports: '报表',
     inbound: '产品入库',

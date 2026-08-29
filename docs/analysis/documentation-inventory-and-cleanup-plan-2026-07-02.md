@@ -49,6 +49,18 @@
 | `docs/architecture/组织-人员-账号-权限统一实施方案.md` | Removed | Replaced by `docs/architecture/组织人员归属-账号权限边界与文件职责计划.md` to avoid keeping a stale target model beside the current analysis. |
 | `docs/architecture/组织人员归属-账号权限边界与文件职责计划.md` | Added | Documents the real current file responsibilities, separates organization-personnel context from account permissions, and records the split-first implementation order. |
 
+## 2026-08-13 Follow-up
+
+| Document | Verdict after follow-up | Result |
+| --- | --- | --- |
+| `docs/architecture/生产拓扑路线步骤与计件工价统一设计.md` | Added as canonical | Defines production segments, dynamic segment-to-work-item binding, leaf-operation piece rates, route-step identity, and stable domain rules. |
+| `docs/architecture/生产路线步骤与计件工价实施准备与文件拆分计划.md` | Added as implementation plan, now tracking progress | Records verified blockers, file split boundaries, deferred areas, PR0-PR4 order, and the current completion of PR0, PR1, and PR2 basic route lifecycle protection without overloading the canonical domain document. |
+| `docs/architecture/生产架构与委外边界设计.md` | Corrected | States that `BOMSection` is a material classification, `LineSegment` is a production segment, and L3 is the projection of dynamically mapped `ProcessStep` records rather than fixed ownership. |
+| `docs/architecture/生产委外执行链路设计.md` | Corrected | Aligns outsourcing with dynamic work-item binding and route-step execution, and removes stale statements about quality routing and process-owned execution policy. |
+| `docs/architecture/aps-scheduling-engine/README.md` | Corrected | Replaces the deleted `/personnel/line` reference and aligns scheduling inputs with `ProductionRoute` and `ProductionRouteStep`. |
+| `docs/architecture/aps-scheduling-engine/domain-model.md` | Corrected | Clarifies that APS consumes production routes and does not infer process steps from BOM section classifications. |
+| `docs/architecture/组织人员归属-账号权限边界与文件职责计划.md` | Corrected | Removes the stale claim that organization and employee models are still stored in `server/models/production.go`; records the remaining production-internal split. |
+
 ## Stale Or Risky References
 
 | Finding | Evidence | Recommended cleanup |

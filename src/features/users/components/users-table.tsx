@@ -29,7 +29,10 @@ import { PermissionBoundary } from '@/components/permission-boundary'
 import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import { callTypes } from '../data/data'
 import { type User, type UserStatus } from '../data/schema'
-import { isProtectedSystemAccount } from '../utils/user-utils'
+import {
+  formatUserDisplayName,
+  isProtectedSystemAccount,
+} from '../utils/user-utils'
 import { DataTableBulkActions } from './data-table-bulk-actions'
 import { getUsersColumns, type UsersTableMode } from './users-columns'
 import { useUsers } from './users-provider'
@@ -66,7 +69,7 @@ export function UsersTable({
   showSelection = true,
   leadingViewSlot,
 }: DataTableProps) {
-  const { t } = useLanguage()
+  const { t, locale } = useLanguage()
   const { setCurrentRow, setOpen } = useUsers()
   const isPermissionsMode = mode === 'permissions'
   const currentUserID = useAuthStore((state) => state.user?.id || '')
@@ -76,8 +79,8 @@ export function UsersTable({
     allowsPermission(isPermissionsMode ? 'perm_manage' : 'user_delete')
 
   const columns = useMemo(
-    () => getUsersColumns(t, mode, selectionEnabled),
-    [mode, selectionEnabled, t]
+    () => getUsersColumns(t, locale, mode, selectionEnabled),
+    [locale, mode, selectionEnabled, t]
   )
 
   const { tableState, tableHandlers, ensurePageInRange } = useUdsUrlTableState({
@@ -256,8 +259,7 @@ export function UsersTable({
               const isSelected = row.getIsSelected()
               const isProtected = isProtectedSystemAccount(user)
               const canSelect = row.getCanSelect()
-              const fullName =
-                `${user.firstName || ''} ${user.lastName || ''}`.trim() || '-'
+              const fullName = formatUserDisplayName(user, locale)
               const permissionPresetId =
                 String(user.permissionPresetId || '').trim() || 'UNASSIGNED'
               const phoneNumber = String(user.phoneNumber || '').trim() || '-'

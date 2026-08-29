@@ -1,6 +1,10 @@
 import { apiFetch } from '@/lib/api-client'
 import { buildDeltaUpsertPayload } from '@/lib/delta/build-delta-upsert-payload'
 import { type DeltaSet } from '@/lib/delta/types'
+import {
+  toPieceworkRatePatchApiDTO,
+  toPieceworkRateWriteApiDTO,
+} from '../adapters/piecework-rate-api-adapter'
 import { type Team, type PieceworkRate } from '../data/schema'
 
 /**
@@ -39,7 +43,7 @@ export const PieceworkMaintenanceService = {
   saveRate: async (data: Partial<PieceworkRate>): Promise<void> => {
     await apiFetch('/piecework/rates', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify(toPieceworkRateWriteApiDTO(data)),
     })
   },
 
@@ -51,13 +55,19 @@ export const PieceworkMaintenanceService = {
     const { id, delta, version } = params
     await apiFetch(`/piecework/rates/${id}`, {
       method: 'PATCH',
-      body: JSON.stringify({ delta, version }),
+      body: JSON.stringify(toPieceworkRatePatchApiDTO(id, delta, version)),
     })
   },
 
-  deleteRate: async (id: string): Promise<void> => {
-    await apiFetch(`/piecework/rates/${id}`, {
-      method: 'DELETE',
-    })
+  deleteRate: async (params: {
+    id: string
+    version: number
+  }): Promise<void> => {
+    await apiFetch(
+      `/piecework/rates/${params.id}?version=${encodeURIComponent(params.version)}`,
+      {
+        method: 'DELETE',
+      }
+    )
   },
 }

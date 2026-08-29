@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -121,7 +122,18 @@ func ExecuteProductionScanCommand(req ExecuteProductionScanCommandRequest) (Exec
 	return defaultProductionScanCommandService.ExecuteProductionScanCommand(req)
 }
 
+func ExecuteProductionScanCommandWithContext(ctx context.Context, req ExecuteProductionScanCommandRequest) (ExecuteProductionScanCommandResponse, error) {
+	return defaultProductionScanCommandService.ExecuteProductionScanCommandWithContext(ctx, req)
+}
+
 func (s *ProductionScanCommandService) ExecuteProductionScanCommand(req ExecuteProductionScanCommandRequest) (ExecuteProductionScanCommandResponse, error) {
+	return s.ExecuteProductionScanCommandWithContext(context.Background(), req)
+}
+
+func (s *ProductionScanCommandService) ExecuteProductionScanCommandWithContext(ctx context.Context, req ExecuteProductionScanCommandRequest) (ExecuteProductionScanCommandResponse, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	normalized := normalizeExecuteProductionScanCommandRequest(req)
 	if err := validateProductionScanCommandShell(normalized); err != nil {
 		return ExecuteProductionScanCommandResponse{}, err
@@ -130,7 +142,7 @@ func (s *ProductionScanCommandService) ExecuteProductionScanCommand(req ExecuteP
 	var result productionScanCommandTxResult
 	err := s.txManager.WithinTransaction(func(tx *gorm.DB) error {
 		var err error
-		result, err = executeProductionScanCommandTx(tx, normalized)
+		result, err = executeProductionScanCommandTx(ctx, tx, normalized)
 		return err
 	})
 	if err != nil {
@@ -147,7 +159,7 @@ func (s *ProductionScanCommandService) ExecuteProductionScanCommand(req ExecuteP
 	}, nil
 }
 
-func executeProductionScanCommandTx(tx *gorm.DB, normalized ExecuteProductionScanCommandRequest) (productionScanCommandTxResult, error) {
+func executeProductionScanCommandTx(ctx context.Context, tx *gorm.DB, normalized ExecuteProductionScanCommandRequest) (productionScanCommandTxResult, error) {
 	resolved, err := resolveProductionScanCommandContextTx(tx, normalized)
 	if err != nil {
 		return productionScanCommandTxResult{}, err
@@ -156,7 +168,7 @@ func executeProductionScanCommandTx(tx *gorm.DB, normalized ExecuteProductionSca
 		return productionScanCommandTxResult{}, err
 	}
 
-	recordResult, err := recordProductionOperationExecutionTx(tx, resolved.Request)
+	recordResult, err := recordProductionOperationExecutionTx(ctx, tx, resolved.Request)
 	if err != nil {
 		return productionScanCommandTxResult{}, err
 	}

@@ -5,9 +5,13 @@ import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { LongText } from '@/components/long-text'
+import { type AppLocale } from '@/locales'
 import { callTypes } from '../data/data'
 import { type User, type UserStatus } from '../data/schema'
-import { isProtectedSystemAccount } from '../utils/user-utils'
+import {
+  formatUserDisplayName,
+  isProtectedSystemAccount,
+} from '../utils/user-utils'
 import { DataTableRowActions } from './data-table-row-actions'
 
 export type UsersTableMode = 'management' | 'permissions'
@@ -38,6 +42,7 @@ type TranslateFn = (
 
 export function getUsersColumns(
   t: TranslateFn,
+  locale: AppLocale,
   mode: UsersTableMode = 'management',
   showSelection = true
 ): ColumnDef<User>[] {
@@ -140,8 +145,7 @@ export function getUsersColumns(
         />
       ),
       cell: ({ row }) => {
-        const { firstName, lastName } = row.original
-        const fullName = `${firstName} ${lastName}`
+        const fullName = formatUserDisplayName(row.original, locale)
         return <LongText className='max-w-36'>{fullName}</LongText>
       },
       meta: { className: 'w-36' },

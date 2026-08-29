@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math"
@@ -412,7 +413,7 @@ func (s *ProductionOutsourcingService) InspectOutsourceOrderLine(req OutsourceIn
 			return err
 		}
 		scanReq := buildOutsourceInspectionScanCommand(order, state, normalized, qualityTarget)
-		scanResult, err = executeProductionScanCommandTx(tx, normalizeExecuteProductionScanCommandRequest(scanReq))
+		scanResult, err = executeProductionScanCommandTx(context.Background(), tx, normalizeExecuteProductionScanCommandRequest(scanReq))
 		if err != nil {
 			return err
 		}

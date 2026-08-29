@@ -1,7 +1,16 @@
 'use client'
 
 import { useCallback, useMemo } from 'react'
-import { Landmark, Save, Tag, Box, Info, Target } from 'lucide-react'
+import {
+  CalendarClock,
+  Landmark,
+  Save,
+  Tag,
+  Box,
+  Info,
+  Target,
+  Route,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import type { DeltaSet } from '@/lib/delta/types'
 import { useLanguage } from '@/context/language-provider'
@@ -13,6 +22,10 @@ import { ActionDialogShell } from '@/components/action-dialog-shell'
 import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
 import { SelectDropdown } from '@/components/select-dropdown'
 import { useProductDisplayOptions } from '@/features/engineering/hooks/use-product-display-options'
+import {
+  useProductionProcessesQuery,
+  useProductionRoutesQuery,
+} from '@/features/production-shared/hooks/use-production-resources'
 import { useProductionTopologyLabels } from '@/features/production-shared/topology/production-topology-labels'
 import type { PieceworkRate } from '../data/schema'
 
@@ -31,9 +44,14 @@ interface RateActionDialogProps {
 
 const DEFAULT_RATE: Partial<PieceworkRate> = {
   productId: '',
+  processStepId: '',
+  routeStepId: '',
   processName: '',
-  piecePrice: 0,
+  unitPrice: 0,
   unit: 'PCS',
+  currency: 'CNY',
+  effectiveFrom: '',
+  effectiveTo: '',
   status: 'active',
   remarks: '',
   version: 1,
@@ -49,6 +67,19 @@ export function RateActionDialog({
   const { t } = useLanguage()
   const { level3Name } = useProductionTopologyLabels()
   const { productOptions } = useProductDisplayOptions({ enabled: open })
+  const processesQuery = useProductionProcessesQuery({ enabled: open })
+  const routesQuery = useProductionRoutesQuery({ enabled: open })
+
+  const processOptions = useMemo(
+    () =>
+      (processesQuery.data ?? []).map((process) => ({
+        label: process.code
+          ? `${process.code} · ${process.name}`
+          : process.name,
+        value: process.id,
+      })),
+    [processesQuery.data]
+  )
 
   const shellClasses = buildActionDialogShellClasses({
     content: 'sm:max-w-[600px] rounded-[32px] overflow-hidden',
@@ -77,6 +108,19 @@ export function RateActionDialog({
     isDirty,
   } = useDeltaTracker(initialFormData, open)
 
+  const routeStepOptions = useMemo(() => {
+    const productId = formData.productId
+    return (routesQuery.data ?? [])
+      .filter((route) => !productId || route.productId === productId)
+      .flatMap((route) =>
+        route.steps.map((step) => ({
+          label: `${route.code} · ${step.sequence}. ${step.processName || step.processCode || step.processStepId}`,
+          value: step.id,
+          processStepId: step.processStepId,
+        }))
+      )
+  }, [formData.productId, routesQuery.data])
+
   const setFormData = useCallback(
     (
       updater: Partial<PieceworkRate> | ((prev: PieceworkRate) => PieceworkRate)
@@ -95,8 +139,8 @@ export function RateActionDialog({
     // Fail Loudly: 必须检查必要字段
     if (
       !formData.productId ||
-      !formData.processName ||
-      formData.piecePrice === undefined
+      !formData.processStepId ||
+      formData.unitPrice === undefined
     ) {
       toast.error(
         t('piecework.rules.toast.validationRequired', { levelName: level3Name })
@@ -185,9 +229,16 @@ export function RateActionDialog({
             {t('piecework.rules.dialog.fields.product')}
           </Label>
           <SelectDropdown
-            defaultValue={formData.productId}
+            value={formData.productId}
+            isControlled
             onValueChange={(val) => {
-              setFormData({ productId: val })
+              setFormData({
+                productId: val,
+                routeStepId: '',
+                processStepId: '',
+                processCode: '',
+                processName: '',
+              })
             }}
             items={productOptions}
             placeholder={t('piecework.rules.dialog.placeholders.product')}
@@ -195,46 +246,88 @@ export function RateActionDialog({
           />
         </div>
 
-        {/* 工序与单价组 */}
+        {/* 作业身份与单价组 */}
         <div className='grid grid-cols-2 gap-6 rounded-[32px] border border-dashed border-muted-foreground/10 bg-muted/20 p-6'>
           <div className='space-y-2'>
             <Label className='flex items-center gap-2 text-[10px] font-black tracking-widest uppercase'>
               <Target className='size-3' />{' '}
-              {t('piecework.rules.dialog.fields.processName', {
-                levelName: level3Name,
-              })}
+              {t('piecework.rules.dialog.fields.processStep')}
             </Label>
-            <Input
-              placeholder={t(
-                'piecework.rules.dialog.placeholders.processName',
-                { levelName: level3Name }
-              )}
-              className='h-12 rounded-2xl border-none bg-background px-5 text-sm font-black shadow-sm'
-              value={formData.processName}
-              onChange={(e) => {
-                setFormData({ processName: e.target.value })
+            <SelectDropdown
+              value={formData.processStepId}
+              isControlled
+              onValueChange={(val) => {
+                const selected = processesQuery.data?.find(
+                  (process) => process.id === val
+                )
+                setFormData({
+                  processStepId: val,
+                  routeStepId: '',
+                  processCode: selected?.code || '',
+                  processName: selected?.name || '',
+                })
               }}
+              items={processOptions}
+              isPending={processesQuery.isPending}
+              placeholder={t('piecework.rules.dialog.placeholders.processStep')}
+              className='h-12 rounded-2xl border-none bg-background px-4 text-sm font-bold shadow-sm'
+            />
+          </div>
+          <div className='space-y-2'>
+            <Label className='flex items-center gap-2 text-[10px] font-black tracking-widest uppercase'>
+              <Route className='size-3' />{' '}
+              {t('piecework.rules.dialog.fields.routeStep')}
+            </Label>
+            <SelectDropdown
+              value={formData.routeStepId}
+              isControlled
+              onValueChange={(val) => {
+                const selected = routeStepOptions.find(
+                  (step) => step.value === val
+                )
+                setFormData({
+                  routeStepId: val,
+                  ...(selected?.processStepId
+                    ? {
+                        processStepId: selected.processStepId,
+                        processCode:
+                          processesQuery.data?.find(
+                            (process) => process.id === selected.processStepId
+                          )?.code || '',
+                        processName:
+                          processesQuery.data?.find(
+                            (process) => process.id === selected.processStepId
+                          )?.name || '',
+                      }
+                    : {}),
+                })
+              }}
+              items={routeStepOptions}
+              isPending={routesQuery.isPending}
+              placeholder={t('piecework.rules.dialog.placeholders.routeStep')}
+              className='h-12 rounded-2xl border-none bg-background px-4 text-sm font-bold shadow-sm'
             />
           </div>
           <div className='space-y-2'>
             <Label className='flex items-center gap-2 text-[10px] font-black tracking-widest uppercase'>
               <Tag className='size-3' />{' '}
-              {t('piecework.rules.dialog.fields.piecePrice')}
+              {t('piecework.rules.dialog.fields.unitPrice')}
             </Label>
             <Input
               type='number'
-              step='0.01'
-              placeholder={t('piecework.rules.dialog.placeholders.piecePrice')}
+              step='0.0001'
+              min='0'
+              placeholder={t('piecework.rules.dialog.placeholders.unitPrice')}
               className='h-12 rounded-2xl border-none bg-background px-5 font-mono text-sm font-black shadow-sm'
-              value={formData.piecePrice}
+              value={formData.unitPrice}
               onChange={(e) => {
-                setFormData({ piecePrice: parseFloat(e.target.value) || 0 })
+                setFormData({ unitPrice: parseFloat(e.target.value) || 0 })
               }}
             />
           </div>
         </div>
 
-        {/* 状态与单位 */}
+        {/* 单位与状态 */}
         <div className='grid grid-cols-2 gap-6'>
           <div className='space-y-2'>
             <Label className='text-[10px] font-black tracking-widest uppercase'>
@@ -270,6 +363,38 @@ export function RateActionDialog({
           </div>
         </div>
 
+        {/* 生效区间 */}
+        <div className='grid grid-cols-2 gap-6'>
+          <div className='space-y-2'>
+            <Label className='flex items-center gap-2 text-[10px] font-black tracking-widest uppercase'>
+              <CalendarClock className='size-3' />{' '}
+              {t('piecework.rules.dialog.fields.effectiveFrom')}
+            </Label>
+            <Input
+              type='date'
+              value={toDateInputValue(formData.effectiveFrom)}
+              onChange={(e) => {
+                setFormData({ effectiveFrom: e.target.value })
+              }}
+              className='h-11 rounded-2xl border-none bg-muted/40 px-5 text-xs font-bold'
+            />
+          </div>
+          <div className='space-y-2'>
+            <Label className='flex items-center gap-2 text-[10px] font-black tracking-widest uppercase'>
+              <CalendarClock className='size-3' />{' '}
+              {t('piecework.rules.dialog.fields.effectiveTo')}
+            </Label>
+            <Input
+              type='date'
+              value={toDateInputValue(formData.effectiveTo)}
+              onChange={(e) => {
+                setFormData({ effectiveTo: e.target.value })
+              }}
+              className='h-11 rounded-2xl border-none bg-muted/40 px-5 text-xs font-bold'
+            />
+          </div>
+        </div>
+
         {/* 备注 */}
         <div className='space-y-2'>
           <Label className='flex items-center gap-2 text-[10px] font-black tracking-widest uppercase'>
@@ -288,4 +413,8 @@ export function RateActionDialog({
       </div>
     </ActionDialogShell>
   )
+}
+
+function toDateInputValue(value?: string) {
+  return value ? value.slice(0, 10) : ''
 }

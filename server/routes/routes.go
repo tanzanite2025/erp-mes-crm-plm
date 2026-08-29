@@ -84,6 +84,7 @@ func SetupRoutes(r *gin.Engine) {
 		registerCuttingOperationRoutes(authorized)
 		registerOrgRoutes(authorized)
 		registerLeaveRoutes(authorized)
+		registerAttendanceDeviceRoutes(authorized)
 		registerFinanceRoutes(authorized)
 		registerArApRoutes(authorized)
 		registerSettlementEvidenceRoutes(authorized)
@@ -92,12 +93,12 @@ func SetupRoutes(r *gin.Engine) {
 		registerPersonalWorkbenchRoutes(authorized)
 		registerSidebarCommandRoutes(authorized)
 		registerApsSchedulingRoutes(authorized)
+		registerPieceworkRoutes(authorized)
 
 		adminOnly := middleware.RequireAnyPermission(authz.PermissionManage)
 		codeCenterAccess := middleware.RequireAnyPermission(authz.MenuCodeCenter)
 		engineeringAccess := middleware.RequireAnyPermission(authz.MenuEngineering)
 		qualityAccess := middleware.RequireAnyPermission(authz.MenuQuality)
-		pieceworkAccess := middleware.RequireAnyPermission(authz.MenuPiecework)
 		printAccess := middleware.RequireAnyPermission(authz.MenuSettings)
 		tradingAccess := middleware.RequireAnyPermission(authz.MenuTrading)
 		tradingOrPurchaseAccess := middleware.RequireAnyPermission(authz.MenuTrading, authz.MenuPurchase)
@@ -401,16 +402,6 @@ func SetupRoutes(r *gin.Engine) {
 			quality.POST("/abnormalities/:id/disposal", handlers.RecordQualityAbnormalityDisposalHandler)
 		}
 
-		piecework := authorized.Group("/piecework")
-		piecework.Use(pieceworkAccess)
-		{
-			piecework.GET("/teams", handlers.GetTeamsHandler)
-			piecework.POST("/teams", adminOnly, handlers.SaveTeamHandler)
-			piecework.DELETE("/teams/:id", adminOnly, handlers.DeleteTeamHandler)
-			piecework.GET("/rates", handlers.GetPieceworkRatesHandler)
-			piecework.POST("/rates", adminOnly, handlers.SavePieceworkRateHandler)
-		}
-
 		labExpGroup := authorized.Group("/labs/experimental")
 		labExpGroup.Use(qualityAccess)
 		{
@@ -424,6 +415,23 @@ func SetupRoutes(r *gin.Engine) {
 			labExpGroup.GET("/reports", handlers.GetExpReportsHandler)
 			labExpGroup.POST("/reports", handlers.SaveExpReportHandler)
 		}
+	}
+}
+
+func registerPieceworkRoutes(authorized *gin.RouterGroup) {
+	pieceworkAccess := middleware.RequireAnyPermission(authz.MenuPiecework)
+	adminOnly := middleware.RequireAnyPermission(authz.PermissionManage)
+
+	piecework := authorized.Group("/piecework")
+	piecework.Use(pieceworkAccess)
+	{
+		piecework.GET("/teams", handlers.GetTeamsHandler)
+		piecework.POST("/teams", adminOnly, handlers.SaveTeamHandler)
+		piecework.DELETE("/teams/:id", adminOnly, handlers.DeleteTeamHandler)
+		piecework.GET("/rates", handlers.GetPieceworkRatesHandler)
+		piecework.POST("/rates", adminOnly, handlers.SavePieceworkRateHandler)
+		piecework.PATCH("/rates/:id", adminOnly, handlers.PatchPieceworkRateHandler)
+		piecework.DELETE("/rates/:id", adminOnly, handlers.DeletePieceworkRateHandler)
 	}
 }
 
@@ -441,6 +449,8 @@ func registerPublicRoutes(api *gin.RouterGroup) {
 
 	api.POST("/auth/login", middleware.LoginRateLimitMiddleware(), handlers.LoginHandler)
 	api.POST("/auth/logout", middleware.CSRFProtection(), handlers.LogoutHandler)
+	api.POST("/attendance-events/ingest", handlers.IngestAttendanceEventsHandler)
+	api.POST("/attendance-events/device-status", handlers.ReportAttendanceDeviceStatusHandler)
 	api.POST("/raw-materials/prepreg-label-ocr-sessions/:sessionId/submit", handlers.SubmitPrepregLabelOcrSessionHandler)
 	api.POST("/production/product-barcode-capture-sessions/:sessionId/submit", handlers.SubmitProductBarcodeCaptureSessionHandler)
 	api.POST("/warehouse/packaging-assemblies/capture-sessions/:sessionId/submit", handlers.SubmitPackagingAssemblyCaptureSessionHandler)

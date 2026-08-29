@@ -34,7 +34,7 @@ const pieceworkRateValidationFallbacks: Record<
   string
 > = {
   'piecework.validation.pieceworkRateProductRequired': '请选择关联产品 SKU',
-  'piecework.validation.pieceworkRateProcessNameRequired': '请输入末级层级名称',
+  'piecework.validation.pieceworkRateProcessNameRequired': '请选择作业项目',
   'piecework.validation.pieceworkRatePriceNonNegative': '单价不能为负数',
 }
 
@@ -97,6 +97,8 @@ export type TeamType = z.infer<typeof teamTypeEnum>
 export function createPieceworkRateSchema(t?: PieceworkTranslate) {
   return z.object({
     id: z.string(),
+    createdAt: z.string().optional(),
+    updatedAt: z.string().optional(),
     productId: z
       .string()
       .min(
@@ -106,7 +108,7 @@ export function createPieceworkRateSchema(t?: PieceworkTranslate) {
           'piecework.validation.pieceworkRateProductRequired'
         )
       ),
-    processName: z
+    processStepId: z
       .string()
       .min(
         1,
@@ -115,7 +117,10 @@ export function createPieceworkRateSchema(t?: PieceworkTranslate) {
           'piecework.validation.pieceworkRateProcessNameRequired'
         )
       ),
-    piecePrice: z
+    routeStepId: z.string().optional(),
+    processCode: z.string().optional(),
+    processName: z.string().optional(),
+    unitPrice: z
       .number()
       .min(
         0,
@@ -125,9 +130,14 @@ export function createPieceworkRateSchema(t?: PieceworkTranslate) {
         )
       ),
     unit: z.string().default('PCS'),
+    currency: z.string().default('CNY'),
+    effectiveAt: z.string().optional(),
+    effectiveFrom: z.string().optional(),
+    effectiveTo: z.string().optional(),
     status: z.enum(['active', 'inactive']).default('active'),
     remarks: z.string().optional(),
     version: z.number().default(1),
+    operator: z.string().optional(),
   })
 }
 

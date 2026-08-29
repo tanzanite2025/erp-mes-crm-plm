@@ -20,13 +20,18 @@
 
 ### 2.2 Route / Process
 
-订单需要映射到工艺路线，至少包含：
+订单需要映射到生产域的已发布工艺路线 `ProductionRoute`，路线步骤使用 `ProductionRouteStep`，至少包含：
 
-- 产线
-- 工序顺序
-- 每道工序耗时
+- `ProductionLine` / `LineSegment`
+- `ProcessStep` 作业项目
+- `sequence` 工序顺序
+- `estimatedMinutes` 每道工序耗时
+- `executionMode` 本厂或委外执行方式
+- `qualityGate` 质量关卡
 - 是否必须按顺序执行
 - 是否允许跨线
+
+工程 BOM 的 `BOMSection` 只负责物料分类，不是 APS 的工段或工序来源。BOM 物料和路线步骤之间如果需要表达领料或消耗点，应通过独立的物料与工艺步骤关联，不应根据 `BOMItem.section` 猜测生产路线。
 
 ### 2.3 Production Resource
 

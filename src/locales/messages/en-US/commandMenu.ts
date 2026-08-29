@@ -93,6 +93,7 @@ export const commandMenu = {
     productionRoutes: 'Production Routes',
     productionExecution: 'Production Execution',
     leaveManagement: 'Leave Management',
+    attendanceDevices: 'Attendance Devices',
     stock: 'Stock List',
     reports: 'Reports',
     inbound: 'Product Inbound',

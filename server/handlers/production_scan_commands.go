@@ -20,10 +20,12 @@ func ExecuteProductionScanCommandHandler(c *gin.Context) {
 	req.Operator = middleware.GetSafeUsername(c)
 	req.IP = c.ClientIP()
 
-	response, err := services.ExecuteProductionScanCommand(req)
+	response, err := services.ExecuteProductionScanCommandWithContext(auditContextFromGin(c), req)
 	if err != nil {
 		switch {
 		case errors.Is(err, services.ErrInvalidProductionScanCommand):
+			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] " + err.Error()})
+		case errors.Is(err, services.ErrInvalidPieceworkRecord):
 			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] " + err.Error()})
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 扫码执行失败: " + err.Error()})

@@ -148,7 +148,9 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   useRecentVisitTracker()
 
   const isPDAShellRoute = pathname === '/pda-shell'
-  const showAssistant = useDeferredActivation(!isPDAShellRoute, 1000)
+  const isPrintTemplateWorkspaceRoute = pathname === '/piecework/templates'
+  const showGlobalDock = !isPDAShellRoute && !isPrintTemplateWorkspaceRoute
+  const showAssistant = useDeferredActivation(showGlobalDock, 1000)
 
   const runIdentitySync = useCallback(async () => {
     if (!shouldSyncIdentity) {
@@ -285,7 +287,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
         >
           {children ?? <Outlet />}
         </SidebarInset>
-        {!isPDAShellRoute && (
+        {showGlobalDock && (
           <GlobalBottomDock>
             <DashboardDockButton />
             <QuickActionsFloating placement='dock' />

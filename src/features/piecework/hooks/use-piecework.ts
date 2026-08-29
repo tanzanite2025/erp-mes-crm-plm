@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import type { DeltaSet } from '@/lib/delta/types'
 import { useLanguage } from '@/context/language-provider'
@@ -119,7 +119,8 @@ export function usePieceworkRateMutations() {
   })
 
   const deleteRateMutation = useMutation({
-    mutationFn: (id: string) => PieceworkMaintenanceService.deleteRate(id),
+    mutationFn: (params: { id: string; version: number }) =>
+      PieceworkMaintenanceService.deleteRate(params),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['piecework_rates'] })
       toast.success(t('piecework.rules.toast.deleteSuccess'))

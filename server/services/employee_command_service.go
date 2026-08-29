@@ -116,6 +116,22 @@ func (s *EmployeeCommandService) SaveEmployee(ctx context.Context, input Employe
 			model.Operator = "system"
 		}
 
+		if strings.TrimSpace(model.ID) == "" && strings.TrimSpace(model.StaffID) != "" {
+			if _, found, err := s.repository.FindEmployeeByIDOrStaffID(tx, "", model.StaffID); err != nil {
+				return err
+			} else if !found {
+				var deletedEmployee models.Employee
+				if err := tx.Unscoped().
+					Where("staff_id = ?", strings.TrimSpace(model.StaffID)).
+					First(&deletedEmployee).Error; err == nil {
+					model.ID = deletedEmployee.ID
+					model.CreatedAt = deletedEmployee.CreatedAt
+				} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+					return err
+				}
+			}
+		}
+
 		if err := s.repository.SaveEmployee(tx, &model); err != nil {
 			return err
 		}

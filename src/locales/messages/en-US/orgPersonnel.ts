@@ -9,6 +9,7 @@ export const orgPersonnel = {
     topology: 'Templates',
     leave: 'Leave Management',
     stats: 'Top Employees',
+    attendanceDevices: 'Attendance Devices',
   },
   leaveMgmt: {
     headerTitle: 'Online Leave Requests',

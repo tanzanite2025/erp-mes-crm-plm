@@ -39,5 +39,10 @@ export function getOrgPersonnelBranchTabs(t: TranslateFn): TabItem[] {
       label: t('orgPersonnel.tabs.stats'),
       href: '/attendance-management/hall-of-fame',
     },
+    {
+      key: 'attendance-devices',
+      label: t('orgPersonnel.tabs.attendanceDevices'),
+      href: '/attendance-management/devices',
+    },
   ]
 }

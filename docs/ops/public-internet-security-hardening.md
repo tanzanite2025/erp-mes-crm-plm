@@ -40,7 +40,7 @@ Internet
 2. Hostinger 防火墙只允许公网访问 `80/443`；SSH 只允许管理员来源或临时开放。
 3. `compose.prod.yml` 中 ERP 业务服务不得使用 `ports` 暴露数据库、Redis、API、搜索服务或监控服务。
 4. `GIN_MODE=release`，`ENABLE_SWAGGER=false`，`ALLOWED_ORIGIN` 不得为 `*`。
-5. `JWT_SECRET`、`POSTGRES_PASSWORD`、`REDIS_PASSWORD`、`AI_SECRET_ENCRYPTION_KEY`、`INITIAL_ADMIN_PASSWORD`、`TOPOLOGY_AUTH_PASSWORD`、`ALERT_WEBHOOK_TOKEN` 必须是生产专用强随机值。
+5. `JWT_SECRET`、`POSTGRES_PASSWORD`、`REDIS_PASSWORD`、`ATTENDANCE_SECRET_ENCRYPTION_KEY`、`AI_SECRET_ENCRYPTION_KEY`、`INITIAL_ADMIN_PASSWORD`、`TOPOLOGY_AUTH_PASSWORD`、`ALERT_WEBHOOK_TOKEN` 必须是生产专用强随机值。
 6. 公网访问 `/api/v1/system/metrics` 必须返回 `404` 或 `403`，不能返回 Prometheus 指标。
 7. 未登录访问 `/uploads/*` 必须失败，不能直接下载上传文件。
 8. `/swagger/*` 在生产必须返回 `404`。

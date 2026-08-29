@@ -1,20 +1,6 @@
 package models
 
-import (
-	"encoding/json"
-
-	"gorm.io/datatypes"
-)
-
-// ProcessStep defines a standard production process.
-type ProcessStep struct {
-	BaseModel
-	Code        string `gorm:"size:50;uniqueIndex;not null" json:"code"`
-	Name        string `gorm:"size:255;not null" json:"name"`
-	Description string `gorm:"type:text" json:"description"`
-	SortOrder   int    `gorm:"default:0" json:"sortOrder"`
-	IsActive    bool   `gorm:"default:true" json:"isActive"`
-}
+import "gorm.io/datatypes"
 
 // ProductionRoute defines the versioned process route for a product family.
 type ProductionRoute struct {
@@ -45,26 +31,4 @@ type ProductionRouteStep struct {
 	EstimatedMinutes int            `gorm:"not null;default:0" json:"estimatedMinutes"`
 	TransferRequired bool           `gorm:"not null;default:false" json:"transferRequired"`
 	Description      string         `gorm:"type:text" json:"description"`
-}
-
-// ProductionLine defines a production line and its nested topology.
-type ProductionLine struct {
-	BaseModel
-	Code        string        `gorm:"size:50;uniqueIndex;not null" json:"code"`
-	Name        string        `gorm:"size:255;not null" json:"name"`
-	Description string        `gorm:"type:text" json:"description"`
-	Version     int64         `gorm:"default:1" json:"version"`
-	IsActive    bool          `gorm:"default:true" json:"isActive"`
-	Segments    []LineSegment `gorm:"foreignKey:LineID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"segments"`
-}
-
-// LineSegment defines a segment within a production line.
-type LineSegment struct {
-	BaseModel
-	LineID      string          `gorm:"type:uuid;index;not null" json:"lineId"`
-	Name        string          `gorm:"size:255;not null" json:"name"`
-	Description string          `gorm:"type:text" json:"description"`
-	SortOrder   int             `gorm:"default:0" json:"sortOrder"`
-	Attributes  json.RawMessage `gorm:"type:jsonb" json:"attributes"`
-	Processes   []ProcessStep   `gorm:"many2many:line_segment_process_mappings;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"processes"`
 }

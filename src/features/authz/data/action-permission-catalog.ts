@@ -725,6 +725,18 @@ const orgActions: LegacyActionPermissionEntry[] = [
     parentId: 'menu_org',
     routeBindings: ['POST /employees/import/commit'],
   },
+  {
+    id: 'action_attendance_device_manage',
+    label: '组织人事：维护考勤设备',
+    desc: '允许新增、更新、删除与测试考勤采集设备绑定。',
+    category: 'action',
+    parentId: 'menu_org',
+    routeBindings: [
+      'POST /attendance-devices',
+      'DELETE /attendance-devices/:id',
+      'POST /attendance-devices/:id/test',
+    ],
+  },
 ]
 
 const productionActions: LegacyActionPermissionEntry[] = [

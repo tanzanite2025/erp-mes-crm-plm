@@ -109,11 +109,12 @@ const (
 )
 
 const (
-	ActionOrgProfileUpdate      = "action_org_profile_update"
-	ActionEmployeeUpdate        = "action_employee_update"
-	ActionHRDetailView          = "action_hr_detail_view"
-	ActionEmployeeImportPreview = "action_employee_import_preview"
-	ActionEmployeeImportCommit  = "action_employee_import_commit"
+	ActionOrgProfileUpdate       = "action_org_profile_update"
+	ActionEmployeeUpdate         = "action_employee_update"
+	ActionHRDetailView           = "action_hr_detail_view"
+	ActionEmployeeImportPreview  = "action_employee_import_preview"
+	ActionEmployeeImportCommit   = "action_employee_import_commit"
+	ActionAttendanceDeviceManage = "action_attendance_device_manage"
 )
 
 const (
@@ -212,6 +213,7 @@ var baseAdminFallbackPermissions = []string{
 	ActionHRDetailView,
 	ActionEmployeeImportPreview,
 	ActionEmployeeImportCommit,
+	ActionAttendanceDeviceManage,
 	ActionProductionLineUpdate,
 	ActionProductionRouteManage,
 	ActionProductionPlanManage,

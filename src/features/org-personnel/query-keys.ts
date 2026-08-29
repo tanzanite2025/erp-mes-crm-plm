@@ -10,6 +10,19 @@ export const personnelQueryKeys = {
     list: (): QueryKey => ['personnel', 'leaves', 'list'],
     stats: (): QueryKey => ['personnel', 'leaves', 'stats'],
   },
+  attendanceDevices: {
+    all: (): QueryKey => ['personnel', 'attendance-devices'],
+    list: (): QueryKey => ['personnel', 'attendance-devices', 'list'],
+    templates: (): QueryKey => ['personnel', 'attendance-devices', 'templates'],
+    events: (deviceId?: string, matchStatus?: string): QueryKey => [
+      'personnel',
+      'attendance-devices',
+      'events',
+      deviceId ?? 'all',
+      matchStatus ?? 'all',
+    ],
+    mappings: (): QueryKey => ['personnel', 'attendance-devices', 'mappings'],
+  },
   stats: {
     all: (): QueryKey => ['personnel', 'stats'],
     ranking: (): QueryKey => ['personnel', 'stats', 'ranking'],

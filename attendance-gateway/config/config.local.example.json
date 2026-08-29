@@ -1,0 +1,34 @@
+{
+  "listenAddr": "127.0.0.1:9090",
+  "erpBaseUrl": "http://127.0.0.1:8020",
+  "erpEventsPath": "/api/v1/attendance-events/ingest",
+  "erpStatusPath": "/api/v1/attendance-events/device-status",
+  "erpTimeoutSeconds": 10,
+  "bridgeToken": "replace-with-at-least-16-chars",
+  "queueDir": "./runtime/queue",
+  "deadLetterDir": "./runtime/dead-letter",
+  "maxQueueItems": 10000,
+  "retryIntervalSeconds": 5,
+  "maxRetryAttempts": 20,
+  "sdkBridgeCommand": "",
+  "sdkBridgeArgs": [],
+  "sdkBridgeWorkDir": "",
+  "sdkBridgeApi": "http://127.0.0.1:9090",
+  "sdkBridgePublicAddress": "127.0.0.1",
+  "sdkBridgeAlarmProtocol": "tcp",
+  "sdkBridgeTimezoneOffset": "+08:00",
+  "sdkBridgeRuntimeDir": "/opt/xdfc-isup-sdk-bridge/vendor/lib64",
+  "sdkBridgeLogDir": "./runtime/sdk-log",
+  "devices": [
+    {
+      "deviceCode": "ATT-HIK-01",
+      "registrationId": "ATT-HIK-01",
+      "registrationPort": 7660,
+      "alarmTcpPort": 7332,
+      "alarmUdpPort": 7334,
+      "isupKey": "replace-with-isup-key",
+      "erpIngressToken": "replace-with-at-least-16-chars",
+      "enabled": true
+    }
+  ]
+}

@@ -1463,24 +1463,6 @@ func logLocalDbAuthHint(dsn string, err error) {
 	log.Printf("[DEV_HINT]   powershell -ExecutionPolicy Bypass -File .\\server\\dev-up.ps1 -ResetDb")
 }
 
-// prepareProductionTopologySchema removes route rows that still depend on the
-// deleted four-level topology before GORM creates the current route-step shape.
-func prepareProductionTopologySchema() {
-	if DB == nil {
-		return
-	}
-
-	statements := []string{
-		`DROP TABLE IF EXISTS production_route_steps CASCADE`,
-	}
-	for _, statement := range statements {
-		if err := DB.Exec(statement).Error; err != nil {
-			log.Printf("Failed to prepare production topology schema: %v", err)
-			log.Fatal(err)
-		}
-	}
-}
-
 // cleanupDeletedProductionTopologySchema removes tables and columns that are
 // no longer part of the fixed L1/L2/L3 production topology.
 func cleanupDeletedProductionTopologySchema() {
@@ -1505,6 +1487,427 @@ func cleanupDeletedProductionTopologySchema() {
 	}
 }
 
+// backfillPieceworkRateContract upgrades legacy rate rows without guessing
+// identities. A process code may populate process_step_id only when it maps
+// to exactly one standard process.
+func backfillPieceworkRateContract() {
+	if DB == nil || !DB.Migrator().HasTable(&models.PieceworkRate{}) {
+		return
+	}
+
+	if err := DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Exec(`
+			UPDATE piecework_rates
+			SET effective_from = effective_at
+			WHERE effective_from IS NULL
+			  AND effective_at IS NOT NULL
+		`).Error; err != nil {
+			return err
+		}
+		if err := tx.Exec(`
+			UPDATE piecework_rates
+			SET unit = 'PCS'
+			WHERE unit IS NULL OR btrim(unit) = ''
+		`).Error; err != nil {
+			return err
+		}
+		if err := tx.Exec(`
+			UPDATE piecework_rates
+			SET currency = 'CNY'
+			WHERE currency IS NULL OR btrim(currency) = ''
+		`).Error; err != nil {
+			return err
+		}
+		if err := tx.Exec(`
+			UPDATE piecework_rates
+			SET status = 'active'
+			WHERE status IS NULL OR btrim(status) = ''
+		`).Error; err != nil {
+			return err
+		}
+		if err := tx.Exec(`
+			UPDATE piecework_rates
+			SET version = 1
+			WHERE version IS NULL OR version <= 0
+		`).Error; err != nil {
+			return err
+		}
+		if err := tx.Exec(`
+			UPDATE piecework_rates AS rate
+			SET process_step_id = route_step.process_step_id
+			FROM production_route_steps AS route_step
+			WHERE rate.process_step_id IS NULL
+			  AND rate.route_step_id IS NOT NULL
+			  AND rate.route_step_id = route_step.id
+			  AND route_step.process_step_id IS NOT NULL
+		`).Error; err != nil {
+			return err
+		}
+		if err := tx.Exec(`
+			UPDATE piecework_rates AS rate
+			SET process_step_id = process.id
+			FROM process_steps AS process
+			WHERE rate.process_step_id IS NULL
+			  AND rate.process_code IS NOT NULL
+			  AND btrim(rate.process_code) <> ''
+			  AND process.code = BTRIM(rate.process_code)
+			  AND (
+				SELECT COUNT(*)
+				FROM process_steps AS same_code
+				WHERE same_code.code = BTRIM(rate.process_code)
+			  ) = 1
+		`).Error; err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		log.Printf("Failed to backfill piecework rate contract: %v", err)
+		log.Fatal(err)
+	}
+}
+
+func recordPieceworkRateContractIssues() {
+	if DB == nil || DB.Dialector.Name() != "postgres" || !DB.Migrator().HasTable(&models.PieceworkRate{}) {
+		return
+	}
+
+	if err := DB.Exec(`
+		CREATE TABLE IF NOT EXISTS piecework_rate_contract_issues (
+			rate_id uuid NOT NULL,
+			issue_code varchar(80) NOT NULL,
+			process_code varchar(50),
+			details text NOT NULL,
+			first_seen_at timestamptz NOT NULL DEFAULT now(),
+			last_seen_at timestamptz NOT NULL DEFAULT now(),
+			resolved_at timestamptz,
+			PRIMARY KEY (rate_id, issue_code)
+		)
+	`).Error; err != nil {
+		log.Fatal("Failed to create piecework rate contract issue report:", err)
+	}
+
+	statements := []string{
+		`
+		INSERT INTO piecework_rate_contract_issues (
+			rate_id,
+			issue_code,
+			process_code,
+			details
+		)
+		SELECT
+			rate.id,
+			'MISSING_PROCESS_STEP_ID',
+			NULLIF(BTRIM(rate.process_code), ''),
+			'Legacy rate has no process code and cannot be mapped automatically.'
+		FROM piecework_rates AS rate
+		WHERE rate.deleted_at IS NULL
+		  AND rate.process_step_id IS NULL
+		  AND NULLIF(BTRIM(rate.process_code), '') IS NULL
+		ON CONFLICT (rate_id, issue_code) DO UPDATE
+		SET last_seen_at = now(),
+			resolved_at = NULL;
+		`,
+		`
+		INSERT INTO piecework_rate_contract_issues (
+			rate_id,
+			issue_code,
+			process_code,
+			details
+		)
+		SELECT
+			rate.id,
+			'PROCESS_CODE_NOT_RESOLVED',
+			NULLIF(BTRIM(rate.process_code), ''),
+			'Legacy process code does not resolve to exactly one process step.'
+		FROM piecework_rates AS rate
+		WHERE rate.deleted_at IS NULL
+		  AND rate.process_step_id IS NULL
+		  AND NULLIF(BTRIM(rate.process_code), '') IS NOT NULL
+		  AND (
+			SELECT COUNT(*)
+			FROM process_steps AS process
+			WHERE process.code = BTRIM(rate.process_code)
+		  ) <> 1
+		ON CONFLICT (rate_id, issue_code) DO UPDATE
+		SET last_seen_at = now(),
+			resolved_at = NULL;
+		`,
+		`
+		INSERT INTO piecework_rate_contract_issues (
+			rate_id,
+			issue_code,
+			process_code,
+			details
+		)
+		SELECT
+			rate.id,
+			'MISSING_EFFECTIVE_FROM',
+			NULLIF(BTRIM(rate.process_code), ''),
+			'Rate has neither canonical effectiveFrom nor legacy effectiveAt.'
+		FROM piecework_rates AS rate
+		WHERE rate.deleted_at IS NULL
+		  AND rate.effective_from IS NULL
+		  AND rate.effective_at IS NULL
+		ON CONFLICT (rate_id, issue_code) DO UPDATE
+		SET last_seen_at = now(),
+			resolved_at = NULL;
+		`,
+		`
+		INSERT INTO piecework_rate_contract_issues (
+			rate_id,
+			issue_code,
+			process_code,
+			details
+		)
+		SELECT
+			rate.id,
+			'OVERLAPPING_ACTIVE_INTERVAL',
+			NULLIF(BTRIM(rate.process_code), ''),
+			'Active rates overlap for the same product and matching scope.'
+		FROM piecework_rates AS rate
+		JOIN piecework_rates AS other
+		  ON rate.id < other.id
+		 AND rate.product_id = other.product_id
+		 AND rate.deleted_at IS NULL
+		 AND other.deleted_at IS NULL
+		 AND LOWER(rate.status) = 'active'
+		 AND LOWER(other.status) = 'active'
+		 AND (
+			(
+				rate.route_step_id IS NULL
+				AND other.route_step_id IS NULL
+				AND rate.process_step_id = other.process_step_id
+			)
+			OR
+			(
+				rate.route_step_id IS NOT NULL
+				AND rate.route_step_id = other.route_step_id
+			)
+		 )
+		 AND tstzrange(
+			rate.effective_from,
+			COALESCE(rate.effective_to, 'infinity'::timestamptz),
+			'[)'
+		 ) && tstzrange(
+			other.effective_from,
+			COALESCE(other.effective_to, 'infinity'::timestamptz),
+			'[)'
+		 )
+		ON CONFLICT (rate_id, issue_code) DO UPDATE
+		SET last_seen_at = now(),
+			resolved_at = NULL;
+		`,
+		`
+		UPDATE piecework_rate_contract_issues AS issue
+		SET resolved_at = COALESCE(issue.resolved_at, now()),
+			last_seen_at = now()
+		WHERE issue.resolved_at IS NULL
+		  AND NOT EXISTS (
+			SELECT 1
+			FROM piecework_rates AS rate
+			WHERE rate.id = issue.rate_id
+			  AND rate.deleted_at IS NULL
+			  AND (
+				(issue.issue_code = 'MISSING_PROCESS_STEP_ID'
+				 AND rate.process_step_id IS NULL
+				 AND NULLIF(BTRIM(rate.process_code), '') IS NULL)
+				OR
+				(issue.issue_code = 'PROCESS_CODE_NOT_RESOLVED'
+				 AND rate.process_step_id IS NULL
+				 AND NULLIF(BTRIM(rate.process_code), '') IS NOT NULL
+				 AND (
+					SELECT COUNT(*)
+					FROM process_steps AS process
+					WHERE process.code = BTRIM(rate.process_code)
+				 ) <> 1)
+				OR
+				(issue.issue_code = 'MISSING_EFFECTIVE_FROM'
+				 AND rate.effective_from IS NULL
+				 AND rate.effective_at IS NULL)
+				OR
+				(issue.issue_code = 'OVERLAPPING_ACTIVE_INTERVAL'
+				 AND NOT EXISTS (
+					SELECT 1
+					FROM piecework_rates AS other
+					WHERE other.id <> rate.id
+					  AND other.deleted_at IS NULL
+					  AND LOWER(other.status) = 'active'
+					  AND rate.product_id = other.product_id
+					  AND (
+						(
+							rate.route_step_id IS NULL
+							AND other.route_step_id IS NULL
+							AND rate.process_step_id = other.process_step_id
+						)
+						OR
+						(
+							rate.route_step_id IS NOT NULL
+							AND rate.route_step_id = other.route_step_id
+						)
+					  )
+					  AND tstzrange(
+						rate.effective_from,
+						COALESCE(rate.effective_to, 'infinity'::timestamptz),
+						'[)'
+					  ) && tstzrange(
+						other.effective_from,
+						COALESCE(other.effective_to, 'infinity'::timestamptz),
+						'[)'
+					  )
+				 ))
+			  )
+		  );
+		`,
+	}
+
+	for _, statement := range statements {
+		if err := DB.Exec(statement).Error; err != nil {
+			log.Fatal("Failed to record piecework rate contract issues:", err)
+		}
+	}
+}
+
+func ensurePieceworkRateIntegrityConstraints() {
+	if DB == nil || DB.Dialector.Name() != "postgres" || !DB.Migrator().HasTable(&models.PieceworkRate{}) {
+		return
+	}
+
+	var unresolved int64
+	if err := DB.Raw(`
+		SELECT COUNT(*)
+		FROM piecework_rates
+		WHERE deleted_at IS NULL
+		  AND (
+			process_step_id IS NULL
+			OR effective_from IS NULL
+			OR (effective_to IS NOT NULL AND effective_to <= effective_from)
+		  )
+	`).Scan(&unresolved).Error; err != nil {
+		log.Fatal("Failed to inspect piecework rate contract readiness:", err)
+	}
+	var overlapping int64
+	if err := DB.Raw(`
+		SELECT COUNT(*)
+		FROM piecework_rates AS rate
+		JOIN piecework_rates AS other
+		  ON rate.id < other.id
+		 AND rate.product_id = other.product_id
+		 AND rate.deleted_at IS NULL
+		 AND other.deleted_at IS NULL
+		 AND LOWER(rate.status) = 'active'
+		 AND LOWER(other.status) = 'active'
+		 AND (
+			(
+				rate.route_step_id IS NULL
+				AND other.route_step_id IS NULL
+				AND rate.process_step_id = other.process_step_id
+			)
+			OR
+			(
+				rate.route_step_id IS NOT NULL
+				AND rate.route_step_id = other.route_step_id
+			)
+		 )
+		 AND tstzrange(
+			rate.effective_from,
+			COALESCE(rate.effective_to, 'infinity'::timestamptz),
+			'[)'
+		 ) && tstzrange(
+			other.effective_from,
+			COALESCE(other.effective_to, 'infinity'::timestamptz),
+			'[)'
+		 )
+	`).Scan(&overlapping).Error; err != nil {
+		log.Fatal("Failed to inspect piecework rate interval overlaps:", err)
+	}
+	if unresolved > 0 || overlapping > 0 {
+		log.Printf(
+			"Piecework rate database constraints are pending: %d rows require contract repair and %d interval pairs overlap. See piecework_rate_contract_issues.",
+			unresolved,
+			overlapping,
+		)
+		return
+	}
+
+	if err := DB.Exec(`CREATE EXTENSION IF NOT EXISTS btree_gist`).Error; err != nil {
+		log.Fatal("Failed to enable btree_gist for piecework rate interval constraints:", err)
+	}
+
+	statements := []string{
+		`ALTER TABLE piecework_rates ALTER COLUMN process_step_id SET NOT NULL`,
+		`ALTER TABLE piecework_rates ALTER COLUMN effective_from SET NOT NULL`,
+		`
+		DO $$
+		BEGIN
+			IF NOT EXISTS (
+				SELECT 1
+				FROM pg_constraint
+				WHERE conname = 'chk_piecework_rates_effective_interval'
+			) THEN
+				ALTER TABLE piecework_rates
+				ADD CONSTRAINT chk_piecework_rates_effective_interval
+				CHECK (effective_to IS NULL OR effective_to > effective_from);
+			END IF;
+		END
+		$$;
+		`,
+		`
+		DO $$
+		BEGIN
+			IF NOT EXISTS (
+				SELECT 1
+				FROM pg_constraint
+				WHERE conname = 'ex_piecework_rates_process_interval'
+			) THEN
+				ALTER TABLE piecework_rates
+				ADD CONSTRAINT ex_piecework_rates_process_interval
+				EXCLUDE USING gist (
+					product_id WITH =,
+					process_step_id WITH =,
+					tstzrange(effective_from, COALESCE(effective_to, 'infinity'::timestamptz), '[)') WITH &&
+				)
+				WHERE (
+					deleted_at IS NULL
+					AND LOWER(status) = 'active'
+					AND route_step_id IS NULL
+				);
+			END IF;
+		END
+		$$;
+		`,
+		`
+		DO $$
+		BEGIN
+			IF NOT EXISTS (
+				SELECT 1
+				FROM pg_constraint
+				WHERE conname = 'ex_piecework_rates_route_interval'
+			) THEN
+				ALTER TABLE piecework_rates
+				ADD CONSTRAINT ex_piecework_rates_route_interval
+				EXCLUDE USING gist (
+					product_id WITH =,
+					route_step_id WITH =,
+					tstzrange(effective_from, COALESCE(effective_to, 'infinity'::timestamptz), '[)') WITH &&
+				)
+				WHERE (
+					deleted_at IS NULL
+					AND LOWER(status) = 'active'
+					AND route_step_id IS NOT NULL
+				);
+			END IF;
+		END
+		$$;
+		`,
+	}
+
+	for _, statement := range statements {
+		if err := DB.Exec(statement).Error; err != nil {
+			log.Fatal("Failed to enforce piecework rate integrity constraints:", err)
+		}
+	}
+}
+
 // InitDB initializes the database connection and schema.
 func InitDB(dsn string) {
 	var err error
@@ -1520,7 +1923,6 @@ func InitDB(dsn string) {
 	audit.StartArchiver(DB)
 	// Migrating database schemas.
 	fmt.Println("Migrating database schemas...")
-	prepareProductionTopologySchema()
 	failOnDuplicatePackagingRules()
 	migrateAccountPermissionPresetSchemaNames()
 
@@ -1610,6 +2012,9 @@ func InitDB(dsn string) {
 		&models.InventoryThresholdRule{},
 		&models.ApprovalRequest{},
 		&models.LeaveRequest{},
+		&models.AttendanceDevice{},
+		&models.AttendanceDeviceEmployeeMapping{},
+		&models.AttendanceEvent{},
 		&models.VehicleContactBinding{},
 		&models.FinancialVoucher{},
 		&models.ClearingEntry{},
@@ -1690,6 +2095,9 @@ func InitDB(dsn string) {
 	if err != nil {
 		log.Fatal("Failed to migrate database:", err)
 	}
+	backfillPieceworkRateContract()
+	recordPieceworkRateContractIssues()
+	ensurePieceworkRateIntegrityConstraints()
 	cleanupDeletedProductionTopologySchema()
 	dropLegacyPermissionPresetArtifacts()
 	dropLegacyWorkflowArtifacts()

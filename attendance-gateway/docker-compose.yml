@@ -1,0 +1,45 @@
+name: xdfc-attendance-gateway
+
+services:
+  isup-gateway:
+    build:
+      context: ..
+      dockerfile: attendance-gateway/Dockerfile
+    image: xdfc-isup-gateway:local
+    container_name: xdfc-isup-gateway
+    restart: unless-stopped
+    ports:
+      - "${ISUP_REGISTER_PORT:-7660}:7660/tcp"
+      - "${ISUP_ALARM_TCP_PORT:-7332}:7332/tcp"
+      - "${ISUP_ALARM_UDP_PORT:-7334}:7334/udp"
+      - "${ISUP_GATEWAY_HTTP_PORT:-9090}:9090/tcp"
+    environment:
+      CONFIG_FILE: /etc/xdfc-isup-gateway/config.json
+      ISUP_GATEWAY_BRIDGE_TOKEN: ${ISUP_GATEWAY_BRIDGE_TOKEN:-}
+      ISUP_GATEWAY_PUBLIC_ADDRESS: ${ISUP_GATEWAY_PUBLIC_ADDRESS:-}
+      ATT_HIK_01_ISUP_KEY: ${ATT_HIK_01_ISUP_KEY:-}
+      ATT_HIK_01_ERP_INGRESS_TOKEN: ${ATT_HIK_01_ERP_INGRESS_TOKEN:-}
+    volumes:
+      - ./config:/etc/xdfc-isup-gateway:ro
+      - ./runtime:/var/lib/xdfc-isup-gateway
+      - ./sdk-bridge:/opt/xdfc-isup-sdk-bridge:ro
+      - ./runtime/sdk-log:/var/lib/xdfc-isup-gateway/sdk-log
+    networks:
+      - erp
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:9090/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+networks:
+  erp:
+    external: true
+    name: ${ERP_DOCKER_NETWORK:-erp_app}

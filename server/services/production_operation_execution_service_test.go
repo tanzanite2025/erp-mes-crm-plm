@@ -1,7 +1,9 @@
 package services
 
 import (
+	"context"
 	"testing"
+	"time"
 	"xdfc-server/models"
 
 	"github.com/glebarez/sqlite"
@@ -82,6 +84,56 @@ func createProductionOperationExecutionTestSchema(t *testing.T, database *gorm.D
 			estimated_minutes INTEGER,
 			transfer_required BOOLEAN,
 			description TEXT
+		)
+	`).Error)
+	require.NoError(t, database.Exec(`
+		CREATE TABLE piecework_rates (
+			id TEXT PRIMARY KEY,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			product_id TEXT NOT NULL,
+			process_step_id TEXT,
+			route_step_id TEXT,
+			process_code TEXT,
+			process_name TEXT,
+			unit TEXT,
+			unit_price REAL,
+			currency TEXT,
+			effective_at DATETIME,
+			effective_from DATETIME,
+			effective_to DATETIME,
+			status TEXT,
+			remarks TEXT,
+			version INTEGER,
+			operator TEXT
+		)
+	`).Error)
+	require.NoError(t, database.Exec(`
+		CREATE TABLE piecework_records (
+			id TEXT PRIMARY KEY,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			work_date DATETIME NOT NULL,
+			employee_id TEXT,
+			team_id TEXT,
+			product_id TEXT,
+			product_name TEXT,
+			route_id TEXT,
+			route_step_id TEXT,
+			process_step_id TEXT,
+			process_code TEXT,
+			process_name TEXT,
+			rate_id TEXT,
+			rate_version INTEGER,
+			quantity REAL,
+			unit TEXT,
+			currency TEXT,
+			unit_price REAL,
+			total_amount REAL,
+			source_execution_id TEXT,
+			is_settled BOOLEAN
 		)
 	`).Error)
 	require.NoError(t, database.Exec(`
@@ -197,6 +249,10 @@ func TestRecordProductionOperationExecutionCreatesOperationAndBarcodeState(t *te
 	require.Equal(t, ProductBarcodeStateStatusInProgress, state.Status)
 	require.Len(t, events, 1)
 	require.Equal(t, ProductBarcodeStateEventStart, events[0].EventType)
+
+	var pieceworkRecordCount int64
+	require.NoError(t, database.Model(&models.PieceworkRecord{}).Count(&pieceworkRecordCount).Error)
+	require.Zero(t, pieceworkRecordCount)
 }
 
 func TestRecordProductionOperationExecutionDoesNotRequirePosition(t *testing.T) {
@@ -212,4 +268,79 @@ func TestRecordProductionOperationExecutionDoesNotRequirePosition(t *testing.T) 
 	require.NoError(t, err)
 	require.Equal(t, ProductBarcodeStateStatusCompleted, operation.Status)
 	require.NotEmpty(t, operation.CompletedAt)
+}
+
+func TestRecordProductionOperationExecutionCreatesPieceworkRecordOnCompletion(t *testing.T) {
+	service, database := newProductionOperationExecutionTestService(t)
+	seedProductionOperationProcess(t, database, "process-a")
+	require.NoError(t, database.Create(&models.ProductionRoute{
+		BaseModel: models.BaseModel{ID: "route-a"},
+		Code:      "ROUTE-A",
+		Name:      "Route A",
+		ProductID: "product-a",
+		Status:    "PUBLISHED",
+	}).Error)
+	require.NoError(t, database.Create(&models.ProductionRouteStep{
+		BaseModel:     models.BaseModel{ID: "route-step-a"},
+		RouteID:       "route-a",
+		Sequence:      10,
+		SegmentID:     "segment-a",
+		ProcessStepID: "process-a",
+	}).Error)
+	require.NoError(t, database.Create(&models.ProductionExecutionLot{
+		BaseModel:      models.BaseModel{ID: "lot-a"},
+		ProductBarcode: "ABC-004",
+		ProductID:      "product-a",
+		ProductName:    "Product A",
+		Quantity:       3,
+		Status:         ProductionExecutionLotStatusActive,
+	}).Error)
+	effectiveFrom := time.Now().UTC().Add(-time.Hour)
+	processStepID := "process-a"
+	routeStepID := "route-step-a"
+	require.NoError(t, database.Create(&models.PieceworkRate{
+		BaseModel:     models.BaseModel{ID: "rate-a"},
+		ProductID:     "product-a",
+		ProcessStepID: &processStepID,
+		RouteStepID:   &routeStepID,
+		ProcessCode:   "process-a",
+		ProcessName:   "process-a",
+		Unit:          "PCS",
+		UnitPrice:     2,
+		Currency:      "CNY",
+		EffectiveFrom: &effectiveFrom,
+		Status:        "active",
+		Version:       1,
+	}).Error)
+
+	operation, err := service.RecordProductionOperationExecutionWithContext(context.Background(), RecordProductionOperationExecutionRequest{
+		ProductBarcode: "ABC-004",
+		ExecutionLotID: "lot-a",
+		RouteID:        "route-a",
+		RouteStepID:    "route-step-a",
+		ProcessStepID:  "process-a",
+		Action:         ProductionOperationActionComplete,
+		Operator:       "tester",
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, ProductBarcodeStateStatusCompleted, operation.Status)
+
+	var record models.PieceworkRecord
+	require.NoError(t, database.First(&record, "source_execution_id = ?", operation.ID).Error)
+	require.Equal(t, "product-a", record.ProductID)
+	require.Equal(t, "Product A", record.ProductName)
+	require.Equal(t, "route-a", record.RouteID)
+	require.Equal(t, "route-step-a", record.RouteStepID)
+	require.Equal(t, "process-a", record.ProcessStepID)
+	require.Equal(t, "rate-a", record.RateID)
+	require.Equal(t, int64(1), record.RateVersion)
+	require.Equal(t, 3.0, record.Quantity)
+	require.Equal(t, 2.0, record.UnitPrice)
+	require.Equal(t, 6.0, record.TotalAmount)
+
+	state, _, err := loadProductBarcodeStateWithEvents(database, "ABC-004")
+	require.NoError(t, err)
+	require.Equal(t, "product-a", state.ProductID)
+	require.Equal(t, "Product A", state.ProductName)
 }

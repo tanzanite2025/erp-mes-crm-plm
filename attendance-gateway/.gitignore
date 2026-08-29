@@ -1,0 +1,11 @@
+bin/
+runtime/
+config/config.json
+sdk-bridge/*
+!sdk-bridge/README.md
+!sdk-bridge/native/
+!sdk-bridge/native/**
+sdk-bridge/native/build*/
+sdk-bridge/native/blackbox-*
+!sdk-bridge/vendor/
+!sdk-bridge/vendor/.gitkeep

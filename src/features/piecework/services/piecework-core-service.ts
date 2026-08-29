@@ -1,6 +1,9 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse } from '@/lib/api-response'
-import { type Team, type PieceworkRate } from '../data/schema'
+import { toPieceworkRateContracts } from '../adapters/piecework-rate-api-adapter'
+import type { PieceworkRateApiDTO } from '../contracts/piecework-rate-api-dto'
+import { type Team } from '../data/schema'
+import type { PieceworkRate } from '../data/schema'
 
 /**
  * PieceworkCoreService - 专门负责计件模块的只读查询逻辑 (Logic-Hook-UI)情况情况总量。
@@ -18,10 +21,12 @@ export const PieceworkCoreService = {
    * 获取所有计件工价规则
    */
   getPieceworkRates: async (): Promise<PieceworkRate[]> => {
-    const res = await apiFetch<PieceworkRate[]>('/piecework/rates')
-    return ensureArrayResponse<PieceworkRate>(
-      res,
-      'PieceworkCoreService.getPieceworkRates'
+    const res = await apiFetch<PieceworkRateApiDTO[]>('/piecework/rates')
+    return toPieceworkRateContracts(
+      ensureArrayResponse<PieceworkRateApiDTO>(
+        res,
+        'PieceworkCoreService.getPieceworkRates'
+      )
     )
   },
 }

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -82,6 +83,12 @@ type productionOperationExecutionRecordResult struct {
 	StateEvent models.ProductBarcodeStateEvent
 }
 
+type productionOperationPieceworkContext struct {
+	ProductID   string
+	ProductName string
+	Quantity    float64
+}
+
 type ProductionOperationExecutionService struct {
 	txManager transactionManager
 }
@@ -98,6 +105,13 @@ func ListProductionOperationExecutions(query ProductionOperationExecutionListQue
 
 func RecordProductionOperationExecution(req RecordProductionOperationExecutionRequest) (ProductionOperationExecutionResponse, error) {
 	return defaultProductionOperationExecutionService.RecordProductionOperationExecution(req)
+}
+
+func RecordProductionOperationExecutionWithContext(
+	ctx context.Context,
+	req RecordProductionOperationExecutionRequest,
+) (ProductionOperationExecutionResponse, error) {
+	return defaultProductionOperationExecutionService.RecordProductionOperationExecutionWithContext(ctx, req)
 }
 
 func (s *ProductionOperationExecutionService) ListProductionOperationExecutions(query ProductionOperationExecutionListQuery) (ProductionOperationExecutionListResponse, error) {
@@ -136,6 +150,16 @@ func (s *ProductionOperationExecutionService) ListProductionOperationExecutions(
 }
 
 func (s *ProductionOperationExecutionService) RecordProductionOperationExecution(req RecordProductionOperationExecutionRequest) (ProductionOperationExecutionResponse, error) {
+	return s.RecordProductionOperationExecutionWithContext(context.Background(), req)
+}
+
+func (s *ProductionOperationExecutionService) RecordProductionOperationExecutionWithContext(
+	ctx context.Context,
+	req RecordProductionOperationExecutionRequest,
+) (ProductionOperationExecutionResponse, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	normalized := normalizeRecordProductionOperationExecutionRequest(req)
 	if err := validateRecordProductionOperationExecutionRequest(s.txManager.DB(), normalized); err != nil {
 		return ProductionOperationExecutionResponse{}, err
@@ -143,7 +167,7 @@ func (s *ProductionOperationExecutionService) RecordProductionOperationExecution
 
 	var saved productionOperationExecutionRecordResult
 	err := s.txManager.WithinTransaction(func(tx *gorm.DB) error {
-		result, err := recordProductionOperationExecutionTx(tx, normalized)
+		result, err := recordProductionOperationExecutionTx(ctx, tx, normalized)
 		if err != nil {
 			return err
 		}
@@ -156,8 +180,16 @@ func (s *ProductionOperationExecutionService) RecordProductionOperationExecution
 	return mapProductionOperationExecutionToResponse(saved.Operation), nil
 }
 
-func recordProductionOperationExecutionTx(tx *gorm.DB, normalized RecordProductionOperationExecutionRequest) (productionOperationExecutionRecordResult, error) {
+func recordProductionOperationExecutionTx(
+	ctx context.Context,
+	tx *gorm.DB,
+	normalized RecordProductionOperationExecutionRequest,
+) (productionOperationExecutionRecordResult, error) {
 	state, exists, err := findProductBarcodeStateTx(tx, normalized.ProductBarcode)
+	if err != nil {
+		return productionOperationExecutionRecordResult{}, err
+	}
+	pieceworkContext, err := resolveProductionOperationPieceworkContextTx(tx, &normalized, state)
 	if err != nil {
 		return productionOperationExecutionRecordResult{}, err
 	}
@@ -167,8 +199,8 @@ func recordProductionOperationExecutionTx(tx *gorm.DB, normalized RecordProducti
 	stateStatus := mapProductionOperationActionToBarcodeStateStatus(normalized.Action)
 	stateReq := SaveProductBarcodeStateRequest{
 		ProductBarcode: normalized.ProductBarcode,
-		ProductID:      strings.TrimSpace(state.ProductID),
-		ProductName:    strings.TrimSpace(state.ProductName),
+		ProductID:      pieceworkContext.ProductID,
+		ProductName:    pieceworkContext.ProductName,
 		RouteID:        normalized.RouteID,
 		RouteStepID:    normalized.RouteStepID,
 		ProcessStepID:  normalized.ProcessStepID,
@@ -251,6 +283,9 @@ func recordProductionOperationExecutionTx(tx *gorm.DB, normalized RecordProducti
 		return productionOperationExecutionRecordResult{}, fmt.Errorf("failed to update product barcode last event: %w", err)
 	}
 	state.LastEventID = event.ID
+	if err := recordPieceworkForCompletedProductionOperationTx(ctx, tx, operation, state, pieceworkContext); err != nil {
+		return productionOperationExecutionRecordResult{}, err
+	}
 
 	return productionOperationExecutionRecordResult{
 		Operation:  operation,
@@ -275,6 +310,89 @@ func normalizeProductionOperationExecutionListQuery(query ProductionOperationExe
 		ExecutionLotID: strings.TrimSpace(query.ExecutionLotID),
 		Limit:          limit,
 	}
+}
+
+func resolveProductionOperationPieceworkContextTx(
+	tx *gorm.DB,
+	req *RecordProductionOperationExecutionRequest,
+	state models.ProductBarcodeState,
+) (productionOperationPieceworkContext, error) {
+	result := productionOperationPieceworkContext{
+		ProductID:   strings.TrimSpace(state.ProductID),
+		ProductName: strings.TrimSpace(state.ProductName),
+		Quantity:    1,
+	}
+
+	var lot models.ProductionExecutionLot
+	query := tx.Model(&models.ProductionExecutionLot{})
+	if req.ExecutionLotID != "" {
+		query = query.Where("id = ?", req.ExecutionLotID)
+	} else {
+		query = query.Where("product_barcode = ?", req.ProductBarcode)
+	}
+	err := query.First(&lot).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return result, nil
+	}
+	if err != nil {
+		return productionOperationPieceworkContext{}, fmt.Errorf("failed to resolve production execution lot for piecework: %w", err)
+	}
+
+	if req.ExecutionLotID == "" {
+		req.ExecutionLotID = strings.TrimSpace(lot.ID)
+	}
+	if productID := strings.TrimSpace(lot.ProductID); productID != "" {
+		result.ProductID = productID
+	}
+	if productName := strings.TrimSpace(lot.ProductName); productName != "" {
+		result.ProductName = productName
+	}
+	if lot.Quantity > 0 {
+		result.Quantity = lot.Quantity
+	}
+	return result, nil
+}
+
+func recordPieceworkForCompletedProductionOperationTx(
+	ctx context.Context,
+	tx *gorm.DB,
+	operation models.ProductionOperationExecution,
+	state models.ProductBarcodeState,
+	work productionOperationPieceworkContext,
+) error {
+	if operation.Action != ProductionOperationActionComplete || operation.ExecutionMode != ProductionOperationExecutionModeInHouse {
+		return nil
+	}
+	if strings.TrimSpace(work.ProductID) == "" {
+		return nil
+	}
+
+	workDate := time.Now().UTC()
+	if operation.CompletedAt != nil {
+		workDate = operation.CompletedAt.UTC()
+	}
+	quantity := work.Quantity
+	if quantity <= 0 {
+		quantity = 1
+	}
+
+	_, err := recordPieceworkTx(ctx, tx, PieceworkRecordCommand{
+		WorkDate:          workDate,
+		ProductID:         work.ProductID,
+		ProductName:       work.ProductName,
+		RouteID:           operation.RouteID,
+		RouteStepID:       operation.RouteStepID,
+		ProcessStepID:     operation.ProcessStepID,
+		Quantity:          quantity,
+		SourceExecutionID: operation.ID,
+	})
+	if err != nil {
+		if errors.Is(err, ErrInvalidPieceworkRecord) {
+			return nil
+		}
+		return fmt.Errorf("failed to freeze piecework record for operation execution %s on barcode %s: %w", operation.ID, state.ProductBarcode, err)
+	}
+	return nil
 }
 
 func normalizeRecordProductionOperationExecutionRequest(req RecordProductionOperationExecutionRequest) RecordProductionOperationExecutionRequest {

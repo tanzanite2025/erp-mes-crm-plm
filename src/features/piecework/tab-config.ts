@@ -14,6 +14,11 @@ export function getPieceworkTabs(t: TabTranslator): TabItem[] {
       href: '/piecework/query',
     },
     {
+      key: 'templates',
+      label: t('piecework.layout.tabs.templates'),
+      href: '/piecework/templates',
+    },
+    {
       key: 'rules',
       label: t('piecework.layout.tabs.rules'),
       href: '/piecework/rules',

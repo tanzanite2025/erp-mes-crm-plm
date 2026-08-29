@@ -114,6 +114,11 @@ func SaveProductionRouteHandler(c *gin.Context) {
 			respondVersionConflict(c)
 			return
 		}
+		if errors.Is(err, services.ErrProductionRouteImmutable) ||
+			errors.Is(err, services.ErrInvalidProductionRouteStatus) {
+			c.JSON(http.StatusConflict, gin.H{"error": "[CONFLICT] " + err.Error()})
+			return
+		}
 		if errors.Is(err, services.ErrInvalidProductionRoute) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -128,6 +133,11 @@ func SaveProductionRouteHandler(c *gin.Context) {
 func DeleteProductionRouteHandler(c *gin.Context) {
 	id := c.Param("id")
 	if err := services.DeleteProductionRoute(id, middleware.GetSafeUsername(c), c.ClientIP()); err != nil {
+		if errors.Is(err, services.ErrProductionRouteImmutable) ||
+			errors.Is(err, services.ErrProductionRouteDeleteBlocked) {
+			c.JSON(http.StatusConflict, gin.H{"error": "[CONFLICT] " + err.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete production route"})
 		return
 	}

@@ -15,6 +15,7 @@ import (
 	"xdfc-server/handlers"
 	"xdfc-server/middleware"
 	"xdfc-server/routes"
+	"xdfc-server/security"
 	"xdfc-server/services"
 
 	"github.com/gin-contrib/gzip"
@@ -283,8 +284,14 @@ func main() {
 	if dsn == "" {
 		log.Fatal("[CRITICAL_SECURITY] DATABASE_URL 环境变量缺失，拒绝启动。请在 .env 文件或环境变量中配置数据库连接字符串。")
 	}
+	if err := security.ValidateAttendanceSecretEncryptionKeyFromEnv(); err != nil {
+		log.Fatalf("[CRITICAL_SECURITY] ATTENDANCE_SECRET_ENCRYPTION_KEY is required for AttendanceDevice.SecretValue encryption-at-rest: %v", err)
+	}
 
 	db.InitDB(dsn)
+	if _, err := services.MigrateAttendanceDeviceSecretsAtRest(db.DB); err != nil {
+		log.Fatalf("[CRITICAL_SECURITY] Failed to migrate AttendanceDevice.SecretValue to encrypted storage: %v", err)
+	}
 	services.StartVehicleModelTemplateGeometryParserWorker(context.Background())
 	db.InitRedis()
 	services.StartInitialSearchRebuild()
@@ -448,8 +455,29 @@ func main() {
 		log.Println("[READY] 委外通知自动重试任务未启用")
 	}
 
+	_, err = c.AddFunc("* * * * *", func() {
+		runCronWithDistributedLock(
+			"attendance-device-sync",
+			"attendance-device-sync",
+			5*time.Minute,
+			func() error {
+				synced, syncErr := services.SyncDueAttendanceDevices()
+				if syncErr != nil {
+					return syncErr
+				}
+				if synced > 0 {
+					log.Printf("[CRON][attendance-device-sync] processed=%d", synced)
+				}
+				return nil
+			},
+		)
+	})
+	if err != nil {
+		log.Printf("[WARN] 无法启动考勤设备同步任务: %v", err)
+	}
+
 	c.Start()
-	log.Println("[READY] 定时任务集群已就绪: 汇率 (11:00) | 备份 (02:00) | 车型模型源文件清理 (03:30) | 委外通知自动重试 (每 10 分钟，release 默认开启)")
+	log.Println("[READY] 定时任务集群已就绪: 汇率 (11:00) | 备份 (02:00) | 车型模型源文件清理 (03:30) | 委外通知自动重试 (每 10 分钟，release 默认开启) | 考勤设备同步 (每分钟检查到期设备)")
 
 	routes.SetupRoutes(r)
 

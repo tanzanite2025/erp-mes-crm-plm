@@ -272,7 +272,7 @@ export function NotificationCenter({
           <Bell className='size-[1.1rem] drop-shadow-[0_1px_4px_rgba(8,47,73,0.35)]' />
         )}
         {visibleUnreadCount > 0 && !isExpanded ? (
-          <span className='absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full border border-background/80 bg-red-500 px-1 text-[9px] font-black text-white shadow-lg dark:border-background/60'>
+          <span className='absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full border border-background/80 bg-black px-1 text-[9px] font-black text-white shadow-lg dark:border-background/60 dark:bg-black'>
             {visibleUnreadCount > 99 ? '99+' : visibleUnreadCount}
           </span>
         ) : null}

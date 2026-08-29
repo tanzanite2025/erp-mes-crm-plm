@@ -147,6 +147,22 @@ const moduleGroups: CommandItemConfig[] = [
     pinyin: 'wwsfj',
   },
   {
+    id: 'tab-attendance-devices',
+    href: '/attendance-management/devices',
+    titleKey: 'commandMenu.items.attendanceDevices',
+    parentKey: 'sidebar.items.attendanceManagement',
+    keywords: [
+      'attendance device',
+      'clock terminal',
+      'ivms',
+      'hikvision',
+      '考勤设备',
+      '打卡机',
+      '海康',
+    ],
+    pinyin: 'kqsb',
+  },
+  {
     id: 'tab-attendance-leave-management',
     href: '/attendance-management/leave',
     titleKey: 'commandMenu.items.leaveManagement',

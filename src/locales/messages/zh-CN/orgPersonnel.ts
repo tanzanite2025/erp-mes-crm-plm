@@ -9,6 +9,7 @@ export const orgPersonnel = {
     topology: '拓扑模板',
     leave: '请假管理',
     stats: '优秀员工榜',
+    attendanceDevices: '考勤设备',
   },
   leaveMgmt: {
     headerTitle: '在线请假申请',

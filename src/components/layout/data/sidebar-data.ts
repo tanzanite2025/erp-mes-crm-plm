@@ -539,7 +539,7 @@ const navGroupConfigs: SidebarGroupConfig[] = [
           {
             id: 'attendance-management',
             titleKey: 'sidebar.items.attendanceManagement',
-            url: '/attendance-management/leave',
+            url: '/attendance-management/devices',
             activeMatch: '/attendance-management',
             icon: Calendar,
             permissionId: permissionIdForPath('/attendance-management'),

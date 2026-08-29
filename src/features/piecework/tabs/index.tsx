@@ -47,7 +47,9 @@ export function PieceworkRules() {
   const filteredData = useMemo(() => {
     return rates.filter(
       (item) =>
-        item.processName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.processName || item.processCode || '')
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
         item.productId.toLowerCase().includes(searchTerm.toLowerCase())
     )
   }, [rates, searchTerm])
@@ -78,11 +80,11 @@ export function PieceworkRules() {
       ),
     },
     {
-      accessorKey: 'piecePrice',
-      header: t('piecework.rules.table.piecePrice'),
+      accessorKey: 'unitPrice',
+      header: t('piecework.rules.table.unitPrice'),
       cell: ({ row }) => (
         <span className='font-mono text-sm font-black text-emerald-600 italic'>
-          ¥{row.original.piecePrice.toFixed(2)} / {row.original.unit}
+          ¥{row.original.unitPrice.toFixed(4)} / {row.original.unit}
         </span>
       ),
     },
@@ -125,7 +127,12 @@ export function PieceworkRules() {
             variant='ghost'
             size='icon'
             className='size-8 rounded-full text-destructive/50 hover:bg-destructive/10 hover:text-destructive'
-            onClick={() => deleteRateMutation.mutate(row.original.id)}
+            onClick={() =>
+              deleteRateMutation.mutate({
+                id: row.original.id,
+                version: row.original.version,
+              })
+            }
           >
             <Trash2 className='size-3.5' />
           </Button>
