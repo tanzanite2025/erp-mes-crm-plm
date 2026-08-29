@@ -199,6 +199,7 @@ POSTGRES_PASSWORD=<strong-random-password>
 POSTGRES_DB=erp_prod
 REDIS_PASSWORD=<strong-random-password>
 JWT_SECRET=<at-least-64-random-characters>
+ATTENDANCE_SECRET_ENCRYPTION_KEY=<strong-random-secret>
 INITIAL_ADMIN_PASSWORD=<one-time-strong-password>
 TOPOLOGY_AUTH_PASSWORD=<strong-random-password>
 ALERT_WEBHOOK_TOKEN=<strong-random-token>
