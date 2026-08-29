@@ -1,7 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import type { ElementType, ReactNode } from 'react'
+import { type ElementType, type ReactNode, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Cable,
@@ -58,6 +57,7 @@ import {
 import { ForbiddenState } from '@/components/forbidden-state'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
+import type { Employee } from '../data/schema'
 import { personnelQueryKeys } from '../query-keys'
 import {
   attendanceDeviceService,
@@ -69,7 +69,6 @@ import {
   type AttendanceDeviceTemplate,
 } from '../services/attendance-device-service'
 import { EmployeeCoreService } from '../services/employee-core-service'
-import type { Employee } from '../data/schema'
 
 type AttendanceDeviceForm = Omit<AttendanceDeviceInput, 'config'> & {
   secret: string

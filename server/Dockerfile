@@ -1,5 +1,5 @@
 # --- Stage 1: Build Go API ---
-FROM golang:1.26.5-alpine AS api-builder
+FROM golang:1.26.6-alpine AS api-builder
 
 ENV CGO_ENABLED=0 \
     GOOS=linux \
