@@ -36,6 +36,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import {
   DataTableFacetedFilter,
@@ -43,6 +44,7 @@ import {
 } from '@/components/data-table'
 import { DataTableViewOptions } from '@/components/data-table/view-options'
 import { ForbiddenState } from '@/components/forbidden-state'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { EmployeeActionDialog } from '../components/employee-action-dialog'
 import { EmployeeBulkActions } from '../components/employee-bulk-actions'
 import {
@@ -452,6 +454,12 @@ export function EmployeeManagementList() {
           </div>
         </div>
         <div className='grid w-full grid-cols-2 gap-1.5 sm:flex sm:w-auto sm:flex-wrap sm:items-center'>
+          <AuditTimelineTriggerButton
+            module={AUDIT_MODULES.employee}
+            targetName={t('orgPersonnel.org.personnelProfile.title')}
+            label={t('common.audit.trigger')}
+            className='h-10 w-full justify-center rounded-xl border-muted px-3 text-[10px] font-black tracking-tighter normal-case shadow-sm transition-all hover:bg-muted active:scale-95 sm:w-auto'
+          />
           <Button
             variant='outline'
             onClick={() => exportPersonnelData(data, nameMap, locale)}

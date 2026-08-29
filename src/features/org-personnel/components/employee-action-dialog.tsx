@@ -25,10 +25,11 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { AuditStamp } from '@/components/common/audit-stamp'
-import { buildHostedQuickActionDialogContentClassName } from '@/components/hosted-quick-action-dialog.styles'
+import {
+  buildHostedQuickActionDialogContentClassName,
+  hostedQuickActionDialogScrollableBodyClassName,
+} from '@/components/hosted-quick-action-dialog.styles'
 import { SelectDropdown } from '@/components/select-dropdown'
-import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import {
   PERSONNEL_FORM_FIELDS,
   type PersonnelFormFieldConfig,
@@ -43,6 +44,11 @@ import {
 } from './employee-action-dialog.shared'
 
 const UNASSIGNED_POSITION_VALUE = '__UNASSIGNED_POSITION__'
+const employeeFieldControlClassName =
+  'h-11 w-full min-w-0 rounded-xl border border-transparent bg-muted/45 px-4 text-sm font-semibold shadow-inner transition-all focus-visible:border-primary/20 focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/15'
+const employeeFieldLabelClassName =
+  'text-xs font-semibold text-muted-foreground'
+const employeeFieldHintClassName = 'text-xs leading-5 text-muted-foreground'
 
 type EmployeeActionDialogProps = {
   currentRow?: Employee
@@ -239,40 +245,29 @@ export function EmployeeActionDialog({
     >
       <DialogContent
         className={buildHostedQuickActionDialogContentClassName(
-          'flex w-[calc(100vw-1.5rem)] max-w-[calc(100vw-1.5rem)] flex-col gap-0 overflow-hidden rounded-[32px] border-none bg-background p-0 shadow-2xl sm:w-[calc(100vw-2rem)] sm:max-w-[calc(100vw-2rem)] md:w-[80vw] md:max-w-[80vw]'
+          'flex w-[calc(100vw-1.5rem)] max-w-[calc(100vw-1.5rem)] flex-col gap-0 overflow-hidden rounded-[28px] border-none bg-background p-0 shadow-2xl sm:w-[calc(100vw-2rem)] sm:max-w-[calc(100vw-2rem)] md:w-[min(1180px,calc(100vw-2rem))] md:max-w-[min(1180px,calc(100vw-2rem))]'
         )}
       >
-        <DialogHeader className='shrink-0 border-b border-dashed border-muted/50 bg-muted/5 px-6 py-5 text-start md:px-8 md:py-6'>
-          <DialogTitle className='text-lg font-black tracking-tighter uppercase italic'>
+        <DialogHeader className='shrink-0 border-b border-dashed border-muted/50 bg-muted/5 px-6 py-5 pr-14 text-start md:px-8 md:py-5'>
+          <DialogTitle className='text-lg font-black'>
             {isEdit
               ? t('orgPersonnel.org.employeeDialog.editTitle')
               : t('orgPersonnel.org.employeeDialog.createTitle')}
           </DialogTitle>
-          <DialogDescription className='text-[9px] font-black tracking-widest uppercase opacity-60'>
+          <DialogDescription className='text-xs font-medium text-muted-foreground'>
             {isEdit
               ? t('orgPersonnel.org.employeeDialog.editDesc')
               : t('orgPersonnel.org.employeeDialog.createDesc')}
           </DialogDescription>
-          {isEdit && currentRow && (
-            <AuditStamp
-              module={AUDIT_MODULES.employee}
-              targetId={currentRow.id}
-              createdBy={currentRow.createdBy}
-              createdAt={currentRow.createdAt}
-              updatedBy={currentRow.updatedBy}
-              updatedAt={currentRow.updatedAt}
-              className='mt-4 border-primary/10'
-            />
-          )}
         </DialogHeader>
 
         <Form {...form}>
           <form
             id='employee-form'
             onSubmit={form.handleSubmit(onSubmitHandler)}
-            className='space-y-4 overflow-visible px-6 py-5 md:px-8 md:py-6'
+            className={`${hostedQuickActionDialogScrollableBodyClassName} px-6 py-5 md:px-8 md:py-6`}
           >
-            <div className='grid grid-cols-1 gap-x-5 gap-y-3 md:grid-cols-2 xl:grid-cols-4'>
+            <div className='grid grid-cols-1 items-start gap-x-4 gap-y-4 md:grid-cols-2 xl:grid-cols-4'>
               {PERSONNEL_FORM_FIELDS.map((fieldConfig) => (
                 <FormField
                   key={fieldConfig.key}
@@ -280,15 +275,15 @@ export function EmployeeActionDialog({
                   name={fieldConfig.key}
                   render={({ field }) => (
                     <FormItem
-                      className={`space-y-1 ${getEmployeeDialogFieldGridClassName(fieldConfig)}`}
+                      className={`min-w-0 space-y-1.5 ${getEmployeeDialogFieldGridClassName(fieldConfig)}`}
                     >
-                      <FormLabel className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+                      <FormLabel className={employeeFieldLabelClassName}>
                         {fieldConfig.key === 'orgUnitId'
                           ? orgUnitFieldLabel
                           : getColumnLabel(fieldConfig.key)}
                       </FormLabel>
                       {fieldConfig.input === 'select' ? (
-                        <div className='pt-0.5'>
+                        <div className='w-full'>
                           <SelectDropdown
                             isControlled
                             value={field.value}
@@ -305,7 +300,7 @@ export function EmployeeActionDialog({
                               ...opt,
                               label: getOptionLabel(opt.label),
                             }))}
-                            className='h-10 rounded-2xl border-none bg-muted/50 text-xs font-bold shadow-inner'
+                            className={employeeFieldControlClassName}
                           />
                         </div>
                       ) : (
@@ -317,13 +312,13 @@ export function EmployeeActionDialog({
                                 ? orgUnitFieldLabel
                                 : getColumnLabel(fieldConfig.key)
                             }
-                            className='h-10 rounded-2xl border-none bg-muted/50 px-4 text-xs font-bold shadow-inner transition-all focus-visible:ring-primary/20'
+                            className={employeeFieldControlClassName}
                             {...field}
                           />
                         </FormControl>
                       )}
                       {fieldConfig.key === 'orgUnitId' && (
-                        <p className='text-[10px] leading-relaxed text-muted-foreground'>
+                        <p className={employeeFieldHintClassName}>
                           {orgUnitFieldHint}
                         </p>
                       )}
@@ -337,20 +332,20 @@ export function EmployeeActionDialog({
                 name='positionId'
                 render={({ field }) => (
                   <FormItem className='space-y-1 md:col-span-2 xl:col-span-2'>
-                    <FormLabel className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+                    <FormLabel className={employeeFieldLabelClassName}>
                       {positionFieldLabel}
                     </FormLabel>
-                    <div className='pt-0.5'>
+                    <div className='w-full'>
                       <SelectDropdown
                         isControlled
                         value={field.value}
                         onValueChange={field.onChange}
                         placeholder={positionFieldLabel}
                         items={positionOptions}
-                        className='h-10 rounded-2xl border-none bg-muted/50 text-xs font-bold shadow-inner'
+                        className={employeeFieldControlClassName}
                       />
                     </div>
-                    <p className='text-[10px] leading-relaxed text-muted-foreground'>
+                    <p className={employeeFieldHintClassName}>
                       {positionFieldHint}
                     </p>
                     <FormMessage />
@@ -365,7 +360,7 @@ export function EmployeeActionDialog({
           <Button
             type='submit'
             form='employee-form'
-            className='h-10 rounded-full px-8 text-[10px] font-black tracking-widest uppercase shadow-xl shadow-blue-500/20 transition-all active:scale-95'
+            className='h-11 w-full rounded-full px-8 text-sm font-semibold shadow-xl shadow-blue-500/20 transition-all active:scale-95 sm:w-auto'
           >
             {t('orgPersonnel.org.employeeDialog.submit')}
           </Button>

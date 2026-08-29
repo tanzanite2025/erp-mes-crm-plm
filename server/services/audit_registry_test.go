@@ -13,6 +13,12 @@ func TestQualityStandardAllowsModuleLevelTimeline(t *testing.T) {
 	}
 }
 
+func TestEmployeeAllowsModuleLevelTimeline(t *testing.T) {
+	if !IsAuditModuleTimelineAllowed(AuditModuleEmployee) {
+		t.Fatalf("%q should allow module-level timeline queries for the personnel profile page", AuditModuleEmployee)
+	}
+}
+
 func TestVehicleModelTemplateAuditRegistration(t *testing.T) {
 	canonicalModule := NormalizeAuditModule("LogisticsVehicleModelTemplate")
 	if canonicalModule != AuditModuleVehicleModelTemplate {

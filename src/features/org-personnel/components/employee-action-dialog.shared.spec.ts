@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
 import { type TranslationKey } from '@/locales'
+import { describe, expect, it } from 'vitest'
 import { getEmployeeFormSchema } from './employee-action-dialog.shared'
 
 const translate = (key: TranslationKey) => key
