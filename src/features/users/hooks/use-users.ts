@@ -7,6 +7,7 @@ import {
   type UserAccessSnapshot,
   type UserListPage,
   type UserOption,
+  type UserPermissionItem,
   type UserPermissionsReplaceResult,
   type UserPermissionsResponse,
 } from '../data/schema'
@@ -27,6 +28,16 @@ export const USER_ACCESS_SNAPSHOT_QUERY_KEY = [
   'access-snapshot',
 ] as const
 export const USER_PERMISSIONS_QUERY_KEY = ['users', 'permissions'] as const
+
+function normalizePermissionIDs(permissionIDs: string[]): string[] {
+  return Array.from(
+    new Set(
+      permissionIDs
+        .map((permissionID) => permissionID.trim().toLowerCase())
+        .filter(Boolean)
+    )
+  )
+}
 
 export const useUsersQuery = (params: UsersQueryParams = {}) => {
   return useQuery<UserListPage>({
@@ -208,13 +219,49 @@ export const useUserMutations = () => {
       queryClient,
       invalidateQueryKeys: [
         USERS_QUERY_KEY,
-        USER_PERMISSIONS_QUERY_KEY,
         USER_ACCESS_SNAPSHOT_QUERY_KEY,
       ],
-      onSuccess: (_data, variables) =>
-        refreshCurrentAccountAccessSnapshotIfMutatedAccountMatches(
+      onSuccess: (data, variables) => {
+        const normalizedPermissionIDs = normalizePermissionIDs(data.permissions)
+        const queryKey = [...USER_PERMISSIONS_QUERY_KEY, variables.id.trim()]
+
+        queryClient.setQueryData<UserPermissionsResponse>(queryKey, (current) => {
+          if (!current) {
+            return current
+          }
+
+          const permissionItemByID = new Map<string, UserPermissionItem>(
+            current.permissions.map((item) => [
+              item.permissionId.trim().toLowerCase(),
+              item,
+            ])
+          )
+          const nextPermissions = normalizedPermissionIDs.map((permissionID) =>
+            permissionItemByID.get(permissionID) ?? {
+              permissionId: permissionID,
+            }
+          )
+          const nextEffectivePermissions = Array.from(
+            new Set([
+              ...current.presetPermissions
+                .map((permissionID) => permissionID.trim().toLowerCase())
+                .filter(Boolean),
+              ...normalizedPermissionIDs,
+            ])
+          )
+
+          return {
+            ...current,
+            permissions: nextPermissions,
+            effectivePermissions: nextEffectivePermissions,
+            total: nextPermissions.length,
+          }
+        })
+
+        return refreshCurrentAccountAccessSnapshotIfMutatedAccountMatches(
           variables.id
-        ),
+        )
+      },
     }),
   })
 

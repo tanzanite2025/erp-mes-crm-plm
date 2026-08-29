@@ -4,7 +4,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createTestUser } from '../test-factories'
-import { useUserMutations, useUserPermissionsQuery } from './use-users'
+import type { UserPermissionsResponse } from '../data/schema'
+import {
+  USER_PERMISSIONS_QUERY_KEY,
+  useUserMutations,
+  useUserPermissionsQuery,
+} from './use-users'
 
 const userApiMocks = vi.hoisted(() => ({
   bindUserEmployee: vi.fn(),
@@ -31,13 +36,19 @@ vi.mock('@/features/authz/services/account-access-refresh-service', () => ({
     accessRefreshMocks.refreshCurrentAccountAccessSnapshotIfMutatedAccountMatches,
 }))
 vi.mock('@/lib/react-query-mutation', () => ({
-  buildMutationOptions: ({ onSuccess, onError }: any) => ({
+  buildMutationOptions: ({
+    onSuccess,
+    onError,
+  }: {
+    onSuccess?: (...args: unknown[]) => unknown
+    onError?: (...args: unknown[]) => unknown
+  }) => ({
     onError,
     onSuccess,
   }),
 }))
 
-function createQueryWrapper() {
+function createQueryEnvironment() {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -45,9 +56,15 @@ function createQueryWrapper() {
     },
   })
 
-  return function QueryWrapper({ children }: PropsWithChildren) {
+  function QueryWrapper({ children }: PropsWithChildren) {
     return createElement(QueryClientProvider, { client: queryClient }, children)
   }
+
+  return { queryClient, wrapper: QueryWrapper }
+}
+
+function createQueryWrapper() {
+  return createQueryEnvironment().wrapper
 }
 
 describe('user query and mutation guards', () => {
@@ -167,5 +184,52 @@ describe('user query and mutation guards', () => {
     expect(
       accessRefreshMocks.refreshCurrentAccountAccessSnapshotIfMutatedAccountMatches
     ).toHaveBeenNthCalledWith(2, targetUser.id)
+  })
+
+  it('syncs cached user permissions after a replacement succeeds', async () => {
+    const { queryClient, wrapper } = createQueryEnvironment()
+    queryClient.setQueryData<UserPermissionsResponse>(
+      [...USER_PERMISSIONS_QUERY_KEY, 'user-1'],
+      {
+        userId: 'user-1',
+        username: 'buyer',
+        status: 'active',
+        permissions: [],
+        presetPermissions: [],
+        effectivePermissions: [],
+        total: 0,
+      }
+    )
+    userApiMocks.replaceUserPermissions.mockResolvedValue({
+      userId: 'user-1',
+      permissions: ['page_purchase_orders', 'menu_purchase'],
+      changeSummary: { added: 2, removed: 0, unchanged: 0 },
+    })
+
+    const { result } = renderHook(() => useUserMutations(), { wrapper })
+
+    await result.current.replaceUserPermissionsMutation.mutateAsync({
+      id: 'user-1',
+      payload: {
+        permissions: ['page_purchase_orders', 'menu_purchase'],
+        reason: 'test',
+      },
+    })
+
+    expect(
+      queryClient.getQueryData<UserPermissionsResponse>([
+        ...USER_PERMISSIONS_QUERY_KEY,
+        'user-1',
+      ])
+    ).toEqual(
+      expect.objectContaining({
+        permissions: [
+          expect.objectContaining({ permissionId: 'page_purchase_orders' }),
+          expect.objectContaining({ permissionId: 'menu_purchase' }),
+        ],
+        effectivePermissions: ['page_purchase_orders', 'menu_purchase'],
+        total: 2,
+      })
+    )
   })
 })

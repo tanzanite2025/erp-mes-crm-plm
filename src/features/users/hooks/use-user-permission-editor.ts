@@ -52,7 +52,6 @@ export function useUserPermissionEditor({
   const {
     data: permissionsData,
     isLoading,
-    refetch,
   } = useUserPermissionsQuery(userID, open && userID.length > 0)
   const { replaceUserPermissionsMutation } = useUserMutations()
 
@@ -154,10 +153,10 @@ export function useUserPermissionEditor({
     })
   }
 
-  const save = () => {
+  const save = async () => {
     if (!userID) return
-    replaceUserPermissionsMutation.mutate(
-      {
+    try {
+      await replaceUserPermissionsMutation.mutateAsync({
         id: userID,
         payload: {
           permissions: draftPermissionIDs.filter((permissionID) => {
@@ -169,15 +168,12 @@ export function useUserPermissionEditor({
           }),
           reason: 'users_permissions_dialog_save',
         },
-      },
-      {
-        onSuccess: async () => {
-          setLocalDraftPermissionIDs(null)
-          await refetch()
-          toast.success(t('users.toast.permissionAssignmentsSaved'))
-        },
-      }
-    )
+      })
+      setLocalDraftPermissionIDs(null)
+      toast.success(t('users.toast.permissionAssignmentsSaved'))
+    } catch {
+      return
+    }
   }
 
   const resetEditor = () => {
