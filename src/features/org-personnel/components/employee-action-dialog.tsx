@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useMemo } from 'react'
-import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { type TranslationKey } from '@/locales'
@@ -38,14 +37,12 @@ import {
 } from '../config/personnel-archive-columns'
 import { type Employee } from '../data/schema'
 import { useOrgPersonnelLookups } from '../hooks/use-org-personnel-lookups'
+import {
+  getEmployeeFormSchema,
+  type EmployeeForm,
+} from './employee-action-dialog.shared'
 
 const UNASSIGNED_POSITION_VALUE = '__UNASSIGNED_POSITION__'
-
-type EmployeeForm = Record<PersonnelFormFieldKey, string> & {
-  id?: string
-  positionId: string
-  version?: number
-}
 
 type EmployeeActionDialogProps = {
   currentRow?: Employee
@@ -150,37 +147,7 @@ export function EmployeeActionDialog({
     includePositions: true,
   })
 
-  const formSchema = z.object({
-    id: z.string().optional(),
-    staffId: z
-      .string()
-      .trim()
-      .min(1, t('orgPersonnel.org.employeeDialog.errors.staffId')),
-    name: z
-      .string()
-      .trim()
-      .min(1, t('orgPersonnel.org.employeeDialog.errors.name')),
-    orgUnitId: z
-      .string()
-      .trim()
-      .min(1, t('orgPersonnel.org.employeeDialog.errors.orgUnitId')),
-    phone: z.string(),
-    emergencyPhone: z.string(),
-    gender: z.string(),
-    joinedDate: z.string(),
-    status: z
-      .string()
-      .trim()
-      .min(1, t('orgPersonnel.org.employeeDialog.errors.status')),
-    age: z.string(),
-    idCard: z.string(),
-    birthday: z.string(),
-    address: z.string(),
-    bankCard: z.string(),
-    bankName: z.string(),
-    education: z.string(),
-    positionId: z.string(),
-  })
+  const formSchema = useMemo(() => getEmployeeFormSchema(t), [t])
 
   const defaultValues = useMemo(() => buildDefaultValues(), [])
 
